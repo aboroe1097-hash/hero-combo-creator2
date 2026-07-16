@@ -1,6 +1,7 @@
 // Eden Map UI — minimap, keyboard shortcuts, quick-jump, mobile sidebar
 import { OVERVIEW_STRUCTURE_TYPES, getQuickJumpSectors } from './eden-map-data.js';
 import { getSectorTileIds } from './eden-map-assets.js?v=20260708_101500';
+import { edenMapText, getEdenSectorDisplayLabel } from './i18n/eden-map/index.js';
 
 const MAJOR_TYPES = OVERVIEW_STRUCTURE_TYPES;
 const MINIMAP_SIZE = 150;
@@ -123,7 +124,8 @@ function renderQuickJumpButtons(api, activeSector = 'FULL') {
   if (wonderIds.size) sectors = sectors.filter((k) => wonderIds.has(k));
   container.innerHTML = sectors.map((key) => {
     const active = activeSector === key ? ' active' : '';
-    return `<button type="button" data-eden-jump="${key}" class="eden-quick-btn${active}" title="Jump to ${key}">${key}</button>`;
+    const place = `${getEdenSectorDisplayLabel(key)} (${key})`;
+    return `<button type="button" data-eden-jump="${key}" class="eden-quick-btn${active}" title="${edenMapText('jumpTo', { place })}">${key}</button>`;
   }).join('');
 
   container.querySelectorAll('[data-eden-jump]').forEach((btn) => {

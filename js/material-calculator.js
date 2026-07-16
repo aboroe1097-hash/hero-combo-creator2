@@ -3,6 +3,14 @@ import '../css/materials.css';
 import { currentLanguage, setCurrentLanguage } from './state.js';
 import { escapeHtml, formatLocaleNumber } from './utils.js';
 import {
+  DM_COPY_FALLBACKS,
+  DM_ENHANCE_FALLBACKS,
+  dmMaterialsText,
+  getDmPlannerCopy,
+  loadDmMaterialsLocale,
+} from './i18n/dm-materials/index.js';
+import {
+  DM_DEFAULT_PLAN_NAME,
   DM_MATERIAL_STOCKPILES,
   DM_NORMAL_GEAR_DRAGONITE_PER_ITEM,
   DM_ROUTES,
@@ -18,6 +26,8 @@ import {
   normalizeMaterialPlan,
   computeEnhancementNeed,
 } from './material-planner-model.js';
+
+export { DM_COPY_FALLBACKS, DM_ENHANCE_FALLBACKS } from './i18n/dm-materials/index.js';
 
 const STORAGE_KEY = 'vts_dm_material_planner_v2';
 const SHARE_PARAM = 'dmPlan';
@@ -35,49 +45,49 @@ const GAME_SLOT_IDS = Object.freeze({
 const EQUIPMENT_SETS = Object.freeze({
   archers: Object.freeze({
     id: 'ranger',
-    label: 'Ranger',
-    names: Object.freeze({
-      armor: "Ranger's Suit",
-      boots: "Ranger's Boots",
-      ring: "Ranger's Soul",
-      dagger: "Ranger's Heart",
-      sword: "Ranger's Long Bow",
-      helmet: "Ranger's Headband",
+    textId: 'sets.archers',
+    nameIds: Object.freeze({
+      armor: 'equipment.archers.armor',
+      boots: 'equipment.archers.boots',
+      ring: 'equipment.archers.ring',
+      dagger: 'equipment.archers.dagger',
+      sword: 'equipment.archers.sword',
+      helmet: 'equipment.archers.helmet',
     }),
   }),
   footmen: Object.freeze({
     id: 'dreadnaught',
-    label: 'Dreadnaught',
-    names: Object.freeze({
-      armor: "Dreadnaught's Ebony Plate",
-      boots: "Dreadnaught's Treads",
-      ring: "Dreadnaught's Calling",
-      dagger: "Dreadnaught's Bulwark",
-      sword: "Dreadnaught's Sabre",
-      helmet: "Dreadnaught's Crown",
+    textId: 'sets.footmen',
+    nameIds: Object.freeze({
+      armor: 'equipment.footmen.armor',
+      boots: 'equipment.footmen.boots',
+      ring: 'equipment.footmen.ring',
+      dagger: 'equipment.footmen.dagger',
+      sword: 'equipment.footmen.sword',
+      helmet: 'equipment.footmen.helmet',
     }),
   }),
   cavalry: Object.freeze({
     id: 'steel-cavalry',
-    label: 'Steel Cavalry',
-    names: Object.freeze({
-      armor: 'Steel Cavalry Golden Plate',
-      boots: 'Steel Cavalry Greaves',
-      ring: 'Steel Cavalry Jade Belt',
-      dagger: 'Steel Cavalry Cowl',
-      sword: 'Steel Cavalry Ranseur',
-      helmet: 'Steel Cavalry Feathered Helm',
+    textId: 'sets.cavalry',
+    nameIds: Object.freeze({
+      armor: 'equipment.cavalry.armor',
+      boots: 'equipment.cavalry.boots',
+      ring: 'equipment.cavalry.ring',
+      dagger: 'equipment.cavalry.dagger',
+      sword: 'equipment.cavalry.sword',
+      helmet: 'equipment.cavalry.helmet',
     }),
   }),
 });
 
-const DM_ITEM_NAMES = Object.freeze({
-  armor: "Dragon Master's Breastplate",
-  boots: "Dragon Master's Sabatons",
-  ring: "Dragon Master's Golden Belt",
-  dagger: "Dragon Master's Stiletto",
-  sword: "Dragon Master's Blade",
-  helmet: "Dragon Master's Crown",
+const DM_ITEM_TEXT_IDS = Object.freeze({
+  armor: 'items.armor',
+  boots: 'items.boots',
+  ring: 'items.ring',
+  dagger: 'items.dagger',
+  sword: 'items.sword',
+  helmet: 'items.helmet',
 });
 
 const DM_RESOURCE_ICONS = Object.freeze({
@@ -93,28 +103,47 @@ const NORMAL_MATERIALS = Object.freeze({
   archers: Object.freeze({
     setId: 'ranger',
     materials: Object.freeze({
-      leather: Object.freeze({ name: 'Wolf Hide', stockpileIndex: 1 }),
-      cloth: Object.freeze({ name: 'Cotton Cloth', stockpileIndex: 2 }),
-      rope: Object.freeze({ name: 'Hemp Rope', stockpileIndex: 3 }),
-      wood: Object.freeze({ name: 'Walnut Wood', stockpileIndex: 4 }),
+      leather: Object.freeze({ textId: 'materials.archers.leather', stockpileIndex: 1 }),
+      cloth: Object.freeze({ textId: 'materials.archers.cloth', stockpileIndex: 2 }),
+      rope: Object.freeze({ textId: 'materials.archers.rope', stockpileIndex: 3 }),
+      wood: Object.freeze({ textId: 'materials.archers.wood', stockpileIndex: 4 }),
     }),
   }),
   cavalry: Object.freeze({
     setId: 'cavalry',
     materials: Object.freeze({
-      coil: Object.freeze({ name: 'Dragon Tendon', stockpileIndex: 1, asset: 'coil' }),
-      claw: Object.freeze({ name: 'Claw', stockpileIndex: 2, asset: 'claw' }),
-      feather: Object.freeze({ name: 'Plume', stockpileIndex: 3, asset: 'feather' }),
-      ingot: Object.freeze({ name: 'Ingot', stockpileIndex: 4, asset: 'ingot' }),
+      coil: Object.freeze({
+        textId: 'materials.cavalry.coil',
+        stockpileIndex: 1,
+        asset: 'coil',
+      }),
+      claw: Object.freeze({
+        textId: 'materials.cavalry.claw',
+        stockpileIndex: 2,
+        asset: 'claw',
+      }),
+      feather: Object.freeze({
+        textId: 'materials.cavalry.feather',
+        stockpileIndex: 3,
+        asset: 'feather',
+      }),
+      ingot: Object.freeze({
+        textId: 'materials.cavalry.ingot',
+        stockpileIndex: 4,
+        asset: 'ingot',
+      }),
     }),
   }),
   footmen: Object.freeze({
     setId: 'dreadnaught',
     materials: Object.freeze({
-      order: Object.freeze({ name: 'Secret Order', stockpileIndex: 1 }),
-      ebony: Object.freeze({ name: 'Ebony Ore', stockpileIndex: 2 }),
-      grindstone: Object.freeze({ name: 'Grindstone', stockpileIndex: 3 }),
-      iron: Object.freeze({ name: 'Iron Sand', stockpileIndex: 4 }),
+      order: Object.freeze({ textId: 'materials.footmen.order', stockpileIndex: 1 }),
+      ebony: Object.freeze({ textId: 'materials.footmen.ebony', stockpileIndex: 2 }),
+      grindstone: Object.freeze({
+        textId: 'materials.footmen.grindstone',
+        stockpileIndex: 3,
+      }),
+      iron: Object.freeze({ textId: 'materials.footmen.iron', stockpileIndex: 4 }),
     }),
   }),
 });
@@ -174,8 +203,8 @@ const SLOT_ASSETS = Object.freeze(
                 troop,
                 Object.freeze({
                   setId: set.id,
-                  name: set.names[slot],
-                  suit: set.label,
+                  nameId: set.nameIds[slot],
+                  suitId: set.textId,
                 }),
               ])
             )
@@ -186,145 +215,26 @@ const SLOT_ASSETS = Object.freeze(
   )
 );
 
-// English is the readability safety net, not a replacement for locale work.
-// Translation catalogs may return the key itself while a catalog is converging; every DM label
-// therefore has an explicit fallback here so the planner never exposes key soup.
-export const DM_COPY_FALLBACKS = Object.freeze({
-  title: 'Dragon Master Set Planner',
-  subtitle:
-    'Build normal troop gear first, then merge through your chosen tier path into gold Dragon Master pieces.',
-  plan: 'Your plan',
-  planName: 'Plan name',
-  preset: 'Target preset',
-  targetSets: 'Full sets',
-  targetSetsOption: '{count} full set(s)',
-  full: 'Full 6-piece set',
-  attack: 'Attack set (4 pieces)',
-  defense: 'Defense set (4 pieces)',
-  routes: 'Crafting routes',
-  directGold: 'Direct Gold',
-  purpleRoute: 'Purple Route',
-  blueRoute: 'Blue Route',
-  fastest: 'Fastest',
-  recommended: 'Recommended',
-  lowestSd: 'Lowest Super Dragonite',
-  directHint: 'Minimal merging. Highest Super Dragonite cost.',
-  purpleHint: 'Best balance of Super Dragonite, gems, and work.',
-  blueHint: 'Saves the most Super Dragonite. Most merging work.',
-  setTitle: 'Dragon Master six-piece set',
-  viewSet: 'Set view',
-  viewSlot: 'Slot view',
-  selected: 'Selected',
-  pieces: 'Pieces',
-  selectedPiece: 'Selected piece',
-  recipeFor: '{piece} via the {route} route',
-  normalGear: 'Normal troop gear',
-  normalGearHint: 'Craft these normal troop pieces first at {tier} tier.',
-  rawMaterials: 'Raw materials',
-  stockpileTitle: 'Full-set material stockpile',
-  stockpileHint:
-    'Materials required to craft the normal troop gear for one complete Dragon Master set.',
-  exactRecipe: 'Exact material recipe',
-  normalItem: 'Normal equipment',
-  archers: 'Archers',
-  footmen: 'Footmen',
-  cavalry: 'Cavalry',
-  dmPiece: 'Dragon Master piece',
-  mergeFour: 'Merge four into the next tier',
-  beforeMerge: 'Before gem merging',
-  mandatoryGems:
-    'Spend remaining Super Dragonite first so the game does not consume it during merging.',
-  completePiece: 'Mark gold piece complete',
-  reopenPiece: 'Reopen gold piece',
-  summary: 'Plan summary',
-  route: 'Route',
-  completed: 'Completed',
-  overallProgress: 'Overall progress',
-  nextAction: 'Next best action',
-  craftNext: 'Craft next',
-  allDone: 'All targeted pieces are complete.',
-  resources: 'Resources',
-  resourceOwned: 'Owned',
-  resourceNeeded: 'Needed',
-  resourceShortfall: 'Shortfall',
-  superDragonite: 'Super Dragonite',
-  dragonite: 'Dragonite',
-  gems: 'Gems',
-  editResources: 'Edit resources',
-  savePlan: 'Save plan',
-  exportPlan: 'Export plan (.json)',
-  sharePlan: 'Copy share link',
-  clearProgress: 'Clear progress',
-  details: 'View full resource breakdown',
-  tier: 'Tier',
-  perPiece: 'Per piece',
-  remainingSet: 'Remaining campaign',
-  saved: 'Plan saved.',
-  exported: 'Plan exported.',
-  copied: 'Share link copied.',
-  copyFailed: 'Could not copy the share link.',
-  armor: 'Armor',
-  dagger: 'Dagger',
-  ring: 'Ring',
-  sword: 'Sword',
-  helmet: 'Helmet',
-  boots: 'Boots',
-  white: 'White',
-  green: 'Green',
-  blue: 'Blue',
-  purple: 'Purple',
-  orange: 'Orange',
-  gold: 'Gold',
-  campaign: 'Five-set campaign',
-  campaignHint: 'Build five complete Dragon Master sets: 30 gold pieces in total.',
-  campaignSet: 'Set {number}',
-  campaignSetsComplete: '{completed} / {total} sets complete',
-  campaignPiecesComplete: '{completed} / {total} gold pieces',
-  campaignFocused: 'Focused set',
-  campaignComplete: 'Five Dragon Master sets complete',
-  campaignCompleteHint:
-    'Crafting is complete. Continue with equipment enhancement, or reopen a set to review it.',
-  campaignReview: 'Review crafting sets',
-  inventoryTitle: 'Your DM piece inventory',
-  inventoryHint:
-    'Enter how many completed gold pieces you currently own. Velo can use this for account reviews.',
-  inventoryOwned: 'Owned {piece}',
-});
-
-export const DM_ENHANCE_FALLBACKS = Object.freeze({
-  dmEnhanceTitle: 'Enhance Equipment',
-  dmEnhanceIntro: 'Plan advancing completed Dragon Master pieces toward +5, +10, +15, +20, or +25.',
-  dmEnhanceResSuperDragonCore: 'Super Dragon Core',
-  dmEnhanceResExoticCrystal: 'Exotic Crystal',
-  dmEnhanceResDragonCrystal: 'Dragon Crystal',
-  dmEnhanceCurrentLevel: 'Current level',
-  dmEnhanceTargetLevel: 'Target level',
-  dmEnhanceScopePiece: 'One piece',
-  dmEnhanceScopeSet: 'Full set (6 pieces)',
-  dmEnhanceOwned: 'Owned',
-  dmEnhanceNeeded: 'Needed',
-  dmEnhanceShortfall: 'Shortfall',
-  dmEnhanceReached: 'Target already reached',
-  dmEnhanceCredit: 'Thanks to Roha and Redbull for contributing the data used by the DM tool.',
-});
-
 let rootEl = null;
 let plan = null;
 let activeDmTool = 'build';
 
 function copy() {
-  const localized = Object.fromEntries(
-    Object.entries(DM_COPY_FALLBACKS).map(([field, fallback]) => [
-      field,
-      localizedDmText(`dmPlanner${field.charAt(0).toUpperCase()}${field.slice(1)}`, fallback),
-    ])
-  );
-  // Every shipped locale already owns the Materials navigation label. Use it
-  // as the heading until that locale receives the more specific DM catalog.
-  if (currentLanguage !== 'en' && materialT('dmPlannerTitle') === 'dmPlannerTitle') {
-    localized.title = localizedDmText('tabMaterials', localized.title);
-  }
-  return localized;
+  return getDmPlannerCopy();
+}
+
+function dmItemName(slot) {
+  return dmMaterialsText(DM_ITEM_TEXT_IDS[slot]);
+}
+
+function materialName(definition) {
+  return definition?.textId ? dmMaterialsText(definition.textId) : '';
+}
+
+function displayedPlanName() {
+  return plan?.name === DM_DEFAULT_PLAN_NAME
+    ? dmMaterialsText('plan.defaultName')
+    : plan?.name || '';
 }
 
 function formatNumber(value) {
@@ -336,20 +246,6 @@ function interpolate(template, values) {
     (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
     template
   );
-}
-
-function materialT(key, values = {}) {
-  const dictionaries = globalThis.VTS_TRANSLATIONS;
-  return interpolate(
-    dictionaries?.[currentLanguage]?.[key] || dictionaries?.en?.[key] || key,
-    values
-  );
-}
-
-function localizedDmText(key, fallback, values = {}) {
-  const translated = materialT(key, values);
-  if (translated && translated !== key) return translated;
-  return interpolate(fallback, values);
 }
 
 function loadPlan() {
@@ -456,15 +352,16 @@ function renderRouteChooser(result, t) {
 }
 
 function renderPlanPanel(result, t) {
+  const planName = displayedPlanName();
   return `
     <aside class="dm-panel dm-plan-panel" aria-labelledby="dmPlanHeading">
       <div class="dm-panel-heading">
         <span class="dm-eyebrow">${escapeHtml(t.plan)}</span>
-        <h3 id="dmPlanHeading">${escapeHtml(plan.name)}</h3>
+        <h3 id="dmPlanHeading">${escapeHtml(planName)}</h3>
       </div>
       <label class="dm-field">
         <span>${escapeHtml(t.planName)}</span>
-        <input type="text" name="dm-plan-name" maxlength="80" value="${escapeHtml(plan.name)}" data-dm-plan-name>
+        <input type="text" name="dm-plan-name" maxlength="80" value="${escapeHtml(planName)}" data-dm-plan-name>
       </label>
       <label class="dm-field">
         <span>${escapeHtml(t.targetSets)}</span>
@@ -505,11 +402,12 @@ function renderSlotCard(slot, t) {
   const active = plan.selectedSlot === slot;
   const completed = plan.completed[slot];
   const targeted = plan.targets[slot];
+  const itemName = dmItemName(slot);
   return `
-    <button type="button" class="dm-slot-card dm-tier-surface ${tier.className}${active ? ' is-active' : ''}${completed ? ' is-complete' : ''}${targeted ? '' : ' is-disabled'}" ${tier.attributes} data-dm-slot="${slot}" aria-pressed="${active}" aria-label="${escapeHtml(`${slotLabel(slot, t)}: ${DM_ITEM_NAMES[slot]}`)}" title="${escapeHtml(DM_ITEM_NAMES[slot])}" ${targeted ? '' : 'disabled'}>
+    <button type="button" class="dm-slot-card dm-tier-surface ${tier.className}${active ? ' is-active' : ''}${completed ? ' is-complete' : ''}${targeted ? '' : ' is-disabled'}" ${tier.attributes} data-dm-slot="${slot}" aria-pressed="${active}" aria-label="${escapeHtml(`${slotLabel(slot, t)}: ${itemName}`)}" title="${escapeHtml(itemName)}" ${targeted ? '' : 'disabled'}>
       <span class="dm-slot-card__name" title="${escapeHtml(slotLabel(slot, t))}">${escapeHtml(slotLabel(slot, t))}</span>
-      <span class="dm-slot-card__art dm-media-slot" title="${escapeHtml(DM_ITEM_NAMES[slot])}">
-        <img src="${image}" alt="${escapeHtml(DM_ITEM_NAMES[slot])}" width="128" height="128" loading="lazy" decoding="async">
+      <span class="dm-slot-card__art dm-media-slot" title="${escapeHtml(itemName)}">
+        <img src="${image}" alt="${escapeHtml(itemName)}" width="128" height="128" loading="lazy" decoding="async">
       </span>
       <span class="dm-slot-card__tier dm-tier-label">${escapeHtml(tierLabel(tier.id, t))}</span>
       <span class="dm-slot-progress"><strong>${completed ? '1 / 1' : '0 / 1'}</strong></span>
@@ -541,9 +439,9 @@ function renderMaterialStockpile(result, t) {
   if (!stockpile) return '';
   const tier = tierPresentation(result.route.normalTier);
   const suits = [
-    ['ranger', 'archers', 'Ranger'],
-    ['cavalry', 'cavalry', 'Steel Cavalry'],
-    ['dreadnaught', 'footmen', 'Dreadnaught'],
+    ['ranger', 'archers', 'sets.archers'],
+    ['cavalry', 'cavalry', 'sets.cavalry'],
+    ['dreadnaught', 'footmen', 'sets.footmen'],
   ];
   return `
     <section class="dm-material-stockpile dm-tier-panel ${tier.className}" ${tier.attributes} aria-labelledby="dmStockpileHeading">
@@ -555,9 +453,9 @@ function renderMaterialStockpile(result, t) {
       <div class="dm-stockpile-suits">
         ${suits
           .map(
-            ([suitId, troopKey, suitName]) => `
+            ([suitId, troopKey, suitNameId]) => `
           <article class="dm-stockpile-suit dm-tier-surface ${tier.className}" ${tier.attributes}>
-            <header><strong>${escapeHtml(suitName)}</strong><span>${escapeHtml(t[troopKey])}</span></header>
+            <header><strong>${escapeHtml(dmMaterialsText(suitNameId))}</strong><span>${escapeHtml(t[troopKey])}</span></header>
             <div>
               ${stockpile[suitId]
                 .map((count, index) => {
@@ -568,11 +466,12 @@ function renderMaterialStockpile(result, t) {
                   const image = material
                     ? getNormalMaterialImage(troopKey, materialKey, result.route.normalTier)
                     : '';
+                  const displayName = materialName(material);
                   return `
                   <span class="dm-stockpile-material${image ? '' : ' is-text-only'}" ${tier.attributes} data-dm-inventory-item>
-                    ${image ? `<img src="${image}" alt="${escapeHtml(material?.name || '')}" width="96" height="76" loading="lazy" decoding="async">` : `<span class="dm-stockpile-material__placeholder">${escapeHtml(material?.name || '')}</span>`}
+                    ${image ? `<img src="${image}" alt="${escapeHtml(displayName)}" width="96" height="76" loading="lazy" decoding="async">` : `<span class="dm-stockpile-material__placeholder">${escapeHtml(displayName)}</span>`}
                     <b>×${formatNumber(count)}</b>
-                    <small>${escapeHtml(material?.name || '')}</small>
+                    <small>${escapeHtml(displayName)}</small>
                   </span>`;
                 })
                 .join('')}
@@ -605,9 +504,10 @@ function renderNormalMaterialRecipe(troop, slot, route, gearCount, t) {
           const definition = NORMAL_MATERIALS[troop].materials[material];
           const image = getNormalMaterialImage(troop, material, route.normalTier);
           const total = perPiece * gearCount;
+          const displayName = materialName(definition);
           return `
-          <span class="dm-normal-material${image ? '' : ' is-text-only'}" ${tier.attributes} data-dm-recipe-ingredient title="${escapeHtml(`${definition.name}: ${perPiece} ${t.perPiece}`)}">
-            ${image ? `<img src="${image}" alt="${escapeHtml(definition.name)}" width="56" height="56" loading="lazy" decoding="async">` : `<small>${escapeHtml(definition.name)}</small>`}
+          <span class="dm-normal-material${image ? '' : ' is-text-only'}" ${tier.attributes} data-dm-recipe-ingredient title="${escapeHtml(`${displayName}: ${perPiece} ${t.perPiece}`)}">
+            ${image ? `<img src="${image}" alt="${escapeHtml(displayName)}" width="56" height="56" loading="lazy" decoding="async">` : `<small>${escapeHtml(displayName)}</small>`}
             <b>×${formatNumber(total)}</b>
           </span>`;
         })
@@ -628,6 +528,8 @@ function renderNormalGear(slot, result, t, stageNumber) {
     troop,
     count: requirements[troop],
     ...asset.normal[troop],
+    name: dmMaterialsText(asset.normal[troop].nameId),
+    suit: dmMaterialsText(asset.normal[troop].suitId),
     image: equipmentAssetPath(asset.normal[troop].setId, asset.gameSlot, route.normalTier),
   }));
   return `
@@ -656,6 +558,7 @@ function renderNormalGear(slot, result, t, stageNumber) {
 }
 
 function renderDmStages(slot, result, t, firstStageNumber) {
+  const itemName = dmItemName(slot);
   return result.route.stages
     .map((stage, index) => {
       const tier = tierPresentation(stage.tier);
@@ -665,10 +568,10 @@ function renderDmStages(slot, result, t, firstStageNumber) {
     <article class="dm-recipe-node dm-recipe-node--${stage.tier} dm-tier-surface ${tier.className}" ${tier.attributes} data-dm-stage>
       <div class="dm-recipe-node__head">
         <span class="dm-stage-number">${index + firstStageNumber}</span>
-        <div><strong>${escapeHtml(DM_ITEM_NAMES[slot])}</strong><small>${escapeHtml(tierLabel(stage.tier, t))}</small></div>
+        <div><strong>${escapeHtml(itemName)}</strong><small>${escapeHtml(tierLabel(stage.tier, t))}</small></div>
       </div>
       <span class="dm-stage-art">
-        <img class="dm-stage-image" src="${image}" alt="${escapeHtml(DM_ITEM_NAMES[slot])}" width="128" height="128" loading="lazy" decoding="async">
+        <img class="dm-stage-image" src="${image}" alt="${escapeHtml(itemName)}" width="128" height="128" loading="lazy" decoding="async">
       </span>
       <span class="dm-stage-count">×${formatNumber(stage.count)}</span>
       ${index === 0 ? renderDmStageResources(result.route, t) : ''}
@@ -696,6 +599,7 @@ function renderDmStageResources(route, t) {
 
 function renderRecipePanel(result, t) {
   const slot = plan.selectedSlot;
+  const itemName = dmItemName(slot);
   const completed = plan.completed[slot];
   const hasStockpile = Boolean(DM_MATERIAL_STOCKPILES[result.route.id]);
   const totalSteps = (hasStockpile ? 1 : 0) + 1 + result.route.stages.length;
@@ -704,7 +608,7 @@ function renderRecipePanel(result, t) {
       <div class="dm-section-heading-row">
         <div>
           <span class="dm-eyebrow">${escapeHtml(t.selectedPiece)}</span>
-          <h3 id="dmRecipeHeading">${escapeHtml(DM_ITEM_NAMES[slot])}</h3>
+          <h3 id="dmRecipeHeading">${escapeHtml(itemName)}</h3>
           <p>${escapeHtml(
             interpolate(t.recipeFor, {
               piece: slotLabel(slot, t),
@@ -784,7 +688,7 @@ function renderSummaryPanel(result, t) {
       <section class="dm-panel dm-next-panel">
         <span class="dm-eyebrow">${escapeHtml(t.nextAction)}</span>
         <strong>${escapeHtml(nextText)}</strong>
-        ${result.nextSlot ? `<button type="button" data-dm-slot="${result.nextSlot}">${escapeHtml(DM_ITEM_NAMES[result.nextSlot])}</button>` : ''}
+        ${result.nextSlot ? `<button type="button" data-dm-slot="${result.nextSlot}">${escapeHtml(dmItemName(result.nextSlot))}</button>` : ''}
       </section>
       <section class="dm-panel dm-resource-panel" aria-labelledby="dmResourceHeading">
         <div class="dm-section-heading-row">
@@ -850,11 +754,26 @@ function handleImageError(event) {
   image.replaceWith(fallback);
 }
 
-// Graceful i18n: prefer the catalog value, fall back to English until the
-// locale lane adds the dmEnhance* keys (see the reconciliation handoff).
+const ENHANCE_TEXT_IDS = Object.freeze({
+  dmEnhanceTitle: 'enhance.title',
+  dmEnhanceIntro: 'enhance.intro',
+  dmEnhanceResSuperDragonCore: 'enhance.resourceSuperDragonCore',
+  dmEnhanceResExoticCrystal: 'enhance.resourceExoticCrystal',
+  dmEnhanceResDragonCrystal: 'enhance.resourceDragonCrystal',
+  dmEnhanceCurrentLevel: 'enhance.currentLevel',
+  dmEnhanceTargetLevel: 'enhance.targetLevel',
+  dmEnhanceScopePiece: 'enhance.scopePiece',
+  dmEnhanceScopeSet: 'enhance.scopeSet',
+  dmEnhanceOwned: 'enhance.owned',
+  dmEnhanceNeeded: 'enhance.needed',
+  dmEnhanceShortfall: 'enhance.shortfall',
+  dmEnhanceReached: 'enhance.reached',
+  dmEnhanceCredit: 'enhance.credit',
+});
+
 function enhanceText(key, fallback) {
-  const value = materialT(key);
-  return value && value !== key ? value : fallback;
+  const id = ENHANCE_TEXT_IDS[key];
+  return id ? dmMaterialsText(id) : fallback;
 }
 
 // Honest resource identity: name + rarity-frame colour (no fabricated icons —
@@ -932,7 +851,7 @@ function renderEnhancePanel() {
           (slot) => {
             const level = enh.currentLevels[slot];
             const label = slotLabel(slot);
-            return `<div class="dm-enhance-piece" role="group" aria-label="${escapeHtml(`${label}, ${currentText} +${level}`)}" title="${escapeHtml(DM_ITEM_NAMES[slot])}">
+            return `<div class="dm-enhance-piece" role="group" aria-label="${escapeHtml(`${label}, ${currentText} +${level}`)}" title="${escapeHtml(dmItemName(slot))}">
               <img src="${equipmentAssetPath(SLOT_ASSETS[slot].setId, SLOT_ASSETS[slot].gameSlot, 'gold')}" alt="" width="96" height="96" loading="lazy" decoding="async">
               <span>${escapeHtml(label)}</span>
               <div class="dm-enhance-piece-controls">
@@ -1045,11 +964,12 @@ function normalizeMaterialLanguage(language) {
   return primary === 'ko' ? 'kr' : primary;
 }
 
-function renderForLanguage({ detail } = {}) {
+async function renderForLanguage({ detail } = {}) {
   const language = normalizeMaterialLanguage(
     detail?.lang || document.documentElement.lang || currentLanguage
   );
   if (language !== currentLanguage) setCurrentLanguage(language);
+  await loadDmMaterialsLocale(language);
   render();
 }
 
@@ -1245,11 +1165,11 @@ function handleChange(event) {
   }
 }
 
-export function initMaterialCalculator() {
+export async function initMaterialCalculator() {
   rootEl = document.getElementById('materialCalculatorRoot');
   if (!rootEl) return;
   if (rootEl.dataset.dmMaterialWired === '1') {
-    renderForLanguage();
+    await renderForLanguage();
     return;
   }
   rootEl.dataset.dmMaterialWired = '1';
@@ -1258,7 +1178,6 @@ export function initMaterialCalculator() {
   rootEl.addEventListener('input', handleInput);
   rootEl.addEventListener('change', handleChange);
   rootEl.addEventListener('error', handleImageError, true);
-  window.addEventListener('edenLanguageUpdate', renderForLanguage);
   window.addEventListener('vts:language-change', renderForLanguage);
-  renderForLanguage();
+  await renderForLanguage();
 }

@@ -5,6 +5,10 @@
  * the header trigger button.
  */
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
+import './i18n/standalone-copy.js';
+
+const STANDALONE_I18N = window.VTSStandaloneI18n;
 
 const DESTS = [
   {
@@ -72,6 +76,7 @@ const DESTS = [
   },
   {
     key: 'tabOcrDashboard',
+    name: 'admin',
     href: 'admin.html',
     kind: 'link',
     fallback: 'VTS Admin',
@@ -94,16 +99,16 @@ const DESTS = [
 ];
 
 function currentLang() {
-  try {
-    return localStorage.getItem('vts_hero_lang') || 'en';
-  } catch {
-    return 'en';
-  }
+  return resolveRuntimeLocale();
 }
 
 function t(key, fallback) {
   const lang = currentLang();
   return translations?.[lang]?.[key] ?? translations?.en?.[key] ?? fallback;
+}
+
+function commandCopy() {
+  return STANDALONE_I18N.getCopy(currentLang()).command;
 }
 
 function normalize(s) {
@@ -116,7 +121,8 @@ function scoreDest(dest, q) {
   if (!q) return 3;
   if (label.startsWith(q)) return 0;
   if (label.includes(q)) return 1;
-  const hay = `${label} ${dest.kw}`;
+  const aliases = commandCopy().aliases?.[dest.name] || '';
+  const hay = `${label} ${dest.kw} ${aliases}`;
   const tokens = q.split(/\s+/).filter(Boolean);
   if (tokens.every((tok) => hay.includes(tok))) return 2;
   return -1;
@@ -187,7 +193,8 @@ function render(query) {
     li.id = `cmdk-item-${i}`;
     li.setAttribute('role', 'option');
     li.setAttribute('aria-selected', i === active ? 'true' : 'false');
-    const badge = d.kind === 'link' ? 'page' : 'tool';
+    const badgeKey = d.kind === 'link' ? 'page' : 'tool';
+    const badge = commandCopy().badges[badgeKey];
     li.innerHTML = `<span class="cmdk-item-label"></span><span class="cmdk-item-badge">${badge}</span>`;
     li.querySelector('.cmdk-item-label').textContent = t(d.key, d.fallback);
     li.addEventListener('pointerenter', () => setActive(i));
@@ -306,6 +313,13 @@ function init() {
   const trigger =
     document.getElementById('commandPaletteTrigger') || document.querySelector('[data-cmdk-open]');
   trigger?.addEventListener('click', open);
+
+  const refreshLanguage = () => {
+    if (!els) return;
+    refreshLocalizedCopy();
+    if (isOpen()) render(els.input.value);
+  };
+  window.addEventListener('vts:language-change', refreshLanguage);
 
   window.vtsOpenCommandPalette = open;
 }

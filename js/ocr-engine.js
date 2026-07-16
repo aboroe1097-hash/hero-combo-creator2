@@ -22,6 +22,7 @@ import {
   readOcrImageDataUrl,
 } from './ocr-shared.js';
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 
 const OCR_LOG_FALLBACKS = Object.freeze({
   adminLogOcrAlreadyRunning: 'A structure OCR upload is already running.',
@@ -50,12 +51,7 @@ const OCR_LOG_FALLBACKS = Object.freeze({
 });
 
 function ocrT(key, vars = {}) {
-  let lang = 'en';
-  try {
-    lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
-  } catch {
-    // Restricted contexts can block storage; English remains the safe fallback.
-  }
+  const lang = resolveRuntimeLocale();
   const dictionaries = window.VTS_TRANSLATIONS || translations;
   let text =
     dictionaries[lang]?.[key] ||

@@ -75,7 +75,7 @@ test('Best and Surprise Me share one stale-safe run lifecycle', () => {
   );
   assert.match(
     run,
-    /lastGeneratedCombos\.push\(\.\.\.combos\)[\s\S]*?renderGeneratorResults\(combos[\s\S]*?liveStatus\.textContent\s*=\s*countMessage/
+    /lastGeneratedCombos\.push\(\.\.\.combos\)[\s\S]*?renderGeneratorResults\(combos[\s\S]*?updateGeneratorRunStatus\(countMessage\)/
   );
   assert.match(run, /downloadGeneratorBtn\?\.classList\.toggle\('hidden', combos\.length === 0\)/);
   assert.match(run, /resultsEl\.focus\(\{ preventScroll: true \}\)/);

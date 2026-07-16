@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260716_101602"></script>
-    <script src="js/theme-prepaint.js?v=20260716_101602"></script>
+    <script src="js/maintenance-config.js?v=20260716_132118"></script>
+    <script src="js/theme-prepaint.js?v=20260716_132118"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -104,15 +104,15 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260716_101602" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260716_101602" />
-    <link rel="stylesheet" href="css/app.css?v=20260716_101602" />
-    <link rel="stylesheet" href="css/components.css?v=20260716_101602" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260716_101602" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260716_101602" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260716_101602" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260716_101602" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260716_101602" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260716_132118" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260716_132118" />
+    <link rel="stylesheet" href="css/app.css?v=20260716_132118" />
+    <link rel="stylesheet" href="css/components.css?v=20260716_132118" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260716_132118" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260716_132118" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260716_132118" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260716_132118" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260716_132118" />
     <script type="importmap">
       {
         "imports": {
@@ -124,7 +124,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260716_101602"></script>
+    <script src="js/admin-auth-config.js?v=20260716_132118"></script>
   </head>
   <body>
     <a
@@ -1125,7 +1125,12 @@
           <div class="research-control-deck">
             <div class="research-deck-row">
               <span class="research-deck-label" data-i18n="researchSeasonLabel">Seasons</span>
-              <div class="research-season-segment" role="group" aria-label="Filter by season">
+              <div
+                class="research-season-segment"
+                role="group"
+                aria-label="Filter by season"
+                data-i18n-aria="researchSeasonFilterAria"
+              >
                 <div class="research-season-bar">
                   <button type="button" class="tech-season-btn active" data-season="S0">S0</button>
                   <button type="button" class="tech-season-btn active" data-season="S1">S1</button>
@@ -1140,7 +1145,12 @@
             </div>
             <div class="research-deck-row research-deck-row-tools">
               <span class="research-deck-label" data-i18n="researchQuickLabel">Quick</span>
-              <div class="research-quick-segment" role="group" aria-label="Season presets">
+              <div
+                class="research-quick-segment"
+                role="group"
+                aria-label="Season presets"
+                data-i18n-aria="researchSeasonPresetsAria"
+              >
                 <button
                   type="button"
                   id="techSeasonAllBtn"
@@ -1211,7 +1221,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260716_101602"
+          data-tab-src="tabs/eden-map.html?v=20260716_132118"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1230,7 +1240,7 @@
         <section
           id="loyaltySection"
           class="tab-panel hidden"
-          data-tab-src="tabs/loyalty.html?v=20260716_101602"
+          data-tab-src="tabs/loyalty.html?v=20260716_132118"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1534,7 +1544,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.11</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.12</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1578,11 +1588,11 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260716_101602"></script>
-    <script type="module" src="js/app.js?v=20260716_101602"></script>
-    <script type="module" src="js/command-palette.js?v=20260716_101602"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260716_101602"></script>
-    <script src="js/index-page-enhancements.js?v=20260716_101602"></script>
-    <script src="js/shell-v14.js?v=20260716_101602"></script>
+    <script src="js/loader-v14.js?v=20260716_132118"></script>
+    <script type="module" src="js/app.js?v=20260716_132118"></script>
+    <script type="module" src="js/command-palette.js?v=20260716_132118"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260716_132118"></script>
+    <script src="js/index-page-enhancements.js?v=20260716_132118"></script>
+    <script src="js/shell-v14.js?v=20260716_132118"></script>
   </body>
 </html>

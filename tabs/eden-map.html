@@ -1,4 +1,8 @@
-<div id="edenMapRoot" class="eden-map-root">
+<div
+  id="edenMapRoot"
+  class="eden-map-root"
+  data-eden-loading-label="Loading Eden Map…"
+>
   <div class="eden-map-header">
     <div>
       <h2 class="eden-page-title" data-i18n="edenMapTitle">Eden Map Planner</h2>
@@ -81,21 +85,21 @@
           >
             <option value="FULL" data-i18n="edenSectorFull">Full Map</option>
             <optgroup label="─ Cardinal Sectors ─" data-i18n-label="edenSectorCardinal">
-              <option value="N">North (N)</option>
-              <option value="NE">North East (NE)</option>
-              <option value="E">East (E)</option>
-              <option value="SE">South East (SE)</option>
-              <option value="S">South (S)</option>
-              <option value="SW">South West (SW)</option>
-              <option value="W">West (W)</option>
-              <option value="NW">North West (NW)</option>
+              <option value="N" data-eden-sector-option="N">North (N)</option>
+              <option value="NE" data-eden-sector-option="NE">North East (NE)</option>
+              <option value="E" data-eden-sector-option="E">East (E)</option>
+              <option value="SE" data-eden-sector-option="SE">South East (SE)</option>
+              <option value="S" data-eden-sector-option="S">South (S)</option>
+              <option value="SW" data-eden-sector-option="SW">South West (SW)</option>
+              <option value="W" data-eden-sector-option="W">West (W)</option>
+              <option value="NW" data-eden-sector-option="NW">North West (NW)</option>
             </optgroup>
             <optgroup label="─ Central Sectors ─" data-i18n-label="edenSectorCentral">
-              <option value="C">Central (C)</option>
-              <option value="NC">North Central (NC)</option>
-              <option value="EC">Eastern Central (EC)</option>
-              <option value="WC">West Central (WC)</option>
-              <option value="SC">South Central (SC)</option>
+              <option value="C" data-eden-sector-option="C">Central (C)</option>
+              <option value="NC" data-eden-sector-option="NC">North Central (NC)</option>
+              <option value="EC" data-eden-sector-option="EC">Eastern Central (EC)</option>
+              <option value="WC" data-eden-sector-option="WC">West Central (WC)</option>
+              <option value="SC" data-eden-sector-option="SC">South Central (SC)</option>
             </optgroup>
           </select>
           <button
@@ -125,7 +129,12 @@
             <span data-i18n="edenIsolateSector">Isolate</span>
           </button>
         </div>
-        <div class="eden-deck-cluster eden-zoom-cluster" role="group" aria-label="Zoom">
+        <div
+          class="eden-deck-cluster eden-zoom-cluster"
+          role="group"
+          aria-label="Zoom controls"
+          data-eden-i18n-aria="zoomControls"
+        >
           <button
             type="button"
             id="edenZoomOut"
@@ -229,6 +238,8 @@
             id="edenFullscreen"
             class="eden-tool-btn"
             title="Fullscreen map"
+            data-eden-i18n="fullscreen"
+            data-eden-i18n-title="fullscreenTitle"
             aria-pressed="false"
           >
             Fullscreen
@@ -260,41 +271,47 @@
       </div>
 
       <details class="eden-mission-panel">
-        <summary class="eden-mission-head" aria-label="Mission controls">
-          <span class="eden-mission-title">Mission</span>
+        <summary
+          class="eden-mission-head"
+          aria-label="Mission controls"
+          data-eden-i18n-aria="missionControls"
+        >
+          <span class="eden-mission-title" data-eden-i18n="mission">Mission</span>
           <span id="edenMissionPreview" class="eden-mission-preview">VTS</span>
         </summary>
         <div class="eden-mission-grid">
           <label class="eden-mission-field eden-mission-field--alliance">
-            <span>Alliance</span>
+            <span data-eden-i18n="alliance">Alliance</span>
             <select
               id="edenMissionAlliance"
               class="eden-mission-select"
               title="Alliance color for targets, paths, and drawing"
+              data-eden-i18n-title="allianceTitle"
             >
-              <option value="vts" data-color="#22d3ee" data-side="ours">VTS</option>
-              <option value="ally-north" data-color="#38bdf8" data-side="ours">Our ally N</option>
-              <option value="ally-south" data-color="#22c55e" data-side="ours">Our ally S</option>
-              <option value="enemy-red" data-color="#ef4444" data-side="enemy">Enemy red</option>
-              <option value="enemy-purple" data-color="#a855f7" data-side="enemy">
+              <option value="vts" data-canonical-name="VTS" data-eden-mission-option="vts" data-color="#22d3ee" data-side="ours">VTS</option>
+              <option value="ally-north" data-canonical-name="Our ally N" data-eden-mission-option="ally-north" data-color="#38bdf8" data-side="ours">Our ally N</option>
+              <option value="ally-south" data-canonical-name="Our ally S" data-eden-mission-option="ally-south" data-color="#22c55e" data-side="ours">Our ally S</option>
+              <option value="enemy-red" data-canonical-name="Enemy red" data-eden-mission-option="enemy-red" data-color="#ef4444" data-side="enemy">Enemy red</option>
+              <option value="enemy-purple" data-canonical-name="Enemy purple" data-eden-mission-option="enemy-purple" data-color="#a855f7" data-side="enemy">
                 Enemy purple
               </option>
-              <option value="enemy-gold" data-color="#f59e0b" data-side="enemy">Enemy gold</option>
-              <option value="neutral" data-color="#94a3b8" data-side="neutral">Neutral</option>
+              <option value="enemy-gold" data-canonical-name="Enemy gold" data-eden-mission-option="enemy-gold" data-color="#f59e0b" data-side="enemy">Enemy gold</option>
+              <option value="neutral" data-canonical-name="Neutral" data-eden-mission-option="neutral" data-color="#94a3b8" data-side="neutral">Neutral</option>
             </select>
           </label>
           <label class="eden-mission-field">
-            <span>Label</span>
+            <span data-eden-i18n="label">Label</span>
             <input
               id="edenMissionLabel"
               class="eden-mission-input"
               type="text"
               placeholder="Gate / Rally"
+              data-eden-i18n-ph="gateRally"
               maxlength="24"
             />
           </label>
           <label class="eden-mission-field eden-mission-field--time">
-            <span>Time</span>
+            <span data-eden-i18n="time">Time</span>
             <input
               id="edenMissionTime"
               class="eden-mission-input"
@@ -304,8 +321,13 @@
               maxlength="5"
             />
           </label>
-          <div class="eden-mission-field eden-mission-teams" role="group" aria-label="VTS teams">
-            <span>VTS team</span>
+          <div
+            class="eden-mission-field eden-mission-teams"
+            role="group"
+            aria-label="VTS teams"
+            data-eden-i18n-aria="vtsTeams"
+          >
+            <span data-eden-i18n="vtsTeam">VTS team</span>
             <div class="eden-mission-team-row">
               <button
                 type="button"
@@ -329,12 +351,12 @@
             </div>
           </div>
           <div class="eden-mission-actions">
-            <button type="button" id="edenMissionUseTarget" class="eden-tool-btn eden-tool-accent">
+            <button type="button" id="edenMissionUseTarget" class="eden-tool-btn eden-tool-accent" data-eden-i18n="placeTarget">
               Place target
             </button>
-            <button type="button" id="edenMissionUsePath" class="eden-tool-btn">Path</button>
-            <button type="button" id="edenMissionUseDraw" class="eden-tool-btn">Draw</button>
-            <button type="button" id="edenDeleteLastTarget" class="eden-tool-btn eden-tool-danger">
+            <button type="button" id="edenMissionUsePath" class="eden-tool-btn" data-eden-i18n="path">Path</button>
+            <button type="button" id="edenMissionUseDraw" class="eden-tool-btn" data-eden-i18n="draw">Draw</button>
+            <button type="button" id="edenDeleteLastTarget" class="eden-tool-btn eden-tool-danger" data-eden-i18n="undoTarget">
               Undo target
             </button>
           </div>
@@ -343,7 +365,7 @@
 
       <div class="eden-deck-row eden-deck-tools">
         <span class="eden-deck-label" data-i18n="edenDeckTools">Tools</span>
-        <div class="eden-tool-segment" role="tablist" aria-label="Map tools">
+        <div class="eden-tool-segment" role="tablist" aria-label="Map tools" data-eden-i18n-aria="mapTools">
           <button
             type="button"
             role="tab"
@@ -395,7 +417,7 @@
             Draw
           </button>
         </div>
-        <div id="edenPathTools" class="eden-path-tools" aria-label="Path options">
+        <div id="edenPathTools" class="eden-path-tools" aria-label="Path options" data-eden-i18n-aria="pathOptions">
           <select
             id="edenPathColor"
             class="eden-path-color-select"
@@ -466,7 +488,7 @@
             Del Path
           </button>
         </div>
-        <div id="edenDrawTools" class="eden-path-tools" aria-label="Draw options">
+        <div id="edenDrawTools" class="eden-path-tools" aria-label="Draw options" data-eden-i18n-aria="drawOptions">
           <select
             id="edenDrawColor"
             class="eden-path-color-select"
@@ -873,6 +895,7 @@
         id="edenMapCanvas"
         role="img"
         data-i18n-aria="edenMapCanvasLabel"
+        data-eden-i18n-aria="canvas"
         aria-label="Eden map canvas"
       ></canvas>
       <canvas
@@ -883,6 +906,7 @@
         role="button"
         tabindex="0"
         data-i18n-aria="edenMinimapLabel"
+        data-eden-i18n-aria="minimap"
         aria-label="Minimap — press Enter to jump"
         data-i18n-title="edenMinimapTitle"
         title="Click to jump"
@@ -911,6 +935,7 @@
         id="edenSidebarClose"
         class="eden-sidebar-close"
         data-i18n-aria="edenSidebarClose"
+        data-eden-i18n-aria="closeSidebar"
         aria-label="Close sidebar"
       >
         ×
@@ -1084,8 +1109,8 @@
           </button>
         </div>
       </div>
-      <nav class="eden-guide-sections" aria-label="Guide sections"></nav>
-      <div class="eden-guide-steps" aria-label="Steps in section"></div>
+      <nav class="eden-guide-sections" aria-label="Guide sections" data-eden-i18n-aria="guideSections"></nav>
+      <div class="eden-guide-steps" aria-label="Steps in section" data-eden-i18n-aria="guideSteps"></div>
       <div class="eden-guide-main"></div>
     </div>
   </details>

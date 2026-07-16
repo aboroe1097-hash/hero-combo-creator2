@@ -1,18 +1,21 @@
 // Site-wide SEO — meta tags, Open Graph, JSON-LD (https://roc-vts.com)
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 
 export const SITE_URL = 'https://roc-vts.com';
 export const SITE_NAME = 'Hero Combo Creator';
 export const SITE_LOGO = `${SITE_URL}/images/logo.png`;
 
-const DEFAULT_LANG = 'en';
-
 function seoStrings(lang) {
   const t = translations[lang] || translations.en;
   return {
     title: t.seoTitle || `${SITE_NAME} — Rise of Castles Ice & Fire | VTS 1097`,
-    description: t.seoDescription || 'Free Rise of Castles: Ice & Fire tools — hero combo builder, Eden map planner, loyalty calculator, tech research, and Hero Atlas for VTS State 1097.',
-    keywords: t.seoKeywords || 'Rise of Castles, Ice and Fire, hero combo, Eden map, VTS 1097, combo creator, loyalty calculator, tech research, Hero Atlas',
+    description:
+      t.seoDescription ||
+      'Free Rise of Castles: Ice & Fire tools — hero combo builder, Eden map planner, loyalty calculator, tech research, and Hero Atlas for VTS State 1097.',
+    keywords:
+      t.seoKeywords ||
+      'Rise of Castles, Ice and Fire, hero combo, Eden map, VTS 1097, combo creator, loyalty calculator, tech research, Hero Atlas',
   };
 }
 
@@ -50,7 +53,8 @@ function injectJsonLd(data) {
   el.textContent = JSON.stringify(data);
 }
 
-export function applySeo(lang = localStorage.getItem('vts_hero_lang') || DEFAULT_LANG) {
+export function applySeo(lang = resolveRuntimeLocale()) {
+  const t = translations[lang] || translations.en;
   const { title, description, keywords } = seoStrings(lang);
   const pageUrl = `${SITE_URL}/`;
 
@@ -59,13 +63,17 @@ export function applySeo(lang = localStorage.getItem('vts_hero_lang') || DEFAULT
 
   setMeta('name', 'description', description);
   setMeta('name', 'keywords', keywords);
-  setMeta('name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+  setMeta(
+    'name',
+    'robots',
+    'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
+  );
   setMeta('name', 'googlebot', 'index, follow');
   setMeta('property', 'og:title', title);
   setMeta('property', 'og:description', description);
   setMeta('property', 'og:url', pageUrl);
   setMeta('property', 'og:image', SITE_LOGO);
-  setMeta('property', 'og:image:alt', `${SITE_NAME} logo`);
+  setMeta('property', 'og:image:alt', title);
   setMeta('property', 'og:type', 'website');
   setMeta('property', 'og:site_name', SITE_NAME);
   setMeta('property', 'og:locale', lang === 'en' ? 'en_US' : lang);
@@ -113,13 +121,13 @@ export function applySeo(lang = localStorage.getItem('vts_hero_lang') || DEFAULT
           priceCurrency: 'USD',
         },
         featureList: [
-          'Hero combo builder and generator',
-          'Hero Atlas with skills and synergies',
-          'Eden map planner with paths and team plan',
-          'Eden loyalty upgrade calculator',
-          'Tech research calculator',
-          'Combo counters',
-        ],
+          t.seoFeatureCombos,
+          t.seoFeatureHeroes,
+          t.seoFeatureEden,
+          t.seoFeatureLoyalty,
+          t.seoFeatureResearch,
+          t.countersTitle,
+        ].filter(Boolean),
         publisher: { '@id': `${SITE_URL}/#organization` },
       },
     ],

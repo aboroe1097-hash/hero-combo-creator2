@@ -17,6 +17,7 @@ import {
   fetchLeaderboards,
   flushPendingSync,
 } from './arcade-scores.js';
+import { formatLocaleNumber } from './locale-format.js';
 
 /* ───────────────────────────── i18n helpers ───────────────────────────── */
 
@@ -35,6 +36,10 @@ function t(key, fallback) {
   const table = (typeof window !== 'undefined' && window.VTS_TRANSLATIONS) || {};
   const lang = currentLang();
   return table[lang]?.[key] || table.en?.[key] || fallback || key;
+}
+
+function formatArcadeNumber(value) {
+  return formatLocaleNumber(value, currentLang());
 }
 
 function gameName(gameId) {
@@ -133,6 +138,10 @@ function buildProfileStrip() {
 
   const nameInput = editForm.querySelector('.arcade-input-name');
   const stateInput = editForm.querySelector('.arcade-input-state');
+  const nameLabel = nameField.querySelector('.arcade-field-label');
+  const stateLabel = stateField.querySelector('.arcade-field-label');
+  const saveBtn = editForm.querySelector('.arcade-btn-primary');
+  const cancelBtn = editForm.querySelector('.arcade-profile-cancel');
 
   const renderSummary = () => {
     const profile = loadProfile();
@@ -199,6 +208,20 @@ function buildProfileStrip() {
     syncPill.textContent = t(info.key, info.fallback);
   };
 
+  const relabel = () => {
+    wrap.setAttribute('aria-label', t('arcadeProfileHeading', 'Arcade Profile'));
+    nameLabel.textContent = t('arcadeProfileNameLabel', 'Name');
+    nameInput.placeholder = t('arcadeProfileNamePh', 'Your name');
+    stateLabel.textContent = t('arcadeProfileStateLabel', 'State');
+    stateInput.placeholder = t('arcadeProfileStatePh', 'e.g. 1097');
+    saveBtn.textContent = t('arcadeProfileSave', 'Save');
+    cancelBtn.textContent = t('arcadeProfileCancel', 'Cancel');
+    if (!err.classList.contains('hidden')) {
+      err.textContent = t('arcadeProfileNameRequired', 'Enter a name to save.');
+    }
+    renderSummary();
+  };
+
   const openEditor = () => {
     const profile = loadProfile();
     nameInput.value = profile.name;
@@ -215,7 +238,7 @@ function buildProfileStrip() {
   };
 
   editBtn.addEventListener('click', openEditor);
-  editForm.querySelector('.arcade-profile-cancel').addEventListener('click', closeEditor);
+  cancelBtn.addEventListener('click', closeEditor);
   editForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const saved = saveProfile({ name: nameInput.value, state: stateInput.value });
@@ -232,7 +255,7 @@ function buildProfileStrip() {
     scheduleRefresh(400);
   });
 
-  return { node: wrap, renderSummary, renderSyncPill };
+  return { node: wrap, relabel, renderSummary, renderSyncPill };
 }
 
 /* ───────────────────────────── leaderboard panel ──────────────────────── */
@@ -365,9 +388,9 @@ function buildLeaderboardPanel() {
     rows.forEach((row) => {
       tbody.append(
         el('tr', { class: 'arcade-lb-row' }, [
-          el('td', { class: 'arcade-lb-rank', text: `${row.rank}` }),
+          el('td', { class: 'arcade-lb-rank', text: formatArcadeNumber(row.rank) }),
           el('td', {}, [playerCell(row)]),
-          el('td', { class: 'arcade-lb-num', text: row.score.toLocaleString() }),
+          el('td', { class: 'arcade-lb-num', text: formatArcadeNumber(row.score) }),
         ])
       );
     });
@@ -406,19 +429,19 @@ function buildLeaderboardPanel() {
         gameBests.append(
           el('span', { class: 'arcade-lb-game-best' }, [
             el('span', { class: 'arcade-lb-game-name', text: gameName(gameId) }),
-            el('strong', { class: 'arcade-lb-game-score', text: best.toLocaleString() }),
+            el('strong', { class: 'arcade-lb-game-score', text: formatArcadeNumber(best) }),
           ])
         );
       }
       tbody.append(
         el('tr', { class: 'arcade-lb-row' }, [
-          el('td', { class: 'arcade-lb-rank', text: `${row.rank}` }),
+          el('td', { class: 'arcade-lb-rank', text: formatArcadeNumber(row.rank) }),
           el('td', {}, [playerCell(row)]),
           el('td', { class: 'arcade-lb-game-scores' }, [gameBests]),
           el('td', { class: 'arcade-lb-num arcade-lb-rating' }, [
             el('strong', {
               class: 'arcade-lb-rating-value',
-              text: row.rating.toLocaleString(),
+              text: formatArcadeNumber(row.rating),
             }),
           ]),
         ])
@@ -440,6 +463,7 @@ function buildLeaderboardPanel() {
   });
 
   const relabelTabs = () => {
+    wrap.setAttribute('aria-label', t('arcadeLeaderboardHeading', 'Leaderboard'));
     tabButtons.forEach((btn, i) => {
       btn.textContent = tabDefs[i].label();
     });
@@ -479,7 +503,7 @@ function renderCardBests(root) {
       el('span', { class: 'arcade-card-best-label', text: t('arcadeCardBestLabel', 'Your best') }),
       el('span', {
         class: 'arcade-card-best-value',
-        text: best > 0 ? best.toLocaleString() : t('arcadeLeaderboardNoBest', 'No best yet'),
+        text: best > 0 ? formatArcadeNumber(best) : t('arcadeLeaderboardNoBest', 'No best yet'),
       })
     );
     badge.classList.toggle('is-empty', best <= 0);
@@ -550,7 +574,7 @@ export function initArcadeLobbyUI(root = document.getElementById('arcadeSection'
     scheduleRefresh(600);
   });
   window.addEventListener('edenLanguageUpdate', () => {
-    profile.renderSummary();
+    profile.relabel();
     board.relabelTabs();
     board.renderBody();
     renderCardBests(root);

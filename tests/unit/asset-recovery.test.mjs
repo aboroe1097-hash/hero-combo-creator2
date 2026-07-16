@@ -4,6 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 const source = readFileSync('js/theme-prepaint.js', 'utf8');
+const pwaSource = readFileSync('js/pwa-register.js', 'utf8');
 
 function createHarness(options = {}) {
   const windowListeners = new Map();
@@ -12,6 +13,8 @@ function createHarness(options = {}) {
   const replacements = [];
   const appended = [];
   const timers = [];
+  const documentAttributes = new Map();
+  const localValues = options.localValues || new Map();
 
   function element(tagName) {
     const listeners = new Map();
@@ -47,7 +50,10 @@ function createHarness(options = {}) {
       },
     },
     documentElement: {
-      setAttribute() {},
+      className: options.rootClass || '',
+      setAttribute(name, value) {
+        documentAttributes.set(name, String(value));
+      },
     },
     getElementById() {
       return null;
@@ -71,8 +77,18 @@ function createHarness(options = {}) {
       replacements.push('reload');
     },
   };
+  const navigator = {
+    language: options.language || 'en-US',
+    onLine: options.online !== false,
+  };
+  const localStorage = {
+    getItem: (key) => localValues.get(key) || null,
+    setItem: (key, value) => localValues.set(key, String(value)),
+  };
   const window = {
     location,
+    localStorage,
+    navigator,
     addEventListener(name, callback) {
       windowListeners.set(name, callback);
     },
@@ -84,8 +100,8 @@ function createHarness(options = {}) {
   const context = {
     window,
     document,
-    navigator: { onLine: options.online !== false },
-    localStorage: { getItem: () => null },
+    navigator,
+    localStorage,
     sessionStorage: {
       getItem: (key) => sessionValues.get(key) || null,
       setItem: (key, value) => sessionValues.set(key, String(value)),
@@ -102,11 +118,78 @@ function createHarness(options = {}) {
     replacements,
     appended,
     timers,
+    documentAttributes,
+    localValues,
     dispatchAssetError(url = 'https://roc-vts.com/assets/index-ABCDEF12.js') {
       windowListeners.get('error')?.({ target: { tagName: 'SCRIPT', src: url, href: '' } });
     },
   };
 }
+
+test('prepaint PWA copy packs cover every stable message ID in all 11 locales', () => {
+  const harness = createHarness();
+  const runtime = harness.window.VTS_PWA_I18N;
+  const audit = runtime.audit();
+
+  assert.equal(audit.ok, true);
+  assert.deepEqual([...audit.missing], []);
+  assert.deepEqual([...audit.unexpected], []);
+  assert.deepEqual(
+    [...runtime.locales],
+    ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']
+  );
+  assert.equal(runtime.ids.length, 12);
+  for (const locale of runtime.locales.filter((value) => value !== 'en')) {
+    for (const id of runtime.ids) {
+      assert.notEqual(
+        runtime.text(id, locale),
+        runtime.text(id, 'en'),
+        `${locale}:${id} must not fall back to English`
+      );
+    }
+  }
+});
+
+test('language prepaint migrates Korean locale aliases and applies Arabic RTL before modules run', () => {
+  const koreanValues = new Map([['vts_hero_lang', 'ko-KR']]);
+  const korean = createHarness({ localValues: koreanValues });
+  assert.equal(korean.window.VTS_INITIAL_LANGUAGE, 'kr');
+  assert.equal(korean.localValues.get('vts_hero_lang'), 'kr');
+  assert.equal(korean.documentAttributes.get('lang'), 'ko-KR');
+  assert.equal(korean.documentAttributes.get('dir'), 'ltr');
+
+  const arabic = createHarness({ localValues: new Map([['vts_hero_lang', 'ar']]) });
+  assert.equal(arabic.window.VTS_INITIAL_LANGUAGE, 'ar');
+  assert.equal(arabic.documentAttributes.get('lang'), 'ar');
+  assert.equal(arabic.documentAttributes.get('dir'), 'rtl');
+});
+
+test('English-only Battle Simulator beta ignores stored locale and keeps recovery copy English', () => {
+  const localValues = new Map([['vts_hero_lang', 'ar']]);
+  const battle = createHarness({ localValues, rootClass: 'battle-simulator-root' });
+
+  assert.equal(battle.window.VTS_INITIAL_LANGUAGE, 'en');
+  assert.equal(battle.localValues.get('vts_hero_lang'), 'ar');
+  assert.equal(battle.documentAttributes.get('lang'), 'en');
+  assert.equal(battle.documentAttributes.get('dir'), 'ltr');
+
+  battle.window.VTS_ASSET_RECOVERY.markBootComplete();
+  battle.dispatchAssetError();
+  const prompt = battle.appended[0];
+  assert.equal(prompt.children[1].textContent, 'Refresh');
+
+  battle.windowListeners.get('vts:language-change')?.({ detail: { lang: 'ar' } });
+  assert.equal(prompt.children[1].textContent, 'Refresh');
+});
+
+test('install and update UI consume stable PWA copy IDs and refresh on language changes', () => {
+  assert.match(pwaSource, /pwaText\('updateAvailable'/);
+  assert.match(pwaSource, /data-pwa-copy="installTitle"/);
+  assert.match(pwaSource, /data-pwa-copy="iosAddToHome"/);
+  assert.match(pwaSource, /data-pwa-copy-aria="dismiss"/);
+  assert.match(pwaSource, /pwaText\('installing', activeLocale\)/);
+  assert.match(pwaSource, /addEventListener\('vts:language-change', refreshVisibleCopy\)/);
+});
 
 test('online boot-time hashed asset failures trigger one cache-busted reload per build', () => {
   const harness = createHarness();
@@ -143,6 +226,25 @@ test('post-boot hashed asset failures show an accessible manual Refresh prompt',
   assert.equal(prompt.children[1].textContent, 'Refresh');
   prompt.children[1].click();
   assert.deepEqual(harness.replacements, ['reload']);
+});
+
+test('asset recovery prompt uses the persisted locale and updates while it remains open', () => {
+  const localValues = new Map([['vts_hero_lang', 'es']]);
+  const harness = createHarness({ localValues });
+  harness.window.VTS_ASSET_RECOVERY.markBootComplete();
+
+  harness.dispatchAssetError();
+
+  const prompt = harness.appended[0];
+  assert.equal(
+    prompt.children[0].textContent,
+    'No se pudo cargar un archivo actualizado del sitio. Actualiza cuando quieras.'
+  );
+  assert.equal(prompt.children[1].textContent, 'Actualizar');
+
+  localValues.set('vts_hero_lang', 'ar');
+  harness.windowListeners.get('vts:language-change')?.({ detail: { lang: 'ar' } });
+  assert.equal(prompt.children[1].textContent, 'تحديث الصفحة');
 });
 
 test('non-asset errors are ignored by the shared recovery helper', () => {

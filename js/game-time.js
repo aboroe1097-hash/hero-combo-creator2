@@ -112,11 +112,19 @@ export function syncGameClockTitles() {
 
 export function mountGameClock(el, options = {}) {
   if (!el) return;
-  const { showUae = true, showDay = true, compact = false } = options;
+  const {
+    showUae = true,
+    showDay = true,
+    compact = false,
+    dayLabel = 'Day',
+    uaeLabel = 'UAE',
+  } = options;
   el.dataset.gameClock = '1';
   el.dataset.showUae = showUae ? '1' : '0';
   el.dataset.showDay = showDay ? '1' : '0';
   el.dataset.compact = compact ? '1' : '0';
+  el.dataset.gameClockDayLabel = dayLabel;
+  el.dataset.gameClockUaeLabel = uaeLabel;
   el.dataset.gameClockBase = el.title || el.dataset.gameClockBase || '';
   clockEls.add(el);
   tickGameClocks();
@@ -138,17 +146,19 @@ function tickGameClocks() {
     const showUae = el.dataset.showUae === '1';
     const showDay = el.dataset.showDay === '1';
     const compact = el.dataset.compact === '1';
+    const dayLabel = el.dataset.gameClockDayLabel || 'Day';
+    const uaeLabel = el.dataset.gameClockUaeLabel || 'UAE';
     const baseTitle = el.dataset.gameClockBase || 'Game time';
     if (compact) {
       el.innerHTML = `${CLOCK_ICON_SVG} ${state.formatted}`;
       el.title = showUae
-        ? `${baseTitle} · ${state.formattedFull} · UAE ${state.uaeFull}`
+        ? `${baseTitle} · ${state.formattedFull} · ${uaeLabel} ${state.uaeFull}`
         : `${baseTitle} · ${state.formattedFull}`;
       return;
     }
     const parts = [`${state.formattedFull}`];
-    if (showDay) parts.push(`Day ${state.gameDayKey}`);
-    if (showUae) parts.push(`UAE ${state.uaeFull}`);
+    if (showDay) parts.push(`${dayLabel} ${state.gameDayKey}`);
+    if (showUae) parts.push(`${uaeLabel} ${state.uaeFull}`);
     el.innerHTML = `${CLOCK_ICON_SVG} ${parts.join(' · ')}`;
     el.title = baseTitle;
   });

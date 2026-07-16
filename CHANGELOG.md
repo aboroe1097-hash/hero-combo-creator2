@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.0.12 - 2026-07-16
+
+- Reworked all ten non-English catalogs with gaming-community wording across the established public tools, Eden X1, Admin, accessibility labels, guidance, and contribution-formula explanations instead of accepting English fallbacks or literal translations as complete; the beta Battle Simulator remains outside this localization pass.
+- Added semantic Research localization for tree metadata, node names, buffs, section headings, MAX/complete actions, resource labels, localized-and-English search, and live language switching while keeping canonical IDs, costs, parsing, art matching, and saved progress unchanged.
+- Localized the Dragon Master planner and enhancement workflow through stable display IDs for equipment, materials, routes, resources, actions, and the default plan name, without changing crafting calculations or stored plans.
+- Added locale-safe display packs for Hero Atlas skills and help, Strife monsters and recommendations, Eden Map structures and sectors, and Manual Builder, Generator, and Counter guidance while preserving canonical game data and saved identifiers.
+- Localized the Admin OCR and Eden Votes workflows, Arcade hub and games, standalone/error/maintenance/PWA shells, exports, loyalty time units, accessibility text, and live language refresh behavior; user-facing numbers and dates now follow the selected language where applicable.
+- Strengthened translation verification with bidirectional catalog checks, duplicate-key detection, dynamic runtime-key discovery, reviewed per-language gaming terminology contracts, placeholder and numeric-token validation, and complete Research, Hero Atlas, Strife, Eden Map, Admin, and standalone content-pack coverage.
+
 ## 14.0.11 - 2026-07-16
 
 - Added the PIN-gated Battle Simulator Beta foundation with three ordered troop rows per side, verified T9/T10 Cavalry, Archers, and Footmen presets, 31,000 troops per row by default, independently editable base Attack/Might, Defense/Resistance, and HP values for every row, and manual entry as either extra-source bonuses or final totals for all seven combat stats.

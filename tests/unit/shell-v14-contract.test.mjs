@@ -5,6 +5,7 @@ import test from 'node:test';
 const index = readFileSync('index.html', 'utf8');
 const shellCss = readFileSync('css/shell-v14.css', 'utf8');
 const shellJs = readFileSync('js/shell-v14.js', 'utf8');
+const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
 
 const countId = (id) => (index.match(new RegExp(`id="${id}"`, 'g')) || []).length;
 
@@ -143,8 +144,10 @@ test('mobile branding keeps the single page heading in the accessibility tree', 
 });
 
 test('More controller localizes all supported languages and preserves keyboard focus', () => {
+  assert.match(shellJs, /standaloneI18n\?\.getCopy\(language\)\?\.shell/);
+  assert.match(shellJs, /import\('\.\/i18n\/standalone-copy\.js'\)/);
   for (const language of ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']) {
-    assert.match(shellJs, new RegExp(`\\b${language}: \\{ more:`));
+    assert.match(standaloneCopy, new RegExp(`\\b${language}: \\{`));
   }
 
   assert.match(shellJs, /event\.key === 'Escape'/);
@@ -154,6 +157,9 @@ test('More controller localizes all supported languages and preserves keyboard f
   assert.match(shellJs, /container\.appendChild\(item\)/);
   assert.match(shellJs, /moreTools\.contains\(item\)/);
   assert.doesNotMatch(shellJs, /cloneNode\(/);
+  const readyIndex = shellJs.indexOf("document.documentElement.dataset.shellNavReady = '1'");
+  assert.ok(readyIndex > shellJs.indexOf("moreButton.addEventListener('click'"));
+  assert.ok(readyIndex > shellJs.indexOf('window.vtsShellOpenMore'));
 });
 
 test('Eden Map uses a compact Soon badge without an injected building note', () => {

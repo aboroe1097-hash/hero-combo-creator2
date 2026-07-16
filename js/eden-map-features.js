@@ -1,9 +1,14 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
 import { MAP_BOUNDS } from './eden-map-terrain.js?v=20260708_101500';
 import {
-  getSectorTileImage, isSectorTileReady, getSectorTileIds, PARCHMENT_BASE,
+  getSectorTileImage,
+  isSectorTileReady,
+  getSectorTileIds,
+  PARCHMENT_BASE,
 } from './eden-map-assets.js?v=20260708_101500';
 import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
+import { outputCopyText } from './i18n/output-copy.js';
+import { formatLocaleNumber, resolveRuntimeLocale } from './locale-format.js';
 
 export const PLANS_STORE_KEY = 'vts_eden_plans_store_v1';
 export const MARCH_SPEED_BASE = 3;
@@ -29,11 +34,18 @@ export function loadPlansStore() {
   try {
     const raw = localStorage.getItem(PLANS_STORE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  const legacy = localStorage.getItem('vts_eden_map_plan_v2') || localStorage.getItem('vts_eden_map_plan_v1');
+  } catch {
+    /* ignore */
+  }
+  const legacy =
+    localStorage.getItem('vts_eden_map_plan_v2') || localStorage.getItem('vts_eden_map_plan_v1');
   const plan = createEmptyPlan();
   if (legacy) {
-    try { Object.assign(plan, JSON.parse(legacy)); } catch { /* ignore */ }
+    try {
+      Object.assign(plan, JSON.parse(legacy));
+    } catch {
+      /* ignore */
+    }
   }
   return { activeId: 'default', plans: { default: { name: 'Main Plan', plan } } };
 }
@@ -59,11 +71,17 @@ export function estimateTravelMinutes(tileDistance, speedMod = 1) {
   return Math.max(1, Math.round(tileDistance / speed));
 }
 
-export function formatTravelTime(mins) {
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
+export function formatTravelTime(mins, locale) {
+  const selectedLocale = resolveRuntimeLocale(locale);
+  const totalMinutes = Math.max(0, Math.round(Number(mins) || 0));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hourUnit = outputCopyText(selectedLocale, 'loyalty.unit.hour.short');
+  const minuteUnit = outputCopyText(selectedLocale, 'loyalty.unit.minute.short');
+  const hourText = `${formatLocaleNumber(hours, selectedLocale)} ${hourUnit}`;
+  const minuteText = `${formatLocaleNumber(minutes, selectedLocale)} ${minuteUnit}`;
+  if (totalMinutes < 60) return minuteText;
+  return minutes ? `${hourText} ${minuteText}` : hourText;
 }
 
 /** Freehand plan sketches — world-space polylines. */
@@ -103,7 +121,7 @@ export function hitTestPath(mx, my, paths, worldToScreen, threshold = 12) {
   paths.forEach((path, pathIdx) => {
     const pts = path.routedPath || path.points;
     if (!pts?.length) return;
-    const screen = pts.map(p => worldToScreen(p.x, p.y));
+    const screen = pts.map((p) => worldToScreen(p.x, p.y));
     for (let i = 0; i < screen.length - 1; i++) {
       const a = screen[i];
       const b = screen[i + 1];
@@ -140,7 +158,7 @@ export function getPathSegmentInfo(path) {
 
 export function drawSegmentLabels(ctx, worldToIso, path, color, show) {
   if (!show) return;
-  getPathSegmentInfo(path).forEach(seg => {
+  getPathSegmentInfo(path).forEach((seg) => {
     const a = worldToIso(seg.from.x, seg.from.y);
     const b = worldToIso(seg.to.x, seg.to.y);
     const mx = (a.x + b.x) / 2;
@@ -187,11 +205,9 @@ export function drawTerritoryOverlay(ctx, worldToIso) {
 }
 
 export function drawFogOfWar(ctx, worldToIso, explored, sectorKey) {
-  const sectors = sectorKey === 'FULL'
-    ? Object.keys(getEdenSectors())
-    : [sectorKey];
+  const sectors = sectorKey === 'FULL' ? Object.keys(getEdenSectors()) : [sectorKey];
   ctx.save();
-  sectors.forEach(sk => {
+  sectors.forEach((sk) => {
     if (explored?.[sk]) return;
     const b = getSectorBounds(sk);
     const corners = [
@@ -212,7 +228,7 @@ export function drawFogOfWar(ctx, worldToIso, explored, sectorKey) {
 export function drawHeatmap(ctx, worldToIso, structures, scale) {
   const cell = 48;
   const buckets = new Map();
-  structures.forEach(s => {
+  structures.forEach((s) => {
     const pts = s.points || s.metaPoints || 0;
     if (!pts) return;
     const bx = Math.floor(s.x / cell);
@@ -294,10 +310,10 @@ export function animateCamera(getCam, setCam, target, redraw, duration = 300) {
   const start = getCam();
   const t0 = performance.now();
   let raf = 0;
-  const ease = t => 1 - (1 - t) ** 3;
+  const ease = (t) => 1 - (1 - t) ** 3;
 
-  return new Promise(resolve => {
-    const tick = now => {
+  return new Promise((resolve) => {
+    const tick = (now) => {
       const p = Math.min(1, (now - t0) / duration);
       const e = ease(p);
       setCam({
@@ -307,7 +323,10 @@ export function animateCamera(getCam, setCam, target, redraw, duration = 300) {
       });
       redraw();
       if (p < 1) raf = requestAnimationFrame(tick);
-      else { cancelAnimationFrame(raf); resolve(); }
+      else {
+        cancelAnimationFrame(raf);
+        resolve();
+      }
     };
     raf = requestAnimationFrame(tick);
   });
@@ -350,9 +369,8 @@ export function pathTouchesSector(path, sectorKey) {
   if (!path || sectorKey === 'FULL') return true;
   const b = getSectorBounds(sectorKey);
   const pts = path.routedPath || path.points || [];
-  return pts.some((pt) =>
-    pt.x >= b.minX - 12 && pt.x <= b.maxX + 12
-    && pt.y >= b.minY - 12 && pt.y <= b.maxY + 12
+  return pts.some(
+    (pt) => pt.x >= b.minX - 12 && pt.x <= b.maxX + 12 && pt.y >= b.minY - 12 && pt.y <= b.maxY + 12
   );
 }
 

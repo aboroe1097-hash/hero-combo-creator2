@@ -1,5 +1,6 @@
 // Eden map season / dataset picker
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 import {
   ensureEdenDatasetsLoaded,
   getEdenDatasetCatalog,
@@ -19,7 +20,7 @@ const defaultDataApi = {
 };
 
 function t(key) {
-  const lang = localStorage.getItem('vts_hero_lang') || 'en';
+  const lang = resolveRuntimeLocale();
   return translations[lang]?.[key] || translations.en[key] || key;
 }
 

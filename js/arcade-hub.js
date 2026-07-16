@@ -1,14 +1,24 @@
+import './i18n/standalone-copy.js';
+
 const GAME_PATH_PATTERN = /^\/games\/boot\/[a-z0-9-]+\.html$/;
-const GAME_LIST_COPY = Object.freeze({
-  en: 'Go Back to Game List', es: 'Volver a la lista de juegos', pt: 'Voltar à lista de jogos', de: 'Zurück zur Spieleliste',
-  fr: 'Liste des jeux', tr: 'Oyun listesi', ru: 'Список игр', id: 'Daftar game',
-  zh: '游戏列表', ar: 'قائمة الألعاب', kr: '게임 목록',
-});
+const I18N = window.VTSStandaloneI18n;
 
 function currentLanguage() {
-  const saved = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
-  const key = saved.toLowerCase().split('-')[0];
-  return key === 'ko' ? 'kr' : key;
+  try {
+    return I18N.normalizeLocale(
+      localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en'
+    );
+  } catch {
+    return I18N.normalizeLocale(document.documentElement.lang || 'en');
+  }
+}
+
+function arcadeCopy() {
+  return I18N.getCopy(currentLanguage()).arcade;
+}
+
+function shellAccessibilityCopy() {
+  return I18N.getCopy(currentLanguage()).shell.accessibility;
 }
 
 function currentTheme() {
@@ -33,16 +43,17 @@ export function initArcadeHub(root = document.getElementById('arcadeSection')) {
   if (!lobby || !cards.length) return;
 
   root.dataset.arcadeHubReady = '1';
+  const initialCopy = arcadeCopy();
   const player = document.createElement('section');
   player.className = 'arcade-player hidden';
-  player.setAttribute('aria-label', 'Arcade game player');
+  player.setAttribute('aria-label', initialCopy.hub.playerAria);
   player.innerHTML = `
     <header class="arcade-player-toolbar">
-      <button class="arcade-game-list-button" type="button">Go Back to Game List</button>
-      <nav class="arcade-game-tabs" aria-label="Switch game"></nav>
+      <button class="arcade-game-list-button" type="button">${initialCopy.shell.back}</button>
+      <nav class="arcade-game-tabs" aria-label="${initialCopy.hub.switchGameAria}"></nav>
     </header>
     <div class="arcade-frame-wrap">
-      <iframe class="arcade-game-frame" title="Arcade game" allow="fullscreen" loading="eager"></iframe>
+      <iframe class="arcade-game-frame" title="${initialCopy.hub.frameTitle}" allow="fullscreen" loading="eager"></iframe>
     </div>`;
   root.appendChild(player);
 
@@ -66,11 +77,35 @@ export function initArcadeHub(root = document.getElementById('arcadeSection')) {
 
   const syncFrameConfig = () => {
     const config = frameConfig();
-    if (config && frame.contentWindow) frame.contentWindow.postMessage(config, window.location.origin);
+    if (config && frame.contentWindow)
+      frame.contentWindow.postMessage(config, window.location.origin);
   };
 
   const syncHubCopy = () => {
-    listButton.textContent = GAME_LIST_COPY[currentLanguage()] || GAME_LIST_COPY.en;
+    const copy = arcadeCopy();
+    const accessibility = shellAccessibilityCopy();
+    listButton.textContent = copy.shell.back;
+    player.setAttribute('aria-label', copy.hub.playerAria);
+    tabs.setAttribute('aria-label', copy.hub.switchGameAria);
+    const activeGameTitle = cards[activeIndex]
+      ?.querySelector('.arcade-card-title')
+      ?.textContent?.trim();
+    frame.title = activeGameTitle || copy.hub.frameTitle;
+    document
+      .querySelector('.command-header')
+      ?.setAttribute('aria-label', accessibility.arcadeGames);
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle?.setAttribute('aria-label', accessibility.themeToggle);
+    themeToggle?.setAttribute('title', accessibility.themeToggle);
+    const pageTitle = document.querySelector('[data-i18n="arcadeTitle"]')?.textContent?.trim();
+    const pageKicker = document.querySelector('[data-i18n="arcadeKicker"]')?.textContent?.trim();
+    const appTitle = document
+      .querySelector('[data-i18n-aria="appTitle"]')
+      ?.getAttribute('aria-label')
+      ?.trim();
+    if (pageTitle && pageKicker && appTitle) {
+      document.title = `${pageTitle} — ${pageKicker} | ${appTitle}`;
+    }
   };
   syncHubCopy();
 
@@ -79,7 +114,8 @@ export function initArcadeHub(root = document.getElementById('arcadeSection')) {
     button.type = 'button';
     button.className = 'arcade-game-tab';
     button.dataset.gameIndex = String(index);
-    button.innerHTML = `<span>${card.querySelector('.arcade-card-tag')?.textContent || `Mode ${index + 1}`}</span><strong>${card.querySelector('.arcade-card-title')?.textContent || ''}</strong>`;
+    const fallbackMode = I18N.format(arcadeCopy().hub.modeFallback, { number: index + 1 });
+    button.innerHTML = `<span>${card.querySelector('.arcade-card-tag')?.textContent || fallbackMode}</span><strong>${card.querySelector('.arcade-card-title')?.textContent || ''}</strong>`;
     tabs.appendChild(button);
     return button;
   });
@@ -88,7 +124,8 @@ export function initArcadeHub(root = document.getElementById('arcadeSection')) {
     const card = cards[index];
     const path = gamePath(card);
     if (!path) return;
-    const title = card.querySelector('.arcade-card-title')?.textContent?.trim() || 'Arcade game';
+    const title =
+      card.querySelector('.arcade-card-title')?.textContent?.trim() || arcadeCopy().hub.frameTitle;
     activeIndex = index;
     lobby.classList.add('hidden');
     player.classList.remove('hidden');
@@ -131,8 +168,11 @@ export function initArcadeHub(root = document.getElementById('arcadeSection')) {
   window.addEventListener('edenLanguageUpdate', () => {
     syncHubCopy();
     tabButtons.forEach((button, index) => {
-      button.querySelector('span').textContent = cards[index].querySelector('.arcade-card-tag')?.textContent || '';
-      button.querySelector('strong').textContent = cards[index].querySelector('.arcade-card-title')?.textContent || '';
+      button.querySelector('span').textContent =
+        cards[index].querySelector('.arcade-card-tag')?.textContent ||
+        I18N.format(arcadeCopy().hub.modeFallback, { number: index + 1 });
+      button.querySelector('strong').textContent =
+        cards[index].querySelector('.arcade-card-title')?.textContent || '';
     });
     syncFrameConfig();
   });

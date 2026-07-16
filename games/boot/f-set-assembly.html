@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -37,7 +37,7 @@
         border-color: rgba(52, 211, 153, 0.65);
         box-shadow: 0 0 10px rgba(52, 211, 153, 0.25);
       }
-      .recipe .slot.filled[data-color="green"] {
+      .recipe .slot.filled[data-color='green'] {
         border-color: rgba(52, 211, 153, 0.85);
         box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
       }
@@ -49,6 +49,7 @@
     </style>
   </head>
   <body>
+    <script src="/js/i18n/standalone-copy.js"></script>
     <script src="./shared.js"></script>
     <script>
       (() => {
@@ -56,12 +57,7 @@
         const SCORE_KEY = 'vts_proto_set_assembly';
         const NEED = ['green', 'blue', 'gold'];
         const ui = G.mountShell({
-          modeId: 'Mode D',
           modeKey: 'arcadeModeD',
-          title: 'Set Assembly',
-          titleKey: 'arcadeSetAssemblyTitle',
-          hint: 'Collect green-blue-gold pieces of the target type to complete a set!',
-          hintKey: 'arcadeSetAssemblyDesc',
           scoreKey: SCORE_KEY,
           controlScheme: 'set',
         });
@@ -83,10 +79,16 @@
         }
 
         const state = {
-          score: 0, lives: 3, paused: false, over: false,
+          score: 0,
+          lives: 3,
+          paused: false,
+          over: false,
           targetType: 'feather',
           collected: { green: false, blue: false, gold: false },
-          sets: 0, pieces: [], spawnAt: 0, last: 0,
+          sets: 0,
+          pieces: [],
+          spawnAt: 0,
+          last: 0,
         };
 
         function setHud() {
@@ -128,52 +130,91 @@
           el.style.cursor = 'pointer';
           const img = document.createElement('img');
           img.src = materialSrcFor(color, type);
-          img.alt = `${color} ${type}`;
+          img.alt = G.materialAlt(color, type);
           img.draggable = false;
           el.appendChild(img);
           ui.playfield.appendChild(el);
           const gate = G.centerOf(document.getElementById('gate'));
-          const dx = gate.x - x; const dy = gate.y - y;
+          const dx = gate.x - x;
+          const dy = gate.y - y;
           const len = Math.hypot(dx, dy) || 1;
           const speed = 0.14 + state.sets * 0.01;
-          const piece = { el, color, type, x, y, vx: (dx / len) * speed, vy: (dy / len) * speed, alive: true };
-          el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); onTap(piece); });
+          const piece = {
+            el,
+            color,
+            type,
+            x,
+            y,
+            vx: (dx / len) * speed,
+            vy: (dy / len) * speed,
+            alive: true,
+          };
+          el.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onTap(piece);
+          });
           state.pieces.push(piece);
         }
 
         function onTap(p) {
           if (state.paused || state.over || !p.alive) return;
-          if (p.type !== state.targetType) { p.alive = false; p.el.remove(); hurt(); return; }
-          if (state.collected[p.color]) {
-            p.alive = false; p.el.classList.add('pop');
-            setTimeout(() => p.el.remove(), 240);
-            state.score += 4; setHud(); return;
+          if (p.type !== state.targetType) {
+            p.alive = false;
+            p.el.remove();
+            hurt();
+            return;
           }
-          p.alive = false; p.el.classList.add('pop');
+          if (state.collected[p.color]) {
+            p.alive = false;
+            p.el.classList.add('pop');
+            setTimeout(() => p.el.remove(), 240);
+            state.score += 4;
+            setHud();
+            return;
+          }
+          p.alive = false;
+          p.el.classList.add('pop');
           setTimeout(() => p.el.remove(), 240);
           state.collected[p.color] = true;
           state.score += 18;
           const { count, mult } = G.feedByColor(p.color === 'green' ? 'blue' : p.color);
-          G.gateFx('hit'); G.vibrate(10);
+          G.gateFx('hit');
+          G.vibrate(10);
           G.floatText(p.x, p.y, `+18`, '#34d399');
           G.showComboBadge(comboBadge, count, mult);
-          refreshRecipe(); setHud();
+          refreshRecipe();
+          setHud();
 
           if (NEED.every((c) => state.collected[c])) {
-            state.sets += 1; state.score += 50;
-            G.feedWing('ice', 1); G.feedWing('fire', 1);
-            G.vibrate(18); setHud();
-            G.showOverlay('Forge ready!', `Set complete - +50 - Sets ${state.sets}`);
-            setTimeout(() => { G.hideOverlay(); if (!state.over) newTarget(); }, 700);
+            state.sets += 1;
+            state.score += 50;
+            G.feedWing('ice', 1);
+            G.feedWing('fire', 1);
+            G.vibrate(18);
+            setHud();
+            G.showOverlay(
+              G.text('forgeReady'),
+              G.text('setComplete', { points: 50, sets: state.sets })
+            );
+            setTimeout(() => {
+              G.hideOverlay();
+              if (!state.over) newTarget();
+            }, 700);
           }
         }
 
         function hurt() {
           state.lives -= 1;
-          G.gateFx('hurt'); G.vibrate(22);
-          G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
+          G.gateFx('hurt');
+          G.vibrate(22);
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
           setHud();
-          if (state.lives <= 0) { state.over = true; G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score); }
+          if (state.lives <= 0) {
+            state.over = true;
+            G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score);
+          }
         }
 
         function loop(t) {
@@ -181,13 +222,21 @@
           const dt = Math.min(32, t - state.last);
           state.last = t;
           if (!state.paused && !state.over) {
-            if (t >= state.spawnAt) { spawn(); state.spawnAt = t + Math.max(500, 950 - state.sets * 40 - state.score); }
+            if (t >= state.spawnAt) {
+              spawn();
+              state.spawnAt = t + Math.max(500, 950 - state.sets * 40 - state.score);
+            }
             const gate = G.centerOf(document.getElementById('gate'));
             for (const p of state.pieces) {
               if (!p.alive) continue;
-              p.x += p.vx * dt; p.y += p.vy * dt;
-              p.el.style.left = `${p.x}px`; p.el.style.top = `${p.y}px`;
-              if (G.dist(p.x, p.y, gate.x, gate.y) < 26) { p.alive = false; p.el.remove(); }
+              p.x += p.vx * dt;
+              p.y += p.vy * dt;
+              p.el.style.left = `${p.x}px`;
+              p.el.style.top = `${p.y}px`;
+              if (G.dist(p.x, p.y, gate.x, gate.y) < 26) {
+                p.alive = false;
+                p.el.remove();
+              }
             }
             state.pieces = state.pieces.filter((p) => p.alive);
           }
@@ -195,16 +244,29 @@
         }
 
         G.setupKeyboard({
-          pause: () => { state.paused = !state.paused; G.togglePauseBtn(ui.btnPause, state.paused); },
+          pause: () => {
+            state.paused = !state.paused;
+            G.togglePauseBtn(ui.btnPause, state.paused);
+          },
           restart: reset,
         });
 
         function reset() {
-          state.score = 0; state.lives = 3; state.paused = false; state.over = false;
-          state.sets = 0; state.spawnAt = G.now() + 400; state.last = 0;
-          state.pieces.forEach((p) => p.el.remove()); state.pieces = [];
-          G.resetWings(); G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
-          G.hideOverlay(); newTarget(); setHud();
+          state.score = 0;
+          state.lives = 3;
+          state.paused = false;
+          state.over = false;
+          state.sets = 0;
+          state.spawnAt = G.now() + 400;
+          state.last = 0;
+          state.pieces.forEach((p) => p.el.remove());
+          state.pieces = [];
+          G.resetWings();
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
+          G.hideOverlay();
+          newTarget();
+          setHud();
         }
 
         ui.btnRestart.addEventListener('click', reset);

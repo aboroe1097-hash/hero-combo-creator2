@@ -7227,7 +7227,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   position: relative;
 }
 .eden-map-root.eden-map-loading::after {
-  content: 'Loading Eden Mapâ€¦';
+  content: attr(data-eden-loading-label);
   position: absolute;
   inset: 0;
   z-index: 50;

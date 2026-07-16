@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -24,11 +24,19 @@
         height: 100%;
         width: 0%;
         border-radius: 999px;
-        transition: width 0.3s, background 0.3s;
+        transition:
+          width 0.3s,
+          background 0.3s;
       }
-      .stress-fill.low { background: #34d399; }
-      .stress-fill.mid { background: #facc15; }
-      .stress-fill.high { background: #ef4444; }
+      .stress-fill.low {
+        background: #34d399;
+      }
+      .stress-fill.mid {
+        background: #facc15;
+      }
+      .stress-fill.high {
+        background: #ef4444;
+      }
       .req-label {
         position: absolute;
         z-index: 12;
@@ -38,30 +46,37 @@
         align-items: center;
         gap: 4px;
       }
-      .req-label.left { top: 30%; left: 10%; }
-      .req-label.right { top: 30%; right: 10%; }
-      .req-label .req-color {
-        width: 18px; height: 18px;
-        border-radius: 50%;
-        border: 1px solid rgba(255,255,255,0.2);
+      .req-label.left {
+        top: 30%;
+        left: 10%;
       }
-      .req-label .req-color.blue { background: #7dd3fc; }
-      .req-label .req-color.gold { background: #f5c451; }
+      .req-label.right {
+        top: 30%;
+        right: 10%;
+      }
+      .req-label .req-color {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .req-label .req-color.blue {
+        background: #7dd3fc;
+      }
+      .req-label .req-color.gold {
+        background: #f5c451;
+      }
     </style>
   </head>
   <body>
+    <script src="/js/i18n/standalone-copy.js"></script>
     <script src="./shared.js"></script>
     <script>
       (() => {
         const G = BootGame;
         const SCORE_KEY = 'vts_proto_sort_hoard';
         const ui = G.mountShell({
-          modeId: 'Mode B',
           modeKey: 'arcadeModeB',
-          title: 'Sort the Hoard',
-          titleKey: 'arcadeSortHoardTitle',
-          hint: 'Feed each wing its requested color. Purple = bonus. Green/White = dodge!',
-          hintKey: 'arcadeSortHoardDesc',
           scoreKey: SCORE_KEY,
           controlScheme: 'sort',
           showShield: false,
@@ -85,9 +100,18 @@
         document.body.appendChild(comboBadge);
 
         const state = {
-          score: 0, stress: 0, maxStress: 100, paused: false, over: false,
-          pieces: [], spawnAt: 0, last: 0, speed: 0.18,
-          iceReq: 'blue', fireReq: 'gold', feedsThisReq: 0,
+          score: 0,
+          stress: 0,
+          maxStress: 100,
+          paused: false,
+          over: false,
+          pieces: [],
+          spawnAt: 0,
+          last: 0,
+          speed: 0.18,
+          iceReq: 'blue',
+          fireReq: 'gold',
+          feedsThisReq: 0,
         };
 
         function setHud() {
@@ -143,7 +167,11 @@
           const dy = target.y - y;
           const len = Math.hypot(dx, dy) || 1;
           state.pieces.push({
-            el, x, y, color, type,
+            el,
+            x,
+            y,
+            color,
+            type,
             vx: (dx / len) * state.speed,
             vy: (dy / len) * state.speed,
             alive: true,
@@ -161,20 +189,28 @@
             const ok = p.color === 'purple' || p.color === req;
             if (!ok) continue;
             const d = G.dist(p.x, p.y, gate.x, gate.y);
-            if (d < bestD) { bestD = d; best = p; }
+            if (d < bestD) {
+              bestD = d;
+              best = p;
+            }
           }
-          if (!best) { addStress(10); return; }
+          if (!best) {
+            addStress(10);
+            return;
+          }
           best.alive = false;
           best.el.classList.add('pop');
           setTimeout(() => best.el.remove(), 260);
           if (best.color === 'green' || best.color === 'white') {
             addStress(15);
-            G.gateFx('hurt'); G.vibrate(22);
+            G.gateFx('hurt');
+            G.vibrate(22);
             return;
           }
           const pts = best.color === 'purple' ? 25 : 10;
           state.score += pts;
-          G.gateFx('hit'); G.vibrate(8);
+          G.gateFx('hit');
+          G.vibrate(8);
           const { count, mult } = G.feedByColor(best.color);
           G.floatText(best.x, best.y, `+${pts}`, '#7dd3fc');
           G.showComboBadge(comboBadge, count, mult);
@@ -209,7 +245,8 @@
               p.el.style.left = `${p.x}px`;
               p.el.style.top = `${p.y}px`;
               if (G.dist(p.x, p.y, gate.x, gate.y) < 28) {
-                p.alive = false; p.el.remove();
+                p.alive = false;
+                p.el.remove();
                 addStress(5);
               }
             }
@@ -224,29 +261,46 @@
 
         const left = document.createElement('div');
         left.className = 'hit-zone left';
-        left.addEventListener('pointerdown', (e) => { e.preventDefault(); tryHit('left'); });
+        left.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          tryHit('left');
+        });
         const right = document.createElement('div');
         right.className = 'hit-zone right';
-        right.addEventListener('pointerdown', (e) => { e.preventDefault(); tryHit('right'); });
+        right.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          tryHit('right');
+        });
         ui.playfield.appendChild(left);
         ui.playfield.appendChild(right);
 
         G.setupKeyboard({
-          left: () => tryHit('left'), right: () => tryHit('right'),
-          pause: () => { state.paused = !state.paused; G.togglePauseBtn(ui.btnPause, state.paused); },
+          left: () => tryHit('left'),
+          right: () => tryHit('right'),
+          pause: () => {
+            state.paused = !state.paused;
+            G.togglePauseBtn(ui.btnPause, state.paused);
+          },
           restart: reset,
         });
 
         function reset() {
-          state.score = 0; state.stress = 0; state.paused = false; state.over = false;
-          state.speed = 0.18; state.spawnAt = G.now() + 400; state.last = 0;
+          state.score = 0;
+          state.stress = 0;
+          state.paused = false;
+          state.over = false;
+          state.speed = 0.18;
+          state.spawnAt = G.now() + 400;
+          state.last = 0;
           state.feedsThisReq = 0;
           state.pieces.forEach((p) => p.el.remove());
           state.pieces = [];
-          G.resetWings(); G.resetCombo();
+          G.resetWings();
+          G.resetCombo();
           G.showComboBadge(comboBadge, 0, 1);
           G.hideOverlay();
-          state.iceReq = 'blue'; state.fireReq = 'gold';
+          state.iceReq = 'blue';
+          state.fireReq = 'gold';
           const cL = document.getElementById('reqColorL');
           const cR = document.getElementById('reqColorR');
           cL.className = 'req-color blue';

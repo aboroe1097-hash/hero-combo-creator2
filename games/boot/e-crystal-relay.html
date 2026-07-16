@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -19,7 +19,12 @@
         position: relative;
         height: 18px;
         border-radius: 999px;
-        background: linear-gradient(90deg, rgba(34, 211, 238, 0.35), rgba(80, 80, 100, 0.25), rgba(251, 146, 60, 0.35));
+        background: linear-gradient(
+          90deg,
+          rgba(34, 211, 238, 0.35),
+          rgba(80, 80, 100, 0.25),
+          rgba(251, 146, 60, 0.35)
+        );
         border: 1px solid rgba(255, 255, 255, 0.15);
         overflow: visible;
       }
@@ -96,18 +101,14 @@
     </style>
   </head>
   <body>
+    <script src="/js/i18n/standalone-copy.js"></script>
     <script src="./shared.js"></script>
     <script>
       (() => {
         const G = BootGame;
         const SCORE_KEY = 'vts_proto_crystal_relay';
         const ui = G.mountShell({
-          modeId: 'Mode C',
           modeKey: 'arcadeModeC',
-          title: 'Crystal Relay',
-          titleKey: 'arcadeCrystalRelayTitle',
-          hint: 'Tap in the green zone - spark gets faster, zone shrinks  stay focused!',
-          hintKey: 'arcadeCrystalRelayDesc',
           scoreKey: SCORE_KEY,
           controlScheme: 'relay',
         });
@@ -136,11 +137,22 @@
         document.body.appendChild(comboBadge);
 
         const state = {
-          score: 0, lives: 3, paused: false, over: false,
-          combo: 0, lastSide: null, t: 0, last: 0,
-          pos: 0, dir: 1, speed: 0.00075,
-          zoneC: 0.5, zoneW: 0.12,
-          color: 'blue', type: 'claw', armed: true,
+          score: 0,
+          lives: 3,
+          paused: false,
+          over: false,
+          combo: 0,
+          lastSide: null,
+          t: 0,
+          last: 0,
+          pos: 0,
+          dir: 1,
+          speed: 0.00075,
+          zoneC: 0.5,
+          zoneW: 0.12,
+          color: 'blue',
+          type: 'claw',
+          armed: true,
         };
 
         function setHud() {
@@ -166,22 +178,31 @@
           state.type = G.randomOf(G.TYPES);
           badge.className = `badge ${state.color === 'purple' ? 'blue' : state.color}`;
           if (state.color === 'purple') badge.style.borderColor = 'rgba(167,139,250,0.7)';
-          badgeImg.src = G.materialSrc(state.color === 'purple' ? 'purple' : state.color, state.type);
+          badgeImg.src = G.materialSrc(
+            state.color === 'purple' ? 'purple' : state.color,
+            state.type
+          );
           state.armed = true;
         }
 
         function hurt() {
-          state.lives -= 1; state.combo = 0;
-          G.gateFx('hurt'); G.vibrate(22);
-          G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
+          state.lives -= 1;
+          state.combo = 0;
+          G.gateFx('hurt');
+          G.vibrate(22);
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
           setHud();
-          if (state.lives <= 0) { state.over = true; G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score); }
+          if (state.lives <= 0) {
+            state.over = true;
+            G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score);
+          }
         }
 
         function showSweetText() {
           const rect = spark.getBoundingClientRect();
           const el = document.createElement('div');
-          el.textContent = 'x2 SWEET!';
+          el.textContent = G.text('sweet');
           Object.assign(el.style, {
             position: 'fixed',
             left: `${rect.left + rect.width / 2}px`,
@@ -207,7 +228,11 @@
           if (state.paused || state.over || !state.armed) return;
           const half = state.zoneW / 2;
           const inZone = Math.abs(state.pos - state.zoneC) <= half;
-          if (!inZone) { hurt(); placeZone(); return; }
+          if (!inZone) {
+            hurt();
+            placeZone();
+            return;
+          }
           const sweetHalf = state.zoneW * 0.15;
           const inSweet = Math.abs(state.pos - state.zoneC) <= sweetHalf;
           const side = state.zoneC < 0.5 ? 'left' : 'right';
@@ -217,14 +242,20 @@
           state.lastSide = side;
           const base = state.color === 'purple' ? 25 : 12;
           let pts = base + state.combo * 3;
-          if (inSweet) { pts *= 2; showSweetText(); }
+          if (inSweet) {
+            pts *= 2;
+            showSweetText();
+          }
           state.score += pts;
           const { count, mult } = G.feedByColor(state.color);
-          G.gateFx('hit'); G.vibrate(8);
+          G.gateFx('hit');
+          G.vibrate(8);
           G.showComboBadge(comboBadge, count, mult);
           state.armed = false;
           setHud();
-          setTimeout(() => { if (!state.over) placeZone(); }, 180);
+          setTimeout(() => {
+            if (!state.over) placeZone();
+          }, 180);
         }
 
         function loop(t) {
@@ -233,28 +264,54 @@
           state.last = t;
           if (!state.paused && !state.over) {
             state.pos += state.dir * state.speed * dt * (1 + state.combo * 0.04);
-            if (state.pos >= 1) { state.pos = 1; state.dir = -1; }
-            if (state.pos <= 0) { state.pos = 0; state.dir = 1; }
+            if (state.pos >= 1) {
+              state.pos = 1;
+              state.dir = -1;
+            }
+            if (state.pos <= 0) {
+              state.pos = 0;
+              state.dir = 1;
+            }
             spark.style.left = `${state.pos * 100}%`;
           }
           requestAnimationFrame(loop);
         }
 
-        document.getElementById('tap').addEventListener('pointerdown', (e) => { e.preventDefault(); tap(); });
+        document.getElementById('tap').addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          tap();
+        });
         G.setupKeyboard({
-          pause: () => { state.paused = !state.paused; G.togglePauseBtn(ui.btnPause, state.paused); },
+          pause: () => {
+            state.paused = !state.paused;
+            G.togglePauseBtn(ui.btnPause, state.paused);
+          },
           restart: reset,
         });
         window.addEventListener('keydown', (e) => {
-          if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); }
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            tap();
+          }
         });
 
         function reset() {
-          state.score = 0; state.lives = 3; state.paused = false; state.over = false;
-          state.combo = 0; state.lastSide = null; state.pos = 0; state.dir = 1;
-          state.speed = 0.00055; state.last = 0;
-          G.resetWings(); G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
-          G.hideOverlay(); placeZone(); setHud();
+          state.score = 0;
+          state.lives = 3;
+          state.paused = false;
+          state.over = false;
+          state.combo = 0;
+          state.lastSide = null;
+          state.pos = 0;
+          state.dir = 1;
+          state.speed = 0.00055;
+          state.last = 0;
+          G.resetWings();
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
+          G.hideOverlay();
+          placeZone();
+          setHud();
         }
 
         ui.btnRestart.addEventListener('click', reset);

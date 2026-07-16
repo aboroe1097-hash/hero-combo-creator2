@@ -38,11 +38,24 @@ test('Arcade uses the shared language preference and localizes every supported a
 });
 
 test('Arcade language changes load translations and synchronize direction and locale', () => {
-  assert.match(arcadeSource, /loadTranslationsForLanguage\(requestedLanguage\)/);
+  assert.match(arcadeSource, /createLatestLanguageLoader/);
+  assert.match(arcadeSource, /requestArcadeLanguage\(requestedLanguage\)/);
   assert.match(arcadeSource, /applyLanguageDirection\(nextLanguage\)/);
   assert.match(arcadeSource, /document\.documentElement\.lang = resolveIntlLocale\(lang\)/);
   assert.match(arcadeSource, /languageSelect\.value = lang/);
   assert.match(arcadeSource, /new CustomEvent\('edenLanguageUpdate'\)/);
+  assert.match(
+    arcadeLobbySource,
+    /window\.addEventListener\('edenLanguageUpdate',[\s\S]*profile\.relabel\(\)/
+  );
+  assert.match(
+    arcadeLobbySource,
+    /const relabel = \(\) => \{[\s\S]*arcadeProfileNameLabel[\s\S]*arcadeProfileSave[\s\S]*renderSummary\(\)/
+  );
+  assert.match(
+    arcadeLobbySource,
+    /const relabelTabs = \(\) => \{[\s\S]*wrap\.setAttribute\('aria-label', t\('arcadeLeaderboardHeading'/
+  );
 });
 
 test('Arcade theme follows the standalone light-dark storage contract', () => {

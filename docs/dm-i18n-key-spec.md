@@ -1,14 +1,18 @@
 # DM Planner & Enhancement — i18n Key Spec
 
-Add these flat keys to each of the 11 locale files (`js/i18n/{en,zh,ar,de,es,fr,id,kr,pt,ru,tr}.js`).
-Both families are already wired in `js/material-calculator.js` and fall back to English if absent.
+The authoritative translations live in `js/i18n/dm-materials/packs.js`, defined through
+`defineDmMaterialsPack()` from `js/i18n/dm-materials/index.js`. The English canonical pack and
+stable display IDs live beside that loader. Do not add new DM runtime copy directly to the flat
+locale catalogs.
 
 ## Key Pattern Convention
 
-- `dmPlanner*` — used via `appT('dmPlanner<CapitalField>', ...)` for the core planner UI
-- `dmEnhance*` — used via `appT('dmEnhance*', ...)` for the enhancement subsection
+- `planner.<field>` — used through `dmMaterialsText()` / `getDmPlannerCopy()`
+- `enhance.<field>` — used through `dmMaterialsText()` for the enhancement subsection
 
-Both resolve through `appT(key, vars)` at `js/utils.js:32`. Interpolation vars use `{varName}` syntax.
+The flat `dmPlanner*` / `dmEnhance*` English bridge exists only for compatibility with shared
+catalog checks. Runtime rendering resolves the dedicated pack. Interpolation vars use
+`{varName}` syntax.
 
 ---
 
@@ -161,19 +165,22 @@ export function appT(key, vars = {}) {
 | 10 | `ru.js` | `js/i18n/ru.js` |
 | 11 | `tr.js` | `js/i18n/tr.js` |
 
-For non-English locales, translate only the value strings — key names are invariant.
+For non-English locales, translate the dedicated pack values only; stable field and display-ID
+names are invariant. The flat-key tables above document the compatibility bridge, not the runtime
+authoring location.
 
 ---
 
 ## Verification
 
-After populating, the enhancement code at `js/material-calculator.js:681-684` calls:
+Run the domain and full translation checks:
 
-```js
-function enhanceText(key, fallback) {
-  const value = appT(key);
-  return value && value !== key ? value : fallback;
-}
+```bash
+node --test tests/unit/domain-i18n-contract.test.mjs tests/unit/material-planner-model.test.mjs
+npm run i18n:check
 ```
 
-When the key is found and returns a string different from the key name, the locale translation is used. Until populated, the `DM_ENHANCE_FALLBACKS` English values display.
+`auditDmMaterialsPack()` requires every planner/enhancement message, matching interpolation
+placeholders, all 12 authored material-name IDs, and all 27 authored set/equipment/Dragon Master
+item display IDs. Canonical English remains available for search and safe runtime fallback, but a
+non-English pack cannot pass by inheriting those visible names.

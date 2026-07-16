@@ -93,6 +93,9 @@ test('the eager launcher stylesheet is available during local Vite development',
 test('Velo branding replaces provider-led assistant chrome with an animated mascot', () => {
   assert.match(launcherSource, /Talk with Velo/);
   assert.match(launcherSource, /VTS Assistant/);
+  assert.match(launcherSource, /translate\('ai\.kicker', 'VTS Assistant'\)/);
+  assert.match(launcherSource, /\.ai-drawer-launcher__eyebrow/);
+  assert.match(launcherSource, /eyebrow\.textContent = kicker/);
   assert.match(assistantTemplate, /data-i18n="ai\.kicker">VTS Assistant<\/span>/);
   assert.match(assistantTemplate, /data-ai-nav="arcade"[\s\S]*?data-i18n="ai\.suggestion\.arcade"/);
   assert.doesNotMatch(localeSources, /VTS Assistant ·/);
@@ -183,6 +186,15 @@ test('Velo branding replaces provider-led assistant chrome with an animated masc
   assert.match(drawerSource, /vts:language-change/);
   assert.match(drawerSource, /notifyAiLanguageChange/);
   assert.match(appSource, /vts:language-change/);
+  assert.match(
+    assistantSource,
+    /this\.currentStatus = \{ keyOrStage, variables: \{ \.\.\.variables \} \}/
+  );
+  assert.match(
+    assistantSource,
+    /refreshLocalizedChrome\(\)[\s\S]*?this\.renderCurrentStatus\(\);[\s\S]*?this\.renderTranscript\(\)/
+  );
+  assert.match(assistantSource, /clearStatus\(\) \{[\s\S]*?this\.currentStatus = null/);
   assert.equal((standaloneLanguageSources.match(/setCurrentLanguage\(lang\)/g) || []).length, 3);
   assert.equal((standaloneLanguageSources.match(/vts:language-change/g) || []).length, 3);
   assert.match(localeSources, /dmPlannerTitle: 'Dragon-Master-Set-Planer'/);

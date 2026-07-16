@@ -55,6 +55,16 @@ test('derives per-level percentage buffs from explicit per-level labels', () => 
   assert.equal(summary.perLevelLabel, '+3%/lvl');
 });
 
+test('formats Research buff values with the selected app locale', () => {
+  const summary = describeNodeBuffProgress(
+    { name: 'Guard', buff: '+5% Resistance', maxLevel: 10 },
+    5,
+    { locale: 'de' }
+  );
+  assert.equal(summary.currentLabel, '+2,5%');
+  assert.equal(summary.maxLabel, '+5%');
+});
+
 test('derives total percentage buffs across max levels', () => {
   const summary = describeNodeBuffProgress(
     {

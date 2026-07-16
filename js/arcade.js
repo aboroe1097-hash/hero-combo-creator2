@@ -1,7 +1,7 @@
 import {
   translations,
-  loadTranslationsForLanguage,
   applyLanguageDirection,
+  createLatestLanguageLoader,
 } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { resolveIntlLocale } from './locale-format.js';
@@ -9,7 +9,7 @@ import { initArcadeHub } from './arcade-hub.js';
 import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
 import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '14.0.11';
+const APP_VERSION = '14.0.12';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
@@ -128,12 +128,15 @@ function updateTextContent(lang) {
   window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
 }
 
-async function setLanguage(lang) {
-  const requestedLanguage = SUPPORTED_LANGUAGES.includes(lang) ? lang : 'en';
-  await loadTranslationsForLanguage(requestedLanguage);
+const requestArcadeLanguage = createLatestLanguageLoader((requestedLanguage) => {
   const loadedLanguage = translations[requestedLanguage] ? requestedLanguage : 'en';
   updateTextContent(loadedLanguage);
-  return loadedLanguage;
+});
+
+async function setLanguage(lang) {
+  const requestedLanguage = SUPPORTED_LANGUAGES.includes(lang) ? lang : 'en';
+  const result = await requestArcadeLanguage(requestedLanguage);
+  return result.applied ? requestedLanguage : null;
 }
 
 async function initArcade() {

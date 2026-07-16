@@ -1,8 +1,39 @@
 import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
 import { p1Copy } from './p1-copy.js';
+import { ADMIN_RUNTIME_DE } from './admin-runtime/de.js';
 
 const de = {
+  ...ADMIN_RUNTIME_DE,
   ...edenX1ContributionModeCopy,
+  // Locale-specific overrides for the shared Eden contribution-mode catalog.
+  adminEdenContributionModeTitle: 'Verbindliche Formel für den Gesamtbeitrag',
+  adminEdenContributionModeHint:
+    'Diese Auswahl bestimmt die tatsächlichen Top 10, danach R4 / Management und anschließend die Teamspieler. Beide Formeln bleiben öffentlich zum Vergleich sichtbar.',
+  adminEdenContributionModeExtended: 'Erweitert',
+  adminEdenContributionModeExtendedHint:
+    'Beitrag + Ex-Gilde + Dienstpunkte + gewichteter Teamleistungsbonus.',
+  adminEdenContributionModeDefault: 'Basis',
+  adminEdenContributionModeDefaultHint:
+    'Nur Beitrag + Ex-Gilde. Dienst und Teamleistungsbonus bleiben sichtbar, zählen aber nicht für die Rangliste.',
+  adminEdenContributionModeActive: 'Aktive Belohnungskette: {mode}.',
+  adminEdenVotesSeasonMismatchTitle: 'Aktuelle Abstimmungssaison aktivieren',
+  adminEdenVotesSeasonMismatchHint:
+    'Die gespeicherten Einstellungen gelten für {storedSeason}. Aktiviere {currentSeason}, bevor du sie bearbeitest. Dabei bleibt die Beitragsformel erhalten; die Abstimmung wird geschlossen, öffentliche Ergebnisse und Namen werden ausgeblendet und die Frist wird gelöscht.',
+  edenX1ContributionModeExtended: 'Erweitert',
+  edenX1ContributionModeDefault: 'Basis',
+  edenX1ContributionModeActive: 'Aktiv',
+  edenX1ContributionModeComparison: 'Vergleich',
+  edenX1ContributionModeActiveNotice:
+    'Dies ist die vom Admin ausgewählte aktive Belohnungskette.',
+  edenX1ContributionModeComparisonNotice:
+    'Nur zum Vergleich; nachfolgende Belohnungsnamen ändern sich dadurch nicht.',
+  edenX1ContributionModeExtendedMeta:
+    'Top 10 nach gewichtetem Gesamtbeitrag: Beitrag + Ex-Gilde + Dienstpunkte + gewichteter Teamleistungsbonus.',
+  edenX1ContributionModeDefaultMeta:
+    'Nur Beitrag + Ex-Gilde; Dienst und Teamleistungsbonus zählen nicht für die Rangliste.',
+  edenX1ContributionModeDefaultScore: 'Basiswert',
+  edenX1ContributionModeExcluded: 'Wird im Basismodus nicht gewertet.',
+  edenX1ContributionModeAria: 'Formeln für den Gesamtbeitrag vergleichen',
   ...p1Copy([
     'Eigentum',
     'Bauwerkstyp',
@@ -1480,7 +1511,7 @@ const de = {
   edenX1ModalAverageHit: 'Durchschnittstreffer',
   edenX1ModalTopPlayers: 'Top-Spieler',
   edenX1ModalRecentHits: 'Letzte Treffer',
-  edenX1PlayerAttackBreakdown: 'Angriffsaufschluesselung',
+  edenX1PlayerAttackBreakdown: 'Angriffsaufschlüsselung',
   edenX1ModalTime: 'Zeit',
   edenX1ModalStructure: 'Struktur',
   edenX1ModalDemo: 'Demo',
@@ -2043,6 +2074,915 @@ const de = {
   'ai.category.adminDashboard': 'Admin-Dashboard',
   'ai.category.adminDashboardHint':
     'Erfordert die Zustimmung für diesen Chat und ein verifiziertes, angemeldetes Administratorkonto',
+  // Semantisch abgestimmte Forschungsoberfläche.
+  ...{
+    researchTitle: 'Forschungsplaner',
+    researchDesc:
+      'Verfolge deinen Forschungsfortschritt und berechne verbleibende Kriegsabzeichen und Tapferkeitsmedaillen. S0- und Militärbäume folgen dem Aufbau im Spiel; Truppenzweige öffnen sich in eigenen Ansichten.',
+    researchSeasonLabel: 'Saisons',
+    researchSeasonFilterAria: 'Nach Saison filtern',
+    researchQuickLabel: 'Schnellauswahl',
+    researchSeasonPresetsAria: 'Saison-Schnellauswahl',
+    researchSelectAll: 'Alle',
+    researchSelectCurrent: 'X1',
+    researchSearchPh: 'Forschungsbäume durchsuchen…',
+    researchTreeCount: '{n} Forschungsbäume',
+    researchNoResults: 'Keine Forschungsbäume entsprechen deinen Filtern.',
+    researchNoData: 'Für die gewählten Saisons sind keine Forschungsdaten verfügbar.',
+    researchOpenCalc: 'Forschungsbaum öffnen',
+    researchProgress: '{pct} % abgeschlossen',
+    researchUnlock: 'Freischaltung:',
+    researchGlobalSummary: 'Gesamtbedarf',
+    researchCombinedCompletion: 'Gesamtfortschritt',
+    researchRemainingWb: 'Verbleibende Kriegsabzeichen',
+    researchRemainingCm: 'Verbleibende Tapferkeitsmedaillen',
+    researchOfTotal: 'von insgesamt {n}',
+    researchGameFooter: 'Erforsche Technologien und stärke dein Reich!',
+    researchGameHint:
+      'Forschung wählen · Stufe mit − / + anpassen · Zurücksetzen setzt sie auf 0 · Abschließen setzt sie auf MAX',
+    researchBranchTabAria: '{branch}-Zweig',
+    researchCanonicalNameNote:
+      'Die Bezeichnungen basieren auf dem Forschungsbaum im Spiel.',
+    researchClearLevel: 'Zurücksetzen',
+    researchCloseCalculator: 'Forschungsplaner schließen',
+    researchContinuousNavigationAria: 'Abschnitte des Forschungsbaums',
+    researchCourageMedals: 'Tapferkeitsmedaillen',
+    researchCourageMedalsShort: 'TM',
+    researchCurrentLevel: 'Aktuelle Stufe',
+    researchDecreaseLevelAria: 'Stufe von {node} verringern',
+    researchIncreaseLevelAria: 'Stufe von {node} erhöhen',
+    researchInspectorAria: 'Ausgewählte Forschung',
+    researchLevelShort: 'St.',
+    researchMax: 'MAX',
+    researchMaxAll: 'Alles abschließen',
+    researchCompleteTree: 'Forschungsbaum abschließen',
+    researchCompleted: 'Abgeschlossen',
+    researchMaxLevel: 'Maximalstufe',
+    researchNodeLevelControlsAria: 'Stufe für {node} einstellen',
+    researchNoNodesInBranch: 'Keine Forschungen in diesem Zweig.',
+    researchPrimaryCost: 'Benötigte Ressource',
+    researchRemaining: 'Noch benötigt',
+    researchResetAll: 'Gesamten Fortschritt zurücksetzen',
+    researchResources: 'Ressourcen',
+    researchResourcesShort: 'Ress.',
+    researchSelectNodePrompt:
+      'Wähle eine Forschung, um Kosten und Fortschritt anzuzeigen.',
+    researchSetMax: 'Auf Maximalstufe setzen',
+    researchTreeTotal: 'Gesamtkosten',
+    researchTreeTotalHint: 'Verbleibende Kosten dieses Forschungsbaums',
+    researchTroopBranchArchers: 'Bogenschützen',
+    researchTroopBranchCavalry: 'Kavallerie',
+    researchTroopBranchesAria: 'Truppenzweige',
+    researchTroopBranchFootmen: 'Infanterie',
+    researchWarBadges: 'Kriegsabzeichen',
+    researchWarBadgesShort: 'KA',
+    researchBuffButton: 'Boni',
+    researchBuffValuesNeedData: 'Bonuswerte fehlen',
+    researchBuffUnlockCount: '{n} Freischaltungen',
+    researchBuffTopBuffsAria: 'Top-Boni',
+    researchBuffMore: '+{n} weitere',
+    researchBuffSummaryOpenAria: 'Bonusübersicht für {tech} anzeigen',
+    researchBuffSummaryDialogAria: 'Bonusübersicht: {tech}',
+    researchBuffSummaryTitle: '{tech}: Bonusübersicht',
+    researchBuffSummaryMeta:
+      '{buffs} Bonusgruppen · {unlocks} Freischaltungen · für {missing} fehlen Werte',
+    researchBuffSummaryEmpty:
+      'Für diesen Forschungsbaum sind noch keine numerischen Bonuswerte verfügbar.',
+    researchBuffSummaryItemMeta:
+      '{current} aktuell · noch {remaining} · {nodes} {nodeLabel}',
+    researchBuffUnlocksTitle: 'Freischaltungen',
+    researchBuffNeedValuesTitle: 'Fehlende Werte',
+    researchBuffCloseAria: 'Bonusübersicht schließen',
+    researchBuffUnknownShort: 'Bonus ?',
+    researchBuffUnlockShort: 'Freischalten',
+    researchBuffUnlocked: 'Freigeschaltet',
+    researchBuffLocked: 'Gesperrt',
+    researchBuffKnownDetailTitle:
+      '{current} von {max}; noch {remaining}; {perLevel}',
+    researchBuffUnlockDetailTitle: 'Wird auf Stufe 1 freigeschaltet',
+    researchBuffMissingDetailTitle:
+      'Für diese Forschung fehlt der genaue Bonuswert.',
+    researchBuffNodeDetail: 'Noch {remaining} · {perLevel}',
+    researchBuffNodeSingular: 'Forschung',
+    researchBuffNodePlural: 'Forschungen',
+    researchGameSequenceTitle: 'Derselbe Forschungsbaum',
+    researchGamePartLabel: 'Abschnitt {n} von {total}',
+    researchGamePartShort: 'Abschnitt {n}',
+    researchGameSequenceHint:
+      'Ein durchgehender Forschungsbaum, zur besseren Übersicht in geordnete Abschnitte geteilt.',
+    researchSectionProduction: 'Produktion',
+    researchSectionGatheringConstruction: 'Sammeln und Bauen',
+    researchSectionMarauderFoundation: 'Marodeur-Grundlagen',
+    researchSectionAdvancedMarauders: 'Fortgeschrittene Marodeur-Jagd',
+    researchSectionDatabaseContinuation: 'Weitere Forschungen',
+    researchSectionFrontRow: 'Frontreihe',
+    researchSectionLegionCommand: 'Legionskommando',
+    researchSectionRecruitment: 'Rekrutierung',
+    researchSectionZoneRewards: 'Zonenbelohnungen',
+    researchSectionIncentives: 'Belohnungsboni',
+    researchSectionMaterialSlots: 'Materialplätze',
+    researchSectionCraftingWorkshops: 'Werkstätten und Herstellung',
+    researchSectionFurnacesSalvage: 'Schmelzöfen und Zerlegen',
+    researchSectionZoneDefense: 'Zonenverteidigung',
+    researchSectionSiegeAttack: 'Belagerungsangriff',
+    researchSectionSiegeDefense: 'Belagerungsverteidigung',
+    researchSectionFieldBattle: 'Feldkampf',
+    researchSectionUnitPower: 'Truppenstärke',
+    researchSectionQuickTraining: 'Schnellausbildung',
+    researchSectionAdvanced: 'Fortgeschritten',
+    researchSectionFoundation: 'Grundlagen',
+    researchSectionAdvancedCommand: 'Fortgeschrittenes Kommando',
+    researchSectionSiegeOrders: 'Belagerungsbefehle',
+    researchSectionFrontLine: 'Frontlinie',
+    researchSectionRearLine: 'Hintere Linie',
+    researchSectionGuardRallyI: 'Wachenmobilisierung I',
+    researchSectionGuardRallyII: 'Wachenmobilisierung II',
+    researchSectionGuardRallyIII: 'Wachenmobilisierung III',
+    researchSectionDestruction: 'Zerstörung',
+    researchSectionSiegeCombat: 'Belagerungskampf',
+    researchSectionMarkCapture: 'Markieren und Erobern',
+    researchSectionShieldMastery: 'Schildmeisterschaft',
+    researchSectionFootmenEnhancement: 'Infanterie verbessern',
+    researchSectionCavalryPromotion: 'Kavallerie verbessern',
+    researchSectionAimDefense: 'Zielen und Verteidigen',
+    researchSectionArcherEnhancement: 'Bogenschützen verbessern',
+  },
+  // Admin-, OCR-, Dienst- und Abstimmungsoberflächen.
+  ...{
+    adminLoginEmailDisabled:
+      'Die Firebase-Anmeldung mit E-Mail und Passwort ist noch nicht aktiviert.',
+    adminCloudSyncError: 'Cloud-Synchronisierung fehlgeschlagen – klicke auf „Aktualisieren“.',
+    adminCloudAdminRequired:
+      'Du bist nicht als Admin angemeldet; dieser Upload wurde nicht synchronisiert.',
+    adminCloudRetryPending:
+      'Lokale Änderungen warten – melde dich an und klicke dann auf „Aktualisieren“.',
+    adminSpecialListSavedLocalOnly:
+      '{label} wurde nur auf diesem Gerät gespeichert. Die Cloud-Synchronisierung wurde nicht bestätigt, daher sehen andere Admins die Änderung möglicherweise noch nicht.',
+    adminApiPrompt:
+      'Optional: Wenn du Bilder hochladen möchtest, füge hier deinen Qwen-API-Schlüssel ein:',
+    adminThAdjustedTotal: 'Angepasste Summe',
+    adminVtsGamesTab: 'VTS-Spiele',
+    adminEdenVotesTab: 'Eden-X1-Abstimmung',
+    adminEdenVotesTitle: 'Eden-X1-Abstimmung: Teamspieler',
+    adminEdenVotesSubtitle:
+      'Steuere das öffentliche Abstimmungsfenster, prüfe aktuelle Stimmzettel und verfolge Änderungen.',
+    adminEdenVotesRefresh: 'Stimmen aktualisieren',
+    adminEdenVotesSettings: 'Abstimmungseinstellungen',
+    adminEdenVotesOpen: 'Abstimmung geöffnet',
+    adminEdenVotesOpenHint: 'Öffentliche Stimmabgaben zulassen.',
+    adminEdenVotesEditing: 'Bearbeitung zulassen',
+    adminEdenVotesEditingHint:
+      'Spieler können abgegebene Stimmen ändern, bis diese Option ausgeschaltet wird.',
+    adminEdenVotesPublicResults: 'Ergebnisse öffentlich anzeigen',
+    adminEdenVotesPublicResultsHint:
+      'Zeige den Stimmenstand auf der öffentlichen Eden-X1-Seite, sobald er freigegeben ist.',
+    adminEdenVotesShowNames: 'Namen der Abstimmenden anzeigen',
+    adminEdenVotesShowNamesHint:
+      'Lass diese Option aus, wenn öffentliche Ergebnisse anonym bleiben sollen.',
+    adminEdenVotesSettingsOpen: 'Die Abstimmung ist geöffnet.',
+    adminEdenVotesSettingsClosed: 'Die Abstimmung ist geschlossen.',
+    adminEdenVotesSettingsSaved: 'Abstimmungseinstellungen gespeichert.',
+    adminEdenVotesSettingsSaveFailed:
+      'Abstimmungseinstellungen konnten nicht gespeichert werden.',
+    adminEdenVotesEmpty: 'Noch keine Stimmen.',
+    adminEdenVotesHistory: 'Änderungsverlauf',
+    adminEdenVotesHistorySubtitle:
+      'Jede gespeicherte Änderung wird hier für die Admin-Prüfung aufgeführt.',
+    adminEdenVotesHistoryEmpty: 'Noch keine Änderungen an Stimmen protokolliert.',
+    adminEdenVotesHistoryBefore: 'Vorher',
+    adminEdenVotesHistoryAfter: 'Nachher',
+    adminEdenVotesHistoryAction: 'Aktion',
+    adminVoteVoter: 'Abstimmende Person',
+    adminVoteUpdated: 'Aktualisiert',
+    adminRosterSnapshotsTitle: 'Kaderstände',
+    adminOcrNetworkError:
+      'Der OCR-Dienst ist nicht erreichbar. Prüfe die Verbindung, aktualisiere die Seite und versuche es erneut.',
+    adminOcrWorkerPermissionError:
+      'HTTP 403: Der vorgeschaltete OCR-Dienst hat den Zugriff verweigert. Prüfe DASHSCOPE_BASE_URL und die Berechtigungen von DASHSCOPE_API_KEY und stelle den Worker erneut bereit.',
+    adminOcrOriginBlockedError:
+      'HTTP 403: Der OCR-Worker hat {origin} blockiert. Füge diese Website zu ALLOWED_ORIGINS hinzu und stelle den Worker erneut bereit.',
+    adminOcrUnknownRequestError: 'Unbekannter Fehler bei der OCR-Anfrage',
+    adminRosterUnsupportedImageStatus:
+      'Kein unterstütztes Kaderbild ausgewählt. Verwende PNG, JPG oder WebP. Abgelehnt: {files}',
+    adminRosterNoImageSelectedStatus: 'Kein Kaderbild ausgewählt.',
+    adminRosterScanningImagesLog: '{count} Kader-Screenshot(s) werden gescannt…',
+    adminRosterOcrRetryLog:
+      'Kader-OCR fehlgeschlagen: {error}. Neuer Versuch in {seconds} s ({attempt}/{total})…',
+    adminRosterOcrErrorLog: 'Kader-OCR-Fehler: {error}',
+    adminDutyUnsupportedImageLog:
+      'Kein unterstütztes Bild für {label} ausgewählt. Verwende PNG, JPG oder WebP. Abgelehnt: {files}',
+    adminDutyNoImageSelectedLog: 'Kein Bild für {label} ausgewählt.',
+    adminContributionUnsupportedImageStatus:
+      'Kein unterstütztes Beitragsbild ausgewählt. Verwende PNG, JPG oder WebP. Abgelehnt: {files}',
+    adminRosterNewSnapshot: 'Neuen Kaderstand speichern',
+    adminRosterNewSnapshotDated: 'Neuer Kaderstand ({day})',
+    adminRosterPastePrompt: 'Mitgliedsnamen einfügen (ein Name pro Zeile):',
+    adminRosterDropZone:
+      'Screenshot der Mitgliederliste hier ablegen oder zum Hochladen klicken',
+    adminRosterScanning: 'Kaderbild wird gescannt…',
+    adminRosterEmpty:
+      'Noch keine Kaderstände. Klicke auf „Neuen Kaderstand speichern“, um den Kader dieser Woche zu sichern.',
+    adminBannerListTitle: 'Bannerliste',
+    adminBannerPasteNames: 'Namen einfügen',
+    adminBannerDropZone:
+      'Screenshot der Bannerliste hier ablegen oder auf „Bild hochladen“ klicken',
+    adminBannerScanning: 'Bannerliste wird gescannt…',
+    adminBannerEmpty: 'Noch keine Bannerlisten gespeichert.',
+    adminPatherListTitle: 'Pather- und Tempo-Kachel-Pläne',
+    adminPatherPastePlan: 'Plan einfügen',
+    adminPatherDropZone:
+      'Screenshot eines Pather- oder Tempo-Kachel-Plans hier ablegen oder auf „Bild hochladen“ klicken',
+    adminPatherScanning: 'Plan wird gescannt…',
+    adminPatherEmpty: 'Noch keine Pather- oder Tempo-Kachel-Pläne gespeichert.',
+    adminShieldWallTitle: 'Schildwall',
+    adminVtsGamesTitle: 'VTS-Boot-Spiele',
+    adminVtsGamesNote:
+      'Öffne ein Spiel in einem neuen Tab. Die Boot-Spiele sind lokale Prototypen mit DM-Materialsymbolen, Flügelgrafiken und Heldenskin-Symbolen. Kombofortschritt und Tastatursteuerung gelten über alle Modi hinweg.',
+    adminShieldWallAddNames: 'Namen hinzufügen',
+    adminShieldWallEmpty: 'Noch keine Schildwall-Einträge.',
+    adminDutySummaryTitle: 'Dienstübersicht',
+    adminDutySummaryEmpty:
+      'Gespeicherte Diensteinsätze werden anschließend hier zusammengefasst.',
+    adminDutySummaryPlayer: 'Spieler',
+    adminDutySummaryEntries: 'Einträge',
+    adminDutySummaryTimes: 'Einsätze',
+    adminDutyContributionTarget: 'Spieler in der Beitragsliste',
+    adminDutyContributionNoSnapshot: 'Kein Beitragsstand',
+    adminDutyContributionNoMatch: 'Nicht in der Beitragsliste',
+    adminDutyContributionFamilyCredit: 'Familiengutschrift',
+    adminDutyBannerSingular: 'Banner',
+    adminDutyPlanSingular: 'Plan',
+    adminDutyShieldWallSingular: 'Schildwall',
+    adminDutyPastePrompt: 'Namen für {label} einfügen, ein Name pro Zeile:',
+    adminDutyNoNamesLog: 'Keine Namen für {label} gefunden.',
+    adminDutyManualPaste: 'Manuell einfügen',
+    adminDutyMatchUnmatchedOption: '— Nicht zugeordnet —',
+    adminDutyManualCorrectionPh: 'Manuelle Korrektur',
+    adminDutyUsageTimeTitle: 'Einsatzzeit',
+    adminDutyTarget: 'Ziel',
+    adminDutyTargetTitle: 'Ziel oder Bauwerk',
+    adminDutyGroup: 'Gruppe',
+    adminDutyGroupTitle: 'Kachelfarbe oder Gruppe',
+    adminDutyPad: 'Feld',
+    adminDutyPadTitle: 'Feldkoordinaten',
+    adminDutyEditTitle: '{label} bearbeiten',
+    adminDutyConfirmTitle: '{label} bestätigen',
+    adminDutyConfirmSub:
+      '{count} Zeilen gefunden. Prüfe vor dem Speichern Kaderzuordnungen, Einsatzzeit und Ziel.',
+    adminDutyDateLabel: 'Datum',
+    adminDutyNoteLabel: 'Notiz',
+    adminDutyNotePh: 'Ereignis, Markierung oder Upload-Notiz',
+    adminDutyGameTimeLabel: 'Spielzeit',
+    adminDutyUpdateRecord: '{singular}-Eintrag aktualisieren',
+    adminDutySaveRecord: '{singular}-Eintrag speichern',
+    adminDutyUpdatedLog: '{label} aktualisiert: {count} Einträge.',
+    adminDutySavedLog: '{label} gespeichert: {count} Einträge.',
+    adminDutyOcrAlreadyRunning: 'Dienst-OCR läuft bereits…',
+    adminDutyScanningImagesLog: '{count} Bild(er) für {label} werden gescannt…',
+    adminDutyScanningImageProgress:
+      'Bild {current}/{total} für {label} wird gescannt…',
+    adminDutyOcrErrorLog: 'OCR-Fehler bei {label} ({file}): {error}',
+    adminDutyNoNamesInImagesLog: 'Keine Namen in den Bildern für {label} gefunden.',
+    adminDutyExtractFailedAlert:
+      'Aus dem Bild für {label} konnten keine Namen ausgelesen werden.',
+    adminDutyDeleteConfirm: 'Diesen Diensteintrag löschen?',
+    adminDutyDeletedLog: 'Diensteintrag gelöscht.',
+    adminDutyEmptyRecords: 'Noch keine Einträge für {label}.',
+    adminDutyMatchedCount: '{confirmed}/{total} zugeordnet',
+    adminDutyReviewCount: '{count} zu prüfen',
+    adminDutyOrder: 'Reihenfolge',
+    adminDutyTime: 'Zeit',
+    adminDutyUploaded: 'Hochgeladen',
+    adminDutyRosterMatch: 'Kaderzuordnung',
+    adminDutyStatus: 'Status',
+    adminDutyUnmatched: 'Nicht zugeordnet',
+    adminDutyTotalLabel: 'insgesamt {count}',
+    adminDutyPlanAbbrev: 'Plan',
+    adminContributionOpeningPickerStatus: 'Bildauswahl wird geöffnet…',
+    adminContributionNoImageSelectedStatus: 'Kein Beitragsbild ausgewählt.',
+    adminContributionOcrBlockedStatus: 'Beitrags-OCR blockiert: {error}',
+    adminContributionOcrBlockedToast:
+      'Beitrags-OCR blockiert. Prüfe die Statusmeldung.',
+    adminContributionDelta: 'Änderung',
+    adminContributionPremiumCount: 'Premium: {count}',
+    adminContributionAutoSuffix: '(automatisch)',
+    adminExGuildToggle: 'Altdaten / Ex-Gilde',
+    adminExGuildEmpty: 'Noch keine Altdaten aus früheren Gilden.',
+    adminExGuildPasteRows: 'Ex-Gilden-Zeilen einfügen',
+    adminExGuildPastePrompt:
+      'Spielernamen und Beiträge einfügen, eine Zeile pro Person (Name, Beitrag):',
+    adminExGuildManualPaste: 'Manuell einfügen (Ex-Gilde)',
+    adminExGuildUploadImage: 'Ex-Gilden-Bild hochladen',
+    adminExGuildAddRow: 'Ex-Gilden-Zeile hinzufügen',
+    adminExGuildSaveList: 'Ex-Gilden-Daten speichern',
+    adminExGuildSavedLog: '{count} Ex-Gilden-Einträge gespeichert.',
+    adminExGuildConfirmTitle: 'Ex-Gilden-Altdaten bestätigen',
+    adminExGuildMatched: '✅ Zugeordnet',
+    adminExGuildUnmatched: '⏳ Nicht zugeordnet',
+    adminExGuildStatus: 'Status',
+    adminExGuildClearAll: 'Alle Ex-Gilden-Daten löschen',
+    adminExGuildTab: 'Ex-Gilden-Daten',
+    adminContributionPrimaryTitle:
+      'Dies ist der Standard-Beitragsstand für die Dashboard-Berechnung.',
+    adminContributionSetPrimaryTitle: 'Als Standard-Beitragsstand festlegen',
+    adminTerminalInfo: 'Informationen',
+  },
+  // Website-, Saison- und Loyalitätsoberflächen.
+  ...{
+    seoTitle: 'Hero Combo Creator — Tools für Rise of Castles: Ice & Fire | VTS 1097',
+    seoDescription:
+      'Kostenlose Tools für Rise of Castles: Ice & Fire im Staat VTS 1097 — Kombobauer und -generator, Heldenatlas, Eden-Kartenplaner, Loyalitätsrechner, Forschungsplaner und Kombo-Konter.',
+    seoKeywords:
+      'Rise of Castles, Ice and Fire, Heldenkombo, Eden-Karte, VTS 1097, Kombo-Ersteller, Loyalitätsrechner, Forschung, Heldenatlas, RoC-Kombos',
+    seoIntro:
+      'Kostenlose Community-Tools für Rise of Castles: Ice & Fire: Stelle Heldenkombos zusammen, plane Eden-Karten, berechne Loyalitätsverbesserungen, verfolge Forschungen und durchsuche den Heldenatlas. Erstellt für den Staat VTS 1097.',
+    seoFooterTitle: 'Enthaltene Tools',
+    seoFooterDesc:
+      'Hero Combo Creator ist ein kostenloses Fan-Toolkit für Spieler von Rise of Castles: Ice & Fire im Staat VTS 1097. Keine Installation nötig — es läuft im Browser auf Desktop und Mobilgeräten.',
+    seoFeatureCombos: 'Kombobauer und -generator mit bewerteten Vorschlägen',
+    seoFeatureHeroes: 'Heldenatlas — Fähigkeiten, Synergien und Top-Kombos',
+    seoFeatureEden: 'Eden-Kartenplaner — Bauwerke, Wege und Teamplan für Saison 5',
+    seoFeatureLoyalty: 'Eden-Loyalitätsrechner — Ausbaupfade und Gift in %',
+    seoFeatureResearch:
+      'Forschungsplaner — Abzeichen, Medaillen und Bäume im Spielaufbau',
+    tabEdenMapBadge: 'Bald',
+    seasonCatchupX1:
+      'X1-Aufholsaison: Jüngere Staaten erhalten in dieser Gruppe alle X1-Helden sowie einige frühe X2-Helden.',
+    seasonCatchupX2:
+      'X2-Aufholsaison: Diese Gruppe umfasst die übrigen X2-Helden sowie die X3-Welle.',
+    seasonCatchupX8:
+      'X8-Aufholsaison: Diese Gruppe vereint die ursprünglichen X4-, X5-, X6-, X7-, X8- und SP-Helden in einer spielbaren Saison.',
+    loyaltySummaryTitle: 'Live-Übersicht',
+    loyaltySummaryCurrent: 'Aktuelle Loyalität',
+    loyaltyPresetsLabel: 'Vorlagen',
+    loyaltyPresetBalanced: 'Ausgewogen',
+    loyaltyPresetMaxCamps: 'Maximale Lager',
+    loyaltyPresetEarly: 'Frühes Eden',
+    loyaltyPresetThroughput: 'Schneller Ausbau',
+    loyaltyPresetApplied: 'Vorlage angewendet',
+    loyaltyOpenEden: 'Eden-Karte',
+    loyaltyOpenEdenTitle: 'Eden-Kartenplaner öffnen',
+    loyaltyOpenEdenToast: 'Eden-Kartenplaner geöffnet',
+    upgrade: 'Verbessern',
+    lvl: 'St.',
+    tabAi: 'Mit Velo sprechen',
+    dmPlannerFootmen: 'Infanterie',
+    dmPlannerClearProgress: 'Fortschritt zurücksetzen',
+    dmPlannerRemainingSet: 'Verbleibendes Kampagnenziel',
+  },
+  // Eden-Kartenplaner: Navigation, Werkzeuge und Ebenen.
+  ...{
+    edenOpenLoyalty: 'Loyalitätsplaner',
+    edenOpenLoyaltyToast: 'Loyalitätsplaner — Verbesserungen bei {zone} planen',
+    edenOpenLoyaltyToastGeneric: 'Loyalitätsplaner geöffnet',
+    edenMapConstructionTitle: 'Eden-Karte — in Arbeit',
+    edenMapConstructionDesc:
+      'Wir setzen deine Screenshots aus dem Spiel zu einer vollständigen interaktiven Karte mit 1600 × 1600 Feldern zusammen. Bald verfügbar.',
+    edenMapConstructionBadge: 'Demnächst',
+    edenMapConstructionHeading: 'In Arbeit',
+    edenMapConstructionBody:
+      'Wir setzen Screenshots aus dem Spiel zu einer vollständigen interaktiven Karte mit 1600 × 1600 Feldern zusammen. Schau bald wieder vorbei.',
+    edenConstructionEngineLoading: 'Kachel-Engine wird vorbereitet…',
+    edenConstructionEngineReady: 'Kachel-Engine geladen — warte auf Kartenaufnahmen.',
+    edenDeckNav: 'Karte',
+    edenDeckTools: 'Werkzeuge',
+    edenPlansPanel: 'Pläne und Export',
+    edenIsolateSector: 'Isolieren',
+    edenIsolateSectorTitle:
+      'Nur den gewählten Sektor anzeigen — plane Wege und Ziele ausschließlich für diese Zone (I)',
+    edenIsolateActive: 'Isolierter Sektorplan',
+    edenIsolateNeedSector:
+      'Wähle zuerst einen Sektor statt der Gesamtkarte und aktiviere dann „Isolieren“.',
+    edenExportPngWorking: 'Kartenbild wird exportiert…',
+    edenExportPngDone: 'Karte als PNG gespeichert',
+    edenZoomOutTitle: 'Verkleinern (−)',
+    edenZoomInTitle: 'Vergrößern (+)',
+    edenResetView: 'Ansicht zurücksetzen',
+    edenResetViewTitle: 'Ansicht zurücksetzen (Leertaste)',
+    edenFitView: 'Einpassen',
+    edenFitViewTitle: 'Sektor einpassen (F)',
+    edenImport: 'Importieren',
+    edenImportTitle: 'Plan importieren',
+    edenExport: 'Exportieren',
+    edenExportTitle: 'Plan exportieren',
+    edenShare: 'Teilen',
+    edenShareTitle: 'Teilbaren Planlink kopieren',
+    edenExportPng: 'PNG',
+    edenExportPngTitle:
+      'Aktuelle Kartenansicht als PNG exportieren; bei isolierter Ansicht wird der Sektortitel einbezogen',
+    edenPlanTitle: 'Gespeicherte Pläne',
+    edenPlanNew: '+ Plan',
+    edenPlanNewTitle: 'Neuen Plan anlegen',
+    edenPlanRename: 'Umbenennen',
+    edenPlanRenameTitle: 'Plan umbenennen',
+    edenPlanDelete: 'Löschen',
+    edenPlanDeleteTitle: 'Plan löschen',
+    edenToolNavigateTitle: 'Zum Verschieben ziehen · Bauwerk zum Auswählen anklicken',
+    edenToolMeasureTitle: 'Strecke A → B messen (M)',
+    edenToolPathTitle: 'Weg zeichnen (P) · Punkt mit Umschalt+Klick setzen',
+    edenToolTargetTitle: 'Eigenes Ziel markieren',
+    edenToolDraw: 'Zeichnen',
+    edenToolDrawTitle: 'Freihand zeichnen (D) · zum Zeichnen ziehen',
+    edenDrawWhite: 'Weiß',
+    edenUndoDraw: 'Rückgängig',
+    edenUndoDrawTitle: 'Letzte Zeichnung entfernen',
+    edenClearDraw: 'Leeren',
+    edenClearDrawTitle: 'Alle Zeichnungen in diesem Plan entfernen',
+    edenPathRed: 'Rot',
+    edenPathBlue: 'Blau',
+    edenPathPurple: 'Violett',
+    edenPathYellow: 'Gelb',
+    edenPathGreen: 'Grün',
+    edenPathScout: 'Aufklärung',
+    edenRouteNamePh: 'Wegname',
+    edenUndoPath: 'Rückgängig',
+    edenUndoPathTitle: 'Letzten Wegpunkt entfernen (Strg+Z)',
+    edenFinishPathTitle: 'Gezeichneten Weg speichern und dem Plan hinzufügen',
+    edenClearPaths: 'Leeren',
+    edenClearPathsTitle: 'Alle gezeichneten Wege aus dem aktuellen Plan entfernen',
+    edenDeletePath: 'Weg löschen',
+    edenDeletePathTitle: 'Ausgewählten Weg löschen (Entf)',
+    edenViewLabel: 'Ansicht',
+    edenViewModeTitle:
+      'Ansicht wählen: Strategie, Aufklärungsdaten, automatische Wegplanung oder Teamzuweisungen',
+    edenViewStrategic: 'Strategie',
+    edenViewScout: 'Aufklärung',
+    edenViewTeams: 'Teamplan',
+    edenMarchSpeedLabel: 'Marschtempo',
+    edenMarchSpeedTitle: 'Multiplikator für Marschzeiten bei Wegen und Messungen',
+    edenRouteNameTitle: 'Optionale Beschriftung des fertigen Weges',
+    edenPlansPanelTitle:
+      'Planwerkzeuge öffnen: Import, Export, Teilungslink, PNG und Planplätze',
+    edenScoutPull: 'Daten abrufen',
+    edenScoutPullTitle: 'Gildeninformationen aus der Cloud abrufen',
+    edenScoutPush: 'Daten senden',
+    edenScoutPushTitle: 'Besitzsdaten in die Cloud senden',
+    edenLayersLabel: 'Ebenen',
+    edenLayerRef: 'Karte',
+    edenLayerRefTitle: 'Eden-Karte mit Fraktionsgrenzen als saubere Pergamentgrundlage',
+    edenLayerScreenshots: 'Aufnahmen',
+    edenLayerScreenshotsTitle:
+      'Screenshots aus dem Spiel pro Sektor zur Ausrichtung einblenden',
+    edenLayerTerrain: 'Gelände',
+    edenLayerTerrainTitle: 'Geländeebene mit Ebenen, Wüste, Flüssen und Bergen',
+    edenLayerStruct: 'Bauwerke',
+    edenLayerStructTitle: 'Symbole für Tore, Städte, Hauptstädte und Tempel',
+    edenLayerPaths: 'Wege',
+    edenLayerPathsTitle: 'Gezeichnete Marschwege der Allianz',
+    edenLayerTargets: 'Ziele',
+    edenLayerTargetsTitle: 'Markierte Ziele und eigene Sammelpunkte',
+    edenLayerTeams: 'Teams',
+    edenLayerTeamsTitle: 'Teamfarben an zugewiesenen Bauwerken',
+    edenLayerLabels: 'Beschriftungen',
+    edenLayerLabelsTitle: 'Namen der Bauwerke auf der Karte',
+    edenLayerZones: 'Zonen',
+    edenLayerZonesTitle: 'Umrisse der Eden-Zonen Nord, Mitte und Süd',
+    edenLayerTerritory: 'Gebiete',
+    edenLayerTerritoryTitle: 'Einfärbung der nördlichen, mittleren und südlichen Zone',
+    edenLayerFog: 'Nebel',
+    edenLayerFogTitle: 'Kriegsnebel über noch nicht erkundeten Sektoren',
+    edenLayerHeat: 'Dichte',
+    edenLayerHeatTitle: 'Dichtekarte der Besetzungswerte',
+    edenLayerSectorHd: 'Sektor-HD',
+    edenLayerSectorHdTitle:
+      'Ältere Option — Sektorpergamente werden beim Auswählen eines Sektors automatisch geladen',
+    edenRefOpacityLabel: 'Karte',
+    edenRefOpacityTitle: 'Deckkraft der Karte mit Fraktionsgrenzen',
+  },
+  // Eden-Kartenplaner: Filter, Datensätze, Bauwerke und Teams.
+  ...{
+    edenFactionLabel: 'Fraktion',
+    edenFactionAll: 'Alle',
+    edenFactionNorth: 'Nord',
+    edenFactionSouth: 'Süd',
+    edenFactionAllTitle: 'Bauwerke aus allen Eden-Zonen anzeigen',
+    edenZoneNorthTitle: 'Auf die nördliche Startzone mit N1–N4 filtern',
+    edenZoneCentralTitle: 'Auf die zentrale Kriegszone C, EC, E, W und WC filtern',
+    edenZoneSouthTitle: 'Auf die südliche Startzone mit S1–S4 filtern',
+    edenZoneLabel: 'Zone',
+    edenZoneNorth: 'Nord',
+    edenZoneCentral: 'Mitte',
+    edenZoneSouth: 'Süd',
+    edenQuickLabel: 'Schnellzugriff',
+    edenTemple: 'Tempel',
+    edenQuickJumpTitle: 'Kartenansicht zu Sektor {sector} verschieben',
+    edenTempleTitle: 'Zum Alten Tempel (AT) in der zentralen Kriegszone springen',
+    edenMinimapTitle: 'Zum Springen klicken',
+    edenLegendForest: 'Wald',
+    edenLegendPlains: 'Ebene',
+    edenLegendDesert: 'Wüste',
+    edenLegendRiver: 'Fluss',
+    edenLegendMountain: 'Berg',
+    edenLegendPath: 'Weg',
+    edenOwnershipAll: 'Alle Besitzstände',
+    edenOwnershipOwned: 'Eigen',
+    edenOwnershipContested: 'Umkämpft',
+    edenOwnershipEnemy: 'Feindlich',
+    edenOwnershipNeutral: 'Neutral',
+    edenSortPoints: 'Sortieren: Punkte',
+    edenSortZone: 'Sortieren: Zone',
+    edenSortType: 'Sortieren: Typ',
+    edenCoordSearchLabel: 'Zu Koordinaten',
+    edenCoordGoTitle: 'Zu X:Y-Koordinaten aus dem Spiel springen',
+    edenCoordInvalid:
+      'Ungültige Koordinaten — verwende X:Y im Kartenbereich 0–1600, 0–1600',
+    edenCoordFoundStruct: '{name} bei {x}:{y} gefunden',
+    edenCoordJumped: 'Zu X:{x} Y:{y} gesprungen',
+    edenDatasetLabelTitle: 'Saison- und Bauwerksdatensatz der Eden-Karte',
+    edenChangeSeason: 'Ändern',
+    edenChangeSeasonTitle: 'Eden-Saisondatensatz ändern',
+    edenSeasonPickTitle: 'Datensatz für deine Eden-Karte wählen',
+    edenSeasonPickDesc:
+      'Bauwerkspositionen können sich je nach Saison unterscheiden. Wähle den Datensatz deines aktuellen Eden-Servers. Du kannst ihn jederzeit über die Werkzeugleiste ändern.',
+    edenDatasetSeason3: 'Saison 3 — Normal',
+    edenDatasetSeason3Desc:
+      'Vollständige Nord-gegen-Süd-Karte für Eden Saison 3 (Normal). Alle Bauwerkskoordinaten stammen aus deinem Saisondatensatz.',
+    edenDatasetSeason5: 'Saison 5 — Wonder X1',
+    edenDatasetSeason5Desc:
+      'Wonder-X1-Karte deiner aktuellen Saison mit Koordinaten aus Screenshots: nördliche Startzone N1–N4, zentrale Kriegszone C, EC, E, W und WC sowie südliche Startzone S1–S4. Für nicht erfasste Tore können X12-Daten verwendet werden.',
+    edenDatasetWondersX12: 'Wonder X12 — Referenz',
+    edenDatasetWondersX12Desc:
+      'Vollständige Wonder-X12-Grundlage aus Referenzblättern in assets/eden_wonders. Gleicher Sektoraufbau wie Saison 5; vergleiche sie mit deiner aktuellen X1-Screenshotkarte.',
+    edenDatasetCoordCount: '{n} Bauwerke im Datensatz',
+    edenDatasetBaseMap: 'Vollständige eingebettete Basiskarte',
+    edenDatasetSwitched: 'Eden-Datensatz: {name}',
+    edenSidebarClose: 'Seitenleiste schließen',
+    edenSectorFull: 'Gesamtkarte',
+    edenSectorCardinal: '— Äußere Sektoren —',
+    edenSectorCentral: '— Zentrale Sektoren —',
+    edenAllZones: 'Alle Zonen',
+    edenAllTypes: 'Alle Bauwerkstypen',
+    edenHintEmpty: 'Wähle ein Bauwerk auf der Karte oder öffne',
+    edenMeasureTitle: 'Strecke A → B',
+    edenMeasureTerrain: 'Geländeroute:',
+    edenMeasureDirect: 'Direkt:',
+    edenMeasureMarch: 'Geschätzter Marsch:',
+    edenMeasureTiles: 'Felder',
+    edenMeasureBlocked: 'Teilweise blockiert — der Weg könnte Berge kreuzen.',
+    edenClearMeasure: 'Messung löschen',
+    edenStatusLabel: 'Status',
+    edenGuildLabel: 'Gilde / Team',
+    edenStatusNeutral: 'Neutral',
+    edenStatusOwned: 'Eigen',
+    edenStatusContested: 'Umkämpft',
+    edenStatusEnemy: 'Feindlich',
+    edenGuildPh: 'z. B. Team Phoenix',
+    edenMarchFromHint:
+      'Von hier marschieren: Tempo in der Werkzeugleiste festlegen · geschätzte Zeiten erscheinen bei Wegen und Messungen',
+    edenMarkTarget: 'Als Ziel markieren',
+    edenMarkedTarget: 'Ziel',
+    edenCenter: 'Zentrieren',
+    edenZoomStruct: 'Vergrößern',
+    edenCopyCoords: 'Koordinaten kopieren',
+    edenOvLabel: 'Besetzungswert:',
+    edenZoneFieldLabel: 'Zone:',
+    edenPlanPrompt: 'Planname',
+    edenPlanRenamePrompt: 'Plan umbenennen',
+    edenRouteStartToast: 'Wegplanung: Ziel wählen',
+    edenStatsShown: 'angezeigt',
+    edenStatsTargets: 'Ziele',
+    edenStatsPaths: 'Wege',
+    edenStatsTeams: 'zugewiesen',
+    edenModeScout: 'Aufklärung',
+    edenModeRoute: 'Wegplanung',
+    edenModeTeams: 'Teams',
+    edenTeamPanelTitle: 'Teamplan',
+    edenTeamPlanEnable: 'Teamplan aktivieren',
+    edenTeamCountLabel: 'Anzahl der Teams',
+    edenTeamCount2: '2 Teams',
+    edenTeamCount3: '3 Teams',
+    edenTeamCount4: '4 Teams',
+    edenTeamPlanOffHint:
+      'Aktiviere den Teamplan, um Bauwerke zuzuweisen und die Zeitleiste anzuzeigen.',
+    edenTeamPlanEnableFirst: 'Aktiviere zuerst den Teamplan in der Seitenleiste.',
+    edenTeamPanelDesc:
+      'Optional — weise Bauwerke Teams und Zeitfenstern im Spiel zu.',
+    edenTeamFilterAll: 'Alle Teams',
+    edenTeam1: 'Team 1',
+    edenTeam2: 'Team 2',
+    edenTeam3: 'Team 3',
+    edenTeam4: 'Team 4',
+    edenTeamUnassigned: 'Nicht zugewiesen',
+    edenTeamAssignLabel: 'Team',
+    edenTeamTimeLabel: 'Spielzeit',
+    edenTeamNoteLabel: 'Notiz',
+    edenTeamNotePh: 'Sammelpunkt, Kombo usw.',
+    edenTeamBoardEmpty: 'Noch keine Zuweisungen',
+    edenTeamUnassignedHint: 'Ziele ohne Team: {n}',
+    edenHelpTitle: 'Eden-Karte verwenden',
+    edenPlanLoadedToast: 'Plan aus dem Teilungslink geladen',
+    edenShareCopiedToast: 'Teilungslink kopiert',
+    edenShareFailedToast: 'Teilungslink konnte nicht erstellt werden',
+    edenRoutePlannedToast: 'Weg geplant — {distance} Felder',
+    edenSectorUnavailableToast: 'Sektor „{sector}“ ist in dieser Saison nicht enthalten',
+    edenSectorReferenceMissingToast: 'Kein Referenzblatt für Sektor „{sector}“',
+    edenPathSavedToast: 'Weg gespeichert — {distance} Felder (~{time})',
+    edenPlanImportedToast: 'Plan importiert',
+    edenInvalidPlanToast: 'Ungültige Plandatei',
+    edenKeepOnePlanToast: 'Mindestens einen Plan behalten',
+    edenScoutOfflineToast: 'Aufklärung offline: {error}',
+    edenNoScoutIntelToast: 'Keine Aufklärungsdaten gefunden',
+    edenScoutIntelMergedToast: 'Aufklärungsdaten zusammengeführt',
+    edenIntelPushedToast: 'Informationen in die Cloud gesendet',
+    edenPushFailedToast: 'Senden fehlgeschlagen: {error}',
+    edenComboPlannerToast: 'Combo Creator — Plan für {zone} ({type})',
+    edenCopiedToast: '{text} kopiert',
+    edenX1Targets: 'X1-Ziele',
+    edenX1TargetsTitle: 'Vordefinierte Wonder-X1-Ziele auf die Karte laden',
+    edenX1TargetsLoadedToast: 'X1-Planungsziele geladen',
+  },
+  // Interaktive Anleitung der Eden-Karte.
+  ...{
+    edenGuideBtn: 'Anleitung',
+    edenGuideBtnTitle: 'Interaktive Einführung öffnen',
+    edenGuidePanelTitle: 'Interaktive Anleitung zur Eden-Karte',
+    edenGuideIntro:
+      'Schrittweise Einführung — probiere jede Aktion direkt auf der Karte aus. Dein Fortschritt wird lokal gespeichert.',
+    edenGuideStartTour: 'Tour starten',
+    edenGuideReset: 'Fortschritt zurücksetzen',
+    edenGuideStepLabel: 'Schritt',
+    edenGuideTryIt: 'Ausprobieren',
+    edenGuideMarkDone: 'Als erledigt markieren',
+    edenGuidePrev: 'Zurück',
+    edenGuideNext: 'Weiter',
+    edenGuideProgress: '{pct} % abgeschlossen · {done}/{total} Schritte',
+    edenGuideVersion: 'Anleitung v{v}',
+    edenGuideCompleteToast: 'Tour abgeschlossen — du kannst jetzt planen!',
+    edenGuideStepDoneToast: 'Schritt als erledigt markiert',
+    edenGuideResetToast: 'Fortschritt der Anleitung zurückgesetzt',
+    edenGuideSecStart: 'Start',
+    edenGuideSecNav: 'Navigation',
+    edenGuideSecExplore: 'Erkunden',
+    edenGuideSecTools: 'Werkzeuge',
+    edenGuideSecPlan: 'Planung',
+    edenGuideSecLayers: 'Ebenen',
+    edenGuideSecKeys: 'Tastenkürzel',
+    edenGuideWelcomeTitle: 'Willkommen auf der Eden-Karte',
+    edenGuideWelcomeDesc:
+      'Planer für Saison 5 mit Pergamentgrundlage, Bauwerkssymbolen, Wegen, optionalen Teamzeitleisten und Allianzinfos. Diese Anleitung zeigt dir alle Funktionen direkt in der Karte.',
+    edenGuideWelcomeTip1:
+      'Gehe mit „Weiter“ zum nächsten Schritt oder springe über die Reiter zu einem Abschnitt.',
+    edenGuideWelcomeTip2:
+      '„Ausprobieren“ aktiviert die echte Steuerung, damit du direkt auf der Karte üben kannst.',
+    edenGuideLayoutTitle: 'Kartenaufbau',
+    edenGuideLayoutDesc:
+      'Die Kartenfläche zeigt deinen Sektor mit Gelände, Bauwerken und Planebenen. In der Seitenleiste findest du Bauwerke, Filter und Details. Diese Anleitung befindet sich unter der Karte.',
+    edenGuideLayoutTip1:
+      'Die Steuerleiste über der Karte bündelt Navigation, Werkzeuge, Ansichten, Pläne, Ebenen und Zonensprünge. Bewege den Zeiger über ein Element, um einen Hinweis zu sehen.',
+    edenGuideLayoutTip2:
+      'Die Legende unten links erklärt die Geländefarben für Ebene, Wüste, Fluss und Berg.',
+    edenGuideLayoutTip3:
+      'Beim Zeigen auf die Karte erscheinen die Koordinaten; die Spielzeit steht neben „Ansicht“ in der Werkzeugleiste.',
+    edenGuideLayoutTip4:
+      'Suche und Bauwerksliste scrollen innerhalb der Seitenleiste und bleiben dadurch über dieser Anleitung.',
+    edenGuideZoomTitle: 'Zoom',
+    edenGuideZoomDesc:
+      'Zoome mit dem Mausrad zum Zeiger oder nutze + / − für feste Stufen von 25 % bis 320 %. Ein Doppelklick auf eine freie Stelle passt den Sektor ein.',
+    edenGuideZoomTip1:
+      'Der Zoom bleibt am Zeiger verankert; der Punkt darunter bleibt an seiner Stelle.',
+    edenGuideZoomTip2: 'Doppelklicke auf ein Bauwerk, um es zu vergrößern.',
+    edenGuideZoomTip3: 'Drücke F oder die Leertaste, um den aktuellen Sektor einzupassen.',
+    edenGuidePanTitle: 'Verschieben und navigieren',
+    edenGuidePanDesc:
+      'Ziehe eine freie Kartenfläche, um die Ansicht zu verschieben. Auch die Pfeiltasten bewegen die Karte. „Navigation“ ist das Standardwerkzeug zum Auswählen von Bauwerken.',
+    edenGuidePanTip1:
+      'Klicke ein Bauwerk auf der Karte oder in der Seitenleiste an, um es auszuwählen.',
+    edenGuidePanTip2:
+      'Drücke Escape, um zur Navigation zurückzukehren und Messpunkte zu löschen.',
+    edenGuideSectorTitle: 'Sektoren',
+    edenGuideSectorDesc:
+      'Eden besteht aus der nördlichen Startzone N1–N4, der zentralen Kriegszone C, EC, E, W und WC sowie der südlichen Startzone S1–S4. Wähle einen Sektor im Menü oder über den Schnellzugriff wie C, W oder Tempel.',
+    edenGuideSectorTip1:
+      'Tastenkürzel: 1 = Gesamtkarte, 2 = N, 3 = NO, 4 = O, 5 = S, 6 = W, 7 = C, 8 = NC.',
+    edenGuideSectorTip2: '„Ausprobieren“ springt zur zentralen Kriegszone C.',
+    edenGuideMinimapTitle: 'Minikarte',
+    edenGuideMinimapDesc:
+      'Die Minikarte unten rechts zeigt deinen sichtbaren Ausschnitt. Klicke eine Stelle an, um die Hauptkarte dorthin zu verschieben.',
+    edenGuideMinimapTip1: 'Besonders hilfreich, wenn du weit hineingezoomt hast.',
+    edenGuideCoordTitle: 'Zu Koordinaten springen',
+    edenGuideCoordDesc:
+      'Gib X:Y-Koordinaten aus dem Spiel, zum Beispiel 800:800, in das Feld „Zu Koordinaten“ ein und drücke „Los“ oder Enter. Die Karte zentriert diesen Punkt und wählt ein nahe gelegenes Bauwerk aus, sofern eines vorhanden ist.',
+    edenGuideCoordTip1:
+      'Du kannst auch Koordinaten einfügen, die du bei einem ausgewählten Bauwerk kopiert hast.',
+    edenGuideCoordTip2:
+      'Der gültige Bereich der vollständigen Eden-Karte liegt ungefähr zwischen 0–1600 × 0–1600.',
+    edenGuideSelectTitle: 'Bauwerke auswählen',
+    edenGuideSelectDesc:
+      'Klicke mit aktivierter Navigation ein Tor, eine Stadt, eine Hauptstadt oder einen Tempel an. Die Seitenleiste scrollt zur Auswahl und hebt sie hervor.',
+    edenGuideSelectTip1: 'Du kannst auch die durchsuchbare Bauwerksliste verwenden.',
+    edenGuideSelectTip2: 'Beim Darüberzeigen erscheint eine kurze Info.',
+    edenGuideSidebarTitle: 'Bauwerksdetails',
+    edenGuideSidebarDesc:
+      'Bei einem ausgewählten Bauwerk kannst du Besitz, Gildenname und Zielstatus festlegen, Koordinaten kopieren oder den Combo Creator öffnen.',
+    edenGuideSidebarTip1: 'Statusfarben: Grün = eigen, Gelb = umkämpft, Rot = feindlich.',
+    edenGuideSidebarTip2:
+      'Mit „Zentrieren“ und „Vergrößern“ richtest du die Karte auf das Bauwerk aus.',
+    edenGuideSidebarTip3:
+      'Bei aktivem Teamplan kannst du hier Team, Spielzeitfenster und Notiz zuweisen.',
+    edenGuideFiltersTitle: 'Filter der Seitenleiste',
+    edenGuideFiltersDesc:
+      'Filtere die Bauwerksliste nach Besitz, Zone, Typ und Sortierung. Die Suche darunter findet Namen und Zonen. Bei aktivem Teamplan erscheint zusätzlich ein Teamfilter.',
+    edenGuideFiltersTip1: 'Der Besitzfilter färbt auch die Markierungen auf der Karte.',
+    edenGuideFiltersTip2:
+      'Die Bauwerkssuche findet Namen und Zonen; X:Y plus Enter springt auch zu Koordinaten.',
+    edenGuideFiltersTip3:
+      'Die Liste scrollt innerhalb der Seitenleiste, während Filter und Suche angeheftet bleiben.',
+    edenGuideViewModesTitle: 'Ansichten',
+    edenGuideViewModesDesc:
+      'Das Ansichtsmenü wechselt den Schwerpunkt: Strategie für den Überblick, Aufklärung zum Abrufen und Senden von Informationen, Wegplanung für automatische Strecken zwischen zwei Punkten und Teamplan für die Zeitleiste.',
+    edenGuideViewModesTip1:
+      'Strategie eignet sich für allgemeine Kartenarbeit und das Markieren von Besitz.',
+    edenGuideViewModesTip2:
+      'Die Aufklärungsansicht zeigt „Daten abrufen“ und „Daten senden“ in der Werkzeugleiste.',
+    edenGuideViewModesTip3:
+      'Die Teamplanansicht hebt die Zeitleiste hervor; aktiviere zuerst den Teamplan in der Seitenleiste.',
+    edenGuideMeasureTitle: 'Messwerkzeug',
+    edenGuideMeasureDesc:
+      'Drücke M oder wähle „Messen“ und klicke dann Punkt A und Punkt B an. Die Strecke berücksichtigt das Gelände und zeigt die geschätzte Marschzeit.',
+    edenGuideMeasureTip1:
+      'Das Marschtempo in der Werkzeugleiste skaliert die Zeitschätzung.',
+    edenGuideMeasureTip2: '„Messung löschen“ entfernt die Punkte in der Seitenleiste.',
+    edenGuidePathTitle: 'Wegwerkzeug',
+    edenGuidePathDesc:
+      'Zeichne Marschwege der Allianz mit Umschalt+Klick. Wähle Farbe und Namen und schließe den Weg ab. Wegpunkte kannst du später in der Navigation bearbeiten.',
+    edenGuidePathTip1:
+      'Strg+Z oder ein Rechtsklick entfernt beim Zeichnen den letzten Wegpunkt.',
+    edenGuidePathTip2: '„Weg löschen“ entfernt die ausgewählte Route.',
+    edenGuidePathTip3: '„X1-Ziele“ lädt vordefinierte Zielmarkierungen.',
+    edenGuideTargetTitle: 'Zielwerkzeug',
+    edenGuideTargetDesc:
+      'Setze eigene Sammelpunkte an beliebigen Stellen der Karte, etwa für Aufstellungsorte ohne Bauwerk.',
+    edenGuideTargetTip1: 'Ziele erscheinen, wenn die Zielebene aktiviert ist.',
+    edenGuideRouteModeTitle: 'Ansicht „Wegplanung“',
+    edenGuideRouteModeDesc:
+      'Wechsle zur Wegplanung und klicke ein Startbauwerk sowie einen Endpunkt an. Das Werkzeug erstellt automatisch einen geländebewussten Weg.',
+    edenGuideRouteModeTip1:
+      'Ideal für schnelle Vergleichswege ohne manuell gesetzte Wegpunkte.',
+    edenGuideRouteModeTip2: 'Das Marschtempo beeinflusst die Zeitschätzung des Weges.',
+    edenGuideOwnTitle: 'Besitz und Gilde',
+    edenGuideOwnDesc:
+      'Wähle ein Bauwerk aus und lege Besitz sowie Gildenname in der Seitenleiste fest. Farben werden auf der Karte und in den Listen aktualisiert.',
+    edenGuideOwnTip1: 'Filtere nach feindlichen oder eigenen Bauwerken.',
+    edenGuideOwnTip2:
+      'Die Gebietsebene zeigt die nördliche, mittlere und südliche Kontrollzone.',
+    edenGuideTeamPlanTitle: 'Teamplan (optional)',
+    edenGuideTeamPlanDesc:
+      'Die Teamplanung ist zunächst aus. Öffne „Teamplan“, aktiviere ihn und wähle zwei bis vier Teams. Weise Bauwerke samt Spielzeitfenstern zu; die Zeitleiste sortiert nach der Uhr im Spiel.',
+    edenGuideTeamPlanTip1:
+      '„Ausprobieren“ aktiviert den Teamplan und öffnet das Feld; Zuweisungen entstehen erst durch deine Auswahl.',
+    edenGuideTeamPlanTip2:
+      'Aktiviere die Teamebene, um Farbsymbole an zugewiesenen Bauwerken zu sehen.',
+    edenGuideTeamPlanTip3:
+      'Wechsle für die vollständige Zeitleiste zur Teamplanansicht. Du kannst den Teamplan jederzeit ausblenden.',
+    edenGuideClockTitle: 'Spielzeit',
+    edenGuideClockDesc:
+      'Die Werkzeugleiste zeigt die aktuelle Eden-Spielzeit im Zyklus 00:00–23:59. Teamzeitfenster und Marschschätzungen verwenden diese Uhr; beim Darüberzeigen siehst du die genaue Zeit.',
+    edenGuideClockTip1:
+      'Es ist dieselbe Uhr wie die globale Zeitanzeige neben der Sprachauswahl.',
+    edenGuidePlansTitle: 'Mehrere Pläne',
+    edenGuidePlansDesc:
+      'Speichere getrennte Szenarien über die Planauswahl. Mit „+ Plan“, „Umbenennen“ und „Löschen“ verwaltest du die Plätze.',
+    edenGuidePlansTip1: 'Jeder Plan speichert eigene Wege, Ziele und Besitzsdaten.',
+    edenGuidePlansTip2:
+      'Auch Teameinstellungen bleiben je Plan erhalten; öffne „Pläne und Export“ in der Steuerleiste.',
+    edenGuideShareTitle: 'Teilen und exportieren',
+    edenGuideShareDesc:
+      '„Teilen“ kopiert eine URL mit deinem eingebetteten Plan. „Exportieren“ lädt JSON herunter, „Importieren“ stellt eine Datei wieder her und PNG speichert ein Kartenbild.',
+    edenGuideShareTip1: 'Über Teilungslinks können Verbündete denselben Plan öffnen.',
+    edenGuideShareTip2: 'PNG eignet sich für Discord oder Allianzunterlagen.',
+    edenGuideScoutTitle: 'Aufklärung und Informationen',
+    edenGuideScoutDesc:
+      'Die Aufklärungsansicht dient zum Sammeln von Informationen. „Daten abrufen“ führt Besitzsdaten aus der Cloud zusammen; „Daten senden“ lädt deine Markierungen optional zu Firebase hoch.',
+    edenGuideScoutTip1:
+      '„Ausprobieren“ wechselt zur Aufklärung, damit du die Steuerung erkunden kannst.',
+    edenGuideLayersTitle: 'Kartenebenen',
+    edenGuideLayersDesc:
+      'Schalte Pergamentkarte, Sektoraufnahmen, Gelände, Bauwerke, Wege, Ziele, optionale Teams, Beschriftungen, Zonen, Gebiete, Nebel, Dichtekarte und Sektor-HD ein oder aus.',
+    edenGuideLayersTip1:
+      'Schalte „Bauwerke“ für eine klarere Geländeansicht aus. „Teams“ bleibt aus, bis du den Teamplan aktivierst.',
+    edenGuideLayersTip2: 'Nebel verdeckt Sektoren, die du noch nicht besucht hast.',
+    edenGuideLayersTip3:
+      'Drücke R, um die Ebenen nach dem Ausprobieren auf die Standardwerte zurückzusetzen.',
+    edenGuideTeamsLayerTitle: 'Teamebene',
+    edenGuideTeamsLayerDesc:
+      'Bei aktivem Teamplan zeigt die Teamebene farbige Symbole an zugewiesenen Bauwerken. Im Teammenü kannst du die Seitenleiste filtern.',
+    edenGuideTeamsLayerTip1:
+      'Die Teamfarben entsprechen der Zeitleiste: Rot, Blau, Grün und Gelb.',
+    edenGuideTeamsLayerTip2:
+      'Deaktiviere den Teamplan, um Zuweisungen auszublenden, ohne gespeicherte Daten zu löschen.',
+    edenGuideRefTitle: 'Deckkraft der Referenz',
+    edenGuideRefDesc:
+      'Die Kartenebene zeigt die optimierte Pergamentgrundlage mit Fraktionsgrenzen für Saison 5. Mit „Aufnahmen“ blendest du Sektor-Screenshots zur Prüfung der Bauwerksausrichtung ein.',
+    edenGuideRefTip1:
+      'Eine geringere Deckkraft hilft beim Ausrichten von Wegen am Gelände.',
+    edenGuideRefTip2:
+      'Hauptstadtsymbole des Pergaments sind maskiert; die anhand der Koordinaten gesetzten Symbole sind maßgeblich.',
+    edenGuideZoneTitle: 'Zonenfilter',
+    edenGuideZoneDesc:
+      'Filtere Bauwerke nach Eden-Zone: Nord mit N1–N4, Mitte mit C, EC, E, W und WC oder Süd mit S1–S4.',
+    edenGuideZoneTip1:
+      '„Alle“ zeigt jedes Bauwerk; kombiniere dies mit dem Zonenmenü der Seitenleiste für genauere Filter.',
+    edenGuideZoneTip2:
+      'Die Gebietsebene färbt die nördliche, mittlere und südliche Kartenhälfte.',
+    edenGuideKeysTitle: 'Tastenkürzel',
+    edenGuideKeysDesc:
+      'Plane schneller mit Tastenkürzeln; die meisten entsprechen den Werkzeugnamen.',
+    edenGuideKeysTip1:
+      'M Messen · P Weg · 1–8 Sektoren · F/Leertaste einpassen · +/− zoomen',
+    edenGuideKeysTip2:
+      'Pfeiltasten verschieben · Entf löscht den gewählten Weg · R setzt Ebenen zurück',
+    edenGuideKeysTip3: 'Strg+Z entfernt beim Zeichnen Wegpunkte',
+    edenGuideKeysTip4:
+      'Escape kehrt zur Navigation zurück und löscht Messpunkte',
+    edenGuideMobileTitle: 'Mobil und Touch',
+    edenGuideMobileDesc:
+      'Zoome mit zwei Fingern und verschiebe mit einem Finger. Nach der Auswahl eines Bauwerks öffnet sich die Seitenleiste als schließbares Feld am unteren Rand. Die Anleitung bleibt unter der Karte.',
+    edenGuideMobileTip1:
+      'Tippe Bauwerke zum Auswählen an; öffne die Anleitung über die Werkzeugleiste oder den Link in der leeren Seitenleiste.',
+    edenGuideMobileTip2:
+      'Im Querformat bleibt mehr Platz für die Karte; die Bauwerksliste scrollt im Seitenleistenfeld.',
+    edenGuideDoneTitle: 'Alles bereit!',
+    edenGuideDoneDesc:
+      'Du kennst jetzt Navigation, Koordinaten, Werkzeuge, optionale Teamplanung, Ebenen und Tastenkürzel. Setze den Fortschritt jederzeit zurück, um die Tour nach Änderungen erneut zu starten.',
+    edenGuideDoneTip1:
+      'Anleitung v2.7 umfasst Pergamentkarte, optionalen Teamplan und Koordinatensprung. Mit „Fortschritt zurücksetzen“ startest du sie erneut.',
+  },
+  ...{
+    edenX1QuickTeam: 'Team-MVPs',
+    edenX1RewardSlotStatus: 'Status',
+    edenX1ModalDetails: 'Details',
+    'ai.kicker': 'VTS-Assistent',
+  },
+  // Final language-quality pass: consistent informal address and natural gaming terminology.
+  ...{
+    researchPerLevel: '{value} pro Stufe',
+    researchVariesPerLevel: 'Variiert je nach Stufe',
+    adminBackToTools: 'Zurück zu den Tools',
+    adminCloudSyncError: 'Problem bei der Cloud-Synchronisierung – klicke auf „Aktualisieren“',
+    adminApiPrompt:
+      'Optional: Wenn du Bilder hochladen möchtest, füge hier den API-Code ein:',
+    adminFooterDisclaimer:
+      'Nicht mit Camel Games oder Rise of Castles verbunden. Spielinhalte gehören ihren jeweiligen Eigentümern. Dies ist ein kostenloses Community-Tool von Fans.',
+    adminContributionNotePh: 'Ereignis, Runde oder Upload-Notiz',
+    adminGuestModeBody:
+      'Du siehst das Dashboard im Lesemodus. Uploads sind deaktiviert. Wenn Diagramme bei „Wird geladen…“ stehen bleiben, sind keine Daten verfügbar.',
+    adminAnalyticsSub:
+      'Bauwerksleistung, Spielerkonstanz, Beteiligungs-Heatmap und Lücken in der Mitgliederliste aus hochgeladenen Angriffsdaten.',
+    heroesComboScopeHint:
+      'Kombos mit Helden bis {season}, passend zu deinen Saisonfiltern.',
+    loyaltyDesc: 'Berechne Verarbeitungszeiten und Upgrade-Pfade.',
+    edenMapDesc:
+      'Wonder-X1-Karte mit Bauwerken und Routen – bewege den Zeiger über die Werkzeugleiste, um Details zu sehen.',
+    edenX1Intro:
+      'Saisonrangliste mit Dienstzählungen, Bonuspunkten für Teamleistung und gewichteten Endwerten.',
+    edenX1MyStatsHint:
+      'Gib deinen Namen im Spiel ein, um Beitrags-, Unterstützungs- und Angriffsdetails zu öffnen.',
+    edenX1MyStatsPlaceholder: 'Gib deinen Namen im Spiel ein…',
+    edenX1MyStatsEmpty:
+      'Beginne mit der Eingabe eines Spielernamens, um Treffer und Daten zu sehen.',
+    edenX1RewardContributionMeta:
+      'Top 10 nur nach aktuellem Beitrag plus Ex-Gilde, nach den Unterstützungsplätzen.',
+    edenX1RewardSupportMeta:
+      'Top 4 nach gewichteter Wertung unter Spielern mit Unterstützungsarbeit: Beitrag, Ex-Gilde, Banner, Wege, Schildwälle und Bonuspunkte für Teamleistung.',
+    edenX1ThConduct: 'Bonuspunkte für Teamleistung',
+    edenX1BreakdownConductPoints: 'Bonuspunkte für Teamleistung',
+    edenX1ConductPrivateNotice:
+      'Diese Bonuspunkte für Teamleistung werden von R5 MalakAbo vergeben. Einzelheiten sind nicht öffentlich; melde dich, wenn du Einspruch einlegen möchtest.',
+    edenX1ConductAria: 'R5-Bonuspunkte für Teamleistung von {player}',
+    edenX1RewardReasonGrant: 'R5-Premiumbelohnung manuell vergeben. Endrang #{rank}.',
+    edenX1RewardReasonForfeit:
+      'Manuelle R5-Premiumbelohnung entfernt. Endrang #{rank}.',
+    edenX1PublicEyebrow: 'Öffentliches Dashboard',
+    edenX1PublicTitle: 'Vollständige Saisonaktivität',
+    edenX1PublicSubtitle:
+      'Öffentliche Übersichten zu Angriffen, Bauwerken und Beiträgen. Klicke auf Spieler- oder Bauwerkszeilen, um Detailfenster zu öffnen.',
+    edenX1WeightedIncludesMeta:
+      'die gewichtete Wertung umfasst Beitrag, Unterstützung und Bonuspunkte für Teamleistung',
+    edenX1WeightedPublicMeta: 'Vollständiger Snapshot des gewichteten Beitrags',
+    edenX1NoPublicWeightedRows:
+      'Noch keine gewichteten Beitragsdaten veröffentlicht.',
+    edenX1NoPublicSearchRows:
+      'Keine passenden Spieler in der öffentlichen gewichteten Liste.',
+    edenX1TopPerformersHint:
+      'Klicke auf einen Spielernamen, um das öffentliche Angriffsdetail zu öffnen.',
+    edenX1StructuresHint:
+      'Klicke auf ein Bauwerk, um seine öffentliche Trefferliste und besten Spieler zu sehen.',
+    edenX1AttackHistoryHint:
+      'Klicke auf eine Bauwerkszeile, um Details zu öffnen.',
+    edenX1OpenPlayerAria: 'Details zu {player} öffnen',
+    edenX1OpenStructureAria: 'Details zu {structure} öffnen',
+    edenX1ModalClose: 'Details schließen',
+    edenX1PlayerDetailTitle: 'Spielerdetails – {player}',
+    edenX1StructureDetailTitle: 'Bauwerksdetails – {structure}',
+    edenX1StructureRowMeta: '{hits} Treffer · {players} Spieler · anklicken',
+    edenX1RewardSkippedPremium: 'Premiumbelohnung übersprungen',
+    edenX1RewardSkippedPremiumReason:
+      'Rang #{rank} hat auf die Premiumbelohnung verzichtet; der Platz geht deshalb an den nächsten berechtigten Spieler.',
+    edenX1VoteErrCloud:
+      'Der Online-Abstimmungsdienst ist noch nicht bereit. Lade die Seite neu und versuche es erneut.',
+    edenX1VoteStatusSaving: 'Stimme wird gespeichert…',
+    edenX1VoteTopStructureHint: 'Feindliche Bauwerke, die dieser Spieler getroffen hat',
+  },
 };
 
 export default de;

@@ -24,7 +24,7 @@ import {
   makeBattleExportFilename,
 } from './battle-simulator-export.js';
 
-const APP_VERSION = '14.0.11';
+const APP_VERSION = '14.0.12';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [

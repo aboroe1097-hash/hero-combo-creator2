@@ -1256,7 +1256,7 @@
   background: var(--control-hover);
 }
 .eden-map-root.eden-map-loading::after {
-  content: 'Loading Eden Map\2026';
+  content: attr(data-eden-loading-label);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   background:

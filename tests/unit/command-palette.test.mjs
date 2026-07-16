@@ -43,7 +43,7 @@ test('reopening reads the shared language and refreshes all localized dialog cop
   const refresh = between('function refreshLocalizedCopy()', 'function render(');
   const open = between('function open()', 'function close()');
 
-  assert.match(source, /localStorage\.getItem\('vts_hero_lang'\)/);
+  assert.match(source, /resolveRuntimeLocale\(\)/);
   assert.doesNotMatch(source, /vts_language/);
   assert.match(refresh, /els\.overlay\.setAttribute\('aria-label',\s*title\)/);
   assert.match(refresh, /els\.input\.placeholder\s*=\s*placeholder/);

@@ -13,231 +13,22 @@
   const CONTROL_CUES = Object.freeze({
     merge: '<kbd>1</kbd><span>=</span><kbd>1</kbd><span>↑</span>',
     sort: '<kbd>A / ←</kbd><span>•</span><kbd>D / →</kbd>',
-    relay: '<kbd>SPACE</kbd><span>•</span><kbd>◉</kbd>',
+    relay: '<kbd>{space}</kbd><span>•</span><kbd>◉</kbd>',
     set: '<kbd>✓</kbd><span>•</span><kbd>✕</kbd>',
     rumble: '<kbd>A / ←</kbd><span>•</span><kbd>D / →</kbd>',
   });
 
-  const SHELL_COPY = {
-    en: {
-      back: 'Go Back to Game List',
-      mode: 'Mode',
-      score: 'Score',
-      best: 'Best',
-      shield: 'Shield',
-      ice: 'Ice wing',
-      fire: 'Fire wing',
-      again: 'Play Again',
-      restart: 'Restart',
-      pause: 'Pause',
-      play: 'Play',
-      gameOver: 'Game Over',
-      newBest: 'New Best!',
-      overloadSafe: 'Overload: safe',
-      overloadBuilding: 'Overload: {count}/10',
-      overloadCritical: 'Overload! {seconds}s',
-      overloadPaused: 'Overload paused',
-    },
-    es: {
-      back: 'Volver a la lista de juegos',
-      mode: 'Modo',
-      score: 'Puntuación',
-      best: 'Mejor',
-      shield: 'Escudo',
-      ice: 'Ala de hielo',
-      fire: 'Ala de fuego',
-      again: 'Jugar de nuevo',
-      restart: 'Reiniciar',
-      pause: 'Pausa',
-      play: 'Jugar',
-      gameOver: 'Fin de la partida',
-      newBest: '¡Nuevo récord!',
-      overloadSafe: 'Sobrecarga: segura',
-      overloadBuilding: 'Sobrecarga: {count}/10',
-      overloadCritical: '¡Sobrecarga! {seconds}s',
-      overloadPaused: 'Sobrecarga en pausa',
-    },
-    pt: {
-      back: 'Voltar à lista de jogos',
-      mode: 'Modo',
-      score: 'Pontos',
-      best: 'Recorde',
-      shield: 'Escudo',
-      ice: 'Asa de gelo',
-      fire: 'Asa de fogo',
-      again: 'Jogar novamente',
-      restart: 'Reiniciar',
-      pause: 'Pausar',
-      play: 'Jogar',
-      gameOver: 'Fim de jogo',
-      newBest: 'Novo recorde!',
-      overloadSafe: 'Sobrecarga: segura',
-      overloadBuilding: 'Sobrecarga: {count}/10',
-      overloadCritical: 'Sobrecarga! {seconds}s',
-      overloadPaused: 'Sobrecarga pausada',
-    },
-    de: {
-      back: 'Zurück zur Spieleliste',
-      mode: 'Modus',
-      score: 'Punkte',
-      best: 'Bestwert',
-      shield: 'Schild',
-      ice: 'Eisflügel',
-      fire: 'Feuerflügel',
-      again: 'Nochmal spielen',
-      restart: 'Neustart',
-      pause: 'Pause',
-      play: 'Spielen',
-      gameOver: 'Spiel vorbei',
-      newBest: 'Neuer Bestwert!',
-      overloadSafe: 'Überlastung: sicher',
-      overloadBuilding: 'Überlastung: {count}/10',
-      overloadCritical: 'Überlastung! {seconds}s',
-      overloadPaused: 'Überlastung pausiert',
-    },
-    fr: {
-      back: 'Retour à la liste des jeux',
-      mode: 'Mode',
-      score: 'Score',
-      best: 'Record',
-      shield: 'Bouclier',
-      ice: 'Aile de glace',
-      fire: 'Aile de feu',
-      again: 'Rejouer',
-      restart: 'Recommencer',
-      pause: 'Pause',
-      play: 'Jouer',
-      gameOver: 'Partie terminée',
-      newBest: 'Nouveau record !',
-      overloadSafe: 'Surcharge : sûre',
-      overloadBuilding: 'Surcharge : {count}/10',
-      overloadCritical: 'Surcharge ! {seconds}s',
-      overloadPaused: 'Surcharge en pause',
-    },
-    tr: {
-      back: 'Oyun Listesine Dön',
-      mode: 'Mod',
-      score: 'Puan',
-      best: 'En iyi',
-      shield: 'Kalkan',
-      ice: 'Buz kanadı',
-      fire: 'Ateş kanadı',
-      again: 'Tekrar oyna',
-      restart: 'Yeniden başlat',
-      pause: 'Duraklat',
-      play: 'Oyna',
-      gameOver: 'Oyun bitti',
-      newBest: 'Yeni rekor!',
-      overloadSafe: 'Aşırı yük: güvenli',
-      overloadBuilding: 'Aşırı yük: {count}/10',
-      overloadCritical: 'Aşırı yük! {seconds}s',
-      overloadPaused: 'Aşırı yük duraklatıldı',
-    },
-    ru: {
-      back: 'Вернуться к списку игр',
-      mode: 'Режим',
-      score: 'Счёт',
-      best: 'Рекорд',
-      shield: 'Щит',
-      ice: 'Ледяное крыло',
-      fire: 'Огненное крыло',
-      again: 'Играть снова',
-      restart: 'Заново',
-      pause: 'Пауза',
-      play: 'Играть',
-      gameOver: 'Игра окончена',
-      newBest: 'Новый рекорд!',
-      overloadSafe: 'Перегрузка: безопасно',
-      overloadBuilding: 'Перегрузка: {count}/10',
-      overloadCritical: 'Перегрузка! {seconds}с',
-      overloadPaused: 'Перегрузка на паузе',
-    },
-    id: {
-      back: 'Kembali ke Daftar Game',
-      mode: 'Mode',
-      score: 'Skor',
-      best: 'Terbaik',
-      shield: 'Perisai',
-      ice: 'Sayap es',
-      fire: 'Sayap api',
-      again: 'Main Lagi',
-      restart: 'Mulai ulang',
-      pause: 'Jeda',
-      play: 'Main',
-      gameOver: 'Permainan selesai',
-      newBest: 'Rekor baru!',
-      overloadSafe: 'Beban: aman',
-      overloadBuilding: 'Beban: {count}/10',
-      overloadCritical: 'Kelebihan beban! {seconds}d',
-      overloadPaused: 'Beban dijeda',
-    },
-    zh: {
-      back: '返回游戏列表',
-      mode: '模式',
-      score: '得分',
-      best: '最佳',
-      shield: '护盾',
-      ice: '冰翼',
-      fire: '火翼',
-      again: '再玩一次',
-      restart: '重新开始',
-      pause: '暂停',
-      play: '继续',
-      gameOver: '游戏结束',
-      newBest: '新纪录！',
-      overloadSafe: '过载：安全',
-      overloadBuilding: '过载：{count}/10',
-      overloadCritical: '过载！{seconds}秒',
-      overloadPaused: '过载已暂停',
-    },
-    ar: {
-      back: 'العودة إلى قائمة الألعاب',
-      mode: 'النمط',
-      score: 'النتيجة',
-      best: 'الأفضل',
-      shield: 'الدرع',
-      ice: 'جناح الجليد',
-      fire: 'جناح النار',
-      again: 'العب مجددًا',
-      restart: 'إعادة البدء',
-      pause: 'إيقاف مؤقت',
-      play: 'لعب',
-      gameOver: 'انتهت اللعبة',
-      newBest: 'رقم قياسي جديد!',
-      overloadSafe: 'الحمل الزائد: آمن',
-      overloadBuilding: 'الحمل الزائد: {count}/10',
-      overloadCritical: 'حمل زائد! {seconds}ث',
-      overloadPaused: 'الحمل الزائد متوقف',
-    },
-    kr: {
-      back: '게임 목록으로 돌아가기',
-      mode: '모드',
-      score: '점수',
-      best: '최고',
-      shield: '방패',
-      ice: '얼음 날개',
-      fire: '불꽃 날개',
-      again: '다시 플레이',
-      restart: '다시 시작',
-      pause: '일시정지',
-      play: '플레이',
-      gameOver: '게임 종료',
-      newBest: '신기록!',
-      overloadSafe: '과부하: 안전',
-      overloadBuilding: '과부하: {count}/10',
-      overloadCritical: '과부하! {seconds}초',
-      overloadPaused: '과부하 일시정지',
-    },
-  };
-
+  const I18N = global.VTSStandaloneI18n;
+  if (!I18N) {
+    throw new Error('VTS standalone translations must load before the Arcade game shell.');
+  }
   let activeShellConfig = null;
-  let activeCopy = SHELL_COPY.en;
+  let activeArcadeCopy = I18N.getCopy('en').arcade;
+  let activeCopy = activeArcadeCopy.shell;
+  let gameOverOverlayState = null;
 
   function normalizeLanguage(language) {
-    const value = String(language || 'en')
-      .toLowerCase()
-      .split('-')[0];
-    return value === 'ko' ? 'kr' : SHELL_COPY[value] ? value : 'en';
+    return I18N.normalizeLocale(language);
   }
 
   function preferredLanguage() {
@@ -253,15 +44,21 @@
 
   function shellCopy(language = preferredLanguage()) {
     const normalized = normalizeLanguage(language);
-    const copy = SHELL_COPY[normalized] || SHELL_COPY.en;
-    activeCopy = copy;
+    activeArcadeCopy = I18N.getCopy(normalized).arcade;
+    activeCopy = activeArcadeCopy.shell;
     document.documentElement.lang = normalized === 'kr' ? 'ko' : normalized;
     document.documentElement.dir = normalized === 'ar' ? 'rtl' : 'ltr';
-    return copy;
+    return activeCopy;
   }
 
   function getCopy() {
     return activeCopy;
+  }
+
+  function text(key, values = {}) {
+    const template =
+      activeArcadeCopy.feedback?.[key] || I18N.getCopy('en').arcade.feedback?.[key] || key;
+    return I18N.format(template, values);
   }
 
   function preferredTheme() {
@@ -304,22 +101,35 @@
       pause.dataset.playLabel = copy.play;
       togglePauseBtn(pause, pause.dataset.paused === 'true');
     }
+    const controlCues = document.getElementById('gameControlCues');
+    if (controlCues) controlCues.innerHTML = controlCue(activeShellConfig?.controlScheme);
+  }
+
+  function controlCue(controlScheme = 'relay') {
+    const template = CONTROL_CUES[controlScheme] || CONTROL_CUES.relay;
+    return template.replace('{space}', activeCopy.spaceKey);
+  }
+
+  function localizedGameConfig(config = activeShellConfig) {
+    const localized = activeArcadeCopy.games?.[config?.modeKey];
+    return {
+      mode: localized?.mode || config?.modeKey || '',
+      title: localized?.title || '',
+      hint: localized?.hint || '',
+    };
   }
 
   function localizeGame(language = preferredLanguage()) {
     if (!activeShellConfig) return;
     const normalized = normalizeLanguage(language);
     const copy = shellCopy(normalized);
+    const game = localizedGameConfig();
     updateShellLabels(copy);
-    document
-      .getElementById('gameTitle')
-      ?.replaceChildren(document.createTextNode(activeShellConfig.title));
-    document
-      .getElementById('gameHint')
-      ?.replaceChildren(document.createTextNode(activeShellConfig.hint));
-    document
-      .getElementById('gameMode')
-      ?.replaceChildren(document.createTextNode(activeShellConfig.modeId));
+    document.getElementById('gameTitle')?.replaceChildren(document.createTextNode(game.title));
+    document.getElementById('gameHint')?.replaceChildren(document.createTextNode(game.hint));
+    document.getElementById('gameMode')?.replaceChildren(document.createTextNode(game.mode));
+    document.title = `${game.mode} - ${game.title}`;
+    refreshDynamicGameCopy();
   }
 
   function applyParentConfig(config) {
@@ -338,7 +148,7 @@
       document.getElementById('gameMode')?.replaceChildren(document.createTextNode(config.mode));
     }
     if (typeof config.title === 'string' && config.title.trim()) {
-      const mode = typeof config.mode === 'string' ? config.mode : activeShellConfig.modeId;
+      const mode = typeof config.mode === 'string' ? config.mode : localizedGameConfig().mode;
       document.title = `${mode.replace(/^.*?([A-E])$/, '$1')} - ${config.title}`;
     }
   }
@@ -352,6 +162,11 @@
 
   function materialSrc(color, type) {
     return `${ASSET_ROOT}/${color}/${type}.png`;
+  }
+
+  function materialAlt(color, type) {
+    const labels = activeArcadeCopy.materials || {};
+    return `${labels[color] || color} ${labels[type] || type}`;
   }
 
   function randomOf(arr) {
@@ -462,9 +277,26 @@
     gate.classList.add(kind === 'hurt' ? 'hurt' : 'hit');
   }
 
-  function showOverlay(title, body) {
+  function refreshDynamicGameCopy() {
+    document.querySelectorAll('.piece[data-color][data-type] img').forEach((image) => {
+      const piece = image.closest('.piece');
+      image.alt = materialAlt(piece?.dataset.color, piece?.dataset.type);
+    });
+
+    const overlay = document.getElementById('overlay');
+    if (!gameOverOverlayState || !overlay?.classList.contains('show')) return;
+    const { isNewBest, score, best } = gameOverOverlayState;
+    overlay.querySelector('h2').textContent = isNewBest
+      ? `\u2605 ${activeCopy.newBest}`
+      : activeCopy.gameOver;
+    overlay.querySelector('p').textContent =
+      `${activeCopy.score} ${score}  \u00b7  ${activeCopy.best} ${best}`;
+  }
+
+  function showOverlay(title, body, state = null) {
     const el = document.getElementById('overlay');
     if (!el) return;
+    gameOverOverlayState = state;
     el.querySelector('h2').textContent = title;
     el.querySelector('p').textContent = body;
     const rb = el.querySelector('#overlayRestart');
@@ -475,6 +307,7 @@
   function hideOverlay() {
     const el = document.getElementById('overlay');
     if (!el) return;
+    gameOverOverlayState = null;
     const rb = el.querySelector('#overlayRestart');
     if (rb) rb.style.display = 'none';
     el.classList.remove('show');
@@ -488,20 +321,10 @@
     }
   }
 
-  function mountShell({
-    modeId,
-    modeKey,
-    title,
-    titleKey,
-    hint,
-    hintKey,
-    scoreKey,
-    controlScheme = 'relay',
-    showShield = true,
-  }) {
+  function mountShell({ modeKey, scoreKey, controlScheme = 'relay', showShield = true }) {
     const copy = shellCopy();
-    activeShellConfig = { modeId, modeKey, title, titleKey, hint, hintKey };
-    const localizedModeId = modeId.replace(/^Mode\s+/, `${copy.mode} `);
+    activeShellConfig = { modeKey, controlScheme };
+    const game = localizedGameConfig(activeShellConfig);
     if (new URLSearchParams(window.location.search).get('embed') === '1') {
       document.body.classList.add('is-arcade-embed');
     }
@@ -514,16 +337,16 @@
         <div class="hud">
           <div class="game-brand-row">
             <span class="game-brand">VTS ARCADE</span>
-            <span class="mode-tag" id="gameMode">${localizedModeId}</span>
+            <span class="mode-tag" id="gameMode">${game.mode}</span>
           </div>
-          <h1 id="gameTitle">${title}</h1>
+          <h1 id="gameTitle">${game.title}</h1>
           <div class="game-brief">
             <span class="game-velo" aria-hidden="true">
               <img class="game-velo-body" src="${VELO_BODY}" alt="" />
               <img class="game-velo-helmet" src="${VELO_HELMET}" alt="" />
             </span>
-            <p class="hint" id="gameHint">${hint}</p>
-            <span class="control-cues" aria-hidden="true">${CONTROL_CUES[controlScheme] || CONTROL_CUES.relay}</span>
+            <p class="hint" id="gameHint">${game.hint}</p>
+            <span class="control-cues" id="gameControlCues" aria-hidden="true">${controlCue(controlScheme)}</span>
           </div>
           <div class="stats">
             <div class="stat gold"><b id="score">0</b><span id="scoreLabel">${copy.score}</span></div>
@@ -578,7 +401,7 @@
     }
     const img = document.createElement('img');
     img.src = materialSrc(color, type);
-    img.alt = `${color} ${type}`;
+    img.alt = materialAlt(color, type);
     img.draggable = false;
     el.appendChild(img);
     return el;
@@ -733,7 +556,7 @@
         clearInterval(interval);
         const title = isNewBest ? `★ ${activeCopy.newBest}` : activeCopy.gameOver;
         const body = `${activeCopy.score} ${score}  ·  ${activeCopy.best} ${best}`;
-        showOverlay(title, body);
+        showOverlay(title, body, { isNewBest, score, best });
       }
     }, 20);
   }
@@ -743,8 +566,8 @@
     btn.dataset.paused = paused ? 'true' : 'false';
     btn.setAttribute('aria-pressed', paused ? 'true' : 'false');
     btn.textContent = paused
-      ? `> ${btn.dataset.playLabel || 'Play'}`
-      : `|| ${btn.dataset.pauseLabel || 'Pause'}`;
+      ? `> ${btn.dataset.playLabel || activeCopy.play}`
+      : `|| ${btn.dataset.pauseLabel || activeCopy.pause}`;
   }
 
   /* ── Hero/skin icon paths for funny modes ── */
@@ -788,45 +611,20 @@
   }
 
   /* ── Funny onomatopoeia for hero fight modes ── */
-  const FIGHT_WORDS = [
-    'BONK!',
-    'WHAM!',
-    'POW!',
-    'BOOF!',
-    'SMACK!',
-    'WHAP!',
-    'THWACK!',
-    'OUCH!',
-    'DOINK!',
-    'BAM!',
-    'CLONK!',
-    'POWIE!',
-    'KA-POW!',
-    'ZOINKS!',
-    'YEOW!',
-    'BOFF!',
-    'ZAP!',
-    'WALLOP!',
-    'THUMP!',
-  ];
-  const DODGE_WORDS = ['WHOOSH!', 'MISS!', 'SWISH!', 'NYEH!', 'WHIFF!', 'SWOOSH!', 'WOOPS!'];
-  const SUPER_WORDS = [
-    '* UPPERCUT! *',
-    '* COMBO! *',
-    '* FINISHER! *',
-    '* SUPLEX! *',
-    '* MEGA!!! *',
-  ];
-
   function fightWord(kind) {
-    const pool = kind === 'super' ? SUPER_WORDS : kind === 'dodge' ? DODGE_WORDS : FIGHT_WORDS;
+    const pool =
+      kind === 'super'
+        ? activeArcadeCopy.fight.super
+        : kind === 'dodge'
+          ? activeArcadeCopy.fight.dodge
+          : activeArcadeCopy.fight.hit;
     return pool[Math.floor(Math.random() * pool.length)];
   }
-
   global.BootGame = {
     TYPES,
     COLORS,
     materialSrc,
+    materialAlt,
     WING_LEFT,
     WING_RIGHT,
     LOGO,
@@ -860,6 +658,7 @@
     animateGameOver,
     togglePauseBtn,
     getCopy,
+    text,
     randomHero,
     heroImg,
     fightWord,

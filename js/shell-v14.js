@@ -58,20 +58,48 @@
   ]);
   const moreHistoryKey = 'vtsShellMoreOpen';
 
-  const shellCopy = {
-    en: { more: 'More', moreTools: 'More tools', close: 'Close' },
-    es: { more: 'Más', moreTools: 'Más herramientas', close: 'Cerrar' },
-    pt: { more: 'Mais', moreTools: 'Mais ferramentas', close: 'Fechar' },
-    de: { more: 'Mehr', moreTools: 'Weitere Werkzeuge', close: 'Schließen' },
-    fr: { more: 'Plus', moreTools: 'Plus d’outils', close: 'Fermer' },
-    tr: { more: 'Diğer', moreTools: 'Diğer araçlar', close: 'Kapat' },
-    ru: { more: 'Ещё', moreTools: 'Другие инструменты', close: 'Закрыть' },
-    id: { more: 'Lainnya', moreTools: 'Alat lainnya', close: 'Tutup' },
-    zh: { more: '更多', moreTools: '更多工具', close: '关闭' },
-    ar: { more: 'المزيد', moreTools: 'أدوات إضافية', close: 'إغلاق' },
-    kr: { more: '더보기', moreTools: '더 많은 도구', close: '닫기' },
-  };
+  const supportedShellLanguages = new Set([
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fr',
+    'id',
+    'kr',
+    'pt',
+    'ru',
+    'tr',
+    'zh',
+  ]);
+  const fallbackShellCopy = Object.freeze({
+    more: 'More',
+    moreTools: 'More tools',
+    close: 'Close',
+    deckLabel: 'S1097 Deck',
+    toolkitLabel: 'VTS 1097 toolkit',
+    teamLine: 'VTS · State 1097',
+    badges: Object.freeze({ new: 'New', hot: 'Hot', beta: 'Beta', seasonal: 'Seasonal' }),
+    accessibility: Object.freeze({
+      primaryTools: 'Primary tools',
+      scrollTabsLeft: 'Scroll tool tabs left',
+      scrollTabsRight: 'Scroll tool tabs right',
+      installApp: 'Install app',
+      themeToggle: 'Switch light/dark theme',
+      seasonalAdmin: 'Open seasonal VTS Admin tools',
+      arcadeGames: 'Play VTS mini-games',
+      siteInfo: 'Site information',
+      quickTools: 'Quick tools',
+      notification: 'Notification',
+      backToTop: 'Back to top',
+      scrollToTop: 'Scroll to top',
+      maintenanceStatus: 'Maintenance status',
+    }),
+  });
+  let standaloneI18n = window.VTSStandaloneI18n || null;
 
+  function copyForLanguage(language) {
+    return standaloneI18n?.getCopy(language)?.shell || fallbackShellCopy;
+  }
   const shortLanguageCodes = {
     ar: 'AR',
     de: 'DE',
@@ -95,10 +123,10 @@
 
   function currentLanguage() {
     const selected = languageSelect?.value;
-    if (selected && shellCopy[selected]) return selected;
+    if (selected && supportedShellLanguages.has(selected)) return selected;
     const htmlLanguage = document.documentElement.lang?.toLowerCase().split('-')[0];
     if (htmlLanguage === 'ko') return 'kr';
-    return shellCopy[htmlLanguage] ? htmlLanguage : 'en';
+    return supportedShellLanguages.has(htmlLanguage) ? htmlLanguage : 'en';
   }
 
   function sourceFor(id) {
@@ -360,7 +388,8 @@
 
   function applyLocale() {
     const language = currentLanguage();
-    const copy = shellCopy[language] || shellCopy.en;
+    const copy = copyForLanguage(language);
+    const accessibility = copy.accessibility || fallbackShellCopy.accessibility;
     const moreLabel = moreButton.querySelector('[data-shell-more-label]');
     const moreTitle = morePanel.querySelector('[data-shell-more-title]');
 
@@ -370,6 +399,61 @@
     morePanel.setAttribute('aria-label', copy.moreTools);
     moreClose.setAttribute('aria-label', copy.close);
     moreClose.setAttribute('title', copy.close);
+
+    const commandHeader = document.querySelector('#app .command-header');
+    commandHeader?.setAttribute('aria-label', copy.toolkitLabel);
+    const maintenanceKicker = document.querySelector('.maintenance-preload .maintenance-kicker');
+    if (maintenanceKicker) maintenanceKicker.textContent = copy.toolkitLabel;
+    const deckLabel = commandHeader?.querySelector('.command-kicker');
+    if (deckLabel) deckLabel.textContent = copy.deckLabel;
+    const teamLine = commandHeader?.querySelector('.command-team-line');
+    if (teamLine) teamLine.textContent = copy.teamLine;
+    const mainLogo = commandHeader?.querySelector('.main-logo');
+    const appTitle = document.getElementById('appTitle')?.textContent?.trim();
+    if (mainLogo) mainLogo.alt = `${appTitle || 'Hero Combo Creator'} - VTS 1097`;
+    if (appTitle) document.title = `${appTitle} - VTS 1097`;
+
+    document.querySelectorAll('.tab-badge-new:not([data-i18n])').forEach((badge) => {
+      badge.textContent = copy.badges.new;
+    });
+    document.querySelectorAll('.tab-badge-hot:not([data-i18n])').forEach((badge) => {
+      badge.textContent = copy.badges.hot;
+    });
+    document.querySelectorAll('.tab-badge-beta:not([data-i18n])').forEach((badge) => {
+      badge.textContent = badge.closest('.seasonal-admin-wrap')
+        ? copy.badges.seasonal
+        : copy.badges.beta;
+    });
+
+    const ariaLabels = [
+      ['.maintenance-preload .maintenance-card', accessibility.maintenanceStatus],
+      ['.tool-nav-shell', accessibility.primaryTools],
+      ['#tabScrollLeft', accessibility.scrollTabsLeft],
+      ['#tabScrollRight', accessibility.scrollTabsRight],
+      ['#installAppBtn', accessibility.installApp],
+      ['#themeToggle', accessibility.themeToggle],
+      ['#tabOcrDashboard', accessibility.seasonalAdmin],
+      ['#tabArcade', accessibility.arcadeGames],
+      ['.roc-footer.site-footer', accessibility.siteInfo],
+      ['.footer-tool-links', accessibility.quickTools],
+      ['#messageBox', accessibility.notification],
+      ['#scrollTopBtn', accessibility.scrollToTop],
+    ];
+    ariaLabels.forEach(([selector, value]) => {
+      if (value) document.querySelector(selector)?.setAttribute('aria-label', value);
+    });
+
+    const titles = [
+      ['#installAppBtn', accessibility.installApp],
+      ['#themeToggle', accessibility.themeToggle],
+      ['#tabOcrDashboard', accessibility.seasonalAdmin],
+      ['#tabArcade', accessibility.arcadeGames],
+      ['#scrollTopBtn', accessibility.backToTop],
+    ];
+    titles.forEach(([selector, value]) => {
+      if (value) document.querySelector(selector)?.setAttribute('title', value);
+    });
+
     if (languageShell)
       languageShell.dataset.shellLang = shortLanguageCodes[language] || language.toUpperCase();
     const selectedOption = languageSelect?.selectedOptions?.[0];
@@ -554,7 +638,6 @@
     focusTabDestination(activeTabName(), { scroll: true });
   });
   layoutNavigation();
-  document.documentElement.dataset.shellNavReady = '1';
 
   let sourceSyncQueued = false;
   const sourceObserver = new MutationObserver(() => {
@@ -674,4 +757,15 @@
   window.vtsShellCloseMore = (options) => dismissMore(options);
 
   applyLocale();
+  if (!standaloneI18n) {
+    import('./i18n/standalone-copy.js')
+      .then(() => {
+        standaloneI18n = window.VTSStandaloneI18n || null;
+        applyLocale();
+      })
+      .catch(() => {
+        /* English fallback remains usable if the optional domain copy fails. */
+      });
+  }
+  document.documentElement.dataset.shellNavReady = '1';
 })();

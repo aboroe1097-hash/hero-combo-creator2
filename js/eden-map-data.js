@@ -949,14 +949,18 @@ export function applyEdenDataset(id) {
   return true;
 }
 
-export function syncEdenSectorSelect(selectEl, { fullLabel = 'Full Map' } = {}) {
+export function syncEdenSectorSelect(
+  selectEl,
+  { fullLabel = 'Full Map', getSectorLabel = (_key, label) => label } = {}
+) {
   const el = selectEl || document.getElementById('edenSectorSelect');
   if (!el) return;
   const prev = el.value;
   const sectors = getEdenSectors();
   const opts = [`<option value="FULL">${fullLabel}</option>`];
   for (const [key, sec] of Object.entries(sectors).sort((a, b) => a[0].localeCompare(b[0]))) {
-    const label = sec.label ? `${sec.label} (${key})` : key;
+    const display = getSectorLabel(key, sec.label || `${key} Sector`);
+    const label = display ? `${display} (${key})` : key;
     opts.push(`<option value="${key}">${label}</option>`);
   }
   el.innerHTML = opts.join('');
@@ -1101,10 +1105,10 @@ export function getTempleCoords() {
 }
 
 export const X1_PLANNING_TARGETS = [
-  { name: 'Temple Push', team: 'Alliance', x: 800, y: 800 },
-  { name: 'NC1 Cap', team: 'North', x: 551, y: 660 },
-  { name: 'W Gate Line', team: 'West', x: 280, y: 720 },
-  { name: 'E Stronghold', team: 'East', x: 1280, y: 640 },
-  { name: 'S Desert Town', team: 'South', x: 620, y: 1180 },
-  { name: 'NE Rally', team: 'North', x: 980, y: 420 },
+  { id: 'templePush', name: 'Temple Push', team: 'Alliance', x: 800, y: 800 },
+  { id: 'nc1Capital', name: 'NC1 Cap', team: 'North', x: 551, y: 660 },
+  { id: 'westGateLine', name: 'W Gate Line', team: 'West', x: 280, y: 720 },
+  { id: 'eastStronghold', name: 'E Stronghold', team: 'East', x: 1280, y: 640 },
+  { id: 'southDesertTown', name: 'S Desert Town', team: 'South', x: 620, y: 1180 },
+  { id: 'northEastRally', name: 'NE Rally', team: 'North', x: 980, y: 420 },
 ];

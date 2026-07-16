@@ -34,6 +34,7 @@ import {
 } from './state.js';
 import { callUi } from './ui-bridge.js';
 import { HERO_DRAG_MIME } from './constants.js';
+import { comboSkinTypeText, comboToolsText } from './i18n/combo-tools/index.js';
 
 let db = null;
 let touchDragHero = null;
@@ -42,9 +43,20 @@ let touchDragCandidate = null;
 let touchDragTimer = null;
 let suppressTouchClickHero = null;
 let keyboardSelectedHero = null;
+let savedComboRecords = [];
+let savedCombosLoaded = false;
+let savedComboDeleteContext = null;
 
 const TOUCH_DRAG_HOLD_MS = 180;
 const TOUCH_SCROLL_SLOP_PX = 10;
+
+function comboCopy(id, values = {}) {
+  return comboToolsText(id, values, currentLanguage);
+}
+
+function skinTypeCopy(type) {
+  return comboSkinTypeText(type, currentLanguage);
+}
 
 function clearTouchDragCandidate() {
   if (touchDragTimer) window.clearTimeout(touchDragTimer);
@@ -78,7 +90,8 @@ function getSkinBadgeHtml(hero, activeSkinsOnly) {
   const skinCount = getHeroSkins(hero.name).length || 1;
   const label = hero.skinTypeIcon || typeInfo.icon || `S${skinCount > 1 ? skinCount : ''}`;
   const color = hero.skinTypeColor || typeInfo.color || '#f59e0b';
-  const title = `${hero.skinName || skin.name || 'Hero skin'} (${hero.skinType || skin.type || 'Skin'})`;
+  const skinType = hero.skinType || skin.type;
+  const title = `${hero.skinName || skin.name || comboCopy('builder.heroSkin')} (${skinType ? skinTypeCopy(skinType) : comboCopy('builder.skin')})`;
   return `<span class="generator-skin-badge generator-skin-badge--priority" title="${escapeHtml(title)}" style="--skin-color:${escapeHtml(color)};--skin-gradient:${escapeHtml(`${color},#fbbf24`)}">${escapeHtml(label)}</span>`;
 }
 
@@ -102,8 +115,8 @@ function restoreComboSlot(idx, heroName) {
   updateManualComboScore();
   announceManualCombo(
     currentCombo[idx]
-      ? `${currentCombo[idx]} restored to combo slot ${idx + 1}.`
-      : `Combo slot ${idx + 1} restored to empty.`
+      ? comboCopy('builder.restoredHero', { hero: currentCombo[idx], slot: idx + 1 })
+      : comboCopy('builder.restoredEmpty', { slot: idx + 1 })
   );
 }
 
@@ -115,21 +128,21 @@ export function placeHeroInSlot(slot, heroName, idx) {
       'showAboModal',
       t.manualNoDuplicateHero || 'This hero is already used in your current combo.'
     );
-    announceManualCombo(`${heroName} is already in this combo.`);
+    announceManualCombo(comboCopy('builder.alreadyInCombo', { hero: heroName }));
     return;
   }
   const previousHero = currentCombo[idx] || null;
   if (previousHero && previousHero !== heroName) {
     pushUndoAction({
-      label: `Combo slot ${idx + 1}`,
-      message: `Combo slot ${idx + 1} changed.`,
+      label: comboCopy('builder.slotLabel', { slot: idx + 1 }),
+      message: comboCopy('builder.slotChanged', { slot: idx + 1 }),
       undo: () => restoreComboSlot(idx, previousHero),
     });
   }
   currentCombo[idx] = heroName;
   updateComboSlotDisplay(slot, heroName, idx);
   updateManualComboScore();
-  announceManualCombo(`${heroName} placed in combo slot ${idx + 1}.`);
+  announceManualCombo(comboCopy('builder.placedHero', { hero: heroName, slot: idx + 1 }));
 }
 
 function createTouchGhost(card, touch) {
@@ -272,7 +285,7 @@ export function renderAvailableHeroes() {
       const tagColor = seasonColors[hero.season] || '#f97316';
       const originTag =
         hero.releaseSeason && hero.releaseSeason !== hero.season
-          ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
+          ? `<span class="hero-origin-tag" title="${escapeHtml(comboCopy('builder.originalRelease', { season: hero.releaseSeason }))}">${escapeHtml(hero.releaseSeason)}</span>`
           : '';
       card.innerHTML = `
         <div class="hero-card-badges">
@@ -440,7 +453,10 @@ export function updateComboSlotDisplay(slot, name, idx) {
   }
   if (name) {
     slot.dataset.heroName = name;
-    slot.setAttribute('aria-label', `Combo slot ${idx + 1}: ${name}. Press Delete to clear.`);
+    slot.setAttribute(
+      'aria-label',
+      comboCopy('builder.filledSlotAria', { slot: idx + 1, hero: name })
+    );
     slot.innerHTML = `
       <img src="${escapeHtml(hero.imageUrl || getHeroImageUrl(name))}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy" draggable="false">
       <span class="slot-name-overlay">
@@ -449,10 +465,7 @@ export function updateComboSlotDisplay(slot, name, idx) {
     slot.classList.add('combo-slot--filled');
   } else {
     delete slot.dataset.heroName;
-    slot.setAttribute(
-      'aria-label',
-      `Combo slot ${idx + 1}: empty. Select a hero, then press Enter here to place.`
-    );
+    slot.setAttribute('aria-label', comboCopy('builder.emptySlotAria', { slot: idx + 1 }));
     slot.innerHTML = `
       <div class="combo-slot-placeholder">
         <span class="combo-plus-icon">+</span>
@@ -508,7 +521,10 @@ export function updateManualComboScore() {
       </div>`
     : '';
   scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(currentCombo, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
-  if (info) announceManualCombo(`Combo score ${info.score}, rank ${info.rank}.`);
+  if (info)
+    announceManualCombo(
+      comboCopy('builder.comboScoreRank', { score: info.score, rank: info.rank })
+    );
 }
 
 export function setupKeyboardComboSlots() {
@@ -523,7 +539,7 @@ export function setupKeyboardComboSlots() {
         currentCombo[idx] = null;
         updateComboSlotDisplay(slot, null, idx);
         updateManualComboScore();
-        announceManualCombo(`Combo slot ${idx + 1} cleared.`);
+        announceManualCombo(comboCopy('builder.slotCleared', { slot: idx + 1 }));
         return;
       }
       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -532,9 +548,97 @@ export function setupKeyboardComboSlots() {
         placeHeroInSlot(slot, keyboardSelectedHero, idx);
         return;
       }
-      announceManualCombo('Select a hero card first, then focus this slot to place it.');
+      announceManualCombo(comboCopy('builder.selectHeroFirst'));
     });
   });
+}
+
+function renderSavedComboRows() {
+  if (!savedCombosLoaded || !savedCombosEl) return;
+  const t = translations[currentLanguage] || translations.en;
+  savedCombosCache.length = 0;
+  savedCombosEl.replaceChildren();
+  noCombosMessage?.classList.toggle('hidden', savedComboRecords.length > 0);
+
+  savedComboRecords.forEach(({ id, heroes }, index) => {
+    const deleteContext = savedComboDeleteContext;
+    savedCombosCache.push(heroes);
+    const row = document.createElement('div');
+    row.className = 'saved-combo-display';
+    row.innerHTML = `
+      <span class="saved-combo-number">${index + 1}</span>
+      <div class="saved-combo-slots"></div>
+    `;
+
+    const slots = row.querySelector('.saved-combo-slots');
+    heroes.forEach((name) => {
+      const item = document.createElement('div');
+      item.className = 'saved-combo-slot-item';
+      item.innerHTML = `
+        <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" loading="lazy">
+        <span>${escapeHtml(name)}</span>
+      `;
+      slots.appendChild(item);
+    });
+
+    const rankInfo = getComboRankInfo(heroes);
+    const counterCount = getCounterCount(heroes);
+    if (rankInfo || counterCount) {
+      const label = t.generatorScoreLabel || 'Score:';
+      const scoreBox = document.createElement('div');
+      scoreBox.className = 'gen-score-panel saved-combo-scorebox';
+      const scoreHtml = rankInfo
+        ? `<div class="gen-score-main">
+            <span class="gen-score-meta">${escapeHtml(label)}</span>
+            <span class="gen-score-value">${rankInfo.score}</span>
+          </div>`
+        : '';
+      scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
+      row.appendChild(scoreBox);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'remove-combo-btn';
+    delBtn.type = 'button';
+    delBtn.textContent = 'X';
+    const deleteLabel = (t.manualBuilderDeleteComboAria || 'Delete saved combo: {heroes}').replace(
+      '{heroes}',
+      heroes.join(', ')
+    );
+    delBtn.setAttribute('aria-label', deleteLabel);
+    delBtn.title = deleteLabel;
+    delBtn.disabled = !deleteContext;
+    delBtn.onclick = () => {
+      if (!deleteContext) return;
+      const activeT = translations[currentLanguage] || translations.en;
+      callUi('showAboModal', activeT.messageConfirmRemoveCombo, async () => {
+        pushUndoAction({
+          label: comboCopy('builder.savedCombo'),
+          undo: async () => {
+            const { collection, addDoc, serverTimestamp } = await importFirestore();
+            await addDoc(collection(deleteContext.db, `users/${deleteContext.userId}/bestCombos`), {
+              heroes: [...heroes],
+              timestamp: serverTimestamp(),
+            });
+          },
+        });
+        await deleteContext.deleteDoc(
+          deleteContext.doc(deleteContext.db, `users/${deleteContext.userId}/bestCombos`, id)
+        );
+      });
+    };
+
+    row.appendChild(delBtn);
+    savedCombosEl.appendChild(row);
+  });
+}
+
+export function refreshManualComboLocalization() {
+  document
+    .querySelectorAll('.combo-slot')
+    .forEach((slot, index) => updateComboSlotDisplay(slot, currentCombo[index], index));
+  updateManualComboScore();
+  renderSavedComboRows();
 }
 
 export async function saveCombo() {
@@ -580,6 +684,7 @@ export async function setupFirestoreListener() {
   db = _db;
 
   const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await importFirestore();
+  savedComboDeleteContext = { db: _db, deleteDoc, doc, userId };
 
   const q = query(
     collection(db, `users/${userId}/bestCombos`),
@@ -591,79 +696,13 @@ export async function setupFirestoreListener() {
   builderFirestoreUnsub = onSnapshot(
     q,
     (snap) => {
-      savedCombosCache.length = 0;
-      savedCombosEl.innerHTML = '';
-      noCombosMessage.classList.toggle('hidden', !snap.empty);
-
-      let counter = 1;
+      savedComboRecords = [];
       snap.forEach((d) => {
         const heroes = d.data().heroes || [];
-        savedCombosCache.push(heroes);
-
-        const row = document.createElement('div');
-        row.className = 'saved-combo-display';
-        row.innerHTML = `
-        <span class="saved-combo-number">${counter}</span>
-        <div class="saved-combo-slots"></div>
-      `;
-
-        const slots = row.querySelector('.saved-combo-slots');
-        heroes.forEach((name) => {
-          const item = document.createElement('div');
-          item.className = 'saved-combo-slot-item';
-          item.innerHTML = `
-          <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" loading="lazy">
-          <span>${escapeHtml(name)}</span>
-        `;
-          slots.appendChild(item);
-        });
-
-        const rankInfo = getComboRankInfo(heroes);
-        const counterCount = getCounterCount(heroes);
-        if (rankInfo || counterCount) {
-          const t = translations[currentLanguage] || translations.en;
-          const label = t.generatorScoreLabel || 'Score:';
-          const scoreBox = document.createElement('div');
-          scoreBox.className = 'gen-score-panel saved-combo-scorebox';
-          const scoreHtml = rankInfo
-            ? `<div class="gen-score-main">
-              <span class="gen-score-meta">${escapeHtml(label)}</span>
-              <span class="gen-score-value">${rankInfo.score}</span>
-            </div>`
-            : '';
-          scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
-          row.appendChild(scoreBox);
-        }
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'remove-combo-btn';
-        delBtn.type = 'button';
-        delBtn.textContent = 'X';
-        const t = translations[currentLanguage] || translations.en;
-        const deleteLabel = (
-          t.manualBuilderDeleteComboAria || 'Delete saved combo: {heroes}'
-        ).replace('{heroes}', heroes.join(', '));
-        delBtn.setAttribute('aria-label', deleteLabel);
-        delBtn.title = deleteLabel;
-        delBtn.onclick = () =>
-          callUi('showAboModal', t.messageConfirmRemoveCombo, async () => {
-            pushUndoAction({
-              label: 'Saved combo',
-              undo: async () => {
-                const { collection, addDoc, serverTimestamp } = await importFirestore();
-                await addDoc(collection(db, `users/${userId}/bestCombos`), {
-                  heroes: [...heroes],
-                  timestamp: serverTimestamp(),
-                });
-              },
-            });
-            await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
-          });
-
-        row.appendChild(delBtn);
-        savedCombosEl.appendChild(row);
-        counter++;
+        savedComboRecords.push({ id: d.id, heroes });
       });
+      savedCombosLoaded = true;
+      renderSavedComboRows();
     },
     (err) => {
       const code = String(err?.code || '');
@@ -673,6 +712,8 @@ export async function setupFirestoreListener() {
       } else {
         console.warn('[builder] saved combos listener failed:', message);
       }
+      savedComboRecords = [];
+      savedCombosLoaded = true;
       savedCombosCache.length = 0;
       if (savedCombosEl) savedCombosEl.innerHTML = '';
       noCombosMessage?.classList.remove('hidden');

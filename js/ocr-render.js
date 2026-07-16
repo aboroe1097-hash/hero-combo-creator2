@@ -26,14 +26,10 @@ import {
 } from './contribution-weighting.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 
 function adminT(key, vars = {}) {
-  let lang = 'en';
-  try {
-    lang = localStorage.getItem('vts_hero_lang') || 'en';
-  } catch {
-    // Storage can be unavailable in restricted browser contexts.
-  }
+  const lang = resolveRuntimeLocale();
   const dictionaries = window.VTS_TRANSLATIONS || translations;
   let text =
     dictionaries[lang]?.[key] ||
@@ -257,7 +253,7 @@ function canonicalPlayerName(player, attackPlayers = []) {
   return (
     resolveCanonicalPlayerName(player, { attackPlayers }) ||
     String(rawName || '').trim() ||
-    'Unknown Player'
+    adminT('adminUnknown')
   );
 }
 
@@ -266,7 +262,7 @@ function canonicalAggregationName(player, attackPlayers = []) {
   return (
     resolveCanonicalPlayerName(player, { attackPlayers }) ||
     String(rawName || '').trim() ||
-    'Unknown Player'
+    adminT('adminUnknown')
   );
 }
 
@@ -407,14 +403,14 @@ function buildActiveAttackView(attacks) {
     if (selectedAttackId && !hasSelectedAttack) {
       selectedAttackId = '';
       if (typeof window.showToast === 'function') {
-        window.showToast('Selected target no longer exists. Showing all targets.', 'info', 2600);
+        window.showToast(adminT('adminSelectedTargetMissing'), 'info', 2600);
       }
     }
     const signature = sortedAttacks
       .map((a) => `${a.id}:${a.game_time}:${structureKey(a)}`)
       .join('|');
     if (filterEl.dataset.attsSignature !== signature) {
-      let opts = '<option value="">All Uploaded Targets</option>';
+      let opts = `<option value="">${esc(adminT('adminFilterAll'))}</option>`;
       sortedAttacks.forEach((a) => {
         const label = `${structureLabel(a)} (${displayGameTime(a.game_time)})`;
         opts += `<option value="${esc(a.id)}">${esc(label)}</option>`;
@@ -485,10 +481,11 @@ function setAnalyticsEmpty() {
     'dashStreaks',
   ].forEach((id) => {
     const el = $id(id);
-    if (el) el.innerHTML = '<div class="dash-empty">No attack data yet</div>';
+    if (el)
+      el.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNoAttackData'))}</div>`;
   });
   const summary = $id('dashAnalyticsSummary');
-  if (summary) summary.innerHTML = '<span>No data</span>';
+  if (summary) summary.innerHTML = `<span>${esc(adminT('adminNoData'))}</span>`;
 }
 
 function animateAnalyticsCards() {
@@ -547,14 +544,14 @@ function renderStructurePerformance(attacks) {
     .sort((a, b) => b.total - a.total || b.attacks - a.attacks || a.label.localeCompare(b.label));
 
   if (!rows.length) {
-    host.innerHTML = '<div class="dash-empty">No structure data yet</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNoStructureData'))}</div>`;
     return;
   }
 
   const max = Math.max(...rows.map((r) => r.total), 1);
   const activeRow = rows.find((r) => r.key === state.structureFilterKey);
   const filterNote = activeRow
-    ? `<div class="dash-analytics-filter-note">Leaderboard filtered by <strong>${esc(activeRow.label)}</strong><button id="dashClearStructureFilter" type="button">Clear</button></div>`
+    ? `<div class="dash-analytics-filter-note">${esc(adminT('adminLeaderboardFilteredBy'))} <strong>${esc(activeRow.label)}</strong><button id="dashClearStructureFilter" type="button">${esc(adminT('adminTerminalClear'))}</button></div>`
     : '';
 
   host.innerHTML =
@@ -567,7 +564,7 @@ function renderStructurePerformance(attacks) {
       <span class="dash-structure-bar" style="width:${pct}%"></span>
       <span class="dash-structure-main">
         <strong>${esc(row.label)}</strong>
-        <span>${row.attacks} hits · ${compactValue(row.avgDemo)} avg demo · ${row.avgAttendance} avg players</span>
+        <span>${esc(adminT('adminStructureRowSummary', { hits: row.attacks, demo: compactValue(row.avgDemo), players: row.avgAttendance }))}</span>
       </span>
       <span class="dash-structure-side">
         <strong>${compactValue(row.total)}</strong>
@@ -598,7 +595,7 @@ function renderPlayerTrends(attacks, psum) {
   const ordered = sortAttacksChrono(attacks).slice(-12);
   const top = psum.slice(0, 6);
   if (!ordered.length || !top.length) {
-    host.innerHTML = '<div class="dash-empty">No player trend data yet</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNoPlayerTrends'))}</div>`;
     return;
   }
 
@@ -620,7 +617,7 @@ function renderPlayerTrends(attacks, psum) {
       return `<div class="dash-trend-row">
       <div class="dash-trend-person">
         <strong>${renderTaggedPlayerName(player)}</strong>
-        <span>${player.participation_count} hits · ${compactValue(player.total_demolition)}</span>
+        <span>${esc(adminT('adminPlayerHitSummary', { hits: player.participation_count, demo: compactValue(player.total_demolition) }))}</span>
       </div>
       ${renderSparkline(vals, color)}
       <span class="dash-trend-delta ${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '+' : ''}${compactValue(delta)}</span>
@@ -639,7 +636,15 @@ function attackHour(attack) {
 function renderHeatmap(attacks) {
   const host = $id('dashHeatmap');
   if (!host) return;
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekdays = [
+    'edenX1DaySun',
+    'edenX1DayMon',
+    'edenX1DayTue',
+    'edenX1DayWed',
+    'edenX1DayThu',
+    'edenX1DayFri',
+    'edenX1DaySat',
+  ].map((key) => adminT(key));
   const buckets = Array.from({ length: 12 }, (_, index) => {
     const from = index * 2;
     const to = from + 1;
@@ -672,7 +677,7 @@ function renderHeatmap(attacks) {
   });
 
   if (!cells.size) {
-    host.innerHTML = '<div class="dash-empty">No timestamped attacks yet</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNoTimestampedAttacks'))}</div>`;
     return;
   }
 
@@ -692,13 +697,12 @@ function renderHeatmap(attacks) {
       };
       const participants = cell.players.size;
       const heat = participants ? (0.15 + (participants / max) * 0.85).toFixed(2) : 0;
-      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${day} ${bucket.fullLabel}: ${participants} unique players, ${cell.hits} player rows, ${cell.attacks} uploaded targets, ${compactValue(cell.demo)} demo">
+      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${esc(adminT('adminHeatmapCellTitle', { day, window: bucket.fullLabel, players: participants, rows: cell.hits, targets: cell.attacks, demo: compactValue(cell.demo) }))}">
         ${participants ? `<strong>${participants}</strong><small>${compactValue(cell.demo)}</small>` : ''}
       </span>`;
     });
   });
-  html +=
-    '</div><div class="dash-analytics-hint">Cells show unique players and total demolition by 2-hour game-time window. Hover for uploaded targets and player-row counts.</div>';
+  html += `</div><div class="dash-analytics-hint">${esc(adminT('adminHeatmapHint'))}</div>`;
   host.innerHTML = html;
 }
 
@@ -706,7 +710,7 @@ function renderDistribution(attacks) {
   const host = $id('dashHitDistribution');
   if (!host) return;
   const buckets = [
-    { label: 'Below 5K', min: 0, max: 5000 },
+    { label: adminT('adminDistributionBelow5K'), min: 0, max: 5000 },
     { label: '5K-10K', min: 5000, max: 10000 },
     { label: '10K-25K', min: 10000, max: 25000 },
     { label: '25K-50K', min: 25000, max: 50000 },
@@ -733,7 +737,7 @@ function renderDistribution(attacks) {
 
   const totalHits = buckets.reduce((sum, b) => sum + b.count, 0);
   if (!totalHits) {
-    host.innerHTML = '<div class="dash-empty">No hit values yet</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNoHitValues'))}</div>`;
     return;
   }
   const maxCount = Math.max(...buckets.map((b) => b.count), 1);
@@ -750,7 +754,7 @@ function renderDistribution(attacks) {
     </div>`;
       })
       .join('') +
-    `<div class="dash-analytics-hint">${totalHits.toLocaleString()} valid player hit rows · ${compactValue(buckets.reduce((sum, b) => sum + b.total, 0))} demolition total · ${compactValue(buckets.reduce((sum, b) => sum + b.total, 0) / totalHits)} avg per row${ignoredRows ? ` · ${ignoredRows.toLocaleString()} zero/blank OCR rows ignored` : ''}.</div>`;
+    `<div class="dash-analytics-hint">${esc(adminT('adminDistributionSummary', { rows: totalHits.toLocaleString(), total: compactValue(buckets.reduce((sum, b) => sum + b.total, 0)), average: compactValue(buckets.reduce((sum, b) => sum + b.total, 0) / totalHits), ignored: ignoredRows ? adminT('adminDistributionIgnoredRows', { count: ignoredRows.toLocaleString() }) : '' }))}</div>`;
 }
 
 function average(values) {
@@ -774,7 +778,7 @@ function renderConsistency(psum) {
     .filter(Boolean);
 
   if (!scored.length) {
-    host.innerHTML = '<div class="dash-empty">Need at least two hits per player</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNeedTwoHits'))}</div>`;
     return;
   }
 
@@ -791,13 +795,13 @@ function renderConsistency(psum) {
     .slice(0, 4);
   const list = (title, rows, kind) => `<div class="dash-insight-list">
     <strong>${title}</strong>
-    ${rows.length ? rows.map((p) => `<span><em>${renderTaggedPlayerName(p)}</em><b class="${kind}">${kind === 'steady' ? `${p.steadyPercent}% steady` : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : '<span class="muted">Not enough movement yet</span>'}
+    ${rows.length ? rows.map((p) => `<span><em>${renderTaggedPlayerName(p)}</em><b class="${kind}">${kind === 'steady' ? esc(adminT('adminConsistencySteady', { percent: p.steadyPercent })) : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : `<span class="muted">${esc(adminT('adminConsistencyNoMovement'))}</span>`}
   </div>`;
 
   host.innerHTML =
-    list('Most consistent', consistent, 'steady') +
-    list('Biggest improvers', improvers, 'up') +
-    list('Decliners to watch', decliners, 'down');
+    list(adminT('adminConsistencyMostConsistent'), consistent, 'steady') +
+    list(adminT('adminConsistencyBiggestImprovers'), improvers, 'up') +
+    list(adminT('adminConsistencyDecliners'), decliners, 'down');
 }
 
 function renderAllianceInsights(psum) {
@@ -808,8 +812,7 @@ function renderAllianceInsights(psum) {
     : null;
   const roster = latest?.members || [];
   if (!roster.length) {
-    host.innerHTML =
-      '<div class="dash-empty">No roster snapshot yet. Add a roster to compare participation gaps.</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminAnalyticsNoRosterSnapshot'))}</div>`;
     return;
   }
 
@@ -829,8 +832,9 @@ function renderAllianceInsights(psum) {
   rosterRows.forEach((row) => {
     const label =
       row.alliance >= 0
-        ? state.allianceList?.[row.alliance] || `Team ${row.alliance + 1}`
-        : 'Unassigned';
+        ? state.allianceList?.[row.alliance] ||
+          adminT('adminRosterTeamNumber', { number: row.alliance + 1 })
+        : adminT('adminRosterUnassigned');
     const current = byAlliance.get(label) || { total: 0, active: 0 };
     current.total++;
     if (participantNorm.has(row.norm)) current.active++;
@@ -840,13 +844,13 @@ function renderAllianceInsights(psum) {
 
   host.innerHTML = `
     <div class="dash-roster-stats">
-      <span><strong>${rosterRows.length}</strong><small>Roster</small></span>
-      <span><strong>${rosterRows.length - missing.length}</strong><small>Active</small></span>
-      <span><strong>${missing.length}</strong><small>Missing</small></span>
-      <span><strong>${unmapped.length}</strong><small>Unmapped</small></span>
+      <span><strong>${rosterRows.length}</strong><small>${esc(adminT('adminBtnRoster'))}</small></span>
+      <span><strong>${rosterRows.length - missing.length}</strong><small>${esc(adminT('adminRosterActive'))}</small></span>
+      <span><strong>${missing.length}</strong><small>${esc(adminT('adminRosterMissing'))}</small></span>
+      <span><strong>${unmapped.length}</strong><small>${esc(adminT('adminRosterUnmapped'))}</small></span>
     </div>
     <div class="dash-insight-list">
-      <strong>Alliance participation</strong>
+      <strong>${esc(adminT('adminAllianceParticipation'))}</strong>
       ${[...byAlliance.entries()]
         .map(([label, stat]) => {
           const pct = stat.total ? Math.round((stat.active / stat.total) * 100) : 0;
@@ -854,9 +858,9 @@ function renderAllianceInsights(psum) {
         })
         .join('')}
     </div>
-    <div class="dash-analytics-hint">${trustedMisses ? `${trustedMisses} trusted members did not appear in the filtered data.` : 'No trusted roster gaps detected in this view.'}${
+    <div class="dash-analytics-hint">${esc(trustedMisses ? adminT('adminTrustedRosterGaps', { count: trustedMisses }) : adminT('adminNoTrustedRosterGaps'))}${
       unmapped.length
-        ? ` Unmapped hits: ${unmapped
+        ? ` ${esc(adminT('adminUnmappedHits'))}: ${unmapped
             .slice(0, 4)
             .map((p) => renderTaggedPlayerName(p))
             .join(', ')}${unmapped.length > 4 ? '...' : ''}`
@@ -869,7 +873,7 @@ function renderStreaks(attacks, psum) {
   if (!host) return;
   const ordered = sortAttacksChrono(attacks);
   if (!ordered.length) {
-    host.innerHTML = '<div class="dash-empty">No attacks yet</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminNoAttacksYet'))}</div>`;
     return;
   }
   const attackSets = ordered.map((a) => {
@@ -917,12 +921,12 @@ function renderStreaks(attacks, psum) {
 
   host.innerHTML = `<div class="dash-streak-columns">
     <div class="dash-insight-list">
-      <strong>Current streaks</strong>
-      ${top.length ? top.map((r) => `<span><em>${renderTaggedPlayerName(r)}</em><b class="up">${r.streak} in a row</b></span>`).join('') : '<span class="muted">No active streaks yet</span>'}
+      <strong>${esc(adminT('adminCurrentStreaks'))}</strong>
+      ${top.length ? top.map((r) => `<span><em>${renderTaggedPlayerName(r)}</em><b class="up">${esc(adminT('adminStreakInRow', { count: r.streak }))}</b></span>`).join('') : `<span class="muted">${esc(adminT('adminNoActiveStreaks'))}</span>`}
     </div>
     <div class="dash-insight-list">
-      <strong>At risk</strong>
-      ${atRisk.length ? atRisk.map((r) => `<span><em>${renderTaggedPlayerName(r)}</em><b class="down">missed last ${Math.min(3, attackSets.length)}</b></span>`).join('') : '<span class="muted">No one missed the latest run window</span>'}
+      <strong>${esc(adminT('adminAtRisk'))}</strong>
+      ${atRisk.length ? atRisk.map((r) => `<span><em>${renderTaggedPlayerName(r)}</em><b class="down">${esc(adminT('adminMissedLast', { count: Math.min(3, attackSets.length) }))}</b></span>`).join('') : `<span class="muted">${esc(adminT('adminNoMissedLatestWindow'))}</span>`}
     </div>
   </div>`;
 }
@@ -938,9 +942,9 @@ function renderAnalytics(attacks, psum) {
   const summary = $id('dashAnalyticsSummary');
   if (summary) {
     summary.innerHTML = `
-      <span><strong>${attacks.length}</strong><small>Structures</small></span>
-      <span><strong>${psum.length}</strong><small>Players</small></span>
-      <span><strong>${compactValue(totalDemo)}</strong><small>Demo</small></span>`;
+      <span><strong>${attacks.length}</strong><small>${esc(adminT('adminAnalyticsStructures'))}</small></span>
+      <span><strong>${psum.length}</strong><small>${esc(adminT('edenX1ModalPlayers'))}</small></span>
+      <span><strong>${compactValue(totalDemo)}</strong><small>${esc(adminT('adminAnalyticsDemo'))}</small></span>`;
   }
   renderStructurePerformance(attacks);
   renderPlayerTrends(attacks, psum);
@@ -1456,18 +1460,18 @@ function renderSpecialOpsCards() {
   return `
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-banners">
       <span class="dash-ops-label">${esc(adminT('adminBannersTab'))}</span>
-      <strong>${bannerRows ? `${bannerRows} names` : 'No records'}</strong>
-      <p>${bannerRecords.length} upload${bannerRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(bannerRecords)} matched${bannerLatest ? ` &middot; latest ${esc(bannerLatest.date || 'saved')}` : ''}</p>
+      <strong>${esc(bannerRows ? adminT('adminNamesCount', { count: bannerRows }) : adminT('adminNoRecords'))}</strong>
+      <p>${esc(adminT('adminDutyOpsSummary', { records: bannerRecords.length, matched: countDutyMatched(bannerRecords), latest: bannerLatest?.date || adminT('adminSaved') }))}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-pathers">
       <span class="dash-ops-label">${esc(adminT('edenX1ThPathers'))}</span>
-      <strong>${patherRows ? `${patherRows} assignments` : 'No records'}</strong>
-      <p>${patherRecords.length} plan${patherRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(patherRecords)} matched${patherLatest ? ` &middot; latest ${esc(patherLatest.date || 'saved')}` : ''}</p>
+      <strong>${esc(patherRows ? adminT('adminAssignmentsCount', { count: patherRows }) : adminT('adminNoRecords'))}</strong>
+      <p>${esc(adminT('adminDutyOpsSummary', { records: patherRecords.length, matched: countDutyMatched(patherRecords), latest: patherLatest?.date || adminT('adminSaved') }))}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-shield">
       <span class="dash-ops-label">${esc(adminT('adminShieldWallTab'))}</span>
-      <strong>${shieldRows ? `${shieldRows} names` : 'No records'}</strong>
-      <p>${shieldRecords.length} list${shieldRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(shieldRecords)} matched${shieldLatest ? ` &middot; latest ${esc(shieldLatest.date || 'saved')}` : ''}</p>
+      <strong>${esc(shieldRows ? adminT('adminNamesCount', { count: shieldRows }) : adminT('adminNoRecords'))}</strong>
+      <p>${esc(adminT('adminDutyOpsSummary', { records: shieldRecords.length, matched: countDutyMatched(shieldRecords), latest: shieldLatest?.date || adminT('adminSaved') }))}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-contributions">
       <span class="dash-ops-label">${esc(adminT('adminContributionsTab'))}</span>
@@ -1491,14 +1495,13 @@ function renderOpsOverview(attacks, psum) {
 
   const specialCards = renderSpecialOpsCards();
   if (!attacks.length && !specialCards) {
-    host.innerHTML =
-      '<div class="dash-ops-card dash-ops-card-empty">Upload attack screenshots or special lists to unlock officer insights.</div>';
+    host.innerHTML = `<div class="dash-ops-card dash-ops-card-empty">${esc(adminT('adminOfficerEmptyAll'))}</div>`;
     return;
   }
 
   if (!attacks.length) {
     host.innerHTML =
-      '<div class="dash-ops-card dash-ops-card-empty">No structure uploads yet. Special-list breakdown is still available below.</div>' +
+      `<div class="dash-ops-card dash-ops-card-empty">${esc(adminT('adminOfficerNoStructures'))}</div>` +
       specialCards;
     return;
   }
@@ -1518,7 +1521,12 @@ function renderOpsOverview(attacks, psum) {
     grouped.set(key, current);
   });
   const structures = [...grouped.values()].sort((a, b) => b.total - a.total);
-  const topStructure = structures[0] || { label: 'Unknown', count: 0, total: 0, players: 0 };
+  const topStructure = structures[0] || {
+    label: adminT('adminUnknown'),
+    count: 0,
+    total: 0,
+    players: 0,
+  };
   const avgAttendance = attacks.length
     ? Math.round(attacks.reduce((sum, a) => sum + attackPlayers(a).length, 0) / attacks.length)
     : 0;
@@ -1543,22 +1551,22 @@ function renderOpsOverview(attacks, psum) {
     <div class="dash-ops-card dash-ops-card-target">
       <span class="dash-ops-label">${esc(adminT('edenX1InsightTargetMix'))}</span>
       <strong>${esc(topStructure.label)}</strong>
-      <p>${topStructure.count} hit${topStructure.count === 1 ? '' : 's'} · ${compactValue(topStructure.total)} demo · ${structures.length} unique target groups</p>
+      <p>${esc(adminT('adminTargetMixSummary', { hits: topStructure.count, demo: compactValue(topStructure.total), groups: structures.length }))}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-attendance">
       <span class="dash-ops-label">${esc(adminT('edenX1InsightAttendanceRisk'))}</span>
-      <strong>${avgAttendance} avg players</strong>
-      <p>${lowParticipation.length ? `${lowParticipation.length} low-frequency names: ${lowNames}` : 'No low-frequency names in the current filter.'}</p>
+      <strong>${esc(adminT('adminAveragePlayers', { count: avgAttendance }))}</strong>
+      <p>${lowParticipation.length ? `${esc(adminT('adminLowFrequencyNames', { count: lowParticipation.length }))}: ${lowNames}` : esc(adminT('adminNoLowFrequencyNames'))}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-mvp">
       <span class="dash-ops-label">${esc(adminT('edenX1InsightBestPerHit'))}</span>
       <strong>${bestPlayer ? renderTaggedPlayerName(bestPlayer) : '---'}</strong>
-      <p>${bestPlayer ? `${compactValue(bestPlayer.avg)} avg · ${bestPlayer.participation_count} hit${bestPlayer.participation_count === 1 ? '' : 's'}` : 'No player data yet.'}</p>
+      <p>${esc(bestPlayer ? adminT('adminBestPlayerSummary', { average: compactValue(bestPlayer.avg), hits: bestPlayer.participation_count }) : adminT('adminNoPlayerData'))}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-health">
       <span class="dash-ops-label">${esc(adminT('edenX1InsightDataHealth'))}</span>
-      <strong>${validationIssues ? `${validationIssues} review` : 'Clean'}</strong>
-      <p>${latest ? `Latest: ${esc(structureLabel(latest))} · ${displayGameTime(latest.game_time)}` : 'No recent target found.'}</p>
+      <strong>${esc(validationIssues ? adminT('adminReviewCount', { count: validationIssues }) : adminT('adminDataClean'))}</strong>
+      <p>${esc(latest ? adminT('adminLatestTarget', { target: structureLabel(latest), time: displayGameTime(latest.game_time) }) : adminT('adminNoRecentTarget'))}</p>
     </div>`;
   if (specialCards) host.insertAdjacentHTML('beforeend', specialCards);
 }
@@ -1572,7 +1580,7 @@ window.clearStructureLeaderboardFilter = function () {
 function renderPerformerRow(row, player, pct, danger = false) {
   row.className = `dash-top-item dash-top-item--wide${danger ? ' dash-top-item--danger' : ''}`;
   row.style.setProperty('--dash-top-pct', `${pct}%`);
-  row.innerHTML = `<span class="dash-top-rank">#${player.original_rank}</span><div class="dash-top-main"><div class="dash-top-bar"></div><span class="dash-top-name" title="${esc(player.name)}">${renderTaggedPlayerName(player)}</span><span class="dash-top-meta">${player.participation_count} hits (${uniqueStructureCount(player)} structs)</span></div><span class="dash-top-val">${(player.total_demolition / 1000).toFixed(0)}k</span>`;
+  row.innerHTML = `<span class="dash-top-rank">#${player.original_rank}</span><div class="dash-top-main"><div class="dash-top-bar"></div><span class="dash-top-name" title="${esc(player.name)}">${renderTaggedPlayerName(player)}</span><span class="dash-top-meta">${esc(adminT('adminPerformerMeta', { hits: player.participation_count, structures: uniqueStructureCount(player) }))}</span></div><span class="dash-top-val">${(player.total_demolition / 1000).toFixed(0)}k</span>`;
 }
 
 function render() {
@@ -1580,14 +1588,16 @@ function render() {
     state._lastRenderedAttacks = [];
     state._lastRenderedPlayerSummary = [];
     state._lastRenderedFilterLabel = '';
-    state._lastRenderedTimeLabel = 'All Time';
+    state._lastRenderedTimeLabel = adminT('adminTimeAll');
     ['dashKpiAttacks', 'dashKpiDemo', 'dashKpiPlayers'].forEach(
       (id) => ($id(id).textContent = '0')
     );
     $id('dashKpiMvp').textContent = '---';
-    $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
-    $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
-    $id('dashLeaderBody').innerHTML = '<tr><td colspan="6" class="dash-empty">No data</td></tr>';
+    $id('dashChart').innerHTML =
+      `<div class="dash-empty">${esc(adminT('adminReadyForUpload'))}</div>`;
+    $id('dashAttackList').innerHTML = `<div class="dash-empty">${esc(adminT('adminEmpty'))}</div>`;
+    $id('dashLeaderBody').innerHTML =
+      `<tr><td colspan="6" class="dash-empty">${esc(adminT('adminNoData'))}</td></tr>`;
     renderOpsOverview([], []);
     renderWeightedContributionDashboard();
     renderAnalyticsWhenVisible([], []);
@@ -1604,10 +1614,10 @@ function render() {
   state._lastRenderedFilterLabel = selectedAttackLabel || structureFilterLabel || '';
   state._lastRenderedTimeLabel =
     state.timeFilter === 'daily'
-      ? 'Today'
+      ? adminT('adminTimeTodayShort')
       : state.timeFilter === 'weekly'
-        ? 'This Week'
-        : 'All Time';
+        ? adminT('adminTimeWeekShort')
+        : adminT('adminTimeAll');
   const leaderPsum = applyLeaderboardSort(adjustedRankedPsum);
   updateLeaderboardSortHeaders();
 
@@ -1645,7 +1655,7 @@ function render() {
     lc.innerHTML = '';
     const lowest = rankedPsumWithRank.slice(-10).reverse();
     if (lowest.length === 0) {
-      lc.innerHTML = '<div class="dash-empty">No data</div>';
+      lc.innerHTML = `<div class="dash-empty">${esc(adminT('adminNoData'))}</div>`;
     } else {
       const lowestMax = Math.max(...lowest.map((p) => p.total_demolition), 1);
       lowest.forEach((p) => {
@@ -1668,14 +1678,14 @@ function render() {
   });
 
   if (filteredAttacks.length === 0) {
-    al.innerHTML = '<div class="dash-empty">No matching attacks</div>';
+    al.innerHTML = `<div class="dash-empty">${esc(adminT('adminNoMatchingAttacks'))}</div>`;
   } else {
     const grouped = {};
     filteredAttacks.forEach((a) => {
       const day =
         a.game_time && a.game_time.includes(',')
           ? a.game_time.split(',')[0]
-          : (a.game_time || 'Unknown Day').split(' ')[0];
+          : (a.game_time || adminT('adminUnknown')).split(' ')[0];
       if (!grouped[day]) grouped[day] = [];
       grouped[day].push(a);
     });
@@ -1710,10 +1720,10 @@ function render() {
       let badge = '';
       if (val) {
         badge = val.overridden
-          ? `<span class="dash-val-badge dash-val-override" title="Marked complete by admin override">✓</span>`
+          ? `<span class="dash-val-badge dash-val-override" title="${esc(adminT('adminMarkedCompleteHint'))}">✓</span>`
           : val.match
             ? `<span class="dash-val-badge dash-val-ok" title="✓ ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
-            : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct * 100).toFixed(1)}% off)">!</span>`;
+            : `<span class="dash-val-badge dash-val-warn" title="✗ ${esc(adminT('adminMissingDataWarning'))}: ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">!</span>`;
       }
       const d = document.createElement('div');
       d.className = 'dash-attack-item';
@@ -1748,7 +1758,7 @@ function render() {
 
   if (structureFilterLabel) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="6" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" class="dash-clear-structure-filter">Clear</button></td>`;
+    tr.innerHTML = `<td colspan="6" class="dash-leader-filter-note">${esc(adminT('adminFilteredBy', { target: structureFilterLabel }))} <button type="button" class="dash-clear-structure-filter">${esc(adminT('adminTerminalClear'))}</button></td>`;
     tr.querySelector('.dash-clear-structure-filter')?.addEventListener('click', () => {
       window.clearStructureLeaderboardFilter();
     });
@@ -1758,14 +1768,14 @@ function render() {
   toShow.forEach((p) => {
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.innerHTML = `<td class="dash-rank" data-label="Rank">#${p.original_rank}</td><td class="dash-pname" data-label="Member">${renderTaggedPlayerName(p)}</td><td class="dash-val" data-label="Total demo">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total" data-label="Adjusted total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center" data-label="Hits">${p.participation_count}</td><td class="dash-avg" data-label="Avg/hit">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
+    tr.innerHTML = `<td class="dash-rank" data-label="${esc(adminT('adminThRank'))}">#${p.original_rank}</td><td class="dash-pname" data-label="${esc(adminT('adminContributionMember'))}">${renderTaggedPlayerName(p)}</td><td class="dash-val" data-label="${esc(adminT('adminThDemo'))}">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total" data-label="${esc(adminT('adminThAdjustedTotal'))}">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center" data-label="${esc(adminT('adminThHits'))}">${p.participation_count}</td><td class="dash-avg" data-label="${esc(adminT('adminThAvg'))}">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p);
     tb.appendChild(tr);
   });
 
   if (!filteredLeader.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="6" class="dash-empty">No matching members</td>';
+    tr.innerHTML = `<td colspan="6" class="dash-empty">${esc(adminT('adminNoMatchingMembers'))}</td>`;
     tb.appendChild(tr);
   }
 
@@ -1806,7 +1816,9 @@ function render() {
   const totalP = partSpread.high + partSpread.medium + partSpread.low;
   const $pct = $id('dashInsightPartPct');
   if ($pct)
-    $pct.textContent = totalP ? `${Math.round((partSpread.high / totalP) * 100)}% Core` : '0%';
+    $pct.textContent = totalP
+      ? adminT('adminCorePercent', { percent: Math.round((partSpread.high / totalP) * 100) })
+      : '0%';
   const $pie = $id('dashPartChart');
   if ($pie) {
     if (totalP) {
@@ -1815,19 +1827,18 @@ function render() {
       const lowPct = Math.round((partSpread.low / totalP) * 100);
       $pie.innerHTML = `
         <div style="display:flex;gap:4px;height:24px;border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3)">
-           <div style="width:${highPct}%;background:linear-gradient(90deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#022c22;transition:width 0.5s" title="Core Active (${partSpread.high})">${highPct > 10 ? highPct + '%' : ''}</div>
-           <div style="width:${medPct}%;background:linear-gradient(90deg,#f59e0b,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#451a03;transition:width 0.5s" title="Casual (${partSpread.medium})">${medPct > 10 ? medPct + '%' : ''}</div>
-           <div style="width:${lowPct}%;background:linear-gradient(90deg,#ef4444,#f87171);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#450a0a;transition:width 0.5s" title="Inactive (${partSpread.low})">${lowPct > 10 ? lowPct + '%' : ''}</div>
+           <div style="width:${highPct}%;background:linear-gradient(90deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#022c22;transition:width 0.5s" title="${esc(adminT('adminParticipationCoreCount', { count: partSpread.high }))}">${highPct > 10 ? highPct + '%' : ''}</div>
+           <div style="width:${medPct}%;background:linear-gradient(90deg,#f59e0b,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#451a03;transition:width 0.5s" title="${esc(adminT('adminParticipationCasualCount', { count: partSpread.medium }))}">${medPct > 10 ? medPct + '%' : ''}</div>
+           <div style="width:${lowPct}%;background:linear-gradient(90deg,#ef4444,#f87171);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#450a0a;transition:width 0.5s" title="${esc(adminT('adminParticipationMissedCount', { count: partSpread.low }))}">${lowPct > 10 ? lowPct + '%' : ''}</div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#cbd5e1;font-weight:700">
-           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981"></span> Core (${partSpread.high})</div>
-           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b"></span> Casual (${partSpread.medium})</div>
-           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444"></span> Missed (${partSpread.low})</div>
+           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981"></span> ${esc(adminT('adminParticipationCoreCount', { count: partSpread.high }))}</div>
+           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b"></span> ${esc(adminT('adminParticipationCasualCount', { count: partSpread.medium }))}</div>
+           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444"></span> ${esc(adminT('adminParticipationMissedCount', { count: partSpread.low }))}</div>
         </div>
       `;
     } else {
-      $pie.innerHTML =
-        '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:1rem 0">No data available</div>';
+      $pie.innerHTML = `<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:1rem 0">${esc(adminT('adminNoData'))}</div>`;
     }
   }
   const $trend = $id('dashTrendChart');
@@ -1839,7 +1850,7 @@ function render() {
       const parsedDate = parseGameTimeDate(a.game_time);
       const key = parsedDate
         ? `${parsedDate.getUTCFullYear()}-${padDate(parsedDate.getUTCMonth() + 1)}-${padDate(parsedDate.getUTCDate())}`
-        : (a.game_time || 'Unknown').split(',')[0];
+        : (a.game_time || adminT('adminUnknown')).split(',')[0];
       const label = parsedDate
         ? `${padDate(parsedDate.getUTCDate())}/${padDate(parsedDate.getUTCMonth() + 1)}`
         : key;
@@ -1867,8 +1878,7 @@ function render() {
     const maxMembers = Math.max(...days.map((d) => d.participants.size), 1);
 
     if (days.length === 0) {
-      $trend.innerHTML =
-        '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:2rem 0">No activity yet</div>';
+      $trend.innerHTML = `<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:2rem 0">${esc(adminT('adminNoActivityYet'))}</div>`;
     } else {
       const w = 560;
       const h = 205;
@@ -1894,7 +1904,7 @@ function render() {
       const labelIndexes = new Set([0, days.length - 1, Math.floor((days.length - 1) / 2)]);
       if (days.length <= 4) days.forEach((_, index) => labelIndexes.add(index));
 
-      let svg = `<svg class="dash-activity-svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%" role="img" aria-label="Activity trend by day">`;
+      let svg = `<svg class="dash-activity-svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%" role="img" aria-label="${esc(adminT('adminActivityTrendAria'))}">`;
       svg += `<defs>
         <linearGradient id="activityBarGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#67e8f9"/>
@@ -1916,7 +1926,7 @@ function render() {
         const barH = Math.max(4, (d.targets / maxTargets) * chartH);
         const y = top + chartH - barH;
         svg += `<g>
-          <title>${d.fullLabel}: ${d.targets} target${d.targets === 1 ? '' : 's'}, ${d.participants.size} members, ${compactValue(d.demo)} demo</title>
+          <title>${esc(adminT('adminActivityDayTitle', { date: d.fullLabel, targets: d.targets, members: d.participants.size, demo: compactValue(d.demo) }))}</title>
           <rect x="${x - barW / 2}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="url(#activityBarGrad)" opacity="0.95"/>
         </g>`;
         if (labelIndexes.has(i)) {
@@ -1932,33 +1942,33 @@ function render() {
       }
       memberPoints.forEach(({ x, y, d }) => {
         svg += `<circle class="dash-activity-point" cx="${x}" cy="${y}" r="5" stroke-width="2.5">
-          <title>${d.fullLabel}: ${d.participants.size} unique members</title>
+          <title>${esc(adminT('adminActivityMembersTitle', { date: d.fullLabel, count: d.participants.size }))}</title>
         </circle>`;
       });
       svg += '</svg>';
       $trend.innerHTML = `
         <div class="dash-activity-kpis">
           <div class="dash-activity-kpi">
-            <div class="dash-activity-kpi-label">Busiest</div>
+            <div class="dash-activity-kpi-label">${esc(adminT('adminActivityBusiest'))}</div>
             <div class="dash-activity-kpi-value">${busiest.label}</div>
-            <div class="dash-activity-kpi-note dash-activity-kpi-note--accent">${busiest.targets} target${busiest.targets === 1 ? '' : 's'}</div>
+            <div class="dash-activity-kpi-note dash-activity-kpi-note--accent">${esc(adminT('adminActivityTargetCount', { count: busiest.targets }))}</div>
           </div>
           <div class="dash-activity-kpi">
-            <div class="dash-activity-kpi-label">Pace</div>
+            <div class="dash-activity-kpi-label">${esc(adminT('adminActivityPace'))}</div>
             <div class="dash-activity-kpi-value">${avgTargets.toFixed(1)}</div>
-            <div class="dash-activity-kpi-note">targets/day</div>
+            <div class="dash-activity-kpi-note">${esc(adminT('adminActivityTargetsPerDay'))}</div>
           </div>
           <div class="dash-activity-kpi">
-            <div class="dash-activity-kpi-label">Crew</div>
+            <div class="dash-activity-kpi-label">${esc(adminT('adminActivityCrew'))}</div>
             <div class="dash-activity-kpi-value">${Math.round(avgMembers)}</div>
-            <div class="dash-activity-kpi-note">members/day</div>
+            <div class="dash-activity-kpi-note">${esc(adminT('adminActivityMembersPerDay'))}</div>
           </div>
         </div>
         <div class="dash-activity-chart-panel">${svg}</div>
         <div class="dash-activity-legend">
           <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--targets"></b>${esc(adminT('adminActivityTargets'))}</span>
           <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--members"></b>${esc(adminT('edenX1ModalPlayers'))}</span>
-          <span class="dash-activity-legend-muted">${days.length} active day${days.length === 1 ? '' : 's'}</span>
+          <span class="dash-activity-legend-muted">${esc(adminT('adminActivityActiveDays', { count: days.length }))}</span>
         </div>`;
     }
   }
@@ -2007,8 +2017,13 @@ function showModal(type, data) {
     $id('dashModalTitle').textContent = type === 'attack' ? structureLabel(data) : data.name;
     $id('dashModalSub').textContent =
       type === 'attack'
-        ? `${displayGameTime(data.game_time)} · ${data.players_count} participants`
-        : `${(data.total_demolition || 0).toLocaleString()} total demolition`;
+        ? adminT('adminModalAttackSubtitle', {
+            time: displayGameTime(data.game_time),
+            count: data.players_count,
+          })
+        : adminT('adminModalPlayerSubtitle', {
+            total: (data.total_demolition || 0).toLocaleString(),
+          });
     if (type === 'attack') {
       const avg = Math.round(data.total_demolition / data.players_count);
       const tiers = { '1M+': 0, '500K+': 0, '100K+': 0, '<100K': 0 };
@@ -2023,15 +2038,15 @@ function showModal(type, data) {
       if (validation && !validation.match) {
         const missing = Math.max(0, validation.expected - (data.total_demolition || 0));
         if (validation.overridden) {
-          h += `<div class="dash-validation-card dash-validation-card--complete"><div><strong>Marked Complete</strong><span>Admin override accepted this structure as complete.</span></div></div>`;
+          h += `<div class="dash-validation-card dash-validation-card--complete"><div><strong>${esc(adminT('adminMarkedComplete'))}</strong><span>${esc(adminT('adminMarkedCompleteHint'))}</span></div></div>`;
         } else {
-          h += `<div class="dash-validation-card dash-validation-card--warn"><div><strong>Missing Data Warning</strong><span>Current ${(data.total_demolition || 0).toLocaleString()} / expected ${validation.expected.toLocaleString()}${missing ? ` - missing ${missing.toLocaleString()}` : ''}.</span></div>${!isGuest() ? `<button type="button" class="dash-btn dash-btn-xs dash-complete-override-btn" data-dash-action="mark-attack-complete" data-attack-id="${esc(data.id)}">Mark Complete</button>` : ''}</div>`;
+          h += `<div class="dash-validation-card dash-validation-card--warn"><div><strong>${esc(adminT('adminMissingDataWarning'))}</strong><span>${esc(adminT('adminMissingDataSummary', { current: (data.total_demolition || 0).toLocaleString(), expected: validation.expected.toLocaleString(), missing: missing.toLocaleString() }))}</span></div>${!isGuest() ? `<button type="button" class="dash-btn dash-btn-xs dash-complete-override-btn" data-dash-action="mark-attack-complete" data-attack-id="${esc(data.id)}">${esc(adminT('adminMarkComplete'))}</button>` : ''}</div>`;
         }
       }
       if (!isGuest()) {
-        h += `<div class="dash-modal-actions"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="add-player" data-attack-id="${esc(data.id)}">Add Player</button><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-attack" data-attack-id="${esc(data.id)}">Edit Details</button><button class="dash-btn dash-btn-xs dash-btn-danger-soft" data-dash-action="delete-attack" data-attack-id="${esc(data.id)}">${esc(adminT('adminDelete'))}</button></div>`;
+        h += `<div class="dash-modal-actions"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="add-player" data-attack-id="${esc(data.id)}">${esc(adminT('adminAddPlayer'))}</button><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-attack" data-attack-id="${esc(data.id)}">${esc(adminT('adminEditDetails'))}</button><button class="dash-btn dash-btn-xs dash-btn-danger-soft" data-dash-action="delete-attack" data-attack-id="${esc(data.id)}">${esc(adminT('adminDelete'))}</button></div>`;
       }
-      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${(avg || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${esc(structureLabel(data))}</div></div></div>`;
+      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>${esc(adminT('adminKpiDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>${esc(adminT('adminModalParticipants'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${data.players_count}</div></div><div class="dash-modal-stat"><div>${esc(adminT('adminModalAverageHit'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${(avg || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>${esc(adminT('adminModalStartTime'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>${esc(adminT('adminModalEndTime'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>${esc(adminT('edenX1ModalStructure'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${esc(structureLabel(data))}</div></div></div>`;
       h += `<div class="dash-modal-section-label">${esc(adminT('adminAnalyticsDistribution'))}</div><div class="dash-distrib">${Object.entries(
         tiers
       )
@@ -2051,9 +2066,9 @@ function showModal(type, data) {
       orderedPlayers.forEach((p, index) => {
         const displayRank = index + 1;
         const encName = encodeURIComponent(p.name).replace(/'/g, '%27');
-        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="Rank" class="dash-rank ${displayRank <= 3 ? 'rank-' + displayRank : ''}">#${displayRank}</td><td data-label="Name" class="dash-pname dash-table-link">${renderTaggedPlayerName(p)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
+        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="${esc(adminT('adminThRank'))}" class="dash-rank ${displayRank <= 3 ? 'rank-' + displayRank : ''}">#${displayRank}</td><td data-label="${esc(adminT('adminThName'))}" class="dash-pname dash-table-link">${renderTaggedPlayerName(p)}</td><td data-label="${esc(adminT('adminModalThDemolition'))}" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
         if (!isGuest()) {
-          h += `<td data-label="Edit" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-player" data-attack-id="${esc(data.id)}" data-player-name="${esc(encName)}">${esc(adminT('adminEdit'))}</button></td>`;
+          h += `<td data-label="${esc(adminT('adminEdit'))}" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-player" data-attack-id="${esc(data.id)}" data-player-name="${esc(encName)}">${esc(adminT('adminEdit'))}</button></td>`;
         }
         h += `</tr>`;
       });
@@ -2063,8 +2078,8 @@ function showModal(type, data) {
         body.innerHTML = `<div class="dash-player-empty-state">
           <div class="dash-player-empty-icon">?</div>
           <div class="dash-player-empty-name">${renderTaggedPlayerName(data)}</div>
-          <div>This player appeared in one attack but hasn't been fully aggregated yet.</div>
-          <div class="dash-player-empty-hint">Upload more screenshots or refresh the dashboard to see their full profile.</div>
+          <div>${esc(adminT('adminPlayerNotAggregated'))}</div>
+          <div class="dash-player-empty-hint">${esc(adminT('adminPlayerNotAggregatedHint'))}</div>
         </div>`;
         m.classList.add('active');
         return;
@@ -2107,7 +2122,7 @@ function showModal(type, data) {
                       ? 'var(--brand-light)'
                       : 'var(--text-dim)'
                   : 'transparent';
-              return `<div class="dash-active-hour-bar" style="--active-hour-bg:${bg};--active-hour-height:${pct}%;--active-hour-min:${val > 0 ? '4px' : '0'}" title="${hr}:00 - ${hr}:59 GT (${val} hits)"></div>`;
+              return `<div class="dash-active-hour-bar" style="--active-hour-bg:${bg};--active-hour-height:${pct}%;--active-hour-min:${val > 0 ? '4px' : '0'}" title="${esc(adminT('adminActiveHourTitle', { from: `${hr}:00`, to: `${hr}:59`, count: val }))}"></div>`;
             })
             .join('')}
           </div>
@@ -2121,7 +2136,7 @@ function showModal(type, data) {
 
       body.innerHTML =
         pb +
-        `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${data.attacks?.length || 0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${data.attacks?.length ? Math.round((data.total_demolition || 0) / data.attacks.length).toLocaleString() : '0'}</div></div></div>` +
+        `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>${esc(adminT('adminKpiDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>${esc(adminT('edenX1VoteStructureHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${data.attacks?.length || 0}</div></div><div class="dash-modal-stat"><div>${esc(adminT('adminModalAverageHit'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${data.attacks?.length ? Math.round((data.total_demolition || 0) / data.attacks.length).toLocaleString() : '0'}</div></div></div>` +
         chartHtml +
         '<table class="dash-table dash-table--stack"><thead><tr><th>' +
         esc(adminT('edenX1ModalTime')) +
@@ -2135,11 +2150,11 @@ function showModal(type, data) {
         sortedAttacks
           .map(
             (att) =>
-              `<tr data-dash-action="show-attack" data-attack-id="${esc(att.id || att.attack_id)}"><td data-label="Time">${displayGameTime(att.game_time)}</td><td data-label="Target" class="dash-table-link">${esc(formatDatasetStructureLabel(att))}</td><td data-label="Value" class="dash-table-right">${(att.val || att.value || 0).toLocaleString()}</td><td data-label="Rank" class="dash-table-center">#${att.rank || '-'}</td></tr>`
+              `<tr data-dash-action="show-attack" data-attack-id="${esc(att.id || att.attack_id)}"><td data-label="${esc(adminT('edenX1ModalTime'))}">${displayGameTime(att.game_time)}</td><td data-label="${esc(adminT('adminModalThTarget'))}" class="dash-table-link">${esc(formatDatasetStructureLabel(att))}</td><td data-label="${esc(adminT('adminModalThValue'))}" class="dash-table-right">${(att.val || att.value || 0).toLocaleString()}</td><td data-label="${esc(adminT('edenX1ModalRank'))}" class="dash-table-center">#${att.rank || '-'}</td></tr>`
           )
           .join('') +
         '</tbody></table>' +
-        '<div class="dash-modal-note">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
+        `<div class="dash-modal-note">${esc(adminT('adminPlayerScheduleNote'))}</div>`;
     }
     bindModalDelegatedActions(body);
     m.classList.add('active');

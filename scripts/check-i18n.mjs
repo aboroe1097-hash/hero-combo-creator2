@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse } from 'acorn';
 import {
   availableLanguages,
   loadTranslationsForLanguage,
@@ -14,6 +15,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const htmlFiles = [
   'index.html',
   'admin.html',
+  'arcade.html',
   'eden-x1.html',
   ...fs
     .readdirSync(path.join(rootDir, 'tabs'))
@@ -241,6 +243,7 @@ const I18N_ATTRS = [
   'data-i18n-title',
   'data-i18n-aria',
   'data-i18n-label',
+  'data-i18n-alt',
 ];
 
 const referencedKeys = new Map();
@@ -274,9 +277,10 @@ function walkJsFiles(dir, out = []) {
   return out;
 }
 
-const jsKeyRe = /\b(?:adminT|dashT|t)\(\s*['"]([a-zA-Z][a-zA-Z0-9_]*)['"]/g;
+const jsKeyRe =
+  /\b(?:adminT|appT|dashT|materialT|translate|t)\(\s*['"]([a-zA-Z][a-zA-Z0-9_.-]*)['"]/g;
 const RUNTIME_KEY_PREFIXES =
-  /^(admin|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
+  /^(admin|ai\.|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
 for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
   const relPath = path.relative(rootDir, absolutePath).replace(/\\/g, '/');
   const source = fs.readFileSync(absolutePath, 'utf8');
@@ -290,6 +294,40 @@ for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
 
 const englishKeys = Object.keys(translations.en || {});
 const errors = [];
+const DOMAIN_PACK_KEY_PREFIXES = /^(?:dmPlanner|dmEnhance)/;
+
+function walkAst(node, visit) {
+  if (!node || typeof node !== 'object') return;
+  visit(node);
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) value.forEach((child) => walkAst(child, visit));
+    else if (value && typeof value === 'object' && typeof value.type === 'string') {
+      walkAst(value, visit);
+    }
+  }
+}
+
+for (const absolutePath of walkJsFiles(path.join(rootDir, 'js', 'i18n'))) {
+  const relPath = path.relative(rootDir, absolutePath);
+  const source = fs.readFileSync(absolutePath, 'utf8');
+  const ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module', locations: true });
+  walkAst(ast, (node) => {
+    if (node.type !== 'ObjectExpression') return;
+    const seen = new Map();
+    for (const property of node.properties) {
+      if (property.type !== 'Property' || property.computed) continue;
+      const key = property.key.type === 'Identifier' ? property.key.name : property.key.value;
+      if (typeof key !== 'string') continue;
+      if (seen.has(key)) {
+        errors.push(
+          `${relPath}:${property.loc.start.line} duplicates translation key "${key}" first defined at line ${seen.get(key)}`
+        );
+      } else {
+        seen.set(key, property.loc.start.line);
+      }
+    }
+  });
+}
 
 for (const [key, locations] of referencedKeys.entries()) {
   if (!(key in translations.en)) {
@@ -298,10 +336,39 @@ for (const [key, locations] of referencedKeys.entries()) {
 }
 
 for (const [lang, dict] of Object.entries(translations)) {
-  const missing = englishKeys.filter((key) => !(key in dict));
+  const missing = englishKeys.filter(
+    (key) => !(key in dict) && !DOMAIN_PACK_KEY_PREFIXES.test(key)
+  );
   if (missing.length) {
     errors.push(
       `${lang} is missing ${missing.length} runtime keys: ${missing.slice(0, 20).join(', ')}`
+    );
+  }
+  const localeOnly = Object.keys(dict).filter((key) => !(key in translations.en));
+  if (localeOnly.length) {
+    errors.push(
+      `${lang} has ${localeOnly.length} keys missing from English: ${localeOnly.slice(0, 20).join(', ')}`
+    );
+  }
+}
+
+const RESEARCH_MAX_ALL_EXPECTATIONS = Object.freeze({
+  ar: 'إكمال الكل',
+  de: 'Alles abschließen',
+  es: 'Completar todo',
+  fr: 'Tout terminer',
+  id: 'Maksimalkan semua',
+  kr: '전체 만렙',
+  pt: 'Completar tudo',
+  ru: 'Прокачать всё',
+  tr: 'Tümünü tamamla',
+  zh: '全部升满',
+});
+
+for (const [lang, expected] of Object.entries(RESEARCH_MAX_ALL_EXPECTATIONS)) {
+  if (translations[lang]?.researchMaxAll !== expected) {
+    errors.push(
+      `${lang}.researchMaxAll must use the reviewed gaming action ${JSON.stringify(expected)}; received ${JSON.stringify(translations[lang]?.researchMaxAll)}`
     );
   }
 }
@@ -363,7 +430,8 @@ for (const [lang, dict] of Object.entries(translations)) {
         enVal === 'P2W row' ||
         enVal === 'Combo DB' ||
         enVal === 'Strife over Dragon'
-      ) continue;
+      )
+        continue;
       errors.push(`${lang}.${key} still matches the English text`);
     }
   }

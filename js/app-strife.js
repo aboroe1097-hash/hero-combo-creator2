@@ -15,13 +15,33 @@ import {
   STRIFE_SEASONS,
   STRIFE_TIERS,
 } from './strife-db.js';
+import {
+  loadStrifeLocale,
+  strifeMonsterText,
+  strifeSkillText,
+  strifeTermText,
+} from './i18n/strife/index.js';
 
 const STRIFE_STAGE_KEY = 'vts_strife_stage';
 const STRIFE_MONSTER_KEY = 'vts_strife_monster';
-const HERO_BY_NAME = new Map(allHeroesData.map(hero => [hero.name, hero]));
-const MONSTER_BY_ID = new Map(STRIFE_MONSTERS.map(monster => [monster.id, monster]));
+const HERO_BY_NAME = new Map(allHeroesData.map((hero) => [hero.name, hero]));
+const MONSTER_BY_ID = new Map(STRIFE_MONSTERS.map((monster) => [monster.id, monster]));
 const REUSABLE_CANDIDATE_LIMIT = 6;
-const STRIFE_RELEASE_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'X8'];
+const STRIFE_RELEASE_ORDER = [
+  'S0',
+  'S1',
+  'S2',
+  'S3',
+  'S4',
+  'X1',
+  'X2',
+  'X3',
+  'X4',
+  'X5',
+  'X6',
+  'X7',
+  'X8',
+];
 
 let strifeRoot = null;
 let strifeLanguageListenerWired = false;
@@ -30,23 +50,23 @@ let strifeRenderFrame = 0;
 function copy(key, fallback, replacements = {}) {
   const active = translations[currentLanguage] || translations.en || {};
   const template = active[key] ?? translations.en?.[key] ?? fallback;
-  return String(template).replace(/\{(\w+)\}/g, (match, token) => (
+  return String(template).replace(/\{(\w+)\}/g, (match, token) =>
     Object.prototype.hasOwnProperty.call(replacements, token) ? String(replacements[token]) : match
-  ));
+  );
 }
 
 function getTierLabel(tier) {
-  return tier === STRIFE_TIERS.P2W
-    ? copy('statePaid', 'Paid')
-    : copy('stateFree', 'Free');
+  return tier === STRIFE_TIERS.P2W ? copy('statePaid', 'Paid') : copy('stateFree', 'Free');
 }
 
 function getPositionLabel(position) {
-  return [
-    copy('skinPositionFront', 'Front'),
-    copy('skinPositionMiddle', 'Middle'),
-    copy('skinPositionBack', 'Back'),
-  ][position] || '';
+  return (
+    [
+      copy('skinPositionFront', 'Front'),
+      copy('skinPositionMiddle', 'Middle'),
+      copy('skinPositionBack', 'Back'),
+    ][position] || ''
+  );
 }
 
 function getStoredStage() {
@@ -84,12 +104,14 @@ function heroAvailable(heroName, availableSeasons) {
   const hero = HERO_BY_NAME.get(heroName);
   if (!hero) return false;
   const selectedStage = availableSeasons[availableSeasons.length - 1] || 'S0';
-  return getReleaseStageIndex(hero.releaseSeason || hero.season) <= getReleaseStageIndex(selectedStage);
+  return (
+    getReleaseStageIndex(hero.releaseSeason || hero.season) <= getReleaseStageIndex(selectedStage)
+  );
 }
 
 function getComboTroopType(combo) {
-  const types = [...new Set(combo.heroes.map(name => HERO_BY_NAME.get(name)?.Type || 'All'))];
-  const concrete = types.filter(type => type !== 'All');
+  const types = [...new Set(combo.heroes.map((name) => HERO_BY_NAME.get(name)?.Type || 'All'))];
+  const concrete = types.filter((type) => type !== 'All');
   if (concrete.length === 1) return concrete[0];
   if (concrete.length === 0) return 'All';
   return 'Mixed';
@@ -98,9 +120,11 @@ function getComboTroopType(combo) {
 function getComboTags(combo) {
   const tags = [];
   if (combo.source === 'manual') {
-    tags.push(combo.tier === STRIFE_TIERS.P2W
-      ? copy('strifeTagP2WRow', 'P2W row')
-      : copy('strifeTagF2PRow', 'F2P row'));
+    tags.push(
+      combo.tier === STRIFE_TIERS.P2W
+        ? copy('strifeTagP2WRow', 'P2W row')
+        : copy('strifeTagF2PRow', 'F2P row')
+    );
   }
   if (combo.source === 'fallback') tags.push(copy('strifeTagComboDb', 'Combo DB'));
 
@@ -120,18 +144,20 @@ function getComboTags(combo) {
 }
 
 function comboHasPaidHero(combo) {
-  return combo.heroes.some(heroName => HERO_BY_NAME.get(heroName)?.State === 'Paid');
+  return combo.heroes.some((heroName) => HERO_BY_NAME.get(heroName)?.State === 'Paid');
 }
 
 function comboIsFreeFriendly(combo) {
-  return combo.heroes.every(heroName => HERO_BY_NAME.get(heroName)?.State !== 'Paid');
+  return combo.heroes.every((heroName) => HERO_BY_NAME.get(heroName)?.State !== 'Paid');
 }
 
 function toManualCombo(entry, index, tier) {
+  const note = entry.note || '';
   const combo = {
     heroes: entry.heroes,
     tier,
-    note: entry.note || '',
+    note,
+    noteId: entry.noteId || '',
     source: 'manual',
     sourceRank: index + 1,
     displayScore: entry.score || copy('strifeManualScore', 'Manual'),
@@ -143,18 +169,18 @@ function toManualCombo(entry, index, tier) {
 
 function getManualCombos(monsterId, stage, availableSeasons) {
   const rows = STRIFE_MONSTER_COMBOS[monsterId] || [];
-  const accepted = rows.filter(entry => {
+  const accepted = rows.filter((entry) => {
     if (!entry?.heroes || entry.heroes.length !== 3) return false;
     if (!stageIsAllowed(entry, stage)) return false;
-    return entry.heroes.every(heroName => heroAvailable(heroName, availableSeasons));
+    return entry.heroes.every((heroName) => heroAvailable(heroName, availableSeasons));
   });
 
   return {
     f2p: accepted
-      .filter(entry => entry.tier !== STRIFE_TIERS.P2W)
+      .filter((entry) => entry.tier !== STRIFE_TIERS.P2W)
       .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.F2P)),
     p2w: accepted
-      .filter(entry => entry.tier === STRIFE_TIERS.P2W)
+      .filter((entry) => entry.tier === STRIFE_TIERS.P2W)
       .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.P2W)),
   };
 }
@@ -162,8 +188,8 @@ function getManualCombos(monsterId, stage, availableSeasons) {
 function getFallbackCombos(stage, availableSeasons, tier) {
   const availableHeroNames = new Set(
     allHeroesData
-      .filter(hero => heroAvailable(hero.name, availableSeasons))
-      .map(hero => hero.name)
+      .filter((hero) => heroAvailable(hero.name, availableSeasons))
+      .map((hero) => hero.name)
   );
   const totalRanked = baseRankedCombos.length;
 
@@ -179,21 +205,32 @@ function getFallbackCombos(stage, availableSeasons, tier) {
       enriched.tags = getComboTags(enriched);
       return enriched;
     })
-    .filter(combo => combo.heroes.every(hero => availableHeroNames.has(hero)))
-    .filter(combo => (tier === STRIFE_TIERS.P2W ? comboHasPaidHero(combo) : comboIsFreeFriendly(combo)))
+    .filter((combo) => combo.heroes.every((hero) => availableHeroNames.has(hero)))
+    .filter((combo) =>
+      tier === STRIFE_TIERS.P2W ? comboHasPaidHero(combo) : comboIsFreeFriendly(combo)
+    )
     .slice(0, REUSABLE_CANDIDATE_LIMIT)
-    .map(combo => ({ ...combo, tier, stage }));
+    .map((combo) => ({ ...combo, tier, stage }));
 }
 
-export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage = getStoredStage()) {
+export function getStrifeRecommendations(
+  monsterId = getStoredMonsterId(),
+  stage = getStoredStage()
+) {
   const selectedMonsterId = MONSTER_BY_ID.has(monsterId) ? monsterId : getStoredMonsterId();
   const monster = MONSTER_BY_ID.get(selectedMonsterId) || STRIFE_MONSTERS[0];
   const selectedStage = STRIFE_SEASONS.includes(stage) ? stage : getStoredStage();
   const availableSeasons = getStageSeasons(selectedStage);
-  const availableHeroes = allHeroesData.filter(hero => heroAvailable(hero.name, availableSeasons));
+  const availableHeroes = allHeroesData.filter((hero) =>
+    heroAvailable(hero.name, availableSeasons)
+  );
   const manual = getManualCombos(monster.id, selectedStage, availableSeasons);
-  const f2pCombos = manual.f2p.length ? manual.f2p : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.F2P);
-  const p2wCombos = manual.p2w.length ? manual.p2w : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.P2W);
+  const f2pCombos = manual.f2p.length
+    ? manual.f2p
+    : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.F2P);
+  const p2wCombos = manual.p2w.length
+    ? manual.p2w
+    : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.P2W);
 
   return {
     monster,
@@ -209,9 +246,10 @@ export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage
 }
 
 function renderMonsterImage(monster, size = 'card') {
-  const initial = monster.name.slice(0, 1).toUpperCase();
+  const monsterName = strifeMonsterText(monster, 'name');
+  const initial = monsterName.slice(0, 1).toUpperCase();
   const image = monster.imageUrl
-    ? `<img src="${escapeHtml(monster.imageUrl)}" alt="${escapeHtml(monster.name)}" width="98" height="80" crossorigin="anonymous" loading="lazy" decoding="async">`
+    ? `<img src="${escapeHtml(monster.imageUrl)}" alt="${escapeHtml(monsterName)}" width="98" height="80" crossorigin="anonymous" loading="lazy" decoding="async">`
     : `<span class="strife-monster-initial">${escapeHtml(initial)}</span>`;
   return `
     <span class="strife-monster-art strife-monster-art--${escapeHtml(size)}" style="--monster-accent:${escapeHtml(monster.accent || '#67e8f9')}">
@@ -221,12 +259,12 @@ function renderMonsterImage(monster, size = 'card') {
 }
 
 function renderMonsterGrid(selectedMonsterId) {
-  return STRIFE_MONSTERS.map(monster => {
+  return STRIFE_MONSTERS.map((monster) => {
     const active = monster.id === selectedMonsterId;
     return `
       <button type="button" class="strife-monster-card${active ? ' active' : ''}" data-strife-monster="${escapeHtml(monster.id)}" aria-pressed="${active}" style="--monster-accent:${escapeHtml(monster.accent || '#67e8f9')}">
         ${renderMonsterImage(monster)}
-        <span class="strife-monster-name">${escapeHtml(monster.name)}</span>
+        <span class="strife-monster-name">${escapeHtml(strifeMonsterText(monster, 'name'))}</span>
         <span class="strife-monster-formation">${escapeHtml(copy('strifeTapToPlan', 'Tap to plan'))}</span>
       </button>
     `;
@@ -234,7 +272,7 @@ function renderMonsterGrid(selectedMonsterId) {
 }
 
 function renderStageControls(stage) {
-  return STRIFE_SEASONS.map(season => {
+  return STRIFE_SEASONS.map((season) => {
     const active = season === stage;
     const color = seasonColors[season] || '#22d3ee';
     return `<button type="button" class="strife-stage-btn${active ? ' active' : ''}" data-strife-stage="${season}" aria-pressed="${active}" style="--stage-color:${escapeHtml(color)}">${season}</button>`;
@@ -243,34 +281,41 @@ function renderStageControls(stage) {
 
 function getMonsterSkills(monster) {
   return Array.isArray(monster?.skills)
-    ? monster.skills.filter(skill => skill && (skill.name || skill.effect || skill.answer))
+    ? monster.skills.filter((skill) => skill && (skill.name || skill.effect || skill.answer))
     : [];
 }
 
 function getMonsterGuideNotes(monster) {
-  return Array.isArray(monster?.guideNotes) ? monster.guideNotes.filter(Boolean) : [];
+  return strifeMonsterText(monster, 'guideNotes').filter(Boolean);
 }
 
-function renderMonsterSkill(skill, index) {
-  const meta = [skill.timing, skill.target].filter(Boolean);
-  const tags = Array.isArray(skill.tags) ? skill.tags.filter(Boolean) : [];
-  const effect = skill.effect ? `<p>${escapeHtml(skill.effect)}</p>` : '';
-  const answer = skill.answer
-    ? `<p class="strife-skill-answer"><strong>${escapeHtml(copy('strifeSkillCounter', 'Counter'))}</strong> ${escapeHtml(skill.answer)}</p>`
+function renderMonsterSkill(monster, skill, index) {
+  const meta = [
+    strifeTermText('timings', skill.timing),
+    strifeTermText('targets', skill.target),
+  ].filter(Boolean);
+  const tags = Array.isArray(skill.tags)
+    ? skill.tags.filter(Boolean).map((tag) => strifeTermText('tags', tag))
+    : [];
+  const effectText = strifeSkillText(monster, skill, 'effect');
+  const answerText = strifeSkillText(monster, skill, 'answer');
+  const effect = effectText ? `<p>${escapeHtml(effectText)}</p>` : '';
+  const answer = answerText
+    ? `<p class="strife-skill-answer"><strong>${escapeHtml(copy('strifeSkillCounter', 'Counter'))}</strong> ${escapeHtml(answerText)}</p>`
     : '';
 
   return `
     <article class="strife-skill-card">
       <div class="strife-skill-head">
         <span>${escapeHtml(copy('strifeSkillNumber', 'Skill {number}', { number: index + 1 }))}</span>
-        <h4>${escapeHtml(skill.name || copy('strifeMonsterSkillFallback', 'Monster skill'))}</h4>
+        <h4>${escapeHtml(strifeSkillText(monster, skill, 'name') || copy('strifeMonsterSkillFallback', 'Monster skill'))}</h4>
       </div>
-      ${meta.length ? `<div class="strife-skill-meta">${meta.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+      ${meta.length ? `<div class="strife-skill-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join('')}</div>` : ''}
       <div class="strife-skill-body">
         ${effect}
         ${answer}
       </div>
-      ${tags.length ? `<div class="strife-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+      ${tags.length ? `<div class="strife-tags">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
     </article>
   `;
 }
@@ -284,7 +329,7 @@ function renderMonsterSkills(monster) {
   const guideContent = guideNotes.length
     ? `
       <div class="strife-guide-notes">
-        ${guideNotes.map(note => `<p>${escapeHtml(note)}</p>`).join('')}
+        ${guideNotes.map((note) => `<p>${escapeHtml(note)}</p>`).join('')}
       </div>
     `
     : `
@@ -294,11 +339,11 @@ function renderMonsterSkills(monster) {
       </div>
     `;
   const content = skills.length
-    ? skills.map((skill, index) => renderMonsterSkill(skill, index)).join('')
+    ? skills.map((skill, index) => renderMonsterSkill(monster, skill, index)).join('')
     : `
       <div class="strife-skill-empty">
         <strong>${escapeHtml(copy('strifeMonsterIntelPendingTitle', 'Monster intel is still being verified'))}</strong>
-        <span>${escapeHtml(copy('strifeMonsterIntelPendingBody', 'No verified skill notes are available for {monster} yet.', { monster: monster.name }))}</span>
+        <span>${escapeHtml(copy('strifeMonsterIntelPendingBody', 'No verified skill notes are available for {monster} yet.', { monster: strifeMonsterText(monster, 'name') }))}</span>
       </div>
     `;
 
@@ -306,9 +351,14 @@ function renderMonsterSkills(monster) {
     <section class="strife-results-band strife-skills-band">
       <div class="strife-section-title">
         <h3>${escapeHtml(copy('strifeMonsterIntel', 'Monster intel'))}</h3>
-        <span>${source || escapeHtml(skills.length
-          ? copy('strifeNotesCount', '{n} notes', { n: skills.length })
-          : copy('strifePending', 'Pending'))}</span>
+        <span>${
+          source ||
+          escapeHtml(
+            skills.length
+              ? copy('strifeNotesCount', '{n} notes', { n: skills.length })
+              : copy('strifePending', 'Pending')
+          )
+        }</span>
       </div>
       ${guideContent}
       <div class="strife-skill-list">${content}</div>
@@ -322,9 +372,10 @@ function renderHeroSlot(heroName, positionIndex) {
   const season = hero?.season || '';
   const state = hero?.State || 'Free';
   const portrait = getHeroImageUrl(heroName);
-  const paid = state === 'Paid'
-    ? `<span class="strife-hero-paid" title="${escapeHtml(copy('statePaid', 'Paid'))}">P</span>`
-    : '';
+  const paid =
+    state === 'Paid'
+      ? `<span class="strife-hero-paid" title="${escapeHtml(copy('statePaid', 'Paid'))}">P</span>`
+      : '';
   return `
     <div class="strife-hero-slot">
       <span class="strife-slot-role">${escapeHtml(getPositionLabel(positionIndex))}</span>
@@ -342,26 +393,27 @@ function renderHeroSlot(heroName, positionIndex) {
 
 function renderComboCard(combo, index, variant = STRIFE_TIERS.F2P) {
   const troopType = combo.troopType || 'Mixed';
-  const title = combo.source === 'manual'
-    ? copy('strifeTierRank', '{tier} #{rank}', { tier: getTierLabel(variant), rank: index + 1 })
-    : copy('strifeReusableRank', 'Reusable #{rank}', { rank: index + 1 });
-  const scoreLabel = combo.source === 'fallback'
-    ? copy('strifeDatabaseRank', 'DB #{rank} · {score}', {
-      rank: combo.sourceRank,
-      score: combo.displayScore,
-    })
-    : combo.displayScore;
-  const troopLabel = troopType === 'Mixed'
-    ? copy('strifeTroopMixed', 'Mixed')
-    : getLocalizedTroop(troopType);
-  const tags = (combo.tags || []).map(tag => `<span>${escapeHtml(tag)}</span>`).join('');
-  const noteMatch = combo.note?.match(/^Recommended (P2W|F2P) formation: (.+)\.$/);
-  const noteText = noteMatch
-    ? copy('strifeRecommendedFormation', 'Recommended {tier} formation: {heroes}.', {
-      tier: noteMatch[1],
-      heroes: noteMatch[2],
-    })
-    : combo.note;
+  const title =
+    combo.source === 'manual'
+      ? copy('strifeTierRank', '{tier} #{rank}', { tier: getTierLabel(variant), rank: index + 1 })
+      : copy('strifeReusableRank', 'Reusable #{rank}', { rank: index + 1 });
+  const scoreLabel =
+    combo.source === 'fallback'
+      ? copy('strifeDatabaseRank', 'DB #{rank} · {score}', {
+          rank: combo.sourceRank,
+          score: combo.displayScore,
+        })
+      : combo.displayScore;
+  const troopLabel =
+    troopType === 'Mixed' ? copy('strifeTroopMixed', 'Mixed') : getLocalizedTroop(troopType);
+  const tags = (combo.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('');
+  const noteText =
+    combo.noteId === 'recommended-formation'
+      ? copy('strifeRecommendedFormation', 'Recommended {tier} formation: {heroes}.', {
+          tier: combo.tier === STRIFE_TIERS.P2W ? 'P2W' : 'F2P',
+          heroes: combo.heroes.join(' / '),
+        })
+      : combo.note;
   const note = noteText ? `<p class="strife-combo-note">${escapeHtml(noteText)}</p>` : '';
 
   return `
@@ -387,11 +439,13 @@ function renderComboCard(combo, index, variant = STRIFE_TIERS.F2P) {
 function renderEmptyState(model, tierLabel) {
   return `
     <div class="strife-empty">
-      <strong>${escapeHtml(copy('strifeEmptyLineupTitle', 'No verified {tier} lineup for {monster} at {stage} yet.', {
-        tier: tierLabel,
-        monster: model.monster.name,
-        stage: model.stage,
-      }))}</strong>
+      <strong>${escapeHtml(
+        copy('strifeEmptyLineupTitle', 'No verified {tier} lineup for {monster} at {stage} yet.', {
+          tier: tierLabel,
+          monster: strifeMonsterText(model.monster, 'name'),
+          stage: model.stage,
+        })
+      )}</strong>
       <span>${escapeHtml(copy('strifeEmptyLineupBody', 'Choose an earlier stage or another monster and check again.'))}</span>
     </div>
   `;
@@ -401,9 +455,10 @@ function renderComboSection(title, subtitle, combos, model, variant, sourceMode)
   const content = combos.length
     ? combos.map((combo, index) => renderComboCard(combo, index, variant)).join('')
     : renderEmptyState(model, getTierLabel(variant));
-  const source = sourceMode === 'manual'
-    ? copy('strifeVerifiedLineup', 'Verified monster lineup')
-    : copy('strifeBestRosterMatch', 'Best available roster match');
+  const source =
+    sourceMode === 'manual'
+      ? copy('strifeVerifiedLineup', 'Verified monster lineup')
+      : copy('strifeBestRosterMatch', 'Best available roster match');
   return `
     <section class="strife-results-band strife-results-band--${escapeHtml(variant)}">
       <div class="strife-section-title">
@@ -420,7 +475,7 @@ function keepActiveMonsterInView() {
   const grid = strifeRoot.querySelector('.strife-monster-grid');
   const active = grid?.querySelector('.strife-monster-card.active');
   if (!grid || !active) return;
-  const nextLeft = active.offsetLeft - ((grid.clientWidth - active.clientWidth) / 2);
+  const nextLeft = active.offsetLeft - (grid.clientWidth - active.clientWidth) / 2;
   grid.scrollTo({ left: Math.max(0, nextLeft), behavior: 'auto' });
 }
 
@@ -456,7 +511,7 @@ function renderStrifeTool() {
         </div>
       </div>
       <div class="strife-metrics" aria-label="${escapeHtml(copy('strifeMetricsAria', 'Strife recommendation metrics'))}">
-        <span class="strife-metric strife-metric--selected">${escapeHtml(copy('strifeMetricSelected', '{monster} selected', { monster: model.monster.name }))}</span>
+        <span class="strife-metric strife-metric--selected">${escapeHtml(copy('strifeMetricSelected', '{monster} selected', { monster: strifeMonsterText(model.monster, 'name') }))}</span>
         <span class="strife-metric strife-metric--heroes"><strong>${escapeHtml(String(model.availableHeroCount))}</strong> ${escapeHtml(copy('availableHeroesTitle', 'Available Heroes'))}</span>
         <span class="strife-metric strife-metric--stages">${escapeHtml(copy('strifeMetricAvailableStages', 'Available stages: {stages}', { stages: model.availableSeasons.join(' / ') }))}</span>
       </div>
@@ -469,12 +524,18 @@ function renderStrifeTool() {
           <p class="strife-eyebrow">${escapeHtml(copy('strifeSelectedMonster', 'Selected monster'))}</p>
           <span class="strife-monster-stage">${escapeHtml(model.stage)}</span>
         </div>
-        <h3>${escapeHtml(model.monster.name)}</h3>
-        <span>${escapeHtml(copy('strifeFormationOrder', 'Formation order: {front} / {middle} / {back}. Use the strongest lane you can build, then repeat that same team for the monster.', {
-          front: getPositionLabel(0),
-          middle: getPositionLabel(1),
-          back: getPositionLabel(2),
-        }))}</span>
+        <h3>${escapeHtml(strifeMonsterText(model.monster, 'name'))}</h3>
+        <span>${escapeHtml(
+          copy(
+            'strifeFormationOrder',
+            'Formation order: {front} / {middle} / {back}. Use the strongest lane you can build, then repeat that same team for the monster.',
+            {
+              front: getPositionLabel(0),
+              middle: getPositionLabel(1),
+              back: getPositionLabel(2),
+            }
+          )
+        )}</span>
       </div>
     </section>
 
@@ -516,7 +577,9 @@ function handleStrifeClick(event) {
     localStorage.setItem(STRIFE_MONSTER_KEY, monsterBtn.dataset.strifeMonster);
     renderStrifeTool();
     if (restoreKeyboardFocus) {
-      requestAnimationFrame(() => strifeRoot?.querySelector('.strife-monster-card.active')?.focus({ preventScroll: true }));
+      requestAnimationFrame(() =>
+        strifeRoot?.querySelector('.strife-monster-card.active')?.focus({ preventScroll: true })
+      );
     }
     return;
   }
@@ -527,12 +590,19 @@ function handleStrifeClick(event) {
     localStorage.setItem(STRIFE_STAGE_KEY, stageBtn.dataset.strifeStage);
     renderStrifeTool();
     if (restoreKeyboardFocus) {
-      requestAnimationFrame(() => strifeRoot?.querySelector('.strife-stage-btn.active')?.focus({ preventScroll: true }));
+      requestAnimationFrame(() =>
+        strifeRoot?.querySelector('.strife-stage-btn.active')?.focus({ preventScroll: true })
+      );
     }
   }
 }
 
-export function initStrifeTool() {
+export async function refreshStrifeLocale(locale = currentLanguage) {
+  await loadStrifeLocale(locale);
+  scheduleStrifeRender();
+}
+
+export async function initStrifeTool() {
   strifeRoot = document.getElementById('strifeToolRoot');
   if (!strifeRoot) return;
   if (strifeRoot.dataset.strifeWired !== '1') {
@@ -541,8 +611,9 @@ export function initStrifeTool() {
   }
   if (!strifeLanguageListenerWired) {
     strifeLanguageListenerWired = true;
-    window.addEventListener('edenLanguageUpdate', scheduleStrifeRender);
+    window.addEventListener('edenLanguageUpdate', () => refreshStrifeLocale(currentLanguage));
   }
+  await loadStrifeLocale(currentLanguage);
   renderStrifeTool();
   window.vtsRenderStrifeTool = scheduleStrifeRender;
 }

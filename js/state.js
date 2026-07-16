@@ -4,9 +4,10 @@ import { allHeroesData } from './heroes-data.js';
 import { skinHeroesData } from './skin-heroes-data.js';
 import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
+import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.0.11';
+export const APP_VERSION = '14.0.12';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -40,7 +41,9 @@ export let selectedStates = ['Free', 'Paid'];
 export let selectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 
 export let currentCombo = [null, null, null];
-export function setCurrentCombo(v) { currentCombo = v; }
+export function setCurrentCombo(v) {
+  currentCombo = v;
+}
 
 export let generatorSelectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];
 export let generatorSelectedStates = ['Free', 'Paid'];
@@ -51,23 +54,53 @@ export let generatorSkinsOnly = false;
 export let manualSkinsOnly = false;
 
 export let userId = 'anonymous';
-export function getUserId() { return userId; }
-export function setUserId(uid) { userId = uid; }
+export function getUserId() {
+  return userId;
+}
+export function setUserId(uid) {
+  userId = uid;
+}
 export let db = null;
-export function setDb(d) { db = d; }
+export function setDb(d) {
+  db = d;
+}
 
-export function setCurrentLanguage(lang) { currentLanguage = lang; }
-export function setHeroInfoEnabled(v) { heroInfoEnabled = v; }
-export function setSelectedSeasons(v) { selectedSeasons = v; }
-export function setSelectedStates(v) { selectedStates = v; }
-export function setSelectedTypes(v) { selectedTypes = v; }
-export function setGeneratorSelectedSeasons(v) { generatorSelectedSeasons = v; }
-export function setGeneratorSelectedStates(v) { generatorSelectedStates = v; }
-export function setGeneratorSelectedTypes(v) { generatorSelectedTypes = v; }
-export function setGeneratorSkinsOnly(v) { generatorSkinsOnly = v; }
-export function setManualSkinsOnly(v) { manualSkinsOnly = v; }
-export function setActiveTechSeasons(v) { activeTechSeasons = v; }
-export function setTechSearchQuery(v) { techSearchQuery = v; }
+export function setCurrentLanguage(lang) {
+  currentLanguage = lang;
+}
+export function setHeroInfoEnabled(v) {
+  heroInfoEnabled = v;
+}
+export function setSelectedSeasons(v) {
+  selectedSeasons = v;
+}
+export function setSelectedStates(v) {
+  selectedStates = v;
+}
+export function setSelectedTypes(v) {
+  selectedTypes = v;
+}
+export function setGeneratorSelectedSeasons(v) {
+  generatorSelectedSeasons = v;
+}
+export function setGeneratorSelectedStates(v) {
+  generatorSelectedStates = v;
+}
+export function setGeneratorSelectedTypes(v) {
+  generatorSelectedTypes = v;
+}
+export function setGeneratorSkinsOnly(v) {
+  generatorSkinsOnly = v;
+}
+export function setManualSkinsOnly(v) {
+  manualSkinsOnly = v;
+}
+export function setActiveTechSeasons(v) {
+  activeTechSeasons = v;
+}
+export function setTechSearchQuery(v) {
+  techSearchQuery = v;
+}
 export function getGeneratorHeroPool(skinsOnly = generatorSkinsOnly) {
   return skinsOnly ? skinHeroesData : allHeroesData;
 }
@@ -82,15 +115,17 @@ export function pushUndoAction(action) {
   if (!action || typeof action.undo !== 'function') return;
   undoHistoryStack.push({
     id: action.id || `undo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    label: action.label || 'Change',
+    label: action.label || comboToolsText('state.change', {}, currentLanguage),
     message: action.message || '',
     undo: action.undo,
     createdAt: Date.now(),
   });
   if (undoHistoryStack.length > 12) undoHistoryStack.shift();
-  window.dispatchEvent(new CustomEvent('vts:undo-available', {
-    detail: undoHistoryStack[undoHistoryStack.length - 1],
-  }));
+  window.dispatchEvent(
+    new CustomEvent('vts:undo-available', {
+      detail: undoHistoryStack[undoHistoryStack.length - 1],
+    })
+  );
 }
 
 export async function undoLastAction() {
@@ -101,9 +136,13 @@ export async function undoLastAction() {
 }
 
 export function getSourceCreditText() {
-  const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
+  const lang = currentLanguage || 'en';
   const t = translations[lang] || translations.en;
-  return t.sourceCreditText || translations.en.sourceCreditText || "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
+  return (
+    t.sourceCreditText ||
+    translations.en.sourceCreditText ||
+    'Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.'
+  );
 }
 
 // --- COLORS (defined in constants.js, re-exported for convenience) ---
@@ -119,18 +158,20 @@ const SEASON_CATCHUP_HINT_KEYS = {
 };
 
 export function getSeasonCatchupHint(seasons = []) {
-  return getSeasonCatchupItems(seasons).map(item => item.text).join(' ');
+  return getSeasonCatchupItems(seasons)
+    .map((item) => item.text)
+    .join(' ');
 }
 
 export function getSeasonCatchupItems(seasons = []) {
-  const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
+  const lang = currentLanguage || 'en';
   const t = translations[lang] || translations.en;
   const en = translations.en || {};
-  const ordered = HERO_ATLAS_ALL_SEASONS.filter(season => seasons.includes(season));
+  const ordered = HERO_ATLAS_ALL_SEASONS.filter((season) => seasons.includes(season));
   return ordered
-    .map(season => {
+    .map((season) => {
       const key = SEASON_CATCHUP_HINT_KEYS[season];
-      const text = key ? (t[key] || en[key] || '') : '';
+      const text = key ? t[key] || en[key] || '' : '';
       const parts = text.split(':');
       return {
         season,
@@ -139,17 +180,19 @@ export function getSeasonCatchupItems(seasons = []) {
         body: parts.length > 0 ? parts.join(':').trim() : text,
       };
     })
-    .filter(item => item.text);
+    .filter((item) => item.text);
 }
 
 const PAID_GEM_SVG = `<svg class="paid-gem-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.8 5.55 15.7l.85-5L2.8 7.2l5-.7L10 2z" fill="#a855f7" stroke="#fde68a" stroke-width=".7"/></svg>`;
 
 export function paidBadgeHtml(variant = 'card') {
-  return `<span class="paid-badge paid-badge--${variant}" title="Paid Hero">${PAID_GEM_SVG}<span class="paid-badge-text">PAID</span></span>`;
+  const title = comboToolsText('state.paidHero', {}, currentLanguage);
+  const label = comboToolsText('state.paid', {}, currentLanguage);
+  return `<span class="paid-badge paid-badge--${variant}" title="${title}">${PAID_GEM_SVG}<span class="paid-badge-text">${label}</span></span>`;
 }
 
 export function paidIconHtml() {
-  return `<span class="paid-icon-inline" title="Paid Hero">${PAID_GEM_SVG}</span>`;
+  return `<span class="paid-icon-inline" title="${comboToolsText('state.paidHero', {}, currentLanguage)}">${PAID_GEM_SVG}</span>`;
 }
 
 // --- DOM ELEMENTS ---
@@ -207,11 +250,16 @@ export const genTroopFiltersEl = document.getElementById('generatorTroopFilters'
 
 export function getTroopColorClass(type) {
   switch (type) {
-    case 'Archers': return 'troop-color--archers';
-    case 'Footmen': return 'troop-color--footmen';
-    case 'Cavalry': return 'troop-color--cavalry';
-    case 'All': return 'troop-color--all';
-    default: return 'troop-color--unknown';
+    case 'Archers':
+      return 'troop-color--archers';
+    case 'Footmen':
+      return 'troop-color--footmen';
+    case 'Cavalry':
+      return 'troop-color--cavalry';
+    case 'All':
+      return 'troop-color--all';
+    default:
+      return 'troop-color--unknown';
   }
 }
 
@@ -225,7 +273,7 @@ export function getLocalizedTroop(type) {
 }
 
 export function getHeroImageUrl(name) {
-  const h = allHeroesData.find(x => x.name === name);
+  const h = allHeroesData.find((x) => x.name === name);
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
 }
 
@@ -233,7 +281,7 @@ export function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
   if (!seasonsArr || seasonsArr.length === 0) return false;
   if (!seasonsArr.includes(hero.season)) return false;
   const heroState = (hero.State || 'Free').toLowerCase();
-  const lowerStatesArr = (statesArr || []).map(s => s.toLowerCase());
+  const lowerStatesArr = (statesArr || []).map((s) => s.toLowerCase());
   if (lowerStatesArr.length && !lowerStatesArr.includes(heroState)) return false;
   const heroType = hero.Type || 'All';
   if (!typesArr || !typesArr.length) return true;
@@ -256,7 +304,7 @@ export function getComboRankInfo(heroes) {
     ) {
       const rank = i + 1;
       let rawScore = 100;
-      if (total > 1) rawScore = 100 - ((i / (total - 1)) * 99);
+      if (total > 1) rawScore = 100 - (i / (total - 1)) * 99;
       return { rank, score: rawScore.toFixed(1), index: i };
     }
   }
@@ -268,40 +316,66 @@ export function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
 }
 
 export function getCounterLabels() {
-  const t = translations[currentLanguage] || translations.en;
   return {
-    toggle: t.countersToggle || 'Counters ({n})',
-    title: t.countersTitle || 'Counters',
-    score: t.countersScore || 'Score',
-    hide: t.countersHide || 'Hide counters',
+    toggle: comboToolsText('counter.toggle', {}, currentLanguage),
+    title: comboToolsText('counter.title', {}, currentLanguage),
+    score: comboToolsText('counter.score', {}, currentLanguage),
+    hide: comboToolsText('counter.hide', {}, currentLanguage),
+    noCounters: comboToolsText('counter.none', {}, currentLanguage),
+    useCounter: comboToolsText('counter.use', {}, currentLanguage),
+    why: comboToolsText('counter.why', {}, currentLanguage),
+    rank: comboToolsText('counter.rank', {}, currentLanguage),
+    unranked: comboToolsText('counter.unranked', {}, currentLanguage),
+    counterNumber: comboToolsText('counter.number', {}, currentLanguage),
+    lineup: comboToolsText('counter.lineup', {}, currentLanguage),
+    pathOne: comboToolsText('counter.pathOne', {}, currentLanguage),
+    pathMany: comboToolsText('counter.pathMany', {}, currentLanguage),
+    pickHelp: comboToolsText('counter.pickHelp', {}, currentLanguage),
+    favoredHelp: comboToolsText('counter.favoredHelp', {}, currentLanguage),
+    targetCombo: comboToolsText('counter.targetCombo', {}, currentLanguage),
+    counter: comboToolsText('counter.counter', {}, currentLanguage),
+    beats: comboToolsText('counter.beats', {}, currentLanguage),
+    target: comboToolsText('counter.target', {}, currentLanguage),
+    localizeReason: (id, fallback) =>
+      id ? comboToolsText(`counter.reason.${id}`, {}, currentLanguage) : fallback,
+    localizeConfidence: (id, fallback) =>
+      id ? comboToolsText(`counter.confidence.${id}`, {}, currentLanguage) : fallback,
   };
 }
 
 export function getCheckedValues(container) {
   if (!container) return [];
-  return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+  return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(
+    (i) => i.value
+  );
 }
 
 export function computeStateSelection(container) {
-  const raw = getCheckedValues(container).map(v => v.toLowerCase());
+  const raw = getCheckedValues(container).map((v) => v.toLowerCase());
   const set = new Set();
   if (raw.length === 0) return ['Free', 'Paid'];
-  if (raw.some(v => v.includes('paid') && v.includes('free'))) { set.add('Free'); set.add('Paid'); }
-  if (raw.some(v => v === 'free')) set.add('Free');
-  if (raw.some(v => v === 'paid')) set.add('Paid');
-  if (set.size === 0) { set.add('Free'); set.add('Paid'); }
+  if (raw.some((v) => v.includes('paid') && v.includes('free'))) {
+    set.add('Free');
+    set.add('Paid');
+  }
+  if (raw.some((v) => v === 'free')) set.add('Free');
+  if (raw.some((v) => v === 'paid')) set.add('Paid');
+  if (set.size === 0) {
+    set.add('Free');
+    set.add('Paid');
+  }
   return Array.from(set);
 }
 
 export function computeTypeSelection(container) {
-  const raw = getCheckedValues(container).map(v => v.toLowerCase());
+  const raw = getCheckedValues(container).map((v) => v.toLowerCase());
   if (raw.length === 0) return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  const hasAll = raw.some(v => v.includes('all') || v.includes('cavalry or archers'));
+  const hasAll = raw.some((v) => v.includes('all') || v.includes('cavalry or archers'));
   if (hasAll) return ['Archers', 'Footmen', 'Cavalry', 'All'];
   const set = new Set();
-  if (raw.some(v => v.includes('archers'))) set.add('Archers');
-  if (raw.some(v => v.includes('footmen'))) set.add('Footmen');
-  if (raw.some(v => v.includes('cavalry'))) set.add('Cavalry');
+  if (raw.some((v) => v.includes('archers'))) set.add('Archers');
+  if (raw.some((v) => v.includes('footmen'))) set.add('Footmen');
+  if (raw.some((v) => v.includes('cavalry'))) set.add('Cavalry');
   if (set.size === 0) return ['Archers', 'Footmen', 'Cavalry', 'All'];
   return Array.from(set);
 }

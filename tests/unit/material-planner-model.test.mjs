@@ -594,12 +594,16 @@ test('DM progress exposes a visible name and recalculated current/max value text
   assert.match(materialUiSource, /function rerender[\s\S]*?render\(\)/);
 });
 
-test('DM heading reuses the translated Materials label while detailed locale keys converge', () => {
-  assert.match(materialUiSource, /localized\.title = localizedDmText\('tabMaterials'/);
-  assert.match(materialUiSource, /globalThis\.VTS_TRANSLATIONS/);
+test('DM copy loads from the dedicated locale pack before rendering', () => {
+  assert.match(materialUiSource, /return getDmPlannerCopy\(\)/);
+  assert.match(materialUiSource, /await loadDmMaterialsLocale\(language\)/);
   assert.match(materialUiSource, /setCurrentLanguage\(language\)/);
   assert.match(materialUiSource, /return primary === 'ko' \? 'kr' : primary/);
   assert.match(
+    materialUiSource,
+    /window\.addEventListener\('vts:language-change', renderForLanguage\)/
+  );
+  assert.doesNotMatch(
     materialUiSource,
     /window\.addEventListener\('edenLanguageUpdate', renderForLanguage\)/
   );
