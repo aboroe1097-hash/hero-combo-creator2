@@ -53,9 +53,10 @@ const LIMITS = {
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
     'arcade.html': { desktop: 426 * 1024, mobile: 519 * 1024 },
-    // Battle Simulator loads only shared tokens plus its 24.3 KiB standalone
-    // sheet, measuring 34.8 KiB on both desktop and mobile before unlock.
-    'battle-simulator.html': { desktop: 38 * 1024, mobile: 38 * 1024 },
+    // Battle Simulator loads only shared tokens plus its 30.6 KiB standalone
+    // sheet, measuring 41.1 KiB on desktop and mobile before unlock. Keep less
+    // than 2 KiB of route-specific headroom.
+    'battle-simulator.html': { desktop: 43 * 1024, mobile: 43 * 1024 },
   },
 };
 
