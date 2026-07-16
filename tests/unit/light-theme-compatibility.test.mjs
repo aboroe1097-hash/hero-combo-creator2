@@ -146,12 +146,16 @@ test('standalone lobby and footer have explicit light surfaces', () => {
   assert.match(eden, /id="edenZoomIn"[^>]*data-i18n-aria="edenZoomInTitle"/);
 });
 
-test('aggregate CSS budget records the accessibility and contribution-control baseline', () => {
+test('aggregate CSS budget records the isolated Battle Simulator workflow baseline', () => {
   const sizeCheck = read('scripts/check-size.mjs');
 
-  assert.match(sizeCheck, /cross-tool light-theme\/touch-target pass/);
-  assert.match(sizeCheck, /aggregate CSS to 1089\.4 KiB/);
+  assert.match(sizeCheck, /expanded standalone simulator sheet remains route-isolated/);
+  assert.match(sizeCheck, /aggregate CSS to 1095\.7 KiB/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1092 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1098 \* 1024/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 426 \* 1024, mobile: 519 \* 1024 \}/);
+  assert.match(
+    sizeCheck,
+    /'battle-simulator\.html': \{ desktop: 43 \* 1024, mobile: 43 \* 1024 \}/
+  );
 });

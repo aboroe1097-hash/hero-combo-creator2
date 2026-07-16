@@ -24,20 +24,20 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // The PIN-gated Battle Simulator keeps its 57.2 KiB application and 9.7 KiB
-  // worker lazy; the full graph measures 3701.5 KiB. Keep about 2.5 KiB of
-  // headroom, while route preload checks prevent either leaking into Index.
-  totalJsBytes: 3704 * 1024,
-  // The cross-tool light-theme/touch-target pass remains covered. The standalone
-  // simulator sheet brings aggregate CSS to 1089.4 KiB while remaining isolated
-  // from existing routes. Keep about 2.6 KiB of headroom.
-  totalCssBytes: 1092 * 1024,
+  // Battle Simulator setup import/presets, coefficient controls, calibration
+  // export, sticky run bar, verdict, and copy/swap keep their 84.5 KiB app lazy;
+  // the full graph measures 3732.2 KiB. Keep less than 3 KiB of headroom while
+  // route preload checks prevent the simulator from leaking into Index.
+  totalJsBytes: 3735 * 1024,
+  // The expanded standalone simulator sheet remains route-isolated and brings
+  // aggregate CSS to 1095.7 KiB. Keep less than 2.5 KiB of headroom.
+  totalCssBytes: 1098 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
   // Vendored Firebase adds cacheable code, not media or initial-route bytes.
-  // The complete artifact measures 20,654.5 KiB with its isolated worker.
-  totalDeployBytes: 20.174 * 1024 * 1024,
+  // The complete artifact measures 20,691.5 KiB after the simulator workflow.
+  totalDeployBytes: 20.21 * 1024 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // The simulator adds its HTML, bootstrap, application, and CSS artifacts;
@@ -50,9 +50,10 @@ const LIMITS = {
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
     'arcade.html': { desktop: 426 * 1024, mobile: 519 * 1024 },
-    // Battle Simulator loads only shared tokens plus its 24.3 KiB standalone
-    // sheet, measuring 34.8 KiB on both desktop and mobile before unlock.
-    'battle-simulator.html': { desktop: 38 * 1024, mobile: 38 * 1024 },
+    // Battle Simulator loads only shared tokens plus its 30.6 KiB standalone
+    // sheet, measuring 41.1 KiB on desktop and mobile before unlock. Keep less
+    // than 2 KiB of route-specific headroom.
+    'battle-simulator.html': { desktop: 43 * 1024, mobile: 43 * 1024 },
   },
 };
 
