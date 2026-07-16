@@ -1,9 +1,39 @@
 // js/pwa-register.js - Service worker registration & install prompt
 const SW_PATH = '/sw.js';
+const ENGLISH_PWA_FALLBACK = Object.freeze({
+  updateAvailable: 'New version available — refresh to update.',
+  dismiss: 'Dismiss',
+  installTitle: 'Install VTS Combos',
+  installSubtitle: 'One-tap access · Works offline',
+  installAction: 'Install',
+  installing: 'Installing…',
+  iosTitle: 'Add to Home Screen',
+  iosTap: 'Tap',
+  iosShare: 'Share',
+  iosAddToHome: 'Add to Home Screen',
+});
+
+function pwaRuntime() {
+  return globalThis.VTS_PWA_I18N;
+}
+
+function currentPwaLocale(candidate) {
+  const runtime = pwaRuntime();
+  if (runtime) return runtime.normalizeLocale(candidate || runtime.detectLocale());
+  const primary = String(candidate || document.documentElement.lang || navigator.language || 'en')
+    .trim()
+    .toLowerCase()
+    .split('-')[0];
+  return primary === 'ko' ? 'kr' : primary;
+}
+
+function pwaText(id, locale) {
+  return pwaRuntime()?.text(id, locale) || ENGLISH_PWA_FALLBACK[id] || id;
+}
 
 function notifyServiceWorkerUpdate() {
   if (typeof window.showToast === 'function') {
-    window.showToast('New version available - refresh to update.', 'info', 8000);
+    window.showToast(pwaText('updateAvailable', currentPwaLocale()), 'info', 8000);
   }
 }
 
@@ -54,6 +84,7 @@ export function registerServiceWorker() {
 
 export function setupInstallPrompt() {
   let deferredPrompt = null;
+  let activeLocale = currentPwaLocale();
   const A2HS_LS = 'a2hs-dismiss';
   const A2HS_COOLDOWN = 30 * 24 * 60 * 60 * 1000;
 
@@ -79,6 +110,30 @@ export function setupInstallPrompt() {
     });
   }
 
+  function refreshBannerCopy(banner, locale = activeLocale) {
+    banner.querySelectorAll('[data-pwa-copy]').forEach((element) => {
+      const id = element.dataset.pwaCopy;
+      element.textContent = pwaText(id, locale);
+    });
+    banner.querySelectorAll('[data-pwa-copy-aria]').forEach((element) => {
+      const id = element.dataset.pwaCopyAria;
+      element.setAttribute('aria-label', pwaText(id, locale));
+    });
+    const installButton = banner.querySelector('.a2hs-banner-install');
+    if (installButton?.dataset.installing === 'true') {
+      installButton.textContent = pwaText('installing', locale);
+    }
+  }
+
+  function refreshVisibleCopy(event) {
+    activeLocale = currentPwaLocale(event?.detail?.lang);
+    document.querySelectorAll('.a2hs-banner').forEach((banner) => {
+      refreshBannerCopy(banner, activeLocale);
+    });
+  }
+
+  window.addEventListener('vts:language-change', refreshVisibleCopy);
+
   function createBanner(installFn) {
     if (a2hsDismissed()) return;
     const wrap = document.querySelector('.a2hs-banner');
@@ -93,23 +148,25 @@ export function setupInstallPrompt() {
       '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 
     banner.innerHTML = hasInstall
-      ? `<button class="a2hs-banner-close" aria-label="Dismiss">&times;</button>
+      ? `<button class="a2hs-banner-close" data-pwa-copy-aria="dismiss">&times;</button>
          <div class="a2hs-banner-msg">
            <span class="a2hs-banner-icon">${svgIcon}</span>
            <div class="a2hs-banner-text">
-             <div class="a2hs-banner-title">Install VTS Combos</div>
-             <div class="a2hs-banner-sub">One-tap access &middot; Works offline</div>
+             <div class="a2hs-banner-title" data-pwa-copy="installTitle"></div>
+             <div class="a2hs-banner-sub" data-pwa-copy="installSubtitle"></div>
            </div>
          </div>
-         <button class="a2hs-banner-install" type="button">Install</button>`
-      : `<button class="a2hs-banner-close" aria-label="Dismiss">&times;</button>
+         <button class="a2hs-banner-install" type="button" data-pwa-copy="installAction"></button>`
+      : `<button class="a2hs-banner-close" data-pwa-copy-aria="dismiss">&times;</button>
          <div class="a2hs-banner-msg">
            <span class="a2hs-banner-icon">${svgIcon}</span>
            <div class="a2hs-banner-text">
-             <div class="a2hs-banner-title">Add to Home Screen</div>
-             <div class="a2hs-banner-sub">Tap <strong>Share</strong> &rarr; <strong>Add to Home Screen</strong></div>
+             <div class="a2hs-banner-title" data-pwa-copy="iosTitle"></div>
+             <div class="a2hs-banner-sub"><span data-pwa-copy="iosTap"></span> <strong data-pwa-copy="iosShare"></strong> &rarr; <strong data-pwa-copy="iosAddToHome"></strong></div>
            </div>
          </div>`;
+
+    refreshBannerCopy(banner, activeLocale);
 
     banner.querySelector('.a2hs-banner-close')?.addEventListener('click', dismissA2hs);
 
@@ -117,7 +174,8 @@ export function setupInstallPrompt() {
     if (installBtn && installFn) {
       installBtn.addEventListener('click', () => {
         installBtn.disabled = true;
-        installBtn.textContent = 'Installing\u2026';
+        installBtn.dataset.installing = 'true';
+        installBtn.textContent = pwaText('installing', activeLocale);
         installFn();
       });
     }

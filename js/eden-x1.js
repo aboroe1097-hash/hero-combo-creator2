@@ -11,11 +11,11 @@ import {
 } from './contribution-weighting.js';
 import {
   translations,
-  loadTranslationsForLanguage,
   applyLanguageDirection,
+  createLatestLanguageLoader,
 } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { setCurrentLanguage } from './state.js';
+import { currentLanguage, setCurrentLanguage } from './state.js';
 import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
@@ -29,6 +29,8 @@ import {
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
+import { localizeEdenX1Shell } from './i18n/eden-x1-shell.js';
+import { runtimeMiscT } from './i18n/runtime-misc.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
   compareManagementVoteAssignmentCandidates,
@@ -37,7 +39,7 @@ import {
   managementVoteCandidateVariants,
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
-import { formatLocaleDate } from './locale-format.js';
+import { formatLocaleDate, formatLocaleNumber } from './locale-format.js';
 import {
   edenVoteDeadlineMs,
   getEdenVoteCountdownParts,
@@ -52,7 +54,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.11';
+const APP_VERSION = '14.0.12';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -334,25 +336,33 @@ function valueOf(input) {
 }
 
 function formatSignedNumber(n) {
-  if (n > 0) return `+${n}`;
-  return String(n);
+  const value = valueOf(n);
+  const formatted = formatLocaleNumber(Math.abs(value), currentLang, {
+    maximumFractionDigits: 2,
+  });
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `-${formatted}`;
+  return formatted;
 }
 
 function formatScore(value) {
-  return valueOf(value).toLocaleString();
+  return formatLocaleNumber(valueOf(value), currentLang);
 }
 
 function compactValue(value) {
   const n = valueOf(value);
   const abs = Math.abs(n);
-  if (abs >= 1000000000) return `${(n / 1000000000).toFixed(1)}B`;
-  if (abs >= 1000000) return `${(n / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
-  if (abs >= 1000) return `${(n / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`;
-  return Math.round(n).toLocaleString();
+  if (abs >= 1000000000)
+    return `${formatLocaleNumber(n / 1000000000, currentLang, { maximumFractionDigits: 1 })}B`;
+  if (abs >= 1000000)
+    return `${formatLocaleNumber(n / 1000000, currentLang, { maximumFractionDigits: abs >= 10000000 ? 0 : 1 })}M`;
+  if (abs >= 1000)
+    return `${formatLocaleNumber(n / 1000, currentLang, { maximumFractionDigits: abs >= 10000 ? 0 : 1 })}K`;
+  return formatLocaleNumber(Math.round(n), currentLang);
 }
 
 function formatWeightedScore(value) {
-  return valueOf(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  return formatLocaleNumber(valueOf(value), currentLang, { maximumFractionDigits: 1 });
 }
 
 function conductBonusValue(row) {
@@ -1157,8 +1167,8 @@ function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
       key: row.playerKey || compactPlayerIdentity(row.playerName),
       name: row.playerName,
       value: t('edenX1VoteBannerPathValue', {
-        banners: row.banners.toLocaleString(),
-        pathers: row.pathers.toLocaleString(),
+        banners: formatScore(row.banners),
+        pathers: formatScore(row.pathers),
       }),
     }));
 }
@@ -1199,7 +1209,9 @@ function rankedEdenStructureHelpRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
     .map((row) => ({
       key: row.key,
       name: row.name,
-      value: `${valueOf(row.participation_count).toLocaleString()} hits`,
+      value: t('edenX1HitsCount', {
+        count: formatEdenNumber(valueOf(row.participation_count)),
+      }),
     }));
 }
 
@@ -1251,7 +1263,7 @@ function rankedEdenBuildingMvpRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
     .map((row) => ({
       key: row.key,
       name: row.name,
-      value: t('edenX1VoteBuildingMvpValue', { count: row.wins.toLocaleString() }),
+      value: t('edenX1VoteBuildingMvpValue', { count: formatScore(row.wins) }),
     }));
 }
 
@@ -1732,13 +1744,13 @@ function renderEdenVoteSupportBreakdown(weighted) {
     ),
     renderEdenVoteBreakdownTile(
       t('edenX1VoteSupportTotal'),
-      total.toLocaleString(),
+      formatScore(total),
       [
         [t('edenX1ThBanners'), formatScore(weighted.banners)],
         [t('edenX1ThPathers'), formatScore(weighted.pathers)],
         [t('edenX1ThShieldWalls'), formatScore(weighted.shieldWalls)],
         [t('edenX1VoteConductBonus'), formatSignedNumber(conductBonus)],
-        [t('edenX1BreakdownTotal'), total.toLocaleString()],
+        [t('edenX1BreakdownTotal'), formatScore(total)],
       ],
       'eden-x1-vote-breakdown-tile--teal',
       t('edenX1InfoSupportTotal')
@@ -3370,9 +3382,10 @@ function renderWeightedMobileSortSelect(numberMode) {
     ['exGuild', t('edenX1ThExGuild')],
     [rankKey, t(numberMode === 'current' ? 'adminContributionRank' : 'adminContributionFinalRank')],
   ];
+  const sortLabel = runtimeMiscT(currentLanguage, 'edenSortWeighted');
   return `<label class="dash-weighted-mobile-sort" for="edenX1MobileSort">
-    <span class="sr-only">Sort weighted contribution table</span>
-    <select id="edenX1MobileSort" class="dash-select-sm" aria-label="Sort weighted contribution table">
+    <span class="sr-only">${esc(sortLabel)}</span>
+    <select id="edenX1MobileSort" class="dash-select-sm" aria-label="${esc(sortLabel)}">
       ${options
         .map(
           ([value, label]) =>
@@ -4110,7 +4123,7 @@ function rewardSlotRows(view) {
       status: winners[index]
         ? `${t('edenX1RewardVoted')} · ${t('edenX1RewardManagementTitle')}`
         : unavailable
-          ? 'Management votes temporarily unavailable'
+          ? t('managementVotesUnavailable')
           : t('edenX1RewardManagementVotePending'),
       statusReason: winners[index]
         ? t('edenX1RewardVoteDetails', {
@@ -4140,7 +4153,7 @@ function rewardSlotRows(view) {
       status: winners[index]
         ? t('edenX1RewardVoted')
         : managementUnavailable
-          ? 'Management votes temporarily unavailable'
+          ? t('managementVotesUnavailable')
           : t('edenX1RewardVotePending'),
       statusReason: winners[index]
         ? t('edenX1RewardVoteDetails', {
@@ -4186,7 +4199,7 @@ function renderRewardSlotStatus(row, view) {
     : row.status;
   const popoverBody = voteDetails
     ? `<strong>${esc(detailsTitle)}</strong>
-      <span><span>${esc(t('edenX1RewardVoted'))}</span><b>${Math.max(0, Math.floor(Number(row.votes) || 0)).toLocaleString()}</b></span>
+      <span><span>${esc(t('edenX1RewardVoted'))}</span><b>${formatScore(Math.max(0, Math.floor(Number(row.votes) || 0)))}</b></span>
       <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(voteDetails.bonusTeamEffort)}</b></span>
       <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${weighted ? formatScore(weighted.contributionScore) : '--'}</b></span>
       <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${weighted ? formatScore(weighted.contributionExGuild) : '--'}</b></span>
@@ -4746,7 +4759,7 @@ function renderPublicWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex, popoverOptions)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex, popoverOptions)}</td>
     <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex, popoverOptions)}</td>
     <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex, { ...rewardContext, deferredScope: options.deferredScope })}</td>
@@ -5135,12 +5148,12 @@ function renderPublicDistribution(attacks) {
       return `<div class="dash-dist-row">
         <span class="dash-dist-label">${esc(bucket.label)}</span>
         <span class="dash-dist-track"><span class="dash-dist-fill" style="width:${fill}%"></span></span>
-        <span class="dash-dist-value">${bucket.count.toLocaleString()} <small>${share}</small></span>
+        <span class="dash-dist-value">${formatScore(bucket.count)} <small>${share}</small></span>
       </div>`;
     })
     .join('');
   const totalDemo = buckets.reduce((sum, bucket) => sum + bucket.total, 0);
-  return `${rows}<div class="dash-analytics-hint">${esc(t('edenX1DistributionHint', { hits: totalHits.toLocaleString(), demo: compactValue(totalDemo), avg: compactValue(totalDemo / totalHits), ignored: ignoredRows.toLocaleString() }))}</div>`;
+  return `${rows}<div class="dash-analytics-hint">${esc(t('edenX1DistributionHint', { hits: formatScore(totalHits), demo: compactValue(totalDemo), avg: compactValue(totalDemo / totalHits), ignored: formatScore(ignoredRows) }))}</div>`;
 }
 
 function renderPublicConsistency(players) {
@@ -5778,10 +5791,17 @@ function updateTextContent(lang) {
     if (dict[key]) el.setAttribute('aria-label', t(key));
   });
 
+  localizeEdenX1Shell(document, lang);
   syncGameClockTitles();
   scheduleLocalizedRerender();
   window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
 }
+
+const requestEdenX1Language = createLatestLanguageLoader((lang) => {
+  const loadedLanguage = translations[lang] ? lang : 'en';
+  applyLanguageDirection(loadedLanguage);
+  updateTextContent(loadedLanguage);
+});
 
 function renderWeightedContributionRow(row, index, options = {}) {
   const total = rowBonusTotal(row);
@@ -5821,7 +5841,7 @@ function renderWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index, popoverOptions)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(options.weightedScoreLabel || t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, { ...rewardContext, deferredScope: options.deferredScope })}</td>
@@ -5962,7 +5982,7 @@ function renderRewardSlotTable(view) {
   const managementVoteError =
     (view === 'management' || view === 'team') && currentManagementVoteResults.status === 'error'
       ? `<div class="eden-x1-management-vote-error" role="alert">
-          <span>Management votes temporarily unavailable.</span>
+          <span>${esc(t('managementVotesUnavailable'))}.</span>
           <button id="edenX1ManagementVotesRetry" class="eden-x1-retry-btn" type="button">${esc(t('edenX1Retry'))}</button>
         </div>`
       : '';
@@ -6378,24 +6398,26 @@ async function loadPublicConductAdjustments(db, firestore, season) {
   return sanitizePublicR5Adjustments(adjustments, seasonKey);
 }
 
+function bindEdenX1LanguageSelector() {
+  const select = $('languageSelect');
+  if (!select || select.dataset.languageWired === '1') return;
+  select.dataset.languageWired = '1';
+  select.addEventListener('change', async (event) => {
+    const nextLang = event.target.value || 'en';
+    localStorage.setItem('vts_hero_lang', nextLang);
+    await requestEdenX1Language(nextLang);
+  });
+}
+
 async function bootShell() {
-  currentLang = getLanguage();
-  await loadTranslationsForLanguage(currentLang);
+  bindEdenX1LanguageSelector();
+  await requestEdenX1Language(getLanguage());
   initTheme();
   mountGameClock($('globalGameClock'), { compact: true, showUae: false });
   $('edenX1FooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
-  updateTextContent(currentLang);
   bindRewardFlowControls();
   bindEdenQuickNav();
   window.addEventListener('resize', schedulePublicHeatmapOverflowSync);
-
-  $('languageSelect')?.addEventListener('change', async (e) => {
-    const nextLang = e.target.value || 'en';
-    localStorage.setItem('vts_hero_lang', nextLang);
-    await loadTranslationsForLanguage(nextLang);
-    applyLanguageDirection(nextLang);
-    updateTextContent(nextLang);
-  });
 }
 
 const EDEN_X1_BOOT_TIMEOUT_MS = 20000;

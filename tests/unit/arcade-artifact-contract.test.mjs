@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 
+await import('../../js/i18n/standalone-copy.js');
+
+const standaloneI18n = globalThis.VTSStandaloneI18n;
 const gameNames = [
   'b-merge-rush.html',
   'c-sort-hoard.html',
@@ -10,11 +13,11 @@ const gameNames = [
   'h-hero-rumble.html',
 ];
 const visibleModes = [
-  ['b-merge-rush.html', 'A', 'Merge Rush'],
-  ['c-sort-hoard.html', 'B', 'Sort the Hoard'],
-  ['e-crystal-relay.html', 'C', 'Crystal Relay'],
-  ['f-set-assembly.html', 'D', 'Set Assembly'],
-  ['h-hero-rumble.html', 'E', 'Hero Rumble'],
+  ['b-merge-rush.html', 'A', 'Merge Rush', 'arcadeModeA'],
+  ['c-sort-hoard.html', 'B', 'Sort the Hoard', 'arcadeModeB'],
+  ['e-crystal-relay.html', 'C', 'Crystal Relay', 'arcadeModeC'],
+  ['f-set-assembly.html', 'D', 'Set Assembly', 'arcadeModeD'],
+  ['h-hero-rumble.html', 'E', 'Hero Rumble', 'arcadeModeE'],
 ];
 const localeIds = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
 const localizedGameKeys = [
@@ -62,10 +65,13 @@ test('Arcade entry and all five games are part of the production artifact contra
 });
 
 test('Arcade lobby and game shells expose the five-mode A-E sequence', () => {
-  for (const [gameName, mode, title] of visibleModes) {
+  const englishGames = standaloneI18n.getCopy('en').arcade.games;
+  for (const [gameName, mode, title, modeKey] of visibleModes) {
     const source = readFileSync(`games/boot/${gameName}`, 'utf8');
     assert.match(source, new RegExp(`<title>${mode} - ${title}<\\/title>`));
-    assert.match(source, new RegExp(`modeId: 'Mode ${mode}'`));
+    assert.match(source, new RegExp(`modeKey: '${modeKey}'`));
+    assert.equal(englishGames[modeKey].mode, `Mode ${mode}`);
+    assert.equal(englishGames[modeKey].title, title);
   }
 });
 
@@ -76,7 +82,14 @@ test('Merge Rush overload meter can reach danger and reports its localized state
   assert.match(merge, /state\.overflowTimer \+= elapsed/);
   assert.match(merge, /role', 'progressbar'/);
   assert.match(merge, /copy\.overloadCritical\.replace/);
-  assert.equal((shared.match(/overloadCritical:/g) || []).length, localeIds.length);
+  assert.match(shared, /activeArcadeCopy = I18N\.getCopy\('en'\)\.arcade/);
+  for (const locale of localeIds) {
+    assert.equal(
+      typeof standaloneI18n.getCopy(locale).arcade.shell.overloadCritical,
+      'string',
+      `${locale}.arcade.shell.overloadCritical`
+    );
+  }
 });
 
 test('every Arcade game declares its translated title, instruction, mode, and control scheme', () => {
@@ -100,18 +113,42 @@ test('every Arcade game declares its translated title, instruction, mode, and co
   for (const [gameName, [modeKey, titleKey, hintKey, controlScheme]] of expected) {
     const source = readFileSync(`games/boot/${gameName}`, 'utf8');
     assert.match(source, new RegExp(`modeKey: '${modeKey}'`));
-    assert.match(source, new RegExp(`titleKey: '${titleKey}'`));
-    assert.match(source, new RegExp(`hintKey: '${hintKey}'`));
     assert.match(source, new RegExp(`controlScheme: '${controlScheme}'`));
+
+    for (const locale of localeIds) {
+      const localized = standaloneI18n.getCopy(locale).arcade.games[modeKey];
+      assert.equal(typeof localized?.mode, 'string', `${locale}.${modeKey}.mode`);
+      assert.equal(typeof localized?.title, 'string', `${locale}.${titleKey}`);
+      assert.equal(typeof localized?.hint, 'string', `${locale}.${hintKey}`);
+      assert.ok(localized.mode.trim() && localized.title.trim() && localized.hint.trim());
+    }
   }
 });
 
 test('all supported locales include every Arcade game title and instruction', async () => {
+  const gameTitlePairs = [
+    ['arcadeModeA', 'arcadeMergeRushTitle'],
+    ['arcadeModeB', 'arcadeSortHoardTitle'],
+    ['arcadeModeC', 'arcadeCrystalRelayTitle'],
+    ['arcadeModeD', 'arcadeSetAssemblyTitle'],
+    ['arcadeModeE', 'arcadeHeroRumbleTitle'],
+  ];
+
   for (const locale of localeIds) {
     const module = await import(new URL(`../../js/i18n/${locale}.js`, import.meta.url));
     for (const key of localizedGameKeys) {
       assert.equal(typeof module.default[key], 'string', `${locale}.${key}`);
       assert.ok(module.default[key].trim(), `${locale}.${key} must not be empty`);
+    }
+
+    const standaloneGames = standaloneI18n.getCopy(locale).arcade.games;
+    for (const [modeKey, titleKey] of gameTitlePairs) {
+      assert.equal(module.default[modeKey], standaloneGames[modeKey].mode, `${locale}.${modeKey}`);
+      assert.equal(
+        module.default[titleKey],
+        standaloneGames[modeKey].title,
+        `${locale}.${titleKey}`
+      );
     }
   }
 });
@@ -139,6 +176,11 @@ test('shared game shell integrates Velo and synchronizes theme and language from
   assert.match(sharedCss, /\.control-cues\s*\{/);
   assert.match(hub, /frame\.contentWindow\.postMessage\(config, window\.location\.origin\)/);
   assert.match(hub, /new MutationObserver\(syncFrameConfig\)/);
+  assert.match(hub, /frame\.title = activeGameTitle \|\| copy\.hub\.frameTitle/);
+  assert.doesNotMatch(hub, /if \(activeIndex < 0\) frame\.title/);
+  assert.match(shared, /function refreshDynamicGameCopy\(\)/);
+  assert.match(shared, /\.piece\[data-color\]\[data-type\] img/);
+  assert.match(shared, /gameOverOverlayState/);
 });
 
 test('gameplay chrome avoids untranslated helper sentences', () => {
@@ -208,7 +250,8 @@ test('Arcade game shell references only existing shared production assets', () =
   }
 
   assert.match(shared, /class="btn ghost nav-back"[^>]*href="\/arcade\.html"/);
-  assert.match(shared, /Go Back to Game List/);
+  assert.match(shared, /VTSStandaloneI18n/);
+  assert.equal(standaloneI18n.getCopy('en').arcade.shell.back, 'Go Back to Game List');
   assert.match(shared, /localStorage\.getItem\('vts_hero_lang'\)/);
   assert.ok(existsSync('assets/velo/velo-body.webp'));
   assert.ok(existsSync('assets/velo/velo-helmet.webp'));

@@ -1,6 +1,10 @@
 import en from './i18n/en.js';
+import { getAiActionCopy } from './i18n/ai-action-copy.js';
+import { getRuntimeMiscCopy } from './i18n/runtime-misc.js';
 
-export const translations = { en };
+export const translations = {
+  en: Object.freeze({ ...en, ...getAiActionCopy('en'), ...getRuntimeMiscCopy('en') }),
+};
 export const translationCoverage = {};
 
 const loaders = {
@@ -33,27 +37,47 @@ export function applyLanguageDirection(lang) {
   }
 }
 
+export function createLatestLanguageLoader(
+  applyLanguage,
+  loadLanguage = loadTranslationsForLanguage
+) {
+  if (typeof applyLanguage !== 'function') {
+    throw new TypeError('createLatestLanguageLoader requires an apply callback');
+  }
+  let requestGeneration = 0;
+  return async function requestLanguage(lang = 'en') {
+    const requestId = ++requestGeneration;
+    const catalog = await loadLanguage(lang);
+    if (requestId !== requestGeneration) {
+      return Object.freeze({ applied: false, catalog });
+    }
+    await applyLanguage(lang, catalog);
+    return Object.freeze({ applied: true, catalog });
+  };
+}
+
 export async function loadTranslationsForLanguage(lang = 'en') {
   if (!lang || translations[lang]) {
-    if (lang) applyLanguageDirection(lang);
     return translations[lang] || translations.en;
   }
   const loader = loaders[lang];
   if (!loader) {
-    applyLanguageDirection('en');
     return translations.en;
   }
   if (!inFlight[lang]) {
     inFlight[lang] = loader()
       .then((mod) => {
-        translations[lang] = mod.default || mod[lang] || translations.en;
-        applyLanguageDirection(lang);
+        const catalog = mod.default || mod[lang] || translations.en;
+        translations[lang] = Object.freeze({
+          ...catalog,
+          ...getAiActionCopy(lang),
+          ...getRuntimeMiscCopy(lang),
+        });
         return translations[lang];
       })
       .catch((err) => {
         delete inFlight[lang];
         console.warn(`[i18n] Failed to load language: ${lang}`, err);
-        applyLanguageDirection('en');
         return translations.en;
       });
   }

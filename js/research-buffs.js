@@ -1,3 +1,5 @@
+import { formatLocaleNumber } from './locale-format.js';
+
 const NUMERIC_TOKEN_RE = /([+-]?\d+(?:\.\d+)?)(\s*[kKmM])?\s*(%)?/g;
 
 function toFiniteNumber(value) {
@@ -22,18 +24,21 @@ function multiplierForSuffix(suffix = '') {
   return 1;
 }
 
-function formatMagnitude(value) {
+function formatMagnitude(value, locale = 'en') {
   const abs = Math.abs(value);
-  if (abs >= 1000000 && abs % 1000000 === 0) return `${abs / 1000000}M`;
-  if (abs >= 1000 && abs % 1000 === 0) return `${abs / 1000}k`;
-  if (Number.isInteger(abs)) return abs.toLocaleString();
-  return Number(abs.toFixed(2)).toLocaleString();
+  if (abs >= 1000000 && abs % 1000000 === 0) {
+    return `${formatLocaleNumber(abs / 1000000, locale)}M`;
+  }
+  if (abs >= 1000 && abs % 1000 === 0) {
+    return `${formatLocaleNumber(abs / 1000, locale)}k`;
+  }
+  return formatLocaleNumber(abs, locale, { maximumFractionDigits: 2 });
 }
 
-function formatSignedValue(value, unit = '') {
+function formatSignedValue(value, unit = '', locale = 'en') {
   const safeValue = Number(value) || 0;
   const sign = safeValue < 0 ? '-' : '+';
-  return `${sign}${formatMagnitude(safeValue)}${unit}`;
+  return `${sign}${formatMagnitude(safeValue, locale)}${unit}`;
 }
 
 function cleanEffectLabel(buff, token) {
@@ -214,7 +219,7 @@ export function getNodeBuffEffects(node) {
   return derived ? [derived] : [];
 }
 
-export function describeNodeBuffProgress(node, level = 0) {
+export function describeNodeBuffProgress(node, level = 0, { locale = 'en' } = {}) {
   const maxLevel = Math.max(1, Number(node.maxLevel) || 1);
   const safeLevel = Math.min(maxLevel, Math.max(0, Number(level) || 0));
   const effects = getNodeBuffEffects(node);
@@ -230,11 +235,11 @@ export function describeNodeBuffProgress(node, level = 0) {
           ? effect.levelValues[levelValueIndex]
           : (Number(effect.perLevelValue) || 0) * safeLevel;
       const remainingValue = effect.maxValue - currentValue;
-      const currentLabel = formatSignedValue(currentValue, effect.unit);
-      const maxLabel = formatSignedValue(effect.maxValue, effect.unit);
-      const remainingLabel = formatSignedValue(remainingValue, effect.unit);
+      const currentLabel = formatSignedValue(currentValue, effect.unit, locale);
+      const maxLabel = formatSignedValue(effect.maxValue, effect.unit, locale);
+      const remainingLabel = formatSignedValue(remainingValue, effect.unit, locale);
       const perLevelLabel = Number.isFinite(effect.perLevelValue)
-        ? `${formatSignedValue(effect.perLevelValue, effect.unit)}/lvl`
+        ? `${formatSignedValue(effect.perLevelValue, effect.unit, locale)}/lvl`
         : 'varies/lvl';
       return {
         label: effect.label,
@@ -294,19 +299,29 @@ export function describeNodeBuffProgress(node, level = 0) {
   };
 }
 
-export function summarizeTechBuffs(tech, { getLevel = () => 0 } = {}) {
+export function summarizeTechBuffs(
+  tech,
+  {
+    getLevel = () => 0,
+    getNodeName = (node) => node.name,
+    getNodeBuff = (node) => node.buff || node.name,
+    getEffectLabel = (effect) => effect.label,
+    locale = 'en',
+  } = {}
+) {
   const groups = new Map();
   const unlocks = [];
   const missing = [];
 
   for (const node of tech.nodes || []) {
     const level = Math.min(Number(node.maxLevel) || 0, Math.max(0, Number(getLevel(node)) || 0));
-    const summary = describeNodeBuffProgress(node, level);
+    const summary = describeNodeBuffProgress(node, level, { locale });
     if (summary.status === 'known') {
-      summary.effects.forEach((effect) => {
+      summary.effects.forEach((effect, effectIndex) => {
         const key = `${effect.label}|${effect.unit}`;
         const group = groups.get(key) || {
-          label: effect.label,
+          label: getEffectLabel(effect, node, effectIndex),
+          canonicalLabel: effect.label,
           unit: effect.unit,
           currentValue: 0,
           maxValue: 0,
@@ -318,32 +333,32 @@ export function summarizeTechBuffs(tech, { getLevel = () => 0 } = {}) {
         group.maxValue += effect.maxValue;
         group.remainingValue += effect.remainingValue;
         group.nodeCount += 1;
-        group.nodes.push(node.name);
+        group.nodes.push(getNodeName(node));
         groups.set(key, group);
       });
     } else if (summary.status === 'unlock') {
       unlocks.push({
-        name: node.name,
-        label: node.buff || node.name,
+        name: getNodeName(node),
+        label: getNodeBuff(node),
         currentLabel: summary.currentLabel,
       });
     } else {
       missing.push({
-        name: node.name,
-        label: node.buff || node.name,
+        name: getNodeName(node),
+        label: getNodeBuff(node),
       });
     }
   }
 
   const known = Array.from(groups.values())
     .map((group) => {
-      const currentLabel = formatSignedValue(group.currentValue, group.unit);
-      const maxLabel = formatSignedValue(group.maxValue, group.unit);
+      const currentLabel = formatSignedValue(group.currentValue, group.unit, locale);
+      const maxLabel = formatSignedValue(group.maxValue, group.unit, locale);
       return {
         ...group,
         currentLabel,
         maxLabel,
-        remainingLabel: formatSignedValue(group.remainingValue, group.unit),
+        remainingLabel: formatSignedValue(group.remainingValue, group.unit, locale),
         currentWithLabel: `${currentLabel} ${group.label}`,
         maxWithLabel: `${maxLabel} ${group.label}`,
       };

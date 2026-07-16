@@ -1,6 +1,10 @@
 // Eden team planning — 4 teams, structure assignments, timeline board
 import { compareGameTimeMinutes, formatGameTimeMinutes, parseGameTimeInput } from './game-time.js';
-import { getStructureLabel, getStructurePoints } from './eden-map-data.js';
+import { getStructurePoints } from './eden-map-data.js';
+import {
+  getEdenStructureDisplayLabel,
+  getEdenTeamDisplayName,
+} from './i18n/eden-map/index.js';
 
 export const EDEN_TEAM_IDS = ['t1', 't2', 't3', 't4'];
 export const TEAM_COUNT_MIN = 2;
@@ -54,7 +58,11 @@ export function getTeamInfo(plan, teamId) {
   if (!teamId || !EDEN_TEAM_IDS.includes(teamId)) return null;
   if (isTeamPlanEnabled(plan) && !isActiveTeam(plan, teamId)) return null;
   const names = { ...defaultTeamNames(), ...(plan?.teamNames || {}) };
-  return { id: teamId, name: names[teamId] || teamId, color: EDEN_TEAM_COLORS[teamId] };
+  return {
+    id: teamId,
+    name: getEdenTeamDisplayName(teamId, names[teamId]),
+    color: EDEN_TEAM_COLORS[teamId],
+  };
 }
 
 export function getStructTeamMeta(plan, structId) {
@@ -86,7 +94,7 @@ export function collectTeamAssignments(plan, structures, edenT) {
       teamId: tm.team,
       gameTime: tm.gameTime || '',
       note: tm.note || '',
-      label: getStructureLabel(s.type),
+      label: getEdenStructureDisplayLabel(s.type),
       zone: s.zone,
       coords: `${s.x}:${s.y}`,
       points: getStructurePoints(s),

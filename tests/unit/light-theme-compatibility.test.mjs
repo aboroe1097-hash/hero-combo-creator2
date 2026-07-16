@@ -51,7 +51,7 @@ test('late main-tool rules cannot re-darken light-theme controls and surfaces', 
     heroTooltip,
     /window\.addEventListener\([\s\S]*?'resize'[\s\S]*?moveHeroTooltip\(\{[\s\S]*?window\.innerWidth \/ 2/
   );
-  assert.match(heroTooltip, /aria-label="Close hero info"/);
+  assert.match(heroTooltip, /aria-label="\$\{escapeHtml\(heroUi\('closeHeroInfo'\)\)\}"/);
   assert.match(
     components,
     /\[data-theme='light'\] \[data-core-tool\] \.generator-card\.generator-card-selected\s*\{[\s\S]*?border-color: #0284c7 !important;[\s\S]*?background:[\s\S]*?#ecfeff !important;[\s\S]*?generator-light-selection-pulse/

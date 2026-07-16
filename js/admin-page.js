@@ -1,10 +1,15 @@
-import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
+import {
+  translations,
+  loadTranslationsForLanguage,
+  applyLanguageDirection,
+  createLatestLanguageLoader,
+} from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '14.0.11';
+const APP_VERSION = '14.0.12';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
@@ -66,10 +71,12 @@ function applyTheme(theme) {
   if (theme === 'light') root.setAttribute('data-theme', 'light');
   else root.removeAttribute('data-theme');
 
-  const meta = document.getElementById('themeColorMeta') || document.querySelector('meta[name="theme-color"]');
+  const meta =
+    document.getElementById('themeColorMeta') || document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', THEME_CHROME_COLORS[theme] || THEME_CHROME_COLORS.dark);
 
-  const manifest = document.getElementById('manifestLink') || document.querySelector('link[rel="manifest"]');
+  const manifest =
+    document.getElementById('manifestLink') || document.querySelector('link[rel="manifest"]');
   if (manifest) manifest.setAttribute('href', THEME_MANIFESTS[theme] || THEME_MANIFESTS.dark);
 
   const btn = document.getElementById('themeToggle');
@@ -92,7 +99,8 @@ function initTheme() {
   if (!btn || btn.dataset.themeWired) return;
   btn.dataset.themeWired = '1';
   btn.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const current =
+      document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     const next = current === 'light' ? 'dark' : 'light';
     localStorage.setItem(THEME_STORAGE_KEY, next);
     localStorage.removeItem('theme');
@@ -153,40 +161,60 @@ function updateTextContent(lang) {
   window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
 }
 
+const requestAdminLanguage = createLatestLanguageLoader((lang) => {
+  const loadedLanguage = translations[lang] ? lang : 'en';
+  applyLanguageDirection(loadedLanguage);
+  updateTextContent(loadedLanguage);
+});
+
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260716_101602');
+  const res = await fetch('tabs/admin.html?v=20260716_132118');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
 
+function bindAdminLanguageSelector() {
+  const select = document.getElementById('languageSelect');
+  if (!select || select.dataset.languageWired === '1') return;
+  select.dataset.languageWired = '1';
+  select.addEventListener('change', async (event) => {
+    const nextLang = event.target.value || 'en';
+    localStorage.setItem('vts_hero_lang', nextLang);
+    await requestAdminLanguage(nextLang);
+  });
+}
+
 async function bootAdminPage() {
-  const lang = getLanguage();
-  await loadTranslationsForLanguage(lang);
+  bindAdminLanguageSelector();
+  await requestAdminLanguage(getLanguage());
   installShowToast();
   initUndoToasts();
   initTheme();
   mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
-  document.getElementById('adminFooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
+  document
+    .getElementById('adminFooterYear')
+    ?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
   await loadAdminTemplate();
-  updateTextContent(lang);
-  document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
-    const nextLang = e.target.value || 'en';
-    localStorage.setItem('vts_hero_lang', nextLang);
-    await loadTranslationsForLanguage(nextLang);
-    applyLanguageDirection(nextLang);
-    updateTextContent(nextLang);
-  });
-  const mod = await import('./ocr-dashboard.js?v=20260716_101602');
+  bindAdminLanguageSelector();
+  await requestAdminLanguage(getLanguage());
+  const mod = await import('./ocr-dashboard.js?v=20260716_132118');
   await mod.bootOcrDashboard();
 }
 
-if (!window.VTS_MAINTENANCE_ACTIVE) bootAdminPage().catch(async (err) => {
-  console.error('Admin dashboard failed to load', err);
-  if (await recoverFromStaleAssetGraph(err)) return;
-  const section = document.getElementById('ocrDashboardSection');
-  if (section) {
-    section.innerHTML = '<div class="admin-load-error">Failed to load admin dashboard. Refresh and try again.</div>';
-  }
-});
+if (!window.VTS_MAINTENANCE_ACTIVE)
+  bootAdminPage().catch(async (err) => {
+    console.error('Admin dashboard failed to load', err);
+    if (await recoverFromStaleAssetGraph(err)) return;
+    const section = document.getElementById('ocrDashboardSection');
+    if (section) {
+      const lang = getLanguage();
+      await loadTranslationsForLanguage(lang);
+      const message = translations[lang]?.adminLoadFailed || translations.en.adminLoadFailed;
+      const error = document.createElement('div');
+      error.className = 'admin-load-error';
+      error.textContent = message;
+      section.replaceChildren(error);
+    }
+  });

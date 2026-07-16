@@ -1,23 +1,45 @@
 import {
-  STRUCTURE_TYPES, getSectorStructures, getStructureLabel, getStructureShort,
-  getStructurePoints, getSectorFaction,
+  STRUCTURE_TYPES,
+  getSectorStructures,
+  getStructureLabel,
+  getStructureShort,
+  getStructurePoints,
+  getSectorFaction,
 } from './eden-map-data.js';
 import { getStructureIcon, isIconReady } from './eden-map-assets.js?v=20260708_101500';
 import {
-  estimateTravelMinutes, formatTravelTime, fuzzyIncludes,
+  estimateTravelMinutes,
+  formatTravelTime,
+  fuzzyIncludes,
 } from './eden-map-features.js?v=20260708_101500';
 import { findRoute } from './eden-map-terrain.js?v=20260708_101500';
 import {
-  isTeamPlanEnabled, getActiveTeamIds, getTeamInfo, getStructTeamMeta,
+  isTeamPlanEnabled,
+  getActiveTeamIds,
+  getTeamInfo,
+  getStructTeamMeta,
   renderTeamBoardHtml,
 } from './eden-map-teams.js';
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
+import { edenMapText, getEdenStructureDisplayLabel } from './i18n/eden-map/index.js';
 
-const STATUS_COLORS = { owned: '#22c55e', contested: '#f59e0b', enemy: '#ef4444', neutral: '#94a3b8' };
-const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capital: 'eden-row-capital', stronghold: 'eden-row-capital', temple: 'eden-row-temple' };
+const STATUS_COLORS = {
+  owned: '#22c55e',
+  contested: '#f59e0b',
+  enemy: '#ef4444',
+  neutral: '#94a3b8',
+};
+const CATEGORY_ROW_CLASS = {
+  gate: 'eden-row-gate',
+  town: 'eden-row-town',
+  capital: 'eden-row-capital',
+  stronghold: 'eden-row-capital',
+  temple: 'eden-row-temple',
+};
 
 function edenT(key) {
-  const lang = localStorage.getItem('vts_hero_lang') || 'en';
+  const lang = resolveRuntimeLocale();
   return translations[lang]?.[key] || translations.en[key] || key;
 }
 
@@ -57,7 +79,7 @@ function getFilteredStructures(plan, sectorKey, listSort, factionFilter) {
   const zoneFilter = document.getElementById('edenZoneFilter')?.value || 'all';
   const typeFilter = document.getElementById('edenTypeFilter')?.value || 'all';
   const teamFilter = isTeamPlanEnabled(plan)
-    ? (document.getElementById('edenTeamFilter')?.value || 'all')
+    ? document.getElementById('edenTeamFilter')?.value || 'all'
     : 'all';
   const search = (document.getElementById('edenStructSearch')?.value || '').toLowerCase();
 
@@ -67,9 +89,16 @@ function getFilteredStructures(plan, sectorKey, listSort, factionFilter) {
     if (typeFilter !== 'all' && s.type !== typeFilter) return false;
     const assignedTeam = getStructTeamMeta(plan, s.id).team;
     if (isTeamPlanEnabled(plan) && teamFilter === 'unassigned' && assignedTeam) return false;
-    if (isTeamPlanEnabled(plan) && teamFilter !== 'all' && teamFilter !== 'unassigned' && assignedTeam !== teamFilter) return false;
-    const label = getStructureLabel(s.type);
-    const hay = `${s.zone} ${s.type} ${label} ${s.x}:${s.y} ${s.guild} ${getStructureStatus(plan, s)} ${assignedTeam}`;
+    if (
+      isTeamPlanEnabled(plan) &&
+      teamFilter !== 'all' &&
+      teamFilter !== 'unassigned' &&
+      assignedTeam !== teamFilter
+    )
+      return false;
+    const canonicalLabel = getStructureLabel(s.type);
+    const displayLabel = getEdenStructureDisplayLabel(s.type);
+    const hay = `${s.zone} ${s.type} ${canonicalLabel} ${displayLabel} ${s.x}:${s.y} ${s.guild} ${getStructureStatus(plan, s)} ${assignedTeam}`;
     if (search && !fuzzyIncludes(search, hay)) return false;
     return true;
   });
@@ -91,7 +120,7 @@ function populateFilters(plan, sectorKey, filtersPopulatedFor, force = false) {
   const structs = getStructures(plan, sectorKey);
   const zones = [...new Set(structs.map((s) => s.zone))].sort();
   const types = [...new Set(structs.map((s) => s.type))].sort((a, b) =>
-    getStructureLabel(a).localeCompare(getStructureLabel(b))
+    getEdenStructureDisplayLabel(a).localeCompare(getEdenStructureDisplayLabel(b))
   );
 
   const zoneSelect = document.getElementById('edenZoneFilter');
@@ -101,10 +130,12 @@ function populateFilters(plan, sectorKey, filtersPopulatedFor, force = false) {
   const prevZone = zoneSelect.value;
   const prevType = typeSelect.value;
 
-  zoneSelect.innerHTML = `<option value="all">${edenT('edenAllZones')}</option>` +
+  zoneSelect.innerHTML =
+    `<option value="all">${edenT('edenAllZones')}</option>` +
     zones.map((z) => `<option value="${z}">${z}</option>`).join('');
-  typeSelect.innerHTML = `<option value="all">${edenT('edenAllTypes')}</option>` +
-    types.map((t) => `<option value="${t}">${getStructureLabel(t)}</option>`).join('');
+  typeSelect.innerHTML =
+    `<option value="all">${edenT('edenAllTypes')}</option>` +
+    types.map((t) => `<option value="${t}">${getEdenStructureDisplayLabel(t)}</option>`).join('');
 
   if ([...zoneSelect.options].some((o) => o.value === prevZone)) zoneSelect.value = prevZone;
   if ([...typeSelect.options].some((o) => o.value === prevType)) typeSelect.value = prevType;
@@ -112,8 +143,17 @@ function populateFilters(plan, sectorKey, filtersPopulatedFor, force = false) {
 
 export function renderSidebar(state) {
   const {
-    plan, selectedId, tool, measureA, measureB,
-    sectorKey, viewMode, listSort, factionFilter, filtersPopulatedFor, onSyncTeamPlanUi,
+    plan,
+    selectedId,
+    tool,
+    measureA,
+    measureB,
+    sectorKey,
+    viewMode,
+    listSort,
+    factionFilter,
+    filtersPopulatedFor,
+    onSyncTeamPlanUi,
   } = state;
 
   populateFilters(plan, sectorKey, filtersPopulatedFor);
@@ -132,7 +172,7 @@ export function renderSidebar(state) {
         <div class="eden-selected-card">
           <div class="eden-selected-title">${edenT('edenMeasureTitle')}</div>
           <div class="eden-selected-meta">${edenT('edenMeasureTerrain')} <strong>${route.distance}</strong> ${edenT('edenMeasureTiles')} · ${edenT('edenMeasureDirect')} ${direct} ${edenT('edenMeasureTiles')}</div>
-          <div class="eden-selected-meta">${edenT('edenMeasureMarch')} <strong>${formatTravelTime(travelMins)}</strong> @ speed ${plan.speed || 1}×</div>
+          <div class="eden-selected-meta">${edenT('edenMeasureMarch')} <strong>${formatTravelTime(travelMins)}</strong> @ ${edenMapText('marchSpeed')} ${plan.speed || 1}×</div>
           <div class="eden-selected-meta">${measureA.x}:${measureA.y} → ${measureB.x}:${measureB.y}</div>
           ${route.blocked ? `<p class="eden-hint">${edenT('edenMeasureBlocked')}</p>` : ''}
           <button type="button" id="edenClearMeasure" class="eden-action-btn">${edenT('edenClearMeasure')}</button>
@@ -145,10 +185,12 @@ export function renderSidebar(state) {
       const status = getStructureStatus(plan, selected);
       const tm = getStructTeamMeta(plan, selected.id);
       const teamOptions = isTeamPlanEnabled(plan)
-        ? getActiveTeamIds(plan).map((tid) => {
-          const t = getTeamInfo(plan, tid);
-          return `<option value="${tid}" ${tm.team === tid ? 'selected' : ''}>${t.name}</option>`;
-        }).join('')
+        ? getActiveTeamIds(plan)
+            .map((tid) => {
+              const t = getTeamInfo(plan, tid);
+              return `<option value="${tid}" ${tm.team === tid ? 'selected' : ''}>${t.name}</option>`;
+            })
+            .join('')
         : '';
       const iconHtml = isIconReady(icon)
         ? `<img class="eden-selected-icon" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
@@ -158,7 +200,7 @@ export function renderSidebar(state) {
           <div class="eden-selected-head">
             ${iconHtml}
             <div>
-              <div class="eden-selected-title">${meta?.label || selected.type} <span class="eden-zone-tag">(${getStructureShort(selected.type)})</span></div>
+              <div class="eden-selected-title">${getEdenStructureDisplayLabel(selected.type)} <span class="eden-zone-tag">(${getStructureShort(selected.type)})</span></div>
               <div class="eden-selected-meta">${edenT('edenZoneFieldLabel')} ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
               <div class="eden-selected-ov"><svg class="eden-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${edenT('edenOvLabel')} <strong>${meta?.points || 0}</strong></div>
             </div>
@@ -175,7 +217,9 @@ export function renderSidebar(state) {
           <label class="eden-guild-label">${edenT('edenGuildLabel')}
             <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="${edenT('edenGuildPh')}" />
           </label>
-          ${isTeamPlanEnabled(plan) ? `
+          ${
+            isTeamPlanEnabled(plan)
+              ? `
           <div class="eden-team-assign-block">
             <label class="eden-guild-label">${edenT('edenTeamAssignLabel')}
               <select id="edenTeamSelect" class="eden-filter-select">
@@ -189,7 +233,9 @@ export function renderSidebar(state) {
             <label class="eden-guild-label">${edenT('edenTeamNoteLabel')}
               <input id="edenTeamNote" type="text" maxlength="48" value="${tm.note || ''}" placeholder="${edenT('edenTeamNotePh')}" />
             </label>
-          </div>` : ''}
+          </div>`
+              : ''
+          }
           <div class="eden-selected-meta">${edenT('edenMarchFromHint')}</div>
           <div class="eden-selected-actions">
             <button type="button" id="edenToggleTargetBtn" class="eden-action-btn ${(plan.targets || []).includes(selected.id) ? 'active' : ''}">
@@ -207,26 +253,28 @@ export function renderSidebar(state) {
 
   const listEl = document.getElementById('edenStructList');
   if (listEl) {
-    listEl.innerHTML = filtered.map((s) => {
-      const meta = STRUCTURE_TYPES[s.type];
-      const isTarget = (plan.targets || []).includes(s.id);
-      const tm = getStructTeamMeta(plan, s.id);
-      const team = isTeamPlanEnabled(plan) && tm.team ? getTeamInfo(plan, tm.team) : null;
-      const icon = getStructureIcon(s.type);
-      const thumb = isIconReady(icon)
-        ? `<img class="eden-struct-thumb" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
-        : `<span class="eden-struct-dot" style="background:${meta?.color}"></span>`;
-      const rowClass = CATEGORY_ROW_CLASS[meta?.category] || '';
-      const ring = STATUS_COLORS[getStructureStatus(plan, s)] || STATUS_COLORS.neutral;
-      return `<button type="button" class="eden-struct-row ${rowClass} ${selectedId === s.id ? 'active' : ''}" data-id="${s.id}">
+    listEl.innerHTML = filtered
+      .map((s) => {
+        const meta = STRUCTURE_TYPES[s.type];
+        const isTarget = (plan.targets || []).includes(s.id);
+        const tm = getStructTeamMeta(plan, s.id);
+        const team = isTeamPlanEnabled(plan) && tm.team ? getTeamInfo(plan, tm.team) : null;
+        const icon = getStructureIcon(s.type);
+        const thumb = isIconReady(icon)
+          ? `<img class="eden-struct-thumb" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
+          : `<span class="eden-struct-dot" style="background:${meta?.color}"></span>`;
+        const rowClass = CATEGORY_ROW_CLASS[meta?.category] || '';
+        const ring = STATUS_COLORS[getStructureStatus(plan, s)] || STATUS_COLORS.neutral;
+        return `<button type="button" class="eden-struct-row ${rowClass} ${selectedId === s.id ? 'active' : ''}" data-id="${s.id}">
         <span class="eden-status-ring" style="--ring:${ring}"></span>
         ${thumb}
-        <span class="eden-struct-info"><strong>${getStructureLabel(s.type)}</strong> ${s.zone} <em>${s.x}:${s.y}</em></span>
-        <span class="eden-struct-pts">${meta?.points} OV</span>
+        <span class="eden-struct-info"><strong>${getEdenStructureDisplayLabel(s.type)}</strong> ${s.zone} <em>${s.x}:${s.y}</em></span>
+        <span class="eden-struct-pts">${meta?.points} ${edenMapText('ov')}</span>
         ${team ? `<span class="eden-team-pill" style="--team-color:${team.color}" title="${team.name}${tm.gameTime ? ' @ ' + tm.gameTime : ''}">${tm.gameTime || team.name.slice(-1)}</span>` : ''}
         ${isTarget ? '<span class="eden-target-star">★</span>' : ''}
       </button>`;
-    }).join('');
+      })
+      .join('');
   }
 
   const statsEl = document.getElementById('edenMapStats');
@@ -237,8 +285,15 @@ export function renderSidebar(state) {
     const assignedCount = isTeamPlanEnabled(plan)
       ? list.filter((s) => getStructTeamMeta(plan, s.id).team).length
       : 0;
-    const modeLabel = viewMode === 'scout' ? ` · ${edenT('edenModeScout')}` : viewMode === 'route' ? ` · ${edenT('edenModeRoute')}` : viewMode === 'teams' ? ` · ${edenT('edenModeTeams')}` : '';
-    statsEl.textContent = `${filtered.length}/${list.length} ${edenT('edenStatsShown')} · ${pts.toLocaleString()} OV · ${assignedCount} ${edenT('edenStatsTeams')} · ${(plan.targets || []).length} ${edenT('edenStatsTargets')} · ${(plan.paths || []).length} ${edenT('edenStatsPaths')} (${pathDist.toLocaleString()} ${edenT('edenMeasureTiles')}, ~${pathTime})${modeLabel}`;
+    const modeLabel =
+      viewMode === 'scout'
+        ? ` · ${edenT('edenModeScout')}`
+        : viewMode === 'route'
+          ? ` · ${edenT('edenModeRoute')}`
+          : viewMode === 'teams'
+            ? ` · ${edenT('edenModeTeams')}`
+            : '';
+    statsEl.textContent = `${filtered.length}/${list.length} ${edenT('edenStatsShown')} · ${pts.toLocaleString()} ${edenMapText('ov')} · ${assignedCount} ${edenT('edenStatsTeams')} · ${(plan.targets || []).length} ${edenT('edenStatsTargets')} · ${(plan.paths || []).length} ${edenT('edenStatsPaths')} (${pathDist.toLocaleString()} ${edenT('edenMeasureTiles')}, ~${pathTime})${modeLabel}`;
   }
 
   const boardEl = document.getElementById('edenTeamBoard');

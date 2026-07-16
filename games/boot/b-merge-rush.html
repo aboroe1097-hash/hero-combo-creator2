@@ -68,6 +68,7 @@
     </style>
   </head>
   <body>
+    <script src="/js/i18n/standalone-copy.js"></script>
     <script src="./shared.js"></script>
     <script>
       (() => {
@@ -75,12 +76,7 @@
         const SCORE_KEY = 'vts_proto_merge_rush';
         const NEXT = { blue: 'purple', purple: 'gold', gold: null };
         const ui = G.mountShell({
-          modeId: 'Mode A',
           modeKey: 'arcadeModeA',
-          title: 'Merge Rush',
-          titleKey: 'arcadeMergeRushTitle',
-          hint: 'Match same color+type to merge (bluepurplegold). Gold+Gold = JACKPOT!',
-          hintKey: 'arcadeMergeRushDesc',
           scoreKey: SCORE_KEY,
           controlScheme: 'merge',
           showShield: false,
@@ -239,12 +235,12 @@
 
           if (!next) {
             state.score += 80;
-            G.floatText(mx, my, ` JACKPOT +80 `, '#f5c451');
+            G.floatText(mx, my, G.text('jackpot', { points: 80 }), '#f5c451');
             G.vibrate(20);
           } else {
             const pts = next === 'purple' ? 15 : 35;
             state.score += pts;
-            G.floatText(mx, my, `MERGE +${pts}`, '#7dd3fc');
+            G.floatText(mx, my, G.text('merge', { points: pts }), '#7dd3fc');
             const el = G.createPieceEl({
               color: next,
               type: a.type,

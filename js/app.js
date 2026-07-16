@@ -1,5 +1,10 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
-import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
+import {
+  translations,
+  loadTranslationsForLanguage,
+  applyLanguageDirection,
+  createLatestLanguageLoader,
+} from './translations.js';
 globalThis.VTS_TRANSLATIONS = translations;
 import { allHeroesData } from './heroes-data.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
@@ -10,20 +15,28 @@ import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
 import { parseRosterShareUrl } from './roster-share.js';
-import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
+import {
+  showHeroTooltip,
+  moveHeroTooltip,
+  hideHeroTooltip,
+  forceHideHeroTooltip,
+} from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
+import { comboToolsText } from './i18n/combo-tools/index.js';
+import { formatLocaleNumber } from './locale-format.js';
 
 import {
   renderGeneratorHeroes,
-  renderGeneratorResults,
   generateBestCombos,
   generateRandomCombos,
   markGeneratorSelectionChanged,
   restoreGeneratorSelection,
   syncGeneratorSelectedCountBadge,
+  refreshGeneratorLocalization,
+  restoreSharedGeneratorResults,
   lastGeneratedCombos,
 } from './app-generator.js';
 
@@ -143,13 +156,15 @@ function loadManualBuilderModule() {
 const renderAvailableHeroesDebounced = debounce(() => {
   if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
 }, DEBOUNCE_MS);
-const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), DEBOUNCE_MS);
+const renderGeneratorHeroesDebounced = debounce(
+  () => renderGeneratorHeroes(syncGeneratorControlState()),
+  DEBOUNCE_MS
+);
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
 const GENERATOR_SKIN_NUDGE_KEY = 'vts_generator_skin_nudge_seen';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
-const MATERIAL_TAB_LABELS = { de: 'DM Material', en: 'DM Materials' };
 let researchModulePromise = null;
 let materialModulePromise = null;
 let exportModulePromise = null;
@@ -162,7 +177,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260716_101602').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260716_132118').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -184,7 +199,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260716_101602').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260716_132118').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -195,7 +210,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260716_101602').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260716_132118').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -206,7 +221,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260716_101602').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260716_132118').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -216,9 +231,10 @@ function loadArcadeModule() {
 }
 
 function resolveDroppedHeroName(dataTransfer) {
-  const rawName = dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
+  const rawName =
+    dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
   const heroName = rawName.trim();
-  return allHeroesData.some(hero => hero.name === heroName) ? heroName : '';
+  return allHeroesData.some((hero) => hero.name === heroName) ? heroName : '';
 }
 
 /* ===== THEME (Dark default + Light) ===== */
@@ -235,11 +251,13 @@ function applyTheme(theme) {
   } else {
     root.removeAttribute('data-theme');
   }
-  const meta = document.getElementById('themeColorMeta') || document.querySelector('meta[name="theme-color"]');
+  const meta =
+    document.getElementById('themeColorMeta') || document.querySelector('meta[name="theme-color"]');
   if (meta) {
     meta.setAttribute('content', THEME_CHROME_COLORS[theme] || THEME_CHROME_COLORS.dark);
   }
-  const manifest = document.getElementById('manifestLink') || document.querySelector('link[rel="manifest"]');
+  const manifest =
+    document.getElementById('manifestLink') || document.querySelector('link[rel="manifest"]');
   if (manifest) {
     manifest.setAttribute('href', THEME_MANIFESTS[theme] || THEME_MANIFESTS.dark);
   }
@@ -272,13 +290,15 @@ function initTheme() {
     if (!btn || btn.dataset.themeWired) return;
     btn.dataset.themeWired = '1';
     btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      const current =
+        document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
       const next = current === 'light' ? 'dark' : 'light';
       localStorage.setItem(THEME_STORAGE_KEY, next);
       localStorage.removeItem('theme');
       applyTheme(next);
     });
-    const currentTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const currentTheme =
+      document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     applyTheme(currentTheme);
   };
   if (document.readyState === 'loading') {
@@ -292,11 +312,11 @@ installShowToast();
 initTheme();
 
 function addCounterHeroesToGenerator(heroNames) {
-  heroNames.filter(Boolean).forEach(name => generatorSelectedHeroes.add(name));
+  heroNames.filter(Boolean).forEach((name) => generatorSelectedHeroes.add(name));
   renderGeneratorHeroes(syncGeneratorControlState());
   markGeneratorSelectionChanged({ immediate: true });
   if (typeof window.showToast === 'function') {
-    window.showToast('Counter heroes added to Generator selection.', 'success');
+    window.showToast(comboToolsText('app.counterHeroesAdded', {}, currentLanguage), 'success');
   }
 }
 
@@ -373,19 +393,20 @@ function syncTabA11yState(activeTabName = '') {
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'heroTooltip';
-  heroTooltip.className = 'hero-tooltip-shell hero-tooltip-shell--interactive hero-tooltip-shell--hidden hidden';
-  heroTooltip.style.zIndex = '5000';
+heroTooltip.className =
+  'hero-tooltip-shell hero-tooltip-shell--interactive hero-tooltip-shell--hidden hidden';
+heroTooltip.style.zIndex = '5000';
 document.body.appendChild(heroTooltip);
 
-document.addEventListener('touchstart', (e) => {
-  if (!e.target.closest('.hero-card') && !heroTooltip.contains(e.target)) {
-    hideHeroTooltip();
-  }
-}, { passive: true });
-
-
-
-
+document.addEventListener(
+  'touchstart',
+  (e) => {
+    if (!e.target.closest('.hero-card') && !heroTooltip.contains(e.target)) {
+      hideHeroTooltip();
+    }
+  },
+  { passive: true }
+);
 
 // --- OVERLAY STACKING ---
 window._overlayStack = 0;
@@ -415,7 +436,10 @@ function showAboModal(message, onConfirm = null) {
   if (onConfirm) {
     messageBoxOkBtn.textContent = t.messageBoxConfirm || 'Confirm';
     messageBoxCancelBtn.classList.remove('hidden');
-    messageBoxOkBtn.onclick = () => { cleanup(); onConfirm(); };
+    messageBoxOkBtn.onclick = () => {
+      cleanup();
+      onConfirm();
+    };
     messageBoxCancelBtn.onclick = cleanup;
   } else {
     messageBoxOkBtn.textContent = t.messageBoxOk || 'OK';
@@ -430,8 +454,8 @@ const DEFAULT_TROOP_FILTER_VALUES = ['All'];
 
 function syncCheckboxValues(container, values) {
   if (!container) return;
-  const wanted = new Set(values.map(v => String(v).toLowerCase()));
-  container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+  const wanted = new Set(values.map((v) => String(v).toLowerCase()));
+  container.querySelectorAll('input[type="checkbox"]').forEach((input) => {
     input.checked = wanted.has(String(input.value).toLowerCase());
   });
 }
@@ -445,16 +469,19 @@ function readSeasonFilterSelection(container) {
 
 function updateSeasonCatchupHint(container) {
   if (!container) return;
-  const targetId = container.id === 'seasonFilters'
-    ? 'seasonCatchupHint'
-    : container.id === 'generatorSeasonFilters'
-      ? 'generatorSeasonCatchupHint'
-      : '';
+  const targetId =
+    container.id === 'seasonFilters'
+      ? 'seasonCatchupHint'
+      : container.id === 'generatorSeasonFilters'
+        ? 'generatorSeasonCatchupHint'
+        : '';
   if (!targetId) return;
   const el = document.getElementById(targetId);
   if (!el) return;
   const items = getSeasonCatchupItems(getCheckedValues(container));
-  el.innerHTML = items.map(item => `
+  el.innerHTML = items
+    .map(
+      (item) => `
     <span class="season-catchup-card season-catchup-card--${escapeHtml(item.season.toLowerCase())}">
       <span class="season-catchup-badge">${escapeHtml(item.season)}</span>
       <span class="season-catchup-copy">
@@ -462,7 +489,9 @@ function updateSeasonCatchupHint(container) {
         <span>${escapeHtml(item.body)}</span>
       </span>
     </span>
-  `).join('');
+  `
+    )
+    .join('');
   el.classList.toggle('hidden', !items.length);
 }
 
@@ -484,12 +513,13 @@ function readTroopFilterSelection(container, changedInput) {
   if (changedInput?.matches?.('input[type="checkbox"]')) {
     const changedValue = changedInput.value.toLowerCase();
     if (changedValue === 'all' && changedInput.checked) {
-      container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      container.querySelectorAll('input[type="checkbox"]').forEach((input) => {
         input.checked = input === changedInput;
       });
     } else if (changedValue !== 'all' && changedInput.checked) {
-      const allInput = Array.from(container.querySelectorAll('input[type="checkbox"]'))
-        .find(input => input.value.toLowerCase() === 'all');
+      const allInput = Array.from(container.querySelectorAll('input[type="checkbox"]')).find(
+        (input) => input.value.toLowerCase() === 'all'
+      );
       if (allInput) allInput.checked = false;
     }
   }
@@ -516,9 +546,12 @@ function wireFilterSets() {
   const manualSeasonFilters = document.getElementById('seasonFilters') || seasonFiltersEl;
   const manualStateFilters = document.getElementById('stateFilters') || stateFiltersEl;
   const manualTroopFilters = document.getElementById('troopFilters') || troopFiltersEl;
-  const generatorSeasonFilters = document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
-  const generatorStateFilters = document.getElementById('generatorStateFilters') || genStateFiltersEl;
-  const generatorTroopFilters = document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
+  const generatorSeasonFilters =
+    document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
+  const generatorStateFilters =
+    document.getElementById('generatorStateFilters') || genStateFiltersEl;
+  const generatorTroopFilters =
+    document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
 
   wireFilterControls(manualSeasonFilters, () => {
     setSelectedSeasons(readSeasonFilterSelection(manualSeasonFilters));
@@ -728,10 +761,12 @@ function syncGeneratorControlState(changedTroopInput = null) {
 }
 
 function getVisibleGeneratorHeroes(options = syncGeneratorControlState()) {
-  const searchQuery = (document.getElementById('generatorHeroSearch')?.value || '').trim().toLowerCase();
+  const searchQuery = (document.getElementById('generatorHeroSearch')?.value || '')
+    .trim()
+    .toLowerCase();
   return getGeneratorHeroPool(options.skinsOnly)
-    .filter(h => heroMatchesFilters(h, options.seasons, options.states, options.types))
-    .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery));
+    .filter((h) => heroMatchesFilters(h, options.seasons, options.states, options.types))
+    .filter((h) => !searchQuery || h.name.toLowerCase().includes(searchQuery));
 }
 
 function resetGeneratorFilters() {
@@ -753,13 +788,13 @@ function selectVisibleGeneratorHeroes() {
   const options = syncGeneratorControlState();
   const visibleHeroes = getVisibleGeneratorHeroes(options);
   const selectAll = () => {
-    visibleHeroes.forEach(h => generatorSelectedHeroes.add(h.name));
+    visibleHeroes.forEach((h) => generatorSelectedHeroes.add(h.name));
     renderGeneratorHeroes(options);
     markGeneratorSelectionChanged({ immediate: true });
   };
 
   if (!visibleHeroes.length) {
-    showAboModal('No visible heroes match the current filters.');
+    showAboModal(comboToolsText('app.noVisibleHeroes', {}, currentLanguage));
     return;
   }
 
@@ -767,42 +802,53 @@ function selectVisibleGeneratorHeroes() {
 }
 
 // --- UI WIRING ---
+const requestAppLanguage = createLatestLanguageLoader((lang) => {
+  const loadedLanguage = translations[lang] ? lang : 'en';
+  setCurrentLanguage(loadedLanguage);
+  applyLanguageDirection(loadedLanguage);
+  updateTextContent();
+  if (manualModeReady) {
+    manualBuilderModule?.renderAvailableHeroes();
+    manualBuilderModule?.refreshManualComboLocalization?.();
+  }
+  renderGeneratorHeroes(syncGeneratorControlState());
+  refreshGeneratorLocalization();
+  if (typeof window.vtsRenderStrifeTool === 'function') window.vtsRenderStrifeTool();
+});
+
 function wireUIActions({ preserveInitialHash = false } = {}) {
   // === TAB BUTTON HANDLERS ===
-const tabs = [
-  { btn: tabManualBtn,   name: 'manual' },
-  { btn: tabGeneratorBtn,name: 'generator' },
-  { btn: tabHeroesBtn,   name: 'heroes' },
-  { btn: tabResearchBtn, name: 'research' },
-  { btn: tabMaterialsBtn, name: 'materials' },
-  { btn: tabEdenMapBtn,  name: 'edenMap' },
-  { btn: tabStrifeBtn,   name: 'strife' },
-  { btn: tabLoyaltyBtn,  name: 'loyalty' },
-  { btn: tabYouTubeBtn,  name: 'youtube' },
-  { btn: tabArcadeBtn,   name: 'arcade' },
-];
-const validTabNames = new Set(tabs.map((tab) => tab.name));
+  const tabs = [
+    { btn: tabManualBtn, name: 'manual' },
+    { btn: tabGeneratorBtn, name: 'generator' },
+    { btn: tabHeroesBtn, name: 'heroes' },
+    { btn: tabResearchBtn, name: 'research' },
+    { btn: tabMaterialsBtn, name: 'materials' },
+    { btn: tabEdenMapBtn, name: 'edenMap' },
+    { btn: tabStrifeBtn, name: 'strife' },
+    { btn: tabLoyaltyBtn, name: 'loyalty' },
+    { btn: tabYouTubeBtn, name: 'youtube' },
+    { btn: tabArcadeBtn, name: 'arcade' },
+  ];
+  const validTabNames = new Set(tabs.map((tab) => tab.name));
 
-tabs.forEach(tab => {
-  if (tab.btn) {
-    tab.btn.addEventListener('click', () => switchTab(tab.name, false, { scrollToSection: true }));
-  }
-});
+  tabs.forEach((tab) => {
+    if (tab.btn) {
+      tab.btn.addEventListener('click', () =>
+        switchTab(tab.name, false, { scrollToSection: true })
+      );
+    }
+  });
   wireFilterSets();
   wireGeneratorSkinToggle();
   wireGeneratorSkinNudge();
   wireHeroSearchInputs();
 
   if (languageSelect) {
-    languageSelect.onchange = async e => {
-      setCurrentLanguage(e.target.value);
-      localStorage.setItem('vts_hero_lang', currentLanguage);
-      await loadTranslationsForLanguage(currentLanguage);
-      applyLanguageDirection(currentLanguage);
-      updateTextContent();
-      if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
-      renderGeneratorHeroes(syncGeneratorControlState());
-      if (typeof window.vtsRenderStrifeTool === 'function') window.vtsRenderStrifeTool();
+    languageSelect.onchange = async (e) => {
+      const requestedLanguage = e.target.value || 'en';
+      localStorage.setItem('vts_hero_lang', requestedLanguage);
+      await requestAppLanguage(requestedLanguage);
     };
   }
 
@@ -810,7 +856,9 @@ tabs.forEach(tab => {
   if (heroInfoToggle && heroInfoToggle.dataset.heroInfoWired !== '1') {
     heroInfoToggle.dataset.heroInfoWired = '1';
     const storedHeroInfo = localStorage.getItem(HERO_INFO_ENABLED_KEY);
-    applyHeroInfoPanelState(storedHeroInfo === null ? heroInfoToggle.checked : storedHeroInfo !== '0');
+    applyHeroInfoPanelState(
+      storedHeroInfo === null ? heroInfoToggle.checked : storedHeroInfo !== '0'
+    );
 
     heroInfoToggle.addEventListener('change', (e) => {
       applyHeroInfoPanelState(e.target.checked);
@@ -834,8 +882,16 @@ tabs.forEach(tab => {
   let _arcadeBooting = false;
 
   const tabPanels = [
-    manualSection, generatorSection, heroesSection, researchSection,
-    materialsSection, edenMapSection, strifeSection, loyaltySection, youtubeSection, arcadeSection,
+    manualSection,
+    generatorSection,
+    heroesSection,
+    researchSection,
+    materialsSection,
+    edenMapSection,
+    strifeSection,
+    loyaltySection,
+    youtubeSection,
+    arcadeSection,
   ];
 
   const _tabTemplatesLoaded = {};
@@ -864,7 +920,10 @@ tabs.forEach(tab => {
     const section = document.getElementById(`${tabName}Section`);
     if (!section || _tabTemplatesLoaded[tabName]) return;
     const src = section.dataset.tabSrc;
-    if (!src) { _tabTemplatesLoaded[tabName] = true; return; }
+    if (!src) {
+      _tabTemplatesLoaded[tabName] = true;
+      return;
+    }
     try {
       const res = await fetch(src);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -880,7 +939,9 @@ tabs.forEach(tab => {
 
   function isDynamicImportLoadFailure(err) {
     const message = String(err?.message || err || '');
-    return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(message);
+    return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+      message
+    );
   }
 
   function recoverFromStaleAssetGraph(reason) {
@@ -896,9 +957,11 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260716_101602')
+        import('./eden-map.js?v=20260716_132118')
           .then((mod) => mod.bootEdenMapPlanner())
-          .then(() => { _edenMapReady = true; })
+          .then(() => {
+            _edenMapReady = true;
+          })
           .catch((err) => {
             console.error('Eden map failed to load', err);
             _edenMapBooting = false;
@@ -908,7 +971,11 @@ tabs.forEach(tab => {
             }
             if (typeof window.showToast === 'function') {
               const t = translations[currentLanguage] || translations.en;
-              window.showToast(t.edenMapLoadFailed || 'Eden map failed to load. Refresh and try again.', 'error', 4000);
+              window.showToast(
+                t.edenMapLoadFailed || 'Eden map failed to load. Refresh and try again.',
+                'error',
+                4000
+              );
             }
           })
           .finally(() => root?.classList.remove('eden-map-loading'));
@@ -930,7 +997,11 @@ tabs.forEach(tab => {
           console.error('Hero Atlas failed to load', err);
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
-            window.showToast(t.moduleLoadFailed?.replace('{name}', 'Hero Atlas') || 'Hero Atlas failed to load.', 'error', 4000);
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Hero Atlas') || 'Hero Atlas failed to load.',
+              'error',
+              4000
+            );
           }
         });
     }
@@ -938,8 +1009,8 @@ tabs.forEach(tab => {
       if (_researchBooting) return;
       _researchBooting = true;
       loadResearchModule()
-        .then((mod) => {
-          mod.initResearchCalculator();
+        .then(async (mod) => {
+          await mod.initResearchCalculator();
           _researchReady = true;
         })
         .catch((err) => {
@@ -947,7 +1018,11 @@ tabs.forEach(tab => {
           console.error('Research failed to load', err);
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
-            window.showToast(t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.', 'error', 4000);
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.',
+              'error',
+              4000
+            );
           }
         });
     }
@@ -955,8 +1030,8 @@ tabs.forEach(tab => {
       if (_materialsBooting) return;
       _materialsBooting = true;
       loadMaterialModule()
-        .then((mod) => {
-          mod.initMaterialCalculator();
+        .then(async (mod) => {
+          await mod.initMaterialCalculator();
           _materialsReady = true;
         })
         .catch((err) => {
@@ -969,7 +1044,12 @@ tabs.forEach(tab => {
           renderTabLoadError(root, 'materials');
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
-            window.showToast(t.moduleLoadFailed?.replace('{name}', 'DM Materials') || 'DM Materials failed to load.', 'error', 4000);
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'DM Materials') ||
+                'DM Materials failed to load.',
+              'error',
+              4000
+            );
           }
         })
         .finally(() => {
@@ -979,9 +1059,9 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260716_101602')
-        .then((mod) => {
-          mod.initStrifeTool();
+      import('./app-strife.js?v=20260716_132118')
+        .then((mod) => mod.initStrifeTool())
+        .then(() => {
           _strifeReady = true;
         })
         .catch((err) => {
@@ -989,13 +1069,17 @@ tabs.forEach(tab => {
           console.error('Strife tool failed to load', err);
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
-            window.showToast(t.moduleLoadFailed?.replace('{name}', 'Strife') || 'Strife failed to load.', 'error', 4000);
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Strife') || 'Strife failed to load.',
+              'error',
+              4000
+            );
           }
         });
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260716_101602')
+      import('./youtube-v14.js?v=20260716_132118')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1004,7 +1088,12 @@ tabs.forEach(tab => {
           console.error('YouTube guide library failed to load', err);
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
-            window.showToast(t.moduleLoadFailed?.replace('{name}', 'YouTube') || 'YouTube guide library failed to load.', 'error', 4000);
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'YouTube') ||
+                'YouTube guide library failed to load.',
+              'error',
+              4000
+            );
           }
         })
         .finally(() => {
@@ -1059,7 +1148,9 @@ tabs.forEach(tab => {
     document.querySelectorAll('.tab-pill').forEach((btn) => {
       btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
     });
-    const activeBtn = document.getElementById(TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    const activeBtn = document.getElementById(
+      TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`
+    );
     if (activeBtn) {
       activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
       requestAnimationFrame(() => keepActiveTabInView(activeBtn));
@@ -1084,7 +1175,10 @@ tabs.forEach(tab => {
 
     document.body.dataset.activeTab = tabName;
     document.body.classList.toggle('tab-manual-active', tabName === 'manual');
-    document.body.classList.toggle('tab-combo-active', tabName === 'manual' || tabName === 'generator');
+    document.body.classList.toggle(
+      'tab-combo-active',
+      tabName === 'manual' || tabName === 'generator'
+    );
     document.body.classList.toggle('tab-strife-active', tabName === 'strife');
 
     onTabActivated(tabName);
@@ -1116,7 +1210,7 @@ tabs.forEach(tab => {
   wireGeneratorSkinNudge();
 
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
-  const genClearAllBtn  = document.getElementById('genClearAllBtn');
+  const genClearAllBtn = document.getElementById('genClearAllBtn');
   const genResetFiltersBtn = document.getElementById('genResetFiltersBtn');
 
   if (genSelectAllBtn) {
@@ -1141,19 +1235,20 @@ tabs.forEach(tab => {
       await builder.saveCombo();
     };
   }
-  
+
   if (clearComboBtn) {
     clearComboBtn.onclick = async () => {
       const builder = await loadManualBuilderModule();
       setCurrentCombo([null, null, null]);
-      document.querySelectorAll('.combo-slot')
+      document
+        .querySelectorAll('.combo-slot')
         .forEach((slot, i) => builder.updateComboSlotDisplay(slot, null, i));
       builder.updateManualComboScore();
     };
   }
-  
+
   if (generateCombosBtn) generateCombosBtn.onclick = generateBestCombos;
-  
+
   const generateRandomBtn = document.getElementById('generateRandomBtn');
   if (generateRandomBtn) generateRandomBtn.onclick = generateRandomCombos;
 
@@ -1167,7 +1262,7 @@ tabs.forEach(tab => {
       // Build combo data format compatible with canvas renderer
       const comboData = savedCombosCache.map((heroes, idx) => {
         const info = getComboRankInfo(heroes);
-        return { heroes, displayScore: info ? info.score : 'â€”' };
+        return { heroes, displayScore: info ? info.score : '—' };
       });
       const { downloadComboImage } = await loadExportModule();
       await downloadComboImage(
@@ -1189,8 +1284,10 @@ tabs.forEach(tab => {
       let text = `${t.lastBestCombosTitle || 'Last Best Combos'}\n\n`;
       savedCombosCache.forEach((heroes, idx) => {
         const info = getComboRankInfo(heroes);
-        const scoreText = info ? ` (Score: ${info.score}, #${info.rank})` : '';
-        text += `${idx + 1}. ${heroes.join(' / ')}${scoreText}\n`;
+        const scoreText = info
+          ? ` (${t.generatorScoreLabel || 'Score:'} ${formatLocaleNumber(info.score, currentLanguage, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, #${formatLocaleNumber(info.rank, currentLanguage)})`
+          : '';
+        text += `${formatLocaleNumber(idx + 1, currentLanguage)}. ${heroes.join(' / ')}${scoreText}\n`;
       });
 
       try {
@@ -1198,7 +1295,9 @@ tabs.forEach(tab => {
           await navigator.share({ text });
         } else if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(text);
-          showAboModal(t.shareCombosCopied || 'Combos copied to clipboard. You can paste them anywhere.');
+          showAboModal(
+            t.shareCombosCopied || 'Combos copied to clipboard. You can paste them anywhere.'
+          );
         } else {
           showAboModal(text);
         }
@@ -1234,8 +1333,8 @@ tabs.forEach(tab => {
 // --- TRANSLATIONS / TEXT ---
 function setLocalizedTextPreservingDecorations(el, text) {
   const normalized = String(text ?? '');
-  const nestedLabel = Array.from(el.children || []).find(
-    (child) => child.matches?.('[data-i18n], [data-shell-label], [data-tab-label]')
+  const nestedLabel = Array.from(el.children || []).find((child) =>
+    child.matches?.('[data-i18n], [data-shell-label], [data-tab-label]')
   );
 
   if (nestedLabel) {
@@ -1257,45 +1356,45 @@ function setLocalizedTextPreservingDecorations(el, text) {
 
 function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
-  
+
   // RTL support for Arabic
-  document.documentElement.dir = (currentLanguage === 'ar') ? 'rtl' : 'ltr';
+  document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.lang = resolveIntlLocale(currentLanguage);
   if (languageSelect) languageSelect.value = currentLanguage;
 
   const idMap = {
-    'appTitle': t.appTitle,
-    'betaNote': t.betaNote,
-    'tabManual': t.tabManual,
-    'tabGenerator': t.tabGenerator,
-    'tabLoyalty': t.tabLoyalty,
-    'tabYouTube': t.tabYouTube || 'YouTube',
-    'tabEdenMap': t.tabEdenMap || 'Eden Map',
-    'tabStrife': t.tabStrife || 'Strife over Dragon',
-    'tabHeroes': t.tabHeroes || 'Hero Atlas',
-    'tabResearch': t.tabResearch || 'Research',
-    'tabMaterialsLabel': t.tabMaterials || MATERIAL_TAB_LABELS[currentLanguage] || MATERIAL_TAB_LABELS.en,
-    'researchTitle': t.researchTitle,
-    'researchDesc': t.researchDesc,
-    'filterBySeasonTitle': t.filterBySeasonTitle,
-    'availableHeroesTitle': t.availableHeroesTitle,
-    'createComboTitle': t.createComboTitle,
-    'lastBestCombosTitle': t.lastBestCombosTitle,
-    'noCombosMessage': t.noCombosMessage,
-    'genToolTitle': t.generatorTitle,
-    'genIntroText': t.generatorIntro,
-    'genFilterTitle': t.filterBySeasonTitle,
-    'genSelectTitle': t.genSelectTitle,
-    'calcLoyaltyBtn': t.calcUpgradesBtn,
-    'saveComboBtn': t.saveComboBtn,
-    'clearComboBtn': t.clearComboBtn,
-    'downloadCombosBtn': t.downloadCombosBtn,
-    'shareAllCombosBtn': t.shareAllCombosBtn,
-    'genSelectAllBtn': t.generatorSelectAll,
-    'genClearAllBtn': t.generatorClearAll,
-    'generateCombosBtn': t.generatorGenerateBtn,
-    'downloadGeneratorBtn': t.generatorDownloadBtn,
-    'generateRandomBtn': t.generatorRandomBtn
+    appTitle: t.appTitle,
+    betaNote: t.betaNote,
+    tabManual: t.tabManual,
+    tabGenerator: t.tabGenerator,
+    tabLoyalty: t.tabLoyalty,
+    tabYouTube: t.tabYouTube || 'YouTube',
+    tabEdenMap: t.tabEdenMap || 'Eden Map',
+    tabStrife: t.tabStrife || 'Strife over Dragon',
+    tabHeroes: t.tabHeroes || 'Hero Atlas',
+    tabResearch: t.tabResearch || 'Research',
+    tabMaterialsLabel: t.tabMaterials || translations.en.tabMaterials,
+    researchTitle: t.researchTitle,
+    researchDesc: t.researchDesc,
+    filterBySeasonTitle: t.filterBySeasonTitle,
+    availableHeroesTitle: t.availableHeroesTitle,
+    createComboTitle: t.createComboTitle,
+    lastBestCombosTitle: t.lastBestCombosTitle,
+    noCombosMessage: t.noCombosMessage,
+    genToolTitle: t.generatorTitle,
+    genIntroText: t.generatorIntro,
+    genFilterTitle: t.filterBySeasonTitle,
+    genSelectTitle: t.genSelectTitle,
+    calcLoyaltyBtn: t.calcUpgradesBtn,
+    saveComboBtn: t.saveComboBtn,
+    clearComboBtn: t.clearComboBtn,
+    downloadCombosBtn: t.downloadCombosBtn,
+    shareAllCombosBtn: t.shareAllCombosBtn,
+    genSelectAllBtn: t.generatorSelectAll,
+    genClearAllBtn: t.generatorClearAll,
+    generateCombosBtn: t.generatorGenerateBtn,
+    downloadGeneratorBtn: t.generatorDownloadBtn,
+    generateRandomBtn: t.generatorRandomBtn,
   };
 
   for (const [id, text] of Object.entries(idMap)) {
@@ -1305,32 +1404,32 @@ function updateTextContent() {
     }
   }
 
-  document.querySelectorAll('[data-i18n]').forEach(el => {
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
     if (t[key]) {
       setLocalizedTextPreservingDecorations(el, t[key].replace('{version}', APP_VERSION));
     }
   });
 
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
     const key = el.getAttribute('data-i18n-ph');
     if (t[key]) {
       el.placeholder = t[key].replace('{version}', APP_VERSION);
     }
   });
 
-  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
     const key = el.getAttribute('data-i18n-title');
     if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
   });
   syncGameClockTitles();
 
-  document.querySelectorAll('[data-i18n-label]').forEach(el => {
+  document.querySelectorAll('[data-i18n-label]').forEach((el) => {
     const key = el.getAttribute('data-i18n-label');
     if (t[key]) el.label = t[key].replace('{version}', APP_VERSION);
   });
 
-  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
     const key = el.getAttribute('data-i18n-aria');
     if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
   });
@@ -1344,13 +1443,16 @@ function updateTextContent() {
   applySeo(currentLanguage);
 
   if (manualModeReady) manualBuilderModule?.updateManualComboScore();
-  if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer') && !researchSection?.classList.contains('hidden')) {
+  if (
+    ENABLE_RESEARCH_FEATURE &&
+    document.getElementById('techListContainer') &&
+    !researchSection?.classList.contains('hidden')
+  ) {
     loadResearchModule()
-      .then((mod) => mod.renderTechList())
+      .then((mod) => mod.refreshResearchLocale(currentLanguage))
       .catch((err) => console.warn('[research] refresh failed:', err));
   }
 }
-
 
 // --- Tab scroll buttons ---
 function initTabScroll() {
@@ -1414,13 +1516,15 @@ function keepActiveTabInView(activeBtn, behavior = 'smooth') {
 
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
-    try {
+  try {
     await safeInit('loadTranslations', () => loadTranslationsForLanguage(currentLanguage));
     await safeInit('updateTextContent', () => updateTextContent());
     safeInit('errorReporting', () => initErrorReporting());
     safeInit('undoToasts', () => initUndoToasts());
-    safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
-    await new Promise(r => requestAnimationFrame(r));
+    safeInit('gameClock', () =>
+      mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false })
+    );
+    await new Promise((r) => requestAnimationFrame(r));
     safeInit('restoreGeneratorSelection', () => restoreGeneratorSelection());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
     safeInit('syncGeneratorSelectedCountBadge', () => syncGeneratorSelectedCountBadge());
@@ -1435,15 +1539,12 @@ async function startApp() {
 
     safeInit('registerServiceWorker', () => registerServiceWorker());
     if (comboShare) {
-      const validHeroNames = new Set(allHeroesData.map(hero => hero.name));
-      const validSharedCombos = comboShare.filter(combo =>
-        combo.heroes.every(heroName => validHeroNames.has(heroName))
+      const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
+      const validSharedCombos = comboShare.filter((combo) =>
+        combo.heroes.every((heroName) => validHeroNames.has(heroName))
       );
       if (validSharedCombos.length) {
-        lastGeneratedCombos.length = 0;
-        lastGeneratedCombos.push(...validSharedCombos);
-        safeInit('renderComboShare', () => renderGeneratorResults(validSharedCombos));
-        downloadGeneratorBtn?.classList.remove('hidden');
+        safeInit('renderComboShare', () => restoreSharedGeneratorResults(validSharedCombos));
         window.vtsSwitchTab?.('generator', true, {
           scrollToSection: true,
           preserveHash: true,
@@ -1451,14 +1552,16 @@ async function startApp() {
       }
     }
     if (rosterShare) {
-      const validHeroNames = new Set(allHeroesData.map(hero => hero.name));
-      const validSharedRoster = rosterShare.filter(heroName => validHeroNames.has(heroName));
+      const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
+      const validSharedRoster = rosterShare.filter((heroName) => validHeroNames.has(heroName));
       if (validSharedRoster.length) {
-        safeInit('applyRosterShare', () => applyRosterToGenerator(validSharedRoster, generatorSelectedHeroes));
+        safeInit('applyRosterShare', () =>
+          applyRosterToGenerator(validSharedRoster, generatorSelectedHeroes)
+        );
         const sharedSeasons = new Set(
           allHeroesData
-            .filter(hero => validSharedRoster.includes(hero.name))
-            .map(hero => hero.season)
+            .filter((hero) => validSharedRoster.includes(hero.name))
+            .map((hero) => hero.season)
         );
         syncCheckboxValues(
           document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl,
@@ -1480,7 +1583,7 @@ async function startApp() {
         if (!firebase.configured) return;
         const user = await ensureAnonymousAuth();
         if (user && user.uid) {
-            setUserId(user.uid);
+          setUserId(user.uid);
         }
         savedComboCloudReady = true;
         if (manualModeReady) {
@@ -1510,10 +1613,10 @@ async function startApp() {
         window.vtsSwitchTab?.(tab, true);
       }
     });
-    } finally {
-        await notifyAppReady();
-        window.VTS_ASSET_RECOVERY?.markBootComplete?.();
-    }
+  } finally {
+    await notifyAppReady();
+    window.VTS_ASSET_RECOVERY?.markBootComplete?.();
+  }
 }
 
 function initKeyboardAwareLayout() {
@@ -1532,12 +1635,16 @@ function safeInit(name, fn) {
   try {
     const result = fn();
     if (result && typeof result.catch === 'function') {
-      return result.catch(err => {
+      return result.catch((err) => {
         console.warn(`[${name}] async init failed:`, err);
         logClientError(`safeInit:${name}`, err);
         if (typeof window.showToast === 'function') {
           const t = translations[currentLanguage] || translations.en;
-          window.showToast((t.moduleLoadFailed || '{name} failed to load').replace('{name}', name), 'warn', 3000);
+          window.showToast(
+            (t.moduleLoadFailed || '{name} failed to load').replace('{name}', name),
+            'warn',
+            3000
+          );
         }
       });
     }
@@ -1547,7 +1654,11 @@ function safeInit(name, fn) {
     logClientError(`safeInit:${name}`, err);
     if (typeof window.showToast === 'function') {
       const t = translations[currentLanguage] || translations.en;
-      window.showToast((t.moduleLoadFailed || '{name} failed to load').replace('{name}', name), 'warn', 3000);
+      window.showToast(
+        (t.moduleLoadFailed || '{name} failed to load').replace('{name}', name),
+        'warn',
+        3000
+      );
     }
     return undefined;
   }
@@ -1576,7 +1687,7 @@ if (window.VTS_MAINTENANCE_ACTIVE) {
     showAboModal,
   });
 
-  startApp().catch(err => console.error('[global] startApp failed:', err));
+  startApp().catch((err) => console.error('[global] startApp failed:', err));
 } else {
-  console.error('[global] startApp not defined â€” module import may have failed');
+  console.error('[global] startApp not defined — module import may have failed');
 }

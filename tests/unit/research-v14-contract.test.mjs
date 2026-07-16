@@ -163,7 +163,7 @@ test('research workspace supports light theme, mobile focus mode, and reduced mo
 });
 
 test('buff summary cards expose semantic accents in dark and light themes', () => {
-  assert.match(source, /data-buff-tone="\$\{getResearchBuffTone\(buff\.label\)\}"/);
+  assert.match(source, /data-buff-tone="\$\{getResearchBuffTone\(buff\.canonicalLabel\)\}"/);
   for (const tone of ['tactical', 'might', 'resistance', 'hp', 'damage', 'speed', 'economy']) {
     assert.match(styles, new RegExp(`data-buff-tone='${tone}'`));
   }

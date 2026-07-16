@@ -687,6 +687,10 @@ test.describe('admin dashboard visual regression', () => {
         #dashCloudStatus,
         #dashLogArea,
         #dashLogOutput,
+        #aiDrawerLauncherShell,
+        .ai-drawer-launcher-shell,
+        #aiDrawer,
+        #aiDrawerBackdrop,
         .dash-cloud-status,
         .dash-log-area { visibility: hidden !important; }
         #dashOcrServiceStatus {
@@ -1157,7 +1161,7 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
     await expectTab(page, '#tabMaterials', '#materialsSection', '#materialCalculatorRoot');
     const materialsTabItem = page.locator('.tab-item', { has: page.locator('#tabMaterials') });
-    await expect(materialsTabItem.locator('.tab-badge-beta')).toHaveText('BETA');
+    await expect(materialsTabItem.locator('.tab-badge-beta')).toHaveText('Beta');
     await expect(page.locator('#materialCalculatorRoot')).toContainText(
       'Dragon Master Set Planner'
     );
@@ -1260,7 +1264,10 @@ test.describe('app smoke tabs', () => {
 
     await expect(page.locator('#languageSelect')).toHaveValue('kr');
     await expect(page.locator('#materialCalculatorRoot .dm-command-header h2')).toHaveText(
-      'DM 재료'
+      'Dragon Master 세트 플래너'
+    );
+    await expect(page.locator('#materialCalculatorRoot .dm-command-header')).toContainText(
+      '일반 병종 장비'
     );
   });
 
@@ -1511,7 +1518,7 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .hero-detail-panel');
     await page.locator('[data-detail-section="skins"]').click();
     await expect(page.locator('#detail-section-skins')).toContainText(
-      'Upgrades Skill 2: Wheel of Fortune -> Eternity'
+      'Upgrades SKILL 2: Wheel of Fortune -> Eternity'
     );
     await expect(page.locator('#detail-section-skins')).not.toContainText('Slot 8');
     await expect(page.locator('#detail-section-skins')).toContainText('Biography: Hidden Power');
@@ -1554,7 +1561,7 @@ test.describe('app smoke tabs', () => {
       .filter({ has: page.locator('.counter-summary-badge:not(.counter-summary-badge--empty)') })
       .first();
     await expect(generatedWithCounters.locator('.counter-summary-badge')).toContainText(
-      'counters known'
+      /\d+ counters? known/
     );
     await expect(
       generatedWithCounters.locator('.generated-counter-row--badge-only .counter-toggle-btn')
@@ -2753,6 +2760,7 @@ test.describe('app smoke tabs', () => {
 
     const contributionViewButton = page.locator('[data-reward-view="contribution"]');
     await contributionViewButton.click();
+    await expect(page.locator('#edenX1NavLoader')).toBeHidden();
     const weightedPanel = page.locator('#dashWeightedContributionPanel');
     await expect(
       weightedPanel.getByRole('heading', { name: 'Total Contribution', exact: true })
@@ -3397,7 +3405,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.eden-x1-reward-panel')).toContainText('计划的前20名奖励分配');
     await expect(page.locator('.eden-x1-reward-flow')).toHaveAttribute(
       'aria-label',
-      '计划的前20名奖励分配'
+      '前 20 名奖励分配方案'
     );
     await expect(page.locator('[data-reward-view="support"]')).toContainText('支援工作');
     await expect(panel.locator('h2')).toContainText('支援工作');
@@ -4617,7 +4625,9 @@ test.describe('app smoke tabs', () => {
     await expect(results).toContainText('Candidate totals');
     await expect(results).toContainText('Ballots');
     const totalsTable = results.locator('table').first();
-    await expect(totalsTable).toContainText('Matched From');
+    await expect(
+      totalsTable.getByRole('columnheader', { name: 'Matched from', exact: true })
+    ).toBeVisible();
     const kikaRow = totalsTable.locator('tbody tr').filter({ hasText: 'Kika' }).first();
     await expect(kikaRow).toContainText('2');
     await expect(kikaRow).toContainText('Kika (1)');

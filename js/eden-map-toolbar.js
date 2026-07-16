@@ -7,9 +7,15 @@ import {
   normalizeTeamPlanSettings,
 } from './eden-map-teams.js';
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
+import {
+  edenMapText,
+  getEdenPlanDisplayName,
+  getEdenSectorDisplayLabel,
+} from './i18n/eden-map/index.js';
 
 function edenT(key) {
-  const lang = localStorage.getItem('vts_hero_lang') || 'en';
+  const lang = resolveRuntimeLocale();
   return translations[lang]?.[key] || translations.en[key] || key;
 }
 
@@ -225,6 +231,7 @@ export function bindToolbar(state, ctx) {
 
   document.getElementById('edenLoadX1Targets')?.addEventListener('click', () => {
     plan.customTargets = X1_PLANNING_TARGETS.filter((t) => t.x && t.y).map((t) => ({
+      presetId: t.id,
       x: t.x,
       y: t.y,
       label: t.name,
@@ -243,7 +250,7 @@ export function bindToolbar(state, ctx) {
     const id = `plan_${Date.now()}`;
     const name = prompt(
       edenT('edenPlanPrompt'),
-      `Plan ${(Object.keys(ctx.getPlansStore().plans).length || 0) + 1}`
+      `${edenMapText('plan')} ${(Object.keys(ctx.getPlansStore().plans).length || 0) + 1}`
     );
     if (!name) return;
     ctx.flushSavePlan();
@@ -358,15 +365,20 @@ export function bindToolbar(state, ctx) {
     if (typeof window.showToast === 'function') {
       window.showToast(edenT('edenExportPngWorking'), 'info', 1800);
     }
-    const planName =
-      ctx.getPlansStore().plans[ctx.getActivePlanId()]?.name || ctx.getActivePlanId();
+    const planEntry = ctx.getPlansStore().plans[ctx.getActivePlanId()];
+    const planName = getEdenPlanDisplayName(
+      ctx.getActivePlanId(),
+      planEntry?.name || ctx.getActivePlanId()
+    );
     const sec = getEdenSectors()[ctx.getSectorKey()];
     const slug = ctx.getSectorKey() === 'FULL' ? 'full' : ctx.getSectorKey().toLowerCase();
     const filename = isolated
       ? `eden-${slug}-${ctx.getActivePlanId()}.png`
       : `eden-${ctx.getActivePlanId()}.png`;
     await ctx.exportMapAsPng(canvas, filename, {
-      title: isolated ? sec?.label || ctx.getSectorKey() : edenT('edenMapTitle'),
+      title: isolated
+        ? getEdenSectorDisplayLabel(ctx.getSectorKey(), sec?.label)
+        : edenT('edenMapTitle'),
       subtitle: isolated ? `${edenT('edenIsolateActive')} · ${planName}` : planName,
       footer: 'VTS 1097 · Hero Combo Creator',
     });

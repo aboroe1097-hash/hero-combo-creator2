@@ -18,7 +18,11 @@ export const COMBO_COUNTERS = [
   {
     target: ['Immortal Guardian', 'Ramses II', 'Beowulf'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines', confidence: 'Duel screenshot' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines',
+        confidence: 'Duel screenshot',
+      },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
       ['King Arthur', 'Theodora', 'Alexander'],
       ['Defender', 'Tarantula', 'Sakura'],
@@ -29,28 +33,49 @@ export const COMBO_COUNTERS = [
   {
     target: ['King Arthur', 'Cleopatra VII', 'Theodora'],
     counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Duel report shows this cavalry line winning into the Arthur/Cleo/Theodora sustain core', confidence: 'Duel screenshot' },
+      {
+        heroes: ['Octavius', 'Rozen Blade', 'Caesar'],
+        reason:
+          'Duel report shows this cavalry line winning into the Arthur/Cleo/Theodora sustain core',
+        confidence: 'Duel screenshot',
+      },
       ['Lawman', 'Defender', 'The Avalanche'],
     ],
   },
   {
     target: ['King Arthur', 'Cleopatra VII', 'Bleeding Steed'],
     counters: [
-      { heroes: ['Beowulf', 'Ramses II', 'Theodora'], reason: 'VTS testing favors Beowulf + Ramses + Theodora sustain into this Arthur/Cleo/Bleeding lane', confidence: 'VTS testing' },
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar pressure is favored into Arthur/Cleo/Bleeding', confidence: 'VTS testing' },
+      {
+        heroes: ['Beowulf', 'Ramses II', 'Theodora'],
+        reason:
+          'VTS testing favors Beowulf + Ramses + Theodora sustain into this Arthur/Cleo/Bleeding lane',
+        confidence: 'VTS testing',
+      },
+      {
+        heroes: ['Octavius', 'Rozen Blade', 'Caesar'],
+        reason: 'Octavius + Rozen + Caesar pressure is favored into Arthur/Cleo/Bleeding',
+        confidence: 'VTS testing',
+      },
     ],
   },
   {
     target: ['King Arthur', 'Rozen Blade', 'Theodora'],
     counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Duel report shows Octavius/Rozen/Caesar beating the Arthur/Rozen/Theodora variant', confidence: 'Duel screenshot' },
+      {
+        heroes: ['Octavius', 'Rozen Blade', 'Caesar'],
+        reason: 'Duel report shows Octavius/Rozen/Caesar beating the Arthur/Rozen/Theodora variant',
+        confidence: 'Duel screenshot',
+      },
       ['Immortal Guardian', 'Ramses II', 'Beowulf'],
     ],
   },
   {
     target: ['Ramses II', 'Leonidas', 'Beowulf'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines',
+      },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
       ['King Arthur', 'Theodora', 'Alexander'],
       ['Lawman', 'Rozen Blade', 'The Avalanche'],
@@ -60,7 +85,10 @@ export const COMBO_COUNTERS = [
   {
     target: ['Hunk', 'Ramses II', 'Beowulf'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines',
+      },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
       ['King Arthur', 'Theodora', 'Alexander'],
     ],
@@ -68,7 +96,10 @@ export const COMBO_COUNTERS = [
   {
     target: ['Bleeding Steed', 'Ramses II', 'Beowulf'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines',
+      },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
       ['King Arthur', 'Theodora', 'Alexander'],
     ],
@@ -76,7 +107,10 @@ export const COMBO_COUNTERS = [
   {
     target: ['Rozen Blade', 'Ramses II', 'Beowulf'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines',
+      },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
       ['King Arthur', 'Theodora', 'Alexander'],
     ],
@@ -84,13 +118,19 @@ export const COMBO_COUNTERS = [
   {
     target: ['King Arthur', 'Theodora', 'Alexander'],
     counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
+      {
+        heroes: ['Octavius', 'Rozen Blade', 'Caesar'],
+        reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines',
+      },
     ],
   },
   {
     target: ['King Arthur', 'Cleopatra VII', 'Alexander'],
     counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
+      {
+        heroes: ['Octavius', 'Rozen Blade', 'Caesar'],
+        reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines',
+      },
     ],
   },
   {
@@ -112,7 +152,10 @@ export const COMBO_COUNTERS = [
   {
     target: ['Octavius', 'Cleopatra VII', 'Caesar'],
     counters: [
-      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Caesar cavalry' },
+      {
+        heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'],
+        reason: 'Ramses + Beowulf lineups are favored into Octavius + Caesar cavalry',
+      },
       ['Hunk', 'Ramses II', 'Beowulf'],
       ['Bleeding Steed', 'Ramses II', 'Beowulf'],
       ['Rozen Blade', 'Ramses II', 'Beowulf'],
@@ -122,9 +165,23 @@ export const COMBO_COUNTERS = [
   {
     target: ['Octavius', 'Rozen Blade', 'Caesar'],
     counters: [
-      { heroes: ['Beowulf', 'Ramses II', 'Theodora'], reason: 'Current VTS testing favors Beowulf front-row sustain with Theodora healing into Octavius/Rozen/Caesar', confidence: 'VTS testing' },
-      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar', confidence: 'Duel screenshot' },
-      { heroes: ['Hunk', 'Boudica', 'Sakura'], reason: 'Soft counter option: Hunk/Boudica/Sakura can pressure this line but is not as reliable as the top sustain counters', confidence: 'Soft counter' },
+      {
+        heroes: ['Beowulf', 'Ramses II', 'Theodora'],
+        reason:
+          'Current VTS testing favors Beowulf front-row sustain with Theodora healing into Octavius/Rozen/Caesar',
+        confidence: 'VTS testing',
+      },
+      {
+        heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'],
+        reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar',
+        confidence: 'Duel screenshot',
+      },
+      {
+        heroes: ['Hunk', 'Boudica', 'Sakura'],
+        reason:
+          'Soft counter option: Hunk/Boudica/Sakura can pressure this line but is not as reliable as the top sustain counters',
+        confidence: 'Soft counter',
+      },
       ['Hunk', 'Ramses II', 'Beowulf'],
       ['Bleeding Steed', 'Ramses II', 'Beowulf'],
       ['Rozen Blade', 'Ramses II', 'Beowulf'],
@@ -134,7 +191,10 @@ export const COMBO_COUNTERS = [
   {
     target: ['Immortal Guardian', 'ELK', 'Tarantula'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Heavy sustain outlasts their damage output' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        reason: 'Heavy sustain outlasts their damage output',
+      },
       ['Lawman', 'Rozen Blade', 'The Avalanche'],
       ['Defender', 'Sakura', 'Jade Eagle'],
     ],
@@ -142,7 +202,10 @@ export const COMBO_COUNTERS = [
   {
     target: ['Black Prince', 'Lancelot', 'The Avalanche'],
     counters: [
-      { heroes: ['Ramses II', 'Leonidas', 'Beowulf'], reason: 'Leonidas disrupts their initial burst setup' },
+      {
+        heroes: ['Ramses II', 'Leonidas', 'Beowulf'],
+        reason: 'Leonidas disrupts their initial burst setup',
+      },
       ['Lawman', 'Defender', 'The Avalanche'],
       ['Defender', 'Tarantula', 'Sakura'],
     ],
@@ -150,12 +213,44 @@ export const COMBO_COUNTERS = [
   {
     target: ['Hunk', 'Spectral Reaper', 'Ramses II'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Alexander'], reason: 'Cleo cleanses debuffs and outheals the pressure' },
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Alexander'],
+        reason: 'Cleo cleanses debuffs and outheals the pressure',
+      },
       ['Immortal Guardian', 'Ramses II', 'Beowulf'],
       ['Lawman', 'Lancelot', 'The Avalanche'],
     ],
-  }
+  },
 ];
+
+const COUNTER_REASON_IDS = Object.freeze({
+  'Arthur sustain and pressure are favored into Ramses + Beowulf lines': 'arthurVsRamses',
+  'Duel report shows this cavalry line winning into the Arthur/Cleo/Theodora sustain core':
+    'duelArthurCleoTheodora',
+  'VTS testing favors Beowulf + Ramses + Theodora sustain into this Arthur/Cleo/Bleeding lane':
+    'vtsBeowulfArthurCleoBleeding',
+  'Octavius + Rozen + Caesar pressure is favored into Arthur/Cleo/Bleeding':
+    'vtsOctaviusArthurCleoBleeding',
+  'Duel report shows Octavius/Rozen/Caesar beating the Arthur/Rozen/Theodora variant':
+    'duelOctaviusArthurRozenTheodora',
+  'Octavius + Rozen + Caesar is favored into King Arthur sustain lines': 'octaviusVsArthurSustain',
+  'Ramses + Beowulf lineups are favored into Octavius + Caesar cavalry': 'ramsesVsOctaviusCaesar',
+  'Current VTS testing favors Beowulf front-row sustain with Theodora healing into Octavius/Rozen/Caesar':
+    'vtsBeowulfVsOctaviusRozenCaesar',
+  'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar':
+    'ramsesVsOctaviusRozenCaesar',
+  'Soft counter option: Hunk/Boudica/Sakura can pressure this line but is not as reliable as the top sustain counters':
+    'softHunkBoudicaSakura',
+  'Heavy sustain outlasts their damage output': 'heavySustainOutlasts',
+  'Leonidas disrupts their initial burst setup': 'leonidasDisrupts',
+  'Cleo cleanses debuffs and outheals the pressure': 'cleoCleanses',
+});
+
+const COUNTER_CONFIDENCE_IDS = Object.freeze({
+  'Duel screenshot': 'duelScreenshot',
+  'VTS testing': 'vtsTesting',
+  'Soft counter': 'softCounter',
+});
 
 export function comboKey(heroes) {
   return [...heroes].sort().join('|');
@@ -168,73 +263,83 @@ export function normalizeCounter(raw) {
   if (raw && Array.isArray(raw.heroes) && raw.heroes.length === 3) {
     const reason = typeof raw.reason === 'string' ? raw.reason.trim() : '';
     const confidence = typeof raw.confidence === 'string' ? raw.confidence.trim() : '';
-    return {
+    const normalized = {
       heroes: [...raw.heroes],
       reason: reason || null,
-      confidence: confidence || null
+      confidence: confidence || null,
     };
+    const reasonId = raw.reasonId || COUNTER_REASON_IDS[reason] || null;
+    const confidenceId = raw.confidenceId || COUNTER_CONFIDENCE_IDS[confidence] || null;
+    if (reasonId) normalized.reasonId = reasonId;
+    if (confidenceId) normalized.confidenceId = confidenceId;
+    return normalized;
   }
   return null;
 }
 
 const _lookup = new Map(
   COMBO_COUNTERS.map((entry) => {
-    const counters = (entry.counters || [])
-      .map(normalizeCounter)
-      .filter(Boolean);
+    const counters = (entry.counters || []).map(normalizeCounter).filter(Boolean);
     return [comboKey(entry.target), counters];
-  }),
+  })
 );
 
 export function getCountersForCombo(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return [];
-  return (_lookup.get(comboKey(heroes)) || []).map(counter => ({
+  return (_lookup.get(comboKey(heroes)) || []).map((counter) => ({
     ...counter,
     heroes: [...counter.heroes],
   }));
 }
 
 export function getAllCounterMatchups() {
-  return COMBO_COUNTERS.map(entry => ({
+  return COMBO_COUNTERS.map((entry) => ({
     target: [...entry.target],
     counters: (entry.counters || []).map(normalizeCounter).filter(Boolean),
   }));
 }
 
 export function getCombosCounteredByHero(heroName) {
-  return getAllCounterMatchups().flatMap(matchup =>
+  return getAllCounterMatchups().flatMap((matchup) =>
     matchup.counters
-      .filter(counter => counter.heroes.includes(heroName))
-      .map(counter => ({
+      .filter((counter) => counter.heroes.includes(heroName))
+      .map((counter) => ({
         target: [...matchup.target],
         counter: [...counter.heroes],
         reason: counter.reason,
+        reasonId: counter.reasonId,
         confidence: counter.confidence,
+        confidenceId: counter.confidenceId,
       }))
   );
 }
 
 export function getCountersAgainstHero(heroName) {
   return getAllCounterMatchups()
-    .filter(matchup => matchup.target.includes(heroName))
-    .flatMap(matchup => matchup.counters.map(counter => ({
-      target: [...matchup.target],
-      counter: [...counter.heroes],
-      reason: counter.reason,
-      confidence: counter.confidence,
-    })));
+    .filter((matchup) => matchup.target.includes(heroName))
+    .flatMap((matchup) =>
+      matchup.counters.map((counter) => ({
+        target: [...matchup.target],
+        counter: [...counter.heroes],
+        reason: counter.reason,
+        reasonId: counter.reasonId,
+        confidence: counter.confidence,
+        confidenceId: counter.confidenceId,
+      }))
+    );
 }
 
 export function validateCounterDatabase() {
-  const heroNames = new Set(allHeroesData.map(hero => hero.name));
+  const heroNames = new Set(allHeroesData.map((hero) => hero.name));
   const issues = [];
 
   COMBO_COUNTERS.forEach((entry, entryIndex) => {
     if (!Array.isArray(entry.target) || entry.target.length !== 3) {
       issues.push(`Entry ${entryIndex + 1} has an invalid target combo.`);
     }
-    (entry.target || []).forEach(name => {
-      if (!heroNames.has(name)) issues.push(`Unknown target hero "${name}" in entry ${entryIndex + 1}.`);
+    (entry.target || []).forEach((name) => {
+      if (!heroNames.has(name))
+        issues.push(`Unknown target hero "${name}" in entry ${entryIndex + 1}.`);
     });
 
     (entry.counters || []).forEach((rawCounter, counterIndex) => {
@@ -243,11 +348,23 @@ export function validateCounterDatabase() {
         issues.push(`Entry ${entryIndex + 1}, counter ${counterIndex + 1} is invalid.`);
         return;
       }
-      counter.heroes.forEach(name => {
+      counter.heroes.forEach((name) => {
         if (!heroNames.has(name)) {
-          issues.push(`Unknown counter hero "${name}" in entry ${entryIndex + 1}, counter ${counterIndex + 1}.`);
+          issues.push(
+            `Unknown counter hero "${name}" in entry ${entryIndex + 1}, counter ${counterIndex + 1}.`
+          );
         }
       });
+      if (counter.reason && !counter.reasonId) {
+        issues.push(
+          `Entry ${entryIndex + 1}, counter ${counterIndex + 1} has no stable reason display ID.`
+        );
+      }
+      if (counter.confidence && !counter.confidenceId) {
+        issues.push(
+          `Entry ${entryIndex + 1}, counter ${counterIndex + 1} has no stable confidence display ID.`
+        );
+      }
     });
   });
 

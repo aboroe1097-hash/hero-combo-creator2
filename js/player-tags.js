@@ -1,4 +1,5 @@
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
+import { appT } from './utils.js';
 
 const TAGS = Object.freeze({
   r5: Object.freeze({
@@ -39,5 +40,6 @@ export function renderSpecialPlayerTag(player, escapeHtml) {
   const tag = getSpecialPlayerTag(player);
   if (!tag) return '';
   const esc = typeof escapeHtml === 'function' ? escapeHtml : (value) => String(value || '');
-  return `<span class="dash-player-rank-tag dash-player-rank-tag--${tag.className}" title="${esc(tag.title)}" aria-label="${esc(tag.title)}">${esc(tag.label)}</span>`;
+  const title = tag.className === 'r4' ? appT('edenX1RewardManagementTitle') : tag.title;
+  return `<span class="dash-player-rank-tag dash-player-rank-tag--${tag.className}" title="${esc(title)}" aria-label="${esc(title)}">${esc(tag.label)}</span>`;
 }

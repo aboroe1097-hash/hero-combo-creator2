@@ -1,6 +1,7 @@
 // js/loyalty-calculator.js
 import { translations } from './translations.js';
-import { resolveIntlLocale } from './locale-format.js';
+import { resolveIntlLocale, resolveRuntimeLocale } from './locale-format.js';
+import { outputCopyText } from './i18n/output-copy.js';
 
 const numberFormatterCache = new Map();
 const durationFormatterCache = new Map();
@@ -126,7 +127,7 @@ const LOYALTY_PRESETS = [
 ];
 
 function currentLanguage() {
-  return typeof localStorage === 'undefined' ? 'en' : localStorage.getItem('vts_hero_lang') || 'en';
+  return resolveRuntimeLocale();
 }
 
 function t() {
@@ -188,6 +189,15 @@ function localizeLoyaltyImageAlternatives() {
   document.querySelectorAll('#loyaltySection [data-i18n-alt]').forEach((image) => {
     const key = image.dataset.i18nAlt;
     if (tr[key]) image.alt = tr[key];
+  });
+}
+
+function localizeLoyaltyTimeUnits() {
+  const language = currentLanguage();
+  document.querySelectorAll('#loyaltySection [data-output-copy]').forEach((unit) => {
+    unit.textContent = outputCopyText(language, unit.dataset.outputCopy);
+    const ariaKey = unit.dataset.outputCopyAria;
+    if (ariaKey) unit.setAttribute('aria-label', outputCopyText(language, ariaKey));
   });
 }
 
@@ -702,6 +712,7 @@ export function initLoyaltyCalculator() {
   });
 
   localizeLoyaltyImageAlternatives();
+  localizeLoyaltyTimeUnits();
   renderPresets();
   renderStickySummary();
   initLoyaltyCrossLinks();
@@ -715,6 +726,7 @@ export function initLoyaltyCalculator() {
   window.addEventListener('edenLanguageUpdate', () => {
     const hasResults = Boolean(document.getElementById('loyaltyResult')?.childElementCount);
     localizeLoyaltyImageAlternatives();
+    localizeLoyaltyTimeUnits();
     renderPresets();
     renderStickySummary();
     if (hasResults) runCalculation({ announce: false, focus: false, scroll: false });

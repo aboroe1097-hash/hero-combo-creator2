@@ -1,5 +1,9 @@
 export const DM_SLOT_IDS = ['armor', 'dagger', 'ring', 'sword', 'helmet', 'boots'];
 
+// Canonical storage/share value. The UI localizes this only while it remains
+// untouched, so user-authored plan names are never translated or rewritten.
+export const DM_DEFAULT_PLAN_NAME = 'VTS DM Set Plan';
+
 export const DM_TARGET_SET_COUNT = 5;
 
 export const DM_SET_IDS = Object.freeze(
@@ -184,7 +188,7 @@ export function createDefaultMaterialPlan() {
   const sets = createMaterialSets();
   return syncFocusedCompletion({
     version: 4,
-    name: 'VTS DM Set Plan',
+    name: DM_DEFAULT_PLAN_NAME,
     route: 'purple',
     preset: 'full',
     targetSets: DM_TARGET_SET_COUNT,

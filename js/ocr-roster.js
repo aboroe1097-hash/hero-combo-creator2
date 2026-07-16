@@ -33,6 +33,7 @@ import {
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 import {
   canonicalizePlayerOptionNames,
   getSpecialAccountIdentityKey,
@@ -62,12 +63,7 @@ import {
 } from './contribution-identity.js';
 
 function adminT(key, vars = {}) {
-  let lang = 'en';
-  try {
-    lang = localStorage.getItem('vts_hero_lang') || 'en';
-  } catch {
-    // Storage can be unavailable in restricted browser contexts.
-  }
+  const lang = resolveRuntimeLocale();
   const dictionaries = window.VTS_TRANSLATIONS || translations;
   let text =
     dictionaries[lang]?.[key] ||
@@ -178,11 +174,14 @@ function paginateLongTables(root, step = TABLE_PAGE_STEP) {
       const remaining = rows.length - limit;
       if (remaining > 0) {
         moreBtn.style.display = '';
-        moreBtn.textContent = `Show ${Math.min(step, remaining)} more (${remaining} hidden)`;
-        allBtn.textContent = `Show all ${rows.length}`;
+        moreBtn.textContent = adminT('adminTableShowMore', {
+          count: Math.min(step, remaining),
+          hidden: remaining,
+        });
+        allBtn.textContent = adminT('adminTableShowAll', { count: rows.length });
       } else {
         moreBtn.style.display = 'none';
-        allBtn.textContent = `Show first ${step}`;
+        allBtn.textContent = adminT('adminTableShowFirst', { count: step });
       }
     };
     moreBtn.addEventListener('click', () => {
@@ -371,7 +370,7 @@ function saveRoster(text) {
   loadRoster();
   if (previous !== text) {
     pushUndoAction({
-      label: 'Roster edit',
+      label: adminT('adminBtnRoster'),
       undo: () => {
         localStorage.setItem(ROSTER_KEY, previous);
         loadRoster();
@@ -385,11 +384,11 @@ function saveRoster(text) {
 function showRosterModal() {
   const m = $id('dashModal'),
     body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = 'Alliance Roster';
-  $id('dashModalSub').textContent = 'Paste names (one per line) to improve OCR.';
+  $id('dashModalTitle').textContent = adminT('adminRosterModalTitle');
+  $id('dashModalSub').textContent = adminT('adminRosterModalHint');
   const rosterText = esc(localStorage.getItem(ROSTER_KEY) || '');
   body.innerHTML = `<textarea id="dashRosterInput" class="dash-input" style="height:300px;font-family:monospace;font-size:0.85rem">${rosterText}</textarea>
-    <div style="margin-top:1rem;display:flex;gap:0.5rem"><button id="dashRosterSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save Roster</button><button id="dashRosterCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div>`;
+    <div style="margin-top:1rem;display:flex;gap:0.5rem"><button id="dashRosterSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT('adminRosterSave'))}</button><button id="dashRosterCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button></div>`;
   $id('dashRosterSaveBtn').onclick = () => {
     saveRoster($id('dashRosterInput').value);
     closeModal();
@@ -484,10 +483,10 @@ function takeRosterSnapshot(namesText) {
 }
 
 function deleteRosterSnapshot(index) {
-  if (!confirm('Delete this roster snapshot?')) return;
+  if (!confirm(adminT('adminRosterDeleteSnapshotConfirm'))) return;
   const [removed] = state.rosterSnapshots.splice(index, 1);
   pushUndoAction({
-    label: 'Roster snapshot',
+    label: adminT('adminRosterSnapshotsTitle'),
     undo: () => {
       state.rosterSnapshots.splice(index, 0, removed);
       saveRosterSnapshots();
@@ -705,8 +704,10 @@ function showRosterSnapshotModal(index) {
   const diff = snap.diff;
   const m = $id('dashModal'),
     body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = 'Snapshot: ' + snap.date;
-  $id('dashModalSub').textContent = snap.members.length + ' members';
+  $id('dashModalTitle').textContent = adminT('adminRosterSnapshotTitle', { date: snap.date });
+  $id('dashModalSub').textContent = adminT('adminRosterMemberCount', {
+    count: snap.members.length,
+  });
   let gridHtml = '';
   snap.members.forEach(function (mem) {
     const mObj = _ensureMember(mem);
@@ -734,7 +735,7 @@ function showRosterSnapshotModal(index) {
   body.innerHTML =
     '<div class="dash-roster-grid">' +
     gridHtml +
-    '</div><div style="margin-top:12px;text-align:right"><button type="button" class="dash-btn" data-admin-action="close-modal">Close</button></div>';
+    `</div><div style="margin-top:12px;text-align:right"><button type="button" class="dash-btn" data-admin-action="close-modal">${esc(adminT('edenX1ModalClose'))}</button></div>`;
   bindAdminControls(body);
   m.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -743,8 +744,10 @@ function showRosterSnapshotModal(index) {
 function configureAlliances() {
   const m = $id('dashModal'),
     body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = 'Configure Alliances';
-  $id('dashModalSub').textContent = 'Name your 5 alliances for member assignment.';
+  $id('dashModalTitle').textContent = adminT('adminRosterConfigureAlliances');
+  $id('dashModalSub').textContent = adminT('adminRosterConfigureAlliancesHint', {
+    count: ALLIANCE_COUNT,
+  });
   let inputsHtml = '';
   state.allianceList.forEach(function (a, i) {
     inputsHtml +=
@@ -759,7 +762,7 @@ function configureAlliances() {
   body.innerHTML =
     '<div style="display:flex;flex-direction:column;gap:8px">' +
     inputsHtml +
-    '<div style="display:flex;gap:8px;margin-top:8px"><button id="dashAllianceSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save</button><button id="dashAllianceCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div></div>';
+    `<div style="display:flex;gap:8px;margin-top:8px"><button id="dashAllianceSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT('adminSave'))}</button><button id="dashAllianceCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button></div></div>`;
   $id('dashAllianceSaveBtn').onclick = function () {
     for (var i = 0; i < ALLIANCE_COUNT; i++) {
       var v = $id('dashAllianceInput' + i);
@@ -845,14 +848,14 @@ function renderRoster() {
       lockOpenIcon +
       ' ' +
       esc(state._rosterLoggedUser) +
-      '</span><button type="button" class="dash-btn dash-btn-sm" data-admin-action="roster-logout">Logout</button></div>'
+      `</span><button type="button" class="dash-btn dash-btn-sm" data-admin-action="roster-logout">${esc(adminT('adminRosterLogout'))}</button></div>`
     : '<div class="dash-roster-login-bar"><span>' +
       lockClosedIcon +
-      ' Roster Login:</span><select id="dashRosterLoginUser">' +
+      ` ${esc(adminT('adminRosterLogin'))}:</span><select id="dashRosterLoginUser">` +
       ROSTER_USERS.map(function (u) {
         return '<option value="' + u + '">' + u + '</option>';
       }).join('') +
-      '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input dash-roster-login-pass" style="width:90px"><button type="button" class="dash-btn dash-btn-sm" data-admin-action="roster-login">Login</button></div>';
+      `</select><input type="password" id="dashRosterLoginPass" aria-label="${esc(adminT('adminLoginPass'))}" placeholder="${esc(adminT('adminLoginPass'))}" value="" class="dash-input dash-roster-login-pass" style="width:90px"><button type="button" class="dash-btn dash-btn-sm" data-admin-action="roster-login">${esc(adminT('adminRosterLoginAction'))}</button></div>`;
   var bulkHtml = '';
   if (state._rosterSelectedIndices.size > 0 && isLoggedIn) {
     var allyOpts = state.allianceList
@@ -863,7 +866,7 @@ function renderRoster() {
     bulkHtml =
       '<div class="dash-roster-bulk-actions"><span style="font-size:0.8rem;font-weight:bold;color:var(--brand)">' +
       state._rosterSelectedIndices.size +
-      ' selected:</span><button type="button" class="dash-btn dash-btn-sm" data-admin-action="apply-bulk-status" data-status="trusted">Mark Trusted</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="apply-bulk-status" data-status="spy">Mark Spy</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="apply-bulk-status" data-status="unknown">Clear Status</button><select class="dash-input dash-roster-bulk-select" style="width:100px" data-admin-action="apply-bulk-alliance"><option value="">Assign to...</option><option value="-1">— Unassign —</option>' +
+      ` ${esc(adminT('adminRosterSelected'))}:</span><button type="button" class="dash-btn dash-btn-sm" data-admin-action="apply-bulk-status" data-status="trusted">${esc(adminT('adminRosterMarkTrusted'))}</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="apply-bulk-status" data-status="spy">${esc(adminT('adminRosterMarkSpy'))}</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="apply-bulk-status" data-status="unknown">${esc(adminT('adminRosterClearStatus'))}</button><select class="dash-input dash-roster-bulk-select" style="width:100px" aria-label="${esc(adminT('adminRosterAssignTo'))}" data-admin-action="apply-bulk-alliance"><option value="">${esc(adminT('adminRosterAssignTo'))}</option><option value="-1">— ${esc(adminT('adminRosterUnassign'))} —</option>` +
       allyOpts +
       '</select></div>';
   }
@@ -918,23 +921,20 @@ function renderRoster() {
     var ocrHtml = pStats
       ? '<span style="margin-left:6px;font-size:0.7rem;color:var(--brand-light)" title="' +
         pStats.total_demolition +
-        ' Demolition / ' +
+        ` ${esc(adminT('adminModalThDemolition'))} / ` +
         pStats.participation_count +
-        ' Attacks">' +
+        ` ${esc(adminT('adminKpiHits'))}">` +
         swordIcon +
         ' ' +
         pStats.total_demolition +
         '</span>'
-      : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">' +
+      : `<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="${esc(adminT('adminRosterNoOcrData'))}">` +
         swordIcon +
         ' —</span>';
     var auditHtml = '';
     if (vb)
       auditHtml +=
-        '<span class="dash-roster-row-vb" title="Verified by ' +
-        esc(vb) +
-        (lm ? ' on ' + lm.slice(0, 10) : '') +
-        '">@' +
+        `<span class="dash-roster-row-vb" title="${esc(adminT('adminRosterVerifiedBy', { officer: vb, date: lm ? lm.slice(0, 10) : '—' }))}">@` +
         esc(vb) +
         '</span>';
     var allySelectHtml =
@@ -982,88 +982,46 @@ function renderRoster() {
       mi +
       '" data-status="spy"' +
       (isLoggedIn ? '' : ' aria-disabled="true"') +
-      ' title="Toggle spy">🚫</span></div>';
+      ` title="${esc(adminT('adminRosterToggleSpy'))}">🚫</span></div>`;
   });
   var historyHtml = '';
   for (var i = state.rosterSnapshots.length - 2; i >= 0; i--) {
     var s = state.rosterSnapshots[i];
     var d = s.diff;
-    historyHtml +=
-      '<div class="dash-roster-history-item"><span class="dash-roster-history-date">' +
-      esc(s.date) +
-      '</span><span class="dash-roster-history-count">' +
-      s.members.length +
-      '</span>' +
-      (d
-        ? '<span class="dash-roster-history-diff">+' +
-          d.joined.length +
-          '/-' +
-          d.left.length +
-          '</span>'
-        : '<span class="dash-roster-history-diff" style="opacity:0.4">—</span>') +
-      '<button type="button" class="dash-btn" style="padding:2px 8px;font-size:0.7rem" data-admin-action="show-roster-snapshot" data-snapshot-index="' +
-      i +
-      '">View</button><button type="button" class="dash-banner-del-btn" data-admin-action="delete-roster-snapshot" data-snapshot-index="' +
-      i +
-      '" title="Delete">✕</button></div>';
+    historyHtml += `<div class="dash-roster-history-item"><span class="dash-roster-history-date">${esc(s.date)}</span><span class="dash-roster-history-count">${s.members.length}</span>${
+      d
+        ? `<span class="dash-roster-history-diff">+${d.joined.length}/-${d.left.length}</span>`
+        : '<span class="dash-roster-history-diff" style="opacity:0.4">—</span>'
+    }<button type="button" class="dash-btn" style="padding:2px 8px;font-size:0.7rem" data-admin-action="show-roster-snapshot" data-snapshot-index="${i}">${esc(adminT('adminRosterView'))}</button><button type="button" class="dash-banner-del-btn" data-admin-action="delete-roster-snapshot" data-snapshot-index="${i}" title="${esc(adminT('adminDelete'))}">✕</button></div>`;
   }
   if (!historyHtml)
-    historyHtml =
-      '<div style="padding:8px;font-size:0.8rem;color:var(--text-muted)">No older snapshots.</div>';
-  body.innerHTML =
-    loginHtml +
-    '<div class="dash-roster-summary"><span class="dash-roster-summary-total">Total: ' +
-    total +
-    '</span><span class="dash-roster-summary-trusted">✅ ' +
-    trusted +
-    ' Trusted</span><span class="dash-roster-summary-unknown">⬜ ' +
-    unknown +
-    ' Unknown</span><span class="dash-roster-summary-spy">🚫 ' +
-    spy +
-    ' Spy</span><span class="dash-roster-summary-assigned">📋 ' +
-    assigned +
-    ' Assigned</span><span class="dash-roster-summary-unassigned">❓ ' +
-    unassigned +
-    ' Unassigned</span><button type="button" class="dash-banner-del-btn" data-admin-action="delete-roster-snapshot" data-snapshot-index="' +
-    snapIndex +
-    '" title="Delete current snapshot" style="margin-left:auto">✕</button></div>' +
-    '<div class="dash-roster-toolbar"><div class="dash-roster-toolbar-filters"><label class="dash-roster-toolbar-label">Alliance <select data-admin-action="set-roster-filter" data-filter-key="alliance"><option value="all">All</option>' +
-    filterAllyOpts +
-    '<option value="unassigned"' +
-    (state._rosterFilterAlliance === 'unassigned' ? ' selected' : '') +
-    '>Unassigned</option></select></label><label class="dash-roster-toolbar-label">Status <select data-admin-action="set-roster-filter" data-filter-key="status"><option value="all">All</option><option value="trusted"' +
-    (state._rosterFilterStatus === 'trusted' ? ' selected' : '') +
-    '>Trusted</option><option value="unknown"' +
-    (state._rosterFilterStatus === 'unknown' ? ' selected' : '') +
-    '>Unknown</option><option value="spy"' +
-    (state._rosterFilterStatus === 'spy' ? ' selected' : '') +
-    '>Spy</option></select></label><input type="text" placeholder="Search name..." value="' +
-    esc(state._rosterSearchQ) +
-    '" data-admin-action="set-roster-filter" data-filter-key="search" class="dash-input dash-roster-search-input" style="width:140px"></div><div class="dash-roster-toolbar-actions">' +
-    bulkHtml +
-    '<button type="button" class="dash-btn dash-btn-sm" data-admin-action="configure-alliances" title="Edit alliance names">⚙️</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="copy-roster-names" data-roster-type="unassigned" title="Copy unassigned names">📋 Unassigned</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="copy-roster-names" data-roster-type="spy" title="Copy spy names">📋 Spies</button></div></div>' +
-    '<div class="dash-roster-checklist"><div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="Select all visible" data-admin-action="toggle-bulk-select-all" data-indices="' +
-    indicesJson +
-    '"' +
-    (state._rosterSelectedIndices.size > 0 && state._rosterSelectedIndices.size === filtered.length
-      ? ' checked'
-      : '') +
-    ' style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">SELECT ALL VISIBLE</span></div>' +
-    rowsHtml +
-    (filtered.length === 0
-      ? '<div class="dash-roster-empty">No members match filters.</div>'
-      : '') +
-    '</div>' +
-    '<div class="dash-roster-total-rows">Showing ' +
-    filtered.length +
-    ' of ' +
-    total +
-    ' members</div>' +
-    '<div class="dash-roster-history"><div class="dash-roster-history-head" role="button" tabindex="0" data-admin-action="toggle-roster-history"><span>📁 Snapshot History (' +
-    (state.rosterSnapshots.length - 1) +
-    ' older)</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">' +
-    historyHtml +
-    '</div></div>';
+    historyHtml = `<div style="padding:8px;font-size:0.8rem;color:var(--text-muted)">${esc(adminT('adminRosterNoOlderSnapshots'))}</div>`;
+  const allSelected =
+    state._rosterSelectedIndices.size > 0 && state._rosterSelectedIndices.size === filtered.length;
+  body.innerHTML = `${loginHtml}
+    <div class="dash-roster-summary">
+      <span class="dash-roster-summary-total">${esc(adminT('adminRosterTotal', { count: total }))}</span>
+      <span class="dash-roster-summary-trusted">✅ ${esc(adminT('adminRosterTrustedCount', { count: trusted }))}</span>
+      <span class="dash-roster-summary-unknown">⬜ ${esc(adminT('adminRosterUnknownCount', { count: unknown }))}</span>
+      <span class="dash-roster-summary-spy">🚫 ${esc(adminT('adminRosterSpyCount', { count: spy }))}</span>
+      <span class="dash-roster-summary-assigned">📋 ${esc(adminT('adminRosterAssignedCount', { count: assigned }))}</span>
+      <span class="dash-roster-summary-unassigned">❓ ${esc(adminT('adminRosterUnassignedCount', { count: unassigned }))}</span>
+      <button type="button" class="dash-banner-del-btn" data-admin-action="delete-roster-snapshot" data-snapshot-index="${snapIndex}" title="${esc(adminT('adminRosterDeleteCurrentSnapshot'))}" style="margin-left:auto">✕</button>
+    </div>
+    <div class="dash-roster-toolbar">
+      <div class="dash-roster-toolbar-filters">
+        <label class="dash-roster-toolbar-label">${esc(adminT('adminRosterAlliance'))} <select data-admin-action="set-roster-filter" data-filter-key="alliance"><option value="all">${esc(adminT('adminRosterAll'))}</option>${filterAllyOpts}<option value="unassigned"${state._rosterFilterAlliance === 'unassigned' ? ' selected' : ''}>${esc(adminT('adminRosterUnassigned'))}</option></select></label>
+        <label class="dash-roster-toolbar-label">${esc(adminT('adminRosterStatus'))} <select data-admin-action="set-roster-filter" data-filter-key="status"><option value="all">${esc(adminT('adminRosterAll'))}</option><option value="trusted"${state._rosterFilterStatus === 'trusted' ? ' selected' : ''}>${esc(adminT('adminRosterTrusted'))}</option><option value="unknown"${state._rosterFilterStatus === 'unknown' ? ' selected' : ''}>${esc(adminT('adminRosterUnknown'))}</option><option value="spy"${state._rosterFilterStatus === 'spy' ? ' selected' : ''}>${esc(adminT('adminRosterSpy'))}</option></select></label>
+        <input type="text" aria-label="${esc(adminT('adminRosterSearchName'))}" placeholder="${esc(adminT('adminRosterSearchName'))}" value="${esc(state._rosterSearchQ)}" data-admin-action="set-roster-filter" data-filter-key="search" class="dash-input dash-roster-search-input" style="width:140px">
+      </div>
+      <div class="dash-roster-toolbar-actions">${bulkHtml}<button type="button" class="dash-btn dash-btn-sm" data-admin-action="configure-alliances" title="${esc(adminT('adminRosterEditAllianceNames'))}">⚙️</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="copy-roster-names" data-roster-type="unassigned" title="${esc(adminT('adminRosterCopyUnassigned'))}">📋 ${esc(adminT('adminRosterUnassigned'))}</button><button type="button" class="dash-btn dash-btn-sm" data-admin-action="copy-roster-names" data-roster-type="spy" title="${esc(adminT('adminRosterCopySpies'))}">📋 ${esc(adminT('adminRosterSpies'))}</button></div>
+    </div>
+    <div class="dash-roster-checklist">
+      <div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="${esc(adminT('adminRosterSelectAllVisible'))}" data-admin-action="toggle-bulk-select-all" data-indices="${indicesJson}"${allSelected ? ' checked' : ''} style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">${esc(adminT('adminRosterSelectAllVisible'))}</span></div>
+      ${rowsHtml}${filtered.length === 0 ? `<div class="dash-roster-empty">${esc(adminT('adminRosterNoFilterMatches'))}</div>` : ''}
+    </div>
+    <div class="dash-roster-total-rows">${esc(adminT('adminRosterShowingMembers', { shown: filtered.length, total }))}</div>
+    <div class="dash-roster-history"><div class="dash-roster-history-head" role="button" tabindex="0" data-admin-action="toggle-roster-history"><span>📁 ${esc(adminT('adminRosterSnapshotHistory', { count: state.rosterSnapshots.length - 1 }))}</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">${historyHtml}</div></div>`;
 }
 
 function loadBannerRecords() {
@@ -1098,10 +1056,8 @@ function showBannerForm(existingIndex = null) {
   }
   const edit = existingIndex !== null && state.bannerRecords[existingIndex];
   beginAdminEditSurface(edit ? 'banner-edit' : 'banner-create');
-  $id('dashModalTitle').textContent = edit ? 'Edit Banner Day' : 'New Banner Day';
-  $id('dashModalSub').textContent = edit
-    ? ''
-    : 'Record banner assignments for a structure attack day.';
+  $id('dashModalTitle').textContent = adminT(edit ? 'adminBannerEditDay' : 'adminBannerNewDay');
+  $id('dashModalSub').textContent = edit ? '' : adminT('adminBannerFormHint');
   const roster = state.rosterSnapshots.length
     ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members
     : [];
@@ -1113,37 +1069,37 @@ function showBannerForm(existingIndex = null) {
     : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
   const teamNames = Object.keys(rec.teams);
   body.innerHTML = `<div class="dash-banner-form-row">
-    <label>Date</label>
+    <label>${esc(adminT('adminDutyDateLabel'))}</label>
     <input type="date" id="dashBannerFormDate" value="${rec.date}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
-    <label>Event</label>
-    <input type="text" id="dashBannerFormEvent" value="${esc(rec.event || '')}" placeholder="e.g. Capital Attack, KE, SvS" style="flex:1">
+    <label>${esc(adminT('adminBannerEvent'))}</label>
+    <input type="text" id="dashBannerFormEvent" value="${esc(rec.event || '')}" placeholder="${esc(adminT('adminBannerEventPh'))}" style="flex:1">
   </div>
   <div style="margin:1rem 0;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px">
-    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Team / Banner Assignments</div>
+    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.05em">${esc(adminT('adminBannerAssignments'))}</div>
     <div id="dashBannerTeamsList">
       ${
         teamNames.length
           ? teamNames
               .map(
                 (team, ti) => `<div class="dash-banner-form-row" data-team-idx="${ti}">
-        <label>Team</label>
-        <input type="text" class="dash-banner-team-name" value="${esc(team)}" placeholder="Dawn/Dusk/Etc" style="flex:1">
-        <label style="min-width:40px">Members</label>
+        <label>${esc(adminT('adminBannerTeam'))}</label>
+        <input type="text" class="dash-banner-team-name" value="${esc(team)}" placeholder="${esc(adminT('adminBannerTeamPh'))}" style="flex:1">
+        <label style="min-width:40px">${esc(adminT('adminContributionMember'))}</label>
         <select class="dash-banner-team-members" multiple style="flex:2;min-height:60px">${memberOptions}</select>
         <button class="dash-banner-del-btn dash-banner-remove-team" style="font-size:1rem">✕</button>
       </div>`
               )
               .join('')
-          : '<div style="color:var(--text-dim);font-size:0.85rem;text-align:center;padding:1rem">No teams added yet. Add a team below.</div>'
+          : `<div style="color:var(--text-dim);font-size:0.85rem;text-align:center;padding:1rem">${esc(adminT('adminBannerNoTeams'))}</div>`
       }
     </div>
-    <button id="dashBannerAddTeamBtn" class="dash-btn" style="margin-top:0.5rem;width:100%">+ Add Team</button>
+    <button id="dashBannerAddTeamBtn" class="dash-btn" style="margin-top:0.5rem;width:100%">+ ${esc(adminT('adminBannerAddTeam'))}</button>
   </div>
   <div style="display:flex;gap:0.5rem">
-    <button id="dashBannerSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${edit ? 'Update' : 'Save'} Banner Day</button>
-    <button id="dashBannerFormCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
+    <button id="dashBannerSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT(edit ? 'adminBannerUpdateDay' : 'adminBannerSaveDay'))}</button>
+    <button id="dashBannerFormCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
 
   $id('dashBannerAddTeamBtn').onclick = () => {
@@ -1152,9 +1108,9 @@ function showBannerForm(existingIndex = null) {
     if (firstEmpty) firstEmpty.remove();
     const div = document.createElement('div');
     div.className = 'dash-banner-form-row';
-    div.innerHTML = `<label>Team</label>
-      <input type="text" class="dash-banner-team-name" value="" placeholder="Dawn/Dusk/Etc" style="flex:1">
-      <label style="min-width:40px">Members</label>
+    div.innerHTML = `<label>${esc(adminT('adminBannerTeam'))}</label>
+      <input type="text" class="dash-banner-team-name" value="" placeholder="${esc(adminT('adminBannerTeamPh'))}" style="flex:1">
+      <label style="min-width:40px">${esc(adminT('adminContributionMember'))}</label>
       <select class="dash-banner-team-members" multiple style="flex:2;min-height:60px">${memberOptions}</select>
       <button class="dash-banner-del-btn dash-banner-remove-team" style="font-size:1rem">✕</button>`;
     div.querySelector('.dash-banner-remove-team').onclick = () => div.remove();
@@ -1179,7 +1135,7 @@ function showBannerForm(existingIndex = null) {
       teams[name] = members;
     });
     if (!Object.keys(teams).length) {
-      alert('Add at least one team with members.');
+      alert(adminT('adminBannerTeamRequired'));
       return;
     }
     const record = { date, event, teams };
@@ -1192,7 +1148,7 @@ function showBannerForm(existingIndex = null) {
     const saveLabel = saveBtn?.textContent || '';
     if (saveBtn) {
       saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+      saveBtn.textContent = adminT('edenX1VoteSavingShort');
     }
     const synced = await saveBannerRecords({ immediate: true, awaitCloud: true });
     if (keepFormOpenAfterSyncConflict(saveBtn, saveLabel)) return;
@@ -1200,7 +1156,7 @@ function showBannerForm(existingIndex = null) {
     renderBanners();
     if (edit) logRosterEvent('adminLogBannerUpdated', 'success');
     else logRosterEvent('adminLogBannerSaved', 'success');
-    notifySpecialListCloudResult(synced, 'Banner day');
+    notifySpecialListCloudResult(synced, adminT('adminBannerNewDay'));
   };
   $id('dashBannerFormCancelBtn').onclick = closeModal;
   m.classList.add('active');
@@ -1208,7 +1164,7 @@ function showBannerForm(existingIndex = null) {
 }
 
 function deleteBannerRecord(index) {
-  if (!confirm('Delete this banner record?')) return;
+  if (!confirm(adminT('adminBannerDeleteConfirm'))) return;
   state.bannerRecords.splice(index, 1);
   saveBannerRecords();
   renderBanners();
@@ -1220,8 +1176,7 @@ function renderBanners() {
   if (!body) return;
   bindAdminControls(body);
   if (!state.bannerRecords.length) {
-    body.innerHTML =
-      '<div class="dash-empty">No banner records yet. Click "New Banner Day" to start tracking.</div>';
+    body.innerHTML = `<div class="dash-empty">${esc(adminT('adminBannerEmptyDetailed'))}</div>`;
     return;
   }
   let html = '';
@@ -1234,16 +1189,16 @@ function renderBanners() {
         <div class="dash-banner-date">
           <span>${esc(rec.date)}</span>
           ${rec.event ? `<span class="dash-banner-event">${esc(rec.event)}</span>` : ''}
-          <span class="dash-banner-count">${teamEntries.length} teams, ${totalMembers} players</span>
+          <span class="dash-banner-count">${esc(adminT('adminBannerTeamPlayerCount', { teams: teamEntries.length, players: totalMembers }))}</span>
         </div>
         <div style="display:flex;gap:6px">
-          <button type="button" class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" data-admin-action="edit-banner" data-index="${i}">Edit</button>
-          <button type="button" class="dash-banner-del-btn" data-admin-action="delete-banner" data-index="${i}" title="Delete">✕</button>
+          <button type="button" class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" data-admin-action="edit-banner" data-index="${i}">${esc(adminT('adminEdit'))}</button>
+          <button type="button" class="dash-banner-del-btn" data-admin-action="delete-banner" data-index="${i}" title="${esc(adminT('adminDelete'))}">✕</button>
         </div>
       </div>
       <div class="dash-banner-body">
         <table class="dash-banner-table dash-banner-team-table">
-          <thead><tr><th>Team</th><th>Members</th><th>Count</th></tr></thead>
+          <thead><tr><th>${esc(adminT('adminBannerTeam'))}</th><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminBannerCount'))}</th></tr></thead>
           <tbody>
             ${teamEntries
               .map(
@@ -1750,7 +1705,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     const saveLabel = saveBtn?.textContent || '';
     if (saveBtn) {
       saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+      saveBtn.textContent = adminT('edenX1VoteSavingShort');
     }
     const synced = await saveDutyRecords({ immediate: true, awaitCloud: true });
     if (keepFormOpenAfterSyncConflict(saveBtn, saveLabel)) return;
@@ -2132,11 +2087,11 @@ function renderDutyPlayerSummary(type, hostId, contributionLookup = buildDutyCon
   const latest = records[0]?.date || '--';
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis">
-      <div class="dash-duty-summary-kpi"><strong>${records.length}</strong><span>uploads</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>entries</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${reviewRows}</strong><span>review</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>players</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${esc(latest)}</strong><span>latest</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${records.length}</strong><span>${esc(adminT('adminSummaryUploads'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>${esc(adminT('adminSummaryEntries'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${reviewRows}</strong><span>${esc(adminT('adminSummaryReview'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>${esc(adminT('adminSummaryPlayers'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(latest)}</strong><span>${esc(adminT('adminSummaryLatest'))}</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <table class="dash-duty-summary-table">
@@ -2375,7 +2330,7 @@ async function restoreExGuildBackup() {
   const candidate = getRecoverableExGuildCandidate();
   if (!candidate?.entries?.length) {
     if (typeof window.showToast === 'function')
-      window.showToast('No Ex-Guild backup was found in this browser.', 'warn', 3000);
+      window.showToast(adminT('adminExGuildBackupMissing'), 'warn', 3000);
     return;
   }
   state.exGuildContributions = cloneExGuildEntries(candidate.entries).map((entry) => ({
@@ -2392,7 +2347,7 @@ async function restoreExGuildBackup() {
     count: state.exGuildContributions.length,
   });
   if (typeof window.showToast === 'function')
-    window.showToast('Ex-Guild data restored.', 'success', 2500);
+    window.showToast(adminT('adminExGuildRestored'), 'success', 2500);
 }
 
 function safeCompactPlayerIdentity(name) {
@@ -2432,7 +2387,7 @@ function buildExGuildMatchTargets(primaryRecord) {
       rank: meta.rank || existing?.rank || '',
       guild: meta.guild || existing?.guild || '',
       recordLabel: meta.recordLabel || existing?.recordLabel || '',
-      source: meta.source || existing?.source || 'Contribution',
+      source: meta.source || existing?.source || adminT('adminContributionTitle'),
       priority,
     };
     if (existing && existing.priority <= priority) {
@@ -2457,7 +2412,9 @@ function buildExGuildMatchTargets(primaryRecord) {
           rank: entry.rank,
           guild: entry.guild,
           recordLabel,
-          source: isPrimary ? 'Default contribution' : 'Contribution list',
+          source: isPrimary
+            ? adminT('adminExGuildSourceBaseContribution')
+            : adminT('adminExGuildSourceContributionList'),
           priority: isPrimary ? 0 : 2,
           primary: isPrimary,
         });
@@ -2465,7 +2422,11 @@ function buildExGuildMatchTargets(primaryRecord) {
     }
   );
   (state.rosterNames || []).forEach((name) =>
-    addTarget(name, { source: 'Roster', priority: 4, primary: false })
+    addTarget(name, {
+      source: adminT('adminExGuildSourceRoster'),
+      priority: 4,
+      primary: false,
+    })
   );
 
   return {
@@ -2561,7 +2522,7 @@ function showExGuildMatchResults(input) {
   const matches = findExGuildMatchTargets(input.value);
   if (!matches.length) {
     results.hidden = false;
-    results.innerHTML = `<div class="dash-xg-empty">No contribution names found</div>`;
+    results.innerHTML = `<div class="dash-xg-empty">${esc(adminT('adminExGuildNoContributionNames'))}</div>`;
     return;
   }
   results.hidden = false;
@@ -2653,8 +2614,8 @@ function deleteExGuildEntry(id) {
   renderContributions();
   refreshDashboardOverview();
   pushUndoAction({
-    label: 'Ex-Guild row',
-    message: 'Ex-Guild row deleted.',
+    label: adminT('adminExGuildRowLabel'),
+    message: adminT('adminExGuildRowDeleted'),
     undo: async () => {
       state.exGuildContributions = previous;
       await saveExGuildContributions({ immediate: true, awaitCloud: true });
@@ -2675,8 +2636,8 @@ function clearExGuildData() {
   renderContributions();
   refreshDashboardOverview();
   pushUndoAction({
-    label: 'Ex-Guild data',
-    message: `${previous.length} Ex-Guild entries cleared.`,
+    label: adminT('adminExGuildDataLabel'),
+    message: adminT('adminExGuildEntriesCleared', { count: previous.length }),
     undo: async () => {
       state.exGuildContributions = previous;
       await saveExGuildContributions({ immediate: true, awaitCloud: true });
@@ -3361,8 +3322,10 @@ function summarizeContributionImageSourceNote(note, rowCount = 0) {
   const isImageSource = imageParts.length > 1 || isImageSourceContributionNote(raw);
   if (!isImageSource) return raw;
   const count = imageParts.length || extensionMatches.length;
-  const label = count > 1 ? `${count} uploaded screenshots` : 'Uploaded screenshot';
-  return rowCount ? `${label} - ${rowCount} rows` : label;
+  const label = adminT('adminUploadedScreenshots', { count: Math.max(1, count) });
+  return rowCount
+    ? `${label} - ${adminT('adminContributionRowsCount', { count: rowCount })}`
+    : label;
 }
 
 function getContributionDisplayNote(note, rowCount = 0) {
@@ -3767,7 +3730,7 @@ function renderContributionComparison() {
           if (typeof window.showToast === 'function') {
             window.showToast(
               adminT('adminContributionAliasMatchFailedToast', {
-                reason: error?.message || 'Unknown error',
+                reason: error?.message || adminT('edenX1UnknownError'),
               }),
               'error',
               5000
@@ -3805,7 +3768,7 @@ function renderContributionComparison() {
           if (typeof window.showToast === 'function') {
             window.showToast(
               adminT('adminContributionAliasMatchFailedToast', {
-                reason: error?.message || 'Unknown error',
+                reason: error?.message || adminT('edenX1UnknownError'),
               }),
               'error',
               5000
@@ -4185,7 +4148,7 @@ function renderExGuildTable() {
       <span>${esc(adminT('adminExGuildEmpty'))}</span>
       ${
         recoverable
-          ? `<button id="dashExGuildRestoreBtn" class="dash-btn dash-btn-soft" type="button">Restore ${recoverable.entries.length} from ${esc(recoverable.label)}</button>`
+          ? `<button id="dashExGuildRestoreBtn" class="dash-btn dash-btn-soft" type="button">${esc(adminT('adminExGuildRestoreBackup', { count: recoverable.entries.length, label: recoverable.label }))}</button>`
           : ''
       }
     </div>`;
@@ -4211,7 +4174,7 @@ function renderExGuildTable() {
         <td>
           <div class="dash-xg-box" data-exguild-match>
             <input type="text" name="exGuildMatch" class="dash-input dash-xg-input" data-exguild-match-input data-entry-id="${esc(entry.id)}" value="${esc(manualMatch)}" placeholder="${esc(adminT('adminExGuildMatchSearchPh'))}" aria-label="${esc(adminT('adminExGuildMatchSearchPh'))}" autocomplete="off" spellcheck="false">
-            <button type="button" class="dash-banner-del-btn dash-xg-clear" data-exguild-clear-match title="Clear match" aria-label="Clear match">x</button>
+            <button type="button" class="dash-banner-del-btn dash-xg-clear" data-exguild-clear-match title="${esc(adminT('adminExGuildClearMatch'))}" aria-label="${esc(adminT('adminExGuildClearMatch'))}">x</button>
             <div class="dash-xg-results" data-exguild-match-results hidden></div>
           </div>
         </td>
@@ -4220,7 +4183,7 @@ function renderExGuildTable() {
     })
     .join('');
   host.innerHTML = `<div class="dash-xg-tools">
-    <span>${targets.length} searchable contribution / roster names</span>
+    <span>${esc(adminT('adminExGuildSearchableNames', { count: targets.length }))}</span>
     <button id="dashExGuildDebuffExportInlineBtn" class="dash-btn dash-btn-xs dash-btn-soft" type="button">${esc(adminT('adminExGuildExportDebuff'))}</button>
   </div>
   <table class="dash-banner-table dash-table--stack dash-xg-table">

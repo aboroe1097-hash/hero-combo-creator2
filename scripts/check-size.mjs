@@ -24,10 +24,12 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // The PIN-gated Battle Simulator keeps its 57.2 KiB application and 9.7 KiB
-  // worker lazy; the full graph measures 3701.5 KiB. Keep about 2.5 KiB of
-  // headroom, while route preload checks prevent either leaking into Index.
-  totalJsBytes: 3704 * 1024,
+  // The full semantic translation audit adds four deferred domain packs for
+  // each non-English locale (Research, Hero Atlas, Strife, and supporting
+  // runtime copy). The 50 locale chunks remain lazy and the Index entry stays
+  // 57.6 KiB; the complete JS graph measures 6338.3 KiB. Keep less than
+  // 62 KiB of aggregate headroom while route preload checks protect startup.
+  totalJsBytes: 6400 * 1024,
   // The cross-tool light-theme/touch-target pass remains covered. The standalone
   // simulator sheet brings aggregate CSS to 1089.4 KiB while remaining isolated
   // from existing routes. Keep about 2.6 KiB of headroom.
@@ -35,14 +37,15 @@ const LIMITS = {
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
-  // Vendored Firebase adds cacheable code, not media or initial-route bytes.
-  // The complete artifact measures 20,654.5 KiB with its isolated worker.
-  totalDeployBytes: 20.174 * 1024 * 1024,
+  // Vendored Firebase and authored locale chunks add cacheable code, not media
+  // or initial-route bytes. The complete audited artifact measures 23,374.9
+  // KiB; keep about 126 KiB of aggregate headroom.
+  totalDeployBytes: 22.95 * 1024 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // The simulator adds its HTML, bootstrap, application, and CSS artifacts;
-  // all remain lazy. Keep a two-file guard above the resulting graph.
-  deployFileCount: 478,
+  // Forty additional per-domain locale chunks plus shared localization adapters
+  // remain lazy. The audited artifact has 523 files; retain a three-file guard.
+  deployFileCount: 526,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     'admin.html': { desktop: 602 * 1024, mobile: 695 * 1024 },

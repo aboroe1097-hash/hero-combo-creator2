@@ -10,6 +10,7 @@ import {
   TechseasonColors,
   TECH_SEASON_ORDER,
   researchSection,
+  currentLanguage,
 } from './state.js';
 // Extracted Research Calculator Module
 import { techDatabase } from './tech-db.js?v=20260708_101500';
@@ -21,6 +22,14 @@ import {
   summarizeTechBuffs,
 } from './research-buffs.js';
 import { appT } from './utils.js';
+import { formatLocaleNumber, resolveIntlLocale } from './locale-format.js';
+import {
+  loadResearchLocale,
+  researchEffectText,
+  researchNodeText,
+  researchSearchText,
+  researchTreeText,
+} from './i18n/research/index.js';
 import '../css/research-v14.css';
 
 const RESEARCH_PROGRESS_KEY = 'vts_research_v1';
@@ -31,6 +40,64 @@ let collapsedResearchSeasonsCache = null;
 let expandedResearchSeasonsCache = null;
 let researchCalculatorReturnFocus = null;
 let researchCalculatorKeyHandler = null;
+let researchLocaleRenderGeneration = 0;
+
+function getResearchTreeName(tech) {
+  return researchTreeText(tech, 'name');
+}
+
+function getResearchTreeUnlock(tech) {
+  return researchTreeText(tech, 'unlockCondition');
+}
+
+function getResearchTreeResource(tech) {
+  return researchTreeText(tech, 'primaryResource');
+}
+
+function getResearchTreePages(tech) {
+  return researchTreeText(tech, 'pages');
+}
+
+function getResearchNodeName(tech, node) {
+  return researchNodeText(tech, node, 'name');
+}
+
+function getResearchNodeBuff(tech, node) {
+  return researchNodeText(tech, node, 'buff');
+}
+
+function formatResearchNumber(value) {
+  return formatLocaleNumber(value, currentLanguage, { maximumFractionDigits: 2 });
+}
+
+function localizeNodeBuffProgress(tech, node, level) {
+  const summary = describeNodeBuffProgress(node, level, { locale: currentLanguage });
+  if (summary.status !== 'known') return summary;
+
+  const effects = summary.effects.map((effect, index) => {
+    const label = researchEffectText(tech, node, effect.label, index);
+    const perLevelLabel =
+      effect.perLevelLabel === 'varies/lvl'
+        ? appT('researchVariesPerLevel')
+        : appT('researchPerLevel', { value: effect.perLevelLabel.replace(/\/lvl$/, '') });
+    return {
+      ...effect,
+      label,
+      perLevelLabel,
+      currentWithLabel: `${effect.currentLabel} ${label}`,
+      maxWithLabel: `${effect.maxLabel} ${label}`,
+    };
+  });
+
+  return {
+    ...summary,
+    effects,
+    effectLabels: effects.map((effect) => effect.label),
+    perLevelLabel: effects.map((effect) => effect.perLevelLabel).join(' + '),
+    currentWithLabel: effects.map((effect) => effect.currentWithLabel).join(' + '),
+    maxWithLabel: effects.map((effect) => effect.maxWithLabel).join(' + '),
+  };
+}
 
 function getResearchScrollBehavior() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
@@ -334,6 +401,11 @@ function getBuffProgressTitle(summary) {
 function getTechBuffSummary(tech) {
   return summarizeTechBuffs(tech, {
     getLevel: (node) => getStoredNodeLevel(tech.id, node.id),
+    getNodeName: (node) => getResearchNodeName(tech, node),
+    getNodeBuff: (node) => getResearchNodeBuff(tech, node),
+    getEffectLabel: (effect, node, effectIndex) =>
+      researchEffectText(tech, node, effect.label, effectIndex),
+    locale: currentLanguage,
   });
 }
 
@@ -404,7 +476,7 @@ function renderResearchBuffSummaryModal(tech, trigger = null) {
             ? Math.min(100, Math.max(0, Math.abs(buff.currentValue / buff.maxValue) * 100))
             : 0;
           return `
-                <article class="research-buff-summary-item" data-buff-tone="${getResearchBuffTone(buff.label)}" title="${escapeHtml(buff.nodes.join(', '))}">
+                <article class="research-buff-summary-item" data-buff-tone="${getResearchBuffTone(buff.canonicalLabel)}" title="${escapeHtml(buff.nodes.join(', '))}">
                     <div class="research-buff-summary-meter" style="--buff-pct: ${pct.toFixed(1)}%"></div>
                     <span class="research-buff-summary-value">${escapeHtml(buff.maxLabel)}</span>
                     <span class="research-buff-summary-label">${escapeHtml(buff.label)}</span>
@@ -452,6 +524,7 @@ function renderResearchBuffSummaryModal(tech, trigger = null) {
 
   const modal = document.createElement('div');
   modal.id = 'researchBuffSummaryModal';
+  modal.dataset.techId = tech.id;
   modal.className = 'research-buff-summary-modal';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
@@ -462,7 +535,7 @@ function renderResearchBuffSummaryModal(tech, trigger = null) {
             <div class="research-buff-summary-head">
                 <div>
                     <span class="research-buff-summary-season">${escapeHtml(tech.season)}</span>
-                    <h3 id="researchBuffSummaryTitle">${escapeHtml(appT('researchBuffSummaryTitle', { tech: tech.name }))}</h3>
+                    <h3 id="researchBuffSummaryTitle">${escapeHtml(appT('researchBuffSummaryTitle', { tech: getResearchTreeName(tech) }))}</h3>
                     <p id="researchBuffSummaryMeta">${escapeHtml(
                       appT('researchBuffSummaryMeta', {
                         buffs: summary.totals.known,
@@ -597,14 +670,12 @@ function updateTechSeasons(seasons) {
 }
 
 function getFilteredTechTrees() {
-  const q = techSearchQuery.trim().toLowerCase();
+  const q = techSearchQuery.trim().toLocaleLowerCase(resolveIntlLocale(currentLanguage));
   return techDatabase
     .filter((tech) => activeTechSeasons.has(tech.season))
     .filter((tech) => {
       if (!q) return true;
-      const hay =
-        `${tech.name} ${tech.season} ${tech.unlockCondition} ${tech.primaryResource}`.toLowerCase();
-      return hay.includes(q);
+      return researchSearchText(tech).includes(q);
     })
     .sort((a, b) => {
       const si = TECH_SEASON_ORDER.indexOf(a.season) - TECH_SEASON_ORDER.indexOf(b.season);
@@ -616,9 +687,15 @@ function getFilteredTechTrees() {
     });
 }
 
-function initResearchCalculator() {
+async function initResearchCalculator() {
   const researchSection = document.getElementById('researchSection');
   if (!researchSection) return;
+
+  let requestedLocale;
+  do {
+    requestedLocale = currentLanguage;
+    await loadResearchLocale(requestedLocale);
+  } while (requestedLocale !== currentLanguage);
 
   if (!ENABLE_RESEARCH_FEATURE) {
     researchSection.innerHTML = `
@@ -667,6 +744,28 @@ function initResearchCalculator() {
   }
 
   renderTechList();
+}
+
+async function refreshResearchLocale(locale = currentLanguage) {
+  const requestId = ++researchLocaleRenderGeneration;
+  await loadResearchLocale(locale);
+  if (requestId !== researchLocaleRenderGeneration || locale !== currentLanguage) return false;
+  renderTechList();
+
+  const container = document.getElementById('techCalculatorContainer');
+  const techId = container?.dataset.techId;
+  if (techId && !container.classList.contains('hidden')) {
+    const tech = techDatabase.find((candidate) => candidate.id === techId);
+    if (tech) renderCalculator(tech);
+  }
+
+  const summaryModal = document.getElementById('researchBuffSummaryModal');
+  const summaryTechId = summaryModal?.dataset.techId;
+  if (summaryTechId) {
+    const tech = techDatabase.find((candidate) => candidate.id === summaryTechId);
+    if (tech) renderResearchBuffSummaryModal(tech, researchBuffSummaryReturnFocus);
+  }
+  return true;
 }
 
 function quickMaxTech(e, techId) {
@@ -798,10 +897,11 @@ function renderTechList() {
     card.style.setProperty('--card-delay', `${Math.min(cardIndex * 35, 280)}ms`);
     cardIndex += 1;
 
-    const resourceLabel = tech.primaryResource || '—';
+    const treeName = getResearchTreeName(tech);
+    const resourceLabel = getResearchTreeResource(tech) || '—';
     const progressPct = Math.min(100, Math.max(0, totals.pct));
     const progressLabel = appT('researchProgress', { pct: progressPct.toFixed(0) });
-    const maxActionLabel = `${isComplete ? appT('researchClearLevel') : appT('researchMax')}: ${tech.name}`;
+    const maxActionLabel = `${isComplete ? appT('researchClearLevel') : appT('researchCompleteTree')}: ${treeName}`;
 
     card.innerHTML = `
             <div class="research-card-topline">
@@ -809,10 +909,10 @@ function renderTechList() {
                 <span class="research-card-pct">${escapeHtml(progressLabel)}</span>
             </div>
             <div class="research-card-head">
-                <h3 class="research-card-title">${escapeHtml(tech.name)}</h3>
+                <h3 class="research-card-title">${escapeHtml(treeName)}</h3>
             </div>
             <div class="research-card-meta">
-                <p class="research-card-unlock"><span>${escapeHtml(appT('researchUnlock'))}</span>${escapeHtml(tech.unlockCondition)}</p>
+                <p class="research-card-unlock"><span>${escapeHtml(appT('researchUnlock'))}</span>${escapeHtml(getResearchTreeUnlock(tech))}</p>
                 <p class="research-card-resource">${escapeHtml(resourceLabel)}</p>
             </div>
             ${renderResearchCardBuffPreview(tech)}
@@ -820,10 +920,10 @@ function renderTechList() {
                 <div class="research-card-progress-bar"></div>
             </div>
             <div class="research-card-actions">
-                <button type="button" class="research-card-buffs" aria-label="${escapeHtml(appT('researchBuffSummaryOpenAria', { tech: tech.name }))}">${escapeHtml(appT('researchBuffButton'))}</button>
-                <button type="button" class="research-card-max${isComplete ? ' research-card-max--done' : ''}" data-tech-id="${escapeHtml(tech.id)}" aria-pressed="${isComplete}" aria-label="${escapeHtml(maxActionLabel)}" title="${escapeHtml(isComplete ? appT('researchClearLevel') : appT('researchMax'))}">
+                <button type="button" class="research-card-buffs" aria-label="${escapeHtml(appT('researchBuffSummaryOpenAria', { tech: treeName }))}">${escapeHtml(appT('researchBuffButton'))}</button>
+                <button type="button" class="research-card-max${isComplete ? ' research-card-max--done' : ''}" data-tech-id="${escapeHtml(tech.id)}" aria-pressed="${isComplete}" aria-label="${escapeHtml(maxActionLabel)}" title="${escapeHtml(isComplete ? appT('researchClearLevel') : appT('researchCompleteTree'))}">
                     ${isComplete ? '<svg class="research-check-icon" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                    <span>${escapeHtml(isComplete ? appT('researchClearLevel') : appT('researchMax'))}</span>
+                    <span>${escapeHtml(isComplete ? appT('researchClearLevel') : appT('researchCompleteTree'))}</span>
                 </button>
                 <button type="button" class="research-card-cta">
                     <span>${escapeHtml(appT('researchOpenCalc'))}</span>
@@ -911,8 +1011,8 @@ function updateGlobalSummary(filteredTechs = null) {
                     ? `
                 <div class="research-summary-stat research-summary-stat-wb">
                     <span class="research-summary-stat-label">${appT('researchRemainingWb')}</span>
-                    <span class="research-summary-stat-value">${iconWB} ${remainingWb.toLocaleString()}</span>
-                    <span class="research-summary-stat-total">${appT('researchOfTotal', { n: totalWbMax.toLocaleString() })}</span>
+                    <span class="research-summary-stat-value">${iconWB} ${formatResearchNumber(remainingWb)}</span>
+                    <span class="research-summary-stat-total">${appT('researchOfTotal', { n: formatResearchNumber(totalWbMax) })}</span>
                 </div>`
                     : ''
                 }
@@ -921,8 +1021,8 @@ function updateGlobalSummary(filteredTechs = null) {
                     ? `
                 <div class="research-summary-stat research-summary-stat-cm">
                     <span class="research-summary-stat-label">${appT('researchRemainingCm')}</span>
-                    <span class="research-summary-stat-value">${iconCM} ${remainingCm.toLocaleString()}</span>
-                    <span class="research-summary-stat-total">${appT('researchOfTotal', { n: totalCmMax.toLocaleString() })}</span>
+                    <span class="research-summary-stat-value">${iconCM} ${formatResearchNumber(remainingCm)}</span>
+                    <span class="research-summary-stat-total">${appT('researchOfTotal', { n: formatResearchNumber(totalCmMax) })}</span>
                 </div>`
                     : ''
                 }
@@ -1014,7 +1114,7 @@ function getGameTroopClass(troop) {
 }
 
 function formatGameNodeLevel(node, level) {
-  if (level >= node.maxLevel) return appT('researchMax');
+  if (level >= node.maxLevel) return appT('researchMaxLevel');
   return `${level}/${node.maxLevel}`;
 }
 
@@ -1073,7 +1173,7 @@ function syncGameNodeVisual(tech, node, level, wrapEl) {
     if (tap) {
       tap.setAttribute(
         'aria-label',
-        `${node.name}. ${appT('researchCurrentLevel')}: ${level}/${node.maxLevel}`
+        `${getResearchNodeName(tech, node)}. ${appT('researchCurrentLevel')}: ${level}/${node.maxLevel}`
       );
       tap.classList.toggle('game-tech-tap--maxed', level >= node.maxLevel);
       tap.classList.toggle('game-tech-tap--progress', level > 0 && level < node.maxLevel);
@@ -1182,7 +1282,8 @@ function resolveResearchGameLayout(tech) {
         .sort(([a], [b]) => a - b)
         .map(([page, nodes]) => ({
           id: `part-${page}`,
-          label: tech.treePages?.[page - 1] || appT('researchGamePartShort', { n: page }),
+          label:
+            getResearchTreePages(tech)?.[page - 1] || appT('researchGamePartShort', { n: page }),
           rows: buildFallbackGameRows(nodes),
         })),
     };
@@ -1311,12 +1412,12 @@ function buildGameTreeTierHtml(tech, row, tierIndex, nextRow, edges, isSectionBo
     html += `
           <article class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
             data-node-id="${escapeHtml(node.id)}" data-node-col="${node._displayCol || 2}" data-node-state="${nodeState}">
-            <button type="button" class="game-tech-tap game-tech-tap--${troopClass}" aria-label="${escapeHtml(node.name)}. ${escapeHtml(appT('researchCurrentLevel'))}: ${level}/${node.maxLevel}">
+            <button type="button" class="game-tech-tap game-tech-tap--${troopClass}" aria-label="${escapeHtml(getResearchNodeName(tech, node))}. ${escapeHtml(appT('researchCurrentLevel'))}: ${level}/${node.maxLevel}">
               <span class="game-tech-medallion" aria-hidden="true">
                 <span class="game-tech-art"></span>
                 <span class="game-tech-level-badge">${formatGameNodeLevel(node, level)}</span>
               </span>
-              <span class="game-tech-name" title="${escapeHtml(node.name)}">${escapeHtml(node.name)}</span>
+              <span class="game-tech-name" title="${escapeHtml(getResearchNodeName(tech, node))}">${escapeHtml(getResearchNodeName(tech, node))}</span>
             </button>
             <input type="number" class="tech-node-input" min="0" max="${node.maxLevel}" value="${level}" tabindex="-1" aria-hidden="true" hidden>
             <div class="node-cost-display game-tech-cost-pill" hidden aria-hidden="true"></div>
@@ -1434,7 +1535,8 @@ function renderGameNodeInspector(rootEl, tech, node) {
   const level = updater?.getLevel() ?? getStoredNodeLevel(tech.id, node.id);
   const wrap = rootEl.querySelector(`.game-tech-node-wrap[data-node-id="${node.id}"]`);
   const remainingHtml = wrap?.querySelector('.node-cost-display')?.innerHTML || '';
-  const buffHtml = renderNodeBuffProgress(describeNodeBuffProgress(node, level));
+  const nodeName = getResearchNodeName(tech, node);
+  const buffHtml = renderNodeBuffProgress(localizeNodeBuffProgress(tech, node, level));
   const artResolution = resolveResearchNodeArt(
     {
       treeId: tech.id,
@@ -1459,18 +1561,18 @@ function renderGameNodeInspector(rootEl, tech, node) {
       <div class="research-node-inspector-head">
         <div>
           <span class="research-node-inspector-kicker">${escapeHtml(appT('researchCurrentLevel'))}</span>
-          <h4>${escapeHtml(node.name)}</h4>
+          <h4>${escapeHtml(nodeName)}</h4>
         </div>
         <button type="button" class="research-node-inspector-close" aria-label="${escapeHtml(appT('researchCloseCalculator'))}">
           <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18 18 6M6 6l12 12"/></svg>
         </button>
       </div>
       <div class="research-node-inspector-level"><strong>${level}</strong><span>/ ${node.maxLevel}</span></div>
-      <div class="research-node-inspector-controls" role="group" aria-label="${escapeHtml(appT('researchNodeLevelControlsAria', { node: node.name }))}">
-        <button type="button" data-inspector-action="decrease" aria-label="${escapeHtml(appT('researchDecreaseLevelAria', { node: node.name }))}"${level <= 0 ? ' disabled' : ''}>−</button>
+      <div class="research-node-inspector-controls" role="group" aria-label="${escapeHtml(appT('researchNodeLevelControlsAria', { node: nodeName }))}">
+        <button type="button" data-inspector-action="decrease" aria-label="${escapeHtml(appT('researchDecreaseLevelAria', { node: nodeName }))}"${level <= 0 ? ' disabled' : ''}>−</button>
         <button type="button" data-inspector-action="clear"${level <= 0 ? ' disabled' : ''}>${escapeHtml(appT('researchClearLevel'))}</button>
         <button type="button" data-inspector-action="max">${escapeHtml(appT('researchSetMax'))}</button>
-        <button type="button" data-inspector-action="increase" aria-label="${escapeHtml(appT('researchIncreaseLevelAria', { node: node.name }))}"${level >= node.maxLevel ? ' disabled' : ''}>+</button>
+        <button type="button" data-inspector-action="increase" aria-label="${escapeHtml(appT('researchIncreaseLevelAria', { node: nodeName }))}"${level >= node.maxLevel ? ' disabled' : ''}>+</button>
       </div>
       <div class="research-node-inspector-detail">
         <div><span>${escapeHtml(appT('researchRemaining'))}</span><div class="research-node-inspector-cost">${remainingHtml}</div></div>
@@ -1568,8 +1670,8 @@ function renderGameCalculator(tech, container) {
       <div class="research-calc-top">
         <div class="research-calc-header">
           <div>
-            <h3 id="researchCalculatorTitle" class="research-calc-title" tabindex="-1">${escapeHtml(tech.name)} <span class="research-calc-season">(${tech.season})</span></h3>
-            <p class="research-calc-sub">${escapeHtml(appT('researchPrimaryCost'))}: <span class="research-calc-primary">${escapeHtml(tech.primaryResource)}</span></p>
+            <h3 id="researchCalculatorTitle" class="research-calc-title" tabindex="-1">${escapeHtml(getResearchTreeName(tech))} <span class="research-calc-season">(${tech.season})</span></h3>
+            <p class="research-calc-sub">${escapeHtml(appT('researchPrimaryCost'))}: <span class="research-calc-primary">${escapeHtml(getResearchTreeResource(tech))}</span></p>
           </div>
           <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="${escapeHtml(appT('researchCloseCalculator'))}">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -1660,6 +1762,7 @@ function moveResearchCalculatorToPortal(container) {
 function renderCalculator(tech) {
   const container = document.getElementById('techCalculatorContainer');
   moveResearchCalculatorToPortal(container);
+  container.dataset.techId = tech.id;
   const activeElement = document.activeElement;
   if (activeElement instanceof HTMLElement && !container.contains(activeElement)) {
     researchCalculatorReturnFocus = activeElement;
@@ -1729,7 +1832,7 @@ function renderCalculator(tech) {
       quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="20">20</button>`;
 
     // Smart Toggle Button
-    let toggleText = isMaxed ? appT('researchClearLevel') : appT('researchMax');
+    let toggleText = isMaxed ? appT('researchClearLevel') : appT('researchMaxLevel');
     let toggleVal = isMaxed ? 0 : node.maxLevel;
     const toggleStateClass = isMaxed ? ' research-max-toggle--undo' : '';
 
@@ -1737,9 +1840,9 @@ function renderCalculator(tech) {
 
     const colAttr =
       node._displayCol || node.col ? ` data-node-col="${node._displayCol || node.col}"` : '';
-    const safeName = escapeHtml(node.name);
-    const safeBuff = escapeHtml(node.buff);
-    const buffSummary = describeNodeBuffProgress(node, savedLevel);
+    const safeName = escapeHtml(getResearchNodeName(tech, node));
+    const safeBuff = escapeHtml(getResearchNodeBuff(tech, node));
+    const buffSummary = localizeNodeBuffProgress(tech, node, savedLevel);
 
     return `
             <div class="research-tree-node-cell"${colAttr}>
@@ -1764,7 +1867,7 @@ function renderCalculator(tech) {
                             </div>
                             <input type="range" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-slider research-node-slider">
                             <div class="research-node-max">
-                                <span class="research-node-mini-label">${escapeHtml(appT('researchMax'))}</span>
+                                <span class="research-node-mini-label">${escapeHtml(appT('researchMaxLevel'))}</span>
                                 <span class="research-node-max-value">${node.maxLevel}</span>
                             </div>
                         </div>
@@ -1824,8 +1927,8 @@ function renderCalculator(tech) {
         <div class="research-calc-top">
             <div class="research-calc-header">
                 <div>
-                    <h3 id="researchCalculatorTitle" class="research-calc-title" tabindex="-1">${escapeHtml(tech.name)} <span class="research-calc-season">(${escapeHtml(tech.season)})</span></h3>
-                    <p class="research-calc-sub">${escapeHtml(appT('researchPrimaryCost'))}: <span class="research-calc-primary">${escapeHtml(tech.primaryResource)}</span></p>
+                    <h3 id="researchCalculatorTitle" class="research-calc-title" tabindex="-1">${escapeHtml(getResearchTreeName(tech))} <span class="research-calc-season">(${escapeHtml(tech.season)})</span></h3>
+                    <p class="research-calc-sub">${escapeHtml(appT('researchPrimaryCost'))}: <span class="research-calc-primary">${escapeHtml(getResearchTreeResource(tech))}</span></p>
                 </div>
                 <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="${escapeHtml(appT('researchCloseCalculator'))}">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -1983,7 +2086,7 @@ function renderCalculator(tech) {
         cont.classList.remove('research-node-card--maxed');
         if (maxBtn) {
           maxBtn.dataset.val = max;
-          maxBtn.textContent = appT('researchMax');
+          maxBtn.textContent = appT('researchMaxLevel');
           maxBtn.className = 'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle';
         }
       }
@@ -2070,31 +2173,31 @@ function calculateTechTotals(tech) {
         display.innerHTML = '';
       } else if (node.costType === 'Dual') {
         display.innerHTML = isGamePill
-          ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
-          : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
+          ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${formatResearchNumber(nodeWisdom)}</span></span><span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${formatResearchNumber(nodeCourage)}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${formatResearchNumber(nodeWisdom)}</span></span><span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${formatResearchNumber(nodeCourage)}</span></span>`;
       } else if (node.costType === 'Courage') {
         display.innerHTML = isGamePill
-          ? `<span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
-          : `<span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
+          ? `<span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${formatResearchNumber(nodeCourage)}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${formatResearchNumber(nodeCourage)}</span></span>`;
       } else if (
         node.costType === 'Wisdom' ||
         node.costType === 'War Badge' ||
         node.costType === 'War Badges'
       ) {
         display.innerHTML = isGamePill
-          ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`
-          : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`;
+          ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${formatResearchNumber(nodeWisdom)}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${formatResearchNumber(nodeWisdom)}</span></span>`;
       } else {
         display.innerHTML = isGamePill
-          ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`
-          : `<span class="research-node-cost-row research-node-cost-row--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`;
+          ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${formatResearchNumber(nodeOther)}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--res">${iconRes}<span>${formatResearchNumber(nodeOther)}</span></span>`;
       }
     }
 
     if (buffDisplay) {
       const compact = buffDisplay.classList.contains('game-tech-buff-pill');
       buffDisplay.innerHTML = renderNodeBuffProgress(
-        describeNodeBuffProgress(node, currentLevel),
+        localizeNodeBuffProgress(tech, node, currentLevel),
         compact
       );
     }
@@ -2114,11 +2217,11 @@ function calculateTechTotals(tech) {
     totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--wb">
                 <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
-                <span>${grandTotalWisdom.toLocaleString()}</span>
+                <span>${formatResearchNumber(grandTotalWisdom)}</span>
             </span>
             <span class="research-cost-summary research-cost-summary--cm">
                 <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
-                <span>${grandTotalCourage.toLocaleString()}</span>
+                <span>${formatResearchNumber(grandTotalCourage)}</span>
             </span>
         `;
   } else if (
@@ -2129,21 +2232,21 @@ function calculateTechTotals(tech) {
     totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--wb">
                 <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
-                <span>${grandTotalWisdom.toLocaleString()}</span>
+                <span>${formatResearchNumber(grandTotalWisdom)}</span>
             </span>
         `;
   } else if (grandTotalCourage > 0 || tech.primaryResource.includes('Courage')) {
     totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--cm">
                 <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
-                <span>${grandTotalCourage.toLocaleString()}</span>
+                <span>${formatResearchNumber(grandTotalCourage)}</span>
             </span>
         `;
   } else {
     totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--res">
                 <span class="research-cost-summary-label"><span class="research-cost-summary-label-full">${escapeHtml(appT('researchResources'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchResourcesShort'))}</span></span>
-                <span>${grandTotalOther.toLocaleString()}</span>
+                <span>${formatResearchNumber(grandTotalOther)}</span>
             </span>
         `;
   }
@@ -2155,4 +2258,10 @@ window.closeTechCalculator = closeTechCalculator;
 window.syncTechSeasonButtons = syncTechSeasonButtons;
 window.syncResearchQuickButtons = syncResearchQuickButtons;
 
-export { initResearchCalculator, renderTechList, updateGlobalSummary, renderCalculator };
+export {
+  initResearchCalculator,
+  refreshResearchLocale,
+  renderTechList,
+  updateGlobalSummary,
+  renderCalculator,
+};

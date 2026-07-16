@@ -84,18 +84,14 @@
     </style>
   </head>
   <body>
+    <script src="/js/i18n/standalone-copy.js"></script>
     <script src="./shared.js"></script>
     <script>
       (() => {
         const G = BootGame;
         const SCORE_KEY = 'vts_proto_hero_rumble';
         const ui = G.mountShell({
-          modeId: 'Mode E',
           modeKey: 'arcadeModeE',
-          title: 'Hero Rumble',
-          titleKey: 'arcadeHeroRumbleTitle',
-          hint: '60-second rumble: Blue = ATTACK - Gold = DODGE - purple = SUPER!',
-          hintKey: 'arcadeHeroRumbleDesc',
           scoreKey: SCORE_KEY,
           controlScheme: 'rumble',
           showShield: false,
@@ -281,7 +277,12 @@
             replaceHero('right', oldName);
             recordElimination('left');
             state.hitsR += 1;
-            G.floatText(window.innerWidth / 2 + 40, window.innerHeight * 0.4, 'K.O.!', '#f5c451');
+            G.floatText(
+              window.innerWidth / 2 + 40,
+              window.innerHeight * 0.4,
+              G.text('knockout'),
+              '#f5c451'
+            );
           }
           heroAnim('right', 'hurt');
           G.gateFx('hurt');
@@ -309,7 +310,12 @@
           }
           if (!caught) {
             G.vibrate(8);
-            G.floatText(window.innerWidth / 2 - 20, window.innerHeight * 0.5, ' MISS!', '#fb7185');
+            G.floatText(
+              window.innerWidth / 2 - 20,
+              window.innerHeight * 0.5,
+              G.text('miss'),
+              '#fb7185'
+            );
             return;
           }
 
@@ -332,7 +338,12 @@
               const oldName = heroB.name;
               replaceHero('right', oldName);
               recordElimination('left');
-              G.floatText(window.innerWidth / 2 + 40, window.innerHeight * 0.4, 'K.O.!', '#f5c451');
+              G.floatText(
+                window.innerWidth / 2 + 40,
+                window.innerHeight * 0.4,
+                G.text('knockout'),
+                '#f5c451'
+              );
             }
           } else {
             state.hitsR += 1;
@@ -380,7 +391,7 @@
             updateHpEl('left', playerHp);
             heroAnim('right', 'punch');
             heroAnim('left', 'hurt');
-            G.floatText(caught.x, caught.y, ' WHIFF!', '#fb923c');
+            G.floatText(caught.x, caught.y, G.text('whiff'), '#fb923c');
             G.vibrate(15);
           } else {
             caught.alive = false;
@@ -405,7 +416,12 @@
               const oldName = heroA.name;
               replaceHero('left', oldName);
               recordElimination('right');
-              G.floatText(window.innerWidth / 2 - 40, window.innerHeight * 0.4, 'K.O.!', '#fb923c');
+              G.floatText(
+                window.innerWidth / 2 - 40,
+                window.innerHeight * 0.4,
+                G.text('knockout'),
+                '#fb923c'
+              );
             }
             G.gateFx('hit');
             G.vibrate(8);

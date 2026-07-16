@@ -1,6 +1,7 @@
 // Eden control deck — rich hover tooltips (desktop) + focus hints
 
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 
 let tipEl = null;
 let activeEl = null;
@@ -8,7 +9,7 @@ let hideTimer = null;
 let scrollRaf = 0;
 
 function edenLang() {
-  return localStorage.getItem('vts_hero_lang') || 'en';
+  return resolveRuntimeLocale();
 }
 
 function edenT(key) {
@@ -36,11 +37,7 @@ function getTipSource(el) {
 }
 
 function readTipText(el) {
-  return (
-    el.getAttribute('data-tip')
-    || el.getAttribute('title')
-    || ''
-  ).trim();
+  return (el.getAttribute('data-tip') || el.getAttribute('title') || '').trim();
 }
 
 function applyTipToEl(el) {
@@ -164,7 +161,7 @@ export function initEdenControlTips() {
     const src = getTipSource(e.target);
     if (src) showTip(src);
   });
-  deck.addEventListener('focusout', () => hideTimer = setTimeout(hideTip, 120));
+  deck.addEventListener('focusout', () => (hideTimer = setTimeout(hideTip, 120)));
 
   window.addEventListener('scroll', onScrollOrResize, true);
   window.addEventListener('resize', onScrollOrResize);

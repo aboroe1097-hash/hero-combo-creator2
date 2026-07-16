@@ -13,8 +13,36 @@ const APP_LOCALE_MAP = Object.freeze({
   zh: 'zh-CN',
 });
 
+export function normalizeAppLanguage(language = 'en') {
+  const primary = String(language || 'en')
+    .trim()
+    .toLowerCase()
+    .split('-')[0];
+  const normalized = primary === 'ko' ? 'kr' : primary;
+  return Object.hasOwn(APP_LOCALE_MAP, normalized) ? normalized : 'en';
+}
+
+export function resolveRuntimeLocale(language) {
+  if (language) return normalizeAppLanguage(language);
+  let stored = '';
+  try {
+    stored = globalThis.localStorage?.getItem('vts_hero_lang') || '';
+  } catch {
+    // Browser and prepaint language hints remain available when storage is restricted.
+  }
+  return normalizeAppLanguage(
+    stored ||
+      globalThis.VTS_INITIAL_LANGUAGE ||
+      globalThis.document?.documentElement?.lang ||
+      globalThis.navigator?.language ||
+      'en'
+  );
+}
+
 export function resolveIntlLocale(language = 'en') {
-  const normalized = String(language || 'en').trim().toLowerCase();
+  const normalized = String(language || 'en')
+    .trim()
+    .toLowerCase();
   const baseLanguage = normalized.split('-')[0];
   return APP_LOCALE_MAP[normalized] || APP_LOCALE_MAP[baseLanguage] || APP_LOCALE_MAP.en;
 }

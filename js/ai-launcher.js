@@ -68,9 +68,12 @@ function setCompact(compact, persist = false) {
 
 function localizeLauncher() {
   const label = translate('ai.nav', 'Talk with Velo');
+  const kicker = translate('ai.kicker', 'VTS Assistant');
   launcher?.setAttribute('aria-label', label);
   const copy = launcher?.querySelector('.ai-drawer-launcher__label');
+  const eyebrow = launcher?.querySelector('.ai-drawer-launcher__eyebrow');
   if (copy) copy.textContent = label;
+  if (eyebrow) eyebrow.textContent = kicker;
   setCompact(shell?.classList.contains('is-compact') || false);
 }
 

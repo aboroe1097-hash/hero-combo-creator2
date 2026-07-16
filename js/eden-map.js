@@ -1,48 +1,125 @@
 import {
-  STRUCTURE_TYPES, X1_PLANNING_TARGETS, TEMPLE_TYPES, OVERVIEW_STRUCTURE_TYPES,
-  getEdenSectors, getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
-  getStructurePoints, getSectorFaction, syncEdenSectorSelect, isEdenSectorKey,
-  parseCoordInput, findStructureByCoords, findSectorForCoords, ensureEdenDatasetsLoaded,
+  STRUCTURE_TYPES,
+  X1_PLANNING_TARGETS,
+  TEMPLE_TYPES,
+  OVERVIEW_STRUCTURE_TYPES,
+  getEdenSectors,
+  getSectorStructures,
+  getSectorBounds,
+  getStructureLabel,
+  getStructureShort,
+  getStructurePoints,
+  getSectorFaction,
+  syncEdenSectorSelect,
+  isEdenSectorKey,
+  parseCoordInput,
+  findStructureByCoords,
+  findSectorForCoords,
+  ensureEdenDatasetsLoaded,
 } from './eden-map-data.js';
 import { initEdenSeasonPicker } from './eden-map-season.js?v=20260708_101500';
 import {
-  MAP_BOUNDS, drawTerrainLayer, findRoute, routeThroughWaypoints, getTerrainAt,
+  MAP_BOUNDS,
+  drawTerrainLayer,
+  findRoute,
+  routeThroughWaypoints,
+  getTerrainAt,
 } from './eden-map-terrain.js?v=20260708_101500';
 import {
-  preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
-  loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs, preloadSectorTiles,
-  preloadStrategyFloor, getSectorTileIds, getSectorTileImage, isSectorTileReady,
-  isUserStructureIcon, EDEN_STRATEGY_FLOOR,
+  preloadStructureIcons,
+  onStructureIconsReady,
+  getStructureIcon,
+  isIconReady,
+  loadStructureIcon,
+  preloadReferenceMap,
+  preloadScreenshotRefs,
+  preloadSectorTiles,
+  preloadStrategyFloor,
+  getSectorTileIds,
+  getSectorTileImage,
+  isSectorTileReady,
+  isUserStructureIcon,
+  EDEN_STRATEGY_FLOOR,
 } from './eden-map-assets.js?v=20260708_101500';
 import { initEdenMapUI } from './eden-map-ui.js?v=20260708_101500';
 import {
-  createEmptyPlan, loadPlansStore, savePlansStore, fuzzyIncludes,
-  estimateTravelMinutes, formatTravelTime, hitTestPath, drawSegmentLabels,
-  drawTerritoryOverlay, drawFogOfWar, drawHeatmap, drawSectorSheetFlat,
-  maskReferenceCapitals, animateCamera, exportMapAsPng, drawPlanSketches,
-  applySectorClip, drawSectorIsolateChrome, pathTouchesSector,
+  createEmptyPlan,
+  loadPlansStore,
+  savePlansStore,
+  fuzzyIncludes,
+  estimateTravelMinutes,
+  formatTravelTime,
+  hitTestPath,
+  drawSegmentLabels,
+  drawTerritoryOverlay,
+  drawFogOfWar,
+  drawHeatmap,
+  drawSectorSheetFlat,
+  maskReferenceCapitals,
+  animateCamera,
+  exportMapAsPng,
+  drawPlanSketches,
+  applySectorClip,
+  drawSectorIsolateChrome,
+  pathTouchesSector,
 } from './eden-map-features.js?v=20260708_101500';
 import {
-  startScoutSync, stopScoutSync, pullScoutIntel, pushScoutIntel, mergeScoutIntel,
+  startScoutSync,
+  stopScoutSync,
+  pullScoutIntel,
+  pushScoutIntel,
+  mergeScoutIntel,
 } from './eden-map-scout.js';
 import { translations } from './translations.js';
+import { currentLanguage } from './state.js';
 import { initEdenMapGuide, openEdenGuide } from './eden-map-guide.js';
 import { openLoyaltyFromEden } from './loyalty-calculator.js';
 import { mountGameClock } from './game-time.js';
 import {
-  EDEN_TEAM_IDS, getActiveTeamIds, getTeamInfo, getStructTeamMeta, isTeamPlanEnabled,
-  normalizeTeamPlanSettings, pruneTeamAssignments, setStructTeamMeta,
+  EDEN_TEAM_IDS,
+  getActiveTeamIds,
+  getTeamInfo,
+  getStructTeamMeta,
+  isTeamPlanEnabled,
+  normalizeTeamPlanSettings,
+  pruneTeamAssignments,
+  setStructTeamMeta,
   renderTeamBoardHtml,
 } from './eden-map-teams.js';
 import { initEdenControlTips } from './eden-tooltips.js?v=20260708_101500';
 import { EDEN_MAP_CONFIG } from './eden-map-config.js';
 import { renderSidebar as renderSidebarModule } from './eden-map-sidebar.js?v=20260708_101500';
 import { bindToolbar as bindToolbarModule } from './eden-map-toolbar.js';
+import {
+  applyEdenMapDomTranslations,
+  edenMapText,
+  getEdenMissionDisplayLabel,
+  getEdenPlanDisplayName,
+  getEdenPresetTargetDisplayLabel,
+  getEdenSectorDisplayLabel,
+  getEdenStoredRouteDisplayLabel,
+  getEdenStructureDisplayLabel,
+  getEdenTerrainDisplayLabel,
+  loadEdenMapLocale,
+} from './i18n/eden-map/index.js';
 
 let _edenLiveMapApi = null;
+let edenMapLanguageGeneration = 0;
+let refreshEdenMapLanguage = async () => {
+  const requestId = ++edenMapLanguageGeneration;
+  await loadEdenMapLocale();
+  if (requestId !== edenMapLanguageGeneration) return false;
+  applyEdenMapDomTranslations(document.getElementById('edenMapRoot'));
+  return true;
+};
+
+window.addEventListener('edenLanguageUpdate', () => {
+  void refreshEdenMapLanguage();
+});
 
 function edenT(key) {
-  const lang = localStorage.getItem('vts_hero_lang') || 'en';
+  const lang =
+    currentLanguage || window.VTS_INITIAL_LANGUAGE || document.documentElement.lang || 'en';
   return translations[lang]?.[key] || translations.en[key] || key;
 }
 
@@ -52,9 +129,28 @@ const MAX_SCALE = 3.2;
 const ZOOM_OVERVIEW_MAX = 0.54;
 const ZOOM_DETAIL_MIN = 0.82;
 const ZOOM_PRESETS = [0.25, 0.42, 0.54, 0.75, 0.82, 1.0, 1.5, 2.0, MAX_SCALE];
-const STATUS_COLORS = { owned: '#22c55e', contested: '#f59e0b', enemy: '#ef4444', neutral: '#94a3b8' };
-const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capital: 'eden-row-capital', stronghold: 'eden-row-capital', temple: 'eden-row-temple' };
-const MISSION_FALLBACK = { id: 'vts', name: 'VTS', color: '#22d3ee', side: 'ours', teams: ['all'], time: '', label: '' };
+const STATUS_COLORS = {
+  owned: '#22c55e',
+  contested: '#f59e0b',
+  enemy: '#ef4444',
+  neutral: '#94a3b8',
+};
+const CATEGORY_ROW_CLASS = {
+  gate: 'eden-row-gate',
+  town: 'eden-row-town',
+  capital: 'eden-row-capital',
+  stronghold: 'eden-row-capital',
+  temple: 'eden-row-temple',
+};
+const MISSION_FALLBACK = {
+  id: 'vts',
+  name: 'VTS',
+  color: '#22d3ee',
+  side: 'ours',
+  teams: ['all'],
+  time: '',
+  label: '',
+};
 const CANVAS_RENDER_SCALE_MIN = 2;
 const CANVAS_RENDER_SCALE_MAX = 2.5;
 const POINTER_DRAG_THRESHOLD_PX = 6;
@@ -74,6 +170,8 @@ export function initEdenMapPlanner() {
   const canvas = document.getElementById('edenMapCanvas');
   const sidebar = document.getElementById('edenMapSidebar');
   if (!root || !canvas || !sidebar) return;
+
+  applyEdenMapDomTranslations(root);
 
   const ctx = canvas.getContext('2d');
   let sectorKey = 'FULL';
@@ -157,9 +255,7 @@ export function initEdenMapPlanner() {
     root.classList.toggle('eden-map-offline', offline);
     if (!status) return;
     status.classList.toggle('hidden', !offline);
-    status.textContent = offline
-      ? 'Offline mode: saved plans and core map tools are available; reference images may be unavailable.'
-      : '';
+    status.textContent = offline ? edenMapText('offline') : '';
   }
 
   syncOfflineStatus();
@@ -176,7 +272,10 @@ export function initEdenMapPlanner() {
   let savePlanTimer = null;
   let savePlanPending = null;
   function persistPlan(planId, nextPlan) {
-    plansStore.plans[planId] = plansStore.plans[planId] || { name: 'Plan', plan: createEmptyPlan() };
+    plansStore.plans[planId] = plansStore.plans[planId] || {
+      name: 'Plan',
+      plan: createEmptyPlan(),
+    };
     plansStore.plans[planId].plan = nextPlan;
     if (planId === activePlanId) {
       plansStore.activeId = planId;
@@ -225,7 +324,8 @@ export function initEdenMapPlanner() {
     selectedId = null;
     selectedPathIdx = null;
     pathDraft = [];
-    toolbarState.plan = plan; toolbarState.pathDraft = pathDraft;
+    toolbarState.plan = plan;
+    toolbarState.pathDraft = pathDraft;
     applyTeamPlanLayerState();
     notifySelection();
     syncPlanSelector();
@@ -236,9 +336,11 @@ export function initEdenMapPlanner() {
     const sel = document.getElementById('edenPlanSelect');
     if (!sel) return;
     const prev = sel.value;
-    sel.innerHTML = Object.entries(plansStore.plans).map(([id, entry]) =>
-      `<option value="${id}">${entry.name || id}</option>`
-    ).join('');
+    sel.innerHTML = Object.entries(plansStore.plans)
+      .map(
+        ([id, entry]) => `<option value="${id}">${getEdenPlanDisplayName(id, entry.name)}</option>`
+      )
+      .join('');
     if (plansStore.plans[prev]) sel.value = prev;
     else sel.value = activePlanId;
   }
@@ -258,17 +360,18 @@ export function initEdenMapPlanner() {
     const prev = el.value;
     const wonderIds = getSectorTileIds();
     const sectors = getEdenSectors();
-    const keys = (wonderIds.length ? wonderIds : [])
-      .filter((k) => sectors[k])
-      .sort();
+    const keys = (wonderIds.length ? wonderIds : []).filter((k) => sectors[k]).sort();
     if (!keys.length) {
-      syncEdenSectorSelect(el);
+      syncEdenSectorSelect(el, {
+        fullLabel: edenT('edenSectorFull'),
+        getSectorLabel: (key, label) => getEdenSectorDisplayLabel(key, label),
+      });
       return;
     }
     const opts = [`<option value="FULL">${edenT('edenSectorFull')}</option>`];
     keys.forEach((key) => {
       const sec = sectors[key];
-      const label = sec?.label ? `${sec.label} (${key})` : key;
+      const label = `${getEdenSectorDisplayLabel(key, sec?.label)} (${key})`;
       opts.push(`<option value="${key}">${label}</option>`);
     });
     el.innerHTML = opts.join('');
@@ -318,7 +421,7 @@ export function initEdenMapPlanner() {
     const base = getSectorStructures(sectorKey);
     const guilds = plan.guilds || {};
     const statuses = plan.status || {};
-    return base.map(s => ({
+    return base.map((s) => ({
       ...s,
       guild: guilds[s.id] || s.guild || '',
       status: statuses[s.id] || 'neutral',
@@ -368,7 +471,7 @@ export function initEdenMapPlanner() {
   }
 
   function syncToolButtons() {
-    document.querySelectorAll('[data-eden-tool]').forEach(b => {
+    document.querySelectorAll('[data-eden-tool]').forEach((b) => {
       const on = b.dataset.edenTool === tool;
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -387,10 +490,12 @@ export function initEdenMapPlanner() {
   }
 
   function getDrawColor() {
-    return getMissionConfig().color
-      || document.getElementById('edenDrawColor')?.value
-      || document.getElementById('edenPathColor')?.value
-      || '#f97316';
+    return (
+      getMissionConfig().color ||
+      document.getElementById('edenDrawColor')?.value ||
+      document.getElementById('edenPathColor')?.value ||
+      '#f97316'
+    );
   }
 
   function getMissionConfig() {
@@ -399,13 +504,14 @@ export function initEdenMapPlanner() {
     const selectedTeams = [...document.querySelectorAll('[data-eden-mission-team].active')]
       .map((btn) => btn.dataset.edenMissionTeam)
       .filter(Boolean);
-    const teams = selectedTeams.includes('all') || !selectedTeams.length
-      ? ['all']
-      : selectedTeams.filter((team) => EDEN_TEAM_IDS.includes(team));
+    const teams =
+      selectedTeams.includes('all') || !selectedTeams.length
+        ? ['all']
+        : selectedTeams.filter((team) => EDEN_TEAM_IDS.includes(team));
     return {
       ...MISSION_FALLBACK,
       id: allianceSelect?.value || MISSION_FALLBACK.id,
-      name: option?.textContent?.trim() || MISSION_FALLBACK.name,
+      name: option?.dataset.canonicalName || MISSION_FALLBACK.name,
       color: option?.dataset?.color || MISSION_FALLBACK.color,
       side: option?.dataset?.side || MISSION_FALLBACK.side,
       teams,
@@ -419,13 +525,15 @@ export function initEdenMapPlanner() {
     const pathColor = document.getElementById('edenPathColor');
     const drawColor = document.getElementById('edenDrawColor');
     const preview = document.getElementById('edenMissionPreview');
-    if (pathColor?.querySelector(`option[value="${mission.color}"]`)) pathColor.value = mission.color;
-    if (drawColor?.querySelector(`option[value="${mission.color}"]`)) drawColor.value = mission.color;
+    if (pathColor?.querySelector(`option[value="${mission.color}"]`))
+      pathColor.value = mission.color;
+    if (drawColor?.querySelector(`option[value="${mission.color}"]`))
+      drawColor.value = mission.color;
     if (preview) {
       const teams = mission.teams.includes('all')
         ? 'VTS'
         : mission.teams.map((team) => team.replace('t', '')).join('+');
-      preview.textContent = mission.id === 'vts' ? teams : mission.name;
+      preview.textContent = mission.id === 'vts' ? teams : getEdenMissionDisplayLabel(mission.id);
       preview.style.setProperty('--mission-color', mission.color);
     }
     root?.style.setProperty('--eden-mission-color', mission.color);
@@ -446,7 +554,8 @@ export function initEdenMapPlanner() {
   }
 
   function formatTargetTeamLabel(target) {
-    if (!target?.teams?.length || target.teams.includes('all')) return target?.alliance === 'vts' ? 'VTS' : '';
+    if (!target?.teams?.length || target.teams.includes('all'))
+      return target?.alliance === 'vts' ? 'VTS' : '';
     return target.teams.map((team) => team.replace('t', '')).join('+');
   }
 
@@ -476,7 +585,10 @@ export function initEdenMapPlanner() {
     }
     tool = next;
     if (tool !== 'measure') measureA = measureB = null;
-    if (tool !== 'path') { pathDraft = []; toolbarState.pathDraft = pathDraft; }
+    if (tool !== 'path') {
+      pathDraft = [];
+      toolbarState.pathDraft = pathDraft;
+    }
     if (tool !== 'draw') {
       drawDraft = null;
       drawing = false;
@@ -508,19 +620,22 @@ export function initEdenMapPlanner() {
   function snapScale(val) {
     let best = val;
     let bestD = 0.06;
-    ZOOM_PRESETS.forEach(p => {
+    ZOOM_PRESETS.forEach((p) => {
       const d = Math.abs(p - val);
-      if (d < bestD) { bestD = d; best = p; }
+      if (d < bestD) {
+        bestD = d;
+        best = p;
+      }
     });
     return clampScale(best);
   }
 
   function nextPresetScale(direction) {
     if (direction > 0) {
-      const next = ZOOM_PRESETS.find(p => p > scale + 0.008);
+      const next = ZOOM_PRESETS.find((p) => p > scale + 0.008);
       return next ?? MAX_SCALE;
     }
-    const prev = [...ZOOM_PRESETS].reverse().find(p => p < scale - 0.008);
+    const prev = [...ZOOM_PRESETS].reverse().find((p) => p < scale - 0.008);
     return prev ?? MIN_SCALE;
   }
 
@@ -616,33 +731,46 @@ export function initEdenMapPlanner() {
           savePlansStore(plansStore);
           savePlan();
           syncPlanSelector();
-          if (typeof window.showToast === 'function') window.showToast(edenT('edenPlanLoadedToast'), 'success');
+          if (typeof window.showToast === 'function')
+            window.showToast(edenT('edenPlanLoadedToast'), 'success');
         }
         return;
       }
       if (!planMatch) return;
       plan = normalizePlan(JSON.parse(decodeURIComponent(atob(planMatch[1]))));
       savePlan();
-      if (typeof window.showToast === 'function') window.showToast(edenT('edenPlanLoadedToast'), 'success');
-    } catch { /* ignore bad hash */ }
+      if (typeof window.showToast === 'function')
+        window.showToast(edenT('edenPlanLoadedToast'), 'success');
+    } catch {
+      /* ignore bad hash */
+    }
   }
 
   function sharePlanLink() {
     try {
-      plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
+      plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || {
+        name: 'Plan',
+        plan: createEmptyPlan(),
+      };
       plansStore.plans[activePlanId].plan = plan;
       plansStore.activeId = activePlanId;
-      const payload = btoa(encodeURIComponent(JSON.stringify({
-        version: 2,
-        activeId: activePlanId,
-        plans: plansStore.plans,
-      })));
+      const payload = btoa(
+        encodeURIComponent(
+          JSON.stringify({
+            version: 2,
+            activeId: activePlanId,
+            plans: plansStore.plans,
+          })
+        )
+      );
       const url = `${location.origin}${location.pathname}#edenStore=${payload}`;
       navigator.clipboard?.writeText(url).then(() => {
-        if (typeof window.showToast === 'function') window.showToast(edenT('edenShareCopiedToast'), 'success');
+        if (typeof window.showToast === 'function')
+          window.showToast(edenT('edenShareCopiedToast'), 'success');
       });
     } catch {
-      if (typeof window.showToast === 'function') window.showToast(edenT('edenShareFailedToast'), 'error');
+      if (typeof window.showToast === 'function')
+        window.showToast(edenT('edenShareFailedToast'), 'error');
     }
   }
 
@@ -651,9 +779,9 @@ export function initEdenMapPlanner() {
     sidebarState.filtersPopulatedFor = sectorKey;
 
     const structs = structures();
-    const zones = [...new Set(structs.map(s => s.zone))].sort();
-    const types = [...new Set(structs.map(s => s.type))].sort((a, b) =>
-      getStructureLabel(a).localeCompare(getStructureLabel(b))
+    const zones = [...new Set(structs.map((s) => s.zone))].sort();
+    const types = [...new Set(structs.map((s) => s.type))].sort((a, b) =>
+      getEdenStructureDisplayLabel(a).localeCompare(getEdenStructureDisplayLabel(b))
     );
 
     const zoneSelect = document.getElementById('edenZoneFilter');
@@ -663,31 +791,33 @@ export function initEdenMapPlanner() {
     const prevZone = zoneSelect.value;
     const prevType = typeSelect.value;
 
-    zoneSelect.innerHTML = `<option value="all">${edenT('edenAllZones')}</option>` +
-      zones.map(z => `<option value="${z}">${z}</option>`).join('');
-    typeSelect.innerHTML = `<option value="all">${edenT('edenAllTypes')}</option>` +
-      types.map(t => `<option value="${t}">${getStructureLabel(t)}</option>`).join('');
+    zoneSelect.innerHTML =
+      `<option value="all">${edenT('edenAllZones')}</option>` +
+      zones.map((z) => `<option value="${z}">${z}</option>`).join('');
+    typeSelect.innerHTML =
+      `<option value="all">${edenT('edenAllTypes')}</option>` +
+      types.map((t) => `<option value="${t}">${getEdenStructureDisplayLabel(t)}</option>`).join('');
 
-    if ([...zoneSelect.options].some(o => o.value === prevZone)) zoneSelect.value = prevZone;
-    if ([...typeSelect.options].some(o => o.value === prevType)) typeSelect.value = prevType;
+    if ([...zoneSelect.options].some((o) => o.value === prevZone)) zoneSelect.value = prevZone;
+    if ([...typeSelect.options].some((o) => o.value === prevType)) typeSelect.value = prevType;
   }
 
   function fitViewToBounds(b, { sectorFocus = false } = {}) {
     const rect = canvas.parentElement.getBoundingClientRect();
     const pad = sectorFocus ? 0.07 : 0.1;
-    const flatStrategyFloor = !sectorFocus && sectorKey === 'FULL'
-      && layers.strategyFloor
-      && EDEN_STRATEGY_FLOOR.layout === 'screen';
+    const flatStrategyFloor =
+      !sectorFocus &&
+      sectorKey === 'FULL' &&
+      layers.strategyFloor &&
+      EDEN_STRATEGY_FLOOR.layout === 'screen';
     const projectedWAt1 = Math.max((b.maxX - b.minX + b.maxY - b.minY) * 0.5, 40);
-    const wAt1 = flatStrategyFloor
-      ? projectedWAt1
-      : Math.max((b.maxX - b.minX) * 0.5, 40);
+    const wAt1 = flatStrategyFloor ? projectedWAt1 : Math.max((b.maxX - b.minX) * 0.5, 40);
     const hAt1 = flatStrategyFloor
       ? Math.max(projectedWAt1 / (EDEN_STRATEGY_FLOOR.screenAspect || 1.6), 40)
       : Math.max((b.maxX - b.minX + b.maxY - b.minY) * 0.25, 40);
     let nextScale = Math.min(
       (rect.width * (1 - pad * 2)) / wAt1,
-      (rect.height * (1 - pad * 2)) / hAt1,
+      (rect.height * (1 - pad * 2)) / hAt1
     );
 
     if (sectorFocus) {
@@ -703,7 +833,9 @@ export function initEdenMapPlanner() {
     return {
       scale: snapped,
       offsetX: rect.width * 0.5 - (cx - cy) * 0.5 * snapped,
-      offsetY: rect.height * (flatStrategyFloor ? 0.5 : (sectorFocus ? 0.42 : 0.15)) - (cx + cy) * 0.25 * snapped,
+      offsetY:
+        rect.height * (flatStrategyFloor ? 0.5 : sectorFocus ? 0.42 : 0.15) -
+        (cx + cy) * 0.25 * snapped,
     };
   }
 
@@ -728,7 +860,7 @@ export function initEdenMapPlanner() {
           () => {
             if (gen !== fitAnimGen) return;
             scheduleDraw({ sidebar: false });
-          },
+          }
         );
       }
       applyCamera(target);
@@ -750,7 +882,7 @@ export function initEdenMapPlanner() {
         () => {
           if (gen !== fitAnimGen) return;
           scheduleDraw({ sidebar: false });
-        },
+        }
       );
     }
 
@@ -767,9 +899,13 @@ export function initEdenMapPlanner() {
     if (smooth) {
       return animateCamera(
         () => ({ offsetX, offsetY, scale }),
-        (cam) => { offsetX = cam.offsetX; offsetY = cam.offsetY; scale = cam.scale; },
+        (cam) => {
+          offsetX = cam.offsetX;
+          offsetY = cam.offsetY;
+          scale = cam.scale;
+        },
         target,
-        () => scheduleDraw({ sidebar: false }),
+        () => scheduleDraw({ sidebar: false })
       );
     }
     offsetX = target.offsetX;
@@ -786,9 +922,13 @@ export function initEdenMapPlanner() {
     };
     return animateCamera(
       () => ({ offsetX, offsetY, scale }),
-      (cam) => { offsetX = cam.offsetX; offsetY = cam.offsetY; scale = cam.scale; },
+      (cam) => {
+        offsetX = cam.offsetX;
+        offsetY = cam.offsetY;
+        scale = cam.scale;
+      },
       target,
-      () => scheduleDraw({ sidebar: false }),
+      () => scheduleDraw({ sidebar: false })
     );
   }
 
@@ -815,14 +955,16 @@ export function initEdenMapPlanner() {
   }
 
   function syncFullscreenState() {
-    const active = document.fullscreenElement === root || root.classList.contains('eden-map-fullscreen-fallback');
+    const active =
+      document.fullscreenElement === root ||
+      root.classList.contains('eden-map-fullscreen-fallback');
     root.classList.toggle('eden-map-fullscreen', active);
     const btn = document.getElementById('edenFullscreen');
     if (btn) {
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-      btn.textContent = active ? 'Exit Fullscreen' : 'Fullscreen';
-      btn.title = active ? 'Exit fullscreen map' : 'Fullscreen map';
+      btn.textContent = active ? edenMapText('exitFullscreen') : edenMapText('fullscreen');
+      btn.title = active ? edenMapText('exitFullscreenTitle') : edenMapText('fullscreenTitle');
     }
     window.setTimeout(() => {
       resize();
@@ -857,8 +999,8 @@ export function initEdenMapPlanner() {
       ctx.strokeStyle = 'rgba(129,140,248,0.45)';
       ctx.lineWidth = 1;
       const label = isSectorIsolated()
-        ? `${sec.label} (${sectorKey})`
-        : sec.label;
+        ? `${getEdenSectorDisplayLabel(sectorKey, sec.label)} (${sectorKey})`
+        : getEdenSectorDisplayLabel(sectorKey, sec.label);
       ctx.font = `bold ${isSectorIsolated() ? 15 : 14}px Inter, sans-serif`;
       const tw = ctx.measureText(label).width + 24;
       const th = 28;
@@ -995,7 +1137,7 @@ export function initEdenMapPlanner() {
       ctx.beginPath();
       ctx.arc(p.x, iconMidY, Math.min(iw, ih) * 0.52, 0, Math.PI * 2);
       ctx.strokeStyle = statusColor;
-      ctx.lineWidth = isSel ? 3 : (mode === 'compact' ? 1.5 : 2);
+      ctx.lineWidth = isSel ? 3 : mode === 'compact' ? 1.5 : 2;
       ctx.stroke();
     }
 
@@ -1078,7 +1220,7 @@ export function initEdenMapPlanner() {
   function drawRoutedPath(points, color, label, distance, opts = {}) {
     if (!points?.length) return;
     const { dashed = false, arrows = true, lineWidth = 3.5 } = opts;
-    const screenPts = points.map(pt => iso(pt.x, pt.y));
+    const screenPts = points.map((pt) => iso(pt.x, pt.y));
 
     ctx.beginPath();
     screenPts.forEach((p, i) => {
@@ -1137,7 +1279,7 @@ export function initEdenMapPlanner() {
     if (badge) {
       const sec = getEdenSectors()[sectorKey];
       badge.textContent = active
-        ? `${sec?.label || sectorKey} · ${edenT('edenIsolateActive')}`
+        ? `${getEdenSectorDisplayLabel(sectorKey, sec?.label)} · ${edenT('edenIsolateActive')}`
         : '';
       badge.classList.toggle('hidden', !active);
     }
@@ -1159,13 +1301,17 @@ export function initEdenMapPlanner() {
     syncIsolateUi();
     fitView(false);
     draw();
-    setTimeout(() => { isolateToggleLock = false; }, 320);
+    setTimeout(() => {
+      isolateToggleLock = false;
+    }, 320);
   }
 
   function drawPaths() {
     if (!layers.paths) return;
     const isolated = isSectorIsolated();
-    const planPaths = (plan.paths || []).filter((p) => !isolated || pathTouchesSector(p, sectorKey));
+    const planPaths = (plan.paths || []).filter(
+      (p) => !isolated || pathTouchesSector(p, sectorKey)
+    );
 
     planPaths.forEach((path, idx) => {
       const realIdx = (plan.paths || []).indexOf(path);
@@ -1173,7 +1319,9 @@ export function initEdenMapPlanner() {
       const color = path.color || '#ef4444';
       const selected = selectedPathIdx === realIdx;
       const showSeg = selected || hoverPathHit?.pathIdx === realIdx;
-      drawRoutedPath(routed, color, path.label, path.distance, { lineWidth: selected ? 5 : 3.5 });
+      drawRoutedPath(routed, color, getEdenStoredRouteDisplayLabel(path.label), path.distance, {
+        lineWidth: selected ? 5 : 3.5,
+      });
       if (showSeg) drawSegmentLabels(ctx, iso, path, color, layers.labels || selected);
       if (selected && routed?.length) {
         routed.forEach((pt, wi) => {
@@ -1191,8 +1339,12 @@ export function initEdenMapPlanner() {
 
     if (pathDraft.length >= 2) {
       const preview = routeThroughWaypoints(pathDraft);
-      const draftColor = getMissionConfig().color || document.getElementById('edenPathColor')?.value || '#f97316';
-      drawRoutedPath(preview.path, draftColor, 'Draft', preview.distance, { dashed: true, arrows: true });
+      const draftColor =
+        getMissionConfig().color || document.getElementById('edenPathColor')?.value || '#f97316';
+      drawRoutedPath(preview.path, draftColor, edenMapText('draft'), preview.distance, {
+        dashed: true,
+        arrows: true,
+      });
     } else if (pathDraft.length === 1) {
       const p = iso(pathDraft[0].x, pathDraft[0].y);
       ctx.beginPath();
@@ -1295,52 +1447,54 @@ export function initEdenMapPlanner() {
 
   function drawPlanningTargets() {
     if (!layers.targets) return;
-    (plan.customTargets || []).filter((t) => pointInCurrentSector(t.x, t.y)).forEach(t => {
-      const p = iso(t.x, t.y);
-      const color = t.color || '#ef4444';
-      const teamLabel = formatTargetTeamLabel(t);
-      const title = targetDisplayLabel(t);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
-      ctx.fillStyle = `${color}55`;
-      ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fill();
-      if (t.time || teamLabel || title) {
-        const top = p.y - 20;
-        if (t.time) {
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = 'bold 10px Inter';
-          ctx.textAlign = 'center';
-          ctx.strokeStyle = 'rgba(2,6,23,0.86)';
-          ctx.lineWidth = 3;
-          ctx.strokeText(t.time, p.x, top);
-          ctx.fillText(t.time, p.x, top);
-        }
-        if (layers.labels || scale > 0.34) {
-          const meta = [teamLabel, title].filter(Boolean).join(' · ');
-          if (meta) {
-            ctx.fillStyle = color;
-            ctx.font = 'bold 8px Inter';
+    (plan.customTargets || [])
+      .filter((t) => pointInCurrentSector(t.x, t.y))
+      .forEach((t) => {
+        const p = iso(t.x, t.y);
+        const color = t.color || '#ef4444';
+        const teamLabel = formatTargetTeamLabel(t);
+        const title = getEdenPresetTargetDisplayLabel(t) || targetDisplayLabel(t);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = `${color}55`;
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fill();
+        if (t.time || teamLabel || title) {
+          const top = p.y - 20;
+          if (t.time) {
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 10px Inter';
             ctx.textAlign = 'center';
-            ctx.strokeStyle = 'rgba(2,6,23,0.88)';
+            ctx.strokeStyle = 'rgba(2,6,23,0.86)';
             ctx.lineWidth = 3;
-            ctx.strokeText(meta, p.x, top + 12);
-            ctx.fillText(meta, p.x, top + 12);
+            ctx.strokeText(t.time, p.x, top);
+            ctx.fillText(t.time, p.x, top);
           }
+          if (layers.labels || scale > 0.34) {
+            const meta = [teamLabel, title].filter(Boolean).join(' · ');
+            if (meta) {
+              ctx.fillStyle = color;
+              ctx.font = 'bold 8px Inter';
+              ctx.textAlign = 'center';
+              ctx.strokeStyle = 'rgba(2,6,23,0.88)';
+              ctx.lineWidth = 3;
+              ctx.strokeText(meta, p.x, top + 12);
+              ctx.fillText(meta, p.x, top + 12);
+            }
+          }
+        } else if (layers.labels && t.label) {
+          ctx.fillStyle = color;
+          ctx.font = 'bold 8px Inter';
+          ctx.textAlign = 'center';
+          ctx.fillText(getEdenPresetTargetDisplayLabel(t), p.x, p.y - 14);
         }
-      } else if (layers.labels && t.label) {
-        ctx.fillStyle = color;
-        ctx.font = 'bold 8px Inter';
-        ctx.textAlign = 'center';
-        ctx.fillText(t.label, p.x, p.y - 14);
-      }
-    });
+      });
   }
 
   function updateCoordHud() {
@@ -1351,18 +1505,19 @@ export function initEdenMapPlanner() {
     if (!hud) return;
     if (!hoverWorld) {
       if (!hud.classList.contains('hidden')) hud.classList.add('hidden');
-      if (hoverPanel && !hoverPanel.classList.contains('hidden')) hoverPanel.classList.add('hidden');
+      if (hoverPanel && !hoverPanel.classList.contains('hidden'))
+        hoverPanel.classList.add('hidden');
       lastHudText = '';
       lastHoverPanelText = '';
       lastRouteKey = '';
       return;
     }
     const terrain = getTerrainAt(hoverWorld.x, hoverWorld.y);
-    const terrainLabel = terrain.charAt(0).toUpperCase() + terrain.slice(1);
+    const terrainLabel = getEdenTerrainDisplayLabel(terrain);
     let text = `X:${hoverWorld.x} Y:${hoverWorld.y} | ${terrainLabel}`;
     if (hoverStruct) {
       const meta = STRUCTURE_TYPES[hoverStruct.type];
-      text = `X:${hoverStruct.x} Y:${hoverStruct.y} | ${terrainLabel} | Zone: ${hoverStruct.zone} | ${getStructureLabel(hoverStruct.type)} · ${meta?.points || 0} OV`;
+      text = `X:${hoverStruct.x} Y:${hoverStruct.y} | ${terrainLabel} | ${edenMapText('zone')}: ${hoverStruct.zone} | ${getEdenStructureDisplayLabel(hoverStruct.type)} · ${meta?.points || 0} ${edenMapText('ov')}`;
     }
     if (text !== lastHudText) {
       hud.textContent = text;
@@ -1372,8 +1527,8 @@ export function initEdenMapPlanner() {
 
     if (hoverPanel) {
       if (hoverStruct) {
-        let extra = `${getStructureLabel(hoverStruct.type)} · ${hoverStruct.zone} · ${hoverStruct.x}:${hoverStruct.y}`;
-        const sel = structures().find(s => s.id === selectedId);
+        let extra = `${getEdenStructureDisplayLabel(hoverStruct.type)} · ${hoverStruct.zone} · ${hoverStruct.x}:${hoverStruct.y}`;
+        const sel = structures().find((s) => s.id === selectedId);
         if (sel && sel.id !== hoverStruct.id) {
           const routeKey = `${sel.id}|${hoverStruct.id}`;
           if (routeKey !== lastRouteKey) {
@@ -1381,7 +1536,7 @@ export function initEdenMapPlanner() {
             lastRouteDistance = route.distance;
             lastRouteKey = routeKey;
           }
-          extra += ` · ${lastRouteDistance} tiles from selected`;
+          extra += ` · ${edenMapText('tilesFromSelected', { distance: lastRouteDistance })}`;
         }
         if (extra !== lastHoverPanelText) {
           hoverPanel.textContent = extra;
@@ -1405,10 +1560,10 @@ export function initEdenMapPlanner() {
       screenToWorld(canvas.width / dpr, canvas.height / dpr),
     ];
     return {
-      minX: Math.min(...corners.map(c => c.x)),
-      maxX: Math.max(...corners.map(c => c.x)),
-      minY: Math.min(...corners.map(c => c.y)),
-      maxY: Math.max(...corners.map(c => c.y)),
+      minX: Math.min(...corners.map((c) => c.x)),
+      maxX: Math.max(...corners.map((c) => c.x)),
+      minY: Math.min(...corners.map((c) => c.y)),
+      maxY: Math.max(...corners.map((c) => c.y)),
     };
   }
 
@@ -1421,7 +1576,7 @@ export function initEdenMapPlanner() {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = (isSectorSheetView() || isolated) ? '#0c0a08' : '#1a140c';
+    ctx.fillStyle = isSectorSheetView() || isolated ? '#0c0a08' : '#1a140c';
     ctx.fillRect(0, 0, w, h);
 
     const fastMode = interacting || panning;
@@ -1430,9 +1585,9 @@ export function initEdenMapPlanner() {
         drawSectorSheetFlat(ctx, w, h, sectorKey, refOpacity, { scale, offsetX, offsetY });
       }
       onRedrawExtra?.();
-      document.getElementById('edenZoomLevel')?.replaceChildren(
-        document.createTextNode(`${Math.round(scale * 100)}%`)
-      );
+      document
+        .getElementById('edenZoomLevel')
+        ?.replaceChildren(document.createTextNode(`${Math.round(scale * 100)}%`));
       return;
     }
 
@@ -1443,9 +1598,17 @@ export function initEdenMapPlanner() {
     }
 
     let liveReferenceDrew = false;
-    if (layers.reference && EDEN_MAP_CONFIG.liveMapEnabled && _edenLiveMapApi?.isEdenLiveMapReady?.()) {
+    if (
+      layers.reference &&
+      EDEN_MAP_CONFIG.liveMapEnabled &&
+      _edenLiveMapApi?.isEdenLiveMapReady?.()
+    ) {
       liveReferenceDrew = _edenLiveMapApi.drawEdenLiveMapLayer(
-        ctx, (x, y) => iso(x, y), scale, getViewBounds(), refOpacity,
+        ctx,
+        (x, y) => iso(x, y),
+        scale,
+        getViewBounds(),
+        refOpacity
       );
     }
 
@@ -1472,10 +1635,12 @@ export function initEdenMapPlanner() {
       maskReferenceCapitals(ctx, iso, capitals, scale);
     }
     if (layers.heatmap && !fastMode) {
-      const heatStructs = structures().filter(structureVisible).map(s => ({
-        ...s,
-        points: getStructurePoints(s),
-      }));
+      const heatStructs = structures()
+        .filter(structureVisible)
+        .map((s) => ({
+          ...s,
+          points: getStructurePoints(s),
+        }));
       drawHeatmap(ctx, iso, heatStructs, scale);
     }
     if (layers.fog && !fastMode) drawFogOfWar(ctx, iso, plan.explored || {}, sectorKey);
@@ -1494,9 +1659,9 @@ export function initEdenMapPlanner() {
 
     onRedrawExtra?.();
 
-    document.getElementById('edenZoomLevel')?.replaceChildren(
-      document.createTextNode(`${Math.round(scale * 100)}%`)
-    );
+    document
+      .getElementById('edenZoomLevel')
+      ?.replaceChildren(document.createTextNode(`${Math.round(scale * 100)}%`));
   }
 
   function scheduleDraw(opts = {}) {
@@ -1539,11 +1704,14 @@ export function initEdenMapPlanner() {
     let best = null;
     let bestD = Infinity;
     const hitRadius = Math.max(14, 22 * scale) * radiusMul;
-    structures().forEach(s => {
+    structures().forEach((s) => {
       if (!shouldDrawStructure(s) && radiusMul <= 1) return;
       const p = iso(s.x, s.y);
       const d = Math.hypot(mx - p.x, my - p.y);
-      if (d < hitRadius && d < bestD) { bestD = d; best = s; }
+      if (d < hitRadius && d < bestD) {
+        bestD = d;
+        best = s;
+      }
     });
     return best;
   }
@@ -1593,7 +1761,8 @@ export function initEdenMapPlanner() {
     const pt = snapPoint(mx, my);
     if (!routeStart) {
       routeStart = { x: pt.x, y: pt.y };
-      if (typeof window.showToast === 'function') window.showToast(edenT('edenRouteStartToast'), 'info', 2000);
+      if (typeof window.showToast === 'function')
+        window.showToast(edenT('edenRouteStartToast'), 'info', 2000);
       draw();
       return;
     }
@@ -1603,7 +1772,8 @@ export function initEdenMapPlanner() {
     const color = mission.color || document.getElementById('edenPathColor')?.value || '#3b82f6';
     plan.paths = plan.paths || [];
     plan.paths.push({
-      label: document.getElementById('edenPathLabel')?.value?.trim() || `Route ${plan.paths.length + 1}`,
+      label:
+        document.getElementById('edenPathLabel')?.value?.trim() || `Route ${plan.paths.length + 1}`,
       points: [routeStart, routeEnd],
       routedPath: routed.path,
       distance: routed.distance,
@@ -1619,13 +1789,16 @@ export function initEdenMapPlanner() {
     savePlan();
     draw();
     if (typeof window.showToast === 'function') {
-      window.showToast(edenT('edenRoutePlannedToast').replace('{distance}', String(routed.distance)), 'success');
+      window.showToast(
+        edenT('edenRoutePlannedToast').replace('{distance}', String(routed.distance)),
+        'success'
+      );
     }
   }
 
   function jumpToTemple() {
     setSector('C');
-    const temple = structures().find(s => TEMPLE_TYPES.has(s.type));
+    const temple = structures().find((s) => TEMPLE_TYPES.has(s.type));
     if (temple) {
       selectedId = temple.id;
       zoomToStructure(temple);
@@ -1640,20 +1813,18 @@ export function initEdenMapPlanner() {
   function switchSectorForNav(key) {
     sectorKey = key;
     markSectorExplored(key);
-    pathDraft = []; toolbarState.pathDraft = pathDraft;
+    pathDraft = [];
+    toolbarState.pathDraft = pathDraft;
     sidebarState.filtersPopulatedFor = null;
     const sel = document.getElementById('edenSectorSelect');
     if (sel) sel.value = key;
-    document.querySelectorAll('[data-eden-sector]').forEach(btn => {
+    document.querySelectorAll('[data-eden-sector]').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.edenSector === key);
     });
   }
 
   function goToCoords(x, y) {
-    if (
-      x < MAP_BOUNDS.minX || x > MAP_BOUNDS.maxX
-      || y < MAP_BOUNDS.minY || y > MAP_BOUNDS.maxY
-    ) {
+    if (x < MAP_BOUNDS.minX || x > MAP_BOUNDS.maxX || y < MAP_BOUNDS.minY || y > MAP_BOUNDS.maxY) {
       if (typeof window.showToast === 'function') {
         window.showToast(edenT('edenCoordInvalid'), 'error', 3500);
       }
@@ -1675,11 +1846,11 @@ export function initEdenMapPlanner() {
       if (typeof window.showToast === 'function') {
         window.showToast(
           edenT('edenCoordFoundStruct')
-            .replace('{name}', getStructureLabel(struct.type))
+            .replace('{name}', getEdenStructureDisplayLabel(struct.type))
             .replace('{x}', String(struct.x))
             .replace('{y}', String(struct.y)),
           'success',
-          3000,
+          3000
         );
       }
       coordSearchPin = null;
@@ -1695,16 +1866,20 @@ export function initEdenMapPlanner() {
       };
       animateCamera(
         () => ({ offsetX, offsetY, scale }),
-        (cam) => { offsetX = cam.offsetX; offsetY = cam.offsetY; scale = cam.scale; },
+        (cam) => {
+          offsetX = cam.offsetX;
+          offsetY = cam.offsetY;
+          scale = cam.scale;
+        },
         target,
-        () => scheduleDraw({ sidebar: false }),
+        () => scheduleDraw({ sidebar: false })
       );
       coordSearchPin = { x, y, until: Date.now() + 5000 };
       if (typeof window.showToast === 'function') {
         window.showToast(
           edenT('edenCoordJumped').replace('{x}', String(x)).replace('{y}', String(y)),
           'info',
-          2500,
+          2500
         );
       }
     }
@@ -1734,8 +1909,15 @@ export function initEdenMapPlanner() {
 
   function renderSidebar() {
     renderSidebarModule({
-      plan, selectedId, tool, measureA, measureB,
-      sectorKey, viewMode, listSort, factionFilter,
+      plan,
+      selectedId,
+      tool,
+      measureA,
+      measureB,
+      sectorKey,
+      viewMode,
+      listSort,
+      factionFilter,
       filtersPopulatedFor: sidebarState,
       onSyncTeamPlanUi: syncTeamPlanUi,
     });
@@ -1802,14 +1984,22 @@ export function initEdenMapPlanner() {
   function setSector(key, smooth = false) {
     if (key !== 'FULL' && !isEdenSectorKey(key)) {
       if (typeof window.showToast === 'function') {
-        window.showToast(edenT('edenSectorUnavailableToast').replace('{sector}', key), 'error', 2800);
+        window.showToast(
+          edenT('edenSectorUnavailableToast').replace('{sector}', key),
+          'error',
+          2800
+        );
       }
       return;
     }
     const wonderIds = getSectorTileIds();
     if (key !== 'FULL' && wonderIds.length && !wonderIds.includes(key)) {
       if (typeof window.showToast === 'function') {
-        window.showToast(edenT('edenSectorReferenceMissingToast').replace('{sector}', key), 'error', 2800);
+        window.showToast(
+          edenT('edenSectorReferenceMissingToast').replace('{sector}', key),
+          'error',
+          2800
+        );
       }
       return;
     }
@@ -1823,11 +2013,12 @@ export function initEdenMapPlanner() {
     markSectorExplored(key);
     selectedId = null;
     notifySelection();
-    pathDraft = []; toolbarState.pathDraft = pathDraft;
+    pathDraft = [];
+    toolbarState.pathDraft = pathDraft;
     sidebarState.filtersPopulatedFor = null;
     const sectorSel = document.getElementById('edenSectorSelect');
     if (sectorSel && sectorSel.value !== key) sectorSel.value = key;
-    document.querySelectorAll('[data-eden-sector]').forEach(btn => {
+    document.querySelectorAll('[data-eden-sector]').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.edenSector === key);
     });
     syncIsolateUi();
@@ -1886,19 +2077,31 @@ export function initEdenMapPlanner() {
       },
       getViewMode: () => viewMode,
       getScoutActive: () => scoutActive,
-      setScoutActive: (val) => { scoutActive = val; },
-      clearRoute: () => { routeStart = routeEnd = null; },
+      setScoutActive: (val) => {
+        scoutActive = val;
+      },
+      clearRoute: () => {
+        routeStart = routeEnd = null;
+      },
       getPlansStore: () => plansStore,
       getActivePlanId: () => activePlanId,
-      setActivePlanId: (id) => { activePlanId = id; },
+      setActivePlanId: (id) => {
+        activePlanId = id;
+      },
       getSectorKey: () => sectorKey,
-      replacePlan: (p) => { plan = p; toolbarState.plan = plan; },
+      replacePlan: (p) => {
+        plan = p;
+        toolbarState.plan = plan;
+      },
       createMissionPayload,
       startScoutSync,
       stopScoutSync,
       pullScoutIntel,
       pushScoutIntel,
-      mergeScoutIntel: (intel) => { plan = mergeScoutIntel(plan, intel); toolbarState.plan = plan; },
+      mergeScoutIntel: (intel) => {
+        plan = mergeScoutIntel(plan, intel);
+        toolbarState.plan = plan;
+      },
       exportMapAsPng,
       flushSavePlan,
       isSectorIsolated,
@@ -1928,8 +2131,16 @@ export function initEdenMapPlanner() {
           draw();
           return;
         }
-        if (pathDraft.length) { pathDraft.pop(); draw(); return; }
-        if (plan.paths?.length) { plan.paths.pop(); savePlan(); draw(); }
+        if (pathDraft.length) {
+          pathDraft.pop();
+          draw();
+          return;
+        }
+        if (plan.paths?.length) {
+          plan.paths.pop();
+          savePlan();
+          draw();
+        }
       },
     });
   }
@@ -1943,7 +2154,7 @@ export function initEdenMapPlanner() {
     const row = e.target.closest('.eden-struct-row');
     if (row) {
       selectedId = row.dataset.id;
-      const s = structures().find(st => st.id === selectedId);
+      const s = structures().find((st) => st.id === selectedId);
       if (s) centerOn(s.x, s.y);
       notifySelection();
       draw();
@@ -1955,24 +2166,24 @@ export function initEdenMapPlanner() {
       return;
     }
     if (e.target.closest('#edenCenterBtn')) {
-      const s = structures().find(st => st.id === selectedId);
+      const s = structures().find((st) => st.id === selectedId);
       if (s) centerOn(s.x, s.y, true);
       draw();
       return;
     }
     if (e.target.closest('#edenZoomStructBtn')) {
-      const s = structures().find(st => st.id === selectedId);
+      const s = structures().find((st) => st.id === selectedId);
       if (s) zoomToStructure(s);
       return;
     }
     if (e.target.closest('#edenComboLinkBtn')) {
-      const s = structures().find(st => st.id === selectedId);
+      const s = structures().find((st) => st.id === selectedId);
       document.getElementById('tabGenerator')?.click();
       if (typeof window.showToast === 'function' && s) {
         window.showToast(
           edenT('edenComboPlannerToast')
             .replace('{zone}', s.zone)
-            .replace('{type}', getStructureLabel(s.type)),
+            .replace('{type}', getEdenStructureDisplayLabel(s.type)),
           'info',
           4000
         );
@@ -1980,8 +2191,8 @@ export function initEdenMapPlanner() {
       return;
     }
     if (e.target.closest('#edenLoyaltyLinkBtn')) {
-      const s = structures().find(st => st.id === selectedId);
-      openLoyaltyFromEden(s ? { zone: s.zone, name: getStructureLabel(s.type) } : null);
+      const s = structures().find((st) => st.id === selectedId);
+      openLoyaltyFromEden(s ? { zone: s.zone, name: getEdenStructureDisplayLabel(s.type) } : null);
       return;
     }
     if (e.target.closest('#edenToggleTargetBtn')) {
@@ -2003,9 +2214,13 @@ export function initEdenMapPlanner() {
     if (e.target.closest('#edenCopyCoordsBtn')) {
       const btn = e.target.closest('#edenCopyCoordsBtn');
       const text = btn?.dataset.coords || '';
-      navigator.clipboard?.writeText(text).then(() => {
-        if (typeof window.showToast === 'function') window.showToast(edenT('edenCopiedToast').replace('{text}', text), 'success');
-      }).catch(() => {});
+      navigator.clipboard
+        ?.writeText(text)
+        .then(() => {
+          if (typeof window.showToast === 'function')
+            window.showToast(edenT('edenCopiedToast').replace('{text}', text), 'success');
+        })
+        .catch(() => {});
     }
   });
 
@@ -2043,21 +2258,29 @@ export function initEdenMapPlanner() {
     }
   });
 
-  sidebar.addEventListener('blur', (e) => {
-    if (e.target.id === 'edenTeamTime' && selectedId) {
-      setStructTeamMeta(plan, selectedId, { gameTime: e.target.value.trim() });
-      savePlan();
-      draw();
-    }
-  }, true);
+  sidebar.addEventListener(
+    'blur',
+    (e) => {
+      if (e.target.id === 'edenTeamTime' && selectedId) {
+        setStructTeamMeta(plan, selectedId, { gameTime: e.target.value.trim() });
+        savePlan();
+        draw();
+      }
+    },
+    true
+  );
 
-  canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const { mx, my } = canvasPointer(e);
-    const factor = e.deltaY > 0 ? 0.92 : 1.09;
-    zoomAt(mx, my, scale * factor);
-  }, { passive: false });
+  canvas.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const { mx, my } = canvasPointer(e);
+      const factor = e.deltaY > 0 ? 0.92 : 1.09;
+      zoomAt(mx, my, scale * factor);
+    },
+    { passive: false }
+  );
 
   canvas.addEventListener('pointerdown', (e) => {
     canvas.setPointerCapture(e.pointerId);
@@ -2077,7 +2300,11 @@ export function initEdenMapPlanner() {
       return;
     }
 
-    if (isSectorSheetView() && !['target', 'path', 'measure', 'draw'].includes(tool) && viewMode !== 'route') {
+    if (
+      isSectorSheetView() &&
+      !['target', 'path', 'measure', 'draw'].includes(tool) &&
+      viewMode !== 'route'
+    ) {
       panning = true;
       markInteracting();
       canvas.style.cursor = 'grabbing';
@@ -2095,7 +2322,10 @@ export function initEdenMapPlanner() {
       const pt = snapPoint(mx, my);
       if (!measureA) measureA = { x: pt.x, y: pt.y };
       else if (!measureB) measureB = { x: pt.x, y: pt.y };
-      else { measureA = { x: pt.x, y: pt.y }; measureB = null; }
+      else {
+        measureA = { x: pt.x, y: pt.y };
+        measureB = null;
+      }
       draw();
       return;
     }
@@ -2123,7 +2353,10 @@ export function initEdenMapPlanner() {
       const pt = snapPoint(mx, my);
       if (!measureA) measureA = { x: pt.x, y: pt.y };
       else if (!measureB) measureB = { x: pt.x, y: pt.y };
-      else { measureA = { x: pt.x, y: pt.y }; measureB = null; }
+      else {
+        measureA = { x: pt.x, y: pt.y };
+        measureB = null;
+      }
       draw();
       return;
     }
@@ -2162,7 +2395,11 @@ export function initEdenMapPlanner() {
     const my = e.clientY - rect.top;
 
     if (isSectorSheetView()) {
-      if (pendingTargetPlacement && !panning && Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX) {
+      if (
+        pendingTargetPlacement &&
+        !panning &&
+        Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX
+      ) {
         pendingTargetPlacement = null;
         snapPreview = null;
         dragMoved = true;
@@ -2184,7 +2421,11 @@ export function initEdenMapPlanner() {
       return;
     }
 
-    if (pendingTargetPlacement && !panning && Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX) {
+    if (
+      pendingTargetPlacement &&
+      !panning &&
+      Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX
+    ) {
       pendingTargetPlacement = null;
       snapPreview = null;
       dragMoved = true;
@@ -2193,7 +2434,11 @@ export function initEdenMapPlanner() {
       canvas.style.cursor = 'grabbing';
     }
 
-    if (pointerDownHit && !panning && Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX) {
+    if (
+      pointerDownHit &&
+      !panning &&
+      Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX
+    ) {
       pointerDownHit = null;
       panning = true;
       dragMoved = true;
@@ -2237,7 +2482,7 @@ export function initEdenMapPlanner() {
     const nextPathHit = (plan.paths || []).length
       ? hitTestPath(mx, my, plan.paths, (x, y) => iso(x, y), 14)
       : null;
-    const pathHoverChanged = (hoverPathHit?.pathIdx !== nextPathHit?.pathIdx);
+    const pathHoverChanged = hoverPathHit?.pathIdx !== nextPathHit?.pathIdx;
     hoverPathHit = nextPathHit;
 
     const nextHover = hitTest(mx, my);
@@ -2247,11 +2492,12 @@ export function initEdenMapPlanner() {
 
     const pathMode = tool === 'path' || e.shiftKey;
     const targetMode = tool === 'target';
-    const snap = pathMode || targetMode
-      ? snapPoint(mx, my, targetMode ? TARGET_STRUCTURE_SNAP_RADIUS_MUL : 1.85)
-      : null;
+    const snap =
+      pathMode || targetMode
+        ? snapPoint(mx, my, targetMode ? TARGET_STRUCTURE_SNAP_RADIUS_MUL : 1.85)
+        : null;
     const nextSnap = snap?.struct ? { x: snap.x, y: snap.y } : null;
-    const snapChanged = (snapPreview?.x !== nextSnap?.x || snapPreview?.y !== nextSnap?.y);
+    const snapChanged = snapPreview?.x !== nextSnap?.x || snapPreview?.y !== nextSnap?.y;
     snapPreview = nextSnap;
 
     updateCoordHud();
@@ -2283,11 +2529,12 @@ export function initEdenMapPlanner() {
     }
     const wasPanning = panning;
     const hadSnapPreview = Boolean(snapPreview);
-    const shouldPlaceTarget = tool === 'target'
-      && pendingTargetPlacement
-      && !wasPanning
-      && !dragMoved
-      && Math.hypot(mx - pointerStart.x, my - pointerStart.y) <= POINTER_DRAG_THRESHOLD_PX;
+    const shouldPlaceTarget =
+      tool === 'target' &&
+      pendingTargetPlacement &&
+      !wasPanning &&
+      !dragMoved &&
+      Math.hypot(mx - pointerStart.x, my - pointerStart.y) <= POINTER_DRAG_THRESHOLD_PX;
     panning = false;
     if (shouldPlaceTarget) {
       snapPreview = null;
@@ -2354,7 +2601,7 @@ export function initEdenMapPlanner() {
     sidebarRefreshTimer = setTimeout(refreshSidebar, 120);
   };
 
-  ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch', 'edenTeamFilter'].forEach(id => {
+  ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch', 'edenTeamFilter'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input', debouncedRefreshSidebar);
@@ -2369,12 +2616,25 @@ export function initEdenMapPlanner() {
     }
   }
   if (ownFilterEl) {
-    ownFilterEl.addEventListener('change', () => { syncOwnershipDot(); draw(); });
-    ownFilterEl.addEventListener('input', () => { syncOwnershipDot(); draw(); });
+    ownFilterEl.addEventListener('change', () => {
+      syncOwnershipDot();
+      draw();
+    });
+    ownFilterEl.addEventListener('input', () => {
+      syncOwnershipDot();
+      draw();
+    });
     syncOwnershipDot();
   }
 
-  mountGameClock(document.getElementById('edenGameClock'), { showUae: false });
+  const mountLocalizedGameClock = () => {
+    mountGameClock(document.getElementById('edenGameClock'), {
+      showUae: false,
+      dayLabel: edenMapText('day'),
+      uaeLabel: 'UAE',
+    });
+  };
+  mountLocalizedGameClock();
   initEdenControlTips();
   bindToolbar();
   syncToolButtons();
@@ -2413,9 +2673,18 @@ export function initEdenMapPlanner() {
     jumpToTemple,
     zoomIn: () => zoomStep(1),
     zoomOut: () => zoomStep(-1),
-    clearMeasure: () => { measureA = measureB = null; draw(); },
-    clearSelection: () => { selectedId = null; draw(); },
-    undoPathPoint: () => { pathDraft.pop(); draw(); },
+    clearMeasure: () => {
+      measureA = measureB = null;
+      draw();
+    },
+    clearSelection: () => {
+      selectedId = null;
+      draw();
+    },
+    undoPathPoint: () => {
+      pathDraft.pop();
+      draw();
+    },
     deleteSelectedPath: () => {
       if (selectedPathIdx != null && plan.paths?.[selectedPathIdx]) {
         plan.paths.splice(selectedPathIdx, 1);
@@ -2424,7 +2693,11 @@ export function initEdenMapPlanner() {
         draw();
         return;
       }
-      if (pathDraft.length) { pathDraft.pop(); draw(); return; }
+      if (pathDraft.length) {
+        pathDraft.pop();
+        draw();
+        return;
+      }
       if ((plan.paths || []).length) {
         plan.paths.pop();
         savePlan();
@@ -2435,51 +2708,71 @@ export function initEdenMapPlanner() {
       Object.assign(layers, {
         strategyFloor: true,
         reference: false,
-        terrain: false, structures: false, paths: true, targets: true,
+        terrain: false,
+        structures: false,
+        paths: true,
+        targets: true,
         teams: isTeamPlanEnabled(plan),
-        labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
+        labels: false,
+        zones: false,
+        fog: false,
+        heatmap: false,
+        territory: false,
+        sectorTiles: false,
       });
-      document.querySelectorAll('[data-eden-layer]').forEach(btn => {
+      document.querySelectorAll('[data-eden-layer]').forEach((btn) => {
         btn.classList.toggle('active', layers[btn.dataset.edenLayer]);
       });
       draw();
     },
-    onRedraw: (fn) => { onRedrawExtra = fn; },
-    onSelectionChange: (fn) => { onSelectionChange = fn; },
+    onRedraw: (fn) => {
+      onRedrawExtra = fn;
+    },
+    onSelectionChange: (fn) => {
+      onSelectionChange = fn;
+    },
   });
   syncQuickJump = ui?.syncQuickJump || (() => {});
 
   let touchPinch = null;
-  canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
+  canvas.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const a = e.touches[0];
+        const b = e.touches[1];
+        const rect = canvas.getBoundingClientRect();
+        touchPinch = {
+          dist: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY),
+          mx: (a.clientX + b.clientX) / 2 - rect.left,
+          my: (a.clientY + b.clientY) / 2 - rect.top,
+          scale0: scale,
+        };
+        markInteracting();
+      }
+    },
+    { passive: false }
+  );
+
+  canvas.addEventListener(
+    'touchmove',
+    (e) => {
+      if (!touchPinch || e.touches.length < 2) return;
       e.preventDefault();
       const a = e.touches[0];
       const b = e.touches[1];
-      const rect = canvas.getBoundingClientRect();
-      touchPinch = {
-        dist: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY),
-        mx: (a.clientX + b.clientX) / 2 - rect.left,
-        my: (a.clientY + b.clientY) / 2 - rect.top,
-        scale0: scale,
-      };
-      markInteracting();
-    }
-  }, { passive: false });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (!touchPinch || e.touches.length < 2) return;
-    e.preventDefault();
-    const a = e.touches[0];
-    const b = e.touches[1];
-    const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-    const factor = dist / touchPinch.dist;
-    const rect = getCanvasRect();
-    const mx = (a.clientX + b.clientX) / 2 - rect.left;
-    const my = (a.clientY + b.clientY) / 2 - rect.top;
-    zoomAt(mx, my, touchPinch.scale0 * factor);
-    touchPinch.mx = mx;
-    touchPinch.my = my;
-  }, { passive: false });
+      const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+      const factor = dist / touchPinch.dist;
+      const rect = getCanvasRect();
+      const mx = (a.clientX + b.clientX) / 2 - rect.left;
+      const my = (a.clientY + b.clientY) / 2 - rect.top;
+      zoomAt(mx, my, touchPinch.scale0 * factor);
+      touchPinch.mx = mx;
+      touchPinch.my = my;
+    },
+    { passive: false }
+  );
 
   canvas.addEventListener('touchend', () => {
     if (touchPinch) {
@@ -2490,7 +2783,10 @@ export function initEdenMapPlanner() {
 
   initEdenSeasonPicker({
     onDatasetApplied: () => {
-      syncEdenSectorSelect(null, { fullLabel: edenT('edenSectorFull') });
+      syncEdenSectorSelect(null, {
+        fullLabel: edenT('edenSectorFull'),
+        getSectorLabel: (key, label) => getEdenSectorDisplayLabel(key, label),
+      });
       if (sectorKey !== 'FULL' && !getEdenSectors()[sectorKey]) {
         sectorIsolate = false;
         switchSectorForNav('FULL');
@@ -2506,14 +2802,38 @@ export function initEdenMapPlanner() {
     },
   });
 
-  window.addEventListener('edenLanguageUpdate', () => {
-    syncEdenSectorSelect(null, { fullLabel: edenT('edenSectorFull') });
+  refreshEdenMapLanguage = async () => {
+    const requestId = ++edenMapLanguageGeneration;
+    await loadEdenMapLocale();
+    if (requestId !== edenMapLanguageGeneration) return false;
+    applyEdenMapDomTranslations(root);
+    mountLocalizedGameClock();
+    syncEdenSectorSelect(null, {
+      fullLabel: edenT('edenSectorFull'),
+      getSectorLabel: (key, label) => getEdenSectorDisplayLabel(key, label),
+    });
+    syncWonderSectorSelect();
+    syncPlanSelector();
+    syncFullscreenState();
+    syncMissionControls();
+    syncQuickJump(sectorKey);
+    syncOfflineStatus();
+    syncIsolateUi();
+    updateCoordHud();
     populateFilters(true);
     renderSidebar();
-  });
+    draw();
+    return true;
+  };
 
   window.addEventListener('resize', debouncedResize);
-  window.addEventListener('scroll', () => { cachedCanvasRect = null; }, { passive: true, capture: true });
+  window.addEventListener(
+    'scroll',
+    () => {
+      cachedCanvasRect = null;
+    },
+    { passive: true, capture: true }
+  );
   document.addEventListener('fullscreenchange', syncFullscreenState);
   applyTeamPlanLayerState();
   syncIsolateUi();
@@ -2529,6 +2849,8 @@ export async function bootEdenMapPlanner() {
     return;
   }
 
+  await refreshEdenMapLanguage();
+
   try {
     await ensureEdenDatasetsLoaded();
   } catch (error) {
@@ -2543,5 +2865,6 @@ export async function bootEdenMapPlanner() {
   }
 
   initEdenMapPlanner();
+  await refreshEdenMapLanguage();
 }
 import '../css/secondary-tools-v14.css';

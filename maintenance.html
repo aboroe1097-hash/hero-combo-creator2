@@ -10,7 +10,14 @@
     <style>
       :root {
         color-scheme: dark;
-        font-family: Sora, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family:
+          Sora,
+          Inter,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
         background: #080d18;
         color: #f6f8ff;
       }
@@ -33,7 +40,7 @@
       }
 
       body::before {
-        content: "";
+        content: '';
         position: fixed;
         inset: 0;
         pointer-events: none;
@@ -146,11 +153,15 @@
       .version {
         margin: 28px 0 0;
         color: #7f8aa4;
-        font: 600 0.72rem/1.4 "JetBrains Mono", ui-monospace, monospace;
+        font:
+          600 0.72rem/1.4 'JetBrains Mono',
+          ui-monospace,
+          monospace;
       }
 
       @keyframes maintenance-velo-patrol {
-        0%, 4% {
+        0%,
+        4% {
           left: 0;
           transform: scaleX(1);
         }
@@ -202,8 +213,8 @@
     <main aria-labelledby="maintenanceTitle" aria-describedby="maintenanceMessage">
       <img src="images/logo-120.webp" alt="" width="92" height="92" />
       <p class="kicker">VTS 1097 TOOLKIT</p>
-      <h1 id="maintenanceTitle">Maintenance Mode</h1>
-      <p id="maintenanceMessage" class="message">
+      <h1 id="maintenanceTitle" data-vts-standalone-copy="title">Maintenance Mode</h1>
+      <p id="maintenanceMessage" class="message" data-vts-standalone-copy="message">
         We are making a few improvements. Please check back soon.
       </p>
       <div class="status-block">
@@ -225,9 +236,10 @@
             />
           </span>
         </div>
-        <p class="status" role="status">Work in progress</p>
+        <p class="status" role="status" data-vts-standalone-copy="status">Work in progress</p>
       </div>
-      <p class="version">v14.0.11</p>
+      <p class="version">v14.0.12</p>
     </main>
+    <script src="js/i18n/standalone-copy.js" data-vts-standalone-page="maintenance"></script>
   </body>
 </html>

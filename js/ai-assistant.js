@@ -2,6 +2,7 @@ import '../css/ai-assistant.css';
 
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
+import { runtimeMiscT } from './i18n/runtime-misc.js';
 import {
   AI_LIMITS,
   AI_SUPPORTED_LOCALES,
@@ -234,6 +235,7 @@ class AiAssistantController {
     this.activeAbort = null;
     this.activeStopCode = '';
     this.activeToolResults = [];
+    this.currentStatus = null;
     this.lastFocused = null;
     this.pendingPrompt = null;
     this.pendingConsentCategory = '';
@@ -404,6 +406,7 @@ class AiAssistantController {
     this.elements.mode.textContent = this.grants.size
       ? translate('ai.personalMode', FALLBACKS['ai.personalMode'])
       : translate('ai.generalMode', FALLBACKS['ai.generalMode']);
+    this.renderCurrentStatus();
     this.renderTranscript();
   }
 
@@ -459,12 +462,24 @@ class AiAssistantController {
   }
 
   setStatus(keyOrStage, variables = {}) {
+    if (!keyOrStage) {
+      this.clearStatus();
+      return;
+    }
+    this.currentStatus = { keyOrStage, variables: { ...variables } };
+    this.renderCurrentStatus();
+  }
+
+  renderCurrentStatus() {
+    if (!this.currentStatus) return;
+    const { keyOrStage, variables } = this.currentStatus;
     const key = STATUS_KEYS[keyOrStage] || `ai.status.${keyOrStage}`;
     const fallback = FALLBACKS[key] || String(keyOrStage).replaceAll('_', ' ');
     this.elements.status.textContent = translate(key, fallback, variables);
   }
 
   clearStatus() {
+    this.currentStatus = null;
     this.elements.status.textContent = '';
   }
 
@@ -961,7 +976,7 @@ class AiAssistantController {
     const key = ERROR_KEY_BY_CODE[normalized] || 'ai.error.generic';
     let body = translate(key, FALLBACKS[key] || FALLBACKS['ai.error.generic']);
     if (retryAfter)
-      body += ` ${translate('ai.error.retryAfter', 'Retry after {time}.', { time: retryAfter })}`;
+      body += ` ${runtimeMiscT(currentLanguage, 'aiRetryAfter', { time: retryAfter })}`;
     this.elements.errorBody.textContent = body;
     this.elements.error.classList.remove('hidden');
     const retryable = RETRYABLE_CODES.has(normalized);

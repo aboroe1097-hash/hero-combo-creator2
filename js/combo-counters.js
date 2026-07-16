@@ -25,6 +25,21 @@ const DEFAULT_LABELS = {
   hide: 'Hide counters',
   noCounters: 'No known counters',
   useCounter: 'Use this counter',
+  why: 'Why',
+  rank: 'Rank #{rank}',
+  unranked: 'Unranked',
+  counterNumber: 'Counter {n}',
+  lineup: 'Counter lineup',
+  pathOne: '{n} known counter path',
+  pathMany: '{n} known counter paths',
+  pickHelp: 'Pick a listed lineup to replace the current generator selection.',
+  favoredHelp: 'These lineups are favored into the current combo.',
+  targetCombo: 'Target combo',
+  counter: 'Counter',
+  beats: 'beats',
+  target: 'Target',
+  localizeReason: (_id, fallback) => fallback,
+  localizeConfidence: (_id, fallback) => fallback,
 };
 
 let counterPanelSeq = 0;
@@ -51,7 +66,9 @@ export function getTopCounters(heroes, getComboRankInfo, limit = Infinity) {
     return {
       heroes: counter.heroes,
       reason: counter.reason,
+      reasonId: counter.reasonId,
       confidence: counter.confidence,
+      confidenceId: counter.confidenceId,
       rank: info?.rank ?? null,
       score: info?.score ?? null,
     };
@@ -60,16 +77,21 @@ export function getTopCounters(heroes, getComboRankInfo, limit = Infinity) {
 
 function renderHeroChips(heroes, getHeroImageUrl, variant = '') {
   const variantClass = variant ? ` counter-hero-chip--${variant}` : '';
-  return heroes.map((name) => `
+  return heroes
+    .map(
+      (name) => `
     <span class="counter-hero-chip${variantClass}" title="${escapeHtml(name)}">
       <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" class="counter-hero-chip-img" loading="lazy">
       <span class="counter-hero-chip-name">${escapeHtml(name)}</span>
-    </span>`).join('');
+    </span>`
+    )
+    .join('');
 }
 
-function renderCounterReason(reason) {
-  return reason
-    ? `<p class="counter-card-reason"><span>Why</span>${escapeHtml(reason)}</p>`
+function renderCounterReason(reason, reasonId, labels) {
+  const localized = labels.localizeReason?.(reasonId, reason) || reason;
+  return localized
+    ? `<p class="counter-card-reason"><span>${escapeHtml(labels.why)}</span>${escapeHtml(localized)}</p>`
     : '';
 }
 
@@ -80,34 +102,45 @@ function renderCounterUseButton(heroes, labels) {
 }
 
 function renderCounterCard(counter, index, getHeroImageUrl, labels, options = {}) {
-  const rankLabel = counter.rank ? `Rank #${counter.rank}` : 'Unranked';
+  const rankLabel = counter.rank
+    ? labels.rank.replace('{rank}', String(counter.rank))
+    : labels.unranked;
   const scoreLabel = counter.score ? `${labels.score} ${counter.score}` : '';
-  const confidenceHtml = counter.confidence
-    ? `<span class="counter-card-confidence">${escapeHtml(counter.confidence)}</span>`
+  const confidence =
+    labels.localizeConfidence?.(counter.confidenceId, counter.confidence) || counter.confidence;
+  const confidenceHtml = confidence
+    ? `<span class="counter-card-confidence">${escapeHtml(confidence)}</span>`
     : '';
   const actionHtml = options.showUseAction ? renderCounterUseButton(counter.heroes, labels) : '';
-  const reasonHtml = renderCounterReason(counter.reason);
-  const footerHtml = (reasonHtml || actionHtml)
-    ? `<div class="counter-card-foot">${reasonHtml}${actionHtml}</div>`
-    : '';
+  const reasonHtml = renderCounterReason(counter.reason, counter.reasonId, labels);
+  const footerHtml =
+    reasonHtml || actionHtml
+      ? `<div class="counter-card-foot">${reasonHtml}${actionHtml}</div>`
+      : '';
   const reasonClass = reasonHtml ? ' counter-card--has-reason' : '';
 
   return `<article class="counter-card counter-card--mini-combo${reasonClass}" style="--counter-delay:${index * 55}ms">
     <div class="counter-card-head">
-      <span class="counter-card-idx">Counter ${index + 1}</span>
+      <span class="counter-card-idx">${escapeHtml(labels.counterNumber.replace('{n}', String(index + 1)))}</span>
       <span class="counter-card-rank">${escapeHtml(rankLabel)}</span>
       ${scoreLabel ? `<span class="counter-card-score">${escapeHtml(scoreLabel)}</span>` : ''}
       ${confidenceHtml}
     </div>
     <div class="counter-lineup-block">
-      <span class="counter-lineup-label">Counter lineup</span>
+      <span class="counter-lineup-label">${escapeHtml(labels.lineup)}</span>
       <div class="counter-card-heroes">${renderHeroChips(counter.heroes, getHeroImageUrl, 'counter')}</div>
     </div>
     ${footerHtml}
   </article>`;
 }
 
-export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS, options = {}) {
+export function renderCountersInline(
+  heroes,
+  getComboRankInfo,
+  getHeroImageUrl,
+  labels = DEFAULT_LABELS,
+  options = {}
+) {
   const t = { ...DEFAULT_LABELS, ...labels };
   const counters = getTopCounters(heroes, getComboRankInfo, options.limit ?? Infinity);
   if (!counters.length) {
@@ -116,23 +149,27 @@ export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, 
       : '';
   }
 
-  const rows = counters.map((counter, i) =>
-    renderCounterCard(counter, i, getHeroImageUrl, t, options)
-  ).join('');
+  const rows = counters
+    .map((counter, i) => renderCounterCard(counter, i, getHeroImageUrl, t, options))
+    .join('');
 
-  const contextClass = options.context ? ` combo-counters-inline--${escapeHtml(options.context)}` : '';
-  const helperText = options.showUseAction
-    ? 'Pick a listed lineup to replace the current generator selection.'
-    : 'These lineups are favored into the current combo.';
+  const contextClass = options.context
+    ? ` combo-counters-inline--${escapeHtml(options.context)}`
+    : '';
+  const helperText = options.showUseAction ? t.pickHelp : t.favoredHelp;
+  const pathLabel = (counters.length === 1 ? t.pathOne : t.pathMany).replace(
+    '{n}',
+    String(counters.length)
+  );
   return `<div class="combo-counters-inline${contextClass}">
     <div class="counter-inline-head">
       <div class="counter-inline-copy">
         <span class="counter-inline-title">${escapeHtml(t.title)}</span>
-        <strong>${counters.length} known counter path${counters.length === 1 ? '' : 's'}</strong>
+        <strong>${escapeHtml(pathLabel)}</strong>
         <small>${escapeHtml(helperText)}</small>
       </div>
       <div class="counter-target-preview">
-        <span>Target combo</span>
+        <span>${escapeHtml(t.targetCombo)}</span>
         <div class="counter-target-chips">${renderHeroChips(heroes, getHeroImageUrl, 'target-mini')}</div>
       </div>
     </div>
@@ -140,7 +177,13 @@ export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, 
   </div>`;
 }
 
-export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS, options = {}) {
+export function renderCountersToggle(
+  heroes,
+  getComboRankInfo,
+  getHeroImageUrl,
+  labels = DEFAULT_LABELS,
+  options = {}
+) {
   const count = getCounterCount(heroes);
   const t = { ...DEFAULT_LABELS, ...labels };
   if (!count) {
@@ -163,7 +206,13 @@ export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, 
   </div>`;
 }
 
-export function renderCounterMatchupList(matchups, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS, options = {}) {
+export function renderCounterMatchupList(
+  matchups,
+  getComboRankInfo,
+  getHeroImageUrl,
+  labels = DEFAULT_LABELS,
+  options = {}
+) {
   const t = { ...DEFAULT_LABELS, ...labels };
   const visible = matchups.slice(0, options.limit ?? 6);
 
@@ -172,31 +221,35 @@ export function renderCounterMatchupList(matchups, getComboRankInfo, getHeroImag
   }
 
   return `<div class="counter-matchup-list">
-    ${visible.map((matchup, index) => {
-      const targetInfo = getComboRankInfo(matchup.target);
-      const counterInfo = getComboRankInfo(matchup.counter);
-      const actionHtml = options.showUseAction ? renderCounterUseButton(matchup.counter, t) : '';
-      return `<article class="counter-matchup-card" style="--counter-delay:${index * 55}ms">
+    ${visible
+      .map((matchup, index) => {
+        const targetInfo = getComboRankInfo(matchup.target);
+        const counterInfo = getComboRankInfo(matchup.counter);
+        const actionHtml = options.showUseAction ? renderCounterUseButton(matchup.counter, t) : '';
+        const confidence =
+          t.localizeConfidence?.(matchup.confidenceId, matchup.confidence) || matchup.confidence;
+        return `<article class="counter-matchup-card" style="--counter-delay:${index * 55}ms">
         <div class="counter-matchup-head">
           <span class="counter-matchup-label">${escapeHtml(options.label || t.title)}</span>
-          ${matchup.confidence ? `<span class="counter-card-confidence">${escapeHtml(matchup.confidence)}</span>` : ''}
+          ${confidence ? `<span class="counter-card-confidence">${escapeHtml(confidence)}</span>` : ''}
         </div>
         <div class="counter-matchup-grid">
           <div class="counter-matchup-side counter-matchup-side--winner">
-            <span class="counter-matchup-side-title">${escapeHtml(options.counterLabel || 'Counter')}</span>
-            <span class="counter-matchup-rank">${counterInfo?.rank ? `#${counterInfo.rank}` : 'Unranked'}</span>
+            <span class="counter-matchup-side-title">${escapeHtml(options.counterLabel || t.counter)}</span>
+            <span class="counter-matchup-rank">${counterInfo?.rank ? `#${counterInfo.rank}` : escapeHtml(t.unranked)}</span>
             <div class="counter-card-heroes">${renderHeroChips(matchup.counter, getHeroImageUrl, 'counter')}</div>
           </div>
-          <div class="counter-matchup-vs">beats</div>
+          <div class="counter-matchup-vs">${escapeHtml(t.beats)}</div>
           <div class="counter-matchup-side">
-            <span class="counter-matchup-side-title">${escapeHtml(options.targetLabel || 'Target')}</span>
-            <span class="counter-matchup-rank">${targetInfo?.rank ? `#${targetInfo.rank}` : 'Unranked'}</span>
+            <span class="counter-matchup-side-title">${escapeHtml(options.targetLabel || t.target)}</span>
+            <span class="counter-matchup-rank">${targetInfo?.rank ? `#${targetInfo.rank}` : escapeHtml(t.unranked)}</span>
             <div class="counter-card-heroes">${renderHeroChips(matchup.target, getHeroImageUrl, 'target')}</div>
           </div>
         </div>
-        ${renderCounterReason(matchup.reason)}
+        ${renderCounterReason(matchup.reason, matchup.reasonId, t)}
         ${actionHtml}
       </article>`;
-    }).join('')}
+      })
+      .join('')}
   </div>`;
 }

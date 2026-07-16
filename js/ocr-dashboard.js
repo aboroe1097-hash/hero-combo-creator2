@@ -70,7 +70,7 @@ import {
   displayGameTime,
 } from './ocr-engine.js';
 import { translations } from './translations.js';
-import { formatLocaleDate, formatLocaleNumber } from './locale-format.js';
+import { formatLocaleDate, formatLocaleNumber, resolveRuntimeLocale } from './locale-format.js';
 import {
   fromEdenVoteDatetimeLocal,
   isEdenVoteDeadlineExpired,
@@ -165,7 +165,7 @@ async function recoverFromStaleAssetGraph(reason) {
   } catch {}
 
   try {
-    setLoginError('Updating dashboard files...');
+    setLoginError(dashT('adminLoading'));
   } catch {}
 
   try {
@@ -1034,7 +1034,7 @@ function renderEdenX1VoteResults() {
   const votes = Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [];
   const { dedupedVotes, totalSelections, totalRows } = collectEdenX1VoteTotals(votes, season);
   if (!dedupedVotes.length) {
-    host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminEdenVotesEmpty'))}</div>`;
     return;
   }
   const ballotRows = dedupedVotes
@@ -1046,14 +1046,14 @@ function renderEdenX1VoteResults() {
 
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis dash-vote-summary-kpis">
-      <div class="dash-duty-summary-kpi"><strong>${totalSelections}</strong><span>votes</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${totalRows.length}</strong><span>candidates</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${esc(season)}</strong><span>season</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalSelections}</strong><span>${esc(dashT('adminVotesLabel'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalRows.length}</strong><span>${esc(dashT('adminCandidatesLabel'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(season)}</strong><span>${esc(dashT('adminSeasonLabel'))}</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <h3 class="dash-modal-section-label">${esc(dashT('adminVoteCandidateTotals'))}</h3>
       <table class="dash-duty-summary-table dash-vote-summary-table">
-        <thead><tr><th>#</th><th>Candidate</th><th>Votes</th><th>Voters</th><th>Matched From</th></tr></thead>
+        <thead><tr><th>#</th><th>${esc(dashT('adminVoteCandidate'))}</th><th>${esc(dashT('adminVotesLabel'))}</th><th>${esc(dashT('adminVoteVoters'))}</th><th>${esc(dashT('adminVoteMatchedFrom'))}</th></tr></thead>
         <tbody>${totalRows
           .map(
             (row, index) => `<tr data-eden-vote-candidate="${esc(row.familyKey)}">
@@ -1062,7 +1062,7 @@ function renderEdenX1VoteResults() {
               <td><span class="dash-duty-cell-value dash-positive">${row.count}</span></td>
               <td>
                 <details class="dash-vote-voters" data-eden-vote-voters="${esc(row.familyKey)}">
-                  <summary aria-label="Show ${row.voters.size} voters">${row.voters.size}</summary>
+                  <summary aria-label="${esc(dashT('adminVoteShowVotersAria', { count: row.voters.size }))}">${row.voters.size}</summary>
                   <ul>${[...row.voters.values()]
                     .sort((a, b) => a.localeCompare(b))
                     .map((name) => `<li>${esc(name)}</li>`)
@@ -1083,7 +1083,7 @@ function renderEdenX1VoteResults() {
     <div class="dash-duty-summary-table-wrap">
       <h3 class="dash-modal-section-label">${esc(dashT('adminVoteBallots'))}</h3>
       <table class="dash-duty-summary-table">
-        <thead><tr><th>Voter</th><th>Vote</th><th>Updated</th></tr></thead>
+        <thead><tr><th>${esc(dashT('adminVoteVoter'))}</th><th>${esc(dashT('adminVoteSelection'))}</th><th>${esc(dashT('adminVoteUpdated'))}</th></tr></thead>
         <tbody>${ballotRows
           .map(
             (vote) => `<tr>
@@ -1113,7 +1113,7 @@ function exportEdenX1VotesCsv() {
       vote.candidates.length
   );
   if (!votes.length) {
-    alert('No Eden X1 votes loaded to export. Open the Eden X1 Votes tab and refresh first.');
+    alert(dashT('adminEdenVotesExportEmpty'));
     return 0;
   }
   const csvCell = (value) => {
@@ -1198,7 +1198,7 @@ async function loadEdenX1Votes() {
     return true;
   } catch (err) {
     console.error('EDEN X1 VOTE LOAD ERROR:', err);
-    host.innerHTML = `<div class="dash-empty">Vote results could not load: ${esc(err?.message || err || 'unknown error')}</div>`;
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminEdenVotesLoadFailed', { error: err?.message || err || dashT('edenX1UnknownError') }))}</div>`;
     showCloudSyncFailure(err, 'Eden X1 vote load failed');
     return false;
   }
@@ -1229,7 +1229,7 @@ async function loadEdenX1VoteHistory() {
     console.error('EDEN X1 VOTE HISTORY LOAD ERROR:', err);
     const host = $id('dashEdenVoteHistory');
     if (host) {
-      host.innerHTML = `<div class="dash-empty">Vote history could not load: ${esc(err?.message || err || 'unknown error')}</div>`;
+      host.innerHTML = `<div class="dash-empty">${esc(dashT('adminEdenVotesHistoryLoadFailed', { error: err?.message || err || dashT('edenX1UnknownError') }))}</div>`;
     }
     showCloudSyncFailure(err, 'Eden X1 vote history load failed');
     return false;
@@ -1527,12 +1527,12 @@ function renderConductSummary(rows) {
   }, rows[0]);
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis">
-      <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>entries</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${esc(formatSignedPoints(totalPoints))}</strong><span>points</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${bonusRows}</strong><span>bonus</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${penaltyRows}</strong><span>penalty</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${summaryRows.length}</strong><span>players</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${esc(conductCreatedAtLabel(latestRow))}</strong><span>latest</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>${esc(dashT('adminSummaryEntries'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(formatSignedPoints(totalPoints))}</strong><span>${esc(dashT('adminSummaryPoints'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${bonusRows}</strong><span>${esc(dashT('adminSummaryBonus'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${penaltyRows}</strong><span>${esc(dashT('adminSummaryPenalty'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${summaryRows.length}</strong><span>${esc(dashT('adminSummaryPlayers'))}</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(conductCreatedAtLabel(latestRow))}</strong><span>${esc(dashT('adminSummaryLatest'))}</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <table class="dash-duty-summary-table">
@@ -2109,16 +2109,15 @@ const PIN_GATED_DASH_SUBTABS = new Set(['edenVotes', 'conduct']);
 function dashSubtabPinOptions(name) {
   if (name === 'conduct') {
     return {
-      kicker: 'Bonus Team Effort Points',
-      title: 'Enter owner PIN',
-      prompt:
-        'This points panel shows member-level admin decisions. Enter the owner PIN to continue.',
+      kicker: dashT('adminConductTab'),
+      title: dashT('adminEdenVotesPinTitle'),
+      prompt: dashT('adminConductPinPrompt'),
     };
   }
   return {
-    kicker: 'Eden X1 Votes',
-    title: 'Enter owner PIN',
-    prompt: 'This voting panel shows member ballots. Enter the owner PIN to continue.',
+    kicker: dashT('adminEdenVotesTab'),
+    title: dashT('adminEdenVotesPinTitle'),
+    prompt: dashT('adminEdenVotesPinPrompt'),
   };
 }
 
@@ -2294,15 +2293,14 @@ function applyRosterCloudData(data) {
 }
 
 function createRosterCloudConflictError(cloudData) {
-  const error = new Error('Roster history changed in cloud. Refresh and retry your edit.');
+  const error = new Error(rosterCloudConflictMessage());
   error.name = 'RosterCloudConflictError';
   error.code = 'roster-cloud-conflict';
   error.cloudData = cloudData;
   return error;
 }
 
-const ROSTER_CLOUD_CONFLICT_MESSAGE =
-  'Roster history changed in cloud. Refresh and retry your edit.';
+const rosterCloudConflictMessage = () => dashT('adminCloudStaleWriteSkipped');
 
 function cloneRosterSnapshots(snapshots) {
   try {
@@ -2380,10 +2378,10 @@ function reconcileDeferredRosterCloudData() {
   if (state._rosterCloudConflict) return;
   state._rosterCloudConflict = true;
   backupRosterSnapshots(state.rosterSnapshots, 'cloud-conflict');
-  setCloudSyncStatus('error', ROSTER_CLOUD_CONFLICT_MESSAGE);
+  setCloudSyncStatus('error', rosterCloudConflictMessage());
   logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'roster' });
   if (typeof window.showToast === 'function') {
-    window.showToast(ROSTER_CLOUD_CONFLICT_MESSAGE, 'warn', 9000);
+    window.showToast(rosterCloudConflictMessage(), 'warn', 9000);
   }
 }
 
@@ -2494,7 +2492,11 @@ async function processRosterImages(files) {
 
   for (let i = 0; i < valid.length; i++) {
     const f = valid[i];
-    if (progText) progText.textContent = `Scanning roster image ${i + 1}/${valid.length}...`;
+    if (progText)
+      progText.textContent = dashT('adminRosterScanningImageProgress', {
+        current: i + 1,
+        total: valid.length,
+      });
     const imageUrl = await readOcrImageDataUrl(f);
 
     try {
@@ -2583,7 +2585,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
   if (!unique.length) {
     logDashboardEvent('adminLogRosterNoNames', 'warn', {}, { source: 'roster' });
-    alert('Could not extract any member names from the image. Check the log panel for details.');
+    alert(dashT('adminRosterExtractFailedAlert'));
     return;
   }
 
@@ -2598,7 +2600,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
     ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members.join('\n')
     : '';
   const input = prompt(
-    `Edit extracted member names (one per line):\n${unique.length} names found from image.`,
+    dashT('adminRosterReviewExtractedPrompt', { count: unique.length }),
     unique.join('\n')
   );
   if (input !== null && input.trim()) {
@@ -2816,10 +2818,10 @@ function describeCloudSyncError(err) {
   if (
     /app ?check.*(?:missing|unavailable)|missing.*app ?check|unavailable.*app ?check/i.test(text)
   ) {
-    return 'App Check token missing; sync will retry automatically.';
+    return dashT('adminOcrUnavailable');
   }
   if (/Firebase not initialized|missing|config/i.test(text)) {
-    return 'Firebase is not configured for this deployment.';
+    return dashT('edenX1NoFirebase');
   }
   if (isRecoverableDashboardCloudError(err)) {
     return dashT('adminCloudLocalCache');
@@ -2849,7 +2851,7 @@ function setRefreshBusy(busy) {
 }
 
 function getDashboardLang() {
-  return localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  return resolveRuntimeLocale();
 }
 
 function dashT(key, vars = {}) {
@@ -3372,8 +3374,7 @@ let dashboardAuxiliarySaveInFlight = false;
 let dashboardDeferredConflictRevision = 0;
 const adminEditGuard = createAdminEditGuard();
 
-const DASHBOARD_EDIT_CONFLICT_MESSAGE =
-  'Cloud data changed while this form has unsaved edits. Refresh to load it, then retry your edit.';
+const dashboardEditConflictMessage = () => dashT('adminCloudStaleWriteSkipped');
 
 function getProtectedAdminEditControl(target) {
   const control = target?.closest?.('input, textarea, select, [contenteditable="true"]');
@@ -3392,12 +3393,12 @@ function adminEditScope(control) {
 function surfaceDeferredDashboardConflict(cloudData) {
   const revision = dashboardSyncRevision(cloudData);
   state._dashboardLastSaveConflict = true;
-  setCloudSyncStatus('error', DASHBOARD_EDIT_CONFLICT_MESSAGE);
+  setCloudSyncStatus('error', dashboardEditConflictMessage());
   if (revision !== dashboardDeferredConflictRevision) {
     dashboardDeferredConflictRevision = revision;
     logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'cloud' });
     if (typeof window.showToast === 'function') {
-      window.showToast(DASHBOARD_EDIT_CONFLICT_MESSAGE, 'warn', 9000);
+      window.showToast(dashboardEditConflictMessage(), 'warn', 9000);
     }
   }
 }
@@ -3473,9 +3474,7 @@ function prepareForManualDashboardRefresh() {
   const editState = adminEditGuard.state();
   if (!editState.active && !editState.hasDeferredSnapshot) return true;
   if (editState.dirty || editState.hasDeferredSnapshot) {
-    const confirmed = window.confirm(
-      'This form has unsaved edits and newer cloud data is available. Refresh will discard the open form. Continue?'
-    );
+    const confirmed = window.confirm(dashT('adminUnsavedRefreshConfirm'));
     if (!confirmed) return false;
     backupDashboardSnapshot(attachAuxiliaryRecords(state.dashData));
   }
@@ -3611,14 +3610,10 @@ function handleDashboardCloudConflict(localData, err) {
   } else if (err?.cloudData) {
     applyDashboardCloudSnapshot(err.cloudData, { schedule: true });
   }
-  setCloudSyncStatus('error', DASHBOARD_EDIT_CONFLICT_MESSAGE);
+  setCloudSyncStatus('error', dashboardEditConflictMessage());
   logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'cloud' });
   if (typeof window.showToast === 'function') {
-    window.showToast(
-      'Cloud data changed first. Your edit was not uploaded; refresh and retry.',
-      'warn',
-      9000
-    );
+    window.showToast(dashT('adminCloudStaleWriteSkipped'), 'warn', 9000);
   }
 }
 
@@ -3660,14 +3655,13 @@ async function writeDashboardSnapshotToCloud(db, firestore, payload, baseRevisio
 
 function createDashboardAttackMutationError(reason) {
   const messages = {
-    'missing-dashboard': 'The cloud dashboard is not available. Refresh and try again.',
-    missing: 'This structure was changed or removed on another device. Refresh and try again.',
-    changed: 'This structure changed on another device. Refresh before editing or deleting it.',
-    'id-collision':
-      'This structure edit conflicts with another cloud record. Refresh and try again.',
-    'invalid-mutation': 'Invalid dashboard change. Refresh and try again.',
+    'missing-dashboard': dashT('adminCloudLocalCache'),
+    missing: dashT('adminCloudStaleWriteSkipped'),
+    changed: dashT('adminCloudStaleWriteSkipped'),
+    'id-collision': dashT('adminCloudStaleWriteSkipped'),
+    'invalid-mutation': dashT('adminInvalidValue'),
   };
-  const error = new Error(messages[reason] || 'The dashboard change could not be saved.');
+  const error = new Error(messages[reason] || dashT('adminCloudSyncError'));
   error.name = 'DashboardAttackMutationError';
   error.code = `dashboard-attack-${reason}`;
   return error;
@@ -4587,7 +4581,7 @@ function buildAdminDebugBundle() {
     debug: {
       app: {
         userAgent: navigator.userAgent,
-        language: localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en',
+        language: getDashboardLang(),
         location: location.href,
       },
       cloud: {
@@ -4921,14 +4915,14 @@ function exportAdminAllDataCsv() {
 }
 
 function currentTopPerformersSubtitle() {
-  const scope = state._lastRenderedFilterLabel || 'Global Top Performers';
+  const scope = state._lastRenderedFilterLabel || dashT('adminChartTop');
   const timeLabel =
     state._lastRenderedTimeLabel ||
     (state.timeFilter === 'daily'
-      ? 'Today'
+      ? dashT('adminTimeTodayShort')
       : state.timeFilter === 'weekly'
-        ? 'This Week'
-        : 'All Time');
+        ? dashT('adminTimeWeekShort')
+        : dashT('adminTimeAll'));
   return `${scope} \u00b7 ${timeLabel}`;
 }
 
@@ -5119,7 +5113,7 @@ window.shareChartImage = async function () {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           navigator.share({ title: dashT('adminChartTop'), files: [file] }).catch(() => {});
         } else {
-          alert('Sharing not supported on this browser. Use the download button instead.');
+          alert(dashT('adminShareUnsupported'));
         }
       });
     })
@@ -5277,20 +5271,9 @@ function scheduleAdminLanguageRefresh() {
   renderCloudSyncStatus();
   renderAdminActivityTerminal();
   setAdminLogSyncStatus(adminLogSyncState);
-  renderEdenX1VoteSettings();
   requestAnimationFrame(() => {
     if (state._adminLanguageRefreshToken !== token) return;
-    if ($id('dashChart')) render();
-    const refreshSecondaryPanels = () => {
-      if (state._adminLanguageRefreshToken !== token) return;
-      renderContributions();
-      renderConductAdjustments();
-    };
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(refreshSecondaryPanels, { timeout: 300 });
-    } else {
-      setTimeout(refreshSecondaryPanels, 0);
-    }
+    renderDashboardSubtab();
   });
 }
 
@@ -5452,7 +5435,7 @@ export async function bootOcrDashboard() {
           await openAdminDashboardAfterAuth({ preferCloudFirst: true });
         }
       } else {
-        setLoginError('Firebase is not configured for admin sign-in.');
+        setLoginError(dashT('adminLoginFirebaseUnavailable'));
       }
     } catch (e) {
       console.error('Admin auth boot failed', e);
@@ -5491,14 +5474,14 @@ export async function bootOcrDashboard() {
         text
       )
     )
-      return 'App Check site key missing';
-    if (/debug token/i.test(text)) return 'App Check debug token needed';
-    if (/app ?check|appcheck|recaptcha/i.test(text)) return 'App Check token blocked';
+      return dashT('adminOcrUnavailable');
+    if (/debug token/i.test(text)) return dashT('adminOcrUnavailable');
+    if (/app ?check|appcheck|recaptcha/i.test(text)) return dashT('adminOcrUnavailable');
     if (/origin not allowed|allowed_origins|not currently allowed/i.test(text))
-      return 'Local origin blocked';
-    if (/dashscope_api_key/i.test(text)) return 'Worker API key missing';
+      return dashT('adminOcrOriginBlockedError', { origin: window.location.origin });
+    if (/dashscope_api_key/i.test(text)) return dashT('adminOcrConfigureWorker');
     if (/worker status\s+40[13]|unauthorized|forbidden/i.test(text))
-      return 'Worker authorization blocked';
+      return dashT('adminOcrWorkerPermissionError');
     return text.length > 64 ? `${text.slice(0, 61)}...` : text;
   }
 
@@ -5891,14 +5874,14 @@ export async function bootOcrDashboard() {
 
   $id('dashClearDataBtn').onclick = async () => {
     if (!CLEAR_HASH) {
-      alert('Admin override is not configured for this deployment.');
+      alert(dashT('adminOverrideUnavailable'));
       return;
     }
-    const code = prompt('Enter admin override code:');
+    const code = prompt(dashT('adminOverrideCodePrompt'));
     if (!code) return;
     const h = await sha256(code);
     if (h === CLEAR_HASH) clearData();
-    else alert('Invalid code');
+    else alert(dashT('adminOverrideInvalidCode'));
   };
 
   $id('dashModalClose').onclick = closeModal;
@@ -5986,11 +5969,11 @@ export async function bootOcrDashboard() {
 }
 
 window.deleteAttack = async function (attId) {
-  const pwd = prompt('Enter Admin Overdrive Password to delete this structure data:');
+  const pwd = prompt(dashT('adminDeleteAttackPasswordPrompt'));
   if (pwd === null) return;
   const hash = await sha256(pwd);
   if (!DELETE_HASHES.size || !DELETE_HASHES.has(hash)) {
-    alert('Incorrect password.');
+    alert(dashT('adminIncorrectPassword'));
     return;
   }
   if (!attId || !state._booted || !state.dashData) return;
@@ -6027,20 +6010,17 @@ window.editAttack = async function (attId) {
   const att = state.dashData.attacks.find((a) => a.id === attId);
   if (!att) return;
   const expectedFingerprint = dashboardAttackFingerprint(att);
-  const newName = prompt('Edit Structure Name (e.g. Capital, Gates, City):', att.structure_name);
+  const newName = prompt(dashT('adminEditStructureNamePrompt'), att.structure_name);
   if (newName === null) return;
   let normalizedTarget = normalizeStructureTarget(newName.trim(), '');
   if (!isNameOnlyStructure(normalizedTarget.structure_name) && !normalizedTarget.structure_level) {
-    const newLevel = prompt('Edit Structure Level (e.g. Lv.1, Lv.5):', att.structure_level);
+    const newLevel = prompt(dashT('adminEditStructureLevelPrompt'), att.structure_level);
     if (newLevel === null) return;
     normalizedTarget = normalizeStructureTarget(normalizedTarget.structure_name, newLevel.trim());
   }
-  const newTime = prompt('Edit End Time (Game Time) (format: YYYY-MM-DD, HH:mm):', att.game_time);
+  const newTime = prompt(dashT('adminEditEndTimePrompt'), att.game_time);
   if (newTime === null) return;
-  const newStartTime = prompt(
-    'Edit Start Time (Game Time) (Optional, leave blank if unknown):',
-    att.start_time || ''
-  );
+  const newStartTime = prompt(dashT('adminEditStartTimePrompt'), att.start_time || '');
   if (newStartTime === null) return;
   const originalId = att.id;
   const timestamp = String(originalId || '').match(/_(\d{10,})$/)?.[1];
@@ -6075,9 +6055,9 @@ window.addPlayer = async function (attId) {
   if (!attId || !state._booted || !state.dashData) return;
   const att = state.dashData.attacks.find((a) => a.id === attId);
   if (!att) return;
-  const pName = prompt('Enter new Player Name:');
+  const pName = prompt(dashT('adminNewPlayerNamePrompt'));
   if (!pName) return;
-  const pVal = prompt(`Enter Demolition Value for ${pName}:`);
+  const pVal = prompt(dashT('adminPlayerDemolitionPrompt', { player: pName }));
   if (!pVal || isNaN(pVal)) return;
 
   att.players.push({ name: pName.trim(), value: Number(pVal), rank: 0 });
@@ -6103,7 +6083,7 @@ window.editPlayer = async function (attId, encName) {
   if (pIdx === -1) return;
 
   const action = prompt(
-    `Editing ${pName}.\nType new Demolition Value to update, or type 'DELETE' to remove this player:`,
+    dashT('adminEditPlayerValuePrompt', { player: pName }),
     att.players[pIdx].value || att.players[pIdx].val
   );
   if (!action) return;
@@ -6113,10 +6093,10 @@ window.editPlayer = async function (attId, encName) {
   } else {
     const pVal = Number(action);
     if (isNaN(pVal)) {
-      alert('Invalid value');
+      alert(dashT('adminInvalidValue'));
       return;
     }
-    const newName = prompt(`Edit Player Name:`, pName);
+    const newName = prompt(dashT('adminEditPlayerNamePrompt'), pName);
     if (newName) att.players[pIdx].name = newName.trim();
     att.players[pIdx].value = pVal;
   }

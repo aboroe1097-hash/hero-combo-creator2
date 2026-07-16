@@ -5,6 +5,7 @@ import test from 'node:test';
 import { heroSkins } from '../../js/skins-db.js';
 
 const atlasSource = readFileSync('js/app-hero-atlas.js', 'utf8');
+const tooltipSource = readFileSync('js/app-hero-tooltip.js', 'utf8');
 const detailCss = readFileSync('css/hero-atlas-detail-v14.css', 'utf8');
 const heroesInfoSource = readFileSync('js/heroes-info.js', 'utf8');
 
@@ -55,6 +56,7 @@ test('Hero Atlas light theme keeps metadata and skill values readable', () => {
 test('skill copy preserves apostrophe entities and excludes provisional Cyrus notes', () => {
   const cyrusSource = heroesInfoSource.slice(heroesInfoSource.indexOf('"Cyrus":'));
   assert.match(atlasSource, /\(\?<!&#\)\\b\(\\d\+\)\\b/);
+  assert.match(tooltipSource, /\(\?<!&#\)\\b\(\\d\+\)\\b/);
   assert.match(cyrusSource, /Cyrus's squad has a 10% chance to Dodge/);
   assert.doesNotMatch(
     cyrusSource,
@@ -72,7 +74,10 @@ test('Biography artwork uses only exact local skin WebPs and hides failed art', 
   }
 
   assert.match(atlasSource, /const skinAssetUrl = getExactSkinAssetUrl\(skin\);/);
-  assert.match(atlasSource, /\$\{skinAssetUrl \? `[\s\S]*?data-skin-art>[\s\S]*?` : ''\}/);
+  assert.match(
+    atlasSource,
+    /\$\{\s*skinAssetUrl\s*\?\s*`[\s\S]*?data-skin-art>[\s\S]*?`\s*:\s*''\s*\}/
+  );
   assert.match(
     atlasSource,
     /image\?\.matches\?\.\('img\[data-skin-art\]'\)[\s\S]*?image\.hidden = true;/

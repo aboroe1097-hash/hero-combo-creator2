@@ -12,6 +12,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/rabbit.jpg',
     skills: [
       {
+        id: 'playful-leap',
         name: 'Playful Leap',
         timing: 'Rounds 1-3',
         target: 'Random squad',
@@ -20,6 +21,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Early Burst', 'Physical'],
       },
       {
+        id: 'carrot-shield',
         name: 'Carrot Shield',
         timing: 'Ongoing',
         target: 'Spring Rabbit',
@@ -36,6 +38,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/gambosate.jpg',
     skills: [
       {
+        id: 'outrage',
         name: 'Outrage',
         timing: 'Round 4 onward',
         target: '2 random squads',
@@ -45,6 +48,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Late Spike', 'Random Hits'],
       },
       {
+        id: 'legions-will',
         name: "Legion's Will",
         timing: 'All 8 rounds',
         target: 'Gambosate',
@@ -54,6 +58,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Control Immune'],
       },
       {
+        id: 'ferocious-roar',
         name: 'Ferocious Roar',
         timing: 'During battle',
         target: 'All player squads',
@@ -63,6 +68,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Silence', 'Anti-Heal'],
       },
       {
+        id: 'power-of-the-legion',
         name: 'Power of the Legion',
         timing: 'Passive',
         target: 'Gambosate army',
@@ -84,6 +90,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/pivana.jpg',
     skills: [
       {
+        id: 'furious-strike',
         name: 'Furious Strike',
         timing: 'Rounds 1-3',
         target: 'All Pilvana squads',
@@ -94,6 +101,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Early Burst', 'Survival'],
       },
       {
+        id: 'dirty-tricks',
         name: 'Dirty Tricks',
         timing: 'After normal attacks',
         target: 'Random squads',
@@ -103,6 +111,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Disarm', 'Skill Damage'],
       },
       {
+        id: 'uncontrolled-rage',
         name: 'Uncontrolled Rage',
         timing: 'Rounds 1-3',
         target: 'Pilvana squad',
@@ -125,6 +134,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/titanus.jpg',
     skills: [
       {
+        id: 'deadly-blade',
         name: 'Deadly Blade',
         timing: 'Rounds 1 and 4',
         target: 'All player squads',
@@ -133,6 +143,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Timed Burst', 'All Squads'],
       },
       {
+        id: 'colossal-figure',
         name: 'Colossal Figure',
         timing: 'Rounds 1-2',
         target: 'Titanus',
@@ -141,6 +152,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Damage Reduction'],
       },
       {
+        id: 'butcher-in-the-wild',
         name: 'Butcher in the Wild',
         timing: 'Ongoing',
         target: 'All player squads',
@@ -149,6 +161,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Bleed', 'Disarm'],
       },
       {
+        id: 'power-of-the-legion',
         name: 'Power of the Legion',
         timing: 'Passive',
         target: 'Titanus army',
@@ -170,6 +183,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/fordogreen.jpg',
     skills: [
       {
+        id: 'forest-call',
         name: 'Forest Call',
         timing: 'Rounds 1-3',
         target: 'Fordogreen',
@@ -178,6 +192,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Early Shield', 'Normal Immune'],
       },
       {
+        id: 'thorn-backlash',
         name: 'Thorn Backlash',
         timing: 'Ongoing',
         target: 'Attacking squad',
@@ -194,6 +209,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/savage-swordsman.jpg',
     skills: [
       {
+        id: 'ferocious-roar',
         name: 'Ferocious Roar',
         timing: 'Ongoing',
         target: '1 random squad',
@@ -202,6 +218,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Damage Reduction', 'De-buff'],
       },
       {
+        id: 'top-swordsman',
         name: 'Top Swordsman',
         timing: 'Rounds 1-4',
         target: 'All squads',
@@ -210,6 +227,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Disarm', 'Control'],
       },
       {
+        id: 'savage-in-nature',
         name: 'Savage in Nature',
         timing: 'Passive',
         target: 'Savage Swordsman',
@@ -226,6 +244,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/sasha.jpg',
     skills: [
       {
+        id: 'storm-shield',
         name: 'Storm Shield',
         timing: 'Rounds 1, 3, 5, 7',
         target: 'All squads',
@@ -234,6 +253,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Disarm', 'Silence'],
       },
       {
+        id: 'sashas-curse',
         name: "Sasha's Curse",
         timing: 'Preparation',
         target: '2 random squads',
@@ -242,6 +262,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Suppression', 'Control'],
       },
       {
+        id: 'legions-strength',
         name: "Legion's Strength",
         timing: 'Passive',
         target: 'Sasha army',
@@ -258,6 +279,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/noisy-noel.jpg',
     skills: [
       {
+        id: 'invisible',
         name: 'Invisible',
         timing: 'All 8 rounds',
         target: 'Noisy Noel',
@@ -266,6 +288,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Control Immune'],
       },
       {
+        id: 'clown-makeup',
         name: 'Clown Makeup',
         timing: 'Passive',
         target: 'Noisy Noel',
@@ -274,6 +297,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Burn Weakness', 'Normal Reduction'],
       },
       {
+        id: 'pickpocket',
         name: 'Pickpocket',
         timing: 'After 2-round prep',
         target: '1 random squad',
@@ -283,6 +307,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Random Burst'],
       },
       {
+        id: 'power-of-the-legion',
         name: 'Power of the Legion',
         timing: 'Passive',
         target: 'Noisy Noel army',
@@ -303,6 +328,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/trident-north-sea.jpg',
     skills: [
       {
+        id: 'trident-swing',
         name: 'Trident Swing',
         timing: 'During battle',
         target: 'All squads in range',
@@ -313,6 +339,7 @@ export const STRIFE_MONSTERS = [
         tags: ['All Squads', 'Repeated Hits'],
       },
       {
+        id: 'lasting-stamina',
         name: 'Lasting Stamina',
         timing: 'Rounds 1-3',
         target: 'Trident',
@@ -322,6 +349,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Damage Reduction', 'Early Survival'],
       },
       {
+        id: 'backlash',
         name: 'Backlash',
         timing: 'When damaged',
         target: '3 random enemy squads',
@@ -332,6 +360,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Counter Damage', 'Skill Damage'],
       },
       {
+        id: 'power-of-the-legion',
         name: 'Power of the Legion',
         timing: 'Passive',
         target: 'Trident army',
@@ -354,6 +383,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'images/strife/monsters/black-annis.jpg',
     skills: [
       {
+        id: 'hags-claw',
         name: "Hag's Claw",
         timing: 'Preparation',
         target: '1 random squad',
@@ -362,6 +392,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Suppression', 'Might Drain'],
       },
       {
+        id: 'devourers-feast',
         name: "Devourer's Feast",
         timing: 'Round 4 onward',
         target: 'Drained squad',
@@ -378,6 +409,7 @@ export const STRIFE_MONSTERS = [
     imageUrl: 'https://static.wixstatic.com/media/43ee96_3a567a080584448bad35a78883cc3e7f~mv2.png',
     skills: [
       {
+        id: 'frozen-tomb',
         name: 'Frozen Tomb',
         timing: 'Rounds 1, 4',
         target: '1 random squad',
@@ -386,6 +418,7 @@ export const STRIFE_MONSTERS = [
         tags: ['Anti-Heal'],
       },
       {
+        id: 'glacial-armor',
         name: 'Glacial Armor',
         timing: 'Passive',
         target: 'Frost Queen',
@@ -402,7 +435,7 @@ export const STRIFE_TIERS = {
   P2W: 'p2w',
 };
 
-export const STRIFE_MONSTER_COMBOS = {
+const STRIFE_RECOMMENDED_FORMATIONS = {
   rabbit: [
     {
       stage: 'X1',
@@ -615,3 +648,16 @@ export const STRIFE_MONSTER_COMBOS = {
     },
   ],
 };
+
+export const STRIFE_MONSTER_COMBOS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(STRIFE_RECOMMENDED_FORMATIONS).map(([monsterId, formations]) => [
+      monsterId,
+      Object.freeze(
+        formations.map((formation) =>
+          Object.freeze({ ...formation, noteId: 'recommended-formation' })
+        )
+      ),
+    ])
+  )
+);

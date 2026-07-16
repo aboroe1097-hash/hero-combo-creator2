@@ -1,4 +1,5 @@
 import { translations } from './translations.js';
+import { resolveRuntimeLocale } from './locale-format.js';
 
 const LEGACY_EDEN_VOTES_PIN_KEY = 'vts_eden_votes_pin_ok';
 const SENSITIVE_ADMIN_PIN_KEY = 'vts_sensitive_admin_pin_ok';
@@ -32,7 +33,7 @@ function writeStorage(key, value) {
 }
 
 function getPinCopy(key, fallback) {
-  const lang = readStorage('vts_hero_lang') || document.documentElement.lang || 'en';
+  const lang = resolveRuntimeLocale(readStorage('vts_hero_lang') || undefined);
   const dictionaries = window.VTS_TRANSLATIONS || translations;
   return (
     dictionaries?.[lang]?.[key] ||
