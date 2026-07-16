@@ -5,6 +5,7 @@ import {
   TROOP_STAT_KEYS,
   TROOP_TIERS,
   TROOP_TYPES,
+  calculateTroopStats,
 } from './battle-simulator-data.js';
 
 export const SETUP_SCHEMA_VERSION = 1;
@@ -290,5 +291,33 @@ export function applySetupSnapshot(state, snapshot) {
     seed: normalized.runOptions.seed,
     strikeVariancePct: normalized.runOptions.strikeVariancePct,
     sides: normalized.sides,
+  };
+}
+
+export function setupSnapshotToEngineConfig(snapshot) {
+  const normalized = normalizeSetupSnapshot(snapshot);
+  const buildSide = (sideId) => {
+    const side = normalized.sides[sideId];
+    return {
+      label: `Side ${sideId}`,
+      rows: side.rows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        tier: row.tier,
+        troops: row.troops,
+        stats: calculateTroopStats({
+          type: row.type,
+          tier: row.tier,
+          mode: side.mode,
+          baseValues: row.baseValues,
+          values: side.mode === STAT_INPUT_MODES.ADD_BONUSES ? row.bonuses : row.finals,
+        }).final,
+      })),
+    };
+  };
+
+  return {
+    sideA: buildSide('A'),
+    sideB: buildSide('B'),
   };
 }

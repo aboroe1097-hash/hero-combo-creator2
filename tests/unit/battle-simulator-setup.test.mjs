@@ -14,6 +14,7 @@ import {
   applySetupSnapshot,
   buildSetupSnapshot,
   parseSetupSnapshot,
+  setupSnapshotToEngineConfig,
 } from '../../js/battle-simulator-setup.js';
 
 const ROW_IDS = ['front', 'middle', 'back'];
@@ -172,6 +173,85 @@ test('battleMode defaults for older snapshots, rejects non-strings, and preserve
     name: 'TypeError',
     message: /battleMode must be a string/i,
   });
+});
+
+test('setupSnapshotToEngineConfig converts each side using its active stat input mode', () => {
+  const config = setupSnapshotToEngineConfig(snapshotFixture());
+
+  assert.deepEqual(config.sideA.rows[0], {
+    id: 'front',
+    type: 'footmen',
+    tier: 9,
+    troops: 31_000,
+    stats: {
+      might: 170,
+      resistance: 130,
+      hp: 50,
+      tacticalMight: 20,
+      tacticalResistance: 15,
+      damage: 10,
+      combatSpeed: 500,
+    },
+  });
+  assert.deepEqual(config.sideB.rows[0], {
+    id: 'front',
+    type: 'footmen',
+    tier: 10,
+    troops: 31_001,
+    stats: {
+      might: 111,
+      resistance: 91,
+      hp: 41,
+      tacticalMight: 31,
+      tacticalResistance: 26,
+      damage: 21,
+      combatSpeed: 511,
+    },
+  });
+});
+
+test('setupSnapshotToEngineConfig preserves canonical row order and returns detached data', () => {
+  const snapshot = deepFreeze(snapshotFixture());
+  const before = structuredClone(snapshot);
+  const config = setupSnapshotToEngineConfig(snapshot);
+
+  assert.deepEqual(config, {
+    sideA: {
+      label: 'Side A',
+      rows: config.sideA.rows,
+    },
+    sideB: {
+      label: 'Side B',
+      rows: config.sideB.rows,
+    },
+  });
+  assert.deepEqual(
+    config.sideA.rows.map((row) => row.id),
+    ROW_IDS
+  );
+  assert.deepEqual(
+    config.sideB.rows.map((row) => row.id),
+    ROW_IDS
+  );
+  assert.deepEqual(snapshot, before);
+  assert.notStrictEqual(config.sideA.rows, snapshot.sides.A.rows);
+  assert.notStrictEqual(config.sideA.rows[0], snapshot.sides.A.rows[0]);
+  assert.notStrictEqual(config.sideA.rows[0].stats, snapshot.sides.A.rows[0].bonuses);
+  assert.deepEqual(Object.keys(config.sideA.rows[0]), ['id', 'type', 'tier', 'troops', 'stats']);
+});
+
+test('setupSnapshotToEngineConfig tolerates future battle modes and drops unknown stats', () => {
+  const snapshot = snapshotFixture();
+  snapshot.battleMode = 'siege';
+  snapshot.sides.A.rows[0].bonuses.lethalDamage = 25;
+  snapshot.sides.A.rows[0].finals.damageMitigation = 30;
+  snapshot.sides.B.rows[0].baseValues.lethalDamage = 5;
+
+  const config = setupSnapshotToEngineConfig(snapshot);
+
+  assert.equal(Object.hasOwn(config.sideA.rows[0].stats, 'lethalDamage'), false);
+  assert.equal(Object.hasOwn(config.sideA.rows[0].stats, 'damageMitigation'), false);
+  assert.equal(Object.hasOwn(config.sideB.rows[0].stats, 'lethalDamage'), false);
 });
 
 test('parseSetupSnapshot rejects bad JSON and missing or unsupported schema versions', () => {
