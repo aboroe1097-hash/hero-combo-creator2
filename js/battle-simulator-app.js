@@ -17,12 +17,26 @@ import {
   simulateBattleBatch,
 } from './battle-simulator-engine.js';
 import {
+  buildBattleCalibrationFixture,
   buildBattleDebugSnapshot,
   buildBattleEventLogCsv,
   buildBattleJsonExport,
   buildBattleSummaryCsv,
   makeBattleExportFilename,
 } from './battle-simulator-export.js';
+import {
+  BATTLE_SETUP_PRESET_STORAGE_KEY,
+  MAX_BATTLE_SETUP_PRESETS,
+  deleteBattleSetupPreset,
+  normalizeBattleSetupPresetName,
+  parseBattleSetupPresetStore,
+  upsertBattleSetupPreset,
+} from './battle-simulator-preset-store.js';
+import {
+  applySetupSnapshot,
+  buildSetupSnapshot,
+  parseSetupSnapshot,
+} from './battle-simulator-setup.js';
 
 const APP_VERSION = '14.0.12';
 const THEME_STORAGE_KEY = 'vts_theme';
@@ -51,6 +65,7 @@ let form = null;
 let state = createInitialState();
 let lastRun = null;
 let setupRevision = 0;
+let presetStore = {};
 
 function emptyStats(value = 0) {
   return Object.fromEntries(TROOP_STAT_KEYS.map((key) => [key, value]));
@@ -71,26 +86,110 @@ function createRow(type, tier, index) {
     bonuses: emptyStats(0),
     finals: { ...base },
     open: index === 0,
+    customized: false,
+  };
+}
+
+function editableFields(source) {
+  return {
+    type: source.type,
+    tier: source.tier,
+    troops: source.troops,
+    baseValues: { ...source.baseValues },
+    bonuses: { ...source.bonuses },
+    finals: { ...source.finals },
+  };
+}
+
+function editableFieldsMatch(left, right) {
+  return (
+    left.type === right.type &&
+    left.tier === right.tier &&
+    left.troops === right.troops &&
+    ['baseValues', 'bonuses', 'finals'].every((bucket) =>
+      TROOP_STAT_KEYS.every((key) => {
+        if (!(key in left[bucket]) && !(key in right[bucket])) return true;
+        return left[bucket][key] === right[bucket][key];
+      })
+    )
+  );
+}
+
+function createSide(defaultType, tier, rowTypes) {
+  const sideDefaultRow = createRow(defaultType, tier, 0);
+  return {
+    mode: STAT_INPUT_MODES.ADD_BONUSES,
+    sideDefaults: editableFields(sideDefaultRow),
+    rows: rowTypes.map((type, index) => createRow(type, tier, index)),
   };
 }
 
 function createInitialState() {
   const sideTypes = ['footmen', 'cavalry', 'archers'];
   return {
+    battleMode: 'pvp-field',
     iterations: 1,
     seed: 1097,
     strikeVariancePct: 5,
     sides: {
-      A: {
-        mode: STAT_INPUT_MODES.ADD_BONUSES,
-        rows: sideTypes.map((type, index) => createRow(type, 9, index)),
-      },
-      B: {
-        mode: STAT_INPUT_MODES.ADD_BONUSES,
-        rows: sideTypes.map((type, index) => createRow(type, 10, index)),
-      },
+      A: createSide('footmen', 9, sideTypes),
+      B: createSide('footmen', 10, sideTypes),
     },
   };
+}
+
+function requireSideId(sideId, label) {
+  if (!SIDE_IDS.includes(sideId)) {
+    throw new RangeError(`${label} must be Side A or Side B.`);
+  }
+}
+
+function cloneBattleSide(side) {
+  return {
+    mode: side.mode,
+    sideDefaults: editableFields(side.sideDefaults),
+    rows: side.rows.map((row) => ({
+      id: row.id,
+      ...editableFields(row),
+      open: row.open,
+      customized: row.customized,
+    })),
+  };
+}
+
+export function copyBattleSideSetup(sourceState, fromSide = 'A', toSide = 'B') {
+  requireSideId(fromSide, 'Copy source');
+  requireSideId(toSide, 'Copy target');
+  if (fromSide === toSide) throw new RangeError('Copy source and target must be different sides.');
+  const sides = Object.fromEntries(
+    SIDE_IDS.map((sideId) => [sideId, cloneBattleSide(sourceState.sides[sideId])])
+  );
+  sides[toSide] = cloneBattleSide(sourceState.sides[fromSide]);
+  return { ...sourceState, sides };
+}
+
+export function swapBattleSides(sourceState) {
+  return {
+    ...sourceState,
+    sides: {
+      A: cloneBattleSide(sourceState.sides.B),
+      B: cloneBattleSide(sourceState.sides.A),
+    },
+  };
+}
+
+export function shouldDisableStrikeVariance(iterations, value) {
+  const numericValue = Number(value);
+  const matchesStep = Math.abs(numericValue * 10 - Math.round(numericValue * 10)) < 1e-9;
+  const isValid =
+    value !== '' &&
+    value !== null &&
+    value !== undefined &&
+    Number.isFinite(numericValue) &&
+    numericValue >= 0 &&
+    numericValue <= 25 &&
+    matchesStep;
+  return Number(iterations) === 1 && isValid;
 }
 
 function icon(name) {
@@ -172,13 +271,14 @@ function pageTemplate() {
 
         <form id="battleSimulatorForm" class="battle-simulator-form" novalidate>
           ${renderRunPanel()}
+          ${renderSetupToolbar()}
           <div id="battleFormations" class="battle-formations">
             ${renderSide('A')}
             ${renderSide('B')}
           </div>
           <div id="battleValidationSummary" class="battle-validation-summary" role="alert" hidden></div>
           <div class="battle-form-actions">
-            <div class="battle-actions-copy" aria-live="polite" data-run-helper>Single run uses exact inputs with no strike variance.</div>
+            <div class="battle-run-status" aria-live="polite" data-run-status></div>
             <div class="battle-result-actions">
               <button class="battle-secondary-button" type="button" data-battle-reset>Reset setup</button>
               <button class="battle-primary-button" type="submit" data-battle-run>${icon('play')}<span>Run 1 simulation</span></button>
@@ -235,6 +335,52 @@ function renderRunPanel() {
     </section>`;
 }
 
+function renderSetupToolbar() {
+  return `
+    <section class="battle-setup-toolbar" aria-labelledby="battleSetupToolbarTitle">
+      <div class="battle-panel-heading">
+        <p class="battle-section-kicker">Setup</p>
+        <h2 id="battleSetupToolbarTitle" tabindex="-1">Move and reuse complete battle setups</h2>
+        <p>Setup files and named presets retain both stat-entry modes, side defaults, row overrides, and run controls.</p>
+      </div>
+      <div class="battle-setup-actions" aria-label="Setup file actions">
+        <button class="battle-secondary-button battle-side-action-button" type="button" data-copy-side-a-to-b>Copy A → B</button>
+        <button class="battle-secondary-button battle-side-action-button" type="button" data-swap-sides>Swap sides</button>
+        <button class="battle-secondary-button" type="button" data-setup-export>Export setup</button>
+        <label class="battle-file-button">
+          <span>Import setup</span>
+          <input data-setup-file type="file" accept=".json,application/json" />
+        </label>
+      </div>
+      <div class="battle-preset-controls">
+        <label class="battle-field battle-preset-name-field">
+          <span>Preset name</span>
+          <input data-preset-name type="text" minlength="1" maxlength="40" autocomplete="off" placeholder="e.g. Field test 1" />
+        </label>
+        <button class="battle-secondary-button" type="button" data-preset-save>Save preset</button>
+        <label class="battle-field battle-preset-select-field">
+          <span>Saved presets</span>
+          <select data-preset-select aria-label="Saved battle setup presets">
+            <option value="">Choose a preset</option>
+          </select>
+        </label>
+        <button class="battle-secondary-button" type="button" data-preset-load disabled>Load</button>
+        <button class="battle-text-button battle-danger-text-button" type="button" data-preset-delete disabled>Delete</button>
+      </div>
+      <p class="battle-setup-hint">Presets stay in this browser only. Save up to ${MAX_BATTLE_SETUP_PRESETS}; use Export setup to move one to another device.</p>
+      <details class="battle-paste-setup">
+        <summary>Paste setup JSON</summary>
+        <div class="battle-paste-setup-body">
+          <label class="battle-field">
+            <span>Setup JSON</span>
+            <textarea data-setup-json rows="7" spellcheck="false" autocomplete="off" placeholder="Paste a Battle Simulator setup snapshot here"></textarea>
+          </label>
+          <button class="battle-secondary-button" type="button" data-setup-import-paste>Import pasted JSON</button>
+        </div>
+      </details>
+    </section>`;
+}
+
 function renderSide(sideId) {
   const side = state.sides[sideId];
   const enteredLabel = side.mode === STAT_INPUT_MODES.ADD_BONUSES ? 'Extra' : 'Final input';
@@ -261,10 +407,63 @@ function renderSide(sideId) {
           </div>
         </fieldset>
       </div>
+      ${renderSideDefaults(sideId)}
       <div class="battle-squad-list">
         ${side.rows.map((row, index) => renderRow(sideId, row, index)).join('')}
       </div>
     </fieldset>`;
+}
+
+function renderSideDefaults(sideId) {
+  const side = state.sides[sideId];
+  const defaults = side.sideDefaults;
+  const calculation = getEntityCalculation(sideId, defaults);
+  const profile = getTroopProfile(defaults.type, defaults.tier);
+  const entered = side.mode === STAT_INPUT_MODES.ADD_BONUSES ? defaults.bonuses : defaults.finals;
+  const enteredLabel = side.mode === STAT_INPUT_MODES.ADD_BONUSES ? 'Extra' : 'Final input';
+  return `
+    <details class="battle-side-setup" data-side-defaults="${sideId}">
+      <summary>
+        <span>
+          <strong>Side setup (applies to all rows)</strong>
+          <small>${profile.label} · ${INTEGER_FORMAT.format(Number(defaults.troops) || 0)} troops · ${entitySummary(sideId, defaults)}</small>
+        </span>
+        <span class="battle-summary-chevron">${icon('chevron')}</span>
+      </summary>
+      <div class="battle-side-setup-body">
+        <div class="battle-squad-controls">
+          <label class="battle-field">
+            <span>Troop type</span>
+            <select data-side-default-field="type" aria-label="Side ${sideId} default troop type">
+              ${TROOP_TYPES.map((type) => `<option value="${type}" ${type === defaults.type ? 'selected' : ''}>${type === 'cavalry' ? 'Cavalry' : type === 'archers' ? 'Archers' : 'Footmen'}</option>`).join('')}
+            </select>
+          </label>
+          <label class="battle-field">
+            <span>Tier</span>
+            <select data-side-default-field="tier" aria-label="Side ${sideId} default troop tier">
+              ${TROOP_TIERS.map((tier) => `<option value="${tier}" ${tier === defaults.tier ? 'selected' : ''}>T${tier}</option>`).join('')}
+            </select>
+          </label>
+          <label class="battle-field">
+            <span>Troops</span>
+            <input data-side-default-field="troops" type="number" min="0" max="10000000" step="1" value="${defaults.troops}" inputmode="numeric" autocomplete="off" aria-label="Side ${sideId} default troop count" required />
+          </label>
+        </div>
+        <div class="battle-stat-table-wrap">
+          <table class="battle-stat-table">
+            <caption class="battle-visually-hidden">Side ${sideId} default final combat stats</caption>
+            <thead><tr><th scope="col">Stat</th><th scope="col">Base</th><th scope="col">${enteredLabel}</th><th scope="col">Final</th></tr></thead>
+            <tbody>
+              ${STAT_DISPLAY_ORDER.map((key) => renderStatRow(sideId, 'side default', defaults, key, profile, calculation, entered[key], 'side-default')).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="battle-side-setup-footer">
+          <p>Apply to all rows overwrites every row, including customized ones.</p>
+          <button class="battle-secondary-button" type="button" data-apply-side-defaults="${sideId}">Apply to all rows</button>
+        </div>
+      </div>
+    </details>`;
 }
 
 function formatStat(value, key, { empty = '—' } = {}) {
@@ -274,31 +473,39 @@ function formatStat(value, key, { empty = '—' } = {}) {
   return TROOP_STAT_METADATA[key].unit === 'percent' ? `${formatted}%` : formatted;
 }
 
-function getRowCalculation(sideId, row) {
+function getEntityCalculation(sideId, entity) {
   const side = state.sides[sideId];
-  const values = side.mode === STAT_INPUT_MODES.ADD_BONUSES ? row.bonuses : row.finals;
+  const values = side.mode === STAT_INPUT_MODES.ADD_BONUSES ? entity.bonuses : entity.finals;
   if (
     TROOP_STAT_KEYS.some((key) => values[key] === '' || !Number.isFinite(Number(values[key]))) ||
     ['might', 'resistance', 'hp'].some(
-      (key) => row.baseValues[key] === '' || !Number.isFinite(Number(row.baseValues[key]))
+      (key) => entity.baseValues[key] === '' || !Number.isFinite(Number(entity.baseValues[key]))
     )
   ) {
     return null;
   }
   return calculateTroopStats({
-    type: row.type,
-    tier: row.tier,
+    type: entity.type,
+    tier: entity.tier,
     mode: side.mode,
-    baseValues: row.baseValues,
+    baseValues: entity.baseValues,
     values,
   });
 }
 
-function rowSummary(sideId, row) {
-  const calculation = getRowCalculation(sideId, row);
-  if (!calculation) return 'Complete the row stats';
+function getRowCalculation(sideId, row) {
+  return getEntityCalculation(sideId, row);
+}
+
+function entitySummary(sideId, entity) {
+  const calculation = getEntityCalculation(sideId, entity);
+  if (!calculation) return 'Complete the stats';
   const { final } = calculation;
   return `M ${formatStat(final.might, 'might')} · R ${formatStat(final.resistance, 'resistance')} · HP ${formatStat(final.hp, 'hp')} · SPD ${formatStat(final.combatSpeed, 'combatSpeed')}`;
+}
+
+function rowSummary(sideId, row) {
+  return entitySummary(sideId, row).replace('Complete the stats', 'Complete the row stats');
 }
 
 function renderRow(sideId, row, index) {
@@ -313,8 +520,8 @@ function renderRow(sideId, row, index) {
       <summary class="battle-squad-summary">
         <span class="battle-row-marker">${index + 1}</span>
         <span class="battle-squad-summary-copy">
-          <strong>${rowDefinition.label} · ${profile.label}</strong>
-          <span>${INTEGER_FORMAT.format(Number(row.troops) || 0)} troops · ${rowSummary(sideId, row)}</span>
+          <span class="battle-row-heading"><strong>${rowDefinition.label} · ${profile.label}</strong><span class="battle-row-state" data-row-customized ${row.customized ? '' : 'hidden'}>Customized</span></span>
+          <span data-row-summary>${INTEGER_FORMAT.format(Number(row.troops) || 0)} troops · ${rowSummary(sideId, row)}</span>
         </span>
         <span class="battle-summary-chevron">${icon('chevron')}</span>
       </summary>
@@ -342,16 +549,28 @@ function renderRow(sideId, row, index) {
             <caption class="battle-visually-hidden">Side ${sideId} ${rowDefinition.label} final combat stats</caption>
             <thead><tr><th scope="col">Stat</th><th scope="col">Base</th><th scope="col">${enteredLabel}</th><th scope="col">Final</th></tr></thead>
             <tbody>
-              ${STAT_DISPLAY_ORDER.map((key) => renderStatRow(sideId, rowDefinition, key, profile, calculation, entered[key])).join('')}
+              ${STAT_DISPLAY_ORDER.map((key) => renderStatRow(sideId, rowDefinition.label, row, key, profile, calculation, entered[key], 'row')).join('')}
             </tbody>
           </table>
         </div>
-        <p class="battle-tactical-note">Attack/Might, Defense/Resistance, and HP start from the selected tier preset but remain independently editable for each player row. * A dash means the troop card did not supply a base; its calculation baseline is zero. Tactical stats are saved for future phases.</p>
+        <div class="battle-row-footer">
+          <p class="battle-tactical-note">Attack/Might, Defense/Resistance, and HP start from the selected tier preset but remain independently editable for each player row. * A dash means the troop card did not supply a base; its calculation baseline is zero. Tactical stats are saved for future phases.</p>
+          <button class="battle-text-button" type="button" data-reset-row-defaults ${row.customized ? '' : 'hidden'}>Reset to side defaults</button>
+        </div>
       </div>
     </details>`;
 }
 
-function renderStatRow(sideId, rowDefinition, key, profile, calculation, enteredValue) {
+function renderStatRow(
+  sideId,
+  contextLabel,
+  entity,
+  key,
+  profile,
+  calculation,
+  enteredValue,
+  scope
+) {
   const metadata = TROOP_STAT_METADATA[key];
   const inactive = TACTICAL_STATS.has(key);
   const displayLabel =
@@ -360,9 +579,11 @@ function renderStatRow(sideId, rowDefinition, key, profile, calculation, entered
       : key === 'resistance'
         ? 'Resistance / Defense'
         : metadata.label;
-  const sideRow = state.sides[sideId].rows[rowDefinition.position];
+  const baseAttribute =
+    scope === 'side-default' ? 'data-side-default-base-stat' : 'data-base-stat-input';
+  const statAttribute = scope === 'side-default' ? 'data-side-default-stat' : 'data-stat';
   const baseText = metadata.baseSourceAvailable
-    ? `<input class="battle-stat-input battle-base-input" data-base-stat-input="${key}" type="number" min="0" max="5000" step="0.01" value="${sideRow.baseValues[key]}" inputmode="decimal" autocomplete="off" aria-label="Side ${sideId} ${rowDefinition.label} editable base ${metadata.label}" title="Preset ${formatStat(profile.baseStats[key], key)} · ${metadata.source}" required />`
+    ? `<input class="battle-stat-input battle-base-input" ${baseAttribute}="${key}" type="number" min="0" max="5000" step="0.01" value="${entity.baseValues[key]}" inputmode="decimal" autocomplete="off" aria-label="Side ${sideId} ${contextLabel} editable base ${metadata.label}" title="Preset ${formatStat(profile.baseStats[key], key)} · ${metadata.source}" required />`
     : '<span class="battle-base-value">—*</span>';
   const finalText = calculation ? formatStat(calculation.final[key], key) : '—';
   const modeLabel =
@@ -377,7 +598,7 @@ function renderStatRow(sideId, rowDefinition, key, profile, calculation, entered
       </th>
       <td data-base-stat="${key}" data-mobile-label="Base">${baseText}</td>
       <td data-mobile-label="${enteredColumnLabel}">
-        <input class="battle-stat-input" data-stat="${key}" type="number" min="0" max="${maximum}" step="0.01" value="${enteredValue}" inputmode="decimal" autocomplete="off" aria-label="Side ${sideId} ${rowDefinition.label} ${metadata.label} ${modeLabel}" required />
+        <input class="battle-stat-input" ${statAttribute}="${key}" type="number" min="0" max="${maximum}" step="0.01" value="${enteredValue}" inputmode="decimal" autocomplete="off" aria-label="Side ${sideId} ${contextLabel} ${metadata.label} ${modeLabel}" required />
       </td>
       <td data-mobile-label="Final"><output class="battle-final-value" data-final-stat="${key}">${finalText}</output></td>
     </tr>`;
@@ -420,17 +641,61 @@ function setRunControls() {
   const iterations = Number(form?.elements.battleIterations?.value || state.iterations);
   state.iterations = iterations;
   const variance = form?.elements.battleVariance;
-  if (variance) variance.disabled = iterations === 1;
+  if (variance) variance.disabled = shouldDisableStrikeVariance(iterations, variance.value);
   const runButton = form?.querySelector('[data-battle-run] span');
   if (runButton)
     runButton.textContent = `Run ${iterations} simulation${iterations === 1 ? '' : 's'}`;
-  const helper = form?.querySelector('[data-run-helper]');
-  if (helper) {
-    helper.textContent =
-      iterations === 1
-        ? 'Single run uses exact inputs with no strike variance.'
-        : `${iterations} seeded runs · ±${NUMBER_FORMAT.format(Number(variance?.value || 0))}% strike variance · averages and win rates.`;
+  updateRunBar();
+}
+
+function sideTroopTotal(sideId) {
+  return state.sides[sideId].rows.reduce((total, row) => total + Number(row.troops || 0), 0);
+}
+
+function formatCompactTroops(value) {
+  if (value >= 1_000_000) return `${NUMBER_FORMAT.format(value / 1_000_000)}m`;
+  if (value < 1000) return INTEGER_FORMAT.format(value);
+  return `${NUMBER_FORMAT.format(value / 1000)}k`;
+}
+
+function updateRunBar() {
+  const status = form?.querySelector('[data-run-status]');
+  if (!status) return;
+  const invalidControls = Array.from(form.querySelectorAll(INVALID_CONTROL_SELECTOR));
+  if (invalidControls.length > 0) {
+    const counts = { A: 0, B: 0, setup: 0 };
+    for (const control of invalidControls) {
+      const sideId = control.closest('.battle-side-panel')?.dataset.side;
+      if (sideId === 'A' || sideId === 'B') counts[sideId] += 1;
+      else counts.setup += 1;
+    }
+    const groups = [
+      counts.A ? `Side A: ${counts.A}` : '',
+      counts.B ? `Side B: ${counts.B}` : '',
+      counts.setup ? `Run setup: ${counts.setup}` : '',
+    ].filter(Boolean);
+    const existingButton = status.querySelector('[data-focus-first-invalid]');
+    const button = existingButton || document.createElement('button');
+    if (!existingButton) {
+      button.className = 'battle-run-invalid-button';
+      button.type = 'button';
+      button.dataset.focusFirstInvalid = '';
+      button.append(document.createElement('strong'), document.createElement('span'));
+      status.replaceChildren(button);
+    }
+    const label = button.querySelector('strong');
+    const nextLabel = `${groups.join(' · ')} field${invalidControls.length === 1 ? ' needs' : 's need'} attention`;
+    if (label.textContent !== nextLabel) label.textContent = nextLabel;
+    const groupedCounts = button.querySelector('span');
+    const nextHint = 'Focus the first highlighted field';
+    if (groupedCounts.textContent !== nextHint) groupedCounts.textContent = nextHint;
+    return;
   }
+
+  const summary = document.createElement('strong');
+  summary.className = 'battle-run-bar-summary';
+  summary.textContent = `A: ${formatCompactTroops(sideTroopTotal('A'))} troops vs B: ${formatCompactTroops(sideTroopTotal('B'))} troops · ${INTEGER_FORMAT.format(Number(state.iterations))} run${Number(state.iterations) === 1 ? '' : 's'}`;
+  status.replaceChildren(summary);
 }
 
 function markResultsStale() {
@@ -441,6 +706,7 @@ function markResultsStale() {
     results.hidden = true;
     results.replaceChildren();
   }
+  updateRunBar();
 }
 
 function refreshRow(sideId, rowIndex) {
@@ -452,10 +718,14 @@ function refreshRow(sideId, rowIndex) {
   const calculation = getRowCalculation(sideId, row);
   const profile = getTroopProfile(row.type, row.tier);
   const strong = card.querySelector('.battle-squad-summary-copy strong');
-  const summary = card.querySelector('.battle-squad-summary-copy span');
+  const summary = card.querySelector('[data-row-summary]');
+  const customizedBadge = card.querySelector('[data-row-customized]');
+  const resetButton = card.querySelector('[data-reset-row-defaults]');
   if (strong) strong.textContent = `${BATTLE_ROWS[rowIndex].label} · ${profile.label}`;
   if (summary)
     summary.textContent = `${INTEGER_FORMAT.format(Number(row.troops) || 0)} troops · ${rowSummary(sideId, row)}`;
+  customizedBadge?.toggleAttribute('hidden', !row.customized);
+  resetButton?.toggleAttribute('hidden', !row.customized);
   for (const key of STAT_DISPLAY_ORDER) {
     const base = card.querySelector(`[data-base-stat="${key}"]`);
     const final = card.querySelector(`[data-final-stat="${key}"]`);
@@ -475,10 +745,52 @@ function refreshRow(sideId, rowIndex) {
   }
 }
 
+function refreshSideDefaults(sideId) {
+  const side = state.sides[sideId];
+  const defaults = side.sideDefaults;
+  const panel = form?.querySelector(`[data-side-defaults="${sideId}"]`);
+  if (!panel) return;
+  const calculation = getEntityCalculation(sideId, defaults);
+  const profile = getTroopProfile(defaults.type, defaults.tier);
+  const summary = panel.querySelector('summary small');
+  if (summary) {
+    summary.textContent = `${profile.label} · ${INTEGER_FORMAT.format(Number(defaults.troops) || 0)} troops · ${entitySummary(sideId, defaults)}`;
+  }
+  for (const key of STAT_DISPLAY_ORDER) {
+    const base = panel.querySelector(`[data-base-stat="${key}"]`);
+    const final = panel.querySelector(`[data-final-stat="${key}"]`);
+    if (base) {
+      if (TROOP_STAT_METADATA[key].baseSourceAvailable) {
+        const input = base.querySelector('[data-side-default-base-stat]');
+        if (input && document.activeElement !== input) input.value = defaults.baseValues[key];
+        if (input) {
+          input.title = `Preset ${formatStat(profile.baseStats[key], key)} · ${TROOP_STAT_METADATA[key].source}`;
+        }
+      } else {
+        base.textContent = '—*';
+        base.title = TROOP_STAT_METADATA[key].source;
+      }
+    }
+    if (final) final.textContent = calculation ? formatStat(calculation.final[key], key) : '—';
+  }
+}
+
 function replaceSide(sideId) {
   const current = form?.querySelector(`.battle-side-panel[data-side="${sideId}"]`);
   if (!current) return;
+  const sideSetupWasOpen = current.querySelector('[data-side-defaults]')?.open === true;
   current.outerHTML = renderSide(sideId);
+  const replacement = form?.querySelector(`.battle-side-panel[data-side="${sideId}"]`);
+  const replacementSetup = replacement?.querySelector('[data-side-defaults]');
+  if (replacementSetup) replacementSetup.open = sideSetupWasOpen;
+}
+
+function replaceRow(sideId, rowIndex) {
+  const current = form?.querySelector(
+    `.battle-squad-card[data-side="${sideId}"][data-row-index="${rowIndex}"]`
+  );
+  if (!current) return;
+  current.outerHTML = renderRow(sideId, state.sides[sideId].rows[rowIndex], rowIndex);
 }
 
 function switchSideMode(sideId, nextMode) {
@@ -526,8 +838,91 @@ function handleRowControl(target) {
   } else {
     return;
   }
+  row.customized = !editableFieldsMatch(row, state.sides[sideId].sideDefaults);
   refreshRow(sideId, rowIndex);
   markResultsStale();
+}
+
+function handleSideDefaultControl(target) {
+  const panel = target.closest('[data-side-defaults]');
+  if (!panel) return false;
+  const sideId = panel.dataset.sideDefaults;
+  const defaults = state.sides[sideId]?.sideDefaults;
+  if (!defaults) return false;
+
+  if (target.matches('[data-side-default-field="type"]')) {
+    defaults.type = target.value;
+    const preset = getTroopProfile(defaults.type, defaults.tier).baseStats;
+    defaults.baseValues = { might: preset.might, resistance: preset.resistance, hp: preset.hp };
+  } else if (target.matches('[data-side-default-field="tier"]')) {
+    defaults.tier = Number(target.value);
+    const preset = getTroopProfile(defaults.type, defaults.tier).baseStats;
+    defaults.baseValues = { might: preset.might, resistance: preset.resistance, hp: preset.hp };
+  } else if (target.matches('[data-side-default-field="troops"]')) {
+    defaults.troops = target.value === '' ? '' : Number(target.value);
+  } else if (target.matches('[data-side-default-base-stat]')) {
+    defaults.baseValues[target.dataset.sideDefaultBaseStat] =
+      target.value === '' ? '' : Number(target.value);
+  } else if (target.matches('[data-side-default-stat]')) {
+    const bucket =
+      state.sides[sideId].mode === STAT_INPUT_MODES.ADD_BONUSES
+        ? defaults.bonuses
+        : defaults.finals;
+    bucket[target.dataset.sideDefaultStat] = target.value === '' ? '' : Number(target.value);
+  } else {
+    return false;
+  }
+  refreshSideDefaults(sideId);
+  markResultsStale();
+  return true;
+}
+
+function copySideDefaultsToRow(row, defaults) {
+  Object.assign(row, editableFields(defaults));
+  row.customized = false;
+}
+
+function applySideDefaults(sideId) {
+  const side = state.sides[sideId];
+  const panel = form?.querySelector(`[data-side-defaults="${sideId}"]`);
+  const invalidControl = panel?.querySelector(INVALID_CONTROL_SELECTOR);
+  if (invalidControl) {
+    showValidation(`Complete the Side ${sideId} defaults before applying them.`, invalidControl);
+    return;
+  }
+  side.rows.forEach((row) => copySideDefaultsToRow(row, side.sideDefaults));
+  replaceSide(sideId);
+  markResultsStale();
+  requestAnimationFrame(() => {
+    form?.querySelector(`[data-apply-side-defaults="${sideId}"]`)?.focus({ preventScroll: true });
+  });
+  showToast(`Side ${sideId} defaults applied to all rows.`);
+}
+
+function resetRowToSideDefaults(sideId, rowIndex) {
+  const side = state.sides[sideId];
+  const row = side?.rows[rowIndex];
+  if (!row) return;
+  const defaultsPanel = form?.querySelector(`[data-side-defaults="${sideId}"]`);
+  const invalidControl = defaultsPanel?.querySelector(INVALID_CONTROL_SELECTOR);
+  if (invalidControl) {
+    showValidation(
+      `Complete the Side ${sideId} defaults before resetting this row.`,
+      invalidControl
+    );
+    return;
+  }
+  copySideDefaultsToRow(row, side.sideDefaults);
+  replaceRow(sideId, rowIndex);
+  markResultsStale();
+  requestAnimationFrame(() => {
+    form
+      ?.querySelector(
+        `.battle-squad-card[data-side="${sideId}"][data-row-index="${rowIndex}"] summary`
+      )
+      ?.focus({ preventScroll: true });
+  });
+  showToast(`Side ${sideId} ${BATTLE_ROWS[rowIndex].label} reset to side defaults.`);
 }
 
 function showValidation(message, invalidControl = null) {
@@ -558,10 +953,16 @@ function clearValidation() {
   });
 }
 
+function findFirstInvalid(scope = form, { includeSideDefaults = false } = {}) {
+  return Array.from(scope?.querySelectorAll(INVALID_CONTROL_SELECTOR) || []).find(
+    (control) => includeSideDefaults || !control.closest('[data-side-defaults]')
+  );
+}
+
 function refreshValidationAfterInput(target) {
   if (!form?.classList.contains('is-validated')) return;
   if (target.validity?.valid) target.removeAttribute('aria-invalid');
-  const nextInvalid = form.querySelector(INVALID_CONTROL_SELECTOR);
+  const nextInvalid = findFirstInvalid(form, { includeSideDefaults: true });
   if (!nextInvalid) {
     clearValidation();
     return;
@@ -671,7 +1072,7 @@ function simulateBattleBatchOffThread(config, options) {
 
 async function runSimulations() {
   clearValidation();
-  const firstInvalid = form?.querySelector(INVALID_CONTROL_SELECTOR);
+  const firstInvalid = findFirstInvalid(form, { includeSideDefaults: true });
   if (firstInvalid) {
     showValidation(
       'Check the highlighted value. Every field must stay within its allowed range.',
@@ -694,13 +1095,20 @@ async function runSimulations() {
   state.iterations = iterations;
   state.seed = seed;
   state.strikeVariancePct = Number(form.elements.battleVariance.value);
+  let setup;
+  try {
+    setup = buildSetupSnapshot(state);
+  } catch (error) {
+    showValidation(error.message || 'The complete setup could not be captured for export.');
+    return;
+  }
   const runRevision = setupRevision;
   const runButton = form.querySelector('[data-battle-run]');
-  const runHelper = form.querySelector('[data-run-helper]');
+  const runStatus = form.querySelector('[data-run-status]');
   form.setAttribute('aria-busy', 'true');
   if (runButton) runButton.disabled = true;
-  if (runHelper) {
-    runHelper.textContent =
+  if (runStatus) {
+    runStatus.textContent =
       iterations === 1
         ? 'Resolving the exact scenario...'
         : `Running ${INTEGER_FORMAT.format(iterations)} seeded simulations without blocking this page...`;
@@ -719,6 +1127,7 @@ async function runSimulations() {
         result,
         selectedResult: result,
         representative: null,
+        setup,
       };
     } else {
       const result = await simulateBattleBatchOffThread(config, {
@@ -752,6 +1161,7 @@ async function runSimulations() {
         result,
         selectedResult,
         representative,
+        setup,
       };
     }
     renderResults();
@@ -778,6 +1188,72 @@ function outcomeCard(label, value, detail, color) {
 
 function metricCard(label, value, detail = '') {
   return `<article class="battle-metric-card"><span class="battle-outcome-label">${label}</span><strong>${value}</strong><small>${detail}</small></article>`;
+}
+
+export function getBatchVerdict(result) {
+  const runCount = Number(result.runCount || 0);
+  const counts = {
+    A: Number(result.winCounts?.A || 0),
+    B: Number(result.winCounts?.B || 0),
+    draw: Number(result.winCounts?.draw || 0),
+    stalemate: Number(result.winCounts?.stalemate || 0),
+  };
+  const rate = (outcome) => (runCount > 0 ? Math.round((counts[outcome] / runCount) * 100) : 0);
+  const highestCount = Math.max(...Object.values(counts));
+  const leaders = Object.keys(counts).filter((outcome) => counts[outcome] === highestCount);
+  const detail = `Side A win rate: ${rate('A')}% · Side B win rate: ${rate('B')}% · Draws: ${counts.draw} · Stalemates: ${counts.stalemate}`;
+
+  if (leaders.length !== 1) {
+    return {
+      tone: 'is-neutral',
+      title: `No clear winner across ${runCount} runs`,
+      detail,
+    };
+  }
+
+  const leader = leaders[0];
+  if (leader === 'draw') {
+    return {
+      tone: 'is-neutral',
+      title: `Draw in ${counts.draw} of ${runCount} runs (${rate('draw')}%)`,
+      detail,
+    };
+  }
+  if (leader === 'stalemate') {
+    return {
+      tone: 'is-neutral',
+      title: `Stalemate in ${counts.stalemate} of ${runCount} runs (${rate('stalemate')}%)`,
+      detail,
+    };
+  }
+
+  const loserSide = leader === 'A' ? 'B' : 'A';
+  return {
+    tone: leader === 'A' ? 'is-success' : 'is-danger',
+    title: `Side ${leader} wins ${counts[leader]} of ${runCount} runs (${rate(leader)}%)`,
+    detail: `Side ${loserSide} win rate: ${rate(loserSide)}% · Draws: ${counts.draw} · Stalemates: ${counts.stalemate}`,
+  };
+}
+
+function renderVerdictBanner(isBatch, result) {
+  if (!isBatch) {
+    if (result.outcome === 'A' || result.outcome === 'B') {
+      const tone = result.outcome === 'A' ? 'is-success' : 'is-danger';
+      return `<div class="battle-verdict-banner ${tone}" role="status"><strong>Side ${result.outcome} wins in ${result.rounds} rounds</strong></div>`;
+    }
+    const verdict =
+      result.outcome === 'draw'
+        ? 'Draw'
+        : `Stalemate (${BATTLE_MODEL_ASSUMPTIONS.maxRounds} round cap)`;
+    return `<div class="battle-verdict-banner is-neutral" role="status"><strong>${verdict}</strong></div>`;
+  }
+
+  const verdict = getBatchVerdict(result);
+  return `
+    <div class="battle-verdict-banner ${verdict.tone}" role="status">
+      <strong>${verdict.title}</strong>
+      <span>${verdict.detail}</span>
+    </div>`;
 }
 
 function renderResults() {
@@ -911,8 +1387,10 @@ function renderResults() {
           <button class="battle-export-button" type="button" data-battle-export="summary-csv">Summary CSV</button>
           <button class="battle-export-button" type="button" data-battle-export="log-csv">Selected log CSV</button>
           <button class="battle-export-button" type="button" data-battle-export="copy">Copy debug</button>
+          <button class="battle-export-button" type="button" data-battle-export="calibration">Calibration fixture</button>
         </div>
       </div>
+      ${renderVerdictBanner(isBatch, result)}
       <div class="battle-outcome-grid">${outcomeHtml}</div>
       <div class="battle-metric-grid">${metricsHtml}</div>
       <div class="battle-survival-board" aria-label="${isBatch ? 'Average surviving troops' : 'Surviving troops'}">
@@ -991,6 +1469,7 @@ function exportPayload({ selectedOnly = false } = {}) {
       : lastRun.result;
   return {
     config: lastRun.config,
+    setup: lastRun.setup,
     model: {
       appVersion: APP_VERSION,
       version: BATTLE_MODEL_VERSION,
@@ -1066,10 +1545,173 @@ async function handleExport(kind) {
     } else if (kind === 'copy') {
       await copyText(buildBattleDebugSnapshot(exportPayload()));
       showToast('Debug snapshot copied.');
+    } else if (kind === 'calibration') {
+      downloadText(
+        buildBattleCalibrationFixture(exportPayload()),
+        exportFilename('calibration', 'json'),
+        'application/json;charset=utf-8'
+      );
+      showToast('Calibration fixture exported. Add the observed battle report values by hand.');
     }
   } catch (error) {
     console.error('[battle-simulator] export failed', error);
     showToast('Export failed. The simulation result is still available on screen.');
+  }
+}
+
+function buildDatedSetupSnapshot() {
+  return { ...buildSetupSnapshot(state), savedAt: new Date().toISOString() };
+}
+
+function setupExportFilename(date = new Date()) {
+  return `battle-setup-${date.toISOString().slice(0, 10)}.json`;
+}
+
+function exportSetup() {
+  try {
+    const snapshot = buildDatedSetupSnapshot();
+    downloadText(
+      JSON.stringify(snapshot, null, 2),
+      setupExportFilename(new Date(snapshot.savedAt)),
+      'application/json;charset=utf-8'
+    );
+    showToast('Battle setup exported.');
+  } catch (error) {
+    console.error('[battle-simulator] setup export failed', error);
+    showToast(error.message || 'Battle setup export failed.');
+  }
+}
+
+function replaceSetupState(nextState, message) {
+  setupRevision += 1;
+  state = nextState;
+  lastRun = null;
+  root.innerHTML = pageTemplate();
+  bindUI();
+  applyTheme(getTheme());
+  const heading = root.querySelector('#battleSetupToolbarTitle');
+  heading?.focus({ preventScroll: true });
+  heading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast(message);
+}
+
+function importSetupText(jsonText) {
+  const snapshot = parseSetupSnapshot(jsonText);
+  const nextState = applySetupSnapshot(state, snapshot);
+  replaceSetupState(nextState, 'Setup imported');
+}
+
+async function importSetupFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    importSetupText(await file.text());
+  } catch (error) {
+    console.error('[battle-simulator] setup import failed', error);
+    showToast(error.message || 'The setup file could not be imported.');
+  } finally {
+    input.value = '';
+  }
+}
+
+function readPresetStore() {
+  try {
+    return {
+      store: parseBattleSetupPresetStore(localStorage.getItem(BATTLE_SETUP_PRESET_STORAGE_KEY)),
+      error: null,
+    };
+  } catch (error) {
+    console.warn('[battle-simulator] saved setup presets unavailable', error);
+    return {
+      store: {},
+      error: 'Saved presets were unavailable or corrupted and have been treated as empty.',
+    };
+  }
+}
+
+function writePresetStore(nextStore) {
+  localStorage.setItem(BATTLE_SETUP_PRESET_STORAGE_KEY, JSON.stringify(nextStore));
+}
+
+function refreshPresetSelect(selectedName = '') {
+  const select = form?.querySelector('[data-preset-select]');
+  if (!select) return;
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Choose a preset';
+  select.replaceChildren(placeholder);
+  const names = Object.keys(presetStore).sort((left, right) => left.localeCompare(right));
+  for (const name of names) {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  }
+  select.value = names.includes(selectedName) ? selectedName : '';
+  updatePresetButtons();
+}
+
+function updatePresetButtons() {
+  const selectedName = form?.querySelector('[data-preset-select]')?.value || '';
+  const hasSelection = Boolean(selectedName && Object.hasOwn(presetStore, selectedName));
+  const loadButton = form?.querySelector('[data-preset-load]');
+  const deleteButton = form?.querySelector('[data-preset-delete]');
+  if (loadButton) loadButton.disabled = !hasSelection;
+  if (deleteButton) deleteButton.disabled = !hasSelection;
+}
+
+function saveNamedPreset() {
+  const nameInput = form?.querySelector('[data-preset-name]');
+  try {
+    const name = normalizeBattleSetupPresetName(nameInput?.value || '');
+    const nextStore = upsertBattleSetupPreset(presetStore, name, buildDatedSetupSnapshot());
+    writePresetStore(nextStore);
+    presetStore = nextStore;
+    if (nameInput) nameInput.value = name;
+    refreshPresetSelect(name);
+    showToast(`Preset “${name}” saved.`);
+  } catch (error) {
+    console.error('[battle-simulator] preset save failed', error);
+    const storageFailure = /quota|security/i.test(error?.name || '') || !error?.message;
+    showToast(
+      storageFailure
+        ? 'Could not save the preset. Browser storage may be full or unavailable.'
+        : error.message
+    );
+  }
+}
+
+function loadNamedPreset() {
+  const name = form?.querySelector('[data-preset-select]')?.value || '';
+  if (!name || !Object.hasOwn(presetStore, name)) {
+    showToast('Choose a saved preset first.');
+    return;
+  }
+  try {
+    const snapshot = parseSetupSnapshot(JSON.stringify(presetStore[name]));
+    const nextState = applySetupSnapshot(state, snapshot);
+    replaceSetupState(nextState, `Preset “${name}” loaded.`);
+  } catch (error) {
+    console.error('[battle-simulator] preset load failed', error);
+    showToast(error.message || 'The saved preset could not be loaded.');
+  }
+}
+
+function deleteNamedPreset() {
+  const name = form?.querySelector('[data-preset-select]')?.value || '';
+  if (!name || !Object.hasOwn(presetStore, name)) {
+    showToast('Choose a saved preset first.');
+    return;
+  }
+  try {
+    const nextStore = deleteBattleSetupPreset(presetStore, name);
+    writePresetStore(nextStore);
+    presetStore = nextStore;
+    refreshPresetSelect();
+    showToast(`Preset “${name}” deleted.`);
+  } catch (error) {
+    console.error('[battle-simulator] preset delete failed', error);
+    showToast('Could not delete the preset from browser storage.');
   }
 }
 
@@ -1114,19 +1756,67 @@ function bindUI() {
       setRunControls();
       markResultsStale();
     } else {
-      handleRowControl(target);
+      if (!handleSideDefaultControl(target)) handleRowControl(target);
     }
   });
   form?.addEventListener('change', (event) => {
     const target = event.target;
-    if (target.name === 'battleIterations') {
+    if (target.matches('[data-setup-file]')) {
+      importSetupFile(target);
+    } else if (target.matches('[data-preset-select]')) {
+      updatePresetButtons();
+    } else if (target.name === 'battleIterations') {
       state.iterations = Number(target.value);
       setRunControls();
       markResultsStale();
     } else if (target.matches('[data-mode-side]')) {
       switchSideMode(target.dataset.modeSide, target.value);
     } else {
-      handleRowControl(target);
+      if (!handleSideDefaultControl(target)) handleRowControl(target);
+    }
+  });
+  form?.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.matches('[data-focus-first-invalid]')) {
+      const firstInvalid = findFirstInvalid(form, { includeSideDefaults: true });
+      if (firstInvalid) {
+        showValidation('Check the highlighted value.', firstInvalid);
+      }
+    } else if (button.matches('[data-copy-side-a-to-b]')) {
+      try {
+        replaceSetupState(copyBattleSideSetup(state, 'A', 'B'), 'Side A copied to Side B.');
+      } catch (error) {
+        console.error('[battle-simulator] side copy failed', error);
+        showToast(error.message || 'Side A could not be copied.');
+      }
+    } else if (button.matches('[data-swap-sides]')) {
+      try {
+        replaceSetupState(swapBattleSides(state), 'Sides A and B swapped.');
+      } catch (error) {
+        console.error('[battle-simulator] side swap failed', error);
+        showToast(error.message || 'The sides could not be swapped.');
+      }
+    } else if (button.matches('[data-setup-export]')) {
+      exportSetup();
+    } else if (button.matches('[data-setup-import-paste]')) {
+      try {
+        importSetupText(form.querySelector('[data-setup-json]')?.value || '');
+      } catch (error) {
+        console.error('[battle-simulator] pasted setup import failed', error);
+        showToast(error.message || 'The pasted setup could not be imported.');
+      }
+    } else if (button.matches('[data-preset-save]')) {
+      saveNamedPreset();
+    } else if (button.matches('[data-preset-load]')) {
+      loadNamedPreset();
+    } else if (button.matches('[data-preset-delete]')) {
+      deleteNamedPreset();
+    } else if (button.matches('[data-apply-side-defaults]')) {
+      applySideDefaults(button.dataset.applySideDefaults);
+    } else if (button.matches('[data-reset-row-defaults]')) {
+      const card = button.closest('.battle-squad-card');
+      if (card) resetRowToSideDefaults(card.dataset.side, Number(card.dataset.rowIndex));
     }
   });
   form?.addEventListener(
@@ -1144,14 +1834,18 @@ function bindUI() {
     const button = event.target.closest('[data-battle-export]');
     if (button) handleExport(button.dataset.battleExport);
   });
+  refreshPresetSelect();
   setRunControls();
 }
 
 export function mountBattleSimulator(target) {
   if (!target) throw new Error('Battle Simulator mount element is missing.');
   root = target;
+  const storedPresets = readPresetStore();
+  presetStore = storedPresets.store;
   root.innerHTML = pageTemplate();
   bindUI();
   applyTheme(getTheme());
   root.querySelector('#battleSimulatorTitle')?.focus({ preventScroll: true });
+  if (storedPresets.error) showToast(storedPresets.error);
 }
