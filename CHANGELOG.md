@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.0.14 - 2026-07-16
+
+- Fixed Eden X1 weighted-score popovers closing immediately when opened by hover or keyboard focus: the scroll-dismiss grace window now covers every open path, not only click, so the scroll that brings the trigger into view no longer dismisses the popover it just opened.
+
 ## 14.0.13 - 2026-07-16
 
 - Added the admin-only Alliance View for the V3S/VTS merge: upload either current roster with a review-before-replace diff, keep every castle/account as its own ranked row, and switch between combined or split All/Top-100 tables.
