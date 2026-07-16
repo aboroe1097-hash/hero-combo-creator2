@@ -2,6 +2,7 @@
   --battle-side-a: var(--ff-action);
   --battle-side-b: var(--ff-urgency);
   --battle-grid: color-mix(in srgb, var(--ff-border) 55%, transparent);
+  --battle-run-bar-clearance: 6.5rem;
 }
 
 *,
@@ -95,7 +96,7 @@ summary {
   width: min(100%, 1680px);
   margin: 0 auto;
   padding: max(12px, var(--ff-safe-top)) max(12px, var(--ff-content-gutter))
-    max(24px, var(--ff-safe-bottom));
+    max(calc(var(--battle-run-bar-clearance) + 1rem), var(--ff-safe-bottom));
 }
 
 .battle-topbar {
@@ -167,6 +168,7 @@ summary {
 .battle-icon-button,
 .battle-back-link,
 .battle-secondary-button,
+.battle-file-button,
 .battle-export-button,
 .battle-primary-button {
   display: inline-flex;
@@ -187,6 +189,7 @@ summary {
 .battle-icon-button,
 .battle-back-link,
 .battle-secondary-button,
+.battle-file-button,
 .battle-export-button {
   color: var(--ff-text);
   background: var(--ff-control);
@@ -206,6 +209,7 @@ summary {
 
 .battle-back-link,
 .battle-secondary-button,
+.battle-file-button,
 .battle-export-button {
   gap: 0.45rem;
   padding: 0.55rem 0.8rem;
@@ -214,6 +218,8 @@ summary {
 .battle-icon-button:hover,
 .battle-back-link:hover,
 .battle-secondary-button:hover,
+.battle-file-button:hover,
+.battle-side-action-button:hover,
 .battle-export-button:hover {
   border-color: var(--ff-border-hover);
   background: var(--ff-control-hover);
@@ -222,6 +228,7 @@ summary {
 .battle-icon-button:active,
 .battle-back-link:active,
 .battle-secondary-button:active,
+.battle-file-button:active,
 .battle-export-button:active,
 .battle-primary-button:active {
   transform: scale(0.98);
@@ -346,6 +353,7 @@ summary {
 }
 
 .battle-run-panel,
+.battle-setup-toolbar,
 .battle-side-panel,
 .battle-results-panel {
   border: 1px solid var(--ff-border);
@@ -361,6 +369,107 @@ summary {
   gap: 1rem;
   align-items: end;
   padding: var(--ff-card-padding);
+}
+
+.battle-setup-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+  padding: var(--ff-card-padding);
+}
+
+.battle-setup-actions,
+.battle-preset-controls {
+  display: flex;
+  align-items: end;
+  gap: 0.55rem;
+}
+
+.battle-setup-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.battle-side-action-button {
+  border-color: color-mix(in srgb, var(--ff-action) 35%, var(--ff-border));
+}
+
+.battle-file-button {
+  position: relative;
+  cursor: pointer;
+}
+
+.battle-file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.battle-file-button:has(input:focus-visible) {
+  box-shadow: var(--ff-focus-ring);
+}
+
+.battle-preset-controls,
+.battle-setup-hint,
+.battle-paste-setup {
+  grid-column: 1 / -1;
+}
+
+.battle-preset-controls {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) auto minmax(11rem, 1fr) auto auto;
+  grid-template-areas: 'name save select load delete';
+}
+
+.battle-preset-name-field {
+  grid-area: name;
+}
+
+[data-preset-save] {
+  grid-area: save;
+}
+
+.battle-preset-select-field {
+  grid-area: select;
+}
+
+[data-preset-load] {
+  grid-area: load;
+}
+
+[data-preset-delete] {
+  grid-area: delete;
+}
+
+.battle-setup-hint {
+  margin: -0.35rem 0 0;
+  color: var(--ff-text-tertiary);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.battle-paste-setup {
+  border-top: 1px solid var(--ff-border-subtle);
+}
+
+.battle-paste-setup > summary {
+  width: fit-content;
+  padding-top: 0.8rem;
+  color: var(--ff-text-dim);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.battle-paste-setup-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: end;
+  padding-top: 0.7rem;
 }
 
 .battle-run-count,
@@ -489,6 +598,7 @@ summary {
 
 .battle-field input,
 .battle-field select,
+.battle-field textarea,
 .battle-stat-input {
   width: 100%;
   min-width: 0;
@@ -504,12 +614,20 @@ summary {
 }
 
 .battle-field input,
-.battle-field select {
+.battle-field select,
+.battle-field textarea {
   padding: 0.65rem 0.75rem;
+}
+
+.battle-field textarea {
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .battle-field input:focus,
 .battle-field select:focus,
+.battle-field textarea:focus,
 .battle-stat-input:focus,
 button:focus-visible,
 a:focus-visible,
@@ -517,8 +635,8 @@ summary:focus-visible {
   box-shadow: var(--ff-focus-ring);
 }
 
-.battle-simulator-form.is-validated :is(input, select):invalid,
-.battle-simulator-form :is(input, select)[aria-invalid='true'] {
+.battle-simulator-form.is-validated :is(input, select, textarea):invalid,
+.battle-simulator-form :is(input, select, textarea)[aria-invalid='true'] {
   border-color: var(--ff-danger);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ff-danger) 18%, transparent);
 }
@@ -530,6 +648,12 @@ summary:focus-visible {
 }
 
 .battle-field input:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+.battle-secondary-button:disabled,
+.battle-text-button:disabled {
   opacity: var(--disabled-opacity);
   cursor: not-allowed;
 }
@@ -575,6 +699,74 @@ summary:focus-visible {
     color-mix(in srgb, var(--side-color) 8%, transparent),
     transparent 55%
   );
+}
+
+.battle-side-setup {
+  margin: var(--ff-card-padding) var(--ff-card-padding) 0;
+  border: 1px solid color-mix(in srgb, var(--side-color) 24%, var(--ff-border-subtle));
+  border-radius: var(--ff-radius-card);
+  overflow: clip;
+  background: color-mix(in srgb, var(--side-color) 4%, var(--ff-surface-soft));
+}
+
+.battle-side-setup > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  min-height: var(--ff-tap-min);
+  padding: 0.7rem 0.8rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.battle-side-setup > summary::-webkit-details-marker {
+  display: none;
+}
+
+.battle-side-setup > summary strong,
+.battle-side-setup > summary small {
+  display: block;
+}
+
+.battle-side-setup > summary strong {
+  font-size: 0.8rem;
+}
+
+.battle-side-setup > summary small {
+  overflow: hidden;
+  margin-top: 0.18rem;
+  color: var(--ff-text-dim);
+  font-family: var(--ff-font-data);
+  font-size: 0.65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-side-setup[open] .battle-summary-chevron {
+  transform: rotate(180deg);
+}
+
+.battle-side-setup-body {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0 0.8rem 0.8rem;
+  border-top: 1px solid var(--ff-border-subtle);
+}
+
+.battle-side-setup-footer,
+.battle-row-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.battle-side-setup-footer p {
+  margin: 0;
+  color: var(--ff-text-tertiary);
+  font-size: 0.68rem;
+  line-height: 1.5;
 }
 
 .battle-side-kicker {
@@ -682,6 +874,46 @@ summary:focus-visible {
 .battle-squad-summary-copy strong,
 .battle-squad-summary-copy span {
   display: block;
+}
+
+.battle-squad-summary-copy .battle-row-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.battle-squad-summary-copy .battle-row-state {
+  display: inline-flex;
+  padding: 0.16rem 0.38rem;
+  color: var(--side-color);
+  background: color-mix(in srgb, var(--side-color) 12%, transparent);
+  font-family: var(--ff-font-ui);
+  font-size: 0.52rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.battle-row-state[hidden],
+.battle-text-button[hidden] {
+  display: none;
+}
+
+.battle-text-button {
+  min-height: var(--ff-tap-min);
+  padding: 0.35rem 0.2rem;
+  border: 0;
+  color: var(--side-color, var(--ff-action));
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.battle-danger-text-button {
+  color: var(--ff-danger);
 }
 
 .battle-squad-summary-copy strong {
@@ -834,17 +1066,21 @@ summary:focus-visible {
 }
 
 .battle-form-actions {
-  position: sticky;
+  position: fixed;
   z-index: var(--z-sticky);
+  left: 50%;
   bottom: max(0.75rem, var(--ff-safe-bottom));
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
+  width: min(calc(100% - 24px), calc(1680px - var(--ff-content-gutter) - var(--ff-content-gutter)));
   padding: 0.75rem;
   border: 1px solid var(--ff-border);
   border-radius: var(--ff-radius-card);
   background: var(--ff-panel-translucent-strong);
   box-shadow: var(--ff-shadow-lift);
   backdrop-filter: blur(var(--ff-blur-raised));
+  transform: translateX(-50%);
 }
 
 .battle-primary-button {
@@ -862,11 +1098,38 @@ summary:focus-visible {
   cursor: wait;
 }
 
-.battle-actions-copy {
+.battle-run-status {
   min-width: 0;
   color: var(--ff-text-dim);
   font-size: 0.74rem;
   line-height: 1.4;
+}
+
+.battle-run-bar-summary {
+  font-family: var(--ff-font-data);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-run-invalid-button {
+  display: grid;
+  gap: 0.12rem;
+  min-height: var(--ff-tap-min);
+  padding: 0.45rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--ff-danger) 42%, var(--ff-border));
+  border-radius: var(--ff-radius-control);
+  color: var(--ff-danger);
+  background: color-mix(in srgb, var(--ff-danger) 9%, var(--ff-control));
+  text-align: left;
+}
+
+.battle-run-invalid-button strong {
+  font-size: 0.72rem;
+}
+
+.battle-run-invalid-button span {
+  color: var(--ff-text-tertiary);
+  font-size: 0.62rem;
 }
 
 .battle-results-panel {
@@ -892,6 +1155,41 @@ summary:focus-visible {
   min-height: 2.35rem;
   padding: 0.4rem 0.65rem;
   font-size: 0.68rem;
+}
+
+.battle-verdict-banner {
+  --verdict-color: var(--ff-text-dim);
+  display: grid;
+  gap: 0.25rem;
+  padding: clamp(0.9rem, 2vw, 1.25rem);
+  border: 1px solid color-mix(in srgb, var(--verdict-color) 42%, var(--ff-border));
+  border-left: 4px solid var(--verdict-color);
+  border-radius: var(--ff-radius-card);
+  color: var(--verdict-color);
+  background: color-mix(in srgb, var(--verdict-color) 9%, var(--ff-panel));
+}
+
+.battle-verdict-banner.is-success {
+  --verdict-color: var(--ff-success);
+}
+
+.battle-verdict-banner.is-danger {
+  --verdict-color: var(--ff-danger);
+}
+
+.battle-verdict-banner.is-neutral {
+  --verdict-color: var(--ff-text-dim);
+}
+
+.battle-verdict-banner strong {
+  font-family: var(--ff-font-data);
+  font-size: clamp(1.05rem, 2.5vw, 1.5rem);
+  line-height: 1.25;
+}
+
+.battle-verdict-banner span {
+  color: var(--ff-text-supporting);
+  font-size: 0.76rem;
 }
 
 .battle-outcome-grid,
@@ -1077,7 +1375,7 @@ summary:focus-visible {
   position: fixed;
   z-index: var(--z-toast);
   right: max(0.75rem, var(--ff-safe-right));
-  bottom: max(0.75rem, var(--ff-safe-bottom));
+  bottom: max(var(--battle-run-bar-clearance), calc(var(--ff-safe-bottom) + 5.5rem));
   display: grid;
   gap: 0.5rem;
   width: min(23rem, calc(100vw - 1.5rem));
@@ -1278,12 +1576,28 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .battle-setup-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-setup-actions {
+    justify-content: flex-start;
+  }
+
+  .battle-preset-controls {
+    grid-template-columns: minmax(10rem, 1fr) auto minmax(10rem, 1fr) auto auto;
+  }
+
   .battle-side-header {
     grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.75fr);
   }
 }
 
 @media (max-width: 700px) {
+  :root {
+    --battle-run-bar-clearance: 8.5rem;
+  }
+
   .battle-app-shell {
     padding-inline: max(8px, var(--ff-safe-left));
   }
@@ -1323,6 +1637,25 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .battle-setup-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-setup-actions {
+    justify-content: flex-start;
+  }
+
+  .battle-preset-controls {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'name save save'
+      'select load delete';
+  }
+
+  .battle-paste-setup-body {
+    grid-template-columns: 1fr;
+  }
+
   .battle-run-advanced {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1349,7 +1682,24 @@ summary:focus-visible {
   }
 
   .battle-form-actions {
+    grid-template-columns: 1fr;
+    width: calc(100% - 16px);
+    padding: 0.55rem;
     align-items: stretch;
+  }
+
+  .battle-form-actions .battle-result-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .battle-form-actions .battle-primary-button {
+    min-width: 0;
+  }
+
+  .battle-side-setup-footer,
+  .battle-row-footer {
+    align-items: flex-start;
     flex-direction: column;
   }
 
@@ -1357,7 +1707,7 @@ summary:focus-visible {
     width: 100%;
   }
 
-  .battle-actions-copy {
+  .battle-run-status {
     text-align: center;
   }
 
@@ -1373,6 +1723,7 @@ summary:focus-visible {
   }
 
   .battle-run-panel,
+  .battle-setup-toolbar,
   .battle-side-header,
   .battle-squad-list,
   .battle-results-panel {
@@ -1385,6 +1736,26 @@ summary:focus-visible {
 
   .battle-run-advanced {
     grid-template-columns: 1fr;
+  }
+
+  .battle-preset-controls {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'name'
+      'save'
+      'select'
+      'load'
+      'delete';
+  }
+
+  .battle-preset-controls > button,
+  .battle-setup-actions,
+  .battle-setup-actions > * {
+    width: 100%;
+  }
+
+  .battle-side-setup {
+    margin: 0.8rem 0.8rem 0;
   }
 
   .battle-stat-table-wrap {
