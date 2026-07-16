@@ -1,16 +1,20 @@
 import { BATTLE_ROWS, TROOP_STAT_KEYS } from './battle-simulator-data.js';
+import {
+  DEFAULT_BATTLE_COEFFICIENTS,
+  normalizeBattleCoefficients,
+} from './battle-simulator-coefficients.js';
 
 export const BATTLE_MODEL_VERSION = 'phase1-beta-1';
 export const BATTLE_MAX_ROUNDS = 200;
-export const BATTLE_BASE_CASUALTY_RATE = 0.08;
+export const BATTLE_BASE_CASUALTY_RATE = DEFAULT_BATTLE_COEFFICIENTS.baseCasualtyRate;
 export const BATTLE_BATCH_PRESETS = Object.freeze([1, 10, 50, 100, 500]);
 export const BATTLE_MAX_BATCH_ITERATIONS = 500;
 
 export const BATTLE_MODEL_ASSUMPTIONS = Object.freeze({
   phase: 'Phase 1 troop-only beta',
   formula:
-    '0.08 * (1 + might / 100) * (1 + damage / 100) / ((1 + resistance / 100) * (1 + hp / 100))',
-  casualtyRateCap: 0.95,
+    'baseCasualtyRate * (1 + mightScale * might / 100) ** mightExponent * (1 + damageScale * damage / 100) ** damageExponent * strikeMultiplier / ((1 + resistanceScale * resistance / 100) ** resistanceExponent * (1 + hpScale * hp / 100) ** hpExponent)',
+  casualtyRateCap: DEFAULT_BATTLE_COEFFICIENTS.casualtyRateCap,
   casualtyRounding:
     'Floor attacker troops multiplied by casualty rate; each valid hit deals at least 1 casualty and never more than the target row has remaining.',
   simultaneousOverflow:
@@ -133,14 +137,57 @@ function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-function calculateCasualtyRateUnchecked(attackerStats, defenderStats, strikeMultiplier) {
+function calculateCasualtyRateInLogSpace(
+  attackerStats,
+  defenderStats,
+  strikeMultiplier,
+  coefficients
+) {
+  if (strikeMultiplier === 0) return 0;
+
+  const logStatFactor = (stat, scale) => Math.log1p((stat / 100) * scale);
+  const logAttack =
+    Math.log(coefficients.baseCasualtyRate) +
+    coefficients.mightExponent * logStatFactor(attackerStats.might, coefficients.mightScale) +
+    coefficients.damageExponent * logStatFactor(attackerStats.damage, coefficients.damageScale) +
+    Math.log(strikeMultiplier);
+  const logDefense =
+    coefficients.resistanceExponent *
+      logStatFactor(defenderStats.resistance, coefficients.resistanceScale) +
+    coefficients.hpExponent * logStatFactor(defenderStats.hp, coefficients.hpScale);
+  const logRate = logAttack - logDefense;
+
+  if (logRate >= Math.log(coefficients.casualtyRateCap)) {
+    return coefficients.casualtyRateCap;
+  }
+  return clamp(Math.exp(logRate), 0, coefficients.casualtyRateCap);
+}
+
+function calculateCasualtyRateUnchecked(
+  attackerStats,
+  defenderStats,
+  strikeMultiplier,
+  coefficients
+) {
   const attack =
-    BATTLE_BASE_CASUALTY_RATE *
-    (1 + attackerStats.might / 100) *
-    (1 + attackerStats.damage / 100) *
+    coefficients.baseCasualtyRate *
+    (1 + (coefficients.mightScale * attackerStats.might) / 100) ** coefficients.mightExponent *
+    (1 + (coefficients.damageScale * attackerStats.damage) / 100) ** coefficients.damageExponent *
     strikeMultiplier;
-  const defense = (1 + defenderStats.resistance / 100) * (1 + defenderStats.hp / 100);
-  return clamp(attack / defense, 0, 0.95);
+  const defense =
+    (1 + (coefficients.resistanceScale * defenderStats.resistance) / 100) **
+      coefficients.resistanceExponent *
+    (1 + (coefficients.hpScale * defenderStats.hp) / 100) ** coefficients.hpExponent;
+  const directRate = attack / defense;
+  if (!Number.isNaN(directRate)) {
+    return clamp(directRate, 0, coefficients.casualtyRateCap);
+  }
+  return calculateCasualtyRateInLogSpace(
+    attackerStats,
+    defenderStats,
+    strikeMultiplier,
+    coefficients
+  );
 }
 
 export function calculateCasualtyRate(attackerStats, defenderStats, strikeMultiplier = 1) {
@@ -148,8 +195,26 @@ export function calculateCasualtyRate(attackerStats, defenderStats, strikeMultip
   return calculateCasualtyRateUnchecked(
     normalizeStats(attackerStats, 'Attacker'),
     normalizeStats(defenderStats, 'Defender'),
-    multiplier
+    multiplier,
+    DEFAULT_BATTLE_COEFFICIENTS
   );
+}
+
+function getModelVersion(coefficients) {
+  const usesDefaults = Object.entries(DEFAULT_BATTLE_COEFFICIENTS).every(
+    ([key, value]) => coefficients[key] === value
+  );
+  return usesDefaults ? BATTLE_MODEL_VERSION : `${BATTLE_MODEL_VERSION}+custom-coefficients`;
+}
+
+function getModelAssumptions(coefficients) {
+  if (coefficients.casualtyRateCap === BATTLE_MODEL_ASSUMPTIONS.casualtyRateCap) {
+    return BATTLE_MODEL_ASSUMPTIONS;
+  }
+  return Object.freeze({
+    ...BATTLE_MODEL_ASSUMPTIONS,
+    casualtyRateCap: coefficients.casualtyRateCap,
+  });
 }
 
 function getAliveRows(side) {
@@ -293,10 +358,18 @@ function getOutcomeReason(outcome, rounds) {
 
 export function simulateBattle(
   { sideA, sideB } = {},
-  { seed: rawSeed = 1, strikeVariancePct: rawVariance = 0, includeEventLog = true } = {}
+  {
+    seed: rawSeed = 1,
+    strikeVariancePct: rawVariance = 0,
+    includeEventLog = true,
+    coefficients: rawCoefficients,
+  } = {}
 ) {
   const seed = normalizeSeed(rawSeed);
   const strikeVariancePct = normalizeVariance(rawVariance);
+  const coefficients = normalizeBattleCoefficients(rawCoefficients);
+  const modelVersion = getModelVersion(coefficients);
+  const assumptions = getModelAssumptions(coefficients);
   const variance = strikeVariancePct / 100;
   const random = createSeededRandom(seed);
   const sides = {
@@ -328,7 +401,8 @@ export function simulateBattle(
         const casualtyRate = calculateCasualtyRateUnchecked(
           actor.stats,
           target.stats,
-          strikeMultiplier
+          strikeMultiplier,
+          coefficients
         );
         const attemptedCasualties = Math.min(
           target.troops,
@@ -417,8 +491,9 @@ export function simulateBattle(
   const summaries = { A: sideASummary, B: sideBSummary };
 
   return {
-    modelVersion: BATTLE_MODEL_VERSION,
-    assumptions: BATTLE_MODEL_ASSUMPTIONS,
+    modelVersion,
+    coefficients,
+    assumptions,
     status: outcome === 'stalemate' ? 'stalemate' : 'complete',
     outcome,
     winner: outcome,
@@ -456,11 +531,15 @@ export function simulateBattleBatch(
     strikeVariancePct: rawVariance = 5,
     includeResults = false,
     includeEventLogs = false,
+    coefficients: rawCoefficients,
   } = {}
 ) {
   const runCount = normalizeIterations(rawIterations);
   const seed = normalizeSeed(rawSeed);
   const strikeVariancePct = normalizeVariance(rawVariance);
+  const coefficients = normalizeBattleCoefficients(rawCoefficients);
+  const modelVersion = getModelVersion(coefficients);
+  const assumptions = getModelAssumptions(coefficients);
   const keepResults = Boolean(includeResults || includeEventLogs);
   const keepLogs = Boolean(includeEventLogs);
   const outcomeCounts = { A: 0, B: 0, draw: 0, stalemate: 0 };
@@ -477,6 +556,7 @@ export function simulateBattleBatch(
       seed: runSeed,
       strikeVariancePct,
       includeEventLog: keepLogs,
+      coefficients,
     });
     outcomeCounts[result.outcome] += 1;
     totalRounds += result.rounds;
@@ -497,8 +577,9 @@ export function simulateBattleBatch(
     ])
   );
   const batch = {
-    modelVersion: BATTLE_MODEL_VERSION,
-    assumptions: BATTLE_MODEL_ASSUMPTIONS,
+    modelVersion,
+    coefficients,
+    assumptions,
     runCount,
     seed,
     runSeeds,

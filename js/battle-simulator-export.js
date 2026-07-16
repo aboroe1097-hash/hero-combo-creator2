@@ -1,4 +1,10 @@
-export const BATTLE_EXPORT_SCHEMA_VERSION = 1;
+import {
+  DEFAULT_BATTLE_COEFFICIENTS,
+  normalizeBattleCoefficients,
+} from './battle-simulator-coefficients.js';
+import { buildSetupSnapshot, parseSetupSnapshot } from './battle-simulator-setup.js';
+
+export const BATTLE_EXPORT_SCHEMA_VERSION = 2;
 
 const EVENT_CSV_COLUMNS = [
   'run_index',
@@ -106,6 +112,15 @@ function sanitizeForExport(value, ancestors = new WeakSet()) {
 
 function stableJson(value, space = 0) {
   return JSON.stringify(sanitizeForExport(value), null, space);
+}
+
+function sanitizeDocument(document) {
+  const sanitized = sanitizeForExport(document);
+  return Object.fromEntries(
+    Object.keys(document)
+      .filter((key) => Object.hasOwn(sanitized, key))
+      .map((key) => [key, sanitized[key]])
+  );
 }
 
 function normalizeGeneratedAt(value) {
@@ -325,6 +340,155 @@ function initialTroops(config, side) {
     if (fromRows !== undefined) return fromRows;
   }
   return undefined;
+}
+
+function resolveSetupSnapshot(input) {
+  const snapshot =
+    input.setup !== undefined
+      ? input.setup
+      : input.state !== undefined
+        ? buildSetupSnapshot(input.state)
+        : undefined;
+  if (!isObject(snapshot)) {
+    throw new TypeError('Battle export requires a setup snapshot or simulator state.');
+  }
+  return parseSetupSnapshot(JSON.stringify(sanitizeForExport(snapshot)));
+}
+
+function selectBattleResult(result, runMode) {
+  for (const selected of [result?.selectedResult, result?.representativeResult]) {
+    if (isObject(selected)) return selected;
+  }
+  if (runMode === 'single' && isObject(result)) return result;
+  return extractRuns(result, runMode).find(isObject) ?? (isObject(result) ? result : {});
+}
+
+function rowsForSide(root, side) {
+  for (const source of sideSources(root, side)) {
+    if (Array.isArray(source)) return source;
+    for (const rows of [source?.rows, source?.squads, source?.formations]) {
+      if (Array.isArray(rows)) return rows;
+    }
+  }
+  return [];
+}
+
+function rowNumber(row, fields) {
+  return firstDefined(fields.map((field) => finiteNumber(row?.[field])));
+}
+
+function buildPerRowMetrics(setup, result, config) {
+  const fallbackIds = ['front', 'middle', 'back'];
+  return Object.fromEntries(
+    ['A', 'B'].map((side) => {
+      const setupRows = rowsForSide(setup, side);
+      const resultRows = rowsForSide(result, side);
+      const configRows = rowsForSide(config, side);
+      const rows = Array.from({ length: 3 }, (_, index) => {
+        const setupRow = setupRows[index];
+        const resultRow = resultRows[index];
+        const configRow = configRows[index];
+        let initial = firstDefined([
+          rowNumber(resultRow, ['initialTroops', 'startingTroops']),
+          rowNumber(setupRow, ['initialTroops', 'troops', 'troopCount', 'count']),
+          rowNumber(configRow, ['initialTroops', 'troops', 'troopCount', 'count']),
+        ]);
+        let surviving = rowNumber(resultRow, [
+          'survivingTroops',
+          'survivors',
+          'remainingTroops',
+          'troopsRemaining',
+          'troops',
+        ]);
+        let casualties = rowNumber(resultRow, ['casualties', 'losses', 'lostTroops']);
+
+        if (initial === undefined && surviving !== undefined && casualties !== undefined) {
+          initial = surviving + casualties;
+        }
+        if (surviving === undefined && initial !== undefined && casualties !== undefined) {
+          surviving = Math.max(0, initial - casualties);
+        }
+        if (casualties === undefined && initial !== undefined && surviving !== undefined) {
+          casualties = Math.max(0, initial - surviving);
+        }
+
+        return {
+          id:
+            resultRow?.id ??
+            setupRow?.id ??
+            configRow?.id ??
+            fallbackIds[index] ??
+            `row-${index + 1}`,
+          initialTroops: initial ?? null,
+          survivingTroops: surviving ?? null,
+          casualties: casualties ?? null,
+        };
+      });
+      return [side, rows];
+    })
+  );
+}
+
+function collectSeeds(context, selectedResult) {
+  let runSeeds = Array.isArray(context.result?.runSeeds)
+    ? context.result.runSeeds
+    : extractRuns(context.result, context.runMode)
+        .map((run) => firstDefined([run?.seed, run?.runSeed]))
+        .filter((seed) => seed !== undefined && seed !== null);
+  const selectedSeed = firstDefined([selectedResult?.seed, selectedResult?.runSeed]);
+  if (runSeeds.length === 0 && selectedSeed !== undefined) runSeeds = [selectedSeed];
+  if (runSeeds.length === 0 && context.seed !== null) runSeeds = [context.seed];
+  return sanitizeForExport({ base: context.seed, runs: runSeeds });
+}
+
+function createRichContext(input = {}) {
+  const context = createContext(input);
+  const setup = resolveSetupSnapshot(input);
+  const selectedResult = selectBattleResult(context.result, context.runMode);
+  const rawCoefficients =
+    firstDefined([
+      selectedResult?.coefficients,
+      context.result?.coefficients,
+      input.coefficients,
+      input.model?.coefficients,
+    ]) ?? DEFAULT_BATTLE_COEFFICIENTS;
+  const coefficients = normalizeBattleCoefficients(sanitizeForExport(rawCoefficients));
+  const modelVersion = String(
+    firstDefined([
+      selectedResult?.modelVersion,
+      context.result?.modelVersion,
+      input.modelVersion,
+      context.model.version,
+    ]) ?? 'unknown'
+  );
+  const assumptions = sanitizeForExport(
+    firstDefined([
+      selectedResult?.assumptions,
+      context.result?.assumptions,
+      context.model.assumptions,
+    ]) ?? []
+  );
+  return {
+    ...context,
+    model: {
+      ...context.model,
+      version: modelVersion,
+      assumptions,
+    },
+    setup,
+    selectedResult,
+    coefficients,
+    modelVersion,
+    seeds: collectSeeds(context, selectedResult),
+    perRow: buildPerRowMetrics(setup, selectedResult, context.config),
+  };
+}
+
+function totalFromRows(rows, field) {
+  const values = rows.map((row) => finiteNumber(row?.[field]));
+  return values.length > 0 && values.every((value) => value !== undefined)
+    ? values.reduce((total, value) => total + value, 0)
+    : null;
 }
 
 function average(values) {
@@ -567,18 +731,23 @@ function eventEntries(result, runMode) {
 }
 
 export function buildBattleJsonExport(input = {}) {
-  const context = createContext(input);
+  const context = createRichContext(input);
   const document = {
     schemaVersion: BATTLE_EXPORT_SCHEMA_VERSION,
     generatedAt: context.generatedAt,
     model: context.model,
+    modelVersion: context.modelVersion,
+    coefficients: context.coefficients,
+    setup: context.setup,
     config: context.config,
     runMode: context.runMode,
     seed: context.seed,
+    seeds: context.seeds,
     variance: context.variance,
+    perRow: context.perRow,
     results: sanitizeForExport(context.result),
   };
-  return JSON.stringify(document, null, 2);
+  return JSON.stringify(sanitizeDocument(document), null, 2);
 }
 
 export function buildBattleSummaryCsv(input = {}) {
@@ -666,7 +835,7 @@ function textNumber(value) {
 }
 
 export function buildBattleDebugSnapshot(input = {}) {
-  const context = createContext(input);
+  const context = createRichContext(input);
   const summary = summarize(context);
   const assumptions = Array.isArray(context.model.assumptions)
     ? context.model.assumptions.length
@@ -680,13 +849,63 @@ export function buildBattleDebugSnapshot(input = {}) {
   return [
     'Battle Simulator debug snapshot',
     `Generated: ${context.generatedAt}`,
-    `Schema / model: ${BATTLE_EXPORT_SCHEMA_VERSION} / ${context.model.version}`,
+    `Schema / model: ${BATTLE_EXPORT_SCHEMA_VERSION} / ${context.modelVersion}`,
     `Run: ${context.runMode} · ${summary.simulations} simulation${summary.simulations === 1 ? '' : 's'} · seed ${seed} · variance ${variance}`,
     `Outcomes: Side A ${summary.sideAWins} (${percent(summary.sideAWinRate)}) · Side B ${summary.sideBWins} (${percent(summary.sideBWinRate)}) · Draw ${summary.draws} (${percent(summary.drawRate)}) · Stalemate ${summary.stalemates} (${percent(summary.stalemateRate)})`,
     `Averages: ${textNumber(summary.averageRounds)} rounds · survivors A/B ${textNumber(summary.averageSideASurvivors)}/${textNumber(summary.averageSideBSurvivors)} · casualties A/B ${textNumber(summary.averageSideACasualties)}/${textNumber(summary.averageSideBCasualties)}`,
     `Assumptions: ${assumptions}`,
+    `Coefficients: ${stableJson(context.coefficients)}`,
+    `Seeds: ${stableJson(context.seeds)}`,
+    `Per-row results: ${stableJson(context.perRow)}`,
+    `Setup: ${stableJson(context.setup)}`,
     `Config: ${stableJson(context.config)}`,
   ].join('\n');
+}
+
+export function buildBattleCalibrationFixture(input = {}) {
+  const context = createRichContext(input);
+  const result = context.selectedResult;
+  const survivorA =
+    numberAt([result], ['survivors.A', 'survivors.sideA']) ??
+    sideMetric(result, context.config, 'A', 'survivors') ??
+    totalFromRows(context.perRow.A, 'survivingTroops');
+  const survivorB =
+    numberAt([result], ['survivors.B', 'survivors.sideB']) ??
+    sideMetric(result, context.config, 'B', 'survivors') ??
+    totalFromRows(context.perRow.B, 'survivingTroops');
+  const document = {
+    fixtureVersion: 1,
+    battleType: 'pvp-field',
+    battleMode: context.setup.battleMode,
+    createdAt: context.generatedAt,
+    setup: context.setup,
+    simulated: {
+      modelVersion: context.modelVersion,
+      coefficients: context.coefficients,
+      seed: firstDefined([result?.seed, result?.runSeed, context.seed]) ?? null,
+      winner: firstDefined([result?.winner, result?.outcome]) ?? null,
+      rounds: roundCount(result) ?? null,
+      perRowCasualties: {
+        A: context.perRow.A.map((row) => row.casualties),
+        B: context.perRow.B.map((row) => row.casualties),
+      },
+      survivors: { A: survivorA, B: survivorB },
+    },
+    observed: {
+      winner: null,
+      rounds: null,
+      perRowCasualties: {
+        A: [null, null, null],
+        B: [null, null, null],
+      },
+      notes: '',
+    },
+    provenance: {
+      submitter: '',
+      reportDate: null,
+    },
+  };
+  return JSON.stringify(sanitizeDocument(document), null, 2);
 }
 
 export function makeBattleExportFilename({
@@ -703,6 +922,7 @@ export function makeBattleExportFilename({
     'event-log': ['event-log', 'csv'],
     debug: ['debug', 'txt'],
     text: ['debug', 'txt'],
+    calibration: ['calibration', 'json'],
   };
   const normalizedKind = String(kind).toLowerCase();
   const [label, defaultExtension] = kindMap[normalizedKind] ?? [normalizedKind, 'txt'];
@@ -713,6 +933,7 @@ export function makeBattleExportFilename({
       .replace(/^-+|-+$/g, '')
       .slice(0, 40) || fallback;
   const stamp = normalizeGeneratedAt(generatedAt).replace(/[:.]/g, '-');
+  if (normalizedKind === 'calibration') return `battle-fixture-${stamp}.json`;
   const safeExtension = safePart(String(extension ?? defaultExtension).replace(/^\./, ''), 'txt');
   return `vts-battle-simulator-${safePart(label, 'export')}-${safePart(mode, 'single')}-${stamp}.${safeExtension}`;
 }

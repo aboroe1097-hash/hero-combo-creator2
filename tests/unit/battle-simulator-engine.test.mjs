@@ -2,8 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  DEFAULT_BATTLE_COEFFICIENTS,
+  normalizeBattleCoefficients,
+} from '../../js/battle-simulator-coefficients.js';
+import {
   BATTLE_BATCH_PRESETS,
   BATTLE_MAX_ROUNDS,
+  BATTLE_MODEL_ASSUMPTIONS,
   BATTLE_MODEL_VERSION,
   calculateCasualtyRate,
   simulateBattle,
@@ -44,6 +49,199 @@ function equalBattleConfig(troops = 1_000) {
     sideB: side(makeRows(), 'Bravo'),
   };
 }
+
+test('battle coefficients fill defaults, reject invalid input, and return a frozen object', () => {
+  const normalized = normalizeBattleCoefficients({ damageScale: 2 });
+  const boundaries = normalizeBattleCoefficients({
+    baseCasualtyRate: 1,
+    mightScale: 10,
+    hpExponent: 10,
+    casualtyRateCap: 1,
+  });
+
+  assert.deepEqual(normalized, { ...DEFAULT_BATTLE_COEFFICIENTS, damageScale: 2 });
+  assert.equal(Object.isFrozen(normalized), true);
+  assert.equal(boundaries.baseCasualtyRate, 1);
+  assert.equal(boundaries.mightScale, 10);
+  assert.equal(boundaries.hpExponent, 10);
+  assert.equal(boundaries.casualtyRateCap, 1);
+  assert.throws(
+    () => normalizeBattleCoefficients({ unknownCoefficient: 1 }),
+    /Unknown battle coefficient/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ mightScale: Number.NaN }),
+    /must be a finite number/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ hpExponent: Number.POSITIVE_INFINITY }),
+    /must be a finite number/
+  );
+  assert.throws(() => normalizeBattleCoefficients({ mightScale: '2' }), /must be a finite number/);
+  assert.throws(
+    () => normalizeBattleCoefficients({ damageScale: null }),
+    /must be a finite number/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ resistanceExponent: true }),
+    /must be a finite number/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ mightScale: undefined }),
+    /must be a finite number/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ baseCasualtyRate: 0 }),
+    /greater than 0 and at most 1/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ casualtyRateCap: 1.01 }),
+    /greater than 0 and at most 1/
+  );
+  assert.throws(
+    () => normalizeBattleCoefficients({ resistanceScale: 10.01 }),
+    /greater than 0 and at most 10/
+  );
+});
+
+test('omitted coefficients and explicit defaults produce bit-identical results', () => {
+  const config = equalBattleConfig();
+  const options = { seed: 42, strikeVariancePct: 5, includeEventLog: false };
+  const implicit = simulateBattle(config, options);
+  const explicit = simulateBattle(config, {
+    ...options,
+    coefficients: DEFAULT_BATTLE_COEFFICIENTS,
+  });
+  const emptyDefaults = simulateBattle(config, {
+    ...options,
+    coefficients: {},
+  });
+  const partialDefaults = simulateBattle(config, {
+    ...options,
+    coefficients: { mightScale: DEFAULT_BATTLE_COEFFICIENTS.mightScale },
+  });
+  const implicitBatch = simulateBattleBatch(config, {
+    iterations: 2,
+    seed: 42,
+    strikeVariancePct: 5,
+    includeResults: true,
+  });
+  const explicitBatch = simulateBattleBatch(config, {
+    iterations: 2,
+    seed: 42,
+    strikeVariancePct: 5,
+    includeResults: true,
+    coefficients: DEFAULT_BATTLE_COEFFICIENTS,
+  });
+
+  assert.deepEqual(implicit, explicit);
+  assert.deepEqual(implicit, emptyDefaults);
+  assert.deepEqual(implicit, partialDefaults);
+  assert.deepEqual(implicitBatch, explicitBatch);
+  assert.equal(implicit.modelVersion, BATTLE_MODEL_VERSION);
+  assert.strictEqual(implicit.assumptions, BATTLE_MODEL_ASSUMPTIONS);
+  assert.deepEqual(implicit.coefficients, DEFAULT_BATTLE_COEFFICIENTS);
+  assert.equal(Object.isFrozen(implicit.coefficients), true);
+});
+
+test('seed 42 preserves the pre-coefficient engine golden result', () => {
+  const result = simulateBattle(equalBattleConfig(), {
+    seed: 42,
+    strikeVariancePct: 5,
+    includeEventLog: false,
+  });
+
+  assert.deepEqual(
+    {
+      winner: result.winner,
+      rounds: result.rounds,
+      survivors: result.survivors,
+      casualties: result.casualties,
+    },
+    {
+      winner: 'B',
+      rounds: 50,
+      survivors: { A: 0, B: 112 },
+      casualties: { A: 3_000, B: 2_888 },
+    }
+  );
+});
+
+test('custom coefficients change battle results and identify single and batch models', () => {
+  const config = equalBattleConfig();
+  const options = { seed: 42, strikeVariancePct: 5, includeEventLog: false };
+  const baseline = simulateBattle(config, options);
+  const custom = simulateBattle(config, {
+    ...options,
+    coefficients: { baseCasualtyRate: 0.16 },
+  });
+  const batch = simulateBattleBatch(config, {
+    iterations: 2,
+    seed: 42,
+    strikeVariancePct: 5,
+    includeResults: true,
+    coefficients: { baseCasualtyRate: 0.16 },
+  });
+
+  assert.notDeepEqual(
+    { rounds: custom.rounds, survivors: custom.survivors, casualties: custom.casualties },
+    { rounds: baseline.rounds, survivors: baseline.survivors, casualties: baseline.casualties }
+  );
+  assert.notEqual(custom.outcome, baseline.outcome);
+  assert.equal(custom.modelVersion, `${BATTLE_MODEL_VERSION}+custom-coefficients`);
+  assert.equal(custom.coefficients.baseCasualtyRate, 0.16);
+  assert.equal(Object.isFrozen(custom.coefficients), true);
+  assert.equal(batch.modelVersion, `${BATTLE_MODEL_VERSION}+custom-coefficients`);
+  assert.deepEqual(batch.coefficients, custom.coefficients);
+  assert.ok(batch.results.every((result) => result.modelVersion === batch.modelVersion));
+});
+
+test('overflowing custom-exponent arithmetic falls back to finite deterministic rates', () => {
+  const extremeStats = {
+    might: Number.MAX_VALUE,
+    resistance: Number.MAX_VALUE,
+    hp: Number.MAX_VALUE,
+    damage: Number.MAX_VALUE,
+  };
+  const config = {
+    sideA: side([row(1, extremeStats), row(0), row(0)], 'Extreme A'),
+    sideB: side([row(1, extremeStats), row(0), row(0)], 'Extreme B'),
+  };
+  const coefficients = {
+    mightExponent: 10,
+    damageExponent: 10,
+    resistanceExponent: 10,
+    hpExponent: 10,
+  };
+  const first = simulateBattle(config, { seed: 42, coefficients });
+  const second = simulateBattle(config, { seed: 42, coefficients });
+
+  assert.deepEqual(first, second);
+  assert.deepEqual(first.survivors, { A: 0, B: 0 });
+  assert.deepEqual(first.casualties, { A: 1, B: 1 });
+  assert.ok(first.actionLog.every((action) => Number.isFinite(action.casualtyRate)));
+});
+
+test('single and batch assumptions report the normalized custom casualty-rate cap', () => {
+  const config = equalBattleConfig(100);
+  const coefficients = { casualtyRateCap: 0.4 };
+  const single = simulateBattle(config, { coefficients });
+  const batch = simulateBattleBatch(config, {
+    iterations: 2,
+    includeResults: true,
+    coefficients,
+  });
+
+  assert.equal(single.assumptions.casualtyRateCap, 0.4);
+  assert.equal(Object.isFrozen(single.assumptions), true);
+  assert.equal(batch.assumptions.casualtyRateCap, 0.4);
+  assert.equal(Object.isFrozen(batch.assumptions), true);
+  assert.ok(
+    batch.results.every(
+      (result) => result.assumptions.casualtyRateCap === 0.4 && Object.isFrozen(result.assumptions)
+    )
+  );
+});
 
 test('beta casualty formula uses Might, Damage, Resistance, and HP with a 95% clamp', () => {
   assert.equal(calculateCasualtyRate(stats(), stats()), 0.08);

@@ -6,20 +6,29 @@ import {
   BATTLE_ROWS,
   DEFAULT_TROOPS,
   EDITABLE_BASE_STAT_KEYS,
+  STAT_INPUT_MODES,
   TROOP_STAT_KEYS,
   TROOP_STAT_METADATA,
+  getTroopProfile,
 } from '../../js/battle-simulator-data.js';
 import {
   BATTLE_BATCH_PRESETS,
   BATTLE_MODEL_ASSUMPTIONS,
   simulateBattleBatch,
 } from '../../js/battle-simulator-engine.js';
-import { calculateMedian } from '../../js/battle-simulator-app.js';
+import {
+  calculateMedian,
+  copyBattleSideSetup,
+  getBatchVerdict,
+  shouldDisableStrikeVariance,
+  swapBattleSides,
+} from '../../js/battle-simulator-app.js';
 import { runBattleBatchWorkerRequest } from '../../js/battle-simulator-worker.js';
 
 const pageSource = readFileSync('battle-simulator.html', 'utf8');
 const bootstrapSource = readFileSync('js/battle-simulator.js', 'utf8');
 const appSource = readFileSync('js/battle-simulator-app.js', 'utf8');
+const battleCssSource = readFileSync('css/battle-simulator.css', 'utf8');
 const viteSource = readFileSync('vite.config.js', 'utf8');
 const indexSource = readFileSync('index.html', 'utf8');
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -30,6 +39,45 @@ function between(source, start, end) {
   assert.notEqual(startIndex, -1, `Missing ${start}`);
   assert.notEqual(endIndex, -1, `Missing ${end}`);
   return source.slice(startIndex, endIndex);
+}
+
+function editableFixture(type, tier, troops, bonus) {
+  const base = getTroopProfile(type, tier).baseStats;
+  return {
+    type,
+    tier,
+    troops,
+    baseValues: { might: base.might, resistance: base.resistance, hp: base.hp },
+    bonuses: Object.fromEntries(TROOP_STAT_KEYS.map((key) => [key, key === 'might' ? bonus : 0])),
+    finals: { ...base },
+  };
+}
+
+function sideFixture(type, tier, troops, bonus, customized) {
+  const sideDefaults = editableFixture(type, tier, troops, bonus);
+  return {
+    mode: STAT_INPUT_MODES.ADD_BONUSES,
+    sideDefaults,
+    rows: BATTLE_ROWS.map(({ id }, index) => ({
+      id,
+      ...editableFixture(type, tier, troops + index, bonus + index),
+      open: index === 0,
+      customized: index === 1 ? customized : false,
+    })),
+  };
+}
+
+function appStateFixture() {
+  return {
+    battleMode: 'pvp-field',
+    iterations: 100,
+    seed: 1097,
+    strikeVariancePct: 5,
+    sides: {
+      A: sideFixture('footmen', 9, 31_000, 10, false),
+      B: sideFixture('cavalry', 10, 42_000, 20, true),
+    },
+  };
 }
 
 test('Battle Simulator is a production entry whose locked HTML contains only an empty mount', () => {
@@ -117,7 +165,10 @@ test('both three-row sides own independent troop, mode, and editable base-stat c
   }
 
   assert.match(appSource, /const SIDE_IDS = \['A', 'B'\]/);
-  assert.match(appSource, /sides:\s*\{\s*A:\s*\{[\s\S]*?B:\s*\{/);
+  assert.match(
+    appSource,
+    /sides:\s*\{\s*A:\s*createSide\('footmen', 9, sideTypes\),\s*B:\s*createSide\('footmen', 10, sideTypes\)/
+  );
   assert.match(appSource, /troops:\s*DEFAULT_TROOPS/);
   assert.match(appSource, /\$\{renderSide\('A'\)\}[\s\S]*?\$\{renderSide\('B'\)\}/);
   assert.match(appSource, /name="side\$\{sideId\}Mode"/);
@@ -125,12 +176,205 @@ test('both three-row sides own independent troop, mode, and editable base-stat c
   assert.match(appSource, /data-row-field="type"/);
   assert.match(appSource, /data-row-field="tier"/);
   assert.match(appSource, /data-row-field="troops"/);
-  assert.match(appSource, /data-base-stat-input="\$\{key\}"/);
+  assert.match(appSource, /'data-base-stat-input'/);
   assert.match(appSource, /state\.sides\[sideId\]\.rows\[rowIndex\]/);
   assert.match(appSource, /row\.baseValues\[target\.dataset\.baseStatInput\]\s*=\s*target\.value/);
   assert.match(
     appSource,
     /row\.baseValues = \{ might: preset\.might, resistance: preset\.resistance, hp: preset\.hp \}/
+  );
+});
+
+test('side setup applies deep-copied defaults while rows expose explicit override state', () => {
+  assert.match(appSource, /battleMode:\s*'pvp-field'/);
+  assert.match(appSource, /sideDefaults:\s*editableFields\(sideDefaultRow\)/);
+  assert.match(appSource, /customized:\s*false/);
+  assert.match(appSource, /Side setup \(applies to all rows\)/);
+  assert.match(appSource, /data-side-default-field="type"/);
+  assert.match(appSource, /data-side-default-field="tier"/);
+  assert.match(appSource, /data-side-default-field="troops"/);
+  assert.match(appSource, /data-side-default-base-stat/);
+  assert.match(appSource, /data-side-default-stat/);
+  assert.match(appSource, /data-apply-side-defaults="\$\{sideId\}"/);
+  assert.match(appSource, /Apply to all rows overwrites every row, including customized ones\./);
+  assert.match(appSource, /data-row-customized/);
+  assert.match(appSource, />Customized<\/span>/);
+  assert.match(appSource, /data-reset-row-defaults/);
+  assert.match(appSource, />Reset to side defaults<\/button>/);
+  assert.match(
+    appSource,
+    /row\.customized = !editableFieldsMatch\(row, state\.sides\[sideId\]\.sideDefaults\)/
+  );
+  assert.match(appSource, /Object\.assign\(row, editableFields\(defaults\)\)/);
+  assert.match(
+    appSource,
+    /side\.rows\.forEach\(\(row\) => copySideDefaultsToRow\(row, side\.sideDefaults\)\)/
+  );
+});
+
+test('copy and swap helpers are canonical, non-mutating, and alias-free', () => {
+  const source = appStateFixture();
+  const before = structuredClone(source);
+  const copied = copyBattleSideSetup(source, 'A', 'B');
+
+  assert.deepEqual(source, before);
+  assert.deepEqual(copied.sides.B, copied.sides.A);
+  assert.notStrictEqual(copied.sides.B, copied.sides.A);
+  assert.notStrictEqual(copied.sides.B.sideDefaults, copied.sides.A.sideDefaults);
+  assert.notStrictEqual(copied.sides.B.rows, copied.sides.A.rows);
+  assert.notStrictEqual(copied.sides.B.rows[0].bonuses, copied.sides.A.rows[0].bonuses);
+  assert.equal(copied.sides.B.rows[1].customized, copied.sides.A.rows[1].customized);
+  copied.sides.B.rows[0].troops += 1;
+  assert.notEqual(copied.sides.B.rows[0].troops, copied.sides.A.rows[0].troops);
+  assert.deepEqual(source, before);
+
+  const swapped = swapBattleSides(source);
+  assert.deepEqual(swapped.sides.A, before.sides.B);
+  assert.deepEqual(swapped.sides.B, before.sides.A);
+  assert.notStrictEqual(swapped.sides.A, source.sides.B);
+  assert.notStrictEqual(swapped.sides.B.rows[0].finals, source.sides.A.rows[0].finals);
+  assert.equal(swapped.sides.A.rows[1].customized, true);
+  assert.equal(swapped.battleMode, 'pvp-field');
+  assert.deepEqual(source, before);
+
+  const inProgress = appStateFixture();
+  inProgress.strikeVariancePct = '';
+  inProgress.sides.A.rows[0].troops = '';
+  const copiedInProgress = copyBattleSideSetup(inProgress, 'A', 'B');
+  assert.equal(copiedInProgress.strikeVariancePct, '');
+  assert.equal(copiedInProgress.sides.B.rows[0].troops, '');
+  assert.notStrictEqual(copiedInProgress.sides.B, inProgress.sides.A);
+  assert.notStrictEqual(
+    copiedInProgress.sides.B.rows[0].bonuses,
+    inProgress.sides.A.rows[0].bonuses
+  );
+});
+
+test('setup toolbar supports file and paste import plus safe browser-local named presets', () => {
+  assert.match(appSource, /buildSetupSnapshot/);
+  assert.match(appSource, /parseSetupSnapshot/);
+  assert.match(appSource, /applySetupSnapshot/);
+  assert.match(appSource, /data-setup-export>Export setup<\/button>/);
+  assert.match(appSource, /data-copy-side-a-to-b>Copy A → B<\/button>/);
+  assert.match(appSource, /data-swap-sides>Swap sides<\/button>/);
+  assert.match(appSource, /data-setup-file type="file" accept="\.json,application\/json"/);
+  assert.match(appSource, /data-setup-json/);
+  assert.match(appSource, /data-setup-import-paste>Import pasted JSON<\/button>/);
+  assert.match(appSource, /Setup imported/);
+  assert.match(appSource, /battle-setup-\$\{date\.toISOString\(\)\.slice\(0, 10\)\}\.json/);
+  assert.match(appSource, /BATTLE_SETUP_PRESET_STORAGE_KEY/);
+  assert.match(appSource, /normalizeBattleSetupPresetName/);
+  assert.match(appSource, /upsertBattleSetupPreset/);
+  assert.match(appSource, /deleteBattleSetupPreset/);
+  assert.match(appSource, /data-preset-name/);
+  assert.match(appSource, /data-preset-save>Save preset<\/button>/);
+  assert.match(appSource, /data-preset-select/);
+  assert.match(appSource, /data-preset-load disabled>Load<\/button>/);
+  assert.match(appSource, /data-preset-delete disabled>Delete<\/button>/);
+  assert.match(appSource, /localStorage\.setItem\(BATTLE_SETUP_PRESET_STORAGE_KEY/);
+  assert.match(appSource, /Saved presets were unavailable or corrupted/);
+  assert.match(appSource, /Browser storage may be full or unavailable/);
+  assert.match(appSource, /option\.textContent = name/);
+
+  const importSetup = between(
+    appSource,
+    'function importSetupText(jsonText)',
+    '\n}\n\nasync function importSetupFile'
+  );
+  assert.ok(importSetup.indexOf('parseSetupSnapshot(jsonText)') >= 0);
+  assert.ok(
+    importSetup.indexOf('parseSetupSnapshot(jsonText)') <
+      importSetup.indexOf('applySetupSnapshot(state, snapshot)')
+  );
+  assert.ok(
+    importSetup.indexOf('applySetupSnapshot(state, snapshot)') <
+      importSetup.indexOf("replaceSetupState(nextState, 'Setup imported')")
+  );
+});
+
+test('fixed run bar stays live, groups invalid sides, and focuses the first invalid field', () => {
+  const updateRunBar = between(
+    appSource,
+    'function updateRunBar()',
+    '\n}\n\nfunction markResultsStale'
+  );
+  assert.match(appSource, /data-run-status/);
+  assert.match(appSource, /data-focus-first-invalid/);
+  assert.match(appSource, /Side A:\s*\$\{counts\.A\}/);
+  assert.match(appSource, /Side B:\s*\$\{counts\.B\}/);
+  assert.match(
+    appSource,
+    /field\$\{invalidControls\.length === 1 \? ' needs' : 's need'\} attention/
+  );
+  assert.match(appSource, /A: \$\{formatCompactTroops\(sideTroopTotal\('A'\)\)\} troops vs B:/);
+  assert.match(appSource, /findFirstInvalid\(form, \{ includeSideDefaults: true \}\)/);
+  assert.match(battleCssSource, /\.battle-form-actions\s*\{[\s\S]*?position:\s*fixed/);
+  assert.match(battleCssSource, /--battle-run-bar-clearance/);
+  assert.match(
+    battleCssSource,
+    /\.battle-toast-region\s*\{[\s\S]*?bottom:\s*max\(var\(--battle-run-bar-clearance\)/
+  );
+  assert.equal(shouldDisableStrikeVariance(1, 5), true);
+  assert.equal(shouldDisableStrikeVariance(1, 30), false);
+  assert.equal(shouldDisableStrikeVariance(1, 0.05), false);
+  assert.equal(shouldDisableStrikeVariance(100, 5), false);
+  assert.match(
+    appSource,
+    /variance\.disabled = shouldDisableStrikeVariance\(iterations, variance\.value\)/
+  );
+  assert.match(updateRunBar, /const existingButton = status\.querySelector/);
+  assert.match(
+    updateRunBar,
+    /const button = existingButton \|\| document\.createElement\('button'\)/
+  );
+  assert.match(updateRunBar, /if \(!existingButton\) \{[\s\S]*?status\.replaceChildren\(button\)/);
+  assert.equal(
+    (updateRunBar.match(/status\.replaceChildren\(button\)/g) || []).length,
+    1,
+    'blur/change refreshes must preserve the mounted invalid-summary button through pointerup'
+  );
+});
+
+test('verdict banner reports dominant outcomes without inventing a winner', () => {
+  assert.match(appSource, /Side \$\{result\.outcome\} wins in \$\{result\.rounds\} rounds/);
+  assert.match(appSource, /'Draw'/);
+  assert.match(appSource, /Stalemate \(\$\{BATTLE_MODEL_ASSUMPTIONS\.maxRounds\} round cap\)/);
+  assert.match(appSource, /renderVerdictBanner\(isBatch, result\)/);
+  assert.match(battleCssSource, /\.battle-verdict-banner\.is-success/);
+  assert.match(battleCssSource, /\.battle-verdict-banner\.is-danger/);
+  assert.match(battleCssSource, /\.battle-verdict-banner\.is-neutral/);
+
+  assert.deepEqual(
+    getBatchVerdict({
+      runCount: 100,
+      winCounts: { A: 87, B: 10, draw: 2, stalemate: 1 },
+    }),
+    {
+      tone: 'is-success',
+      title: 'Side A wins 87 of 100 runs (87%)',
+      detail: 'Side B win rate: 10% · Draws: 2 · Stalemates: 1',
+    }
+  );
+  assert.match(
+    getBatchVerdict({
+      runCount: 100,
+      winCounts: { A: 0, B: 0, draw: 100, stalemate: 0 },
+    }).title,
+    /^Draw in 100 of 100 runs \(100%\)$/
+  );
+  assert.match(
+    getBatchVerdict({
+      runCount: 100,
+      winCounts: { A: 50, B: 50, draw: 0, stalemate: 0 },
+    }).title,
+    /^No clear winner/
+  );
+  assert.match(
+    getBatchVerdict({
+      runCount: 100,
+      winCounts: { A: 20, B: 10, draw: 25, stalemate: 45 },
+    }).title,
+    /^Stalemate in 45 of 100 runs \(45%\)$/
   );
 });
 
@@ -176,20 +420,23 @@ test('batch controls expose every requested preset, reproducibility inputs, and 
   );
 });
 
-test('results offer four debugging exports with full, summary, selected-log, and copy modes', () => {
+test('results offer five debugging exports including a calibration fixture', () => {
   const exportModes = Array.from(
     appSource.matchAll(/data-battle-export="([^"]+)"/g),
     (match) => match[1]
   );
-  assert.deepEqual(exportModes, ['json', 'summary-csv', 'log-csv', 'copy']);
+  assert.deepEqual(exportModes, ['json', 'summary-csv', 'log-csv', 'copy', 'calibration']);
   assert.match(appSource, /buildBattleJsonExport\(exportPayload\(\)\)/);
   assert.match(appSource, /buildBattleSummaryCsv\(exportPayload\(\)\)/);
   assert.match(appSource, /buildBattleEventLogCsv\(exportPayload\(\{ selectedOnly: true \}\)\)/);
   assert.match(appSource, /copyText\(buildBattleDebugSnapshot\(exportPayload\(\)\)\)/);
+  assert.match(appSource, /buildBattleCalibrationFixture\(exportPayload\(\)\)/);
+  assert.match(appSource, /setup:\s*lastRun\.setup/);
   assert.match(appSource, /data-battle-export="json">Full JSON/);
   assert.match(appSource, /data-battle-export="summary-csv">Summary CSV/);
   assert.match(appSource, /data-battle-export="log-csv">Selected log CSV/);
   assert.match(appSource, /data-battle-export="copy">Copy debug/);
+  assert.match(appSource, /data-battle-export="calibration">Calibration fixture/);
   assert.match(appSource, /data-battle-log-content/);
   assert.match(appSource, /const VISIBLE_EVENT_LIMIT = 300/);
   assert.match(appSource, /Selected log CSV exports all/);
