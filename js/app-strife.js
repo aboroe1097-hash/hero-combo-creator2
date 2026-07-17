@@ -320,6 +320,29 @@ function renderMonsterSkill(monster, skill, index) {
   `;
 }
 
+function renderRankOneReward(monster) {
+  const reward = monster?.rankOneReward;
+  if (!reward || !reward.name) return '';
+  const label = copy('strifeRankOneReward', 'Rank 1 reward');
+  const note = copy(
+    'strifeRankOneRewardNote',
+    'Exclusive reward gifted to the Rank 1 player in the event ranking.'
+  );
+  const media = reward.imageUrl
+    ? `<img src="${escapeHtml(reward.imageUrl)}" alt="${escapeHtml(reward.name)}" width="56" height="56" crossorigin="anonymous" loading="lazy" decoding="async">`
+    : `<span class="strife-reward-placeholder" aria-hidden="true">🏆</span>`;
+  return `
+    <div class="strife-rank-reward" style="--monster-accent:${escapeHtml(monster.accent || '#67e8f9')}">
+      <span class="strife-reward-media">${media}</span>
+      <div class="strife-reward-body">
+        <span class="strife-reward-label">${escapeHtml(label)}</span>
+        <strong class="strife-reward-name">${escapeHtml(reward.name)}</strong>
+        <span class="strife-reward-note">${escapeHtml(note)}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderMonsterSkills(monster) {
   const skills = getMonsterSkills(monster);
   const guideNotes = getMonsterGuideNotes(monster);
@@ -361,6 +384,7 @@ function renderMonsterSkills(monster) {
         }</span>
       </div>
       ${guideContent}
+      ${renderRankOneReward(monster)}
       <div class="strife-skill-list">${content}</div>
     </section>
   `;

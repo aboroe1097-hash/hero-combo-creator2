@@ -1637,6 +1637,8 @@ const ru = {
   strifeNotesCount: '{n} заметок',
   strifePaidCombos: 'Платные комбо',
   strifePending: 'В ожидании',
+  strifeRankOneReward: 'Награда за 1-е место',
+  strifeRankOneRewardNote: 'Эксклюзивная награда, вручаемая игроку на 1-м месте в рейтинге события.',
   strifeRecommendedFormation: 'Рекомендуемая формация {tier}: {heroes}.',
   strifeReusableRank: 'Многоразовый #{rank}',
   strifeSeasonStageGroupAria: 'Этап сезона Strife',

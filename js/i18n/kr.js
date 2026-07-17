@@ -1617,6 +1617,8 @@ const kr = {
   strifeNotesCount: '{n} 노트',
   strifePaidCombos: '유료 콤보',
   strifePending: '대기 중',
+  strifeRankOneReward: '1위 보상',
+  strifeRankOneRewardNote: '이벤트 랭킹 1위 플레이어에게 지급되는 전용 보상입니다.',
   strifeRecommendedFormation: '추천 {tier} 대형: {heroes}.',
   strifeReusableRank: '재사용 가능 #{rank}',
   strifeSeasonStageGroupAria: 'Strife 시즌 단계',

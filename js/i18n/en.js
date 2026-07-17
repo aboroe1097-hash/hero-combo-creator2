@@ -1675,6 +1675,8 @@ const en = {
   strifeNotesCount: '{n} notes',
   strifePaidCombos: 'Paid combos',
   strifePending: 'Pending',
+  strifeRankOneReward: 'Rank 1 reward',
+  strifeRankOneRewardNote: 'Exclusive reward gifted to the Rank 1 player in the event ranking.',
   strifeRecommendedFormation: 'Recommended {tier} formation: {heroes}.',
   strifeReusableRank: 'Reusable #{rank}',
   strifeSeasonStageGroupAria: 'Strife season stage',

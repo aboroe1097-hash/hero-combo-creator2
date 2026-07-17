@@ -1637,6 +1637,8 @@ const id = {
   strifeNotesCount: '{n} catatan',
   strifePaidCombos: 'Kombo berbayar',
   strifePending: 'Tertunda',
+  strifeRankOneReward: 'Hadiah Peringkat 1',
+  strifeRankOneRewardNote: 'Hadiah eksklusif yang diberikan kepada pemain Peringkat 1 di peringkat event.',
   strifeRecommendedFormation: 'Formasi {tier} yang direkomendasikan: {heroes}.',
   strifeReusableRank: 'Dapat digunakan kembali #{rank}',
   strifeSeasonStageGroupAria: 'Tahap musim Strife',

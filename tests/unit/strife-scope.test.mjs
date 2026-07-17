@@ -38,3 +38,14 @@ test('Strife recommendations and local monster art remain internally complete', 
     assert.equal(existsSync(path.join(projectRoot, imageUrl)), true, imageUrl);
   }
 });
+
+test('Strife rank-1 rewards carry a name and only reference art that exists', () => {
+  for (const monster of STRIFE_MONSTERS) {
+    const reward = monster.rankOneReward;
+    if (!reward) continue;
+    assert.ok(reward.name, `${monster.id} rank-1 reward is missing a name`);
+    const { imageUrl } = reward;
+    if (!imageUrl || /^https?:\/\//u.test(imageUrl)) continue;
+    assert.equal(existsSync(path.join(projectRoot, imageUrl)), true, imageUrl);
+  }
+});

@@ -12798,6 +12798,75 @@ body.admin-standalone-page .command-kicker {
   line-height: 1.45;
 }
 
+.strife-rank-reward {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--monster-accent, #67e8f9) 42%, transparent);
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.14), rgba(2, 6, 23, 0.36)),
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in srgb, var(--monster-accent, #67e8f9) 18%, transparent),
+      transparent 38%
+    );
+  border-radius: 8px;
+}
+
+.strife-reward-media {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--monster-accent, #67e8f9) 46%, transparent);
+  background: rgba(2, 6, 23, 0.55);
+  overflow: hidden;
+}
+
+.strife-reward-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.strife-reward-placeholder {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.strife-reward-body {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.strife-reward-label {
+  font-size: 0.62rem;
+  font-weight: 820;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--monster-accent, #67e8f9) 72%, #e2e8f0);
+}
+
+.strife-reward-name {
+  color: #f8fafc;
+  font-size: 0.86rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.strife-reward-note {
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
 .strife-skill-card {
   min-width: 0;
   display: grid;
@@ -17386,6 +17455,29 @@ body.admin-standalone-page .admin-footer .footer-section h4 {
 }
 
 [data-theme='light'] .strife-guide-notes p {
+  color: #334155;
+}
+
+[data-theme='light'] .strife-rank-reward {
+  border-color: color-mix(in srgb, var(--monster-accent, #0e7490) 34%, transparent);
+  background:
+    linear-gradient(135deg, rgba(254, 243, 199, 0.62), rgba(248, 250, 252, 0.96)),
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in srgb, var(--monster-accent, #0e7490) 12%, transparent),
+      transparent 38%
+    );
+}
+
+[data-theme='light'] .strife-reward-media {
+  background: rgba(248, 250, 252, 0.9);
+}
+
+[data-theme='light'] .strife-reward-name {
+  color: #0f172a;
+}
+
+[data-theme='light'] .strife-reward-note {
   color: #334155;
 }
 

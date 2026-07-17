@@ -1687,6 +1687,8 @@ const de = {
   strifeNotesCount: '{n} Notizen',
   strifePaidCombos: 'Bezahlte Kombos',
   strifePending: 'Ausstehend',
+  strifeRankOneReward: 'Belohnung für Platz 1',
+  strifeRankOneRewardNote: 'Exklusive Belohnung, die dem Spieler auf Rang 1 der Event-Rangliste geschenkt wird.',
   strifeRecommendedFormation: 'Empfohlene {tier} Aufstellung: {heroes}.',
   strifeReusableRank: 'Wiederverwendbar #{rank}',
   strifeSeasonStageGroupAria: 'Strife-Jahreszeitstufe',

@@ -1621,6 +1621,8 @@ const ar = {
   strifeNotesCount: '{n} ملاحظة',
   strifePaidCombos: 'تشكيلات مدفوعة',
   strifePending: 'قيد الانتظار',
+  strifeRankOneReward: 'مكافأة المركز الأول',
+  strifeRankOneRewardNote: 'مكافأة حصرية تُهدى للاعب صاحب المركز الأول في ترتيب الحدث.',
   strifeRecommendedFormation: 'التشكيلة الموصى بها {tier}: {heroes}.',
   strifeReusableRank: 'قابل لإعادة الاستخدام #{rank}',
   strifeSeasonStageGroupAria: 'مرحلة موسم Strife',

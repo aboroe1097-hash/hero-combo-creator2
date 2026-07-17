@@ -225,6 +225,13 @@ export const STRIFE_MONSTERS = [
         tags: ['Stat Boss'],
       },
     ],
+    // Rank 1 finishers on the event leaderboard receive an exclusive hero icon
+    // gifted by this boss. Drop the artwork at the imageUrl path to light it up;
+    // until then the reward renders as a labeled placeholder badge.
+    rankOneReward: {
+      name: 'Dark Rider Avatar',
+      imageUrl: '',
+    },
   },
   {
     id: 'savage-swordsman',
