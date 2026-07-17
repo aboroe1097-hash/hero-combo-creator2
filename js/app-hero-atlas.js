@@ -18,7 +18,14 @@ import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { escapeHtml } from './utils.js';
-import { hasSkin, getHeroSkins, getSkinCount, getHeroHiddenPower, SKIN_TYPES } from './skins-db.js';
+import {
+  hasSkin,
+  getHeroSkins,
+  getSkinCount,
+  getHeroHiddenPower,
+  getSkinTiers,
+  SKIN_TYPES,
+} from './skins-db.js';
 import {
   getActiveHeroAtlasLocale,
   heroContentText,
@@ -316,6 +323,7 @@ let _heroesTabState = {
   search: '',
   selected: null,
   view: 'ranking',
+  mode: 'heroes',
   comboScope: 'season-capped',
   sort: 'rating',
   limit: 20,
@@ -539,6 +547,16 @@ function wireHeroesTabEvents(container) {
   _heroesTabEventsWired = true;
 
   container.addEventListener('click', (e) => {
+    const modeBtn = e.target.closest('[data-atlas-mode]');
+    if (modeBtn) {
+      const nextMode = modeBtn.dataset.atlasMode === 'skins' ? 'skins' : 'heroes';
+      if (_heroesTabState.mode !== nextMode) {
+        _heroesTabState.mode = nextMode;
+        renderHeroesTab();
+      }
+      return;
+    }
+
     const seasonBtn = e.target.closest('[data-hero-season]');
     if (seasonBtn) {
       toggleHeroAtlasSeason(seasonBtn.dataset.heroSeason);
@@ -690,6 +708,102 @@ function wireHeroesTabEvents(container) {
   });
 }
 
+function renderAtlasModeToggle(mode) {
+  return `
+    <div class="atlas-mode-toggle" role="tablist" aria-label="${escapeHtml(heroUi('skinAtlasTitle'))}">
+      <button type="button" class="atlas-mode-btn ${mode === 'heroes' ? 'active' : ''}" data-atlas-mode="heroes" role="tab" aria-selected="${mode === 'heroes'}">${escapeHtml(heroUi('atlasModeHeroes'))}</button>
+      <button type="button" class="atlas-mode-btn ${mode === 'skins' ? 'active' : ''}" data-atlas-mode="skins" role="tab" aria-selected="${mode === 'skins'}">${escapeHtml(heroUi('atlasModeSkins'))}</button>
+    </div>`;
+}
+
+function renderSkinReqList(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `<ul class="skin-req-list">${items
+    .map(
+      (item) =>
+        `<li class="skin-req-item"><span class="skin-req-name">${escapeHtml(item.name)}</span><span class="skin-req-qty">×${escapeHtml(String(item.qty))}</span></li>`
+    )
+    .join('')}</ul>`;
+}
+
+function renderSkinStarStep({ label, sublabel, body }) {
+  return `
+    <div class="skin-star-step">
+      <div class="skin-star-head">
+        <span class="skin-star-badge">${escapeHtml(label)}</span>
+        <span class="skin-star-title">${escapeHtml(sublabel)}</span>
+      </div>
+      <div class="skin-star-body">${body}</div>
+    </div>`;
+}
+
+function renderSkinTierCard(tier) {
+  const starWord = heroUi('star');
+  const star1 = renderSkinStarStep({
+    label: `${starWord} 1`,
+    sublabel: heroUi('biographyAttributes'),
+    body: `<p class="skin-star-note">${escapeHtml(tier.star1?.unlock || '')}</p>`,
+  });
+  const star2 = renderSkinStarStep({
+    label: `${starWord} 2`,
+    sublabel: heroUi('star2Inheriting'),
+    body: renderSkinReqList(tier.star1To2?.items),
+  });
+  const star3 = tier.hasPreserving
+    ? renderSkinStarStep({
+        label: `${starWord} 3`,
+        sublabel: heroUi('star3Preserving'),
+        body: renderSkinReqList(tier.star2To3?.items),
+      })
+    : renderSkinStarStep({
+        label: `${starWord} 3`,
+        sublabel: heroUi('star3Preserving'),
+        body: `<p class="skin-star-note skin-star-note--none">${escapeHtml(heroUi('skinNoPreserving'))}</p>`,
+      });
+
+  const heroesBlock = tier.knownHeroes.length
+    ? `<div class="skin-tier-heroes">
+        <span class="skin-tier-heroes-label">${escapeHtml(heroUi('skinKnownHeroes'))}</span>
+        <div class="skin-tier-hero-chips">${tier.knownHeroes
+          .map((name) => `<span class="skin-tier-hero-chip">${escapeHtml(name)}</span>`)
+          .join('')}</div>
+      </div>`
+    : tier.heroesNote
+      ? `<p class="skin-tier-heroes-note">${escapeHtml(tier.heroesNote)}</p>`
+      : '';
+
+  return `
+    <article class="skin-tier-card" style="--skin-accent:${escapeHtml(tier.color)}">
+      <header class="skin-tier-head">
+        <div class="skin-tier-title-row">
+          <h3 class="skin-tier-name">${escapeHtml(tier.name)}</h3>
+          <span class="skin-tier-rank">${escapeHtml(tier.rank)}</span>
+        </div>
+        <p class="skin-tier-summary">${escapeHtml(tier.summary)}</p>
+      </header>
+      <div class="skin-star-track">${star1}${star2}${star3}</div>
+      <section class="skin-tier-section skin-tier-maximize">
+        <h4 class="skin-tier-section-title">${escapeHtml(heroUi('skinMaximizeCost'))}</h4>
+        ${renderSkinReqList(tier.maximizeTotal)}
+      </section>
+      <section class="skin-tier-section skin-tier-acquire">
+        <h4 class="skin-tier-section-title">${escapeHtml(heroUi('skinAcquisition'))}</h4>
+        <ul class="skin-acquire-list">${tier.acquisition
+          .map((line) => `<li>${escapeHtml(line)}</li>`)
+          .join('')}</ul>
+      </section>
+      ${heroesBlock}
+    </article>`;
+}
+
+function renderSkinAtlas() {
+  const tiers = getSkinTiers();
+  return `
+    <div class="skin-atlas">
+      <div class="skin-atlas-grid">${tiers.map(renderSkinTierCard).join('')}</div>
+    </div>`;
+}
+
 function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
   const container = document.getElementById('heroesTabContent');
   if (!container) return;
@@ -718,6 +832,18 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
     sort,
   } = _heroesTabState;
   const t = translations[currentLanguage] || translations.en;
+
+  const mode = _heroesTabState.mode || 'heroes';
+  if (mode === 'skins') {
+    container.innerHTML = `
+      <div class="heroes-tab-inner heroes-tab-inner--skins">
+        <div class="heroes-toolbar-sticky heroes-toolbar-sticky--modeonly">
+          ${renderAtlasModeToggle(mode)}
+        </div>
+        ${renderSkinAtlas()}
+      </div>`;
+    return;
+  }
 
   const troops = ['all', 'Archers', 'Footmen', 'Cavalry'];
   const states = ['all', 'Free', 'Paid'];
@@ -1170,6 +1296,7 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
     container.innerHTML = `
       <div class="heroes-tab-inner${selected ? ' heroes-tab-inner--detail-open' : ''}">
         <div class="heroes-toolbar-sticky">
+          ${renderAtlasModeToggle(mode)}
           <div class="heroes-toolbar">
             <div class="hero-search-wrap heroes-search-field">
               <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
