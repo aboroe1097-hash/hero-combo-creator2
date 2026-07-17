@@ -557,6 +557,27 @@ test('function entrypoint declares Node 22, both managed secrets, and no logged 
   assert.match(implementation, /boh_allstar_member_grants/);
 });
 
+test('Firestore configuration applies TTL cleanup to grants and security attempts', () => {
+  const firebaseConfig = JSON.parse(readRepositoryFile('firebase.json'));
+  const indexConfig = JSON.parse(readRepositoryFile('firestore.indexes.json'));
+  assert.equal(firebaseConfig.firestore.indexes, 'firestore.indexes.json');
+  assert.deepEqual(indexConfig.indexes, []);
+  assert.deepEqual(indexConfig.fieldOverrides, [
+    {
+      collectionGroup: ALL_STAR_BOH_ATTEMPT_COLLECTION,
+      fieldPath: 'expiresAt',
+      ttl: true,
+      indexes: [],
+    },
+    {
+      collectionGroup: ALL_STAR_BOH_GRANT_COLLECTION,
+      fieldPath: 'expiresAt',
+      ttl: true,
+      indexes: [],
+    },
+  ]);
+});
+
 test('Firestore grant helper requires a matching active server grant and preserves admin bypass', () => {
   const rules = readRepositoryFile('firestore.rules');
   const helper = rulesMatch(
