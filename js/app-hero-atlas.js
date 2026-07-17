@@ -17,7 +17,7 @@ import { baseRankedCombos } from './combos-db.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, formatLocaleNumber } from './utils.js';
 import {
   hasSkin,
   getHeroSkins,
@@ -339,10 +339,7 @@ async function refreshHeroAtlasLocale(locale = currentLanguage) {
   const normalized = normalizeHeroAtlasLocale(locale);
   const token = ++_heroLocaleRefreshToken;
   await loadHeroAtlasLocale(normalized);
-  if (
-    token !== _heroLocaleRefreshToken ||
-    normalized !== normalizeHeroAtlasLocale(currentLanguage)
-  )
+  if (token !== _heroLocaleRefreshToken || normalized !== normalizeHeroAtlasLocale(currentLanguage))
     return;
   if (getActiveHeroAtlasLocale() !== normalized) {
     renderHeroesTab({ suppressLocaleRefresh: true });
@@ -366,6 +363,7 @@ function applyHeroAtlasUrlParams() {
   if (_heroesUrlParamsApplied) return;
   _heroesUrlParamsApplied = true;
   const params = new URLSearchParams(window.location.search);
+  _heroesTabState.mode = params.get('atlas') === 'skins' ? 'skins' : 'heroes';
   const seasonParam = params.get('season') || params.get('seasons');
   if (seasonParam) {
     const seasons = seasonParam
@@ -391,6 +389,8 @@ function applyHeroAtlasUrlParams() {
 
 function updateHeroAtlasUrlParams() {
   const params = new URLSearchParams(window.location.search);
+  if (_heroesTabState.mode === 'skins') params.set('atlas', 'skins');
+  else params.delete('atlas');
   const normalizedSeasons = normalizeHeroAtlasSeasons(_heroesTabState.seasons);
   if (normalizedSeasons.length === HERO_ATLAS_ALL_SEASONS.length) params.delete('season');
   else params.set('season', normalizedSeasons.join(','));
@@ -547,12 +547,14 @@ function wireHeroesTabEvents(container) {
   _heroesTabEventsWired = true;
 
   container.addEventListener('click', (e) => {
-    const modeBtn = e.target.closest('[data-atlas-mode]');
+    const modeBtn = e.target?.closest?.('[data-atlas-mode]');
     if (modeBtn) {
       const nextMode = modeBtn.dataset.atlasMode === 'skins' ? 'skins' : 'heroes';
       if (_heroesTabState.mode !== nextMode) {
         _heroesTabState.mode = nextMode;
+        updateHeroAtlasUrlParams();
         renderHeroesTab();
+        container.querySelector(`[data-atlas-mode="${nextMode}"]`)?.focus({ preventScroll: true });
       }
       return;
     }
@@ -710,9 +712,9 @@ function wireHeroesTabEvents(container) {
 
 function renderAtlasModeToggle(mode) {
   return `
-    <div class="atlas-mode-toggle" role="tablist" aria-label="${escapeHtml(heroUi('skinAtlasTitle'))}">
-      <button type="button" class="atlas-mode-btn ${mode === 'heroes' ? 'active' : ''}" data-atlas-mode="heroes" role="tab" aria-selected="${mode === 'heroes'}">${escapeHtml(heroUi('atlasModeHeroes'))}</button>
-      <button type="button" class="atlas-mode-btn ${mode === 'skins' ? 'active' : ''}" data-atlas-mode="skins" role="tab" aria-selected="${mode === 'skins'}">${escapeHtml(heroUi('atlasModeSkins'))}</button>
+    <div class="atlas-mode-toggle" role="group" aria-label="${escapeHtml(heroUi('skinAtlasTitle'))}">
+      <button type="button" class="atlas-mode-btn ${mode === 'heroes' ? 'active' : ''}" data-atlas-mode="heroes" aria-pressed="${mode === 'heroes'}">${escapeHtml(heroUi('atlasModeHeroes'))}</button>
+      <button type="button" class="atlas-mode-btn ${mode === 'skins' ? 'active' : ''}" data-atlas-mode="skins" aria-pressed="${mode === 'skins'}">${escapeHtml(heroUi('atlasModeSkins'))}</button>
     </div>`;
 }
 
@@ -721,7 +723,7 @@ function renderSkinReqList(items) {
   return `<ul class="skin-req-list">${items
     .map(
       (item) =>
-        `<li class="skin-req-item"><span class="skin-req-name">${escapeHtml(item.name)}</span><span class="skin-req-qty">×${escapeHtml(String(item.qty))}</span></li>`
+        `<li class="skin-req-item"><span class="skin-req-name">${escapeHtml(heroContentText(item.name))}</span><bdi class="skin-req-qty">×${escapeHtml(formatLocaleNumber(item.qty, currentLanguage))}</bdi></li>`
     )
     .join('')}</ul>`;
 }
@@ -739,24 +741,25 @@ function renderSkinStarStep({ label, sublabel, body }) {
 
 function renderSkinTierCard(tier) {
   const starWord = heroUi('star');
+  const starLabel = (value) => `${starWord} ${formatLocaleNumber(value, currentLanguage)}`;
   const star1 = renderSkinStarStep({
-    label: `${starWord} 1`,
+    label: starLabel(1),
     sublabel: heroUi('biographyAttributes'),
-    body: `<p class="skin-star-note">${escapeHtml(tier.star1?.unlock || '')}</p>`,
+    body: `<p class="skin-star-note">${escapeHtml(heroContentText(tier.star1?.unlock || ''))}</p>`,
   });
   const star2 = renderSkinStarStep({
-    label: `${starWord} 2`,
+    label: starLabel(2),
     sublabel: heroUi('star2Inheriting'),
     body: renderSkinReqList(tier.star1To2?.items),
   });
   const star3 = tier.hasPreserving
     ? renderSkinStarStep({
-        label: `${starWord} 3`,
+        label: starLabel(3),
         sublabel: heroUi('star3Preserving'),
         body: renderSkinReqList(tier.star2To3?.items),
       })
     : renderSkinStarStep({
-        label: `${starWord} 3`,
+        label: starLabel(3),
         sublabel: heroUi('star3Preserving'),
         body: `<p class="skin-star-note skin-star-note--none">${escapeHtml(heroUi('skinNoPreserving'))}</p>`,
       });
@@ -765,21 +768,24 @@ function renderSkinTierCard(tier) {
     ? `<div class="skin-tier-heroes">
         <span class="skin-tier-heroes-label">${escapeHtml(heroUi('skinKnownHeroes'))}</span>
         <div class="skin-tier-hero-chips">${tier.knownHeroes
-          .map((name) => `<span class="skin-tier-hero-chip">${escapeHtml(name)}</span>`)
+          .map(
+            (name) =>
+              `<bdi class="skin-tier-hero-chip" dir="auto" translate="no">${escapeHtml(name)}</bdi>`
+          )
           .join('')}</div>
       </div>`
     : tier.heroesNote
-      ? `<p class="skin-tier-heroes-note">${escapeHtml(tier.heroesNote)}</p>`
+      ? `<p class="skin-tier-heroes-note">${escapeHtml(heroContentText(tier.heroesNote))}</p>`
       : '';
 
   return `
     <article class="skin-tier-card" style="--skin-accent:${escapeHtml(tier.color)}">
       <header class="skin-tier-head">
         <div class="skin-tier-title-row">
-          <h3 class="skin-tier-name">${escapeHtml(tier.name)}</h3>
-          <span class="skin-tier-rank">${escapeHtml(tier.rank)}</span>
+          <h3 class="skin-tier-name">${escapeHtml(heroContentText(tier.name))}</h3>
+          <span class="skin-tier-rank">${escapeHtml(heroContentText(tier.rank))}</span>
         </div>
-        <p class="skin-tier-summary">${escapeHtml(tier.summary)}</p>
+        <p class="skin-tier-summary">${escapeHtml(heroContentText(tier.summary))}</p>
       </header>
       <div class="skin-star-track">${star1}${star2}${star3}</div>
       <section class="skin-tier-section skin-tier-maximize">
@@ -789,7 +795,7 @@ function renderSkinTierCard(tier) {
       <section class="skin-tier-section skin-tier-acquire">
         <h4 class="skin-tier-section-title">${escapeHtml(heroUi('skinAcquisition'))}</h4>
         <ul class="skin-acquire-list">${tier.acquisition
-          .map((line) => `<li>${escapeHtml(line)}</li>`)
+          .map((line) => `<li>${escapeHtml(heroContentText(line))}</li>`)
           .join('')}</ul>
       </section>
       ${heroesBlock}
@@ -799,9 +805,13 @@ function renderSkinTierCard(tier) {
 function renderSkinAtlas() {
   const tiers = getSkinTiers();
   return `
-    <div class="skin-atlas">
+    <section class="skin-atlas" aria-labelledby="skinAtlasHeading">
+      <header class="skin-atlas-intro">
+        <h2 id="skinAtlasHeading">${escapeHtml(heroUi('skinAtlasTitle'))}</h2>
+        <p>${escapeHtml(heroUi('skinAtlasDescription'))}</p>
+      </header>
       <div class="skin-atlas-grid">${tiers.map(renderSkinTierCard).join('')}</div>
-    </div>`;
+    </section>`;
 }
 
 function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {

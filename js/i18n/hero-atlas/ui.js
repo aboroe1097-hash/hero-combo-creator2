@@ -87,6 +87,7 @@ const KEYS = Object.freeze([
   'skinAcquisition',
   'skinNoPreserving',
   'skinKnownHeroes',
+  'skinAtlasDescription',
 ]);
 
 const ROWS = {
@@ -179,6 +180,7 @@ const ROWS = {
     'How to obtain',
     'No Preserving Skill',
     'Heroes with this skin',
+    'Compare skin tiers, star-up costs, acquisition paths, and known heroes.',
   ],
   ar: [
     'المهارة',
@@ -269,6 +271,7 @@ const ROWS = {
     'طريقة الحصول',
     'لا توجد مهارة حفظ',
     'الأبطال بهذا الزي',
+    'قارن بين فئات المظاهر، وتكاليف ترقية النجوم، وطرق الحصول عليها، والأبطال المعروفين لكل فئة.',
   ],
   de: [
     'SKILL',
@@ -359,6 +362,7 @@ const ROWS = {
     'So erhältst du ihn',
     'Keine Bewahren-Fähigkeit',
     'Helden mit diesem Skin',
+    'Vergleiche Skin-Stufen, Kosten für Sternaufstiege, Bezugswege und bekannte Helden.',
   ],
   es: [
     'HABILIDAD',
@@ -449,6 +453,7 @@ const ROWS = {
     'Cómo obtenerlo',
     'Sin habilidad de Preservación',
     'Héroes con este aspecto',
+    'Compara los niveles de aspectos, los costes de mejora de estrellas, las formas de obtención y los héroes conocidos.',
   ],
   fr: [
     'COMPÉTENCE',
@@ -539,6 +544,7 @@ const ROWS = {
     'Comment l’obtenir',
     'Aucune compétence de Préservation',
     'Héros avec ce skin',
+    'Compare les paliers de skins, les coûts d’amélioration des étoiles, les modes d’obtention et les héros connus.',
   ],
   id: [
     'SKILL',
@@ -629,6 +635,7 @@ const ROWS = {
     'Cara mendapatkan',
     'Tanpa Skill Preservasi',
     'Hero dengan skin ini',
+    'Bandingkan tier skin, biaya naik bintang, cara mendapatkannya, dan hero yang diketahui.',
   ],
   kr: [
     '스킬',
@@ -719,6 +726,7 @@ const ROWS = {
     '획득 방법',
     '보존 스킬 없음',
     '이 스킨을 가진 영웅',
+    '스킨 등급, 성급 강화 비용, 획득 경로, 확인된 영웅을 비교하세요.',
   ],
   pt: [
     'HABILIDADE',
@@ -809,6 +817,7 @@ const ROWS = {
     'Como obter',
     'Sem Habilidade de Preservação',
     'Heróis com esta skin',
+    'Compare os níveis de skins, os custos para subir estrelas, as formas de obtenção e os heróis conhecidos.',
   ],
   ru: [
     'НАВЫК',
@@ -899,6 +908,7 @@ const ROWS = {
     'Как получить',
     'Нет навыка сохранения',
     'Герои с этим обликом',
+    'Сравните ранги обликов, стоимость повышения звёзд, способы получения и известных героев.',
   ],
   tr: [
     'BECERİ',
@@ -989,6 +999,7 @@ const ROWS = {
     'Nasıl elde edilir',
     'Koruma Yeteneği yok',
     'Bu kostüme sahip kahramanlar',
+    'Kostüm kademelerini, yıldız yükseltme maliyetlerini, edinme yollarını ve bilinen kahramanları karşılaştır.',
   ],
   zh: [
     '技能',
@@ -1079,6 +1090,7 @@ const ROWS = {
     '获取方式',
     '无保留技能',
     '拥有此皮肤的英雄',
+    '对比皮肤等级、升星成本、获取途径和已知英雄。',
   ],
 };
 

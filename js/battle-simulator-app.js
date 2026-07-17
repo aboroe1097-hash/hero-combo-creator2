@@ -38,7 +38,7 @@ import {
   parseSetupSnapshot,
 } from './battle-simulator-setup.js';
 
-const APP_VERSION = '14.0.17';
+const APP_VERSION = '14.0.18';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [

@@ -1042,6 +1042,38 @@ const skills = {
 };
 
 const strings = {
+  Basic: 'Dasar',
+  Intermediate: 'Menengah',
+  Advanced: 'Lanjutan',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    'Tier skin pemula — memberikan Skill Pewarisan, tetapi tidak pernah memberikan Skill Pelestarian.',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    'Tier menengah — memiliki Skill Pewarisan dan Skill Pelestarian, serta ditingkatkan dengan Segel Biografi biasa.',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    'Tier tertinggi — juga memiliki kedua skill tersebut, tetapi peningkatannya memerlukan Segel Biografi Lanjutan yang lebih mahal.',
+  'Granted on activation (owning the skin).':
+    'Diberikan saat diaktifkan (cukup dengan memiliki skin).',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    'Beli langsung selama event perilisan hero tersebut — setelah dibeli, skin menjadi milikmu permanen.',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    'Tukarkan di Eden Skin Store: skin Mythic milik Beast Queen seharga 400 koin Biography Skin.',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    'Dapatkan dari pack event perilisan atau comeback (peluang drop sekitar 1,4% per pack).',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    'Dapatkan skin tertentu dari rotasi Eden Skin Store.',
+  'Recruit certain skins with Super Vouchers.': 'Dapatkan skin tertentu dengan Super Vouchers.',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    'Dapatkan beberapa sebagai hadiah milestone dalam event total pemakaian gem.',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    'Tukarkan Perfect Crystals dengan skin tersebut di Premium Shop.',
+  'Only two heroes have Mythic skins.': 'Hanya dua hero yang memiliki skin Mythic.',
+  'The most common skin tier — most heroes with a skin fall here.':
+    'Tier skin yang paling umum — sebagian besar hero yang memiliki skin berada di tier ini.',
+  'Epic Hero Medal': 'Medali Hero Epik',
+  'Legendary Hero Medal': 'Medali Hero Legendaris',
+  'Seasonal Legendary Hero Medal': 'Medali Hero Legendaris Musiman',
+  'Biography Seal': 'Segel Biografi',
+  'Advanced Biography Seal': 'Segel Biografi Lanjutan',
   '1 random friendly squad within effective range': '1 skuad sekutu acak dalam jangkauan efektif',
   '3 random friendly squads within effective range': '3 skuad sekutu acak dalam jangkauan efektif',
   'A castable battle skill. Some have prep time, chance to trigger, range, and target rules.':

@@ -72,8 +72,10 @@ test('Hero Atlas skill localization uses hero plus skill ID and leaves canonical
 });
 
 test('every non-English Hero Atlas content pack covers all skills and rendered skin/help copy', async () => {
-  assert.equal(HERO_ATLAS_REQUIRED_STRINGS.length, 160);
+  assert.equal(HERO_ATLAS_REQUIRED_STRINGS.length, 181);
   assert.ok(HERO_ATLAS_REQUIRED_STRINGS.includes('Arthur Pendragon the Once and Future King'));
+  assert.ok(HERO_ATLAS_REQUIRED_STRINGS.includes('Advanced Biography Seal'));
+  assert.ok(HERO_ATLAS_REQUIRED_STRINGS.includes('Only two heroes have Mythic skins.'));
   for (const locale of locales) {
     const packUrl = new URL(`../../js/i18n/hero-atlas/locales/${locale}.js`, import.meta.url);
     const source = await readFile(packUrl, 'utf8');
@@ -180,6 +182,8 @@ test('Hero Atlas renderers resolve translated content without rewriting canonica
   assert.match(atlas, /heroSkillText\(selected, sk, 'desc'\)/);
   assert.match(atlas, /heroContentText\(skin\.preservingSkill\.description\)/);
   assert.match(atlas, /heroContentText\(skin\.fullName\)/);
+  assert.match(atlas, /heroContentText\(tier\.summary\)/);
+  assert.match(atlas, /heroContentText\(item\.name\)/);
   assert.match(atlas, /aria-pressed="\$\{comboScope === 'all'\}"/);
   assert.match(atlas, /vts:language-change/);
   assert.match(

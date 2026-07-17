@@ -24,21 +24,21 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // Specialization Towers stays route-isolated, but its canonical 32-research
-  // corpus, contribution adapter, progressive node-access model, and eleven
-  // lazy locale packs bring the combined graph to 6903.9 KiB on top of the live
-  // Strife update. Keep less than 2.1 KiB of aggregate headroom.
-  totalJsBytes: 6906 * 1024,
-  // The evidence-backed progressive graph brings aggregate CSS to 1180.92 KiB.
-  // Keep less than 2.1 KiB of aggregate headroom.
-  totalCssBytes: 1183 * 1024,
+  // Skin Atlas adds a route-lazy catalog plus complete copy in all 11 locales,
+  // bringing the combined JavaScript graph to 6938.8 KiB. Keep less than
+  // 2.2 KiB of aggregate headroom.
+  totalJsBytes: 6941 * 1024,
+  // Its route-lazy catalog styles bring aggregate CSS to 1187.8 KiB without
+  // changing the initial Admin, Eden, Arcade, Battle, or Towers route totals.
+  // Keep less than 2.2 KiB of aggregate headroom.
+  totalCssBytes: 1190 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
   // Vendored Firebase and the authored standalone tools add cacheable code,
-  // not media. The complete combined artifact measures 24,040.8 KiB after the
-  // progressive Specialization path; keep less than 2.2 KiB of headroom.
-  totalDeployBytes: 24043 * 1024,
+  // not media. The complete artifact measures 24,085.7 KiB with Skin Atlas and
+  // its locale packs; keep less than 3.3 KiB of headroom.
+  totalDeployBytes: 24089 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization adds its entry, feature modules, and lazy locale chunks.

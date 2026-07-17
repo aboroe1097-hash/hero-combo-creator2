@@ -5,9 +5,12 @@ import test from 'node:test';
 import { heroSkins } from '../../js/skins-db.js';
 
 const atlasSource = readFileSync('js/app-hero-atlas.js', 'utf8');
+const appSource = readFileSync('js/app.js', 'utf8');
 const tooltipSource = readFileSync('js/app-hero-tooltip.js', 'utf8');
 const detailCss = readFileSync('css/hero-atlas-detail-v14.css', 'utf8');
+const sharedCss = readFileSync('css/app.css', 'utf8');
 const heroesInfoSource = readFileSync('js/heroes-info.js', 'utf8');
+const metadataSource = readFileSync('scripts/update-build-metadata.mjs', 'utf8');
 
 test('Hero Atlas detail uses the scoped v14 hierarchy without changing section hooks', () => {
   assert.match(atlasSource, /import '\.\.\/css\/hero-atlas-detail-v14\.css';/);
@@ -51,6 +54,21 @@ test('Hero Atlas light theme keeps metadata and skill values readable', () => {
     detailCss,
     /\.heroes-combo-scope-hint,[\s\S]*?\.hero-detail-empty \{[\s\S]*?color: #52657a !important;/
   );
+});
+
+test('Hero Atlas lazy chunk receives the current build cache key', () => {
+  assert.match(appSource, /import\('\.\/app-hero-atlas\.js\?v=[0-9A-Za-z_-]+'\)/);
+  assert.match(metadataSource, /app-hero-atlas\|app-research/);
+});
+
+test('Skin Atlas styles remain lazy, responsive, keyboard-visible, and RTL-safe', () => {
+  assert.doesNotMatch(sharedCss, /\.atlas-mode-toggle|\.skin-tier-card/);
+  assert.match(detailCss, /min-height: 44px/);
+  assert.match(detailCss, /\.atlas-mode-btn:focus-visible/);
+  assert.match(detailCss, /minmax\(min\(19rem, 100%\), 1fr\)/);
+  assert.match(detailCss, /padding-inline-start: 0\.9rem/);
+  assert.match(detailCss, /inset-inline-start: 0/);
+  assert.match(detailCss, /\[data-theme='light'\] \.skin-tier-rank,[\s\S]*?color: #1e293b/);
 });
 
 test('skill copy preserves apostrophe entities and excludes provisional Cyrus notes', () => {

@@ -1042,6 +1042,37 @@ const skills = {
 };
 
 const strings = {
+  Basic: 'أساسي',
+  Intermediate: 'متوسط',
+  Advanced: 'متقدم',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    'فئة المظاهر للمبتدئين — تمنح مهارة التوريث، لكنها لا تمنح مهارة الحفظ أبداً.',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    'الفئة المتوسطة — تتضمن مهارة التوريث ومهارة الحفظ، وتُطوَّر باستخدام أختام السيرة العادية.',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    'الفئة الأعلى — تتضمن أيضاً مهارة التوريث ومهارة الحفظ، لكن تطويرها يتطلب أختام السيرة المتقدمة الأعلى تكلفة.',
+  'Granted on activation (owning the skin).': 'تُمنح عند التفعيل (بمجرد امتلاك المظهر).',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    'اشترِه مباشرةً خلال فعالية إطلاق البطل — وبعد الشراء يبقى ملكك.',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    'استبدله من Eden Skin Store: مظهر Mythic الخاص بـ Beast Queen يكلف 400 من عملات Biography Skin.',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    'احصل عليه من حزم فعالية الإطلاق أو العودة (نسبة ظهور تقارب 1.4% لكل حزمة).',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    'احصل على مظاهر محددة من التشكيلة الدورية في Eden Skin Store.',
+  'Recruit certain skins with Super Vouchers.': 'احصل على بعض المظاهر باستخدام Super Vouchers.',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    'احصل على بعضها كمكافآت مراحل في فعاليات الإنفاق التراكمي للجواهر.',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    'استبدل Perfect Crystals بها في Premium Shop.',
+  'Only two heroes have Mythic skins.': 'يوجد مظهر Mythic لبطلين فقط.',
+  'The most common skin tier — most heroes with a skin fall here.':
+    'الفئة الأكثر شيوعاً للمظاهر — معظم الأبطال الذين لديهم مظهر يندرجون ضمنها.',
+  'Epic Hero Medal': 'ميدالية بطل ملحمية',
+  'Legendary Hero Medal': 'ميدالية بطل أسطورية',
+  'Seasonal Legendary Hero Medal': 'ميدالية بطل أسطورية موسمية',
+  'Biography Seal': 'ختم السيرة',
+  'Advanced Biography Seal': 'ختم السيرة المتقدم',
   '1 random friendly squad within effective range': '1 فرقة ودية عشوائية ضمن النطاق الفعال',
   '3 random friendly squads within effective range': '3 فرق ودية عشوائية ضمن النطاق الفعال',
   'A castable battle skill. Some have prep time, chance to trigger, range, and target rules.':

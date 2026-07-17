@@ -1042,6 +1042,37 @@ const skills = {
 };
 
 const strings = {
+  Basic: '기본',
+  Intermediate: '중급',
+  Advanced: '고급',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    '입문 등급 스킨입니다. 계승 스킬은 제공하지만 보존 스킬은 제공하지 않습니다.',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    '중간 등급 스킨입니다. 계승 스킬과 보존 스킬을 모두 제공하며, 일반 열전 인장으로 강화합니다.',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    '최상위 등급 스킨입니다. 두 스킬을 모두 제공하지만, 강화에는 더 비싼 고급 열전 인장이 필요합니다.',
+  'Granted on activation (owning the skin).': '스킨을 보유해 활성화하면 지급됩니다.',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    '해당 영웅의 출시 이벤트에서 직접 구매할 수 있으며, 구매 후 영구 소장됩니다.',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    'Eden Skin Store에서 교환할 수 있습니다. Beast Queen의 Mythic 스킨은 Biography Skin 코인 400개가 필요합니다.',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    '출시 또는 복각 이벤트 팩에서 획득할 수 있습니다(팩당 약 1.4% 확률).',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    '일부 스킨은 Eden Skin Store의 로테이션 상품으로 획득할 수 있습니다.',
+  'Recruit certain skins with Super Vouchers.': '일부 스킨은 Super Vouchers로 획득할 수 있습니다.',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    '누적 보석 소비 이벤트의 마일스톤 보상으로 일부를 획득할 수 있습니다.',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    'Premium Shop에서 Perfect Crystals로 교환할 수 있습니다.',
+  'Only two heroes have Mythic skins.': 'Mythic 스킨이 있는 영웅은 단 두 명입니다.',
+  'The most common skin tier — most heroes with a skin fall here.':
+    '가장 일반적인 스킨 등급으로, 스킨이 있는 영웅 대부분이 이 등급에 속합니다.',
+  'Epic Hero Medal': '에픽 영웅 메달',
+  'Legendary Hero Medal': '전설 영웅 메달',
+  'Seasonal Legendary Hero Medal': '시즌 전설 영웅 메달',
+  'Biography Seal': '열전 인장',
+  'Advanced Biography Seal': '고급 열전 인장',
   '1 random friendly squad within effective range': '유효 범위 내 무작위 아군 부대 1개',
   '3 random friendly squads within effective range': '유효 범위 내에 있는 무작위 아군 부대 3개',
   'A castable battle skill. Some have prep time, chance to trigger, range, and target rules.':
