@@ -94,6 +94,67 @@ async function readPopoverPaintState(popover) {
   });
 }
 
+test.describe('Battle Simulator beta', () => {
+  test('localizes the PIN gate and renders source-aware unit equations', async ({ page }) => {
+    await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+    await page.addInitScript(
+      ({ pin }) => {
+        window.VTS_ADMIN_AUTH = { adminPin: pin };
+        localStorage.setItem('vts_maintenance_bypass', '1');
+        localStorage.setItem('vts_hero_lang', 'ar');
+        localStorage.removeItem('vts_sensitive_admin_pin_ok');
+        localStorage.removeItem('vts_eden_votes_pin_ok');
+      },
+      { pin: TEST_SENSITIVE_ADMIN_PIN }
+    );
+
+    await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
+    await expect(page.locator('.pin-gate-dialog')).not.toContainText('Beta Testers Only');
+    await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
+    await page.locator('.pin-gate-btn-primary').click();
+
+    await expect(page.locator('#battleSimulatorForm')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('[data-battle-language] option')).toHaveCount(11);
+    await expect(page.locator('[data-research-enabled="A"]')).toBeChecked();
+    await expect(page.locator('[data-research-enabled="B"]')).not.toBeChecked();
+    await expect(page.locator('.battle-legion-sources')).toHaveCount(2);
+
+    const frontA = page.locator('.battle-squad-card[data-side="A"][data-row-index="0"]');
+    await expect(frontA).toHaveAttribute('open', '');
+    await expect(frontA.locator('[data-unit-stat-input="attack"]')).toHaveValue('71.4');
+    await frontA.locator('[data-stat="might"]').fill('400');
+    await expect(frontA.locator('[data-effective-stat="attack"]').first()).toContainText('357');
+    await expect(
+      frontA.locator('.battle-stat-source-row[data-source-type="manual"]')
+    ).toContainText('+400%');
+
+    await page.locator('[data-equipment-set="A"]').selectOption('normal.dreadnaught');
+    await expect(page.locator('[data-equipment-card="A"]')).toContainText(/Identity only|هوية/);
+    await expect(page.locator('[data-equipment-enhancement="A"]')).toBeEnabled();
+
+    await page.locator('[data-battle-language]').selectOption('de');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+    await expect(page.locator('#battleSimulatorTitle')).toBeVisible();
+
+    const themeToggle = page.locator('#battleThemeToggle');
+    await themeToggle.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'true');
+    await themeToggle.click();
+    await expect.poll(() => page.locator('html').getAttribute('data-theme')).toBeNull();
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'false');
+
+    const runBar = page.locator('.battle-form-actions');
+    await expect(runBar).toBeVisible();
+    const box = await runBar.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.y + box.height).toBeLessThanOrEqual(await page.evaluate(() => innerHeight));
+  });
+});
+
 const visualViewports = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'desktop', width: 1280, height: 800 },
@@ -134,6 +195,23 @@ const visualSurfaces = [
     sectionId: '#researchSection',
     marker: '#techListContainer',
     target: '#techListContainer',
+    setup: async (page) => {
+      const basicCombat = page.locator('.research-tech-card[data-tech-id="375d1626"]');
+      const classLegion = page.locator('.research-tech-card[data-tech-id="cc2c9ee1"]');
+      await expect(basicCombat.locator('.research-card-buff-preview--missing')).toContainText(
+        'Buff values need data',
+        { timeout: 15000 }
+      );
+      await expect(classLegion.locator('.research-card-buff-pill').first()).toBeVisible({
+        timeout: 15000,
+      });
+      await expect(page.locator('.research-season-max').first()).toContainText('Complete all', {
+        timeout: 15000,
+      });
+      await expect(page.locator('.research-card-max').first()).toContainText('Complete tree', {
+        timeout: 15000,
+      });
+    },
   },
   {
     name: 'loyalty',

@@ -1689,6 +1689,7 @@ const id = {
   strifeTroopMixed: 'Campuran',
   strifeVerifiedLineup: 'Susunan monster terverifikasi',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Spesialisasi',
 
   adminEdenVotesClearDeadline: 'Hapus batas waktu',
   adminEdenVotesDeadline: 'Batas waktu pemungutan suara',

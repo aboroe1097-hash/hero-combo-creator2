@@ -1741,6 +1741,7 @@ const de = {
   strifeTroopMixed: 'Gemischt',
   strifeVerifiedLineup: 'Bestätigte Monsteraufstellung',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Spezialisierung',
 
   adminEdenVotesClearDeadline: 'Frist löschen',
   adminEdenVotesDeadline: 'Abstimmungsende',

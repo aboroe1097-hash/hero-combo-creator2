@@ -98,6 +98,10 @@
       ],
       runner: imageVisual('images/strife/monsters/trident-north-sea.jpg'),
     }),
+    specialization: presentation({
+      identity: cloneVisual('#tabSpecialization svg', 'images/logo-120.webp'),
+      runner: cloneVisual('#tabSpecialization svg', 'images/logo-40.webp'),
+    }),
     loyalty: presentation({
       identity: cloneVisual('#tabLoyalty svg', 'images/saved_units.png'),
       milestones: [
@@ -148,6 +152,7 @@
     material: 'dm',
     ocr: 'admin',
     strife: 'strife',
+    specialization: 'specialization',
     youtube: 'youtube',
   });
 
@@ -156,6 +161,10 @@
     Object.freeze({ context: 'dm', selector: '#materialsSection, #materialCalculatorRoot' }),
     Object.freeze({ context: 'eden-map', selector: '#edenMapSection, #edenMapRoot' }),
     Object.freeze({ context: 'strife', selector: '#strifeSection, #strifeToolRoot' }),
+    Object.freeze({
+      context: 'specialization',
+      selector: '#specializationSection, #specializationToolRoot',
+    }),
     Object.freeze({ context: 'loyalty', selector: '#loyaltySection, #loyaltyCalculatorRoot' }),
     Object.freeze({ context: 'research', selector: '#researchSection' }),
     Object.freeze({ context: 'hero-atlas', selector: '#heroesSection, #heroesTabContent' }),

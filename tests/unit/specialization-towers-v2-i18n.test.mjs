@@ -185,6 +185,14 @@ test('community contribution copy requires evidence and keeps verification state
   assert.match(SPECIALIZATION_TOWERS_V2_EN.contributionInstructions, /evidence/i);
   assert.match(SPECIALIZATION_TOWERS_V2_EN.contributionInstructions, /verified/i);
   assert.match(SPECIALIZATION_TOWERS_V2_EN.contributionSheetPending, /pending/i);
+  assert.ok(
+    SPECIALIZATION_TOWERS_V2_EN.downloadContributionTemplate,
+    'downloadContributionTemplate should be set'
+  );
+  assert.ok(
+    SPECIALIZATION_TOWERS_V2_EN.contributionTemplateDownloaded,
+    'contributionTemplateDownloaded should be set'
+  );
 
   for (const locale of EXPECTED_LOCALES) {
     const pack = getSpecializationTowersV2Pack(locale);

@@ -100,14 +100,14 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
   assert.match(
     shellJs,
-    /const wideDesktopPrimaryIds = \[\.\.\.desktopPrimaryIds, 'tabStrife', 'tabLoyalty', 'tabYouTube'\];/
+    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabSpecialization',\s*'tabLoyalty',\s*'tabYouTube',?\s*\];/
   );
   assert.match(
     shellJs,
     /const mobilePrimaryIds = \['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade'\];/
   );
 
-  for (const id of ['tabStrife', 'tabLoyalty', 'tabYouTube']) {
+  for (const id of ['tabStrife', 'tabSpecialization', 'tabLoyalty', 'tabYouTube']) {
     assert.match(
       index,
       new RegExp(

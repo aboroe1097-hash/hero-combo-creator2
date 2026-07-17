@@ -16,15 +16,28 @@ import {
 } from '../../js/battle-simulator-engine.js';
 
 function stats(overrides = {}) {
+  const {
+    attack = 70,
+    defense = 70,
+    unitHp = 20,
+    might = 100,
+    resistance = 100,
+    hp = 100,
+    ...battleOverrides
+  } = overrides;
   return {
-    might: 0,
-    resistance: 0,
-    hp: 0,
-    tacticalMight: 0,
-    tacticalResistance: 0,
-    damage: 0,
-    combatSpeed: 0,
-    ...overrides,
+    unit: { attack, defense, hp: unitHp },
+    battle: {
+      might,
+      resistance,
+      hp,
+      tacticalMight: 0,
+      tacticalResistance: 0,
+      damage: 0,
+      damageMitigation: 0,
+      combatSpeed: 0,
+      ...battleOverrides,
+    },
   };
 }
 
@@ -144,7 +157,7 @@ test('omitted coefficients and explicit defaults produce bit-identical results',
   assert.equal(Object.isFrozen(implicit.coefficients), true);
 });
 
-test('seed 42 preserves the pre-coefficient engine golden result', () => {
+test('seed 42 preserves the v2 engine golden result', () => {
   const result = simulateBattle(equalBattleConfig(), {
     seed: 42,
     strikeVariancePct: 5,
@@ -198,10 +211,10 @@ test('custom coefficients change battle results and identify single and batch mo
 
 test('overflowing custom-exponent arithmetic falls back to finite deterministic rates', () => {
   const extremeStats = {
-    might: Number.MAX_VALUE,
-    resistance: Number.MAX_VALUE,
-    hp: Number.MAX_VALUE,
-    damage: Number.MAX_VALUE,
+    might: 5_000,
+    resistance: 5_000,
+    hp: 5_000,
+    damage: 5_000,
   };
   const config = {
     sideA: side([row(1, extremeStats), row(0), row(0)], 'Extreme A'),
@@ -243,28 +256,44 @@ test('single and batch assumptions report the normalized custom casualty-rate ca
   );
 });
 
-test('beta casualty formula uses Might, Damage, Resistance, and HP with a 95% clamp', () => {
-  assert.equal(calculateCasualtyRate(stats(), stats()), 0.08);
-  assert.equal(
-    calculateCasualtyRate(stats({ might: 100, damage: 50 }), stats({ resistance: 100, hp: 50 })),
-    0.08
+test('v2 casualty formula uses effective unit points, damage mitigation, and the 95% clamp', () => {
+  assert.equal(BATTLE_MODEL_ASSUMPTIONS.statContractVersion, 2);
+  assert.equal(BATTLE_MODEL_ASSUMPTIONS.hpReference, 20);
+  assert.ok(Math.abs(calculateCasualtyRate(stats(), stats()) - 0.08) < 1e-12);
+  assert.ok(
+    Math.abs(calculateCasualtyRate(stats({ might: 500 }), stats()) - 0.4) < 1e-12,
+    '70 Attack points at 500% Battle Might resolves to 350 effective Attack'
   );
-  assert.equal(calculateCasualtyRate(stats({ might: 1_000_000 }), stats()), 0.95);
+  assert.equal(calculateCasualtyRate(stats({ might: 5_000 }), stats()), 0.95);
 
-  const baseRate = calculateCasualtyRate(stats({ might: 100 }), stats());
+  const baseRate = calculateCasualtyRate(stats(), stats());
   assert.ok(calculateCasualtyRate(stats({ might: 200 }), stats()) > baseRate);
-  assert.ok(calculateCasualtyRate(stats({ might: 100, damage: 25 }), stats()) > baseRate);
-  assert.ok(calculateCasualtyRate(stats({ might: 100 }), stats({ resistance: 50 })) < baseRate);
-  assert.ok(calculateCasualtyRate(stats({ might: 100 }), stats({ hp: 50 })) < baseRate);
+  assert.ok(calculateCasualtyRate(stats({ damage: 25 }), stats()) > baseRate);
+  assert.ok(calculateCasualtyRate(stats(), stats({ resistance: 200 })) < baseRate);
+  assert.ok(calculateCasualtyRate(stats(), stats({ hp: 200 })) < baseRate);
+  assert.ok(calculateCasualtyRate(stats(), stats({ damageMitigation: 25 })) < baseRate);
 });
 
-test('Tactical Might and Tactical Resistance are recorded but inactive in Phase 1', () => {
+test('Tactical Might and Tactical Resistance are recorded but inactive in v2', () => {
   const base = calculateCasualtyRate(stats({ might: 100 }), stats({ resistance: 50 }));
   const tactical = calculateCasualtyRate(
-    stats({ might: 100, tacticalMight: 999_999 }),
-    stats({ resistance: 50, tacticalResistance: 999_999 })
+    stats({ might: 100, tacticalMight: 5_000 }),
+    stats({ resistance: 50, tacticalResistance: 5_000 })
   );
   assert.equal(tactical, base);
+});
+
+test('zero effective Attack yields zero casualties instead of the old one-casualty minimum', () => {
+  const config = {
+    sideA: side([row(100, { attack: 0, combatSpeed: 10 }), row(0), row(0)], 'No attack'),
+    sideB: side([row(100, { attack: 0, combatSpeed: 5 }), row(0), row(0)], 'No counterattack'),
+  };
+  const result = simulateBattle(config, { includeEventLog: true });
+
+  assert.equal(calculateCasualtyRate(stats({ attack: 0 }), stats()), 0);
+  assert.equal(result.outcome, 'stalemate');
+  assert.equal(result.rounds, BATTLE_MAX_ROUNDS);
+  assert.ok(result.actionLog.every((action) => action.casualties === 0));
 });
 
 test('single-run simulation is deterministic by default and exposes stable summaries and logs', () => {
@@ -401,7 +430,7 @@ test('multiple fastest rows on one side open simultaneously without reporting a 
 });
 
 test('simultaneous exchanges share the current front target and retarget next round', () => {
-  const lethal = { might: 10_000 };
+  const lethal = { might: 5_000 };
   const config = {
     sideA: side(
       [
@@ -467,7 +496,7 @@ test('a valid strike causes at least one casualty and never exceeds target troop
   const config = {
     sideA: side([row(1, { combatSpeed: 2 }), row(0), row(0)], 'Attacker'),
     sideB: side(
-      [row(1, { resistance: 1_000_000, hp: 1_000_000, combatSpeed: 1 }), row(0), row(0)],
+      [row(1, { resistance: 5_000, hp: 5_000, combatSpeed: 1 }), row(0), row(0)],
       'Defender'
     ),
   };
@@ -480,9 +509,9 @@ test('a valid strike causes at least one casualty and never exceeds target troop
 
 test('battle stops at a 200-round stalemate when both sides remain alive', () => {
   const fortifiedRows = () => [
-    row(1_000_000, { resistance: 1_000_000_000_000, hp: 1_000_000_000_000 }),
-    row(1_000_000, { resistance: 1_000_000_000_000, hp: 1_000_000_000_000 }),
-    row(1_000_000, { resistance: 1_000_000_000_000, hp: 1_000_000_000_000 }),
+    row(1_000_000, { resistance: 5_000, hp: 5_000 }),
+    row(1_000_000, { resistance: 5_000, hp: 5_000 }),
+    row(1_000_000, { resistance: 5_000, hp: 5_000 }),
   ];
   const result = simulateBattle({
     sideA: side(fortifiedRows(), 'Fort A'),
@@ -504,6 +533,66 @@ test('simulation never mutates caller formations or stat objects', () => {
   simulateBattle(config);
 
   assert.deepEqual(config, before);
+});
+
+test('engine requires the complete nested v2 stat contract and rejects legacy finalStats', () => {
+  const complete = stats();
+  const missingUnit = structuredClone(complete);
+  delete missingUnit.unit.attack;
+  const missingBattle = structuredClone(complete);
+  delete missingBattle.battle.damageMitigation;
+
+  assert.throws(
+    () => calculateCasualtyRate(missingUnit, complete),
+    /missing required field "attack"/i
+  );
+  assert.throws(
+    () => calculateCasualtyRate(complete, missingBattle),
+    /missing required field "damageMitigation"/i
+  );
+  assert.throws(
+    () =>
+      calculateCasualtyRate({ unitStats: complete.unit, battleStats: complete.battle }, complete),
+    /missing required field "unit"/i
+  );
+
+  const legacyRow = { type: 'cavalry', tier: 9, troops: 1, finalStats: complete };
+  assert.throws(
+    () =>
+      simulateBattle({
+        sideA: side([legacyRow, row(0), row(0)], 'Legacy'),
+        sideB: side([row(1), row(0), row(0)], 'Current'),
+      }),
+    /stats must be provided as an object/i
+  );
+});
+
+test('engine bounds stat values and row troops while preserving safe maximum side totals', () => {
+  assert.throws(
+    () => calculateCasualtyRate(stats({ attack: 5_001 }), stats()),
+    /unit attack cannot exceed 5000/i
+  );
+  assert.throws(
+    () => calculateCasualtyRate(stats({ might: 5_001 }), stats()),
+    /battle might cannot exceed 5000/i
+  );
+  assert.throws(
+    () => calculateCasualtyRate(stats({ combatSpeed: 10_001 }), stats()),
+    /battle combatSpeed cannot exceed 10000/i
+  );
+
+  const overCap = equalBattleConfig();
+  overCap.sideA.rows[0].troops = 10_000_001;
+  assert.throws(() => simulateBattle(overCap), /troops cannot exceed 10000000/i);
+
+  const maxRows = () => [row(10_000_000), row(10_000_000), row(10_000_000)];
+  const zeroRows = () => [row(0), row(0), row(0)];
+  const result = simulateBattle({
+    sideA: side(maxRows(), 'Maximum'),
+    sideB: side(zeroRows(), 'Empty'),
+  });
+  assert.equal(result.sides.A.initialTroops, 30_000_000);
+  assert.equal(Number.isSafeInteger(result.sides.A.initialTroops), true);
 });
 
 test('single-run validation rejects malformed formations, values, seed, and variance', () => {

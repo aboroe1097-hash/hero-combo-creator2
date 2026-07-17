@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.0.19';
+export const APP_VERSION = '14.0.20';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -228,11 +228,13 @@ export const tabMaterialsBtn = document.getElementById('tabMaterials');
 export const tabHeroesBtn = document.getElementById('tabHeroes');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
+export const tabSpecializationBtn = document.getElementById('tabSpecialization');
 export const tabArcadeBtn = document.getElementById('tabArcade');
 export const tabAllStarBohBtn = document.getElementById('tabAllStarBoh');
 export const heroesSection = document.getElementById('heroesSection');
 export const edenMapSection = document.getElementById('edenMapSection');
 export const strifeSection = document.getElementById('strifeSection');
+export const specializationSection = document.getElementById('specializationSection');
 export const globalToggleRow = document.getElementById('globalToggleRow');
 
 export const comboFooterBar = document.getElementById('comboFooterBar');

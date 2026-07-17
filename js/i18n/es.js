@@ -1705,6 +1705,7 @@ const es = {
   strifeTroopMixed: 'Mixto',
   strifeVerifiedLineup: 'Alineación de monstruo verificada',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Especialización',
 
   adminEdenVotesClearDeadline: 'Borrar fecha límite',
   adminEdenVotesDeadline: 'Fecha límite de votación',

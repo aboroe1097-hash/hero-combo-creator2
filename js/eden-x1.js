@@ -54,7 +54,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.19';
+const APP_VERSION = '14.0.20';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -3777,7 +3777,13 @@ function bindWeightedPopovers(host) {
     button.addEventListener('focusin', () => positionWeightedPopover(button));
     button.addEventListener('focusout', () => {
       setTimeout(() => {
-        if (button.classList.contains('is-open') || button.contains(document.activeElement)) return;
+        if (
+          button.classList.contains('is-open') ||
+          button.contains(document.activeElement) ||
+          button.matches(':hover')
+        ) {
+          return;
+        }
         hideWeightedPopover(button);
       }, 0);
     });

@@ -147,6 +147,25 @@ test('flags multi-level nonnumeric nodes as missing buff value data', () => {
   assert.equal(describeNodeBuffProgress(node, 3).status, 'missing');
 });
 
+test('does not treat level ranges or following M-words as numeric buff magnitudes', () => {
+  assert.deepEqual(
+    getNodeBuffEffects({
+      name: 'Novice Rebel Slayer',
+      buff: 'Might vs Lvl 1-5 Marauders',
+      maxLevel: 5,
+    }),
+    []
+  );
+  assert.deepEqual(
+    getNodeBuffEffects({
+      name: 'Temp Bed',
+      buff: '15000 Medical Tent Capacity',
+      maxLevel: 20,
+    }),
+    []
+  );
+});
+
 test('finds missing buff value nodes by season', () => {
   const missing = findMissingBuffValueNodes(
     [

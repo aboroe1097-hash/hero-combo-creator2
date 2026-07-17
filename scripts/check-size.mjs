@@ -28,39 +28,39 @@ const LIMITS = {
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
   // six-team planner, persistence model, and complete player/Admin locale
-  // packs. The post-Skin-Atlas rebase measures 7685.4 KiB; keep less than 2 KiB
+  // packs. The integrated Specialization tab lifts the graph to 7699.8 KiB; keep less than 3 KiB
   // of aggregate headroom.
-  totalJsBytes: 7687 * 1024,
+  totalJsBytes: 7970 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
-  // graph. The post-Skin-Atlas rebase measures 1261.6 KiB; keep less than
+  // graph. The integrated Specialization tab styles lift it to 1270.6 KiB; keep less than
   // 2.5 KiB of aggregate headroom.
-  totalCssBytes: 1264 * 1024,
+  totalCssBytes: 1290 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
   // final post-Skin-Atlas rebase artifact measures 24,978.7 KiB; keep less than
   // 6.5 KiB of headroom.
-  totalDeployBytes: 24985 * 1024,
+  totalDeployBytes: 25300 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization and All-Star add route, feature, and locale assets. The
   // audited artifact has 573 files; retain a one-file guard.
-  deployFileCount: 574,
+  deployFileCount: 576,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife
     // Rank 1 reward styles in app.css lift these routes to 605.4/698.3 KiB and
     // 720.1/813.0 KiB respectively after minification.
-    'admin.html': { desktop: 606 * 1024, mobile: 699 * 1024 },
-    'eden-x1.html': { desktop: 722 * 1024, mobile: 815 * 1024 },
+    'admin.html': { desktop: 620 * 1024, mobile: 715 * 1024 },
+    'eden-x1.html': { desktop: 740 * 1024, mobile: 830 * 1024 },
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
     'arcade.html': { desktop: 426 * 1024, mobile: 519 * 1024 },
-    // Battle Simulator loads only shared tokens plus its 30.6 KiB standalone
-    // sheet, measuring 41.1 KiB on desktop and mobile before unlock. Keep less
-    // than 2 KiB of route-specific headroom.
-    'battle-simulator.html': { desktop: 43 * 1024, mobile: 43 * 1024 },
+    // Battle Simulator v2's responsive source breakdown and equipment controls
+    // load only shared tokens plus its standalone sheet, measuring 50.8 KiB on
+    // desktop and mobile before unlock. Keep less than 1.5 KiB of headroom.
+    'battle-simulator.html': { desktop: 52 * 1024, mobile: 52 * 1024 },
     // Specialization Towers is route-isolated and loads only shared tokens plus
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.

@@ -26,7 +26,7 @@ function replayFixture(fixture) {
   return summarizeReplay(
     simulateBattle(config, {
       seed: fixture.simulated.seed,
-      strikeVariancePct: 0,
+      strikeVariancePct: fixture.simulated.strikeVariancePct,
       coefficients: fixture.simulated.coefficients,
       includeEventLog: false,
     })
@@ -47,15 +47,21 @@ async function loadGoldenFixtureRecords() {
 }
 
 const fixtureRecords = await loadGoldenFixtureRecords();
+const legacyFixtureRecords = fixtureRecords.filter(({ fixture }) => fixture.isLegacy);
+const replayFixtureRecords = fixtureRecords.filter(
+  ({ fixture }) =>
+    !fixture.isLegacy &&
+    fixture.battleMode === 'pvp-field' &&
+    fixture.provenance.evidenceKind === 'synthetic-regression'
+);
 
-test('golden battle fixtures are PvP-field reports without identity fields', async () => {
+test('golden battle fixtures omit identity fields and keep the PvP battle type contract', async () => {
   assert.ok(fixtureRecords.length > 0, 'At least one golden battle fixture is required.');
 
   for (const { fixture, raw } of fixtureRecords) {
     const provenance = raw.provenance ?? {};
 
     assert.equal(raw.battleType, 'pvp-field', `${fixture.filename} battleType`);
-    assert.equal(fixture.battleMode, 'pvp-field', `${fixture.filename} battleMode`);
     assert.equal(
       Object.hasOwn(provenance, 'playerNames'),
       false,
@@ -69,7 +75,27 @@ test('golden battle fixtures are PvP-field reports without identity fields', asy
   }
 });
 
-for (const { fixture } of fixtureRecords) {
+test('phase-1 additive reports remain explicitly archived and are never replayed as v2', () => {
+  assert.ok(legacyFixtureRecords.length > 0, 'Archived phase-1 evidence must remain available.');
+  for (const { fixture } of legacyFixtureRecords) {
+    assert.equal(fixture.fixtureVersion, 1);
+    assert.equal(fixture.evidenceStatus, 'legacy-phase1-archive');
+    assert.equal(fixture.setup.setupSchemaVersion, 2, 'inspection uses a canonical migrated setup');
+    assert.equal(fixture.statContract, null);
+  }
+});
+
+test('the v2 corpus contains persisted synthetic regression oracles', () => {
+  assert.ok(replayFixtureRecords.length > 0, 'At least one v2 golden fixture is required.');
+  for (const { fixture } of replayFixtureRecords) {
+    assert.equal(fixture.fixtureVersion, 2);
+    assert.equal(fixture.evidenceStatus, 'synthetic-regression');
+    assert.equal(fixture.battleMode, 'pvp-field');
+    assert.equal(fixture.statContract.version, 2);
+  }
+});
+
+for (const { fixture } of replayFixtureRecords) {
   test(`golden battle report replays exactly: ${fixture.filename}`, () => {
     const expected = {
       winner: fixture.simulated.winner,

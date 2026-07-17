@@ -79,7 +79,7 @@ export const SPECIALIZATION_TOWERS_V2_EN = Object.freeze({
   communityDataDescription:
     'We are collecting exact inner-node medal costs and prerequisites. Do not estimate values.',
   downloadContributionTemplate: 'Download contribution template',
-  openContributionSheet: 'Open community Google Sheet',
+  openContributionSheet: 'Open Google Community Sheet',
   contributionSheetPending: 'Google Sheet link pending',
   contributionInstructions:
     'Add evidence for each value so it can be verified before entering the canonical dataset.',

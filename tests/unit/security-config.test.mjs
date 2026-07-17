@@ -59,6 +59,7 @@ test('sensitive PIN gate has no committed fallback secret', () => {
 test('Battle Simulator remains private-indexed and fail-closed before PIN unlock', () => {
   const page = readFileSync('battle-simulator.html', 'utf8');
   const bootstrap = readFileSync('js/battle-simulator.js', 'utf8');
+  const simulatorI18n = readFileSync('js/battle-simulator-i18n.js', 'utf8');
   const gateCall = bootstrap.indexOf('await requireSensitiveAdminPin');
   const appImport = bootstrap.indexOf("await import('./battle-simulator-app.js')");
 
@@ -68,8 +69,12 @@ test('Battle Simulator remains private-indexed and fail-closed before PIN unlock
   assert.ok(gateCall >= 0, 'Battle Simulator should request the shared sensitive PIN');
   assert.ok(appImport > gateCall, 'simulator code must load only after the PIN gate resolves');
   assert.match(bootstrap, /if \(!unlocked\) \{\s*location\.assign\('index\.html'\);/);
-  assert.match(bootstrap, /title: 'Beta Testers Only'/);
-  assert.match(bootstrap, /Only Beta Testers are allowed to access the Battle Simulator/);
+  assert.match(bootstrap, /await loadBattleSimulatorLocale\(locale\)/);
+  assert.match(bootstrap, /title: translator\.t\('gate\.title'\)/);
+  assert.match(bootstrap, /prompt: translator\.t\('gate\.prompt'\)/);
+  assert.match(bootstrap, /unconfiguredTitle: translator\.t\('gate\.title'\)/);
+  assert.match(simulatorI18n, /'gate\.title': 'Beta Testers Only'/);
+  assert.match(simulatorI18n, /Only Beta Testers can access the Battle Simulator/);
 });
 
 test('admin boot does not preload gated Eden vote records', () => {

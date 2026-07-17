@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { DEFAULT_BATTLE_COEFFICIENTS } from '../../js/battle-simulator-coefficients.js';
+import { BATTLE_STAT_CONTRACT } from '../../js/battle-simulator-data.js';
 import {
   BATTLE_EXPORT_SCHEMA_VERSION,
   buildBattleCalibrationFixture,
@@ -11,6 +12,12 @@ import {
   buildBattleSummaryCsv,
   makeBattleExportFilename,
 } from '../../js/battle-simulator-export.js';
+import {
+  buildSetupSnapshot,
+  createEmptyCapturedSourceSnapshot,
+  createEmptyEquipmentLoadout,
+  createEmptyResearchSnapshot,
+} from '../../js/battle-simulator-setup.js';
 
 const GENERATED_AT = '2026-07-16T00:48:45.000Z';
 
@@ -21,19 +28,20 @@ const ZERO_STATS = Object.freeze({
   tacticalMight: 0,
   tacticalResistance: 0,
   damage: 0,
+  damageMitigation: 0,
   combatSpeed: 0,
 });
 
 function setupRow(id, type, tier, troops, customized = false) {
-  const baseValues = { might: 100 + tier, resistance: 50 + tier, hp: 20 };
+  const unitValues = { attack: 100 + tier, defense: 50 + tier, hp: 20 };
   return {
     id,
     type,
     tier,
     troops,
-    baseValues,
+    unitValues,
     bonuses: { ...ZERO_STATS },
-    finals: { ...ZERO_STATS, ...baseValues },
+    finals: { ...ZERO_STATS, might: 100 + tier, resistance: 50 + tier, hp: 20 },
     open: id === 'front',
     customized,
   };
@@ -42,18 +50,23 @@ function setupRow(id, type, tier, troops, customized = false) {
 function setupSnapshot(overrides = {}) {
   const sideAFirst = setupRow('front', 'footmen', 9, 31_000);
   const sideBFirst = setupRow('front', 'footmen', 10, 31_000);
-  return {
-    setupSchemaVersion: 1,
-    savedAt: null,
+  const snapshot = buildSetupSnapshot({
     battleMode: 'pvp-field',
+    iterations: 1,
+    seed: 42,
+    strikeVariancePct: 0,
     sides: {
       A: {
         mode: 'add-bonuses',
+        researchEnabled: false,
+        researchSnapshot: createEmptyResearchSnapshot(),
+        equipmentLoadout: createEmptyEquipmentLoadout(),
+        capturedSourceSnapshot: createEmptyCapturedSourceSnapshot(),
         sideDefaults: {
           type: sideAFirst.type,
           tier: sideAFirst.tier,
           troops: sideAFirst.troops,
-          baseValues: { ...sideAFirst.baseValues },
+          unitValues: { ...sideAFirst.unitValues },
           bonuses: { ...sideAFirst.bonuses },
           finals: { ...sideAFirst.finals },
         },
@@ -65,11 +78,15 @@ function setupSnapshot(overrides = {}) {
       },
       B: {
         mode: 'final-totals',
+        researchEnabled: false,
+        researchSnapshot: createEmptyResearchSnapshot(),
+        equipmentLoadout: createEmptyEquipmentLoadout(),
+        capturedSourceSnapshot: createEmptyCapturedSourceSnapshot(),
         sideDefaults: {
           type: sideBFirst.type,
           tier: sideBFirst.tier,
           troops: sideBFirst.troops,
-          baseValues: { ...sideBFirst.baseValues },
+          unitValues: { ...sideBFirst.unitValues },
           bonuses: { ...sideBFirst.bonuses },
           finals: { ...sideBFirst.finals },
         },
@@ -80,9 +97,8 @@ function setupSnapshot(overrides = {}) {
         ],
       },
     },
-    runOptions: { iterations: 1, seed: 42, strikeVariancePct: 0 },
-    ...overrides,
-  };
+  });
+  return { ...snapshot, ...overrides };
 }
 
 function config(overrides = {}) {
@@ -176,12 +192,12 @@ function exportInput(result, overrides = {}) {
   };
 }
 
-test('full JSON schema v2 includes setup, model inputs, seeds, and per-row outcomes', () => {
+test('full JSON schema v3 includes stat/source/equipment provenance and per-row outcomes', () => {
   const json = buildBattleJsonExport(exportInput(calibrationResult(), { seed: 42, variance: 0 }));
   const parsed = JSON.parse(json);
 
   assert.equal(parsed.schemaVersion, BATTLE_EXPORT_SCHEMA_VERSION);
-  assert.equal(parsed.schemaVersion, 2);
+  assert.equal(parsed.schemaVersion, 3);
   assert.equal(parsed.generatedAt, GENERATED_AT);
   assert.equal(parsed.model.version, 'phase1-beta-1');
   assert.deepEqual(parsed.model.assumptions, [
@@ -189,6 +205,7 @@ test('full JSON schema v2 includes setup, model inputs, seeds, and per-row outco
     'No troop-type counters.',
   ]);
   assert.equal(parsed.modelVersion, 'phase1-beta-1');
+  assert.deepEqual(parsed.statContract, BATTLE_STAT_CONTRACT);
   assert.deepEqual(parsed.coefficients, DEFAULT_BATTLE_COEFFICIENTS);
   assert.deepEqual(parsed.setup, setupSnapshot());
   assert.equal(parsed.setup.battleMode, 'pvp-field');
@@ -214,8 +231,11 @@ test('full JSON schema v2 includes setup, model inputs, seeds, and per-row outco
     'generatedAt',
     'model',
     'modelVersion',
+    'statContract',
     'coefficients',
     'setup',
+    'sourceProvenance',
+    'equipmentProvenance',
     'config',
     'runMode',
     'seed',
@@ -261,17 +281,29 @@ test('calibration fixture has the exact corpus shape and uses the selected run',
       )
     )
   );
+  const sourceProvenance = {
+    A: setup.sides.A.capturedSourceSnapshot,
+    B: setup.sides.B.capturedSourceSnapshot,
+  };
+  const equipmentProvenance = {
+    A: setup.sides.A.equipmentLoadout,
+    B: setup.sides.B.equipmentLoadout,
+  };
 
   assert.deepEqual(fixture, {
-    fixtureVersion: 1,
+    fixtureVersion: 2,
     battleType: 'pvp-field',
     battleMode: 'siege',
     createdAt: GENERATED_AT,
+    statContract: BATTLE_STAT_CONTRACT,
+    sourceProvenance,
+    equipmentProvenance,
     setup,
     simulated: {
       modelVersion: 'phase1-beta-1',
       coefficients: { ...DEFAULT_BATTLE_COEFFICIENTS },
       seed: 202,
+      strikeVariancePct: 0,
       winner: 'A',
       rounds: 4,
       perRowCasualties: {
@@ -289,8 +321,30 @@ test('calibration fixture has the exact corpus shape and uses the selected run',
       },
       notes: '',
     },
-    provenance: { submitter: '', reportDate: null },
+    provenance: {
+      submitter: '',
+      reportDate: null,
+      evidenceKind: 'unverified-game-report',
+    },
   });
+});
+
+test('calibration fixture persists the selected run variance instead of inactive setup variance', () => {
+  const setup = setupSnapshot();
+  setup.runOptions.strikeVariancePct = 5;
+  const fixture = JSON.parse(
+    buildBattleCalibrationFixture(
+      exportInput(calibrationResult({ seed: 202, strikeVariancePct: 0 }), {
+        seed: 202,
+        variance: 5,
+        setup,
+      })
+    )
+  );
+
+  assert.equal(fixture.setup.runOptions.strikeVariancePct, 5);
+  assert.equal(fixture.simulated.seed, 202);
+  assert.equal(fixture.simulated.strikeVariancePct, 0);
 });
 
 test('summary CSV computes single-run outcomes and side averages', () => {
@@ -301,7 +355,7 @@ test('summary CSV computes single-run outcomes and side averages', () => {
   assert.match(header, /average_side_a_survivors,average_side_b_survivors/);
   assert.match(
     row,
-    /^2,2026-07-16T00:48:45\.000Z,troops-v1,single,fixed,,1,1,1,0,0,0,0,0,0,4,40000,0,40000,22000,62000,84000,/
+    /^3,2026-07-16T00:48:45\.000Z,troops-v1,single,fixed,,1,1,1,0,0,0,0,0,0,4,40000,0,40000,22000,62000,84000,/
   );
   assert.match(row, /"\{""label"":""Baseline""/);
 });
@@ -497,7 +551,7 @@ test('rich JSON and debug prefer actual custom result model metadata', () => {
   assert.equal(parsed.model.appVersion, '14.0.11');
   assert.deepEqual(parsed.model.assumptions, actualAssumptions);
   assert.equal(parsed.coefficients.casualtyRateCap, 0.5);
-  assert.match(text, /Schema \/ model: 2 \/ phase1-beta-1\+custom-coefficients/);
+  assert.match(text, /Schema \/ model: 3 \/ phase1-beta-1\+custom-coefficients/);
   assert.match(text, /Assumptions: \{"casualtyRateCap":0\.5,"source":"selected-result"\}/);
   assert.match(text, /Coefficients: .*"casualtyRateCap":0\.5/);
   assert.doesNotMatch(text, /caller-default|"casualtyRateCap":0\.95/);
@@ -539,7 +593,10 @@ test('debug snapshot is concise and reports aggregate batch diagnostics', () => 
   assert.match(text, /Seeds: \{"base":null,"runs":\[\]\}/);
   assert.match(text, /Per-row results: \{"A":\[/);
   assert.match(text, /Setup: \{"battleMode":"pvp-field","runOptions":/);
-  assert.ok(text.split('\n').length <= 12);
+  assert.match(text, /Stat contract: \{"battleKeys":/);
+  assert.match(text, /Source provenance: \{"A":/);
+  assert.match(text, /Equipment provenance: \{"A":/);
+  assert.ok(text.split('\n').length <= 15);
 });
 
 test('all export modes recursively remove PIN, auth, token, secret, and storage fields', () => {

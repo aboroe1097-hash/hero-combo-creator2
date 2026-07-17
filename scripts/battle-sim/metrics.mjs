@@ -156,8 +156,11 @@ export function casualtySmape(predicted, observed) {
 export function simulateFixture(fixture, coefficients) {
   const fixtureObject = requireObject(fixture, 'Calibration fixture');
   const result = simulateBattle(setupSnapshotToEngineConfig(fixtureObject.setup), {
-    seed: 1,
-    strikeVariancePct: 0,
+    seed: fixtureObject.simulated?.seed ?? fixtureObject.setup?.runOptions?.seed ?? 1,
+    strikeVariancePct:
+      fixtureObject.simulated?.strikeVariancePct ??
+      fixtureObject.setup?.runOptions?.strikeVariancePct ??
+      0,
     includeEventLog: false,
     coefficients,
   });

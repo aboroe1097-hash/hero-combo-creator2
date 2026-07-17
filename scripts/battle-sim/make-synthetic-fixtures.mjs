@@ -7,13 +7,16 @@ import { simulateBattle } from '../../js/battle-simulator-engine.js';
 import { buildBattleCalibrationFixture } from '../../js/battle-simulator-export.js';
 import {
   buildSetupSnapshot,
+  createEmptyCapturedSourceSnapshot,
+  createEmptyEquipmentLoadout,
+  createEmptyResearchSnapshot,
   setupSnapshotToEngineConfig,
 } from '../../js/battle-simulator-setup.js';
 
 const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIRECTORY = resolve(SCRIPT_DIRECTORY, '../../tests/fixtures/battle-reports');
-const FIXED_TIMESTAMP = '2026-07-16T00:00:00.000Z';
-const FIXED_REPORT_DATE = '2026-07-16';
+const FIXED_TIMESTAMP = '2026-07-17T00:00:00.000Z';
+const FIXED_REPORT_DATE = '2026-07-17';
 const ROW_IDS = Object.freeze(['front', 'middle', 'back']);
 
 const SYNTHETIC_COEFFICIENTS = Object.freeze({
@@ -50,6 +53,7 @@ function unit(
       tacticalMight,
       tacticalResistance,
       damage,
+      damageMitigation: 0,
       combatSpeed,
     },
     baseAdjustments,
@@ -143,9 +147,9 @@ const CASES = Object.freeze([
       unit('footmen', 9, 41_000, [245, 340, 168, 18, 43, 155, 570]),
     ],
     B: [
-      unit('cavalry', 10, 36_000, [520, 230, 108, 58, 28, 35, 830]),
-      unit('archers', 9, 37_000, [575, 182, 80, 69, 20, 40, 600]),
-      unit('footmen', 10, 39_000, [405, 350, 172, 35, 45, 28, 590]),
+      unit('cavalry', 10, 43_200, [520, 230, 108, 58, 28, 35, 830]),
+      unit('archers', 9, 44_400, [575, 182, 80, 69, 20, 40, 600]),
+      unit('footmen', 10, 46_800, [405, 350, 172, 35, 45, 28, 590]),
     ],
   },
   {
@@ -156,9 +160,9 @@ const CASES = Object.freeze([
       unit('archers', 10, 34_000, [455, 155, 160, 53, 18, 130, 615]),
     ],
     B: [
-      unit('footmen', 9, 40_000, [320, 520, 85, 27, 65, 70, 595]),
-      unit('cavalry', 10, 34_000, [415, 405, 78, 45, 50, 102, 800]),
-      unit('archers', 9, 35_000, [450, 365, 62, 52, 44, 128, 610]),
+      unit('footmen', 9, 48_000, [320, 520, 85, 27, 65, 70, 595]),
+      unit('cavalry', 10, 40_800, [415, 405, 78, 45, 50, 102, 800]),
+      unit('archers', 9, 42_000, [450, 365, 62, 52, 44, 128, 610]),
     ],
   },
   {
@@ -229,31 +233,24 @@ function roundStat(value) {
 
 function buildEditableFields(specification) {
   const profile = getTroopProfile(specification.type, specification.tier);
-  const baseValues = Object.fromEntries(
-    ['might', 'resistance', 'hp'].map((key) => [
-      key,
-      roundStat(profile.baseStats[key] + (specification.baseAdjustments[key] ?? 0)),
-    ])
-  );
+  const unitValues = {
+    attack: roundStat(profile.unitStats.attack + (specification.baseAdjustments.might ?? 0)),
+    defense: roundStat(profile.unitStats.defense + (specification.baseAdjustments.resistance ?? 0)),
+    hp: roundStat(profile.unitStats.hp + (specification.baseAdjustments.hp ?? 0)),
+  };
+  const baselines = { might: 100, resistance: 100, hp: 100 };
   const bonuses = Object.fromEntries(
     Object.entries(specification.stats).map(([key, value]) => [
       key,
-      roundStat(value - (baseValues[key] ?? 0)),
+      roundStat(Math.max(0, value - (baselines[key] ?? 0))),
     ])
   );
-  for (const [key, value] of Object.entries(bonuses)) {
-    if (value < 0) {
-      throw new RangeError(
-        `${specification.type} T${specification.tier} ${key} final total cannot be below its base value.`
-      );
-    }
-  }
 
   return {
     type: specification.type,
     tier: specification.tier,
     troops: specification.troops,
-    baseValues,
+    unitValues,
     bonuses,
     finals: { ...specification.stats },
   };
@@ -267,7 +264,15 @@ function buildSide(mode, specifications) {
     customized: index !== 0,
   }));
   const { id: _id, open: _open, customized: _customized, ...sideDefaults } = rows[0];
-  return { mode, sideDefaults, rows };
+  return {
+    mode,
+    researchEnabled: false,
+    researchSnapshot: createEmptyResearchSnapshot(),
+    equipmentLoadout: createEmptyEquipmentLoadout(),
+    capturedSourceSnapshot: createEmptyCapturedSourceSnapshot(),
+    sideDefaults,
+    rows,
+  };
 }
 
 function buildSyntheticSetup(caseDefinition, seed) {
@@ -323,8 +328,9 @@ function makeFixture(caseDefinition, index) {
   );
   fixture.observed = copyObservedOutcome(fixture.simulated);
   fixture.provenance = {
-    submitter: 'synthetic',
+    submitter: 'synthetic-v2',
     reportDate: FIXED_REPORT_DATE,
+    evidenceKind: 'synthetic-regression',
   };
   return fixture;
 }
@@ -336,7 +342,7 @@ async function removeStaleSyntheticFixtures(expectedNames) {
       .filter(
         (entry) =>
           entry.isFile() &&
-          /^synthetic-\d+\.json$/u.test(entry.name) &&
+          /^v2-synthetic-\d+\.json$/u.test(entry.name) &&
           !expectedNames.has(entry.name)
       )
       .map((entry) => unlink(resolve(FIXTURE_DIRECTORY, entry.name)))
@@ -346,7 +352,7 @@ async function removeStaleSyntheticFixtures(expectedNames) {
 async function main() {
   await mkdir(FIXTURE_DIRECTORY, { recursive: true });
   const fixtureNames = CASES.map(
-    (_caseDefinition, index) => `synthetic-${String(index + 1).padStart(2, '0')}.json`
+    (_caseDefinition, index) => `v2-synthetic-${String(index + 1).padStart(2, '0')}.json`
   );
   await removeStaleSyntheticFixtures(new Set(fixtureNames));
 
@@ -356,7 +362,9 @@ async function main() {
     await writeFile(resolve(FIXTURE_DIRECTORY, fixtureNames[index]), output, 'utf8');
   }
 
-  console.log(`Wrote ${CASES.length} deterministic synthetic battle fixtures.`);
+  console.log(
+    `Wrote ${CASES.length} deterministic v2 synthetic battle fixtures; legacy phase-1 files were preserved.`
+  );
 }
 
 await main();

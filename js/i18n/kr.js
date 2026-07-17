@@ -1669,6 +1669,7 @@ const kr = {
   strifeTroopMixed: '혼합',
   strifeVerifiedLineup: '확인된 몬스터 전열',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: '특성화',
 
   adminEdenVotesClearDeadline: '마감 지우기',
   adminEdenVotesDeadline: '투표 마감',

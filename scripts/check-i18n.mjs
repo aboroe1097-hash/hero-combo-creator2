@@ -281,11 +281,16 @@ const jsKeyRe =
   /\b(?:adminT|appT|dashT|materialT|translate|t)\(\s*['"]([a-zA-Z][a-zA-Z0-9_.-]*)['"]/g;
 const RUNTIME_KEY_PREFIXES =
   /^(admin|ai\.|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
+// The standalone Battle Simulator owns a separate, extraction-safe locale
+// namespace. Its complete 11-locale parity and placeholder contracts are
+// enforced by battle-simulator-i18n.test.mjs instead of the main app packs.
+const STANDALONE_RUNTIME_I18N_MODULE_RE = /^js\/battle-simulator(?:-|\.js$)/;
 for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
   const relPath = path.relative(rootDir, absolutePath).replace(/\\/g, '/');
   // Specialization Towers owns a strict, independently audited lazy locale pack.
   // Its keys must not be mistaken for the main application catalog.
   if (relPath.startsWith('js/specialization-towers-v2-')) continue;
+  if (STANDALONE_RUNTIME_I18N_MODULE_RE.test(relPath)) continue;
   const source = fs.readFileSync(absolutePath, 'utf8');
   let match;
   while ((match = jsKeyRe.exec(source))) {

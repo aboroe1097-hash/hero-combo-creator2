@@ -99,11 +99,13 @@ import {
   tabHeroesBtn,
   tabEdenMapBtn,
   tabStrifeBtn,
+  tabSpecializationBtn,
   tabArcadeBtn,
   tabAllStarBohBtn,
   heroesSection,
   edenMapSection,
   strifeSection,
+  specializationSection,
   globalToggleRow,
   comboFooterBar,
   generatorHeroesEl,
@@ -179,7 +181,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260717_160946').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260717_200936').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -201,7 +203,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260717_160946').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260717_200936').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -212,7 +214,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260717_160946').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260717_200936').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -223,7 +225,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260717_160946').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260717_200936').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -362,6 +364,7 @@ const TAB_BTN_IDS = {
   materials: 'tabMaterials',
   edenMap: 'tabEdenMap',
   strife: 'tabStrife',
+  specialization: 'tabSpecialization',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
   arcade: 'tabArcade',
@@ -829,6 +832,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     { btn: tabMaterialsBtn, name: 'materials' },
     { btn: tabEdenMapBtn, name: 'edenMap' },
     { btn: tabStrifeBtn, name: 'strife' },
+    { btn: tabSpecializationBtn, name: 'specialization' },
     { btn: tabLoyaltyBtn, name: 'loyalty' },
     { btn: tabYouTubeBtn, name: 'youtube' },
     { btn: tabArcadeBtn, name: 'arcade' },
@@ -880,6 +884,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _materialsBooting = false;
   let _strifeReady = false;
   let _strifeBooting = false;
+  let _specializationReady = false;
+  let _specializationBooting = false;
   let _youtubeReady = false;
   let _youtubeBooting = false;
   let _arcadeReady = false;
@@ -895,6 +901,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     materialsSection,
     edenMapSection,
     strifeSection,
+    specializationSection,
     loyaltySection,
     youtubeSection,
     arcadeSection,
@@ -964,7 +971,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260717_160946')
+        import('./eden-map.js?v=20260717_200936')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -994,7 +1001,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260717_160946')
+      import('./app-hero-atlas.js?v=20260717_200936')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1066,7 +1073,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260717_160946')
+      import('./app-strife.js?v=20260717_200936')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1084,9 +1091,31 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
           }
         });
     }
+    if (tabName === 'specialization' && !_specializationReady) {
+      if (_specializationBooting) return;
+      _specializationBooting = true;
+      import('./app-specialization.js')
+        .then((mod) => mod.initSpecializationTool())
+        .then(() => {
+          _specializationReady = true;
+        })
+        .catch((err) => {
+          _specializationBooting = false;
+          console.error('Specialization tool failed to load', err);
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Specialization') ||
+                'Specialization failed to load.',
+              'error',
+              4000
+            );
+          }
+        });
+    }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260717_160946')
+      import('./youtube-v14.js?v=20260717_200936')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1207,6 +1236,10 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       tabName === 'manual' || tabName === 'generator'
     );
     document.body.classList.toggle('tab-strife-active', tabName === 'strife');
+    document.body.classList.toggle(
+      'tab-specialization-active',
+      tabName === 'specialization'
+    );
 
     onTabActivated(tabName);
     _lastTab = tabName;
@@ -1398,6 +1431,7 @@ function updateTextContent() {
     tabYouTube: t.tabYouTube || 'YouTube',
     tabEdenMap: t.tabEdenMap || 'Eden Map',
     tabStrife: t.tabStrife || 'Strife over Dragon',
+    tabSpecialization: t.tabSpecialization || 'Specialization',
     tabHeroes: t.tabHeroes || 'Hero Atlas',
     tabResearch: t.tabResearch || 'Research',
     tabMaterialsLabel: t.tabMaterials || translations.en.tabMaterials,

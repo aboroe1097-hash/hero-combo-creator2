@@ -1,22 +1,35 @@
-import { BATTLE_ROWS, TROOP_STAT_KEYS } from './battle-simulator-data.js';
+import {
+  BATTLE_ROWS,
+  BATTLE_STAT_KEYS,
+  MAX_BATTLE_STAT_VALUE,
+  MAX_COMBAT_SPEED,
+  MAX_UNIT_STAT_VALUE,
+  UNIT_STAT_KEYS,
+} from './battle-simulator-data.js';
 import {
   DEFAULT_BATTLE_COEFFICIENTS,
   normalizeBattleCoefficients,
 } from './battle-simulator-coefficients.js';
 
-export const BATTLE_MODEL_VERSION = 'phase1-beta-1';
+export const BATTLE_MODEL_VERSION = 'battle-stats-v2-beta-1';
 export const BATTLE_MAX_ROUNDS = 200;
 export const BATTLE_BASE_CASUALTY_RATE = DEFAULT_BATTLE_COEFFICIENTS.baseCasualtyRate;
 export const BATTLE_BATCH_PRESETS = Object.freeze([1, 10, 50, 100, 500]);
 export const BATTLE_MAX_BATCH_ITERATIONS = 500;
+export const BATTLE_HP_REFERENCE = 20;
+export const BATTLE_MAX_TROOPS_PER_ROW = 10_000_000;
 
 export const BATTLE_MODEL_ASSUMPTIONS = Object.freeze({
-  phase: 'Phase 1 troop-only beta',
+  phase: 'Battle stats v2 troop-only beta',
+  statContractVersion: 2,
   formula:
-    'baseCasualtyRate * (1 + mightScale * might / 100) ** mightExponent * (1 + damageScale * damage / 100) ** damageExponent * strikeMultiplier / ((1 + resistanceScale * resistance / 100) ** resistanceExponent * (1 + hpScale * hp / 100) ** hpExponent)',
+    'baseCasualtyRate * (mightScale * effectiveAttack) ** mightExponent * (1 + damageScale * damage / 100) ** damageExponent * strikeMultiplier / ((resistanceScale * effectiveDefense) ** resistanceExponent * (hpScale * effectiveHp / 20) ** hpExponent * (1 + damageMitigation / 100))',
+  statDerivation:
+    'effectiveAttack = unit Attack * Battle Might / 100; effectiveDefense = unit Defense * Battle Resistance / 100; effectiveHp = unit HP * Battle HP / 100.',
+  hpReference: BATTLE_HP_REFERENCE,
   casualtyRateCap: DEFAULT_BATTLE_COEFFICIENTS.casualtyRateCap,
   casualtyRounding:
-    'Floor attacker troops multiplied by casualty rate; each valid hit deals at least 1 casualty and never more than the target row has remaining.',
+    'Floor attacker troops multiplied by casualty rate; a positive-rate hit deals at least 1 casualty, a zero-rate hit deals 0, and no hit exceeds the target row remaining.',
   simultaneousOverflow:
     'If simultaneous attempted casualties exceed the target row, allocate the available troops proportionally and assign remainder casualties by largest fractional share, then stable action order.',
   maxRounds: BATTLE_MAX_ROUNDS,
@@ -36,24 +49,60 @@ const UINT32_MAX = 0xffffffff;
 const UINT32_RANGE = 0x100000000;
 const RUN_SEED_STEP = 0x9e3779b9;
 
-function validateFiniteNonNegative(value, label, fallback = 0) {
-  const numeric = value === undefined ? fallback : Number(value);
+function validateFiniteNonNegative(value, label, maximum = Number.MAX_VALUE) {
+  const numeric = Number(value);
   if (!Number.isFinite(numeric)) throw new TypeError(`${label} must be a finite number.`);
   if (numeric < 0) throw new RangeError(`${label} cannot be negative.`);
+  if (numeric > maximum) throw new RangeError(`${label} cannot exceed ${maximum}.`);
   return numeric;
+}
+
+function requireOwn(object, key, label) {
+  if (!Object.hasOwn(object, key)) {
+    throw new TypeError(`${label} is missing required field "${key}".`);
+  }
+  return object[key];
+}
+
+function requireStatsObject(value, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new TypeError(`${label} must be provided as an object.`);
+  }
+  return value;
 }
 
 function normalizeStats(rawStats, label) {
   if (!rawStats || typeof rawStats !== 'object' || Array.isArray(rawStats)) {
     throw new TypeError(`${label} stats must be provided as an object.`);
   }
-
-  return Object.fromEntries(
-    TROOP_STAT_KEYS.map((key) => [
-      key,
-      validateFiniteNonNegative(rawStats[key], `${label} ${key}`, 0),
-    ])
+  const rawUnit = requireStatsObject(requireOwn(rawStats, 'unit', label), `${label} unit stats`);
+  const rawBattle = requireStatsObject(
+    requireOwn(rawStats, 'battle', label),
+    `${label} battle stats`
   );
+
+  return {
+    unit: Object.fromEntries(
+      UNIT_STAT_KEYS.map((key) => [
+        key,
+        validateFiniteNonNegative(
+          requireOwn(rawUnit, key, `${label} unit stats`),
+          `${label} unit ${key}`,
+          MAX_UNIT_STAT_VALUE
+        ),
+      ])
+    ),
+    battle: Object.fromEntries(
+      BATTLE_STAT_KEYS.map((key) => [
+        key,
+        validateFiniteNonNegative(
+          requireOwn(rawBattle, key, `${label} battle stats`),
+          `${label} battle ${key}`,
+          key === 'combatSpeed' ? MAX_COMBAT_SPEED : MAX_BATTLE_STAT_VALUE
+        ),
+      ])
+    ),
+  };
 }
 
 function normalizeTroops(value, label) {
@@ -62,6 +111,9 @@ function normalizeTroops(value, label) {
     throw new TypeError(`${label} troops must be a safe integer.`);
   }
   if (troops < 0) throw new RangeError(`${label} troops cannot be negative.`);
+  if (troops > BATTLE_MAX_TROOPS_PER_ROW) {
+    throw new RangeError(`${label} troops cannot exceed ${BATTLE_MAX_TROOPS_PER_ROW}.`);
+  }
   return troops;
 }
 
@@ -88,12 +140,13 @@ function normalizeSide(rawSide, sideId) {
       tier: rawRow.tier ?? null,
       initialTroops,
       troops: initialTroops,
-      stats: normalizeStats(
-        rawRow.stats ?? rawRow.finalStats,
-        `Side ${sideId} ${rowDefinition.label}`
-      ),
+      stats: normalizeStats(rawRow.stats, `Side ${sideId} ${rowDefinition.label}`),
     };
   });
+  const initialTroops = rows.reduce((total, row) => total + row.initialTroops, 0);
+  if (!Number.isSafeInteger(initialTroops)) {
+    throw new RangeError(`Side ${sideId} total troops must be a safe integer.`);
+  }
 
   return {
     id: sideId,
@@ -144,17 +197,38 @@ function calculateCasualtyRateInLogSpace(
   coefficients
 ) {
   if (strikeMultiplier === 0) return 0;
+  if (attackerStats.unit.attack === 0 || attackerStats.battle.might === 0) return 0;
+  if (
+    defenderStats.unit.defense === 0 ||
+    defenderStats.battle.resistance === 0 ||
+    defenderStats.unit.hp === 0 ||
+    defenderStats.battle.hp === 0
+  ) {
+    return coefficients.casualtyRateCap;
+  }
 
-  const logStatFactor = (stat, scale) => Math.log1p((stat / 100) * scale);
+  const logEffective = (points, percent) => Math.log(points) + Math.log(percent) - Math.log(100);
+  const attackerEffectiveAttack = logEffective(
+    attackerStats.unit.attack,
+    attackerStats.battle.might
+  );
+  const defenderEffectiveDefense = logEffective(
+    defenderStats.unit.defense,
+    defenderStats.battle.resistance
+  );
+  const defenderEffectiveHp = logEffective(defenderStats.unit.hp, defenderStats.battle.hp);
   const logAttack =
     Math.log(coefficients.baseCasualtyRate) +
-    coefficients.mightExponent * logStatFactor(attackerStats.might, coefficients.mightScale) +
-    coefficients.damageExponent * logStatFactor(attackerStats.damage, coefficients.damageScale) +
+    coefficients.mightExponent * (Math.log(coefficients.mightScale) + attackerEffectiveAttack) +
+    coefficients.damageExponent *
+      Math.log1p((attackerStats.battle.damage / 100) * coefficients.damageScale) +
     Math.log(strikeMultiplier);
   const logDefense =
     coefficients.resistanceExponent *
-      logStatFactor(defenderStats.resistance, coefficients.resistanceScale) +
-    coefficients.hpExponent * logStatFactor(defenderStats.hp, coefficients.hpScale);
+      (Math.log(coefficients.resistanceScale) + defenderEffectiveDefense) +
+    coefficients.hpExponent *
+      (Math.log(coefficients.hpScale) + defenderEffectiveHp - Math.log(BATTLE_HP_REFERENCE)) +
+    Math.log1p(defenderStats.battle.damageMitigation / 100);
   const logRate = logAttack - logDefense;
 
   if (logRate >= Math.log(coefficients.casualtyRateCap)) {
@@ -169,19 +243,6 @@ function calculateCasualtyRateUnchecked(
   strikeMultiplier,
   coefficients
 ) {
-  const attack =
-    coefficients.baseCasualtyRate *
-    (1 + (coefficients.mightScale * attackerStats.might) / 100) ** coefficients.mightExponent *
-    (1 + (coefficients.damageScale * attackerStats.damage) / 100) ** coefficients.damageExponent *
-    strikeMultiplier;
-  const defense =
-    (1 + (coefficients.resistanceScale * defenderStats.resistance) / 100) **
-      coefficients.resistanceExponent *
-    (1 + (coefficients.hpScale * defenderStats.hp) / 100) ** coefficients.hpExponent;
-  const directRate = attack / defense;
-  if (!Number.isNaN(directRate)) {
-    return clamp(directRate, 0, coefficients.casualtyRateCap);
-  }
   return calculateCasualtyRateInLogSpace(
     attackerStats,
     defenderStats,
@@ -255,8 +316,8 @@ function buildRoundGroups(sides, round) {
   }
 
   const livingRows = getLivingRowsInStableOrder(sides);
-  const openingSpeed = Math.max(...livingRows.map((row) => row.stats.combatSpeed));
-  const openingActors = livingRows.filter((row) => row.stats.combatSpeed === openingSpeed);
+  const openingSpeed = Math.max(...livingRows.map((row) => row.stats.battle.combatSpeed));
+  const openingActors = livingRows.filter((row) => row.stats.battle.combatSpeed === openingSpeed);
   const openingActorSet = new Set(openingActors);
   return [
     {
@@ -336,7 +397,10 @@ function createSideSummary(side) {
     initialTroops: row.initialTroops,
     survivingTroops: row.troops,
     casualties: row.initialTroops - row.troops,
-    stats: { ...row.stats },
+    stats: {
+      unit: { ...row.stats.unit },
+      battle: { ...row.stats.battle },
+    },
   }));
   const initialTroops = rows.reduce((total, row) => total + row.initialTroops, 0);
   const survivingTroops = rows.reduce((total, row) => total + row.survivingTroops, 0);
@@ -404,17 +468,17 @@ export function simulateBattle(
           strikeMultiplier,
           coefficients
         );
-        const attemptedCasualties = Math.min(
-          target.troops,
-          Math.max(1, Math.floor(actor.troops * casualtyRate))
-        );
+        const attemptedCasualties =
+          casualtyRate <= 0
+            ? 0
+            : Math.min(target.troops, Math.max(1, Math.floor(actor.troops * casualtyRate)));
         actions.push({
           id: `r${rounds}-g${groupIndex + 1}-a${actions.length + 1}`,
           round: rounds,
           group: groupIndex + 1,
           groupType: roundGroup.groupType,
           combatSpeed: roundGroup.combatSpeed,
-          actorCombatSpeed: actor.stats.combatSpeed,
+          actorCombatSpeed: actor.stats.battle.combatSpeed,
           simultaneous: livingActors.length > 1,
           attackerSide: actor.side,
           attackerRowId: actor.id,

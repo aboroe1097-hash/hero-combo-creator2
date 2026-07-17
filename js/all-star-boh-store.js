@@ -783,6 +783,7 @@ export function normalizeAllStarBohReview(input = {}) {
     score: normalizeScore(source.score),
     adjustments,
   };
+  if (own(source, 'statCorrections')) output.statCorrections = source.statCorrections;
   if (['needs_changes', 'rejected'].includes(output.status) && !output.note) {
     throw new AllStarBohValidationError(
       'Player-facing feedback is required for a correction or exclusion.'

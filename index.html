@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260717_160946"></script>
-    <script src="js/theme-prepaint.js?v=20260717_160946"></script>
+    <script src="js/maintenance-config.js?v=20260717_200936"></script>
+    <script src="js/theme-prepaint.js?v=20260717_200936"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -104,15 +104,15 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260717_160946" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260717_160946" />
-    <link rel="stylesheet" href="css/app.css?v=20260717_160946" />
-    <link rel="stylesheet" href="css/components.css?v=20260717_160946" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260717_160946" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260717_160946" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260717_160946" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260717_160946" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260717_160946" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260717_200936" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260717_200936" />
+    <link rel="stylesheet" href="css/app.css?v=20260717_200936" />
+    <link rel="stylesheet" href="css/components.css?v=20260717_200936" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260717_200936" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260717_200936" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260717_200936" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260717_200936" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260717_200936" />
     <script type="importmap">
       {
         "imports": {
@@ -124,7 +124,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260717_160946"></script>
+    <script src="js/admin-auth-config.js?v=20260717_200936"></script>
   </head>
   <body>
     <a
@@ -485,6 +485,17 @@
                     />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6" /></svg
                   >Strife over Dragon</button
+                ><span class="tab-badge tab-badge-new">NEW</span>
+              </div>
+              <div class="tab-item tab-badge-wrap" data-shell-wide-primary>
+                <button id="tabSpecialization" class="tab-pill tab-pill-inactive" data-i18n="tabSpecialization">
+                  <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M4 21h16M6 21V9l6-4 6 4v12M10 21v-5h4v5"
+                    /></svg
+                  >Specialization</button
                 ><span class="tab-badge tab-badge-new">NEW</span>
               </div>
               <div class="tab-item" data-shell-wide-primary>
@@ -1268,7 +1279,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260717_160946"
+          data-tab-src="tabs/eden-map.html?v=20260717_200936"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1284,10 +1295,18 @@
           <div id="strifeToolRoot" class="strife-tool-root"></div>
         </section>
 
+        <section id="specializationSection" class="tab-panel hidden animate-fade-in tab-panel-pad-lg">
+          <div class="specialization-loading tab-loading" aria-busy="true">
+            <div class="spinner"></div>
+            <span data-i18n="loadingEllipsis">Loading…</span>
+          </div>
+          <div id="specializationToolRoot" class="specialization-tool-root"></div>
+        </section>
+
         <section
           id="loyaltySection"
           class="tab-panel hidden"
-          data-tab-src="tabs/loyalty.html?v=20260717_160946"
+          data-tab-src="tabs/loyalty.html?v=20260717_200936"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1298,7 +1317,7 @@
         <section
           id="allStarBohSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/all-star-boh.html?v=20260717_160946"
+          data-tab-src="tabs/all-star-boh.html?v=20260717_200936"
         >
           <div class="tab-loading" role="status" aria-live="polite">
             <div class="spinner"></div>
@@ -1608,7 +1627,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.19</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.20</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1652,11 +1671,11 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260717_160946"></script>
-    <script type="module" src="js/app.js?v=20260717_160946"></script>
-    <script type="module" src="js/command-palette.js?v=20260717_160946"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260717_160946"></script>
-    <script src="js/index-page-enhancements.js?v=20260717_160946"></script>
-    <script src="js/shell-v14.js?v=20260717_160946"></script>
+    <script src="js/loader-v14.js?v=20260717_200936"></script>
+    <script type="module" src="js/app.js?v=20260717_200936"></script>
+    <script type="module" src="js/command-palette.js?v=20260717_200936"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260717_200936"></script>
+    <script src="js/index-page-enhancements.js?v=20260717_200936"></script>
+    <script src="js/shell-v14.js?v=20260717_200936"></script>
   </body>
 </html>

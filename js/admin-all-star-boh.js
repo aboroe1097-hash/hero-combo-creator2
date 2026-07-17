@@ -1219,6 +1219,9 @@ async function adapterReviewSubmission(state, payload) {
     locked: existing.locked === true,
     score: calculated,
     adjustments,
+    statCorrections: Object.prototype.hasOwnProperty.call(payload, 'statCorrections')
+      ? adapterClone(payload.statCorrections)
+      : adapterClone(existing.statCorrections || {}),
     submissionRevision: adapterRevision(submission.revision),
   };
   const saved = await state.adminStore.saveReview(uid, input, {
@@ -1280,6 +1283,16 @@ async function adapterSetScoreOverride(state, payload) {
         reason: cleanText(payload.reason),
       },
     ];
+    return draft;
+  });
+}
+
+async function adapterRemoveScoreOverride(state, payload) {
+  const id = cleanText(payload.playerId);
+  await adapterSaveDraft(state, (draft) => {
+    draft.scoreOverrides = list(draft.scoreOverrides).filter(
+      (override) => override.playerId !== id
+    );
     return draft;
   });
 }
@@ -2360,6 +2373,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     if (type === 'reviewSubmission') await adapterReviewSubmission(state, payload);
     else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
     else if (type === 'setScoreOverride') await adapterSetScoreOverride(state, payload);
+    else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
     else if (type === 'setSeatLock') await adapterSetSeatLock(state, payload);
     else if (type === 'moveSeat') await adapterMoveOrSwapSeat(state, payload, false);
     else if (type === 'swapSeats') await adapterMoveOrSwapSeat(state, payload, true);
@@ -2479,6 +2493,8 @@ function makeInitialState(root, options) {
     planLegionId: snapshot.plan.legions[0]?.id || DEFAULT_LEGIONS[0].id,
     planScope: 'role',
     previewKind: 'announcement',
+    selectedPreviewTeamId: snapshot.teams[0]?.id || '',
+    selectedPreviewPlayerId: snapshot.teams[0]?.seats.find((seat) => seat.playerId)?.playerId || '',
     roleDrafts: null,
     phaseDrafts: null,
     objectiveDraftId: '',
@@ -3171,6 +3187,20 @@ function renderSignupDetail(state, submission) {
   const review = submission?.review || {};
   const reviewStatus = adapterReviewStatusToUi(review.status);
   const selected = (value) => (reviewStatus === value ? ' selected' : '');
+  const correctionEntries = statEntries(state, submission).filter(({ key }) =>
+    [
+      'totalCastlePower',
+      'troopPower',
+      'buildingPower',
+      'technologyPower',
+      'heroCombatPower',
+      'dragonPower',
+    ].includes(key)
+  );
+  const correctionReason =
+    correctionEntries
+      .map(({ key }) => cleanText(review?.statCorrections?.[key]?.reason))
+      .find(Boolean) || '';
   return `<aside class="boh-admin-detail" aria-labelledby="bohSignupDetailTitle">
     <header>
       <div><span>${escapeHtml(state.tr('adminBohAccountSubmission', 'PLAYER SUBMISSION'))}</span>
@@ -3191,6 +3221,45 @@ function renderSignupDetail(state, submission) {
         )
         .join('')}
     </dl>
+    <section class="boh-admin-card" aria-labelledby="bohAdminCorrectionsTitle">
+      <details>
+        <summary><h5 id="bohAdminCorrectionsTitle">${escapeHtml(
+          state.tr('adminBohAdminCorrections', 'Admin corrections')
+        )}</h5></summary>
+        <form class="boh-admin-stack" data-form="stat-corrections">
+          <input type="hidden" name="playerId" value="${escapeHtml(id)}" />
+          <div class="boh-admin-weight-grid">
+            ${correctionEntries
+              .map(({ key, label, value }) => {
+                const corrected = review?.statCorrections?.[key]?.corrected ?? value ?? '';
+                const original =
+                  value === undefined || value === null || value === ''
+                    ? '—'
+                    : formatNumber(state, value);
+                return `<label><span>${escapeHtml(label)}</span>
+                  <output>${escapeHtml(
+                    state.tr('adminBohOriginalValue', 'Original: {value}', { value: original })
+                  )}</output>
+                  <input class="boh-admin-input" type="number" name="statCorrection.${escapeHtml(
+                    key
+                  )}" min="0" step="1" value="${escapeHtml(corrected)}" />
+                </label>`;
+              })
+              .join('')}
+          </div>
+          <label><span>${escapeHtml(
+            state.tr('adminBohCorrectionReason', 'Correction reason')
+          )}</span>
+            <textarea class="boh-admin-textarea" name="reason" rows="3" maxlength="500" required>${escapeHtml(
+              correctionReason
+            )}</textarea>
+          </label>
+          <button class="boh-admin-button" type="submit">${escapeHtml(
+            state.tr('adminBohSaveCorrections', 'Save corrections')
+          )}</button>
+        </form>
+      </details>
+    </section>
     <dl class="boh-admin-stat-grid">
       ${submissionDetailEntries(state, submission)
         .map(
@@ -3321,7 +3390,7 @@ function renderScoring(state) {
         )}</h4></div></header>
         <form class="boh-admin-stack" data-form="score-override">
           <label><span>${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</span>
-            <select class="boh-admin-select" name="playerId" required>
+            <select class="boh-admin-select" name="playerId" data-action="score-override-player" required>
               <option value="">${escapeHtml(state.tr('adminBohSelectPlayer', 'Select player'))}</option>
               ${players
                 .map(
@@ -3341,6 +3410,9 @@ function renderScoring(state) {
           </label>
           <button class="boh-admin-button" type="submit">${escapeHtml(
             state.tr('adminBohSaveOverride', 'Save override')
+          )}</button>
+          <button class="boh-admin-button boh-admin-button-danger" type="button" data-action="remove-score-override" data-player-id="" hidden>${escapeHtml(
+            state.tr('adminBohRemoveOverride', 'Remove override')
           )}</button>
         </form>
         <div class="boh-admin-version-list">
@@ -4648,13 +4720,139 @@ function renderAnnouncementPreview(state) {
 }
 
 function renderPlanPreview(state) {
-  const team = state.snapshot.teams[0];
+  const teams = state.snapshot.teams;
+  const team =
+    teams.find((candidate) => candidate.id === state.selectedPreviewTeamId) || teams[0] || null;
+  const assignedSeats = list(team?.seats).filter((seat) => seat.playerId);
+  const seat =
+    assignedSeats.find((candidate) => candidate.playerId === state.selectedPreviewPlayerId) ||
+    assignedSeats[0] ||
+    null;
+  state.selectedPreviewTeamId = team?.id || '';
+  state.selectedPreviewPlayerId = seat?.playerId || '';
   const phases = state.snapshot.plan.phases;
   const legions = state.snapshot.plan.legions;
+  const role = state.snapshot.plan.roleGroups.find((item) => item.id === seat?.roleGroupId);
+  const captainSeat = team?.seats.find((item) => item.playerId === team.captainId);
+  const previewRuleSources = [
+    ...state.snapshot.plan.instructions,
+    ...list(state.snapshot.plan.roleDefaults),
+    ...list(state.snapshot.plan.seatOverrides),
+    ...list(state.snapshot.plan.playerOverrides),
+  ];
+  const uniquePreviewRules = new Map(
+    previewRuleSources.map((item, index) => [cleanText(item.id) || `preview-rule-${index}`, item])
+  );
+  const previewRules = [...uniquePreviewRules.values()].map((item) => ({
+    ...item,
+    instruction:
+      item.instruction && typeof item.instruction === 'object'
+        ? item.instruction
+        : {
+            summary: cleanText(item.instruction),
+            action: cleanText(item.action),
+            startObjectiveId: cleanText(item.startObjectiveId),
+            objectiveId: cleanText(item.objectiveId),
+            targetLabel: cleanText(item.objectiveCode),
+            viaObjectiveIds: list(item.viaObjectiveIds),
+            pathObjectiveIds: list(item.pathObjectiveIds),
+            loadout: cleanText(item.loadout),
+            teleport: item.teleport,
+            note: cleanText(item.note),
+          },
+  }));
+  const previewPlan = {
+    ...state.snapshot.plan,
+    instructions: previewRules.filter((item) => item.scope === 'global' || item.scopeId === '*'),
+    roleDefaults: previewRules.filter((item) => item.scope === 'role'),
+    seatOverrides: previewRules.filter((item) => item.scope === 'seat'),
+    playerOverrides: previewRules.filter((item) => item.scope === 'player'),
+  };
+  const timeline = phases.map((phase) => ({
+    phase,
+    legions: legions.map((legion) => {
+      let instruction = {};
+      if (team && seat) {
+        try {
+          instruction = BohModel.resolveBohInstruction(previewPlan, {
+            teamId: team.id,
+            phaseId: phase.id,
+            legionId: legion.id,
+            roleGroupId: seat.roleGroupId,
+            seatNumber: seat.seatNumber,
+            playerId: seat.playerId,
+          }).instruction;
+        } catch {
+          instruction = {};
+        }
+      }
+      return { legion, instruction };
+    }),
+  }));
+  const referencedObjectiveIds = new Set(
+    timeline.flatMap(({ legions: phaseLegions }) =>
+      phaseLegions.flatMap(({ instruction }) => [
+        instruction.startObjectiveId,
+        ...list(instruction.viaObjectiveIds),
+        ...list(instruction.pathObjectiveIds),
+        instruction.objectiveId,
+      ])
+    )
+  );
+  const objectives = state.snapshot.plan.objectives.filter((objective) =>
+    referencedObjectiveIds.has(objective.id)
+  );
+  const instructionText = (instruction) =>
+    [
+      instruction.action,
+      instruction.summary,
+      instruction.note,
+      instruction.loadout,
+      instruction.teleport,
+    ]
+      .map(cleanText)
+      .filter(Boolean)
+      .join(' · ');
   return `<div class="boh-admin-player-preview">
+    <div class="boh-admin-field-pair">
+      <label><span>${escapeHtml(state.tr('adminBohTeam', 'Team'))}</span>
+        <select class="boh-admin-select" data-action="preview-team">
+          ${teams
+            .map(
+              (candidate) =>
+                `<option value="${escapeHtml(candidate.id)}" ${candidate.id === team?.id ? 'selected' : ''}>${escapeHtml(
+                  teamDisplayName(state, candidate)
+                )}</option>`
+            )
+            .join('')}
+        </select>
+      </label>
+      <label><span>${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</span>
+        <select class="boh-admin-select" data-action="preview-player" ${assignedSeats.length ? '' : 'disabled'}>
+          ${
+            assignedSeats.length
+              ? assignedSeats
+                  .map(
+                    (candidate) =>
+                      `<option value="${escapeHtml(candidate.playerId)}" ${candidate.playerId === seat?.playerId ? 'selected' : ''}>${escapeHtml(
+                        candidate.displayName ||
+                          playerName(playerById(state, candidate.playerId)) ||
+                          candidate.playerId
+                      )}</option>`
+                  )
+                  .join('')
+              : `<option value="">${escapeHtml(
+                  state.tr('adminBohNoAssignedPlayers', 'No assigned players')
+                )}</option>`
+          }
+        </select>
+      </label>
+    </div>
     <header><span>${escapeHtml(state.tr('adminBohPreviewExample', 'PLAYER VIEW EXAMPLE'))}</span>
       <h5>${escapeHtml(
-        teamDisplayName(state, team) || state.tr('adminBohTeamPlan', 'Team plan')
+        seat?.displayName ||
+          playerName(playerById(state, seat?.playerId)) ||
+          state.tr('adminBohTeamPlan', 'Team plan')
       )}</h5>
       <p>${escapeHtml(
         state.tr(
@@ -4662,21 +4860,56 @@ function renderPlanPreview(state) {
           'Players see a phase timeline and only the instructions relevant to their assignment.'
         )
       )}</p></header>
-    <div class="boh-admin-preview-legions">${legions
-      .map((legion) => `<span>${escapeHtml(legionDisplayName(state, legion))}</span>`)
-      .join('')}</div>
-    <ol class="boh-admin-preview-timeline">${phases
-      .map((phase) => {
-        const count = state.snapshot.plan.instructions.filter(
-          (instruction) =>
-            instruction.phaseId === phase.id &&
-            (!instruction.teamId || instruction.teamId === team?.id)
-        ).length;
-        return `<li><span>${escapeHtml(phaseDisplayName(state, phase))}</span><strong>${escapeHtml(
-          state.tr('adminBohInstructionCount', '{count} instructions', { count })
-        )}</strong></li>`;
-      })
+    <dl class="boh-admin-stat-grid">
+      <div><dt>${escapeHtml(state.tr('adminBohTeam', 'Team'))}</dt><dd>${escapeHtml(
+        teamDisplayName(state, team)
+      )}</dd></div>
+      <div><dt>${escapeHtml(state.tr('adminBohSeat', 'Seat'))}</dt><dd>${escapeHtml(
+        seat?.seatNumber || '—'
+      )}</dd></div>
+      <div><dt>${escapeHtml(state.tr('adminBohRoleGroup', 'Role'))}</dt><dd>${escapeHtml(
+        roleDisplayName(state, role) || state.tr('adminBohRoleUnassigned', 'Role unassigned')
+      )}</dd></div>
+      <div><dt>${escapeHtml(state.tr('adminBohCaptain', 'Captain'))}</dt><dd>${escapeHtml(
+        captainSeat?.displayName ||
+          playerName(playerById(state, captainSeat?.playerId)) ||
+          state.tr('adminBohNotAssigned', 'Not assigned')
+      )}</dd></div>
+    </dl>
+    <ol class="boh-admin-preview-timeline">${timeline
+      .map(
+        ({ phase, legions: phaseLegions }) =>
+          `<li><strong>${escapeHtml(phaseDisplayName(state, phase))}</strong>
+            <div class="boh-admin-preview-legions">${phaseLegions
+              .map(({ legion, instruction }) => {
+                const text = instructionText(instruction);
+                return `<span><strong>${escapeHtml(
+                  legionDisplayName(state, legion)
+                )}</strong><small>${escapeHtml(
+                  text || state.tr('adminBohNoInstructions', 'No instructions')
+                )}</small></span>`;
+              })
+              .join('')}</div>
+          </li>`
+      )
       .join('')}</ol>
+    <section class="boh-admin-warning-box" data-empty="${objectives.length === 0}">
+      <h5>${escapeHtml(state.tr('adminBohMapObjectives', 'Map objectives'))}</h5>
+      ${
+        objectives.length
+          ? `<ul>${objectives
+              .map(
+                (objective) =>
+                  `<li><strong>${escapeHtml(
+                    cleanText(objective.code || objective.id)
+                  )}</strong> ${escapeHtml(cleanText(objective.label))}</li>`
+              )
+              .join('')}</ul>`
+          : `<p>${escapeHtml(
+              state.tr('adminBohNoObjectivesForPlayer', 'No mapped objectives for this player.')
+            )}</p>`
+      }
+    </section>
   </div>`;
 }
 
@@ -4976,6 +5209,17 @@ async function handleClick(state, event) {
     state.objectiveDraftId = '';
     return;
   }
+  if (action === 'remove-score-override') {
+    const playerIdValue = cleanText(button.dataset.playerId);
+    if (!playerIdValue) return;
+    await invokeAction(
+      state,
+      'removeScoreOverride',
+      { playerId: playerIdValue },
+      state.tr('adminBohOverrideRemoved', 'Score override removed.')
+    );
+    return;
+  }
   if (action === 'validate-revision') {
     await invokeAction(
       state,
@@ -4992,6 +5236,35 @@ async function handleClick(state, event) {
 }
 
 function handleChange(state, event) {
+  const action = cleanText(event.target.dataset.action);
+  if (action === 'score-override-player') {
+    const form = event.target.closest('form[data-form="score-override"]');
+    const button = form?.querySelector('[data-action="remove-score-override"]');
+    const selectedScore = state.snapshot.scores.find(
+      (score) => playerId(score) === cleanText(event.target.value)
+    );
+    const hasOverride =
+      selectedScore?.overrideScore !== null && selectedScore?.overrideScore !== undefined;
+    if (button) {
+      button.dataset.playerId = cleanText(event.target.value);
+      button.hidden = !hasOverride;
+    }
+    return;
+  }
+  if (action === 'preview-team') {
+    state.selectedPreviewTeamId = cleanText(event.target.value);
+    const team = state.snapshot.teams.find(
+      (candidate) => candidate.id === state.selectedPreviewTeamId
+    );
+    state.selectedPreviewPlayerId = team?.seats.find((seat) => seat.playerId)?.playerId || '';
+    renderShell(state);
+    return;
+  }
+  if (action === 'preview-player') {
+    state.selectedPreviewPlayerId = cleanText(event.target.value);
+    renderShell(state);
+    return;
+  }
   const control = event.target.closest('[data-plan-filter]');
   if (!control) return;
   state.rotationDraftId = '';
@@ -5115,6 +5388,40 @@ async function handleSubmit(state, event) {
         adminUsefulnessRating: usefulnessInput === '' ? null : clamp(usefulnessInput, 0, 100),
       },
       state.tr('adminBohReviewSaved', 'Signup review saved.')
+    );
+    return;
+  }
+  if (kind === 'stat-corrections') {
+    const submission = state.snapshot.submissions.find(
+      (item) => playerId(item) === cleanText(data.get('playerId'))
+    );
+    const review = submission?.review || {};
+    const reason = cleanText(data.get('reason'));
+    const statCorrections = Object.fromEntries(
+      [
+        'totalCastlePower',
+        'troopPower',
+        'buildingPower',
+        'technologyPower',
+        'heroCombatPower',
+        'dragonPower',
+      ]
+        .map((key) => [key, cleanText(data.get(`statCorrection.${key}`))])
+        .filter(([, corrected]) => corrected !== '')
+        .map(([key, corrected]) => [key, { corrected: finiteNumber(corrected), reason }])
+    );
+    await invokeAction(
+      state,
+      'reviewSubmission',
+      {
+        playerId: cleanText(data.get('playerId')),
+        status: adapterReviewStatusToUi(review.status),
+        note: cleanText(review.note),
+        internalNote: cleanText(review.internalNote),
+        adminUsefulnessRating: review?.adjustments?.bohUsefulRating ?? null,
+        statCorrections,
+      },
+      state.tr('adminBohCorrectionsSaved', 'Admin corrections saved.')
     );
     return;
   }
