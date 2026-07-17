@@ -16,6 +16,7 @@
 - Added complete player and admin All-Star copy for all eleven supported languages, revision-safe live persistence, authenticated OCR rate limits, privacy-safe member publications, identity and security contracts, responsive/RTL/keyboard behavior, and focused model, controller, storage, Worker, and integration coverage.
 - Bound every member-visible overview, team, and personal-plan read to the current published revision, published team set, and matching announcement/plan state so hidden or stale publication documents cannot be fetched directly.
 - Preserved the production AI quota Durable Object bindings, declarative SQLite export, and existing namespace while adding the All-Star rate limiter through the same exports lifecycle, preventing a later Worker deploy from orphaning live quota state.
+- Added declarative Firestore TTL cleanup for expired All-Star member grants and security-attempt records; authorization continues to reject expiry synchronously and never depends on delayed cleanup.
 - Changed the release workflow for normal additive `gh-pages` PRs: `npm run check` remains mandatory, while `npm run firebase:preview` is reserved for major version upgrades, broad overhauls, or changes that explicitly need Firebase-hosted validation.
 
 ## 14.0.18 - 2026-07-17
