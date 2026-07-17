@@ -26,8 +26,10 @@ export const STRIFE_SKILL_IDS = Object.freeze([
   'titanus:colossal-figure',
   'titanus:butcher-in-the-wild',
   'titanus:power-of-the-legion',
-  'fordogreen:forest-call',
-  'fordogreen:thorn-backlash',
+  'fordogreen:preemptive-strike',
+  'fordogreen:broken-promise',
+  'fordogreen:hunt-you-down',
+  'fordogreen:power-of-the-legion',
   'savage-swordsman:ferocious-roar',
   'savage-swordsman:top-swordsman',
   'savage-swordsman:savage-in-nature',
@@ -106,6 +108,8 @@ export const STRIFE_TARGETS = Object.freeze([
   'Trident army',
   'Drained squad',
   'Frost Queen',
+  'Lowest-power squad',
+  'Fordogreen army',
 ]);
 
 export const STRIFE_TAGS = Object.freeze([
@@ -147,6 +151,8 @@ export const STRIFE_TAGS = Object.freeze([
   'Late Burst',
   'Physical Reduction',
   'Skill Weakness',
+  'Crit Weakness',
+  'Focus Fire',
 ]);
 
 function orderedRecord(ids, values, kind) {

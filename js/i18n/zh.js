@@ -1592,6 +1592,8 @@ const zh = {
   strifeNotesCount: '{n} 条笔记',
   strifePaidCombos: '付费连击',
   strifePending: '待定',
+  strifeRankOneReward: '第一名奖励',
+  strifeRankOneRewardNote: '赛事排名第一的玩家可获得的专属奖励。',
   strifeRecommendedFormation: '推荐的 {tier} 编队：{heroes}。',
   strifeReusableRank: '可重复使用 #{rank}',
   strifeSeasonStageGroupAria: '纷争赛季阶段',

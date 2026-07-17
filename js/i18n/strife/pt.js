@@ -81,14 +81,24 @@ export default defineStrifePack({
       'Use uma linha de frente robusta e evite composições frágeis de canhão de vidro.',
     ],
     [
-      'Chamado da Floresta',
-      'Fica imune a ataques normais durante os três primeiros rounds.',
-      'Concentre-se em dano de habilidade ou use suportes com limpeza.',
+      'Ataque Preventivo',
+      'Nos 2 primeiros rounds, causa 200% de dano a 2 esquadrões inimigos aleatórios e os desarma por 1 round.',
+      'Leve linhas de frente imunes a controle ou com muita vida para aguentar o desarme inicial, ou derrube o chefe antes de a janela de burst fechar.',
     ],
     [
-      'Revide de Espinhos',
-      'Reflete para o atacante uma porcentagem do dano físico recebido.',
-      'Use sustain de cura e dano de habilidade em vez de ataques físicos.',
+      'Promessa Quebrada',
+      'Recebe 60% menos dano de habilidade, mas 50% mais dano crítico em batalha.',
+      'Abandone os nukers de habilidade e construa em torno de atacantes de ataque básico físico com crítico.',
+    ],
+    [
+      'Caçada Implacável',
+      'Após um ataque normal, 100% de chance de causar 300% de dano ao esquadrão de menor poder de tropas e fazê-lo receber 40% mais dano físico até o fim da batalha.',
+      'Evite escalar um esquadrão frágil de baixo poder que o chefe possa mirar, e adicione redução de dano físico na retaguarda.',
+    ],
+    [
+      'Poder da Legião',
+      'A Legião do herói ganha 500% mais Poderio e 70% mais dano; a velocidade de combate e o limite de soldados em marcha aumentam em 800 e 4.875.750.',
+      'Espere uma dura prova de estatísticas; leve seus melhores núcleos em vez de truques de controle.',
     ],
     [
       'Rugido Feroz',
@@ -237,6 +247,8 @@ export default defineStrifePack({
     'Exército do Tridente',
     'Esquadrão drenado',
     'Rainha do Gelo',
+    'Esquadrão de menor poder',
+    'Exército de Fordogreen',
   ],
   tags: [
     'Burst inicial',
@@ -277,5 +289,7 @@ export default defineStrifePack({
     'Burst tardio',
     'Redução física',
     'Fraqueza a habilidades',
+    'Fraqueza a crítico',
+    'Fogo concentrado',
   ],
 });

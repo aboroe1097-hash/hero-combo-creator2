@@ -1637,6 +1637,8 @@ const tr = {
   strifeNotesCount: '{n} not',
   strifePaidCombos: 'Ücretli kombinasyonlar',
   strifePending: 'Beklemede',
+  strifeRankOneReward: '1. sıra ödülü',
+  strifeRankOneRewardNote: 'Etkinlik sıralamasında 1. olan oyuncuya verilen özel ödül.',
   strifeRecommendedFormation: 'Önerilen {tier} düzeni: {heroes}.',
   strifeReusableRank: 'Yeniden kullanılabilir #{rank}',
   strifeSeasonStageGroupAria: 'Strife sezon aşaması',

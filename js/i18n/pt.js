@@ -1630,6 +1630,8 @@ const pt = {
   strifeNotesCount: '{n} notas',
   strifePaidCombos: 'Combos pagos',
   strifePending: 'Pendente',
+  strifeRankOneReward: 'Recompensa do 1º lugar',
+  strifeRankOneRewardNote: 'Recompensa exclusiva presenteada ao jogador em 1º lugar na classificação do evento.',
   strifeRecommendedFormation: 'Formação {tier} recomendada: {heroes}.',
   strifeReusableRank: 'Reutilizável #{rank}',
   strifeSeasonStageGroupAria: 'Estágio de temporada do Strife',

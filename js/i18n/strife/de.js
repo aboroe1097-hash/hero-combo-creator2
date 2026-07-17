@@ -81,14 +81,24 @@ export default defineStrifePack({
       'Nutze eine robuste Front und vermeide fragile Glaskanonen-Setups.',
     ],
     [
-      'Ruf des Waldes',
-      'Ist in den ersten drei Runden immun gegen normale Angriffe.',
-      'Konzentriere dich auf Fertigkeitsschaden oder setze reinigende Supports ein.',
+      'Präventivschlag',
+      'Verursacht in den ersten 2 Runden 200 % Schaden an 2 zufälligen gegnerischen Trupps und entwaffnet sie für 1 Runde.',
+      'Setze kontrollimmune oder sehr robuste Fronttrupps ein, um die Eröffnungs-Entwaffnung zu überstehen, oder besiege den Boss vor dem Ende des Burst-Fensters.',
     ],
     [
-      'Dornenschlag',
-      'Wirft einen Teil des eingehenden physischen Schadens auf den Angreifer zurück.',
-      'Setze auf Heilungs-Sustain und Fertigkeitsschaden statt physischer Angriffe.',
+      'Gebrochenes Versprechen',
+      'Erleidet 60 % weniger Fertigkeitsschaden, aber 50 % mehr kritischen Schaden.',
+      'Verzichte auf Fertigkeitsschaden-Nuker und setze auf physische Normalangriffe mit hohem Kritwert.',
+    ],
+    [
+      'Gnadenlose Jagd',
+      'Nach einem normalen Angriff 100 % Chance, dem Trupp mit der niedrigsten Truppenstärke 300 % Schaden zuzufügen; dieser erleidet bis Kampfende 40 % mehr physischen Schaden.',
+      'Stelle keinen schwachen, leistungsarmen Trupp auf, den der Boss herauspicken kann, und gib der Hinterreihe physische Schadensminderung.',
+    ],
+    [
+      'Macht der Legion',
+      'Die Heldenlegion erhält 500 % mehr Macht und 70 % mehr Schaden; Kampftempo und Marschlimit steigen um 800 bzw. 4.875.750.',
+      'Erwarte einen harten Stat-Check; bring deine stärksten Kerne statt Kontroll-Gimmicks.',
     ],
     [
       'Wildes Gebrüll',
@@ -237,6 +247,8 @@ export default defineStrifePack({
     'Armee des Dreizacks',
     'Geschwächter Trupp',
     'Frostkönigin',
+    'Trupp mit niedrigster Stärke',
+    'Fordogreen-Armee',
   ],
   tags: [
     'Früher Burst',
@@ -277,5 +289,7 @@ export default defineStrifePack({
     'Später Burst',
     'Physische Minderung',
     'Fertigkeitsschwäche',
+    'Krit-Schwäche',
+    'Fokusfeuer',
   ],
 });

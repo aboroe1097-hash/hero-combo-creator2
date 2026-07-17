@@ -81,14 +81,24 @@ export default defineStrifePack({
       'Sağlam ön saflar kullan ve kırılgan cam top dizilimlerden kaçın.',
     ],
     [
-      'Ormanın Çağrısı',
-      'İlk üç tur boyunca normal saldırılara bağışıktır.',
-      'Beceri hasarına odaklan veya arındırma yapan destekler kullan.',
+      'Ön Saldırı',
+      'İlk 2 turda 2 rastgele düşman birliğine %200 hasar verir ve onları 1 tur silahsız bırakır.',
+      'Açılış silahsızlandırmasını atlatmak için kontrol bağışık veya yüksek CP’li ön saf getir ya da patlama penceresi kapanmadan patronu devir.',
     ],
     [
-      'Diken Tepkisi',
-      'Gelen fiziksel hasarın bir yüzdesini saldırana geri yansıtır.',
-      'Fiziksel saldırı yerine iyileştirme, dayanıklılık ve beceri hasarı kullan.',
+      'Bozulan Söz',
+      'Savaşlarda %60 daha az beceri hasarı alır ama %50 daha fazla kritik hasar alır.',
+      'Beceri hasarı vuruşçularını bırak ve fiziksel temel saldırı kritik vuruşçular etrafında kur.',
+    ],
+    [
+      'Peşine Düşerim',
+      'Normal saldırıdan sonra %100 ihtimalle en düşük birlik gücüne sahip düşman birliğine %300 hasar verir ve savaş bitene kadar %40 daha fazla fiziksel hasar almasını sağlar.',
+      'Patronun hedef alabileceği kırılgan, düşük güçlü bir birlik dizme ve arka safa fiziksel hasar azaltma ekle.',
+    ],
+    [
+      'Lejyonun Gücü',
+      'Kahramanın Lejyonu %500 daha fazla Güç ve %70 daha fazla hasar kazanır; savaş hızı ve yürüyen asker sınırı 800 ve 4.875.750 artar.',
+      'Ağır bir istatistik sınavı bekle; kontrol oyunları yerine en güçlü çekirdeklerini getir.',
     ],
     [
       'Vahşi Kükreme',
@@ -237,6 +247,8 @@ export default defineStrifePack({
     'Üçlü Mızrak ordusu',
     'Sömürülmüş birlik',
     'Buz Kraliçesi',
+    'En düşük güçlü birlik',
+    'Fordogreen ordusu',
   ],
   tags: [
     'Erken patlama',
@@ -277,5 +289,7 @@ export default defineStrifePack({
     'Geç patlama',
     'Fiziksel hasar azaltma',
     'Beceri zayıflığı',
+    'Kritik zayıflığı',
+    'Odak ateşi',
   ],
 });
