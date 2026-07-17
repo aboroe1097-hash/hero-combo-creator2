@@ -436,6 +436,9 @@ const tr = {
   tabOcrDashboard: 'VTS Yönetici',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Savaş Simülatörü',
+  tabSpecializationTowers: 'Uzmanlık Kuleleri',
+  tabSpecializationTowersAliases:
+    'uzmanlık kulesi kuleler rozet madalya düğüm dallar teknoloji ağacı ilerleme süvari okçu piyade',
   cmdkButton: 'Araç ara',
   cmdkTitle: 'Bir araca git',
   cmdkPlaceholder: 'Araç ve sayfa ara…',

@@ -46,6 +46,7 @@ for (const relativePath of [
   'js/eden-x1.js',
   'js/arcade.js',
   'js/battle-simulator-app.js',
+  'js/specialization-towers-v2-app.js',
 ]) {
   captureVersion(
     relativePath,
@@ -66,6 +67,13 @@ captureVersion(
   'battle-simulator.html',
   /<meta\s+name="vts-app-version"\s+content="(\d+\.\d+\.\d+)"\s*\/?>/,
   'battle-simulator.html application version',
+  expectedVersion
+);
+
+captureVersion(
+  'specialization-towers.html',
+  /<meta\s+name="vts-app-version"\s+content="(\d+\.\d+\.\d+)"\s*\/?>/,
+  'specialization-towers.html application version',
   expectedVersion
 );
 

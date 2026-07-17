@@ -465,6 +465,9 @@ const en = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Battle Simulator',
+  tabSpecializationTowers: 'Specialization Towers',
+  tabSpecializationTowersAliases:
+    'specialization tower towers badge medals nodes branches tech tree progress cavalry archers footmen',
   cmdkButton: 'Search tools',
   cmdkTitle: 'Jump to a tool',
   cmdkPlaceholder: 'Search tools and pages…',

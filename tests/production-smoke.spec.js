@@ -7,6 +7,7 @@ const targetOrigin = new URL(
 ).origin;
 const localIndex = readFileSync('dist/index.html', 'utf8');
 const localBattleSimulator = readFileSync('dist/battle-simulator.html', 'utf8');
+const localSpecializationTowers = readFileSync('dist/specialization-towers.html', 'utf8');
 const localServiceWorker = readFileSync('dist/sw.js', 'utf8');
 const localMaintenanceConfig = readFileSync('dist/js/maintenance-config.js', 'utf8');
 const maintenanceEnabled = /window\.VTS_MAINTENANCE_MODE\s*=\s*true/u.test(localMaintenanceConfig);
@@ -78,6 +79,7 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     '/eden-x1.html',
     '/arcade.html',
     '/battle-simulator.html',
+    '/specialization-towers.html',
     '/games/boot/b-merge-rush.html',
   ]) {
     await page.goto(entryPath, { waitUntil: 'domcontentloaded' });
@@ -93,6 +95,45 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
   await context.close();
 });
 
+test('built Specialization Towers route is public, complete, and route-isolated', async ({
+  page,
+}) => {
+  const failures = observeTargetFailures(page);
+  const consoleErrors = [];
+  const resourcePaths = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('request', (request) => {
+    resourcePaths.push(new URL(request.url()).pathname);
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem('vts_maintenance_bypass', '1');
+  });
+
+  await page.goto('/specialization-towers.html', { waitUntil: 'domcontentloaded' });
+
+  const mount = page.locator('#specializationTowersMount');
+  await expect(mount).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('body')).not.toHaveClass(/\bis-locked\b/u);
+  await expect(page.getByRole('dialog', { name: /Beta Testers Only/iu })).toHaveCount(0);
+
+  const towerTabs = mount.locator('[data-specialization-tower-tabs]');
+  await expect(towerTabs).toBeVisible();
+  await expect(towerTabs.locator('button[data-specialization-tower]')).toHaveCount(3);
+
+  const graph = mount.locator('[data-specialization-tower-graph]:visible');
+  await expect(graph).toBeVisible();
+  await expect(graph.locator('[data-specialization-column]')).toHaveCount(8);
+
+  expect(
+    resourcePaths.filter((path) => /(?:^|\/)battle-simulator(?:[-./]|$)/u.test(path)),
+    'the built specialization route must not preload protected Battle Simulator assets'
+  ).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+  expect(failures).toEqual([]);
+});
+
 test('verified Pages artifact loads standalone pages, lazy chunks, and its service worker', async ({
   page,
   request,
@@ -103,10 +144,12 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
     localStorage.setItem('vts_intro_v1_seen', '1');
     localStorage.setItem('vts_eden_dataset', 'season5');
   });
+  expect(localServiceWorker).toContain("'/specialization-towers.html'");
 
   for (const [url, expectedBody] of [
     ['/index.html', localIndex],
     ['/battle-simulator.html', localBattleSimulator],
+    ['/specialization-towers.html', localSpecializationTowers],
     ['/sw.js', localServiceWorker],
   ]) {
     const response = await request.get(url, { headers: { 'Cache-Control': 'no-cache' } });

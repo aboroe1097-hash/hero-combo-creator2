@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.0.17 - 2026-07-17
+
+- Added the public Specialization Towers v2 planner with separate Cavalry, Archers, and Footmen towers; eight game-like columns; four research learnings per column; 25/50/75/100 milestones; and medal-free Legion Skills that unlock only after all four learnings reach 100%.
+- Added the canonical X28+ specialization corpus with 32 researches, shared internal-node structures across troop types, troop-specific names and effects, exact full-research badge costs, S3/SX1 availability, portable progress import/export, undo/redo, and persistent local planning state.
+- Kept partial medal accounting evidence-based: unknown node costs remain unknown, recorded exact totals are invalidated whenever their selected nodes change, and the community-data panel links to the shared Google Sheet plus a versioned one-row-per-node CSV contribution template.
+- Added evidence-backed progressive node revelation for Enhanced Tactics IV: its two screenshot-confirmed roots are available together, the observed final node remains visible and locked, unverified downstream nodes stay hidden, and the contribution template now collects initial visibility, reveal prerequisites, branch identity, and evidence references without inventing an order.
+- Added a standalone battle-contribution contract that keeps unit base-point modifiers separate from battle percentages, exports scoped numeric/effect contributions with diagnostics, supports future engine extraction without Battle Simulator imports, and rejects non-finite arithmetic.
+- Added the accepted dense dark/light tower-board UI, persistent desktop inspector, scrollable mobile dialogs, keyboard/focus restoration, RTL and eleven-language UI packs, strict local-only CSP-safe rendering, public navigation/command-palette discovery, service-worker coverage, responsive production smoke tests, and route-specific size budgets.
+
 ## 14.0.16 - 2026-07-17
 
 - Rebuilt the Strife over Dragon boss Fordogreen as "Fordogreen the Dark Rider" with its current four-skill kit — Preemptive Strike, Broken Promise, Hunt You Down, and Power of the Legion — including timings, targets, counters, and localized copy across all eleven supported languages.

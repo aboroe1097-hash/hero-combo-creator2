@@ -438,6 +438,9 @@ const ru = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Симулятор битв',
+  tabSpecializationTowers: 'Башни специализации',
+  tabSpecializationTowersAliases:
+    'специализация башня башни значки медали узлы ветки дерево технологий прогресс кавалерия лучники пехота',
   cmdkButton: 'Поиск инструментов',
   cmdkTitle: 'Перейти к инструменту',
   cmdkPlaceholder: 'Поиск инструментов и страниц…',

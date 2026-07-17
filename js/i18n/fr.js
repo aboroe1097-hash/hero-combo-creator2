@@ -469,6 +469,9 @@ const fr = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Simulateur de combat',
+  tabSpecializationTowers: 'Tours de spécialisation',
+  tabSpecializationTowersAliases:
+    'spécialisation tour tours insignes médailles nœuds branches arbre technologique progression cavalerie archers fantassins',
   cmdkButton: 'Rechercher des outils',
   cmdkTitle: 'Aller à un outil',
   cmdkPlaceholder: 'Rechercher outils et pages…',

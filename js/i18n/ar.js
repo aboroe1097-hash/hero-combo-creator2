@@ -435,6 +435,9 @@ const ar = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'محاكي المعارك',
+  tabSpecializationTowers: 'أبراج التخصص',
+  tabSpecializationTowersAliases:
+    'تخصص برج أبراج شارات ميداليات عقد فروع شجرة التقنية تقدم فرسان رماة مشاة',
   cmdkButton: 'البحث في الأدوات',
   cmdkTitle: 'الانتقال إلى أداة',
   cmdkPlaceholder: 'ابحث في الأدوات والصفحات…',

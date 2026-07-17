@@ -436,6 +436,9 @@ const id = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Simulator Pertempuran',
+  tabSpecializationTowers: 'Menara Spesialisasi',
+  tabSpecializationTowersAliases:
+    'spesialisasi menara lencana medali simpul cabang pohon teknologi progres kavaleri pemanah infanteri',
   cmdkButton: 'Cari alat',
   cmdkTitle: 'Lompat ke alat',
   cmdkPlaceholder: 'Cari alat dan halaman…',

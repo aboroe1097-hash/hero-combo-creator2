@@ -12,7 +12,7 @@ function between(start, end) {
   return source.slice(startIndex, endIndex);
 }
 
-test('command palette exposes the twelve deterministic tool destinations', () => {
+test('command palette exposes the thirteen deterministic tool destinations', () => {
   const destinations = between('const DESTS = [', '];');
   const keys = Array.from(destinations.matchAll(/\bkey:\s*'([^']+)'/g), (match) => match[1]);
 
@@ -21,6 +21,7 @@ test('command palette exposes the twelve deterministic tool destinations', () =>
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
+    'tabSpecializationTowers',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
@@ -31,11 +32,23 @@ test('command palette exposes the twelve deterministic tool destinations', () =>
     'tabBattleSimulator',
   ]);
   assert.match(destinations, /name:\s*'manual'[\s\S]*?kind:\s*'tab'/);
+  assert.match(
+    destinations,
+    /key:\s*'tabSpecializationTowers'[\s\S]*?aliasesKey:\s*'tabSpecializationTowersAliases'[\s\S]*?href:\s*'specialization-towers\.html'[\s\S]*?kind:\s*'link'/
+  );
   assert.match(destinations, /key:\s*'tabOcrDashboard'[\s\S]*?href:\s*'admin\.html'/);
   assert.match(destinations, /key:\s*'tabArcade'[\s\S]*?name:\s*'arcade'[\s\S]*?kind:\s*'tab'/);
   assert.match(
     destinations,
     /key:\s*'tabBattleSimulator'[\s\S]*?href:\s*'battle-simulator\.html'[\s\S]*?kind:\s*'link'/
+  );
+});
+
+test('command palette includes translated aliases for Specialization Towers', () => {
+  assert.match(source, /const catalogAliases = dest\.aliasesKey \? t\(dest\.aliasesKey, ''\) : ''/);
+  assert.match(
+    source,
+    /const aliases = `\$\{commandCopy\(\)\.aliases\?\.\[dest\.name\] \|\| ''\} \$\{catalogAliases\}`/
   );
 });
 

@@ -39,6 +39,7 @@ export default defineConfig({
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
+        'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
       },
       output: {
         onlyExplicitManualChunks: true,

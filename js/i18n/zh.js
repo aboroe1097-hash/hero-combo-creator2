@@ -427,6 +427,8 @@ const zh = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: '战斗模拟器',
+  tabSpecializationTowers: '专精塔',
+  tabSpecializationTowersAliases: '专精 塔 徽章 勋章 节点 分支 科技树 进度 骑兵 弓兵 步兵',
   cmdkButton: '搜索工具',
   cmdkTitle: '跳转到工具',
   cmdkPlaceholder: '搜索工具和页面…',

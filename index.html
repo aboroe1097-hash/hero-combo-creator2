@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260716_214701"></script>
-    <script src="js/theme-prepaint.js?v=20260716_214701"></script>
+    <script src="js/maintenance-config.js?v=20260717_132543"></script>
+    <script src="js/theme-prepaint.js?v=20260717_132543"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -104,15 +104,15 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260716_214701" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260716_214701" />
-    <link rel="stylesheet" href="css/app.css?v=20260716_214701" />
-    <link rel="stylesheet" href="css/components.css?v=20260716_214701" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260716_214701" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260716_214701" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260716_214701" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260716_214701" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260716_214701" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260717_132543" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260717_132543" />
+    <link rel="stylesheet" href="css/app.css?v=20260717_132543" />
+    <link rel="stylesheet" href="css/components.css?v=20260717_132543" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260717_132543" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260717_132543" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260717_132543" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260717_132543" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260717_132543" />
     <script type="importmap">
       {
         "imports": {
@@ -124,7 +124,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260716_214701"></script>
+    <script src="js/admin-auth-config.js?v=20260717_132543"></script>
   </head>
   <body>
     <a
@@ -421,6 +421,26 @@
                     /></svg
                   ><span data-i18n="tabResearch">Research</span></button
                 ><span class="tab-badge tab-badge-hot">HOT</span>
+              </div>
+              <div class="tab-item">
+                <a
+                  id="tabSpecializationTowers"
+                  href="specialization-towers.html"
+                  class="tab-pill tab-pill-inactive"
+                  ><svg
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M5 21h14M7 21V9l5-6 5 6v12M9.5 12h5M9.5 16h5"
+                    /></svg
+                  ><span data-i18n="tabSpecializationTowers">Specialization Towers</span></a
+                >
               </div>
               <div class="tab-item tab-badge-wrap" data-shell-desktop-primary>
                 <button id="tabMaterials" class="tab-pill tab-pill-inactive">
@@ -1221,7 +1241,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260716_214701"
+          data-tab-src="tabs/eden-map.html?v=20260717_132543"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1240,7 +1260,7 @@
         <section
           id="loyaltySection"
           class="tab-panel hidden"
-          data-tab-src="tabs/loyalty.html?v=20260716_214701"
+          data-tab-src="tabs/loyalty.html?v=20260717_132543"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1531,6 +1551,9 @@
             >
             <a href="#heroes" data-footer-tab="heroes" data-i18n="tabHeroes">Hero Atlas</a>
             <a href="#research" data-footer-tab="research" data-i18n="tabResearch">Research</a>
+            <a href="specialization-towers.html" data-i18n="tabSpecializationTowers"
+              >Specialization Towers</a
+            >
             <a href="#materials" data-footer-tab="materials" data-i18n="tabMaterials"
               >DM Materials</a
             >
@@ -1544,7 +1567,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.16</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.17</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1588,11 +1611,11 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260716_214701"></script>
-    <script type="module" src="js/app.js?v=20260716_214701"></script>
-    <script type="module" src="js/command-palette.js?v=20260716_214701"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260716_214701"></script>
-    <script src="js/index-page-enhancements.js?v=20260716_214701"></script>
-    <script src="js/shell-v14.js?v=20260716_214701"></script>
+    <script src="js/loader-v14.js?v=20260717_132543"></script>
+    <script type="module" src="js/app.js?v=20260717_132543"></script>
+    <script type="module" src="js/command-palette.js?v=20260717_132543"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260717_132543"></script>
+    <script src="js/index-page-enhancements.js?v=20260717_132543"></script>
+    <script src="js/shell-v14.js?v=20260717_132543"></script>
   </body>
 </html>

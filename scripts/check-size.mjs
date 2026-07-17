@@ -24,28 +24,26 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // Alliance View and its briefing renderer stay behind separate Admin-only
-  // dynamic imports. The 1600x1200 Canvas export plus eleven-locale copy bring
-  // the combined graph up; the refreshed Strife Fordogreen kit, its eleven-locale
-  // skill copy, and the Rank 1 reward view lift the aggregate to 6609.7 KiB while
-  // the Index entry remains 57.6 KiB. Keep less than 1.5 KiB of aggregate headroom
-  // while preload checks protect startup.
-  totalJsBytes: 6611 * 1024,
-  // Alliance View's responsive table/dialog states bring aggregate CSS to
-  // 1118.7 KiB. Keep less than 2.5 KiB of aggregate headroom.
-  totalCssBytes: 1121 * 1024,
+  // Specialization Towers stays route-isolated, but its canonical 32-research
+  // corpus, contribution adapter, progressive node-access model, and eleven
+  // lazy locale packs bring the combined graph to 6903.9 KiB on top of the live
+  // Strife update. Keep less than 2.1 KiB of aggregate headroom.
+  totalJsBytes: 6906 * 1024,
+  // The evidence-backed progressive graph brings aggregate CSS to 1180.92 KiB.
+  // Keep less than 2.1 KiB of aggregate headroom.
+  totalCssBytes: 1183 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
-  // Vendored Firebase, authored locale chunks, the simulator, Alliance View,
-  // and its lazy briefing renderer add cacheable code, not media. The complete
-  // combined artifact measures 23,666.9 KiB; keep less than 16 KiB of headroom.
-  totalDeployBytes: 23682 * 1024,
+  // Vendored Firebase and the authored standalone tools add cacheable code,
+  // not media. The complete combined artifact measures 24,040.8 KiB after the
+  // progressive Specialization path; keep less than 2.2 KiB of headroom.
+  totalDeployBytes: 24043 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // Forty additional per-domain locale chunks plus shared localization adapters
-  // remain lazy. The audited artifact has 525 files; retain a one-file guard.
-  deployFileCount: 526,
+  // Specialization adds its entry, feature modules, and lazy locale chunks.
+  // The audited artifact has 541 files; retain a one-file guard.
+  deployFileCount: 542,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife
@@ -60,6 +58,10 @@ const LIMITS = {
     // sheet, measuring 41.1 KiB on desktop and mobile before unlock. Keep less
     // than 2 KiB of route-specific headroom.
     'battle-simulator.html': { desktop: 43 * 1024, mobile: 43 * 1024 },
+    // Specialization Towers is route-isolated and loads only shared tokens plus
+    // its responsive progression workspace. Keep a focused per-route ceiling;
+    // aggregate artifact budgets are recalibrated from the production build.
+    'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
   },
 };
 

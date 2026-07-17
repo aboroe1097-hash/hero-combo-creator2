@@ -149,13 +149,17 @@ test('standalone lobby and footer have explicit light surfaces', () => {
 test('aggregate CSS budget records the current route-isolated feature baseline', () => {
   const sizeCheck = read('scripts/check-size.mjs');
 
-  assert.match(sizeCheck, /Alliance View's responsive table\/dialog states/);
-  assert.match(sizeCheck, /1118\.7 KiB\. Keep less than 2\.5 KiB/);
+  assert.match(sizeCheck, /evidence-backed progressive graph/);
+  assert.match(sizeCheck, /1180\.92 KiB/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1121 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1183 \* 1024/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 426 \* 1024, mobile: 519 \* 1024 \}/);
   assert.match(
     sizeCheck,
     /'battle-simulator\.html': \{ desktop: 43 \* 1024, mobile: 43 \* 1024 \}/
+  );
+  assert.match(
+    sizeCheck,
+    /'specialization-towers\.html': \{ desktop: 80 \* 1024, mobile: 80 \* 1024 \}/
   );
 });
