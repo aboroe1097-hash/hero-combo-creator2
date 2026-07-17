@@ -127,6 +127,9 @@ test('Eden row popovers materialize only when a trigger is used', () => {
 });
 
 test('Eden weighted popovers escape the card stacking context and keep JS placement', () => {
+  assert.match(edenCss, /html\.admin-standalone-root\s*\{\s*scroll-behavior:\s*auto;/);
+  assert.match(eden, /behavior:\s*reducedMotion \? 'auto' : 'smooth'/);
+  assert.match(eden, /behavior:\s*prefersReducedMotion\(\) \? 'auto' : 'smooth'/);
   assert.match(
     edenCss,
     /\.eden-x1-weighted-card:has\([\s\S]*?\.dash-weighted-score-popover\[aria-hidden='false'\][\s\S]*?-webkit-backdrop-filter:\s*none\s*!important;[\s\S]*?backdrop-filter:\s*none\s*!important;/
@@ -134,6 +137,10 @@ test('Eden weighted popovers escape the card stacking context and keep JS placem
   assert.doesNotMatch(
     edenCss,
     /\.eden-x1-popover-trigger\.is-open\s+\.dash-weighted-score-popover\s*\{[^}]*left:\s*50%\s*!important;/
+  );
+  assert.match(
+    eden,
+    /button\.classList\.contains\('is-open'\)[\s\S]*?button\.contains\(document\.activeElement\)[\s\S]*?button\.matches\(':hover'\)[\s\S]*?hideWeightedPopover\(button\)/
   );
 });
 

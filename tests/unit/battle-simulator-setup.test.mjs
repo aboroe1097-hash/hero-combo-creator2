@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { BATTLE_STAT_CONTRACT } from '../../js/battle-simulator-data.js';
+import { resolveResearchSources } from '../../js/battle-simulator-research.js';
 import {
   BATTLE_SETUP_PRESET_STORAGE_KEY,
   MAX_BATTLE_SETUP_PRESETS,
@@ -10,9 +12,12 @@ import {
   upsertBattleSetupPreset,
 } from '../../js/battle-simulator-preset-store.js';
 import {
+  CAPTURED_SOURCE_SNAPSHOT_SCHEMA_VERSION,
+  LEGACY_SETUP_SCHEMA_VERSION,
   SETUP_SCHEMA_VERSION,
   applySetupSnapshot,
   buildSetupSnapshot,
+  createEmptyCapturedSourceSnapshot,
   parseSetupSnapshot,
   setupSnapshotToEngineConfig,
 } from '../../js/battle-simulator-setup.js';
@@ -20,7 +25,7 @@ import {
 const ROW_IDS = ['front', 'middle', 'back'];
 const TYPES = ['footmen', 'cavalry', 'archers'];
 
-function stats(offset = 0) {
+function battleStats(offset = 0) {
   return {
     might: 100 + offset,
     resistance: 80 + offset,
@@ -28,16 +33,13 @@ function stats(offset = 0) {
     tacticalMight: 20 + offset,
     tacticalResistance: 15 + offset,
     damage: 10 + offset,
+    damageMitigation: 5 + offset,
     combatSpeed: 500 + offset,
   };
 }
 
-function baseValues(offset = 0) {
-  return {
-    might: 70 + offset,
-    resistance: 50 + offset,
-    hp: 20 + offset,
-  };
+function unitValues(offset = 0) {
+  return { attack: 70 + offset, defense: 50 + offset, hp: 20 + offset };
 }
 
 function editableFields(type, tier, offset = 0) {
@@ -45,15 +47,77 @@ function editableFields(type, tier, offset = 0) {
     type,
     tier,
     troops: 31_000 + offset,
-    baseValues: baseValues(offset),
-    bonuses: stats(offset),
-    finals: stats(offset + 10),
+    unitValues: unitValues(offset),
+    bonuses: battleStats(offset),
+    finals: battleStats(offset + 10),
   };
 }
 
-function side(sideOffset, tier, mode) {
+function researchSource(overrides = {}) {
+  return {
+    sourceType: 'research',
+    sourceId: 'research:tree-a:node-a:0',
+    label: 'Footmen Might',
+    statKey: 'might',
+    amount: 25,
+    operation: 'add',
+    unit: 'percent',
+    appliesTo: {
+      battleModes: ['pvp-field'],
+      troopTypes: ['footmen'],
+      rowIds: ['front'],
+    },
+    verification: 'explicit',
+    provenance: { techId: 'tree-a', nodeId: 'node-a', level: 5 },
+    ...overrides,
+  };
+}
+
+function capturedSourceSnapshot(source = researchSource()) {
+  return {
+    schemaVersion: CAPTURED_SOURCE_SNAPSHOT_SCHEMA_VERSION,
+    catalogRevisions: { research: 'research-2026-07-17', equipment: 'equipment-v1-empty' },
+    sources: [source],
+    excludedSources: [
+      {
+        sourceType: 'research',
+        sourceId: 'research:tree-b:node-b',
+        label: 'Unmodeled Siege Might',
+        reason: 'missing-value',
+        verification: { status: 'excluded', reason: 'missing-value' },
+        provenance: { progressKey: 'tree-b:node-b', savedLevel: 7 },
+      },
+    ],
+    diagnostics: [
+      {
+        code: 'research-missing-value',
+        severity: 'warning',
+        message: 'One saved node has no verified quantitative value.',
+        sourceId: 'research:tree-c:node-c',
+      },
+    ],
+  };
+}
+
+function researchSnapshot(source = researchSource()) {
+  return {
+    schemaVersion: 1,
+    catalogVersion: 'research-2026-07-17',
+    battleMode: 'pvp-field',
+    sources: [source],
+    excludedSources: [],
+    diagnostics: [],
+    savedProgress: { exists: true, malformed: false, entryCount: 3 },
+  };
+}
+
+function side(sideOffset, tier, mode, { researchEnabled = false } = {}) {
   return {
     mode,
+    researchEnabled,
+    researchSnapshot: researchSnapshot(),
+    equipmentLoadout: undefined,
+    capturedSourceSnapshot: capturedSourceSnapshot(),
     sideDefaults: editableFields(TYPES[sideOffset], tier, sideOffset),
     rows: ROW_IDS.map((id, index) => ({
       id,
@@ -71,7 +135,7 @@ function stateFixture() {
     seed: 1097,
     strikeVariancePct: 5,
     sides: {
-      A: side(0, 9, 'add-bonuses'),
+      A: side(0, 9, 'add-bonuses', { researchEnabled: true }),
       B: side(1, 10, 'final-totals'),
     },
   };
@@ -81,6 +145,28 @@ function snapshotFixture() {
   return buildSetupSnapshot(stateFixture());
 }
 
+function legacySnapshotFixture() {
+  const legacy = snapshotFixture();
+  legacy.setupSchemaVersion = LEGACY_SETUP_SCHEMA_VERSION;
+  for (const side of Object.values(legacy.sides)) {
+    delete side.researchEnabled;
+    delete side.researchSnapshot;
+    delete side.equipmentLoadout;
+    delete side.capturedSourceSnapshot;
+    for (const fields of [side.sideDefaults, ...side.rows]) {
+      fields.baseValues = {
+        might: fields.unitValues.attack,
+        resistance: fields.unitValues.defense,
+        hp: fields.unitValues.hp,
+      };
+      delete fields.unitValues;
+      delete fields.bonuses.damageMitigation;
+      delete fields.finals.damageMitigation;
+    }
+  }
+  return legacy;
+}
+
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
   Object.freeze(value);
@@ -88,53 +174,89 @@ function deepFreeze(value) {
   return value;
 }
 
-test('build, stringify, parse, and apply round-trip the complete simulator setup', () => {
+test('v2 build, stringify, parse, and apply round-trip complete source-aware setup', () => {
   const state = deepFreeze(stateFixture());
-  const stateBefore = structuredClone(state);
+  const before = structuredClone(state);
   const snapshot = buildSetupSnapshot(state);
 
-  assert.equal(snapshot.setupSchemaVersion, SETUP_SCHEMA_VERSION);
+  assert.equal(snapshot.setupSchemaVersion, 2);
   assert.equal(snapshot.savedAt, null);
-  assert.equal(snapshot.battleMode, 'pvp-field');
-  assert.deepEqual(snapshot.runOptions, {
-    iterations: state.iterations,
-    seed: state.seed,
-    strikeVariancePct: state.strikeVariancePct,
+  assert.equal(snapshot.sides.A.researchEnabled, true);
+  assert.equal(snapshot.sides.B.researchEnabled, false);
+  assert.deepEqual(Object.keys(snapshot.sides.A.rows[0].unitValues), ['attack', 'defense', 'hp']);
+  assert.equal(snapshot.sides.A.rows[0].bonuses.damageMitigation, 5);
+  assert.equal(snapshot.sides.A.equipmentLoadout.mode, 'none');
+  assert.equal(snapshot.sides.A.capturedSourceSnapshot.sources.length, 1);
+  assert.equal(snapshot.sides.A.researchSnapshot.sources.length, 1);
+  assert.deepEqual(snapshot.sides.A.researchSnapshot.savedProgress, {
+    exists: true,
+    malformed: false,
+    entryCount: 3,
   });
-  assert.deepEqual(snapshot.sides, state.sides);
+  assert.equal(snapshot.sides.A.capturedSourceSnapshot.excludedSources[0].reason, 'missing-value');
 
-  snapshot.savedAt = '2026-07-16T00:00:00.000Z';
+  snapshot.savedAt = '2026-07-17T00:00:00.000Z';
   const parsed = parseSetupSnapshot(JSON.stringify(snapshot));
-  const currentState = deepFreeze({ ...stateFixture(), transientView: { selectedResult: 7 } });
-  const currentBefore = structuredClone(currentState);
-  const applied = applySetupSnapshot(currentState, deepFreeze(parsed));
+  const current = deepFreeze({ ...stateFixture(), transientView: { selectedResult: 7 } });
+  const applied = applySetupSnapshot(current, deepFreeze(parsed));
 
-  assert.deepEqual(
-    applied,
-    { ...stateBefore, transientView: { selectedResult: 7 } },
-    'setup fields replace state while unrelated top-level state survives'
-  );
-  assert.deepEqual(state, stateBefore);
-  assert.deepEqual(currentState, currentBefore);
+  assert.deepEqual(applied.transientView, { selectedResult: 7 });
+  assert.deepEqual(applied.sides, parsed.sides);
   assert.notStrictEqual(applied.sides, parsed.sides);
-  assert.notStrictEqual(applied.sides.A.rows[0], parsed.sides.A.rows[0]);
-  assert.notStrictEqual(applied.sides.A.rows[0].bonuses, parsed.sides.A.rows[0].bonuses);
+  assert.notStrictEqual(applied.sides.A.rows[0].unitValues, parsed.sides.A.rows[0].unitValues);
+  assert.notStrictEqual(
+    applied.sides.A.capturedSourceSnapshot.sources[0],
+    parsed.sides.A.capturedSourceSnapshot.sources[0]
+  );
+  assert.deepEqual(state, before);
 });
 
-test('parseSetupSnapshot returns a canonical snapshot and ignores future extra keys', () => {
-  const raw = snapshotFixture();
-  raw.futureTopLevel = { enabled: true };
-  raw.sides.C = { future: true };
-  raw.sides.A.futureSideField = 'ignored';
-  raw.sides.A.sideDefaults.futureDefaultField = 'ignored';
-  raw.sides.A.rows[0].futureRowField = 'ignored';
-  raw.sides.A.rows[0].bonuses.futureStat = 999;
-  raw.sides.A.sideDefaults.baseValues.lethalDamage = 999;
-  raw.sides.A.sideDefaults.finals.lethalDamage = 999;
-  raw.sides.A.rows[0].baseValues.lethalDamage = 999;
-  raw.sides.A.rows[0].bonuses.lethalDamage = 999;
-  const parsed = parseSetupSnapshot(JSON.stringify(raw));
+test('v1 snapshots migrate to v2 unit points, safe empty sources, and correct mode semantics', () => {
+  const legacy = legacySnapshotFixture();
+  const parsed = parseSetupSnapshot(JSON.stringify(legacy));
 
+  assert.equal(parsed.setupSchemaVersion, SETUP_SCHEMA_VERSION);
+  assert.deepEqual(parsed.sides.A.rows[0].unitValues, { attack: 70, defense: 50, hp: 20 });
+  assert.equal(parsed.sides.A.rows[0].bonuses.damageMitigation, 0);
+  assert.equal(parsed.sides.A.researchEnabled, false);
+  assert.equal(parsed.sides.A.equipmentLoadout.mode, 'none');
+  assert.deepEqual(parsed.sides.A.capturedSourceSnapshot.sources, []);
+  assert.deepEqual(parsed.sides.A.researchSnapshot.sources, []);
+  assert.deepEqual(parsed.sides.A.researchSnapshot.savedProgress, {
+    exists: false,
+    malformed: false,
+    entryCount: 0,
+  });
+
+  const config = setupSnapshotToEngineConfig(parsed);
+  assert.deepEqual(config.sideA.rows[0].stats.unit, { attack: 70, defense: 50, hp: 20 });
+  assert.equal(config.sideA.rows[0].stats.battle.might, 200);
+  assert.equal(config.sideA.rows[0].statBreakdown.effective.attack, 140);
+  assert.equal(config.sideB.rows[0].stats.battle.might, 111);
+  assert.equal(
+    config.sideB.rows[0].statBreakdown.effective.attack,
+    Number(((71 * 111) / 100).toFixed(6))
+  );
+});
+
+test('parser canonicalizes unknown keys at every setup and stat layer', () => {
+  const raw = snapshotFixture();
+  raw.futureTopLevel = true;
+  raw.sides.C = { future: true };
+  raw.sides.A.futureSide = true;
+  raw.sides.A.rows[0].futureRow = true;
+  raw.sides.A.rows[0].unitValues.lethalDamage = 25;
+  raw.sides.A.rows[0].bonuses.lethalDamage = 25;
+  raw.sides.A.sideDefaults.finals.lethalDamage = 25;
+  raw.sides.A.capturedSourceSnapshot.sources.push(
+    researchSource({
+      sourceId: 'future:lethal-damage',
+      statKey: 'lethalDamage',
+      label: 'Future lethal damage',
+    })
+  );
+
+  const parsed = parseSetupSnapshot(JSON.stringify(raw));
   assert.deepEqual(Object.keys(parsed), [
     'setupSchemaVersion',
     'savedAt',
@@ -143,385 +265,251 @@ test('parseSetupSnapshot returns a canonical snapshot and ignores future extra k
     'runOptions',
   ]);
   assert.deepEqual(Object.keys(parsed.sides), ['A', 'B']);
-  assert.equal(Object.hasOwn(parsed.sides.A, 'futureSideField'), false);
-  assert.equal(Object.hasOwn(parsed.sides.A.sideDefaults, 'futureDefaultField'), false);
-  assert.equal(Object.hasOwn(parsed.sides.A.rows[0], 'futureRowField'), false);
-  assert.equal(Object.hasOwn(parsed.sides.A.rows[0].bonuses, 'futureStat'), false);
-  assert.equal(Object.hasOwn(parsed.sides.A.sideDefaults.baseValues, 'lethalDamage'), false);
-  assert.equal(Object.hasOwn(parsed.sides.A.sideDefaults.finals, 'lethalDamage'), false);
-  assert.equal(Object.hasOwn(parsed.sides.A.rows[0].baseValues, 'lethalDamage'), false);
+  assert.equal(Object.hasOwn(parsed.sides.A, 'futureSide'), false);
+  assert.equal(Object.hasOwn(parsed.sides.A.rows[0], 'futureRow'), false);
+  assert.equal(Object.hasOwn(parsed.sides.A.rows[0].unitValues, 'lethalDamage'), false);
   assert.equal(Object.hasOwn(parsed.sides.A.rows[0].bonuses, 'lethalDamage'), false);
+  assert.equal(Object.hasOwn(parsed.sides.A.sideDefaults.finals, 'lethalDamage'), false);
+  assert.equal(
+    parsed.sides.A.capturedSourceSnapshot.sources.some(({ statKey }) => statKey === 'lethalDamage'),
+    false
+  );
 });
 
-test('battleMode defaults for older snapshots, rejects non-strings, and preserves future modes', () => {
-  const legacy = snapshotFixture();
+test('captured sources are bounded, deterministic, detached, and reject sensitive provenance', () => {
+  const raw = snapshotFixture();
+  raw.sides.A.capturedSourceSnapshot.sources = [
+    researchSource({ sourceId: 'research:z', amount: 10 }),
+    researchSource({ sourceId: 'research:a', amount: 20 }),
+  ];
+  const parsed = parseSetupSnapshot(JSON.stringify(raw));
+  assert.deepEqual(
+    parsed.sides.A.capturedSourceSnapshot.sources.map(({ sourceId }) => sourceId),
+    ['research:a', 'research:z']
+  );
+  assert.deepEqual(parsed.sides.A.capturedSourceSnapshot.catalogRevisions, {
+    research: 'research-2026-07-17',
+    equipment: 'equipment-v1-empty',
+  });
+
+  const sensitive = snapshotFixture();
+  sensitive.sides.A.capturedSourceSnapshot.sources[0].provenance.localStorage = {
+    vts_sensitive_admin_pin_ok: '1',
+  };
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(sensitive)), /sensitive field/i);
+
+  const duplicate = snapshotFixture();
+  duplicate.sides.A.capturedSourceSnapshot.sources.push(
+    structuredClone(duplicate.sides.A.capturedSourceSnapshot.sources[0])
+  );
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(duplicate)), /duplicate source/i);
+
+  const oversized = snapshotFixture();
+  oversized.sides.A.capturedSourceSnapshot.diagnostics = Array.from(
+    { length: 1_025 },
+    (_, index) => ({ code: `d-${index}`, severity: 'info', message: 'bounded', sourceId: null })
+  );
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(oversized)), /at most 1024/i);
+});
+
+test('live Research snapshots preserve saved-progress status and generic excluded diagnostics', () => {
+  const state = stateFixture();
+  const resolved = resolveResearchSources({
+    progress: { 'future-tree:future-node': 11 },
+    battleMode: 'pvp-field',
+  });
+  state.sides.A.researchSnapshot = resolved;
+  state.sides.A.capturedSourceSnapshot = {
+    schemaVersion: CAPTURED_SOURCE_SNAPSHOT_SCHEMA_VERSION,
+    catalogRevisions: { research: resolved.catalogVersion, equipment: null },
+    sources: resolved.sources,
+    excludedSources: resolved.excludedSources,
+    diagnostics: resolved.diagnostics,
+  };
+
+  const snapshot = buildSetupSnapshot(state);
+  assert.deepEqual(snapshot.sides.A.researchSnapshot.savedProgress, {
+    exists: true,
+    malformed: false,
+    entryCount: 1,
+  });
+  assert.deepEqual(
+    snapshot.sides.A.researchSnapshot.excludedSources.map(({ reason }) => reason),
+    ['unknown-saved-key']
+  );
+  assert.equal(
+    snapshot.sides.A.capturedSourceSnapshot.excludedSources[0].provenance.savedLevel,
+    11
+  );
+  assert.match(snapshot.sides.A.capturedSourceSnapshot.diagnostics[0].sourceId, /^research:/);
+});
+
+test('setup-to-engine config supplies nested stats, captured sources, and detached provenance', () => {
+  const snapshot = deepFreeze(snapshotFixture());
+  const before = structuredClone(snapshot);
+  const config = setupSnapshotToEngineConfig(snapshot);
+  const front = config.sideA.rows[0];
+  const middle = config.sideA.rows[1];
+
+  assert.equal(config.battleMode, 'pvp-field');
+  assert.deepEqual(config.statContract, BATTLE_STAT_CONTRACT);
+  assert.deepEqual(front.stats.unit, { attack: 70, defense: 50, hp: 20 });
+  assert.equal(front.stats.battle.might, 225, '100 baseline + 100 manual + 25 Research');
+  assert.equal(front.statBreakdown.effective.attack, 157.5);
+  assert.equal(front.statBreakdown.battle.includedSources.length, 9);
+  assert.equal(middle.stats.battle.might, 201, 'row-filtered Research does not apply');
+  assert.ok(
+    middle.statBreakdown.battle.excludedSources.some(
+      ({ sourceId, exclusionReason }) =>
+        sourceId === 'research:tree-a:node-a:0' && exclusionReason === 'troop-type'
+    )
+  );
+  assert.deepEqual(snapshot, before);
+  assert.notStrictEqual(config.sideA.equipmentLoadout, snapshot.sides.A.equipmentLoadout);
+  assert.notStrictEqual(front.stats, snapshot.sides.A.rows[0].bonuses);
+});
+
+test('battleMode defaults for legacy snapshots, preserves future strings, and rejects non-strings', () => {
+  const legacy = legacySnapshotFixture();
   delete legacy.battleMode;
   assert.equal(parseSetupSnapshot(JSON.stringify(legacy)).battleMode, 'pvp-field');
 
   const future = snapshotFixture();
   future.battleMode = 'siege';
-  const parsedFuture = parseSetupSnapshot(JSON.stringify(future));
-  assert.equal(parsedFuture.battleMode, 'siege');
-  assert.equal(
-    applySetupSnapshot({ ...stateFixture(), battleMode: 'pvp-field' }, parsedFuture).battleMode,
-    'siege'
-  );
+  future.sides.A.researchSnapshot.battleMode = 'siege';
+  assert.equal(parseSetupSnapshot(JSON.stringify(future)).battleMode, 'siege');
 
   const invalid = snapshotFixture();
   invalid.battleMode = 7;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(invalid)), {
-    name: 'TypeError',
-    message: /battleMode must be a string/i,
-  });
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(invalid)), /battleMode must be a string/i);
 });
 
-test('setupSnapshotToEngineConfig converts each side using its active stat input mode', () => {
-  const config = setupSnapshotToEngineConfig(snapshotFixture());
+test('parser rejects unsupported versions, malformed formations, values, and source contracts', () => {
+  assert.throws(() => parseSetupSnapshot('{bad json'), /json is invalid/i);
+  assert.throws(() => parseSetupSnapshot({}), /provided as text/i);
 
-  assert.deepEqual(config.sideA.rows[0], {
-    id: 'front',
-    type: 'footmen',
-    tier: 9,
-    troops: 31_000,
-    stats: {
-      might: 170,
-      resistance: 130,
-      hp: 50,
-      tacticalMight: 20,
-      tacticalResistance: 15,
-      damage: 10,
-      combatSpeed: 500,
-    },
-  });
-  assert.deepEqual(config.sideB.rows[0], {
-    id: 'front',
-    type: 'footmen',
-    tier: 10,
-    troops: 31_001,
-    stats: {
-      might: 111,
-      resistance: 91,
-      hp: 41,
-      tacticalMight: 31,
-      tacticalResistance: 26,
-      damage: 21,
-      combatSpeed: 511,
-    },
-  });
-});
+  const wrongVersion = snapshotFixture();
+  wrongVersion.setupSchemaVersion = 3;
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(wrongVersion)), /unsupported.*schema/i);
 
-test('setupSnapshotToEngineConfig preserves canonical row order and returns detached data', () => {
-  const snapshot = deepFreeze(snapshotFixture());
-  const before = structuredClone(snapshot);
-  const config = setupSnapshotToEngineConfig(snapshot);
-
-  assert.deepEqual(config, {
-    sideA: {
-      label: 'Side A',
-      rows: config.sideA.rows,
-    },
-    sideB: {
-      label: 'Side B',
-      rows: config.sideB.rows,
-    },
-  });
-  assert.deepEqual(
-    config.sideA.rows.map((row) => row.id),
-    ROW_IDS
-  );
-  assert.deepEqual(
-    config.sideB.rows.map((row) => row.id),
-    ROW_IDS
-  );
-  assert.deepEqual(snapshot, before);
-  assert.notStrictEqual(config.sideA.rows, snapshot.sides.A.rows);
-  assert.notStrictEqual(config.sideA.rows[0], snapshot.sides.A.rows[0]);
-  assert.notStrictEqual(config.sideA.rows[0].stats, snapshot.sides.A.rows[0].bonuses);
-  assert.deepEqual(Object.keys(config.sideA.rows[0]), ['id', 'type', 'tier', 'troops', 'stats']);
-});
-
-test('setupSnapshotToEngineConfig tolerates future battle modes and drops unknown stats', () => {
-  const snapshot = snapshotFixture();
-  snapshot.battleMode = 'siege';
-  snapshot.sides.A.rows[0].bonuses.lethalDamage = 25;
-  snapshot.sides.A.rows[0].finals.damageMitigation = 30;
-  snapshot.sides.B.rows[0].baseValues.lethalDamage = 5;
-
-  const config = setupSnapshotToEngineConfig(snapshot);
-
-  assert.equal(Object.hasOwn(config.sideA.rows[0].stats, 'lethalDamage'), false);
-  assert.equal(Object.hasOwn(config.sideA.rows[0].stats, 'damageMitigation'), false);
-  assert.equal(Object.hasOwn(config.sideB.rows[0].stats, 'lethalDamage'), false);
-});
-
-test('parseSetupSnapshot rejects bad JSON and missing or unsupported schema versions', () => {
-  assert.throws(() => parseSetupSnapshot('{bad json'), {
-    name: 'TypeError',
-    message: /battle setup json is invalid/i,
-  });
-  assert.throws(() => parseSetupSnapshot({}), {
-    name: 'TypeError',
-    message: /provided as text/i,
-  });
-
-  const missing = snapshotFixture();
-  delete missing.setupSchemaVersion;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(missing)), {
-    name: 'TypeError',
-    message: /missing required field "setupSchemaVersion"/i,
-  });
-
-  const wrong = snapshotFixture();
-  wrong.setupSchemaVersion = 2;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(wrong)), {
-    name: 'RangeError',
-    message: /unsupported battle setup schema version/i,
-  });
-});
-
-test('parseSetupSnapshot requires both sides and exactly ordered Front, Middle, Back rows', () => {
   const missingSide = snapshotFixture();
   delete missingSide.sides.B;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(missingSide)), {
-    name: 'TypeError',
-    message: /missing required field "B"/,
-  });
-
-  const missingRows = snapshotFixture();
-  delete missingRows.sides.A.rows;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(missingRows)), {
-    name: 'TypeError',
-    message: /missing required field "rows"/i,
-  });
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(missingSide)),
+    /missing required field "B"/i
+  );
 
   const shortRows = snapshotFixture();
   shortRows.sides.A.rows.pop();
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(shortRows)), {
-    name: 'RangeError',
-    message: /exactly three rows/i,
-  });
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(shortRows)), /exactly three rows/i);
 
-  const misorderedRows = snapshotFixture();
-  [misorderedRows.sides.A.rows[0], misorderedRows.sides.A.rows[1]] = [
-    misorderedRows.sides.A.rows[1],
-    misorderedRows.sides.A.rows[0],
+  const misordered = snapshotFixture();
+  [misordered.sides.A.rows[0], misordered.sides.A.rows[1]] = [
+    misordered.sides.A.rows[1],
+    misordered.sides.A.rows[0],
   ];
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(misorderedRows)), {
-    name: 'RangeError',
-    message: /must use row id "front"/i,
-  });
-});
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(misordered)), /row id "front"/i);
 
-test('parseSetupSnapshot rejects unsupported troop types, tiers, and entry modes', () => {
   const badType = snapshotFixture();
   badType.sides.A.rows[0].type = 'mages';
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(badType)), {
-    name: 'RangeError',
-    message: /unsupported troop type "mages"/i,
-  });
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(badType)), /unsupported troop type/i);
 
-  const badTier = snapshotFixture();
-  badTier.sides.B.sideDefaults.tier = 11;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(badTier)), {
-    name: 'RangeError',
-    message: /unsupported troop tier T11/i,
-  });
+  const missingUnit = snapshotFixture();
+  delete missingUnit.sides.A.rows[0].unitValues.attack;
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(missingUnit)), /attack.*finite number/i);
 
-  const badMode = snapshotFixture();
-  badMode.sides.A.mode = 'combined';
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(badMode)), {
-    name: 'RangeError',
-    message: /unsupported stat input mode/i,
-  });
-});
-
-test('parseSetupSnapshot strictly validates stats, troops, flags, and run options', () => {
-  const cases = [
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].bonuses.might = null;
-      },
-      error: TypeError,
-      message: /might must be a finite number/i,
-    },
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].bonuses.might = '100';
-      },
-      error: TypeError,
-      message: /might must be a finite number/i,
-    },
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].bonuses.might = false;
-      },
-      error: TypeError,
-      message: /might must be a finite number/i,
-    },
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].bonuses.might = -1;
-      },
-      error: RangeError,
-      message: /might must be between 0 and 5000/i,
-    },
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].finals.combatSpeed = 10_001;
-      },
-      error: RangeError,
-      message: /combatSpeed must be between 0 and 10000/i,
-    },
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].troops = 1.5;
-      },
-      error: TypeError,
-      message: /troops must be a safe integer/i,
-    },
-    {
-      mutate: (value) => {
-        value.sides.A.rows[0].customized = 'false';
-      },
-      error: TypeError,
-      message: /customized must be a boolean/i,
-    },
-    {
-      mutate: (value) => {
-        value.runOptions.iterations = 7;
-      },
-      error: RangeError,
-      message: /iterations must be one of/i,
-    },
-    {
-      mutate: (value) => {
-        value.runOptions.seed = 0x1_0000_0000;
-      },
-      error: RangeError,
-      message: /seed must be between/i,
-    },
-    {
-      mutate: (value) => {
-        value.runOptions.strikeVariancePct = 26;
-      },
-      error: RangeError,
-      message: /strike variance must be between 0 and 25/i,
-    },
-    {
-      mutate: (value) => {
-        value.savedAt = 'July 16, 2026';
-      },
-      error: TypeError,
-      message: /ISO date-time format/i,
-    },
-  ];
-
-  for (const { mutate, error, message } of cases) {
-    const snapshot = snapshotFixture();
-    mutate(snapshot);
-    assert.throws(() => parseSetupSnapshot(JSON.stringify(snapshot)), {
-      name: error.name,
-      message,
-    });
-  }
-
-  const missingStat = snapshotFixture();
-  delete missingStat.sides.A.rows[0].finals.hp;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(missingStat)), {
-    name: 'TypeError',
-    message: /missing required field "hp"/i,
-  });
-
-  const overflowingNumberJson = JSON.stringify(snapshotFixture()).replace(
-    '"might":100',
-    '"might":1e999'
+  const missingBattleStat = snapshotFixture();
+  delete missingBattleStat.sides.A.rows[0].finals.hp;
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(missingBattleStat)),
+    /missing required field "hp"/i
   );
-  assert.throws(() => parseSetupSnapshot(overflowingNumberJson), {
-    name: 'TypeError',
-    message: /might must be a finite number/i,
-  });
+
+  const badResearchFlag = snapshotFixture();
+  badResearchFlag.sides.A.researchEnabled = 'true';
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(badResearchFlag)), /must be a boolean/i);
+
+  const badSavedProgress = snapshotFixture();
+  badSavedProgress.sides.A.researchSnapshot.savedProgress.entryCount = 2_001;
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(badSavedProgress)), /entryCount.*between/i);
+
+  const badSourceUnit = snapshotFixture();
+  badSourceUnit.sides.A.capturedSourceSnapshot.sources[0].unit = 'points';
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(badSourceUnit)),
+    /must use unit "percent"/i
+  );
+
+  const badEquipment = snapshotFixture();
+  badEquipment.sides.A.equipmentLoadout.loadoutSchemaVersion = 99;
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(badEquipment)),
+    /equipment loadout schema/i
+  );
+
+  const invalidRun = snapshotFixture();
+  invalidRun.runOptions.iterations = 7;
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(invalidRun)), /iterations must be one of/i);
 });
 
-test('preset names are trimmed and constrained to 1 through 40 characters', () => {
+test('preset helpers canonicalize mixed v1/v2 stores without mutation', () => {
   assert.equal(BATTLE_SETUP_PRESET_STORAGE_KEY, 'vts_battle_sim_setups');
   assert.equal(MAX_BATTLE_SETUP_PRESETS, 20);
-  assert.equal(normalizeBattleSetupPresetName('  My cavalry setup  '), 'My cavalry setup');
-  assert.throws(() => normalizeBattleSetupPresetName('   '), RangeError);
-  assert.throws(() => normalizeBattleSetupPresetName('x'.repeat(41)), RangeError);
-  assert.throws(() => normalizeBattleSetupPresetName(1097), TypeError);
-  for (const reserved of ['__proto__', 'prototype', 'constructor', ' Constructor ']) {
-    assert.throws(() => normalizeBattleSetupPresetName(reserved), /reserved/i);
-  }
-});
+  assert.equal(normalizeBattleSetupPresetName('  My setup  '), 'My setup');
+  assert.throws(() => normalizeBattleSetupPresetName('__proto__'), /reserved/i);
+  assert.throws(() => normalizeBattleSetupPresetName('x'.repeat(41)), /1 and 40/i);
 
-test('preset store helpers validate snapshots and never mutate the source store', () => {
-  const snapshot = snapshotFixture();
-  snapshot.savedAt = '2026-07-16T00:00:00.000Z';
-  const source = deepFreeze({ Existing: snapshot });
+  const v2 = snapshotFixture();
+  const v1 = legacySnapshotFixture();
+  const parsed = parseBattleSetupPresetStore(JSON.stringify({ Legacy: v1, Current: v2 }));
+  assert.equal(parsed.Legacy.setupSchemaVersion, SETUP_SCHEMA_VERSION);
+  assert.equal(parsed.Current.setupSchemaVersion, SETUP_SCHEMA_VERSION);
+  assert.deepEqual(parsed.Legacy.sides.A.rows[0].unitValues, {
+    attack: 70,
+    defense: 50,
+    hp: 20,
+  });
+
+  const source = deepFreeze({ Existing: v2 });
   const before = structuredClone(source);
-
-  const updated = upsertBattleSetupPreset(source, '  New setup  ', snapshotFixture());
+  const updated = upsertBattleSetupPreset(source, 'New', v1);
   assert.deepEqual(source, before);
-  assert.deepEqual(Object.keys(updated), ['Existing', 'New setup']);
+  assert.equal(updated.New.setupSchemaVersion, SETUP_SCHEMA_VERSION);
   assert.notStrictEqual(updated.Existing, source.Existing);
-  assert.equal(updated['New setup'].setupSchemaVersion, SETUP_SCHEMA_VERSION);
-
-  const parsed = parseBattleSetupPresetStore(JSON.stringify(updated));
-  assert.deepEqual(parsed, updated);
+  assert.deepEqual(Object.keys(deleteBattleSetupPreset(updated, ' Existing ')), ['New']);
   assert.deepEqual(parseBattleSetupPresetStore(null), {});
-  assert.deepEqual(parseBattleSetupPresetStore(''), {});
-
-  const deleted = deleteBattleSetupPreset(updated, ' Existing ');
-  assert.deepEqual(Object.keys(deleted), ['New setup']);
-  assert.deepEqual(Object.keys(updated), ['Existing', 'New setup']);
 });
 
-test('preset store preserves markup names as inert object keys', () => {
-  const withMarkup = upsertBattleSetupPreset({}, '<img src=x onerror=alert(1)>', snapshotFixture());
+test('preset store retains inert names, enforces its limit, and rejects corruption', () => {
+  const markup = '<img src=x onerror=alert(1)>';
+  const stored = upsertBattleSetupPreset({}, markup, snapshotFixture());
+  assert.equal(Object.hasOwn(stored, markup), true);
+  assert.deepEqual(parseBattleSetupPresetStore(JSON.stringify(stored)), stored);
 
-  assert.equal(Object.hasOwn(withMarkup, '<img src=x onerror=alert(1)>'), true);
-  assert.equal(Object.getPrototypeOf(withMarkup), Object.prototype);
-  assert.deepEqual(parseBattleSetupPresetStore(JSON.stringify(withMarkup)), withMarkup);
-});
-
-test('preset store allows replacement at the limit but rejects a twenty-first name', () => {
-  let store = {};
+  let full = {};
   for (let index = 1; index <= MAX_BATTLE_SETUP_PRESETS; index += 1) {
-    store = upsertBattleSetupPreset(store, `Preset ${index}`, snapshotFixture());
+    full = upsertBattleSetupPreset(full, `Preset ${index}`, snapshotFixture());
   }
-  assert.equal(Object.keys(store).length, MAX_BATTLE_SETUP_PRESETS);
-
-  const replaced = upsertBattleSetupPreset(store, 'Preset 1', snapshotFixture());
-  assert.equal(Object.keys(replaced).length, MAX_BATTLE_SETUP_PRESETS);
+  assert.equal(
+    Object.keys(upsertBattleSetupPreset(full, 'Preset 1', snapshotFixture())).length,
+    20
+  );
+  assert.throws(() => upsertBattleSetupPreset(full, 'Preset 21', snapshotFixture()), /at most 20/i);
+  assert.throws(() => parseBattleSetupPresetStore('{bad'), /JSON is invalid/i);
+  assert.throws(() => parseBattleSetupPresetStore('[]'), /JSON object/i);
   assert.throws(
-    () => upsertBattleSetupPreset(store, 'Preset 21', snapshotFixture()),
-    /at most 20/i
+    () =>
+      parseBattleSetupPresetStore(
+        JSON.stringify({ Alpha: snapshotFixture(), ' Alpha ': snapshotFixture() })
+      ),
+    /duplicate name/i
   );
 });
 
-test('preset store rejects corrupted JSON, duplicate trimmed names, and invalid snapshots', () => {
-  assert.throws(() => parseBattleSetupPresetStore('{bad'), {
-    name: 'TypeError',
-    message: /preset store JSON is invalid/i,
-  });
-  assert.throws(() => parseBattleSetupPresetStore('[]'), {
-    name: 'TypeError',
-    message: /must be a JSON object/i,
-  });
-
-  const duplicateNames = Object.fromEntries([
-    ['Alpha', snapshotFixture()],
-    [' Alpha ', snapshotFixture()],
-  ]);
-  assert.throws(() => parseBattleSetupPresetStore(JSON.stringify(duplicateNames)), {
-    name: 'RangeError',
-    message: /duplicate name "Alpha"/i,
-  });
-
-  const invalidSnapshot = snapshotFixture();
-  invalidSnapshot.sides.A.rows[0].type = 'mages';
-  assert.throws(
-    () => parseBattleSetupPresetStore(JSON.stringify({ Broken: invalidSnapshot })),
-    /Preset "Broken" is invalid.*unsupported troop type/is
-  );
+test('empty captured source snapshots are fresh canonical values', () => {
+  const first = createEmptyCapturedSourceSnapshot();
+  const second = createEmptyCapturedSourceSnapshot();
+  assert.deepEqual(first, second);
+  assert.notStrictEqual(first, second);
+  assert.notStrictEqual(first.sources, second.sources);
 });

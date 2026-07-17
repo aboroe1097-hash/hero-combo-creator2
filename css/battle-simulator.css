@@ -78,7 +78,7 @@ summary {
   position: fixed;
   z-index: calc(var(--z-modal) + 2);
   top: 0.5rem;
-  left: 0.5rem;
+  inset-inline-start: 0.5rem;
   transform: translateY(-150%);
   padding: 0.7rem 1rem;
   border-radius: var(--radius-control);
@@ -88,7 +88,7 @@ summary {
   transition: transform var(--ff-t-tap);
 }
 
-.battle-skip-link:focus {
+.battle-skip-link:focus-visible {
   transform: translateY(0);
 }
 
@@ -163,6 +163,37 @@ summary {
 
 .battle-topbar-actions {
   gap: 0.5rem;
+}
+
+.battle-language-field {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 8.5rem;
+}
+
+.battle-language-field > span {
+  color: var(--ff-text-tertiary);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.battle-language-field select {
+  min-height: 2.45rem;
+  padding-block: 0.4rem;
+  padding-inline: 0.65rem 2rem;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-control);
+  outline: none;
+  color: var(--ff-text);
+  background: var(--ff-control);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.battle-language-field select:focus-visible {
+  box-shadow: var(--ff-focus-ring);
 }
 
 .battle-icon-button,
@@ -551,13 +582,13 @@ summary {
 }
 
 .battle-input-suffix input {
-  padding-right: 2rem;
+  padding-inline-end: 2rem;
 }
 
 .battle-input-suffix > span {
   position: absolute;
   top: 50%;
-  right: 0.75rem;
+  inset-inline-end: 0.75rem;
   color: var(--ff-text-tertiary);
   font-family: var(--ff-font-data);
   font-size: 0.72rem;
@@ -625,10 +656,10 @@ summary {
   line-height: 1.5;
 }
 
-.battle-field input:focus,
-.battle-field select:focus,
-.battle-field textarea:focus,
-.battle-stat-input:focus,
+.battle-field input:focus-visible,
+.battle-field select:focus-visible,
+.battle-field textarea:focus-visible,
+.battle-stat-input:focus-visible,
 button:focus-visible,
 a:focus-visible,
 summary:focus-visible {
@@ -647,7 +678,8 @@ summary:focus-visible {
   line-height: 1.4;
 }
 
-.battle-field input:disabled {
+.battle-field input:disabled,
+.battle-field select:disabled {
   opacity: var(--disabled-opacity);
   cursor: not-allowed;
 }
@@ -699,6 +731,211 @@ summary:focus-visible {
     color-mix(in srgb, var(--side-color) 8%, transparent),
     transparent 55%
   );
+}
+
+.battle-legion-sources {
+  display: grid;
+  gap: 0.7rem;
+  margin: var(--ff-card-padding) var(--ff-card-padding) 0;
+  padding: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--side-color) 26%, var(--ff-border-subtle));
+  border-radius: var(--ff-radius-card);
+  background: color-mix(in srgb, var(--side-color) 4%, var(--ff-panel-translucent));
+}
+
+.battle-source-section-heading,
+.battle-source-card-heading,
+.battle-source-card-metrics,
+.battle-source-toggle,
+.battle-stat-source-heading,
+.battle-stat-source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.battle-source-section-heading h3,
+.battle-source-card-heading h4,
+.battle-stat-node-group > h4 {
+  margin: 0;
+}
+
+.battle-source-section-heading > p {
+  max-width: 21rem;
+  margin: 0;
+  color: var(--ff-text-tertiary);
+  font-size: 0.65rem;
+  line-height: 1.45;
+  text-align: end;
+}
+
+.battle-legion-source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.battle-source-card {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.7rem;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-control);
+  background: var(--ff-surface-soft);
+}
+
+.battle-source-card-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.battle-source-card-heading > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.battle-source-card-heading h4 {
+  margin-top: 0.12rem;
+  font-size: 0.82rem;
+}
+
+.battle-source-overline {
+  color: var(--ff-text-tertiary);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.battle-source-status,
+.battle-run-partial-status {
+  flex: 0 0 auto;
+  padding: 0.22rem 0.42rem;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--ff-text-tertiary);
+  background: var(--ff-control);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+.battle-source-status {
+  display: block;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: start;
+}
+
+.battle-source-status.is-active {
+  border-color: color-mix(in srgb, var(--ff-success) 36%, var(--ff-border));
+  color: var(--ff-success);
+}
+
+.battle-source-status.is-partial,
+.battle-run-partial-status {
+  border-color: color-mix(in srgb, var(--ff-warning) 42%, var(--ff-border));
+  color: var(--ff-warning);
+}
+
+.battle-source-toggle {
+  justify-content: flex-start;
+  min-height: 2rem;
+  color: var(--ff-text-supporting);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.battle-source-toggle input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--side-color);
+}
+
+.battle-source-toggle input:focus-visible {
+  box-shadow: var(--ff-focus-ring);
+}
+
+.battle-source-card-metrics {
+  align-items: baseline;
+  color: var(--ff-text-dim);
+  font-size: 0.62rem;
+}
+
+.battle-source-card-metrics strong {
+  color: var(--ff-text-supporting);
+  font-size: 0.68rem;
+}
+
+.battle-source-help,
+.battle-inline-warning {
+  margin: 0;
+  color: var(--ff-text-tertiary);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.battle-inline-warning {
+  padding-inline-start: 0.55rem;
+  border-inline-start: 2px solid var(--ff-warning);
+  color: var(--ff-warning);
+}
+
+.battle-equipment-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.battle-equipment-controls > .battle-field:first-child {
+  grid-column: 1 / -1;
+}
+
+.battle-equipment-controls .battle-field > span {
+  font-size: 0.58rem;
+}
+
+.battle-equipment-controls :is(input, select) {
+  min-height: 2.15rem;
+  padding-block: 0.35rem;
+  font-size: 0.68rem;
+}
+
+.battle-input-prefix {
+  position: relative;
+  display: block;
+}
+
+.battle-input-prefix > span {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  inset-inline-start: 0.55rem;
+  color: var(--ff-text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.battle-input-prefix input {
+  padding-inline-start: 1.35rem;
+}
+
+.battle-compact-button {
+  justify-self: start;
+  min-height: 2.15rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.64rem;
 }
 
 .battle-side-setup {
@@ -955,6 +1192,253 @@ summary:focus-visible {
   padding-top: 0.8rem;
 }
 
+.battle-stat-node-groups {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.battle-stat-node-group {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.battle-stat-node-group > h4 {
+  color: var(--ff-text-tertiary);
+  font-size: 0.61rem;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.battle-stat-node-list {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.battle-stat-secondary-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.battle-stat-secondary-list > details[open] {
+  grid-column: 1 / -1;
+}
+
+.battle-stat-node {
+  min-width: 0;
+  overflow: clip;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-control);
+  background: var(--ff-surface-soft);
+}
+
+.battle-stat-node[open] {
+  border-color: color-mix(in srgb, var(--side-color) 34%, var(--ff-border));
+  background: color-mix(in srgb, var(--side-color) 4%, var(--ff-surface-soft));
+}
+
+.battle-stat-node > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+  align-items: center;
+  min-height: var(--ff-tap-min);
+  padding: 0.52rem 0.65rem;
+  list-style: none;
+}
+
+.battle-stat-node > summary::-webkit-details-marker {
+  display: none;
+}
+
+.battle-stat-node > summary > span:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.battle-stat-node > summary strong,
+.battle-stat-node > summary small {
+  display: block;
+}
+
+.battle-stat-node > summary strong {
+  color: var(--ff-text-supporting);
+  font-size: 0.72rem;
+}
+
+.battle-stat-node > summary small:not(.battle-inactive-chip) {
+  color: var(--ff-text-tertiary);
+  font-size: 0.57rem;
+}
+
+.battle-stat-node > summary output,
+.battle-stat-equation-result output,
+.battle-stat-source-row output {
+  color: var(--side-color);
+  font-family: var(--ff-font-data);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-stat-node[open] > summary .battle-summary-chevron {
+  transform: rotate(180deg);
+}
+
+.battle-stat-node-body {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border-top: 1px solid var(--ff-border-subtle);
+}
+
+.battle-stat-equation {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) auto minmax(7rem, 1fr) auto minmax(8rem, 1fr);
+  gap: 0.45rem;
+  align-items: stretch;
+  direction: ltr;
+}
+
+.battle-stat-equation-term,
+.battle-stat-equation-result {
+  display: grid;
+  gap: 0.28rem;
+  align-content: start;
+  min-width: 0;
+  padding: 0.55rem;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-control);
+  background: var(--ff-control);
+  direction: ltr;
+}
+
+:dir(rtl) .battle-stat-equation-term,
+:dir(rtl) .battle-stat-equation-result {
+  direction: rtl;
+}
+
+.battle-stat-equation-term > span:first-child,
+.battle-stat-equation-result > span:first-child {
+  color: var(--ff-text-dim);
+  font-size: 0.59rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.battle-stat-equation-term small,
+.battle-stat-equation-result small {
+  color: var(--ff-text-tertiary);
+  font-size: 0.55rem;
+  line-height: 1.35;
+}
+
+.battle-stat-equation-result {
+  border-color: color-mix(in srgb, var(--side-color) 31%, var(--ff-border));
+  background: color-mix(in srgb, var(--side-color) 7%, var(--ff-control));
+}
+
+.battle-stat-equation-result output {
+  align-self: center;
+  font-size: 1rem;
+}
+
+.battle-equation-operator {
+  display: grid;
+  place-items: center;
+  color: var(--ff-text-tertiary);
+  font-family: var(--ff-font-data);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.battle-stat-source-breakdown {
+  overflow: hidden;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-control);
+  background: var(--ff-panel-translucent);
+}
+
+.battle-stat-source-heading {
+  padding: 0.42rem 0.55rem;
+  border-bottom: 1px solid var(--ff-border-subtle);
+  color: var(--ff-text-dim);
+  font-size: 0.58rem;
+}
+
+.battle-stat-source-heading span {
+  color: var(--ff-text-tertiary);
+}
+
+.battle-stat-source-breakdown ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.battle-stat-source-row {
+  min-height: 2.5rem;
+  padding: 0.38rem 0.55rem;
+  border-bottom: 1px solid var(--battle-grid);
+}
+
+.battle-stat-source-row:last-child {
+  border-bottom: 0;
+}
+
+.battle-stat-source-row > span {
+  min-width: 0;
+}
+
+.battle-stat-source-row strong,
+.battle-stat-source-row small {
+  display: block;
+}
+
+.battle-stat-source-row strong {
+  overflow: hidden;
+  color: var(--ff-text-supporting);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-stat-source-row small {
+  margin-top: 0.08rem;
+  color: var(--ff-text-tertiary);
+  font-size: 0.53rem;
+}
+
+.battle-stat-source-row.is-baseline output,
+.battle-stat-source-row.is-override output {
+  color: var(--ff-text-dim);
+}
+
+.battle-stat-source-row.is-excluded {
+  opacity: 0.62;
+}
+
+.battle-stat-source-row.is-excluded output {
+  color: var(--ff-text-tertiary);
+  text-decoration: line-through;
+}
+
+.battle-secondary-stat-input {
+  max-width: 12rem;
+}
+
+.battle-stat-inactive-note {
+  margin: 0;
+  color: var(--ff-text-tertiary);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
 .battle-stat-table-wrap {
   min-width: 0;
   overflow-x: auto;
@@ -1068,7 +1552,7 @@ summary:focus-visible {
 .battle-form-actions {
   position: fixed;
   z-index: var(--z-sticky);
-  left: 50%;
+  inset-inline-start: 50%;
   bottom: max(0.75rem, var(--ff-safe-bottom));
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1081,6 +1565,10 @@ summary:focus-visible {
   box-shadow: var(--ff-shadow-lift);
   backdrop-filter: blur(var(--ff-blur-raised));
   transform: translateX(-50%);
+}
+
+:dir(rtl) .battle-form-actions {
+  transform: translateX(50%);
 }
 
 .battle-primary-button {
@@ -1099,6 +1587,10 @@ summary:focus-visible {
 }
 
 .battle-run-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
   min-width: 0;
   color: var(--ff-text-dim);
   font-size: 0.74rem;
@@ -1120,7 +1612,7 @@ summary:focus-visible {
   border-radius: var(--ff-radius-control);
   color: var(--ff-danger);
   background: color-mix(in srgb, var(--ff-danger) 9%, var(--ff-control));
-  text-align: left;
+  text-align: start;
 }
 
 .battle-run-invalid-button strong {
@@ -1163,7 +1655,7 @@ summary:focus-visible {
   gap: 0.25rem;
   padding: clamp(0.9rem, 2vw, 1.25rem);
   border: 1px solid color-mix(in srgb, var(--verdict-color) 42%, var(--ff-border));
-  border-left: 4px solid var(--verdict-color);
+  border-inline-start: 4px solid var(--verdict-color);
   border-radius: var(--ff-radius-card);
   color: var(--verdict-color);
   background: color-mix(in srgb, var(--verdict-color) 9%, var(--ff-panel));
@@ -1179,6 +1671,23 @@ summary:focus-visible {
 
 .battle-verdict-banner.is-neutral {
   --verdict-color: var(--ff-text-dim);
+}
+
+.battle-results-partial {
+  display: flex;
+  gap: 0.65rem;
+  align-items: baseline;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--ff-warning) 38%, var(--ff-border));
+  border-radius: var(--ff-radius-control);
+  color: var(--ff-warning);
+  background: color-mix(in srgb, var(--ff-warning) 8%, var(--ff-panel));
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.battle-results-partial span {
+  color: var(--ff-text-dim);
 }
 
 .battle-verdict-banner strong {
@@ -1312,7 +1821,7 @@ summary:focus-visible {
 
 .battle-assumptions-body ul {
   margin: 0;
-  padding-left: 1.2rem;
+  padding-inline-start: 1.2rem;
 }
 
 .battle-assumptions-body li + li {
@@ -1374,7 +1883,7 @@ summary:focus-visible {
 .battle-toast-region {
   position: fixed;
   z-index: var(--z-toast);
-  right: max(0.75rem, var(--ff-safe-right));
+  inset-inline-end: max(0.75rem, var(--ff-safe-right));
   bottom: max(var(--battle-run-bar-clearance), calc(var(--ff-safe-bottom) + 5.5rem));
   display: grid;
   gap: 0.5rem;
@@ -1523,7 +2032,7 @@ summary:focus-visible {
   letter-spacing: 0.1em;
 }
 
-.pin-gate-input:focus {
+.pin-gate-input:focus-visible {
   box-shadow: var(--ff-focus-ring);
 }
 
@@ -1591,6 +2100,10 @@ summary:focus-visible {
   .battle-side-header {
     grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.75fr);
   }
+
+  .battle-equipment-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1614,6 +2127,14 @@ summary:focus-visible {
 
   .battle-brand-copy small,
   .battle-back-link span {
+    display: none;
+  }
+
+  .battle-language-field {
+    min-width: 5.5rem;
+  }
+
+  .battle-language-field > span {
     display: none;
   }
 
@@ -1668,6 +2189,33 @@ summary:focus-visible {
     width: 100%;
   }
 
+  .battle-legion-source-grid,
+  .battle-equipment-controls,
+  .battle-stat-secondary-list {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-stat-secondary-list > details[open] {
+    grid-column: auto;
+  }
+
+  .battle-stat-equation {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-equation-operator {
+    min-height: 1rem;
+  }
+
+  .battle-source-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .battle-source-section-heading > p {
+    text-align: start;
+  }
+
   .battle-squad-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1708,6 +2256,7 @@ summary:focus-visible {
   }
 
   .battle-run-status {
+    justify-content: center;
     text-align: center;
   }
 
@@ -1756,6 +2305,17 @@ summary:focus-visible {
 
   .battle-side-setup {
     margin: 0.8rem 0.8rem 0;
+  }
+
+  .battle-legion-sources {
+    margin: 0.8rem 0.8rem 0;
+  }
+
+  .battle-source-card-heading,
+  .battle-source-card-metrics,
+  .battle-results-partial {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .battle-stat-table-wrap {
@@ -1862,5 +2422,14 @@ summary:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

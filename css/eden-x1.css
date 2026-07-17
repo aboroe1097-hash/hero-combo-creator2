@@ -1,5 +1,12 @@
 /* Eden X1 route-only polish. Kept out of the shared app bundle. */
 
+/* Eden requests intentional navigation motion explicitly in JavaScript. Keep
+   implicit browser and actionability scrolling immediate so a moving viewport
+   cannot dismiss pointer-driven popovers underneath the sticky quick-nav. */
+html.admin-standalone-root {
+  scroll-behavior: auto;
+}
+
 /* =============================================================
    v14 Frost & Flame — Eden X1 page typography and token mapping.
    Sora carries all UI/display; JetBrains Mono is data-only

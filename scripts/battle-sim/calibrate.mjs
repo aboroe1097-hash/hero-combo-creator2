@@ -6,7 +6,7 @@ import {
   DEFAULT_BATTLE_COEFFICIENTS,
   normalizeBattleCoefficients,
 } from '../../js/battle-simulator-coefficients.js';
-import { loadFixtureCorpus } from './fixtures.mjs';
+import { loadCalibrationFixtureCorpus } from './fixtures.mjs';
 import { corpusLoss, corpusMetrics } from './metrics.mjs';
 
 export const DEFAULT_FIXTURE_DIRECTORY = 'tests/fixtures/battle-reports';
@@ -549,7 +549,12 @@ export async function runCalibration(options = {}) {
     write: options.write ?? false,
     maxIterations: options.maxIterations ?? DEFAULT_MAX_ITERATIONS,
   };
-  const { fixtures, skippedFiles } = await loadFixtureCorpus(normalizedOptions.fixtures);
+  const { fixtures, skippedFiles } = await loadCalibrationFixtureCorpus(normalizedOptions.fixtures);
+  if (fixtures.length === 0) {
+    throw new RangeError(
+      'No verified observed-game-report fixtures are available for calibration. Synthetic regression fixtures are replay oracles only.'
+    );
+  }
   const split = splitFixtures(fixtures, normalizedOptions.holdout);
   const fittedCoefficients = fitCoefficients(split.fitFixtures, {
     maxIterations: normalizedOptions.maxIterations,

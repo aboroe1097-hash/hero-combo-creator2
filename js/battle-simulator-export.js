@@ -2,9 +2,10 @@ import {
   DEFAULT_BATTLE_COEFFICIENTS,
   normalizeBattleCoefficients,
 } from './battle-simulator-coefficients.js';
+import { BATTLE_STAT_CONTRACT } from './battle-simulator-data.js';
 import { buildSetupSnapshot, parseSetupSnapshot } from './battle-simulator-setup.js';
 
-export const BATTLE_EXPORT_SCHEMA_VERSION = 2;
+export const BATTLE_EXPORT_SCHEMA_VERSION = 3;
 
 const EVENT_CSV_COLUMNS = [
   'run_index',
@@ -46,6 +47,9 @@ const SUMMARY_CSV_COLUMNS = [
   'average_side_b_casualties',
   'average_total_casualties',
   'config_json',
+  'stat_contract_json',
+  'source_provenance_json',
+  'equipment_provenance_json',
 ];
 
 function isObject(value) {
@@ -355,6 +359,21 @@ function resolveSetupSnapshot(input) {
   return parseSetupSnapshot(JSON.stringify(sanitizeForExport(snapshot)));
 }
 
+function buildSourceProvenance(setup) {
+  return Object.fromEntries(
+    ['A', 'B'].map((sideId) => [
+      sideId,
+      sanitizeForExport(setup.sides[sideId].capturedSourceSnapshot),
+    ])
+  );
+}
+
+function buildEquipmentProvenance(setup) {
+  return Object.fromEntries(
+    ['A', 'B'].map((sideId) => [sideId, sanitizeForExport(setup.sides[sideId].equipmentLoadout)])
+  );
+}
+
 function selectBattleResult(result, runMode) {
   for (const selected of [result?.selectedResult, result?.representativeResult]) {
     if (isObject(selected)) return selected;
@@ -468,6 +487,16 @@ function createRichContext(input = {}) {
       context.model.assumptions,
     ]) ?? []
   );
+  const statContract = sanitizeForExport(
+    firstDefined([
+      selectedResult?.statContract,
+      context.result?.statContract,
+      context.config?.statContract,
+      input.statContract,
+    ]) ?? BATTLE_STAT_CONTRACT
+  );
+  const sourceProvenance = buildSourceProvenance(setup);
+  const equipmentProvenance = buildEquipmentProvenance(setup);
   return {
     ...context,
     model: {
@@ -479,6 +508,9 @@ function createRichContext(input = {}) {
     selectedResult,
     coefficients,
     modelVersion,
+    statContract,
+    sourceProvenance,
+    equipmentProvenance,
     seeds: collectSeeds(context, selectedResult),
     perRow: buildPerRowMetrics(setup, selectedResult, context.config),
   };
@@ -737,8 +769,11 @@ export function buildBattleJsonExport(input = {}) {
     generatedAt: context.generatedAt,
     model: context.model,
     modelVersion: context.modelVersion,
+    statContract: context.statContract,
     coefficients: context.coefficients,
     setup: context.setup,
+    sourceProvenance: context.sourceProvenance,
+    equipmentProvenance: context.equipmentProvenance,
     config: context.config,
     runMode: context.runMode,
     seed: context.seed,
@@ -751,7 +786,7 @@ export function buildBattleJsonExport(input = {}) {
 }
 
 export function buildBattleSummaryCsv(input = {}) {
-  const context = createContext(input);
+  const context = createRichContext(input);
   const summary = summarize(context);
   const row = [
     BATTLE_EXPORT_SCHEMA_VERSION,
@@ -779,6 +814,9 @@ export function buildBattleSummaryCsv(input = {}) {
     formatNumber(summary.averageSideBCasualties),
     formatNumber(summary.averageTotalCasualties),
     stableJson(context.config),
+    stableJson(context.statContract),
+    stableJson(context.sourceProvenance),
+    stableJson(context.equipmentProvenance),
   ];
   return `${csvLine(SUMMARY_CSV_COLUMNS)}\n${csvLine(row)}`;
 }
@@ -854,7 +892,10 @@ export function buildBattleDebugSnapshot(input = {}) {
     `Outcomes: Side A ${summary.sideAWins} (${percent(summary.sideAWinRate)}) · Side B ${summary.sideBWins} (${percent(summary.sideBWinRate)}) · Draw ${summary.draws} (${percent(summary.drawRate)}) · Stalemate ${summary.stalemates} (${percent(summary.stalemateRate)})`,
     `Averages: ${textNumber(summary.averageRounds)} rounds · survivors A/B ${textNumber(summary.averageSideASurvivors)}/${textNumber(summary.averageSideBSurvivors)} · casualties A/B ${textNumber(summary.averageSideACasualties)}/${textNumber(summary.averageSideBCasualties)}`,
     `Assumptions: ${assumptions}`,
+    `Stat contract: ${stableJson(context.statContract)}`,
     `Coefficients: ${stableJson(context.coefficients)}`,
+    `Source provenance: ${stableJson(context.sourceProvenance)}`,
+    `Equipment provenance: ${stableJson(context.equipmentProvenance)}`,
     `Seeds: ${stableJson(context.seeds)}`,
     `Per-row results: ${stableJson(context.perRow)}`,
     `Setup: ${stableJson(context.setup)}`,
@@ -874,15 +915,26 @@ export function buildBattleCalibrationFixture(input = {}) {
     sideMetric(result, context.config, 'B', 'survivors') ??
     totalFromRows(context.perRow.B, 'survivingTroops');
   const document = {
-    fixtureVersion: 1,
+    fixtureVersion: 2,
     battleType: 'pvp-field',
     battleMode: context.setup.battleMode,
     createdAt: context.generatedAt,
+    statContract: context.statContract,
+    sourceProvenance: context.sourceProvenance,
+    equipmentProvenance: context.equipmentProvenance,
     setup: context.setup,
     simulated: {
       modelVersion: context.modelVersion,
       coefficients: context.coefficients,
       seed: firstDefined([result?.seed, result?.runSeed, context.seed]) ?? null,
+      strikeVariancePct:
+        firstDefined([
+          finiteNumber(result?.strikeVariancePct),
+          finiteNumber(context.result?.strikeVariancePct),
+          finiteNumber(context.result?.batch?.strikeVariancePct),
+          finiteNumber(context.variance),
+          context.setup.runOptions.strikeVariancePct,
+        ]) ?? 0,
       winner: firstDefined([result?.winner, result?.outcome]) ?? null,
       rounds: roundCount(result) ?? null,
       perRowCasualties: {
@@ -903,6 +955,7 @@ export function buildBattleCalibrationFixture(input = {}) {
     provenance: {
       submitter: '',
       reportDate: null,
+      evidenceKind: 'unverified-game-report',
     },
   };
   return JSON.stringify(sanitizeDocument(document), null, 2);

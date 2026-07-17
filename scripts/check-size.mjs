@@ -57,10 +57,10 @@ const LIMITS = {
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
     'arcade.html': { desktop: 426 * 1024, mobile: 519 * 1024 },
-    // Battle Simulator loads only shared tokens plus its 30.6 KiB standalone
-    // sheet, measuring 41.1 KiB on desktop and mobile before unlock. Keep less
-    // than 2 KiB of route-specific headroom.
-    'battle-simulator.html': { desktop: 43 * 1024, mobile: 43 * 1024 },
+    // Battle Simulator v2's responsive source breakdown and equipment controls
+    // load only shared tokens plus its standalone sheet, measuring 50.8 KiB on
+    // desktop and mobile before unlock. Keep less than 1.5 KiB of headroom.
+    'battle-simulator.html': { desktop: 52 * 1024, mobile: 52 * 1024 },
     // Specialization Towers is route-isolated and loads only shared tokens plus
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.

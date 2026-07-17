@@ -3777,7 +3777,13 @@ function bindWeightedPopovers(host) {
     button.addEventListener('focusin', () => positionWeightedPopover(button));
     button.addEventListener('focusout', () => {
       setTimeout(() => {
-        if (button.classList.contains('is-open') || button.contains(document.activeElement)) return;
+        if (
+          button.classList.contains('is-open') ||
+          button.contains(document.activeElement) ||
+          button.matches(':hover')
+        ) {
+          return;
+        }
         hideWeightedPopover(button);
       }, 0);
     });

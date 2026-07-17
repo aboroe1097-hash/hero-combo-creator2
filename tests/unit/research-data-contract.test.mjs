@@ -14,6 +14,7 @@ import {
   resolveResearchNodeArt,
 } from '../../js/research-game-art.js';
 import { RESEARCH_GAME_LAYOUTS } from '../../js/research-game-layouts.js';
+import { describeNodeBuffProgress, findMissingBuffValueNodes } from '../../js/research-buffs.js';
 import { techDatabase } from '../../js/tech-db.js';
 import { validateResearchContracts } from '../../scripts/lib/research-contracts.mjs';
 
@@ -228,4 +229,42 @@ test('research persistence remains namespaced by the stable treeId:nodeId key', 
     assert.doesNotMatch(tree.id, /[:/]/);
     for (const node of tree.nodes || []) assert.doesNotMatch(node.id, /[:/]/);
   }
+});
+
+test('Class Legion analogues use exact shared curves while ambiguous Supply Unit stays missing', () => {
+  const tree = techDatabase.find((candidate) => candidate.id === 'cc2c9ee1');
+  const expectedMetadataNodes = [
+    'node_2',
+    'node_3',
+    'node_4',
+    'node_5',
+    'node_6',
+    'node_10',
+    'node_12',
+    'node_13',
+    'node_14',
+  ];
+
+  for (const nodeId of expectedMetadataNodes) {
+    assert.ok(tree.nodes.find((node) => node.id === nodeId)?.buffStats, nodeId);
+  }
+  const footmenResistance = tree.nodes.find((node) => node.id === 'node_4');
+  assert.equal(describeNodeBuffProgress(footmenResistance, 6).currentLabel, '+13%');
+  assert.equal(
+    describeNodeBuffProgress(
+      tree.nodes.find((node) => node.id === 'node_11'),
+      3
+    ).status,
+    'missing'
+  );
+});
+
+test('semantic buff parser leaves 88 exact-value gaps after nine Class Legion analogues', () => {
+  const missing = findMissingBuffValueNodes(techDatabase);
+  assert.equal(missing.length, 88);
+  assert.equal(missing.length + 9, 97, 'pre-analogue parser-correct baseline');
+  assert.ok(
+    missing.some(({ tech, node }) => tech.id === 'f915a84b' && node.id === 'node_8'),
+    'Basic Military HP remains explicitly missing'
+  );
 });

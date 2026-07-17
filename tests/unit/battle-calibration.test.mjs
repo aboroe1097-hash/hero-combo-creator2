@@ -13,10 +13,12 @@ import {
   fitCoefficients,
   logSpacedValues,
   nelderMeadSearch,
+  runCalibration,
   splitFixtures,
   writeCalibrationArtifacts,
 } from '../../scripts/battle-sim/calibrate.mjs';
 import {
+  loadCalibrationFixtureCorpus,
   loadFixtureCorpus,
   loadFixtures,
   validateFixture,
@@ -33,7 +35,8 @@ import {
 const TEST_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = resolve(TEST_DIRECTORY, '..', '..');
 const FIXTURE_DIRECTORY = join(REPOSITORY_ROOT, 'tests', 'fixtures', 'battle-reports');
-const SYNTHETIC_FILENAME = /^synthetic-\d{2}\.json$/;
+const SYNTHETIC_FILENAME = /^v2-synthetic-\d{2}\.json$/;
+const LEGACY_SYNTHETIC_FILENAME = /^synthetic-\d{2}\.json$/;
 
 function syntheticFixtureFiles() {
   return readdirSync(FIXTURE_DIRECTORY)
@@ -44,6 +47,14 @@ function syntheticFixtureFiles() {
 function readRawSyntheticFixture() {
   const [filename] = syntheticFixtureFiles();
   assert.ok(filename, 'at least one generated synthetic fixture must exist');
+  return JSON.parse(readFileSync(join(FIXTURE_DIRECTORY, filename), 'utf8'));
+}
+
+function readRawLegacySyntheticFixture() {
+  const filename = readdirSync(FIXTURE_DIRECTORY)
+    .filter((entry) => LEGACY_SYNTHETIC_FILENAME.test(entry))
+    .sort()[0];
+  assert.ok(filename, 'at least one archived phase-1 fixture must exist');
   return JSON.parse(readFileSync(join(FIXTURE_DIRECTORY, filename), 'utf8'));
 }
 
@@ -152,12 +163,33 @@ test('validateFixture ignores future keys at every supported fixture layer', () 
   raw.setup.futureSetupField = 'ignored';
   raw.setup.sides.A.futureSideField = 'ignored';
   raw.setup.sides.A.rows[0].futureRowField = 'ignored';
-  raw.setup.sides.A.rows[0].baseValues.lethalDamage = 25;
+  raw.setup.sides.A.rows[0].unitValues.lethalDamage = 25;
   raw.setup.sides.A.rows[0].bonuses.lethalDamage = 25;
-  raw.setup.sides.A.rows[0].finals.damageMitigation = 30;
+  raw.setup.sides.A.rows[0].finals.lethalDamage = 30;
   raw.simulated.futureSimulatedField = 'ignored';
   raw.simulated.coefficients.futureCoefficient = 42;
   raw.observed.futureObservedField = 'ignored';
+  raw.statContract.futureContractField = 'ignored';
+  raw.statContract.battleKeys.push('lethalDamage');
+  const futureSource = {
+    sourceType: 'future',
+    sourceId: 'future:lethal-damage',
+    label: 'Future lethal damage',
+    statKey: 'lethalDamage',
+    amount: 25,
+    operation: 'add',
+    unit: 'percent',
+    appliesTo: { battleModes: ['pvp-field'], troopTypes: [], rowIds: [] },
+    verification: null,
+    provenance: null,
+    futureSourceField: 'ignored',
+  };
+  raw.setup.sides.A.capturedSourceSnapshot.sources.push(futureSource);
+  raw.sourceProvenance.A.sources.push(structuredClone(futureSource));
+  raw.setup.sides.A.capturedSourceSnapshot.futureSnapshotField = 'ignored';
+  raw.sourceProvenance.A.futureSnapshotField = 'ignored';
+  raw.setup.sides.A.equipmentLoadout.futureEquipmentField = 'ignored';
+  raw.equipmentProvenance.A.futureEquipmentField = 'ignored';
 
   const fixture = validateFixture(raw, 'future-fields.json');
 
@@ -165,13 +197,74 @@ test('validateFixture ignores future keys at every supported fixture layer', () 
   assert.equal(Object.hasOwn(fixture.setup, 'futureSetupField'), false);
   assert.equal(Object.hasOwn(fixture.setup.sides.A, 'futureSideField'), false);
   assert.equal(Object.hasOwn(fixture.setup.sides.A.rows[0], 'futureRowField'), false);
-  assert.equal(Object.hasOwn(fixture.setup.sides.A.rows[0].baseValues, 'lethalDamage'), false);
+  assert.equal(Object.hasOwn(fixture.setup.sides.A.rows[0].unitValues, 'lethalDamage'), false);
   assert.equal(Object.hasOwn(fixture.setup.sides.A.rows[0].bonuses, 'lethalDamage'), false);
-  assert.equal(Object.hasOwn(fixture.setup.sides.A.rows[0].finals, 'damageMitigation'), false);
-  assert.equal(Object.hasOwn(fixture.engineConfig.sideA.rows[0].stats, 'lethalDamage'), false);
+  assert.equal(Object.hasOwn(fixture.setup.sides.A.rows[0].finals, 'lethalDamage'), false);
+  assert.equal(Object.hasOwn(fixture.engineConfig.sideA.rows[0].stats.unit, 'lethalDamage'), false);
+  assert.equal(
+    Object.hasOwn(fixture.engineConfig.sideA.rows[0].stats.battle, 'lethalDamage'),
+    false
+  );
   assert.equal(Object.hasOwn(fixture.simulated, 'futureSimulatedField'), false);
   assert.equal(Object.hasOwn(fixture.simulated.coefficients, 'futureCoefficient'), false);
   assert.equal(Object.hasOwn(fixture.observed, 'futureObservedField'), false);
+  assert.equal(Object.hasOwn(fixture.statContract, 'futureContractField'), false);
+  assert.equal(fixture.statContract.battleKeys.includes('lethalDamage'), false);
+  assert.equal(
+    fixture.sourceProvenance.A.sources.some(({ statKey }) => statKey === 'lethalDamage'),
+    false
+  );
+  assert.equal(Object.hasOwn(fixture.sourceProvenance.A, 'futureSnapshotField'), false);
+  assert.equal(Object.hasOwn(fixture.equipmentProvenance.A, 'futureEquipmentField'), false);
+});
+
+test('legacy phase-1 reports remain inspectable but are archive-only for calibration', async () => {
+  const legacy = validateFixture(readRawLegacySyntheticFixture(), 'legacy-phase1.json');
+  assert.equal(legacy.fixtureVersion, 1);
+  assert.equal(legacy.isLegacy, true);
+  assert.equal(legacy.evidenceStatus, 'legacy-phase1-archive');
+  assert.equal(legacy.setup.setupSchemaVersion, 2);
+
+  const { result, warnings } = await captureWarnings(() => loadFixtureCorpus(FIXTURE_DIRECTORY));
+  assert.equal(result.archivedFiles.length, 12);
+  assert.equal(
+    result.fixtures.filter((fixture) => SYNTHETIC_FILENAME.test(fixture.filename)).length,
+    12
+  );
+  assert.equal(
+    warnings.some((warning) => /synthetic-\d{2}/i.test(warning)),
+    false
+  );
+
+  const { result: calibrationCorpus } = await captureWarnings(() =>
+    loadCalibrationFixtureCorpus(FIXTURE_DIRECTORY)
+  );
+  assert.equal(calibrationCorpus.fixtures.length, 0);
+  assert.equal(calibrationCorpus.replayOnlyFiles.length, 12);
+  await assert.rejects(
+    runCalibration({ fixtures: FIXTURE_DIRECTORY }),
+    /No verified observed-game-report fixtures.*Synthetic regression/i
+  );
+});
+
+test('calibration loader admits observed game reports and excludes synthetic replay oracles', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'battle-calibration-evidence-'));
+  try {
+    const replay = readRawSyntheticFixture();
+    const observed = structuredClone(replay);
+    observed.provenance.evidenceKind = 'observed-game-report';
+    writeFileSync(join(directory, '10-replay.json'), `${JSON.stringify(replay)}\n`, 'utf8');
+    writeFileSync(join(directory, '20-observed.json'), `${JSON.stringify(observed)}\n`, 'utf8');
+
+    const corpus = await loadCalibrationFixtureCorpus(directory);
+    assert.deepEqual(
+      corpus.fixtures.map(({ filename }) => filename),
+      ['20-observed.json']
+    );
+    assert.deepEqual(corpus.replayOnlyFiles, ['10-replay.json']);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test('fixture loaders sort deterministically and warn while skipping siege and unfilled reports', async () => {
@@ -247,10 +340,10 @@ test('validateFixture rejects every required structural failure with a filename 
     {
       name: 'wrong fixture version',
       mutate: (fixture) => {
-        fixture.fixtureVersion = 2;
+        fixture.fixtureVersion = 3;
       },
       errorType: RangeError,
-      message: /fixtureVersion must be 1/i,
+      message: /fixtureVersion must be 1 or 2/i,
     },
     {
       name: 'missing setup',
@@ -283,6 +376,86 @@ test('validateFixture rejects every required structural failure with a filename 
       },
       errorType: TypeError,
       message: /invalid setup.*battleMode must be a string/i,
+    },
+    {
+      name: 'legacy setup inside v2 fixture',
+      mutate: (fixture) => {
+        fixture.setup.setupSchemaVersion = 1;
+      },
+      errorType: TypeError,
+      message: /invalid setup/i,
+    },
+    {
+      name: 'mismatched stat contract',
+      mutate: (fixture) => {
+        fixture.statContract.version = 99;
+      },
+      errorType: TypeError,
+      message: /statContract must match/i,
+    },
+    {
+      name: 'mismatched source provenance',
+      mutate: (fixture) => {
+        fixture.sourceProvenance.A.sources.push({ future: true });
+      },
+      errorType: TypeError,
+      message: /sourceProvenance must match/i,
+    },
+    {
+      name: 'missing evidence kind',
+      mutate: (fixture) => {
+        delete fixture.provenance.evidenceKind;
+      },
+      errorType: TypeError,
+      message: /provenance\.evidenceKind must be one of/i,
+    },
+    {
+      name: 'missing replay coefficient',
+      mutate: (fixture) => {
+        delete fixture.simulated.coefficients.baseCasualtyRate;
+      },
+      errorType: TypeError,
+      message: /simulated\.coefficients is missing required coefficient.*baseCasualtyRate/i,
+    },
+    {
+      name: 'non-finite replay coefficient',
+      mutate: (fixture) => {
+        fixture.simulated.coefficients.baseCasualtyRate = Number.NaN;
+      },
+      errorType: TypeError,
+      message: /invalid simulated\.coefficients.*finite number/i,
+    },
+    {
+      name: 'fractional replay seed',
+      mutate: (fixture) => {
+        fixture.simulated.seed = 1.5;
+      },
+      errorType: TypeError,
+      message: /simulated\.seed must be a safe integer/i,
+    },
+    {
+      name: 'out-of-range replay seed',
+      mutate: (fixture) => {
+        fixture.simulated.seed = 0x1_0000_0000;
+      },
+      errorType: RangeError,
+      message: /simulated\.seed must be between 0 and 4294967295/i,
+    },
+    {
+      name: 'non-finite replay variance',
+      mutate: (fixture) => {
+        fixture.simulated.strikeVariancePct = Number.POSITIVE_INFINITY;
+      },
+      errorType: TypeError,
+      message: /simulated\.strikeVariancePct must be a finite number/i,
+    },
+    {
+      name: 'out-of-range replay variance',
+      mutate: (fixture) => {
+        fixture.simulated.strikeVariancePct = -1;
+      },
+      errorType: RangeError,
+      message: /simulated\.strikeVariancePct must be between 0 and 100/i,
     },
     {
       name: 'invalid observed winner',
@@ -468,12 +641,25 @@ test('calibration writer creates the calibrated JSON and reproducible Markdown r
 });
 
 test(
-  'full coarse and Nelder-Mead fit recovers the synthetic calibration corpus',
+  'v2 generating coefficients replay exactly and the fitter materially improves defaults',
   { timeout: 35_000 },
   async () => {
     const { fixtures } = await loadFixtureCorpus(FIXTURE_DIRECTORY);
     const synthetic = fixtures.filter((fixture) => SYNTHETIC_FILENAME.test(fixture.filename));
     assert.equal(synthetic.length, 12);
+    const generatingCoefficients = synthetic[0].simulated.coefficients;
+    for (const fixture of synthetic) {
+      assert.deepEqual(fixture.simulated.coefficients, generatingCoefficients);
+      assert.equal(fixture.provenance.evidenceKind, 'synthetic-regression');
+    }
+    assert.equal(corpusLoss(synthetic, generatingCoefficients), 0);
+    assert.deepEqual(corpusMetrics(synthetic, generatingCoefficients), {
+      fixtureCount: 12,
+      winnerAccuracy: 1,
+      casualtySmapeMedian: 0,
+      casualtySmapeP90: 0,
+      wrongWinnerFiles: [],
+    });
 
     const defaultLoss = corpusLoss(synthetic, DEFAULT_BATTLE_COEFFICIENTS);
     assert.ok(defaultLoss > 0, 'synthetic coefficients must differ measurably from defaults');
@@ -489,6 +675,9 @@ test(
       `expected fitted loss ${fittedLoss} to be at most 25% of default loss ${defaultLoss}`
     );
     assert.equal(fittedMetrics.winnerAccuracy, 1);
+    assert.equal(fittedMetrics.casualtySmapeMedian, 0);
+    assert.ok(fittedMetrics.casualtySmapeP90 < 0.5);
+    assert.deepEqual(fittedMetrics.wrongWinnerFiles, []);
     assert.ok(elapsedMs < 30_000, `fit should complete within 30 seconds; took ${elapsedMs}ms`);
   }
 );

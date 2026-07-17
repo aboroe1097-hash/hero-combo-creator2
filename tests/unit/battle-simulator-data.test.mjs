@@ -3,17 +3,36 @@ import test from 'node:test';
 
 import {
   BATTLE_ROWS,
+  BATTLE_STAT_BASELINES,
+  BATTLE_STAT_CONTRACT,
+  BATTLE_STAT_KEYS,
+  BATTLE_STAT_METADATA,
   DEFAULT_TROOPS,
   EDITABLE_BASE_STAT_KEYS,
   STAT_INPUT_MODES,
   TROOP_PROFILES,
-  TROOP_STAT_KEYS,
-  TROOP_STAT_METADATA,
+  UNIT_STAT_KEYS,
   calculateTroopStats,
   getTroopProfile,
 } from '../../js/battle-simulator-data.js';
 
-test('Phase 1 uses 31,000 troops and fixed Front, Middle, Back rows', () => {
+function source(overrides = {}) {
+  return {
+    sourceType: 'research',
+    sourceId: 'research.cavalry-might',
+    label: 'Cavalry Might research',
+    statKey: 'might',
+    amount: 50,
+    operation: 'add',
+    unit: 'percent',
+    appliesTo: { battleModes: ['pvp-field'], troopTypes: ['cavalry'], rowIds: [] },
+    verification: { status: 'verified' },
+    provenance: { source: 'test-fixture' },
+    ...overrides,
+  };
+}
+
+test('v2 keeps 31,000 troops and fixed Front, Middle, Back rows', () => {
   assert.equal(DEFAULT_TROOPS, 31_000);
   assert.deepEqual(
     BATTLE_ROWS.map(({ id, label, position }) => ({ id, label, position })),
@@ -25,194 +44,209 @@ test('Phase 1 uses 31,000 troops and fixed Front, Middle, Back rows', () => {
   );
 });
 
-test('all six supported troop profiles match the supplied T9 and T10 cards', () => {
+test('all six troop profiles expose supplied card values as unit points, not percentages', () => {
   const expected = {
     cavalry: {
-      9: { might: 88.74, resistance: 49.98, hp: 18.36 },
-      10: { might: 92.82, resistance: 52.02, hp: 18.36 },
+      9: { attack: 88.74, defense: 49.98, hp: 18.36 },
+      10: { attack: 92.82, defense: 52.02, hp: 18.36 },
     },
     archers: {
-      9: { might: 107.1, resistance: 49.49, hp: 13 },
-      10: { might: 111.18, resistance: 51.51, hp: 13 },
+      9: { attack: 107.1, defense: 49.49, hp: 13 },
+      10: { attack: 111.18, defense: 51.51, hp: 13 },
     },
     footmen: {
-      9: { might: 71.4, resistance: 74.46, hp: 20 },
-      10: { might: 74.46, resistance: 77.52, hp: 21 },
+      9: { attack: 71.4, defense: 74.46, hp: 20 },
+      10: { attack: 74.46, defense: 77.52, hp: 21 },
     },
   };
 
   for (const [type, tiers] of Object.entries(expected)) {
     for (const [tier, stats] of Object.entries(tiers)) {
       const profile = getTroopProfile(type, tier);
-      assert.deepEqual(
-        {
-          might: profile.baseStats.might,
-          resistance: profile.baseStats.resistance,
-          hp: profile.baseStats.hp,
-        },
-        stats
-      );
-      assert.deepEqual(
-        {
-          tacticalMight: profile.baseStats.tacticalMight,
-          tacticalResistance: profile.baseStats.tacticalResistance,
-          damage: profile.baseStats.damage,
-          combatSpeed: profile.baseStats.combatSpeed,
-        },
-        { tacticalMight: 0, tacticalResistance: 0, damage: 0, combatSpeed: 0 }
-      );
+      assert.deepEqual(profile.unitStats, stats);
+      assert.equal(Object.hasOwn(profile, 'baseStats'), false);
+      assert.equal(Object.isFrozen(profile.unitStats), true);
     }
   }
-
   assert.equal(Object.keys(TROOP_PROFILES).length, 3);
 });
 
-test('unavailable Phase 1 base stat sources are explicit and Combat Speed stays raw', () => {
-  for (const key of ['tacticalMight', 'tacticalResistance', 'damage', 'combatSpeed']) {
-    assert.equal(TROOP_STAT_METADATA[key].baseSourceAvailable, false);
-    assert.match(TROOP_STAT_METADATA[key].source, /unavailable/i);
-  }
-  assert.equal(TROOP_STAT_METADATA.combatSpeed.unit, 'raw');
-  assert.equal(TROOP_STAT_METADATA.might.baseSourceAvailable, true);
-  assert.equal(TROOP_STAT_KEYS.length, 7);
+test('stat contract separates unit points from eight battle stats and their neutral baselines', () => {
+  assert.deepEqual(UNIT_STAT_KEYS, ['attack', 'defense', 'hp']);
+  assert.deepEqual(EDITABLE_BASE_STAT_KEYS, UNIT_STAT_KEYS);
+  assert.deepEqual(BATTLE_STAT_KEYS, [
+    'might',
+    'resistance',
+    'hp',
+    'tacticalMight',
+    'tacticalResistance',
+    'damage',
+    'damageMitigation',
+    'combatSpeed',
+  ]);
+  assert.deepEqual(BATTLE_STAT_BASELINES, {
+    might: 100,
+    resistance: 100,
+    hp: 100,
+    tacticalMight: 0,
+    tacticalResistance: 0,
+    damage: 0,
+    damageMitigation: 0,
+    combatSpeed: 0,
+  });
+  assert.equal(BATTLE_STAT_CONTRACT.version, 2);
+  assert.equal(BATTLE_STAT_METADATA.might.label, 'Battle Might');
+  assert.equal(BATTLE_STAT_METADATA.combatSpeed.unit, 'raw');
 });
 
-test('add-bonuses mode derives the exact Cav T9 88.74 + 300 = 388.74 total', () => {
+test('source mode adds neutral baseline, applicable automatic sources, and manual values', () => {
   const result = calculateTroopStats({
     type: 'cavalry',
     tier: 9,
     mode: STAT_INPUT_MODES.ADD_BONUSES,
-    values: { might: 300, resistance: 12, combatSpeed: 519 },
+    unitValues: { attack: 70 },
+    values: { might: 350, resistance: 20, combatSpeed: 519 },
+    sources: [source()],
+    context: { battleMode: 'pvp-field', rowId: 'front' },
   });
 
-  assert.equal(result.base.might, 88.74);
-  assert.equal(result.entered.might, 300);
-  assert.equal(result.final.might, 388.74);
-  assert.equal(result.final.resistance, 61.98);
-  assert.equal(result.final.combatSpeed, 519);
-  assert.equal(result.final.tacticalMight, 0);
+  assert.deepEqual(result.unit.resolved, { attack: 70, defense: 49.98, hp: 18.36 });
+  assert.equal(result.battle.totals.might, 500);
+  assert.equal(result.battle.totals.resistance, 120);
+  assert.equal(result.battle.totals.hp, 100);
+  assert.equal(result.battle.totals.combatSpeed, 519);
+  assert.deepEqual(result.effective, { attack: 350, defense: 59.976, hp: 18.36 });
+  assert.equal(result.battle.includedSources.length, 4);
+  assert.equal(result.battle.excludedSources.length, 0);
+  assert.deepEqual(result.engineStats, {
+    unit: result.unit.resolved,
+    battle: result.battle.totals,
+  });
 });
 
-test('editable Cav T9 base Might supports the exact 90 + 300 = 390 calculation', () => {
+test('source mode counts an exact automatic source contribution only once', () => {
+  const automatic = source({
+    appliesTo: { battleModes: [], troopTypes: [], rowIds: [] },
+  });
   const result = calculateTroopStats({
     type: 'cavalry',
     tier: 9,
-    mode: STAT_INPUT_MODES.ADD_BONUSES,
-    baseValues: { might: 90 },
-    values: { might: 300 },
+    sources: [automatic, structuredClone(automatic)],
   });
 
-  assert.deepEqual(EDITABLE_BASE_STAT_KEYS, ['might', 'resistance', 'hp']);
-  assert.equal(result.profile.baseStats.might, 88.74);
-  assert.equal(result.base.might, 90);
-  assert.equal(result.entered.might, 300);
-  assert.equal(result.final.might, 390);
-  assert.equal(result.base.tacticalMight, 0);
-  assert.equal(result.base.tacticalResistance, 0);
-  assert.equal(result.base.damage, 0);
-  assert.equal(result.base.combatSpeed, 0);
+  assert.equal(result.battle.totals.might, 150);
+  assert.equal(result.battle.includedSources.length, 1);
+  assert.equal(result.effective.attack, 133.11);
 });
 
-test('otherwise-equivalent rows calculate independently from their own editable base values', () => {
-  const shared = {
-    type: 'archers',
-    tier: 10,
-    mode: STAT_INPUT_MODES.ADD_BONUSES,
-    values: { might: 100, resistance: 200, hp: 50 },
-  };
-  const sideA = calculateTroopStats({
-    ...shared,
-    baseValues: { might: 111.18, resistance: 51.51, hp: 13 },
-  });
-  const sideB = calculateTroopStats({
-    ...shared,
-    baseValues: { might: 140, resistance: 80, hp: 25 },
-  });
-
-  assert.deepEqual(sideA.final, {
-    might: 211.18,
-    resistance: 251.51,
-    hp: 63,
-    tacticalMight: 0,
-    tacticalResistance: 0,
-    damage: 0,
-    combatSpeed: 0,
-  });
-  assert.deepEqual(sideB.final, {
-    might: 240,
-    resistance: 280,
-    hp: 75,
-    tacticalMight: 0,
-    tacticalResistance: 0,
-    damage: 0,
-    combatSpeed: 0,
-  });
-});
-
-test('final-totals mode uses entered totals directly and defaults omitted totals to base', () => {
+test('final-total mode applies 70 points at 500% as 350 and excludes automatic sources', () => {
   const result = calculateTroopStats({
     type: 'footmen',
-    tier: 10,
+    tier: 9,
     mode: STAT_INPUT_MODES.FINAL_TOTALS,
-    values: {
-      might: 390,
-      tacticalMight: 571.32,
-      tacticalResistance: 156.3,
-      damage: 28,
-      combatSpeed: 519,
-    },
+    unitValues: { attack: 70 },
+    values: { might: 500, resistance: 390, hp: 250, damageMitigation: 25 },
+    sources: [source({ appliesTo: { battleModes: [], troopTypes: [], rowIds: [] } })],
   });
 
-  assert.equal(result.final.might, 390);
-  assert.equal(result.final.resistance, 77.52);
-  assert.equal(result.final.hp, 21);
-  assert.equal(result.final.tacticalMight, 571.32);
-  assert.equal(result.final.tacticalResistance, 156.3);
-  assert.equal(result.final.damage, 28);
-  assert.equal(result.final.combatSpeed, 519);
+  assert.equal(result.battle.totals.might, 500);
+  assert.equal(result.effective.attack, 350);
+  assert.equal(result.effective.defense, 290.394);
+  assert.equal(result.effective.hp, 50);
+  assert.equal(result.battle.includedSources.length, 0);
+  assert.equal(result.battle.excludedSources.length, 1);
+  assert.equal(result.battle.excludedSources[0].exclusionReason, 'final-total-override');
 });
 
-test('an entered final total remains direct and independent of an edited base value', () => {
+test('non-applicable sources remain informational and do not alter source-mode totals', () => {
+  const result = calculateTroopStats({
+    type: 'archers',
+    tier: 10,
+    sources: [source()],
+    context: { battleMode: 'pvp-field', rowId: 'back' },
+  });
+
+  assert.equal(result.battle.totals.might, 100);
+  assert.equal(result.battle.includedSources.length, 0);
+  assert.equal(result.battle.excludedSources[0].exclusionReason, 'troop-type');
+});
+
+test('canonical unit overrides remain independent and never mutate input', () => {
+  const unitValues = { attack: 90, defense: 60, hp: 25 };
+  const before = structuredClone(unitValues);
   const result = calculateTroopStats({
     type: 'cavalry',
     tier: 9,
-    mode: STAT_INPUT_MODES.FINAL_TOTALS,
-    baseValues: { might: 90, resistance: 60, hp: 25 },
-    values: { might: 390, resistance: 420, hp: 180 },
+    unitValues,
+    values: { might: 400 },
   });
 
-  assert.deepEqual(
-    { might: result.base.might, resistance: result.base.resistance, hp: result.base.hp },
-    { might: 90, resistance: 60, hp: 25 }
+  assert.deepEqual(result.unit.entered, { attack: 90, defense: 60, hp: 25 });
+  assert.deepEqual(result.unit.resolved, { attack: 90, defense: 60, hp: 25 });
+  assert.equal(result.battle.totals.might, 500);
+  assert.equal(result.effective.attack, 450);
+  assert.deepEqual(unitValues, before);
+});
+
+test('calculation enforces finite maxima and derives maximum effective stats without overflow', () => {
+  const maximum = calculateTroopStats({
+    type: 'footmen',
+    tier: 9,
+    mode: STAT_INPUT_MODES.FINAL_TOTALS,
+    unitValues: { attack: 5_000, defense: 5_000, hp: 5_000 },
+    values: { might: 5_000, resistance: 5_000, hp: 5_000, combatSpeed: 10_000 },
+  });
+  assert.deepEqual(maximum.effective, { attack: 250_000, defense: 250_000, hp: 250_000 });
+  assert.ok(Object.values(maximum.effective).every(Number.isFinite));
+
+  assert.throws(
+    () =>
+      calculateTroopStats({
+        type: 'footmen',
+        tier: 9,
+        unitValues: { attack: 5_001 },
+      }),
+    /Attack cannot exceed 5000/
   );
-  assert.deepEqual(
-    { might: result.final.might, resistance: result.final.resistance, hp: result.final.hp },
-    { might: 390, resistance: 420, hp: 180 }
+  assert.throws(
+    () => calculateTroopStats({ type: 'footmen', tier: 9, values: { might: 5_001 } }),
+    /Battle Might cannot exceed 5000/
+  );
+  assert.throws(
+    () => calculateTroopStats({ type: 'footmen', tier: 9, values: { combatSpeed: 10_001 } }),
+    /Combat Speed cannot exceed 10000/
+  );
+  assert.throws(
+    () =>
+      calculateTroopStats({
+        type: 'footmen',
+        tier: 9,
+        sources: [
+          source({
+            amount: 5_000,
+            appliesTo: { battleModes: [], troopTypes: [], rowIds: [] },
+          }),
+        ],
+      }),
+    /Battle Might cannot exceed 5000/
   );
 });
 
-test('stat calculation is pure and does not mutate the caller values or frozen profile', () => {
-  const values = { might: 300 };
-  const baseValues = { might: 90, resistance: 60, hp: 25 };
-  const before = structuredClone(values);
-  const baseBefore = structuredClone(baseValues);
-  const profile = getTroopProfile('cavalry', 9);
-
-  calculateTroopStats({ type: 'cavalry', tier: 9, baseValues, values });
-
-  assert.deepEqual(values, before);
-  assert.deepEqual(baseValues, baseBefore);
-  assert.equal(Object.isFrozen(profile), true);
-  assert.equal(Object.isFrozen(profile.baseStats), true);
-  assert.equal(profile.baseStats.might, 88.74);
-});
-
-test('profile and stat validation fail clearly on unsupported or unsafe input', () => {
+test('calculation validation rejects ambiguous, unsupported, negative, and non-finite input', () => {
   assert.throws(() => getTroopProfile('mage', 9), /Unsupported troop type/);
   assert.throws(() => getTroopProfile('cavalry', 8), /Unsupported troop tier/);
   assert.throws(
     () => calculateTroopStats({ type: 'cavalry', tier: 9, mode: 'mystery' }),
     /Unsupported stat input mode/
+  );
+  assert.throws(
+    () =>
+      calculateTroopStats({
+        type: 'cavalry',
+        tier: 9,
+        unitValues: { might: 90 },
+      }),
+    /Unsupported unit stat "might"/
   );
   assert.throws(
     () => calculateTroopStats({ type: 'cavalry', tier: 9, values: { might: -1 } }),
@@ -224,18 +258,6 @@ test('profile and stat validation fail clearly on unsupported or unsafe input', 
   );
   assert.throws(
     () => calculateTroopStats({ type: 'cavalry', tier: 9, values: { marchingSpeed: 26 } }),
-    /Unsupported troop stat/
-  );
-  assert.throws(
-    () => calculateTroopStats({ type: 'cavalry', tier: 9, baseValues: { might: -1 } }),
-    /cannot be negative/
-  );
-  assert.throws(
-    () => calculateTroopStats({ type: 'cavalry', tier: 9, baseValues: { resistance: Infinity } }),
-    /finite number/
-  );
-  assert.throws(
-    () => calculateTroopStats({ type: 'cavalry', tier: 9, baseValues: { tacticalMight: 10 } }),
-    /Unsupported editable base stat/
+    /Unsupported battle stat/
   );
 });

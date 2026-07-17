@@ -1,6 +1,9 @@
 import { formatLocaleNumber } from './locale-format.js';
 
-const NUMERIC_TOKEN_RE = /([+-]?\d+(?:\.\d+)?)(\s*[kKmM])?\s*(%)?/g;
+// Magnitude suffixes must touch the number ("500k", not "500 k"). Otherwise the
+// first letter of a following word such as "Marauders" or "Medical" can be
+// mistaken for a million suffix.
+const NUMERIC_TOKEN_RE = /([+-]?\d+(?:\.\d+)?)([kKmM])?\s*(%)?/g;
 
 function toFiniteNumber(value) {
   const n = Number(value);
@@ -134,6 +137,10 @@ function collectNumericTokens(buff) {
   for (const match of buff.matchAll(NUMERIC_TOKEN_RE)) {
     if (isLevelReference(buff, match)) continue;
     const rawNumber = match[1];
+    // A hyphen between two digits is a range separator ("Lvl 1-5"), not a
+    // negative effect. The leading level token is rejected by isLevelReference;
+    // reject the range endpoint here as well.
+    if (rawNumber.startsWith('-') && /\d/.test(buff[match.index - 1] || '')) continue;
     const suffix = match[2] || '';
     const percent = !!match[3];
     const signed = rawNumber.startsWith('+') || rawNumber.startsWith('-');

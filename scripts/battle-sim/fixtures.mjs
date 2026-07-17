@@ -1,18 +1,31 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { DEFAULT_BATTLE_COEFFICIENTS } from '../../js/battle-simulator-coefficients.js';
+import {
+  DEFAULT_BATTLE_COEFFICIENTS,
+  normalizeBattleCoefficients,
+} from '../../js/battle-simulator-coefficients.js';
+import { BATTLE_STAT_CONTRACT } from '../../js/battle-simulator-data.js';
 import {
   parseSetupSnapshot,
   setupSnapshotToEngineConfig,
 } from '../../js/battle-simulator-setup.js';
 
 const DEFAULT_FIXTURE_DIRECTORY = 'tests/fixtures/battle-reports';
-const FIXTURE_VERSION = 1;
+export const LEGACY_FIXTURE_VERSION = 1;
+export const FIXTURE_VERSION = 2;
+const SUPPORTED_FIXTURE_VERSIONS = Object.freeze([LEGACY_FIXTURE_VERSION, FIXTURE_VERSION]);
 const SUPPORTED_BATTLE_MODE = 'pvp-field';
 const SIDE_IDS = Object.freeze(['A', 'B']);
 const OBSERVED_WINNERS = Object.freeze(['A', 'B', 'draw']);
+const V2_EVIDENCE_KINDS = Object.freeze([
+  'synthetic-regression',
+  'observed-game-report',
+  'unverified-game-report',
+]);
 const COEFFICIENT_KEYS = Object.freeze(Object.keys(DEFAULT_BATTLE_COEFFICIENTS));
+const UINT32_MAX = 0xffffffff;
+const MAX_STRIKE_VARIANCE_PCT = 100;
 
 function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -25,6 +38,15 @@ function fail(filename, message, ErrorType = TypeError) {
 function requireRecord(value, filename, label) {
   if (!isRecord(value)) fail(filename, `${label} must be an object.`);
   return value;
+}
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (!isRecord(value)) return JSON.stringify(value);
+  return `{${Object.keys(value)
+    .sort(compareNames)
+    .map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`)
+    .join(',')}}`;
 }
 
 function canonicalizeSetup(value, filename) {
@@ -112,35 +134,150 @@ function canonicalizePerRowCasualties(value) {
   };
 }
 
-function canonicalizeCoefficients(value) {
-  if (!isRecord(value)) return undefined;
-  return Object.fromEntries(
-    COEFFICIENT_KEYS.filter((key) => Object.hasOwn(value, key)).map((key) => [key, value[key]])
+function canonicalizeCoefficients(value, filename, required) {
+  if (value === undefined && !required) return undefined;
+  const coefficients = requireRecord(value, filename, 'simulated.coefficients');
+  const missingKeys = COEFFICIENT_KEYS.filter((key) => !Object.hasOwn(coefficients, key));
+  if (required && missingKeys.length > 0) {
+    fail(
+      filename,
+      `simulated.coefficients is missing required coefficient${missingKeys.length === 1 ? '' : 's'}: ${missingKeys.join(', ')}.`
+    );
+  }
+  const knownCoefficients = Object.fromEntries(
+    COEFFICIENT_KEYS.filter((key) => Object.hasOwn(coefficients, key)).map((key) => [
+      key,
+      coefficients[key],
+    ])
   );
+  try {
+    return { ...normalizeBattleCoefficients(knownCoefficients) };
+  } catch (error) {
+    fail(filename, `invalid simulated.coefficients: ${error.message}`, error.constructor);
+  }
 }
 
-function canonicalizeSimulated(value) {
-  if (!isRecord(value)) return {};
-  const survivors = isRecord(value.survivors)
-    ? { A: value.survivors.A, B: value.survivors.B }
+function canonicalizeSeed(value, filename, required) {
+  if (value === undefined && !required) return undefined;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
+    fail(filename, 'simulated.seed must be a safe integer.');
+  }
+  if (value < 0 || value > UINT32_MAX) {
+    fail(filename, `simulated.seed must be between 0 and ${UINT32_MAX}.`, RangeError);
+  }
+  return value;
+}
+
+function canonicalizeStrikeVariance(value, filename, required) {
+  if (value === undefined && !required) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    fail(filename, 'simulated.strikeVariancePct must be a finite number.');
+  }
+  if (value < 0 || value > MAX_STRIKE_VARIANCE_PCT) {
+    fail(
+      filename,
+      `simulated.strikeVariancePct must be between 0 and ${MAX_STRIKE_VARIANCE_PCT}.`,
+      RangeError
+    );
+  }
+  return value;
+}
+
+function canonicalizeSimulated(value, filename, isLegacy) {
+  if (value === undefined && isLegacy) return {};
+  const simulated = requireRecord(value, filename, 'simulated');
+  const requiresReplayContract = !isLegacy;
+  const survivors = isRecord(simulated.survivors)
+    ? { A: simulated.survivors.A, B: simulated.survivors.B }
     : undefined;
   return {
-    modelVersion: value.modelVersion,
-    coefficients: canonicalizeCoefficients(value.coefficients),
-    seed: value.seed,
-    winner: value.winner,
-    rounds: value.rounds,
-    perRowCasualties: canonicalizePerRowCasualties(value.perRowCasualties),
+    modelVersion: simulated.modelVersion,
+    coefficients: canonicalizeCoefficients(
+      simulated.coefficients,
+      filename,
+      requiresReplayContract
+    ),
+    seed: canonicalizeSeed(simulated.seed, filename, requiresReplayContract),
+    strikeVariancePct: canonicalizeStrikeVariance(
+      simulated.strikeVariancePct,
+      filename,
+      requiresReplayContract
+    ),
+    winner: simulated.winner,
+    rounds: simulated.rounds,
+    perRowCasualties: canonicalizePerRowCasualties(simulated.perRowCasualties),
     survivors,
   };
 }
 
-function canonicalizeProvenance(value) {
-  if (!isRecord(value)) return { submitter: '', reportDate: null };
+function canonicalizeStatContract(value, filename) {
+  const contract = requireRecord(value, filename, 'statContract');
+  if (!Array.isArray(contract.unitKeys)) fail(filename, 'statContract.unitKeys must be an array.');
+  if (!Array.isArray(contract.battleKeys)) {
+    fail(filename, 'statContract.battleKeys must be an array.');
+  }
+  const multiplierBaselines = requireRecord(
+    contract.multiplierBaselines,
+    filename,
+    'statContract.multiplierBaselines'
+  );
+  const derivation = requireRecord(contract.derivation, filename, 'statContract.derivation');
+  return {
+    version: contract.version,
+    unitKeys: BATTLE_STAT_CONTRACT.unitKeys.filter((key) => contract.unitKeys.includes(key)),
+    battleKeys: BATTLE_STAT_CONTRACT.battleKeys.filter((key) => contract.battleKeys.includes(key)),
+    multiplierBaselines: Object.fromEntries(
+      Object.keys(BATTLE_STAT_CONTRACT.multiplierBaselines).map((key) => [
+        key,
+        multiplierBaselines[key],
+      ])
+    ),
+    derivation: Object.fromEntries(
+      Object.keys(BATTLE_STAT_CONTRACT.derivation).map((key) => [key, derivation[key]])
+    ),
+  };
+}
+
+function canonicalizeDuplicatedSideField(value, setup, filename, field, label) {
+  const duplicated = requireRecord(value, filename, label);
+  for (const sideId of SIDE_IDS) {
+    if (!Object.hasOwn(duplicated, sideId)) fail(filename, `${label}.${sideId} is required.`);
+  }
+  const candidate = {
+    ...setup,
+    sides: Object.fromEntries(
+      SIDE_IDS.map((sideId) => [
+        sideId,
+        {
+          ...setup.sides[sideId],
+          [field]: duplicated[sideId],
+        },
+      ])
+    ),
+  };
+  let normalized;
+  try {
+    normalized = canonicalizeSetup(candidate, filename);
+  } catch (error) {
+    fail(filename, `${label} must match the corresponding setup field.`, error.constructor);
+  }
+  return Object.fromEntries(SIDE_IDS.map((sideId) => [sideId, normalized.sides[sideId][field]]));
+}
+
+function canonicalizeProvenance(value, filename, isLegacy) {
+  if (!isRecord(value)) {
+    if (!isLegacy) fail(filename, 'provenance must be an object for fixtureVersion 2.');
+    return { submitter: '', reportDate: null, evidenceKind: 'legacy-phase1-archive' };
+  }
+  const evidenceKind = isLegacy ? 'legacy-phase1-archive' : value.evidenceKind;
+  if (!isLegacy && !V2_EVIDENCE_KINDS.includes(evidenceKind)) {
+    fail(filename, `provenance.evidenceKind must be one of: ${V2_EVIDENCE_KINDS.join(', ')}.`);
+  }
   return {
     submitter: typeof value.submitter === 'string' ? value.submitter : '',
     reportDate:
       typeof value.reportDate === 'string' || value.reportDate === null ? value.reportDate : null,
+    evidenceKind,
   };
 }
 
@@ -158,7 +295,9 @@ function skipReason(fixture) {
 }
 
 function unsupportedRawBattleMode(fixture) {
-  if (!isRecord(fixture) || fixture.fixtureVersion !== FIXTURE_VERSION) return null;
+  if (!isRecord(fixture) || !SUPPORTED_FIXTURE_VERSIONS.includes(fixture.fixtureVersion)) {
+    return null;
+  }
   if (Object.hasOwn(fixture, 'battleMode') && typeof fixture.battleMode !== 'string') {
     return null;
   }
@@ -187,21 +326,63 @@ export function validateFixture(obj, filename) {
   const displayName = String(filename || '<fixture>');
   const fixture = requireRecord(obj, displayName, 'fixture');
 
-  if (fixture.fixtureVersion !== FIXTURE_VERSION) {
+  if (!SUPPORTED_FIXTURE_VERSIONS.includes(fixture.fixtureVersion)) {
     fail(
       displayName,
-      `fixtureVersion must be ${FIXTURE_VERSION}; received ${String(fixture.fixtureVersion)}.`,
+      `fixtureVersion must be ${LEGACY_FIXTURE_VERSION} or ${FIXTURE_VERSION}; received ${String(fixture.fixtureVersion)}.`,
       RangeError
     );
   }
+  const isLegacy = fixture.fixtureVersion === LEGACY_FIXTURE_VERSION;
 
   if (Object.hasOwn(fixture, 'battleMode') && typeof fixture.battleMode !== 'string') {
     fail(displayName, 'battleMode must be a string when present.');
   }
 
   const setup = canonicalizeSetup(fixture.setup, displayName);
+  if (!isLegacy && fixture.setup?.setupSchemaVersion !== 2) {
+    fail(displayName, 'fixtureVersion 2 requires setupSchemaVersion 2.', RangeError);
+  }
   const engineConfig = canonicalizeEngineConfig(setup, displayName);
   const battleMode = Object.hasOwn(fixture, 'battleMode') ? fixture.battleMode : setup.battleMode;
+  if (!isLegacy && battleMode !== setup.battleMode) {
+    fail(displayName, 'battleMode must match setup.battleMode for fixtureVersion 2.');
+  }
+  if (!isLegacy && fixture.battleType !== SUPPORTED_BATTLE_MODE) {
+    fail(displayName, `battleType must be "${SUPPORTED_BATTLE_MODE}" for fixtureVersion 2.`);
+  }
+  const sourceProvenance = Object.fromEntries(
+    SIDE_IDS.map((sideId) => [sideId, setup.sides[sideId].capturedSourceSnapshot])
+  );
+  const equipmentProvenance = Object.fromEntries(
+    SIDE_IDS.map((sideId) => [sideId, setup.sides[sideId].equipmentLoadout])
+  );
+  if (!isLegacy) {
+    const suppliedStatContract = canonicalizeStatContract(fixture.statContract, displayName);
+    const suppliedSourceProvenance = canonicalizeDuplicatedSideField(
+      fixture.sourceProvenance,
+      setup,
+      displayName,
+      'capturedSourceSnapshot',
+      'sourceProvenance'
+    );
+    const suppliedEquipmentProvenance = canonicalizeDuplicatedSideField(
+      fixture.equipmentProvenance,
+      setup,
+      displayName,
+      'equipmentLoadout',
+      'equipmentProvenance'
+    );
+    if (stableJson(suppliedStatContract) !== stableJson(BATTLE_STAT_CONTRACT)) {
+      fail(displayName, 'statContract must match the current battle stat contract.');
+    }
+    if (stableJson(suppliedSourceProvenance) !== stableJson(sourceProvenance)) {
+      fail(displayName, 'sourceProvenance must match the captured setup sources.');
+    }
+    if (stableJson(suppliedEquipmentProvenance) !== stableJson(equipmentProvenance)) {
+      fail(displayName, 'equipmentProvenance must match the captured setup equipment.');
+    }
+  }
   const observed = requireRecord(fixture.observed, displayName, 'observed');
   const winner = validateWinner(observed.winner, displayName);
   const perRowCasualties = canonicalizeObservedCasualties(
@@ -210,22 +391,28 @@ export function validateFixture(obj, filename) {
     setup,
     displayName
   );
+  const provenance = canonicalizeProvenance(fixture.provenance, displayName, isLegacy);
 
   return {
-    fixtureVersion: FIXTURE_VERSION,
+    fixtureVersion: fixture.fixtureVersion,
+    evidenceStatus: provenance.evidenceKind,
+    isLegacy,
     battleType: typeof fixture.battleType === 'string' ? fixture.battleType : SUPPORTED_BATTLE_MODE,
     battleMode,
     createdAt: typeof fixture.createdAt === 'string' ? fixture.createdAt : null,
+    statContract: isLegacy ? null : BATTLE_STAT_CONTRACT,
+    sourceProvenance: isLegacy ? null : sourceProvenance,
+    equipmentProvenance: isLegacy ? null : equipmentProvenance,
     setup,
     engineConfig,
-    simulated: canonicalizeSimulated(fixture.simulated),
+    simulated: canonicalizeSimulated(fixture.simulated, displayName, isLegacy),
     observed: {
       winner,
       rounds: observed.rounds ?? null,
       perRowCasualties,
       notes: typeof observed.notes === 'string' ? observed.notes : '',
     },
-    provenance: canonicalizeProvenance(fixture.provenance),
+    provenance,
     filename: displayName,
   };
 }
@@ -239,6 +426,7 @@ export async function loadFixtureCorpus(dir = DEFAULT_FIXTURE_DIRECTORY) {
     .sort((left, right) => compareNames(left.name, right.name));
   const fixtures = [];
   const skippedFiles = [];
+  const archivedFiles = [];
 
   for (const entry of entries) {
     const filename = entry.name;
@@ -266,6 +454,11 @@ export async function loadFixtureCorpus(dir = DEFAULT_FIXTURE_DIRECTORY) {
     }
 
     const fixture = validateFixture(rawFixture, filename);
+    if (fixture.isLegacy) {
+      archivedFiles.push(filename);
+      skippedFiles.push(filename);
+      continue;
+    }
     const reason = skipReason(fixture);
     if (reason) {
       console.warn(`[battle-sim] Skipping ${filename}: ${reason}.`);
@@ -275,7 +468,7 @@ export async function loadFixtureCorpus(dir = DEFAULT_FIXTURE_DIRECTORY) {
     fixtures.push(fixture);
   }
 
-  return { fixtures, skippedFiles };
+  return { fixtures, skippedFiles, archivedFiles };
 }
 
 /**
@@ -283,4 +476,30 @@ export async function loadFixtureCorpus(dir = DEFAULT_FIXTURE_DIRECTORY) {
  */
 export async function loadFixtures(dir = DEFAULT_FIXTURE_DIRECTORY) {
   return (await loadFixtureCorpus(dir)).fixtures;
+}
+
+/** Load deterministic v2 replay fixtures, including labeled synthetic regressions. */
+export async function loadReplayFixtures(dir = DEFAULT_FIXTURE_DIRECTORY) {
+  return loadFixtures(dir);
+}
+
+/** Load only independently supplied game reports eligible for coefficient fitting. */
+export async function loadCalibrationFixtureCorpus(dir = DEFAULT_FIXTURE_DIRECTORY) {
+  const corpus = await loadFixtureCorpus(dir);
+  const fixtures = corpus.fixtures.filter(
+    (fixture) => fixture.provenance.evidenceKind === 'observed-game-report'
+  );
+  const replayOnlyFiles = corpus.fixtures
+    .filter((fixture) => fixture.provenance.evidenceKind !== 'observed-game-report')
+    .map((fixture) => fixture.filename);
+  return {
+    fixtures,
+    skippedFiles: [...corpus.skippedFiles, ...replayOnlyFiles],
+    archivedFiles: corpus.archivedFiles,
+    replayOnlyFiles,
+  };
+}
+
+export async function loadCalibrationFixtures(dir = DEFAULT_FIXTURE_DIRECTORY) {
+  return (await loadCalibrationFixtureCorpus(dir)).fixtures;
 }

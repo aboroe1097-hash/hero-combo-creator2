@@ -3,7 +3,8 @@
 ## 14.0.20 - 2026-07-17
 
 - Added a Specialization Towers tab inside the main app (index.html) that follows the in-game flow: column banners of circular badges with a Legion Skill crest at the foot, and tapping a badge opens a node graph — an oval ring for most families and a dependency tree for Enhanced Tactics — with milestones, a medal-entry field, and complete/reset. Reuses the verified Specialization dataset, model, store, and eleven-language i18n; no game data is reinvented.
-- Added a community contribution flow to the Specialization tab: a one-click per-node CSV template download (a medal_cost column to fill) plus a link to the community sheet, and shipped a matching importable spreadsheet template.
+- Added a community contribution form to the Specialization tab with an inline fillable UI: contributor name, per-node medal cost entry, and optional reviewer name — all persisted in localStorage, replacing the previous CSV-download and external-sheet approach.
+- Merged Battle Simulator v2 engine with research and equipment source breakdowns, per-stat node UI with source-level breakdown, whole-legion equipment loadouts with set/grade/enhancement selection, full i18n support, and v2 synthetic test fixtures.
 
 ## 14.0.19 - 2026-07-17
 

@@ -23,7 +23,7 @@ import {
   loadSpecializationState,
   saveSpecializationState,
 } from './specialization-towers-v2-store.js';
-import { buildContributionTemplateCsv } from './specialization-towers-v2-template.js';
+import { buildContributionTemplateRows } from './specialization-towers-v2-template.js';
 import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
@@ -50,8 +50,7 @@ const NODE_ICON = [
   { test: /Speed/i, icon: '⏳' },
 ];
 
-const CONTRIBUTION_SHEET_URL =
-  'https://docs.google.com/spreadsheets/d/1b8KpSdvf02L5sGoi075MIO7J8IjKVMImBxHDDUWvF64/edit';
+const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
 
 let root = null;
 let state = null;
@@ -59,6 +58,29 @@ let activeTroop = 'cavalry';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
 let wired = false;
+
+function loadContributions() {
+  try {
+    const raw = localStorage.getItem(CONTRIBUTION_STORAGE_KEY);
+    if (!raw) return { contributorName: '', nodes: {} };
+    const parsed = JSON.parse(raw);
+    if (typeof parsed !== 'object' || !parsed) return { contributorName: '', nodes: {} };
+    return {
+      contributorName: typeof parsed.contributorName === 'string' ? parsed.contributorName : '',
+      nodes: typeof parsed.nodes === 'object' && parsed.nodes ? parsed.nodes : {},
+    };
+  } catch {
+    return { contributorName: '', nodes: {} };
+  }
+}
+
+function saveContributions(data) {
+  try {
+    localStorage.setItem(CONTRIBUTION_STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    /* storage full or unavailable */
+  }
+}
 
 function locale() {
   return resolveSpecializationTowersV2Locale(currentLanguage);
@@ -181,15 +203,51 @@ function renderBanner(columnId) {
 }
 
 function renderCommunity() {
+  const data = loadContributions();
+  const { headers, rows } = buildContributionTemplateRows();
+  const columns = Object.values(SPECIALIZATION_COLUMNS).sort((a, b) => Number(a.id) - Number(b.id));
   return `
     <section class="spec-community">
       <div class="spec-community-copy">
         <h4>${escapeHtml(sp('communityDataTitle'))}</h4>
         <p>${escapeHtml(sp('communityDataDescription'))}</p>
       </div>
-      <div class="spec-community-actions">
-        <button type="button" class="spec-btn spec-btn--primary" data-spec-download-template>${escapeHtml(sp('downloadContributionTemplate'))}</button>
-        <a class="spec-btn" href="${escapeHtml(CONTRIBUTION_SHEET_URL)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sp('openContributionSheet'))}</a>
+      <div class="spec-contrib-name-row">
+        <label>
+          <span>${escapeHtml(sp('contributorName'))}</span>
+          <input class="spec-contrib-name-input" type="text" data-spec-contrib-name value="${escapeHtml(data.contributorName)}" maxlength="40" placeholder="${escapeHtml(sp('contributorNamePlaceholder'))}" />
+        </label>
+        <span class="spec-contrib-count">${escapeHtml(sp('nodesWithData', { count: Object.keys(data.nodes).filter((k) => data.nodes[k]?.medalCost != null).length }))}</span>
+      </div>
+      <div class="spec-contrib-nodes">
+        ${columns.map((col) => {
+          const colResearches = col.researches.map((rid) => SPECIALIZATION_RESEARCH[rid]).filter(Boolean);
+          if (!colResearches.length) return '';
+          return `<details class="spec-contrib-column">
+            <summary><strong>${escapeHtml(col.name)}</strong></summary>
+            ${colResearches.map((research) => {
+              const rowData = rows.filter((r) => r[3] === research.id);
+              if (!rowData.length) return '';
+              return `<section class="spec-contrib-research">
+                <h5>${escapeHtml(research.name)}</h5>
+                ${rowData.map((row) => {
+                  const nodeId = row[6];
+                  const nodeName = row[7];
+                  const saved = data.nodes[nodeId] || {};
+                  return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}">
+                    <span class="spec-contrib-node-name">${escapeHtml(nodeName)}</span>
+                    <label><span>${escapeHtml(sp('medalCost'))}</span>
+                      <input type="number" min="0" step="1" class="spec-contrib-medal" data-spec-node-medal="${escapeHtml(nodeId)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                    </label>
+                    <label><span>${escapeHtml(sp('reviewer'))}</span>
+                      <input type="text" class="spec-contrib-reviewer" data-spec-node-reviewer="${escapeHtml(nodeId)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('reviewerPlaceholder'))}" />
+                    </label>
+                  </div>`;
+                }).join('')}
+              </section>`;
+            }).join('')}
+          </details>`;
+        }).join('')}
       </div>
     </section>`;
 }
@@ -416,23 +474,6 @@ function render() {
 
 /* ---------- Events ---------- */
 
-function downloadTemplate() {
-  try {
-    const csv = buildContributionTemplateCsv();
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'specialization-medal-contributions.csv';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error('[specialization] template download failed', error);
-  }
-}
-
 function openDetail(researchId) {
   selectedResearchId = researchId;
   view = 'detail';
@@ -460,9 +501,8 @@ function onClick(event) {
     backToOverview();
     return;
   }
-  if (event.target.closest('[data-spec-download-template]')) {
-    downloadTemplate();
-    return;
+  if (event.target.closest('[data-spec-contrib-name]')) {
+    return; // handled by change event
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
   if (nodeBtn && !nodeBtn.disabled && selectedResearchId) {
@@ -497,6 +537,37 @@ function onChange(event) {
     setResearchMedalsSpent(state, activeTroop, selectedResearchId, value);
     persist();
     render();
+    return;
+  }
+  const nameInput = event.target.closest('[data-spec-contrib-name]');
+  if (nameInput) {
+    const data = loadContributions();
+    data.contributorName = nameInput.value.trim();
+    saveContributions(data);
+    return;
+  }
+  const medalInput = event.target.closest('[data-spec-node-medal]');
+  if (medalInput) {
+    const nodeId = medalInput.dataset.specNodeMedal;
+    const raw = medalInput.value.trim();
+    const data = loadContributions();
+    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
+    data.nodes[nodeId].medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    saveContributions(data);
+    const countEl = root?.querySelector('.spec-contrib-count');
+    if (countEl) {
+      const allData = loadContributions();
+      countEl.textContent = sp('nodesWithData', { count: Object.keys(allData.nodes).filter((k) => allData.nodes[k]?.medalCost != null).length });
+    }
+    return;
+  }
+  const reviewerInput = event.target.closest('[data-spec-node-reviewer]');
+  if (reviewerInput) {
+    const nodeId = reviewerInput.dataset.specNodeReviewer;
+    const data = loadContributions();
+    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
+    data.nodes[nodeId].reviewer = reviewerInput.value.trim();
+    saveContributions(data);
   }
 }
 
