@@ -12,6 +12,7 @@ const entryHtmlFiles = [
   'eden-x1.html',
   'arcade.html',
   'battle-simulator.html',
+  'specialization-towers.html',
 ];
 const baseAppShellFiles = [
   '/',
@@ -30,6 +31,7 @@ const baseAppShellFiles = [
   '/eden-x1.html',
   '/arcade.html',
   '/battle-simulator.html',
+  '/specialization-towers.html',
 ];
 
 function makeBuildVersion() {

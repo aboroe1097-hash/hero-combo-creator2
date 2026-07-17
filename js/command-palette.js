@@ -40,6 +40,15 @@ const DESTS = [
     kw: 'tech research academy tree buffs nodes',
   },
   {
+    key: 'tabSpecializationTowers',
+    aliasesKey: 'tabSpecializationTowersAliases',
+    name: 'specializationTowers',
+    href: 'specialization-towers.html',
+    kind: 'link',
+    fallback: 'Specialization Towers',
+    kw: 'specialization tower towers badge medals nodes branches tech tree progress cavalry archers footmen',
+  },
+  {
     key: 'tabMaterials',
     name: 'materials',
     kind: 'tab',
@@ -121,7 +130,8 @@ function scoreDest(dest, q) {
   if (!q) return 3;
   if (label.startsWith(q)) return 0;
   if (label.includes(q)) return 1;
-  const aliases = commandCopy().aliases?.[dest.name] || '';
+  const catalogAliases = dest.aliasesKey ? t(dest.aliasesKey, '') : '';
+  const aliases = `${commandCopy().aliases?.[dest.name] || ''} ${catalogAliases}`;
   const hay = `${label} ${dest.kw} ${aliases}`;
   const tokens = q.split(/\s+/).filter(Boolean);
   if (tokens.every((tok) => hay.includes(tok))) return 2;

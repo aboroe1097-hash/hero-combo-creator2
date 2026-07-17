@@ -18,6 +18,7 @@ test('v14 shell assets load last without replacing established tool ids', () => 
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
+    'tabSpecializationTowers',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
@@ -162,6 +163,19 @@ test('More controller localizes all supported languages and preserves keyboard f
   assert.ok(readyIndex > shellJs.indexOf('window.vtsShellOpenMore'));
 });
 
+test('Specialization Towers is an external More tool without changing mobile primary tools', () => {
+  assert.match(
+    index,
+    /id="tabSpecializationTowers"[\s\S]*?href="specialization-towers\.html"[\s\S]*?data-i18n="tabSpecializationTowers">Specialization Towers<\/span>/
+  );
+  assert.match(shellJs, /'tabResearch',\s*'tabSpecializationTowers',\s*'tabMaterials'/);
+  assert.doesNotMatch(shellJs, /\['tabSpecializationTowers',\s*'[^']+'\]/);
+  assert.doesNotMatch(
+    index,
+    /<div\b(?=[^>]*\bdata-shell-mobile-primary\b)[^>]*>\s*<a\b[^>]*\bid="tabSpecializationTowers"/
+  );
+});
+
 test('Eden Map uses a compact Soon badge without an injected building note', () => {
   assert.match(index, /id="tabEdenMap"[\s\S]*?data-i18n="tabEdenMapBadge">Soon<\/span>/);
   assert.doesNotMatch(shellJs, /shell-more-building-note|To be completed before next season/);
@@ -188,6 +202,10 @@ test('footer is one compact community strip and keeps tab-link behavior', () => 
   assert.match(
     index,
     /href="battle-simulator\.html" data-i18n="tabBattleSimulator">Battle Simulator<\/a>/
+  );
+  assert.match(
+    index,
+    /href="specialization-towers\.html" data-i18n="tabSpecializationTowers"[\s\S]*?Specialization Towers<\/a\s*>/
   );
   assert.match(index, /id="footerYear"/);
   assert.match(

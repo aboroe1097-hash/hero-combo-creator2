@@ -178,6 +178,7 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
     'eden-x1.html',
     'arcade.html',
     'battle-simulator.html',
+    'specialization-towers.html',
   ];
   const inlineExecutableScript =
     /<script(?![^>]*\bsrc=)(?![^>]*type="(?:application\/ld\+json|importmap)")/i;
@@ -218,7 +219,7 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
       });
     assert.ok(scriptSrc, `${page} should define script-src`);
     assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
-    if (page === 'battle-simulator.html') {
+    if (page === 'battle-simulator.html' || page === 'specialization-towers.html') {
       assert.equal(connectSrc.trim(), "'self'", `${page} should not open external connections`);
     } else {
       assert.match(
@@ -249,6 +250,8 @@ test('build metadata refreshes cache-busted modules while Material shares the ma
   const app = readFileSync('js/app.js', 'utf8');
   assert.match(script, /createHash\('sha256'\)/);
   assert.match(script, /updateCspHashes\(\)/);
+  assert.match(script, /'specialization-towers\.html'/);
+  assert.match(script, /'\/specialization-towers\.html'/);
   assert.match(script, /app-research\|eden-map\|app-strife\|app-export\|arcade-spa/);
   assert.doesNotMatch(script, /material-calculator/);
   assert.doesNotMatch(app, /20260708_101500/);
@@ -776,19 +779,22 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
-  // v14 adds the standalone Arcade and Battle Simulator entries, the global
-  // command palette, and the two small Velo layers needed by Eden's first-paint
-  // loader. Keep a measured one-entry margin without allowing the shell to grow
-  // unbounded.
-  assert.ok(urls.length <= 51, `expected bounded app shell, found ${urls.length} URLs`);
+  // v14 adds the standalone Arcade, Battle Simulator, and Specialization Towers
+  // entries, the global command palette, and the two small Velo layers needed by
+  // Eden's first-paint loader. Keep a measured one-entry margin without allowing
+  // the shell to grow unbounded.
+  assert.ok(urls.length <= 55, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));
   assert.ok(urls.includes('/arcade.html'));
   assert.ok(urls.includes('/battle-simulator.html'));
+  assert.ok(urls.includes('/specialization-towers.html'));
   assert.ok(urls.includes('/maintenance.html'));
   assert.ok(urls.some((url) => url.startsWith('/css/battle-simulator.css?v=')));
   assert.ok(urls.some((url) => url.startsWith('/js/battle-simulator.js?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/css/specialization-towers-v2.css?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/js/specialization-towers-v2.js?v=')));
   assert.ok(urls.some((url) => url.startsWith('/css/command-palette.css?v=')));
   assert.ok(urls.some((url) => url.startsWith('/js/command-palette.js?v=')));
   assert.ok(urls.includes('/images/logo.png'));

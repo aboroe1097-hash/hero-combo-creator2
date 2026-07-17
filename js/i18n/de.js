@@ -471,6 +471,9 @@ const de = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Kampfsimulator',
+  tabSpecializationTowers: 'Spezialisierungstürme',
+  tabSpecializationTowersAliases:
+    'spezialisierung turm türme abzeichen medaillen knoten zweige technologiebaum fortschritt kavallerie schützen fußsoldaten',
   cmdkButton: 'Tools suchen',
   cmdkTitle: 'Zu einem Tool springen',
   cmdkPlaceholder: 'Tools und Seiten suchen…',

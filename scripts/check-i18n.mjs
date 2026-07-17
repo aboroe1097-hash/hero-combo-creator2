@@ -283,6 +283,9 @@ const RUNTIME_KEY_PREFIXES =
   /^(admin|ai\.|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
 for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
   const relPath = path.relative(rootDir, absolutePath).replace(/\\/g, '/');
+  // Specialization Towers owns a strict, independently audited lazy locale pack.
+  // Its keys must not be mistaken for the main application catalog.
+  if (relPath.startsWith('js/specialization-towers-v2-')) continue;
   const source = fs.readFileSync(absolutePath, 'utf8');
   let match;
   while ((match = jsKeyRe.exec(source))) {

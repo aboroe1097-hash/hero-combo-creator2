@@ -350,6 +350,9 @@ const kr = {
   tabOcrDashboard: 'VTS 관리자',
   tabArcade: 'Arcade',
   tabBattleSimulator: '전투 시뮬레이터',
+  tabSpecializationTowers: '전문화 타워',
+  tabSpecializationTowersAliases:
+    '전문화 타워 탑 배지 메달 노드 분기 기술 트리 진행도 기병 궁병 보병',
   cmdkButton: '도구 검색',
   cmdkTitle: '도구로 이동',
   cmdkPlaceholder: '도구 및 페이지 검색…',

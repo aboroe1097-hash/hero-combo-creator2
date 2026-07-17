@@ -454,6 +454,9 @@ const pt = {
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabBattleSimulator: 'Simulador de batalhas',
+  tabSpecializationTowers: 'Torres de especialização',
+  tabSpecializationTowersAliases:
+    'especialização torre torres distintivos medalhas nós ramos árvore tecnológica progresso cavalaria arqueiros infantaria',
   cmdkButton: 'Buscar ferramentas',
   cmdkTitle: 'Ir para uma ferramenta',
   cmdkPlaceholder: 'Buscar ferramentas e páginas…',
