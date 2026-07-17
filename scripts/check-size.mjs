@@ -24,26 +24,29 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // Skin Atlas adds a route-lazy catalog plus complete copy in all 11 locales,
-  // bringing the combined JavaScript graph to 6938.8 KiB. Keep less than
-  // 2.2 KiB of aggregate headroom.
-  totalJsBytes: 6941 * 1024,
-  // Its route-lazy catalog styles bring aggregate CSS to 1187.8 KiB without
-  // changing the initial Admin, Eden, Arcade, Battle, or Towers route totals.
-  // Keep less than 2.2 KiB of aggregate headroom.
-  totalCssBytes: 1190 * 1024,
+  // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
+  // route-isolated behind dynamic imports. The combined graph now includes the
+  // canonical tower research corpus, Skin Atlas data, secure BoH client,
+  // six-team planner, persistence model, and complete player/Admin locale
+  // packs. The post-Skin-Atlas rebase measures 7685.4 KiB; keep less than 2 KiB
+  // of aggregate headroom.
+  totalJsBytes: 7687 * 1024,
+  // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
+  // ship as lazy CSS chunks without changing the primary route's initial CSS
+  // graph. The post-Skin-Atlas rebase measures 1261.6 KiB; keep less than
+  // 2.5 KiB of aggregate headroom.
+  totalCssBytes: 1264 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
-  // Source-only Eden PNGs are intentionally excluded by post-build; these
-  // caps prevent them (or similarly large duplicates) from returning unseen.
-  // Vendored Firebase and the authored standalone tools add cacheable code,
-  // not media. The complete artifact measures 24,085.7 KiB with Skin Atlas and
-  // its locale packs; keep less than 3.3 KiB of headroom.
-  totalDeployBytes: 24089 * 1024,
+  // Source-only Eden PNGs are intentionally excluded by post-build; these caps
+  // prevent them (or similarly large duplicates) from returning unseen. The
+  // final post-Skin-Atlas rebase artifact measures 24,978.7 KiB; keep less than
+  // 6.5 KiB of headroom.
+  totalDeployBytes: 24985 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // Specialization adds its entry, feature modules, and lazy locale chunks.
-  // The audited artifact has 541 files; retain a one-file guard.
-  deployFileCount: 542,
+  // Specialization and All-Star add route, feature, and locale assets. The
+  // audited artifact has 573 files; retain a one-file guard.
+  deployFileCount: 574,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife

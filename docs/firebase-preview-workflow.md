@@ -1,7 +1,9 @@
 # Firebase Preview Workflow
 
-Firebase Hosting preview channels are the online prerelease gate for user-visible releases. The
-production site still deploys only from the protected `gh-pages` branch after a pull request,
+Firebase Hosting preview channels are an optional online prerelease gate reserved for major version
+upgrades, broad overhauls, or changes that explicitly need Firebase Hosting validation. Normal
+additive releases proceed from a green `npm run check` directly to commit, push, and pull request.
+The production site still deploys only from the protected `gh-pages` branch after a pull request,
 `deploy-verification`, owner review, and owner merge.
 
 ## Run the gate
@@ -22,8 +24,8 @@ The command performs these steps in order:
 5. Compares the remote HTML/service worker with the local artifact, then runs the production
    Playwright smoke suite against the main app, standalone pages, Arcade, and all five games.
 
-If any local or online check fails, fix the issue and rerun the same command. Do not commit or push
-the release branch until the Firebase preview is green.
+If any local or online check fails, fix the issue and rerun the same command. When this optional
+gate is used, do not commit or push the release branch until the Firebase preview is green.
 
 For Arcade persistence changes, verify the real anonymous-auth write/read contract against the
 returned preview URL, then remove the temporary score row with the authenticated Firebase CLI:
@@ -48,7 +50,7 @@ This fallback verifies an authenticated score write and read, confirms that a lo
 then deletes both the temporary score row and Firebase Auth user in `finally` cleanup.
 
 The expiry can be changed for one run with `FIREBASE_PREVIEW_EXPIRES` (for example, `1d`). A custom
-channel can be supplied while retaining the mandatory full gate:
+channel can be supplied while retaining the full local gate:
 
 ```bash
 npm run firebase:preview -- release-candidate
@@ -80,6 +82,6 @@ npm run firebase:preview -- release-candidate
 
 ## Pull-request evidence
 
-Record the preview URL, expiry, tested viewport(s), and any deliberately untested backend flows in
-the pull request. After the preview passes, stage only intended files, push the release branch, and
-open the pull request into `gh-pages`.
+When the optional preview gate is used, record the preview URL, expiry, tested viewport(s), and any
+deliberately untested backend flows in the pull request. After the preview passes, stage only
+intended files, push the release branch, and open the pull request into `gh-pages`.

@@ -148,6 +148,11 @@ let allianceViewVoteSettingsUnsubscribe = null;
 let allianceViewContributionFrame = 0;
 let localAllianceViewFirestoreContext = null;
 const allianceViewContributionSubscribers = new Set();
+let allStarBohModulePromise = null;
+let allStarBohMountPromise = null;
+let allStarBohController = null;
+let allStarBohAdminI18n = null;
+let allStarBohResearchI18n = null;
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 
 function isDynamicImportLoadFailure(err) {
@@ -626,6 +631,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
+  if (name === 'allStarBoh') void ensureAllStarBohMountedOrUpdated();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
 }
@@ -2134,39 +2140,78 @@ function cloneAllianceViewTestValue(value) {
 
 function getLocalAllianceViewFirestoreContext() {
   if (localAllianceViewFirestoreContext) return localAllianceViewFirestoreContext;
-  const documents = new Map();
+  const documents = new Map([
+    [
+      'boh_allstar_config/current',
+      { activeSeason: 'season-2026', open: true, grantDurationMinutes: 720 },
+    ],
+  ]);
   const listeners = new Map();
   let transactionQueue = Promise.resolve();
 
-  const snapshotFor = (path) => ({
+  const documentSnapshotFor = (path) => ({
+    id: path.split('/').pop(),
     exists: () => documents.has(path),
     data: () => cloneAllianceViewTestValue(documents.get(path)),
   });
+  const collectionSnapshotFor = (path) => {
+    const prefix = `${path}/`;
+    return {
+      docs: [...documents.keys()]
+        .filter(
+          (documentPath) =>
+            documentPath.startsWith(prefix) && !documentPath.slice(prefix.length).includes('/')
+        )
+        .map(documentSnapshotFor),
+      forEach(callback) {
+        this.docs.forEach(callback);
+      },
+    };
+  };
+  const snapshotFor = (reference) =>
+    reference.kind === 'collection'
+      ? collectionSnapshotFor(reference.path)
+      : documentSnapshotFor(reference.path);
   const notifyPath = (path) => {
-    for (const listener of listeners.get(path) || []) listener(snapshotFor(path));
+    const documentReference = { kind: 'doc', path };
+    for (const listener of listeners.get(`doc:${path}`) || []) {
+      listener(snapshotFor(documentReference));
+    }
+    const collectionPath = path.split('/').slice(0, -1).join('/');
+    const collectionReference = { kind: 'collection', path: collectionPath };
+    for (const listener of listeners.get(`collection:${collectionPath}`) || []) {
+      listener(snapshotFor(collectionReference));
+    }
   };
   const firestore = {
-    doc: (_db, path) => ({ path: String(path) }),
+    doc: (_db, path) => ({ kind: 'doc', path: String(path) }),
+    collection: (_db, path) => ({ kind: 'collection', path: String(path) }),
+    getDoc: async (reference) => snapshotFor(reference),
+    getDocs: async (reference) => snapshotFor(reference),
     onSnapshot: (reference, onNext) => {
-      const path = reference.path;
-      const pathListeners = listeners.get(path) || new Set();
+      const key = `${reference.kind || 'doc'}:${reference.path}`;
+      const pathListeners = listeners.get(key) || new Set();
       pathListeners.add(onNext);
-      listeners.set(path, pathListeners);
-      queueMicrotask(() => onNext(snapshotFor(path)));
+      listeners.set(key, pathListeners);
+      queueMicrotask(() => onNext(snapshotFor(reference)));
       return () => {
         pathListeners.delete(onNext);
-        if (!pathListeners.size) listeners.delete(path);
+        if (!pathListeners.size) listeners.delete(key);
       };
     },
     runTransaction: (_db, handler) => {
       const run = async () => {
         const writes = new Map();
         const transaction = {
-          get: async (reference) => snapshotFor(reference.path),
+          get: async (reference) => snapshotFor(reference),
           set: (reference, value) => writes.set(reference.path, cloneAllianceViewTestValue(value)),
+          delete: (reference) => writes.set(reference.path, undefined),
         };
         const result = await handler(transaction);
-        for (const [path, value] of writes) documents.set(path, value);
+        for (const [path, value] of writes) {
+          if (value === undefined) documents.delete(path);
+          else documents.set(path, value);
+        }
         for (const path of writes.keys()) notifyPath(path);
         return result;
       };
@@ -2970,6 +3015,22 @@ function dashT(key, vars = {}) {
   return text;
 }
 
+function allStarBohAdminT(key, vars = {}) {
+  if (typeof allStarBohAdminI18n?.adminAllStarBohText === 'function') {
+    return allStarBohAdminI18n.adminAllStarBohText(key, vars, getDashboardLang());
+  }
+  const domainTranslator = window.VTS_ALL_STAR_BOH_TRANSLATE || window.allStarBohText;
+  if (typeof domainTranslator === 'function') {
+    try {
+      const translated = domainTranslator(key, vars, getDashboardLang());
+      if (translated && translated !== key) return translated;
+    } catch (error) {
+      console.warn('ALL-STAR BOH ADMIN TRANSLATION ERROR:', error);
+    }
+  }
+  return dashT(key, vars);
+}
+
 function logDashboardEvent(key, type = 'info', params = {}, options = {}) {
   return log(dashT(key, params), type, options.file || null, {
     messageKey: key,
@@ -3317,6 +3378,8 @@ async function doSignOut() {
   // the session or reopen the dashboard when the user flips to null. Cleared on
   // the next sign-in (doLogin).
   state._signingOut = true;
+  allStarBohController?.destroy?.();
+  allStarBohController = null;
   allianceViewController?.destroy?.();
   allianceViewController = null;
   allianceViewSettingsLoaded = false;
@@ -4800,6 +4863,99 @@ async function ensureAllianceViewMountedOrUpdated() {
   return allianceViewMountPromise;
 }
 
+async function getAllStarBohAdminStoreOptions(storeModule) {
+  const context = await window.getVtsAdminFirestoreContext();
+  const uid = String(context?.user?.uid || '').trim();
+  const tokenResult = await context?.user?.getIdTokenResult?.();
+  const admin = tokenResult?.claims?.admin === true;
+  if (!uid || !admin) throw new Error(dashT('adminCloudAdminRequired'));
+  if (typeof storeModule?.getAllStarBohActiveConfig !== 'function') {
+    throw new Error(allStarBohAdminT('adminBohUnavailable'));
+  }
+  const config = await storeModule.getAllStarBohActiveConfig({
+    db: context.db,
+    firestore: context.firestore,
+  });
+  return {
+    db: context.db,
+    firestore: context.firestore,
+    seasonId: config.activeSeason,
+    uid,
+    admin,
+  };
+}
+
+async function ensureAllStarBohMountedOrUpdated() {
+  if (allStarBohController) {
+    await allStarBohController.refresh?.();
+    return allStarBohController;
+  }
+  if (allStarBohMountPromise) return allStarBohMountPromise;
+  allStarBohMountPromise = (async () => {
+    if (!allStarBohModulePromise) {
+      allStarBohModulePromise = Promise.all([
+        import('./admin-all-star-boh.js'),
+        import('./all-star-boh-store.js'),
+        import('./i18n/admin-all-star-boh/index.js'),
+        import('./heroes-data.js'),
+        import('./tech-db.js'),
+        import('./i18n/research/index.js'),
+        import('../css/admin-all-star-boh.css'),
+      ]).catch((error) => {
+        allStarBohModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+    }
+    const [adminModule, storeModule, i18nModule, heroModule, researchModule, researchI18nModule] =
+      await allStarBohModulePromise;
+    allStarBohAdminI18n = i18nModule;
+    allStarBohResearchI18n = researchI18nModule;
+    await Promise.all([
+      i18nModule.loadAdminAllStarBohLocale(getDashboardLang()),
+      researchI18nModule.loadResearchLocale(getDashboardLang()),
+    ]);
+    allStarBohController = await adminModule.initializeAdminAllStarBoh($id('dashAllStarBohRoot'), {
+      t: allStarBohAdminT,
+      locale: getDashboardLang(),
+      heroMetadata: heroModule.allHeroesData || [],
+      researchMetadata: () =>
+        (researchModule.techDatabase || []).map((tree) => ({
+          id: tree.id,
+          label: researchI18nModule.researchTreeText(tree, 'name', getDashboardLang()),
+        })),
+      createStore: async () => {
+        const adminStore = storeModule.createAllStarBohAdminStore({
+          ...(await getAllStarBohAdminStoreOptions(storeModule)),
+          heroNames: (heroModule.allHeroesData || []).map((hero) => hero.name),
+          researchTreeIds: (researchModule.techDatabase || []).map((tree) => tree.id),
+        });
+        return adminModule.createAdminAllStarBohStoreAdapter(adminStore, {
+          validatePublication: adminModule.validateAdminAllStarBohPublicationBundle,
+          onError: (error, context) =>
+            console.error('ALL-STAR BOH ADMIN LIVE REFRESH ERROR:', context?.action, error),
+        });
+      },
+    });
+    return allStarBohController;
+  })()
+    .catch((error) => {
+      console.error('ALL-STAR BOH ADMIN LOAD ERROR:', error);
+      const root = $id('dashAllStarBohRoot');
+      if (root) {
+        root.setAttribute('aria-busy', 'false');
+        root.innerHTML = `<div class="dash-empty" role="alert">${esc(
+          allStarBohAdminT('adminBohUnavailable')
+        )}</div>`;
+      }
+      return null;
+    })
+    .finally(() => {
+      allStarBohMountPromise = null;
+    });
+  return allStarBohMountPromise;
+}
+
 function contributionRewardExportLabel(tier) {
   return (
     {
@@ -5539,6 +5695,14 @@ function scheduleAdminLanguageRefresh() {
   renderCloudSyncStatus();
   renderAdminActivityTerminal();
   setAdminLogSyncStatus(adminLogSyncState);
+  if (allStarBohAdminI18n?.loadAdminAllStarBohLocale) {
+    void Promise.all([
+      allStarBohAdminI18n.loadAdminAllStarBohLocale(getDashboardLang()),
+      allStarBohResearchI18n?.loadResearchLocale?.(getDashboardLang()),
+    ]).then(() => allStarBohController?.refreshLanguage?.(allStarBohAdminT, getDashboardLang()));
+  } else {
+    allStarBohController?.refreshLanguage?.(allStarBohAdminT, getDashboardLang());
+  }
   allianceViewController?.refreshLanguage?.(dashT);
   requestAnimationFrame(() => {
     if (state._adminLanguageRefreshToken !== token) return;

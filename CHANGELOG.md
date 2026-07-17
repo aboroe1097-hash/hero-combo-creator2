@@ -1,9 +1,22 @@
 # Changelog
 
+## 14.0.19 - 2026-07-17
+
+- Added a VTS-only All-Star BoH member hub with a server-verified seasonal PIN, anonymous Firebase Auth, App Check, expiring server-owned member grants, locked-by-default navigation, and Firestore enforcement instead of exposing another reusable client-side PIN.
+- Added manual and screenshot-assisted signup for the full legacy power breakdown, T9 and speed-hero readiness, fieldable hero availability, self-reported research-tree percentages, exactly two preferred All-Star fighting windows, an optional favorite role, non-binding teammate requests, teleport/voice readiness, and plan commitment; searchable hero controls and grouped research quick-fill actions keep the expanded form usable, while OCR screenshots are resized in-browser, processed through a fixed server-owned schema, explicitly reviewed, and never stored.
+- Added an independent Epic Showdown Planning section where members can multi-select South, Center, and North lanes plus multiple reset-relative play windows (`+8`, `+10`, and `+12`); updates remain separate from All-Star signup revisions, and admins receive live per-player details and preference counts.
+- Added deterministic, versioned strength scoring and an admin-controlled six-team builder that requires exactly 12 unique accounts per team, respects seat and role locks, exposes score breakdowns, and validates all 72 assignments before publication.
+- Added the Admin VTS All-Star command center for signup review, formula versions and overrides, team balancing and seat moves, configurable 12-seat role groups, four timed phases, two Legion plans, rotations, loadouts, teleport notes, objectives, and separate Team Announcement and Team Plan releases.
+- Adapted the supplied 2025 plan safely: Offensive, Rune, Top, and Bottom roles plus the 0–5, 5–10, 10–15, and 15–30 minute structure and objective codes can be reused, while all 15-seat player names, assignments, and capacities are deliberately excluded from the new 12-seat format.
+- Added complete player and admin All-Star copy for all eleven supported languages, revision-safe live persistence, authenticated OCR rate limits, privacy-safe member publications, identity and security contracts, responsive/RTL/keyboard behavior, and focused model, controller, storage, Worker, and integration coverage.
+- Bound every member-visible overview, team, and personal-plan read to the current published revision, published team set, and matching announcement/plan state so hidden or stale publication documents cannot be fetched directly.
+- Preserved the production AI quota Durable Object bindings and migration history in the shared OCR Worker before appending the All-Star rate limiter, preventing a later Worker deploy from orphaning live quota state.
+- Changed the release workflow for normal additive `gh-pages` PRs: `npm run check` remains mandatory, while `npm run firebase:preview` is reserved for major version upgrades, broad overhauls, or changes that explicitly need Firebase-hosted validation.
+
 ## 14.0.18 - 2026-07-17
 
 - Added a Skin Atlas mode to the Hero Atlas: a Heroes/Skins toggle that opens a catalog of the three hero-skin tiers (Mythic, Legendary, Everlasting), each showing the Star 1 activation bonus, the Star 1→2 Inheriting Skill cost, the Star 2→3 Preserving Skill cost, the full maximize total, how to obtain the skin, and known heroes for that tier.
-- Encoded the verified per-tier star-up material costs (Biography Seal, Advanced Biography Seal, Epic/Legendary/Seasonal Legendary Hero Medals) with theme-aware styling and localized UI labels across all eleven supported languages.
+- Encoded the verified per-tier star-up material costs (Biography Seal, Advanced Biography Seal, Epic/Legendary/Seasonal Legendary Hero Medals) with theme-aware styling and complete copy across all eleven supported languages.
 
 ## 14.0.17 - 2026-07-17
 
@@ -13,6 +26,7 @@
 - Added evidence-backed progressive node revelation for Enhanced Tactics IV: its two screenshot-confirmed roots are available together, the observed final node remains visible and locked, unverified downstream nodes stay hidden, and the contribution template now collects initial visibility, reveal prerequisites, branch identity, and evidence references without inventing an order.
 - Added a standalone battle-contribution contract that keeps unit base-point modifiers separate from battle percentages, exports scoped numeric/effect contributions with diagnostics, supports future engine extraction without Battle Simulator imports, and rejects non-finite arithmetic.
 - Added the accepted dense dark/light tower-board UI, persistent desktop inspector, scrollable mobile dialogs, keyboard/focus restoration, RTL and eleven-language UI packs, strict local-only CSP-safe rendering, public navigation/command-palette discovery, service-worker coverage, responsive production smoke tests, and route-specific size budgets.
+
 ## 14.0.16 - 2026-07-17
 
 - Rebuilt the Strife over Dragon boss Fordogreen as "Fordogreen the Dark Rider" with its current four-skill kit — Preemptive Strike, Broken Promise, Hunt You Down, and Power of the Legion — including timings, targets, counters, and localized copy across all eleven supported languages.

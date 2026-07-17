@@ -1,0 +1,1723 @@
+<div
+  class="boh-hub"
+  data-role="boh-root"
+  aria-labelledby="bohPageTitle"
+  aria-hidden="true"
+  hidden
+  inert
+>
+  <header class="boh-hero">
+    <div class="boh-hero__copy">
+      <p class="boh-eyebrow" data-boh-i18n="hero.eyebrow">VTS MEMBERS &middot; ALL-STAR BOH</p>
+      <h2 id="bohPageTitle" data-boh-i18n="hero.title">Build your strongest team</h2>
+      <p data-boh-i18n="hero.description">
+        Share your current combat stats, check your team assignment, and follow your personal match
+        plan from one private hub.
+      </p>
+    </div>
+
+    <div class="boh-event-status" data-role="event-status" aria-live="polite">
+      <span class="boh-status-dot" aria-hidden="true"></span>
+      <span data-role="event-status-label" data-boh-i18n="status.preparing"
+        >Preparing this season</span
+      >
+    </div>
+  </header>
+
+  <nav class="boh-subnav" aria-label="All-Star BoH sections" data-boh-i18n-aria="nav.ariaLabel">
+    <div class="boh-subnav__track" role="tablist" aria-orientation="horizontal">
+      <button
+        class="boh-subnav__tab is-active"
+        id="bohSignupTab"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="bohSignupPanel"
+        data-role="section-tab"
+        data-section="signup"
+      >
+        <span class="boh-subnav__step" aria-hidden="true">1</span>
+        <span>
+          <strong data-boh-i18n="nav.signup">Signup</strong>
+          <small data-boh-i18n="nav.signupHint">Share your stats</small>
+        </span>
+      </button>
+      <button
+        class="boh-subnav__tab"
+        id="bohAnnouncementTab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="bohAnnouncementPanel"
+        tabindex="-1"
+        data-role="section-tab"
+        data-section="announcement"
+      >
+        <span class="boh-subnav__step" aria-hidden="true">2</span>
+        <span>
+          <strong data-boh-i18n="nav.announcement">Team Announcement</strong>
+          <small data-boh-i18n="nav.announcementHint">Meet your roster</small>
+        </span>
+      </button>
+      <button
+        class="boh-subnav__tab"
+        id="bohPlanTab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="bohPlanPanel"
+        tabindex="-1"
+        data-role="section-tab"
+        data-section="plan"
+      >
+        <span class="boh-subnav__step" aria-hidden="true">3</span>
+        <span>
+          <strong data-boh-i18n="nav.plan">My Team Plan</strong>
+          <small data-boh-i18n="nav.planHint">Know every move</small>
+        </span>
+      </button>
+      <button
+        class="boh-subnav__tab"
+        id="bohShowdownTab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="bohShowdownPanel"
+        tabindex="-1"
+        data-role="section-tab"
+        data-section="showdown"
+      >
+        <span class="boh-subnav__step" aria-hidden="true">4</span>
+        <span>
+          <strong data-boh-i18n="nav.showdown">Epic Showdown</strong>
+          <small data-boh-i18n="nav.showdownHint">Choose lanes &amp; times</small>
+        </span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="boh-feedback" data-role="page-feedback" role="status" aria-live="polite" hidden></div>
+
+  <section
+    class="boh-section"
+    id="bohSignupPanel"
+    role="tabpanel"
+    aria-labelledby="bohSignupTab"
+    data-role="section-panel"
+    data-section="signup"
+  >
+    <div class="boh-section-heading">
+      <div>
+        <p class="boh-kicker" data-boh-i18n="signup.kicker">PLAYER INTAKE</p>
+        <h3 data-boh-i18n="signup.title">Tell us where your account stands</h3>
+        <p data-boh-i18n="signup.description">
+          Accurate stats help leadership build six balanced 12-player teams. You can enter the
+          values yourself or let screenshot OCR prepare an editable draft.
+        </p>
+      </div>
+      <span class="boh-save-state" data-role="signup-save-state" data-boh-i18n="signup.notSubmitted"
+        >Not submitted</span
+      >
+    </div>
+
+    <aside
+      class="boh-review-feedback"
+      data-role="submission-feedback"
+      role="status"
+      aria-live="polite"
+      hidden
+    >
+      <span class="boh-review-feedback__icon" aria-hidden="true">!</span>
+      <div>
+        <p
+          class="boh-kicker"
+          data-role="submission-feedback-kicker"
+          data-boh-i18n="feedback.kicker"
+        >
+          SIGNUP REVIEW
+        </p>
+        <h4 data-role="submission-feedback-title"></h4>
+        <p data-role="submission-feedback-description"></p>
+        <blockquote data-role="submission-feedback-note" hidden></blockquote>
+        <small data-role="submission-feedback-revision"></small>
+      </div>
+    </aside>
+
+    <aside class="boh-notice boh-notice--privacy" aria-labelledby="bohPrivacyTitle">
+      <span class="boh-notice__icon" aria-hidden="true">i</span>
+      <div>
+        <h4 id="bohPrivacyTitle" data-boh-i18n="signup.privacyTitle">
+          Your screenshot requires your confirmation
+        </h4>
+        <p data-boh-i18n="signup.privacyDescription">
+          If you use OCR, your screenshot is sent to a third-party AI service only to read the
+          visible numbers. OCR can make mistakes. Review and correct every value before you submit;
+          no extracted value is accepted automatically.
+        </p>
+      </div>
+    </aside>
+
+    <form class="boh-form" data-role="signup-form" novalidate>
+      <fieldset class="boh-card boh-method-picker">
+        <legend data-boh-i18n="signup.methodLegend">How do you want to add your stats?</legend>
+        <div class="boh-choice-grid">
+          <label class="boh-choice-card">
+            <input
+              type="radio"
+              name="bohEntryMethod"
+              value="manual"
+              checked
+              data-role="entry-method"
+            />
+            <span class="boh-choice-card__mark" aria-hidden="true"></span>
+            <span>
+              <strong data-boh-i18n="signup.methodManual">Enter values manually</strong>
+              <small data-boh-i18n="signup.methodManualHint"
+                >Best when you already have the numbers ready.</small
+              >
+            </span>
+          </label>
+          <label class="boh-choice-card">
+            <input type="radio" name="bohEntryMethod" value="ocr" data-role="entry-method" />
+            <span class="boh-choice-card__mark" aria-hidden="true"></span>
+            <span>
+              <strong data-boh-i18n="signup.methodOcr">Read a screenshot with OCR</strong>
+              <small data-boh-i18n="signup.methodOcrHint"
+                >Upload one clear account-stat screenshot, then review the draft.</small
+              >
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <section class="boh-card boh-upload" data-role="ocr-upload-panel" hidden>
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="signup.ocrKicker">OPTIONAL OCR</p>
+            <h4 data-boh-i18n="signup.ocrTitle">Upload your account-stat screen</h4>
+          </div>
+          <span class="boh-chip" data-boh-i18n="signup.ocrOneImage">One image</span>
+        </div>
+
+        <ol
+          class="boh-help-steps"
+          aria-label="Screenshot checklist"
+          data-boh-i18n-aria="signup.ocrChecklist"
+        >
+          <li data-boh-i18n="signup.ocrStep1">
+            Open the in-game profile or account-stat page that shows the full power breakdown.
+          </li>
+          <li data-boh-i18n="signup.ocrStep2">
+            Keep every number sharp, uncropped, and free from chat bubbles or overlays.
+          </li>
+          <li data-boh-i18n="signup.ocrStep3">
+            After processing, compare the OCR draft with the screenshot before confirming.
+          </li>
+        </ol>
+
+        <label class="boh-dropzone" data-role="ocr-dropzone">
+          <input
+            class="boh-file-input"
+            type="file"
+            name="statsScreenshot"
+            accept="image/png,image/jpeg,image/webp"
+            data-role="ocr-file-input"
+          />
+          <span class="boh-dropzone__icon" aria-hidden="true">+</span>
+          <span class="boh-dropzone__copy">
+            <strong data-boh-i18n="signup.ocrChoose">Choose a screenshot</strong>
+            <small data-boh-i18n="signup.ocrFileHint"
+              >PNG, JPG, or WebP. Use a clear, recent image.</small
+            >
+          </span>
+        </label>
+
+        <div class="boh-upload-preview" data-role="ocr-preview" hidden>
+          <img
+            data-role="ocr-preview-image"
+            alt="Selected account-stat screenshot preview"
+            data-boh-i18n-alt="signup.ocrPreviewAlt"
+          />
+          <div>
+            <strong data-role="ocr-file-name" data-boh-i18n="signup.ocrSelected"
+              >Screenshot selected</strong
+            >
+            <small data-role="ocr-file-meta" data-boh-i18n="signup.ocrReady"
+              >Ready to process</small
+            >
+          </div>
+          <button
+            class="boh-button boh-button--quiet"
+            type="button"
+            data-role="ocr-remove"
+            data-boh-i18n="action.remove"
+          >
+            Remove
+          </button>
+        </div>
+
+        <label class="boh-check-row">
+          <input type="checkbox" data-role="ocr-consent" />
+          <span data-boh-i18n="signup.ocrConsent">
+            I understand this screenshot will be processed by a third-party AI provider and that I
+            must verify its output.
+          </span>
+        </label>
+
+        <button
+          class="boh-button boh-button--secondary"
+          type="button"
+          data-role="ocr-process"
+          data-boh-i18n="signup.ocrProcess"
+        >
+          Read screenshot
+        </button>
+        <p class="boh-inline-status" data-role="ocr-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="boh-card" aria-labelledby="bohIdentityTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="signup.playerKicker">PLAYER</p>
+            <h4 id="bohIdentityTitle" data-boh-i18n="signup.accountTitle">Your account</h4>
+          </div>
+          <span class="boh-required-note"
+            ><span aria-hidden="true">*</span>
+            <span data-boh-i18n="common.required">Required</span></span
+          >
+        </div>
+        <div class="boh-field-grid boh-field-grid--two">
+          <label class="boh-field">
+            <span
+              ><span data-boh-i18n="signup.gameName">Current in-game name</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="gameName"
+              autocomplete="nickname"
+              maxlength="64"
+              required
+              data-stat="gameName"
+              data-role="field-game-name"
+              aria-describedby="bohGameNameHint bohOcrIssue-gameName"
+            />
+            <small id="bohGameNameHint" data-boh-i18n="signup.gameNameHint"
+              >Use the exact name leadership knows you by.</small
+            >
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-gameName" data-role="ocr-field-issue"></small>
+          </label>
+          <label class="boh-field">
+            <span data-boh-i18n="signup.timezone">Timezone</span>
+            <input
+              type="text"
+              name="timezone"
+              autocomplete="off"
+              placeholder="Example: UTC+2"
+              data-boh-i18n-placeholder="signup.timezonePlaceholder"
+              maxlength="32"
+              data-role="field-timezone"
+            />
+          </label>
+        </div>
+        <aside class="boh-device-identity" aria-labelledby="bohDeviceIdentityTitle">
+          <span aria-hidden="true">i</span>
+          <div>
+            <h5 id="bohDeviceIdentityTitle" data-boh-i18n="signup.deviceIdentityTitle">
+              Keep your signup connected
+            </h5>
+            <p data-boh-i18n="signup.deviceIdentityDescription">
+              This signup is tied to this browser profile, not a password. If you change device or
+              browser, or clear site data, submit again using the exact same in-game name, then
+              contact R5 to merge or confirm the entries.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="boh-card" aria-labelledby="bohPowerTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="signup.powerKicker">POWER BREAKDOWN</p>
+            <h4 id="bohPowerTitle" data-boh-i18n="signup.powerTitle">Current combat stats</h4>
+          </div>
+          <span
+            class="boh-review-badge"
+            data-role="ocr-review-badge"
+            data-boh-i18n="signup.ocrReviewBadge"
+            hidden
+            >OCR draft &middot; review</span
+          >
+        </div>
+        <p
+          class="boh-card-intro"
+          id="bohPowerHelp"
+          data-role="power-help"
+          data-boh-i18n="signup.powerHint"
+        >
+          Enter the full values shown in-game. Do not shorten 250,000,000 to 250M.
+        </p>
+        <aside
+          class="boh-ocr-review-alert"
+          data-role="ocr-review-alert"
+          role="status"
+          aria-live="polite"
+          hidden
+        >
+          <div>
+            <h5 data-role="ocr-review-alert-title"></h5>
+            <p data-role="ocr-review-alert-description"></p>
+          </div>
+          <ul data-role="ocr-warning-list" hidden></ul>
+        </aside>
+        <div class="boh-field-grid boh-field-grid--three" data-role="ocr-review-fields">
+          <label class="boh-field boh-field--featured">
+            <span
+              ><span data-boh-i18n="signup.totalPower">Total Castle Power</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="totalCastlePower"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+              data-stat="totalCastlePower"
+              data-role="stat-input"
+              aria-describedby="bohPowerHelp bohOcrIssue-totalCastlePower"
+            />
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-totalCastlePower" data-role="ocr-field-issue"></small>
+          </label>
+          <label class="boh-field">
+            <span
+              ><span data-boh-i18n="signup.troopPower">Troop Power</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="troopPower"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+              data-stat="troopPower"
+              data-role="stat-input"
+              aria-describedby="bohPowerHelp bohOcrIssue-troopPower"
+            />
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-troopPower" data-role="ocr-field-issue"></small>
+          </label>
+          <label class="boh-field">
+            <span
+              ><span data-boh-i18n="signup.buildingPower">Building Power</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="buildingPower"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+              data-stat="buildingPower"
+              data-role="stat-input"
+              aria-describedby="bohPowerHelp bohOcrIssue-buildingPower"
+            />
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-buildingPower" data-role="ocr-field-issue"></small>
+          </label>
+          <label class="boh-field">
+            <span
+              ><span data-boh-i18n="signup.technologyPower">Technology Power</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="technologyPower"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+              data-stat="technologyPower"
+              data-role="stat-input"
+              aria-describedby="bohPowerHelp bohOcrIssue-technologyPower"
+            />
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-technologyPower" data-role="ocr-field-issue"></small>
+          </label>
+          <label class="boh-field">
+            <span
+              ><span data-boh-i18n="signup.heroPower">Hero Combat Power</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="heroCombatPower"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+              data-stat="heroCombatPower"
+              data-role="stat-input"
+              aria-describedby="bohPowerHelp bohOcrIssue-heroCombatPower"
+            />
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-heroCombatPower" data-role="ocr-field-issue"></small>
+          </label>
+          <label class="boh-field">
+            <span
+              ><span data-boh-i18n="signup.dragonPower">Dragons Power</span>
+              <b aria-hidden="true">*</b></span
+            >
+            <input
+              type="text"
+              name="dragonPower"
+              inputmode="numeric"
+              autocomplete="off"
+              required
+              data-stat="dragonPower"
+              data-role="stat-input"
+              aria-describedby="bohPowerHelp bohOcrIssue-dragonPower"
+            />
+            <small data-role="ocr-field-confidence"></small>
+            <small id="bohOcrIssue-dragonPower" data-role="ocr-field-issue"></small>
+          </label>
+        </div>
+
+        <div class="boh-review-confirm" data-role="ocr-review-confirmation" hidden>
+          <label class="boh-check-row">
+            <input type="checkbox" data-role="ocr-values-confirmed" />
+            <span data-boh-i18n="signup.ocrConfirmValues"
+              >I compared every extracted value with my screenshot and corrected any mistakes.</span
+            >
+          </label>
+        </div>
+      </section>
+
+      <section class="boh-card" aria-labelledby="bohReadinessTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="signup.readinessKicker">READINESS</p>
+            <h4 id="bohReadinessTitle" data-boh-i18n="signup.readinessTitle">
+              Troops, heroes, and RoC
+            </h4>
+          </div>
+        </div>
+
+        <fieldset class="boh-fieldset">
+          <legend data-boh-i18n="signup.t9Legend">Which T9 troop types can you field?</legend>
+          <p data-boh-i18n="signup.t9Hint">Select every type that is ready now.</p>
+          <div class="boh-check-grid">
+            <label class="boh-check-card">
+              <input type="checkbox" name="t9Types" value="cavalry" />
+              <span data-boh-i18n="signup.t9Cavalry">Cavalry</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="t9Types" value="archers" />
+              <span data-boh-i18n="signup.t9Archers">Archers</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="t9Types" value="footmen" />
+              <span data-boh-i18n="signup.t9Footmen">Footmen</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="t9Types" value="none" data-role="t9-none" />
+              <span data-boh-i18n="signup.t9None">None yet / T8</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="boh-fieldset">
+          <legend data-boh-i18n="signup.speedHeroesLegend">
+            Which speed heroes will be ready in 2&ndash;4 weeks?
+          </legend>
+          <p data-boh-i18n="signup.speedHeroesHint">
+            Select every hero you expect to have match-ready.
+          </p>
+          <div class="boh-check-grid boh-check-grid--three">
+            <label class="boh-check-card">
+              <input type="checkbox" name="speedHeroes" value="lionheart" />
+              <span data-boh-i18n="signup.heroLionheart">LionHeart</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="speedHeroes" value="cao-cao" />
+              <span data-boh-i18n="signup.heroCaoCao">Cao Cao</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="speedHeroes" value="al-fatih" />
+              <span data-boh-i18n="signup.heroAlFatih">Al Fatih</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <details class="boh-catalog-disclosure" data-role="hero-selector">
+          <summary>
+            <span>
+              <strong data-boh-i18n="signup.usableHeroesTitle">Usable heroes</strong>
+              <small data-boh-i18n="signup.usableHeroesHint">
+                Select heroes you own in enough copies to field in battle. They do not need to be
+                maxed.
+              </small>
+            </span>
+            <span class="boh-chip" data-role="hero-selected-count" role="status" aria-live="polite"
+              >0 selected</span
+            >
+          </summary>
+          <div class="boh-catalog-disclosure__body">
+            <div class="boh-catalog-filters">
+              <label class="boh-field">
+                <span data-boh-i18n="signup.heroSearch">Search heroes</span>
+                <input
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Search by hero name"
+                  data-boh-i18n-placeholder="signup.heroSearchPlaceholder"
+                  data-role="hero-search"
+                />
+              </label>
+              <label class="boh-field">
+                <span data-boh-i18n="signup.heroTroopFilter">Troop type</span>
+                <select data-role="hero-troop-filter">
+                  <option value="" data-boh-i18n="signup.heroAllTroops">All troop types</option>
+                </select>
+              </label>
+              <label class="boh-field">
+                <span data-boh-i18n="signup.heroSeasonFilter">Season</span>
+                <select data-role="hero-season-filter">
+                  <option value="" data-boh-i18n="signup.heroAllSeasons">All seasons</option>
+                </select>
+              </label>
+            </div>
+            <p
+              class="boh-catalog-results"
+              data-role="hero-results"
+              role="status"
+              aria-live="polite"
+            >
+              0 heroes shown
+            </p>
+            <div
+              class="boh-catalog-list boh-hero-list"
+              data-role="hero-list"
+              role="group"
+              aria-label="Usable heroes"
+              data-boh-i18n-aria="signup.usableHeroesTitle"
+            ></div>
+            <p
+              class="boh-catalog-empty"
+              data-role="hero-no-results"
+              data-boh-i18n="signup.heroNoResults"
+              hidden
+            >
+              No heroes match these filters.
+            </p>
+          </div>
+        </details>
+
+        <div class="boh-field-grid boh-field-grid--two">
+          <label class="boh-field">
+            <span data-boh-i18n="signup.level50Heroes">Number of level 50 heroes</span>
+            <input
+              type="number"
+              name="level50Heroes"
+              inputmode="numeric"
+              min="0"
+              max="99"
+              step="1"
+              data-role="field-level-50-heroes"
+            />
+          </label>
+          <label class="boh-field">
+            <span data-boh-i18n="signup.rocLevel">RoC level</span>
+            <input
+              type="number"
+              name="rocLevel"
+              inputmode="numeric"
+              min="0"
+              max="99"
+              step="1"
+              data-role="field-roc-level"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section class="boh-card boh-research-card" aria-labelledby="bohResearchTitle">
+        <details class="boh-catalog-disclosure" data-role="research-selector">
+          <summary>
+            <span>
+              <strong id="bohResearchTitle" data-boh-i18n="signup.researchTitle"
+                >Research progress</strong
+              >
+              <small data-boh-i18n="signup.researchHint">
+                Optional. Enter an estimated completion percentage for any research tree you know.
+              </small>
+            </span>
+            <span
+              class="boh-chip"
+              data-role="research-entered-count"
+              role="status"
+              aria-live="polite"
+              >0 of 0 trees entered</span
+            >
+          </summary>
+          <div class="boh-catalog-disclosure__body">
+            <div class="boh-research-groups" data-role="research-groups"></div>
+          </div>
+        </details>
+      </section>
+
+      <section class="boh-card" aria-labelledby="bohCommitmentTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="signup.commitmentKicker">COMMITMENT</p>
+            <h4 id="bohCommitmentTitle" data-boh-i18n="signup.commitmentTitle">
+              Availability and team fit
+            </h4>
+          </div>
+        </div>
+        <p class="boh-card-intro" data-boh-i18n="signup.commitmentHint">
+          Power is only one part of selection. Honest availability helps us form dependable teams
+          and backups.
+        </p>
+
+        <fieldset class="boh-fieldset">
+          <legend>
+            <span data-boh-i18n="signup.availabilityLegend">Your expected availability</span>
+            <b aria-hidden="true">*</b>
+          </legend>
+          <div class="boh-choice-grid boh-choice-grid--three">
+            <label class="boh-choice-card boh-choice-card--compact">
+              <input type="radio" name="availability" value="all" required />
+              <span class="boh-choice-card__mark" aria-hidden="true"></span>
+              <span
+                ><strong data-boh-i18n="signup.availabilityAll">All matches</strong
+                ><small data-boh-i18n="signup.availabilityAllHint"
+                  >I expect to be fully available.</small
+                ></span
+              >
+            </label>
+            <label class="boh-choice-card boh-choice-card--compact">
+              <input type="radio" name="availability" value="most" />
+              <span class="boh-choice-card__mark" aria-hidden="true"></span>
+              <span
+                ><strong data-boh-i18n="signup.availabilityMost">Most matches</strong
+                ><small data-boh-i18n="signup.availabilityMostHint"
+                  >I may miss a limited number.</small
+                ></span
+              >
+            </label>
+            <label class="boh-choice-card boh-choice-card--compact">
+              <input type="radio" name="availability" value="backup" />
+              <span class="boh-choice-card__mark" aria-hidden="true"></span>
+              <span
+                ><strong data-boh-i18n="signup.availabilityBackup">Backup</strong
+                ><small data-boh-i18n="signup.availabilityBackupHint"
+                  >Use me when a roster needs cover.</small
+                ></span
+              >
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="boh-fieldset" data-role="fighting-times-fieldset">
+          <legend>
+            <span data-boh-i18n="signup.fightingTimesLegend"
+              >Choose exactly two All-Star fighting times</span
+            >
+            <b aria-hidden="true">*</b>
+          </legend>
+          <p id="bohFightingTimesHint" data-boh-i18n="signup.fightingTimesHint">
+            Select the two game times when you are most available to fight.
+          </p>
+          <div
+            class="boh-check-grid"
+            role="group"
+            aria-describedby="bohFightingTimesHint bohFightingTimesError"
+          >
+            <label class="boh-check-card">
+              <input type="checkbox" name="fightingTimeIds" value="+8" />
+              <span data-boh-i18n="signup.fightingTime8">Game time +8</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="fightingTimeIds" value="+12" />
+              <span data-boh-i18n="signup.fightingTime12">Game time +12</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="fightingTimeIds" value="+14" />
+              <span data-boh-i18n="signup.fightingTime14">Game time +14</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="checkbox" name="fightingTimeIds" value="+20" />
+              <span data-boh-i18n="signup.fightingTime20">Game time +20</span>
+            </label>
+          </div>
+          <div class="boh-field-status-row">
+            <span class="boh-chip" data-role="fighting-times-count" role="status" aria-live="polite"
+              >0 / 2 selected</span
+            >
+            <p
+              class="boh-inline-error"
+              id="bohFightingTimesError"
+              data-role="fighting-times-error"
+              role="alert"
+              hidden
+            ></p>
+          </div>
+        </fieldset>
+
+        <div class="boh-field-grid boh-field-grid--two">
+          <label class="boh-field">
+            <span data-boh-i18n="signup.favoriteRole">Favorite role (optional)</span>
+            <select name="preferredRole" data-role="field-preferred-role">
+              <option value="" data-boh-i18n="role.noPreference">No preference</option>
+              <option value="flexible" data-boh-i18n="role.flexible">
+                Flexible &mdash; place me where needed
+              </option>
+              <option value="offensive" data-boh-i18n="role.offensive">Offensive team</option>
+              <option value="rune" data-boh-i18n="role.rune">Rune team</option>
+              <option value="top" data-boh-i18n="role.top">Top side</option>
+              <option value="bottom" data-boh-i18n="role.bottom">Bottom side</option>
+              <option value="backup" data-boh-i18n="role.backup">Backup / rotating player</option>
+            </select>
+          </label>
+          <label class="boh-field">
+            <span data-boh-i18n="signup.unavailableTimes">Known unavailable times</span>
+            <input
+              type="text"
+              name="unavailableTimes"
+              maxlength="160"
+              placeholder="Dates, match times, or none"
+              data-boh-i18n-placeholder="signup.unavailableTimesPlaceholder"
+              data-role="field-unavailable-times"
+            />
+          </label>
+        </div>
+
+        <label class="boh-field boh-field--teammates">
+          <span data-boh-i18n="signup.preferredTeammates">Preferred teammates</span>
+          <textarea
+            name="preferredTeammates"
+            rows="2"
+            maxlength="1024"
+            placeholder="Example: PlayerOne, PlayerTwo"
+            data-boh-i18n-placeholder="signup.preferredTeammatesPlaceholder"
+            data-role="field-preferred-teammates"
+            aria-describedby="bohPreferredTeammatesHint"
+          ></textarea>
+          <small id="bohPreferredTeammatesHint" data-boh-i18n="signup.preferredTeammatesHint">
+            Optional &mdash; add up to six names, separated by commas or new lines. Leadership will
+            consider the request, but balanced teams come first.
+          </small>
+        </label>
+
+        <div class="boh-commitment-list">
+          <label class="boh-check-row">
+            <input type="checkbox" name="canTeleport" />
+            <span data-boh-i18n="signup.commitTeleport"
+              >I can follow teleport calls when my plan requires them.</span
+            >
+          </label>
+          <label class="boh-check-row">
+            <input type="checkbox" name="canUseVoice" />
+            <span data-boh-i18n="signup.commitLiveCalls"
+              >I can follow live leadership calls during matches.</span
+            >
+          </label>
+          <label class="boh-check-row boh-check-row--required">
+            <input type="checkbox" name="planCommitment" required />
+            <span data-boh-i18n="signup.commitPlan"
+              >I will review my assignment and follow the published team plan.</span
+            >
+          </label>
+        </div>
+
+        <label class="boh-field">
+          <span data-boh-i18n="signup.playerNotes">Anything leadership should know?</span>
+          <textarea
+            name="playerNotes"
+            rows="3"
+            maxlength="500"
+            placeholder="Optional context about your account, availability, or role experience"
+            data-boh-i18n-placeholder="signup.playerNotesPlaceholder"
+            data-role="field-player-notes"
+          ></textarea>
+        </label>
+      </section>
+
+      <footer class="boh-form-actions">
+        <div>
+          <strong data-boh-i18n="signup.reviewTitle">Review before submitting</strong>
+          <span data-boh-i18n="signup.reviewHint"
+            >Your latest confirmed submission will be used for team balancing.</span
+          >
+        </div>
+        <button
+          class="boh-button boh-button--primary"
+          type="submit"
+          data-role="signup-submit"
+          data-boh-i18n="signup.submit"
+        >
+          Submit my stats
+        </button>
+      </footer>
+    </form>
+  </section>
+
+  <section
+    class="boh-section"
+    id="bohAnnouncementPanel"
+    role="tabpanel"
+    aria-labelledby="bohAnnouncementTab"
+    data-role="section-panel"
+    data-section="announcement"
+    hidden
+  >
+    <div class="boh-section-heading">
+      <div>
+        <p class="boh-kicker" data-boh-i18n="announcement.kicker">TEAM ANNOUNCEMENT</p>
+        <h3 data-boh-i18n="announcement.title">Your All-Star roster</h3>
+        <p data-boh-i18n="announcement.description">
+          See your personal assignment first, then explore all six balanced teams.
+        </p>
+      </div>
+      <span
+        class="boh-save-state"
+        data-role="announcement-version"
+        data-boh-i18n="status.awaitingPublication"
+        >Awaiting publication</span
+      >
+    </div>
+
+    <div class="boh-state-card" data-role="announcement-state-locked">
+      <span class="boh-state-card__icon" aria-hidden="true">&#128274;</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="access.membersOnly">MEMBERS ONLY</p>
+        <h4 data-boh-i18n="announcement.lockedTitle">
+          Unlock the All-Star hub to see team announcements
+        </h4>
+        <p data-boh-i18n="announcement.lockedDescription">
+          Enter the current VTS member PIN before viewing private roster information.
+        </p>
+      </div>
+      <button
+        class="boh-button boh-button--primary"
+        type="button"
+        data-role="unlock-request"
+        data-boh-i18n="access.enterPin"
+      >
+        Enter member PIN
+      </button>
+    </div>
+
+    <div class="boh-state-card" data-role="announcement-state-unpublished" hidden>
+      <span class="boh-state-card__icon" aria-hidden="true">&#9203;</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="announcement.unpublishedKicker">NOT PUBLISHED YET</p>
+        <h4 data-boh-i18n="announcement.unpublishedTitle">Leadership is balancing the teams</h4>
+        <p data-boh-i18n="announcement.unpublishedDescription">
+          Your signup is safe. Return here when the announcement is released.
+        </p>
+      </div>
+      <span class="boh-chip" data-boh-i18n="announcement.unpublishedBadge"
+        >We will announce when ready</span
+      >
+    </div>
+
+    <div class="boh-state-card" data-role="announcement-state-unassigned" hidden>
+      <span class="boh-state-card__icon" aria-hidden="true">?</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="announcement.unassignedKicker">NO ASSIGNMENT FOUND</p>
+        <h4 data-boh-i18n="announcement.unassignedTitle">
+          Your name is not on a published roster yet
+        </h4>
+        <p data-boh-i18n="announcement.unassignedDescription">
+          Check that your current game name matches your signup, or contact leadership.
+        </p>
+      </div>
+      <button
+        class="boh-button boh-button--secondary"
+        type="button"
+        data-role="announcement-help"
+        data-boh-i18n="announcement.reviewSignup"
+      >
+        Review my signup
+      </button>
+    </div>
+
+    <div class="boh-announcement" data-role="announcement-state-assigned" hidden>
+      <article class="boh-my-team" data-role="my-team-card">
+        <div class="boh-my-team__identity">
+          <span class="boh-team-mark" data-role="my-team-number" data-boh-i18n="common.team1"
+            >Team 1</span
+          >
+          <div>
+            <p class="boh-kicker" data-boh-i18n="announcement.myAssignment">YOUR ASSIGNMENT</p>
+            <h4 data-role="my-team-name" data-boh-i18n="common.teamName">Team name</h4>
+            <p>
+              <span data-boh-i18n="announcement.captain">Captain:</span>
+              <strong data-role="my-team-captain" data-boh-i18n="status.toBeAnnounced"
+                >To be announced</strong
+              >
+            </p>
+          </div>
+        </div>
+        <dl class="boh-assignment-facts">
+          <div>
+            <dt data-boh-i18n="announcement.yourSeat">Your seat</dt>
+            <dd data-role="my-seat-number">&mdash;</dd>
+          </div>
+          <div>
+            <dt data-boh-i18n="announcement.startingRole">Starting role</dt>
+            <dd data-role="my-starting-role">&mdash;</dd>
+          </div>
+          <div>
+            <dt data-boh-i18n="announcement.rosterStatus">Roster status</dt>
+            <dd>
+              <span
+                class="boh-chip boh-chip--success"
+                data-role="my-roster-status"
+                data-boh-i18n="status.assigned"
+                >Assigned</span
+              >
+            </dd>
+          </div>
+        </dl>
+        <button
+          class="boh-button boh-button--primary"
+          type="button"
+          data-role="open-my-plan"
+          data-boh-i18n="announcement.openPlan"
+        >
+          Open my team plan
+        </button>
+      </article>
+
+      <section class="boh-roster-section" aria-labelledby="bohMyRosterTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="announcement.twelvePlayers">12 PLAYERS</p>
+            <h4 id="bohMyRosterTitle" data-boh-i18n="announcement.myRoster">Your team roster</h4>
+          </div>
+        </div>
+        <ol class="boh-roster-grid" data-role="my-team-roster">
+          <li data-seat="1">
+            <span>1</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="2">
+            <span>2</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="3">
+            <span>3</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="4">
+            <span>4</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="5">
+            <span>5</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="6">
+            <span>6</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="7">
+            <span>7</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="8">
+            <span>8</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="9">
+            <span>9</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="10">
+            <span>10</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="11">
+            <span>11</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+          <li data-seat="12">
+            <span>12</span
+            ><strong data-boh-i18n="announcement.playerPlaceholder">Player assignment</strong
+            ><small data-boh-i18n="common.role">Role</small>
+          </li>
+        </ol>
+      </section>
+
+      <section class="boh-all-teams" aria-labelledby="bohAllTeamsTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="announcement.allTeamsKicker">
+              6 TEAMS &middot; 72 PLAYERS
+            </p>
+            <h4 id="bohAllTeamsTitle" data-boh-i18n="announcement.allTeamsTitle">
+              All team overview
+            </h4>
+          </div>
+          <span class="boh-chip" data-boh-i18n="announcement.highlightHint"
+            >Your team is highlighted</span
+          >
+        </div>
+        <div class="boh-team-overview" data-role="team-overview">
+          <button class="boh-team-summary is-mine" type="button" data-team-id="team-1">
+            <span class="boh-team-summary__number">01</span>
+            <span
+              ><strong data-boh-i18n="common.team1">Team 1</strong
+              ><small data-boh-i18n="announcement.viewRosterHint"
+                >12 players &middot; View roster</small
+              ></span
+            >
+            <span class="boh-chip boh-chip--success" data-boh-i18n="announcement.myTeam"
+              >My team</span
+            >
+          </button>
+          <button class="boh-team-summary" type="button" data-team-id="team-2">
+            <span class="boh-team-summary__number">02</span>
+            <span
+              ><strong data-boh-i18n="common.team2">Team 2</strong
+              ><small data-boh-i18n="announcement.viewRosterHint"
+                >12 players &middot; View roster</small
+              ></span
+            >
+          </button>
+          <button class="boh-team-summary" type="button" data-team-id="team-3">
+            <span class="boh-team-summary__number">03</span>
+            <span
+              ><strong data-boh-i18n="common.team3">Team 3</strong
+              ><small data-boh-i18n="announcement.viewRosterHint"
+                >12 players &middot; View roster</small
+              ></span
+            >
+          </button>
+          <button class="boh-team-summary" type="button" data-team-id="team-4">
+            <span class="boh-team-summary__number">04</span>
+            <span
+              ><strong data-boh-i18n="common.team4">Team 4</strong
+              ><small data-boh-i18n="announcement.viewRosterHint"
+                >12 players &middot; View roster</small
+              ></span
+            >
+          </button>
+          <button class="boh-team-summary" type="button" data-team-id="team-5">
+            <span class="boh-team-summary__number">05</span>
+            <span
+              ><strong data-boh-i18n="common.team5">Team 5</strong
+              ><small data-boh-i18n="announcement.viewRosterHint"
+                >12 players &middot; View roster</small
+              ></span
+            >
+          </button>
+          <button class="boh-team-summary" type="button" data-team-id="team-6">
+            <span class="boh-team-summary__number">06</span>
+            <span
+              ><strong data-boh-i18n="common.team6">Team 6</strong
+              ><small data-boh-i18n="announcement.viewRosterHint"
+                >12 players &middot; View roster</small
+              ></span
+            >
+          </button>
+        </div>
+        <div
+          class="boh-team-detail"
+          id="bohTeamOverviewDetail"
+          data-role="team-overview-detail"
+          aria-live="polite"
+          hidden
+        ></div>
+      </section>
+    </div>
+  </section>
+
+  <section
+    class="boh-section"
+    id="bohPlanPanel"
+    role="tabpanel"
+    aria-labelledby="bohPlanTab"
+    data-role="section-panel"
+    data-section="plan"
+    hidden
+  >
+    <div class="boh-section-heading">
+      <div>
+        <p class="boh-kicker" data-boh-i18n="plan.kicker">PERSONAL MATCH GUIDE</p>
+        <h3 data-boh-i18n="plan.title">My Team Plan</h3>
+        <p data-boh-i18n="plan.description">
+          Your role, route, loadout, and next move for every phase of the match.
+        </p>
+      </div>
+      <span
+        class="boh-save-state"
+        data-role="plan-version"
+        data-boh-i18n="status.awaitingPublication"
+        >Awaiting publication</span
+      >
+    </div>
+
+    <div class="boh-state-card" data-role="plan-state-locked">
+      <span class="boh-state-card__icon" aria-hidden="true">&#128274;</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="access.membersOnly">MEMBERS ONLY</p>
+        <h4 data-boh-i18n="plan.lockedTitle">Unlock the All-Star hub to see your plan</h4>
+        <p data-boh-i18n="plan.lockedDescription">
+          Private strategy is only visible after member access is confirmed.
+        </p>
+      </div>
+      <button
+        class="boh-button boh-button--primary"
+        type="button"
+        data-role="unlock-request"
+        data-boh-i18n="access.enterPin"
+      >
+        Enter member PIN
+      </button>
+    </div>
+
+    <div class="boh-state-card" data-role="plan-state-unpublished" hidden>
+      <span class="boh-state-card__icon" aria-hidden="true">&#9203;</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="plan.unpublishedKicker">PLAN IN PROGRESS</p>
+        <h4 data-boh-i18n="plan.unpublishedTitle">
+          Leadership has not published your match plan yet
+        </h4>
+        <p data-boh-i18n="plan.unpublishedDescription">
+          Once released, this page will show only the instructions relevant to you.
+        </p>
+      </div>
+    </div>
+
+    <div class="boh-state-card" data-role="plan-state-unassigned" hidden>
+      <span class="boh-state-card__icon" aria-hidden="true">?</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="plan.unassignedKicker">ASSIGNMENT NEEDED</p>
+        <h4 data-boh-i18n="plan.unassignedTitle">No personal plan is connected to your account</h4>
+        <p data-boh-i18n="plan.unassignedDescription">
+          Check the Team Announcement or ask leadership to confirm your game name.
+        </p>
+      </div>
+    </div>
+
+    <div class="boh-plan" data-role="plan-state-published" hidden>
+      <article class="boh-plan-identity">
+        <div class="boh-plan-identity__main">
+          <span class="boh-team-mark" data-role="plan-team-number" data-boh-i18n="common.team1"
+            >Team 1</span
+          >
+          <div>
+            <p class="boh-kicker" data-boh-i18n="plan.startingAssignment">
+              YOUR STARTING ASSIGNMENT
+            </p>
+            <h4>
+              <span data-role="plan-player-name" data-boh-i18n="common.player">Player</span>
+              <span aria-hidden="true">&middot;</span>
+              <span data-role="plan-role" data-boh-i18n="role.offensive">Offensive Team</span>
+            </h4>
+            <p>
+              <span data-boh-i18n="common.seat">Seat</span> <strong data-role="plan-seat">1</strong>
+              <span aria-hidden="true">&middot;</span>
+              <span data-role="plan-team-name" data-boh-i18n="common.teamName">Team name</span>
+            </p>
+          </div>
+        </div>
+        <div class="boh-role-change" data-role="role-rotation-summary" hidden>
+          <span aria-hidden="true">&#8635;</span>
+          <span>
+            <strong data-boh-i18n="plan.rotationTitle">Your role changes later.</strong>
+            <span data-boh-i18n="plan.rotationHint"
+              >Follow the rotation marker in the timeline.</span
+            >
+          </span>
+        </div>
+      </article>
+
+      <div class="boh-plan-toolbar">
+        <fieldset class="boh-legion-picker" data-role="legion-picker">
+          <legend data-boh-i18n="plan.opponentSide">Opponent side</legend>
+          <div>
+            <input type="radio" name="bohLegion" value="legion-1" id="bohLegion1" checked />
+            <label for="bohLegion1" data-boh-i18n="plan.legion1">Legion 1</label>
+            <input type="radio" name="bohLegion" value="legion-2" id="bohLegion2" />
+            <label for="bohLegion2" data-boh-i18n="plan.legion2">Legion 2</label>
+          </div>
+          <small data-boh-i18n="plan.legionHint"
+            >Choose the Legion shown for your current matchup.</small
+          >
+        </fieldset>
+        <div class="boh-plan-updated">
+          <span data-boh-i18n="plan.updated">Plan updated</span>
+          <strong data-role="plan-updated-at" data-boh-i18n="status.notAvailable"
+            >Not available</strong
+          >
+        </div>
+      </div>
+
+      <section class="boh-now-next" aria-labelledby="bohNowNextTitle">
+        <h4 class="sr-only" id="bohNowNextTitle" data-boh-i18n="plan.nowNextTitle">
+          Current and next instructions
+        </h4>
+        <article class="boh-now-next__card boh-now-next__card--now" data-role="current-instruction">
+          <div class="boh-now-next__label">
+            <span class="boh-live-dot" aria-hidden="true"></span>
+            <span data-boh-i18n="plan.now">NOW</span>
+            <small data-role="current-phase-time">0&ndash;5 min</small>
+          </div>
+          <strong data-role="current-action" data-boh-i18n="plan.waitPublished"
+            >Wait for the published plan</strong
+          >
+          <p data-role="current-target" data-boh-i18n="plan.targetPlaceholder">
+            Your target and route will appear here.
+          </p>
+          <div class="boh-instruction-tags">
+            <span data-role="current-loadout" data-boh-i18n="plan.loadoutPlaceholder"
+              >Loadout: &mdash;</span
+            >
+            <span data-role="current-teleport" data-boh-i18n="plan.teleportPlaceholder"
+              >Teleport: &mdash;</span
+            >
+          </div>
+        </article>
+        <article class="boh-now-next__card boh-now-next__card--next" data-role="next-instruction">
+          <div class="boh-now-next__label">
+            <span data-boh-i18n="plan.next">NEXT</span>
+            <small data-role="next-phase-time">5&ndash;10 min</small>
+          </div>
+          <strong data-role="next-action" data-boh-i18n="plan.nextMove">Next move</strong>
+          <p data-role="next-target" data-boh-i18n="plan.nextPlaceholder">
+            Your upcoming instruction will appear here.
+          </p>
+        </article>
+      </section>
+
+      <section class="boh-plan-grid">
+        <div class="boh-timeline-card">
+          <div class="boh-card-heading">
+            <div>
+              <p class="boh-kicker" data-boh-i18n="plan.timelineKicker">MATCH TIMELINE</p>
+              <h4 data-boh-i18n="plan.timelineTitle">Your four phases</h4>
+            </div>
+            <span class="boh-chip" data-boh-i18n="plan.matchTimeHint">Times are match time</span>
+          </div>
+
+          <div
+            class="boh-phase-tabs"
+            role="tablist"
+            aria-label="Match phases"
+            data-boh-i18n-aria="plan.phaseTabsAria"
+            data-role="phase-tabs"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="bohPhase0Panel"
+              id="bohPhase0Tab"
+              data-phase-id="phase-0"
+            >
+              <span>01</span><strong>0&ndash;5</strong
+              ><small data-boh-i18n="phase.opening">Opening</small>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="bohPhase1Panel"
+              id="bohPhase1Tab"
+              tabindex="-1"
+              data-phase-id="phase-1"
+            >
+              <span>02</span><strong>5&ndash;10</strong
+              ><small data-boh-i18n="phase.setup">Setup</small>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="bohPhase2Panel"
+              id="bohPhase2Tab"
+              tabindex="-1"
+              data-phase-id="phase-2"
+            >
+              <span>03</span><strong>10&ndash;15</strong
+              ><small data-boh-i18n="phase.pressure">Pressure</small>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="bohPhase3Panel"
+              id="bohPhase3Tab"
+              tabindex="-1"
+              data-phase-id="phase-3"
+            >
+              <span>04</span><strong>15&ndash;30</strong
+              ><small data-boh-i18n="phase.endgame">Endgame</small>
+            </button>
+          </div>
+
+          <article
+            class="boh-phase-panel"
+            id="bohPhase0Panel"
+            role="tabpanel"
+            aria-labelledby="bohPhase0Tab"
+            data-role="phase-panel"
+            data-phase-id="phase-0"
+          >
+            <div class="boh-phase-panel__head">
+              <div>
+                <span class="boh-phase-number" data-boh-i18n="phase.phaseOne">PHASE 01</span>
+                <h5 data-role="phase-title" data-boh-i18n="phase.openingTitle">
+                  Opening &middot; 0&ndash;5 minutes
+                </h5>
+              </div>
+              <span class="boh-role-pill" data-role="phase-role" data-boh-i18n="role.offensive"
+                >Offensive Team</span
+              >
+            </div>
+            <dl class="boh-instruction-list">
+              <div>
+                <dt data-boh-i18n="plan.action">Action</dt>
+                <dd data-role="phase-action" data-boh-i18n="plan.actionPlaceholder">
+                  Your published action will appear here.
+                </dd>
+              </div>
+              <div>
+                <dt data-boh-i18n="plan.targetRoute">Target / route</dt>
+                <dd data-role="phase-target">&mdash;</dd>
+              </div>
+              <div>
+                <dt data-boh-i18n="plan.troopsHeroes">Troops &amp; heroes</dt>
+                <dd data-role="phase-loadout">&mdash;</dd>
+              </div>
+              <div>
+                <dt data-boh-i18n="plan.teleport">Teleport</dt>
+                <dd data-role="phase-teleport">&mdash;</dd>
+              </div>
+            </dl>
+            <aside class="boh-command-note" data-role="phase-note" hidden>
+              <strong data-boh-i18n="plan.leadershipNote">Leadership note</strong>
+              <p></p>
+            </aside>
+          </article>
+
+          <article
+            class="boh-phase-panel"
+            id="bohPhase1Panel"
+            role="tabpanel"
+            aria-labelledby="bohPhase1Tab"
+            data-role="phase-panel"
+            data-phase-id="phase-1"
+            hidden
+          ></article>
+          <article
+            class="boh-phase-panel"
+            id="bohPhase2Panel"
+            role="tabpanel"
+            aria-labelledby="bohPhase2Tab"
+            data-role="phase-panel"
+            data-phase-id="phase-2"
+            hidden
+          ></article>
+          <article
+            class="boh-phase-panel"
+            id="bohPhase3Panel"
+            role="tabpanel"
+            aria-labelledby="bohPhase3Tab"
+            data-role="phase-panel"
+            data-phase-id="phase-3"
+            hidden
+          ></article>
+
+          <ol class="boh-phase-summary" data-role="phase-summary-list">
+            <li class="is-current" data-phase-id="phase-0">
+              <span>0&ndash;5</span
+              ><strong data-boh-i18n="phase.openingAssignment">Opening assignment</strong
+              ><small data-boh-i18n="phase.startingRole">Starting role</small>
+            </li>
+            <li data-phase-id="phase-1">
+              <span>5&ndash;10</span
+              ><strong data-boh-i18n="phase.secondAssignment">Second assignment</strong
+              ><small data-boh-i18n="phase.continueRole">Continue role</small>
+            </li>
+            <li class="has-rotation" data-phase-id="phase-2">
+              <span>10&ndash;15</span
+              ><strong data-boh-i18n="phase.roleRotation">Role rotation</strong
+              ><small data-boh-i18n="phase.newRole">&#8635; New role</small>
+            </li>
+            <li data-phase-id="phase-3">
+              <span>15&ndash;30</span
+              ><strong data-boh-i18n="phase.endgameAssignment">Endgame assignment</strong
+              ><small data-boh-i18n="phase.finalObjective">Final objective</small>
+            </li>
+          </ol>
+        </div>
+
+        <section class="boh-map-card" aria-labelledby="bohMapTitle">
+          <div class="boh-card-heading">
+            <div>
+              <p class="boh-kicker" data-boh-i18n="plan.routeKicker">YOUR ROUTE</p>
+              <h4 id="bohMapTitle" data-boh-i18n="plan.mapTitle">Personal map</h4>
+            </div>
+            <span class="boh-chip" data-boh-i18n="plan.mapScaleHint"
+              >Schematic &middot; not to scale</span
+            >
+          </div>
+
+          <div class="boh-map-wrap" data-role="personal-map">
+            <svg
+              class="boh-map"
+              viewBox="0 0 640 430"
+              role="img"
+              aria-labelledby="bohMapSvgTitle bohMapSvgDesc"
+              data-role="personal-map-svg"
+            >
+              <title id="bohMapSvgTitle" data-boh-i18n="plan.mapSvgTitle">
+                Personal match route schematic
+              </title>
+              <desc id="bohMapSvgDesc" data-boh-i18n="plan.mapSvgDescription">
+                A schematic arena map showing leadership-authored objectives and, when coordinates
+                are available, your assigned start, route, and target. The same route is written
+                below the map.
+              </desc>
+              <rect class="boh-map__field" x="8" y="8" width="624" height="414" rx="28" />
+              <path class="boh-map__lane" d="M82 88 L320 215 L558 88" />
+              <path class="boh-map__lane" d="M82 342 L320 215 L558 342" />
+              <path class="boh-map__lane" d="M82 88 L82 342 M558 88 L558 342" />
+              <circle class="boh-map__zone" cx="320" cy="215" r="54" />
+              <path
+                class="boh-map__route"
+                d="M82 342 C160 328 210 274 270 242 S410 150 558 88"
+                data-role="map-route"
+              />
+              <g data-role="map-objectives"></g>
+            </svg>
+          </div>
+
+          <div class="boh-map-legend" aria-label="Map legend" data-boh-i18n-aria="plan.mapLegend">
+            <span
+              ><i class="boh-map-key boh-map-key--route" aria-hidden="true"></i
+              ><span data-boh-i18n="plan.yourRoute">Your route</span></span
+            >
+            <span
+              ><i class="boh-map-key boh-map-key--target" aria-hidden="true"></i
+              ><span data-boh-i18n="plan.currentTarget">Current target</span></span
+            >
+            <span
+              ><i class="boh-map-key boh-map-key--other" aria-hidden="true"></i
+              ><span data-boh-i18n="plan.otherObjective">Other objective</span></span
+            >
+          </div>
+
+          <div class="boh-route-text" data-role="personal-route-text">
+            <h5 data-boh-i18n="plan.routeTextTitle">Your route in text</h5>
+            <ol>
+              <li>
+                <strong data-boh-i18n="plan.routeStart">Start:</strong>
+                <span data-role="route-start" data-boh-i18n="plan.spawnPlaceholder"
+                  >Your spawn</span
+                >
+              </li>
+              <li>
+                <strong data-boh-i18n="plan.routeVia">Move through:</strong>
+                <span data-role="route-via" data-boh-i18n="plan.towerPlaceholder"
+                  >Assigned tower</span
+                >
+              </li>
+              <li>
+                <strong data-boh-i18n="plan.routeFinish">Finish:</strong>
+                <span data-role="route-target" data-boh-i18n="plan.currentTarget"
+                  >Current target</span
+                >
+              </li>
+            </ol>
+          </div>
+        </section>
+      </section>
+
+      <aside class="boh-plan-reminder">
+        <span aria-hidden="true">!</span>
+        <div>
+          <strong data-boh-i18n="plan.liveCallTitle">The live call wins.</strong>
+          <p data-boh-i18n="plan.liveCallDescription">
+            If leadership changes the plan during the match, follow the live instruction first.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section
+    class="boh-section"
+    id="bohShowdownPanel"
+    role="tabpanel"
+    aria-labelledby="bohShowdownTab"
+    data-role="section-panel"
+    data-section="showdown"
+    hidden
+  >
+    <div class="boh-section-heading">
+      <div>
+        <p class="boh-kicker" data-boh-i18n="showdown.kicker">EPIC SHOWDOWN</p>
+        <h3 data-boh-i18n="showdown.title">Where and when do you want to play?</h3>
+        <p data-boh-i18n="showdown.description">
+          Select every battlefield position and game time that works for you. You can update these
+          preferences later.
+        </p>
+      </div>
+      <span
+        class="boh-save-state"
+        data-role="showdown-save-state"
+        role="status"
+        aria-live="polite"
+        data-boh-i18n="showdown.notSaved"
+        >Not saved</span
+      >
+    </div>
+
+    <div class="boh-state-card" data-role="showdown-state-locked">
+      <span class="boh-state-card__icon" aria-hidden="true">&#128274;</span>
+      <div>
+        <p class="boh-kicker" data-boh-i18n="access.membersOnly">MEMBERS ONLY</p>
+        <h4 data-boh-i18n="showdown.lockedTitle">
+          Unlock the member hub to save Epic Showdown preferences
+        </h4>
+        <p data-boh-i18n="showdown.lockedDescription">
+          Enter the current VTS member PIN before saving private availability.
+        </p>
+      </div>
+      <button
+        class="boh-button boh-button--primary"
+        type="button"
+        data-role="unlock-request"
+        data-boh-i18n="access.enterPin"
+      >
+        Enter member PIN
+      </button>
+    </div>
+
+    <form class="boh-form boh-showdown-form" data-role="showdown-form" hidden>
+      <section class="boh-card boh-showdown-card" aria-labelledby="bohShowdownPreferencesTitle">
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="showdown.kicker">EPIC SHOWDOWN</p>
+            <h4 id="bohShowdownPreferencesTitle" data-boh-i18n="showdown.title">
+              Where and when do you want to play?
+            </h4>
+          </div>
+        </div>
+
+        <label class="boh-field boh-showdown-name">
+          <span>
+            <span data-boh-i18n="showdown.gameName">Current in-game name</span>
+            <b aria-hidden="true">*</b>
+          </span>
+          <input
+            type="text"
+            name="epicGameName"
+            autocomplete="nickname"
+            maxlength="160"
+            required
+            placeholder="Enter your exact in-game name"
+            data-boh-i18n-placeholder="showdown.gameNamePlaceholder"
+            data-role="showdown-game-name"
+            aria-describedby="bohShowdownGameNameHint"
+          />
+          <small id="bohShowdownGameNameHint" data-boh-i18n="showdown.gameNameHint">
+            This lets leadership identify your Epic Showdown preferences even if you did not submit
+            All-Star stats.
+          </small>
+        </label>
+
+        <fieldset class="boh-fieldset">
+          <legend data-boh-i18n="showdown.laneLegend">Preferred battlefield positions</legend>
+          <p id="bohShowdownLaneHint" data-boh-i18n="showdown.laneHint">
+            Choose one or more positions.
+          </p>
+          <div
+            class="boh-check-grid boh-check-grid--three boh-showdown-options"
+            role="group"
+            aria-describedby="bohShowdownLaneHint"
+          >
+            <label class="boh-check-card boh-showdown-option">
+              <input type="checkbox" name="epicLanePreferences" value="south" />
+              <span data-boh-i18n="showdown.laneSouth">South</span>
+            </label>
+            <label class="boh-check-card boh-showdown-option">
+              <input type="checkbox" name="epicLanePreferences" value="center" />
+              <span data-boh-i18n="showdown.laneCenter">Center</span>
+            </label>
+            <label class="boh-check-card boh-showdown-option">
+              <input type="checkbox" name="epicLanePreferences" value="north" />
+              <span data-boh-i18n="showdown.laneNorth">North</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="boh-fieldset">
+          <legend data-boh-i18n="showdown.timeLegend">Preferred game times</legend>
+          <p id="bohShowdownTimeHint" data-boh-i18n="showdown.timeHint">
+            Choose every game time you can play.
+          </p>
+          <div
+            class="boh-check-grid boh-showdown-options"
+            role="group"
+            aria-describedby="bohShowdownTimeHint"
+            data-role="showdown-time-options"
+          ></div>
+          <p
+            class="boh-inline-status"
+            data-role="showdown-no-times"
+            data-boh-i18n="showdown.noTimeOptions"
+            hidden
+          >
+            No game times are currently available. Please check again later.
+          </p>
+        </fieldset>
+
+        <p
+          class="boh-showdown-summary"
+          data-role="showdown-summary"
+          role="status"
+          aria-live="polite"
+          data-boh-i18n="showdown.summaryNone"
+        >
+          No preferences selected yet.
+        </p>
+      </section>
+
+      <footer class="boh-form-actions">
+        <div>
+          <strong data-boh-i18n="showdown.title">Where and when do you want to play?</strong>
+          <span data-boh-i18n="showdown.description">
+            Select every battlefield position and game time that works for you. You can update these
+            preferences later.
+          </span>
+        </div>
+        <button
+          class="boh-button boh-button--primary"
+          type="submit"
+          data-role="showdown-submit"
+          data-boh-i18n="showdown.save"
+        >
+          Save Epic preferences
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

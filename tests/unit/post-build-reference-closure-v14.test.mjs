@@ -117,3 +117,49 @@ test('post-build rejects missing files and directories without an explicit index
   assert.match(result.stderr, /tabs\/admin\.html: href="\/missing-link\.html"/);
   assert.doesNotMatch(result.stderr, /empty\.html.*exists/i);
 });
+
+test('post-build keeps the All-Star gate offline-ready without precaching protected modules', (t) => {
+  const fixtureRoot = createPostBuildFixture();
+  t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
+
+  writeFixtureFile(fixtureRoot, 'index.html', '<!doctype html><title>Fixture</title>');
+  writeFixtureFile(fixtureRoot, 'sw.js', "const APP_SHELL = [\n  '/index.html'\n];\n");
+  for (const asset of [
+    'all-star-boh-bootstrap-fixture.js',
+    'all-star-boh-fixture.css',
+    'all-star-boh-fixture.js',
+    'all-star-boh-model-fixture.js',
+    'all-star-boh-store-fixture.js',
+    'admin-all-star-boh-fixture.js',
+    'unrelated-fixture.js',
+  ]) {
+    writeFixtureFile(fixtureRoot, `assets/${asset}`);
+  }
+
+  const result = runPostBuild(fixtureRoot);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const serviceWorker = readFileSync(path.join(fixtureRoot, 'dist', 'sw.js'), 'utf8');
+
+  for (const publicGateAsset of [
+    '/assets/all-star-boh-bootstrap-fixture.js',
+    '/assets/all-star-boh-fixture.css',
+    '/assets/unrelated-fixture.js',
+  ]) {
+    assert.ok(
+      serviceWorker.includes(`'${publicGateAsset}'`),
+      `${publicGateAsset} should remain in the generated precache manifest`
+    );
+  }
+  for (const protectedAsset of [
+    '/assets/all-star-boh-fixture.js',
+    '/assets/all-star-boh-model-fixture.js',
+    '/assets/all-star-boh-store-fixture.js',
+    '/assets/admin-all-star-boh-fixture.js',
+  ]) {
+    assert.equal(
+      serviceWorker.includes(`'${protectedAsset}'`),
+      false,
+      `${protectedAsset} must stay out of the generated precache manifest`
+    );
+  }
+});

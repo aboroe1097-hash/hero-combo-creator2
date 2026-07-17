@@ -39,13 +39,14 @@ Every change must follow these steps in order:
    data checks, production build, size budgets, and Playwright smoke tests. Use `npm run check:fast`
    during development, but the full `check` is required before a PR.
 
-7. **Verify user-visible releases online before committing:** run `npm run firebase:preview`. It
-   reruns the complete local gate, deploys only `dist/` to an expiring Firebase Hosting channel,
-   and runs the production smoke suite against the returned URL. Fix and redeploy until green, then
-   record the URL and expiry in the PR. The preview uses the real `abocombo` backend; automated
-   smoke initializes anonymous Auth and Analytics without intentional Firestore writes. Keep
-   additional QA read-only unless production writes are explicitly in scope.
-   Documentation-only/internal changes may use `npm run check` without a Firebase preview.
+7. **Use Firebase preview for high-risk releases only:** run `npm run firebase:preview` for a major
+   version upgrade, broad overhaul, or change that explicitly needs Firebase Hosting validation.
+   It reruns the complete local gate, deploys only `dist/` to an expiring Firebase Hosting channel,
+   and runs the production smoke suite against the returned URL. When this optional gate is used,
+   fix and redeploy until green, then record the URL and expiry in the PR. The preview uses the real
+   `abocombo` backend; automated smoke initializes anonymous Auth and Analytics without intentional
+   Firestore writes. Keep additional QA read-only unless production writes are explicitly in scope.
+   Normal additive releases proceed from a green `npm run check` directly to commit, push, and PR.
 
 8. **Stage intended files only** — never secrets, generated artifacts, or unrelated cruft.
    Commit with a concise message matching the repo style (no `-n`/skip-hooks, no force-push).
@@ -93,8 +94,9 @@ for branch protection.
 GitHub Pages deploys the static app only. Deploy these separately when their files or contracts
 change:
 
-- **Firebase Hosting preview:** `npm run firebase:preview` uses `firebase.preview.json` and a
-  version-derived temporary channel. It is a prerelease test and never replaces the `gh-pages` PR.
+- **Firebase Hosting preview:** when high-risk release validation is required,
+  `npm run firebase:preview` uses `firebase.preview.json` and a version-derived temporary channel.
+  It is an optional prerelease test and never replaces the `gh-pages` PR.
 - **Cloudflare Worker:** `workers/qwen-cors-proxy.js` or `wrangler.jsonc`.
 - **Firebase rules/config:** `firestore.rules`, Firebase indexes, Firebase Functions, or
   Firebase/App Check configuration.
