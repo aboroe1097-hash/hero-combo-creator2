@@ -1042,6 +1042,39 @@ const skills = {
 };
 
 const strings = {
+  Basic: 'Базовый',
+  Intermediate: 'Средний',
+  Advanced: 'Продвинутый',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    'Начальный ранг облика — даёт навык наследования, но не навык сохранения.',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    'Средний ранг облика — даёт навыки наследования и сохранения, а для улучшения использует обычные Печати биографии.',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    'Высший ранг облика — также даёт оба навыка, но для его улучшения нужны более дорогие Продвинутые печати биографии.',
+  'Granted on activation (owning the skin).':
+    'Выдаётся при активации (достаточно владеть обликом).',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    'Купите напрямую во время события выхода героя — после покупки облик останется у вас навсегда.',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    'Обменяйте в Eden Skin Store: Mythic-облик Beast Queen стоит 400 монет Biography Skin.',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    'Получите из наборов события выхода или возвращения (шанс выпадения из каждого набора — около 1,4%).',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    'Некоторые облики появляются в ротации Eden Skin Store.',
+  'Recruit certain skins with Super Vouchers.':
+    'Некоторые облики можно получить за Super Vouchers.',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    'Некоторые можно получить за этапные награды в событиях за суммарную трату самоцветов.',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    'Обменяйте Perfect Crystals на них в Premium Shop.',
+  'Only two heroes have Mythic skins.': 'Mythic-облики есть только у двух героев.',
+  'The most common skin tier — most heroes with a skin fall here.':
+    'Самый распространённый ранг обликов — к нему относится большинство героев, имеющих облик.',
+  'Epic Hero Medal': 'Эпическая медаль героя',
+  'Legendary Hero Medal': 'Легендарная медаль героя',
+  'Seasonal Legendary Hero Medal': 'Сезонная легендарная медаль героя',
+  'Biography Seal': 'Печать биографии',
+  'Advanced Biography Seal': 'Продвинутая печать биографии',
   '1 random friendly squad within effective range': '1 случайный союзный отряд в радиусе действия',
   '3 random friendly squads within effective range':
     '3 случайных союзных отряда в радиусе действия',

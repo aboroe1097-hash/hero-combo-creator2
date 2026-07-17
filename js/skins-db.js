@@ -13,6 +13,135 @@ export const SKIN_TYPES = {
   S2: { label: 'S2', color: '#60a5fa', icon: 'S2' }
 };
 
+// Skin Atlas tier catalog. The game groups hero skins into three tiers, each
+// with a fixed star-up cost shared by every skin of that tier. Values are
+// transcribed from the community skin guide; item names are kept canonical
+// (game proper nouns). Star 1 (Biography Attributes) is granted on activation;
+// star1To2 = Inheriting Skill Unlock; star2To3 = Preservation Skill Unlock
+// (Mythic skins have no Preserving Skill). Quantities are per skin.
+export const SKIN_TIERS = [
+  {
+    id: 'mythic',
+    name: 'Mythic',
+    typeKey: 'Mythic',
+    rank: 'Basic',
+    color: SKIN_TYPES.Mythic.color,
+    summary:
+      'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.',
+    hasPreserving: false,
+    star1: { unlock: 'Granted on activation (owning the skin).' },
+    star1To2: {
+      items: [
+        { name: 'Epic Hero Medal', qty: 18 },
+        { name: 'Legendary Hero Medal', qty: 9 },
+        { name: 'Biography Seal', qty: 240 },
+      ],
+    },
+    star2To3: null,
+    maximizeTotal: [
+      { name: 'Biography Seal', qty: 240 },
+      { name: 'Legendary Hero Medal', qty: 9 },
+      { name: 'Epic Hero Medal', qty: 18 },
+    ],
+    acquisition: [
+      'Buy directly during that hero\'s launch event — yours to keep once purchased.',
+      "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.",
+    ],
+    knownHeroes: ['Queen Anne', 'Beast Queen'],
+    heroesNote: 'Only two heroes have Mythic skins.',
+  },
+  {
+    id: 'legendary',
+    name: 'Legendary',
+    typeKey: 'Legendary',
+    rank: 'Intermediate',
+    color: SKIN_TYPES.Legendary.color,
+    summary:
+      'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.',
+    hasPreserving: true,
+    star1: { unlock: 'Granted on activation (owning the skin).' },
+    star1To2: {
+      items: [
+        { name: 'Epic Hero Medal', qty: 32 },
+        { name: 'Legendary Hero Medal', qty: 16 },
+        { name: 'Biography Seal', qty: 480 },
+      ],
+    },
+    star2To3: {
+      items: [
+        { name: 'Legendary Hero Medal', qty: 2 },
+        { name: 'Seasonal Legendary Hero Medal', qty: 2 },
+        { name: 'Biography Seal', qty: 450 },
+      ],
+    },
+    maximizeTotal: [
+      { name: 'Biography Seal', qty: 930 },
+      { name: 'Epic Hero Medal', qty: 32 },
+      { name: 'Legendary Hero Medal', qty: 18 },
+      { name: 'Seasonal Legendary Hero Medal', qty: 2 },
+    ],
+    acquisition: [
+      'Pull from launch or return event packs (about a 1.4% drop rate per pack).',
+      'Pick select skins up from the Eden Skin Store rotation.',
+      'Recruit certain skins with Super Vouchers.',
+    ],
+    knownHeroes: [],
+    heroesNote: 'The most common skin tier — most heroes with a skin fall here.',
+  },
+  {
+    id: 'everlasting',
+    name: 'Everlasting',
+    typeKey: 'Everlasting',
+    rank: 'Advanced',
+    color: SKIN_TYPES.Everlasting.color,
+    summary:
+      'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.',
+    hasPreserving: true,
+    star1: { unlock: 'Granted on activation (owning the skin).' },
+    star1To2: {
+      items: [
+        { name: 'Epic Hero Medal', qty: 96 },
+        { name: 'Legendary Hero Medal', qty: 32 },
+        { name: 'Seasonal Legendary Hero Medal', qty: 4 },
+        { name: 'Advanced Biography Seal', qty: 480 },
+      ],
+    },
+    star2To3: {
+      items: [
+        { name: 'Legendary Hero Medal', qty: 6 },
+        { name: 'Seasonal Legendary Hero Medal', qty: 6 },
+        { name: 'Advanced Biography Seal', qty: 280 },
+      ],
+    },
+    maximizeTotal: [
+      { name: 'Advanced Biography Seal', qty: 760 },
+      { name: 'Epic Hero Medal', qty: 96 },
+      { name: 'Legendary Hero Medal', qty: 38 },
+      { name: 'Seasonal Legendary Hero Medal', qty: 10 },
+    ],
+    acquisition: [
+      'Pull from launch or return event packs (about a 1.4% drop rate per pack).',
+      'Earn some as milestone rewards in cumulative gem-spend events.',
+      'Exchange Perfect Crystals for them in the Premium Shop.',
+    ],
+    knownHeroes: [
+      'Cleopatra VII',
+      'Ramses II',
+      'Ramses III',
+      'Caesar',
+      'Gustav',
+      'King Arthur',
+      'Beowulf',
+      'Boudica',
+      'Alexander',
+      'Spectral Reaper',
+      'Poison Mango',
+      'Lilith',
+    ],
+    heroesNote: '',
+  },
+];
+
 export const SKIN_STAR_STAGES = {
   1: {
     label: 'Star 1',
@@ -449,4 +578,9 @@ export function getSkinIconHtml(skin, maximized = false) {
   const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
   const animClass = maximized ? 'skin-icon-animated' : '';
   return `<span class="skin-icon ${animClass}" style="color:${typeInfo.color};border-color:${typeInfo.color}" title="${skin.name} (${skin.type})">${typeInfo.icon}</span>`;
+}
+
+// The ordered Skin Atlas tier catalog with verified star-up costs.
+export function getSkinTiers() {
+  return SKIN_TIERS;
 }

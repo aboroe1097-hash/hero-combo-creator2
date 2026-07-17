@@ -25,13 +25,13 @@ async function openApp(page, path = '/') {
   await waitForAppReady(page);
 }
 
-async function openDirectTabHash(page, tabName, sectionId, marker) {
+async function openDirectTabHash(page, tabName, sectionId, marker, search = '') {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.setItem('vts_eden_dataset', 'season5');
   });
-  await page.goto(`/#${tabName}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/${search}#${tabName}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator(sectionId)).toBeVisible({ timeout: 20000 });
   await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
@@ -1361,6 +1361,86 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
     await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
     await expectTab(page, '#tabResearch', '#researchSection', '#techListContainer');
+  });
+
+  test('Skin Atlas deep link preserves mode, focus, localization, and mobile layout', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => localStorage.setItem('vts_hero_lang', 'en'));
+    await openDirectTabHash(
+      page,
+      'heroes',
+      '#heroesSection',
+      '#heroesSection .skin-atlas',
+      '?atlas=skins'
+    );
+
+    const modeGroup = page.getByRole('group', { name: 'Skin Atlas' });
+    const heroesMode = page.locator('[data-atlas-mode="heroes"]');
+    const skinsMode = page.locator('[data-atlas-mode="skins"]');
+    const cards = page.locator('.skin-tier-card');
+
+    await expect(modeGroup).toBeVisible();
+    await expect(modeGroup.locator('[aria-pressed="true"]')).toHaveCount(1);
+    await expect(heroesMode).toHaveAttribute('aria-pressed', 'false');
+    await expect(skinsMode).toHaveAttribute('aria-pressed', 'true');
+    await expect(cards).toHaveCount(3);
+    await expect(cards.locator('.skin-tier-name')).toHaveText([
+      'Mythic',
+      'Legendary',
+      'Everlasting',
+    ]);
+    await expect(page.locator('#skinAtlasHeading')).toHaveText('Skin Atlas');
+
+    await heroesMode.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-atlas-mode="heroes"]')).toBeFocused();
+    await expect(page.locator('[data-atlas-mode="heroes"]')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(page.locator('#heroesSection .heroes-layout')).toBeVisible();
+    await expect(page.locator('.skin-atlas')).toHaveCount(0);
+    await expect
+      .poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get('atlas')))
+      .toBeNull();
+
+    await page.locator('[data-atlas-mode="skins"]').focus();
+    await page.keyboard.press('Space');
+    await expect(page.locator('[data-atlas-mode="skins"]')).toBeFocused();
+    await expect(page.locator('[data-atlas-mode="skins"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(cards).toHaveCount(3);
+    await expect
+      .poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get('atlas')))
+      .toBe('skins');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#languageSelect').selectOption('ar');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('#skinAtlasHeading')).toHaveText('أطلس الأزياء');
+    await expect(cards.first().locator('.skin-tier-rank')).toHaveText('أساسي');
+    await expect(cards.first().locator('.skin-tier-summary')).toContainText(
+      'فئة المظاهر للمبتدئين'
+    );
+    await expect(
+      cards.first().locator('.skin-req-name').filter({ hasText: 'ختم السيرة' }).first()
+    ).toHaveText('ختم السيرة');
+
+    const layout = await page.locator('#heroesSection').evaluate((section) => {
+      const root = document.documentElement;
+      const sectionRect = section.getBoundingClientRect();
+      const cardsInBounds = [...section.querySelectorAll('.skin-tier-card')].every((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left >= sectionRect.left - 1 && rect.right <= sectionRect.right + 1;
+      });
+      return {
+        documentFits: root.scrollWidth <= root.clientWidth + 1,
+        sectionFits: section.scrollWidth <= section.clientWidth + 1,
+        cardsInBounds,
+      };
+    });
+    expect(layout).toEqual({ documentFits: true, sectionFits: true, cardsInBounds: true });
   });
 
   test('dragon master materials tab renders interactive calculator', async ({ page }) => {

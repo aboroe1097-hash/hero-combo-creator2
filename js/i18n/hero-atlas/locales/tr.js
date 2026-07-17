@@ -1260,6 +1260,38 @@ const strings = {
     'Miras Becerisinin kilidi açıldığında benzersiz görünüm simgesi kullanılabilir.',
   Vulnerable: 'Savunmasız',
   'Wheel of Fortune': 'Kader Çarkı',
+  Basic: 'Temel',
+  Intermediate: 'Orta',
+  Advanced: 'İleri',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    'Giriş seviyesi kostüm kademesi — Miras Becerisi kazandırır ancak Koruma Becerisi kazandırmaz.',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    'Orta kademe — hem Miras hem de Koruma Becerisi sunar ve standart Biyografi Mühürleriyle geliştirilir.',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    'En üst kademe — iki beceriyi de sunar ancak geliştirmeleri daha pahalı İleri Biyografi Mühürleri gerektirir.',
+  'Granted on activation (owning the skin).':
+    'Kostüm etkinleştirildiğinde (sahip olduğunda) verilir.',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    'İlgili kahramanın çıkış etkinliğinde doğrudan satın al — satın aldıktan sonra kalıcı olarak senin olur.',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    'Eden Skin Store’da takas et: Beast Queen’in Mythic kostümü 400 Biography Skin jetonuna alınır.',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    'Çıkış veya geri dönüş etkinliği paketlerinden elde et (paket başına yaklaşık 1,4% düşme oranı).',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    'Belirli kostümleri Eden Skin Store rotasyonundan al.',
+  'Recruit certain skins with Super Vouchers.': 'Belirli kostümleri Super Vouchers ile al.',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    'Bazılarını toplam mücevher harcama etkinliklerinde aşama ödülü olarak kazan.',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    'Premium Shop’ta Perfect Crystals karşılığında takas et.',
+  'Only two heroes have Mythic skins.': 'Yalnızca iki kahramanın Mythic kostümü vardır.',
+  'The most common skin tier — most heroes with a skin fall here.':
+    'En yaygın kostüm kademesi — kostümü olan kahramanların çoğu bu kademededir.',
+  'Epic Hero Medal': 'Epik Kahraman Madalyası',
+  'Legendary Hero Medal': 'Efsanevi Kahraman Madalyası',
+  'Seasonal Legendary Hero Medal': 'Sezonluk Efsanevi Kahraman Madalyası',
+  'Biography Seal': 'Biyografi Mührü',
+  'Advanced Biography Seal': 'İleri Biyografi Mührü',
 };
 
 export default { skills, strings };

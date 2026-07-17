@@ -1042,6 +1042,39 @@ const skills = {
 };
 
 const strings = {
+  Basic: 'Basis',
+  Intermediate: 'Mittelstufe',
+  Advanced: 'Fortgeschritten',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    'Die Einstiegsstufe für Skins – sie gewährt einen Vererbungs-Skill, aber niemals einen Bewahrungs-Skill.',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    'Die mittlere Stufe – sie besitzt sowohl einen Vererbungs- als auch einen Bewahrungs-Skill und wird mit normalen Biografie-Siegeln verbessert.',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    'Die höchste Stufe – sie besitzt ebenfalls beide Skills, doch ihre Verbesserungen kosten die wertvolleren fortgeschrittenen Biografie-Siegel.',
+  'Granted on activation (owning the skin).':
+    'Wird bei der Aktivierung gewährt (durch den Besitz des Skins).',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    'Kaufe ihn direkt während des Launch-Events des Helden – nach dem Kauf gehört er dauerhaft dir.',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    'Tausche ihn im Eden Skin Store ein: Der Mythic-Skin von Beast Queen kostet 400 Biography-Skin-Münzen.',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    'Ziehe ihn aus Paketen zum Launch- oder Rückkehr-Event (ca. 1,4 % Dropchance pro Paket).',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    'Ausgewählte Skins sind in der Rotation des Eden Skin Store erhältlich.',
+  'Recruit certain skins with Super Vouchers.':
+    'Bestimmte Skins kannst du mit Super Vouchers erhalten.',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    'Einige erhältst du als Meilensteinbelohnung bei Events für kumulierte Edelsteinausgaben.',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    'Tausche im Premium Shop Perfect Crystals gegen sie ein.',
+  'Only two heroes have Mythic skins.': 'Nur zwei Helden haben Mythic-Skins.',
+  'The most common skin tier — most heroes with a skin fall here.':
+    'Die häufigste Skin-Stufe – die meisten Helden mit einem Skin gehören zu dieser Stufe.',
+  'Epic Hero Medal': 'Epische Heldenmedaille',
+  'Legendary Hero Medal': 'Legendäre Heldenmedaille',
+  'Seasonal Legendary Hero Medal': 'Saisonale legendäre Heldenmedaille',
+  'Biography Seal': 'Biografie-Siegel',
+  'Advanced Biography Seal': 'Fortgeschrittenes Biografie-Siegel',
   '1 random friendly squad within effective range':
     '1 zuf\u00e4lliger verb\u00fcndeter Trupp in Wirkungsreichweite',
   '3 random friendly squads within effective range':

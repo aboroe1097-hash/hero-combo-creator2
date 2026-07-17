@@ -1,4 +1,10 @@
-import { heroHiddenPowers, heroSkins, SKIN_STAR_STAGES, SKIN_TYPES } from '../../skins-db.js';
+import {
+  heroHiddenPowers,
+  heroSkins,
+  SKIN_STAR_STAGES,
+  SKIN_TIERS,
+  SKIN_TYPES,
+} from '../../skins-db.js';
 import { HERO_SKILL_HELP_STRINGS } from './help-content.js';
 
 function addString(target, value) {
@@ -15,6 +21,18 @@ export function collectHeroAtlasRequiredStrings() {
     addString(strings, stage.label);
     addString(strings, stage.title);
     addString(strings, stage.unlock);
+  });
+
+  SKIN_TIERS.forEach((tier) => {
+    addString(strings, tier.name);
+    addString(strings, tier.rank);
+    addString(strings, tier.summary);
+    addString(strings, tier.star1?.unlock);
+    tier.star1To2?.items?.forEach((item) => addString(strings, item.name));
+    tier.star2To3?.items?.forEach((item) => addString(strings, item.name));
+    tier.maximizeTotal?.forEach((item) => addString(strings, item.name));
+    tier.acquisition?.forEach((line) => addString(strings, line));
+    addString(strings, tier.heroesNote);
   });
 
   Object.values(heroHiddenPowers).forEach((hiddenPower) => {

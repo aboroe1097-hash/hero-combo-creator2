@@ -1245,6 +1245,37 @@ const strings = {
     '解锁继承技能后可使用专属皮肤图标。',
   Vulnerable: '易伤',
   'Wheel of Fortune': '命运之轮',
+  Basic: '基础',
+  Intermediate: '中级',
+  Advanced: '高级',
+  'The entry-level skin tier — it grants an Inheriting Skill but never a Preserving Skill.':
+    '入门级皮肤——可获得传承技能，但不会获得保留技能。',
+  'The mid tier — it carries both an Inheriting Skill and a Preserving Skill, funded with standard Biography Seals.':
+    '中级皮肤——同时拥有传承技能和保留技能，升级使用普通传记印章。',
+  'The top tier — it also has an Inheriting Skill and a Preserving Skill, but its upgrades cost the pricier Advanced Biography Seals.':
+    '最高级皮肤——同样拥有这两种技能，但升级需要更昂贵的高级传记印章。',
+  'Granted on activation (owning the skin).': '激活时获得（拥有该皮肤即可）。',
+  "Buy directly during that hero's launch event — yours to keep once purchased.":
+    '在该英雄首发活动期间直接购买，购买后永久拥有。',
+  "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.":
+    '可在 Eden Skin Store 中兑换：Beast Queen 的 Mythic 皮肤需要 400 枚 Biography Skin 币。',
+  'Pull from launch or return event packs (about a 1.4% drop rate per pack).':
+    '可从首发或返场活动礼包中抽取（每包掉率约 1.4%）。',
+  'Pick select skins up from the Eden Skin Store rotation.':
+    '可在 Eden Skin Store 轮换中获取指定皮肤。',
+  'Recruit certain skins with Super Vouchers.': '可使用 Super Vouchers 获取部分皮肤。',
+  'Earn some as milestone rewards in cumulative gem-spend events.':
+    '部分皮肤可通过累计宝石消耗活动的里程碑奖励获得。',
+  'Exchange Perfect Crystals for them in the Premium Shop.':
+    '可在 Premium Shop 中使用 Perfect Crystals 兑换。',
+  'Only two heroes have Mythic skins.': '只有两名英雄拥有 Mythic 皮肤。',
+  'The most common skin tier — most heroes with a skin fall here.':
+    '最常见的皮肤等级——大多数拥有皮肤的英雄都属于此等级。',
+  'Epic Hero Medal': '史诗英雄勋章',
+  'Legendary Hero Medal': '传奇英雄勋章',
+  'Seasonal Legendary Hero Medal': '赛季传奇英雄勋章',
+  'Biography Seal': '传记印章',
+  'Advanced Biography Seal': '高级传记印章',
 };
 
 export default { skills, strings };
