@@ -20,9 +20,10 @@ test('Strife uses stable compound IDs for every canonical skill', () => {
   const keys = STRIFE_MONSTERS.flatMap((monster) =>
     monster.skills.map((skill) => strifeSkillKey(monster, skill))
   );
-  assert.equal(keys.length, 33);
-  assert.equal(new Set(keys).size, 33);
+  assert.equal(keys.length, 35);
+  assert.equal(new Set(keys).size, 35);
   assert.ok(keys.includes('gambosate:power-of-the-legion'));
+  assert.ok(keys.includes('fordogreen:power-of-the-legion'));
   assert.ok(keys.includes('titanus:power-of-the-legion'));
   assert.ok(keys.includes('noisy-noel:power-of-the-legion'));
   assert.ok(keys.includes('trident-north-sea:power-of-the-legion'));
@@ -97,7 +98,7 @@ test('Strife reloads its lazy content pack and renders canonical note IDs', asyn
 
 test('every authored recommendation carries a stable localized note ID', () => {
   const formations = Object.values(STRIFE_MONSTER_COMBOS).flat();
-  assert.equal(formations.length, 32);
+  assert.equal(formations.length, 33);
   for (const formation of formations) {
     assert.equal(formation.noteId, 'recommended-formation');
     assert.match(formation.note, /^Recommended (?:F2P|P2W) formation:/);

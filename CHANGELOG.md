@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.0.16 - 2026-07-17
+
+- Rebuilt the Strife over Dragon boss Fordogreen as "Fordogreen the Dark Rider" with its current four-skill kit — Preemptive Strike, Broken Promise, Hunt You Down, and Power of the Legion — including timings, targets, counters, and localized copy across all eleven supported languages.
+- Added the top X1 pay-to-win recommendation for Fordogreen (Edward the Confessor / Ramses II / Beowulf) alongside the existing formations.
+
 ## 14.0.15 - 2026-07-16
 
 - Added a simple, case-insensitive search inside the Alliance View Eden account-match editor while preserving the current selection during filtering and live contribution refreshes.

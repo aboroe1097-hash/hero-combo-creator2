@@ -178,27 +178,51 @@ export const STRIFE_MONSTERS = [
   },
   {
     id: 'fordogreen',
-    name: 'Fordogreen',
+    name: 'Fordogreen the Dark Rider',
     accent: '#60a5fa',
     imageUrl: 'images/strife/monsters/fordogreen.jpg',
     skills: [
       {
-        id: 'forest-call',
-        name: 'Forest Call',
-        timing: 'Rounds 1-3',
-        target: 'Fordogreen',
-        effect: 'Immune to normal attacks during the first three rounds.',
-        answer: 'Focus on skill damage or deploy cleansing supports.',
-        tags: ['Early Shield', 'Normal Immune'],
+        id: 'preemptive-strike',
+        name: 'Preemptive Strike',
+        timing: 'Rounds 1-2',
+        target: '2 random squads',
+        effect:
+          'For the first 2 rounds, deals 200% Damage to 2 random enemy squads and disarms them for 1 round.',
+        answer:
+          'Bring control-immune or high-HP front rows to survive the opening disarm, or race the boss down before the burst window closes.',
+        tags: ['Early Burst', 'Disarm'],
       },
       {
-        id: 'thorn-backlash',
-        name: 'Thorn Backlash',
-        timing: 'Ongoing',
-        target: 'Attacking squad',
-        effect: 'Reflects a percentage of incoming physical damage back to the attacker.',
-        answer: 'Use healing sustain and skill damage over physical attacks.',
-        tags: ['Reflect', 'Anti-Physical'],
+        id: 'broken-promise',
+        name: 'Broken Promise',
+        timing: 'Passive',
+        target: 'Fordogreen',
+        effect: 'Takes 60% less Skill Damage but 50% more Crit Damage in battles.',
+        answer: 'Drop skill-damage nukers and build around physical basic-attack crit dealers.',
+        tags: ['Skill Reduction', 'Crit Weakness'],
+      },
+      {
+        id: 'hunt-you-down',
+        name: 'Hunt You Down',
+        timing: 'After normal attacks',
+        target: 'Lowest-power squad',
+        effect:
+          'After a normal attack, 100% chance to deal 300% Damage to the enemy squad with the lowest troop power and make it take 40% more Physical Damage until the battle ends.',
+        answer:
+          'Avoid fielding a fragile low-power squad the boss can single out, and layer physical damage reduction on the back line.',
+        tags: ['Focus Fire', 'Physical'],
+      },
+      {
+        id: 'power-of-the-legion',
+        name: 'Power of the Legion',
+        timing: 'Passive',
+        target: 'Fordogreen army',
+        effect:
+          "The Hero's Legion gains 500% more Might and 70% more Damage, with combat speed and the marching soldier cap raised by 800 and 4,875,750.",
+        answer:
+          'Expect a heavy stat check; bring your strongest cores rather than gimmick control picks.',
+        tags: ['Stat Boss'],
       },
     ],
   },
@@ -457,6 +481,12 @@ const STRIFE_RECOMMENDED_FORMATIONS = {
     },
   ],
   fordogreen: [
+    {
+      stage: 'X1',
+      tier: 'p2w',
+      heroes: ['Edward the Confessor', 'Ramses II', 'Beowulf'],
+      note: 'Recommended P2W formation: Edward the Confessor / Ramses II / Beowulf.',
+    },
     {
       stage: 'X1',
       tier: 'p2w',

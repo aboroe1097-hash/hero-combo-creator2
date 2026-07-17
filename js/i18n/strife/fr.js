@@ -81,14 +81,24 @@ export default defineStrifePack({
       'Utilisez une première ligne robuste et évitez les compositions canon de verre.',
     ],
     [
-      'Appel de la forêt',
-      'Immunise contre les attaques normales pendant les trois premiers rounds.',
-      'Concentrez-vous sur les dégâts de compétence ou déployez des soutiens capables de dissiper.',
+      'Frappe préventive',
+      'Pendant les 2 premiers rounds, inflige 200 % de dégâts à 2 escouades ennemies aléatoires et les désarme pendant 1 round.',
+      'Amenez des lignes de front immunisées au contrôle ou très résistantes pour encaisser le désarmement d’ouverture, ou abattez le boss avant la fin de la fenêtre de burst.',
     ],
     [
-      'Contrecoup d’épines',
-      'Renvoie à l’attaquant une partie des dégâts physiques reçus.',
-      'Privilégiez le sustain par les soins et les dégâts de compétence aux attaques physiques.',
+      'Promesse brisée',
+      'Subit 60 % de dégâts de compétence en moins mais 50 % de dégâts critiques en plus en combat.',
+      'Abandonnez les nukers de compétence et bâtissez autour de frappes de base physiques à critique.',
+    ],
+    [
+      'Traque implacable',
+      'Après une attaque normale, 100 % de chance d’infliger 300 % de dégâts à l’escouade au plus faible potentiel de troupes et de lui faire subir 40 % de dégâts physiques en plus jusqu’à la fin du combat.',
+      'Évitez d’aligner une escouade fragile à faible puissance que le boss peut cibler, et ajoutez de la réduction de dégâts physiques en arrière-ligne.',
+    ],
+    [
+      'Puissance de la Légion',
+      'La Légion du héros gagne 500 % de Puissance et 70 % de dégâts en plus ; la vitesse de combat et le plafond de soldats en marche augmentent de 800 et 4 875 750.',
+      'Attendez-vous à un rude test de statistiques ; amenez vos meilleurs noyaux plutôt que des astuces de contrôle.',
     ],
     [
       'Rugissement féroce',
@@ -237,6 +247,8 @@ export default defineStrifePack({
     'Armée du Trident',
     'Escadron drainé',
     'Reine de Givre',
+    'Escadron le plus faible',
+    'Armée de Fordogreen',
   ],
   tags: [
     'Burst initial',
@@ -277,5 +289,7 @@ export default defineStrifePack({
     'Burst tardif',
     'Réduction physique',
     'Faiblesse aux compétences',
+    'Faiblesse aux critiques',
+    'Tir concentré',
   ],
 });

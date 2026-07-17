@@ -81,14 +81,24 @@ export default defineStrifePack({
       'Gunakan garis depan kokoh dan hindari komposisi glass cannon yang rapuh.',
     ],
     [
-      'Panggilan Hutan',
-      'Kebal terhadap Normal Attack selama tiga ronde pertama.',
-      'Fokus pada Skill Damage atau gunakan support dengan Cleanse.',
+      'Serangan Pendahulu',
+      'Pada 2 ronde pertama, memberi 200% Damage ke 2 skuad musuh acak dan melucuti senjata mereka selama 1 ronde.',
+      'Bawa barisan depan yang kebal kontrol atau ber-HP tinggi untuk bertahan dari pelucutan awal, atau habisi bos sebelum jendela burst tertutup.',
     ],
     [
-      'Pantulan Duri',
-      'Memantulkan sebagian Physical Damage yang diterima kembali ke penyerang.',
-      'Gunakan sustain heal dan Skill Damage, bukan serangan Physical.',
+      'Janji Ingkar',
+      'Menerima 60% lebih sedikit Skill Damage tetapi 50% lebih banyak Crit Damage dalam pertempuran.',
+      'Tinggalkan nuker skill dan bangun tim di sekitar penyerang Normal Attack fisik dengan crit tinggi.',
+    ],
+    [
+      'Memburumu',
+      'Setelah Normal Attack, 100% peluang memberi 300% Damage ke skuad dengan kekuatan pasukan terendah dan membuatnya menerima 40% lebih banyak Physical Damage hingga pertempuran berakhir.',
+      'Hindari menurunkan skuad lemah berkekuatan rendah yang bisa disasar bos, dan tambahkan pengurangan Physical Damage di barisan belakang.',
+    ],
+    [
+      'Kekuatan Legiun',
+      'Legiun Hero mendapat 500% Might dan 70% Damage lebih besar; kecepatan tempur dan batas prajurit berbaris naik 800 dan 4.875.750.',
+      'Bersiaplah untuk uji statistik berat; bawa inti terkuatmu alih-alih trik kontrol.',
     ],
     [
       'Auman Ganas',
@@ -237,6 +247,8 @@ export default defineStrifePack({
     'Pasukan Trisula',
     'Skuad yang terkuras',
     'Ratu Es',
+    'Skuad berkekuatan terendah',
+    'Pasukan Fordogreen',
   ],
   tags: [
     'Burst Awal',
@@ -277,5 +289,7 @@ export default defineStrifePack({
     'Burst Akhir',
     'Reduksi Physical',
     'Lemah terhadap Skill',
+    'Lemah terhadap Crit',
+    'Fokus Serang',
   ],
 });

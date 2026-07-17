@@ -11,13 +11,13 @@ const comboRows = Object.values(STRIFE_MONSTER_COMBOS).flat();
 
 test('Strife exposes only the intentional S0 through X2 stage scope', () => {
   assert.deepEqual(STRIFE_SEASONS, ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
-  assert.equal(comboRows.length, 32);
+  assert.equal(comboRows.length, 33);
   assert.deepEqual(
     comboRows.reduce((counts, { stage }) => {
       counts[stage] = (counts[stage] || 0) + 1;
       return counts;
     }, {}),
-    { X1: 12, S3: 7, S4: 4, X2: 3, S1: 3, S2: 3 }
+    { X1: 13, S3: 7, S4: 4, X2: 3, S1: 3, S2: 3 }
   );
   assert.equal(
     comboRows.some(({ stage }) => stage === 'X8'),

@@ -81,14 +81,24 @@ export default defineStrifePack({
       'Usa primeras líneas resistentes y evita composiciones frágiles de cañón de cristal.',
     ],
     [
-      'Llamada del bosque',
-      'Es inmune a los ataques normales durante las primeras tres rondas.',
-      'Céntrate en daño de habilidad o despliega apoyos con limpieza.',
+      'Ataque preventivo',
+      'Durante las 2 primeras rondas, inflige un 200 % de daño a 2 escuadrones enemigos aleatorios y los desarma durante 1 ronda.',
+      'Lleva primeras líneas inmunes al control o con mucha vida para aguantar el desarme inicial, o derriba al jefe antes de que cierre la ventana de burst.',
     ],
     [
-      'Contraataque de espinas',
-      'Refleja al atacante un porcentaje del daño físico recibido.',
-      'Usa sustain de curación y daño de habilidad en vez de ataques físicos.',
+      'Promesa rota',
+      'Recibe un 60 % menos de daño de habilidad, pero un 50 % más de daño crítico en combate.',
+      'Deja los atacantes de habilidad y monta la composición alrededor de ataques básicos físicos con crítico.',
+    ],
+    [
+      'Te daré caza',
+      'Tras un ataque normal, 100 % de probabilidad de infligir un 300 % de daño al escuadrón con menor poder de tropas y hacer que reciba un 40 % más de daño físico hasta el final del combate.',
+      'Evita desplegar un escuadrón frágil de bajo poder que el jefe pueda señalar, y añade reducción de daño físico en la retaguardia.',
+    ],
+    [
+      'Poder de la Legión',
+      'La legión del héroe obtiene un 500 % más de Poder y un 70 % más de daño; la velocidad de combate y la capacidad de marcha aumentan en 800 y 4.875.750.',
+      'Espera una dura prueba de stats; lleva tus mejores núcleos en vez de trucos de control.',
     ],
     [
       'Rugido feroz',
@@ -237,6 +247,8 @@ export default defineStrifePack({
     'Ejército del Tridente',
     'Escuadrón drenado',
     'Reina de Hielo',
+    'Escuadrón de menor poder',
+    'Ejército de Fordogreen',
   ],
   tags: [
     'Burst inicial',
@@ -277,5 +289,7 @@ export default defineStrifePack({
     'Burst tardío',
     'Reducción física',
     'Debilidad a habilidades',
+    'Debilidad a críticos',
+    'Fuego focalizado',
   ],
 });
