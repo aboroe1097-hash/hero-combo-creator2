@@ -3730,6 +3730,10 @@ test.describe('app smoke tabs', () => {
       .first()
       .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
     await supportScoreTrigger.hover();
+    // A deferred public-data refresh can replace the hovered row while this
+    // long smoke case is running. Re-focus the current trigger so the
+    // accessibility path and viewport-position assertions target the live row.
+    await supportScoreTrigger.focus();
     const supportScorePopover = supportScoreTrigger.locator('.dash-weighted-score-popover');
     await expect(supportScorePopover).toBeVisible();
     const supportPopoverMetrics = await supportScorePopover.evaluate((popover) => {

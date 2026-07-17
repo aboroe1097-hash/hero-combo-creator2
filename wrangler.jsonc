@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "delicate-term-725f",
-  "main": "workers/qwen-cors-proxy.js",
+  "main": "workers/qwen-cors-proxy-entry.js",
   "compatibility_date": "2026-06-25",
   "workers_dev": true,
   "preview_urls": false,
@@ -12,6 +12,14 @@
   "durable_objects": {
     "bindings": [
       {
+        "name": "AI_USER_QUOTA",
+        "class_name": "AiQuotaDurableObject",
+      },
+      {
+        "name": "AI_GLOBAL_QUOTA",
+        "class_name": "AiQuotaDurableObject",
+      },
+      {
         "name": "BOH_OCR_RATE_LIMITER",
         "class_name": "BohOcrRateLimiter",
       },
@@ -19,7 +27,12 @@
   },
   "migrations": [
     {
-      // Immutable after its first production deployment; append future tags.
+      // Already deployed in production. Never rename or remove this tag/class.
+      "tag": "ai-quota-v1",
+      "new_sqlite_classes": ["AiQuotaDurableObject"],
+    },
+    {
+      // Append-only after its first production deployment.
       "tag": "v1-boh-ocr-rate-limiter",
       "new_sqlite_classes": ["BohOcrRateLimiter"],
     },

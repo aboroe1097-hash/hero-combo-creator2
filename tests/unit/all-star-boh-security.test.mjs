@@ -505,6 +505,10 @@ test('closed seasons and missing server secrets fail closed', async () => {
   const missingSecret = await invoke(createHandlerFixture({ memberPin: '' }));
   assert.equal(missingSecret.statusCode, 503);
   assert.deepEqual(missingSecret.body, { error: 'service_unavailable' });
+
+  const weakSecret = await invoke(createHandlerFixture({ memberPin: 'short-pin' }));
+  assert.equal(weakSecret.statusCode, 503);
+  assert.deepEqual(weakSecret.body, { error: 'service_unavailable' });
 });
 
 test('configuration and grant-path helpers require bounded values', () => {
@@ -705,6 +709,10 @@ test('Firestore private and published paths enforce admin/member boundaries with
     'published teams'
   );
   assert.match(published, /allow get: if hasActiveAllStarBohGrant\(season\)/);
+  assert.match(
+    published,
+    /!exists\([\s\S]*published\/current[\s\S]*\)[\s\S]*safeAllStarBohPublishedOverviewRead\(season\)/
+  );
   assert.match(published, /safeAllStarBohPublishedOverviewRead\(season\)/);
   assert.match(published, /allow list: if false/);
   assert.match(published, /validAllStarBohPublishedOverviewCreate\(season\)/);
@@ -738,7 +746,11 @@ test('Firestore private and published paths enforce admin/member boundaries with
   );
   assert.match(
     players,
-    /isOwner\(uid\)[\s\S]*hasActiveAllStarBohGrant\(season\)[\s\S]*validAllStarBohPublishedPlayerData\(resource\.data, season, uid\)/
+    /isOwner\(uid\)[\s\S]*hasActiveAllStarBohGrant\(season\)[\s\S]*safeAllStarBohPublishedPlayerRead\(season, uid\)/
+  );
+  assert.match(
+    players,
+    /!exists\([\s\S]*publishedPlayers\/\$\(uid\)[\s\S]*\)[\s\S]*safeAllStarBohPublishedPlayerRead\(season, uid\)/
   );
   assert.match(players, /allow list: if false/);
   assert.match(players, /validAllStarBohPublishedPlayerCreate\(season, uid\)/);
@@ -791,6 +803,96 @@ test('Firestore private and published paths enforce admin/member boundaries with
   assert.doesNotMatch(
     overviewAllowlist,
     /'playerIds'|'timeline'|'instructions'|'seatOverrides'|'plan'/
+  );
+
+  const publicationReadGate = rulesMatch(
+    rules,
+    /function activeAllStarBohPublicationData\(data, season\) \{[\s\S]*?\n {4}\}/,
+    'active publication read gate'
+  );
+  assert.match(publicationReadGate, /data\.announcementPublished == true/);
+  assert.match(publicationReadGate, /data\.teamCount == 6/);
+  assert.match(publicationReadGate, /data\.rosterSize == 12/);
+  assert.match(publicationReadGate, /data\.teamIds\.size\(\) == 6/);
+  assert.match(
+    publicationReadGate,
+    /data\.teamIds\.toSet\(\)\.size\(\) == data\.teamIds\.size\(\)/
+  );
+  assert.match(
+    publicationReadGate,
+    /data\.planPublished == true[\s\S]*data\.status in \['plan', 'live'\][\s\S]*data\.activePlanRevision == data\.revision/
+  );
+  assert.match(
+    publicationReadGate,
+    /data\.planPublished == false[\s\S]*data\.status in \['announcement', 'live'\][\s\S]*data\.activePlanRevision == null/
+  );
+
+  const hiddenPublicationReadGate = rulesMatch(
+    rules,
+    /function safeAllStarBohHiddenPublicationData\(data, season\) \{[\s\S]*?\n {4}\}/,
+    'hidden publication read gate'
+  );
+  assert.match(hiddenPublicationReadGate, /data\.status == 'hidden'/);
+  assert.match(hiddenPublicationReadGate, /data\.eventName == ''/);
+  assert.match(hiddenPublicationReadGate, /data\.title == ''/);
+  assert.match(hiddenPublicationReadGate, /data\.subtitle == ''/);
+  assert.match(hiddenPublicationReadGate, /data\.message == ''/);
+  assert.match(hiddenPublicationReadGate, /data\.announcementPublished == false/);
+  assert.match(hiddenPublicationReadGate, /data\.planPublished == false/);
+  assert.match(hiddenPublicationReadGate, /data\.teamCount == 0/);
+  assert.match(hiddenPublicationReadGate, /data\.rosterSize == 0/);
+  assert.match(hiddenPublicationReadGate, /data\.teamIds\.size\(\) == 0/);
+  assert.match(hiddenPublicationReadGate, /data\.phases\.size\(\) == 0/);
+  assert.match(hiddenPublicationReadGate, /data\.legions\.size\(\) == 0/);
+
+  const overviewReadGate = rulesMatch(
+    rules,
+    /function safeAllStarBohPublishedOverviewRead\(season\) \{[\s\S]*?\n {4}\}/,
+    'published overview read gate'
+  );
+  assert.match(overviewReadGate, /validAllStarBohPublishedOverviewData\(resource\.data, season\)/);
+  assert.match(overviewReadGate, /activeAllStarBohPublicationData\(resource\.data, season\)/);
+  assert.match(overviewReadGate, /safeAllStarBohHiddenPublicationData\(resource\.data, season\)/);
+
+  for (const [label, matcher] of [
+    [
+      'overview create state gate',
+      /function validAllStarBohPublishedOverviewCreate\(season\) \{[\s\S]*activeAllStarBohPublicationData\(request\.resource\.data, season\)[\s\S]*safeAllStarBohHiddenPublicationData\(request\.resource\.data, season\)/,
+    ],
+    [
+      'overview update state gate',
+      /function validAllStarBohPublishedOverviewUpdate\(season\) \{[\s\S]*activeAllStarBohPublicationData\(request\.resource\.data, season\)[\s\S]*safeAllStarBohHiddenPublicationData\(request\.resource\.data, season\)/,
+    ],
+  ]) {
+    assert.match(rules, matcher, label);
+  }
+
+  const teamReadGate = rulesMatch(
+    rules,
+    /function safeAllStarBohPublishedTeamRead\(season, teamId\) \{[\s\S]*?\n {4}\}/,
+    'published team read gate'
+  );
+  assert.match(teamReadGate, /published\/current/);
+  assert.match(teamReadGate, /activeAllStarBohPublicationData/);
+  assert.match(teamReadGate, /teamIds\.hasAny\(\[teamId\]\)/);
+  assert.match(teamReadGate, /resource\.data\.revision == get\(/);
+
+  const playerReadGate = rulesMatch(
+    rules,
+    /function safeAllStarBohPublishedPlayerRead\(season, uid\) \{[\s\S]*?\n {4}\}/,
+    'published player read gate'
+  );
+  assert.match(playerReadGate, /published\/current/);
+  assert.match(playerReadGate, /activeAllStarBohPublicationData/);
+  assert.match(playerReadGate, /teamIds\.hasAny\(\[resource\.data\.teamId\]\)/);
+  assert.match(playerReadGate, /resource\.data\.revision == get\(/);
+  assert.match(
+    playerReadGate,
+    /planPublished == true[\s\S]*'plan' in resource\.data[\s\S]*'timeline' in resource\.data/
+  );
+  assert.match(
+    playerReadGate,
+    /planPublished == false[\s\S]*!\('plan' in resource\.data\)[\s\S]*!\('timeline' in resource\.data\)/
   );
 
   for (const [label, matcher] of [

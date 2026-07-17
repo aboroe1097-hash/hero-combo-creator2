@@ -24,23 +24,24 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // Specialization Towers, Alliance View, and All-Star BoH stay route-isolated
-  // behind dynamic imports. The combined graph now includes the canonical tower
-  // research corpus plus the secure BoH client, six-team planner, persistence
-  // model, and complete player/Admin locale packs. The post-rebase production
-  // build measures 7651.0 KiB; keep less than 2 KiB of aggregate headroom.
-  totalJsBytes: 7653 * 1024,
-  // Specialization Towers and the player/Admin All-Star surfaces ship as lazy
-  // CSS chunks without changing the primary route's initial CSS graph. The
-  // post-rebase aggregate measures 1256.4 KiB; keep less than 2.6 KiB of
-  // aggregate headroom.
-  totalCssBytes: 1259 * 1024,
+  // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
+  // route-isolated behind dynamic imports. The combined graph now includes the
+  // canonical tower research corpus, Skin Atlas data, secure BoH client,
+  // six-team planner, persistence model, and complete player/Admin locale
+  // packs. The post-Skin-Atlas rebase measures 7685.4 KiB; keep less than 2 KiB
+  // of aggregate headroom.
+  totalJsBytes: 7687 * 1024,
+  // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
+  // ship as lazy CSS chunks without changing the primary route's initial CSS
+  // graph. The post-Skin-Atlas rebase measures 1261.6 KiB; keep less than
+  // 2.5 KiB of aggregate headroom.
+  totalCssBytes: 1264 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
-  // final post-rebase artifact measures 24,938.5 KiB; keep less than 6.5 KiB
-  // of headroom.
-  totalDeployBytes: 24945 * 1024,
+  // final post-Skin-Atlas rebase artifact measures 24,978.7 KiB; keep less than
+  // 6.5 KiB of headroom.
+  totalDeployBytes: 24985 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization and All-Star add route, feature, and locale assets. The

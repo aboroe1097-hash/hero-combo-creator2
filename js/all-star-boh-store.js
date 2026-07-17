@@ -1365,6 +1365,20 @@ function normalizePublishedCurrent(input = {}) {
       normalize: normalizeLegion,
     }),
   };
+  if (!output.announcementPublished) {
+    Object.assign(output, {
+      eventName: '',
+      title: '',
+      subtitle: '',
+      message: '',
+      activePlanRevision: null,
+      teamCount: 0,
+      rosterSize: 0,
+      teamIds: [],
+      phases: [],
+      legions: [],
+    });
+  }
   assertDocumentSize(output, MAX_PUBLICATION_BYTES, 'Published overview');
   return output;
 }

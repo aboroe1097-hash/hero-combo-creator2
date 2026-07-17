@@ -1674,6 +1674,128 @@ test('atomic publish sanitizes member documents, removes stale projections, and 
   assert.equal('getPersonalPlanFor' in member, false);
 });
 
+test('hidden publication keeps members unlocked without exposing draft announcement data', async () => {
+  const currentPath = getAllStarBohPublishedPath(SEASON_ID);
+  const indexPath = getAllStarBohPublicationIndexPath(SEASON_ID);
+  const oldTeamPath = getAllStarBohPublishedTeamPath(SEASON_ID, 'private-team');
+  const oldPlayerPath = getAllStarBohPublishedPlayerPath(SEASON_ID, 'private-player');
+  const createdAt = { toMillis: () => 1_700_000_000_000 };
+  const fake = createFirestoreFake({
+    [currentPath]: {
+      status: 'announcement',
+      eventName: 'Existing public event',
+      title: 'Existing public title',
+      subtitle: '',
+      message: '',
+      announcementPublished: true,
+      planPublished: false,
+      activePlanRevision: null,
+      teamCount: 6,
+      rosterSize: 12,
+      teamIds: ['private-team'],
+      phases: [],
+      legions: [],
+      seasonId: SEASON_ID,
+      schemaVersion: 1,
+      revision: 1,
+      createdAt,
+      updatedAt: createdAt,
+      updatedBy: 'admin-1',
+    },
+    [indexPath]: {
+      playerIds: ['private-player'],
+      teamIds: ['private-team'],
+      seasonId: SEASON_ID,
+      schemaVersion: 1,
+      revision: 1,
+      createdAt,
+      updatedAt: createdAt,
+      updatedBy: 'admin-1',
+    },
+    [oldTeamPath]: { seasonId: SEASON_ID, teamId: 'private-team', revision: 1 },
+    [oldPlayerPath]: { seasonId: SEASON_ID, uid: 'private-player', revision: 1 },
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+
+  const result = await admin.publish(
+    {
+      current: {
+        status: 'hidden',
+        eventName: 'Private draft event',
+        title: 'Private draft title',
+        subtitle: 'Private draft subtitle',
+        message: 'Private draft message',
+        announcementPublished: false,
+        planPublished: false,
+        activePlanRevision: 99,
+        teamCount: 6,
+        rosterSize: 12,
+        teamIds: ['private-team'],
+        phases: RELEASE_PHASES,
+        legions: RELEASE_LEGIONS,
+      },
+      teams: {},
+      players: {},
+    },
+    { expectedRevision: 1 }
+  );
+
+  assert.deepEqual(
+    {
+      status: result.current.status,
+      eventName: result.current.eventName,
+      title: result.current.title,
+      subtitle: result.current.subtitle,
+      message: result.current.message,
+      announcementPublished: result.current.announcementPublished,
+      planPublished: result.current.planPublished,
+      activePlanRevision: result.current.activePlanRevision,
+      teamCount: result.current.teamCount,
+      rosterSize: result.current.rosterSize,
+      teamIds: result.current.teamIds,
+      phases: result.current.phases,
+      legions: result.current.legions,
+    },
+    {
+      status: 'hidden',
+      eventName: '',
+      title: '',
+      subtitle: '',
+      message: '',
+      announcementPublished: false,
+      planPublished: false,
+      activePlanRevision: null,
+      teamCount: 0,
+      rosterSize: 0,
+      teamIds: [],
+      phases: [],
+      legions: [],
+    }
+  );
+  assert.deepEqual(fake.read(currentPath), result.current);
+  assert.equal(result.current.revision, 2);
+  assert.deepEqual(result.current.createdAt, createdAt);
+  assert.deepEqual(fake.read(indexPath).teamIds, []);
+  assert.deepEqual(fake.read(indexPath).playerIds, []);
+  assert.equal(fake.read(oldTeamPath), undefined);
+  assert.equal(fake.read(oldPlayerPath), undefined);
+
+  const member = createAllStarBohPlayerStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'unassigned-member',
+  });
+  assert.equal((await member.getPublication()).status, 'hidden');
+  assert.equal(await member.getPersonalPlan(), null);
+});
+
 test('plan publication requires complete validation, stores compact timelines, and pins the active revision', async () => {
   const bundle = completePublicationBundle({ planPublished: true });
   bundle.current.activePlanRevision = 999;

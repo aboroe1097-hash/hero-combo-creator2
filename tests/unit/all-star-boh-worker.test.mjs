@@ -937,11 +937,27 @@ test('All-Star OCR returns a private 503 before provider work when durable bindi
 
 test('Wrangler provisions the production Durable Object binding and SQLite migration', () => {
   const config = readFileSync('wrangler.jsonc', 'utf8');
+  const workerEntrySource = readFileSync('workers/qwen-cors-proxy-entry.js', 'utf8');
+  assert.match(config, /"name":\s*"AI_USER_QUOTA"[\s\S]*?"class_name":\s*"AiQuotaDurableObject"/u);
+  assert.match(
+    config,
+    /"name":\s*"AI_GLOBAL_QUOTA"[\s\S]*?"class_name":\s*"AiQuotaDurableObject"/u
+  );
+  assert.match(config, /"tag":\s*"ai-quota-v1"[\s\S]*?"AiQuotaDurableObject"/u);
   assert.match(
     config,
     /"name":\s*"BOH_OCR_RATE_LIMITER"[\s\S]*?"class_name":\s*"BohOcrRateLimiter"/u
   );
+  assert.match(
+    config,
+    /"tag":\s*"v1-boh-ocr-rate-limiter"[\s\S]*?"new_sqlite_classes":\s*\["BohOcrRateLimiter"\]/u
+  );
   assert.match(config, /"new_sqlite_classes":\s*\["BohOcrRateLimiter"\]/u);
+  assert.ok(config.indexOf('"ai-quota-v1"') < config.indexOf('"v1-boh-ocr-rate-limiter"'));
+  assert.match(
+    workerEntrySource,
+    /export \{ AiQuotaDurableObject \} from '\.\/ai\/quota-do\.js';/u
+  );
   assert.match(config, /"BOH_OCR_RATE_LIMIT_MODE":\s*"durable"/u);
   assert.doesNotMatch(config, /"BOH_OCR_RATE_LIMIT_MODE":\s*"memory-test"/u);
 });

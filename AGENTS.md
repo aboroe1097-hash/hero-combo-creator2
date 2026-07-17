@@ -10,9 +10,10 @@ This repo deploys the live site from the `gh-pages` branch. Treat `gh-pages` as 
 - Use the `codex/` branch prefix for Codex-authored branches unless the user asks for another name.
 - Update the release version and `CHANGELOG.md` for user-visible changes before the final checks.
 - Run `npm run check` before opening a pull request back into `gh-pages`.
-- For user-visible release PRs, run `npm run firebase:preview` before committing or pushing. It runs
-  the full local gate, deploys Hosting-only to an expiring versioned Firebase preview channel, and
-  runs the production smoke suite against the returned online URL.
+- For normal additive release PRs, proceed from a green `npm run check` directly to commit, push,
+  and PR.
+- Run `npm run firebase:preview` only for a major version upgrade, broad overhaul, or change that
+  explicitly needs Firebase Hosting validation.
 - Wait for the required `deploy-verification` check and owner review before merge.
 - Let the owner merge the PR. Only bypass this flow when the user explicitly asks for an emergency direct deploy.
 
@@ -24,7 +25,7 @@ git switch -c codex/short-description origin/gh-pages
 npm ci
 # make focused changes and update release metadata when required
 npm run version:check
-npm run firebase:preview
+npm run check
 git add <intended files>
 git commit -m "Short description"
 git push -u origin codex/short-description
@@ -33,12 +34,13 @@ gh pr create --base gh-pages --head codex/short-description
 
 `npm run check` is the full local gate: version consistency, lint/format, unit and data checks, production build, size budgets, and Playwright smoke tests. `npm run check:fast` is useful during development but is not sufficient for a PR. CI and the production deploy both call `npm run verify:deploy`; CI supplies deterministic non-secret build values while production supplies repository environment values.
 
-`npm run firebase:preview` includes `npm run check`, deploys only `dist/` through
-`firebase.preview.json`, and performs remote smoke testing. The temporary preview is public and uses
-the real `abocombo` backend. Automated smoke initializes anonymous Auth and Analytics but performs
-no intentional Firestore writes; keep additional QA read-only unless production writes are in scope.
-Firebase preview success is prerelease evidence only. Production still ships through the reviewed
-`gh-pages` pull request.
+`npm run firebase:preview` is an optional high-risk release gate for major version upgrades, broad
+overhauls, or changes that explicitly need Firebase Hosting validation. When used, it includes
+`npm run check`, deploys only `dist/` through `firebase.preview.json`, and performs remote smoke
+testing. The temporary preview is public and uses the real `abocombo` backend. Automated smoke
+initializes anonymous Auth and Analytics but performs no intentional Firestore writes; keep
+additional QA read-only unless production writes are in scope. Firebase preview success is
+prerelease evidence only. Production still ships through the reviewed `gh-pages` pull request.
 
 Repository protection for `gh-pages` should require a pull request, owner approval, and the `deploy-verification` status check. Workflows are a safety net, not a substitute for branch protection.
 

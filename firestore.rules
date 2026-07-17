@@ -997,6 +997,10 @@ service cloud.firestore {
 
     function validAllStarBohPublishedOverviewCreate(season) {
       return validAllStarBohPublishedOverview(season)
+        && (
+          activeAllStarBohPublicationData(request.resource.data, season)
+          || safeAllStarBohHiddenPublicationData(request.resource.data, season)
+        )
         && request.resource.data.revision == 1
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
@@ -1005,6 +1009,10 @@ service cloud.firestore {
 
     function validAllStarBohPublishedOverviewUpdate(season) {
       return validAllStarBohPublishedOverview(season)
+        && (
+          activeAllStarBohPublicationData(request.resource.data, season)
+          || safeAllStarBohHiddenPublicationData(request.resource.data, season)
+        )
         && request.resource.data.seasonId == resource.data.seasonId
         && request.resource.data.schemaVersion == resource.data.schemaVersion
         && request.resource.data.createdAt == resource.data.createdAt
@@ -1013,8 +1021,68 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid;
     }
 
+    function activeAllStarBohPublicationData(data, season) {
+      return data.seasonId == season
+        && data.schemaVersion == 1
+        && data.revision is int
+        && data.revision > 0
+        && data.announcementPublished == true
+        && data.teamCount == 6
+        && data.rosterSize == 12
+        && data.teamIds is list
+        && data.teamIds.size() == 6
+        && data.teamIds.toSet().size() == data.teamIds.size()
+        && (
+          (
+            data.planPublished == true
+            && data.status in ['plan', 'live']
+            && data.activePlanRevision == data.revision
+            && data.phases is list
+            && data.phases.size() == 4
+            && data.legions is list
+            && data.legions.size() == 2
+          )
+          || (
+            data.planPublished == false
+            && data.status in ['announcement', 'live']
+            && data.activePlanRevision == null
+            && data.phases is list
+            && data.phases.size() == 0
+            && data.legions is list
+            && data.legions.size() == 0
+          )
+        );
+    }
+
+    function safeAllStarBohHiddenPublicationData(data, season) {
+      return data.seasonId == season
+        && data.schemaVersion == 1
+        && data.revision is int
+        && data.revision > 0
+        && data.status == 'hidden'
+        && data.eventName == ''
+        && data.title == ''
+        && data.subtitle == ''
+        && data.message == ''
+        && data.announcementPublished == false
+        && data.planPublished == false
+        && data.activePlanRevision == null
+        && data.teamCount == 0
+        && data.rosterSize == 0
+        && data.teamIds is list
+        && data.teamIds.size() == 0
+        && data.phases is list
+        && data.phases.size() == 0
+        && data.legions is list
+        && data.legions.size() == 0;
+    }
+
     function safeAllStarBohPublishedOverviewRead(season) {
-      return validAllStarBohPublishedOverviewData(resource.data, season);
+      return validAllStarBohPublishedOverviewData(resource.data, season)
+        && (
+          activeAllStarBohPublicationData(resource.data, season)
+          || safeAllStarBohHiddenPublicationData(resource.data, season)
+        );
     }
 
     function validAllStarBohPublishedSeatItem(values, index) {
@@ -1122,7 +1190,28 @@ service cloud.firestore {
     }
 
     function safeAllStarBohPublishedTeamRead(season, teamId) {
-      return validAllStarBohPublishedTeamData(resource.data, season, teamId);
+      return validAllStarBohPublishedTeamData(resource.data, season, teamId)
+        && exists(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        )
+        && validAllStarBohPublishedOverviewData(
+          get(
+            /databases/$(database)/documents/boh_allstar/$(season)/published/current
+          ).data,
+          season
+        )
+        && activeAllStarBohPublicationData(
+          get(
+            /databases/$(database)/documents/boh_allstar/$(season)/published/current
+          ).data,
+          season
+        )
+        && get(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.teamIds.hasAny([teamId])
+        && resource.data.revision == get(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.revision;
     }
 
     function validAllStarBohIdentifier(value, allowEmpty) {
@@ -1355,6 +1444,47 @@ service cloud.firestore {
       && data.updatedBy is string
       && data.updatedBy.size() > 0
       && data.updatedBy.size() <= 128;
+    }
+
+    function safeAllStarBohPublishedPlayerRead(season, uid) {
+      return validAllStarBohPublishedPlayerData(resource.data, season, uid)
+        && exists(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        )
+        && validAllStarBohPublishedOverviewData(
+          get(
+            /databases/$(database)/documents/boh_allstar/$(season)/published/current
+          ).data,
+          season
+        )
+        && activeAllStarBohPublicationData(
+          get(
+            /databases/$(database)/documents/boh_allstar/$(season)/published/current
+          ).data,
+          season
+        )
+        && get(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.teamIds.hasAny([resource.data.teamId])
+        && resource.data.revision == get(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.revision
+        && (
+          (
+            get(
+              /databases/$(database)/documents/boh_allstar/$(season)/published/current
+            ).data.planPublished == true
+            && 'plan' in resource.data
+            && 'timeline' in resource.data
+          )
+          || (
+            get(
+              /databases/$(database)/documents/boh_allstar/$(season)/published/current
+            ).data.planPublished == false
+            && !('plan' in resource.data)
+            && !('timeline' in resource.data)
+          )
+        );
     }
 
     function validAllStarBohPublishedPlayerCreate(season, uid) {
@@ -1614,7 +1744,13 @@ service cloud.firestore {
 
       match /published/current {
         allow get: if hasActiveAllStarBohGrant(season)
-          && (isAdmin() || safeAllStarBohPublishedOverviewRead(season));
+          && (
+            isAdmin()
+            || !exists(
+              /databases/$(database)/documents/boh_allstar/$(season)/published/current
+            )
+            || safeAllStarBohPublishedOverviewRead(season)
+          );
         allow list: if false;
         allow create: if isAdmin()
           && validAllStarBohPublishedOverviewCreate(season);
@@ -1639,7 +1775,12 @@ service cloud.firestore {
           || (
             isOwner(uid)
             && hasActiveAllStarBohGrant(season)
-            && validAllStarBohPublishedPlayerData(resource.data, season, uid)
+            && (
+              !exists(
+                /databases/$(database)/documents/boh_allstar/$(season)/publishedPlayers/$(uid)
+              )
+              || safeAllStarBohPublishedPlayerRead(season, uid)
+            )
           );
         allow list: if false;
         allow create: if isAdmin()

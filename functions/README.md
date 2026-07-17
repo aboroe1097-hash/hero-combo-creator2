@@ -13,6 +13,8 @@ firebase functions:secrets:set BOH_THROTTLE_PEPPER
 
 `BOH_THROTTLE_PEPPER` should be an independent random value of at least 32 characters. It is used only to HMAC throttle keys; do not reuse the member PIN.
 
+`BOH_MEMBER_PIN` must be at least 12 characters. Use a season-specific, high-entropy value rather than a short numeric code; the Function fails closed when the configured secret is missing, too short, or longer than 128 characters.
+
 ## Required Firestore configuration
 
 Create the admin-only document `boh_allstar_config/current` with:

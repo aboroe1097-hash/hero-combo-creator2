@@ -5,6 +5,7 @@ export const ALL_STAR_BOH_ATTEMPT_COLLECTION = 'boh_allstar_security_attempts';
 export const ALL_STAR_BOH_GRANT_COLLECTION = 'boh_allstar_member_grants';
 export const ALL_STAR_BOH_GRANT_SCHEMA_VERSION = 1;
 export const MAX_UNLOCK_REQUEST_BYTES = 1024;
+export const MIN_CONFIGURED_PIN_LENGTH = 12;
 export const MAX_PIN_LENGTH = 128;
 export const THROTTLE_POLICY = Object.freeze({
   windowMs: 10 * 60 * 1000,
@@ -401,7 +402,11 @@ export function createUnlockAllStarBohHandler(dependencies) {
 
       const expectedPin = String(getMemberPin?.() || '');
       const throttlePepper = String(getThrottlePepper?.() || '');
-      if (!expectedPin || expectedPin.length > MAX_PIN_LENGTH || throttlePepper.length < 32) {
+      if (
+        expectedPin.length < MIN_CONFIGURED_PIN_LENGTH ||
+        expectedPin.length > MAX_PIN_LENGTH ||
+        throttlePepper.length < 32
+      ) {
         throw new AllStarBohUnlockError(503, 'service_unavailable', 'Unlock is unavailable.');
       }
       const succeeded = constantTimePinMatches(pin, expectedPin);
