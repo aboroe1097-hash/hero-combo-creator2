@@ -25,18 +25,18 @@
       },
     ],
   },
-  "migrations": [
-    {
-      // Already deployed in production. Never rename or remove this tag/class.
-      "tag": "ai-quota-v1",
-      "new_sqlite_classes": ["AiQuotaDurableObject"],
+  "exports": {
+    // Production already uses declarative exports. Keep this class live so
+    // its existing namespace and AI quota state remain attached.
+    "AiQuotaDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite",
     },
-    {
-      // Append-only after its first production deployment.
-      "tag": "v1-boh-ocr-rate-limiter",
-      "new_sqlite_classes": ["BohOcrRateLimiter"],
+    "BohOcrRateLimiter": {
+      "type": "durable-object",
+      "storage": "sqlite",
     },
-  ],
+  },
   // RATE_LIMIT_KV remains optional for the legacy generic OCR route only.
   // All-Star BoH OCR atomically coordinates actor + global admission through
   // BOH_OCR_RATE_LIMITER and fails closed without it.

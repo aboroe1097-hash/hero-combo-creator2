@@ -10,7 +10,7 @@
 - Adapted the supplied 2025 plan safely: Offensive, Rune, Top, and Bottom roles plus the 0–5, 5–10, 10–15, and 15–30 minute structure and objective codes can be reused, while all 15-seat player names, assignments, and capacities are deliberately excluded from the new 12-seat format.
 - Added complete player and admin All-Star copy for all eleven supported languages, revision-safe live persistence, authenticated OCR rate limits, privacy-safe member publications, identity and security contracts, responsive/RTL/keyboard behavior, and focused model, controller, storage, Worker, and integration coverage.
 - Bound every member-visible overview, team, and personal-plan read to the current published revision, published team set, and matching announcement/plan state so hidden or stale publication documents cannot be fetched directly.
-- Preserved the production AI quota Durable Object bindings and migration history in the shared OCR Worker before appending the All-Star rate limiter, preventing a later Worker deploy from orphaning live quota state.
+- Preserved the production AI quota Durable Object bindings, declarative SQLite export, and existing namespace while adding the All-Star rate limiter through the same exports lifecycle, preventing a later Worker deploy from orphaning live quota state.
 - Changed the release workflow for normal additive `gh-pages` PRs: `npm run check` remains mandatory, while `npm run firebase:preview` is reserved for major version upgrades, broad overhauls, or changes that explicitly need Firebase-hosted validation.
 
 ## 14.0.18 - 2026-07-17
