@@ -26,9 +26,11 @@ const LIMITS = {
   entryCssBytes: 405 * 1024,
   // Alliance View and its briefing renderer stay behind separate Admin-only
   // dynamic imports. The 1600x1200 Canvas export plus eleven-locale copy bring
-  // the combined graph to 6596.4 KiB while the Index entry remains 57.6 KiB.
-  // Keep less than 12 KiB of aggregate headroom while preload checks protect startup.
-  totalJsBytes: 6608 * 1024,
+  // the combined graph up; the refreshed Strife Fordogreen kit, its eleven-locale
+  // skill copy, and the Rank 1 reward view lift the aggregate to 6609.7 KiB while
+  // the Index entry remains 57.6 KiB. Keep less than 1.5 KiB of aggregate headroom
+  // while preload checks protect startup.
+  totalJsBytes: 6611 * 1024,
   // Alliance View's responsive table/dialog states bring aggregate CSS to
   // 1118.7 KiB. Keep less than 2.5 KiB of aggregate headroom.
   totalCssBytes: 1121 * 1024,
@@ -46,9 +48,10 @@ const LIMITS = {
   deployFileCount: 526,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
-    // Alliance View reuses the Admin/Eden design system. These routes measure
-    // 603.7/696.6 KiB and 720.1/813.0 KiB respectively after minification.
-    'admin.html': { desktop: 605 * 1024, mobile: 698 * 1024 },
+    // Alliance View reuses the Admin/Eden design system. The shared Strife
+    // Rank 1 reward styles in app.css lift these routes to 605.4/698.3 KiB and
+    // 720.1/813.0 KiB respectively after minification.
+    'admin.html': { desktop: 606 * 1024, mobile: 699 * 1024 },
     'eden-x1.html': { desktop: 722 * 1024, mobile: 815 * 1024 },
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
