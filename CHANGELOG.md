@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.0.20 - 2026-07-17
+
+- Added a Specialization Towers tab inside the main app (index.html) that follows the in-game flow: column banners of circular badges with a Legion Skill crest at the foot, and tapping a badge opens a node graph — an oval ring for most families and a dependency tree for Enhanced Tactics — with milestones, a medal-entry field, and complete/reset. Reuses the verified Specialization dataset, model, store, and eleven-language i18n; no game data is reinvented.
+- Added a community contribution flow to the Specialization tab: a one-click per-node CSV template download (a medal_cost column to fill) plus a link to the community sheet, and shipped a matching importable spreadsheet template.
+
 ## 14.0.19 - 2026-07-17
 
 - Added a VTS-only All-Star BoH member hub with a server-verified seasonal PIN, anonymous Firebase Auth, App Check, expiring server-owned member grants, locked-by-default navigation, and Firestore enforcement instead of exposing another reusable client-side PIN.
