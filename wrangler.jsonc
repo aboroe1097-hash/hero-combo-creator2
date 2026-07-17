@@ -7,10 +7,26 @@
   "preview_urls": false,
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
   },
-  // For durable cross-isolate rate limits, create a KV namespace and add it here:
-  // "kv_namespaces": [{ "binding": "RATE_LIMIT_KV", "id": "<KV_NAMESPACE_ID>" }],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BOH_OCR_RATE_LIMITER",
+        "class_name": "BohOcrRateLimiter",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      // Immutable after its first production deployment; append future tags.
+      "tag": "v1-boh-ocr-rate-limiter",
+      "new_sqlite_classes": ["BohOcrRateLimiter"],
+    },
+  ],
+  // RATE_LIMIT_KV remains optional for the legacy generic OCR route only.
+  // All-Star BoH OCR atomically coordinates actor + global admission through
+  // BOH_OCR_RATE_LIMITER and fails closed without it.
   "vars": {
     "ALLOWED_ORIGINS": "https://roc-vts.com,https://www.roc-vts.com,https://abocombo.web.app,https://abocombo.firebaseapp.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:5176,http://127.0.0.1:5176,http://localhost:5177,http://127.0.0.1:5177,http://localhost:4173,http://127.0.0.1:4173,http://localhost:4174,http://127.0.0.1:4174",
     "DASHSCOPE_BASE_URL": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
@@ -18,8 +34,24 @@
     "DASHSCOPE_FALLBACK_MODELS": "qwen-vl-max,qwen-vl-ocr-2025-11-20,qwen-vl-ocr",
     "FIREBASE_APP_CHECK_PROJECT_NUMBER": "103195597389",
     "FIREBASE_APP_CHECK_APP_ID": "1:103195597389:web:97788d99356b4e59839a04",
+    "FIREBASE_PROJECT_ID": "abocombo",
+    "FIREBASE_PROJECT_NUMBER": "103195597389",
+    "FIREBASE_APP_ID": "1:103195597389:web:97788d99356b4e59839a04",
+    "BOH_DASHSCOPE_MODEL": "qwen-vl-plus",
+    "BOH_OCR_MAX_BODY_BYTES": "6291456",
+    "BOH_OCR_MAX_IMAGE_BYTES": "4194304",
+    "BOH_OCR_MAX_DIMENSION": "3000",
+    "BOH_OCR_MAX_PIXELS": "6000000",
+    "BOH_OCR_MAX_POWER": "100000000000",
+    "BOH_OCR_MAX_PROVIDER_BYTES": "131072",
+    "BOH_OCR_UPSTREAM_TIMEOUT_MS": "45000",
+    "BOH_OCR_RATE_LIMIT_WINDOW_SECONDS": "300",
+    "BOH_OCR_RATE_LIMIT_MAX_REQUESTS": "6",
+    "BOH_OCR_GLOBAL_RATE_LIMIT_WINDOW_SECONDS": "60",
+    "BOH_OCR_GLOBAL_RATE_LIMIT_MAX_REQUESTS": "120",
+    "BOH_OCR_RATE_LIMIT_MODE": "durable",
     "MAX_BODY_BYTES": "5242880",
     "RATE_LIMIT_WINDOW_SECONDS": "60",
-    "RATE_LIMIT_MAX_REQUESTS": "30"
-  }
+    "RATE_LIMIT_MAX_REQUESTS": "30",
+  },
 }

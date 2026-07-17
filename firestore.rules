@@ -488,6 +488,1031 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    function hasActiveAllStarBohGrant(season) {
+      return signedIn()
+        && (
+          isAdmin()
+          || (
+            exists(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            )
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.keys().hasOnly([
+              'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
+            ])
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.keys().hasAll([
+              'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
+            ])
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.schemaVersion == 1
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.uid == request.auth.uid
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.seasonId == season
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.issuedAt is timestamp
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.expiresAt is timestamp
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.issuedAt <= request.time
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.issuedAt < get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.expiresAt
+            && get(
+              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            ).data.expiresAt > request.time
+            && exists(
+              /databases/$(database)/documents/boh_allstar_config/current
+            )
+            && get(
+              /databases/$(database)/documents/boh_allstar_config/current
+            ).data.activeSeason == season
+          )
+        );
+    }
+
+    function validAllStarBohConfig() {
+      return request.resource.data.keys().hasOnly([
+        'activeSeason', 'open', 'grantDurationMinutes'
+      ])
+      && request.resource.data.keys().hasAll([
+        'activeSeason', 'open', 'grantDurationMinutes'
+      ])
+      && request.resource.data.activeSeason is string
+      && request.resource.data.activeSeason.matches('^[A-Za-z0-9_-]{1,80}$')
+      && request.resource.data.open is bool
+      && request.resource.data.grantDurationMinutes is int
+      && request.resource.data.grantDurationMinutes >= 5
+      && request.resource.data.grantDurationMinutes <= 10080;
+    }
+
+    function canReadOwnActiveAllStarBohGrant(uid) {
+      return isOwner(uid)
+        && resource.data.keys().hasOnly([
+          'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
+        ])
+        && resource.data.keys().hasAll([
+          'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
+        ])
+        && resource.data.schemaVersion == 1
+        && resource.data.uid == uid
+        && resource.data.seasonId is string
+        && resource.data.seasonId.matches('^[A-Za-z0-9_-]{1,80}$')
+        && resource.data.issuedAt is timestamp
+        && resource.data.expiresAt is timestamp
+        && resource.data.issuedAt <= request.time
+        && resource.data.issuedAt < resource.data.expiresAt
+        && resource.data.expiresAt > request.time
+        && exists(
+          /databases/$(database)/documents/boh_allstar_config/current
+        )
+        && get(
+          /databases/$(database)/documents/boh_allstar_config/current
+        ).data.activeSeason == resource.data.seasonId;
+    }
+
+    function validAllStarBohText(value, maxLength) {
+      return value is string
+        && value.size() <= maxLength
+        && !value.matches('^data:image/.*');
+    }
+
+    function validAllStarBohStringItem(values, index, maxLength) {
+      return values.size() <= index
+        || (
+          values[index] is string
+          && values[index].size() > 0
+          && validAllStarBohText(values[index], maxLength)
+        );
+    }
+
+    function validAllStarBohStringList(values, maxItems, maxLength) {
+      return values is list
+        && values.size() <= maxItems
+        && validAllStarBohStringItem(values, 0, maxLength)
+        && validAllStarBohStringItem(values, 1, maxLength)
+        && validAllStarBohStringItem(values, 2, maxLength)
+        && validAllStarBohStringItem(values, 3, maxLength)
+        && validAllStarBohStringItem(values, 4, maxLength)
+        && validAllStarBohStringItem(values, 5, maxLength)
+        && validAllStarBohStringItem(values, 6, maxLength)
+        && validAllStarBohStringItem(values, 7, maxLength)
+        && validAllStarBohStringItem(values, 8, maxLength)
+        && validAllStarBohStringItem(values, 9, maxLength)
+        && validAllStarBohStringItem(values, 10, maxLength)
+        && validAllStarBohStringItem(values, 11, maxLength)
+        && validAllStarBohStringItem(values, 12, maxLength)
+        && validAllStarBohStringItem(values, 13, maxLength)
+        && validAllStarBohStringItem(values, 14, maxLength)
+        && validAllStarBohStringItem(values, 15, maxLength)
+        && validAllStarBohStringItem(values, 16, maxLength)
+        && validAllStarBohStringItem(values, 17, maxLength)
+        && validAllStarBohStringItem(values, 18, maxLength)
+        && validAllStarBohStringItem(values, 19, maxLength)
+        && validAllStarBohStringItem(values, 20, maxLength)
+        && validAllStarBohStringItem(values, 21, maxLength)
+        && validAllStarBohStringItem(values, 22, maxLength)
+        && validAllStarBohStringItem(values, 23, maxLength)
+        && validAllStarBohStringItem(values, 24, maxLength)
+        && validAllStarBohStringItem(values, 25, maxLength)
+        && validAllStarBohStringItem(values, 26, maxLength)
+        && validAllStarBohStringItem(values, 27, maxLength)
+        && validAllStarBohStringItem(values, 28, maxLength)
+        && validAllStarBohStringItem(values, 29, maxLength);
+    }
+
+    function validAllStarBohNullableInt(value, minimum, maximum) {
+      return value == null
+        || (value is int && value >= minimum && value <= maximum);
+    }
+
+    function validAllStarBohNullableNumber(value, minimum, maximum) {
+      return value == null
+        || (
+          (value is int || value is float)
+          && value >= minimum
+          && value <= maximum
+        );
+    }
+
+    function validAllStarBohNullableBool(value) {
+      return value == null || value is bool;
+    }
+
+    function validAllStarBohUsableHeroNames(values) {
+      return values is list
+        && values.size() <= 78
+        && values.toSet().size() == values.size()
+        && values.toSet().hasOnly([
+          'Jeanne d\'Arc', 'Isabella I', 'Jiguang Qi', 'Mary Tudor',
+          'Leonidas', 'The Boneless', 'Demon Spear', 'Kublai',
+          'The Heroine', 'Queen Anne', 'North\'s Rage', 'William Wallace',
+          'Yukimura Sanada', 'Heaven\'s Justice', 'Alfred', 'Cao Cao',
+          'Charles the Great', 'Black Prince', 'Lionheart', 'Al Fatih',
+          'Edward the Confessor', 'Constantine the Great', 'Genghis Khan',
+          'William the Conqueror', 'Inquisitor', 'BeastQueen', 'Jade',
+          'Immortal', 'Peace Bringer', 'Witch Hunter', 'Ramses II',
+          'Octavius', 'Che Liu', 'War Lord', 'Jane', 'Sky Breaker',
+          'Rokuboshuten', 'Bleeding Steed', 'Rozen Blade', 'Cleopatra VII',
+          'Caesar', 'Desert Storm', 'Soaring Hawk', 'The Brave', 'Jade Eagle',
+          'Immortal Guardian', 'Divine Arrow', 'Theodora', 'King Arthur',
+          'Beowulf', 'Hunk', 'Boudica', 'Sakura', 'Wind-Walker', 'ELK',
+          'Cicero', 'The Avalanche', 'Army Breaker', 'Dach Tengri',
+          'Tarantula', 'Lancelot', 'Alexander', 'Lawman', 'Defender',
+          'Spectral Reaper', 'Valkyrie', 'Bjorn', 'Skanda', 'Liberator',
+          'Ashen Verdict', 'Warden', 'Warhammer', 'Eidolon', 'Scarlet Reaver',
+          'Rainforest Ranger', 'Fortuneteller', 'Ragnar', 'Cyrus'
+        ]);
+    }
+
+    function validAllStarBohResearchProgressItem(values, researchId) {
+      return !(researchId in values)
+        || (
+          values.get(researchId, -1) is int
+          && values.get(researchId, -1) >= 0
+          && values.get(researchId, -1) <= 100
+        );
+    }
+
+    function validAllStarBohResearchProgress(values) {
+      return values is map
+        && values.keys().hasOnly([
+          'd1956263', 'b2691f74', '375d1626', '4a932eb0', '802e7893',
+          '38d12254', '5fef2163', 'cc2c9ee1', '3929cbb9', 'f915a84b',
+          'footmen_training', 'archers_training', 'cavalry_training',
+          'f0595b07', 'zone_conflict', '1a6ec06e', 'city_defence',
+          'defence_legion', 'e8704053', 'b3581c97', '2b149bcb', '3f5ebb34',
+          '3ff71437', 'art_of_war_command', '77db4a78', '24ffc526',
+          '2c49bd2a', 'fc190e81', '19ae0569'
+        ])
+        && validAllStarBohResearchProgressItem(values, 'd1956263')
+        && validAllStarBohResearchProgressItem(values, 'b2691f74')
+        && validAllStarBohResearchProgressItem(values, '375d1626')
+        && validAllStarBohResearchProgressItem(values, '4a932eb0')
+        && validAllStarBohResearchProgressItem(values, '802e7893')
+        && validAllStarBohResearchProgressItem(values, '38d12254')
+        && validAllStarBohResearchProgressItem(values, '5fef2163')
+        && validAllStarBohResearchProgressItem(values, 'cc2c9ee1')
+        && validAllStarBohResearchProgressItem(values, '3929cbb9')
+        && validAllStarBohResearchProgressItem(values, 'f915a84b')
+        && validAllStarBohResearchProgressItem(values, 'footmen_training')
+        && validAllStarBohResearchProgressItem(values, 'archers_training')
+        && validAllStarBohResearchProgressItem(values, 'cavalry_training')
+        && validAllStarBohResearchProgressItem(values, 'f0595b07')
+        && validAllStarBohResearchProgressItem(values, 'zone_conflict')
+        && validAllStarBohResearchProgressItem(values, '1a6ec06e')
+        && validAllStarBohResearchProgressItem(values, 'city_defence')
+        && validAllStarBohResearchProgressItem(values, 'defence_legion')
+        && validAllStarBohResearchProgressItem(values, 'e8704053')
+        && validAllStarBohResearchProgressItem(values, 'b3581c97')
+        && validAllStarBohResearchProgressItem(values, '2b149bcb')
+        && validAllStarBohResearchProgressItem(values, '3f5ebb34')
+        && validAllStarBohResearchProgressItem(values, '3ff71437')
+        && validAllStarBohResearchProgressItem(values, 'art_of_war_command')
+        && validAllStarBohResearchProgressItem(values, '77db4a78')
+        && validAllStarBohResearchProgressItem(values, '24ffc526')
+        && validAllStarBohResearchProgressItem(values, '2c49bd2a')
+        && validAllStarBohResearchProgressItem(values, 'fc190e81')
+        && validAllStarBohResearchProgressItem(values, '19ae0569');
+    }
+
+    function validAllStarBohFightingTimeIds(values) {
+      return values is list
+        && values.size() == 2
+        && values.toSet().size() == values.size()
+        && values.toSet().hasOnly(['+8', '+12', '+14', '+20']);
+    }
+
+    function validAllStarBohStats(stats) {
+      return stats is map
+        && stats.keys().hasOnly([
+          'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
+          'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
+          'level50HeroCount', 'rocLevel', 'usableHeroNames',
+          'researchProgressPct'
+        ])
+        && stats.keys().hasAll([
+          'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
+          'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
+          'level50HeroCount', 'rocLevel'
+        ])
+        && validAllStarBohNullableInt(stats.totalCastlePower, 0, 1000000000000000)
+        && validAllStarBohNullableInt(stats.troopPower, 0, 1000000000000000)
+        && validAllStarBohNullableInt(stats.buildingPower, 0, 1000000000000000)
+        && validAllStarBohNullableInt(stats.technologyPower, 0, 1000000000000000)
+        && validAllStarBohNullableInt(stats.heroCombatPower, 0, 1000000000000000)
+        && validAllStarBohNullableInt(stats.dragonPower, 0, 1000000000000000)
+        && validAllStarBohStringList(stats.t9TroopTypes, 12, 60)
+        && validAllStarBohStringList(stats.readySpeedHeroes, 24, 80)
+        && validAllStarBohNullableInt(stats.level50HeroCount, 0, 500)
+        && validAllStarBohNullableInt(stats.rocLevel, 0, 100)
+        && (
+          !('usableHeroNames' in stats)
+          || validAllStarBohUsableHeroNames(stats.usableHeroNames)
+        )
+        && (
+          !('researchProgressPct' in stats)
+          || validAllStarBohResearchProgress(stats.researchProgressPct)
+        );
+    }
+
+    function validAllStarBohCommitment(commitment) {
+      return commitment is map
+        && commitment.keys().hasOnly([
+          'availability', 'preferredRole', 'unavailableTimes', 'canTeleport',
+          'canUseVoice', 'planCommitment', 'notes', 'fightingTimeIds'
+        ])
+        && commitment.keys().hasAll([
+          'availability', 'preferredRole', 'unavailableTimes', 'canTeleport',
+          'canUseVoice', 'planCommitment', 'notes'
+        ])
+        && commitment.availability in ['all', 'most', 'backup', 'unavailable', '']
+        && commitment.preferredRole in [
+          'flexible', 'offensive', 'rune', 'top', 'bottom', 'backup', ''
+        ]
+        && validAllStarBohText(commitment.unavailableTimes, 800)
+        && validAllStarBohNullableBool(commitment.canTeleport)
+        && validAllStarBohNullableBool(commitment.canUseVoice)
+        && validAllStarBohNullableBool(commitment.planCommitment)
+        && validAllStarBohText(commitment.notes, 2000)
+        && (
+          !('fightingTimeIds' in commitment)
+          || validAllStarBohFightingTimeIds(commitment.fightingTimeIds)
+        );
+    }
+
+    function validAllStarBohEpicLanePreferences(values) {
+      return values is list
+        && values.size() > 0
+        && values.size() <= 3
+        && values.toSet().size() == values.size()
+        && values.toSet().hasOnly(['south', 'center', 'north']);
+    }
+
+    function validAllStarBohEpicTimePreferences(values) {
+      return values is list
+        && values.size() > 0
+        && values.size() <= 3
+        && values.toSet().size() == values.size()
+        && values.toSet().hasOnly(['+8', '+10', '+12']);
+    }
+
+    function validAllStarBohEpicPreferences(season, uid) {
+      return request.resource.data.keys().hasOnly([
+        'gameName', 'lanePreferences', 'timePreferences',
+        'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.keys().hasAll([
+        'gameName', 'lanePreferences', 'timePreferences',
+        'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && validAllStarBohText(request.resource.data.gameName, 160)
+      && request.resource.data.gameName.size() > 0
+      && validAllStarBohEpicLanePreferences(
+        request.resource.data.lanePreferences
+      )
+      && validAllStarBohEpicTimePreferences(
+        request.resource.data.timePreferences
+      )
+      && request.resource.data.seasonId == season
+      && request.resource.data.uid == uid
+      && request.resource.data.schemaVersion == 1
+      && request.resource.data.revision is int
+      && request.resource.data.revision > 0
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt == request.time
+      && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohEpicPreferencesCreate(season, uid) {
+      return validAllStarBohEpicPreferences(season, uid)
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validAllStarBohEpicPreferencesUpdate(season, uid) {
+      return validAllStarBohEpicPreferences(season, uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'gameName', 'lanePreferences', 'timePreferences',
+          'revision', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+
+    function validAllStarBohFieldConfidence(fieldConfidence) {
+      return fieldConfidence is map
+        && fieldConfidence.keys().hasOnly([
+          'totalCastlePower', 'troopPower', 'buildingPower',
+          'technologyPower', 'heroCombatPower', 'dragonPower'
+        ])
+        && (!('totalCastlePower' in fieldConfidence)
+          || validAllStarBohNullableNumber(fieldConfidence.totalCastlePower, 0, 1))
+        && (!('troopPower' in fieldConfidence)
+          || validAllStarBohNullableNumber(fieldConfidence.troopPower, 0, 1))
+        && (!('buildingPower' in fieldConfidence)
+          || validAllStarBohNullableNumber(fieldConfidence.buildingPower, 0, 1))
+        && (!('technologyPower' in fieldConfidence)
+          || validAllStarBohNullableNumber(fieldConfidence.technologyPower, 0, 1))
+        && (!('heroCombatPower' in fieldConfidence)
+          || validAllStarBohNullableNumber(fieldConfidence.heroCombatPower, 0, 1))
+        && (!('dragonPower' in fieldConfidence)
+          || validAllStarBohNullableNumber(fieldConfidence.dragonPower, 0, 1));
+    }
+
+    function validAllStarBohOcr(ocr) {
+      return ocr is map
+        && ocr.keys().hasOnly([
+          'used', 'valuesConfirmed', 'confidence', 'warnings', 'fieldConfidence'
+        ])
+        && ocr.keys().hasAll([
+          'used', 'valuesConfirmed', 'confidence', 'warnings', 'fieldConfidence'
+        ])
+        && ocr.used is bool
+        && ocr.valuesConfirmed is bool
+        && validAllStarBohNullableNumber(ocr.confidence, 0, 1)
+        && validAllStarBohStringList(ocr.warnings, 20, 240)
+        && validAllStarBohFieldConfidence(ocr.fieldConfidence);
+    }
+
+    function validAllStarBohPublishedPhaseItem(values, index) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly([
+            'id', 'label', 'order', 'startMinute', 'endMinute'
+          ])
+          && values[index].keys().hasAll([
+            'id', 'label', 'order', 'startMinute', 'endMinute'
+          ])
+          && values[index].id is string
+          && values[index].id.matches('^[A-Za-z0-9_-]{1,128}$')
+          && validAllStarBohText(values[index].label, 160)
+          && values[index].label.size() > 0
+          && values[index].order is int
+          && values[index].order >= 0
+          && values[index].order <= 100
+          && (values[index].startMinute is int || values[index].startMinute is float)
+          && values[index].startMinute >= 0
+          && values[index].startMinute <= 180
+          && (values[index].endMinute is int || values[index].endMinute is float)
+          && values[index].endMinute >= 0
+          && values[index].endMinute <= 180
+          && values[index].endMinute > values[index].startMinute
+        );
+    }
+
+    function validAllStarBohPublishedPhases(values) {
+      return values is list
+        && values.size() <= 4
+        && validAllStarBohPublishedPhaseItem(values, 0)
+        && validAllStarBohPublishedPhaseItem(values, 1)
+        && validAllStarBohPublishedPhaseItem(values, 2)
+        && validAllStarBohPublishedPhaseItem(values, 3);
+    }
+
+    function validAllStarBohPublishedLegionItem(values, index) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly(['id', 'label', 'order'])
+          && values[index].keys().hasAll(['id', 'label', 'order'])
+          && values[index].id is string
+          && values[index].id.matches('^[A-Za-z0-9_-]{1,128}$')
+          && validAllStarBohText(values[index].label, 160)
+          && values[index].label.size() > 0
+          && values[index].order is int
+          && values[index].order >= 0
+          && values[index].order <= 100
+        );
+    }
+
+    function validAllStarBohPublishedLegions(values) {
+      return values is list
+        && values.size() <= 2
+        && validAllStarBohPublishedLegionItem(values, 0)
+        && validAllStarBohPublishedLegionItem(values, 1);
+    }
+
+    function validAllStarBohPublishedOverviewData(data, season) {
+      return data.keys().hasOnly([
+        'status', 'eventName', 'title', 'subtitle', 'message',
+        'announcementPublished', 'planPublished', 'activePlanRevision',
+        'teamCount', 'rosterSize', 'teamIds', 'phases', 'legions',
+        'seasonId', 'schemaVersion', 'revision', 'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.keys().hasAll([
+        'status', 'eventName', 'title', 'subtitle', 'message',
+        'announcementPublished', 'planPublished', 'activePlanRevision',
+        'teamCount', 'rosterSize', 'teamIds', 'phases', 'legions',
+        'seasonId', 'schemaVersion', 'revision', 'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.status in ['hidden', 'announcement', 'plan', 'live']
+      && validAllStarBohText(data.eventName, 160)
+      && validAllStarBohText(data.title, 160)
+      && validAllStarBohText(data.subtitle, 800)
+      && validAllStarBohText(data.message, 2000)
+      && data.announcementPublished is bool
+      && data.planPublished is bool
+      && validAllStarBohNullableInt(data.activePlanRevision, 0, 1000000)
+      && data.teamCount is int
+      && data.teamCount >= 0
+      && data.teamCount <= 6
+      && data.rosterSize is int
+      && data.rosterSize >= 0
+      && data.rosterSize <= 12
+      && validAllStarBohStringList(data.teamIds, 6, 128)
+      && validAllStarBohPublishedPhases(data.phases)
+      && validAllStarBohPublishedLegions(data.legions)
+      && data.seasonId == season
+      && data.schemaVersion == 1
+      && data.revision is int
+      && data.revision > 0
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp
+      && data.updatedBy is string
+      && data.updatedBy.size() > 0
+      && data.updatedBy.size() <= 128;
+    }
+
+    function validAllStarBohPublishedOverview(season) {
+      return validAllStarBohPublishedOverviewData(request.resource.data, season);
+    }
+
+    function validAllStarBohPublishedOverviewCreate(season) {
+      return validAllStarBohPublishedOverview(season)
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohPublishedOverviewUpdate(season) {
+      return validAllStarBohPublishedOverview(season)
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function safeAllStarBohPublishedOverviewRead(season) {
+      return validAllStarBohPublishedOverviewData(resource.data, season);
+    }
+
+    function validAllStarBohPublishedSeatItem(values, index) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly([
+            'id', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
+            'roleLabel', 'side', 'lane'
+          ])
+          && values[index].keys().hasAll([
+            'id', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
+            'roleLabel', 'side', 'lane'
+          ])
+          && validAllStarBohText(values[index].id, 128)
+          && values[index].seatNumber is int
+          && values[index].seatNumber >= 1
+          && values[index].seatNumber <= 12
+          && validAllStarBohText(values[index].playerId, 128)
+          && values[index].playerId.size() > 0
+          && validAllStarBohText(values[index].displayName, 160)
+          && values[index].displayName.size() > 0
+          && validAllStarBohText(values[index].roleGroupId, 128)
+          && values[index].roleGroupId.size() > 0
+          && validAllStarBohText(values[index].roleLabel, 160)
+          && validAllStarBohText(values[index].side, 60)
+          && validAllStarBohText(values[index].lane, 60)
+        );
+    }
+
+    function validAllStarBohPublishedSeats(values) {
+      return values is list
+        && values.size() == 12
+        && validAllStarBohPublishedSeatItem(values, 0)
+        && validAllStarBohPublishedSeatItem(values, 1)
+        && validAllStarBohPublishedSeatItem(values, 2)
+        && validAllStarBohPublishedSeatItem(values, 3)
+        && validAllStarBohPublishedSeatItem(values, 4)
+        && validAllStarBohPublishedSeatItem(values, 5)
+        && validAllStarBohPublishedSeatItem(values, 6)
+        && validAllStarBohPublishedSeatItem(values, 7)
+        && validAllStarBohPublishedSeatItem(values, 8)
+        && validAllStarBohPublishedSeatItem(values, 9)
+        && validAllStarBohPublishedSeatItem(values, 10)
+        && validAllStarBohPublishedSeatItem(values, 11);
+    }
+
+    function validAllStarBohPublishedTeamData(data, season, teamId) {
+      return data.keys().hasOnly([
+        'name', 'number', 'color', 'captainId', 'seats',
+        'seasonId', 'teamId', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.keys().hasAll([
+        'name', 'number', 'color', 'captainId', 'seats',
+        'seasonId', 'teamId', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && validAllStarBohText(data.name, 160)
+      && data.name.size() > 0
+      && data.number is int
+      && data.number >= 1
+      && data.number <= 6
+      && validAllStarBohText(data.color, 40)
+      && validAllStarBohText(data.captainId, 128)
+      && validAllStarBohPublishedSeats(data.seats)
+      && data.seasonId == season
+      && data.teamId == teamId
+      && data.schemaVersion == 1
+      && data.revision is int
+      && data.revision > 0
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp
+      && data.updatedBy is string
+      && data.updatedBy.size() > 0
+      && data.updatedBy.size() <= 128;
+    }
+
+    function validAllStarBohPublishedTeam(season, teamId) {
+      return validAllStarBohPublishedTeamData(request.resource.data, season, teamId);
+    }
+
+    function validAllStarBohPublishedTeamCreate(season, teamId) {
+      return validAllStarBohPublishedTeam(season, teamId)
+        && request.resource.data.revision == getAfter(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.revision
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohPublishedTeamUpdate(season, teamId) {
+      return validAllStarBohPublishedTeam(season, teamId)
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.teamId == resource.data.teamId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.revision == getAfter(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.revision
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function safeAllStarBohPublishedTeamRead(season, teamId) {
+      return validAllStarBohPublishedTeamData(resource.data, season, teamId);
+    }
+
+    function validAllStarBohIdentifier(value, allowEmpty) {
+      return value is string
+        && (
+          (allowEmpty && value.size() == 0)
+          || value.matches('^[A-Za-z0-9_-]{1,128}$')
+        );
+    }
+
+    function validAllStarBohShortIdentifierList(values) {
+      return values is list
+        && values.size() <= 30;
+    }
+
+    function validAllStarBohPublishedInstruction(instruction) {
+      return instruction is map
+        && instruction.keys().hasOnly([
+          'summary', 'action', 'target', 'startObjectiveId', 'objectiveId',
+          'targetLabel', 'loadout', 'teleport', 'note', 'priority',
+          'viaObjectiveIds', 'pathObjectiveIds'
+        ])
+        && instruction.keys().hasAll([
+          'summary', 'action', 'target', 'startObjectiveId', 'objectiveId',
+          'targetLabel', 'loadout', 'teleport', 'note', 'priority',
+          'viaObjectiveIds', 'pathObjectiveIds'
+        ])
+        && validAllStarBohText(instruction.summary, 2000)
+        && validAllStarBohText(instruction.action, 100)
+        && validAllStarBohText(instruction.target, 240)
+        && validAllStarBohIdentifier(instruction.startObjectiveId, true)
+        && validAllStarBohIdentifier(instruction.objectiveId, true)
+        && validAllStarBohText(instruction.targetLabel, 160)
+        && validAllStarBohText(instruction.loadout, 240)
+        && (
+          instruction.teleport == null
+          || instruction.teleport is bool
+          || validAllStarBohText(instruction.teleport, 240)
+        )
+        && validAllStarBohText(instruction.note, 2000)
+        && validAllStarBohNullableInt(instruction.priority, 0, 100)
+        && validAllStarBohShortIdentifierList(instruction.viaObjectiveIds)
+        && validAllStarBohShortIdentifierList(instruction.pathObjectiveIds);
+    }
+
+    function validAllStarBohPublishedTimelineItem(values, index, uid, teamId, baseSeatNumber) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly([
+            'teamId', 'playerId', 'gameName', 'phaseId', 'phaseLabel',
+            'startMinute', 'endMinute', 'legionId', 'legionLabel',
+            'seatNumber', 'baseSeatNumber', 'roleGroupId', 'roleLabel',
+            'rotated', 'instruction'
+          ])
+          && values[index].keys().hasAll([
+            'teamId', 'playerId', 'gameName', 'phaseId', 'phaseLabel',
+            'startMinute', 'endMinute', 'legionId', 'legionLabel',
+            'seatNumber', 'baseSeatNumber', 'roleGroupId', 'roleLabel',
+            'rotated', 'instruction'
+          ])
+          && values[index].teamId == teamId
+          && values[index].playerId == uid
+          && validAllStarBohText(values[index].gameName, 160)
+          && validAllStarBohIdentifier(values[index].phaseId, false)
+          && validAllStarBohText(values[index].phaseLabel, 160)
+          && values[index].phaseLabel.size() > 0
+          && (values[index].startMinute is int || values[index].startMinute is float)
+          && values[index].startMinute >= 0
+          && values[index].startMinute <= 180
+          && (values[index].endMinute is int || values[index].endMinute is float)
+          && values[index].endMinute >= 0
+          && values[index].endMinute <= 180
+          && values[index].endMinute > values[index].startMinute
+          && validAllStarBohIdentifier(values[index].legionId, false)
+          && validAllStarBohText(values[index].legionLabel, 160)
+          && values[index].legionLabel.size() > 0
+          && values[index].seatNumber is int
+          && values[index].seatNumber >= 1
+          && values[index].seatNumber <= 12
+          && values[index].baseSeatNumber is int
+          && values[index].baseSeatNumber == baseSeatNumber
+          && validAllStarBohIdentifier(values[index].roleGroupId, false)
+          && validAllStarBohText(values[index].roleLabel, 160)
+          && values[index].roleLabel.size() > 0
+          && values[index].rotated is bool
+          && validAllStarBohPublishedInstruction(values[index].instruction)
+        );
+    }
+
+    function validAllStarBohPublishedTimeline(values, uid, teamId, baseSeatNumber) {
+      return values is list
+        && values.size() == 8
+        && validAllStarBohPublishedTimelineItem(values, 0, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 1, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 2, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 3, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 4, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 5, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 6, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 7, uid, teamId, baseSeatNumber);
+    }
+
+    function validAllStarBohPublishedRoleItem(values, index) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly(['id', 'label', 'order', 'color', 'capacity'])
+          && values[index].keys().hasAll(['id', 'label', 'order', 'color', 'capacity'])
+          && validAllStarBohIdentifier(values[index].id, false)
+          && validAllStarBohText(values[index].label, 160)
+          && values[index].label.size() > 0
+          && values[index].order is int
+          && values[index].order >= 0
+          && values[index].order <= 100
+          && validAllStarBohText(values[index].color, 40)
+          && values[index].capacity is int
+          && values[index].capacity >= 1
+          && values[index].capacity <= 12
+        );
+    }
+
+    function validAllStarBohPublishedRoles(values) {
+      return values is list
+        && values.size() <= 12
+        && validAllStarBohPublishedRoleItem(values, 0)
+        && validAllStarBohPublishedRoleItem(values, 1)
+        && validAllStarBohPublishedRoleItem(values, 2)
+        && validAllStarBohPublishedRoleItem(values, 3)
+        && validAllStarBohPublishedRoleItem(values, 4)
+        && validAllStarBohPublishedRoleItem(values, 5)
+        && validAllStarBohPublishedRoleItem(values, 6)
+        && validAllStarBohPublishedRoleItem(values, 7)
+        && validAllStarBohPublishedRoleItem(values, 8)
+        && validAllStarBohPublishedRoleItem(values, 9)
+        && validAllStarBohPublishedRoleItem(values, 10)
+        && validAllStarBohPublishedRoleItem(values, 11);
+    }
+
+    function validAllStarBohPublishedObjectives(values) {
+      return values is list && values.size() <= 64;
+    }
+
+    function validAllStarBohPublishedPlan(plan) {
+      return plan is map
+        && plan.keys().hasOnly([
+          'schemaVersion', 'id', 'label', 'roleGroups', 'phases', 'legions',
+          'objectives', 'roleDefaults', 'seatOverrides', 'playerOverrides',
+          'instructions', 'rotations', 'notes'
+        ])
+        && plan.keys().hasAll([
+          'schemaVersion', 'id', 'label', 'roleGroups', 'phases', 'legions',
+          'objectives', 'roleDefaults', 'seatOverrides', 'playerOverrides',
+          'instructions', 'rotations', 'notes'
+        ])
+        && plan.schemaVersion == 1
+        && validAllStarBohIdentifier(plan.id, true)
+        && validAllStarBohText(plan.label, 160)
+        && validAllStarBohPublishedRoles(plan.roleGroups)
+        && validAllStarBohPublishedPhases(plan.phases)
+        && plan.phases.size() == 4
+        && validAllStarBohPublishedLegions(plan.legions)
+        && plan.legions.size() == 2
+        && validAllStarBohPublishedObjectives(plan.objectives)
+        && plan.roleDefaults is list
+        && plan.roleDefaults.size() == 0
+        && plan.seatOverrides is list
+        && plan.seatOverrides.size() == 0
+        && plan.playerOverrides is list
+        && plan.playerOverrides.size() == 0
+        && plan.instructions is list
+        && plan.instructions.size() == 0
+        && plan.rotations is list
+        && plan.rotations.size() == 0
+        && plan.notes is list
+        && plan.notes.size() == 0;
+    }
+
+    function validAllStarBohPublishedPlayerData(data, season, uid) {
+      return data.keys().hasOnly([
+        'playerId', 'displayName', 'teamId', 'teamName', 'teamNumber',
+        'teamColor', 'seatNumber', 'roleGroupId', 'roleLabel', 'announcement',
+        'plan', 'timeline', 'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.keys().hasAll([
+        'playerId', 'displayName', 'teamId', 'teamName', 'teamNumber',
+        'teamColor', 'seatNumber', 'roleGroupId', 'roleLabel', 'announcement',
+        'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.playerId == uid
+      && data.uid == uid
+      && data.seasonId == season
+      && data.schemaVersion == 1
+      && validAllStarBohText(data.displayName, 160)
+      && validAllStarBohIdentifier(data.teamId, false)
+      && validAllStarBohText(data.teamName, 160)
+      && data.teamNumber is int
+      && data.teamNumber >= 1
+      && data.teamNumber <= 6
+      && validAllStarBohText(data.teamColor, 40)
+      && data.seatNumber is int
+      && data.seatNumber >= 1
+      && data.seatNumber <= 12
+      && validAllStarBohIdentifier(data.roleGroupId, true)
+      && validAllStarBohText(data.roleLabel, 160)
+      && validAllStarBohText(data.announcement, 2000)
+      && (
+        (
+          !('plan' in data)
+          && !('timeline' in data)
+        )
+        || (
+          'plan' in data
+          && 'timeline' in data
+          && validAllStarBohPublishedPlan(data.plan)
+          && validAllStarBohPublishedTimeline(
+            data.timeline,
+            uid,
+            data.teamId,
+            data.seatNumber
+          )
+        )
+      )
+      && data.revision is int
+      && data.revision > 0
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp
+      && data.updatedBy is string
+      && data.updatedBy.size() > 0
+      && data.updatedBy.size() <= 128;
+    }
+
+    function validAllStarBohPublishedPlayerCreate(season, uid) {
+      return validAllStarBohPublishedPlayerData(request.resource.data, season, uid)
+        && request.resource.data.revision == getAfter(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.revision
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohPublishedPlayerUpdate(season, uid) {
+      return validAllStarBohPublishedPlayerData(request.resource.data, season, uid)
+        && request.resource.data.playerId == resource.data.playerId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.revision == getAfter(
+          /databases/$(database)/documents/boh_allstar/$(season)/published/current
+        ).data.revision
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohSubmission(season, uid) {
+      return request.resource.data.keys().hasOnly([
+        'playerId', 'gameName', 'knownNames', 'locale', 'timezone', 'entryMethod',
+        'status', 'stats', 'preferredTeammates', 'rolePreferences',
+        'eligibleRoleIds', 'commitment', 'ocr',
+        'submittedAtMs', 'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.keys().hasAll([
+        'playerId', 'gameName', 'knownNames', 'locale', 'timezone', 'entryMethod',
+        'status', 'stats', 'rolePreferences', 'eligibleRoleIds', 'commitment', 'ocr',
+        'submittedAtMs', 'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.playerId == uid
+      && request.resource.data.uid == uid
+      && request.resource.data.seasonId == season
+      && request.resource.data.schemaVersion == 1
+      && validAllStarBohText(request.resource.data.gameName, 160)
+      && request.resource.data.gameName.size() > 0
+      && validAllStarBohStringList(request.resource.data.knownNames, 30, 160)
+      && validAllStarBohText(request.resource.data.locale, 20)
+      && validAllStarBohText(request.resource.data.timezone, 80)
+      && request.resource.data.entryMethod in ['manual', 'ocr']
+      && request.resource.data.status in ['draft', 'submitted', 'withdrawn']
+      && validAllStarBohStats(request.resource.data.stats)
+      && (
+        !('preferredTeammates' in request.resource.data)
+        || validAllStarBohStringList(
+          request.resource.data.preferredTeammates,
+          6,
+          160
+        )
+      )
+      && validAllStarBohStringList(request.resource.data.rolePreferences, 12, 128)
+      && validAllStarBohStringList(request.resource.data.eligibleRoleIds, 20, 128)
+      && validAllStarBohCommitment(request.resource.data.commitment)
+      && validAllStarBohOcr(request.resource.data.ocr)
+      && validAllStarBohNullableInt(
+        request.resource.data.submittedAtMs,
+        0,
+        9007199254740991
+      )
+      && request.resource.data.revision is int
+      && request.resource.data.revision > 0
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt == request.time
+      && request.resource.data.updatedBy == request.auth.uid
+      && (
+        request.resource.data.status != 'submitted'
+        || request.resource.data.entryMethod != 'ocr'
+        || (
+          request.resource.data.ocr.used == true
+          && request.resource.data.ocr.valuesConfirmed == true
+        )
+      );
+    }
+
+    function validAllStarBohSubmissionCreate(season, uid) {
+      return validAllStarBohSubmission(season, uid)
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validAllStarBohSubmissionUpdate(season, uid) {
+      return validAllStarBohSubmission(season, uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'gameName', 'knownNames', 'locale', 'timezone', 'entryMethod', 'status',
+          'stats', 'preferredTeammates', 'rolePreferences', 'eligibleRoleIds',
+          'commitment', 'ocr',
+          'submittedAtMs', 'revision', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.playerId == resource.data.playerId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+
+    function validAllStarBohFeedback(season, uid) {
+      return request.resource.data.keys().hasOnly([
+        'status', 'note', 'submissionRevision', 'reviewRevision',
+        'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.keys().hasAll([
+        'status', 'note', 'submissionRevision', 'reviewRevision',
+        'seasonId', 'uid', 'schemaVersion', 'revision',
+        'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.status in [
+        'pending', 'confirmed', 'needs_correction', 'excluded'
+      ]
+      && validAllStarBohText(request.resource.data.note, 2000)
+      && (
+        !(request.resource.data.status in ['needs_correction', 'excluded'])
+        || request.resource.data.note.size() > 0
+      )
+      && request.resource.data.submissionRevision is int
+      && request.resource.data.submissionRevision > 0
+      && request.resource.data.reviewRevision is int
+      && request.resource.data.reviewRevision > 0
+      && request.resource.data.seasonId == season
+      && request.resource.data.uid == uid
+      && request.resource.data.schemaVersion == 1
+      && request.resource.data.revision is int
+      && request.resource.data.revision > 0
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt == request.time;
+    }
+
+    function validAllStarBohFeedbackCreate(season, uid) {
+      return validAllStarBohFeedback(season, uid)
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validAllStarBohFeedbackUpdate(season, uid) {
+      return validAllStarBohFeedback(season, uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'note', 'submissionRevision', 'reviewRevision',
+          'revision', 'updatedAt'
+        ])
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+
     match /comments/{commentId} {
       allow read: if canReadComment();
       allow create: if signedIn() && validComment();
@@ -520,6 +1545,109 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validSharedIntel();
       allow delete: if false;
+    }
+
+    match /boh_allstar_config/current {
+      allow get: if isAdmin();
+      allow list: if false;
+      allow create, update: if isAdmin() && validAllStarBohConfig();
+      allow delete: if false;
+    }
+
+    match /boh_allstar_member_grants/{uid} {
+      allow get: if canReadOwnActiveAllStarBohGrant(uid);
+      allow list, create, update, delete: if false;
+    }
+
+    match /boh_allstar_security_attempts/{attemptId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /boh_allstar/{season} {
+      allow read, write: if isAdmin();
+
+      match /submissions/{uid} {
+        allow get: if isAdmin() || (isOwner(uid) && hasActiveAllStarBohGrant(season));
+        allow list: if isAdmin();
+        allow create: if isOwner(uid)
+          && hasActiveAllStarBohGrant(season)
+          && validAllStarBohSubmissionCreate(season, uid);
+        allow update: if isOwner(uid)
+          && hasActiveAllStarBohGrant(season)
+          && validAllStarBohSubmissionUpdate(season, uid);
+        allow delete: if false;
+      }
+
+      match /reviews/{uid} {
+        allow read, create, update: if isAdmin();
+        allow delete: if false;
+      }
+
+      match /feedback/{uid} {
+        allow get: if isAdmin() || (isOwner(uid) && hasActiveAllStarBohGrant(season));
+        allow list: if false;
+        allow create: if isAdmin() && validAllStarBohFeedbackCreate(season, uid);
+        allow update: if isAdmin() && validAllStarBohFeedbackUpdate(season, uid);
+        allow delete: if false;
+      }
+
+      match /epicPreferences/{uid} {
+        allow get: if isAdmin()
+          || (isOwner(uid) && hasActiveAllStarBohGrant(season));
+        allow list: if isAdmin();
+        allow create: if isOwner(uid)
+          && hasActiveAllStarBohGrant(season)
+          && validAllStarBohEpicPreferencesCreate(season, uid);
+        allow update: if isOwner(uid)
+          && hasActiveAllStarBohGrant(season)
+          && validAllStarBohEpicPreferencesUpdate(season, uid);
+        allow delete: if false;
+      }
+
+      match /drafts/{draftId} {
+        allow read, write: if isAdmin();
+      }
+
+      match /draftTeams/{teamId} {
+        allow read, write: if isAdmin();
+      }
+
+      match /published/current {
+        allow get: if hasActiveAllStarBohGrant(season)
+          && (isAdmin() || safeAllStarBohPublishedOverviewRead(season));
+        allow list: if false;
+        allow create: if isAdmin()
+          && validAllStarBohPublishedOverviewCreate(season);
+        allow update: if isAdmin()
+          && validAllStarBohPublishedOverviewUpdate(season);
+        allow delete: if isAdmin();
+      }
+
+      match /publishedTeams/{teamId} {
+        allow get: if hasActiveAllStarBohGrant(season)
+          && (isAdmin() || safeAllStarBohPublishedTeamRead(season, teamId));
+        allow list: if false;
+        allow create: if isAdmin()
+          && validAllStarBohPublishedTeamCreate(season, teamId);
+        allow update: if isAdmin()
+          && validAllStarBohPublishedTeamUpdate(season, teamId);
+        allow delete: if isAdmin();
+      }
+
+      match /publishedPlayers/{uid} {
+        allow get: if isAdmin()
+          || (
+            isOwner(uid)
+            && hasActiveAllStarBohGrant(season)
+            && validAllStarBohPublishedPlayerData(resource.data, season, uid)
+          );
+        allow list: if false;
+        allow create: if isAdmin()
+          && validAllStarBohPublishedPlayerCreate(season, uid);
+        allow update: if isAdmin()
+          && validAllStarBohPublishedPlayerUpdate(season, uid);
+        allow delete: if isAdmin();
+      }
     }
 
     match /vts_admin/dashboard_data {

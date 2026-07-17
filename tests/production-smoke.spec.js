@@ -162,6 +162,13 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
     }
   }
   expect(localIndex).toContain(`v${packageVersion}`);
+  expect(localIndex).toContain('<span data-i18n="loadingEllipsis">Loading…</span>');
+  expect(localIndex).not.toContain('Loadingâ€¦');
+  expect(localServiceWorker).not.toMatch(
+    /\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/'"]*\.js/iu
+  );
+  expect(localServiceWorker).toMatch(/\/assets\/all-star-boh-bootstrap-[^/'"]*\.js/iu);
+  expect(localServiceWorker).toMatch(/\/assets\/all-star-boh-[^/'"]*\.css/iu);
   if (isRemotePreview) {
     const rootResponse = await request.get('/', { headers: { 'Cache-Control': 'no-cache' } });
     expect(rootResponse.ok()).toBe(true);
@@ -198,6 +205,38 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
     if (openedMore) await expect(page.locator('#shellMorePanel')).toBeHidden();
     await expect(page.locator(marker).first()).toBeVisible({ timeout: 30000 });
   }
+
+  const allStarTab = page.locator('#tabAllStarBoh');
+  await expect(page.locator('#allStarBohSection .tab-loading')).toHaveText('Loading…');
+  let openedAllStarMore = false;
+  if (!(await allStarTab.isVisible())) {
+    await page.locator('#shellMoreButton').click();
+    await expect(page.locator('#shellMorePanel')).toBeVisible();
+    await expect(allStarTab).toBeVisible();
+    openedAllStarMore = true;
+  }
+  await expect(allStarTab).toHaveAccessibleName('Open the All-Star BoH member hub');
+  await allStarTab.click();
+  if (openedAllStarMore) await expect(page.locator('#shellMorePanel')).toBeHidden();
+  await expect(page.locator('#allStarBohSection .boh-access-gate')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#allStarBohSection [data-role="boh-root"]')).toBeHidden();
+  const lockedAllStarResources = await page.evaluate(() =>
+    performance
+      .getEntriesByType('resource')
+      .map((entry) => new URL(entry.name, window.location.href).pathname)
+  );
+  expect(
+    lockedAllStarResources.some((path) =>
+      /\/assets\/all-star-boh-bootstrap-[^/]+\.js$/u.test(path)
+    ),
+    'All-Star public access bootstrap should load'
+  ).toBe(true);
+  expect(
+    lockedAllStarResources.some((path) =>
+      /\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/]*\.js$/u.test(path)
+    ),
+    'protected All-Star domain chunks must not load before server-verified access'
+  ).toBe(false);
 
   const productionState = await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.ready;

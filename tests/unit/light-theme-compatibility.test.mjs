@@ -149,10 +149,11 @@ test('standalone lobby and footer have explicit light surfaces', () => {
 test('aggregate CSS budget records the current route-isolated feature baseline', () => {
   const sizeCheck = read('scripts/check-size.mjs');
 
-  assert.match(sizeCheck, /route-lazy catalog styles/);
-  assert.match(sizeCheck, /1187\.8 KiB/);
+  assert.match(sizeCheck, /Specialization Towers, Alliance View, and All-Star BoH/);
+  assert.match(sizeCheck, /7651\.0 KiB/);
+  assert.match(sizeCheck, /1256\.4 KiB/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1190 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1259 \* 1024/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 426 \* 1024, mobile: 519 \* 1024 \}/);
   assert.match(
     sizeCheck,

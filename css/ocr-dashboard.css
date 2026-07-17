@@ -3500,15 +3500,15 @@ body[style*='overflow: hidden'] .tab-panel {
 
 @media (min-width: 1201px) {
   #ocrDashboardRoot .dash-subtab-nav {
-    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-template-columns: repeat(11, minmax(0, 1fr));
     gap: 0.35rem;
     padding: 0.35rem;
   }
 
   #ocrDashboardRoot .dash-subtab-btn {
-    gap: 0.3rem;
-    padding: 0.62rem 0.35rem;
-    font-size: 0.7rem;
+    gap: 0.2rem;
+    padding: 0.62rem 0.2rem;
+    font-size: 0.66rem;
   }
 
   #ocrDashboardRoot .dash-subtab-btn span {
@@ -3520,8 +3520,8 @@ body[style*='overflow: hidden'] .tab-panel {
   }
 
   #ocrDashboardRoot .dash-subtab-btn svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
   }
 }
 
@@ -8556,7 +8556,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
 }
 
 /* Standalone Admin mobile dock
-   Keep the ten internal Admin tools available without leaving their tab rail
+   Keep the eleven internal Admin tools available without leaving their tab rail
    between dashboard content. The signed-out and connecting states do not show
    it because the rail remains inside #dashApp. */
 @media (max-width: 768px) {

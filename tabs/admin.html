@@ -517,6 +517,22 @@
             >Alliance View</span
           >
         </button>
+        <button class="dash-subtab-btn" data-subtab="allStarBoh">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m12 3 2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7L12 3z" />
+          </svg>
+          <span data-i18n="adminBohTab">All-Star BoH</span>
+        </button>
         <button class="dash-subtab-btn" data-subtab="edenVotes">
           <svg
             width="14"
@@ -1542,6 +1558,24 @@
             <span data-i18n="adminAllianceViewLoading" data-admin-i18n="adminAllianceViewLoading"
               >Loading Alliance View...</span
             >
+          </div>
+        </section>
+      </div>
+
+      <!-- Sub-tab: All-Star BoH (module is lazy-loaded when opened) -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabAllStarBoh">
+        <section
+          id="dashAllStarBohRoot"
+          class="boh-admin-root"
+          aria-labelledby="dashAllStarBohTitle"
+          aria-busy="true"
+        >
+          <h2 id="dashAllStarBohTitle" class="sr-only" data-i18n="adminBohTitle">
+            All-Star BoH Command Center
+          </h2>
+          <div class="dash-card" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            <span data-i18n="adminBohLoading">Loading All-Star administration...</span>
           </div>
         </section>
       </div>

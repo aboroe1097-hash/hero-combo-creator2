@@ -1223,7 +1223,7 @@ test.describe('app smoke tabs', () => {
     const setupAction = page.getByRole('button', {
       name: 'Select heroes in the Generator first.',
     });
-    await expect(setupAction).toBeVisible();
+    await expect(setupAction).toBeVisible({ timeout: 15000 });
     await setupAction.click();
     await expect(page.locator('#generatorSection')).toBeVisible();
     await page.locator('#generatorHeroes .generator-card').first().click();

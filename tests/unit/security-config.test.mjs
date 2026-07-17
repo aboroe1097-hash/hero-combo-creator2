@@ -776,6 +776,7 @@ test('Eden X1 votes are member-keyed with admin list and owner get', () => {
 
 test('service worker precaches a complete, version-stamped app shell', () => {
   const source = readFileSync('public/sw.js', 'utf8');
+  const postBuild = readFileSync('scripts/post-build.mjs', 'utf8');
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
@@ -840,6 +841,9 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.match(source, /navigationFallback\(url\.pathname\)/);
   assert.match(source, /isImmutableAssetUrl/);
   assert.doesNotMatch(source, /url\.pathname\.startsWith\('\/assets\/'\)\) return true/);
+  assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN/);
+  assert.match(postBuild, /all-star-boh-\(\?!bootstrap-\)/);
+  assert.match(postBuild, /!isProtectedAllStarPrecacheUrl\(url\)/);
 });
 
 test('service worker cache policy rejects private traffic and preserves foreign caches', async () => {

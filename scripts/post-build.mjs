@@ -123,6 +123,16 @@ function distUrlExists(url) {
   return fs.existsSync(path.join(dist, rel));
 }
 
+// The public bootstrap and its gate stylesheet may load before a member has
+// unlocked the hub. The planner, persistence/OCR domain, and Admin controller
+// must only be fetched after their corresponding server-verified access gate.
+const PROTECTED_ALL_STAR_PRECACHE_PATTERN =
+  /^\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/]*\.js$/iu;
+
+function isProtectedAllStarPrecacheUrl(url) {
+  return PROTECTED_ALL_STAR_PRECACHE_PATTERN.test(String(url || '').split(/[?#]/u, 1)[0]);
+}
+
 function collectDistPrecacheUrls(existingUrls) {
   const urls = new Set(existingUrls);
   urls.add('/');
@@ -144,7 +154,10 @@ function collectDistPrecacheUrls(existingUrls) {
       if (/\.(?:js|css)$/.test(entry)) urls.add(`/assets/${entry}`);
     }
   }
-  return [...urls].filter(distUrlExists).sort((a, b) => a.localeCompare(b));
+  return [...urls]
+    .filter(distUrlExists)
+    .filter((url) => !isProtectedAllStarPrecacheUrl(url))
+    .sort((a, b) => a.localeCompare(b));
 }
 
 function updateServiceWorkerManifest() {

@@ -32,6 +32,7 @@
     'tabStrife',
     'tabLoyalty',
     'tabEdenX1',
+    'tabAllStarBoh',
     'tabYouTube',
     'tabOcrDashboard',
   ];
@@ -55,6 +56,7 @@
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
     ['tabLoyalty', 'loyalty'],
+    ['tabAllStarBoh', 'allStarBoh'],
     ['tabYouTube', 'youtube'],
   ]);
   const moreHistoryKey = 'vtsShellMoreOpen';

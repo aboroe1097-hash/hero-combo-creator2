@@ -92,6 +92,13 @@ const DESTS = [
     kw: 'admin ocr roster gifts leaderboard contribution vote conduct dashboard',
   },
   {
+    key: 'tabAllStarBoh',
+    name: 'allStarBoh',
+    kind: 'tab',
+    fallback: 'All-Star BoH',
+    kw: 'all star boh signup teams assignment roles plan legion tournament wings',
+  },
+  {
     key: 'tabArcade',
     name: 'arcade',
     kind: 'tab',

@@ -89,6 +89,7 @@ import {
   researchSection,
   materialsSection,
   arcadeSection,
+  allStarBohSection,
   tabManualBtn,
   tabGeneratorBtn,
   tabLoyaltyBtn,
@@ -99,6 +100,7 @@ import {
   tabEdenMapBtn,
   tabStrifeBtn,
   tabArcadeBtn,
+  tabAllStarBohBtn,
   heroesSection,
   edenMapSection,
   strifeSection,
@@ -177,7 +179,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260717_144919').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260717_135756').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -199,7 +201,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260717_144919').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260717_135756').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -210,7 +212,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260717_144919').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260717_135756').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -221,7 +223,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260717_144919').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260717_135756').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -363,6 +365,7 @@ const TAB_BTN_IDS = {
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
   arcade: 'tabArcade',
+  allStarBoh: 'tabAllStarBoh',
 };
 
 function getHomeNavigationScrollBehavior(preferredBehavior = 'smooth') {
@@ -829,6 +832,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     { btn: tabLoyaltyBtn, name: 'loyalty' },
     { btn: tabYouTubeBtn, name: 'youtube' },
     { btn: tabArcadeBtn, name: 'arcade' },
+    { btn: tabAllStarBohBtn, name: 'allStarBoh' },
   ];
   const validTabNames = new Set(tabs.map((tab) => tab.name));
 
@@ -880,6 +884,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _youtubeBooting = false;
   let _arcadeReady = false;
   let _arcadeBooting = false;
+  let _allStarBohReady = false;
+  let _allStarBohBooting = false;
 
   const tabPanels = [
     manualSection,
@@ -892,6 +898,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     loyaltySection,
     youtubeSection,
     arcadeSection,
+    allStarBohSection,
   ];
 
   const _tabTemplatesLoaded = {};
@@ -957,7 +964,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260717_144919')
+        import('./eden-map.js?v=20260717_135756')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1059,7 +1066,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260717_144919')
+      import('./app-strife.js?v=20260717_135756')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1079,7 +1086,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260717_144919')
+      import('./youtube-v14.js?v=20260717_135756')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1113,6 +1120,26 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         })
         .finally(() => {
           _arcadeBooting = false;
+        });
+    }
+    if (tabName === 'allStarBoh' && !_allStarBohReady && !_allStarBohBooting) {
+      _allStarBohBooting = true;
+      loadTabTemplate('allStarBoh')
+        .then(() => import('./all-star-boh-bootstrap.js'))
+        .then((module) => module.bootAllStarBohTab())
+        .then(() => {
+          _allStarBohReady = true;
+        })
+        .catch((error) => {
+          console.error('All-Star BoH member hub failed to load', error);
+          if (isDynamicImportLoadFailure(error)) {
+            recoverFromStaleAssetGraph(error);
+            return;
+          }
+          renderTabLoadError(allStarBohSection, 'allStarBoh');
+        })
+        .finally(() => {
+          _allStarBohBooting = false;
         });
     }
     if (tabName === 'loyalty') {

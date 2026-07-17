@@ -1,0 +1,25 @@
+{
+  "name": "roc-vts-secure-functions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "test": "node --test ../tests/unit/all-star-boh-security.test.mjs",
+    "format": "prettier --write index.js src/**/*.js",
+    "format:check": "prettier --check index.js src/**/*.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.2.0",
+    "firebase-functions": "^7.3.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.4"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}
