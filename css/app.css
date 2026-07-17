@@ -18892,3 +18892,505 @@ html[dir='rtl'] .gen-buttons-row {
     z-index: 1;
   }
 }
+
+/* ============================================================
+   Specialization Towers — integrated tab (game-faithful flow)
+   ============================================================ */
+.specialization-tool-root {
+  width: 100%;
+  min-width: 0;
+}
+.spec-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.spec-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(120, 90, 40, 0.5);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(48, 36, 18, 0.7), rgba(2, 6, 23, 0.5));
+}
+.spec-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 850;
+  color: #fcd34d;
+}
+.spec-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: #cbb892;
+}
+.spec-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.spec-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 9px;
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid rgba(120, 90, 40, 0.45);
+  min-width: 6.5rem;
+}
+.spec-stat-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #b9a884;
+}
+.spec-stat-value {
+  font-size: 1rem;
+  font-weight: 850;
+  color: #f8fafc;
+}
+.spec-stat-value--medals {
+  color: #fbbf24;
+}
+.spec-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Troop tabs */
+.spec-troop-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+.spec-troop-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 11px;
+  border: 1px solid rgba(120, 90, 40, 0.5);
+  background: rgba(30, 22, 10, 0.5);
+  cursor: pointer;
+  color: #cbb892;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.spec-troop-tab:hover {
+  border-color: rgba(217, 179, 91, 0.8);
+}
+.spec-troop-tab.active {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(2, 6, 23, 0.4));
+  color: #fef3c7;
+}
+.spec-troop-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.spec-troop-name {
+  font-weight: 820;
+  font-size: 0.92rem;
+  flex: 1;
+}
+.spec-troop-pct {
+  font-weight: 850;
+  font-size: 0.95rem;
+  color: #f59e0b;
+}
+
+/* Overview: column banners */
+.spec-banners {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(9.5rem, 1fr);
+  gap: 0.85rem;
+  overflow-x: auto;
+  padding-bottom: 0.6rem;
+  scroll-snap-type: x proximity;
+}
+.spec-banner {
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.6rem 0.5rem 0.75rem;
+  border-radius: 4px 4px 10px 10px;
+  border: 1px solid rgba(120, 90, 40, 0.55);
+  border-top: 4px solid var(--banner-accent, #b7791f);
+  background: linear-gradient(180deg, rgba(60, 46, 22, 0.55), rgba(20, 15, 8, 0.7));
+}
+.spec-banner:nth-child(6n + 1) {
+  --banner-accent: #b7791f;
+}
+.spec-banner:nth-child(6n + 2) {
+  --banner-accent: #4d7c0f;
+}
+.spec-banner:nth-child(6n + 3) {
+  --banner-accent: #0e7490;
+}
+.spec-banner:nth-child(6n + 4) {
+  --banner-accent: #7c3aed;
+}
+.spec-banner:nth-child(6n + 5) {
+  --banner-accent: #a16207;
+}
+.spec-banner:nth-child(6n + 6) {
+  --banner-accent: #b45309;
+}
+.spec-banner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.15rem;
+}
+.spec-banner-num {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--banner-accent, #b7791f) 45%, transparent);
+  color: #fef3c7;
+  font-weight: 850;
+  font-size: 0.8rem;
+}
+.spec-banner-season {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cbb892;
+}
+.spec-banner-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* Badge — circular emblem + label + % under it, like the in-game banner */
+.spec-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0.35rem 0.25rem 0.45rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+.spec-badge:hover {
+  background: rgba(217, 179, 91, 0.12);
+}
+.spec-badge-emblem {
+  width: 3.1rem;
+  height: 3.1rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  background: radial-gradient(circle at 35% 30%, #4b3a1c, #211710);
+  border: 2px solid #6b4f22;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.spec-badge[data-status='complete'] .spec-badge-emblem {
+  border-color: #d9b35b;
+  box-shadow: 0 0 10px rgba(217, 179, 91, 0.5);
+}
+.spec-badge[data-status='in-progress'] .spec-badge-emblem {
+  border-color: #38bdf8;
+}
+.spec-badge-name {
+  font-size: 0.68rem;
+  font-weight: 760;
+  color: #e7dcc4;
+  text-align: center;
+  line-height: 1.15;
+}
+.spec-badge-pct {
+  font-size: 0.66rem;
+  font-weight: 850;
+  color: #05203a;
+  background: #d9b35b;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.spec-badge[data-status='unstarted'] .spec-badge-pct {
+  color: #cbd5e1;
+  background: rgba(71, 85, 105, 0.6);
+}
+
+/* Legion Skill crest at the banner foot */
+.spec-crest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: auto;
+  padding: 0.5rem 0.3rem;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+}
+.spec-crest[disabled] {
+  cursor: default;
+}
+.spec-crest-emblem {
+  width: 2.7rem;
+  height: 2.7rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  border: 2px solid #64748b;
+  background: radial-gradient(circle at 35% 30%, #334155, #0f172a);
+}
+.spec-crest.is-unlocked .spec-crest-emblem {
+  border-color: #fbbf24;
+  background: radial-gradient(circle at 35% 30%, #b45309, #7c2d12);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.55);
+}
+.spec-crest-name {
+  font-size: 0.62rem;
+  font-weight: 780;
+  text-align: center;
+  line-height: 1.1;
+  color: #cbb892;
+}
+.spec-crest.is-locked .spec-crest-name {
+  color: #94a3b8;
+}
+
+/* Detail: node ring */
+.spec-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 34rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.spec-detail-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.spec-back {
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 90, 40, 0.6);
+  background: rgba(30, 22, 10, 0.6);
+  color: #fcd34d;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.spec-detail-title h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 850;
+  color: #fcd34d;
+}
+.spec-detail-title span {
+  font-size: 0.72rem;
+  color: #b9a884;
+}
+.spec-ring {
+  position: relative;
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+}
+.spec-ring-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.spec-ring-path ellipse {
+  fill: none;
+  stroke: rgba(217, 179, 91, 0.55);
+  stroke-width: 0.6;
+  stroke-dasharray: 1.4 1.2;
+}
+.spec-ring-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 5rem;
+  height: 5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4b3a1c, #1a120a);
+  border: 3px solid #d9b35b;
+  box-shadow: 0 0 18px rgba(217, 179, 91, 0.4);
+}
+.spec-ring-emblem {
+  font-size: 1.9rem;
+}
+.spec-ring-pct {
+  position: absolute;
+  bottom: -0.6rem;
+  font-size: 0.66rem;
+  font-weight: 850;
+  color: #05203a;
+  background: #d9b35b;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.spec-ring-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  cursor: pointer;
+  border: 2px solid #64748b;
+  background: radial-gradient(circle at 35% 30%, #334155, #0f172a);
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.spec-ring-node:hover:not([disabled]) {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.spec-ring-node[data-state='learned'] {
+  border-color: #d9b35b;
+  background: radial-gradient(circle at 35% 30%, #b45309, #7c2d12);
+  box-shadow: 0 0 10px rgba(217, 179, 91, 0.6);
+}
+.spec-ring-node[data-state='available'] {
+  border-color: #38bdf8;
+}
+.spec-ring-node[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.spec-detail-section h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 820;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b9a884;
+}
+.spec-medal-field label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 820;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b9a884;
+  margin-bottom: 0.35rem;
+}
+.spec-medal-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 90, 40, 0.7);
+  background: rgba(2, 6, 23, 0.6);
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.spec-cost-table {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.spec-cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #cbb892;
+}
+.spec-cost-row strong {
+  color: #f8fafc;
+}
+.spec-milestones {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+.spec-milestones li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  color: #cbb892;
+}
+.spec-milestones li[data-status='done'] {
+  color: #fcd34d;
+}
+.spec-milestone-pct {
+  font-weight: 850;
+  color: #f59e0b;
+}
+.spec-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.spec-btn {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 90, 40, 0.7);
+  background: rgba(30, 22, 10, 0.6);
+  color: #e7dcc4;
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.spec-btn--primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1a120a;
+}
+
+@media (max-width: 640px) {
+  .spec-banners {
+    grid-auto-columns: minmax(8.5rem, 82%);
+  }
+}
+
+[data-theme='light'] .spec-summary,
+[data-theme='light'] .spec-banner {
+  background: linear-gradient(180deg, rgba(254, 249, 235, 0.96), rgba(245, 238, 220, 0.92));
+  border-color: rgba(180, 140, 70, 0.5);
+}
+[data-theme='light'] .spec-title,
+[data-theme='light'] .spec-detail-title h3 {
+  color: #b45309;
+}
+[data-theme='light'] .spec-subtitle,
+[data-theme='light'] .spec-badge-name,
+[data-theme='light'] .spec-cost-row {
+  color: #57452a;
+}
+[data-theme='light'] .spec-stat-value,
+[data-theme='light'] .spec-troop-name {
+  color: #1f2937;
+}
+[data-theme='light'] .spec-troop-tab {
+  background: rgba(255, 252, 244, 0.9);
+}

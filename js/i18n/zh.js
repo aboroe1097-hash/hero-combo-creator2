@@ -1643,6 +1643,7 @@ const zh = {
   strifeTroopMixed: '混合',
   strifeVerifiedLineup: '已验证的怪物阵容',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: '专精',
 
   adminEdenVotesClearDeadline: '清除截止日期',
   adminEdenVotesDeadline: '投票截止日期',

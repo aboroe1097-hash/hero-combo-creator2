@@ -1728,6 +1728,7 @@ const en = {
   strifeTroopMixed: 'Mixed',
   strifeVerifiedLineup: 'Verified monster lineup',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Specialization',
 
   adminEdenVotesClearDeadline: 'Clear deadline',
   adminEdenVotesDeadline: 'Voting deadline',

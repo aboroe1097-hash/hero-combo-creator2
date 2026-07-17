@@ -1684,6 +1684,7 @@ const pt = {
   strifeTroopMixed: 'Misto',
   strifeVerifiedLineup: 'Formação de monstro verificada',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Especialização',
 
   adminEdenVotesClearDeadline: 'Limpar prazo',
   adminEdenVotesDeadline: 'Prazo de votação',

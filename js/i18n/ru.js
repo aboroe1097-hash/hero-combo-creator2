@@ -1689,6 +1689,7 @@ const ru = {
   strifeTroopMixed: 'Смешанный',
   strifeVerifiedLineup: 'Проверенная расстановка монстра',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Специализация',
 
   adminEdenVotesClearDeadline: 'Очистить дедлайн',
   adminEdenVotesDeadline: 'Дедлайн голосования',

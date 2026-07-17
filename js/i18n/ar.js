@@ -1673,6 +1673,7 @@ const ar = {
   strifeTroopMixed: 'مختلط',
   strifeVerifiedLineup: 'تشكيلة وحش مؤكدة',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'التخصص',
 
   adminEdenVotesClearDeadline: 'إلغاء الموعد',
   adminEdenVotesDeadline: 'موعد إغلاق التصويت',

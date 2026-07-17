@@ -1689,6 +1689,7 @@ const tr = {
   strifeTroopMixed: 'Karma',
   strifeVerifiedLineup: 'Onaylanmış canavar düzeni',
   tabStrife: 'Strife over Dragon',
+  tabSpecialization: 'Uzmanlık',
 
   adminEdenVotesClearDeadline: 'Son tarihi temizle',
   adminEdenVotesDeadline: 'Oylama son tarihi',

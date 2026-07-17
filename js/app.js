@@ -99,11 +99,13 @@ import {
   tabHeroesBtn,
   tabEdenMapBtn,
   tabStrifeBtn,
+  tabSpecializationBtn,
   tabArcadeBtn,
   tabAllStarBohBtn,
   heroesSection,
   edenMapSection,
   strifeSection,
+  specializationSection,
   globalToggleRow,
   comboFooterBar,
   generatorHeroesEl,
@@ -362,6 +364,7 @@ const TAB_BTN_IDS = {
   materials: 'tabMaterials',
   edenMap: 'tabEdenMap',
   strife: 'tabStrife',
+  specialization: 'tabSpecialization',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
   arcade: 'tabArcade',
@@ -829,6 +832,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     { btn: tabMaterialsBtn, name: 'materials' },
     { btn: tabEdenMapBtn, name: 'edenMap' },
     { btn: tabStrifeBtn, name: 'strife' },
+    { btn: tabSpecializationBtn, name: 'specialization' },
     { btn: tabLoyaltyBtn, name: 'loyalty' },
     { btn: tabYouTubeBtn, name: 'youtube' },
     { btn: tabArcadeBtn, name: 'arcade' },
@@ -880,6 +884,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _materialsBooting = false;
   let _strifeReady = false;
   let _strifeBooting = false;
+  let _specializationReady = false;
+  let _specializationBooting = false;
   let _youtubeReady = false;
   let _youtubeBooting = false;
   let _arcadeReady = false;
@@ -895,6 +901,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     materialsSection,
     edenMapSection,
     strifeSection,
+    specializationSection,
     loyaltySection,
     youtubeSection,
     arcadeSection,
@@ -1084,6 +1091,28 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
           }
         });
     }
+    if (tabName === 'specialization' && !_specializationReady) {
+      if (_specializationBooting) return;
+      _specializationBooting = true;
+      import('./app-specialization.js')
+        .then((mod) => mod.initSpecializationTool())
+        .then(() => {
+          _specializationReady = true;
+        })
+        .catch((err) => {
+          _specializationBooting = false;
+          console.error('Specialization tool failed to load', err);
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Specialization') ||
+                'Specialization failed to load.',
+              'error',
+              4000
+            );
+          }
+        });
+    }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
       import('./youtube-v14.js?v=20260717_160946')
@@ -1207,6 +1236,10 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       tabName === 'manual' || tabName === 'generator'
     );
     document.body.classList.toggle('tab-strife-active', tabName === 'strife');
+    document.body.classList.toggle(
+      'tab-specialization-active',
+      tabName === 'specialization'
+    );
 
     onTabActivated(tabName);
     _lastTab = tabName;
@@ -1398,6 +1431,7 @@ function updateTextContent() {
     tabYouTube: t.tabYouTube || 'YouTube',
     tabEdenMap: t.tabEdenMap || 'Eden Map',
     tabStrife: t.tabStrife || 'Strife over Dragon',
+    tabSpecialization: t.tabSpecialization || 'Specialization',
     tabHeroes: t.tabHeroes || 'Hero Atlas',
     tabResearch: t.tabResearch || 'Research',
     tabMaterialsLabel: t.tabMaterials || translations.en.tabMaterials,
