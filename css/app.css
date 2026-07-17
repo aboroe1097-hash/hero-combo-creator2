@@ -19394,3 +19394,67 @@ html[dir='rtl'] .gen-buttons-row {
 [data-theme='light'] .spec-troop-tab {
   background: rgba(255, 252, 244, 0.9);
 }
+
+/* Specialization: community contribution + tree layout */
+.spec-community {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid rgba(120, 90, 40, 0.5);
+  border-radius: 12px;
+  background: rgba(30, 22, 10, 0.45);
+}
+.spec-community-copy h4 {
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 820;
+  color: #fcd34d;
+}
+.spec-community-copy p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #cbb892;
+  max-width: 42ch;
+}
+.spec-community-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.spec-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  text-align: center;
+}
+.spec-ring-path line {
+  stroke: rgba(217, 179, 91, 0.55);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+}
+.spec-ring--tree {
+  max-width: 22rem;
+  aspect-ratio: 3 / 4;
+}
+.spec-tree-pct {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.4rem;
+  font-size: 0.66rem;
+  font-weight: 850;
+  color: #05203a;
+  background: #d9b35b;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+[data-theme='light'] .spec-community {
+  background: rgba(255, 252, 244, 0.9);
+  border-color: rgba(180, 140, 70, 0.5);
+}
+[data-theme='light'] .spec-community-copy p {
+  color: #57452a;
+}

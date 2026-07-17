@@ -23,6 +23,7 @@ import {
   loadSpecializationState,
   saveSpecializationState,
 } from './specialization-towers-v2-store.js';
+import { buildContributionTemplateCsv } from './specialization-towers-v2-template.js';
 import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
@@ -48,6 +49,9 @@ const NODE_ICON = [
   { test: /HP|Revival/i, icon: '❤️' },
   { test: /Speed/i, icon: '⏳' },
 ];
+
+const CONTRIBUTION_SHEET_URL =
+  'https://docs.google.com/spreadsheets/d/1b8KpSdvf02L5sGoi075MIO7J8IjKVMImBxHDDUWvF64/edit';
 
 let root = null;
 let state = null;
@@ -176,6 +180,20 @@ function renderBanner(columnId) {
     </section>`;
 }
 
+function renderCommunity() {
+  return `
+    <section class="spec-community">
+      <div class="spec-community-copy">
+        <h4>${escapeHtml(sp('communityDataTitle'))}</h4>
+        <p>${escapeHtml(sp('communityDataDescription'))}</p>
+      </div>
+      <div class="spec-community-actions">
+        <button type="button" class="spec-btn spec-btn--primary" data-spec-download-template>${escapeHtml(sp('downloadContributionTemplate'))}</button>
+        <a class="spec-btn" href="${escapeHtml(CONTRIBUTION_SHEET_URL)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sp('openContributionSheet'))}</a>
+      </div>
+    </section>`;
+}
+
 function renderOverview(summary) {
   return `
     ${renderTroopTabs(summary)}
@@ -184,29 +202,48 @@ function renderOverview(summary) {
       ${Object.keys(SPECIALIZATION_COLUMNS)
         .map((id) => renderBanner(Number(id)))
         .join('')}
-    </div>`;
+    </div>
+    ${renderCommunity()}`;
 }
 
-/* ---------- Detail: node ring for one research ---------- */
+/* ---------- Detail: node graph (oval ring or tactic tree) ---------- */
+
+function resolveNode(research, entry) {
+  return (
+    research.nodes.find((candidate) => candidate.id === entry.nodeId) ||
+    (research.passiveSkillNodeId === entry.nodeId
+      ? { id: entry.nodeId, name: sp('nodePathProgressive'), effect: '' }
+      : { id: entry.nodeId, name: '', effect: '' })
+  );
+}
+
+function nodeButton(research, entry, x, y) {
+  const node = resolveNode(research, entry);
+  const disabled = entry.state === 'locked' || entry.state === 'hidden';
+  const tip = `${escapeHtml(node.name)}${node.effect ? ' — ' + escapeHtml(node.effect) : ''}`;
+  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true"' : ''} title="${tip}" aria-pressed="${entry.state === 'learned'}"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
+}
+
+// Enhanced Tactics is a small dependency tree in-game; everything else is a
+// closed oval ring. The dataset only encodes edges for progressive-reveal
+// researches, so ring vs. tree is chosen by family and any prerequisite data.
+function isTreeLayout(research) {
+  return (
+    /^Enhanced/i.test(research.name) ||
+    Boolean(research.progressiveReveal) ||
+    research.nodes.some((node) => Array.isArray(node.prerequisiteNodeIds))
+  );
+}
 
 function renderRing(research, access) {
   const entries = access.entries;
   const n = entries.length || 1;
   const nodes = entries
     .map((entry, i) => {
-      const node =
-        research.nodes.find((candidate) => candidate.id === entry.nodeId) ||
-        (research.passiveSkillNodeId === entry.nodeId
-          ? { id: entry.nodeId, name: sp('nodePathProgressive'), effect: '' }
-          : { id: entry.nodeId, name: '', effect: '' });
       const angle = (-90 + (360 / n) * i) * (Math.PI / 180);
-      const left = 50 + 40 * Math.cos(angle);
-      const top = 50 + 42 * Math.sin(angle);
-      const disabled = entry.state === 'locked' || entry.state === 'hidden';
-      return `
-        <button type="button" class="spec-ring-node" data-state="${entry.state}" data-spec-node="${entry.nodeId}" style="left:${left.toFixed(2)}%;top:${top.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true"' : ''} title="${escapeHtml(node.name)}${node.effect ? ' — ' + escapeHtml(node.effect) : ''}" aria-pressed="${entry.state === 'learned'}">
-          <span aria-hidden="true">${nodeIcon(node.effect)}</span>
-        </button>`;
+      const x = 50 + 40 * Math.cos(angle);
+      const y = 50 + 42 * Math.sin(angle);
+      return nodeButton(research, entry, x, y);
     })
     .join('');
   const progress = getResearchProgress(state, activeTroop, research.id);
@@ -221,6 +258,92 @@ function renderRing(research, access) {
       </div>
       ${nodes}
     </div>`;
+}
+
+function renderTree(research, access) {
+  const entries = access.entries;
+  const nodeById = new Map(research.nodes.map((node) => [node.id, node]));
+  const hasEdges = research.nodes.some(
+    (node) => Array.isArray(node.prerequisiteNodeIds) && node.prerequisiteNodeIds.length
+  );
+
+  let tiers;
+  if (hasEdges) {
+    const depthCache = new Map();
+    const depthOf = (id, seen = new Set()) => {
+      if (depthCache.has(id)) return depthCache.get(id);
+      const prereqs = nodeById.get(id)?.prerequisiteNodeIds;
+      let d = 0;
+      if (Array.isArray(prereqs) && prereqs.length && !seen.has(id)) {
+        seen.add(id);
+        d = 1 + Math.max(...prereqs.map((p) => depthOf(p, seen)));
+      }
+      depthCache.set(id, d);
+      return d;
+    };
+    const byDepth = new Map();
+    entries.forEach((entry) => {
+      const d = depthOf(entry.nodeId);
+      if (!byDepth.has(d)) byDepth.set(d, []);
+      byDepth.get(d).push(entry);
+    });
+    tiers = [...byDepth.keys()].sort((a, b) => a - b).map((d) => byDepth.get(d));
+  } else {
+    tiers = [];
+    for (let i = 0; i < entries.length; i += 3) tiers.push(entries.slice(i, i + 3));
+  }
+
+  const total = tiers.length;
+  const pos = new Map();
+  const nodesHtml = tiers
+    .map((tier, t) => {
+      const y = ((t + 0.6) / (total + 0.2)) * 100;
+      return tier
+        .map((entry, j) => {
+          const x = ((j + 0.5) / tier.length) * 100;
+          pos.set(entry.nodeId, { x, y });
+          return nodeButton(research, entry, x, y);
+        })
+        .join('');
+    })
+    .join('');
+
+  const lines = [];
+  tiers.forEach((tier, t) => {
+    if (t === 0) return;
+    const above = tiers[t - 1];
+    tier.forEach((entry) => {
+      const to = pos.get(entry.nodeId);
+      const prereqs = nodeById.get(entry.nodeId)?.prerequisiteNodeIds;
+      let targets;
+      if (Array.isArray(prereqs) && prereqs.length) {
+        targets = prereqs.map((pid) => pos.get(pid)).filter(Boolean);
+      } else {
+        // No edge data: wire to the nearest node in the tier above.
+        const nearest = above.reduce((best, e) => {
+          const p = pos.get(e.nodeId);
+          if (!p) return best;
+          return !best || Math.abs(p.x - to.x) < Math.abs(best.x - to.x) ? p : best;
+        }, null);
+        targets = nearest ? [nearest] : [];
+      }
+      targets.forEach((from) => {
+        lines.push(`<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" />`);
+      });
+    });
+  });
+
+  const progress = getResearchProgress(state, activeTroop, research.id);
+  return `
+    <div class="spec-ring spec-ring--tree" role="group" aria-label="${escapeHtml(researchName(research))}">
+      <svg class="spec-ring-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines.join('')}</svg>
+      ${nodesHtml}
+      <span class="spec-tree-pct">${pct(progress.percent)}%</span>
+    </div>`;
+}
+
+function renderNodeGraph(research, access) {
+  return isTreeLayout(research) ? renderTree(research, access) : renderRing(research, access);
 }
 
 function renderMilestones(research) {
@@ -258,7 +381,7 @@ function renderDetail() {
           <span>${escapeHtml(column.name)} · ${escapeHtml(seasonLabel(column.unlockSeason))} · ${escapeHtml(sp('nodeLevel', { current: progress.completedNodes, maximum: progress.totalNodes }))}</span>
         </div>
       </header>
-      ${renderRing(research, access)}
+      ${renderNodeGraph(research, access)}
       <section class="spec-detail-section spec-medal-field">
         <label for="spec-medals-input">${escapeHtml(sp('medalsRecorded'))}</label>
         <input id="spec-medals-input" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" data-spec-medals ${progress.isComplete ? 'disabled' : ''} />
@@ -293,6 +416,23 @@ function render() {
 
 /* ---------- Events ---------- */
 
+function downloadTemplate() {
+  try {
+    const csv = buildContributionTemplateCsv();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'specialization-medal-contributions.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('[specialization] template download failed', error);
+  }
+}
+
 function openDetail(researchId) {
   selectedResearchId = researchId;
   view = 'detail';
@@ -318,6 +458,10 @@ function onClick(event) {
   }
   if (event.target.closest('[data-spec-back]')) {
     backToOverview();
+    return;
+  }
+  if (event.target.closest('[data-spec-download-template]')) {
+    downloadTemplate();
     return;
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
