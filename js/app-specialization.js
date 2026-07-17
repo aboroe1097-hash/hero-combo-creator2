@@ -214,10 +214,10 @@ function renderCommunity() {
       </div>
       <div class="spec-contrib-name-row">
         <label>
-          <span>${escapeHtml(sp('contributorName'))}</span>
-          <input class="spec-contrib-name-input" type="text" data-spec-contrib-name value="${escapeHtml(data.contributorName)}" maxlength="40" placeholder="${escapeHtml(sp('contributorNamePlaceholder'))}" />
+          <span>${'Your name'}</span>
+          <input class="spec-contrib-name-input" type="text" data-spec-contrib-name value="${escapeHtml(data.contributorName)}" maxlength="40" placeholder="${'Enter your in-game name'}" />
         </label>
-        <span class="spec-contrib-count">${escapeHtml(sp('nodesWithData', { count: Object.keys(data.nodes).filter((k) => data.nodes[k]?.medalCost != null).length }))}</span>
+        <span class="spec-contrib-count">${Object.keys(data.nodes).filter((k) => data.nodes[k]?.medalCost != null).length} nodes with data</span>
       </div>
       <div class="spec-contrib-nodes">
         ${columns.map((col) => {
@@ -236,11 +236,11 @@ function renderCommunity() {
                   const saved = data.nodes[nodeId] || {};
                   return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}">
                     <span class="spec-contrib-node-name">${escapeHtml(nodeName)}</span>
-                    <label><span>${escapeHtml(sp('medalCost'))}</span>
+                    <label><span>Medal cost</span>
                       <input type="number" min="0" step="1" class="spec-contrib-medal" data-spec-node-medal="${escapeHtml(nodeId)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
                     </label>
-                    <label><span>${escapeHtml(sp('reviewer'))}</span>
-                      <input type="text" class="spec-contrib-reviewer" data-spec-node-reviewer="${escapeHtml(nodeId)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('reviewerPlaceholder'))}" />
+                    <label><span>Reviewer</span>
+                      <input type="text" class="spec-contrib-reviewer" data-spec-node-reviewer="${escapeHtml(nodeId)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="Who verified this value?" />
                     </label>
                   </div>`;
                 }).join('')}
@@ -557,7 +557,7 @@ function onChange(event) {
     const countEl = root?.querySelector('.spec-contrib-count');
     if (countEl) {
       const allData = loadContributions();
-      countEl.textContent = sp('nodesWithData', { count: Object.keys(allData.nodes).filter((k) => allData.nodes[k]?.medalCost != null).length });
+      countEl.textContent = `${Object.keys(allData.nodes).filter((k) => allData.nodes[k]?.medalCost != null).length} nodes with data`;
     }
     return;
   }
