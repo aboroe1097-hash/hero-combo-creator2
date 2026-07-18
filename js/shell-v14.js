@@ -26,7 +26,6 @@
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
-    'tabSpecializationTowers',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',

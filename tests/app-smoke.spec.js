@@ -1235,6 +1235,7 @@ test.describe('app smoke tabs', () => {
       ['edenMap', '#edenMapSection', '#edenMapRoot'],
       ['materials', '#materialsSection', '#materialCalculatorRoot'],
       ['research', '#researchSection', '#techListContainer'],
+      ['specialization', '#specializationSection', '#specializationToolRoot .spec-tool'],
       ['heroes', '#heroesSection', '#heroesSection .heroes-layout'],
       ['strife', '#strifeSection', '#strifeToolRoot .strife-monster-card:first-child'],
     ];
@@ -1242,6 +1243,7 @@ test.describe('app smoke tabs', () => {
     for (const [tabName, sectionId, marker] of directTabs) {
       await openDirectTabHash(page, tabName, sectionId, marker);
     }
+    await expect(page.locator('#specializationSection .specialization-loading')).toHaveCount(0);
   });
 
   test('shared combo link opens Generator with the shared result', async ({ page }) => {
@@ -1261,6 +1263,71 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#generatorResults')).toContainText('Theodora');
     await expect(page.locator('#generatorResults .gen-score-value')).toHaveText('97.5');
     await expect(page).toHaveURL(new RegExp(`#combo=${encoded}$`));
+  });
+
+  test('integrated Specialization persists node, complete, and reset actions', async ({ page }) => {
+    test.slow();
+    await openDirectTabHash(
+      page,
+      'specialization',
+      '#specializationSection',
+      '#specializationToolRoot .spec-tool'
+    );
+    await expect(page.locator('#specializationSection .specialization-loading')).toHaveCount(0);
+
+    const firstBadge = page.locator('.spec-badge-wrap').first();
+    await firstBadge.locator('[data-spec-quick-max]').click();
+    await expect(firstBadge.locator('.spec-badge-pct')).toHaveText('100%');
+
+    await firstBadge.locator('[data-spec-research]').click();
+    const reset = page.locator('[data-spec-reset]');
+    await expect(reset).toContainText('(11/11)');
+    await reset.click();
+    await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
+
+    await page.locator('[data-spec-node]:not([disabled])').first().click();
+    await expect(reset).toContainText('(1/11)');
+
+    await page.locator('[data-spec-complete]').click();
+    await expect(reset).toContainText('(11/11)');
+    await reset.click();
+    await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
+  });
+
+  test('Specialization contribution nodes keep submitted and reviewed medals together', async ({
+    page,
+  }) => {
+    test.slow();
+    await openDirectTabHash(
+      page,
+      'specialization',
+      '#specializationSection',
+      '#specializationToolRoot .spec-tool'
+    );
+
+    await page.locator('.spec-contrib-column').first().locator('summary').click();
+    const node = page.locator('.spec-contrib-node').first();
+    await expect(node.locator('.spec-contrib-node-identity')).toBeVisible();
+    await expect(node.locator('.spec-contrib-stage')).toHaveCount(2);
+
+    const fields = [
+      ['[data-spec-node-contributor]', 'Alice'],
+      ['[data-spec-node-medal]', '120'],
+      ['[data-spec-node-reviewer]', 'Bob'],
+      ['[data-spec-node-reviewed-medal]', '120'],
+    ];
+    for (const [selector, value] of fields) {
+      await node.locator(selector).fill(value);
+      await node.locator(selector).dispatchEvent('change');
+    }
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#specializationSection')).toBeVisible({ timeout: 20000 });
+    await page.locator('.spec-contrib-column').first().locator('summary').click();
+    const restored = page.locator('.spec-contrib-node').first();
+    for (const [selector, value] of fields) {
+      await expect(restored.locator(selector)).toHaveValue(value);
+    }
   });
 
   test('shared roster link wins over restored selection and selects known heroes', async ({

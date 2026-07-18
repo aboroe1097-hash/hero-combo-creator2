@@ -5,6 +5,7 @@ import test from 'node:test';
 const index = readFileSync('index.html', 'utf8');
 const shellCss = readFileSync('css/shell-v14.css', 'utf8');
 const shellJs = readFileSync('js/shell-v14.js', 'utf8');
+const specializationJs = readFileSync('js/app-specialization.js', 'utf8');
 const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
 
 const countId = (id) => (index.match(new RegExp(`id="${id}"`, 'g')) || []).length;
@@ -18,7 +19,7 @@ test('v14 shell assets load last without replacing established tool ids', () => 
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
-    'tabSpecializationTowers',
+    'tabSpecialization',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
@@ -163,17 +164,12 @@ test('More controller localizes all supported languages and preserves keyboard f
   assert.ok(readyIndex > shellJs.indexOf('window.vtsShellOpenMore'));
 });
 
-test('Specialization Towers is an external More tool without changing mobile primary tools', () => {
-  assert.match(
-    index,
-    /id="tabSpecializationTowers"[\s\S]*?href="specialization-towers\.html"[\s\S]*?data-i18n="tabSpecializationTowers">Specialization Towers<\/span>/
-  );
-  assert.match(shellJs, /'tabResearch',\s*'tabSpecializationTowers',\s*'tabMaterials'/);
-  assert.doesNotMatch(shellJs, /\['tabSpecializationTowers',\s*'[^']+'\]/);
-  assert.doesNotMatch(
-    index,
-    /<div\b(?=[^>]*\bdata-shell-mobile-primary\b)[^>]*>\s*<a\b[^>]*\bid="tabSpecializationTowers"/
-  );
+test('Specialization uses only the integrated tab destination', () => {
+  assert.doesNotMatch(index, /specialization-towers\.html/);
+  assert.match(index, /id="tabSpecialization"[\s\S]*?data-i18n="tabSpecialization"/);
+  assert.match(shellJs, /\['tabSpecialization',\s*'specialization'\]/);
+  assert.doesNotMatch(shellJs, /tabSpecializationTowers/);
+  assert.match(specializationJs, /querySelector\('\.specialization-loading'\)\?\.remove\(\)/);
 });
 
 test('Eden Map uses a compact Soon badge without an injected building note', () => {
@@ -203,10 +199,7 @@ test('footer is one compact community strip and keeps tab-link behavior', () => 
     index,
     /href="battle-simulator\.html" data-i18n="tabBattleSimulator">Battle Simulator<\/a>/
   );
-  assert.match(
-    index,
-    /href="specialization-towers\.html" data-i18n="tabSpecializationTowers"[\s\S]*?Specialization Towers<\/a\s*>/
-  );
+  assert.match(index, /href="#specialization"[\s\S]*?data-footer-tab="specialization"/);
   assert.match(index, /id="footerYear"/);
   assert.match(
     shellCss,

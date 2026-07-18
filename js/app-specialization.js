@@ -82,6 +82,12 @@ function saveContributions(data) {
   }
 }
 
+function contributionCount(data) {
+  return Object.values(data.nodes).filter(
+    (node) => node?.medalCost != null || node?.reviewedMedalCost != null
+  ).length;
+}
+
 function locale() {
   return resolveSpecializationTowersV2Locale(currentLanguage);
 }
@@ -174,11 +180,14 @@ function renderBadge(researchId) {
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
   return `
-    <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
-      <span class="spec-badge-emblem" aria-hidden="true">${badgeIcon(research.name)}</span>
-      <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
-      <span class="spec-badge-pct">${pct(progress.percent)}%</span>
-    </button>`;
+    <div class="spec-badge-wrap">
+      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
+        <span class="spec-badge-emblem" aria-hidden="true">${badgeIcon(research.name)}</span>
+        <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
+        <span class="spec-badge-pct">${pct(progress.percent)}%</span>
+      </button>
+      <button type="button" class="spec-badge-max" data-spec-quick-max="${researchId}" aria-label="${escapeHtml(`${sp('completeLearning')}: ${researchName(research)}`)}" title="${escapeHtml(sp('completeLearning'))}" ${progress.isComplete ? 'disabled' : ''}>${escapeHtml(sp('quickMax'))}</button>
+    </div>`;
 }
 
 function renderBanner(columnId) {
@@ -204,7 +213,7 @@ function renderBanner(columnId) {
 
 function renderCommunity() {
   const data = loadContributions();
-  const { headers, rows } = buildContributionTemplateRows();
+  const { rows } = buildContributionTemplateRows();
   const columns = Object.values(SPECIALIZATION_COLUMNS).sort((a, b) => Number(a.id) - Number(b.id));
   return `
     <section class="spec-community">
@@ -212,13 +221,7 @@ function renderCommunity() {
         <h4>${escapeHtml(sp('communityDataTitle'))}</h4>
         <p>${escapeHtml(sp('communityDataDescription'))}</p>
       </div>
-      <div class="spec-contrib-name-row">
-        <label>
-          <span>${'Your name'}</span>
-          <input class="spec-contrib-name-input" type="text" data-spec-contrib-name value="${escapeHtml(data.contributorName)}" maxlength="40" placeholder="${'Enter your in-game name'}" />
-        </label>
-        <span class="spec-contrib-count">${Object.keys(data.nodes).filter((k) => data.nodes[k]?.medalCost != null).length} nodes with data</span>
-      </div>
+      <span class="spec-contrib-count">${escapeHtml(sp('communityNodesWithData', { count: contributionCount(data) }))}</span>
       <div class="spec-contrib-nodes">
         ${columns.map((col) => {
           const colResearches = col.researches.map((rid) => SPECIALIZATION_RESEARCH[rid]).filter(Boolean);
@@ -231,17 +234,35 @@ function renderCommunity() {
               return `<section class="spec-contrib-research">
                 <h5>${escapeHtml(research.name)}</h5>
                 ${rowData.map((row) => {
+                  const nodePosition = row[5];
                   const nodeId = row[6];
                   const nodeName = row[7];
+                  const nodeEffect = row[8];
                   const saved = data.nodes[nodeId] || {};
                   return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}">
-                    <span class="spec-contrib-node-name">${escapeHtml(nodeName)}</span>
-                    <label><span>Medal cost</span>
-                      <input type="number" min="0" step="1" class="spec-contrib-medal" data-spec-node-medal="${escapeHtml(nodeId)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
-                    </label>
-                    <label><span>Reviewer</span>
-                      <input type="text" class="spec-contrib-reviewer" data-spec-node-reviewer="${escapeHtml(nodeId)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="Who verified this value?" />
-                    </label>
+                    <div class="spec-contrib-node-identity">
+                      <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon(nodeEffect)}</span>
+                      <span><small>#${fmt(nodePosition)}</small><strong>${escapeHtml(nodeName)}</strong>${nodeEffect ? `<em>${escapeHtml(nodeEffect)}</em>` : ''}</span>
+                    </div>
+                    <fieldset class="spec-contrib-stage">
+                      <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
+                      <label><span>${escapeHtml(sp('communityContributorName'))}</span>
+                        <input type="text" data-spec-node-contributor="${escapeHtml(nodeId)}" value="${escapeHtml(saved.contributor || data.contributorName || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityContributorPlaceholder'))}" />
+                      </label>
+                      <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
+                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeId)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                      </label>
+                    </fieldset>
+                    <span class="spec-contrib-flow" aria-hidden="true">→</span>
+                    <fieldset class="spec-contrib-stage spec-contrib-stage--review">
+                      <legend>${escapeHtml(sp('verificationVerified'))}</legend>
+                      <label><span>${escapeHtml(sp('communityReviewer'))}</span>
+                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeId)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" />
+                      </label>
+                      <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
+                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeId)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                      </label>
+                    </fieldset>
                   </div>`;
                 }).join('')}
               </section>`;
@@ -485,6 +506,17 @@ function backToOverview() {
   render();
 }
 
+function completeResearch(researchId) {
+  const research = SPECIALIZATION_RESEARCH[researchId];
+  if (!research) return;
+  const allNodes = research.nodes.map((node) => node.id);
+  if (research.passiveSkillNodeId !== null && research.passiveSkillNodeId !== undefined) {
+    allNodes.push(research.passiveSkillNodeId);
+  }
+  state = setResearchNodes(state, activeTroop, researchId, allNodes);
+  persist();
+}
+
 function onClick(event) {
   const troopBtn = event.target.closest('[data-spec-troop]');
   if (troopBtn) {
@@ -501,29 +533,31 @@ function onClick(event) {
     backToOverview();
     return;
   }
-  if (event.target.closest('[data-spec-contrib-name]')) {
-    return; // handled by change event
+  const quickMax = event.target.closest('[data-spec-quick-max]');
+  if (quickMax && !quickMax.disabled) {
+    completeResearch(quickMax.dataset.specQuickMax);
+    render();
+    return;
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
   if (nodeBtn && !nodeBtn.disabled && selectedResearchId) {
-    toggleResearchNode(state, activeTroop, selectedResearchId, Number(nodeBtn.dataset.specNode));
+    state = toggleResearchNode(
+      state,
+      activeTroop,
+      selectedResearchId,
+      Number(nodeBtn.dataset.specNode)
+    );
     persist();
     render();
     return;
   }
   if (event.target.closest('[data-spec-complete]') && selectedResearchId) {
-    const research = SPECIALIZATION_RESEARCH[selectedResearchId];
-    const allNodes = research.nodes.map((node) => node.id);
-    if (research.passiveSkillNodeId !== null && research.passiveSkillNodeId !== undefined) {
-      allNodes.push(research.passiveSkillNodeId);
-    }
-    setResearchNodes(state, activeTroop, selectedResearchId, allNodes);
-    persist();
+    completeResearch(selectedResearchId);
     render();
     return;
   }
   if (event.target.closest('[data-spec-reset]') && selectedResearchId) {
-    resetResearch(state, activeTroop, selectedResearchId);
+    state = resetResearch(state, activeTroop, selectedResearchId);
     persist();
     render();
   }
@@ -534,15 +568,17 @@ function onChange(event) {
   if (medals && selectedResearchId) {
     const raw = medals.value.trim();
     const value = raw === '' ? null : Math.max(0, Number(raw) || 0);
-    setResearchMedalsSpent(state, activeTroop, selectedResearchId, value);
+    state = setResearchMedalsSpent(state, activeTroop, selectedResearchId, value);
     persist();
     render();
     return;
   }
-  const nameInput = event.target.closest('[data-spec-contrib-name]');
-  if (nameInput) {
+  const contributorInput = event.target.closest('[data-spec-node-contributor]');
+  if (contributorInput) {
+    const nodeId = contributorInput.dataset.specNodeContributor;
     const data = loadContributions();
-    data.contributorName = nameInput.value.trim();
+    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
+    data.nodes[nodeId].contributor = contributorInput.value.trim();
     saveContributions(data);
     return;
   }
@@ -557,7 +593,9 @@ function onChange(event) {
     const countEl = root?.querySelector('.spec-contrib-count');
     if (countEl) {
       const allData = loadContributions();
-      countEl.textContent = `${Object.keys(allData.nodes).filter((k) => allData.nodes[k]?.medalCost != null).length} nodes with data`;
+      countEl.textContent = sp('communityNodesWithData', {
+        count: contributionCount(allData),
+      });
     }
     return;
   }
@@ -568,6 +606,20 @@ function onChange(event) {
     if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
     data.nodes[nodeId].reviewer = reviewerInput.value.trim();
     saveContributions(data);
+    return;
+  }
+  const reviewedMedalInput = event.target.closest('[data-spec-node-reviewed-medal]');
+  if (reviewedMedalInput) {
+    const nodeId = reviewedMedalInput.dataset.specNodeReviewedMedal;
+    const raw = reviewedMedalInput.value.trim();
+    const data = loadContributions();
+    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
+    data.nodes[nodeId].reviewedMedalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    saveContributions(data);
+    const countEl = root?.querySelector('.spec-contrib-count');
+    if (countEl) {
+      countEl.textContent = sp('communityNodesWithData', { count: contributionCount(data) });
+    }
   }
 }
 
@@ -584,4 +636,5 @@ export function initSpecializationTool() {
     wired = true;
   }
   render();
+  root.closest('#specializationSection')?.querySelector('.specialization-loading')?.remove();
 }
