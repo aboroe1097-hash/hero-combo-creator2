@@ -8,6 +8,8 @@ import { escapeHtml } from './utils.js';
 import {
   SPECIALIZATION_COLUMNS,
   SPECIALIZATION_RESEARCH,
+  getSpecializationLegionSkillImage,
+  getSpecializationResearchImage,
 } from './specialization-towers-v2-data.js';
 import {
   getSpecializationSummary,
@@ -133,6 +135,12 @@ function badgeIcon(name) {
   return BADGE_ICON.find((entry) => entry.test.test(name))?.icon || '◆';
 }
 
+function plannerSprite(asset, className = '') {
+  if (!asset) return '';
+  const viewBox = `${asset.column * 120} ${288 + asset.row * 129} 120 129`;
+  return `<svg class="${className} specialization-planner-sprite" viewBox="${viewBox}" focusable="false"><image href="${escapeHtml(asset.src)}" width="960" height="933"></image></svg>`;
+}
+
 function nodeIcon(effect) {
   return NODE_ICON.find((entry) => entry.test.test(effect || ''))?.icon || '◆';
 }
@@ -214,10 +222,11 @@ function renderBadge(researchId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
+  const image = getSpecializationResearchImage(researchId, activeTroop);
   return `
     <div class="spec-badge-wrap">
       <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
-        <span class="spec-badge-emblem" aria-hidden="true">${badgeIcon(research.name)}</span>
+        <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
         <span class="spec-badge-pct">${pct(progress.percent)}%</span>
       </button>
@@ -229,8 +238,9 @@ function renderBanner(columnId) {
   const column = SPECIALIZATION_COLUMNS[columnId];
   const colProgress = getColumnProgress(state, activeTroop, columnId);
   const unlocked = colProgress.legionSkillUnlocked;
-  const skill = unlocked ? colProgress.legionSkill : null;
+  const skill = colProgress.legionSkill;
   const skillName = skill?.name || '';
+  const skillImage = getSpecializationLegionSkillImage(columnId, activeTroop);
   const skillTip = unlocked
     ? `${skillName}${skill?.desc ? ` — ${skill.desc}` : ''}`
     : sd('legionLockedHint');
@@ -244,7 +254,7 @@ function renderBanner(columnId) {
         ${column.researches.map(renderBadge).join('')}
       </div>
       <button type="button" class="spec-crest ${unlocked ? 'is-unlocked' : 'is-locked'}" data-spec-legion="${columnId}" ${unlocked ? `aria-expanded="${selectedLegionColumnId === columnId}" aria-controls="spec-legion-inspector"` : 'disabled aria-disabled="true"'} title="${escapeHtml(skillTip)}">
-        <span class="spec-crest-emblem" aria-hidden="true">${unlocked ? '🏅' : '🔒'}</span>
+        <span class="spec-crest-emblem" aria-hidden="true">${skillImage ? plannerSprite(skillImage) : unlocked ? '🏅' : '🔒'}</span>
         <span class="spec-crest-name">${escapeHtml(skillName || sp('legionSkills'))}</span>
       </button>
     </section>`;
@@ -255,9 +265,10 @@ function renderLegionSkillInspector() {
   const progress = getColumnProgress(state, activeTroop, selectedLegionColumnId);
   const skill = progress.legionSkillUnlocked ? progress.legionSkill : null;
   if (!skill) return '';
+  const skillImage = getSpecializationLegionSkillImage(selectedLegionColumnId, activeTroop);
   return `
     <section id="spec-legion-inspector" class="spec-legion-inspector" tabindex="-1" aria-live="polite">
-      <span class="spec-legion-inspector-icon" aria-hidden="true">🏅</span>
+      <span class="spec-legion-inspector-icon" aria-hidden="true">${skillImage ? plannerSprite(skillImage) : '🏅'}</span>
       <div class="spec-legion-inspector-copy">
         <span class="spec-node-inspector-kicker">${escapeHtml(sd('legionPreview'))} · ${escapeHtml(columnLabel(selectedLegionColumnId))}</span>
         <h4>${escapeHtml(skill.name)}</h4>
@@ -436,13 +447,14 @@ function renderRing(research, access) {
     })
     .join('');
   const progress = getResearchProgress(state, activeTroop, research.id);
+  const image = getSpecializationResearchImage(research.id, activeTroop);
   return `
     <div class="spec-ring" role="group" aria-label="${escapeHtml(researchName(research))}">
       <svg class="spec-ring-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <ellipse cx="50" cy="50" rx="40" ry="42" />
       </svg>
       <div class="spec-ring-center">
-        <span class="spec-ring-emblem" aria-hidden="true">${badgeIcon(research.name)}</span>
+        <span class="spec-ring-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-ring-pct">${pct(progress.percent)}%</span>
       </div>
       ${nodes}

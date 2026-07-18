@@ -6,6 +6,8 @@ import {
   SPECIALIZATION_LEGION_SKILLS,
   SPECIALIZATION_RESEARCH,
   SPECIALIZATION_SOURCE_METADATA,
+  getSpecializationLegionSkillImage,
+  getSpecializationResearchImage,
 } from './specialization-towers-v2-data.js';
 import {
   createEmptySpecializationState,
@@ -37,7 +39,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '14.1.4';
+export const APP_VERSION = '14.1.5';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];
@@ -107,6 +109,12 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value).replaceAll('`', '&#96;');
+}
+
+function plannerSprite(asset, className) {
+  if (!asset) return '';
+  const viewBox = `${asset.column * 120} ${288 + asset.row * 129} 120 129`;
+  return `<svg class="${className} specialization-planner-sprite" viewBox="${viewBox}" focusable="false"><image href="${escapeAttribute(asset.src)}" width="960" height="933"></image></svg>`;
 }
 
 function t(key, variables = {}) {
@@ -336,11 +344,12 @@ function renderResearchButton(researchId, columnId) {
   const selected = selectedItem.kind === 'research' && selectedItem.researchId === researchId;
   const stateName = statusForProgress(progress);
   const displayName = researchDisplayName(research, activeTroop);
+  const image = getSpecializationResearchImage(researchId, activeTroop);
   return `
     <article class="specialization-research" data-specialization-research="${researchId}">
       <button type="button" class="specialization-research-node" data-specialization-open-research="${researchId}" data-column-id="${columnId}" data-state="${stateName}" aria-pressed="${selected}" aria-label="${escapeAttribute(t('nodeStatusAria', { name: displayName, status: statusLabel(progress), current: progress.completedNodes, maximum: progress.totalNodes }))}">
         ${renderCircularProgress('specialization-node-progress-ring', percent)}
-        <span class="specialization-node-icon" aria-hidden="true">${stateName === 'complete' ? '✦' : '◆'}</span>
+        <span class="specialization-node-icon" aria-hidden="true">${plannerSprite(image, 'specialization-research-image')}</span>
         <span class="specialization-node-percent">${percent}%</span>
       </button>
       <strong class="specialization-skill-name">${escapeHtml(displayName)}</strong>
@@ -354,6 +363,7 @@ function renderColumn(columnId) {
   const percent = roundedPercent(progress.percent);
   const unlocked = isColumnSkillUnlocked(progress);
   const skill = SPECIALIZATION_LEGION_SKILLS[columnId][activeTroop];
+  const skillImage = getSpecializationLegionSkillImage(columnId, activeTroop);
   const selected = selectedItem.columnId === columnId;
   return `
     <section class="specialization-column ${selected ? 'is-selected' : ''}" data-specialization-column="${columnId}" data-selected="${selected}">
@@ -369,7 +379,7 @@ function renderColumn(columnId) {
         ${column.researches.map((researchId) => renderResearchButton(researchId, columnId)).join('')}
       </div>
       <div class="specialization-column-skill" data-specialization-column-skill="${columnId}">
-        <button type="button" class="specialization-legion-skill ${unlocked ? 'is-unlocked' : 'is-unavailable'}" data-specialization-open-column-skill="${columnId}" data-state="${unlocked ? 'unlocked' : 'locked'}" aria-label="${escapeAttribute(`${skill.name}: ${unlocked ? t('statusComplete') : t('statusLocked')}`)}"><span aria-hidden="true">${unlocked ? '✹' : '🔒'}</span></button>
+        <button type="button" class="specialization-legion-skill ${unlocked ? 'is-unlocked' : 'is-unavailable'}" data-specialization-open-column-skill="${columnId}" data-state="${unlocked ? 'unlocked' : 'locked'}" aria-label="${escapeAttribute(`${skill.name}: ${unlocked ? t('statusComplete') : t('statusLocked')}`)}">${plannerSprite(skillImage, 'specialization-legion-skill-image')}<span class="specialization-legion-skill-state" aria-hidden="true">${unlocked ? '✓' : '🔒'}</span></button>
         <strong class="specialization-skill-name">${escapeHtml(skill.name)}</strong>
         <span class="specialization-skill-status">${escapeHtml(unlocked ? t('freeUnlock') : t('statusLocked'))}</span>
       </div>
@@ -494,6 +504,7 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
   const recorded = progress.isComplete ? research.cost : selection.medalsSpent;
   const remaining = recorded === null ? null : Math.max(0, research.cost - recorded);
   const percent = roundedPercent(progress.percent);
+  const image = getSpecializationResearchImage(research.id, activeTroop);
   const recordedMedalsId = `${titleId}-recorded-medals`;
   const progressGroupId = `${titleId}-progress-label`;
   const pathNoticeId = `${titleId}-path-notice`;
@@ -505,7 +516,7 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
         <button type="button" class="specialization-inspector-close" data-specialization-close-inspector aria-label="${escapeAttribute(t('closeDialog'))}">${iconSvg('close')}</button>
       </div>
       <section class="specialization-selection-card">
-        <span class="specialization-selection-icon" aria-hidden="true">${TROOP_ICONS[activeTroop]}</span>
+        <span class="specialization-selection-icon" aria-hidden="true">${plannerSprite(image, 'specialization-selection-image')}</span>
         <div class="specialization-selection-copy"><h3>${escapeHtml(displayName)}</h3><p>${escapeHtml(troopLabel(activeTroop))}</p><div class="specialization-selection-meta"><span>${escapeHtml(SPECIALIZATION_COLUMNS[research.column].name)}</span><span>${escapeHtml(seasonLabel(SPECIALIZATION_COLUMNS[research.column].unlockSeason))}</span><span>${escapeHtml(t('nodeLevel', { current: progress.completedNodes, maximum: progress.totalNodes }))}</span></div></div>
       </section>
       <section class="specialization-progress-editor">
@@ -541,11 +552,12 @@ function renderSkillInspector(titleId = 'specialization-inspector-title') {
   const columnProgress = getColumnProgress(state, activeTroop, columnId);
   const unlocked = isColumnSkillUnlocked(columnProgress);
   const skill = SPECIALIZATION_LEGION_SKILLS[columnId][activeTroop];
+  const skillImage = getSpecializationLegionSkillImage(columnId, activeTroop);
   return `
     <div class="specialization-inspector-inner">
       <div class="specialization-inspector-header"><h2 id="${titleId}">${escapeHtml(t('legionSkills'))}</h2><button type="button" class="specialization-inspector-close" data-specialization-close-inspector aria-label="${escapeAttribute(t('closeDialog'))}">${iconSvg('close')}</button></div>
       <section class="specialization-selection-card">
-        <span class="specialization-selection-icon" aria-hidden="true">✹</span>
+        <span class="specialization-selection-icon" aria-hidden="true">${plannerSprite(skillImage, 'specialization-selection-image')}</span>
         <div class="specialization-selection-copy"><h3>${escapeHtml(skill.name)}</h3><p>${escapeHtml(`${troopLabel(activeTroop)} · ${SPECIALIZATION_COLUMNS[columnId].name}`)}</p><div class="specialization-selection-meta"><span>${escapeHtml(unlocked ? t('statusComplete') : t('statusLocked'))}</span><span>${escapeHtml(t('freeUnlock'))}</span></div></div>
       </section>
       <section class="specialization-inspector-summary">
@@ -828,7 +840,11 @@ export function getContributionInitialVisibility(research, node) {
     return node.visibleWhenLocked ? 'visible_locked' : 'hidden_until_prerequisites';
   }
   if (node?.visibleWhenLocked) return 'visible_locked';
-  return research?.progressiveReveal ? 'hidden_unverified' : '';
+  if (research?.progressiveReveal?.status === 'partial-evidence') return 'hidden_unverified';
+  if (research?.progressiveReveal?.status === 'catalog-complete-path-unverified') {
+    return 'available';
+  }
+  return '';
 }
 
 export function buildContributionTemplateRows() {
@@ -880,7 +896,7 @@ export function buildContributionTemplateRows() {
         Array.isArray(node.prerequisiteNodeIds) ? node.prerequisiteNodeIds.join('|') : '',
         node.pathBranch || '',
         '',
-        research.progressiveReveal ? 'game-screenshot-2026-07-17' : '',
+        research.progressiveReveal ? 'public-planner-app-js;game-screenshot-2026-07-17' : '',
         '',
         t('verificationMissing'),
         '',

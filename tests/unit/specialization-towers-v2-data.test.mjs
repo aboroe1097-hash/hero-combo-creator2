@@ -1,23 +1,36 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
+import {
+  SPECIALIZATION_PLANNER_ASSETS,
+  SPECIALIZATION_PLANNER_SPRITE_URL,
+} from '../../js/specialization-towers-v2-assets.js';
 import {
   SPECIALIZATION_COLUMNS,
   SPECIALIZATION_CONTRIBUTION_SHEET_URL,
   SPECIALIZATION_CONTRIBUTION_TEMPLATE_VERSION,
   SPECIALIZATION_DATA_REVISION,
   SPECIALIZATION_LEGION_SKILLS,
+  SPECIALIZATION_LEGION_SKILL_IMAGES,
   SPECIALIZATION_RESEARCH,
+  SPECIALIZATION_RESEARCH_IMAGES,
   SPECIALIZATION_SOURCE_METADATA,
   SPECIALIZATION_TROOPS,
+  getSpecializationLegionSkillImage,
   getSpecializationResearch,
+  getSpecializationResearchImage,
 } from '../../js/specialization-towers-v2-data.js';
 
+const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const researchEntries = Object.entries(SPECIALIZATION_RESEARCH);
 const researchValues = Object.values(SPECIALIZATION_RESEARCH);
 
 test('specialization source provenance identifies the X28+ eight-column revision', () => {
-  assert.equal(SPECIALIZATION_DATA_REVISION, '2026-07-17-progressive-paths');
+  assert.equal(SPECIALIZATION_DATA_REVISION, '2026-07-18-public-planner-assets');
   assert.deepEqual(SPECIALIZATION_SOURCE_METADATA, {
     title: 'Unit Specialization',
     publisher: 'ROCAcademy / Rise of Castles community guide',
@@ -27,6 +40,8 @@ test('specialization source provenance identifies the X28+ eight-column revision
       'https://www.riseofcastles.net/en/feedrocbook/rise-of-castles-heroes/discussion/bc31587e-ebef-4d6c-93b2-5fff08cc993f',
     plannerUrl: 'https://tools.riseofcastles.net/specialization-tower-planner/',
     plannerDataUrl: 'https://tools.riseofcastles.net/specialization-tower-planner/app.js',
+    plannerDataSha256: '46516975281b529b9d4d1460c2abc9121f8f256429f4aef4c9d7c236ac5c155e',
+    plannerAssetCount: 33,
     legacyGuideUrl: 'https://www.riseofcastles.net/en/specializationtower',
     revisionDate: '2026-05-20',
     seasonScope: 'X28+',
@@ -97,14 +112,15 @@ test('research and selectable-node identities are unique and internally consiste
   assert.equal(new Set(selectableIds).size, selectableIds.length);
 });
 
-test('Enhanced Tactics IV records only the progressive path states proven by screenshots', () => {
+test('Enhanced Tactics IV exposes the complete public catalog without inventing path edges', () => {
   const research = getSpecializationResearch('enhanced4');
   assert.deepEqual(research.progressiveReveal, {
-    status: 'partial-evidence',
-    sourceType: 'user-supplied-game-screenshots',
-    observationDate: '2026-07-17',
-    note: 'At 0%, Defense Plan and Siege Plan are available while Swirling Wind is visible but locked. Downstream prerequisites remain unverified.',
+    status: 'catalog-complete-path-unverified',
+    sourceType: 'public-planner-and-user-supplied-game-screenshots',
+    observationDate: '2026-07-18',
+    note: 'The public planner confirms all 24 nodes and their buffs. Screenshots confirm both roots and the visible final node; downstream dependency edges remain unverified and are not claimed.',
   });
+  assert.equal(research.nodes.length, 24);
 
   const defenseRoot = research.nodes.find(({ id }) => id === 1);
   const siegeRoot = research.nodes.find(({ id }) => id === 12);
@@ -129,6 +145,71 @@ test('Enhanced Tactics IV records only the progressive path states proven by scr
     2,
     'downstream edges must remain absent until verified'
   );
+});
+
+test('all 33 public planner emblems are local, hashed, and mapped to the canonical corpus', () => {
+  const manifest = JSON.parse(
+    readFileSync(join(repoRoot, 'tests/fixtures/specialization-planner-assets.json'), 'utf8')
+  );
+  assert.equal(manifest.sourceUrl, SPECIALIZATION_SOURCE_METADATA.plannerDataUrl);
+  assert.equal(manifest.sourceSha256, SPECIALIZATION_SOURCE_METADATA.plannerDataSha256);
+  assert.equal(manifest.assetCount, 33);
+  assert.equal(manifest.researchAssetCount, 9);
+  assert.equal(manifest.legionSkillAssetCount, 24);
+  assert.equal(manifest.localBytes, 39584);
+  assert.equal(manifest.plannerGridBytes, 36760);
+  assert.ok(manifest.plannerGridBytes < manifest.sourceBytes / 20);
+
+  const mappedAssets = new Set([
+    ...Object.values(SPECIALIZATION_RESEARCH_IMAGES).flatMap((asset) =>
+      asset?.src ? [asset] : Object.values(asset)
+    ),
+    ...Object.values(SPECIALIZATION_LEGION_SKILL_IMAGES).flat(),
+  ]);
+  const spriteAssets = new Set(Object.values(SPECIALIZATION_PLANNER_ASSETS));
+  assert.deepEqual(mappedAssets, spriteAssets);
+  assert.deepEqual(
+    new Set(Object.keys(SPECIALIZATION_PLANNER_ASSETS)),
+    new Set(manifest.assets.map(({ assetKey }) => assetKey))
+  );
+
+  const spriteBytes = readFileSync(join(repoRoot, manifest.sprite.path));
+  assert.equal(SPECIALIZATION_PLANNER_SPRITE_URL, manifest.sprite.path);
+  assert.equal(spriteBytes.length, manifest.localBytes);
+  assert.equal(createHash('sha256').update(spriteBytes).digest('hex'), manifest.sprite.sha256);
+  assert.equal(
+    new Set(
+      Object.values(SPECIALIZATION_PLANNER_ASSETS).map(({ column, row }) => `${column}:${row}`)
+    ).size,
+    33
+  );
+
+  for (const asset of manifest.assets) {
+    const sprite = SPECIALIZATION_PLANNER_ASSETS[asset.assetKey];
+    assert.equal(sprite.src, manifest.sprite.path);
+    assert.equal(sprite.columns, manifest.sprite.columns);
+    assert.equal(sprite.rows, manifest.sprite.rows);
+    assert.ok(sprite.column >= 0 && sprite.column < sprite.columns, asset.assetKey);
+    assert.ok(sprite.row >= 0 && sprite.row < sprite.rows, asset.assetKey);
+    assert.equal(asset.contentType, 'image/webp');
+    assert.equal(asset.sourceContentType, 'image/png');
+    assert.match(asset.sourceSha256, /^[a-f0-9]{64}$/u);
+    assert.ok(asset.bytes < asset.sourceBytes, asset.assetKey);
+    assert.ok(asset.width >= 110 && asset.height >= 110, asset.path);
+  }
+
+  for (const research of researchValues) {
+    for (const troop of SPECIALIZATION_TROOPS) {
+      assert.ok(getSpecializationResearchImage(research.id, troop), `${research.id}/${troop}`);
+    }
+  }
+  for (const columnId of Object.keys(SPECIALIZATION_COLUMNS)) {
+    for (const troop of SPECIALIZATION_TROOPS) {
+      assert.ok(getSpecializationLegionSkillImage(columnId, troop), `${columnId}/${troop}`);
+    }
+  }
+  assert.equal(getSpecializationResearchImage(null, 'cavalry'), null);
+  assert.equal(getSpecializationLegionSkillImage('missing', 'cavalry'), null);
 });
 
 test('each column has four researches and the canonical medal costs total 1,369,839', () => {

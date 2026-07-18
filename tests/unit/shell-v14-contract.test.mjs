@@ -187,6 +187,10 @@ test('Specialization uses only the integrated tab destination', () => {
   assert.match(specializationJs, /data-spec-set-selected-node/);
   assert.match(specializationJs, /data-spec-help-node/);
   assert.match(specializationJs, /function contributionNodeKey\(/);
+  assert.match(specializationJs, /getSpecializationResearchImage/);
+  assert.match(specializationJs, /getSpecializationLegionSkillImage/);
+  assert.match(appCss, /\.spec-badge-emblem \.specialization-planner-sprite/);
+  assert.match(appCss, /\.spec-crest-emblem \.specialization-planner-sprite/);
   assert.match(appCss, /\.spec-ring-node\[data-selected='true'\]/);
   assert.match(appCss, /\/\* Acknowledgments \/ Hall of Honor \*\//);
   assert.match(appCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.spec-ack-plate/);

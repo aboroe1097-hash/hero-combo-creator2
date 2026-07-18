@@ -51,7 +51,11 @@ function initialVisibility(research, node) {
     return node.visibleWhenLocked ? 'visible_locked' : 'hidden_until_prerequisites';
   }
   if (node?.visibleWhenLocked) return 'visible_locked';
-  return research?.progressiveReveal ? 'hidden_unverified' : '';
+  if (research?.progressiveReveal?.status === 'partial-evidence') return 'hidden_unverified';
+  if (research?.progressiveReveal?.status === 'catalog-complete-path-unverified') {
+    return 'available';
+  }
+  return '';
 }
 
 export function buildContributionTemplateRows() {

@@ -329,6 +329,12 @@ test('loads and mounts private modules only after server unlock returns a verifi
   const expiryTimer = timers.find(({ delay }) => delay > 12_000);
   assert.ok(expiryTimer);
 
+  const gateStateCount = gate.states.length;
+  records.controllerOptions.onError({ code: 'permission-denied' }, { action: 'save-submission' });
+  assert.equal(root.hidden, false, 'a rejected write must keep the member hub visible');
+  assert.equal(gate.states.length, gateStateCount, 'a rejected write is not proof of grant expiry');
+  assert.equal(domain.testController.destroyed, false);
+
   await eventTarget.listeners.get('vts:language-change')?.({ detail: { lang: 'ar' } });
   assert.equal(records.loadedResearchLocales.at(-1), 'ar');
   assert.deepEqual(domain.testController.setLanguageCalls.at(-1), [

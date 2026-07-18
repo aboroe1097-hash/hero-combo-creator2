@@ -12,6 +12,25 @@ const stateSource = readFileSync('js/state.js', 'utf8');
 const shellSource = readFileSync('js/shell-v14.js', 'utf8');
 const commandPaletteSource = readFileSync('js/command-palette.js', 'utf8');
 
+test('failed signup writes preserve the filled form and do not masquerade as PIN expiry', () => {
+  assert.match(bootstrapSource, /if \(error\?\.code === 'access_expired'\)/);
+  assert.doesNotMatch(
+    bootstrapSource,
+    /error\?\.code === 'access_expired' \|\| error\?\.code === 'permission-denied'/
+  );
+  assert.match(controllerSource, /let preserveFormOnFailure = false/);
+  assert.match(controllerSource, /preserveFormOnFailure = true/);
+  assert.match(controllerSource, /if \(preserveFormOnFailure\) renderSubmissionControls\(state\)/);
+});
+
+test('commitment questions have generous vertical separation', () => {
+  assert.match(tabSource, /class="boh-card boh-commitment-card"/);
+  assert.match(
+    cssSource,
+    /\.boh-commitment-card\s*>\s*:is\([^)]*\.boh-fieldset[^)]*\.boh-field[^)]*\)\s*\{\s*margin-top:\s*clamp\(1\.5rem, 2vw, 2rem\)/s
+  );
+});
+
 function openingTagById(source, id) {
   const match = source.match(new RegExp(`<[^>]*\\sid="${id}"[^>]*>`));
   assert.ok(match, `Missing element #${id}`);

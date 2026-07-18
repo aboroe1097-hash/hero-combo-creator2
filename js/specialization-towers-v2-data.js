@@ -1,3 +1,5 @@
+import { SPECIALIZATION_PLANNER_ASSETS } from './specialization-towers-v2-assets.js';
+
 /**
  * Canonical Unit Specialization tower data.
  *
@@ -6,7 +8,7 @@
  * rules until the battle engine explicitly models them.
  */
 
-export const SPECIALIZATION_DATA_REVISION = '2026-07-17-progressive-paths';
+export const SPECIALIZATION_DATA_REVISION = '2026-07-18-public-planner-assets';
 export const SPECIALIZATION_CONTRIBUTION_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1b8KpSdvf02L5sGoi075MIO7J8IjKVMImBxHDDUWvF64/edit?usp=sharing';
 export const SPECIALIZATION_CONTRIBUTION_TEMPLATE_VERSION = 2;
@@ -20,6 +22,8 @@ export const SPECIALIZATION_SOURCE_METADATA = Object.freeze({
     'https://www.riseofcastles.net/en/feedrocbook/rise-of-castles-heroes/discussion/bc31587e-ebef-4d6c-93b2-5fff08cc993f',
   plannerUrl: 'https://tools.riseofcastles.net/specialization-tower-planner/',
   plannerDataUrl: 'https://tools.riseofcastles.net/specialization-tower-planner/app.js',
+  plannerDataSha256: '46516975281b529b9d4d1460c2abc9121f8f256429f4aef4c9d7c236ac5c155e',
+  plannerAssetCount: 33,
   legacyGuideUrl: 'https://www.riseofcastles.net/en/specializationtower',
   revisionDate: '2026-05-20',
   seasonScope: 'X28+',
@@ -8268,10 +8272,10 @@ const RESEARCH_DATA = {
     sequence: 28,
     column: 7,
     progressiveReveal: {
-      status: 'partial-evidence',
-      sourceType: 'user-supplied-game-screenshots',
-      observationDate: '2026-07-17',
-      note: 'At 0%, Defense Plan and Siege Plan are available while Swirling Wind is visible but locked. Downstream prerequisites remain unverified.',
+      status: 'catalog-complete-path-unverified',
+      sourceType: 'public-planner-and-user-supplied-game-screenshots',
+      observationDate: '2026-07-18',
+      note: 'The public planner confirms all 24 nodes and their buffs. Screenshots confirm both roots and the visible final node; downstream dependency edges remain unverified and are not claimed.',
     },
     nodes: [
       {
@@ -9850,10 +9854,75 @@ const COLUMNS = {
   },
 };
 
+const plannerAsset = (assetKey) => SPECIALIZATION_PLANNER_ASSETS[assetKey] ?? null;
+
+const RESEARCH_IMAGES = {
+  training: {
+    footman: plannerAsset('research/training-footman.webp'),
+    archer: plannerAsset('research/training-archer.webp'),
+    cavalry: plannerAsset('research/training-cavalry.webp'),
+  },
+  encounter: plannerAsset('research/encounter.webp'),
+  callofglory: plannerAsset('research/callofglory.webp'),
+  enhanced: plannerAsset('research/enhanced.webp'),
+  siege: plannerAsset('research/siege.webp'),
+  defensive: plannerAsset('research/defensive.webp'),
+  neat: plannerAsset('research/neat.webp'),
+};
+
+const LEGION_SKILL_IMAGES = {
+  footman: [
+    plannerAsset('legion-skills/footman-1-reserve-supply.webp'),
+    plannerAsset('legion-skills/footman-2-target-tactics.webp'),
+    plannerAsset('legion-skills/footman-3-cover-the-weak-point.webp'),
+    plannerAsset('legion-skills/footman-4-locate-the-weakness.webp'),
+    plannerAsset('legion-skills/footman-5-sharpened-blade.webp'),
+    plannerAsset('legion-skills/footman-6-accumulation.webp'),
+    plannerAsset('legion-skills/footman-7-impenetrable-formation.webp'),
+    plannerAsset('legion-skills/footman-8-shield-wall-resonance.webp'),
+  ],
+  archer: [
+    plannerAsset('legion-skills/archer-1-rapid-shots.webp'),
+    plannerAsset('legion-skills/archer-2-sniper-archer.webp'),
+    plannerAsset('legion-skills/archer-3-strong-resistance.webp'),
+    plannerAsset('legion-skills/archer-4-focused-attack.webp'),
+    plannerAsset('legion-skills/archer-5-timing-of-attack.webp'),
+    plannerAsset('legion-skills/archer-6-combo.webp'),
+    plannerAsset('legion-skills/archer-7-first-arrow-declaration.webp'),
+    plannerAsset('legion-skills/archer-8-purifying-arrows.webp'),
+  ],
+  cavalry: [
+    plannerAsset('legion-skills/cavalry-1-rescue-skills.webp'),
+    plannerAsset('legion-skills/cavalry-2-vanguard-s-suppression.webp'),
+    plannerAsset('legion-skills/cavalry-3-breakout.webp'),
+    plannerAsset('legion-skills/cavalry-4-charging-forward.webp'),
+    plannerAsset('legion-skills/cavalry-5-breakout.webp'),
+    plannerAsset('legion-skills/cavalry-6-null-heal.webp'),
+    plannerAsset('legion-skills/cavalry-7-bash-from-the-back.webp'),
+    plannerAsset('legion-skills/cavalry-8-headstarter.webp'),
+  ],
+};
+
 export const SPECIALIZATION_RESEARCH = deepFreeze(RESEARCH_DATA);
 export const SPECIALIZATION_COLUMNS = deepFreeze(COLUMNS);
 export const SPECIALIZATION_LEGION_SKILLS = deepFreeze(LEGION_SKILLS);
+export const SPECIALIZATION_RESEARCH_IMAGES = deepFreeze(RESEARCH_IMAGES);
+export const SPECIALIZATION_LEGION_SKILL_IMAGES = deepFreeze(LEGION_SKILL_IMAGES);
 
 export function getSpecializationResearch(id) {
   return typeof id === 'string' ? (SPECIALIZATION_RESEARCH[id] ?? null) : null;
+}
+
+export function getSpecializationResearchImage(researchId, troopId) {
+  if (typeof researchId !== 'string') return null;
+  const researchType = researchId.replace(/\d+/gu, '');
+  const asset = SPECIALIZATION_RESEARCH_IMAGES[researchType];
+  if (asset?.src) return asset;
+  return asset?.[troopId] ?? null;
+}
+
+export function getSpecializationLegionSkillImage(columnId, troopId) {
+  const columnIndex = Number(columnId) - 1;
+  if (!Number.isInteger(columnIndex) || columnIndex < 0) return null;
+  return SPECIALIZATION_LEGION_SKILL_IMAGES[troopId]?.[columnIndex] ?? null;
 }

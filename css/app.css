@@ -19360,6 +19360,16 @@ html[dir='rtl'] .gen-buttons-row {
   border: 2px solid #6b4f22;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
+.spec-badge-emblem .specialization-planner-sprite,
+.spec-crest-emblem .specialization-planner-sprite,
+.spec-legion-inspector-icon .specialization-planner-sprite,
+.spec-ring-emblem .specialization-planner-sprite {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
 .spec-badge[data-status='complete'] .spec-badge-emblem {
   border-color: #d9b35b;
   box-shadow: 0 0 10px rgba(217, 179, 91, 0.5);
@@ -19411,6 +19421,9 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-crest[disabled] {
   cursor: default;
+}
+.spec-crest.is-locked .spec-crest-emblem .specialization-planner-sprite {
+  filter: grayscale(0.35) brightness(0.7);
 }
 .spec-crest-emblem {
   width: 2.7rem;
@@ -19603,6 +19616,9 @@ html[dir='rtl'] .gen-buttons-row {
   box-shadow: 0 0 18px rgba(217, 179, 91, 0.4);
 }
 .spec-ring-emblem {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
   font-size: 1.9rem;
 }
 .spec-ring-pct {

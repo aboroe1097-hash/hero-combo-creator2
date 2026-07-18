@@ -28,10 +28,10 @@ const LIMITS = {
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
   // six-team planner, persistence model, and complete player/Admin locale
-  // packs. Velo b0.2, the localized Specialization node inspector, and the
-  // optional All-Star troop OCR review lift the graph to 8053 KiB; retain
-  // less than 47 KiB of aggregate headroom.
-  totalJsBytes: 8100 * 1024,
+  // packs. Velo b0.2, the localized Specialization node inspector, optional
+  // All-Star troop OCR review, and the complete 718-node public planner corpus
+  // measure 8104.1 KiB; retain less than 6 KiB of aggregate headroom.
+  totalJsBytes: 8110 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

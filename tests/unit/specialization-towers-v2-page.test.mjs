@@ -161,6 +161,18 @@ test('every column renders four research entries and one medal-free completion s
   assert.match(featureSource, /(?:no medals?|medal-free|does not require medals?)/iu);
 });
 
+test('public planner research and Legion Skill emblems render from local assets', () => {
+  assert.match(appSource, /getSpecializationResearchImage/u);
+  assert.match(appSource, /getSpecializationLegionSkillImage/u);
+  assert.match(appSource, /specialization-research-image/u);
+  assert.match(appSource, /specialization-legion-skill-image/u);
+  assert.match(appSource, /specialization-planner-sprite/u);
+  assert.match(appSource, /specialization-selection-image/u);
+  assert.match(cssSource, /\.specialization-research-image\s*\{/u);
+  assert.match(cssSource, /\.specialization-legion-skill-image\s*\{/u);
+  assert.doesNotMatch(appSource, /static\.wixstatic\.com/u);
+});
+
 test('research inspection exposes internal attribute nodes and four exact milestones', () => {
   assert.match(appSource, /data-specialization-inspector/u);
   assert.match(appSource, /(?:<dialog\b|role=["']dialog["'])/u);
@@ -207,7 +219,7 @@ test('contribution CSV rows align and distinguish roots from gated or unverified
   assert.equal(column(byNodeId.get(1), 'path_branch'), 'defense');
   assert.equal(column(byNodeId.get(12), 'initial_visibility'), 'available');
   assert.equal(column(byNodeId.get(12), 'path_branch'), 'siege');
-  assert.equal(column(byNodeId.get(2), 'initial_visibility'), 'hidden_unverified');
+  assert.equal(column(byNodeId.get(2), 'initial_visibility'), 'available');
   assert.equal(column(byNodeId.get(24), 'initial_visibility'), 'visible_locked');
   assert.equal(column(byNodeId.get(24), 'path_branch'), 'convergence');
   assert.equal(
