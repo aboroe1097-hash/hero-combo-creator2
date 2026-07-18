@@ -16,11 +16,17 @@
       </p>
     </div>
 
-    <div class="boh-event-status" data-role="event-status" aria-live="polite">
-      <span class="boh-status-dot" aria-hidden="true"></span>
-      <span data-role="event-status-label" data-boh-i18n="status.preparing"
-        >Preparing this season</span
-      >
+    <div class="boh-hero__actions">
+      <div class="boh-event-status" data-role="event-status" aria-live="polite">
+        <span class="boh-status-dot" aria-hidden="true"></span>
+        <span data-role="event-status-label" data-boh-i18n="status.preparing"
+          >Preparing this season</span
+        >
+      </div>
+      <button class="boh-button boh-button--quiet" type="button" data-role="lock-hub">
+        <span aria-hidden="true">&#128274;</span>
+        <span data-boh-i18n="nav.lockHub">Lock hub</span>
+      </button>
     </div>
   </header>
 
@@ -109,23 +115,6 @@
           <small data-boh-i18n="nav.planHint">Know every move</small>
         </span>
       </button>
-      <button
-        class="boh-subnav__tab"
-        id="bohShowdownTab"
-        type="button"
-        role="tab"
-        aria-selected="false"
-        aria-controls="bohShowdownPanel"
-        tabindex="-1"
-        data-role="section-tab"
-        data-section="showdown"
-      >
-        <span class="boh-subnav__step" aria-hidden="true">4</span>
-        <span>
-          <strong data-boh-i18n="nav.showdown">Epic Showdown</strong>
-          <small data-boh-i18n="nav.showdownHint">Optional · VTS 1097 only</small>
-        </span>
-      </button>
     </div>
   </nav>
 
@@ -148,9 +137,20 @@
           values yourself or let screenshot OCR prepare an editable draft.
         </p>
       </div>
-      <span class="boh-save-state" data-role="signup-save-state" data-boh-i18n="signup.notSubmitted"
-        >Not submitted</span
-      >
+      <div class="boh-section-heading__actions">
+        <span class="boh-save-state" data-role="signup-save-state" data-boh-i18n="signup.notSubmitted"
+          >Not submitted</span
+        >
+        <button
+          class="boh-button boh-button--secondary boh-button--compact"
+          type="button"
+          data-role="edit-signup"
+          data-boh-i18n="signup.editSignup"
+          hidden
+        >
+          Edit my signup
+        </button>
+      </div>
     </div>
 
     <aside
@@ -640,12 +640,13 @@
             <small id="bohOcrIssue-dragonPower" data-role="ocr-field-issue"></small>
           </label>
           <label class="boh-field">
-            <span data-boh-i18n="signup.unitSpecialtyPower">Unit Specialty Power (optional)</span>
+            <span data-boh-i18n="signup.unitSpecialtyPower">Unit Specialty Power</span>
             <input
               type="text"
               name="unitSpecialtyPower"
               inputmode="numeric"
               autocomplete="off"
+              required
               data-stat="unitSpecialtyPower"
               data-role="stat-input"
               aria-describedby="bohPowerHelp bohOcrIssue-unitSpecialtyPower"
@@ -706,18 +707,26 @@
           <div class="boh-check-grid">
             <label class="boh-check-card">
               <input type="checkbox" name="t10Types" value="cavalry" />
+              <span class="boh-t10-type-icon boh-t10-type-icon--cavalry" aria-hidden="true"></span>
               <span data-boh-i18n="signup.t9Cavalry">Cavalry</span>
             </label>
             <label class="boh-check-card">
               <input type="checkbox" name="t10Types" value="archers" />
+              <span class="boh-t10-type-icon boh-t10-type-icon--archers" aria-hidden="true"></span>
               <span data-boh-i18n="signup.t9Archers">Archers</span>
             </label>
             <label class="boh-check-card">
               <input type="checkbox" name="t10Types" value="footmen" />
+              <span class="boh-t10-type-icon boh-t10-type-icon--footmen" aria-hidden="true"></span>
               <span data-boh-i18n="signup.t9Footmen">Footmen</span>
             </label>
             <label class="boh-check-card">
               <input type="checkbox" name="t10Types" value="all" data-role="t10-all" />
+              <span class="boh-t10-type-icons" aria-hidden="true">
+                <span class="boh-t10-type-icon boh-t10-type-icon--cavalry"></span>
+                <span class="boh-t10-type-icon boh-t10-type-icon--archers"></span>
+                <span class="boh-t10-type-icon boh-t10-type-icon--footmen"></span>
+              </span>
               <span data-boh-i18n="signup.t9None">All T10 troop types</span>
             </label>
           </div>
@@ -799,7 +808,7 @@
               <label class="boh-field">
                 <span data-boh-i18n="signup.heroSeasonFilter">Season</span>
                 <select data-role="hero-season-filter">
-                  <option value="" data-boh-i18n="signup.heroAllSeasons">All seasons</option>
+                  <option value="X8">X8</option>
                 </select>
               </label>
             </div>
@@ -1045,6 +1054,25 @@
           </label>
         </div>
 
+        <fieldset class="boh-fieldset" data-role="leadership-interest-fieldset">
+          <legend data-boh-i18n="signup.leadershipInterest">
+            Would you be willing to lead a team or help with management?
+          </legend>
+          <p data-boh-i18n="signup.leadershipInterestHint">
+            This is a planning signal only; leadership will contact you before assigning anything.
+          </p>
+          <div class="boh-check-grid boh-check-grid--two" role="radiogroup">
+            <label class="boh-check-card">
+              <input type="radio" name="leadershipInterest" value="yes" required />
+              <span data-boh-i18n="signup.leadershipInterestYes">Yes, I can help lead</span>
+            </label>
+            <label class="boh-check-card">
+              <input type="radio" name="leadershipInterest" value="no" required />
+              <span data-boh-i18n="signup.leadershipInterestNo">No, not this season</span>
+            </label>
+          </div>
+        </fieldset>
+
         <label class="boh-field boh-field--teammates">
           <span data-boh-i18n="signup.preferredTeammates">Preferred teammates</span>
           <textarea
@@ -1073,6 +1101,48 @@
             data-role="field-player-notes"
           ></textarea>
         </label>
+
+        <fieldset class="boh-fieldset boh-team-name-picker" data-role="team-name-picker">
+          <legend data-boh-i18n="signup.teamNameTitle">Which team names do you like?</legend>
+          <p class="boh-fieldset__hint" data-boh-i18n="signup.teamNameDescription">
+            Pick every animal team identity you would be happy to join.
+          </p>
+          <div class="boh-team-name-grid">
+            <label class="boh-team-name-option">
+              <input type="checkbox" name="teamNamePreferences" value="iron-wolves" />
+              <span class="boh-team-emblem boh-team-emblem--wolf" aria-hidden="true"></span>
+              <strong>Iron Wolves</strong>
+            </label>
+            <label class="boh-team-name-option">
+              <input type="checkbox" name="teamNamePreferences" value="storm-ravens" />
+              <span class="boh-team-emblem boh-team-emblem--raven" aria-hidden="true"></span>
+              <strong>Storm Ravens</strong>
+            </label>
+            <label class="boh-team-name-option">
+              <input type="checkbox" name="teamNamePreferences" value="ember-lions" />
+              <span class="boh-team-emblem boh-team-emblem--lion" aria-hidden="true"></span>
+              <strong>Ember Lions</strong>
+            </label>
+            <label class="boh-team-name-option">
+              <input type="checkbox" name="teamNamePreferences" value="frost-bears" />
+              <span class="boh-team-emblem boh-team-emblem--bear" aria-hidden="true"></span>
+              <strong>Frost Bears</strong>
+            </label>
+            <label class="boh-team-name-option">
+              <input type="checkbox" name="teamNamePreferences" value="night-falcons" />
+              <span class="boh-team-emblem boh-team-emblem--falcon" aria-hidden="true"></span>
+              <strong>Night Falcons</strong>
+            </label>
+            <label class="boh-team-name-option">
+              <input type="checkbox" name="teamNamePreferences" value="thunder-bulls" />
+              <span class="boh-team-emblem boh-team-emblem--bull" aria-hidden="true"></span>
+              <strong>Thunder Bulls</strong>
+            </label>
+          </div>
+          <small data-boh-i18n="signup.teamNameHint"
+            >Optional and just for fun; leadership makes the final team-name decision.</small
+          >
+        </fieldset>
       </section>
 
       <footer class="boh-form-actions">
@@ -1081,6 +1151,13 @@
           <span data-boh-i18n="signup.reviewHint"
             >Your latest confirmed submission will be used for team balancing.</span
           >
+          <span
+            class="boh-submit-error"
+            data-role="signup-form-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></span>
         </div>
         <button
           class="boh-button boh-button--primary"
@@ -1794,34 +1871,7 @@
     </div>
   </section>
 
-  <section
-    class="boh-section"
-    id="bohShowdownPanel"
-    role="tabpanel"
-    aria-labelledby="bohShowdownTab"
-    data-role="section-panel"
-    data-section="showdown"
-    hidden
-  >
-    <div class="boh-section-heading">
-      <div>
-        <p class="boh-kicker" data-boh-i18n="showdown.kicker">EPIC SHOWDOWN</p>
-        <h3 data-boh-i18n="showdown.title">Where and when do you want to play?</h3>
-        <p data-boh-i18n="showdown.description">
-          Optional for VTS 1097 players only. Select every battlefield position and game time that
-          works for you; you can update these preferences later.
-        </p>
-      </div>
-      <span
-        class="boh-save-state"
-        data-role="showdown-save-state"
-        role="status"
-        aria-live="polite"
-        data-boh-i18n="showdown.notSaved"
-        >Not saved</span
-      >
-    </div>
-
+  <section class="boh-section boh-signup-addon" data-role="signup-addon">
     <div class="boh-state-card" data-role="showdown-state-locked">
       <span class="boh-state-card__icon" aria-hidden="true">&#128274;</span>
       <div>
@@ -1844,15 +1894,28 @@
     </div>
 
     <form class="boh-form boh-showdown-form" data-role="showdown-form" hidden>
-      <section class="boh-card boh-showdown-card" aria-labelledby="bohShowdownPreferencesTitle">
+      <section class="boh-card boh-showdown-card" aria-labelledby="bohShowdownFormTitle">
         <div class="boh-card-heading">
           <div>
             <p class="boh-kicker" data-boh-i18n="showdown.kicker">EPIC SHOWDOWN</p>
-            <h4 id="bohShowdownPreferencesTitle" data-boh-i18n="showdown.title">
+            <h4 id="bohShowdownFormTitle" data-boh-i18n="showdown.title">
               Where and when do you want to play?
             </h4>
           </div>
+          <span
+            class="boh-save-state"
+            data-role="showdown-save-state"
+            role="status"
+            aria-live="polite"
+            data-boh-i18n="showdown.notSaved"
+            >Not saved</span
+          >
         </div>
+
+        <p class="boh-showdown-description" data-boh-i18n="showdown.description">
+          Optional for VTS 1097 players only. Select every battlefield position and game time that
+          works for you; you can update these preferences later.
+        </p>
 
         <label class="boh-field boh-showdown-name">
           <span>
@@ -1920,6 +1983,27 @@
           >
             No game times are currently available. Please check again later.
           </p>
+        </fieldset>
+
+        <fieldset class="boh-fieldset">
+          <legend data-boh-i18n="showdown.flexibilityLegend">How do you prefer to stay flexible?</legend>
+          <p id="bohShowdownFlexibilityHint" data-boh-i18n="showdown.flexibilityHint">
+            Choose the one approach that suits you best.
+          </p>
+          <div class="boh-check-grid boh-check-grid--three boh-showdown-options" aria-describedby="bohShowdownFlexibilityHint">
+            <label class="boh-check-card boh-showdown-option">
+              <input type="radio" name="epicFlexibilityPreference" value="change-roles" required />
+              <span data-boh-i18n="showdown.flexibilityRoles">Change roles, keep my fight time</span>
+            </label>
+            <label class="boh-check-card boh-showdown-option">
+              <input type="radio" name="epicFlexibilityPreference" value="change-times" required />
+              <span data-boh-i18n="showdown.flexibilityTimes">Change fight time, keep my role</span>
+            </label>
+            <label class="boh-check-card boh-showdown-option">
+              <input type="radio" name="epicFlexibilityPreference" value="fixed" required />
+              <span data-boh-i18n="showdown.flexibilityFixed">One fixed role and fight time</span>
+            </label>
+          </div>
         </fieldset>
 
         <p

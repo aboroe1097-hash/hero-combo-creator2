@@ -162,6 +162,7 @@ export default Object.freeze({
   'signup.methodOcrHint':
     'Загрузите один чёткий скриншот статистики аккаунта, затем проверьте черновик.',
   'signup.notSubmitted': 'Не отправлено',
+  'signup.editSignup': 'Изменить мою заявку',
   'signup.ocrChecklist': 'Требования к скриншоту',
   'signup.ocrChoose': 'Выбрать скриншот',
   'signup.ocrConfirmValues':
@@ -175,7 +176,7 @@ export default Object.freeze({
   'signup.ocrExampleAlt': 'Пример игрового экрана с разбивкой мощи',
   'signup.ocrExampleTitle': 'Пример скриншота',
   'signup.ocrExampleHint': 'Язык может отличаться. Покажите весь список и порядок строк.',
-  'signup.unitSpecialtyPower': 'Мощь специализации войск (необязательно)',
+  'signup.unitSpecialtyPower': 'Мощь специализации войск',
   'signup.artifactPower': 'Мощь артефактов (необязательно)',
   'signup.royalTechPower': 'Мощь королевских технологий (необязательно)',
   'signup.rocExampleAlt': 'Пример красной ветки специализации RoC',
@@ -280,8 +281,6 @@ export default Object.freeze({
     'Уверенность OCR недоступна — внимательно проверьте это поле.',
   'signup.ocrMissingSummary':
     'Обязательных полей, не распознанных OCR: {count}. Заполните их перед подтверждением.',
-  'nav.showdown': 'Epic Showdown',
-  'nav.showdownHint': 'Необязательно · только VTS 1097',
   'signup.preferredTeammates': 'Желаемые товарищи по команде',
   'signup.preferredTeammatesHint':
     'Необязательно — укажите до шести имён через запятую или с новой строки. Руководство учтёт пожелание, но баланс команд важнее.',
@@ -303,6 +302,12 @@ export default Object.freeze({
   'showdown.timeLegend': 'Желаемое время матчей',
   'showdown.timeHint': 'Выберите всё время, когда вы можете играть.',
   'showdown.timeRequired': 'Выберите хотя бы одно доступное время матча.',
+  'showdown.flexibilityLegend': 'Как вы предпочитаете сохранять гибкость?',
+  'showdown.flexibilityHint': 'Выберите наиболее подходящий вариант.',
+  'showdown.flexibilityRoles': 'Менять роли, сохранить время боя',
+  'showdown.flexibilityTimes': 'Менять время боя, сохранить роль',
+  'showdown.flexibilityFixed': 'Одна фиксированная роль и время',
+  'showdown.flexibilityRequired': 'Выберите гибкость для Epic Showdown.',
   'showdown.timeOption': 'Время матча {time}',
   'showdown.notSaved': 'Не сохранено',
   'showdown.saved': 'Сохранено · версия {revision}',
@@ -327,7 +332,6 @@ export default Object.freeze({
   'signup.heroTroopFilter': 'Тип войск',
   'signup.heroSeasonFilter': 'Сезон',
   'signup.heroAllTroops': 'Все типы войск',
-  'signup.heroAllSeasons': 'Все сезоны',
   'signup.heroAllTypes': 'Все войска',
   'signup.heroResults': 'Показано героев: {count}',
   'signup.heroResult': 'Показан 1 герой',
@@ -363,8 +367,22 @@ export default Object.freeze({
   'signup.roleTopDescription': 'Удерживает и оспаривает цели на верхней линии.',
   'signup.roleBottomDescription': 'Удерживает и оспаривает цели на нижней линии.',
   'signup.primaryRole': 'Основная роль',
+  'signup.leadershipInterest': 'Готовы ли вы руководить командой или помогать с управлением?',
+  'signup.leadershipInterestHint':
+    'Это только сигнал для планирования; руководство свяжется с вами до назначения обязанностей.',
+  'signup.leadershipInterestYes': 'Да, я могу помогать руководить',
+  'signup.leadershipInterestNo': 'Нет, не в этом сезоне',
+  'signup.leadershipInterestRequired':
+    'Укажите, можете ли вы помогать с руководством или управлением в этом сезоне.',
   'signup.secondaryRole': 'Дополнительная роль (необязательно)',
   'signup.selectRole': 'Выберите роль',
   'signup.secondaryRoleDifferent': 'Выберите другую дополнительную роль.',
+  'nav.lockHub': 'Заблокировать раздел',
+  'signup.requiredFieldsMissing': 'Заполни выделенное обязательное поле перед отправкой.',
+  'signup.teamNameTitle': 'Какие названия команд тебе нравятся?',
+  'signup.teamNameDescription':
+    'Выбери все варианты с животными, к которым хотел бы присоединиться.',
+  'signup.teamNameHint':
+    'Необязательно и для развлечения; окончательное решение принимает руководство.',
   'role.noPreference': 'Без предпочтений',
 });

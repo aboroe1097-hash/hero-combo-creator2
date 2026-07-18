@@ -617,7 +617,7 @@ const entries = [
     guidance: [
       'Access needs the current seasonal member PIN shared by VTS leadership; the unlock is verified server-side and expires, and Velo never knows, asks for, or checks PIN values.',
       'Signup defaults to screenshot OCR for the six common power rows and up to three extended rows, then collects T10 troop types, speed heroes, usable heroes, research percentages, RoC level, exactly two preferred fighting windows, and primary/secondary roles.',
-      'Epic Showdown planning is separate from signup: members multi-select South, Center, and North lanes plus reset-relative windows (+8, +10, +12).',
+      'Epic Showdown planning sits at the end of signup: members multi-select South, Center, and North lanes, choose reset-relative windows from +6 through +20, and state whether they prefer changing roles, changing fight times, or one fixed assignment.',
       'Admins build six teams of twelve unique accounts each; members only see their own published team, announcement, and plan once released.',
       'If the tab shows locked or "access could not be confirmed", the member PIN or season may have rotated — ask leadership for the current PIN.',
     ],

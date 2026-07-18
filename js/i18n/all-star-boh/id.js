@@ -162,6 +162,7 @@ export default Object.freeze({
   'signup.methodOcr': 'Baca screenshot dengan OCR',
   'signup.methodOcrHint': 'Unggah satu screenshot stat akun yang jelas, lalu periksa drafnya.',
   'signup.notSubmitted': 'Belum dikirim',
+  'signup.editSignup': 'Edit pendaftaran saya',
   'signup.ocrChecklist': 'Checklist screenshot',
   'signup.ocrChoose': 'Pilih screenshot',
   'signup.ocrConfirmValues':
@@ -176,7 +177,7 @@ export default Object.freeze({
   'signup.ocrExampleTitle': 'Contoh screenshot',
   'signup.ocrExampleHint':
     'Bahasamu mungkin berbeda. Pastikan daftar lengkap dan urutannya terlihat.',
-  'signup.unitSpecialtyPower': 'Power Spesialisasi Unit (opsional)',
+  'signup.unitSpecialtyPower': 'Power Spesialisasi Unit',
   'signup.artifactPower': 'Power Artefak (opsional)',
   'signup.royalTechPower': 'Power Teknologi Kerajaan (opsional)',
   'signup.rocExampleAlt': 'Contoh pohon spesialisasi RoC merah',
@@ -282,8 +283,6 @@ export default Object.freeze({
     'Tingkat keyakinan OCR tidak tersedia — periksa kolom ini dengan teliti.',
   'signup.ocrMissingSummary':
     'OCR tidak membaca {count} kolom wajib. Isi kolom tersebut sebelum mengonfirmasi.',
-  'nav.showdown': 'Epic Showdown',
-  'nav.showdownHint': 'Opsional · khusus VTS 1097',
   'signup.preferredTeammates': 'Rekan tim pilihan',
   'signup.preferredTeammatesHint':
     'Opsional — tambahkan hingga enam nama, dipisahkan dengan koma atau baris baru. Pengurus akan mempertimbangkan permintaanmu, tetapi keseimbangan tim tetap menjadi prioritas.',
@@ -305,6 +304,12 @@ export default Object.freeze({
   'showdown.timeLegend': 'Waktu pertandingan pilihan',
   'showdown.timeHint': 'Pilih semua waktu pertandingan yang dapat kamu ikuti.',
   'showdown.timeRequired': 'Pilih setidaknya satu waktu pertandingan yang tersedia.',
+  'showdown.flexibilityLegend': 'Bagaimana Anda ingin tetap fleksibel?',
+  'showdown.flexibilityHint': 'Pilih pendekatan yang paling cocok.',
+  'showdown.flexibilityRoles': 'Ganti peran, pertahankan waktu bertarung',
+  'showdown.flexibilityTimes': 'Ganti waktu, pertahankan peran',
+  'showdown.flexibilityFixed': 'Satu peran dan waktu tetap',
+  'showdown.flexibilityRequired': 'Pilih fleksibilitas untuk Epic Showdown.',
   'showdown.timeOption': 'Waktu pertandingan {time}',
   'showdown.notSaved': 'Belum disimpan',
   'showdown.saved': 'Tersimpan · revisi {revision}',
@@ -328,7 +333,6 @@ export default Object.freeze({
   'signup.heroTroopFilter': 'Jenis pasukan',
   'signup.heroSeasonFilter': 'Musim',
   'signup.heroAllTroops': 'Semua jenis pasukan',
-  'signup.heroAllSeasons': 'Semua musim',
   'signup.heroAllTypes': 'Semua pasukan',
   'signup.heroResults': '{count} hero ditampilkan',
   'signup.heroResult': '1 hero ditampilkan',
@@ -364,8 +368,21 @@ export default Object.freeze({
   'signup.roleTopDescription': 'Menjaga dan merebut objektif di jalur atas.',
   'signup.roleBottomDescription': 'Menjaga dan merebut objektif di jalur bawah.',
   'signup.primaryRole': 'Peran utama',
+  'signup.leadershipInterest': 'Apakah kamu bersedia memimpin tim atau membantu pengelolaan?',
+  'signup.leadershipInterestHint':
+    'Ini hanya sinyal perencanaan; pimpinan akan menghubungimu sebelum memberi tugas.',
+  'signup.leadershipInterestYes': 'Ya, saya bisa membantu memimpin',
+  'signup.leadershipInterestNo': 'Tidak, bukan musim ini',
+  'signup.leadershipInterestRequired':
+    'Pilih apakah kamu dapat membantu memimpin atau mengelola musim ini.',
   'signup.secondaryRole': 'Peran kedua (opsional)',
   'signup.selectRole': 'Pilih peran',
   'signup.secondaryRoleDifferent': 'Pilih peran kedua yang berbeda.',
+  'nav.lockHub': 'Kunci hub',
+  'signup.requiredFieldsMissing': 'Lengkapi bidang wajib yang disorot sebelum mengirim.',
+  'signup.teamNameTitle': 'Nama tim mana yang kamu suka?',
+  'signup.teamNameDescription': 'Pilih semua identitas tim hewan yang ingin kamu ikuti.',
+  'signup.teamNameHint':
+    'Opsional dan hanya untuk bersenang-senang; pimpinan menentukan nama akhir.',
   'role.noPreference': 'Tidak ada pilihan',
 });

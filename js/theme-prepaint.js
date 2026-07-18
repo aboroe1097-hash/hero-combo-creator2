@@ -424,11 +424,12 @@ function isEnglishOnlyBattleSimulator() {
     document.body.appendChild(prompt);
   }
 
-  function reportFailure(reason, url) {
+  function reportFailure(reason, url, options) {
+    options = options || {};
     if (url && !isHashedAssetUrl(url)) return false;
     if (!url && !isDynamicImportFailure(reason)) return false;
     if (!navigator.onLine) return false;
-    if (!bootComplete && !hasReloaded()) {
+    if ((!bootComplete || options.autoReload === true) && !hasReloaded()) {
       rememberReload();
       console.warn('[assets] reloading once after a startup asset failure:', reason || url);
       addCacheBuster();

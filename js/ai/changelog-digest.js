@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.3";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.4";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.4",
+    "date": "2026-07-18",
+    "highlights": [
+      "Reworked the All-Star signup OCR panel into a desktop split layout with a much larger full-list example opposite the upload controls while preserving the stacked mobile flow.",
+      "Limited the cumulative hero season filter to S0, S1, S2, S3, S4, X1, X2, and X8; added exact supplied troop portraits to the T10 readiness choices; replaced missing or incorrect research artwork with all 29 exact supplied in-game icon crops; and added an explicit, admin-visible …",
+      "Folded Epic Showdown preferences into the end of Signup, expanded its selectable game times to every two hours from +6 through +20, added a planning-only choice between flexible roles, flexible fight times, or one fixed assignment, and simplified the member journey navigation to…",
+      "Made Unit Specialty Power mandatory, added visible focus-guided submission errors and an explicit Edit my signup action, a safe Lock hub action, and automatic one-time recovery from stale All-Star asset chunks so access happens before private form entry, saved answers remain edi…",
+      "Added six optional animal team-name concepts with original matching emblems; players can favorite any number for leadership planning without affecting scores or automatic team balance."
+    ]
+  },
   {
     "version": "14.1.3",
     "date": "2026-07-18",
@@ -97,15 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Rebuilt the Strife over Dragon boss Fordogreen as \"Fordogreen the Dark Rider\" with its current four-skill kit — Preemptive Strike, Broken Promise, Hunt You Down, and Power of the Legion — including timings, targets, counters, and localized copy across all eleven supported langua…",
       "Added the top X1 pay-to-win recommendation for Fordogreen (Edward the Confessor / Ramses II / Beowulf) alongside the existing formations.",
       "Added a localized Rank 1 reward callout to the Strife boss intel band that surfaces the exclusive hero icon gifted to the event's top-ranked player, rendering a placeholder badge until the reward artwork is supplied."
-    ]
-  },
-  {
-    "version": "14.0.15",
-    "date": "2026-07-16",
-    "highlights": [
-      "Added a simple, case-insensitive search inside the Alliance View Eden account-match editor while preserving the current selection during filtering and live contribution refreshes.",
-      "Added a localized, one-click Alliance merge briefing PNG generated from the current live admin data, comparing a power-ranked full Top 100 against 95 keeps plus 5 reserved incoming seats with alliance composition, power cutoffs, C30 strength, Eden coverage, and manual-match reco…",
-      "Kept the leadership brief honest about uneven Eden tracking coverage by using total power for both cross-alliance routes and labeling accounts outside the keep route as feeder candidates rather than automatic removals."
     ]
   }
 ].map((release) =>

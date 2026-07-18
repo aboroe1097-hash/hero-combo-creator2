@@ -163,6 +163,7 @@ export default Object.freeze({
   'signup.methodOcrHint':
     'Lade einen gut lesbaren Screenshot deiner Kontowerte hoch und prüfe danach den Entwurf.',
   'signup.notSubmitted': 'Nicht eingereicht',
+  'signup.editSignup': 'Meine Anmeldung bearbeiten',
   'signup.ocrChecklist': 'Screenshot-Prüfliste',
   'signup.ocrChoose': 'Screenshot auswählen',
   'signup.ocrConfirmValues':
@@ -177,7 +178,7 @@ export default Object.freeze({
   'signup.ocrExampleTitle': 'Beispiel-Screenshot',
   'signup.ocrExampleHint':
     'Deine Sprache kann abweichen. Zeige die vollständige Liste in Reihenfolge.',
-  'signup.unitSpecialtyPower': 'Einheitenspezialisierungskraft (optional)',
+  'signup.unitSpecialtyPower': 'Einheitenspezialisierungskraft',
   'signup.artifactPower': 'Artefaktkraft (optional)',
   'signup.royalTechPower': 'Königliche Technologiekraft (optional)',
   'signup.rocExampleAlt': 'Beispiel für den roten RoC-Spezialisierungsbaum',
@@ -283,8 +284,6 @@ export default Object.freeze({
     'Keine OCR-Erkennungssicherheit verfügbar — prüfe dieses Feld sorgfältig.',
   'signup.ocrMissingSummary':
     'Nicht erkannte Pflichtfelder: {count}. Trage die Werte vor der Bestätigung ein.',
-  'nav.showdown': 'Epic Showdown',
-  'nav.showdownHint': 'Optional · nur VTS 1097',
   'signup.preferredTeammates': 'Wunschmitspieler',
   'signup.preferredTeammatesHint':
     'Optional — füge bis zu sechs Namen hinzu, getrennt durch Kommas oder neue Zeilen. Die Leitung berücksichtigt deinen Wunsch, aber ausgeglichene Teams haben Vorrang.',
@@ -306,6 +305,12 @@ export default Object.freeze({
   'showdown.timeLegend': 'Bevorzugte Spielzeiten',
   'showdown.timeHint': 'Wähle alle Spielzeiten aus, zu denen du spielen kannst.',
   'showdown.timeRequired': 'Wähle mindestens eine verfügbare Spielzeit.',
+  'showdown.flexibilityLegend': 'Wie möchtest du flexibel bleiben?',
+  'showdown.flexibilityHint': 'Wähle den Ansatz, der am besten zu dir passt.',
+  'showdown.flexibilityRoles': 'Rollen wechseln, Kampfzeit behalten',
+  'showdown.flexibilityTimes': 'Kampfzeit wechseln, Rolle behalten',
+  'showdown.flexibilityFixed': 'Eine feste Rolle und Kampfzeit',
+  'showdown.flexibilityRequired': 'Wähle deine Flexibilität für Epic Showdown.',
   'showdown.timeOption': 'Spielzeit {time}',
   'showdown.notSaved': 'Nicht gespeichert',
   'showdown.saved': 'Gespeichert · Version {revision}',
@@ -330,7 +335,6 @@ export default Object.freeze({
   'signup.heroTroopFilter': 'Truppentyp',
   'signup.heroSeasonFilter': 'Saison',
   'signup.heroAllTroops': 'Alle Truppentypen',
-  'signup.heroAllSeasons': 'Alle Saisons',
   'signup.heroAllTypes': 'Alle Truppen',
   'signup.heroResults': '{count} Helden angezeigt',
   'signup.heroResult': '1 Held angezeigt',
@@ -366,8 +370,22 @@ export default Object.freeze({
   'signup.roleTopDescription': 'Hält und umkämpft Ziele auf der oberen Route.',
   'signup.roleBottomDescription': 'Hält und umkämpft Ziele auf der unteren Route.',
   'signup.primaryRole': 'Primärrolle',
+  'signup.leadershipInterest': 'Würdest du ein Team leiten oder bei der Organisation helfen?',
+  'signup.leadershipInterestHint':
+    'Dies ist nur ein Planungssignal; die Leitung kontaktiert dich vor jeder Zuweisung.',
+  'signup.leadershipInterestYes': 'Ja, ich kann bei der Leitung helfen',
+  'signup.leadershipInterestNo': 'Nein, nicht in dieser Saison',
+  'signup.leadershipInterestRequired':
+    'Gib an, ob du diese Saison bei Leitung oder Organisation helfen kannst.',
   'signup.secondaryRole': 'Sekundärrolle (optional)',
   'signup.selectRole': 'Rolle wählen',
   'signup.secondaryRoleDifferent': 'Wähle eine andere Sekundärrolle.',
+  'nav.lockHub': 'Hub sperren',
+  'signup.requiredFieldsMissing': 'Fülle vor dem Absenden das markierte Pflichtfeld aus.',
+  'signup.teamNameTitle': 'Welche Teamnamen gefallen dir?',
+  'signup.teamNameDescription':
+    'Wähle alle Tier-Teamidentitäten, denen du gerne beitreten würdest.',
+  'signup.teamNameHint':
+    'Optional und nur zum Spaß; die Leitung entscheidet den endgültigen Namen.',
   'role.noPreference': 'Keine Präferenz',
 });

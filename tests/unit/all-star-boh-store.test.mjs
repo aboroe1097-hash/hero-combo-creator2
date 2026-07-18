@@ -62,7 +62,10 @@ function submission(gameName = '古風無道', overrides = {}) {
     commitment: {
       availability: 'all',
       preferredRole: 'offensive',
+      secondaryRole: 'rune',
+      canHelpLead: true,
       fightingTimeIds: ['+8', '+12'],
+      teamNamePreferences: ['iron-wolves', 'frost-bears'],
       unavailableTimes: '',
       canTeleport: true,
       canUseVoice: false,
@@ -667,6 +670,9 @@ test('signup planning fields are catalog-ordered, sparse, and require two times 
   assert.deepEqual(Object.keys(saved.stats.researchProgressPct), ['development', 'combat']);
   assert.equal(saved.commitment.preferredRole, '');
   assert.deepEqual(saved.commitment.fightingTimeIds, ['+12', '+20']);
+  assert.equal(saved.commitment.secondaryRole, 'rune');
+  assert.equal(saved.commitment.canHelpLead, true);
+  assert.deepEqual(saved.commitment.teamNamePreferences, ['iron-wolves', 'frost-bears']);
 
   const legacyStored = fake.read(path);
   delete legacyStored.commitment.fightingTimeIds;
@@ -858,7 +864,7 @@ test('Epic preference serializer is allowlisted and the admin store observes the
     uid: 'admin-1',
     admin: true,
   });
-  assert.deepEqual(admin.epicTimeSlotIds, ['+8', '+10', '+12']);
+  assert.deepEqual(admin.epicTimeSlotIds, ['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']);
   const listed = await admin.getEpicShowdownPreferencesList();
   assert.equal(listed.length, 1);
   assert.equal(listed[0].uid, 'player-1');

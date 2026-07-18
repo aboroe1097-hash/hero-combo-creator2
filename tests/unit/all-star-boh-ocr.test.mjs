@@ -288,7 +288,7 @@ test('response parsing normalizes values and flags missing and low-confidence fi
   assert.equal(parsed.extracted.totalCastlePower, 123456789);
   assert.equal(parsed.extracted.dragonPower, null);
   assert.equal(parsed.extracted.gameName, 'VTS Hero');
-  assert.deepEqual(parsed.missingFields, ['dragonPower']);
+  assert.deepEqual(parsed.missingFields, ['dragonPower', 'unitSpecialtyPower']);
   assert.deepEqual(parsed.lowConfidenceFields, ['troopPower', 'gameName']);
   assert.deepEqual(parsed.fieldIssues.dragonPower, [{ code: 'missing' }]);
   assert.deepEqual(parsed.fieldIssues.troopPower, [{ code: 'low_confidence', confidence: 0.42 }]);
@@ -296,9 +296,9 @@ test('response parsing normalizes values and flags missing and low-confidence fi
   assert.equal(parsed.requiresReview, true);
 });
 
-test('six-row screenshots stay complete while optional extra power rows are preserved', () => {
+test('six-row screenshots require specialty power while optional extra power rows are preserved', () => {
   const sixRow = parseBohStatsOcrResult(response());
-  assert.deepEqual(sixRow.missingFields, []);
+  assert.deepEqual(sixRow.missingFields, ['unitSpecialtyPower']);
   assert.equal(sixRow.extracted.unitSpecialtyPower, null);
   assert.equal(sixRow.extracted.artifactPower, null);
   assert.equal(sixRow.extracted.royalTechPower, null);
@@ -372,6 +372,7 @@ test('review model keeps OCR values immutable and derives correction audit metad
   const rawResult = response({
     extracted: {
       dragonPower: null,
+      unitSpecialtyPower: 5_000_000,
     },
   });
   const review = buildBohStatsReviewModel(rawResult);

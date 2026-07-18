@@ -112,6 +112,7 @@ function createPlayerFixture() {
         technologyPower: 200_000_000,
         heroCombatPower: 200_000_000,
         dragonPower: 100_000_000,
+        unitSpecialtyPower: 50_000_000,
         level50HeroCount: 8,
         rocLevel: 12,
         t9TroopTypes: ['cavalry', 'archers'],
@@ -123,6 +124,9 @@ function createPlayerFixture() {
         availability: 'all',
         fightingTimeIds: ['+8', '+12'],
         preferredRole: 'offensive',
+        secondaryRole: '',
+        canHelpLead: false,
+        teamNamePreferences: ['iron-wolves', 'frost-bears'],
         unavailableTimes: '',
         canTeleport: true,
         canUseVoice: true,
@@ -134,6 +138,7 @@ function createPlayerFixture() {
       gameName: 'Player 1-01',
       lanePreferences: ['south', 'north'],
       timePreferences: ['+8'],
+      flexibilityPreference: 'change-roles',
       revision: 2,
     },
     submissionFeedback: {
@@ -295,7 +300,7 @@ async function openInjectedPlayerHub(page) {
       accessGranted: true,
       seasonId: fixture.seasonId,
       uid: fixture.uid,
-      epicTimeSlotIds: Object.freeze(['+8', '+10', '+12']),
+      epicTimeSlotIds: Object.freeze(['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']),
       subscribeSubmission(next) {
         queueMicrotask(() => next(submission));
         window.__BOH_PUSH_SUBMISSION__ = (value) => {
@@ -629,13 +634,12 @@ test.describe('All-Star BoH secure player hub', () => {
     expect(
       await visibleHeroRows.evaluateAll((rows) =>
         rows.every(
-          (row) =>
-            row.dataset.troopType === 'Archers' && ['S0', 'S1'].includes(row.dataset.season)
+          (row) => row.dataset.troopType === 'Archers' && ['S0', 'S1'].includes(row.dataset.season)
         )
       )
     ).toBe(true);
     await root.locator('[data-role="hero-troop-filter"]').selectOption('');
-    await root.locator('[data-role="hero-season-filter"]').selectOption('');
+    await root.locator('[data-role="hero-season-filter"]').selectOption('X8');
 
     const researchSelector = root.locator('[data-role="research-selector"]');
     await researchSelector.locator('summary').click();
@@ -695,6 +699,7 @@ test.describe('All-Star BoH secure player hub', () => {
     const secondaryRole = root.locator('[name="secondaryRole"]');
     await secondaryRole.selectOption('rune');
     await expect(secondaryRole).toHaveValue('rune');
+    await root.locator('[name="leadershipInterest"][value="yes"]').check();
 
     await root.locator('[data-role="signup-submit"]').click();
     await expect.poll(() => page.evaluate(() => window.__BOH_SAVED_SUBMISSION__)).toBeTruthy();
@@ -707,17 +712,18 @@ test.describe('All-Star BoH secure player hub', () => {
     expect(saved.payload.commitment.fightingTimeIds).toEqual(['+8', '+20']);
     expect(saved.payload.commitment.preferredRole).toBe('flexible');
     expect(saved.payload.commitment.secondaryRole).toBe('rune');
+    expect(saved.payload.commitment.canHelpLead).toBe(true);
     expect(saved.payload.rolePreferences).toEqual(['rune']);
   });
 
-  test('mocked grant renders four sections, six 12-player teams, and both planning tools', async ({
+  test('mocked grant renders three sections, six 12-player teams, and both planning tools', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await openInjectedPlayerHub(page);
     const root = page.locator('[data-role="boh-root"]');
     const sectionTabs = root.locator('[data-role="section-tab"]');
-    await expect(sectionTabs).toHaveCount(4);
+    await expect(sectionTabs).toHaveCount(3);
     await expect(root.locator('[name="preferredTeammates"]')).toHaveValue(
       'Player 2-01\nPlayer 3-01'
     );
@@ -816,11 +822,11 @@ test.describe('All-Star BoH secure player hub', () => {
       'M 85 359 L 320 215 L 533 71'
     );
 
-    await sectionTabs.nth(3).click();
+    await sectionTabs.nth(0).click();
     const lanePreferences = root.locator('[name="epicLanePreferences"]');
     const timePreferences = root.locator('[name="epicTimePreferences"]');
     await expect(lanePreferences).toHaveCount(3);
-    await expect(timePreferences).toHaveCount(3);
+    await expect(timePreferences).toHaveCount(8);
     await expect(root.locator('[name="epicGameName"]')).toHaveValue('Player 1-01');
     await expect(root.locator('[name="epicLanePreferences"][value="south"]')).toBeChecked();
     await expect(root.locator('[name="epicLanePreferences"][value="north"]')).toBeChecked();
@@ -828,6 +834,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await root.locator('[name="epicLanePreferences"][value="center"]').check();
     await root.locator('[name="epicTimePreferences"][value="+10"]').check();
     await root.locator('[name="epicTimePreferences"][value="+12"]').check();
+    await root.locator('[name="epicFlexibilityPreference"][value="change-times"]').check();
     await expect(root.locator('[data-role="showdown-summary"]')).toContainText(
       '3 positions · 3 game times selected'
     );
@@ -840,6 +847,7 @@ test.describe('All-Star BoH secure player hub', () => {
           gameName: 'Player 1-01',
           lanePreferences: ['south', 'center', 'north'],
           timePreferences: ['+8', '+10', '+12'],
+          flexibilityPreference: 'change-times',
         },
         options: { expectedRevision: 2 },
       });
@@ -932,17 +940,20 @@ test.describe('All-Star BoH secure player hub', () => {
 
     const review = root.locator('[data-role="ocr-review-alert"]');
     const technology = root.locator('[name="technologyPower"]');
+    const specialty = root.locator('[name="unitSpecialtyPower"]');
     const confirmation = root.locator('[data-role="ocr-values-confirmed"]');
     await expect(review).toBeVisible();
-    await expect(review).toContainText('OCR missed 1 required field');
+    await expect(review).toContainText('OCR missed 2 required field');
     await expect(review).toContainText('Technology power was cropped');
     await expect(technology).toHaveAttribute('aria-invalid', 'true');
     await expect(technology).toHaveAttribute('aria-describedby', /bohOcrIssue-technologyPower/u);
     await expect(root.locator('#bohOcrIssue-technologyPower')).toContainText('Missing');
+    await expect(root.locator('#bohOcrIssue-unitSpecialtyPower')).toContainText('Missing');
     await expect(root.locator('#bohOcrIssue-troopPower')).toContainText('Low OCR confidence');
     await expect(confirmation).toBeDisabled();
 
     await technology.fill('300000000');
+    await specialty.fill('50000000');
     await expect(technology).not.toHaveAttribute('aria-invalid', 'true');
     await expect(root.locator('#bohOcrIssue-technologyPower')).toContainText('Corrected manually');
     await expect(confirmation).toBeEnabled();

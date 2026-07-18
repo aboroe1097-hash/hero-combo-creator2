@@ -381,6 +381,68 @@ test('a still-valid persisted grant mounts directly without requesting a PIN', a
   lifecycle.destroy();
 });
 
+test('manual Lock hub conceals private content and requires PIN without replacing user identity', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const records = {};
+  const values = new Map();
+  const lockStorage = {
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+  };
+  let grantReads = 0;
+  let unlockCalls = 0;
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase: createFirebase(),
+    eventTarget: createEventTarget(),
+    lockStorage,
+    accessClient: {
+      async getAccessGrant() {
+        grantReads += 1;
+        return GRANT;
+      },
+      async unlock() {
+        unlockCalls += 1;
+        return GRANT;
+      },
+      destroy() {},
+      processOcr() {},
+    },
+    now: () => NOW_MS,
+    loadStylesheet: async () => {},
+    loadDomain: async () => createDomain(records),
+    setTimeout: () => 1,
+    clearTimeout: () => {},
+  });
+
+  assert.equal(root.hidden, false);
+  lifecycle.lock();
+  assert.equal(root.hidden, true);
+  assert.equal(root.inert, true);
+  assert.equal(values.get('vts_all_star_boh_manual_lock'), '1');
+  assert.equal(gate.states.at(-1), 'locked');
+
+  await lifecycle.retry();
+  assert.equal(grantReads, 1, 'manual lock must not silently reuse the server grant');
+  assert.equal(root.hidden, true);
+
+  await gate.unlock('current-member-pin');
+  assert.equal(unlockCalls, 1);
+  assert.equal(root.hidden, false);
+  assert.equal(values.has('vts_all_star_boh_manual_lock'), false);
+  assert.equal(records.storeOptions.uid, 'member-uid');
+  lifecycle.destroy();
+});
+
 test('destroy invalidates an in-flight private mount before it can reveal the hub', async () => {
   const root = createRoot();
   const gate = createGate();
@@ -453,4 +515,5 @@ test('bootstrap keeps CSS lazy, permits the two secure endpoints, and statically
   assert.match(source, /input\.type = 'password'/u);
   assert.match(source, /input\.value = '';\s*await unlockHandler/u);
   assert.doesNotMatch(source, /boh-access-cancel|Not now|showCanceled/u);
+  assert.match(source, /onLockHub: lockHub/u);
 });

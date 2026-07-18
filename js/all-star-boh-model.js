@@ -13,10 +13,32 @@ export const BOH_FIELD_SIZE = BOH_TEAM_COUNT * BOH_TEAM_SIZE;
 export const BOH_MAX_PREFERRED_TEAMMATES = 6;
 export const BOH_MAX_USABLE_HERO_NAMES = 78;
 export const BOH_FIGHTING_TIME_IDS = Object.freeze(['+8', '+12', '+14', '+20']);
+export const BOH_TEAM_NAME_PREFERENCES = Object.freeze([
+  'iron-wolves',
+  'storm-ravens',
+  'ember-lions',
+  'frost-bears',
+  'night-falcons',
+  'thunder-bulls',
+]);
 export const BOH_ENTRY_METHODS = Object.freeze(['manual', 'ocr']);
 export const BOH_AVAILABILITY_VALUES = Object.freeze(['all', 'most', 'backup']);
 export const BOH_EPIC_SHOWDOWN_LANES = Object.freeze(['south', 'center', 'north']);
-export const BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS = Object.freeze(['+8', '+10', '+12']);
+export const BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS = Object.freeze([
+  '+6',
+  '+8',
+  '+10',
+  '+12',
+  '+14',
+  '+16',
+  '+18',
+  '+20',
+]);
+export const BOH_EPIC_FLEXIBILITY_PREFERENCES = Object.freeze([
+  'change-roles',
+  'change-times',
+  'fixed',
+]);
 export const BOH_PREFERRED_ROLES = Object.freeze([
   'flexible',
   'offensive',
@@ -420,12 +442,18 @@ export function normalizeBohEpicShowdownPreferences(input = {}, options = {}) {
   if (!timePreferences.length) {
     throw modelError('boh_epic_time_required', { field: 'timePreferences' });
   }
-
+  const flexibilityPreference = normalizedEnum(
+    source.flexibilityPreference,
+    BOH_EPIC_FLEXIBILITY_PREFERENCES,
+    '',
+    'flexibilityPreference'
+  );
   return {
     schemaVersion: BOH_EPIC_SHOWDOWN_SCHEMA_VERSION,
     gameName,
     lanePreferences,
     timePreferences,
+    ...(flexibilityPreference ? { flexibilityPreference } : {}),
   };
 }
 
@@ -594,13 +622,9 @@ export function normalizeBohSignup(input = {}, options = {}) {
       dragonPower: nonNegativeNumber(
         firstDefined(rawStats.dragonPower, rawStats.dragonsPower, input.dragonPower)
       ),
-      ...(firstDefined(rawStats.unitSpecialtyPower, rawStats.specialtyPower) == null
-        ? {}
-        : {
-            unitSpecialtyPower: nonNegativeNumber(
-              firstDefined(rawStats.unitSpecialtyPower, rawStats.specialtyPower)
-            ),
-          }),
+      unitSpecialtyPower: nonNegativeNumber(
+        firstDefined(rawStats.unitSpecialtyPower, rawStats.specialtyPower)
+      ),
       ...(rawStats.artifactPower == null
         ? {}
         : { artifactPower: nonNegativeNumber(rawStats.artifactPower) }),
@@ -635,7 +659,17 @@ export function normalizeBohSignup(input = {}, options = {}) {
       ),
       preferredRole,
       secondaryRole,
+      canHelpLead: optionalBoolean(
+        firstDefined(input.canHelpLead, rawCommitment.canHelpLead),
+        'canHelpLead'
+      ),
       fightingTimeIds,
+      teamNamePreferences: normalizeCatalogSelection(
+        firstDefined(input.teamNamePreferences, rawCommitment.teamNamePreferences),
+        BOH_TEAM_NAME_PREFERENCES,
+        'teamNamePreferences',
+        BOH_TEAM_NAME_PREFERENCES.length
+      ),
       unavailableTimes: boundedPlainText(
         firstDefined(input.unavailableTimes, rawCommitment.unavailableTimes),
         800,

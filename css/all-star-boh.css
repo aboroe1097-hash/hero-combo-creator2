@@ -87,6 +87,19 @@
   max-width: 52rem;
 }
 
+.boh-hero__actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: end;
+  gap: 0.55rem;
+}
+
+.boh-hero__actions .boh-button {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.75rem;
+}
+
 .boh-eyebrow,
 .boh-kicker {
   margin: 0;
@@ -317,7 +330,7 @@
 
 .boh-subnav__track {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-width: 0;
   gap: 0.3rem;
 }
@@ -448,6 +461,13 @@
 
 .boh-save-state {
   flex: 0 0 auto;
+}
+
+.boh-section-heading__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .boh-form,
@@ -852,6 +872,76 @@
   border-color: rgba(125, 211, 252, 0.33);
 }
 
+@media (min-width: 821px) {
+  .boh-upload {
+    display: grid;
+    grid-template-columns: minmax(15rem, 0.42fr) minmax(0, 0.58fr);
+    grid-template-areas:
+      'example heading'
+      'example help'
+      'example dropzone'
+      'example preview'
+      'example consent'
+      'example process'
+      'example status';
+    grid-template-rows: auto auto auto auto auto auto 1fr;
+    align-items: start;
+    column-gap: 1.25rem;
+  }
+
+  .boh-upload > .boh-card-heading {
+    grid-area: heading;
+  }
+
+  .boh-upload > .boh-help-steps {
+    grid-area: help;
+  }
+
+  .boh-upload > .boh-ocr-example {
+    grid-area: example;
+    align-self: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    margin: 0;
+    padding: 0.8rem;
+  }
+
+  .boh-upload > .boh-ocr-example a {
+    min-height: 24rem;
+    background: color-mix(in srgb, var(--boh-panel-strong) 92%, transparent);
+  }
+
+  .boh-upload > .boh-ocr-example img {
+    width: 100%;
+    height: 100%;
+    max-height: 36rem;
+    aspect-ratio: auto;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .boh-upload > .boh-dropzone {
+    grid-area: dropzone;
+  }
+
+  .boh-upload > .boh-upload-preview {
+    grid-area: preview;
+  }
+
+  .boh-upload > .boh-check-row {
+    grid-area: consent;
+  }
+
+  .boh-upload > .boh-button {
+    grid-area: process;
+    justify-self: start;
+  }
+
+  .boh-upload > .boh-inline-status {
+    grid-area: status;
+  }
+}
+
 .boh-help-steps {
   display: grid;
   margin: 0 0 0.85rem;
@@ -1108,6 +1198,45 @@
   background: rgba(2, 6, 23, 0.45);
   object-fit: cover;
   object-position: top center;
+}
+
+.boh-t10-type-icon {
+  width: 2.75rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 0.55rem;
+  background-image: var(--boh-all-star-icon-sprite);
+  background-repeat: no-repeat;
+  background-size: 16.5rem 16.5rem;
+  box-shadow: inset 0 -0.35rem 0.65rem rgba(2, 6, 23, 0.32);
+}
+
+.boh-t10-type-icon--footmen {
+  background-position: 0 0;
+}
+
+.boh-t10-type-icon--cavalry {
+  background-position: -2.75rem 0;
+}
+
+.boh-t10-type-icon--archers {
+  background-position: -5.5rem 0;
+}
+
+.boh-t10-type-icons {
+  display: flex;
+  width: 3.6rem;
+  flex: 0 0 auto;
+}
+
+.boh-t10-type-icons .boh-t10-type-icon {
+  width: 1.6rem;
+  height: 2.35rem;
+}
+
+.boh-t10-type-icons .boh-t10-type-icon + .boh-t10-type-icon {
+  margin-inline-start: -0.6rem;
 }
 
 .boh-roc-readiness {
@@ -1576,9 +1705,12 @@
   flex: 0 0 auto;
   border: 1px solid color-mix(in srgb, var(--boh-gold) 48%, var(--boh-line));
   border-radius: 0.55rem;
-  background: var(--boh-panel);
-  object-fit: cover;
-  object-position: 50% 20%;
+  background-color: var(--boh-panel);
+  background-image: var(--boh-all-star-icon-sprite);
+  background-repeat: no-repeat;
+  background-position: calc(var(--boh-research-art-column) * -2.3rem)
+    calc(var(--boh-research-art-row) * -2.3rem);
+  background-size: 13.8rem 13.8rem;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--boh-gold) 8%, transparent);
 }
 
@@ -1655,6 +1787,13 @@
   border-color: rgba(167, 139, 250, 0.32);
   background:
     linear-gradient(135deg, rgba(167, 139, 250, 0.055), transparent 42%), var(--boh-panel);
+}
+
+.boh-showdown-description {
+  margin: -0.25rem 0 0.9rem;
+  color: var(--boh-muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
 }
 
 .boh-showdown-option {
@@ -1749,6 +1888,84 @@
   color: var(--boh-muted);
   font-size: 0.64rem;
   line-height: 1.4;
+}
+
+.boh-submit-error:not([hidden]) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--boh-danger);
+  font-weight: 760;
+}
+
+.boh-team-name-picker {
+  grid-column: 1 / -1;
+}
+
+.boh-team-name-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.65rem;
+}
+
+.boh-team-name-option {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 0.5rem 0.75rem;
+  border: 1px solid var(--boh-line);
+  border-radius: var(--boh-radius-sm);
+  background: color-mix(in srgb, var(--boh-control) 84%, transparent);
+  cursor: pointer;
+  text-align: center;
+}
+
+.boh-team-name-option:has(input:checked) {
+  border-color: var(--boh-violet);
+  background: color-mix(in srgb, var(--boh-violet) 13%, var(--boh-control));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--boh-violet) 38%, transparent);
+}
+
+.boh-team-name-option input {
+  justify-self: start;
+  margin: 0;
+}
+
+.boh-team-name-option strong {
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.boh-team-emblem {
+  width: 4.5rem;
+  height: 5.6rem;
+  background-image: url('/images/boh-team-emblems.webp');
+  background-repeat: no-repeat;
+  background-size: 13.5rem 13.5rem;
+}
+
+.boh-team-emblem--wolf {
+  background-position: 0 0;
+}
+
+.boh-team-emblem--raven {
+  background-position: -4.5rem 0;
+}
+
+.boh-team-emblem--lion {
+  background-position: -9rem 0;
+}
+
+.boh-team-emblem--bear {
+  background-position: 0 -6.75rem;
+}
+
+.boh-team-emblem--falcon {
+  background-position: -4.5rem -6.75rem;
+}
+
+.boh-team-emblem--bull {
+  background-position: -9rem -6.75rem;
 }
 
 .boh-state-card {
@@ -2590,6 +2807,10 @@
 
   .boh-event-status {
     align-self: flex-start;
+  }
+
+  .boh-hero__actions {
+    justify-items: start;
   }
 
   .boh-subnav__tab {

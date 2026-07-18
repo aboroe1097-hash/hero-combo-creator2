@@ -77,12 +77,11 @@ test('All-Star BoH is an internal lazy tab wired through the shell and command p
   );
 });
 
-test('the four player subsections have bidirectional tab and tabpanel ARIA links', () => {
+test('the three player subsections have bidirectional tab and tabpanel ARIA links', () => {
   const sections = [
     ['bohSignupTab', 'bohSignupPanel', 'signup'],
     ['bohAnnouncementTab', 'bohAnnouncementPanel', 'announcement'],
     ['bohPlanTab', 'bohPlanPanel', 'plan'],
-    ['bohShowdownTab', 'bohShowdownPanel', 'showdown'],
   ];
 
   for (const [tabId, panelId, section] of sections) {
@@ -214,7 +213,6 @@ test('signup planning selectors are compact, optional where intended, and keyboa
   assert.match(controllerSource, /seasonRank\(row\.dataset\.season\) <= selectedSeasonRank/u);
   assert.match(controllerSource, /portrait\.src = hero\.imageUrl/u);
   assert.match(controllerSource, /VERIFIED_RESEARCH_ART/u);
-  assert.match(controllerSource, /\/assets\/research\/sources\/basic-combat-01\.jpg/u);
   assert.match(controllerSource, /art\.dataset\.verifiedResearchArt/u);
   assert.match(cssSource, /\.boh-research-row__art\s*\{/u);
 
@@ -253,6 +251,8 @@ test('signup planning selectors are compact, optional where intended, and keyboa
 });
 
 test('Epic Showdown planning uses accessible independent multi-select lane and time controls', () => {
+  assert.doesNotMatch(tabSource, /id="bohShowdownTab"/);
+  assert.match(tabSource, /data-role="signup-addon"/);
   assert.match(
     tabSource,
     /name="epicGameName"[\s\S]*?maxlength="160"[\s\S]*?required[\s\S]*?aria-describedby="bohShowdownGameNameHint"/
@@ -269,8 +269,90 @@ test('Epic Showdown planning uses accessible independent multi-select lane and t
   assert.match(tabSource, /data-role="showdown-submit"/);
   assert.match(tabSource, /data-role="showdown-save-state"[\s\S]*?aria-live="polite"/);
   assert.match(tabSource, /data-role="showdown-summary"[\s\S]*?aria-live="polite"/);
-  assert.match(cssSource, /\.boh-subnav__track\s*\{[\s\S]*?repeat\(4,/);
+  assert.equal(Array.from(tabSource.matchAll(/name="epicFlexibilityPreference"/gu)).length, 3);
+  assert.match(controllerSource, /'\+6',[\s\S]*?'\+20'/);
+  assert.match(cssSource, /\.boh-subnav__track\s*\{[\s\S]*?repeat\(3,/);
   assert.match(cssSource, /\.boh-showdown-option:has\(input:focus-visible\)/);
+});
+
+test('hero season filter exposes only the requested cumulative milestones', () => {
+  assert.match(
+    controllerSource,
+    /HERO_SEASON_MILESTONES\s*=\s*Object\.freeze\(\['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'\]\)/
+  );
+  assert.doesNotMatch(tabSource, /data-boh-i18n="signup\.heroAllSeasons"/);
+});
+
+test('signup asks explicitly whether the player can help lead or manage', () => {
+  assert.match(tabSource, /data-role="leadership-interest-fieldset"/);
+  assert.match(tabSource, /name="leadershipInterest" value="yes" required/);
+  assert.match(tabSource, /name="leadershipInterest" value="no" required/);
+});
+
+test('specialty power is required and failed submission explains and focuses the first field', () => {
+  assert.match(
+    tabSource,
+    /name="unitSpecialtyPower"[\s\S]*?required[\s\S]*?data-stat="unitSpecialtyPower"/
+  );
+  assert.match(tabSource, /data-role="signup-form-error"[\s\S]*?aria-live="assertive"/);
+  assert.match(controllerSource, /form\.reportValidity\(\)/);
+  assert.match(controllerSource, /firstInvalid\?\.focus\?\.\(\{/);
+  assert.match(controllerSource, /firstInvalid\?\.scrollIntoView\?\.\(/);
+});
+
+test('signup includes six independently selectable animal team concepts with generated emblems', () => {
+  assert.equal(Array.from(tabSource.matchAll(/name="teamNamePreferences"/gu)).length, 6);
+  for (const id of [
+    'iron-wolves',
+    'storm-ravens',
+    'ember-lions',
+    'frost-bears',
+    'night-falcons',
+    'thunder-bulls',
+  ]) {
+    assert.match(tabSource, new RegExp(`value="${id}"`));
+  }
+  assert.match(cssSource, /url\('\/images\/boh-team-emblems\.webp'\)/);
+  assert.match(controllerSource, /teamNamePreferences/);
+});
+
+test('authenticated hub offers a safe manual lock action', () => {
+  assert.match(tabSource, /data-role="lock-hub"/);
+  assert.match(controllerSource, /onLockHub/);
+});
+
+test('submitted members can explicitly return to their hydrated signup for edits', () => {
+  assert.match(tabSource, /data-role="edit-signup"/);
+  assert.match(controllerSource, /target\.matches\?\.\('\[data-role="edit-signup"\]'\)/);
+  assert.match(controllerSource, /form\?\.scrollIntoView/);
+});
+
+test('T10 readiness maps the supplied portraits to cavalry, archers, and footmen', () => {
+  assert.match(controllerSource, /const ALL_STAR_ICON_SPRITE =\s*'data:image\/webp;base64,/);
+  assert.match(controllerSource, /root\.style\?\.setProperty\?\.\('--boh-all-star-icon-sprite'/);
+  assert.match(cssSource, /background-image: var\(--boh-all-star-icon-sprite\)/);
+  for (const troopType of ['cavalry', 'archers', 'footmen']) {
+    assert.match(
+      tabSource,
+      new RegExp(`value="${troopType}"[\\s\\S]*?boh-t10-type-icon--${troopType}`)
+    );
+  }
+});
+
+test('all 29 verified S0 through X8 research trees use exact cropped in-game icons', () => {
+  const artMap = controllerSource.match(
+    /const VERIFIED_RESEARCH_ART = Object\.freeze\(\{([\s\S]*?)\}\);/u
+  )?.[1];
+  assert.ok(artMap);
+  assert.equal(Array.from(artMap.matchAll(/^\s+'[^']+': \d+,?$/gmu)).length, 29);
+  for (let index = 3; index <= 31; index += 1) {
+    assert.match(artMap, new RegExp(`: ${index},`));
+  }
+  assert.match(artMap, /'dragon blood blessing': 30/);
+  assert.match(artMap, /'lofty legion': 31/);
+  assert.match(controllerSource, /--boh-research-art-column/);
+  assert.match(controllerSource, /--boh-research-art-row/);
+  assert.match(cssSource, /background-size: 13\.8rem 13\.8rem/);
 });
 
 test('announcement and plan surfaces retain explicit protected publication states', () => {

@@ -8,6 +8,7 @@ import {
 
 const bootstraps = new WeakMap();
 const SECURE_BOOT_TIMEOUT_MS = 12_000;
+const MANUAL_LOCK_KEY = 'vts_all_star_boh_manual_lock';
 
 const GATE_FALLBACKS = Object.freeze({
   kicker: 'VTS MEMBERS ONLY',
@@ -377,6 +378,33 @@ export async function bootAllStarBohTab(options = {}) {
   let expiryTimer = null;
   let languageGeneration = 0;
   let lifecycleGeneration = 0;
+  let manuallyLockedInMemory = false;
+  let lockStorage = options.lockStorage || null;
+  if (!lockStorage) {
+    try {
+      lockStorage = globalThis.localStorage;
+    } catch {
+      lockStorage = null;
+    }
+  }
+
+  function isManuallyLocked() {
+    try {
+      return manuallyLockedInMemory || lockStorage?.getItem?.(MANUAL_LOCK_KEY) === '1';
+    } catch {
+      return manuallyLockedInMemory;
+    }
+  }
+
+  function setManuallyLocked(locked) {
+    manuallyLockedInMemory = Boolean(locked);
+    try {
+      if (locked) lockStorage?.setItem?.(MANUAL_LOCK_KEY, '1');
+      else lockStorage?.removeItem?.(MANUAL_LOCK_KEY);
+    } catch {
+      // The in-memory lock still protects the currently mounted private view.
+    }
+  }
 
   function clearExpiryTimer() {
     if (expiryTimer !== null && typeof clearTimer === 'function') clearTimer(expiryTimer);
@@ -394,6 +422,15 @@ export async function bootAllStarBohTab(options = {}) {
     unmountDomain();
     concealBohRoot(root);
     gate.showExpired();
+  }
+
+  function lockHub() {
+    if (destroyed) return;
+    lifecycleGeneration += 1;
+    setManuallyLocked(true);
+    unmountDomain();
+    concealBohRoot(root);
+    gate.showLocked();
   }
 
   function scheduleExpiry(grant) {
@@ -535,6 +572,7 @@ export async function bootAllStarBohTab(options = {}) {
         options.onError?.(error, context);
       },
       onNotice: options.onNotice,
+      onLockHub: lockHub,
     });
     revealBohRoot(root);
     gate.hide();
@@ -550,7 +588,8 @@ export async function bootAllStarBohTab(options = {}) {
       await ensureFirebase();
       const grant = await accessClient.unlock(pin);
       if (destroyed) return;
-      await mountDomain(grant);
+      const mounted = await mountDomain(grant);
+      if (mounted) setManuallyLocked(false);
     } catch (error) {
       if (!destroyed) {
         concealBohRoot(root);
@@ -587,6 +626,11 @@ export async function bootAllStarBohTab(options = {}) {
   const lifecycle = Object.freeze({
     async retry() {
       if (destroyed || busy) return lifecycle;
+      if (isManuallyLocked()) {
+        concealBohRoot(root);
+        gate.showLocked();
+        return lifecycle;
+      }
       busy = true;
       gate.showChecking();
       try {
@@ -599,6 +643,10 @@ export async function bootAllStarBohTab(options = {}) {
       } finally {
         busy = false;
       }
+      return lifecycle;
+    },
+    lock() {
+      lockHub();
       return lifecycle;
     },
     destroy() {

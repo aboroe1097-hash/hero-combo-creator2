@@ -34,6 +34,7 @@ function validSignup(overrides = {}) {
     availability: 'all',
     fightingTimeIds: ['+8', '+12'],
     preferredRole: 'offensive',
+    leadershipInterest: 'no',
     playerNotes: 'Ready.',
     ...overrides,
   };
@@ -116,6 +117,7 @@ test('OCR submission is explicitly confirmed and cannot persist image data', () 
   assert.equal(payload.stats.unitSpecialtyPower, 6_485_660);
   assert.equal(payload.stats.artifactPower, 1_567_700);
   assert.equal(payload.stats.royalTechPower, 11_898_587);
+  assert.equal(payload.commitment.canHelpLead, false);
   assert.deepEqual(payload.stats.t10TroopTypes, ['cavalry', 'archers']);
   assert.equal(Object.hasOwn(payload.stats, 'level50HeroCount'), false);
   assert.equal(payload.submittedAtMs, 1234);
@@ -213,6 +215,7 @@ test('Epic Showdown payload keeps multiple lanes and configured game times indep
         epicGameName: 'Epic Player',
         epicLanePreferences: ['south', 'north'],
         epicTimePreferences: ['+8', '+12'],
+        epicFlexibilityPreference: 'change-roles',
       },
       { timeSlotIds: ['+8', '+10', '+12'] }
     ),
@@ -220,6 +223,7 @@ test('Epic Showdown payload keeps multiple lanes and configured game times indep
       gameName: 'Epic Player',
       lanePreferences: ['south', 'north'],
       timePreferences: ['+8', '+12'],
+      flexibilityPreference: 'change-roles',
     }
   );
   assert.throws(

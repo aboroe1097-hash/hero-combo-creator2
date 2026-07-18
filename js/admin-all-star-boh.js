@@ -5,7 +5,15 @@ const CONTROLLERS = new WeakMap();
 const TEAM_COUNT = 6;
 const ROSTER_SIZE = 12;
 const EPIC_LANE_IDS = ['south', 'center', 'north'];
-const DEFAULT_EPIC_TIME_OPTIONS = ['+8', '+10', '+12'];
+const DEFAULT_EPIC_TIME_OPTIONS = ['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20'];
+const TEAM_NAME_LABELS = Object.freeze({
+  'iron-wolves': 'Iron Wolves',
+  'storm-ravens': 'Storm Ravens',
+  'ember-lions': 'Ember Lions',
+  'frost-bears': 'Frost Bears',
+  'night-falcons': 'Night Falcons',
+  'thunder-bulls': 'Thunder Bulls',
+});
 
 const STAGES = [
   ['signups', 'adminBohStageSignups', 'Signup Review'],
@@ -309,6 +317,7 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
       displayName: playerName(rawPreference) || playerName(submission) || identifier,
       lanes,
       times,
+      flexibilityPreference: cleanText(rawPreference?.flexibilityPreference),
     });
   }
 
@@ -436,12 +445,18 @@ export function buildAdminSignupPlanningSignals(submission = {}, options = {}) {
   const fightingTimeIds = uniqueTextList(commitment?.fightingTimeIds).slice(0, 2);
   const primaryRole = cleanText(commitment?.preferredRole);
   const secondaryRole = cleanText(commitment?.secondaryRole);
+  const canHelpLead = commitment?.canHelpLead === true;
+  const teamNamePreferences = uniqueTextList(commitment?.teamNamePreferences)
+    .filter((id) => TEAM_NAME_LABELS[id])
+    .map((id) => TEAM_NAME_LABELS[id]);
   const preferredTeammates = getAdminPreferredTeammateNames(submission);
 
   return {
     favoriteRole: primaryRole,
     primaryRole,
     secondaryRole,
+    canHelpLead,
+    teamNamePreferences,
     fightingTimeIds,
     heroGroups,
     preferredTeammates,
@@ -450,6 +465,8 @@ export function buildAdminSignupPlanningSignals(submission = {}, options = {}) {
     hasSignals: Boolean(
       primaryRole ||
       secondaryRole ||
+      canHelpLead ||
+      teamNamePreferences.length ||
       fightingTimeIds.length ||
       heroGroups.length ||
       preferredTeammates.length ||
@@ -2751,6 +2768,9 @@ function renderEpicShowdownPreferenceSummary(state) {
         <td>${escapeHtml(
           preference.times.join(', ') || state.tr('adminBohNotProvided', 'Not provided')
         )}</td>
+        <td>${escapeHtml(
+          preference.flexibilityPreference || state.tr('adminBohNotProvided', 'Not provided')
+        )}</td>
       </tr>`
     )
     .join('');
@@ -2800,6 +2820,9 @@ function renderEpicShowdownPreferenceSummary(state) {
                   )}</th>
                   <th scope="col">${escapeHtml(
                     state.tr('adminBohEpicTimes', 'Preferred game times')
+                  )}</th>
+                  <th scope="col">${escapeHtml(
+                    state.tr('adminBohEpicFlexibility', 'Flexibility preference')
                   )}</th>
                 </tr></thead>
                 <tbody>${preferenceRows}</tbody>
@@ -3151,10 +3174,26 @@ function renderSignupPlanningSignals(state, submission) {
           : ''
       }
       ${
+        signals.canHelpLead
+          ? `<section><h6>${escapeHtml(
+              state.tr('adminBohLeadershipInterest', 'Leadership support')
+            )}</h6>${renderPlanningChips([
+              state.tr('adminBohLeadershipInterestYes', 'Willing to lead or help manage'),
+            ])}</section>`
+          : ''
+      }
+      ${
         signals.fightingTimeIds.length
           ? `<section><h6>${escapeHtml(
               state.tr('adminBohFightingTimes', 'Preferred fighting times')
             )}</h6>${renderPlanningChips(signals.fightingTimeIds)}</section>`
+          : ''
+      }
+      ${
+        signals.teamNamePreferences.length
+          ? `<section><h6>${escapeHtml(
+              state.tr('adminBohTeamNamePreferences', 'Favorite team names')
+            )}</h6>${renderPlanningChips(signals.teamNamePreferences)}</section>`
           : ''
       }
     </div>
@@ -3562,6 +3601,9 @@ function renderEligiblePoolPlanningHints(state, player) {
         signals.secondaryRole
       )}`
     );
+  }
+  if (signals.canHelpLead) {
+    hints.push(state.tr('adminBohLeadershipInterestYes', 'Willing to lead or help manage'));
   }
   if (signals.fightingTimeIds.length) hints.push(signals.fightingTimeIds.join(' / '));
   if (signals.usableHeroCount) {

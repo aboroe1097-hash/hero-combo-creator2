@@ -6,8 +6,26 @@ export const ALL_STAR_BOH_MAX_PLAYERS = 72;
 export const ALL_STAR_BOH_MAX_PREFERRED_TEAMMATES = 6;
 export const ALL_STAR_BOH_MAX_USABLE_HERO_NAMES = 78;
 export const ALL_STAR_BOH_FIGHTING_TIME_IDS = Object.freeze(['+8', '+12', '+14', '+20']);
+export const ALL_STAR_BOH_TEAM_NAME_PREFERENCES = Object.freeze([
+  'iron-wolves',
+  'storm-ravens',
+  'ember-lions',
+  'frost-bears',
+  'night-falcons',
+  'thunder-bulls',
+]);
 export const ALL_STAR_BOH_EPIC_SHOWDOWN_LANES = Object.freeze(['south', 'center', 'north']);
-export const ALL_STAR_BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS = Object.freeze(['+8', '+10', '+12']);
+export const ALL_STAR_BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS = Object.freeze([
+  '+6',
+  '+8',
+  '+10',
+  '+12',
+  '+14',
+  '+16',
+  '+18',
+  '+20',
+]);
+const EPIC_FLEXIBILITY_VALUES = new Set(['change-roles', 'change-times', 'fixed', '']);
 
 const MAX_ID_LENGTH = 128;
 const MAX_NAME_LENGTH = 160;
@@ -547,6 +565,14 @@ function normalizeStats(input = {}, options = {}) {
 
 function normalizeCommitment(input = {}, options = {}) {
   const source = optionalRecord(input);
+  const teamNamePreferences = boundedStringArray(source.teamNamePreferences || [], {
+    label: 'Team name preferences',
+    maxItems: ALL_STAR_BOH_TEAM_NAME_PREFERENCES.length,
+    identifiers: true,
+  });
+  if (teamNamePreferences.some((value) => !ALL_STAR_BOH_TEAM_NAME_PREFERENCES.includes(value))) {
+    throw new AllStarBohValidationError('Team name preferences contain an unsupported value.');
+  }
   return {
     availability: normalizedEnum(source.availability, AVAILABILITY_VALUES, '', 'Availability'),
     preferredRole: normalizedEnum(
@@ -561,9 +587,11 @@ function normalizeCommitment(input = {}, options = {}) {
       '',
       'Secondary role'
     ),
+    canHelpLead: optionalBoolean(source.canHelpLead),
     fightingTimeIds: normalizeFightingTimeIds(source.fightingTimeIds, {
       allowLegacyEmpty: options.requireFightingTimeIds !== true,
     }),
+    teamNamePreferences,
     unavailableTimes: boundedString(source.unavailableTimes, 800, 'Unavailable times'),
     canTeleport: optionalBoolean(source.canTeleport),
     canUseVoice: optionalBoolean(source.canUseVoice),
@@ -725,8 +753,18 @@ export function normalizeAllStarBohEpicPreferences(input = {}, options = {}) {
   if (!timePreferences.length) {
     throw new AllStarBohValidationError('Choose at least one Epic Showdown game time.');
   }
-
-  const normalized = { gameName, lanePreferences, timePreferences };
+  const flexibilityPreference = normalizedEnum(
+    source.flexibilityPreference,
+    EPIC_FLEXIBILITY_VALUES,
+    '',
+    'Epic Showdown flexibility preference'
+  );
+  const normalized = {
+    gameName,
+    lanePreferences,
+    timePreferences,
+    ...(flexibilityPreference ? { flexibilityPreference } : {}),
+  };
   assertDocumentSize(normalized, MAX_EPIC_PREFERENCES_BYTES, 'Epic Showdown preferences');
   return normalized;
 }
