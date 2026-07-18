@@ -150,7 +150,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   const sizeCheck = read('scripts/check-size.mjs');
 
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
-  assert.match(sizeCheck, /7699\.8 KiB/);
+  assert.match(sizeCheck, /7988\.5 KiB/);
   assert.match(sizeCheck, /1270\.6 KiB/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
   assert.match(sizeCheck, /totalCssBytes: 1290 \* 1024/);

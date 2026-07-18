@@ -118,6 +118,7 @@ async function prepareInitialTurn(request, env, auth, payload) {
     providerInput: buildInitialProviderSteps(payload.history, payload.input),
     allowedToolGroups,
     locale: payload.input.locale,
+    activeTab: payload.input.activeTab || null,
     uidHash: quota.uidHash,
     startedAt: Date.now(),
     priorFingerprints: [],
@@ -195,6 +196,7 @@ async function handleTurn(request, env, origin) {
       providerInput: prepared.providerInput,
       allowedToolGroups: prepared.allowedToolGroups,
       locale: prepared.locale,
+      activeTab: prepared.activeTab ?? null,
       requestSignal: request.signal,
     });
   } catch (error) {

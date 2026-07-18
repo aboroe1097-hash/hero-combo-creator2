@@ -288,6 +288,55 @@ export const TOOL_DECLARATIONS = Object.freeze([
       additionalProperties: false,
     },
   },
+  {
+    type: 'function',
+    name: 'get_toolkit_map',
+    description:
+      'List the VTS 1097 toolkit tabs and standalone pages with what each one does, which questions it answers, and its deep link. Use this to explain the app or to route the user to the right tool when a request is outside chat evidence.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 120 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_whats_new',
+    description:
+      'Read the recent toolkit release notes and current app version. Use this for "what changed", "what is new", or when a feature was added.',
+    parameters: {
+      type: 'object',
+      properties: {
+        limit: { type: 'integer', minimum: 1, maximum: 10 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_specialization_context',
+    description:
+      'Read canonical Specialization Towers data. kind=overview lists all eight columns with researches, medal costs, seasons, and Legion Skills; kind=column with columnId details one column; kind=research with researchName details one research including nodes and milestones. Unknown medal values stay unknown and must never be estimated.',
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['overview', 'column', 'research'] },
+        columnId: { type: 'integer', minimum: 1, maximum: 8 },
+        researchName: { type: 'string', minLength: 1, maxLength: 80 },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_skin_tier_details',
+    description:
+      'Read the three hero-skin tiers (Mythic, Legendary, Everlasting) with Star 1 activation, star-up costs, maximize totals, and acquisition paths including Premium-shop perfect-crystal exchange.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
 ]);
 
 export const TOOL_NAMES = Object.freeze(TOOL_DECLARATIONS.map(({ name }) => name));
@@ -549,5 +598,39 @@ export function validateToolArguments(name, args) {
       (args.kind !== 'player' || typeof args.playerName === 'string')
     );
   }
+  if (name === 'get_toolkit_map') {
+    return (
+      hasOnlyKeys(args, ['query']) &&
+      (args.query === undefined ||
+        (typeof args.query === 'string' && args.query.length > 0 && args.query.length <= 120))
+    );
+  }
+  if (name === 'get_whats_new') {
+    return (
+      hasOnlyKeys(args, ['limit']) &&
+      (args.limit === undefined ||
+        (Number.isInteger(args.limit) && args.limit >= 1 && args.limit <= 10))
+    );
+  }
+  if (name === 'get_specialization_context') {
+    if (
+      !hasOnlyKeys(args, ['kind', 'columnId', 'researchName']) ||
+      !['overview', 'column', 'research'].includes(args.kind)
+    ) {
+      return false;
+    }
+    if (args.kind === 'column') {
+      return Number.isInteger(args.columnId) && args.columnId >= 1 && args.columnId <= 8;
+    }
+    if (args.kind === 'research') {
+      return (
+        typeof args.researchName === 'string' &&
+        args.researchName.length > 0 &&
+        args.researchName.length <= 80
+      );
+    }
+    return args.columnId === undefined && args.researchName === undefined;
+  }
+  if (name === 'get_skin_tier_details') return hasOnlyKeys(args, []);
   return false;
 }

@@ -28,9 +28,10 @@ const LIMITS = {
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
   // six-team planner, persistence model, and complete player/Admin locale
-  // packs. The integrated Specialization tab lifts the graph to 7699.8 KiB; keep less than 3 KiB
-  // of aggregate headroom.
-  totalJsBytes: 7970 * 1024,
+  // packs. The Velo b0.2 app-awareness tools (toolkit map, changelog digest,
+  // specialization and skin-tier adapters) lift the graph to 7988.5 KiB; keep
+  // less than 4 KiB of aggregate headroom.
+  totalJsBytes: 7992 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The integrated Specialization tab styles lift it to 1270.6 KiB; keep less than
@@ -39,14 +40,15 @@ const LIMITS = {
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
-  // final post-Skin-Atlas rebase artifact measures 24,978.7 KiB; keep less than
+  // final Velo b0.2 artifact measures 25,303.5 KiB; keep less than
   // 6.5 KiB of headroom.
-  totalDeployBytes: 25300 * 1024,
+  totalDeployBytes: 25310 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // Specialization and All-Star add route, feature, and locale assets. The
-  // audited artifact has 573 files; retain a one-file guard.
-  deployFileCount: 576,
+  // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
+  // feature, and locale assets. The audited artifact has 577 files; retain a
+  // one-file guard.
+  deployFileCount: 578,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife

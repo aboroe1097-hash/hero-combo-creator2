@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.1.1 - 2026-07-18
+
+- Added four read-only Velo tools so the assistant knows the whole toolkit: `get_toolkit_map` (every tab/page with what it answers and its deep link), `get_whats_new` (recent release notes from a generated changelog digest), `get_specialization_context` (canonical Specialization Towers columns, researches, nodes, milestones, medal costs, and Legion Skills), and `get_skin_tier_details` (the three skin tiers with star-up costs and acquisition paths).
+- Added a `velo:changelog` script that generates `js/ai/changelog-digest.js` from CHANGELOG.md; the build runs it automatically and a unit test keeps the digest in sync with the released version.
+- Rebranded the assistant build as Velo b0.2 and refreshed Velo's system prompt: the role now covers Specialization Towers, skin tiers, All-Star BoH public mechanics, Battle Simulator context, and app navigation; the helmet gag became occasional and varied; out-of-scope answers now route to the right toolkit tab instead of refusing; and answer shape/wording is instructed to vary between turns.
+- Added grounded VTS guide knowledge entries for the All-Star BoH member flow, Specialization Towers structure, skin-tier economy, and the Fordogreen X1 Strife approach, plus community-shorthand aliases (dm, ac, boh, spec, cop, f2p, p2w) in guide retrieval.
+- Added an optional `activeTab` breadcrumb to the chat request contract: the Worker schema accepts it and injects an ACTIVE APP TAB section into the model instruction; the client keeps it disabled until the Worker deploy that accepts the field is live.
+
 ## 14.1.0 - 2026-07-18
 
 - Fixed manually pasted Total Contribution names retaining a separator comma, including previously saved records when they are normalized for display and export.

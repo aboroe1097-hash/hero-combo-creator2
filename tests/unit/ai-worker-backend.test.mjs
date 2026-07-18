@@ -49,9 +49,20 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
     request.system_instruction,
     /Never\npromise to stop mentioning or wearing the helmet/
   );
-  assert.match(request.system_instruction, /Whenever a user directly asks Velo for help/);
-  assert.match(request.system_instruction, /nudge this helmet above my eyes/);
-  assert.match(request.system_instruction, /at most one helmet beat per answer/);
+  assert.match(request.system_instruction, /first help request of a conversation/);
+  assert.match(request.system_instruction, /never reuse a helmet beat already used/);
+  assert.match(request.system_instruction, /skip the beat entirely on follow-ups/);
+  assert.match(request.system_instruction, /Use get_toolkit_map/);
+  assert.match(request.system_instruction, /Use get_whats_new/);
+  assert.match(request.system_instruction, /Use get_specialization_context/);
+  assert.match(request.system_instruction, /get_skin_tier_details/);
+  assert.match(request.system_instruction, /never estimate them/);
+  assert.match(
+    request.system_instruction,
+    /never\nask for, guess, store, or verify the member PIN/
+  );
+  assert.match(request.system_instruction, /Never open consecutive answers\nwith the same phrase/);
+  assert.match(request.system_instruction, /If an ACTIVE APP TAB is supplied below/);
   assert.match(request.system_instruction, /VTS 1097 dragons stick together/);
   assert.match(request.system_instruction, /personal:research_progress is allowed/);
   assert.match(
