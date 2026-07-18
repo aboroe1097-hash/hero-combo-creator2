@@ -1,4 +1,19 @@
-const POWER_FIELDS = Object.freeze([
+import {
+  ALL_STAR_BOH_SIGNUP_WINDOW,
+  getAllStarBohCountdownParts,
+  getAllStarBohSignupWindowState,
+} from './all-star-boh-schedule.js';
+import {
+  BOH_TROOP_TIERS,
+  BOH_TROOP_TYPES,
+  buildBohTroopOcrRequest,
+  mergeBohTroopOcrRows,
+  parseBohTroopInventoryRow,
+  parseBohTroopOcrResult,
+  serializeBohTroopInventoryRow,
+} from './all-star-boh-troop-ocr.js';
+
+const REQUIRED_POWER_FIELDS = Object.freeze([
   'totalCastlePower',
   'troopPower',
   'buildingPower',
@@ -6,20 +21,42 @@ const POWER_FIELDS = Object.freeze([
   'heroCombatPower',
   'dragonPower',
 ]);
+const OPTIONAL_POWER_FIELDS = Object.freeze([
+  'unitSpecialtyPower',
+  'artifactPower',
+  'royalTechPower',
+]);
+const POWER_FIELDS = Object.freeze([...REQUIRED_POWER_FIELDS, ...OPTIONAL_POWER_FIELDS]);
 
 const SECTION_ORDER = Object.freeze(['signup', 'announcement', 'plan', 'showdown']);
-const AVAILABILITY_VALUES = new Set(['all', 'most', 'backup']);
-const ROLE_VALUES = new Set(['flexible', 'offensive', 'rune', 'top', 'bottom', 'backup']);
+const AVAILABILITY_VALUES = new Set(['all', 'most']);
+const ROLE_VALUES = new Set(['flexible', 'offensive', 'rune', 'top', 'bottom']);
 const FIGHTING_TIME_IDS = Object.freeze(['+8', '+12', '+14', '+20']);
 const EPIC_LANE_VALUES = Object.freeze(['south', 'center', 'north']);
 const DEFAULT_EPIC_TIME_SLOT_IDS = Object.freeze(['+8', '+10', '+12']);
+const VERIFIED_RESEARCH_ART = Object.freeze({
+  'accessory production': '/assets/research/sources/accessory-production-01.jpg',
+  'archer training': '/assets/research/sources/archer-training-01.jpg',
+  'art of war command': '/assets/research/sources/art-of-war-command-01.jpg',
+  'basic combat': '/assets/research/sources/basic-combat-01.jpg',
+  'basic military': '/assets/research/sources/basic-military-01.jpg',
+  'cavalry training': '/assets/research/sources/cavalry-training-01.jpg',
+  'footmen training': '/assets/research/sources/footmen-training-01.jpg',
+  'guard rally': '/assets/research/sources/guard-rally-01.jpg',
+  'master warfare': '/assets/research/sources/master-warfare-01.jpg',
+  'raider legion': '/assets/research/sources/raider-legion-01.jpg',
+  'research legion ii': '/assets/research/sources/research-legion-ii-01.jpg',
+  'solid tactics': '/assets/research/sources/solid-tactics-01.jpg',
+  'town development': '/assets/research/sources/town-development-01.jpg',
+  'zone commemoration': '/assets/research/sources/zone-commemoration-01.jpg',
+  'zone conflict': '/assets/research/sources/zone-conflict-01.jpg',
+});
 const PRIVATE_VALUE_KEY = /(?:imageData|base64|screenshot|dataUrl|file|blob)/iu;
 const DEFAULT_ROLE_LABELS = Object.freeze({
   offensive: Object.freeze(['Offensive Team']),
   rune: Object.freeze(['Rune Team']),
   top: Object.freeze(['Top Side']),
   bottom: Object.freeze(['Bottom Side']),
-  backup: Object.freeze(['Backup', 'Backup / rotating player']),
   flexible: Object.freeze(['Flexible', 'Flexible - place me where needed']),
 });
 const DEFAULT_PHASE_LABELS = Object.freeze({
@@ -29,6 +66,441 @@ const DEFAULT_PHASE_LABELS = Object.freeze({
   'phase-15-30': Object.freeze(['15-30 Minutes', '15-30 min']),
 });
 const controllers = new WeakMap();
+
+const SIGNUP_WINDOW_COPY = Object.freeze({
+  en: [
+    'SIGNUP WINDOW',
+    'Signups open in',
+    'Signups close in',
+    'Signups are closed',
+    'Signup dates will be announced soon',
+    'Leadership will publish the opening and closing times here.',
+    'Opens {date}',
+    'Open {opens} — closes {closes}',
+    'Closed {date}',
+    'days',
+    'hours',
+    'minutes',
+    'seconds',
+  ],
+  ar: [
+    'فترة التسجيل',
+    'يفتح التسجيل خلال',
+    'يغلق التسجيل خلال',
+    'أُغلق التسجيل',
+    'سيتم الإعلان عن مواعيد التسجيل قريبًا',
+    'ستنشر القيادة وقتي فتح التسجيل وإغلاقه هنا.',
+    'يفتح {date}',
+    'مفتوح {opens} — يغلق {closes}',
+    'أُغلق {date}',
+    'يوم',
+    'ساعة',
+    'دقيقة',
+    'ثانية',
+  ],
+  de: [
+    'ANMELDEZEITRAUM',
+    'Anmeldung öffnet in',
+    'Anmeldung schließt in',
+    'Anmeldung geschlossen',
+    'Anmeldedaten werden bald bekannt gegeben',
+    'Die Leitung veröffentlicht hier Öffnungs- und Schlusszeit.',
+    'Öffnet {date}',
+    'Offen {opens} — schließt {closes}',
+    'Geschlossen {date}',
+    'Tage',
+    'Stunden',
+    'Minuten',
+    'Sekunden',
+  ],
+  es: [
+    'PERÍODO DE INSCRIPCIÓN',
+    'Las inscripciones abren en',
+    'Las inscripciones cierran en',
+    'Inscripciones cerradas',
+    'Las fechas se anunciarán pronto',
+    'El liderazgo publicará aquí la apertura y el cierre.',
+    'Abre {date}',
+    'Abre {opens} — cierra {closes}',
+    'Cerró {date}',
+    'días',
+    'horas',
+    'minutos',
+    'segundos',
+  ],
+  fr: [
+    'PÉRIODE D’INSCRIPTION',
+    'Ouverture des inscriptions dans',
+    'Clôture des inscriptions dans',
+    'Inscriptions closes',
+    'Les dates seront bientôt annoncées',
+    'L’équipe dirigeante publiera ici les heures d’ouverture et de clôture.',
+    'Ouverture {date}',
+    'Ouvert {opens} — clôture {closes}',
+    'Clôturé {date}',
+    'jours',
+    'heures',
+    'minutes',
+    'secondes',
+  ],
+  id: [
+    'JADWAL PENDAFTARAN',
+    'Pendaftaran dibuka dalam',
+    'Pendaftaran ditutup dalam',
+    'Pendaftaran ditutup',
+    'Jadwal pendaftaran segera diumumkan',
+    'Pimpinan akan menampilkan waktu buka dan tutup di sini.',
+    'Buka {date}',
+    'Buka {opens} — tutup {closes}',
+    'Ditutup {date}',
+    'hari',
+    'jam',
+    'menit',
+    'detik',
+  ],
+  kr: [
+    '가입 기간',
+    '가입 시작까지',
+    '가입 마감까지',
+    '가입 마감',
+    '가입 일정은 곧 안내됩니다',
+    '운영진이 시작 및 마감 시간을 여기에 게시합니다.',
+    '{date} 시작',
+    '{opens} 시작 — {closes} 마감',
+    '{date} 마감',
+    '일',
+    '시간',
+    '분',
+    '초',
+  ],
+  pt: [
+    'PERÍODO DE INSCRIÇÃO',
+    'Inscrições abrem em',
+    'Inscrições fecham em',
+    'Inscrições encerradas',
+    'As datas serão anunciadas em breve',
+    'A liderança publicará aqui os horários de abertura e encerramento.',
+    'Abre {date}',
+    'Abre {opens} — fecha {closes}',
+    'Encerrou {date}',
+    'dias',
+    'horas',
+    'minutos',
+    'segundos',
+  ],
+  ru: [
+    'ПЕРИОД РЕГИСТРАЦИИ',
+    'Регистрация откроется через',
+    'Регистрация закроется через',
+    'Регистрация закрыта',
+    'Даты регистрации скоро объявят',
+    'Руководство опубликует здесь время открытия и закрытия.',
+    'Откроется {date}',
+    'Открытие {opens} — закрытие {closes}',
+    'Закрыто {date}',
+    'дней',
+    'часов',
+    'минут',
+    'секунд',
+  ],
+  tr: [
+    'KAYIT DÖNEMİ',
+    'Kayıtların açılmasına',
+    'Kayıtların kapanmasına',
+    'Kayıtlar kapandı',
+    'Kayıt tarihleri yakında duyurulacak',
+    'Liderlik açılış ve kapanış saatlerini burada yayınlayacak.',
+    'Açılış {date}',
+    'Açılış {opens} — kapanış {closes}',
+    'Kapandı {date}',
+    'gün',
+    'saat',
+    'dakika',
+    'saniye',
+  ],
+  zh: [
+    '报名时间',
+    '距离报名开始',
+    '距离报名结束',
+    '报名已结束',
+    '报名日期即将公布',
+    '管理团队将在这里公布开始和结束时间。',
+    '{date} 开始',
+    '{opens} 开始 — {closes} 结束',
+    '{date} 已结束',
+    '天',
+    '小时',
+    '分钟',
+    '秒',
+  ],
+});
+
+const TROOP_OCR_COPY = Object.freeze({
+  en: [
+    'OPTIONAL TROOP OCR',
+    'Upload your Troop Details screens',
+    'Up to 4 images',
+    'Add overlapping screenshots from the top and lower parts of the list. We will map each visible troop by type, tier, enhanced status, and count.',
+    'Top of the troop list',
+    'Continue down the list',
+    'Choose Troop Details screenshots',
+    'Select 1–4 clear images with enough overlap to avoid missing rows.',
+    'I understand these images use the same third-party OCR provider and I must review the rows.',
+    'Read troop screenshots',
+    'Remove all',
+    'Review every detected troop row',
+    'Correct uncertain type, tier, enhanced badge, or count before confirming.',
+    'I compared every troop row with my screenshots.',
+    'Reading screenshot {current} of {total}…',
+    '{count} troop rows detected. Review them below.',
+    'Normal',
+    'Enhanced',
+    'Uncertain',
+    'Count',
+    'Type',
+    'Tier',
+  ],
+  ar: [
+    'OCR اختياري للقوات',
+    'ارفع شاشات تفاصيل القوات',
+    'حتى 4 صور',
+    'أضف صورًا متداخلة من أعلى القائمة وأسفلها. سنطابق النوع والمستوى والتحسين والعدد.',
+    'أعلى قائمة القوات',
+    'تابع أسفل القائمة',
+    'اختر صور تفاصيل القوات',
+    'اختر 1–4 صور واضحة ومتداخلة لتجنب فقد الصفوف.',
+    'أفهم أن الصور ستستخدم مزود OCR خارجيًا ويجب أن أراجع الصفوف.',
+    'قراءة صور القوات',
+    'إزالة الكل',
+    'راجع كل صف قوات تم اكتشافه',
+    'صحح النوع أو المستوى أو شارة التحسين أو العدد غير المؤكد.',
+    'قارنت كل صف قوات بصوري.',
+    'جارٍ قراءة الصورة {current} من {total}…',
+    'تم اكتشاف {count} صف قوات. راجعها أدناه.',
+    'عادي',
+    'محسن',
+    'غير مؤكد',
+    'العدد',
+    'النوع',
+    'المستوى',
+  ],
+  de: [
+    'OPTIONALE TRUPPEN-OCR',
+    'Troppendetails hochladen',
+    'Bis zu 4 Bilder',
+    'Lade überlappende Bilder vom oberen und unteren Teil der Liste hoch. Typ, Stufe, Verbesserung und Anzahl werden zugeordnet.',
+    'Oberer Teil der Truppenliste',
+    'Weiter unten in der Liste',
+    'Troppendetails auswählen',
+    'Wähle 1–4 klare, überlappende Bilder.',
+    'Ich verstehe, dass ein externer OCR-Anbieter genutzt wird und ich die Zeilen prüfen muss.',
+    'Truppenbilder lesen',
+    'Alle entfernen',
+    'Jede erkannte Truppenzeile prüfen',
+    'Unsicheren Typ, Stufe, Verbesserungsabzeichen oder Anzahl korrigieren.',
+    'Ich habe jede Truppenzeile mit meinen Bildern verglichen.',
+    'Bild {current} von {total} wird gelesen…',
+    '{count} Truppenzeilen erkannt. Bitte unten prüfen.',
+    'Normal',
+    'Verbessert',
+    'Unsicher',
+    'Anzahl',
+    'Typ',
+    'Stufe',
+  ],
+  es: [
+    'OCR DE TROPAS OPCIONAL',
+    'Sube tus pantallas de Detalles de tropas',
+    'Hasta 4 imágenes',
+    'Añade capturas superpuestas de la parte superior e inferior. Mapearemos tipo, nivel, mejora y cantidad.',
+    'Parte superior de la lista',
+    'Continúa por la lista',
+    'Elegir capturas de tropas',
+    'Selecciona 1–4 imágenes claras con solapamiento.',
+    'Entiendo que estas imágenes usan un proveedor OCR externo y debo revisar las filas.',
+    'Leer capturas de tropas',
+    'Quitar todo',
+    'Revisa cada fila detectada',
+    'Corrige cualquier tipo, nivel, mejora o cantidad dudosa.',
+    'Comparé cada fila con mis capturas.',
+    'Leyendo imagen {current} de {total}…',
+    'Se detectaron {count} filas. Revísalas abajo.',
+    'Normal',
+    'Mejorada',
+    'Dudosa',
+    'Cantidad',
+    'Tipo',
+    'Nivel',
+  ],
+  fr: [
+    'OCR DES TROUPES FACULTATIF',
+    'Importez les écrans Détails des troupes',
+    'Jusqu’à 4 images',
+    'Ajoutez des captures qui se chevauchent du haut et du bas de la liste. Nous associerons type, niveau, amélioration et nombre.',
+    'Haut de la liste',
+    'Suite de la liste',
+    'Choisir les captures de troupes',
+    'Sélectionnez 1 à 4 images nettes avec chevauchement.',
+    'Je comprends que ces images utilisent un fournisseur OCR tiers et que je dois vérifier les lignes.',
+    'Lire les captures',
+    'Tout retirer',
+    'Vérifiez chaque ligne détectée',
+    'Corrigez le type, le niveau, le badge amélioré ou le nombre incertain.',
+    'J’ai comparé chaque ligne à mes captures.',
+    'Lecture de l’image {current} sur {total}…',
+    '{count} lignes détectées. Vérifiez-les ci-dessous.',
+    'Normal',
+    'Amélioré',
+    'Incertain',
+    'Nombre',
+    'Type',
+    'Niveau',
+  ],
+  id: [
+    'OCR PASUKAN OPSIONAL',
+    'Unggah layar Rincian Pasukan',
+    'Maksimal 4 gambar',
+    'Tambahkan tangkapan layar yang bertumpuk dari bagian atas dan bawah daftar. Kami akan memetakan jenis, tingkat, peningkatan, dan jumlah.',
+    'Bagian atas daftar',
+    'Lanjutkan ke bawah',
+    'Pilih tangkapan layar pasukan',
+    'Pilih 1–4 gambar jelas yang saling tumpang tindih.',
+    'Saya memahami gambar memakai penyedia OCR pihak ketiga dan saya harus memeriksa barisnya.',
+    'Baca tangkapan pasukan',
+    'Hapus semua',
+    'Periksa setiap baris yang terdeteksi',
+    'Perbaiki jenis, tingkat, lencana peningkatan, atau jumlah yang meragukan.',
+    'Saya membandingkan setiap baris dengan gambar saya.',
+    'Membaca gambar {current} dari {total}…',
+    '{count} baris terdeteksi. Periksa di bawah.',
+    'Normal',
+    'Ditingkatkan',
+    'Tidak pasti',
+    'Jumlah',
+    'Jenis',
+    'Tingkat',
+  ],
+  kr: [
+    '선택 병력 OCR',
+    '병력 상세 화면 업로드',
+    '최대 4장',
+    '목록 위아래의 겹치는 스크린샷을 추가하세요. 병종, 티어, 강화 여부, 수량을 매핑합니다.',
+    '병력 목록 상단',
+    '목록 아래로 계속',
+    '병력 상세 스크린샷 선택',
+    '행 누락 방지를 위해 겹치는 선명한 이미지 1–4장을 선택하세요.',
+    '외부 OCR 제공업체가 이미지를 처리하며 행을 직접 검토해야 함을 이해합니다.',
+    '병력 스크린샷 읽기',
+    '모두 제거',
+    '감지된 모든 병력 행 검토',
+    '불확실한 병종, 티어, 강화 배지 또는 수량을 수정하세요.',
+    '모든 병력 행을 스크린샷과 비교했습니다.',
+    '{total}장 중 {current}장 읽는 중…',
+    '병력 행 {count}개를 감지했습니다. 아래에서 검토하세요.',
+    '일반',
+    '강화',
+    '불확실',
+    '수량',
+    '병종',
+    '티어',
+  ],
+  pt: [
+    'OCR DE TROPAS OPCIONAL',
+    'Envie as telas de Detalhes das tropas',
+    'Até 4 imagens',
+    'Adicione capturas sobrepostas do topo e da parte inferior. Mapearemos tipo, nível, aprimoramento e quantidade.',
+    'Topo da lista',
+    'Continue pela lista',
+    'Escolher capturas de tropas',
+    'Selecione 1–4 imagens nítidas com sobreposição.',
+    'Entendo que estas imagens usam um provedor OCR externo e devo revisar as linhas.',
+    'Ler capturas de tropas',
+    'Remover tudo',
+    'Revise cada linha detectada',
+    'Corrija tipo, nível, selo aprimorado ou quantidade incerta.',
+    'Comparei cada linha com minhas capturas.',
+    'Lendo imagem {current} de {total}…',
+    '{count} linhas detectadas. Revise abaixo.',
+    'Normal',
+    'Aprimorado',
+    'Incerto',
+    'Quantidade',
+    'Tipo',
+    'Nível',
+  ],
+  ru: [
+    'НЕОБЯЗАТЕЛЬНОЕ OCR ВОЙСК',
+    'Загрузите экраны «Детали войск»',
+    'До 4 изображений',
+    'Добавьте перекрывающиеся снимки верхней и нижней частей списка. Мы определим тип, уровень, усиление и количество.',
+    'Верх списка войск',
+    'Продолжение списка',
+    'Выбрать снимки войск',
+    'Выберите 1–4 чётких снимка с перекрытием.',
+    'Я понимаю, что изображения обрабатывает сторонний OCR и строки нужно проверить.',
+    'Распознать войска',
+    'Удалить всё',
+    'Проверьте каждую найденную строку',
+    'Исправьте сомнительный тип, уровень, значок усиления или количество.',
+    'Я сверил каждую строку со снимками.',
+    'Чтение изображения {current} из {total}…',
+    'Найдено строк: {count}. Проверьте их ниже.',
+    'Обычные',
+    'Усиленные',
+    'Неясно',
+    'Количество',
+    'Тип',
+    'Уровень',
+  ],
+  tr: [
+    'İSTEĞE BAĞLI BİRLİK OCR',
+    'Birlik Ayrıntıları ekranlarını yükle',
+    'En fazla 4 görsel',
+    'Listenin üst ve alt kısımlarından çakışan ekran görüntüleri ekleyin. Tür, seviye, geliştirme ve sayıyı eşleştireceğiz.',
+    'Birlik listesinin üstü',
+    'Listede aşağı devam et',
+    'Birlik ekran görüntülerini seç',
+    'Satır kaçırmamak için çakışan 1–4 net görsel seçin.',
+    'Görsellerin üçüncü taraf OCR ile işleneceğini ve satırları kontrol etmem gerektiğini anlıyorum.',
+    'Birlik görsellerini oku',
+    'Tümünü kaldır',
+    'Algılanan her birlik satırını kontrol et',
+    'Belirsiz türü, seviyeyi, geliştirme rozetini veya sayıyı düzeltin.',
+    'Her satırı ekran görüntülerimle karşılaştırdım.',
+    '{total} görselden {current}. okunuyor…',
+    '{count} birlik satırı algılandı. Aşağıda kontrol edin.',
+    'Normal',
+    'Geliştirilmiş',
+    'Belirsiz',
+    'Sayı',
+    'Tür',
+    'Seviye',
+  ],
+  zh: [
+    '可选部队 OCR',
+    '上传“部队详情”页面',
+    '最多 4 张图片',
+    '上传列表顶部和下部有重叠的截图。我们会识别兵种、等级、强化状态和数量。',
+    '部队列表顶部',
+    '继续向下截图',
+    '选择部队详情截图',
+    '选择 1–4 张清晰且有重叠的图片。',
+    '我了解图片会由第三方 OCR 服务处理，并且必须检查识别结果。',
+    '读取部队截图',
+    '全部移除',
+    '检查每一条识别结果',
+    '修正不确定的兵种、等级、强化标记或数量。',
+    '我已将每一行与截图核对。',
+    '正在读取第 {current}/{total} 张图片…',
+    '识别到 {count} 条部队记录。请在下方检查。',
+    '普通',
+    '强化',
+    '不确定',
+    '数量',
+    '兵种',
+    '等级',
+  ],
+});
 
 function textValue(value) {
   return String(value ?? '')
@@ -396,7 +868,7 @@ export function buildBohSubmissionPayload(source, options = {}) {
   }
 
   const stats = {};
-  for (const field of POWER_FIELDS) {
+  for (const field of REQUIRED_POWER_FIELDS) {
     try {
       stats[field] = parseBohInteger(formValue(source, field), {
         label: field,
@@ -408,12 +880,20 @@ export function buildBohSubmissionPayload(source, options = {}) {
       throw error;
     }
   }
-  stats.level50HeroCount = parseBohInteger(formValue(source, 'level50Heroes'), {
-    label: 'Level 50 heroes',
-    minimum: 0,
-    maximum: 99,
-    required: false,
-  });
+  for (const field of OPTIONAL_POWER_FIELDS) {
+    const rawValue = formValue(source, field);
+    if (rawValue === null || rawValue === undefined || String(rawValue).trim() === '') continue;
+    try {
+      stats[field] = parseBohInteger(rawValue, {
+        label: field,
+        minimum: 0,
+        maximum: 100_000_000_000,
+      });
+    } catch (error) {
+      error.field = field;
+      throw error;
+    }
+  }
   stats.rocLevel = parseBohInteger(formValue(source, 'rocLevel'), {
     label: 'RoC level',
     minimum: 0,
@@ -421,16 +901,13 @@ export function buildBohSubmissionPayload(source, options = {}) {
     required: false,
   });
 
-  const t9Types = safeList(
-    formValues(source, 't9Types'),
-    new Set(['cavalry', 'archers', 'footmen', 'none'])
+  const requestedT10Types = safeList(
+    formValues(source, 't10Types'),
+    new Set(['cavalry', 'archers', 'footmen', 'all'])
   );
-  if (t9Types.includes('none') && t9Types.length > 1) {
-    const error = new TypeError('Choose T9 troop types or None, not both.');
-    error.field = 't9Types';
-    throw error;
-  }
-  stats.t9TroopTypes = t9Types.filter((value) => value !== 'none');
+  stats.t10TroopTypes = requestedT10Types.includes('all')
+    ? ['cavalry', 'archers', 'footmen']
+    : requestedT10Types;
   stats.readySpeedHeroes = safeList(
     formValues(source, 'speedHeroes'),
     new Set(['lionheart', 'cao-cao', 'al-fatih'])
@@ -443,6 +920,19 @@ export function buildBohSubmissionPayload(source, options = {}) {
     'usableHeroNames'
   );
   stats.researchProgressPct = researchProgressFrom(source, researchTreeIds);
+  stats.troopRoster = formValues(source, 'troopRoster')
+    .map((value) => textValue(value))
+    .filter((value) =>
+      /^(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)\|\d{1,10}$/u.test(
+        value
+      )
+    )
+    .slice(0, 60);
+  if (stats.troopRoster.length && !booleanValue(formValue(source, 'troopOcrConfirmed'))) {
+    const error = new TypeError('Compare every troop row with your screenshots before submitting.');
+    error.field = 'troopOcrConfirmed';
+    throw error;
+  }
 
   const availability = textValue(formValue(source, 'availability')).toLowerCase();
   if (!AVAILABILITY_VALUES.has(availability)) {
@@ -451,9 +941,21 @@ export function buildBohSubmissionPayload(source, options = {}) {
     throw error;
   }
   const preferredRole = textValue(formValue(source, 'preferredRole')).toLowerCase();
-  if (preferredRole && !ROLE_VALUES.has(preferredRole)) {
-    const error = new TypeError('Preferred role is invalid.');
+  if (!ROLE_VALUES.has(preferredRole)) {
+    const error = new TypeError('Choose your primary role.');
     error.field = 'preferredRole';
+    throw error;
+  }
+  const secondaryRole = textValue(formValue(source, 'secondaryRole')).toLowerCase();
+  if (secondaryRole && !ROLE_VALUES.has(secondaryRole)) {
+    const error = new TypeError('Secondary role is invalid.');
+    error.field = 'secondaryRole';
+    throw error;
+  }
+  if (secondaryRole && secondaryRole === preferredRole) {
+    const error = new TypeError('Choose a different secondary role.');
+    error.field = 'secondaryRole';
+    error.i18nKey = 'signup.secondaryRoleDifferent';
     throw error;
   }
   const fightingTimeIds = canonicalCatalogSelection(
@@ -467,12 +969,6 @@ export function buildBohSubmissionPayload(source, options = {}) {
     error.i18nKey = 'signup.fightingTimesRequired';
     throw error;
   }
-  if (!booleanValue(formValue(source, 'planCommitment'))) {
-    const error = new TypeError('Confirm that you will review and follow the published plan.');
-    error.field = 'planCommitment';
-    throw error;
-  }
-
   const entryMethod = options.entryMethod === 'ocr' ? 'ocr' : 'manual';
   if (entryMethod === 'ocr' && (!options.ocrReview || options.ocrValuesConfirmed !== true)) {
     const error = new TypeError('Review and explicitly confirm every OCR value before submitting.');
@@ -501,16 +997,15 @@ export function buildBohSubmissionPayload(source, options = {}) {
     entryMethod,
     status: 'submitted',
     stats,
-    rolePreferences: !preferredRole || preferredRole === 'flexible' ? [] : [preferredRole],
+    rolePreferences: [preferredRole, secondaryRole].filter(
+      (role, index, roles) => role && role !== 'flexible' && roles.indexOf(role) === index
+    ),
     eligibleRoleIds: [],
     commitment: {
       availability,
       preferredRole,
+      secondaryRole,
       fightingTimeIds,
-      unavailableTimes: textValue(formValue(source, 'unavailableTimes')).slice(0, 800),
-      canTeleport: booleanValue(formValue(source, 'canTeleport')),
-      canUseVoice: booleanValue(formValue(source, 'canUseVoice')),
-      planCommitment: true,
       notes: textValue(formValue(source, 'playerNotes')).slice(0, 2000),
     },
     ocr: {
@@ -815,7 +1310,7 @@ function initialState(options) {
     tr: makeTranslator(options.text, options.language || 'en'),
     accessGranted: Boolean(options.store && options.store.accessGranted !== false),
     section: 'signup',
-    entryMethod: 'manual',
+    entryMethod: 'ocr',
     selectedPhaseId: '',
     selectedLegionId: '',
     selectedTeamId: '',
@@ -830,6 +1325,10 @@ function initialState(options) {
     ocrReview: null,
     ocrInvalidField: '',
     ocrBusy: false,
+    troopOcrFiles: [],
+    troopOcrRows: [],
+    troopOcrWarnings: [],
+    troopOcrBusy: false,
     saving: false,
     dirty: false,
     hydratedRevision: null,
@@ -842,11 +1341,123 @@ function initialState(options) {
     renderedHeroCatalog: '',
     renderedResearchCatalog: '',
     fightingTimeErrorKey: '',
+    signupWindow:
+      options.signupWindow ||
+      globalThis.VTS_ALL_STAR_BOH_SIGNUP_WINDOW ||
+      ALL_STAR_BOH_SIGNUP_WINDOW,
+    scheduleTimer: null,
     destroyed: false,
     subscriptions: [],
     teamSubscriptions: new Map(),
     eventsAbort: new AbortController(),
   };
+}
+
+function signupWindowLocale(language) {
+  const normalized = textValue(language).toLowerCase().replace('_', '-');
+  if (normalized === 'ko' || normalized.startsWith('ko-')) return 'kr';
+  const base = normalized.split('-')[0];
+  return SIGNUP_WINDOW_COPY[base] ? base : 'en';
+}
+
+function signupWindowTemplate(value, replacements = {}) {
+  return String(value).replace(/\{(\w+)\}/gu, (_match, key) => replacements[key] || '');
+}
+
+function formatSignupWindowDate(value, locale) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return '';
+  const intlLocale = locale === 'kr' ? 'ko' : locale;
+  try {
+    return new Intl.DateTimeFormat(intlLocale, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    }).format(timestamp);
+  } catch {
+    return new Date(timestamp).toLocaleString();
+  }
+}
+
+function renderSignupWindow(state) {
+  const card = query(state.root, '[data-role="signup-window"]');
+  if (!card) return;
+  const now = typeof state.options.now === 'function' ? state.options.now() : Date.now();
+  const windowState = getAllStarBohSignupWindowState(state.signupWindow, now);
+  const locale = signupWindowLocale(state.language);
+  const copy = SIGNUP_WINDOW_COPY[locale];
+  const [
+    kicker,
+    upcomingTitle,
+    openTitle,
+    closedTitle,
+    unconfiguredTitle,
+    unconfiguredDates,
+    upcomingDates,
+    openDates,
+    closedDates,
+    daysLabel,
+    hoursLabel,
+    minutesLabel,
+    secondsLabel,
+  ] = copy;
+  card.dataset.phase = windowState.phase;
+  setText(query(card, '[data-role="signup-window-kicker"]'), kicker);
+  const title =
+    windowState.phase === 'upcoming'
+      ? upcomingTitle
+      : windowState.phase === 'open'
+        ? openTitle
+        : windowState.phase === 'closed'
+          ? closedTitle
+          : unconfiguredTitle;
+  setText(query(card, '[data-role="signup-window-title"]'), title);
+  const opens = formatSignupWindowDate(windowState.opensAt, locale);
+  const closes = formatSignupWindowDate(windowState.closesAt, locale);
+  const dates =
+    windowState.phase === 'upcoming'
+      ? signupWindowTemplate(upcomingDates, { date: opens })
+      : windowState.phase === 'open'
+        ? signupWindowTemplate(openDates, { opens, closes })
+        : windowState.phase === 'closed'
+          ? signupWindowTemplate(closedDates, { date: closes })
+          : unconfiguredDates;
+  setText(query(card, '[data-role="signup-window-dates"]'), dates);
+  const countdown = query(card, '[data-role="signup-window-countdown"]');
+  setHidden(countdown, !['upcoming', 'open'].includes(windowState.phase));
+  const parts = getAllStarBohCountdownParts(windowState.remainingSeconds);
+  for (const [part, label] of [
+    ['days', daysLabel],
+    ['hours', hoursLabel],
+    ['minutes', minutesLabel],
+    ['seconds', secondsLabel],
+  ]) {
+    setText(
+      query(card, `[data-role="signup-window-${part}"]`),
+      String(parts[part]).padStart(2, '0')
+    );
+    setText(query(card, `[data-role="signup-window-${part}-label"]`), label);
+  }
+}
+
+function startSignupWindowTimer(state) {
+  const setIntervalImpl =
+    state.options.setInterval ||
+    ownerWindow(state.root)?.setInterval?.bind(ownerWindow(state.root));
+  if (typeof setIntervalImpl !== 'function' || state.scheduleTimer !== null) return;
+  state.scheduleTimer = setIntervalImpl(() => renderSignupWindow(state), 1000);
+}
+
+function stopSignupWindowTimer(state) {
+  if (state.scheduleTimer === null) return;
+  const clearIntervalImpl =
+    state.options.clearInterval ||
+    ownerWindow(state.root)?.clearInterval?.bind(ownerWindow(state.root));
+  clearIntervalImpl?.(state.scheduleTimer);
+  state.scheduleTimer = null;
 }
 
 function reportError(state, error, context = {}) {
@@ -888,6 +1499,16 @@ function activateSection(state, section, focus = false) {
     tab.tabIndex = selected ? 0 : -1;
     tab.classList?.toggle('is-active', selected);
     if (selected && focus) tab.focus?.();
+    if (selected && tab.scrollIntoView) {
+      const reducedMotion = ownerWindow(state.root)?.matchMedia?.(
+        '(prefers-reduced-motion: reduce)'
+      )?.matches;
+      tab.scrollIntoView({
+        behavior: reducedMotion ? 'auto' : 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
   }
   for (const panel of queryAll(state.root, '[data-role="section-panel"]')) {
     panel.hidden = panel.dataset.section !== section;
@@ -926,13 +1547,25 @@ function heroCatalogFor(state) {
     const key = comparableLabel(name);
     if (!name || seen.has(key)) continue;
     seen.add(key);
+    const season = textValue(value?.releaseSeason || value?.season || '');
+    if (seasonRank(season) === null) continue;
     heroes.push({
       name,
       troopType: textValue(value?.Type || value?.type || 'All') || 'All',
-      season: textValue(value?.releaseSeason || value?.season || ''),
+      season,
+      imageUrl: textValue(value?.imageUrl || value?.image || ''),
     });
   }
   return heroes;
+}
+
+function seasonRank(value) {
+  const normalized = textValue(value).toUpperCase().replace(/^SX/u, 'X');
+  const season = /^S([0-4])$/u.exec(normalized);
+  if (season) return Number(season[1]);
+  const eden = /^X([1-8])$/u.exec(normalized);
+  if (eden) return 4 + Number(eden[1]);
+  return null;
 }
 
 function researchCatalogFor(state) {
@@ -966,13 +1599,14 @@ function renderHeroCatalogStatus(state) {
   );
   const search = comparableLabel(query(state.root, '[data-role="hero-search"]')?.value);
   const troopType = comparableLabel(query(state.root, '[data-role="hero-troop-filter"]')?.value);
-  const season = comparableLabel(query(state.root, '[data-role="hero-season-filter"]')?.value);
+  const season = query(state.root, '[data-role="hero-season-filter"]')?.value || '';
+  const selectedSeasonRank = seasonRank(season);
   let shown = 0;
   for (const row of queryAll(state.root, '[data-role="hero-option"]')) {
     const matches =
       (!search || comparableLabel(row.dataset.search).includes(search)) &&
       (!troopType || comparableLabel(row.dataset.troopType) === troopType) &&
-      (!season || comparableLabel(row.dataset.season) === season);
+      (selectedSeasonRank === null || seasonRank(row.dataset.season) <= selectedSeasonRank);
     row.hidden = !matches;
     if (matches) shown += 1;
   }
@@ -991,7 +1625,7 @@ function renderHeroCatalog(state) {
   const heroes = heroCatalogFor(state);
   const renderKey = JSON.stringify([
     state.language,
-    heroes.map(({ name, troopType, season }) => [name, troopType, season]),
+    heroes.map(({ name, troopType, season, imageUrl }) => [name, troopType, season, imageUrl]),
   ]);
   if (state.renderedHeroCatalog !== renderKey) {
     const checked = new Set(
@@ -1012,6 +1646,11 @@ function renderHeroCatalog(state) {
       input.name = 'usableHeroNames';
       input.value = hero.name;
       input.checked = checked.has(hero.name);
+      const portrait = createElement(state.root, 'img', 'boh-catalog-row__portrait');
+      portrait.src = hero.imageUrl;
+      portrait.alt = '';
+      portrait.loading = 'lazy';
+      portrait.decoding = 'async';
       const copy = createElement(state.root, 'span', 'boh-catalog-row__copy');
       const name = createElement(state.root, 'strong', '', hero.name);
       const metadata = createElement(
@@ -1021,7 +1660,7 @@ function renderHeroCatalog(state) {
         [hero.season, heroTroopLabel(state, hero.troopType)].filter(Boolean).join(' · ')
       );
       append(copy, name, metadata);
-      append(row, input, copy);
+      append(row, input, portrait, copy);
       return row;
     });
     replaceChildren(list, ...rows);
@@ -1044,7 +1683,9 @@ function renderHeroCatalog(state) {
       troopFilter.value = troopTypes.includes(currentTroop) ? currentTroop : '';
     }
     if (seasonFilter) {
-      const seasons = [...new Set(heroes.map((hero) => hero.season).filter(Boolean))];
+      const seasons = [...new Set(heroes.map((hero) => hero.season).filter(Boolean))].sort(
+        (left, right) => seasonRank(left) - seasonRank(right)
+      );
       const all = createElement(
         state.root,
         'option',
@@ -1074,6 +1715,10 @@ function researchTreeLabel(state, tree) {
     }
   }
   return textValue(tree.name || tree.id);
+}
+
+function verifiedResearchArt(tree) {
+  return VERIFIED_RESEARCH_ART[comparableLabel(tree?.name)] || '';
 }
 
 function renderResearchStatus(state) {
@@ -1125,8 +1770,19 @@ function renderResearchCatalog(state) {
         const inputId = `bohResearchProgress${seasonIndex}_${treeIndex}`;
         const row = createElement(state.root, 'div', 'boh-research-row');
         row.dataset.treeId = tree.id;
-        const name = createElement(state.root, 'label', 'boh-research-row__name', label);
+        const name = createElement(state.root, 'label', 'boh-research-row__name');
         name.htmlFor = inputId;
+        const artUrl = verifiedResearchArt(tree);
+        if (artUrl) {
+          const art = createElement(state.root, 'img', 'boh-research-row__art');
+          art.src = artUrl;
+          art.alt = '';
+          art.loading = 'lazy';
+          art.decoding = 'async';
+          art.dataset.verifiedResearchArt = '';
+          append(name, art);
+        }
+        append(name, createElement(state.root, 'span', '', label));
         const input = createElement(state.root, 'input');
         input.id = inputId;
         input.type = 'number';
@@ -1225,14 +1881,20 @@ function hydrateForm(state) {
   updateInput(form, 'gameName', submission.gameName);
   updateInput(form, 'timezone', submission.timezone);
   for (const field of POWER_FIELDS) updateInput(form, field, submission.stats?.[field]);
-  updateInput(form, 'level50Heroes', submission.stats?.level50HeroCount);
   updateInput(form, 'rocLevel', submission.stats?.rocLevel);
   updateChecked(
     form,
-    't9Types',
-    submission.stats?.t9TroopTypes?.length ? submission.stats.t9TroopTypes : ['none']
+    't10Types',
+    submission.stats?.t10TroopTypes?.length === 3
+      ? ['cavalry', 'archers', 'footmen', 'all']
+      : submission.stats?.t10TroopTypes || submission.stats?.t9TroopTypes || []
   );
   updateChecked(form, 'speedHeroes', submission.stats?.readySpeedHeroes || []);
+  state.troopOcrRows = (submission.stats?.troopRoster || [])
+    .map(parseBohTroopInventoryRow)
+    .filter(Boolean);
+  const troopConfirmed = query(state.root, '[data-role="troop-ocr-confirmed"]');
+  if (troopConfirmed) troopConfirmed.checked = state.troopOcrRows.length > 0;
   updateChecked(form, 'usableHeroNames', submission.stats?.usableHeroNames || []);
   const researchProgress = submission.stats?.researchProgressPct || {};
   for (const input of queryAll(form, '[data-role="research-progress-input"]')) {
@@ -1243,11 +1905,8 @@ function hydrateForm(state) {
   updateChecked(form, 'availability', submission.commitment?.availability);
   updateChecked(form, 'fightingTimeIds', submission.commitment?.fightingTimeIds || []);
   updateInput(form, 'preferredRole', submission.commitment?.preferredRole || '');
-  updateInput(form, 'unavailableTimes', submission.commitment?.unavailableTimes);
+  updateInput(form, 'secondaryRole', submission.commitment?.secondaryRole || '');
   updateInput(form, 'preferredTeammates', (submission.preferredTeammates || []).join('\n'));
-  updateChecked(form, 'canTeleport', submission.commitment?.canTeleport ? ['on'] : []);
-  updateChecked(form, 'canUseVoice', submission.commitment?.canUseVoice ? ['on'] : []);
-  updateChecked(form, 'planCommitment', submission.commitment?.planCommitment ? ['on'] : []);
   updateInput(form, 'playerNotes', submission.commitment?.notes);
   setEntryMethod(state, submission.entryMethod);
   if (submission.entryMethod === 'ocr') {
@@ -1272,6 +1931,7 @@ function hydrateForm(state) {
   }
   state.hydratedRevision = revision;
   renderOcr(state);
+  renderTroopOcr(state);
   renderSignupPlanningControls(state);
 }
 
@@ -1425,7 +2085,7 @@ function renderOcrReviewAlert(state) {
   const alert = query(state.root, '[data-role="ocr-review-alert"]');
   setHidden(alert, !state.ocrReview);
   if (!alert || !state.ocrReview) return;
-  const missingCount = POWER_FIELDS.filter(
+  const missingCount = REQUIRED_POWER_FIELDS.filter(
     (field) => state.ocrReview.confirmedValues?.[field] === null
   ).length;
   const hasIssues = Object.values(state.ocrReview.fieldIssues || {}).some(
@@ -1526,6 +2186,208 @@ function renderOcr(state) {
     confirmation.disabled = Boolean(state.ocrReview && state.ocrReview.isComplete !== true);
     if (confirmation.disabled) confirmation.checked = false;
   }
+}
+
+function troopOcrCopy(state) {
+  return TROOP_OCR_COPY[signupWindowLocale(state.language)] || TROOP_OCR_COPY.en;
+}
+
+function localizeTroopOcr(state) {
+  const copy = troopOcrCopy(state);
+  const roles = [
+    'kicker',
+    'title',
+    'chip',
+    'description',
+    'example-top',
+    'example-lower',
+    'choose',
+    'file-hint',
+    'consent-label',
+    'process',
+    'remove',
+    'review-title',
+    'review-hint',
+    'confirm-label',
+  ];
+  roles.forEach((role, index) =>
+    setText(query(state.root, `[data-role="troop-ocr-${role}"]`), copy[index])
+  );
+}
+
+function troopRowSelect(state, index, field, values, selected, labels = values) {
+  const select = createElement(state.root, 'select', 'boh-input');
+  if (!select) return null;
+  select.dataset.role = 'troop-ocr-row-field';
+  select.dataset.index = String(index);
+  select.dataset.field = field;
+  values.forEach((value, optionIndex) => {
+    const option = createElement(state.root, 'option', '', labels[optionIndex]);
+    option.value = value;
+    option.selected = String(value) === String(selected ?? '');
+    select.append(option);
+  });
+  return select;
+}
+
+function renderTroopOcr(state) {
+  localizeTroopOcr(state);
+  const copy = troopOcrCopy(state);
+  const files = query(state.root, '[data-role="troop-ocr-file-list"]');
+  setHidden(files, state.troopOcrFiles.length === 0);
+  replaceChildren(
+    files,
+    ...state.troopOcrFiles.map((file, index) =>
+      createElement(state.root, 'span', 'boh-chip', `${index + 1}. ${file.name}`)
+    )
+  );
+  setBusy(
+    query(state.root, '[data-role="troop-ocr-process"]'),
+    state.troopOcrBusy || !state.troopOcrFiles.length
+  );
+  const review = query(state.root, '[data-role="troop-ocr-review"]');
+  setHidden(review, state.troopOcrRows.length === 0);
+  const rowsRoot = query(state.root, '[data-role="troop-ocr-rows"]');
+  const modeValues = ['', 'normal', 'enhanced'];
+  const modeLabels = [copy[18], copy[16], copy[17]];
+  const rows = state.troopOcrRows.map((row, index) => {
+    const container = createElement(state.root, 'div', 'boh-troop-review__row');
+    if (!container) return null;
+    if (row.needsReview) container.dataset.review = 'true';
+    const type = troopRowSelect(state, index, 'troopType', BOH_TROOP_TYPES, row.troopType, [
+      'Footmen',
+      'Cavalry',
+      'Archers',
+    ]);
+    const tier = troopRowSelect(state, index, 'tier', BOH_TROOP_TIERS, row.tier);
+    const mode = troopRowSelect(
+      state,
+      index,
+      'enhanced',
+      modeValues,
+      row.enhanced === true ? 'enhanced' : row.enhanced === false ? 'normal' : '',
+      modeLabels
+    );
+    const count = createElement(state.root, 'input', 'boh-input');
+    count.type = 'number';
+    count.min = '0';
+    count.max = '1000000000';
+    count.inputMode = 'numeric';
+    count.value = row.count ?? '';
+    count.placeholder = copy[19];
+    count.dataset.role = 'troop-ocr-row-field';
+    count.dataset.index = String(index);
+    count.dataset.field = 'count';
+    const name = createElement(
+      state.root,
+      'span',
+      'boh-troop-review__name',
+      row.unitName || `#${index + 1}`
+    );
+    append(container, name, type, tier, mode, count);
+    const serialized = serializeBohTroopInventoryRow(row);
+    if (serialized) {
+      const hidden = createElement(state.root, 'input');
+      hidden.type = 'hidden';
+      hidden.name = 'troopRoster';
+      hidden.value = serialized;
+      container.append(hidden);
+    }
+    return container;
+  });
+  replaceChildren(rowsRoot, ...rows);
+  const confirmation = query(state.root, '[data-role="troop-ocr-confirmed"]');
+  if (confirmation) {
+    confirmation.disabled = state.troopOcrRows.some((row) => !serializeBohTroopInventoryRow(row));
+    if (confirmation.disabled) confirmation.checked = false;
+  }
+}
+
+function clearTroopOcr(state) {
+  state.troopOcrFiles = [];
+  state.troopOcrRows = [];
+  state.troopOcrWarnings = [];
+  const input = query(state.root, '[data-role="troop-ocr-file-input"]');
+  if (input) input.value = '';
+  setText(query(state.root, '[data-role="troop-ocr-status"]'), '');
+  renderTroopOcr(state);
+}
+
+function selectTroopOcrFiles(state, files) {
+  const selected = Array.from(files || []).slice(0, 4);
+  if (!selected.length) return clearTroopOcr(state);
+  for (const file of selected) {
+    if (!/^image\/(?:png|jpeg|webp)$/u.test(file.type) || file.size > 10 * 1024 * 1024) {
+      throw new TypeError(
+        'Use up to four PNG, JPG, or WebP troop screenshots, 10 MB each or smaller.'
+      );
+    }
+  }
+  state.troopOcrFiles = selected;
+  state.troopOcrRows = [];
+  state.troopOcrWarnings = [];
+  renderTroopOcr(state);
+}
+
+async function processTroopOcr(state) {
+  if (!state.troopOcrFiles.length)
+    throw new TypeError('Choose at least one Troop Details screenshot.');
+  if (!query(state.root, '[data-role="troop-ocr-consent"]')?.checked) {
+    throw new TypeError('Confirm the troop OCR processing notice first.');
+  }
+  const prepare = state.ocr.prepareBohStatsScreenshot || state.ocr.prepareScreenshot;
+  const transport = state.ocr.process || state.ocr.recognize || state.ocr.request;
+  if (typeof prepare !== 'function' || typeof transport !== 'function')
+    throw new TypeError('Troop OCR is not available.');
+  state.troopOcrBusy = true;
+  renderTroopOcr(state);
+  const detected = [];
+  const warnings = [];
+  try {
+    for (let index = 0; index < state.troopOcrFiles.length; index += 1) {
+      setText(
+        query(state.root, '[data-role="troop-ocr-status"]'),
+        signupWindowTemplate(troopOcrCopy(state)[14], {
+          current: index + 1,
+          total: state.troopOcrFiles.length,
+        })
+      );
+      const prepared = await prepare(state.troopOcrFiles[index]);
+      const request = buildBohTroopOcrRequest({
+        seasonId: state.store?.seasonId || state.options.seasonId,
+        imageData: prepared.imageData,
+      });
+      const response = await transport(request);
+      const parsed = parseBohTroopOcrResult(response?.result || response);
+      detected.push(...parsed.rows);
+      warnings.push(...parsed.warnings);
+    }
+    state.troopOcrRows = mergeBohTroopOcrRows(detected);
+    state.troopOcrWarnings = warnings;
+    const confirmed = query(state.root, '[data-role="troop-ocr-confirmed"]');
+    if (confirmed) confirmed.checked = false;
+    setText(
+      query(state.root, '[data-role="troop-ocr-status"]'),
+      signupWindowTemplate(troopOcrCopy(state)[15], { count: state.troopOcrRows.length })
+    );
+  } finally {
+    state.troopOcrBusy = false;
+    renderTroopOcr(state);
+  }
+}
+
+function updateTroopOcrRow(state, target) {
+  const index = Number(target.dataset.index);
+  const field = target.dataset.field;
+  if (!Number.isInteger(index) || !state.troopOcrRows[index]) return;
+  const row = { ...state.troopOcrRows[index] };
+  if (field === 'enhanced')
+    row.enhanced = target.value === 'enhanced' ? true : target.value === 'normal' ? false : null;
+  else if (field === 'count') row.count = /^\d+$/u.test(target.value) ? Number(target.value) : null;
+  else row[field] = target.value;
+  row.needsReview = !serializeBohTroopInventoryRow(row);
+  state.troopOcrRows[index] = row;
+  renderTroopOcr(state);
 }
 
 function currentTeam(state) {
@@ -2184,9 +3046,11 @@ function renderEpicPreferences(state) {
 
 function render(state) {
   if (state.destroyed) return;
+  renderSignupWindow(state);
   activateSection(state, state.section);
   setEntryMethod(state, state.entryMethod);
   renderSignupPlanningControls(state);
+  renderTroopOcr(state);
   renderSubmissionState(state);
   renderPublicationStates(state);
   renderEpicPreferences(state);
@@ -2308,16 +3172,34 @@ function formDataFor(form) {
 function focusErrorField(state, field) {
   const selectors = {
     ocrValuesConfirmed: '[data-role="ocr-values-confirmed"]',
-    t9Types: '[name="t9Types"]',
+    troopOcrConfirmed: '[data-role="troop-ocr-confirmed"]',
+    t10Types: '[name="t10Types"]',
     fightingTimeIds: '[name="fightingTimeIds"]',
   };
-  query(state.root, selectors[field] || `[name="${field}"]`)?.focus?.();
+  const target = query(state.root, selectors[field] || `[name="${field}"]`);
+  target?.focus?.({ preventScroll: true });
+  target?.scrollIntoView?.({
+    behavior: ownerWindow(state.root)?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+      ? 'auto'
+      : 'smooth',
+    block: 'center',
+  });
 }
 
 async function submitSignup(state, form) {
   if (!state.store?.saveSubmission)
     throw new TypeError('Member access is required before submitting.');
-  if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
+  form.dataset.validationAttempted = 'true';
+  if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+    const firstInvalid = query(form, ':invalid');
+    firstInvalid?.scrollIntoView?.({
+      behavior: ownerWindow(state.root)?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+        ? 'auto'
+        : 'smooth',
+      block: 'center',
+    });
+    return;
+  }
   let data = formDataFor(form);
   if (state.entryMethod === 'ocr' && state.ocrReview) {
     const corrections = Object.fromEntries(
@@ -2540,6 +3422,18 @@ async function handleClick(state, event) {
     }
     return;
   }
+  if (target.matches?.('[data-role="troop-ocr-remove"]')) {
+    clearTroopOcr(state);
+    return;
+  }
+  if (target.matches?.('[data-role="troop-ocr-process"]')) {
+    try {
+      await processTroopOcr(state);
+    } catch (error) {
+      reportError(state, error, { action: 'process-troop-ocr' });
+    }
+    return;
+  }
   if (target.matches?.('.boh-team-summary')) {
     state.selectedTeamId = target.dataset.teamId;
     renderTeamDetail(state, state.selectedTeamId);
@@ -2557,6 +3451,20 @@ function handleChange(state, event) {
   if (target.matches?.('[data-role="hero-troop-filter"], [data-role="hero-season-filter"]')) {
     renderHeroCatalogStatus(state);
     return;
+  }
+  if (target.matches?.('[data-role="field-preferred-role"], [data-role="field-secondary-role"]')) {
+    const primary = query(state.root, '[data-role="field-preferred-role"]');
+    const secondary = query(state.root, '[data-role="field-secondary-role"]');
+    if (primary && secondary) {
+      for (const option of secondary.options || []) {
+        option.disabled = Boolean(primary.value) && option.value === primary.value;
+      }
+      secondary.setCustomValidity?.(
+        secondary.value && secondary.value === primary.value
+          ? state.tr('signup.secondaryRoleDifferent', 'Choose a different secondary role.')
+          : ''
+      );
+    }
   }
   if (target.matches?.('[name="fightingTimeIds"]')) {
     const count = queryAll(state.root, '[name="fightingTimeIds"]:checked').length;
@@ -2577,13 +3485,21 @@ function handleChange(state, event) {
       clearOcrFile(state);
       reportError(state, error, { action: 'select-ocr-file' });
     }
-  } else if (target.matches?.('[data-role="t9-none"]') && target.checked) {
-    for (const input of queryAll(state.root, '[name="t9Types"]')) {
-      if (input !== target) input.checked = false;
+  } else if (target.matches?.('[data-role="troop-ocr-file-input"]')) {
+    try {
+      selectTroopOcrFiles(state, target.files);
+    } catch (error) {
+      clearTroopOcr(state);
+      reportError(state, error, { action: 'select-troop-ocr-files' });
     }
-  } else if (target.matches?.('[name="t9Types"]:not([data-role="t9-none"])') && target.checked) {
-    const none = query(state.root, '[data-role="t9-none"]');
-    if (none) none.checked = false;
+  } else if (target.matches?.('[data-role="troop-ocr-row-field"]')) {
+    updateTroopOcrRow(state, target);
+  } else if (target.matches?.('[data-role="t10-all"]')) {
+    for (const input of queryAll(state.root, '[name="t10Types"]')) input.checked = target.checked;
+  } else if (target.matches?.('[name="t10Types"]:not([data-role="t10-all"])')) {
+    const types = queryAll(state.root, '[name="t10Types"]:not([data-role="t10-all"])');
+    const all = query(state.root, '[data-role="t10-all"]');
+    if (all) all.checked = types.every((input) => input.checked);
   } else if (target.matches?.('[name="bohLegion"]')) {
     state.selectedLegionId = target.value;
     renderPlan(state);
@@ -2834,6 +3750,7 @@ export function initializeAllStarBoh(options = {}) {
   const state = initialState(options);
   bindEvents(state);
   startSubscriptions(state);
+  startSignupWindowTimer(state);
   render(state);
   refreshState(state).catch((error) => reportError(state, error, { action: 'refresh' }));
 
@@ -2842,6 +3759,7 @@ export function initializeAllStarBoh(options = {}) {
       if (state.destroyed) return;
       state.destroyed = true;
       state.eventsAbort.abort();
+      stopSignupWindowTimer(state);
       unsubscribeAll(state);
       revokePreview(state);
       state.store?.stop?.();

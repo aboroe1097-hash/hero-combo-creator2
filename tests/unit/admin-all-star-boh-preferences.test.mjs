@@ -355,7 +355,7 @@ test('admin preference signals never feed automatic balance or assignment logic'
   const signupTableFunction = source.slice(signupTableStart, signupTableEnd);
   assert.doesNotMatch(
     signupTableFunction,
-    /adminBohUsableHeroes|adminBohResearchProgress|adminBohFightingTimes|adminBohFavoriteRole/u
+    /adminBohUsableHeroes|adminBohResearchProgress|adminBohFightingTimes|adminBohPrimaryRole|adminBohSecondaryRole/u
   );
   assert.match(source, /They do not change scores or lock assignments\./u);
   assert.match(source, /adapterNotify\(state, false\)/u);

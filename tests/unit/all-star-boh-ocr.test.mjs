@@ -296,6 +296,33 @@ test('response parsing normalizes values and flags missing and low-confidence fi
   assert.equal(parsed.requiresReview, true);
 });
 
+test('six-row screenshots stay complete while optional extra power rows are preserved', () => {
+  const sixRow = parseBohStatsOcrResult(response());
+  assert.deepEqual(sixRow.missingFields, []);
+  assert.equal(sixRow.extracted.unitSpecialtyPower, null);
+  assert.equal(sixRow.extracted.artifactPower, null);
+  assert.equal(sixRow.extracted.royalTechPower, null);
+
+  const extended = parseBohStatsOcrResult(
+    response({
+      extracted: {
+        unitSpecialtyPower: '6,485,660',
+        artifactPower: '1,567,700',
+        royalTechPower: '11,898,587',
+      },
+      confidence: {
+        unitSpecialtyPower: 0.92,
+        artifactPower: 0.91,
+        royalTechPower: 0.9,
+      },
+    })
+  );
+  assert.deepEqual(extended.missingFields, []);
+  assert.equal(extended.extracted.unitSpecialtyPower, 6_485_660);
+  assert.equal(extended.extracted.artifactPower, 1_567_700);
+  assert.equal(extended.extracted.royalTechPower, 11_898_587);
+});
+
 test('response parsing rejects malformed contracts and unsafe extracted values', () => {
   assert.throws(() => parseBohStatsOcrResult(null), hasCode('invalid_response'));
 

@@ -17,10 +17,8 @@ const GATE_FALLBACKS = Object.freeze({
   pinLabel: 'Member PIN',
   pinHint: 'The PIN is checked securely and is never saved on this device.',
   unlock: 'Unlock hub',
-  cancel: 'Not now',
   checking: 'Checking your secure member access...',
   busy: 'Confirming member access...',
-  canceled: 'The All-Star hub remains locked.',
   expired: 'Your member access expired. Enter the current PIN to unlock it again.',
   invalidPin: 'Enter the current member PIN.',
   denied: 'That PIN did not match. Check it and try again.',
@@ -164,10 +162,7 @@ export function createAllStarBohAccessGate(options = {}) {
   const submit = element(documentRef, 'button', 'boh-button boh-button--primary');
   submit.type = 'submit';
   submit.dataset.role = 'boh-access-submit';
-  const cancel = element(documentRef, 'button', 'boh-button boh-button--quiet');
-  cancel.type = 'button';
-  cancel.dataset.role = 'boh-access-cancel';
-  append(actions, submit, cancel);
+  append(actions, submit);
   append(form, field, feedback, actions);
   append(card, form);
   append(container, hero, card);
@@ -176,7 +171,6 @@ export function createAllStarBohAccessGate(options = {}) {
   let locale = normalizeLocale(options.locale || currentLocale(documentRef));
   let copy = {};
   let unlockHandler = null;
-  let cancelHandler = null;
   let state = 'checking';
   let lastError = null;
 
@@ -189,10 +183,8 @@ export function createAllStarBohAccessGate(options = {}) {
       pinLabel: accessText(catalog, 'PinLabel', GATE_FALLBACKS.pinLabel, 'adminEdenVotesPinLabel'),
       pinHint: accessText(catalog, 'PinHint', GATE_FALLBACKS.pinHint),
       unlock: accessText(catalog, 'Unlock', GATE_FALLBACKS.unlock, 'adminEdenVotesPinUnlock'),
-      cancel: accessText(catalog, 'Cancel', GATE_FALLBACKS.cancel, 'adminCancel'),
       checking: accessText(catalog, 'Checking', GATE_FALLBACKS.checking),
       busy: accessText(catalog, 'Busy', GATE_FALLBACKS.busy),
-      canceled: accessText(catalog, 'Canceled', GATE_FALLBACKS.canceled),
       expired: accessText(catalog, 'Expired', GATE_FALLBACKS.expired),
       invalidPin: accessText(catalog, 'ErrorInvalidPin', GATE_FALLBACKS.invalidPin),
       denied: accessText(catalog, 'ErrorDenied', GATE_FALLBACKS.denied, 'adminEdenVotesPinError'),
@@ -208,7 +200,6 @@ export function createAllStarBohAccessGate(options = {}) {
     description.textContent = copy.description;
     pinLabel.textContent = copy.pinLabel;
     pinHint.textContent = copy.pinHint;
-    cancel.textContent = copy.cancel;
   }
 
   function render() {
@@ -216,7 +207,6 @@ export function createAllStarBohAccessGate(options = {}) {
     const busy = state === 'checking' || state === 'busy';
     input.disabled = busy;
     submit.disabled = busy;
-    cancel.disabled = state === 'busy';
     submit.setAttribute('aria-busy', String(state === 'busy'));
     submit.textContent = state === 'busy' ? copy.busy : copy.unlock;
     feedback.dataset.tone = state === 'error' || state === 'expired' ? 'error' : 'neutral';
@@ -225,7 +215,6 @@ export function createAllStarBohAccessGate(options = {}) {
     feedback.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
     if (state === 'checking') feedback.textContent = copy.checking;
     else if (state === 'busy') feedback.textContent = copy.busy;
-    else if (state === 'canceled') feedback.textContent = copy.canceled;
     else if (state === 'expired') feedback.textContent = copy.expired;
     else if (state === 'error') feedback.textContent = gateErrorMessage(lastError, copy);
     else feedback.textContent = '';
@@ -238,18 +227,12 @@ export function createAllStarBohAccessGate(options = {}) {
     input.value = '';
     await unlockHandler?.(pin);
   });
-  cancel.addEventListener('click', () => {
-    input.value = '';
-    cancelHandler?.();
-  });
-
   updateCopy();
   render();
 
   return Object.freeze({
     setHandlers(handlers = {}) {
       unlockHandler = typeof handlers.unlock === 'function' ? handlers.unlock : null;
-      cancelHandler = typeof handlers.cancel === 'function' ? handlers.cancel : null;
     },
     setLocale(value) {
       locale = normalizeLocale(value);
@@ -270,12 +253,6 @@ export function createAllStarBohAccessGate(options = {}) {
     },
     showBusy() {
       state = 'busy';
-      lastError = null;
-      container.hidden = false;
-      render();
-    },
-    showCanceled() {
-      state = 'canceled';
       lastError = null;
       container.hidden = false;
       render();
@@ -301,7 +278,6 @@ export function createAllStarBohAccessGate(options = {}) {
     destroy() {
       input.value = '';
       unlockHandler = null;
-      cancelHandler = null;
       container.remove();
     },
   });
@@ -585,14 +561,7 @@ export async function bootAllStarBohTab(options = {}) {
     }
   }
 
-  function cancel() {
-    if (destroyed || busy) return;
-    unmountDomain();
-    concealBohRoot(root);
-    gate.showCanceled();
-  }
-
-  gate.setHandlers({ unlock, cancel });
+  gate.setHandlers({ unlock });
   gate.showChecking();
 
   const languageHandler = async (event) => {

@@ -29,6 +29,12 @@ import {
   resolveSpecializationTowersV2Locale,
   getSpecializationTowersV2Direction,
 } from './i18n/specialization-towers-v2/index.js';
+import {
+  specializationDisplayText,
+  localizeSpecializationEffect,
+  localizeSpecializationNodeName,
+  localizeSpecializationResearchName,
+} from './i18n/specialization-towers-v2/display.js';
 
 const UI_TROOPS = ['cavalry', 'archer', 'footman'];
 const TROOP_ICON = { cavalry: '🐴', archer: '🏹', footman: '🛡️' };
@@ -52,15 +58,13 @@ const NODE_ICON = [
 
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
 
-// Honored contributors — extend this list as the community grows.
-const ACKNOWLEDGMENTS = Object.freeze(['Ptr', 'Old.Faithful', 'Raven G']);
-
 let root = null;
 let state = null;
 let activeTroop = 'cavalry';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
 let selectedNodeId = null;
+let selectedLegionColumnId = null;
 let wired = false;
 
 function contributionNodeKey(researchId, nodeId) {
@@ -112,6 +116,10 @@ function sp(key, vars = {}) {
   return specializationTowersV2Text(key, vars, locale());
 }
 
+function sd(key, vars = {}) {
+  return specializationDisplayText(locale(), key, vars);
+}
+
 function fmt(value) {
   const loc = locale();
   return new Intl.NumberFormat(loc === 'kr' ? 'ko' : loc).format(Number(value) || 0);
@@ -140,8 +148,19 @@ function seasonLabel(value) {
 }
 
 function researchName(research) {
-  if (/^Training\b/u.test(research.name)) return `${troopLabel(activeTroop)} ${research.name}`;
-  return research.name;
+  return localizeSpecializationResearchName(locale(), research.name, troopLabel(activeTroop));
+}
+
+function columnLabel(columnId) {
+  return sd('columnLabel', { number: columnId });
+}
+
+function nodeName(name) {
+  return localizeSpecializationNodeName(locale(), name);
+}
+
+function effectText(effect) {
+  return localizeSpecializationEffect(locale(), effect);
 }
 
 function persist() {
@@ -202,7 +221,7 @@ function renderBadge(researchId) {
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
         <span class="spec-badge-pct">${pct(progress.percent)}%</span>
       </button>
-      <button type="button" class="spec-badge-max" data-spec-quick-max="${researchId}" aria-label="${escapeHtml(`${sp('completeLearning')}: ${researchName(research)}`)}" title="${escapeHtml(sp('completeLearning'))}" ${progress.isComplete ? 'disabled' : ''}>${escapeHtml(sp('quickMax'))}</button>
+      <button type="button" class="spec-badge-max${progress.isComplete ? ' is-unmax' : ''}" data-spec-quick-set="${progress.isComplete ? 'reset' : 'complete'}" data-spec-research-id="${researchId}" aria-label="${escapeHtml(`${progress.isComplete ? sp('resetLearning') : sp('completeLearning')}: ${researchName(research)}`)}" title="${escapeHtml(progress.isComplete ? sp('resetLearning') : sp('completeLearning'))}">${escapeHtml(progress.isComplete ? sd('quickUnmax') : sp('quickMax'))}</button>
     </div>`;
 }
 
@@ -210,9 +229,13 @@ function renderBanner(columnId) {
   const column = SPECIALIZATION_COLUMNS[columnId];
   const colProgress = getColumnProgress(state, activeTroop, columnId);
   const unlocked = colProgress.legionSkillUnlocked;
-  const skillName = unlocked && colProgress.legionSkill ? colProgress.legionSkill.name : '';
+  const skill = unlocked ? colProgress.legionSkill : null;
+  const skillName = skill?.name || '';
+  const skillTip = unlocked
+    ? `${skillName}${skill?.desc ? ` — ${skill.desc}` : ''}`
+    : sd('legionLockedHint');
   return `
-    <section class="spec-banner" aria-label="${escapeHtml(column.name)}">
+    <section class="spec-banner" aria-label="${escapeHtml(columnLabel(columnId))}">
       <header class="spec-banner-head">
         <span class="spec-banner-num">${columnId}</span>
         <span class="spec-banner-season">${escapeHtml(seasonLabel(column.unlockSeason))}</span>
@@ -220,10 +243,29 @@ function renderBanner(columnId) {
       <div class="spec-banner-badges">
         ${column.researches.map(renderBadge).join('')}
       </div>
-      <button type="button" class="spec-crest ${unlocked ? 'is-unlocked' : 'is-locked'}" data-spec-legion="${columnId}" ${unlocked ? '' : 'disabled'} title="${escapeHtml(sp('legionSkills'))}">
+      <button type="button" class="spec-crest ${unlocked ? 'is-unlocked' : 'is-locked'}" data-spec-legion="${columnId}" ${unlocked ? `aria-expanded="${selectedLegionColumnId === columnId}" aria-controls="spec-legion-inspector"` : 'disabled aria-disabled="true"'} title="${escapeHtml(skillTip)}">
         <span class="spec-crest-emblem" aria-hidden="true">${unlocked ? '🏅' : '🔒'}</span>
         <span class="spec-crest-name">${escapeHtml(skillName || sp('legionSkills'))}</span>
       </button>
+    </section>`;
+}
+
+function renderLegionSkillInspector() {
+  if (!selectedLegionColumnId) return '';
+  const progress = getColumnProgress(state, activeTroop, selectedLegionColumnId);
+  const skill = progress.legionSkillUnlocked ? progress.legionSkill : null;
+  if (!skill) return '';
+  return `
+    <section id="spec-legion-inspector" class="spec-legion-inspector" tabindex="-1" aria-live="polite">
+      <span class="spec-legion-inspector-icon" aria-hidden="true">🏅</span>
+      <div class="spec-legion-inspector-copy">
+        <span class="spec-node-inspector-kicker">${escapeHtml(sd('legionPreview'))} · ${escapeHtml(columnLabel(selectedLegionColumnId))}</span>
+        <h4>${escapeHtml(skill.name)}</h4>
+        <p><strong>${escapeHtml(sp('nodeBuffLabel'))}</strong> ${escapeHtml(skill.desc || sp('nodeBuffUnknown'))}</p>
+        ${locale() === 'en' ? '' : `<small>${escapeHtml(sp('canonicalEnglishBadge'))}</small>`}
+      </div>
+      <span class="spec-legion-unlocked">${escapeHtml(sd('legionUnlocked'))}</span>
+      <button type="button" class="spec-legion-close" data-spec-close-legion aria-label="${escapeHtml(sd('closePreview'))}">×</button>
     </section>`;
 }
 
@@ -239,27 +281,32 @@ function renderCommunity() {
       </div>
       <span class="spec-contrib-count">${escapeHtml(sp('communityNodesWithData', { count: contributionCount(data) }))}</span>
       <div class="spec-contrib-nodes">
-        ${columns.map((col) => {
-          const colResearches = col.researches.map((rid) => SPECIALIZATION_RESEARCH[rid]).filter(Boolean);
-          if (!colResearches.length) return '';
-          return `<details class="spec-contrib-column">
-            <summary><strong>${escapeHtml(col.name)}</strong></summary>
-            ${colResearches.map((research) => {
-              const rowData = rows.filter((r) => r[3] === research.id);
-              if (!rowData.length) return '';
-              return `<section class="spec-contrib-research">
-                <h5>${escapeHtml(research.name)}</h5>
-                ${rowData.map((row) => {
-                  const nodePosition = row[5];
-                  const nodeId = row[6];
-                  const nodeName = row[7];
-                  const nodeEffect = row[8];
-                  const nodeKey = contributionNodeKey(research.id, nodeId);
-                  const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
-                  return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
+        ${columns
+          .map((col) => {
+            const colResearches = col.researches
+              .map((rid) => SPECIALIZATION_RESEARCH[rid])
+              .filter(Boolean);
+            if (!colResearches.length) return '';
+            return `<details class="spec-contrib-column">
+            <summary><strong>${escapeHtml(columnLabel(col.id))}</strong></summary>
+            ${colResearches
+              .map((research) => {
+                const rowData = rows.filter((r) => r[3] === research.id);
+                if (!rowData.length) return '';
+                return `<section class="spec-contrib-research">
+                <h5>${escapeHtml(researchName(research))}</h5>
+                ${rowData
+                  .map((row) => {
+                    const nodePosition = row[5];
+                    const nodeId = row[6];
+                    const nodeLabel = row[7];
+                    const nodeEffect = row[8];
+                    const nodeKey = contributionNodeKey(research.id, nodeId);
+                    const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
+                    return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
                     <div class="spec-contrib-node-identity">
                       <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon(nodeEffect)}</span>
-                      <span><small>#${fmt(nodePosition)}</small><strong>${escapeHtml(nodeName)}</strong>${nodeEffect ? `<em>${escapeHtml(nodeEffect)}</em>` : ''}</span>
+                      <span><small>#${fmt(nodePosition)}</small><strong>${escapeHtml(nodeName(nodeLabel))}</strong>${nodeEffect ? `<em>${escapeHtml(effectText(nodeEffect))}</em>` : ''}</span>
                     </div>
                     <fieldset class="spec-contrib-stage">
                       <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
@@ -281,17 +328,20 @@ function renderCommunity() {
                       </label>
                     </fieldset>
                   </div>`;
-                }).join('')}
+                  })
+                  .join('')}
               </section>`;
-            }).join('')}
+              })
+              .join('')}
           </details>`;
-        }).join('')}
+          })
+          .join('')}
       </div>
     </section>`;
 }
 
 function renderAcknowledgments() {
-  const plates = ['VTS 1097 Community', ...ACKNOWLEDGMENTS];
+  const plates = ['VTS 1097 Community'];
   return `
     <section class="spec-ack" aria-labelledby="spec-ack-title">
       <div class="spec-ack-rule" aria-hidden="true"><span class="spec-ack-seal">🏅</span></div>
@@ -302,7 +352,10 @@ function renderAcknowledgments() {
       <ul class="spec-ack-plates" role="list">
         ${plates
           .map(
-            (name, index) => `<li class="spec-ack-plate${index === 0 ? ' spec-ack-plate--lead' : ''}" style="--i:${index}">
+            (
+              name,
+              index
+            ) => `<li class="spec-ack-plate${index === 0 ? ' spec-ack-plate--lead' : ''}" style="--i:${index}">
               <span class="spec-ack-plate-crest" aria-hidden="true">${index === 0 ? '🛡️' : '◆'}</span>
               <span class="spec-ack-plate-name">${escapeHtml(name)}</span>
             </li>`
@@ -322,6 +375,7 @@ function renderOverview(summary) {
         .map((id) => renderBanner(Number(id)))
         .join('')}
     </div>
+    ${renderLegionSkillInspector()}
     ${renderCommunity()}
     ${renderAcknowledgments()}`;
 }
@@ -353,8 +407,10 @@ function nodeButton(research, entry, x, y) {
   const node = resolveNode(research, entry);
   const disabled = entry.state === 'hidden';
   const selected = entry.nodeId === selectedNodeId;
-  const tip = `${escapeHtml(node.name)}${node.effect ? ' — ' + escapeHtml(node.effect) : ''}`;
-  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-selected="${selected}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector" aria-pressed="${entry.state === 'learned'}"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
+  const localizedName = nodeName(node.name);
+  const localizedEffect = effectText(node.effect);
+  const tip = `${escapeHtml(localizedName)}${localizedEffect ? ' — ' + escapeHtml(localizedEffect) : ''}`;
+  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-selected="${selected}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}${selected ? 'aria-current="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
 }
 
 // Enhanced Tactics is a small dependency tree in-game; everything else is a
@@ -489,18 +545,22 @@ function renderSelectedNode(research, access) {
   const knownMedals = saved.reviewedMedalCost ?? saved.medalCost ?? null;
   const learned = entry.state === 'learned';
   const canToggle = learned || entry.selectable;
+  const position = access.entries.findIndex((candidate) => candidate.nodeId === entry.nodeId) + 1;
   return `
     <section id="spec-node-inspector" class="spec-node-inspector" data-state="${entry.state}" aria-live="polite">
       <div class="spec-node-inspector-icon" aria-hidden="true">${nodeIcon(node.effect)}</div>
       <div class="spec-node-inspector-copy">
-        <span class="spec-node-inspector-kicker">${escapeHtml(sp('selectedLearning'))}</span>
-        <h4>${escapeHtml(node.name)}</h4>
-        <div class="spec-node-inspector-buff"><span>${escapeHtml(sp('nodeBuffLabel'))}</span><strong>${escapeHtml(node.effect || sp('nodeBuffUnknown'))}</strong></div>
+        <span class="spec-node-inspector-kicker">${escapeHtml(sp('selectedLearning'))} · ${escapeHtml(sd('nodePosition', { current: position, total: access.entries.length }))}</span>
+        <h4>${escapeHtml(nodeName(node.name))}</h4>
+        <div class="spec-node-inspector-buff"><span>${escapeHtml(sp('nodeBuffLabel'))}</span><strong>${escapeHtml(effectText(node.effect) || sp('nodeBuffUnknown'))}</strong></div>
       </div>
-      <div class="spec-node-inspector-state">
-        <span class="spec-node-state-pill">${escapeHtml(sp(learned ? 'nodeLearned' : 'nodeNotLearned'))}</span>
-        <button type="button" class="spec-btn spec-node-toggle" data-spec-toggle-selected-node ${canToggle ? '' : 'disabled aria-disabled="true"'}>${escapeHtml(sp(learned ? 'markNodeUnlearned' : 'markNodeLearned'))}</button>
-      </div>
+      <fieldset class="spec-node-inspector-state">
+        <legend>${escapeHtml(sd('learningStatus'))}</legend>
+        <div class="spec-node-state-options">
+          <button type="button" data-spec-set-selected-node="unlearned" aria-pressed="${!learned}">${escapeHtml(sp('nodeNotLearned'))}</button>
+          <button type="button" data-spec-set-selected-node="learned" aria-pressed="${learned}" ${canToggle ? '' : 'disabled aria-disabled="true"'}>${escapeHtml(sp('nodeLearned'))}</button>
+        </div>
+      </fieldset>
       <div class="spec-node-medal-status${knownMedals === null ? ' is-unknown' : ''}">
         <span class="spec-node-info" aria-hidden="true">i</span>
         <p>${knownMedals === null ? escapeHtml(sp('nodeMedalHelp')) : `${escapeHtml(sp('communityMedalCost'))}: <strong>${fmt(knownMedals)}</strong>`}</p>
@@ -520,7 +580,7 @@ function renderMilestones(research) {
         ${milestones
           .map((m) => {
             const done = progress.completedNodes * 100 >= Number(m.percent) * progress.totalNodes;
-            return `<li data-status="${done ? 'done' : 'todo'}"><span class="spec-milestone-pct">${m.percent}%</span><span class="spec-milestone-effect">${escapeHtml(m.effect)}</span><span aria-hidden="true">${done ? '✓' : '○'}</span></li>`;
+            return `<li data-status="${done ? 'done' : 'todo'}"><span class="spec-milestone-pct">${m.percent}%</span><span class="spec-milestone-effect">${escapeHtml(effectText(m.effect))}</span><span aria-hidden="true">${done ? '✓' : '○'}</span></li>`;
           })
           .join('')}
       </ol>
@@ -541,9 +601,10 @@ function renderDetail() {
         <button type="button" class="spec-back" data-spec-back aria-label="${escapeHtml(sp('back'))}">‹</button>
         <div class="spec-detail-title">
           <h3>${escapeHtml(researchName(research))}</h3>
-          <span>${escapeHtml(column.name)} · ${escapeHtml(seasonLabel(column.unlockSeason))} · ${escapeHtml(sp('nodeLevel', { current: progress.completedNodes, maximum: progress.totalNodes }))}</span>
+          <span>${escapeHtml(columnLabel(column.id))} · ${escapeHtml(seasonLabel(column.unlockSeason))} · ${escapeHtml(sp('nodeLevel', { current: progress.completedNodes, maximum: progress.totalNodes }))}</span>
         </div>
       </header>
+      <div class="spec-node-guide"><strong>${escapeHtml(sd('chooseNodeTitle'))}</strong><span>${escapeHtml(sd('chooseNodeHint'))}</span></div>
       ${renderNodeGraph(research, access)}
       ${renderSelectedNode(research, access)}
       <section class="spec-detail-section spec-medal-field">
@@ -621,6 +682,7 @@ function onClick(event) {
   const troopBtn = event.target.closest('[data-spec-troop]');
   if (troopBtn) {
     activeTroop = troopBtn.dataset.specTroop;
+    selectedLegionColumnId = null;
     render();
     return;
   }
@@ -633,26 +695,58 @@ function onClick(event) {
     backToOverview();
     return;
   }
-  const quickMax = event.target.closest('[data-spec-quick-max]');
-  if (quickMax && !quickMax.disabled) {
-    completeResearch(quickMax.dataset.specQuickMax);
+  const quickSet = event.target.closest('[data-spec-quick-set]');
+  if (quickSet) {
+    const researchId = quickSet.dataset.specResearchId;
+    if (quickSet.dataset.specQuickSet === 'reset') {
+      state = resetResearch(state, activeTroop, researchId);
+      selectedLegionColumnId = null;
+      persist();
+    } else {
+      completeResearch(researchId);
+    }
     render();
+    return;
+  }
+  const legion = event.target.closest('[data-spec-legion]');
+  if (legion && !legion.disabled) {
+    const columnId = Number(legion.dataset.specLegion);
+    selectedLegionColumnId = selectedLegionColumnId === columnId ? null : columnId;
+    render();
+    (selectedLegionColumnId
+      ? root?.querySelector('#spec-legion-inspector')
+      : root?.querySelector(`[data-spec-legion="${columnId}"]`)
+    )?.focus({ preventScroll: true });
+    return;
+  }
+  if (event.target.closest('[data-spec-close-legion]')) {
+    const columnId = selectedLegionColumnId;
+    selectedLegionColumnId = null;
+    render();
+    root?.querySelector(`[data-spec-legion="${columnId}"]`)?.focus({ preventScroll: true });
     return;
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
   if (nodeBtn && !nodeBtn.disabled && selectedResearchId) {
     selectedNodeId = Number(nodeBtn.dataset.specNode);
     render();
-    root
-      ?.querySelector(`[data-spec-node="${selectedNodeId}"]`)
-      ?.focus({ preventScroll: true });
+    root?.querySelector(`[data-spec-node="${selectedNodeId}"]`)?.focus({ preventScroll: true });
     return;
   }
-  if (event.target.closest('[data-spec-toggle-selected-node]') && selectedResearchId) {
-    state = toggleResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
-    persist();
-    render();
-    root?.querySelector('[data-spec-toggle-selected-node]')?.focus({ preventScroll: true });
+  const nodeState = event.target.closest('[data-spec-set-selected-node]');
+  if (nodeState && selectedResearchId) {
+    const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+    const learned =
+      access.entries.find((entry) => entry.nodeId === selectedNodeId)?.state === 'learned';
+    const wantsLearned = nodeState.dataset.specSetSelectedNode === 'learned';
+    if (learned !== wantsLearned) {
+      state = toggleResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
+      persist();
+      render();
+    }
+    root
+      ?.querySelector(`[data-spec-set-selected-node="${wantsLearned ? 'learned' : 'unlearned'}"]`)
+      ?.focus({ preventScroll: true });
     return;
   }
   if (event.target.closest('[data-spec-help-node]') && selectedResearchId) {
@@ -694,8 +788,7 @@ function onChange(event) {
     const nodeId = medalInput.dataset.specNodeMedal;
     const raw = medalInput.value.trim();
     const data = loadContributions();
-    contributionRecord(data, nodeId).medalCost =
-      raw === '' ? null : Math.max(0, Number(raw) || 0);
+    contributionRecord(data, nodeId).medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
     saveContributions(data);
     const countEl = root?.querySelector('.spec-contrib-count');
     if (countEl) {

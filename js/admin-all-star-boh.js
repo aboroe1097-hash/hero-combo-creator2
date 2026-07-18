@@ -21,7 +21,7 @@ const SCORE_COMPONENTS = [
   ['technologyPower', 'adminBohScoreTechnologyPower', 'Technology power', 0.7],
   ['heroCombatPower', 'adminBohScoreHeroPower', 'Hero combat power', 0.8],
   ['dragonPower', 'adminBohScoreDragonPower', 'Dragon power', 1],
-  ['t9TroopType', 'adminBohScoreT9Type', 'Each T9 troop type', 3000],
+  ['t9TroopType', 'adminBohScoreT9Type', 'Each T10 troop type', 3000],
   ['readySpeedHero', 'adminBohScoreSpeedHero', 'Each ready speed hero', 2500],
   ['level50Hero', 'adminBohScoreLevel50Hero', 'Each level 50 hero', 750],
   ['bohUsefulRating', 'adminBohScoreBohUseful', 'BoH usefulness point', 1000],
@@ -434,18 +434,22 @@ export function buildAdminSignupPlanningSignals(submission = {}, options = {}) {
     })
     .filter((item) => item?.id);
   const fightingTimeIds = uniqueTextList(commitment?.fightingTimeIds).slice(0, 2);
-  const favoriteRole = cleanText(commitment?.preferredRole);
+  const primaryRole = cleanText(commitment?.preferredRole);
+  const secondaryRole = cleanText(commitment?.secondaryRole);
   const preferredTeammates = getAdminPreferredTeammateNames(submission);
 
   return {
-    favoriteRole,
+    favoriteRole: primaryRole,
+    primaryRole,
+    secondaryRole,
     fightingTimeIds,
     heroGroups,
     preferredTeammates,
     research,
     usableHeroCount: usableHeroNames.length,
     hasSignals: Boolean(
-      favoriteRole ||
+      primaryRole ||
+      secondaryRole ||
       fightingTimeIds.length ||
       heroGroups.length ||
       preferredTeammates.length ||
@@ -2970,7 +2974,9 @@ function statEntries(state, submission) {
     ['technologyPower', 'adminBohStatTechnologyPower', 'Technology power'],
     ['heroCombatPower', 'adminBohStatHeroPower', 'Hero combat power'],
     ['dragonPower', 'adminBohStatDragonPower', 'Dragon power'],
-    ['level50HeroCount', 'adminBohStatLevel50Heroes', 'Level 50 heroes'],
+    ['unitSpecialtyPower', 'adminBohStatUnitSpecialtyPower', 'Unit specialty power'],
+    ['artifactPower', 'adminBohStatArtifactPower', 'Artifact power'],
+    ['royalTechPower', 'adminBohStatRoyalTechPower', 'Royal Tech power'],
     ['rocLevel', 'adminBohStatRocLevel', 'RoC level'],
   ].map(([key, translationKey, fallback]) => ({
     key,
@@ -2980,9 +2986,7 @@ function statEntries(state, submission) {
         ? (source.heroCombatPower ?? source.heroPower)
         : key === 'totalCastlePower'
           ? (source.totalCastlePower ?? source.totalPower)
-          : key === 'level50HeroCount'
-            ? (source.level50HeroCount ?? source.level50Heroes)
-            : source[key],
+          : source[key],
   }));
 }
 
@@ -3045,10 +3049,19 @@ function submissionDetailEntries(state, submission) {
         ? formatDate(state, submission.submittedAt || submission.submittedAtMs)
         : state.tr('adminBohNotProvided', 'Not provided'),
     ],
-    [state.tr('adminBohT9Types', 'T9 troop types'), arrayOrFallback(stats.t9TroopTypes)],
+    [
+      state.tr('adminBohT9Types', 'T10 troop types'),
+      arrayOrFallback(stats.t10TroopTypes?.length ? stats.t10TroopTypes : stats.t9TroopTypes),
+    ],
     [
       state.tr('adminBohReadySpeedHeroes', 'Ready speed heroes'),
       arrayOrFallback(stats.readySpeedHeroes),
+    ],
+    [
+      state.tr('adminBohTroopInventory', 'OCR troop inventory'),
+      stats.troopRoster?.length
+        ? `${stats.troopRoster.length} ${state.tr('adminBohTroopRows', 'reviewed rows')}`
+        : state.tr('adminBohNotProvided', 'Not provided'),
     ],
     [state.tr('adminBohTimezone', 'Timezone'), textOrFallback(submission?.timezone)],
     [
@@ -3056,22 +3069,6 @@ function submissionDetailEntries(state, submission) {
       commitment.availability
         ? adminChoiceLabel(state, commitment.availability)
         : textOrFallback(''),
-    ],
-    [
-      state.tr('adminBohUnavailableTimes', 'Unavailable times'),
-      textOrFallback(commitment.unavailableTimes),
-    ],
-    [
-      state.tr('adminBohCanTeleport', 'Can teleport'),
-      adminBooleanLabel(state, commitment.canTeleport),
-    ],
-    [
-      state.tr('adminBohCanUseVoice', 'Can use voice'),
-      adminBooleanLabel(state, commitment.canUseVoice),
-    ],
-    [
-      state.tr('adminBohPlanCommitment', 'Will follow the plan'),
-      adminBooleanLabel(state, commitment.planCommitment),
     ],
     [state.tr('adminBohPlayerNotes', 'Player notes'), textOrFallback(commitment.notes)],
   ];
@@ -3140,10 +3137,17 @@ function renderSignupPlanningSignals(state, submission) {
           : ''
       }
       ${
-        signals.favoriteRole
+        signals.primaryRole
           ? `<section><h6>${escapeHtml(
-              state.tr('adminBohFavoriteRole', 'Favorite role')
-            )}</h6>${renderPlanningChips([adminChoiceLabel(state, signals.favoriteRole)])}</section>`
+              state.tr('adminBohPrimaryRole', 'Primary role')
+            )}</h6>${renderPlanningChips([adminChoiceLabel(state, signals.primaryRole)])}</section>`
+          : ''
+      }
+      ${
+        signals.secondaryRole
+          ? `<section><h6>${escapeHtml(
+              state.tr('adminBohSecondaryRole', 'Secondary role')
+            )}</h6>${renderPlanningChips([adminChoiceLabel(state, signals.secondaryRole)])}</section>`
           : ''
       }
       ${
@@ -3543,11 +3547,19 @@ function selectedTeamBuilderIds(state, candidates) {
 function renderEligiblePoolPlanningHints(state, player) {
   const signals = buildAdminSignupPlanningSignals(player, state.options);
   const hints = [];
-  if (signals.favoriteRole) {
+  if (signals.primaryRole) {
     hints.push(
-      `${state.tr('adminBohFavoriteRole', 'Favorite role')}: ${adminChoiceLabel(
+      `${state.tr('adminBohPrimaryRole', 'Primary role')}: ${adminChoiceLabel(
         state,
-        signals.favoriteRole
+        signals.primaryRole
+      )}`
+    );
+  }
+  if (signals.secondaryRole) {
+    hints.push(
+      `${state.tr('adminBohSecondaryRole', 'Secondary role')}: ${adminChoiceLabel(
+        state,
+        signals.secondaryRole
       )}`
     );
   }

@@ -25,17 +25,15 @@ function validSignup(overrides = {}) {
     technologyPower: '200000000',
     heroCombatPower: '200000000',
     dragonPower: '100000000',
-    t9Types: ['cavalry', 'archers'],
+    unitSpecialtyPower: '6,485,660',
+    artifactPower: '1,567,700',
+    royalTechPower: '11,898,587',
+    t10Types: ['cavalry', 'archers'],
     speedHeroes: ['lionheart'],
-    level50Heroes: '8',
     rocLevel: '12',
     availability: 'all',
     fightingTimeIds: ['+8', '+12'],
     preferredRole: 'offensive',
-    unavailableTimes: 'None',
-    canTeleport: 'on',
-    canUseVoice: 'on',
-    planCommitment: 'on',
     playerNotes: 'Ready.',
     ...overrides,
   };
@@ -115,6 +113,11 @@ test('OCR submission is explicitly confirmed and cannot persist image data', () 
   assert.equal(payload.ocr.used, true);
   assert.equal(payload.ocr.valuesConfirmed, true);
   assert.equal(payload.stats.totalCastlePower, 1_000_000_000);
+  assert.equal(payload.stats.unitSpecialtyPower, 6_485_660);
+  assert.equal(payload.stats.artifactPower, 1_567_700);
+  assert.equal(payload.stats.royalTechPower, 11_898_587);
+  assert.deepEqual(payload.stats.t10TroopTypes, ['cavalry', 'archers']);
+  assert.equal(Object.hasOwn(payload.stats, 'level50HeroCount'), false);
   assert.equal(payload.submittedAtMs, 1234);
 });
 
@@ -167,7 +170,8 @@ test('signup keeps planning catalogs sparse and requires exactly two All-Star fi
       'researchProgressPct.tree-b': '',
       'researchProgressPct.tree-c': '75',
       fightingTimeIds: ['+20', '+12'],
-      preferredRole: '',
+      preferredRole: 'flexible',
+      secondaryRole: 'rune',
     }),
     options
   );
@@ -175,8 +179,11 @@ test('signup keeps planning catalogs sparse and requires exactly two All-Star fi
   assert.deepEqual(payload.stats.usableHeroNames, ['Hero Z', 'Hero B']);
   assert.deepEqual(payload.stats.researchProgressPct, { 'tree-a': 0, 'tree-c': 75 });
   assert.deepEqual(payload.commitment.fightingTimeIds, ['+12', '+20']);
-  assert.equal(payload.commitment.preferredRole, '');
-  assert.deepEqual(payload.rolePreferences, []);
+  assert.equal(payload.commitment.preferredRole, 'flexible');
+  assert.equal(payload.commitment.secondaryRole, 'rune');
+  assert.deepEqual(payload.rolePreferences, ['rune']);
+  assert.equal(Object.hasOwn(payload.commitment, 'unavailableTimes'), false);
+  assert.equal(Object.hasOwn(payload.commitment, 'planCommitment'), false);
   assert.deepEqual(modelOptions, {
     heroNames: options.heroNames,
     researchTreeIds: options.researchTreeIds,

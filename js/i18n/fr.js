@@ -483,10 +483,8 @@ const fr = {
   bohAccessPinHint:
     'Le PIN est vérifié de manière sécurisée et n’est jamais enregistré sur cet appareil.',
   bohAccessUnlock: 'Déverrouiller l’espace',
-  bohAccessCancel: 'Pas maintenant',
   bohAccessChecking: 'Vérification de ton accès sécurisé…',
   bohAccessBusy: 'Confirmation de l’accès membre…',
-  bohAccessCanceled: 'L’espace All-Star reste verrouillé.',
   bohAccessExpired:
     'Ton accès membre a expiré. Saisis le PIN actuel pour le déverrouiller à nouveau.',
   bohAccessErrorInvalidPin: 'Saisis le PIN membre actuel.',
@@ -708,7 +706,7 @@ const fr = {
   heroesClearFilters: 'Effacer les filtres',
   heroesSeasonHint: 'Saisons - sélection multiple',
   sourceCreditText:
-    "Données soigneusement collectées auprès de la communauté VTS 1097, Ptr, Old.Faithful, Raven G et d'autres contributeurs.",
+    'Données soigneusement collectées auprès de la communauté VTS 1097 et de ses contributeurs.',
   manualNoDuplicateHero: 'Ce héros est déjà utilisé dans votre combo actuel.',
   toastComboSaved: 'Combo enregistré !',
   toastComboSaveFailed: "Impossible d'enregistrer le combo",
@@ -1715,7 +1713,8 @@ const fr = {
   strifePaidCombos: 'Combos payants',
   strifePending: 'En attente',
   strifeRankOneReward: 'Récompense du rang 1',
-  strifeRankOneRewardNote: 'Récompense exclusive offerte au joueur classé 1er du classement de l’événement.',
+  strifeRankOneRewardNote:
+    'Récompense exclusive offerte au joueur classé 1er du classement de l’événement.',
   strifeRecommendedFormation: 'Formation {tier} recommandée : {heroes}.',
   strifeReusableRank: 'Réutilisable #{rank}',
   strifeSeasonStageGroupAria: 'Stade de saison Strife',
@@ -2069,8 +2068,7 @@ const fr = {
       '{buffs} groupes de bonus · {unlocks} déblocages · {missing} sans valeur',
     researchBuffSummaryEmpty:
       'Aucune valeur numérique de bonus n’est encore disponible pour cet arbre.',
-    researchBuffSummaryItemMeta:
-      '{current} actuellement · reste {remaining} · {nodes} {nodeLabel}',
+    researchBuffSummaryItemMeta: '{current} actuellement · reste {remaining} · {nodes} {nodeLabel}',
     researchBuffUnlocksTitle: 'Déblocages',
     researchBuffNeedValuesTitle: 'Valeurs manquantes',
     researchBuffCloseAria: 'Fermer le récapitulatif des bonus',
@@ -2078,11 +2076,9 @@ const fr = {
     researchBuffUnlockShort: 'Débloquer',
     researchBuffUnlocked: 'Débloqué',
     researchBuffLocked: 'Verrouillé',
-    researchBuffKnownDetailTitle:
-      'Actuel : {current} sur {max} ; reste {remaining} ; {perLevel}',
+    researchBuffKnownDetailTitle: 'Actuel : {current} sur {max} ; reste {remaining} ; {perLevel}',
     researchBuffUnlockDetailTitle: 'Se débloque au niveau 1',
-    researchBuffMissingDetailTitle:
-      'La valeur exacte du bonus manque pour cette technologie.',
+    researchBuffMissingDetailTitle: 'La valeur exacte du bonus manque pour cette technologie.',
     researchBuffNodeDetail: 'Reste {remaining} · {perLevel}',
     researchBuffNodeSingular: 'technologie',
     researchBuffNodePlural: 'technologies',
@@ -2161,8 +2157,7 @@ const fr = {
     adminEdenVotesSettingsOpen: 'Le vote est ouvert.',
     adminEdenVotesSettingsClosed: 'Le vote est fermé.',
     adminEdenVotesSettingsSaved: 'Paramètres du vote enregistrés.',
-    adminEdenVotesSettingsSaveFailed:
-      'Impossible d’enregistrer les paramètres du vote.',
+    adminEdenVotesSettingsSaveFailed: 'Impossible d’enregistrer les paramètres du vote.',
     adminEdenVotesEmpty: 'Aucun vote pour le moment.',
     adminEdenVotesHistory: 'Historique des modifications',
     adminEdenVotesHistorySubtitle:
@@ -2258,12 +2253,10 @@ const fr = {
     adminDutySavedLog: '{label} enregistré : {count} entrées.',
     adminDutyOcrAlreadyRunning: 'L’OCR des missions est déjà en cours…',
     adminDutyScanningImagesLog: 'Analyse de {count} image(s) pour {label}…',
-    adminDutyScanningImageProgress:
-      'Analyse de l’image {current}/{total} pour {label}…',
+    adminDutyScanningImageProgress: 'Analyse de l’image {current}/{total} pour {label}…',
     adminDutyOcrErrorLog: 'Erreur OCR pour {label} ({file}) : {error}',
     adminDutyNoNamesInImagesLog: 'Aucun nom trouvé dans les images pour {label}.',
-    adminDutyExtractFailedAlert:
-      'Impossible d’extraire les noms de l’image pour {label}.',
+    adminDutyExtractFailedAlert: 'Impossible d’extraire les noms de l’image pour {label}.',
     adminDutyDeleteConfirm: 'Supprimer cette entrée de mission ?',
     adminDutyDeletedLog: 'Entrée de mission supprimée.',
     adminDutyEmptyRecords: 'Aucune entrée pour {label}.',
@@ -2282,8 +2275,7 @@ const fr = {
     adminContributionOpeningPickerStatus: 'Ouverture du sélecteur d’images…',
     adminContributionNoImageSelectedStatus: 'Aucune image de contribution sélectionnée.',
     adminContributionOcrBlockedStatus: 'OCR des contributions bloqué : {error}',
-    adminContributionOcrBlockedToast:
-      'OCR des contributions bloqué. Consultez le message d’état.',
+    adminContributionOcrBlockedToast: 'OCR des contributions bloqué. Consultez le message d’état.',
     adminContributionDelta: 'Écart',
     adminContributionStatus: 'État',
     adminContributionGain: 'Progression',
@@ -2307,8 +2299,7 @@ const fr = {
     adminExGuildTab: 'Données d’ex-guilde',
     adminContributionPrimaryTitle:
       'Ceci est l’instantané de contribution utilisé par défaut pour les calculs du tableau de bord.',
-    adminContributionSetPrimaryTitle:
-      'Définir comme instantané de contribution par défaut',
+    adminContributionSetPrimaryTitle: 'Définir comme instantané de contribution par défaut',
     adminTerminalInfo: 'Informations',
   },
   // Site public, saisons et fidélité.
@@ -2328,8 +2319,7 @@ const fr = {
     seoFeatureEden:
       'Planificateur de carte d’Eden — structures, routes et plan d’équipe de la saison 5',
     seoFeatureLoyalty: 'Calculateur de loyauté d’Eden — améliorations et poison en %',
-    seoFeatureResearch:
-      'Planificateur de recherche — insignes, médailles et arbres fidèles au jeu',
+    seoFeatureResearch: 'Planificateur de recherche — insignes, médailles et arbres fidèles au jeu',
     tabEdenMapBadge: 'Bientôt',
     seasonCatchupX1:
       'Rattrapage X1 : dans cette tranche, les États plus jeunes reçoivent tous les héros X1 ainsi que quelques héros du début de X2.',
@@ -2375,12 +2365,10 @@ const fr = {
     dmPlannerFastest: 'La plus rapide',
     dmPlannerRecommended: 'Recommandée',
     dmPlannerLowestSd: 'Moins de Super Dragonite',
-    dmPlannerDirectHint:
-      'Un minimum de fusions, mais le coût le plus élevé en Super Dragonite.',
+    dmPlannerDirectHint: 'Un minimum de fusions, mais le coût le plus élevé en Super Dragonite.',
     dmPlannerPurpleHint:
       'Le meilleur équilibre entre Super Dragonite, gemmes et travail de fusion.',
-    dmPlannerBlueHint:
-      'Économise le plus de Super Dragonite, mais demande le plus de fusions.',
+    dmPlannerBlueHint: 'Économise le plus de Super Dragonite, mais demande le plus de fusions.',
     dmPlannerSetTitle: 'Ensemble Dragon Master de six pièces',
     dmPlannerViewSet: 'Vue de l’ensemble',
     dmPlannerViewSlot: 'Vue par emplacement',
@@ -2389,8 +2377,7 @@ const fr = {
     dmPlannerSelectedPiece: 'Pièce sélectionnée',
     dmPlannerRecipeFor: '{piece} par la voie {route}',
     dmPlannerNormalGear: 'Équipement normal des troupes',
-    dmPlannerNormalGearHint:
-      'Fabriquez d’abord ces pièces d’équipement normal au palier {tier}.',
+    dmPlannerNormalGearHint: 'Fabriquez d’abord ces pièces d’équipement normal au palier {tier}.',
     dmPlannerRawMaterials: 'Matériaux bruts',
     dmPlannerStockpileTitle: 'Réserve de matériaux pour un ensemble complet',
     dmPlannerStockpileHint:
@@ -2475,14 +2462,12 @@ const fr = {
     dmEnhanceNeeded: 'Nécessaire',
     dmEnhanceShortfall: 'Manquant',
     dmEnhanceReached: 'Objectif déjà atteint',
-    dmEnhanceCredit:
-      'Merci à Roha et Redbull pour les données utilisées par l’outil DM.',
+    dmEnhanceCredit: 'Merci à Roha et Redbull pour les données utilisées par l’outil DM.',
   },
   // Planificateur de carte d’Eden : navigation, outils et calques.
   ...{
     edenOpenLoyalty: 'Planificateur de loyauté',
-    edenOpenLoyaltyToast:
-      'Planificateur de loyauté — prévoir les améliorations près de {zone}',
+    edenOpenLoyaltyToast: 'Planificateur de loyauté — prévoir les améliorations près de {zone}',
     edenOpenLoyaltyToastGeneric: 'Planificateur de loyauté ouvert',
     edenMapConstructionTitle: 'Carte d’Eden — en construction',
     edenMapConstructionDesc:
@@ -2492,8 +2477,7 @@ const fr = {
     edenMapConstructionBody:
       'Nous assemblons les captures du jeu en une carte interactive complète de 1600 × 1600 cases. Revenez bientôt.',
     edenConstructionEngineLoading: 'Préparation du moteur de tuiles…',
-    edenConstructionEngineReady:
-      'Moteur de tuiles chargé — en attente des captures de carte.',
+    edenConstructionEngineReady: 'Moteur de tuiles chargé — en attente des captures de carte.',
     edenDeckNav: 'Carte',
     edenDeckTools: 'Outils',
     edenPlansPanel: 'Plans et exportation',
@@ -2560,8 +2544,7 @@ const fr = {
     edenViewScout: 'Reconnaissance',
     edenViewTeams: 'Plan d’équipe',
     edenMarchSpeedLabel: 'Vitesse de marche',
-    edenMarchSpeedTitle:
-      'Multiplicateur du temps de marche pour les routes et les mesures',
+    edenMarchSpeedTitle: 'Multiplicateur du temps de marche pour les routes et les mesures',
     edenRouteNameTitle: 'Libellé facultatif affiché sur la route terminée',
     edenPlansPanelTitle:
       'Ouvrir les outils de plan : importation, exportation, partage, PNG et emplacements',
@@ -2571,14 +2554,11 @@ const fr = {
     edenScoutPushTitle: 'Envoyer les données de possession vers le cloud',
     edenLayersLabel: 'Calques',
     edenLayerRef: 'Carte',
-    edenLayerRefTitle:
-      'Carte d’Eden avec limites de factions comme fond de parchemin épuré',
+    edenLayerRefTitle: 'Carte d’Eden avec limites de factions comme fond de parchemin épuré',
     edenLayerScreenshots: 'Captures',
-    edenLayerScreenshotsTitle:
-      'Captures du jeu par secteur pour vérifier l’alignement',
+    edenLayerScreenshotsTitle: 'Captures du jeu par secteur pour vérifier l’alignement',
     edenLayerTerrain: 'Terrain',
-    edenLayerTerrainTitle:
-      'Calque du terrain : plaines, désert, rivières et montagnes',
+    edenLayerTerrainTitle: 'Calque du terrain : plaines, désert, rivières et montagnes',
     edenLayerStruct: 'Structures',
     edenLayerStructTitle: 'Icônes des portes, villes, capitales et temples',
     edenLayerPaths: 'Routes',
@@ -2620,8 +2600,7 @@ const fr = {
     edenQuickLabel: 'Accès rapide',
     edenTemple: 'Temple',
     edenQuickJumpTitle: 'Déplacer la carte vers le secteur {sector}',
-    edenTempleTitle:
-      'Aller au Temple antique (AT) dans la zone de guerre centrale',
+    edenTempleTitle: 'Aller au Temple antique (AT) dans la zone de guerre centrale',
     edenMinimapTitle: 'Cliquer pour se déplacer',
     edenLegendForest: 'Forêt',
     edenLegendPlains: 'Plaine',
@@ -2639,8 +2618,7 @@ const fr = {
     edenSortType: 'Trier : type',
     edenCoordSearchLabel: 'Aller aux coordonnées',
     edenCoordGoTitle: 'Aller aux coordonnées X:Y du jeu',
-    edenCoordInvalid:
-      'Coordonnées invalides — utilisez X:Y dans la plage 0–1600, 0–1600',
+    edenCoordInvalid: 'Coordonnées invalides — utilisez X:Y dans la plage 0–1600, 0–1600',
     edenCoordFoundStruct: '{name} trouvé à {x}:{y}',
     edenCoordJumped: 'Déplacement vers X:{x} Y:{y}',
     edenDatasetLabelTitle: 'Saison et jeu de données des structures de la carte d’Eden',
@@ -2709,8 +2687,7 @@ const fr = {
     edenTeamCount4: '4 équipes',
     edenTeamPlanOffHint:
       'Activez le plan d’équipe pour affecter des structures et afficher la chronologie.',
-    edenTeamPlanEnableFirst:
-      'Activez d’abord le plan d’équipe dans la barre latérale.',
+    edenTeamPlanEnableFirst: 'Activez d’abord le plan d’équipe dans la barre latérale.',
     edenTeamPanelDesc:
       'Facultatif — affectez les structures aux équipes avec des créneaux horaires du jeu.',
     edenTeamFilterAll: 'Toutes les équipes',
@@ -2730,10 +2707,8 @@ const fr = {
     edenShareCopiedToast: 'Lien de partage copié',
     edenShareFailedToast: 'Impossible de créer le lien de partage',
     edenRoutePlannedToast: 'Route planifiée — {distance} cases',
-    edenSectorUnavailableToast:
-      'Le secteur « {sector} » n’existe pas sur la carte de cette saison',
-    edenSectorReferenceMissingToast:
-      'Aucune fiche de référence pour le secteur « {sector} »',
+    edenSectorUnavailableToast: 'Le secteur « {sector} » n’existe pas sur la carte de cette saison',
+    edenSectorReferenceMissingToast: 'Aucune fiche de référence pour le secteur « {sector} »',
     edenPathSavedToast: 'Route enregistrée — {distance} cases (~{time})',
     edenPlanImportedToast: 'Plan importé',
     edenInvalidPlanToast: 'Fichier de plan invalide',
@@ -2796,11 +2771,9 @@ const fr = {
     edenGuideZoomTitle: 'Zoom',
     edenGuideZoomDesc:
       'Zoomez vers le pointeur avec la molette ou utilisez + / − pour les niveaux prédéfinis de 25 % à 320 %. Double-cliquez sur une zone vide pour ajuster le secteur.',
-    edenGuideZoomTip1:
-      'Le zoom reste ancré au pointeur : le point sous le curseur ne bouge pas.',
+    edenGuideZoomTip1: 'Le zoom reste ancré au pointeur : le point sous le curseur ne bouge pas.',
     edenGuideZoomTip2: 'Double-cliquez sur une structure pour zoomer dessus.',
-    edenGuideZoomTip3:
-      'Appuyez sur F ou Espace pour ajuster le secteur actuel.',
+    edenGuideZoomTip3: 'Appuyez sur F ou Espace pour ajuster le secteur actuel.',
     edenGuidePanTitle: 'Déplacement et navigation',
     edenGuidePanDesc:
       'Faites glisser une zone vide pour déplacer la vue. Les flèches du clavier déplacent aussi la carte. Navigation est l’outil par défaut pour sélectionner les structures.',
@@ -2828,23 +2801,20 @@ const fr = {
     edenGuideSelectTitle: 'Sélectionner les structures',
     edenGuideSelectDesc:
       'Avec Navigation actif, cliquez sur une porte, une ville, une capitale ou un temple. La barre latérale défile jusqu’à la structure et la met en évidence.',
-    edenGuideSelectTip1:
-      'Vous pouvez également utiliser la liste de structures avec recherche.',
+    edenGuideSelectTip1: 'Vous pouvez également utiliser la liste de structures avec recherche.',
     edenGuideSelectTip2: 'Le survol affiche un résumé rapide.',
     edenGuideSidebarTitle: 'Détails de la structure',
     edenGuideSidebarDesc:
       'Après avoir sélectionné une structure, définissez sa possession et sa guilde, marquez-la comme cible, copiez ses coordonnées ou ouvrez Combo Creator.',
     edenGuideSidebarTip1:
       'Couleurs d’état : vert pour possédée, jaune pour contestée, rouge pour ennemie.',
-    edenGuideSidebarTip2:
-      '« Centrer » et « Zoomer » dirigent la carte vers la structure.',
+    edenGuideSidebarTip2: '« Centrer » et « Zoomer » dirigent la carte vers la structure.',
     edenGuideSidebarTip3:
       'Lorsque le plan d’équipe est actif, affectez ici une équipe, un créneau du jeu et une note.',
     edenGuideFiltersTitle: 'Filtres de la barre latérale',
     edenGuideFiltersDesc:
       'Filtrez les structures par possession, zone, type et ordre. La recherche trouve les noms et zones. Un filtre d’équipe apparaît lorsque le plan d’équipe est actif.',
-    edenGuideFiltersTip1:
-      'Le filtre de possession colore également les repères sur la carte.',
+    edenGuideFiltersTip1: 'Le filtre de possession colore également les repères sur la carte.',
     edenGuideFiltersTip2:
       'La recherche trouve noms et zones ; une saisie X:Y suivie d’Entrée rejoint aussi les coordonnées.',
     edenGuideFiltersTip3:
@@ -2861,15 +2831,12 @@ const fr = {
     edenGuideMeasureTitle: 'Outil de mesure',
     edenGuideMeasureDesc:
       'Appuyez sur M ou choisissez Mesurer, puis cliquez sur les points A et B. La distance tient compte du terrain et indique le temps de marche estimé.',
-    edenGuideMeasureTip1:
-      'La vitesse de marche de la barre d’outils ajuste les durées estimées.',
-    edenGuideMeasureTip2:
-      '« Effacer la mesure » retire les points dans la barre latérale.',
+    edenGuideMeasureTip1: 'La vitesse de marche de la barre d’outils ajuste les durées estimées.',
+    edenGuideMeasureTip2: '« Effacer la mesure » retire les points dans la barre latérale.',
     edenGuidePathTitle: 'Outil de route',
     edenGuidePathDesc:
       'Tracez les routes de marche de l’alliance avec Maj+clic. Choisissez une couleur et un nom, puis terminez la route. Vous pourrez déplacer les points plus tard en mode Navigation.',
-    edenGuidePathTip1:
-      'Ctrl+Z ou un clic droit retire le dernier point pendant le tracé.',
+    edenGuidePathTip1: 'Ctrl+Z ou un clic droit retire le dernier point pendant le tracé.',
     edenGuidePathTip2: '« Supprimer la route » retire le trajet sélectionné.',
     edenGuidePathTip3: '« Cibles X1 » charge les objectifs prédéfinis.',
     edenGuideTargetTitle: 'Outil de cible',
@@ -2879,17 +2846,14 @@ const fr = {
     edenGuideRouteModeTitle: 'Vue Planification de route',
     edenGuideRouteModeDesc:
       'Choisissez Planification de route, puis cliquez sur une structure de départ et un point d’arrivée. L’outil crée automatiquement un trajet adapté au terrain.',
-    edenGuideRouteModeTip1:
-      'Idéal pour comparer rapidement des trajets sans placer chaque point.',
-    edenGuideRouteModeTip2:
-      'La vitesse de marche modifie l’estimation de durée de la route.',
+    edenGuideRouteModeTip1: 'Idéal pour comparer rapidement des trajets sans placer chaque point.',
+    edenGuideRouteModeTip2: 'La vitesse de marche modifie l’estimation de durée de la route.',
     edenGuideOwnTitle: 'Possession et guilde',
     edenGuideOwnDesc:
       'Sélectionnez une structure, puis définissez sa possession et sa guilde. Les couleurs sont mises à jour sur la carte et dans les listes.',
     edenGuideOwnTip1:
       'Utilisez les filtres pour n’afficher que les structures ennemies ou possédées.',
-    edenGuideOwnTip2:
-      'Le calque Territoires montre les zones de contrôle nord, centrale et sud.',
+    edenGuideOwnTip2: 'Le calque Territoires montre les zones de contrôle nord, centrale et sud.',
     edenGuideTeamPlanTitle: 'Plan d’équipe (facultatif)',
     edenGuideTeamPlanDesc:
       'La planification d’équipe est désactivée au départ. Ouvrez son panneau, activez-la et choisissez deux à quatre équipes. Affectez les structures avec des créneaux du jeu ; la chronologie les trie selon l’horloge du jeu.',
@@ -2907,30 +2871,25 @@ const fr = {
     edenGuidePlansTitle: 'Plusieurs plans',
     edenGuidePlansDesc:
       'Enregistrez plusieurs scénarios dans le menu des plans. Utilisez « + Plan », « Renommer » et « Suppr. » pour gérer les emplacements.',
-    edenGuidePlansTip1:
-      'Chaque plan conserve ses propres routes, cibles et données de possession.',
+    edenGuidePlansTip1: 'Chaque plan conserve ses propres routes, cibles et données de possession.',
     edenGuidePlansTip2:
       'Les réglages d’équipe sont aussi propres à chaque plan ; ouvrez « Plans et exportation » dans la barre de commandes.',
     edenGuideShareTitle: 'Partager et exporter',
     edenGuideShareDesc:
       'Partager copie une URL contenant votre plan. Exporter télécharge un fichier JSON, Importer le restaure et PNG enregistre une image de la carte.',
-    edenGuideShareTip1:
-      'Les liens de partage permettent aux alliés d’ouvrir le même plan.',
+    edenGuideShareTip1: 'Les liens de partage permettent aux alliés d’ouvrir le même plan.',
     edenGuideShareTip2: 'Le PNG convient à Discord ou aux documents d’alliance.',
     edenGuideScoutTitle: 'Reconnaissance et renseignements',
     edenGuideScoutDesc:
       'La vue Reconnaissance sert à collecter des renseignements. Récupérer fusionne les possessions du cloud ; Envoyer transmet vos marquages vers Firebase si vous le souhaitez.',
-    edenGuideScoutTip1:
-      '« Essayer » active Reconnaissance afin d’en découvrir les commandes.',
+    edenGuideScoutTip1: '« Essayer » active Reconnaissance afin d’en découvrir les commandes.',
     edenGuideLayersTitle: 'Calques de la carte',
     edenGuideLayersDesc:
       'Activez ou masquez le parchemin, les captures de secteur, le terrain, les structures, les routes, les cibles, les équipes facultatives, les libellés, les zones, les territoires, le brouillard, la densité et les tuiles HD.',
     edenGuideLayersTip1:
       'Masquez Structures pour mieux voir le terrain. Équipes reste désactivé tant que le plan d’équipe ne l’est pas.',
-    edenGuideLayersTip2:
-      'Le brouillard masque les secteurs que vous n’avez pas encore visités.',
-    edenGuideLayersTip3:
-      'Appuyez sur R pour rétablir les calques par défaut après vos essais.',
+    edenGuideLayersTip2: 'Le brouillard masque les secteurs que vous n’avez pas encore visités.',
+    edenGuideLayersTip3: 'Appuyez sur R pour rétablir les calques par défaut après vos essais.',
     edenGuideTeamsLayerTitle: 'Calque Équipes',
     edenGuideTeamsLayerDesc:
       'Quand le plan d’équipe est actif, ce calque affiche des pastilles colorées sur les structures affectées. Le menu des équipes filtre la liste latérale.',
@@ -2941,8 +2900,7 @@ const fr = {
     edenGuideRefTitle: 'Opacité de la référence',
     edenGuideRefDesc:
       'Le calque Carte affiche le fond de parchemin optimisé avec limites de factions de la saison 5. Captures superpose les images de secteur afin de vérifier l’alignement des structures.',
-    edenGuideRefTip1:
-      'Une opacité réduite facilite l’alignement des routes avec le terrain.',
+    edenGuideRefTip1: 'Une opacité réduite facilite l’alignement des routes avec le terrain.',
     edenGuideRefTip2:
       'Les icônes de capitale du parchemin sont masquées ; les icônes placées selon leurs coordonnées font foi.',
     edenGuideZoneTitle: 'Filtre de zone',
@@ -2955,13 +2913,11 @@ const fr = {
     edenGuideKeysTitle: 'Raccourcis clavier',
     edenGuideKeysDesc:
       'Planifiez plus vite avec les raccourcis ; la plupart reprennent le nom des outils.',
-    edenGuideKeysTip1:
-      'M mesurer · P route · 1–8 secteurs · F/Espace ajuster · +/− zoomer',
+    edenGuideKeysTip1: 'M mesurer · P route · 1–8 secteurs · F/Espace ajuster · +/− zoomer',
     edenGuideKeysTip2:
       'Flèches déplacer · Suppr. effacer la route sélectionnée · R rétablir les calques',
     edenGuideKeysTip3: 'Ctrl+Z retire les points pendant le tracé',
-    edenGuideKeysTip4:
-      'Échap revient à Navigation et efface les points de mesure',
+    edenGuideKeysTip4: 'Échap revient à Navigation et efface les points de mesure',
     edenGuideMobileTitle: 'Mobile et tactile',
     edenGuideMobileDesc:
       'Pincez pour zoomer et faites glisser d’un doigt pour déplacer. La sélection d’une structure ouvre la barre latérale sous forme de panneau inférieur refermable. Le guide reste sous la carte.',
@@ -3037,8 +2993,7 @@ const fr = {
     edenX1StructureDetailTitle: 'Détails de la structure — {structure}',
     edenX1PlayerDetailHint:
       'Cliquez sur une cible ci-dessous pour afficher les détails de la structure.',
-    edenX1StructureDetailHint:
-      'Cliquez sur un joueur ci-dessous pour afficher ses détails.',
+    edenX1StructureDetailHint: 'Cliquez sur un joueur ci-dessous pour afficher ses détails.',
     edenX1ModalTotalDemo: 'Démolition totale',
     edenX1ModalHits: 'Frappes',
     edenX1ModalTargets: 'Cibles',
@@ -3108,18 +3063,15 @@ const fr = {
     edenX1PublicDemoMeta: 'Vue de démonstration — résultats non définitifs',
     edenX1WeightedIncludesMeta:
       'le score pondéré comprend la contribution, le soutien et les points bonus d’effort collectif',
-    edenX1NoPublicWeightedRows:
-      'Aucune donnée publique de contribution pondérée pour le moment.',
-    edenX1NoPublicSearchRows:
-      'Aucun joueur correspondant dans la liste publique pondérée.',
+    edenX1NoPublicWeightedRows: 'Aucune donnée publique de contribution pondérée pour le moment.',
+    edenX1NoPublicSearchRows: 'Aucun joueur correspondant dans la liste publique pondérée.',
     edenX1KpiStructureHits: 'Frappes sur les structures',
     edenX1KpiTotalDemo: 'Démolition totale',
     edenX1TopPerformersHint:
       'Cliquez sur le nom d’un joueur pour ouvrir le détail public de ses attaques.',
     edenX1StructuresHint:
       'Cliquez sur une structure pour voir la liste publique des frappes et ses meilleurs joueurs.',
-    edenX1AttackHistoryHint:
-      'Cliquez sur une ligne de structure pour ouvrir ses détails.',
+    edenX1AttackHistoryHint: 'Cliquez sur une ligne de structure pour ouvrir ses détails.',
     edenX1ModalClose: 'Fermer les détails',
     edenX1VoteClosed:
       'Le vote a été fermé par R5. Les résultats définitifs seront annoncés le dernier jour.',
@@ -3139,8 +3091,7 @@ const fr = {
     edenX1VoteContributionTotal: 'Contribution totale',
     edenX1VoteStatus: 'État du vote',
     strifeSourceGuide: 'Guide de référence',
-    arcadeIntro:
-      'Vous pensez pouvoir battre les meilleurs scores de l’Arcade ? À vous de jouer.',
+    arcadeIntro: 'Vous pensez pouvoir battre les meilleurs scores de l’Arcade ? À vous de jouer.',
   },
 };
 

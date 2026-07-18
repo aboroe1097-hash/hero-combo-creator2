@@ -605,7 +605,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(teammateNames).toHaveValue('Newest server teammate');
   });
 
-  test('signup planning controls capture fieldable heroes, research, two fight times, and an optional role', async ({
+  test('signup planning controls capture fieldable heroes, research, two fight times, and role choices', async ({
     page,
   }) => {
     await openInjectedPlayerHub(page);
@@ -628,7 +628,10 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect.poll(() => visibleHeroRows.count()).toBeGreaterThan(0);
     expect(
       await visibleHeroRows.evaluateAll((rows) =>
-        rows.every((row) => row.dataset.troopType === 'Archers' && row.dataset.season === 'S1')
+        rows.every(
+          (row) =>
+            row.dataset.troopType === 'Archers' && ['S0', 'S1'].includes(row.dataset.season)
+        )
       )
     ).toBe(true);
     await root.locator('[data-role="hero-troop-filter"]').selectOption('');
@@ -689,7 +692,9 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(favoriteRole).toHaveValue('');
     await favoriteRole.selectOption('flexible');
     await expect(favoriteRole).toHaveValue('flexible');
-    await favoriteRole.selectOption('');
+    const secondaryRole = root.locator('[name="secondaryRole"]');
+    await secondaryRole.selectOption('rune');
+    await expect(secondaryRole).toHaveValue('rune');
 
     await root.locator('[data-role="signup-submit"]').click();
     await expect.poll(() => page.evaluate(() => window.__BOH_SAVED_SUBMISSION__)).toBeTruthy();
@@ -700,8 +705,9 @@ test.describe('All-Star BoH secure player hub', () => {
     );
     expect(saved.payload.stats.researchProgressPct).toEqual({ d1956263: 0, b2691f74: 100 });
     expect(saved.payload.commitment.fightingTimeIds).toEqual(['+8', '+20']);
-    expect(saved.payload.commitment.preferredRole).toBe('');
-    expect(saved.payload.rolePreferences).toEqual([]);
+    expect(saved.payload.commitment.preferredRole).toBe('flexible');
+    expect(saved.payload.commitment.secondaryRole).toBe('rune');
+    expect(saved.payload.rolePreferences).toEqual(['rune']);
   });
 
   test('mocked grant renders four sections, six 12-player teams, and both planning tools', async ({

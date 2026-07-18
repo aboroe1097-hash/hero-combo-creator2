@@ -454,10 +454,8 @@ const es = {
   bohAccessPinLabel: 'PIN de miembro',
   bohAccessPinHint: 'El PIN se comprueba de forma segura y nunca se guarda en este dispositivo.',
   bohAccessUnlock: 'Desbloquear centro',
-  bohAccessCancel: 'Ahora no',
   bohAccessChecking: 'Comprobando tu acceso seguro…',
   bohAccessBusy: 'Confirmando acceso de miembro…',
-  bohAccessCanceled: 'El centro All-Star seguirá bloqueado.',
   bohAccessExpired: 'Tu acceso de miembro caducó. Introduce el PIN actual para volver a entrar.',
   bohAccessErrorInvalidPin: 'Introduce el PIN actual de miembros.',
   bohAccessErrorDenied: 'Ese PIN no coincide. Compruébalo e inténtalo de nuevo.',
@@ -681,7 +679,7 @@ const es = {
   heroesClearFilters: 'Limpiar filtros',
   heroesSeasonHint: 'Temporadas - selección múltiple',
   sourceCreditText:
-    'Datos recopilados cuidadosamente por la comunidad VTS 1097, Ptr, Old.Faithful, Raven G y otros colaboradores.',
+    'Datos recopilados cuidadosamente por la comunidad VTS 1097 y sus colaboradores.',
   manualNoDuplicateHero: 'Este héroe ya está usado en tu combo actual.',
   toastComboSaved: 'Combo guardado!',
   toastComboSaveFailed: 'No se pudo guardar el combo',
@@ -1684,7 +1682,8 @@ const es = {
   strifePaidCombos: 'Combos de pago',
   strifePending: 'Pendiente',
   strifeRankOneReward: 'Recompensa del puesto 1',
-  strifeRankOneRewardNote: 'Recompensa exclusiva que se regala al jugador en el puesto 1 de la clasificación del evento.',
+  strifeRankOneRewardNote:
+    'Recompensa exclusiva que se regala al jugador en el puesto 1 de la clasificación del evento.',
   strifeRecommendedFormation: 'Formación {tier} recomendada: {heroes}.',
   strifeReusableRank: 'Reutilizable #{rank}',
   strifeSeasonStageGroupAria: 'Etapa de temporada de Strife',
@@ -2061,10 +2060,8 @@ const es = {
     researchBuffSummaryTitle: 'Bonificaciones de {tech}',
     researchBuffSummaryMeta:
       'Bonificaciones: {buffs} · Desbloqueos: {unlocks} · Sin datos: {missing}',
-    researchBuffSummaryEmpty:
-      'Este árbol todavía no tiene valores numéricos de bonificación.',
-    researchBuffSummaryItemMeta:
-      'Actual: {current} · Falta: {remaining} · {nodes} {nodeLabel}',
+    researchBuffSummaryEmpty: 'Este árbol todavía no tiene valores numéricos de bonificación.',
+    researchBuffSummaryItemMeta: 'Actual: {current} · Falta: {remaining} · {nodes} {nodeLabel}',
     researchBuffUnlocksTitle: 'Desbloqueos',
     researchBuffNeedValuesTitle: 'Faltan valores',
     researchBuffCloseAria: 'Cerrar resumen de bonificaciones',
@@ -2072,11 +2069,9 @@ const es = {
     researchBuffUnlockShort: 'Por desbloquear',
     researchBuffUnlocked: 'Desbloqueado',
     researchBuffLocked: 'Bloqueado',
-    researchBuffKnownDetailTitle:
-      'Actual: {current} de {max}; faltan {remaining}; {perLevel}',
+    researchBuffKnownDetailTitle: 'Actual: {current} de {max}; faltan {remaining}; {perLevel}',
     researchBuffUnlockDetailTitle: 'Se desbloquea en el nivel 1',
-    researchBuffMissingDetailTitle:
-      'Falta el valor exacto de la bonificación de este nodo.',
+    researchBuffMissingDetailTitle: 'Falta el valor exacto de la bonificación de este nodo.',
     researchBuffNodeDetail: 'Faltan {remaining} · {perLevel}',
     researchBuffNodeSingular: 'nodo',
     researchBuffNodePlural: 'nodos',
@@ -2132,8 +2127,7 @@ const es = {
       'El inicio de sesión de Firebase con correo y contraseña todavía no está habilitado.',
     adminCloudAdminRequired:
       'No has iniciado sesión como administrador; esta carga no se sincronizó.',
-    adminCloudRetryPending:
-      'Hay cambios locales pendientes; inicia sesión y pulsa Actualizar.',
+    adminCloudRetryPending: 'Hay cambios locales pendientes; inicia sesión y pulsa Actualizar.',
     adminSpecialListSavedLocalOnly:
       '{label} se guardó solo en este dispositivo. La nube no confirmó la sincronización, así que es posible que otros administradores no lo vean todavía.',
     adminThBonusR5: 'Bono (R5)',
@@ -2207,8 +2201,7 @@ const es = {
     adminDutyPlanAbbrev: 'Plan',
     adminContributionTotalCount: '{total} en total',
     adminContributionOpeningPickerStatus: 'Abriendo el selector de imágenes...',
-    adminContributionNoImageSelectedStatus:
-      'No se seleccionó ninguna imagen de contribución.',
+    adminContributionNoImageSelectedStatus: 'No se seleccionó ninguna imagen de contribución.',
     adminContributionOcrBlockedStatus: 'OCR de contribución bloqueado: {error}',
     adminContributionOcrBlockedToast:
       'El OCR de contribución está bloqueado. Consulta el mensaje de estado.',
@@ -2232,8 +2225,7 @@ const es = {
     adminExGuildTab: 'Datos ex-guild',
     adminContributionPrimaryTitle:
       'Esta es la captura de contribución predeterminada para calcular el panel.',
-    adminContributionSetPrimaryTitle:
-      'Usar como captura de contribución predeterminada.',
+    adminContributionSetPrimaryTitle: 'Usar como captura de contribución predeterminada.',
 
     // Eden X1: analítica pública y paneles de detalle.
     edenX1InsightTargetMix: 'Distribución de objetivos',
@@ -2293,10 +2285,8 @@ const es = {
     edenX1ModalDetails: 'Detalles',
     edenX1PlayerDetailTitle: 'Detalles del jugador: {player}',
     edenX1StructureDetailTitle: 'Detalles de la estructura: {structure}',
-    edenX1PlayerDetailHint:
-      'Pulsa un objetivo para cambiar a los detalles de la estructura.',
-    edenX1StructureDetailHint:
-      'Pulsa un jugador para cambiar a los detalles del jugador.',
+    edenX1PlayerDetailHint: 'Pulsa un objetivo para cambiar a los detalles de la estructura.',
+    edenX1StructureDetailHint: 'Pulsa un jugador para cambiar a los detalles del jugador.',
     edenX1ModalTotalDemo: 'Demolición total',
     edenX1ModalHits: 'Golpes',
     edenX1ModalTargets: 'Objetivos',
@@ -2388,8 +2378,7 @@ const es = {
     edenViewScout: 'Exploración',
     edenViewTeams: 'Plan de equipos',
     edenMarchSpeedLabel: 'Velocidad de marcha',
-    edenMarchSpeedTitle:
-      'Multiplicador del tiempo de marcha de rutas y mediciones de distancia',
+    edenMarchSpeedTitle: 'Multiplicador del tiempo de marcha de rutas y mediciones de distancia',
     edenRouteNameTitle: 'Etiqueta opcional para la ruta terminada',
     edenPlansPanelTitle:
       'Abrir herramientas de planes: importar, exportar, compartir, PNG y espacios de planes',
@@ -2531,8 +2520,7 @@ const es = {
     edenTeamPlanOffHint:
       'Activa el plan de equipos para asignar estructuras y mostrar el cronograma.',
     edenTeamPlanEnableFirst: 'Activa primero el plan de equipos en el panel lateral.',
-    edenTeamPanelDesc:
-      'Opcional: asigna estructuras a equipos con horarios del juego.',
+    edenTeamPanelDesc: 'Opcional: asigna estructuras a equipos con horarios del juego.',
     edenTeamFilterAll: 'Todos los equipos',
     edenTeam1: 'Equipo 1',
     edenTeam2: 'Equipo 2',
@@ -2609,10 +2597,8 @@ const es = {
     'ai.kicker': 'Asistente VTS',
     adminGuestModeBody:
       'Estás viendo el panel en modo de solo lectura. Las cargas están desactivadas. Si los gráficos permanecen en «Cargando…», no hay datos para mostrar.',
-    edenX1RewardReasonGrant:
-      'R5 concedió la recompensa premium manualmente. Rango final #{rank}.',
-    edenX1RewardReasonForfeit:
-      'R5 retiró la recompensa premium manual. Rango final #{rank}.',
+    edenX1RewardReasonGrant: 'R5 concedió la recompensa premium manualmente. Rango final #{rank}.',
+    edenX1RewardReasonForfeit: 'R5 retiró la recompensa premium manual. Rango final #{rank}.',
     edenX1RewardSkippedPremiumReason:
       'El rango #{rank} cedió la recompensa premium, así que la plaza pasa al siguiente jugador elegible.',
     edenX1VoteConductBonus: 'Puntos extra R5',
@@ -2641,10 +2627,8 @@ const es = {
     dmPlannerRecommended: 'Recomendada',
     dmPlannerLowestSd: 'Menos Superdragonita',
     dmPlannerDirectHint: 'Menos fusiones y mayor coste de Superdragonita.',
-    dmPlannerPurpleHint:
-      'El mejor equilibrio entre Superdragonita, gemas y trabajo.',
-    dmPlannerBlueHint:
-      'La ruta que más Superdragonita ahorra, pero requiere más fusiones.',
+    dmPlannerPurpleHint: 'El mejor equilibrio entre Superdragonita, gemas y trabajo.',
+    dmPlannerBlueHint: 'La ruta que más Superdragonita ahorra, pero requiere más fusiones.',
     dmPlannerSetTitle: 'Conjunto Dragon Master de seis piezas',
     dmPlannerViewSet: 'Vista del conjunto',
     dmPlannerViewSlot: 'Vista por espacio',
@@ -2653,8 +2637,7 @@ const es = {
     dmPlannerSelectedPiece: 'Pieza seleccionada',
     dmPlannerRecipeFor: '{piece} mediante la ruta {route}',
     dmPlannerNormalGear: 'Equipo normal de tropas',
-    dmPlannerNormalGearHint:
-      'Fabrica primero estas piezas normales de tropas en el nivel {tier}.',
+    dmPlannerNormalGearHint: 'Fabrica primero estas piezas normales de tropas en el nivel {tier}.',
     dmPlannerRawMaterials: 'Materiales básicos',
     dmPlannerStockpileTitle: 'Materiales para un conjunto completo',
     dmPlannerStockpileHint:
@@ -2714,10 +2697,8 @@ const es = {
     dmPlannerCampaignHint:
       'Fabrica cinco conjuntos Dragon Master completos: 30 piezas doradas en total.',
     dmPlannerCampaignSet: 'Conjunto {number}',
-    dmPlannerCampaignSetsComplete:
-      '{completed} de {total} conjuntos completados',
-    dmPlannerCampaignPiecesComplete:
-      '{completed} de {total} piezas doradas completadas',
+    dmPlannerCampaignSetsComplete: '{completed} de {total} conjuntos completados',
+    dmPlannerCampaignPiecesComplete: '{completed} de {total} piezas doradas completadas',
     dmPlannerCampaignFocused: 'Conjunto activo',
     dmPlannerCampaignComplete: 'Cinco conjuntos Dragon Master completados',
     dmPlannerCampaignCompleteHint:
@@ -2791,8 +2772,7 @@ const es = {
     edenGuideZoomTitle: 'Zoom',
     edenGuideZoomDesc:
       'Usa la rueda para acercarte hacia el cursor o + / − para elegir niveles predefinidos (25%–320%). Haz doble clic en una zona vacía para encajar el sector.',
-    edenGuideZoomTip1:
-      'El zoom se centra en el puntero: el punto bajo el cursor permanece fijo.',
+    edenGuideZoomTip1: 'El zoom se centra en el puntero: el punto bajo el cursor permanece fijo.',
     edenGuideZoomTip2: 'Haz doble clic en una estructura para acercarte a ella.',
     edenGuideZoomTip3: 'Pulsa F o Espacio para encajar el sector actual.',
     edenGuidePanTitle: 'Desplazamiento y herramienta Navegar',
@@ -2800,13 +2780,11 @@ const es = {
       'Arrastra una zona vacía para desplazar el mapa. Las flechas también mueven la vista. Navegar es la herramienta predeterminada para seleccionar estructuras.',
     edenGuidePanTip1:
       'Haz clic en una estructura del mapa o de la lista lateral para seleccionarla.',
-    edenGuidePanTip2:
-      'Pulsa Escape para volver a Navegar y borrar los puntos de medición.',
+    edenGuidePanTip2: 'Pulsa Escape para volver a Navegar y borrar los puntos de medición.',
     edenGuideSectorTitle: 'Sectores',
     edenGuideSectorDesc:
       'Eden tiene una zona de preparación norte (N1–N4), una zona de guerra central (C, EC, E, W, WC) y una zona de preparación sur (S1–S4). Elige un sector en el menú o usa los accesos rápidos (C, W, Templo…).',
-    edenGuideSectorTip1:
-      'Atajos: 1=mapa completo, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C y 8=NC.',
+    edenGuideSectorTip1: 'Atajos: 1=mapa completo, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C y 8=NC.',
     edenGuideSectorTip2: 'Probar ahora te lleva a Central (C), en la zona de guerra.',
     edenGuideMinimapTitle: 'Minimapa',
     edenGuideMinimapDesc:
@@ -2822,16 +2800,14 @@ const es = {
     edenGuideSelectTitle: 'Seleccionar estructuras',
     edenGuideSelectDesc:
       'Con Navegar activo, pulsa cualquier puerta, pueblo, capital o templo del mapa. El panel lateral se desplaza para resaltar tu selección.',
-    edenGuideSelectTip1:
-      'También puedes elegir una estructura en la lista con buscador.',
+    edenGuideSelectTip1: 'También puedes elegir una estructura en la lista con buscador.',
     edenGuideSelectTip2: 'Al pasar el cursor se muestra un resumen rápido.',
     edenGuideSidebarTitle: 'Detalles de la estructura',
     edenGuideSidebarDesc:
       'Al seleccionar una estructura, puedes indicar quién la controla y el nombre del gremio, marcarla como objetivo, copiar sus coordenadas o abrir Combo Creator.',
     edenGuideSidebarTip1:
       'Colores de control: verde para propia, amarillo para disputada y rojo para enemiga.',
-    edenGuideSidebarTip2:
-      'Los botones Centrar y Acercar enfocan la estructura en el mapa.',
+    edenGuideSidebarTip2: 'Los botones Centrar y Acercar enfocan la estructura en el mapa.',
     edenGuideSidebarTip3:
       'Si activas el plan de equipos, también puedes asignar un equipo, una franja horaria del juego y una nota.',
     edenGuideFiltersTitle: 'Filtros del panel lateral',
@@ -2855,14 +2831,12 @@ const es = {
     edenGuideMeasureTitle: 'Herramienta Medir',
     edenGuideMeasureDesc:
       'Pulsa M o Medir y después elige los puntos A y B en el mapa. La distancia tiene en cuenta el terreno y muestra un tiempo de marcha estimado.',
-    edenGuideMeasureTip1:
-      'La velocidad de marcha de la barra ajusta las estimaciones de viaje.',
+    edenGuideMeasureTip1: 'La velocidad de marcha de la barra ajusta las estimaciones de viaje.',
     edenGuideMeasureTip2: 'Borrar medición reinicia los puntos en el panel lateral.',
     edenGuidePathTitle: 'Herramienta Ruta',
     edenGuidePathDesc:
       'Dibuja rutas de marcha de la alianza con Mayús+clic para añadir puntos. Elige un color y un nombre y pulsa Finalizar ruta. Después puedes editar los puntos en el modo Navegar.',
-    edenGuidePathTip1:
-      'Ctrl+Z o el botón derecho deshace el último punto mientras dibujas.',
+    edenGuidePathTip1: 'Ctrl+Z o el botón derecho deshace el último punto mientras dibujas.',
     edenGuidePathTip2: 'Eliminar ruta borra la ruta seleccionada.',
     edenGuidePathTip3: 'Objetivos X1 carga marcadores de objetivos predefinidos.',
     edenGuideTargetTitle: 'Herramienta Objetivo',
@@ -2872,17 +2846,13 @@ const es = {
     edenGuideRouteModeTitle: 'Vista Planificador de rutas',
     edenGuideRouteModeDesc:
       'Cambia Vista a Planificador de rutas y selecciona una estructura de inicio y un punto de destino. La herramienta crea automáticamente una ruta que tiene en cuenta el terreno.',
-    edenGuideRouteModeTip1:
-      'Ideal para comparar rutas rápidamente sin colocar puntos a mano.',
-    edenGuideRouteModeTip2:
-      'La velocidad de marcha modifica el tiempo estimado de la ruta.',
+    edenGuideRouteModeTip1: 'Ideal para comparar rutas rápidamente sin colocar puntos a mano.',
+    edenGuideRouteModeTip2: 'La velocidad de marcha modifica el tiempo estimado de la ruta.',
     edenGuideOwnTitle: 'Control y gremio',
     edenGuideOwnDesc:
       'Selecciona una estructura y define quién la controla y el nombre del gremio en la tarjeta lateral. Los colores se actualizan en el mapa y las listas.',
-    edenGuideOwnTip1:
-      'Usa los filtros para mostrar solo estructuras enemigas o propias.',
-    edenGuideOwnTip2:
-      'La capa Territorio muestra las zonas de control norte, central y sur.',
+    edenGuideOwnTip1: 'Usa los filtros para mostrar solo estructuras enemigas o propias.',
+    edenGuideOwnTip2: 'La capa Territorio muestra las zonas de control norte, central y sur.',
     edenGuideTeamPlanTitle: 'Plan de equipos (opcional)',
     edenGuideTeamPlanDesc:
       'El plan de equipos está desactivado de forma predeterminada. Abre Plan de equipos en el panel lateral, marca Activar plan de equipos y elige entre 2 y 4 equipos. Asigna estructuras con franjas horarias del juego; el cronograma se ordena por el reloj del juego.',
@@ -2895,26 +2865,22 @@ const es = {
     edenGuideClockTitle: 'Hora del juego',
     edenGuideClockDesc:
       'La barra muestra la hora de Eden en directo (ciclo 00:00–23:59). Las franjas de asignación y las estimaciones de marcha usan este reloj; pasa el cursor para ver la hora exacta.',
-    edenGuideClockTip1:
-      'Es el mismo reloj que aparece junto al selector de idioma.',
+    edenGuideClockTip1: 'Es el mismo reloj que aparece junto al selector de idioma.',
     edenGuidePlansTitle: 'Varios planes',
     edenGuidePlansDesc:
       'Guarda escenarios distintos con el menú de planes. Usa + Plan para crear uno y Renombrar o Eliminar para administrar los espacios.',
-    edenGuidePlansTip1:
-      'Cada plan conserva sus propias rutas, objetivos y datos de control.',
+    edenGuidePlansTip1: 'Cada plan conserva sus propias rutas, objetivos y datos de control.',
     edenGuidePlansTip2:
       'Cada plan conserva sus equipos, rutas, objetivos y datos de control; abre Planes y exportación en el panel de control.',
     edenGuideShareTitle: 'Compartir y exportar',
     edenGuideShareDesc:
       'Compartir copia una URL con el plan codificado. Exportar descarga un JSON e Importar restaura un archivo. PNG guarda una captura del mapa.',
-    edenGuideShareTip1:
-      'Los enlaces compartidos permiten que tus aliados abran el mismo plan.',
+    edenGuideShareTip1: 'Los enlaces compartidos permiten que tus aliados abran el mismo plan.',
     edenGuideShareTip2: 'La imagen PNG viene bien para Discord o los documentos de la alianza.',
     edenGuideScoutTitle: 'Exploración e información',
     edenGuideScoutDesc:
       'Exploración se centra en recopilar información. Descargar información combina los datos de control de la nube; Subir información envía tus marcas (Firebase, opcional).',
-    edenGuideScoutTip1:
-      'Probar ahora cambia a Exploración para que conozcas sus controles.',
+    edenGuideScoutTip1: 'Probar ahora cambia a Exploración para que conozcas sus controles.',
     edenGuideLayersTitle: 'Capas del mapa',
     edenGuideLayersDesc:
       'Activa o desactiva el mapa de pergamino, capturas, terreno, estructuras, rutas, objetivos, equipos (opcional), etiquetas, zonas, territorio, niebla, mapa de calor y mosaicos HD del sector.',
@@ -2933,8 +2899,7 @@ const es = {
     edenGuideRefTitle: 'Opacidad de referencia',
     edenGuideRefDesc:
       'La capa Mapa muestra el pergamino optimizado con la división de facciones (temporada 5, recortado y alineado). Usa Capturas por sector para comprobar la alineación de las estructuras.',
-    edenGuideRefTip1:
-      'Reduce la opacidad de referencia para alinear las rutas con el terreno.',
+    edenGuideRefTip1: 'Reduce la opacidad de referencia para alinear las rutas con el terreno.',
     edenGuideRefTip2:
       'Los iconos de capital del pergamino están ocultos; las figuras colocadas por coordenadas son la referencia válida.',
     edenGuideZoneTitle: 'Filtro de zona',
@@ -2942,18 +2907,15 @@ const es = {
       'Filtra las estructuras por zona de Eden: Norte (preparación N1–N4), Central (zona de guerra C, EC, E, W y WC) o Sur (preparación S1–S4).',
     edenGuideZoneTip1:
       'Todas muestra todas las estructuras; combínalo con el menú de zona lateral para afinar el filtro.',
-    edenGuideZoneTip2:
-      'La capa Territorio tiñe las mitades norte, central y sur del mapa.',
+    edenGuideZoneTip2: 'La capa Territorio tiñe las mitades norte, central y sur del mapa.',
     edenGuideKeysTitle: 'Atajos de teclado',
     edenGuideKeysDesc:
       'Planifica más rápido con teclas directas; la mayoría coincide con las etiquetas de la barra.',
-    edenGuideKeysTip1:
-      'M Medir · P Ruta · 1–8 sectores · F/Espacio encajar · +/− zoom',
+    edenGuideKeysTip1: 'M Medir · P Ruta · 1–8 sectores · F/Espacio encajar · +/− zoom',
     edenGuideKeysTip2:
       'Flechas desplazar · Supr elimina la ruta seleccionada · R restablece las capas',
     edenGuideKeysTip3: 'Ctrl+Z deshace puntos mientras dibujas una ruta',
-    edenGuideKeysTip4:
-      'Escape vuelve a Navegar y borra los puntos de medición',
+    edenGuideKeysTip4: 'Escape vuelve a Navegar y borra los puntos de medición',
     edenGuideMobileTitle: 'Móvil y pantalla táctil',
     edenGuideMobileDesc:
       'Pellizca para ampliar y arrastra con un dedo para desplazarte. Al seleccionar una estructura, el panel lateral se abre abajo con un botón para cerrarlo. La guía permanece debajo del mapa.',

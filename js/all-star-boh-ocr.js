@@ -21,13 +21,22 @@ export const BOH_STATS_OCR_JPEG_QUALITY = 0.88;
 export const BOH_STATS_OCR_MAX_POWER = 100_000_000_000;
 export const BOH_STATS_OCR_LOW_CONFIDENCE_THRESHOLD = 0.75;
 
-export const BOH_STATS_POWER_FIELDS = Object.freeze([
+export const BOH_STATS_REQUIRED_POWER_FIELDS = Object.freeze([
   'totalCastlePower',
   'troopPower',
   'buildingPower',
   'technologyPower',
   'heroCombatPower',
   'dragonPower',
+]);
+export const BOH_STATS_OPTIONAL_POWER_FIELDS = Object.freeze([
+  'unitSpecialtyPower',
+  'artifactPower',
+  'royalTechPower',
+]);
+export const BOH_STATS_POWER_FIELDS = Object.freeze([
+  ...BOH_STATS_REQUIRED_POWER_FIELDS,
+  ...BOH_STATS_OPTIONAL_POWER_FIELDS,
 ]);
 
 export const BOH_STATS_OCR_FIELDS = Object.freeze([...BOH_STATS_POWER_FIELDS, 'gameName']);
@@ -147,7 +156,7 @@ function defaultCreateCanvas(width, height) {
   return canvas;
 }
 
-function assertJpegDataUrl(imageData) {
+export function assertJpegDataUrl(imageData) {
   if (typeof imageData !== 'string' || !JPEG_DATA_URL_PATTERN.test(imageData)) {
     fail('invalid_sanitized_image', 'The screenshot could not be safely converted to JPEG.');
   }
@@ -212,8 +221,10 @@ function buildFieldIssues(extracted, confidence, lowConfidenceThreshold) {
 
   for (const field of BOH_STATS_POWER_FIELDS) {
     if (extracted[field] === null) {
-      missingFields.push(field);
-      fieldIssues[field].push({ code: 'missing' });
+      if (BOH_STATS_REQUIRED_POWER_FIELDS.includes(field)) {
+        missingFields.push(field);
+        fieldIssues[field].push({ code: 'missing' });
+      }
       continue;
     }
     if (confidence[field] === null) {
@@ -250,7 +261,7 @@ function buildFieldIssues(extracted, confidence, lowConfidenceThreshold) {
 }
 
 function isCompleteConfirmedValues(values) {
-  return BOH_STATS_POWER_FIELDS.every((field) => values[field] !== null);
+  return BOH_STATS_REQUIRED_POWER_FIELDS.every((field) => values[field] !== null);
 }
 
 function buildCorrectionAudit(ocrValues, confirmedValues, requestId, reviewedAt) {

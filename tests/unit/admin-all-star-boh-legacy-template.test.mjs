@@ -256,7 +256,9 @@ test('admin plan editor exposes every scope, route, Legion, teleport, and note c
 test('admin review and rotation editors preserve canonical editable fields', () => {
   const source = readFileSync('js/admin-all-star-boh.js', 'utf8');
   assert.match(source, /\['totalCastlePower', 'adminBohStatTotalPower'/u);
-  assert.match(source, /\['level50HeroCount', 'adminBohStatLevel50Heroes'/u);
+  assert.match(source, /\['unitSpecialtyPower', 'adminBohStatUnitSpecialtyPower'/u);
+  assert.match(source, /\['artifactPower', 'adminBohStatArtifactPower'/u);
+  assert.match(source, /\['royalTechPower', 'adminBohStatRoyalTechPower'/u);
   assert.match(source, /const reviewStatus = adapterReviewStatusToUi\(review\.status\)/u);
   assert.match(source, /escapeHtml\(review\.note \|\| ''\)/u);
   assert.match(source, /name="adminUsefulnessRating"/u);

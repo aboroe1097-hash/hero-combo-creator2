@@ -128,6 +128,7 @@ test('signup normalization carries the form locale and commitment fields canonic
   assert.deepEqual(signup.commitment, {
     availability: 'most',
     preferredRole: 'top',
+    secondaryRole: '',
     fightingTimeIds: [],
     unavailableTimes: 'Friday 20:00–21:00',
     canTeleport: true,
@@ -251,6 +252,7 @@ test('nested commitment aliases normalize and invalid form values fail explicitl
     commitment: {
       availability: 'backup',
       preferredRole: 'flexible',
+      secondaryRole: '',
       unavailableTimes: 'None',
       canTeleport: 0,
       canUseVoice: 'yes',
@@ -262,6 +264,7 @@ test('nested commitment aliases normalize and invalid form values fail explicitl
   assert.deepEqual(signup.commitment, {
     availability: 'backup',
     preferredRole: 'flexible',
+    secondaryRole: '',
     fightingTimeIds: [],
     unavailableTimes: 'None',
     canTeleport: false,

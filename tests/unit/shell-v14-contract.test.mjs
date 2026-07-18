@@ -8,8 +8,16 @@ const appCss = readFileSync('css/app.css', 'utf8');
 const shellJs = readFileSync('js/shell-v14.js', 'utf8');
 const specializationJs = readFileSync('js/app-specialization.js', 'utf8');
 const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
+const aiAssistantTemplate = readFileSync('tabs/ai-assistant.html', 'utf8');
+const veloPrompt = readFileSync('workers/ai/prompt.js', 'utf8');
 
 const countId = (id) => (index.match(new RegExp(`id="${id}"`, 'g')) || []).length;
+
+test('Velo frontend badge matches the deployed b0.2 prompt contract', () => {
+  assert.match(aiAssistantTemplate, /aria-label="Velo Beta 0\.2">Beta 0\.2</);
+  assert.doesNotMatch(aiAssistantTemplate, /Beta 0\.1/);
+  assert.match(veloPrompt, /Velo b0\.2/);
+});
 
 test('v14 shell assets load last without replacing established tool ids', () => {
   assert.ok(index.indexOf('css/shell-v14.css') > index.indexOf('css/mobile.css'));
@@ -171,15 +179,12 @@ test('Specialization uses only the integrated tab destination', () => {
   assert.match(shellJs, /\['tabSpecialization',\s*'specialization'\]/);
   assert.doesNotMatch(shellJs, /tabSpecializationTowers/);
   assert.match(specializationJs, /querySelector\('\.specialization-loading'\)\?\.remove\(\)/);
-  assert.match(
-    specializationJs,
-    /const ACKNOWLEDGMENTS = Object\.freeze\(\['Ptr', 'Old\.Faithful', 'Raven G'\]\)/
-  );
+  assert.doesNotMatch(specializationJs, /ACKNOWLEDGMENTS|Old\.Faithful|Raven G|\bPtr\b/);
   assert.match(
     specializationJs,
     /\$\{renderCommunity\(\)\}[\s\S]*?\$\{renderAcknowledgments\(\)\}/
   );
-  assert.match(specializationJs, /data-spec-toggle-selected-node/);
+  assert.match(specializationJs, /data-spec-set-selected-node/);
   assert.match(specializationJs, /data-spec-help-node/);
   assert.match(specializationJs, /function contributionNodeKey\(/);
   assert.match(appCss, /\.spec-ring-node\[data-selected='true'\]/);

@@ -1276,8 +1276,9 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#specializationSection .specialization-loading')).toHaveCount(0);
 
     const firstBadge = page.locator('.spec-badge-wrap').first();
-    await firstBadge.locator('[data-spec-quick-max]').click();
+    await firstBadge.locator('[data-spec-quick-set="complete"]').click();
     await expect(firstBadge.locator('.spec-badge-pct')).toHaveText('100%');
+    await expect(firstBadge.locator('[data-spec-quick-set="reset"]')).toContainText('UNMAX');
 
     await firstBadge.locator('[data-spec-research]').click();
     const reset = page.locator('[data-spec-reset]');
@@ -1292,7 +1293,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
     await expect(reset).toContainText('(0/11)');
 
-    await page.locator('[data-spec-toggle-selected-node]').click();
+    await page.locator('[data-spec-set-selected-node="learned"]').click();
     await expect(reset).toContainText('(1/11)');
 
     await page.locator('[data-spec-complete]').click();
@@ -1303,7 +1304,36 @@ test.describe('app smoke tabs', () => {
     await page.locator('[data-spec-help-node]').click();
     await expect(page.locator('.spec-tool')).toHaveAttribute('data-view', 'overview');
     await expect(page.locator('[data-contribution-key="training1:2"]')).toBeVisible();
-    await expect(page.locator('[data-contribution-key="training1:2"] [data-spec-node-medal]')).toBeFocused();
+    await expect(
+      page.locator('[data-contribution-key="training1:2"] [data-spec-node-medal]')
+    ).toBeFocused();
+  });
+
+  test('Specialization unlocks, previews, and reverses a Legion Skill', async ({ page }) => {
+    test.slow();
+    await openDirectTabHash(
+      page,
+      'specialization',
+      '#specializationSection',
+      '#specializationToolRoot .spec-tool'
+    );
+
+    const firstColumn = page.locator('.spec-banner').first();
+    for (let index = 0; index < 4; index += 1) {
+      await firstColumn.locator('[data-spec-quick-set="complete"]').first().click();
+    }
+    const crest = firstColumn.locator('[data-spec-legion="1"]');
+    await expect(crest).toBeEnabled();
+    await expect(crest).toHaveAttribute('title', /.+ — .+/);
+    await crest.hover();
+    await crest.click();
+    await expect(page.locator('#spec-legion-inspector')).toBeVisible();
+    await expect(page.locator('#spec-legion-inspector h4')).not.toBeEmpty();
+    await expect(page.locator('#spec-legion-inspector p')).toContainText('Buff');
+
+    await firstColumn.locator('[data-spec-quick-set="reset"]').first().click();
+    await expect(firstColumn.locator('[data-spec-legion="1"]')).toBeDisabled();
+    await expect(page.locator('#spec-legion-inspector')).toHaveCount(0);
   });
 
   test('Specialization contribution nodes keep submitted and reviewed medals together', async ({
@@ -1346,9 +1376,8 @@ test.describe('app smoke tabs', () => {
 
     const acknowledgments = page.locator('.spec-ack');
     await expect(acknowledgments).toBeVisible();
-    await expect(acknowledgments.locator('.spec-ack-plate')).toHaveCount(4);
+    await expect(acknowledgments.locator('.spec-ack-plate')).toHaveCount(1);
     await expect(acknowledgments).toContainText('VTS 1097 Community');
-    await expect(acknowledgments).toContainText('Old.Faithful');
   });
 
   test('Specialization mobile view keeps node details and actions touch-safe', async ({ page }) => {

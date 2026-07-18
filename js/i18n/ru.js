@@ -451,10 +451,8 @@ const ru = {
   bohAccessPinLabel: 'PIN участника',
   bohAccessPinHint: 'PIN проверяется безопасно и не сохраняется на этом устройстве.',
   bohAccessUnlock: 'Открыть центр',
-  bohAccessCancel: 'Не сейчас',
   bohAccessChecking: 'Проверяем безопасный доступ участника...',
   bohAccessBusy: 'Подтверждаем доступ участника...',
-  bohAccessCanceled: 'Центр All-Star остаётся закрытым.',
   bohAccessExpired: 'Срок доступа истёк. Введите актуальный PIN ещё раз.',
   bohAccessErrorInvalidPin: 'Введите актуальный PIN участника.',
   bohAccessErrorDenied: 'PIN не подошёл. Проверьте его и повторите попытку.',
@@ -675,8 +673,7 @@ const ru = {
   heroesBioSkinsTitle: 'Био-скины',
   heroesClearFilters: 'Сбросить фильтры',
   heroesSeasonHint: 'Сезоны - можно выбрать несколько',
-  sourceCreditText:
-    'Данные тщательно собраны сообществом VTS 1097, Ptr, Old.Faithful, Raven G и другими участниками.',
+  sourceCreditText: 'Данные тщательно собраны сообществом VTS 1097 и его участниками.',
   manualNoDuplicateHero: 'Этот герой уже используется в текущей комбинации.',
   toastComboSaved: 'Комбо сохранено!',
   toastComboSaveFailed: 'Не удалось сохранить комбо',
@@ -1668,7 +1665,8 @@ const ru = {
   strifePaidCombos: 'Платные комбо',
   strifePending: 'В ожидании',
   strifeRankOneReward: 'Награда за 1-е место',
-  strifeRankOneRewardNote: 'Эксклюзивная награда, вручаемая игроку на 1-м месте в рейтинге события.',
+  strifeRankOneRewardNote:
+    'Эксклюзивная награда, вручаемая игроку на 1-м месте в рейтинге события.',
   strifeRecommendedFormation: 'Рекомендуемая формация {tier}: {heroes}.',
   strifeReusableRank: 'Многоразовый #{rank}',
   strifeSeasonStageGroupAria: 'Этап сезона Strife',
@@ -2020,12 +2018,9 @@ Object.assign(ru, {
   researchBuffSummaryOpenAria: 'Показать баффы: {tech}',
   researchBuffSummaryDialogAria: 'Баффы: {tech}',
   researchBuffSummaryTitle: '{tech}: сводка баффов',
-  researchBuffSummaryMeta:
-    'Групп баффов: {buffs} · открытий: {unlocks} · без данных: {missing}',
-  researchBuffSummaryEmpty:
-    'Для этого дерева пока нет точных числовых значений баффов.',
-  researchBuffSummaryItemMeta:
-    'Сейчас: {current} · осталось: {remaining} · {nodes} {nodeLabel}',
+  researchBuffSummaryMeta: 'Групп баффов: {buffs} · открытий: {unlocks} · без данных: {missing}',
+  researchBuffSummaryEmpty: 'Для этого дерева пока нет точных числовых значений баффов.',
+  researchBuffSummaryItemMeta: 'Сейчас: {current} · осталось: {remaining} · {nodes} {nodeLabel}',
   researchBuffUnlocksTitle: 'Открываемые эффекты',
   researchBuffNeedValuesTitle: 'Нет точных значений',
   researchBuffCloseAria: 'Закрыть сводку баффов',
@@ -2033,8 +2028,7 @@ Object.assign(ru, {
   researchBuffUnlockShort: 'Открыть',
   researchBuffUnlocked: 'Открыто',
   researchBuffLocked: 'Не открыто',
-  researchBuffKnownDetailTitle:
-    'Сейчас {current} из {max}; осталось {remaining}; {perLevel}',
+  researchBuffKnownDetailTitle: 'Сейчас {current} из {max}; осталось {remaining}; {perLevel}',
   researchBuffUnlockDetailTitle: 'Открывается на 1-м уровне',
   researchBuffMissingDetailTitle: 'Для этой технологии нет точного значения баффа.',
   researchBuffNodeDetail: 'Осталось {remaining} · {perLevel}',
@@ -2123,8 +2117,7 @@ Object.assign(ru, {
   edenViewModeTitle:
     'Режим карты: стратегия, разведданные, автопланировщик маршрута или назначения команд',
   edenViewTeams: 'План команд',
-  edenPlansPanelTitle:
-    'Открыть инструменты плана: импорт, экспорт, ссылка, PNG и слоты планов',
+  edenPlansPanelTitle: 'Открыть инструменты плана: импорт, экспорт, ссылка, PNG и слоты планов',
   edenLayersLabel: 'Слои',
   edenLayerRef: 'Карта',
   edenLayerRefTitle: 'Чистая пергаментная карта разделения фракций Eden',
@@ -2214,8 +2207,7 @@ Object.assign(ru, {
   edenTeamCount2: '2 команды',
   edenTeamCount3: '3 команды',
   edenTeamCount4: '4 команды',
-  edenTeamPlanOffHint:
-    'Включите план команд, чтобы назначать объекты и видеть временную шкалу.',
+  edenTeamPlanOffHint: 'Включите план команд, чтобы назначать объекты и видеть временную шкалу.',
   edenTeamPlanEnableFirst: 'Сначала включите план команд на боковой панели.',
   edenTeamPanelDesc: 'Необязательно: назначайте командам объекты и окна игрового времени.',
   edenTeamFilterAll: 'Все команды',
@@ -2342,8 +2334,7 @@ Object.assign(ru, {
   edenGuideBtn: 'Руководство',
   edenGuideBtnTitle: 'Открыть интерактивное обучение',
   edenGuidePanelTitle: 'Интерактивное руководство по карте Eden',
-  edenGuideIntro:
-    'Пошаговое обучение на настоящей карте. Прогресс сохраняется на этом устройстве.',
+  edenGuideIntro: 'Пошаговое обучение на настоящей карте. Прогресс сохраняется на этом устройстве.',
   edenGuideStartTour: 'Начать обучение',
   edenGuideReset: 'Сбросить прогресс',
   edenGuideStepLabel: 'Шаг',
@@ -2390,13 +2381,11 @@ Object.assign(ru, {
   edenGuidePanDesc:
     'Тяните пустую область карты для перемещения. Стрелки тоже двигают вид. Навигация — основной режим выбора объектов.',
   edenGuidePanTip1: 'Выберите объект нажатием на карте или в списке боковой панели.',
-  edenGuidePanTip2:
-    'Escape возвращает в режим навигации и очищает точки измерения.',
+  edenGuidePanTip2: 'Escape возвращает в режим навигации и очищает точки измерения.',
   edenGuideSectorTitle: 'Секторы',
   edenGuideSectorDesc:
     'В Eden есть северный плацдарм N1–N4, центральная зона войны C, EC, E, W, WC и южный плацдарм S1–S4. Выберите сектор в списке или через быстрые кнопки C, W, Храм и другие.',
-  edenGuideSectorTip1:
-    'Горячие клавиши: 1=вся карта, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C, 8=NC.',
+  edenGuideSectorTip1: 'Горячие клавиши: 1=вся карта, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C, 8=NC.',
   edenGuideSectorTip2: '«Попробовать» переносит в центральную зону C.',
   edenGuideMinimapTitle: 'Мини-карта',
   edenGuideMinimapDesc:
@@ -2423,8 +2412,7 @@ Object.assign(ru, {
   edenGuideFiltersDesc:
     'Фильтруйте объекты по владению, зоне и типу, меняйте сортировку. Поиск ниже находит название или зону. При включённом плане доступен фильтр команд.',
   edenGuideFiltersTip1: 'Фильтр владения также окрашивает метки на карте.',
-  edenGuideFiltersTip2:
-    'Поиск находит названия и зоны; ввод X:Y с Enter переносит к координатам.',
+  edenGuideFiltersTip2: 'Поиск находит названия и зоны; ввод X:Y с Enter переносит к координатам.',
   edenGuideFiltersTip3:
     'Список прокручивается внутри панели, а фильтры и поиск остаются закреплены сверху.',
   edenGuideViewModesTitle: 'Режимы карты',
@@ -2513,7 +2501,8 @@ Object.assign(ru, {
   edenGuideZoneTip2: 'Слой территории окрашивает северную, центральную и южную части карты.',
   edenGuideKeysTitle: 'Горячие клавиши',
   edenGuideKeysDesc: 'Ускоряйте планирование клавишами, соответствующими названиям инструментов.',
-  edenGuideKeysTip1: 'M — измерение · P — маршрут · 1–8 — секторы · F/Пробел — вписать · +/− — масштаб',
+  edenGuideKeysTip1:
+    'M — измерение · P — маршрут · 1–8 — секторы · F/Пробел — вписать · +/− — масштаб',
   edenGuideKeysTip2: 'Стрелки — перемещение · Del — удалить маршрут · R — сбросить слои',
   edenGuideKeysTip3: 'Ctrl+Z отменяет точки во время рисования маршрута',
   edenGuideKeysTip4: 'Escape возвращает навигацию и очищает точки измерения',
@@ -2570,8 +2559,7 @@ Object.assign(ru, {
   adminExGuildToggle: 'Архивные данные / прежняя гильдия',
   adminExGuildEmpty: 'Архивных данных прежней гильдии пока нет.',
   adminExGuildPasteRows: 'Вставить строки прежней гильдии',
-  adminExGuildPastePrompt:
-    'Вставьте имена игроков и вклад по одной строке в формате «Имя, вклад»:',
+  adminExGuildPastePrompt: 'Вставьте имена игроков и вклад по одной строке в формате «Имя, вклад»:',
   adminExGuildManualPaste: 'Ручная вставка (прежняя гильдия)',
   adminExGuildUploadImage: 'Загрузить снимок прежней гильдии',
   adminExGuildAddRow: 'Добавить строку прежней гильдии',
@@ -2593,8 +2581,7 @@ Object.assign(ru, {
   edenX1TargetsLoadedToast: 'Цели планирования X1 загружены',
   edenX1VoteHelpJump: 'Нужна помощь с голосованием? Посмотрите лучшие имена',
   edenX1VoteShowTop3: 'Показать топ-3',
-  edenX1VoteClosed:
-    'R5 закрыл голосование. Итоговые результаты объявят в последний день.',
+  edenX1VoteClosed: 'R5 закрыл голосование. Итоговые результаты объявят в последний день.',
   edenX1VoteEditingClosed:
     'R5 закрыл изменение голосов. Ваш ранее сохранённый голос остаётся учтён.',
   edenX1RewardSkippedPremium: 'Премиальная награда пропущена',
@@ -2639,8 +2626,7 @@ Object.assign(ru, {
   tabArcade: 'Аркада',
   seasonCatchupX1:
     'Догоняющий X1: молодые государства получают в этой группе всех героев X1 и часть ранних героев X2.',
-  seasonCatchupX2:
-    'Догоняющий X2: эта группа включает остальных героев X2 и волну X3.',
+  seasonCatchupX2: 'Догоняющий X2: эта группа включает остальных героев X2 и волну X3.',
   seasonCatchupX8:
     'Догоняющий X8: герои исходных X4, X5, X6, X7, X8 и SP объединены в один игровой сезон.',
 });
