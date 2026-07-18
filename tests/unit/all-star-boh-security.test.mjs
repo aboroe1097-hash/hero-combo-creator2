@@ -976,6 +976,26 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
   assert.doesNotMatch(statsValidator, /bohUsefulRating/);
 });
 
+test('Firestore string-list validation evaluates only populated item ranges', () => {
+  const rules = readRepositoryFile('firestore.rules');
+  const validator = rulesMatch(
+    rules,
+    /function validAllStarBohStringList\(values, maxItems, maxLength\) \{[\s\S]*?\n {4}\}/,
+    'bounded string-list validator'
+  );
+
+  assert.match(validator, /values\.size\(\) <= maxItems/);
+  for (const boundary of [6, 12, 20, 30, 45]) {
+    assert.match(
+      validator,
+      new RegExp(`values\\.size\\(\\) <= ${boundary} \\|\\| validAllStarBohStringItems`)
+    );
+  }
+  assert.match(rules, /function validAllStarBohStringItems45To59\(/);
+  assert.match(rules, /validAllStarBohStringItem\(values, 59, maxLength\)/);
+  assert.doesNotMatch(validator, /maxItems <= (?:6|12|20|30|45)/);
+});
+
 test('Firestore private signup tactical catalogs match canonical source data', () => {
   const rules = readRepositoryFile('firestore.rules');
   const statsValidator = rulesMatch(

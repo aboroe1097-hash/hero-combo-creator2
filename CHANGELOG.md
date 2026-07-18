@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.1.6 - 2026-07-19
+
+- Reduced All-Star Firestore rule evaluation for short signup lists while preserving validation through the full 60-item troop roster, preventing valid submissions from exceeding the rules expression budget.
+
 ## 14.1.5 - 2026-07-18
 
 - Completed the Specialization Towers public planner corpus with all 32 researches, 718 attribute nodes, 384 milestone buffs, 17 passive skills, and 24 troop-specific Legion Skills while keeping unverified prerequisite edges and node medal costs explicitly unknown.
