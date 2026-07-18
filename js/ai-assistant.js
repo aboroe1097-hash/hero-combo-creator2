@@ -218,6 +218,26 @@ function normalizeLocale(value) {
   return AI_SUPPORTED_LOCALES.includes(locale) ? locale : 'en';
 }
 
+// Flip to true only after the Worker deploy that accepts input.activeTab
+// (workers/ai/schema.js) — the previously deployed schema rejects unknown
+// request fields, so sending it early would fail every chat turn.
+const SEND_ACTIVE_TAB_CONTEXT = false;
+
+function currentActiveTabContext() {
+  const tab = String(document.body?.dataset?.activeTab || '').trim();
+  return /^[a-zA-Z][a-zA-Z0-9-]{0,39}$/.test(tab) ? tab : null;
+}
+
+function messageInputPayload(prompt) {
+  const activeTab = SEND_ACTIVE_TAB_CONTEXT ? currentActiveTabContext() : null;
+  return {
+    kind: 'message',
+    text: prompt,
+    locale: normalizeLocale(currentLanguage),
+    ...(activeTab ? { activeTab } : {}),
+  };
+}
+
 function toolStage(calls) {
   const names = (Array.isArray(calls) ? calls : []).map((call) => call?.name).join(' ');
   if (/combo|counter/.test(names)) return 'checking_ranked_combos';
@@ -611,7 +631,7 @@ class AiAssistantController {
       version: 1,
       requestId,
       history: priorHistory,
-      input: { kind: 'message', text: prompt, locale: normalizeLocale(currentLanguage) },
+      input: messageInputPayload(prompt),
       allowedToolGroups,
     };
     let round = 0;

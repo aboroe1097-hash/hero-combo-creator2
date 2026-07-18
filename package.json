@@ -1,6 +1,6 @@
 {
   "name": "hero-combo-creator",
-  "version": "14.1.1",
+  "version": "14.1.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "build:eden": "python scripts/eden/build-eden-datasets.py && python scripts/eden/check_dup_ids.py",
     "build-env:check": "node scripts/check-build-env.mjs",
     "dev": "vite",
-    "build": "npm run data:check && npm run build:eden && node scripts/update-build-metadata.mjs && vite build && node scripts/post-build.mjs && node scripts/minify-built-css.mjs",
+    "build": "npm run data:check && npm run build:eden && node scripts/build-changelog-digest.mjs && node scripts/update-build-metadata.mjs && vite build && node scripts/post-build.mjs && node scripts/minify-built-css.mjs",
     "data:check": "node scripts/check-tech-db.mjs",
     "firebase:admin-claim": "node scripts/firebase-set-admin-claim.mjs",
     "firebase:preview": "npm run check && node scripts/deploy-firebase-preview.mjs",
@@ -29,6 +29,7 @@
     "worker:deploy": "npx wrangler deploy",
     "worker:tail": "npx wrangler tail delicate-term-725f",
     "velo:lab": "node scripts/velo-lab-server.mjs",
+    "velo:changelog": "node scripts/build-changelog-digest.mjs",
     "check:fast": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check",
     "check:full": "npm run check",
     "check": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check && npm run build && npm run size:check && npm run smoke:prod && npm run smoke",

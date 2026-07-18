@@ -28,35 +28,38 @@ const LIMITS = {
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
   // six-team planner, persistence model, and complete player/Admin locale
-  // packs. The integrated Specialization tab lifts the graph to 7699.8 KiB; keep less than 3 KiB
+  // packs. Velo b0.2 plus the localized Specialization node inspector and Hall
+  // of Honor lift the combined graph to 8003.6 KiB; retain less than 3.5 KiB
   // of aggregate headroom.
-  totalJsBytes: 7970 * 1024,
+  totalJsBytes: 8007 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
-  // graph. The integrated Specialization tab styles lift it to 1270.6 KiB; keep less than
-  // 2.5 KiB of aggregate headroom.
-  totalCssBytes: 1290 * 1024,
+  // graph. The touch-safe Specialization inspector, mobile command view, and
+  // Hall of Honor lift it to 1294.2 KiB after production minification; keep
+  // less than 3 KiB of aggregate headroom.
+  totalCssBytes: 1297 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
-  // final post-Skin-Atlas rebase artifact measures 24,978.7 KiB; keep less than
-  // 6.5 KiB of headroom.
-  totalDeployBytes: 25300 * 1024,
+  // combined 14.1.2 artifact measures 25,335.8 KiB with Velo b0.2 and the
+  // localized Specialization expansion; retain less than 4.5 KiB of headroom.
+  totalDeployBytes: 25340 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // Specialization and All-Star add route, feature, and locale assets. The
-  // audited artifact has 573 files; retain a one-file guard.
-  deployFileCount: 576,
+  // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
+  // feature, and locale assets. The audited artifact has 577 files; retain a
+  // one-file guard.
+  deployFileCount: 578,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife
-    // Rank 1 reward styles in app.css lift these routes to 605.4/698.3 KiB and
-    // 720.1/813.0 KiB respectively after minification.
-    'admin.html': { desktop: 620 * 1024, mobile: 715 * 1024 },
-    'eden-x1.html': { desktop: 740 * 1024, mobile: 830 * 1024 },
-    // Mobile Arcade loads the shared v14 interaction sheet and measures
-    // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
-    'arcade.html': { desktop: 426 * 1024, mobile: 519 * 1024 },
+    // Hall of Honor and the phone node inspector expand shared app.css. Admin
+    // measures 628.2/721.1 KiB and Eden 744.7/837.5 KiB after minification.
+    'admin.html': { desktop: 630 * 1024, mobile: 723 * 1024 },
+    'eden-x1.html': { desktop: 747 * 1024, mobile: 840 * 1024 },
+    // Arcade measures 428.3/521.1 KiB with the combined lazy route graph;
+    // retain less than 2 KiB of route-specific headroom.
+    'arcade.html': { desktop: 430 * 1024, mobile: 523 * 1024 },
     // Battle Simulator v2's responsive source breakdown and equipment controls
     // load only shared tokens plus its standalone sheet, measuring 50.8 KiB on
     // desktop and mobile before unlock. Keep less than 1.5 KiB of headroom.

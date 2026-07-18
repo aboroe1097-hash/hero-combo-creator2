@@ -52,12 +52,28 @@ const NODE_ICON = [
 
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
 
+// Honored contributors — extend this list as the community grows.
+const ACKNOWLEDGMENTS = Object.freeze(['Ptr', 'Old.Faithful', 'Raven G']);
+
 let root = null;
 let state = null;
 let activeTroop = 'cavalry';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
+let selectedNodeId = null;
 let wired = false;
+
+function contributionNodeKey(researchId, nodeId) {
+  return `${researchId}:${nodeId}`;
+}
+
+function contributionRecord(data, nodeKey) {
+  if (data.nodes[nodeKey]) return data.nodes[nodeKey];
+  const legacyNodeId = nodeKey.split(':').at(-1);
+  data.nodes[nodeKey] = { ...(data.nodes[legacyNodeId] || {}) };
+  delete data.nodes[legacyNodeId];
+  return data.nodes[nodeKey];
+}
 
 function loadContributions() {
   try {
@@ -238,8 +254,9 @@ function renderCommunity() {
                   const nodeId = row[6];
                   const nodeName = row[7];
                   const nodeEffect = row[8];
-                  const saved = data.nodes[nodeId] || {};
-                  return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}">
+                  const nodeKey = contributionNodeKey(research.id, nodeId);
+                  const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
+                  return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
                     <div class="spec-contrib-node-identity">
                       <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon(nodeEffect)}</span>
                       <span><small>#${fmt(nodePosition)}</small><strong>${escapeHtml(nodeName)}</strong>${nodeEffect ? `<em>${escapeHtml(nodeEffect)}</em>` : ''}</span>
@@ -247,20 +264,20 @@ function renderCommunity() {
                     <fieldset class="spec-contrib-stage">
                       <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
                       <label><span>${escapeHtml(sp('communityContributorName'))}</span>
-                        <input type="text" data-spec-node-contributor="${escapeHtml(nodeId)}" value="${escapeHtml(saved.contributor || data.contributorName || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityContributorPlaceholder'))}" />
+                        <input type="text" data-spec-node-contributor="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.contributor || data.contributorName || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityContributorPlaceholder'))}" />
                       </label>
                       <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
-                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeId)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeKey)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
                       </label>
                     </fieldset>
                     <span class="spec-contrib-flow" aria-hidden="true">→</span>
                     <fieldset class="spec-contrib-stage spec-contrib-stage--review">
                       <legend>${escapeHtml(sp('verificationVerified'))}</legend>
                       <label><span>${escapeHtml(sp('communityReviewer'))}</span>
-                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeId)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" />
+                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" />
                       </label>
                       <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
-                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeId)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeKey)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
                       </label>
                     </fieldset>
                   </div>`;
@@ -273,6 +290,29 @@ function renderCommunity() {
     </section>`;
 }
 
+function renderAcknowledgments() {
+  const plates = ['VTS 1097 Community', ...ACKNOWLEDGMENTS];
+  return `
+    <section class="spec-ack" aria-labelledby="spec-ack-title">
+      <div class="spec-ack-rule" aria-hidden="true"><span class="spec-ack-seal">🏅</span></div>
+      <header class="spec-ack-head">
+        <h4 id="spec-ack-title">${escapeHtml(sp('ackTitle'))}</h4>
+        <p class="spec-ack-intro">${escapeHtml(sp('ackIntro'))}</p>
+      </header>
+      <ul class="spec-ack-plates" role="list">
+        ${plates
+          .map(
+            (name, index) => `<li class="spec-ack-plate${index === 0 ? ' spec-ack-plate--lead' : ''}" style="--i:${index}">
+              <span class="spec-ack-plate-crest" aria-hidden="true">${index === 0 ? '🛡️' : '◆'}</span>
+              <span class="spec-ack-plate-name">${escapeHtml(name)}</span>
+            </li>`
+          )
+          .join('')}
+      </ul>
+      <p class="spec-ack-tail">${escapeHtml(sp('ackTail'))}</p>
+    </section>`;
+}
+
 function renderOverview(summary) {
   return `
     ${renderTroopTabs(summary)}
@@ -282,25 +322,39 @@ function renderOverview(summary) {
         .map((id) => renderBanner(Number(id)))
         .join('')}
     </div>
-    ${renderCommunity()}`;
+    ${renderCommunity()}
+    ${renderAcknowledgments()}`;
 }
 
 /* ---------- Detail: node graph (oval ring or tactic tree) ---------- */
 
 function resolveNode(research, entry) {
-  return (
-    research.nodes.find((candidate) => candidate.id === entry.nodeId) ||
-    (research.passiveSkillNodeId === entry.nodeId
-      ? { id: entry.nodeId, name: sp('nodePathProgressive'), effect: '' }
-      : { id: entry.nodeId, name: '', effect: '' })
-  );
+  const node = research.nodes.find((candidate) => candidate.id === entry.nodeId);
+  if (node) {
+    const troopOverride = node.troopSpecific?.[activeTroop];
+    return {
+      ...node,
+      name: troopOverride?.name || node.name,
+      effect: troopOverride?.effect || troopOverride?.desc || node.effect || node.desc || '',
+    };
+  }
+  if (research.passiveSkillNodeId === entry.nodeId) {
+    const passive = research.passiveSkill?.[activeTroop] || {};
+    return {
+      id: entry.nodeId,
+      name: passive.name || sp('nodePathProgressive'),
+      effect: passive.effect || passive.desc || '',
+    };
+  }
+  return { id: entry.nodeId, name: '', effect: '' };
 }
 
 function nodeButton(research, entry, x, y) {
   const node = resolveNode(research, entry);
-  const disabled = entry.state === 'locked' || entry.state === 'hidden';
+  const disabled = entry.state === 'hidden';
+  const selected = entry.nodeId === selectedNodeId;
   const tip = `${escapeHtml(node.name)}${node.effect ? ' — ' + escapeHtml(node.effect) : ''}`;
-  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true"' : ''} title="${tip}" aria-pressed="${entry.state === 'learned'}"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
+  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-selected="${selected}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector" aria-pressed="${entry.state === 'learned'}"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
 }
 
 // Enhanced Tactics is a small dependency tree in-game; everything else is a
@@ -425,6 +479,36 @@ function renderNodeGraph(research, access) {
   return isTreeLayout(research) ? renderTree(research, access) : renderRing(research, access);
 }
 
+function renderSelectedNode(research, access) {
+  const entry = access.entries.find((candidate) => candidate.nodeId === selectedNodeId);
+  if (!entry) return '';
+  const node = resolveNode(research, entry);
+  const nodeKey = contributionNodeKey(research.id, entry.nodeId);
+  const contributionData = loadContributions();
+  const saved = contributionData.nodes[nodeKey] || contributionData.nodes[entry.nodeId] || {};
+  const knownMedals = saved.reviewedMedalCost ?? saved.medalCost ?? null;
+  const learned = entry.state === 'learned';
+  const canToggle = learned || entry.selectable;
+  return `
+    <section id="spec-node-inspector" class="spec-node-inspector" data-state="${entry.state}" aria-live="polite">
+      <div class="spec-node-inspector-icon" aria-hidden="true">${nodeIcon(node.effect)}</div>
+      <div class="spec-node-inspector-copy">
+        <span class="spec-node-inspector-kicker">${escapeHtml(sp('selectedLearning'))}</span>
+        <h4>${escapeHtml(node.name)}</h4>
+        <div class="spec-node-inspector-buff"><span>${escapeHtml(sp('nodeBuffLabel'))}</span><strong>${escapeHtml(node.effect || sp('nodeBuffUnknown'))}</strong></div>
+      </div>
+      <div class="spec-node-inspector-state">
+        <span class="spec-node-state-pill">${escapeHtml(sp(learned ? 'nodeLearned' : 'nodeNotLearned'))}</span>
+        <button type="button" class="spec-btn spec-node-toggle" data-spec-toggle-selected-node ${canToggle ? '' : 'disabled aria-disabled="true"'}>${escapeHtml(sp(learned ? 'markNodeUnlearned' : 'markNodeLearned'))}</button>
+      </div>
+      <div class="spec-node-medal-status${knownMedals === null ? ' is-unknown' : ''}">
+        <span class="spec-node-info" aria-hidden="true">i</span>
+        <p>${knownMedals === null ? escapeHtml(sp('nodeMedalHelp')) : `${escapeHtml(sp('communityMedalCost'))}: <strong>${fmt(knownMedals)}</strong>`}</p>
+        ${knownMedals === null ? `<button type="button" class="spec-node-help" data-spec-help-node>${escapeHtml(sp('helpFillNodeMedals'))}</button>` : ''}
+      </div>
+    </section>`;
+}
+
 function renderMilestones(research) {
   const milestones = research.skillMilestones?.[activeTroop] || [];
   if (!milestones.length) return '';
@@ -461,6 +545,7 @@ function renderDetail() {
         </div>
       </header>
       ${renderNodeGraph(research, access)}
+      ${renderSelectedNode(research, access)}
       <section class="spec-detail-section spec-medal-field">
         <label for="spec-medals-input">${escapeHtml(sp('medalsRecorded'))}</label>
         <input id="spec-medals-input" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" data-spec-medals ${progress.isComplete ? 'disabled' : ''} />
@@ -488,22 +573,37 @@ function render() {
       ${renderSummary(summary)}
       ${view === 'detail' && selectedResearchId ? renderDetail() : renderOverview(summary)}
     </div>`;
-  if (view === 'detail') {
-    root.querySelector('.spec-back')?.focus({ preventScroll: true });
-  }
 }
 
 /* ---------- Events ---------- */
 
 function openDetail(researchId) {
   selectedResearchId = researchId;
+  const access = getResearchNodeAccess(state, activeTroop, researchId);
+  selectedNodeId = access.entries.find((entry) => entry.state !== 'hidden')?.nodeId ?? null;
   view = 'detail';
   render();
+  root?.querySelector('.spec-back')?.focus({ preventScroll: true });
 }
 
 function backToOverview() {
   view = 'overview';
   render();
+}
+
+function focusContributionNode(researchId, nodeId) {
+  const nodeKey = contributionNodeKey(researchId, nodeId);
+  view = 'overview';
+  render();
+  const row = root?.querySelector(`[data-contribution-key="${nodeKey}"]`);
+  if (!row) return;
+  const column = row.closest('details');
+  if (column) column.open = true;
+  row.scrollIntoView({
+    behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    block: 'center',
+  });
+  row.querySelector('[data-spec-node-medal]')?.focus({ preventScroll: true });
 }
 
 function completeResearch(researchId) {
@@ -541,14 +641,22 @@ function onClick(event) {
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
   if (nodeBtn && !nodeBtn.disabled && selectedResearchId) {
-    state = toggleResearchNode(
-      state,
-      activeTroop,
-      selectedResearchId,
-      Number(nodeBtn.dataset.specNode)
-    );
+    selectedNodeId = Number(nodeBtn.dataset.specNode);
+    render();
+    root
+      ?.querySelector(`[data-spec-node="${selectedNodeId}"]`)
+      ?.focus({ preventScroll: true });
+    return;
+  }
+  if (event.target.closest('[data-spec-toggle-selected-node]') && selectedResearchId) {
+    state = toggleResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
     persist();
     render();
+    root?.querySelector('[data-spec-toggle-selected-node]')?.focus({ preventScroll: true });
+    return;
+  }
+  if (event.target.closest('[data-spec-help-node]') && selectedResearchId) {
+    focusContributionNode(selectedResearchId, selectedNodeId);
     return;
   }
   if (event.target.closest('[data-spec-complete]') && selectedResearchId) {
@@ -577,8 +685,7 @@ function onChange(event) {
   if (contributorInput) {
     const nodeId = contributorInput.dataset.specNodeContributor;
     const data = loadContributions();
-    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
-    data.nodes[nodeId].contributor = contributorInput.value.trim();
+    contributionRecord(data, nodeId).contributor = contributorInput.value.trim();
     saveContributions(data);
     return;
   }
@@ -587,8 +694,8 @@ function onChange(event) {
     const nodeId = medalInput.dataset.specNodeMedal;
     const raw = medalInput.value.trim();
     const data = loadContributions();
-    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
-    data.nodes[nodeId].medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    contributionRecord(data, nodeId).medalCost =
+      raw === '' ? null : Math.max(0, Number(raw) || 0);
     saveContributions(data);
     const countEl = root?.querySelector('.spec-contrib-count');
     if (countEl) {
@@ -603,8 +710,7 @@ function onChange(event) {
   if (reviewerInput) {
     const nodeId = reviewerInput.dataset.specNodeReviewer;
     const data = loadContributions();
-    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
-    data.nodes[nodeId].reviewer = reviewerInput.value.trim();
+    contributionRecord(data, nodeId).reviewer = reviewerInput.value.trim();
     saveContributions(data);
     return;
   }
@@ -613,8 +719,8 @@ function onChange(event) {
     const nodeId = reviewedMedalInput.dataset.specNodeReviewedMedal;
     const raw = reviewedMedalInput.value.trim();
     const data = loadContributions();
-    if (!data.nodes[nodeId]) data.nodes[nodeId] = {};
-    data.nodes[nodeId].reviewedMedalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    contributionRecord(data, nodeId).reviewedMedalCost =
+      raw === '' ? null : Math.max(0, Number(raw) || 0);
     saveContributions(data);
     const countEl = root?.querySelector('.spec-contrib-count');
     if (countEl) {

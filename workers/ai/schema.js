@@ -77,7 +77,8 @@ function validateHistory(value) {
 }
 
 function validateMessageInput(value) {
-  requireExactKeys(value, ['kind', 'text', 'locale']);
+  // activeTab is an optional UI breadcrumb; older clients omit it.
+  requireExactKeys(value, ['kind', 'text', 'locale', 'activeTab'], ['kind', 'text', 'locale']);
   if (value.kind !== 'message') fail('Initial input kind must be message.');
   if (
     typeof value.text !== 'string' ||
@@ -95,7 +96,18 @@ function validateMessageInput(value) {
   if (typeof value.locale !== 'string' || !LOCALE_SET.has(value.locale)) {
     fail('The locale is not supported.');
   }
-  return { kind: 'message', text: value.text, locale: value.locale };
+  if (
+    value.activeTab !== undefined &&
+    (typeof value.activeTab !== 'string' || !/^[a-zA-Z][a-zA-Z0-9-]{0,39}$/.test(value.activeTab))
+  ) {
+    fail('The active tab is invalid.');
+  }
+  return {
+    kind: 'message',
+    text: value.text,
+    locale: value.locale,
+    activeTab: value.activeTab ?? null,
+  };
 }
 
 function validateToolResults(value) {
