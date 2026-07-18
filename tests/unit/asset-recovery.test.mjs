@@ -228,6 +228,22 @@ test('post-boot hashed asset failures show an accessible manual Refresh prompt',
   assert.deepEqual(harness.replacements, ['reload']);
 });
 
+test('a protected lazy feature may request one guarded post-boot stale-chunk reload', () => {
+  const harness = createHarness();
+  harness.window.VTS_ASSET_RECOVERY.markBootComplete();
+
+  const recovered = harness.window.VTS_ASSET_RECOVERY.reportFailure(
+    new Error('Failed to fetch dynamically imported module'),
+    '',
+    { autoReload: true }
+  );
+
+  assert.equal(recovered, true);
+  assert.equal(harness.replacements.length, 1);
+  assert.match(harness.replacements[0], /asset-reload=build-1-/);
+  assert.equal(harness.appended.length, 0);
+});
+
 test('asset recovery prompt uses the persisted locale and updates while it remains open', () => {
   const localValues = new Map([['vts_hero_lang', 'es']]);
   const harness = createHarness({ localValues });

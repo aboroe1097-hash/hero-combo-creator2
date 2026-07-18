@@ -28,12 +28,9 @@ export const BOH_STATS_REQUIRED_POWER_FIELDS = Object.freeze([
   'technologyPower',
   'heroCombatPower',
   'dragonPower',
-]);
-export const BOH_STATS_OPTIONAL_POWER_FIELDS = Object.freeze([
   'unitSpecialtyPower',
-  'artifactPower',
-  'royalTechPower',
 ]);
+export const BOH_STATS_OPTIONAL_POWER_FIELDS = Object.freeze(['artifactPower', 'royalTechPower']);
 export const BOH_STATS_POWER_FIELDS = Object.freeze([
   ...BOH_STATS_REQUIRED_POWER_FIELDS,
   ...BOH_STATS_OPTIONAL_POWER_FIELDS,

@@ -163,6 +163,7 @@ export default Object.freeze({
   'signup.methodOcrHint':
     'Sube una captura clara de las estadísticas de tu cuenta y después revisa el borrador.',
   'signup.notSubmitted': 'Sin enviar',
+  'signup.editSignup': 'Editar mi inscripción',
   'signup.ocrChecklist': 'Lista de comprobación de la captura',
   'signup.ocrChoose': 'Elegir una captura',
   'signup.ocrConfirmValues':
@@ -176,7 +177,7 @@ export default Object.freeze({
   'signup.ocrExampleAlt': 'Ejemplo de captura del desglose de poder del juego',
   'signup.ocrExampleTitle': 'Captura de ejemplo',
   'signup.ocrExampleHint': 'El idioma puede variar. Mantén visible la lista completa y su orden.',
-  'signup.unitSpecialtyPower': 'Poder de especialidad de unidades (opcional)',
+  'signup.unitSpecialtyPower': 'Poder de especialidad de unidades',
   'signup.artifactPower': 'Poder de artefactos (opcional)',
   'signup.royalTechPower': 'Poder de tecnología real (opcional)',
   'signup.rocExampleAlt': 'Ejemplo del árbol rojo de especialización RoC',
@@ -282,8 +283,6 @@ export default Object.freeze({
     'La confianza del OCR no está disponible — comprueba este campo con cuidado.',
   'signup.ocrMissingSummary':
     'Campos obligatorios no detectados por el OCR: {count}. Complétalos antes de confirmar.',
-  'nav.showdown': 'Epic Showdown',
-  'nav.showdownHint': 'Opcional · solo VTS 1097',
   'signup.preferredTeammates': 'Compañeros preferidos',
   'signup.preferredTeammatesHint':
     'Opcional — añade hasta seis nombres, separados por comas o líneas nuevas. El liderazgo tendrá en cuenta tu petición, pero la prioridad será formar equipos equilibrados.',
@@ -305,6 +304,12 @@ export default Object.freeze({
   'showdown.timeLegend': 'Horarios de partida preferidos',
   'showdown.timeHint': 'Elige todos los horarios en los que puedas jugar.',
   'showdown.timeRequired': 'Elige al menos un horario de partida disponible.',
+  'showdown.flexibilityLegend': '¿Cómo prefieres mantenerte flexible?',
+  'showdown.flexibilityHint': 'Elige el enfoque que mejor se adapte a ti.',
+  'showdown.flexibilityRoles': 'Cambiar roles y mantener mi horario',
+  'showdown.flexibilityTimes': 'Cambiar horario y mantener mi rol',
+  'showdown.flexibilityFixed': 'Un rol y horario fijos',
+  'showdown.flexibilityRequired': 'Elige tu tipo de flexibilidad para Epic Showdown.',
   'showdown.timeOption': 'Horario de partida {time}',
   'showdown.notSaved': 'Sin guardar',
   'showdown.saved': 'Guardado · revisión {revision}',
@@ -330,7 +335,6 @@ export default Object.freeze({
   'signup.heroTroopFilter': 'Tipo de tropa',
   'signup.heroSeasonFilter': 'Temporada',
   'signup.heroAllTroops': 'Todos los tipos de tropa',
-  'signup.heroAllSeasons': 'Todas las temporadas',
   'signup.heroAllTypes': 'Todas las tropas',
   'signup.heroResults': 'Se muestran {count} héroes',
   'signup.heroResult': 'Se muestra 1 héroe',
@@ -366,8 +370,21 @@ export default Object.freeze({
   'signup.roleTopDescription': 'Defiende y disputa objetivos en la ruta superior.',
   'signup.roleBottomDescription': 'Defiende y disputa objetivos en la ruta inferior.',
   'signup.primaryRole': 'Rol principal',
+  'signup.leadershipInterest': '¿Estarías dispuesto a liderar un equipo o ayudar con la gestión?',
+  'signup.leadershipInterestHint':
+    'Es solo una señal de planificación; el liderazgo te contactará antes de asignarte algo.',
+  'signup.leadershipInterestYes': 'Sí, puedo ayudar a liderar',
+  'signup.leadershipInterestNo': 'No, esta temporada no',
+  'signup.leadershipInterestRequired':
+    'Indica si puedes ayudar a liderar o gestionar esta temporada.',
   'signup.secondaryRole': 'Rol secundario (opcional)',
   'signup.selectRole': 'Elige un rol',
   'signup.secondaryRoleDifferent': 'Elige un rol secundario diferente.',
+  'nav.lockHub': 'Bloquear centro',
+  'signup.requiredFieldsMissing': 'Completa el campo obligatorio resaltado antes de enviar.',
+  'signup.teamNameTitle': '¿Qué nombres de equipo te gustan?',
+  'signup.teamNameDescription':
+    'Elige todas las identidades animales a las que te gustaría unirte.',
+  'signup.teamNameHint': 'Es opcional y solo por diversión; el liderazgo decide el nombre final.',
   'role.noPreference': 'Sin preferencia',
 });

@@ -1071,11 +1071,15 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     'legacy-compatible member commitment required keys'
   );
   assert.match(commitmentHasOnly, /'fightingTimeIds'/);
+  assert.match(commitmentHasOnly, /'secondaryRole'/);
+  assert.match(commitmentHasOnly, /'canHelpLead'/);
+  assert.match(commitmentHasOnly, /'teamNamePreferences'/);
   assert.doesNotMatch(commitmentHasAll, /'fightingTimeIds'/);
   assert.match(
     commitmentValidator,
     /!\('fightingTimeIds' in commitment\)[\s\S]*validAllStarBohFightingTimeIds\(commitment\.fightingTimeIds\)/
   );
+  assert.match(commitmentValidator, /validAllStarBohTeamNamePreferences/);
   const fightingTimes = rulesMatch(
     rules,
     /function validAllStarBohFightingTimeIds\(values\) \{[\s\S]*?\n {4}\}/,
@@ -1132,6 +1136,7 @@ test('Firestore keeps Epic Showdown preferences independent and owner-scoped', (
     'gameName',
     'lanePreferences',
     'timePreferences',
+    'flexibilityPreference',
     'seasonId',
     'uid',
     'schemaVersion',
@@ -1168,9 +1173,13 @@ test('Firestore keeps Epic Showdown preferences independent and owner-scoped', (
   );
   assert.match(times, /values is list/);
   assert.match(times, /values\.size\(\) > 0/);
-  assert.match(times, /values\.size\(\) <= 3/);
+  assert.match(times, /values\.size\(\) <= 8/);
   assert.match(times, /values\.toSet\(\)\.size\(\) == values\.size\(\)/);
-  assert.match(times, /hasOnly\(\['\+8', '\+10', '\+12'\]\)/);
+  assert.match(
+    times,
+    /hasOnly\(\['\+6', '\+8', '\+10', '\+12', '\+14', '\+16', '\+18', '\+20'\]\)/
+  );
+  assert.match(validator, /'flexibilityPreference'/);
 
   const updateValidator = rulesMatch(
     rules,

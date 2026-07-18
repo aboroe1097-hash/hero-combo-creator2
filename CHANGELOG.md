@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.1.4 - 2026-07-18
+
+- Reworked the All-Star signup OCR panel into a desktop split layout with a much larger full-list example opposite the upload controls while preserving the stacked mobile flow.
+- Limited the cumulative hero season filter to S0, S1, S2, S3, S4, X1, X2, and X8; added exact supplied troop portraits to the T10 readiness choices; replaced missing or incorrect research artwork with all 29 exact supplied in-game icon crops; and added an explicit, admin-visible willingness-to-lead planning signal.
+- Folded Epic Showdown preferences into the end of Signup, expanded its selectable game times to every two hours from +6 through +20, added a planning-only choice between flexible roles, flexible fight times, or one fixed assignment, and simplified the member journey navigation to Signup, Team Announcement, and My Team Plan without changing the independent Epic preference revision contract.
+- Made Unit Specialty Power mandatory, added visible focus-guided submission errors and an explicit Edit my signup action, a safe Lock hub action, and automatic one-time recovery from stale All-Star asset chunks so access happens before private form entry, saved answers remain editable, and valid grants resume without another PIN.
+- Added six optional animal team-name concepts with original matching emblems; players can favorite any number for leadership planning without affecting scores or automatic team balance.
+
 ## 14.1.3 - 2026-07-18
 
 - Improved Specialization node selection with a clear node guide, stronger selected/focus states, explicit learned/not-learned choices, localized research and column names, and accessible mobile controls.

@@ -161,6 +161,7 @@ export default Object.freeze({
   'signup.methodOcrHint':
     'Hesap istatistiklerini gösteren net bir ekran görüntüsü yükle, ardından taslağı kontrol et.',
   'signup.notSubmitted': 'Gönderilmedi',
+  'signup.editSignup': 'Kaydımı düzenle',
   'signup.ocrChecklist': 'Ekran görüntüsü kontrol listesi',
   'signup.ocrChoose': 'Ekran görüntüsü seç',
   'signup.ocrConfirmValues':
@@ -174,7 +175,7 @@ export default Object.freeze({
   'signup.ocrExampleAlt': 'Oyun içi güç dağılımı örnek ekran görüntüsü',
   'signup.ocrExampleTitle': 'Örnek ekran görüntüsü',
   'signup.ocrExampleHint': 'Dilin farklı olabilir. Tam listeyi ve yukarıdan aşağı sırasını göster.',
-  'signup.unitSpecialtyPower': 'Birim Uzmanlık Gücü (isteğe bağlı)',
+  'signup.unitSpecialtyPower': 'Birim Uzmanlık Gücü',
   'signup.artifactPower': 'Eser Gücü (isteğe bağlı)',
   'signup.royalTechPower': 'Kraliyet Teknoloji Gücü (isteğe bağlı)',
   'signup.rocExampleAlt': 'Kırmızı RoC uzmanlık ağacı örneği',
@@ -279,8 +280,6 @@ export default Object.freeze({
     'OCR güven düzeyi kullanılamıyor — bu alanı dikkatle kontrol et.',
   'signup.ocrMissingSummary':
     'OCR {count} zorunlu alanı okuyamadı. Onaylamadan önce bu alanları doldur.',
-  'nav.showdown': 'Epic Showdown',
-  'nav.showdownHint': 'İsteğe bağlı · yalnız VTS 1097',
   'signup.preferredTeammates': 'Tercih edilen takım arkadaşları',
   'signup.preferredTeammatesHint':
     'İsteğe bağlı — virgül veya yeni satırla ayırarak en fazla altı isim ekle. Yönetim isteğini dikkate alır, ancak dengeli takımlar önceliklidir.',
@@ -302,6 +301,12 @@ export default Object.freeze({
   'showdown.timeLegend': 'Tercih edilen maç saatleri',
   'showdown.timeHint': 'Katılabileceğin tüm maç saatlerini seç.',
   'showdown.timeRequired': 'En az bir kullanılabilir maç saati seç.',
+  'showdown.flexibilityLegend': 'Nasıl esnek kalmayı tercih edersin?',
+  'showdown.flexibilityHint': 'Sana en uygun yaklaşımı seç.',
+  'showdown.flexibilityRoles': 'Rol değiştir, savaş saatimi koru',
+  'showdown.flexibilityTimes': 'Savaş saatini değiştir, rolümü koru',
+  'showdown.flexibilityFixed': 'Tek sabit rol ve savaş saati',
+  'showdown.flexibilityRequired': 'Epic Showdown için esneklik tercihini seç.',
   'showdown.timeOption': 'Maç saati {time}',
   'showdown.notSaved': 'Kaydedilmedi',
   'showdown.saved': 'Kaydedildi · sürüm {revision}',
@@ -325,7 +330,6 @@ export default Object.freeze({
   'signup.heroTroopFilter': 'Birlik türü',
   'signup.heroSeasonFilter': 'Sezon',
   'signup.heroAllTroops': 'Tüm birlik türleri',
-  'signup.heroAllSeasons': 'Tüm sezonlar',
   'signup.heroAllTypes': 'Tüm birlikler',
   'signup.heroResults': '{count} kahraman gösteriliyor',
   'signup.heroResult': '1 kahraman gösteriliyor',
@@ -361,8 +365,21 @@ export default Object.freeze({
   'signup.roleTopDescription': 'Üst rotadaki hedefleri tutar ve mücadele eder.',
   'signup.roleBottomDescription': 'Alt rotadaki hedefleri tutar ve mücadele eder.',
   'signup.primaryRole': 'Birincil rol',
+  'signup.leadershipInterest':
+    'Bir takıma liderlik etmeye veya yönetime yardım etmeye istekli misin?',
+  'signup.leadershipInterestHint':
+    'Bu yalnızca bir planlama işaretidir; herhangi bir görev verilmeden önce liderlik seninle iletişime geçer.',
+  'signup.leadershipInterestYes': 'Evet, liderliğe yardım edebilirim',
+  'signup.leadershipInterestNo': 'Hayır, bu sezon değil',
+  'signup.leadershipInterestRequired':
+    'Bu sezon liderliğe veya yönetime yardım edip edemeyeceğini seç.',
   'signup.secondaryRole': 'İkincil rol (isteğe bağlı)',
   'signup.selectRole': 'Bir rol seç',
   'signup.secondaryRoleDifferent': 'Farklı bir ikincil rol seç.',
+  'nav.lockHub': 'Merkezi kilitle',
+  'signup.requiredFieldsMissing': 'Göndermeden önce vurgulanan zorunlu alanı doldur.',
+  'signup.teamNameTitle': 'Hangi takım adlarını beğeniyorsun?',
+  'signup.teamNameDescription': 'Katılmaktan mutlu olacağın tüm hayvan takımı kimliklerini seç.',
+  'signup.teamNameHint': 'İsteğe bağlı ve eğlence içindir; son isme yönetim karar verir.',
   'role.noPreference': 'Tercih yok',
 });

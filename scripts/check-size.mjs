@@ -49,7 +49,7 @@ const LIMITS = {
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
   // files; retain a one-file guard.
-  deployFileCount: 582,
+  deployFileCount: 583,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife

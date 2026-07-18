@@ -31,7 +31,7 @@ function createAdminStoreFixture() {
     },
   ];
   const store = {
-    epicTimeSlotIds: Object.freeze(['+8', '+10', '+12']),
+    epicTimeSlotIds: Object.freeze(['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']),
     async listSubmissions() {
       return structuredClone(submissions);
     },
@@ -106,7 +106,9 @@ test('signup planning signals group known heroes and preserve entered research a
       },
       commitment: {
         preferredRole: 'top',
+        canHelpLead: true,
         fightingTimeIds: ['+8', '+12'],
+        teamNamePreferences: ['iron-wolves', 'night-falcons'],
       },
     },
     {
@@ -132,6 +134,8 @@ test('signup planning signals group known heroes and preserve entered research a
   ]);
   assert.deepEqual(signals.fightingTimeIds, ['+8', '+12']);
   assert.equal(signals.favoriteRole, 'top');
+  assert.equal(signals.canHelpLead, true);
+  assert.deepEqual(signals.teamNamePreferences, ['Iron Wolves', 'Night Falcons']);
   assert.equal(signals.usableHeroCount, 3);
   assert.equal(signals.hasSignals, true);
 
@@ -282,6 +286,7 @@ test('Epic Showdown summary keeps legacy empty responses visible for admin revie
     displayName: 'Needs follow-up',
     lanes: [],
     times: [],
+    flexibilityPreference: '',
   });
 });
 
@@ -307,7 +312,7 @@ test('admin adapter loads and live-refreshes Epic preferences without changing B
   const adapter = createAdminAllStarBohStoreAdapter(store);
   const initial = await adapter.start();
 
-  assert.deepEqual(initial.epicTimeSlotIds, ['+8', '+10', '+12']);
+  assert.deepEqual(initial.epicTimeSlotIds, ['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']);
   assert.equal(initial.epicPreferences.length, 1);
   const initialRevision = initial.revision;
   const validated = await adapter.dispatch({

@@ -734,6 +734,16 @@ service cloud.firestore {
         && values.toSet().hasOnly(['+8', '+12', '+14', '+20']);
     }
 
+    function validAllStarBohTeamNamePreferences(values) {
+      return values is list
+        && values.size() <= 6
+        && values.toSet().size() == values.size()
+        && values.toSet().hasOnly([
+          'iron-wolves', 'storm-ravens', 'ember-lions',
+          'frost-bears', 'night-falcons', 'thunder-bulls'
+        ]);
+    }
+
     function validAllStarBohStats(stats) {
       return stats is map
         && stats.keys().hasOnly([
@@ -776,8 +786,9 @@ service cloud.firestore {
     function validAllStarBohCommitment(commitment) {
       return commitment is map
         && commitment.keys().hasOnly([
-          'availability', 'preferredRole', 'unavailableTimes', 'canTeleport',
-          'canUseVoice', 'planCommitment', 'notes', 'fightingTimeIds'
+          'availability', 'preferredRole', 'secondaryRole', 'canHelpLead',
+          'unavailableTimes', 'canTeleport', 'canUseVoice', 'planCommitment',
+          'notes', 'fightingTimeIds', 'teamNamePreferences'
         ])
         && commitment.keys().hasAll([
           'availability', 'preferredRole', 'unavailableTimes', 'canTeleport',
@@ -787,6 +798,10 @@ service cloud.firestore {
         && commitment.preferredRole in [
           'flexible', 'offensive', 'rune', 'top', 'bottom', 'backup', ''
         ]
+        && (!('secondaryRole' in commitment) || commitment.secondaryRole in [
+          'flexible', 'offensive', 'rune', 'top', 'bottom', 'backup', ''
+        ])
+        && (!('canHelpLead' in commitment) || validAllStarBohNullableBool(commitment.canHelpLead))
         && validAllStarBohText(commitment.unavailableTimes, 800)
         && validAllStarBohNullableBool(commitment.canTeleport)
         && validAllStarBohNullableBool(commitment.canUseVoice)
@@ -795,6 +810,10 @@ service cloud.firestore {
         && (
           !('fightingTimeIds' in commitment)
           || validAllStarBohFightingTimeIds(commitment.fightingTimeIds)
+        )
+        && (
+          !('teamNamePreferences' in commitment)
+          || validAllStarBohTeamNamePreferences(commitment.teamNamePreferences)
         );
     }
 
@@ -809,14 +828,14 @@ service cloud.firestore {
     function validAllStarBohEpicTimePreferences(values) {
       return values is list
         && values.size() > 0
-        && values.size() <= 3
+        && values.size() <= 8
         && values.toSet().size() == values.size()
-        && values.toSet().hasOnly(['+8', '+10', '+12']);
+        && values.toSet().hasOnly(['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']);
     }
 
     function validAllStarBohEpicPreferences(season, uid) {
       return request.resource.data.keys().hasOnly([
-        'gameName', 'lanePreferences', 'timePreferences',
+        'gameName', 'lanePreferences', 'timePreferences', 'flexibilityPreference',
         'seasonId', 'uid', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
@@ -833,6 +852,8 @@ service cloud.firestore {
       && validAllStarBohEpicTimePreferences(
         request.resource.data.timePreferences
       )
+      && (!('flexibilityPreference' in request.resource.data)
+        || request.resource.data.flexibilityPreference in ['change-roles', 'change-times', 'fixed'])
       && request.resource.data.seasonId == season
       && request.resource.data.uid == uid
       && request.resource.data.schemaVersion == 1
@@ -852,7 +873,7 @@ service cloud.firestore {
     function validAllStarBohEpicPreferencesUpdate(season, uid) {
       return validAllStarBohEpicPreferences(season, uid)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'gameName', 'lanePreferences', 'timePreferences',
+          'gameName', 'lanePreferences', 'timePreferences', 'flexibilityPreference',
           'revision', 'updatedAt', 'updatedBy'
         ])
         && request.resource.data.seasonId == resource.data.seasonId

@@ -181,7 +181,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260718_175825').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260718_195505').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -203,7 +203,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260718_175825').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260718_195505').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -214,7 +214,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260718_175825').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260718_195505').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -225,7 +225,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260718_175825').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260718_195505').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -953,13 +953,15 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
 
   function isDynamicImportLoadFailure(err) {
     const message = String(err?.message || err || '');
-    return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+    return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload/i.test(
       message
     );
   }
 
   function recoverFromStaleAssetGraph(reason) {
-    return window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '') || false;
+    return (
+      window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false
+    );
   }
 
   function onTabActivated(tabName) {
@@ -971,7 +973,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260718_175825')
+        import('./eden-map.js?v=20260718_195505')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1001,7 +1003,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260718_175825')
+      import('./app-hero-atlas.js?v=20260718_195505')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1073,7 +1075,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260718_175825')
+      import('./app-strife.js?v=20260718_195505')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1115,7 +1117,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260718_175825')
+      import('./youtube-v14.js?v=20260718_195505')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;

@@ -110,6 +110,8 @@ test('signup normalization carries the form locale and commitment fields canonic
     entryMethod: 'OCR',
     availability: 'MOST',
     preferredRole: 'TOP',
+    canHelpLead: 'yes',
+    teamNamePreferences: ['night-falcons', 'iron-wolves'],
     unavailableTimes: ' Friday  20:00–21:00 ',
     canTeleport: 'on',
     canUseVoice: false,
@@ -129,7 +131,9 @@ test('signup normalization carries the form locale and commitment fields canonic
     availability: 'most',
     preferredRole: 'top',
     secondaryRole: '',
+    canHelpLead: true,
     fightingTimeIds: [],
+    teamNamePreferences: ['iron-wolves', 'night-falcons'],
     unavailableTimes: 'Friday 20:00–21:00',
     canTeleport: true,
     canUseVoice: false,
@@ -183,19 +187,30 @@ test('preferred teammate requests are optional, bounded, normalized, and do not 
 
 test('Epic Showdown preferences support independent lane and configured time multi-selects', () => {
   assert.deepEqual(BOH_EPIC_SHOWDOWN_LANES, ['south', 'center', 'north']);
-  assert.deepEqual(BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS, ['+8', '+10', '+12']);
-  assert.deepEqual(normalizeBohEpicShowdownTimeSlotIds(), ['+8', '+10', '+12']);
+  assert.deepEqual(BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS, [
+    '+6',
+    '+8',
+    '+10',
+    '+12',
+    '+14',
+    '+16',
+    '+18',
+    '+20',
+  ]);
+  assert.deepEqual(normalizeBohEpicShowdownTimeSlotIds(), BOH_EPIC_SHOWDOWN_DEFAULT_TIME_SLOT_IDS);
   assert.deepEqual(
     normalizeBohEpicShowdownPreferences({
       gameName: '  \uFF21bo\u0000 Epic ',
       lanePreferences: ['North', 'south', 'north'],
       timePreferences: ['+12', '+8'],
+      flexibilityPreference: 'fixed',
     }),
     {
       schemaVersion: 1,
       gameName: 'Abo Epic',
       lanePreferences: ['north', 'south'],
       timePreferences: ['+12', '+8'],
+      flexibilityPreference: 'fixed',
     }
   );
   assert.deepEqual(
@@ -219,7 +234,7 @@ test('Epic Showdown preferences support independent lane and configured time mul
       normalizeBohEpicShowdownPreferences({
         gameName: 'Player',
         lanePreferences: ['center'],
-        timePreferences: ['+14'],
+        timePreferences: ['+22'],
       }),
     /boh_epic_time_slot_not_configured/
   );
@@ -253,6 +268,7 @@ test('nested commitment aliases normalize and invalid form values fail explicitl
       availability: 'backup',
       preferredRole: 'flexible',
       secondaryRole: '',
+      canHelpLead: false,
       unavailableTimes: 'None',
       canTeleport: 0,
       canUseVoice: 'yes',
@@ -265,7 +281,9 @@ test('nested commitment aliases normalize and invalid form values fail explicitl
     availability: 'backup',
     preferredRole: 'flexible',
     secondaryRole: '',
+    canHelpLead: false,
     fightingTimeIds: [],
+    teamNamePreferences: [],
     unavailableTimes: 'None',
     canTeleport: false,
     canUseVoice: true,
