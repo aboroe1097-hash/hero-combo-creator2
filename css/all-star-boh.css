@@ -789,6 +789,11 @@
   margin-top: 0.8rem;
 }
 
+.boh-commitment-card
+  > :is(.boh-fieldset, .boh-role-guide, .boh-field-grid, .boh-field) {
+  margin-top: clamp(1.5rem, 2vw, 2rem);
+}
+
 .boh-choice-card {
   position: relative;
   display: grid;
@@ -1941,7 +1946,7 @@
   height: 5.6rem;
   background-image: url('/images/boh-team-emblems.webp');
   background-repeat: no-repeat;
-  background-size: 13.5rem 13.5rem;
+  background-size: 45rem auto;
 }
 
 .boh-team-emblem--wolf {

@@ -566,7 +566,7 @@ export async function bootAllStarBohTab(options = {}) {
       researchTreeText: domain.researchI18n?.researchTreeText,
       loadResearchLocale: domain.researchI18n?.loadResearchLocale,
       onError(error, context) {
-        if (error?.code === 'access_expired' || error?.code === 'permission-denied') {
+        if (error?.code === 'access_expired') {
           relockExpired();
         }
         options.onError?.(error, context);

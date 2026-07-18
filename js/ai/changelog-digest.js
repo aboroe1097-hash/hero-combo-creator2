@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.4";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.5";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.5",
+    "date": "2026-07-18",
+    "highlights": [
+      "Completed the Specialization Towers public planner corpus with all 32 researches, 718 attribute nodes, 384 milestone buffs, 17 passive skills, and 24 troop-specific Legion Skills while keeping unverified prerequisite edges and node medal costs explicitly unknown.",
+      "Added all 33 public research and Legion Skill emblems as locally embedded, size-budgeted WebP assets with source URLs, original hashes, optimized hashes, dimensions, and planner JavaScript provenance.",
+      "Exposed the full 24-node Enhanced Tactics IV catalog in both Specialization renderers, added the public artwork to overview/detail/Legion Skill surfaces, and expanded automated coverage for the complete catalog and asset integrity.",
+      "Rebuilt the README's Specialization documentation and replaced outdated gallery captures with current desktop and mobile planner screenshots.",
+      "Kept the All-Star signup form and member hub intact when Firestore rejects a save, showing the write error inline instead of incorrectly treating every permission denial as an expired PIN grant."
+    ]
+  },
   {
     "version": "14.1.4",
     "date": "2026-07-18",
@@ -99,15 +110,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added evidence-backed progressive node revelation for Enhanced Tactics IV: its two screenshot-confirmed roots are available together, the observed final node remains visible and locked, unverified downstream nodes stay hidden, and the contribution template now collects initial v…",
       "Added a standalone battle-contribution contract that keeps unit base-point modifiers separate from battle percentages, exports scoped numeric/effect contributions with diagnostics, supports future engine extraction without Battle Simulator imports, and rejects non-finite arithme…",
       "Added the accepted dense dark/light tower-board UI, persistent desktop inspector, scrollable mobile dialogs, keyboard/focus restoration, RTL and eleven-language UI packs, strict local-only CSP-safe rendering, public navigation/command-palette discovery, service-worker coverage, …"
-    ]
-  },
-  {
-    "version": "14.0.16",
-    "date": "2026-07-17",
-    "highlights": [
-      "Rebuilt the Strife over Dragon boss Fordogreen as \"Fordogreen the Dark Rider\" with its current four-skill kit — Preemptive Strike, Broken Promise, Hunt You Down, and Power of the Legion — including timings, targets, counters, and localized copy across all eleven supported langua…",
-      "Added the top X1 pay-to-win recommendation for Fordogreen (Edward the Confessor / Ramses II / Beowulf) alongside the existing formations.",
-      "Added a localized Rank 1 reward callout to the Strife boss intel band that surfaces the exclusive hero icon gifted to the event's top-ranked player, rendering a placeholder badge until the reward artwork is supplied."
     ]
   }
 ].map((release) =>

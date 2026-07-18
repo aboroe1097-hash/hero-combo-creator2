@@ -28,10 +28,10 @@ const LIMITS = {
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
   // six-team planner, persistence model, and complete player/Admin locale
-  // packs. Velo b0.2, the localized Specialization node inspector, and the
-  // optional All-Star troop OCR review lift the graph to 8053 KiB; retain
-  // less than 47 KiB of aggregate headroom.
-  totalJsBytes: 8100 * 1024,
+  // packs. Velo b0.2, the localized Specialization node inspector, optional
+  // All-Star troop OCR review, and the complete 718-node public planner corpus
+  // measure 8104.1 KiB; retain less than 6 KiB of aggregate headroom.
+  totalJsBytes: 8110 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -43,7 +43,10 @@ const LIMITS = {
   // prevent them (or similarly large duplicates) from returning unseen. The
   // combined 14.1.3 artifact measures 26,012.1 KiB after adding four optimized
   // All-Star reference images; retain less than 138 KiB of headroom.
-  totalDeployBytes: 26150 * 1024,
+  // The complete public Specialization corpus and shared 33-emblem sprite leave
+  // single-digit KiB headroom. Allow deterministic CI build metadata to vary
+  // without weakening the route, JS, CSS, media, or file-count budgets below.
+  totalDeployBytes: 26160 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

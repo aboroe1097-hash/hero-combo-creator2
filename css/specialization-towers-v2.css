@@ -953,6 +953,19 @@ html[data-theme='light'] {
   object-fit: cover;
 }
 
+.specialization-planner-sprite {
+  display: block;
+  overflow: hidden;
+}
+
+.specialization-research-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: contain !important;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.48));
+}
+
 .specialization-node-lock {
   position: absolute;
   display: grid;
@@ -1065,6 +1078,30 @@ html[data-theme='light'] {
 .specialization-legion-skill.is-unlocked,
 .specialization-legion-skill[data-state='unlocked'] {
   animation: specialization-skill-arrive 520ms var(--ease-spring) both;
+}
+
+.specialization-legion-skill-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.52));
+}
+
+.specialization-legion-skill-state {
+  position: absolute;
+  inset-inline-end: -2px;
+  inset-block-end: -2px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--skill-color) 72%, white);
+  border-radius: 50%;
+  color: var(--ff-text);
+  background: var(--ff-panel-strong);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.42);
+  font-size: 12px;
 }
 
 .specialization-skill-name {
@@ -1235,6 +1272,15 @@ html[data-theme='light'] {
   background: var(--ff-surface);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--ff-warning) 11%, transparent);
   font-size: 30px;
+}
+
+.specialization-selection-image {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  border-radius: 50%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.5));
 }
 
 .specialization-selection-copy {

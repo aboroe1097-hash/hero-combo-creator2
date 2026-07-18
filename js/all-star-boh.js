@@ -1998,6 +1998,12 @@ function hydrateForm(state) {
 }
 
 function renderSubmissionState(state) {
+  renderSubmissionControls(state);
+  hydrateForm(state);
+  renderSubmissionFeedback(state);
+}
+
+function renderSubmissionControls(state) {
   const label = query(state.root, '[data-role="signup-save-state"]');
   const submit = query(state.root, '[data-role="signup-submit"]');
   const edit = query(state.root, '[data-role="edit-signup"]');
@@ -2012,8 +2018,6 @@ function renderSubmissionState(state) {
       })
     );
   } else setText(label, state.tr('signup.notSubmitted', 'Not submitted'));
-  hydrateForm(state);
-  renderSubmissionFeedback(state);
 }
 
 function feedbackCopy(state, status, stale) {
@@ -3320,8 +3324,9 @@ async function submitSignup(state, form) {
     return;
   }
   state.saving = true;
+  let preserveFormOnFailure = false;
   clearNotice(state);
-  renderSubmissionState(state);
+  renderSubmissionControls(state);
   try {
     const expectedRevision = Number.isInteger(state.submissionEditBaseRevision)
       ? Math.max(0, state.submissionEditBaseRevision)
@@ -3352,12 +3357,15 @@ async function submitSignup(state, form) {
         );
       }
     } else {
+      preserveFormOnFailure = true;
       reportError(state, error, { action: 'save-submission' });
+      setSignupFormError(state, error?.message || 'Submission was not saved. Please try again.');
       focusErrorField(state, error?.field);
     }
   } finally {
     state.saving = false;
-    render(state);
+    if (preserveFormOnFailure) renderSubmissionControls(state);
+    else render(state);
     data = null;
   }
 }

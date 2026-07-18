@@ -1407,7 +1407,11 @@ test.describe('app smoke tabs', () => {
       return [...element.querySelectorAll('*')]
         .filter((candidate) => {
           const rect = candidate.getBoundingClientRect();
+          const clippedPlannerImage =
+            candidate.tagName.toLowerCase() === 'image' &&
+            candidate.closest('svg.specialization-planner-sprite');
           return (
+            !clippedPlannerImage &&
             rect.width > 0 &&
             rect.height > 0 &&
             (rect.right > bounds.right + 1 || rect.left < bounds.left - 1)

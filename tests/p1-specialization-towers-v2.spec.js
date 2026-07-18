@@ -53,7 +53,7 @@ test('Specialization Towers loads publicly as an isolated eight-column tool', as
   expect(observed.errors).toEqual([]);
 });
 
-test('Enhanced Tactics IV shows only evidence-backed initial node states', async ({ page }) => {
+test('Enhanced Tactics IV exposes the complete public 24-node catalog', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.removeItem('vts_specialization_towers_v2');
@@ -65,7 +65,7 @@ test('Enhanced Tactics IV shows only evidence-backed initial node states', async
     page.locator(
       '[data-specialization-inspector-panel] [data-specialization-complete-learning="enhanced4"]'
     )
-  ).toBeDisabled();
+  ).toBeEnabled();
   await page
     .locator('[data-specialization-inspector-panel] [data-specialization-open-node-path]')
     .click();
@@ -73,12 +73,15 @@ test('Enhanced Tactics IV shows only evidence-backed initial node states', async
   await expect(dialog).toBeVisible();
 
   const visibleNodes = dialog.locator('[data-specialization-attribute-node]:visible');
-  await expect(visibleNodes).toHaveCount(3);
+  await expect(visibleNodes).toHaveCount(24);
   await expect(dialog.locator('[data-specialization-attribute-node="1"]')).toBeEnabled();
   await expect(dialog.locator('[data-specialization-attribute-node="12"]')).toBeEnabled();
-  await expect(dialog.locator('[data-specialization-attribute-node="24"]')).toBeDisabled();
-  await expect(dialog.locator('[data-specialization-attribute-node="2"]')).toHaveCount(0);
-  await expect(dialog.locator('[data-specialization-hidden-node-count]')).toContainText('21');
+  await expect(dialog.locator('[data-specialization-attribute-node="24"]')).toBeEnabled();
+  await expect(dialog.locator('[data-specialization-attribute-node="2"]')).toBeEnabled();
+  await expect(dialog.locator('[data-specialization-hidden-node-count]')).toHaveCount(0);
+  await expect(dialog).toContainText('Defense Plan');
+  await expect(dialog).toContainText('Siege Plan');
+  await expect(dialog).toContainText('Swirling Wind');
 
   await dialog.locator('[data-specialization-attribute-node="1"]').click();
   const reopened = page.locator('[data-specialization-node-path-dialog]');
@@ -87,6 +90,6 @@ test('Enhanced Tactics IV shows only evidence-backed initial node states', async
     'aria-pressed',
     'true'
   );
+  await expect(reopened.locator('[data-specialization-attribute-node="2"]')).toBeEnabled();
   await expect(reopened.locator('[data-specialization-attribute-node="12"]')).toBeEnabled();
-  await expect(reopened.locator('[data-specialization-attribute-node="2"]')).toHaveCount(0);
 });

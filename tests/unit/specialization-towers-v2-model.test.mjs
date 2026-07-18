@@ -140,26 +140,27 @@ test('removing a prerequisite cascade-clears every explicitly dependent descenda
   assert.deepEqual(removeResearchNodeAndDependents(research, [1, 2, 3, 4], 2), [1, 4]);
 });
 
-test('Enhanced Tactics IV exposes both verified roots without inventing downstream edges', () => {
+test('Enhanced Tactics IV exposes all public nodes without inventing downstream edges', () => {
   const initial = createEmptySpecializationState();
   const access = getResearchNodeAccess(initial, 'cavalry', 'enhanced4');
-  assert.equal(access.mode, 'partial-evidence');
-  assert.equal(access.hiddenCount, 21);
+  assert.equal(access.mode, 'unrestricted');
+  assert.equal(access.hiddenCount, 0);
+  assert.equal(access.entries.length, 24);
+  assert.equal(
+    access.entries.every(({ visible, selectable }) => visible && selectable),
+    true
+  );
   assert.equal(access.entries.find(({ nodeId }) => nodeId === 1).state, 'available');
   assert.equal(access.entries.find(({ nodeId }) => nodeId === 12).state, 'available');
-  assert.equal(access.entries.find(({ nodeId }) => nodeId === 24).state, 'locked');
-  assert.throws(
-    () => toggleResearchNode(initial, 'cavalry', 'enhanced4', 2),
-    /not currently available/
-  );
+  assert.equal(access.entries.find(({ nodeId }) => nodeId === 24).state, 'available');
 
-  const withDefenseRoot = toggleResearchNode(initial, 'cavalry', 'enhanced4', 1);
+  const withPublishedNode = toggleResearchNode(initial, 'cavalry', 'enhanced4', 2);
   assert.deepEqual(
-    getResearchSelection(withDefenseRoot, 'cavalry', 'enhanced4').selectedNodeIds,
-    [1]
+    getResearchSelection(withPublishedNode, 'cavalry', 'enhanced4').selectedNodeIds,
+    [2]
   );
   assert.equal(
-    getResearchNodeAccess(withDefenseRoot, 'cavalry', 'enhanced4').entries.find(
+    getResearchNodeAccess(withPublishedNode, 'cavalry', 'enhanced4').entries.find(
       ({ nodeId }) => nodeId === 12
     ).state,
     'available'
