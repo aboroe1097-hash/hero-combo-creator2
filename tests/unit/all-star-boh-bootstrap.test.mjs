@@ -48,9 +48,6 @@ function createGate(order = []) {
     showBusy() {
       states.push('busy');
     },
-    showCanceled() {
-      states.push('canceled');
-    },
     showExpired() {
       states.push('expired');
     },
@@ -66,9 +63,6 @@ function createGate(order = []) {
     },
     unlock(pin) {
       return handlers.unlock(pin);
-    },
-    cancel() {
-      return handlers.cancel();
     },
   };
   return gate;
@@ -205,10 +199,7 @@ test('keeps the form concealed and private domain chunks unloaded without a vali
   assert.equal(gate.states.at(-1), 'locked');
   assert.ok(order.indexOf('stylesheet') < order.indexOf('gate-handlers'));
 
-  gate.cancel();
-  assert.equal(root.hidden, true);
-  assert.equal(domainLoads, 0);
-  assert.equal(gate.states.at(-1), 'canceled');
+  assert.equal(gate.states.includes('hidden'), false);
   lifecycle.destroy();
 });
 
@@ -461,4 +452,5 @@ test('bootstrap keeps CSS lazy, permits the two secure endpoints, and statically
   );
   assert.match(source, /input\.type = 'password'/u);
   assert.match(source, /input\.value = '';\s*await unlockHandler/u);
+  assert.doesNotMatch(source, /boh-access-cancel|Not now|showCanceled/u);
 });

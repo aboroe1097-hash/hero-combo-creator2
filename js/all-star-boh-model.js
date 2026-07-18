@@ -202,6 +202,27 @@ function normalizeStringList(value, options = {}) {
   });
 }
 
+function normalizeTroopRoster(value) {
+  const values = Array.isArray(value) ? value : [];
+  if (values.length > 60)
+    throw modelError('boh_signup_list_too_long', { field: 'troopRoster', maxItems: 60 });
+  const seen = new Set();
+  return values
+    .map((entry) => String(entry || '').trim())
+    .filter((entry) => {
+      if (
+        !/^(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)\|\d{1,10}$/u.test(
+          entry
+        )
+      ) {
+        throw modelError('boh_signup_catalog_value_invalid', { field: 'troopRoster' });
+      }
+      if (seen.has(entry)) return false;
+      seen.add(entry);
+      return true;
+    });
+}
+
 function normalizePlanningCatalog(value, field, options = {}) {
   if (value === undefined) return null;
   if (!Array.isArray(value)) throw modelError('boh_signup_catalog_invalid', { field });
@@ -491,6 +512,11 @@ export function normalizeBohSignup(input = {}, options = {}) {
     firstDefined(rawStats.t9TroopTypes, input.t9TroopTypes, rawStats.t9Types),
     { ignore: ['none', 'no t9', 't8', 'n/a'] }
   );
+  const t10TroopTypes = normalizeStringList(
+    firstDefined(rawStats.t10TroopTypes, input.t10TroopTypes, rawStats.t10Types),
+    { ignore: ['none', 'all', 'n/a'] }
+  );
+  const troopRoster = normalizeTroopRoster(firstDefined(rawStats.troopRoster, input.troopRoster));
   const readySpeedHeroes = normalizeStringList(
     firstDefined(rawStats.readySpeedHeroes, input.readySpeedHeroes, rawStats.speedHeroes),
     { ignore: ['none', 'n/a'] }
@@ -524,10 +550,18 @@ export function normalizeBohSignup(input = {}, options = {}) {
     '',
     'preferredRole'
   );
+  const secondaryRole = normalizedEnum(
+    firstDefined(input.secondaryRole, rawCommitment.secondaryRole),
+    BOH_PREFERRED_ROLES,
+    '',
+    'secondaryRole'
+  );
   const rolePreferences = normalizeStringList(
     firstDefined(input.rolePreferences, rawStats.rolePreferences)
   ).map((role) => normalizeBohId(role));
   if (!rolePreferences.length && preferredRole) rolePreferences.push(preferredRole);
+  if (secondaryRole && !rolePreferences.includes(secondaryRole))
+    rolePreferences.push(secondaryRole);
   const eligibleRoleIds = normalizeStringList(
     firstDefined(input.eligibleRoleIds, input.eligibleRoles, rawStats.eligibleRoleIds)
   ).map((role) => normalizeBohId(role));
@@ -560,7 +594,22 @@ export function normalizeBohSignup(input = {}, options = {}) {
       dragonPower: nonNegativeNumber(
         firstDefined(rawStats.dragonPower, rawStats.dragonsPower, input.dragonPower)
       ),
+      ...(firstDefined(rawStats.unitSpecialtyPower, rawStats.specialtyPower) == null
+        ? {}
+        : {
+            unitSpecialtyPower: nonNegativeNumber(
+              firstDefined(rawStats.unitSpecialtyPower, rawStats.specialtyPower)
+            ),
+          }),
+      ...(rawStats.artifactPower == null
+        ? {}
+        : { artifactPower: nonNegativeNumber(rawStats.artifactPower) }),
+      ...(rawStats.royalTechPower == null
+        ? {}
+        : { royalTechPower: nonNegativeNumber(rawStats.royalTechPower) }),
       t9TroopTypes,
+      t10TroopTypes,
+      troopRoster,
       readySpeedHeroes,
       usableHeroNames,
       researchProgressPct,
@@ -585,6 +634,7 @@ export function normalizeBohSignup(input = {}, options = {}) {
         'availability'
       ),
       preferredRole,
+      secondaryRole,
       fightingTimeIds,
       unavailableTimes: boundedPlainText(
         firstDefined(input.unavailableTimes, rawCommitment.unavailableTimes),
@@ -679,7 +729,7 @@ export function scoreBohSignup(input, profileInput = BOH_2025_SCORING_PROFILE, o
   });
 
   const bonusInputs = {
-    t9TroopType: signup.stats.t9TroopTypes.length,
+    t9TroopType: signup.stats.t10TroopTypes?.length || signup.stats.t9TroopTypes.length,
     readySpeedHero: signup.stats.readySpeedHeroes.length,
     level50Hero: signup.stats.level50HeroCount,
     // This value is intentionally accepted only through the admin scorer call.

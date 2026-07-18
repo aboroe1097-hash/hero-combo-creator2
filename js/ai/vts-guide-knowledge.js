@@ -616,7 +616,7 @@ const entries = [
       'The All-Star BoH tab is a members-only hub: unlock with the seasonal PIN from leadership, sign up with your power and readiness details, optionally set Epic Showdown preferences, and later view your published team and plan.',
     guidance: [
       'Access needs the current seasonal member PIN shared by VTS leadership; the unlock is verified server-side and expires, and Velo never knows, asks for, or checks PIN values.',
-      'Signup collects the power breakdown, T9 troop types, ready speed heroes, usable heroes, self-reported research percentages, exactly two preferred fighting windows, an optional favorite role, and teleport/voice/plan commitment.',
+      'Signup defaults to screenshot OCR for the six common power rows and up to three extended rows, then collects T10 troop types, speed heroes, usable heroes, research percentages, RoC level, exactly two preferred fighting windows, and primary/secondary roles.',
       'Epic Showdown planning is separate from signup: members multi-select South, Center, and North lanes plus reset-relative windows (+8, +10, +12).',
       'Admins build six teams of twelve unique accounts each; members only see their own published team, announcement, and plan once released.',
       'If the tab shows locked or "access could not be confirmed", the member PIN or season may have rotated — ask leadership for the current PIN.',
@@ -645,7 +645,7 @@ const entries = [
     status: 'app_feature_snapshot',
     requiresCurrentConfirmation: true,
     summary:
-      'Each troop type (cavalry, archers, footmen) has its own tower of eight research columns; finishing all four researches in a column to 100% unlocks that column\'s Legion Skill for free.',
+      "Each troop type (cavalry, archers, footmen) has its own tower of eight research columns; finishing all four researches in a column to 100% unlocks that column's Legion Skill for free.",
     guidance: [
       'Columns I–VI unlock in Season 3 and columns VII–VIII in SX1; season availability is reference metadata, planning ahead is allowed.',
       'Every column contains four researches; each research is a graph of attribute nodes learned with medals, plus percent milestones that grant extra effects.',

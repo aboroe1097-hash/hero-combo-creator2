@@ -467,10 +467,8 @@ const pt = {
   bohAccessPinLabel: 'PIN de membro',
   bohAccessPinHint: 'O PIN é verificado com segurança e nunca é salvo neste dispositivo.',
   bohAccessUnlock: 'Desbloquear área',
-  bohAccessCancel: 'Agora não',
   bohAccessChecking: 'Verificando seu acesso seguro…',
   bohAccessBusy: 'Confirmando acesso de membro…',
-  bohAccessCanceled: 'A área All-Star continuará bloqueada.',
   bohAccessExpired: 'Seu acesso de membro expirou. Digite o PIN atual para desbloquear novamente.',
   bohAccessErrorInvalidPin: 'Digite o PIN atual dos membros.',
   bohAccessErrorDenied: 'Esse PIN não confere. Verifique e tente novamente.',
@@ -1151,7 +1149,7 @@ const pt = {
   heroesClearFilters: 'Limpar filtros',
   heroesSeasonHint: 'Temporadas - selecione várias',
   sourceCreditText:
-    'Dados cuidadosamente coletados da comunidade VTS 1097, Ptr, Old.Faithful, Raven G e outros colaboradores.',
+    'Dados cuidadosamente coletados da comunidade VTS 1097 e de seus colaboradores.',
   manualNoDuplicateHero: 'Este herói já está na sua combo atual.',
   toastComboSaved: 'Combo salva!',
   toastComboSaveFailed: 'Não foi possível salvar a combo',
@@ -1663,7 +1661,8 @@ const pt = {
   strifePaidCombos: 'Combos pagos',
   strifePending: 'Pendente',
   strifeRankOneReward: 'Recompensa do 1º lugar',
-  strifeRankOneRewardNote: 'Recompensa exclusiva presenteada ao jogador em 1º lugar na classificação do evento.',
+  strifeRankOneRewardNote:
+    'Recompensa exclusiva presenteada ao jogador em 1º lugar na classificação do evento.',
   strifeRecommendedFormation: 'Formação {tier} recomendada: {heroes}.',
   strifeReusableRank: 'Reutilizável #{rank}',
   strifeSeasonStageGroupAria: 'Estágio de temporada do Strife',
@@ -2037,11 +2036,9 @@ const pt = {
     researchBuffSummaryOpenAria: 'Ver os bônus de {tech}',
     researchBuffSummaryDialogAria: 'Resumo dos bônus de {tech}',
     researchBuffSummaryTitle: 'Bônus de {tech}',
-    researchBuffSummaryMeta:
-      'Bônus: {buffs} · Desbloqueios: {unlocks} · Sem dados: {missing}',
+    researchBuffSummaryMeta: 'Bônus: {buffs} · Desbloqueios: {unlocks} · Sem dados: {missing}',
     researchBuffSummaryEmpty: 'Esta árvore ainda não tem valores numéricos de bônus.',
-    researchBuffSummaryItemMeta:
-      'Atual: {current} · Restante: {remaining} · {nodes} {nodeLabel}',
+    researchBuffSummaryItemMeta: 'Atual: {current} · Restante: {remaining} · {nodes} {nodeLabel}',
     researchBuffUnlocksTitle: 'Desbloqueios',
     researchBuffNeedValuesTitle: 'Valores pendentes',
     researchBuffCloseAria: 'Fechar resumo dos bônus',
@@ -2049,8 +2046,7 @@ const pt = {
     researchBuffUnlockShort: 'A desbloquear',
     researchBuffUnlocked: 'Desbloqueado',
     researchBuffLocked: 'Bloqueado',
-    researchBuffKnownDetailTitle:
-      'Atual: {current} de {max}; restam {remaining}; {perLevel}',
+    researchBuffKnownDetailTitle: 'Atual: {current} de {max}; restam {remaining}; {perLevel}',
     researchBuffUnlockDetailTitle: 'Desbloqueia no nível 1',
     researchBuffMissingDetailTitle: 'Falta o valor exato do bônus deste nó.',
     researchBuffNodeDetail: 'Restam {remaining} · {perLevel}',
@@ -2104,12 +2100,9 @@ const pt = {
     researchSectionZoneRewards: 'Recompensas da zona',
 
     // Administração e fluxos de revisão.
-    adminLoginEmailDisabled:
-      'O login do Firebase com e-mail e senha ainda não está habilitado.',
-    adminCloudAdminRequired:
-      'Você não entrou como administrador; este envio não foi sincronizado.',
-    adminCloudRetryPending:
-      'Há alterações locais pendentes; entre na conta e clique em Atualizar.',
+    adminLoginEmailDisabled: 'O login do Firebase com e-mail e senha ainda não está habilitado.',
+    adminCloudAdminRequired: 'Você não entrou como administrador; este envio não foi sincronizado.',
+    adminCloudRetryPending: 'Há alterações locais pendentes; entre na conta e clique em Atualizar.',
     adminSpecialListSavedLocalOnly:
       '{label} foi salvo apenas neste dispositivo. A nuvem não confirmou a sincronização, então outros administradores talvez ainda não o vejam.',
     adminThBonusR5: 'Bônus (R5)',
@@ -2171,15 +2164,13 @@ const pt = {
     adminRosterNewSnapshot: 'Nova captura',
     adminRosterNewSnapshotDated: 'Nova captura ({day})',
     adminRosterPastePrompt: 'Cole os nomes dos membros, um por linha:',
-    adminRosterDropZone:
-      'Solte aqui uma captura da lista de membros ou clique para enviar.',
+    adminRosterDropZone: 'Solte aqui uma captura da lista de membros ou clique para enviar.',
     adminRosterScanning: 'Analisando imagem do elenco...',
     adminRosterEmpty:
       'Ainda não há capturas do elenco. Clique em “Nova captura” para salvar o elenco desta semana.',
     adminBannerListTitle: 'Lista de bandeiras',
     adminBannerPasteNames: 'Colar nomes',
-    adminBannerDropZone:
-      'Solte aqui uma captura da lista de bandeiras ou clique em Enviar imagem.',
+    adminBannerDropZone: 'Solte aqui uma captura da lista de bandeiras ou clique em Enviar imagem.',
     adminBannerScanning: 'Analisando lista de bandeiras...',
     adminBannerEmpty: 'Ainda não há registros de bandeiras.',
     adminPatherListTitle: 'Planos de caminhos / peças de velocidade',
@@ -2234,8 +2225,7 @@ const pt = {
     adminDutySavedLog: '{label} salvo: {count} registros.',
     adminDutyOcrAlreadyRunning: 'O OCR de tarefas já está em execução...',
     adminDutyScanningImagesLog: 'Analisando {count} imagem(ns) de {label}...',
-    adminDutyScanningImageProgress:
-      'Analisando imagem {current}/{total} de {label}...',
+    adminDutyScanningImageProgress: 'Analisando imagem {current}/{total} de {label}...',
     adminDutyOcrErrorLog: 'Erro de OCR de {label} ({file}): {error}',
     adminDutyNoNamesInImagesLog: 'Nenhum nome encontrado nas imagens de {label}.',
     adminDutyExtractFailedAlert: 'Não foi possível extrair nomes da imagem de {label}.',
@@ -2256,8 +2246,7 @@ const pt = {
     adminContributionSnapshotSummary: '{count} capturas',
     adminContributionTotalCount: '{total} no total',
     adminContributionOpeningPickerStatus: 'Abrindo o seletor de imagens...',
-    adminContributionNoImageSelectedStatus:
-      'Nenhuma imagem de contribuição foi selecionada.',
+    adminContributionNoImageSelectedStatus: 'Nenhuma imagem de contribuição foi selecionada.',
     adminContributionOcrBlockedStatus: 'OCR de contribuição bloqueado: {error}',
     adminContributionOcrBlockedToast:
       'O OCR de contribuição está bloqueado. Consulte a mensagem de status.',
@@ -2268,8 +2257,7 @@ const pt = {
     adminExGuildToggle: 'Dados históricos / ex-guild',
     adminExGuildEmpty: 'Ainda não há dados históricos de ex-guild.',
     adminExGuildPasteRows: 'Colar linhas de ex-guild',
-    adminExGuildPastePrompt:
-      'Cole nomes e contribuições, um por linha (Nome, Contribuição):',
+    adminExGuildPastePrompt: 'Cole nomes e contribuições, um por linha (Nome, Contribuição):',
     adminExGuildManualPaste: 'Colagem manual (ex-guild)',
     adminExGuildUploadImage: 'Enviar imagem de ex-guild',
     adminExGuildAddRow: 'Adicionar linha de ex-guild',
@@ -2283,8 +2271,7 @@ const pt = {
     adminExGuildTab: 'Dados ex-guild',
     adminContributionPrimaryTitle:
       'Esta é a captura de contribuição padrão para o cálculo do painel.',
-    adminContributionSetPrimaryTitle:
-      'Definir como captura de contribuição padrão.',
+    adminContributionSetPrimaryTitle: 'Definir como captura de contribuição padrão.',
 
     // Eden X1: análises públicas e painéis de detalhes.
     edenX1RewardSlotStatus: 'Situação',
@@ -2372,11 +2359,9 @@ const pt = {
     edenMapConstructionBody:
       'Estamos reunindo suas capturas do jogo em um mapa interativo de 1600×1600. Volte em breve.',
     edenConstructionEngineLoading: 'Preparando o mecanismo de mosaicos…',
-    edenConstructionEngineReady:
-      'Mecanismo de mosaicos carregado; aguardando capturas.',
+    edenConstructionEngineReady: 'Mecanismo de mosaicos carregado; aguardando capturas.',
     edenIsolateSector: 'Isolar',
-    edenIsolateNeedSector:
-      'Escolha um setor primeiro (não o Mapa completo) e depois ative Isolar.',
+    edenIsolateNeedSector: 'Escolha um setor primeiro (não o Mapa completo) e depois ative Isolar.',
     edenZoomOutTitle: 'Reduzir zoom (−)',
     edenZoomInTitle: 'Ampliar zoom (+)',
     edenResetView: 'Redefinir',
@@ -2432,8 +2417,7 @@ const pt = {
     edenMeasureDirect: 'Direta:',
     edenMeasureMarch: 'Marcha estimada:',
     edenMeasureTiles: 'quadrados',
-    edenMeasureBlocked:
-      'Rota parcialmente bloqueada; talvez atravesse montanhas.',
+    edenMeasureBlocked: 'Rota parcialmente bloqueada; talvez atravesse montanhas.',
     edenMarchFromHint:
       'Marchar daqui: ajuste a velocidade na barra · tempos estimados nas rotas e medições',
     edenMarkTarget: 'Marcar alvo',
@@ -2447,10 +2431,8 @@ const pt = {
     edenShareCopiedToast: 'Link do plano copiado',
     edenShareFailedToast: 'Não foi possível criar o link do plano',
     edenRoutePlannedToast: 'Rota calculada · {distance} quadrados',
-    edenSectorUnavailableToast:
-      'O setor “{sector}” não existe no mapa desta temporada',
-    edenSectorReferenceMissingToast:
-      'Não há folha de referência para o setor “{sector}”',
+    edenSectorUnavailableToast: 'O setor “{sector}” não existe no mapa desta temporada',
+    edenSectorReferenceMissingToast: 'Não há folha de referência para o setor “{sector}”',
     edenPathSavedToast: 'Rota salva · {distance} quadrados (~{time})',
     edenPlanImportedToast: 'Plano importado',
     edenInvalidPlanToast: 'Arquivo de plano inválido',
@@ -2534,10 +2516,8 @@ const pt = {
     edenX1ConductPrivateNotice:
       'Estes pontos extras de esforço da equipe são atribuídos pelo R5 MalakAbo. Os detalhes não ficam públicos; entre em contato para contestar.',
     edenX1ConductAria: 'Pontos extras de esforço da equipe R5 de {player}',
-    edenX1RewardReasonGrant:
-      'R5 concedeu a recompensa premium manualmente. Posição final #{rank}.',
-    edenX1RewardReasonForfeit:
-      'R5 retirou a recompensa premium manual. Posição final #{rank}.',
+    edenX1RewardReasonGrant: 'R5 concedeu a recompensa premium manualmente. Posição final #{rank}.',
+    edenX1RewardReasonForfeit: 'R5 retirou a recompensa premium manual. Posição final #{rank}.',
     edenX1RewardSkippedPremiumReason:
       'A posição #{rank} abriu mão da recompensa premium; a vaga passa ao próximo jogador elegível.',
     edenX1WeightedIncludesMeta:
@@ -2564,10 +2544,8 @@ const pt = {
     dmPlannerRecommended: 'Recomendada',
     dmPlannerLowestSd: 'Menos Super Dragonita',
     dmPlannerDirectHint: 'Menos fusões e maior custo de Super Dragonita.',
-    dmPlannerPurpleHint:
-      'O melhor equilíbrio entre Super Dragonita, gemas e trabalho.',
-    dmPlannerBlueHint:
-      'A rota que mais economiza Super Dragonita, mas exige mais fusões.',
+    dmPlannerPurpleHint: 'O melhor equilíbrio entre Super Dragonita, gemas e trabalho.',
+    dmPlannerBlueHint: 'A rota que mais economiza Super Dragonita, mas exige mais fusões.',
     dmPlannerSetTitle: 'Conjunto Dragon Master de seis peças',
     dmPlannerViewSet: 'Visão do conjunto',
     dmPlannerViewSlot: 'Visão por espaço',
@@ -2576,8 +2554,7 @@ const pt = {
     dmPlannerSelectedPiece: 'Peça selecionada',
     dmPlannerRecipeFor: '{piece} pela rota {route}',
     dmPlannerNormalGear: 'Equipamento normal de tropas',
-    dmPlannerNormalGearHint:
-      'Primeiro fabrique estas peças normais de tropas no nível {tier}.',
+    dmPlannerNormalGearHint: 'Primeiro fabrique estas peças normais de tropas no nível {tier}.',
     dmPlannerRawMaterials: 'Materiais básicos',
     dmPlannerStockpileTitle: 'Materiais para um conjunto completo',
     dmPlannerStockpileHint:
@@ -2637,10 +2614,8 @@ const pt = {
     dmPlannerCampaignHint:
       'Fabrique cinco conjuntos Dragon Master completos: 30 peças douradas ao todo.',
     dmPlannerCampaignSet: 'Conjunto {number}',
-    dmPlannerCampaignSetsComplete:
-      '{completed} de {total} conjuntos concluídos',
-    dmPlannerCampaignPiecesComplete:
-      '{completed} de {total} peças douradas concluídas',
+    dmPlannerCampaignSetsComplete: '{completed} de {total} conjuntos concluídos',
+    dmPlannerCampaignPiecesComplete: '{completed} de {total} peças douradas concluídas',
     dmPlannerCampaignFocused: 'Conjunto em foco',
     dmPlannerCampaignComplete: 'Cinco conjuntos Dragon Master concluídos',
     dmPlannerCampaignCompleteHint:
@@ -2664,8 +2639,7 @@ const pt = {
     dmEnhanceNeeded: 'Necessários',
     dmEnhanceShortfall: 'Faltam',
     dmEnhanceReached: 'Objetivo já alcançado',
-    dmEnhanceCredit:
-      'Agradecemos a Roha e Redbull pelos dados usados na ferramenta Dragon Master.',
+    dmEnhanceCredit: 'Agradecemos a Roha e Redbull pelos dados usados na ferramenta Dragon Master.',
   },
 };
 

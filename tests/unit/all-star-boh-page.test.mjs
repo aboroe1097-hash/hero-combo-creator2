@@ -120,9 +120,11 @@ test('signup preserves the canonical combat fields and requires reviewable OCR',
     'technologyPower',
     'heroCombatPower',
     'dragonPower',
-    't9Types',
+    'unitSpecialtyPower',
+    'artifactPower',
+    'royalTechPower',
+    't10Types',
     'speedHeroes',
-    'level50Heroes',
     'rocLevel',
   ];
   for (const name of canonicalFields) {
@@ -146,8 +148,8 @@ test('signup preserves the canonical combat fields and requires reviewable OCR',
     );
   }
 
-  for (const value of ['cavalry', 'archers', 'footmen', 'none']) {
-    assert.match(tabSource, new RegExp(`name="t9Types" value="${value}"`));
+  for (const value of ['cavalry', 'archers', 'footmen', 'all']) {
+    assert.match(tabSource, new RegExp(`name="t10Types" value="${value}"`));
   }
   for (const value of ['lionheart', 'cao-cao', 'al-fatih']) {
     assert.match(tabSource, new RegExp(`name="speedHeroes" value="${value}"`));
@@ -174,6 +176,8 @@ test('signup preserves the canonical combat fields and requires reviewable OCR',
   assert.match(tabSource, /contact R5 to merge or confirm the entries/);
   assert.match(tabSource, /data-role="submission-feedback"/);
   assert.match(tabSource, /data-role="submission-feedback-note"/);
+  assert.match(tabSource, /src="\/images\/boh-power-breakdown-example\.jpg"/);
+  assert.match(tabSource, /src="\/images\/boh-roc-red-tree-example\.png"/);
   assert.match(tabSource, /name="preferredTeammates"/);
   assert.match(tabSource, /data-boh-i18n="signup\.preferredTeammates"/);
   assert.match(tabSource, /aria-describedby="bohPreferredTeammatesHint"/);
@@ -206,6 +210,13 @@ test('signup planning selectors are compact, optional where intended, and keyboa
   assert.match(controllerSource, /type = 'number'[\s\S]*?min = '0'[\s\S]*?max = '100'/u);
   assert.match(controllerSource, /\['25', '50', '75', '100', ''\]/u);
   assert.match(controllerSource, /researchTreeText\(tree, 'name', state\.language\)/u);
+  assert.match(controllerSource, /const eden = \/\^X\(\[1-8\]\)\$\/u/u);
+  assert.match(controllerSource, /seasonRank\(row\.dataset\.season\) <= selectedSeasonRank/u);
+  assert.match(controllerSource, /portrait\.src = hero\.imageUrl/u);
+  assert.match(controllerSource, /VERIFIED_RESEARCH_ART/u);
+  assert.match(controllerSource, /\/assets\/research\/sources\/basic-combat-01\.jpg/u);
+  assert.match(controllerSource, /art\.dataset\.verifiedResearchArt/u);
+  assert.match(cssSource, /\.boh-research-row__art\s*\{/u);
 
   const fightingTimes = Array.from(
     tabSource.matchAll(/name="fightingTimeIds" value="([^"]+)"/gu),
@@ -218,9 +229,20 @@ test('signup planning selectors are compact, optional where intended, and keyboa
 
   const preferredRole = tabSource.match(/<select name="preferredRole"[\s\S]*?<\/select>/u)?.[0];
   assert.ok(preferredRole);
-  assert.match(preferredRole, /<option value=""[^>]*>No preference<\/option>/u);
+  assert.match(preferredRole, /required/u);
+  assert.match(preferredRole, /<option value=""[^>]*>Choose a role<\/option>/u);
   assert.match(preferredRole, /<option value="flexible"/u);
   assert.ok(preferredRole.indexOf('value=""') < preferredRole.indexOf('value="flexible"'));
+  const secondaryRole = tabSource.match(/<select name="secondaryRole"[\s\S]*?<\/select>/u)?.[0];
+  assert.ok(secondaryRole);
+  assert.match(secondaryRole, /<option value=""[^>]*>No preference<\/option>/u);
+  assert.match(tabSource, /class="boh-role-guide"/u);
+  assert.match(tabSource, /data-boh-i18n="signup\.roleOffensiveDescription"/u);
+  assert.doesNotMatch(tabSource, /name="unavailableTimes"/u);
+  assert.doesNotMatch(tabSource, /name="planCommitment"/u);
+  assert.doesNotMatch(tabSource, /name="canTeleport"/u);
+  assert.doesNotMatch(tabSource, /name="canUseVoice"/u);
+  assert.doesNotMatch(tabSource, /name="availability" value="backup"/u);
   assert.match(cssSource, /\.boh-catalog-disclosure > summary:focus-visible/u);
   assert.match(cssSource, /\.boh-catalog-list\s*\{[\s\S]*?overflow:\s*auto/u);
   assert.match(cssSource, /\.boh-research-row\s*\{[\s\S]*?minmax\(9rem, 1fr\)/u);

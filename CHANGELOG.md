@@ -1,5 +1,16 @@
 # Changelog
 
+## 14.1.3 - 2026-07-18
+
+- Improved Specialization node selection with a clear node guide, stronger selected/focus states, explicit learned/not-learned choices, localized research and column names, and accessible mobile controls.
+- Added reversible MAX/UNMAX controls to every Specialization research and an interactive Legion Skill preview that unlocks after all four column researches are complete.
+- Rebuilt the All-Star BoH signup around screenshot-first multilingual OCR for the six common power rows plus three optional extended rows, an in-form screenshot example, compact timezone and mobile controls, T10 readiness, portrait-backed hero selection with cumulative seasons through X8, verified in-game research artwork where source evidence exists, and a Red-tree RoC reference.
+- Simplified All-Star planning to full/most attendance, two game-required time preferences with a cross-team majority explanation, translated primary and secondary role selection with an inline role guide, and no backup, unavailable-time, level-50, or generic commitment questions; Epic Showdown remains the final optional VTS 1097-only section.
+- Removed the All-Star access-gate dismissal path so the private signup form can only be revealed after the seasonal member PIN is successfully verified.
+- Added a localized, mobile-ready All-Star signup-window banner that counts down to opening and then closing, shows the exact local dates, and falls back to a clear schedule-pending state until leadership enters the confirmed ISO timestamps.
+- Added optional multi-image Troop Details OCR with both supplied in-game examples, editable type/tier/normal-or-enhanced/count review rows, overlap deduplication, S through SSS support, and explicit confirmation before the compact troop inventory reaches leadership.
+- Corrected the Velo drawer badge to Beta 0.2 so it matches the already-deployed b0.2 Worker and removed retired contributor names from public credits.
+
 ## 14.1.2 - 2026-07-18
 
 - Added four read-only Velo tools so the assistant knows the whole toolkit: `get_toolkit_map` (every tab/page with what it answers and its deep link), `get_whats_new` (recent release notes from a generated changelog digest), `get_specialization_context` (canonical Specialization Towers columns, researches, nodes, milestones, medal costs, and Legion Skills), and `get_skin_tier_details` (the three skin tiers with star-up costs and acquisition paths).
@@ -10,7 +21,7 @@
 - Added the verified Cavalry columns I–III evidence overlay with 17 source screenshots, 23 exact icon crops, provenance metadata, and stable research/node records; unknown medal costs, learning order, prerequisites, and ambiguous icon mappings remain explicitly unknown.
 - Added the verified Archer columns I–III evidence overlay with 17 hashed source screenshots, 19 exact icon crops, 253 research-node records, observed layouts, provenance metadata, and canonical troop overrides while retaining unknown costs and prerequisite directions as `null`.
 - Added the verified Footmen columns I–III evidence corpus with 17 source screenshots, pixel-preserving crop descriptors, completed-graph node counts and visual ordering, and confirmed Legion Skill names/effects without inventing canonical node mappings, costs, or prerequisite directions.
-- Added a localized Hall of Honor to the bottom of the integrated Specialization tab for the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and every data contributor.
+- Added a localized Hall of Honor to the bottom of the integrated Specialization tab for the VTS 1097 Community and every data contributor.
 - Separated node inspection from learning changes so selecting a node now shows its name, troop-specific buff, learned state, and an explicit learn/unlearn action.
 - Added an unknown-medal help prompt that opens and focuses the selected node's Community Data record, with contribution storage now scoped by research and node instead of colliding numeric node IDs.
 - Reworked the Specialization phone layout with touch-safe nodes and controls, compact summary and troop navigation, snap-scrolling towers, responsive contribution records, sticky learning actions, and a two-column mobile Hall of Honor.

@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.1.2';
+export const APP_VERSION = '14.1.3';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -141,7 +141,7 @@ export function getSourceCreditText() {
   return (
     t.sourceCreditText ||
     translations.en.sourceCreditText ||
-    'Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.'
+    'Data meticulously sourced from the VTS 1097 Community and its contributors.'
   );
 }
 

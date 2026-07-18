@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.3",
+    "date": "2026-07-18",
+    "highlights": [
+      "Improved Specialization node selection with a clear node guide, stronger selected/focus states, explicit learned/not-learned choices, localized research and column names, and accessible mobile controls.",
+      "Added reversible MAX/UNMAX controls to every Specialization research and an interactive Legion Skill preview that unlocks after all four column researches are complete.",
+      "Rebuilt the All-Star BoH signup around screenshot-first multilingual OCR for the six common power rows plus three optional extended rows, an in-form screenshot example, compact timezone and mobile controls, T10 readiness, portrait-backed hero selection with cumulative seasons th…",
+      "Simplified All-Star planning to full/most attendance, two game-required time preferences with a cross-team majority explanation, translated primary and secondary role selection with an inline role guide, and no backup, unavailable-time, level-50, or generic commitment questions;…",
+      "Removed the All-Star access-gate dismissal path so the private signup form can only be revealed after the seasonal member PIN is successfully verified.",
+      "Added a localized, mobile-ready All-Star signup-window banner that counts down to opening and then closing, shows the exact local dates, and falls back to a clear schedule-pending state until leadership enters the confirmed ISO timestamps."
+    ]
+  },
   {
     "version": "14.1.2",
     "date": "2026-07-18",
@@ -94,13 +106,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added a simple, case-insensitive search inside the Alliance View Eden account-match editor while preserving the current selection during filtering and live contribution refreshes.",
       "Added a localized, one-click Alliance merge briefing PNG generated from the current live admin data, comparing a power-ranked full Top 100 against 95 keeps plus 5 reserved incoming seats with alliance composition, power cutoffs, C30 strength, Eden coverage, and manual-match reco…",
       "Kept the leadership brief honest about uneven Eden tracking coverage by using total power for both cross-alliance routes and labeling accounts outside the keep route as feeder candidates rather than automatic removals."
-    ]
-  },
-  {
-    "version": "14.0.14",
-    "date": "2026-07-16",
-    "highlights": [
-      "Fixed Eden X1 weighted-score popovers closing immediately when opened by hover or keyboard focus: the scroll-dismiss grace window now covers every open path, not only click, so the scroll that brings the trigger into view no longer dismisses the popover it just opened."
     ]
   }
 ].map((release) =>

@@ -449,10 +449,8 @@ const id = {
   bohAccessPinLabel: 'PIN anggota',
   bohAccessPinHint: 'PIN diperiksa dengan aman dan tidak pernah disimpan di perangkat ini.',
   bohAccessUnlock: 'Buka hub',
-  bohAccessCancel: 'Nanti saja',
   bohAccessChecking: 'Memeriksa akses aman anggota...',
   bohAccessBusy: 'Mengonfirmasi akses anggota...',
-  bohAccessCanceled: 'Hub All-Star tetap terkunci.',
   bohAccessExpired: 'Akses anggota sudah berakhir. Masukkan PIN saat ini untuk membukanya lagi.',
   bohAccessErrorInvalidPin: 'Masukkan PIN anggota saat ini.',
   bohAccessErrorDenied: 'PIN tidak cocok. Periksa lalu coba lagi.',
@@ -665,7 +663,7 @@ const id = {
   heroesClearFilters: 'Hapus filter',
   heroesSeasonHint: 'Musim - pilih beberapa',
   sourceCreditText:
-    'Data dikumpulkan dengan teliti dari Komunitas VTS 1097, Ptr, Old.Faithful, Raven G, dan kontributor lain.',
+    'Data dikumpulkan dengan teliti dari Komunitas VTS 1097 dan para kontributornya.',
   manualNoDuplicateHero: 'Hero ini sudah dipakai dalam kombo saat ini.',
   toastComboSaved: 'Kombo disimpan!',
   toastComboSaveFailed: 'Tidak dapat menyimpan kombo',
@@ -1668,7 +1666,8 @@ const id = {
   strifePaidCombos: 'Kombo berbayar',
   strifePending: 'Tertunda',
   strifeRankOneReward: 'Hadiah Peringkat 1',
-  strifeRankOneRewardNote: 'Hadiah eksklusif yang diberikan kepada pemain Peringkat 1 di peringkat event.',
+  strifeRankOneRewardNote:
+    'Hadiah eksklusif yang diberikan kepada pemain Peringkat 1 di peringkat event.',
   strifeRecommendedFormation: 'Formasi {tier} yang direkomendasikan: {heroes}.',
   strifeReusableRank: 'Dapat digunakan kembali #{rank}',
   strifeSeasonStageGroupAria: 'Tahap musim Strife',
@@ -2018,11 +2017,9 @@ Object.assign(id, {
   researchBuffSummaryOpenAria: 'Tampilkan ringkasan buff {tech}',
   researchBuffSummaryDialogAria: 'Ringkasan buff {tech}',
   researchBuffSummaryTitle: 'Ringkasan Buff: {tech}',
-  researchBuffSummaryMeta:
-    '{buffs} grup buff · {unlocks} terbuka · {missing} belum ada data',
+  researchBuffSummaryMeta: '{buffs} grup buff · {unlocks} terbuka · {missing} belum ada data',
   researchBuffSummaryEmpty: 'Belum ada nilai buff numerik untuk pohon ini.',
-  researchBuffSummaryItemMeta:
-    'Saat ini {current} · sisa {remaining} · {nodes} {nodeLabel}',
+  researchBuffSummaryItemMeta: 'Saat ini {current} · sisa {remaining} · {nodes} {nodeLabel}',
   researchBuffUnlocksTitle: 'Yang terbuka',
   researchBuffNeedValuesTitle: 'Nilai belum tersedia',
   researchBuffCloseAria: 'Tutup ringkasan buff',
@@ -2030,8 +2027,7 @@ Object.assign(id, {
   researchBuffUnlockShort: 'Buka',
   researchBuffUnlocked: 'Terbuka',
   researchBuffLocked: 'Terkunci',
-  researchBuffKnownDetailTitle:
-    'Saat ini {current} dari {max}; sisa {remaining}; {perLevel}',
+  researchBuffKnownDetailTitle: 'Saat ini {current} dari {max}; sisa {remaining}; {perLevel}',
   researchBuffUnlockDetailTitle: 'Terbuka di level 1',
   researchBuffMissingDetailTitle: 'Teknologi ini belum memiliki nilai buff yang pasti.',
   researchBuffNodeDetail: 'Sisa {remaining} · {perLevel}',
@@ -2351,8 +2347,7 @@ Object.assign(id, {
   edenGuideBtn: 'Panduan',
   edenGuideBtnTitle: 'Buka tutorial interaktif',
   edenGuidePanelTitle: 'Panduan Interaktif Peta Eden',
-  edenGuideIntro:
-    'Tutorial langkah demi langkah di peta asli. Progres disimpan di perangkat ini.',
+  edenGuideIntro: 'Tutorial langkah demi langkah di peta asli. Progres disimpan di perangkat ini.',
   edenGuideStartTour: 'Mulai tutorial',
   edenGuideReset: 'Reset progres',
   edenGuideStepLabel: 'Langkah',
@@ -2375,8 +2370,7 @@ Object.assign(id, {
   edenGuideWelcomeTitle: 'Selamat datang di Peta Eden',
   edenGuideWelcomeDesc:
     'Perencana Season 5 dengan lapisan perkamen, ikon struktur, rute, timeline tim opsional, dan intel aliansi. Ikuti panduan ini untuk mencoba setiap fitur.',
-  edenGuideWelcomeTip1:
-    'Tekan Berikutnya untuk maju atau pilih bagian mana pun dari tab di atas.',
+  edenGuideWelcomeTip1: 'Tekan Berikutnya untuk maju atau pilih bagian mana pun dari tab di atas.',
   edenGuideWelcomeTip2: 'Tombol Coba mengaktifkan kontrol asli agar Anda bisa latihan di peta.',
   edenGuideLayoutTitle: 'Layout peta',
   edenGuideLayoutDesc:
@@ -2403,8 +2397,7 @@ Object.assign(id, {
   edenGuideSectorTitle: 'Sektor',
   edenGuideSectorDesc:
     'Eden memiliki staging Utara N1–N4, zona perang tengah C, EC, E, W, WC, dan staging Selatan S1–S4. Pilih dari dropdown atau tombol cepat C, W, Kuil, dan lainnya.',
-  edenGuideSectorTip1:
-    'Hotkey: 1=peta penuh, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C, 8=NC.',
+  edenGuideSectorTip1: 'Hotkey: 1=peta penuh, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C, 8=NC.',
   edenGuideSectorTip2: 'Tombol Coba melompat ke zona Tengah C.',
   edenGuideMinimapTitle: 'Minimap',
   edenGuideMinimapDesc:
@@ -2603,7 +2596,8 @@ Object.assign(id, {
   adminRosterPastePrompt: 'Tempel nama anggota, satu nama per baris:',
   adminRosterDropZone: 'Letakkan screenshot daftar anggota di sini atau klik untuk mengunggah',
   adminRosterScanning: 'Memindai gambar roster…',
-  adminRosterEmpty: 'Belum ada snapshot roster. Klik “Snapshot baru” untuk menyimpan roster minggu ini.',
+  adminRosterEmpty:
+    'Belum ada snapshot roster. Klik “Snapshot baru” untuk menyimpan roster minggu ini.',
   adminBannerListTitle: 'Daftar Banner',
   adminBannerPasteNames: 'Tempel nama',
   adminBannerDropZone: 'Letakkan screenshot daftar Banner di sini atau klik Unggah Gambar',
@@ -2825,8 +2819,7 @@ Object.assign(id, {
   edenScoutOfflineToast: 'Scout tidak terhubung: {error}',
   seasonCatchupX1:
     'Catch-up X1: state muda mendapat semua hero X1 dan beberapa hero X2 awal dalam kelompok ini.',
-  seasonCatchupX2:
-    'Catch-up X2: kelompok ini mencakup sisa hero X2 serta gelombang X3.',
+  seasonCatchupX2: 'Catch-up X2: kelompok ini mencakup sisa hero X2 serta gelombang X3.',
   seasonCatchupX8:
     'Catch-up X8: hero dari X4, X5, X6, X7, X8, dan SP asli digabung menjadi satu season yang dapat dimainkan.',
   resSurplus: 'Kelebihan',

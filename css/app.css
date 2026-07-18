@@ -15433,7 +15433,6 @@ body.hide-hero-info #heroTooltip {
     right: 0.75rem;
     width: calc(100vw - 1.5rem);
   }
-
 }
 
 /* 11.4.0 command-center polish: denser setup controls without changing IDs. */
@@ -19205,7 +19204,9 @@ html[dir='rtl'] .gen-buttons-row {
   background: rgba(30, 22, 10, 0.5);
   cursor: pointer;
   color: #cbb892;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 .spec-troop-tab:hover {
   border-color: rgba(217, 179, 91, 0.8);
@@ -19329,16 +19330,21 @@ html[dir='rtl'] .gen-buttons-row {
   font-weight: 900;
   letter-spacing: 0.04em;
   cursor: pointer;
+  touch-action: manipulation;
 }
 .spec-badge-max:hover,
 .spec-badge-max:focus-visible {
   background: color-mix(in srgb, var(--banner-accent, #b7791f) 34%, #0f172a);
 }
-.spec-badge-max:disabled {
-  border-color: rgba(100, 116, 139, 0.35);
-  color: #64748b;
-  cursor: default;
-  opacity: 0.58;
+.spec-badge-max.is-unmax {
+  border-color: rgba(251, 113, 133, 0.62);
+  color: #fecdd3;
+  background: rgba(127, 29, 29, 0.22);
+}
+.spec-badge-max.is-unmax:hover,
+.spec-badge-max.is-unmax:focus-visible {
+  border-color: #fb7185;
+  background: rgba(159, 18, 57, 0.34);
 }
 .spec-badge:hover {
   background: rgba(217, 179, 91, 0.12);
@@ -19393,6 +19399,15 @@ html[dir='rtl'] .gen-buttons-row {
   border-radius: 9px;
   cursor: pointer;
   background: transparent;
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.spec-crest.is-unlocked:hover,
+.spec-crest.is-unlocked:focus-visible {
+  background: rgba(251, 191, 36, 0.1);
+  transform: translateY(-2px);
 }
 .spec-crest[disabled] {
   cursor: default;
@@ -19423,6 +19438,84 @@ html[dir='rtl'] .gen-buttons-row {
   color: #94a3b8;
 }
 
+.spec-legion-inspector {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 3.1rem 0.9rem 0.9rem;
+  border: 1px solid rgba(251, 191, 36, 0.52);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0 0, rgba(251, 191, 36, 0.14), transparent 40%),
+    rgba(11, 17, 31, 0.92);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+}
+.spec-legion-inspector:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 3px;
+}
+.spec-legion-inspector-icon {
+  display: grid;
+  place-items: center;
+  width: 3.35rem;
+  height: 3.35rem;
+  border: 2px solid #fbbf24;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #b45309, #7c2d12);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.34);
+  font-size: 1.45rem;
+}
+.spec-legion-inspector-copy h4 {
+  margin: 0.12rem 0 0;
+  color: #fef3c7;
+  font-size: 1rem;
+}
+.spec-legion-inspector-copy p {
+  margin: 0.3rem 0 0;
+  color: #d6c6a5;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.spec-legion-inspector-copy p strong {
+  color: #fbbf24;
+  margin-inline-end: 0.35rem;
+}
+.spec-legion-inspector-copy small {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: #7dd3fc;
+  font-size: 0.62rem;
+}
+.spec-legion-unlocked {
+  padding: 0.22rem 0.55rem;
+  border: 1px solid rgba(74, 222, 128, 0.42);
+  border-radius: 999px;
+  color: #86efac;
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+.spec-legion-close {
+  position: absolute;
+  inset-block-start: 0.55rem;
+  inset-inline-end: 0.55rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 1.25rem;
+  touch-action: manipulation;
+}
+.spec-legion-close:hover,
+.spec-legion-close:focus-visible {
+  border-color: rgba(125, 211, 252, 0.45);
+  background: rgba(125, 211, 252, 0.1);
+}
+
 /* Detail: node ring */
 .spec-detail {
   display: flex;
@@ -19436,6 +19529,23 @@ html[dir='rtl'] .gen-buttons-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+}
+.spec-node-guide {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.65rem 0.8rem;
+  border-inline-start: 3px solid #38bdf8;
+  border-radius: 0 8px 8px 0;
+  background: rgba(14, 116, 144, 0.1);
+}
+.spec-node-guide strong {
+  color: #e0f2fe;
+  font-size: 0.78rem;
+}
+.spec-node-guide span {
+  color: #a5b4c9;
+  font-size: 0.7rem;
+  line-height: 1.45;
 }
 .spec-back {
   width: 2.2rem;
@@ -19517,7 +19627,10 @@ html[dir='rtl'] .gen-buttons-row {
   cursor: pointer;
   border: 2px solid #64748b;
   background: radial-gradient(circle at 35% 30%, #334155, #0f172a);
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+  touch-action: manipulation;
 }
 .spec-ring-node:hover:not([disabled]) {
   transform: translate(-50%, -50%) scale(1.08);
@@ -19536,6 +19649,12 @@ html[dir='rtl'] .gen-buttons-row {
   box-shadow:
     0 0 0 3px rgba(56, 189, 248, 0.42),
     0 0 16px rgba(217, 179, 91, 0.58);
+  transform: translate(-50%, -50%) scale(1.12);
+}
+.spec-ring-node:focus-visible {
+  z-index: 3;
+  outline: 3px solid #f8fafc;
+  outline-offset: 3px;
 }
 .spec-ring-node[disabled] {
   opacity: 0.45;
@@ -19595,27 +19714,43 @@ html[dir='rtl'] .gen-buttons-row {
   font-size: 0.76rem;
 }
 .spec-node-inspector-state {
-  display: grid;
-  justify-items: end;
-  gap: 0.35rem;
+  min-width: 12rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
-.spec-node-state-pill {
-  padding: 0.13rem 0.48rem;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  border-radius: 999px;
-  color: #cbd5e1;
+.spec-node-inspector-state legend {
+  margin-bottom: 0.3rem;
+  color: #94a3b8;
   font-size: 0.62rem;
   font-weight: 800;
 }
-.spec-node-inspector[data-state='learned'] .spec-node-state-pill {
-  border-color: rgba(252, 211, 77, 0.48);
-  color: #fcd34d;
+.spec-node-state-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0.2rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 9px;
+  background: rgba(2, 6, 23, 0.45);
 }
-.spec-node-toggle {
-  min-width: 8.5rem;
-  padding: 0.48rem 0.62rem;
+.spec-node-state-options button {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.67rem;
+  font-weight: 850;
+  touch-action: manipulation;
 }
-.spec-node-toggle:disabled {
+.spec-node-state-options button[aria-pressed='true'] {
+  border-color: rgba(252, 211, 77, 0.42);
+  background: rgba(180, 83, 9, 0.28);
+  color: #fef3c7;
+}
+.spec-node-state-options button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
 }
@@ -19762,10 +19897,15 @@ html[dir='rtl'] .gen-buttons-row {
   }
   .spec-node-inspector-state {
     grid-column: 1 / -1;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    justify-items: start;
+    min-width: 0;
     width: 100%;
+  }
+  .spec-legion-inspector {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .spec-legion-unlocked {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
   .spec-node-medal-status {
     flex-wrap: wrap;

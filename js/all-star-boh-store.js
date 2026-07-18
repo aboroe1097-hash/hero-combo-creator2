@@ -479,8 +479,13 @@ function normalizeStats(input = {}, options = {}) {
     heroCombatPower: number(['heroCombatPower', 'heroPower'], 'Hero combat power'),
     dragonPower: number(['dragonPower', 'dragonsPower'], 'Dragon power'),
     t9TroopTypes: boundedStringArray(firstDefined(source, ['t9TroopTypes', 't9Types']) || [], {
-      label: 'T9 troop types',
+      label: 'T10 troop types',
       maxItems: 12,
+      maxLength: 60,
+    }),
+    t10TroopTypes: boundedStringArray(firstDefined(source, ['t10TroopTypes', 't10Types']) || [], {
+      label: 'T10 troop types',
+      maxItems: 3,
       maxLength: 60,
     }),
     readySpeedHeroes: boundedStringArray(
@@ -490,6 +495,31 @@ function normalizeStats(input = {}, options = {}) {
     level50HeroCount: number(['level50HeroCount', 'level50Heroes'], 'Level 50 hero count', 500),
     rocLevel: number(['rocLevel'], 'RoC level', 100),
   };
+  if (source.troopRoster !== undefined) {
+    stats.troopRoster = boundedStringArray(source.troopRoster || [], {
+      label: 'Troop roster',
+      maxItems: 60,
+      maxLength: 48,
+    });
+  }
+  for (const entry of stats.troopRoster || []) {
+    if (
+      !/^(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)\|\d{1,10}$/u.test(
+        entry
+      )
+    ) {
+      throw new AllStarBohValidationError('Troop inventory contains an invalid row.');
+    }
+  }
+  for (const [key, aliases, label] of [
+    ['unitSpecialtyPower', ['unitSpecialtyPower', 'specialtyPower'], 'Unit specialty power'],
+    ['artifactPower', ['artifactPower'], 'Artifact power'],
+    ['royalTechPower', ['royalTechPower'], 'Royal Tech power'],
+  ]) {
+    const rawValue = firstDefined(source, aliases);
+    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
+    stats[key] = boundedInteger(rawValue, label, { minimum: 0, maximum: 10 ** 15 });
+  }
   if (options.includePlanningSignals === true) {
     stats.usableHeroNames = normalizePlanningSelection(
       source.usableHeroNames,
@@ -525,6 +555,12 @@ function normalizeCommitment(input = {}, options = {}) {
       '',
       'Preferred role'
     ),
+    secondaryRole: normalizedEnum(
+      source.secondaryRole,
+      PREFERRED_ROLE_VALUES,
+      '',
+      'Secondary role'
+    ),
     fightingTimeIds: normalizeFightingTimeIds(source.fightingTimeIds, {
       allowLegacyEmpty: options.requireFightingTimeIds !== true,
     }),
@@ -551,6 +587,9 @@ function normalizeOcrAudit(input = {}) {
     'technologyPower',
     'heroCombatPower',
     'dragonPower',
+    'unitSpecialtyPower',
+    'artifactPower',
+    'royalTechPower',
   ]) {
     if (!own(fieldConfidenceSource, key)) continue;
     fieldConfidence[key] = boundedNumber(fieldConfidenceSource[key], `OCR ${key} confidence`, {
@@ -585,6 +624,10 @@ export function normalizeAllStarBohSubmission(input = {}, options = {}) {
   const preferredRole = firstDefined(optionalRecord(source.commitment), ['preferredRole', 'role']);
   if (!rolePreferences.length && preferredRole) {
     rolePreferences.push(requiredIdentifier(preferredRole, 'Preferred role'));
+  }
+  const secondaryRole = firstDefined(optionalRecord(source.commitment), ['secondaryRole']);
+  if (secondaryRole && !rolePreferences.includes(secondaryRole)) {
+    rolePreferences.push(requiredIdentifier(secondaryRole, 'Secondary role'));
   }
   const gameName = boundedString(
     firstDefined(source, ['gameName', 'accountName', 'playerName']),

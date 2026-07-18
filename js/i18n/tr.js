@@ -449,10 +449,8 @@ const tr = {
   bohAccessPinLabel: 'Üye PIN’i',
   bohAccessPinHint: 'PIN güvenli biçimde kontrol edilir ve bu cihaza hiçbir zaman kaydedilmez.',
   bohAccessUnlock: 'Merkezi aç',
-  bohAccessCancel: 'Şimdi değil',
   bohAccessChecking: 'Güvenli üye erişimin kontrol ediliyor...',
   bohAccessBusy: 'Üye erişimi onaylanıyor...',
-  bohAccessCanceled: 'All-Star merkezi kilitli kalacak.',
   bohAccessExpired: 'Üye erişiminin süresi doldu. Yeniden açmak için güncel PIN’i gir.',
   bohAccessErrorInvalidPin: 'Güncel üye PIN’ini gir.',
   bohAccessErrorDenied: 'Bu PIN eşleşmedi. Kontrol edip tekrar dene.',
@@ -687,7 +685,7 @@ const tr = {
   heroesClearFilters: 'Filtreleri temizle',
   heroesSeasonHint: 'Sezonlar - birden fazla seç',
   sourceCreditText:
-    'Veriler VTS 1097 Topluluğu, Ptr, Old.Faithful, Raven G ve diğer katkı sağlayanlardan özenle derlenmiştir.',
+    'Veriler VTS 1097 Topluluğu ve katkı sağlayan üyeleri tarafından özenle derlenmiştir.',
   manualNoDuplicateHero: 'Bu kahraman mevcut kombonda zaten kullanılıyor.',
   toastComboSaved: 'Kombo kaydedildi!',
   toastComboSaveFailed: 'Kombo kaydedilemedi',
@@ -2042,8 +2040,7 @@ Object.assign(tr, {
   researchBuffSummaryMeta:
     '{buffs} buff grubu · {unlocks} açılabilir özellik · {missing} eksik veri',
   researchBuffSummaryEmpty: 'Bu ağaç için henüz sayısal buff değeri yok.',
-  researchBuffSummaryItemMeta:
-    'Mevcut {current} · kalan {remaining} · {nodes} {nodeLabel}',
+  researchBuffSummaryItemMeta: 'Mevcut {current} · kalan {remaining} · {nodes} {nodeLabel}',
   researchBuffUnlocksTitle: 'Açılan özellikler',
   researchBuffNeedValuesTitle: 'Eksik değerler',
   researchBuffCloseAria: 'Buff özetini kapat',
@@ -2051,8 +2048,7 @@ Object.assign(tr, {
   researchBuffUnlockShort: 'Açılır',
   researchBuffUnlocked: 'Açık',
   researchBuffLocked: 'Kilitli',
-  researchBuffKnownDetailTitle:
-    'Mevcut {current}/{max}; kalan {remaining}; {perLevel}',
+  researchBuffKnownDetailTitle: 'Mevcut {current}/{max}; kalan {remaining}; {perLevel}',
   researchBuffUnlockDetailTitle: '1. seviyede açılır',
   researchBuffMissingDetailTitle: 'Bu geliştirme için kesin buff değeri gerekiyor.',
   researchBuffNodeDetail: 'Kalan {remaining} · {perLevel}',
@@ -2107,10 +2103,8 @@ Object.assign(tr, {
 
   // Admin and contribution management.
   adminLoginEmailDisabled: 'Firebase E-posta/Şifre ile oturum açma henüz etkin değil.',
-  adminCloudAdminRequired:
-    'Yönetici olarak oturum açılmadı; bu yükleme bulutla eşitlenmedi.',
-  adminCloudRetryPending:
-    'Yerel değişiklikler bekliyor — oturum açtıktan sonra Yenile’ye tıkla',
+  adminCloudAdminRequired: 'Yönetici olarak oturum açılmadı; bu yükleme bulutla eşitlenmedi.',
+  adminCloudRetryPending: 'Yerel değişiklikler bekliyor — oturum açtıktan sonra Yenile’ye tıkla',
   adminSpecialListSavedLocalOnly:
     '{label} yalnızca bu cihaza kaydedildi. Bulut eşitlemesi doğrulanmadığı için diğer yöneticiler bunu göremeyebilir.',
   adminThAdjustedTotal: 'Düzeltilmiş toplam',
@@ -2131,8 +2125,7 @@ Object.assign(tr, {
   adminEdenVotesPublicResultsHint:
     'Hazır olduğunda oy sıralamasını herkese açık Eden X1 sayfasında göster.',
   adminEdenVotesShowNames: 'Oy verenlerin adlarını göster',
-  adminEdenVotesShowNamesHint:
-    'Herkese açık sonuçların anonim kalması gerekiyorsa kapalı tut.',
+  adminEdenVotesShowNamesHint: 'Herkese açık sonuçların anonim kalması gerekiyorsa kapalı tut.',
   adminEdenVotesSettingsOpen: 'Oylama açık.',
   adminEdenVotesSettingsClosed: 'Oylama kapalı.',
   adminEdenVotesSettingsSaved: 'Oylama kontrolleri kaydedildi.',
@@ -2170,15 +2163,13 @@ Object.assign(tr, {
   adminRosterNewSnapshot: 'Yeni Kayıt',
   adminRosterNewSnapshotDated: 'Yeni Kayıt ({day})',
   adminRosterPastePrompt: 'Üye adlarını yapıştır (her satıra bir ad):',
-  adminRosterDropZone:
-    'Üye listesi ekran görüntüsünü buraya bırak veya yüklemek için tıkla',
+  adminRosterDropZone: 'Üye listesi ekran görüntüsünü buraya bırak veya yüklemek için tıkla',
   adminRosterScanning: 'Kadro görseli taranıyor...',
   adminRosterEmpty:
     'Henüz kadro kaydı yok. Bu haftanın kadrosunu kaydetmek için “Yeni Kayıt”a tıkla.',
   adminBannerListTitle: 'Sancak Listesi',
   adminBannerPasteNames: 'Adları Yapıştır',
-  adminBannerDropZone:
-    'Sancak listesi ekran görüntüsünü buraya bırak veya Görsel Yükle’ye tıkla',
+  adminBannerDropZone: 'Sancak listesi ekran görüntüsünü buraya bırak veya Görsel Yükle’ye tıkla',
   adminBannerScanning: 'Sancak listesi taranıyor...',
   adminBannerEmpty: 'Henüz sancak listesi kaydı yok.',
   adminPatherListTitle: 'Yol Açanlar / Hızlı Kare Planları',
@@ -2194,8 +2185,7 @@ Object.assign(tr, {
   adminShieldWallAddNames: 'Ad Ekle',
   adminShieldWallEmpty: 'Henüz kalkan duvarı kaydı yok.',
   adminDutySummaryTitle: 'Görev Özeti',
-  adminDutySummaryEmpty:
-    'Kayıtlar kaydedildikten sonra görev katılımları burada özetlenir.',
+  adminDutySummaryEmpty: 'Kayıtlar kaydedildikten sonra görev katılımları burada özetlenir.',
   adminDutySummaryPlayer: 'Oyuncu',
   adminDutySummaryEntries: 'Kayıt',
   adminDutySummaryTimes: 'Katılım',
@@ -2255,8 +2245,7 @@ Object.assign(tr, {
   adminContributionOpeningPickerStatus: 'Görsel seçici açılıyor...',
   adminContributionNoImageSelectedStatus: 'Katkı görseli seçilmedi.',
   adminContributionOcrBlockedStatus: 'Katkı OCR işlemi engellendi: {error}',
-  adminContributionOcrBlockedToast:
-    'Katkı OCR işlemi engellendi. Durum mesajını kontrol et.',
+  adminContributionOcrBlockedToast: 'Katkı OCR işlemi engellendi. Durum mesajını kontrol et.',
   adminContributionDelta: 'Fark',
   adminContributionFinal: 'Nihai',
   adminContributionPremiumCount: 'Özel {count}',
@@ -2319,8 +2308,7 @@ Object.assign(tr, {
   edenIsolateSectorTitle:
     'Haritada yalnızca seçili sektörü göster — rota ve hedefleri sadece bu bölge için planla (I)',
   edenIsolateActive: 'Ayrılmış sektör planı',
-  edenIsolateNeedSector:
-    'Önce bir sektör seç (Tam Harita değil), ardından Ayır’ı etkinleştir.',
+  edenIsolateNeedSector: 'Önce bir sektör seç (Tam Harita değil), ardından Ayır’ı etkinleştir.',
   edenExportPngWorking: 'Harita görseli dışa aktarılıyor…',
   edenExportPngDone: 'Harita PNG’si kaydedildi',
   edenZoomOutTitle: 'Uzaklaştır (−)',
@@ -2436,8 +2424,7 @@ Object.assign(tr, {
   edenCoordSearchPh: 'X:Y örn. 800:800',
   edenCoordGo: 'Git',
   edenCoordGoTitle: 'Oyun içi X:Y koordinatlarına git',
-  edenCoordInvalid:
-    'Geçersiz koordinat — X:Y biçimini kullan (harita aralığı 0–1600, 0–1600)',
+  edenCoordInvalid: 'Geçersiz koordinat — X:Y biçimini kullan (harita aralığı 0–1600, 0–1600)',
   edenCoordFoundStruct: '{name}, {x}:{y} konumunda bulundu',
   edenCoordJumped: 'X:{x} Y:{y} konumuna gidildi',
   edenDatasetLabelTitle: 'Eden haritası sezon / yapı veri seti',
@@ -2503,8 +2490,7 @@ Object.assign(tr, {
   edenTeamCount2: '2 takım',
   edenTeamCount3: '3 takım',
   edenTeamCount4: '4 takım',
-  edenTeamPlanOffHint:
-    'Yapı atamak ve zaman çizelgesi panosunu göstermek için takım planını aç.',
+  edenTeamPlanOffHint: 'Yapı atamak ve zaman çizelgesi panosunu göstermek için takım planını aç.',
   edenTeamPlanEnableFirst: 'Önce kenar çubuğundan takım planını etkinleştir.',
   edenTeamPanelDesc: 'İsteğe bağlı — yapıları oyun saati aralıklarıyla takımlara ata.',
   edenTeamFilterAll: 'Tüm takımlar',
@@ -2558,8 +2544,7 @@ Object.assign(tr, {
     'Tuval; sektörünü arazi, yapılar ve plan katmanlarıyla gösterir. Kenar çubuğunda yapılar, filtreler ve ayrıntılar bulunur. Bu etkileşimli rehber haritanın altında yer alır.',
   edenGuideLayoutTip1:
     'Haritanın üstündeki kontrol paneli gezinme, araçlar, görünüm modları, planlar, katmanlar ve bölge geçişlerini gruplar — açıklamasını görmek için herhangi bir kontrolün üzerine gel.',
-  edenGuideLayoutTip2:
-    'Sol alttaki gösterge arazi renklerini açıklar — ova, çöl, nehir ve dağ.',
+  edenGuideLayoutTip2: 'Sol alttaki gösterge arazi renklerini açıklar — ova, çöl, nehir ve dağ.',
   edenGuideLayoutTip3:
     'Fareyi haritanın üzerinde gezdirince koordinat göstergesi görünür; oyun saati araç çubuğunda Görünüm’ün yanında yer alır.',
   edenGuideLayoutTip4:
@@ -2567,22 +2552,18 @@ Object.assign(tr, {
   edenGuideZoomTitle: 'Yakınlaştırma',
   edenGuideZoomDesc:
     'Fare tekerleğiyle imlece doğru yakınlaştır veya hazır seviyeler için + / − kullan (%25–%320). Sektörü sığdırmak için haritanın boş bir yerine çift tıkla.',
-  edenGuideZoomTip1:
-    'Yakınlaştırma imlece sabitlenir — imlecin altındaki nokta yerinde kalır.',
+  edenGuideZoomTip1: 'Yakınlaştırma imlece sabitlenir — imlecin altındaki nokta yerinde kalır.',
   edenGuideZoomTip2: 'Bir yapıya yakınlaşmak için yapıya çift tıkla.',
   edenGuideZoomTip3: 'Geçerli sektörü sığdırmak için F veya Boşluk tuşuna bas.',
   edenGuidePanTitle: 'Kaydırma ve Gezinme aracı',
   edenGuidePanDesc:
     'Kaydırmak için haritanın boş bir alanını sürükle. Görünümü ok tuşlarıyla da hareket ettirebilirsin. Yapı seçmek için varsayılan araç Gezinme’dir.',
-  edenGuidePanTip1:
-    'Seçmek için haritadaki veya kenar çubuğu listesindeki bir yapıya tıkla.',
-  edenGuidePanTip2:
-    'Gezinme’ye dönmek ve ölçüm noktalarını temizlemek için Escape’e bas.',
+  edenGuidePanTip1: 'Seçmek için haritadaki veya kenar çubuğu listesindeki bir yapıya tıkla.',
+  edenGuidePanTip2: 'Gezinme’ye dönmek ve ölçüm noktalarını temizlemek için Escape’e bas.',
   edenGuideSectorTitle: 'Sektörler',
   edenGuideSectorDesc:
     'Eden; kuzey hazırlık bölgesi (N1–N4), merkez savaş bölgesi (C, EC, E, W, WC) ve güney hazırlık bölgesinden (S1–S4) oluşur. Açılır listeden ya da hızlı seçimlerden (C, W, Tapınak…) bir sektör seç.',
-  edenGuideSectorTip1:
-    'Kısayollar: 1=Tam harita, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C, 8=NC.',
+  edenGuideSectorTip1: 'Kısayollar: 1=Tam harita, 2=N, 3=NE, 4=E, 5=S, 6=W, 7=C, 8=NC.',
   edenGuideSectorTip2: 'Şimdi dene, merkez savaş bölgesindeki C sektörüne götürür.',
   edenGuideMinimapTitle: 'Mini harita',
   edenGuideMinimapDesc:
@@ -2593,8 +2574,7 @@ Object.assign(tr, {
     'Kenar çubuğundaki Koordinata git alanına oyun içi X:Y koordinatlarını (örn. 800:800) yazıp Git’e tıkla veya Enter’a bas. Harita o noktayı ortalar ve yakında bir yapı varsa onu seçer.',
   edenGuideCoordTip1:
     'Seçili bir yapının Koordinatları Kopyala düğmesinden aldığın koordinatları da yapıştırabilirsin.',
-  edenGuideCoordTip2:
-    'Tam Eden haritasında geçerli aralık yaklaşık 0–1600 × 0–1600’dür.',
+  edenGuideCoordTip2: 'Tam Eden haritasında geçerli aralık yaklaşık 0–1600 × 0–1600’dür.',
   edenGuideSelectTitle: 'Yapı seçme',
   edenGuideSelectDesc:
     'Gezinme etkinken haritadaki herhangi bir kapıya, kasabaya, başkente veya tapınağa tıkla. Kenar çubuğu seçimini vurgulamak için otomatik kayar.',
@@ -2603,19 +2583,16 @@ Object.assign(tr, {
   edenGuideSidebarTitle: 'Yapı ayrıntıları',
   edenGuideSidebarDesc:
     'Bir yapı seçildiğinde hakimiyet durumunu ve lonca adını ayarla, hedef olarak işaretle, koordinatları kopyala veya Kombo Oluşturucu’yu aç.',
-  edenGuideSidebarTip1:
-    'Durum renkleri: yeşil bizim, sarı çekişmeli, kırmızı düşman.',
+  edenGuideSidebarTip1: 'Durum renkleri: yeşil bizim, sarı çekişmeli, kırmızı düşman.',
   edenGuideSidebarTip2: 'Ortala ve Yakınlaştır düğmeleri haritayı yapıya odaklar.',
-  edenGuideSidebarTip3:
-    'Takım planı etkinse buradan takım, oyun saati aralığı ve not ata.',
+  edenGuideSidebarTip3: 'Takım planı etkinse buradan takım, oyun saati aralığı ve not ata.',
   edenGuideFiltersTitle: 'Kenar çubuğu filtreleri',
   edenGuideFiltersDesc:
     'Yapı listesini hakimiyet, bölge ve türe göre filtrele; sıralamasını seç. Ad veya bölge metni aramak için alttaki arama kutusunu kullan. Takım planı açıkken takım filtresi de görünür.',
   edenGuideFiltersTip1: 'Hakimiyet filtresi haritadaki işaretleri de renklendirir.',
   edenGuideFiltersTip2:
     'Yapı araması adları ve bölgeleri eşleştirir; X:Y yazıp Enter’a basmak da koordinata götürür.',
-  edenGuideFiltersTip3:
-    'Liste kenar çubuğu içinde kayar — filtreler ve arama üstte sabit kalır.',
+  edenGuideFiltersTip3: 'Liste kenar çubuğu içinde kayar — filtreler ve arama üstte sabit kalır.',
   edenGuideViewModesTitle: 'Görünüm modları',
   edenGuideViewModesDesc:
     'Görünüm menüsü planlama odağını değiştirir: Stratejik (varsayılan genel bakış), Keşif Modu (istihbarat çek/gönder), Rota Planlayıcısı (iki nokta arasında otomatik rota) ve Takım Planı (takım planı açıksa zaman çizelgesi).',
@@ -2628,8 +2605,7 @@ Object.assign(tr, {
   edenGuideMeasureTitle: 'Ölçüm aracı',
   edenGuideMeasureDesc:
     'M’ye bas veya Ölç’e tıkla, ardından haritada A ve B noktalarını seç. Mesafe araziyi hesaba katar ve tahmini yürüyüş süresini gösterir.',
-  edenGuideMeasureTip1:
-    'Araç çubuğundaki yürüyüş hızı, seyahat tahminlerini ölçekler.',
+  edenGuideMeasureTip1: 'Araç çubuğundaki yürüyüş hızı, seyahat tahminlerini ölçekler.',
   edenGuideMeasureTip2: 'Ölçümü Temizle, kenar çubuğundaki noktaları sıfırlar.',
   edenGuidePathTitle: 'Rota aracı',
   edenGuidePathDesc:
@@ -2651,48 +2627,41 @@ Object.assign(tr, {
   edenGuideOwnDesc:
     'Bir yapı seç, ardından kenar çubuğu kartından hakimiyet durumunu ve lonca adını ayarla. Renkler haritada ve listelerde güncellenir.',
   edenGuideOwnTip1: 'Yalnızca düşman veya bize ait yapıları göstermek için filtreleri kullan.',
-  edenGuideOwnTip2:
-    'Toprak katmanı kuzey / merkez / güney kontrol bölgelerini görselleştirir.',
+  edenGuideOwnTip2: 'Toprak katmanı kuzey / merkez / güney kontrol bölgelerini görselleştirir.',
   edenGuideTeamPlanTitle: 'Takım planı (isteğe bağlı)',
   edenGuideTeamPlanDesc:
     'Takım planlaması varsayılan olarak kapalıdır. Kenar çubuğundan Takım planını aç, Takım planını etkinleştir seçeneğini işaretle ve 2–4 takım seç. Yapıları oyun saati aralıklarıyla ata; zaman çizelgesi panosu oyun içi saate göre sıralanır.',
   edenGuideTeamPlanTip1:
     'Şimdi dene takım planını etkinleştirip paneli açar — sen atama yapana kadar hiçbir yapı atanmaz.',
-  edenGuideTeamPlanTip2:
-    'Atanmış yapılarda renkli rozetleri göstermek için Takımlar katmanını aç.',
+  edenGuideTeamPlanTip2: 'Atanmış yapılarda renkli rozetleri göstermek için Takımlar katmanını aç.',
   edenGuideTeamPlanTip3:
     'Tam zaman çizelgesi için Görünüm’ü Takım Planı’na geçir; gizlemek için takım planını istediğin zaman kapatabilirsin.',
   edenGuideClockTitle: 'Oyun saati',
   edenGuideClockDesc:
     'Araç çubuğu canlı Eden oyun saatini gösterir (00:00–23:59 döngüsü). Takım görevi aralıkları ve yürüyüş tahminleri bu saati kullanır — tam saati görmek için üzerine gel.',
-  edenGuideClockTip1:
-    'Dil seçicinin yanındaki genel saat rozetiyle aynı saati kullanır.',
+  edenGuideClockTip1: 'Dil seçicinin yanındaki genel saat rozetiyle aynı saati kullanır.',
   edenGuidePlansTitle: 'Birden fazla plan',
   edenGuidePlansDesc:
     'Plan açılır menüsüyle ayrı senaryolar kaydet. Yeni plan için + Yeni Plan’ı, yuvaları yönetmek için Yeniden Adlandır veya Sil’i kullan.',
-  edenGuidePlansTip1:
-    'Her plan kendi rotalarını, hedeflerini ve hakimiyet verilerini saklar.',
+  edenGuidePlansTip1: 'Her plan kendi rotalarını, hedeflerini ve hakimiyet verilerini saklar.',
   edenGuidePlansTip2:
     'Her plan takım ayarlarını, rotaları, hedefleri ve hakimiyeti saklar — kontrol panelinden Planlar ve dışa aktarmayı aç.',
   edenGuideShareTitle: 'Paylaşma ve dışa aktarma',
   edenGuideShareDesc:
     'Paylaş, planının kodlandığı bir bağlantıyı kopyalar. Dışa Aktar JSON indirir; İçe Aktar dosyayı geri yükler. PNG ise haritanın ekran görüntüsünü kaydeder.',
-  edenGuideShareTip1:
-    'Paylaşım bağlantıları müttefiklerin aynı plan düzenini açmasını sağlar.',
+  edenGuideShareTip1: 'Paylaşım bağlantıları müttefiklerin aynı plan düzenini açmasını sağlar.',
   edenGuideShareTip2: 'PNG, Discord veya ittifak belgeleri için kullanışlıdır.',
   edenGuideScoutTitle: 'Keşif Modu ve istihbarat',
   edenGuideScoutDesc:
     'Keşif Modu istihbarat toplamaya odaklanır. İstihbarat Çek buluttaki hakimiyet verilerini birleştirir; İstihbarat Gönder işaretlerini yükler (Firebase, isteğe bağlı).',
-  edenGuideScoutTip1:
-    'Şimdi dene, keşif kontrollerini inceleyebilmen için Keşif Modu’na geçer.',
+  edenGuideScoutTip1: 'Şimdi dene, keşif kontrollerini inceleyebilmen için Keşif Modu’na geçer.',
   edenGuideLayersTitle: 'Harita katmanları',
   edenGuideLayersDesc:
     'Şu katmanları açıp kapat: parşömen harita, ekran görüntüleri, arazi, yapılar, rotalar, hedefler, takımlar (isteğe bağlı), etiketler, bölgeler, toprak, sis, ısı haritası ve sektör HD kareleri.',
   edenGuideLayersTip1:
     'Daha temiz bir arazi görünümü için Yapıları kapat; takım planını etkinleştirene kadar Takımlar varsayılan olarak kapalıdır.',
   edenGuideLayersTip2: 'Sis, henüz ziyaret etmediğin sektörleri gizler.',
-  edenGuideLayersTip3:
-    'Denerken katmanları varsayılanlarına sıfırlamak için R’ye bas.',
+  edenGuideLayersTip3: 'Denerken katmanları varsayılanlarına sıfırlamak için R’ye bas.',
   edenGuideTeamsLayerTitle: 'Takımlar katmanı',
   edenGuideTeamsLayerDesc:
     'Takım planı etkinken görev atanmış yapılarda renkli rozetler görmek için Takımları aç. Takım açılır menüsüyle kenar çubuğu listesini takıma göre filtrele.',
@@ -2703,8 +2672,7 @@ Object.assign(tr, {
   edenGuideRefTitle: 'Referans opaklığı',
   edenGuideRefDesc:
     'Harita katmanı optimize edilmiş, fraksiyonlara bölünmüş parşömen altlığını gösterir (Sezon 5, kırpılmış ve hizalanmış). Yapı hizalamasını doğrulamak için sektör bazlı ekran görüntülerini kullan.',
-  edenGuideRefTip1:
-    'Düşük referans opaklığı, rotaları araziyle hizalamayı kolaylaştırır.',
+  edenGuideRefTip1: 'Düşük referans opaklığı, rotaları araziyle hizalamayı kolaylaştırır.',
   edenGuideRefTip2:
     'Parşömendeki başkent simgeleri maskelenmiştir — koordinatlara yerleştirilen simgeler esas alınır.',
   edenGuideZoneTitle: 'Bölge filtresi',
@@ -2712,18 +2680,14 @@ Object.assign(tr, {
     'Yapıları Eden bölgesine göre filtrele: Kuzey (N1–N4 hazırlık), Merkez (C, EC, E, W, WC savaş bölgesi) veya Güney (S1–S4 hazırlık).',
   edenGuideZoneTip1:
     'Tümü her yapıyı gösterir; daha hassas seçim için kenar çubuğundaki bölge menüsüyle birlikte kullan.',
-  edenGuideZoneTip2:
-    'Toprak katmanı haritanın kuzey, merkez ve güney kısımlarını renklendirir.',
+  edenGuideZoneTip2: 'Toprak katmanı haritanın kuzey, merkez ve güney kısımlarını renklendirir.',
   edenGuideKeysTitle: 'Klavye kısayolları',
   edenGuideKeysDesc:
     'Kısayollarla planlamayı hızlandır — çoğu araç çubuğundaki araç etiketleriyle eşleşir.',
-  edenGuideKeysTip1:
-    'M Ölçüm · P Rota · 1–8 sektörler · F/Boşluk sığdır · +/− yakınlaştır',
-  edenGuideKeysTip2:
-    'Ok tuşları kaydırır · Del seçili rotayı siler · R katmanları sıfırlar',
+  edenGuideKeysTip1: 'M Ölçüm · P Rota · 1–8 sektörler · F/Boşluk sığdır · +/− yakınlaştır',
+  edenGuideKeysTip2: 'Ok tuşları kaydırır · Del seçili rotayı siler · R katmanları sıfırlar',
   edenGuideKeysTip3: 'Ctrl+Z rota çizerken son noktayı geri alır',
-  edenGuideKeysTip4:
-    'Escape, Gezinme’ye döner ve ölçüm noktalarını temizler',
+  edenGuideKeysTip4: 'Escape, Gezinme’ye döner ve ölçüm noktalarını temizler',
   edenGuideMobileTitle: 'Mobil ve dokunmatik',
   edenGuideMobileDesc:
     'Yakınlaştırmak için iki parmakla sıkıştır, kaydırmak için tek parmakla sürükle. Bir yapı seçildiğinde kenar çubuğu kapatma düğmeli bir alt panel olarak açılır. Rehber paneli haritanın altında kalır.',
@@ -2774,8 +2738,7 @@ Object.assign(tr, {
   adminExGuildStatus: 'Durum',
   adminExGuildClearAll: 'Tüm Eski Lonca Verilerini Temizle',
   adminExGuildTab: 'Eski Lonca Verileri',
-  adminContributionPrimaryTitle:
-    'Bu, panel hesaplamalarında kullanılan varsayılan katkı kaydıdır',
+  adminContributionPrimaryTitle: 'Bu, panel hesaplamalarında kullanılan varsayılan katkı kaydıdır',
   adminContributionSetPrimaryTitle: 'Varsayılan katkı kaydı olarak ayarla',
 
   // Eden X1 analytics and detail dialogs.
@@ -2881,10 +2844,8 @@ Object.assign(tr, {
   edenX1RewardFlowSubtitle:
     'Herkese açık liste çalışma formülünü gösterir; yönetim, tüm görev kayıtları incelendikten sonra nihai sezon ödüllerini onaylar.',
   edenX1QuickTeam: 'Takım MVP’leri',
-  edenX1MyStatsHint:
-    'Katkı, destek ve saldırı ayrıntılarını açmak için oyun içindeki adını gir.',
-  edenX1MyStatsEmpty:
-    'Eşleşmeleri görmek ve verileri açmak için bir oyuncu adı yazmaya başla.',
+  edenX1MyStatsHint: 'Katkı, destek ve saldırı ayrıntılarını açmak için oyun içindeki adını gir.',
+  edenX1MyStatsEmpty: 'Eşleşmeleri görmek ve verileri açmak için bir oyuncu adı yazmaya başla.',
   edenX1RewardSupportMeta:
     'Destek çalışması olan oyuncular arasında ağırlıklı puana göre ilk 4: katkı, eski lonca, sancaklar, yol açma, kalkan duvarları ve bonus takım emeği puanları.',
   edenX1ThConduct: 'Bonus Takım Emeği Puanları',
@@ -2899,8 +2860,7 @@ Object.assign(tr, {
   edenX1RewardReasonAria: '{player} için nihai ödül: {reward}',
   edenX1RewardReasonRank: 'Nihai sıra #{rank}. Temel ödül: {reward}.',
   edenX1RewardReasonGrant: 'R5 premium ödül kararı. Nihai sıra #{rank}.',
-  edenX1RewardReasonForfeit:
-    'R5 premium ödül hakkından vazgeçildi. Nihai sıra #{rank}.',
+  edenX1RewardReasonForfeit: 'R5 premium ödül hakkından vazgeçildi. Nihai sıra #{rank}.',
   edenX1PublicSubtitle:
     'Herkese açık saldırı, yapı ve katkı özetleri. Ayrıntı pencerelerini açmak için oyuncu ve yapı satırlarına dokunun.',
   edenX1PublicDemoMeta: 'Demo görünüm — henüz nihai değil',
@@ -2909,14 +2869,12 @@ Object.assign(tr, {
   edenX1WeightedPublicMeta: 'Tam ağırlıklı katkı anlık görüntüsü',
   edenX1NoPublicWeightedRows: 'Henüz ağırlıklı katkı verisi yayımlanmadı.',
   edenX1NoPublicSearchRows: 'Herkese açık ağırlıklı listede eşleşen oyuncu yok.',
-  edenX1TopPerformersHint:
-    'Herkese açık saldırı ayrıntılarını açmak için oyuncu adına dokunun.',
+  edenX1TopPerformersHint: 'Herkese açık saldırı ayrıntılarını açmak için oyuncu adına dokunun.',
   edenX1StructuresHint:
     'Herkese açık vuruş listesini ve en iyi oyuncuları görmek için herhangi bir yapıya dokunun.',
   edenX1AttackHistoryHint: 'Ayrıntıları açmak için yapı satırına dokunun.',
   edenX1VoteHelpJump: 'Oylama için yardım mı lazım? En iyi isimleri gör',
-  edenX1VoteClosed:
-    'Oylama R5 tarafından kapatıldı. Nihai sonuçlar son gün açıklanacak.',
+  edenX1VoteClosed: 'Oylama R5 tarafından kapatıldı. Nihai sonuçlar son gün açıklanacak.',
   edenX1VoteEditingClosed:
     'Oy düzenleme R5 tarafından kapatıldı. Daha önce kaydedilen oyun kayıtlı kalır.',
   edenX1RewardSkippedPremium: 'Premium ödül kademesi atlandı',

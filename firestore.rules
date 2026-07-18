@@ -740,7 +740,8 @@ service cloud.firestore {
           'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
           'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
           'level50HeroCount', 'rocLevel', 'usableHeroNames',
-          'researchProgressPct'
+          'researchProgressPct', 'troopRoster', 't10TroopTypes',
+          'unitSpecialtyPower', 'artifactPower', 'royalTechPower'
         ])
         && stats.keys().hasAll([
           'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
@@ -754,9 +755,14 @@ service cloud.firestore {
         && validAllStarBohNullableInt(stats.heroCombatPower, 0, 1000000000000000)
         && validAllStarBohNullableInt(stats.dragonPower, 0, 1000000000000000)
         && validAllStarBohStringList(stats.t9TroopTypes, 12, 60)
+        && (!('t10TroopTypes' in stats) || validAllStarBohStringList(stats.t10TroopTypes, 3, 60))
+        && (!('troopRoster' in stats) || validAllStarBohStringList(stats.troopRoster, 60, 48))
         && validAllStarBohStringList(stats.readySpeedHeroes, 24, 80)
         && validAllStarBohNullableInt(stats.level50HeroCount, 0, 500)
         && validAllStarBohNullableInt(stats.rocLevel, 0, 100)
+        && (!('unitSpecialtyPower' in stats) || validAllStarBohNullableInt(stats.unitSpecialtyPower, 0, 1000000000000000))
+        && (!('artifactPower' in stats) || validAllStarBohNullableInt(stats.artifactPower, 0, 1000000000000000))
+        && (!('royalTechPower' in stats) || validAllStarBohNullableInt(stats.royalTechPower, 0, 1000000000000000))
         && (
           !('usableHeroNames' in stats)
           || validAllStarBohUsableHeroNames(stats.usableHeroNames)

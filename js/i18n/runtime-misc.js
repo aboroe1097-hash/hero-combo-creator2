@@ -54,7 +54,8 @@ const COPY = Object.freeze({
     adminExGuildEntriesCleared: '{count} Ex-Gilden-Einträge gelöscht.',
     adminExGuildRestoreBackup: '{count} aus {label} wiederherstellen',
     managementVotesUnavailable: 'Management-Abstimmung vorübergehend nicht verfügbar',
-    adminLoadFailed: 'Admin-Dashboard konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
+    adminLoadFailed:
+      'Admin-Dashboard konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
   }),
   es: Object.freeze({
     aiRetryAfter: 'Vuelve a intentarlo después de {time}.',
@@ -73,7 +74,8 @@ const COPY = Object.freeze({
     adminExGuildEntriesCleared: 'Se borraron {count} registros de exgremio.',
     adminExGuildRestoreBackup: 'Restaurar {count} desde {label}',
     managementVotesUnavailable: 'Los votos de gestión no están disponibles temporalmente',
-    adminLoadFailed: 'No se pudo cargar el panel de administración. Actualiza la página e inténtalo de nuevo.',
+    adminLoadFailed:
+      'No se pudo cargar el panel de administración. Actualiza la página e inténtalo de nuevo.',
   }),
   fr: Object.freeze({
     aiRetryAfter: 'Réessayez après {time}.',
@@ -92,7 +94,8 @@ const COPY = Object.freeze({
     adminExGuildEntriesCleared: "{count} entrées d'ex-guilde effacées.",
     adminExGuildRestoreBackup: 'Restaurer {count} depuis {label}',
     managementVotesUnavailable: 'Votes de la gestion temporairement indisponibles',
-    adminLoadFailed: "Impossible de charger le tableau d'administration. Actualisez la page et réessayez.",
+    adminLoadFailed:
+      "Impossible de charger le tableau d'administration. Actualisez la page et réessayez.",
   }),
   id: Object.freeze({
     aiRetryAfter: 'Coba lagi setelah {time}.',
@@ -149,7 +152,8 @@ const COPY = Object.freeze({
     adminExGuildEntriesCleared: '{count} registros de ex-guilda apagados.',
     adminExGuildRestoreBackup: 'Restaurar {count} de {label}',
     managementVotesUnavailable: 'Votos da gestão temporariamente indisponíveis',
-    adminLoadFailed: 'Não foi possível carregar o painel administrativo. Atualize e tente novamente.',
+    adminLoadFailed:
+      'Não foi possível carregar o painel administrativo. Atualize e tente novamente.',
   }),
   ru: Object.freeze({
     aiRetryAfter: 'Повторите попытку через {time}.',
@@ -168,7 +172,8 @@ const COPY = Object.freeze({
     adminExGuildEntriesCleared: 'Удалено записей бывшей гильдии: {count}.',
     adminExGuildRestoreBackup: 'Восстановить {count} из {label}',
     managementVotesUnavailable: 'Голоса руководства временно недоступны',
-    adminLoadFailed: 'Не удалось загрузить панель администратора. Обновите страницу и повторите попытку.',
+    adminLoadFailed:
+      'Не удалось загрузить панель администратора. Обновите страницу и повторите попытку.',
   }),
   tr: Object.freeze({
     aiRetryAfter: '{time} sonra tekrar dene.',
