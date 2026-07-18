@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "troopId": "cavalry",
+  "observationDate": "2026-07-18",
+  "sourceArchive": {
+    "filename": "cav.zip",
+    "sha256": "41edb116383bbb18555798788a5579f3aa8c5dff64545bf9b507712e49e9d901"
+  },
+  "assetPolicy": {
+    "sourcePreservation": "The 17 supplied JPEG files are preserved byte-for-byte under evidence/ with normalized filenames.",
+    "derivedTransform": "PNG crops decode source pixels and crop without scaling, retouching, generation, or interpolation.",
+    "semanticLimit": "Node icon motifs are not assigned to canonical node IDs because completed screenshots do not disambiguate repeated nodes."
+  },
+  "evidence": [
+    ["cav-overview", "evidence/01-overview.jpeg", 716, 1600, "8e1636eff0e7d1285629e898134482ee29e9bd631a09f6ddda5412b9fc4bd0f3"],
+    ["cav-training-1", "evidence/02-cavalry-training-i.jpeg", 716, 1600, "4f1ad983187ee64897154cf990187be863512cff25f4bcde2a011b71027d1173"],
+    ["cav-training-2", "evidence/03-cavalry-training-ii.jpeg", 716, 1600, "eb8ce30c75d08acfe99013f1f9662496df3cddc1be083a5ef05818ef6e36256e"],
+    ["cav-training-3", "evidence/04-cavalry-training-iii.jpeg", 716, 1600, "4c8d00fed711cccfb7cd8d9cdf16d72126cb46f8521b2540021616a436631471"],
+    ["cav-encounter-1", "evidence/05-encounter-battle-i.jpeg", 716, 1600, "120abded3a0051750754f1a9a6b1d80bfcd4af8813a086124c379076b8d90eac"],
+    ["cav-siege-1", "evidence/06-siege-skill-i.jpeg", 716, 1600, "34e6d9acd1c3c1356adb8995d1eb73c3d46e46019a05509fb86d74fd417bdb1a"],
+    ["cav-encounter-2", "evidence/07-encounter-battle-ii.jpeg", 716, 1600, "82c5fc06c0353e32a915ea9fe69dff7cb3eebb9fc30fb43ec9e9559902c5071f"],
+    ["cav-call-glory-1", "evidence/08-call-of-glory-i.jpeg", 716, 1600, "62bb5c6140f1a03d28497b24257fd9113f0cc0a7a5e2c171e4c5724ba87f8cb2"],
+    ["cav-defensive-1", "evidence/09-defensive-skill-i.jpeg", 716, 1600, "5f437df36bd3949c459d31d9a40f9a58804b96a4714fb9f3b196681f3aa2372b"],
+    ["cav-call-glory-2", "evidence/10-call-of-glory-ii.jpeg", 716, 1600, "44ca630e2959d58d8fb4a4ac1a6db7cdc0048d6d6921cc9435e20344734db28a"],
+    ["cav-enhanced-1", "evidence/11-enhanced-tactics-i.jpeg", 716, 1600, "b4c159ad829995e2afff526df8578e8ca585f5346cd0de7db3b1b4cb9778f7fe"],
+    ["cav-neat-1", "evidence/12-neat-formation-i.jpeg", 716, 1600, "c0d7efbac75339feb2f48c18a19f43064096e96f158f23a71d65dd79154c3dda"],
+    ["cav-enhanced-2-left", "evidence/13-enhanced-tactics-ii-left.jpeg", 716, 1600, "6d6d86d72ffc0287d14db87be65892e451f9c846022f04acf1943a00634e747e"],
+    ["cav-enhanced-2-right", "evidence/14-enhanced-tactics-ii-right.jpeg", 716, 1600, "36819d9ec5f844043941f0f2495152bbd55bd92f18f134fd0983ce4df73ce57f"],
+    ["cav-legion-rescue", "evidence/15-rescue-skills.jpeg", 716, 1600, "4e139d7dcb6ba840343de6119efdd8118a3ec9a4da177cbe9e982efb43340b18"],
+    ["cav-legion-suppression", "evidence/16-vanguards-suppression.jpeg", 716, 1600, "c21e82d247d3ddf968b4675fdbe78e24d1466f28404acba7516505ba701af2a2"],
+    ["cav-legion-breakout", "evidence/17-breakout.jpeg", 716, 1600, "d751ec477c93c7a3f5af78976fe8ce536d0fbcb584b1347fb87b6412242f82b1"]
+  ],
+  "derivedAssets": [
+    ["icons/research/cavalry-training-i.png", "cav-overview", [50, 285, 140, 120], "071d69600ee3aa71b1d05c93e5aaa494d49ce2388afc2e0a2f4abd70acd873da"],
+    ["icons/research/cavalry-training-ii.png", "cav-overview", [280, 285, 140, 120], "a1315f920503cc51505b93c8368ea0ae8bd4364e186bdf5fe6873b87a95330c6"],
+    ["icons/research/cavalry-training-iii.png", "cav-overview", [510, 285, 140, 120], "0f8fd827beab11d9620e4672dbb386c3e1ca639d6d0a516d5605e108c4378066"],
+    ["icons/research/encounter-battle-i.png", "cav-overview", [50, 560, 140, 120], "584ef3287298fcbecfa3b3c460cc74540333665ceddf3fa5d028707b160b12bb"],
+    ["icons/research/siege-skill-i.png", "cav-overview", [280, 560, 140, 120], "62e33c4cbb91f9a38824c783b3162fcf7235ffb3c4d39f1e9157f9c891bbcdf0"],
+    ["icons/research/encounter-battle-ii.png", "cav-overview", [510, 560, 140, 120], "8d392e49a8776287b7f440d29756364c9269e1d0ab0848e9237726d94c9d9925"],
+    ["icons/research/call-of-glory-i.png", "cav-overview", [50, 825, 140, 120], "8f64712734ae0b6d2508634cc75af5c23f541eed9303bed0537b4d3e62d0a6d3"],
+    ["icons/research/defensive-skill-i.png", "cav-overview", [280, 825, 140, 120], "f3602a05d6dc2d5ca9bc77e8633cc31bd5e57247c42902518b3914b81f279194"],
+    ["icons/research/call-of-glory-ii.png", "cav-overview", [510, 825, 140, 120], "16efa48c1927874ee5d543fdd3d4ea7ecfad1a4adddae191feca7aa021f0daae"],
+    ["icons/research/enhanced-tactics-i.png", "cav-overview", [50, 1090, 140, 120], "20b11bb5db313355980a149185cc86a03c8d09a11a25c3726c1f7c199d5e3b7b"],
+    ["icons/research/neat-formation-i.png", "cav-overview", [280, 1090, 140, 120], "9f2039a07966bfdd2ee279e9cfc93f1e1892f33448d2a2682766575867106d0d"],
+    ["icons/research/enhanced-tactics-ii.png", "cav-overview", [510, 1090, 140, 120], "d53b9570341ed91247ebb586a6caef59036755d926fcd9a27549b64242aca172"],
+    ["icons/nodes/red-crossed-swords.png", "cav-training-1", [90, 595, 100, 100], "cac0d833677c0bdb76ef4d30517d17ca562ebac127d143765b7e34ceb6139694"],
+    ["icons/nodes/green-heart.png", "cav-training-1", [484, 455, 100, 100], "4adc15d072b552785f410dc2d655f8f61c9f494db4c9e556870058a48b9ac386"],
+    ["icons/nodes/purple-shield.png", "cav-training-1", [570, 610, 104, 104], "2cfc6fc37bd847ffa1fda8bae3e9d52fb443907d155e43c12772fe488c495870"],
+    ["icons/nodes/purple-hourglass.png", "cav-training-1", [300, 335, 112, 112], "98e3df090abd854629bcbccb93838c16356d1c4d576903168aa810ac5d7e1711"],
+    ["icons/nodes/purple-head.png", "cav-training-2", [35, 375, 140, 140], "43cbfcb6f04cfd56baf18b1b84f173fc69240113e5353783b8e27efb6779f31b"],
+    ["icons/nodes/purple-impact.png", "cav-encounter-1", [0, 770, 100, 100], "acbc753fcd4819ff1604c5bdbec692368e56c9a0a6f13ab939c4c6c2dbc58e2c"],
+    ["icons/nodes/purple-marching.png", "cav-encounter-1", [300, 1185, 112, 112], "7eee7a8407edeb5748611451893f5b07cc4fd526d373a8c05836a10a6ae32233"],
+    ["icons/nodes/purple-helmet.png", "cav-call-glory-1", [150, 300, 110, 110], "8be7f3cf006200cd4c952741fd849c5c3f10070fa3fdcbe2004bab54916ec8af"],
+    ["icons/legion-skills/rescue-skills.png", "cav-legion-rescue", [300, 615, 112, 112], "3d221a02f3415aa5d2752156b354787452887c5df0bb4110c893b853376ca212"],
+    ["icons/legion-skills/vanguards-suppression.png", "cav-legion-suppression", [300, 615, 112, 112], "ac1881d0a99df1cff176120b5e8bf37afc286a655f021bb187d9eae281e0bf72"],
+    ["icons/legion-skills/breakout.png", "cav-legion-breakout", [300, 590, 112, 112], "5c472612ad2f65bae89a3437d156ad78a214c4565ea752d33cd28a58fe2cac8d"]
+  ]
+}

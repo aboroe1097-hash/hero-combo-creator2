@@ -22,6 +22,12 @@ import {
 import { getVtsPlayerContextAdapter } from './tool-adapters-community.js';
 import { getVtsGuideContextAdapter } from './tool-adapters-knowledge.js';
 import { getAdminContextAdapter } from './tool-adapters-admin.js';
+import {
+  getSkinTierDetailsAdapter,
+  getSpecializationContextAdapter,
+  getToolkitMapAdapter,
+  getWhatsNewAdapter,
+} from './tool-adapters-app.js';
 import { createToolError, createToolSuccess } from './tool-envelope.js';
 import { AiToolInputError } from './tool-utils.js';
 
@@ -94,6 +100,22 @@ const DEFINITIONS = {
   get_admin_context: {
     execute: getAdminContextAdapter,
     requiredGroups: () => [AI_TOOL_GROUPS.STATIC, AI_TOOL_GROUPS.ADMIN_DASHBOARD],
+  },
+  get_toolkit_map: {
+    execute: getToolkitMapAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_whats_new: {
+    execute: getWhatsNewAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_specialization_context: {
+    execute: getSpecializationContextAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_skin_tier_details: {
+    execute: getSkinTierDetailsAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
   },
 };
 
@@ -353,6 +375,50 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
       },
       additionalProperties: false,
     }),
+  }),
+  Object.freeze({
+    name: 'get_toolkit_map',
+    description:
+      'List the VTS 1097 toolkit tabs and pages with what each answers and its deep link.',
+    parameters: Object.freeze({
+      type: 'object',
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 120 },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_whats_new',
+    description: 'Read recent toolkit release notes and the current app version.',
+    parameters: Object.freeze({
+      type: 'object',
+      properties: {
+        limit: { type: 'integer', minimum: 1, maximum: 10 },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_specialization_context',
+    description:
+      'Read canonical Specialization Towers data: column overview, one column, or one research with nodes, milestones, and Legion Skills.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['kind'],
+      properties: {
+        kind: { type: 'string', enum: ['overview', 'column', 'research'] },
+        columnId: { type: 'integer', minimum: 1, maximum: 8 },
+        researchName: { type: 'string', minLength: 1, maxLength: 80 },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_skin_tier_details',
+    description:
+      'Read the three hero-skin tiers with star-up costs, maximize totals, and acquisition paths.',
+    parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
   }),
 ]);
 

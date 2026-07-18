@@ -29,12 +29,107 @@ class MemoryStorage {
 
 const staticContext = { allowedToolGroups: [AI_TOOL_GROUPS.STATIC], appVersion: '14.0.0' };
 
-test('tool registry exposes exactly fourteen frozen, explicitly mapped read-only tools', () => {
-  assert.equal(AI_TOOL_NAMES.length, 14);
-  assert.equal(AI_TOOL_DECLARATIONS.length, 14);
+test('tool registry exposes exactly eighteen frozen, explicitly mapped read-only tools', () => {
+  assert.equal(AI_TOOL_NAMES.length, 18);
+  assert.equal(AI_TOOL_DECLARATIONS.length, 18);
   assert.equal(Object.isFrozen(AI_TOOL_EXECUTORS), true);
   assert.deepEqual(Object.keys(AI_TOOL_EXECUTORS), AI_TOOL_NAMES);
   assert.equal('eval' in AI_TOOL_EXECUTORS, false);
+});
+
+test('toolkit map lists every tab with a working deep link and routes queries', async () => {
+  const full = await executeAiToolCall({ name: 'get_toolkit_map', arguments: {} }, staticContext);
+  assert.equal(full.ok, true);
+  assert.ok(full.data.tools.length >= 12);
+  for (const tool of full.data.tools) {
+    assert.ok(tool.id && tool.name && tool.summary, `${tool.id} basic fields`);
+    assert.ok(['tab', 'page', 'drawer'].includes(tool.kind));
+    if (tool.kind === 'tab') assert.ok(tool.hash, `${tool.id} tab hash`);
+    if (tool.kind === 'page') assert.match(tool.href, /\.html$/u);
+  }
+  const spec = await executeAiToolCall(
+    { name: 'get_toolkit_map', arguments: { query: 'where do I enter specialization medals' } },
+    staticContext
+  );
+  assert.equal(spec.ok, true);
+  assert.equal(spec.data.tools[0].id, 'specialization');
+  assert.equal(spec.data.tools[0].hash, 'specialization');
+});
+
+test('whats-new digest matches the released changelog and package version', async () => {
+  const { readFileSync } = await import('node:fs');
+  const packageVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+  const latestChangelog = readFileSync('CHANGELOG.md', 'utf8').match(
+    /^## (\d+\.\d+\.\d+)\s+-\s+(\d{4}-\d{2}-\d{2})/m
+  );
+  const result = await executeAiToolCall(
+    { name: 'get_whats_new', arguments: { limit: 3 } },
+    staticContext
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.data.currentVersion, packageVersion, 'run `npm run velo:changelog`');
+  assert.equal(result.data.releases[0].version, latestChangelog[1]);
+  assert.equal(result.data.releases[0].date, latestChangelog[2]);
+  assert.equal(result.data.releases.length, 3);
+  assert.ok(result.data.releases[0].highlights.length >= 1);
+});
+
+test('specialization context serves canonical columns, researches, and Legion Skills', async () => {
+  const overview = await executeAiToolCall(
+    { name: 'get_specialization_context', arguments: { kind: 'overview' } },
+    staticContext
+  );
+  assert.equal(overview.ok, true);
+  assert.equal(overview.data.columns.length, 8);
+  const first = overview.data.columns.find((column) => column.id === 1);
+  assert.equal(first.unlockSeason, 'S3');
+  assert.equal(first.researches.length, 4);
+  assert.equal(first.totalMedalCost, 15647);
+  assert.ok(first.legionSkills.cavalry?.name);
+
+  const research = await executeAiToolCall(
+    {
+      name: 'get_specialization_context',
+      arguments: { kind: 'research', researchName: 'Training I' },
+    },
+    staticContext
+  );
+  assert.equal(research.ok, true);
+  assert.equal(research.data.found, true);
+  assert.equal(research.data.research.medalCost, 1674);
+  assert.ok(research.data.research.nodes.length > 0);
+  assert.ok(
+    research.meta.warnings.some((warning) => /never estimated/u.test(warning)),
+    'unknown medal values must stay unknown'
+  );
+
+  const missing = await executeAiToolCall(
+    {
+      name: 'get_specialization_context',
+      arguments: { kind: 'research', researchName: 'Not A Research' },
+    },
+    staticContext
+  );
+  assert.equal(missing.ok, true);
+  assert.equal(missing.data.found, false);
+  assert.ok(missing.data.availableResearches.includes('Training I'));
+});
+
+test('skin tier details expose all three tiers with star-up costs and acquisition', async () => {
+  const result = await executeAiToolCall(
+    { name: 'get_skin_tier_details', arguments: {} },
+    staticContext
+  );
+  assert.equal(result.ok, true);
+  assert.deepEqual(
+    result.data.tiers.map((tier) => tier.id),
+    ['mythic', 'legendary', 'everlasting']
+  );
+  const mythic = result.data.tiers[0];
+  assert.equal(mythic.hasPreserving, false);
+  assert.equal(mythic.star2To3, null);
+  assert.ok(mythic.star1To2.items.length > 0);
+  assert.ok(mythic.acquisition.length > 0);
 });
 
 test('public VTS player context recognizes Abo without reading private roster data', async () => {

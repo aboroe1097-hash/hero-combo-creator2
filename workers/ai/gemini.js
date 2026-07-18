@@ -36,11 +36,12 @@ function toolsForGroups(groups) {
   );
 }
 
-export function buildGeminiRequest({ model, providerInput, allowedToolGroups, locale }) {
+export function buildGeminiRequest({ model, providerInput, allowedToolGroups, locale, activeTab }) {
+  const activeTabSection = activeTab ? `\n\nACTIVE APP TAB\n${activeTab}` : '';
   return {
     model,
     input: providerInput,
-    system_instruction: `${SYSTEM_INSTRUCTION}\n\nCURRENT UI LANGUAGE\n${locale}\n\nALLOWED TOOL GROUPS\n${allowedToolGroups.join(', ')}`,
+    system_instruction: `${SYSTEM_INSTRUCTION}\n\nCURRENT UI LANGUAGE\n${locale}${activeTabSection}\n\nALLOWED TOOL GROUPS\n${allowedToolGroups.join(', ')}`,
     tools: toolsForGroups(allowedToolGroups),
     stream: true,
     store: false,
@@ -674,9 +675,10 @@ export async function prepareGeminiUpstream({
   providerInput,
   allowedToolGroups,
   locale,
+  activeTab = null,
   requestSignal,
 }) {
   const model = configuredModel(env);
-  const body = buildGeminiRequest({ model, providerInput, allowedToolGroups, locale });
+  const body = buildGeminiRequest({ model, providerInput, allowedToolGroups, locale, activeTab });
   return fetchGeminiInteraction({ env, body, clientSignal: requestSignal });
 }

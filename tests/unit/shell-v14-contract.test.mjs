@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const index = readFileSync('index.html', 'utf8');
 const shellCss = readFileSync('css/shell-v14.css', 'utf8');
+const appCss = readFileSync('css/app.css', 'utf8');
 const shellJs = readFileSync('js/shell-v14.js', 'utf8');
 const specializationJs = readFileSync('js/app-specialization.js', 'utf8');
 const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
@@ -170,6 +171,20 @@ test('Specialization uses only the integrated tab destination', () => {
   assert.match(shellJs, /\['tabSpecialization',\s*'specialization'\]/);
   assert.doesNotMatch(shellJs, /tabSpecializationTowers/);
   assert.match(specializationJs, /querySelector\('\.specialization-loading'\)\?\.remove\(\)/);
+  assert.match(
+    specializationJs,
+    /const ACKNOWLEDGMENTS = Object\.freeze\(\['Ptr', 'Old\.Faithful', 'Raven G'\]\)/
+  );
+  assert.match(
+    specializationJs,
+    /\$\{renderCommunity\(\)\}[\s\S]*?\$\{renderAcknowledgments\(\)\}/
+  );
+  assert.match(specializationJs, /data-spec-toggle-selected-node/);
+  assert.match(specializationJs, /data-spec-help-node/);
+  assert.match(specializationJs, /function contributionNodeKey\(/);
+  assert.match(appCss, /\.spec-ring-node\[data-selected='true'\]/);
+  assert.match(appCss, /\/\* Acknowledgments \/ Hall of Honor \*\//);
+  assert.match(appCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.spec-ack-plate/);
 });
 
 test('Eden Map uses a compact Soon badge without an injected building note', () => {

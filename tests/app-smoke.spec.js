@@ -109,7 +109,7 @@ test.describe('Battle Simulator beta', () => {
     );
 
     await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl', { timeout: 20000 });
     await expect(page.locator('.pin-gate-dialog')).toBeVisible();
     await expect(page.locator('.pin-gate-dialog')).not.toContainText('Beta Testers Only');
     await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
@@ -1285,13 +1285,25 @@ test.describe('app smoke tabs', () => {
     await reset.click();
     await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
 
-    await page.locator('[data-spec-node]:not([disabled])').first().click();
+    const secondNode = page.locator('[data-spec-node]:not([disabled])').nth(1);
+    await secondNode.click();
+    await expect(secondNode).toHaveAttribute('data-selected', 'true');
+    await expect(page.locator('#spec-node-inspector h4')).toHaveText('Revival');
+    await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
+    await expect(reset).toContainText('(0/11)');
+
+    await page.locator('[data-spec-toggle-selected-node]').click();
     await expect(reset).toContainText('(1/11)');
 
     await page.locator('[data-spec-complete]').click();
     await expect(reset).toContainText('(11/11)');
     await reset.click();
     await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
+
+    await page.locator('[data-spec-help-node]').click();
+    await expect(page.locator('.spec-tool')).toHaveAttribute('data-view', 'overview');
+    await expect(page.locator('[data-contribution-key="training1:2"]')).toBeVisible();
+    await expect(page.locator('[data-contribution-key="training1:2"] [data-spec-node-medal]')).toBeFocused();
   });
 
   test('Specialization contribution nodes keep submitted and reviewed medals together', async ({
@@ -1320,6 +1332,9 @@ test.describe('app smoke tabs', () => {
       await node.locator(selector).fill(value);
       await node.locator(selector).dispatchEvent('change');
     }
+    await expect(
+      page.locator('.spec-contrib-research').nth(1).locator('[data-spec-node-medal]').first()
+    ).toHaveValue('');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('#specializationSection')).toBeVisible({ timeout: 20000 });
@@ -1328,6 +1343,54 @@ test.describe('app smoke tabs', () => {
     for (const [selector, value] of fields) {
       await expect(restored.locator(selector)).toHaveValue(value);
     }
+
+    const acknowledgments = page.locator('.spec-ack');
+    await expect(acknowledgments).toBeVisible();
+    await expect(acknowledgments.locator('.spec-ack-plate')).toHaveCount(4);
+    await expect(acknowledgments).toContainText('VTS 1097 Community');
+    await expect(acknowledgments).toContainText('Old.Faithful');
+  });
+
+  test('Specialization mobile view keeps node details and actions touch-safe', async ({ page }) => {
+    test.slow();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openDirectTabHash(
+      page,
+      'specialization',
+      '#specializationSection',
+      '#specializationToolRoot .spec-tool'
+    );
+
+    await page.locator('[data-spec-research]').first().click();
+    const node = page.locator('[data-spec-node]:not([disabled])').nth(1);
+    await node.click();
+    await expect(page.locator('#spec-node-inspector')).toBeVisible();
+    await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
+    await expect(page.locator('[data-spec-help-node]')).toBeVisible();
+
+    const nodeBox = await node.boundingBox();
+    expect(nodeBox?.width).toBeGreaterThanOrEqual(44);
+    expect(nodeBox?.height).toBeGreaterThanOrEqual(44);
+    await expect(page.locator('.spec-detail-actions')).toHaveCSS('position', 'sticky');
+    await expect(page.locator('.spec-summary')).toBeHidden();
+    const overflow = await page.locator('#specializationToolRoot').evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return [...element.querySelectorAll('*')]
+        .filter((candidate) => {
+          const rect = candidate.getBoundingClientRect();
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            (rect.right > bounds.right + 1 || rect.left < bounds.left - 1)
+          );
+        })
+        .map((candidate) => ({
+          className: candidate.className,
+          left: Math.round(candidate.getBoundingClientRect().left),
+          right: Math.round(candidate.getBoundingClientRect().right),
+        }));
+    });
+    expect(overflow).toEqual([]);
   });
 
   test('shared roster link wins over restored selection and selects known heroes', async ({

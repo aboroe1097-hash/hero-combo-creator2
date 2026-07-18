@@ -7,14 +7,27 @@ import {
   requirePlainArguments,
 } from './tool-utils.js';
 
+// Community shorthand expanded into the canonical dataset vocabulary so slang
+// queries ("dm set", "spec towers", "boh signup") still retrieve entries.
+const QUERY_ALIASES = Object.freeze({
+  dm: ['dragon', 'master'],
+  ac: ['alliance', 'center'],
+  boh: ['battlefield', 'honor'],
+  allstar: ['all', 'star'],
+  spec: ['specialization'],
+  specs: ['specialization'],
+  cop: ['clash', 'provinces'],
+  f2p: ['free'],
+  p2w: ['paid'],
+  roc: ['reign', 'chaos'],
+});
+
 function queryTokens(value) {
-  return [
-    ...new Set(
-      normalizeLookupToken(value)
-        .split(' ')
-        .filter((token) => token.length > 1)
-    ),
-  ];
+  const base = normalizeLookupToken(value)
+    .split(' ')
+    .filter((token) => token.length > 1);
+  const expanded = base.flatMap((token) => QUERY_ALIASES[token] || []);
+  return [...new Set([...base, ...expanded])];
 }
 
 function searchableText(entry) {
