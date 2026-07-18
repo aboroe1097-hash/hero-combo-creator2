@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.5";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.6",
+    "date": "2026-07-19",
+    "highlights": [
+      "Reduced All-Star Firestore rule evaluation for short signup lists while preserving validation through the full 60-item troop roster, preventing valid submissions from exceeding the rules expression budget."
+    ]
+  },
   {
     "version": "14.1.5",
     "date": "2026-07-18",
@@ -98,18 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Added a Skin Atlas mode to the Hero Atlas: a Heroes/Skins toggle that opens a catalog of the three hero-skin tiers (Mythic, Legendary, Everlasting), each showing the Star 1 activation bonus, the Star 1→2 Inheriting Skill cost, the Star 2→3 Preserving Skill cost, the full maximiz…",
       "Encoded the verified per-tier star-up material costs (Biography Seal, Advanced Biography Seal, Epic/Legendary/Seasonal Legendary Hero Medals) with theme-aware styling and complete copy across all eleven supported languages."
-    ]
-  },
-  {
-    "version": "14.0.17",
-    "date": "2026-07-17",
-    "highlights": [
-      "Added the public Specialization Towers v2 planner with separate Cavalry, Archers, and Footmen towers; eight game-like columns; four research learnings per column; 25/50/75/100 milestones; and medal-free Legion Skills that unlock only after all four learnings reach 100%.",
-      "Added the canonical X28+ specialization corpus with 32 researches, shared internal-node structures across troop types, troop-specific names and effects, exact full-research badge costs, S3/SX1 availability, portable progress import/export, undo/redo, and persistent local plannin…",
-      "Kept partial medal accounting evidence-based: unknown node costs remain unknown, recorded exact totals are invalidated whenever their selected nodes change, and the community-data panel links to the shared Google Sheet plus a versioned one-row-per-node CSV contribution template.",
-      "Added evidence-backed progressive node revelation for Enhanced Tactics IV: its two screenshot-confirmed roots are available together, the observed final node remains visible and locked, unverified downstream nodes stay hidden, and the contribution template now collects initial v…",
-      "Added a standalone battle-contribution contract that keeps unit base-point modifiers separate from battle percentages, exports scoped numeric/effect contributions with diagnostics, supports future engine extraction without Battle Simulator imports, and rejects non-finite arithme…",
-      "Added the accepted dense dark/light tower-board UI, persistent desktop inspector, scrollable mobile dialogs, keyboard/focus restoration, RTL and eleven-language UI packs, strict local-only CSP-safe rendering, public navigation/command-palette discovery, service-worker coverage, …"
     ]
   }
 ].map((release) =>

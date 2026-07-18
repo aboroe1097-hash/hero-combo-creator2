@@ -597,30 +597,37 @@ service cloud.firestore {
         );
     }
 
-    function validAllStarBohStringList(values, maxItems, maxLength) {
-      return values is list
-        && values.size() <= maxItems
-        && validAllStarBohStringItem(values, 0, maxLength)
+    function validAllStarBohStringItems0To5(values, maxLength) {
+      return validAllStarBohStringItem(values, 0, maxLength)
         && validAllStarBohStringItem(values, 1, maxLength)
         && validAllStarBohStringItem(values, 2, maxLength)
         && validAllStarBohStringItem(values, 3, maxLength)
         && validAllStarBohStringItem(values, 4, maxLength)
-        && validAllStarBohStringItem(values, 5, maxLength)
-        && validAllStarBohStringItem(values, 6, maxLength)
+        && validAllStarBohStringItem(values, 5, maxLength);
+    }
+
+    function validAllStarBohStringItems6To11(values, maxLength) {
+      return validAllStarBohStringItem(values, 6, maxLength)
         && validAllStarBohStringItem(values, 7, maxLength)
         && validAllStarBohStringItem(values, 8, maxLength)
         && validAllStarBohStringItem(values, 9, maxLength)
         && validAllStarBohStringItem(values, 10, maxLength)
-        && validAllStarBohStringItem(values, 11, maxLength)
-        && validAllStarBohStringItem(values, 12, maxLength)
+        && validAllStarBohStringItem(values, 11, maxLength);
+    }
+
+    function validAllStarBohStringItems12To19(values, maxLength) {
+      return validAllStarBohStringItem(values, 12, maxLength)
         && validAllStarBohStringItem(values, 13, maxLength)
         && validAllStarBohStringItem(values, 14, maxLength)
         && validAllStarBohStringItem(values, 15, maxLength)
         && validAllStarBohStringItem(values, 16, maxLength)
         && validAllStarBohStringItem(values, 17, maxLength)
         && validAllStarBohStringItem(values, 18, maxLength)
-        && validAllStarBohStringItem(values, 19, maxLength)
-        && validAllStarBohStringItem(values, 20, maxLength)
+        && validAllStarBohStringItem(values, 19, maxLength);
+    }
+
+    function validAllStarBohStringItems20To29(values, maxLength) {
+      return validAllStarBohStringItem(values, 20, maxLength)
         && validAllStarBohStringItem(values, 21, maxLength)
         && validAllStarBohStringItem(values, 22, maxLength)
         && validAllStarBohStringItem(values, 23, maxLength)
@@ -630,6 +637,53 @@ service cloud.firestore {
         && validAllStarBohStringItem(values, 27, maxLength)
         && validAllStarBohStringItem(values, 28, maxLength)
         && validAllStarBohStringItem(values, 29, maxLength);
+    }
+
+    function validAllStarBohStringItems30To44(values, maxLength) {
+      return validAllStarBohStringItem(values, 30, maxLength)
+        && validAllStarBohStringItem(values, 31, maxLength)
+        && validAllStarBohStringItem(values, 32, maxLength)
+        && validAllStarBohStringItem(values, 33, maxLength)
+        && validAllStarBohStringItem(values, 34, maxLength)
+        && validAllStarBohStringItem(values, 35, maxLength)
+        && validAllStarBohStringItem(values, 36, maxLength)
+        && validAllStarBohStringItem(values, 37, maxLength)
+        && validAllStarBohStringItem(values, 38, maxLength)
+        && validAllStarBohStringItem(values, 39, maxLength)
+        && validAllStarBohStringItem(values, 40, maxLength)
+        && validAllStarBohStringItem(values, 41, maxLength)
+        && validAllStarBohStringItem(values, 42, maxLength)
+        && validAllStarBohStringItem(values, 43, maxLength)
+        && validAllStarBohStringItem(values, 44, maxLength);
+    }
+
+    function validAllStarBohStringItems45To59(values, maxLength) {
+      return validAllStarBohStringItem(values, 45, maxLength)
+        && validAllStarBohStringItem(values, 46, maxLength)
+        && validAllStarBohStringItem(values, 47, maxLength)
+        && validAllStarBohStringItem(values, 48, maxLength)
+        && validAllStarBohStringItem(values, 49, maxLength)
+        && validAllStarBohStringItem(values, 50, maxLength)
+        && validAllStarBohStringItem(values, 51, maxLength)
+        && validAllStarBohStringItem(values, 52, maxLength)
+        && validAllStarBohStringItem(values, 53, maxLength)
+        && validAllStarBohStringItem(values, 54, maxLength)
+        && validAllStarBohStringItem(values, 55, maxLength)
+        && validAllStarBohStringItem(values, 56, maxLength)
+        && validAllStarBohStringItem(values, 57, maxLength)
+        && validAllStarBohStringItem(values, 58, maxLength)
+        && validAllStarBohStringItem(values, 59, maxLength);
+    }
+
+    function validAllStarBohStringList(values, maxItems, maxLength) {
+      return values is list
+        && values.size() <= maxItems
+        && validAllStarBohStringItems0To5(values, maxLength)
+        && (values.size() <= 6 || validAllStarBohStringItems6To11(values, maxLength))
+        && (values.size() <= 12 || validAllStarBohStringItems12To19(values, maxLength))
+        && (values.size() <= 20 || validAllStarBohStringItems20To29(values, maxLength))
+        && (values.size() <= 30 || validAllStarBohStringItems30To44(values, maxLength))
+        && (values.size() <= 45 || validAllStarBohStringItems45To59(values, maxLength));
     }
 
     function validAllStarBohNullableInt(value, minimum, maximum) {
