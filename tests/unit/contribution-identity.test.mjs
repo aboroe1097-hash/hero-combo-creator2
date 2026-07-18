@@ -7,8 +7,23 @@ import {
   getContributionAliasMatch,
   getContributionCanonicalName,
   getContributionSnapshotIdentity,
+  normalizeContributionMemberName,
   removeContributionAliasMatch,
 } from '../../js/contribution-identity.js';
+
+test('contribution member normalization removes accidental trailing CSV separators', () => {
+  assert.equal(normalizeContributionMemberName('(Vts)MalakAbo,'), '(Vts)MalakAbo');
+  assert.equal(normalizeContributionMemberName('Family, Given'), 'Family, Given');
+});
+
+test('contribution identity can apply the normal VTS guild when an optional guild is omitted', () => {
+  assert.equal(
+    getContributionSnapshotIdentity({ name: 'MalakAbo', guild: '' }, null, {
+      defaultGuild: 'VTS X1',
+    }),
+    getContributionSnapshotIdentity({ name: 'MalakAbo', guild: 'VTS X1' }, null)
+  );
+});
 
 test('overlapping OCR screenshots collapse duplicate rank and score fragments', () => {
   const rows = collapseContributionOcrDuplicates([

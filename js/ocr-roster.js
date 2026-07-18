@@ -59,6 +59,7 @@ import {
   getContributionAliasMatch,
   getContributionCanonicalName,
   getContributionSnapshotIdentity,
+  normalizeContributionMemberName,
   removeContributionAliasMatch,
 } from './contribution-identity.js';
 
@@ -2778,7 +2779,9 @@ function normalizeContributionEntries(input) {
       const rank = Number(
         String(item.rank || item.order || item.index || '').replace(/[^\d]/g, '')
       );
-      const name = String(item.name || item.member || item.player || item.members || '').trim();
+      const name = normalizeContributionMemberName(
+        item.name || item.member || item.player || item.members || ''
+      );
       const guild = String(item.guild || item.alliance || item.team || '')
         .replace(/^guild\s*[:：]\s*/i, '')
         .trim();
@@ -2834,6 +2837,7 @@ function parseContributionEntriesFromText(text) {
       let guild = '';
       let beforeValue = row
         .slice(0, valueMatch.index)
+        .trim()
         .replace(/[|,;:-]+$/g, '')
         .trim();
       const guildMatch = beforeValue.match(/\bGuild\s*[:：]\s*(.+)$/i);
@@ -3355,7 +3359,8 @@ function getContributionIdentity(entry) {
   const canonicalName = getContributionCanonicalDisplayName(entry?.name);
   return getContributionSnapshotIdentity(
     { ...entry, name: canonicalName },
-    state.playerRegistry || readStoredPlayerRegistry()
+    state.playerRegistry || readStoredPlayerRegistry(),
+    { defaultGuild: 'VTS X1' }
   );
 }
 

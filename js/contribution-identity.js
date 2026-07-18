@@ -11,6 +11,10 @@ function cleanText(value) {
     .trim();
 }
 
+export function normalizeContributionMemberName(value) {
+  return cleanText(value).replace(/,+$/u, '').trim();
+}
+
 function contributionNumber(value) {
   const parsed = Number(String(value ?? '').replace(/[^\d.-]/g, ''));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -83,12 +87,12 @@ function aliasOwner(registry, name) {
   );
 }
 
-export function getContributionSnapshotIdentity(entry, registryInput) {
+export function getContributionSnapshotIdentity(entry, registryInput, options = {}) {
   const registry = normalizePlayerRegistry(registryInput);
-  const rawName = cleanText(entry?.name);
+  const rawName = normalizeContributionMemberName(entry?.name);
   const canonicalName = resolvePlayerRegistryAlias(rawName, registry) || rawName;
   const nameKey = compactRegistryName(canonicalName);
-  const guildKey = compactRegistryName(entry?.guild);
+  const guildKey = compactRegistryName(entry?.guild || options.defaultGuild);
   return nameKey || guildKey ? `${nameKey}|${guildKey}` : '|';
 }
 
