@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.1.0 - 2026-07-18
+
+- Fixed manually pasted Total Contribution names retaining a separator comma, including previously saved records when they are normalized for display and export.
+- Restored contribution snapshot matching when the optional guild field is omitted by applying the VTS X1 default only within the normal contribution comparison, avoiding unnecessary one-off aliases.
+
 ## 14.0.20 - 2026-07-17
 
 - Added a Specialization Towers tab inside the main app (index.html) that follows the in-game flow: column banners of circular badges with a Legion Skill crest at the foot, and tapping a badge opens a node graph — an oval ring for most families and a dependency tree for Enhanced Tactics — with milestones, a medal-entry field, and complete/reset. Reuses the verified Specialization dataset, model, store, and eleven-language i18n; no game data is reinvented.
