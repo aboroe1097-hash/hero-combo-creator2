@@ -19073,6 +19073,11 @@ html[dir='rtl'] .gen-buttons-row {
   flex-direction: column;
   gap: 0.55rem;
 }
+.spec-badge-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+}
 
 /* Badge — circular emblem + label + % under it, like the in-game banner */
 .spec-badge {
@@ -19086,6 +19091,29 @@ html[dir='rtl'] .gen-buttons-row {
   cursor: pointer;
   border-radius: 8px;
   transition: background 0.15s ease;
+}
+.spec-badge-max {
+  min-width: 3.2rem;
+  min-height: 1.55rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--banner-accent, #b7791f) 72%, #f8d477);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #f8d477;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.spec-badge-max:hover,
+.spec-badge-max:focus-visible {
+  background: color-mix(in srgb, var(--banner-accent, #b7791f) 34%, #0f172a);
+}
+.spec-badge-max:disabled {
+  border-color: rgba(100, 116, 139, 0.35);
+  color: #64748b;
+  cursor: default;
+  opacity: 0.58;
 }
 .spec-badge:hover {
   background: rgba(217, 179, 91, 0.12);
@@ -19397,10 +19425,9 @@ html[dir='rtl'] .gen-buttons-row {
 
 /* Specialization: community contribution + tree layout */
 .spec-community {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: 1rem;
   padding: 0.9rem 1.1rem;
   border: 1px solid rgba(120, 90, 40, 0.5);
@@ -19451,36 +19478,16 @@ html[dir='rtl'] .gen-buttons-row {
   border-radius: 999px;
   padding: 1px 8px;
 }
-.spec-contrib-name-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  width: 100%;
-  margin-top: 0.5rem;
-}
-.spec-contrib-name-row label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: #cbb892;
-}
-.spec-contrib-name-input {
-  padding: 0.35rem 0.55rem;
-  border-radius: 6px;
-  border: 1px solid rgba(120, 90, 40, 0.5);
-  background: rgba(20, 14, 6, 0.6);
-  color: #e7dcc4;
-  font-size: 0.8rem;
-  max-width: 14rem;
-}
 .spec-contrib-count {
   font-size: 0.76rem;
   color: #fcd34d;
   font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(217, 179, 91, 0.3);
+  border-radius: 999px;
 }
 .spec-contrib-nodes {
+  grid-column: 1 / -1;
   width: 100%;
   max-height: 28rem;
   overflow-y: auto;
@@ -19503,44 +19510,109 @@ html[dir='rtl'] .gen-buttons-row {
   color: #e7dcc4;
 }
 .spec-contrib-research {
-  padding: 0.3rem 0.7rem 0.6rem;
+  padding: 0.35rem 0.7rem 0.7rem;
 }
 .spec-contrib-research h5 {
-  margin: 0.25rem 0 0.35rem;
-  font-size: 0.78rem;
-  font-weight: 700;
+  margin: 0.4rem 0 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 800;
   color: #d9b35b;
 }
 .spec-contrib-node {
+  display: grid;
+  grid-template-columns: minmax(11rem, 0.75fr) minmax(19rem, 1fr) auto minmax(19rem, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem;
+  border: 1px solid rgba(120, 90, 40, 0.28);
+  border-radius: 8px;
+  background: rgba(7, 10, 20, 0.28);
+}
+.spec-contrib-node + .spec-contrib-node {
+  margin-top: 0.4rem;
+}
+.spec-contrib-node-identity {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
+  gap: 0.55rem;
+  min-width: 0;
 }
-.spec-contrib-node-name {
-  flex: 1;
-  font-size: 0.74rem;
-  color: #cbb892;
-  min-width: 7rem;
+.spec-contrib-node-icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(217, 179, 91, 0.55);
+  border-radius: 50%;
+  background: rgba(45, 32, 11, 0.76);
+  font-size: 1rem;
 }
-.spec-contrib-node label {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.spec-contrib-node-identity > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+.spec-contrib-node-identity small,
+.spec-contrib-node-identity em {
+  overflow: hidden;
+  color: #a89060;
+  font-size: 0.65rem;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spec-contrib-node-identity strong {
+  overflow: hidden;
+  color: #e7dcc4;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spec-contrib-stage {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(6.5rem, 0.65fr);
+  gap: 0.45rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.35rem 0.5rem 0.5rem;
+  border: 1px solid rgba(217, 179, 91, 0.25);
+  border-radius: 7px;
+}
+.spec-contrib-stage--review {
+  border-color: rgba(56, 189, 248, 0.28);
+}
+.spec-contrib-stage legend {
+  padding: 0 0.35rem;
+  color: #d9b35b;
+  font-size: 0.63rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.spec-contrib-stage--review legend {
+  color: #7dd3fc;
+}
+.spec-contrib-stage label {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
   font-size: 0.7rem;
   color: #a89060;
 }
-.spec-contrib-node input {
-  padding: 0.2rem 0.4rem;
+.spec-contrib-stage input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.34rem 0.45rem;
   border-radius: 4px;
   border: 1px solid rgba(120, 90, 40, 0.4);
   background: rgba(20, 14, 6, 0.5);
   color: #e7dcc4;
   font-size: 0.74rem;
-  width: 5.5rem;
 }
-.spec-contrib-node input[type="number"] {
-  width: 4.5rem;
+.spec-contrib-flow {
+  color: #d9b35b;
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 [data-theme='light'] .spec-community {
@@ -19550,13 +19622,12 @@ html[dir='rtl'] .gen-buttons-row {
 [data-theme='light'] .spec-community-copy p {
   color: #57452a;
 }
-[data-theme='light'] .spec-contrib-name-row label,
-[data-theme='light'] .spec-contrib-node-name,
-[data-theme='light'] .spec-contrib-node label {
+[data-theme='light'] .spec-contrib-node-identity strong,
+[data-theme='light'] .spec-contrib-stage label {
   color: #57452a;
 }
-[data-theme='light'] .spec-contrib-name-input,
-[data-theme='light'] .spec-contrib-node input {
+[data-theme='light'] .spec-contrib-node,
+[data-theme='light'] .spec-contrib-stage input {
   background: rgba(255, 252, 244, 0.9);
   color: #1f2937;
   border-color: rgba(180, 140, 70, 0.5);
@@ -19572,4 +19643,33 @@ html[dir='rtl'] .gen-buttons-row {
 }
 [data-theme='light'] .spec-contrib-research h5 {
   color: #92400e;
+}
+
+@media (max-width: 1100px) {
+  .spec-contrib-node {
+    grid-template-columns: minmax(10rem, 0.65fr) minmax(16rem, 1fr) auto minmax(16rem, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .spec-community {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .spec-contrib-count,
+  .spec-contrib-nodes {
+    grid-column: 1;
+  }
+  .spec-contrib-node {
+    grid-template-columns: 1fr;
+  }
+  .spec-contrib-flow {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .spec-contrib-stage {
+    grid-template-columns: 1fr;
+  }
 }

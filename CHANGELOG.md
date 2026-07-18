@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.1.1 - 2026-07-18
+
+- Removed public navigation to the legacy standalone Specialization Towers page so the integrated `#specialization` tab is the only advertised destination.
+- Cleared the integrated Specialization loading placeholder after the tool mounts successfully.
+- Fixed integrated Specialization node selection, Complete Learning, Reset Learning, and recorded-medal changes persisting the model's returned state.
+- Added a localized quick-MAX action to every Specialization overview badge so a learning can be completed without opening its node graph.
+- Localized the Community Data contributor, medal-cost, reviewer, and completion-count fields across all eleven supported languages.
+- Reworked Community Data into compact game-node records with separate contributor and reviewer medal values, preserving earlier saved submissions while supporting partial research updates.
+
 ## 14.1.0 - 2026-07-18
 
 - Fixed manually pasted Total Contribution names retaining a separator comma, including previously saved records when they are normalized for display and export.
