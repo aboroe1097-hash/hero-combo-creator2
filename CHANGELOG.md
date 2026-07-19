@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.1.8 - 2026-07-19
+
+- Preserved the successful All-Star signup confirmation when a delayed realtime-listener permission error arrives after the submission has already been committed, while continuing to report the background error through the controller error hook.
+
 ## 14.1.7 - 2026-07-19
 
 - Replaced the expression-heavy All-Star signup write path with bounded, owner-scoped validation that keeps the exact previously denied member payload below Firestore's 1,000-expression limit while requiring Unit Specialty Power at the database boundary.

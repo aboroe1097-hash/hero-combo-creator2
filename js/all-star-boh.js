@@ -1397,6 +1397,7 @@ function initialState(options) {
     renderedHeroCatalog: '',
     renderedResearchCatalog: '',
     fightingTimeErrorKey: '',
+    feedbackRevision: 0,
     signupWindow:
       options.signupWindow ||
       globalThis.VTS_ALL_STAR_BOH_SIGNUP_WINDOW ||
@@ -1517,6 +1518,7 @@ function stopSignupWindowTimer(state) {
 }
 
 function reportError(state, error, context = {}) {
+  state.feedbackRevision += 1;
   state.options.onError?.(error, context);
   const feedback = query(state.root, '[data-role="page-feedback"]');
   if (feedback) {
@@ -1527,6 +1529,7 @@ function reportError(state, error, context = {}) {
 }
 
 function notice(state, key, fallback, context = {}) {
+  state.feedbackRevision += 1;
   const message = state.tr(key, fallback, context);
   state.options.onNotice?.(message, { key, ...context });
   const feedback = query(state.root, '[data-role="page-feedback"]');
@@ -1538,6 +1541,7 @@ function notice(state, key, fallback, context = {}) {
 }
 
 function clearNotice(state) {
+  state.feedbackRevision += 1;
   const feedback = query(state.root, '[data-role="page-feedback"]');
   if (feedback) {
     feedback.hidden = true;
@@ -3691,7 +3695,15 @@ function unsubscribeAll(state) {
 }
 
 function subscriptionError(state, source) {
-  return (error) => reportError(state, error, { action: 'subscribe', source });
+  const feedbackRevision = state.feedbackRevision;
+  return (error) => {
+    const context = { action: 'subscribe', source };
+    if (state.feedbackRevision === feedbackRevision) {
+      reportError(state, error, context);
+      return;
+    }
+    state.options.onError?.(error, context);
+  };
 }
 
 function reconcileTeamSubscriptions(state) {

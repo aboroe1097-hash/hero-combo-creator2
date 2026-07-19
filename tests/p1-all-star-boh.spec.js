@@ -301,12 +301,14 @@ async function openInjectedPlayerHub(page) {
       seasonId: fixture.seasonId,
       uid: fixture.uid,
       epicTimeSlotIds: Object.freeze(['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']),
-      subscribeSubmission(next) {
+      subscribeSubmission(next, error) {
         queueMicrotask(() => next(submission));
         window.__BOH_PUSH_SUBMISSION__ = (value) => {
           submission = value;
           next(value);
         };
+        window.__BOH_PUSH_SUBMISSION_ERROR__ = () =>
+          error?.(new Error('Missing or insufficient permissions.'));
         subscribers.add(next);
         return () => subscribers.delete(next);
       },
@@ -469,6 +471,10 @@ async function openInjectedPlayerHub(page) {
       }),
       setTimeout: () => 1,
       clearTimeout: () => {},
+      onError(error, context) {
+        window.__BOH_BACKGROUND_ERRORS__ ||= [];
+        window.__BOH_BACKGROUND_ERRORS__.push({ message: error?.message, context });
+      },
     });
   }, createPlayerFixture());
 
@@ -608,6 +614,29 @@ test.describe('All-Star BoH secure player hub', () => {
       'changed in another session'
     );
     await expect(teammateNames).toHaveValue('Newest server teammate');
+  });
+
+  test('successful signup confirmation survives a delayed subscription permission error', async ({
+    page,
+  }) => {
+    await openInjectedPlayerHub(page);
+    const root = page.locator('[data-role="boh-root"]');
+    const feedback = root.locator('[data-role="page-feedback"]');
+
+    await root.locator('[data-role="signup-submit"]').click();
+    await expect(feedback).toHaveText('Your stats were submitted successfully.');
+    await expect(feedback).toHaveAttribute('data-tone', 'success');
+
+    await page.evaluate(() => window.__BOH_PUSH_SUBMISSION_ERROR__());
+
+    await expect(feedback).toHaveText('Your stats were submitted successfully.');
+    await expect(feedback).toHaveAttribute('data-tone', 'success');
+    await expect
+      .poll(() => page.evaluate(() => window.__BOH_BACKGROUND_ERRORS__?.at(-1)))
+      .toEqual({
+        message: 'Missing or insufficient permissions.',
+        context: { action: 'subscribe', source: 'submission' },
+      });
   });
 
   test('signup planning controls capture fieldable heroes, research, two fight times, and role choices', async ({

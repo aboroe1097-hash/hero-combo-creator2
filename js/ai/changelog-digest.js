@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.7";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.8";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.8",
+    "date": "2026-07-19",
+    "highlights": [
+      "Preserved the successful All-Star signup confirmation when a delayed realtime-listener permission error arrives after the submission has already been committed, while continuing to report the background error through the controller error hook."
+    ]
+  },
   {
     "version": "14.1.7",
     "date": "2026-07-19",
@@ -92,18 +99,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added a Specialization Towers tab inside the main app (index.html) that follows the in-game flow: column banners of circular badges with a Legion Skill crest at the foot, and tapping a badge opens a node graph — an oval ring for most families and a dependency tree for Enhanced T…",
       "Added a community contribution form to the Specialization tab with an inline fillable UI: contributor name, per-node medal cost entry, and optional reviewer name — all persisted in localStorage, replacing the previous CSV-download and external-sheet approach.",
       "Merged Battle Simulator v2 engine with research and equipment source breakdowns, per-stat node UI with source-level breakdown, whole-legion equipment loadouts with set/grade/enhancement selection, full i18n support, and v2 synthetic test fixtures."
-    ]
-  },
-  {
-    "version": "14.0.19",
-    "date": "2026-07-17",
-    "highlights": [
-      "Added a VTS-only All-Star BoH member hub with a server-verified seasonal PIN, anonymous Firebase Auth, App Check, expiring server-owned member grants, locked-by-default navigation, and Firestore enforcement instead of exposing another reusable client-side PIN.",
-      "Added manual and screenshot-assisted signup for the full legacy power breakdown, T9 and speed-hero readiness, fieldable hero availability, self-reported research-tree percentages, exactly two preferred All-Star fighting windows, an optional favorite role, non-binding teammate re…",
-      "Added an independent Epic Showdown Planning section where members can multi-select South, Center, and North lanes plus multiple reset-relative play windows (`+8`, `+10`, and `+12`); updates remain separate from All-Star signup revisions, and admins receive live per-player detail…",
-      "Added deterministic, versioned strength scoring and an admin-controlled six-team builder that requires exactly 12 unique accounts per team, respects seat and role locks, exposes score breakdowns, and validates all 72 assignments before publication.",
-      "Added the Admin VTS All-Star command center for signup review, formula versions and overrides, team balancing and seat moves, configurable 12-seat role groups, four timed phases, two Legion plans, rotations, loadouts, teleport notes, objectives, and separate Team Announcement an…",
-      "Adapted the supplied 2025 plan safely: Offensive, Rune, Top, and Bottom roles plus the 0–5, 5–10, 10–15, and 15–30 minute structure and objective codes can be reused, while all 15-seat player names, assignments, and capacities are deliberately excluded from the new 12-seat forma…"
     ]
   }
 ].map((release) =>
