@@ -3,6 +3,7 @@ import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
   compareEdenX1ContributionRankingRows,
+  dedupeWeightedRowsByFamily,
   getEdenX1ContributionRankingScore,
   getWeightedPlayerFamilyKey,
   normalizeEdenX1ContributionRankingMode,
@@ -54,7 +55,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.1.16';
+const APP_VERSION = '14.1.17';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -3092,11 +3093,18 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
       .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode))
       .map((row, index) => [row.playerKey, index + 1])
   );
-  const supportPlayerKeys = new Set(getSupportRewardRows().map((row) => row.playerKey));
-  const sorted = currentRows
-    .filter((row) => Number(row.currentRank) > 0 && !supportPlayerKeys.has(row.playerKey))
-    .slice()
-    .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode));
+  const supportFamilyKeys = new Set(
+    getSupportRewardRows().map(
+      (row) => row.familyKey || rewardPriorityFamilyKey(row.playerKey, row.playerName)
+    )
+  );
+  const sorted = dedupeWeightedRowsByFamily(
+    currentRows
+      .filter((row) => Number(row.currentRank) > 0)
+      .slice()
+      .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode)),
+    { reservedFamilyKeys: supportFamilyKeys }
+  );
   const rows = [];
   let rewardSlot = 0;
   for (const row of sorted) {
@@ -3129,16 +3137,18 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
 }
 
 function getSupportRewardRows() {
-  return currentRows
-    .filter((row) => rowBonusTotal(row) > 0)
-    .slice()
-    .sort(
-      (a, b) =>
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
-        rowBonusTotal(b) - rowBonusTotal(a) ||
-        valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
-        String(a.playerName || '').localeCompare(String(b.playerName || ''))
-    )
+  return dedupeWeightedRowsByFamily(
+    currentRows
+      .filter((row) => rowBonusTotal(row) > 0)
+      .slice()
+      .sort(
+        (a, b) =>
+          valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
+          rowBonusTotal(b) - rowBonusTotal(a) ||
+          valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
+          String(a.playerName || '').localeCompare(String(b.playerName || ''))
+      )
+  )
     .slice(0, 4)
     .map((row, index) => ({
       ...row,
@@ -6081,12 +6091,14 @@ function getAnnouncementRemainingRows() {
     .filter((row) => !row.placeholder)
     .forEach((row) => addRewardPriorityIdentity(selected, row.playerKey, row.playerName));
   const rankingMode = authoritativeContributionRankingMode();
-  return currentRows
-    .filter(
-      (row) => Number(row.currentRank) > 0 && !managementVoteCandidateIsReserved(row, selected)
-    )
-    .slice()
-    .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode))
+  return dedupeWeightedRowsByFamily(
+    currentRows
+      .filter(
+        (row) => Number(row.currentRank) > 0 && !managementVoteCandidateIsReserved(row, selected)
+      )
+      .slice()
+      .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode))
+  )
     .slice(0, 90)
     .map((row, index) => ({
       ...row,
@@ -7057,6 +7069,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     r5Adjustments,
     exGuildContributions,
     season,
+    includeSupportOnly: true,
   });
   currentSeason = String(season || defaultEdenSeason()).trim();
   currentMemberOptions = collectEdenMemberOptions(data, model.rows || []);

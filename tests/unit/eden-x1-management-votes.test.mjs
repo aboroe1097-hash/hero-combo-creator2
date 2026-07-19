@@ -288,6 +288,21 @@ test('management votes include listed candidates and skip duplicate picks inside
   );
 });
 
+test('management self-votes remain counted under the current published policy', () => {
+  const results = aggregateManagementVotes(
+    [{ rowIndex: 0, voterName: 'Same Player', picks: ['Same Player', 'Other Player'] }],
+    {
+      resolveCandidate(rawName) {
+        const playerKey = compactTestKey(rawName);
+        return { playerKey, familyKey: playerKey, playerName: rawName, matched: true };
+      },
+    }
+  );
+
+  assert.equal(results.totalVotes, 2);
+  assert.equal(results.rankings.find((row) => row.playerName === 'Same Player').votes, 1);
+});
+
 test('management ballots count aliases once per voter and rank their shared family once', () => {
   const results = aggregateManagementVotes(
     [
