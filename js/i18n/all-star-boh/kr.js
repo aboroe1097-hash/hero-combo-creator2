@@ -161,7 +161,6 @@ export default Object.freeze({
   'signup.editSignup': '내 신청 수정',
   'signup.ocrChecklist': '스크린샷 체크리스트',
   'signup.ocrChoose': '스크린샷 선택',
-  'signup.ocrConfirmValues': '추출된 모든 수치를 스크린샷과 비교하고 오류를 수정했습니다.',
   'signup.ocrConsent':
     '이 스크린샷이 외부 AI 업체에서 처리되며, 결과를 직접 확인해야 한다는 점에 동의합니다.',
   'signup.ocrFileHint': 'PNG, JPG 또는 WebP. 최근의 선명한 이미지를 사용하세요.',
@@ -209,8 +208,6 @@ export default Object.freeze({
   'signup.t9Legend': '출전 가능한 T10 병종은?',
   'signup.t9None': '모든 T10 병종',
   'signup.technologyPower': '연구 전투력',
-  'signup.timezone': '시간대',
-  'signup.timezonePlaceholder': '예: UTC+2',
   'signup.title': '현재 계정 상태를 알려 주세요',
   'signup.totalPower': '성 전체 전투력',
   'signup.troopPower': '부대 전투력',

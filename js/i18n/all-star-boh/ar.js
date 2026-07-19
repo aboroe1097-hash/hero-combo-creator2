@@ -162,7 +162,6 @@ export default Object.freeze({
   'signup.editSignup': 'تعديل تسجيلي',
   'signup.ocrChecklist': 'قائمة التحقق من لقطة الشاشة',
   'signup.ocrChoose': 'اختر لقطة شاشة',
-  'signup.ocrConfirmValues': 'قارنت كل قيمة مستخرجة بلقطة الشاشة وصححت أي أخطاء.',
   'signup.ocrConsent':
     'أفهم أن مزود ذكاء اصطناعي خارجي سيعالج لقطة الشاشة، وأن عليّ التحقق من النتائج.',
   'signup.ocrFileHint': 'PNG أو JPG أو WebP. استخدم صورة حديثة وواضحة.',
@@ -211,8 +210,6 @@ export default Object.freeze({
   'signup.t9Legend': 'أي أنواع قوات T10 يمكنك استخدامها؟',
   'signup.t9None': 'جميع أنواع قوات T10',
   'signup.technologyPower': 'قوة التقنية',
-  'signup.timezone': 'المنطقة الزمنية',
-  'signup.timezonePlaceholder': 'مثال: UTC+2',
   'signup.title': 'أخبرنا بمستوى حسابك الحالي',
   'signup.totalPower': 'إجمالي قوة القلعة',
   'signup.troopPower': 'قوة القوات',

@@ -229,4 +229,8 @@ test('footer is one compact community strip and keeps tab-link behavior', () => 
     shellCss,
     /#app \.site-footer \.footer-content\s*\{[\s\S]*?grid-template-columns:\s*auto minmax\(0, 1fr\) auto !important/
   );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 640px\)[\s\S]*?#app \.footer-tool-links\s*\{[\s\S]*?display:\s*none/
+  );
 });

@@ -960,7 +960,7 @@ test.describe('All-Star BoH secure player hub', () => {
       .toBeLessThanOrEqual(1);
   });
 
-  test('OCR review exposes warnings, ties issues to fields, and blocks consent until complete', async ({
+  test('OCR fills power fields directly and highlights any missing values for editing', async ({
     page,
   }) => {
     await openInjectedPlayerHub(page);
@@ -980,7 +980,6 @@ test.describe('All-Star BoH secure player hub', () => {
     const review = root.locator('[data-role="ocr-review-alert"]');
     const technology = root.locator('[name="technologyPower"]');
     const specialty = root.locator('[name="unitSpecialtyPower"]');
-    const confirmation = root.locator('[data-role="ocr-values-confirmed"]');
     await expect(review).toBeVisible();
     await expect(review).toContainText('OCR missed 2 required field');
     await expect(review).toContainText('Technology power was cropped');
@@ -989,13 +988,14 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('#bohOcrIssue-technologyPower')).toContainText('Missing');
     await expect(root.locator('#bohOcrIssue-unitSpecialtyPower')).toContainText('Missing');
     await expect(root.locator('#bohOcrIssue-troopPower')).toContainText('Low OCR confidence');
-    await expect(confirmation).toBeDisabled();
+    await expect(root.locator('[name="totalCastlePower"]')).toHaveValue('1000000000');
+    await expect(root.locator('[name="troopPower"]')).toHaveValue('400000000');
+    await expect(root.locator('[data-role="ocr-values-confirmed"]')).toHaveCount(0);
 
     await technology.fill('300000000');
     await specialty.fill('50000000');
     await expect(technology).not.toHaveAttribute('aria-invalid', 'true');
     await expect(root.locator('#bohOcrIssue-technologyPower')).toContainText('Corrected manually');
-    await expect(confirmation).toBeEnabled();
   });
 });
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.1.13 - 2026-07-19
+
+- Filled editable power fields directly from account-stat OCR and removed the separate extracted-value confirmation checkbox while retaining third-party processing consent.
+- Removed the visible timezone question while preserving the stored submission schema for existing records.
+- Replaced the crowded mobile footer with compact centered account links and removed duplicate tool navigation already available in the mobile dock.
+
 ## 14.1.12 - 2026-07-19
 
 - Reduced All-Star submission security-rule evaluation by caching the active member grant and validating submission submaps through short aliases, preventing valid large signups from exceeding Firestore's 1,000-expression limit.

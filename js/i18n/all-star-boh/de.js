@@ -168,8 +168,6 @@ export default Object.freeze({
   'signup.editSignup': 'Meine Anmeldung bearbeiten',
   'signup.ocrChecklist': 'Screenshot-Prüfliste',
   'signup.ocrChoose': 'Screenshot auswählen',
-  'signup.ocrConfirmValues':
-    'Ich habe jeden ausgelesenen Wert mit meinem Screenshot verglichen und Fehler korrigiert.',
   'signup.ocrConsent':
     'Mir ist bewusst, dass ein externer KI-Anbieter diesen Screenshot verarbeitet und dass ich das Ergebnis prüfen muss.',
   'signup.ocrFileHint': 'PNG, JPG oder WebP. Verwende ein aktuelles, gut lesbares Bild.',
@@ -223,8 +221,6 @@ export default Object.freeze({
   'signup.t9Legend': 'Welche T10-Truppentypen kannst du einsetzen?',
   'signup.t9None': 'Alle T10-Truppentypen',
   'signup.technologyPower': 'Technologiestärke',
-  'signup.timezone': 'Zeitzone',
-  'signup.timezonePlaceholder': 'Beispiel: UTC+2',
   'signup.title': 'Zeig uns den aktuellen Stand deines Kontos',
   'signup.totalPower': 'Gesamtstärke der Burg',
   'signup.troopPower': 'Truppenstärke',

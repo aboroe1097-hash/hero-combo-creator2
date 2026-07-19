@@ -168,8 +168,6 @@ export default Object.freeze({
   'signup.editSignup': 'Editar mi inscripción',
   'signup.ocrChecklist': 'Lista de comprobación de la captura',
   'signup.ocrChoose': 'Elegir una captura',
-  'signup.ocrConfirmValues':
-    'He comparado cada valor extraído con mi captura y he corregido los errores.',
   'signup.ocrConsent':
     'Entiendo que un proveedor externo de IA procesará esta captura y que debo comprobar el resultado.',
   'signup.ocrFileHint': 'PNG, JPG o WebP. Usa una imagen reciente y nítida.',
@@ -222,8 +220,6 @@ export default Object.freeze({
   'signup.t9Legend': '¿Qué tipos de tropas T10 puedes desplegar?',
   'signup.t9None': 'Todos los tipos de tropas T10',
   'signup.technologyPower': 'Poder de tecnología',
-  'signup.timezone': 'Zona horaria',
-  'signup.timezonePlaceholder': 'Ejemplo: UTC+2',
   'signup.title': 'Cuéntanos el estado actual de tu cuenta',
   'signup.totalPower': 'Poder total del castillo',
   'signup.troopPower': 'Poder de tropas',

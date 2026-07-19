@@ -74,7 +74,7 @@ test('strict numeric parsing accepts localized full integers and rejects abbrevi
   assert.throws(() => parseBohInteger('12.5'), /full whole-number/u);
 });
 
-test('OCR submission is explicitly confirmed and cannot persist image data', () => {
+test('OCR submission automatically accepts populated editable values and cannot persist image data', () => {
   const review = {
     imageData: 'data:image/jpeg;base64,PRIVATE',
     requestId: 'request-1',
@@ -89,22 +89,11 @@ test('OCR submission is explicitly confirmed and cannot persist image data', () 
       dragonPower: 0.85,
     },
   };
-  assert.throws(
-    () =>
-      buildBohSubmissionPayload(validSignup({ imageData: 'data:image/jpeg;base64,PRIVATE' }), {
-        entryMethod: 'ocr',
-        ocrReview: review,
-        ocrValuesConfirmed: false,
-      }),
-    /explicitly confirm/u
-  );
-
   const payload = buildBohSubmissionPayload(
     validSignup({ imageData: 'data:image/jpeg;base64,PRIVATE' }),
     {
       entryMethod: 'ocr',
       ocrReview: review,
-      ocrValuesConfirmed: true,
       language: 'en',
       now: 1234,
     }
