@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.7",
+    "date": "2026-07-19",
+    "highlights": [
+      "Replaced the expression-heavy All-Star signup write path with bounded, owner-scoped validation that keeps the exact previously denied member payload below Firestore's 1,000-expression limit while requiring Unit Specialty Power at the database boundary."
+    ]
+  },
   {
     "version": "14.1.6",
     "date": "2026-07-19",
@@ -97,14 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added deterministic, versioned strength scoring and an admin-controlled six-team builder that requires exactly 12 unique accounts per team, respects seat and role locks, exposes score breakdowns, and validates all 72 assignments before publication.",
       "Added the Admin VTS All-Star command center for signup review, formula versions and overrides, team balancing and seat moves, configurable 12-seat role groups, four timed phases, two Legion plans, rotations, loadouts, teleport notes, objectives, and separate Team Announcement an…",
       "Adapted the supplied 2025 plan safely: Offensive, Rune, Top, and Bottom roles plus the 0–5, 5–10, 10–15, and 15–30 minute structure and objective codes can be reused, while all 15-seat player names, assignments, and capacities are deliberately excluded from the new 12-seat forma…"
-    ]
-  },
-  {
-    "version": "14.0.18",
-    "date": "2026-07-17",
-    "highlights": [
-      "Added a Skin Atlas mode to the Hero Atlas: a Heroes/Skins toggle that opens a catalog of the three hero-skin tiers (Mythic, Legendary, Everlasting), each showing the Star 1 activation bonus, the Star 1→2 Inheriting Skill cost, the Star 2→3 Preserving Skill cost, the full maximiz…",
-      "Encoded the verified per-tier star-up material costs (Biography Seal, Advanced Biography Seal, Epic/Legendary/Seasonal Legendary Hero Medals) with theme-aware styling and complete copy across all eleven supported languages."
     ]
   }
 ].map((release) =>
