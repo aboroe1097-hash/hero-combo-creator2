@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.8";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.9";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.9",
+    "date": "2026-07-19",
+    "highlights": [
+      "Kept owner-authenticated All-Star signup edits below Firestore's rules-expression limit by removing redundant update checks while preserving the shared schema, path-bound identity, immutable creation timestamp, and exact revision increment."
+    ]
+  },
   {
     "version": "14.1.8",
     "date": "2026-07-19",
@@ -90,15 +97,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed manually pasted Total Contribution names retaining a separator comma, including previously saved records when they are normalized for display and export.",
       "Restored contribution snapshot matching when the optional guild field is omitted by applying the VTS X1 default only within the normal contribution comparison, avoiding unnecessary one-off aliases."
-    ]
-  },
-  {
-    "version": "14.0.20",
-    "date": "2026-07-17",
-    "highlights": [
-      "Added a Specialization Towers tab inside the main app (index.html) that follows the in-game flow: column banners of circular badges with a Legion Skill crest at the foot, and tapping a badge opens a node graph — an oval ring for most families and a dependency tree for Enhanced T…",
-      "Added a community contribution form to the Specialization tab with an inline fillable UI: contributor name, per-node medal cost entry, and optional reviewer name — all persisted in localStorage, replacing the previous CSV-download and external-sheet approach.",
-      "Merged Battle Simulator v2 engine with research and equipment source breakdowns, per-stat node UI with source-level breakdown, whole-legion equipment loadouts with set/grade/enhancement selection, full i18n support, and v2 synthetic test fixtures."
     ]
   }
 ].map((release) =>

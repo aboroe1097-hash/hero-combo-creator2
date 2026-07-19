@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.1.9 - 2026-07-19
+
+- Kept owner-authenticated All-Star signup edits below Firestore's rules-expression limit by removing redundant update checks while preserving the shared schema, path-bound identity, immutable creation timestamp, and exact revision increment.
+
 ## 14.1.8 - 2026-07-19
 
 - Preserved the successful All-Star signup confirmation when a delayed realtime-listener permission error arrives after the submission has already been committed, while continuing to report the background error through the controller error hook.

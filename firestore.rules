@@ -1778,16 +1778,9 @@ service cloud.firestore {
 
     function validAllStarBohSubmissionUpdate(season, uid) {
       return validAllStarBohSubmission(season, uid)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'gameName', 'knownNames', 'locale', 'timezone', 'entryMethod', 'status',
-          'stats', 'preferredTeammates', 'rolePreferences', 'eligibleRoleIds',
-          'commitment', 'ocr',
-          'submittedAtMs', 'revision', 'updatedAt', 'updatedBy'
-        ])
-        && request.resource.data.playerId == resource.data.playerId
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.seasonId == resource.data.seasonId
-        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        // The shared validator already pins identity to the path and schema version.
+        // Avoid repeating those checks here so valid edits stay below Firestore's
+        // rules-expression limit.
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.revision == resource.data.revision + 1;
     }
