@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': '输入成员 PIN',
   'access.membersOnly': '仅限成员',
@@ -357,4 +359,5 @@ export default Object.freeze({
   'signup.teamNameDescription': '请选择所有你愿意加入的动物主题战队。',
   'signup.teamNameHint': '此项可选，仅供趣味参考；最终名称由管理团队决定。',
   'role.noPreference': '无偏好',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

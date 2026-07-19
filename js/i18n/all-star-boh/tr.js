@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': 'Üye PIN’ini gir',
   'access.membersOnly': 'YALNIZCA ÜYELER',
@@ -390,4 +392,5 @@ export default Object.freeze({
   'signup.teamNameDescription': 'Katılmaktan mutlu olacağın tüm hayvan takımı kimliklerini seç.',
   'signup.teamNameHint': 'İsteğe bağlı ve eğlence içindir; son isme yönetim karar verir.',
   'role.noPreference': 'Tercih yok',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

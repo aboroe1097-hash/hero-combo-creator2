@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.1.11 - 2026-07-19
+
+- Defaulted hero and research catalog filters to X1 and added a one-tap "Max all" action for each season's research group.
+- Saved the primary All-Star signup before optional Epic Showdown preferences so a rejected signup can no longer leave an Epic-only player record, and visibly marked required Unit Specialty Power.
+- Added an opening All-Star participation choice, an Epic-only path, automatic in-game-name sharing with Epic Showdown, and required contact/state/reason details for applicants outside VTS 1097.
+- Updated the owner-scoped Firestore signup contract for the new VTS applicant fields and surfaced them in the leadership review panel.
+- Fixed the mobile All-Star signup so the optional Troop OCR buttons remain inside their own section instead of floating over manual entry fields.
+- Separated the three troop portraits in the “All T10 troop types” selector so each icon remains individually visible on phones.
+
 ## 14.1.10 - 2026-07-19
 
 - Added a true top-layer confirmation after successful All-Star signup submissions and edits, clearing stale permission errors only after the write succeeds and keeping delayed listener failures from replacing the confirmed result.

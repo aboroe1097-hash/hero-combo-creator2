@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': 'Introduce el PIN de miembros',
   'access.membersOnly': 'SOLO PARA MIEMBROS',
@@ -395,4 +397,5 @@ export default Object.freeze({
     'Elige todas las identidades animales a las que te gustaría unirte.',
   'signup.teamNameHint': 'Es opcional y solo por diversión; el liderazgo decide el nombre final.',
   'role.noPreference': 'Sin preferencia',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

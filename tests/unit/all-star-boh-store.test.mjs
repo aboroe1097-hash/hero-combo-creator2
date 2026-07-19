@@ -64,6 +64,10 @@ function submission(gameName = '古風無道', overrides = {}) {
       preferredRole: 'offensive',
       secondaryRole: 'rune',
       canHelpLead: true,
+      vts1097Member: true,
+      contactNumber: '',
+      currentState: '',
+      joinReason: '',
       fightingTimeIds: ['+8', '+12'],
       teamNamePreferences: ['iron-wolves', 'frost-bears'],
       unavailableTimes: '',
@@ -2183,6 +2187,7 @@ test('transaction retries commit one coherent revision and serializers reject in
         commitment: {
           availability: 'all',
           fightingTimeIds: ['+8', '+12'],
+          vts1097Member: true,
           notes: 'x'.repeat(2001),
         },
       }),

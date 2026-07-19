@@ -8,6 +8,7 @@ const cssSource = readFileSync('css/all-star-boh.css', 'utf8');
 const appSource = readFileSync('js/app.js', 'utf8');
 const bootstrapSource = readFileSync('js/all-star-boh-bootstrap.js', 'utf8');
 const controllerSource = readFileSync('js/all-star-boh.js', 'utf8');
+const rulesSource = readFileSync('firestore.rules', 'utf8');
 const stateSource = readFileSync('js/state.js', 'utf8');
 const shellSource = readFileSync('js/shell-v14.js', 'utf8');
 const commandPaletteSource = readFileSync('js/command-palette.js', 'utf8');
@@ -310,9 +311,12 @@ test('Epic Showdown planning is included before the single combined signup actio
   assert.match(controllerSource, /function submitCombinedParticipation/);
   assert.match(
     controllerSource,
-    /if \(state\.epicDirty\) \{[\s\S]*?await submitEpicPreferences\(state, showdownForm\)/
+    /const signupSaved = await submitSignup\(state, signupForm\);[\s\S]*?if \(!signupSaved\) return;[\s\S]*?if \(state\.epicDirty\) \{[\s\S]*?await submitEpicPreferences\(state, showdownForm\)/
   );
-  assert.match(controllerSource, /await submitSignup\(state, signupForm\)/);
+  assert.doesNotMatch(
+    controllerSource,
+    /if \(state\.epicDirty\) \{[\s\S]*?submitEpicPreferences[\s\S]*?await submitSignup/
+  );
   assert.match(
     controllerSource,
     /updateChecked\([\s\S]*?'epicFlexibilityPreference',[\s\S]*?flexibilityPreference/
@@ -321,12 +325,56 @@ test('Epic Showdown planning is included before the single combined signup actio
   assert.match(cssSource, /\.boh-showdown-option:has\(input:focus-visible\)/);
 });
 
+test('Unit Specialty Power is visibly marked as required', () => {
+  assert.match(
+    tabSource,
+    /data-boh-i18n="signup\.unitSpecialtyPower"[\s\S]*?class="boh-required"[\s\S]*?name="unitSpecialtyPower"[\s\S]*?required/u
+  );
+});
+
+test('participation choice supports an Epic-only path and mirrors the signup name', () => {
+  assert.match(tabSource, /name="participationMode" value="allstar" checked/u);
+  assert.match(tabSource, /name="participationMode" value="epic-only"/u);
+  assert.match(controllerSource, /state\.participationMode === 'epic-only'/u);
+  assert.match(
+    controllerSource,
+    /event\.target\?\.matches\?\.\('\[name="gameName"\]'\)[\s\S]*?!state\.epicNameTouched[\s\S]*?'epicGameName'/u
+  );
+  assert.match(controllerSource, /event\.target\?\.matches\?\.\('\[name="epicGameName"\]'\)/u);
+});
+
+test('non-VTS applicants provide required contact, state, and reason fields', () => {
+  assert.match(tabSource, /name="vts1097Member" value="yes" required/u);
+  assert.match(tabSource, /name="vts1097Member" value="no" required/u);
+  for (const field of ['contactNumber', 'currentState', 'joinReason']) {
+    assert.match(tabSource, new RegExp(`name="${field}"`));
+    assert.match(controllerSource, new RegExp(`formValue\\(source, '${field}'\\)`));
+    assert.match(rulesSource, new RegExp(`commitment\\.${field}`));
+  }
+  assert.match(rulesSource, /commitment\.vts1097Member is bool/u);
+});
+
 test('hero season filter exposes only the requested cumulative milestones', () => {
   assert.match(
     controllerSource,
     /HERO_SEASON_MILESTONES\s*=\s*Object\.freeze\(\['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'\]\)/
   );
   assert.doesNotMatch(tabSource, /data-boh-i18n="signup\.heroAllSeasons"/);
+  assert.match(controllerSource, /\[data-role="hero-season-filter"\]'\)\?\.value \|\| 'X1'/u);
+  assert.match(controllerSource, /currentSeason = seasonFilter\?\.value \|\| 'X1'/u);
+});
+
+test('research defaults to X1 and offers one Max all action per season', () => {
+  assert.match(tabSource, /data-role="research-season-filter"/u);
+  assert.match(tabSource, /<option value="X1" selected>X1<\/option>/u);
+  assert.match(controllerSource, /group\.dataset\.role = 'research-season-group'/u);
+  assert.match(controllerSource, /maxAll\.dataset\.role = 'research-season-max'/u);
+  assert.match(controllerSource, /input\.value = '100'/u);
+  assert.match(
+    controllerSource,
+    /group\.hidden = selectedRank !== null && groupRank !== null && groupRank > selectedRank/u
+  );
+  assert.match(cssSource, /\.boh-research-season__max\s*\{/u);
 });
 
 test('signup asks explicitly whether the player can help lead or manage', () => {
@@ -383,6 +431,24 @@ test('T10 readiness maps the supplied portraits to cavalry, archers, and footmen
       new RegExp(`value="${troopType}"[\\s\\S]*?boh-t10-type-icon--${troopType}`)
     );
   }
+  assert.match(cssSource, /\.boh-t10-type-icons\s*\{[\s\S]*?gap:\s*0\.25rem/u);
+  assert.match(
+    cssSource,
+    /\.boh-t10-type-icons \.boh-t10-type-icon \+ \.boh-t10-type-icon\s*\{\s*margin-inline-start:\s*0/u
+  );
+});
+
+test('mobile sticky actions are limited to the final signup footer', () => {
+  assert.match(tabSource, /<div class="boh-form-actions boh-form-actions--inline">/u);
+  assert.match(tabSource, /<footer class="boh-form-actions">/u);
+  assert.match(
+    cssSource,
+    /@media \(max-width: 620px\)[\s\S]*?footer\.boh-form-actions\s*\{[\s\S]*?position:\s*sticky/u
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /@media \(max-width: 620px\)[\s\S]*?\n\s{2}\.boh-form-actions\s*\{[\s\S]*?position:\s*sticky/u
+  );
 });
 
 test('all 29 verified S0 through X8 research trees use exact cropped in-game icons', () => {

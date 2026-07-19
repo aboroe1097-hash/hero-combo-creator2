@@ -663,6 +663,26 @@ export function normalizeBohSignup(input = {}, options = {}) {
         firstDefined(input.canHelpLead, rawCommitment.canHelpLead),
         'canHelpLead'
       ),
+      vts1097Member: optionalBoolean(
+        firstDefined(input.vts1097Member, rawCommitment.vts1097Member),
+        'vts1097Member'
+      ),
+      contactNumber: boundedPlainText(
+        firstDefined(input.contactNumber, rawCommitment.contactNumber),
+        160,
+        'contactNumber'
+      ),
+      currentState: boundedPlainText(
+        firstDefined(input.currentState, rawCommitment.currentState),
+        160,
+        'currentState'
+      ),
+      joinReason: boundedPlainText(
+        firstDefined(input.joinReason, rawCommitment.joinReason),
+        1000,
+        'joinReason',
+        { multiline: true }
+      ),
       fightingTimeIds,
       teamNamePreferences: normalizeCatalogSelection(
         firstDefined(input.teamNamePreferences, rawCommitment.teamNamePreferences),

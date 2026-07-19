@@ -24,6 +24,7 @@ function validSignup() {
     fightingTimeIds: ['+8', '+12'],
     preferredRole: 'offensive',
     leadershipInterest: 'no',
+    vts1097Member: 'yes',
     unavailableTimes: '',
     canTeleport: 'on',
     canUseVoice: 'on',

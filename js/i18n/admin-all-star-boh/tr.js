@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   adminBohAccountSubmission: 'OYUNCU BAŞVURUSU',
   adminBohAction: 'Eylem',
@@ -401,4 +403,5 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Tüm birlik türleri',
   adminBohTroopInventory: 'OCR birlik envanteri',
   adminBohTroopRows: 'incelenen satır',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': 'Masukkan PIN anggota',
   'access.membersOnly': 'KHUSUS ANGGOTA',
@@ -393,4 +395,5 @@ export default Object.freeze({
   'signup.teamNameHint':
     'Opsional dan hanya untuk bersenang-senang; pimpinan menentukan nama akhir.',
   'role.noPreference': 'Tidak ada pilihan',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

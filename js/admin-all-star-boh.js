@@ -3094,6 +3094,20 @@ function submissionDetailEntries(state, submission) {
         : textOrFallback(''),
     ],
     [state.tr('adminBohPlayerNotes', 'Player notes'), textOrFallback(commitment.notes)],
+    [
+      state.tr('adminBohVtsMember', 'Plays in VTS 1097'),
+      commitment.vts1097Member == null
+        ? state.tr('adminBohNotProvided', 'Not provided')
+        : commitment.vts1097Member
+          ? state.tr('adminBohYes', 'Yes')
+          : state.tr('adminBohNo', 'No'),
+    ],
+    [
+      state.tr('adminBohContactNumber', 'Viber / WhatsApp'),
+      textOrFallback(commitment.contactNumber),
+    ],
+    [state.tr('adminBohCurrentState', 'Current state'), textOrFallback(commitment.currentState)],
+    [state.tr('adminBohJoinReason', 'Why VTS'), textOrFallback(commitment.joinReason)],
   ];
 }
 

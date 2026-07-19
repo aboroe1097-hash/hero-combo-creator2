@@ -1007,6 +1007,23 @@ export function buildBohSubmissionPayload(source, options = {}) {
     error.i18nKey = 'signup.leadershipInterestRequired';
     throw error;
   }
+  const vtsMemberValue = textValue(formValue(source, 'vts1097Member')).toLowerCase();
+  if (!['yes', 'no'].includes(vtsMemberValue)) {
+    const error = new TypeError('Choose whether you currently play in VTS 1097.');
+    error.field = 'vts1097Member';
+    throw error;
+  }
+  const vts1097Member = vtsMemberValue === 'yes';
+  const contactNumber = textValue(formValue(source, 'contactNumber')).slice(0, 160);
+  const currentState = textValue(formValue(source, 'currentState')).slice(0, 160);
+  const joinReason = textValue(formValue(source, 'joinReason')).slice(0, 1000);
+  if (!vts1097Member && (!contactNumber || !currentState || !joinReason)) {
+    const error = new TypeError(
+      'Non-VTS players must provide contact details, current state, and why they want to join.'
+    );
+    error.field = !contactNumber ? 'contactNumber' : !currentState ? 'currentState' : 'joinReason';
+    throw error;
+  }
   const fightingTimeIds = canonicalCatalogSelection(
     formValues(source, 'fightingTimeIds'),
     FIGHTING_TIME_IDS,
@@ -1060,6 +1077,10 @@ export function buildBohSubmissionPayload(source, options = {}) {
       preferredRole,
       secondaryRole,
       canHelpLead: leadershipInterest === 'yes',
+      vts1097Member,
+      contactNumber: vts1097Member ? '' : contactNumber,
+      currentState: vts1097Member ? '' : currentState,
+      joinReason: vts1097Member ? '' : joinReason,
       fightingTimeIds,
       teamNamePreferences,
       notes: textValue(formValue(source, 'playerNotes')).slice(0, 2000),
@@ -1391,6 +1412,8 @@ function initialState(options) {
     submissionEditBaseRevision: null,
     epicSaving: false,
     epicDirty: false,
+    participationMode: 'allstar',
+    epicNameTouched: false,
     epicHydratedRevision: null,
     epicEditBaseRevision: null,
     renderedEpicTimeOptions: '',
@@ -1709,7 +1732,7 @@ function renderHeroCatalogStatus(state) {
   );
   const search = comparableLabel(query(state.root, '[data-role="hero-search"]')?.value);
   const troopType = comparableLabel(query(state.root, '[data-role="hero-troop-filter"]')?.value);
-  const season = query(state.root, '[data-role="hero-season-filter"]')?.value || 'X8';
+  const season = query(state.root, '[data-role="hero-season-filter"]')?.value || 'X1';
   const selectedSeasonRank = seasonRank(season);
   let shown = 0;
   for (const row of queryAll(state.root, '[data-role="hero-option"]')) {
@@ -1744,7 +1767,7 @@ function renderHeroCatalog(state) {
     const troopFilter = query(state.root, '[data-role="hero-troop-filter"]');
     const seasonFilter = query(state.root, '[data-role="hero-season-filter"]');
     const currentTroop = troopFilter?.value || '';
-    const currentSeason = seasonFilter?.value || 'X8';
+    const currentSeason = seasonFilter?.value || 'X1';
     const rows = heroes.map((hero) => {
       const row = createElement(state.root, 'label', 'boh-catalog-row');
       row.dataset.role = 'hero-option';
@@ -1799,7 +1822,7 @@ function renderHeroCatalog(state) {
         return option;
       });
       replaceChildren(seasonFilter, ...options);
-      seasonFilter.value = HERO_SEASON_MILESTONES.includes(currentSeason) ? currentSeason : 'X8';
+      seasonFilter.value = HERO_SEASON_MILESTONES.includes(currentSeason) ? currentSeason : 'X1';
     }
     state.renderedHeroCatalog = renderKey;
   }
@@ -1833,6 +1856,16 @@ function renderResearchStatus(state) {
   );
 }
 
+function renderResearchSeasonFilter(state) {
+  const filter = query(state.root, '[data-role="research-season-filter"]');
+  const selectedSeason = HERO_SEASON_MILESTONES.includes(filter?.value) ? filter.value : 'X1';
+  const selectedRank = seasonRank(selectedSeason);
+  for (const group of queryAll(state.root, '[data-role="research-season-group"]')) {
+    const groupRank = seasonRank(group.dataset.season);
+    group.hidden = selectedRank !== null && groupRank !== null && groupRank > selectedRank;
+  }
+}
+
 function renderResearchCatalog(state) {
   const container = query(state.root, '[data-role="research-groups"]');
   if (!container) return;
@@ -1853,10 +1886,24 @@ function renderResearchCatalog(state) {
       if (!seasons.has(tree.season)) seasons.set(tree.season, []);
       seasons.get(tree.season).push(tree);
     }
+    const seasonFilter = query(state.root, '[data-role="research-season-filter"]');
+    const currentSeason = seasonFilter?.value || 'X1';
+    if (seasonFilter) {
+      const options = HERO_SEASON_MILESTONES.map((value) => {
+        const option = createElement(state.root, 'option', '', value);
+        option.value = value;
+        return option;
+      });
+      replaceChildren(seasonFilter, ...options);
+      seasonFilter.value = HERO_SEASON_MILESTONES.includes(currentSeason) ? currentSeason : 'X1';
+    }
     const groups = [...seasons.entries()].map(([season, seasonTrees], seasonIndex) => {
       const group = createElement(state.root, 'section', 'boh-research-season');
+      group.dataset.role = 'research-season-group';
+      group.dataset.season = season;
       const headingId = `bohResearchSeason${seasonIndex}`;
       group.setAttribute('aria-labelledby', headingId);
+      const header = createElement(state.root, 'div', 'boh-research-season__header');
       const heading = createElement(
         state.root,
         'h5',
@@ -1864,7 +1911,21 @@ function renderResearchCatalog(state) {
         state.tr('signup.researchSeason', '{season} research', { season })
       );
       heading.id = headingId;
-      append(group, heading);
+      const maxAll = createElement(
+        state.root,
+        'button',
+        'boh-research-season__max',
+        state.tr('signup.researchMaxAll', 'Max all')
+      );
+      maxAll.type = 'button';
+      maxAll.dataset.role = 'research-season-max';
+      maxAll.dataset.season = season;
+      maxAll.setAttribute(
+        'aria-label',
+        state.tr('signup.researchMaxAllLabel', 'Set all {season} research to 100%', { season })
+      );
+      append(header, heading, maxAll);
+      append(group, header);
       for (const [treeIndex, tree] of seasonTrees.entries()) {
         const label = researchTreeLabel(state, tree);
         const inputId = `bohResearchProgress${seasonIndex}_${treeIndex}`;
@@ -1930,6 +1991,7 @@ function renderResearchCatalog(state) {
     replaceChildren(container, ...groups);
     state.renderedResearchCatalog = renderKey;
   }
+  renderResearchSeasonFilter(state);
   renderResearchStatus(state);
 }
 
@@ -1975,6 +2037,31 @@ function renderSignupPlanningControls(state) {
   renderHeroCatalog(state);
   renderResearchCatalog(state);
   renderFightingTimes(state);
+}
+
+function renderParticipationMode(state) {
+  const allStar = state.participationMode !== 'epic-only';
+  for (const element of queryAll(state.root, '[data-allstar-intake]')) setHidden(element, !allStar);
+  if (allStar) renderSubmissionFeedback(state);
+  else setHidden(query(state.root, '[data-role="submission-feedback"]'), true);
+  const submit = query(state.root, '[data-role="signup-submit"]');
+  if (submit) {
+    setText(
+      submit,
+      allStar
+        ? state.tr('signup.submitAll', 'Submit signup & Epic choices')
+        : state.tr('showdown.submitOnly', 'Save Epic Showdown choices')
+    );
+  }
+}
+
+function renderVtsMembership(state) {
+  const form = query(state.root, '[data-role="signup-form"]');
+  const selected = query(form, '[name="vts1097Member"]:checked')?.value || '';
+  const details = query(form, '[data-role="nonmember-fields"]');
+  const required = selected === 'no';
+  setHidden(details, !required);
+  for (const input of queryAll(details, 'input, textarea')) input.required = required;
 }
 
 function hydrateForm(state) {
@@ -2023,6 +2110,19 @@ function hydrateForm(state) {
   );
   updateInput(form, 'preferredTeammates', (submission.preferredTeammates || []).join('\n'));
   updateInput(form, 'playerNotes', submission.commitment?.notes);
+  updateChecked(
+    form,
+    'vts1097Member',
+    submission.commitment?.vts1097Member == null
+      ? ''
+      : submission.commitment.vts1097Member
+        ? 'yes'
+        : 'no'
+  );
+  updateInput(form, 'contactNumber', submission.commitment?.contactNumber);
+  updateInput(form, 'currentState', submission.commitment?.currentState);
+  updateInput(form, 'joinReason', submission.commitment?.joinReason);
+  renderVtsMembership(state);
   setEntryMethod(state, submission.entryMethod);
   if (submission.entryMethod === 'ocr') {
     const values = { ...submission.stats, gameName: submission.gameName };
@@ -3177,8 +3277,10 @@ function render(state) {
   activateSection(state, state.section);
   setEntryMethod(state, state.entryMethod);
   renderSignupPlanningControls(state);
+  renderVtsMembership(state);
   renderTroopOcr(state);
   renderSubmissionState(state);
+  renderParticipationMode(state);
   renderPublicationStates(state);
   renderEpicPreferences(state);
   const statusLabel = query(state.root, '[data-role="event-status-label"]');
@@ -3333,7 +3435,7 @@ async function submitSignup(state, form) {
         : 'smooth',
       block: 'center',
     });
-    return;
+    return false;
   }
   setSignupFormError(state);
   let data = formDataFor(form);
@@ -3375,7 +3477,7 @@ async function submitSignup(state, form) {
     reportError(state, error, { action: 'save-submission' });
     setSignupFormError(state, error?.message || 'Review the highlighted field and try again.');
     focusErrorField(state, error?.field);
-    return;
+    return false;
   }
   state.saving = true;
   let preserveFormOnFailure = false;
@@ -3429,6 +3531,7 @@ async function submitSignup(state, form) {
     data = null;
   }
   if (confirmation) showSubmissionConfirmation(state, confirmation);
+  return confirmation !== null;
 }
 
 async function submitEpicPreferences(state, form) {
@@ -3508,15 +3611,21 @@ async function submitEpicPreferences(state, form) {
 
 async function submitCombinedParticipation(state, signupForm, showdownForm) {
   if (!signupForm || !showdownForm) return;
+  if (state.participationMode === 'epic-only') {
+    await submitEpicPreferences(state, showdownForm);
+    return;
+  }
   if (typeof signupForm.reportValidity === 'function' && !signupForm.reportValidity()) {
     signupForm.querySelector?.(':invalid')?.focus?.({ preventScroll: true });
     return;
   }
+  // The signup is the primary participation record shown in the All-Star admin panel.
+  // Save it first so a rejected signup can never leave a misleading Epic-only record.
+  const signupSaved = await submitSignup(state, signupForm);
+  if (!signupSaved) return;
   if (state.epicDirty) {
-    const epicSaved = await submitEpicPreferences(state, showdownForm);
-    if (!epicSaved) return;
+    await submitEpicPreferences(state, showdownForm);
   }
-  await submitSignup(state, signupForm);
 }
 
 function tabKeyMove(state, event, tabs, activeIndex, activate) {
@@ -3583,6 +3692,17 @@ async function handleClick(state, event) {
     }
     return;
   }
+  if (target.matches?.('[data-role="research-season-max"]')) {
+    const season = target.dataset.season;
+    for (const input of queryAll(state.root, '[data-role="research-progress-input"]')) {
+      if (input.closest?.('[data-role="research-season-group"]')?.dataset.season === season) {
+        input.value = '100';
+      }
+    }
+    markSubmissionDirty(state);
+    renderResearchStatus(state);
+    return;
+  }
   if (target.matches?.('[data-role="section-tab"]')) {
     activateSection(state, target.dataset.section);
     return;
@@ -3643,6 +3763,24 @@ function handleChange(state, event) {
     renderHeroCatalogStatus(state);
     return;
   }
+  if (target.matches?.('[data-role="research-season-filter"]')) {
+    renderResearchSeasonFilter(state);
+    return;
+  }
+  if (target.matches?.('[name="participationMode"]')) {
+    state.participationMode = target.value === 'epic-only' ? 'epic-only' : 'allstar';
+    renderParticipationMode(state);
+    if (state.participationMode === 'epic-only') {
+      query(state.root, '[data-role="signup-addon"]')?.scrollIntoView?.({
+        behavior: ownerWindow(state.root)?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+          ? 'auto'
+          : 'smooth',
+        block: 'start',
+      });
+    }
+    return;
+  }
+  if (target.matches?.('[name="vts1097Member"]')) renderVtsMembership(state);
   if (target.matches?.('[data-role="field-preferred-role"], [data-role="field-secondary-role"]')) {
     const primary = query(state.root, '[data-role="field-preferred-role"]');
     const secondary = query(state.root, '[data-role="field-secondary-role"]');
@@ -3745,6 +3883,14 @@ function bindEvents(state) {
       if (event.target?.matches?.('[data-role="research-progress-input"]')) {
         renderResearchStatus(state);
       }
+      if (event.target?.matches?.('[name="gameName"]') && !state.epicNameTouched) {
+        updateInput(
+          query(state.root, '[data-role="showdown-form"]'),
+          'epicGameName',
+          event.target.value
+        );
+      }
+      if (event.target?.matches?.('[name="epicGameName"]')) state.epicNameTouched = true;
       if (event.target?.closest?.('[data-role="signup-form"]')) markSubmissionDirty(state);
       if (event.target?.closest?.('[data-role="showdown-form"]')) markEpicDirty(state);
       if (event.target?.matches?.('[data-stat]')) syncOcrReviewFromForm(state);

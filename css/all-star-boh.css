@@ -777,6 +777,17 @@
   margin-top: 0.7rem;
 }
 
+.boh-participation-choice,
+.boh-vts-membership,
+.boh-nonmember-fields {
+  margin-block: 1rem;
+}
+
+.boh-nonmember-fields {
+  display: grid;
+  gap: 1rem;
+}
+
 .boh-choice-grid--three,
 .boh-field-grid--three,
 .boh-check-grid--three {
@@ -849,8 +860,7 @@
   margin-top: 0.8rem;
 }
 
-.boh-commitment-card
-  > :is(.boh-fieldset, .boh-role-guide, .boh-field-grid, .boh-field) {
+.boh-commitment-card > :is(.boh-fieldset, .boh-role-guide, .boh-field-grid, .boh-field) {
   margin-top: clamp(1.5rem, 2vw, 2rem);
 }
 
@@ -1291,8 +1301,9 @@
 
 .boh-t10-type-icons {
   display: flex;
-  width: 3.6rem;
+  width: auto;
   flex: 0 0 auto;
+  gap: 0.25rem;
 }
 
 .boh-t10-type-icons .boh-t10-type-icon {
@@ -1301,7 +1312,7 @@
 }
 
 .boh-t10-type-icons .boh-t10-type-icon + .boh-t10-type-icon {
-  margin-inline-start: -0.6rem;
+  margin-inline-start: 0;
 }
 
 .boh-roc-readiness {
@@ -1715,6 +1726,11 @@
   gap: 0.7rem;
 }
 
+.boh-research-filters {
+  max-width: 14rem;
+  margin-bottom: 0.7rem;
+}
+
 .boh-research-season {
   min-width: 0;
   overflow: hidden;
@@ -1723,7 +1739,7 @@
   background: color-mix(in srgb, var(--boh-control) 72%, transparent);
 }
 
-.boh-research-season__heading {
+.boh-research-season__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1737,6 +1753,30 @@
   font-size: 0.65rem;
   font-weight: 820;
   line-height: 1.35;
+}
+
+.boh-research-season__heading {
+  min-width: 0;
+  margin: 0;
+  font: inherit;
+}
+
+.boh-research-season__max {
+  min-height: 2rem;
+  flex: 0 0 auto;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--boh-sky) 48%, var(--boh-line));
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--boh-sky) 10%, var(--boh-control));
+  color: var(--boh-sky);
+  font-size: 0.58rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.boh-research-season__max:hover {
+  border-color: var(--boh-sky);
+  color: var(--boh-text);
 }
 
 .boh-research-row {
@@ -3164,7 +3204,7 @@
     min-height: 3rem;
   }
 
-  .boh-form-actions {
+  footer.boh-form-actions {
     position: sticky;
     z-index: 20;
     bottom: max(0.4rem, env(safe-area-inset-bottom));
@@ -3179,7 +3219,7 @@
     backdrop-filter: blur(14px);
   }
 
-  .boh-form-actions .boh-button {
+  footer.boh-form-actions .boh-button {
     width: 100%;
   }
 
@@ -3306,7 +3346,6 @@
   .boh-button:hover {
     transform: none;
   }
-
 }
 
 @media (forced-colors: active) {

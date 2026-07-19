@@ -132,10 +132,7 @@
       <h3 id="bohSubmissionConfirmationTitle" data-role="submission-confirmation-title">
         Signup submitted
       </h3>
-      <p
-        id="bohSubmissionConfirmationDescription"
-        data-role="submission-confirmation-description"
-      >
+      <p id="bohSubmissionConfirmationDescription" data-role="submission-confirmation-description">
         Your information is ready for leadership review and team balancing.
       </p>
       <p class="boh-confirmation-dialog__revision" data-role="submission-confirmation-revision">
@@ -169,7 +166,10 @@
         </p>
       </div>
       <div class="boh-section-heading__actions">
-        <span class="boh-save-state" data-role="signup-save-state" data-boh-i18n="signup.notSubmitted"
+        <span
+          class="boh-save-state"
+          data-role="signup-save-state"
+          data-boh-i18n="signup.notSubmitted"
           >Not submitted</span
         >
         <button
@@ -183,6 +183,28 @@
         </button>
       </div>
     </div>
+
+    <fieldset class="boh-card boh-participation-choice" data-role="participation-choice">
+      <legend data-boh-i18n="signup.participationLegend">Do you want to play All-Star BoH?</legend>
+      <div class="boh-choice-grid">
+        <label class="boh-choice-card">
+          <input type="radio" name="participationMode" value="allstar" checked />
+          <span class="boh-choice-card__mark" aria-hidden="true"></span>
+          <span>
+            <strong data-boh-i18n="signup.participationAllStar">Yes, join All-Star BoH</strong>
+            <small data-boh-i18n="signup.participationAllStarHint">Complete the signup and Epic Showdown choices.</small>
+          </span>
+        </label>
+        <label class="boh-choice-card">
+          <input type="radio" name="participationMode" value="epic-only" />
+          <span class="boh-choice-card__mark" aria-hidden="true"></span>
+          <span>
+            <strong data-boh-i18n="signup.participationEpicOnly">No, Epic Showdown only</strong>
+            <small data-boh-i18n="signup.participationEpicOnlyHint">Skip the All-Star intake and choose your Epic availability.</small>
+          </span>
+        </label>
+      </div>
+    </fieldset>
 
     <aside
       class="boh-review-feedback"
@@ -207,7 +229,7 @@
       </div>
     </aside>
 
-    <aside class="boh-notice boh-notice--privacy" aria-labelledby="bohPrivacyTitle">
+    <aside class="boh-notice boh-notice--privacy" aria-labelledby="bohPrivacyTitle" data-allstar-intake>
       <span class="boh-notice__icon" aria-hidden="true">i</span>
       <div>
         <h4 id="bohPrivacyTitle" data-boh-i18n="signup.privacyTitle">
@@ -221,7 +243,7 @@
       </div>
     </aside>
 
-    <form class="boh-form" data-role="signup-form" novalidate>
+    <form class="boh-form" data-role="signup-form" data-allstar-intake novalidate>
       <fieldset class="boh-card boh-method-picker">
         <legend data-boh-i18n="signup.methodLegend">How do you want to add your stats?</legend>
         <div class="boh-choice-grid">
@@ -511,6 +533,40 @@
             />
           </label>
         </div>
+        <fieldset class="boh-fieldset boh-vts-membership">
+          <legend>
+            <span data-boh-i18n="signup.vtsMemberLegend">Do you currently play in VTS 1097?</span>
+            <b aria-hidden="true">*</b>
+          </legend>
+          <div class="boh-choice-grid">
+            <label class="boh-choice-card">
+              <input type="radio" name="vts1097Member" value="yes" required />
+              <span class="boh-choice-card__mark" aria-hidden="true"></span>
+              <strong data-boh-i18n="common.yes">Yes</strong>
+            </label>
+            <label class="boh-choice-card">
+              <input type="radio" name="vts1097Member" value="no" required />
+              <span class="boh-choice-card__mark" aria-hidden="true"></span>
+              <strong data-boh-i18n="common.no">No</strong>
+            </label>
+          </div>
+        </fieldset>
+        <div class="boh-nonmember-fields" data-role="nonmember-fields" hidden>
+          <div class="boh-field-grid boh-field-grid--two">
+            <label class="boh-field">
+              <span><span data-boh-i18n="signup.contactNumber">Viber or WhatsApp number</span> <b aria-hidden="true">*</b></span>
+              <input type="text" name="contactNumber" autocomplete="tel" maxlength="160" />
+            </label>
+            <label class="boh-field">
+              <span><span data-boh-i18n="signup.currentState">Current state</span> <b aria-hidden="true">*</b></span>
+              <input type="text" name="currentState" maxlength="160" />
+            </label>
+          </div>
+          <label class="boh-field">
+            <span><span data-boh-i18n="signup.joinReason">Why do you want to play with VTS?</span> <b aria-hidden="true">*</b></span>
+            <textarea name="joinReason" rows="3" maxlength="1000"></textarea>
+          </label>
+        </div>
         <aside class="boh-device-identity" aria-labelledby="bohDeviceIdentityTitle">
           <span aria-hidden="true">i</span>
           <div>
@@ -671,7 +727,10 @@
             <small id="bohOcrIssue-dragonPower" data-role="ocr-field-issue"></small>
           </label>
           <label class="boh-field">
-            <span data-boh-i18n="signup.unitSpecialtyPower">Unit Specialty Power</span>
+              <span>
+                <span data-boh-i18n="signup.unitSpecialtyPower">Unit Specialty Power</span>
+                <span class="boh-required" aria-hidden="true">*</span>
+              </span>
             <input
               type="text"
               name="unitSpecialtyPower"
@@ -917,6 +976,14 @@
             >
           </summary>
           <div class="boh-catalog-disclosure__body">
+            <div class="boh-research-filters">
+              <label class="boh-field">
+                <span data-boh-i18n="signup.heroSeasonFilter">Season</span>
+                <select data-role="research-season-filter">
+                  <option value="X1" selected>X1</option>
+                </select>
+              </label>
+            </div>
             <div class="boh-research-groups" data-role="research-groups"></div>
           </div>
         </details>
@@ -2001,14 +2068,21 @@
         </fieldset>
 
         <fieldset class="boh-fieldset">
-          <legend data-boh-i18n="showdown.flexibilityLegend">How do you prefer to stay flexible?</legend>
+          <legend data-boh-i18n="showdown.flexibilityLegend">
+            How do you prefer to stay flexible?
+          </legend>
           <p id="bohShowdownFlexibilityHint" data-boh-i18n="showdown.flexibilityHint">
             Choose the one approach that suits you best.
           </p>
-          <div class="boh-check-grid boh-check-grid--three boh-showdown-options" aria-describedby="bohShowdownFlexibilityHint">
+          <div
+            class="boh-check-grid boh-check-grid--three boh-showdown-options"
+            aria-describedby="bohShowdownFlexibilityHint"
+          >
             <label class="boh-check-card boh-showdown-option">
               <input type="radio" name="epicFlexibilityPreference" value="change-roles" required />
-              <span data-boh-i18n="showdown.flexibilityRoles">Change roles, keep my fight time</span>
+              <span data-boh-i18n="showdown.flexibilityRoles"
+                >Change roles, keep my fight time</span
+              >
             </label>
             <label class="boh-check-card boh-showdown-option">
               <input type="radio" name="epicFlexibilityPreference" value="change-times" required />
