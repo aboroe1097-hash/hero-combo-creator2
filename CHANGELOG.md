@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.1.17 - 2026-07-19
+
+- Audited all 200 Eden contribution entries, 180 duty records, 40 conduct records, management votes, and teammate votes against canonical player families while preserving the published Top 20 order.
+- Deduplicated reward families across Support, Contribution, Management, Team Players, and the 90 Power House positions so secondary accounts cannot receive a second season reward.
+- Mapped verified public aliases and duty-only workers without letting zero-contribution support accounts enter Contribution or Power House rankings, and retained all 142 banners, 30 pathers, 8 shield walls, and 44 net conduct points.
+
 ## 14.1.16 - 2026-07-19
 
 - Added explicit Guild Master and Core reward tiers to the Final Top 20 while preserving each winner's support, contribution, management-vote, or team-vote selection reason.

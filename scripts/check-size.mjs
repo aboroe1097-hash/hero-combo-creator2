@@ -31,8 +31,9 @@ const LIMITS = {
   // packs. Velo b0.2, the localized Specialization node inspector, optional
   // All-Star troop OCR review, and the complete 718-node public planner corpus
   // measure 8117.7 KiB after the All-Star participation intake and shared
-  // applicant locale additions; retain less than 7.5 KiB of aggregate headroom.
-  totalJsBytes: 8145 * 1024,
+  // applicant locale additions. The audited Eden reward-family allocation and
+  // 14.1.17 release digest measure 8145.8 KiB; retain about 1.2 KiB of headroom.
+  totalJsBytes: 8147 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

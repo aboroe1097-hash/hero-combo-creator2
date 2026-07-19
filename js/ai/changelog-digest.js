@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.16";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.17";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.17",
+    "date": "2026-07-19",
+    "highlights": [
+      "Audited all 200 Eden contribution entries, 180 duty records, 40 conduct records, management votes, and teammate votes against canonical player families while preserving the published Top 20 order.",
+      "Deduplicated reward families across Support, Contribution, Management, Team Players, and the 90 Power House positions so secondary accounts cannot receive a second season reward.",
+      "Mapped verified public aliases and duty-only workers without letting zero-contribution support accounts enter Contribution or Power House rankings, and retained all 142 banners, 30 pathers, 8 shield walls, and 44 net conduct points."
+    ]
+  },
   {
     "version": "14.1.16",
     "date": "2026-07-19",
@@ -82,13 +91,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-07-19",
     "highlights": [
       "Preserved the successful All-Star signup confirmation when a delayed realtime-listener permission error arrives after the submission has already been committed, while continuing to report the background error through the controller error hook."
-    ]
-  },
-  {
-    "version": "14.1.7",
-    "date": "2026-07-19",
-    "highlights": [
-      "Replaced the expression-heavy All-Star signup write path with bounded, owner-scoped validation that keeps the exact previously denied member payload below Firestore's 1,000-expression limit while requiring Unit Specialty Power at the database boundary."
     ]
   }
 ].map((release) =>

@@ -7,6 +7,7 @@ import {
 } from './ocr-name-normalizer.js';
 import { resolvePlayerRegistryFamilyKey } from './player-registry.js';
 import { collapseContributionOcrDuplicates } from './contribution-identity.js';
+import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -154,8 +155,28 @@ function weightedPlayerKeyForName(name) {
   return getSpecialAccountIdentityKey(displayName, compactPlayerIdentity(displayName));
 }
 
+function cleanWeightedPlayerName(value) {
+  return String(value || '')
+    .replace(/"\s*,\s*$/u, '')
+    .trim();
+}
+
 function resolveWeightedPlayerIdentity(player) {
-  const identity = resolvePlayerIdentity(player);
+  const sourceName =
+    typeof player === 'string'
+      ? stripExGuildGuildTag(cleanWeightedPlayerName(player))
+      : {
+          ...player,
+          name: stripExGuildGuildTag(
+            cleanWeightedPlayerName(
+              player?.playerName ||
+                player?.display_player_name ||
+                player?.displayName ||
+                player?.name
+            )
+          ),
+        };
+  const identity = resolvePlayerIdentity(sourceName);
   if (!identity) return null;
   const playerKey = weightedPlayerKeyForName(
     identity.playerName || identity.displayName || identity.rawName
@@ -184,19 +205,35 @@ const PRIMARY_FAMILY_ACCOUNT_KEYS = Object.freeze({
 // so their duty + conduct can be consolidated onto a single main account.
 // Single-account players are their own family.
 function playerFamilyKey(accountKey) {
-  const key = String(accountKey || '');
-  const registryFamily = resolvePlayerRegistryFamilyKey(key);
+  const sourceKey = String(accountKey || '');
+  const registryFamily = resolvePlayerRegistryFamilyKey(sourceKey);
   if (registryFamily) return registryFamily;
+  const publicProfile = getPublicVtsPlayerProfile(sourceKey);
+  const key = compactPlayerIdentity(publicProfile?.name) || sourceKey;
   if (/^kika(?:alt|banner2?)?$/.test(key)) return 'kika';
   if (key === 'goodness' || key === 'goodnesgraycious') return 'goodnesgraycious';
   if (key === 'redbull' || key === 'redbulls' || key === 'redbullbanner') return 'redbull';
   if (key === 'undead' || key === 'undeadbanner') return 'undead';
   if (/^sarafin[ao]$/.test(key)) return 'sarafino';
+  if (/^maximus+(?:banner)?$/.test(key)) return 'maximus';
+  if (key === 'qimmortal' || key === 'qimmortalis') return 'qimmortal';
   return key;
 }
 
 export function getWeightedPlayerFamilyKey(accountKey) {
   return playerFamilyKey(accountKey);
+}
+
+export function dedupeWeightedRowsByFamily(rows = [], options = {}) {
+  const seenFamilies = new Set(
+    Array.from(options.reservedFamilyKeys || [], (key) => playerFamilyKey(key)).filter(Boolean)
+  );
+  return (Array.isArray(rows) ? rows : []).filter((row) => {
+    const familyKey = row?.familyKey || playerFamilyKey(row?.playerKey);
+    if (!familyKey || seenFamilies.has(familyKey)) return false;
+    seenFamilies.add(familyKey);
+    return true;
+  });
 }
 
 export function normalizeWeightedR5Adjustments(adjustments = [], season = '') {
@@ -212,12 +249,14 @@ export function normalizeWeightedR5Adjustments(adjustments = [], season = '') {
     }
     if (seasonKey && String(adjustment.season || '').trim() !== seasonKey) return;
 
-    const playerKey = weightedPlayerKeyForName(adjustment.playerName || adjustment.playerKey);
+    const identity = resolveWeightedPlayerIdentity(adjustment.playerName || adjustment.playerKey);
+    const playerKey = identity?.playerKey;
     if (!playerKey) return;
+    const familyKey = playerFamilyKey(playerKey);
     normalized.push({
       ...adjustment,
       playerKey,
-      playerFamilyKey: playerFamilyKey(playerKey),
+      playerFamilyKey: familyKey,
     });
   });
 
@@ -306,20 +345,20 @@ function buildConductMap(adjustments = [], season = '') {
   return totals;
 }
 
-function buildForfeitPlayerSet(adjustments = [], season = '') {
+function buildForfeitFamilySet(adjustments = [], season = '') {
   const forfeit = new Set();
   normalizeWeightedR5Adjustments(adjustments, season).forEach((entry) => {
     if (entry?.category !== 'forfeit_premium') return;
-    forfeit.add(entry.playerKey);
+    forfeit.add(entry.playerFamilyKey || playerFamilyKey(entry.playerKey));
   });
   return forfeit;
 }
 
-function buildGrantPremiumPlayerSet(adjustments = [], season = '') {
+function buildGrantPremiumFamilySet(adjustments = [], season = '') {
   const grants = new Set();
   normalizeWeightedR5Adjustments(adjustments, season).forEach((entry) => {
     if (entry?.category !== 'grant_premium') return;
-    grants.add(entry.playerKey);
+    grants.add(entry.playerFamilyKey || playerFamilyKey(entry.playerKey));
   });
   return grants;
 }
@@ -384,16 +423,17 @@ export function buildWeightedContributionRows(options = {}) {
   const dutyCounts = buildWeightedDutyCounts(options.dutyRecords);
   const conductMap = buildConductMap(options.r5Adjustments, options.season || options.r5Season);
   const weights = normalizeWeights(options.weights);
-  const forfeitPlayers = buildForfeitPlayerSet(
+  const forfeitFamilies = buildForfeitFamilySet(
     options.r5Adjustments,
     options.season || options.r5Season
   );
-  const grantPremiumPlayers = buildGrantPremiumPlayerSet(
+  const grantPremiumFamilies = buildGrantPremiumFamilySet(
     options.r5Adjustments,
     options.season || options.r5Season
   );
   const exGuildMap = buildExGuildMap(options.exGuildContributions);
   const exGuildBreakdownMap = buildExGuildBreakdownMap(options.exGuildContributions);
+  const includeSupportOnly = options.includeSupportOnly === true;
 
   const baseRows = entries
     .map((entry) => {
@@ -401,6 +441,7 @@ export function buildWeightedContributionRows(options = {}) {
       if (!identity) return null;
       return {
         playerKey: identity.playerKey,
+        familyKey: playerFamilyKey(identity.playerKey),
         playerName: identity.playerName,
         sourceName: entry.name || identity.playerName,
         currentRank: numberValue(entry.rank),
@@ -408,9 +449,37 @@ export function buildWeightedContributionRows(options = {}) {
         contributionScore: contributionValue(entry),
         contributionExGuild: exGuildMap.get(identity.playerKey) || 0,
         contributionExGuildBreakdown: exGuildBreakdownMap.get(identity.playerKey) || [],
+        supportOnly: false,
       };
     })
     .filter(Boolean);
+
+  const contributionFamilies = new Set(baseRows.map((row) => row.familyKey));
+  const supportOnlyRows = new Map();
+  if (includeSupportOnly) {
+    dutyCounts.forEach((counts, accountKey) => {
+      const familyKey = playerFamilyKey(accountKey);
+      const dutyTotal = counts.shieldWalls + counts.pathers + counts.banners;
+      if (!familyKey || !dutyTotal || contributionFamilies.has(familyKey)) return;
+      const current = supportOnlyRows.get(familyKey);
+      if (current && current.dutyTotal >= dutyTotal) return;
+      const publicProfile = getPublicVtsPlayerProfile(counts.playerName || accountKey);
+      supportOnlyRows.set(familyKey, {
+        playerKey: familyKey,
+        familyKey,
+        playerName: publicProfile?.name || counts.playerName || accountKey,
+        sourceName: counts.playerName || accountKey,
+        currentRank: 0,
+        currentReward: 'none',
+        contributionScore: 0,
+        contributionExGuild: 0,
+        contributionExGuildBreakdown: [],
+        supportOnly: true,
+        dutyTotal,
+      });
+    });
+  }
+  const contributionAndSupportRows = [...baseRows, ...supportOnlyRows.values()];
 
   // A player can hold several distinct accounts (e.g. Kika's main + secondary +
   // banner accounts). They stay as separate rows, but their duty (banners /
@@ -433,14 +502,14 @@ export function buildWeightedContributionRows(options = {}) {
   });
 
   const primaryIndexByFamily = new Map();
-  baseRows.forEach((row, index) => {
-    const fam = playerFamilyKey(row.playerKey);
+  contributionAndSupportRows.forEach((row, index) => {
+    const fam = row.familyKey || playerFamilyKey(row.playerKey);
     const currentBest = primaryIndexByFamily.get(fam);
     if (currentBest === undefined) {
       primaryIndexByFamily.set(fam, index);
       return;
     }
-    const best = baseRows[currentBest];
+    const best = contributionAndSupportRows[currentBest];
     const candidatePreferred = isPreferredFamilyAccount(row, fam);
     const bestPreferred = isPreferredFamilyAccount(best, fam);
     if (candidatePreferred && !bestPreferred) {
@@ -458,8 +527,8 @@ export function buildWeightedContributionRows(options = {}) {
     }
   });
 
-  const rows = baseRows.map((row, index) => {
-    const fam = playerFamilyKey(row.playerKey);
+  const rows = contributionAndSupportRows.map((row, index) => {
+    const fam = row.familyKey || playerFamilyKey(row.playerKey);
     const isPrimaryAccount = primaryIndexByFamily.get(fam) === index;
     const duties = isPrimaryAccount ? familyDuty.get(fam) || emptyDutyCounts() : emptyDutyCounts();
     return {
@@ -475,25 +544,27 @@ export function buildWeightedContributionRows(options = {}) {
   const premiumCutoff = getContributionPremiumCutoff(record);
   const BASE_POINT_VALUE = 10000;
 
-  const rankedRows = rows
-    .map((row) => {
-      const exGuildPoints = row.contributionExGuild || 0;
-      const contributionRewardScore = row.contributionScore + exGuildPoints;
-      const dutyPoints =
-        row.banners * BASE_POINT_VALUE +
-        row.pathers * BASE_POINT_VALUE +
-        row.shieldWalls * BASE_POINT_VALUE;
-      const conductPoints = row.conductBonus * BASE_POINT_VALUE;
-      const weightedScore = contributionRewardScore + dutyPoints + conductPoints;
+  const scoredRows = rows.map((row) => {
+    const exGuildPoints = row.contributionExGuild || 0;
+    const contributionRewardScore = row.contributionScore + exGuildPoints;
+    const dutyPoints =
+      row.banners * BASE_POINT_VALUE +
+      row.pathers * BASE_POINT_VALUE +
+      row.shieldWalls * BASE_POINT_VALUE;
+    const conductPoints = row.conductBonus * BASE_POINT_VALUE;
+    const weightedScore = contributionRewardScore + dutyPoints + conductPoints;
 
-      return {
-        ...row,
-        contributionRewardScore,
-        dutyPoints,
-        conductPoints,
-        weightedScore,
-      };
-    })
+    return {
+      ...row,
+      contributionRewardScore,
+      dutyPoints,
+      conductPoints,
+      weightedScore,
+    };
+  });
+
+  const rankedContributionRows = scoredRows
+    .filter((row) => !row.supportOnly)
     .sort(
       (a, b) =>
         b.weightedScore - a.weightedScore ||
@@ -511,16 +582,29 @@ export function buildWeightedContributionRows(options = {}) {
       // Final reward is the rank tier unless an R5 conduct flag overrides it.
       let finalReward = baseReward;
       let rewardReason = 'rank';
-      if (grantPremiumPlayers.has(row.playerKey)) {
+      if (grantPremiumFamilies.has(row.familyKey)) {
         finalReward = 'core';
         rewardReason = 'grant_premium';
       }
-      if (forfeitPlayers.has(row.playerKey) && finalReward === 'core') {
+      if (forfeitFamilies.has(row.familyKey) && finalReward === 'core') {
         finalReward = 'power_house';
         rewardReason = 'forfeit_premium';
       }
       return { ...row, finalRank: rank, baseReward, finalReward, rewardReason };
     });
+
+  const rankedRows = [
+    ...rankedContributionRows,
+    ...scoredRows
+      .filter((row) => row.supportOnly)
+      .map((row) => ({
+        ...row,
+        finalRank: 0,
+        baseReward: 'none',
+        finalReward: 'none',
+        rewardReason: 'support_only',
+      })),
+  ];
 
   return {
     record,

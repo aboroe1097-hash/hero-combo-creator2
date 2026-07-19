@@ -22,9 +22,11 @@ const {
   buildWeightedContributionRows,
   buildWeightedDutyCounts,
   compareEdenX1ContributionRankingRows,
+  dedupeWeightedRowsByFamily,
   getEdenX1ContributionRankingScore,
   getLatestContributionRecord,
   getWeightedContributionRecordLabel,
+  getWeightedPlayerFamilyKey,
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } = await import('../../js/contribution-weighting.js');
@@ -494,6 +496,165 @@ test('weighted contribution consolidates a player family duty + conduct onto the
     assert.equal(main.pathers, 0);
     assert.equal(main.conductBonus, 0);
   });
+});
+
+test('audited public aliases and service accounts resolve to one reward family', () => {
+  const families = [
+    ['drthunder293', 'drthunder'],
+    ['lisavetka', 'lisaveta'],
+    ['angel1097', 'angel'],
+    ['λngξl1097', 'angel'],
+    ['julirae', 'juli'],
+    ['maximusss', 'maximus'],
+    ['maximusssbanner', 'maximus'],
+    ['qimmortalis', 'qimmortal'],
+  ];
+
+  families.forEach(([accountKey, expectedFamily]) => {
+    assert.equal(getWeightedPlayerFamilyKey(accountKey), expectedFamily);
+  });
+});
+
+test('audited guild tags and public aliases credit conduct to the contribution family', () => {
+  const season = 'season-2026';
+  const model = buildWeightedContributionRows({
+    season,
+    contributionRecords: [
+      {
+        id: 'audited-conduct-aliases',
+        date: '2026-07-18',
+        entries: [
+          { rank: 1, name: 'Lisaveta', contribution: 100000 },
+          { rank: 2, name: 'Obliterated', contribution: 90000 },
+          { rank: 3, name: 'Dr Thunder', contribution: 80000 },
+        ],
+      },
+    ],
+    r5Adjustments: [
+      { season, player: '(Pic)Lisavetka', points: 1, category: 'connected_road' },
+      { season, player: '(Pic)Obliterated', points: 1, category: 'connected_road' },
+      { season, player: 'Obliterated', points: 1, category: 'connected_road' },
+      { season, player: 'Dr Thunder 293', points: 3, category: 'extra_effort' },
+    ],
+  });
+
+  assert.equal(model.rows.find((row) => row.playerName === 'Lisaveta').conductBonus, 1);
+  assert.equal(model.rows.find((row) => row.playerName === 'Obliterated').conductBonus, 2);
+  assert.equal(model.rows.find((row) => row.playerName === 'Dr Thunder').conductBonus, 3);
+});
+
+test('audited duty aliases credit Juli and Maximus contribution accounts', () => {
+  const model = buildWeightedContributionRows({
+    contributionRecords: [
+      {
+        id: 'audited-duty-aliases',
+        date: '2026-07-18',
+        entries: [
+          { rank: 1, name: '**Juli Rae**', contribution: 100000 },
+          { rank: 2, name: 'MaximuSss', contribution: 90000 },
+        ],
+      },
+    ],
+    dutyRecords: [
+      { type: 'banner', entries: [{ name: 'Juli', confirmed: 'Juli' }] },
+      { type: 'banner', entries: [{ name: 'Maximus', confirmed: 'Maximus' }] },
+    ],
+  });
+
+  assert.equal(model.rows.find((row) => row.sourceName === '**Juli Rae**').banners, 1);
+  assert.equal(model.rows.find((row) => row.sourceName === 'MaximuSss').banners, 1);
+});
+
+test('duty workers absent from contribution stay support-only and do not shift ranks', () => {
+  const model = buildWeightedContributionRows({
+    includeSupportOnly: true,
+    contributionRecords: [
+      {
+        id: 'support-only-workers',
+        date: '2026-07-18',
+        entries: [{ rank: 1, name: 'Ranked Player', contribution: 100000 }],
+      },
+    ],
+    dutyRecords: [
+      {
+        type: 'banner',
+        entries: [
+          { name: 'Ezeta.TV', confirmed: 'Ezeta.TV' },
+          { name: '@She selkie', confirmed: '@She selkie' },
+        ],
+      },
+    ],
+  });
+
+  const ranked = model.rows.find((row) => row.playerName === 'Ranked Player');
+  const supportOnly = model.rows.filter((row) => row.supportOnly);
+  assert.equal(ranked.finalRank, 1);
+  assert.equal(supportOnly.length, 2);
+  supportOnly.forEach((row) => {
+    assert.equal(row.currentRank, 0);
+    assert.equal(row.finalRank, 0);
+    assert.equal(row.finalReward, 'none');
+    assert.equal(row.contributionScore, 0);
+    assert.equal(row.banners, 1);
+  });
+});
+
+test('support-only duty names discard a stored trailing quote artifact', () => {
+  const model = buildWeightedContributionRows({
+    includeSupportOnly: true,
+    contributionRecords: [
+      {
+        id: 'support-only-name-cleanup',
+        date: '2026-07-18',
+        entries: [{ rank: 1, name: 'Ranked Player', contribution: 100000 }],
+      },
+    ],
+    dutyRecords: [{ type: 'banner', entries: [{ name: '@Ezeta.TV', confirmed: 'Ezeta.TV",' }] }],
+  });
+
+  const supportOnly = model.rows.find((row) => row.supportOnly);
+  assert.equal(supportOnly.playerName, 'Ezeta.TV');
+  assert.equal(supportOnly.banners, 1);
+});
+
+test('reward row deduplication keeps the best sorted account per family', () => {
+  const rows = [
+    { playerKey: 'sarafino', familyKey: 'sarafino', playerName: 'Sarafino' },
+    { playerKey: 'sarafina', familyKey: 'sarafino', playerName: 'Sarafina' },
+    { playerKey: 'other', familyKey: 'other', playerName: 'Other' },
+  ];
+
+  assert.deepEqual(
+    dedupeWeightedRowsByFamily(rows).map((row) => row.playerName),
+    ['Sarafino', 'Other']
+  );
+  assert.deepEqual(
+    dedupeWeightedRowsByFamily(rows, { reservedFamilyKeys: ['sarafino'] }).map(
+      (row) => row.playerName
+    ),
+    ['Other']
+  );
+});
+
+test('Power House allocation can retain exactly 90 unique unreserved families', () => {
+  const rows = Array.from({ length: 92 }, (_, index) => ({
+    playerKey: `player-${index + 1}`,
+    familyKey: `family-${index + 1}`,
+    playerName: `Player ${index + 1}`,
+  }));
+  rows.splice(25, 0, {
+    playerKey: 'player-10-alt',
+    familyKey: 'family-10',
+    playerName: 'Player 10 Alt',
+  });
+
+  const allocated = dedupeWeightedRowsByFamily(rows, {
+    reservedFamilyKeys: new Set(['family-1', 'family-2']),
+  }).slice(0, 90);
+
+  assert.equal(allocated.length, 90);
+  assert.equal(new Set(allocated.map((row) => row.familyKey)).size, 90);
+  assert.ok(allocated.every((row) => !['family-1', 'family-2'].includes(row.familyKey)));
 });
 
 test('weighted contribution routes RedBull service credit to the main managed account', () => {
