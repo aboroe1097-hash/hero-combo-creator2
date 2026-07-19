@@ -10,6 +10,10 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohTroopCount: 'Count',
   adminBohTroopEnhanced: 'Enhanced',
   adminBohTroopNormal: 'Normal',
+  adminBohTroopEstimateLofty: 'S (Lofty)',
+  adminBohTroopEstimateEnhancedT10: 'Enhanced T10',
+  adminBohTroopEstimateT10: 'Regular T10',
+  adminBohTroopEstimateT9: 'T9',
   adminBohDeleteSignup: 'Delete signup',
   adminBohDeleteSignupHelp:
     'Permanently remove this signup and its review. Epic Showdown preferences are kept.',
