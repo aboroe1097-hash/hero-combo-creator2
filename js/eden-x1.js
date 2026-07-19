@@ -6075,11 +6075,33 @@ function getAnnouncementRows() {
   return rows;
 }
 
+function getAnnouncementRemainingRows() {
+  const selected = createRewardPriorityIdentitySet();
+  getAnnouncementRows()
+    .filter((row) => !row.placeholder)
+    .forEach((row) => addRewardPriorityIdentity(selected, row.playerKey, row.playerName));
+  const rankingMode = authoritativeContributionRankingMode();
+  return currentRows
+    .filter(
+      (row) => Number(row.currentRank) > 0 && !managementVoteCandidateIsReserved(row, selected)
+    )
+    .slice()
+    .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode))
+    .slice(0, 90)
+    .map((row, index) => ({
+      ...row,
+      baseReward: 'power_house',
+      currentReward: 'power_house',
+      finalReward: 'power_house',
+      finalRank: index + 21,
+    }));
+}
+
 function renderAnnouncementTable() {
   const rows = getAnnouncementRows();
   const rewardViewClass = rewardViewAccentClass('announcement');
   return `<div class="dash-weighted-contribution-panel">
-    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card eden-x1-announcement-card${rewardViewClass}">
+    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card eden-x1-announcement-card${rewardViewClass}" data-announcement-export="top20">
       <div class="dash-card-hdr dash-card-hdr-wrap">
         <h2 class="dash-card-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6093,15 +6115,17 @@ function renderAnnouncementTable() {
         </h2>
         <div class="dash-weighted-table-controls">
           <span class="dash-weighted-contribution-meta">${esc(t('edenX1RewardAnnouncementCopy'))}</span>
+          <button class="dash-btn dash-btn-xs" type="button" data-announcement-download="top20" data-html2canvas-ignore="true">${esc(t('downloadCombosBtn'))}</button>
         </div>
       </div>
       <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
         <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-slots-table eden-x1-announcement-table">
           <thead><tr>
             <th>${esc(t('edenX1ThNumber'))}</th>
-            <th>${esc(t('adminContributionMember'))}</th>
-            <th>${esc(t('edenX1RewardSlotGroup'))}</th>
-            <th>${esc(t('edenX1RewardAnnouncementThWhy'))}</th>
+             <th>${esc(t('adminContributionMember'))}</th>
+             <th>${esc(t('edenX1RewardSlotGroup'))}</th>
+             <th>${esc(t('adminContributionReward'))}</th>
+             <th>${esc(t('edenX1RewardAnnouncementThWhy'))}</th>
           </tr></thead>
           <tbody>${rows
             .map((row) => {
@@ -6111,9 +6135,10 @@ function renderAnnouncementTable() {
                 : `<strong>${renderTaggedPlayerName(row)}</strong>`;
               return `<tr class="eden-x1-announcement-row--${row.category}">
                 <td data-label="${esc(t('edenX1ThNumber'))}">${row.rank}</td>
-                <td data-label="${esc(t('adminContributionMember'))}">${name}</td>
-                <td data-label="${esc(t('edenX1RewardSlotGroup'))}"><span class="eden-x1-announcement-chip eden-x1-announcement-chip--${row.category}">${esc(t(meta.labelKey))}</span></td>
-                <td data-label="${esc(t('edenX1RewardAnnouncementThWhy'))}">${esc(t(meta.whyKey))}</td>
+                 <td data-label="${esc(t('adminContributionMember'))}">${name}</td>
+                 <td data-label="${esc(t('edenX1RewardSlotGroup'))}"><span class="eden-x1-announcement-chip eden-x1-announcement-chip--${row.category}">${esc(t(meta.labelKey))}</span></td>
+                 <td data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.rank === 1 ? 'guild_master' : 'core'))}</td>
+                 <td data-label="${esc(t('edenX1RewardAnnouncementThWhy'))}">${esc(t(meta.whyKey))}</td>
               </tr>`;
             })
             .join('')}</tbody>
@@ -6122,6 +6147,86 @@ function renderAnnouncementTable() {
       <p class="eden-x1-announcement-footer"><strong>${esc(t('edenX1RewardAnnouncementCongrats'))}</strong> ${esc(t('edenX1RewardFlowSubtitle'))}</p>
     </div>
   </div>`;
+}
+
+function renderAnnouncementRemainingTable() {
+  const rows = getAnnouncementRemainingRows();
+  const groups = [0, 30, 60].map((start) => rows.slice(start, start + 30));
+  return `<div class="dash-weighted-contribution-panel">
+    <div class="dash-card eden-x1-weighted-card eden-x1-announcement-remaining" data-announcement-export="remaining">
+      <div class="dash-card-hdr dash-card-hdr-wrap">
+        <h2 class="dash-card-title"><span>#21–110 · ${esc(t('adminContributionRewardPowerHouse'))}</span></h2>
+        <button class="dash-btn dash-btn-xs" type="button" data-announcement-download="remaining" data-html2canvas-ignore="true">${esc(t('downloadCombosBtn'))}</button>
+      </div>
+      <div class="eden-x1-announcement-remaining-grid">${groups
+        .map(
+          (group) => `<table class="dash-banner-table eden-x1-announcement-remaining-table">
+            <thead><tr><th>${esc(t('edenX1ThNumber'))}</th><th>${esc(t('adminContributionMember'))}</th></tr></thead>
+            <tbody>${group
+              .map(
+                (row) =>
+                  `<tr><td>${row.finalRank}</td><td><strong>${renderTaggedPlayerName(row)}</strong></td></tr>`
+              )
+              .join('')}</tbody>
+          </table>`
+        )
+        .join('')}</div>
+      <p class="eden-x1-announcement-footer"><strong>${esc(t('adminContributionRewardPowerHouse'))}</strong> · #21–110</p>
+    </div>
+  </div>`;
+}
+
+function loadAnnouncementCanvas() {
+  if (window._h2cPromise) return window._h2cPromise;
+  window._h2cPromise = new Promise((resolve, reject) => {
+    if (typeof window.html2canvas === 'function') return resolve(window.html2canvas);
+    const script = document.createElement('script');
+    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+    script.async = true;
+    script.onload = () => resolve(window.html2canvas);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  return window._h2cPromise;
+}
+
+async function downloadAnnouncementImage(target, filename) {
+  const html2canvas = await loadAnnouncementCanvas();
+  const clone = target.cloneNode(true);
+  clone.querySelectorAll('[data-html2canvas-ignore]').forEach((node) => node.remove());
+  clone.classList.add('eden-x1-announcement-export');
+  document.body.appendChild(clone);
+  try {
+    await document.fonts?.ready;
+    const canvas = await html2canvas(clone, {
+      backgroundColor: '#08111f',
+      scale: 2,
+      useCORS: true,
+      windowWidth: 1400,
+    });
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } finally {
+    clone.remove();
+  }
+}
+
+function bindAnnouncementDownloads(host) {
+  host.querySelectorAll('[data-announcement-download]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const kind = button.dataset.announcementDownload;
+      const target = host.querySelector(`[data-announcement-export="${kind}"]`);
+      if (!target) return;
+      button.disabled = true;
+      try {
+        await downloadAnnouncementImage(target, `vts-eden-x1-${kind}.png`);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
 }
 
 function bindManagementVoteRetry(host) {
@@ -6422,7 +6527,8 @@ function renderCurrentTable(renderOptions = {}) {
   if (!rewardFlowReady) return;
   if (currentRewardView === 'announcement') {
     cancelProgressiveWeightedTablePlan('reward');
-    panel.innerHTML = renderAnnouncementTable();
+    panel.innerHTML = `${renderAnnouncementTable()}${renderAnnouncementRemainingTable()}`;
+    bindAnnouncementDownloads(panel);
     renderEdenVoteRail();
     updateRewardFlowControls();
     if (renderOptions.scrollIntoView) {

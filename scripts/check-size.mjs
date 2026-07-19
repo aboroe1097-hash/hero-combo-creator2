@@ -50,7 +50,8 @@ const LIMITS = {
   // without weakening the route, JS, CSS, media, or file-count budgets below.
   // The 14.1.11 applicant flow measures 26,172.1 KiB with shared locale chunks;
   // retain less than 8 KiB while keeping route and media caps unchanged.
-  totalDeployBytes: 26200 * 1024,
+  // The downloadable Top 20 and 21-110 reward cards add one focused Eden bundle feature.
+  totalDeployBytes: 26210 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
