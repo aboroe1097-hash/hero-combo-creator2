@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': 'Mitglieder-PIN eingeben',
   'access.membersOnly': 'NUR FÜR MITGLIEDER',
@@ -396,4 +398,5 @@ export default Object.freeze({
   'signup.teamNameHint':
     'Optional und nur zum Spaß; die Leitung entscheidet den endgültigen Namen.',
   'role.noPreference': 'Keine Präferenz',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

@@ -35,6 +35,7 @@ function validSignup(overrides = {}) {
     fightingTimeIds: ['+8', '+12'],
     preferredRole: 'offensive',
     leadershipInterest: 'no',
+    vts1097Member: 'yes',
     playerNotes: 'Ready.',
     ...overrides,
   };
@@ -150,6 +151,27 @@ test('signup accepts up to six optional teammate names without duplicating the p
         })
       ),
     /no more than six/u
+  );
+});
+
+test('non-VTS applicants require structured contact, state, and join details', () => {
+  const options = { heroNames: [], researchTreeIds: [] };
+  const payload = buildBohSubmissionPayload(
+    validSignup({
+      vts1097Member: 'no',
+      contactNumber: '+1 555 1097',
+      currentState: 'State 999',
+      joinReason: 'Friends invited me to compete with VTS.',
+    }),
+    options
+  );
+  assert.equal(payload.commitment.vts1097Member, false);
+  assert.equal(payload.commitment.contactNumber, '+1 555 1097');
+  assert.equal(payload.commitment.currentState, 'State 999');
+  assert.equal(payload.commitment.joinReason, 'Friends invited me to compete with VTS.');
+  assert.throws(
+    () => buildBohSubmissionPayload(validSignup({ vts1097Member: 'no' }), options),
+    /must provide contact details/u
   );
 });
 

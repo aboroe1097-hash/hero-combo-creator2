@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': 'Введите PIN для участников',
   'access.membersOnly': 'ТОЛЬКО ДЛЯ УЧАСТНИКОВ',
@@ -393,4 +395,5 @@ export default Object.freeze({
   'signup.teamNameHint':
     'Необязательно и для развлечения; окончательное решение принимает руководство.',
   'role.noPreference': 'Без предпочтений',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

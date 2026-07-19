@@ -345,6 +345,10 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohPlayerFeedbackPlaceholder:
     'Explain any correction or exclusion. The player can read this message.',
   adminBohPlayerNotes: 'Player notes',
+  adminBohVtsMember: 'Plays in VTS 1097',
+  adminBohContactNumber: 'Viber / WhatsApp',
+  adminBohCurrentState: 'Current state',
+  adminBohJoinReason: 'Why VTS',
   adminBohReadySpeedHeroes: 'Ready speed heroes',
   adminBohRolePreferences: 'Role preferences',
   adminBohRemoveFromSeat: 'Remove from seat',

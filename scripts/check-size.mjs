@@ -30,14 +30,16 @@ const LIMITS = {
   // six-team planner, persistence model, and complete player/Admin locale
   // packs. Velo b0.2, the localized Specialization node inspector, optional
   // All-Star troop OCR review, and the complete 718-node public planner corpus
-  // measure 8104.1 KiB; retain less than 6 KiB of aggregate headroom.
-  totalJsBytes: 8110 * 1024,
+  // measure 8117.7 KiB after the All-Star participation intake and shared
+  // applicant locale additions; retain less than 7.5 KiB of aggregate headroom.
+  totalJsBytes: 8125 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
   // Hall of Honor and the mobile All-Star intake lift it to 1303.7 KiB after
-  // production minification; keep less than 6.5 KiB of aggregate headroom.
-  totalCssBytes: 1310 * 1024,
+  // production minification. The mobile signup fixes and season actions measure
+  // 1310.6 KiB; retain less than 1.5 KiB of aggregate headroom.
+  totalCssBytes: 1312 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -46,13 +48,16 @@ const LIMITS = {
   // The complete public Specialization corpus and shared 33-emblem sprite leave
   // single-digit KiB headroom. Allow deterministic CI build metadata to vary
   // without weakening the route, JS, CSS, media, or file-count budgets below.
-  totalDeployBytes: 26160 * 1024,
+  // The 14.1.11 applicant flow measures 26,172.1 KiB with shared locale chunks;
+  // retain less than 8 KiB while keeping route and media caps unchanged.
+  totalDeployBytes: 26180 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
-  // files; retain a one-file guard.
-  deployFileCount: 583,
+  // files. Shared player/admin applicant copy brings the audited artifact to
+  // 585 files; retain a one-file guard.
+  deployFileCount: 586,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife

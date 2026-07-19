@@ -1,3 +1,5 @@
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   'access.enterPin': '멤버 PIN 입력',
   'access.membersOnly': '멤버 전용',
@@ -373,4 +375,5 @@ export default Object.freeze({
   'signup.teamNameDescription': '가입하고 싶은 동물 팀 이름을 모두 선택하세요.',
   'signup.teamNameHint': '선택 사항이며 재미를 위한 항목입니다. 최종 이름은 운영진이 결정합니다.',
   'role.noPreference': '선호 없음',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });

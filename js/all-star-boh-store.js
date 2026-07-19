@@ -573,6 +573,18 @@ function normalizeCommitment(input = {}, options = {}) {
   if (teamNamePreferences.some((value) => !ALL_STAR_BOH_TEAM_NAME_PREFERENCES.includes(value))) {
     throw new AllStarBohValidationError('Team name preferences contain an unsupported value.');
   }
+  const vts1097Member = optionalBoolean(source.vts1097Member);
+  const contactNumber = boundedString(source.contactNumber, 160, 'Contact number');
+  const currentState = boundedString(source.currentState, 160, 'Current state');
+  const joinReason = boundedString(source.joinReason, 1000, 'VTS join reason');
+  if (options.requireVtsMembership === true && vts1097Member === null) {
+    throw new AllStarBohValidationError('VTS 1097 membership selection is required.');
+  }
+  if (vts1097Member === false && (!contactNumber || !currentState || !joinReason)) {
+    throw new AllStarBohValidationError(
+      'Non-VTS players must provide contact details, current state, and a join reason.'
+    );
+  }
   return {
     availability: normalizedEnum(source.availability, AVAILABILITY_VALUES, '', 'Availability'),
     preferredRole: normalizedEnum(
@@ -588,6 +600,10 @@ function normalizeCommitment(input = {}, options = {}) {
       'Secondary role'
     ),
     canHelpLead: optionalBoolean(source.canHelpLead),
+    vts1097Member,
+    contactNumber: vts1097Member === true ? '' : contactNumber,
+    currentState: vts1097Member === true ? '' : currentState,
+    joinReason: vts1097Member === true ? '' : joinReason,
     fightingTimeIds: normalizeFightingTimeIds(source.fightingTimeIds, {
       allowLegacyEmpty: options.requireFightingTimeIds !== true,
     }),
@@ -1885,6 +1901,7 @@ export function createAllStarBohPlayerStore(options = {}) {
         normalizeAllStarBohSubmission(value, {
           ...submissionPlanningOptions,
           requireFightingTimeIds: true,
+          requireVtsMembership: true,
         }),
       maxBytes: MAX_SUBMISSION_BYTES,
       label: 'Player submission',

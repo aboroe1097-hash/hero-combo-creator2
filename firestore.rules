@@ -1729,7 +1729,8 @@ service cloud.firestore {
       && request.resource.data.commitment.keys().hasOnly([
         'availability', 'preferredRole', 'secondaryRole', 'canHelpLead',
         'unavailableTimes', 'canTeleport', 'canUseVoice', 'planCommitment',
-        'notes', 'fightingTimeIds', 'teamNamePreferences'
+        'notes', 'fightingTimeIds', 'teamNamePreferences',
+        'vts1097Member', 'contactNumber', 'currentState', 'joinReason'
       ])
       && request.resource.data.commitment.availability in ['all', 'most', 'backup', 'unavailable', '']
       && request.resource.data.commitment.preferredRole in [
@@ -1739,6 +1740,21 @@ service cloud.firestore {
       && request.resource.data.commitment.fightingTimeIds.size() == 2
       && request.resource.data.commitment.teamNamePreferences is list
       && request.resource.data.commitment.teamNamePreferences.size() <= 6
+      && request.resource.data.commitment.vts1097Member is bool
+      && request.resource.data.commitment.contactNumber is string
+      && request.resource.data.commitment.contactNumber.size() <= 160
+      && request.resource.data.commitment.currentState is string
+      && request.resource.data.commitment.currentState.size() <= 160
+      && request.resource.data.commitment.joinReason is string
+      && request.resource.data.commitment.joinReason.size() <= 1000
+      && (
+        request.resource.data.commitment.vts1097Member == true
+        || (
+          request.resource.data.commitment.contactNumber.size() > 0
+          && request.resource.data.commitment.currentState.size() > 0
+          && request.resource.data.commitment.joinReason.size() > 0
+        )
+      )
       && request.resource.data.commitment.notes is string
       && request.resource.data.commitment.notes.size() <= 2000
       && request.resource.data.ocr is map

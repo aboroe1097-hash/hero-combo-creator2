@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   adminBohAccountSubmission: 'تسجيل اللاعب',
   adminBohAction: 'الإجراء',
@@ -397,4 +399,5 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'جميع أنواع القوات',
   adminBohTroopInventory: 'قائمة القوات من OCR',
   adminBohTroopRows: 'صفوف تمت مراجعتها',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

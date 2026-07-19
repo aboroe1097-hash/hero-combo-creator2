@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   adminBohAccountSubmission: 'INSCRIPTION DU JOUEUR',
   adminBohAction: 'Action',
@@ -401,4 +403,5 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Tous les types de troupes',
   adminBohTroopInventory: 'Inventaire des troupes OCR',
   adminBohTroopRows: 'lignes vérifiées',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   adminBohAccountSubmission: '플레이어 신청서',
   adminBohAction: '행동',
@@ -398,4 +400,5 @@ export default Object.freeze({
   adminBohHeroGroupAll: '모든 병종',
   adminBohTroopInventory: 'OCR 병력 목록',
   adminBohTroopRows: '검토된 행',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

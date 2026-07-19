@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.10";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.11";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.11",
+    "date": "2026-07-19",
+    "highlights": [
+      "Defaulted hero and research catalog filters to X1 and added a one-tap \"Max all\" action for each season's research group.",
+      "Saved the primary All-Star signup before optional Epic Showdown preferences so a rejected signup can no longer leave an Epic-only player record, and visibly marked required Unit Specialty Power.",
+      "Added an opening All-Star participation choice, an Epic-only path, automatic in-game-name sharing with Epic Showdown, and required contact/state/reason details for applicants outside VTS 1097.",
+      "Updated the owner-scoped Firestore signup contract for the new VTS applicant fields and surfaced them in the leadership review panel.",
+      "Fixed the mobile All-Star signup so the optional Troop OCR buttons remain inside their own section instead of floating over manual entry fields.",
+      "Separated the three troop portraits in the “All T10 troop types” selector so each icon remains individually visible on phones."
+    ]
+  },
   {
     "version": "14.1.10",
     "date": "2026-07-19",
@@ -86,18 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added grounded VTS guide knowledge entries for the All-Star BoH member flow, Specialization Towers structure, skin-tier economy, and the Fordogreen X1 Strife approach, plus community-shorthand aliases (dm, ac, boh, spec, cop, f2p, p2w) in guide retrieval.",
       "Added an optional `activeTab` breadcrumb to the chat request contract: the Worker schema accepts it and injects an ACTIVE APP TAB section into the model instruction; the client keeps it disabled until the Worker deploy that accepts the field is live.",
       "Added the verified Cavalry columns I–III evidence overlay with 17 source screenshots, 23 exact icon crops, provenance metadata, and stable research/node records; unknown medal costs, learning order, prerequisites, and ambiguous icon mappings remain explicitly unknown."
-    ]
-  },
-  {
-    "version": "14.1.1",
-    "date": "2026-07-18",
-    "highlights": [
-      "Removed public navigation to the legacy standalone Specialization Towers page so the integrated `#specialization` tab is the only advertised destination.",
-      "Cleared the integrated Specialization loading placeholder after the tool mounts successfully.",
-      "Fixed integrated Specialization node selection, Complete Learning, Reset Learning, and recorded-medal changes persisting the model's returned state.",
-      "Added a localized quick-MAX action to every Specialization overview badge so a learning can be completed without opening its node graph.",
-      "Localized the Community Data contributor, medal-cost, reviewer, and completion-count fields across all eleven supported languages.",
-      "Reworked Community Data into compact game-node records with separate contributor and reviewer medal values, preserving earlier saved submissions while supporting partial research updates."
     ]
   }
 ].map((release) =>

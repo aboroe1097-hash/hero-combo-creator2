@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   adminBohAccountSubmission: 'PENDAFTARAN PEMAIN',
   adminBohAction: 'Tindakan',
@@ -400,4 +402,5 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Semua jenis pasukan',
   adminBohTroopInventory: 'Inventaris pasukan OCR',
   adminBohTroopRows: 'baris ditinjau',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

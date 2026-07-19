@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
+
 export default Object.freeze({
   adminBohAccountSubmission: '玩家报名资料',
   adminBohAction: '行动',
@@ -387,4 +389,5 @@ export default Object.freeze({
   adminBohHeroGroupAll: '全部兵种',
   adminBohTroopInventory: 'OCR 部队清单',
   adminBohTroopRows: '条已检查记录',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

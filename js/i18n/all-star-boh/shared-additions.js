@@ -1,0 +1,16 @@
+export const ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
+  'common.no': 'No',
+  'common.yes': 'Yes',
+  'showdown.submitOnly': 'Save Epic Showdown choices',
+  'signup.contactNumber': 'Viber or WhatsApp number',
+  'signup.currentState': 'Current state',
+  'signup.joinReason': 'Why do you want to play with VTS?',
+  'signup.participationAllStar': 'Yes, join All-Star BoH',
+  'signup.participationAllStarHint': 'Complete the signup and Epic Showdown choices.',
+  'signup.participationEpicOnly': 'No, Epic Showdown only',
+  'signup.participationEpicOnlyHint': 'Skip the All-Star intake and choose your Epic availability.',
+  'signup.participationLegend': 'Do you want to play All-Star BoH?',
+  'signup.researchMaxAll': 'Max all',
+  'signup.researchMaxAllLabel': 'Set all {season} research to 100%',
+  'signup.vtsMemberLegend': 'Do you currently play in VTS 1097?',
+});
