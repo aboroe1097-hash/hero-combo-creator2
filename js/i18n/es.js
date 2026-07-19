@@ -1344,6 +1344,15 @@ const es = {
     'Tres recompensas por voto anónimo del gremio por trabajo en equipo y fiabilidad destacados.',
   edenX1RewardTeamVoteTag: 'Vota aquí por los mejores jugadores de equipo',
   edenX1RewardCardAction: 'Ver tabla',
+  edenX1RewardAnnouncementTitle: 'Top 20 final',
+  edenX1RewardAnnouncementCopy:
+    'La lista combinada de destinatarios de las cuatro categorías de recompensa.',
+  edenX1RewardAnnouncementThWhy: 'Por qué fue elegido',
+  edenX1RewardWhySupport: 'Mejor puntuación de apoyo ponderada elegible',
+  edenX1RewardWhyContribution: 'Mejor clasificación de contribución base elegible',
+  edenX1RewardWhyManagement: 'Ganador del top 3 en la votación de gestión',
+  edenX1RewardWhyTeam: 'Voto del gremio por trabajo en equipo y fiabilidad',
+  edenX1RewardAnnouncementCongrats: '¡Felicidades, Top 20!',
   edenX1RewardViewAria: 'Mostrar plazas de recompensa de {title}',
   edenX1RewardContributionMeta:
     'Top 10 solo por contribución actual + ex-gremio, después de apoyo.',

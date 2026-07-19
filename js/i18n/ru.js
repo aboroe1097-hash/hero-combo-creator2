@@ -1335,6 +1335,15 @@ const ru = {
     'Три награды по анонимному голосованию гильдии за командную работу и надежность.',
   edenX1RewardTeamVoteTag: 'Голосуйте здесь за лучших командных игроков',
   edenX1RewardCardAction: 'Открыть таблицу',
+  edenX1RewardAnnouncementTitle: 'Финальный Топ-20',
+  edenX1RewardAnnouncementCopy:
+    'Объединённый список получателей по всем четырём категориям наград.',
+  edenX1RewardAnnouncementThWhy: 'Причина выбора',
+  edenX1RewardWhySupport: 'Лучший подходящий взвешенный балл поддержки',
+  edenX1RewardWhyContribution: 'Лучший подходящий базовый рейтинг вклада',
+  edenX1RewardWhyManagement: 'Победитель топ-3 голосования руководства',
+  edenX1RewardWhyTeam: 'Голос гильдии за командную работу и надёжность',
+  edenX1RewardAnnouncementCongrats: 'Поздравляем, Топ-20!',
   edenX1RewardViewAria: 'Показать места наград для {title}',
   edenX1RewardContributionMeta: 'Первые 10 только по текущему вкладу + экс-гильдии, после помощи.',
   edenX1RewardSupportMeta:

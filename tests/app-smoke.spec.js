@@ -3694,6 +3694,27 @@ test.describe('app smoke tabs', () => {
     await expect(preLoadSupportCard.locator('.eden-x1-flow-label').first()).toBeVisible();
     await expect(preLoadSupportCard).toHaveCSS('content-visibility', 'visible');
 
+    const announcementCard = page.locator('[data-reward-view="announcement"]');
+    await expect(announcementCard).toBeEnabled();
+    await announcementCard.click();
+    await expect(announcementCard).toHaveAttribute('aria-pressed', 'true');
+    const announcementTable = page.locator('.eden-x1-announcement-table');
+    await expect(announcementTable).toBeVisible();
+    await expect(announcementTable.locator('tbody tr')).toHaveCount(20);
+    await expect(announcementTable.locator('.eden-x1-announcement-chip--support')).toHaveCount(4);
+    await expect(announcementTable.locator('.eden-x1-announcement-chip--contribution')).toHaveCount(
+      10
+    );
+    await expect(announcementTable.locator('.eden-x1-announcement-chip--management')).toHaveCount(
+      3
+    );
+    await expect(announcementTable.locator('.eden-x1-announcement-chip--team')).toHaveCount(3);
+    await expect(page.locator('.eden-x1-announcement-footer')).toContainText(
+      'Congratulations, Top 20!'
+    );
+    await page.locator('[data-reward-view="team"]').click();
+    await expect(preLoadTeamCard).toHaveAttribute('aria-pressed', 'true');
+
     const marquee = page.locator('#edenX1Marquee');
     const top20CutoffStat = marquee
       .locator('.eden-x1-marquee-stat')
@@ -3925,13 +3946,13 @@ test.describe('app smoke tabs', () => {
       'Português',
       'Deutsch',
       'Français',
+      'Hrvatski',
       'Türkçe',
       'Русский',
       'Bahasa Indonesia',
       '中文',
       'العربية',
       '한국어',
-      'Hrvatski',
     ]);
     await page.locator('#languageSelect').selectOption('es');
     await expect(page.locator('.eden-x1-notice strong')).toHaveText('Vista demo - no final.');

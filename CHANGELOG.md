@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.1.15 - 2026-07-19
+
+- Added a Final Top 20 announcement view to the Eden X1 reward flow that combines the four support, contribution, management, and team reward lanes into one shareable recipient table with category chips and placeholder rows until each lane is decided.
+- Aligned the eden-x1 smoke expectation for the language selector with the Croatian option position shipped in 14.1.13.
+
 ## 14.1.14 - 2026-07-19
 
 - Fixed the Croatian language smoke-test contract that blocked #84 deploy verification after the twelfth locale was added.

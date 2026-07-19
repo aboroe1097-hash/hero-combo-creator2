@@ -1373,6 +1373,15 @@ const fr = {
     'Trois récompenses par vote anonyme de la guilde pour le travail d’équipe et la fiabilité remarquables.',
   edenX1RewardTeamVoteTag: 'Votez ici pour les meilleurs joueurs d’équipe',
   edenX1RewardCardAction: 'Voir le tableau',
+  edenX1RewardAnnouncementTitle: 'Top 20 final',
+  edenX1RewardAnnouncementCopy:
+    'La liste combinée des bénéficiaires des quatre catégories de récompense.',
+  edenX1RewardAnnouncementThWhy: 'Raison de la sélection',
+  edenX1RewardWhySupport: 'Meilleur score de soutien pondéré éligible',
+  edenX1RewardWhyContribution: 'Meilleur classement de contribution de base éligible',
+  edenX1RewardWhyManagement: 'Vainqueur du top 3 au vote de la direction',
+  edenX1RewardWhyTeam: 'Vote de la guilde pour l’esprit d’équipe et la fiabilité',
+  edenX1RewardAnnouncementCongrats: 'Félicitations au Top 20 !',
   edenX1RewardViewAria: 'Afficher les places de récompense pour {title}',
   edenX1RewardContributionMeta:
     'Top 10 uniquement par contribution actuelle + ex-guilde, après soutien.',
