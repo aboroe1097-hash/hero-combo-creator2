@@ -54,7 +54,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.1.14';
+const APP_VERSION = '14.1.15';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -2760,6 +2760,7 @@ function rewardViewTitleKey(view) {
       support: 'edenX1RewardSupportTitle',
       management: 'edenX1RewardManagementTitle',
       team: 'edenX1RewardTeamTitle',
+      announcement: 'edenX1RewardAnnouncementTitle',
     }[view] || 'edenX1WeightedTitle'
   );
 }
@@ -2771,6 +2772,7 @@ function rewardViewMetaKey(view) {
       support: 'edenX1RewardSupportMeta',
       management: 'edenX1RewardManagementMeta',
       team: 'edenX1RewardTeamMeta',
+      announcement: 'edenX1RewardAnnouncementCopy',
     }[view] || ''
   );
 }
@@ -2782,6 +2784,7 @@ function rewardViewAccentClass(view) {
       support: 'support',
       management: 'management',
       team: 'team',
+      announcement: 'announcement',
     }[view] || '';
   return safeView ? ` eden-x1-reward-table--${safeView}` : '';
 }
@@ -6035,6 +6038,92 @@ function renderRewardSlotTable(view) {
   </div>`;
 }
 
+function announcementCategoryMeta(category) {
+  return {
+    support: { labelKey: 'edenX1RewardSupportTitle', whyKey: 'edenX1RewardWhySupport' },
+    contribution: {
+      labelKey: 'edenX1RewardLeaderboardTitle',
+      whyKey: 'edenX1RewardWhyContribution',
+    },
+    management: { labelKey: 'edenX1RewardManagementTitle', whyKey: 'edenX1RewardWhyManagement' },
+    team: { labelKey: 'edenX1RewardTeamTitle', whyKey: 'edenX1RewardWhyTeam' },
+  }[category];
+}
+
+function getAnnouncementRows() {
+  const rows = [];
+  const push = (category, quota, entries) => {
+    for (let index = 0; index < quota; index += 1) {
+      const entry = entries[index] || null;
+      rows.push({
+        rank: rows.length + 1,
+        category,
+        playerName: entry?.playerName || '',
+        playerKey: entry?.playerKey || '',
+        placeholder: !entry,
+      });
+    }
+  };
+  push('support', 4, getSupportRewardRows());
+  push(
+    'contribution',
+    10,
+    getContributionRewardRows().filter((row) => Number(row.edenX1RewardSlot) > 0)
+  );
+  push('management', 3, getEligibleManagementVoteWinners());
+  push('team', 3, getEligibleTeamVoteWinners());
+  return rows;
+}
+
+function renderAnnouncementTable() {
+  const rows = getAnnouncementRows();
+  const rewardViewClass = rewardViewAccentClass('announcement');
+  return `<div class="dash-weighted-contribution-panel">
+    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card eden-x1-announcement-card${rewardViewClass}">
+      <div class="dash-card-hdr dash-card-hdr-wrap">
+        <h2 class="dash-card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 21h8" />
+            <path d="M12 17v4" />
+            <path d="M17 4H7v5a5 5 0 0 0 10 0Z" />
+            <path d="M7 6H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4" />
+            <path d="M17 6h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4" />
+          </svg>
+          <span>${esc(t('edenX1RewardAnnouncementTitle'))}</span>
+        </h2>
+        <div class="dash-weighted-table-controls">
+          <span class="dash-weighted-contribution-meta">${esc(t('edenX1RewardAnnouncementCopy'))}</span>
+        </div>
+      </div>
+      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
+        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-slots-table eden-x1-announcement-table">
+          <thead><tr>
+            <th>${esc(t('edenX1ThNumber'))}</th>
+            <th>${esc(t('adminContributionMember'))}</th>
+            <th>${esc(t('edenX1RewardSlotGroup'))}</th>
+            <th>${esc(t('edenX1RewardAnnouncementThWhy'))}</th>
+          </tr></thead>
+          <tbody>${rows
+            .map((row) => {
+              const meta = announcementCategoryMeta(row.category);
+              const name = row.placeholder
+                ? esc(t('edenX1Tba'))
+                : `<strong>${renderTaggedPlayerName(row)}</strong>`;
+              return `<tr class="eden-x1-announcement-row--${row.category}">
+                <td data-label="${esc(t('edenX1ThNumber'))}">${row.rank}</td>
+                <td data-label="${esc(t('adminContributionMember'))}">${name}</td>
+                <td data-label="${esc(t('edenX1RewardSlotGroup'))}"><span class="eden-x1-announcement-chip eden-x1-announcement-chip--${row.category}">${esc(t(meta.labelKey))}</span></td>
+                <td data-label="${esc(t('edenX1RewardAnnouncementThWhy'))}">${esc(t(meta.whyKey))}</td>
+              </tr>`;
+            })
+            .join('')}</tbody>
+        </table>
+      </div>
+      <p class="eden-x1-announcement-footer"><strong>${esc(t('edenX1RewardAnnouncementCongrats'))}</strong> ${esc(t('edenX1RewardFlowSubtitle'))}</p>
+    </div>
+  </div>`;
+}
+
 function bindManagementVoteRetry(host) {
   host?.querySelector('#edenX1ManagementVotesRetry')?.addEventListener('click', (event) => {
     const button = event.currentTarget;
@@ -6331,6 +6420,16 @@ function renderCurrentTable(renderOptions = {}) {
   const panel = $('dashWeightedContributionPanel');
   if (!panel) return;
   if (!rewardFlowReady) return;
+  if (currentRewardView === 'announcement') {
+    cancelProgressiveWeightedTablePlan('reward');
+    panel.innerHTML = renderAnnouncementTable();
+    renderEdenVoteRail();
+    updateRewardFlowControls();
+    if (renderOptions.scrollIntoView) {
+      queueRewardTableScroll();
+    }
+    return;
+  }
   if (currentRewardView === 'management' || currentRewardView === 'team') {
     cancelProgressiveWeightedTablePlan('reward');
     panel.innerHTML = renderRewardSlotTable(currentRewardView);

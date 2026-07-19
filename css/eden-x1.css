@@ -899,6 +899,58 @@ body.eden-x1-page {
   --eden-flow-rgb-2: 45, 212, 191;
 }
 
+.eden-x1-page [data-reward-view='announcement'],
+.eden-x1-page .eden-x1-reward-table--announcement,
+#ocrDashboardRoot .eden-x1-reward-table--announcement {
+  --eden-flow-rgb: 244, 114, 182;
+  --eden-flow-rgb-2: 250, 204, 21;
+}
+
+.eden-x1-reward-flow .eden-x1-flow-card--announcement {
+  grid-column: 1 / -1;
+}
+
+.eden-x1-announcement-chip {
+  display: inline-flex;
+  padding: 0.14rem 0.58rem;
+  border: 1px solid rgba(var(--eden-chip-rgb, 148, 163, 184), 0.55);
+  border-radius: 999px;
+  background: rgba(var(--eden-chip-rgb, 148, 163, 184), 0.14);
+  color: rgb(var(--eden-chip-rgb, 148, 163, 184));
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.eden-x1-announcement-row--support {
+  --eden-chip-rgb: 94, 234, 212;
+}
+
+.eden-x1-announcement-row--contribution {
+  --eden-chip-rgb: 250, 204, 21;
+}
+
+.eden-x1-announcement-row--management {
+  --eden-chip-rgb: 167, 139, 250;
+}
+
+.eden-x1-announcement-row--team {
+  --eden-chip-rgb: 96, 165, 250;
+}
+
+.eden-x1-announcement-table tbody td:first-child {
+  box-shadow: inset 3px 0 0 rgba(var(--eden-chip-rgb), 0.85);
+}
+
+.eden-x1-announcement-footer {
+  margin: 0.9rem 0 0;
+  padding: 0.72rem 0.9rem;
+  border: 1px solid rgba(var(--eden-flow-rgb, 244, 114, 182), 0.32);
+  border-radius: 12px;
+  background: rgba(var(--eden-flow-rgb, 244, 114, 182), 0.08);
+  font-size: 0.82rem;
+}
+
 .eden-x1-page .eden-x1-flow-card {
   border-color: rgba(var(--eden-flow-rgb), 0.38);
   background:

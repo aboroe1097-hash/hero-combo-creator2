@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.14";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.15";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.15",
+    "date": "2026-07-19",
+    "highlights": [
+      "Added a Final Top 20 announcement view to the Eden X1 reward flow that combines the four support, contribution, management, and team reward lanes into one shareable recipient table with category chips and placeholder rows until each lane is decided.",
+      "Aligned the eden-x1 smoke expectation for the language selector with the Croatian option position shipped in 14.1.13."
+    ]
+  },
   {
     "version": "14.1.14",
     "date": "2026-07-19",
@@ -80,17 +88,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-07-19",
     "highlights": [
       "Reduced All-Star Firestore rule evaluation for short signup lists while preserving validation through the full 60-item troop roster, preventing valid submissions from exceeding the rules expression budget."
-    ]
-  },
-  {
-    "version": "14.1.5",
-    "date": "2026-07-18",
-    "highlights": [
-      "Completed the Specialization Towers public planner corpus with all 32 researches, 718 attribute nodes, 384 milestone buffs, 17 passive skills, and 24 troop-specific Legion Skills while keeping unverified prerequisite edges and node medal costs explicitly unknown.",
-      "Added all 33 public research and Legion Skill emblems as locally embedded, size-budgeted WebP assets with source URLs, original hashes, optimized hashes, dimensions, and planner JavaScript provenance.",
-      "Exposed the full 24-node Enhanced Tactics IV catalog in both Specialization renderers, added the public artwork to overview/detail/Legion Skill surfaces, and expanded automated coverage for the complete catalog and asset integrity.",
-      "Rebuilt the README's Specialization documentation and replaced outdated gallery captures with current desktop and mobile planner screenshots.",
-      "Kept the All-Star signup form and member hub intact when Firestore rejects a save, showing the write error inline instead of incorrectly treating every permission denial as an expired PIN grant."
     ]
   }
 ].map((release) =>
