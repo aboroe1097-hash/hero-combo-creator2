@@ -361,10 +361,9 @@ export default Object.freeze({
   'signup.fightingTimesLegend': 'Escolha exatamente dois horários de combate All-Star',
   'signup.fightingTimesHint':
     'O jogo exige duas opções de horário preferidas. Os horários finais são decididos pelo voto da maioria de todas as equipes participantes.',
-  'signup.fightingTime8': 'Horário da partida +8',
   'signup.fightingTime12': 'Horário da partida +12',
   'signup.fightingTime14': 'Horário da partida +14',
-  'signup.fightingTime20': 'Horário da partida +20',
+  'signup.fightingTime16': 'Horário da partida +16',
   'signup.fightingTimesCount': '{count} / 2 selecionados',
   'signup.fightingTimesRequired': 'Escolha exatamente dois horários de combate All-Star.',
   'signup.fightingTimesLimit':
@@ -396,6 +395,26 @@ export default Object.freeze({
   'signup.teamNameHint': 'Opcional e só por diversão; a liderança decide o nome final.',
   'role.noPreference': 'Sem preferência',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'common.yes': 'Sim',
+  'common.no': 'Não',
+  'signup.participationLegend': 'Você quer jogar o All-Star BoH?',
+  'signup.participationAllStar': 'Sim, participar do All-Star BoH',
+  'signup.participationAllStarHint': 'Preencha a inscrição e as opções do Epic Showdown.',
+  'signup.participationEpicOnly': 'Não, apenas Epic Showdown',
+  'signup.participationEpicOnlyHint':
+    'Pule os dados do All-Star e escolha sua disponibilidade para o Epic.',
+  'signup.vtsMemberLegend': 'Você joga atualmente na VTS 1097?',
+  'signup.contactNumber': 'Número do Viber ou WhatsApp',
+  'signup.currentState': 'Estado atual',
+  'signup.joinReason': 'Por que você quer jogar com a VTS?',
+  'signup.troopEstimateTitle': 'Estimativa de tropas',
+  'signup.troopEstimateDescription':
+    'Informe uma estimativa opcional em milhões para cada categoria.',
+  'signup.troopEstimateMillionsHint': 'Exemplo: se você tem 7.000.000 de tropas, digite apenas 7.',
+  'signup.troopEstimateLofty': 'Tropas S (Lofty) T10',
+  'signup.troopEstimateEnhancedT10': 'Tropas T10 aprimoradas',
+  'signup.troopEstimateT10': 'Tropas T10',
+  'signup.troopEstimateT9': 'Tropas T9',
   'signup.permissionDeniedError':
     'Não foi possível salvar sua inscrição — seu acesso de membro pode ter expirado. Desbloqueie novamente com o PIN e reenvie. Se continuar falhando, fale com a liderança.',
 });

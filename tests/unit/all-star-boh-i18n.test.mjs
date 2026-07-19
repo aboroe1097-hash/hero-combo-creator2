@@ -107,7 +107,7 @@ test('canonical English covers every current All-Star BoH template key', async (
   const html = await readFile(templateUrl, 'utf8');
   const templateKeys = [...new Set(extractTemplateKeys(html))].sort();
 
-  assert.equal(templateKeys.length, 280);
+  assert.equal(templateKeys.length, 286);
   assert.deepEqual(
     templateKeys.filter((key) => !Object.hasOwn(ALL_STAR_BOH_EN, key)),
     [],
@@ -140,7 +140,7 @@ test('canonical English exactly covers template and runtime translator contracts
   );
   assert.equal(runtimeKeys.length, 115);
   assert.equal(runtimeOnlyKeys.length, 79);
-  assert.equal(expectedKeys.length, 359);
+  assert.equal(expectedKeys.length, 365);
   assert.deepEqual(
     Object.keys(ALL_STAR_BOH_EN).sort(),
     expectedKeys,

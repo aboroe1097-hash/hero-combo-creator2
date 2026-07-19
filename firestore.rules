@@ -809,7 +809,7 @@ service cloud.firestore {
       return values is list
         && values.size() == 2
         && values.toSet().size() == values.size()
-        && values.toSet().hasOnly(['+8', '+12', '+14', '+20']);
+        && values.toSet().hasOnly(['+12', '+14', '+16']);
     }
 
     function validAllStarBohTeamNamePreferences(values) {

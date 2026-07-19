@@ -101,6 +101,27 @@ test('signup normalization preserves Unicode names, accepts localized digits, an
   assert.doesNotMatch(JSON.stringify(signup), /must-not-survive|secret/);
 });
 
+test('signup normalization preserves optional aggregate troop estimates in troopRoster', () => {
+  const signup = normalizeBohSignup({
+    gameName: 'Troop Estimator',
+    stats: {
+      troopRoster: [
+        'estimate|lofty|7000000',
+        'estimate|enhanced-t10|1500000',
+        'estimate|t10|2000000',
+        'estimate|t9|3000000',
+      ],
+    },
+  });
+
+  assert.deepEqual(signup.stats.troopRoster, [
+    'estimate|lofty|7000000',
+    'estimate|enhanced-t10|1500000',
+    'estimate|t10|2000000',
+    'estimate|t9|3000000',
+  ]);
+});
+
 test('signup normalization carries the form locale and commitment fields canonically', () => {
   const signup = normalizeBohSignup({
     playerId: 'member-1097',
@@ -334,7 +355,7 @@ test('planning signals use canonical catalogs without changing readiness, scorin
     },
     commitment: {
       preferredRole: '',
-      fightingTimeIds: ['+20', '+12'],
+      fightingTimeIds: ['+16', '+12'],
     },
   };
   const planningOptions = { heroNames, researchTreeIds, requireFightingTimeIds: true };
@@ -346,8 +367,8 @@ test('planning signals use canonical catalogs without changing readiness, scorin
   assert.deepEqual(Object.keys(signup.stats.researchProgressPct), ['development', 'combat']);
   assert.equal(signup.commitment.preferredRole, '');
   assert.deepEqual(signup.rolePreferences, []);
-  assert.deepEqual(signup.commitment.fightingTimeIds, ['+12', '+20']);
-  assert.deepEqual(BOH_FIGHTING_TIME_IDS, ['+8', '+12', '+14', '+20']);
+  assert.deepEqual(signup.commitment.fightingTimeIds, ['+12', '+16']);
+  assert.deepEqual(BOH_FIGHTING_TIME_IDS, ['+12', '+14', '+16']);
 
   const baseline = structuredClone(raw);
   delete baseline.stats.usableHeroNames;
@@ -362,7 +383,7 @@ test('planning signals use canonical catalogs without changing readiness, scorin
     ...player,
     usableHeroNames: index % 2 ? ['Hero A'] : ['Hero B', 'Hero Z'],
     researchProgressPct: { development: index % 101, combat: 0 },
-    fightingTimeIds: index % 2 ? ['+8', '+14'] : ['+12', '+20'],
+    fightingTimeIds: index % 2 ? ['+12', '+14'] : ['+14', '+16'],
   }));
   const assignments = (result) =>
     result.teams.map((team) => team.players.map((player) => player.playerId));
@@ -418,7 +439,7 @@ test('planning signal validation keeps sparse blanks distinct from zero and new 
       /boh_signup_research_progress_invalid/
     );
   }
-  for (const fightingTimeIds of [[], ['+8'], ['+8', '+8'], ['+8', '+12', '+14']]) {
+  for (const fightingTimeIds of [[], ['+12'], ['+12', '+12'], ['+12', '+14', '+16']]) {
     assert.throws(
       () =>
         normalizeBohSignup(
@@ -429,7 +450,7 @@ test('planning signal validation keeps sparse blanks distinct from zero and new 
     );
   }
   assert.throws(
-    () => normalizeBohSignup({ gameName: 'Bad time', fightingTimeIds: ['+8', '+10'] }),
+    () => normalizeBohSignup({ gameName: 'Bad time', fightingTimeIds: ['+8', '+12'] }),
     /boh_signup_fighting_time_invalid/
   );
 });

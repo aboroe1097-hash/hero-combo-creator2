@@ -3116,9 +3116,9 @@ function submissionDetailEntries(state, submission) {
       arrayOrFallback(stats.readySpeedHeroes),
     ],
     [
-      state.tr('adminBohTroopInventory', 'OCR troop inventory'),
+      state.tr('adminBohTroopInventory', 'Troop estimates'),
       stats.troopRoster?.length
-        ? `${stats.troopRoster.length} ${state.tr('adminBohTroopRows', 'reviewed rows')}`
+        ? `${stats.troopRoster.length} ${state.tr('adminBohTroopRows', 'reported groups')}`
         : state.tr('adminBohNotProvided', 'Not provided'),
     ],
     [state.tr('adminBohTimezone', 'Timezone'), textOrFallback(submission?.timezone)],
@@ -3149,6 +3149,23 @@ function submissionDetailEntries(state, submission) {
 function renderTroopInventory(state, submission) {
   const stats = submission?.confirmedStats || submission?.stats || {};
   const rows = list(stats.troopRoster).flatMap((entry) => {
+    const estimate = /^estimate\|(lofty|enhanced-t10|t10|t9)\|(\d{1,10})$/u.exec(cleanText(entry));
+    if (estimate) {
+      const labels = {
+        lofty: state.tr('adminBohTroopEstimateLofty', 'S (Lofty)'),
+        'enhanced-t10': state.tr('adminBohTroopEstimateEnhancedT10', 'Enhanced T10'),
+        t10: state.tr('adminBohTroopEstimateT10', 'Regular T10'),
+        t9: state.tr('adminBohTroopEstimateT9', 'T9'),
+      };
+      return [
+        {
+          troopType: labels[estimate[1]],
+          tier: '—',
+          enhanced: '—',
+          count: formatNumber(state, Number(estimate[2])),
+        },
+      ];
+    }
     const match =
       /^(footmen|cavalry|archers)\|(SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(normal|enhanced)\|(\d{1,10})$/u.exec(
         cleanText(entry)
@@ -3169,9 +3186,9 @@ function renderTroopInventory(state, submission) {
   if (!rows.length) return '';
   return `<section class="boh-admin-card" aria-labelledby="bohAdminTroopInventoryTitle">
     <header><div><span>${escapeHtml(
-      state.tr('adminBohTroopInventoryKicker', 'REVIEWED TROOP OCR')
+      state.tr('adminBohTroopInventoryKicker', 'REPORTED TROOPS')
     )}</span><h4 id="bohAdminTroopInventoryTitle">${escapeHtml(
-      state.tr('adminBohTroopInventory', 'OCR troop inventory')
+      state.tr('adminBohTroopInventory', 'Troop estimates')
     )}</h4></div></header>
     <div class="boh-admin-table-wrap" tabindex="0">
       <table class="boh-admin-table">

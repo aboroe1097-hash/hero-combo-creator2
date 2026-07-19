@@ -12,7 +12,7 @@ export const BOH_TEAM_SIZE = 12;
 export const BOH_FIELD_SIZE = BOH_TEAM_COUNT * BOH_TEAM_SIZE;
 export const BOH_MAX_PREFERRED_TEAMMATES = 6;
 export const BOH_MAX_USABLE_HERO_NAMES = 78;
-export const BOH_FIGHTING_TIME_IDS = Object.freeze(['+8', '+12', '+14', '+20']);
+export const BOH_FIGHTING_TIME_IDS = Object.freeze(['+12', '+14', '+16']);
 export const BOH_TEAM_NAME_PREFERENCES = Object.freeze([
   'iron-wolves',
   'storm-ravens',
@@ -233,7 +233,7 @@ function normalizeTroopRoster(value) {
     .map((entry) => String(entry || '').trim())
     .filter((entry) => {
       if (
-        !/^(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)\|\d{1,10}$/u.test(
+        !/^(?:(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)|estimate\|(?:lofty|enhanced-t10|t10|t9))\|\d{1,10}$/u.test(
           entry
         )
       ) {

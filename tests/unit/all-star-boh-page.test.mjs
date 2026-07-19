@@ -8,6 +8,7 @@ const cssSource = readFileSync('css/all-star-boh.css', 'utf8');
 const appSource = readFileSync('js/app.js', 'utf8');
 const bootstrapSource = readFileSync('js/all-star-boh-bootstrap.js', 'utf8');
 const controllerSource = readFileSync('js/all-star-boh.js', 'utf8');
+const adminBohSource = readFileSync('js/admin-all-star-boh.js', 'utf8');
 const rulesSource = readFileSync('firestore.rules', 'utf8');
 const stateSource = readFileSync('js/state.js', 'utf8');
 const shellSource = readFileSync('js/shell-v14.js', 'utf8');
@@ -257,10 +258,14 @@ test('signup planning selectors are compact, optional where intended, and keyboa
     tabSource.matchAll(/name="fightingTimeIds" value="([^"]+)"/gu),
     (match) => match[1]
   );
-  assert.deepEqual(fightingTimes, ['+8', '+12', '+14', '+20']);
+  assert.deepEqual(fightingTimes, ['+12', '+14', '+16']);
   assert.match(tabSource, /data-role="fighting-times-count"[^>]*role="status"/u);
   assert.match(tabSource, /data-role="fighting-times-error"[^>]*role="alert"/u);
   assert.match(controllerSource, /Only two fighting times can be selected/u);
+  assert.match(
+    controllerSource,
+    /const FIGHTING_TIME_IDS = Object\.freeze\(\['\+12', '\+14', '\+16'\]\)/u
+  );
 
   const preferredRole = tabSource.match(/<select name="preferredRole"[\s\S]*?<\/select>/u)?.[0];
   assert.ok(preferredRole);
@@ -285,6 +290,26 @@ test('signup planning selectors are compact, optional where intended, and keyboa
     cssSource,
     /@media \(max-width: 620px\)[\s\S]*?\.boh-catalog-filters,[\s\S]*?\.boh-catalog-list\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/u
   );
+});
+
+test('optional troop estimates reuse troopRoster and hydrate for edits and admin review', () => {
+  for (const field of [
+    'troopEstimateLofty',
+    'troopEstimateEnhancedT10',
+    'troopEstimateT10',
+    'troopEstimateT9',
+  ]) {
+    assert.match(tabSource, new RegExp(`name="${field}"`));
+  }
+  assert.match(tabSource, /if you have 7,000,000 troops, enter 7/iu);
+  assert.match(controllerSource, /Math\.round\(millions \* 1_000_000\)/u);
+  assert.match(controllerSource, /`estimate\|\$\{key\}\|\$\{count\}`/u);
+  assert.match(controllerSource, /function troopEstimateTotals\(roster\)/u);
+  assert.match(controllerSource, /updateInput\(form, field, count \?/u);
+  assert.match(controllerSource, /stats\.troopRoster = troopEstimateRoster\(source\)/u);
+  assert.doesNotMatch(rulesSource, /troopEstimate(?:Lofty|EnhancedT10|T10|T9)/u);
+  assert.match(rulesSource, /'troopRoster'/u);
+  assert.match(adminBohSource, /estimate\\\|\(lofty\|enhanced-t10\|t10\|t9\)/u);
 });
 
 test('Epic Showdown planning is included before the single combined signup action', () => {

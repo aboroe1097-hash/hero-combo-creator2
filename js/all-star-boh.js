@@ -28,7 +28,13 @@ const POWER_FIELDS = Object.freeze([...REQUIRED_POWER_FIELDS, ...OPTIONAL_POWER_
 const SECTION_ORDER = Object.freeze(['signup', 'announcement', 'plan']);
 const AVAILABILITY_VALUES = new Set(['all', 'most']);
 const ROLE_VALUES = new Set(['flexible', 'offensive', 'rune', 'top', 'bottom']);
-const FIGHTING_TIME_IDS = Object.freeze(['+8', '+12', '+14', '+20']);
+const FIGHTING_TIME_IDS = Object.freeze(['+12', '+14', '+16']);
+const TROOP_ESTIMATE_FIELDS = Object.freeze([
+  ['lofty', 'troopEstimateLofty'],
+  ['enhanced-t10', 'troopEstimateEnhancedT10'],
+  ['t10', 'troopEstimateT10'],
+  ['t9', 'troopEstimateT9'],
+]);
 const HERO_SEASON_MILESTONES = Object.freeze(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8']);
 const EPIC_LANE_VALUES = Object.freeze(['south', 'center', 'north']);
 const DEFAULT_EPIC_TIME_SLOT_IDS = Object.freeze([
@@ -655,6 +661,40 @@ function formValues(source, name) {
   return value === undefined || value === null || value === '' ? [] : [value];
 }
 
+function troopEstimateRoster(source) {
+  return TROOP_ESTIMATE_FIELDS.flatMap(([key, field]) => {
+    const rawValue = normalizeDigits(formValue(source, field)).trim().replace(',', '.');
+    if (!rawValue) return [];
+    const millions = Number(rawValue);
+    if (!Number.isFinite(millions) || millions < 0 || millions > 9999) {
+      const error = new RangeError('Troop estimates must be between 0 and 9,999 million.');
+      error.field = field;
+      throw error;
+    }
+    const count = Math.round(millions * 1_000_000);
+    return count > 0 ? [`estimate|${key}|${count}`] : [];
+  });
+}
+
+function troopEstimateTotals(roster) {
+  const totals = new Map(TROOP_ESTIMATE_FIELDS.map(([key]) => [key, 0]));
+  for (const value of roster || []) {
+    const aggregate = /^estimate\|(lofty|enhanced-t10|t10|t9)\|(\d{1,10})$/u.exec(String(value));
+    if (aggregate) {
+      totals.set(aggregate[1], Number(aggregate[2]));
+      continue;
+    }
+    const row = parseBohTroopInventoryRow(value);
+    if (!row?.count) continue;
+    if (['S', 'SS', 'SSS'].includes(row.tier)) totals.set('lofty', totals.get('lofty') + row.count);
+    else if (row.tier === 'X' && row.enhanced)
+      totals.set('enhanced-t10', totals.get('enhanced-t10') + row.count);
+    else if (row.tier === 'X') totals.set('t10', totals.get('t10') + row.count);
+    else if (row.tier === 'IX') totals.set('t9', totals.get('t9') + row.count);
+  }
+  return totals;
+}
+
 function normalizeDigits(value) {
   const zeroPoints = [
     0x0660, 0x06f0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0be6, 0x0c66, 0x0ce6, 0x0d66, 0x0e50,
@@ -962,19 +1002,7 @@ export function buildBohSubmissionPayload(source, options = {}) {
     'usableHeroNames'
   );
   stats.researchProgressPct = researchProgressFrom(source, researchTreeIds);
-  stats.troopRoster = formValues(source, 'troopRoster')
-    .map((value) => textValue(value))
-    .filter((value) =>
-      /^(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)\|\d{1,10}$/u.test(
-        value
-      )
-    )
-    .slice(0, 60);
-  if (stats.troopRoster.length && !booleanValue(formValue(source, 'troopOcrConfirmed'))) {
-    const error = new TypeError('Compare every troop row with your screenshots before submitting.');
-    error.field = 'troopOcrConfirmed';
-    throw error;
-  }
+  stats.troopRoster = troopEstimateRoster(source);
 
   const availability = textValue(formValue(source, 'availability')).toLowerCase();
   if (!AVAILABILITY_VALUES.has(availability)) {
@@ -2083,6 +2111,11 @@ function hydrateForm(state) {
   state.troopOcrRows = (submission.stats?.troopRoster || [])
     .map(parseBohTroopInventoryRow)
     .filter(Boolean);
+  const estimateTotals = troopEstimateTotals(submission.stats?.troopRoster || []);
+  for (const [key, field] of TROOP_ESTIMATE_FIELDS) {
+    const count = estimateTotals.get(key) || 0;
+    updateInput(form, field, count ? Number((count / 1_000_000).toFixed(3)) : '');
+  }
   const troopConfirmed = query(state.root, '[data-role="troop-ocr-confirmed"]');
   if (troopConfirmed) troopConfirmed.checked = state.troopOcrRows.length > 0;
   updateChecked(form, 'usableHeroNames', submission.stats?.usableHeroNames || []);

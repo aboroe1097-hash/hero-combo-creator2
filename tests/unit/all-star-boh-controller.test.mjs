@@ -32,7 +32,7 @@ function validSignup(overrides = {}) {
     speedHeroes: ['lionheart'],
     rocLevel: '12',
     availability: 'all',
-    fightingTimeIds: ['+8', '+12'],
+    fightingTimeIds: ['+12', '+14'],
     preferredRole: 'offensive',
     leadershipInterest: 'no',
     vts1097Member: 'yes',
@@ -113,6 +113,30 @@ test('OCR submission automatically accepts populated editable values and cannot 
   assert.equal(payload.submittedAtMs, 1234);
 });
 
+test('optional troop estimates serialize million inputs inside the existing troop roster field', () => {
+  const blank = buildBohSubmissionPayload(validSignup(), {
+    heroNames: [],
+    researchTreeIds: [],
+  });
+  assert.deepEqual(blank.stats.troopRoster, []);
+
+  const estimated = buildBohSubmissionPayload(
+    validSignup({
+      troopEstimateLofty: '7',
+      troopEstimateEnhancedT10: '1.5',
+      troopEstimateT10: '',
+      troopEstimateT9: '0',
+    }),
+    { heroNames: [], researchTreeIds: [] }
+  );
+  assert.deepEqual(estimated.stats.troopRoster, [
+    'estimate|lofty|7000000',
+    'estimate|enhanced-t10|1500000',
+  ]);
+  assert.equal(Object.hasOwn(estimated.stats, 'troopEstimateLofty'), false);
+  assert.equal(Object.hasOwn(estimated.stats, 'troopEstimateT10'), false);
+});
+
 test('resubmission preserves verified name history while adding the current game name', () => {
   const payload = buildBohSubmissionPayload(validSignup({ gameName: 'Current Name' }), {
     knownNames: ['Old Name', 'Current Name', ''],
@@ -182,7 +206,7 @@ test('signup keeps planning catalogs sparse and requires exactly two All-Star fi
       'researchProgressPct.tree-a': '0',
       'researchProgressPct.tree-b': '',
       'researchProgressPct.tree-c': '75',
-      fightingTimeIds: ['+20', '+12'],
+      fightingTimeIds: ['+16', '+12'],
       preferredRole: 'flexible',
       secondaryRole: 'rune',
     }),
@@ -191,7 +215,7 @@ test('signup keeps planning catalogs sparse and requires exactly two All-Star fi
 
   assert.deepEqual(payload.stats.usableHeroNames, ['Hero Z', 'Hero B']);
   assert.deepEqual(payload.stats.researchProgressPct, { 'tree-a': 0, 'tree-c': 75 });
-  assert.deepEqual(payload.commitment.fightingTimeIds, ['+12', '+20']);
+  assert.deepEqual(payload.commitment.fightingTimeIds, ['+12', '+16']);
   assert.equal(payload.commitment.preferredRole, 'flexible');
   assert.equal(payload.commitment.secondaryRole, 'rune');
   assert.deepEqual(payload.rolePreferences, ['rune']);
@@ -203,14 +227,14 @@ test('signup keeps planning catalogs sparse and requires exactly two All-Star fi
     requireFightingTimeIds: true,
   });
 
-  for (const fightingTimeIds of [['+8'], ['+8', '+12', '+14']]) {
+  for (const fightingTimeIds of [['+12'], ['+12', '+14', '+16']]) {
     assert.throws(
       () => buildBohSubmissionPayload(validSignup({ fightingTimeIds }), options),
       /exactly two All-Star fighting times/u
     );
   }
   assert.throws(
-    () => buildBohSubmissionPayload(validSignup({ fightingTimeIds: ['+8', '+10'] }), options),
+    () => buildBohSubmissionPayload(validSignup({ fightingTimeIds: ['+8', '+12'] }), options),
     /unavailable option/u
   );
   assert.throws(
