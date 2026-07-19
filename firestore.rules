@@ -488,56 +488,38 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    function validActiveAllStarBohGrant(grant, config, season) {
+      return grant.keys().hasOnly([
+        'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
+      ])
+      && grant.keys().hasAll([
+        'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
+      ])
+      && grant.schemaVersion == 1
+      && grant.uid == request.auth.uid
+      && grant.seasonId == season
+      && grant.issuedAt is timestamp
+      && grant.expiresAt is timestamp
+      && grant.issuedAt <= request.time
+      && grant.issuedAt < grant.expiresAt
+      && grant.expiresAt > request.time
+      && config.activeSeason == season;
+    }
+
     function hasActiveAllStarBohGrant(season) {
+      let grantPath = /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid);
+      let configPath = /databases/$(database)/documents/boh_allstar_config/current;
       return signedIn()
         && (
           isAdmin()
           || (
-            exists(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
+            exists(grantPath)
+            && exists(configPath)
+            && validActiveAllStarBohGrant(
+              get(grantPath).data,
+              get(configPath).data,
+              season
             )
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.keys().hasOnly([
-              'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
-            ])
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.keys().hasAll([
-              'schemaVersion', 'uid', 'seasonId', 'issuedAt', 'expiresAt'
-            ])
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.schemaVersion == 1
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.uid == request.auth.uid
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.seasonId == season
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.issuedAt is timestamp
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.expiresAt is timestamp
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.issuedAt <= request.time
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.issuedAt < get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.expiresAt
-            && get(
-              /databases/$(database)/documents/boh_allstar_member_grants/$(request.auth.uid)
-            ).data.expiresAt > request.time
-            && exists(
-              /databases/$(database)/documents/boh_allstar_config/current
-            )
-            && get(
-              /databases/$(database)/documents/boh_allstar_config/current
-            ).data.activeSeason == season
           )
         );
     }
@@ -1635,154 +1617,161 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid;
     }
 
-    function validAllStarBohSubmission(season, uid) {
-      return request.resource.data.keys().hasOnly([
+    function validAllStarBohSubmissionData(data, stats, commitment, ocr, season, uid) {
+      return data.keys().hasOnly([
         'playerId', 'gameName', 'knownNames', 'locale', 'timezone', 'entryMethod',
         'status', 'stats', 'preferredTeammates', 'rolePreferences',
         'eligibleRoleIds', 'commitment', 'ocr',
         'submittedAtMs', 'seasonId', 'uid', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
-      && request.resource.data.keys().hasAll([
+      && data.keys().hasAll([
         'playerId', 'gameName', 'knownNames', 'locale', 'timezone', 'entryMethod',
         'status', 'stats', 'rolePreferences', 'eligibleRoleIds', 'commitment', 'ocr',
         'submittedAtMs', 'seasonId', 'uid', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
-      && request.resource.data.playerId == uid
-      && request.resource.data.uid == uid
-      && request.resource.data.seasonId == season
-      && request.resource.data.schemaVersion == 1
-      && validAllStarBohText(request.resource.data.gameName, 160)
-      && request.resource.data.gameName.size() > 0
-      && request.resource.data.knownNames is list
-      && request.resource.data.knownNames.size() <= 30
-      && request.resource.data.locale is string
-      && request.resource.data.locale.size() <= 20
-      && request.resource.data.timezone is string
-      && request.resource.data.timezone.size() <= 80
-      && request.resource.data.entryMethod in ['manual', 'ocr']
-      && request.resource.data.status in ['draft', 'submitted', 'withdrawn']
-      && request.resource.data.stats is map
-      && request.resource.data.stats.keys().hasOnly([
+      && data.playerId == uid
+      && data.uid == uid
+      && data.seasonId == season
+      && data.schemaVersion == 1
+      && validAllStarBohText(data.gameName, 160)
+      && data.gameName.size() > 0
+      && data.knownNames is list
+      && data.knownNames.size() <= 30
+      && data.locale is string
+      && data.locale.size() <= 20
+      && data.timezone is string
+      && data.timezone.size() <= 80
+      && data.entryMethod in ['manual', 'ocr']
+      && data.status in ['draft', 'submitted', 'withdrawn']
+      && stats is map
+      && stats.keys().hasOnly([
         'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
         'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
         'level50HeroCount', 'rocLevel', 'usableHeroNames',
         'researchProgressPct', 'troopRoster', 't10TroopTypes',
         'unitSpecialtyPower', 'artifactPower', 'royalTechPower'
       ])
-      && request.resource.data.stats.keys().hasAll([
+      && stats.keys().hasAll([
         'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
         'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
         'level50HeroCount', 'rocLevel', 'unitSpecialtyPower'
       ])
-      && request.resource.data.stats.totalCastlePower is int
-      && request.resource.data.stats.totalCastlePower >= 0
-      && request.resource.data.stats.troopPower is int
-      && request.resource.data.stats.troopPower >= 0
-      && request.resource.data.stats.buildingPower is int
-      && request.resource.data.stats.buildingPower >= 0
-      && request.resource.data.stats.technologyPower is int
-      && request.resource.data.stats.technologyPower >= 0
-      && request.resource.data.stats.heroCombatPower is int
-      && request.resource.data.stats.heroCombatPower >= 0
-      && request.resource.data.stats.dragonPower is int
-      && request.resource.data.stats.dragonPower >= 0
-      && request.resource.data.stats.unitSpecialtyPower is int
-      && request.resource.data.stats.unitSpecialtyPower >= 0
-      && request.resource.data.stats.t9TroopTypes is list
-      && request.resource.data.stats.t9TroopTypes.size() <= 12
-      && request.resource.data.stats.readySpeedHeroes is list
-      && request.resource.data.stats.readySpeedHeroes.size() <= 24
-      && request.resource.data.stats.level50HeroCount is int
-      && request.resource.data.stats.level50HeroCount >= 0
-      && request.resource.data.stats.level50HeroCount <= 500
-      && request.resource.data.stats.rocLevel is int
-      && request.resource.data.stats.rocLevel >= 0
-      && request.resource.data.stats.rocLevel <= 100
-      && (!('t10TroopTypes' in request.resource.data.stats)
-        || (request.resource.data.stats.t10TroopTypes is list
-          && request.resource.data.stats.t10TroopTypes.size() <= 3))
-      && (!('troopRoster' in request.resource.data.stats)
-        || (request.resource.data.stats.troopRoster is list
-          && request.resource.data.stats.troopRoster.size() <= 60))
-      && (!('usableHeroNames' in request.resource.data.stats)
-        || (request.resource.data.stats.usableHeroNames is list
-          && request.resource.data.stats.usableHeroNames.size() <= 78))
-      && (!('researchProgressPct' in request.resource.data.stats)
-        || (request.resource.data.stats.researchProgressPct is map
-          && request.resource.data.stats.researchProgressPct.size() <= 29))
-      && (!('artifactPower' in request.resource.data.stats)
-        || validAllStarBohNullableInt(request.resource.data.stats.artifactPower, 0, 1000000000000000))
-      && (!('royalTechPower' in request.resource.data.stats)
-        || validAllStarBohNullableInt(request.resource.data.stats.royalTechPower, 0, 1000000000000000))
+      && stats.totalCastlePower is int
+      && stats.totalCastlePower >= 0
+      && stats.troopPower is int
+      && stats.troopPower >= 0
+      && stats.buildingPower is int
+      && stats.buildingPower >= 0
+      && stats.technologyPower is int
+      && stats.technologyPower >= 0
+      && stats.heroCombatPower is int
+      && stats.heroCombatPower >= 0
+      && stats.dragonPower is int
+      && stats.dragonPower >= 0
+      && stats.unitSpecialtyPower is int
+      && stats.unitSpecialtyPower >= 0
+      && stats.t9TroopTypes is list
+      && stats.t9TroopTypes.size() <= 12
+      && stats.readySpeedHeroes is list
+      && stats.readySpeedHeroes.size() <= 24
+      && stats.level50HeroCount is int
+      && stats.level50HeroCount >= 0
+      && stats.level50HeroCount <= 500
+      && stats.rocLevel is int
+      && stats.rocLevel >= 0
+      && stats.rocLevel <= 100
+      && (!('t10TroopTypes' in stats)
+        || (stats.t10TroopTypes is list && stats.t10TroopTypes.size() <= 3))
+      && (!('troopRoster' in stats)
+        || (stats.troopRoster is list && stats.troopRoster.size() <= 60))
+      && (!('usableHeroNames' in stats)
+        || (stats.usableHeroNames is list && stats.usableHeroNames.size() <= 78))
+      && (!('researchProgressPct' in stats)
+        || (stats.researchProgressPct is map && stats.researchProgressPct.size() <= 29))
+      && (!('artifactPower' in stats)
+        || validAllStarBohNullableInt(stats.artifactPower, 0, 1000000000000000))
+      && (!('royalTechPower' in stats)
+        || validAllStarBohNullableInt(stats.royalTechPower, 0, 1000000000000000))
       && (
-        !('preferredTeammates' in request.resource.data)
-        || (request.resource.data.preferredTeammates is list
-          && request.resource.data.preferredTeammates.size() <= 6)
+        !('preferredTeammates' in data)
+        || (data.preferredTeammates is list && data.preferredTeammates.size() <= 6)
       )
-      && request.resource.data.rolePreferences is list
-      && request.resource.data.rolePreferences.size() <= 12
-      && request.resource.data.eligibleRoleIds is list
-      && request.resource.data.eligibleRoleIds.size() <= 20
-      && request.resource.data.commitment is map
-      && request.resource.data.commitment.keys().hasOnly([
+      && data.rolePreferences is list
+      && data.rolePreferences.size() <= 12
+      && data.eligibleRoleIds is list
+      && data.eligibleRoleIds.size() <= 20
+      && commitment is map
+      && commitment.keys().hasOnly([
         'availability', 'preferredRole', 'secondaryRole', 'canHelpLead',
         'unavailableTimes', 'canTeleport', 'canUseVoice', 'planCommitment',
         'notes', 'fightingTimeIds', 'teamNamePreferences',
         'vts1097Member', 'contactNumber', 'currentState', 'joinReason'
       ])
-      && request.resource.data.commitment.availability in ['all', 'most', 'backup', 'unavailable', '']
-      && request.resource.data.commitment.preferredRole in [
+      && commitment.availability in ['all', 'most', 'backup', 'unavailable', '']
+      && commitment.preferredRole in [
         'flexible', 'offensive', 'rune', 'top', 'bottom', 'backup', ''
       ]
-      && request.resource.data.commitment.fightingTimeIds is list
-      && request.resource.data.commitment.fightingTimeIds.size() == 2
-      && request.resource.data.commitment.teamNamePreferences is list
-      && request.resource.data.commitment.teamNamePreferences.size() <= 6
-      && request.resource.data.commitment.vts1097Member is bool
-      && request.resource.data.commitment.contactNumber is string
-      && request.resource.data.commitment.contactNumber.size() <= 160
-      && request.resource.data.commitment.currentState is string
-      && request.resource.data.commitment.currentState.size() <= 160
-      && request.resource.data.commitment.joinReason is string
-      && request.resource.data.commitment.joinReason.size() <= 1000
+      && commitment.fightingTimeIds is list
+      && commitment.fightingTimeIds.size() == 2
+      && commitment.teamNamePreferences is list
+      && commitment.teamNamePreferences.size() <= 6
+      && commitment.vts1097Member is bool
+      && commitment.contactNumber is string
+      && commitment.contactNumber.size() <= 160
+      && commitment.currentState is string
+      && commitment.currentState.size() <= 160
+      && commitment.joinReason is string
+      && commitment.joinReason.size() <= 1000
       && (
-        request.resource.data.commitment.vts1097Member == true
+        commitment.vts1097Member == true
         || (
-          request.resource.data.commitment.contactNumber.size() > 0
-          && request.resource.data.commitment.currentState.size() > 0
-          && request.resource.data.commitment.joinReason.size() > 0
+          commitment.contactNumber.size() > 0
+          && commitment.currentState.size() > 0
+          && commitment.joinReason.size() > 0
         )
       )
-      && request.resource.data.commitment.notes is string
-      && request.resource.data.commitment.notes.size() <= 2000
-      && request.resource.data.ocr is map
-      && request.resource.data.ocr.keys().hasOnly([
+      && commitment.notes is string
+      && commitment.notes.size() <= 2000
+      && ocr is map
+      && ocr.keys().hasOnly([
         'used', 'valuesConfirmed', 'confidence', 'warnings', 'fieldConfidence'
       ])
-      && request.resource.data.ocr.used is bool
-      && request.resource.data.ocr.valuesConfirmed is bool
-      && request.resource.data.ocr.warnings is list
-      && request.resource.data.ocr.warnings.size() <= 20
-      && request.resource.data.ocr.fieldConfidence is map
+      && ocr.used is bool
+      && ocr.valuesConfirmed is bool
+      && ocr.warnings is list
+      && ocr.warnings.size() <= 20
+      && ocr.fieldConfidence is map
       && validAllStarBohNullableInt(
-        request.resource.data.submittedAtMs,
+        data.submittedAtMs,
         0,
         9007199254740991
       )
-      && request.resource.data.revision is int
-      && request.resource.data.revision > 0
-      && request.resource.data.createdAt is timestamp
-      && request.resource.data.updatedAt == request.time
-      && request.resource.data.updatedBy == request.auth.uid
+      && data.revision is int
+      && data.revision > 0
+      && data.createdAt is timestamp
+      && data.updatedAt == request.time
+      && data.updatedBy == request.auth.uid
       && (
-        request.resource.data.status != 'submitted'
-        || request.resource.data.entryMethod != 'ocr'
+        data.status != 'submitted'
+        || data.entryMethod != 'ocr'
         || (
-          request.resource.data.ocr.used == true
-          && request.resource.data.ocr.valuesConfirmed == true
+          ocr.used == true
+          && ocr.valuesConfirmed == true
         )
+      );
+    }
+
+    function validAllStarBohSubmission(season, uid) {
+      let data = request.resource.data;
+      return validAllStarBohSubmissionData(
+        data,
+        data.stats,
+        data.commitment,
+        data.ocr,
+        season,
+        uid
       );
     }
 
