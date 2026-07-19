@@ -3716,7 +3716,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('[data-announcement-download="top20"]')).toBeVisible();
     await expect(page.locator('[data-announcement-download="remaining"]')).toBeVisible();
     await expect(page.locator('.eden-x1-announcement-remaining-table')).toHaveCount(3);
-    await expect(page.locator('.eden-x1-announcement-footer')).toContainText(
+    await expect(page.locator('.eden-x1-announcement-footer').first()).toContainText(
       'Congratulations, Top 20!'
     );
     await page.locator('[data-reward-view="team"]').click();
