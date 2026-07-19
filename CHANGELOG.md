@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.1.12 - 2026-07-19
+
+- Reduced All-Star submission security-rule evaluation by caching the active member grant and validating submission submaps through short aliases, preventing valid large signups from exceeding Firestore's 1,000-expression limit.
+
 ## 14.1.11 - 2026-07-19
 
 - Defaulted hero and research catalog filters to X1 and added a one-tap "Max all" action for each season's research group.

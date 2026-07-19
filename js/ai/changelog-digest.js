@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.11";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.12";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.12",
+    "date": "2026-07-19",
+    "highlights": [
+      "Reduced All-Star submission security-rule evaluation by caching the active member grant and validating submission submaps through short aliases, preventing valid large signups from exceeding Firestore's 1,000-expression limit."
+    ]
+  },
   {
     "version": "14.1.11",
     "date": "2026-07-19",
@@ -86,18 +93,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Simplified All-Star planning to full/most attendance, two game-required time preferences with a cross-team majority explanation, translated primary and secondary role selection with an inline role guide, and no backup, unavailable-time, level-50, or generic commitment questions;…",
       "Removed the All-Star access-gate dismissal path so the private signup form can only be revealed after the seasonal member PIN is successfully verified.",
       "Added a localized, mobile-ready All-Star signup-window banner that counts down to opening and then closing, shows the exact local dates, and falls back to a clear schedule-pending state until leadership enters the confirmed ISO timestamps."
-    ]
-  },
-  {
-    "version": "14.1.2",
-    "date": "2026-07-18",
-    "highlights": [
-      "Added four read-only Velo tools so the assistant knows the whole toolkit: `get_toolkit_map` (every tab/page with what it answers and its deep link), `get_whats_new` (recent release notes from a generated changelog digest), `get_specialization_context` (canonical Specialization T…",
-      "Added a `velo:changelog` script that generates `js/ai/changelog-digest.js` from CHANGELOG.md; the build runs it automatically and a unit test keeps the digest in sync with the released version.",
-      "Rebranded the assistant build as Velo b0.2 and refreshed Velo's system prompt: the role now covers Specialization Towers, skin tiers, All-Star BoH public mechanics, Battle Simulator context, and app navigation; the helmet gag became occasional and varied; out-of-scope answers no…",
-      "Added grounded VTS guide knowledge entries for the All-Star BoH member flow, Specialization Towers structure, skin-tier economy, and the Fordogreen X1 Strife approach, plus community-shorthand aliases (dm, ac, boh, spec, cop, f2p, p2w) in guide retrieval.",
-      "Added an optional `activeTab` breadcrumb to the chat request contract: the Worker schema accepts it and injects an ACTIVE APP TAB section into the model instruction; the client keeps it disabled until the Worker deploy that accepts the field is live.",
-      "Added the verified Cavalry columns I–III evidence overlay with 17 source screenshots, 23 exact icon crops, provenance metadata, and stable research/node records; unknown medal costs, learning order, prerequisites, and ambiguous icon mappings remain explicitly unknown."
     ]
   }
 ].map((release) =>

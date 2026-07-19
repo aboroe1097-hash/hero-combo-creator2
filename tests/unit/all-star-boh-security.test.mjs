@@ -393,8 +393,8 @@ test('one grant contract joins Function issuance, browser reload, rules, and OCR
 
   const rules = readRepositoryFile('firestore.rules');
   assert.match(rules, /boh_allstar_member_grants\/\$\(request\.auth\.uid\)/);
-  assert.match(rules, /\.data\.activeSeason == season/);
-  assert.match(rules, /\.data\.expiresAt > request\.time/);
+  assert.match(rules, /config\.activeSeason == season/);
+  assert.match(rules, /grant\.expiresAt > request\.time/);
 });
 
 test('member unlock never reads or replaces custom claims, including for an admin token', async () => {
@@ -585,17 +585,25 @@ test('Firestore grant helper requires a matching active server grant and preserv
     /function hasActiveAllStarBohGrant\(season\) \{[\s\S]*?\n {4}\}/,
     'active grant helper'
   );
+  const grantValidator = rulesMatch(
+    rules,
+    /function validActiveAllStarBohGrant\(grant, config, season\) \{[\s\S]*?\n {4}\}/,
+    'active grant data validator'
+  );
   assert.match(helper, /isAdmin\(\)/);
   assert.match(helper, /boh_allstar_member_grants\/\$\(request\.auth\.uid\)/);
-  assert.match(helper, /\.data\.keys\(\)\.hasOnly/);
-  assert.match(helper, /\.data\.schemaVersion == 1/);
-  assert.match(helper, /\.data\.uid == request\.auth\.uid/);
-  assert.match(helper, /\.data\.seasonId == season/);
-  assert.match(helper, /\.data\.expiresAt is timestamp/);
-  assert.match(helper, /\.data\.issuedAt <= request\.time/);
-  assert.match(helper, /\.data\.expiresAt > request\.time/);
+  assert.match(helper, /validActiveAllStarBohGrant\(/);
+  assert.equal((helper.match(/get\(grantPath\)\.data/gu) || []).length, 1);
+  assert.equal((helper.match(/get\(configPath\)\.data/gu) || []).length, 1);
+  assert.match(grantValidator, /grant\.keys\(\)\.hasOnly/);
+  assert.match(grantValidator, /grant\.schemaVersion == 1/);
+  assert.match(grantValidator, /grant\.uid == request\.auth\.uid/);
+  assert.match(grantValidator, /grant\.seasonId == season/);
+  assert.match(grantValidator, /grant\.expiresAt is timestamp/);
+  assert.match(grantValidator, /grant\.issuedAt <= request\.time/);
+  assert.match(grantValidator, /grant\.expiresAt > request\.time/);
   assert.match(helper, /boh_allstar_config\/current/);
-  assert.match(helper, /\.data\.activeSeason == season/);
+  assert.match(grantValidator, /config\.activeSeason == season/);
   assert.doesNotMatch(helper, /request\.auth\.token\.bohAllStar/);
 });
 
@@ -629,7 +637,7 @@ test('Firestore submissions are own-get/create/update only for members, never li
 
   const sharedValidator = rulesMatch(
     rules,
-    /function validAllStarBohSubmission\(season, uid\) \{[\s\S]*?\n {4}\}/,
+    /function validAllStarBohSubmissionData\(data, stats, commitment, ocr, season, uid\) \{[\s\S]*?\n {4}\}/,
     'shared submission validator'
   );
   assert.match(sharedValidator, /playerId == uid/);
@@ -940,13 +948,13 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
   const rules = readRepositoryFile('firestore.rules');
   const validator = rulesMatch(
     rules,
-    /function validAllStarBohSubmission\(season, uid\) \{[\s\S]*?\n {4}\}/,
+    /function validAllStarBohSubmissionData\(data, stats, commitment, ocr, season, uid\) \{[\s\S]*?\n {4}\}/,
     'submission schema'
   );
   assert.match(validator, /keys\(\)\.hasOnly/);
-  assert.match(validator, /request\.resource\.data\.stats is map/);
-  assert.match(validator, /request\.resource\.data\.commitment is map/);
-  assert.match(validator, /request\.resource\.data\.ocr is map/);
+  assert.match(validator, /stats is map/);
+  assert.match(validator, /commitment is map/);
+  assert.match(validator, /ocr is map/);
   assert.doesNotMatch(
     validator,
     /validAllStarBoh(?:Stats|Commitment|Ocr)\(/,
@@ -954,7 +962,7 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
   );
   assert.match(
     validator,
-    /!\('preferredTeammates' in request\.resource\.data\)[\s\S]*preferredTeammates is list[\s\S]*preferredTeammates\.size\(\) <= 6/
+    /!\('preferredTeammates' in data\)[\s\S]*preferredTeammates is list[\s\S]*preferredTeammates\.size\(\) <= 6/
   );
   assert.match(validator, /'unitSpecialtyPower'/);
   assert.match(validator, /stats\.unitSpecialtyPower is int/);
@@ -977,6 +985,7 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
     'submission update schema'
   );
   assert.match(updateValidator, /validAllStarBohSubmission\(season, uid\)/);
+  assert.doesNotMatch(validator, /request\.resource\.data\./);
   assert.doesNotMatch(
     validator,
     /(?:password|secret|pincode|screenshot|imageData|imageBytes|base64|dataUrl)/i
@@ -1130,7 +1139,7 @@ test('Firestore private signup tactical catalogs match canonical source data', (
   assert.match(fightingTimes, /hasOnly\(\['\+8', '\+12', '\+14', '\+20'\]\)/);
 
   const publishedStart = rules.indexOf('function validAllStarBohPublishedPhaseItem');
-  const submissionStart = rules.indexOf('function validAllStarBohSubmission(');
+  const submissionStart = rules.indexOf('function validAllStarBohSubmissionData(');
   assert.ok(publishedStart >= 0 && submissionStart > publishedStart);
   assert.doesNotMatch(
     rules.slice(publishedStart, submissionStart),
