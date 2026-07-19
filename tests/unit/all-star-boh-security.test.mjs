@@ -624,13 +624,19 @@ test('Firestore submissions are own-get/create/update only for members, never li
     /function validAllStarBohSubmissionUpdate\(season, uid\) \{[\s\S]*?\n {4}\}/,
     'submission update validator'
   );
-  for (const immutableField of ['playerId', 'uid', 'seasonId', 'schemaVersion', 'createdAt']) {
-    assert.match(
-      updateValidator,
-      new RegExp(`${immutableField} == resource\\.data\\.${immutableField}`)
-    );
-  }
+  assert.match(updateValidator, /createdAt == resource\.data\.createdAt/);
   assert.match(updateValidator, /revision == resource\.data\.revision \+ 1/);
+
+  const sharedValidator = rulesMatch(
+    rules,
+    /function validAllStarBohSubmission\(season, uid\) \{[\s\S]*?\n {4}\}/,
+    'shared submission validator'
+  );
+  assert.match(sharedValidator, /playerId == uid/);
+  assert.match(sharedValidator, /uid == uid/);
+  assert.match(sharedValidator, /seasonId == season/);
+  assert.match(sharedValidator, /schemaVersion == 1/);
+  assert.doesNotMatch(updateValidator, /diff\(resource\.data\)\.affectedKeys\(\)/);
 });
 
 test('Firestore private and published paths enforce admin/member boundaries without broad access', () => {
@@ -970,7 +976,7 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
     /function validAllStarBohSubmissionUpdate\(season, uid\) \{[\s\S]*?\n {4}\}/,
     'submission update schema'
   );
-  assert.match(updateValidator, /'preferredTeammates'/);
+  assert.match(updateValidator, /validAllStarBohSubmission\(season, uid\)/);
   assert.doesNotMatch(
     validator,
     /(?:password|secret|pincode|screenshot|imageData|imageBytes|base64|dataUrl)/i
