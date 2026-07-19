@@ -393,6 +393,8 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.secondaryRoleDifferent': 'Choose a different secondary role.',
   'nav.lockHub': 'Lock hub',
   'signup.requiredFieldsMissing': 'Complete the highlighted required field before submitting.',
+  'signup.permissionDeniedError':
+    'Your submission could not be saved — your member access may have expired. Unlock with your PIN again, then resubmit. If it keeps failing, contact leadership.',
   'signup.teamNameTitle': 'Which team names do you like?',
   'signup.teamNameDescription': 'Pick every animal team identity you would be happy to join.',
   'signup.teamNameHint':
@@ -405,6 +407,7 @@ const LOCALE_LOADERS = Object.freeze({
   de: () => import('./de.js'),
   es: () => import('./es.js'),
   fr: () => import('./fr.js'),
+  hr: () => import('./hr.js'),
   id: () => import('./id.js'),
   kr: () => import('./kr.js'),
   pt: () => import('./pt.js'),
@@ -426,7 +429,7 @@ export function resolveAllStarBohLocale(locale) {
 function normalizePack(module) {
   const candidate = module?.default ?? module?.ALL_STAR_BOH_TRANSLATIONS ?? module?.translations;
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null;
-  return Object.freeze({ ...candidate });
+  return Object.freeze({ ...ALL_STAR_BOH_EN, ...candidate });
 }
 
 function format(template, vars = {}) {

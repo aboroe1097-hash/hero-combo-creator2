@@ -370,4 +370,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'اختياري وللمتعة فقط؛ تتخذ القيادة القرار النهائي للاسم.',
   'role.noPreference': 'لا يوجد تفضيل',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'تعذّر حفظ تسجيلك — ربما انتهت صلاحية وصول العضوية. افتح القفل مجددًا باستخدام رمز PIN ثم أعد الإرسال. إذا استمرت المشكلة، تواصل مع القيادة.',
 });

@@ -11,7 +11,9 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Filled editable power fields directly from account-stat OCR and removed the separate extracted-value confirmation checkbox while retaining third-party processing consent.",
       "Removed the visible timezone question while preserving the stored submission schema for existing records.",
-      "Replaced the crowded mobile footer with compact centered account links and removed duplicate tool navigation already available in the mobile dock."
+      "Replaced the crowded mobile footer with compact centered account links and removed duplicate tool navigation already available in the mobile dock.",
+      "Added Croatian (`hr`) as the twelfth project language with translated core navigation, PWA, and player-facing All-Star signup copy plus explicit canonical-English fallback for specialist catalogs still awaiting reviewed Croatian terminology.",
+      "Restored the visible required marker for Unit Specialty Power and replaced raw Firestore permission errors with a translated PIN-expiry recovery message for signup and Epic Showdown saves."
     ]
   },
   {

@@ -394,4 +394,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'Es opcional y solo por diversión; el liderazgo decide el nombre final.',
   'role.noPreference': 'Sin preferencia',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'No se pudo guardar tu inscripción; es posible que tu acceso de miembro haya caducado. Desbloquea de nuevo con tu PIN y vuelve a enviarla. Si el problema continúa, contacta con liderazgo.',
 });

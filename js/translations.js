@@ -12,6 +12,7 @@ const loaders = {
   de: () => import('./i18n/de.js'),
   es: () => import('./i18n/es.js'),
   fr: () => import('./i18n/fr.js'),
+  hr: () => import('./i18n/hr.js'),
   id: () => import('./i18n/id.js'),
   kr: () => import('./i18n/kr.js'),
   pt: () => import('./i18n/pt.js'),
@@ -67,11 +68,19 @@ export async function loadTranslationsForLanguage(lang = 'en') {
   if (!inFlight[lang]) {
     inFlight[lang] = loader()
       .then((mod) => {
-        const catalog = mod.default || mod[lang] || translations.en;
+        const catalog = mod.default || mod[lang] || {};
+        const missingBeforeFallback = Object.keys(translations.en).filter(
+          (key) => !Object.hasOwn(catalog, key)
+        );
         translations[lang] = Object.freeze({
+          ...translations.en,
           ...catalog,
           ...getAiActionCopy(lang),
           ...getRuntimeMiscCopy(lang),
+        });
+        translationCoverage[lang] = Object.freeze({
+          missingBeforeFallback: Object.freeze(missingBeforeFallback),
+          total: Object.keys(translations.en).length,
         });
         return translations[lang];
       })

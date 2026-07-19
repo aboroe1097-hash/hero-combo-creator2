@@ -7,6 +7,7 @@
     'pt',
     'de',
     'fr',
+    'hr',
     'tr',
     'ru',
     'id',
@@ -1469,6 +1470,10 @@
       },
     },
   };
+
+  // Croatian is available project-wide while specialist standalone copy is
+  // reviewed incrementally; canonical English remains the explicit fallback.
+  COPY.hr = COPY.en;
 
   function deepFreeze(value) {
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;

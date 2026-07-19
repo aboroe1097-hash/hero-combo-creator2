@@ -389,4 +389,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'İsteğe bağlı ve eğlence içindir; son isme yönetim karar verir.',
   'role.noPreference': 'Tercih yok',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Kaydın kaydedilemedi — üye erişiminin süresi dolmuş olabilir. PIN ile yeniden kilidi açıp tekrar gönder. Sorun devam ederse yönetimle iletişime geç.',
 });

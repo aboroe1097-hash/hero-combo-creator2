@@ -357,4 +357,6 @@ export default Object.freeze({
   'signup.teamNameHint': '此项可选，仅供趣味参考；最终名称由管理团队决定。',
   'role.noPreference': '无偏好',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    '无法保存报名信息——你的成员访问权限可能已过期。请重新使用 PIN 解锁后再次提交。如果仍然失败，请联系管理人员。',
 });

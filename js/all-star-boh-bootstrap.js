@@ -38,7 +38,7 @@ function normalizeLocale(value) {
     .replace('_', '-');
   if (locale === 'ko' || locale.startsWith('ko-')) return 'kr';
   const base = locale.split('-')[0];
-  return ['ar', 'de', 'en', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'].includes(base)
+  return ['ar', 'de', 'en', 'es', 'fr', 'hr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'].includes(base)
     ? base
     : 'en';
 }

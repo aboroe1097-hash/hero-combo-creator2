@@ -390,4 +390,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'Optionnel et juste pour le plaisir ; la direction choisit le nom final.',
   'role.noPreference': 'Aucune préférence',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Ton inscription n’a pas pu être enregistrée — ton accès membre a peut-être expiré. Déverrouille à nouveau avec ton code PIN, puis renvoie le formulaire. Si le problème persiste, contacte la direction.',
 });

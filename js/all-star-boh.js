@@ -3400,6 +3400,20 @@ function focusErrorField(state, field) {
   });
 }
 
+function isPermissionDeniedError(error) {
+  return (
+    error?.code === 'permission-denied' ||
+    /(?:missing or )?insufficient permissions/iu.test(String(error?.message || ''))
+  );
+}
+
+function permissionDeniedMessage(state) {
+  return state.tr(
+    'signup.permissionDeniedError',
+    'Your submission could not be saved — your member access may have expired. Unlock with your PIN again, then resubmit. If it keeps failing, contact leadership.'
+  );
+}
+
 async function submitSignup(state, form) {
   if (!state.store?.saveSubmission)
     throw new TypeError('Member access is required before submitting.');
@@ -3505,7 +3519,12 @@ async function submitSignup(state, form) {
     } else {
       preserveFormOnFailure = true;
       reportError(state, error, { action: 'save-submission' });
-      setSignupFormError(state, error?.message || 'Submission was not saved. Please try again.');
+      setSignupFormError(
+        state,
+        isPermissionDeniedError(error)
+          ? permissionDeniedMessage(state)
+          : error?.message || 'Submission was not saved. Please try again.'
+      );
       focusErrorField(state, error?.field);
     }
   } finally {
@@ -3583,6 +3602,14 @@ async function submitEpicPreferences(state, form) {
         );
       } else {
         reportError(state, error, { action: 'save-epic-preferences' });
+        if (isPermissionDeniedError(error)) {
+          notice(
+            state,
+            'signup.permissionDeniedError',
+            'Your submission could not be saved — your member access may have expired. Unlock with your PIN again, then resubmit. If it keeps failing, contact leadership.',
+            { tone: 'error' }
+          );
+        }
       }
       focusErrorField(state, error?.field);
     }

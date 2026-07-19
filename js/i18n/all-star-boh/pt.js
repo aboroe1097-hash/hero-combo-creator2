@@ -396,4 +396,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'Opcional e só por diversão; a liderança decide o nome final.',
   'role.noPreference': 'Sem preferência',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Não foi possível salvar sua inscrição — seu acesso de membro pode ter expirado. Desbloqueie novamente com o PIN e reenvie. Se continuar falhando, fale com a liderança.',
 });

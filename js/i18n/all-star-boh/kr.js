@@ -373,4 +373,6 @@ export default Object.freeze({
   'signup.teamNameHint': '선택 사항이며 재미를 위한 항목입니다. 최종 이름은 운영진이 결정합니다.',
   'role.noPreference': '선호 없음',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    '신청서를 저장하지 못했습니다. 회원 접근 권한이 만료되었을 수 있습니다. PIN으로 다시 잠금을 해제한 뒤 재제출하세요. 계속 실패하면 운영진에게 문의하세요.',
 });

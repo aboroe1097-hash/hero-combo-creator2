@@ -395,4 +395,6 @@ export default Object.freeze({
     'Optional und nur zum Spaß; die Leitung entscheidet den endgültigen Namen.',
   'role.noPreference': 'Keine Präferenz',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Deine Anmeldung konnte nicht gespeichert werden — dein Mitgliederzugang ist möglicherweise abgelaufen. Entsperre erneut mit deiner PIN und sende noch einmal. Wenn das Problem bleibt, kontaktiere die Leitung.',
 });

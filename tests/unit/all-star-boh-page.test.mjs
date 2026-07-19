@@ -330,7 +330,24 @@ test('Epic Showdown planning is included before the single combined signup actio
 test('Unit Specialty Power is visibly marked as required', () => {
   assert.match(
     tabSource,
-    /data-boh-i18n="signup\.unitSpecialtyPower"[\s\S]*?class="boh-required"[\s\S]*?name="unitSpecialtyPower"[\s\S]*?required/u
+    /data-boh-i18n="signup\.unitSpecialtyPower">Unit Specialty Power<\/span>[\s\S]*?<b aria-hidden="true">\*<\/b>[\s\S]*?name="unitSpecialtyPower"[\s\S]*?required/u
+  );
+  assert.doesNotMatch(tabSource, /class="boh-required"/u);
+});
+
+test('permission failures show a translated recovery step for both signup writes', () => {
+  assert.match(controllerSource, /function isPermissionDeniedError\(error\)/u);
+  assert.match(controllerSource, /error\?\.code === 'permission-denied'/u);
+  assert.match(controllerSource, /insufficient permissions/iu);
+  assert.match(controllerSource, /function permissionDeniedMessage\(state\)/u);
+  assert.match(controllerSource, /'signup\.permissionDeniedError'/u);
+  assert.match(
+    controllerSource,
+    /setSignupFormError\([\s\S]*?isPermissionDeniedError\(error\)[\s\S]*?permissionDeniedMessage\(state\)/u
+  );
+  assert.match(
+    controllerSource,
+    /action: 'save-epic-preferences'[\s\S]*?if \(isPermissionDeniedError\(error\)\)[\s\S]*?notice\([\s\S]*?state,[\s\S]*?'signup\.permissionDeniedError'/u
   );
 });
 

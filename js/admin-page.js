@@ -112,7 +112,7 @@ function getLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
     const primary = String(navigator.language || '')
       .toLowerCase()
       .split('-')[0];
@@ -170,7 +170,7 @@ const requestAdminLanguage = createLatestLanguageLoader((lang) => {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260719_150211');
+  const res = await fetch('tabs/admin.html?v=20260719_152100');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -199,7 +199,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20260719_150211');
+  const mod = await import('./ocr-dashboard.js?v=20260719_152100');
   await mod.bootOcrDashboard();
 }
 

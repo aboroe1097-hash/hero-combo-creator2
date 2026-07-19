@@ -392,4 +392,6 @@ export default Object.freeze({
     'Opsional dan hanya untuk bersenang-senang; pimpinan menentukan nama akhir.',
   'role.noPreference': 'Tidak ada pilihan',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Pendaftaranmu tidak dapat disimpan — akses anggota mungkin sudah kedaluwarsa. Buka kembali dengan PIN lalu kirim ulang. Jika masih gagal, hubungi pimpinan.',
 });
