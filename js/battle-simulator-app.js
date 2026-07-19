@@ -57,7 +57,7 @@ import {
   createEmptyResearchSnapshot,
 } from './battle-simulator-research.js';
 
-const APP_VERSION = '14.1.15';
+const APP_VERSION = '14.1.16';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [

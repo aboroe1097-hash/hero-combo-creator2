@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.1.16 - 2026-07-19
+
+- Added explicit Guild Master and Core reward tiers to the Final Top 20 while preserving each winner's support, contribution, management-vote, or team-vote selection reason.
+- Added a deduplicated 90-player Power House ranking for positions 21–110 and one-click PNG downloads for both reward tables.
+
 ## 14.1.15 - 2026-07-19
 
 - Added a Final Top 20 announcement view to the Eden X1 reward flow that combines the four support, contribution, management, and team reward lanes into one shareable recipient table with category chips and placeholder rows until each lane is decided.
