@@ -126,6 +126,10 @@ function createPlayerFixture() {
         preferredRole: 'offensive',
         secondaryRole: '',
         canHelpLead: false,
+        vts1097Member: true,
+        contactNumber: '',
+        currentState: '',
+        joinReason: '',
         teamNamePreferences: ['iron-wolves', 'frost-bears'],
         unavailableTimes: '',
         canTeleport: true,
@@ -911,6 +915,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[name="epicTimePreferences"][value="+8"]')).toBeChecked();
     await expect(root.locator('[name="epicTimePreferences"][value="+12"]')).not.toBeChecked();
 
+    await root.locator('[data-role="submission-confirmation-close"]').click();
     await sectionTabs.nth(2).click();
 
     await root.locator('#bohLegion2').check();
