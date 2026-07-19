@@ -32,8 +32,10 @@ const LIMITS = {
   // All-Star troop OCR review, and the complete 718-node public planner corpus
   // measure 8117.7 KiB after the All-Star participation intake and shared
   // applicant locale additions. The audited Eden reward-family allocation and
-  // 14.1.17 release digest measure 8145.8 KiB; retain about 1.2 KiB of headroom.
-  totalJsBytes: 8147 * 1024,
+  // 14.1.17 release digest measured 8145.8 KiB. The localized admin troop
+  // estimate labels bring the audited 14.1.18 graph to 8159.3 KiB; retain
+  // less than 2 KiB of aggregate headroom.
+  totalJsBytes: 8161 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -52,7 +54,9 @@ const LIMITS = {
   // The 14.1.11 applicant flow measures 26,172.1 KiB with shared locale chunks;
   // retain less than 8 KiB while keeping route and media caps unchanged.
   // The downloadable Top 20 and 21-110 reward cards add one focused Eden bundle feature.
-  totalDeployBytes: 26210 * 1024,
+  // Localized admin troop estimates bring the audited artifact to 26,222.3 KiB;
+  // retain less than 2 KiB while route and media caps remain unchanged.
+  totalDeployBytes: 26224 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
