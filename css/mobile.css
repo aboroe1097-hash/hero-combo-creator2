@@ -5110,6 +5110,11 @@ body[data-active-tab='loyalty'] .bug-report-fab {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+body.keyboard-open .a2hs-banner {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
 .a2hs-banner-msg {
   display: flex;
   align-items: center;

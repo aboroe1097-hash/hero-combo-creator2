@@ -23,6 +23,21 @@ test('failed signup writes preserve the filled form and do not masquerade as PIN
   assert.match(controllerSource, /if \(preserveFormOnFailure\) renderSubmissionControls\(state\)/);
 });
 
+test('successful signup writes open an accessible revision confirmation dialog', () => {
+  assert.match(tabSource, /<dialog[\s\S]*data-role="submission-confirmation"/);
+  assert.match(tabSource, /aria-labelledby="bohSubmissionConfirmationTitle"/);
+  assert.match(tabSource, /aria-describedby="bohSubmissionConfirmationDescription"/);
+  assert.match(controllerSource, /function showSubmissionConfirmation/);
+  assert.match(controllerSource, /edited: expectedRevision > 0/);
+  assert.match(
+    controllerSource,
+    /if \(saved\) state\.submission = saved;\s*setSignupFormError\(state\)/
+  );
+  assert.match(controllerSource, /if \(confirmation\) showSubmissionConfirmation/);
+  assert.match(cssSource, /\.boh-confirmation-dialog::backdrop/);
+  assert.match(cssSource, /\.boh-confirmation-dialog \{[\s\S]*?z-index: 2147483000/);
+});
+
 test('commitment questions have generous vertical separation', () => {
   assert.match(tabSource, /class="boh-card boh-commitment-card"/);
   assert.match(
@@ -269,7 +284,7 @@ test('signup planning selectors are compact, optional where intended, and keyboa
   );
 });
 
-test('Epic Showdown planning uses accessible independent multi-select lane and time controls', () => {
+test('Epic Showdown planning is included before the single combined signup action', () => {
   assert.doesNotMatch(tabSource, /id="bohShowdownTab"/);
   assert.match(tabSource, /data-role="signup-addon"/);
   assert.match(
@@ -285,11 +300,23 @@ test('Epic Showdown planning uses accessible independent multi-select lane and t
   assert.match(tabSource, /data-role="showdown-time-options"/);
   assert.match(tabSource, /aria-describedby="bohShowdownTimeHint"/);
   assert.match(tabSource, /data-role="showdown-form"/);
-  assert.match(tabSource, /data-role="showdown-submit"/);
+  assert.doesNotMatch(tabSource, /data-role="showdown-submit"/);
+  assert.equal(Array.from(tabSource.matchAll(/data-role="signup-submit"/gu)).length, 1);
+  assert.match(tabSource, /data-boh-i18n="signup\.submitAll"/);
   assert.match(tabSource, /data-role="showdown-save-state"[\s\S]*?aria-live="polite"/);
   assert.match(tabSource, /data-role="showdown-summary"[\s\S]*?aria-live="polite"/);
   assert.equal(Array.from(tabSource.matchAll(/name="epicFlexibilityPreference"/gu)).length, 3);
   assert.match(controllerSource, /'\+6',[\s\S]*?'\+20'/);
+  assert.match(controllerSource, /function submitCombinedParticipation/);
+  assert.match(
+    controllerSource,
+    /if \(state\.epicDirty\) \{[\s\S]*?await submitEpicPreferences\(state, showdownForm\)/
+  );
+  assert.match(controllerSource, /await submitSignup\(state, signupForm\)/);
+  assert.match(
+    controllerSource,
+    /updateChecked\([\s\S]*?'epicFlexibilityPreference',[\s\S]*?flexibilityPreference/
+  );
   assert.match(cssSource, /\.boh-subnav__track\s*\{[\s\S]*?repeat\(3,/);
   assert.match(cssSource, /\.boh-showdown-option:has\(input:focus-visible\)/);
 });

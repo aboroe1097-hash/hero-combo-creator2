@@ -9,13 +9,19 @@ This repo deploys the live site from the `gh-pages` branch. Treat `gh-pages` as 
 - Start every change from the latest `origin/gh-pages` on a separate branch.
 - Use the `codex/` branch prefix for Codex-authored branches unless the user asks for another name.
 - Update the release version and `CHANGELOG.md` for user-visible changes before the final checks.
-- Run `npm run check` before opening a pull request back into `gh-pages`.
-- For normal additive release PRs, proceed from a green `npm run check` directly to commit, push,
-  and PR.
+- Use the fast incremental-fix lane below for small fixes, edits, and add-ons. Do not delay a PR for
+  the full 10-15 minute local matrix once focused evidence gives at least moderate confidence
+  (roughly 50%) that the change is sound.
+- Require `npm run check` before a PR only for major version upgrades, broad overhauls, security or
+  authentication contract changes, Firebase rules/schema changes, major dependency upgrades, or
+  other changes whose risk cannot be covered by focused tests.
 - Run `npm run firebase:preview` only for a major version upgrade, broad overhaul, or change that
   explicitly needs Firebase Hosting validation.
-- Wait for the required `deploy-verification` check and owner review before merge.
-- Let the owner merge the PR. Only bypass this flow when the user explicitly asks for an emergency direct deploy.
+- For normal work, let the owner merge after the required checks. When the owner explicitly asks
+  Codex to fast-merge, commit, push, open the PR, and attempt the merge immediately; use auto-merge
+  when branch protection still requires CI. Never push directly to `gh-pages`.
+- If a fast PR or its local/CI checks fail, fix the issue in a new follow-up PR and ship that focused
+  correction promptly instead of holding unrelated completed fixes indefinitely.
 
 Recommended sequence:
 
@@ -25,14 +31,27 @@ git switch -c codex/short-description origin/gh-pages
 npm ci
 # make focused changes and update release metadata when required
 npm run version:check
-npm run check
+# Small incremental fix: run focused tests and npm run check:fast when practical.
+# High-risk/broad change: run npm run check.
 git add <intended files>
 git commit -m "Short description"
 git push -u origin codex/short-description
 gh pr create --base gh-pages --head codex/short-description
 ```
 
-`npm run check` is the full local gate: version consistency, lint/format, unit and data checks, production build, size budgets, and Playwright smoke tests. `npm run check:fast` is useful during development but is not sufficient for a PR. CI and the production deploy both call `npm run verify:deploy`; CI supplies deterministic non-secret build values while production supplies repository environment values.
+### Fast Incremental-Fix Lane
+
+For a small, reversible fix or add-on, run the narrowest relevant unit/browser tests plus
+`npm run check:fast` when practical. If bundled CSS, assets, or release metadata changed, also run
+the directly relevant build, version, or size command. Once those focused checks support at least
+moderate confidence, commit, push, and open the PR without waiting for the full smoke matrix. CI and
+the production deploy remain broader verification layers. A failed check or merge becomes a small
+follow-up PR; it is not a reason to bypass branch protection or push to production directly.
+
+`npm run check` remains the full high-risk gate: version consistency, lint/format, unit and data
+checks, production build, size budgets, and Playwright smoke tests. CI and the production deploy
+both call `npm run verify:deploy`; CI supplies deterministic non-secret build values while
+production supplies repository environment values.
 
 `npm run firebase:preview` is an optional high-risk release gate for major version upgrades, broad
 overhauls, or changes that explicitly need Firebase Hosting validation. When used, it includes

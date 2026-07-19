@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.9";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.10";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.10",
+    "date": "2026-07-19",
+    "highlights": [
+      "Added a true top-layer confirmation after successful All-Star signup submissions and edits, clearing stale permission errors only after the write succeeds and keeping delayed listener failures from replacing the confirmed result.",
+      "Moved optional Epic Showdown choices ahead of the single signup action, saving them with the signup only when changed and fixing saved flexibility radio choices so untouched Epic fields never block submission.",
+      "Replaced the first-visit PIN wait with a Velo secure-access loader, limited the mobile Add to Home Screen prompt to 20 seconds, and immediately hid the install prompt, tool dock, Velo launcher, and overlapping controls while a mobile user is writing."
+    ]
+  },
   {
     "version": "14.1.9",
     "date": "2026-07-19",
@@ -89,14 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added a localized quick-MAX action to every Specialization overview badge so a learning can be completed without opening its node graph.",
       "Localized the Community Data contributor, medal-cost, reviewer, and completion-count fields across all eleven supported languages.",
       "Reworked Community Data into compact game-node records with separate contributor and reviewer medal values, preserving earlier saved submissions while supporting partial research updates."
-    ]
-  },
-  {
-    "version": "14.1.0",
-    "date": "2026-07-18",
-    "highlights": [
-      "Fixed manually pasted Total Contribution names retaining a separator comma, including previously saved records when they are normalized for display and export.",
-      "Restored contribution snapshot matching when the optional guild field is omitted by applying the VTS X1 default only within the normal contribution comparison, avoiding unnecessary one-off aliases."
     ]
   }
 ].map((release) =>

@@ -1550,6 +1550,55 @@ function clearNotice(state) {
   }
 }
 
+function showSubmissionConfirmation(state, { edited = false, revision = 1 } = {}) {
+  const dialog = query(state.root, '[data-role="submission-confirmation"]');
+  if (!dialog) return;
+  const safeRevision = Math.max(1, finiteInteger(revision) || 1);
+  setText(
+    query(dialog, '[data-role="submission-confirmation-kicker"]'),
+    state.tr('signup.confirmationKicker', 'SIGNUP SAVED')
+  );
+  setText(
+    query(dialog, '[data-role="submission-confirmation-title"]'),
+    edited
+      ? state.tr('signup.editConfirmationTitle', 'Edits accepted')
+      : state.tr('signup.submitConfirmationTitle', 'Signup submitted')
+  );
+  setText(
+    query(dialog, '[data-role="submission-confirmation-description"]'),
+    edited
+      ? state.tr(
+          'signup.editConfirmationDescription',
+          'Your updated information is saved and ready for leadership review.'
+        )
+      : state.tr(
+          'signup.submitConfirmationDescription',
+          'Your information is ready for leadership review and team balancing.'
+        )
+  );
+  setText(
+    query(dialog, '[data-role="submission-confirmation-revision"]'),
+    state.tr('signup.confirmationRevision', 'Submission revision {revision}', {
+      revision: safeRevision,
+    })
+  );
+  setText(
+    query(dialog, '[data-role="submission-confirmation-close"]'),
+    state.tr('signup.confirmationContinue', 'Continue')
+  );
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute?.('open', '');
+  query(dialog, '[data-role="submission-confirmation-close"]')?.focus?.();
+}
+
+function closeSubmissionConfirmation(state) {
+  const dialog = query(state.root, '[data-role="submission-confirmation"]');
+  if (!dialog) return;
+  if (typeof dialog.close === 'function') dialog.close();
+  else dialog.removeAttribute?.('open');
+  query(state.root, '[data-role="signup-submit"]')?.focus?.({ preventScroll: true });
+}
+
 function activateSection(state, section, focus = false) {
   if (!SECTION_ORDER.includes(section)) return false;
   state.section = section;
@@ -3068,7 +3117,7 @@ function hydrateEpicPreferences(state) {
   updateInput(form, 'epicGameName', gameName);
   updateChecked(form, 'epicLanePreferences', state.epicPreferences?.lanePreferences || []);
   updateChecked(form, 'epicTimePreferences', state.epicPreferences?.timePreferences || []);
-  updateInput(
+  updateChecked(
     form,
     'epicFlexibilityPreference',
     state.epicPreferences?.flexibilityPreference || ''
@@ -3097,7 +3146,7 @@ function renderEpicPreferences(state) {
   const locked = query(state.root, '[data-role="showdown-state-locked"]');
   const form = query(state.root, '[data-role="showdown-form"]');
   const saveState = query(state.root, '[data-role="showdown-save-state"]');
-  const submit = query(state.root, '[data-role="showdown-submit"]');
+  const submit = query(state.root, '[data-role="signup-submit"]');
   setHidden(locked, state.accessGranted);
   setHidden(form, !state.accessGranted);
   const timeSlotIds = epicTimeSlotIdsFor(state);
@@ -3107,6 +3156,7 @@ function renderEpicPreferences(state) {
   setBusy(
     submit,
     state.epicSaving ||
+      state.saving ||
       !state.accessGranted ||
       typeof state.store?.saveEpicShowdownPreferences !== 'function'
   );
@@ -3329,6 +3379,7 @@ async function submitSignup(state, form) {
   }
   state.saving = true;
   let preserveFormOnFailure = false;
+  let confirmation = null;
   clearNotice(state);
   renderSubmissionControls(state);
   try {
@@ -3337,12 +3388,17 @@ async function submitSignup(state, form) {
       : finiteInteger(state.submission?.revision);
     const saved = await state.store.saveSubmission(payload, { expectedRevision });
     if (saved) state.submission = saved;
+    setSignupFormError(state);
     state.dirty = false;
     state.hydratedRevision = null;
     state.submissionEditBaseRevision = null;
     notice(state, 'signup.savedNotice', 'Your stats were submitted successfully.', {
       tone: 'success',
     });
+    confirmation = {
+      edited: expectedRevision > 0,
+      revision: finiteInteger(saved?.revision) || expectedRevision + 1,
+    };
   } catch (error) {
     if (/conflict/iu.test(error?.name || '') || Number.isInteger(error?.actualRevision)) {
       const latest = await state.store.getSubmission?.().catch(() => undefined);
@@ -3372,18 +3428,20 @@ async function submitSignup(state, form) {
     else render(state);
     data = null;
   }
+  if (confirmation) showSubmissionConfirmation(state, confirmation);
 }
 
 async function submitEpicPreferences(state, form) {
   if (typeof state.store?.saveEpicShowdownPreferences !== 'function') {
     throw new TypeError('Member access is required before saving Epic Showdown preferences.');
   }
-  if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
+  if (typeof form.reportValidity === 'function' && !form.reportValidity()) return false;
   const payload = buildBohEpicPreferencesPayload(formDataFor(form), {
     model: state.model,
     timeSlotIds: epicTimeSlotIdsFor(state),
   });
   state.epicSaving = true;
+  let savedSuccessfully = false;
   clearNotice(state);
   renderEpicPreferences(state);
   try {
@@ -3399,6 +3457,7 @@ async function submitEpicPreferences(state, form) {
     notice(state, 'showdown.savedNotice', 'Your Epic Showdown preferences were saved.', {
       tone: 'success',
     });
+    savedSuccessfully = true;
   } catch (error) {
     if (/conflict/iu.test(error?.name || '') || Number.isInteger(error?.actualRevision)) {
       const latest = await state.store.getEpicShowdownPreferences?.().catch(() => undefined);
@@ -3444,6 +3503,20 @@ async function submitEpicPreferences(state, form) {
     state.epicSaving = false;
     renderEpicPreferences(state);
   }
+  return savedSuccessfully;
+}
+
+async function submitCombinedParticipation(state, signupForm, showdownForm) {
+  if (!signupForm || !showdownForm) return;
+  if (typeof signupForm.reportValidity === 'function' && !signupForm.reportValidity()) {
+    signupForm.querySelector?.(':invalid')?.focus?.({ preventScroll: true });
+    return;
+  }
+  if (state.epicDirty) {
+    const epicSaved = await submitEpicPreferences(state, showdownForm);
+    if (!epicSaved) return;
+  }
+  await submitSignup(state, signupForm);
 }
 
 function tabKeyMove(state, event, tabs, activeIndex, activate) {
@@ -3485,6 +3558,10 @@ async function handleClick(state, event) {
   if (!target || (state.root.contains && !state.root.contains(target))) return;
   if (target.matches?.('[data-role="lock-hub"]')) {
     state.options.onLockHub?.();
+    return;
+  }
+  if (target.matches?.('[data-role="submission-confirmation-close"]')) {
+    closeSubmissionConfirmation(state);
     return;
   }
   if (target.matches?.('[data-role="edit-signup"]')) {
@@ -3646,9 +3723,11 @@ function handleSubmit(state, event) {
   const showdownForm = event.target?.closest?.('[data-role="showdown-form"]');
   if (!signupForm && !showdownForm) return;
   event.preventDefault();
-  const action = signupForm
-    ? submitSignup(state, signupForm)
-    : submitEpicPreferences(state, showdownForm);
+  const action = submitCombinedParticipation(
+    state,
+    signupForm || query(state.root, '[data-role="signup-form"]'),
+    showdownForm || query(state.root, '[data-role="showdown-form"]')
+  );
   action.catch((error) => reportError(state, error, { action: 'submit' }));
 }
 

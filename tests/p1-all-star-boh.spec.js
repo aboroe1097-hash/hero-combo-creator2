@@ -626,6 +626,12 @@ test.describe('All-Star BoH secure player hub', () => {
     await root.locator('[data-role="signup-submit"]').click();
     await expect(feedback).toHaveText('Your stats were submitted successfully.');
     await expect(feedback).toHaveAttribute('data-tone', 'success');
+    const confirmation = root.locator('[data-role="submission-confirmation"]');
+    await expect(confirmation).toBeVisible();
+    await expect(confirmation).toHaveAccessibleName('Edits accepted');
+    await expect(confirmation.locator('[data-role="submission-confirmation-revision"]')).toHaveText(
+      'Submission revision 3'
+    );
 
     await page.evaluate(() => window.__BOH_PUSH_SUBMISSION_ERROR__());
 
@@ -637,6 +643,9 @@ test.describe('All-Star BoH secure player hub', () => {
         message: 'Missing or insufficient permissions.',
         context: { action: 'subscribe', source: 'submission' },
       });
+    await confirmation.locator('[data-role="submission-confirmation-close"]').click();
+    await expect(confirmation).toBeHidden();
+    await expect(root.locator('[data-role="signup-submit"]')).toBeFocused();
   });
 
   test('signup planning controls capture fieldable heroes, research, two fight times, and role choices', async ({
@@ -788,17 +797,11 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[data-role="submission-feedback-note"]')).toContainText(
       'Unavailable for this event window.'
     );
-    await page.evaluate(() => {
-      window.__BOH_PUSH_SUBMISSION__({
-        playerId: 'player-1-1',
-        gameName: 'Player 1-01',
-        status: 'submitted',
-        revision: 3,
-        entryMethod: 'manual',
-        stats: {},
-        commitment: {},
-      });
-    });
+    const refreshedSubmission = { ...createPlayerFixture().submission, revision: 3 };
+    await page.evaluate(
+      (submission) => window.__BOH_PUSH_SUBMISSION__(submission),
+      refreshedSubmission
+    );
     await expect(root.locator('[data-role="submission-feedback-title"]')).toHaveText(
       'Signup updated — review pending'
     );
@@ -867,7 +870,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[data-role="showdown-summary"]')).toContainText(
       '3 positions · 3 game times selected'
     );
-    await root.locator('[data-role="showdown-submit"]').click();
+    await root.locator('[data-role="signup-submit"]').click();
     await expect(root.locator('[data-role="showdown-save-state"]')).toContainText('revision 3');
     await expect
       .poll(() => page.evaluate(() => window.__BOH_SAVED_EPIC_PREFERENCES__))
@@ -881,6 +884,8 @@ test.describe('All-Star BoH secure player hub', () => {
         options: { expectedRevision: 2 },
       });
 
+    await root.locator('[data-role="submission-confirmation-close"]').click();
+
     await root.locator('[name="epicLanePreferences"][value="south"]').uncheck();
     await page.evaluate(() => {
       window.__BOH_PUSH_EPIC_PREFERENCES__({
@@ -893,7 +898,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[name="epicLanePreferences"][value="center"]')).toBeChecked();
     await expect(root.locator('[name="epicLanePreferences"][value="north"]')).toBeChecked();
     await expect(root.locator('[name="epicTimePreferences"][value="+12"]')).toBeChecked();
-    await root.locator('[data-role="showdown-submit"]').click();
+    await root.locator('[data-role="signup-submit"]').click();
     await expect(root.locator('[data-role="page-feedback"]')).toContainText(
       'Latest saved choices loaded'
     );

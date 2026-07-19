@@ -210,7 +210,7 @@ export default Object.freeze({
   'signup.rocLevel': 'RoC seviyesi',
   'signup.speedHeroesHint': 'Hesabında bulunan tüm hız kahramanlarını seç.',
   'signup.speedHeroesLegend': 'Hangi hız kahramanlarına sahipsin?',
-  'signup.submit': 'İstatistiklerimi gönder',
+  'signup.submitAll': 'Kaydı ve Epic seçimlerini gönder',
   'signup.t9Archers': 'Okçular',
   'signup.t9Cavalry': 'Süvariler',
   'signup.t9Footmen': 'Piyadeler',
@@ -237,6 +237,15 @@ export default Object.freeze({
   'signup.revisionConflict':
     'Kayıtlı başvurun başka bir oturumda değişti. Formu kontrol edip yeniden gönder.',
   'signup.savedNotice': 'İstatistiklerin başarıyla gönderildi.',
+  'signup.confirmationKicker': 'KAYIT KAYDEDİLDİ',
+  'signup.submitConfirmationTitle': 'Kayıt gönderildi',
+  'signup.submitConfirmationDescription':
+    'Bilgilerin liderlik incelemesi ve takım dengelemesi için hazır.',
+  'signup.editConfirmationTitle': 'Değişiklikler kabul edildi',
+  'signup.editConfirmationDescription':
+    'Güncellenen bilgilerin kaydedildi ve liderlik incelemesine hazır.',
+  'signup.confirmationRevision': 'Kayıt revizyonu {revision}',
+  'signup.confirmationContinue': 'Devam et',
   'signup.saving': 'Kaydediliyor…',
   'signup.submitted': 'Gönderildi · revizyon {revision}',
   'status.publishedRevision': 'Yayımlandı · revizyon {revision}',
@@ -313,7 +322,6 @@ export default Object.freeze({
   'showdown.saving': 'Kaydediliyor…',
   'showdown.revisionConflict':
     'Son kaydedilen seçimler yüklendi — kaydetmeden önce kontrol edip değiştir.',
-  'showdown.save': 'Epic tercihlerini kaydet',
   'showdown.savedNotice': 'Epic Showdown tercihlerin kaydedildi.',
   'showdown.lockedTitle': 'Epic Showdown tercihlerini kaydetmek için üye merkezinin kilidini aç',
   'showdown.lockedDescription':

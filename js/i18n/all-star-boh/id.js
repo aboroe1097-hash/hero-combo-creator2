@@ -212,7 +212,7 @@ export default Object.freeze({
   'signup.rocLevel': 'Level RoC',
   'signup.speedHeroesHint': 'Pilih semua hero speed yang saat ini kamu miliki.',
   'signup.speedHeroesLegend': 'Hero speed mana yang kamu miliki?',
-  'signup.submit': 'Kirim stat saya',
+  'signup.submitAll': 'Kirim pendaftaran & pilihan Epic',
   'signup.t9Archers': 'Pemanah',
   'signup.t9Cavalry': 'Kavaleri',
   'signup.t9Footmen': 'Infanteri',
@@ -239,6 +239,15 @@ export default Object.freeze({
   'signup.revisionConflict':
     'Data pendaftaran tersimpan berubah di sesi lain. Periksa formulir ini lalu kirim kembali.',
   'signup.savedNotice': 'Statistikmu berhasil dikirim.',
+  'signup.confirmationKicker': 'PENDAFTARAN TERSIMPAN',
+  'signup.submitConfirmationTitle': 'Pendaftaran terkirim',
+  'signup.submitConfirmationDescription':
+    'Informasimu siap ditinjau pimpinan dan digunakan untuk menyeimbangkan tim.',
+  'signup.editConfirmationTitle': 'Perubahan diterima',
+  'signup.editConfirmationDescription':
+    'Informasi terbarumu telah tersimpan dan siap ditinjau pimpinan.',
+  'signup.confirmationRevision': 'Revisi pendaftaran {revision}',
+  'signup.confirmationContinue': 'Lanjutkan',
   'signup.saving': 'Menyimpan…',
   'signup.submitted': 'Terkirim · revisi {revision}',
   'status.publishedRevision': 'Dipublikasikan · revisi {revision}',
@@ -316,7 +325,6 @@ export default Object.freeze({
   'showdown.saving': 'Menyimpan…',
   'showdown.revisionConflict':
     'Pilihan terakhir yang tersimpan telah dimuat — periksa dan ubah sebelum menyimpan.',
-  'showdown.save': 'Simpan preferensi Epic',
   'showdown.savedNotice': 'Preferensi Epic Showdown kamu telah disimpan.',
   'showdown.lockedTitle': 'Buka hub anggota untuk menyimpan preferensi Epic Showdown',
   'showdown.lockedDescription':

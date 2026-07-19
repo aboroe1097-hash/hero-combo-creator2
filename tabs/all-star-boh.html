@@ -120,6 +120,37 @@
 
   <div class="boh-feedback" data-role="page-feedback" role="status" aria-live="polite" hidden></div>
 
+  <dialog
+    class="boh-confirmation-dialog"
+    data-role="submission-confirmation"
+    aria-labelledby="bohSubmissionConfirmationTitle"
+    aria-describedby="bohSubmissionConfirmationDescription"
+  >
+    <div class="boh-confirmation-dialog__panel">
+      <span class="boh-confirmation-dialog__icon" aria-hidden="true">&#10003;</span>
+      <p class="boh-kicker" data-role="submission-confirmation-kicker">SIGNUP SAVED</p>
+      <h3 id="bohSubmissionConfirmationTitle" data-role="submission-confirmation-title">
+        Signup submitted
+      </h3>
+      <p
+        id="bohSubmissionConfirmationDescription"
+        data-role="submission-confirmation-description"
+      >
+        Your information is ready for leadership review and team balancing.
+      </p>
+      <p class="boh-confirmation-dialog__revision" data-role="submission-confirmation-revision">
+        Submission revision 1
+      </p>
+      <button
+        class="boh-button boh-button--primary"
+        type="button"
+        data-role="submission-confirmation-close"
+      >
+        Continue
+      </button>
+    </div>
+  </dialog>
+
   <section
     class="boh-section"
     id="bohSignupPanel"
@@ -1145,29 +1176,13 @@
         </fieldset>
       </section>
 
-      <footer class="boh-form-actions">
-        <div>
-          <strong data-boh-i18n="signup.reviewTitle">Review before submitting</strong>
-          <span data-boh-i18n="signup.reviewHint"
-            >Your latest confirmed submission will be used for team balancing.</span
-          >
-          <span
-            class="boh-submit-error"
-            data-role="signup-form-error"
-            role="alert"
-            aria-live="assertive"
-            hidden
-          ></span>
-        </div>
-        <button
-          class="boh-button boh-button--primary"
-          type="submit"
-          data-role="signup-submit"
-          data-boh-i18n="signup.submit"
-        >
-          Submit my stats
-        </button>
-      </footer>
+      <span
+        class="boh-submit-error"
+        data-role="signup-form-error"
+        role="alert"
+        aria-live="assertive"
+        hidden
+      ></span>
     </form>
   </section>
 
@@ -2019,19 +2034,18 @@
 
       <footer class="boh-form-actions">
         <div>
-          <strong data-boh-i18n="showdown.title">Where and when do you want to play?</strong>
-          <span data-boh-i18n="showdown.description">
-            Select every battlefield position and game time that works for you. You can update these
-            preferences later.
-          </span>
+          <strong data-boh-i18n="signup.reviewTitle">Review before submitting</strong>
+          <span data-boh-i18n="signup.reviewHint"
+            >Your latest confirmed submission will be used for team balancing.</span
+          >
         </div>
         <button
           class="boh-button boh-button--primary"
           type="submit"
-          data-role="showdown-submit"
-          data-boh-i18n="showdown.save"
+          data-role="signup-submit"
+          data-boh-i18n="signup.submitAll"
         >
-          Save Epic preferences
+          Submit signup &amp; Epic choices
         </button>
       </footer>
     </form>
