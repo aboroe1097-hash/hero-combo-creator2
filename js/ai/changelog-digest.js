@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.14";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.14",
+    "date": "2026-07-19",
+    "highlights": [
+      "Fixed the Croatian language smoke-test contract that blocked #84 deploy verification after the twelfth locale was added.",
+      "Expanded All-Star admin corrections to Unit Specialty, Artifact, and Royal Tech power and reject suspicious OCR `1` placeholders in unreadable extended-power rows.",
+      "Displayed reviewed troop OCR rows in the admin signup panel and widened the combined T10 portraits so they remain distinct on desktop and mobile.",
+      "Added a confirmed admin-only signup deletion action for removing test entries while preserving separate Epic Showdown preferences."
+    ]
+  },
   {
     "version": "14.1.13",
     "date": "2026-07-19",
@@ -81,17 +91,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Exposed the full 24-node Enhanced Tactics IV catalog in both Specialization renderers, added the public artwork to overview/detail/Legion Skill surfaces, and expanded automated coverage for the complete catalog and asset integrity.",
       "Rebuilt the README's Specialization documentation and replaced outdated gallery captures with current desktop and mobile planner screenshots.",
       "Kept the All-Star signup form and member hub intact when Firestore rejects a save, showing the write error inline instead of incorrectly treating every permission denial as an expired PIN grant."
-    ]
-  },
-  {
-    "version": "14.1.4",
-    "date": "2026-07-18",
-    "highlights": [
-      "Reworked the All-Star signup OCR panel into a desktop split layout with a much larger full-list example opposite the upload controls while preserving the stacked mobile flow.",
-      "Limited the cumulative hero season filter to S0, S1, S2, S3, S4, X1, X2, and X8; added exact supplied troop portraits to the T10 readiness choices; replaced missing or incorrect research artwork with all 29 exact supplied in-game icon crops; and added an explicit, admin-visible …",
-      "Folded Epic Showdown preferences into the end of Signup, expanded its selectable game times to every two hours from +6 through +20, added a planning-only choice between flexible roles, flexible fight times, or one fixed assignment, and simplified the member journey navigation to…",
-      "Made Unit Specialty Power mandatory, added visible focus-guided submission errors and an explicit Edit my signup action, a safe Lock hub action, and automatic one-time recovery from stale All-Star asset chunks so access happens before private form entry, saved answers remain edi…",
-      "Added six optional animal team-name concepts with original matching emblems; players can favorite any number for leadership planning without affecting scores or automatic team balance."
     ]
   }
 ].map((release) =>

@@ -1301,13 +1301,13 @@
 
 .boh-t10-type-icons {
   display: flex;
-  width: auto;
+  width: 7.55rem;
   flex: 0 0 auto;
   gap: 0.25rem;
 }
 
 .boh-t10-type-icons .boh-t10-type-icon {
-  width: 1.6rem;
+  width: 2.35rem;
   height: 2.35rem;
 }
 
