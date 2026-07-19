@@ -21,7 +21,7 @@ function validSignup() {
     level50Heroes: '8',
     rocLevel: '12',
     availability: 'all',
-    fightingTimeIds: ['+8', '+12'],
+    fightingTimeIds: ['+12', '+14'],
     preferredRole: 'offensive',
     leadershipInterest: 'no',
     vts1097Member: 'yes',

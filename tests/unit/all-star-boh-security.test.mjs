@@ -1136,7 +1136,7 @@ test('Firestore private signup tactical catalogs match canonical source data', (
   assert.match(fightingTimes, /values is list/);
   assert.match(fightingTimes, /values\.size\(\) == 2/);
   assert.match(fightingTimes, /values\.toSet\(\)\.size\(\) == values\.size\(\)/);
-  assert.match(fightingTimes, /hasOnly\(\['\+8', '\+12', '\+14', '\+20'\]\)/);
+  assert.match(fightingTimes, /hasOnly\(\['\+12', '\+14', '\+16'\]\)/);
 
   const publishedStart = rules.indexOf('function validAllStarBohPublishedPhaseItem');
   const submissionStart = rules.indexOf('function validAllStarBohSubmissionData(');

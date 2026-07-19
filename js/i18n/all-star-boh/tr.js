@@ -354,10 +354,9 @@ export default Object.freeze({
   'signup.fightingTimesLegend': 'Tam olarak iki All-Star savaş saati seç',
   'signup.fightingTimesHint':
     'Oyun iki tercih edilen saat seçilmesini ister. Nihai savaş saatleri katılan tüm takımların çoğunluk oyuyla belirlenir.',
-  'signup.fightingTime8': 'Maç saati +8',
   'signup.fightingTime12': 'Maç saati +12',
   'signup.fightingTime14': 'Maç saati +14',
-  'signup.fightingTime20': 'Maç saati +20',
+  'signup.fightingTime16': 'Maç saati +16',
   'signup.fightingTimesCount': '{count} / 2 seçildi',
   'signup.fightingTimesRequired': 'Tam olarak iki All-Star savaş saati seç.',
   'signup.fightingTimesLimit':
@@ -389,6 +388,25 @@ export default Object.freeze({
   'signup.teamNameHint': 'İsteğe bağlı ve eğlence içindir; son isme yönetim karar verir.',
   'role.noPreference': 'Tercih yok',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'common.yes': 'Evet',
+  'common.no': 'Hayır',
+  'signup.participationLegend': 'All-Star BoH oynamak istiyor musun?',
+  'signup.participationAllStar': 'Evet, All-Star BoH’a katıl',
+  'signup.participationAllStarHint': 'Kayıt formunu ve Epic Showdown seçimlerini tamamla.',
+  'signup.participationEpicOnly': 'Hayır, yalnızca Epic Showdown',
+  'signup.participationEpicOnlyHint': 'All-Star bilgilerini atla ve Epic uygunluğunu seç.',
+  'signup.vtsMemberLegend': 'Şu anda VTS 1097’de oynuyor musun?',
+  'signup.contactNumber': 'Viber veya WhatsApp numarası',
+  'signup.currentState': 'Mevcut eyalet',
+  'signup.joinReason': 'Neden VTS ile oynamak istiyorsun?',
+  'signup.troopEstimateTitle': 'Tahmini birlik sayısı',
+  'signup.troopEstimateDescription':
+    'Her kategori için milyon cinsinden isteğe bağlı bir tahmin gir.',
+  'signup.troopEstimateMillionsHint': 'Örnek: 7.000.000 birliğin varsa yalnızca 7 yaz.',
+  'signup.troopEstimateLofty': 'S (Lofty) T10 birlikleri',
+  'signup.troopEstimateEnhancedT10': 'Geliştirilmiş T10 birlikleri',
+  'signup.troopEstimateT10': 'T10 birlikleri',
+  'signup.troopEstimateT9': 'T9 birlikleri',
   'signup.permissionDeniedError':
     'Kaydın kaydedilemedi — üye erişiminin süresi dolmuş olabilir. PIN ile yeniden kilidi açıp tekrar gönder. Sorun devam ederse yönetimle iletişime geç.',
 });

@@ -68,7 +68,7 @@ function submission(gameName = '古風無道', overrides = {}) {
       contactNumber: '',
       currentState: '',
       joinReason: '',
-      fightingTimeIds: ['+8', '+12'],
+      fightingTimeIds: ['+12', '+14'],
       teamNamePreferences: ['iron-wolves', 'frost-bears'],
       unavailableTimes: '',
       canTeleport: true,
@@ -664,7 +664,7 @@ test('signup planning fields are catalog-ordered, sparse, and require two times 
     commitment: {
       ...base.commitment,
       preferredRole: '',
-      fightingTimeIds: ['+20', '+12'],
+      fightingTimeIds: ['+16', '+12'],
     },
   });
 
@@ -673,7 +673,7 @@ test('signup planning fields are catalog-ordered, sparse, and require two times 
   assert.deepEqual(saved.stats.researchProgressPct, { development: 75, combat: 0 });
   assert.deepEqual(Object.keys(saved.stats.researchProgressPct), ['development', 'combat']);
   assert.equal(saved.commitment.preferredRole, '');
-  assert.deepEqual(saved.commitment.fightingTimeIds, ['+12', '+20']);
+  assert.deepEqual(saved.commitment.fightingTimeIds, ['+12', '+16']);
   assert.equal(saved.commitment.secondaryRole, 'rune');
   assert.equal(saved.commitment.canHelpLead, true);
   assert.deepEqual(saved.commitment.teamNamePreferences, ['iron-wolves', 'frost-bears']);
@@ -717,6 +717,29 @@ test('signup planning fields are catalog-ordered, sparse, and require two times 
     /between 0 and 100/
   );
   assert.equal(fake.read(path).revision, 1);
+});
+
+test('aggregate troop estimates round-trip through the existing troopRoster contract', () => {
+  const normalized = normalizeAllStarBohSubmission(
+    submission('Estimated Troops', {
+      stats: {
+        totalPower: 1_000_000_000,
+        troopPower: 100_000_000,
+        buildingPower: 200_000_000,
+        technologyPower: 300_000_000,
+        heroPower: 250_000_000,
+        dragonPower: 150_000_000,
+        troopRoster: ['estimate|lofty|7000000', 'estimate|t10|2500000'],
+      },
+    })
+  );
+
+  assert.deepEqual(normalized.stats.troopRoster, [
+    'estimate|lofty|7000000',
+    'estimate|t10|2500000',
+  ]);
+  assert.equal(Object.hasOwn(normalized.stats, 'troopEstimateLofty'), false);
+  assert.equal(Object.hasOwn(normalized.stats, 'troopEstimateT10'), false);
 });
 
 test('Epic Showdown preferences have an independent per-player revision and configurable times', async () => {
@@ -991,6 +1014,10 @@ test('admin methods preflight caller-provided admin context before reads, listen
     store.saveReview('player-1', { status: 'verified' }),
     AllStarBohAdminRequiredError
   );
+  await assert.rejects(
+    store.deleteSubmission('player-1', { expectedRevision: 1 }),
+    AllStarBohAdminRequiredError
+  );
   await assert.rejects(store.saveDraft({ title: 'Denied' }), AllStarBohAdminRequiredError);
   assert.equal(fake.getDocsCount, 0);
   assert.equal(fake.transactionCount, 0);
@@ -998,6 +1025,34 @@ test('admin methods preflight caller-provided admin context before reads, listen
     fake.listenerCount('collection', `${getAllStarBohSeasonPath(SEASON_ID)}/submissions`),
     0
   );
+});
+
+test('admin deletion removes a signup and its review and feedback in one transaction', async () => {
+  const uid = 'player-1';
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, uid);
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, uid);
+  const feedbackPath = getAllStarBohFeedbackPath(SEASON_ID, uid);
+  const fake = createFirestoreFake({
+    [submissionPath]: { uid, seasonId: SEASON_ID, revision: 3 },
+    [reviewPath]: { uid, seasonId: SEASON_ID, revision: 2 },
+    [feedbackPath]: { uid, seasonId: SEASON_ID, revision: 1 },
+  });
+  const store = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+
+  assert.deepEqual(await store.deleteSubmission(uid, { expectedRevision: 3 }), {
+    uid,
+    deleted: true,
+  });
+  assert.equal(fake.read(submissionPath), undefined);
+  assert.equal(fake.read(reviewPath), undefined);
+  assert.equal(fake.read(feedbackPath), undefined);
+  assert.equal(fake.transactionCount, 1);
 });
 
 test('admin lists and observes submissions, saves reviews, and accepts incomplete drafts', async () => {
@@ -2186,7 +2241,7 @@ test('transaction retries commit one coherent revision and serializers reject in
       submission('Oversized', {
         commitment: {
           availability: 'all',
-          fightingTimeIds: ['+8', '+12'],
+          fightingTimeIds: ['+12', '+14'],
           vts1097Member: true,
           notes: 'x'.repeat(2001),
         },

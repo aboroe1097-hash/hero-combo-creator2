@@ -357,10 +357,9 @@ export default Object.freeze({
   'signup.fightingTimesLegend': 'Pilih tepat dua waktu bertempur All-Star',
   'signup.fightingTimesHint':
     'Game mewajibkan dua pilihan waktu. Waktu bertarung final ditentukan oleh suara mayoritas semua tim peserta.',
-  'signup.fightingTime8': 'Waktu pertandingan +8',
   'signup.fightingTime12': 'Waktu pertandingan +12',
   'signup.fightingTime14': 'Waktu pertandingan +14',
-  'signup.fightingTime20': 'Waktu pertandingan +20',
+  'signup.fightingTime16': 'Waktu pertandingan +16',
   'signup.fightingTimesCount': '{count} / 2 dipilih',
   'signup.fightingTimesRequired': 'Pilih tepat dua waktu bertempur All-Star.',
   'signup.fightingTimesLimit':
@@ -392,6 +391,25 @@ export default Object.freeze({
     'Opsional dan hanya untuk bersenang-senang; pimpinan menentukan nama akhir.',
   'role.noPreference': 'Tidak ada pilihan',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'common.yes': 'Ya',
+  'common.no': 'Tidak',
+  'signup.participationLegend': 'Apakah kamu ingin bermain All-Star BoH?',
+  'signup.participationAllStar': 'Ya, ikut All-Star BoH',
+  'signup.participationAllStarHint': 'Lengkapi pendaftaran dan pilihan Epic Showdown.',
+  'signup.participationEpicOnly': 'Tidak, hanya Epic Showdown',
+  'signup.participationEpicOnlyHint': 'Lewati data All-Star dan pilih ketersediaan Epic-mu.',
+  'signup.vtsMemberLegend': 'Apakah kamu saat ini bermain di VTS 1097?',
+  'signup.contactNumber': 'Nomor Viber atau WhatsApp',
+  'signup.currentState': 'State saat ini',
+  'signup.joinReason': 'Mengapa kamu ingin bermain bersama VTS?',
+  'signup.troopEstimateTitle': 'Perkiraan jumlah pasukan',
+  'signup.troopEstimateDescription':
+    'Masukkan perkiraan opsional dalam jutaan untuk setiap kategori.',
+  'signup.troopEstimateMillionsHint': 'Contoh: jika kamu punya 7.000.000 pasukan, cukup tulis 7.',
+  'signup.troopEstimateLofty': 'Pasukan S (Lofty) T10',
+  'signup.troopEstimateEnhancedT10': 'Pasukan T10 yang ditingkatkan',
+  'signup.troopEstimateT10': 'Pasukan T10',
+  'signup.troopEstimateT9': 'Pasukan T9',
   'signup.permissionDeniedError':
     'Pendaftaranmu tidak dapat disimpan — akses anggota mungkin sudah kedaluwarsa. Buka kembali dengan PIN lalu kirim ulang. Jika masih gagal, hubungi pimpinan.',
 });

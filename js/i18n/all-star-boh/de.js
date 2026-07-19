@@ -359,10 +359,9 @@ export default Object.freeze({
   'signup.fightingTimesLegend': 'Wähle genau zwei All-Star-Kampfzeiten',
   'signup.fightingTimesHint':
     'Das Spiel verlangt zwei bevorzugte Zeiten. Die endgültigen Kampfzeiten werden durch die Mehrheitswahl aller teilnehmenden Teams bestimmt.',
-  'signup.fightingTime8': 'Spielzeit +8',
   'signup.fightingTime12': 'Spielzeit +12',
   'signup.fightingTime14': 'Spielzeit +14',
-  'signup.fightingTime20': 'Spielzeit +20',
+  'signup.fightingTime16': 'Spielzeit +16',
   'signup.fightingTimesCount': '{count} / 2 ausgewählt',
   'signup.fightingTimesRequired': 'Wähle genau zwei All-Star-Kampfzeiten.',
   'signup.fightingTimesLimit':
@@ -395,6 +394,26 @@ export default Object.freeze({
     'Optional und nur zum Spaß; die Leitung entscheidet den endgültigen Namen.',
   'role.noPreference': 'Keine Präferenz',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'common.yes': 'Ja',
+  'common.no': 'Nein',
+  'signup.participationLegend': 'Möchtest du All-Star BoH spielen?',
+  'signup.participationAllStar': 'Ja, bei All-Star BoH mitmachen',
+  'signup.participationAllStarHint': 'Fülle die Anmeldung und die Epic-Showdown-Auswahl aus.',
+  'signup.participationEpicOnly': 'Nein, nur Epic Showdown',
+  'signup.participationEpicOnlyHint':
+    'Überspringe die All-Star-Daten und wähle deine Epic-Verfügbarkeit.',
+  'signup.vtsMemberLegend': 'Spielst du derzeit in VTS 1097?',
+  'signup.contactNumber': 'Viber- oder WhatsApp-Nummer',
+  'signup.currentState': 'Aktueller Staat',
+  'signup.joinReason': 'Warum möchtest du mit VTS spielen?',
+  'signup.troopEstimateTitle': 'Geschätzte Truppenstärke',
+  'signup.troopEstimateDescription':
+    'Gib optional für jede Kategorie eine Schätzung in Millionen ein.',
+  'signup.troopEstimateMillionsHint': 'Beispiel: Bei 7.000.000 Truppen gib einfach 7 ein.',
+  'signup.troopEstimateLofty': 'S-(Lofty)-T10-Truppen',
+  'signup.troopEstimateEnhancedT10': 'Verbesserte T10-Truppen',
+  'signup.troopEstimateT10': 'T10-Truppen',
+  'signup.troopEstimateT9': 'T9-Truppen',
   'signup.permissionDeniedError':
     'Deine Anmeldung konnte nicht gespeichert werden — dein Mitgliederzugang ist möglicherweise abgelaufen. Entsperre erneut mit deiner PIN und sende noch einmal. Wenn das Problem bleibt, kontaktiere die Leitung.',
 });

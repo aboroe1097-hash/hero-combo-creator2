@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.1.18 - 2026-07-20
+
+- Replaced unreliable multi-image troop OCR with four optional million-based estimates for Lofty (S), enhanced T10, regular T10, and T9 troops; entering `7` records an estimated `7,000,000` troops while preserving legacy reviewed troop rows.
+- Limited All-Star fighting-time choices to `+12`, `+14`, and `+16`, with exactly two choices still required; Epic Showdown time choices are unchanged.
+- Completed localized All-Star participation, VTS membership, contact, state, reason, and troop-estimate copy across all twelve supported languages instead of falling back to English.
+- Verified protected admin signup deletion removes only the selected signup, review, and feedback while preserving independent Epic Showdown preferences.
+
 ## 14.1.17 - 2026-07-19
 
 - Audited all 200 Eden contribution entries, 180 duty records, 40 conduct records, management votes, and teammate votes against canonical player families while preserving the published Top 20 order.

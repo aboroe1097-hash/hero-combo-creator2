@@ -192,7 +192,9 @@
           <span class="boh-choice-card__mark" aria-hidden="true"></span>
           <span>
             <strong data-boh-i18n="signup.participationAllStar">Yes, join All-Star BoH</strong>
-            <small data-boh-i18n="signup.participationAllStarHint">Complete the signup and Epic Showdown choices.</small>
+            <small data-boh-i18n="signup.participationAllStarHint"
+              >Complete the signup and Epic Showdown choices.</small
+            >
           </span>
         </label>
         <label class="boh-choice-card">
@@ -200,7 +202,9 @@
           <span class="boh-choice-card__mark" aria-hidden="true"></span>
           <span>
             <strong data-boh-i18n="signup.participationEpicOnly">No, Epic Showdown only</strong>
-            <small data-boh-i18n="signup.participationEpicOnlyHint">Skip the All-Star intake and choose your Epic availability.</small>
+            <small data-boh-i18n="signup.participationEpicOnlyHint"
+              >Skip the All-Star intake and choose your Epic availability.</small
+            >
           </span>
         </label>
       </div>
@@ -229,7 +233,11 @@
       </div>
     </aside>
 
-    <aside class="boh-notice boh-notice--privacy" aria-labelledby="bohPrivacyTitle" data-allstar-intake>
+    <aside
+      class="boh-notice boh-notice--privacy"
+      aria-labelledby="bohPrivacyTitle"
+      data-allstar-intake
+    >
       <span class="boh-notice__icon" aria-hidden="true">i</span>
       <div>
         <h4 id="bohPrivacyTitle" data-boh-i18n="signup.privacyTitle">
@@ -380,7 +388,7 @@
         <p class="boh-inline-status" data-role="ocr-status" role="status" aria-live="polite"></p>
       </section>
 
-      <section class="boh-card boh-troop-ocr" data-role="troop-ocr-panel">
+      <section class="boh-card boh-troop-ocr" data-role="troop-ocr-panel" hidden>
         <div class="boh-card-heading">
           <div>
             <p class="boh-kicker" data-role="troop-ocr-kicker">OPTIONAL TROOP OCR</p>
@@ -487,6 +495,71 @@
         </div>
       </section>
 
+      <section class="boh-card" data-role="troop-estimates-panel">
+        <div class="boh-card-heading">
+          <div>
+            <h4 data-boh-i18n="signup.troopEstimateTitle">Optional troop estimates</h4>
+          </div>
+        </div>
+        <p class="boh-card-intro" data-boh-i18n="signup.troopEstimateDescription">
+          Help leadership understand your approximate troop strength. You may leave these fields
+          blank.
+        </p>
+        <p class="boh-card-intro" data-boh-i18n="signup.troopEstimateMillionsHint">
+          Enter totals in millions. For example, if you have 7,000,000 troops, enter 7.
+        </p>
+        <div class="boh-power-grid">
+          <label class="boh-field">
+            <span data-boh-i18n="signup.troopEstimateLofty">S (Lofty) troops</span>
+            <input
+              type="number"
+              name="troopEstimateLofty"
+              min="0"
+              max="9999"
+              step="0.1"
+              inputmode="decimal"
+              placeholder="0"
+            />
+          </label>
+          <label class="boh-field">
+            <span data-boh-i18n="signup.troopEstimateEnhancedT10">Enhanced T10 troops</span>
+            <input
+              type="number"
+              name="troopEstimateEnhancedT10"
+              min="0"
+              max="9999"
+              step="0.1"
+              inputmode="decimal"
+              placeholder="0"
+            />
+          </label>
+          <label class="boh-field">
+            <span data-boh-i18n="signup.troopEstimateT10">Regular T10 troops</span>
+            <input
+              type="number"
+              name="troopEstimateT10"
+              min="0"
+              max="9999"
+              step="0.1"
+              inputmode="decimal"
+              placeholder="0"
+            />
+          </label>
+          <label class="boh-field">
+            <span data-boh-i18n="signup.troopEstimateT9">T9 troops</span>
+            <input
+              type="number"
+              name="troopEstimateT9"
+              min="0"
+              max="9999"
+              step="0.1"
+              inputmode="decimal"
+              placeholder="0"
+            />
+          </label>
+        </div>
+      </section>
+
       <section class="boh-card" aria-labelledby="bohIdentityTitle">
         <div class="boh-card-heading">
           <div>
@@ -543,16 +616,25 @@
         <div class="boh-nonmember-fields" data-role="nonmember-fields" hidden>
           <div class="boh-field-grid boh-field-grid--two">
             <label class="boh-field">
-              <span><span data-boh-i18n="signup.contactNumber">Viber or WhatsApp number</span> <b aria-hidden="true">*</b></span>
+              <span
+                ><span data-boh-i18n="signup.contactNumber">Viber or WhatsApp number</span>
+                <b aria-hidden="true">*</b></span
+              >
               <input type="text" name="contactNumber" autocomplete="tel" maxlength="160" />
             </label>
             <label class="boh-field">
-              <span><span data-boh-i18n="signup.currentState">Current state</span> <b aria-hidden="true">*</b></span>
+              <span
+                ><span data-boh-i18n="signup.currentState">Current state</span>
+                <b aria-hidden="true">*</b></span
+              >
               <input type="text" name="currentState" maxlength="160" />
             </label>
           </div>
           <label class="boh-field">
-            <span><span data-boh-i18n="signup.joinReason">Why do you want to play with VTS?</span> <b aria-hidden="true">*</b></span>
+            <span
+              ><span data-boh-i18n="signup.joinReason">Why do you want to play with VTS?</span>
+              <b aria-hidden="true">*</b></span
+            >
             <textarea name="joinReason" rows="3" maxlength="1000"></textarea>
           </label>
         </div>
@@ -759,7 +841,6 @@
             <small id="bohOcrIssue-royalTechPower" data-role="ocr-field-issue"></small>
           </label>
         </div>
-
       </section>
 
       <section class="boh-card" aria-labelledby="bohReadinessTitle">
@@ -1030,10 +1111,6 @@
             aria-describedby="bohFightingTimesHint bohFightingTimesError"
           >
             <label class="boh-check-card">
-              <input type="checkbox" name="fightingTimeIds" value="+8" />
-              <span data-boh-i18n="signup.fightingTime8">Game time +8</span>
-            </label>
-            <label class="boh-check-card">
               <input type="checkbox" name="fightingTimeIds" value="+12" />
               <span data-boh-i18n="signup.fightingTime12">Game time +12</span>
             </label>
@@ -1042,8 +1119,8 @@
               <span data-boh-i18n="signup.fightingTime14">Game time +14</span>
             </label>
             <label class="boh-check-card">
-              <input type="checkbox" name="fightingTimeIds" value="+20" />
-              <span data-boh-i18n="signup.fightingTime20">Game time +20</span>
+              <input type="checkbox" name="fightingTimeIds" value="+16" />
+              <span data-boh-i18n="signup.fightingTime16">Game time +16</span>
             </label>
           </div>
           <div class="boh-field-status-row">

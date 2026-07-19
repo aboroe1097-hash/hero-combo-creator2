@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.17";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.18";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.18",
+    "date": "2026-07-20",
+    "highlights": [
+      "Replaced unreliable multi-image troop OCR with four optional million-based estimates for Lofty (S), enhanced T10, regular T10, and T9 troops; entering `7` records an estimated `7,000,000` troops while preserving legacy reviewed troop rows.",
+      "Limited All-Star fighting-time choices to `+12`, `+14`, and `+16`, with exactly two choices still required; Epic Showdown time choices are unchanged.",
+      "Completed localized All-Star participation, VTS membership, contact, state, reason, and troop-estimate copy across all twelve supported languages instead of falling back to English.",
+      "Verified protected admin signup deletion removes only the selected signup, review, and feedback while preserving independent Epic Showdown preferences."
+    ]
+  },
   {
     "version": "14.1.17",
     "date": "2026-07-19",
@@ -84,13 +94,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-07-19",
     "highlights": [
       "Kept owner-authenticated All-Star signup edits below Firestore's rules-expression limit by removing redundant update checks while preserving the shared schema, path-bound identity, immutable creation timestamp, and exact revision increment."
-    ]
-  },
-  {
-    "version": "14.1.8",
-    "date": "2026-07-19",
-    "highlights": [
-      "Preserved the successful All-Star signup confirmation when a delayed realtime-listener permission error arrives after the submission has already been committed, while continuing to report the background error through the controller error hook."
     ]
   }
 ].map((release) =>
