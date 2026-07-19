@@ -683,6 +683,22 @@ test('signup planning fields are catalog-ordered, sparse, and require two times 
   fake.write(path, legacyStored);
   assert.deepEqual((await store.getSubmission()).commitment.fightingTimeIds, []);
 
+  legacyStored.commitment.fightingTimeIds = ['+8', '+20'];
+  fake.write(path, legacyStored);
+  assert.deepEqual((await store.getSubmission()).commitment.fightingTimeIds, ['+8', '+20']);
+
+  await assert.rejects(
+    store.saveSubmission(
+      {
+        ...base,
+        commitment: { ...base.commitment, fightingTimeIds: ['+8', '+20'] },
+        revision: 1,
+      },
+      { expectedRevision: 1 }
+    ),
+    /Fighting times contains an unsupported value/
+  );
+
   await assert.rejects(
     store.saveSubmission(
       {
@@ -1058,8 +1074,10 @@ test('admin deletion removes a signup and its review and feedback in one transac
 test('admin lists and observes submissions, saves reviews, and accepts incomplete drafts', async () => {
   const player1Path = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
   const player2Path = getAllStarBohSubmissionPath(SEASON_ID, 'player-2');
+  const legacyPlayer = storedSubmission('player-1', 1, submission('Player One'));
+  legacyPlayer.commitment.fightingTimeIds = ['+8', '+20'];
   const fake = createFirestoreFake({
-    [player1Path]: storedSubmission('player-1', 1, submission('Player One')),
+    [player1Path]: legacyPlayer,
     [player2Path]: storedSubmission('player-2', 3, submission('Player Two')),
   });
   const store = createAllStarBohAdminStore({
@@ -1078,6 +1096,7 @@ test('admin lists and observes submissions, saves reviews, and accepts incomplet
       ['player-2', 'Player Two', 3],
     ]
   );
+  assert.deepEqual(listed[0].commitment.fightingTimeIds, ['+8', '+20']);
   listed[0].stats.t9TroopTypes.push('mutated');
   assert.deepEqual(fake.read(player1Path).stats.t9TroopTypes, ['cavalry', 'archers']);
 

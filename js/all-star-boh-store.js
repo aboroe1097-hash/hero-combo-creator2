@@ -6,6 +6,11 @@ export const ALL_STAR_BOH_MAX_PLAYERS = 72;
 export const ALL_STAR_BOH_MAX_PREFERRED_TEAMMATES = 6;
 export const ALL_STAR_BOH_MAX_USABLE_HERO_NAMES = 78;
 export const ALL_STAR_BOH_FIGHTING_TIME_IDS = Object.freeze(['+12', '+14', '+16']);
+const ALL_STAR_BOH_STORED_FIGHTING_TIME_IDS = Object.freeze([
+  '+8',
+  ...ALL_STAR_BOH_FIGHTING_TIME_IDS,
+  '+20',
+]);
 export const ALL_STAR_BOH_TEAM_NAME_PREFERENCES = Object.freeze([
   'iron-wolves',
   'storm-ravens',
@@ -461,12 +466,16 @@ function normalizeResearchProgress(value, catalog) {
 }
 
 function normalizeFightingTimeIds(value, options = {}) {
+  const supportedTimeIds =
+    options.allowLegacyValues === true
+      ? ALL_STAR_BOH_STORED_FIGHTING_TIME_IDS
+      : ALL_STAR_BOH_FIGHTING_TIME_IDS;
   const selection = boundedStringArray(value || [], {
     label: 'Fighting times',
-    maxItems: ALL_STAR_BOH_FIGHTING_TIME_IDS.length,
+    maxItems: supportedTimeIds.length,
     maxLength: 8,
   });
-  const allowedKeys = new Set(ALL_STAR_BOH_FIGHTING_TIME_IDS.map(planningValueKey));
+  const allowedKeys = new Set(supportedTimeIds.map(planningValueKey));
   const selectedKeys = new Set();
   for (const timeId of selection) {
     const key = planningValueKey(timeId);
@@ -475,7 +484,7 @@ function normalizeFightingTimeIds(value, options = {}) {
     }
     selectedKeys.add(key);
   }
-  const normalized = ALL_STAR_BOH_FIGHTING_TIME_IDS.filter((timeId) =>
+  const normalized = supportedTimeIds.filter((timeId) =>
     selectedKeys.has(planningValueKey(timeId))
   );
   if (!normalized.length && options.allowLegacyEmpty) return normalized;
@@ -606,6 +615,7 @@ function normalizeCommitment(input = {}, options = {}) {
     joinReason: vts1097Member === true ? '' : joinReason,
     fightingTimeIds: normalizeFightingTimeIds(source.fightingTimeIds, {
       allowLegacyEmpty: options.requireFightingTimeIds !== true,
+      allowLegacyValues: options.allowLegacyFightingTimeIds === true,
     }),
     teamNamePreferences,
     unavailableTimes: boundedString(source.unavailableTimes, 800, 'Unavailable times'),
@@ -1863,6 +1873,10 @@ export function createAllStarBohPlayerStore(options = {}) {
     ...(heroNames === null ? {} : { heroNames: Object.freeze(heroNames) }),
     ...(researchTreeIds === null ? {} : { researchTreeIds: Object.freeze(researchTreeIds) }),
   });
+  const submissionReadOptions = Object.freeze({
+    ...submissionPlanningOptions,
+    allowLegacyFightingTimeIds: true,
+  });
   const epicTimeSlotIds = Object.freeze(
     normalizeEpicTimeSlotIds(
       options.epicTimeSlotIds === undefined
@@ -1880,7 +1894,7 @@ export function createAllStarBohPlayerStore(options = {}) {
   async function getSubmission() {
     const snapshot = await firestore.getDoc(submissionRef);
     return parseDocumentSnapshot(snapshot, (raw) =>
-      normalizeSubmissionDocument(raw, seasonId, uid, submissionPlanningOptions)
+      normalizeSubmissionDocument(raw, seasonId, uid, submissionReadOptions)
     );
   }
 
@@ -1916,7 +1930,7 @@ export function createAllStarBohPlayerStore(options = {}) {
       submissionRef,
       (snapshot) =>
         parseDocumentSnapshot(snapshot, (raw) =>
-          normalizeSubmissionDocument(raw, seasonId, uid, submissionPlanningOptions)
+          normalizeSubmissionDocument(raw, seasonId, uid, submissionReadOptions)
         ),
       next,
       error
@@ -2334,6 +2348,10 @@ export function createAllStarBohAdminStore(options = {}) {
     ...(heroNames === null ? {} : { heroNames: Object.freeze(heroNames) }),
     ...(researchTreeIds === null ? {} : { researchTreeIds: Object.freeze(researchTreeIds) }),
   });
+  const submissionReadOptions = Object.freeze({
+    ...submissionPlanningOptions,
+    allowLegacyFightingTimeIds: true,
+  });
   const epicTimeSlotIds = Object.freeze(
     normalizeEpicTimeSlotIds(
       options.epicTimeSlotIds === undefined
@@ -2362,7 +2380,7 @@ export function createAllStarBohAdminStore(options = {}) {
         const targetUid = requiredIdentifier(snapshotId(docSnapshot), 'Submission user ID');
         const raw = snapshotData(docSnapshot);
         if (!raw) return null;
-        return normalizeSubmissionDocument(raw, seasonId, targetUid, submissionPlanningOptions);
+        return normalizeSubmissionDocument(raw, seasonId, targetUid, submissionReadOptions);
       })
       .filter(Boolean);
   }

@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.18";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.19";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.19",
+    "date": "2026-07-20",
+    "highlights": [
+      "Restored backward-compatible All-Star signup reads for historical `+8` and `+20` fighting-time selections so one older record cannot prevent the admin dashboard or a player's saved form from loading.",
+      "Kept all new and updated submissions restricted to exactly two current fighting times from `+12`, `+14`, and `+16`."
+    ]
+  },
   {
     "version": "14.1.18",
     "date": "2026-07-20",
@@ -87,13 +95,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added a true top-layer confirmation after successful All-Star signup submissions and edits, clearing stale permission errors only after the write succeeds and keeping delayed listener failures from replacing the confirmed result.",
       "Moved optional Epic Showdown choices ahead of the single signup action, saving them with the signup only when changed and fixing saved flexibility radio choices so untouched Epic fields never block submission.",
       "Replaced the first-visit PIN wait with a Velo secure-access loader, limited the mobile Add to Home Screen prompt to 20 seconds, and immediately hid the install prompt, tool dock, Velo launcher, and overlapping controls while a mobile user is writing."
-    ]
-  },
-  {
-    "version": "14.1.9",
-    "date": "2026-07-19",
-    "highlights": [
-      "Kept owner-authenticated All-Star signup edits below Firestore's rules-expression limit by removing redundant update checks while preserving the shared schema, path-bound identity, immutable creation timestamp, and exact revision increment."
     ]
   }
 ].map((release) =>
