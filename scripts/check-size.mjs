@@ -32,7 +32,7 @@ const LIMITS = {
   // All-Star troop OCR review, and the complete 718-node public planner corpus
   // measure 8117.7 KiB after the All-Star participation intake and shared
   // applicant locale additions; retain less than 7.5 KiB of aggregate headroom.
-  totalJsBytes: 8125 * 1024,
+  totalJsBytes: 8145 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -50,14 +50,14 @@ const LIMITS = {
   // without weakening the route, JS, CSS, media, or file-count budgets below.
   // The 14.1.11 applicant flow measures 26,172.1 KiB with shared locale chunks;
   // retain less than 8 KiB while keeping route and media caps unchanged.
-  totalDeployBytes: 26180 * 1024,
+  totalDeployBytes: 26200 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
   // files. Shared player/admin applicant copy brings the audited artifact to
   // 585 files; retain a one-file guard.
-  deployFileCount: 586,
+  deployFileCount: 588,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife

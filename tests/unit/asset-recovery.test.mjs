@@ -126,7 +126,7 @@ function createHarness(options = {}) {
   };
 }
 
-test('prepaint PWA copy packs cover every stable message ID in all 11 locales', () => {
+test('prepaint PWA copy packs cover every stable message ID in all 12 locales', () => {
   const harness = createHarness();
   const runtime = harness.window.VTS_PWA_I18N;
   const audit = runtime.audit();
@@ -136,7 +136,7 @@ test('prepaint PWA copy packs cover every stable message ID in all 11 locales', 
   assert.deepEqual([...audit.unexpected], []);
   assert.deepEqual(
     [...runtime.locales],
-    ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']
+    ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']
   );
   assert.equal(runtime.ids.length, 12);
   for (const locale of runtime.locales.filter((value) => value !== 'en')) {

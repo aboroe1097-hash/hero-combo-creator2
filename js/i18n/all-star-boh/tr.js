@@ -166,8 +166,6 @@ export default Object.freeze({
   'signup.editSignup': 'Kaydımı düzenle',
   'signup.ocrChecklist': 'Ekran görüntüsü kontrol listesi',
   'signup.ocrChoose': 'Ekran görüntüsü seç',
-  'signup.ocrConfirmValues':
-    'Çıkarılan her değeri ekran görüntümle karşılaştırdım ve tüm hataları düzelttim.',
   'signup.ocrConsent':
     'Bu ekran görüntüsünün üçüncü taraf bir yapay zekâ hizmeti tarafından işleneceğini ve çıktıyı doğrulamam gerektiğini anlıyorum.',
   'signup.ocrFileHint': 'PNG, JPG veya WebP. Net ve güncel bir görsel kullan.',
@@ -220,8 +218,6 @@ export default Object.freeze({
   'signup.t9Legend': 'Hangi T10 birlik türlerini kullanabiliyorsun?',
   'signup.t9None': 'Tüm T10 birlik türleri',
   'signup.technologyPower': 'Teknoloji Gücü',
-  'signup.timezone': 'Saat dilimi',
-  'signup.timezonePlaceholder': 'Örnek: UTC+2',
   'signup.title': 'Hesabının mevcut durumunu paylaş',
   'signup.totalPower': 'Toplam Kale Gücü',
   'signup.troopPower': 'Birlik Gücü',
@@ -393,4 +389,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'İsteğe bağlı ve eğlence içindir; son isme yönetim karar verir.',
   'role.noPreference': 'Tercih yok',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Kaydın kaydedilemedi — üye erişiminin süresi dolmuş olabilir. PIN ile yeniden kilidi açıp tekrar gönder. Sorun devam ederse yönetimle iletişime geç.',
 });

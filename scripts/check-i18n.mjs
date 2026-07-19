@@ -420,7 +420,9 @@ for (const [lang, dict] of Object.entries(translations)) {
 
 for (const [lang, dict] of Object.entries(translations)) {
   if (lang === 'en') continue;
+  const intentionalFallbacks = new Set(translationCoverage[lang]?.missingBeforeFallback || []);
   for (const key of NON_FALLBACK_KEYS) {
+    if (intentionalFallbacks.has(key)) continue;
     if (key in dict && dict[key] === translations.en[key]) {
       const enVal = translations.en[key];
       // Allow identical values for shared brand terms, proper nouns, and placeholder-heavy text

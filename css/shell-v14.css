@@ -1639,22 +1639,24 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .site-footer .footer-content {
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    gap: 8px 12px !important;
-    padding-block: 10px !important;
-    padding-inline: 10px 54px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: center;
+    gap: 10px !important;
+    padding: 14px !important;
   }
 
   #app .footer-tool-links {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    order: 3;
-    padding-top: 4px;
-    border-top: 1px solid var(--shell-line);
+    display: none;
   }
 
   #app .footer-meta {
-    align-items: flex-end;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #app .footer-community-links {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   #app .footer-community-links a {
@@ -1663,9 +1665,8 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .site-footer .footer-disclaimer {
-    padding-block: 7px 9px;
-    padding-inline: 10px 54px;
-    text-align: start;
+    padding: 10px 14px 12px;
+    text-align: center;
   }
 }
 

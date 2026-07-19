@@ -11,7 +11,20 @@ function isEnglishOnlyBattleSimulator() {
 (function installPwaRuntimeCopy(global) {
   'use strict';
 
-  var LOCALES = Object.freeze(['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']);
+  var LOCALES = Object.freeze([
+    'en',
+    'es',
+    'pt',
+    'de',
+    'fr',
+    'hr',
+    'tr',
+    'ru',
+    'id',
+    'zh',
+    'ar',
+    'kr',
+  ]);
   var IDS = Object.freeze([
     'updateAvailable',
     'dismiss',
@@ -100,6 +113,21 @@ function isEnglishOnlyBattleSimulator() {
       assetRecoveryMessage:
         'Un fichier mis à jour du site n’a pas pu être chargé. Actualisez quand vous êtes prêt.',
       refresh: 'Actualiser',
+    }),
+    hr: Object.freeze({
+      updateAvailable: 'Dostupna je nova verzija — osvježi stranicu za ažuriranje.',
+      dismiss: 'Zatvori',
+      installTitle: 'Instaliraj VTS Combos',
+      installSubtitle: 'Pristup jednim dodirom · Radi izvan mreže',
+      installAction: 'Instaliraj',
+      installing: 'Instaliranje…',
+      iosTitle: 'Dodaj na početni zaslon',
+      iosTap: 'Dodirni',
+      iosShare: 'Dijeli',
+      iosAddToHome: 'Dodaj na početni zaslon',
+      assetRecoveryMessage:
+        'Ažurirana datoteka stranice nije se mogla učitati. Osvježi kada budeš spreman.',
+      refresh: 'Osvježi',
     }),
     tr: Object.freeze({
       updateAvailable: 'Yeni sürüm hazır — uygulamak için sayfayı yenile.',

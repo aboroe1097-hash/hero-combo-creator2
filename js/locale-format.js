@@ -4,6 +4,7 @@ const APP_LOCALE_MAP = Object.freeze({
   en: 'en-US',
   es: 'es-ES',
   fr: 'fr-FR',
+  hr: 'hr-HR',
   id: 'id-ID',
   kr: 'ko-KR',
   ko: 'ko-KR',

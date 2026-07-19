@@ -1041,9 +1041,9 @@ export function buildBohSubmissionPayload(source, options = {}) {
     'teamNamePreferences'
   );
   const entryMethod = options.entryMethod === 'ocr' ? 'ocr' : 'manual';
-  if (entryMethod === 'ocr' && (!options.ocrReview || options.ocrValuesConfirmed !== true)) {
-    const error = new TypeError('Review and explicitly confirm every OCR value before submitting.');
-    error.field = 'ocrValuesConfirmed';
+  if (entryMethod === 'ocr' && !options.ocrReview) {
+    const error = new TypeError('Read a screenshot before submitting OCR values.');
+    error.field = 'statsScreenshot';
     throw error;
   }
   const confidence = options.ocrReview?.confidence || {};
@@ -1087,7 +1087,7 @@ export function buildBohSubmissionPayload(source, options = {}) {
     },
     ocr: {
       used: entryMethod === 'ocr',
-      valuesConfirmed: entryMethod === 'ocr' && options.ocrValuesConfirmed === true,
+      valuesConfirmed: entryMethod === 'ocr',
       confidence: Number.isFinite(confidence.overall) ? confidence.overall : null,
       warnings: entryMethod === 'ocr' ? [...(options.ocrReview?.warnings || [])].slice(0, 20) : [],
       fieldConfidence: entryMethod === 'ocr' ? fieldConfidence : {},
@@ -1655,8 +1655,6 @@ function setEntryMethod(state, method) {
   for (const input of queryAll(state.root, '[data-role="entry-method"]')) {
     input.checked = input.value === state.entryMethod;
   }
-  const confirmation = query(state.root, '[data-role="ocr-values-confirmed"]');
-  if (state.entryMethod !== 'ocr' && confirmation) confirmation.checked = false;
   renderOcr(state);
 }
 
@@ -2141,8 +2139,6 @@ function hydrateForm(state) {
       },
       requestId: '',
     };
-    const confirmed = query(state.root, '[data-role="ocr-values-confirmed"]');
-    if (confirmed) confirmed.checked = submission.ocr?.valuesConfirmed === true;
   }
   state.hydratedRevision = revision;
   renderOcr(state);
@@ -2341,7 +2337,6 @@ function renderOcr(state) {
   const preview = query(state.root, '[data-role="ocr-preview"]');
   const previewImage = query(state.root, '[data-role="ocr-preview-image"]');
   const reviewBadge = query(state.root, '[data-role="ocr-review-badge"]');
-  const reviewConfirmation = query(state.root, '[data-role="ocr-review-confirmation"]');
   const status = query(state.root, '[data-role="ocr-status"]');
   const process = query(state.root, '[data-role="ocr-process"]');
   setHidden(preview, !state.ocrFile);
@@ -2360,7 +2355,6 @@ function renderOcr(state) {
       : state.tr('signup.ocrReady', 'Ready to process')
   );
   setHidden(reviewBadge, !state.ocrReview);
-  setHidden(reviewConfirmation, !state.ocrReview);
   setBusy(process, state.ocrBusy || !state.ocrFile);
   if (status && state.ocrBusy)
     status.textContent = state.tr('signup.ocrProcessing', 'Reading screenshot…');
@@ -2401,11 +2395,6 @@ function renderOcr(state) {
     }
     if (missing) input.setAttribute?.('aria-invalid', 'true');
     else input.removeAttribute?.('aria-invalid');
-  }
-  const confirmation = query(state.root, '[data-role="ocr-values-confirmed"]');
-  if (confirmation) {
-    confirmation.disabled = Boolean(state.ocrReview && state.ocrReview.isComplete !== true);
-    if (confirmation.disabled) confirmation.checked = false;
   }
 }
 
@@ -3305,8 +3294,6 @@ function clearOcrFile(state) {
   state.ocrInvalidField = '';
   const input = query(state.root, '[data-role="ocr-file-input"]');
   if (input) input.value = '';
-  const confirmation = query(state.root, '[data-role="ocr-values-confirmed"]');
-  if (confirmation) confirmation.checked = false;
   const status = query(state.root, '[data-role="ocr-status"]');
   setText(status, '');
   renderOcr(state);
@@ -3359,11 +3346,12 @@ async function processOcr(state) {
     const form = query(state.root, '[data-role="signup-form"]');
     for (const field of POWER_FIELDS) updateInput(form, field, values[field] ?? '');
     if (values.gameName) updateInput(form, 'gameName', values.gameName);
-    const confirmed = query(state.root, '[data-role="ocr-values-confirmed"]');
-    if (confirmed) confirmed.checked = false;
     setText(
       query(state.root, '[data-role="ocr-status"]'),
-      state.tr('signup.ocrReviewReady', 'OCR draft ready. Review every value before submitting.')
+      state.tr(
+        'signup.ocrReviewReady',
+        'Power values filled automatically. Edit any incorrect or missing number before submitting.'
+      )
     );
   } finally {
     state.ocrBusy = false;
@@ -3386,8 +3374,6 @@ function syncOcrReviewFromForm(state) {
     state.ocrReview = { ...state.ocrReview, isComplete: false };
     state.ocrInvalidField = textValue(error?.field);
   }
-  const confirmation = query(state.root, '[data-role="ocr-values-confirmed"]');
-  if (confirmation) confirmation.checked = false;
   renderOcr(state);
 }
 
@@ -3400,7 +3386,6 @@ function formDataFor(form) {
 
 function focusErrorField(state, field) {
   const selectors = {
-    ocrValuesConfirmed: '[data-role="ocr-values-confirmed"]',
     troopOcrConfirmed: '[data-role="troop-ocr-confirmed"]',
     t10Types: '[name="t10Types"]',
     fightingTimeIds: '[name="fightingTimeIds"]',
@@ -3413,6 +3398,20 @@ function focusErrorField(state, field) {
       : 'smooth',
     block: 'center',
   });
+}
+
+function isPermissionDeniedError(error) {
+  return (
+    error?.code === 'permission-denied' ||
+    /(?:missing or )?insufficient permissions/iu.test(String(error?.message || ''))
+  );
+}
+
+function permissionDeniedMessage(state) {
+  return state.tr(
+    'signup.permissionDeniedError',
+    'Your submission could not be saved — your member access may have expired. Unlock with your PIN again, then resubmit. If it keeps failing, contact leadership.'
+  );
 }
 
 async function submitSignup(state, form) {
@@ -3453,7 +3452,6 @@ async function submitSignup(state, form) {
     payload = buildBohSubmissionPayload(data, {
       entryMethod: state.entryMethod,
       ocrReview: state.ocrReview,
-      ocrValuesConfirmed: query(state.root, '[data-role="ocr-values-confirmed"]')?.checked === true,
       language: state.language,
       model: state.model,
       knownNames: state.submission?.knownNames,
@@ -3521,7 +3519,12 @@ async function submitSignup(state, form) {
     } else {
       preserveFormOnFailure = true;
       reportError(state, error, { action: 'save-submission' });
-      setSignupFormError(state, error?.message || 'Submission was not saved. Please try again.');
+      setSignupFormError(
+        state,
+        isPermissionDeniedError(error)
+          ? permissionDeniedMessage(state)
+          : error?.message || 'Submission was not saved. Please try again.'
+      );
       focusErrorField(state, error?.field);
     }
   } finally {
@@ -3599,6 +3602,14 @@ async function submitEpicPreferences(state, form) {
         );
       } else {
         reportError(state, error, { action: 'save-epic-preferences' });
+        if (isPermissionDeniedError(error)) {
+          notice(
+            state,
+            'signup.permissionDeniedError',
+            'Your submission could not be saved — your member access may have expired. Unlock with your PIN again, then resubmit. If it keeps failing, contact leadership.',
+            { tone: 'error' }
+          );
+        }
       }
       focusErrorField(state, error?.field);
     }

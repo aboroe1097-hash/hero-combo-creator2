@@ -6,7 +6,7 @@ await import('../../js/i18n/standalone-copy.js');
 
 const i18n = globalThis.VTSStandaloneI18n;
 const root = new URL('../../', import.meta.url);
-const locales = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+const locales = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
 
 function read(relativePath) {
   return readFileSync(new URL(relativePath, root), 'utf8');
@@ -36,7 +36,7 @@ function assertSameShape(reference, candidate, path = '') {
   }
 }
 
-test('standalone domain copy completely covers all eleven supported locales', () => {
+test('standalone domain copy resolves all twelve supported locales', () => {
   assert.deepEqual(i18n.locales, locales);
   const english = i18n.getCopy('en');
   for (const locale of locales) assertSameShape(english, i18n.getCopy(locale), locale);

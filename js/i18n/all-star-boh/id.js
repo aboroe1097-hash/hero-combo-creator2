@@ -167,8 +167,6 @@ export default Object.freeze({
   'signup.editSignup': 'Edit pendaftaran saya',
   'signup.ocrChecklist': 'Checklist screenshot',
   'signup.ocrChoose': 'Pilih screenshot',
-  'signup.ocrConfirmValues':
-    'Saya sudah membandingkan setiap nilai hasil ekstraksi dengan screenshot dan memperbaiki kesalahannya.',
   'signup.ocrConsent':
     'Saya memahami bahwa screenshot ini akan diproses oleh penyedia AI pihak ketiga dan hasilnya harus saya periksa.',
   'signup.ocrFileHint': 'PNG, JPG, atau WebP. Gunakan gambar terbaru yang jelas.',
@@ -222,8 +220,6 @@ export default Object.freeze({
   'signup.t9Legend': 'Tipe pasukan T10 mana yang bisa kamu turunkan?',
   'signup.t9None': 'Semua tipe pasukan T10',
   'signup.technologyPower': 'Kekuatan Teknologi',
-  'signup.timezone': 'Zona waktu',
-  'signup.timezonePlaceholder': 'Contoh: UTC+2',
   'signup.title': 'Beri tahu kami kondisi akunmu saat ini',
   'signup.totalPower': 'Total Kekuatan Kastel',
   'signup.troopPower': 'Kekuatan Pasukan',
@@ -396,4 +392,6 @@ export default Object.freeze({
     'Opsional dan hanya untuk bersenang-senang; pimpinan menentukan nama akhir.',
   'role.noPreference': 'Tidak ada pilihan',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Pendaftaranmu tidak dapat disimpan — akses anggota mungkin sudah kedaluwarsa. Buka kembali dengan PIN lalu kirim ulang. Jika masih gagal, hubungi pimpinan.',
 });

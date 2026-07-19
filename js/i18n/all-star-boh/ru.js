@@ -167,8 +167,6 @@ export default Object.freeze({
   'signup.editSignup': 'Изменить мою заявку',
   'signup.ocrChecklist': 'Требования к скриншоту',
   'signup.ocrChoose': 'Выбрать скриншот',
-  'signup.ocrConfirmValues':
-    'Я сверил каждое распознанное значение со скриншотом и исправил все ошибки.',
   'signup.ocrConsent':
     'Я понимаю, что скриншот обработает сторонний сервис ИИ и что результат нужно проверить.',
   'signup.ocrFileHint': 'PNG, JPG или WebP. Используйте чёткое и свежее изображение.',
@@ -221,8 +219,6 @@ export default Object.freeze({
   'signup.t9Legend': 'Какие типы войск T10 вы можете выставить?',
   'signup.t9None': 'Все типы войск T10',
   'signup.technologyPower': 'Мощь исследований',
-  'signup.timezone': 'Часовой пояс',
-  'signup.timezonePlaceholder': 'Например: UTC+2',
   'signup.title': 'Расскажите о состоянии своего аккаунта',
   'signup.totalPower': 'Общая мощь замка',
   'signup.troopPower': 'Мощь войск',
@@ -396,4 +392,6 @@ export default Object.freeze({
     'Необязательно и для развлечения; окончательное решение принимает руководство.',
   'role.noPreference': 'Без предпочтений',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Не удалось сохранить заявку — возможно, срок доступа участника истёк. Снова разблокируйте форму с помощью PIN-кода и отправьте её повторно. Если ошибка повторится, свяжитесь с руководством.',
 });

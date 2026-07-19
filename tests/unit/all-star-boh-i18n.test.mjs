@@ -107,7 +107,7 @@ test('canonical English covers every current All-Star BoH template key', async (
   const html = await readFile(templateUrl, 'utf8');
   const templateKeys = [...new Set(extractTemplateKeys(html))].sort();
 
-  assert.equal(templateKeys.length, 283);
+  assert.equal(templateKeys.length, 280);
   assert.deepEqual(
     templateKeys.filter((key) => !Object.hasOwn(ALL_STAR_BOH_EN, key)),
     [],
@@ -116,7 +116,6 @@ test('canonical English covers every current All-Star BoH template key', async (
   assert.equal(ALL_STAR_BOH_EN['hero.title'], 'Build your strongest team');
   assert.equal(ALL_STAR_BOH_EN['nav.ariaLabel'], 'All-Star BoH sections');
   assert.equal(ALL_STAR_BOH_EN['signup.ocrPreviewAlt'], 'Selected account-stat screenshot preview');
-  assert.equal(ALL_STAR_BOH_EN['signup.timezonePlaceholder'], 'Example: UTC+2');
 });
 
 test('canonical English exactly covers template and runtime translator contracts', async () => {
@@ -139,9 +138,9 @@ test('canonical English exactly covers template and runtime translator contracts
     [],
     'Every player runtime translation call must use a literal key and English fallback'
   );
-  assert.equal(runtimeKeys.length, 114);
-  assert.equal(runtimeOnlyKeys.length, 78);
-  assert.equal(expectedKeys.length, 361);
+  assert.equal(runtimeKeys.length, 115);
+  assert.equal(runtimeOnlyKeys.length, 79);
+  assert.equal(expectedKeys.length, 359);
   assert.deepEqual(
     Object.keys(ALL_STAR_BOH_EN).sort(),
     expectedKeys,
@@ -166,7 +165,7 @@ test('DOM translation routes text and accessible attributes without writing unsa
   const textNode = makeNode({ bohI18n: 'hero.title' });
   const ariaNode = makeNode({ bohI18nAria: 'nav.ariaLabel' });
   const altNode = makeNode({ bohI18nAlt: 'signup.ocrPreviewAlt' });
-  const placeholderNode = makeNode({ bohI18nPlaceholder: 'signup.timezonePlaceholder' });
+  const placeholderNode = makeNode({ bohI18nPlaceholder: 'signup.preferredTeammatesPlaceholder' });
   const nodesBySelector = {
     '[data-boh-i18n]': [textNode],
     '[data-boh-i18n-aria]': [ariaNode],
@@ -183,7 +182,7 @@ test('DOM translation routes text and accessible attributes without writing unsa
   assert.equal(textNode.textContent, 'Build your strongest team');
   assert.equal(ariaNode.attributes['aria-label'], 'All-Star BoH sections');
   assert.equal(altNode.attributes.alt, 'Selected account-stat screenshot preview');
-  assert.equal(placeholderNode.attributes.placeholder, 'Example: UTC+2');
+  assert.equal(placeholderNode.attributes.placeholder, 'Example: PlayerOne, PlayerTwo');
 });
 
 test('text formatting substitutes supplied variables and preserves unresolved placeholders', () => {
@@ -205,6 +204,7 @@ test('locale resolution, English fallback, and lazy-loader contract stay stable'
     'de',
     'es',
     'fr',
+    'hr',
     'id',
     'kr',
     'pt',
@@ -225,6 +225,6 @@ test('locale resolution, English fallback, and lazy-loader contract stay stable'
   }
   assert.doesNotMatch(
     source,
-    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|id|kr|pt|ru|tr|zh)\.js['"]/
+    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|hr|id|kr|pt|ru|tr|zh)\.js['"]/
   );
 });

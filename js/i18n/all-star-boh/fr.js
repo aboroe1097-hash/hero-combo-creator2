@@ -167,8 +167,6 @@ export default Object.freeze({
   'signup.editSignup': 'Modifier mon inscription',
   'signup.ocrChecklist': 'Checklist de la capture',
   'signup.ocrChoose': 'Choisir une capture',
-  'signup.ocrConfirmValues':
-    'J’ai comparé chaque valeur extraite à ma capture et corrigé les erreurs.',
   'signup.ocrConsent':
     'Je comprends que cette capture sera traitée par une IA tierce et que je dois vérifier le résultat.',
   'signup.ocrFileHint': 'PNG, JPG ou WebP. Utilise une image récente et nette.',
@@ -220,8 +218,6 @@ export default Object.freeze({
   'signup.t9Legend': 'Quels types de troupes T10 pouvez-vous aligner ?',
   'signup.t9None': 'Tous les types de troupes T10',
   'signup.technologyPower': 'Puissance technologique',
-  'signup.timezone': 'Fuseau horaire',
-  'signup.timezonePlaceholder': 'Exemple : UTC+2',
   'signup.title': 'Indique-nous le niveau actuel de ton compte',
   'signup.totalPower': 'Puissance totale du château',
   'signup.troopPower': 'Puissance des troupes',
@@ -394,4 +390,6 @@ export default Object.freeze({
   'signup.teamNameHint': 'Optionnel et juste pour le plaisir ; la direction choisit le nom final.',
   'role.noPreference': 'Aucune préférence',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
+  'signup.permissionDeniedError':
+    'Ton inscription n’a pas pu être enregistrée — ton accès membre a peut-être expiré. Déverrouille à nouveau avec ton code PIN, puis renvoie le formulaire. Si le problème persiste, contacte la direction.',
 });

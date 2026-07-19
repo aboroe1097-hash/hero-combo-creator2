@@ -205,10 +205,8 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.ocrCheckDescription':
     'Compare every value with the screenshot before confirming the draft.',
   'signup.ocrCheckTitle': 'Check the highlighted OCR fields',
-  'signup.ocrConfirmValues':
-    'I compared every extracted value with my screenshot and corrected any mistakes.',
   'signup.ocrConsent':
-    'I understand this screenshot will be processed by a third-party AI provider and that I must verify its output.',
+    'I understand this screenshot will be processed by a third-party AI provider and the extracted values will be placed into my power fields.',
   'signup.ocrFileHint': 'PNG, JPG, or WebP. Use a clear, recent image.',
   'signup.ocrKicker': 'OPTIONAL OCR',
   'signup.ocrIssueCorrected': 'Corrected manually — verify once more.',
@@ -250,8 +248,8 @@ export const ALL_STAR_BOH_EN = Object.freeze({
     'Optional — add up to six names, separated by commas or new lines. Leadership will consider the request, but balanced teams come first.',
   'signup.preferredTeammatesPlaceholder': 'Example: PlayerOne, PlayerTwo',
   'signup.privacyDescription':
-    'If you use OCR, your screenshot is sent to a third-party AI service only to read the visible numbers. OCR can make mistakes. Review and correct every value before you submit; no extracted value is accepted automatically.',
-  'signup.privacyTitle': 'Your screenshot requires your confirmation',
+    'If you use OCR, your screenshot is sent to a third-party AI service only to read the visible numbers. The extracted power values are placed directly into the fields below. Edit any incorrect or missing number before submitting.',
+  'signup.privacyTitle': 'OCR fills the power fields for you',
   'signup.readinessKicker': 'READINESS',
   'signup.readinessTitle': 'Troops, heroes, and RoC',
   'signup.reviewHint': 'Your latest confirmed submission will be used for team balancing.',
@@ -268,8 +266,6 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.t9Legend': 'Which T10 troop types can you field?',
   'signup.t9None': 'All T10 troop types',
   'signup.technologyPower': 'Technology Power',
-  'signup.timezone': 'Timezone',
-  'signup.timezonePlaceholder': 'Example: UTC+2',
   'signup.title': 'Tell us where your account stands',
   'signup.totalPower': 'Total Castle Power',
   'signup.troopPower': 'Troop Power',
@@ -283,7 +279,8 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.ocrConsentRequired': 'Confirm the OCR processing notice first.',
   'signup.ocrFileRequired': 'Choose one screenshot first.',
   'signup.ocrProcessing': 'Reading screenshot…',
-  'signup.ocrReviewReady': 'OCR draft ready. Review every value before submitting.',
+  'signup.ocrReviewReady':
+    'Power values filled automatically. Edit any incorrect or missing number before submitting.',
   'signup.revisionConflict':
     'Your saved signup changed in another session. Review this form and submit again.',
   'signup.savedNotice': 'Your stats were submitted successfully.',
@@ -396,6 +393,8 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.secondaryRoleDifferent': 'Choose a different secondary role.',
   'nav.lockHub': 'Lock hub',
   'signup.requiredFieldsMissing': 'Complete the highlighted required field before submitting.',
+  'signup.permissionDeniedError':
+    'Your submission could not be saved — your member access may have expired. Unlock with your PIN again, then resubmit. If it keeps failing, contact leadership.',
   'signup.teamNameTitle': 'Which team names do you like?',
   'signup.teamNameDescription': 'Pick every animal team identity you would be happy to join.',
   'signup.teamNameHint':
@@ -408,6 +407,7 @@ const LOCALE_LOADERS = Object.freeze({
   de: () => import('./de.js'),
   es: () => import('./es.js'),
   fr: () => import('./fr.js'),
+  hr: () => import('./hr.js'),
   id: () => import('./id.js'),
   kr: () => import('./kr.js'),
   pt: () => import('./pt.js'),
@@ -429,7 +429,7 @@ export function resolveAllStarBohLocale(locale) {
 function normalizePack(module) {
   const candidate = module?.default ?? module?.ALL_STAR_BOH_TRANSLATIONS ?? module?.translations;
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null;
-  return Object.freeze({ ...candidate });
+  return Object.freeze({ ...ALL_STAR_BOH_EN, ...candidate });
 }
 
 function format(template, vars = {}) {

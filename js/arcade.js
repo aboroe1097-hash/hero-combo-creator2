@@ -9,11 +9,24 @@ import { initArcadeHub } from './arcade-hub.js';
 import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
 import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '14.1.12';
+const APP_VERSION = '14.1.13';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
-const SUPPORTED_LANGUAGES = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+const SUPPORTED_LANGUAGES = [
+  'en',
+  'es',
+  'pt',
+  'de',
+  'fr',
+  'hr',
+  'tr',
+  'ru',
+  'id',
+  'zh',
+  'ar',
+  'kr',
+];
 
 function getPreferredTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');

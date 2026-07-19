@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.1.12';
+export const APP_VERSION = '14.1.13';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -18,7 +18,7 @@ function detectInitialLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
     const primary = String(globalThis.navigator?.language || '')
       .toLowerCase()
       .split('-')[0];
