@@ -671,6 +671,12 @@
 }
 
 @media (max-width: 640px) {
+  body.keyboard-open .ai-drawer-launcher-shell {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
   body:has(#shellMoreTools) .ai-drawer-launcher-shell {
     inset-inline-end: max(12px, env(safe-area-inset-right));
     bottom: calc(96px + env(safe-area-inset-bottom));

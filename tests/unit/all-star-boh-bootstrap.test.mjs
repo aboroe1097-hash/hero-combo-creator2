@@ -520,6 +520,9 @@ test('bootstrap keeps CSS lazy, permits the two secure endpoints, and statically
   );
   assert.match(source, /input\.type = 'password'/u);
   assert.match(source, /input\.value = '';\s*await unlockHandler/u);
+  assert.match(source, /progress\.dataset\.role = 'boh-access-progress'/u);
+  assert.match(source, /loader\.dataset\.vtsLoaderContext = 'admin'/u);
+  assert.match(source, /progress\.hidden = !unlocking/u);
   assert.doesNotMatch(source, /boh-access-cancel|Not now|showCanceled/u);
   assert.match(source, /onLockHub: lockHub/u);
 });

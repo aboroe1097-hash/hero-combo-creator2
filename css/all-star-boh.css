@@ -427,6 +427,66 @@
   background: var(--boh-control);
 }
 
+.boh-access-progress {
+  min-height: 10rem;
+}
+
+.boh-access-progress .vts-loader {
+  min-height: 10rem;
+  border: 0;
+}
+
+.boh-confirmation-dialog {
+  position: fixed;
+  z-index: 2147483000;
+  inset: 0;
+  width: min(calc(100% - 2rem), 32rem);
+  padding: 0;
+  border-radius: var(--boh-radius);
+  background: var(--boh-panel-strong);
+  color: var(--boh-text);
+}
+
+.boh-confirmation-dialog::backdrop {
+  background: rgba(2, 8, 23, 0.76);
+}
+
+.boh-confirmation-dialog__panel {
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  padding: clamp(1.4rem, 5vw, 2.25rem);
+  text-align: center;
+}
+
+.boh-confirmation-dialog__icon {
+  display: grid;
+  width: 3.75rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--boh-teal) 14%, var(--boh-control));
+  color: var(--boh-teal);
+  font-size: 2rem;
+}
+
+.boh-confirmation-dialog :is(h3, h3 + p, .boh-confirmation-dialog__revision) {
+  margin: 0;
+}
+
+.boh-confirmation-dialog h3 {
+  font-size: clamp(1.45rem, 5vw, 2rem);
+}
+
+.boh-confirmation-dialog__revision {
+  color: var(--boh-sky);
+  font-weight: 800;
+}
+
+.boh-confirmation-dialog .boh-button {
+  min-width: 10rem;
+}
+
 .boh-section {
   min-width: 0;
 }
@@ -3246,6 +3306,7 @@
   .boh-button:hover {
     transform: none;
   }
+
 }
 
 @media (forced-colors: active) {

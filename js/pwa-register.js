@@ -84,9 +84,11 @@ export function registerServiceWorker() {
 
 export function setupInstallPrompt() {
   let deferredPrompt = null;
+  let autoDismissTimer = null;
   let activeLocale = currentPwaLocale();
   const A2HS_LS = 'a2hs-dismiss';
   const A2HS_COOLDOWN = 30 * 24 * 60 * 60 * 1000;
+  const A2HS_VISIBLE_MS = 20_000;
 
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -100,10 +102,16 @@ export function setupInstallPrompt() {
     }
   }
 
-  function dismissA2hs() {
-    try {
-      localStorage.setItem(A2HS_LS, String(Date.now()));
-    } catch {}
+  function dismissA2hs({ remember = true } = {}) {
+    if (autoDismissTimer) {
+      clearTimeout(autoDismissTimer);
+      autoDismissTimer = null;
+    }
+    if (remember) {
+      try {
+        localStorage.setItem(A2HS_LS, String(Date.now()));
+      } catch {}
+    }
     document.querySelectorAll('.a2hs-banner').forEach((el) => {
       el.classList.remove('visible');
       setTimeout(() => el.remove(), 260);
@@ -182,7 +190,14 @@ export function setupInstallPrompt() {
 
     document.body.appendChild(banner);
     requestAnimationFrame(() => requestAnimationFrame(() => banner.classList.add('visible')));
+    autoDismissTimer = setTimeout(() => dismissA2hs({ remember: false }), A2HS_VISIBLE_MS);
   }
+
+  document.addEventListener('focusin', (event) => {
+    if (event.target?.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
+      dismissA2hs({ remember: false });
+    }
+  });
 
   /* ── Desktop: existing small button in command bar ── */
   const btn = document.getElementById('installAppBtn');

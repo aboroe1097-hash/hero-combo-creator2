@@ -199,7 +199,7 @@ export default Object.freeze({
   'signup.rocLevel': 'RoC 레벨',
   'signup.speedHeroesHint': '현재 보유한 스피드 영웅을 모두 선택하세요.',
   'signup.speedHeroesLegend': '보유한 스피드 영웅은?',
-  'signup.submit': '내 스탯 제출',
+  'signup.submitAll': '신청 및 에픽 선택 제출',
   'signup.t9Archers': '궁병',
   'signup.t9Cavalry': '기병',
   'signup.t9Footmen': '보병',
@@ -226,6 +226,15 @@ export default Object.freeze({
   'signup.revisionConflict':
     '저장된 신청 정보가 다른 세션에서 변경되었습니다. 양식을 확인한 뒤 다시 제출하세요.',
   'signup.savedNotice': '계정 및 참가 정보가 성공적으로 제출되었습니다.',
+  'signup.confirmationKicker': '신청 저장 완료',
+  'signup.submitConfirmationTitle': '신청이 제출되었습니다',
+  'signup.submitConfirmationDescription':
+    '정보가 운영진 검토와 팀 균형 조정을 위해 준비되었습니다.',
+  'signup.editConfirmationTitle': '수정 사항이 반영되었습니다',
+  'signup.editConfirmationDescription':
+    '업데이트된 정보가 저장되어 운영진 검토를 기다리고 있습니다.',
+  'signup.confirmationRevision': '신청 수정본 {revision}',
+  'signup.confirmationContinue': '계속',
   'signup.saving': '저장 중…',
   'signup.submitted': '제출 완료 · 수정본 {revision}',
   'status.publishedRevision': '게시됨 · 수정본 {revision}',
@@ -299,7 +308,6 @@ export default Object.freeze({
   'showdown.saving': '저장 중…',
   'showdown.revisionConflict':
     '최근 저장된 선택 항목을 불러왔습니다 — 저장하기 전에 확인하고 변경하세요.',
-  'showdown.save': '에픽 희망 사항 저장',
   'showdown.savedNotice': '에픽 쇼다운 희망 사항을 저장했습니다.',
   'showdown.lockedTitle': '에픽 쇼다운 희망 사항을 저장하려면 멤버 허브를 잠금 해제하세요',
   'showdown.lockedDescription':

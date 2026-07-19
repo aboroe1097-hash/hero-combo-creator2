@@ -7,6 +7,9 @@ const shellCss = readFileSync('css/shell-v14.css', 'utf8');
 const mobileCss = readFileSync('css/mobile.css', 'utf8');
 const edenCss = readFileSync('css/eden-x1.css', 'utf8');
 const manualBuilder = readFileSync('js/app-builder.js', 'utf8');
+const appSource = readFileSync('js/app.js', 'utf8');
+const pwaSource = readFileSync('js/pwa-register.js', 'utf8');
+const aiLauncherCss = readFileSync('public/ai-launcher-critical.css', 'utf8');
 
 test('Hero Atlas keeps an always-loaded stacked command deck for wide mobile viewports', () => {
   assert.match(
@@ -71,8 +74,33 @@ test('mobile bottom layers share one safe dock clearance after Comments retireme
   assert.doesNotMatch(shellCss, /#commentsSection|\.comments-list/);
   assert.match(
     shellCss,
-    /body\.keyboard-open \.floating-tool-btn,[\s\S]*?visibility:\s*hidden !important/
+    /body\.keyboard-open #app \.tool-nav-shell,[\s\S]*?visibility:\s*hidden !important/
   );
+});
+
+test('mobile writing mode reacts to focus before the visual viewport and clears after recovery', () => {
+  assert.match(appSource, /document\.addEventListener\('focusin'/);
+  assert.match(appSource, /focusedEditable \|\| viewportKeyboardOpen/);
+  assert.match(appSource, /document\.body\.classList\.toggle\('keyboard-open', keyboardOpen\)/);
+  assert.match(appSource, /focusRecoveryTimer = setTimeout\([\s\S]*?180\)/);
+  assert.match(
+    shellCss,
+    /body\.keyboard-open #app \.tool-nav-shell,[\s\S]*?body\.keyboard-open #comboFooterBar \{[\s\S]*?pointer-events:\s*none !important/
+  );
+  assert.match(
+    aiLauncherCss,
+    /body\.keyboard-open \.ai-drawer-launcher-shell \{[\s\S]*?pointer-events:\s*none !important/
+  );
+});
+
+test('mobile install prompt is brief and gets out of the way when writing begins', () => {
+  assert.match(pwaSource, /const A2HS_VISIBLE_MS = 20_000/);
+  assert.match(
+    pwaSource,
+    /autoDismissTimer = setTimeout\(\(\) => dismissA2hs\(\{ remember: false \}\), A2HS_VISIBLE_MS\)/
+  );
+  assert.match(pwaSource, /document\.addEventListener\('focusin'/);
+  assert.match(mobileCss, /body\.keyboard-open \.a2hs-banner \{[\s\S]*?pointer-events:\s*none/);
 });
 
 test('Manual Builder keeps a compact floating drop dock without stealing hero-list scrolling', () => {

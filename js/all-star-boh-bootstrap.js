@@ -165,7 +165,16 @@ export function createAllStarBohAccessGate(options = {}) {
   submit.dataset.role = 'boh-access-submit';
   append(actions, submit);
   append(form, field, feedback, actions);
-  append(card, form);
+  const progress = element(documentRef, 'div', 'boh-access-progress');
+  progress.dataset.role = 'boh-access-progress';
+  progress.hidden = true;
+  const loader = element(documentRef, 'div');
+  loader.dataset.vtsLoader = '';
+  loader.dataset.vtsLoaderContext = 'admin';
+  loader.dataset.vtsLoaderVariant = 'compact';
+  loader.dataset.vtsLoaderProgress = 'indeterminate';
+  append(progress, loader);
+  append(card, form, progress);
   append(container, hero, card);
   root.parentNode.insertBefore(container, root);
 
@@ -201,11 +210,23 @@ export function createAllStarBohAccessGate(options = {}) {
     description.textContent = copy.description;
     pinLabel.textContent = copy.pinLabel;
     pinHint.textContent = copy.pinHint;
+    loader.dataset.vtsLoaderKicker = 'VELO';
+    loader.dataset.vtsLoaderTitle = copy.busy;
+    loader.dataset.vtsLoaderStatus = copy.checking;
+    const mountedKicker = loader.querySelector?.('.vts-loader__kicker');
+    const mountedTitle = loader.querySelector?.('.vts-loader__title');
+    const mountedStatus = loader.querySelector?.('.vts-loader__status');
+    if (mountedKicker) mountedKicker.textContent = 'VELO';
+    if (mountedTitle) mountedTitle.textContent = copy.busy;
+    if (mountedStatus) mountedStatus.textContent = copy.checking;
   }
 
   function render() {
     updateCopy();
     const busy = state === 'checking' || state === 'busy';
+    const unlocking = state === 'busy';
+    form.hidden = unlocking;
+    progress.hidden = !unlocking;
     input.disabled = busy;
     submit.disabled = busy;
     submit.setAttribute('aria-busy', String(state === 'busy'));

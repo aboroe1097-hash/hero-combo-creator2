@@ -248,7 +248,7 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.rocLevel': 'RoC level',
   'signup.speedHeroesHint': 'Select every speed hero currently available on your account.',
   'signup.speedHeroesLegend': 'Which speed heroes do you have?',
-  'signup.submit': 'Submit my stats',
+  'signup.submitAll': 'Submit signup & Epic choices',
   'signup.t9Archers': 'Archers',
   'signup.t9Cavalry': 'Cavalry',
   'signup.t9Footmen': 'Footmen',
@@ -275,6 +275,15 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.revisionConflict':
     'Your saved signup changed in another session. Review this form and submit again.',
   'signup.savedNotice': 'Your stats were submitted successfully.',
+  'signup.confirmationKicker': 'SIGNUP SAVED',
+  'signup.submitConfirmationTitle': 'Signup submitted',
+  'signup.submitConfirmationDescription':
+    'Your information is ready for leadership review and team balancing.',
+  'signup.editConfirmationTitle': 'Edits accepted',
+  'signup.editConfirmationDescription':
+    'Your updated information is saved and ready for leadership review.',
+  'signup.confirmationRevision': 'Submission revision {revision}',
+  'signup.confirmationContinue': 'Continue',
   'signup.saving': 'Saving…',
   'signup.submitted': 'Submitted · revision {revision}',
   'status.publishedRevision': 'Published · revision {revision}',
@@ -311,7 +320,6 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'showdown.saved': 'Saved · revision {revision}',
   'showdown.saving': 'Saving…',
   'showdown.revisionConflict': 'Latest saved choices loaded—review and change them before saving.',
-  'showdown.save': 'Save Epic preferences',
   'showdown.savedNotice': 'Your Epic Showdown preferences were saved.',
   'showdown.lockedTitle': 'Unlock the member hub to save Epic Showdown preferences',
   'showdown.lockedDescription':

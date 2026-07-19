@@ -210,7 +210,7 @@ export default Object.freeze({
   'signup.rocLevel': 'Niveau de RoC',
   'signup.speedHeroesHint': 'Sélectionnez tous les héros de vitesse que vous possédez.',
   'signup.speedHeroesLegend': 'Quels héros de vitesse possédez-vous ?',
-  'signup.submit': 'Envoyer mes stats',
+  'signup.submitAll': 'Envoyer l’inscription et les choix Epic',
   'signup.t9Archers': 'Archers',
   'signup.t9Cavalry': 'Cavalerie',
   'signup.t9Footmen': 'Fantassins',
@@ -237,6 +237,15 @@ export default Object.freeze({
   'signup.revisionConflict':
     'Ton inscription enregistrée a changé dans une autre session. Vérifie le formulaire puis renvoie-le.',
   'signup.savedNotice': 'Tes statistiques ont bien été envoyées.',
+  'signup.confirmationKicker': 'INSCRIPTION ENREGISTRÉE',
+  'signup.submitConfirmationTitle': 'Inscription envoyée',
+  'signup.submitConfirmationDescription':
+    'Tes informations sont prêtes pour la vérification et l’équilibrage des équipes.',
+  'signup.editConfirmationTitle': 'Modifications acceptées',
+  'signup.editConfirmationDescription':
+    'Tes informations mises à jour sont enregistrées et prêtes à être vérifiées.',
+  'signup.confirmationRevision': 'Révision de l’inscription {revision}',
+  'signup.confirmationContinue': 'Continuer',
   'signup.saving': 'Enregistrement…',
   'signup.submitted': 'Envoyé · révision {revision}',
   'status.publishedRevision': 'Publié · révision {revision}',
@@ -314,7 +323,6 @@ export default Object.freeze({
   'showdown.saving': 'Enregistrement…',
   'showdown.revisionConflict':
     'Les derniers choix enregistrés ont été chargés — vérifie-les et modifie-les avant d’enregistrer.',
-  'showdown.save': 'Enregistrer mes préférences Epic',
   'showdown.savedNotice': 'Tes préférences pour l’Epic Showdown ont été enregistrées.',
   'showdown.lockedTitle':
     'Déverrouille l’espace membres pour enregistrer tes préférences Epic Showdown',

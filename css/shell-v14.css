@@ -1608,9 +1608,13 @@ body.shell-more-open #app .tool-nav-inner {
     bottom: var(--shell-mobile-nav-clearance) !important;
   }
 
+  body.keyboard-open #app .tool-nav-shell,
   body.keyboard-open .floating-tool-btn,
-  body.keyboard-open .bug-report-fab {
+  body.keyboard-open .bug-report-fab,
+  body.keyboard-open #scrollTopBtn,
+  body.keyboard-open #comboFooterBar {
     visibility: hidden !important;
+    opacity: 0 !important;
     pointer-events: none !important;
   }
 
