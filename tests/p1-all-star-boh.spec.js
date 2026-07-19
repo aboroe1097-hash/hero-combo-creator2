@@ -122,7 +122,7 @@ function createPlayerFixture() {
       },
       commitment: {
         availability: 'all',
-        fightingTimeIds: ['+8', '+12'],
+        fightingTimeIds: ['+12', '+14'],
         preferredRole: 'offensive',
         secondaryRole: '',
         canHelpLead: false,
@@ -206,7 +206,7 @@ function createAdminFixture() {
       commitment: {
         availability: 'all',
         preferredRole: seat.playerId === 'player-1-1' ? 'top' : seat.roleGroupId,
-        ...(seat.playerId === 'player-1-1' ? { fightingTimeIds: ['+8', '+20'] } : {}),
+        ...(seat.playerId === 'player-1-1' ? { fightingTimeIds: ['+12', '+16'] } : {}),
       },
     }))
   );
@@ -712,10 +712,10 @@ test.describe('All-Star BoH secure player hub', () => {
     );
 
     const fightingTimes = root.locator('[name="fightingTimeIds"]');
-    await expect(fightingTimes).toHaveCount(4);
-    await expect(root.locator('[name="fightingTimeIds"][value="+8"]')).toBeChecked();
+    await expect(fightingTimes).toHaveCount(3);
     await expect(root.locator('[name="fightingTimeIds"][value="+12"]')).toBeChecked();
-    await root.locator('[name="fightingTimeIds"][value="+12"]').uncheck();
+    await expect(root.locator('[name="fightingTimeIds"][value="+14"]')).toBeChecked();
+    await root.locator('[name="fightingTimeIds"][value="+14"]').uncheck();
     await expect(root.locator('[data-role="fighting-times-count"]')).toHaveText('1 / 2 selected');
     await root.locator('[data-role="signup-submit"]').click();
     await expect(root.locator('[data-role="fighting-times-error"]')).toContainText(
@@ -723,14 +723,14 @@ test.describe('All-Star BoH secure player hub', () => {
     );
     expect(await page.evaluate(() => window.__BOH_SAVED_SUBMISSION__ ?? null)).toBeNull();
 
-    await root.locator('[name="fightingTimeIds"][value="+14"]').check();
-    await root.locator('[name="fightingTimeIds"][value="+20"]').click();
-    await expect(root.locator('[name="fightingTimeIds"][value="+20"]')).not.toBeChecked();
+    await root.locator('[name="fightingTimeIds"][value="+16"]').check();
+    await root.locator('[name="fightingTimeIds"][value="+14"]').click();
+    await expect(root.locator('[name="fightingTimeIds"][value="+14"]')).not.toBeChecked();
     await expect(root.locator('[data-role="fighting-times-error"]')).toContainText(
       'Only two fighting times can be selected.'
     );
-    await root.locator('[name="fightingTimeIds"][value="+14"]').uncheck();
-    await root.locator('[name="fightingTimeIds"][value="+20"]').check();
+    await root.locator('[name="fightingTimeIds"][value="+16"]').uncheck();
+    await root.locator('[name="fightingTimeIds"][value="+14"]').check();
     await expect(root.locator('[data-role="fighting-times-count"]')).toHaveText('2 / 2 selected');
 
     const favoriteRole = root.locator('[name="preferredRole"]');
@@ -751,7 +751,7 @@ test.describe('All-Star BoH secure player hub', () => {
       expect.arrayContaining(['Lionheart', 'Cao Cao', 'Al Fatih'])
     );
     expect(saved.payload.stats.researchProgressPct).toEqual({ d1956263: 0, b2691f74: 100 });
-    expect(saved.payload.commitment.fightingTimeIds).toEqual(['+8', '+20']);
+    expect(saved.payload.commitment.fightingTimeIds).toEqual(['+12', '+14']);
     expect(saved.payload.commitment.preferredRole).toBe('flexible');
     expect(saved.payload.commitment.secondaryRole).toBe('rune');
     expect(saved.payload.commitment.canHelpLead).toBe(true);
@@ -1015,8 +1015,8 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(planningSignals).toBeVisible();
     await expect(planningSignals).toContainText('Planning signal only');
     await expect(planningSignals).toContainText('Top side');
-    await expect(planningSignals).toContainText('+8');
-    await expect(planningSignals).toContainText('+20');
+    await expect(planningSignals).toContainText('+12');
+    await expect(planningSignals).toContainText('+16');
     await expect(planningSignals).toContainText('Lionheart');
     await expect(planningSignals).toContainText('Al Fatih');
     await expect(
