@@ -786,6 +786,34 @@ test('provider output is range-bound and cannot expand the public response contr
   );
 });
 
+test('suspicious single-digit extended powers are cleared for manual review', () => {
+  const baseline = JSON.parse(providerEnvelope().choices[0].message.content);
+  const normalized = normalizeBohStatsOcrProviderResponse(
+    providerEnvelope({
+      extracted: {
+        ...baseline.extracted,
+        unitSpecialtyPower: 1,
+        artifactPower: 1,
+        royalTechPower: 1,
+      },
+      confidence: {
+        overall: 0.8,
+        unitSpecialtyPower: 0.8,
+        artifactPower: 0.8,
+        royalTechPower: 0.8,
+      },
+    }),
+    {},
+    'server-id'
+  );
+
+  assert.equal(normalized.extracted.unitSpecialtyPower, null);
+  assert.equal(normalized.extracted.artifactPower, null);
+  assert.equal(normalized.extracted.royalTechPower, null);
+  assert.equal(normalized.confidence.unitSpecialtyPower, null);
+  assert.match(normalized.warnings.at(-1), /extended power rows were unreadable/iu);
+});
+
 test('Durable Object atomically rejects concurrent actor requests and stores only hashed keys', async () => {
   clearBohStatsOcrRateLimitForTests();
   const limiter = createBohRateLimiterNamespace();

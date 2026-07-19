@@ -1253,6 +1253,28 @@ async function adapterReviewSubmission(state, payload) {
   adapterNotify(state);
 }
 
+async function adapterDeleteSubmission(state, payload) {
+  const submission = adapterFindSubmission(state, payload.playerId);
+  if (!submission) {
+    throw adapterError('all-star-boh-submission-unknown', 'The selected signup no longer exists.');
+  }
+  if (typeof state.adminStore.deleteSubmission !== 'function') {
+    throw adapterError(
+      'all-star-boh-action-unavailable',
+      'Deleting signups is not connected to the admin store.'
+    );
+  }
+  const uid = adapterSubmissionUid(submission);
+  await state.adminStore.deleteSubmission(uid, {
+    expectedRevision: adapterRevision(submission.revision),
+  });
+  state.submissions = state.submissions.filter(
+    (candidate) => adapterSubmissionUid(candidate) !== uid
+  );
+  state.reviews.delete(uid);
+  adapterNotify(state);
+}
+
 async function adapterCreateScoringVersion(state, payload) {
   const current = adapterActiveScoringVersion(state);
   const versions = list(state.draft?.scoringVersions);
@@ -2392,6 +2414,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     const payload = command.payload && typeof command.payload === 'object' ? command.payload : {};
     adapterAssertRevision(state, payload, command);
     if (type === 'reviewSubmission') await adapterReviewSubmission(state, payload);
+    else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
     else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
     else if (type === 'setScoreOverride') await adapterSetScoreOverride(state, payload);
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
@@ -3013,6 +3036,18 @@ function statEntries(state, submission) {
   }));
 }
 
+const CORRECTABLE_STAT_KEYS = Object.freeze([
+  'totalCastlePower',
+  'troopPower',
+  'buildingPower',
+  'technologyPower',
+  'heroCombatPower',
+  'dragonPower',
+  'unitSpecialtyPower',
+  'artifactPower',
+  'royalTechPower',
+]);
+
 function adminBooleanLabel(state, value) {
   if (value === true) return state.tr('adminBohYes', 'Yes');
   if (value === false) return state.tr('adminBohNo', 'No');
@@ -3109,6 +3144,54 @@ function submissionDetailEntries(state, submission) {
     [state.tr('adminBohCurrentState', 'Current state'), textOrFallback(commitment.currentState)],
     [state.tr('adminBohJoinReason', 'Why VTS'), textOrFallback(commitment.joinReason)],
   ];
+}
+
+function renderTroopInventory(state, submission) {
+  const stats = submission?.confirmedStats || submission?.stats || {};
+  const rows = list(stats.troopRoster).flatMap((entry) => {
+    const match =
+      /^(footmen|cavalry|archers)\|(SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(normal|enhanced)\|(\d{1,10})$/u.exec(
+        cleanText(entry)
+      );
+    if (!match) return [];
+    return [
+      {
+        troopType: adminChoiceLabel(state, match[1]),
+        tier: match[2],
+        enhanced:
+          match[3] === 'enhanced'
+            ? state.tr('adminBohTroopEnhanced', 'Enhanced')
+            : state.tr('adminBohTroopNormal', 'Normal'),
+        count: formatNumber(state, Number(match[4])),
+      },
+    ];
+  });
+  if (!rows.length) return '';
+  return `<section class="boh-admin-card" aria-labelledby="bohAdminTroopInventoryTitle">
+    <header><div><span>${escapeHtml(
+      state.tr('adminBohTroopInventoryKicker', 'REVIEWED TROOP OCR')
+    )}</span><h4 id="bohAdminTroopInventoryTitle">${escapeHtml(
+      state.tr('adminBohTroopInventory', 'OCR troop inventory')
+    )}</h4></div></header>
+    <div class="boh-admin-table-wrap" tabindex="0">
+      <table class="boh-admin-table">
+        <thead><tr>
+          <th>${escapeHtml(state.tr('adminBohTroopType', 'Troop type'))}</th>
+          <th>${escapeHtml(state.tr('adminBohTroopTier', 'Tier'))}</th>
+          <th>${escapeHtml(state.tr('adminBohTroopStatus', 'Status'))}</th>
+          <th>${escapeHtml(state.tr('adminBohTroopCount', 'Count'))}</th>
+        </tr></thead>
+        <tbody>${rows
+          .map(
+            (row) =>
+              `<tr><td>${escapeHtml(row.troopType)}</td><td>${escapeHtml(
+                row.tier
+              )}</td><td>${escapeHtml(row.enhanced)}</td><td>${escapeHtml(row.count)}</td></tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>
+  </section>`;
 }
 
 function heroGroupLabel(state, groupId) {
@@ -3245,14 +3328,7 @@ function renderSignupDetail(state, submission) {
   const reviewStatus = adapterReviewStatusToUi(review.status);
   const selected = (value) => (reviewStatus === value ? ' selected' : '');
   const correctionEntries = statEntries(state, submission).filter(({ key }) =>
-    [
-      'totalCastlePower',
-      'troopPower',
-      'buildingPower',
-      'technologyPower',
-      'heroCombatPower',
-      'dragonPower',
-    ].includes(key)
+    CORRECTABLE_STAT_KEYS.includes(key)
   );
   const correctionReason =
     correctionEntries
@@ -3325,6 +3401,7 @@ function renderSignupDetail(state, submission) {
         )
         .join('')}
     </dl>
+    ${renderTroopInventory(state, submission)}
     ${renderSignupPlanningSignals(state, submission)}
     <section class="boh-admin-warning-box" data-empty="${warnings.length === 0}">
       <h5>${escapeHtml(state.tr('adminBohOcrWarnings', 'OCR review notes'))}</h5>
@@ -3380,6 +3457,18 @@ function renderSignupDetail(state, submission) {
         state.tr('adminBohSaveReview', 'Save review')
       )}</button>
     </form>
+    <section class="boh-admin-card">
+      <h5>${escapeHtml(state.tr('adminBohDeleteSignup', 'Delete signup'))}</h5>
+      <p>${escapeHtml(
+        state.tr(
+          'adminBohDeleteSignupHelp',
+          'Permanently remove this signup and its review. Epic Showdown preferences are kept.'
+        )
+      )}</p>
+      <button class="boh-admin-button boh-admin-button-danger" type="button" data-action="delete-submission" data-player-id="${escapeHtml(
+        id
+      )}">${escapeHtml(state.tr('adminBohDeleteSignupButton', 'Delete this signup'))}</button>
+    </section>
   </aside>`;
 }
 
@@ -5105,6 +5194,29 @@ async function handleClick(state, event) {
       ?.focus();
     return;
   }
+  if (action === 'delete-submission') {
+    const targetId = cleanText(button.dataset.playerId);
+    const submission = state.snapshot.submissions.find((item) => playerId(item) === targetId);
+    if (!submission) return;
+    const displayName = playerName(submission) || targetId;
+    const message = state.tr(
+      'adminBohDeleteSignupConfirm',
+      'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
+      { player: displayName }
+    );
+    const confirmed = await Promise.resolve(
+      state.options.confirm?.(message) ?? window.confirm(message)
+    );
+    if (!confirmed) return;
+    await invokeAction(
+      state,
+      'deleteSubmission',
+      { playerId: targetId },
+      state.tr('adminBohSignupDeleted', 'Signup deleted.')
+    );
+    state.selectedSubmissionId = '';
+    return;
+  }
   if (action === 'select-seat') {
     const found = findSeat(state, button.dataset.teamId, button.dataset.seatNumber);
     if (!found || !found.seat.playerId || found.seat.locked) return;
@@ -5466,15 +5578,7 @@ async function handleSubmit(state, event) {
     const review = submission?.review || {};
     const reason = cleanText(data.get('reason'));
     const statCorrections = Object.fromEntries(
-      [
-        'totalCastlePower',
-        'troopPower',
-        'buildingPower',
-        'technologyPower',
-        'heroCombatPower',
-        'dragonPower',
-      ]
-        .map((key) => [key, cleanText(data.get(`statCorrection.${key}`))])
+      CORRECTABLE_STAT_KEYS.map((key) => [key, cleanText(data.get(`statCorrection.${key}`))])
         .filter(([, corrected]) => corrected !== '')
         .map(([key, corrected]) => [key, { corrected: finiteNumber(corrected), reason }])
     );

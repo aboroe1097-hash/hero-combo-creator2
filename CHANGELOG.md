@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.1.14 - 2026-07-19
+
+- Fixed the Croatian language smoke-test contract that blocked #84 deploy verification after the twelfth locale was added.
+- Expanded All-Star admin corrections to Unit Specialty, Artifact, and Royal Tech power and reject suspicious OCR `1` placeholders in unreadable extended-power rows.
+- Displayed reviewed troop OCR rows in the admin signup panel and widened the combined T10 portraits so they remain distinct on desktop and mobile.
+- Added a confirmed admin-only signup deletion action for removing test entries while preserving separate Epic Showdown preferences.
+
 ## 14.1.13 - 2026-07-19
 
 - Filled editable power fields directly from account-stat OCR and removed the separate extracted-value confirmation checkbox while retaining third-party processing consent.

@@ -259,6 +259,25 @@ test('admin review and rotation editors preserve canonical editable fields', () 
   assert.match(source, /\['unitSpecialtyPower', 'adminBohStatUnitSpecialtyPower'/u);
   assert.match(source, /\['artifactPower', 'adminBohStatArtifactPower'/u);
   assert.match(source, /\['royalTechPower', 'adminBohStatRoyalTechPower'/u);
+  assert.match(
+    source,
+    /const CORRECTABLE_STAT_KEYS = Object\.freeze\(\[[\s\S]*?'unitSpecialtyPower'[\s\S]*?'artifactPower'[\s\S]*?'royalTechPower'/u
+  );
+  assert.match(
+    source,
+    /const correctionEntries = statEntries\(state, submission\)\.filter\(\(\{ key \}\) =>[\s\S]*?CORRECTABLE_STAT_KEYS\.includes\(key\)/u
+  );
+  assert.match(
+    source,
+    /const statCorrections = Object\.fromEntries\([\s\S]*?CORRECTABLE_STAT_KEYS/u
+  );
+  assert.match(source, /function renderTroopInventory\(state, submission\)/u);
+  assert.match(source, /stats\.troopRoster/u);
+  assert.match(source, /bohAdminTroopInventoryTitle/u);
+  assert.match(source, /\$\{renderTroopInventory\(state, submission\)\}/u);
+  assert.match(source, /data-action="delete-submission"/u);
+  assert.match(source, /state\.options\.confirm\?\.\(message\) \?\? window\.confirm\(message\)/u);
+  assert.match(source, /else if \(type === 'deleteSubmission'\)/u);
   assert.match(source, /const reviewStatus = adapterReviewStatusToUi\(review\.status\)/u);
   assert.match(source, /escapeHtml\(review\.note \|\| ''\)/u);
   assert.match(source, /name="adminUsefulnessRating"/u);

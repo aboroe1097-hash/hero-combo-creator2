@@ -2378,6 +2378,38 @@ export function createAllStarBohAdminStore(options = {}) {
     return subscriptions.subscribe(submissionsRef(), parseSubmissionCollection, next, error);
   }
 
+  async function deleteSubmission(targetUidInput, deleteOptions = {}) {
+    await ensureAdmin();
+    const targetUid = requiredIdentifier(targetUidInput, 'Submission user ID');
+    const expectedRevision = normalizeRevision(
+      deleteOptions.expectedRevision ?? 0,
+      'Expected submission revision'
+    );
+    const submissionPath = getAllStarBohSubmissionPath(seasonId, targetUid);
+    const submissionRef = documentRef(firestore, db, submissionPath);
+    const reviewRef = documentRef(firestore, db, getAllStarBohReviewPath(seasonId, targetUid));
+    const feedbackRef = documentRef(firestore, db, getAllStarBohFeedbackPath(seasonId, targetUid));
+    await firestore.runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(submissionRef);
+      const submission = snapshotData(snapshot);
+      if (!submission) {
+        throw new AllStarBohValidationError('The selected signup no longer exists.');
+      }
+      assertStoredIdentity(submission, { seasonId, uid: targetUid });
+      const actualRevision = normalizeRevision(
+        submission.revision ?? 0,
+        'Stored submission revision'
+      );
+      if (actualRevision !== expectedRevision) {
+        throw new AllStarBohConflictError(submissionPath, expectedRevision, actualRevision);
+      }
+      transaction.delete(submissionRef);
+      transaction.delete(reviewRef);
+      transaction.delete(feedbackRef);
+    });
+    return Object.freeze({ uid: targetUid, deleted: true });
+  }
+
   function epicPreferencesCollectionRef() {
     return collectionRef(firestore, db, `${getAllStarBohSeasonPath(seasonId)}/epicPreferences`);
   }
@@ -3156,6 +3188,7 @@ export function createAllStarBohAdminStore(options = {}) {
     epicTimeSlotIds,
     listSubmissions,
     subscribeSubmissions,
+    deleteSubmission,
     getEpicShowdownPreferencesList,
     subscribeEpicShowdownPreferences,
     getPublication,

@@ -607,7 +607,7 @@ test('Firestore grant helper requires a matching active server grant and preserv
   assert.doesNotMatch(helper, /request\.auth\.token\.bohAllStar/);
 });
 
-test('Firestore submissions are own-get/create/update only for members, never list/delete', () => {
+test('Firestore submissions are owner-written while admins can list and delete test signups', () => {
   const rules = readRepositoryFile('firestore.rules');
   const block = rulesMatch(
     rules,
@@ -624,7 +624,7 @@ test('Firestore submissions are own-get/create/update only for members, never li
     /allow create: if isOwner\(uid\)[\s\S]*hasActiveAllStarBohGrant\(season\)[\s\S]*validAllStarBohSubmissionCreate/
   );
   assert.match(block, /allow update: if isOwner\(uid\)[\s\S]*validAllStarBohSubmissionUpdate/);
-  assert.match(block, /allow delete: if false/);
+  assert.match(block, /allow delete: if isAdmin\(\)/);
   assert.doesNotMatch(block, /allow (?:create|update): if isAdmin/);
 
   const updateValidator = rulesMatch(
@@ -718,7 +718,7 @@ test('Firestore private and published paths enforce admin/member boundaries with
   assert.match(feedback, /allow list: if false/);
   assert.match(feedback, /allow create: if isAdmin\(\) && validAllStarBohFeedbackCreate/);
   assert.match(feedback, /allow update: if isAdmin\(\) && validAllStarBohFeedbackUpdate/);
-  assert.match(feedback, /allow delete: if false/);
+  assert.match(feedback, /allow delete: if isAdmin\(\)/);
   const feedbackValidator = rulesMatch(
     rules,
     /function validAllStarBohFeedback\(season, uid\) \{[\s\S]*?\n {4}\}/,

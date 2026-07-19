@@ -406,6 +406,20 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohTroopInventory: 'OCR troop inventory',
   adminBohTroopRows: 'reviewed rows',
   adminBohHeroGroupAll: 'All troop types',
+  adminBohTroopInventoryKicker: 'REVIEWED TROOP OCR',
+  adminBohTroopType: 'Troop type',
+  adminBohTroopTier: 'Tier',
+  adminBohTroopStatus: 'Status',
+  adminBohTroopCount: 'Count',
+  adminBohTroopEnhanced: 'Enhanced',
+  adminBohTroopNormal: 'Normal',
+  adminBohDeleteSignup: 'Delete signup',
+  adminBohDeleteSignupHelp:
+    'Permanently remove this signup and its review. Epic Showdown preferences are kept.',
+  adminBohDeleteSignupButton: 'Delete this signup',
+  adminBohDeleteSignupConfirm:
+    'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
+  adminBohSignupDeleted: 'Signup deleted.',
 });
 
 const LOCALE_LOADERS = Object.freeze({

@@ -103,7 +103,7 @@ test('canonical English exactly covers every admin translator and integration ke
 
   const sourceKeys = [...keys].sort();
   const englishKeys = Object.keys(ADMIN_ALL_STAR_BOH_EN).sort();
-  assert.equal(sourceKeys.length, 383);
+  assert.equal(sourceKeys.length, 395);
   assert.deepEqual(englishKeys, sourceKeys, 'English must have no missing or extra admin keys');
   assert.ok(
     Object.values(ADMIN_ALL_STAR_BOH_EN).every((value) => typeof value === 'string' && value)
@@ -131,7 +131,7 @@ test('canonical placeholders exactly match every source fallback contract', asyn
   const placeholderKeys = Object.entries(ADMIN_ALL_STAR_BOH_EN)
     .filter(([, value]) => placeholderNames(value).length)
     .map(([key]) => key);
-  assert.equal(placeholderKeys.length, 32);
+  assert.equal(placeholderKeys.length, 33);
 });
 
 test('admin text formatting substitutes supplied values and preserves unresolved placeholders', () => {

@@ -1903,12 +1903,12 @@ service cloud.firestore {
         allow update: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
           && validAllStarBohSubmissionUpdate(season, uid);
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
 
       match /reviews/{uid} {
         allow read, create, update: if isAdmin();
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
 
       match /feedback/{uid} {
@@ -1916,7 +1916,7 @@ service cloud.firestore {
         allow list: if false;
         allow create: if isAdmin() && validAllStarBohFeedbackCreate(season, uid);
         allow update: if isAdmin() && validAllStarBohFeedbackUpdate(season, uid);
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
 
       match /epicPreferences/{uid} {
