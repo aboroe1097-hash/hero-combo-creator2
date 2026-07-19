@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.1.7 - 2026-07-19
+
+- Replaced the expression-heavy All-Star signup write path with bounded, owner-scoped validation that keeps the exact previously denied member payload below Firestore's 1,000-expression limit while requiring Unit Specialty Power at the database boundary.
+
 ## 14.1.6 - 2026-07-19
 
 - Reduced All-Star Firestore rule evaluation for short signup lists while preserving validation through the full 60-item troop roster, preventing valid submissions from exceeding the rules expression budget.

@@ -938,13 +938,21 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
     'submission schema'
   );
   assert.match(validator, /keys\(\)\.hasOnly/);
-  assert.match(validator, /validAllStarBohStats/);
-  assert.match(validator, /validAllStarBohCommitment/);
-  assert.match(validator, /validAllStarBohOcr/);
+  assert.match(validator, /request\.resource\.data\.stats is map/);
+  assert.match(validator, /request\.resource\.data\.commitment is map/);
+  assert.match(validator, /request\.resource\.data\.ocr is map/);
+  assert.doesNotMatch(
+    validator,
+    /validAllStarBoh(?:Stats|Commitment|Ocr)\(/,
+    'submission writes must not invoke the expression-heavy legacy validators'
+  );
   assert.match(
     validator,
-    /!\('preferredTeammates' in request\.resource\.data\)[\s\S]*validAllStarBohStringList\([\s\S]*request\.resource\.data\.preferredTeammates,[\s\S]*6,[\s\S]*160/
+    /!\('preferredTeammates' in request\.resource\.data\)[\s\S]*preferredTeammates is list[\s\S]*preferredTeammates\.size\(\) <= 6/
   );
+  assert.match(validator, /'unitSpecialtyPower'/);
+  assert.match(validator, /stats\.unitSpecialtyPower is int/);
+  assert.match(validator, /stats\.unitSpecialtyPower >= 0/);
   const submissionHasOnly = rulesMatch(
     validator,
     /keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/,
@@ -985,6 +993,7 @@ test('Firestore string-list validation evaluates only populated item ranges', ()
   );
 
   assert.match(validator, /values\.size\(\) <= maxItems/);
+  assert.match(validator, /values\.size\(\) == 0/);
   for (const boundary of [6, 12, 20, 30, 45]) {
     assert.match(
       validator,
@@ -1061,9 +1070,13 @@ test('Firestore private signup tactical catalogs match canonical source data', (
   assert.match(researchValidator, /values is map/);
   for (const researchId of canonicalResearchIds) {
     assert.match(
-      researchValidator,
+      rules,
       new RegExp(`validAllStarBohResearchProgressItem\\(values, '${researchId}'\\)`)
     );
+  }
+  assert.match(researchValidator, /values\.size\(\) == 0/);
+  for (const group of [1, 2, 3, 4, 5, 6]) {
+    assert.match(researchValidator, new RegExp(`validAllStarBohResearchProgressGroup${group}`));
   }
   const researchItemValidator = rulesMatch(
     rules,

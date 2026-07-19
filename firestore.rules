@@ -589,101 +589,103 @@ service cloud.firestore {
     }
 
     function validAllStarBohStringItem(values, index, maxLength) {
-      return values.size() <= index
-        || (
-          values[index] is string
-          && values[index].size() > 0
-          && validAllStarBohText(values[index], maxLength)
-        );
+      return values[index] is string
+        && values[index].size() > 0
+        && validAllStarBohText(values[index], maxLength);
     }
 
     function validAllStarBohStringItems0To5(values, maxLength) {
       return validAllStarBohStringItem(values, 0, maxLength)
-        && validAllStarBohStringItem(values, 1, maxLength)
-        && validAllStarBohStringItem(values, 2, maxLength)
-        && validAllStarBohStringItem(values, 3, maxLength)
-        && validAllStarBohStringItem(values, 4, maxLength)
-        && validAllStarBohStringItem(values, 5, maxLength);
+        && (values.size() <= 1 || validAllStarBohStringItem(values, 1, maxLength))
+        && (values.size() <= 2 || validAllStarBohStringItem(values, 2, maxLength))
+        && (values.size() <= 3 || validAllStarBohStringItem(values, 3, maxLength))
+        && (values.size() <= 4 || validAllStarBohStringItem(values, 4, maxLength))
+        && (values.size() <= 5 || validAllStarBohStringItem(values, 5, maxLength));
     }
 
     function validAllStarBohStringItems6To11(values, maxLength) {
       return validAllStarBohStringItem(values, 6, maxLength)
-        && validAllStarBohStringItem(values, 7, maxLength)
-        && validAllStarBohStringItem(values, 8, maxLength)
-        && validAllStarBohStringItem(values, 9, maxLength)
-        && validAllStarBohStringItem(values, 10, maxLength)
-        && validAllStarBohStringItem(values, 11, maxLength);
+        && (values.size() <= 7 || validAllStarBohStringItem(values, 7, maxLength))
+        && (values.size() <= 8 || validAllStarBohStringItem(values, 8, maxLength))
+        && (values.size() <= 9 || validAllStarBohStringItem(values, 9, maxLength))
+        && (values.size() <= 10 || validAllStarBohStringItem(values, 10, maxLength))
+        && (values.size() <= 11 || validAllStarBohStringItem(values, 11, maxLength));
     }
 
     function validAllStarBohStringItems12To19(values, maxLength) {
       return validAllStarBohStringItem(values, 12, maxLength)
-        && validAllStarBohStringItem(values, 13, maxLength)
-        && validAllStarBohStringItem(values, 14, maxLength)
-        && validAllStarBohStringItem(values, 15, maxLength)
-        && validAllStarBohStringItem(values, 16, maxLength)
-        && validAllStarBohStringItem(values, 17, maxLength)
-        && validAllStarBohStringItem(values, 18, maxLength)
-        && validAllStarBohStringItem(values, 19, maxLength);
+        && (values.size() <= 13 || validAllStarBohStringItem(values, 13, maxLength))
+        && (values.size() <= 14 || validAllStarBohStringItem(values, 14, maxLength))
+        && (values.size() <= 15 || validAllStarBohStringItem(values, 15, maxLength))
+        && (values.size() <= 16 || validAllStarBohStringItem(values, 16, maxLength))
+        && (values.size() <= 17 || validAllStarBohStringItem(values, 17, maxLength))
+        && (values.size() <= 18 || validAllStarBohStringItem(values, 18, maxLength))
+        && (values.size() <= 19 || validAllStarBohStringItem(values, 19, maxLength));
     }
 
     function validAllStarBohStringItems20To29(values, maxLength) {
       return validAllStarBohStringItem(values, 20, maxLength)
-        && validAllStarBohStringItem(values, 21, maxLength)
-        && validAllStarBohStringItem(values, 22, maxLength)
-        && validAllStarBohStringItem(values, 23, maxLength)
-        && validAllStarBohStringItem(values, 24, maxLength)
-        && validAllStarBohStringItem(values, 25, maxLength)
-        && validAllStarBohStringItem(values, 26, maxLength)
-        && validAllStarBohStringItem(values, 27, maxLength)
-        && validAllStarBohStringItem(values, 28, maxLength)
-        && validAllStarBohStringItem(values, 29, maxLength);
+        && (values.size() <= 21 || validAllStarBohStringItem(values, 21, maxLength))
+        && (values.size() <= 22 || validAllStarBohStringItem(values, 22, maxLength))
+        && (values.size() <= 23 || validAllStarBohStringItem(values, 23, maxLength))
+        && (values.size() <= 24 || validAllStarBohStringItem(values, 24, maxLength))
+        && (values.size() <= 25 || validAllStarBohStringItem(values, 25, maxLength))
+        && (values.size() <= 26 || validAllStarBohStringItem(values, 26, maxLength))
+        && (values.size() <= 27 || validAllStarBohStringItem(values, 27, maxLength))
+        && (values.size() <= 28 || validAllStarBohStringItem(values, 28, maxLength))
+        && (values.size() <= 29 || validAllStarBohStringItem(values, 29, maxLength));
     }
 
     function validAllStarBohStringItems30To44(values, maxLength) {
       return validAllStarBohStringItem(values, 30, maxLength)
-        && validAllStarBohStringItem(values, 31, maxLength)
-        && validAllStarBohStringItem(values, 32, maxLength)
-        && validAllStarBohStringItem(values, 33, maxLength)
-        && validAllStarBohStringItem(values, 34, maxLength)
-        && validAllStarBohStringItem(values, 35, maxLength)
-        && validAllStarBohStringItem(values, 36, maxLength)
-        && validAllStarBohStringItem(values, 37, maxLength)
-        && validAllStarBohStringItem(values, 38, maxLength)
-        && validAllStarBohStringItem(values, 39, maxLength)
-        && validAllStarBohStringItem(values, 40, maxLength)
-        && validAllStarBohStringItem(values, 41, maxLength)
-        && validAllStarBohStringItem(values, 42, maxLength)
-        && validAllStarBohStringItem(values, 43, maxLength)
-        && validAllStarBohStringItem(values, 44, maxLength);
+        && (values.size() <= 31 || validAllStarBohStringItem(values, 31, maxLength))
+        && (values.size() <= 32 || validAllStarBohStringItem(values, 32, maxLength))
+        && (values.size() <= 33 || validAllStarBohStringItem(values, 33, maxLength))
+        && (values.size() <= 34 || validAllStarBohStringItem(values, 34, maxLength))
+        && (values.size() <= 35 || validAllStarBohStringItem(values, 35, maxLength))
+        && (values.size() <= 36 || validAllStarBohStringItem(values, 36, maxLength))
+        && (values.size() <= 37 || validAllStarBohStringItem(values, 37, maxLength))
+        && (values.size() <= 38 || validAllStarBohStringItem(values, 38, maxLength))
+        && (values.size() <= 39 || validAllStarBohStringItem(values, 39, maxLength))
+        && (values.size() <= 40 || validAllStarBohStringItem(values, 40, maxLength))
+        && (values.size() <= 41 || validAllStarBohStringItem(values, 41, maxLength))
+        && (values.size() <= 42 || validAllStarBohStringItem(values, 42, maxLength))
+        && (values.size() <= 43 || validAllStarBohStringItem(values, 43, maxLength))
+        && (values.size() <= 44 || validAllStarBohStringItem(values, 44, maxLength));
     }
 
     function validAllStarBohStringItems45To59(values, maxLength) {
       return validAllStarBohStringItem(values, 45, maxLength)
-        && validAllStarBohStringItem(values, 46, maxLength)
-        && validAllStarBohStringItem(values, 47, maxLength)
-        && validAllStarBohStringItem(values, 48, maxLength)
-        && validAllStarBohStringItem(values, 49, maxLength)
-        && validAllStarBohStringItem(values, 50, maxLength)
-        && validAllStarBohStringItem(values, 51, maxLength)
-        && validAllStarBohStringItem(values, 52, maxLength)
-        && validAllStarBohStringItem(values, 53, maxLength)
-        && validAllStarBohStringItem(values, 54, maxLength)
-        && validAllStarBohStringItem(values, 55, maxLength)
-        && validAllStarBohStringItem(values, 56, maxLength)
-        && validAllStarBohStringItem(values, 57, maxLength)
-        && validAllStarBohStringItem(values, 58, maxLength)
-        && validAllStarBohStringItem(values, 59, maxLength);
+        && (values.size() <= 46 || validAllStarBohStringItem(values, 46, maxLength))
+        && (values.size() <= 47 || validAllStarBohStringItem(values, 47, maxLength))
+        && (values.size() <= 48 || validAllStarBohStringItem(values, 48, maxLength))
+        && (values.size() <= 49 || validAllStarBohStringItem(values, 49, maxLength))
+        && (values.size() <= 50 || validAllStarBohStringItem(values, 50, maxLength))
+        && (values.size() <= 51 || validAllStarBohStringItem(values, 51, maxLength))
+        && (values.size() <= 52 || validAllStarBohStringItem(values, 52, maxLength))
+        && (values.size() <= 53 || validAllStarBohStringItem(values, 53, maxLength))
+        && (values.size() <= 54 || validAllStarBohStringItem(values, 54, maxLength))
+        && (values.size() <= 55 || validAllStarBohStringItem(values, 55, maxLength))
+        && (values.size() <= 56 || validAllStarBohStringItem(values, 56, maxLength))
+        && (values.size() <= 57 || validAllStarBohStringItem(values, 57, maxLength))
+        && (values.size() <= 58 || validAllStarBohStringItem(values, 58, maxLength))
+        && (values.size() <= 59 || validAllStarBohStringItem(values, 59, maxLength));
     }
 
     function validAllStarBohStringList(values, maxItems, maxLength) {
       return values is list
         && values.size() <= maxItems
-        && validAllStarBohStringItems0To5(values, maxLength)
-        && (values.size() <= 6 || validAllStarBohStringItems6To11(values, maxLength))
-        && (values.size() <= 12 || validAllStarBohStringItems12To19(values, maxLength))
-        && (values.size() <= 20 || validAllStarBohStringItems20To29(values, maxLength))
-        && (values.size() <= 30 || validAllStarBohStringItems30To44(values, maxLength))
-        && (values.size() <= 45 || validAllStarBohStringItems45To59(values, maxLength));
+        && (
+          values.size() == 0
+          || (
+            validAllStarBohStringItems0To5(values, maxLength)
+            && (values.size() <= 6 || validAllStarBohStringItems6To11(values, maxLength))
+            && (values.size() <= 12 || validAllStarBohStringItems12To19(values, maxLength))
+            && (values.size() <= 20 || validAllStarBohStringItems20To29(values, maxLength))
+            && (values.size() <= 30 || validAllStarBohStringItems30To44(values, maxLength))
+            && (values.size() <= 45 || validAllStarBohStringItems45To59(values, maxLength))
+          )
+        );
     }
 
     function validAllStarBohNullableInt(value, minimum, maximum) {
@@ -707,27 +709,32 @@ service cloud.firestore {
     function validAllStarBohUsableHeroNames(values) {
       return values is list
         && values.size() <= 78
-        && values.toSet().size() == values.size()
-        && values.toSet().hasOnly([
-          'Jeanne d\'Arc', 'Isabella I', 'Jiguang Qi', 'Mary Tudor',
-          'Leonidas', 'The Boneless', 'Demon Spear', 'Kublai',
-          'The Heroine', 'Queen Anne', 'North\'s Rage', 'William Wallace',
-          'Yukimura Sanada', 'Heaven\'s Justice', 'Alfred', 'Cao Cao',
-          'Charles the Great', 'Black Prince', 'Lionheart', 'Al Fatih',
-          'Edward the Confessor', 'Constantine the Great', 'Genghis Khan',
-          'William the Conqueror', 'Inquisitor', 'BeastQueen', 'Jade',
-          'Immortal', 'Peace Bringer', 'Witch Hunter', 'Ramses II',
-          'Octavius', 'Che Liu', 'War Lord', 'Jane', 'Sky Breaker',
-          'Rokuboshuten', 'Bleeding Steed', 'Rozen Blade', 'Cleopatra VII',
-          'Caesar', 'Desert Storm', 'Soaring Hawk', 'The Brave', 'Jade Eagle',
-          'Immortal Guardian', 'Divine Arrow', 'Theodora', 'King Arthur',
-          'Beowulf', 'Hunk', 'Boudica', 'Sakura', 'Wind-Walker', 'ELK',
-          'Cicero', 'The Avalanche', 'Army Breaker', 'Dach Tengri',
-          'Tarantula', 'Lancelot', 'Alexander', 'Lawman', 'Defender',
-          'Spectral Reaper', 'Valkyrie', 'Bjorn', 'Skanda', 'Liberator',
-          'Ashen Verdict', 'Warden', 'Warhammer', 'Eidolon', 'Scarlet Reaver',
-          'Rainforest Ranger', 'Fortuneteller', 'Ragnar', 'Cyrus'
-        ]);
+        && (
+          values.size() == 0
+          || (
+            values.toSet().size() == values.size()
+            && values.toSet().hasOnly([
+              'Jeanne d\'Arc', 'Isabella I', 'Jiguang Qi', 'Mary Tudor',
+              'Leonidas', 'The Boneless', 'Demon Spear', 'Kublai',
+              'The Heroine', 'Queen Anne', 'North\'s Rage', 'William Wallace',
+              'Yukimura Sanada', 'Heaven\'s Justice', 'Alfred', 'Cao Cao',
+              'Charles the Great', 'Black Prince', 'Lionheart', 'Al Fatih',
+              'Edward the Confessor', 'Constantine the Great', 'Genghis Khan',
+              'William the Conqueror', 'Inquisitor', 'BeastQueen', 'Jade',
+              'Immortal', 'Peace Bringer', 'Witch Hunter', 'Ramses II',
+              'Octavius', 'Che Liu', 'War Lord', 'Jane', 'Sky Breaker',
+              'Rokuboshuten', 'Bleeding Steed', 'Rozen Blade', 'Cleopatra VII',
+              'Caesar', 'Desert Storm', 'Soaring Hawk', 'The Brave', 'Jade Eagle',
+              'Immortal Guardian', 'Divine Arrow', 'Theodora', 'King Arthur',
+              'Beowulf', 'Hunk', 'Boudica', 'Sakura', 'Wind-Walker', 'ELK',
+              'Cicero', 'The Avalanche', 'Army Breaker', 'Dach Tengri',
+              'Tarantula', 'Lancelot', 'Alexander', 'Lawman', 'Defender',
+              'Spectral Reaper', 'Valkyrie', 'Bjorn', 'Skanda', 'Liberator',
+              'Ashen Verdict', 'Warden', 'Warhammer', 'Eidolon', 'Scarlet Reaver',
+              'Rainforest Ranger', 'Fortuneteller', 'Ragnar', 'Cyrus'
+            ])
+          )
+        );
     }
 
     function validAllStarBohResearchProgressItem(values, researchId) {
@@ -737,6 +744,53 @@ service cloud.firestore {
           && values.get(researchId, -1) >= 0
           && values.get(researchId, -1) <= 100
         );
+    }
+
+    function validAllStarBohResearchProgressGroup1(values) {
+      return validAllStarBohResearchProgressItem(values, 'd1956263')
+        && validAllStarBohResearchProgressItem(values, 'b2691f74')
+        && validAllStarBohResearchProgressItem(values, '375d1626')
+        && validAllStarBohResearchProgressItem(values, '4a932eb0')
+        && validAllStarBohResearchProgressItem(values, '802e7893');
+    }
+
+    function validAllStarBohResearchProgressGroup2(values) {
+      return validAllStarBohResearchProgressItem(values, '38d12254')
+        && validAllStarBohResearchProgressItem(values, '5fef2163')
+        && validAllStarBohResearchProgressItem(values, 'cc2c9ee1')
+        && validAllStarBohResearchProgressItem(values, '3929cbb9')
+        && validAllStarBohResearchProgressItem(values, 'f915a84b');
+    }
+
+    function validAllStarBohResearchProgressGroup3(values) {
+      return validAllStarBohResearchProgressItem(values, 'footmen_training')
+        && validAllStarBohResearchProgressItem(values, 'archers_training')
+        && validAllStarBohResearchProgressItem(values, 'cavalry_training')
+        && validAllStarBohResearchProgressItem(values, 'f0595b07')
+        && validAllStarBohResearchProgressItem(values, 'zone_conflict');
+    }
+
+    function validAllStarBohResearchProgressGroup4(values) {
+      return validAllStarBohResearchProgressItem(values, '1a6ec06e')
+        && validAllStarBohResearchProgressItem(values, 'city_defence')
+        && validAllStarBohResearchProgressItem(values, 'defence_legion')
+        && validAllStarBohResearchProgressItem(values, 'e8704053')
+        && validAllStarBohResearchProgressItem(values, 'b3581c97');
+    }
+
+    function validAllStarBohResearchProgressGroup5(values) {
+      return validAllStarBohResearchProgressItem(values, '2b149bcb')
+        && validAllStarBohResearchProgressItem(values, '3f5ebb34')
+        && validAllStarBohResearchProgressItem(values, '3ff71437')
+        && validAllStarBohResearchProgressItem(values, 'art_of_war_command')
+        && validAllStarBohResearchProgressItem(values, '77db4a78');
+    }
+
+    function validAllStarBohResearchProgressGroup6(values) {
+      return validAllStarBohResearchProgressItem(values, '24ffc526')
+        && validAllStarBohResearchProgressItem(values, '2c49bd2a')
+        && validAllStarBohResearchProgressItem(values, 'fc190e81')
+        && validAllStarBohResearchProgressItem(values, '19ae0569');
     }
 
     function validAllStarBohResearchProgress(values) {
@@ -750,35 +804,23 @@ service cloud.firestore {
           '3ff71437', 'art_of_war_command', '77db4a78', '24ffc526',
           '2c49bd2a', 'fc190e81', '19ae0569'
         ])
-        && validAllStarBohResearchProgressItem(values, 'd1956263')
-        && validAllStarBohResearchProgressItem(values, 'b2691f74')
-        && validAllStarBohResearchProgressItem(values, '375d1626')
-        && validAllStarBohResearchProgressItem(values, '4a932eb0')
-        && validAllStarBohResearchProgressItem(values, '802e7893')
-        && validAllStarBohResearchProgressItem(values, '38d12254')
-        && validAllStarBohResearchProgressItem(values, '5fef2163')
-        && validAllStarBohResearchProgressItem(values, 'cc2c9ee1')
-        && validAllStarBohResearchProgressItem(values, '3929cbb9')
-        && validAllStarBohResearchProgressItem(values, 'f915a84b')
-        && validAllStarBohResearchProgressItem(values, 'footmen_training')
-        && validAllStarBohResearchProgressItem(values, 'archers_training')
-        && validAllStarBohResearchProgressItem(values, 'cavalry_training')
-        && validAllStarBohResearchProgressItem(values, 'f0595b07')
-        && validAllStarBohResearchProgressItem(values, 'zone_conflict')
-        && validAllStarBohResearchProgressItem(values, '1a6ec06e')
-        && validAllStarBohResearchProgressItem(values, 'city_defence')
-        && validAllStarBohResearchProgressItem(values, 'defence_legion')
-        && validAllStarBohResearchProgressItem(values, 'e8704053')
-        && validAllStarBohResearchProgressItem(values, 'b3581c97')
-        && validAllStarBohResearchProgressItem(values, '2b149bcb')
-        && validAllStarBohResearchProgressItem(values, '3f5ebb34')
-        && validAllStarBohResearchProgressItem(values, '3ff71437')
-        && validAllStarBohResearchProgressItem(values, 'art_of_war_command')
-        && validAllStarBohResearchProgressItem(values, '77db4a78')
-        && validAllStarBohResearchProgressItem(values, '24ffc526')
-        && validAllStarBohResearchProgressItem(values, '2c49bd2a')
-        && validAllStarBohResearchProgressItem(values, 'fc190e81')
-        && validAllStarBohResearchProgressItem(values, '19ae0569');
+        && (
+          values.size() == 0
+          || (
+            (!values.keys().hasAny(['d1956263', 'b2691f74', '375d1626', '4a932eb0', '802e7893'])
+              || validAllStarBohResearchProgressGroup1(values))
+            && (!values.keys().hasAny(['38d12254', '5fef2163', 'cc2c9ee1', '3929cbb9', 'f915a84b'])
+              || validAllStarBohResearchProgressGroup2(values))
+            && (!values.keys().hasAny(['footmen_training', 'archers_training', 'cavalry_training', 'f0595b07', 'zone_conflict'])
+              || validAllStarBohResearchProgressGroup3(values))
+            && (!values.keys().hasAny(['1a6ec06e', 'city_defence', 'defence_legion', 'e8704053', 'b3581c97'])
+              || validAllStarBohResearchProgressGroup4(values))
+            && (!values.keys().hasAny(['2b149bcb', '3f5ebb34', '3ff71437', 'art_of_war_command', '77db4a78'])
+              || validAllStarBohResearchProgressGroup5(values))
+            && (!values.keys().hasAny(['24ffc526', '2c49bd2a', 'fc190e81', '19ae0569'])
+              || validAllStarBohResearchProgressGroup6(values))
+          )
+        );
     }
 
     function validAllStarBohFightingTimeIds(values) {
@@ -1613,24 +1655,101 @@ service cloud.firestore {
       && request.resource.data.schemaVersion == 1
       && validAllStarBohText(request.resource.data.gameName, 160)
       && request.resource.data.gameName.size() > 0
-      && validAllStarBohStringList(request.resource.data.knownNames, 30, 160)
-      && validAllStarBohText(request.resource.data.locale, 20)
-      && validAllStarBohText(request.resource.data.timezone, 80)
+      && request.resource.data.knownNames is list
+      && request.resource.data.knownNames.size() <= 30
+      && request.resource.data.locale is string
+      && request.resource.data.locale.size() <= 20
+      && request.resource.data.timezone is string
+      && request.resource.data.timezone.size() <= 80
       && request.resource.data.entryMethod in ['manual', 'ocr']
       && request.resource.data.status in ['draft', 'submitted', 'withdrawn']
-      && validAllStarBohStats(request.resource.data.stats)
+      && request.resource.data.stats is map
+      && request.resource.data.stats.keys().hasOnly([
+        'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
+        'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
+        'level50HeroCount', 'rocLevel', 'usableHeroNames',
+        'researchProgressPct', 'troopRoster', 't10TroopTypes',
+        'unitSpecialtyPower', 'artifactPower', 'royalTechPower'
+      ])
+      && request.resource.data.stats.keys().hasAll([
+        'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
+        'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
+        'level50HeroCount', 'rocLevel', 'unitSpecialtyPower'
+      ])
+      && request.resource.data.stats.totalCastlePower is int
+      && request.resource.data.stats.totalCastlePower >= 0
+      && request.resource.data.stats.troopPower is int
+      && request.resource.data.stats.troopPower >= 0
+      && request.resource.data.stats.buildingPower is int
+      && request.resource.data.stats.buildingPower >= 0
+      && request.resource.data.stats.technologyPower is int
+      && request.resource.data.stats.technologyPower >= 0
+      && request.resource.data.stats.heroCombatPower is int
+      && request.resource.data.stats.heroCombatPower >= 0
+      && request.resource.data.stats.dragonPower is int
+      && request.resource.data.stats.dragonPower >= 0
+      && request.resource.data.stats.unitSpecialtyPower is int
+      && request.resource.data.stats.unitSpecialtyPower >= 0
+      && request.resource.data.stats.t9TroopTypes is list
+      && request.resource.data.stats.t9TroopTypes.size() <= 12
+      && request.resource.data.stats.readySpeedHeroes is list
+      && request.resource.data.stats.readySpeedHeroes.size() <= 24
+      && request.resource.data.stats.level50HeroCount is int
+      && request.resource.data.stats.level50HeroCount >= 0
+      && request.resource.data.stats.level50HeroCount <= 500
+      && request.resource.data.stats.rocLevel is int
+      && request.resource.data.stats.rocLevel >= 0
+      && request.resource.data.stats.rocLevel <= 100
+      && (!('t10TroopTypes' in request.resource.data.stats)
+        || (request.resource.data.stats.t10TroopTypes is list
+          && request.resource.data.stats.t10TroopTypes.size() <= 3))
+      && (!('troopRoster' in request.resource.data.stats)
+        || (request.resource.data.stats.troopRoster is list
+          && request.resource.data.stats.troopRoster.size() <= 60))
+      && (!('usableHeroNames' in request.resource.data.stats)
+        || (request.resource.data.stats.usableHeroNames is list
+          && request.resource.data.stats.usableHeroNames.size() <= 78))
+      && (!('researchProgressPct' in request.resource.data.stats)
+        || (request.resource.data.stats.researchProgressPct is map
+          && request.resource.data.stats.researchProgressPct.size() <= 29))
+      && (!('artifactPower' in request.resource.data.stats)
+        || validAllStarBohNullableInt(request.resource.data.stats.artifactPower, 0, 1000000000000000))
+      && (!('royalTechPower' in request.resource.data.stats)
+        || validAllStarBohNullableInt(request.resource.data.stats.royalTechPower, 0, 1000000000000000))
       && (
         !('preferredTeammates' in request.resource.data)
-        || validAllStarBohStringList(
-          request.resource.data.preferredTeammates,
-          6,
-          160
-        )
+        || (request.resource.data.preferredTeammates is list
+          && request.resource.data.preferredTeammates.size() <= 6)
       )
-      && validAllStarBohStringList(request.resource.data.rolePreferences, 12, 128)
-      && validAllStarBohStringList(request.resource.data.eligibleRoleIds, 20, 128)
-      && validAllStarBohCommitment(request.resource.data.commitment)
-      && validAllStarBohOcr(request.resource.data.ocr)
+      && request.resource.data.rolePreferences is list
+      && request.resource.data.rolePreferences.size() <= 12
+      && request.resource.data.eligibleRoleIds is list
+      && request.resource.data.eligibleRoleIds.size() <= 20
+      && request.resource.data.commitment is map
+      && request.resource.data.commitment.keys().hasOnly([
+        'availability', 'preferredRole', 'secondaryRole', 'canHelpLead',
+        'unavailableTimes', 'canTeleport', 'canUseVoice', 'planCommitment',
+        'notes', 'fightingTimeIds', 'teamNamePreferences'
+      ])
+      && request.resource.data.commitment.availability in ['all', 'most', 'backup', 'unavailable', '']
+      && request.resource.data.commitment.preferredRole in [
+        'flexible', 'offensive', 'rune', 'top', 'bottom', 'backup', ''
+      ]
+      && request.resource.data.commitment.fightingTimeIds is list
+      && request.resource.data.commitment.fightingTimeIds.size() == 2
+      && request.resource.data.commitment.teamNamePreferences is list
+      && request.resource.data.commitment.teamNamePreferences.size() <= 6
+      && request.resource.data.commitment.notes is string
+      && request.resource.data.commitment.notes.size() <= 2000
+      && request.resource.data.ocr is map
+      && request.resource.data.ocr.keys().hasOnly([
+        'used', 'valuesConfirmed', 'confidence', 'warnings', 'fieldConfidence'
+      ])
+      && request.resource.data.ocr.used is bool
+      && request.resource.data.ocr.valuesConfirmed is bool
+      && request.resource.data.ocr.warnings is list
+      && request.resource.data.ocr.warnings.size() <= 20
+      && request.resource.data.ocr.fieldConfidence is map
       && validAllStarBohNullableInt(
         request.resource.data.submittedAtMs,
         0,
