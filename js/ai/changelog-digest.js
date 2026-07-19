@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.15";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.16";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.16",
+    "date": "2026-07-19",
+    "highlights": [
+      "Added explicit Guild Master and Core reward tiers to the Final Top 20 while preserving each winner's support, contribution, management-vote, or team-vote selection reason.",
+      "Added a deduplicated 90-player Power House ranking for positions 21–110 and one-click PNG downloads for both reward tables."
+    ]
+  },
   {
     "version": "14.1.15",
     "date": "2026-07-19",
@@ -81,13 +89,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-07-19",
     "highlights": [
       "Replaced the expression-heavy All-Star signup write path with bounded, owner-scoped validation that keeps the exact previously denied member payload below Firestore's 1,000-expression limit while requiring Unit Specialty Power at the database boundary."
-    ]
-  },
-  {
-    "version": "14.1.6",
-    "date": "2026-07-19",
-    "highlights": [
-      "Reduced All-Star Firestore rule evaluation for short signup lists while preserving validation through the full 60-item troop roster, preventing valid submissions from exceeding the rules expression budget."
     ]
   }
 ].map((release) =>

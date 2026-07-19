@@ -3709,7 +3709,14 @@ test.describe('app smoke tabs', () => {
       3
     );
     await expect(announcementTable.locator('.eden-x1-announcement-chip--team')).toHaveCount(3);
-    await expect(page.locator('.eden-x1-announcement-footer')).toContainText(
+    await expect(announcementTable.locator('tbody tr').first()).toContainText(
+      'Guild Master Reward'
+    );
+    await expect(announcementTable.locator('tbody tr').nth(1)).toContainText('Core Rewards');
+    await expect(page.locator('[data-announcement-download="top20"]')).toBeVisible();
+    await expect(page.locator('[data-announcement-download="remaining"]')).toBeVisible();
+    await expect(page.locator('.eden-x1-announcement-remaining-table')).toHaveCount(3);
+    await expect(page.locator('.eden-x1-announcement-footer').first()).toContainText(
       'Congratulations, Top 20!'
     );
     await page.locator('[data-reward-view="team"]').click();
