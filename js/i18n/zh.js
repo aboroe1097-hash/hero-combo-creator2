@@ -439,6 +439,9 @@ const zh = {
   bohAccessPinLabel: '成员 PIN',
   bohAccessPinHint: 'PIN 会经过安全验证，且不会保存在此设备上。',
   bohAccessUnlock: '解锁中心',
+  bohAccessRetry: '重试',
+  bohAccessShowPin: '显示 PIN',
+  bohAccessHidePin: '隐藏 PIN',
   bohAccessChecking: '正在检查安全成员访问权限...',
   bohAccessBusy: '正在确认成员访问权限...',
   bohAccessExpired: '成员访问已过期，请重新输入当前 PIN。',
@@ -451,6 +454,8 @@ const zh = {
     '此浏览器已登录管理面板。为保护玩家报名，请在无痕窗口中打开此链接，并在那里输入成员 PIN。',
   bohAccessErrorAppCheck: '无法完成安全应用验证，请重试。',
   bohAccessErrorNetwork: '无法连接安全服务，请检查网络后重试。',
+  bohAccessErrorSecureServiceUnreachable:
+    '当前网络或地区无法连接报名所需的 Google 安全服务。请尝试使用 VPN 或切换网络，然后点击“重试”。这并不表示您的 PIN 错误。',
   bohAccessErrorGeneric: '无法确认成员访问权限，请重试。',
   adminBohTab: 'All-Star BoH',
   adminBohTitle: 'All-Star BoH 指挥中心',

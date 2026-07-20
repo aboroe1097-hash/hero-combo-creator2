@@ -155,10 +155,81 @@ test.describe('Battle Simulator beta', () => {
   });
 });
 
-const visualViewports = [
+const mobileHeaderViewports = [
   { name: 'mobile', width: 375, height: 812 },
+  { name: 'mobile-390', width: 390, height: 844 },
+];
+
+test('mobile command header stays visible, contained, and separate from fixed navigation', async ({
+  page,
+}) => {
+  for (const viewport of mobileHeaderViewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await openApp(page, `/?header-geometry=${viewport.width}`);
+    await page.waitForFunction(() => document.documentElement.dataset.shellNavReady === '1');
+
+    const header = page.locator('.command-header');
+    await expect(header).toBeVisible();
+    await expect(header.locator('.command-brand')).toBeVisible();
+    await expect(header.locator('.command-logo')).toBeVisible();
+    await expect(header.locator('.main-logo')).toBeVisible();
+    await expect(header.locator('.shell-brand-title')).toBeVisible();
+    await expect(header.locator('.version-ribbon')).toBeVisible();
+
+    const geometry = await page.evaluate(() => {
+      const commandHeader = document.querySelector('.command-header');
+      const commandActions = document.querySelector('.command-actions');
+      const version = document.querySelector('.version-ribbon');
+      const bottomNav = document.querySelector('.tool-nav-shell');
+      const headerRect = commandHeader.getBoundingClientRect();
+      const navRect = bottomNav.getBoundingClientRect();
+      const contains = (selector) => {
+        const rect = document.querySelector(selector).getBoundingClientRect();
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.left >= headerRect.left - 1 &&
+          rect.right <= headerRect.right + 1 &&
+          rect.top >= headerRect.top - 1 &&
+          rect.bottom <= headerRect.bottom + 1
+        );
+      };
+      return {
+        headerPosition: getComputedStyle(commandHeader).position,
+        navPosition: getComputedStyle(bottomNav).position,
+        clipPaths: [commandHeader, commandActions, version].map(
+          (element) => getComputedStyle(element).clipPath
+        ),
+        contained: [
+          '.command-brand',
+          '.command-logo',
+          '.main-logo',
+          '.shell-brand-title',
+          '.version-ribbon',
+        ].map(contains),
+        navOverlapsHeader: navRect.top < headerRect.bottom && navRect.bottom > headerRect.top,
+        horizontalOverflow:
+          document.documentElement.scrollWidth > window.innerWidth + 1 ||
+          document.body.scrollWidth > window.innerWidth + 1,
+      };
+    });
+
+    expect(geometry).toEqual({
+      headerPosition: 'relative',
+      navPosition: 'fixed',
+      clipPaths: ['none', 'none', 'none'],
+      contained: [true, true, true, true, true],
+      navOverlapsHeader: false,
+      horizontalOverflow: false,
+    });
+  }
+});
+
+const visualViewports = [
+  mobileHeaderViewports[0],
   { name: 'desktop', width: 1280, height: 800 },
 ];
+const headerViewports = [mobileHeaderViewports[0], mobileHeaderViewports[1], visualViewports[1]];
 
 const visualSurfaces = [
   {
@@ -242,6 +313,7 @@ async function stabilizeVisuals(page) {
       .generate-summary,
       .generated-summary,
       #generatorResults > .text-center,
+      #generatorResults .generator-run-meta span,
       #globalGameClock {
         visibility: hidden !important;
       }
@@ -266,7 +338,7 @@ async function openVisualApp(page, viewport) {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
   await openApp(page, `/?visual=${viewport.name}`);
   await page.waitForFunction(() => document.documentElement.dataset.shellNavReady === '1');
-  if (viewport.name === 'mobile') {
+  if (viewport.width <= 640) {
     await page.waitForFunction(() => {
       const nav = document.getElementById('tabNavScroll');
       return (
@@ -797,13 +869,15 @@ test.describe('visual regression', () => {
     testInfo.snapshotSuffix = '';
   });
 
-  for (const viewport of visualViewports) {
+  for (const viewport of headerViewports) {
     test(`header renders directly without an entry gate at ${viewport.name}`, async ({ page }) => {
       await verifyRetiredEntryGate(page, viewport);
       await openVisualApp(page, viewport);
       await expectVisualSnapshot(page, '.command-header', `header-nav-${viewport.name}.png`);
     });
+  }
 
+  for (const viewport of visualViewports) {
     for (const surface of visualSurfaces) {
       test(`${surface.name} renders at ${viewport.name}`, async ({ page }) => {
         await openVisualApp(page, viewport);

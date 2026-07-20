@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.1";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.2";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.2",
+    "date": "2026-07-20",
+    "highlights": [
+      "Added actionable VPN, different-network, and Retry guidance when regional or network restrictions prevent access to required Google signup security services, without presenting the failure as an incorrect PIN; semantic validation, authentication, and admin-session errors remain …",
+      "Kept the first paint fail-closed with a visible loader and access gate before CSS and security boot, added an accessible localized PIN visibility control, and accepted hash casing variants.",
+      "Made screenshot OCR a generation-safe single-flight flow with deterministic processing, ready, and error states plus retry support.",
+      "Prevented clipping of the header, logo, and version badge at 375 px and 390 px mobile widths while keeping the safe-area bottom navigation separate."
+    ]
+  },
   {
     "version": "14.2.1",
     "date": "2026-07-20",
@@ -85,17 +95,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Expanded All-Star admin corrections to Unit Specialty, Artifact, and Royal Tech power and reject suspicious OCR `1` placeholders in unreadable extended-power rows.",
       "Displayed reviewed troop OCR rows in the admin signup panel and widened the combined T10 portraits so they remain distinct on desktop and mobile.",
       "Added a confirmed admin-only signup deletion action for removing test entries while preserving separate Epic Showdown preferences."
-    ]
-  },
-  {
-    "version": "14.1.13",
-    "date": "2026-07-19",
-    "highlights": [
-      "Filled editable power fields directly from account-stat OCR and removed the separate extracted-value confirmation checkbox while retaining third-party processing consent.",
-      "Removed the visible timezone question while preserving the stored submission schema for existing records.",
-      "Replaced the crowded mobile footer with compact centered account links and removed duplicate tool navigation already available in the mobile dock.",
-      "Added Croatian (`hr`) as the twelfth project language with translated core navigation, PWA, and player-facing All-Star signup copy plus explicit canonical-English fallback for specialist catalogs still awaiting reviewed Croatian terminology.",
-      "Restored the visible required marker for Unit Specialty Power and replaced raw Firestore permission errors with a translated PIN-expiry recovery message for signup and Epic Showdown saves."
     ]
   }
 ].map((release) =>

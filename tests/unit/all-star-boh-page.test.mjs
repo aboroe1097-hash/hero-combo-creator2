@@ -10,6 +10,7 @@ const cssSource = readFileSync('css/all-star-boh.css', 'utf8');
 const appSource = readFileSync('js/app.js', 'utf8');
 const bootstrapSource = readFileSync('js/all-star-boh-bootstrap.js', 'utf8');
 const controllerSource = readFileSync('js/all-star-boh.js', 'utf8');
+const allStarI18nSource = readFileSync('js/i18n/all-star-boh/index.js', 'utf8');
 const adminBohSource = readFileSync('js/admin-all-star-boh.js', 'utf8');
 const rulesSource = readFileSync('firestore.rules', 'utf8');
 const stateSource = readFileSync('js/state.js', 'utf8');
@@ -111,7 +112,7 @@ test('All-Star BoH is an internal lazy tab wired through the shell and command p
   assert.ok(lazyBlock, 'Missing the All-Star BoH lazy bootstrap block');
   const templateIndex = lazyBlock.indexOf("loadTabTemplate('allStarBoh')");
   const importIndex = lazyBlock.indexOf("import('./all-star-boh-bootstrap.js')");
-  const bootIndex = lazyBlock.indexOf('module.bootAllStarBohTab()');
+  const bootIndex = lazyBlock.indexOf('module?.bootAllStarBohTab()');
   assert.ok(templateIndex >= 0, 'the tab template must be loaded');
   assert.ok(templateIndex < importIndex, 'the protected bootstrap loads only after the template');
   assert.ok(importIndex < bootIndex, 'the lazy module must be imported before its boot hook runs');
@@ -441,10 +442,57 @@ test('research defaults to X1 and offers one Max all action per season', () => {
   );
 });
 
-test('screenshot OCR displays indeterminate progress and blocks duplicate reads', () => {
+test('screenshot OCR uses a generation-safe, phase-rendered single flight', () => {
+  const processStart = controllerSource.indexOf('async function processOcr(state)');
+  const processEnd = controllerSource.indexOf('\nfunction syncOcrReviewFromForm', processStart);
+  const processSource = controllerSource.slice(processStart, processEnd);
+
   assert.match(tabSource, /<progress[\s\S]*?data-role="ocr-progress"[\s\S]*?hidden/u);
-  assert.match(controllerSource, /setHidden\(progress, !state\.ocrBusy\)/u);
+  assert.match(controllerSource, /ocrGeneration: 0,[\s\S]*?ocrPhase: 'idle'/u);
+  assert.match(
+    processSource,
+    /^async function processOcr\(state\) \{\s+if \(state\.ocrBusy\) return;/u
+  );
+  assert.match(
+    processSource,
+    /const file = state\.ocrFile;\s+const generation = state\.ocrGeneration;/u
+  );
+  assert.match(controllerSource, /state\.ocrGeneration \+= 1;/u);
+  assert.equal(
+    Array.from(controllerSource.matchAll(/state\.ocrGeneration \+= 1;/gu)).length,
+    2,
+    'selection and clearing must each invalidate older OCR requests'
+  );
+  assert.match(
+    controllerSource,
+    /return state\.ocrGeneration === generation && state\.ocrFile === file;/u
+  );
+  assert.match(processSource, /if \(!isCurrentOcrRequest\(state, file, generation\)\) return;/u);
+  assert.match(processSource, /state\.ocrPhase = 'processing';/u);
+  assert.match(processSource, /state\.ocrPhase = 'ready';/u);
+  assert.match(
+    processSource,
+    /catch \(error\) \{\s+if \(!isCurrentOcrRequest\(state, file, generation\)\) return;\s+state\.ocrPhase = 'error';\s+throw error;/u
+  );
+  assert.match(controllerSource, /const isProcessing = state\.ocrPhase === 'processing';/u);
+  assert.match(controllerSource, /setHidden\(progress, !isProcessing\)/u);
   assert.match(controllerSource, /setBusy\(process, state\.ocrBusy \|\| !state\.ocrFile\)/u);
+  assert.match(controllerSource, /setText\(status, statusText \|\| ''\)/u);
+  assert.equal(
+    Array.from(controllerSource.matchAll(/\[data-role="ocr-status"\]/gu)).length,
+    1,
+    'only renderOcr may own OCR status output'
+  );
+  assert.doesNotMatch(processSource, /scrollIntoView/u);
+  assert.match(
+    allStarI18nSource,
+    /Reading screenshot—keep this page open\. You may continue filling the form\./u
+  );
+  assert.match(allStarI18nSource, /Power values filled automatically\. Review the fields below\./u);
+  assert.match(
+    allStarI18nSource,
+    /'signup\.ocrError':[\s\S]*?Screenshot reading failed\. Check your connection, then press Read Screenshot to try again\./u
+  );
   assert.match(cssSource, /\.boh-ocr-progress\s*\{/u);
 });
 

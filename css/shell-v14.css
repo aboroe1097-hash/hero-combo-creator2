@@ -1279,27 +1279,43 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .command-header {
+    position: relative !important;
     display: flex !important;
     grid-template-columns: none !important;
-    align-items: center !important;
-    gap: 5px !important;
-    min-height: 58px !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 6px !important;
+    min-height: 0 !important;
     margin-bottom: 9px !important;
-    padding: 5px !important;
+    padding: 8px !important;
+    overflow: visible !important;
     border-radius: 17px !important;
+  }
+
+  #app .command-header,
+  #app .command-actions,
+  #app .version-ribbon {
+    clip-path: none !important;
   }
 
   #app .command-brand {
     position: relative;
-    flex: 0 0 64px;
-    gap: 0 !important;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    width: 100%;
     min-width: 0 !important;
     padding: 0 !important;
   }
 
   #app .command-logo {
-    display: block !important;
-    width: 36px !important;
+    display: grid !important;
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+    align-items: center !important;
+    gap: 7px !important;
+    width: 100% !important;
     min-width: 0;
   }
 
@@ -1310,13 +1326,19 @@ body.shell-more-open #app .tool-nav-inner {
     border-radius: 11px !important;
   }
 
-  #app .command-logo > :not(picture):not(#appTitle) {
+  #app .command-logo .command-logo-copy {
     display: none !important;
   }
 
-  #app .command-header .command-logo .shell-brand-title,
-  #app .command-header .command-logo .command-logo-copy {
-    display: none !important;
+  #app .command-header .command-logo .shell-brand-title {
+    grid-column: 2;
+    grid-row: 1;
+    display: block !important;
+    overflow: visible;
+    font-size: 0.75rem !important;
+    line-height: 1.1 !important;
+    text-overflow: clip;
+    white-space: nowrap;
   }
 
   #app .command-kicker {
@@ -1324,18 +1346,18 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .version-ribbon {
-    position: absolute;
-    inset-block-end: -2px;
-    inset-inline-start: 22px;
+    position: static;
     display: block !important;
-    width: 44px !important;
-    padding: 2px 4px !important;
-    font-size: 0.46rem;
+    width: auto !important;
+    max-width: 100%;
+    padding: 3px 7px !important;
+    font-size: 0.75rem !important;
+    line-height: 1.15 !important;
   }
 
   #app .command-actions {
     flex: 0 0 auto;
-    width: auto !important;
+    width: 100% !important;
     padding: 0 !important;
   }
 
@@ -1454,9 +1476,9 @@ body.shell-more-open #app .tool-nav-inner {
     grid-template-columns: minmax(0, 4fr) minmax(62px, 1fr) !important;
     gap: 2px !important;
     width: min(100%, 560px);
-    min-height: 68px;
+    min-height: calc(68px + var(--ff-safe-bottom));
     margin-inline: auto;
-    padding: 3px !important;
+    padding: 3px 3px calc(3px + var(--ff-safe-bottom)) !important;
     border: 1px solid var(--ff-hairline) !important;
     border-radius: 22px !important;
     background: color-mix(in srgb, var(--shell-glass-strong) 94%, transparent) !important;

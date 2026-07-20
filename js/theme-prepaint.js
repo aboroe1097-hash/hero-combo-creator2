@@ -340,7 +340,6 @@ function isEnglishOnlyBattleSimulator() {
 
 (function prepareInitialTabBeforePaint() {
   try {
-    var tab = window.location.hash.slice(1).split('?')[0];
     var deferredTabs = [
       'manual',
       'arcade',
@@ -351,9 +350,20 @@ function isEnglishOnlyBattleSimulator() {
       'strife',
       'loyalty',
       'youtube',
+      'allStarBoh',
     ];
-    if (deferredTabs.indexOf(tab) !== -1) {
-      document.documentElement.setAttribute('data-initial-tab-pending', tab);
+
+    function resolveDeferredTabName(rawTabName) {
+      var normalized = String(rawTabName || '').toLowerCase();
+      for (var index = 0; index < deferredTabs.length; index += 1) {
+        if (deferredTabs[index].toLowerCase() === normalized) return deferredTabs[index];
+      }
+      return '';
+    }
+
+    var canonicalTab = resolveDeferredTabName(window.location.hash.slice(1).split('?')[0]);
+    if (canonicalTab) {
+      document.documentElement.setAttribute('data-initial-tab-pending', canonicalTab);
     }
   } catch (e) {
     // Invalid or restricted locations fall back to the default Generator tab.

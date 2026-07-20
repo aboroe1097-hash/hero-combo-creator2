@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.2.2 - 2026-07-20
+
+- Added actionable VPN, different-network, and Retry guidance when regional or network restrictions prevent access to required Google signup security services, without presenting the failure as an incorrect PIN; semantic validation, authentication, and admin-session errors remain distinct.
+- Kept the first paint fail-closed with a visible loader and access gate before CSS and security boot, added an accessible localized PIN visibility control, and accepted hash casing variants.
+- Made screenshot OCR a generation-safe single-flight flow with deterministic processing, ready, and error states plus retry support.
+- Prevented clipping of the header, logo, and version badge at 375 px and 390 px mobile widths while keeping the safe-area bottom navigation separate.
+
 ## 14.2.1 - 2026-07-20
 
 - Fixed All-Star BoH signup validation so RoC specialization levels from 0 through the in-game maximum of 160 can be submitted instead of forcing affected members to leave the field blank.

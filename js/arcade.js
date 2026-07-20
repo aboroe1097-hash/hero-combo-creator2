@@ -9,7 +9,7 @@ import { initArcadeHub } from './arcade-hub.js';
 import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
 import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '14.2.1';
+const APP_VERSION = '14.2.2';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };

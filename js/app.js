@@ -181,7 +181,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260720_105113').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260720_160110').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -203,7 +203,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260720_105113').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260720_160110').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -214,7 +214,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260720_105113').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260720_160110').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -225,7 +225,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260720_105113').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260720_160110').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -938,22 +938,35 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
 
   async function loadTabTemplate(tabName) {
     const section = document.getElementById(`${tabName}Section`);
-    if (!section || _tabTemplatesLoaded[tabName]) return;
+    if (!section || _tabTemplatesLoaded[tabName]) return true;
     const src = section.dataset.tabSrc;
     if (!src) {
       _tabTemplatesLoaded[tabName] = true;
-      return;
+      return true;
     }
     try {
       const res = await fetch(src);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const html = await res.text();
-      section.innerHTML = html;
+      if (tabName === 'allStarBoh') {
+        section.insertAdjacentHTML('beforeend', html);
+        const protectedRoot = section.querySelector('[data-role="boh-root"]');
+        if (protectedRoot) {
+          protectedRoot.hidden = true;
+          protectedRoot.setAttribute('aria-hidden', 'true');
+          protectedRoot.setAttribute('inert', '');
+          if ('inert' in protectedRoot) protectedRoot.inert = true;
+        }
+      } else {
+        section.innerHTML = html;
+      }
       _tabTemplatesLoaded[tabName] = true;
       updateTextContent();
+      return true;
     } catch (err) {
       console.warn(`[Tab] Failed to load template for ${tabName}:`, err);
       renderTabLoadError(section, tabName);
+      return false;
     }
   }
 
@@ -979,7 +992,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260720_105113')
+        import('./eden-map.js?v=20260720_160110')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1009,7 +1022,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260720_105113')
+      import('./app-hero-atlas.js?v=20260720_160110')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1081,7 +1094,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260720_105113')
+      import('./app-strife.js?v=20260720_160110')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1123,7 +1136,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260720_105113')
+      import('./youtube-v14.js?v=20260720_160110')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1162,17 +1175,15 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'allStarBoh' && !_allStarBohReady && !_allStarBohBooting) {
       _allStarBohBooting = true;
       loadTabTemplate('allStarBoh')
-        .then(() => import('./all-star-boh-bootstrap.js'))
-        .then((module) => module.bootAllStarBohTab())
-        .then(() => {
+        .then((loaded) => (loaded ? import('./all-star-boh-bootstrap.js') : null))
+        .then((module) => module?.bootAllStarBohTab())
+        .then((lifecycle) => {
+          if (!lifecycle) return;
           _allStarBohReady = true;
         })
         .catch((error) => {
           console.error('All-Star BoH member hub failed to load', error);
-          if (isDynamicImportLoadFailure(error)) {
-            recoverFromStaleAssetGraph(error);
-            return;
-          }
+          if (isDynamicImportLoadFailure(error) && recoverFromStaleAssetGraph(error)) return;
           renderTabLoadError(allStarBohSection, 'allStarBoh');
         })
         .finally(() => {

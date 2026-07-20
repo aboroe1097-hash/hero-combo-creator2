@@ -131,10 +131,12 @@ test('YouTube activation survives responsive reparenting and reaches its declare
 test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
-  for (const hash of ['allstarboh', 'AllStarBoh', 'allStarBoh']) {
+  const routeCases = ['allstarboh', 'ALLSTARBOH', 'AllStarBoh', 'aLlStArBoH', 'allStarBoh'];
+  for (const hash of routeCases) {
     await openHome(page, `/#${hash}`);
     await expect(page.locator('#allStarBohSection')).toBeVisible();
     await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'allStarBoh');
+    await expect(page.locator('#skipCurrentTool')).toHaveAttribute('href', '#allStarBohSection');
     await expect(page).toHaveURL(/#allStarBoh$/);
   }
 });

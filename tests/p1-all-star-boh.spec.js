@@ -9,6 +9,10 @@ const PRIVATE_PLAYER_MODULES = [
   '/js/all-star-boh-store.js',
   '/js/i18n/all-star-boh/index.js',
 ];
+const OCR_PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
 
 const PHASES = [
   { id: 'phase-0-5', label: '0-5 Minutes', startMinute: 0, endMinute: 5, order: 1 },
@@ -278,13 +282,13 @@ async function blockExternalServices(page) {
   await page.route(EXTERNAL_REQUEST, (route) => route.abort());
 }
 
-async function openInjectedPlayerHub(page) {
+async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
   await blockExternalServices(page);
   await page.goto('/tabs/all-star-boh.html', { waitUntil: 'domcontentloaded' });
   await page.addStyleTag({ url: '/css/_tokens.css' });
   await page.addStyleTag({ url: '/css/app.css' });
   await page.addStyleTag({ url: '/css/all-star-boh.css' });
-  await page.evaluate(async (fixture) => {
+  await page.evaluate(async ({ fixture, ocrTransport: transportOptions }) => {
     const [bootstrap, controller, model, ocr, i18n, heroData, researchData, researchI18n] =
       await Promise.all([
         import('/js/all-star-boh-bootstrap.js'),
@@ -300,6 +304,7 @@ async function openInjectedPlayerHub(page) {
     let submission = { ...fixture.submission };
     let epicPreferences = { ...fixture.epicPreferences };
     const subscribers = new Set();
+    window.__BOH_OCR_CALL_COUNT__ = 0;
     const store = {
       accessGranted: true,
       seasonId: fixture.seasonId,
@@ -406,6 +411,19 @@ async function openInjectedPlayerHub(page) {
         };
       },
       async processOcr() {
+        window.__BOH_OCR_CALL_COUNT__ += 1;
+        const callNumber = window.__BOH_OCR_CALL_COUNT__;
+        if (transportOptions.deferred) {
+          await new Promise((resolve) => {
+            window.__BOH_RESOLVE_OCR__ = () => {
+              delete window.__BOH_RESOLVE_OCR__;
+              resolve();
+            };
+          });
+        }
+        if (transportOptions.failOnce && callNumber === 1) {
+          throw new Error('Injected OCR transport failed once.');
+        }
         return {
           result: {
             schemaVersion: 1,
@@ -480,7 +498,7 @@ async function openInjectedPlayerHub(page) {
         window.__BOH_BACKGROUND_ERRORS__.push({ message: error?.message, context });
       },
     });
-  }, createPlayerFixture());
+  }, { fixture: createPlayerFixture(), ocrTransport });
 
   const gate = page.locator('[data-role="boh-access-gate"]');
   await expect(gate).toBeVisible();
@@ -489,6 +507,18 @@ async function openInjectedPlayerHub(page) {
   await gate.locator('[data-role="boh-access-submit"]').click();
   await expect(gate).toBeHidden();
   await expect(page.locator('[data-role="boh-root"]')).toBeVisible();
+}
+
+async function prepareInjectedOcr(page) {
+  const root = page.locator('[data-role="boh-root"]');
+  await root.locator('[data-role="entry-method"][value="ocr"]').check();
+  await root.locator('[data-role="ocr-file-input"]').setInputFiles({
+    name: 'stats.png',
+    mimeType: 'image/png',
+    buffer: OCR_PIXEL_PNG,
+  });
+  await root.locator('[data-role="ocr-consent"]').check();
+  return root;
 }
 
 async function openInjectedAdmin(page) {
@@ -569,6 +599,117 @@ test.describe('All-Star BoH secure player hub', () => {
     );
   });
 
+  test('PIN visibility resets after submit and regional errors expose only Retry', async ({
+    page,
+  }) => {
+    await blockExternalServices(page);
+    await page.goto('/tabs/all-star-boh.html', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(async () => {
+      const { createAllStarBohAccessGate } = await import('/js/all-star-boh-bootstrap.js');
+      const root = document.querySelector('[data-role="boh-root"]');
+      const gate = createAllStarBohAccessGate({ root, locale: 'en' });
+      gate.setHandlers({
+        unlock() {
+          gate.showError({ code: 'access_denied' });
+        },
+        retry() {
+          gate.showLocked();
+        },
+      });
+      gate.showLocked();
+      window.__BOH_RENDERED_GATE__ = gate;
+    });
+
+    const gate = page.locator('[data-role="boh-access-gate"]');
+    const pin = gate.locator('[data-role="boh-access-pin"]');
+    const toggle = gate.locator('[data-role="boh-access-pin-toggle"]');
+    const unlock = gate.locator('[data-role="boh-access-submit"]');
+    const retry = gate.getByRole('button', { name: 'Retry', exact: true });
+
+    await expect(pin).toHaveAttribute('type', 'password');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toHaveAccessibleName('Show PIN');
+    await pin.fill('wrong-pin');
+    await toggle.click();
+    await expect(pin).toHaveAttribute('type', 'text');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle).toHaveAccessibleName('Hide PIN');
+
+    await unlock.click();
+    await expect(gate.locator('[data-role="boh-access-feedback"]')).toHaveText(
+      'That PIN did not match. Check it and try again.'
+    );
+    await expect(pin).toHaveValue('');
+    await expect(pin).toHaveAttribute('type', 'password');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toHaveAccessibleName('Show PIN');
+    await expect(retry).toBeHidden();
+
+    await page.evaluate(() => {
+      window.__BOH_RENDERED_GATE__.showError({ code: 'secure_service_unreachable' });
+    });
+    await expect(gate.locator('[data-role="boh-access-feedback"]')).toHaveText(
+      'The secure Google service required for signup cannot be reached from this network or region. Try a VPN or a different network, then press Retry. Your PIN has not been rejected.'
+    );
+    await expect(retry).toHaveCount(1);
+    await expect(retry).toBeVisible();
+    await expect(retry).toBeEnabled();
+    await expect(pin).toBeHidden();
+    await expect(pin).toBeDisabled();
+    await expect(unlock).toBeHidden();
+    await expect(unlock).toBeDisabled();
+
+    await retry.click();
+    await expect(pin).toBeVisible();
+    await expect(pin).toBeEnabled();
+    await expect(pin).toHaveAttribute('type', 'password');
+    await expect(unlock).toBeVisible();
+    await expect(unlock).toBeEnabled();
+    await expect(retry).toBeHidden();
+  });
+
+  test('mixed-case direct hash paints its loader before the delayed gate module mounts', async ({
+    page,
+  }) => {
+    await blockExternalServices(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_maintenance_bypass', '1');
+      localStorage.setItem('vts_intro_v1_seen', '1');
+    });
+    let releaseBootstrap;
+    let markBootstrapRequested;
+    const bootstrapHold = new Promise((resolve) => {
+      releaseBootstrap = resolve;
+    });
+    const bootstrapRequested = new Promise((resolve) => {
+      markBootstrapRequested = resolve;
+    });
+    await page.route('**/js/all-star-boh-bootstrap.js*', async (route) => {
+      markBootstrapRequested();
+      await bootstrapHold;
+      await route.continue();
+    });
+
+    await page.goto('/#aLlStArBoH', { waitUntil: 'domcontentloaded' });
+    await bootstrapRequested;
+    const section = page.locator('#allStarBohSection');
+    const loader = section.locator(':scope > .tab-loading');
+    const root = section.locator('[data-role="boh-root"]');
+    await expect(section).toBeVisible();
+    await expect(loader).toBeVisible();
+    await expect(section.locator('[data-role="boh-access-gate"]')).toHaveCount(0);
+    await expect(root).toBeHidden();
+    await expect(root).toHaveAttribute('aria-hidden', 'true');
+    await expect(root).toHaveAttribute('inert', '');
+
+    releaseBootstrap();
+    await expect(section.locator('[data-role="boh-access-gate"]')).toBeVisible({ timeout: 20_000 });
+    await expect(loader).toHaveCount(0);
+    await expect(root).toBeHidden();
+    await expect(root).toHaveAttribute('aria-hidden', 'true');
+    await expect(root).toHaveAttribute('inert', '');
+  });
+
   test('direct hash fails closed and does not fetch private feature chunks before a grant', async ({
     page,
   }) => {
@@ -587,8 +728,17 @@ test.describe('All-Star BoH secure player hub', () => {
     const root = page.locator('#allStarBohSection [data-role="boh-root"]');
     await expect(gate).toBeVisible({ timeout: 20_000 });
     await expect(gate).toHaveAccessibleName(/Unlock the All-Star BoH hub/i);
-    await expect(gate.locator('[data-role="boh-access-pin"]')).toBeEnabled({ timeout: 20_000 });
-    await expect(gate.locator('[data-role="boh-access-pin"]')).toBeFocused();
+    await expect(gate.locator('[data-role="boh-access-feedback"]')).toHaveText(
+      'The secure Google service required for signup cannot be reached from this network or region. Try a VPN or a different network, then press Retry. Your PIN has not been rejected.',
+      { timeout: 20_000 }
+    );
+    await expect(gate.locator('[data-role="boh-access-pin"]')).toBeHidden();
+    await expect(gate.locator('[data-role="boh-access-pin"]')).toBeDisabled();
+    const retry = gate.getByRole('button', { name: 'Retry', exact: true });
+    await expect(retry).toHaveCount(1);
+    await expect(retry).toBeVisible();
+    await expect(retry).toBeEnabled();
+    await expect(retry).toBeFocused();
     await expect(root).toBeHidden();
     await expect(root).toHaveAttribute('aria-hidden', 'true');
     await expect(root).toHaveAttribute('inert', '');
@@ -979,17 +1129,7 @@ test.describe('All-Star BoH secure player hub', () => {
     page,
   }) => {
     await openInjectedPlayerHub(page);
-    const root = page.locator('[data-role="boh-root"]');
-    await root.locator('[data-role="entry-method"][value="ocr"]').check();
-    await root.locator('[data-role="ocr-file-input"]').setInputFiles({
-      name: 'stats.png',
-      mimeType: 'image/png',
-      buffer: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-        'base64'
-      ),
-    });
-    await root.locator('[data-role="ocr-consent"]').check();
+    const root = await prepareInjectedOcr(page);
     await root.locator('[data-role="ocr-process"]').click();
 
     const review = root.locator('[data-role="ocr-review-alert"]');
@@ -1011,6 +1151,62 @@ test.describe('All-Star BoH secure player hub', () => {
     await specialty.fill('50000000');
     await expect(technology).not.toHaveAttribute('aria-invalid', 'true');
     await expect(root.locator('#bohOcrIssue-technologyPower')).toContainText('Corrected manually');
+  });
+
+  test('two rapid bubbling OCR activations share one in-flight transport request', async ({
+    page,
+  }) => {
+    await openInjectedPlayerHub(page, { ocrTransport: { deferred: true } });
+    const root = await prepareInjectedOcr(page);
+    const process = root.locator('[data-role="ocr-process"]');
+    const progress = root.locator('[data-role="ocr-progress"]');
+    const status = root.locator('[data-role="ocr-status"]');
+
+    await process.evaluate((button) => {
+      button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    });
+
+    await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(1);
+    await expect(process).toBeDisabled();
+    await expect(progress).toBeVisible();
+    await expect(status).toHaveText(
+      'Reading screenshot—keep this page open. You may continue filling the form.'
+    );
+
+    await page.evaluate(() => window.__BOH_RESOLVE_OCR__());
+    await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(1);
+    await expect(progress).toBeHidden();
+    await expect(process).toBeEnabled();
+    await expect(status).toHaveText(
+      'Power values filled automatically. Review the fields below.'
+    );
+  });
+
+  test('OCR failure clears progress and permits one deliberate successful retry', async ({
+    page,
+  }) => {
+    await openInjectedPlayerHub(page, { ocrTransport: { failOnce: true } });
+    const root = await prepareInjectedOcr(page);
+    const process = root.locator('[data-role="ocr-process"]');
+    const progress = root.locator('[data-role="ocr-progress"]');
+    const status = root.locator('[data-role="ocr-status"]');
+
+    await process.click();
+    await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(1);
+    await expect(progress).toBeHidden();
+    await expect(status).toHaveText(
+      'Screenshot reading failed. Check your connection, then press Read Screenshot to try again.'
+    );
+    await expect(process).toBeEnabled();
+
+    await process.click();
+    await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(2);
+    await expect(progress).toBeHidden();
+    await expect(process).toBeEnabled();
+    await expect(status).toHaveText(
+      'Power values filled automatically. Review the fields below.'
+    );
   });
 });
 
