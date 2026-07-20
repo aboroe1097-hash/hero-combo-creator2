@@ -447,6 +447,8 @@ const zh = {
   bohAccessErrorLocked: '尝试次数过多，请稍后再试。',
   bohAccessErrorClosed: 'All-Star BoH 当前未开放访问。',
   bohAccessErrorAuth: '无法准备安全登录，请重试。',
+  bohAccessErrorIdentityConflict:
+    '此浏览器已登录管理面板。为保护玩家报名，请在无痕窗口中打开此链接，并在那里输入成员 PIN。',
   bohAccessErrorAppCheck: '无法完成安全应用验证，请重试。',
   bohAccessErrorNetwork: '无法连接安全服务，请检查网络后重试。',
   bohAccessErrorGeneric: '无法确认成员访问权限，请重试。',

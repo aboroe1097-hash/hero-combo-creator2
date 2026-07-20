@@ -491,6 +491,8 @@ const de = {
   bohAccessErrorLocked: 'Zu viele Versuche. Warte kurz und versuche es dann erneut.',
   bohAccessErrorClosed: 'Der Zugang zu All-Star BoH ist derzeit nicht geöffnet.',
   bohAccessErrorAuth: 'Die sichere Anmeldung konnte nicht vorbereitet werden. Versuche es erneut.',
+  bohAccessErrorIdentityConflict:
+    'Dieser Browser ist im Leitungs-Dashboard angemeldet. Öffne diesen Link zum Schutz der Spieleranmeldungen in einem privaten Fenster und gib dort die Mitglieder-PIN ein.',
   bohAccessErrorAppCheck:
     'Die sichere App-Prüfung konnte nicht abgeschlossen werden. Versuche es erneut.',
   bohAccessErrorNetwork:

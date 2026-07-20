@@ -33,9 +33,10 @@ const LIMITS = {
   // measure 8117.7 KiB after the All-Star participation intake and shared
   // applicant locale additions. The audited Eden reward-family allocation and
   // 14.1.17 release digest measured 8145.8 KiB. The localized admin troop
-  // estimate labels bring the audited 14.1.18 graph to 8159.3 KiB; retain
-  // less than 2 KiB of aggregate headroom.
-  totalJsBytes: 8161 * 1024,
+  // estimate labels and the localized shared-admin protection bring the
+  // audited 14.2.0 graph to 8161.7 KiB; retain roughly 14 KiB of aggregate
+  // headroom while route and entry budgets remain unchanged.
+  totalJsBytes: 8176 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

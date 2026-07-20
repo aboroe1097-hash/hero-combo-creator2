@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.20";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.0";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.0",
+    "date": "2026-07-20",
+    "highlights": [
+      "Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.",
+      "Localized the leadership-session warning across all twelve supported site languages and added rendered browser coverage for the exact message."
+    ]
+  },
   {
     "version": "14.1.20",
     "date": "2026-07-20",
@@ -84,18 +92,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-07-19",
     "highlights": [
       "Reduced All-Star submission security-rule evaluation by caching the active member grant and validating submission submaps through short aliases, preventing valid large signups from exceeding Firestore's 1,000-expression limit."
-    ]
-  },
-  {
-    "version": "14.1.11",
-    "date": "2026-07-19",
-    "highlights": [
-      "Defaulted hero and research catalog filters to X1 and added a one-tap \"Max all\" action for each season's research group.",
-      "Saved the primary All-Star signup before optional Epic Showdown preferences so a rejected signup can no longer leave an Epic-only player record, and visibly marked required Unit Specialty Power.",
-      "Added an opening All-Star participation choice, an Epic-only path, automatic in-game-name sharing with Epic Showdown, and required contact/state/reason details for applicants outside VTS 1097.",
-      "Updated the owner-scoped Firestore signup contract for the new VTS applicant fields and surfaced them in the leadership review panel.",
-      "Fixed the mobile All-Star signup so the optional Troop OCR buttons remain inside their own section instead of floating over manual entry fields.",
-      "Separated the three troop portraits in the “All T10 troop types” selector so each icon remains individually visible on phones."
     ]
   }
 ].map((release) =>

@@ -486,6 +486,8 @@ const en = {
   bohAccessErrorLocked: 'Too many attempts. Wait a moment, then try again.',
   bohAccessErrorClosed: 'All-Star BoH access is not open right now.',
   bohAccessErrorAuth: 'Secure sign-in could not be prepared. Please try again.',
+  bohAccessErrorIdentityConflict:
+    'This browser is signed into the leadership dashboard. To protect player signups, open this link in a private window and enter the member PIN there.',
   bohAccessErrorAppCheck: 'Secure app verification could not be completed. Please try again.',
   bohAccessErrorNetwork:
     'The secure service could not be reached. Check your connection and try again.',

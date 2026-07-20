@@ -456,6 +456,8 @@ const ar = {
   bohAccessErrorLocked: 'محاولات كثيرة جدًا. انتظر قليلًا ثم حاول مجددًا.',
   bohAccessErrorClosed: 'دخول All-Star BoH غير متاح الآن.',
   bohAccessErrorAuth: 'تعذّر تجهيز تسجيل الدخول الآمن. حاول مجددًا.',
+  bohAccessErrorIdentityConflict:
+    'هذا المتصفح مسجّل الدخول إلى لوحة القيادة. لحماية طلبات اللاعبين، افتح هذا الرابط في نافذة خاصة وأدخل رمز PIN للأعضاء هناك.',
   bohAccessErrorAppCheck: 'تعذّر إكمال التحقق الآمن من التطبيق. حاول مجددًا.',
   bohAccessErrorNetwork: 'تعذّر الوصول إلى الخدمة الآمنة. تحقّق من اتصالك وحاول مجددًا.',
   bohAccessErrorGeneric: 'تعذّر تأكيد دخول العضو. حاول مجددًا.',

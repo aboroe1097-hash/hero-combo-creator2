@@ -457,6 +457,8 @@ const id = {
   bohAccessErrorLocked: 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.',
   bohAccessErrorClosed: 'Akses All-Star BoH sedang tidak dibuka.',
   bohAccessErrorAuth: 'Login aman tidak dapat disiapkan. Coba lagi.',
+  bohAccessErrorIdentityConflict:
+    'Browser ini sedang masuk ke dasbor pimpinan. Untuk melindungi pendaftaran pemain, buka tautan ini di jendela privat lalu masukkan PIN anggota di sana.',
   bohAccessErrorAppCheck: 'Verifikasi aplikasi aman gagal diselesaikan. Coba lagi.',
   bohAccessErrorNetwork: 'Layanan aman tidak dapat dijangkau. Periksa koneksi lalu coba lagi.',
   bohAccessErrorGeneric: 'Akses anggota tidak dapat dikonfirmasi. Coba lagi.',

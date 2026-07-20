@@ -462,6 +462,8 @@ const es = {
   bohAccessErrorLocked: 'Demasiados intentos. Espera un momento y vuelve a intentarlo.',
   bohAccessErrorClosed: 'El acceso a All-Star BoH no está abierto ahora mismo.',
   bohAccessErrorAuth: 'No se pudo preparar el inicio de sesión seguro. Inténtalo de nuevo.',
+  bohAccessErrorIdentityConflict:
+    'Este navegador tiene abierta una sesión del panel de liderazgo. Para proteger las inscripciones, abre este enlace en una ventana privada e introduce allí el PIN de miembros.',
   bohAccessErrorAppCheck:
     'No se pudo completar la verificación segura de la app. Inténtalo de nuevo.',
   bohAccessErrorNetwork:

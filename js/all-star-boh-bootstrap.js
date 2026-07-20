@@ -205,6 +205,11 @@ export function createAllStarBohAccessGate(options = {}) {
       locked: accessText(catalog, 'ErrorLocked', GATE_FALLBACKS.locked),
       closed: accessText(catalog, 'ErrorClosed', GATE_FALLBACKS.closed),
       auth: accessText(catalog, 'ErrorAuth', GATE_FALLBACKS.auth),
+      identityConflict: accessText(
+        catalog,
+        'ErrorIdentityConflict',
+        GATE_FALLBACKS.identityConflict
+      ),
       appCheck: accessText(catalog, 'ErrorAppCheck', GATE_FALLBACKS.appCheck),
       network: accessText(catalog, 'ErrorNetwork', GATE_FALLBACKS.network),
       generic: accessText(catalog, 'ErrorGeneric', GATE_FALLBACKS.generic),
