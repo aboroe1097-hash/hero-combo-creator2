@@ -419,6 +419,18 @@
   line-height: 1.45;
 }
 
+.boh-ocr-progress {
+  display: block;
+  width: min(100%, 32rem);
+  height: 0.65rem;
+  margin-top: 0.7rem;
+  accent-color: var(--boh-sky);
+}
+
+.boh-ocr-progress[hidden] {
+  display: none;
+}
+
 .boh-feedback:not([hidden]) {
   display: block;
   padding: 0.7rem 0.85rem;

@@ -979,7 +979,7 @@ export function buildBohSubmissionPayload(source, options = {}) {
   stats.rocLevel = parseBohInteger(formValue(source, 'rocLevel'), {
     label: 'RoC level',
     minimum: 0,
-    maximum: 99,
+    maximum: 160,
     required: false,
   });
 
@@ -1923,7 +1923,12 @@ function renderResearchCatalog(state) {
       replaceChildren(seasonFilter, ...options);
       seasonFilter.value = HERO_SEASON_MILESTONES.includes(currentSeason) ? currentSeason : 'X1';
     }
-    const groups = [...seasons.entries()].map(([season, seasonTrees], seasonIndex) => {
+    const orderedSeasons = [...seasons.entries()].sort(([left], [right]) => {
+      const leftRank = seasonRank(left) ?? Number.MAX_SAFE_INTEGER;
+      const rightRank = seasonRank(right) ?? Number.MAX_SAFE_INTEGER;
+      return leftRank - rightRank || left.localeCompare(right);
+    });
+    const groups = orderedSeasons.map(([season, seasonTrees], seasonIndex) => {
       const group = createElement(state.root, 'section', 'boh-research-season');
       group.dataset.role = 'research-season-group';
       group.dataset.season = season;
@@ -2372,6 +2377,7 @@ function renderOcr(state) {
   const reviewBadge = query(state.root, '[data-role="ocr-review-badge"]');
   const status = query(state.root, '[data-role="ocr-status"]');
   const process = query(state.root, '[data-role="ocr-process"]');
+  const progress = query(state.root, '[data-role="ocr-progress"]');
   setHidden(preview, !state.ocrFile);
   if (previewImage) {
     if (state.ocrPreviewUrl) previewImage.src = state.ocrPreviewUrl;
@@ -2388,6 +2394,8 @@ function renderOcr(state) {
       : state.tr('signup.ocrReady', 'Ready to process')
   );
   setHidden(reviewBadge, !state.ocrReview);
+  setHidden(progress, !state.ocrBusy);
+  if (progress && state.ocrBusy) progress.removeAttribute?.('value');
   setBusy(process, state.ocrBusy || !state.ocrFile);
   if (status && state.ocrBusy)
     status.textContent = state.tr('signup.ocrProcessing', 'Reading screenshot…');

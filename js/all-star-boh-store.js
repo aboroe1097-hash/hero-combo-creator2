@@ -520,7 +520,7 @@ function normalizeStats(input = {}, options = {}) {
       { label: 'Ready speed heroes', maxItems: 24, maxLength: 80 }
     ),
     level50HeroCount: number(['level50HeroCount', 'level50Heroes'], 'Level 50 hero count', 500),
-    rocLevel: number(['rocLevel'], 'RoC level', 100),
+    rocLevel: number(['rocLevel'], 'RoC level', 160),
   };
   if (source.troopRoster !== undefined) {
     stats.troopRoster = boundedStringArray(source.troopRoster || [], {
