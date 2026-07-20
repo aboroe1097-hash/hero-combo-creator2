@@ -1,7 +1,19 @@
 import { expect, test } from '@playwright/test';
 
 const navigationPlacements = new Map([
-  [640, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'primary' }],
+  [
+    640,
+    {
+      tabStrife: 'more',
+      tabLoyalty: 'more',
+      tabResearch: 'primary',
+      tabYouTube: 'primary',
+      tabAllStarBoh: 'primary',
+      tabEdenX1: 'primary',
+      tabGenerator: 'more',
+      tabArcade: 'more',
+    },
+  ],
   [641, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
   [1439, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
   [1440, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary' }],
@@ -48,6 +60,14 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
 }) => {
   await page.setViewportSize({ width: 640, height: 900 });
   await openHome(page);
+
+  await expect(page.locator('#betaNote')).toBeVisible();
+  await expect(page.locator('#betaNote')).toContainText(/^v\d+\.\d+\.\d+/);
+  await expect
+    .poll(() =>
+      page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
+    )
+    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });
@@ -106,6 +126,17 @@ test('YouTube activation survives responsive reparenting and reaches its declare
   await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'youtube');
   await expect(youtubeTab).toHaveAttribute('aria-pressed', 'true');
   await expect(page).toHaveURL(/#youtube$/);
+});
+
+test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const hash of ['allstarboh', 'AllStarBoh', 'allStarBoh']) {
+    await openHome(page, `/#${hash}`);
+    await expect(page.locator('#allStarBohSection')).toBeVisible();
+    await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'allStarBoh');
+    await expect(page).toHaveURL(/#allStarBoh$/);
+  }
 });
 
 test('skip link follows active, lazy, hash, and Back navigation while preserving the mobile H1', async ({

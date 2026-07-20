@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.1.19 - 2026-07-20
+
+- Restored backward-compatible All-Star signup reads for historical `+8` and `+20` fighting-time selections so one older record cannot prevent the admin dashboard or a player's saved form from loading.
+- Kept all new and updated submissions restricted to exactly two current fighting times from `+12`, `+14`, and `+16`.
+- Prioritized Research, YouTube, All-Star BoH, and Eden X1 Rankings in the mobile bottom navigation, restored a compact mobile version badge, and fully hid the off-screen skip-link outline until keyboard focus.
+- Made shared tab links case-insensitive so common variants such as `#allstarboh` and `#AllStarBoh` open and normalize to the canonical `#allStarBoh` route.
+
 ## 14.1.18 - 2026-07-20
 
 - Replaced unreliable multi-image troop OCR with four optional million-based estimates for Lofty (S), enhanced T10, regular T10, and T9 troops; entering `7` records an estimated `7,000,000` troops while preserving legacy reviewed troop rows.

@@ -93,6 +93,8 @@ test('All-Star BoH is an internal lazy tab wired through the shell and command p
     /export const tabAllStarBohBtn = document\.getElementById\('tabAllStarBoh'\)/
   );
   assert.match(appSource, /allStarBoh:\s*'tabAllStarBoh'/);
+  assert.match(appSource, /function resolveTabName\(rawTabName, validTabNames\)/);
+  assert.match(appSource, /name\.toLowerCase\(\) === normalized/);
   assert.match(appSource, /\{ btn: tabAllStarBohBtn, name: 'allStarBoh' \}/);
 
   const lazyBlock = appSource.match(

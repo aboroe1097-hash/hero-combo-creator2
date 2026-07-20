@@ -35,7 +35,11 @@ test('compact shell clock drops the status dot and reserves readable timer width
   assert.match(compactShell, /#app #globalGameClock \{[\s\S]*?flex: 0 0 84px/);
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
   assert.doesNotMatch(compactShell, /text-overflow: ellipsis/);
-  assert.match(compactShell, /#app \.command-brand \{[\s\S]*?flex: 0 0 36px/);
+  assert.match(compactShell, /#app \.command-brand \{[\s\S]*?flex: 0 0 64px/);
+  assert.match(
+    compactShell,
+    /#app \.version-ribbon \{[\s\S]*?display: block !important;[\s\S]*?width: 44px !important;/
+  );
   assert.match(
     compactShell,
     /#app \.command-header \.command-logo \.command-logo-copy \{[\s\S]*?display: none !important;/
