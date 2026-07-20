@@ -1,7 +1,19 @@
 import { expect, test } from '@playwright/test';
 
 const navigationPlacements = new Map([
-  [640, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'primary' }],
+  [
+    640,
+    {
+      tabStrife: 'more',
+      tabLoyalty: 'more',
+      tabResearch: 'primary',
+      tabYouTube: 'primary',
+      tabAllStarBoh: 'primary',
+      tabEdenX1: 'primary',
+      tabGenerator: 'more',
+      tabArcade: 'more',
+    },
+  ],
   [641, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
   [1439, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
   [1440, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary' }],
@@ -48,6 +60,17 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
 }) => {
   await page.setViewportSize({ width: 640, height: 900 });
   await openHome(page);
+
+  await expect(page.locator('#betaNote')).toBeVisible();
+  await expect(page.locator('#betaNote')).toHaveAttribute(
+    'data-mobile-version',
+    /^v\d+\.\d+\.\d+$/
+  );
+  await expect
+    .poll(() =>
+      page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
+    )
+    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });

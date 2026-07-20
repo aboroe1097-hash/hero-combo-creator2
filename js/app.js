@@ -1418,6 +1418,8 @@ function setLocalizedTextPreservingDecorations(el, text) {
 
 function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
+  const betaNote = document.getElementById('betaNote');
+  if (betaNote) betaNote.dataset.mobileVersion = `v${APP_VERSION}`;
 
   // RTL support for Arabic
   document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';

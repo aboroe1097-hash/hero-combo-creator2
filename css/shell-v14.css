@@ -67,6 +67,8 @@ body.app-ready #app.app-shell {
   font-weight: 800;
   line-height: 1.25;
   transform: translateY(calc(-100% - 24px));
+  clip-path: inset(0 0 100% 0);
+  pointer-events: none;
 }
 
 .shell-skip-current-tool:focus,
@@ -74,6 +76,8 @@ body.app-ready #app.app-shell {
   outline: 3px solid color-mix(in srgb, var(--ff-action) 42%, transparent);
   outline-offset: 3px;
   transform: translateY(0);
+  clip-path: none;
+  pointer-events: auto;
 }
 
 /* ---- V14 base typography ----------------------------------- */
@@ -1288,7 +1292,8 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .command-brand {
-    flex: 0 0 36px;
+    position: relative;
+    flex: 0 0 64px;
     gap: 0 !important;
     min-width: 0 !important;
     padding: 0 !important;
@@ -1316,9 +1321,25 @@ body.shell-more-open #app .tool-nav-inner {
     display: none !important;
   }
 
-  #app .version-ribbon,
   #app .command-kicker {
     display: none !important;
+  }
+
+  #app .version-ribbon {
+    position: absolute;
+    inset-block-end: -2px;
+    inset-inline-start: 22px;
+    z-index: 1;
+    display: block !important;
+    max-width: none;
+    padding: 2px 4px !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+  }
+
+  #app .version-ribbon::before {
+    content: attr(data-mobile-version);
+    font-size: 0.46rem;
   }
 
   #app .command-actions {

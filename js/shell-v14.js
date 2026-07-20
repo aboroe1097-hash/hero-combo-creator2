@@ -51,7 +51,7 @@
     'tabLoyalty',
     'tabYouTube',
   ];
-  const mobilePrimaryIds = ['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade'];
+  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1'];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
     ['tabManual', 'manual'],
