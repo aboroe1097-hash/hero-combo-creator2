@@ -676,23 +676,30 @@ function troopEstimateRoster(source) {
   });
 }
 
-function troopEstimateTotals(roster) {
-  const totals = new Map(TROOP_ESTIMATE_FIELDS.map(([key]) => [key, 0]));
+export function troopEstimateTotals(roster) {
+  const legacyTotals = new Map(TROOP_ESTIMATE_FIELDS.map(([key]) => [key, 0]));
+  const aggregateTotals = new Map();
   for (const value of roster || []) {
     const aggregate = /^estimate\|(lofty|enhanced-t10|t10|t9)\|(\d{1,10})$/u.exec(String(value));
     if (aggregate) {
-      totals.set(aggregate[1], Number(aggregate[2]));
+      aggregateTotals.set(aggregate[1], Number(aggregate[2]));
       continue;
     }
     const row = parseBohTroopInventoryRow(value);
     if (!row?.count) continue;
-    if (['S', 'SS', 'SSS'].includes(row.tier)) totals.set('lofty', totals.get('lofty') + row.count);
+    if (['S', 'SS', 'SSS'].includes(row.tier))
+      legacyTotals.set('lofty', legacyTotals.get('lofty') + row.count);
     else if (row.tier === 'X' && row.enhanced)
-      totals.set('enhanced-t10', totals.get('enhanced-t10') + row.count);
-    else if (row.tier === 'X') totals.set('t10', totals.get('t10') + row.count);
-    else if (row.tier === 'IX') totals.set('t9', totals.get('t9') + row.count);
+      legacyTotals.set('enhanced-t10', legacyTotals.get('enhanced-t10') + row.count);
+    else if (row.tier === 'X') legacyTotals.set('t10', legacyTotals.get('t10') + row.count);
+    else if (row.tier === 'IX') legacyTotals.set('t9', legacyTotals.get('t9') + row.count);
   }
-  return totals;
+  return new Map(
+    TROOP_ESTIMATE_FIELDS.map(([key]) => [
+      key,
+      aggregateTotals.has(key) ? aggregateTotals.get(key) : legacyTotals.get(key),
+    ])
+  );
 }
 
 function normalizeDigits(value) {
@@ -1700,7 +1707,7 @@ function updateChecked(form, name, values) {
   }
 }
 
-function heroCatalogFor(state) {
+export function heroCatalogFor(state) {
   const seen = new Set();
   const heroes = [];
   for (const value of Array.isArray(state.options.heroes) ? state.options.heroes : []) {
@@ -1708,7 +1715,9 @@ function heroCatalogFor(state) {
     const key = comparableLabel(name);
     if (!name || seen.has(key)) continue;
     seen.add(key);
-    const season = textValue(value?.releaseSeason || value?.season || '');
+    const releaseSeason = textValue(value?.releaseSeason);
+    const season =
+      seasonRank(releaseSeason) === null ? textValue(value?.season || '') : releaseSeason;
     if (seasonRank(season) === null) continue;
     heroes.push({
       name,

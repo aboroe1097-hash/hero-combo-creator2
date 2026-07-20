@@ -55,11 +55,10 @@ const LIMITS = {
   // The 14.1.11 applicant flow measures 26,172.1 KiB with shared locale chunks;
   // retain less than 8 KiB while keeping route and media caps unchanged.
   // The downloadable Top 20 and 21-110 reward cards add one focused Eden bundle feature.
-  // Localized admin troop estimates and the 14.1.19 mobile/hash compatibility
-  // release bring the deterministic CI artifact to 26,224.1 KiB. Keep roughly
-  // 16 KiB of complete-artifact headroom while the tighter JS, CSS, route,
-  // media, and file-count budgets below remain unchanged.
-  totalDeployBytes: 26240 * 1024,
+  // The 14.2.3 All-Star scoring/catalog consistency release measures 26,241.1
+  // KiB and retains roughly 15 KiB of complete-artifact headroom while the
+  // tighter JS, CSS, route, media, and file-count budgets remain unchanged.
+  totalDeployBytes: 26256 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

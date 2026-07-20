@@ -103,7 +103,7 @@ test('canonical English exactly covers every admin translator and integration ke
 
   const sourceKeys = [...keys].sort();
   const englishKeys = Object.keys(ADMIN_ALL_STAR_BOH_EN).sort();
-  assert.equal(sourceKeys.length, 399);
+  assert.equal(sourceKeys.length, 404);
   assert.deepEqual(englishKeys, sourceKeys, 'English must have no missing or extra admin keys');
   assert.ok(
     Object.values(ADMIN_ALL_STAR_BOH_EN).every((value) => typeof value === 'string' && value)
@@ -112,6 +112,26 @@ test('canonical English exactly covers every admin translator and integration ke
   assert.equal(
     ADMIN_ALL_STAR_BOH_EN.adminBohUnavailable,
     'All-Star administration is unavailable. Refresh and try again.'
+  );
+  assert.deepEqual(
+    {
+      unitSpecialtyPower: ADMIN_ALL_STAR_BOH_EN.adminBohScoreUnitSpecialtyPower,
+      rocLevel: ADMIN_ALL_STAR_BOH_EN.adminBohScoreRocLevel,
+      paidUsableHero: ADMIN_ALL_STAR_BOH_EN.adminBohScorePaidUsableHero,
+      loftyTroopMillion: ADMIN_ALL_STAR_BOH_EN.adminBohScoreLoftyTroopMillion,
+      enhancedT10TroopMillion: ADMIN_ALL_STAR_BOH_EN.adminBohScoreEnhancedT10TroopMillion,
+    },
+    {
+      unitSpecialtyPower: 'Unit specialty power',
+      rocLevel: 'RoC level',
+      paidUsableHero: 'Each paid usable hero',
+      loftyTroopMillion: 'S (Lofty) troops — points per 1 million',
+      enhancedT10TroopMillion: 'Enhanced T10 troops — points per 1 million',
+    }
+  );
+  assert.equal(
+    ADMIN_ALL_STAR_BOH_EN.adminBohSignupPlanningSignalsHelp,
+    'Preferences guide planning and never lock assignments. Only enabled scoring components affect scores.'
   );
 });
 
@@ -166,6 +186,21 @@ test('admin locale resolution, fallback, and lazy-loader contract stay stable', 
   assert.equal(adminAllStarBohText('adminBohTitle', {}, 'ar'), ADMIN_ALL_STAR_BOH_EN.adminBohTitle);
   assert.strictEqual(await loadAdminAllStarBohLocale('en-US'), ADMIN_ALL_STAR_BOH_EN);
   assert.strictEqual(await loadAdminAllStarBohLocale('unsupported'), ADMIN_ALL_STAR_BOH_EN);
+
+  const sharedFallbackKeys = [
+    'adminBohScoreUnitSpecialtyPower',
+    'adminBohScoreRocLevel',
+    'adminBohScorePaidUsableHero',
+    'adminBohScoreLoftyTroopMillion',
+    'adminBohScoreEnhancedT10TroopMillion',
+    'adminBohSignupPlanningSignalsHelp',
+  ];
+  for (const locale of ADMIN_ALL_STAR_BOH_LOCALES.slice(1)) {
+    const pack = await loadAdminAllStarBohLocale(locale);
+    for (const key of sharedFallbackKeys) {
+      assert.equal(pack[key], ADMIN_ALL_STAR_BOH_EN[key], `${locale} should use canonical ${key}`);
+    }
+  }
 
   const source = await readFile(domainUrl, 'utf8');
   for (const locale of ADMIN_ALL_STAR_BOH_LOCALES.slice(1)) {

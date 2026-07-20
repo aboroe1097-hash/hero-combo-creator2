@@ -475,14 +475,18 @@ test('2025 formula exposes an exact deterministic component breakdown', () => {
         technologyPower: 3000000,
         heroCombatPower: 4000000,
         dragonPower: 5000000,
+        unitSpecialtyPower: 6000000,
         t9TroopTypes: ['Cavalry', 'Archers', 'Footmen'],
         readySpeedHeroes: ['LionHeart', 'Cao Cao'],
+        usableHeroNames: ['Cleopatra'],
+        troopRoster: ['estimate|lofty|7000000', 'estimate|enhanced-t10|1500000'],
         level50HeroCount: 4,
+        rocLevel: 160,
         bohUsefulRating: 99,
       },
     },
     BOH_2025_SCORING_PROFILE,
-    { adminUsefulnessRating: 2 }
+    { adminUsefulnessRating: 2, paidUsableHeroNames: ['cleopatra'] }
   );
 
   assert.equal(scored.profileId, 'all-star-boh-2025-v1');
@@ -492,13 +496,136 @@ test('2025 formula exposes an exact deterministic component breakdown', () => {
   assert.equal(scored.breakdown.technologyPower.points, 2100);
   assert.equal(scored.breakdown.heroCombatPower.points, 3200);
   assert.equal(scored.breakdown.dragonPower.points, 5000);
+  assert.equal(scored.breakdown.unitSpecialtyPower.points, 0);
   assert.equal(scored.breakdown.t9TroopType.points, 9000);
   assert.equal(scored.breakdown.readySpeedHero.points, 5000);
   assert.equal(scored.breakdown.level50Hero.points, 3000);
   assert.equal(scored.breakdown.bohUsefulRating.points, 2000);
+  assert.equal(scored.breakdown.rocLevel.points, 0);
+  assert.equal(scored.breakdown.paidUsableHero.points, 0);
+  assert.equal(scored.breakdown.loftyTroopMillion.points, 0);
+  assert.equal(scored.breakdown.enhancedT10TroopMillion.points, 0);
   assert.equal(scored.powerSubtotal, 10950);
   assert.equal(scored.bonusSubtotal, 19000);
   assert.equal(scored.total, 29950);
+});
+
+test('custom scoring profiles apply all five new model inputs', () => {
+  const profile = createBohScoringProfile({
+    powerWeights: { unitSpecialtyPower: 0.5 },
+    bonusWeights: {
+      rocLevel: 10,
+      paidUsableHero: 500,
+      loftyTroopMillion: 200,
+      enhancedT10TroopMillion: 400,
+    },
+  });
+  const scored = scoreBohSignup(
+    {
+      gameName: 'New Inputs',
+      stats: {
+        unitSpecialtyPower: 2000000,
+        rocLevel: 160,
+        usableHeroNames: ['Cleopatra', 'Ragnar', 'Free Hero'],
+        troopRoster: ['estimate|lofty|7500000', 'estimate|enhanced-t10|1250000'],
+      },
+    },
+    profile,
+    { paidUsableHeroNames: ['cleopatra', 'RAGNAR'] }
+  );
+
+  assert.deepEqual(
+    Object.fromEntries(
+      [
+        'unitSpecialtyPower',
+        'rocLevel',
+        'paidUsableHero',
+        'loftyTroopMillion',
+        'enhancedT10TroopMillion',
+      ].map((field) => [field, scored.breakdown[field].input])
+    ),
+    {
+      unitSpecialtyPower: 2000000,
+      rocLevel: 160,
+      paidUsableHero: 2,
+      loftyTroopMillion: 7.5,
+      enhancedT10TroopMillion: 1.25,
+    }
+  );
+  assert.equal(scored.breakdown.unitSpecialtyPower.points, 1000);
+  assert.equal(scored.breakdown.rocLevel.points, 1600);
+  assert.equal(scored.breakdown.paidUsableHero.points, 1000);
+  assert.equal(scored.breakdown.loftyTroopMillion.points, 1500);
+  assert.equal(scored.breakdown.enhancedT10TroopMillion.points, 500);
+  assert.equal(scored.total, 5600);
+});
+
+test('paid usable heroes require trusted metadata and normalize names before intersection', () => {
+  const input = {
+    gameName: 'Hero Trust',
+    paidUsableHero: 99,
+    paidUsableHeroCount: 99,
+    stats: {
+      usableHeroNames: [' Cleopatra ', 'CLEOPATRA', 'Ragnar', 'Free Hero'],
+      paidUsableHero: 99,
+      paidUsableHeroCount: 99,
+    },
+  };
+  const profile = createBohScoringProfile({ bonusWeights: { paidUsableHero: 100 } });
+  const trusted = scoreBohSignup(input, profile, {
+    paidUsableHeroNames: ['cleopatra', 'RAGNAR', 'ragnar', 'Unowned Paid Hero'],
+  });
+  const missingMetadata = scoreBohSignup(input, profile);
+
+  assert.equal(trusted.breakdown.paidUsableHero.input, 2);
+  assert.equal(trusted.breakdown.paidUsableHero.points, 200);
+  assert.equal(missingMetadata.breakdown.paidUsableHero.input, 0);
+  assert.equal(missingMetadata.breakdown.paidUsableHero.points, 0);
+});
+
+test('aggregate troop estimates override legacy rows and legacy encodings still sum', () => {
+  const profile = createBohScoringProfile({
+    bonusWeights: { loftyTroopMillion: 10, enhancedT10TroopMillion: 20 },
+  });
+  const aggregate = scoreBohSignup(
+    {
+      gameName: 'Aggregate Troops',
+      troopRoster: [
+        'estimate|lofty|7000000',
+        'cavalry|S|normal|1000000',
+        'archers|SS|enhanced|2000000',
+        'footmen|SSS|normal|3000000',
+        'estimate|enhanced-t10|1500000',
+        'cavalry|X|enhanced|4000000',
+        'archers|X|normal|9000000',
+      ],
+    },
+    profile
+  );
+  const legacy = scoreBohSignup(
+    {
+      gameName: 'Legacy Troops',
+      troopRoster: [
+        'cavalry|S|normal|1000000',
+        'archers|SS|enhanced|2000000',
+        'footmen|SSS|normal|3000000',
+        'cavalry|X|enhanced|4000000',
+        'footmen|X|enhanced|500000',
+        'archers|X|normal|9000000',
+        'footmen|IX|enhanced|8000000',
+      ],
+    },
+    profile
+  );
+
+  assert.equal(aggregate.breakdown.loftyTroopMillion.input, 7);
+  assert.equal(aggregate.breakdown.enhancedT10TroopMillion.input, 1.5);
+  assert.equal(aggregate.breakdown.loftyTroopMillion.points, 70);
+  assert.equal(aggregate.breakdown.enhancedT10TroopMillion.points, 30);
+  assert.equal(legacy.breakdown.loftyTroopMillion.input, 6);
+  assert.equal(legacy.breakdown.enhancedT10TroopMillion.input, 4.5);
+  assert.equal(legacy.breakdown.loftyTroopMillion.points, 60);
+  assert.equal(legacy.breakdown.enhancedT10TroopMillion.points, 90);
 });
 
 test('player-controlled usefulness is ignored and only a bounded admin adjustment can score', () => {

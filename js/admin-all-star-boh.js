@@ -29,10 +29,25 @@ const SCORE_COMPONENTS = [
   ['technologyPower', 'adminBohScoreTechnologyPower', 'Technology power', 0.7],
   ['heroCombatPower', 'adminBohScoreHeroPower', 'Hero combat power', 0.8],
   ['dragonPower', 'adminBohScoreDragonPower', 'Dragon power', 1],
+  ['unitSpecialtyPower', 'adminBohScoreUnitSpecialtyPower', 'Unit specialty power', 0],
   ['t9TroopType', 'adminBohScoreT9Type', 'Each T10 troop type', 3000],
   ['readySpeedHero', 'adminBohScoreSpeedHero', 'Each ready speed hero', 2500],
   ['level50Hero', 'adminBohScoreLevel50Hero', 'Each level 50 hero', 750],
   ['bohUsefulRating', 'adminBohScoreBohUseful', 'BoH usefulness point', 1000],
+  ['rocLevel', 'adminBohScoreRocLevel', 'RoC level', 0],
+  ['paidUsableHero', 'adminBohScorePaidUsableHero', 'Each paid usable hero', 0],
+  [
+    'loftyTroopMillion',
+    'adminBohScoreLoftyTroopMillion',
+    'S (Lofty) troops — points per 1 million',
+    0,
+  ],
+  [
+    'enhancedT10TroopMillion',
+    'adminBohScoreEnhancedT10TroopMillion',
+    'Enhanced T10 troops — points per 1 million',
+    0,
+  ],
 ];
 
 const DEFAULT_PHASES = [
@@ -737,10 +752,15 @@ function adapterUiScoringVersion(version) {
       technologyPower: finiteNumber(power.technologyPower, 0.7),
       heroCombatPower: finiteNumber(power.heroCombatPower, 0.8),
       dragonPower: finiteNumber(power.dragonPower, 1),
+      unitSpecialtyPower: finiteNumber(power.unitSpecialtyPower ?? 0),
       t9TroopType: finiteNumber(bonus.t9TroopType, 3000),
       readySpeedHero: finiteNumber(bonus.readySpeedHero, 2500),
       level50Hero: finiteNumber(bonus.level50Hero, 750),
       bohUsefulRating: finiteNumber(bonus.bohUsefulRating, 1000),
+      rocLevel: finiteNumber(bonus.rocLevel ?? 0),
+      paidUsableHero: finiteNumber(bonus.paidUsableHero ?? 0),
+      loftyTroopMillion: finiteNumber(bonus.loftyTroopMillion ?? 0),
+      enhancedT10TroopMillion: finiteNumber(bonus.enhancedT10TroopMillion ?? 0),
     },
   };
 }
@@ -763,6 +783,7 @@ function adapterScoreRecord(state, submission) {
         adminUsefulnessRating: reviewMatchesSubmission
           ? (review?.adjustments?.bohUsefulRating ?? 0)
           : 0,
+        paidUsableHeroNames: state.paidUsableHeroNames,
       }
     );
   } catch {
@@ -1225,7 +1246,10 @@ async function adapterReviewSubmission(state, payload) {
         gameName: playerName(submission) || adapterSubmissionId(submission),
       },
       adapterActiveScoringVersion(state),
-      { adminUsefulnessRating: adminUsefulnessRating ?? 0 }
+      {
+        adminUsefulnessRating: adminUsefulnessRating ?? 0,
+        paidUsableHeroNames: state.paidUsableHeroNames,
+      }
     );
   } catch {
     calculated = { total: 0, breakdown: {} };
@@ -1295,12 +1319,29 @@ async function adapterCreateScoringVersion(state, payload) {
       technologyPower: finiteNumber(weights.technologyPower, current.powerWeights?.technologyPower),
       heroCombatPower: finiteNumber(weights.heroCombatPower, current.powerWeights?.heroCombatPower),
       dragonPower: finiteNumber(weights.dragonPower, current.powerWeights?.dragonPower),
+      unitSpecialtyPower: finiteNumber(
+        weights.unitSpecialtyPower,
+        current.powerWeights?.unitSpecialtyPower ?? 0
+      ),
     },
     bonusWeights: {
       t9TroopType: finiteNumber(weights.t9TroopType, current.bonusWeights?.t9TroopType),
       readySpeedHero: finiteNumber(weights.readySpeedHero, current.bonusWeights?.readySpeedHero),
       level50Hero: finiteNumber(weights.level50Hero, current.bonusWeights?.level50Hero),
       bohUsefulRating: finiteNumber(weights.bohUsefulRating, current.bonusWeights?.bohUsefulRating),
+      rocLevel: finiteNumber(weights.rocLevel, current.bonusWeights?.rocLevel ?? 0),
+      paidUsableHero: finiteNumber(
+        weights.paidUsableHero,
+        current.bonusWeights?.paidUsableHero ?? 0
+      ),
+      loftyTroopMillion: finiteNumber(
+        weights.loftyTroopMillion,
+        current.bonusWeights?.loftyTroopMillion ?? 0
+      ),
+      enhancedT10TroopMillion: finiteNumber(
+        weights.enhancedT10TroopMillion,
+        current.bonusWeights?.enhancedT10TroopMillion ?? 0
+      ),
     },
     powerDivisor: finiteNumber(current.powerDivisor, 1000),
     precision: integer(current.precision, 3),
@@ -2391,6 +2432,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
   const state = {
     adminStore,
     options,
+    paidUsableHeroNames: uniqueTextList(options.paidUsableHeroNames),
     submissions: [],
     epicPreferences: [],
     reviews: new Map(),
@@ -3262,7 +3304,7 @@ function renderSignupPlanningSignals(state, submission) {
     <p>${escapeHtml(
       state.tr(
         'adminBohSignupPlanningSignalsHelp',
-        'Player-entered preferences for planning only. They do not change scores or lock assignments.'
+        'Preferences guide planning and never lock assignments. Only enabled scoring components affect scores.'
       )
     )}</p>
     <div class="boh-admin-signal-compact-grid">

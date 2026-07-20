@@ -806,10 +806,15 @@ function normalizeScore(input = {}) {
     'technologyPower',
     'heroCombatPower',
     'dragonPower',
+    'unitSpecialtyPower',
     't9TroopType',
     'readySpeedHero',
     'level50Hero',
     'bohUsefulRating',
+    'rocLevel',
+    'paidUsableHero',
+    'loftyTroopMillion',
+    'enhancedT10TroopMillion',
     'override',
   ];
   for (const key of allowedBreakdownKeys) {
@@ -947,8 +952,18 @@ function normalizeScoringVersion(input, index = 0) {
     'technologyPower',
     'heroCombatPower',
     'dragonPower',
+    'unitSpecialtyPower',
   ];
-  const bonusKeys = ['t9TroopType', 'readySpeedHero', 'level50Hero', 'bohUsefulRating'];
+  const bonusKeys = [
+    't9TroopType',
+    'readySpeedHero',
+    'level50Hero',
+    'bohUsefulRating',
+    'rocLevel',
+    'paidUsableHero',
+    'loftyTroopMillion',
+    'enhancedT10TroopMillion',
+  ];
   return {
     id: requiredIdentifier(source.id, 'Scoring version ID'),
     version: boundedInteger(source.version, 'Scoring version', { minimum: 1, maximum: 1_000_000 }),

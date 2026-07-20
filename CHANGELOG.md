@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.2.3 - 2026-07-20
+
+- Added five configurable All-Star scoring components for Unit Specialty Power, RoC level, paid usable heroes, Lofty troops per million, and Enhanced T10 troops per million, all defaulting to zero.
+- Derived paid usable hero counts from the canonical hero catalog and preserved all five component weights through scoring-version and admin-draft store round trips.
+- Kept legacy scoring totals unchanged until an admin explicitly creates and enables a new scoring version with nonzero weights.
+
 ## 14.2.2 - 2026-07-20
 
 - Added actionable VPN, different-network, and Retry guidance when regional or network restrictions prevent access to required Google signup security services, without presenting the failure as an incorrect PIN; semantic validation, authentication, and admin-session errors remain distinct.

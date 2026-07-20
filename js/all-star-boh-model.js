@@ -55,6 +55,7 @@ const SCORE_POWER_FIELDS = Object.freeze([
   'technologyPower',
   'heroCombatPower',
   'dragonPower',
+  'unitSpecialtyPower',
 ]);
 
 const SCORE_BONUS_FIELDS = Object.freeze([
@@ -62,6 +63,10 @@ const SCORE_BONUS_FIELDS = Object.freeze([
   'readySpeedHero',
   'level50Hero',
   'bohUsefulRating',
+  'rocLevel',
+  'paidUsableHero',
+  'loftyTroopMillion',
+  'enhancedT10TroopMillion',
 ]);
 
 function deepFreeze(value) {
@@ -87,12 +92,17 @@ export const BOH_2025_SCORING_PROFILE = deepFreeze({
     technologyPower: 0.7,
     heroCombatPower: 0.8,
     dragonPower: 1,
+    unitSpecialtyPower: 0,
   },
   bonusWeights: {
     t9TroopType: 3000,
     readySpeedHero: 2500,
     level50Hero: 750,
     bohUsefulRating: 1000,
+    rocLevel: 0,
+    paidUsableHero: 0,
+    loftyTroopMillion: 0,
+    enhancedT10TroopMillion: 0,
   },
 });
 
@@ -766,6 +776,39 @@ function adminUsefulnessRating(options = {}) {
   return rating;
 }
 
+function trustedPaidUsableHeroCount(usableHeroNames, options = {}) {
+  const paidHeroKeys = new Set(
+    normalizeStringList(options.paidUsableHeroNames).map(normalizeBohNameKey)
+  );
+  if (!paidHeroKeys.size) return 0;
+  const usableHeroKeys = new Set(normalizeStringList(usableHeroNames).map(normalizeBohNameKey));
+  return [...usableHeroKeys].filter((heroKey) => paidHeroKeys.has(heroKey)).length;
+}
+
+function scoreTroopMillions(troopRoster) {
+  const aggregateCounts = { lofty: null, 'enhanced-t10': null };
+  const legacyCounts = { lofty: 0, 'enhanced-t10': 0 };
+  for (const entry of troopRoster) {
+    const aggregate = /^estimate\|(lofty|enhanced-t10)\|(\d{1,10})$/u.exec(entry);
+    if (aggregate) {
+      aggregateCounts[aggregate[1]] = Number(aggregate[2]);
+      continue;
+    }
+    const legacy =
+      /^(?:footmen|cavalry|archers)\|(SSS|SS|S|X)\|(normal|enhanced)\|(\d{1,10})$/u.exec(entry);
+    if (!legacy) continue;
+    const [, tier, mode, rawCount] = legacy;
+    const count = Number(rawCount);
+    if (['S', 'SS', 'SSS'].includes(tier)) legacyCounts.lofty += count;
+    else if (tier === 'X' && mode === 'enhanced') legacyCounts['enhanced-t10'] += count;
+  }
+  return {
+    loftyTroopMillion: (aggregateCounts.lofty ?? legacyCounts.lofty) / 1_000_000,
+    enhancedT10TroopMillion:
+      (aggregateCounts['enhanced-t10'] ?? legacyCounts['enhanced-t10']) / 1_000_000,
+  };
+}
+
 export function scoreBohSignup(input, profileInput = BOH_2025_SCORING_PROFILE, options = {}) {
   const signup = normalizeBohSignup(input, options);
   const profile = createBohScoringProfile(profileInput);
@@ -789,6 +832,9 @@ export function scoreBohSignup(input, profileInput = BOH_2025_SCORING_PROFILE, o
     // This value is intentionally accepted only through the admin scorer call.
     // Player submissions never own or normalize a usefulness adjustment.
     bohUsefulRating: adminUsefulnessRating(options),
+    rocLevel: signup.stats.rocLevel,
+    paidUsableHero: trustedPaidUsableHeroCount(signup.stats.usableHeroNames, options),
+    ...scoreTroopMillions(signup.stats.troopRoster),
   };
   SCORE_BONUS_FIELDS.forEach((field) => {
     const sourceValue = bonusInputs[field];

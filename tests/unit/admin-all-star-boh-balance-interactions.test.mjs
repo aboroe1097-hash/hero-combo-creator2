@@ -146,6 +146,7 @@ function conflictError(expectedRevision, actualRevision) {
 function createPrimitiveStoreFixture(options = {}) {
   const playerCount = options.playerCount || 72;
   const submissions = createSkewedSubmissions(playerCount);
+  options.mutateSubmissions?.(submissions);
   const reviews = new Map(
     submissions.map((submission) => [
       submission.uid,
@@ -160,7 +161,7 @@ function createPrimitiveStoreFixture(options = {}) {
       },
     ])
   );
-  let draft = createInitialDraft(playerCount);
+  let draft = clone(options.draft || createInitialDraft(playerCount));
   const teams = createInitialTeams();
   let publication = null;
   const publishCalls = [];
@@ -689,6 +690,102 @@ test('leadership usefulness affects scores only for the reviewed submission revi
   assert.equal(stale.reviewStale, true);
   assert.equal(stale.scoreBreakdown.bohUsefulRating.input, 0);
   assert.equal(stale.calculatedScore, original.calculatedScore);
+  adapter.stop();
+});
+
+test('admin scoring preserves sparse zero defaults and trusts paid hero metadata on every recalculation', async () => {
+  const draft = createInitialDraft(1);
+  draft.activeScoringVersionId = 'legacy-sparse';
+  draft.scoringVersions = [
+    {
+      id: 'legacy-sparse',
+      version: 1,
+      label: 'Legacy sparse profile',
+      powerWeights: {},
+      bonusWeights: {},
+      powerDivisor: 1000,
+      precision: 3,
+    },
+  ];
+  const primitiveStore = createPrimitiveStoreFixture({
+    playerCount: 1,
+    draft,
+    mutateSubmissions(submissions) {
+      submissions[0].stats = {
+        unitSpecialtyPower: 1_000,
+        rocLevel: 3,
+        usableHeroNames: ['Cleopatra VII', 'Free Hero', 'Beowulf', 'Cleopatra VII'],
+        troopRoster: ['estimate|lofty|2000000', 'estimate|enhanced-t10|3000000'],
+      };
+    },
+  });
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore, {
+    paidUsableHeroNames: ['Cleopatra VII', 'Beowulf'],
+  });
+  let snapshot = await adapter.start();
+
+  assert.deepEqual(
+    {
+      unitSpecialtyPower: snapshot.scoring.activeVersion.weights.unitSpecialtyPower,
+      rocLevel: snapshot.scoring.activeVersion.weights.rocLevel,
+      paidUsableHero: snapshot.scoring.activeVersion.weights.paidUsableHero,
+      loftyTroopMillion: snapshot.scoring.activeVersion.weights.loftyTroopMillion,
+      enhancedT10TroopMillion: snapshot.scoring.activeVersion.weights.enhancedT10TroopMillion,
+    },
+    {
+      unitSpecialtyPower: 0,
+      rocLevel: 0,
+      paidUsableHero: 0,
+      loftyTroopMillion: 0,
+      enhancedT10TroopMillion: 0,
+    }
+  );
+  assert.equal(snapshot.scores[0].scoreBreakdown.paidUsableHero.input, 2);
+  assert.equal(snapshot.scores[0].scoreBreakdown.paidUsableHero.points, 0);
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'createScoringVersion', {
+      label: 'Expanded profile',
+      note: 'Enable the new score components.',
+      weights: {
+        unitSpecialtyPower: 0.25,
+        rocLevel: 40,
+        paidUsableHero: 125,
+        loftyTroopMillion: 80,
+        enhancedT10TroopMillion: 90,
+      },
+    })
+  ).snapshot;
+  const savedProfile = primitiveStore.draft.scoringVersions.at(-1);
+  assert.equal(savedProfile.powerWeights.unitSpecialtyPower, 0.25);
+  assert.deepEqual(
+    {
+      rocLevel: savedProfile.bonusWeights.rocLevel,
+      paidUsableHero: savedProfile.bonusWeights.paidUsableHero,
+      loftyTroopMillion: savedProfile.bonusWeights.loftyTroopMillion,
+      enhancedT10TroopMillion: savedProfile.bonusWeights.enhancedT10TroopMillion,
+    },
+    {
+      rocLevel: 40,
+      paidUsableHero: 125,
+      loftyTroopMillion: 80,
+      enhancedT10TroopMillion: 90,
+    }
+  );
+  const recalculated = snapshot.scores[0].scoreBreakdown;
+  assert.equal(recalculated.paidUsableHero.input, 2);
+  assert.equal(recalculated.paidUsableHero.points, 250);
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'reviewSubmission', {
+      playerId: 'player-01',
+      status: 'confirmed',
+      note: 'Recalculated with canonical paid hero metadata.',
+    })
+  ).snapshot;
+  const persistedBreakdown = snapshot.submissions[0].review.score.breakdown;
+  assert.equal(persistedBreakdown.paidUsableHero.input, 2);
+  assert.equal(persistedBreakdown.paidUsableHero.points, 250);
   adapter.stop();
 });
 

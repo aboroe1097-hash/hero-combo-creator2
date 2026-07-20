@@ -1,3 +1,5 @@
+import { ADMIN_ALL_STAR_BOH_SCORING_ADDITIONS } from './scoring-additions.js';
+
 export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohVtsMember: 'Plays in VTS 1097',
   adminBohContactNumber: 'Viber / WhatsApp',
@@ -21,4 +23,5 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohDeleteSignupConfirm:
     'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
   adminBohSignupDeleted: 'Signup deleted.',
+  ...ADMIN_ALL_STAR_BOH_SCORING_ADDITIONS,
 });

@@ -1243,6 +1243,101 @@ test('admin lists and observes submissions, saves reviews, and accepts incomplet
   assert.equal(draftTeam.scoreTotal, 999_999);
 });
 
+test('score and profile serializers round-trip new keys without densifying legacy profiles', async () => {
+  const playerId = 'score-round-trip-player';
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, playerId);
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, playerId);
+  const draftPath = getAllStarBohDraftPath(SEASON_ID);
+  const fake = createFirestoreFake({
+    [submissionPath]: storedSubmission(playerId, 1, submission('Score Round Trip')),
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+  const newBreakdown = {
+    unitSpecialtyPower: { input: 25_000_000, weight: 0.4, divisor: 1000, points: 10_000 },
+    rocLevel: { input: 12, weight: 125, points: 1500 },
+    paidUsableHero: { input: 3, weight: 800, points: 2400 },
+    loftyTroopMillion: { input: 90, weight: 40, points: 3600 },
+    enhancedT10TroopMillion: { input: 45, weight: 75, points: 3375 },
+  };
+
+  const review = await admin.saveReview(playerId, {
+    submissionRevision: 1,
+    status: 'verified',
+    score: {
+      profileId: 'expanded-2026',
+      profileVersion: 2,
+      breakdown: newBreakdown,
+      total: 20_875,
+    },
+  });
+  assert.deepEqual(review.score.breakdown, newBreakdown);
+  assert.deepEqual(fake.read(reviewPath).score.breakdown, newBreakdown);
+
+  const expandedPowerWeights = {
+    troopPower: 0.05,
+    unitSpecialtyPower: 0.4,
+  };
+  const expandedBonusWeights = {
+    rocLevel: 125,
+    paidUsableHero: 800,
+    loftyTroopMillion: 40,
+    enhancedT10TroopMillion: 75,
+  };
+  const draft = await admin.saveDraft({
+    title: 'Expanded scoring round trip',
+    scoring: {
+      activeVersion: 'expanded-2026',
+      versions: [
+        {
+          id: 'expanded-2026',
+          version: 2,
+          powerWeights: expandedPowerWeights,
+          bonusWeights: expandedBonusWeights,
+          powerDivisor: 1000,
+          precision: 0,
+        },
+        {
+          id: 'legacy-sparse',
+          version: 1,
+          weights: {
+            troopPower: 0.05,
+            t9TroopType: 3000,
+          },
+          powerDivisor: 1000,
+          precision: 0,
+        },
+      ],
+    },
+    plan: emptyPlan(),
+  });
+
+  assert.deepEqual(draft.scoringVersions[0].powerWeights, expandedPowerWeights);
+  assert.deepEqual(draft.scoringVersions[0].bonusWeights, expandedBonusWeights);
+  assert.deepEqual(fake.read(draftPath).scoringVersions[0].powerWeights, expandedPowerWeights);
+  assert.deepEqual(fake.read(draftPath).scoringVersions[0].bonusWeights, expandedBonusWeights);
+
+  const sparseLegacy = draft.scoringVersions[1];
+  assert.deepEqual(sparseLegacy.powerWeights, { troopPower: 0.05 });
+  assert.deepEqual(sparseLegacy.bonusWeights, { t9TroopType: 3000 });
+  for (const key of [
+    'unitSpecialtyPower',
+    'rocLevel',
+    'paidUsableHero',
+    'loftyTroopMillion',
+    'enhancedT10TroopMillion',
+  ]) {
+    assert.equal(key in sparseLegacy.powerWeights, false);
+    assert.equal(key in sparseLegacy.bonusWeights, false);
+  }
+  assert.deepEqual(fake.read(draftPath).scoringVersions[1], sparseLegacy);
+});
+
 test('review saves publish atomic, private-safe player feedback with revision checks', async () => {
   const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
   const reviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-1');

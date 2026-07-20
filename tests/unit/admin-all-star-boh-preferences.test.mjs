@@ -362,6 +362,9 @@ test('admin preference signals never feed automatic balance or assignment logic'
     signupTableFunction,
     /adminBohUsableHeroes|adminBohResearchProgress|adminBohFightingTimes|adminBohPrimaryRole|adminBohSecondaryRole/u
   );
-  assert.match(source, /They do not change scores or lock assignments\./u);
+  assert.match(
+    source,
+    /Preferences guide planning and never lock assignments\. Only enabled scoring components affect scores\./u
+  );
   assert.match(source, /adapterNotify\(state, false\)/u);
 });

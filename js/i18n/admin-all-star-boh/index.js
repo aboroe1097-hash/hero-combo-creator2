@@ -1,4 +1,5 @@
 import { resolveRuntimeLocale } from '../../locale-format.js';
+import { ADMIN_ALL_STAR_BOH_SCORING_ADDITIONS } from './scoring-additions.js';
 
 export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohAccountSubmission: 'PLAYER SUBMISSION',
@@ -390,8 +391,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohEpicLaneCenter: 'Center',
   adminBohEpicLaneNorth: 'North',
   adminBohSignupPlanningSignals: 'Signup planning signals',
-  adminBohSignupPlanningSignalsHelp:
-    'Player-entered preferences for planning only. They do not change scores or lock assignments.',
   adminBohUsableHeroes: 'Usable heroes',
   adminBohResearchProgress: 'Research progress',
   adminBohPrimaryRole: 'Primary role',
@@ -424,6 +423,7 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohDeleteSignupConfirm:
     'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
   adminBohSignupDeleted: 'Signup deleted.',
+  ...ADMIN_ALL_STAR_BOH_SCORING_ADDITIONS,
 });
 
 const LOCALE_LOADERS = Object.freeze({

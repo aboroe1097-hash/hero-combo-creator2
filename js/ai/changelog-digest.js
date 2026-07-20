@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.3",
+    "date": "2026-07-20",
+    "highlights": [
+      "Added five configurable All-Star scoring components for Unit Specialty Power, RoC level, paid usable heroes, Lofty troops per million, and Enhanced T10 troops per million, all defaulting to zero.",
+      "Derived paid usable hero counts from the canonical hero catalog and preserved all five component weights through scoring-version and admin-draft store round trips.",
+      "Kept legacy scoring totals unchanged until an admin explicitly creates and enables a new scoring version with nonzero weights."
+    ]
+  },
   {
     "version": "14.2.2",
     "date": "2026-07-20",
@@ -85,16 +94,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Added a Final Top 20 announcement view to the Eden X1 reward flow that combines the four support, contribution, management, and team reward lanes into one shareable recipient table with category chips and placeholder rows until each lane is decided.",
       "Aligned the eden-x1 smoke expectation for the language selector with the Croatian option position shipped in 14.1.13."
-    ]
-  },
-  {
-    "version": "14.1.14",
-    "date": "2026-07-19",
-    "highlights": [
-      "Fixed the Croatian language smoke-test contract that blocked #84 deploy verification after the twelfth locale was added.",
-      "Expanded All-Star admin corrections to Unit Specialty, Artifact, and Royal Tech power and reject suspicious OCR `1` placeholders in unreadable extended-power rows.",
-      "Displayed reviewed troop OCR rows in the admin signup panel and widened the combined T10 portraits so they remain distinct on desktop and mobile.",
-      "Added a confirmed admin-only signup deletion action for removing test entries while preserving separate Epic Showdown preferences."
     ]
   }
 ].map((release) =>

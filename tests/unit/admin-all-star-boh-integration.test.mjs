@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const adminPage = readFileSync('admin.html', 'utf8');
 const adminTab = readFileSync('tabs/admin.html', 'utf8');
+const adminModule = readFileSync('js/admin-all-star-boh.js', 'utf8');
 const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
 test('Admin VTS places the lazy All-Star BoH tab between Alliance View and Eden votes', () => {
@@ -70,6 +71,36 @@ test('Admin All-Star mount injects the verified admin context and authoritative 
     dashboard,
     /validatePublication:\s*adminModule\.validateAdminAllStarBohPublicationBundle/
   );
+  assert.match(
+    dashboard,
+    /paidUsableHeroNames:\s*\(heroModule\.allHeroesData \|\| \[\]\)[\s\S]*?\.filter\(\(hero\) => hero\.State === 'Paid'\)[\s\S]*?\.map\(\(hero\) => hero\.name\)/
+  );
+});
+
+test('Admin scoring builder registers every new component with a zero default', () => {
+  const rows = [
+    ['unitSpecialtyPower', 'adminBohScoreUnitSpecialtyPower', 'Unit specialty power'],
+    ['rocLevel', 'adminBohScoreRocLevel', 'RoC level'],
+    ['paidUsableHero', 'adminBohScorePaidUsableHero', 'Each paid usable hero'],
+    [
+      'loftyTroopMillion',
+      'adminBohScoreLoftyTroopMillion',
+      'S (Lofty) troops — points per 1 million',
+    ],
+    [
+      'enhancedT10TroopMillion',
+      'adminBohScoreEnhancedT10TroopMillion',
+      'Enhanced T10 troops — points per 1 million',
+    ],
+  ];
+  for (const [key, translationKey, label] of rows) {
+    const tuple = new RegExp(
+      `'${key}',\\s*'${translationKey}',\\s*'${label.replace(/[()]/g, '\\$&')}',\\s*0`,
+      'u'
+    );
+    assert.match(adminModule, tuple);
+  }
+  assert.match(adminModule, /SCORE_COMPONENTS\.map\([\s\S]*?name="weight\.\$\{key\}"/u);
 });
 
 test('Admin All-Star lifecycle refreshes live state and language, then destroys on sign-out', () => {
