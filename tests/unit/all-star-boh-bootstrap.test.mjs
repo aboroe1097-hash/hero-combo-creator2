@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { bootAllStarBohTab } from '../../js/all-star-boh-bootstrap.js';
+import { bootAllStarBohTab, createAllStarBohAccessGate } from '../../js/all-star-boh-bootstrap.js';
 
 const NOW_MS = 1_750_000_000_000;
 const GRANT = Object.freeze({
@@ -64,8 +64,96 @@ function createGate(order = []) {
     unlock(pin) {
       return handlers.unlock(pin);
     },
+    retry() {
+      return handlers.retry();
+    },
   };
   return gate;
+}
+
+function createGateDocument(language = 'en') {
+  function createNode(tagName = '') {
+    const attributes = new Map();
+    const listeners = new Map();
+    const node = {
+      tagName: String(tagName).toUpperCase(),
+      children: [],
+      parentNode: null,
+      dataset: {},
+      className: '',
+      textContent: '',
+      hidden: false,
+      disabled: false,
+      value: '',
+      type: '',
+      append(...children) {
+        children.forEach((child) => {
+          if (!child) return;
+          child.parentNode = node;
+          node.children.push(child);
+        });
+      },
+      insertBefore(child, reference) {
+        child.parentNode = node;
+        const index = node.children.indexOf(reference);
+        if (index < 0) node.children.push(child);
+        else node.children.splice(index, 0, child);
+      },
+      remove() {
+        const index = node.parentNode?.children.indexOf(node) ?? -1;
+        if (index >= 0) node.parentNode.children.splice(index, 1);
+        node.parentNode = null;
+      },
+      setAttribute(name, value) {
+        attributes.set(name, String(value));
+      },
+      removeAttribute(name) {
+        attributes.delete(name);
+      },
+      getAttribute(name) {
+        return attributes.get(name) ?? null;
+      },
+      addEventListener(type, listener) {
+        const entries = listeners.get(type) || [];
+        entries.push(listener);
+        listeners.set(type, entries);
+      },
+      async dispatch(type, event = {}) {
+        await Promise.all((listeners.get(type) || []).map((listener) => listener(event)));
+      },
+      querySelector(selector) {
+        const match = (candidate) => {
+          const role = selector.match(/^\[data-role="([^"]+)"\]$/u)?.[1];
+          if (role) return candidate.dataset.role === role;
+          if (selector.startsWith('.')) {
+            return candidate.className.split(/\s+/u).includes(selector.slice(1));
+          }
+          return candidate.tagName === selector.toUpperCase();
+        };
+        const queue = [...node.children];
+        while (queue.length) {
+          const candidate = queue.shift();
+          if (match(candidate)) return candidate;
+          queue.push(...candidate.children);
+        }
+        return null;
+      },
+      focus() {
+        node.focused = true;
+      },
+    };
+    return node;
+  }
+
+  const document = {
+    documentElement: { lang: language },
+    createElement: createNode,
+  };
+  const parent = createNode('div');
+  const root = createNode('main');
+  root.ownerDocument = document;
+  parent.append(root);
+  return { document, parent, root };
 }
 
 function createEventTarget() {
@@ -160,6 +248,73 @@ function createFirebase() {
   };
 }
 
+test('PIN visibility is accessible and resets after submit and secure state transitions', async () => {
+  const { document, parent, root } = createGateDocument();
+  const gate = createAllStarBohAccessGate({ root, document });
+  const input = parent.querySelector('[data-role="boh-access-pin"]');
+  const toggle = parent.querySelector('[data-role="boh-access-pin-toggle"]');
+  const submit = parent.querySelector('[data-role="boh-access-submit"]');
+  const retry = parent.querySelector('[data-role="boh-access-retry"]');
+  const feedback = parent.querySelector('[data-role="boh-access-feedback"]');
+  const form = parent.querySelector('.boh-access-form');
+  const label = parent.querySelector('label');
+  const hint = parent.querySelector('small');
+  let receivedPin = '';
+  let retryCalls = 0;
+
+  gate.setHandlers({
+    async unlock(pin) {
+      receivedPin = pin;
+    },
+    async retry() {
+      retryCalls += 1;
+      gate.showChecking();
+    },
+  });
+  gate.showLocked();
+
+  assert.equal(label.getAttribute('for'), input.getAttribute('id'));
+  assert.equal(input.getAttribute('aria-describedby'), hint.getAttribute('id'));
+  assert.equal(label.parentNode, input.parentNode.parentNode);
+  assert.equal(toggle.parentNode, input.parentNode);
+  assert.notEqual(toggle.parentNode, label);
+  assert.equal(input.type, 'password');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'false');
+  assert.equal(toggle.getAttribute('aria-label'), 'Show PIN');
+  await toggle.dispatch('click');
+  assert.equal(input.type, 'text');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'true');
+  assert.equal(toggle.getAttribute('aria-label'), 'Hide PIN');
+
+  input.value = 'current-member-pin';
+  await form.dispatch('submit', { preventDefault() {} });
+  assert.equal(receivedPin, 'current-member-pin');
+  assert.equal(input.value, '');
+  assert.equal(input.type, 'password');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'false');
+
+  gate.showError({ code: 'secure_service_unreachable' });
+  assert.equal(input.disabled, true);
+  assert.equal(submit.hidden, true);
+  assert.equal(retry.hidden, false);
+  assert.equal(feedback.getAttribute('role'), 'alert');
+  assert.equal(
+    feedback.textContent,
+    'The secure Google service required for signup cannot be reached from this network or region. Try a VPN or a different network, then press Retry. Your PIN has not been rejected.'
+  );
+  await retry.dispatch('click');
+  assert.equal(retryCalls, 1);
+  assert.equal(input.type, 'password');
+  assert.equal(input.value, '');
+
+  gate.showError({ code: 'access_denied' });
+  assert.equal(input.disabled, false);
+  assert.equal(submit.hidden, false);
+  assert.equal(retry.hidden, true);
+  assert.equal(feedback.textContent, 'That PIN did not match. Check it and try again.');
+  gate.destroy();
+});
+
 test('refuses to mount the member hub under an inherited leadership account', async () => {
   const root = createRoot();
   const gate = createGate();
@@ -242,7 +397,55 @@ test('keeps the form concealed and private domain chunks unloaded without a vali
   lifecycle.destroy();
 });
 
-test('secure Firebase preparation times out fail-closed and leaves the PIN gate retryable', async () => {
+test('mounts the gate and only then removes the static loader before awaiting the stylesheet', async () => {
+  const order = [];
+  const root = createRoot();
+  const gate = createGate();
+  let finishStylesheet;
+  const stylesheetPending = new Promise((resolve) => {
+    finishStylesheet = resolve;
+  });
+  root.parentNode = {
+    querySelector(selector) {
+      assert.equal(selector, '.tab-loading');
+      return {
+        remove() {
+          order.push('loader-removed');
+        },
+      };
+    },
+  };
+
+  const boot = bootAllStarBohTab({
+    root,
+    createGate() {
+      order.push('gate-created');
+      return gate;
+    },
+    firebase: createFirebase(),
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        return null;
+      },
+      destroy() {},
+    },
+    loadStylesheet() {
+      order.push('stylesheet-started');
+      return stylesheetPending;
+    },
+  });
+
+  await Promise.resolve();
+  assert.deepEqual(order, ['gate-created', 'loader-removed', 'stylesheet-started']);
+  assert.equal(root.hidden, true);
+  finishStylesheet();
+  const lifecycle = await boot;
+  assert.equal(gate.states.at(-1), 'locked');
+  lifecycle.destroy();
+});
+
+test('secure Firebase preparation timeout becomes a regional secure-service error', async () => {
   const root = createRoot();
   const gate = createGate();
   const timers = [];
@@ -276,7 +479,327 @@ test('secure Firebase preparation times out fail-closed and leaves the PIN gate 
   const lifecycle = await boot;
   assert.equal(root.hidden, true);
   assert.equal(gate.states.at(-1), 'error');
-  assert.equal(gate.error?.code, 'request_timeout');
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  lifecycle.destroy();
+});
+
+test('Firebase Auth network failures become regional secure-service errors', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const firebase = createFirebase();
+  firebase.ensureAnonymousAuth = async () => {
+    throw Object.assign(new Error('Network request failed'), {
+      code: 'auth/network-request-failed',
+    });
+  };
+
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase,
+    eventTarget: createEventTarget(),
+    loadStylesheet: async () => {},
+  });
+
+  assert.equal(root.hidden, true);
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  lifecycle.destroy();
+});
+
+test('secure Firebase module fetch failures become regional secure-service errors', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    eventTarget: createEventTarget(),
+    loadFirebase: async () => {
+      throw new TypeError('Failed to fetch dynamically imported module');
+    },
+    loadStylesheet: async () => {},
+  });
+
+  assert.equal(root.hidden, true);
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  assert.equal(gate.error?.cause?.message, 'Failed to fetch dynamically imported module');
+  lifecycle.destroy();
+});
+
+test('exact Safari Load failed module errors become regional secure-service errors', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    eventTarget: createEventTarget(),
+    loadFirebase: async () => {
+      throw new TypeError('Load failed');
+    },
+    loadStylesheet: async () => {},
+  });
+
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  assert.equal(gate.error?.cause?.message, 'Load failed');
+  lifecycle.destroy();
+});
+
+test('semantic Firebase loader text containing load failed remains unchanged and generic', async () => {
+  const { document, parent, root } = createGateDocument();
+  const renderedGate = createAllStarBohAccessGate({ root, document });
+  const semanticError = Object.assign(new Error('configuration load failed validation'), {
+    code: 'firebase_config_rejected',
+  });
+  let receivedError = null;
+  const gate = {
+    setHandlers(handlers) {
+      renderedGate.setHandlers(handlers);
+    },
+    setLocale(locale) {
+      renderedGate.setLocale(locale);
+    },
+    showChecking() {
+      renderedGate.showChecking();
+    },
+    showLocked() {
+      renderedGate.showLocked();
+    },
+    showBusy() {
+      renderedGate.showBusy();
+    },
+    showExpired() {
+      renderedGate.showExpired();
+    },
+    showError(error) {
+      receivedError = error;
+      renderedGate.showError(error);
+    },
+    hide() {
+      renderedGate.hide();
+    },
+    destroy() {
+      renderedGate.destroy();
+    },
+  };
+
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    document,
+    eventTarget: createEventTarget(),
+    loadFirebase: async () => {
+      throw semanticError;
+    },
+    loadStylesheet: async () => {},
+  });
+
+  const feedback = parent.querySelector('[data-role="boh-access-feedback"]');
+  const retry = parent.querySelector('[data-role="boh-access-retry"]');
+  assert.equal(receivedError, semanticError);
+  assert.equal(receivedError.code, 'firebase_config_rejected');
+  assert.equal(receivedError.message, 'configuration load failed validation');
+  assert.equal(feedback.textContent, 'Member access could not be confirmed. Please try again.');
+  assert.doesNotMatch(feedback.textContent, /secure Google service|VPN|different network/iu);
+  assert.equal(retry.hidden, true);
+  lifecycle.destroy();
+});
+
+test('App Check network failures become regional secure-service errors', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const firebase = createFirebase();
+  firebase.getFirebaseAppCheckToken = async () => {
+    throw Object.assign(new Error('App Check fetch failed'), {
+      code: 'appCheck/fetch-network-error',
+    });
+  };
+  let domainLoads = 0;
+
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase,
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        return GRANT;
+      },
+      destroy() {},
+    },
+    now: () => NOW_MS,
+    loadStylesheet: async () => {},
+    loadDomain: async () => {
+      domainLoads += 1;
+      return createDomain();
+    },
+  });
+
+  assert.equal(root.hidden, true);
+  assert.equal(domainLoads, 0);
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  lifecycle.destroy();
+});
+
+test('App Check network failures during grant lookup become regional secure-service errors', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase: createFirebase(),
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        throw Object.assign(new Error('App Check fetch failed'), {
+          code: 'appCheck/fetch-network-error',
+        });
+      },
+      destroy() {},
+    },
+    loadStylesheet: async () => {},
+  });
+
+  assert.equal(root.hidden, true);
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  lifecycle.destroy();
+});
+
+test('semantic Firebase Auth and App Check rejection codes are not relabeled', async () => {
+  const authRoot = createRoot();
+  const authGate = createGate();
+  const authFirebase = createFirebase();
+  authFirebase.ensureAnonymousAuth = async () => {
+    throw Object.assign(new Error('Authentication rejected'), { code: 'invalid_auth' });
+  };
+  const authLifecycle = await bootAllStarBohTab({
+    root: authRoot,
+    gate: authGate,
+    firebase: authFirebase,
+    eventTarget: createEventTarget(),
+    loadStylesheet: async () => {},
+  });
+  assert.equal(authGate.error?.code, 'invalid_auth');
+  authLifecycle.destroy();
+
+  const appCheckRoot = createRoot();
+  const appCheckGate = createGate();
+  const appCheckFirebase = createFirebase();
+  appCheckFirebase.getFirebaseAppCheckToken = async () => {
+    throw Object.assign(new Error('App Check rejected'), { code: 'invalid_app_check' });
+  };
+  const appCheckLifecycle = await bootAllStarBohTab({
+    root: appCheckRoot,
+    gate: appCheckGate,
+    firebase: appCheckFirebase,
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        return GRANT;
+      },
+      destroy() {},
+    },
+    now: () => NOW_MS,
+    loadStylesheet: async () => {},
+  });
+  assert.equal(appCheckGate.error?.code, 'invalid_app_check');
+  appCheckLifecycle.destroy();
+});
+
+test('wrong PIN errors remain semantic and keep the normal PIN flow', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase: createFirebase(),
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        return null;
+      },
+      async unlock() {
+        throw Object.assign(new Error('That PIN did not match.'), { code: 'access_denied' });
+      },
+      destroy() {},
+    },
+    loadStylesheet: async () => {},
+  });
+
+  await gate.unlock('wrong-pin');
+  assert.equal(root.hidden, true);
+  assert.equal(gate.error?.code, 'access_denied');
+  assert.equal(gate.states.at(-1), 'error');
+  lifecycle.destroy();
+});
+
+test('secure access errors persist through failure and Retry returns to PIN when no grant exists', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  let grantReads = 0;
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase: createFirebase(),
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        grantReads += 1;
+        if (grantReads < 3) {
+          throw Object.assign(new Error('Secure request failed'), { code: 'network_error' });
+        }
+        return null;
+      },
+      destroy() {},
+    },
+    loadStylesheet: async () => {},
+  });
+
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  await gate.retry();
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  assert.equal(gate.states.at(-1), 'error');
+  await gate.retry();
+  assert.equal(grantReads, 3);
+  assert.equal(gate.states.at(-1), 'locked');
+  assert.equal(root.hidden, true);
+  lifecycle.destroy();
+});
+
+test('Retry mounts a still-valid secure grant without requesting the PIN', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  let grantReads = 0;
+  let unlockCalls = 0;
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase: createFirebase(),
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        grantReads += 1;
+        if (grantReads === 1) {
+          throw Object.assign(new Error('Secure request timed out'), { code: 'request_timeout' });
+        }
+        return GRANT;
+      },
+      async unlock() {
+        unlockCalls += 1;
+        return GRANT;
+      },
+      destroy() {},
+      processOcr() {},
+    },
+    now: () => NOW_MS,
+    loadStylesheet: async () => {},
+    loadDomain: async () => createDomain(),
+  });
+
+  assert.equal(gate.error?.code, 'secure_service_unreachable');
+  await gate.retry();
+  assert.equal(grantReads, 2);
+  assert.equal(unlockCalls, 0);
+  assert.equal(root.hidden, false);
+  assert.equal(gate.states.at(-1), 'hidden');
   lifecycle.destroy();
 });
 
@@ -539,10 +1062,12 @@ test('destroy invalidates an in-flight private mount before it can reveal the hu
   assert.equal(gate.states.at(-1), 'destroyed');
 });
 
-test('bootstrap keeps CSS lazy, permits the two secure endpoints, and statically gates domain imports', async () => {
-  const [index, source] = await Promise.all([
+test('bootstrap keeps CSS lazy, mounts the gate first, and statically gates domain imports', async () => {
+  const [index, source, appSource, cssSource] = await Promise.all([
     readFile(new URL('../../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../../js/all-star-boh-bootstrap.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../js/app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../css/all-star-boh.css', import.meta.url), 'utf8'),
   ]);
 
   assert.doesNotMatch(index, /<link[^>]+all-star-boh\.css/iu);
@@ -553,15 +1078,70 @@ test('bootstrap keeps CSS lazy, permits the two secure endpoints, and statically
   assert.match(index, /https:\/\/us-central1-abocombo\.cloudfunctions\.net/u);
   assert.match(index, /https:\/\/delicate-term-725f\.aboroe1097\.workers\.dev/u);
   assert.doesNotMatch(source, /from ['"]\.\/all-star-boh(?:-model|-ocr|-store)?\.js['"]/u);
-  assert.ok(
-    source.indexOf('await (options.loadStylesheet || loadAllStarBohStylesheet)()') <
-      source.indexOf('options.createGate || createAllStarBohAccessGate')
+  const gateIndex = source.indexOf('options.createGate || createAllStarBohAccessGate');
+  const loaderRemovalIndex = source.indexOf('loadingPlaceholder?.remove?.()');
+  const stylesheetIndex = source.indexOf(
+    'await (options.loadStylesheet || loadAllStarBohStylesheet)()'
   );
+  assert.ok(gateIndex < loaderRemovalIndex);
+  assert.ok(loaderRemovalIndex < stylesheetIndex);
+  assert.match(source, /querySelector\?\.\('\.tab-loading'\)/u);
+  assert.match(source, /loadingPlaceholder\?\.remove\?\.\(\)/u);
   assert.match(source, /input\.type = 'password'/u);
-  assert.match(source, /input\.value = '';\s*await unlockHandler/u);
+  assert.match(source, /togglePin\.setAttribute\('aria-pressed', 'false'\)/u);
+  assert.match(source, /togglePin\.setAttribute\('aria-label'/u);
+  assert.match(source, /input\.value = '';\s*input\.type = 'password'/u);
+  assert.match(source, /setHandlers\(handlers = \{\}\)[\s\S]*retryHandler/u);
+  assert.match(source, /state = error\?\.code === 'secure_service_unreachable' \? 'secure-error'/u);
   assert.match(source, /progress\.dataset\.role = 'boh-access-progress'/u);
   assert.match(source, /loader\.dataset\.vtsLoaderContext = 'admin'/u);
   assert.match(source, /progress\.hidden = !unlocking/u);
+  assert.match(cssSource, /\.boh-pin-toggle\s*\{/u);
+  assert.match(appSource, /section\.insertAdjacentHTML\('beforeend', html\)/u);
+  assert.match(appSource, /protectedRoot\.setAttribute\('inert', ''\)/u);
+  assert.match(
+    appSource,
+    /isDynamicImportLoadFailure\(error\) && recoverFromStaleAssetGraph\(error\)/u
+  );
   assert.doesNotMatch(source, /boh-access-cancel|Not now|showCanceled/u);
   assert.match(source, /onLockHub: lockHub/u);
+});
+
+test('regional copy and PIN controls are present in every main translation catalog', async () => {
+  const translations = {
+    en: ['Retry', 'Show PIN', 'Hide PIN'],
+    zh: ['重试', '显示 PIN', '隐藏 PIN'],
+    ar: ['إعادة المحاولة', 'إظهار رمز PIN', 'إخفاء رمز PIN'],
+    de: ['Erneut versuchen', 'PIN anzeigen', 'PIN ausblenden'],
+    es: ['Reintentar', 'Mostrar PIN', 'Ocultar PIN'],
+    fr: ['Réessayer', 'Afficher le PIN', 'Masquer le PIN'],
+    hr: ['Pokušaj ponovno', 'Prikaži PIN', 'Sakrij PIN'],
+    id: ['Coba lagi', 'Tampilkan PIN', 'Sembunyikan PIN'],
+    kr: ['다시 시도', 'PIN 표시', 'PIN 숨기기'],
+    pt: ['Tentar novamente', 'Mostrar PIN', 'Ocultar PIN'],
+    ru: ['Повторить', 'Показать PIN', 'Скрыть PIN'],
+    tr: ['Tekrar dene', 'PIN’i göster', 'PIN’i gizle'],
+  };
+  const sources = Object.fromEntries(
+    await Promise.all(
+      Object.keys(translations).map(async (locale) => [
+        locale,
+        await readFile(new URL(`../../js/i18n/${locale}.js`, import.meta.url), 'utf8'),
+      ])
+    )
+  );
+
+  for (const [locale, [retry, showPin, hidePin]] of Object.entries(translations)) {
+    assert.match(sources[locale], new RegExp(`bohAccessRetry: '${retry}'`, 'u'));
+    assert.match(sources[locale], new RegExp(`bohAccessShowPin: '${showPin}'`, 'u'));
+    assert.match(sources[locale], new RegExp(`bohAccessHidePin: '${hidePin}'`, 'u'));
+  }
+  assert.match(
+    sources.en,
+    /The secure Google service required for signup cannot be reached from this network or region\. Try a VPN or a different network, then press Retry\. Your PIN has not been rejected\./u
+  );
+  assert.match(
+    sources.zh,
+    /当前网络或地区无法连接报名所需的 Google 安全服务。请尝试使用 VPN 或切换网络，然后点击“重试”。这并不表示您的 PIN 错误。/u
+  );
 });

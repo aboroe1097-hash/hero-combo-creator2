@@ -483,6 +483,9 @@ const fr = {
   bohAccessPinHint:
     'Le PIN est vérifié de manière sécurisée et n’est jamais enregistré sur cet appareil.',
   bohAccessUnlock: 'Déverrouiller l’espace',
+  bohAccessRetry: 'Réessayer',
+  bohAccessShowPin: 'Afficher le PIN',
+  bohAccessHidePin: 'Masquer le PIN',
   bohAccessChecking: 'Vérification de ton accès sécurisé…',
   bohAccessBusy: 'Confirmation de l’accès membre…',
   bohAccessExpired:

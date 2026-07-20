@@ -18,6 +18,9 @@ const GATE_FALLBACKS = Object.freeze({
   pinLabel: 'Member PIN',
   pinHint: 'The PIN is checked securely and is never saved on this device.',
   unlock: 'Unlock hub',
+  retry: 'Retry',
+  showPin: 'Show PIN',
+  hidePin: 'Hide PIN',
   checking: 'Checking your secure member access...',
   busy: 'Confirming member access...',
   expired: 'Your member access expired. Enter the current PIN to unlock it again.',
@@ -30,8 +33,53 @@ const GATE_FALLBACKS = Object.freeze({
     'This browser is signed into the leadership dashboard. To protect player signups, open this link in a private window and enter the member PIN there.',
   appCheck: 'Secure app verification could not be completed. Please try again.',
   network: 'The secure service could not be reached. Check your connection and try again.',
+  secureServiceUnreachable:
+    'The secure Google service required for signup cannot be reached from this network or region. Try a VPN or a different network, then press Retry. Your PIN has not been rejected.',
   generic: 'Member access could not be confirmed. Please try again.',
 });
+
+function secureServiceUnreachable(error) {
+  if (error?.code === 'secure_service_unreachable') return error;
+  return new AllStarBohAccessError(
+    'secure_service_unreachable',
+    'The secure signup service could not be reached.',
+    { cause: error }
+  );
+}
+
+function isSecureTransportError(error) {
+  return error?.code === 'network_error' || error?.code === 'request_timeout';
+}
+
+function isFirebaseAuthNetworkError(error) {
+  return String(error?.code || '').toLowerCase() === 'auth/network-request-failed';
+}
+
+function isAppCheckNetworkError(error) {
+  const code = String(error?.code || '').toLowerCase();
+  return (
+    code === 'appcheck/fetch-network-error' ||
+    code === 'app-check/fetch-network-error' ||
+    code === 'appcheck/network-request-failed' ||
+    code === 'app-check/network-request-failed'
+  );
+}
+
+function isSecureResourceLoadError(error) {
+  const message = String(error?.message || error || '');
+  return /^(?:failed to fetch|fetch failed|load failed)$|failed to fetch dynamically imported module|importing a module script failed|error loading dynamically imported module|unable to preload|networkerror when attempting to fetch resource/iu.test(
+    message
+  );
+}
+
+function normalizeSecureTransportError(error) {
+  return error?.code === 'secure_service_unreachable' ||
+    isSecureTransportError(error) ||
+    isFirebaseAuthNetworkError(error) ||
+    isAppCheckNetworkError(error)
+    ? secureServiceUnreachable(error)
+    : error;
+}
 
 function normalizeLocale(value) {
   const locale = String(value || 'en')
@@ -114,6 +162,8 @@ function gateErrorMessage(error, copy) {
     case 'network_error':
     case 'request_timeout':
       return copy.network;
+    case 'secure_service_unreachable':
+      return copy.secureServiceUnreachable;
     case 'access_expired':
       return copy.expired;
     default:
@@ -144,10 +194,15 @@ export function createAllStarBohAccessGate(options = {}) {
   const card = element(documentRef, 'div', 'boh-card boh-access-card');
   const form = element(documentRef, 'form', 'boh-form boh-access-form');
   form.noValidate = true;
-  const field = element(documentRef, 'label', 'boh-field');
-  const pinLabel = element(documentRef, 'span');
+  const field = element(documentRef, 'div', 'boh-field');
+  const pinLabel = element(documentRef, 'label');
   const input = element(documentRef, 'input');
+  const pinInputId = 'bohAccessPin';
+  const pinHintId = 'bohAccessPinHint';
   input.type = 'password';
+  input.setAttribute('id', pinInputId);
+  input.setAttribute('aria-describedby', pinHintId);
+  pinLabel.setAttribute('for', pinInputId);
   input.name = 'bohMemberPin';
   input.autocomplete = 'off';
   input.autocapitalize = 'none';
@@ -156,7 +211,17 @@ export function createAllStarBohAccessGate(options = {}) {
   input.required = true;
   input.dataset.role = 'boh-access-pin';
   const pinHint = element(documentRef, 'small');
-  append(field, pinLabel, input, pinHint);
+  pinHint.setAttribute('id', pinHintId);
+  const pinControl = element(documentRef, 'div', 'boh-pin-control');
+  const togglePin = element(documentRef, 'button', 'boh-pin-toggle');
+  togglePin.type = 'button';
+  togglePin.dataset.role = 'boh-access-pin-toggle';
+  togglePin.setAttribute('aria-pressed', 'false');
+  const togglePinIcon = element(documentRef, 'span', 'boh-pin-toggle__icon', '◉');
+  togglePinIcon.setAttribute('aria-hidden', 'true');
+  append(togglePin, togglePinIcon);
+  append(pinControl, input, togglePin);
+  append(field, pinLabel, pinControl, pinHint);
 
   const feedback = element(documentRef, 'p', 'boh-feedback');
   feedback.dataset.role = 'boh-access-feedback';
@@ -167,7 +232,11 @@ export function createAllStarBohAccessGate(options = {}) {
   const submit = element(documentRef, 'button', 'boh-button boh-button--primary');
   submit.type = 'submit';
   submit.dataset.role = 'boh-access-submit';
-  append(actions, submit);
+  const retry = element(documentRef, 'button', 'boh-button boh-button--primary');
+  retry.type = 'button';
+  retry.dataset.role = 'boh-access-retry';
+  retry.hidden = true;
+  append(actions, submit, retry);
   append(form, field, feedback, actions);
   const progress = element(documentRef, 'div', 'boh-access-progress');
   progress.dataset.role = 'boh-access-progress';
@@ -185,8 +254,16 @@ export function createAllStarBohAccessGate(options = {}) {
   let locale = normalizeLocale(options.locale || currentLocale(documentRef));
   let copy = {};
   let unlockHandler = null;
+  let retryHandler = null;
   let state = 'checking';
   let lastError = null;
+
+  function resetPin() {
+    input.value = '';
+    input.type = 'password';
+    togglePin.setAttribute('aria-pressed', 'false');
+    togglePin.setAttribute('aria-label', copy.showPin || GATE_FALLBACKS.showPin);
+  }
 
   function updateCopy() {
     const catalog = options.getCatalog?.(locale) || currentCatalog(locale) || Object.create(null);
@@ -197,6 +274,9 @@ export function createAllStarBohAccessGate(options = {}) {
       pinLabel: accessText(catalog, 'PinLabel', GATE_FALLBACKS.pinLabel, 'adminEdenVotesPinLabel'),
       pinHint: accessText(catalog, 'PinHint', GATE_FALLBACKS.pinHint),
       unlock: accessText(catalog, 'Unlock', GATE_FALLBACKS.unlock, 'adminEdenVotesPinUnlock'),
+      retry: accessText(catalog, 'Retry', GATE_FALLBACKS.retry),
+      showPin: accessText(catalog, 'ShowPin', GATE_FALLBACKS.showPin),
+      hidePin: accessText(catalog, 'HidePin', GATE_FALLBACKS.hidePin),
       checking: accessText(catalog, 'Checking', GATE_FALLBACKS.checking),
       busy: accessText(catalog, 'Busy', GATE_FALLBACKS.busy),
       expired: accessText(catalog, 'Expired', GATE_FALLBACKS.expired),
@@ -212,6 +292,11 @@ export function createAllStarBohAccessGate(options = {}) {
       ),
       appCheck: accessText(catalog, 'ErrorAppCheck', GATE_FALLBACKS.appCheck),
       network: accessText(catalog, 'ErrorNetwork', GATE_FALLBACKS.network),
+      secureServiceUnreachable: accessText(
+        catalog,
+        'ErrorSecureServiceUnreachable',
+        GATE_FALLBACKS.secureServiceUnreachable
+      ),
       generic: accessText(catalog, 'ErrorGeneric', GATE_FALLBACKS.generic),
     };
     kicker.textContent = copy.kicker;
@@ -219,6 +304,8 @@ export function createAllStarBohAccessGate(options = {}) {
     description.textContent = copy.description;
     pinLabel.textContent = copy.pinLabel;
     pinHint.textContent = copy.pinHint;
+    retry.textContent = copy.retry;
+    togglePin.setAttribute('aria-label', input.type === 'text' ? copy.hidePin : copy.showPin);
     loader.dataset.vtsLoaderKicker = 'VELO';
     loader.dataset.vtsLoaderTitle = copy.busy;
     loader.dataset.vtsLoaderStatus = copy.checking;
@@ -234,28 +321,51 @@ export function createAllStarBohAccessGate(options = {}) {
     updateCopy();
     const busy = state === 'checking' || state === 'busy';
     const unlocking = state === 'busy';
+    const secureError = state === 'secure-error';
     form.hidden = unlocking;
     progress.hidden = !unlocking;
-    input.disabled = busy;
-    submit.disabled = busy;
+    field.hidden = secureError;
+    input.disabled = busy || secureError;
+    togglePin.disabled = busy || secureError;
+    submit.hidden = secureError;
+    submit.disabled = busy || secureError;
+    retry.hidden = !secureError;
+    retry.disabled = !secureError;
     submit.setAttribute('aria-busy', String(state === 'busy'));
     submit.textContent = state === 'busy' ? copy.busy : copy.unlock;
-    feedback.dataset.tone = state === 'error' || state === 'expired' ? 'error' : 'neutral';
-    const assertive = state === 'error' || state === 'expired';
+    feedback.dataset.tone =
+      state === 'error' || state === 'secure-error' || state === 'expired' ? 'error' : 'neutral';
+    const assertive = state === 'error' || state === 'secure-error' || state === 'expired';
     feedback.setAttribute('role', assertive ? 'alert' : 'status');
     feedback.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
     if (state === 'checking') feedback.textContent = copy.checking;
     else if (state === 'busy') feedback.textContent = copy.busy;
     else if (state === 'expired') feedback.textContent = copy.expired;
-    else if (state === 'error') feedback.textContent = gateErrorMessage(lastError, copy);
+    else if (state === 'error' || state === 'secure-error')
+      feedback.textContent = gateErrorMessage(lastError, copy);
     else feedback.textContent = '';
   }
 
+  togglePin.addEventListener('click', () => {
+    if (togglePin.disabled) return;
+    const visible = input.type === 'text';
+    input.type = visible ? 'password' : 'text';
+    togglePin.setAttribute('aria-pressed', String(!visible));
+    togglePin.setAttribute('aria-label', visible ? copy.showPin : copy.hidePin);
+    input.focus?.();
+  });
+
+  retry.addEventListener('click', async () => {
+    if (state !== 'secure-error') return;
+    resetPin();
+    await retryHandler?.();
+  });
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (state === 'busy' || state === 'checking') return;
+    if (state === 'busy' || state === 'checking' || state === 'secure-error') return;
     const pin = input.value;
-    input.value = '';
+    resetPin();
     await unlockHandler?.(pin);
   });
   updateCopy();
@@ -264,18 +374,21 @@ export function createAllStarBohAccessGate(options = {}) {
   return Object.freeze({
     setHandlers(handlers = {}) {
       unlockHandler = typeof handlers.unlock === 'function' ? handlers.unlock : null;
+      retryHandler = typeof handlers.retry === 'function' ? handlers.retry : null;
     },
     setLocale(value) {
       locale = normalizeLocale(value);
       render();
     },
     showChecking() {
+      resetPin();
       state = 'checking';
       lastError = null;
       container.hidden = false;
       render();
     },
     showLocked() {
+      resetPin();
       state = 'locked';
       lastError = null;
       container.hidden = false;
@@ -283,12 +396,14 @@ export function createAllStarBohAccessGate(options = {}) {
       input.focus?.();
     },
     showBusy() {
+      resetPin();
       state = 'busy';
       lastError = null;
       container.hidden = false;
       render();
     },
     showExpired() {
+      resetPin();
       state = 'expired';
       lastError = null;
       container.hidden = false;
@@ -296,19 +411,22 @@ export function createAllStarBohAccessGate(options = {}) {
       input.focus?.();
     },
     showError(error) {
-      state = 'error';
+      resetPin();
+      state = error?.code === 'secure_service_unreachable' ? 'secure-error' : 'error';
       lastError = error;
       container.hidden = false;
       render();
-      input.focus?.();
+      if (state === 'secure-error') retry.focus?.();
+      else input.focus?.();
     },
     hide() {
-      input.value = '';
+      resetPin();
       container.hidden = true;
     },
     destroy() {
-      input.value = '';
+      resetPin();
       unlockHandler = null;
+      retryHandler = null;
       container.remove();
     },
   });
@@ -363,7 +481,7 @@ function withSecureBootTimeout(task, options = {}) {
       timer = setTimer(() => {
         reject(
           new AllStarBohAccessError(
-            'request_timeout',
+            'secure_service_unreachable',
             'Secure member access could not be prepared in time.'
           )
         );
@@ -383,7 +501,6 @@ export async function bootAllStarBohTab(options = {}) {
   if (existing) return existing;
 
   concealBohRoot(root);
-  await (options.loadStylesheet || loadAllStarBohStylesheet)();
   const gate =
     options.gate ||
     (options.createGate || createAllStarBohAccessGate)({
@@ -392,6 +509,10 @@ export async function bootAllStarBohTab(options = {}) {
       locale: options.locale || currentLocale(documentRef),
       getCatalog: options.getCatalog,
     });
+  const loadingPlaceholder =
+    options.loadingPlaceholder || root.parentNode?.querySelector?.('.tab-loading');
+  loadingPlaceholder?.remove?.();
+  await (options.loadStylesheet || loadAllStarBohStylesheet)();
   const now = options.now || Date.now;
   const setTimer = options.setTimeout || globalThis.setTimeout?.bind(globalThis);
   const clearTimer = options.clearTimeout || globalThis.clearTimeout?.bind(globalThis);
@@ -474,16 +595,38 @@ export async function bootAllStarBohTab(options = {}) {
     if (firebaseContext) return firebaseContext;
     if (!firebasePromise) {
       const bootstrapTask = (async () => {
-        firebase =
-          options.firebase || (await (options.loadFirebase || (() => import('./firebase.js')))());
-        const initialized = await firebase.initFirebase?.();
+        if (options.firebase) {
+          firebase = options.firebase;
+        } else {
+          try {
+            firebase = await (options.loadFirebase || (() => import('./firebase.js')))();
+          } catch (error) {
+            if (isSecureResourceLoadError(error)) throw secureServiceUnreachable(error);
+            throw error;
+          }
+        }
+        let initialized;
+        try {
+          initialized = await firebase.initFirebase?.();
+        } catch (error) {
+          if (isSecureResourceLoadError(error)) throw secureServiceUnreachable(error);
+          throw error;
+        }
         if (!initialized?.configured || !initialized.db) {
           throw new AllStarBohAccessError(
             'auth_required',
             'Firebase is not configured for All-Star access.'
           );
         }
-        const user = await firebase.ensureAnonymousAuth?.();
+        let user;
+        try {
+          user = await firebase.ensureAnonymousAuth?.();
+        } catch (error) {
+          if (isFirebaseAuthNetworkError(error) || isSecureResourceLoadError(error)) {
+            throw secureServiceUnreachable(error);
+          }
+          throw error;
+        }
         if (!user?.uid) {
           throw new AllStarBohAccessError('auth_required', 'Firebase sign-in is unavailable.');
         }
@@ -521,11 +664,23 @@ export async function bootAllStarBohTab(options = {}) {
   }
 
   async function ensureAppCheck() {
-    const token = await withSecureBootTimeout(firebase?.getFirebaseAppCheckToken?.(false), {
-      setTimeout: setTimer,
-      clearTimeout: clearTimer,
-      timeoutMs: options.firebaseTimeoutMs,
-    });
+    let token;
+    try {
+      token = await withSecureBootTimeout(firebase?.getFirebaseAppCheckToken?.(false), {
+        setTimeout: setTimer,
+        clearTimeout: clearTimer,
+        timeoutMs: options.firebaseTimeoutMs,
+      });
+    } catch (error) {
+      if (
+        error?.code === 'secure_service_unreachable' ||
+        isAppCheckNetworkError(error) ||
+        isSecureResourceLoadError(error)
+      ) {
+        throw secureServiceUnreachable(error);
+      }
+      throw error;
+    }
     if (typeof token !== 'string' || !token) {
       throw new AllStarBohAccessError('app_check_required', 'Secure app verification is required.');
     }
@@ -533,12 +688,12 @@ export async function bootAllStarBohTab(options = {}) {
 
   async function getDomain() {
     if (!domainPromise) {
-      domainPromise = Promise.resolve((options.loadDomain || loadAllStarBohDomain)()).catch(
-        (error) => {
+      domainPromise = Promise.resolve()
+        .then(() => (options.loadDomain || loadAllStarBohDomain)())
+        .catch((error) => {
           domainPromise = null;
-          throw error;
-        }
-      );
+          throw isSecureResourceLoadError(error) ? secureServiceUnreachable(error) : error;
+        });
     }
     return domainPromise;
   }
@@ -629,14 +784,13 @@ export async function bootAllStarBohTab(options = {}) {
     } catch (error) {
       if (!destroyed) {
         concealBohRoot(root);
-        gate.showError(error);
+        gate.showError(normalizeSecureTransportError(error));
       }
     } finally {
       busy = false;
     }
   }
 
-  gate.setHandlers({ unlock });
   gate.showChecking();
 
   const languageHandler = async (event) => {
@@ -675,7 +829,7 @@ export async function bootAllStarBohTab(options = {}) {
         if (grant) await mountDomain(grant);
         else gate.showLocked();
       } catch (error) {
-        if (!destroyed) gate.showError(error);
+        if (!destroyed) gate.showError(normalizeSecureTransportError(error));
       } finally {
         busy = false;
       }
@@ -697,6 +851,7 @@ export async function bootAllStarBohTab(options = {}) {
       bootstraps.delete(root);
     },
   });
+  gate.setHandlers({ unlock, retry: lifecycle.retry });
   bootstraps.set(root, lifecycle);
   await lifecycle.retry();
   return lifecycle;

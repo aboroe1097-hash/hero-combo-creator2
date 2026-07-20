@@ -6,6 +6,7 @@ const index = readFileSync('index.html', 'utf8');
 const shellCss = readFileSync('css/shell-v14.css', 'utf8');
 const appCss = readFileSync('css/app.css', 'utf8');
 const shellJs = readFileSync('js/shell-v14.js', 'utf8');
+const themePrepaint = readFileSync('js/theme-prepaint.js', 'utf8');
 const specializationJs = readFileSync('js/app-specialization.js', 'utf8');
 const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
 const aiAssistantTemplate = readFileSync('tabs/ai-assistant.html', 'utf8');
@@ -38,6 +39,37 @@ test('v14 shell assets load last without replacing established tool ids', () => 
   ]) {
     assert.equal(countId(id), 1, `${id} must remain unique`);
   }
+});
+
+test('All-Star routing canonicalizes every hash casing before and after app boot', () => {
+  assert.match(themePrepaint, /function resolveDeferredTabName\(/);
+  assert.match(themePrepaint, /String\(rawTabName \|\| ''\)\.toLowerCase\(\)/);
+  assert.match(themePrepaint, /'allStarBoh'/);
+  assert.match(themePrepaint, /setAttribute\('data-initial-tab-pending', canonicalTab\)/);
+
+  assert.match(shellJs, /function resolveCanonicalHashTabName\(/);
+  assert.match(shellJs, /tabName\.toLowerCase\(\) === normalizedHash/);
+  assert.ok(
+    (shellJs.match(/resolveCanonicalHashTabName\(/g) || []).length >= 3,
+    'the canonical resolver must serve active-tab and More-history comparisons'
+  );
+});
+
+test('pending All-Star first paint exposes only its static route loader', () => {
+  assert.match(
+    index,
+    /html\[data-initial-tab-pending='allStarBoh'\] #allStarBohSection\s*\{[\s\S]*?display:\s*block !important/
+  );
+  assert.match(
+    index,
+    /html\[data-initial-tab-pending='allStarBoh'\] #allStarBohSection > \.tab-loading\s*\{[\s\S]*?display:\s*flex !important/
+  );
+  assert.match(
+    appCss,
+    /html\[data-initial-tab-pending\] #generatorSection\s*\{[\s\S]*?display:\s*none !important/
+  );
+  assert.doesNotMatch(appCss, /data-initial-tab-pending='allStarBoh'/);
+  assert.doesNotMatch(appCss, /data-initial-tab-pending='allStarBoh'[^\n]*boh-root/);
 });
 
 test('mobile exposes exactly four primary destinations and an accessible More sheet', () => {
@@ -146,8 +178,7 @@ test('first-focus skip link follows the active tool and respects reduced motion'
 
 test('mobile branding keeps the single page heading in the accessibility tree', () => {
   assert.equal(countId('appTitle'), 1);
-  assert.match(shellCss, /#app \.command-logo > :not\(picture\):not\(#appTitle\)\s*\{/);
-  assert.doesNotMatch(shellCss, /#app \.command-logo > :not\(picture\)\s*\{/);
+  assert.doesNotMatch(shellCss, /#app \.command-logo > :not\(picture\)/);
   assert.match(
     shellCss,
     /#app \.command-logo #appTitle\s*\{[\s\S]*?clip-path:\s*inset\(50%\) !important/

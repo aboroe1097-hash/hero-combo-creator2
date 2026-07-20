@@ -1217,7 +1217,7 @@
   color: var(--boh-text);
 }
 
-.boh-field > span,
+.boh-field > :is(span, label),
 .boh-fieldset > legend {
   font-size: 0.68rem;
   font-weight: 760;
@@ -1242,6 +1242,51 @@
   border-radius: var(--boh-radius-sm);
   background: var(--boh-control);
   color: var(--boh-text);
+}
+
+.boh-pin-control {
+  position: relative;
+  min-width: 0;
+}
+
+.boh-pin-control > input {
+  padding-inline-end: 3.4rem;
+}
+
+.boh-pin-toggle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: grid;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-inline-start: 1px solid var(--boh-line);
+  border-radius: 0 var(--boh-radius-sm) var(--boh-radius-sm) 0;
+  background: transparent;
+  color: var(--boh-muted);
+  cursor: pointer;
+}
+
+[dir='rtl'] .boh-pin-toggle {
+  border-radius: var(--boh-radius-sm) 0 0 var(--boh-radius-sm);
+}
+
+.boh-pin-toggle:hover,
+.boh-pin-toggle[aria-pressed='true'] {
+  color: var(--boh-sky);
+}
+
+.boh-pin-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.boh-pin-toggle__icon {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .boh-field textarea {
@@ -1989,6 +2034,10 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.8rem 0.2rem 0.2rem;
+}
+
+.boh-access-form .boh-form-actions {
+  justify-content: flex-start;
 }
 
 .boh-form-actions > div {

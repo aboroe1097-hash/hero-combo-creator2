@@ -143,10 +143,23 @@
     return document.getElementById(id);
   }
 
+  function resolveCanonicalHashTabName(rawHash = window.location.hash) {
+    const normalizedHash = String(rawHash || '')
+      .replace(/^#/, '')
+      .split('?')[0]
+      .toLowerCase();
+    if (!normalizedHash) return '';
+    return (
+      Array.from(internalHashes.values()).find(
+        (tabName) => tabName.toLowerCase() === normalizedHash
+      ) || ''
+    );
+  }
+
   function activeTabName() {
     const validTabNames = new Set(internalHashes.values());
-    const hashTabName = window.location.hash.replace(/^#/, '').split('?')[0];
-    if (validTabNames.has(hashTabName)) return hashTabName;
+    const hashTabName = resolveCanonicalHashTabName();
+    if (hashTabName) return hashTabName;
 
     const bodyTabName = document.body.dataset.activeTab || '';
     if (validTabNames.has(bodyTabName)) return bodyTabName;
@@ -613,7 +626,7 @@
 
   function closeMoreForNavigation(source) {
     const tabName = internalHashes.get(source.id);
-    const activeHash = window.location.hash.replace(/^#/, '').split('?')[0];
+    const activeHash = resolveCanonicalHashTabName();
 
     setOpen(false, { restoreFocus: false });
     focusTabDestination(tabName);

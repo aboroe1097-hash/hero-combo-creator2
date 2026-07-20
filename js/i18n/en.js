@@ -478,6 +478,9 @@ const en = {
   bohAccessPinLabel: 'Member PIN',
   bohAccessPinHint: 'The PIN is checked securely and is never saved on this device.',
   bohAccessUnlock: 'Unlock hub',
+  bohAccessRetry: 'Retry',
+  bohAccessShowPin: 'Show PIN',
+  bohAccessHidePin: 'Hide PIN',
   bohAccessChecking: 'Checking your secure member access...',
   bohAccessBusy: 'Confirming member access...',
   bohAccessExpired: 'Your member access expired. Enter the current PIN to unlock it again.',
@@ -491,6 +494,8 @@ const en = {
   bohAccessErrorAppCheck: 'Secure app verification could not be completed. Please try again.',
   bohAccessErrorNetwork:
     'The secure service could not be reached. Check your connection and try again.',
+  bohAccessErrorSecureServiceUnreachable:
+    'The secure Google service required for signup cannot be reached from this network or region. Try a VPN or a different network, then press Retry. Your PIN has not been rejected.',
   bohAccessErrorGeneric: 'Member access could not be confirmed. Please try again.',
   adminBohTab: 'All-Star BoH',
   adminBohTitle: 'All-Star BoH Command Center',

@@ -1429,6 +1429,8 @@ function initialState(options) {
     ocrPreviewUrl: '',
     ocrReview: null,
     ocrInvalidField: '',
+    ocrGeneration: 0,
+    ocrPhase: 'idle',
     ocrBusy: false,
     troopOcrFiles: [],
     troopOcrRows: [],
@@ -2378,6 +2380,21 @@ function renderOcr(state) {
   const status = query(state.root, '[data-role="ocr-status"]');
   const process = query(state.root, '[data-role="ocr-process"]');
   const progress = query(state.root, '[data-role="ocr-progress"]');
+  const isProcessing = state.ocrPhase === 'processing';
+  const statusText = {
+    processing: state.tr(
+      'signup.ocrProcessing',
+      'Reading screenshot—keep this page open. You may continue filling the form.'
+    ),
+    ready: state.tr(
+      'signup.ocrReviewReady',
+      'Power values filled automatically. Review the fields below.'
+    ),
+    error: state.tr(
+      'signup.ocrError',
+      'Screenshot reading failed. Check your connection, then press Read Screenshot to try again.'
+    ),
+  }[state.ocrPhase];
   setHidden(preview, !state.ocrFile);
   if (previewImage) {
     if (state.ocrPreviewUrl) previewImage.src = state.ocrPreviewUrl;
@@ -2394,11 +2411,10 @@ function renderOcr(state) {
       : state.tr('signup.ocrReady', 'Ready to process')
   );
   setHidden(reviewBadge, !state.ocrReview);
-  setHidden(progress, !state.ocrBusy);
-  if (progress && state.ocrBusy) progress.removeAttribute?.('value');
+  setHidden(progress, !isProcessing);
+  if (progress && isProcessing) progress.removeAttribute?.('value');
   setBusy(process, state.ocrBusy || !state.ocrFile);
-  if (status && state.ocrBusy)
-    status.textContent = state.tr('signup.ocrProcessing', 'Reading screenshot…');
+  setText(status, statusText || '');
   renderOcrReviewAlert(state);
   for (const input of queryAll(state.root, '[data-stat]')) {
     const confidence = state.ocrReview?.confidence?.[input.dataset.stat];
@@ -3330,13 +3346,13 @@ function revokePreview(state) {
 
 function clearOcrFile(state) {
   revokePreview(state);
+  state.ocrGeneration += 1;
   state.ocrFile = null;
   state.ocrReview = null;
   state.ocrInvalidField = '';
+  state.ocrPhase = 'idle';
   const input = query(state.root, '[data-role="ocr-file-input"]');
   if (input) input.value = '';
-  const status = query(state.root, '[data-role="ocr-status"]');
-  setText(status, '');
   renderOcr(state);
 }
 
@@ -3344,42 +3360,54 @@ function selectOcrFile(state, files) {
   const select = state.ocr.getSingleBohStatsScreenshot || ((input) => Array.from(input || [])[0]);
   const file = select(files);
   revokePreview(state);
+  state.ocrGeneration += 1;
   state.ocrFile = file;
   state.ocrReview = null;
   state.ocrInvalidField = '';
+  state.ocrPhase = 'idle';
   state.ocrPreviewUrl = ownerWindow(state.root)?.URL?.createObjectURL?.(file) || '';
   renderOcr(state);
 }
 
+function isCurrentOcrRequest(state, file, generation) {
+  return state.ocrGeneration === generation && state.ocrFile === file;
+}
+
 async function processOcr(state) {
+  if (state.ocrBusy) return;
+  const file = state.ocrFile;
+  const generation = state.ocrGeneration;
   const consent = query(state.root, '[data-role="ocr-consent"]');
-  if (!state.ocrFile)
+  if (!file)
     throw new TypeError(state.tr('signup.ocrFileRequired', 'Choose one screenshot first.'));
   if (!consent?.checked)
     throw new TypeError(
       state.tr('signup.ocrConsentRequired', 'Confirm the OCR processing notice first.')
     );
-  const prepare = state.ocr.prepareBohStatsScreenshot || state.ocr.prepareScreenshot;
-  const buildRequest = state.ocr.buildBohStatsOcrRequest || ((value) => value);
-  const transport =
-    state.ocr.process || state.ocr.recognize || state.ocr.extractStats || state.ocr.request;
-  const buildReview = state.ocr.buildBohStatsReviewModel;
-  if (
-    typeof prepare !== 'function' ||
-    typeof transport !== 'function' ||
-    typeof buildReview !== 'function'
-  ) {
-    throw new TypeError('Stats OCR service is not available.');
-  }
   state.ocrBusy = true;
+  state.ocrPhase = 'processing';
   renderOcr(state);
   try {
-    const prepared = await prepare(state.ocrFile);
+    const prepare = state.ocr.prepareBohStatsScreenshot || state.ocr.prepareScreenshot;
+    const buildRequest = state.ocr.buildBohStatsOcrRequest || ((value) => value);
+    const transport =
+      state.ocr.process || state.ocr.recognize || state.ocr.extractStats || state.ocr.request;
+    const buildReview = state.ocr.buildBohStatsReviewModel;
+    if (
+      typeof prepare !== 'function' ||
+      typeof transport !== 'function' ||
+      typeof buildReview !== 'function'
+    ) {
+      throw new TypeError('Stats OCR service is not available.');
+    }
+    const prepared = await prepare(file);
+    if (!isCurrentOcrRequest(state, file, generation)) return;
     const request = buildRequest({
       seasonId: state.store?.seasonId || state.options.seasonId,
       imageData: prepared.imageData,
     });
     const response = await transport(request);
+    if (!isCurrentOcrRequest(state, file, generation)) return;
     const review = buildReview(response?.result || response);
     state.ocrReview = review;
     state.ocrInvalidField = '';
@@ -3387,13 +3415,11 @@ async function processOcr(state) {
     const form = query(state.root, '[data-role="signup-form"]');
     for (const field of POWER_FIELDS) updateInput(form, field, values[field] ?? '');
     if (values.gameName) updateInput(form, 'gameName', values.gameName);
-    setText(
-      query(state.root, '[data-role="ocr-status"]'),
-      state.tr(
-        'signup.ocrReviewReady',
-        'Power values filled automatically. Edit any incorrect or missing number before submitting.'
-      )
-    );
+    state.ocrPhase = 'ready';
+  } catch (error) {
+    if (!isCurrentOcrRequest(state, file, generation)) return;
+    state.ocrPhase = 'error';
+    throw error;
   } finally {
     state.ocrBusy = false;
     renderOcr(state);

@@ -285,9 +285,11 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.ocrConfidence': 'OCR confidence: {percent}%',
   'signup.ocrConsentRequired': 'Confirm the OCR processing notice first.',
   'signup.ocrFileRequired': 'Choose one screenshot first.',
-  'signup.ocrProcessing': 'Reading screenshot…',
-  'signup.ocrReviewReady':
-    'Power values filled automatically. Edit any incorrect or missing number before submitting.',
+  'signup.ocrProcessing':
+    'Reading screenshot—keep this page open. You may continue filling the form.',
+  'signup.ocrReviewReady': 'Power values filled automatically. Review the fields below.',
+  'signup.ocrError':
+    'Screenshot reading failed. Check your connection, then press Read Screenshot to try again.',
   'signup.revisionConflict':
     'Your saved signup changed in another session. Review this form and submit again.',
   'signup.savedNotice': 'Your stats were submitted successfully.',

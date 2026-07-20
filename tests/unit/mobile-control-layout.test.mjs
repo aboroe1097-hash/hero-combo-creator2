@@ -30,23 +30,55 @@ test('Hero Atlas keeps an always-loaded stacked command deck for wide mobile vie
   );
 });
 
-test('compact shell clock drops the status dot and reserves readable timer width', () => {
+test('compact shell keeps readable brand, version, and controls in normal header flow', () => {
   const compactShell = shellCss.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
   assert.match(compactShell, /#app #globalGameClock \{[\s\S]*?flex: 0 0 84px/);
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
   assert.doesNotMatch(compactShell, /text-overflow: ellipsis/);
-  assert.match(compactShell, /#app \.command-brand \{[\s\S]*?flex: 0 0 64px/);
   assert.match(
     compactShell,
-    /#app \.version-ribbon \{[\s\S]*?display: block !important;[\s\S]*?width: 44px !important;/
+    /#app \.command-header \{[\s\S]*?position: relative !important;[\s\S]*?flex-direction: column;[\s\S]*?overflow: visible !important/
+  );
+  assert.match(compactShell, /#app \.command-brand \{[\s\S]*?flex-direction: column/);
+  assert.match(
+    compactShell,
+    /#app \.version-ribbon \{[\s\S]*?display: block !important;[\s\S]*?width: auto !important;[\s\S]*?font-size: 0\.75rem !important;/
   );
   assert.match(
     compactShell,
-    /#app \.command-header \.command-logo \.command-logo-copy \{[\s\S]*?display: none !important;/
+    /#app \.command-header \.command-logo \.shell-brand-title \{[\s\S]*?display: block !important;[\s\S]*?font-size: 0\.75rem !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.command-logo \.command-logo-copy \{\s*display: none !important;/
   );
   assert.match(
     compactShell,
     /#app \.lang-select-wrapper,[\s\S]*?#app \.lang-select-shell \{[\s\S]*?width: 44px/
+  );
+});
+
+test('mobile resets legacy clipping and keeps the safe-area nav separate from the header', () => {
+  const compactShell = shellCss.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
+  assert.match(
+    compactShell,
+    /#app \.command-header,[\s\S]*?#app \.command-actions,[\s\S]*?#app \.version-ribbon \{\s*clip-path: none !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.tool-nav-shell \{[\s\S]*?position: fixed !important;[\s\S]*?bottom: 0;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.tool-nav-inner \{[\s\S]*?min-height: calc\(68px \+ var\(--ff-safe-bottom\)\);[\s\S]*?padding: 3px 3px calc\(3px \+ var\(--ff-safe-bottom\)\) !important;/
+  );
+  assert.match(
+    compactShell,
+    /padding-block: max\(7px, var\(--ff-safe-top\)\) var\(--shell-mobile-nav-clearance\) !important;/
+  );
+  assert.match(
+    compactShell,
+    /--shell-mobile-nav-clearance: calc\(96px \+ var\(--ff-safe-bottom\)\)/
   );
 });
 
