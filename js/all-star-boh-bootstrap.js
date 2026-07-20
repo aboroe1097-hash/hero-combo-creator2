@@ -26,6 +26,8 @@ const GATE_FALLBACKS = Object.freeze({
   locked: 'Too many attempts. Wait a moment, then try again.',
   closed: 'All-Star BoH access is not open right now.',
   auth: 'Secure sign-in could not be prepared. Please try again.',
+  identityConflict:
+    'This browser is signed into the leadership dashboard. To protect player signups, open this link in a private window and enter the member PIN there.',
   appCheck: 'Secure app verification could not be completed. Please try again.',
   network: 'The secure service could not be reached. Check your connection and try again.',
   generic: 'Member access could not be confirmed. Please try again.',
@@ -104,6 +106,8 @@ function gateErrorMessage(error, copy) {
     case 'invalid_auth':
     case 'grant_verification_failed':
       return copy.auth;
+    case 'member_identity_conflict':
+      return copy.identityConflict;
     case 'app_check_required':
     case 'invalid_app_check':
       return copy.appCheck;
@@ -477,6 +481,12 @@ export async function bootAllStarBohTab(options = {}) {
         const user = await firebase.ensureAnonymousAuth?.();
         if (!user?.uid) {
           throw new AllStarBohAccessError('auth_required', 'Firebase sign-in is unavailable.');
+        }
+        if (user.isAnonymous !== true) {
+          throw new AllStarBohAccessError(
+            'member_identity_conflict',
+            'The All-Star member signup cannot use a leadership account.'
+          );
         }
         firebaseContext = { db: initialized.db, user };
         if (!accessClient) {

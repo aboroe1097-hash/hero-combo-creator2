@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.1.20 - 2026-07-20
+
+- Blocked the member All-Star signup from inheriting an existing leadership/admin Firebase login, preventing shared admin browsers from opening or overwriting one member submission.
+- Added a fail-closed message directing leadership users to open the signup in a private window, where the site creates a separate anonymous member identity.
+
 ## 14.1.19 - 2026-07-20
 
 - Restored backward-compatible All-Star signup reads for historical `+8` and `+20` fighting-time selections so one older record cannot prevent the admin dashboard or a player's saved form from loading.

@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.19";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.1.20";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.1.20",
+    "date": "2026-07-20",
+    "highlights": [
+      "Blocked the member All-Star signup from inheriting an existing leadership/admin Firebase login, preventing shared admin browsers from opening or overwriting one member submission.",
+      "Added a fail-closed message directing leadership users to open the signup in a private window, where the site creates a separate anonymous member identity."
+    ]
+  },
   {
     "version": "14.1.19",
     "date": "2026-07-20",
@@ -88,15 +96,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Updated the owner-scoped Firestore signup contract for the new VTS applicant fields and surfaced them in the leadership review panel.",
       "Fixed the mobile All-Star signup so the optional Troop OCR buttons remain inside their own section instead of floating over manual entry fields.",
       "Separated the three troop portraits in the “All T10 troop types” selector so each icon remains individually visible on phones."
-    ]
-  },
-  {
-    "version": "14.1.10",
-    "date": "2026-07-19",
-    "highlights": [
-      "Added a true top-layer confirmation after successful All-Star signup submissions and edits, clearing stale permission errors only after the write succeeds and keeping delayed listener failures from replacing the confirmed result.",
-      "Moved optional Epic Showdown choices ahead of the single signup action, saving them with the signup only when changed and fixing saved flexibility radio choices so untouched Epic fields never block submission.",
-      "Replaced the first-visit PIN wait with a Velo secure-access loader, limited the mobile Add to Home Screen prompt to 20 seconds, and immediately hid the install prompt, tool dock, Velo launcher, and overlapping controls while a mobile user is writing."
     ]
   }
 ].map((release) =>
