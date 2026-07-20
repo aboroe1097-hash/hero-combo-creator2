@@ -38,7 +38,7 @@ test('compact shell clock drops the status dot and reserves readable timer width
   assert.match(compactShell, /#app \.command-brand \{[\s\S]*?flex: 0 0 64px/);
   assert.match(
     compactShell,
-    /#app \.version-ribbon \{[\s\S]*?display: block !important;[\s\S]*?#app \.version-ribbon::before \{[\s\S]*?content: attr\(data-mobile-version\)/
+    /#app \.version-ribbon \{[\s\S]*?display: block !important;[\s\S]*?width: 44px !important;/
   );
   assert.match(
     compactShell,

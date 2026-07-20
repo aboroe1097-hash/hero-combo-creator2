@@ -62,10 +62,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
   await openHome(page);
 
   await expect(page.locator('#betaNote')).toBeVisible();
-  await expect(page.locator('#betaNote')).toHaveAttribute(
-    'data-mobile-version',
-    /^v\d+\.\d+\.\d+$/
-  );
+  await expect(page.locator('#betaNote')).toContainText(/^v\d+\.\d+\.\d+/);
   await expect
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
