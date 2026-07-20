@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'Appliquer le réglage du rôle',
   adminBohAssignedSeats: 'Places attribuées',
   adminBohAverageTeamScore: 'Score moyen d’équipe',
-  adminBohBalanceConfirm:
-    'Répartir à nouveau toutes les places déverrouillées avec la version de score active ? Les places verrouillées resteront en place.',
-  adminBohBalanceTeams: 'Former des équipes équilibrées',
   adminBohBlockingIssues: 'Problèmes bloquants',
   adminBohBreakdown: 'Détail',
   adminBohCalculated: 'Calculé',
@@ -68,7 +65,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'Instruction du plan enregistrée.',
   adminBohInstructionScope: 'Portée de l’instruction',
   adminBohInvalidTimeline: 'Utilisez exactement quatre phases ordonnées et sans chevauchement.',
-  adminBohKicker: 'ALL-STAR BoH · 6 ÉQUIPES · 72 JOUEURS',
   adminBohLegacyConfirm:
     'Copier les horaires des quatre phases et les codes d’objectif de l’an dernier ? Les rôles à 15 places et tous les anciens noms de joueurs seront exclus.',
   adminBohLegacyIs15Seats: 'Avertissement sur l’ancien plan :',
@@ -228,7 +224,6 @@ export default Object.freeze({
   adminBohSignupCaption: '{shown} inscriptions sur {total}',
   adminBohSignupsHelp:
     'Comparez les valeurs confirmées par le joueur aux alertes OCR. Les captures ne sont affichées que si le stockage fournit explicitement une URL de vérification protégée.',
-  adminBohSixTeamBoard: 'Tableau d’affectation des six équipes',
   adminBohSource: 'Saisie',
   adminBohStageFive: 'ÉTAPE 5 SUR 5',
   adminBohStageFour: 'ÉTAPE 4 SUR 5',
@@ -257,8 +252,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'Exclu',
   adminBohStatusPending: 'En attente de vérification',
   adminBohStatusUnknown: 'Inconnu',
-  adminBohSubtitle:
-    'Vérifiez les inscriptions, équilibrez six équipes, créez les plans de rôles et publiez des vues sûres pour les joueurs.',
   adminBohSwapHereLabel: 'Échanger avec {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Équipe',
@@ -268,11 +261,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'Plan d’équipe',
   adminBohTeamPlanCopied: 'Plan d’équipe copié sans affectations de joueurs.',
   adminBohTeamPlans: 'Plans d’équipe',
-  adminBohTeamsBalanced: 'Brouillon d’équipes équilibrées créé.',
   adminBohTeamSeatsFilled: '{assigned} places occupées sur 12',
-  adminBohTeamsHelp:
-    'Formez six équipes de 12. Les places verrouillées restent en place lors du rééquilibrage. Choisissez une place, puis déplacez-la vers une place libre ou échangez-la avec une place occupée.',
-  adminBohTeamSpread: 'Écart entre le plus haut et le plus bas',
   adminBohTeleport: 'Instruction de téléportation',
   adminBohTeleportPlaceholder: 'Aucune téléportation ou destination',
   adminBohTemplatePrivacy:
@@ -295,7 +284,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'Le plan doit contenir la Légion 1 et la Légion 2.',
   adminBohValidationMap: 'Aucun objectif schématique n’a été placé.',
   adminBohValidationPhases: 'Le plan doit contenir exactement quatre phases.',
-  adminBohValidationSeats: '{assigned} places sur 72 sont attribuées.',
   adminBohVersionHistory: 'Historique des versions',
   adminBohVersionLabel: 'Nom de version',
   adminBohVersionLabelPlaceholder: 'Exemple : sélection 2026 v2',
@@ -328,10 +316,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'Indisponible',
   adminBohDestinationSeat: 'Place de destination',
   adminBohDirectAssignment: 'AFFECTATION DIRECTE',
-  adminBohEligiblePool: 'Groupe admissible de 72 joueurs',
-  adminBohEligiblePoolHelp:
-    'Choisissez exactement 72 inscriptions actuelles et vérifiées. Seul ce groupe enregistré est utilisé pour l’équilibrage et l’affectation directe des places.',
-  adminBohEligiblePoolSaved: 'Groupe admissible de 72 joueurs enregistré.',
   adminBohEligibleRoles: 'Rôles possibles',
   adminBohEntryMethod: 'Mode de saisie',
   adminBohKnownNames: 'Noms connus',
@@ -353,7 +337,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'Les codes ou IDs sont associés aux repères de la carte puis fusionnés dans cet ordre : départ, étapes, trajet ordonné, cible.',
   adminBohRoutePathPlaceholder: 'Exemple : CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Enregistrer les 72 admissibles',
   adminBohSaveTeamMetadata: 'Enregistrer les détails de l’équipe',
   adminBohSelectCaptain: 'Sélectionner le capitaine',
   adminBohStartObjective: 'Objectif de départ',

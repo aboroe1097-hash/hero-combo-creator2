@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'Aplicar padrão da função',
   adminBohAssignedSeats: 'Posições atribuídas',
   adminBohAverageTeamScore: 'Pontuação média da equipe',
-  adminBohBalanceConfirm:
-    'Redistribuir todas as posições desbloqueadas usando a versão de pontuação ativa? As posições bloqueadas permanecerão no lugar.',
-  adminBohBalanceTeams: 'Montar equipes equilibradas',
   adminBohBlockingIssues: 'Problemas impeditivos',
   adminBohBreakdown: 'Detalhamento',
   adminBohCalculated: 'Calculado',
@@ -68,7 +65,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'Instrução do plano salva.',
   adminBohInstructionScope: 'Escopo da instrução',
   adminBohInvalidTimeline: 'Use exatamente quatro fases ordenadas e sem sobreposição.',
-  adminBohKicker: 'ALL-STAR BoH · 6 EQUIPES · 72 JOGADORES',
   adminBohLegacyConfirm:
     'Copiar os horários das quatro fases e os códigos de objetivo do ano passado? As funções de 15 posições e todos os nomes antigos serão excluídos.',
   adminBohLegacyIs15Seats: 'Aviso sobre o plano anterior:',
@@ -227,7 +223,6 @@ export default Object.freeze({
   adminBohSignupCaption: '{shown} de {total} inscrições',
   adminBohSignupsHelp:
     'Compare os valores confirmados pelo jogador com os avisos de OCR. As capturas só aparecem se o armazenamento fornecer explicitamente uma URL de análise protegida.',
-  adminBohSixTeamBoard: 'Painel de atribuição das seis equipes',
   adminBohSource: 'Captura',
   adminBohStageFive: 'ETAPA 5 DE 5',
   adminBohStageFour: 'ETAPA 4 DE 5',
@@ -256,8 +251,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'Excluído',
   adminBohStatusPending: 'Aguardando análise',
   adminBohStatusUnknown: 'Desconhecido',
-  adminBohSubtitle:
-    'Analise inscrições, equilibre seis equipes, crie planos por função e publique visões seguras para os jogadores.',
   adminBohSwapHereLabel: 'Trocar com {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Equipe',
@@ -267,11 +260,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'Plano da equipe',
   adminBohTeamPlanCopied: 'Plano da equipe copiado sem atribuições de jogadores.',
   adminBohTeamPlans: 'Planos das equipes',
-  adminBohTeamsBalanced: 'Rascunho de equipes equilibradas criado.',
   adminBohTeamSeatsFilled: '{assigned} de 12 posições preenchidas',
-  adminBohTeamsHelp:
-    'Monte seis equipes de 12. As posições bloqueadas permanecem durante o equilíbrio. Escolha uma posição e mova para uma vazia ou troque com uma ocupada.',
-  adminBohTeamSpread: 'Diferença entre a maior e a menor',
   adminBohTeleport: 'Instrução de teleporte',
   adminBohTeleportPlaceholder: 'Sem teleporte ou destino',
   adminBohTemplatePrivacy:
@@ -294,7 +283,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'O plano deve conter a Legião 1 e a Legião 2.',
   adminBohValidationMap: 'Nenhum objetivo foi colocado no esquema.',
   adminBohValidationPhases: 'O plano deve conter exatamente quatro fases.',
-  adminBohValidationSeats: '{assigned} de 72 posições estão atribuídas.',
   adminBohVersionHistory: 'Histórico de versões',
   adminBohVersionLabel: 'Nome da versão',
   adminBohVersionLabelPlaceholder: 'Exemplo: seleção 2026 v2',
@@ -327,10 +315,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'Indisponível',
   adminBohDestinationSeat: 'Vaga de destino',
   adminBohDirectAssignment: 'ESCALAÇÃO DIRETA',
-  adminBohEligiblePool: 'Grupo elegível de 72 jogadores',
-  adminBohEligiblePoolHelp:
-    'Escolha exatamente 72 inscrições atuais e verificadas. Somente este grupo salvo é usado para equilibrar equipes e fazer a escalação direta das vagas.',
-  adminBohEligiblePoolSaved: 'Grupo elegível de 72 jogadores salvo.',
   adminBohEligibleRoles: 'Funções elegíveis',
   adminBohEntryMethod: 'Forma de entrada',
   adminBohKnownNames: 'Nomes conhecidos',
@@ -352,7 +336,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'Códigos ou IDs são vinculados aos pontos do mapa e unidos nesta ordem: início, pontos intermediários, trajeto ordenado e alvo.',
   adminBohRoutePathPlaceholder: 'Exemplo: CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Salvar os 72 elegíveis',
   adminBohSaveTeamMetadata: 'Salvar detalhes da equipe',
   adminBohSelectCaptain: 'Selecionar capitão',
   adminBohStartObjective: 'Objetivo inicial',

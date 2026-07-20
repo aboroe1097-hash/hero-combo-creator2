@@ -11,6 +11,7 @@ import {
   loadAdminAllStarBohLocale,
   resolveAdminAllStarBohLocale,
 } from '../../js/i18n/admin-all-star-boh/index.js';
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from '../../js/i18n/admin-all-star-boh/shared-additions.js';
 
 const adminSourceUrl = new URL('../../js/admin-all-star-boh.js', import.meta.url);
 const domainUrl = new URL('../../js/i18n/admin-all-star-boh/index.js', import.meta.url);
@@ -103,7 +104,7 @@ test('canonical English exactly covers every admin translator and integration ke
 
   const sourceKeys = [...keys].sort();
   const englishKeys = Object.keys(ADMIN_ALL_STAR_BOH_EN).sort();
-  assert.equal(sourceKeys.length, 404);
+  assert.equal(sourceKeys.length, 445);
   assert.deepEqual(englishKeys, sourceKeys, 'English must have no missing or extra admin keys');
   assert.ok(
     Object.values(ADMIN_ALL_STAR_BOH_EN).every((value) => typeof value === 'string' && value)
@@ -151,7 +152,7 @@ test('canonical placeholders exactly match every source fallback contract', asyn
   const placeholderKeys = Object.entries(ADMIN_ALL_STAR_BOH_EN)
     .filter(([, value]) => placeholderNames(value).length)
     .map(([key]) => key);
-  assert.equal(placeholderKeys.length, 33);
+  assert.equal(placeholderKeys.length, 42);
 });
 
 test('admin text formatting substitutes supplied values and preserves unresolved placeholders', () => {
@@ -187,14 +188,7 @@ test('admin locale resolution, fallback, and lazy-loader contract stay stable', 
   assert.strictEqual(await loadAdminAllStarBohLocale('en-US'), ADMIN_ALL_STAR_BOH_EN);
   assert.strictEqual(await loadAdminAllStarBohLocale('unsupported'), ADMIN_ALL_STAR_BOH_EN);
 
-  const sharedFallbackKeys = [
-    'adminBohScoreUnitSpecialtyPower',
-    'adminBohScoreRocLevel',
-    'adminBohScorePaidUsableHero',
-    'adminBohScoreLoftyTroopMillion',
-    'adminBohScoreEnhancedT10TroopMillion',
-    'adminBohSignupPlanningSignalsHelp',
-  ];
+  const sharedFallbackKeys = Object.keys(ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS);
   for (const locale of ADMIN_ALL_STAR_BOH_LOCALES.slice(1)) {
     const pack = await loadAdminAllStarBohLocale(locale);
     for (const key of sharedFallbackKeys) {

@@ -5,6 +5,10 @@
 - Added five configurable All-Star scoring components for Unit Specialty Power, RoC level, paid usable heroes, Lofty troops per million, and Enhanced T10 troops per million, all defaulting to zero.
 - Derived paid usable hero counts from the canonical hero catalog and preserved all five component weights through scoring-version and admin-draft store round trips.
 - Kept legacy scoring totals unchanged until an admin explicitly creates and enables a new scoring version with nonzero weights.
+- Made Team Builder support configurable 2–6 12-player teams, an explicit eligible pool, and exact-team forces, with preview/apply balancing by active score or Total Castle Power and both totals visible.
+- Made reviewed player names and stats editable and applied those corrections throughout scoring, team building, publication, and export.
+- Added compound review filters, stable sorting, and formula-safe CSV export limited to the current visible row order.
+- Added sequential batch confirmation for selected visible rows with clear partial-success reporting.
 
 ## 14.2.2 - 2026-07-20
 

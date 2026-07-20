@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'Rol varsayılanını uygula',
   adminBohAssignedSeats: 'Atanan pozisyonlar',
   adminBohAverageTeamScore: 'Ortalama takım puanı',
-  adminBohBalanceConfirm:
-    'Kilitli olmayan tüm pozisyonlar aktif puan sürümüyle yeniden dağıtılsın mı? Kilitli pozisyonlar yerinde kalır.',
-  adminBohBalanceTeams: 'Dengeli takımlar kur',
   adminBohBlockingIssues: 'Devamı engelleyen sorunlar',
   adminBohBreakdown: 'Dağılım',
   adminBohCalculated: 'Hesaplanan',
@@ -69,7 +66,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'Plan talimatı kaydedildi.',
   adminBohInstructionScope: 'Talimat kapsamı',
   adminBohInvalidTimeline: 'Tam olarak dört sıralı ve çakışmayan aşama kullan.',
-  adminBohKicker: 'ALL-STAR BoH · 6 TAKIM · 72 OYUNCU',
   adminBohLegacyConfirm:
     'Geçen yılın dört aşama süresi ve hedef kodları kopyalansın mı? 15 pozisyonlu roller ve tüm eski oyuncu adları alınmayacak.',
   adminBohLegacyIs15Seats: 'Eski plan uyarısı:',
@@ -228,7 +224,6 @@ export default Object.freeze({
   adminBohSignupCaption: '{total} başvurunun {shown} tanesi',
   adminBohSignupsHelp:
     'Oyuncunun onayladığı değerleri OCR uyarılarıyla karşılaştır. Depo açıkça korumalı bir inceleme bağlantısı sunmadıkça ekran görüntüleri burada gösterilmez.',
-  adminBohSixTeamBoard: 'Altı takım atama panosu',
   adminBohSource: 'Giriş yöntemi',
   adminBohStageFive: '5. AŞAMA / 5',
   adminBohStageFour: '4. AŞAMA / 5',
@@ -257,8 +252,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'Dışlandı',
   adminBohStatusPending: 'İnceleme bekliyor',
   adminBohStatusUnknown: 'Bilinmiyor',
-  adminBohSubtitle:
-    'Başvuruları incele, altı takımı dengele, rol planlarını hazırla ve oyunculara güvenle gösterilecek ekranları yayımla.',
   adminBohSwapHereLabel: '{player} ile yer değiştir',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Takım',
@@ -268,11 +261,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'Takım planı',
   adminBohTeamPlanCopied: 'Takım planı, oyuncu atamaları alınmadan kopyalandı.',
   adminBohTeamPlans: 'Takım Planları',
-  adminBohTeamsBalanced: 'Dengeli takım taslağı oluşturuldu.',
   adminBohTeamSeatsFilled: '12 pozisyonun {assigned} tanesi dolu',
-  adminBohTeamsHelp:
-    '12’şer oyuncudan altı takım kur. Kilitli pozisyonlar yeniden dengelemede korunur; bir pozisyon seçip oyuncuyu boş pozisyona taşı veya dolu pozisyondaki oyuncuyla yer değiştir.',
-  adminBohTeamSpread: 'En yüksek-en düşük farkı',
   adminBohTeleport: 'Işınlanma talimatı',
   adminBohTeleportPlaceholder: 'Işınlanma yok veya hedef belirtilmedi',
   adminBohTemplatePrivacy:
@@ -295,7 +284,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'Plan, Legion 1 ve Legion 2 içermelidir.',
   adminBohValidationMap: 'Şematik haritaya henüz hedef yerleştirilmedi.',
   adminBohValidationPhases: 'Plan tam olarak dört aşama içermelidir.',
-  adminBohValidationSeats: '72 pozisyonun {assigned} tanesi atandı.',
   adminBohVersionHistory: 'Sürüm geçmişi',
   adminBohVersionLabel: 'Sürüm etiketi',
   adminBohVersionLabelPlaceholder: 'Örnek: 2026 seçim v2',
@@ -328,10 +316,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'Müsait değil',
   adminBohDestinationSeat: 'Hedef koltuk',
   adminBohDirectAssignment: 'DOĞRUDAN ATAMA',
-  adminBohEligiblePool: 'Uygun 72 oyuncu havuzu',
-  adminBohEligiblePoolHelp:
-    'Güncel ve doğrulanmış kayıtlardan tam 72 kişi seçin. Dengeleme ve doğrudan koltuk atamasında yalnızca bu kayıtlı havuz kullanılır.',
-  adminBohEligiblePoolSaved: 'Uygun 72 oyuncu havuzu kaydedildi.',
   adminBohEligibleRoles: 'Uygun roller',
   adminBohEntryMethod: 'Giriş yöntemi',
   adminBohKnownNames: 'Bilinen adlar',
@@ -353,7 +337,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'Kodlar veya kimlikler harita noktalarıyla eşleştirilir ve şu sırayla birleştirilir: başlangıç, ara hedefler, sıralı yol, varış.',
   adminBohRoutePathPlaceholder: 'Örnek: CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Uygun 72 oyuncuyu kaydet',
   adminBohSaveTeamMetadata: 'Takım ayrıntılarını kaydet',
   adminBohSelectCaptain: 'Kaptan seç',
   adminBohStartObjective: 'Başlangıç hedefi',

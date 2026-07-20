@@ -2672,6 +2672,15 @@ function currentTeam(state) {
 }
 
 function renderPublicationStates(state) {
+  const publishedTeamCount = finiteInteger(state.publication?.teamCount);
+  const teamCount = publishedTeamCount >= 2 && publishedTeamCount <= 6 ? publishedTeamCount : 6;
+  setText(
+    query(state.root, '[data-role="all-teams-kicker"]'),
+    state.tr('announcement.allTeamsKicker', '{teams} TEAMS · {players} PLAYERS', {
+      teams: teamCount,
+      players: teamCount * 12,
+    })
+  );
   const selected = selectBohPlayerStates({
     accessGranted: state.accessGranted,
     publication: state.publication,

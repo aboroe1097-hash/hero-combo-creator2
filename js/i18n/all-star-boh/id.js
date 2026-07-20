@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': 'Masukkan PIN anggota',
   'access.membersOnly': 'KHUSUS ANGGOTA',
   'action.remove': 'Hapus',
-  'announcement.allTeamsKicker': '6 TIM · 72 PEMAIN',
+  'announcement.allTeamsKicker': '{teams} TIM · {players} PEMAIN',
   'announcement.allTeamsTitle': 'Ringkasan semua tim',
   'announcement.captain': 'Kapten:',
   'announcement.description':

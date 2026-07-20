@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': 'Digite o PIN de membro',
   'access.membersOnly': 'SOMENTE MEMBROS',
   'action.remove': 'Remover',
-  'announcement.allTeamsKicker': '6 EQUIPES · 72 JOGADORES',
+  'announcement.allTeamsKicker': '{teams} EQUIPES · {players} JOGADORES',
   'announcement.allTeamsTitle': 'Visão geral de todas as equipes',
   'announcement.captain': 'Capitão:',
   'announcement.description':

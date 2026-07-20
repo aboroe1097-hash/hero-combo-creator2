@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'Rollenstandard anwenden',
   adminBohAssignedSeats: 'Belegte Plätze',
   adminBohAverageTeamScore: 'Durchschnittliche Teamwertung',
-  adminBohBalanceConfirm:
-    'Alle entsperrten Plätze mit der aktiven Wertungsversion neu verteilen? Gesperrte Plätze bleiben unverändert.',
-  adminBohBalanceTeams: 'Ausgeglichene Teams bilden',
   adminBohBlockingIssues: 'Blockierende Probleme',
   adminBohBreakdown: 'Aufschlüsselung',
   adminBohCalculated: 'Berechnet',
@@ -68,7 +65,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'Plananweisung gespeichert.',
   adminBohInstructionScope: 'Geltungsbereich',
   adminBohInvalidTimeline: 'Verwende genau vier geordnete, nicht überlappende Phasen.',
-  adminBohKicker: 'ALL-STAR BoH · 6 TEAMS · 72 SPIELER',
   adminBohLegacyConfirm:
     'Vier Phasenzeiten und Zielcodes aus dem Vorjahr kopieren? Die 15-Platz-Rollen und alle alten Spielernamen werden ausgeschlossen.',
   adminBohLegacyIs15Seats: 'Warnung zum alten Plan:',
@@ -227,7 +223,6 @@ export default Object.freeze({
   adminBohSignupCaption: '{shown} von {total} Anmeldungen',
   adminBohSignupsHelp:
     'Vergleiche bestätigte Spielerwerte mit OCR-Hinweisen. Screenshots werden hier nur gezeigt, wenn der Speicher ausdrücklich eine geschützte Prüf-URL liefert.',
-  adminBohSixTeamBoard: 'Zuweisungsübersicht für sechs Teams',
   adminBohSource: 'Erfassung',
   adminBohStageFive: 'PHASE 5 VON 5',
   adminBohStageFour: 'PHASE 4 VON 5',
@@ -256,8 +251,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'Ausgeschlossen',
   adminBohStatusPending: 'Prüfung ausstehend',
   adminBohStatusUnknown: 'Unbekannt',
-  adminBohSubtitle:
-    'Anmeldungen prüfen, sechs Teams ausgleichen, Rollenpläne erstellen und sichere Spieleransichten veröffentlichen.',
   adminBohSwapHereLabel: 'Mit {player} tauschen',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Team',
@@ -267,11 +260,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'Teamplan',
   adminBohTeamPlanCopied: 'Teamplan ohne Spielerzuweisungen kopiert.',
   adminBohTeamPlans: 'Teampläne',
-  adminBohTeamsBalanced: 'Ausgeglichener Teamentwurf erstellt.',
   adminBohTeamSeatsFilled: '{assigned} von 12 Plätzen belegt',
-  adminBohTeamsHelp:
-    'Bilde sechs Teams mit je 12 Spielern. Gesperrte Plätze bleiben beim Ausgleichen erhalten. Wähle einen Platz und verschiebe ihn auf einen freien Platz oder tausche ihn mit einem belegten.',
-  adminBohTeamSpread: 'Spanne vom höchsten zum niedrigsten Wert',
   adminBohTeleport: 'Teleport-Anweisung',
   adminBohTeleportPlaceholder: 'Kein Teleport oder Ziel',
   adminBohTemplatePrivacy:
@@ -295,7 +284,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'Der Plan muss Legion 1 und Legion 2 enthalten.',
   adminBohValidationMap: 'Es wurden keine Kartenziele gesetzt.',
   adminBohValidationPhases: 'Der Plan muss genau vier Phasen enthalten.',
-  adminBohValidationSeats: '{assigned} von 72 Plätzen sind zugewiesen.',
   adminBohVersionHistory: 'Versionsverlauf',
   adminBohVersionLabel: 'Versionsname',
   adminBohVersionLabelPlaceholder: 'Beispiel: Auswahl 2026 v2',
@@ -328,10 +316,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'Nicht verfügbar',
   adminBohDestinationSeat: 'Zielplatz',
   adminBohDirectAssignment: 'DIREKTZUWEISUNG',
-  adminBohEligiblePool: 'Berechtigter 72-Spieler-Pool',
-  adminBohEligiblePoolHelp:
-    'Wähle genau 72 aktuelle, bestätigte Anmeldungen. Nur dieser gespeicherte Pool wird für den Ausgleich und die direkte Platzzuweisung verwendet.',
-  adminBohEligiblePoolSaved: 'Berechtigter 72-Spieler-Pool gespeichert.',
   adminBohEligibleRoles: 'Geeignete Rollen',
   adminBohEntryMethod: 'Erfassungsmethode',
   adminBohKnownNames: 'Bekannte Namen',
@@ -353,7 +337,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'Codes oder IDs werden Kartenankern zugeordnet und in dieser Reihenfolge zusammengeführt: Start, Zwischenziele, geordneter Pfad, Ziel.',
   adminBohRoutePathPlaceholder: 'Beispiel: CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Berechtigte 72 speichern',
   adminBohSaveTeamMetadata: 'Teamdetails speichern',
   adminBohSelectCaptain: 'Kapitän auswählen',
   adminBohStartObjective: 'Startziel',

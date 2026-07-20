@@ -67,6 +67,31 @@ test('player state selection covers locked, unpublished, unassigned, and assigne
   );
 });
 
+test('announcement team kicker uses published team count with a legacy six-team fallback', async () => {
+  const root = new EventTarget();
+  const view = new EventTarget();
+  const kicker = { textContent: '' };
+  view.getComputedStyle = () => ({ direction: 'ltr' });
+  root.ownerDocument = { defaultView: view };
+  root.querySelector = (selector) =>
+    selector === '[data-role="all-teams-kicker"]' ? kicker : null;
+  root.querySelectorAll = () => [];
+  root.contains = () => true;
+
+  const controller = initializeAllStarBoh({
+    root,
+    text: { 'announcement.allTeamsKicker': '{teams} TEAMS · {players} PLAYERS' },
+  });
+  assert.equal(kicker.textContent, '6 TEAMS · 72 PLAYERS');
+
+  await controller.refresh({ publication: { teamCount: 2 } });
+  assert.equal(kicker.textContent, '2 TEAMS · 24 PLAYERS');
+
+  await controller.refresh({ publication: {} });
+  assert.equal(kicker.textContent, '6 TEAMS · 72 PLAYERS');
+  controller.destroy();
+});
+
 test('strict numeric parsing accepts localized full integers and rejects abbreviations', () => {
   assert.equal(parseBohInteger('١٬٢٣٤٬٥٦٧'), 1_234_567);
   assert.equal(parseBohInteger('1 234 567'), 1_234_567);

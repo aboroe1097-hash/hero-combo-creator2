@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': 'Введите PIN для участников',
   'access.membersOnly': 'ТОЛЬКО ДЛЯ УЧАСТНИКОВ',
   'action.remove': 'Удалить',
-  'announcement.allTeamsKicker': '6 КОМАНД · 72 ИГРОКА',
+  'announcement.allTeamsKicker': '{teams} КОМАНД · {players} ИГРОКА',
   'announcement.allTeamsTitle': 'Обзор всех команд',
   'announcement.captain': 'Капитан:',
   'announcement.description':

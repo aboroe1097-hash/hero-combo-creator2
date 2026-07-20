@@ -289,3 +289,23 @@ test('admin review and rotation editors preserve canonical editable fields', () 
   assert.match(source, /data-action="remove-rotation"/u);
   assert.match(source, /else if \(type === 'removeRotation'\)/u);
 });
+
+test('admin scoring workflow exposes filters, batch review, corrections, and balance preview controls', () => {
+  const source = readFileSync('js/admin-all-star-boh.js', 'utf8');
+
+  assert.match(source, /aria-sort="\$\{ariaSort\}"/u);
+  assert.match(source, /data-action="select-all-visible"/u);
+  assert.match(source, /data-action="select-submission-row"/u);
+  assert.match(source, /data-form="batch-review"/u);
+  assert.match(source, /data-action="export-signups"/u);
+  assert.match(source, /name="gameNameCorrection"/u);
+  assert.match(source, /name="gameNameCorrectionReason"/u);
+  assert.match(source, /data-form="team-builder-settings"/u);
+  assert.match(source, /name="teamCount"/u);
+  assert.match(source, /name="balanceMetric"/u);
+  assert.match(source, /name="forcedTeam\.\$\{escapeHtml\(player\.playerId\)\}"/u);
+  assert.match(source, /data-action="preview-balance-teams"/u);
+  assert.match(source, /data-action="apply-balance-preview"/u);
+  assert.match(source, /data-action="discard-balance-preview"/u);
+  assert.doesNotMatch(source, /data-action="balance-teams"/u);
+});

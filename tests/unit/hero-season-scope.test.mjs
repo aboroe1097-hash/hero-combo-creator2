@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { heroCatalogFor } from '../../js/all-star-boh.js';
 import { allHeroesData } from '../../js/heroes-data.js';
 
 const EXPECTED_X8_CATCHUP_HEROES = [
@@ -66,6 +67,17 @@ test('hero roster exposes only the intentional X8 catch-up wave', () => {
       .map(({ name, releaseSeason }) => [name, releaseSeason]),
     EXPECTED_X8_CATCHUP_HEROES
   );
+});
+
+test('All-Star hero catalog includes Cyrus once without rewriting its SP release metadata', () => {
+  const canonicalCyrus = allHeroesData.find(({ name }) => name === 'Cyrus');
+  const activeCyrus = heroCatalogFor({ options: { heroes: allHeroesData } }).filter(
+    ({ name }) => name === 'Cyrus'
+  );
+
+  assert.equal(canonicalCyrus?.releaseSeason, 'SP');
+  assert.equal(activeCyrus.length, 1);
+  assert.equal(activeCyrus[0].season, 'X8');
 });
 
 test('future hero batch stays out of the active roster until its seasons are supported', () => {

@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': 'Üye PIN’ini gir',
   'access.membersOnly': 'YALNIZCA ÜYELER',
   'action.remove': 'Kaldır',
-  'announcement.allTeamsKicker': '6 TAKIM · 72 OYUNCU',
+  'announcement.allTeamsKicker': '{teams} TAKIM · {players} OYUNCU',
   'announcement.allTeamsTitle': 'Tüm takımlara genel bakış',
   'announcement.captain': 'Kaptan:',
   'announcement.description':

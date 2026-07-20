@@ -4,7 +4,7 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'access.enterPin': 'Enter member PIN',
   'access.membersOnly': 'MEMBERS ONLY',
   'action.remove': 'Remove',
-  'announcement.allTeamsKicker': '6 TEAMS · 72 PLAYERS',
+  'announcement.allTeamsKicker': '{teams} TEAMS · {players} PLAYERS',
   'announcement.allTeamsTitle': 'All team overview',
   'announcement.captain': 'Captain:',
   'announcement.description':

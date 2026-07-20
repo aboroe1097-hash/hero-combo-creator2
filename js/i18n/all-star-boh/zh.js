@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': '输入成员 PIN',
   'access.membersOnly': '仅限成员',
   'action.remove': '移除',
-  'announcement.allTeamsKicker': '6 支战队 · 72 名玩家',
+  'announcement.allTeamsKicker': '{teams} 支战队 · {players} 名玩家',
   'announcement.allTeamsTitle': '全部战队总览',
   'announcement.captain': '队长：',
   'announcement.description': '先查看你的个人安排，再浏览全部六支均衡战队。',

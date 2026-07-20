@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createAdminAllStarBohStoreAdapter } from '../../js/admin-all-star-boh.js';
+import {
+  buildSignupReviewCsv,
+  createAdminAllStarBohStoreAdapter,
+} from '../../js/admin-all-star-boh.js';
 
 const TEAM_IDS = Array.from({ length: 6 }, (_, index) => `team-${index + 1}`);
 const ROLE_BY_SEAT = [
@@ -166,6 +169,9 @@ function createPrimitiveStoreFixture(options = {}) {
   let publication = null;
   const publishCalls = [];
   const bundleCalls = [];
+  const bundleAttempts = [];
+  const draftListeners = new Set();
+  const teamListeners = new Map();
   let singleTeamSaveCount = 0;
 
   function revisionedSave(current, input, expectedRevision) {
@@ -189,12 +195,27 @@ function createPrimitiveStoreFixture(options = {}) {
     get bundleCalls() {
       return bundleCalls;
     },
+    get bundleAttempts() {
+      return bundleAttempts;
+    },
+    get activeTeamSubscriberIds() {
+      return [...teamListeners]
+        .filter(([, listeners]) => listeners.size)
+        .map(([teamId]) => teamId)
+        .sort();
+    },
     get singleTeamSaveCount() {
       return singleTeamSaveCount;
     },
     bumpTeamRevision(teamId) {
       const current = teams.get(teamId);
       teams.set(teamId, { ...current, revision: Number(current?.revision || 0) + 1 });
+    },
+    emitDraft(value = draft) {
+      for (const listener of [...draftListeners]) listener(clone(value));
+    },
+    emitTeam(teamId, value = teams.get(teamId)) {
+      for (const listener of [...(teamListeners.get(teamId) || [])]) listener(clone(value));
     },
     bumpSubmissionRevision(uid) {
       const submission = submissions.find((item) => item.uid === uid);
@@ -221,8 +242,9 @@ function createPrimitiveStoreFixture(options = {}) {
     async getDraft() {
       return clone(draft);
     },
-    subscribeDraft() {
-      return () => {};
+    subscribeDraft(next) {
+      draftListeners.add(next);
+      return () => draftListeners.delete(next);
     },
     async saveDraft(input, options) {
       draft = revisionedSave(draft, input, options.expectedRevision);
@@ -231,8 +253,11 @@ function createPrimitiveStoreFixture(options = {}) {
     async getDraftTeam(teamId) {
       return clone(teams.get(teamId) || null);
     },
-    subscribeDraftTeam() {
-      return () => {};
+    subscribeDraftTeam(teamId, next) {
+      if (!teamListeners.has(teamId)) teamListeners.set(teamId, new Set());
+      const listeners = teamListeners.get(teamId);
+      listeners.add(next);
+      return () => listeners.delete(next);
     },
     async saveDraftTeam(teamId, input, options) {
       singleTeamSaveCount += 1;
@@ -241,6 +266,7 @@ function createPrimitiveStoreFixture(options = {}) {
       return clone(saved);
     },
     async saveDraftBundle(bundle, options) {
+      bundleAttempts.push({ bundle: clone(bundle), options: clone(options) });
       const teamEntries = Object.entries(bundle.teams || {});
       for (const [teamId] of teamEntries) {
         const actual = Number(teams.get(teamId)?.revision || 0);
@@ -276,7 +302,7 @@ function createPrimitiveStoreFixture(options = {}) {
       assert.equal(options.sourceDraftRevision, draft.revision);
       assert.deepEqual(
         options.sourceTeamRevisions,
-        Object.fromEntries(TEAM_IDS.map((teamId) => [teamId, teams.get(teamId).revision]))
+        Object.fromEntries(draft.teamIds.map((teamId) => [teamId, teams.get(teamId).revision]))
       );
       if (bundle.current.planPublished) {
         assert.equal(typeof options.validate, 'function');
@@ -338,6 +364,557 @@ async function createBalancedFixture() {
   snapshot = await saveTeamCaptains(adapter, snapshot);
   return { adapter, primitiveStore, snapshot };
 }
+
+test('dynamic balance preview is pure, honors power metric and forced teams, then applies atomically once', async () => {
+  const teamCount = 2;
+  const fieldSize = teamCount * 12;
+  const draft = {
+    ...createInitialDraft(fieldSize),
+    teamCount,
+    balanceMetric: 'totalPower',
+    teamIds: TEAM_IDS.slice(0, teamCount),
+    playerIds: Array.from({ length: fieldSize }, (_, index) => playerId(index)),
+    forcedTeamAssignments: [{ playerId: 'player-07', teamId: 'team-2' }],
+  };
+  const primitiveStore = createPrimitiveStoreFixture({ playerCount: fieldSize, draft });
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+
+  const previewed = await dispatch(adapter, snapshot, 'previewBalanceTeams');
+  snapshot = previewed.snapshot;
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  assert.equal(snapshot.event.teamCount, teamCount);
+  assert.equal(snapshot.event.fieldSize, fieldSize);
+  assert.equal(snapshot.balancePreview.balanceMetric, 'totalPower');
+  assert.equal(snapshot.balancePreview.teams.length, teamCount);
+  assert.ok(snapshot.balancePreview.teams.every((team) => team.seats.length === 12));
+  assert.ok(snapshot.balancePreview.teams.every((team) => team.totalCastlePower > 0));
+  const forcedSeat = snapshot.balancePreview.teams
+    .find((team) => team.id === 'team-2')
+    .seats.find((candidate) => candidate.playerId === 'player-07');
+  assert.ok(forcedSeat);
+  assert.equal(forcedSeat.locked, false);
+  const previewTeams = clone(snapshot.balancePreview.teams);
+
+  snapshot = (await dispatch(adapter, snapshot, 'applyBalancePreview')).snapshot;
+  assert.equal(primitiveStore.bundleCalls.length, 1);
+  assert.deepEqual(Object.keys(primitiveStore.bundleCalls[0].bundle.teams).sort(), [
+    'team-1',
+    'team-2',
+  ]);
+  assert.equal(primitiveStore.bundleCalls[0].bundle.draft.teamCount, teamCount);
+  assert.equal(primitiveStore.bundleCalls[0].bundle.draft.balanceMetric, 'totalPower');
+  assert.equal(primitiveStore.bundleCalls[0].options.expectedDraftRevision, 0);
+  assert.deepEqual(primitiveStore.bundleCalls[0].options.expectedTeamRevisions, {
+    'team-1': 0,
+    'team-2': 0,
+  });
+  assert.deepEqual(
+    primitiveStore.bundleCalls[0].bundle.teams,
+    Object.fromEntries(previewTeams.map((team) => [team.id, team]))
+  );
+  assert.equal(snapshot.balancePreview, null);
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'applyBalancePreview'),
+    (error) => error.code === 'all-star-boh-preview-stale'
+  );
+  assert.equal(primitiveStore.bundleCalls.length, 1);
+  adapter.stop();
+});
+
+test('balance preview rejects a changed live source without writing', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  snapshot = (await dispatch(adapter, snapshot, 'previewBalanceTeams')).snapshot;
+  primitiveStore.bumpTeamRevision('team-1');
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'applyBalancePreview'),
+    (error) => error.code === 'all-star-boh-preview-stale'
+  );
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  adapter.stop();
+});
+
+test('stale balance rejection invalidates prior publish readiness', async () => {
+  const { adapter, primitiveStore } = await createBalancedFixture();
+  let snapshot = adapter.getSnapshot();
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+  assert.equal(snapshot.validation.announcement.valid, true);
+  const validatedRevision = snapshot.revision;
+  const teamRevision = snapshot.documentRevisions.teams['team-1'];
+  const bundleCount = primitiveStore.bundleCalls.length;
+
+  snapshot = (await dispatch(adapter, snapshot, 'previewBalanceTeams')).snapshot;
+  primitiveStore.bumpTeamRevision('team-1');
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'applyBalancePreview'),
+    (error) => error.code === 'all-star-boh-preview-stale'
+  );
+
+  const refreshed = adapter.getSnapshot();
+  assert.equal(refreshed.revision, validatedRevision + 1);
+  assert.deepEqual(refreshed.validation, {});
+  assert.equal(refreshed.documentRevisions.teams['team-1'], teamRevision + 1);
+  assert.equal(primitiveStore.bundleCalls.length, bundleCount);
+  await assert.rejects(
+    dispatch(adapter, refreshed, 'publishAnnouncement'),
+    (error) => error.code === 'all-star-boh-publish-not-validated'
+  );
+  adapter.stop();
+});
+
+test('balance preview translates an atomic-write race into a stale preview', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const saveDraftBundle = primitiveStore.saveDraftBundle.bind(primitiveStore);
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  snapshot = (await dispatch(adapter, snapshot, 'previewBalanceTeams')).snapshot;
+  const previewRevision = snapshot.revision;
+  primitiveStore.saveDraftBundle = async (...args) => {
+    primitiveStore.bumpTeamRevision('team-1');
+    return saveDraftBundle(...args);
+  };
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'applyBalancePreview'),
+    (error) => error.code === 'all-star-boh-preview-stale'
+  );
+  const refreshed = adapter.getSnapshot();
+  assert.equal(refreshed.balancePreview, null);
+  assert.equal(refreshed.revision, previewRevision + 1);
+  assert.equal(refreshed.documentRevisions.teams['team-1'], 1);
+  assert.deepEqual(refreshed.validation, {});
+  assert.equal(primitiveStore.bundleAttempts.length, 1);
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  adapter.stop();
+});
+
+test('balance conflicts stay stale-preview errors when the best-effort refresh fails', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const saveDraftBundle = primitiveStore.saveDraftBundle.bind(primitiveStore);
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  snapshot = (await dispatch(adapter, snapshot, 'previewBalanceTeams')).snapshot;
+  primitiveStore.saveDraftBundle = async (...args) => {
+    primitiveStore.bumpTeamRevision('team-1');
+    primitiveStore.getDraft = async () => {
+      throw new Error('fixture refresh failure');
+    };
+    return saveDraftBundle(...args);
+  };
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'applyBalancePreview'),
+    (error) =>
+      error?.code === 'all-star-boh-preview-stale' &&
+      error?.cause?.message === 'fixture refresh failure'
+  );
+  assert.equal(adapter.getSnapshot().balancePreview, null);
+  assert.equal(primitiveStore.bundleAttempts.length, 1);
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  adapter.stop();
+});
+
+test('team builder settings save independently with stable forced placements', async () => {
+  const playerIds = Array.from({ length: 72 }, (_, index) => playerId(index));
+  const primitiveStore = createPrimitiveStoreFixture({
+    playerCount: 73,
+    draft: { ...createInitialDraft(72), playerIds },
+  });
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'saveTeamBuilderSettings', {
+      teamCount: 6,
+      balanceMetric: 'totalPower',
+      forcedTeamAssignments: [
+        { playerId: 'player-07', teamId: 'team-2' },
+        { playerId: 'player-07', teamId: 'team-2' },
+      ],
+    })
+  ).snapshot;
+
+  assert.equal(snapshot.event.teamCount, 6);
+  assert.equal(snapshot.event.balanceMetric, 'totalPower');
+  assert.deepEqual(snapshot.eligiblePlayerIds, playerIds);
+  assert.deepEqual(snapshot.forcedTeamAssignments, [{ playerId: 'player-07', teamId: 'team-2' }]);
+  assert.deepEqual(primitiveStore.draft.playerIds, playerIds);
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'saveEligiblePool', {
+      playerIds: [...playerIds.filter((id) => id !== 'player-07'), 'player-73'],
+    }),
+    (error) => error.code === 'all-star-boh-selection-forced-player'
+  );
+  assert.deepEqual(primitiveStore.draft.playerIds, playerIds);
+  adapter.stop();
+});
+
+test('shrinking clears removed teams atomically so expansion cannot resurrect players', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  for (const teamId of TEAM_IDS.slice(2)) {
+    const team = primitiveStore.teams.get(teamId);
+    team.seats = team.seats.map((seatEntry) => ({ ...seatEntry, locked: false }));
+  }
+  const removedPlayerIds = TEAM_IDS.slice(2).flatMap((teamId) =>
+    primitiveStore.teams
+      .get(teamId)
+      .seats.map((seatEntry) => seatEntry.playerId)
+      .filter(Boolean)
+  );
+  const teamMetadata = Object.fromEntries(
+    TEAM_IDS.map((teamId) => {
+      const team = primitiveStore.teams.get(teamId);
+      return [teamId, { name: team.name, number: team.number }];
+    })
+  );
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  const eligiblePlayerIds = snapshot.eligiblePlayerIds;
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS);
+
+  await primitiveStore.saveDraft(primitiveStore.draft, { expectedRevision: 0 });
+  primitiveStore.bumpTeamRevision('team-3');
+  snapshot = (
+    await dispatch(adapter, snapshot, 'saveTeamBuilderSettings', {
+      teamCount: 2,
+      balanceMetric: 'score',
+      forcedTeamAssignments: [],
+    })
+  ).snapshot;
+
+  assert.equal(snapshot.event.teamCount, 2);
+  assert.equal(snapshot.teams.length, 2);
+  assert.equal(primitiveStore.bundleCalls.length, 1);
+  assert.equal(primitiveStore.singleTeamSaveCount, 0);
+  const shrink = primitiveStore.bundleCalls[0];
+  assert.equal(shrink.options.expectedDraftRevision, 1);
+  assert.deepEqual(
+    shrink.options.expectedTeamRevisions,
+    Object.fromEntries(TEAM_IDS.map((teamId) => [teamId, teamId === 'team-3' ? 1 : 0]))
+  );
+  assert.deepEqual(Object.keys(shrink.bundle.teams).sort(), TEAM_IDS);
+  assert.deepEqual(shrink.bundle.draft.teamIds, TEAM_IDS.slice(0, 2));
+  assert.deepEqual(primitiveStore.draft.teamIds, TEAM_IDS.slice(0, 2));
+  assert.equal(primitiveStore.draft.revision, 2);
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS.slice(0, 2));
+  assert.deepEqual(snapshot.eligiblePlayerIds, eligiblePlayerIds);
+  assert.deepEqual(
+    shrink.bundle.teams['team-1'].seats.map((seatEntry) => seatEntry.playerId).filter(Boolean),
+    ['player-01', 'player-07']
+  );
+  assert.ok(
+    TEAM_IDS.slice(2)
+      .map((teamId) => shrink.bundle.teams[teamId])
+      .every(
+        (team) =>
+          team.captainId === '' &&
+          team.scoreTotal === 0 &&
+          team.scoreAverage === 0 &&
+          team.balanceTotal === 0 &&
+          team.totalCastlePower === 0 &&
+          team.seats.every(
+            (seatEntry) =>
+              !seatEntry.playerId &&
+              !seatEntry.displayName &&
+              seatEntry.locked === false &&
+              seatEntry.score === 0 &&
+              seatEntry.totalCastlePower === 0
+          )
+      )
+  );
+  assert.ok(
+    TEAM_IDS.every((teamId) => {
+      const team = primitiveStore.teams.get(teamId);
+      return team.name === teamMetadata[teamId].name && team.number === teamMetadata[teamId].number;
+    })
+  );
+  assert.deepEqual(
+    Object.fromEntries(
+      TEAM_IDS.map((teamId) => [teamId, primitiveStore.teams.get(teamId).revision])
+    ),
+    Object.fromEntries(TEAM_IDS.map((teamId) => [teamId, teamId === 'team-3' ? 2 : 1]))
+  );
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'saveTeamBuilderSettings', {
+      teamCount: 6,
+      balanceMetric: 'score',
+      forcedTeamAssignments: [],
+    })
+  ).snapshot;
+  assert.equal(primitiveStore.bundleCalls.length, 1, 'expansion needs no roster-clearing bundle');
+  assert.equal(primitiveStore.bundleAttempts.length, 1);
+  assert.equal(snapshot.teams.length, 6);
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS);
+  assert.deepEqual(snapshot.eligiblePlayerIds, eligiblePlayerIds);
+  assert.equal(
+    snapshot.teams
+      .slice(2)
+      .flatMap((team) => team.seats)
+      .some((seatEntry) => removedPlayerIds.includes(seatEntry.playerId)),
+    false
+  );
+  assert.ok(
+    TEAM_IDS.slice(2).every((teamId) =>
+      primitiveStore.teams.get(teamId).seats.every((seatEntry) => !seatEntry.playerId)
+    )
+  );
+
+  snapshot = (await dispatch(adapter, snapshot, 'previewBalanceTeams')).snapshot;
+  const previewRevision = snapshot.revision;
+  const preview = clone(snapshot.balancePreview);
+  primitiveStore.emitDraft();
+  primitiveStore.emitTeam('team-3');
+  primitiveStore.emitDraft({ ...primitiveStore.draft, revision: 1, teamCount: 2 });
+  primitiveStore.emitTeam('team-3', {
+    ...primitiveStore.teams.get('team-3'),
+    revision: 0,
+    seats: [{ seatNumber: 1, playerId: 'player-03', locked: false }],
+  });
+  assert.equal(adapter.getSnapshot().revision, previewRevision);
+  assert.deepEqual(adapter.getSnapshot().balancePreview, preview);
+  adapter.stop();
+});
+
+test('shrink validation adopts fresh locked-team revisions before rejecting', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+  const validatedRevision = snapshot.revision;
+  primitiveStore.bumpTeamRevision('team-3');
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'saveTeamBuilderSettings', {
+      teamCount: 2,
+      balanceMetric: 'score',
+      forcedTeamAssignments: [],
+    }),
+    (error) => error?.code === 'all-star-boh-team-count-locked-player'
+  );
+
+  const refreshed = adapter.getSnapshot();
+  assert.equal(refreshed.revision, validatedRevision + 1);
+  assert.equal(refreshed.documentRevisions.teams['team-3'], 1);
+  assert.deepEqual(refreshed.validation, {});
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS);
+  assert.equal(primitiveStore.bundleAttempts.length, 0);
+  adapter.stop();
+});
+
+test('shrink CAS guards retained teams and rolls back the entire bundle on a race', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  for (const teamId of TEAM_IDS.slice(2)) {
+    const team = primitiveStore.teams.get(teamId);
+    team.seats = team.seats.map((seatEntry) => ({ ...seatEntry, locked: false }));
+  }
+  const originalDraft = clone(primitiveStore.draft);
+  const originalRemovedTeams = Object.fromEntries(
+    TEAM_IDS.slice(2).map((teamId) => [teamId, clone(primitiveStore.teams.get(teamId))])
+  );
+  const saveDraftBundle = primitiveStore.saveDraftBundle.bind(primitiveStore);
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  const snapshot = await adapter.start();
+  primitiveStore.saveDraftBundle = async (...args) => {
+    primitiveStore.bumpTeamRevision('team-1');
+    return saveDraftBundle(...args);
+  };
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'saveTeamBuilderSettings', {
+      teamCount: 2,
+      balanceMetric: 'score',
+      forcedTeamAssignments: [],
+    }),
+    (error) => error?.code === 'all-star-boh-conflict'
+  );
+
+  assert.equal(primitiveStore.bundleAttempts.length, 1);
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  assert.deepEqual(primitiveStore.draft, originalDraft);
+  assert.deepEqual(
+    Object.fromEntries(
+      TEAM_IDS.slice(2).map((teamId) => [teamId, primitiveStore.teams.get(teamId)])
+    ),
+    originalRemovedTeams
+  );
+  const refreshed = adapter.getSnapshot();
+  assert.equal(refreshed.event.teamCount, 6);
+  assert.equal(refreshed.documentRevisions.teams['team-1'], 1);
+  assert.equal(refreshed.revision, snapshot.revision + 1);
+  assert.deepEqual(refreshed.validation, {});
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS);
+  adapter.stop();
+});
+
+test('manual refresh reconciles subscriptions after an external team-count change', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  await adapter.start();
+
+  await primitiveStore.saveDraft(
+    { ...primitiveStore.draft, teamCount: 2, teamIds: TEAM_IDS.slice(0, 2) },
+    { expectedRevision: 0 }
+  );
+  let snapshot = await adapter.refresh();
+  assert.equal(snapshot.event.teamCount, 2);
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS.slice(0, 2));
+
+  await primitiveStore.saveDraft(
+    { ...primitiveStore.draft, teamCount: 6, teamIds: TEAM_IDS },
+    { expectedRevision: 1 }
+  );
+  snapshot = await adapter.refresh();
+  assert.equal(snapshot.event.teamCount, 6);
+  assert.deepEqual(primitiveStore.activeTeamSubscriberIds, TEAM_IDS);
+  adapter.stop();
+});
+
+test('batch confirmation returns a structured full-success summary through dispatch', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  const snapshot = await adapter.start();
+
+  const result = await dispatch(adapter, snapshot, 'batchReviewSubmissions', {
+    playerIds: ['player-01', 'player-02'],
+    status: 'confirmed',
+  });
+
+  assert.deepEqual(result.result, {
+    successfulPlayerIds: ['player-01', 'player-02'],
+    failedPlayerIds: [],
+    failedPlayers: [],
+  });
+  assert.equal(result.snapshot.revision, snapshot.revision + 2);
+  adapter.stop();
+});
+
+test('batch confirmation refreshes and saves sequentially while retaining partial successes', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const callOrder = [];
+  const listSubmissions = primitiveStore.listSubmissions.bind(primitiveStore);
+  const getReview = primitiveStore.getReview.bind(primitiveStore);
+  const saveReview = primitiveStore.saveReview.bind(primitiveStore);
+  primitiveStore.listSubmissions = async () => {
+    callOrder.push('list');
+    return listSubmissions();
+  };
+  primitiveStore.getReview = async (uid) => {
+    callOrder.push(`review:${uid}`);
+    return getReview(uid);
+  };
+  primitiveStore.saveReview = async (uid, input, options) => {
+    callOrder.push(`save:${uid}`);
+    if (uid === 'player-02') throw new Error('fixture review failure');
+    return saveReview(uid, input, options);
+  };
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  const snapshot = await adapter.start();
+  callOrder.length = 0;
+
+  let partialFailure;
+  try {
+    await dispatch(adapter, snapshot, 'batchReviewSubmissions', {
+      playerIds: ['player-01', 'player-02', 'player-03'],
+      status: 'confirmed',
+    });
+  } catch (error) {
+    partialFailure = error;
+  }
+
+  assert.equal(partialFailure?.code, 'all-star-boh-batch-partial');
+  assert.deepEqual(partialFailure.successfulPlayerIds, ['player-01', 'player-03']);
+  assert.deepEqual(partialFailure.failedPlayerIds, ['player-02']);
+  assert.deepEqual(partialFailure.failedPlayers, ['Player 02']);
+  assert.deepEqual(callOrder, [
+    'list',
+    'review:firebase-uid-01',
+    'save:firebase-uid-01',
+    'list',
+    'review:player-02',
+    'save:player-02',
+    'list',
+    'review:player-03',
+    'save:player-03',
+  ]);
+  assert.equal((await primitiveStore.getReview('firebase-uid-01')).revision, 1);
+  assert.equal((await primitiveStore.getReview('player-02')).revision, 0);
+  assert.equal((await primitiveStore.getReview('player-03')).revision, 1);
+  adapter.stop();
+});
+
+test('fresh name and stat corrections drive score, CSV, and materialized seats while preserving originals', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  const initialScore = snapshot.scores.find((score) => score.playerId === 'player-01').finalScore;
+  const originalDragonPower = fixtureScore(0) * 1_000;
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'reviewSubmission', {
+      playerId: 'player-01',
+      status: 'confirmed',
+      statCorrections: {
+        dragonPower: { corrected: 1_000, reason: 'Verified screenshot' },
+      },
+      gameNameCorrection: { corrected: 'Reviewed Alpha', reason: 'Matched roster' },
+    })
+  ).snapshot;
+  const corrected = snapshot.submissions.find((item) => item.playerId === 'player-01');
+  assert.equal(corrected.gameName, 'Reviewed Alpha');
+  assert.equal(corrected.originalGameName, 'Player 01');
+  assert.equal(corrected.stats.dragonPower, 1_000);
+  assert.equal(corrected.originalStats.dragonPower, originalDragonPower);
+  assert.ok(
+    snapshot.scores.find((score) => score.playerId === 'player-01').finalScore < initialScore
+  );
+  const csv = buildSignupReviewCsv([corrected]);
+  assert.match(csv, /"Reviewed Alpha","Player 01"/u);
+  assert.match(csv, /"1000"/u);
+
+  snapshot = (await dispatch(adapter, snapshot, 'balanceTeams')).snapshot;
+  assert.equal(
+    snapshot.teams
+      .flatMap((team) => team.seats)
+      .find((seatEntry) => seatEntry.playerId === 'player-01').displayName,
+    'Reviewed Alpha'
+  );
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'reviewSubmission', {
+      playerId: 'player-01',
+      status: 'confirmed',
+    })
+  ).snapshot;
+  assert.equal(
+    snapshot.submissions.find((item) => item.playerId === 'player-01').stats.dragonPower,
+    1_000,
+    'unrelated review saves preserve the correction'
+  );
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'reviewSubmission', {
+      playerId: 'player-01',
+      status: 'confirmed',
+      statCorrections: {},
+      gameNameCorrection: null,
+    })
+  ).snapshot;
+  const restored = snapshot.submissions.find((item) => item.playerId === 'player-01');
+  assert.equal(restored.gameName, 'Player 01');
+  assert.equal(restored.stats.dragonPower, originalDragonPower);
+  assert.equal(
+    snapshot.teams
+      .flatMap((team) => team.seats)
+      .find((seatEntry) => seatEntry.playerId === 'player-01').displayName,
+    'Player 01'
+  );
+  adapter.stop();
+});
 
 test('adapter balances a severely skewed 72-player field while preserving exact locks', async () => {
   const primitiveStore = createPrimitiveStoreFixture();
@@ -876,6 +1453,7 @@ test('announcement and plan publishing each require validation of their current 
   );
   assert.equal(snapshot.validation.revision, snapshot.revision);
 
+  const draftRevisionBeforePublish = primitiveStore.draft.revision;
   const announcement = await dispatch(adapter, snapshot, 'publishAnnouncement');
   snapshot = announcement.snapshot;
   assert.equal(primitiveStore.publishCalls.length, 1);
@@ -889,7 +1467,11 @@ test('announcement and plan publishing each require validation of their current 
   assert.equal('plan' in announcementCall.bundle.players['firebase-uid-01'], false);
   assert.equal(announcementCall.bundle.players['firebase-uid-01'].playerId, 'player-01');
   assert.equal('playerIds' in announcementCall.bundle.current, false);
-  assert.equal(primitiveStore.draft.revision, 0, 'publish must not perform a second draft write');
+  assert.equal(
+    primitiveStore.draft.revision,
+    draftRevisionBeforePublish,
+    'publish must not perform a second draft write'
+  );
   assert.equal(snapshot.publications.announcement.status, 'published');
   assert.equal(snapshot.publications.plan.status, 'draft');
 
