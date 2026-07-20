@@ -11,7 +11,8 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Restored backward-compatible All-Star signup reads for historical `+8` and `+20` fighting-time selections so one older record cannot prevent the admin dashboard or a player's saved form from loading.",
       "Kept all new and updated submissions restricted to exactly two current fighting times from `+12`, `+14`, and `+16`.",
-      "Prioritized Research, YouTube, All-Star BoH, and Eden X1 Rankings in the mobile bottom navigation, restored a compact mobile version badge, and fully hid the off-screen skip-link outline until keyboard focus."
+      "Prioritized Research, YouTube, All-Star BoH, and Eden X1 Rankings in the mobile bottom navigation, restored a compact mobile version badge, and fully hid the off-screen skip-link outline until keyboard focus.",
+      "Made shared tab links case-insensitive so common variants such as `#allstarboh` and `#AllStarBoh` open and normalize to the canonical `#allStarBoh` route."
     ]
   },
   {

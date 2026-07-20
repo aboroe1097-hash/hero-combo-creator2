@@ -128,6 +128,17 @@ test('YouTube activation survives responsive reparenting and reaches its declare
   await expect(page).toHaveURL(/#youtube$/);
 });
 
+test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const hash of ['allstarboh', 'AllStarBoh', 'allStarBoh']) {
+    await openHome(page, `/#${hash}`);
+    await expect(page.locator('#allStarBohSection')).toBeVisible();
+    await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'allStarBoh');
+    await expect(page).toHaveURL(/#allStarBoh$/);
+  }
+});
+
 test('skip link follows active, lazy, hash, and Back navigation while preserving the mobile H1', async ({
   page,
 }) => {

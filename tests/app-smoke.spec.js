@@ -9,7 +9,7 @@ const TEST_SENSITIVE_ADMIN_PIN_HASH =
 
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
-  await expect(page.locator('#tabGenerator')).toBeVisible();
+  await expect(page.locator('#tabGenerator')).toHaveCount(1);
   await expect(page.locator('#generatorSection')).toBeVisible();
   await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
 }
@@ -270,7 +270,8 @@ async function openVisualApp(page, viewport) {
     await page.waitForFunction(() => {
       const nav = document.getElementById('tabNavScroll');
       return (
-        nav?.contains(document.getElementById('tabArcade')) &&
+        nav?.contains(document.getElementById('tabAllStarBoh')) &&
+        !nav.contains(document.getElementById('tabArcade')) &&
         !nav.contains(document.getElementById('tabOcrDashboard'))
       );
     });
