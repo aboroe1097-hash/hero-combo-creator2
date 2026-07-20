@@ -45,6 +45,7 @@ const MAX_TEAM_BYTES = 256 * 1024;
 const MAX_PUBLICATION_BYTES = 128 * 1024;
 const MAX_PERSONAL_PLAN_BYTES = 96 * 1024;
 const MAX_PUBLISHED_TIMELINE_ITEMS = 8;
+const MAX_CORRECTION_REASON_LENGTH = 500;
 const FORBIDDEN_PERSISTED_KEY =
   /(?:base64|data[_-]?url|image[_-]?(?:bytes|data|file)|screenshot|raw[_-]?image|arraybuffer|blob|file[_-]?data|pin(?:code)?|password|secret)/i;
 const DATA_URL_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
@@ -52,6 +53,19 @@ const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]+$/;
 const SUBMISSION_STATUS = new Set(['draft', 'submitted', 'withdrawn']);
 const REVIEW_STATUS = new Set(['pending', 'verified', 'needs_changes', 'rejected']);
 const FEEDBACK_STATUS = new Set(['pending', 'confirmed', 'needs_correction', 'excluded']);
+const DRAFT_BALANCE_METRICS = new Set(['score', 'totalPower']);
+const REVIEW_STAT_CORRECTION_LIMITS = Object.freeze({
+  totalCastlePower: 10 ** 12,
+  troopPower: 10 ** 12,
+  buildingPower: 10 ** 12,
+  technologyPower: 10 ** 12,
+  heroCombatPower: 10 ** 12,
+  dragonPower: 10 ** 12,
+  unitSpecialtyPower: 10 ** 12,
+  artifactPower: 10 ** 12,
+  royalTechPower: 10 ** 12,
+  rocLevel: 160,
+});
 const ENTRY_METHODS = new Set(['manual', 'ocr']);
 const AVAILABILITY_VALUES = new Set(['all', 'most', 'backup', 'unavailable', '']);
 const PREFERRED_ROLE_VALUES = new Set([
@@ -806,10 +820,15 @@ function normalizeScore(input = {}) {
     'technologyPower',
     'heroCombatPower',
     'dragonPower',
+    'unitSpecialtyPower',
     't9TroopType',
     'readySpeedHero',
     'level50Hero',
     'bohUsefulRating',
+    'rocLevel',
+    'paidUsableHero',
+    'loftyTroopMillion',
+    'enhancedT10TroopMillion',
     'override',
   ];
   for (const key of allowedBreakdownKeys) {
@@ -867,6 +886,56 @@ function normalizeScore(input = {}) {
   };
 }
 
+function normalizeReviewStatCorrections(input) {
+  if (input === null || input === undefined) return {};
+  const source = requireRecord(input, 'Stat corrections');
+  const output = {};
+  for (const [key, maximum] of Object.entries(REVIEW_STAT_CORRECTION_LIMITS)) {
+    if (!own(source, key)) continue;
+    const correction = requireRecord(source[key], `${key} correction`);
+    const rawCorrected = correction.corrected;
+    if (
+      (typeof rawCorrected !== 'number' && typeof rawCorrected !== 'string') ||
+      (typeof rawCorrected === 'string' && !rawCorrected.trim())
+    ) {
+      throw new AllStarBohValidationError(`${key} corrected value must be a number.`);
+    }
+    const corrected = boundedNumber(rawCorrected, `${key} corrected value`, {
+      minimum: 0,
+      maximum,
+    });
+    if (corrected === null) {
+      throw new AllStarBohValidationError(`${key} corrected value is required.`);
+    }
+    output[key] = {
+      corrected,
+      reason: boundedString(
+        correction.reason,
+        MAX_CORRECTION_REASON_LENGTH,
+        `${key} correction reason`,
+        { required: true }
+      ),
+    };
+  }
+  return output;
+}
+
+function normalizeGameNameCorrection(input) {
+  if (input === null || input === undefined) return null;
+  const source = requireRecord(input, 'Game name correction');
+  return {
+    corrected: normalizedUnicodePlayerName(source.corrected, 'Corrected game name', {
+      required: true,
+    }),
+    reason: boundedString(
+      source.reason,
+      MAX_CORRECTION_REASON_LENGTH,
+      'Game name correction reason',
+      { required: true }
+    ),
+  };
+}
+
 export function normalizeAllStarBohReview(input = {}) {
   const source = requireRecord(input, 'Submission review');
   assertNoPrivateBinary(source, 'Submission review');
@@ -890,7 +959,13 @@ export function normalizeAllStarBohReview(input = {}) {
     score: normalizeScore(source.score),
     adjustments,
   };
-  if (own(source, 'statCorrections')) output.statCorrections = source.statCorrections;
+  if (own(source, 'statCorrections')) {
+    output.statCorrections = normalizeReviewStatCorrections(source.statCorrections);
+  }
+  if (own(source, 'gameNameCorrection')) {
+    const gameNameCorrection = normalizeGameNameCorrection(source.gameNameCorrection);
+    if (gameNameCorrection) output.gameNameCorrection = gameNameCorrection;
+  }
   if (['needs_changes', 'rejected'].includes(output.status) && !output.note) {
     throw new AllStarBohValidationError(
       'Player-facing feedback is required for a correction or exclusion.'
@@ -947,8 +1022,18 @@ function normalizeScoringVersion(input, index = 0) {
     'technologyPower',
     'heroCombatPower',
     'dragonPower',
+    'unitSpecialtyPower',
   ];
-  const bonusKeys = ['t9TroopType', 'readySpeedHero', 'level50Hero', 'bohUsefulRating'];
+  const bonusKeys = [
+    't9TroopType',
+    'readySpeedHero',
+    'level50Hero',
+    'bohUsefulRating',
+    'rocLevel',
+    'paidUsableHero',
+    'loftyTroopMillion',
+    'enhancedT10TroopMillion',
+  ];
   return {
     id: requiredIdentifier(source.id, 'Scoring version ID'),
     version: boundedInteger(source.version, 'Scoring version', { minimum: 1, maximum: 1_000_000 }),
@@ -1374,11 +1459,63 @@ function normalizeTeam(input = {}, options = {}) {
   return output;
 }
 
+function normalizeDraftTeamCount(source) {
+  if (!own(source, 'teamCount')) return ALL_STAR_BOH_MAX_TEAMS;
+  const teamCount = boundedInteger(source.teamCount, 'Draft team count', {
+    minimum: 2,
+    maximum: ALL_STAR_BOH_MAX_TEAMS,
+  });
+  if (teamCount === null) {
+    throw new AllStarBohValidationError('Draft team count is required.');
+  }
+  return teamCount;
+}
+
+function normalizeDraftBalanceMetric(source) {
+  if (!own(source, 'balanceMetric')) return 'score';
+  const balanceMetric = boundedString(source.balanceMetric, 40, 'Draft balance metric', {
+    required: true,
+  });
+  if (!DRAFT_BALANCE_METRICS.has(balanceMetric)) {
+    throw new AllStarBohValidationError('Draft balance metric has an unsupported value.');
+  }
+  return balanceMetric;
+}
+
+function normalizeForcedTeamAssignments(input) {
+  const assignments = boundedObjectArray(input || [], {
+    label: 'Forced team assignments',
+    maxItems: ALL_STAR_BOH_MAX_PLAYERS,
+    normalize: (item, index) => {
+      const source = requireRecord(item, `Forced team assignment ${index + 1}`);
+      return {
+        playerId: boundedString(source.playerId, MAX_ID_LENGTH, 'Forced player ID', {
+          required: true,
+        }),
+        teamId: requiredIdentifier(source.teamId, 'Forced team ID'),
+      };
+    },
+  });
+  const playerIds = new Set();
+  for (const assignment of assignments) {
+    if (playerIds.has(assignment.playerId)) {
+      throw new AllStarBohValidationError(
+        `Player ${assignment.playerId} has more than one forced team assignment.`
+      );
+    }
+    playerIds.add(assignment.playerId);
+  }
+  return assignments;
+}
+
 export function normalizeAllStarBohDraft(input = {}) {
   const source = requireRecord(input, 'Admin draft');
   assertNoPrivateBinary(source, 'Admin draft');
   const scoringSource = optionalRecord(source.scoring);
   const output = {
+    teamCount: normalizeDraftTeamCount(source),
+    balanceMetric: normalizeDraftBalanceMetric(source),
+    forcedTeamAssignments: normalizeForcedTeamAssignments(source.forcedTeamAssignments),
     title: boundedString(source.title, MAX_NAME_LENGTH, 'Draft title'),
     note: boundedString(source.note, MAX_NOTE_LENGTH, 'Draft note'),
     activeScoringVersionId: optionalIdentifier(
@@ -2210,19 +2347,29 @@ function validatePublicationReferences(current, teams, players) {
       'A team announcement requires announcement or live publication status.'
     );
   }
-  if (teams.size !== ALL_STAR_BOH_MAX_TEAMS) {
+  const teamCount = teams.size;
+  if (teamCount < 2 || teamCount > ALL_STAR_BOH_MAX_TEAMS) {
     throw new AllStarBohPublishValidationError(
-      `A team announcement requires exactly ${ALL_STAR_BOH_MAX_TEAMS} teams.`
+      `A team announcement requires between 2 and ${ALL_STAR_BOH_MAX_TEAMS} teams.`
     );
   }
-  if (players.size !== ALL_STAR_BOH_MAX_PLAYERS) {
+  const expectedPlayerCount = teamCount * 12;
+  if (players.size !== expectedPlayerCount) {
     throw new AllStarBohPublishValidationError(
-      `A team announcement requires exactly ${ALL_STAR_BOH_MAX_PLAYERS} player projections.`
+      `A ${teamCount}-team announcement requires exactly ${expectedPlayerCount} player projections.`
     );
   }
-  if (current.teamCount !== null && current.teamCount !== ALL_STAR_BOH_MAX_TEAMS) {
+  if (current.teamCount !== null && current.teamCount !== teamCount) {
     throw new AllStarBohPublishValidationError(
-      `Published team count must be ${ALL_STAR_BOH_MAX_TEAMS}.`
+      `Published team count must match the ${teamCount} published teams.`
+    );
+  }
+  if (
+    current.teamIds.length > 0 &&
+    (current.teamIds.length !== teamCount || current.teamIds.some((teamId) => !teams.has(teamId)))
+  ) {
+    throw new AllStarBohPublishValidationError(
+      'Published team IDs must match the published team documents.'
     );
   }
   if (current.rosterSize !== null && current.rosterSize !== 12) {
@@ -2315,9 +2462,9 @@ function validatePublicationReferences(current, teams, players) {
       );
     }
   }
-  if (assignedPlayers.size !== ALL_STAR_BOH_MAX_PLAYERS) {
+  if (assignedPlayers.size !== expectedPlayerCount) {
     throw new AllStarBohPublishValidationError(
-      `Published seats must contain ${ALL_STAR_BOH_MAX_PLAYERS} unique players.`
+      `Published seats must contain ${expectedPlayerCount} unique players.`
     );
   }
 }
@@ -2944,7 +3091,7 @@ export function createAllStarBohAdminStore(options = {}) {
         );
       }
     }
-    current.teamCount = current.announcementPublished ? ALL_STAR_BOH_MAX_TEAMS : 0;
+    current.teamCount = current.announcementPublished ? teams.size : 0;
     current.rosterSize = current.announcementPublished ? 12 : 0;
     const validationHooks = [options.validatePublication, publishOptions.validate].filter(
       (hook, index, hooks) => typeof hook === 'function' && hooks.indexOf(hook) === index

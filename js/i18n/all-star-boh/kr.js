@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': '멤버 PIN 입력',
   'access.membersOnly': '멤버 전용',
   'action.remove': '삭제',
-  'announcement.allTeamsKicker': '6개 팀 · 72명',
+  'announcement.allTeamsKicker': '{teams}개 팀 · {players}명',
   'announcement.allTeamsTitle': '전체 팀 보기',
   'announcement.captain': '팀장:',
   'announcement.description': '먼저 내 배정을 확인한 뒤, 밸런스를 맞춘 6개 팀을 모두 살펴보세요.',

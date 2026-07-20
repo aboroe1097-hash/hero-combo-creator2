@@ -4,7 +4,7 @@ export default Object.freeze({
   'access.enterPin': 'أدخل رمز PIN الخاص بالأعضاء',
   'access.membersOnly': 'للأعضاء فقط',
   'action.remove': 'إزالة',
-  'announcement.allTeamsKicker': '6 فرق · 72 لاعبًا',
+  'announcement.allTeamsKicker': '{teams} فرق · {players} لاعبًا',
   'announcement.allTeamsTitle': 'نظرة عامة على جميع الفرق',
   'announcement.captain': 'القائد:',
   'announcement.description': 'اطّلع على تكليفك أولًا، ثم استعرض الفرق الستة المتوازنة.',

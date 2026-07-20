@@ -4931,6 +4931,9 @@ async function ensureAllStarBohMountedOrUpdated() {
           researchTreeIds: (researchModule.techDatabase || []).map((tree) => tree.id),
         });
         return adminModule.createAdminAllStarBohStoreAdapter(adminStore, {
+          paidUsableHeroNames: (heroModule.allHeroesData || [])
+            .filter((hero) => hero.State === 'Paid')
+            .map((hero) => hero.name),
           validatePublication: adminModule.validateAdminAllStarBohPublicationBundle,
           onError: (error, context) =>
             console.error('ALL-STAR BOH ADMIN LIVE REFRESH ERROR:', context?.action, error),

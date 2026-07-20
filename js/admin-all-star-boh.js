@@ -3,6 +3,7 @@ import * as BohModel from './all-star-boh-model.js';
 const CONTROLLERS = new WeakMap();
 
 const TEAM_COUNT = 6;
+const MIN_TEAM_COUNT = 2;
 const ROSTER_SIZE = 12;
 const EPIC_LANE_IDS = ['south', 'center', 'north'];
 const DEFAULT_EPIC_TIME_OPTIONS = ['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20'];
@@ -29,10 +30,25 @@ const SCORE_COMPONENTS = [
   ['technologyPower', 'adminBohScoreTechnologyPower', 'Technology power', 0.7],
   ['heroCombatPower', 'adminBohScoreHeroPower', 'Hero combat power', 0.8],
   ['dragonPower', 'adminBohScoreDragonPower', 'Dragon power', 1],
+  ['unitSpecialtyPower', 'adminBohScoreUnitSpecialtyPower', 'Unit specialty power', 0],
   ['t9TroopType', 'adminBohScoreT9Type', 'Each T10 troop type', 3000],
   ['readySpeedHero', 'adminBohScoreSpeedHero', 'Each ready speed hero', 2500],
   ['level50Hero', 'adminBohScoreLevel50Hero', 'Each level 50 hero', 750],
   ['bohUsefulRating', 'adminBohScoreBohUseful', 'BoH usefulness point', 1000],
+  ['rocLevel', 'adminBohScoreRocLevel', 'RoC level', 0],
+  ['paidUsableHero', 'adminBohScorePaidUsableHero', 'Each paid usable hero', 0],
+  [
+    'loftyTroopMillion',
+    'adminBohScoreLoftyTroopMillion',
+    'S (Lofty) troops — points per 1 million',
+    0,
+  ],
+  [
+    'enhancedT10TroopMillion',
+    'adminBohScoreEnhancedT10TroopMillion',
+    'Enhanced T10 troops — points per 1 million',
+    0,
+  ],
 ];
 
 const DEFAULT_PHASES = [
@@ -46,6 +62,19 @@ const DEFAULT_LEGIONS = [
   { id: 'legion-1', label: 'Legion 1', order: 1 },
   { id: 'legion-2', label: 'Legion 2', order: 2 },
 ];
+
+const CORRECTABLE_STAT_KEYS = Object.freeze([
+  'totalCastlePower',
+  'troopPower',
+  'buildingPower',
+  'technologyPower',
+  'heroCombatPower',
+  'dragonPower',
+  'unitSpecialtyPower',
+  'artifactPower',
+  'royalTechPower',
+  'rocLevel',
+]);
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -82,6 +111,259 @@ function list(value) {
 
 function uniqueTextList(value) {
   return [...new Set(list(value).map(cleanText).filter(Boolean))];
+}
+
+function timestampValue(value) {
+  if (typeof value?.toMillis === 'function') return finiteNumber(value.toMillis());
+  if (Number.isFinite(value?.seconds)) return value.seconds * 1000;
+  if (value instanceof Date) return value.getTime();
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && value !== '') return numeric;
+  const parsed = Date.parse(String(value || ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function reviewMatchesSubmission(submission, review = submission?.review) {
+  return Boolean(
+    review &&
+    review.stale !== true &&
+    Number.isInteger(submission?.revision) &&
+    Number.isInteger(review?.submissionRevision) &&
+    review.submissionRevision === submission.revision
+  );
+}
+
+function effectiveAdminSubmission(submission = {}, review = submission?.review) {
+  const stats = { ...(submission?.stats || {}) };
+  for (const key of [
+    ...CORRECTABLE_STAT_KEYS,
+    't9TroopTypes',
+    't10TroopTypes',
+    'troopRoster',
+    'readySpeedHeroes',
+    'usableHeroNames',
+    'researchProgressPct',
+    'level50HeroCount',
+  ]) {
+    if (stats[key] == null && submission?.[key] != null) stats[key] = submission[key];
+  }
+  const mergedStats = { ...stats, ...(submission?.confirmedStats || {}) };
+  const output = {
+    ...submission,
+    stats: mergedStats,
+    originalStats: { ...(submission?.originalStats || mergedStats) },
+  };
+  const originalName = cleanText(submission?.originalGameName) || playerName(submission);
+  output.originalGameName = originalName;
+  if (!reviewMatchesSubmission(submission, review)) return output;
+
+  for (const key of CORRECTABLE_STAT_KEYS) {
+    const correction = review?.statCorrections?.[key];
+    if (!correction || correction.corrected === '' || correction.corrected == null) continue;
+    const corrected = Number(correction.corrected);
+    if (Number.isFinite(corrected) && corrected >= 0) output.stats[key] = corrected;
+  }
+  const nameCorrection = review?.gameNameCorrection;
+  const correctedName = cleanText(nameCorrection?.corrected);
+  if (correctedName && cleanText(nameCorrection?.reason)) {
+    output.gameName = correctedName;
+    output.displayName = correctedName;
+  }
+  output.confirmedStats = output.stats;
+  return output;
+}
+
+function adminSubmissionFields(record = {}) {
+  const effective = effectiveAdminSubmission(record);
+  const stats = effective.stats || {};
+  const commitment = effective.commitment || {};
+  const roles = uniqueTextList([
+    ...list(effective.rolePreferences),
+    commitment.preferredRole,
+    commitment.secondaryRole,
+  ]).map((value) => value.toLocaleLowerCase());
+  const troopTypes = uniqueTextList([
+    ...list(stats.t9TroopTypes),
+    ...list(stats.t10TroopTypes),
+    ...Object.keys(stats.troopRoster || {}),
+  ]).map((value) => value.toLocaleLowerCase());
+  const originalName = effective.originalGameName || playerName(record);
+  const effectiveName = playerName(effective) || playerId(record);
+  const totalPower = finiteNumber(stats.totalCastlePower ?? stats.totalPower);
+  const score = finiteNumber(effective.finalScore ?? effective.score?.total ?? effective.score);
+  return {
+    record,
+    effective,
+    stats,
+    commitment,
+    originalName,
+    effectiveName,
+    totalPower,
+    score,
+    status: submissionStatus(effective),
+    roles,
+    troopTypes,
+    fightingTimes: uniqueTextList(commitment.fightingTimeIds || effective.fightingTimeIds),
+    vtsMember: commitment.vts1097Member ?? effective.vts1097Member,
+    updated: timestampValue(
+      effective.updatedAtMs || effective.updatedAt || effective.submittedAt || effective.createdAt
+    ),
+  };
+}
+
+export function filterAdminSubmissions(records, filters = {}) {
+  const search = cleanText(filters.search || filters.text).toLocaleLowerCase();
+  const status = cleanText(filters.status).toLocaleLowerCase();
+  const fightingTime = cleanText(
+    filters.fightingTime || filters.fightingTimeId
+  ).toLocaleLowerCase();
+  const role = cleanText(filters.role || filters.rolePreference).toLocaleLowerCase();
+  const troopType = cleanText(filters.troopType).toLocaleLowerCase();
+  const vtsFilter = filters.vtsMember ?? filters.vts1097Member;
+  const minPower = filters.minTotalPower === '' ? null : Number(filters.minTotalPower);
+  const maxPower = filters.maxTotalPower === '' ? null : Number(filters.maxTotalPower);
+  return list(records).filter((record) => {
+    const fields = adminSubmissionFields(record);
+    const haystack = [
+      fields.effectiveName,
+      fields.originalName,
+      playerId(record),
+      record.server,
+      record.alliance,
+    ]
+      .map((value) => cleanText(value).toLocaleLowerCase())
+      .join('\n');
+    if (search && !haystack.includes(search)) return false;
+    if (status && status !== 'all' && fields.status !== status) return false;
+    if (
+      fightingTime &&
+      fightingTime !== 'all' &&
+      !fields.fightingTimes.some((value) => value.toLocaleLowerCase() === fightingTime)
+    ) {
+      return false;
+    }
+    if (
+      role &&
+      role !== 'all' &&
+      !fields.roles.includes(role) &&
+      !fields.roles.includes('flexible')
+    ) {
+      return false;
+    }
+    if (troopType && troopType !== 'all' && !fields.troopTypes.includes(troopType)) return false;
+    if (vtsFilter !== '' && vtsFilter != null && vtsFilter !== 'all') {
+      const expected =
+        vtsFilter === true || ['true', 'yes', 'member'].includes(cleanText(vtsFilter));
+      if (fields.vtsMember !== expected) return false;
+    }
+    if (Number.isFinite(minPower) && fields.totalPower < minPower) return false;
+    if (Number.isFinite(maxPower) && fields.totalPower > maxPower) return false;
+    return true;
+  });
+}
+
+export function sortAdminSubmissions(records, sort = {}) {
+  const key = cleanText(typeof sort === 'string' ? sort : sort.key || sort.field) || 'updated';
+  const direction = cleanText(sort.direction || sort.order).toLocaleLowerCase() === 'asc' ? 1 : -1;
+  const valueFor = (fields) => {
+    if (key === 'name') return fields.effectiveName.toLocaleLowerCase();
+    if (key === 'power') return fields.totalPower;
+    if (key === 'score') return fields.score;
+    if (key === 'status') return fields.status;
+    return fields.updated;
+  };
+  return list(records)
+    .map((record, index) => ({ record, index, fields: adminSubmissionFields(record) }))
+    .sort((left, right) => {
+      const leftValue = valueFor(left.fields);
+      const rightValue = valueFor(right.fields);
+      const compared =
+        typeof leftValue === 'string'
+          ? leftValue.localeCompare(rightValue)
+          : finiteNumber(leftValue) - finiteNumber(rightValue);
+      return compared ? compared * direction : left.index - right.index;
+    })
+    .map(({ record }) => record);
+}
+
+function csvCell(value) {
+  let text = String(value ?? '');
+  const firstContent = [...text].find((character) => {
+    const codePoint = character.codePointAt(0);
+    return !/\s/u.test(character) && codePoint > 31 && codePoint !== 127;
+  });
+  if (firstContent && '=+-@'.includes(firstContent)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function adminSubmissionCapture(record, options = {}) {
+  if (record?.ocr?.used || record?.captureSource === 'ocr') {
+    return cleanText(options.ocrLabel) || 'OCR + confirmed';
+  }
+  return cleanText(record?.entryMethod) || cleanText(options.manualLabel) || 'Manual';
+}
+
+export function buildSignupReviewCsv(records, options = {}) {
+  const headers = [
+    'Player ID',
+    'Effective Name',
+    'Original Name',
+    'Server',
+    'Current State',
+    'Alliance',
+    'Total Power',
+    'Troop Power',
+    'Building Power',
+    'Technology Power',
+    'Hero Combat Power',
+    'Dragon Power',
+    'Unit Specialty Power',
+    'Artifact Power',
+    'Royal Tech Power',
+    'RoC Level',
+    'Score',
+    'Status',
+    'Capture',
+    'Updated',
+    'Fighting Times',
+    'Role Preferences',
+    'T9 Troop Types',
+    'T10 Troop Types',
+    'VTS Member',
+  ];
+  const rows = list(records).map((record) => {
+    const fields = adminSubmissionFields(record);
+    const { effective, stats, commitment } = fields;
+    return [
+      playerId(record),
+      fields.effectiveName,
+      fields.originalName,
+      effective.server,
+      commitment.currentState,
+      effective.alliance,
+      fields.totalPower,
+      stats.troopPower,
+      stats.buildingPower,
+      stats.technologyPower,
+      stats.heroCombatPower ?? stats.heroPower,
+      stats.dragonPower,
+      stats.unitSpecialtyPower,
+      stats.artifactPower,
+      stats.royalTechPower,
+      stats.rocLevel,
+      fields.score,
+      fields.status,
+      adminSubmissionCapture(effective, options),
+      effective.updatedAtMs || fields.updated,
+      fields.fightingTimes.join(' | '),
+      fields.roles.join(' | '),
+      uniqueTextList(stats.t9TroopTypes).join(' | '),
+      uniqueTextList(stats.t10TroopTypes).join(' | '),
+      fields.vtsMember == null ? '' : fields.vtsMember ? 'Yes' : 'No',
+    ];
+  });
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  return `${options.includeBom ? '\uFEFF' : ''}${csv}\r\n`;
 }
 
 function makeTranslator(translator) {
@@ -149,9 +431,18 @@ function normalizeSeat(source, teamId, seatNumber) {
   };
 }
 
-function normalizeTeams(sourceTeams) {
+function normalizeTeamCount(value, fallback = TEAM_COUNT) {
+  const count = integer(value, fallback);
+  return count >= MIN_TEAM_COUNT && count <= TEAM_COUNT ? count : fallback;
+}
+
+function normalizeBalanceMetric(value) {
+  return cleanText(value) === 'totalPower' ? 'totalPower' : 'score';
+}
+
+function normalizeTeams(sourceTeams, teamCount = TEAM_COUNT) {
   const teams = list(sourceTeams);
-  return Array.from({ length: TEAM_COUNT }, (_, index) => {
+  return Array.from({ length: normalizeTeamCount(teamCount) }, (_, index) => {
     const number = index + 1;
     const source =
       teams.find((team) => integer(team?.number || team?.teamNumber) === number) ||
@@ -237,13 +528,20 @@ function normalizeSnapshot(source = {}) {
   const snapshot = source && typeof source === 'object' ? source : {};
   const scoring = snapshot.scoring && typeof snapshot.scoring === 'object' ? snapshot.scoring : {};
   const plan = snapshot.plan && typeof snapshot.plan === 'object' ? snapshot.plan : {};
+  const teamCount = normalizeTeamCount(
+    snapshot.event?.teamCount ?? snapshot.teamCount ?? (list(snapshot.teams).length || TEAM_COUNT)
+  );
   return {
     ...snapshot,
     revision: Math.max(0, integer(snapshot.revision)),
     event: {
-      teamCount: TEAM_COUNT,
-      rosterSize: ROSTER_SIZE,
       ...(snapshot.event || {}),
+      teamCount,
+      rosterSize: ROSTER_SIZE,
+      fieldSize: teamCount * ROSTER_SIZE,
+      balanceMetric: normalizeBalanceMetric(
+        snapshot.event?.balanceMetric ?? snapshot.balanceMetric
+      ),
     },
     submissions: list(snapshot.submissions),
     scores: list(snapshot.scores || snapshot.scoredPlayers),
@@ -251,7 +549,7 @@ function normalizeSnapshot(source = {}) {
       ...scoring,
       versions: list(scoring.versions),
     },
-    teams: normalizeTeams(snapshot.teams),
+    teams: normalizeTeams(snapshot.teams, teamCount),
     plan: {
       ...plan,
       roleGroups: normalizeRoleGroups(snapshot),
@@ -562,8 +860,16 @@ function adapterDefaultScoringVersion() {
   };
 }
 
-function adapterDefaultTeamIds() {
-  return Array.from({ length: TEAM_COUNT }, (_, index) => `team-${index + 1}`);
+function adapterTeamCount(draft) {
+  return normalizeTeamCount(draft?.teamCount);
+}
+
+function adapterFieldSize(draft) {
+  return adapterTeamCount(draft) * ROSTER_SIZE;
+}
+
+function adapterDefaultTeamIds(teamCount = TEAM_COUNT) {
+  return Array.from({ length: normalizeTeamCount(teamCount) }, (_, index) => `team-${index + 1}`);
 }
 
 function adapterDefaultDraft() {
@@ -575,6 +881,9 @@ function adapterDefaultDraft() {
     activeScoringVersionId: scoringVersion.id,
     scoringVersions: [scoringVersion],
     scoreOverrides: [],
+    teamCount: TEAM_COUNT,
+    balanceMetric: 'score',
+    forcedTeamAssignments: [],
     teamIds: adapterDefaultTeamIds(),
     playerIds: [],
     plan: adapterDefaultPlan(),
@@ -604,14 +913,15 @@ function adapterPlan(draft) {
 }
 
 function adapterTeamIds(draft) {
+  const teamCount = adapterTeamCount(draft);
   const output = [];
   for (const rawId of list(draft?.teamIds)) {
     const id = cleanText(rawId);
     if (id && !output.includes(id)) output.push(id);
-    if (output.length === TEAM_COUNT) break;
+    if (output.length === teamCount) break;
   }
-  for (const fallback of adapterDefaultTeamIds()) {
-    if (output.length === TEAM_COUNT) break;
+  for (const fallback of adapterDefaultTeamIds(teamCount)) {
+    if (output.length === teamCount) break;
     if (!output.includes(fallback)) output.push(fallback);
   }
   return output;
@@ -636,17 +946,25 @@ function adapterMaterializeTeam(state, teamId, index) {
     const stored = sourceSeats.find(
       (seat) => integer(seat?.seatNumber || seat?.number) === templateSeat.seatNumber
     );
+    const storedPlayerId = cleanText(stored?.playerId || stored?.uid);
+    const submission = storedPlayerId ? adapterFindSubmission(state, storedPlayerId) : null;
+    const effective = submission ? adapterEffectiveSubmission(state, submission) : null;
+    const score = submission ? adapterScoreRecord(state, submission) : null;
     return {
       id: cleanText(stored?.id) || `${teamId}-seat-${templateSeat.seatNumber}`,
       seatNumber: templateSeat.seatNumber,
-      playerId: cleanText(stored?.playerId || stored?.uid),
-      displayName: cleanText(stored?.displayName || stored?.gameName || stored?.name),
+      playerId: storedPlayerId,
+      displayName:
+        playerName(effective) || cleanText(stored?.displayName || stored?.gameName || stored?.name),
       roleGroupId: templateSeat.roleGroupId,
       roleLabel: templateSeat.roleLabel,
       side: cleanText(stored?.side),
       lane: cleanText(stored?.lane),
       locked: stored?.locked === true,
-      score: finiteNumber(stored?.score),
+      score: score ? score.finalScore : finiteNumber(stored?.score),
+      totalCastlePower: effective
+        ? finiteNumber(effective.stats?.totalCastlePower ?? effective.stats?.totalPower)
+        : finiteNumber(stored?.totalCastlePower),
     };
   });
   return {
@@ -661,6 +979,7 @@ function adapterMaterializeTeam(state, teamId, index) {
     seats,
     plan: source.plan && typeof source.plan === 'object' ? adapterClone(source.plan) : {},
     scoreTotal: seats.reduce((total, seat) => total + finiteNumber(seat.score), 0),
+    totalCastlePower: seats.reduce((total, seat) => total + finiteNumber(seat.totalCastlePower), 0),
     notes: cleanText(source.notes),
   };
 }
@@ -680,6 +999,14 @@ function adapterFindSubmission(state, identifier) {
       (submission) =>
         adapterSubmissionId(submission) === id || adapterSubmissionUid(submission) === id
     ) || null
+  );
+}
+
+function adapterEffectiveSubmission(state, submission) {
+  if (!submission) return null;
+  return effectiveAdminSubmission(
+    submission,
+    state.reviews.get(adapterSubmissionUid(submission)) || submission.review
   );
 }
 
@@ -737,10 +1064,15 @@ function adapterUiScoringVersion(version) {
       technologyPower: finiteNumber(power.technologyPower, 0.7),
       heroCombatPower: finiteNumber(power.heroCombatPower, 0.8),
       dragonPower: finiteNumber(power.dragonPower, 1),
+      unitSpecialtyPower: finiteNumber(power.unitSpecialtyPower ?? 0),
       t9TroopType: finiteNumber(bonus.t9TroopType, 3000),
       readySpeedHero: finiteNumber(bonus.readySpeedHero, 2500),
       level50Hero: finiteNumber(bonus.level50Hero, 750),
       bohUsefulRating: finiteNumber(bonus.bohUsefulRating, 1000),
+      rocLevel: finiteNumber(bonus.rocLevel ?? 0),
+      paidUsableHero: finiteNumber(bonus.paidUsableHero ?? 0),
+      loftyTroopMillion: finiteNumber(bonus.loftyTroopMillion ?? 0),
+      enhancedT10TroopMillion: finiteNumber(bonus.enhancedT10TroopMillion ?? 0),
     },
   };
 }
@@ -749,6 +1081,7 @@ function adapterScoreRecord(state, submission) {
   const uid = adapterSubmissionUid(submission);
   const id = adapterSubmissionId(submission);
   const review = state.reviews.get(uid) || null;
+  const effective = adapterEffectiveSubmission(state, submission);
   const reviewMatchesSubmission =
     review?.stale !== true &&
     Number.isInteger(review?.submissionRevision) &&
@@ -757,12 +1090,13 @@ function adapterScoreRecord(state, submission) {
   let calculated = review?.score && typeof review.score === 'object' ? review.score : null;
   try {
     calculated = BohModel.scoreBohSignup(
-      { ...submission, playerId: id, gameName: playerName(submission) || id },
+      { ...effective, playerId: id, gameName: playerName(effective) || id },
       profile,
       {
         adminUsefulnessRating: reviewMatchesSubmission
           ? (review?.adjustments?.bohUsefulRating ?? 0)
           : 0,
+        paidUsableHeroNames: state.paidUsableHeroNames,
       }
     );
   } catch {
@@ -774,7 +1108,11 @@ function adapterScoreRecord(state, submission) {
   return {
     playerId: id,
     uid,
-    displayName: playerName(submission) || id,
+    displayName: playerName(effective) || id,
+    originalDisplayName: playerName(submission) || id,
+    totalCastlePower: finiteNumber(
+      effective?.stats?.totalCastlePower ?? effective?.stats?.totalPower
+    ),
     reviewStatus: adapterReviewIsFresh(submission, review)
       ? adapterReviewStatusToUi(review?.status)
       : 'pending',
@@ -833,11 +1171,13 @@ function adapterSnapshot(state) {
   const submissions = state.submissions.map((submission) => {
     const uid = adapterSubmissionUid(submission);
     const review = state.reviews.get(uid) || null;
+    const effective = adapterEffectiveSubmission(state, submission);
     const score = adapterScoreRecord(state, submission);
     return {
-      ...adapterClone(submission),
+      ...adapterClone(effective),
       playerId: adapterSubmissionId(submission),
       submissionUid: uid,
+      originalGameName: playerName(submission),
       reviewStatus: adapterReviewIsFresh(submission, review)
         ? adapterReviewStatusToUi(review?.status)
         : 'pending',
@@ -857,12 +1197,19 @@ function adapterSnapshot(state) {
   const planPublished = publication.planPublished === true;
   return {
     revision: state.revision,
-    event: { teamCount: TEAM_COUNT, rosterSize: ROSTER_SIZE },
+    event: {
+      teamCount: adapterTeamCount(draft),
+      rosterSize: ROSTER_SIZE,
+      fieldSize: adapterFieldSize(draft),
+      balanceMetric: normalizeBalanceMetric(draft.balanceMetric),
+    },
     submissions,
     epicPreferences: adapterClone(state.epicPreferences),
     epicTimeSlotIds: adapterClone(list(state.adminStore?.epicTimeSlotIds)),
     scores,
     eligiblePlayerIds: adapterClone(list(draft.playerIds)),
+    forcedTeamAssignments: adapterClone(list(draft.forcedTeamAssignments)),
+    balancePreview: adapterClone(state.balancePreview),
     scoring: {
       activeVersion: active,
       versions,
@@ -904,6 +1251,7 @@ function adapterNotify(state, changed = true) {
   if (changed) {
     state.revision += 1;
     state.validation = {};
+    state.balancePreview = null;
   }
   const snapshot = adapterSnapshot(state);
   for (const listener of [...state.listeners]) {
@@ -921,42 +1269,61 @@ function adapterHandleBackgroundError(state, error, action) {
   state.options.onError?.(error, { action });
 }
 
-async function adapterLoadReviews(state) {
+async function adapterReadReviews(state, submissions = state.submissions) {
   const entries = await Promise.all(
-    state.submissions.map(async (submission) => {
+    submissions.map(async (submission) => {
       const uid = adapterSubmissionUid(submission);
       if (!uid) return null;
       const review = await state.adminStore.getReview(uid);
       return [uid, review];
     })
   );
-  state.reviews = new Map(entries.filter(Boolean));
+  return new Map(entries.filter(Boolean));
 }
 
-async function adapterLoadTeams(state) {
-  const teamIds = adapterTeamIds(state.draft);
+async function adapterLoadReviews(state) {
+  state.reviews = await adapterReadReviews(state);
+}
+
+async function adapterReadTeams(state, draft = state.draft) {
+  const teamIds = adapterTeamIds(draft);
   const entries = await Promise.all(
     teamIds.map(async (teamId) => [teamId, await state.adminStore.getDraftTeam(teamId)])
   );
-  state.teams = new Map(entries);
+  return new Map(entries);
 }
 
-async function adapterLoadPublication(state) {
+async function adapterReadDraftTeams(state) {
+  const draft = (await state.adminStore.getDraft()) || adapterDefaultDraft();
+  const teams = await adapterReadTeams(state, draft);
+  return { draft, teams };
+}
+
+async function adapterLoadTeams(state) {
+  state.teams = await adapterReadTeams(state);
+}
+
+async function adapterReadPublication(state) {
   const getter = state.adminStore.getPublication || state.options.publicationStore?.getPublication;
-  if (typeof getter !== 'function') return;
+  if (typeof getter !== 'function') {
+    return {
+      publication: state.publication,
+      publicationRevision: state.publicationRevision,
+    };
+  }
   const owner = state.adminStore.getPublication ? state.adminStore : state.options.publicationStore;
-  state.publication = (await Promise.resolve(getter.call(owner))) || null;
-  state.publicationRevision = adapterRevision(
-    state.publication?.revision ?? state.publicationRevision
-  );
+  const publication = (await Promise.resolve(getter.call(owner))) || null;
+  return {
+    publication,
+    publicationRevision: adapterRevision(publication?.revision ?? state.publicationRevision),
+  };
 }
 
-async function adapterLoadEpicPreferences(state) {
+async function adapterReadEpicPreferences(state) {
   if (typeof state.adminStore.getEpicShowdownPreferencesList !== 'function') {
-    state.epicPreferences = [];
-    return;
+    return [];
   }
-  state.epicPreferences = list(await state.adminStore.getEpicShowdownPreferencesList());
+  return list(await state.adminStore.getEpicShowdownPreferencesList());
 }
 
 async function adapterLoadAll(state, changed = true) {
@@ -964,14 +1331,25 @@ async function adapterLoadAll(state, changed = true) {
     state.adminStore.listSubmissions(),
     state.adminStore.getDraft(),
   ]);
-  state.submissions = list(submissions);
-  state.draft = draft || adapterDefaultDraft();
-  await Promise.all([
-    adapterLoadReviews(state),
-    adapterLoadTeams(state),
-    adapterLoadPublication(state),
-    adapterLoadEpicPreferences(state),
+  const nextSubmissions = list(submissions);
+  const nextDraft = draft || adapterDefaultDraft();
+  const [reviews, teams, publication, epicPreferences] = await Promise.all([
+    adapterReadReviews(state, nextSubmissions),
+    adapterReadTeams(state, nextDraft),
+    adapterReadPublication(state),
+    adapterReadEpicPreferences(state),
   ]);
+  state.submissions = nextSubmissions;
+  state.reviews = reviews;
+  state.publication = publication.publication;
+  state.publicationRevision = publication.publicationRevision;
+  state.epicPreferences = epicPreferences;
+  if (state.teamUnsubscribers.size || state.unsubscribers.size) {
+    await adapterAdoptDraftTeams(state, { draft: nextDraft, teams }, 'loadAll', false);
+  } else {
+    state.draft = nextDraft;
+    state.teams = teams;
+  }
   return adapterNotify(state, changed);
 }
 
@@ -993,13 +1371,35 @@ async function adapterReplaceTeamSubscriptions(state) {
       teamId,
       (team) => {
         if (state.stopped) return;
+        const current = state.teams.get(teamId);
+        if (
+          state.teams.has(teamId) &&
+          adapterRevision(team?.revision) <= adapterRevision(current?.revision)
+        ) {
+          return;
+        }
         state.teams.set(teamId, team);
-        adapterNotify(state);
+        if (!state.teamSubscriptionNotificationsSuspended) adapterNotify(state);
       },
       (error) => adapterHandleBackgroundError(state, error, 'subscribeDraftTeam')
     );
     state.teamUnsubscribers.set(teamId, unsubscribe);
   }
+}
+
+async function adapterAdoptDraftTeams(state, source, action, notify = true) {
+  state.draft = source.draft || adapterDefaultDraft();
+  state.teams =
+    source.teams instanceof Map ? source.teams : new Map(Object.entries(source.teams || {}));
+  state.teamSubscriptionNotificationsSuspended += 1;
+  try {
+    await adapterReplaceTeamSubscriptions(state);
+  } catch (error) {
+    adapterHandleBackgroundError(state, error, action);
+  } finally {
+    state.teamSubscriptionNotificationsSuspended -= 1;
+  }
+  if (notify) adapterNotify(state);
 }
 
 async function adapterStartSubscriptions(state) {
@@ -1018,7 +1418,9 @@ async function adapterStartSubscriptions(state) {
   const draftUnsubscribe = await state.adminStore.subscribeDraft(
     (draft) => {
       if (state.stopped) return;
-      state.draft = draft || adapterDefaultDraft();
+      const nextDraft = draft || adapterDefaultDraft();
+      if (adapterRevision(nextDraft.revision) <= adapterRevision(state.draft?.revision)) return;
+      state.draft = nextDraft;
       void adapterReplaceTeamSubscriptions(state)
         .then(() => adapterNotify(state))
         .catch((error) => adapterHandleBackgroundError(state, error, 'subscribeDraft'));
@@ -1174,6 +1576,7 @@ function adapterPlayerFields(seat) {
     playerId: cleanText(seat?.playerId),
     displayName: cleanText(seat?.displayName),
     score: finiteNumber(seat?.score),
+    totalCastlePower: finiteNumber(seat?.totalCastlePower),
   };
 }
 
@@ -1181,6 +1584,7 @@ function adapterAssignPlayer(seat, player) {
   seat.playerId = cleanText(player?.playerId);
   seat.displayName = cleanText(player?.displayName);
   seat.score = finiteNumber(player?.score);
+  seat.totalCastlePower = finiteNumber(player?.totalCastlePower);
 }
 
 function adapterReconcileCaptain(team) {
@@ -1199,7 +1603,9 @@ async function adapterReviewSubmission(state, payload) {
   const existing = state.reviews.get(uid) || {};
   const existingAdjustments = adapterClone(existing.adjustments || {});
   const reviewStatus = adapterUiStatusToReview(payload.status);
-  const feedbackNote = cleanText(payload.note);
+  const feedbackNote = Object.prototype.hasOwnProperty.call(payload, 'note')
+    ? cleanText(payload.note)
+    : cleanText(existing.note);
   if (['needs_changes', 'rejected'].includes(reviewStatus) && !feedbackNote) {
     throw adapterError(
       'all-star-boh-feedback-required',
@@ -1216,16 +1622,41 @@ async function adapterReviewSubmission(state, payload) {
     ...existingAdjustments,
     bohUsefulRating: adminUsefulnessRating,
   };
+  const statCorrections = Object.prototype.hasOwnProperty.call(payload, 'statCorrections')
+    ? adapterClone(payload.statCorrections)
+    : adapterClone(existing.statCorrections || {});
+  let gameNameCorrection = adapterClone(existing.gameNameCorrection || null);
+  if (Object.prototype.hasOwnProperty.call(payload, 'gameNameCorrection')) {
+    const corrected = cleanText(payload.gameNameCorrection?.corrected);
+    const reason = cleanText(payload.gameNameCorrection?.reason);
+    if (corrected && !reason) {
+      throw adapterError(
+        'all-star-boh-name-correction-reason-required',
+        'A reason is required when correcting a player name.'
+      );
+    }
+    gameNameCorrection = corrected ? { corrected, reason } : null;
+  }
+  const prospectiveReview = {
+    ...existing,
+    submissionRevision: adapterRevision(submission.revision),
+    statCorrections,
+    gameNameCorrection,
+  };
+  const effective = effectiveAdminSubmission(submission, prospectiveReview);
   let calculated;
   try {
     calculated = BohModel.scoreBohSignup(
       {
-        ...submission,
+        ...effective,
         playerId: adapterSubmissionId(submission),
-        gameName: playerName(submission) || adapterSubmissionId(submission),
+        gameName: playerName(effective) || adapterSubmissionId(submission),
       },
       adapterActiveScoringVersion(state),
-      { adminUsefulnessRating: adminUsefulnessRating ?? 0 }
+      {
+        adminUsefulnessRating: adminUsefulnessRating ?? 0,
+        paidUsableHeroNames: state.paidUsableHeroNames,
+      }
     );
   } catch {
     calculated = { total: 0, breakdown: {} };
@@ -1240,9 +1671,8 @@ async function adapterReviewSubmission(state, payload) {
     locked: existing.locked === true,
     score: calculated,
     adjustments,
-    statCorrections: Object.prototype.hasOwnProperty.call(payload, 'statCorrections')
-      ? adapterClone(payload.statCorrections)
-      : adapterClone(existing.statCorrections || {}),
+    statCorrections,
+    ...(gameNameCorrection ? { gameNameCorrection } : {}),
     submissionRevision: adapterRevision(submission.revision),
   };
   const saved = await state.adminStore.saveReview(uid, input, {
@@ -1251,6 +1681,61 @@ async function adapterReviewSubmission(state, payload) {
   });
   state.reviews.set(uid, saved || input);
   adapterNotify(state);
+}
+
+async function adapterBatchReviewSubmissions(state, payload) {
+  if (cleanText(payload.status) !== 'confirmed') {
+    throw adapterError(
+      'all-star-boh-batch-status-invalid',
+      'Batch review currently supports confirmation only.'
+    );
+  }
+  const playerIds = uniqueTextList(payload.playerIds);
+  if (!playerIds.length) {
+    throw adapterError('all-star-boh-batch-empty', 'Select at least one visible signup.');
+  }
+  const successfulPlayerIds = [];
+  const failedPlayerIds = [];
+  const failedPlayers = [];
+  for (const playerIdValue of playerIds) {
+    try {
+      state.submissions = list(await state.adminStore.listSubmissions());
+      const submission = adapterFindSubmission(state, playerIdValue);
+      if (!submission) {
+        throw adapterError(
+          'all-star-boh-submission-unknown',
+          'The selected signup no longer exists.'
+        );
+      }
+      const uid = adapterSubmissionUid(submission);
+      const review = await state.adminStore.getReview(uid);
+      state.reviews.set(uid, review || null);
+      await adapterReviewSubmission(state, {
+        playerId: playerIdValue,
+        status: 'confirmed',
+        ...(Object.prototype.hasOwnProperty.call(payload, 'note')
+          ? { note: cleanText(payload.note) }
+          : {}),
+      });
+      successfulPlayerIds.push(playerIdValue);
+    } catch {
+      const submission = adapterFindSubmission(state, playerIdValue);
+      failedPlayerIds.push(playerIdValue);
+      failedPlayers.push(
+        playerName(adapterEffectiveSubmission(state, submission)) ||
+          playerName(submission) ||
+          playerIdValue
+      );
+    }
+  }
+  if (failedPlayerIds.length) {
+    throw adapterError(
+      'all-star-boh-batch-partial',
+      `Could not confirm: ${failedPlayers.join(', ')}.`,
+      { successfulPlayerIds, failedPlayerIds, failedPlayers }
+    );
+  }
+  return { successfulPlayerIds, failedPlayerIds, failedPlayers };
 }
 
 async function adapterDeleteSubmission(state, payload) {
@@ -1295,12 +1780,29 @@ async function adapterCreateScoringVersion(state, payload) {
       technologyPower: finiteNumber(weights.technologyPower, current.powerWeights?.technologyPower),
       heroCombatPower: finiteNumber(weights.heroCombatPower, current.powerWeights?.heroCombatPower),
       dragonPower: finiteNumber(weights.dragonPower, current.powerWeights?.dragonPower),
+      unitSpecialtyPower: finiteNumber(
+        weights.unitSpecialtyPower,
+        current.powerWeights?.unitSpecialtyPower ?? 0
+      ),
     },
     bonusWeights: {
       t9TroopType: finiteNumber(weights.t9TroopType, current.bonusWeights?.t9TroopType),
       readySpeedHero: finiteNumber(weights.readySpeedHero, current.bonusWeights?.readySpeedHero),
       level50Hero: finiteNumber(weights.level50Hero, current.bonusWeights?.level50Hero),
       bohUsefulRating: finiteNumber(weights.bohUsefulRating, current.bonusWeights?.bohUsefulRating),
+      rocLevel: finiteNumber(weights.rocLevel, current.bonusWeights?.rocLevel ?? 0),
+      paidUsableHero: finiteNumber(
+        weights.paidUsableHero,
+        current.bonusWeights?.paidUsableHero ?? 0
+      ),
+      loftyTroopMillion: finiteNumber(
+        weights.loftyTroopMillion,
+        current.bonusWeights?.loftyTroopMillion ?? 0
+      ),
+      enhancedT10TroopMillion: finiteNumber(
+        weights.enhancedT10TroopMillion,
+        current.bonusWeights?.enhancedT10TroopMillion ?? 0
+      ),
     },
     powerDivisor: finiteNumber(current.powerDivisor, 1000),
     precision: integer(current.precision, 3),
@@ -1384,12 +1886,14 @@ function adapterVerifiedPlayers(state) {
       return adapterReviewIsFresh(submission, review);
     })
     .map((submission) => {
+      const effective = adapterEffectiveSubmission(state, submission);
       const score = adapterScoreRecord(state, submission);
       return {
-        ...adapterClone(submission),
+        ...adapterClone(effective),
         playerId: adapterSubmissionId(submission),
-        gameName: playerName(submission) || adapterSubmissionId(submission),
+        gameName: playerName(effective) || adapterSubmissionId(submission),
         score: score.finalScore,
+        totalCastlePower: score.totalCastlePower,
         scoreBreakdown: score.scoreBreakdown,
       };
     });
@@ -1401,21 +1905,20 @@ function adapterSelectedPlayerIds(state, verifiedPlayers = adapterVerifiedPlayer
     .map(cleanText)
     .filter((id, index, values) => id && verifiedIds.has(id) && values.indexOf(id) === index);
   if (explicit.length) return explicit;
-  if (verifiedPlayers.length === ALL_STAR_BOH_SELECTION_SIZE) {
+  if (verifiedPlayers.length === adapterFieldSize(state.draft)) {
     return verifiedPlayers.map((player) => player.playerId);
   }
   return [];
 }
 
-const ALL_STAR_BOH_SELECTION_SIZE = TEAM_COUNT * ROSTER_SIZE;
-
 function adapterBalancedPlayers(state) {
   const verifiedPlayers = adapterVerifiedPlayers(state);
   const selectedIds = adapterSelectedPlayerIds(state, verifiedPlayers);
-  if (selectedIds.length !== ALL_STAR_BOH_SELECTION_SIZE) {
+  const fieldSize = adapterFieldSize(state.draft);
+  if (selectedIds.length !== fieldSize) {
     throw adapterError(
       'all-star-boh-selection-incomplete',
-      `Select exactly ${ALL_STAR_BOH_SELECTION_SIZE} verified players before balancing teams.`
+      `Select exactly ${fieldSize} verified players before balancing teams.`
     );
   }
   const selected = new Set(selectedIds);
@@ -1428,10 +1931,11 @@ async function adapterSaveEligiblePool(state, payload) {
   const playerIds = list(payload.playerIds)
     .map(cleanText)
     .filter((id, index, values) => id && values.indexOf(id) === index);
-  if (playerIds.length !== ALL_STAR_BOH_SELECTION_SIZE) {
+  const fieldSize = adapterFieldSize(state.draft);
+  if (playerIds.length !== fieldSize) {
     throw adapterError(
       'all-star-boh-selection-count',
-      `Choose exactly ${ALL_STAR_BOH_SELECTION_SIZE} verified players.`
+      `Choose exactly ${fieldSize} verified players.`
     );
   }
   const unknown = playerIds.filter((id) => !verifiedIds.has(id));
@@ -1449,13 +1953,228 @@ async function adapterSaveEligiblePool(state, payload) {
   if (lockedOutsidePool.length) {
     throw adapterError(
       'all-star-boh-selection-locked-player',
-      'Unlock seats before removing their players from the eligible 72.'
+      'Unlock seats before removing their players from the eligible field.'
+    );
+  }
+  const forcedOutsidePool = list(state.draft?.forcedTeamAssignments).filter(
+    (assignment) => !selected.has(cleanText(assignment?.playerId))
+  );
+  if (forcedOutsidePool.length) {
+    throw adapterError(
+      'all-star-boh-selection-forced-player',
+      'Clear exact-team placements before removing those players from the eligible field.'
     );
   }
   await adapterSaveDraft(state, (draft) => {
     draft.playerIds = playerIds;
     return draft;
   });
+}
+
+function adapterForcedAssignments(state, input, draft = state.draft) {
+  const teamIds = adapterTeamIds(draft);
+  const activeTeams = new Set(teamIds);
+  const selected = new Set(adapterSelectedPlayerIds(state));
+  const verified = new Set(adapterVerifiedPlayers(state).map((player) => player.playerId));
+  const byPlayer = new Map();
+  for (const rawAssignment of list(input)) {
+    const playerIdValue = cleanText(rawAssignment?.playerId);
+    const teamId = cleanText(rawAssignment?.teamId);
+    if (!playerIdValue && !teamId) continue;
+    if (!verified.has(playerIdValue)) {
+      throw adapterError(
+        'all-star-boh-forced-player-unverified',
+        `The exact-team player is not currently verified: ${playerIdValue || '(empty)'}.`
+      );
+    }
+    if (!selected.has(playerIdValue)) {
+      throw adapterError(
+        'all-star-boh-forced-player-unselected',
+        `Save ${playerIdValue} in the eligible field before placing them on an exact team.`
+      );
+    }
+    if (!activeTeams.has(teamId)) {
+      throw adapterError(
+        'all-star-boh-forced-team-inactive',
+        `The exact-team placement uses an inactive team: ${teamId || '(empty)'}.`
+      );
+    }
+    const existing = byPlayer.get(playerIdValue);
+    if (existing && existing !== teamId) {
+      throw adapterError(
+        'all-star-boh-forced-player-duplicate',
+        `${playerIdValue} has conflicting exact-team placements.`
+      );
+    }
+    byPlayer.set(playerIdValue, teamId);
+  }
+  for (const [index, teamId] of teamIds.entries()) {
+    const team = adapterMaterializeTeam(state, teamId, index);
+    for (const seat of team.seats) {
+      const forcedTeamId = byPlayer.get(seat.playerId);
+      if (seat.locked && forcedTeamId && forcedTeamId !== teamId) {
+        throw adapterError(
+          'all-star-boh-forced-locked-team-conflict',
+          `${seat.displayName || seat.playerId} is locked to another team.`
+        );
+      }
+    }
+  }
+  return [...byPlayer]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([playerIdValue, teamId]) => ({ playerId: playerIdValue, teamId }));
+}
+
+async function adapterSaveTeamBuilderSettings(state, payload) {
+  const requestedCount = Number(payload.teamCount ?? state.draft?.teamCount ?? TEAM_COUNT);
+  if (
+    !Number.isInteger(requestedCount) ||
+    requestedCount < MIN_TEAM_COUNT ||
+    requestedCount > TEAM_COUNT
+  ) {
+    throw adapterError('all-star-boh-team-count-invalid', 'Choose between two and six teams.');
+  }
+  let authoritativeSource = null;
+  if (requestedCount < adapterTeamCount(state.draft)) {
+    authoritativeSource = await adapterReadDraftTeams(state);
+  }
+  const source = authoritativeSource || { draft: state.draft, teams: state.teams };
+  const workingState = { ...state, draft: source.draft, teams: source.teams };
+  let nextDraft;
+  let currentTeamIds;
+  let nextTeamIdList;
+  let removedTeamIds;
+  try {
+    const requestedMetric = cleanText(payload.balanceMetric ?? workingState.draft?.balanceMetric);
+    if (!['score', 'totalPower'].includes(requestedMetric)) {
+      throw adapterError(
+        'all-star-boh-balance-metric-invalid',
+        'Choose scoring points or total in-game power.'
+      );
+    }
+    nextDraft = {
+      ...adapterClone(workingState.draft || adapterDefaultDraft()),
+      teamCount: requestedCount,
+      balanceMetric: requestedMetric,
+    };
+    currentTeamIds = adapterTeamIds(workingState.draft);
+    nextTeamIdList = adapterTeamIds(nextDraft);
+    const nextTeamIds = new Set(nextTeamIdList);
+    removedTeamIds = currentTeamIds.filter((teamId) => !nextTeamIds.has(teamId));
+    const lockedOnInactiveTeam = removedTeamIds
+      .flatMap(
+        (teamId) =>
+          adapterMaterializeTeam(workingState, teamId, currentTeamIds.indexOf(teamId)).seats
+      )
+      .find((seat) => seat.locked && seat.playerId);
+    if (lockedOnInactiveTeam) {
+      throw adapterError(
+        'all-star-boh-team-count-locked-player',
+        'Unlock occupied seats on teams that would become inactive.'
+      );
+    }
+    nextDraft.forcedTeamAssignments = adapterForcedAssignments(
+      workingState,
+      Object.prototype.hasOwnProperty.call(payload, 'forcedTeamAssignments')
+        ? payload.forcedTeamAssignments
+        : workingState.draft?.forcedTeamAssignments,
+      nextDraft
+    );
+    nextDraft.teamIds = nextTeamIdList;
+  } catch (error) {
+    if (authoritativeSource) {
+      await adapterAdoptDraftTeams(state, authoritativeSource, 'saveTeamBuilderSettingsValidation');
+    }
+    throw error;
+  }
+
+  if (!removedTeamIds.length) {
+    const nextTeams = await adapterReadTeams(state, nextDraft);
+    try {
+      const savedDraft = await state.adminStore.saveDraft(nextDraft, {
+        expectedRevision: adapterRevision(workingState.draft?.revision),
+      });
+      await adapterAdoptDraftTeams(
+        state,
+        { draft: savedDraft || nextDraft, teams: nextTeams },
+        'saveTeamBuilderSettings'
+      );
+    } catch (error) {
+      let refreshed = null;
+      try {
+        refreshed = await adapterReadDraftTeams(state);
+      } catch (refreshError) {
+        adapterHandleBackgroundError(state, refreshError, 'saveTeamBuilderSettingsConflictRefresh');
+      }
+      if (refreshed) {
+        await adapterAdoptDraftTeams(state, refreshed, 'saveTeamBuilderSettingsConflict');
+      }
+      throw error;
+    }
+    return;
+  }
+
+  const removedTeamIdSet = new Set(removedTeamIds);
+  const teamEntries = Object.fromEntries(
+    currentTeamIds.map((teamId) => {
+      const team = adapterMaterializeTeam(workingState, teamId, currentTeamIds.indexOf(teamId));
+      if (!removedTeamIdSet.has(teamId)) return [teamId, team];
+      team.captainId = '';
+      team.scoreTotal = 0;
+      team.totalScore = 0;
+      team.scoreAverage = 0;
+      team.averageScore = 0;
+      team.totalCastlePower = 0;
+      team.totalPower = 0;
+      team.balanceTotal = 0;
+      team.balanceAverage = 0;
+      team.seats = team.seats.map((seat) => ({
+        ...seat,
+        playerId: '',
+        displayName: '',
+        locked: false,
+        score: 0,
+        totalCastlePower: 0,
+      }));
+      return [teamId, team];
+    })
+  );
+  let saved;
+  try {
+    saved = await state.adminStore.saveDraftBundle(
+      { draft: nextDraft, teams: teamEntries },
+      {
+        expectedDraftRevision: adapterRevision(workingState.draft?.revision),
+        expectedTeamRevisions: Object.fromEntries(
+          currentTeamIds.map((teamId) => [
+            teamId,
+            adapterRevision(workingState.teams.get(teamId)?.revision),
+          ])
+        ),
+      }
+    );
+  } catch (error) {
+    let refreshed = null;
+    try {
+      refreshed = await adapterReadDraftTeams(state);
+    } catch (refreshError) {
+      adapterHandleBackgroundError(state, refreshError, 'saveTeamBuilderSettingsConflictRefresh');
+    }
+    if (refreshed) {
+      await adapterAdoptDraftTeams(state, refreshed, 'saveTeamBuilderSettingsConflict');
+    }
+    throw error;
+  }
+  await adapterAdoptDraftTeams(
+    state,
+    {
+      draft: saved?.draft || nextDraft,
+      teams: new Map(
+        currentTeamIds.map((teamId) => [teamId, saved?.teams?.[teamId] || teamEntries[teamId]])
+      ),
+    },
+    'saveTeamBuilderSettings'
+  );
 }
 
 async function adapterAssignSeatPlayer(state, payload) {
@@ -1477,7 +2196,7 @@ async function adapterAssignSeatPlayer(state, payload) {
   if (!selectedIds.has(playerIdValue)) {
     throw adapterError(
       'all-star-boh-player-not-selected',
-      'Choose a player from the saved eligible 72.'
+      `Choose a player from the saved eligible ${adapterFieldSize(state.draft)}.`
     );
   }
   const player = verifiedPlayers.find((candidate) => candidate.playerId === playerIdValue);
@@ -1503,6 +2222,7 @@ async function adapterAssignSeatPlayer(state, payload) {
     playerId: player.playerId,
     displayName: player.gameName,
     score: player.score,
+    totalCastlePower: player.totalCastlePower,
   });
   adapterReconcileCaptain(targetTeam);
   affected.set(targetTeam.id, targetTeam);
@@ -1511,7 +2231,40 @@ async function adapterAssignSeatPlayer(state, payload) {
   else await adapterSaveTeams(state, teams);
 }
 
-async function adapterBalanceTeams(state) {
+function adapterBalanceSource(state) {
+  const teamIds = adapterTeamIds(state.draft);
+  const activeScoring = adapterActiveScoringVersion(state);
+  return {
+    uiRevision: state.revision,
+    draftRevision: adapterRevision(state.draft?.revision),
+    teamRevisions: Object.fromEntries(
+      teamIds.map((teamId) => [teamId, adapterRevision(state.teams.get(teamId)?.revision)])
+    ),
+    scoringVersion: [cleanText(activeScoring?.id), integer(activeScoring?.version)],
+    submissionRevisions: state.submissions
+      .map((submission) => [
+        adapterSubmissionUid(submission),
+        adapterRevision(submission?.revision),
+      ])
+      .sort(([left], [right]) => left.localeCompare(right)),
+    reviewRevisions: [...state.reviews]
+      .map(([uid, review]) => [
+        uid,
+        adapterRevision(review?.revision),
+        adapterRevision(review?.submissionRevision),
+      ])
+      .sort(([left], [right]) => left.localeCompare(right)),
+    settings: {
+      teamCount: adapterTeamCount(state.draft),
+      balanceMetric: normalizeBalanceMetric(state.draft?.balanceMetric),
+      playerIds: adapterSelectedPlayerIds(state),
+      forcedTeamAssignments: adapterClone(list(state.draft?.forcedTeamAssignments)),
+      teamIds,
+    },
+  };
+}
+
+function adapterBuildBalancePreview(state) {
   const plan = adapterPlan(state.draft);
   const currentTeams = adapterTeamIds(state.draft).map((teamId, index) =>
     adapterMaterializeTeam(state, teamId, index)
@@ -1526,17 +2279,21 @@ async function adapterBalanceTeams(state) {
         roleGroupId: seat.roleGroupId,
       }))
   );
+  const forcedTeamAssignments = adapterForcedAssignments(state, state.draft?.forcedTeamAssignments);
   const result = BohModel.balanceBohTeams(adapterBalancedPlayers(state), {
+    teamCount: adapterTeamCount(state.draft),
+    balanceMetric: normalizeBalanceMetric(state.draft?.balanceMetric),
     roleGroups: plan.roleGroups,
     teams: currentTeams.map((team) => ({
       id: team.id,
       number: team.number,
       label: team.name,
     })),
+    forcedTeamAssignments,
     lockedAssignments: locks,
   });
   const teams = result.teams.map((balanced, index) => {
-    const current = currentTeams[index];
+    const current = currentTeams.find((team) => team.id === balanced.id) || currentTeams[index];
     const template = adapterSeatTemplate(plan);
     const nextTeam = {
       ...current,
@@ -1557,14 +2314,125 @@ async function adapterBalanceTeams(state) {
           lane: '',
           locked: assignment?.locked === true,
           score: finiteNumber(assignment?.score),
+          totalCastlePower: finiteNumber(assignment?.totalCastlePower),
         };
       }),
       scoreTotal: finiteNumber(balanced.totalScore),
       scoreAverage: finiteNumber(balanced.averageScore),
+      totalCastlePower: finiteNumber(balanced.totalCastlePower),
+      balanceTotal: finiteNumber(balanced.balanceTotal),
     };
     return adapterReconcileCaptain(nextTeam);
   });
-  await adapterSaveTeams(state, teams);
+  return {
+    source: adapterBalanceSource(state),
+    draft: adapterClone(state.draft),
+    settings: {
+      teamCount: result.teamCount,
+      balanceMetric: result.balanceMetric,
+      forcedTeamAssignments,
+    },
+    teams,
+    scoreSpread: finiteNumber(result.scoreSpread),
+    powerSpread: finiteNumber(result.powerSpread),
+    balanceSpread: finiteNumber(result.balanceSpread),
+    balanceMetric: result.balanceMetric,
+    applied: false,
+  };
+}
+
+function adapterPreviewStale() {
+  return adapterError(
+    'all-star-boh-preview-stale',
+    'The balance preview is stale. Create a new preview before applying it.'
+  );
+}
+
+async function adapterPreviewBalanceTeams(state) {
+  state.balancePreview = adapterBuildBalancePreview(state);
+  adapterNotify(state, false);
+}
+
+function adapterDiscardBalancePreview(state) {
+  state.balancePreview = null;
+  adapterNotify(state, false);
+}
+
+async function adapterRefreshBalanceSources(state) {
+  const [submissions, draft] = await Promise.all([
+    state.adminStore.listSubmissions(),
+    state.adminStore.getDraft(),
+  ]);
+  const nextSubmissions = list(submissions);
+  const nextDraft = draft || adapterDefaultDraft();
+  const [reviews, teams] = await Promise.all([
+    adapterReadReviews(state, nextSubmissions),
+    adapterReadTeams(state, nextDraft),
+  ]);
+  state.submissions = nextSubmissions;
+  state.reviews = reviews;
+  await adapterAdoptDraftTeams(state, { draft: nextDraft, teams }, 'refreshBalanceSources', false);
+}
+
+async function adapterApplyBalancePreview(state) {
+  const preview = state.balancePreview;
+  if (!preview || preview.applied) throw adapterPreviewStale();
+  await adapterRefreshBalanceSources(state);
+  if (JSON.stringify(preview.source) !== JSON.stringify(adapterBalanceSource(state))) {
+    state.balancePreview = null;
+    adapterNotify(state);
+    throw adapterPreviewStale();
+  }
+  const teamEntries = Object.fromEntries(
+    preview.teams.map((team) => [team.id, adapterClone(team)])
+  );
+  let saved;
+  try {
+    saved = await state.adminStore.saveDraftBundle(
+      { draft: adapterClone(preview.draft), teams: teamEntries },
+      {
+        expectedDraftRevision: preview.source.draftRevision,
+        expectedTeamRevisions: adapterClone(preview.source.teamRevisions),
+      }
+    );
+  } catch (error) {
+    if (error?.code === 'all-star-boh-conflict') {
+      state.balancePreview = null;
+      let refreshError = null;
+      try {
+        await adapterRefreshBalanceSources(state);
+      } catch (cause) {
+        refreshError = cause;
+        try {
+          adapterHandleBackgroundError(state, cause, 'applyBalancePreviewConflictRefresh');
+        } catch {
+          // The stale-preview contract must survive optional error-reporting failures.
+        }
+      }
+      adapterNotify(state);
+      const staleError = adapterPreviewStale();
+      if (refreshError) staleError.cause = refreshError;
+      throw staleError;
+    }
+    state.balancePreview = null;
+    adapterNotify(state, false);
+    throw error;
+  }
+  preview.applied = true;
+  state.balancePreview = null;
+  await adapterAdoptDraftTeams(
+    state,
+    {
+      draft: saved?.draft || preview.draft,
+      teams: new Map(Object.entries(saved?.teams || teamEntries)),
+    },
+    'applyBalancePreview'
+  );
+}
+
+async function adapterBalanceTeams(state) {
+  await adapterPreviewBalanceTeams(state);
+  await adapterApplyBalancePreview(state);
 }
 
 async function adapterSaveRoleGroups(state, payload) {
@@ -2072,8 +2940,9 @@ function adapterTeamMetadataErrors(state) {
   const teams = adapterTeamIds(state.draft).map((teamId, index) =>
     adapterMaterializeTeam(state, teamId, index)
   );
-  if (teams.length !== TEAM_COUNT) {
-    errors.push(`all-star-boh-team-count (expected: ${TEAM_COUNT}, actual: ${teams.length})`);
+  const teamCount = adapterTeamCount(state.draft);
+  if (teams.length !== teamCount) {
+    errors.push(`all-star-boh-team-count (expected: ${teamCount}, actual: ${teams.length})`);
   }
   for (const team of teams) {
     if (!cleanText(team.name)) errors.push(`all-star-boh-team-name-required (team: ${team.id})`);
@@ -2091,6 +2960,7 @@ function adapterValidate(state) {
   const plan = adapterPlan(state.draft);
   const teams = adapterModelTeams(state);
   const teamValidation = BohModel.validateBohTeamAssignments(teams, {
+    teamCount: adapterTeamCount(state.draft),
     roleGroups: plan.roleGroups,
     expectedPlayerIds: adapterBalancedPlayers(state).map((player) => player.playerId),
   });
@@ -2254,7 +3124,7 @@ function adapterPublicationBundle(state, kind) {
       announcementPublished,
       planPublished,
       activePlanRevision: state.revision,
-      teamCount: TEAM_COUNT,
+      teamCount: adapterTeamCount(state.draft),
       rosterSize: ROSTER_SIZE,
       teamIds: Object.keys(teams),
       phases: includePlan ? adapterClone(plan.phases) : [],
@@ -2274,7 +3144,14 @@ function adapterPublicationBundle(state, kind) {
 
 export function validateAdminAllStarBohPublicationBundle(bundle = {}) {
   const current = bundle.current || {};
-  if (current.planPublished !== true) return { valid: true, errors: [] };
+  if (current.announcementPublished !== true && current.planPublished !== true) {
+    const hiddenErrors = [];
+    if (integer(current.teamCount) !== 0) hiddenErrors.push({ code: 'boh_hidden_team_count' });
+    if (Object.keys(bundle.teams || {}).length) hiddenErrors.push({ code: 'boh_hidden_teams' });
+    if (Object.keys(bundle.players || {}).length) hiddenErrors.push({ code: 'boh_hidden_players' });
+    return { valid: hiddenErrors.length === 0, errors: hiddenErrors };
+  }
+  const teamCount = normalizeTeamCount(current.teamCount, 0);
   const teams = Object.entries(bundle.teams || {}).map(([teamId, team]) => ({
     id: teamId,
     number: team.number,
@@ -2291,10 +3168,19 @@ export function validateAdminAllStarBohPublicationBundle(bundle = {}) {
   const roleGroups = players.find((player) => player?.plan)?.plan?.roleGroups || [];
   const errors = list(
     BohModel.validateBohTeamAssignments(teams, {
+      teamCount,
       roleGroups,
       expectedPlayerIds: players.map((player) => player.playerId),
     }).errors
   );
+  if (players.length !== teamCount * ROSTER_SIZE) {
+    errors.push({
+      code: 'boh_player_projection_count',
+      expected: teamCount * ROSTER_SIZE,
+      actual: players.length,
+    });
+  }
+  if (current.planPublished !== true) return { valid: errors.length === 0, errors };
   const phaseIds = list(current.phases).map((phase) => phase.id);
   const legionIds = list(current.legions).map((legion) => legion.id);
   const expectedSteps = new Set(
@@ -2391,6 +3277,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
   const state = {
     adminStore,
     options,
+    paidUsableHeroNames: uniqueTextList(options.paidUsableHeroNames),
     submissions: [],
     epicPreferences: [],
     reviews: new Map(),
@@ -2399,10 +3286,12 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     publication: null,
     publicationRevision: adapterRevision(options.publicationRevision),
     validation: {},
+    balancePreview: null,
     revision: 0,
     listeners: new Set(),
     unsubscribers: new Set(),
     teamUnsubscribers: new Map(),
+    teamSubscriptionNotificationsSuspended: 0,
     idSequence: 0,
     started: false,
     startPromise: null,
@@ -2412,9 +3301,17 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
   async function dispatch(command = {}) {
     const type = cleanText(command.type);
     const payload = command.payload && typeof command.payload === 'object' ? command.payload : {};
-    adapterAssertRevision(state, payload, command);
+    let actionResult;
+    if (type === 'applyBalancePreview') {
+      const expected = adapterRevision(payload?.expectedRevision ?? command?.expectedRevision);
+      if (expected !== state.revision) throw adapterPreviewStale();
+    } else {
+      adapterAssertRevision(state, payload, command);
+    }
     if (type === 'reviewSubmission') await adapterReviewSubmission(state, payload);
-    else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
+    else if (type === 'batchReviewSubmissions') {
+      actionResult = await adapterBatchReviewSubmissions(state, payload);
+    } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
     else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
     else if (type === 'setScoreOverride') await adapterSetScoreOverride(state, payload);
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
@@ -2422,7 +3319,12 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'moveSeat') await adapterMoveOrSwapSeat(state, payload, false);
     else if (type === 'swapSeats') await adapterMoveOrSwapSeat(state, payload, true);
     else if (type === 'balanceTeams') await adapterBalanceTeams(state, payload);
-    else if (type === 'saveEligiblePool') await adapterSaveEligiblePool(state, payload);
+    else if (type === 'previewBalanceTeams') await adapterPreviewBalanceTeams(state, payload);
+    else if (type === 'applyBalancePreview') await adapterApplyBalancePreview(state, payload);
+    else if (type === 'discardBalancePreview') adapterDiscardBalancePreview(state);
+    else if (type === 'saveTeamBuilderSettings') {
+      await adapterSaveTeamBuilderSettings(state, payload);
+    } else if (type === 'saveEligiblePool') await adapterSaveEligiblePool(state, payload);
     else if (type === 'assignSeatPlayer') await adapterAssignSeatPlayer(state, payload);
     else if (type === 'saveTeamMetadata') await adapterSaveTeamMetadata(state, payload);
     else if (type === 'saveRoleGroups') await adapterSaveRoleGroups(state, payload);
@@ -2448,7 +3350,10 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
         `Unknown All-Star admin action: ${type || '(empty)'}.`
       );
     }
-    return { snapshot: adapterSnapshot(state) };
+    return {
+      snapshot: adapterSnapshot(state),
+      ...(actionResult === undefined ? {} : { result: actionResult }),
+    };
   }
 
   const adapter = {
@@ -2530,6 +3435,16 @@ function makeInitialState(root, options) {
     stage: STAGES.some(([id]) => id === options.initialStage) ? options.initialStage : 'signups',
     signupFilter: 'all',
     signupSearch: '',
+    signupFilters: {
+      fightingTime: 'all',
+      role: 'all',
+      troopType: 'all',
+      vtsMember: 'all',
+      minTotalPower: '',
+      maxTotalPower: '',
+    },
+    signupSort: { key: 'updated', direction: 'desc' },
+    selectedSubmissionIds: new Set(),
     selectedSubmissionId: '',
     selectedSourceSeat: null,
     planTeamId: snapshot.teams[0]?.id || 'team-1',
@@ -2696,15 +3611,18 @@ function renderShell(state) {
       <header class="boh-admin-hero">
         <div>
           <p class="boh-admin-kicker">${escapeHtml(
-            state.tr('adminBohKicker', 'ALL-STAR BoH · 6 TEAMS · 72 PLAYERS')
+            state.tr('adminBohDynamicKicker', 'ALL-STAR BoH / {teams} TEAMS / {players} PLAYERS', {
+              teams: snapshotTeamCount(state),
+              players: snapshotFieldSize(state),
+            })
           )}</p>
           <h2 id="bohAdminTitle">${escapeHtml(
             state.tr('adminBohTitle', 'All-Star BoH Command Center')
           )}</h2>
           <p>${escapeHtml(
             state.tr(
-              'adminBohSubtitle',
-              'Review signups, balance six teams, author role plans, and publish player-safe views.'
+              'adminBohDynamicSubtitle',
+              'Review signups, balance the selected field, author role plans, and publish player-safe views.'
             )
           )}</p>
         </div>
@@ -2734,6 +3652,11 @@ function renderShell(state) {
       </div>
     </section>`;
   root.setAttribute('aria-busy', String(state.pending));
+  if (state.pending) {
+    root
+      .querySelectorAll?.('button, input, select, textarea')
+      .forEach((control) => (control.disabled = true));
+  }
 }
 
 function renderCurrentStage(state) {
@@ -2860,20 +3783,47 @@ function renderEpicShowdownPreferenceSummary(state) {
 }
 
 function filteredSubmissions(state) {
-  const needle = state.signupSearch.toLocaleLowerCase();
-  return state.snapshot.submissions.filter((submission) => {
-    const status = submissionStatus(submission);
-    if (state.signupFilter !== 'all' && status !== state.signupFilter) return false;
-    if (!needle) return true;
-    return [playerName(submission), submission?.server, submission?.alliance]
-      .map((value) => cleanText(value).toLocaleLowerCase())
-      .some((value) => value.includes(needle));
-  });
+  return sortAdminSubmissions(
+    filterAdminSubmissions(state.snapshot.submissions, {
+      search: state.signupSearch,
+      status: state.signupFilter,
+      ...state.signupFilters,
+    }),
+    state.signupSort
+  );
+}
+
+function signupFilterOptions(state) {
+  const fields = state.snapshot.submissions.map(adminSubmissionFields);
+  return {
+    fightingTimes: uniqueTextList(fields.flatMap((item) => item.fightingTimes)).sort(),
+    roles: uniqueTextList(fields.flatMap((item) => item.roles)).sort(),
+    troopTypes: uniqueTextList(fields.flatMap((item) => item.troopTypes)).sort(),
+  };
+}
+
+function signupSortHeader(state, key, label) {
+  const active = state.signupSort.key === key;
+  const ariaSort = active
+    ? state.signupSort.direction === 'asc'
+      ? 'ascending'
+      : 'descending'
+    : 'none';
+  return `<th scope="col" aria-sort="${ariaSort}"><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="signup-sort" data-sort-key="${key}">${escapeHtml(
+    label
+  )}</button></th>`;
 }
 
 function renderSignupReview(state) {
   const submissions = state.snapshot.submissions;
   const visible = filteredSubmissions(state);
+  const filterOptions = signupFilterOptions(state);
+  const visibleIds = visible.map(playerId).filter(Boolean);
+  const selectedVisibleIds = visibleIds.filter((id) => state.selectedSubmissionIds.has(id));
+  const allVisibleSelected = Boolean(
+    visibleIds.length && visibleIds.every((id) => state.selectedSubmissionIds.has(id))
+  );
+  const disabled = state.pending ? 'disabled' : '';
   const pending = submissions.filter((item) => submissionStatus(item) === 'pending').length;
   const confirmed = submissions.filter((item) =>
     ['confirmed', 'approved'].includes(submissionStatus(item))
@@ -2917,9 +3867,64 @@ function renderSignupReview(state) {
           ${signupStatusOptions(state)}
         </select>
       </label>
+      <label><span>${escapeHtml(state.tr('adminBohFightingTime', 'Fighting time'))}</span>
+        <select class="boh-admin-select" name="fightingTime">
+          <option value="all">${escapeHtml(state.tr('adminBohAll', 'All'))}</option>
+          ${filterOptions.fightingTimes
+            .map(
+              (value) =>
+                `<option value="${escapeHtml(value)}" ${state.signupFilters.fightingTime === value ? 'selected' : ''}>${escapeHtml(value)}</option>`
+            )
+            .join('')}
+        </select></label>
+      <label><span>${escapeHtml(state.tr('adminBohRolePreference', 'Role preference'))}</span>
+        <select class="boh-admin-select" name="role">
+          <option value="all">${escapeHtml(state.tr('adminBohAll', 'All'))}</option>
+          ${filterOptions.roles
+            .map(
+              (value) =>
+                `<option value="${escapeHtml(value)}" ${state.signupFilters.role === value ? 'selected' : ''}>${escapeHtml(adminChoiceLabel(state, value))}</option>`
+            )
+            .join('')}
+        </select></label>
+      <label><span>${escapeHtml(state.tr('adminBohTroopType', 'Troop type'))}</span>
+        <select class="boh-admin-select" name="troopType">
+          <option value="all">${escapeHtml(state.tr('adminBohAll', 'All'))}</option>
+          ${filterOptions.troopTypes
+            .map(
+              (value) =>
+                `<option value="${escapeHtml(value)}" ${state.signupFilters.troopType === value ? 'selected' : ''}>${escapeHtml(adminChoiceLabel(state, value))}</option>`
+            )
+            .join('')}
+        </select></label>
+      <label><span>${escapeHtml(state.tr('adminBohVtsMember', 'VTS member'))}</span>
+        <select class="boh-admin-select" name="vtsMember">
+          <option value="all">${escapeHtml(state.tr('adminBohAll', 'All'))}</option>
+          <option value="true" ${state.signupFilters.vtsMember === 'true' ? 'selected' : ''}>${escapeHtml(state.tr('adminBohYes', 'Yes'))}</option>
+          <option value="false" ${state.signupFilters.vtsMember === 'false' ? 'selected' : ''}>${escapeHtml(state.tr('adminBohNo', 'No'))}</option>
+        </select></label>
+      <label><span>${escapeHtml(state.tr('adminBohMinimumPower', 'Minimum total power'))}</span>
+        <input class="boh-admin-input" type="number" min="0" name="minTotalPower" value="${escapeHtml(state.signupFilters.minTotalPower)}" /></label>
+      <label><span>${escapeHtml(state.tr('adminBohMaximumPower', 'Maximum total power'))}</span>
+        <input class="boh-admin-input" type="number" min="0" name="maxTotalPower" value="${escapeHtml(state.signupFilters.maxTotalPower)}" /></label>
       <button class="boh-admin-button" type="submit">${escapeHtml(
         state.tr('adminBohApplyFilters', 'Apply filters')
       )}</button>
+    </form>
+    <form class="boh-admin-toolbar" data-form="batch-review" aria-busy="${state.pending}">
+      <label><span>${escapeHtml(
+        state.tr('adminBohBatchNote', 'Optional confirmation note')
+      )}</span><input class="boh-admin-input" name="note" maxlength="2000" ${disabled} /></label>
+      <button class="boh-admin-button boh-admin-button-primary" type="submit" ${
+        selectedVisibleIds.length && !state.pending ? '' : 'disabled'
+      }>${escapeHtml(
+        state.tr('adminBohConfirmSelected', 'Confirm selected ({count})', {
+          count: selectedVisibleIds.length,
+        })
+      )}</button>
+      <button class="boh-admin-button" type="button" data-action="export-signups" ${
+        visible.length && !state.pending ? '' : 'disabled'
+      }>${escapeHtml(state.tr('adminBohExportCsv', 'Export visible CSV'))}</button>
     </form>
     <div class="boh-admin-review-layout">
       <div class="boh-admin-table-wrap" tabindex="0">
@@ -2931,18 +3936,25 @@ function renderSignupReview(state) {
             })
           )}</caption>
           <thead><tr>
-            <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
+            <th scope="col"><label><span class="boh-admin-sr">${escapeHtml(
+              state.tr('adminBohSelectAllVisible', 'Select all visible signups')
+            )}</span><input type="checkbox" data-action="select-all-visible" ${
+              allVisibleSelected ? 'checked' : ''
+            } ${disabled} /></label></th>
+            ${signupSortHeader(state, 'name', state.tr('adminBohPlayer', 'Player'))}
+            ${signupSortHeader(state, 'power', state.tr('adminBohStatTotalPower', 'Total power'))}
+            ${signupSortHeader(state, 'score', state.tr('adminBohFinalScore', 'Final score'))}
             <th scope="col">${escapeHtml(
               state.tr('adminBohPreferredTeammates', 'Preferred teammates')
             )}</th>
             <th scope="col">${escapeHtml(state.tr('adminBohSource', 'Capture'))}</th>
-            <th scope="col">${escapeHtml(state.tr('adminBohReviewStatus', 'Review status'))}</th>
-            <th scope="col">${escapeHtml(state.tr('adminBohUpdated', 'Updated'))}</th>
+            ${signupSortHeader(state, 'status', state.tr('adminBohReviewStatus', 'Review status'))}
+            ${signupSortHeader(state, 'updated', state.tr('adminBohUpdated', 'Updated'))}
             <th scope="col"><span class="boh-admin-sr">${escapeHtml(
               state.tr('adminBohActions', 'Actions')
             )}</span></th>
           </tr></thead>
-          <tbody>${visible.length ? visible.map((item) => renderSignupRow(state, item)).join('') : renderEmptyRow(state, 6, 'adminBohNoSignups', 'No signups match these filters.')}</tbody>
+          <tbody>${visible.length ? visible.map((item) => renderSignupRow(state, item)).join('') : renderEmptyRow(state, 9, 'adminBohNoSignups', 'No signups match these filters.')}</tbody>
         </table>
       </div>
       ${selected ? renderSignupDetail(state, selected) : renderSignupEmptyDetail(state)}
@@ -2969,15 +3981,25 @@ function signupStatusOptions(state) {
 
 function renderSignupRow(state, submission) {
   const id = playerId(submission);
+  const fields = adminSubmissionFields(submission);
   const status = submissionStatus(submission);
-  const capture =
-    submission?.ocr?.used || submission?.captureSource === 'ocr'
-      ? state.tr('adminBohCaptureOcrConfirmed', 'OCR + confirmed')
-      : state.tr('adminBohCaptureManual', 'Manual');
+  const capture = adminSubmissionCapture(submission, {
+    ocrLabel: state.tr('adminBohCaptureOcrConfirmed', 'OCR + confirmed'),
+    manualLabel: state.tr('adminBohCaptureManual', 'Manual'),
+  });
   const preferredTeammates = getAdminPreferredTeammateNames(submission);
   return `<tr ${state.selectedSubmissionId === id ? 'data-selected="true"' : ''}>
+    <td><input type="checkbox" data-action="select-submission-row" data-player-id="${escapeHtml(
+      id
+    )}" aria-label="${escapeHtml(
+      state.tr('adminBohSelectSignupNamed', 'Select {player}', {
+        player: fields.effectiveName || id,
+      })
+    )}" ${state.selectedSubmissionIds.has(id) ? 'checked' : ''} ${state.pending ? 'disabled' : ''} /></td>
     <th scope="row"><strong>${escapeHtml(playerName(submission) || id || '—')}</strong>
       <small>${escapeHtml(cleanText(submission?.server || submission?.alliance))}</small></th>
+    <td>${escapeHtml(formatNumber(state, fields.totalPower))}</td>
+    <td>${escapeHtml(formatNumber(state, fields.score))}</td>
     <td class="boh-admin-preferred-teammates-cell">${escapeHtml(
       preferredTeammates.join(', ') || '—'
     )}</td>
@@ -3036,17 +4058,18 @@ function statEntries(state, submission) {
   }));
 }
 
-const CORRECTABLE_STAT_KEYS = Object.freeze([
-  'totalCastlePower',
-  'troopPower',
-  'buildingPower',
-  'technologyPower',
-  'heroCombatPower',
-  'dragonPower',
-  'unitSpecialtyPower',
-  'artifactPower',
-  'royalTechPower',
-]);
+function originalStatValue(submission, key) {
+  const source = submission?.originalStats || submission?.confirmedStats || submission?.stats || {};
+  if (key === 'heroCombatPower') return source.heroCombatPower ?? source.heroPower;
+  if (key === 'totalCastlePower') return source.totalCastlePower ?? source.totalPower;
+  return source[key];
+}
+
+function statCorrectionChanged(corrected, original) {
+  if (corrected === '') return false;
+  if (original === '' || original === null || original === undefined) return true;
+  return finiteNumber(corrected) !== finiteNumber(original);
+}
 
 function adminBooleanLabel(state, value) {
   if (value === true) return state.tr('adminBohYes', 'Yes');
@@ -3262,7 +4285,7 @@ function renderSignupPlanningSignals(state, submission) {
     <p>${escapeHtml(
       state.tr(
         'adminBohSignupPlanningSignalsHelp',
-        'Player-entered preferences for planning only. They do not change scores or lock assignments.'
+        'Preferences guide planning and never lock assignments. Only enabled scoring components affect scores.'
       )
     )}</p>
     <div class="boh-admin-signal-compact-grid">
@@ -3378,14 +4401,34 @@ function renderSignupDetail(state, submission) {
         )}</h5></summary>
         <form class="boh-admin-stack" data-form="stat-corrections">
           <input type="hidden" name="playerId" value="${escapeHtml(id)}" />
+          <label><span>${escapeHtml(
+            state.tr('adminBohCorrectedPlayerName', 'Corrected player name')
+          )}</span>
+            <output>${escapeHtml(
+              state.tr('adminBohOriginalValue', 'Original: {value}', {
+                value: cleanText(submission.originalGameName) || playerName(submission) || id,
+              })
+            )}</output>
+            <input class="boh-admin-input" name="gameNameCorrection" maxlength="160" value="${escapeHtml(
+              review?.gameNameCorrection?.corrected || ''
+            )}" />
+          </label>
+          <label><span>${escapeHtml(
+            state.tr('adminBohNameCorrectionReason', 'Name correction reason')
+          )}</span>
+            <textarea class="boh-admin-textarea" name="gameNameCorrectionReason" rows="2" maxlength="500">${escapeHtml(
+              review?.gameNameCorrection?.reason || ''
+            )}</textarea>
+          </label>
           <div class="boh-admin-weight-grid">
             ${correctionEntries
               .map(({ key, label, value }) => {
                 const corrected = review?.statCorrections?.[key]?.corrected ?? value ?? '';
+                const originalValue = originalStatValue(submission, key);
                 const original =
-                  value === undefined || value === null || value === ''
+                  originalValue === undefined || originalValue === null || originalValue === ''
                     ? '—'
-                    : formatNumber(state, value);
+                    : formatNumber(state, originalValue);
                 return `<label><span>${escapeHtml(label)}</span>
                   <output>${escapeHtml(
                     state.tr('adminBohOriginalValue', 'Original: {value}', { value: original })
@@ -3400,7 +4443,7 @@ function renderSignupDetail(state, submission) {
           <label><span>${escapeHtml(
             state.tr('adminBohCorrectionReason', 'Correction reason')
           )}</span>
-            <textarea class="boh-admin-textarea" name="reason" rows="3" maxlength="500" required>${escapeHtml(
+            <textarea class="boh-admin-textarea" name="reason" rows="3" maxlength="500">${escapeHtml(
               correctionReason
             )}</textarea>
           </label>
@@ -3673,17 +4716,47 @@ function teamScore(state, team) {
   );
 }
 
+function playerTotalPower(player) {
+  return finiteNumber(
+    player?.totalCastlePower ??
+      player?.stats?.totalCastlePower ??
+      player?.confirmedStats?.totalCastlePower
+  );
+}
+
+function teamPower(state, team) {
+  return team.seats.reduce(
+    (total, seat) => total + playerTotalPower(playerById(state, seat.playerId)),
+    0
+  );
+}
+
+function snapshotTeamCount(state) {
+  return normalizeTeamCount(state.snapshot.event?.teamCount ?? state.snapshot.teams.length);
+}
+
+function snapshotFieldSize(state) {
+  return snapshotTeamCount(state) * ROSTER_SIZE;
+}
+
 function teamBalance(state) {
-  const totals = state.snapshot.teams.map((team) => teamScore(state, team));
+  const scoreTotals = state.snapshot.teams.map((team) => teamScore(state, team));
+  const powerTotals = state.snapshot.teams.map((team) => teamPower(state, team));
   const assigned = state.snapshot.teams
     .flatMap((team) => team.seats)
     .filter((seat) => seat.playerId).length;
-  const average = totals.reduce((sum, score) => sum + score, 0) / Math.max(1, totals.length);
+  const scoreAverage =
+    scoreTotals.reduce((sum, score) => sum + score, 0) / Math.max(1, scoreTotals.length);
+  const powerAverage =
+    powerTotals.reduce((sum, power) => sum + power, 0) / Math.max(1, powerTotals.length);
   return {
-    totals,
+    scoreTotals,
+    powerTotals,
     assigned,
-    average,
-    spread: Math.max(...totals, 0) - Math.min(...totals, 0),
+    scoreAverage,
+    powerAverage,
+    scoreSpread: Math.max(...scoreTotals, 0) - Math.min(...scoreTotals, 0),
+    powerSpread: Math.max(...powerTotals, 0) - Math.min(...powerTotals, 0),
   };
 }
 
@@ -3700,7 +4773,7 @@ function selectedTeamBuilderIds(state, candidates) {
   const candidateIds = new Set(candidates.map((player) => player.playerId));
   const explicit = list(state.snapshot.eligiblePlayerIds).filter((id) => candidateIds.has(id));
   if (explicit.length) return explicit;
-  return candidates.slice(0, ALL_STAR_BOH_SELECTION_SIZE).map((player) => player.playerId);
+  return candidates.slice(0, snapshotFieldSize(state)).map((player) => player.playerId);
 }
 
 function renderEligiblePoolPlanningHints(state, player) {
@@ -3737,14 +4810,16 @@ function renderEligiblePoolPlanningHints(state, player) {
 
 function renderEligiblePool(state, candidates, selectedIds) {
   const selected = new Set(selectedIds);
+  const fieldSize = snapshotFieldSize(state);
   return `<details class="boh-admin-card" open>
     <summary><strong>${escapeHtml(
-      state.tr('adminBohEligiblePool', 'Eligible 72-player pool')
-    )}</strong> <span>${selected.size} / ${ALL_STAR_BOH_SELECTION_SIZE}</span></summary>
+      state.tr('adminBohEligiblePool', 'Eligible player pool')
+    )}</strong> <span>${selected.size} / ${fieldSize}</span></summary>
     <p>${escapeHtml(
       state.tr(
         'adminBohEligiblePoolHelp',
-        'Choose exactly 72 current, verified signups. Only this saved pool is used by balancing and direct seat assignment.'
+        'Choose exactly {count} current, verified signups. Only this saved pool is used by balancing and direct seat assignment.',
+        { count: fieldSize }
       )
     )}</p>
     <form class="boh-admin-stack" data-form="eligible-pool">
@@ -3766,7 +4841,7 @@ function renderEligiblePool(state, candidates, selectedIds) {
           .join('')}
       </div>
       <button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
-        state.tr('adminBohSaveEligiblePool', 'Save eligible 72')
+        state.tr('adminBohSaveEligiblePool', 'Save eligible field')
       )}</button>
     </form>
   </details>`;
@@ -3819,10 +4894,134 @@ function renderDirectAssignment(state, candidates, selectedIds) {
   </form>`;
 }
 
+function renderTeamBuilderSettings(state, candidates, selectedIds) {
+  const selected = new Set(selectedIds);
+  const selectedCandidates = candidates.filter((player) => selected.has(player.playerId));
+  const forced = new Map(
+    list(state.snapshot.forcedTeamAssignments).map((assignment) => [
+      cleanText(assignment?.playerId),
+      cleanText(assignment?.teamId),
+    ])
+  );
+  const teamCount = snapshotTeamCount(state);
+  const balanceMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric);
+  return `<form class="boh-admin-card boh-admin-stack" data-form="team-builder-settings">
+    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohBalanceConfiguration', 'BALANCE CONFIGURATION')
+    )}</p><h4>${escapeHtml(
+      state.tr('adminBohTeamCountAndMetric', 'Team count, metric, and exact-team placements')
+    )}</h4></div></header>
+    <div class="boh-admin-field-pair">
+      <label><span>${escapeHtml(state.tr('adminBohTeamCount', 'Team count'))}</span>
+        <select class="boh-admin-select" name="teamCount">${Array.from(
+          { length: TEAM_COUNT - MIN_TEAM_COUNT + 1 },
+          (_, index) => index + MIN_TEAM_COUNT
+        )
+          .map(
+            (count) =>
+              `<option value="${count}" ${count === teamCount ? 'selected' : ''}>${count} x ${ROSTER_SIZE}</option>`
+          )
+          .join('')}</select></label>
+      <label><span>${escapeHtml(state.tr('adminBohBalanceMetric', 'Balance metric'))}</span>
+        <select class="boh-admin-select" name="balanceMetric">
+          <option value="score" ${balanceMetric === 'score' ? 'selected' : ''}>${escapeHtml(
+            state.tr('adminBohScoringPoints', 'Scoring points')
+          )}</option>
+          <option value="totalPower" ${balanceMetric === 'totalPower' ? 'selected' : ''}>${escapeHtml(
+            state.tr('adminBohTotalGamePower', 'Total in-game power')
+          )}</option>
+        </select></label>
+    </div>
+    <p>${escapeHtml(
+      state.tr(
+        'adminBohTeamSettingsHelp',
+        'Save configuration separately. Changing it never changes the saved eligible player IDs.'
+      )
+    )}</p>
+    <div class="boh-admin-repeat-list">
+      ${selectedCandidates
+        .map(
+          (player) => `<label class="boh-admin-confirm"><span>${escapeHtml(
+            playerName(player) || player.playerId
+          )}</span><select class="boh-admin-select" name="forcedTeam.${escapeHtml(player.playerId)}">
+            <option value="">${escapeHtml(state.tr('adminBohAnyTeam', 'Any team'))}</option>
+            ${state.snapshot.teams
+              .map(
+                (team) =>
+                  `<option value="${escapeHtml(team.id)}" ${forced.get(player.playerId) === team.id ? 'selected' : ''}>${escapeHtml(teamDisplayName(state, team))}</option>`
+              )
+              .join('')}
+          </select></label>`
+        )
+        .join('')}
+    </div>
+    <button class="boh-admin-button" type="submit">${escapeHtml(
+      state.tr('adminBohSaveBalanceConfiguration', 'Save balance configuration')
+    )}</button>
+  </form>`;
+}
+
+function renderBalancePreview(state) {
+  const preview = state.snapshot.balancePreview;
+  if (!preview) {
+    return `<section class="boh-admin-card"><p>${escapeHtml(
+      state.tr(
+        'adminBohNoBalancePreview',
+        'Create a preview to compare both team totals before applying.'
+      )
+    )}</p></section>`;
+  }
+  const activeLabel =
+    preview.balanceMetric === 'totalPower'
+      ? state.tr('adminBohTotalGamePower', 'Total in-game power')
+      : state.tr('adminBohScoringPoints', 'Scoring points');
+  return `<section class="boh-admin-card" aria-labelledby="bohBalancePreviewTitle">
+    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohBalancePreview', 'BALANCE PREVIEW')
+    )}</p><h4 id="bohBalancePreviewTitle">${escapeHtml(
+      state.tr('adminBohActiveBalanceMetric', 'Active metric: {metric}', { metric: activeLabel })
+    )}</h4></div></header>
+    <div class="boh-admin-summary-grid">
+      ${summaryCard(formatNumber(state, preview.scoreSpread), state.tr('adminBohScoreSpread', 'Score spread'))}
+      ${summaryCard(formatNumber(state, preview.powerSpread), state.tr('adminBohPowerSpread', 'Power spread'))}
+      ${summaryCard(formatNumber(state, preview.balanceSpread), state.tr('adminBohActiveSpread', 'Active metric spread'))}
+    </div>
+    <div class="boh-admin-table-wrap" tabindex="0"><table class="boh-admin-table">
+      <thead><tr><th scope="col">${escapeHtml(state.tr('adminBohTeam', 'Team'))}</th>
+        <th scope="col">${escapeHtml(
+          state.tr('adminBohScoreComparison', 'Current -> proposed scoring points')
+        )}</th>
+        <th scope="col">${escapeHtml(
+          state.tr('adminBohPowerComparison', 'Current -> proposed total power')
+        )}</th>
+        <th scope="col">${escapeHtml(state.tr('adminBohProposedRoster', 'Proposed roster'))}</th></tr></thead>
+      <tbody>${list(preview.teams)
+        .map((team) => {
+          const current = state.snapshot.teams.find((candidate) => candidate.id === team.id);
+          const currentScore = current ? teamScore(state, current) : 0;
+          const currentPower = current ? teamPower(state, current) : 0;
+          return `<tr><th scope="row">${escapeHtml(team.name)}</th><td>${escapeHtml(
+            `${formatNumber(state, currentScore)} -> ${formatNumber(state, team.scoreTotal)}`
+          )}</td><td>${escapeHtml(
+            `${formatNumber(state, currentPower)} -> ${formatNumber(state, team.totalCastlePower)}`
+          )}</td><td>${escapeHtml(
+            list(team.seats)
+              .filter((seat) => seat.playerId)
+              .map((seat) => seat.displayName || seat.playerId)
+              .join(', ')
+          )}</td></tr>`;
+        })
+        .join('')}</tbody>
+    </table></div>
+  </section>`;
+}
+
 function renderTeamBuilder(state) {
   const balance = teamBalance(state);
   const candidates = teamBuilderCandidates(state);
   const selectedIds = selectedTeamBuilderIds(state, candidates);
+  const preview = state.snapshot.balancePreview;
+  const activeMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric);
   return `
     <header class="boh-admin-stage-header">
       <div><p class="boh-admin-eyebrow">${escapeHtml(state.tr('adminBohStageThree', 'STAGE 3 OF 5'))}</p>
@@ -3830,29 +5029,47 @@ function renderTeamBuilder(state) {
         <p>${escapeHtml(
           state.tr(
             'adminBohTeamsHelp',
-            'Build six teams of 12. Locked seats survive rebalance; choose a seat, then move into an empty seat or swap with an occupied seat.'
+            'Build {count} teams of 12. Locked seats survive preview and apply; direct moves remain available.',
+            { count: snapshotTeamCount(state) }
           )
         )}</p></div>
       <div class="boh-admin-stage-actions">
         <button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
           state.selectedSourceSeat ? '' : 'disabled'
         }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button>
-        <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="balance-teams">${escapeHtml(
-          state.tr('adminBohBalanceTeams', 'Build balanced teams')
+        <button type="button" class="boh-admin-button" data-action="discard-balance-preview" ${
+          preview ? '' : 'disabled'
+        }>${escapeHtml(state.tr('adminBohDiscardPreview', 'Discard preview'))}</button>
+        <button type="button" class="boh-admin-button" data-action="preview-balance-teams">${escapeHtml(
+          state.tr('adminBohPreviewBalance', 'Preview balance')
         )}</button>
+        <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="apply-balance-preview" ${
+          preview ? '' : 'disabled'
+        }>${escapeHtml(state.tr('adminBohApplyPreview', 'Apply preview'))}</button>
       </div>
     </header>
     <div class="boh-admin-summary-grid">
-      ${summaryCard(`${balance.assigned} / ${TEAM_COUNT * ROSTER_SIZE}`, state.tr('adminBohAssignedSeats', 'Assigned seats'))}
-      ${summaryCard(formatNumber(state, balance.average), state.tr('adminBohAverageTeamScore', 'Average team score'))}
-      ${summaryCard(formatNumber(state, balance.spread), state.tr('adminBohTeamSpread', 'Highest-to-lowest spread'), balance.spread ? 'warning' : 'success')}
+      ${summaryCard(`${balance.assigned} / ${snapshotFieldSize(state)}`, state.tr('adminBohAssignedSeats', 'Assigned seats'))}
+      ${summaryCard(formatNumber(state, balance.scoreAverage), state.tr('adminBohAverageTeamScore', 'Average team score'))}
+      ${summaryCard(formatNumber(state, balance.powerAverage), state.tr('adminBohAverageTeamPower', 'Average team power'))}
+      ${summaryCard(
+        activeMetric === 'totalPower'
+          ? state.tr('adminBohTotalGamePower', 'Total in-game power')
+          : state.tr('adminBohScoringPoints', 'Scoring points'),
+        state.tr('adminBohActiveBalanceMetricLabel', 'Active balance metric'),
+        'success'
+      )}
       ${summaryCard(state.snapshot.teams.flatMap((team) => team.seats).filter((seat) => seat.locked).length, state.tr('adminBohLockedSeats', 'Locked seats'))}
     </div>
+    ${renderTeamBuilderSettings(state, candidates, selectedIds)}
     ${renderEligiblePool(state, candidates, selectedIds)}
     ${renderDirectAssignment(state, candidates, selectedIds)}
+    ${renderBalancePreview(state)}
     ${renderSeatMoveNotice(state)}
     <div class="boh-admin-team-board" aria-label="${escapeHtml(
-      state.tr('adminBohSixTeamBoard', 'Six-team assignment board')
+      state.tr('adminBohTeamBoard', '{count}-team assignment board', {
+        count: snapshotTeamCount(state),
+      })
     )}">
       ${state.snapshot.teams.map((team, index) => renderTeamColumn(state, team, balance, index)).join('')}
     </div>`;
@@ -3874,14 +5091,23 @@ function renderSeatMoveNotice(state) {
 }
 
 function renderTeamColumn(state, team, balance, index) {
-  const score = balance.totals[index];
-  const difference = score - balance.average;
+  const score = balance.scoreTotals[index];
+  const power = balance.powerTotals[index];
+  const powerMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric) === 'totalPower';
+  const difference = powerMetric ? power - balance.powerAverage : score - balance.scoreAverage;
   const assigned = team.seats.filter((seat) => seat.playerId).length;
   return `<section class="boh-admin-team" aria-labelledby="bohTeamTitle-${team.number}">
     <header style="--boh-team-color:${escapeHtml(team.color || '#7dd3fc')}">
       <div><span>${escapeHtml(state.tr('adminBohTeamNumber', 'TEAM {number}', { number: team.number }))}</span>
         <h4 id="bohTeamTitle-${team.number}">${escapeHtml(teamDisplayName(state, team))}</h4></div>
-      <div class="boh-admin-team-score"><strong>${escapeHtml(formatNumber(state, score))}</strong>
+      <div class="boh-admin-team-score"><strong>${escapeHtml(
+        formatNumber(state, powerMetric ? power : score)
+      )}</strong>
+        <span>${escapeHtml(state.tr('adminBohScoringPoints', 'Scoring points'))}: ${escapeHtml(
+          formatNumber(state, score)
+        )} / ${escapeHtml(state.tr('adminBohTotalGamePower', 'Total in-game power'))}: ${escapeHtml(
+          formatNumber(state, power)
+        )}</span>
         <span>${difference >= 0 ? '+' : ''}${escapeHtml(formatNumber(state, difference))} ${escapeHtml(
           state.tr('adminBohVsAverage', 'vs avg')
         )}</span></div>
@@ -4650,10 +5876,12 @@ function deriveValidation(state, kind) {
   );
   const errors = [];
   const warnings = [];
-  if (assigned.length !== TEAM_COUNT * ROSTER_SIZE) {
+  const fieldSize = snapshotFieldSize(state);
+  if (assigned.length !== fieldSize) {
     errors.push(
-      state.tr('adminBohValidationSeats', '{assigned} of 72 seats are assigned.', {
+      state.tr('adminBohValidationDynamicSeats', '{assigned} of {total} seats are assigned.', {
         assigned: assigned.length,
+        total: fieldSize,
       })
     );
   }
@@ -5127,6 +6355,7 @@ async function invokeAction(state, name, payload, successMessage) {
   }
   state.pending = true;
   state.root.setAttribute('aria-busy', 'true');
+  renderShell(state);
   setStatus(state, state.tr('adminBohSaving', 'Saving…'), 'loading');
   try {
     const command = { ...payload, expectedRevision: state.snapshot.revision };
@@ -5143,17 +6372,26 @@ async function invokeAction(state, name, payload, successMessage) {
     else await refreshState(state);
     state.roleDrafts = null;
     state.phaseDrafts = null;
+    if (name === 'batchReviewSubmissions') {
+      list(payload.playerIds).forEach((id) => state.selectedSubmissionIds.delete(cleanText(id)));
+    }
     setStatus(state, successMessage || state.tr('adminBohSaved', 'Saved.'), 'success');
     state.options.onActionComplete?.({ action: name, payload: command, result });
     renderShell(state);
     return result;
   } catch (error) {
+    if (name === 'batchReviewSubmissions') {
+      list(error?.successfulPlayerIds).forEach((id) =>
+        state.selectedSubmissionIds.delete(cleanText(id))
+      );
+    }
     setStatus(state, error?.message || String(error), 'error');
     state.options.onError?.(error, { action: name, payload });
     return null;
   } finally {
     state.pending = false;
     state.root.setAttribute('aria-busy', 'false');
+    renderShell(state);
   }
 }
 
@@ -5178,11 +6416,48 @@ function findSeat(state, teamId, seatNumber) {
   return team && seat ? { team, seat } : null;
 }
 
+function downloadVisibleSignupCsv(state) {
+  const records = filteredSubmissions(state);
+  const csv = buildSignupReviewCsv(records, {
+    includeBom: true,
+    ocrLabel: state.tr('adminBohCaptureOcrConfirmed', 'OCR + confirmed'),
+    manualLabel: state.tr('adminBohCaptureManual', 'Manual'),
+  });
+  if (typeof state.options.downloadSignupReviewCsv === 'function') {
+    state.options.downloadSignupReviewCsv(csv, records);
+    return records.length;
+  }
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'all-star-boh-signup-review.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+  return records.length;
+}
+
 async function handleClick(state, event) {
   const button = event.target.closest('button');
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'signup-sort') {
+    const key = cleanText(button.dataset.sortKey);
+    const direction =
+      state.signupSort.key === key && state.signupSort.direction === 'asc' ? 'desc' : 'asc';
+    state.signupSort = { key, direction };
+    renderShell(state);
+    return;
+  }
+  if (action === 'export-signups') {
+    const count = downloadVisibleSignupCsv(state);
+    setStatus(
+      state,
+      state.tr('adminBohExportedRows', 'Exported {count} visible signups.', { count }),
+      'success'
+    );
+    return;
+  }
   if (action === 'stage') {
     state.stage = button.dataset.stage;
     state.selectedSourceSeat = null;
@@ -5283,31 +6558,38 @@ async function handleClick(state, event) {
     );
     return;
   }
-  if (action === 'balance-teams') {
+  if (action === 'preview-balance-teams') {
+    await invokeAction(
+      state,
+      'previewBalanceTeams',
+      {},
+      state.tr('adminBohBalancePreviewReady', 'Balance preview ready.')
+    );
+    return;
+  }
+  if (action === 'discard-balance-preview') {
+    await invokeAction(
+      state,
+      'discardBalancePreview',
+      {},
+      state.tr('adminBohBalancePreviewDiscarded', 'Balance preview discarded.')
+    );
+    return;
+  }
+  if (action === 'apply-balance-preview') {
+    const message = state.tr(
+      'adminBohApplyBalanceConfirm',
+      'Apply this exact balance preview in one atomic save?'
+    );
     const confirmed = await Promise.resolve(
-      state.options.confirm?.(
-        state.tr(
-          'adminBohBalanceConfirm',
-          'Rebuild all unlocked seats using the active score version? Locked seats stay in place.'
-        )
-      ) ??
-        window.confirm(
-          state.tr(
-            'adminBohBalanceConfirm',
-            'Rebuild all unlocked seats using the active score version? Locked seats stay in place.'
-          )
-        )
+      state.options.confirm?.(message) ?? window.confirm(message)
     );
     if (!confirmed) return;
     await invokeAction(
       state,
-      'balanceTeams',
-      {
-        teamCount: TEAM_COUNT,
-        rosterSize: ROSTER_SIZE,
-        scoringVersionId: scoringVersion(state.snapshot)?.id || '',
-      },
-      state.tr('adminBohTeamsBalanced', 'Balanced team draft created.')
+      'applyBalancePreview',
+      {},
+      state.tr('adminBohBalancePreviewApplied', 'Balance preview applied.')
     );
     return;
   }
@@ -5434,6 +6716,22 @@ async function handleClick(state, event) {
 
 function handleChange(state, event) {
   const action = cleanText(event.target.dataset.action);
+  if (action === 'select-submission-row') {
+    const id = cleanText(event.target.dataset.playerId);
+    if (event.target.checked) state.selectedSubmissionIds.add(id);
+    else state.selectedSubmissionIds.delete(id);
+    renderShell(state);
+    return;
+  }
+  if (action === 'select-all-visible') {
+    for (const submission of filteredSubmissions(state)) {
+      const id = playerId(submission);
+      if (event.target.checked) state.selectedSubmissionIds.add(id);
+      else state.selectedSubmissionIds.delete(id);
+    }
+    renderShell(state);
+    return;
+  }
   if (action === 'score-override-player') {
     const form = event.target.closest('form[data-form="score-override"]');
     const button = form?.querySelector('[data-action="remove-score-override"]');
@@ -5509,7 +6807,40 @@ async function handleSubmit(state, event) {
   if (kind === 'signup-filter') {
     state.signupSearch = cleanText(data.get('search'));
     state.signupFilter = cleanText(data.get('status')) || 'all';
+    state.signupFilters = {
+      fightingTime: cleanText(data.get('fightingTime')) || 'all',
+      role: cleanText(data.get('role')) || 'all',
+      troopType: cleanText(data.get('troopType')) || 'all',
+      vtsMember: cleanText(data.get('vtsMember')) || 'all',
+      minTotalPower: cleanText(data.get('minTotalPower')),
+      maxTotalPower: cleanText(data.get('maxTotalPower')),
+    };
     renderShell(state);
+    return;
+  }
+  if (kind === 'batch-review') {
+    const visible = new Set(filteredSubmissions(state).map(playerId));
+    const playerIds = [...state.selectedSubmissionIds].filter((id) => visible.has(id));
+    if (!playerIds.length) return;
+    const message = state.tr(
+      'adminBohBatchConfirmPrompt',
+      'Confirm {count} visible selected signups?',
+      { count: playerIds.length }
+    );
+    const confirmed = await Promise.resolve(
+      state.options.confirm?.(message) ?? window.confirm(message)
+    );
+    if (!confirmed) return;
+    await invokeAction(
+      state,
+      'batchReviewSubmissions',
+      {
+        playerIds,
+        status: 'confirmed',
+        ...(cleanText(data.get('note')) ? { note: cleanText(data.get('note')) } : {}),
+      },
+      state.tr('adminBohBatchConfirmed', 'Selected visible signups confirmed.')
+    );
     return;
   }
   if (kind === 'copy-phase-template') {
@@ -5595,10 +6926,34 @@ async function handleSubmit(state, event) {
     const review = submission?.review || {};
     const reason = cleanText(data.get('reason'));
     const statCorrections = Object.fromEntries(
-      CORRECTABLE_STAT_KEYS.map((key) => [key, cleanText(data.get(`statCorrection.${key}`))])
-        .filter(([, corrected]) => corrected !== '')
+      CORRECTABLE_STAT_KEYS.map((key) => [
+        key,
+        cleanText(data.get(`statCorrection.${key}`)),
+        originalStatValue(submission, key),
+      ])
+        .filter(([, corrected, original]) => statCorrectionChanged(corrected, original))
         .map(([key, corrected]) => [key, { corrected: finiteNumber(corrected), reason }])
     );
+    const enteredName = cleanText(data.get('gameNameCorrection'));
+    const correctedName =
+      enteredName && enteredName !== cleanText(submission?.originalGameName) ? enteredName : '';
+    const nameReason = cleanText(data.get('gameNameCorrectionReason'));
+    if (Object.keys(statCorrections).length && !reason) {
+      setStatus(
+        state,
+        state.tr('adminBohCorrectionReasonRequired', 'Add a reason for changed stats.'),
+        'error'
+      );
+      return;
+    }
+    if (correctedName && !nameReason) {
+      setStatus(
+        state,
+        state.tr('adminBohNameCorrectionReasonRequired', 'Add a reason for the corrected name.'),
+        'error'
+      );
+      return;
+    }
     await invokeAction(
       state,
       'reviewSubmission',
@@ -5609,6 +6964,10 @@ async function handleSubmit(state, event) {
         internalNote: cleanText(review.internalNote),
         adminUsefulnessRating: review?.adjustments?.bohUsefulRating ?? null,
         statCorrections,
+        gameNameCorrection: {
+          corrected: correctedName,
+          reason: nameReason,
+        },
       },
       state.tr('adminBohCorrectionsSaved', 'Admin corrections saved.')
     );
@@ -5639,12 +6998,31 @@ async function handleSubmit(state, event) {
     );
     return;
   }
+  if (kind === 'team-builder-settings') {
+    const forcedTeamAssignments = [...data.entries()]
+      .filter(([name, teamId]) => name.startsWith('forcedTeam.') && cleanText(teamId))
+      .map(([name, teamId]) => ({
+        playerId: cleanText(name.slice('forcedTeam.'.length)),
+        teamId: cleanText(teamId),
+      }));
+    await invokeAction(
+      state,
+      'saveTeamBuilderSettings',
+      {
+        teamCount: integer(data.get('teamCount')),
+        balanceMetric: cleanText(data.get('balanceMetric')),
+        forcedTeamAssignments,
+      },
+      state.tr('adminBohBalanceConfigurationSaved', 'Balance configuration saved.')
+    );
+    return;
+  }
   if (kind === 'eligible-pool') {
     await invokeAction(
       state,
       'saveEligiblePool',
       { playerIds: data.getAll('playerId').map(cleanText).filter(Boolean) },
-      state.tr('adminBohEligiblePoolSaved', 'Eligible 72-player pool saved.')
+      state.tr('adminBohEligiblePoolSaved', 'Eligible player field saved.')
     );
     return;
   }

@@ -35,8 +35,10 @@ const LIMITS = {
   // 14.1.17 release digest measured 8145.8 KiB. The localized admin troop
   // estimate labels and the localized shared-admin protection bring the
   // audited 14.2.0 graph to 8161.7 KiB; retain roughly 14 KiB of aggregate
-  // headroom while route and entry budgets remain unchanged.
-  totalJsBytes: 8176 * 1024,
+  // headroom while route and entry budgets remain unchanged. The combined
+  // 14.2.3 All-Star scoring and admin-operations release measures 8195.1 KiB;
+  // retain roughly 17 KiB while the isolated route caps remain unchanged.
+  totalJsBytes: 8212 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -55,11 +57,10 @@ const LIMITS = {
   // The 14.1.11 applicant flow measures 26,172.1 KiB with shared locale chunks;
   // retain less than 8 KiB while keeping route and media caps unchanged.
   // The downloadable Top 20 and 21-110 reward cards add one focused Eden bundle feature.
-  // Localized admin troop estimates and the 14.1.19 mobile/hash compatibility
-  // release bring the deterministic CI artifact to 26,224.1 KiB. Keep roughly
-  // 16 KiB of complete-artifact headroom while the tighter JS, CSS, route,
-  // media, and file-count budgets below remain unchanged.
-  totalDeployBytes: 26240 * 1024,
+  // The combined 14.2.3 All-Star scoring and admin-operations release measures
+  // 26,264.8 KiB and retains roughly 16 KiB of complete-artifact headroom while
+  // the tighter CSS, route, media, and file-count budgets remain unchanged.
+  totalDeployBytes: 26281 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

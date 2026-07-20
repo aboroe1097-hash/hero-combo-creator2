@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'تطبيق الإعداد الافتراضي للدور',
   adminBohAssignedSeats: 'المواقع المعيّنة',
   adminBohAverageTeamScore: 'متوسط نقاط الفريق',
-  adminBohBalanceConfirm:
-    'إعادة توزيع كل المواقع غير المقفلة باستخدام إصدار النقاط النشط؟ ستبقى المواقع المقفلة كما هي.',
-  adminBohBalanceTeams: 'تكوين فرق متوازنة',
   adminBohBlockingIssues: 'مشكلات تمنع المتابعة',
   adminBohBreakdown: 'التفاصيل',
   adminBohCalculated: 'المحتسب',
@@ -68,7 +65,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'تم حفظ تعليمة الخطة.',
   adminBohInstructionScope: 'نطاق التعليمة',
   adminBohInvalidTimeline: 'استخدم أربع مراحل مرتبة وغير متداخلة بالضبط.',
-  adminBohKicker: 'ALL-STAR BoH · 6 فرق · 72 لاعبًا',
   adminBohLegacyConfirm:
     'نسخ توقيتات المراحل الأربع ورموز الأهداف من العام الماضي؟ سيتم استبعاد أدوار الـ15 موقعًا وكل أسماء اللاعبين القديمة.',
   adminBohLegacyIs15Seats: 'تنبيه بشأن الخطة القديمة:',
@@ -226,7 +222,6 @@ export default Object.freeze({
   adminBohSignupCaption: '{shown} من أصل {total} تسجيلًا',
   adminBohSignupsHelp:
     'قارن القيم التي أكدها اللاعب بتنبيهات OCR. لا تظهر لقطات الشاشة هنا إلا إذا وفّر المخزن رابط مراجعة محميًا بوضوح.',
-  adminBohSixTeamBoard: 'لوحة تعيينات الفرق الستة',
   adminBohSource: 'طريقة الإدخال',
   adminBohStageFive: 'المرحلة 5 من 5',
   adminBohStageFour: 'المرحلة 4 من 5',
@@ -255,7 +250,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'مستبعد',
   adminBohStatusPending: 'بانتظار المراجعة',
   adminBohStatusUnknown: 'غير معروف',
-  adminBohSubtitle: 'راجع التسجيلات، ووازن ستة فرق، واكتب خطط الأدوار، وانشر عروضًا آمنة للاعبين.',
   adminBohSwapHereLabel: 'التبديل مع {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'الفريق',
@@ -265,11 +259,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'خطة الفريق',
   adminBohTeamPlanCopied: 'تم نسخ خطة الفريق من دون تعيينات اللاعبين.',
   adminBohTeamPlans: 'خطط الفرق',
-  adminBohTeamsBalanced: 'تم إنشاء مسودة فرق متوازنة.',
   adminBohTeamSeatsFilled: 'تم ملء {assigned} من 12 موقعًا',
-  adminBohTeamsHelp:
-    'كوّن ستة فرق من 12 لاعبًا. تبقى المواقع المقفلة عند إعادة التوازن؛ اختر موقعًا ثم انقل اللاعب إلى موقع فارغ أو بدّله مع موقع مشغول.',
-  adminBohTeamSpread: 'الفارق بين الأعلى والأدنى',
   adminBohTeleport: 'تعليمة الانتقال الآني',
   adminBohTeleportPlaceholder: 'لا انتقال آني أو وجهة',
   adminBohTemplatePrivacy:
@@ -292,7 +282,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'يجب أن تتضمن الخطة Legion 1 وLegion 2.',
   adminBohValidationMap: 'لم توضع أي أهداف على الخريطة التخطيطية.',
   adminBohValidationPhases: 'يجب أن تتضمن الخطة أربع مراحل بالضبط.',
-  adminBohValidationSeats: 'تم تعيين {assigned} من أصل 72 موقعًا.',
   adminBohVersionHistory: 'سجل الإصدارات',
   adminBohVersionLabel: 'اسم الإصدار',
   adminBohVersionLabelPlaceholder: 'مثال: اختيار 2026 - الإصدار 2',
@@ -325,10 +314,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'غير متوفر',
   adminBohDestinationSeat: 'المقعد الوجهة',
   adminBohDirectAssignment: 'التعيين المباشر',
-  adminBohEligiblePool: 'قائمة الـ 72 المؤهلين',
-  adminBohEligiblePoolHelp:
-    'اختر 72 تسجيلًا حاليًا وموثقًا بالضبط. لن تُستخدم في الموازنة والتعيين المباشر للمقاعد إلا هذه القائمة المحفوظة.',
-  adminBohEligiblePoolSaved: 'تم حفظ قائمة الـ 72 المؤهلين.',
   adminBohEligibleRoles: 'الأدوار المناسبة',
   adminBohEntryMethod: 'طريقة الإدخال',
   adminBohKnownNames: 'الأسماء المعروفة',
@@ -349,7 +334,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'تُطابق الرموز أو المعرّفات مع نقاط الخريطة وتُدمج بهذا الترتيب: البداية، نقاط المرور، المسار المرتب، الهدف.',
   adminBohRoutePathPlaceholder: 'مثال: CC2، T3، FH1',
-  adminBohSaveEligiblePool: 'حفظ الـ 72 المؤهلين',
   adminBohSaveTeamMetadata: 'حفظ تفاصيل الفريق',
   adminBohSelectCaptain: 'اختر القائد',
   adminBohStartObjective: 'نقطة البداية',

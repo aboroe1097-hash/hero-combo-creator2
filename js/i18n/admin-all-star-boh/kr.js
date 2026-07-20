@@ -18,9 +18,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: '역할 기본값 적용',
   adminBohAssignedSeats: '배정된 자리',
   adminBohAverageTeamScore: '팀 평균 점수',
-  adminBohBalanceConfirm:
-    '활성 점수 버전으로 잠기지 않은 자리를 모두 다시 배치할까요? 잠긴 자리는 그대로 유지됩니다.',
-  adminBohBalanceTeams: '균형 팀 구성',
   adminBohBlockingIssues: '진행 차단 문제',
   adminBohBreakdown: '세부 내역',
   adminBohCalculated: '계산값',
@@ -67,7 +64,6 @@ export default Object.freeze({
   adminBohInstructionSaved: '작전 지시를 저장했습니다.',
   adminBohInstructionScope: '지시 적용 범위',
   adminBohInvalidTimeline: '겹치지 않는 4개 단계를 시간순으로 정확히 설정하세요.',
-  adminBohKicker: 'ALL-STAR BoH · 6팀 · 72명',
   adminBohLegacyConfirm:
     '작년의 4단계 시간과 목표 코드를 복사할까요? 15자리 역할과 기존 플레이어 이름은 모두 제외됩니다.',
   adminBohLegacyIs15Seats: '이전 작전 경고:',
@@ -225,7 +221,6 @@ export default Object.freeze({
   adminBohSignupCaption: '신청서 {total}개 중 {shown}개',
   adminBohSignupsHelp:
     '플레이어가 확인한 값과 OCR 경고를 비교하세요. 저장소에서 보호된 검토 URL을 명시적으로 제공하지 않는 한 스크린샷은 표시되지 않습니다.',
-  adminBohSixTeamBoard: '6팀 배치 보드',
   adminBohSource: '입력 방식',
   adminBohStageFive: '5 / 5단계',
   adminBohStageFour: '4 / 5단계',
@@ -254,8 +249,6 @@ export default Object.freeze({
   adminBohStatusExcluded: '제외됨',
   adminBohStatusPending: '검토 대기',
   adminBohStatusUnknown: '알 수 없음',
-  adminBohSubtitle:
-    '신청서를 검토하고 6개 팀을 균형 있게 구성한 뒤 역할 작전을 작성해 플레이어용 화면을 안전하게 공개하세요.',
   adminBohSwapHereLabel: '{player} 님과 교환',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: '팀',
@@ -265,11 +258,7 @@ export default Object.freeze({
   adminBohTeamPlan: '팀 작전',
   adminBohTeamPlanCopied: '플레이어 배치 없이 팀 작전을 복사했습니다.',
   adminBohTeamPlans: '팀 작전',
-  adminBohTeamsBalanced: '균형 팀 초안을 만들었습니다.',
   adminBohTeamSeatsFilled: '12자리 중 {assigned}자리 배정',
-  adminBohTeamsHelp:
-    '12명씩 6개 팀을 구성하세요. 재균형 시 잠긴 자리는 유지됩니다. 자리를 선택한 뒤 빈 자리로 이동하거나 다른 플레이어와 교환하세요.',
-  adminBohTeamSpread: '최고점과 최저점 차이',
   adminBohTeleport: '텔레포트 지시',
   adminBohTeleportPlaceholder: '텔레포트 없음 / 목적지 없음',
   adminBohTemplatePrivacy:
@@ -292,7 +281,6 @@ export default Object.freeze({
   adminBohValidationLegions: '작전에는 군단 1과 군단 2가 모두 있어야 합니다.',
   adminBohValidationMap: '전술도에 목표가 없습니다.',
   adminBohValidationPhases: '작전에는 정확히 4단계가 있어야 합니다.',
-  adminBohValidationSeats: '72자리 중 {assigned}자리가 배정되었습니다.',
   adminBohVersionHistory: '버전 기록',
   adminBohVersionLabel: '버전 이름',
   adminBohVersionLabelPlaceholder: '예: 2026 선발 v2',
@@ -325,10 +313,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: '참여 불가',
   adminBohDestinationSeat: '이동할 좌석',
   adminBohDirectAssignment: '직접 배치',
-  adminBohEligiblePool: '선발 가능한 72명 명단',
-  adminBohEligiblePoolHelp:
-    '현재 검증된 신청자 72명을 정확히 선택하세요. 저장한 이 명단만 팀 균형 배치와 직접 좌석 배치에 사용됩니다.',
-  adminBohEligiblePoolSaved: '선발 가능한 72명 명단을 저장했습니다.',
   adminBohEligibleRoles: '배치 가능한 역할',
   adminBohEntryMethod: '입력 방식',
   adminBohKnownNames: '확인된 이름',
@@ -350,7 +334,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     '코드 또는 ID를 맵 거점에 연결하고 시작, 경유, 순서 경로, 목표 순으로 합칩니다.',
   adminBohRoutePathPlaceholder: '예: CC2, T3, FH1',
-  adminBohSaveEligiblePool: '선발 가능한 72명 저장',
   adminBohSaveTeamMetadata: '팀 정보 저장',
   adminBohSelectCaptain: '팀장 선택',
   adminBohStartObjective: '시작 거점',

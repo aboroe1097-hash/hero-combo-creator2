@@ -1,4 +1,5 @@
 import { resolveRuntimeLocale } from '../../locale-format.js';
+import { ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
 
 export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohAccountSubmission: 'PLAYER SUBMISSION',
@@ -18,9 +19,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohApplyRoleDefault: 'Apply role default',
   adminBohAssignedSeats: 'Assigned seats',
   adminBohAverageTeamScore: 'Average team score',
-  adminBohBalanceConfirm:
-    'Rebuild all unlocked seats using the active score version? Locked seats stay in place.',
-  adminBohBalanceTeams: 'Build balanced teams',
   adminBohBlockingIssues: 'Blocking issues',
   adminBohBreakdown: 'Breakdown',
   adminBohCalculated: 'Calculated',
@@ -67,7 +65,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohInstructionSaved: 'Plan instruction saved.',
   adminBohInstructionScope: 'Instruction scope',
   adminBohInvalidTimeline: 'Use exactly four ordered, non-overlapping phases.',
-  adminBohKicker: 'ALL-STAR BoH · 6 TEAMS · 72 PLAYERS',
   adminBohLegacyConfirm:
     'Copy last year’s four phase timings and objective codes? The 15-seat roles and every legacy player name will be excluded.',
   adminBohLegacyIs15Seats: 'Legacy plan warning:',
@@ -226,7 +223,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohSignupCaption: '{shown} of {total} signups',
   adminBohSignupsHelp:
     'Compare player-confirmed values with OCR warnings. Screenshots are not exposed here unless the store explicitly supplies a protected review URL.',
-  adminBohSixTeamBoard: 'Six-team assignment board',
   adminBohSource: 'Capture',
   adminBohStageFive: 'STAGE 5 OF 5',
   adminBohStageFour: 'STAGE 4 OF 5',
@@ -255,8 +251,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohStatusExcluded: 'Excluded',
   adminBohStatusPending: 'Pending review',
   adminBohStatusUnknown: 'Unknown',
-  adminBohSubtitle:
-    'Review signups, balance six teams, author role plans, and publish player-safe views.',
   adminBohSwapHereLabel: 'Swap with {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Team',
@@ -266,11 +260,7 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohTeamPlan: 'Team plan',
   adminBohTeamPlanCopied: 'Team plan copied without player assignments.',
   adminBohTeamPlans: 'Team Plans',
-  adminBohTeamsBalanced: 'Balanced team draft created.',
   adminBohTeamSeatsFilled: '{assigned} of 12 seats filled',
-  adminBohTeamsHelp:
-    'Build six teams of 12. Locked seats survive rebalance; choose a seat, then move into an empty seat or swap with an occupied seat.',
-  adminBohTeamSpread: 'Highest-to-lowest spread',
   adminBohTeleport: 'Teleport instruction',
   adminBohTeleportPlaceholder: 'No teleport or destination',
   adminBohTemplatePrivacy:
@@ -293,7 +283,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohValidationLegions: 'The plan must contain Legion 1 and Legion 2.',
   adminBohValidationMap: 'No schematic objectives have been placed.',
   adminBohValidationPhases: 'The plan must contain exactly four phases.',
-  adminBohValidationSeats: '{assigned} of 72 seats are assigned.',
   adminBohVersionHistory: 'Version history',
   adminBohVersionLabel: 'Version label',
   adminBohVersionLabelPlaceholder: 'Example: 2026 selection v2',
@@ -327,10 +316,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohChoiceUnavailable: 'Unavailable',
   adminBohDestinationSeat: 'Destination seat',
   adminBohDirectAssignment: 'DIRECT ASSIGNMENT',
-  adminBohEligiblePool: 'Eligible 72-player pool',
-  adminBohEligiblePoolHelp:
-    'Choose exactly 72 current, verified signups. Only this saved pool is used by balancing and direct seat assignment.',
-  adminBohEligiblePoolSaved: 'Eligible 72-player pool saved.',
   adminBohEligibleRoles: 'Eligible roles',
   adminBohEntryMethod: 'Entry method',
   adminBohKnownNames: 'Known names',
@@ -356,7 +341,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohRoutePathHelp:
     'Codes or IDs are resolved to map anchors and merged in this order: Start, Via, ordered path, Target.',
   adminBohRoutePathPlaceholder: 'Example: CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Save eligible 72',
   adminBohSaveTeamMetadata: 'Save team details',
   adminBohSelectCaptain: 'Select captain',
   adminBohStartObjective: 'Start objective',
@@ -390,8 +374,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohEpicLaneCenter: 'Center',
   adminBohEpicLaneNorth: 'North',
   adminBohSignupPlanningSignals: 'Signup planning signals',
-  adminBohSignupPlanningSignalsHelp:
-    'Player-entered preferences for planning only. They do not change scores or lock assignments.',
   adminBohUsableHeroes: 'Usable heroes',
   adminBohResearchProgress: 'Research progress',
   adminBohPrimaryRole: 'Primary role',
@@ -424,6 +406,7 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohDeleteSignupConfirm:
     'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
   adminBohSignupDeleted: 'Signup deleted.',
+  ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });
 
 const LOCALE_LOADERS = Object.freeze({

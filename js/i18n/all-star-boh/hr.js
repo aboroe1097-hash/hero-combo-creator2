@@ -2,6 +2,7 @@ export default Object.freeze({
   'access.enterPin': 'Unesi članski PIN',
   'access.membersOnly': 'SAMO ZA ČLANOVE',
   'action.remove': 'Ukloni',
+  'announcement.allTeamsKicker': '{teams} TIMOVA · {players} IGRAČA',
   'common.required': 'Obavezno',
   'common.yes': 'Da',
   'common.no': 'Ne',

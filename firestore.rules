@@ -1132,10 +1132,11 @@ service cloud.firestore {
         && data.revision is int
         && data.revision > 0
         && data.announcementPublished == true
-        && data.teamCount == 6
+        && data.teamCount >= 2
+        && data.teamCount <= 6
         && data.rosterSize == 12
         && data.teamIds is list
-        && data.teamIds.size() == 6
+        && data.teamIds.size() == data.teamCount
         && data.teamIds.toSet().size() == data.teamIds.size()
         && (
           (

@@ -846,9 +846,12 @@ test('Firestore private and published paths enforce admin/member boundaries with
     'active publication read gate'
   );
   assert.match(publicationReadGate, /data\.announcementPublished == true/);
-  assert.match(publicationReadGate, /data\.teamCount == 6/);
+  assert.match(publicationReadGate, /data\.teamCount >= 2/);
+  assert.match(publicationReadGate, /data\.teamCount <= 6/);
   assert.match(publicationReadGate, /data\.rosterSize == 12/);
-  assert.match(publicationReadGate, /data\.teamIds\.size\(\) == 6/);
+  assert.match(publicationReadGate, /data\.teamIds\.size\(\) == data\.teamCount/);
+  assert.doesNotMatch(publicationReadGate, /data\.teamCount == 6/);
+  assert.doesNotMatch(publicationReadGate, /data\.teamIds\.size\(\) == 6/);
   assert.match(
     publicationReadGate,
     /data\.teamIds\.toSet\(\)\.size\(\) == data\.teamIds\.size\(\)/

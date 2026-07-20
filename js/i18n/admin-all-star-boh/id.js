@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'Terapkan bawaan peran',
   adminBohAssignedSeats: 'Slot terisi',
   adminBohAverageTeamScore: 'Rata-rata skor tim',
-  adminBohBalanceConfirm:
-    'Susun ulang semua slot yang tidak dikunci memakai versi skor aktif? Slot terkunci tetap di tempat.',
-  adminBohBalanceTeams: 'Susun tim seimbang',
   adminBohBlockingIssues: 'Masalah penghambat',
   adminBohBreakdown: 'Rincian',
   adminBohCalculated: 'Hasil hitung',
@@ -68,7 +65,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'Instruksi rencana disimpan.',
   adminBohInstructionScope: 'Cakupan instruksi',
   adminBohInvalidTimeline: 'Gunakan tepat empat fase berurutan tanpa tumpang tindih.',
-  adminBohKicker: 'ALL-STAR BoH · 6 TIM · 72 PEMAIN',
   adminBohLegacyConfirm:
     'Salin empat waktu fase dan kode objektif tahun lalu? Peran 15 slot dan semua nama pemain lama tidak akan disertakan.',
   adminBohLegacyIs15Seats: 'Peringatan rencana lama:',
@@ -227,7 +223,6 @@ export default Object.freeze({
   adminBohSignupCaption: '{shown} dari {total} pendaftaran',
   adminBohSignupsHelp:
     'Bandingkan nilai yang dikonfirmasi pemain dengan peringatan OCR. Tangkapan layar tidak ditampilkan kecuali penyimpanan menyediakan URL pemeriksaan terlindungi secara khusus.',
-  adminBohSixTeamBoard: 'Papan penempatan enam tim',
   adminBohSource: 'Sumber',
   adminBohStageFive: 'TAHAP 5 DARI 5',
   adminBohStageFour: 'TAHAP 4 DARI 5',
@@ -256,8 +251,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'Dikeluarkan',
   adminBohStatusPending: 'Menunggu pemeriksaan',
   adminBohStatusUnknown: 'Tidak diketahui',
-  adminBohSubtitle:
-    'Periksa pendaftaran, seimbangkan enam tim, susun rencana peran, dan terbitkan tampilan aman bagi pemain.',
   adminBohSwapHereLabel: 'Tukar dengan {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Tim',
@@ -267,11 +260,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'Rencana tim',
   adminBohTeamPlanCopied: 'Rencana tim disalin tanpa penempatan pemain.',
   adminBohTeamPlans: 'Rencana Tim',
-  adminBohTeamsBalanced: 'Draf tim seimbang dibuat.',
   adminBohTeamSeatsFilled: '{assigned} dari 12 slot terisi',
-  adminBohTeamsHelp:
-    'Susun enam tim berisi 12 pemain. Slot terkunci tetap saat diseimbangkan ulang; pilih satu slot, lalu pindahkan ke slot kosong atau tukar dengan slot terisi.',
-  adminBohTeamSpread: 'Selisih tertinggi ke terendah',
   adminBohTeleport: 'Instruksi teleport',
   adminBohTeleportPlaceholder: 'Tanpa teleport atau tujuan',
   adminBohTemplatePrivacy:
@@ -294,7 +283,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'Rencana harus memuat Legion 1 dan Legion 2.',
   adminBohValidationMap: 'Belum ada objektif pada skema.',
   adminBohValidationPhases: 'Rencana harus memuat tepat empat fase.',
-  adminBohValidationSeats: '{assigned} dari 72 slot sudah terisi.',
   adminBohVersionHistory: 'Riwayat versi',
   adminBohVersionLabel: 'Label versi',
   adminBohVersionLabelPlaceholder: 'Contoh: seleksi 2026 v2',
@@ -327,10 +315,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'Tidak tersedia',
   adminBohDestinationSeat: 'Kursi tujuan',
   adminBohDirectAssignment: 'PENEMPATAN LANGSUNG',
-  adminBohEligiblePool: 'Pool 72 pemain yang memenuhi syarat',
-  adminBohEligiblePoolHelp:
-    'Pilih tepat 72 pendaftaran terkini yang sudah diverifikasi. Hanya pool tersimpan ini yang dipakai untuk penyeimbangan dan penempatan kursi langsung.',
-  adminBohEligiblePoolSaved: 'Pool 72 pemain yang memenuhi syarat disimpan.',
   adminBohEligibleRoles: 'Peran yang sesuai',
   adminBohEntryMethod: 'Metode entri',
   adminBohKnownNames: 'Nama yang dikenal',
@@ -352,7 +336,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'Kode atau ID dicocokkan ke titik peta lalu digabungkan dalam urutan ini: awal, titik perantara, jalur berurutan, target.',
   adminBohRoutePathPlaceholder: 'Contoh: CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Simpan 72 pemain yang memenuhi syarat',
   adminBohSaveTeamMetadata: 'Simpan detail tim',
   adminBohSelectCaptain: 'Pilih kapten',
   adminBohStartObjective: 'Objektif awal',

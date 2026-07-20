@@ -19,9 +19,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: 'Применить шаблон роли',
   adminBohAssignedSeats: 'Занятые места',
   adminBohAverageTeamScore: 'Средний балл команды',
-  adminBohBalanceConfirm:
-    'Пересобрать все незаблокированные места по активной версии оценки? Заблокированные места останутся без изменений.',
-  adminBohBalanceTeams: 'Собрать равные команды',
   adminBohBlockingIssues: 'Критические ошибки',
   adminBohBreakdown: 'Разбивка',
   adminBohCalculated: 'Рассчитано',
@@ -68,7 +65,6 @@ export default Object.freeze({
   adminBohInstructionSaved: 'Указание плана сохранено.',
   adminBohInstructionScope: 'Область указания',
   adminBohInvalidTimeline: 'Задайте ровно четыре последовательных этапа без пересечений.',
-  adminBohKicker: 'ALL-STAR BoH · 6 КОМАНД · 72 ИГРОКА',
   adminBohLegacyConfirm:
     'Копировать четыре этапа и коды объектов прошлого года? Роли на 15 мест и все старые имена игроков будут исключены.',
   adminBohLegacyIs15Seats: 'Предупреждение о старом плане:',
@@ -226,7 +222,6 @@ export default Object.freeze({
   adminBohSignupCaption: 'Показано {shown} из {total} заявок',
   adminBohSignupsHelp:
     'Сравните подтверждённые игроком значения с замечаниями OCR. Скриншоты здесь скрыты, если хранилище явно не предоставляет защищённую ссылку для проверки.',
-  adminBohSixTeamBoard: 'Распределение по шести командам',
   adminBohSource: 'Источник',
   adminBohStageFive: 'ЭТАП 5 ИЗ 5',
   adminBohStageFour: 'ЭТАП 4 ИЗ 5',
@@ -255,8 +250,6 @@ export default Object.freeze({
   adminBohStatusExcluded: 'Исключено',
   adminBohStatusPending: 'Ожидает проверки',
   adminBohStatusUnknown: 'Неизвестно',
-  adminBohSubtitle:
-    'Проверяйте заявки, балансируйте шесть команд, создавайте планы ролей и публикуйте безопасный вид для игроков.',
   adminBohSwapHereLabel: 'Обменять с {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Команда',
@@ -266,11 +259,7 @@ export default Object.freeze({
   adminBohTeamPlan: 'План команды',
   adminBohTeamPlanCopied: 'План команды скопирован без назначений игроков.',
   adminBohTeamPlans: 'Планы команд',
-  adminBohTeamsBalanced: 'Черновик равных команд создан.',
   adminBohTeamSeatsFilled: 'Занято {assigned} из 12 мест',
-  adminBohTeamsHelp:
-    'Соберите шесть команд по 12 игроков. Заблокированные места сохраняются при перебалансировке. Выберите место, затем перенесите игрока на свободное или обменяйте с занятым.',
-  adminBohTeamSpread: 'Разница между сильнейшей и слабейшей',
   adminBohTeleport: 'Указание по телепорту',
   adminBohTeleportPlaceholder: 'Без телепорта или точки назначения',
   adminBohTemplatePrivacy:
@@ -293,7 +282,6 @@ export default Object.freeze({
   adminBohValidationLegions: 'План должен содержать Легион 1 и Легион 2.',
   adminBohValidationMap: 'На схеме нет объектов.',
   adminBohValidationPhases: 'План должен содержать ровно четыре этапа.',
-  adminBohValidationSeats: 'Назначено {assigned} из 72 мест.',
   adminBohVersionHistory: 'История версий',
   adminBohVersionLabel: 'Название версии',
   adminBohVersionLabelPlaceholder: 'Пример: Отбор 2026, версия 2',
@@ -326,10 +314,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: 'Недоступен',
   adminBohDestinationSeat: 'Целевое место',
   adminBohDirectAssignment: 'ПРЯМОЕ НАЗНАЧЕНИЕ',
-  adminBohEligiblePool: 'Допущенный состав из 72 игроков',
-  adminBohEligiblePoolHelp:
-    'Выберите ровно 72 актуальные подтверждённые заявки. Только этот сохранённый состав используется для балансировки и прямого назначения на места.',
-  adminBohEligiblePoolSaved: 'Допущенный состав из 72 игроков сохранён.',
   adminBohEligibleRoles: 'Подходящие роли',
   adminBohEntryMethod: 'Способ ввода',
   adminBohKnownNames: 'Известные имена',
@@ -351,7 +335,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     'Коды или ID связываются с точками на карте и объединяются так: старт, промежуточные цели, упорядоченный путь, цель.',
   adminBohRoutePathPlaceholder: 'Пример: CC2, T3, FH1',
-  adminBohSaveEligiblePool: 'Сохранить 72 допущенных игроков',
   adminBohSaveTeamMetadata: 'Сохранить данные команды',
   adminBohSelectCaptain: 'Выбрать капитана',
   adminBohStartObjective: 'Стартовая цель',

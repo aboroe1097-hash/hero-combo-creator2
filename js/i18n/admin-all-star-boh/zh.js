@@ -18,8 +18,6 @@ export default Object.freeze({
   adminBohApplyRoleDefault: '应用职责默认值',
   adminBohAssignedSeats: '已分配席位',
   adminBohAverageTeamScore: '队伍平均分',
-  adminBohBalanceConfirm: '要按当前评分版本重新安排所有未锁定席位吗？已锁定席位将保持不变。',
-  adminBohBalanceTeams: '组建均衡队伍',
   adminBohBlockingIssues: '阻止发布的问题',
   adminBohBreakdown: '明细',
   adminBohCalculated: '计算结果',
@@ -66,7 +64,6 @@ export default Object.freeze({
   adminBohInstructionSaved: '作战指令已保存。',
   adminBohInstructionScope: '指令适用范围',
   adminBohInvalidTimeline: '请设置正好四个按顺序且不重叠的阶段。',
-  adminBohKicker: 'ALL-STAR BoH · 6 支队伍 · 72 名玩家',
   adminBohLegacyConfirm:
     '要复制去年的四个阶段时间和目标代码吗？15 席职责结构及所有旧玩家姓名都不会复制。',
   adminBohLegacyIs15Seats: '旧方案提示：',
@@ -219,7 +216,6 @@ export default Object.freeze({
   adminBohSignupCaption: '显示 {shown} / {total} 份报名',
   adminBohSignupsHelp:
     '对比玩家确认的数值和 OCR 警告。除非存储端明确提供受保护的审核链接，否则这里不会显示截图。',
-  adminBohSixTeamBoard: '六队席位安排板',
   adminBohSource: '录入方式',
   adminBohStageFive: '第 5 / 5 步',
   adminBohStageFour: '第 4 / 5 步',
@@ -248,7 +244,6 @@ export default Object.freeze({
   adminBohStatusExcluded: '已排除',
   adminBohStatusPending: '等待审核',
   adminBohStatusUnknown: '未知',
-  adminBohSubtitle: '审核报名、均衡六支队伍、编写职责方案，并安全发布玩家视图。',
   adminBohSwapHereLabel: '与 {player} 互换',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: '队伍',
@@ -258,11 +253,7 @@ export default Object.freeze({
   adminBohTeamPlan: '队伍方案',
   adminBohTeamPlanCopied: '已复制队伍方案，不含玩家安排。',
   adminBohTeamPlans: '队伍方案',
-  adminBohTeamsBalanced: '已生成均衡队伍草稿。',
   adminBohTeamSeatsFilled: '12 个席位中已分配 {assigned} 个',
-  adminBohTeamsHelp:
-    '组建 6 支各 12 人的队伍。重新均衡时保留锁定席位；选择一个席位后，可移动到空席位或与已占用席位互换。',
-  adminBohTeamSpread: '最高分与最低分差距',
   adminBohTeleport: '迁城指令',
   adminBohTeleportPlaceholder: '无需迁城或未指定目标',
   adminBohTemplatePrivacy:
@@ -285,7 +276,6 @@ export default Object.freeze({
   adminBohValidationLegions: '方案必须包含军团 1 和军团 2。',
   adminBohValidationMap: '示意图上尚未放置目标。',
   adminBohValidationPhases: '方案必须正好包含四个阶段。',
-  adminBohValidationSeats: '72 个席位中已分配 {assigned} 个。',
   adminBohVersionHistory: '版本记录',
   adminBohVersionLabel: '版本名称',
   adminBohVersionLabelPlaceholder: '例如：2026 选拔 v2',
@@ -318,10 +308,6 @@ export default Object.freeze({
   adminBohChoiceUnavailable: '无法参加',
   adminBohDestinationSeat: '目标位置',
   adminBohDirectAssignment: '直接安排',
-  adminBohEligiblePool: '72 人参选名单',
-  adminBohEligiblePoolHelp:
-    '请准确选择 72 份当前已验证的报名。只有保存的这份名单会用于队伍平衡和直接安排位置。',
-  adminBohEligiblePoolSaved: '72 人参选名单已保存。',
   adminBohEligibleRoles: '可胜任的职责',
   adminBohEntryMethod: '录入方式',
   adminBohKnownNames: '已知名称',
@@ -341,7 +327,6 @@ export default Object.freeze({
   adminBohRoutePathHelp:
     '代码或 ID 会匹配到地图锚点，并按以下顺序合并：起点、途经点、有序路径、目标点。',
   adminBohRoutePathPlaceholder: '示例：CC2、T3、FH1',
-  adminBohSaveEligiblePool: '保存 72 人参选名单',
   adminBohSaveTeamMetadata: '保存队伍详情',
   adminBohSelectCaptain: '选择队长',
   adminBohStartObjective: '起始目标',

@@ -5,9 +5,12 @@ import test from 'node:test';
 import {
   buildAdminEpicShowdownPreferenceSummary,
   buildAdminSignupPlanningSignals,
+  buildSignupReviewCsv,
   createAdminAllStarBohController,
   createAdminAllStarBohStoreAdapter,
+  filterAdminSubmissions,
   getAdminPreferredTeammateNames,
+  sortAdminSubmissions,
 } from '../../js/admin-all-star-boh.js';
 
 function createAdminStoreFixture() {
@@ -362,6 +365,134 @@ test('admin preference signals never feed automatic balance or assignment logic'
     signupTableFunction,
     /adminBohUsableHeroes|adminBohResearchProgress|adminBohFightingTimes|adminBohPrimaryRole|adminBohSecondaryRole/u
   );
-  assert.match(source, /They do not change scores or lock assignments\./u);
+  assert.match(
+    source,
+    /Preferences guide planning and never lock assignments\. Only enabled scoring components affect scores\./u
+  );
   assert.match(source, /adapterNotify\(state, false\)/u);
+});
+
+test('admin submission filters compose against fresh effective names and corrected stats', () => {
+  const records = [
+    {
+      playerId: 'alpha',
+      gameName: 'Original Alpha',
+      revision: 4,
+      reviewStatus: 'confirmed',
+      stats: {
+        totalCastlePower: 100,
+        t9TroopTypes: ['cavalry'],
+      },
+      commitment: {
+        fightingTimeIds: ['+12', '+14'],
+        preferredRole: 'flexible',
+        vts1097Member: true,
+      },
+      review: {
+        submissionRevision: 4,
+        gameNameCorrection: { corrected: 'Reviewed Alpha', reason: 'Matched roster' },
+        statCorrections: {
+          totalCastlePower: { corrected: 900, reason: 'Verified screenshot' },
+        },
+      },
+    },
+    {
+      playerId: 'bravo',
+      gameName: 'Bravo',
+      revision: 2,
+      reviewStatus: 'confirmed',
+      stats: { totalCastlePower: 800, t10TroopTypes: ['archers'] },
+      commitment: {
+        fightingTimeIds: ['+12'],
+        preferredRole: 'top',
+        vts1097Member: false,
+      },
+      review: {
+        submissionRevision: 1,
+        gameNameCorrection: { corrected: 'Stale Bravo', reason: 'Old review' },
+      },
+    },
+  ];
+
+  assert.deepEqual(
+    filterAdminSubmissions(records, {
+      search: 'reviewed alpha',
+      status: 'confirmed',
+      fightingTime: '+14',
+      role: 'bottom',
+      troopType: 'cavalry',
+      vtsMember: true,
+      minTotalPower: 850,
+      maxTotalPower: 950,
+    }).map((record) => record.playerId),
+    ['alpha']
+  );
+  assert.deepEqual(
+    filterAdminSubmissions(records, { search: 'stale bravo' }).map((record) => record.playerId),
+    []
+  );
+});
+
+test('admin submission sorting is stable and CSV quotes every protected effective field', () => {
+  const records = [
+    {
+      playerId: 'first',
+      gameName: '=Original, "One"',
+      revision: 1,
+      reviewStatus: 'confirmed',
+      finalScore: 20,
+      updatedAtMs: 10,
+      server: '1097',
+      stats: { totalCastlePower: 500, unitSpecialtyPower: 7, rocLevel: 160 },
+      commitment: {
+        preferredRole: 'top',
+        fightingTimeIds: ['+12'],
+        vts1097Member: true,
+        currentState: '=Not a server',
+      },
+      review: {
+        submissionRevision: 1,
+        gameNameCorrection: { corrected: '@Reviewed\nOne', reason: 'Roster audit' },
+      },
+    },
+    {
+      playerId: 'second',
+      gameName: 'Second',
+      revision: 1,
+      reviewStatus: 'confirmed',
+      finalScore: 20,
+      updatedAtMs: 20,
+      stats: { totalCastlePower: 500 },
+      commitment: {},
+    },
+  ];
+
+  assert.deepEqual(
+    sortAdminSubmissions(records, { key: 'score', direction: 'asc' }).map(
+      (record) => record.playerId
+    ),
+    ['first', 'second']
+  );
+  assert.deepEqual(
+    sortAdminSubmissions(records, { key: 'updated', direction: 'desc' }).map(
+      (record) => record.playerId
+    ),
+    ['second', 'first']
+  );
+
+  const csv = buildSignupReviewCsv(records, { includeBom: true });
+  assert.ok(csv.startsWith('\uFEFF"Player ID","Effective Name","Original Name"'));
+  assert.match(csv, /"'@Reviewed\nOne"/u);
+  assert.match(csv, /"'=Original, ""One"""/u);
+  assert.match(csv, /"Server","Current State","Alliance"/u);
+  assert.match(csv, /"1097","'=Not a server"/u);
+  assert.match(csv, /,"7",[^\r\n]*,"160",/u);
+  assert.ok(csv.endsWith('\r\n'));
+  assert.ok(
+    csv
+      .slice(1)
+      .split('\r\n')[0]
+      .split(',')
+      .every((cell) => cell.startsWith('"'))
+  );
 });

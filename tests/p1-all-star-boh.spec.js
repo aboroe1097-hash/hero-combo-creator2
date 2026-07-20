@@ -186,33 +186,82 @@ function createPlayerFixture() {
 function createAdminFixture() {
   const teams = Array.from({ length: 6 }, (_unused, index) => createTeam(index + 1));
   const submissions = teams.flatMap((team) =>
-    team.seats.map((seat, index) => ({
-      playerId: seat.playerId,
-      displayName: seat.displayName,
-      gameName: seat.displayName,
-      alliance: index % 2 ? 'VTS' : 'V3S',
-      server: '1097',
-      reviewStatus: index % 5 === 0 ? 'pending' : 'confirmed',
+    team.seats.map((seat, index) => {
+      const reviewStatus = index % 5 === 0 ? 'pending' : 'confirmed';
+      return {
+        playerId: seat.playerId,
+        displayName: seat.displayName,
+        gameName: seat.displayName,
+        alliance: index % 2 ? 'VTS' : 'V3S',
+        server: '1097',
+        revision: 1,
+        reviewStatus,
+        review: {
+          status: reviewStatus === 'confirmed' ? 'verified' : 'pending',
+          submissionRevision: 1,
+          revision: 1,
+        },
+        stats: {
+          totalCastlePower: 300_000_000 + team.number * 10_000_000 + seat.seatNumber * 100_000,
+          troopPower: 120_000_000,
+          buildingPower: 45_000_000,
+          technologyPower: 55_000_000,
+          heroCombatPower: 70_000_000,
+          dragonPower: 20_000_000,
+          unitSpecialtyPower: 10_000_000,
+          ...(seat.playerId === 'player-1-1'
+            ? {
+                usableHeroNames: ['Lionheart', 'Al Fatih'],
+                researchProgressPct: { d1956263: 0, b2691f74: 100 },
+              }
+            : {}),
+        },
+        commitment: {
+          availability: 'all',
+          preferredRole: seat.playerId === 'player-1-1' ? 'top' : seat.roleGroupId,
+          ...(seat.playerId === 'player-1-1' ? { fightingTimeIds: ['+12', '+16'] } : {}),
+        },
+      };
+    })
+  );
+  Object.assign(
+    submissions.find((item) => item.playerId === 'player-1-2'),
+    {
+      displayName: '=Formula Pilot',
+      gameName: '=Formula Pilot',
+      updatedAtMs: 1_787_000_002_000,
       stats: {
-        totalCastlePower: 300_000_000 + team.number * 10_000_000 + seat.seatNumber * 100_000,
-        troopPower: 120_000_000,
-        buildingPower: 45_000_000,
-        technologyPower: 55_000_000,
-        heroCombatPower: 70_000_000,
-        dragonPower: 20_000_000,
-        ...(seat.playerId === 'player-1-1'
-          ? {
-              usableHeroNames: ['Lionheart', 'Al Fatih'],
-              researchProgressPct: { d1956263: 0, b2691f74: 100 },
-            }
-          : {}),
+        ...submissions.find((item) => item.playerId === 'player-1-2').stats,
+        totalCastlePower: 900_000_000,
+        unitSpecialtyPower: 22_000_000,
+        t9TroopTypes: ['cavalry'],
       },
       commitment: {
         availability: 'all',
-        preferredRole: seat.playerId === 'player-1-1' ? 'top' : seat.roleGroupId,
-        ...(seat.playerId === 'player-1-1' ? { fightingTimeIds: ['+12', '+16'] } : {}),
+        fightingTimeIds: ['+14'],
+        preferredRole: 'flexible',
+        vts1097Member: true,
       },
-    }))
+    }
+  );
+  Object.assign(
+    submissions.find((item) => item.playerId === 'player-1-3'),
+    {
+      displayName: 'Alpha Pilot',
+      gameName: 'Alpha Pilot',
+      updatedAtMs: 1_787_000_001_000,
+      stats: {
+        ...submissions.find((item) => item.playerId === 'player-1-3').stats,
+        totalCastlePower: 800_000_000,
+        t9TroopTypes: ['cavalry'],
+      },
+      commitment: {
+        availability: 'all',
+        fightingTimeIds: ['+14'],
+        preferredRole: 'offensive',
+        vts1097Member: true,
+      },
+    }
   );
   const scores = submissions.map((submission, index) => ({
     playerId: submission.playerId,
@@ -542,6 +591,78 @@ async function openInjectedAdmin(page) {
     panel?.classList.remove('hidden');
     const module = await import('/js/admin-all-star-boh.js');
     window.__BOH_ADMIN_ACTIONS__ = [];
+    window.__BOH_ADMIN_CONFIRMS__ = [];
+    window.__BOH_ADMIN_DOWNLOADS__ = [];
+    window.__BOH_ADMIN_SNAPSHOT__ = snapshot;
+    const clone = (value) => structuredClone(value);
+    const submissionById = (playerId) =>
+      snapshot.submissions.find((submission) => submission.playerId === playerId);
+    const buildBalancePreview = () => {
+      const fieldSize = snapshot.event.teamCount * 12;
+      const confirmedIds = snapshot.submissions
+        .filter((submission) => ['confirmed', 'approved'].includes(submission.reviewStatus))
+        .map((submission) => submission.playerId);
+      const selectedIds = (
+        snapshot.eligiblePlayerIds?.length ? snapshot.eligiblePlayerIds : confirmedIds
+      ).slice(0, fieldSize);
+      const forced = new Map(
+        (snapshot.forcedTeamAssignments || []).map((assignment) => [
+          assignment.playerId,
+          assignment.teamId,
+        ])
+      );
+      const buckets = new Map(snapshot.teams.map((team) => [team.id, []]));
+      for (const playerId of selectedIds) {
+        const teamId = forced.get(playerId);
+        if (teamId && buckets.has(teamId)) buckets.get(teamId).push(playerId);
+      }
+      let nextTeam = 0;
+      for (const playerId of selectedIds) {
+        if (forced.has(playerId)) continue;
+        while (snapshot.teams.length && buckets.get(snapshot.teams[nextTeam].id).length >= 12) {
+          nextTeam = (nextTeam + 1) % snapshot.teams.length;
+        }
+        buckets.get(snapshot.teams[nextTeam].id).push(playerId);
+        nextTeam = (nextTeam + 1) % snapshot.teams.length;
+      }
+      const scoreById = new Map(snapshot.scores.map((score) => [score.playerId, score.finalScore]));
+      const previewTeams = snapshot.teams.map((team) => {
+        const playerIds = buckets.get(team.id);
+        const seats = team.seats.map((seat, index) => {
+          const playerId = playerIds[index] || '';
+          const submission = submissionById(playerId);
+          return {
+            ...seat,
+            playerId,
+            displayName: submission?.displayName || submission?.gameName || '',
+            locked: false,
+          };
+        });
+        return {
+          ...team,
+          seats,
+          scoreTotal: playerIds.reduce(
+            (total, playerId) => total + (scoreById.get(playerId) || 0),
+            0
+          ),
+          totalCastlePower: playerIds.reduce(
+            (total, playerId) => total + (submissionById(playerId)?.stats?.totalCastlePower || 0),
+            0
+          ),
+        };
+      });
+      const scores = previewTeams.map((team) => team.scoreTotal);
+      const powers = previewTeams.map((team) => team.totalCastlePower);
+      const scoreSpread = Math.max(...scores) - Math.min(...scores);
+      const powerSpread = Math.max(...powers) - Math.min(...powers);
+      snapshot.balancePreview = {
+        teams: previewTeams,
+        scoreSpread,
+        powerSpread,
+        balanceSpread: snapshot.event.balanceMetric === 'totalPower' ? powerSpread : scoreSpread,
+        balanceMetric: snapshot.event.balanceMetric,
+      };
+    };
     const store = {
       async start() {
         return snapshot;
@@ -556,7 +677,64 @@ async function openInjectedAdmin(page) {
         return () => {};
       },
       async dispatch(command) {
-        window.__BOH_ADMIN_ACTIONS__.push(command);
+        window.__BOH_ADMIN_ACTIONS__.push(clone(command));
+        const payload = command.payload || {};
+        if (command.type === 'saveTeamBuilderSettings') {
+          snapshot.event = {
+            ...snapshot.event,
+            teamCount: payload.teamCount,
+            fieldSize: payload.teamCount * 12,
+            balanceMetric: payload.balanceMetric,
+          };
+          snapshot.teams = snapshot.teams.slice(0, payload.teamCount);
+          snapshot.forcedTeamAssignments = clone(payload.forcedTeamAssignments || []);
+          snapshot.balancePreview = null;
+        } else if (command.type === 'saveEligiblePool') {
+          snapshot.eligiblePlayerIds = [...payload.playerIds];
+          snapshot.balancePreview = null;
+        } else if (command.type === 'previewBalanceTeams') {
+          buildBalancePreview();
+        } else if (command.type === 'discardBalancePreview') {
+          snapshot.balancePreview = null;
+        } else if (command.type === 'applyBalancePreview' && snapshot.balancePreview) {
+          snapshot.teams = clone(snapshot.balancePreview.teams);
+          snapshot.balancePreview = null;
+        } else if (command.type === 'reviewSubmission') {
+          const submission = submissionById(payload.playerId);
+          if (submission) {
+            submission.originalGameName ||= submission.gameName || submission.displayName;
+            submission.originalStats ||= clone(submission.stats || {});
+            submission.reviewStatus = payload.status;
+            submission.review = {
+              ...(submission.review || {}),
+              status: payload.status,
+              note: payload.note,
+              internalNote: payload.internalNote,
+              submissionRevision: submission.revision,
+              statCorrections: clone(payload.statCorrections || {}),
+              gameNameCorrection: clone(payload.gameNameCorrection || {}),
+            };
+            for (const [key, correction] of Object.entries(payload.statCorrections || {})) {
+              submission.stats[key] = correction.corrected;
+            }
+            if (payload.gameNameCorrection?.corrected) {
+              submission.displayName = payload.gameNameCorrection.corrected;
+              submission.gameName = payload.gameNameCorrection.corrected;
+            }
+          }
+        } else if (command.type === 'batchReviewSubmissions') {
+          for (const playerId of payload.playerIds || []) {
+            const submission = submissionById(playerId);
+            if (!submission) continue;
+            submission.reviewStatus = 'confirmed';
+            submission.review = {
+              ...(submission.review || {}),
+              status: 'confirmed',
+              note: payload.note || '',
+              submissionRevision: submission.revision,
+            };
+          }
+        }
         return { snapshot };
       },
       stop() {},
@@ -576,7 +754,16 @@ async function openInjectedAdmin(page) {
           d1956263: 'Rapid Production',
           b2691f74: 'Town Development',
         },
-        confirm: () => true,
+        confirm(message) {
+          window.__BOH_ADMIN_CONFIRMS__.push(message);
+          return true;
+        },
+        downloadSignupReviewCsv(csv, records) {
+          window.__BOH_ADMIN_DOWNLOADS__.push({
+            csv,
+            playerIds: records.map((record) => record.playerId),
+          });
+        },
       }
     );
   }, createAdminFixture());
@@ -1211,6 +1398,179 @@ test.describe('All-Star BoH secure player hub', () => {
 });
 
 test.describe('All-Star BoH Admin VTS command center', () => {
+  test('configures a 24-player two-team field, forces an exact team, and previews before apply', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="teams"]').click();
+
+    const settings = root.locator('[data-form="team-builder-settings"]');
+    await settings.locator('[name="teamCount"]').selectOption('2');
+    await settings.locator('[name="balanceMetric"]').selectOption('totalPower');
+    await settings.locator('[name="forcedTeam.player-1-2"]').selectOption('team-2');
+    await settings.getByRole('button', { name: 'Save balance configuration' }).click();
+
+    await expect(root.locator('.boh-admin-team')).toHaveCount(2);
+    await expect(root.locator('.boh-admin-seat')).toHaveCount(24);
+    await expect(
+      root.locator('[data-form="eligible-pool"]').locator('xpath=ancestor::details[1]/summary')
+    ).toContainText('24 / 24');
+    await expect(
+      root.locator('[data-form="eligible-pool"] input[name="playerId"]:checked')
+    ).toHaveCount(24);
+    await root
+      .locator('[data-form="eligible-pool"]')
+      .getByRole('button', { name: 'Save eligible field' })
+      .click();
+
+    await root.locator('[data-action="preview-balance-teams"]').click();
+    await expect(root.locator('#bohBalancePreviewTitle')).toContainText(
+      'Active metric: Total in-game power'
+    );
+    await expect(
+      root.locator('#bohBalancePreviewTitle').locator('xpath=ancestor::section[1]')
+    ).toContainText('=Formula Pilot');
+    await expect(root.locator('[data-action="apply-balance-preview"]')).toBeEnabled();
+    await root.locator('[data-action="apply-balance-preview"]').click();
+
+    const result = await page.evaluate(() => ({
+      actions: window.__BOH_ADMIN_ACTIONS__,
+      confirms: window.__BOH_ADMIN_CONFIRMS__,
+      forcedSeat: window.__BOH_ADMIN_SNAPSHOT__.teams
+        .find((team) => team.id === 'team-2')
+        .seats.find((seat) => seat.playerId === 'player-1-2'),
+    }));
+    expect(result.actions.map((action) => action.type)).toEqual([
+      'saveTeamBuilderSettings',
+      'saveEligiblePool',
+      'previewBalanceTeams',
+      'applyBalancePreview',
+    ]);
+    expect(result.actions[0].payload).toMatchObject({
+      teamCount: 2,
+      balanceMetric: 'totalPower',
+      forcedTeamAssignments: [{ playerId: 'player-1-2', teamId: 'team-2' }],
+    });
+    expect(result.actions[1].payload.playerIds).toHaveLength(24);
+    expect(result.confirms.at(-1)).toMatch(/apply this exact balance preview/iu);
+    expect(result.forcedSeat).toMatchObject({
+      playerId: 'player-1-2',
+      displayName: '=Formula Pilot',
+      locked: false,
+    });
+  });
+
+  test('edits the reviewed player name and an individual confirmed stat with audit reasons', async ({
+    page,
+  }) => {
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="signups"]').click();
+    await root.locator('[data-action="select-submission"][data-player-id="player-1-2"]').click();
+
+    const corrections = root.locator('[data-form="stat-corrections"]');
+    await corrections.locator('xpath=ancestor::details[1]/summary').click();
+    await expect(corrections.locator('[name="statCorrection.unitSpecialtyPower"]')).toHaveValue(
+      '22000000'
+    );
+    await corrections.locator('[name="gameNameCorrection"]').fill('Formula Pilot Renamed');
+    await corrections.locator('[name="gameNameCorrectionReason"]').fill('OCR split the name.');
+    await corrections.locator('[name="statCorrection.unitSpecialtyPower"]').fill('25000000');
+    await corrections.locator('[name="reason"]').fill('Confirmed from the submitted screenshot.');
+    await corrections.getByRole('button', { name: 'Save corrections' }).click();
+
+    await expect(root.locator('#bohSignupDetailTitle')).toHaveText('Formula Pilot Renamed');
+    const result = await page.evaluate(() => ({
+      action: window.__BOH_ADMIN_ACTIONS__.at(-1),
+      submission: window.__BOH_ADMIN_SNAPSHOT__.submissions.find(
+        (item) => item.playerId === 'player-1-2'
+      ),
+    }));
+    expect(result.action.type).toBe('reviewSubmission');
+    expect(result.action.payload).toMatchObject({
+      playerId: 'player-1-2',
+      status: 'confirmed',
+      gameNameCorrection: {
+        corrected: 'Formula Pilot Renamed',
+        reason: 'OCR split the name.',
+      },
+      statCorrections: {
+        unitSpecialtyPower: {
+          corrected: 25_000_000,
+          reason: 'Confirmed from the submitted screenshot.',
+        },
+      },
+    });
+    expect(Object.keys(result.action.payload.statCorrections)).toEqual(['unitSpecialtyPower']);
+    expect(result.submission).toMatchObject({
+      originalGameName: '=Formula Pilot',
+      displayName: 'Formula Pilot Renamed',
+      stats: { unitSpecialtyPower: 25_000_000 },
+    });
+  });
+
+  test('filters and sorts signups, safely exports visible rows, then batch-confirms that selection', async ({
+    page,
+  }) => {
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="signups"]').click();
+    const filters = root.locator('[data-form="signup-filter"]');
+    await filters.locator('[name="search"]').fill('Pilot');
+    await filters.locator('[name="status"]').selectOption('confirmed');
+    await filters.locator('[name="fightingTime"]').selectOption('+14');
+    await filters.locator('[name="role"]').selectOption('offensive');
+    await filters.locator('[name="troopType"]').selectOption('cavalry');
+    await filters.locator('[name="vtsMember"]').selectOption('true');
+    await filters.locator('[name="minTotalPower"]').fill('700000000');
+    await filters.locator('[name="maxTotalPower"]').fill('950000000');
+    await filters.getByRole('button', { name: 'Apply filters' }).click();
+
+    const table = root.locator('.boh-admin-review-layout table');
+    await expect(table.locator('caption')).toHaveText('2 of 72 signups');
+    await expect(table.locator('tbody tr')).toHaveCount(2);
+    const powerSort = table.locator('[data-action="signup-sort"][data-sort-key="power"]');
+    await powerSort.click();
+    await expect(powerSort.locator('xpath=ancestor::th[1]')).toHaveAttribute(
+      'aria-sort',
+      'ascending'
+    );
+    await expect(table.locator('tbody tr th strong')).toHaveText(['Alpha Pilot', '=Formula Pilot']);
+    await powerSort.click();
+    await expect(table.locator('tbody tr th strong')).toHaveText(['=Formula Pilot', 'Alpha Pilot']);
+
+    await root.locator('[data-action="export-signups"]').click();
+    const download = await page.evaluate(() => window.__BOH_ADMIN_DOWNLOADS__.at(-1));
+    expect(download.playerIds).toEqual(['player-1-2', 'player-1-3']);
+    expect(download.csv.startsWith('\uFEFF')).toBe(true);
+    expect(download.csv).toContain('\r\n');
+    expect(download.csv).toContain('"\'=Formula Pilot"');
+    expect(download.csv).not.toContain('Player 2-01');
+
+    await root.locator('[data-action="select-all-visible"]').check();
+    await expect(table.locator('[data-action="select-submission-row"]:checked')).toHaveCount(2);
+    const batch = root.locator('[data-form="batch-review"]');
+    await batch.locator('[name="note"]').fill('Confirmed together after final review.');
+    await batch.getByRole('button', { name: 'Confirm selected (2)' }).click();
+
+    const batchResult = await page.evaluate(() => ({
+      action: window.__BOH_ADMIN_ACTIONS__.at(-1),
+      confirms: window.__BOH_ADMIN_CONFIRMS__,
+    }));
+    expect(batchResult.confirms.at(-1)).toMatch(/confirm 2 visible selected signups/iu);
+    expect(batchResult.action).toMatchObject({
+      type: 'batchReviewSubmissions',
+      payload: {
+        playerIds: ['player-1-2', 'player-1-3'],
+        status: 'confirmed',
+        note: 'Confirmed together after final review.',
+      },
+    });
+    await expect(batch.getByRole('button', { name: 'Confirm selected (0)' })).toBeDisabled();
+  });
+
   test('local test auth renders five stages, 72 seats, plan controls, and safe legacy reuse', async ({
     page,
   }) => {

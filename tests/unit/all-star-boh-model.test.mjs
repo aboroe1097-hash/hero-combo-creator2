@@ -35,18 +35,19 @@ import {
 
 function draftPlayers(options = {}) {
   const roles = options.roles || null;
-  return Array.from({ length: BOH_FIELD_SIZE }, (_, index) => ({
+  const fieldSize = (options.teamCount || BOH_TEAM_COUNT) * BOH_TEAM_SIZE;
+  return Array.from({ length: fieldSize }, (_, index) => ({
     playerId: `player-${index + 1}`,
     gameName: `Player ${index + 1}`,
-    score: options.sameScore ? 100 : BOH_FIELD_SIZE - index,
+    score: options.sameScore ? 100 : fieldSize - index,
     eligibleRoleIds: roles?.[index] || [],
     rolePreferences: roles?.[index] || [],
   }));
 }
 
-function completeTeams() {
+function completeTeams(teamCount = BOH_TEAM_COUNT) {
   const seats = createBohSeatTemplate();
-  return Array.from({ length: BOH_TEAM_COUNT }, (_, teamIndex) => ({
+  return Array.from({ length: teamCount }, (_, teamIndex) => ({
     id: `team-${teamIndex + 1}`,
     players: seats.map((seat) => ({
       playerId: `player-${teamIndex * BOH_TEAM_SIZE + seat.seatNumber}`,
@@ -475,14 +476,18 @@ test('2025 formula exposes an exact deterministic component breakdown', () => {
         technologyPower: 3000000,
         heroCombatPower: 4000000,
         dragonPower: 5000000,
+        unitSpecialtyPower: 6000000,
         t9TroopTypes: ['Cavalry', 'Archers', 'Footmen'],
         readySpeedHeroes: ['LionHeart', 'Cao Cao'],
+        usableHeroNames: ['Cleopatra'],
+        troopRoster: ['estimate|lofty|7000000', 'estimate|enhanced-t10|1500000'],
         level50HeroCount: 4,
+        rocLevel: 160,
         bohUsefulRating: 99,
       },
     },
     BOH_2025_SCORING_PROFILE,
-    { adminUsefulnessRating: 2 }
+    { adminUsefulnessRating: 2, paidUsableHeroNames: ['cleopatra'] }
   );
 
   assert.equal(scored.profileId, 'all-star-boh-2025-v1');
@@ -492,13 +497,136 @@ test('2025 formula exposes an exact deterministic component breakdown', () => {
   assert.equal(scored.breakdown.technologyPower.points, 2100);
   assert.equal(scored.breakdown.heroCombatPower.points, 3200);
   assert.equal(scored.breakdown.dragonPower.points, 5000);
+  assert.equal(scored.breakdown.unitSpecialtyPower.points, 0);
   assert.equal(scored.breakdown.t9TroopType.points, 9000);
   assert.equal(scored.breakdown.readySpeedHero.points, 5000);
   assert.equal(scored.breakdown.level50Hero.points, 3000);
   assert.equal(scored.breakdown.bohUsefulRating.points, 2000);
+  assert.equal(scored.breakdown.rocLevel.points, 0);
+  assert.equal(scored.breakdown.paidUsableHero.points, 0);
+  assert.equal(scored.breakdown.loftyTroopMillion.points, 0);
+  assert.equal(scored.breakdown.enhancedT10TroopMillion.points, 0);
   assert.equal(scored.powerSubtotal, 10950);
   assert.equal(scored.bonusSubtotal, 19000);
   assert.equal(scored.total, 29950);
+});
+
+test('custom scoring profiles apply all five new model inputs', () => {
+  const profile = createBohScoringProfile({
+    powerWeights: { unitSpecialtyPower: 0.5 },
+    bonusWeights: {
+      rocLevel: 10,
+      paidUsableHero: 500,
+      loftyTroopMillion: 200,
+      enhancedT10TroopMillion: 400,
+    },
+  });
+  const scored = scoreBohSignup(
+    {
+      gameName: 'New Inputs',
+      stats: {
+        unitSpecialtyPower: 2000000,
+        rocLevel: 160,
+        usableHeroNames: ['Cleopatra', 'Ragnar', 'Free Hero'],
+        troopRoster: ['estimate|lofty|7500000', 'estimate|enhanced-t10|1250000'],
+      },
+    },
+    profile,
+    { paidUsableHeroNames: ['cleopatra', 'RAGNAR'] }
+  );
+
+  assert.deepEqual(
+    Object.fromEntries(
+      [
+        'unitSpecialtyPower',
+        'rocLevel',
+        'paidUsableHero',
+        'loftyTroopMillion',
+        'enhancedT10TroopMillion',
+      ].map((field) => [field, scored.breakdown[field].input])
+    ),
+    {
+      unitSpecialtyPower: 2000000,
+      rocLevel: 160,
+      paidUsableHero: 2,
+      loftyTroopMillion: 7.5,
+      enhancedT10TroopMillion: 1.25,
+    }
+  );
+  assert.equal(scored.breakdown.unitSpecialtyPower.points, 1000);
+  assert.equal(scored.breakdown.rocLevel.points, 1600);
+  assert.equal(scored.breakdown.paidUsableHero.points, 1000);
+  assert.equal(scored.breakdown.loftyTroopMillion.points, 1500);
+  assert.equal(scored.breakdown.enhancedT10TroopMillion.points, 500);
+  assert.equal(scored.total, 5600);
+});
+
+test('paid usable heroes require trusted metadata and normalize names before intersection', () => {
+  const input = {
+    gameName: 'Hero Trust',
+    paidUsableHero: 99,
+    paidUsableHeroCount: 99,
+    stats: {
+      usableHeroNames: [' Cleopatra ', 'CLEOPATRA', 'Ragnar', 'Free Hero'],
+      paidUsableHero: 99,
+      paidUsableHeroCount: 99,
+    },
+  };
+  const profile = createBohScoringProfile({ bonusWeights: { paidUsableHero: 100 } });
+  const trusted = scoreBohSignup(input, profile, {
+    paidUsableHeroNames: ['cleopatra', 'RAGNAR', 'ragnar', 'Unowned Paid Hero'],
+  });
+  const missingMetadata = scoreBohSignup(input, profile);
+
+  assert.equal(trusted.breakdown.paidUsableHero.input, 2);
+  assert.equal(trusted.breakdown.paidUsableHero.points, 200);
+  assert.equal(missingMetadata.breakdown.paidUsableHero.input, 0);
+  assert.equal(missingMetadata.breakdown.paidUsableHero.points, 0);
+});
+
+test('aggregate troop estimates override legacy rows and legacy encodings still sum', () => {
+  const profile = createBohScoringProfile({
+    bonusWeights: { loftyTroopMillion: 10, enhancedT10TroopMillion: 20 },
+  });
+  const aggregate = scoreBohSignup(
+    {
+      gameName: 'Aggregate Troops',
+      troopRoster: [
+        'estimate|lofty|7000000',
+        'cavalry|S|normal|1000000',
+        'archers|SS|enhanced|2000000',
+        'footmen|SSS|normal|3000000',
+        'estimate|enhanced-t10|1500000',
+        'cavalry|X|enhanced|4000000',
+        'archers|X|normal|9000000',
+      ],
+    },
+    profile
+  );
+  const legacy = scoreBohSignup(
+    {
+      gameName: 'Legacy Troops',
+      troopRoster: [
+        'cavalry|S|normal|1000000',
+        'archers|SS|enhanced|2000000',
+        'footmen|SSS|normal|3000000',
+        'cavalry|X|enhanced|4000000',
+        'footmen|X|enhanced|500000',
+        'archers|X|normal|9000000',
+        'footmen|IX|enhanced|8000000',
+      ],
+    },
+    profile
+  );
+
+  assert.equal(aggregate.breakdown.loftyTroopMillion.input, 7);
+  assert.equal(aggregate.breakdown.enhancedT10TroopMillion.input, 1.5);
+  assert.equal(aggregate.breakdown.loftyTroopMillion.points, 70);
+  assert.equal(aggregate.breakdown.enhancedT10TroopMillion.points, 30);
+  assert.equal(legacy.breakdown.loftyTroopMillion.input, 6);
+  assert.equal(legacy.breakdown.enhancedT10TroopMillion.input, 4.5);
+  assert.equal(legacy.breakdown.loftyTroopMillion.points, 60);
+  assert.equal(legacy.breakdown.enhancedT10TroopMillion.points, 90);
 });
 
 test('player-controlled usefulness is ignored and only a bounded admin adjustment can score', () => {
@@ -662,6 +790,270 @@ test('balancing is deterministic, complete, role-covered, and score-balanced', (
   }
 });
 
+test('omitted balance options preserve the legacy six-team assignment order', () => {
+  const result = balanceBohTeams(draftPlayers());
+  assert.equal(result.teamCount, BOH_TEAM_COUNT);
+  assert.equal(result.fieldSize, BOH_FIELD_SIZE);
+  assert.equal(result.balanceMetric, 'score');
+  assert.deepEqual(
+    result.teams.map((team) => team.players.map((player) => player.playerId)),
+    [
+      [
+        'player-1',
+        'player-2',
+        'player-3',
+        'player-4',
+        'player-5',
+        'player-67',
+        'player-66',
+        'player-65',
+        'player-64',
+        'player-63',
+        'player-62',
+        'player-36',
+      ],
+      [
+        'player-13',
+        'player-14',
+        'player-15',
+        'player-16',
+        'player-18',
+        'player-55',
+        'player-54',
+        'player-53',
+        'player-52',
+        'player-51',
+        'player-50',
+        'player-47',
+      ],
+      [
+        'player-6',
+        'player-17',
+        'player-46',
+        'player-45',
+        'player-44',
+        'player-43',
+        'player-42',
+        'player-41',
+        'player-40',
+        'player-39',
+        'player-38',
+        'player-37',
+      ],
+      [
+        'player-61',
+        'player-35',
+        'player-34',
+        'player-33',
+        'player-32',
+        'player-25',
+        'player-30',
+        'player-29',
+        'player-28',
+        'player-27',
+        'player-56',
+        'player-48',
+      ],
+      [
+        'player-24',
+        'player-23',
+        'player-22',
+        'player-21',
+        'player-20',
+        'player-19',
+        'player-26',
+        'player-49',
+        'player-57',
+        'player-58',
+        'player-59',
+        'player-60',
+      ],
+      [
+        'player-12',
+        'player-11',
+        'player-10',
+        'player-9',
+        'player-8',
+        'player-7',
+        'player-31',
+        'player-68',
+        'player-69',
+        'player-70',
+        'player-71',
+        'player-72',
+      ],
+    ]
+  );
+  assert.deepEqual(
+    result.teams.map((team) => team.totalScore),
+    [438, 438, 438, 438, 438, 438]
+  );
+});
+
+test('balancing supports every team count from two through six deterministically', () => {
+  const assignments = (result) =>
+    result.teams.map((team) => team.players.map((player) => player.playerId));
+
+  for (let teamCount = 2; teamCount <= BOH_TEAM_COUNT; teamCount += 1) {
+    const players = draftPlayers({ teamCount });
+    const first = balanceBohTeams(players, { teamCount });
+    const second = balanceBohTeams(players, { teamCount });
+    const playerIds = first.teams.flatMap((team) => team.players.map((player) => player.playerId));
+
+    assert.deepEqual(assignments(first), assignments(second));
+    assert.equal(first.teamCount, teamCount);
+    assert.equal(first.fieldSize, teamCount * BOH_TEAM_SIZE);
+    assert.equal(first.teams.length, teamCount);
+    assert.equal(first.validation.valid, true);
+    assert.equal(
+      validateBohTeamAssignments(first.teams, { teamCount }).valid,
+      true,
+      `expected ${teamCount} teams to validate`
+    );
+    assert.equal(playerIds.length, teamCount * BOH_TEAM_SIZE);
+    assert.equal(new Set(playerIds).size, playerIds.length);
+    first.teams.forEach((team) => {
+      assert.equal(team.players.length, BOH_TEAM_SIZE);
+      BOH_DEFAULT_ROLE_GROUPS.forEach((group) => {
+        assert.equal(
+          team.players.filter((player) => player.roleGroupId === group.id).length,
+          group.capacity
+        );
+      });
+    });
+  }
+});
+
+test('team counts and their exact field sizes are validated before balancing', () => {
+  for (const teamCount of [1, 7, 2.5, 'not-a-count']) {
+    assert.throws(() => balanceBohTeams(draftPlayers(), { teamCount }), /boh_team_count_invalid/);
+  }
+  const threeTeams = draftPlayers({ teamCount: 3 });
+  assert.throws(
+    () => balanceBohTeams(threeTeams.slice(0, -1), { teamCount: 3 }),
+    /boh_field_size_invalid/
+  );
+  assert.throws(
+    () =>
+      balanceBohTeams(
+        [...threeTeams, { playerId: 'extra-player', gameName: 'Extra Player', score: 0 }],
+        { teamCount: 3 }
+      ),
+    /boh_field_size_invalid/
+  );
+  assert.throws(
+    () => balanceBohTeams(draftPlayers({ teamCount: 2 }), { teamCount: 2, balanceMetric: 'power' }),
+    /boh_balance_metric_invalid/
+  );
+
+  const invalidValidation = validateBohTeamAssignments(completeTeams(2), { teamCount: 1 });
+  assert.equal(invalidValidation.valid, false);
+  assert.ok(invalidValidation.errors.some((error) => error.code === 'boh_team_count_invalid'));
+});
+
+test('custom team numbers are unique integers from one through six with omitted defaults', () => {
+  const players = draftPlayers({ teamCount: 2 });
+  const defaults = balanceBohTeams(players, {
+    teamCount: 2,
+    teams: [{ id: 'alpha' }, { id: 'beta' }],
+  });
+  assert.deepEqual(
+    defaults.teams.map((team) => team.number),
+    [1, 2]
+  );
+
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        teams: [
+          { id: 'alpha', number: 1 },
+          { id: 'beta', number: '1' },
+        ],
+      }),
+    /boh_team_number_duplicate/
+  );
+  for (const number of [0, 7, 1.5, 'not-a-number']) {
+    assert.throws(
+      () =>
+        balanceBohTeams(players, {
+          teamCount: 2,
+          teams: [
+            { id: 'alpha', number },
+            { id: 'beta', number: 2 },
+          ],
+        }),
+      /boh_team_number_invalid/
+    );
+  }
+
+  const duplicateNumbers = completeTeams(2);
+  duplicateNumbers[0].number = 1;
+  duplicateNumbers[1].number = '1';
+  const duplicateValidation = validateBohTeamAssignments(duplicateNumbers, { teamCount: 2 });
+  assert.equal(duplicateValidation.valid, false);
+  assert.ok(duplicateValidation.errors.some((error) => error.code === 'boh_team_number_duplicate'));
+
+  const invalidNumbers = completeTeams(2);
+  invalidNumbers[0].number = 7;
+  const invalidNumberValidation = validateBohTeamAssignments(invalidNumbers, { teamCount: 2 });
+  assert.equal(invalidNumberValidation.valid, false);
+  assert.ok(
+    invalidNumberValidation.errors.some((error) => error.code === 'boh_team_number_invalid')
+  );
+});
+
+test('explicit team references are strict and ambiguous legacy references are rejected', () => {
+  const players = draftPlayers({ teamCount: 2 });
+  const teams = [
+    { id: '2', number: 1, label: 'Numeric ID' },
+    { id: 'alpha', number: 2, label: 'Numeric Number' },
+  ];
+  const strict = balanceBohTeams(players, {
+    teamCount: 2,
+    teams,
+    forcedTeamAssignments: [
+      { playerId: 'player-1', teamId: '2' },
+      { playerId: 'player-2', teamNumber: 2 },
+    ],
+  });
+  const teamFor = (result, playerId) =>
+    result.teams.find((team) => team.players.some((player) => player.playerId === playerId));
+  assert.equal(teamFor(strict, 'player-1').id, '2');
+  assert.equal(teamFor(strict, 'player-2').id, 'alpha');
+
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        teams,
+        forcedTeamAssignments: { 'player-1': '2' },
+      }),
+    /boh_forced_team_ambiguous/
+  );
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        teams,
+        lockedAssignments: [{ playerId: 'player-1', team: 2 }],
+      }),
+    /boh_locked_team_ambiguous/
+  );
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        teams: [
+          { id: 'alpha', number: 1 },
+          { id: 'beta', number: 2 },
+        ],
+        forcedTeamAssignments: [{ playerId: 'player-1', teamId: '2' }],
+      }),
+    /boh_forced_team_unknown/
+  );
+});
+
 test('balancing honors exact-seat, team, and role locks while retaining legal coverage', () => {
   const result = balanceBohTeams(draftPlayers(), {
     lockedAssignments: {
@@ -685,6 +1077,238 @@ test('balancing honors exact-seat, team, and role locks while retaining legal co
   assert.equal(find('player-3').team.id, 'team-4');
   assert.ok(find('player-1').player.locked);
   assert.equal(result.validation.valid, true);
+});
+
+test('forced team assignments accept array, map, and object inputs without locking seats', () => {
+  const inputs = [
+    [{ playerId: 'player-1', teamId: 'team-2' }],
+    new Map([['player-1', 'team-2']]),
+    { 'player-1': { teamId: 'team-2' } },
+  ];
+
+  inputs.forEach((forcedTeamAssignments) => {
+    const result = balanceBohTeams(draftPlayers({ teamCount: 2 }), {
+      teamCount: 2,
+      forcedTeamAssignments,
+      lockedAssignments: {
+        'player-2': { teamId: 'team-1', seatNumber: 1 },
+      },
+    });
+    const forcedTeam = result.teams.find((team) =>
+      team.players.some((player) => player.playerId === 'player-1')
+    );
+    const forcedPlayer = forcedTeam.players.find((player) => player.playerId === 'player-1');
+    const lockedPlayer = result.teams
+      .flatMap((team) => team.players)
+      .find((player) => player.playerId === 'player-2');
+
+    assert.equal(forcedTeam.id, 'team-2');
+    assert.equal(forcedPlayer.locked, false);
+    assert.equal(lockedPlayer.locked, true);
+    assert.equal(result.validation.valid, true);
+  });
+});
+
+test('forced team assignments reject unknowns, duplicates, and conflicting seat locks', () => {
+  const players = draftPlayers({ teamCount: 2 });
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        forcedTeamAssignments: { 'missing-player': 'team-1' },
+      }),
+    /boh_forced_player_unknown/
+  );
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        forcedTeamAssignments: { 'player-1': 'team-3' },
+      }),
+    /boh_forced_team_unknown/
+  );
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        forcedTeamAssignments: [
+          { playerId: 'player-1', teamId: 'team-1' },
+          { playerId: 'player-1', teamId: 'team-2' },
+        ],
+      }),
+    /boh_forced_player_duplicate/
+  );
+  assert.throws(
+    () =>
+      balanceBohTeams(players, {
+        teamCount: 2,
+        forcedTeamAssignments: { 'player-1': 'team-2' },
+        lockedAssignments: {
+          'player-1': { teamId: 'team-1', seatNumber: 1 },
+        },
+      }),
+    /boh_forced_locked_team_conflict/
+  );
+
+  const compatible = balanceBohTeams(players, {
+    teamCount: 2,
+    forcedTeamAssignments: { 'player-1': 'team-1' },
+    lockedAssignments: { 'player-1': { teamId: 'team-1', seatNumber: 1 } },
+  });
+  const player = compatible.teams[0].players.find((entry) => entry.playerId === 'player-1');
+  assert.equal(player.seatNumber, 1);
+  assert.equal(player.locked, true);
+});
+
+test('score and total-power balancing optimize inverse fixtures while emitting both totals', () => {
+  const teamCount = 2;
+  const fieldSize = teamCount * BOH_TEAM_SIZE;
+  const players = Array.from({ length: fieldSize }, (_, index) => ({
+    playerId: `metric-${index + 1}`,
+    gameName: `Metric ${index + 1}`,
+    score: (fieldSize - index) ** 3,
+    stats: { totalCastlePower: (index + 1) ** 2 * 1000 },
+  }));
+  const scoreBalanced = balanceBohTeams(players, { teamCount, balanceMetric: 'score' });
+  const powerBalanced = balanceBohTeams(players, {
+    teamCount,
+    balanceMetric: 'totalPower',
+  });
+  const assignments = (result) =>
+    result.teams.map((team) => team.players.map((player) => player.playerId));
+
+  assert.notDeepEqual(assignments(scoreBalanced), assignments(powerBalanced));
+  assert.ok(scoreBalanced.scoreSpread < powerBalanced.scoreSpread);
+  assert.ok(powerBalanced.powerSpread < scoreBalanced.powerSpread);
+  assert.equal(scoreBalanced.balanceMetric, 'score');
+  assert.equal(scoreBalanced.balanceSpread, scoreBalanced.scoreSpread);
+  assert.equal(powerBalanced.balanceMetric, 'totalPower');
+  assert.equal(powerBalanced.balanceSpread, powerBalanced.powerSpread);
+
+  for (const result of [scoreBalanced, powerBalanced]) {
+    result.teams.forEach((team) => {
+      const totalScore = team.players.reduce((total, player) => total + player.score, 0);
+      const totalCastlePower = team.players.reduce(
+        (total, player) => total + player.totalCastlePower,
+        0
+      );
+      assert.equal(team.totalScore, totalScore);
+      assert.equal(team.totalCastlePower, totalCastlePower);
+      assert.equal(
+        team.balanceTotal,
+        result.balanceMetric === 'totalPower' ? totalCastlePower : totalScore
+      );
+      team.players.forEach((player) => {
+        assert.equal(player.totalCastlePower, player.signup.stats.totalCastlePower);
+      });
+    });
+    const scoreTotals = result.teams.map((team) => team.totalScore);
+    const powerTotals = result.teams.map((team) => team.totalCastlePower);
+    assert.equal(result.scoreSpread, Math.max(...scoreTotals) - Math.min(...scoreTotals));
+    assert.equal(result.powerSpread, Math.max(...powerTotals) - Math.min(...powerTotals));
+  }
+});
+
+test('total-power balancing normalizes mixed adapter aliases before applying constraints', () => {
+  const teamCount = 3;
+  const basePlayers = draftPlayers({ teamCount });
+  const expectedPower = new Map(
+    basePlayers.map((player, index) => [player.playerId, (index + 1) ** 2 * 1000])
+  );
+  const canonical = basePlayers.map((player) => ({
+    ...player,
+    stats: { totalCastlePower: expectedPower.get(player.playerId) },
+  }));
+  const mixed = basePlayers.map((player, index) => {
+    const power = expectedPower.get(player.playerId);
+    if (index % 4 === 0) {
+      return {
+        ...player,
+        signup: {
+          playerId: player.playerId,
+          gameName: player.gameName,
+          stats: { totalCastlePower: 1 },
+        },
+        totalCastlePower: power,
+      };
+    }
+    if (index % 4 === 1) {
+      return {
+        ...player,
+        signup: {
+          playerId: player.playerId,
+          gameName: player.gameName,
+          totalPower: 1,
+        },
+        totalPower: power,
+      };
+    }
+    if (index % 4 === 2) return { ...player, stats: { totalPower: power } };
+    return { ...player, totalPower: power };
+  });
+  const options = {
+    teamCount,
+    balanceMetric: 'totalPower',
+    forcedTeamAssignments: { 'player-1': { teamNumber: 3 } },
+    lockedAssignments: { 'player-2': { teamNumber: 2, seatNumber: 1 } },
+  };
+  const canonicalResult = balanceBohTeams(canonical, options);
+  const mixedResult = balanceBohTeams(mixed, options);
+  const assignments = (result) =>
+    result.teams.map((team) => team.players.map((player) => player.playerId));
+
+  assert.deepEqual(assignments(mixedResult), assignments(canonicalResult));
+  mixedResult.teams.forEach((team) => {
+    team.players.forEach((player) => {
+      assert.equal(player.totalCastlePower, expectedPower.get(player.playerId));
+      assert.equal(player.signup.stats.totalCastlePower, expectedPower.get(player.playerId));
+    });
+  });
+  const teamFor = (playerId) =>
+    mixedResult.teams.find((team) => team.players.some((player) => player.playerId === playerId));
+  assert.equal(teamFor('player-1').number, 3);
+  assert.equal(
+    teamFor('player-1').players.find((player) => player.playerId === 'player-1').locked,
+    false
+  );
+  assert.equal(teamFor('player-2').number, 2);
+  assert.equal(
+    teamFor('player-2').players.find((player) => player.playerId === 'player-2').seatNumber,
+    1
+  );
+});
+
+test('draft total power is finite and clamped to the store-compatible range', () => {
+  const players = draftPlayers({ teamCount: 2, sameScore: true }).map((player, index) => {
+    if (index === 0) return { ...player, totalCastlePower: -100 };
+    if (index === 1) return { ...player, totalPower: Number.POSITIVE_INFINITY };
+    if (index === 2) return { ...player, stats: { totalCastlePower: 10 ** 15 } };
+    if (index === 3) return { ...player, stats: { totalPower: '1,234' } };
+    if (index === 4) {
+      return {
+        ...player,
+        signup: {
+          playerId: player.playerId,
+          gameName: player.gameName,
+          stats: { totalCastlePower: 10 },
+        },
+        stats: { totalCastlePower: 20 },
+        totalPower: 30,
+        totalCastlePower: 40,
+      };
+    }
+    return player;
+  });
+  const result = balanceBohTeams(players, { teamCount: 2, balanceMetric: 'totalPower' });
+  const byId = new Map(
+    result.teams.flatMap((team) => team.players.map((player) => [player.playerId, player]))
+  );
+
+  assert.equal(byId.get('player-1').totalCastlePower, 0);
+  assert.equal(byId.get('player-2').totalCastlePower, 0);
+  assert.equal(byId.get('player-3').totalCastlePower, 10 ** 12);
+  assert.equal(byId.get('player-4').totalCastlePower, 1234);
+  assert.equal(byId.get('player-5').totalCastlePower, 40);
 });
 
 test('role eligibility is a hard coverage input and impossible coverage is rejected', () => {
