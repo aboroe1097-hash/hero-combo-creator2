@@ -444,7 +444,7 @@ async function openInjectedPlayerHub(page) {
           return { configured: true, db: { local: true } };
         },
         async ensureAnonymousAuth() {
-          return { uid: fixture.uid };
+          return { uid: fixture.uid, isAnonymous: true };
         },
         async getFirebaseAppCheckToken() {
           return 'local-app-check-token';

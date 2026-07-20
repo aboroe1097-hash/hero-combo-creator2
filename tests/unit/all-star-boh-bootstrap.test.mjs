@@ -151,7 +151,7 @@ function createFirebase() {
       return { configured: true, db: { name: 'db' } };
     },
     async ensureAnonymousAuth() {
-      return { uid: 'member-uid' };
+      return { uid: 'member-uid', isAnonymous: true };
     },
     async getFirebaseAppCheckToken(forceRefresh) {
       appCheckCalls.push(forceRefresh);
@@ -159,6 +159,45 @@ function createFirebase() {
     },
   };
 }
+
+test('refuses to mount the member hub under an inherited leadership account', async () => {
+  const root = createRoot();
+  const gate = createGate();
+  const firebase = createFirebase();
+  firebase.ensureAnonymousAuth = async () => ({
+    uid: 'shared-admin-uid',
+    isAnonymous: false,
+    email: 'leadership@example.test',
+  });
+  let domainLoads = 0;
+
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    gate,
+    firebase,
+    eventTarget: createEventTarget(),
+    accessClient: {
+      async getAccessGrant() {
+        return GRANT;
+      },
+      destroy() {},
+    },
+    now: () => NOW_MS,
+    loadStylesheet: async () => {},
+    loadDomain: async () => {
+      domainLoads += 1;
+      return createDomain({});
+    },
+    setTimeout: () => 1,
+    clearTimeout: () => {},
+  });
+
+  assert.equal(root.hidden, true);
+  assert.equal(domainLoads, 0);
+  assert.equal(gate.states.at(-1), 'error');
+  assert.equal(gate.error?.code, 'member_identity_conflict');
+  lifecycle.destroy();
+});
 
 test('keeps the form concealed and private domain chunks unloaded without a valid grant', async () => {
   const order = [];
