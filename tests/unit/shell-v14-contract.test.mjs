@@ -48,7 +48,7 @@ test('mobile exposes exactly four primary destinations and an accessible More sh
     (match) => match[1]
   );
 
-  assert.deepEqual(mobilePrimaryIds, ['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade']);
+  assert.deepEqual(mobilePrimaryIds, ['tabResearch', 'tabEdenX1', 'tabAllStarBoh', 'tabYouTube']);
   assert.match(
     index,
     /id="shellMoreButton"[^>]*aria-expanded="false"[^>]*aria-controls="shellMorePanel"/
@@ -61,7 +61,7 @@ test('mobile exposes exactly four primary destinations and an accessible More sh
 });
 
 test('translated mobile labels preserve their icon-library artwork', () => {
-  for (const id of ['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade']) {
+  for (const id of ['tabResearch', 'tabEdenX1', 'tabAllStarBoh', 'tabYouTube']) {
     assert.match(index, new RegExp(`id="${id}"[\\s\\S]*?<svg[\\s\\S]*?<span`));
   }
   assert.doesNotMatch(index, /id="(?:tabResearch|tabYouTube)"[^>]*data-i18n=/);
@@ -114,7 +114,7 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   );
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade'\];/
+    /const mobilePrimaryIds = \['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1'\];/
   );
 
   for (const id of ['tabStrife', 'tabSpecialization', 'tabLoyalty', 'tabYouTube']) {
