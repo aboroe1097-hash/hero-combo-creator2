@@ -34,6 +34,8 @@ const hr = Object.freeze({
   tabAllStarBoh: 'All-Star BoH',
   tabAllStarBohAria: 'Otvori All-Star BoH centar za članove',
   tabAllStarBohBadge: 'Sezonski',
+  bohAccessErrorIdentityConflict:
+    'Ovaj je preglednik prijavljen na upravljačku ploču vodstva. Radi zaštite prijava igrača otvori ovu poveznicu u privatnom prozoru i tamo unesi članski PIN.',
   tabMaterials: 'DM materijali',
   tabAi: 'Razgovaraj s Velom',
   tabStrife: 'Strife over Dragon',

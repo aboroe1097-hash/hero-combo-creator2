@@ -554,6 +554,21 @@ async function openInjectedAdmin(page) {
 }
 
 test.describe('All-Star BoH secure player hub', () => {
+  test('leadership identity conflict renders the private-window instruction', async ({ page }) => {
+    await blockExternalServices(page);
+    await page.goto('/tabs/all-star-boh.html', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(async () => {
+      const { createAllStarBohAccessGate } = await import('/js/all-star-boh-bootstrap.js');
+      const root = document.querySelector('[data-role="boh-root"]');
+      const gate = createAllStarBohAccessGate({ root, locale: 'en' });
+      gate.showError({ code: 'member_identity_conflict' });
+    });
+
+    await expect(page.locator('[data-role="boh-access-feedback"]')).toHaveText(
+      /signed into the leadership dashboard.*open this link in a private window/iu
+    );
+  });
+
   test('direct hash fails closed and does not fetch private feature chunks before a grant', async ({
     page,
   }) => {

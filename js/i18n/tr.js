@@ -457,6 +457,8 @@ const tr = {
   bohAccessErrorLocked: 'Çok fazla deneme yaptın. Biraz bekleyip tekrar dene.',
   bohAccessErrorClosed: 'All-Star BoH erişimi şu anda açık değil.',
   bohAccessErrorAuth: 'Güvenli oturum açılamadı. Lütfen tekrar dene.',
+  bohAccessErrorIdentityConflict:
+    'Bu tarayıcı liderlik panelinde oturum açmış durumda. Oyuncu kayıtlarını korumak için bu bağlantıyı gizli bir pencerede aç ve üye PIN’ini orada gir.',
   bohAccessErrorAppCheck: 'Güvenli uygulama doğrulaması tamamlanamadı. Lütfen tekrar dene.',
   bohAccessErrorNetwork: 'Güvenli hizmete ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
   bohAccessErrorGeneric: 'Üye erişimi onaylanamadı. Lütfen tekrar dene.',

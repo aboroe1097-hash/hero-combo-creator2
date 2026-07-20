@@ -492,6 +492,8 @@ const fr = {
   bohAccessErrorLocked: 'Trop de tentatives. Attends un instant puis réessaie.',
   bohAccessErrorClosed: 'L’accès à All-Star BoH n’est pas ouvert pour le moment.',
   bohAccessErrorAuth: 'La connexion sécurisée n’a pas pu être préparée. Réessaie.',
+  bohAccessErrorIdentityConflict:
+    'Ce navigateur est connecté au tableau de bord des responsables. Pour protéger les inscriptions, ouvre ce lien dans une fenêtre privée et saisis-y le PIN membre.',
   bohAccessErrorAppCheck: 'La vérification sécurisée de l’application a échoué. Réessaie.',
   bohAccessErrorNetwork:
     'Le service sécurisé est inaccessible. Vérifie ta connexion puis réessaie.',

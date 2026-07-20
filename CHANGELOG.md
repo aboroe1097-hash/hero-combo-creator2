@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.2.0 - 2026-07-20
+
+- Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.
+- Localized the leadership-session warning across all twelve supported site languages and added rendered browser coverage for the exact message.
+
 ## 14.1.20 - 2026-07-20
 
 - Blocked the member All-Star signup from inheriting an existing leadership/admin Firebase login, preventing shared admin browsers from opening or overwriting one member submission.

@@ -371,6 +371,8 @@ const kr = {
   bohAccessErrorLocked: '시도 횟수가 너무 많습니다. 잠시 후 다시 시도하세요.',
   bohAccessErrorClosed: '현재 All-Star BoH 접근이 열려 있지 않습니다.',
   bohAccessErrorAuth: '안전한 로그인을 준비하지 못했습니다. 다시 시도하세요.',
+  bohAccessErrorIdentityConflict:
+    '이 브라우저는 운영진 대시보드에 로그인되어 있습니다. 플레이어 신청을 보호하려면 이 링크를 비공개 창에서 열고 멤버 PIN을 입력하세요.',
   bohAccessErrorAppCheck: '안전한 앱 확인을 완료하지 못했습니다. 다시 시도하세요.',
   bohAccessErrorNetwork: '보안 서비스에 연결할 수 없습니다. 인터넷 연결을 확인하세요.',
   bohAccessErrorGeneric: '멤버 접근을 확인하지 못했습니다. 다시 시도하세요.',
