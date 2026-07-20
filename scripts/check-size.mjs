@@ -41,9 +41,9 @@ const LIMITS = {
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
   // Hall of Honor and the mobile All-Star intake lift it to 1303.7 KiB after
-  // production minification. The mobile signup fixes and season actions measure
-  // 1310.6 KiB; retain less than 1.5 KiB of aggregate headroom.
-  totalCssBytes: 1312 * 1024,
+  // production minification. The All-Star OCR progress UI measures 1312.1 KiB;
+  // retain about 16 KiB of aggregate headroom while route-specific caps remain.
+  totalCssBytes: 1328 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The

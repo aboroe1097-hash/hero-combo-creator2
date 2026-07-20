@@ -385,6 +385,13 @@
         >
           Read screenshot
         </button>
+        <progress
+          class="boh-ocr-progress"
+          data-role="ocr-progress"
+          aria-label="Reading screenshot"
+          data-boh-i18n-aria-label="signup.ocrProcessing"
+          hidden
+        ></progress>
         <p class="boh-inline-status" data-role="ocr-status" role="status" aria-live="polite"></p>
       </section>
 
@@ -998,7 +1005,7 @@
               name="rocLevel"
               inputmode="numeric"
               min="0"
-              max="99"
+              max="160"
               step="1"
               data-role="field-roc-level"
             />

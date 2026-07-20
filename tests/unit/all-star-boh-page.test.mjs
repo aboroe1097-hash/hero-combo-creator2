@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { techDatabase } from '../../js/tech-db.js';
+
 const indexSource = readFileSync('index.html', 'utf8');
 const tabSource = readFileSync('tabs/all-star-boh.html', 'utf8');
 const cssSource = readFileSync('css/all-star-boh.css', 'utf8');
@@ -13,6 +15,12 @@ const rulesSource = readFileSync('firestore.rules', 'utf8');
 const stateSource = readFileSync('js/state.js', 'utf8');
 const shellSource = readFileSync('js/shell-v14.js', 'utf8');
 const commandPaletteSource = readFileSync('js/command-palette.js', 'utf8');
+
+test('RoC specialization level uses the in-game 160 maximum across UI and rules', () => {
+  assert.match(tabSource, /name="rocLevel"[\s\S]{0,160}max="160"/u);
+  assert.match(controllerSource, /label: 'RoC level',[\s\S]{0,100}maximum: 160/u);
+  assert.match(rulesSource, /stats\.rocLevel <= 160/u);
+});
 
 test('failed signup writes preserve the filled form and do not masquerade as PIN expiry', () => {
   assert.match(bootstrapSource, /if \(error\?\.code === 'access_expired'\)/);
@@ -398,6 +406,7 @@ test('non-VTS applicants provide required contact, state, and reason fields', ()
     assert.match(rulesSource, new RegExp(`commitment\\.${field}`));
   }
   assert.match(rulesSource, /commitment\.vts1097Member is bool/u);
+  assert.doesNotMatch(rulesSource, /commitment\.contactNumber\.size\(\) > 0/u);
 });
 
 test('hero season filter exposes only the requested cumulative milestones', () => {
@@ -421,6 +430,22 @@ test('research defaults to X1 and offers one Max all action per season', () => {
     /group\.hidden = selectedRank !== null && groupRank !== null && groupRank > selectedRank/u
   );
   assert.match(cssSource, /\.boh-research-season__max\s*\{/u);
+  assert.match(controllerSource, /const orderedSeasons = \[\.\.\.seasons\.entries\(\)\]\.sort/u);
+  assert.deepEqual(
+    techDatabase.filter(({ season }) => season === 'S1').map(({ name }) => name),
+    ['Advanced Soldier Training']
+  );
+  assert.deepEqual(
+    techDatabase.filter(({ season }) => season === 'X1').map(({ name }) => name),
+    ['Art of War - Command', 'Solid Tactics']
+  );
+});
+
+test('screenshot OCR displays indeterminate progress and blocks duplicate reads', () => {
+  assert.match(tabSource, /<progress[\s\S]*?data-role="ocr-progress"[\s\S]*?hidden/u);
+  assert.match(controllerSource, /setHidden\(progress, !state\.ocrBusy\)/u);
+  assert.match(controllerSource, /setBusy\(process, state\.ocrBusy \|\| !state\.ocrFile\)/u);
+  assert.match(cssSource, /\.boh-ocr-progress\s*\{/u);
 });
 
 test('signup asks explicitly whether the player can help lead or manage', () => {

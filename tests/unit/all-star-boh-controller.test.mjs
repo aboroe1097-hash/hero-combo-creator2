@@ -74,6 +74,15 @@ test('strict numeric parsing accepts localized full integers and rejects abbrevi
   assert.throws(() => parseBohInteger('12.5'), /full whole-number/u);
 });
 
+test('RoC specialization level accepts the full in-game 0 through 160 range', () => {
+  const payload = buildBohSubmissionPayload(validSignup({ rocLevel: '160' }));
+  assert.equal(payload.stats.rocLevel, 160);
+  assert.throws(
+    () => buildBohSubmissionPayload(validSignup({ rocLevel: '161' })),
+    /RoC level is outside the accepted range/u
+  );
+});
+
 test('OCR submission automatically accepts populated editable values and cannot persist image data', () => {
   const review = {
     imageData: 'data:image/jpeg;base64,PRIVATE',

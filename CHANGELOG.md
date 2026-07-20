@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.2.1 - 2026-07-20
+
+- Fixed All-Star BoH signup validation so RoC specialization levels from 0 through the in-game maximum of 160 can be submitted instead of forcing affected members to leave the field blank.
+- Kept the browser, data normalization, and Firestore rules on the same RoC level range so accepted values appear correctly in the admin review panel.
+- Prevented non-1097 applicants from exhausting Firestore's rules-expression budget when their required contact number, current state, and join reason are submitted; the client and store continue to require all three values.
+- Added a visible screenshot-OCR progress bar, strengthened Unit Specialty Power extraction guidance, and kept duplicate OCR requests disabled while one read is running.
+- Sorted research groups chronologically and pinned the verified S1 and X1 trees in regression coverage so those season sections remain visible in the cumulative X1 view.
+
 ## 14.2.0 - 2026-07-20
 
 - Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.

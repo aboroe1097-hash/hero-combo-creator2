@@ -847,7 +847,7 @@ service cloud.firestore {
         && (!('troopRoster' in stats) || validAllStarBohStringList(stats.troopRoster, 60, 48))
         && validAllStarBohStringList(stats.readySpeedHeroes, 24, 80)
         && validAllStarBohNullableInt(stats.level50HeroCount, 0, 500)
-        && validAllStarBohNullableInt(stats.rocLevel, 0, 100)
+        && validAllStarBohNullableInt(stats.rocLevel, 0, 160)
         && (!('unitSpecialtyPower' in stats) || validAllStarBohNullableInt(stats.unitSpecialtyPower, 0, 1000000000000000))
         && (!('artifactPower' in stats) || validAllStarBohNullableInt(stats.artifactPower, 0, 1000000000000000))
         && (!('royalTechPower' in stats) || validAllStarBohNullableInt(stats.royalTechPower, 0, 1000000000000000))
@@ -1681,7 +1681,7 @@ service cloud.firestore {
       && stats.level50HeroCount <= 500
       && stats.rocLevel is int
       && stats.rocLevel >= 0
-      && stats.rocLevel <= 100
+      && stats.rocLevel <= 160
       && (!('t10TroopTypes' in stats)
         || (stats.t10TroopTypes is list && stats.t10TroopTypes.size() <= 3))
       && (!('troopRoster' in stats)
@@ -1724,14 +1724,6 @@ service cloud.firestore {
       && commitment.currentState.size() <= 160
       && commitment.joinReason is string
       && commitment.joinReason.size() <= 1000
-      && (
-        commitment.vts1097Member == true
-        || (
-          commitment.contactNumber.size() > 0
-          && commitment.currentState.size() > 0
-          && commitment.joinReason.size() > 0
-        )
-      )
       && commitment.notes is string
       && commitment.notes.size() <= 2000
       && ocr is map

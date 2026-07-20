@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.1",
+    "date": "2026-07-20",
+    "highlights": [
+      "Fixed All-Star BoH signup validation so RoC specialization levels from 0 through the in-game maximum of 160 can be submitted instead of forcing affected members to leave the field blank.",
+      "Kept the browser, data normalization, and Firestore rules on the same RoC level range so accepted values appear correctly in the admin review panel.",
+      "Prevented non-1097 applicants from exhausting Firestore's rules-expression budget when their required contact number, current state, and join reason are submitted; the client and store continue to require all three values.",
+      "Added a visible screenshot-OCR progress bar, strengthened Unit Specialty Power extraction guidance, and kept duplicate OCR requests disabled while one read is running.",
+      "Sorted research groups chronologically and pinned the verified S1 and X1 trees in regression coverage so those season sections remain visible in the cumulative X1 view."
+    ]
+  },
   {
     "version": "14.2.0",
     "date": "2026-07-20",
@@ -85,13 +96,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Replaced the crowded mobile footer with compact centered account links and removed duplicate tool navigation already available in the mobile dock.",
       "Added Croatian (`hr`) as the twelfth project language with translated core navigation, PWA, and player-facing All-Star signup copy plus explicit canonical-English fallback for specialist catalogs still awaiting reviewed Croatian terminology.",
       "Restored the visible required marker for Unit Specialty Power and replaced raw Firestore permission errors with a translated PIN-expiry recovery message for signup and Epic Showdown saves."
-    ]
-  },
-  {
-    "version": "14.1.12",
-    "date": "2026-07-19",
-    "highlights": [
-      "Reduced All-Star submission security-rule evaluation by caching the active member grant and validating submission submaps through short aliases, preventing valid large signups from exceeding Firestore's 1,000-expression limit."
     ]
   }
 ].map((release) =>
