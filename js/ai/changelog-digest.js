@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.3";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.4";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.4",
+    "date": "2026-07-21",
+    "highlights": [
+      "Added audited All-Star admin corrections across player-entered profile, stats, roster, hero, research, availability, role, and commitment data while preserving the original submission.",
+      "Added reasoned 1-10,000 leadership commitment scores as an additive score component, stored-score diagnostics, and a balanced team-building mode that evaluates scoring points and Total Castle Power independently.",
+      "Expanded All-Star score and review tooling with richer score provenance, sortable audit data, roster-aware CSV export, clearer selection controls, and sequential batch confirmation and deletion.",
+      "Let existing All-Star signups save manual corrections when replacement screenshot OCR fails, with actionable Russian retry and fallback guidance; first-time OCR verification remains required.",
+      "Improved Specialization Towers on mobile and RTL layouts with scroll position cues, focus and modal-scroll preservation, touch accessibility, and explicit provenance that public totals are whole-research totals while per-node medal costs remain unknown."
+    ]
+  },
   {
     "version": "14.2.3",
     "date": "2026-07-20",
@@ -89,14 +100,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Added explicit Guild Master and Core reward tiers to the Final Top 20 while preserving each winner's support, contribution, management-vote, or team-vote selection reason.",
       "Added a deduplicated 90-player Power House ranking for positions 21–110 and one-click PNG downloads for both reward tables."
-    ]
-  },
-  {
-    "version": "14.1.15",
-    "date": "2026-07-19",
-    "highlights": [
-      "Added a Final Top 20 announcement view to the Eden X1 reward flow that combines the four support, contribution, management, and team reward lanes into one shareable recipient table with category chips and placeholder rows until each lane is decided.",
-      "Aligned the eden-x1 smoke expectation for the language selector with the Croatian option position shipped in 14.1.13."
     ]
   }
 ].map((release) =>

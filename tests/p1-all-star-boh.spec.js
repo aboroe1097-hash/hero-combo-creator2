@@ -337,217 +337,220 @@ async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
   await page.addStyleTag({ url: '/css/_tokens.css' });
   await page.addStyleTag({ url: '/css/app.css' });
   await page.addStyleTag({ url: '/css/all-star-boh.css' });
-  await page.evaluate(async ({ fixture, ocrTransport: transportOptions }) => {
-    const [bootstrap, controller, model, ocr, i18n, heroData, researchData, researchI18n] =
-      await Promise.all([
-        import('/js/all-star-boh-bootstrap.js'),
-        import('/js/all-star-boh.js'),
-        import('/js/all-star-boh-model.js'),
-        import('/js/all-star-boh-ocr.js'),
-        import('/js/i18n/all-star-boh/index.js'),
-        import('/js/heroes-data.js'),
-        import('/js/tech-db.js'),
-        import('/js/i18n/research/index.js'),
-      ]);
-    const teams = new Map(fixture.teams.map((team) => [team.id, team]));
-    let submission = { ...fixture.submission };
-    let epicPreferences = { ...fixture.epicPreferences };
-    const subscribers = new Set();
-    window.__BOH_OCR_CALL_COUNT__ = 0;
-    const store = {
-      accessGranted: true,
-      seasonId: fixture.seasonId,
-      uid: fixture.uid,
-      epicTimeSlotIds: Object.freeze(['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']),
-      subscribeSubmission(next, error) {
-        queueMicrotask(() => next(submission));
-        window.__BOH_PUSH_SUBMISSION__ = (value) => {
-          submission = value;
-          next(value);
-        };
-        window.__BOH_PUSH_SUBMISSION_ERROR__ = () =>
-          error?.(new Error('Missing or insufficient permissions.'));
-        subscribers.add(next);
-        return () => subscribers.delete(next);
-      },
-      subscribeSubmissionFeedback(next) {
-        next(fixture.submissionFeedback);
-        window.__BOH_PUSH_SUBMISSION_FEEDBACK__ = next;
-        subscribers.add(next);
-        return () => subscribers.delete(next);
-      },
-      subscribeEpicShowdownPreferences(next) {
-        next(epicPreferences);
-        window.__BOH_PUSH_EPIC_PREFERENCES__ = (value) => {
-          epicPreferences = value;
-          next(value);
-        };
-        subscribers.add(next);
-        return () => subscribers.delete(next);
-      },
-      subscribePublication(next) {
-        next(fixture.publication);
-        subscribers.add(next);
-        return () => subscribers.delete(next);
-      },
-      subscribePersonalPlan(next) {
-        next(fixture.personalPlan);
-        subscribers.add(next);
-        return () => subscribers.delete(next);
-      },
-      subscribePublishedTeam(teamId, next) {
-        next(teams.get(teamId) || null);
-        subscribers.add(next);
-        return () => subscribers.delete(next);
-      },
-      async getSubmission() {
-        return submission;
-      },
-      async getSubmissionFeedback() {
-        return fixture.submissionFeedback;
-      },
-      async getEpicShowdownPreferences() {
-        return epicPreferences;
-      },
-      async getPublication() {
-        return fixture.publication;
-      },
-      async getPersonalPlan() {
-        return fixture.personalPlan;
-      },
-      async getPublishedTeam(teamId) {
-        return teams.get(teamId) || null;
-      },
-      async saveSubmission(payload, options) {
-        window.__BOH_SAVED_SUBMISSION__ = { payload, options };
-        if (options.expectedRevision !== submission.revision) {
-          const error = new Error('Signup revision conflict.');
-          error.name = 'AllStarBohConflictError';
-          error.actualRevision = submission.revision;
-          throw error;
-        }
-        submission = { ...payload, status: 'submitted', revision: submission.revision + 1 };
-        return submission;
-      },
-      async saveEpicShowdownPreferences(payload, options) {
-        window.__BOH_SAVED_EPIC_PREFERENCES__ = { payload, options };
-        if (options.expectedRevision !== epicPreferences.revision) {
-          const error = new Error('Epic preference revision conflict.');
-          error.name = 'AllStarBohConflictError';
-          error.actualRevision = epicPreferences.revision;
-          throw error;
-        }
-        epicPreferences = { ...payload, revision: epicPreferences.revision + 1 };
-        return epicPreferences;
-      },
-      stop() {
-        window.__BOH_PLAYER_STORE_STOPPED__ = true;
-      },
-    };
-    const accessClient = {
-      async getAccessGrant() {
-        return null;
-      },
-      async unlock(pin) {
-        if (pin !== 'local-member-pin') {
-          const error = new Error('Access denied');
-          error.code = 'access_denied';
-          throw error;
-        }
-        return {
-          seasonId: fixture.seasonId,
-          expiresAt: Math.floor(Date.now() / 1000) + 3600,
-        };
-      },
-      async processOcr() {
-        window.__BOH_OCR_CALL_COUNT__ += 1;
-        const callNumber = window.__BOH_OCR_CALL_COUNT__;
-        if (transportOptions.deferred) {
-          await new Promise((resolve) => {
-            window.__BOH_RESOLVE_OCR__ = () => {
-              delete window.__BOH_RESOLVE_OCR__;
-              resolve();
-            };
-          });
-        }
-        if (transportOptions.failOnce && callNumber === 1) {
-          throw new Error('Injected OCR transport failed once.');
-        }
-        return {
-          result: {
-            schemaVersion: 1,
-            requestId: 'rendered-ocr-request',
-            extracted: {
-              gameName: 'Player 1-01',
-              totalCastlePower: 1_000_000_000,
-              troopPower: 400_000_000,
-              buildingPower: 100_000_000,
-              technologyPower: null,
-              heroCombatPower: 200_000_000,
-              dragonPower: 100_000_000,
+  await page.evaluate(
+    async ({ fixture, ocrTransport: transportOptions }) => {
+      const [bootstrap, controller, model, ocr, i18n, heroData, researchData, researchI18n] =
+        await Promise.all([
+          import('/js/all-star-boh-bootstrap.js'),
+          import('/js/all-star-boh.js'),
+          import('/js/all-star-boh-model.js'),
+          import('/js/all-star-boh-ocr.js'),
+          import('/js/i18n/all-star-boh/index.js'),
+          import('/js/heroes-data.js'),
+          import('/js/tech-db.js'),
+          import('/js/i18n/research/index.js'),
+        ]);
+      const teams = new Map(fixture.teams.map((team) => [team.id, team]));
+      let submission = { ...fixture.submission };
+      let epicPreferences = { ...fixture.epicPreferences };
+      const subscribers = new Set();
+      window.__BOH_OCR_CALL_COUNT__ = 0;
+      const store = {
+        accessGranted: true,
+        seasonId: fixture.seasonId,
+        uid: fixture.uid,
+        epicTimeSlotIds: Object.freeze(['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20']),
+        subscribeSubmission(next, error) {
+          queueMicrotask(() => next(submission));
+          window.__BOH_PUSH_SUBMISSION__ = (value) => {
+            submission = value;
+            next(value);
+          };
+          window.__BOH_PUSH_SUBMISSION_ERROR__ = () =>
+            error?.(new Error('Missing or insufficient permissions.'));
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
+        subscribeSubmissionFeedback(next) {
+          next(fixture.submissionFeedback);
+          window.__BOH_PUSH_SUBMISSION_FEEDBACK__ = next;
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
+        subscribeEpicShowdownPreferences(next) {
+          next(epicPreferences);
+          window.__BOH_PUSH_EPIC_PREFERENCES__ = (value) => {
+            epicPreferences = value;
+            next(value);
+          };
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
+        subscribePublication(next) {
+          next(fixture.publication);
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
+        subscribePersonalPlan(next) {
+          next(fixture.personalPlan);
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
+        subscribePublishedTeam(teamId, next) {
+          next(teams.get(teamId) || null);
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
+        async getSubmission() {
+          return submission;
+        },
+        async getSubmissionFeedback() {
+          return fixture.submissionFeedback;
+        },
+        async getEpicShowdownPreferences() {
+          return epicPreferences;
+        },
+        async getPublication() {
+          return fixture.publication;
+        },
+        async getPersonalPlan() {
+          return fixture.personalPlan;
+        },
+        async getPublishedTeam(teamId) {
+          return teams.get(teamId) || null;
+        },
+        async saveSubmission(payload, options) {
+          window.__BOH_SAVED_SUBMISSION__ = { payload, options };
+          if (options.expectedRevision !== submission.revision) {
+            const error = new Error('Signup revision conflict.');
+            error.name = 'AllStarBohConflictError';
+            error.actualRevision = submission.revision;
+            throw error;
+          }
+          submission = { ...payload, status: 'submitted', revision: submission.revision + 1 };
+          return submission;
+        },
+        async saveEpicShowdownPreferences(payload, options) {
+          window.__BOH_SAVED_EPIC_PREFERENCES__ = { payload, options };
+          if (options.expectedRevision !== epicPreferences.revision) {
+            const error = new Error('Epic preference revision conflict.');
+            error.name = 'AllStarBohConflictError';
+            error.actualRevision = epicPreferences.revision;
+            throw error;
+          }
+          epicPreferences = { ...payload, revision: epicPreferences.revision + 1 };
+          return epicPreferences;
+        },
+        stop() {
+          window.__BOH_PLAYER_STORE_STOPPED__ = true;
+        },
+      };
+      const accessClient = {
+        async getAccessGrant() {
+          return null;
+        },
+        async unlock(pin) {
+          if (pin !== 'local-member-pin') {
+            const error = new Error('Access denied');
+            error.code = 'access_denied';
+            throw error;
+          }
+          return {
+            seasonId: fixture.seasonId,
+            expiresAt: Math.floor(Date.now() / 1000) + 3600,
+          };
+        },
+        async processOcr() {
+          window.__BOH_OCR_CALL_COUNT__ += 1;
+          const callNumber = window.__BOH_OCR_CALL_COUNT__;
+          if (transportOptions.deferred) {
+            await new Promise((resolve) => {
+              window.__BOH_RESOLVE_OCR__ = () => {
+                delete window.__BOH_RESOLVE_OCR__;
+                resolve();
+              };
+            });
+          }
+          if (transportOptions.failOnce && callNumber === 1) {
+            throw new Error('Injected OCR transport failed once.');
+          }
+          return {
+            result: {
+              schemaVersion: 1,
+              requestId: 'rendered-ocr-request',
+              extracted: {
+                gameName: 'Player 1-01',
+                totalCastlePower: 1_000_000_000,
+                troopPower: 400_000_000,
+                buildingPower: 100_000_000,
+                technologyPower: null,
+                heroCombatPower: 200_000_000,
+                dragonPower: 100_000_000,
+              },
+              confidence: {
+                gameName: 0.98,
+                totalCastlePower: 0.99,
+                troopPower: 0.42,
+                buildingPower: 0.95,
+                technologyPower: 0.9,
+                heroCombatPower: 0.97,
+                dragonPower: 0.96,
+              },
+              warnings: ['Technology power was cropped in the screenshot.'],
             },
-            confidence: {
-              gameName: 0.98,
-              totalCastlePower: 0.99,
-              troopPower: 0.42,
-              buildingPower: 0.95,
-              technologyPower: 0.9,
-              heroCombatPower: 0.97,
-              dragonPower: 0.96,
-            },
-            warnings: ['Technology power was cropped in the screenshot.'],
+          };
+        },
+        destroy() {},
+      };
+      const root = document.querySelector('[data-role="boh-root"]');
+      window.__BOH_PLAYER_LIFECYCLE__ = await bootstrap.bootAllStarBohTab({
+        root,
+        locale: 'en',
+        accessClient,
+        firebase: {
+          async initFirebase() {
+            return { configured: true, db: { local: true } };
           },
-        };
-      },
-      destroy() {},
-    };
-    const root = document.querySelector('[data-role="boh-root"]');
-    window.__BOH_PLAYER_LIFECYCLE__ = await bootstrap.bootAllStarBohTab({
-      root,
-      locale: 'en',
-      accessClient,
-      firebase: {
-        async initFirebase() {
-          return { configured: true, db: { local: true } };
-        },
-        async ensureAnonymousAuth() {
-          return { uid: fixture.uid, isAnonymous: true };
-        },
-        async getFirebaseAppCheckToken() {
-          return 'local-app-check-token';
-        },
-      },
-      loadStylesheet: async () => {},
-      loadDomain: async () => ({
-        controller,
-        model,
-        ocr: {
-          ...ocr,
-          // Image decode/re-encoding has dedicated unit coverage. Keep this
-          // rendered test focused on the OCR review and correction workflow.
-          async prepareBohStatsScreenshot() {
-            return {
-              imageData: 'data:image/jpeg;base64,/9j/2Q==',
-              width: 1,
-              height: 1,
-            };
+          async ensureAnonymousAuth() {
+            return { uid: fixture.uid, isAnonymous: true };
+          },
+          async getFirebaseAppCheckToken() {
+            return 'local-app-check-token';
           },
         },
-        i18n,
-        heroData,
-        researchData,
-        researchI18n,
-        firestore: {},
-        store: { createAllStarBohPlayerStore: () => store },
-      }),
-      setTimeout: () => 1,
-      clearTimeout: () => {},
-      onError(error, context) {
-        window.__BOH_BACKGROUND_ERRORS__ ||= [];
-        window.__BOH_BACKGROUND_ERRORS__.push({ message: error?.message, context });
-      },
-    });
-  }, { fixture: createPlayerFixture(), ocrTransport });
+        loadStylesheet: async () => {},
+        loadDomain: async () => ({
+          controller,
+          model,
+          ocr: {
+            ...ocr,
+            // Image decode/re-encoding has dedicated unit coverage. Keep this
+            // rendered test focused on the OCR review and correction workflow.
+            async prepareBohStatsScreenshot() {
+              return {
+                imageData: 'data:image/jpeg;base64,/9j/2Q==',
+                width: 1,
+                height: 1,
+              };
+            },
+          },
+          i18n,
+          heroData,
+          researchData,
+          researchI18n,
+          firestore: {},
+          store: { createAllStarBohPlayerStore: () => store },
+        }),
+        setTimeout: () => 1,
+        clearTimeout: () => {},
+        onError(error, context) {
+          window.__BOH_BACKGROUND_ERRORS__ ||= [];
+          window.__BOH_BACKGROUND_ERRORS__.push({ message: error?.message, context });
+        },
+      });
+    },
+    { fixture: createPlayerFixture(), ocrTransport }
+  );
 
   const gate = page.locator('[data-role="boh-access-gate"]');
   await expect(gate).toBeVisible();
@@ -593,6 +596,7 @@ async function openInjectedAdmin(page) {
     window.__BOH_ADMIN_ACTIONS__ = [];
     window.__BOH_ADMIN_CONFIRMS__ = [];
     window.__BOH_ADMIN_DOWNLOADS__ = [];
+    window.__BOH_ADMIN_DELETE_FAILURE_IDS__ = [];
     window.__BOH_ADMIN_SNAPSHOT__ = snapshot;
     const clone = (value) => structuredClone(value);
     const submissionById = (playerId) =>
@@ -713,6 +717,7 @@ async function openInjectedAdmin(page) {
               submissionRevision: submission.revision,
               statCorrections: clone(payload.statCorrections || {}),
               gameNameCorrection: clone(payload.gameNameCorrection || {}),
+              submissionCorrection: clone(payload.submissionCorrection || null),
             };
             for (const [key, correction] of Object.entries(payload.statCorrections || {})) {
               submission.stats[key] = correction.corrected;
@@ -720,6 +725,39 @@ async function openInjectedAdmin(page) {
             if (payload.gameNameCorrection?.corrected) {
               submission.displayName = payload.gameNameCorrection.corrected;
               submission.gameName = payload.gameNameCorrection.corrected;
+            }
+            const correctedValues = payload.submissionCorrection?.values || {};
+            if (Object.prototype.hasOwnProperty.call(correctedValues, 'gameName')) {
+              submission.displayName = correctedValues.gameName;
+              submission.gameName = correctedValues.gameName;
+            }
+            Object.assign(submission.stats, clone(correctedValues.stats || {}));
+          }
+        } else if (command.type === 'saveCommitmentScores') {
+          const reason = payload.reason || 'Commitment/usefulness assessment';
+          for (const adjustment of payload.adjustments || []) {
+            const score = snapshot.scores.find((entry) => entry.playerId === adjustment.playerId);
+            if (!score) continue;
+            const calculatedScore =
+              score.calculatedScore ?? score.finalScore - (score.commitmentScore || 0);
+            const commitmentScore =
+              adjustment.score === null || adjustment.score === ''
+                ? null
+                : Number(adjustment.score);
+            Object.assign(score, {
+              calculatedScore,
+              commitmentScore,
+              commitmentScoreReason: commitmentScore === null ? '' : reason,
+              finalScore: calculatedScore + (commitmentScore || 0),
+            });
+            const submission = submissionById(adjustment.playerId);
+            if (submission) {
+              Object.assign(submission, {
+                calculatedScore,
+                commitmentScore,
+                commitmentScoreReason: commitmentScore === null ? '' : reason,
+                finalScore: score.finalScore,
+              });
             }
           }
         } else if (command.type === 'batchReviewSubmissions') {
@@ -733,6 +771,39 @@ async function openInjectedAdmin(page) {
               note: payload.note || '',
               submissionRevision: submission.revision,
             };
+          }
+        } else if (command.type === 'deleteSubmission') {
+          if (window.__BOH_ADMIN_DELETE_FAILURE_IDS__.includes(payload.playerId)) {
+            throw new Error(`Fixture could not delete ${payload.playerId}.`);
+          }
+          snapshot.submissions = snapshot.submissions.filter(
+            (submission) => submission.playerId !== payload.playerId
+          );
+          snapshot.scores = snapshot.scores.filter((score) => score.playerId !== payload.playerId);
+        } else if (command.type === 'batchDeleteSubmissions') {
+          const successfulPlayerIds = [];
+          const failedPlayerIds = [];
+          const failedPlayers = [];
+          for (const playerId of payload.playerIds || []) {
+            const submission = submissionById(playerId);
+            if (window.__BOH_ADMIN_DELETE_FAILURE_IDS__.includes(playerId)) {
+              failedPlayerIds.push(playerId);
+              failedPlayers.push(submission?.displayName || submission?.gameName || playerId);
+              continue;
+            }
+            successfulPlayerIds.push(playerId);
+            snapshot.submissions = snapshot.submissions.filter(
+              (candidate) => candidate.playerId !== playerId
+            );
+            snapshot.scores = snapshot.scores.filter((score) => score.playerId !== playerId);
+          }
+          if (failedPlayerIds.length) {
+            const error = new Error(`Could not delete: ${failedPlayers.join(', ')}.`);
+            error.code = 'all-star-boh-batch-delete-partial';
+            error.successfulPlayerIds = successfulPlayerIds;
+            error.failedPlayerIds = failedPlayerIds;
+            error.failedPlayers = failedPlayers;
+            throw error;
           }
         }
         return { snapshot };
@@ -1365,9 +1436,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(1);
     await expect(progress).toBeHidden();
     await expect(process).toBeEnabled();
-    await expect(status).toHaveText(
-      'Power values filled automatically. Review the fields below.'
-    );
+    await expect(status).toHaveText('Power values filled automatically. Review the fields below.');
   });
 
   test('OCR failure clears progress and permits one deliberate successful retry', async ({
@@ -1383,7 +1452,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(1);
     await expect(progress).toBeHidden();
     await expect(status).toHaveText(
-      'Screenshot reading failed. Check your connection, then press Read Screenshot to try again.'
+      'Screenshot reading failed. Retry, or enter or correct the values manually—you can still save your update.'
     );
     await expect(process).toBeEnabled();
 
@@ -1391,14 +1460,12 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect.poll(() => page.evaluate(() => window.__BOH_OCR_CALL_COUNT__)).toBe(2);
     await expect(progress).toBeHidden();
     await expect(process).toBeEnabled();
-    await expect(status).toHaveText(
-      'Power values filled automatically. Review the fields below.'
-    );
+    await expect(status).toHaveText('Power values filled automatically. Review the fields below.');
   });
 });
 
 test.describe('All-Star BoH Admin VTS command center', () => {
-  test('configures a 24-player two-team field, forces an exact team, and previews before apply', async ({
+  test('configures a 24-player balanced two-team field, forces an exact team, and previews before apply', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
@@ -1408,7 +1475,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
 
     const settings = root.locator('[data-form="team-builder-settings"]');
     await settings.locator('[name="teamCount"]').selectOption('2');
-    await settings.locator('[name="balanceMetric"]').selectOption('totalPower');
+    await settings.locator('[name="balanceMetric"]').selectOption('balanced');
     await settings.locator('[name="forcedTeam.player-1-2"]').selectOption('team-2');
     await settings.getByRole('button', { name: 'Save balance configuration' }).click();
 
@@ -1427,13 +1494,28 @@ test.describe('All-Star BoH Admin VTS command center', () => {
 
     await root.locator('[data-action="preview-balance-teams"]').click();
     await expect(root.locator('#bohBalancePreviewTitle')).toContainText(
-      'Active metric: Total in-game power'
+      'Active metric: Balanced score + power'
     );
     await expect(
       root.locator('#bohBalancePreviewTitle').locator('xpath=ancestor::section[1]')
     ).toContainText('=Formula Pilot');
+    const previewSection = root
+      .locator('#bohBalancePreviewTitle')
+      .locator('xpath=ancestor::section[1]');
+    await expect(previewSection).toContainText('Score spread');
+    await expect(previewSection).toContainText('Power spread');
+    await expect(previewSection).not.toContainText('Active metric spread');
     await expect(root.locator('[data-action="apply-balance-preview"]')).toBeEnabled();
     await root.locator('[data-action="apply-balance-preview"]').click();
+    const balancedTeamScoreTexts = await root.locator('.boh-admin-team-score').allTextContents();
+    expect(balancedTeamScoreTexts).toHaveLength(2);
+    await expect(root.locator('.boh-admin-team-score [data-balance-primary-total]')).toHaveCount(0);
+    for (const text of balancedTeamScoreTexts) {
+      expect(text).toContain('Balanced score + power');
+      expect(text).toContain('Scoring points');
+      expect(text).toContain('Total in-game power');
+      expect(text).not.toContain('vs avg');
+    }
 
     const result = await page.evaluate(() => ({
       actions: window.__BOH_ADMIN_ACTIONS__,
@@ -1450,7 +1532,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     ]);
     expect(result.actions[0].payload).toMatchObject({
       teamCount: 2,
-      balanceMetric: 'totalPower',
+      balanceMetric: 'balanced',
       forcedTeamAssignments: [{ playerId: 'player-1-2', teamId: 'team-2' }],
     });
     expect(result.actions[1].payload.playerIds).toHaveLength(24);
@@ -1470,15 +1552,15 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await root.locator('[data-stage="signups"]').click();
     await root.locator('[data-action="select-submission"][data-player-id="player-1-2"]').click();
 
-    const corrections = root.locator('[data-form="stat-corrections"]');
-    await corrections.locator('xpath=ancestor::details[1]/summary').click();
-    await expect(corrections.locator('[name="statCorrection.unitSpecialtyPower"]')).toHaveValue(
+    const corrections = root.locator('[data-form="submission-corrections"]');
+    await expect(corrections.locator('[name="correction.stats.unitSpecialtyPower"]')).toHaveValue(
       '22000000'
     );
-    await corrections.locator('[name="gameNameCorrection"]').fill('Formula Pilot Renamed');
-    await corrections.locator('[name="gameNameCorrectionReason"]').fill('OCR split the name.');
-    await corrections.locator('[name="statCorrection.unitSpecialtyPower"]').fill('25000000');
-    await corrections.locator('[name="reason"]').fill('Confirmed from the submitted screenshot.');
+    await corrections.locator('[name="correction.gameName"]').fill('Formula Pilot Renamed');
+    await corrections.locator('[name="correction.stats.unitSpecialtyPower"]').fill('25000000');
+    await corrections
+      .locator('[name="correction.reason"]')
+      .fill('Confirmed from the submitted screenshot.');
     await corrections.getByRole('button', { name: 'Save corrections' }).click();
 
     await expect(root.locator('#bohSignupDetailTitle')).toHaveText('Formula Pilot Renamed');
@@ -1492,18 +1574,15 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     expect(result.action.payload).toMatchObject({
       playerId: 'player-1-2',
       status: 'confirmed',
-      gameNameCorrection: {
-        corrected: 'Formula Pilot Renamed',
-        reason: 'OCR split the name.',
-      },
-      statCorrections: {
-        unitSpecialtyPower: {
-          corrected: 25_000_000,
-          reason: 'Confirmed from the submitted screenshot.',
+      submissionCorrection: {
+        schemaVersion: 1,
+        reason: 'Confirmed from the submitted screenshot.',
+        values: {
+          gameName: 'Formula Pilot Renamed',
+          stats: { unitSpecialtyPower: 25_000_000 },
         },
       },
     });
-    expect(Object.keys(result.action.payload.statCorrections)).toEqual(['unitSpecialtyPower']);
     expect(result.submission).toMatchObject({
       originalGameName: '=Formula Pilot',
       displayName: 'Formula Pilot Renamed',
@@ -1546,10 +1625,23 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     expect(download.playerIds).toEqual(['player-1-2', 'player-1-3']);
     expect(download.csv.startsWith('\uFEFF')).toBe(true);
     expect(download.csv).toContain('\r\n');
+    expect(download.csv).toContain(
+      '"Calculated Score","Legacy Final Override","Commitment Adjustment","Final Score","Score Diagnostic"'
+    );
+    expect(download.csv).toContain(
+      '"Canonical Troop Roster","Lofty Count","Enhanced T10 Count","Regular T10 Count","T9 Count"'
+    );
     expect(download.csv).toContain('"\'=Formula Pilot"');
     expect(download.csv).not.toContain('Player 2-01');
 
-    await root.locator('[data-action="select-all-visible"]').check();
+    const selectAll = root.locator('[data-action="select-all-visible"]');
+    const rowCheckboxes = table.locator('[data-action="select-submission-row"]');
+    await rowCheckboxes.first().check();
+    await expect(selectAll).not.toBeChecked();
+    expect(await selectAll.evaluate((checkbox) => checkbox.indeterminate)).toBe(true);
+    await rowCheckboxes.first().uncheck();
+    expect(await selectAll.evaluate((checkbox) => checkbox.indeterminate)).toBe(false);
+    await selectAll.check();
     await expect(table.locator('[data-action="select-submission-row"]:checked')).toHaveCount(2);
     const batch = root.locator('[data-form="batch-review"]');
     await batch.locator('[name="note"]').fill('Confirmed together after final review.');
@@ -1569,6 +1661,82 @@ test.describe('All-Star BoH Admin VTS command center', () => {
       },
     });
     await expect(batch.getByRole('button', { name: 'Confirm selected (0)' })).toBeDisabled();
+
+    await root.locator('[data-action="select-all-visible"]').check();
+    const deleteSelected = batch.getByRole('button', { name: 'Delete selected (2)' });
+    await expect(deleteSelected).toBeEnabled();
+    await deleteSelected.click();
+    const deleteResult = await page.evaluate(() => ({
+      action: window.__BOH_ADMIN_ACTIONS__.at(-1),
+      confirms: window.__BOH_ADMIN_CONFIRMS__,
+    }));
+    expect(deleteResult.action).toMatchObject({
+      type: 'batchDeleteSubmissions',
+      payload: { playerIds: ['player-1-2', 'player-1-3'] },
+    });
+    expect(deleteResult.confirms.at(-1)).toMatch(
+      /cannot be undone.*signups.*reviews.*player feedback.*preferences will be kept/iu
+    );
+    await expect(table.locator('caption')).toHaveText('0 of 70 signups');
+    await expect(batch.getByRole('button', { name: 'Delete selected (0)' })).toBeDisabled();
+  });
+
+  test('batch deletion keeps failed rows selected and closes detail only for a successful deletion', async ({
+    page,
+  }) => {
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="signups"]').click();
+    await page.evaluate(() => {
+      window.__BOH_ADMIN_DELETE_FAILURE_IDS__ = ['player-1-3'];
+    });
+    const successfulRow = root.locator(
+      '[data-action="select-submission-row"][data-player-id="player-1-2"]'
+    );
+    const failedRow = root.locator(
+      '[data-action="select-submission-row"][data-player-id="player-1-3"]'
+    );
+    await successfulRow.check();
+    await failedRow.check();
+    await root.locator('[data-action="select-submission"][data-player-id="player-1-2"]').click();
+    await root.getByRole('button', { name: 'Delete selected (2)' }).click();
+
+    await expect(successfulRow).toHaveCount(0);
+    await expect(failedRow).toBeChecked();
+    await expect(root.locator('#bohSignupDetailTitle')).toHaveCount(0);
+
+    await root.locator('[data-action="select-submission"][data-player-id="player-1-3"]').click();
+    const failedTitle = await root.locator('#bohSignupDetailTitle').textContent();
+    await root.getByRole('button', { name: 'Delete selected (1)' }).click();
+    await expect(failedRow).toBeChecked();
+    await expect(root.locator('#bohSignupDetailTitle')).toHaveText(failedTitle);
+  });
+
+  test('single deletion preserves retry state on failure and clears it only after success', async ({
+    page,
+  }) => {
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="signups"]').click();
+    await page.evaluate(() => {
+      window.__BOH_ADMIN_DELETE_FAILURE_IDS__ = ['player-1-2'];
+    });
+    const rowCheckbox = root.locator(
+      '[data-action="select-submission-row"][data-player-id="player-1-2"]'
+    );
+    await rowCheckbox.check();
+    await root.locator('[data-action="select-submission"][data-player-id="player-1-2"]').click();
+    const detailTitle = await root.locator('#bohSignupDetailTitle').textContent();
+    await root.getByRole('button', { name: 'Delete this signup' }).click();
+    await expect(rowCheckbox).toBeChecked();
+    await expect(root.locator('#bohSignupDetailTitle')).toHaveText(detailTitle);
+
+    await page.evaluate(() => {
+      window.__BOH_ADMIN_DELETE_FAILURE_IDS__ = [];
+    });
+    await root.getByRole('button', { name: 'Delete this signup' }).click();
+    await expect(rowCheckbox).toHaveCount(0);
+    await expect(root.locator('#bohSignupDetailTitle')).toHaveCount(0);
   });
 
   test('local test auth renders five stages, 72 seats, plan controls, and safe legacy reuse', async ({
@@ -1600,6 +1768,49 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await stageTabs.first().focus();
     await page.keyboard.press('ArrowRight');
     await expect(root.locator('[data-stage="scoring"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(root).toContainText(
+      'Commitment adjustments are a separate subjective input and may double-count judgment'
+    );
+    const scoreAudit = root.locator('.boh-admin-score-table');
+    const totalPowerSort = scoreAudit.getByRole('button', { name: 'Total power' });
+    const totalPowerHeader = totalPowerSort.locator('xpath=ancestor::th[1]');
+    await expect(scoreAudit.locator('thead th')).toHaveCount(7);
+    await totalPowerSort.focus();
+    await page.keyboard.press('Enter');
+    await expect(totalPowerHeader).toHaveAttribute('aria-sort', 'ascending');
+    await expect(totalPowerSort.locator('.boh-admin-sort-indicator')).toHaveText('↑');
+    await totalPowerSort.focus();
+    await page.keyboard.press('Enter');
+    await expect(totalPowerHeader).toHaveAttribute('aria-sort', 'descending');
+    await root.locator('[data-stage="signups"]').click();
+    await root.locator('[data-stage="scoring"]').click();
+    await expect(totalPowerHeader).toHaveAttribute('aria-sort', 'descending');
+    const commitmentForm = root.locator('[data-form="commitment-scores"]');
+    const formulaPilotScore = commitmentForm.locator('[data-commitment-score-player="player-1-2"]');
+    const alphaPilotScore = commitmentForm.locator('[data-commitment-score-player="player-1-3"]');
+    await expect(formulaPilotScore).toHaveAttribute(
+      'aria-label',
+      'Commitment score for =Formula Pilot'
+    );
+    await expect(formulaPilotScore).toHaveAttribute('min', '1');
+    await expect(formulaPilotScore).toHaveAttribute('max', '10000');
+    await formulaPilotScore.fill('125');
+    await alphaPilotScore.fill('250');
+    await commitmentForm.locator('[name="reason"]').fill('Rendered leadership audit');
+    await commitmentForm.getByRole('button', { name: 'Save manual scores' }).click();
+    await expect(formulaPilotScore).toHaveValue('125');
+    await expect(alphaPilotScore).toHaveValue('250');
+    const commitmentActions = await page.evaluate(() =>
+      window.__BOH_ADMIN_ACTIONS__.filter((action) => action.type === 'saveCommitmentScores')
+    );
+    expect(commitmentActions).toHaveLength(1);
+    expect(commitmentActions[0].payload).toMatchObject({
+      reason: 'Rendered leadership audit',
+      adjustments: expect.arrayContaining([
+        { playerId: 'player-1-2', score: '125' },
+        { playerId: 'player-1-3', score: '250' },
+      ]),
+    });
 
     for (const stage of ['signups', 'scoring', 'teams', 'plans', 'publish']) {
       await root.locator(`[data-stage="${stage}"]`).click();
@@ -1634,8 +1845,19 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(root.locator('[data-action="start-legacy-structure"]')).toBeVisible();
 
     await root.locator('[data-action="start-legacy-structure"]').click();
-    await expect.poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.length)).toBe(1);
-    const command = await page.evaluate(() => window.__BOH_ADMIN_ACTIONS__[0]);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            window.__BOH_ADMIN_ACTIONS__.filter(
+              (action) => action.type === 'applyLegacyStructureTemplate'
+            ).length
+        )
+      )
+      .toBe(1);
+    const command = await page.evaluate(() =>
+      window.__BOH_ADMIN_ACTIONS__.find((action) => action.type === 'applyLegacyStructureTemplate')
+    );
     expect(command.type).toBe('applyLegacyStructureTemplate');
     expect(command.payload).toMatchObject({
       sourceSeatCount: 15,

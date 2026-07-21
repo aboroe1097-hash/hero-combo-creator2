@@ -46,6 +46,7 @@ export const SPECIALIZATION_TOWERS_V2_EN = Object.freeze({
   medalsRequired: 'Medals required',
   medalsRemaining: 'Medals remaining',
   medalsUnknown: 'Medal cost unknown',
+  selectNodeBeforeMedals: 'Select at least one node before adding medals.',
   noMedalsRequired: 'No medals required',
   medalsCount: '{count} medals',
   exactMedalDataOnly: 'Only confirmed medal costs are counted. Unknown costs stay unknown.',
@@ -91,12 +92,10 @@ export const SPECIALIZATION_TOWERS_V2_EN = Object.freeze({
   nodeNotLearned: 'Not learned',
   markNodeLearned: 'Mark learned',
   markNodeUnlearned: 'Mark unlearned',
-  nodeMedalHelp:
-    'Exact medal cost unknown. If you know it, please help us fill this node.',
+  nodeMedalHelp: 'Exact medal cost unknown. If you know it, please help us fill this node.',
   helpFillNodeMedals: 'Help fill medals',
   ackTitle: 'With gratitude',
-  ackIntro:
-    'This toolkit exists because the community shared, tested, and refined every number.',
+  ackIntro: 'This toolkit exists because the community shared, tested, and refined every number.',
   ackTail: '…and every contributor who helped verify the data.',
   downloadContributionTemplate: 'Download contribution template',
   openContributionSheet: 'Open Google Community Sheet',

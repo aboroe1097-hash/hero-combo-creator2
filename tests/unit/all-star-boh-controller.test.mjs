@@ -41,6 +41,108 @@ function validSignup(overrides = {}) {
   };
 }
 
+function reviewedOcrSignup(revision = 1) {
+  return {
+    ...buildBohSubmissionPayload(validSignup(), {
+      entryMethod: 'ocr',
+      ocrReview: {
+        confidence: { overall: 0.82 },
+        warnings: [],
+      },
+      now: 1234,
+    }),
+    revision,
+  };
+}
+
+function createSignupSubmitHarness() {
+  const view = new EventTarget();
+  view.getComputedStyle = () => ({ direction: 'ltr' });
+  view.matchMedia = () => ({ matches: true });
+  view.FormData = class {
+    constructor(form) {
+      this.values = form.values;
+    }
+
+    get(name) {
+      const value = this.values[name];
+      return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+    }
+
+    getAll(name) {
+      const value = this.values[name];
+      return Array.isArray(value) ? value : value == null || value === '' ? [] : [value];
+    }
+  };
+  const ownerDocument = { defaultView: view };
+  const signupForm = {
+    dataset: {},
+    ownerDocument,
+    values: validSignup(),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    reportValidity: () => true,
+  };
+  const showdownForm = {
+    ownerDocument,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    reportValidity: () => true,
+  };
+  const removeOcrButton = {
+    matches: (selector) => selector === '[data-role="ocr-remove"]',
+  };
+  const root = new EventTarget();
+  root.ownerDocument = ownerDocument;
+  root.querySelector = (selector) => {
+    if (selector === '[data-role="signup-form"]') return signupForm;
+    if (selector === '[data-role="showdown-form"]') return showdownForm;
+    return null;
+  };
+  root.querySelectorAll = () => [];
+  root.closest = (selector) => {
+    if (selector === 'button, [role="tab"]') return removeOcrButton;
+    if (selector === '[data-role="signup-form"]') return signupForm;
+    return null;
+  };
+  root.contains = () => true;
+
+  const saves = [];
+  const errors = [];
+  const store = {
+    seasonId: 'season-2026',
+    uid: 'player-7',
+    async saveSubmission(payload, options) {
+      saves.push({ payload, options });
+      return {
+        ...payload,
+        revision: options.expectedRevision + 1,
+      };
+    },
+  };
+  const controller = initializeAllStarBoh({
+    root,
+    store,
+    onError(error, context) {
+      errors.push({ error, context });
+    },
+  });
+
+  return {
+    controller,
+    errors,
+    root,
+    saves,
+    clearOcrReview() {
+      root.dispatchEvent(new Event('click'));
+    },
+    async submit() {
+      root.dispatchEvent(new Event('submit', { cancelable: true }));
+      await new Promise((resolve) => setImmediate(resolve));
+    },
+  };
+}
+
 test('player state selection covers locked, unpublished, unassigned, and assigned states', () => {
   assert.deepEqual(selectBohPlayerStates({ accessGranted: false }), {
     announcement: 'locked',
@@ -145,6 +247,43 @@ test('OCR submission automatically accepts populated editable values and cannot 
   assert.deepEqual(payload.stats.t10TroopTypes, ['cavalry', 'archers']);
   assert.equal(Object.hasOwn(payload.stats, 'level50HeroCount'), false);
   assert.equal(payload.submittedAtMs, 1234);
+});
+
+test('existing OCR signup with a cleared review saves its update as manual at the expected revision', async () => {
+  const harness = createSignupSubmitHarness();
+  await harness.controller.refresh({ submission: reviewedOcrSignup(4) });
+  harness.clearOcrReview();
+  await harness.submit();
+
+  assert.equal(harness.saves.length, 1);
+  assert.equal(harness.saves[0].payload.entryMethod, 'manual');
+  assert.equal(harness.saves[0].payload.ocr.used, false);
+  assert.equal(harness.saves[0].payload.ocr.valuesConfirmed, false);
+  assert.deepEqual(harness.saves[0].options, { expectedRevision: 4 });
+  harness.controller.destroy();
+});
+
+test('first-time OCR signup without a review remains blocked', async () => {
+  const harness = createSignupSubmitHarness();
+  await harness.submit();
+
+  assert.equal(harness.saves.length, 0);
+  assert.match(harness.errors[0]?.error?.message || '', /Read a screenshot before submitting/u);
+  assert.deepEqual(harness.errors[0]?.context, { action: 'save-submission' });
+  harness.controller.destroy();
+});
+
+test('existing signup with a current OCR review remains recorded as OCR', async () => {
+  const harness = createSignupSubmitHarness();
+  await harness.controller.refresh({ submission: reviewedOcrSignup(7) });
+  await harness.submit();
+
+  assert.equal(harness.saves.length, 1);
+  assert.equal(harness.saves[0].payload.entryMethod, 'ocr');
+  assert.equal(harness.saves[0].payload.ocr.used, true);
+  assert.equal(harness.saves[0].payload.ocr.valuesConfirmed, true);
+  assert.deepEqual(harness.saves[0].options, { expectedRevision: 7 });
+  harness.controller.destroy();
 });
 
 test('optional troop estimates serialize million inputs inside the existing troop roster field', () => {

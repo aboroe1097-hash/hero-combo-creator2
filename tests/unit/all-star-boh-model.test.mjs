@@ -63,6 +63,74 @@ function oneTeam() {
   return completeTeams()[0];
 }
 
+function assignmentIds(result) {
+  return result.teams.map((team) => team.players.map((player) => player.playerId));
+}
+
+function metricDraftPlayers(options = {}) {
+  const teamCount = options.teamCount || 2;
+  const fieldSize = teamCount * BOH_TEAM_SIZE;
+  const powerScale = options.powerScale || 1;
+  const scoreScale = options.scoreScale || 1;
+  return Array.from({ length: fieldSize }, (_, index) => ({
+    playerId: `metric-${index + 1}`,
+    gameName: `Metric ${index + 1}`,
+    score: options.zeroScore ? 0 : (fieldSize - index) ** 3 * scoreScale,
+    stats: {
+      totalCastlePower: options.zeroPower ? 0 : (index + 1) ** 2 * 1000 * powerScale,
+    },
+  }));
+}
+
+function seededDominanceDraftPlayers(fixtureIndex = 26) {
+  let state = 0x98765432;
+  const next = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state;
+  };
+  let players = [];
+  for (let fixture = 0; fixture <= fixtureIndex; fixture += 1) {
+    players = Array.from({ length: 2 * BOH_TEAM_SIZE }, (_, index) => ({
+      playerId: `seed-${fixture}-${index}`,
+      gameName: `Seed ${fixture}-${index}`,
+      score: 1000 + (next() % 100000),
+      stats: { totalCastlePower: 1_000_000 + (next() % 900_000_000) },
+    }));
+  }
+  return players;
+}
+
+function normalizedBalanceSse(result) {
+  const scoreMean =
+    result.teams.reduce((total, team) => total + team.totalScore, 0) / result.teamCount;
+  const powerMean =
+    result.teams.reduce((total, team) => total + team.totalCastlePower, 0) / result.teamCount;
+  return result.teams.reduce((total, team) => {
+    const scoreDeviation = scoreMean > 0 ? (team.totalScore - scoreMean) / scoreMean : 0;
+    const powerDeviation = powerMean > 0 ? (team.totalCastlePower - powerMean) / powerMean : 0;
+    return total + scoreDeviation ** 2 + powerDeviation ** 2;
+  }, 0);
+}
+
+function paretoDominates(left, right) {
+  return (
+    left.scoreSpread <= right.scoreSpread &&
+    left.powerSpread <= right.powerSpread &&
+    (left.scoreSpread < right.scoreSpread || left.powerSpread < right.powerSpread)
+  );
+}
+
+function normalizedWorstSpread(result) {
+  const scoreMean =
+    result.teams.reduce((total, team) => total + team.totalScore, 0) / result.teamCount;
+  const powerMean =
+    result.teams.reduce((total, team) => total + team.totalCastlePower, 0) / result.teamCount;
+  return Math.max(
+    scoreMean > 0 ? result.scoreSpread / scoreMean : 0,
+    powerMean > 0 ? result.powerSpread / powerMean : 0
+  );
+}
+
 test('signup normalization preserves Unicode names, accepts localized digits, and drops images', () => {
   const signup = normalizeBohSignup({
     gameName: '  Ａｌｉ   古風無道  ',
@@ -509,6 +577,31 @@ test('2025 formula exposes an exact deterministic component breakdown', () => {
   assert.equal(scored.powerSubtotal, 10950);
   assert.equal(scored.bonusSubtotal, 19000);
   assert.equal(scored.total, 29950);
+});
+
+test('frozen legacy specialty weight stays zero while explicit v2 profiles can score it', () => {
+  const input = {
+    gameName: 'Specialist',
+    stats: { unitSpecialtyPower: 1_234_000 },
+  };
+  const legacy = scoreBohSignup(input);
+  const customV2 = scoreBohSignup(
+    input,
+    createBohScoringProfile({
+      id: 'custom-v2-specialty-power',
+      version: 2,
+      powerWeights: { unitSpecialtyPower: 1 },
+    })
+  );
+
+  assert.equal(BOH_2025_SCORING_PROFILE.powerWeights.unitSpecialtyPower, 0);
+  assert.equal(legacy.breakdown.unitSpecialtyPower.weight, 0);
+  assert.equal(legacy.breakdown.unitSpecialtyPower.points, 0);
+  assert.equal(legacy.total, 0);
+  assert.equal(customV2.profileVersion, 2);
+  assert.equal(customV2.breakdown.unitSpecialtyPower.weight, 1);
+  assert.equal(customV2.breakdown.unitSpecialtyPower.points, 1234);
+  assert.equal(customV2.total, 1234);
 });
 
 test('custom scoring profiles apply all five new model inputs', () => {
@@ -1162,22 +1255,74 @@ test('forced team assignments reject unknowns, duplicates, and conflicting seat 
 
 test('score and total-power balancing optimize inverse fixtures while emitting both totals', () => {
   const teamCount = 2;
-  const fieldSize = teamCount * BOH_TEAM_SIZE;
-  const players = Array.from({ length: fieldSize }, (_, index) => ({
-    playerId: `metric-${index + 1}`,
-    gameName: `Metric ${index + 1}`,
-    score: (fieldSize - index) ** 3,
-    stats: { totalCastlePower: (index + 1) ** 2 * 1000 },
-  }));
+  const players = metricDraftPlayers({ teamCount });
   const scoreBalanced = balanceBohTeams(players, { teamCount, balanceMetric: 'score' });
   const powerBalanced = balanceBohTeams(players, {
     teamCount,
     balanceMetric: 'totalPower',
   });
-  const assignments = (result) =>
-    result.teams.map((team) => team.players.map((player) => player.playerId));
 
-  assert.notDeepEqual(assignments(scoreBalanced), assignments(powerBalanced));
+  assert.deepEqual(assignmentIds(scoreBalanced), [
+    [
+      'metric-1',
+      'metric-2',
+      'metric-3',
+      'metric-23',
+      'metric-20',
+      'metric-19',
+      'metric-18',
+      'metric-17',
+      'metric-16',
+      'metric-15',
+      'metric-14',
+      'metric-9',
+    ],
+    [
+      'metric-12',
+      'metric-11',
+      'metric-10',
+      'metric-13',
+      'metric-8',
+      'metric-7',
+      'metric-6',
+      'metric-5',
+      'metric-4',
+      'metric-22',
+      'metric-21',
+      'metric-24',
+    ],
+  ]);
+  assert.deepEqual(assignmentIds(powerBalanced), [
+    [
+      'metric-24',
+      'metric-23',
+      'metric-22',
+      'metric-4',
+      'metric-5',
+      'metric-6',
+      'metric-7',
+      'metric-17',
+      'metric-9',
+      'metric-10',
+      'metric-11',
+      'metric-12',
+    ],
+    [
+      'metric-13',
+      'metric-14',
+      'metric-15',
+      'metric-16',
+      'metric-8',
+      'metric-18',
+      'metric-19',
+      'metric-20',
+      'metric-21',
+      'metric-3',
+      'metric-2',
+      'metric-1',
+    ],
+  ]);
+  assert.notDeepEqual(assignmentIds(scoreBalanced), assignmentIds(powerBalanced));
   assert.ok(scoreBalanced.scoreSpread < powerBalanced.scoreSpread);
   assert.ok(powerBalanced.powerSpread < scoreBalanced.powerSpread);
   assert.equal(scoreBalanced.balanceMetric, 'score');
@@ -1207,6 +1352,125 @@ test('score and total-power balancing optimize inverse fixtures while emitting b
     assert.equal(result.scoreSpread, Math.max(...scoreTotals) - Math.min(...scoreTotals));
     assert.equal(result.powerSpread, Math.max(...powerTotals) - Math.min(...powerTotals));
   }
+});
+
+test('balanced metric is public, deterministic, scale-stable, and improves two-axis tradeoffs', () => {
+  const teamCount = 2;
+  const players = metricDraftPlayers({ teamCount });
+  const scoreBalanced = balanceBohTeams(players, { teamCount, balanceMetric: 'score' });
+  const powerBalanced = balanceBohTeams(players, { teamCount, balanceMetric: 'totalPower' });
+  const balanced = balanceBohTeams(players, { teamCount, balanceMetric: 'balanced' });
+  const repeated = balanceBohTeams(players, { teamCount, balanceMetric: 'balanced' });
+  const scaled = balanceBohTeams(
+    metricDraftPlayers({ teamCount, scoreScale: 37, powerScale: 10_000 }),
+    {
+      teamCount,
+      balanceMetric: 'balanced',
+    }
+  );
+
+  assert.equal(balanced.balanceMetric, 'balanced');
+  assert.equal(balanced.balanceSpread, balanced.scoreSpread);
+  assert.deepEqual(assignmentIds(balanced), assignmentIds(repeated));
+  assert.deepEqual(assignmentIds(balanced), assignmentIds(scaled));
+  assert.ok(normalizedWorstSpread(balanced) < normalizedWorstSpread(scoreBalanced));
+  assert.ok(normalizedWorstSpread(balanced) < normalizedWorstSpread(powerBalanced));
+  assert.ok(balanced.scoreSpread > scoreBalanced.scoreSpread);
+  assert.ok(balanced.powerSpread > powerBalanced.powerSpread);
+  assert.ok(balanced.scoreSpread < powerBalanced.scoreSpread);
+  assert.ok(balanced.powerSpread < scoreBalanced.powerSpread);
+  balanced.teams.forEach((team) => {
+    assert.equal(team.balanceTotal, team.totalScore);
+  });
+});
+
+test('balanced multi-start fixes the deterministic single-seed Pareto regression', () => {
+  const players = seededDominanceDraftPlayers();
+  const scoreBalanced = balanceBohTeams(players, { teamCount: 2, balanceMetric: 'score' });
+  const powerBalanced = balanceBohTeams(players, { teamCount: 2, balanceMetric: 'totalPower' });
+  const balanced = balanceBohTeams(players, { teamCount: 2, balanceMetric: 'balanced' });
+  const balancedObjective = normalizedBalanceSse(balanced);
+
+  // The former direct score-seeded hill climb returned spreads of 7,340 and
+  // 12,148,164 here, so the legacy total-power result Pareto-dominated it.
+  assert.deepEqual([balanced.scoreSpread, balanced.powerSpread], [3744, 1031968]);
+  assert.ok(balancedObjective <= normalizedBalanceSse(scoreBalanced) + 1e-15);
+  assert.ok(balancedObjective <= normalizedBalanceSse(powerBalanced) + 1e-15);
+  assert.equal(paretoDominates(scoreBalanced, balanced), false);
+  assert.equal(paretoDominates(powerBalanced, balanced), false);
+});
+
+test('balanced multi-start is no worse than either legacy objective for three to six teams', () => {
+  for (let teamCount = 3; teamCount <= BOH_TEAM_COUNT; teamCount += 1) {
+    const players = metricDraftPlayers({ teamCount });
+    const scoreBalanced = balanceBohTeams(players, { teamCount, balanceMetric: 'score' });
+    const powerBalanced = balanceBohTeams(players, { teamCount, balanceMetric: 'totalPower' });
+    const balanced = balanceBohTeams(players, { teamCount, balanceMetric: 'balanced' });
+    const balancedObjective = normalizedBalanceSse(balanced);
+
+    assert.ok(
+      balancedObjective <= normalizedBalanceSse(scoreBalanced) + 1e-15,
+      `teamCount=${teamCount} exceeded score objective`
+    );
+    assert.ok(
+      balancedObjective <= normalizedBalanceSse(powerBalanced) + 1e-15,
+      `teamCount=${teamCount} exceeded total-power objective`
+    );
+    assert.equal(balanced.validation.valid, true);
+  }
+});
+
+test('balanced metric keeps forced and locked seats deterministically', () => {
+  const teamCount = 2;
+  const options = {
+    teamCount,
+    balanceMetric: 'balanced',
+    forcedTeamAssignments: { 'metric-24': { teamId: 'team-1' } },
+    lockedAssignments: { 'metric-1': { teamId: 'team-2', seatNumber: 1 } },
+  };
+  const constrained = balanceBohTeams(metricDraftPlayers({ teamCount }), options);
+  const repeated = balanceBohTeams(metricDraftPlayers({ teamCount }), options);
+  const constrainedPlayers = constrained.teams.flatMap((team) =>
+    team.players.map((player) => ({ teamId: team.id, ...player }))
+  );
+  const locked = constrainedPlayers.find((player) => player.playerId === 'metric-1');
+  const forced = constrainedPlayers.find((player) => player.playerId === 'metric-24');
+
+  assert.equal(locked.teamId, 'team-2');
+  assert.equal(locked.seatNumber, 1);
+  assert.equal(locked.locked, true);
+  assert.equal(forced.teamId, 'team-1');
+  assert.equal(forced.locked, false);
+  assert.equal(constrained.validation.valid, true);
+  assert.deepEqual(assignmentIds(constrained), assignmentIds(repeated));
+});
+
+test('balanced metric handles zero-power and zero-both objective axes', () => {
+  const teamCount = 2;
+  const zeroMeanScore = balanceBohTeams(metricDraftPlayers({ teamCount, zeroScore: true }), {
+    teamCount,
+    balanceMetric: 'balanced',
+  });
+  const zeroMeanPower = balanceBohTeams(metricDraftPlayers({ teamCount, zeroPower: true }), {
+    teamCount,
+    balanceMetric: 'balanced',
+  });
+  const zeroBoth = balanceBohTeams(
+    metricDraftPlayers({ teamCount, zeroScore: true, zeroPower: true }),
+    { teamCount, balanceMetric: 'balanced' }
+  );
+
+  assert.equal(zeroMeanScore.scoreSpread, 0);
+  assert.equal(zeroMeanScore.balanceSpread, 0);
+  assert.ok(Number.isFinite(zeroMeanScore.powerSpread));
+  assert.equal(zeroMeanScore.validation.valid, true);
+  assert.equal(zeroMeanPower.powerSpread, 0);
+  assert.ok(Number.isFinite(zeroMeanPower.scoreSpread));
+  assert.equal(zeroMeanPower.validation.valid, true);
+  assert.equal(zeroBoth.scoreSpread, 0);
+  assert.equal(zeroBoth.powerSpread, 0);
+  assert.equal(normalizedBalanceSse(zeroBoth), 0);
+  assert.equal(zeroBoth.validation.valid, true);
 });
 
 test('total-power balancing normalizes mixed adapter aliases before applying constraints', () => {

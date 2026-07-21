@@ -13,6 +13,7 @@ import {
   allStarBohText,
   loadAllStarBohLocale,
 } from '../../js/i18n/all-star-boh/index.js';
+import ALL_STAR_BOH_RU from '../../js/i18n/all-star-boh/ru.js';
 
 function placeholderSignature(value) {
   return Array.from(String(value).matchAll(/\{(\w+)\}/gu), (match) => match[1]).sort();
@@ -32,6 +33,8 @@ const PLAYER_SAFETY_TRANSLATION_KEYS = Object.freeze([
   'signup.ocrIssueMissingConfidence',
   'signup.ocrMissingSummary',
 ]);
+
+const RUSSIAN_PLAYER_SAFETY_TRANSLATION_KEYS = Object.freeze(['signup.ocrError']);
 
 async function assertLocaleParity({ locale, english, load, translate, label }) {
   const pack = await load(locale);
@@ -80,6 +83,14 @@ test('all eleven player locale chunks preserve canonical keys and safe fallback'
         `player ${locale}.${key} must not silently fall back to English`
       );
     }
+  }
+});
+
+test('Russian OCR failure safety copy is native instead of an English fallback', () => {
+  for (const key of RUSSIAN_PLAYER_SAFETY_TRANSLATION_KEYS) {
+    assert.equal(typeof ALL_STAR_BOH_RU[key], 'string');
+    assert.ok(ALL_STAR_BOH_RU[key].trim());
+    assert.notEqual(ALL_STAR_BOH_RU[key], ALL_STAR_BOH_EN[key]);
   }
 });
 

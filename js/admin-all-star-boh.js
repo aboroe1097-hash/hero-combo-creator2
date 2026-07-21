@@ -1,4 +1,5 @@
 import * as BohModel from './all-star-boh-model.js';
+import { applyAllStarBohSubmissionCorrections } from './all-star-boh-store.js';
 
 const CONTROLLERS = new WeakMap();
 
@@ -76,6 +77,40 @@ const CORRECTABLE_STAT_KEYS = Object.freeze([
   'rocLevel',
 ]);
 
+const FULL_CORRECTION_STAT_KEYS = Object.freeze([...CORRECTABLE_STAT_KEYS, 'level50HeroCount']);
+const OPTIONAL_POWER_KEYS = Object.freeze(['artifactPower', 'royalTechPower']);
+const CORRECTION_NUMBER_LIMITS = Object.freeze({
+  totalCastlePower: 10 ** 12,
+  troopPower: 10 ** 12,
+  buildingPower: 10 ** 12,
+  technologyPower: 10 ** 12,
+  heroCombatPower: 10 ** 12,
+  dragonPower: 10 ** 12,
+  unitSpecialtyPower: 10 ** 12,
+  artifactPower: 10 ** 12,
+  royalTechPower: 10 ** 12,
+  rocLevel: 160,
+  level50HeroCount: 500,
+});
+const CORRECTION_TROOP_TYPES = Object.freeze(['cavalry', 'archers', 'footmen']);
+const CORRECTION_SPEED_HEROES = Object.freeze(['lionheart', 'cao-cao', 'al-fatih']);
+const CORRECTION_TROOP_ROW_PATTERN =
+  /^(?:(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)\|\d{1,10}|estimate\|(?:lofty|enhanced-t10|t10|t9)\|\d{1,10})$/u;
+const CORRECTION_BOOLEAN_FIELDS = Object.freeze([
+  'canHelpLead',
+  'vts1097Member',
+  'canTeleport',
+  'canUseVoice',
+  'planCommitment',
+]);
+const CORRECTION_COMMITMENT_TEXT_LIMITS = Object.freeze({
+  unavailableTimes: 800,
+  contactNumber: 160,
+  currentState: 160,
+  joinReason: 1000,
+  notes: 2000,
+});
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -113,6 +148,64 @@ function uniqueTextList(value) {
   return [...new Set(list(value).map(cleanText).filter(Boolean))];
 }
 
+function hasOwn(source, key) {
+  return Object.prototype.hasOwnProperty.call(source || {}, key);
+}
+
+function correctionValueKey(value) {
+  if (Array.isArray(value)) {
+    return JSON.stringify(
+      [...value]
+        .map((item) => (typeof item === 'string' ? cleanText(item) : item))
+        .sort((left, right) => String(left).localeCompare(String(right)))
+    );
+  }
+  if (value && typeof value === 'object') {
+    return JSON.stringify(
+      Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)))
+    );
+  }
+  return JSON.stringify(value ?? null);
+}
+
+function correctionValuesEqual(left, right) {
+  return correctionValueKey(left) === correctionValueKey(right);
+}
+
+function originalCorrectionSubmission(submission = {}) {
+  const original =
+    submission?.originalSubmission && typeof submission.originalSubmission === 'object'
+      ? submission.originalSubmission
+      : {};
+  const originalStats = {
+    ...(original?.stats ||
+      submission?.originalStats ||
+      submission?.confirmedStats ||
+      submission?.stats ||
+      {}),
+  };
+  const originalCommitment = {
+    ...(original?.commitment || submission?.originalCommitment || submission?.commitment || {}),
+  };
+  return {
+    gameName:
+      cleanText(original?.gameName) ||
+      cleanText(submission?.originalGameName) ||
+      playerName(submission),
+    locale: hasOwn(original, 'locale') ? cleanText(original.locale) : cleanText(submission?.locale),
+    timezone: hasOwn(original, 'timezone')
+      ? cleanText(original.timezone)
+      : cleanText(submission?.timezone),
+    preferredTeammates: uniqueTextList(
+      hasOwn(original, 'preferredTeammates')
+        ? original.preferredTeammates
+        : submission?.preferredTeammates
+    ),
+    stats: originalStats,
+    commitment: originalCommitment,
+  };
+}
+
 function timestampValue(value) {
   if (typeof value?.toMillis === 'function') return finiteNumber(value.toMillis());
   if (Number.isFinite(value?.seconds)) return value.seconds * 1000;
@@ -121,16 +214,6 @@ function timestampValue(value) {
   if (Number.isFinite(numeric) && value !== '') return numeric;
   const parsed = Date.parse(String(value || ''));
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function reviewMatchesSubmission(submission, review = submission?.review) {
-  return Boolean(
-    review &&
-    review.stale !== true &&
-    Number.isInteger(submission?.revision) &&
-    Number.isInteger(review?.submissionRevision) &&
-    review.submissionRevision === submission.revision
-  );
 }
 
 function effectiveAdminSubmission(submission = {}, review = submission?.review) {
@@ -148,27 +231,35 @@ function effectiveAdminSubmission(submission = {}, review = submission?.review) 
     if (stats[key] == null && submission?.[key] != null) stats[key] = submission[key];
   }
   const mergedStats = { ...stats, ...(submission?.confirmedStats || {}) };
-  const output = {
+  const original = originalCorrectionSubmission({ ...submission, stats: mergedStats });
+  const base = {
     ...submission,
     stats: mergedStats,
-    originalStats: { ...(submission?.originalStats || mergedStats) },
+    commitment: { ...(submission?.commitment || {}) },
+    originalStats: { ...original.stats },
+    originalCommitment: { ...original.commitment },
+    originalSubmission: {
+      gameName: original.gameName,
+      locale: original.locale,
+      timezone: original.timezone,
+      preferredTeammates: [...original.preferredTeammates],
+      stats: { ...original.stats },
+      commitment: { ...original.commitment },
+    },
   };
   const originalName = cleanText(submission?.originalGameName) || playerName(submission);
+  base.originalGameName = originalName;
+  let output = base;
+  try {
+    output = applyAllStarBohSubmissionCorrections(base, review);
+  } catch {
+    // Keep malformed historical review data inspectable instead of breaking the admin table.
+  }
   output.originalGameName = originalName;
-  if (!reviewMatchesSubmission(submission, review)) return output;
-
-  for (const key of CORRECTABLE_STAT_KEYS) {
-    const correction = review?.statCorrections?.[key];
-    if (!correction || correction.corrected === '' || correction.corrected == null) continue;
-    const corrected = Number(correction.corrected);
-    if (Number.isFinite(corrected) && corrected >= 0) output.stats[key] = corrected;
-  }
-  const nameCorrection = review?.gameNameCorrection;
-  const correctedName = cleanText(nameCorrection?.corrected);
-  if (correctedName && cleanText(nameCorrection?.reason)) {
-    output.gameName = correctedName;
-    output.displayName = correctedName;
-  }
+  output.originalStats = { ...original.stats };
+  output.originalCommitment = { ...original.commitment };
+  output.originalSubmission = base.originalSubmission;
+  if (cleanText(output.gameName)) output.displayName = cleanText(output.gameName);
   output.confirmedStats = output.stats;
   return output;
 }
@@ -185,7 +276,7 @@ function adminSubmissionFields(record = {}) {
   const troopTypes = uniqueTextList([
     ...list(stats.t9TroopTypes),
     ...list(stats.t10TroopTypes),
-    ...Object.keys(stats.troopRoster || {}),
+    ...troopRosterTroopTypes(stats.troopRoster),
   ]).map((value) => value.toLocaleLowerCase());
   const originalName = effective.originalGameName || playerName(record);
   const effectiveName = playerName(effective) || playerId(record);
@@ -286,6 +377,73 @@ export function sortAdminSubmissions(records, sort = {}) {
     .map(({ record }) => record);
 }
 
+const SCORE_AUDIT_SORT_KEYS = Object.freeze([
+  'player',
+  'totalPower',
+  'calculated',
+  'override',
+  'commitment',
+  'finalScore',
+  'breakdown',
+]);
+
+function scoreAuditTotalPower(player) {
+  const value =
+    player?.totalCastlePower ?? player?.stats?.totalCastlePower ?? player?.stats?.totalPower;
+  return value === undefined || value === null || value === '' ? null : finiteNumber(value);
+}
+
+export function sortAdminScoreBreakdownRows(records, sort = {}, options = {}) {
+  const requestedKey = cleanText(sort.key || sort.field);
+  if (!SCORE_AUDIT_SORT_KEYS.includes(requestedKey)) return list(records);
+  const direction = cleanText(sort.direction || sort.order).toLocaleLowerCase() === 'desc' ? -1 : 1;
+  const numericKeys = new Set(['totalPower', 'calculated', 'override', 'commitment', 'finalScore']);
+  const collator = new Intl.Collator(cleanText(options.locale) || undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
+  const valueFor = (player) => {
+    if (requestedKey === 'player') return cleanText(player?.displayName || player?.playerId);
+    if (requestedKey === 'totalPower') return scoreAuditTotalPower(player);
+    if (requestedKey === 'calculated') {
+      return player?.calculatedScore === undefined || player?.calculatedScore === null
+        ? scoreValue(player)
+        : finiteNumber(player.calculatedScore);
+    }
+    if (requestedKey === 'override') {
+      return player?.overrideScore === undefined || player?.overrideScore === null
+        ? null
+        : finiteNumber(player.overrideScore);
+    }
+    if (requestedKey === 'commitment') {
+      return player?.commitmentScore === undefined || player?.commitmentScore === null
+        ? null
+        : finiteNumber(player.commitmentScore);
+    }
+    if (requestedKey === 'finalScore') return scoreValue(player);
+    return cleanText(
+      typeof options.breakdownText === 'function'
+        ? options.breakdownText(player)
+        : player?.breakdownText
+    );
+  };
+  const missing = (value) =>
+    value === undefined || value === null || (typeof value === 'string' && value === '');
+  return list(records)
+    .map((record, index) => ({ record, index, value: valueFor(record) }))
+    .sort((left, right) => {
+      const leftMissing = missing(left.value);
+      const rightMissing = missing(right.value);
+      if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+      if (leftMissing) return left.index - right.index;
+      const compared = numericKeys.has(requestedKey)
+        ? finiteNumber(left.value) - finiteNumber(right.value)
+        : collator.compare(String(left.value), String(right.value));
+      return compared ? compared * direction : left.index - right.index;
+    })
+    .map(({ record }) => record);
+}
+
 function csvCell(value) {
   let text = String(value ?? '');
   const firstContent = [...text].find((character) => {
@@ -294,6 +452,61 @@ function csvCell(value) {
   });
   if (firstContent && '=+-@'.includes(firstContent)) text = `'${text}`;
   return `"${text.replaceAll('"', '""')}"`;
+}
+
+function troopRosterRows(value) {
+  if (Array.isArray(value)) return value.map((item) => cleanText(item)).filter(Boolean);
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, count]) => `${cleanText(key)}|${cleanText(count)}`)
+      .filter(Boolean);
+  }
+  return cleanText(value).split(/\r?\n/u).map(cleanText).filter(Boolean);
+}
+
+function troopRosterTroopTypes(value) {
+  if (Array.isArray(value)) {
+    return troopRosterRows(value).flatMap((row) => {
+      if (!CORRECTION_TROOP_ROW_PATTERN.test(row)) return [];
+      const troopType = cleanText(row.split('|', 1)[0]);
+      return CORRECTION_TROOP_TYPES.includes(troopType) ? [troopType] : [];
+    });
+  }
+  if (value && typeof value === 'object') return Object.keys(value);
+  return [];
+}
+
+function parseTroopRosterCounts(value) {
+  const counts = { lofty: 0, enhancedT10: 0, regularT10: 0, t9: 0 };
+  const estimates = {};
+  for (const row of troopRosterRows(value)) {
+    const [kind = '', second = '', third = '', fourth = ''] = row.split('|').map(cleanText);
+    const count = Math.max(0, finiteNumber(kind === 'estimate' ? third : fourth));
+    if (kind === 'estimate') {
+      const estimateKind = second.toLocaleLowerCase();
+      if (['lofty', 'enhanced-t10', 't10', 't9'].includes(estimateKind)) {
+        estimates[estimateKind] = count;
+      }
+      continue;
+    }
+    const tier = second.toLocaleUpperCase();
+    const status = third.toLocaleLowerCase();
+    if (['S', 'SS', 'SSS'].includes(tier)) counts.lofty += count;
+    else if (tier === 'X' && status === 'enhanced') counts.enhancedT10 += count;
+    else if (tier === 'X' && status === 'normal') counts.regularT10 += count;
+    else if (tier === 'IX') counts.t9 += count;
+  }
+  return {
+    lofty: estimates.lofty ?? counts.lofty,
+    enhancedT10: estimates['enhanced-t10'] ?? counts.enhancedT10,
+    regularT10: estimates.t10 ?? counts.regularT10,
+    t9: estimates.t9 ?? counts.t9,
+  };
+}
+
+function scoreDiagnosticCsvValue(fields) {
+  const code = cleanText(fields.effective.scoreDiagnostic || fields.record?.scoreDiagnostic);
+  return code || '';
 }
 
 function adminSubmissionCapture(record, options = {}) {
@@ -321,7 +534,16 @@ export function buildSignupReviewCsv(records, options = {}) {
     'Artifact Power',
     'Royal Tech Power',
     'RoC Level',
-    'Score',
+    'Calculated Score',
+    'Legacy Final Override',
+    'Commitment Adjustment',
+    'Final Score',
+    'Score Diagnostic',
+    'Canonical Troop Roster',
+    'Lofty Count',
+    'Enhanced T10 Count',
+    'Regular T10 Count',
+    'T9 Count',
     'Status',
     'Capture',
     'Updated',
@@ -334,6 +556,8 @@ export function buildSignupReviewCsv(records, options = {}) {
   const rows = list(records).map((record) => {
     const fields = adminSubmissionFields(record);
     const { effective, stats, commitment } = fields;
+    const rosterRows = troopRosterRows(stats.troopRoster);
+    const rosterCounts = parseTroopRosterCounts(stats.troopRoster);
     return [
       playerId(record),
       fields.effectiveName,
@@ -351,7 +575,16 @@ export function buildSignupReviewCsv(records, options = {}) {
       stats.artifactPower,
       stats.royalTechPower,
       stats.rocLevel,
+      effective.calculatedScore ?? effective.score?.calculatedScore ?? effective.score?.total,
+      effective.overrideScore ?? '',
+      effective.commitmentScore ?? '',
       fields.score,
+      scoreDiagnosticCsvValue(fields),
+      rosterRows.join(' | '),
+      rosterCounts.lofty,
+      rosterCounts.enhancedT10,
+      rosterCounts.regularT10,
+      rosterCounts.t9,
       fields.status,
       adminSubmissionCapture(effective, options),
       effective.updatedAtMs || fields.updated,
@@ -437,7 +670,16 @@ function normalizeTeamCount(value, fallback = TEAM_COUNT) {
 }
 
 function normalizeBalanceMetric(value) {
-  return cleanText(value) === 'totalPower' ? 'totalPower' : 'score';
+  const metric = cleanText(value);
+  return ['score', 'totalPower', 'balanced'].includes(metric) ? metric : 'score';
+}
+
+function balanceMetricLabel(state, metric) {
+  const normalized = normalizeBalanceMetric(metric);
+  if (normalized === 'totalPower') return state.tr('adminBohTotalGamePower', 'Total in-game power');
+  if (normalized === 'balanced')
+    return state.tr('adminBohBalancedScorePower', 'Balanced score + power');
+  return state.tr('adminBohScoringPoints', 'Scoring points');
 }
 
 function normalizeTeams(sourceTeams, teamCount = TEAM_COUNT) {
@@ -884,6 +1126,7 @@ function adapterDefaultDraft() {
     teamCount: TEAM_COUNT,
     balanceMetric: 'score',
     forcedTeamAssignments: [],
+    commitmentScoreAdjustments: [],
     teamIds: adapterDefaultTeamIds(),
     playerIds: [],
     plan: adapterDefaultPlan(),
@@ -1042,6 +1285,16 @@ function adapterReviewIsFresh(submission, review) {
   );
 }
 
+function adapterReviewMatchesSubmissionRevision(submission, review) {
+  return Boolean(
+    review &&
+    review.stale !== true &&
+    Number.isInteger(submission?.revision) &&
+    Number.isInteger(review?.submissionRevision) &&
+    review.submissionRevision === submission.revision
+  );
+}
+
 function adapterActiveScoringVersion(state) {
   const versions = list(state.draft?.scoringVersions);
   const activeId = cleanText(state.draft?.activeScoringVersionId);
@@ -1087,7 +1340,8 @@ function adapterScoreRecord(state, submission) {
     Number.isInteger(review?.submissionRevision) &&
     review.submissionRevision === submission?.revision;
   const profile = adapterActiveScoringVersion(state);
-  let calculated = review?.score && typeof review.score === 'object' ? review.score : null;
+  let calculated;
+  let scoreDiagnostic = '';
   try {
     calculated = BohModel.scoreBohSignup(
       { ...effective, playerId: id, gameName: playerName(effective) || id },
@@ -1100,11 +1354,49 @@ function adapterScoreRecord(state, submission) {
       }
     );
   } catch {
-    calculated ||= { total: 0, breakdown: {} };
+    calculated = { total: 0, breakdown: {} };
+    scoreDiagnostic = 'calculation_failed';
+  }
+  const storedScore = review?.score && typeof review.score === 'object' ? review.score : null;
+  if (!scoreDiagnostic && review && !reviewMatchesSubmission && !storedScore) {
+    scoreDiagnostic = 'stale_submission';
+  } else if (!scoreDiagnostic && adapterReviewIsFresh(submission, review) && !storedScore) {
+    scoreDiagnostic = 'unverifiable';
+  }
+  if (!scoreDiagnostic && storedScore) {
+    const storedProfileId = cleanText(storedScore.profileId);
+    const storedProfileVersion = Number(storedScore.profileVersion);
+    const storedTotal = Number(storedScore.total);
+    const storedScoreIsVerifiable =
+      storedProfileId &&
+      Number.isInteger(storedProfileVersion) &&
+      storedProfileVersion > 0 &&
+      storedScore.total !== null &&
+      storedScore.total !== '' &&
+      Number.isFinite(storedTotal);
+    if (!reviewMatchesSubmission) scoreDiagnostic = 'stale_submission';
+    else if (!storedScoreIsVerifiable) scoreDiagnostic = 'unverifiable';
+    else if (
+      storedProfileId !== cleanText(calculated.profileId) ||
+      storedProfileVersion !== Number(calculated.profileVersion)
+    ) {
+      scoreDiagnostic = 'stale_profile';
+    } else {
+      const precision = Math.max(0, Math.min(6, integer(calculated.precision)));
+      const tolerance = 0.5 * 10 ** -precision;
+      if (Math.abs(storedTotal - finiteNumber(calculated.total)) > tolerance) {
+        scoreDiagnostic = 'stored_mismatch';
+      }
+    }
   }
   const override = list(state.draft?.scoreOverrides).find((item) => item.playerId === id);
+  const commitment = list(state.draft?.commitmentScoreAdjustments).find(
+    (item) => item.playerId === id
+  );
   const calculatedScore = finiteNumber(calculated?.total);
-  const finalScore = override ? finiteNumber(override.score) : calculatedScore;
+  const measuredScore = override ? finiteNumber(override.score) : calculatedScore;
+  const commitmentScore = commitment ? finiteNumber(commitment.score) : null;
+  const finalScore = measuredScore + (commitmentScore ?? 0);
   return {
     playerId: id,
     uid,
@@ -1122,6 +1414,9 @@ function adapterScoreRecord(state, submission) {
     calculatedScore,
     overrideScore: override ? finiteNumber(override.score) : null,
     overrideReason: cleanText(override?.reason),
+    commitmentScore,
+    commitmentScoreReason: cleanText(commitment?.reason),
+    scoreDiagnostic,
     finalScore,
     score: { ...adapterClone(calculated), total: finalScore },
     scoreBreakdown: adapterClone(calculated?.breakdown || {}),
@@ -1186,7 +1481,13 @@ function adapterSnapshot(state) {
         (review?.stale === true || review?.submissionRevision !== submission?.revision),
       review: adapterClone(review),
       score: score.score,
+      calculatedScore: score.calculatedScore,
+      overrideScore: score.overrideScore,
+      overrideReason: score.overrideReason,
+      commitmentScore: score.commitmentScore,
+      commitmentScoreReason: score.commitmentScoreReason,
       finalScore: score.finalScore,
+      scoreDiagnostic: score.scoreDiagnostic,
     };
   });
   const scores = state.submissions.map((submission) => adapterScoreRecord(state, submission));
@@ -1247,11 +1548,18 @@ function adapterSnapshot(state) {
   };
 }
 
-function adapterNotify(state, changed = true) {
+function adapterBalancePreviewMatchesCurrentSource(state) {
+  return Boolean(
+    state.balancePreview &&
+    JSON.stringify(state.balancePreview.source) === JSON.stringify(adapterBalanceSource(state))
+  );
+}
+
+function adapterNotify(state, changed = true, options = {}) {
   if (changed) {
     state.revision += 1;
     state.validation = {};
-    state.balancePreview = null;
+    if (options.preserveBalancePreview !== true) state.balancePreview = null;
   }
   const snapshot = adapterSnapshot(state);
   for (const listener of [...state.listeners]) {
@@ -1350,7 +1658,9 @@ async function adapterLoadAll(state, changed = true) {
     state.draft = nextDraft;
     state.teams = teams;
   }
-  return adapterNotify(state, changed);
+  return adapterNotify(state, changed, {
+    preserveBalancePreview: changed && adapterBalancePreviewMatchesCurrentSource(state),
+  });
 }
 
 async function adapterReplaceTeamSubscriptions(state) {
@@ -1408,7 +1718,11 @@ async function adapterStartSubscriptions(state) {
       if (state.stopped) return;
       state.submissions = list(submissions);
       void adapterLoadReviews(state)
-        .then(() => adapterNotify(state))
+        .then(() =>
+          adapterNotify(state, true, {
+            preserveBalancePreview: adapterBalancePreviewMatchesCurrentSource(state),
+          })
+        )
         .catch((error) => adapterHandleBackgroundError(state, error, 'subscribeSubmissions'));
     },
     (error) => adapterHandleBackgroundError(state, error, 'subscribeSubmissions')
@@ -1601,11 +1915,14 @@ async function adapterReviewSubmission(state, payload) {
   }
   const uid = adapterSubmissionUid(submission);
   const existing = state.reviews.get(uid) || {};
-  const existingAdjustments = adapterClone(existing.adjustments || {});
+  const existingReviewIsCurrent = adapterReviewMatchesSubmissionRevision(submission, existing);
+  const existingAdjustments = existingReviewIsCurrent
+    ? adapterClone(existing.adjustments || {})
+    : {};
   const reviewStatus = adapterUiStatusToReview(payload.status);
   const feedbackNote = Object.prototype.hasOwnProperty.call(payload, 'note')
     ? cleanText(payload.note)
-    : cleanText(existing.note);
+    : cleanText(existingReviewIsCurrent ? existing.note : '');
   if (['needs_changes', 'rejected'].includes(reviewStatus) && !feedbackNote) {
     throw adapterError(
       'all-star-boh-feedback-required',
@@ -1622,10 +1939,12 @@ async function adapterReviewSubmission(state, payload) {
     ...existingAdjustments,
     bohUsefulRating: adminUsefulnessRating,
   };
-  const statCorrections = Object.prototype.hasOwnProperty.call(payload, 'statCorrections')
+  let statCorrections = Object.prototype.hasOwnProperty.call(payload, 'statCorrections')
     ? adapterClone(payload.statCorrections)
-    : adapterClone(existing.statCorrections || {});
-  let gameNameCorrection = adapterClone(existing.gameNameCorrection || null);
+    : adapterClone(existingReviewIsCurrent ? existing.statCorrections || {} : {});
+  let gameNameCorrection = adapterClone(
+    existingReviewIsCurrent ? existing.gameNameCorrection || null : null
+  );
   if (Object.prototype.hasOwnProperty.call(payload, 'gameNameCorrection')) {
     const corrected = cleanText(payload.gameNameCorrection?.corrected);
     const reason = cleanText(payload.gameNameCorrection?.reason);
@@ -1637,11 +1956,33 @@ async function adapterReviewSubmission(state, payload) {
     }
     gameNameCorrection = corrected ? { corrected, reason } : null;
   }
+  const hasSubmissionCorrection = Object.prototype.hasOwnProperty.call(
+    payload,
+    'submissionCorrection'
+  );
+  const submissionCorrection = hasSubmissionCorrection
+    ? adapterClone(payload.submissionCorrection)
+    : adapterClone(existingReviewIsCurrent ? existing.submissionCorrection || null : null);
+  if (hasSubmissionCorrection) {
+    const correctionReason = cleanText(submissionCorrection?.reason);
+    const correctionValues = submissionCorrection?.values || {};
+    statCorrections = Object.fromEntries(
+      CORRECTABLE_STAT_KEYS.filter(
+        (key) => hasOwn(correctionValues?.stats, key) && correctionValues.stats[key] !== null
+      ).map((key) => [key, { corrected: correctionValues.stats[key], reason: correctionReason }])
+    );
+    const correctedName = cleanText(correctionValues.gameName);
+    gameNameCorrection = correctedName
+      ? { corrected: correctedName, reason: correctionReason }
+      : null;
+  }
   const prospectiveReview = {
     ...existing,
     submissionRevision: adapterRevision(submission.revision),
+    stale: false,
     statCorrections,
     gameNameCorrection,
+    submissionCorrection,
   };
   const effective = effectiveAdminSubmission(submission, prospectiveReview);
   let calculated;
@@ -1672,6 +2013,7 @@ async function adapterReviewSubmission(state, payload) {
     score: calculated,
     adjustments,
     statCorrections,
+    submissionCorrection,
     ...(gameNameCorrection ? { gameNameCorrection } : {}),
     submissionRevision: adapterRevision(submission.revision),
   };
@@ -1757,7 +2099,115 @@ async function adapterDeleteSubmission(state, payload) {
     (candidate) => adapterSubmissionUid(candidate) !== uid
   );
   state.reviews.delete(uid);
+  const playerIds = new Set([uid, adapterSubmissionId(submission)].filter(Boolean));
+  const draft = adapterClone(state.draft || adapterDefaultDraft());
+  draft.playerIds = list(draft.playerIds).filter((playerIdValue) => !playerIds.has(playerIdValue));
+  draft.forcedTeamAssignments = list(draft.forcedTeamAssignments).filter(
+    (assignment) => !playerIds.has(cleanText(assignment?.playerId))
+  );
+  draft.commitmentScoreAdjustments = list(draft.commitmentScoreAdjustments).filter(
+    (adjustment) => !playerIds.has(cleanText(adjustment?.playerId))
+  );
+  draft.scoreOverrides = list(draft.scoreOverrides).filter(
+    (override) => !playerIds.has(cleanText(override?.playerId))
+  );
+  draft.plan = adapterPlan(draft);
+  draft.plan.playerOverrides = list(draft.plan.playerOverrides).filter(
+    (rule) => !playerIds.has(cleanText(rule?.playerId))
+  );
+  draft.plan.instructions = list(draft.plan.instructions).filter(
+    (rule) => !playerIds.has(cleanText(rule?.playerId))
+  );
+  draft.plan.rotations = list(draft.plan.rotations).filter(
+    (rotation) => !playerIds.has(cleanText(rotation?.playerId))
+  );
+  state.draft = draft;
+  for (const [teamId, currentTeam] of state.teams) {
+    if (!list(currentTeam?.seats).some((seat) => playerIds.has(cleanText(seat?.playerId)))) {
+      continue;
+    }
+    const team = adapterClone(currentTeam);
+    team.seats = list(team.seats).map((seat) => {
+      if (!playerIds.has(cleanText(seat?.playerId))) return seat;
+      return {
+        ...seat,
+        playerId: '',
+        displayName: '',
+        score: null,
+        totalCastlePower: null,
+        locked: false,
+      };
+    });
+    state.teams.set(teamId, adapterReconcileCaptain(team));
+  }
+  try {
+    const refreshedDraftTeams = await adapterReadDraftTeams(state);
+    await adapterAdoptDraftTeams(
+      state,
+      refreshedDraftTeams,
+      'deleteSubmissionRefreshDraftTeams',
+      false
+    );
+  } catch (error) {
+    try {
+      adapterHandleBackgroundError(state, error, 'deleteSubmissionRefreshDraftTeams');
+    } catch {
+      // Observer failures must not turn a committed deletion into a reported failure.
+    }
+  }
   adapterNotify(state);
+}
+
+async function adapterBatchDeleteSubmissions(state, payload) {
+  const missing = ['listSubmissions', 'deleteSubmission'].filter(
+    (name) => typeof state.adminStore?.[name] !== 'function'
+  );
+  if (missing.length) {
+    throw adapterError(
+      'all-star-boh-action-unavailable',
+      `Deleting signups is not connected to the admin store: ${missing.join(', ')}.`
+    );
+  }
+  const playerIds = uniqueTextList(payload.playerIds);
+  if (!playerIds.length) {
+    throw adapterError('all-star-boh-batch-empty', 'Select at least one visible signup.');
+  }
+  const successfulPlayerIds = [];
+  const failedPlayerIds = [];
+  const failedPlayers = [];
+  for (const playerIdValue of playerIds) {
+    let submission = null;
+    try {
+      state.submissions = list(await state.adminStore.listSubmissions());
+      submission = adapterFindSubmission(state, playerIdValue);
+      if (!submission) {
+        throw adapterError(
+          'all-star-boh-submission-unknown',
+          'The selected signup no longer exists.'
+        );
+      }
+      await adapterDeleteSubmission(state, {
+        playerId: adapterSubmissionId(submission) || adapterSubmissionUid(submission),
+      });
+      successfulPlayerIds.push(playerIdValue);
+    } catch {
+      failedPlayerIds.push(playerIdValue);
+      failedPlayers.push(
+        playerName(adapterEffectiveSubmission(state, submission)) ||
+          playerName(submission) ||
+          playerIdValue
+      );
+    }
+  }
+  if (failedPlayerIds.length) {
+    adapterNotify(state, false);
+    throw adapterError(
+      'all-star-boh-batch-delete-partial',
+      `Could not delete: ${failedPlayers.join(', ')}.`,
+      { successfulPlayerIds, failedPlayerIds, failedPlayers }
+    );
+  }
+  return { successfulPlayerIds, failedPlayerIds, failedPlayers };
 }
 
 async function adapterCreateScoringVersion(state, payload) {
@@ -1838,6 +2288,62 @@ async function adapterRemoveScoreOverride(state, payload) {
     draft.scoreOverrides = list(draft.scoreOverrides).filter(
       (override) => override.playerId !== id
     );
+    return draft;
+  });
+}
+
+async function adapterSaveCommitmentScores(state, payload) {
+  const updates = list(payload.adjustments);
+  const seen = new Set();
+  const normalizedUpdates = updates.map((item) => {
+    const playerIdValue = cleanText(item?.playerId);
+    if (!playerIdValue || seen.has(playerIdValue)) {
+      throw adapterError(
+        'all-star-boh-commitment-score-player-invalid',
+        'Each commitment score must target one unique player.'
+      );
+    }
+    seen.add(playerIdValue);
+    if (!adapterFindSubmission(state, playerIdValue)) {
+      throw adapterError(
+        'all-star-boh-submission-unknown',
+        'A commitment score targets a player who no longer exists.'
+      );
+    }
+    if (item?.score === null || item?.score === undefined || cleanText(item.score) === '') {
+      return { playerId: playerIdValue, score: null };
+    }
+    const score = Number(item.score);
+    if (!Number.isInteger(score) || score < 1 || score > 10_000) {
+      throw adapterError(
+        'all-star-boh-commitment-score-invalid',
+        'Commitment/usefulness scores must be whole numbers from 1 to 10,000.'
+      );
+    }
+    return { playerId: playerIdValue, score };
+  });
+  const reason = cleanText(payload.reason) || 'Commitment/usefulness assessment';
+  if ([...reason].length > 2_000) {
+    throw adapterError(
+      'all-star-boh-commitment-score-reason-invalid',
+      'The shared commitment score note must be 2,000 characters or fewer.'
+    );
+  }
+  await adapterSaveDraft(state, (draft) => {
+    const existing = new Map(
+      list(draft.commitmentScoreAdjustments).map((item) => [item.playerId, item])
+    );
+    for (const update of normalizedUpdates) {
+      if (update.score === null) existing.delete(update.playerId);
+      else if (finiteNumber(existing.get(update.playerId)?.score, Number.NaN) !== update.score) {
+        existing.set(update.playerId, {
+          playerId: update.playerId,
+          score: update.score,
+          reason,
+        });
+      }
+    }
+    draft.commitmentScoreAdjustments = [...existing.values()];
     return draft;
   });
 }
@@ -2046,10 +2552,10 @@ async function adapterSaveTeamBuilderSettings(state, payload) {
   let removedTeamIds;
   try {
     const requestedMetric = cleanText(payload.balanceMetric ?? workingState.draft?.balanceMetric);
-    if (!['score', 'totalPower'].includes(requestedMetric)) {
+    if (!['score', 'totalPower', 'balanced'].includes(requestedMetric)) {
       throw adapterError(
         'all-star-boh-balance-metric-invalid',
-        'Choose scoring points or total in-game power.'
+        'Choose scoring points, total in-game power, or balanced score + power.'
       );
     }
     nextDraft = {
@@ -2234,30 +2740,38 @@ async function adapterAssignSeatPlayer(state, payload) {
 function adapterBalanceSource(state) {
   const teamIds = adapterTeamIds(state.draft);
   const activeScoring = adapterActiveScoringVersion(state);
+  const selectedPlayerIds = adapterSelectedPlayerIds(state);
+  const selectedPlayerIdSet = new Set(selectedPlayerIds);
+  const selectedSubmissions = state.submissions.filter((submission) =>
+    selectedPlayerIdSet.has(adapterSubmissionId(submission))
+  );
   return {
-    uiRevision: state.revision,
     draftRevision: adapterRevision(state.draft?.revision),
     teamRevisions: Object.fromEntries(
       teamIds.map((teamId) => [teamId, adapterRevision(state.teams.get(teamId)?.revision)])
     ),
     scoringVersion: [cleanText(activeScoring?.id), integer(activeScoring?.version)],
-    submissionRevisions: state.submissions
+    submissionRevisions: selectedSubmissions
       .map((submission) => [
         adapterSubmissionUid(submission),
         adapterRevision(submission?.revision),
       ])
       .sort(([left], [right]) => left.localeCompare(right)),
-    reviewRevisions: [...state.reviews]
-      .map(([uid, review]) => [
-        uid,
-        adapterRevision(review?.revision),
-        adapterRevision(review?.submissionRevision),
-      ])
+    reviewRevisions: selectedSubmissions
+      .map((submission) => {
+        const uid = adapterSubmissionUid(submission);
+        const review = state.reviews.get(uid);
+        return [
+          uid,
+          adapterRevision(review?.revision),
+          adapterRevision(review?.submissionRevision),
+        ];
+      })
       .sort(([left], [right]) => left.localeCompare(right)),
     settings: {
       teamCount: adapterTeamCount(state.draft),
       balanceMetric: normalizeBalanceMetric(state.draft?.balanceMetric),
-      playerIds: adapterSelectedPlayerIds(state),
+      playerIds: selectedPlayerIds,
       forcedTeamAssignments: adapterClone(list(state.draft?.forcedTeamAssignments)),
       teamIds,
     },
@@ -2393,6 +2907,8 @@ async function adapterApplyBalancePreview(state) {
       {
         expectedDraftRevision: preview.source.draftRevision,
         expectedTeamRevisions: adapterClone(preview.source.teamRevisions),
+        expectedSubmissionRevisions: adapterClone(preview.source.submissionRevisions),
+        expectedReviewRevisions: adapterClone(preview.source.reviewRevisions),
       }
     );
   } catch (error) {
@@ -3312,10 +3828,14 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'batchReviewSubmissions') {
       actionResult = await adapterBatchReviewSubmissions(state, payload);
     } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
-    else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
+    else if (type === 'batchDeleteSubmissions') {
+      actionResult = await adapterBatchDeleteSubmissions(state, payload);
+    } else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
     else if (type === 'setScoreOverride') await adapterSetScoreOverride(state, payload);
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
-    else if (type === 'setSeatLock') await adapterSetSeatLock(state, payload);
+    else if (type === 'saveCommitmentScores') {
+      await adapterSaveCommitmentScores(state, payload);
+    } else if (type === 'setSeatLock') await adapterSetSeatLock(state, payload);
     else if (type === 'moveSeat') await adapterMoveOrSwapSeat(state, payload, false);
     else if (type === 'swapSeats') await adapterMoveOrSwapSeat(state, payload, true);
     else if (type === 'balanceTeams') await adapterBalanceTeams(state, payload);
@@ -3444,8 +3964,11 @@ function makeInitialState(root, options) {
       maxTotalPower: '',
     },
     signupSort: { key: 'updated', direction: 'desc' },
+    scoreAuditSort: { key: '', direction: 'asc' },
     selectedSubmissionIds: new Set(),
     selectedSubmissionId: '',
+    correctionDrafts: new Map(),
+    commitmentScoreDraft: null,
     selectedSourceSeat: null,
     planTeamId: snapshot.teams[0]?.id || 'team-1',
     planPhaseId: snapshot.plan.phases[0]?.id || DEFAULT_PHASES[0].id,
@@ -3604,6 +4127,12 @@ function renderStageNavigation(state) {
 
 function renderShell(state) {
   const { root } = state;
+  const correctionFocus = correctionFocusSnapshot(root);
+  const openCorrectionForm = root.querySelector?.('[data-form="submission-corrections"]');
+  const openCorrectionId = cleanText(openCorrectionForm?.elements?.playerId?.value);
+  if (openCorrectionForm && correctionDraftFor(state, openCorrectionId)) {
+    captureCorrectionDraft(state, openCorrectionForm);
+  }
   root.classList.add('boh-admin');
   if (state.direction) root.dir = state.direction;
   root.innerHTML = `
@@ -3652,11 +4181,21 @@ function renderShell(state) {
       </div>
     </section>`;
   root.setAttribute('aria-busy', String(state.pending));
+  syncSignupSelectionCheckbox(state);
   if (state.pending) {
     root
       .querySelectorAll?.('button, input, select, textarea')
       .forEach((control) => (control.disabled = true));
   }
+  restoreCorrectionFocus(state, correctionFocus);
+}
+
+function syncSignupSelectionCheckbox(state) {
+  const checkbox = state.root.querySelector?.('[data-action="select-all-visible"]');
+  if (!checkbox) return;
+  const visibleIds = filteredSubmissions(state).map(playerId).filter(Boolean);
+  const selectedCount = visibleIds.filter((id) => state.selectedSubmissionIds.has(id)).length;
+  checkbox.indeterminate = selectedCount > 0 && selectedCount < visibleIds.length;
 }
 
 function renderCurrentStage(state) {
@@ -3911,7 +4450,7 @@ function renderSignupReview(state) {
         state.tr('adminBohApplyFilters', 'Apply filters')
       )}</button>
     </form>
-    <form class="boh-admin-toolbar" data-form="batch-review" aria-busy="${state.pending}">
+    <form class="boh-admin-toolbar boh-admin-batch-toolbar" data-form="batch-review" aria-busy="${state.pending}">
       <label><span>${escapeHtml(
         state.tr('adminBohBatchNote', 'Optional confirmation note')
       )}</span><input class="boh-admin-input" name="note" maxlength="2000" ${disabled} /></label>
@@ -3919,6 +4458,13 @@ function renderSignupReview(state) {
         selectedVisibleIds.length && !state.pending ? '' : 'disabled'
       }>${escapeHtml(
         state.tr('adminBohConfirmSelected', 'Confirm selected ({count})', {
+          count: selectedVisibleIds.length,
+        })
+      )}</button>
+      <button class="boh-admin-button boh-admin-button-danger" type="button" data-action="delete-selected-submissions" ${
+        selectedVisibleIds.length && !state.pending ? '' : 'disabled'
+      }>${escapeHtml(
+        state.tr('adminBohDeleteSelected', 'Delete selected ({count})', {
           count: selectedVisibleIds.length,
         })
       )}</button>
@@ -3938,7 +4484,7 @@ function renderSignupReview(state) {
           <thead><tr>
             <th scope="col"><label><span class="boh-admin-sr">${escapeHtml(
               state.tr('adminBohSelectAllVisible', 'Select all visible signups')
-            )}</span><input type="checkbox" data-action="select-all-visible" ${
+            )}</span><input class="boh-admin-selection-checkbox" type="checkbox" data-action="select-all-visible" ${
               allVisibleSelected ? 'checked' : ''
             } ${disabled} /></label></th>
             ${signupSortHeader(state, 'name', state.tr('adminBohPlayer', 'Player'))}
@@ -3987,19 +4533,22 @@ function renderSignupRow(state, submission) {
     ocrLabel: state.tr('adminBohCaptureOcrConfirmed', 'OCR + confirmed'),
     manualLabel: state.tr('adminBohCaptureManual', 'Manual'),
   });
-  const preferredTeammates = getAdminPreferredTeammateNames(submission);
+  const preferredTeammates = getAdminPreferredTeammateNames(fields.effective);
   return `<tr ${state.selectedSubmissionId === id ? 'data-selected="true"' : ''}>
-    <td><input type="checkbox" data-action="select-submission-row" data-player-id="${escapeHtml(
+    <td><input class="boh-admin-selection-checkbox" type="checkbox" data-action="select-submission-row" data-player-id="${escapeHtml(
       id
     )}" aria-label="${escapeHtml(
       state.tr('adminBohSelectSignupNamed', 'Select {player}', {
         player: fields.effectiveName || id,
       })
     )}" ${state.selectedSubmissionIds.has(id) ? 'checked' : ''} ${state.pending ? 'disabled' : ''} /></td>
-    <th scope="row"><strong>${escapeHtml(playerName(submission) || id || '—')}</strong>
+    <th scope="row"><strong>${escapeHtml(fields.effectiveName || id || '—')}</strong>
       <small>${escapeHtml(cleanText(submission?.server || submission?.alliance))}</small></th>
     <td>${escapeHtml(formatNumber(state, fields.totalPower))}</td>
-    <td>${escapeHtml(formatNumber(state, fields.score))}</td>
+    <td>${escapeHtml(formatNumber(state, fields.score))}${renderScoreDiagnostic(
+      state,
+      submission?.scoreDiagnostic
+    )}</td>
     <td class="boh-admin-preferred-teammates-cell">${escapeHtml(
       preferredTeammates.join(', ') || '—'
     )}</td>
@@ -4046,6 +4595,7 @@ function statEntries(state, submission) {
     ['artifactPower', 'adminBohStatArtifactPower', 'Artifact power'],
     ['royalTechPower', 'adminBohStatRoyalTechPower', 'Royal Tech power'],
     ['rocLevel', 'adminBohStatRocLevel', 'RoC level'],
+    ['level50HeroCount', 'adminBohStatLevel50Heroes', 'Level 50 hero count'],
   ].map(([key, translationKey, fallback]) => ({
     key,
     label: state.tr(translationKey, fallback),
@@ -4056,19 +4606,6 @@ function statEntries(state, submission) {
           ? (source.totalCastlePower ?? source.totalPower)
           : source[key],
   }));
-}
-
-function originalStatValue(submission, key) {
-  const source = submission?.originalStats || submission?.confirmedStats || submission?.stats || {};
-  if (key === 'heroCombatPower') return source.heroCombatPower ?? source.heroPower;
-  if (key === 'totalCastlePower') return source.totalCastlePower ?? source.totalPower;
-  return source[key];
-}
-
-function statCorrectionChanged(corrected, original) {
-  if (corrected === '') return false;
-  if (original === '' || original === null || original === undefined) return true;
-  return finiteNumber(corrected) !== finiteNumber(original);
 }
 
 function adminBooleanLabel(state, value) {
@@ -4361,29 +4898,550 @@ function renderSignupPlanningSignals(state, submission) {
   </section>`;
 }
 
+function correctionDraftFor(state, playerIdValue) {
+  return state.correctionDrafts?.get(cleanText(playerIdValue)) || null;
+}
+
+function correctionFieldValues(state, playerIdValue, name, fallback = []) {
+  const draft = correctionDraftFor(state, playerIdValue);
+  if (draft?.fields && hasOwn(draft.fields, name)) return list(draft.fields[name]).map(String);
+  return (Array.isArray(fallback) ? fallback : [fallback]).map((value) => String(value ?? ''));
+}
+
+function correctionFieldValue(state, playerIdValue, name, fallback = '') {
+  return correctionFieldValues(state, playerIdValue, name, fallback)[0] ?? '';
+}
+
+function correctionOption(value, label, selectedValue) {
+  return `<option value="${escapeHtml(value)}" ${String(selectedValue) === String(value) ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+}
+
+function correctionSelectOptions(state, values, currentValue, { includeBlank = true } = {}) {
+  const normalized = uniqueTextList(values);
+  const current = cleanText(currentValue);
+  if (current && !normalized.includes(current)) normalized.push(current);
+  return `${
+    includeBlank
+      ? correctionOption('', state.tr('adminBohNotProvided', 'Not provided'), current)
+      : ''
+  }${normalized
+    .map((value) => correctionOption(value, adminChoiceLabel(state, value), current))
+    .join('')}`;
+}
+
+function renderCorrectionCheckboxes(state, id, name, values, selectedValues, labelFor) {
+  const selected = new Set(selectedValues.map(cleanText));
+  const options = uniqueTextList([...values, ...selectedValues]);
+  return `<div class="boh-admin-correction-check-grid">${options
+    .map(
+      (value) => `<label class="boh-admin-check-option"><input type="checkbox" name="${escapeHtml(
+        name
+      )}" value="${escapeHtml(value)}" ${selected.has(value) ? 'checked' : ''} />
+        <span>${escapeHtml(labelFor?.(value) || adminChoiceLabel(state, value) || value)}</span></label>`
+    )
+    .join('')}</div>`;
+}
+
+function correctionHeroNames(state, selectedValues = []) {
+  const catalog = planningMetadataEntries(
+    state.options.heroMetadata || state.options.heroCatalog || state.options.catalogs?.heroes || []
+  )
+    .map((hero) => cleanText(hero?.name || hero?.label || hero?.id))
+    .filter(Boolean);
+  return uniqueTextList([...catalog, ...selectedValues]);
+}
+
+function correctionResearchEntries(state, current = {}) {
+  const source =
+    state.options.researchMetadata ||
+    state.options.researchCatalog ||
+    state.options.catalogs?.research ||
+    [];
+  const byId = new Map();
+  for (const item of planningMetadataEntries(source, 'id')) {
+    const id = cleanText(item?.id || item?.researchTreeId || item?.key);
+    if (!id) continue;
+    byId.set(id, cleanText(item?.label || item?.name) || id);
+  }
+  for (const id of Object.keys(current || {})) {
+    if (!byId.has(id)) byId.set(id, id);
+  }
+  return [...byId].map(([id, label]) => ({ id, label }));
+}
+
+function parseCorrectionTroopRow(value) {
+  const normalized = cleanText(value);
+  const estimate = /^estimate\|(lofty|enhanced-t10|t10|t9)\|(\d{1,10})$/u.exec(normalized);
+  if (estimate) {
+    return {
+      kind: 'estimate',
+      estimateKind: estimate[1],
+      troopType: 'cavalry',
+      tier: 'X',
+      mode: 'normal',
+      count: estimate[2],
+    };
+  }
+  const detailed =
+    /^(footmen|cavalry|archers)\|(SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(normal|enhanced)\|(\d{1,10})$/u.exec(
+      normalized
+    );
+  return {
+    kind: 'detailed',
+    estimateKind: 'lofty',
+    troopType: detailed?.[1] || 'cavalry',
+    tier: detailed?.[2] || 'X',
+    mode: detailed?.[3] || 'normal',
+    count: detailed?.[4] || '',
+  };
+}
+
+function correctionTroopRows(state, id, persistedRows) {
+  const draft = correctionDraftFor(state, id);
+  if (!draft?.fields || !hasOwn(draft.fields, 'correction.troop.kind')) {
+    const rows = list(persistedRows).map(parseCorrectionTroopRow);
+    return rows.length ? rows : [parseCorrectionTroopRow('')];
+  }
+  const field = (name) => list(draft.fields[name]).map(String);
+  return field('correction.troop.kind').map((kind, index) => ({
+    kind: kind === 'estimate' ? 'estimate' : 'detailed',
+    estimateKind: field('correction.troop.estimateKind')[index] || 'lofty',
+    troopType: field('correction.troop.type')[index] || 'cavalry',
+    tier: field('correction.troop.tier')[index] || 'X',
+    mode: field('correction.troop.mode')[index] || 'normal',
+    count: field('correction.troop.count')[index] || '',
+  }));
+}
+
+function renderCorrectionTroopRow(state, row) {
+  const detailed = row.kind !== 'estimate';
+  const tiers = ['SSS', 'SS', 'S', 'X', 'IX', 'VIII', 'VII', 'VI', 'V', 'IV', 'III', 'II', 'I'];
+  const estimates = [
+    ['lofty', state.tr('adminBohTroopEstimateLofty', 'S (Lofty)')],
+    ['enhanced-t10', state.tr('adminBohTroopEstimateEnhancedT10', 'Enhanced T10')],
+    ['t10', state.tr('adminBohTroopEstimateT10', 'Regular T10')],
+    ['t9', state.tr('adminBohTroopEstimateT9', 'T9')],
+  ];
+  return `<div class="boh-admin-correction-troop-row" data-correction-troop-row>
+    <label><span>${escapeHtml(state.tr('adminBohTroopRowKind', 'Row kind'))}</span><select class="boh-admin-select" name="correction.troop.kind" data-correction-troop-kind>
+      ${correctionOption('detailed', state.tr('adminBohTroopDetailedRow', 'Troop type and tier'), row.kind)}
+      ${correctionOption('estimate', state.tr('adminBohTroopEstimateRow', 'Aggregate estimate'), row.kind)}
+    </select></label>
+    <div class="boh-admin-correction-troop-fields" data-troop-fields="detailed" ${detailed ? '' : 'hidden'}>
+      <label><span>${escapeHtml(state.tr('adminBohTroopType', 'Troop type'))}</span><select class="boh-admin-select" name="correction.troop.type">${CORRECTION_TROOP_TYPES.map(
+        (value) => correctionOption(value, adminChoiceLabel(state, value), row.troopType)
+      ).join('')}</select></label>
+      <label><span>${escapeHtml(state.tr('adminBohTroopTier', 'Tier'))}</span><select class="boh-admin-select" name="correction.troop.tier">${tiers
+        .map((value) => correctionOption(value, value, row.tier))
+        .join('')}</select></label>
+      <label><span>${escapeHtml(state.tr('adminBohTroopStatus', 'Status'))}</span><select class="boh-admin-select" name="correction.troop.mode">
+        ${correctionOption('normal', state.tr('adminBohTroopNormal', 'Normal'), row.mode)}
+        ${correctionOption('enhanced', state.tr('adminBohTroopEnhanced', 'Enhanced'), row.mode)}
+      </select></label>
+    </div>
+    <div class="boh-admin-correction-troop-fields" data-troop-fields="estimate" ${detailed ? 'hidden' : ''}>
+      <label><span>${escapeHtml(state.tr('adminBohTroopEstimateKind', 'Estimate kind'))}</span><select class="boh-admin-select" name="correction.troop.estimateKind">${estimates
+        .map(([value, label]) => correctionOption(value, label, row.estimateKind))
+        .join('')}</select></label>
+    </div>
+    <label><span>${escapeHtml(state.tr('adminBohTroopCount', 'Count'))}</span><input class="boh-admin-input" type="number" name="correction.troop.count" min="0" max="9999999999" step="1" value="${escapeHtml(
+      row.count
+    )}" /></label>
+    <button type="button" class="boh-admin-icon-button" data-action="remove-correction-troop-row" aria-label="${escapeHtml(
+      state.tr('adminBohRemoveTroopRow', 'Remove troop row')
+    )}">&times;</button>
+  </div>`;
+}
+
+function serializeCorrectionTroopRows(form) {
+  return [...form.querySelectorAll('[data-correction-troop-row]')]
+    .map((row) => {
+      const kind = cleanText(row.querySelector('[name="correction.troop.kind"]')?.value);
+      const count = cleanText(row.querySelector('[name="correction.troop.count"]')?.value);
+      if (!count) return '';
+      if (kind === 'estimate') {
+        const estimateKind = cleanText(
+          row.querySelector('[name="correction.troop.estimateKind"]')?.value
+        );
+        return `estimate|${estimateKind}|${count}`;
+      }
+      const troopType = cleanText(row.querySelector('[name="correction.troop.type"]')?.value);
+      const tier = cleanText(row.querySelector('[name="correction.troop.tier"]')?.value);
+      const mode = cleanText(row.querySelector('[name="correction.troop.mode"]')?.value);
+      return `${troopType}|${tier}|${mode}|${count}`;
+    })
+    .filter(Boolean);
+}
+
+function renderCorrectionBooleanSelect(state, id, field, value, label) {
+  const name = `correction.commitment.${field}`;
+  const current = correctionFieldValue(state, id, name, value == null ? '' : String(value));
+  return `<label><span>${escapeHtml(label)}</span>
+    <select class="boh-admin-select" name="${escapeHtml(name)}">
+      ${correctionOption('', state.tr('adminBohNotProvided', 'Not provided'), current)}
+      ${correctionOption('true', state.tr('adminBohYes', 'Yes'), current)}
+      ${correctionOption('false', state.tr('adminBohNo', 'No'), current)}
+    </select></label>`;
+}
+
+function renderFullCorrectionEditor(state, submission, effective) {
+  const id = playerId(submission);
+  const review = submission?.review || {};
+  const stats = effective?.stats || {};
+  const commitment = effective?.commitment || {};
+  const draft = correctionDraftFor(state, id);
+  const value = (name, fallback = '') => correctionFieldValue(state, id, name, fallback);
+  const values = (name, fallback = []) => correctionFieldValues(state, id, name, fallback);
+  const reason = value(
+    'correction.reason',
+    review?.submissionCorrection?.reason ||
+      Object.values(review?.statCorrections || {})
+        .map((item) => cleanText(item?.reason))
+        .find(Boolean) ||
+      review?.gameNameCorrection?.reason ||
+      ''
+  );
+  const numericalLabels = new Map([
+    ...statEntries(state, effective).map(({ key, label }) => [key, label]),
+    ['level50HeroCount', state.tr('adminBohStatLevel50Heroes', 'Level 50 hero count')],
+  ]);
+  const numericFields = FULL_CORRECTION_STAT_KEYS.map((key) => {
+    const name = `correction.stats.${key}`;
+    const currentValue = value(name, stats[key] ?? '');
+    const maximum = CORRECTION_NUMBER_LIMITS[key];
+    if (OPTIONAL_POWER_KEYS.includes(key)) {
+      const modeName = `${name}.mode`;
+      const mode = value(modeName, stats[key] == null ? 'clear' : 'value');
+      return `<div class="boh-admin-correction-number boh-admin-correction-number-optional">
+        <label><span>${escapeHtml(numericalLabels.get(key) || key)}</span>
+          <select class="boh-admin-select" name="${escapeHtml(modeName)}" data-correction-optional-mode="${escapeHtml(
+            key
+          )}">
+            ${correctionOption('value', state.tr('adminBohCorrectionUseValue', 'Use value'), mode)}
+            ${correctionOption('clear', state.tr('adminBohCorrectionClearValue', 'Clear value'), mode)}
+          </select></label>
+        <label><span class="boh-admin-sr">${escapeHtml(
+          state.tr('adminBohCorrectionNumericValue', 'Corrected numeric value')
+        )}</span><input class="boh-admin-input" type="number" name="${escapeHtml(
+          name
+        )}" min="0" max="${maximum}" step="1" value="${escapeHtml(currentValue)}" /></label>
+      </div>`;
+    }
+    return `<label><span>${escapeHtml(numericalLabels.get(key) || key)}</span>
+      <input class="boh-admin-input" type="number" name="${escapeHtml(
+        name
+      )}" min="0" max="${maximum}" step="1" value="${escapeHtml(
+        currentValue === '' ? 0 : currentValue
+      )}" required /></label>`;
+  }).join('');
+  const t9Values = values('correction.stats.t9TroopTypes', stats.t9TroopTypes || []);
+  const t10Values = values('correction.stats.t10TroopTypes', stats.t10TroopTypes || []);
+  const speedValues = values('correction.stats.readySpeedHeroes', stats.readySpeedHeroes || []);
+  const heroValues = values('correction.stats.usableHeroNames', stats.usableHeroNames || []);
+  const heroNames = correctionHeroNames(state, heroValues);
+  const troopRows = correctionTroopRows(state, id, stats.troopRoster || []);
+  const researchEntries = correctionResearchEntries(state, stats.researchProgressPct || {});
+  const fightingValues = values(
+    'correction.commitment.fightingTimeIds',
+    commitment.fightingTimeIds || []
+  );
+  const teamValues = values(
+    'correction.commitment.teamNamePreferences',
+    commitment.teamNamePreferences || []
+  );
+  const preferredRole = value(
+    'correction.commitment.preferredRole',
+    commitment.preferredRole || ''
+  );
+  const secondaryRole = value(
+    'correction.commitment.secondaryRole',
+    commitment.secondaryRole || ''
+  );
+  const availability = value('correction.commitment.availability', commitment.availability || '');
+  const teammateValues = values(
+    'correction.preferredTeammates',
+    effective?.preferredTeammates || []
+  );
+  while (teammateValues.length < BohModel.BOH_MAX_PREFERRED_TEAMMATES) teammateValues.push('');
+
+  return `<section class="boh-admin-card boh-admin-correction-card" aria-labelledby="bohAdminCorrectionsTitle">
+    <details open>
+      <summary><span><strong id="bohAdminCorrectionsTitle">${escapeHtml(
+        state.tr('adminBohFullCorrectionTitle', 'Full player-data corrections')
+      )}</strong><small>${escapeHtml(
+        `${state.tr('adminBohAdminCorrections', 'Admin corrections')} — ${state.tr(
+          'adminBohFullCorrectionHelp',
+          'Edit effective player data without changing the original submission or its evidence.'
+        )}`
+      )}</small></span><span class="boh-admin-correction-dirty" ${draft ? '' : 'hidden'}>${escapeHtml(
+        state.tr('adminBohUnsavedCorrection', 'Unsaved draft')
+      )}</span></summary>
+      <form class="boh-admin-stack boh-admin-correction-form" data-form="submission-corrections" novalidate>
+        <input type="hidden" name="playerId" value="${escapeHtml(id)}" />
+        <fieldset class="boh-admin-correction-section"><legend>${escapeHtml(
+          state.tr('adminBohCorrectionIdentity', 'Identity and account details')
+        )}</legend>
+          <div class="boh-admin-correction-grid">
+            <label><span>${escapeHtml(
+              state.tr('adminBohCorrectedPlayerName', 'Corrected player name')
+            )}</span><small>${escapeHtml(
+              state.tr('adminBohOriginalValue', 'Original: {value}', {
+                value: originalCorrectionSubmission(submission).gameName || id,
+              })
+            )}</small><input class="boh-admin-input" name="correction.gameName" maxlength="160" value="${escapeHtml(
+              value('correction.gameName', playerName(effective) || id)
+            )}" required /></label>
+            <label><span>${escapeHtml(
+              state.tr('adminBohLocale', 'Language / locale')
+            )}</span><input class="boh-admin-input" name="correction.locale" maxlength="20" value="${escapeHtml(
+              value('correction.locale', effective?.locale || '')
+            )}" /></label>
+            <label><span>${escapeHtml(
+              state.tr('adminBohTimezone', 'Timezone')
+            )}</span><input class="boh-admin-input" name="correction.timezone" maxlength="80" value="${escapeHtml(
+              value('correction.timezone', effective?.timezone || '')
+            )}" /></label>
+          </div>
+          <div><span class="boh-admin-field-label">${escapeHtml(
+            state.tr('adminBohPreferredTeammates', 'Preferred teammates')
+          )}</span><div class="boh-admin-teammate-correction-grid">${teammateValues
+            .slice(0, BohModel.BOH_MAX_PREFERRED_TEAMMATES)
+            .map(
+              (teammate, index) =>
+                `<label><span>${escapeHtml(
+                  state.tr('adminBohPreferredTeammateNumber', 'Teammate {number}', {
+                    number: index + 1,
+                  })
+                )}</span><input class="boh-admin-input" name="correction.preferredTeammates" maxlength="160" value="${escapeHtml(
+                  teammate
+                )}" /></label>`
+            )
+            .join('')}</div></div>
+        </fieldset>
+
+        <fieldset class="boh-admin-correction-section"><legend>${escapeHtml(
+          state.tr('adminBohCorrectionNumericStats', 'Power and numeric stats')
+        )}</legend><div class="boh-admin-correction-grid">${numericFields}</div></fieldset>
+
+        <fieldset class="boh-admin-correction-section"><legend>${escapeHtml(
+          state.tr('adminBohCorrectionStructuredStats', 'Troops, heroes, and research')
+        )}</legend>
+          <div class="boh-admin-correction-choice-columns">
+            <section><h6>${escapeHtml(state.tr('adminBohT9Types', 'T9 troop types'))}</h6>${renderCorrectionCheckboxes(
+              state,
+              id,
+              'correction.stats.t9TroopTypes',
+              CORRECTION_TROOP_TYPES,
+              t9Values
+            )}</section>
+            <section><h6>${escapeHtml(state.tr('adminBohT10Types', 'T10 troop types'))}</h6>${renderCorrectionCheckboxes(
+              state,
+              id,
+              'correction.stats.t10TroopTypes',
+              CORRECTION_TROOP_TYPES,
+              t10Values
+            )}</section>
+            <section><h6>${escapeHtml(
+              state.tr('adminBohReadySpeedHeroes', 'Ready speed heroes')
+            )}</h6>${renderCorrectionCheckboxes(
+              state,
+              id,
+              'correction.stats.readySpeedHeroes',
+              CORRECTION_SPEED_HEROES,
+              speedValues
+            )}</section>
+          </div>
+          <section class="boh-admin-correction-subsection"><header><div><h6>${escapeHtml(
+            state.tr('adminBohTroopInventory', 'Troop roster rows')
+          )}</h6><small>${escapeHtml(
+            state.tr(
+              'adminBohTroopRowHelp',
+              'Choose the row kind, troop details, and count. Encoded storage values are handled automatically.'
+            )
+          )}</small></div><button type="button" class="boh-admin-button boh-admin-button-small" data-action="add-correction-troop-row">${escapeHtml(
+            state.tr('adminBohAddTroopRow', 'Add row')
+          )}</button></header><div data-correction-troop-rows>${troopRows
+            .slice(0, 60)
+            .map((row) => renderCorrectionTroopRow(state, row))
+            .join('')}</div></section>
+          <section class="boh-admin-correction-subsection"><h6>${escapeHtml(
+            state.tr('adminBohUsableHeroes', 'Usable heroes')
+          )}</h6><input class="boh-admin-input" type="search" data-action="filter-correction-heroes" placeholder="${escapeHtml(
+            state.tr('adminBohSearchHeroes', 'Search heroes')
+          )}" /><select class="boh-admin-select boh-admin-correction-multiselect" name="correction.stats.usableHeroNames" multiple size="8" aria-label="${escapeHtml(
+            state.tr('adminBohUsableHeroes', 'Usable heroes')
+          )}">${heroNames
+            .map(
+              (hero) =>
+                `<option value="${escapeHtml(hero)}" ${heroValues.includes(hero) ? 'selected' : ''}>${escapeHtml(
+                  hero
+                )}</option>`
+            )
+            .join('')}</select></section>
+          <section class="boh-admin-correction-subsection"><h6>${escapeHtml(
+            state.tr('adminBohResearchProgress', 'Research progress')
+          )}</h6><div class="boh-admin-research-correction-grid">${researchEntries
+            .map((entry, index) => {
+              const fieldName = `correction.stats.research.${index}`;
+              return `<label><span>${escapeHtml(entry.label)}</span><input class="boh-admin-input" type="number" min="0" max="100" step="1" name="${escapeHtml(
+                fieldName
+              )}" data-research-id="${escapeHtml(entry.id)}" value="${escapeHtml(
+                value(fieldName, stats.researchProgressPct?.[entry.id] ?? '')
+              )}" /></label>`;
+            })
+            .join('')}</div></section>
+        </fieldset>
+
+        <fieldset class="boh-admin-correction-section"><legend>${escapeHtml(
+          state.tr('adminBohCorrectionCommitment', 'Availability and commitment')
+        )}</legend>
+          <div class="boh-admin-correction-grid">
+            <label><span>${escapeHtml(
+              state.tr('adminBohAvailability', 'Availability')
+            )}</span><select class="boh-admin-select" name="correction.commitment.availability">${correctionSelectOptions(
+              state,
+              BohModel.BOH_AVAILABILITY_VALUES,
+              availability
+            )}</select></label>
+            <label><span>${escapeHtml(
+              state.tr('adminBohPrimaryRole', 'Primary role')
+            )}</span><select class="boh-admin-select" name="correction.commitment.preferredRole">${correctionSelectOptions(
+              state,
+              BohModel.BOH_PREFERRED_ROLES,
+              preferredRole
+            )}</select></label>
+            <label><span>${escapeHtml(
+              state.tr('adminBohSecondaryRole', 'Secondary role')
+            )}</span><select class="boh-admin-select" name="correction.commitment.secondaryRole">${correctionSelectOptions(
+              state,
+              BohModel.BOH_PREFERRED_ROLES,
+              secondaryRole
+            )}</select></label>
+            ${renderCorrectionBooleanSelect(
+              state,
+              id,
+              'canHelpLead',
+              commitment.canHelpLead,
+              state.tr('adminBohLeadershipInterest', 'Can help lead')
+            )}
+            ${renderCorrectionBooleanSelect(
+              state,
+              id,
+              'vts1097Member',
+              commitment.vts1097Member,
+              state.tr('adminBohVtsMember', 'Plays in VTS 1097')
+            )}
+            ${renderCorrectionBooleanSelect(
+              state,
+              id,
+              'canTeleport',
+              commitment.canTeleport,
+              state.tr('adminBohCanTeleport', 'Can teleport')
+            )}
+            ${renderCorrectionBooleanSelect(
+              state,
+              id,
+              'canUseVoice',
+              commitment.canUseVoice,
+              state.tr('adminBohCanUseVoice', 'Can use voice chat')
+            )}
+            ${renderCorrectionBooleanSelect(
+              state,
+              id,
+              'planCommitment',
+              commitment.planCommitment,
+              state.tr('adminBohPlanCommitment', 'Will follow the team plan')
+            )}
+          </div>
+          <div class="boh-admin-correction-choice-columns">
+            <section><h6>${escapeHtml(
+              state.tr('adminBohFightingTimes', 'Preferred fighting times')
+            )}</h6>${renderCorrectionCheckboxes(
+              state,
+              id,
+              'correction.commitment.fightingTimeIds',
+              BohModel.BOH_FIGHTING_TIME_IDS,
+              fightingValues,
+              (time) => time
+            )}</section>
+            <section><h6>${escapeHtml(
+              state.tr('adminBohTeamNamePreferences', 'Favorite team names')
+            )}</h6>${renderCorrectionCheckboxes(
+              state,
+              id,
+              'correction.commitment.teamNamePreferences',
+              BohModel.BOH_TEAM_NAME_PREFERENCES,
+              teamValues,
+              (teamId) => TEAM_NAME_LABELS[teamId] || teamId
+            )}</section>
+          </div>
+          <div class="boh-admin-correction-grid">
+            ${Object.entries(CORRECTION_COMMITMENT_TEXT_LIMITS)
+              .map(([field, maxLength]) => {
+                const labels = {
+                  unavailableTimes: state.tr('adminBohUnavailableTimes', 'Unavailable times'),
+                  contactNumber: state.tr('adminBohContactNumber', 'Viber / WhatsApp'),
+                  currentState: state.tr('adminBohCurrentState', 'Current state'),
+                  joinReason: state.tr('adminBohJoinReason', 'Why VTS'),
+                  notes: state.tr('adminBohPlayerNotes', 'Player notes'),
+                };
+                const fieldName = `correction.commitment.${field}`;
+                const fieldValue = value(fieldName, commitment[field] || '');
+                return `<label class="${['joinReason', 'notes'].includes(field) ? 'boh-admin-correction-wide' : ''}"><span>${escapeHtml(
+                  labels[field]
+                )}</span>${
+                  ['unavailableTimes', 'joinReason', 'notes'].includes(field)
+                    ? `<textarea class="boh-admin-textarea" name="${escapeHtml(
+                        fieldName
+                      )}" maxlength="${maxLength}" rows="3">${escapeHtml(fieldValue)}</textarea>`
+                    : `<input class="boh-admin-input" name="${escapeHtml(
+                        fieldName
+                      )}" maxlength="${maxLength}" value="${escapeHtml(fieldValue)}" />`
+                }</label>`;
+              })
+              .join('')}
+          </div>
+        </fieldset>
+
+        <label><span>${escapeHtml(
+          state.tr('adminBohCorrectionReason', 'Correction reason')
+        )}</span><textarea class="boh-admin-textarea" name="correction.reason" rows="3" maxlength="500" aria-describedby="bohAdminCorrectionReasonHelp">${escapeHtml(
+          reason
+        )}</textarea><small id="bohAdminCorrectionReasonHelp">${escapeHtml(
+          state.tr(
+            'adminBohCorrectionReasonHelp',
+            'Required when any corrected value differs from the original submission (maximum 500 characters).'
+          )
+        )}</small></label>
+        <div class="boh-admin-correction-actions"><button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
+          state.tr('adminBohSaveCorrections', 'Save corrections')
+        )}</button><button class="boh-admin-button" type="button" data-action="discard-correction-draft" ${
+          draft ? '' : 'disabled'
+        }>${escapeHtml(state.tr('adminBohDiscardCorrections', 'Discard unsaved draft'))}</button></div>
+      </form>
+    </details>
+  </section>`;
+}
+
 function renderSignupDetail(state, submission) {
   const id = playerId(submission);
   const warnings = list(submission?.ocr?.warnings || submission?.ocrWarnings);
   const review = submission?.review || {};
-  const reviewStatus = adapterReviewStatusToUi(review.status);
+  const effective = effectiveAdminSubmission(submission, review);
+  const reviewStatus = cleanText(submission?.reviewStatus).toLocaleLowerCase() || 'pending';
+  const reviewMatchesSubmission = adapterReviewMatchesSubmissionRevision(submission, review);
   const selected = (value) => (reviewStatus === value ? ' selected' : '');
-  const correctionEntries = statEntries(state, submission).filter(({ key }) =>
-    CORRECTABLE_STAT_KEYS.includes(key)
-  );
-  const correctionReason =
-    correctionEntries
-      .map(({ key }) => cleanText(review?.statCorrections?.[key]?.reason))
-      .find(Boolean) || '';
   return `<aside class="boh-admin-detail" aria-labelledby="bohSignupDetailTitle">
     <header>
       <div><span>${escapeHtml(state.tr('adminBohAccountSubmission', 'PLAYER SUBMISSION'))}</span>
-      <h4 id="bohSignupDetailTitle" tabindex="-1">${escapeHtml(playerName(submission) || id)}</h4></div>
+      <h4 id="bohSignupDetailTitle" tabindex="-1">${escapeHtml(playerName(effective) || id)}</h4></div>
       <button type="button" class="boh-admin-icon-button" data-action="close-submission" aria-label="${escapeHtml(
         state.tr('adminBohCloseReview', 'Close signup review')
       )}">×</button>
     </header>
+    ${renderScoreDiagnostic(state, submission?.scoreDiagnostic)}
     <dl class="boh-admin-stat-grid">
-      ${statEntries(state, submission)
+      ${statEntries(state, effective)
         .map(
           ({ label, value }) =>
             `<div><dt>${escapeHtml(label)}</dt><dd>${
@@ -4394,75 +5452,17 @@ function renderSignupDetail(state, submission) {
         )
         .join('')}
     </dl>
-    <section class="boh-admin-card" aria-labelledby="bohAdminCorrectionsTitle">
-      <details>
-        <summary><h5 id="bohAdminCorrectionsTitle">${escapeHtml(
-          state.tr('adminBohAdminCorrections', 'Admin corrections')
-        )}</h5></summary>
-        <form class="boh-admin-stack" data-form="stat-corrections">
-          <input type="hidden" name="playerId" value="${escapeHtml(id)}" />
-          <label><span>${escapeHtml(
-            state.tr('adminBohCorrectedPlayerName', 'Corrected player name')
-          )}</span>
-            <output>${escapeHtml(
-              state.tr('adminBohOriginalValue', 'Original: {value}', {
-                value: cleanText(submission.originalGameName) || playerName(submission) || id,
-              })
-            )}</output>
-            <input class="boh-admin-input" name="gameNameCorrection" maxlength="160" value="${escapeHtml(
-              review?.gameNameCorrection?.corrected || ''
-            )}" />
-          </label>
-          <label><span>${escapeHtml(
-            state.tr('adminBohNameCorrectionReason', 'Name correction reason')
-          )}</span>
-            <textarea class="boh-admin-textarea" name="gameNameCorrectionReason" rows="2" maxlength="500">${escapeHtml(
-              review?.gameNameCorrection?.reason || ''
-            )}</textarea>
-          </label>
-          <div class="boh-admin-weight-grid">
-            ${correctionEntries
-              .map(({ key, label, value }) => {
-                const corrected = review?.statCorrections?.[key]?.corrected ?? value ?? '';
-                const originalValue = originalStatValue(submission, key);
-                const original =
-                  originalValue === undefined || originalValue === null || originalValue === ''
-                    ? '—'
-                    : formatNumber(state, originalValue);
-                return `<label><span>${escapeHtml(label)}</span>
-                  <output>${escapeHtml(
-                    state.tr('adminBohOriginalValue', 'Original: {value}', { value: original })
-                  )}</output>
-                  <input class="boh-admin-input" type="number" name="statCorrection.${escapeHtml(
-                    key
-                  )}" min="0" step="1" value="${escapeHtml(corrected)}" />
-                </label>`;
-              })
-              .join('')}
-          </div>
-          <label><span>${escapeHtml(
-            state.tr('adminBohCorrectionReason', 'Correction reason')
-          )}</span>
-            <textarea class="boh-admin-textarea" name="reason" rows="3" maxlength="500">${escapeHtml(
-              correctionReason
-            )}</textarea>
-          </label>
-          <button class="boh-admin-button" type="submit">${escapeHtml(
-            state.tr('adminBohSaveCorrections', 'Save corrections')
-          )}</button>
-        </form>
-      </details>
-    </section>
+    ${renderFullCorrectionEditor(state, submission, effective)}
     <dl class="boh-admin-stat-grid">
-      ${submissionDetailEntries(state, submission)
+      ${submissionDetailEntries(state, effective)
         .map(
           ([label, value]) =>
             `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`
         )
         .join('')}
     </dl>
-    ${renderTroopInventory(state, submission)}
-    ${renderSignupPlanningSignals(state, submission)}
+    ${renderTroopInventory(state, effective)}
+    ${renderSignupPlanningSignals(state, effective)}
     <section class="boh-admin-warning-box" data-empty="${warnings.length === 0}">
       <h5>${escapeHtml(state.tr('adminBohOcrWarnings', 'OCR review notes'))}</h5>
       ${
@@ -4489,7 +5489,7 @@ function renderSignupDetail(state, submission) {
             'adminBohPlayerFeedbackPlaceholder',
             'Explain any correction or exclusion. The player can read this message.'
           )
-        )}">${escapeHtml(review.note || '')}</textarea>
+        )}">${escapeHtml(reviewMatchesSubmission ? review.note || '' : '')}</textarea>
       </label>
       <label><span>${escapeHtml(
         state.tr('adminBohInternalReviewNote', 'Private leadership note')
@@ -4505,7 +5505,7 @@ function renderSignupDetail(state, submission) {
         state.tr('adminBohAdminUsefulness', 'Leadership usefulness rating')
       )}</span>
         <input class="boh-admin-input" type="number" name="adminUsefulnessRating" min="0" max="100" step="0.1"
-          value="${escapeHtml(review?.adjustments?.bohUsefulRating ?? '')}" />
+          value="${escapeHtml(reviewMatchesSubmission ? (review?.adjustments?.bohUsefulRating ?? '') : '')}" />
         <small>${escapeHtml(
           state.tr(
             'adminBohAdminUsefulnessHelp',
@@ -4522,7 +5522,7 @@ function renderSignupDetail(state, submission) {
       <p>${escapeHtml(
         state.tr(
           'adminBohDeleteSignupHelp',
-          'Permanently remove this signup and its review. Epic Showdown preferences are kept.'
+          'Permanently remove this signup, its review, and player feedback. Epic Showdown preferences are kept.'
         )
       )}</p>
       <button class="boh-admin-button boh-admin-button-danger" type="button" data-action="delete-submission" data-player-id="${escapeHtml(
@@ -4546,14 +5546,16 @@ function renderScoring(state) {
     ['confirmed', 'approved'].includes(submissionStatus(player))
   );
   const versions = state.snapshot.scoring.versions;
+  const showsCommitmentDoubleCountWarning =
+    finiteNumber(activeWeight(version, 'bohUsefulRating')) !== 0;
   return `
     <header class="boh-admin-stage-header">
       <div><p class="boh-admin-eyebrow">${escapeHtml(state.tr('adminBohStageTwo', 'STAGE 2 OF 5'))}</p>
         <h3>${escapeHtml(stageLabel(state, 'scoring'))}</h3>
         <p>${escapeHtml(
           state.tr(
-            'adminBohScoringHelp',
-            'Every formula change creates a new auditable version. Player overrides require a reason.'
+            'adminBohCommitmentScoringIntro',
+            'Formula changes create auditable versions. Leadership commitment/usefulness ratings are additive, batch-saved, and reasoned.'
           )
         )}</p></div>
       <div class="boh-admin-version-badge"><span>${escapeHtml(
@@ -4588,39 +5590,30 @@ function renderScoring(state) {
           state.tr('adminBohSaveNewVersion', 'Save as new version')
         )}</button>
       </form>
+      ${
+        showsCommitmentDoubleCountWarning
+          ? `<p class="boh-admin-template-warning" role="note">${escapeHtml(
+              state.tr(
+                'adminBohCommitmentDoubleCountWarning',
+                'Commitment adjustments are a separate subjective input and may double-count judgment when BoH usefulness has weight.'
+              )
+            )}</p>`
+          : ''
+      }
       <section class="boh-admin-card" aria-labelledby="bohScoreOverrideTitle">
         <header><div><p class="boh-admin-card-kicker">${escapeHtml(
           state.tr('adminBohManualJudgment', 'MANUAL JUDGMENT')
         )}</p><h4 id="bohScoreOverrideTitle">${escapeHtml(
-          state.tr('adminBohScoreOverride', 'Player score override')
-        )}</h4></div></header>
-        <form class="boh-admin-stack" data-form="score-override">
-          <label><span>${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</span>
-            <select class="boh-admin-select" name="playerId" data-action="score-override-player" required>
-              <option value="">${escapeHtml(state.tr('adminBohSelectPlayer', 'Select player'))}</option>
-              ${players
-                .map(
-                  (player) =>
-                    `<option value="${escapeHtml(player.playerId)}">${escapeHtml(
-                      player.displayName || player.playerId
-                    )}</option>`
-                )
-                .join('')}
-            </select>
-          </label>
-          <label><span>${escapeHtml(state.tr('adminBohOverrideScore', 'Override score'))}</span>
-            <input class="boh-admin-input" type="number" name="score" min="0" step="1" required />
-          </label>
-          <label><span>${escapeHtml(state.tr('adminBohOverrideReason', 'Override reason'))}</span>
-            <textarea class="boh-admin-textarea" name="reason" rows="4" maxlength="500" required></textarea>
-          </label>
-          <button class="boh-admin-button" type="submit">${escapeHtml(
-            state.tr('adminBohSaveOverride', 'Save override')
-          )}</button>
-          <button class="boh-admin-button boh-admin-button-danger" type="button" data-action="remove-score-override" data-player-id="" hidden>${escapeHtml(
-            state.tr('adminBohRemoveOverride', 'Remove override')
-          )}</button>
-        </form>
+          `${state.tr('adminBohScoreOverride', 'Player score override')} — ${state.tr(
+            'adminBohLegacyReadOnly',
+            'legacy, read-only'
+          )}`
+        )}</h4><p>${escapeHtml(
+          state.tr(
+            'adminBohLegacyOverrideHelp',
+            'Existing exact score replacements remain visible in the audit table. New leadership ratings are additive and are edited there.'
+          )
+        )}</p></div></header>
         <div class="boh-admin-version-list">
           <h5>${escapeHtml(state.tr('adminBohVersionHistory', 'Version history'))}</h5>
           ${
@@ -4664,7 +5657,72 @@ function playerBreakdown(state, player) {
   });
 }
 
+function scoreBreakdownText(state, player) {
+  return playerBreakdown(state, player)
+    .filter((item) => item.value)
+    .map((item) => `${item.label}: ${formatNumber(state, item.value)}`)
+    .join(' · ');
+}
+
+function scoreAuditSortHeader(state, key, label) {
+  const active = state.scoreAuditSort.key === key;
+  const direction = active ? state.scoreAuditSort.direction : '';
+  const ariaSort = active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  const indicator = active ? (direction === 'asc' ? '↑' : '↓') : '';
+  return `<th scope="col" aria-sort="${ariaSort}"><button type="button" class="boh-admin-button boh-admin-button-quiet boh-admin-sort-button" data-action="score-audit-sort" data-sort-key="${key}">${escapeHtml(
+    label
+  )}<span class="boh-admin-sort-indicator" aria-hidden="true">${indicator}</span></button></th>`;
+}
+
+function commitmentScoreDraftValue(state, player) {
+  const id = cleanText(player?.playerId);
+  if (hasOwn(state.commitmentScoreDraft?.scores, id)) {
+    return state.commitmentScoreDraft.scores[id];
+  }
+  return player?.commitmentScore === undefined || player?.commitmentScore === null
+    ? ''
+    : String(player.commitmentScore);
+}
+
+function scoreDiagnosticLabel(state, code) {
+  const labels = {
+    calculation_failed: [
+      'adminBohScoreDiagnosticCalculationFailed',
+      'Fresh score calculation failed',
+    ],
+    stale_submission: [
+      'adminBohScoreDiagnosticStaleSubmission',
+      'Stored score belongs to an older submission',
+    ],
+    stale_profile: ['adminBohScoreDiagnosticStaleProfile', 'Stored score uses another profile'],
+    stored_mismatch: [
+      'adminBohScoreDiagnosticMismatch',
+      'Stored score differs from fresh calculation',
+    ],
+    unverifiable: ['adminBohScoreDiagnosticUnverifiable', 'Stored score cannot be verified'],
+  };
+  const [key, fallback] = labels[code] || ['', ''];
+  return key ? state.tr(key, fallback) : '';
+}
+
+function renderScoreDiagnostic(state, code) {
+  const normalizedCode = cleanText(code);
+  const label = scoreDiagnosticLabel(state, normalizedCode);
+  return label
+    ? `<small class="boh-admin-score-diagnostic" data-score-diagnostic="${escapeHtml(
+        normalizedCode
+      )}">${escapeHtml(label)}</small>`
+    : '';
+}
+
 function renderScoreBreakdown(state, players, version) {
+  const sortedPlayers = sortAdminScoreBreakdownRows(players, state.scoreAuditSort, {
+    locale: state.locale,
+    breakdownText: (player) => scoreBreakdownText(state, player),
+  });
+  const ratedCount = players.filter(
+    (player) => player.commitmentScore !== null && player.commitmentScore !== undefined
+  ).length;
   return `<section class="boh-admin-card boh-admin-score-table" aria-labelledby="bohScoreBreakdownTitle">
     <header><div><p class="boh-admin-card-kicker">${escapeHtml(
       state.tr('adminBohScoreAudit', 'SCORE AUDIT')
@@ -4672,40 +5730,85 @@ function renderScoreBreakdown(state, players, version) {
       state.tr('adminBohPlayerBreakdown', 'Player scoring breakdown')
     )}</h4></div><span>${escapeHtml(
       cleanText(version?.label || version?.id) || state.tr('adminBohDraft', 'Draft')
-    )}</span></header>
+    )}</span><strong class="boh-admin-score-completeness">${escapeHtml(
+      state.tr('adminBohCommitmentScoreCompleteness', '{rated} of {total} players rated', {
+        rated: ratedCount,
+        total: players.length,
+      })
+    )}</strong></header>
+    <form class="boh-admin-stack" data-form="commitment-scores" novalidate>
+      <div class="boh-admin-commitment-score-toolbar">
+        <p>${escapeHtml(
+          state.tr(
+            'adminBohCommitmentScoreHelp',
+            'Add 1–10,000 commitment/usefulness points to the calculated score. Score-based balancing uses the final total; Total Power balancing is unaffected. Blank removes a rating.'
+          )
+        )}</p>
+        <label><span>${escapeHtml(
+          state.tr('adminBohCommitmentScoreNote', 'Shared audit note for changed ratings')
+        )}</span><input class="boh-admin-input" name="reason" maxlength="2000" value="${escapeHtml(
+          state.commitmentScoreDraft?.reason || ''
+        )}" placeholder="${escapeHtml(
+          state.tr('adminBohCommitmentScoreDefaultReason', 'Commitment/usefulness assessment')
+        )}" /></label>
+        <button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
+          state.tr('adminBohSaveCommitmentScores', 'Save manual scores')
+        )}</button>
+      </div>
     <div class="boh-admin-table-wrap" tabindex="0"><table class="boh-admin-table">
-      <thead><tr><th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
-        <th scope="col">${escapeHtml(state.tr('adminBohCalculated', 'Calculated'))}</th>
-        <th scope="col">${escapeHtml(state.tr('adminBohOverride', 'Override'))}</th>
-        <th scope="col">${escapeHtml(state.tr('adminBohFinalScore', 'Final score'))}</th>
-        <th scope="col">${escapeHtml(state.tr('adminBohBreakdown', 'Breakdown'))}</th></tr></thead>
+      <thead><tr>${scoreAuditSortHeader(state, 'player', state.tr('adminBohPlayer', 'Player'))}
+        ${scoreAuditSortHeader(state, 'totalPower', state.tr('adminBohStatTotalPower', 'Total power'))}
+        ${scoreAuditSortHeader(state, 'calculated', state.tr('adminBohCalculated', 'Calculated'))}
+        ${scoreAuditSortHeader(state, 'override', state.tr('adminBohLegacyFinalOverride', 'Legacy final override'))}
+        ${scoreAuditSortHeader(state, 'commitment', state.tr('adminBohCommitmentScore', 'Commitment'))}
+        ${scoreAuditSortHeader(state, 'finalScore', state.tr('adminBohFinalScore', 'Final score'))}
+        ${scoreAuditSortHeader(state, 'breakdown', state.tr('adminBohBreakdown', 'Breakdown / diagnostic'))}</tr></thead>
       <tbody>${
-        players.length
-          ? players
+        sortedPlayers.length
+          ? sortedPlayers
               .map((player) => {
-                const breakdown = playerBreakdown(state, player)
-                  .filter((item) => item.value)
-                  .map((item) => `${item.label}: ${formatNumber(state, item.value)}`)
-                  .join(' · ');
+                const breakdown = scoreBreakdownText(state, player);
+                const totalPower = scoreAuditTotalPower(player);
                 return `<tr><th scope="row">${escapeHtml(player.displayName || player.playerId)}</th>
-                  <td>${escapeHtml(formatNumber(state, player?.calculatedScore ?? scoreValue(player)))}</td>
                   <td>${
+                    totalPower === null ? '—' : escapeHtml(formatNumber(state, totalPower))
+                  }</td>
+                  <td>${escapeHtml(formatNumber(state, player?.calculatedScore ?? scoreValue(player)))}</td>
+                  <td class="boh-admin-legacy-override">${
                     player?.overrideScore === undefined || player?.overrideScore === null
                       ? '—'
-                      : escapeHtml(formatNumber(state, player.overrideScore))
+                      : `<strong>${escapeHtml(
+                          formatNumber(state, player.overrideScore)
+                        )}</strong><small>${escapeHtml(
+                          state.tr('adminBohLegacyOverrideWarning', 'Legacy exact replacement')
+                        )}</small>`
                   }</td>
+                  <td><label class="boh-admin-score-input"><span class="boh-admin-sr">${escapeHtml(
+                    state.tr('adminBohCommitmentScoreForPlayer', 'Commitment score for {player}', {
+                      player: player.displayName || player.playerId,
+                    })
+                  )}</span><input class="boh-admin-input" type="number" min="1" max="10000" step="1" inputmode="numeric" data-commitment-score-player="${escapeHtml(
+                    player.playerId
+                  )}" value="${escapeHtml(commitmentScoreDraftValue(state, player))}" aria-label="${escapeHtml(
+                    state.tr('adminBohCommitmentScoreForPlayer', 'Commitment score for {player}', {
+                      player: player.displayName || player.playerId,
+                    })
+                  )}" /></label></td>
                   <td><strong>${escapeHtml(formatNumber(state, scoreValue(player)))}</strong></td>
-                  <td class="boh-admin-breakdown-cell">${escapeHtml(breakdown || '—')}</td></tr>`;
+                  <td class="boh-admin-breakdown-cell"><span>${escapeHtml(
+                    breakdown || '—'
+                  )}</span>${renderScoreDiagnostic(state, player.scoreDiagnostic)}</td></tr>`;
               })
               .join('')
           : renderEmptyRow(
               state,
-              5,
+              7,
               'adminBohNoConfirmedScores',
               'Confirm signup records to calculate scores.'
             )
       }</tbody>
     </table></div>
+    </form>
   </section>`;
 }
 
@@ -4930,6 +6033,9 @@ function renderTeamBuilderSettings(state, candidates, selectedIds) {
           <option value="totalPower" ${balanceMetric === 'totalPower' ? 'selected' : ''}>${escapeHtml(
             state.tr('adminBohTotalGamePower', 'Total in-game power')
           )}</option>
+          <option value="balanced" ${balanceMetric === 'balanced' ? 'selected' : ''}>${escapeHtml(
+            state.tr('adminBohBalancedScorePower', 'Balanced score + power')
+          )}</option>
         </select></label>
     </div>
     <p>${escapeHtml(
@@ -4971,10 +6077,8 @@ function renderBalancePreview(state) {
       )
     )}</p></section>`;
   }
-  const activeLabel =
-    preview.balanceMetric === 'totalPower'
-      ? state.tr('adminBohTotalGamePower', 'Total in-game power')
-      : state.tr('adminBohScoringPoints', 'Scoring points');
+  const activeLabel = balanceMetricLabel(state, preview.balanceMetric);
+  const activeMetric = normalizeBalanceMetric(preview.balanceMetric);
   return `<section class="boh-admin-card" aria-labelledby="bohBalancePreviewTitle">
     <header><div><p class="boh-admin-card-kicker">${escapeHtml(
       state.tr('adminBohBalancePreview', 'BALANCE PREVIEW')
@@ -4984,7 +6088,14 @@ function renderBalancePreview(state) {
     <div class="boh-admin-summary-grid">
       ${summaryCard(formatNumber(state, preview.scoreSpread), state.tr('adminBohScoreSpread', 'Score spread'))}
       ${summaryCard(formatNumber(state, preview.powerSpread), state.tr('adminBohPowerSpread', 'Power spread'))}
-      ${summaryCard(formatNumber(state, preview.balanceSpread), state.tr('adminBohActiveSpread', 'Active metric spread'))}
+      ${
+        activeMetric === 'balanced'
+          ? ''
+          : summaryCard(
+              formatNumber(state, preview.balanceSpread),
+              state.tr('adminBohActiveSpread', 'Active metric spread')
+            )
+      }
     </div>
     <div class="boh-admin-table-wrap" tabindex="0"><table class="boh-admin-table">
       <thead><tr><th scope="col">${escapeHtml(state.tr('adminBohTeam', 'Team'))}</th>
@@ -5053,9 +6164,7 @@ function renderTeamBuilder(state) {
       ${summaryCard(formatNumber(state, balance.scoreAverage), state.tr('adminBohAverageTeamScore', 'Average team score'))}
       ${summaryCard(formatNumber(state, balance.powerAverage), state.tr('adminBohAverageTeamPower', 'Average team power'))}
       ${summaryCard(
-        activeMetric === 'totalPower'
-          ? state.tr('adminBohTotalGamePower', 'Total in-game power')
-          : state.tr('adminBohScoringPoints', 'Scoring points'),
+        balanceMetricLabel(state, activeMetric),
         state.tr('adminBohActiveBalanceMetricLabel', 'Active balance metric'),
         'success'
       )}
@@ -5093,24 +6202,35 @@ function renderSeatMoveNotice(state) {
 function renderTeamColumn(state, team, balance, index) {
   const score = balance.scoreTotals[index];
   const power = balance.powerTotals[index];
-  const powerMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric) === 'totalPower';
+  const activeMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric);
+  const powerMetric = activeMetric === 'totalPower';
+  const balancedMetric = activeMetric === 'balanced';
+  const displayedTotal = powerMetric ? power : score;
   const difference = powerMetric ? power - balance.powerAverage : score - balance.scoreAverage;
   const assigned = team.seats.filter((seat) => seat.playerId).length;
   return `<section class="boh-admin-team" aria-labelledby="bohTeamTitle-${team.number}">
     <header style="--boh-team-color:${escapeHtml(team.color || '#7dd3fc')}">
       <div><span>${escapeHtml(state.tr('adminBohTeamNumber', 'TEAM {number}', { number: team.number }))}</span>
         <h4 id="bohTeamTitle-${team.number}">${escapeHtml(teamDisplayName(state, team))}</h4></div>
-      <div class="boh-admin-team-score"><strong>${escapeHtml(
-        formatNumber(state, powerMetric ? power : score)
-      )}</strong>
+      <div class="boh-admin-team-score">${
+        balancedMetric
+          ? `<span>${escapeHtml(balanceMetricLabel(state, activeMetric))}</span>`
+          : `<strong data-balance-primary-total>${escapeHtml(
+              formatNumber(state, displayedTotal)
+            )}</strong><span>${escapeHtml(balanceMetricLabel(state, activeMetric))}</span>`
+      }
         <span>${escapeHtml(state.tr('adminBohScoringPoints', 'Scoring points'))}: ${escapeHtml(
           formatNumber(state, score)
         )} / ${escapeHtml(state.tr('adminBohTotalGamePower', 'Total in-game power'))}: ${escapeHtml(
           formatNumber(state, power)
         )}</span>
-        <span>${difference >= 0 ? '+' : ''}${escapeHtml(formatNumber(state, difference))} ${escapeHtml(
-          state.tr('adminBohVsAverage', 'vs avg')
-        )}</span></div>
+        ${
+          balancedMetric
+            ? ''
+            : `<span>${difference >= 0 ? '+' : ''}${escapeHtml(formatNumber(state, difference))} ${escapeHtml(
+                state.tr('adminBohVsAverage', 'vs avg')
+              )}</span>`
+        }</div>
     </header>
     <form class="boh-admin-stack" data-form="team-metadata">
       <input type="hidden" name="teamId" value="${escapeHtml(team.id)}" />
@@ -6324,12 +7444,443 @@ function setStatus(state, message, tone = 'neutral') {
   element.hidden = !state.status.message;
 }
 
+function clearDeletedSubmissionState(state, playerIds) {
+  const deletedIds = new Set(list(playerIds).map(cleanText).filter(Boolean));
+  for (const id of deletedIds) {
+    state.selectedSubmissionIds.delete(id);
+    state.correctionDrafts?.delete(id);
+  }
+  if (deletedIds.has(state.selectedSubmissionId)) state.selectedSubmissionId = '';
+}
+
 function formValues(form) {
   return new FormData(form);
 }
 
 function arrayValues(formData, key) {
   return formData.getAll(key).map(cleanText);
+}
+
+function correctionDraftFields(form) {
+  const fields = {};
+  for (const control of form?.elements || []) {
+    const name = cleanText(control?.name);
+    if (name && name !== 'playerId' && !hasOwn(fields, name)) fields[name] = [];
+  }
+  for (const [name, rawValue] of new FormData(form).entries()) {
+    if (name === 'playerId') continue;
+    if (!hasOwn(fields, name)) fields[name] = [];
+    fields[name].push(String(rawValue ?? ''));
+  }
+  return fields;
+}
+
+function captureCorrectionDraft(state, form) {
+  if (!form?.matches?.('[data-form="submission-corrections"]')) return null;
+  const id = cleanText(new FormData(form).get('playerId'));
+  if (!id) return null;
+  const draft = { playerId: id, fields: correctionDraftFields(form) };
+  state.correctionDrafts.set(id, draft);
+  const card = form.closest('.boh-admin-correction-card');
+  const dirty = card?.querySelector('.boh-admin-correction-dirty');
+  if (dirty) dirty.hidden = false;
+  const discard = form.querySelector('[data-action="discard-correction-draft"]');
+  if (discard) discard.disabled = false;
+  return draft;
+}
+
+function captureCommitmentScoreDraft(state, form) {
+  if (!form?.matches?.('[data-form="commitment-scores"]')) return null;
+  const scores = Object.fromEntries(
+    [...form.querySelectorAll('[data-commitment-score-player]')].map((control) => [
+      cleanText(control.dataset.commitmentScorePlayer),
+      String(control.value ?? ''),
+    ])
+  );
+  state.commitmentScoreDraft = {
+    scores,
+    reason: String(form.elements?.reason?.value ?? ''),
+  };
+  return state.commitmentScoreDraft;
+}
+
+function pruneCorrectionDrafts(state) {
+  const ids = new Set(state.snapshot.submissions.map(playerId));
+  for (const id of state.correctionDrafts.keys()) {
+    if (!ids.has(id)) state.correctionDrafts.delete(id);
+  }
+}
+
+function correctionFocusSnapshot(root) {
+  const active = root?.ownerDocument?.activeElement;
+  const form = active?.closest?.('[data-form="submission-corrections"]');
+  if (!form || !root.contains(active)) return null;
+  const name = cleanText(active.name);
+  if (!name) return null;
+  const controls = [...form.elements].filter((control) => control.name === name);
+  return {
+    playerId: cleanText(new FormData(form).get('playerId')),
+    name,
+    index: Math.max(0, controls.indexOf(active)),
+    selectionStart: Number.isInteger(active.selectionStart) ? active.selectionStart : null,
+    selectionEnd: Number.isInteger(active.selectionEnd) ? active.selectionEnd : null,
+  };
+}
+
+function restoreCorrectionFocus(state, snapshot) {
+  if (!snapshot || !correctionDraftFor(state, snapshot.playerId)) return;
+  const form = state.root.querySelector('[data-form="submission-corrections"]');
+  if (cleanText(form?.elements?.playerId?.value) !== snapshot.playerId) return;
+  const control = [...(form?.elements || [])].filter(
+    (candidate) => candidate.name === snapshot.name
+  )[snapshot.index];
+  if (!control || control.disabled) return;
+  control.focus?.({ preventScroll: true });
+  if (snapshot.selectionStart !== null && typeof control.setSelectionRange === 'function') {
+    control.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
+  }
+}
+
+function originalCorrectionStatValue(original, key) {
+  if (key === 'totalCastlePower') {
+    return original?.stats?.totalCastlePower ?? original?.stats?.totalPower ?? 0;
+  }
+  if (key === 'heroCombatPower') {
+    return original?.stats?.heroCombatPower ?? original?.stats?.heroPower ?? 0;
+  }
+  if (OPTIONAL_POWER_KEYS.includes(key)) return original?.stats?.[key] ?? null;
+  return original?.stats?.[key] ?? 0;
+}
+
+export function buildAdminSubmissionCorrectionOverlay(submission, proposed = {}, reason = '') {
+  const original = originalCorrectionSubmission(submission);
+  const values = {};
+  const proposedName = cleanText(proposed.gameName);
+  if (!correctionValuesEqual(proposedName, original.gameName)) values.gameName = proposedName;
+  for (const key of ['locale', 'timezone']) {
+    const proposedValue = cleanText(proposed[key]);
+    if (!correctionValuesEqual(proposedValue, cleanText(original[key]))) {
+      values[key] = proposedValue;
+    }
+  }
+  const teammates = uniqueTextList(proposed.preferredTeammates);
+  if (!correctionValuesEqual(teammates, original.preferredTeammates || [])) {
+    values.preferredTeammates = teammates;
+  }
+
+  const statValues = {};
+  for (const key of FULL_CORRECTION_STAT_KEYS) {
+    if (!hasOwn(proposed.stats, key)) continue;
+    if (!correctionValuesEqual(proposed.stats[key], originalCorrectionStatValue(original, key))) {
+      statValues[key] = proposed.stats[key];
+    }
+  }
+  for (const key of [
+    't9TroopTypes',
+    't10TroopTypes',
+    'readySpeedHeroes',
+    'troopRoster',
+    'usableHeroNames',
+  ]) {
+    const proposedValue = uniqueTextList(proposed.stats?.[key]);
+    const originalValue = uniqueTextList(original.stats?.[key]);
+    if (!correctionValuesEqual(proposedValue, originalValue)) statValues[key] = proposedValue;
+  }
+  const proposedResearch = proposed.stats?.researchProgressPct || {};
+  const originalResearch = original.stats?.researchProgressPct || {};
+  if (!correctionValuesEqual(proposedResearch, originalResearch)) {
+    statValues.researchProgressPct = proposedResearch;
+  }
+  if (Object.keys(statValues).length) values.stats = statValues;
+
+  const commitmentValues = {};
+  for (const key of ['availability', 'preferredRole', 'secondaryRole']) {
+    const proposedValue = cleanText(proposed.commitment?.[key]);
+    const originalValue = cleanText(original.commitment?.[key]);
+    if (!correctionValuesEqual(proposedValue, originalValue)) {
+      commitmentValues[key] = proposedValue;
+    }
+  }
+  for (const key of CORRECTION_BOOLEAN_FIELDS) {
+    const proposedValue = proposed.commitment?.[key] ?? null;
+    const originalValue = original.commitment?.[key] ?? null;
+    if (!correctionValuesEqual(proposedValue, originalValue)) {
+      commitmentValues[key] = proposedValue;
+    }
+  }
+  for (const key of Object.keys(CORRECTION_COMMITMENT_TEXT_LIMITS)) {
+    const proposedValue = cleanText(proposed.commitment?.[key]);
+    const originalValue = cleanText(original.commitment?.[key]);
+    if (!correctionValuesEqual(proposedValue, originalValue)) {
+      commitmentValues[key] = proposedValue;
+    }
+  }
+  for (const key of ['fightingTimeIds', 'teamNamePreferences']) {
+    const proposedValue = uniqueTextList(proposed.commitment?.[key]);
+    const originalValue = uniqueTextList(original.commitment?.[key]);
+    if (!correctionValuesEqual(proposedValue, originalValue)) {
+      commitmentValues[key] = proposedValue;
+    }
+  }
+  if (Object.keys(commitmentValues).length) values.commitment = commitmentValues;
+
+  if (!Object.keys(values).length) return null;
+  return {
+    schemaVersion: 1,
+    reason: cleanText(reason),
+    values,
+  };
+}
+
+function correctionBooleanValue(value) {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return null;
+}
+
+function proposedCorrectionFromForm(form) {
+  const data = new FormData(form);
+  const stats = {};
+  for (const key of FULL_CORRECTION_STAT_KEYS) {
+    const rawValue = cleanText(data.get(`correction.stats.${key}`));
+    if (OPTIONAL_POWER_KEYS.includes(key)) {
+      stats[key] =
+        cleanText(data.get(`correction.stats.${key}.mode`)) === 'clear'
+          ? null
+          : rawValue === ''
+            ? Number.NaN
+            : Number(rawValue);
+    } else {
+      stats[key] = rawValue === '' ? Number.NaN : Number(rawValue);
+    }
+  }
+  stats.t9TroopTypes = uniqueTextList(data.getAll('correction.stats.t9TroopTypes'));
+  stats.t10TroopTypes = uniqueTextList(data.getAll('correction.stats.t10TroopTypes'));
+  stats.readySpeedHeroes = uniqueTextList(data.getAll('correction.stats.readySpeedHeroes'));
+  stats.troopRoster = uniqueTextList(serializeCorrectionTroopRows(form));
+  stats.usableHeroNames = uniqueTextList(data.getAll('correction.stats.usableHeroNames'));
+  stats.researchProgressPct = {};
+  for (const control of form.querySelectorAll('[data-research-id]')) {
+    const rawValue = cleanText(control.value);
+    if (rawValue !== '')
+      stats.researchProgressPct[cleanText(control.dataset.researchId)] = Number(rawValue);
+  }
+  const commitment = {
+    availability: cleanText(data.get('correction.commitment.availability')),
+    preferredRole: cleanText(data.get('correction.commitment.preferredRole')),
+    secondaryRole: cleanText(data.get('correction.commitment.secondaryRole')),
+    fightingTimeIds: uniqueTextList(data.getAll('correction.commitment.fightingTimeIds')),
+    teamNamePreferences: uniqueTextList(data.getAll('correction.commitment.teamNamePreferences')),
+  };
+  for (const key of CORRECTION_BOOLEAN_FIELDS) {
+    commitment[key] = correctionBooleanValue(data.get(`correction.commitment.${key}`));
+  }
+  for (const key of Object.keys(CORRECTION_COMMITMENT_TEXT_LIMITS)) {
+    commitment[key] = cleanText(data.get(`correction.commitment.${key}`));
+  }
+  return {
+    playerId: cleanText(data.get('playerId')),
+    reason: cleanText(data.get('correction.reason')),
+    proposed: {
+      gameName: cleanText(data.get('correction.gameName')),
+      locale: cleanText(data.get('correction.locale')),
+      timezone: cleanText(data.get('correction.timezone')),
+      preferredTeammates: uniqueTextList(data.getAll('correction.preferredTeammates')),
+      stats,
+      commitment,
+    },
+  };
+}
+
+function correctionControl(form, name) {
+  const entry = form?.elements?.namedItem?.(name);
+  if (entry && typeof entry.setCustomValidity === 'function') return entry;
+  return [...(form?.elements || [])].find((control) => control.name === name) || null;
+}
+
+function invalidateCorrectionControl(state, control, message) {
+  if (!control) return false;
+  control.setCustomValidity?.(message);
+  control.setAttribute?.('aria-invalid', 'true');
+  setStatus(state, message, 'error');
+  control.focus?.();
+  control.reportValidity?.();
+  return false;
+}
+
+function validateCorrectionForm(state, form, submission, parsed) {
+  clearCorrectionValidity(form);
+  const original = originalCorrectionSubmission(submission);
+  const { proposed } = parsed;
+  if (!proposed.gameName) {
+    return invalidateCorrectionControl(
+      state,
+      correctionControl(form, 'correction.gameName'),
+      state.tr('adminBohCorrectionNameRequired', 'Player name is required.')
+    );
+  }
+  for (const key of FULL_CORRECTION_STAT_KEYS) {
+    const value = proposed.stats[key];
+    if (OPTIONAL_POWER_KEYS.includes(key) && value === null) continue;
+    const maximum = CORRECTION_NUMBER_LIMITS[key];
+    if (!Number.isInteger(value) || value < 0 || value > maximum) {
+      return invalidateCorrectionControl(
+        state,
+        correctionControl(form, `correction.stats.${key}`),
+        state.tr('adminBohCorrectionNumberInvalid', 'Enter a whole number from 0 to {maximum}.', {
+          maximum,
+        })
+      );
+    }
+  }
+  if (proposed.preferredTeammates.length > BohModel.BOH_MAX_PREFERRED_TEAMMATES) {
+    return invalidateCorrectionControl(
+      state,
+      correctionControl(form, 'correction.preferredTeammates'),
+      state.tr('adminBohCorrectionTeammatesInvalid', 'Choose no more than six teammates.')
+    );
+  }
+  if (
+    proposed.preferredTeammates.some(
+      (name) => planningValueKey(name) === planningValueKey(proposed.gameName)
+    )
+  ) {
+    return invalidateCorrectionControl(
+      state,
+      correctionControl(form, 'correction.preferredTeammates'),
+      state.tr('adminBohCorrectionSelfTeammate', 'A player cannot list their own account name.')
+    );
+  }
+  const rosterRows = [...form.querySelectorAll('[data-correction-troop-row]')];
+  const serializedRoster = serializeCorrectionTroopRows(form);
+  for (const row of rosterRows) {
+    const control = row.querySelector('[name="correction.troop.count"]');
+    const count = cleanText(control?.value);
+    if (
+      count &&
+      (!Number.isInteger(Number(count)) || Number(count) < 0 || Number(count) > 9_999_999_999)
+    ) {
+      return invalidateCorrectionControl(
+        state,
+        control,
+        state.tr(
+          'adminBohCorrectionTroopCountInvalid',
+          'Troop count must be a whole number from 0 to 9,999,999,999.'
+        )
+      );
+    }
+  }
+  if (serializedRoster.some((row) => !CORRECTION_TROOP_ROW_PATTERN.test(row))) {
+    return invalidateCorrectionControl(
+      state,
+      rosterRows[0]?.querySelector('[name="correction.troop.count"]'),
+      state.tr('adminBohCorrectionTroopRowInvalid', 'Use a valid structured troop row.')
+    );
+  }
+  if (new Set(serializedRoster).size !== serializedRoster.length) {
+    return invalidateCorrectionControl(
+      state,
+      rosterRows[0]?.querySelector('[name="correction.troop.count"]'),
+      state.tr('adminBohCorrectionTroopRowDuplicate', 'Remove duplicate troop rows.')
+    );
+  }
+  if (rosterRows.length > 60) {
+    return invalidateCorrectionControl(
+      state,
+      rosterRows[0]?.querySelector('[name="correction.troop.count"]'),
+      state.tr('adminBohCorrectionTroopRowsTooMany', 'Use no more than 60 troop rows.')
+    );
+  }
+  if (proposed.stats.usableHeroNames.length > BohModel.BOH_MAX_USABLE_HERO_NAMES) {
+    return invalidateCorrectionControl(
+      state,
+      correctionControl(form, 'correction.stats.usableHeroNames'),
+      state.tr('adminBohCorrectionHeroesTooMany', 'Choose no more than 78 usable heroes.')
+    );
+  }
+  for (const control of form.querySelectorAll('[data-research-id]')) {
+    if (cleanText(control.value) === '') continue;
+    const progress = Number(control.value);
+    if (!Number.isInteger(progress) || progress < 0 || progress > 100) {
+      return invalidateCorrectionControl(
+        state,
+        control,
+        state.tr('adminBohCorrectionResearchInvalid', 'Research progress must be 0 to 100.')
+      );
+    }
+  }
+  const { commitment } = proposed;
+  if (
+    commitment.preferredRole &&
+    commitment.secondaryRole &&
+    commitment.preferredRole === commitment.secondaryRole
+  ) {
+    return invalidateCorrectionControl(
+      state,
+      correctionControl(form, 'correction.commitment.secondaryRole'),
+      state.tr('adminBohCorrectionRolesDiffer', 'Primary and secondary roles must be different.')
+    );
+  }
+  const fightingChanged = !correctionValuesEqual(
+    commitment.fightingTimeIds,
+    uniqueTextList(original.commitment?.fightingTimeIds)
+  );
+  if (
+    fightingChanged &&
+    (commitment.fightingTimeIds.length !== 2 ||
+      commitment.fightingTimeIds.some((id) => !BohModel.BOH_FIGHTING_TIME_IDS.includes(id)))
+  ) {
+    return invalidateCorrectionControl(
+      state,
+      form.querySelector('[name="correction.commitment.fightingTimeIds"]'),
+      state.tr(
+        'adminBohCorrectionFightingTimesInvalid',
+        'Choose exactly two current fighting slots: +12, +14, or +16.'
+      )
+    );
+  }
+  if (commitment.vts1097Member === false) {
+    for (const [key, message] of [
+      [
+        'contactNumber',
+        state.tr(
+          'adminBohCorrectionContactRequired',
+          'Contact number is required for a non-VTS player.'
+        ),
+      ],
+      [
+        'currentState',
+        state.tr(
+          'adminBohCorrectionStateRequired',
+          'Current state is required for a non-VTS player.'
+        ),
+      ],
+      [
+        'joinReason',
+        state.tr(
+          'adminBohCorrectionJoinReasonRequired',
+          'Join reason is required for a non-VTS player.'
+        ),
+      ],
+    ]) {
+      if (!commitment[key]) {
+        return invalidateCorrectionControl(
+          state,
+          correctionControl(form, `correction.commitment.${key}`),
+          message
+        );
+      }
+    }
+  }
+  const overlay = buildAdminSubmissionCorrectionOverlay(submission, proposed, parsed.reason);
+  if (overlay && !parsed.reason) {
+    return invalidateCorrectionControl(
+      state,
+      correctionControl(form, 'correction.reason'),
+      state.tr('adminBohCorrectionReasonRequired', 'Add one reason for these corrections.')
+    );
+  }
+  return overlay;
 }
 
 async function invokeAction(state, name, payload, successMessage) {
@@ -6374,6 +7925,14 @@ async function invokeAction(state, name, payload, successMessage) {
     state.phaseDrafts = null;
     if (name === 'batchReviewSubmissions') {
       list(payload.playerIds).forEach((id) => state.selectedSubmissionIds.delete(cleanText(id)));
+    } else if (name === 'batchDeleteSubmissions') {
+      const successfulPlayerIds = list(
+        result?.result?.successfulPlayerIds ?? result?.successfulPlayerIds
+      );
+      clearDeletedSubmissionState(
+        state,
+        successfulPlayerIds.length ? successfulPlayerIds : payload.playerIds
+      );
     }
     setStatus(state, successMessage || state.tr('adminBohSaved', 'Saved.'), 'success');
     state.options.onActionComplete?.({ action: name, payload: command, result });
@@ -6384,6 +7943,13 @@ async function invokeAction(state, name, payload, successMessage) {
       list(error?.successfulPlayerIds).forEach((id) =>
         state.selectedSubmissionIds.delete(cleanText(id))
       );
+    } else if (name === 'batchDeleteSubmissions') {
+      clearDeletedSubmissionState(state, error?.successfulPlayerIds);
+      try {
+        await refreshState(state);
+      } catch (refreshError) {
+        state.options.onError?.(refreshError, { action: 'batchDeleteSubmissionsRefresh' });
+      }
     }
     setStatus(state, error?.message || String(error), 'error');
     state.options.onError?.(error, { action: name, payload });
@@ -6407,6 +7973,7 @@ async function refreshState(state, suppliedSnapshot) {
     snapshot = await Promise.resolve(state.options.getSnapshot());
   }
   if (snapshot) state.snapshot = normalizeSnapshot(snapshot);
+  pruneCorrectionDrafts(state);
   return state.snapshot;
 }
 
@@ -6441,11 +8008,53 @@ async function handleClick(state, event) {
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'add-correction-troop-row') {
+    const form = button.closest('[data-form="submission-corrections"]');
+    const rows = form?.querySelector('[data-correction-troop-rows]');
+    if (!rows || rows.children.length >= 60) return;
+    rows.insertAdjacentHTML(
+      'beforeend',
+      renderCorrectionTroopRow(state, parseCorrectionTroopRow(''))
+    );
+    captureCorrectionDraft(state, form);
+    rows.lastElementChild?.querySelector('[name="correction.troop.kind"]')?.focus();
+    return;
+  }
+  if (action === 'remove-correction-troop-row') {
+    const form = button.closest('[data-form="submission-corrections"]');
+    const rows = form?.querySelector('[data-correction-troop-rows]');
+    if (!rows) return;
+    if (rows.children.length === 1) {
+      rows.querySelector('[name="correction.troop.count"]').value = '';
+    } else button.closest('.boh-admin-correction-troop-row')?.remove();
+    captureCorrectionDraft(state, form);
+    return;
+  }
+  if (action === 'discard-correction-draft') {
+    const form = button.closest('[data-form="submission-corrections"]');
+    const id = cleanText(form?.elements?.playerId?.value);
+    if (!id) return;
+    state.correctionDrafts.delete(id);
+    renderShell(state);
+    state.root
+      .querySelector('[data-form="submission-corrections"] [name="correction.gameName"]')
+      ?.focus();
+    return;
+  }
   if (action === 'signup-sort') {
     const key = cleanText(button.dataset.sortKey);
     const direction =
       state.signupSort.key === key && state.signupSort.direction === 'asc' ? 'desc' : 'asc';
     state.signupSort = { key, direction };
+    renderShell(state);
+    return;
+  }
+  if (action === 'score-audit-sort') {
+    const key = cleanText(button.dataset.sortKey);
+    if (!SCORE_AUDIT_SORT_KEYS.includes(key)) return;
+    const direction =
+      state.scoreAuditSort.key === key && state.scoreAuditSort.direction === 'asc' ? 'desc' : 'asc';
+    state.scoreAuditSort = { key, direction };
     renderShell(state);
     return;
   }
@@ -6455,6 +8064,28 @@ async function handleClick(state, event) {
       state,
       state.tr('adminBohExportedRows', 'Exported {count} visible signups.', { count }),
       'success'
+    );
+    return;
+  }
+  if (action === 'delete-selected-submissions') {
+    const playerIds = filteredSubmissions(state)
+      .map(playerId)
+      .filter((id) => id && state.selectedSubmissionIds.has(id));
+    if (!playerIds.length) return;
+    const message = state.tr(
+      'adminBohBatchDeletePrompt',
+      'This cannot be undone. Permanently delete {count} selected visible signups, their reviews, and their player feedback? Epic Showdown preferences will be kept.',
+      { count: playerIds.length }
+    );
+    const confirmed = await Promise.resolve(
+      state.options.confirm?.(message) ?? window.confirm(message)
+    );
+    if (!confirmed) return;
+    await invokeAction(
+      state,
+      'batchDeleteSubmissions',
+      { playerIds },
+      state.tr('adminBohBatchDeleted', 'Selected visible signups deleted.')
     );
     return;
   }
@@ -6493,20 +8124,22 @@ async function handleClick(state, event) {
     const displayName = playerName(submission) || targetId;
     const message = state.tr(
       'adminBohDeleteSignupConfirm',
-      'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
+      'This cannot be undone. Permanently delete the signup for {player}, its review, and its player feedback? Epic Showdown preferences will be kept.',
       { player: displayName }
     );
     const confirmed = await Promise.resolve(
       state.options.confirm?.(message) ?? window.confirm(message)
     );
     if (!confirmed) return;
-    await invokeAction(
+    const result = await invokeAction(
       state,
       'deleteSubmission',
       { playerId: targetId },
       state.tr('adminBohSignupDeleted', 'Signup deleted.')
     );
-    state.selectedSubmissionId = '';
+    if (result === null) return;
+    clearDeletedSubmissionState(state, [targetId]);
+    renderShell(state);
     return;
   }
   if (action === 'select-seat') {
@@ -6688,17 +8321,6 @@ async function handleClick(state, event) {
     state.objectiveDraftId = '';
     return;
   }
-  if (action === 'remove-score-override') {
-    const playerIdValue = cleanText(button.dataset.playerId);
-    if (!playerIdValue) return;
-    await invokeAction(
-      state,
-      'removeScoreOverride',
-      { playerId: playerIdValue },
-      state.tr('adminBohOverrideRemoved', 'Score override removed.')
-    );
-    return;
-  }
   if (action === 'validate-revision') {
     await invokeAction(
       state,
@@ -6714,7 +8336,51 @@ async function handleClick(state, event) {
   }
 }
 
+function clearCorrectionValidity(form) {
+  for (const control of form?.querySelectorAll?.('[aria-invalid="true"]') || []) {
+    control.removeAttribute('aria-invalid');
+    control.setCustomValidity?.('');
+  }
+}
+
+function handleInput(state, event) {
+  const scoreForm = event.target.closest?.('[data-form="commitment-scores"]');
+  if (scoreForm) {
+    event.target.setCustomValidity?.('');
+    event.target.removeAttribute?.('aria-invalid');
+    captureCommitmentScoreDraft(state, scoreForm);
+    return;
+  }
+  const form = event.target.closest?.('[data-form="submission-corrections"]');
+  if (!form) return;
+  if (event.target.matches?.('[data-action="filter-correction-heroes"]')) {
+    const query = cleanText(event.target.value).toLocaleLowerCase();
+    for (const option of form.querySelectorAll(
+      'select[name="correction.stats.usableHeroNames"] option'
+    )) {
+      option.hidden = Boolean(
+        query && !cleanText(option.textContent).toLocaleLowerCase().includes(query)
+      );
+    }
+    return;
+  }
+  clearCorrectionValidity(form);
+  captureCorrectionDraft(state, form);
+}
+
 function handleChange(state, event) {
+  const correctionForm = event.target.closest?.('[data-form="submission-corrections"]');
+  if (correctionForm) {
+    if (event.target.matches?.('[data-correction-troop-kind]')) {
+      const row = event.target.closest('[data-correction-troop-row]');
+      for (const fields of row?.querySelectorAll?.('[data-troop-fields]') || []) {
+        fields.hidden = fields.dataset.troopFields !== event.target.value;
+      }
+    }
+    clearCorrectionValidity(correctionForm);
+    captureCorrectionDraft(state, correctionForm);
+    return;
+  }
   const action = cleanText(event.target.dataset.action);
   if (action === 'select-submission-row') {
     const id = cleanText(event.target.dataset.playerId);
@@ -6730,20 +8396,6 @@ function handleChange(state, event) {
       else state.selectedSubmissionIds.delete(id);
     }
     renderShell(state);
-    return;
-  }
-  if (action === 'score-override-player') {
-    const form = event.target.closest('form[data-form="score-override"]');
-    const button = form?.querySelector('[data-action="remove-score-override"]');
-    const selectedScore = state.snapshot.scores.find(
-      (score) => playerId(score) === cleanText(event.target.value)
-    );
-    const hasOverride =
-      selectedScore?.overrideScore !== null && selectedScore?.overrideScore !== undefined;
-    if (button) {
-      button.dataset.playerId = cleanText(event.target.value);
-      button.hidden = !hasOverride;
-    }
     return;
   }
   if (action === 'preview-team') {
@@ -6919,58 +8571,34 @@ async function handleSubmit(state, event) {
     );
     return;
   }
-  if (kind === 'stat-corrections') {
+  if (kind === 'submission-corrections') {
+    captureCorrectionDraft(state, form);
+    const parsed = proposedCorrectionFromForm(form);
     const submission = state.snapshot.submissions.find(
-      (item) => playerId(item) === cleanText(data.get('playerId'))
+      (item) => playerId(item) === parsed.playerId
     );
+    if (!submission) return;
+    const overlay = validateCorrectionForm(state, form, submission, parsed);
+    if (overlay === false) return;
     const review = submission?.review || {};
-    const reason = cleanText(data.get('reason'));
-    const statCorrections = Object.fromEntries(
-      CORRECTABLE_STAT_KEYS.map((key) => [
-        key,
-        cleanText(data.get(`statCorrection.${key}`)),
-        originalStatValue(submission, key),
-      ])
-        .filter(([, corrected, original]) => statCorrectionChanged(corrected, original))
-        .map(([key, corrected]) => [key, { corrected: finiteNumber(corrected), reason }])
-    );
-    const enteredName = cleanText(data.get('gameNameCorrection'));
-    const correctedName =
-      enteredName && enteredName !== cleanText(submission?.originalGameName) ? enteredName : '';
-    const nameReason = cleanText(data.get('gameNameCorrectionReason'));
-    if (Object.keys(statCorrections).length && !reason) {
-      setStatus(
-        state,
-        state.tr('adminBohCorrectionReasonRequired', 'Add a reason for changed stats.'),
-        'error'
-      );
-      return;
-    }
-    if (correctedName && !nameReason) {
-      setStatus(
-        state,
-        state.tr('adminBohNameCorrectionReasonRequired', 'Add a reason for the corrected name.'),
-        'error'
-      );
-      return;
-    }
-    await invokeAction(
+    const result = await invokeAction(
       state,
       'reviewSubmission',
       {
-        playerId: cleanText(data.get('playerId')),
-        status: adapterReviewStatusToUi(review.status),
-        note: cleanText(review.note),
+        playerId: parsed.playerId,
+        status: cleanText(submission.reviewStatus).toLocaleLowerCase() || 'pending',
+        note: cleanText(
+          adapterReviewMatchesSubmissionRevision(submission, review) ? review.note : ''
+        ),
         internalNote: cleanText(review.internalNote),
-        adminUsefulnessRating: review?.adjustments?.bohUsefulRating ?? null,
-        statCorrections,
-        gameNameCorrection: {
-          corrected: correctedName,
-          reason: nameReason,
-        },
+        submissionCorrection: overlay,
       },
       state.tr('adminBohCorrectionsSaved', 'Admin corrections saved.')
     );
+    if (result !== null) {
+      state.correctionDrafts.delete(parsed.playerId);
+      renderShell(state);
+    }
     return;
   }
   if (kind === 'scoring-version') {
@@ -6985,17 +8613,45 @@ async function handleSubmit(state, event) {
     );
     return;
   }
-  if (kind === 'score-override') {
-    await invokeAction(
+  if (kind === 'commitment-scores') {
+    captureCommitmentScoreDraft(state, form);
+    const adjustments = [];
+    for (const control of form.querySelectorAll('[data-commitment-score-player]')) {
+      control.setCustomValidity?.('');
+      control.removeAttribute?.('aria-invalid');
+      const rawScore = cleanText(control.value);
+      if (rawScore) {
+        const score = Number(rawScore);
+        if (!Number.isInteger(score) || score < 1 || score > 10_000) {
+          invalidateCorrectionControl(
+            state,
+            control,
+            state.tr(
+              'adminBohCommitmentScoreInvalid',
+              'Enter a whole commitment score from 1 to 10,000, or leave it blank.'
+            )
+          );
+          return;
+        }
+      }
+      adjustments.push({
+        playerId: cleanText(control.dataset.commitmentScorePlayer),
+        score: rawScore || null,
+      });
+    }
+    const result = await invokeAction(
       state,
-      'setScoreOverride',
+      'saveCommitmentScores',
       {
-        playerId: cleanText(data.get('playerId')),
-        score: Math.max(0, integer(data.get('score'))),
-        reason: cleanText(data.get('reason')),
+        adjustments,
+        reason: cleanText(form.elements?.reason?.value),
       },
-      state.tr('adminBohOverrideSaved', 'Score override saved.')
+      state.tr('adminBohCommitmentScoresSaved', 'Manual commitment scores saved.')
     );
+    if (result !== null) {
+      state.commitmentScoreDraft = null;
+      renderShell(state);
+    }
     return;
   }
   if (kind === 'team-builder-settings') {
@@ -7204,6 +8860,7 @@ function bindEvents(state) {
     },
     { signal }
   );
+  state.root.addEventListener('input', (event) => handleInput(state, event), { signal });
   state.root.addEventListener('change', (event) => handleChange(state, event), { signal });
   state.root.addEventListener(
     'submit',
@@ -7254,6 +8911,7 @@ async function startController(state) {
       state.unsubscribe = state.store.subscribe((change) => {
         if (state.destroyed) return;
         state.snapshot = normalizeSnapshot(change?.snapshot || change);
+        pruneCorrectionDrafts(state);
         state.roleDrafts = null;
         state.phaseDrafts = null;
         renderShell(state);

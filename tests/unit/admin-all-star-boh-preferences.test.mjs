@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
+  buildAdminSubmissionCorrectionOverlay,
   buildAdminEpicShowdownPreferenceSummary,
   buildAdminSignupPlanningSignals,
   buildSignupReviewCsv,
@@ -12,6 +13,72 @@ import {
   getAdminPreferredTeammateNames,
   sortAdminSubmissions,
 } from '../../js/admin-all-star-boh.js';
+
+test('full correction overlays stay sparse and retain explicit clears', () => {
+  const submission = {
+    gameName: 'Original',
+    locale: 'en',
+    timezone: 'UTC+2',
+    preferredTeammates: ['Bravo'],
+    stats: {
+      totalCastlePower: 100,
+      artifactPower: 50,
+      royalTechPower: 20,
+      t9TroopTypes: ['cavalry'],
+      t10TroopTypes: [],
+      readySpeedHeroes: ['lionheart'],
+      troopRoster: ['cavalry|X|normal|1000'],
+      usableHeroNames: ['Lionheart'],
+      researchProgressPct: { military: 40 },
+      level50HeroCount: 2,
+      rocLevel: 10,
+    },
+    commitment: {
+      availability: 'all',
+      preferredRole: 'top',
+      secondaryRole: 'bottom',
+      canHelpLead: false,
+      vts1097Member: true,
+      fightingTimeIds: ['+12', '+14'],
+      teamNamePreferences: ['iron-wolves'],
+      canTeleport: true,
+      canUseVoice: false,
+      planCommitment: true,
+      notes: 'Original note',
+    },
+  };
+  const proposed = structuredClone(submission);
+  proposed.gameName = 'Corrected';
+  proposed.locale = '';
+  proposed.preferredTeammates = [];
+  proposed.stats.artifactPower = null;
+  proposed.stats.royalTechPower = null;
+  proposed.stats.t10TroopTypes = ['archers'];
+  proposed.stats.researchProgressPct = {};
+  proposed.commitment.canHelpLead = true;
+  proposed.commitment.notes = '';
+
+  assert.deepEqual(buildAdminSubmissionCorrectionOverlay(submission, proposed, 'Roster audit'), {
+    schemaVersion: 1,
+    reason: 'Roster audit',
+    values: {
+      gameName: 'Corrected',
+      locale: '',
+      preferredTeammates: [],
+      stats: {
+        artifactPower: null,
+        royalTechPower: null,
+        t10TroopTypes: ['archers'],
+        researchProgressPct: {},
+      },
+      commitment: { canHelpLead: true, notes: '' },
+    },
+  });
+  assert.equal(
+    buildAdminSubmissionCorrectionOverlay(submission, submission, 'No differences'),
+    null
+  );
+});
 
 function createAdminStoreFixture() {
   let epicNext = null;
@@ -431,6 +498,39 @@ test('admin submission filters compose against fresh effective names and correct
     filterAdminSubmissions(records, { search: 'stale bravo' }).map((record) => record.playerId),
     []
   );
+
+  const rosterRecords = [
+    {
+      playerId: 'canonical-roster',
+      gameName: 'Canonical Roster',
+      stats: {
+        troopRoster: ['cavalry|X|normal|1000', 'archers|malformed'],
+      },
+    },
+    {
+      playerId: 'legacy-roster',
+      gameName: 'Legacy Roster',
+      stats: { troopRoster: { footmen: 1000 } },
+    },
+  ];
+  assert.deepEqual(
+    filterAdminSubmissions(rosterRecords, { troopType: 'cavalry' }).map(
+      (record) => record.playerId
+    ),
+    ['canonical-roster']
+  );
+  assert.deepEqual(
+    filterAdminSubmissions(rosterRecords, { troopType: 'archers' }).map(
+      (record) => record.playerId
+    ),
+    []
+  );
+  assert.deepEqual(
+    filterAdminSubmissions(rosterRecords, { troopType: 'footmen' }).map(
+      (record) => record.playerId
+    ),
+    ['legacy-roster']
+  );
 });
 
 test('admin submission sorting is stable and CSV quotes every protected effective field', () => {
@@ -482,7 +582,7 @@ test('admin submission sorting is stable and CSV quotes every protected effectiv
 
   const csv = buildSignupReviewCsv(records, { includeBom: true });
   assert.ok(csv.startsWith('\uFEFF"Player ID","Effective Name","Original Name"'));
-  assert.match(csv, /"'@Reviewed\nOne"/u);
+  assert.match(csv, /"'@Reviewed One"/u);
   assert.match(csv, /"'=Original, ""One"""/u);
   assert.match(csv, /"Server","Current State","Alliance"/u);
   assert.match(csv, /"1097","'=Not a server"/u);
@@ -495,4 +595,83 @@ test('admin submission sorting is stable and CSV quotes every protected effectiv
       .split(',')
       .every((cell) => cell.startsWith('"'))
   );
+});
+
+test('signup review CSV audits effective score provenance and troop roster counts', () => {
+  const records = [
+    {
+      playerId: 'alpha',
+      gameName: 'Original Alpha',
+      revision: 2,
+      finalScore: 444,
+      calculatedScore: 100,
+      overrideScore: 300,
+      commitmentScore: 144,
+      scoreDiagnostic: 'stored_mismatch',
+      stats: {
+        totalCastlePower: 1,
+        troopRoster: [
+          'infantry|S|normal|10',
+          'archers|SS|normal|20',
+          'cavalry|SSS|normal|30',
+          'infantry|X|enhanced|40',
+          'archers|X|normal|50',
+          'cavalry|IX|normal|60',
+          'malformed row stays canonical',
+          'estimate|lofty|700',
+          'estimate|lofty|701',
+          'estimate|enhanced-t10|702',
+          'estimate|enhanced-t10|705',
+          'estimate|t10|703',
+          'estimate|t9|704',
+        ],
+      },
+      commitment: { currentState: '+Formula', preferredRole: 'top' },
+      review: {
+        submissionRevision: 2,
+        submissionCorrection: {
+          schemaVersion: 1,
+          reason: 'CSV audit',
+          values: {
+            gameName: '=Corrected, "Alpha"',
+            stats: { totalCastlePower: 9 },
+          },
+        },
+      },
+    },
+    {
+      playerId: 'bravo',
+      gameName: 'Bravo',
+      revision: 1,
+      calculatedScore: 12,
+      finalScore: 12,
+      stats: {
+        troopRoster: [
+          'infantry|S|normal|1',
+          'archers|SS|normal|2',
+          'cavalry|SSS|normal|3',
+          'infantry|X|enhanced|4',
+          'archers|X|normal|5',
+          'cavalry|IX|normal|6',
+        ],
+      },
+      commitment: {},
+    },
+  ];
+
+  const csv = buildSignupReviewCsv(records, { includeBom: true });
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.match(
+    csv,
+    /"Calculated Score","Legacy Final Override","Commitment Adjustment","Final Score","Score Diagnostic","Canonical Troop Roster","Lofty Count","Enhanced T10 Count","Regular T10 Count","T9 Count"/u
+  );
+  assert.match(csv, /"'=Corrected, ""Alpha""","Original Alpha"/u);
+  assert.match(csv, /"'\+Formula"/u);
+  assert.match(csv, /"100","300","144","444","stored_mismatch"/u);
+  assert.match(csv, /malformed row stays canonical/u);
+  assert.match(csv, /"701","705","703","704"/u);
+  assert.match(csv, /"12","","","12",""/u);
+  assert.match(csv, /"6","4","5","6"/u);
+  assert.ok(csv.includes('\r\n'));
+  assert.ok(csv.endsWith('\r\n'));
 });

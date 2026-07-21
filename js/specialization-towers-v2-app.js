@@ -39,7 +39,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '14.2.3';
+export const APP_VERSION = '14.2.4';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];
@@ -96,6 +96,9 @@ let inspectorOpener = null;
 let nodePathRestoreMode = 'desktop';
 let inspectorCollapsed = false;
 let toastTimer = 0;
+let graphScrollFrame = 0;
+let graphScrollTarget = null;
+let currentGraphColumn = 1;
 let unbindLanguageChange = () => {};
 
 function escapeHtml(value) {
@@ -337,6 +340,21 @@ function renderTowerTabs(summary) {
     </div>`;
 }
 
+function columnPositionText(columnId) {
+  return `${t('currentTowerProgress')} \u00b7 ${t('progressOf', {
+    completed: formatNumber(columnId),
+    total: formatNumber(SPECIALIZATION_COLUMN_COUNT),
+  })}`;
+}
+
+function renderColumnPositionPill(columnId = currentGraphColumn) {
+  const current = Math.max(1, Math.min(SPECIALIZATION_COLUMN_COUNT, Number(columnId) || 1));
+  return `<div class="specialization-column-position" data-specialization-column-position role="status" aria-live="polite" aria-atomic="true" data-current-column="${current}">
+    <span data-specialization-column-position-label>${escapeHtml(columnPositionText(current))}</span>
+    <span class="specialization-column-position-dots" aria-hidden="true">${COLUMN_IDS.map((columnId) => `<span class="specialization-column-position-dot" data-specialization-column-dot="${columnId}" data-current="${columnId === current}"></span>`).join('')}</span>
+  </div>`;
+}
+
 function renderResearchButton(researchId, columnId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   const progress = getResearchProgress(state, activeTroop, researchId);
@@ -395,6 +413,7 @@ function renderGraph() {
           ${COLUMN_IDS.map((columnId) => renderColumn(columnId)).join('')}
         </div>
       </div>
+      ${renderColumnPositionPill()}
       <footer class="specialization-graph-footer">
         <div class="specialization-legend">
           <span>${escapeHtml(t('nodeStatus'))}:</span>
@@ -506,9 +525,17 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
   const percent = roundedPercent(progress.percent);
   const image = getSpecializationResearchImage(research.id, activeTroop);
   const recordedMedalsId = `${titleId}-recorded-medals`;
+  const recordedMedalsHelpId = `${titleId}-recorded-medals-help`;
+  const exactMedalDataId = `${titleId}-exact-medal-data`;
   const progressGroupId = `${titleId}-progress-label`;
   const pathNoticeId = `${titleId}-path-notice`;
   const requiresExactNodeSelection = nodeAccess.mode === 'partial-evidence';
+  const needsNodeBeforeMedals = progress.completedNodes === 0;
+  const medalInputDisabled = progress.isComplete || needsNodeBeforeMedals;
+  const medalDescriptionIds = [
+    ...(needsNodeBeforeMedals ? [recordedMedalsHelpId] : []),
+    exactMedalDataId,
+  ].join(' ');
   return `
     <div class="specialization-inspector-inner">
       <div class="specialization-inspector-header">
@@ -533,12 +560,13 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
       ${renderMilestones(research, progress)}
       <section class="specialization-medal-field">
         <label for="${recordedMedalsId}">${escapeHtml(t('medalsRecorded'))}</label>
-        <input id="${recordedMedalsId}" data-specialization-recorded-medals data-research-id="${research.id}" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeAttribute(t('medalsUnknown'))}" ${progress.isComplete ? 'disabled' : ''} />
+        <input id="${recordedMedalsId}" data-specialization-recorded-medals data-research-id="${research.id}" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeAttribute(t('medalsUnknown'))}" aria-describedby="${medalDescriptionIds}" ${medalInputDisabled ? 'disabled' : ''} />
+        ${needsNodeBeforeMedals ? `<p class="specialization-inline-notice" id="${recordedMedalsHelpId}">${escapeHtml(t('selectNodeBeforeMedals'))}</p>` : ''}
         <div class="specialization-cost-table">
           <div class="specialization-cost-row"><span>${escapeHtml(t('medalsRequired'))}</span><strong>${formatNumber(research.cost)}</strong></div>
           <div class="specialization-cost-row"><span>${escapeHtml(t('medalsRemaining'))}</span><strong>${remaining === null ? escapeHtml(t('medalsUnknown')) : formatNumber(remaining)}</strong></div>
         </div>
-        <p>${escapeHtml(t('exactMedalDataOnly'))}</p>
+        <p id="${exactMedalDataId}">${escapeHtml(t('exactMedalDataOnly'))}</p>
       </section>
       <div class="specialization-actions">
         <button type="button" class="specialization-action specialization-action--primary" data-specialization-complete-learning="${research.id}"${requiresExactNodeSelection ? ` aria-describedby="${pathNoticeId}" disabled` : ''}>${escapeHtml(t('completeLearning'))}</button>
@@ -608,13 +636,14 @@ function renderDialogs() {
 }
 
 function renderApp() {
+  cancelGraphScrollUpdate();
   const summary = getSpecializationSummary(state);
   root.innerHTML = `
     <div class="specialization-app">
       ${renderHeader()}
       <main class="specialization-main" id="specializationWorkspace">
         <section class="specialization-intro">
-          <div class="specialization-title-block"><h1>${escapeHtml(t('title'))} <span class="specialization-scope-chip">${escapeHtml(t('betaBadge'))}</span></h1><p>${escapeHtml(t('subtitle'))}</p><div class="specialization-header__meta"><span>${escapeHtml(t('sourceRevision'))}: ${escapeHtml(SPECIALIZATION_DATA_REVISION)}</span><span>·</span><span>${escapeHtml(t('canonicalEnglishBadge'))}</span></div></div>
+          <div class="specialization-title-block"><h1>${escapeHtml(t('title'))} <span class="specialization-scope-chip">${escapeHtml(t('betaBadge'))}</span></h1><p>${escapeHtml(t('subtitle'))}</p><div class="specialization-header__meta"><span>${escapeHtml(t('sourceRevision'))}: ${escapeHtml(SPECIALIZATION_DATA_REVISION)}</span><span class="specialization-meta-separator" aria-hidden="true">·</span><span>${escapeHtml(t('canonicalEnglishBadge'))}</span></div></div>
           ${renderSummary(summary)}
         </section>
         ${renderTowerTabs(summary)}
@@ -632,12 +661,78 @@ function renderApp() {
     </div>`;
 }
 
+function revealActiveTowerTab(tabList) {
+  const activeTab = tabList?.querySelector('[data-specialization-tower][aria-selected="true"]');
+  if (!activeTab) return;
+  const pageX = globalThis.scrollX;
+  const pageY = globalThis.scrollY;
+  activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+  globalThis.scrollTo({ left: pageX, top: pageY, behavior: 'auto' });
+}
+
+function leadingVisibleColumnId(graph) {
+  const columns = [...(graph?.querySelectorAll('[data-specialization-column]') || [])];
+  if (!columns.length) return 1;
+  const graphRect = graph.getBoundingClientRect();
+  const lastColumn = columns.at(-1);
+  const lastRect = lastColumn.getBoundingClientRect();
+  if (lastRect.left >= graphRect.left && lastRect.right <= graphRect.right + 1) {
+    return Number(lastColumn.dataset.specializationColumn);
+  }
+  let nearest = columns[0];
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const column of columns) {
+    const rect = column.getBoundingClientRect();
+    if (rect.right <= graphRect.left || rect.left >= graphRect.right) continue;
+    const distance = Math.abs(rect.left - graphRect.left);
+    if (distance < nearestDistance) {
+      nearest = column;
+      nearestDistance = distance;
+    }
+  }
+  return Number(nearest.dataset.specializationColumn) || 1;
+}
+
+function updateColumnPosition(graph) {
+  const position = root?.querySelector('[data-specialization-column-position]');
+  if (!graph || !position) return;
+  const columnId = leadingVisibleColumnId(graph);
+  if (currentGraphColumn === columnId) return;
+  currentGraphColumn = columnId;
+  position.dataset.currentColumn = String(columnId);
+  const label = position.querySelector('[data-specialization-column-position-label]');
+  if (label) label.textContent = columnPositionText(columnId);
+  for (const dot of position.querySelectorAll('[data-specialization-column-dot]')) {
+    const isCurrent = Number(dot.dataset.specializationColumnDot) === columnId;
+    dot.dataset.current = String(isCurrent);
+  }
+}
+
+function cancelGraphScrollUpdate() {
+  if (graphScrollFrame) globalThis.cancelAnimationFrame(graphScrollFrame);
+  graphScrollFrame = 0;
+  graphScrollTarget = null;
+}
+
+function restoreRenderedScroll({ graphScrollLeft = 0, tabScrollLeft = 0 } = {}) {
+  const graph = root.querySelector('[data-specialization-tower-graph]');
+  const tabList = root.querySelector('[data-specialization-tower-tabs]');
+  if (graph) graph.scrollLeft = graphScrollLeft;
+  if (tabList) {
+    tabList.scrollLeft = tabScrollLeft;
+    revealActiveTowerTab(tabList);
+  }
+  updateColumnPosition(graph);
+}
+
 function refresh({ preserveScroll = true } = {}) {
   const graph = root.querySelector('[data-specialization-tower-graph]');
-  const scrollLeft = preserveScroll ? graph?.scrollLeft || 0 : 0;
+  const tabList = root.querySelector('[data-specialization-tower-tabs]');
+  const graphScrollLeft = preserveScroll ? graph?.scrollLeft || 0 : 0;
+  const tabScrollLeft = tabList?.scrollLeft || 0;
+  if (!preserveScroll) currentGraphColumn = 1;
   renderApp();
-  const nextGraph = root.querySelector('[data-specialization-tower-graph]');
-  if (nextGraph) nextGraph.scrollLeft = scrollLeft;
+  restoreRenderedScroll({ graphScrollLeft, tabScrollLeft });
 }
 
 function updateInspectorOnly() {
@@ -679,10 +774,15 @@ function findMatchingControl(container, descriptor) {
   );
 }
 
-function remember(nextState, message = '', { reopenNodePath = false } = {}) {
+function remember(nextState, message = '', { reopenNodePath = false, restoreControl = null } = {}) {
   const currentMobileInspector = root.querySelector('[data-specialization-inspector]');
   const mobileInspectorWasOpen = Boolean(currentMobileInspector?.open);
-  const focusDescriptor = describeSpecializationControl(document.activeElement);
+  const mobileInspectorScrollTop = currentMobileInspector?.querySelector(
+    '[data-specialization-modal-inspector-content]'
+  )?.scrollTop;
+  const focusedControl =
+    restoreControl instanceof HTMLElement ? restoreControl : document.activeElement;
+  const focusDescriptor = describeSpecializationControl(focusedControl);
   const focusWasInDesktopInspector = Boolean(
     document.activeElement?.closest?.('[data-specialization-inspector-panel]')
   );
@@ -704,6 +804,12 @@ function remember(nextState, message = '', { reopenNodePath = false } = {}) {
           `[data-specialization-open-column-skill="${Number(selectedItem.columnId)}"]`
         );
       if (mobileInspector && !mobileInspector.open) mobileInspector.showModal();
+      const modalContent = mobileInspector?.querySelector(
+        '[data-specialization-modal-inspector-content]'
+      );
+      if (typeof mobileInspectorScrollTop === 'number' && modalContent) {
+        modalContent.scrollTop = mobileInspectorScrollTop;
+      }
       restoreTarget = mobileInspector?.querySelector('[data-specialization-open-node-path]');
     }
     openDialog('[data-specialization-node-path-dialog]', restoreTarget);
@@ -715,10 +821,19 @@ function remember(nextState, message = '', { reopenNodePath = false } = {}) {
         `[data-specialization-open-column-skill="${Number(selectedItem.columnId)}"]`
       );
     if (mobileInspector && !mobileInspector.open) mobileInspector.showModal();
+    const modalContent = mobileInspector?.querySelector(
+      '[data-specialization-modal-inspector-content]'
+    );
+    if (typeof mobileInspectorScrollTop === 'number' && modalContent) {
+      modalContent.scrollTop = mobileInspectorScrollTop;
+    }
     const focusTarget =
       findMatchingControl(mobileInspector, focusDescriptor) ||
       mobileInspector?.querySelector('[data-specialization-close-inspector]');
-    focusTarget?.focus();
+    focusTarget?.focus({ preventScroll: true });
+    if (typeof mobileInspectorScrollTop === 'number' && modalContent) {
+      modalContent.scrollTop = mobileInspectorScrollTop;
+    }
   } else if (focusWasInDesktopInspector) {
     findMatchingControl(
       root.querySelector('[data-specialization-inspector-panel]'),
@@ -1015,6 +1130,7 @@ function handleClick(event) {
   const tower = target.dataset.specializationTower;
   if (tower) {
     activeTroop = tower;
+    currentGraphColumn = 1;
     safeStorageSet(ACTIVE_TOWER_KEY, tower);
     selectedItem = {
       kind: 'research',
@@ -1137,7 +1253,8 @@ function handleChange(event) {
         t('learningUpdated', {
           name: researchDisplayName(SPECIALIZATION_RESEARCH[researchId], activeTroop),
           level: roundedPercent(getResearchProgress(state, activeTroop, researchId).percent),
-        })
+        }),
+        { restoreControl: target }
       );
     } catch {
       updateInspectorOnly();
@@ -1161,15 +1278,6 @@ async function handleImport(event) {
 }
 
 function handleKeydown(event) {
-  if (event.key === 'Escape') {
-    const openDialogElement = [...root.querySelectorAll('dialog[open]')].at(-1);
-    if (!openDialogElement) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (openDialogElement?.hasAttribute('data-specialization-inspector')) closeInspectorDialog();
-    else if (openDialogElement) closeDialog(openDialogElement);
-    return;
-  }
   const tab = event.target.closest('[data-specialization-tower]');
   if (!tab) return;
   const tabs = [...root.querySelectorAll('[data-specialization-tower]')];
@@ -1186,17 +1294,36 @@ function handleKeydown(event) {
   root.querySelector(`[data-specialization-tower="${nextTroop}"]`)?.focus({ preventScroll: true });
 }
 
+function handleScroll(event) {
+  const graph = event.target;
+  if (!(graph instanceof HTMLElement) || !graph.matches('[data-specialization-tower-graph]'))
+    return;
+  graphScrollTarget = graph;
+  if (graphScrollFrame) return;
+  graphScrollFrame = globalThis.requestAnimationFrame(() => {
+    const latestGraph = graphScrollTarget;
+    graphScrollFrame = 0;
+    graphScrollTarget = null;
+    if (latestGraph === root?.querySelector('[data-specialization-tower-graph]')) {
+      updateColumnPosition(latestGraph);
+    }
+  });
+}
+
+function handleDialogCancel(event) {
+  if (!(event.target instanceof HTMLDialogElement)) return;
+  event.preventDefault();
+  if (event.target.hasAttribute('data-specialization-inspector')) closeInspectorDialog();
+  else closeDialog(event.target);
+}
+
 function bindEvents() {
   root.addEventListener('click', handleClick);
   root.addEventListener('change', handleChange);
   root.addEventListener('change', (event) => void handleImport(event));
   root.addEventListener('keydown', handleKeydown);
-  root.addEventListener('cancel', (event) => {
-    if (!(event.target instanceof HTMLDialogElement)) return;
-    event.preventDefault();
-    if (event.target.hasAttribute('data-specialization-inspector')) closeInspectorDialog();
-    else closeDialog(event.target);
-  });
+  root.addEventListener('scroll', handleScroll, true);
+  root.addEventListener('cancel', handleDialogCancel, true);
 }
 
 async function initialize() {
@@ -1208,12 +1335,13 @@ async function initialize() {
   applyLocaleToDocument(locale);
   applyTheme();
   renderApp();
+  restoreRenderedScroll();
   bindEvents();
   unbindLanguageChange = bindSpecializationTowersV2LanguageChange(({ locale: nextLocale }) => {
     const focusDescriptor = describeSpecializationControl(document.activeElement);
     locale = nextLocale;
     applyLocaleToDocument(nextLocale);
-    renderApp();
+    refresh();
     findMatchingControl(root, focusDescriptor)?.focus({ preventScroll: true });
   }, globalThis);
 }
@@ -1226,6 +1354,7 @@ export function mountSpecializationTowers(mount) {
   state = loadSpecializationState();
   const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'cavalry');
   activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'cavalry';
+  currentGraphColumn = 1;
   selectedItem = {
     kind: 'research',
     researchId: SPECIALIZATION_COLUMNS[1].researches[0],
@@ -1237,6 +1366,8 @@ export function mountSpecializationTowers(mount) {
   });
   return () => {
     unbindLanguageChange();
+    cancelGraphScrollUpdate();
+    root?.removeEventListener('cancel', handleDialogCancel, true);
     root?.replaceChildren();
     root = null;
   };

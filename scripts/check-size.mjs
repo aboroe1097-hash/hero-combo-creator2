@@ -38,7 +38,10 @@ const LIMITS = {
   // headroom while route and entry budgets remain unchanged. The combined
   // 14.2.3 All-Star scoring and admin-operations release measures 8195.1 KiB;
   // retain roughly 17 KiB while the isolated route caps remain unchanged.
-  totalJsBytes: 8212 * 1024,
+  // The audited 14.2.4 correction editor, score diagnostics, roster CSV, and
+  // three-mode team builder measure 8248.9 KiB; retain roughly 17 KiB while
+  // every entry and isolated route budget remains unchanged.
+  totalJsBytes: 8266 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -60,7 +63,9 @@ const LIMITS = {
   // The combined 14.2.3 All-Star scoring and admin-operations release measures
   // 26,264.8 KiB and retains roughly 16 KiB of complete-artifact headroom while
   // the tighter CSS, route, media, and file-count budgets remain unchanged.
-  totalDeployBytes: 26281 * 1024,
+  // The complete audited 14.2.4 artifact measures 26,327.7 KiB; retain roughly
+  // 17 KiB while the tighter route, CSS, media, and file-count caps stay fixed.
+  totalDeployBytes: 26345 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

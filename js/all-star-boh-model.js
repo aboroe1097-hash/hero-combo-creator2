@@ -11,7 +11,7 @@ export const BOH_TEAM_COUNT = 6;
 export const BOH_TEAM_SIZE = 12;
 export const BOH_FIELD_SIZE = BOH_TEAM_COUNT * BOH_TEAM_SIZE;
 const BOH_MIN_TEAM_COUNT = 2;
-const BOH_BALANCE_METRICS = new Set(['score', 'totalPower']);
+const BOH_BALANCE_METRICS = new Set(['score', 'totalPower', 'balanced']);
 const BOH_MAX_TOTAL_CASTLE_POWER = 10 ** 12;
 export const BOH_MAX_PREFERRED_TEAMMATES = 6;
 export const BOH_MAX_USABLE_HERO_NAMES = 78;
@@ -1262,6 +1262,64 @@ function teamBalanceTotals(slots, slotToPlayer, playersById, teamCount, balanceM
   return totals;
 }
 
+function balancedAxisTotals(slots, slotToPlayer, playersById, teamCount, valueForPlayer) {
+  const totals = Array.from({ length: teamCount }, () => 0);
+  slots.forEach((slot, index) => {
+    const playerId = slotToPlayer[index];
+    const player = playersById.get(playerId);
+    if (playerId && player) totals[slot.teamIndex] += valueForPlayer(player);
+  });
+  return totals;
+}
+
+function balancedSwapPenalty(axes, teamIndexes) {
+  return axes.reduce((total, axis) => {
+    if (!(axis.mean > 0)) return total;
+    return (
+      total +
+      teamIndexes.reduce((axisTotal, teamIndex) => {
+        const normalizedDeviation = (axis.totals[teamIndex] - axis.mean) / axis.mean;
+        return axisTotal + normalizedDeviation ** 2;
+      }, 0)
+    );
+  }, 0);
+}
+
+function balancedAssignmentPenalty(slots, slotToPlayer, playersById, teamCount) {
+  const teamIndexes = Array.from({ length: teamCount }, (_, index) => index);
+  return balancedSwapPenalty(
+    [
+      {
+        totals: balancedAxisTotals(
+          slots,
+          slotToPlayer,
+          playersById,
+          teamCount,
+          (player) => player.score
+        ),
+        mean: [...playersById.values()].reduce((sum, player) => sum + player.score, 0) / teamCount,
+      },
+      {
+        totals: balancedAxisTotals(
+          slots,
+          slotToPlayer,
+          playersById,
+          teamCount,
+          (player) => player.totalCastlePower
+        ),
+        mean:
+          [...playersById.values()].reduce((sum, player) => sum + player.totalCastlePower, 0) /
+          teamCount,
+      },
+    ],
+    teamIndexes
+  );
+}
+
+function draftAssignmentKey(slotToPlayer) {
+  return JSON.stringify(slotToPlayer.map((playerId) => String(playerId ?? '')));
+}
+
 function optimizeDraftSwaps({
   slots,
   slotToPlayer,
@@ -1276,9 +1334,36 @@ function optimizeDraftSwaps({
     0
   );
   const mean = balanceTotal / teamCount;
+  const balancedAxes =
+    balanceMetric === 'balanced'
+      ? [
+          {
+            mean:
+              [...playersById.values()].reduce((sum, player) => sum + player.score, 0) / teamCount,
+            valueForPlayer: (player) => player.score,
+          },
+          {
+            mean:
+              [...playersById.values()].reduce((sum, player) => sum + player.totalCastlePower, 0) /
+              teamCount,
+            valueForPlayer: (player) => player.totalCastlePower,
+          },
+        ]
+      : null;
   const maxPasses = 2000;
   for (let pass = 0; pass < maxPasses; pass += 1) {
     const totals = teamBalanceTotals(slots, slotToPlayer, playersById, teamCount, balanceMetric);
+    if (balancedAxes) {
+      balancedAxes.forEach((axis) => {
+        axis.totals = balancedAxisTotals(
+          slots,
+          slotToPlayer,
+          playersById,
+          teamCount,
+          axis.valueForPlayer
+        );
+      });
+    }
     let best = null;
     for (let leftIndex = 0; leftIndex < slots.length; leftIndex += 1) {
       const leftSlot = slots[leftIndex];
@@ -1294,14 +1379,33 @@ function optimizeDraftSwaps({
         if (!allowedSlots.get(leftPlayerId)?.has(rightIndex)) continue;
         if (!allowedSlots.get(rightPlayerId)?.has(leftIndex)) continue;
 
-        const leftValue = balanceValueForPlayer(leftPlayer, balanceMetric);
-        const rightValue = balanceValueForPlayer(rightPlayer, balanceMetric);
+        let oldPenalty;
+        let newPenalty;
+        if (balancedAxes) {
+          const teamIndexes = [leftSlot.teamIndex, rightSlot.teamIndex];
+          oldPenalty = balancedSwapPenalty(balancedAxes, teamIndexes);
+          newPenalty = balancedAxes.reduce((penalty, axis) => {
+            if (!(axis.mean > 0)) return penalty;
+            const leftValue = axis.valueForPlayer(leftPlayer);
+            const rightValue = axis.valueForPlayer(rightPlayer);
+            const leftNext = axis.totals[leftSlot.teamIndex] - leftValue + rightValue;
+            const rightNext = axis.totals[rightSlot.teamIndex] - rightValue + leftValue;
+            return (
+              penalty +
+              ((leftNext - axis.mean) / axis.mean) ** 2 +
+              ((rightNext - axis.mean) / axis.mean) ** 2
+            );
+          }, 0);
+        } else {
+          const leftValue = balanceValueForPlayer(leftPlayer, balanceMetric);
+          const rightValue = balanceValueForPlayer(rightPlayer, balanceMetric);
 
-        const oldPenalty =
-          (totals[leftSlot.teamIndex] - mean) ** 2 + (totals[rightSlot.teamIndex] - mean) ** 2;
-        const leftNext = totals[leftSlot.teamIndex] - leftValue + rightValue;
-        const rightNext = totals[rightSlot.teamIndex] - rightValue + leftValue;
-        const newPenalty = (leftNext - mean) ** 2 + (rightNext - mean) ** 2;
+          oldPenalty =
+            (totals[leftSlot.teamIndex] - mean) ** 2 + (totals[rightSlot.teamIndex] - mean) ** 2;
+          const leftNext = totals[leftSlot.teamIndex] - leftValue + rightValue;
+          const rightNext = totals[rightSlot.teamIndex] - rightValue + leftValue;
+          newPenalty = (leftNext - mean) ** 2 + (rightNext - mean) ** 2;
+        }
         const improvement = oldPenalty - newPenalty;
         if (!(improvement > 1e-9)) continue;
 
@@ -1338,6 +1442,111 @@ function optimizeDraftSwaps({
     playerToSlot.set(leftPlayerId, best.rightIndex);
     playerToSlot.set(rightPlayerId, best.leftIndex);
   }
+}
+
+function createDraftAssignment({ slots, players, playersById, balanceMetric }) {
+  const orderedPlayers = players.slice().sort((left, right) => {
+    const constrained = left._orderedSlots.length - right._orderedSlots.length;
+    if (constrained) return constrained;
+    const preferenceCount = left.rolePreferences.length - right.rolePreferences.length;
+    if (preferenceCount) return preferenceCount;
+    const balanceOrder =
+      balanceValueForPlayer(right, balanceMetric) - balanceValueForPlayer(left, balanceMetric);
+    return balanceOrder || compareText(left.playerId, right.playerId);
+  });
+  const slotToPlayer = Array.from({ length: slots.length }, () => null);
+  const playerToSlot = new Map();
+
+  function trySeat(player, seenSlots, seenPlayers) {
+    if (seenPlayers.has(player.playerId)) return false;
+    seenPlayers.add(player.playerId);
+    for (const slotIndex of player._orderedSlots) {
+      if (seenSlots.has(slotIndex)) continue;
+      seenSlots.add(slotIndex);
+      const occupantId = slotToPlayer[slotIndex];
+      if (!occupantId) {
+        slotToPlayer[slotIndex] = player.playerId;
+        playerToSlot.set(player.playerId, slotIndex);
+        return true;
+      }
+      const occupant = playersById.get(occupantId);
+      if (occupant && trySeat(occupant, seenSlots, seenPlayers)) {
+        slotToPlayer[slotIndex] = player.playerId;
+        playerToSlot.set(player.playerId, slotIndex);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const unmatched = [];
+  orderedPlayers.forEach((player) => {
+    if (!trySeat(player, new Set(), new Set())) unmatched.push(player.playerId);
+  });
+  if (unmatched.length || playerToSlot.size !== players.length) {
+    throw modelError('boh_role_coverage_unavailable', { unmatchedPlayerIds: unmatched });
+  }
+  return { slotToPlayer, playerToSlot };
+}
+
+function createOptimizedDraftAssignment({
+  slots,
+  players,
+  playersById,
+  allowedSlots,
+  teamCount,
+  seedMetric,
+  balanceMetric,
+}) {
+  const assignment = createDraftAssignment({
+    slots,
+    players,
+    playersById,
+    balanceMetric: seedMetric,
+  });
+  if (seedMetric !== balanceMetric) {
+    optimizeDraftSwaps({
+      slots,
+      ...assignment,
+      allowedSlots,
+      playersById,
+      teamCount,
+      balanceMetric: seedMetric,
+    });
+  }
+  optimizeDraftSwaps({
+    slots,
+    ...assignment,
+    allowedSlots,
+    playersById,
+    teamCount,
+    balanceMetric,
+  });
+  return assignment;
+}
+
+function createBalancedDraftAssignment({ slots, players, playersById, allowedSlots, teamCount }) {
+  const candidates = ['score', 'totalPower', 'balanced'].map((seedMetric) => {
+    const assignment = createOptimizedDraftAssignment({
+      slots,
+      players,
+      playersById,
+      allowedSlots,
+      teamCount,
+      seedMetric,
+      balanceMetric: 'balanced',
+    });
+    return {
+      ...assignment,
+      penalty: balancedAssignmentPenalty(slots, assignment.slotToPlayer, playersById, teamCount),
+      key: draftAssignmentKey(assignment.slotToPlayer),
+    };
+  });
+  candidates.sort((left, right) => {
+    if (left.penalty !== right.penalty) return left.penalty < right.penalty ? -1 : 1;
+    return compareText(left.key, right.key);
+  });
+  return candidates[0];
 }
 
 /**
@@ -1422,57 +1631,25 @@ export function balanceBohTeams(playersInput = [], options = {}) {
     player._orderedSlots = allowed;
   });
 
-  const orderedPlayers = players.slice().sort((left, right) => {
-    const constrained = left._orderedSlots.length - right._orderedSlots.length;
-    if (constrained) return constrained;
-    const preferenceCount = left.rolePreferences.length - right.rolePreferences.length;
-    if (preferenceCount) return preferenceCount;
-    const balanceOrder =
-      balanceValueForPlayer(right, balanceMetric) - balanceValueForPlayer(left, balanceMetric);
-    return balanceOrder || compareText(left.playerId, right.playerId);
-  });
-  const slotToPlayer = Array.from({ length: slots.length }, () => null);
-  const playerToSlot = new Map();
-
-  function trySeat(player, seenSlots, seenPlayers) {
-    if (seenPlayers.has(player.playerId)) return false;
-    seenPlayers.add(player.playerId);
-    for (const slotIndex of player._orderedSlots) {
-      if (seenSlots.has(slotIndex)) continue;
-      seenSlots.add(slotIndex);
-      const occupantId = slotToPlayer[slotIndex];
-      if (!occupantId) {
-        slotToPlayer[slotIndex] = player.playerId;
-        playerToSlot.set(player.playerId, slotIndex);
-        return true;
-      }
-      const occupant = playersById.get(occupantId);
-      if (occupant && trySeat(occupant, seenSlots, seenPlayers)) {
-        slotToPlayer[slotIndex] = player.playerId;
-        playerToSlot.set(player.playerId, slotIndex);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  const unmatched = [];
-  orderedPlayers.forEach((player) => {
-    if (!trySeat(player, new Set(), new Set())) unmatched.push(player.playerId);
-  });
-  if (unmatched.length || playerToSlot.size !== players.length) {
-    throw modelError('boh_role_coverage_unavailable', { unmatchedPlayerIds: unmatched });
-  }
-
-  optimizeDraftSwaps({
-    slots,
-    slotToPlayer,
-    playerToSlot,
-    allowedSlots,
-    playersById,
-    teamCount,
-    balanceMetric,
-  });
+  const assignment =
+    balanceMetric === 'balanced'
+      ? createBalancedDraftAssignment({
+          slots,
+          players,
+          playersById,
+          allowedSlots,
+          teamCount,
+        })
+      : createOptimizedDraftAssignment({
+          slots,
+          players,
+          playersById,
+          allowedSlots,
+          teamCount,
+          seedMetric: balanceMetric,
+          balanceMetric,
+        });
+  const { slotToPlayer } = assignment;
 
   const resultTeams = teams.map((team, teamIndex) => {
     const assignments = slots

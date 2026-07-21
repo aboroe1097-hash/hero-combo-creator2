@@ -8,6 +8,7 @@ import {
   AllStarBohConflictError,
   AllStarBohPublishValidationError,
   AllStarBohValidationError,
+  applyAllStarBohSubmissionCorrections,
   createAllStarBohAdminStore,
   createAllStarBohPlayerStore,
   getAllStarBohActiveConfig,
@@ -1047,16 +1048,152 @@ test('admin methods preflight caller-provided admin context before reads, listen
   );
 });
 
-test('admin deletion removes a signup and its review and feedback in one transaction', async () => {
+test('admin deletion removes signup data in one transaction while preserving Epic preferences', async () => {
   const uid = 'player-1';
+  const storedPlayerId = 'stable-player-1';
   const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, uid);
   const reviewPath = getAllStarBohReviewPath(SEASON_ID, uid);
   const feedbackPath = getAllStarBohFeedbackPath(SEASON_ID, uid);
-  const fake = createFirestoreFake({
-    [submissionPath]: { uid, seasonId: SEASON_ID, revision: 3 },
+  const epicPreferencesPath = getAllStarBohEpicPreferencesPath(SEASON_ID, uid);
+  const draftPath = getAllStarBohDraftPath(SEASON_ID);
+  const team1Path = getAllStarBohDraftTeamPath(SEASON_ID, 'team-1');
+  const team2Path = getAllStarBohDraftTeamPath(SEASON_ID, 'team-2');
+  const targetRule = (id, playerIdValue) => ({
+    id,
+    teamId: '*',
+    phaseId: '*',
+    legionId: '*',
+    playerId: playerIdValue,
+    scope: 'player',
+    order: 1,
+    instruction: { summary: 'Player instruction' },
+  });
+  const initial = {
+    [submissionPath]: { uid, playerId: storedPlayerId, seasonId: SEASON_ID, revision: 3 },
     [reviewPath]: { uid, seasonId: SEASON_ID, revision: 2 },
     [feedbackPath]: { uid, seasonId: SEASON_ID, revision: 1 },
-  });
+    [epicPreferencesPath]: {
+      uid,
+      seasonId: SEASON_ID,
+      revision: 4,
+      gameName: 'Epic Player',
+      lanePreferences: ['center'],
+      timePreferences: ['+14'],
+    },
+    [draftPath]: {
+      seasonId: SEASON_ID,
+      revision: 5,
+      teamCount: 2,
+      teamIds: ['team-1', 'team-2'],
+      playerIds: [uid, storedPlayerId, 'other-player'],
+      forcedTeamAssignments: [
+        { playerId: storedPlayerId, teamId: 'team-1' },
+        { playerId: 'other-player', teamId: 'team-2' },
+      ],
+      commitmentScoreAdjustments: [
+        { playerId: uid, score: 100, reason: 'Target' },
+        { playerId: 'other-player', score: 200, reason: 'Keep' },
+      ],
+      scoreOverrides: [
+        { playerId: storedPlayerId, score: 300, reason: 'Target' },
+        { playerId: 'other-player', score: 400, reason: 'Keep' },
+      ],
+      plan: emptyPlan({
+        roleDefaults: [
+          targetRule('target-role-default', uid),
+          targetRule('keep-role-default', 'other-player'),
+        ],
+        seatOverrides: [
+          targetRule('target-seat-override', storedPlayerId),
+          targetRule('keep-seat-override', 'other-player'),
+        ],
+        playerOverrides: [
+          targetRule('target-override', storedPlayerId),
+          targetRule('keep-override', 'other-player'),
+        ],
+        instructions: [
+          targetRule('target-instruction', uid),
+          targetRule('keep-instruction', 'other-player'),
+        ],
+        rotations: [
+          {
+            id: 'target-rotation',
+            teamId: '*',
+            phaseId: '*',
+            legionId: '*',
+            playerId: storedPlayerId,
+            seatNumber: 1,
+            order: 1,
+          },
+          {
+            id: 'keep-rotation',
+            teamId: '*',
+            phaseId: '*',
+            legionId: '*',
+            playerId: 'other-player',
+            seatNumber: 2,
+            order: 2,
+          },
+        ],
+      }),
+    },
+    [team1Path]: {
+      ...publishedTeam('team-1', [storedPlayerId, 'other-player']),
+      seasonId: SEASON_ID,
+      teamId: 'team-1',
+      revision: 7,
+      seats: publishedTeam('team-1', [storedPlayerId, 'other-player']).seats.map((seat, index) => ({
+        ...seat,
+        totalCastlePower: index === 0 ? 987_654_321 : 123_456_789,
+      })),
+    },
+    [team2Path]: {
+      ...publishedTeam('team-2', ['team-2-player']),
+      seasonId: SEASON_ID,
+      teamId: 'team-2',
+      revision: 4,
+      captainId: storedPlayerId,
+      plan: emptyPlan({
+        roleDefaults: [
+          targetRule('team-target-role-default', storedPlayerId),
+          targetRule('team-keep-role-default', 'other-player'),
+        ],
+        seatOverrides: [
+          targetRule('team-target-seat-override', uid),
+          targetRule('team-keep-seat-override', 'other-player'),
+        ],
+        playerOverrides: [
+          targetRule('team-target-player-override', storedPlayerId),
+          targetRule('team-keep-player-override', 'other-player'),
+        ],
+        instructions: [
+          targetRule('team-target-instruction', uid),
+          targetRule('team-keep-instruction', 'other-player'),
+        ],
+        rotations: [
+          {
+            id: 'team-target-rotation',
+            teamId: 'team-2',
+            phaseId: '*',
+            legionId: '*',
+            playerId: storedPlayerId,
+            seatNumber: 1,
+            order: 1,
+          },
+          {
+            id: 'team-keep-rotation',
+            teamId: 'team-2',
+            phaseId: '*',
+            legionId: '*',
+            playerId: 'other-player',
+            seatNumber: 2,
+            order: 2,
+          },
+        ],
+      }),
+    },
+  };
+  const fake = createFirestoreFake(initial);
   const store = createAllStarBohAdminStore({
     db: {},
     firestore: fake.firestore,
@@ -1072,7 +1209,149 @@ test('admin deletion removes a signup and its review and feedback in one transac
   assert.equal(fake.read(submissionPath), undefined);
   assert.equal(fake.read(reviewPath), undefined);
   assert.equal(fake.read(feedbackPath), undefined);
+  assert.equal(fake.read(epicPreferencesPath)?.gameName, 'Epic Player');
+  assert.equal(fake.read(epicPreferencesPath)?.revision, 4);
+  const savedDraft = fake.read(draftPath);
+  assert.equal(savedDraft.revision, 6);
+  assert.deepEqual(savedDraft.playerIds, ['other-player']);
+  assert.deepEqual(savedDraft.forcedTeamAssignments, [
+    { playerId: 'other-player', teamId: 'team-2' },
+  ]);
+  assert.deepEqual(
+    savedDraft.commitmentScoreAdjustments.map((item) => item.playerId),
+    ['other-player']
+  );
+  assert.deepEqual(
+    savedDraft.scoreOverrides.map((item) => item.playerId),
+    ['other-player']
+  );
+  assert.deepEqual(
+    savedDraft.plan.roleDefaults.map((item) => item.playerId),
+    ['other-player']
+  );
+  assert.deepEqual(
+    savedDraft.plan.seatOverrides.map((item) => item.playerId),
+    ['other-player']
+  );
+  assert.deepEqual(
+    savedDraft.plan.playerOverrides.map((item) => item.playerId),
+    ['other-player']
+  );
+  assert.deepEqual(
+    savedDraft.plan.instructions.map((item) => item.playerId),
+    ['other-player']
+  );
+  assert.deepEqual(
+    savedDraft.plan.rotations.map((item) => item.playerId),
+    ['other-player']
+  );
+  const savedTeam1 = fake.read(team1Path);
+  assert.equal(savedTeam1.revision, 8);
+  assert.equal(savedTeam1.captainId, '');
+  assert.equal(savedTeam1.seats[0].playerId, '');
+  assert.equal(savedTeam1.seats[0].displayName, '');
+  assert.equal(savedTeam1.seats[0].locked, false);
+  assert.equal(savedTeam1.seats[0].score, null);
+  assert.equal(Object.hasOwn(savedTeam1.seats[0], 'totalCastlePower'), false);
+  assert.equal(savedTeam1.seats[1].playerId, 'other-player');
+  const savedTeam2 = fake.read(team2Path);
+  assert.equal(savedTeam2.revision, 5);
+  assert.equal(savedTeam2.captainId, '');
+  assert.equal(savedTeam2.seats[0].playerId, 'team-2-player');
+  for (const key of [
+    'roleDefaults',
+    'seatOverrides',
+    'playerOverrides',
+    'instructions',
+    'rotations',
+  ]) {
+    assert.deepEqual(
+      savedTeam2.plan[key].map((item) => item.playerId),
+      ['other-player'],
+      key
+    );
+  }
   assert.equal(fake.transactionCount, 1);
+
+  for (const failureOptions of [
+    { expectedRevision: 2, fakeOptions: {} },
+    { expectedRevision: 3, fakeOptions: { failCommit: true } },
+  ]) {
+    const failingFake = createFirestoreFake(initial, failureOptions.fakeOptions);
+    const failingStore = createAllStarBohAdminStore({
+      db: {},
+      firestore: failingFake.firestore,
+      seasonId: SEASON_ID,
+      uid: 'admin-1',
+      admin: true,
+    });
+    await assert.rejects(
+      failingStore.deleteSubmission(uid, { expectedRevision: failureOptions.expectedRevision }),
+      failureOptions.fakeOptions.failCommit ? /Synthetic commit failure/ : AllStarBohConflictError
+    );
+    for (const [path, value] of Object.entries(initial)) {
+      assert.deepEqual(failingFake.read(path), value);
+    }
+  }
+});
+
+test('admin deletion reads fallback teams for incomplete legacy drafts and rolls back atomically', async () => {
+  for (const fixture of [
+    { label: 'empty team IDs', teamIds: [], fallbackTeamId: 'team-2' },
+    { label: 'short team IDs', teamIds: ['custom-team'], fallbackTeamId: 'team-1' },
+  ]) {
+    const uid = `legacy-${fixture.fallbackTeamId}`;
+    const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, uid);
+    const draftPath = getAllStarBohDraftPath(SEASON_ID);
+    const fallbackTeamPath = getAllStarBohDraftTeamPath(SEASON_ID, fixture.fallbackTeamId);
+    const initial = {
+      [submissionPath]: { uid, playerId: uid, seasonId: SEASON_ID, revision: 2 },
+      [draftPath]: {
+        seasonId: SEASON_ID,
+        revision: 3,
+        teamCount: 2,
+        teamIds: fixture.teamIds,
+        playerIds: [uid],
+      },
+      [fallbackTeamPath]: {
+        ...publishedTeam(fixture.fallbackTeamId, [uid]),
+        seasonId: SEASON_ID,
+        teamId: fixture.fallbackTeamId,
+        revision: 4,
+      },
+    };
+    const failingFake = createFirestoreFake(initial, { failCommit: true });
+    const failingStore = createAllStarBohAdminStore({
+      db: {},
+      firestore: failingFake.firestore,
+      seasonId: SEASON_ID,
+      uid: 'admin-1',
+      admin: true,
+    });
+    await assert.rejects(
+      failingStore.deleteSubmission(uid, { expectedRevision: 2 }),
+      /Synthetic commit failure/,
+      fixture.label
+    );
+    for (const [path, value] of Object.entries(initial)) {
+      assert.deepEqual(failingFake.read(path), value, `${fixture.label}: ${path}`);
+    }
+
+    const refreshedFake = createFirestoreFake(initial);
+    const refreshedStore = createAllStarBohAdminStore({
+      db: {},
+      firestore: refreshedFake.firestore,
+      seasonId: SEASON_ID,
+      uid: 'admin-1',
+      admin: true,
+    });
+    await refreshedStore.deleteSubmission(uid, { expectedRevision: 2 });
+    assert.equal(refreshedFake.read(submissionPath), undefined, fixture.label);
+    const savedTeam = refreshedFake.read(fallbackTeamPath);
+    assert.equal(savedTeam.revision, 5, fixture.label);
+    assert.equal(savedTeam.seats[0].playerId, '', fixture.label);
+    assert.equal(savedTeam.captainId, '', fixture.label);
+  }
 });
 
 test('draft and private review extensions normalize legacy values and reject unsafe input', () => {
@@ -1080,6 +1359,7 @@ test('draft and private review extensions normalize legacy values and reject uns
   assert.equal(legacyDraft.teamCount, 6);
   assert.equal(legacyDraft.balanceMetric, 'score');
   assert.deepEqual(legacyDraft.forcedTeamAssignments, []);
+  assert.deepEqual(legacyDraft.commitmentScoreAdjustments, []);
   assert.equal(legacyDraft.title, 'Legacy draft');
 
   const configuredDraft = normalizeAllStarBohDraft({
@@ -1098,10 +1378,33 @@ test('draft and private review extensions normalize legacy values and reject uns
     { playerId: 'Player_2', teamId: 'team-1' },
   ]);
 
+  const balancedDraft = normalizeAllStarBohDraft({
+    balanceMetric: ' balanced ',
+    commitmentScoreAdjustments: [
+      {
+        playerId: ' user:provider/abc@example.com ',
+        score: '1,000',
+        reason: ' Strong commitment audit. ',
+      },
+      { playerId: 'Player', score: 2 },
+      { playerId: 'player', score: 3 },
+    ],
+  });
+  assert.equal(balancedDraft.balanceMetric, 'balanced');
+  assert.deepEqual(balancedDraft.commitmentScoreAdjustments, [
+    {
+      playerId: 'user:provider/abc@example.com',
+      score: 1000,
+      reason: 'Strong commitment audit.',
+    },
+    { playerId: 'Player', score: 2, reason: '' },
+    { playerId: 'player', score: 3, reason: '' },
+  ]);
+
   for (const teamCount of [null, 1, 7, 2.5]) {
     assert.throws(() => normalizeAllStarBohDraft({ teamCount }), AllStarBohValidationError);
   }
-  for (const balanceMetric of [null, 'Score', 'totalpower']) {
+  for (const balanceMetric of [null, 'Score', 'totalpower', 'garbage']) {
     assert.throws(() => normalizeAllStarBohDraft({ balanceMetric }), AllStarBohValidationError);
   }
   assert.throws(
@@ -1124,6 +1427,25 @@ test('draft and private review extensions normalize legacy values and reject uns
       }),
     /exceeds 72 items/
   );
+  for (const commitmentScoreAdjustments of [
+    [null],
+    [{ playerId: 'player-1' }],
+    [{ playerId: 'player-1', score: null }],
+    [{ playerId: 'player-1', score: 1.5 }],
+    [{ playerId: 'player-1', score: 0 }],
+    [{ playerId: 'player-1', score: 10_001 }],
+    [{ playerId: 'player-1', score: 1, reason: 'x'.repeat(2001) }],
+    [
+      { playerId: 'player-1', score: 1 },
+      { playerId: 'player-1', score: 2 },
+    ],
+    Array.from({ length: 73 }, (_, index) => ({ playerId: `player-${index + 1}`, score: 1 })),
+  ]) {
+    assert.throws(
+      () => normalizeAllStarBohDraft({ commitmentScoreAdjustments }),
+      AllStarBohValidationError
+    );
+  }
 
   const legacyReview = normalizeAllStarBohReview({ status: 'verified' });
   assert.equal('statCorrections' in legacyReview, false);
@@ -1180,6 +1502,741 @@ test('draft and private review extensions normalize legacy values and reject uns
   ]) {
     assert.throws(() => normalizeAllStarBohReview(review), AllStarBohValidationError);
   }
+});
+
+test('draft balanced metric and commitment score adjustments round-trip without changing score overrides', async () => {
+  const draftPath = getAllStarBohDraftPath(SEASON_ID);
+  const fake = createFirestoreFake();
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+
+  const draft = await admin.saveDraft({
+    title: 'Balanced commitment draft',
+    balanceMetric: ' balanced ',
+    commitmentScoreAdjustments: [
+      { playerId: ' player-1 ', score: '100', reason: ' Reliable planner. ' },
+      { playerId: 'player-2', score: 10_000, reason: '' },
+    ],
+    scoreOverrides: [
+      { playerId: 'player-1', score: -50, reason: 'Legacy score override remains separate.' },
+    ],
+    plan: emptyPlan(),
+  });
+
+  assert.equal(draft.balanceMetric, 'balanced');
+  assert.deepEqual(draft.commitmentScoreAdjustments, [
+    { playerId: 'player-1', score: 100, reason: 'Reliable planner.' },
+    { playerId: 'player-2', score: 10_000, reason: '' },
+  ]);
+  assert.deepEqual(draft.scoreOverrides, [
+    { playerId: 'player-1', score: -50, reason: 'Legacy score override remains separate.' },
+  ]);
+  assert.deepEqual(
+    fake.read(draftPath).commitmentScoreAdjustments,
+    draft.commitmentScoreAdjustments
+  );
+  assert.deepEqual(
+    (await admin.getDraft()).commitmentScoreAdjustments,
+    draft.commitmentScoreAdjustments
+  );
+});
+
+test('submission correction overlay normalizes every field family and takes precedence over legacy corrections', () => {
+  const heroNames = ['Hero A', 'Hero B', 'Hero C'];
+  const researchTreeIds = ['development', 'combat'];
+  const base = {
+    ...normalizeAllStarBohSubmission(
+      submission('Original Player', {
+        stats: {
+          ...submission().stats,
+          unitSpecialtyPower: 10,
+          artifactPower: 20,
+          royalTechPower: 30,
+          troopRoster: ['estimate|lofty|7000000'],
+          usableHeroNames: ['Hero A'],
+          researchProgressPct: { development: 50 },
+        },
+      }),
+      { heroNames, researchTreeIds, requireFightingTimeIds: true, requireVtsMembership: true }
+    ),
+    revision: 7,
+  };
+  const originalBase = cloneForFake(base);
+  const normalizedReview = normalizeAllStarBohReview({
+    submissionRevision: 7,
+    status: 'verified',
+    gameNameCorrection: { corrected: 'Legacy Name', reason: 'Legacy name audit' },
+    statCorrections: { troopPower: { corrected: 111, reason: 'Legacy stat audit' } },
+    submissionCorrection: {
+      schemaVersion: 1,
+      reason: 'Full profile audit',
+      changedFields: ['uid', 'stats.totalCastlePower'],
+      values: {
+        gameName: ' Final Player ',
+        locale: '',
+        timezone: ' UTC ',
+        preferredTeammates: [],
+        stats: {
+          totalCastlePower: '2,000,000',
+          troopPower: 222,
+          buildingPower: 111,
+          technologyPower: 0,
+          heroCombatPower: 333,
+          dragonPower: 444,
+          unitSpecialtyPower: 666,
+          artifactPower: null,
+          royalTechPower: null,
+          rocLevel: 20,
+          level50HeroCount: 4,
+          t9TroopTypes: [],
+          t10TroopTypes: ['cavalry'],
+          readySpeedHeroes: [],
+          troopRoster: ['estimate|t10|2500000'],
+          usableHeroNames: ['Hero B', 'Hero A'],
+          researchProgressPct: { combat: '100' },
+        },
+        commitment: {
+          availability: 'backup',
+          unavailableTimes: '',
+          preferredRole: 'top',
+          secondaryRole: 'bottom',
+          canHelpLead: null,
+          vts1097Member: false,
+          contactNumber: '555-0100',
+          currentState: 'State 1097',
+          joinReason: 'Captain verified transfer details.',
+          fightingTimeIds: ['+14', '+12'],
+          teamNamePreferences: [],
+          canTeleport: null,
+          canUseVoice: false,
+          planCommitment: true,
+          notes: '',
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(normalizedReview.submissionCorrection.changedFields, [
+    'gameName',
+    'locale',
+    'timezone',
+    'preferredTeammates',
+    'stats.totalCastlePower',
+    'stats.troopPower',
+    'stats.buildingPower',
+    'stats.technologyPower',
+    'stats.heroCombatPower',
+    'stats.dragonPower',
+    'stats.unitSpecialtyPower',
+    'stats.artifactPower',
+    'stats.royalTechPower',
+    'stats.rocLevel',
+    'stats.level50HeroCount',
+    'stats.t9TroopTypes',
+    'stats.t10TroopTypes',
+    'stats.readySpeedHeroes',
+    'stats.troopRoster',
+    'stats.usableHeroNames',
+    'stats.researchProgressPct',
+    'commitment.availability',
+    'commitment.unavailableTimes',
+    'commitment.preferredRole',
+    'commitment.secondaryRole',
+    'commitment.canHelpLead',
+    'commitment.vts1097Member',
+    'commitment.contactNumber',
+    'commitment.currentState',
+    'commitment.joinReason',
+    'commitment.fightingTimeIds',
+    'commitment.teamNamePreferences',
+    'commitment.canTeleport',
+    'commitment.canUseVoice',
+    'commitment.planCommitment',
+    'commitment.notes',
+  ]);
+
+  const effective = applyAllStarBohSubmissionCorrections(base, normalizedReview);
+  assert.deepEqual(base, originalBase);
+  assert.equal(effective.gameName, 'Final Player');
+  assert.equal(effective.locale, '');
+  assert.equal(effective.timezone, 'UTC');
+  assert.deepEqual(effective.preferredTeammates, []);
+  assert.equal(effective.stats.troopPower, 222);
+  assert.equal(effective.stats.totalCastlePower, 2_000_000);
+  assert.equal(effective.stats.buildingPower, 111);
+  assert.equal(effective.stats.unitSpecialtyPower, 666);
+  assert.equal(effective.stats.artifactPower, null);
+  assert.equal(effective.stats.royalTechPower, null);
+  assert.deepEqual(effective.stats.troopRoster, ['estimate|t10|2500000']);
+  assert.deepEqual(effective.stats.usableHeroNames, ['Hero B', 'Hero A']);
+  assert.deepEqual(effective.stats.researchProgressPct, { combat: 100 });
+  assert.equal(effective.commitment.availability, 'backup');
+  assert.equal(effective.commitment.preferredRole, 'top');
+  assert.equal(effective.commitment.secondaryRole, 'bottom');
+  assert.deepEqual(effective.rolePreferences, ['top', 'bottom']);
+  assert.equal(effective.commitment.canHelpLead, null);
+  assert.equal(effective.commitment.vts1097Member, false);
+  assert.deepEqual(effective.commitment.fightingTimeIds, ['+12', '+14']);
+  assert.deepEqual(effective.commitment.teamNamePreferences, []);
+  assert.equal(effective.commitment.canTeleport, null);
+  assert.equal(effective.commitment.canUseVoice, false);
+  assert.equal(effective.commitment.planCommitment, true);
+  assert.equal(effective.commitment.notes, '');
+
+  const staleEffective = applyAllStarBohSubmissionCorrections(base, {
+    ...normalizedReview,
+    submissionRevision: 6,
+  });
+  assert.equal(staleEffective.gameName, 'Original Player');
+  assert.equal(staleEffective.stats.troopPower, 100_000_000);
+
+  const restoredEffective = applyAllStarBohSubmissionCorrections(base, {
+    submissionRevision: 7,
+    status: 'verified',
+  });
+  assert.equal(restoredEffective.gameName, 'Original Player');
+  assert.deepEqual(restoredEffective.rolePreferences, ['offensive', 'rune']);
+
+  const conflictingLegacy = {
+    ...base,
+    rolePreferences: ['bottom'],
+  };
+  const nonRoleEffective = applyAllStarBohSubmissionCorrections(conflictingLegacy, {
+    submissionRevision: 7,
+    status: 'verified',
+    submissionCorrection: {
+      reason: 'Notes audit only',
+      values: { commitment: { notes: 'Verified without changing roles.' } },
+    },
+  });
+  assert.deepEqual(nonRoleEffective.rolePreferences, ['bottom']);
+
+  const flexibleEffective = applyAllStarBohSubmissionCorrections(base, {
+    submissionRevision: 7,
+    status: 'verified',
+    submissionCorrection: {
+      reason: 'Role audit',
+      values: { commitment: { preferredRole: 'flexible', secondaryRole: 'top' } },
+    },
+  });
+  assert.deepEqual(flexibleEffective.rolePreferences, ['top']);
+});
+
+test('effective VTS corrections canonically clear non-VTS contact fields without mutating the submission', () => {
+  const base = {
+    ...normalizeAllStarBohSubmission(
+      submission('Transfer Player', {
+        commitment: {
+          ...submission().commitment,
+          vts1097Member: false,
+          contactNumber: '555-0100',
+          currentState: 'State 1200',
+          joinReason: 'Joining VTS for the event.',
+        },
+      }),
+      { requireFightingTimeIds: true, requireVtsMembership: true }
+    ),
+    revision: 3,
+  };
+  const original = cloneForFake(base);
+  const review = normalizeAllStarBohReview({
+    submissionRevision: 3,
+    status: 'pending',
+    submissionCorrection: {
+      reason: 'Membership audit',
+      values: { commitment: { vts1097Member: true } },
+    },
+  });
+
+  const effective = applyAllStarBohSubmissionCorrections(base, review);
+  assert.equal(effective.commitment.vts1097Member, true);
+  assert.equal(effective.commitment.contactNumber, '');
+  assert.equal(effective.commitment.currentState, '');
+  assert.equal(effective.commitment.joinReason, '');
+  assert.deepEqual(base, original);
+});
+
+test('submission correction overlay drops unknown fields and rejects provenance fields', () => {
+  const dropped = normalizeAllStarBohReview({
+    status: 'verified',
+    submissionCorrection: {
+      reason: 'Locale only',
+      changedFields: ['uid', 'stats.unknownStat'],
+      values: {
+        locale: ' en ',
+        nickname: 'ignored',
+        stats: { unknownStat: 123 },
+        commitment: { unsupportedFlag: true },
+      },
+    },
+  });
+  assert.deepEqual(dropped.submissionCorrection, {
+    schemaVersion: 1,
+    reason: 'Locale only',
+    values: { locale: 'en' },
+    changedFields: ['locale'],
+  });
+
+  const catalogLikeIds = normalizeAllStarBohReview({
+    status: 'verified',
+    submissionCorrection: {
+      reason: 'Research IDs can look like protected keys',
+      values: { stats: { researchProgressPct: { uid: 25, status: 75 } } },
+    },
+  });
+  assert.deepEqual(catalogLikeIds.submissionCorrection.values.stats.researchProgressPct, {
+    uid: 25,
+    status: 75,
+  });
+
+  assert.throws(
+    () => normalizeAllStarBohReview({ submissionCorrection: { values: { locale: 'en' } } }),
+    /Submission correction reason is required/
+  );
+  for (const submissionCorrection of [
+    { reason: 'Bad values', values: [] },
+    { reason: 'Bad stats', values: { stats: [] } },
+    { reason: 'Bad commitment', values: { commitment: [] } },
+  ]) {
+    assert.throws(() => normalizeAllStarBohReview({ submissionCorrection }), /must be an object/);
+  }
+  for (const [field, value] of [
+    ['buildingPower', null],
+    ['unitSpecialtyPower', null],
+    ['level50HeroCount', null],
+    ['rocLevel', ' '],
+    ['totalCastlePower', ''],
+  ]) {
+    assert.throws(
+      () =>
+        normalizeAllStarBohReview({
+          submissionCorrection: {
+            reason: 'Required numeric correction',
+            values: { stats: { [field]: value } },
+          },
+        }),
+      /correction is required/
+    );
+  }
+  for (const submissionCorrection of [
+    { reason: 'No identity', values: { uid: 'player-2' } },
+    { reason: 'No status', values: { status: 'submitted' } },
+    { reason: 'No OCR', values: { OCR: { used: true } } },
+    { reason: 'No revision', values: { stats: { revision: 2 } } },
+    { reason: 'No roles', values: { commitment: { rolePreferences: ['offensive'] } } },
+    { reason: 'No root provenance', uid: 'player-2', values: { locale: 'en' } },
+  ]) {
+    assert.throws(
+      () => normalizeAllStarBohReview({ submissionCorrection }),
+      AllStarBohValidationError
+    );
+  }
+});
+
+test('review submission correction round-trips, survives unrelated saves, and stays out of player feedback', async () => {
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-1');
+  const feedbackPath = getAllStarBohFeedbackPath(SEASON_ID, 'player-1');
+  const fake = createFirestoreFake({
+    [submissionPath]: storedSubmission('player-1', 1, submission('Player One')),
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+    heroNames: ['Hero A'],
+    researchTreeIds: ['development'],
+  });
+  const player = createAllStarBohPlayerStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'player-1',
+  });
+
+  const saved = await admin.saveReview('player-1', {
+    submissionRevision: 1,
+    status: 'verified',
+    note: 'Your signup is confirmed.',
+    submissionCorrection: {
+      reason: 'Roster audit private reason',
+      changedFields: ['uid'],
+      values: {
+        gameName: 'Player One Fixed',
+        stats: { troopPower: 123_456_789, usableHeroNames: ['Hero A'] },
+        commitment: { notes: '' },
+      },
+    },
+  });
+  assert.equal(saved.submissionCorrection.reason, 'Roster audit private reason');
+  assert.deepEqual(saved.submissionCorrection.changedFields, [
+    'gameName',
+    'stats.troopPower',
+    'stats.usableHeroNames',
+    'commitment.notes',
+  ]);
+  assert.equal(fake.read(submissionPath).gameName, 'Player One');
+  assert.equal(fake.read(reviewPath).submissionCorrection.values.gameName, 'Player One Fixed');
+  assert.equal(
+    (await admin.getReview('player-1')).submissionCorrection.reason,
+    'Roster audit private reason'
+  );
+
+  const rawFeedback = fake.read(feedbackPath);
+  assert.equal('submissionCorrection' in rawFeedback, false);
+  assert.equal('gameNameCorrection' in rawFeedback, false);
+  assert.equal('statCorrections' in rawFeedback, false);
+  assert.doesNotMatch(JSON.stringify(rawFeedback), /Roster audit private reason|Player One Fixed/);
+  const safeFeedback = await player.getSubmissionFeedback();
+  assert.equal('submissionCorrection' in safeFeedback, false);
+  assert.doesNotMatch(JSON.stringify(safeFeedback), /Roster audit private reason|Player One Fixed/);
+
+  const originalCorrection = cloneForFake(fake.read(reviewPath).submissionCorrection);
+  await admin.saveReview(
+    'player-1',
+    { submissionRevision: 1, status: 'verified', note: 'Still confirmed.' },
+    { expectedRevision: 1 }
+  );
+  assert.deepEqual(fake.read(reviewPath).submissionCorrection, originalCorrection);
+  assert.equal(fake.read(reviewPath).note, 'Still confirmed.');
+});
+
+test('review saves never preserve a submission correction from an older or stale review', async () => {
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-1');
+  const staleSubmissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-2');
+  const staleReviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-2');
+  const fake = createFirestoreFake({
+    [submissionPath]: storedSubmission('player-1', 2, submission('Player One')),
+    [reviewPath]: {
+      seasonId: SEASON_ID,
+      uid: 'player-1',
+      schemaVersion: 1,
+      revision: 1,
+      submissionRevision: 1,
+      status: 'verified',
+      note: 'Old review',
+      roleTags: [],
+      locked: false,
+      submissionCorrection: {
+        reason: 'Old account audit',
+        values: { gameName: 'Old Corrected Name' },
+      },
+    },
+    [staleSubmissionPath]: storedSubmission('player-2', 2, submission('Player Two')),
+    [staleReviewPath]: {
+      seasonId: SEASON_ID,
+      uid: 'player-2',
+      schemaVersion: 1,
+      revision: 1,
+      submissionRevision: 2,
+      stale: true,
+      status: 'verified',
+      note: 'Explicitly stale review',
+      roleTags: [],
+      locked: false,
+      submissionCorrection: {
+        reason: 'Stale account audit',
+        values: { gameName: 'Stale Corrected Name' },
+      },
+    },
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+
+  const saved = await admin.saveReview(
+    'player-1',
+    { submissionRevision: 2, status: 'verified', note: 'Reviewed current revision.' },
+    { expectedRevision: 1 }
+  );
+  assert.equal(saved.submissionRevision, 2);
+  assert.equal(saved.submissionCorrection, undefined);
+  assert.equal(fake.read(reviewPath).submissionCorrection, undefined);
+
+  const staleSaved = await admin.saveReview(
+    'player-2',
+    { submissionRevision: 2, status: 'verified', note: 'Reviewed without correction.' },
+    { expectedRevision: 1 }
+  );
+  assert.equal(staleSaved.submissionCorrection, undefined);
+  assert.equal(fake.read(staleReviewPath).submissionCorrection, undefined);
+});
+
+test('review submission correction validates against catalogs and non-VTS requirements before writes', async () => {
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-1');
+  const feedbackPath = getAllStarBohFeedbackPath(SEASON_ID, 'player-1');
+  const fake = createFirestoreFake({
+    [submissionPath]: storedSubmission('player-1', 1, submission('Player One')),
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+    heroNames: ['Hero A'],
+    researchTreeIds: ['development'],
+  });
+
+  await assert.rejects(
+    admin.saveReview('player-1', {
+      submissionRevision: 1,
+      status: 'verified',
+      submissionCorrection: {
+        reason: 'Bad hero',
+        values: { stats: { usableHeroNames: ['Unknown Hero'] } },
+      },
+    }),
+    /outside its catalog/
+  );
+  await assert.rejects(
+    admin.saveReview('player-1', {
+      submissionRevision: 1,
+      status: 'verified',
+      submissionCorrection: {
+        reason: 'Bad research',
+        values: { stats: { researchProgressPct: { unknown: 50 } } },
+      },
+    }),
+    /unknown tree ID/
+  );
+  await assert.rejects(
+    admin.saveReview('player-1', {
+      submissionRevision: 1,
+      status: 'verified',
+      submissionCorrection: {
+        reason: 'Incomplete non-VTS correction',
+        values: { commitment: { vts1097Member: false } },
+      },
+    }),
+    /Non-VTS players must provide contact details/
+  );
+  await assert.rejects(
+    admin.saveReview('player-1', {
+      submissionRevision: 1,
+      status: 'verified',
+      submissionCorrection: {
+        reason: 'Missing membership correction',
+        values: { commitment: { vts1097Member: null } },
+      },
+    }),
+    /VTS 1097 membership selection is required/
+  );
+  await assert.rejects(
+    admin.saveReview('player-1', {
+      submissionRevision: 1,
+      status: 'verified',
+      submissionCorrection: {
+        reason: 'Missing fighting times',
+        values: { commitment: { fightingTimeIds: [] } },
+      },
+    }),
+    /Exactly two fighting times are required/
+  );
+  assert.equal(fake.read(reviewPath), undefined);
+  assert.equal(fake.read(feedbackPath), undefined);
+
+  const catalogAdmin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+    heroNames: ['Hero A'],
+    researchTreeIds: ['uid', 'status'],
+  });
+  const saved = await catalogAdmin.saveReview('player-1', {
+    submissionRevision: 1,
+    status: 'verified',
+    submissionCorrection: {
+      reason: 'Valid current catalog and non-VTS audit',
+      values: {
+        stats: { researchProgressPct: { uid: 25, status: 75 } },
+        commitment: {
+          vts1097Member: false,
+          contactNumber: '555-1097',
+          currentState: 'State 1200',
+          joinReason: 'Joining VTS for the All-Star roster.',
+        },
+      },
+    },
+  });
+  assert.deepEqual(saved.submissionCorrection.values.stats.researchProgressPct, {
+    uid: 25,
+    status: 75,
+  });
+  assert.equal(saved.submissionCorrection.values.commitment.vts1097Member, false);
+});
+
+test('review submission correction save is fenced to the current submission revision', async () => {
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-1');
+  const feedbackPath = getAllStarBohFeedbackPath(SEASON_ID, 'player-1');
+  const fake = createFirestoreFake({
+    [submissionPath]: storedSubmission('player-1', 2, submission('Player One')),
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+
+  await assert.rejects(
+    admin.saveReview('player-1', {
+      submissionRevision: 1,
+      status: 'verified',
+      submissionCorrection: {
+        reason: 'Stale correction',
+        values: { gameName: 'Stale Name' },
+      },
+    }),
+    (error) =>
+      error instanceof AllStarBohConflictError &&
+      error.path === submissionPath &&
+      error.expectedRevision === 1 &&
+      error.actualRevision === 2
+  );
+  assert.equal(fake.read(reviewPath), undefined);
+  assert.equal(fake.read(feedbackPath), undefined);
+});
+
+test('review submission correction supports a realistic maximum sparse overlay within review limits', async () => {
+  const heroNames = Array.from(
+    { length: 78 },
+    (_, index) => `Hero ${String(index + 1).padStart(2, '0')} ${'A'.repeat(130)}`
+  );
+  const researchTreeIds = Array.from(
+    { length: 120 },
+    (_, index) => `tree-${String(index + 1).padStart(3, '0')}-${'r'.repeat(100)}`
+  );
+  const submissionPath = getAllStarBohSubmissionPath(SEASON_ID, 'player-1');
+  const reviewPath = getAllStarBohReviewPath(SEASON_ID, 'player-1');
+  const fake = createFirestoreFake({
+    [submissionPath]: storedSubmission('player-1', 1, submission('Player One')),
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+    heroNames,
+    researchTreeIds,
+  });
+  const values = {
+    gameName: 'P'.repeat(160),
+    locale: 'zh-Hant-TW',
+    timezone: 'America/Argentina/Buenos_Aires',
+    preferredTeammates: Array.from(
+      { length: 6 },
+      (_, index) => `Mate ${index + 1} ${'m'.repeat(120)}`
+    ),
+    stats: {
+      totalCastlePower: 10 ** 12,
+      troopPower: 10 ** 12,
+      buildingPower: 10 ** 12,
+      technologyPower: 10 ** 12,
+      heroCombatPower: 10 ** 12,
+      dragonPower: 10 ** 12,
+      unitSpecialtyPower: 10 ** 12,
+      artifactPower: 10 ** 12,
+      royalTechPower: 10 ** 12,
+      rocLevel: 160,
+      level50HeroCount: 500,
+      t9TroopTypes: Array.from(
+        { length: 12 },
+        (_, index) => `T9 type ${index + 1} ${'t'.repeat(40)}`
+      ),
+      t10TroopTypes: Array.from(
+        { length: 3 },
+        (_, index) => `T10 type ${index + 1} ${'x'.repeat(40)}`
+      ),
+      readySpeedHeroes: Array.from(
+        { length: 24 },
+        (_, index) => `Speed Hero ${index + 1} ${'s'.repeat(54)}`
+      ),
+      troopRoster: Array.from({ length: 60 }, (_, index) => `estimate|t10|${1_000_000 + index}`),
+      usableHeroNames: heroNames,
+      researchProgressPct: Object.fromEntries(
+        researchTreeIds.map((researchTreeId, index) => [researchTreeId, index % 101])
+      ),
+    },
+    commitment: {
+      availability: 'most',
+      unavailableTimes: 'u'.repeat(800),
+      preferredRole: 'offensive',
+      secondaryRole: 'rune',
+      canHelpLead: true,
+      vts1097Member: false,
+      contactNumber: '1'.repeat(120),
+      currentState: 'State '.padEnd(120, 'S'),
+      joinReason: 'j'.repeat(1000),
+      fightingTimeIds: ['+12', '+14'],
+      teamNamePreferences: [
+        'iron-wolves',
+        'storm-ravens',
+        'ember-lions',
+        'frost-bears',
+        'night-falcons',
+        'thunder-bulls',
+      ],
+      canTeleport: true,
+      canUseVoice: true,
+      planCommitment: true,
+      notes: 'n'.repeat(2000),
+    },
+  };
+
+  const normalized = normalizeAllStarBohReview({
+    submissionRevision: 1,
+    status: 'verified',
+    note: 'Confirmed.',
+    submissionCorrection: {
+      schemaVersion: 1,
+      reason: 'r'.repeat(500),
+      values,
+    },
+  });
+  const normalizedBytes = Buffer.byteLength(JSON.stringify(normalized), 'utf8');
+  assert.ok(
+    normalizedBytes > 32 * 1024,
+    `expected overlay to justify review limit, got ${normalizedBytes}`
+  );
+  assert.ok(
+    normalizedBytes < 64 * 1024,
+    `expected overlay below raised limit, got ${normalizedBytes}`
+  );
+
+  await admin.saveReview('player-1', {
+    submissionRevision: 1,
+    status: 'verified',
+    note: 'Confirmed.',
+    submissionCorrection: { reason: 'r'.repeat(500), values },
+  });
+  const storedBytes = Buffer.byteLength(JSON.stringify(fake.read(reviewPath)), 'utf8');
+  assert.ok(
+    storedBytes > 32 * 1024,
+    `expected stored review above prior limit, got ${storedBytes}`
+  );
+  assert.ok(
+    storedBytes < 64 * 1024,
+    `expected stored review below raised limit, got ${storedBytes}`
+  );
 });
 
 test('admin lists and observes submissions, saves reviews, and accepts incomplete drafts', async () => {
@@ -1404,7 +2461,7 @@ test('score and profile serializers round-trip new keys without densifying legac
 
   const expandedPowerWeights = {
     troopPower: 0.05,
-    unitSpecialtyPower: 0.4,
+    unitSpecialtyPower: 1,
   };
   const expandedBonusWeights = {
     rocLevel: 125,
@@ -1615,9 +2672,32 @@ test('a failed review transaction writes neither the private review nor player f
 
 test('draft bundle saves the draft and six teams atomically across success, conflict, and commit failure', async () => {
   const draftPath = getAllStarBohDraftPath(SEASON_ID);
+  const guardedUid = 'guarded-player';
+  const guardedSubmissionPath = getAllStarBohSubmissionPath(SEASON_ID, guardedUid);
+  const guardedReviewPath = getAllStarBohReviewPath(SEASON_ID, guardedUid);
+  const missingReviewUid = 'missing-review-player';
+  const missingReviewSubmissionPath = getAllStarBohSubmissionPath(SEASON_ID, missingReviewUid);
   const teamIds = Array.from({ length: 6 }, (_, index) => `team-${index + 1}`);
   const initial = {
     [draftPath]: { seasonId: SEASON_ID, revision: 2, title: 'Original draft' },
+    [guardedSubmissionPath]: {
+      seasonId: SEASON_ID,
+      uid: guardedUid,
+      playerId: guardedUid,
+      revision: 3,
+    },
+    [guardedReviewPath]: {
+      seasonId: SEASON_ID,
+      uid: guardedUid,
+      revision: 2,
+      submissionRevision: 3,
+    },
+    [missingReviewSubmissionPath]: {
+      seasonId: SEASON_ID,
+      uid: missingReviewUid,
+      playerId: missingReviewUid,
+      revision: 1,
+    },
     ...Object.fromEntries(
       teamIds.map((teamId) => [
         getAllStarBohDraftTeamPath(SEASON_ID, teamId),
@@ -1639,6 +2719,14 @@ test('draft bundle saves the draft and six teams atomically across success, conf
   const saveOptions = {
     expectedDraftRevision: 2,
     expectedTeamRevisions: Object.fromEntries(teamIds.map((teamId) => [teamId, 4])),
+    expectedSubmissionRevisions: [
+      [guardedUid, 3],
+      [missingReviewUid, 1],
+    ],
+    expectedReviewRevisions: [
+      [guardedUid, 2, 3],
+      [missingReviewUid, 0, 0],
+    ],
   };
   const preflightFake = createFirestoreFake();
   const preflightAdmin = createAllStarBohAdminStore({
@@ -1673,7 +2761,47 @@ test('draft bundle saves the draft and six teams atomically across success, conf
     ),
     /occupies multiple teams/
   );
+  await assert.rejects(
+    preflightAdmin.saveDraftBundle(
+      { teams: { 'team-1': publishedTeam('team-1', ['player-1']) } },
+      {
+        expectedTeamRevisions: { 'team-1': 0 },
+        expectedSubmissionRevisions: [['unsafe/player', 1]],
+      }
+    ),
+    /may contain only/
+  );
   assert.equal(preflightFake.transactionCount, 0);
+  const maximumSourceIds = Array.from(
+    { length: 72 },
+    (_, index) => `source-${String(index + 1).padStart(2, '0')}`
+  );
+  await assert.rejects(
+    preflightAdmin.saveDraftBundle(
+      { teams: { 'team-1': publishedTeam('team-1', ['player-1']) } },
+      {
+        expectedTeamRevisions: { 'team-1': 0 },
+        expectedSubmissionRevisions: maximumSourceIds.map((sourceUid) => [sourceUid, 1]),
+        expectedReviewRevisions: maximumSourceIds.map((sourceUid) => [sourceUid, 1, 1]),
+      }
+    ),
+    AllStarBohConflictError
+  );
+  assert.equal(preflightFake.transactionCount, 1, '72 source guards reach store preflight');
+  await assert.rejects(
+    preflightAdmin.saveDraftBundle(
+      { teams: { 'team-1': publishedTeam('team-1', ['player-1']) } },
+      {
+        expectedTeamRevisions: { 'team-1': 0 },
+        expectedSubmissionRevisions: [
+          ...maximumSourceIds.map((sourceUid) => [sourceUid, 1]),
+          ['source-73', 1],
+        ],
+      }
+    ),
+    /guards exceed 72 entries/
+  );
+  assert.equal(preflightFake.transactionCount, 1, 'the store still rejects more than 72 guards');
   const fake = createFirestoreFake(initial);
   const admin = createAllStarBohAdminStore({
     db: {},
@@ -1691,6 +2819,79 @@ test('draft bundle saves the draft and six teams atomically across success, conf
   teamIds.forEach((teamId) => {
     assert.equal(saved.teams[teamId].revision, 5);
     assert.equal(fake.read(getAllStarBohDraftTeamPath(SEASON_ID, teamId)).revision, 5);
+  });
+
+  fake.write(guardedSubmissionPath, { ...initial[guardedSubmissionPath], revision: 4 });
+  const beforeSubmissionConflict = Object.fromEntries(
+    [draftPath, ...teamIds.map((teamId) => getAllStarBohDraftTeamPath(SEASON_ID, teamId))].map(
+      (path) => [path, fake.read(path)]
+    )
+  );
+  await assert.rejects(
+    admin.saveDraftBundle(bundle, {
+      ...saveOptions,
+      expectedDraftRevision: 3,
+      expectedTeamRevisions: Object.fromEntries(teamIds.map((teamId) => [teamId, 5])),
+    }),
+    (error) =>
+      error instanceof AllStarBohConflictError &&
+      error.path === guardedSubmissionPath &&
+      error.expectedRevision === 3 &&
+      error.actualRevision === 4
+  );
+  Object.entries(beforeSubmissionConflict).forEach(([path, value]) => {
+    assert.deepEqual(fake.read(path), value);
+  });
+
+  fake.write(guardedSubmissionPath, initial[guardedSubmissionPath]);
+  fake.write(guardedReviewPath, { ...initial[guardedReviewPath], submissionRevision: 4 });
+  const beforeReviewConflict = Object.fromEntries(
+    [draftPath, ...teamIds.map((teamId) => getAllStarBohDraftTeamPath(SEASON_ID, teamId))].map(
+      (path) => [path, fake.read(path)]
+    )
+  );
+  await assert.rejects(
+    admin.saveDraftBundle(bundle, {
+      ...saveOptions,
+      expectedDraftRevision: 3,
+      expectedTeamRevisions: Object.fromEntries(teamIds.map((teamId) => [teamId, 5])),
+    }),
+    (error) =>
+      error instanceof AllStarBohConflictError &&
+      error.path === guardedReviewPath &&
+      error.expectedRevision === 3 &&
+      error.actualRevision === 4
+  );
+  Object.entries(beforeReviewConflict).forEach(([path, value]) => {
+    assert.deepEqual(fake.read(path), value);
+  });
+  fake.write(guardedReviewPath, initial[guardedReviewPath]);
+
+  const missingSourceInitial = Object.fromEntries(
+    [draftPath, ...teamIds.map((teamId) => getAllStarBohDraftTeamPath(SEASON_ID, teamId))].map(
+      (path) => [path, initial[path]]
+    )
+  );
+  const missingSourceFake = createFirestoreFake(missingSourceInitial);
+  const missingSourceAdmin = createAllStarBohAdminStore({
+    db: {},
+    firestore: missingSourceFake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+  await assert.rejects(
+    missingSourceAdmin.saveDraftBundle(bundle, {
+      ...saveOptions,
+      expectedSubmissionRevisions: [['missing-source', 0]],
+      expectedReviewRevisions: [['missing-source', 0, 0]],
+    }),
+    (error) =>
+      error instanceof AllStarBohConflictError &&
+      error.path === getAllStarBohSubmissionPath(SEASON_ID, 'missing-source')
+  );
+  Object.entries(missingSourceInitial).forEach(([path, value]) => {
+    assert.deepEqual(missingSourceFake.read(path), value);
   });
 
   const beforeConflict = Object.fromEntries(
@@ -1769,6 +2970,8 @@ test('store serializers preserve canonical signup, score, team, plan, and rotati
       rocLevel: 12,
       bohUsefulRating: 2.5,
     },
+    vts1097Member: true,
+    fightingTimeIds: ['+12', '+14'],
   });
   const canonicalScore = scoreBohSignup(canonicalSignup);
   fake.write(

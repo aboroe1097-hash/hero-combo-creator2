@@ -48,7 +48,7 @@ test('specialization source provenance identifies the X28+ eight-column revision
     columnCount: 8,
     evidenceNotes: [
       'The May 20, 2026 current guide confirms 8 columns and Season X28+ coverage.',
-      'The interactive planner data supplies the canonical node-level costs, bonuses, milestones, passive skills, and Legion Skills.',
+      'The interactive planner data supplies canonical research-level medal totals, bonuses, milestones, passive skills, and Legion Skills; per-node costs remain unknown unless directly evidenced.',
     ],
   });
   assert.deepEqual(SPECIALIZATION_TROOPS, ['footman', 'archer', 'cavalry']);
