@@ -135,7 +135,8 @@ export default Object.freeze({
   'role.offensive': 'Hücum takımı',
   'role.rune': 'Rün takımı',
   'role.top': 'Üst taraf',
-  'signup.accountNoteDescription': 'Başka bir hesap mı kaydediyorsunuz? Farklı bir tarayıcı, gizli/özel pencere veya farklı bir cihaz kullanın. Bu tarayıcı aynı anda yalnızca bir yerel kayıt taslağı tutar, bu nedenle burada hesaplar arasında geçiş yapmak önceki hesabın kaydedilmiş taslağının yerine geçebilir.',
+  'signup.accountNoteDescription':
+    'Başka bir hesap mı kaydediyorsunuz? Farklı bir tarayıcı, gizli/özel pencere veya farklı bir cihaz kullanın. Bu tarayıcı aynı anda yalnızca bir yerel kayıt taslağı tutar, bu nedenle burada hesaplar arasında geçiş yapmak önceki hesabın kaydedilmiş taslağının yerine geçebilir.',
   'signup.accountNoteTitle': 'Birden fazla hesap mı kullanıyorsunuz?',
   'signup.accountTitle': 'Hesabın',
   'signup.availabilityAll': 'Tüm maçlar',

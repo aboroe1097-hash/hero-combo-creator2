@@ -136,7 +136,8 @@ export default Object.freeze({
   'role.offensive': 'Équipe offensive',
   'role.rune': 'Équipe Rune',
   'role.top': 'Côté haut',
-  'signup.accountNoteDescription': 'Vous inscrire avec un autre compte ? Utilisez un navigateur différent, une fenêtre privée/incognito ou un autre appareil. Ce navigateur ne conserve qu\'un seul brouillon d\'inscription local à la fois. Changer de compte ici peut remplacer le brouillon enregistré pour le compte précédent.',
+  'signup.accountNoteDescription':
+    "Vous inscrire avec un autre compte ? Utilisez un navigateur différent, une fenêtre privée/incognito ou un autre appareil. Ce navigateur ne conserve qu'un seul brouillon d'inscription local à la fois. Changer de compte ici peut remplacer le brouillon enregistré pour le compte précédent.",
   'signup.accountNoteTitle': 'Vous utilisez plusieurs comptes ?',
   'signup.accountTitle': 'Ton compte',
   'signup.availabilityAll': 'Tous les matchs',

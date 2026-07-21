@@ -224,7 +224,10 @@ test('signup preserves the canonical combat fields and requires reviewable OCR',
   assert.match(tabSource, /contact R5 to merge or confirm the entries/);
   assert.match(tabSource, /id="bohAccountNoteTitle"/);
   assert.match(tabSource, /data-boh-i18n="signup\.accountNoteDescription"/);
-  assert.match(tabSource, /Use a different browser, private\/incognito window, or a\s+different device/);
+  assert.match(
+    tabSource,
+    /Use a different browser, private\/incognito window, or a\s+different device/
+  );
   assert.match(tabSource, /data-role="submission-feedback"/);
   assert.match(tabSource, /data-role="submission-feedback-note"/);
   assert.match(tabSource, /src="\/images\/boh-power-breakdown-example\.jpg"/);

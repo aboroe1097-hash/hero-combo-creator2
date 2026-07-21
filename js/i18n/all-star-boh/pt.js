@@ -137,7 +137,8 @@ export default Object.freeze({
   'role.offensive': 'Equipe ofensiva',
   'role.rune': 'Equipe da Runa',
   'role.top': 'Lado superior',
-  'signup.accountNoteDescription': 'Inscrevendo outra conta? Use um navegador diferente, janela privativa/anonimato ou um dispositivo diferente. Este navegador mantém apenas um rascunho de inscrição local por vez; trocar de contas aqui pode substituir o rascunho salvo da conta anterior.',
+  'signup.accountNoteDescription':
+    'Inscrevendo outra conta? Use um navegador diferente, janela privativa/anonimato ou um dispositivo diferente. Este navegador mantém apenas um rascunho de inscrição local por vez; trocar de contas aqui pode substituir o rascunho salvo da conta anterior.',
   'signup.accountNoteTitle': 'Usando várias contas?',
   'signup.accountTitle': 'Sua conta',
   'signup.availabilityAll': 'Todas as partidas',

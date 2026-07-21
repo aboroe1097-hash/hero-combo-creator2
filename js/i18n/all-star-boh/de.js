@@ -137,7 +137,8 @@ export default Object.freeze({
   'role.offensive': 'Offensivteam',
   'role.rune': 'Runenteam',
   'role.top': 'Obere Seite',
-  'signup.accountNoteDescription': 'Ein weiteres Konto anmelden? Verwende einen anderen Browser, ein privates/Inkognito-Fenster oder ein anderes Gerät. Dieser Browser speichert jeweils nur einen lokalen Anmeldungsentwurf. Wenn du hier die Konten wechselst, kann der gespeicherte Entwurf des vorherigen Kontos ersetzt werden.',
+  'signup.accountNoteDescription':
+    'Ein weiteres Konto anmelden? Verwende einen anderen Browser, ein privates/Inkognito-Fenster oder ein anderes Gerät. Dieser Browser speichert jeweils nur einen lokalen Anmeldungsentwurf. Wenn du hier die Konten wechselst, kann der gespeicherte Entwurf des vorherigen Kontos ersetzt werden.',
   'signup.accountNoteTitle': 'Mehrere Konten nutzen?',
   'signup.accountTitle': 'Dein Konto',
   'signup.availabilityAll': 'Alle Matches',

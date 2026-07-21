@@ -128,7 +128,8 @@ export default Object.freeze({
   'role.offensive': '进攻组',
   'role.rune': '符文组',
   'role.top': '上路',
-  'signup.accountNoteDescription': '要注册另一个账号？请使用不同的浏览器、隐私/无痕窗口或不同的设备。此浏览器一次只保留一个本地注册草稿，因此在此切换账号可能会替换之前账号已保存的草稿。',
+  'signup.accountNoteDescription':
+    '要注册另一个账号？请使用不同的浏览器、隐私/无痕窗口或不同的设备。此浏览器一次只保留一个本地注册草稿，因此在此切换账号可能会替换之前账号已保存的草稿。',
   'signup.accountNoteTitle': '使用多个账号？',
   'signup.accountTitle': '你的账号',
   'signup.availabilityAll': '全部比赛',

@@ -150,7 +150,8 @@ export default Object.freeze({
   'signup.commitmentTitle': 'Ketersediaan dan kecocokan tim',
   'signup.description':
     'Stat yang akurat membantu pengurus membentuk enam tim berisi 12 pemain yang seimbang. Masukkan nilainya sendiri atau biarkan OCR membuat draf yang bisa diedit dari screenshot.',
-  'signup.accountNoteDescription': 'Mendaftarkan akun lain? Gunakan browser yang berbeda, jendela pribadi/incognito, atau perangkat yang berbeda. Browser ini hanya menyimpan satu draf pendaftaran lokal dalam satu waktu, jadi mengganti akun di sini dapat mengganti draf yang tersimpan untuk akun sebelumnya.',
+  'signup.accountNoteDescription':
+    'Mendaftarkan akun lain? Gunakan browser yang berbeda, jendela pribadi/incognito, atau perangkat yang berbeda. Browser ini hanya menyimpan satu draf pendaftaran lokal dalam satu waktu, jadi mengganti akun di sini dapat mengganti draf yang tersimpan untuk akun sebelumnya.',
   'signup.accountNoteTitle': 'Menggunakan banyak akun?',
   'signup.dragonPower': 'Kekuatan Naga',
   'signup.gameName': 'Nama dalam game saat ini',

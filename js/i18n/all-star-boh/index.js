@@ -160,7 +160,8 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'role.offensive': 'Offensive team',
   'role.rune': 'Rune team',
   'role.top': 'Top side',
-  'signup.accountNoteDescription': 'Signing up another account? Use a different browser, private/incognito window, or a different device. This browser only keeps one local signup draft at a time, so switching accounts here may replace the saved draft for the previous account.',
+  'signup.accountNoteDescription':
+    'Signing up another account? Use a different browser, private/incognito window, or a different device. This browser only keeps one local signup draft at a time, so switching accounts here may replace the saved draft for the previous account.',
   'signup.accountNoteTitle': 'Using multiple accounts?',
   'signup.accountTitle': 'Your account',
   'signup.availabilityAll': 'All matches',

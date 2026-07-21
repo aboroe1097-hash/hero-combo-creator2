@@ -131,7 +131,8 @@ export default Object.freeze({
   'role.offensive': '공격팀',
   'role.rune': '룬팀',
   'role.top': '위쪽',
-  'signup.accountNoteDescription': '다른 계정으로 가입하시겠습니까? 다른 브라우저, 개인정보 보호/시크릿 창 또는 다른 기기를 사용하세요. 이 브라우저는 한 번에 하나의 로컬 가입 초안만 유지하므로, 여기서 계정을 전환하면 이전 계정의 저장된 초안이 대체될 수 있습니다.',
+  'signup.accountNoteDescription':
+    '다른 계정으로 가입하시겠습니까? 다른 브라우저, 개인정보 보호/시크릿 창 또는 다른 기기를 사용하세요. 이 브라우저는 한 번에 하나의 로컬 가입 초안만 유지하므로, 여기서 계정을 전환하면 이전 계정의 저장된 초안이 대체될 수 있습니다.',
   'signup.accountNoteTitle': '여러 계정을 사용 중이신가요?',
   'signup.accountTitle': '내 계정',
   'signup.availabilityAll': '모든 경기',

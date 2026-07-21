@@ -33,7 +33,8 @@ export default Object.freeze({
   'nav.planHint': 'Znaj svaki potez',
   'nav.signup': 'Prijava',
   'nav.signupHint': 'Podijeli statistike',
-  'signup.accountNoteDescription': 'Prijavljujete drugi račun? Koristite drugi preglednik, privatni/anonimni prozor ili drugi uređaj. Ovaj preglednik pohranjuje samo jednu lokalnu skicu prijave odjednom, pa prebacivanje računa ovdje može zamijeniti spremljenu skicu prethodnog računa.',
+  'signup.accountNoteDescription':
+    'Prijavljujete drugi račun? Koristite drugi preglednik, privatni/anonimni prozor ili drugi uređaj. Ovaj preglednik pohranjuje samo jednu lokalnu skicu prijave odjednom, pa prebacivanje računa ovdje može zamijeniti spremljenu skicu prethodnog računa.',
   'signup.accountNoteTitle': 'Koristite više računa?',
   'signup.accountTitle': 'Tvoj račun',
   'signup.availabilityAll': 'Svi mečevi',
