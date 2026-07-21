@@ -51,7 +51,7 @@ const LIMITS = {
   // Hall of Honor and the mobile All-Star intake lift it to 1303.7 KiB after
   // production minification. The All-Star OCR progress UI measures 1312.1 KiB;
   // retain about 16 KiB of aggregate headroom while route-specific caps remain.
-  totalCssBytes: 1328 * 1024,
+  totalCssBytes: 1329 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -72,7 +72,7 @@ const LIMITS = {
   // KiB of deployed output. Bump by 1 KiB to restore headroom.
   // The 14.2.6 Epic planning controls measure 26,352.9 KiB; retain roughly
   // 17 KiB while the route, media, CSS, and file-count caps stay fixed.
-  totalDeployBytes: 26370 * 1024,
+  totalDeployBytes: 26372 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

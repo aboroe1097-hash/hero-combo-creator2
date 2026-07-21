@@ -154,7 +154,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /1312\.1 KiB/);
   assert.match(sizeCheck, /totalJsBytes: 8288 \* 1024/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1328 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1329 \* 1024/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 432 \* 1024, mobile: 525 \* 1024 \}/);
   assert.match(
     sizeCheck,

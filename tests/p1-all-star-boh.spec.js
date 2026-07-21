@@ -703,6 +703,47 @@ async function openInjectedAdmin(page) {
         } else if (command.type === 'applyBalancePreview' && snapshot.balancePreview) {
           snapshot.teams = clone(snapshot.balancePreview.teams);
           snapshot.balancePreview = null;
+        } else if (command.type === 'autoAssignRankedRoles') {
+          const pattern = [
+            'offensive',
+            'offensive',
+            'bottom',
+            'top',
+            'offensive',
+            'offensive',
+            'bottom',
+            'top',
+            'rune',
+            'rune',
+            'bottom',
+            'top',
+          ];
+          for (const team of snapshot.teams) {
+            const rankedSeats = team.seats
+              .filter((seat) => seat.playerId)
+              .sort((left, right) => {
+                const leftScore =
+                  snapshot.scores.find((score) => score.playerId === left.playerId)?.finalScore ||
+                  0;
+                const rightScore =
+                  snapshot.scores.find((score) => score.playerId === right.playerId)?.finalScore ||
+                  0;
+                return rightScore - leftScore || left.seatNumber - right.seatNumber;
+              });
+            rankedSeats.forEach((seat, index) => {
+              seat.roleGroupId = pattern[index];
+              seat.roleLabel = ROLES.find((role) => role.id === pattern[index])?.label || '';
+            });
+          }
+        } else if (command.type === 'saveTeamMetadata') {
+          const team = snapshot.teams.find((item) => item.id === payload.teamId);
+          if (team) {
+            team.name = payload.name;
+            team.color = payload.color;
+            team.captainId = payload.captainId;
+            team.coLeaderIds = [...(payload.coLeaderIds || [])].filter(Boolean).slice(0, 2);
+            team.notes = payload.notes;
+          }
         } else if (command.type === 'reviewSubmission') {
           const submission = submissionById(payload.playerId);
           if (submission) {
@@ -1481,15 +1522,39 @@ test.describe('All-Star BoH Admin VTS command center', () => {
 
     await expect(root.locator('.boh-admin-team')).toHaveCount(2);
     await expect(root.locator('.boh-admin-seat')).toHaveCount(24);
-    await expect(
-      root.locator('[data-form="eligible-pool"]').locator('xpath=ancestor::details[1]/summary')
-    ).toContainText('24 / 24');
+    const eligiblePool = root.locator('[data-form="eligible-pool"]');
+    const eligibleSummary = eligiblePool.locator('xpath=ancestor::details[1]/summary');
+    await expect(eligibleSummary).toContainText('24 / 24');
     await expect(
       root.locator('[data-form="eligible-pool"] input[name="playerId"]:checked')
     ).toHaveCount(24);
+    await eligibleSummary.click();
+    await expect(eligiblePool.getByLabel('Search eligible players')).toBeVisible();
+    const firstEligibleLabel = await eligiblePool
+      .locator('[data-eligible-pool-row] .boh-admin-eligible-player > span')
+      .first()
+      .textContent();
+    await eligiblePool
+      .getByLabel('Search eligible players')
+      .fill(firstEligibleLabel?.split(' Â· ')[0] || 'player');
+    await expect(eligiblePool.locator('[data-eligible-pool-search-count]')).toContainText(
+      /matches/u
+    );
+    await eligiblePool.getByLabel('Search eligible players').fill('');
+    const firstEligibleCheckbox = eligiblePool.locator('input[name="playerId"]').first();
+    await firstEligibleCheckbox.uncheck();
+    await expect(eligibleSummary).toContainText('23 / 24');
+    await expect(
+      eligiblePool.getByRole('button', { name: 'Save eligible field (23 / 24)' })
+    ).toBeVisible();
+    await firstEligibleCheckbox.check();
+    await expect(eligibleSummary).toContainText('24 / 24');
+    await expect(
+      eligiblePool.getByRole('button', { name: 'Save eligible field (24 / 24)' })
+    ).toBeVisible();
     await root
       .locator('[data-form="eligible-pool"]')
-      .getByRole('button', { name: 'Save eligible field' })
+      .getByRole('button', { name: 'Save eligible field (24 / 24)' })
       .click();
 
     await root.locator('[data-action="preview-balance-teams"]').click();
@@ -1516,6 +1581,13 @@ test.describe('All-Star BoH Admin VTS command center', () => {
       expect(text).toContain('Total in-game power');
       expect(text).not.toContain('vs avg');
     }
+    await expect(root.getByRole('button', { name: 'Roles PNG' })).toBeVisible();
+    await expect(root.getByRole('button', { name: 'Scores PNG' })).toBeVisible();
+    await expect(root.getByText('Co-leader 1').first()).toBeVisible();
+    await root.getByRole('button', { name: 'Auto roles by rank' }).click();
+    await expect
+      .poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.map((action) => action.type)))
+      .toContain('autoAssignRankedRoles');
 
     const result = await page.evaluate(() => ({
       actions: window.__BOH_ADMIN_ACTIONS__,
@@ -1529,6 +1601,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
       'saveEligiblePool',
       'previewBalanceTeams',
       'applyBalancePreview',
+      'autoAssignRankedRoles',
     ]);
     expect(result.actions[0].payload).toMatchObject({
       teamCount: 2,
