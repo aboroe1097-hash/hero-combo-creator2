@@ -9170,9 +9170,14 @@ function bindEvents(state) {
     (event) => {
       handleStageKeys(state, event);
       if (event.key === 'Escape' && state.selectedSubmissionId) {
+        const closingPlayerId = state.selectedSubmissionId;
         state.selectedSubmissionId = '';
         updateHash(state);
         renderNow(state);
+        const escapedId = CSS.escape(closingPlayerId);
+        state.root
+          .querySelector(`[data-action="select-submission"][data-player-id="${escapedId}"]`)
+          ?.focus();
         event.preventDefault();
       }
     },
