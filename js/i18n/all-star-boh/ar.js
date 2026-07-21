@@ -132,6 +132,8 @@ export default Object.freeze({
   'role.offensive': 'فريق الهجوم',
   'role.rune': 'فريق الرون',
   'role.top': 'الجهة العلوية',
+  'signup.accountNoteDescription': 'هل تريد التسجيل بحساب آخر؟ استخدم متصفحاً مختلفاً، نافذة خاصة/متصفح تصفح خاص، أو جهازاً آخر. هذا المتصفح يحتفظ بمسودة تسجيل محلية واحدة فقط في كل مرة، لذا قد يؤدي تبديل الحسابات هنا إلى استبدال المسودة المحفوظة للحساب السابق.',
+  'signup.accountNoteTitle': 'هل تستخدم حسابات متعددة؟',
   'signup.accountTitle': 'حسابك',
   'signup.availabilityAll': 'جميع المباريات',
   'signup.availabilityAllHint': 'أتوقع أن أكون متاحًا بالكامل.',
