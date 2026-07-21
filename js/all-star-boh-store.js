@@ -39,7 +39,7 @@ const MAX_NOTE_LENGTH = 2000;
 const MAX_ARRAY_ITEMS = 120;
 const MAX_SUBMISSION_BYTES = 48 * 1024;
 const MAX_EPIC_PREFERENCES_BYTES = 8 * 1024;
-const MAX_REVIEW_BYTES = 32 * 1024;
+const MAX_REVIEW_BYTES = 64 * 1024;
 const MAX_DRAFT_BYTES = 640 * 1024;
 const MAX_TEAM_BYTES = 256 * 1024;
 const MAX_PUBLICATION_BYTES = 128 * 1024;
@@ -53,7 +53,7 @@ const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]+$/;
 const SUBMISSION_STATUS = new Set(['draft', 'submitted', 'withdrawn']);
 const REVIEW_STATUS = new Set(['pending', 'verified', 'needs_changes', 'rejected']);
 const FEEDBACK_STATUS = new Set(['pending', 'confirmed', 'needs_correction', 'excluded']);
-const DRAFT_BALANCE_METRICS = new Set(['score', 'totalPower']);
+const DRAFT_BALANCE_METRICS = new Set(['score', 'totalPower', 'balanced']);
 const REVIEW_STAT_CORRECTION_LIMITS = Object.freeze({
   totalCastlePower: 10 ** 12,
   troopPower: 10 ** 12,
@@ -66,6 +66,83 @@ const REVIEW_STAT_CORRECTION_LIMITS = Object.freeze({
   royalTechPower: 10 ** 12,
   rocLevel: 160,
 });
+const SUBMISSION_CORRECTION_SCHEMA_VERSION = 1;
+const SUBMISSION_CORRECTION_TOP_FIELDS = Object.freeze([
+  'gameName',
+  'locale',
+  'timezone',
+  'preferredTeammates',
+]);
+const SUBMISSION_CORRECTION_NUMERIC_STAT_LIMITS = Object.freeze({
+  totalCastlePower: 10 ** 12,
+  troopPower: 10 ** 12,
+  buildingPower: 10 ** 12,
+  technologyPower: 10 ** 12,
+  heroCombatPower: 10 ** 12,
+  dragonPower: 10 ** 12,
+  unitSpecialtyPower: 10 ** 12,
+  artifactPower: 10 ** 12,
+  royalTechPower: 10 ** 12,
+  rocLevel: 160,
+  level50HeroCount: 500,
+});
+const SUBMISSION_CORRECTION_REQUIRED_NUMERIC_STATS = new Set([
+  'totalCastlePower',
+  'troopPower',
+  'buildingPower',
+  'technologyPower',
+  'heroCombatPower',
+  'dragonPower',
+  'unitSpecialtyPower',
+  'rocLevel',
+  'level50HeroCount',
+]);
+const SUBMISSION_CORRECTION_STATS_FIELDS = Object.freeze([
+  ...Object.keys(SUBMISSION_CORRECTION_NUMERIC_STAT_LIMITS),
+  't9TroopTypes',
+  't10TroopTypes',
+  'readySpeedHeroes',
+  'troopRoster',
+  'usableHeroNames',
+  'researchProgressPct',
+]);
+const SUBMISSION_CORRECTION_COMMITMENT_FIELDS = Object.freeze([
+  'availability',
+  'unavailableTimes',
+  'preferredRole',
+  'secondaryRole',
+  'canHelpLead',
+  'vts1097Member',
+  'contactNumber',
+  'currentState',
+  'joinReason',
+  'fightingTimeIds',
+  'teamNamePreferences',
+  'canTeleport',
+  'canUseVoice',
+  'planCommitment',
+  'notes',
+]);
+const SUBMISSION_CORRECTION_FORBIDDEN_KEYS = new Set([
+  'playerid',
+  'uid',
+  'seasonid',
+  'status',
+  'knownnames',
+  'entrymethod',
+  'ocr',
+  'createdat',
+  'createdatms',
+  'updatedat',
+  'updatedatms',
+  'updatedby',
+  'submittedat',
+  'submittedatms',
+  'revision',
+  'schemaversion',
+  'rolepreferences',
+  'eligibleroleids',
+]);
 const ENTRY_METHODS = new Set(['manual', 'ocr']);
 const AVAILABILITY_VALUES = new Set(['all', 'most', 'backup', 'unavailable', '']);
 const PREFERRED_ROLE_VALUES = new Set([
@@ -329,6 +406,42 @@ function normalizeRevision(value, label = 'Expected revision') {
     throw new AllStarBohValidationError(`${label} must be a non-negative integer.`);
   }
   return revision;
+}
+
+function normalizeSourceRevisionGuards(value, options = {}) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new AllStarBohValidationError(`${options.label} guards must be an array.`);
+  }
+  if (value.length > ALL_STAR_BOH_MAX_PLAYERS) {
+    throw new AllStarBohValidationError(
+      `${options.label} guards exceed ${ALL_STAR_BOH_MAX_PLAYERS} entries.`
+    );
+  }
+  const seen = new Set();
+  return value.map((entry, index) => {
+    if (!Array.isArray(entry) || entry.length !== options.revisionCount + 1) {
+      throw new AllStarBohValidationError(
+        `${options.label} guard ${index + 1} has an invalid shape.`
+      );
+    }
+    const targetUid = requiredIdentifier(entry[0], `${options.label} guard user ID`);
+    if (seen.has(targetUid)) {
+      throw new AllStarBohValidationError(`${options.label} guards contain duplicate user IDs.`);
+    }
+    seen.add(targetUid);
+    return {
+      uid: targetUid,
+      revisions: entry
+        .slice(1)
+        .map((revision, revisionIndex) =>
+          normalizeRevision(
+            revision,
+            `${options.label} guard ${options.revisionLabels[revisionIndex]}`
+          )
+        ),
+    };
+  });
 }
 
 function resolveExpectedRevision(input, options = {}) {
@@ -936,6 +1049,308 @@ function normalizeGameNameCorrection(input) {
   };
 }
 
+function isForbiddenSubmissionCorrectionKey(key) {
+  return SUBMISSION_CORRECTION_FORBIDDEN_KEYS.has(String(key).toLocaleLowerCase('en'));
+}
+
+function assertNoForbiddenSubmissionCorrectionKeys(source, path) {
+  for (const key of Object.keys(optionalRecord(source))) {
+    if (isForbiddenSubmissionCorrectionKey(key)) {
+      throw new AllStarBohValidationError(`${path}.${key} cannot be corrected.`);
+    }
+  }
+}
+
+function optionalCorrectionRecord(value, label) {
+  if (value === null || value === undefined) return {};
+  return requireRecord(value, label);
+}
+
+function normalizeSubmissionCorrectionBoolean(value, label) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'boolean') {
+    throw new AllStarBohValidationError(`${label} must be true, false, or null.`);
+  }
+  return value;
+}
+
+function normalizeSubmissionCorrectionNumber(value, key) {
+  if (
+    SUBMISSION_CORRECTION_REQUIRED_NUMERIC_STATS.has(key) &&
+    (value === null || value === undefined || (typeof value === 'string' && !value.trim()))
+  ) {
+    throw new AllStarBohValidationError(`${key} correction is required.`);
+  }
+  if (value === null || value === undefined || value === '') return null;
+  return boundedInteger(value, `${key} correction`, {
+    minimum: 0,
+    maximum: SUBMISSION_CORRECTION_NUMERIC_STAT_LIMITS[key],
+  });
+}
+
+function normalizeSubmissionCorrectionTroopRoster(value) {
+  const troopRoster = boundedStringArray(value || [], {
+    label: 'Troop roster',
+    maxItems: 60,
+    maxLength: 48,
+  });
+  for (const entry of troopRoster) {
+    if (
+      !/^(?:(?:footmen|cavalry|archers)\|(?:SSS|SS|S|X|IX|VIII|VII|VI|V|IV|III|II|I)\|(?:normal|enhanced)|estimate\|(?:lofty|enhanced-t10|t10|t9))\|\d{1,10}$/u.test(
+        entry
+      )
+    ) {
+      throw new AllStarBohValidationError('Troop inventory contains an invalid row.');
+    }
+  }
+  return troopRoster;
+}
+
+function normalizeSubmissionCorrectionTopValue(key, value) {
+  if (key === 'gameName') {
+    return normalizedUnicodePlayerName(value, 'Corrected game name', { required: true });
+  }
+  if (key === 'locale') return boundedString(value, 20, 'Corrected locale');
+  if (key === 'timezone') return boundedString(value, 80, 'Corrected timezone');
+  if (key === 'preferredTeammates') return boundedPlayerNameArray(value);
+  return undefined;
+}
+
+function normalizeSubmissionCorrectionStats(input) {
+  const source = optionalCorrectionRecord(input, 'Submission correction stats');
+  const output = {};
+  for (const key of SUBMISSION_CORRECTION_STATS_FIELDS) {
+    if (!own(source, key)) continue;
+    if (own(SUBMISSION_CORRECTION_NUMERIC_STAT_LIMITS, key)) {
+      output[key] = normalizeSubmissionCorrectionNumber(source[key], key);
+    } else if (key === 't9TroopTypes') {
+      output[key] = boundedStringArray(source[key] || [], {
+        label: 'T9 troop types',
+        maxItems: 12,
+        maxLength: 60,
+      });
+    } else if (key === 't10TroopTypes') {
+      output[key] = boundedStringArray(source[key] || [], {
+        label: 'T10 troop types',
+        maxItems: 3,
+        maxLength: 60,
+      });
+    } else if (key === 'readySpeedHeroes') {
+      output[key] = boundedStringArray(source[key] || [], {
+        label: 'Ready speed heroes',
+        maxItems: 24,
+        maxLength: 80,
+      });
+    } else if (key === 'troopRoster') {
+      output[key] = normalizeSubmissionCorrectionTroopRoster(source[key]);
+    } else if (key === 'usableHeroNames') {
+      output[key] = boundedStringArray(source[key] || [], {
+        label: 'Usable heroes',
+        maxItems: ALL_STAR_BOH_MAX_USABLE_HERO_NAMES,
+        maxLength: MAX_NAME_LENGTH,
+      });
+    } else if (key === 'researchProgressPct') {
+      output[key] = normalizeResearchProgress(source[key], null);
+    }
+  }
+  return output;
+}
+
+function normalizeSubmissionCorrectionCommitment(input) {
+  const source = optionalCorrectionRecord(input, 'Submission correction commitment');
+  const output = {};
+  for (const key of SUBMISSION_CORRECTION_COMMITMENT_FIELDS) {
+    if (!own(source, key)) continue;
+    if (key === 'availability') {
+      output[key] = normalizedEnum(source[key], AVAILABILITY_VALUES, '', 'Availability');
+    } else if (key === 'unavailableTimes') {
+      output[key] = boundedString(source[key], 800, 'Unavailable times');
+    } else if (key === 'preferredRole') {
+      output[key] = normalizedEnum(source[key], PREFERRED_ROLE_VALUES, '', 'Preferred role');
+    } else if (key === 'secondaryRole') {
+      output[key] = normalizedEnum(source[key], PREFERRED_ROLE_VALUES, '', 'Secondary role');
+    } else if (key === 'canHelpLead') {
+      output[key] = normalizeSubmissionCorrectionBoolean(source[key], 'Can help lead');
+    } else if (key === 'vts1097Member') {
+      output[key] = normalizeSubmissionCorrectionBoolean(source[key], 'VTS 1097 membership');
+    } else if (key === 'contactNumber') {
+      output[key] = boundedString(source[key], 160, 'Contact number');
+    } else if (key === 'currentState') {
+      output[key] = boundedString(source[key], 160, 'Current state');
+    } else if (key === 'joinReason') {
+      output[key] = boundedString(source[key], 1000, 'VTS join reason');
+    } else if (key === 'fightingTimeIds') {
+      output[key] = normalizeFightingTimeIds(source[key] || [], { allowLegacyEmpty: true });
+    } else if (key === 'teamNamePreferences') {
+      const teamNamePreferences = boundedStringArray(source[key] || [], {
+        label: 'Team name preferences',
+        maxItems: ALL_STAR_BOH_TEAM_NAME_PREFERENCES.length,
+        identifiers: true,
+      });
+      if (
+        teamNamePreferences.some((value) => !ALL_STAR_BOH_TEAM_NAME_PREFERENCES.includes(value))
+      ) {
+        throw new AllStarBohValidationError('Team name preferences contain an unsupported value.');
+      }
+      output[key] = teamNamePreferences;
+    } else if (key === 'canTeleport') {
+      output[key] = normalizeSubmissionCorrectionBoolean(source[key], 'Can teleport');
+    } else if (key === 'canUseVoice') {
+      output[key] = normalizeSubmissionCorrectionBoolean(source[key], 'Can use voice');
+    } else if (key === 'planCommitment') {
+      output[key] = normalizeSubmissionCorrectionBoolean(source[key], 'Plan commitment');
+    } else if (key === 'notes') {
+      output[key] = boundedString(source[key], MAX_NOTE_LENGTH, 'Player notes');
+    }
+  }
+  return output;
+}
+
+function submissionCorrectionChangedFields(values) {
+  const changedFields = [];
+  for (const key of SUBMISSION_CORRECTION_TOP_FIELDS) {
+    if (own(values, key)) changedFields.push(key);
+  }
+  for (const key of SUBMISSION_CORRECTION_STATS_FIELDS) {
+    if (own(values.stats, key)) changedFields.push(`stats.${key}`);
+  }
+  for (const key of SUBMISSION_CORRECTION_COMMITMENT_FIELDS) {
+    if (own(values.commitment, key)) changedFields.push(`commitment.${key}`);
+  }
+  return changedFields;
+}
+
+function normalizeSubmissionCorrection(input) {
+  if (input === null || input === undefined) return null;
+  const source = requireRecord(input, 'Submission correction');
+  assertNoPrivateBinary(source, 'Submission correction');
+  for (const key of Object.keys(source)) {
+    if (['schemaVersion', 'reason', 'values', 'changedFields'].includes(key)) continue;
+    if (isForbiddenSubmissionCorrectionKey(key)) {
+      throw new AllStarBohValidationError(`Submission correction ${key} cannot be corrected.`);
+    }
+  }
+  const schemaVersion = boundedInteger(
+    source.schemaVersion ?? SUBMISSION_CORRECTION_SCHEMA_VERSION,
+    'Submission correction schema version',
+    { minimum: SUBMISSION_CORRECTION_SCHEMA_VERSION, maximum: SUBMISSION_CORRECTION_SCHEMA_VERSION }
+  );
+  const valuesSource = optionalCorrectionRecord(source.values, 'Submission correction values');
+  assertNoForbiddenSubmissionCorrectionKeys(valuesSource, 'Submission correction values');
+  assertNoForbiddenSubmissionCorrectionKeys(
+    optionalRecord(valuesSource.stats),
+    'Submission correction values.stats'
+  );
+  assertNoForbiddenSubmissionCorrectionKeys(
+    optionalRecord(valuesSource.commitment),
+    'Submission correction values.commitment'
+  );
+  const values = {};
+  for (const key of SUBMISSION_CORRECTION_TOP_FIELDS) {
+    if (own(valuesSource, key))
+      values[key] = normalizeSubmissionCorrectionTopValue(key, valuesSource[key]);
+  }
+  const stats = normalizeSubmissionCorrectionStats(valuesSource.stats);
+  if (Object.keys(stats).length) values.stats = stats;
+  const commitment = normalizeSubmissionCorrectionCommitment(valuesSource.commitment);
+  if (Object.keys(commitment).length) values.commitment = commitment;
+  const changedFields = submissionCorrectionChangedFields(values);
+  if (!changedFields.length) return null;
+  return {
+    schemaVersion,
+    reason: boundedString(
+      source.reason,
+      MAX_CORRECTION_REASON_LENGTH,
+      'Submission correction reason',
+      {
+        required: true,
+      }
+    ),
+    values,
+    changedFields,
+  };
+}
+
+function deriveSubmissionRolePreferences(commitmentInput) {
+  const commitment = optionalRecord(commitmentInput);
+  const rolePreferences = [];
+  for (const [value, label] of [
+    [commitment.preferredRole, 'Preferred role'],
+    [commitment.secondaryRole, 'Secondary role'],
+  ]) {
+    const role = String(value ?? '')
+      .trim()
+      .toLowerCase();
+    if (!role || role === 'flexible') continue;
+    const normalized = requiredIdentifier(role, label);
+    if (!rolePreferences.includes(normalized)) rolePreferences.push(normalized);
+  }
+  return rolePreferences;
+}
+
+function reviewMatchesCorrectionTarget(submission, review) {
+  if (!review || typeof review !== 'object' || review.stale === true) return false;
+  const submissionRevision = Number(submission?.revision);
+  const reviewRevision = Number(review?.submissionRevision);
+  const hasSubmissionRevision = Number.isInteger(submissionRevision);
+  const hasReviewRevision = Number.isInteger(reviewRevision);
+  if (!hasSubmissionRevision && !hasReviewRevision) return true;
+  return hasSubmissionRevision && hasReviewRevision && submissionRevision === reviewRevision;
+}
+
+export function applyAllStarBohSubmissionCorrections(submission, review) {
+  const source = requireRecord(submission, 'Player submission');
+  const output = cloneValue(source);
+  output.stats = { ...optionalRecord(output.stats) };
+  output.commitment = { ...optionalRecord(output.commitment) };
+  const originalRolePreferences = cloneValue(output.rolePreferences || []);
+  if (!reviewMatchesCorrectionTarget(source, review)) return output;
+
+  const normalizedReview = normalizeAllStarBohReview(review);
+  for (const key of Object.keys(REVIEW_STAT_CORRECTION_LIMITS)) {
+    const correction = normalizedReview.statCorrections?.[key];
+    if (!correction || correction.corrected === null || correction.corrected === undefined) {
+      continue;
+    }
+    output.stats[key] = correction.corrected;
+  }
+  if (normalizedReview.gameNameCorrection) {
+    output.gameName = normalizedReview.gameNameCorrection.corrected;
+  }
+  const correction = normalizedReview.submissionCorrection;
+  if (!correction) return output;
+  const correctedRoleFields =
+    own(correction.values.commitment, 'preferredRole') ||
+    own(correction.values.commitment, 'secondaryRole');
+  for (const key of SUBMISSION_CORRECTION_TOP_FIELDS) {
+    if (own(correction.values, key)) output[key] = cloneValue(correction.values[key]);
+  }
+  for (const key of SUBMISSION_CORRECTION_STATS_FIELDS) {
+    if (own(correction.values.stats, key))
+      output.stats[key] = cloneValue(correction.values.stats[key]);
+  }
+  for (const key of SUBMISSION_CORRECTION_COMMITMENT_FIELDS) {
+    if (own(correction.values.commitment, key)) {
+      output.commitment[key] = cloneValue(correction.values.commitment[key]);
+    }
+  }
+  if (
+    own(correction.values.commitment, 'vts1097Member') &&
+    output.commitment.vts1097Member === true
+  ) {
+    const canonicalCommitment = normalizeCommitment(output.commitment, {
+      allowLegacyFightingTimeIds: true,
+    });
+    output.commitment.contactNumber = canonicalCommitment.contactNumber;
+    output.commitment.currentState = canonicalCommitment.currentState;
+    output.commitment.joinReason = canonicalCommitment.joinReason;
+  }
+  output.rolePreferences = correctedRoleFields
+    ? deriveSubmissionRolePreferences(output.commitment)
+    : originalRolePreferences;
+  return output;
+}
+
 export function normalizeAllStarBohReview(input = {}) {
   const source = requireRecord(input, 'Submission review');
   assertNoPrivateBinary(source, 'Submission review');
@@ -965,6 +1380,10 @@ export function normalizeAllStarBohReview(input = {}) {
   if (own(source, 'gameNameCorrection')) {
     const gameNameCorrection = normalizeGameNameCorrection(source.gameNameCorrection);
     if (gameNameCorrection) output.gameNameCorrection = gameNameCorrection;
+  }
+  if (own(source, 'submissionCorrection')) {
+    const submissionCorrection = normalizeSubmissionCorrection(source.submissionCorrection);
+    if (submissionCorrection) output.submissionCorrection = submissionCorrection;
   }
   if (['needs_changes', 'rejected'].includes(output.status) && !output.note) {
     throw new AllStarBohValidationError(
@@ -1508,6 +1927,43 @@ function normalizeForcedTeamAssignments(input) {
   return assignments;
 }
 
+function normalizeCommitmentScoreAdjustments(input) {
+  const adjustments = boundedObjectArray(input || [], {
+    label: 'Commitment score adjustments',
+    maxItems: ALL_STAR_BOH_MAX_PLAYERS,
+    normalize: (item, index) => {
+      const source = requireRecord(item, `Commitment score adjustment ${index + 1}`);
+      const score = boundedInteger(source.score, 'Commitment score adjustment score', {
+        minimum: 1,
+        maximum: 10_000,
+      });
+      if (score === null) {
+        throw new AllStarBohValidationError('Commitment score adjustment score is required.');
+      }
+      return {
+        playerId: boundedString(
+          source.playerId,
+          MAX_ID_LENGTH,
+          'Commitment score adjustment player ID',
+          { required: true }
+        ),
+        score,
+        reason: boundedString(source.reason, MAX_NOTE_LENGTH, 'Commitment score adjustment reason'),
+      };
+    },
+  });
+  const playerIds = new Set();
+  for (const adjustment of adjustments) {
+    const playerId = adjustment.playerId;
+    if (playerIds.has(playerId)) {
+      throw new AllStarBohValidationError(
+        `Player ${adjustment.playerId} has more than one commitment score adjustment.`
+      );
+    }
+    playerIds.add(playerId);
+  }
+  return adjustments;
+}
 export function normalizeAllStarBohDraft(input = {}) {
   const source = requireRecord(input, 'Admin draft');
   assertNoPrivateBinary(source, 'Admin draft');
@@ -1528,6 +1984,9 @@ export function normalizeAllStarBohDraft(input = {}) {
       maxItems: 30,
       normalize: normalizeScoringVersion,
     }),
+    commitmentScoreAdjustments: normalizeCommitmentScoreAdjustments(
+      source.commitmentScoreAdjustments
+    ),
     scoreOverrides: boundedObjectArray(source.scoreOverrides || [], {
       label: 'Score overrides',
       maxItems: ALL_STAR_BOH_MAX_PLAYERS,
@@ -1563,6 +2022,41 @@ export function normalizeAllStarBohDraft(input = {}) {
   };
   assertDocumentSize(output, MAX_DRAFT_BYTES, 'Admin draft');
   return output;
+}
+
+function resolveDraftTeamIds(draft) {
+  const teamIds = [];
+  for (const rawTeamId of draft?.teamIds || []) {
+    const teamId = String(rawTeamId || '').trim();
+    if (teamId && !teamIds.includes(teamId)) teamIds.push(teamId);
+    if (teamIds.length === draft.teamCount) break;
+  }
+  for (let number = 1; teamIds.length < draft.teamCount; number += 1) {
+    const fallbackTeamId = `team-${number}`;
+    if (!teamIds.includes(fallbackTeamId)) teamIds.push(fallbackTeamId);
+  }
+  return teamIds;
+}
+
+function planReferencesPlayer(plan, playerIds) {
+  return [
+    ...plan.roleDefaults,
+    ...plan.seatOverrides,
+    ...plan.playerOverrides,
+    ...plan.instructions,
+    ...plan.rotations,
+  ].some((item) => playerIds.has(item.playerId));
+}
+
+function removePlanPlayerReferences(plan, playerIds) {
+  return {
+    ...plan,
+    roleDefaults: plan.roleDefaults.filter((rule) => !playerIds.has(rule.playerId)),
+    seatOverrides: plan.seatOverrides.filter((rule) => !playerIds.has(rule.playerId)),
+    playerOverrides: plan.playerOverrides.filter((rule) => !playerIds.has(rule.playerId)),
+    instructions: plan.instructions.filter((rule) => !playerIds.has(rule.playerId)),
+    rotations: plan.rotations.filter((rotation) => !playerIds.has(rotation.playerId)),
+  };
 }
 
 export function normalizeAllStarBohDraftTeam(input = {}) {
@@ -2554,19 +3048,120 @@ export function createAllStarBohAdminStore(options = {}) {
     const submissionRef = documentRef(firestore, db, submissionPath);
     const reviewRef = documentRef(firestore, db, getAllStarBohReviewPath(seasonId, targetUid));
     const feedbackRef = documentRef(firestore, db, getAllStarBohFeedbackPath(seasonId, targetUid));
+    const draftPath = getAllStarBohDraftPath(seasonId);
+    const draftRef = documentRef(firestore, db, draftPath);
     await firestore.runTransaction(db, async (transaction) => {
-      const snapshot = await transaction.get(submissionRef);
-      const submission = snapshotData(snapshot);
+      const submissionSnapshot = await transaction.get(submissionRef);
+      const draftSnapshot = await transaction.get(draftRef);
+      const submission = snapshotData(submissionSnapshot);
       if (!submission) {
         throw new AllStarBohValidationError('The selected signup no longer exists.');
       }
       assertStoredIdentity(submission, { seasonId, uid: targetUid });
+      const storedPlayerId = own(submission, 'playerId')
+        ? requiredIdentifier(submission.playerId, 'Stored submission player ID')
+        : targetUid;
+      const playerIds = new Set([targetUid, storedPlayerId]);
+      const existingDraft = snapshotData(draftSnapshot);
+      if (existingDraft) assertStoredIdentity(existingDraft, { seasonId });
+      const draft = existingDraft ? normalizeAllStarBohDraft(existingDraft) : null;
+      const teamRefs = new Map(
+        (draft ? resolveDraftTeamIds(draft) : []).map((teamId) => [
+          teamId,
+          documentRef(firestore, db, getAllStarBohDraftTeamPath(seasonId, teamId)),
+        ])
+      );
+      const teamSnapshots = new Map(
+        await Promise.all(
+          [...teamRefs].map(async ([teamId, ref]) => [teamId, await transaction.get(ref)])
+        )
+      );
       const actualRevision = normalizeRevision(
         submission.revision ?? 0,
         'Stored submission revision'
       );
       if (actualRevision !== expectedRevision) {
         throw new AllStarBohConflictError(submissionPath, expectedRevision, actualRevision);
+      }
+
+      const nextDraft = draft
+        ? {
+            ...draft,
+            playerIds: draft.playerIds.filter((playerId) => !playerIds.has(playerId)),
+            forcedTeamAssignments: draft.forcedTeamAssignments.filter(
+              (assignment) => !playerIds.has(assignment.playerId)
+            ),
+            commitmentScoreAdjustments: draft.commitmentScoreAdjustments.filter(
+              (adjustment) => !playerIds.has(adjustment.playerId)
+            ),
+            scoreOverrides: draft.scoreOverrides.filter(
+              (override) => !playerIds.has(override.playerId)
+            ),
+            plan: {
+              ...removePlanPlayerReferences(draft.plan, playerIds),
+            },
+          }
+        : null;
+      const draftChanged = Boolean(draft && JSON.stringify(nextDraft) !== JSON.stringify(draft));
+      const changedTeams = new Map();
+      for (const [teamId, teamSnapshot] of teamSnapshots) {
+        const existingTeam = snapshotData(teamSnapshot);
+        if (!existingTeam) continue;
+        assertStoredIdentity(existingTeam, { seasonId, teamId });
+        const team = normalizeAllStarBohDraftTeam(existingTeam);
+        const hasPlayerSeat = team.seats.some((seat) => playerIds.has(seat.playerId));
+        const hasPlayerCaptain = playerIds.has(team.captainId);
+        const hasPlayerPlanReference = planReferencesPlayer(team.plan, playerIds);
+        if (!hasPlayerSeat && !hasPlayerCaptain && !hasPlayerPlanReference) continue;
+        const seats = team.seats.map((seat) =>
+          playerIds.has(seat.playerId)
+            ? { ...seat, playerId: '', displayName: '', locked: false, score: null }
+            : seat
+        );
+        const occupiedScores = seats
+          .filter((seat) => seat.playerId && Number.isFinite(seat.score))
+          .map((seat) => seat.score);
+        changedTeams.set(teamId, {
+          existingTeam,
+          team: {
+            ...team,
+            captainId: hasPlayerCaptain ? '' : team.captainId,
+            seats,
+            plan: removePlanPlayerReferences(team.plan, playerIds),
+            scoreTotal: occupiedScores.reduce((total, score) => total + score, 0),
+            scoreAverage: occupiedScores.length
+              ? occupiedScores.reduce((total, score) => total + score, 0) / occupiedScores.length
+              : 0,
+          },
+        });
+      }
+
+      const serverTimestamp = firestore.serverTimestamp();
+      if (draftChanged) {
+        const draftRevision = normalizeRevision(
+          existingDraft.revision ?? 0,
+          'Stored draft revision'
+        );
+        transaction.set(draftRef, {
+          ...nextDraft,
+          ...metadataForWrite(existingDraft, { seasonId }, draftRevision, uid, serverTimestamp),
+        });
+      }
+      for (const [teamId, details] of changedTeams) {
+        const teamRevision = normalizeRevision(
+          details.existingTeam.revision ?? 0,
+          `Stored ${teamId} revision`
+        );
+        transaction.set(teamRefs.get(teamId), {
+          ...normalizeAllStarBohDraftTeam(details.team),
+          ...metadataForWrite(
+            details.existingTeam,
+            { seasonId, teamId },
+            teamRevision,
+            uid,
+            serverTimestamp
+          ),
+        });
       }
       transaction.delete(submissionRef);
       transaction.delete(reviewRef);
@@ -2724,7 +3319,8 @@ export function createAllStarBohAdminStore(options = {}) {
     await ensureAdmin();
     const targetUid = requiredIdentifier(targetUidInput, 'Review user ID');
     const reviewInput = requireRecord(input, 'Submission review');
-    const content = normalizeAllStarBohReview(reviewInput);
+    const normalizedReviewInput = normalizeAllStarBohReview(reviewInput);
+    const inputHasSubmissionCorrection = own(reviewInput, 'submissionCorrection');
     const expectedRevision = resolveExpectedRevision(reviewInput, saveOptions);
     const expectedSubmissionRevisionInput =
       saveOptions.submissionRevision ?? reviewInput.submissionRevision;
@@ -2773,6 +3369,37 @@ export function createAllStarBohAdminStore(options = {}) {
           actualSubmissionRevision
         );
       }
+      const content = { ...normalizedReviewInput };
+      if (
+        !inputHasSubmissionCorrection &&
+        existingReview &&
+        existingReview.stale !== true &&
+        existingReview.submissionRevision === actualSubmissionRevision &&
+        own(existingReview, 'submissionCorrection')
+      ) {
+        const existingSubmissionCorrection =
+          normalizeAllStarBohReview(existingReview).submissionCorrection;
+        if (existingSubmissionCorrection)
+          content.submissionCorrection = existingSubmissionCorrection;
+      }
+      assertDocumentSize(content, MAX_REVIEW_BYTES, 'Submission review');
+      const normalizedSubmission = normalizeSubmissionDocument(
+        submission,
+        seasonId,
+        targetUid,
+        submissionReadOptions
+      );
+      const effectiveSubmission = applyAllStarBohSubmissionCorrections(normalizedSubmission, {
+        ...content,
+        submissionRevision: actualSubmissionRevision,
+      });
+      normalizeAllStarBohSubmission(effectiveSubmission, {
+        ...submissionPlanningOptions,
+        requireFightingTimeIds: true,
+        requireVtsMembership: true,
+        allowLegacyFightingTimeIds: true,
+      });
+
       const serverTimestamp = firestore.serverTimestamp();
       payload = {
         ...content,
@@ -2967,6 +3594,23 @@ export function createAllStarBohAdminStore(options = {}) {
       teams.set(teamId, { team, expectedRevision });
     }
 
+    const expectedSubmissionRevisions = normalizeSourceRevisionGuards(
+      saveOptions.expectedSubmissionRevisions,
+      {
+        label: 'Submission source',
+        revisionCount: 1,
+        revisionLabels: ['revision'],
+      }
+    );
+    const expectedReviewRevisions = normalizeSourceRevisionGuards(
+      saveOptions.expectedReviewRevisions,
+      {
+        label: 'Review source',
+        revisionCount: 2,
+        revisionLabels: ['revision', 'submission revision'],
+      }
+    );
+
     const draftPath = hasDraft ? getAllStarBohDraftPath(seasonId) : null;
     const draftRef = hasDraft ? documentRef(firestore, db, draftPath) : null;
     const teamRefs = new Map(
@@ -2975,13 +3619,39 @@ export function createAllStarBohAdminStore(options = {}) {
         documentRef(firestore, db, getAllStarBohDraftTeamPath(seasonId, teamId)),
       ])
     );
+    const submissionRefs = new Map(
+      expectedSubmissionRevisions.map((guard) => [
+        guard.uid,
+        documentRef(firestore, db, getAllStarBohSubmissionPath(seasonId, guard.uid)),
+      ])
+    );
+    const reviewRefs = new Map(
+      expectedReviewRevisions.map((guard) => [
+        guard.uid,
+        documentRef(firestore, db, getAllStarBohReviewPath(seasonId, guard.uid)),
+      ])
+    );
     let result = null;
     await firestore.runTransaction(db, async (transaction) => {
-      const draftSnapshot = draftRef ? await transaction.get(draftRef) : null;
-      const teamSnapshots = new Map();
-      for (const [teamId, ref] of teamRefs) {
-        teamSnapshots.set(teamId, await transaction.get(ref));
-      }
+      const [draftSnapshot, teamSnapshotEntries, submissionSnapshotEntries, reviewSnapshotEntries] =
+        await Promise.all([
+          draftRef ? transaction.get(draftRef) : Promise.resolve(null),
+          Promise.all(
+            [...teamRefs].map(async ([teamId, ref]) => [teamId, await transaction.get(ref)])
+          ),
+          Promise.all(
+            [...submissionRefs].map(async ([targetUid, ref]) => [
+              targetUid,
+              await transaction.get(ref),
+            ])
+          ),
+          Promise.all(
+            [...reviewRefs].map(async ([targetUid, ref]) => [targetUid, await transaction.get(ref)])
+          ),
+        ]);
+      const teamSnapshots = new Map(teamSnapshotEntries);
+      const submissionSnapshots = new Map(submissionSnapshotEntries);
+      const reviewSnapshots = new Map(reviewSnapshotEntries);
 
       const existingDraft = draftSnapshot ? snapshotData(draftSnapshot) : null;
       if (hasDraft) {
@@ -3006,6 +3676,54 @@ export function createAllStarBohAdminStore(options = {}) {
           );
         }
         existingTeams.set(teamId, existing);
+      }
+      for (const guard of expectedSubmissionRevisions) {
+        const existing = snapshotData(submissionSnapshots.get(guard.uid));
+        if (!existing) {
+          throw new AllStarBohConflictError(
+            getAllStarBohSubmissionPath(seasonId, guard.uid),
+            guard.revisions[0],
+            0
+          );
+        }
+        assertStoredIdentity(existing, { seasonId, uid: guard.uid });
+        const actualRevision = existing
+          ? normalizeRevision(existing.revision ?? 0, 'Stored submission source revision')
+          : 0;
+        if (actualRevision !== guard.revisions[0]) {
+          throw new AllStarBohConflictError(
+            getAllStarBohSubmissionPath(seasonId, guard.uid),
+            guard.revisions[0],
+            actualRevision
+          );
+        }
+      }
+      for (const guard of expectedReviewRevisions) {
+        const existing = snapshotData(reviewSnapshots.get(guard.uid));
+        if (existing) assertStoredIdentity(existing, { seasonId, uid: guard.uid });
+        const actualRevision = existing
+          ? normalizeRevision(existing.revision ?? 0, 'Stored review source revision')
+          : 0;
+        if (actualRevision !== guard.revisions[0]) {
+          throw new AllStarBohConflictError(
+            getAllStarBohReviewPath(seasonId, guard.uid),
+            guard.revisions[0],
+            actualRevision
+          );
+        }
+        const actualSubmissionRevision = existing
+          ? normalizeRevision(
+              existing.submissionRevision ?? 0,
+              'Stored reviewed submission revision'
+            )
+          : 0;
+        if (actualSubmissionRevision !== guard.revisions[1]) {
+          throw new AllStarBohConflictError(
+            getAllStarBohReviewPath(seasonId, guard.uid),
+            guard.revisions[1],
+            actualSubmissionRevision
+          );
+        }
       }
 
       const serverTimestamp = firestore.serverTimestamp();

@@ -289,7 +289,7 @@ export const ALL_STAR_BOH_EN = Object.freeze({
     'Reading screenshot—keep this page open. You may continue filling the form.',
   'signup.ocrReviewReady': 'Power values filled automatically. Review the fields below.',
   'signup.ocrError':
-    'Screenshot reading failed. Check your connection, then press Read Screenshot to try again.',
+    'Screenshot reading failed. Retry, or enter or correct the values manually—you can still save your update.',
   'signup.revisionConflict':
     'Your saved signup changed in another session. Review this form and submit again.',
   'signup.savedNotice': 'Your stats were submitted successfully.',

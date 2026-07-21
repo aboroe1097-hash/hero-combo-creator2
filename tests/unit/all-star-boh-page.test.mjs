@@ -491,7 +491,7 @@ test('screenshot OCR uses a generation-safe, phase-rendered single flight', () =
   assert.match(allStarI18nSource, /Power values filled automatically\. Review the fields below\./u);
   assert.match(
     allStarI18nSource,
-    /'signup\.ocrError':[\s\S]*?Screenshot reading failed\. Check your connection, then press Read Screenshot to try again\./u
+    /'signup\.ocrError':[\s\S]*?Screenshot reading failed\. Retry, or enter or correct the values manually—you can still save your update\./u
   );
   assert.match(cssSource, /\.boh-ocr-progress\s*\{/u);
 });

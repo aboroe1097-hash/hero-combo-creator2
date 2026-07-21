@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.2.3)
+# Hero Combo Creator - VTS 1097 (v14.2.4)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management.
 
@@ -84,8 +84,8 @@ live in `tests/fixtures/specialization-planner-assets.json`. The embedded browse
 
 Known prerequisite edges are enforced. When the public corpus confirms every node and buff but not
 the dependency path—as with Enhanced Tactics IV—the planner exposes the complete catalog without
-inventing edges. Unknown node-level medal costs remain unknown instead of being estimated from the
-research total.
+inventing edges. The source planner supplies whole-research medal totals, not per-node costs;
+unknown node-level medal costs remain unknown instead of being estimated from those totals.
 
 Progress is stored under `vts_specialization_towers_v2`. The standalone
 `specialization-towers.html` route supports JSON import/export and contribution CSV debugging; the

@@ -2401,7 +2401,7 @@ function renderOcr(state) {
     ),
     error: state.tr(
       'signup.ocrError',
-      'Screenshot reading failed. Check your connection, then press Read Screenshot to try again.'
+      'Screenshot reading failed. Retry, or enter or correct the values manually—you can still save your update.'
     ),
   }[state.ocrPhase];
   setHidden(preview, !state.ocrFile);
@@ -3534,8 +3534,12 @@ async function submitSignup(state, form) {
   }
   let payload;
   try {
+    const effectiveEntryMethod =
+      state.entryMethod === 'ocr' && !state.ocrReview && state.submission?.status === 'submitted'
+        ? 'manual'
+        : state.entryMethod;
     payload = buildBohSubmissionPayload(data, {
-      entryMethod: state.entryMethod,
+      entryMethod: effectiveEntryMethod,
       ocrReview: state.ocrReview,
       language: state.language,
       model: state.model,

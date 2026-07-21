@@ -185,6 +185,23 @@ test('DOM translation routes text and accessible attributes without writing unsa
   assert.equal(placeholderNode.attributes.placeholder, 'Example: PlayerOne, PlayerTwo');
 });
 
+test('Russian OCR failure guidance renders without falling back to English', async () => {
+  const russianCopy =
+    'Не удалось распознать скриншот. Повторите попытку или введите/исправьте значения вручную — обновление всё равно можно сохранить.';
+  const pack = await loadAllStarBohLocale('ru');
+  const textNode = makeNode({ bohI18n: 'signup.ocrError' });
+  const root = {
+    querySelectorAll(selector) {
+      return selector === '[data-boh-i18n]' ? [textNode] : [];
+    },
+  };
+
+  assert.equal(pack['signup.ocrError'], russianCopy);
+  assert.notEqual(pack['signup.ocrError'], ALL_STAR_BOH_EN['signup.ocrError']);
+  applyAllStarBohTranslations(root, 'ru');
+  assert.equal(textNode.textContent, russianCopy);
+});
+
 test('text formatting substitutes supplied variables and preserves unresolved placeholders', () => {
   assert.equal(
     allStarBohText('Player {name} / {role}', { name: 'Abo' }, 'en'),

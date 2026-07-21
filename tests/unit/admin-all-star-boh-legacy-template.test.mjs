@@ -265,21 +265,30 @@ test('admin review and rotation editors preserve canonical editable fields', () 
   );
   assert.match(
     source,
-    /const correctionEntries = statEntries\(state, submission\)\.filter\(\(\{ key \}\) =>[\s\S]*?CORRECTABLE_STAT_KEYS\.includes\(key\)/u
+    /const FULL_CORRECTION_STAT_KEYS = Object\.freeze\(\[[\s\S]*?'level50HeroCount'/u
   );
   assert.match(
     source,
-    /const statCorrections = Object\.fromEntries\([\s\S]*?CORRECTABLE_STAT_KEYS/u
+    /export function buildAdminSubmissionCorrectionOverlay\([\s\S]*?submissionCorrection/u
   );
   assert.match(source, /function renderTroopInventory\(state, submission\)/u);
   assert.match(source, /stats\.troopRoster/u);
   assert.match(source, /bohAdminTroopInventoryTitle/u);
-  assert.match(source, /\$\{renderTroopInventory\(state, submission\)\}/u);
+  assert.match(source, /\$\{renderTroopInventory\(state, effective\)\}/u);
   assert.match(source, /data-action="delete-submission"/u);
   assert.match(source, /state\.options\.confirm\?\.\(message\) \?\? window\.confirm\(message\)/u);
   assert.match(source, /else if \(type === 'deleteSubmission'\)/u);
-  assert.match(source, /const reviewStatus = adapterReviewStatusToUi\(review\.status\)/u);
-  assert.match(source, /escapeHtml\(review\.note \|\| ''\)/u);
+  assert.match(source, /if \(result === null\) return;[\s\S]*?clearDeletedSubmissionState/u);
+  assert.match(
+    source,
+    /const reviewStatus = cleanText\(submission\?\.reviewStatus\)\.toLocaleLowerCase\(\) \|\| 'pending'/u
+  );
+  assert.doesNotMatch(source, /const reviewStatus = adapterReviewStatusToUi\(review\.status\)/u);
+  assert.match(source, /escapeHtml\(reviewMatchesSubmission \? review\.note \|\| '' : ''\)/u);
+  assert.match(
+    source,
+    /adapterReviewMatchesSubmissionRevision\(submission, review\) \? review\.note : ''/u
+  );
   assert.match(source, /name="adminUsefulnessRating"/u);
   assert.match(source, /name="captainId"/u);
   assert.match(source, /name="notes"/u);
@@ -296,10 +305,27 @@ test('admin scoring workflow exposes filters, batch review, corrections, and bal
   assert.match(source, /aria-sort="\$\{ariaSort\}"/u);
   assert.match(source, /data-action="select-all-visible"/u);
   assert.match(source, /data-action="select-submission-row"/u);
+  assert.match(source, /class="boh-admin-selection-checkbox"/u);
+  assert.match(source, /checkbox\.indeterminate = selectedCount > 0/u);
   assert.match(source, /data-form="batch-review"/u);
+  assert.match(source, /data-action="delete-selected-submissions"/u);
+  assert.match(source, /'batchDeleteSubmissions'/u);
+  assert.match(source, /'all-star-boh-batch-delete-partial'/u);
   assert.match(source, /data-action="export-signups"/u);
-  assert.match(source, /name="gameNameCorrection"/u);
-  assert.match(source, /name="gameNameCorrectionReason"/u);
+  assert.match(source, /data-action="score-audit-sort"/u);
+  assert.match(source, /aria-sort="\$\{ariaSort\}"/u);
+  assert.match(source, /player\?\.totalCastlePower \?\? player\?\.stats\?\.totalCastlePower/u);
+  assert.match(source, /data-form="commitment-scores"/u);
+  assert.match(source, /data-commitment-score-player/u);
+  assert.match(source, /min="1" max="10000" step="1" inputmode="numeric"/u);
+  assert.match(source, /adminBohCommitmentScoreForPlayer/u);
+  assert.match(source, /data-score-diagnostic/u);
+  assert.doesNotMatch(source, /data-form="score-override"/u);
+  assert.match(source, /data-form="submission-corrections"/u);
+  assert.match(source, /name="correction\.gameName"/u);
+  assert.match(source, /name="correction\.reason"/u);
+  assert.match(source, /data-correction-troop-row/u);
+  assert.doesNotMatch(source, /data-form="stat-corrections"/u);
   assert.match(source, /data-form="team-builder-settings"/u);
   assert.match(source, /name="teamCount"/u);
   assert.match(source, /name="balanceMetric"/u);
@@ -308,4 +334,36 @@ test('admin scoring workflow exposes filters, batch review, corrections, and bal
   assert.match(source, /data-action="apply-balance-preview"/u);
   assert.match(source, /data-action="discard-balance-preview"/u);
   assert.doesNotMatch(source, /data-action="balance-teams"/u);
+});
+
+test('admin signup table keeps the wide desktop split and accessible checkbox contracts', () => {
+  const css = readFileSync('css/admin-all-star-boh.css', 'utf8');
+
+  assert.match(
+    css,
+    /\.boh-admin-review-layout\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 2\.2fr\) minmax\(20rem, 0\.65fr\);[\s\S]*?\}/u
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 1120px\)[\s\S]*?\.boh-admin-review-layout,[\s\S]*?grid-template-columns:\s*1fr;/u
+  );
+  assert.match(css, /\.boh-admin-selection-checkbox\s*\{[\s\S]*?accent-color:/u);
+  assert.match(css, /min-height:\s*1\.15rem;/u);
+  assert.match(css, /min-width:\s*1\.15rem;/u);
+  assert.match(css, /\.boh-admin-selection-checkbox:focus-visible/u);
+  assert.match(css, /\.boh-admin-selection-checkbox:disabled/u);
+  assert.match(css, /@media \(forced-colors: active\)[\s\S]*?\.boh-admin-selection-checkbox/u);
+});
+
+test('manual commitment scoring has compact responsive audit styles', () => {
+  const css = readFileSync('css/admin-all-star-boh.css', 'utf8');
+
+  assert.match(css, /\.boh-admin-commitment-score-toolbar\s*\{[\s\S]*?display:\s*grid;/u);
+  assert.match(css, /\.boh-admin-score-input \.boh-admin-input\s*\{[\s\S]*?text-align:\s*end;/u);
+  assert.match(css, /\.boh-admin-legacy-override small\s*\{[\s\S]*?color:\s*var\(--boh-gold\);/u);
+  assert.match(css, /\.boh-admin-score-diagnostic\s*\{[\s\S]*?border:\s*1px solid/u);
+  assert.match(
+    css,
+    /@media \(max-width: 760px\)[\s\S]*?\.boh-admin-commitment-score-toolbar\s*\{[\s\S]*?grid-template-columns:\s*1fr;/u
+  );
 });

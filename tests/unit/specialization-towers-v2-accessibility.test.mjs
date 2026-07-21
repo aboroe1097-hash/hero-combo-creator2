@@ -87,7 +87,9 @@ test('the research inspector is modal, Escape-closeable, and restores focus', ()
   assert.match(appSource, /aria-labelledby=/u);
   assert.match(appSource, /data-specialization-close-inspector/u);
   assert.match(appSource, /(?:document\.activeElement|returnFocus|restoreTarget|inspectorOpener)/u);
-  assert.match(appSource, /(?:event|e)\.key\s*===\s*["']Escape["']/u);
+  assert.match(appSource, /addEventListener\(["']cancel["'],\s*handleDialogCancel,\s*true\)/u);
+  assert.match(appSource, /removeEventListener\(["']cancel["'],\s*handleDialogCancel,\s*true\)/u);
+  assert.match(appSource, /event\.target\.hasAttribute\(["']data-specialization-inspector["']\)/u);
   assert.match(appSource, /(?:showModal\(\)|(?:event|e)\.key\s*!==\s*["']Tab["'])/u);
   assert.match(
     appSource,
@@ -112,6 +114,24 @@ test('status changes and toasts are announced without stealing focus', () => {
   assert.doesNotMatch(appSource, /data-specialization-toast[^\n]{0,200}\.focus\(/u);
 });
 
+test('mobile graph exposes an atomic column position status without replacing graph scroll', () => {
+  assert.match(renderedSource, /data-specialization-column-position/u);
+  assert.match(
+    renderedSource,
+    /<[^>]+(?=[^>]*data-specialization-column-position)(?=[^>]*role=["']status["'])(?=[^>]*aria-live=["']polite["'])(?=[^>]*aria-atomic=["']true["'])[^>]*>/u
+  );
+  assert.match(appSource, /progressOf/u);
+  assert.match(appSource, /columnPositionText/u);
+  assert.match(appSource, /leadingVisibleColumnId/u);
+  assert.match(appSource, /requestAnimationFrame/u);
+  assert.match(appSource, /SPECIALIZATION_COLUMN_COUNT/u);
+  assert.match(cssSource, /\.specialization-column-position-dot/u);
+  assert.match(
+    cssSource,
+    /data-specialization-tower-(?:graph|canvas)[^{]*\{[\s\S]*?overflow-x:\s*auto/u
+  );
+});
+
 test('theme and locale changes update document state without a reload', () => {
   assert.match(appSource, /['"]vts_theme['"]/u);
   assert.match(appSource, /(?:dataset\.theme|setAttribute\(["']data-theme["'])/u);
@@ -126,10 +146,12 @@ test('theme and locale changes update document state without a reload', () => {
 test('feature CSS supports focus, touch targets, light theme, RTL, mobile, and reduced motion', () => {
   assert.match(cssSource, /:focus-visible/u);
   assert.match(cssSource, /min-height:\s*44px/u);
+  assert.match(cssSource, /touch-action:\s*manipulation/u);
   assert.match(cssSource, /\[data-theme=["']light["']\][^{]*(?:specialization|spec-tower)/u);
   assert.match(cssSource, /\[dir=["']rtl["']\][^{]*(?:specialization|spec-tower)/u);
   assert.match(cssSource, /unicode-bidi:\s*isolate/u);
   assert.match(cssSource, /@media\s*\(max-width:\s*(?:640|720|768)px\)/u);
+  assert.match(cssSource, /100dvh/u);
   assert.match(
     cssSource,
     /data-specialization-tower-(?:graph|canvas)[^{]*\{[\s\S]*?overflow-x:\s*auto/u
