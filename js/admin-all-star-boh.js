@@ -759,6 +759,9 @@ function normalizeTeams(sourceTeams, teamCount = TEAM_COUNT) {
       generatedName: !cleanText(source.name || source.label),
       color: cleanText(source.color),
       captainId: cleanText(source.captainId),
+      coLeaderIds: uniqueTextList(
+        source.coLeaderIds || source.coleaderIds || source.coLeaders
+      ).slice(0, 2),
       notes: cleanText(source.notes),
       seats,
     };
@@ -1391,6 +1394,10 @@ function adapterMaterializeTeam(state, teamId, index) {
     name: cleanText(source.name || source.label) || `Team ${index + 1}`,
     color: cleanText(source.color) || ADAPTER_TEAM_COLORS[index % ADAPTER_TEAM_COLORS.length],
     captainId: cleanText(source.captainId),
+    coLeaderIds: uniqueTextList(source.coLeaderIds || source.coleaderIds || source.coLeaders).slice(
+      0,
+      2
+    ),
     seats,
     plan: source.plan && typeof source.plan === 'object' ? adapterClone(source.plan) : {},
     scoreTotal: seats.reduce((total, seat) => total + finiteNumber(seat.score), 0),
@@ -2017,19 +2024,100 @@ async function adapterSaveTeams(state, teams) {
 async function adapterSaveTeamMetadata(state, payload) {
   const team = adapterFindTeam(state, payload.teamId);
   const captainId = cleanText(payload.captainId);
+  const coLeaderIds = uniqueTextList(payload.coLeaderIds).slice(0, 2);
   if (captainId && !team.seats.some((seat) => seat.playerId === captainId)) {
     throw adapterError(
       'all-star-boh-captain-not-on-team',
       'Choose a captain who is assigned to this team.'
     );
   }
+  for (const coLeaderId of coLeaderIds) {
+    if (!team.seats.some((seat) => seat.playerId === coLeaderId)) {
+      throw adapterError(
+        'all-star-boh-co-leader-not-on-team',
+        'Choose co-leaders who are assigned to this team.'
+      );
+    }
+  }
+  if (captainId && coLeaderIds.includes(captainId)) {
+    throw adapterError(
+      'all-star-boh-leadership-duplicate',
+      'Leader and co-leaders must be different players.'
+    );
+  }
   await adapterSaveTeam(state, team.id, (draftTeam) => {
     draftTeam.name = cleanText(payload.name);
     draftTeam.color = cleanText(payload.color);
     draftTeam.captainId = captainId;
+    draftTeam.coLeaderIds = coLeaderIds;
     draftTeam.notes = cleanText(payload.notes);
     return draftTeam;
   });
+}
+
+function adapterRoleIdByPurpose(plan, purpose) {
+  const aliases = {
+    offensive: ['offensive', 'center', 'offense'],
+    bottom: ['bottom', 'bot'],
+    top: ['top'],
+    rune: ['rune'],
+  }[purpose];
+  return (
+    plan.roleGroups.find((role) =>
+      aliases.some((alias) => cleanText(role.id).toLocaleLowerCase().includes(alias))
+    )?.id ||
+    plan.roleGroups.find((role) =>
+      aliases.some((alias) => cleanText(role.label).toLocaleLowerCase().includes(alias))
+    )?.id ||
+    ''
+  );
+}
+
+async function adapterAutoAssignRankedRoles(state) {
+  const plan = adapterPlan(state.draft);
+  const pattern = [
+    'offensive',
+    'offensive',
+    'bottom',
+    'top',
+    'offensive',
+    'offensive',
+    'bottom',
+    'top',
+    'rune',
+    'rune',
+    'bottom',
+    'top',
+  ];
+  const roleIds = Object.fromEntries(
+    ['offensive', 'bottom', 'top', 'rune'].map((purpose) => [
+      purpose,
+      adapterRoleIdByPurpose(plan, purpose),
+    ])
+  );
+  if (Object.values(roleIds).some((id) => !id)) {
+    throw adapterError(
+      'all-star-boh-ranked-role-missing',
+      'Ranked role assignment needs Offensive, Top, Bot, and Rune role groups.'
+    );
+  }
+  const teams = adapterTeamIds(state.draft).map((teamId, index) => {
+    const team = adapterMaterializeTeam(state, teamId, index);
+    const rankedSeats = team.seats
+      .filter((seat) => seat.playerId)
+      .sort(
+        (left, right) =>
+          finiteNumber(right.score) - finiteNumber(left.score) || left.seatNumber - right.seatNumber
+      );
+    rankedSeats.forEach((seat, index) => {
+      seat.roleGroupId = roleIds[pattern[index] || 'offensive'];
+      const role = plan.roleGroups.find((item) => item.id === seat.roleGroupId);
+      seat.roleLabel =
+        roleDisplayName({ tr: (key, fallback) => fallback }, role) || role?.label || '';
+    });
+    return team;
+  });
+  await adapterSaveTeams(state, teams);
 }
 
 function adapterUniqueId(prefix, state) {
@@ -2078,6 +2166,10 @@ function adapterReconcileCaptain(team) {
   if (team.captainId && !team.seats.some((seat) => seat.playerId === team.captainId)) {
     team.captainId = '';
   }
+  const teamPlayerIds = new Set(team.seats.map((seat) => seat.playerId).filter(Boolean));
+  team.coLeaderIds = uniqueTextList(team.coLeaderIds)
+    .filter((id) => teamPlayerIds.has(id))
+    .slice(0, 2);
   return team;
 }
 
@@ -2819,6 +2911,7 @@ async function adapterSaveTeamBuilderSettings(state, payload) {
       const team = adapterMaterializeTeam(workingState, teamId, currentTeamIds.indexOf(teamId));
       if (!removedTeamIdSet.has(teamId)) return [teamId, team];
       team.captainId = '';
+      team.coLeaderIds = [];
       team.scoreTotal = 0;
       team.totalScore = 0;
       team.scoreAverage = 0;
@@ -3656,10 +3749,16 @@ function adapterTeamMetadataErrors(state) {
   for (const team of teams) {
     if (!cleanText(team.name)) errors.push(`all-star-boh-team-name-required (team: ${team.id})`);
     if (!cleanText(team.color)) errors.push(`all-star-boh-team-color-required (team: ${team.id})`);
+    const teamPlayerIds = new Set(team.seats.map((seat) => seat.playerId).filter(Boolean));
     if (!cleanText(team.captainId)) {
       errors.push(`all-star-boh-team-captain-required (team: ${team.id})`);
-    } else if (!team.seats.some((seat) => seat.playerId === team.captainId)) {
+    } else if (!teamPlayerIds.has(team.captainId)) {
       errors.push(`all-star-boh-team-captain-unassigned (team: ${team.id})`);
+    }
+    for (const coLeaderId of uniqueTextList(team.coLeaderIds)) {
+      if (!teamPlayerIds.has(coLeaderId)) {
+        errors.push(`all-star-boh-team-co-leader-unassigned (team: ${team.id})`);
+      }
     }
   }
   return errors;
@@ -3761,6 +3860,7 @@ function adapterPublicationBundle(state, kind) {
       number: team.number,
       color: team.color,
       captainId: team.captainId,
+      coLeaderIds: uniqueTextList(team.coLeaderIds).slice(0, 2),
       seats: team.seats.map((seat) => ({
         id: seat.id,
         seatNumber: seat.seatNumber,
@@ -4040,6 +4140,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'saveTeamBuilderSettings') {
       await adapterSaveTeamBuilderSettings(state, payload);
     } else if (type === 'saveEligiblePool') await adapterSaveEligiblePool(state, payload);
+    else if (type === 'autoAssignRankedRoles') await adapterAutoAssignRankedRoles(state);
     else if (type === 'assignSeatPlayer') await adapterAssignSeatPlayer(state, payload);
     else if (type === 'saveTeamMetadata') await adapterSaveTeamMetadata(state, payload);
     else if (type === 'saveRoleGroups') await adapterSaveRoleGroups(state, payload);
@@ -4424,6 +4525,7 @@ function renderShell(state) {
   root.setAttribute('aria-busy', String(state.pending));
   syncSignupSelectionCheckbox(state);
   syncEligiblePoolCount(state);
+  syncEligiblePoolSearch(state);
   syncStickyOffsets(state);
   const stagePanel = root.querySelector('#bohAdminStagePanel');
   if (stagePanel) {
@@ -4502,6 +4604,34 @@ function syncEligiblePoolCount(state) {
   if (save) {
     save.textContent = `${state.tr('adminBohSaveEligiblePool', 'Save eligible field')} (${text})`;
     save.disabled = state.pending;
+  }
+}
+
+function syncEligiblePoolSearch(state) {
+  const form = state.root.querySelector('[data-form="eligible-pool"]');
+  if (!form) return;
+  const input = form.querySelector('[data-action="eligible-pool-search"]');
+  const filter = cleanText(form.querySelector('[data-action="eligible-pool-filter"]')?.value);
+  const query = cleanText(input?.value).toLocaleLowerCase();
+  let matches = 0;
+  for (const row of form.querySelectorAll('[data-eligible-pool-row]')) {
+    const haystack = cleanText(row.dataset.search).toLocaleLowerCase();
+    const checkbox = row.querySelector('input[name="playerId"]');
+    const selectionMatches =
+      filter === 'selected'
+        ? checkbox?.checked
+        : filter === 'unselected'
+          ? !checkbox?.checked
+          : true;
+    const visible = selectionMatches && (!query || haystack.includes(query));
+    row.hidden = !visible;
+    if (visible) matches += 1;
+  }
+  const counter = form.querySelector('[data-eligible-pool-search-count]');
+  if (counter) {
+    counter.textContent = query
+      ? state.tr('adminBohEligiblePoolSearchCount', '{count} matches', { count: matches })
+      : '';
   }
 }
 
@@ -6066,6 +6196,43 @@ function commitmentScoreDraftValue(state, player) {
     : String(player.commitmentScore);
 }
 
+function applyCommitmentScoreBatch(state, form) {
+  if (!form) return 0;
+  const mode = cleanText(form.querySelector('[name="commitmentBatchMode"]')?.value) || 'set';
+  const amount = integer(form.querySelector('[name="commitmentBatchValue"]')?.value);
+  const inputs = [...form.querySelectorAll('[data-commitment-score-player]')];
+  if (mode !== 'clear' && (amount < 1 || amount > 10000)) {
+    setStatus(
+      state,
+      state.tr('adminBohCommitmentBatchInvalid', 'Use a batch value from 1 to 10,000.'),
+      'error'
+    );
+    return 0;
+  }
+  for (const input of inputs) {
+    if (mode === 'clear') {
+      input.value = '';
+    } else if (mode === 'add') {
+      const next = clamp(integer(input.value) + amount, 1, 10000);
+      input.value = String(next);
+    } else {
+      input.value = String(amount);
+    }
+    input.setCustomValidity?.('');
+    input.removeAttribute?.('aria-invalid');
+  }
+  captureCommitmentScoreDraft(state, form);
+  setStatus(
+    state,
+    state.tr(
+      'adminBohCommitmentBatchApplied',
+      'Batch commitment values updated. Review, then save manual scores.'
+    ),
+    'success'
+  );
+  return inputs.length;
+}
+
 function scoreDiagnosticLabel(state, code) {
   const labels = {
     calculation_failed: [
@@ -6133,6 +6300,23 @@ function renderScoreBreakdown(state, players, version) {
         )}" placeholder="${escapeHtml(
           state.tr('adminBohCommitmentScoreDefaultReason', 'Commitment/usefulness assessment')
         )}" /></label>
+        <div class="boh-admin-commitment-batch" aria-label="${escapeHtml(
+          state.tr('adminBohCommitmentBatch', 'Batch commitment adjustment')
+        )}">
+          <label><span>${escapeHtml(
+            state.tr('adminBohCommitmentBatchMode', 'Batch mode')
+          )}</span><select class="boh-admin-input" name="commitmentBatchMode">
+            <option value="set">${escapeHtml(state.tr('adminBohCommitmentBatchSet', 'Set to'))}</option>
+            <option value="add">${escapeHtml(state.tr('adminBohCommitmentBatchAdd', 'Add on'))}</option>
+            <option value="clear">${escapeHtml(state.tr('adminBohCommitmentBatchClear', 'Clear'))}</option>
+          </select></label>
+          <label><span>${escapeHtml(
+            state.tr('adminBohCommitmentBatchValue', 'Value')
+          )}</span><input class="boh-admin-input" name="commitmentBatchValue" type="number" min="1" max="10000" step="1" inputmode="numeric" placeholder="1-10000" /></label>
+          <button class="boh-admin-button" type="button" data-action="apply-commitment-batch">${escapeHtml(
+            state.tr('adminBohCommitmentBatchApply', 'Apply to visible rows')
+          )}</button>
+        </div>
         <button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
           state.tr('adminBohSaveCommitmentScores', 'Save manual scores')
         )}</button>
@@ -6261,9 +6445,12 @@ function selectedTeamBuilderIds(state, candidates) {
   return candidates.slice(0, snapshotFieldSize(state)).map((player) => player.playerId);
 }
 
-function renderEligiblePoolPlanningHints(state, player) {
+function eligiblePoolHintLabels(state, player) {
   const signals = buildAdminSignupPlanningSignals(player, state.options);
   const hints = [];
+  if (cleanText(player.locale)) {
+    hints.push(`${state.tr('adminBohLocale', 'Language / locale')}: ${cleanText(player.locale)}`);
+  }
   if (signals.primaryRole) {
     hints.push(
       `${state.tr('adminBohPrimaryRole', 'Primary role')}: ${adminChoiceLabel(
@@ -6287,6 +6474,11 @@ function renderEligiblePoolPlanningHints(state, player) {
   if (signals.usableHeroCount) {
     hints.push(state.tr('adminBohHeroCount', '{count} heroes', { count: signals.usableHeroCount }));
   }
+  return hints;
+}
+
+function renderEligiblePoolPlanningHints(state, player) {
+  const hints = eligiblePoolHintLabels(state, player);
   if (!hints.length) return '';
   return `<small class="boh-admin-eligible-hints">${hints
     .map((hint) => `<span>${escapeHtml(hint)}</span>`)
@@ -6296,7 +6488,8 @@ function renderEligiblePoolPlanningHints(state, player) {
 function renderEligiblePool(state, candidates, selectedIds) {
   const selected = new Set(selectedIds);
   const fieldSize = snapshotFieldSize(state);
-  return `<details class="boh-admin-card" open>
+  const detailsOpen = selected.size === fieldSize ? '' : ' open';
+  return `<details class="boh-admin-card boh-admin-eligible-pool"${detailsOpen}>
     <summary><strong>${escapeHtml(
       state.tr('adminBohEligiblePool', 'Eligible player pool')
     )}</strong> <span data-eligible-pool-count>${selected.size} / ${fieldSize}</span></summary>
@@ -6308,10 +6501,38 @@ function renderEligiblePool(state, candidates, selectedIds) {
       )
     )}</p>
     <form class="boh-admin-stack" data-form="eligible-pool" data-eligible-field-size="${fieldSize}">
-      <div class="boh-admin-repeat-list">
+      <div class="boh-admin-eligible-toolbar">
+        <label><span>${escapeHtml(
+          state.tr('adminBohEligiblePoolSearch', 'Search eligible players')
+        )}</span><input class="boh-admin-input" type="search" data-action="eligible-pool-search" placeholder="${escapeHtml(
+          state.tr('adminBohEligiblePoolSearchPlaceholder', 'Name, role, time, language...')
+        )}" autocomplete="off" /></label>
+        <label><span>${escapeHtml(
+          state.tr('adminBohEligiblePoolFilter', 'Show')
+        )}</span><select class="boh-admin-input" data-action="eligible-pool-filter">
+          <option value="all">${escapeHtml(state.tr('adminBohEligiblePoolFilterAll', 'All players'))}</option>
+          <option value="selected">${escapeHtml(
+            state.tr('adminBohEligiblePoolFilterSelected', 'Selected only')
+          )}</option>
+          <option value="unselected">${escapeHtml(
+            state.tr('adminBohEligiblePoolFilterUnselected', 'Unselected only')
+          )}</option>
+        </select></label>
+        <small data-eligible-pool-search-count></small>
+      </div>
+      <div class="boh-admin-repeat-list boh-admin-eligible-grid">
         ${candidates
-          .map(
-            (player) => `<label class="boh-admin-confirm">
+          .map((player) => {
+            const hints = eligiblePoolHintLabels(state, player);
+            const searchText = [
+              playerName(player),
+              player.playerId,
+              formatNumber(state, scoreValue(player)),
+              ...hints,
+            ].join(' ');
+            return `<label class="boh-admin-confirm" data-eligible-pool-row data-search="${escapeHtml(
+              searchText
+            )}">
               <input type="checkbox" name="playerId" data-action="eligible-pool-player" value="${escapeHtml(player.playerId)}" ${
                 selected.has(player.playerId) ? 'checked' : ''
               } />
@@ -6321,8 +6542,8 @@ function renderEligiblePool(state, candidates, selectedIds) {
                 )}</span>
                 ${renderEligiblePoolPlanningHints(state, player)}
               </span>
-            </label>`
-          )
+            </label>`;
+          })
           .join('')}
       </div>
       <button class="boh-admin-button boh-admin-button-primary" type="submit" data-eligible-pool-save>${escapeHtml(
@@ -6536,6 +6757,9 @@ function renderTeamBuilder(state) {
         <button type="button" class="boh-admin-button" data-action="preview-balance-teams">${escapeHtml(
           state.tr('adminBohPreviewBalance', 'Preview balance')
         )}</button>
+        <button type="button" class="boh-admin-button" data-action="auto-assign-ranked-roles">${escapeHtml(
+          state.tr('adminBohAutoAssignRankedRoles', 'Auto roles by rank')
+        )}</button>
         <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="apply-balance-preview" ${
           preview ? '' : 'disabled'
         }>${escapeHtml(state.tr('adminBohApplyPreview', 'Apply preview'))}</button>
@@ -6557,13 +6781,128 @@ function renderTeamBuilder(state) {
     ${renderDirectAssignment(state, candidates, selectedIds)}
     ${renderBalancePreview(state)}
     ${renderSeatMoveNotice(state)}
-    <div class="boh-admin-team-board" aria-label="${escapeHtml(
+    ${renderTeamExportTools(state, balance)}
+    <div class="boh-admin-team-board" style="--boh-team-count:${snapshotTeamCount(state)}" aria-label="${escapeHtml(
       state.tr('adminBohTeamBoard', '{count}-team assignment board', {
         count: snapshotTeamCount(state),
       })
     )}">
       ${state.snapshot.teams.map((team, index) => renderTeamColumn(state, team, balance, index)).join('')}
-    </div>`;
+    </div>
+    <div class="boh-admin-team-export-host" aria-hidden="true">${renderTeamExportCard(
+      state,
+      balance,
+      'roles'
+    )}${renderTeamExportCard(state, balance, 'scores')}</div>`;
+}
+
+function renderTeamExportTools(state, balance) {
+  return `<section class="boh-admin-card boh-admin-team-export-tools">
+    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohTeamExportKicker', 'TEAM EXPORT')
+    )}</p><h4>${escapeHtml(
+      state.tr('adminBohTeamExportTitle', 'Shareable team output')
+    )}</h4><p>${escapeHtml(
+      state.tr(
+        'adminBohTeamExportHelp',
+        'Exports the current teams as a clean roster with player scores and team totals.'
+      )
+    )}</p></div>
+    <div class="boh-admin-stage-actions">
+      <button type="button" class="boh-admin-button" data-action="export-team-board-csv">${escapeHtml(
+        state.tr('adminBohExportTeamsCsv', 'Export teams CSV')
+      )}</button>
+      <button type="button" class="boh-admin-button" data-action="export-team-board-png" data-export-view="roles">${escapeHtml(
+        state.tr('adminBohExportTeamsRolesPng', 'Roles PNG')
+      )}</button>
+      <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="export-team-board-png" data-export-view="scores">${escapeHtml(
+        state.tr('adminBohExportTeamsScoresPng', 'Scores PNG')
+      )}</button>
+    </div></header>
+    <div class="boh-admin-team-export-mini" style="--boh-team-count:${snapshotTeamCount(state)}">
+      ${state.snapshot.teams
+        .map(
+          (team, index) =>
+            `<span style="--boh-team-color:${escapeHtml(team.color || '#7dd3fc')}">${escapeHtml(
+              teamDisplayName(state, team)
+            )}: ${escapeHtml(formatNumber(state, balance.scoreTotals[index] || 0))}</span>`
+        )
+        .join('')}
+    </div>
+  </section>`;
+}
+
+function renderTeamExportCard(state, balance, mode = 'scores') {
+  const teamCount = snapshotTeamCount(state);
+  const scoresMode = mode !== 'roles';
+  return `<section class="boh-admin-team-export-card" data-team-export-card="${escapeHtml(
+    mode
+  )}" style="--boh-team-count:${teamCount}">
+    <header>
+      <div><p>${escapeHtml(state.tr('adminBohAllStarBoh', 'All-Star BoH'))}</p>
+      <h2>${escapeHtml(
+        state.tr(
+          scoresMode ? 'adminBohTeamExportScoresRoster' : 'adminBohTeamExportRolesRoster',
+          scoresMode ? '{count}-team score roster' : '{count}-team role roster',
+          { count: teamCount }
+        )
+      )}</h2></div>
+      <span>${escapeHtml(new Date().toISOString().slice(0, 10))}</span>
+    </header>
+    <div class="boh-admin-team-export-grid">
+      ${state.snapshot.teams
+        .map((team, index) => {
+          const score = balance.scoreTotals[index] || 0;
+          const power = balance.powerTotals[index] || 0;
+          return `<article class="boh-admin-team-export-column" style="--boh-team-color:${escapeHtml(
+            team.color || '#7dd3fc'
+          )}">
+            <h3>${escapeHtml(teamDisplayName(state, team))}</h3>
+            <p>${escapeHtml(state.tr('adminBohScoringPoints', 'Scoring points'))}: ${escapeHtml(
+              formatNumber(state, score)
+            )} · ${escapeHtml(state.tr('adminBohTotalGamePower', 'Total in-game power'))}: ${escapeHtml(
+              formatNumber(state, power)
+            )}</p>
+            <ol>${team.seats
+              .map((seat) => {
+                const player = playerById(state, seat.playerId);
+                const role = state.snapshot.plan.roleGroups.find(
+                  (item) => item.id === seat.roleGroupId
+                );
+                const name =
+                  seat.displayName ||
+                  playerName(player) ||
+                  state.tr('adminBohEmptySeat', 'Empty seat');
+                const playerScore =
+                  seat.playerId && player ? formatNumber(state, scoreValue(player)) : '';
+                const playerPower =
+                  seat.playerId && seat.totalCastlePower
+                    ? formatNumber(state, seat.totalCastlePower)
+                    : player
+                      ? formatNumber(state, scoreAuditTotalPower(player))
+                      : '';
+                const detail = scoresMode
+                  ? [playerScore, playerPower].filter(Boolean).join(' / ')
+                  : roleDisplayName(state, role) ||
+                    state.tr('adminBohRoleUnassigned', 'Role unassigned');
+                const leaderBadge =
+                  seat.playerId === team.captainId
+                    ? state.tr('adminBohLeaderShort', 'L')
+                    : uniqueTextList(team.coLeaderIds).includes(seat.playerId)
+                      ? state.tr('adminBohCoLeaderShort', 'CL')
+                      : '';
+                return `<li><span>${seat.seatNumber}</span><strong>${escapeHtml(
+                  name
+                )}${leaderBadge ? `<b>${escapeHtml(leaderBadge)}</b>` : ''}</strong><em>${escapeHtml(
+                  detail
+                )}</em></li>`;
+              })
+              .join('')}</ol>
+          </article>`;
+        })
+        .join('')}
+    </div>
+  </section>`;
 }
 
 function renderSeatMoveNotice(state) {
@@ -6640,6 +6979,27 @@ function renderTeamColumn(state, team, balance, index) {
             .join('')}
         </select>
       </label>
+      <div class="boh-admin-field-pair">
+        ${[0, 1]
+          .map(
+            (slot) => `<label><span>${escapeHtml(
+              state.tr('adminBohCoLeaderNumber', 'Co-leader {number}', { number: slot + 1 })
+            )}</span>
+        <select class="boh-admin-select" name="coLeaderIds">
+          <option value="">${escapeHtml(state.tr('adminBohSelectCoLeader', 'Select co-leader'))}</option>
+          ${team.seats
+            .filter((seat) => seat.playerId)
+            .map(
+              (seat) =>
+                `<option value="${escapeHtml(seat.playerId)}" ${
+                  seat.playerId === team.coLeaderIds?.[slot] ? 'selected' : ''
+                }>${escapeHtml(seat.displayName || playerName(playerById(state, seat.playerId)))}</option>`
+            )
+            .join('')}
+        </select></label>`
+          )
+          .join('')}
+      </div>
       <label><span>${escapeHtml(state.tr('adminBohTeamNotes', 'Admin team notes'))}</span>
         <textarea class="boh-admin-textarea" name="notes" rows="2" maxlength="2000">${escapeHtml(
           team.notes || ''
@@ -6667,6 +7027,10 @@ function renderSeat(state, team, seat) {
   const sourceSelected = Boolean(state.selectedSourceSeat);
   const destinationDisabled = selected || seat.locked;
   const role = state.snapshot.plan.roleGroups.find((item) => item.id === seat.roleGroupId);
+  const playerScore = occupied && player ? formatNumber(state, scoreValue(player)) : '';
+  const playerPower = occupied
+    ? formatNumber(state, seat.totalCastlePower || scoreAuditTotalPower(player))
+    : '';
   return `<li class="boh-admin-seat" data-occupied="${occupied}" data-locked="${seat.locked}" data-selected="${selected}">
     <span class="boh-admin-seat-number">${seat.seatNumber}</span>
     <button type="button" class="boh-admin-seat-main" data-action="${
@@ -6691,7 +7055,13 @@ function renderSeat(state, team, seat) {
       )}">
       <strong>${escapeHtml(seat.displayName || playerName(player) || state.tr('adminBohEmptySeat', 'Empty seat'))}</strong>
       <small>${escapeHtml(
-        roleDisplayName(state, role) || state.tr('adminBohRoleUnassigned', 'Role unassigned')
+        [
+          roleDisplayName(state, role) || state.tr('adminBohRoleUnassigned', 'Role unassigned'),
+          playerScore ? `${state.tr('adminBohScore', 'Score')}: ${playerScore}` : '',
+          playerPower ? `${state.tr('adminBohPower', 'Power')}: ${playerPower}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
       )}</small>
     </button>
     <button type="button" class="boh-admin-lock-button" data-action="toggle-seat-lock"
@@ -7415,6 +7785,16 @@ function deriveValidation(state, kind) {
           team: teamDisplayName(state, team),
         })
       );
+    }
+    const teamPlayerIds = new Set(team.seats.map((seat) => seat.playerId).filter(Boolean));
+    for (const coLeaderId of uniqueTextList(team.coLeaderIds)) {
+      if (!teamPlayerIds.has(coLeaderId)) {
+        errors.push(
+          state.tr('adminBohValidationCoLeader', '{team} has a co-leader who is not assigned.', {
+            team: teamDisplayName(state, team),
+          })
+        );
+      }
     }
   }
   if (kind === 'plan' && state.snapshot.plan.phases.length !== 4) {
@@ -8527,6 +8907,108 @@ function downloadEpicPlanningCsv(state) {
   return summary.activeCount;
 }
 
+function buildTeamBoardCsv(state) {
+  const balance = teamBalance(state);
+  const headers = [
+    'team',
+    'teamScore',
+    'teamPower',
+    'seat',
+    'player',
+    'leadership',
+    'playerPower',
+    'playerScore',
+    'role',
+    'locked',
+  ];
+  const rows = state.snapshot.teams.flatMap((team, index) =>
+    team.seats.map((seat) => {
+      const player = playerById(state, seat.playerId);
+      const role = state.snapshot.plan.roleGroups.find((item) => item.id === seat.roleGroupId);
+      const leadership =
+        seat.playerId === team.captainId
+          ? 'leader'
+          : uniqueTextList(team.coLeaderIds).includes(seat.playerId)
+            ? 'co-leader'
+            : '';
+      return [
+        teamDisplayName(state, team),
+        balance.scoreTotals[index] || 0,
+        balance.powerTotals[index] || 0,
+        seat.seatNumber,
+        seat.displayName || playerName(player) || '',
+        leadership,
+        seat.totalCastlePower || scoreAuditTotalPower(player) || '',
+        player ? scoreValue(player) : '',
+        roleDisplayName(state, role) || '',
+        seat.locked ? 'yes' : '',
+      ];
+    })
+  );
+  return `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n')}\r\n`;
+}
+
+function downloadTeamBoardCsv(state) {
+  const csv = buildTeamBoardCsv(state);
+  if (typeof state.options.downloadTeamBoardCsv === 'function') {
+    state.options.downloadTeamBoardCsv(csv, state.snapshot.teams);
+    return state.snapshot.teams.length;
+  }
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'all-star-boh-teams.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+  return state.snapshot.teams.length;
+}
+
+function loadHtml2CanvasForBoh() {
+  if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+  const existing = document.querySelector('script[data-html2canvas-loader="true"]');
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve(window.html2canvas), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Could not load html2canvas.')), {
+        once: true,
+      });
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.dataset.html2canvasLoader = 'true';
+    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+    script.onload = () => {
+      if (typeof window.html2canvas === 'function') resolve(window.html2canvas);
+      else reject(new Error('html2canvas loaded without exposing window.html2canvas'));
+    };
+    script.onerror = () => reject(new Error('Could not load html2canvas.'));
+    document.head.appendChild(script);
+  });
+}
+
+async function downloadTeamBoardPng(state, mode = 'scores') {
+  const normalizedMode = mode === 'roles' ? 'roles' : 'scores';
+  const target = state.root.querySelector(`[data-team-export-card="${normalizedMode}"]`);
+  if (!target) throw new Error('Team export card is unavailable.');
+  if (typeof state.options.downloadTeamBoardPng === 'function') {
+    state.options.downloadTeamBoardPng(target, state.snapshot.teams, normalizedMode);
+    return state.snapshot.teams.length;
+  }
+  const html2canvas = await loadHtml2CanvasForBoh();
+  const canvas = await html2canvas(target, {
+    backgroundColor: '#0b1020',
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+  });
+  const link = document.createElement('a');
+  link.download = `all-star-boh-teams-${normalizedMode}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  return state.snapshot.teams.length;
+}
+
 async function handleClick(state, event) {
   const button = event.target.closest('button');
   if (!button || !state.root.contains(button) || button.disabled) return;
@@ -8598,6 +9080,28 @@ async function handleClick(state, event) {
       state.tr('adminBohEpicExportedRows', 'Exported {count} active Epic players.', { count }),
       'success'
     );
+    return;
+  }
+  if (action === 'export-team-board-csv') {
+    const count = downloadTeamBoardCsv(state);
+    setStatus(
+      state,
+      state.tr('adminBohTeamCsvExported', 'Exported {count} teams as CSV.', { count }),
+      'success'
+    );
+    return;
+  }
+  if (action === 'export-team-board-png') {
+    const count = await downloadTeamBoardPng(state, cleanText(button.dataset.exportView));
+    setStatus(
+      state,
+      state.tr('adminBohTeamPngExported', 'Exported {count} teams as PNG.', { count }),
+      'success'
+    );
+    return;
+  }
+  if (action === 'apply-commitment-batch') {
+    applyCommitmentScoreBatch(state, button.closest('[data-form="commitment-scores"]'));
     return;
   }
   if (action === 'delete-selected-submissions') {
@@ -8733,6 +9237,15 @@ async function handleClick(state, event) {
       'previewBalanceTeams',
       {},
       state.tr('adminBohBalancePreviewReady', 'Balance preview ready.')
+    );
+    return;
+  }
+  if (action === 'auto-assign-ranked-roles') {
+    await invokeAction(
+      state,
+      'autoAssignRankedRoles',
+      {},
+      state.tr('adminBohRankedRolesApplied', 'Roles assigned by per-team score rank.')
     );
     return;
   }
@@ -8880,6 +9393,10 @@ function clearCorrectionValidity(form) {
 }
 
 function handleInput(state, event) {
+  if (event.target.matches?.('[data-action="eligible-pool-search"]')) {
+    syncEligiblePoolSearch(state);
+    return;
+  }
   const scoreForm = event.target.closest?.('[data-form="commitment-scores"]');
   if (scoreForm) {
     event.target.setCustomValidity?.('');
@@ -8918,8 +9435,13 @@ function handleChange(state, event) {
     return;
   }
   const action = cleanText(event.target.dataset.action);
+  if (action === 'eligible-pool-filter') {
+    syncEligiblePoolSearch(state);
+    return;
+  }
   if (action === 'eligible-pool-player') {
     syncEligiblePoolCount(state);
+    syncEligiblePoolSearch(state);
     return;
   }
   if (action === 'select-submission-row') {
@@ -9281,6 +9803,7 @@ async function handleSubmit(state, event) {
         name: cleanText(data.get('name')),
         color: cleanText(data.get('color')),
         captainId: cleanText(data.get('captainId')),
+        coLeaderIds: uniqueTextList(data.getAll('coLeaderIds')),
         notes: cleanText(data.get('notes')),
       },
       state.tr('adminBohTeamMetadataSaved', 'Team details saved.')

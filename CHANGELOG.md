@@ -2,7 +2,8 @@
 
 ## 14.2.7 - 2026-07-22
 
-- Fixed the All-Star BoH Team Builder eligible-player pool so checkbox changes immediately update the selected-player count and save-button count before saving.
+- Fixed the All-Star BoH Team Builder eligible-player pool so checkbox changes immediately update the selected-player count and save-button count before saving, with a compact searchable/filterable manager that starts collapsed when the saved count is already valid.
+- Improved All-Star Team Builder outputs with exact team-count columns, leader plus co-leader metadata, ranked role assignment, batch commitment-score helpers, and shareable CSV/PNG team exports for roles or scores/power.
 
 ## 14.2.6 - 2026-07-21
 

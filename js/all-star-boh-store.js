@@ -1858,6 +1858,14 @@ function normalizeTeam(input = {}, options = {}) {
     number: boundedInteger(source.number, 'Team number', { minimum: 1, maximum: 6 }),
     color: boundedString(source.color, 40, 'Team color'),
     captainId: boundedString(source.captainId, MAX_ID_LENGTH, 'Captain ID'),
+    coLeaderIds: boundedObjectArray(
+      source.coLeaderIds || source.coleaderIds || source.coLeaders || [],
+      {
+        label: 'Team co-leaders',
+        maxItems: 2,
+        normalize: (id) => boundedString(id, MAX_ID_LENGTH, 'Team co-leader ID'),
+      }
+    ).filter(Boolean),
     seats,
   };
   const includePlan = !options.published || options.includePlan === true;
