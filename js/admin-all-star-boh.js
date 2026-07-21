@@ -892,6 +892,12 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
     for (const identifier of identifiers) submissionsByIdentifier.set(identifier, submission);
   }
 
+  const planningOverrides = new Map(
+    list(snapshot?.epicPlanningOverrides).map((override) => [
+      cleanText(override?.playerId),
+      override,
+    ])
+  );
   const playersById = new Map();
   for (const rawPreference of preferenceRecords(snapshot?.epicPreferences)) {
     const identifier = playerId(rawPreference);
@@ -902,19 +908,77 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
       .map((lane) => lane.toLocaleLowerCase())
       .filter((lane) => EPIC_LANE_IDS.includes(lane));
     const times = uniqueTextList(rawPreference?.timePreferences);
+    const planning = planningOverrides.get(resolvedId) || planningOverrides.get(identifier) || {};
+    const laneOverride = EPIC_LANE_IDS.includes(cleanText(planning?.laneOverride))
+      ? cleanText(planning.laneOverride)
+      : '';
     playersById.set(resolvedId, {
       playerId: resolvedId,
       displayName: playerName(rawPreference) || playerName(submission) || identifier,
+      locale: cleanText(submission?.locale || rawPreference?.locale),
       lanes,
       times,
       flexibilityPreference: cleanText(rawPreference?.flexibilityPreference),
+      excluded: planning?.excluded === true,
+      laneOverride,
+      groupId: cleanText(planning?.groupId),
+      effectiveLane: '',
     });
   }
 
-  const players = [...playersById.values()].sort((left, right) =>
-    left.displayName.localeCompare(right.displayName, undefined, { sensitivity: 'base' })
-  );
+  const players = [...playersById.values()].sort((left, right) => {
+    const nameCompared = left.displayName.localeCompare(right.displayName, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    return (
+      nameCompared || left.playerId.localeCompare(right.playerId, undefined, { numeric: true })
+    );
+  });
+  const activePlayers = players.filter((player) => !player.excluded);
+  for (const player of activePlayers.filter((candidate) => !candidate.groupId)) {
+    player.effectiveLane =
+      player.laneOverride || (player.lanes.length === 1 ? player.lanes[0] : '');
+  }
+  const groups = new Map();
+  for (const player of activePlayers.filter((candidate) => candidate.groupId)) {
+    if (!groups.has(player.groupId)) groups.set(player.groupId, []);
+    groups.get(player.groupId).push(player);
+  }
+  const groupWarnings = [];
+  for (const [groupId, members] of [...groups].sort(([left], [right]) =>
+    left.localeCompare(right, undefined, { sensitivity: 'base' })
+  )) {
+    const explicitLanes = uniqueTextList(members.map((member) => member.laneOverride));
+    let effectiveLane = '';
+    let code = '';
+    if (explicitLanes.length > 1) code = 'conflict';
+    else if (explicitLanes.length === 1) effectiveLane = explicitLanes[0];
+    else {
+      const preferredLanes = uniqueTextList(
+        members.map((member) => (member.lanes.length === 1 ? member.lanes[0] : ''))
+      );
+      if (preferredLanes.length === 1 && members.every((member) => member.lanes.length === 1)) {
+        effectiveLane = preferredLanes[0];
+      } else code = 'unresolved';
+    }
+    for (const member of members) member.effectiveLane = effectiveLane;
+    if (code) {
+      groupWarnings.push({
+        groupId,
+        code,
+        status: code,
+        playerIds: members.map((member) => member.playerId),
+      });
+    }
+  }
+  const status = groupWarnings.some((warning) => warning.code === 'conflict')
+    ? 'conflict'
+    : groupWarnings.length
+      ? 'unresolved'
+      : 'ready';
   const laneCounts = Object.fromEntries(EPIC_LANE_IDS.map((lane) => [lane, 0]));
+  const effectiveLaneCounts = Object.fromEntries(EPIC_LANE_IDS.map((lane) => [lane, 0]));
   const availableTimes = uniqueTextList(snapshot?.epicTimeSlotIds);
   const timeCounts = new Map(
     (availableTimes.length ? availableTimes : DEFAULT_EPIC_TIME_OPTIONS).map((time) => [time, 0])
@@ -922,6 +986,9 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
   for (const preference of players) {
     for (const lane of preference.lanes) laneCounts[lane] += 1;
     for (const time of preference.times) timeCounts.set(time, (timeCounts.get(time) || 0) + 1);
+  }
+  for (const player of activePlayers) {
+    if (player.effectiveLane) effectiveLaneCounts[player.effectiveLane] += 1;
   }
 
   const times = [...timeCounts]
@@ -935,10 +1002,64 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
 
   return {
     players,
+    activePlayers,
     laneCounts,
+    effectiveLaneCounts,
     times,
+    status,
     totalPlayers: players.length,
+    activeTotal: activePlayers.length,
+    activeCount: activePlayers.length,
+    excludedPlayers: players.filter((player) => player.excluded),
+    excludedTotal: players.length - activePlayers.length,
+    excludedCount: players.length - activePlayers.length,
+    groupWarnings,
   };
+}
+
+export function buildEpicShowdownPlanningCsv(summaryOrSnapshot = {}, options = {}) {
+  const summary = Array.isArray(summaryOrSnapshot?.players)
+    ? summaryOrSnapshot
+    : buildAdminEpicShowdownPreferenceSummary(summaryOrSnapshot);
+  const headers = [
+    'Player ID',
+    'Player',
+    'Locale',
+    'Preferred Lanes',
+    'Preferred Times',
+    'Flexibility',
+    'Lane Override',
+    'Effective Lane',
+    'Group',
+  ];
+  const players = list(summary.players)
+    .filter((player) => options.includeExcluded === true || player.excluded !== true)
+    .sort((left, right) => {
+      const nameCompared = cleanText(left?.displayName).localeCompare(
+        cleanText(right?.displayName),
+        undefined,
+        { numeric: true, sensitivity: 'base' }
+      );
+      return (
+        nameCompared ||
+        cleanText(left?.playerId).localeCompare(cleanText(right?.playerId), undefined, {
+          numeric: true,
+        })
+      );
+    });
+  const rows = players.map((player) => [
+    player.playerId,
+    player.displayName,
+    player.locale,
+    list(player.lanes).join(' | '),
+    list(player.times).join(' | '),
+    player.flexibilityPreference,
+    player.laneOverride,
+    player.effectiveLane,
+    player.groupId,
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  return `${options.includeBom ? '\uFEFF' : ''}${csv}\r\n`;
 }
 
 function planningMetadataEntries(source, identityKey = 'name') {
@@ -1176,6 +1297,7 @@ function adapterDefaultDraft() {
     teamCount: TEAM_COUNT,
     balanceMetric: 'score',
     forcedTeamAssignments: [],
+    epicPlanningOverrides: [],
     commitmentScoreAdjustments: [],
     teamIds: adapterDefaultTeamIds(),
     playerIds: [],
@@ -1557,6 +1679,7 @@ function adapterSnapshot(state) {
     submissions,
     epicPreferences: adapterClone(state.epicPreferences),
     epicTimeSlotIds: adapterClone(list(state.adminStore?.epicTimeSlotIds)),
+    epicPlanningOverrides: adapterClone(list(draft.epicPlanningOverrides)),
     scores,
     eligiblePlayerIds: adapterClone(list(draft.playerIds)),
     forcedTeamAssignments: adapterClone(list(draft.forcedTeamAssignments)),
@@ -2394,6 +2517,26 @@ async function adapterSaveCommitmentScores(state, payload) {
       }
     }
     draft.commitmentScoreAdjustments = [...existing.values()];
+    return draft;
+  });
+}
+
+async function adapterSaveEpicPlanningOverrides(state, payload) {
+  const overrides = list(payload?.overrides)
+    .map((override) => ({
+      playerId: cleanText(override?.playerId),
+      excluded: override?.excluded === true,
+      laneOverride: EPIC_LANE_IDS.includes(cleanText(override?.laneOverride))
+        ? cleanText(override.laneOverride)
+        : '',
+      groupId: cleanText(override?.groupId),
+    }))
+    .filter(
+      (override) =>
+        override.playerId && (override.excluded || override.laneOverride || override.groupId)
+    );
+  await adapterSaveDraft(state, (draft) => {
+    draft.epicPlanningOverrides = overrides;
     return draft;
   });
 }
@@ -3885,6 +4028,8 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
     else if (type === 'saveCommitmentScores') {
       await adapterSaveCommitmentScores(state, payload);
+    } else if (type === 'saveEpicPlanningOverrides') {
+      await adapterSaveEpicPlanningOverrides(state, payload);
     } else if (type === 'setSeatLock') await adapterSetSeatLock(state, payload);
     else if (type === 'moveSeat') await adapterMoveOrSwapSeat(state, payload, false);
     else if (type === 'swapSeats') await adapterMoveOrSwapSeat(state, payload, true);
@@ -4390,8 +4535,9 @@ function renderEpicShowdownPreferenceSummary(state) {
     .join('');
   const preferenceRows = summary.players
     .map(
-      (preference) => `<tr>
+      (preference) => `<tr${preference.excluded ? ' data-epic-excluded="true"' : ''}>
         <th scope="row">${escapeHtml(preference.displayName || preference.playerId)}</th>
+        <td>${escapeHtml(preference.locale || state.tr('adminBohNotProvided', 'Not provided'))}</td>
         <td>${escapeHtml(
           preference.lanes.map((lane) => epicLaneLabel(state, lane)).join(', ') ||
             state.tr('adminBohNotProvided', 'Not provided')
@@ -4402,8 +4548,58 @@ function renderEpicShowdownPreferenceSummary(state) {
         <td>${escapeHtml(
           preference.flexibilityPreference || state.tr('adminBohNotProvided', 'Not provided')
         )}</td>
+        <td><input class="boh-admin-selection-checkbox" type="checkbox" name="excluded.${escapeHtml(
+          preference.playerId
+        )}" ${preference.excluded ? 'checked' : ''} aria-label="${escapeHtml(
+          state.tr('adminBohEpicExcludePlayer', 'Exclude {player} from Epic planning', {
+            player: preference.displayName || preference.playerId,
+          })
+        )}"></td>
+        <td><select class="boh-admin-select" name="laneOverride.${escapeHtml(
+          preference.playerId
+        )}" aria-label="${escapeHtml(
+          state.tr('adminBohEpicLaneOverrideFor', 'Lane override for {player}', {
+            player: preference.displayName || preference.playerId,
+          })
+        )}">
+          <option value="">${escapeHtml(state.tr('adminBohEpicUsePreference', 'Use preference'))}</option>
+          ${EPIC_LANE_IDS.map(
+            (lane) =>
+              `<option value="${escapeHtml(lane)}" ${preference.laneOverride === lane ? 'selected' : ''}>${escapeHtml(epicLaneLabel(state, lane))}</option>`
+          ).join('')}
+        </select><small>${escapeHtml(
+          preference.effectiveLane
+            ? state.tr('adminBohEpicEffectiveLane', 'Effective: {lane}', {
+                lane: epicLaneLabel(state, preference.effectiveLane),
+              })
+            : state.tr('adminBohEpicLaneUnresolved', 'Effective lane unresolved')
+        )}</small></td>
+        <td><input class="boh-admin-input" name="groupId.${escapeHtml(
+          preference.playerId
+        )}" maxlength="160" value="${escapeHtml(preference.groupId)}" placeholder="${escapeHtml(
+          state.tr('adminBohEpicGroupPlaceholder', 'Example: Turkish A')
+        )}" aria-label="${escapeHtml(
+          state.tr('adminBohEpicGroupFor', 'Keep-together group for {player}', {
+            player: preference.displayName || preference.playerId,
+          })
+        )}"></td>
       </tr>`
     )
+    .join('');
+  const groupWarnings = summary.groupWarnings
+    .map((warning) => {
+      const message =
+        warning.code === 'conflict'
+          ? state.tr('adminBohEpicGroupConflict', 'Group {group} has conflicting lane overrides.', {
+              group: warning.groupId,
+            })
+          : state.tr(
+              'adminBohEpicGroupUnresolved',
+              'Group {group} needs one shared lane override.',
+              { group: warning.groupId }
+            );
+      return `<li>${escapeHtml(message)}</li>`;
+    })
     .join('');
 
   const epicOpen = state.epicSummaryOpen ? ' open' : '';
@@ -4413,7 +4609,10 @@ function renderEpicShowdownPreferenceSummary(state) {
         state.tr('adminBohEpicShowdownPreferences', 'Epic Showdown preferences')
       )}</span>
       <strong class="boh-admin-preference-total">${escapeHtml(
-        playerCountLabel(state, summary.totalPlayers)
+        state.tr('adminBohEpicActiveExcluded', '{active} active · {excluded} excluded', {
+          active: summary.activeCount,
+          excluded: summary.excludedCount,
+        })
       )}</strong>
     </summary>
     <p class="boh-admin-card-kicker">${escapeHtml(
@@ -4441,10 +4640,17 @@ function renderEpicShowdownPreferenceSummary(state) {
       )}</summary>
       ${
         preferenceRows
-          ? `<div class="boh-admin-table-wrap" tabindex="0">
+          ? `<form data-form="epic-planning">
+            ${
+              groupWarnings
+                ? `<ul class="boh-admin-epic-warnings" role="alert">${groupWarnings}</ul>`
+                : ''
+            }
+            <div class="boh-admin-table-wrap" tabindex="0">
               <table class="boh-admin-table">
                 <thead><tr>
                   <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
+                  <th scope="col">${escapeHtml(state.tr('adminBohLocale', 'Language / locale'))}</th>
                   <th scope="col">${escapeHtml(
                     state.tr('adminBohEpicLane', 'Preferred lanes')
                   )}</th>
@@ -4454,10 +4660,26 @@ function renderEpicShowdownPreferenceSummary(state) {
                   <th scope="col">${escapeHtml(
                     state.tr('adminBohEpicFlexibility', 'Flexibility preference')
                   )}</th>
+                  <th scope="col">${escapeHtml(state.tr('adminBohEpicExcluded', 'Exclude'))}</th>
+                  <th scope="col">${escapeHtml(
+                    state.tr('adminBohEpicLaneOverride', 'Lane override')
+                  )}</th>
+                  <th scope="col">${escapeHtml(
+                    state.tr('adminBohEpicKeepTogetherGroup', 'Keep-together group')
+                  )}</th>
                 </tr></thead>
                 <tbody>${preferenceRows}</tbody>
               </table>
-            </div>`
+            </div>
+            <div class="boh-admin-stage-actions boh-admin-epic-actions">
+              <button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
+                state.tr('adminBohEpicSavePlanning', 'Save Epic planning controls')
+              )}</button>
+              <button class="boh-admin-button" type="button" data-action="export-epic-planning">${escapeHtml(
+                state.tr('adminBohEpicExportPlanning', 'Export active Epic CSV')
+              )}</button>
+            </div>
+          </form>`
           : `<p class="boh-admin-preference-empty">${escapeHtml(
               state.tr('adminBohEpicNoPreferences', 'No Epic Showdown preferences submitted yet.')
             )}</p>`
@@ -8273,6 +8495,22 @@ function downloadVisibleSignupCsv(state) {
   return records.length;
 }
 
+function downloadEpicPlanningCsv(state) {
+  const summary = buildAdminEpicShowdownPreferenceSummary(state.snapshot);
+  const csv = buildEpicShowdownPlanningCsv(summary, { includeBom: true });
+  if (typeof state.options.downloadEpicPlanningCsv === 'function') {
+    state.options.downloadEpicPlanningCsv(csv, summary.activePlayers);
+    return summary.activeCount;
+  }
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'epic-showdown-planning.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+  return summary.activeCount;
+}
+
 async function handleClick(state, event) {
   const button = event.target.closest('button');
   if (!button || !state.root.contains(button) || button.disabled) return;
@@ -8333,6 +8571,15 @@ async function handleClick(state, event) {
     setStatus(
       state,
       state.tr('adminBohExportedRows', 'Exported {count} visible signups.', { count }),
+      'success'
+    );
+    return;
+  }
+  if (action === 'export-epic-planning') {
+    const count = downloadEpicPlanningCsv(state);
+    setStatus(
+      state,
+      state.tr('adminBohEpicExportedRows', 'Exported {count} active Epic players.', { count }),
       'success'
     );
     return;
@@ -8785,6 +9032,22 @@ async function handleSubmit(state, event) {
         ...(cleanText(data.get('note')) ? { note: cleanText(data.get('note')) } : {}),
       },
       state.tr('adminBohBatchConfirmed', 'Selected visible signups confirmed.')
+    );
+    return;
+  }
+  if (kind === 'epic-planning') {
+    const summary = buildAdminEpicShowdownPreferenceSummary(state.snapshot);
+    const overrides = summary.players.map((player) => ({
+      playerId: player.playerId,
+      excluded: data.has(`excluded.${player.playerId}`),
+      laneOverride: cleanText(data.get(`laneOverride.${player.playerId}`)),
+      groupId: cleanText(data.get(`groupId.${player.playerId}`)),
+    }));
+    await invokeAction(
+      state,
+      'saveEpicPlanningOverrides',
+      { overrides },
+      state.tr('adminBohEpicPlanningSaved', 'Epic planning controls saved.')
     );
     return;
   }

@@ -5,6 +5,7 @@ import test from 'node:test';
 import {
   buildAdminSubmissionCorrectionOverlay,
   buildAdminEpicShowdownPreferenceSummary,
+  buildEpicShowdownPlanningCsv,
   buildAdminSignupPlanningSignals,
   buildSignupReviewCsv,
   createAdminAllStarBohController,
@@ -82,6 +83,7 @@ test('full correction overlays stay sparse and retain explicit clears', () => {
 
 function createAdminStoreFixture() {
   let epicNext = null;
+  const savedDrafts = [];
   const submissions = Array.from({ length: 72 }, (_, index) => {
     const number = index + 1;
     return {
@@ -121,6 +123,7 @@ function createAdminStoreFixture() {
       return () => {};
     },
     async saveDraft(value) {
+      savedDrafts.push(structuredClone(value));
       return value;
     },
     async getDraftTeam() {
@@ -150,6 +153,9 @@ function createAdminStoreFixture() {
     emitEpicPreferences(value) {
       epicPreferences = structuredClone(value);
       epicNext?.(structuredClone(value));
+    },
+    getSavedDrafts() {
+      return structuredClone(savedDrafts);
     },
   };
   return store;
@@ -352,10 +358,69 @@ test('Epic Showdown summary keeps legacy empty responses visible for admin revie
   assert.deepEqual(summary.players[0], {
     playerId: 'firebase-empty',
     displayName: 'Needs follow-up',
+    locale: '',
     lanes: [],
     times: [],
     flexibilityPreference: '',
+    excluded: false,
+    laneOverride: '',
+    groupId: '',
+    effectiveLane: '',
   });
+});
+
+test('Epic planning exclusions, locales, and keep-together groups evaluate deterministically', () => {
+  const snapshot = {
+    submissions: [
+      { uid: 'uid-a', playerId: 'a', gameName: '=Alpha', locale: 'tr' },
+      { uid: 'uid-b', playerId: 'b', gameName: 'Bravo', locale: 'tr' },
+      { uid: 'uid-c', playerId: 'c', gameName: 'Castle alt', locale: 'en' },
+    ],
+    epicPreferences: [
+      { uid: 'uid-a', lanePreferences: ['north'], timePreferences: ['+13'] },
+      { uid: 'uid-b', lanePreferences: ['south'], timePreferences: ['+13'] },
+      { uid: 'uid-c', lanePreferences: ['center'], timePreferences: ['+16'] },
+    ],
+    epicPlanningOverrides: [
+      { playerId: 'a', laneOverride: 'center', groupId: 'Turkish', excluded: false },
+      { playerId: 'b', laneOverride: '', groupId: 'Turkish', excluded: false },
+      { playerId: 'c', laneOverride: '', groupId: '', excluded: true },
+    ],
+  };
+  const summary = buildAdminEpicShowdownPreferenceSummary(snapshot);
+
+  assert.equal(summary.activeCount, 2);
+  assert.equal(summary.excludedCount, 1);
+  assert.equal(summary.status, 'ready');
+  assert.deepEqual(summary.groupWarnings, []);
+  assert.deepEqual(
+    summary.players.map(({ playerId, locale, excluded, effectiveLane, groupId }) => ({
+      playerId,
+      locale,
+      excluded,
+      effectiveLane,
+      groupId,
+    })),
+    [
+      { playerId: 'a', locale: 'tr', excluded: false, effectiveLane: 'center', groupId: 'Turkish' },
+      { playerId: 'b', locale: 'tr', excluded: false, effectiveLane: 'center', groupId: 'Turkish' },
+      { playerId: 'c', locale: 'en', excluded: true, effectiveLane: '', groupId: '' },
+    ]
+  );
+
+  const csv = buildEpicShowdownPlanningCsv(summary);
+  assert.match(csv, /"a","'=Alpha"/u);
+  assert.match(csv, /"Turkish"/u);
+  assert.doesNotMatch(csv, /Castle alt/u);
+
+  snapshot.epicPlanningOverrides[1].laneOverride = 'south';
+  const conflicted = buildAdminEpicShowdownPreferenceSummary(snapshot);
+  assert.equal(conflicted.status, 'conflict');
+  assert.deepEqual(conflicted.groupWarnings, [
+    { groupId: 'Turkish', code: 'conflict', status: 'conflict', playerIds: ['a', 'b'] },
+  ]);
+  assert.equal(conflicted.players[0].effectiveLane, '');
+  assert.equal(conflicted.players[1].effectiveLane, '');
 });
 
 test('Epic-only preference records show their game name instead of an opaque user ID', () => {
@@ -373,6 +438,55 @@ test('Epic-only preference records show their game name instead of an opaque use
 
   assert.equal(summary.players[0].displayName, 'Epic Only Player');
   assert.equal(summary.players[0].playerId, 'firebase-opaque-uid');
+});
+
+test('Epic planning editor exposes persistence and active export hooks', () => {
+  const source = readFileSync('js/admin-all-star-boh.js', 'utf8');
+  assert.match(source, /data-form="epic-planning"/u);
+  assert.match(source, /data-action="export-epic-planning"/u);
+  assert.match(source, /name="excluded\.\$\{escapeHtml\(\s*preference\.playerId/u);
+  assert.match(source, /name="laneOverride\.\$\{escapeHtml\(\s*preference\.playerId/u);
+  assert.match(source, /name="groupId\.\$\{escapeHtml\(\s*preference\.playerId/u);
+  assert.match(source, /'saveEpicPlanningOverrides'/u);
+  assert.match(source, /epic-showdown-planning\.csv/u);
+  assert.match(source, /state\.options\.downloadEpicPlanningCsv/u);
+});
+
+test('Epic planning CSV guards formula-looking active fields and omits excluded players', () => {
+  const csv = buildEpicShowdownPlanningCsv({
+    players: [
+      {
+        playerId: 'excluded',
+        displayName: 'Excluded',
+        locale: 'en',
+        lanes: ['south'],
+        times: ['+8'],
+        flexibilityPreference: '',
+        laneOverride: '',
+        effectiveLane: 'south',
+        groupId: '',
+        excluded: true,
+      },
+      {
+        playerId: '=active',
+        displayName: '@Alpha',
+        locale: '+tr',
+        lanes: ['north'],
+        times: ['+12'],
+        flexibilityPreference: '-flex',
+        laneOverride: 'center',
+        effectiveLane: 'center',
+        groupId: '=group',
+        excluded: false,
+      },
+    ],
+  });
+
+  assert.ok(csv.startsWith('"Player ID","Player","Locale","Preferred Lanes"'));
+  assert.doesNotMatch(csv, /Excluded/u);
+  assert.match(csv, /"'=active","'@Alpha","'\+tr"/u);
+  assert.match(csv, /"'-flex","center","center","'=group"/u);
+  assert.ok(csv.endsWith('\r\n'));
 });
 
 test('admin adapter loads and live-refreshes Epic preferences without changing BoH revision', async () => {
@@ -401,6 +515,19 @@ test('admin adapter loads and live-refreshes Epic preferences without changing B
   assert.deepEqual(refreshed.validation, validationBeforeEpicRefresh);
   assert.deepEqual(refreshed.epicPreferences[0].lanePreferences, ['north']);
   assert.deepEqual(refreshed.epicPreferences[0].timePreferences, ['+10']);
+
+  await adapter.dispatch({
+    type: 'saveEpicPlanningOverrides',
+    payload: {
+      overrides: [
+        { playerId: 'player-alpha', excluded: true, laneOverride: 'north', groupId: 'Group 1' },
+      ],
+    },
+    expectedRevision: initialRevision,
+  });
+  assert.deepEqual(store.getSavedDrafts().at(-1).epicPlanningOverrides, [
+    { playerId: 'player-alpha', excluded: true, laneOverride: 'north', groupId: 'Group 1' },
+  ]);
 
   adapter.stop();
 });

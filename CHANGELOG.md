@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.2.6 - 2026-07-21
+
+- Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.
+- Evaluated every keep-together group as one shared lane, surfaced unresolved or conflicting groups, and showed active-versus-excluded totals in the admin workspace.
+- Added a formula-safe active Epic planning CSV with player locale, preferences, lane overrides, effective lanes, and group IDs.
+
 ## 14.2.5 - 2026-07-21
 
 - Collapsed Epic Showdown preference summary by default (H1).

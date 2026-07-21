@@ -1359,6 +1359,7 @@ test('draft and private review extensions normalize legacy values and reject uns
   assert.equal(legacyDraft.teamCount, 6);
   assert.equal(legacyDraft.balanceMetric, 'score');
   assert.deepEqual(legacyDraft.forcedTeamAssignments, []);
+  assert.deepEqual(legacyDraft.epicPlanningOverrides, []);
   assert.deepEqual(legacyDraft.commitmentScoreAdjustments, []);
   assert.equal(legacyDraft.title, 'Legacy draft');
 
@@ -1370,12 +1371,20 @@ test('draft and private review extensions normalize legacy values and reject uns
       { playerId: ' player-1 ', teamId: ' team-2 ' },
       { playerId: 'Player_2', teamId: 'team-1' },
     ],
+    epicPlanningOverrides: [
+      { playerId: ' player-1 ', excluded: true, laneOverride: ' NORTH ', groupId: ' Turkish ' },
+      { playerId: 'Player_2', laneOverride: '', groupId: '' },
+    ],
   });
   assert.equal(configuredDraft.teamCount, 2);
   assert.equal(configuredDraft.balanceMetric, 'totalPower');
   assert.deepEqual(configuredDraft.forcedTeamAssignments, [
     { playerId: 'player-1', teamId: 'team-2' },
     { playerId: 'Player_2', teamId: 'team-1' },
+  ]);
+  assert.deepEqual(configuredDraft.epicPlanningOverrides, [
+    { playerId: 'player-1', excluded: true, laneOverride: 'north', groupId: 'Turkish' },
+    { playerId: 'Player_2', excluded: false, laneOverride: '', groupId: '' },
   ]);
 
   const balancedDraft = normalizeAllStarBohDraft({
@@ -1427,6 +1436,19 @@ test('draft and private review extensions normalize legacy values and reject uns
       }),
     /exceeds 72 items/
   );
+  for (const epicPlanningOverrides of [
+    [{ playerId: 'player-1', laneOverride: 'top' }],
+    [
+      { playerId: 'player-1', laneOverride: 'north' },
+      { playerId: 'player-1', laneOverride: 'south' },
+    ],
+    Array.from({ length: 73 }, (_, index) => ({ playerId: `player-${index + 1}` })),
+  ]) {
+    assert.throws(
+      () => normalizeAllStarBohDraft({ epicPlanningOverrides }),
+      AllStarBohValidationError
+    );
+  }
   for (const commitmentScoreAdjustments of [
     [null],
     [{ playerId: 'player-1' }],

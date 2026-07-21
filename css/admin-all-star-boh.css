@@ -451,6 +451,31 @@
   margin-top: 0.7rem;
 }
 
+.boh-admin-preference-details tr[data-epic-excluded='true'] {
+  opacity: 0.58;
+}
+
+.boh-admin-preference-details td .boh-admin-input,
+.boh-admin-preference-details td .boh-admin-select {
+  min-width: 10rem;
+}
+
+.boh-admin-preference-details td small {
+  color: var(--ff-text-dim);
+  display: block;
+  margin-top: 0.3rem;
+}
+
+.boh-admin-epic-warnings {
+  color: var(--ff-gold);
+  font-size: 0.72rem;
+  margin: 0.75rem 0 0;
+}
+
+.boh-admin-epic-actions {
+  margin-top: 0.75rem;
+}
+
 .boh-admin-preference-empty {
   color: var(--ff-text-dim);
   font-size: 0.72rem;

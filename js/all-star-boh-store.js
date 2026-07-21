@@ -54,6 +54,7 @@ const SUBMISSION_STATUS = new Set(['draft', 'submitted', 'withdrawn']);
 const REVIEW_STATUS = new Set(['pending', 'verified', 'needs_changes', 'rejected']);
 const FEEDBACK_STATUS = new Set(['pending', 'confirmed', 'needs_correction', 'excluded']);
 const DRAFT_BALANCE_METRICS = new Set(['score', 'totalPower', 'balanced']);
+const EPIC_PLANNING_LANE_OVERRIDES = new Set(['', ...ALL_STAR_BOH_EPIC_SHOWDOWN_LANES]);
 const REVIEW_STAT_CORRECTION_LIMITS = Object.freeze({
   totalCastlePower: 10 ** 12,
   troopPower: 10 ** 12,
@@ -1927,6 +1928,42 @@ function normalizeForcedTeamAssignments(input) {
   return assignments;
 }
 
+function normalizeEpicPlanningOverrides(input) {
+  const overrides = boundedObjectArray(input || [], {
+    label: 'Epic planning overrides',
+    maxItems: ALL_STAR_BOH_MAX_PLAYERS,
+    normalize: (item, index) => {
+      const source = requireRecord(item, `Epic planning override ${index + 1}`);
+      const laneOverride = boundedString(
+        source.laneOverride,
+        MAX_NAME_LENGTH,
+        'Epic planning lane override'
+      ).toLocaleLowerCase();
+      if (!EPIC_PLANNING_LANE_OVERRIDES.has(laneOverride)) {
+        throw new AllStarBohValidationError('Epic planning lane override is unsupported.');
+      }
+      return {
+        playerId: boundedString(source.playerId, MAX_ID_LENGTH, 'Epic planning player ID', {
+          required: true,
+        }),
+        excluded: source.excluded === true,
+        laneOverride,
+        groupId: boundedString(source.groupId, MAX_NAME_LENGTH, 'Epic planning group'),
+      };
+    },
+  });
+  const playerIds = new Set();
+  for (const override of overrides) {
+    if (playerIds.has(override.playerId)) {
+      throw new AllStarBohValidationError(
+        `Player ${override.playerId} has more than one Epic planning override.`
+      );
+    }
+    playerIds.add(override.playerId);
+  }
+  return overrides;
+}
+
 function normalizeCommitmentScoreAdjustments(input) {
   const adjustments = boundedObjectArray(input || [], {
     label: 'Commitment score adjustments',
@@ -1972,6 +2009,7 @@ export function normalizeAllStarBohDraft(input = {}) {
     teamCount: normalizeDraftTeamCount(source),
     balanceMetric: normalizeDraftBalanceMetric(source),
     forcedTeamAssignments: normalizeForcedTeamAssignments(source.forcedTeamAssignments),
+    epicPlanningOverrides: normalizeEpicPlanningOverrides(source.epicPlanningOverrides),
     title: boundedString(source.title, MAX_NAME_LENGTH, 'Draft title'),
     note: boundedString(source.note, MAX_NOTE_LENGTH, 'Draft note'),
     activeScoringVersionId: optionalIdentifier(
