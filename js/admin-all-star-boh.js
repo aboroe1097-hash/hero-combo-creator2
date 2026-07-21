@@ -1,6 +1,54 @@
 import * as BohModel from './all-star-boh-model.js';
 import { applyAllStarBohSubmissionCorrections } from './all-star-boh-store.js';
 
+function scheduleRender(state) {
+  if (!state._renderDirty) {
+    state._renderDirty = true;
+    if (!state._renderPending) {
+      state._renderPending = true;
+      requestAnimationFrame(() => {
+        state._renderPending = false;
+        if (state._renderDirty) {
+          state._renderDirty = false;
+          renderShell(state);
+        }
+      });
+    }
+  }
+}
+
+function renderNow(state) {
+  state._renderDirty = false;
+  state._renderPending = false;
+  renderShell(state);
+}
+
+function syncHash(state) {
+  const hash = window.location.hash;
+  const parts = hash.replace(/^#/, '').split('/');
+  if (parts[0] === 'allstar') {
+    if (STAGES.some(([id]) => id === parts[1])) {
+      state.stage = parts[1];
+    }
+    if (parts[2] && parts[2].startsWith('player-')) {
+      state.selectedSubmissionId = parts[2].slice(7);
+    }
+  }
+}
+
+function updateHash(state) {
+  try {
+    const parts = ['allstar', state.stage];
+    if (state.selectedSubmissionId) {
+      parts.push('player-' + state.selectedSubmissionId);
+    }
+    const newHash = '#' + parts.join('/');
+    if (window.location.hash !== newHash) {
+      history.replaceState(null, '', newHash);
+    }
+  } catch {}
+}
+
 const CONTROLLERS = new WeakMap();
 
 const TEAM_COUNT = 6;
@@ -552,6 +600,7 @@ export function buildSignupReviewCsv(records, options = {}) {
     'T9 Troop Types',
     'T10 Troop Types',
     'VTS Member',
+    'Locale',
   ];
   const rows = list(records).map((record) => {
     const fields = adminSubmissionFields(record);
@@ -593,6 +642,7 @@ export function buildSignupReviewCsv(records, options = {}) {
       uniqueTextList(stats.t9TroopTypes).join(' | '),
       uniqueTextList(stats.t10TroopTypes).join(' | '),
       fields.vtsMember == null ? '' : fields.vtsMember ? 'Yes' : 'No',
+      effective?.locale || record?.locale || '',
     ];
   });
   const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
@@ -842,6 +892,12 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
     for (const identifier of identifiers) submissionsByIdentifier.set(identifier, submission);
   }
 
+  const planningOverrides = new Map(
+    list(snapshot?.epicPlanningOverrides).map((override) => [
+      cleanText(override?.playerId),
+      override,
+    ])
+  );
   const playersById = new Map();
   for (const rawPreference of preferenceRecords(snapshot?.epicPreferences)) {
     const identifier = playerId(rawPreference);
@@ -852,19 +908,77 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
       .map((lane) => lane.toLocaleLowerCase())
       .filter((lane) => EPIC_LANE_IDS.includes(lane));
     const times = uniqueTextList(rawPreference?.timePreferences);
+    const planning = planningOverrides.get(resolvedId) || planningOverrides.get(identifier) || {};
+    const laneOverride = EPIC_LANE_IDS.includes(cleanText(planning?.laneOverride))
+      ? cleanText(planning.laneOverride)
+      : '';
     playersById.set(resolvedId, {
       playerId: resolvedId,
       displayName: playerName(rawPreference) || playerName(submission) || identifier,
+      locale: cleanText(submission?.locale || rawPreference?.locale),
       lanes,
       times,
       flexibilityPreference: cleanText(rawPreference?.flexibilityPreference),
+      excluded: planning?.excluded === true,
+      laneOverride,
+      groupId: cleanText(planning?.groupId),
+      effectiveLane: '',
     });
   }
 
-  const players = [...playersById.values()].sort((left, right) =>
-    left.displayName.localeCompare(right.displayName, undefined, { sensitivity: 'base' })
-  );
+  const players = [...playersById.values()].sort((left, right) => {
+    const nameCompared = left.displayName.localeCompare(right.displayName, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    return (
+      nameCompared || left.playerId.localeCompare(right.playerId, undefined, { numeric: true })
+    );
+  });
+  const activePlayers = players.filter((player) => !player.excluded);
+  for (const player of activePlayers.filter((candidate) => !candidate.groupId)) {
+    player.effectiveLane =
+      player.laneOverride || (player.lanes.length === 1 ? player.lanes[0] : '');
+  }
+  const groups = new Map();
+  for (const player of activePlayers.filter((candidate) => candidate.groupId)) {
+    if (!groups.has(player.groupId)) groups.set(player.groupId, []);
+    groups.get(player.groupId).push(player);
+  }
+  const groupWarnings = [];
+  for (const [groupId, members] of [...groups].sort(([left], [right]) =>
+    left.localeCompare(right, undefined, { sensitivity: 'base' })
+  )) {
+    const explicitLanes = uniqueTextList(members.map((member) => member.laneOverride));
+    let effectiveLane = '';
+    let code = '';
+    if (explicitLanes.length > 1) code = 'conflict';
+    else if (explicitLanes.length === 1) effectiveLane = explicitLanes[0];
+    else {
+      const preferredLanes = uniqueTextList(
+        members.map((member) => (member.lanes.length === 1 ? member.lanes[0] : ''))
+      );
+      if (preferredLanes.length === 1 && members.every((member) => member.lanes.length === 1)) {
+        effectiveLane = preferredLanes[0];
+      } else code = 'unresolved';
+    }
+    for (const member of members) member.effectiveLane = effectiveLane;
+    if (code) {
+      groupWarnings.push({
+        groupId,
+        code,
+        status: code,
+        playerIds: members.map((member) => member.playerId),
+      });
+    }
+  }
+  const status = groupWarnings.some((warning) => warning.code === 'conflict')
+    ? 'conflict'
+    : groupWarnings.length
+      ? 'unresolved'
+      : 'ready';
   const laneCounts = Object.fromEntries(EPIC_LANE_IDS.map((lane) => [lane, 0]));
+  const effectiveLaneCounts = Object.fromEntries(EPIC_LANE_IDS.map((lane) => [lane, 0]));
   const availableTimes = uniqueTextList(snapshot?.epicTimeSlotIds);
   const timeCounts = new Map(
     (availableTimes.length ? availableTimes : DEFAULT_EPIC_TIME_OPTIONS).map((time) => [time, 0])
@@ -872,6 +986,9 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
   for (const preference of players) {
     for (const lane of preference.lanes) laneCounts[lane] += 1;
     for (const time of preference.times) timeCounts.set(time, (timeCounts.get(time) || 0) + 1);
+  }
+  for (const player of activePlayers) {
+    if (player.effectiveLane) effectiveLaneCounts[player.effectiveLane] += 1;
   }
 
   const times = [...timeCounts]
@@ -885,10 +1002,64 @@ export function buildAdminEpicShowdownPreferenceSummary(snapshot = {}) {
 
   return {
     players,
+    activePlayers,
     laneCounts,
+    effectiveLaneCounts,
     times,
+    status,
     totalPlayers: players.length,
+    activeTotal: activePlayers.length,
+    activeCount: activePlayers.length,
+    excludedPlayers: players.filter((player) => player.excluded),
+    excludedTotal: players.length - activePlayers.length,
+    excludedCount: players.length - activePlayers.length,
+    groupWarnings,
   };
+}
+
+export function buildEpicShowdownPlanningCsv(summaryOrSnapshot = {}, options = {}) {
+  const summary = Array.isArray(summaryOrSnapshot?.players)
+    ? summaryOrSnapshot
+    : buildAdminEpicShowdownPreferenceSummary(summaryOrSnapshot);
+  const headers = [
+    'Player ID',
+    'Player',
+    'Locale',
+    'Preferred Lanes',
+    'Preferred Times',
+    'Flexibility',
+    'Lane Override',
+    'Effective Lane',
+    'Group',
+  ];
+  const players = list(summary.players)
+    .filter((player) => options.includeExcluded === true || player.excluded !== true)
+    .sort((left, right) => {
+      const nameCompared = cleanText(left?.displayName).localeCompare(
+        cleanText(right?.displayName),
+        undefined,
+        { numeric: true, sensitivity: 'base' }
+      );
+      return (
+        nameCompared ||
+        cleanText(left?.playerId).localeCompare(cleanText(right?.playerId), undefined, {
+          numeric: true,
+        })
+      );
+    });
+  const rows = players.map((player) => [
+    player.playerId,
+    player.displayName,
+    player.locale,
+    list(player.lanes).join(' | '),
+    list(player.times).join(' | '),
+    player.flexibilityPreference,
+    player.laneOverride,
+    player.effectiveLane,
+    player.groupId,
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  return `${options.includeBom ? '\uFEFF' : ''}${csv}\r\n`;
 }
 
 function planningMetadataEntries(source, identityKey = 'name') {
@@ -1126,6 +1297,7 @@ function adapterDefaultDraft() {
     teamCount: TEAM_COUNT,
     balanceMetric: 'score',
     forcedTeamAssignments: [],
+    epicPlanningOverrides: [],
     commitmentScoreAdjustments: [],
     teamIds: adapterDefaultTeamIds(),
     playerIds: [],
@@ -1507,6 +1679,7 @@ function adapterSnapshot(state) {
     submissions,
     epicPreferences: adapterClone(state.epicPreferences),
     epicTimeSlotIds: adapterClone(list(state.adminStore?.epicTimeSlotIds)),
+    epicPlanningOverrides: adapterClone(list(draft.epicPlanningOverrides)),
     scores,
     eligiblePlayerIds: adapterClone(list(draft.playerIds)),
     forcedTeamAssignments: adapterClone(list(draft.forcedTeamAssignments)),
@@ -2344,6 +2517,26 @@ async function adapterSaveCommitmentScores(state, payload) {
       }
     }
     draft.commitmentScoreAdjustments = [...existing.values()];
+    return draft;
+  });
+}
+
+async function adapterSaveEpicPlanningOverrides(state, payload) {
+  const overrides = list(payload?.overrides)
+    .map((override) => ({
+      playerId: cleanText(override?.playerId),
+      excluded: override?.excluded === true,
+      laneOverride: EPIC_LANE_IDS.includes(cleanText(override?.laneOverride))
+        ? cleanText(override.laneOverride)
+        : '',
+      groupId: cleanText(override?.groupId),
+    }))
+    .filter(
+      (override) =>
+        override.playerId && (override.excluded || override.laneOverride || override.groupId)
+    );
+  await adapterSaveDraft(state, (draft) => {
+    draft.epicPlanningOverrides = overrides;
     return draft;
   });
 }
@@ -3835,6 +4028,8 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
     else if (type === 'saveCommitmentScores') {
       await adapterSaveCommitmentScores(state, payload);
+    } else if (type === 'saveEpicPlanningOverrides') {
+      await adapterSaveEpicPlanningOverrides(state, payload);
     } else if (type === 'setSeatLock') await adapterSetSeatLock(state, payload);
     else if (type === 'moveSeat') await adapterMoveOrSwapSeat(state, payload, false);
     else if (type === 'swapSeats') await adapterMoveOrSwapSeat(state, payload, true);
@@ -3952,9 +4147,34 @@ function makeInitialState(root, options) {
     locale: cleanText(options.locale) || document.documentElement.lang || 'en',
     direction: cleanText(options.direction),
     snapshot,
-    stage: STAGES.some(([id]) => id === options.initialStage) ? options.initialStage : 'signups',
-    signupFilter: 'all',
-    signupSearch: '',
+    stage: (() => {
+      try {
+        const m = window.location.hash.match(/^#allstar\/(\w+)/);
+        return m && STAGES.some(([id]) => id === m[1])
+          ? m[1]
+          : STAGES.some(([id]) => id === options.initialStage)
+            ? options.initialStage
+            : 'signups';
+      } catch {
+        return STAGES.some(([id]) => id === options.initialStage)
+          ? options.initialStage
+          : 'signups';
+      }
+    })(),
+    signupFilter: (() => {
+      try {
+        return sessionStorage.getItem('bohAdminSignupFilter') || 'all';
+      } catch {
+        return 'all';
+      }
+    })(),
+    signupSearch: (() => {
+      try {
+        return sessionStorage.getItem('bohAdminSignupSearch') || '';
+      } catch {
+        return '';
+      }
+    })(),
     signupFilters: {
       fightingTime: 'all',
       role: 'all',
@@ -3963,10 +4183,34 @@ function makeInitialState(root, options) {
       minTotalPower: '',
       maxTotalPower: '',
     },
-    signupSort: { key: 'updated', direction: 'desc' },
+    signupSort: (() => {
+      try {
+        const s = sessionStorage.getItem('bohAdminSignupSort');
+        return s ? JSON.parse(s) : { key: 'updated', direction: 'desc' };
+      } catch {
+        return { key: 'updated', direction: 'desc' };
+      }
+    })(),
+    _renderDirty: false,
+    _renderPending: false,
+    _snapshotDirty: false,
+    epicSummaryOpen: (() => {
+      try {
+        return sessionStorage.getItem('bohAdminEpicSummaryOpen') === 'true';
+      } catch {
+        return false;
+      }
+    })(),
     scoreAuditSort: { key: '', direction: 'asc' },
     selectedSubmissionIds: new Set(),
-    selectedSubmissionId: '',
+    selectedSubmissionId: (() => {
+      try {
+        const m = window.location.hash.match(/^#allstar\/\w+\/player-(.+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+      } catch {
+        return '';
+      }
+    })(),
     correctionDrafts: new Map(),
     commitmentScoreDraft: null,
     selectedSourceSeat: null,
@@ -4127,7 +4371,7 @@ function renderStageNavigation(state) {
 
 function renderShell(state) {
   const { root } = state;
-  const correctionFocus = correctionFocusSnapshot(root);
+  const focusSnap = snapshotFocus(root);
   const openCorrectionForm = root.querySelector?.('[data-form="submission-corrections"]');
   const openCorrectionId = cleanText(openCorrectionForm?.elements?.playerId?.value);
   if (openCorrectionForm && correctionDraftFor(state, openCorrectionId)) {
@@ -4164,10 +4408,7 @@ function renderShell(state) {
         </div>
       </header>
 
-      <div id="bohAdminStatus" class="boh-admin-status" role="status" aria-live="polite"
-        data-tone="${escapeHtml(state.status.tone)}" ${state.status.message ? '' : 'hidden'}>
-        ${escapeHtml(state.status.message)}
-      </div>
+      <!-- bohAdminStatus rendered separately as persistent live region -->
 
       <nav class="boh-admin-nav" role="tablist" aria-label="${escapeHtml(
         state.tr('adminBohWorkflow', 'All-Star administration workflow')
@@ -4182,12 +4423,39 @@ function renderShell(state) {
     </section>`;
   root.setAttribute('aria-busy', String(state.pending));
   syncSignupSelectionCheckbox(state);
-  if (state.pending) {
-    root
-      .querySelectorAll?.('button, input, select, textarea')
-      .forEach((control) => (control.disabled = true));
+  syncStickyOffsets(state);
+  const stagePanel = root.querySelector('#bohAdminStagePanel');
+  if (stagePanel) {
+    stagePanel.inert = state.pending;
   }
-  restoreCorrectionFocus(state, correctionFocus);
+  restoreFocus(root, focusSnap);
+}
+
+function syncStickyOffsets(state) {
+  const table = state.root?.querySelector?.('.boh-admin-table');
+  if (!table) return;
+  const headerRow = table.querySelector('thead tr');
+  if (!headerRow) return;
+  const headers = [...headerRow.children];
+  const cumWidths = [];
+  let running = 0;
+  for (let i = 0; i < headers.length; i++) {
+    const h = headers[i];
+    const isSticky = h.classList.contains('boh-admin-col-sticky');
+    cumWidths.push(isSticky ? running : 0);
+    if (isSticky) running += h.offsetWidth;
+  }
+  if (!running) return;
+  const isRtl = document?.dir === 'rtl' || state.root.closest?.('[dir="rtl"]');
+  const prop = isRtl ? 'right' : 'left';
+  for (let i = 0; i < headers.length; i++) {
+    if (!cumWidths[i]) continue;
+    headers[i].style[prop] = cumWidths[i] + 'px';
+    table.querySelectorAll('tbody tr').forEach((tr) => {
+      const cell = tr.children[i];
+      if (cell) cell.style[prop] = cumWidths[i] + 'px';
+    });
+  }
 }
 
 function syncSignupSelectionCheckbox(state) {
@@ -4196,6 +4464,29 @@ function syncSignupSelectionCheckbox(state) {
   const visibleIds = filteredSubmissions(state).map(playerId).filter(Boolean);
   const selectedCount = visibleIds.filter((id) => state.selectedSubmissionIds.has(id)).length;
   checkbox.indeterminate = selectedCount > 0 && selectedCount < visibleIds.length;
+}
+
+function syncBatchToolbar(state) {
+  const toolbar = state.root.querySelector('[data-form="batch-review"]');
+  if (!toolbar) return;
+  const visible = filteredSubmissions(state);
+  const visibleIds = visible.map(playerId).filter(Boolean);
+  const selectedCount = visibleIds.filter((id) => state.selectedSubmissionIds.has(id)).length;
+  const disabled = !selectedCount || state.pending;
+  const btn1 = toolbar.querySelector('button[type="submit"]');
+  const btn2 = toolbar.querySelector('[data-action="delete-selected-submissions"]');
+  if (btn1) {
+    btn1.disabled = disabled;
+    btn1.textContent = state.tr('adminBohConfirmSelected', 'Confirm selected ({count})', {
+      count: selectedCount,
+    });
+  }
+  if (btn2) {
+    btn2.disabled = disabled;
+    btn2.textContent = state.tr('adminBohDeleteSelected', 'Delete selected ({count})', {
+      count: selectedCount,
+    });
+  }
 }
 
 function renderCurrentStage(state) {
@@ -4244,8 +4535,9 @@ function renderEpicShowdownPreferenceSummary(state) {
     .join('');
   const preferenceRows = summary.players
     .map(
-      (preference) => `<tr>
+      (preference) => `<tr${preference.excluded ? ' data-epic-excluded="true"' : ''}>
         <th scope="row">${escapeHtml(preference.displayName || preference.playerId)}</th>
+        <td>${escapeHtml(preference.locale || state.tr('adminBohNotProvided', 'Not provided'))}</td>
         <td>${escapeHtml(
           preference.lanes.map((lane) => epicLaneLabel(state, lane)).join(', ') ||
             state.tr('adminBohNotProvided', 'Not provided')
@@ -4256,30 +4548,82 @@ function renderEpicShowdownPreferenceSummary(state) {
         <td>${escapeHtml(
           preference.flexibilityPreference || state.tr('adminBohNotProvided', 'Not provided')
         )}</td>
+        <td><input class="boh-admin-selection-checkbox" type="checkbox" name="excluded.${escapeHtml(
+          preference.playerId
+        )}" ${preference.excluded ? 'checked' : ''} aria-label="${escapeHtml(
+          state.tr('adminBohEpicExcludePlayer', 'Exclude {player} from Epic planning', {
+            player: preference.displayName || preference.playerId,
+          })
+        )}"></td>
+        <td><select class="boh-admin-select" name="laneOverride.${escapeHtml(
+          preference.playerId
+        )}" aria-label="${escapeHtml(
+          state.tr('adminBohEpicLaneOverrideFor', 'Lane override for {player}', {
+            player: preference.displayName || preference.playerId,
+          })
+        )}">
+          <option value="">${escapeHtml(state.tr('adminBohEpicUsePreference', 'Use preference'))}</option>
+          ${EPIC_LANE_IDS.map(
+            (lane) =>
+              `<option value="${escapeHtml(lane)}" ${preference.laneOverride === lane ? 'selected' : ''}>${escapeHtml(epicLaneLabel(state, lane))}</option>`
+          ).join('')}
+        </select><small>${escapeHtml(
+          preference.effectiveLane
+            ? state.tr('adminBohEpicEffectiveLane', 'Effective: {lane}', {
+                lane: epicLaneLabel(state, preference.effectiveLane),
+              })
+            : state.tr('adminBohEpicLaneUnresolved', 'Effective lane unresolved')
+        )}</small></td>
+        <td><input class="boh-admin-input" name="groupId.${escapeHtml(
+          preference.playerId
+        )}" maxlength="160" value="${escapeHtml(preference.groupId)}" placeholder="${escapeHtml(
+          state.tr('adminBohEpicGroupPlaceholder', 'Example: Turkish A')
+        )}" aria-label="${escapeHtml(
+          state.tr('adminBohEpicGroupFor', 'Keep-together group for {player}', {
+            player: preference.displayName || preference.playerId,
+          })
+        )}"></td>
       </tr>`
     )
     .join('');
+  const groupWarnings = summary.groupWarnings
+    .map((warning) => {
+      const message =
+        warning.code === 'conflict'
+          ? state.tr('adminBohEpicGroupConflict', 'Group {group} has conflicting lane overrides.', {
+              group: warning.groupId,
+            })
+          : state.tr(
+              'adminBohEpicGroupUnresolved',
+              'Group {group} needs one shared lane override.',
+              { group: warning.groupId }
+            );
+      return `<li>${escapeHtml(message)}</li>`;
+    })
+    .join('');
 
-  return `<section class="boh-admin-card boh-admin-epic-preferences" aria-labelledby="bohAdminEpicPreferencesTitle">
-    <header>
-      <div>
-        <p class="boh-admin-card-kicker">${escapeHtml(
-          state.tr('adminBohPlanningSignal', 'Planning signal only')
-        )}</p>
-        <h4 id="bohAdminEpicPreferencesTitle">${escapeHtml(
-          state.tr('adminBohEpicShowdownPreferences', 'Epic Showdown preferences')
-        )}</h4>
-        <p>${escapeHtml(
-          state.tr(
-            'adminBohEpicShowdownPreferencesHelp',
-            'Player-selected lanes and game times for planning only. Multiple choices are allowed.'
-          )
-        )}</p>
-      </div>
+  const epicOpen = state.epicSummaryOpen ? ' open' : '';
+  return `<details class="boh-admin-card boh-admin-epic-preferences"${epicOpen}>
+    <summary class="boh-admin-epic-summary">
+      <span class="boh-admin-epic-summary-title">${escapeHtml(
+        state.tr('adminBohEpicShowdownPreferences', 'Epic Showdown preferences')
+      )}</span>
       <strong class="boh-admin-preference-total">${escapeHtml(
-        playerCountLabel(state, summary.totalPlayers)
+        state.tr('adminBohEpicActiveExcluded', '{active} active · {excluded} excluded', {
+          active: summary.activeCount,
+          excluded: summary.excludedCount,
+        })
       )}</strong>
-    </header>
+    </summary>
+    <p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohPlanningSignal', 'Planning signal only')
+    )}</p>
+    <p>${escapeHtml(
+      state.tr(
+        'adminBohEpicShowdownPreferencesHelp',
+        'Player-selected lanes and game times for planning only. Multiple choices are allowed.'
+      )
+    )}</p>
     <div class="boh-admin-preference-overview">
       <section>
         <h5>${escapeHtml(state.tr('adminBohEpicLaneSummary', 'Lane interest'))}</h5>
@@ -4290,16 +4634,23 @@ function renderEpicShowdownPreferenceSummary(state) {
         <ul>${timeItems}</ul>
       </section>
     </div>
-    <details class="boh-admin-preference-details" open>
+    <details class="boh-admin-preference-details">
       <summary>${escapeHtml(
         state.tr('adminBohEpicPlayerPreferences', 'Player preference details')
       )}</summary>
       ${
         preferenceRows
-          ? `<div class="boh-admin-table-wrap" tabindex="0">
+          ? `<form data-form="epic-planning">
+            ${
+              groupWarnings
+                ? `<ul class="boh-admin-epic-warnings" role="alert">${groupWarnings}</ul>`
+                : ''
+            }
+            <div class="boh-admin-table-wrap" tabindex="0">
               <table class="boh-admin-table">
                 <thead><tr>
                   <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
+                  <th scope="col">${escapeHtml(state.tr('adminBohLocale', 'Language / locale'))}</th>
                   <th scope="col">${escapeHtml(
                     state.tr('adminBohEpicLane', 'Preferred lanes')
                   )}</th>
@@ -4309,16 +4660,32 @@ function renderEpicShowdownPreferenceSummary(state) {
                   <th scope="col">${escapeHtml(
                     state.tr('adminBohEpicFlexibility', 'Flexibility preference')
                   )}</th>
+                  <th scope="col">${escapeHtml(state.tr('adminBohEpicExcluded', 'Exclude'))}</th>
+                  <th scope="col">${escapeHtml(
+                    state.tr('adminBohEpicLaneOverride', 'Lane override')
+                  )}</th>
+                  <th scope="col">${escapeHtml(
+                    state.tr('adminBohEpicKeepTogetherGroup', 'Keep-together group')
+                  )}</th>
                 </tr></thead>
                 <tbody>${preferenceRows}</tbody>
               </table>
-            </div>`
+            </div>
+            <div class="boh-admin-stage-actions boh-admin-epic-actions">
+              <button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
+                state.tr('adminBohEpicSavePlanning', 'Save Epic planning controls')
+              )}</button>
+              <button class="boh-admin-button" type="button" data-action="export-epic-planning">${escapeHtml(
+                state.tr('adminBohEpicExportPlanning', 'Export active Epic CSV')
+              )}</button>
+            </div>
+          </form>`
           : `<p class="boh-admin-preference-empty">${escapeHtml(
               state.tr('adminBohEpicNoPreferences', 'No Epic Showdown preferences submitted yet.')
             )}</p>`
       }
     </details>
-  </section>`;
+  </details>`;
 }
 
 function filteredSubmissions(state) {
@@ -4341,14 +4708,15 @@ function signupFilterOptions(state) {
   };
 }
 
-function signupSortHeader(state, key, label) {
+function signupSortHeader(state, key, label, extraClass = '') {
   const active = state.signupSort.key === key;
   const ariaSort = active
     ? state.signupSort.direction === 'asc'
       ? 'ascending'
       : 'descending'
     : 'none';
-  return `<th scope="col" aria-sort="${ariaSort}"><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="signup-sort" data-sort-key="${key}">${escapeHtml(
+  const cls = extraClass ? ` class="${escapeHtml(extraClass)}"` : '';
+  return `<th scope="col"${cls} aria-sort="${ariaSort}"><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="signup-sort" data-sort-key="${key}">${escapeHtml(
     label
   )}</button></th>`;
 }
@@ -4482,23 +4850,23 @@ function renderSignupReview(state) {
             })
           )}</caption>
           <thead><tr>
-            <th scope="col"><label><span class="boh-admin-sr">${escapeHtml(
+            <th scope="col" class="boh-admin-col-sticky boh-admin-col-sticky-1"><label><span class="boh-admin-sr">${escapeHtml(
               state.tr('adminBohSelectAllVisible', 'Select all visible signups')
             )}</span><input class="boh-admin-selection-checkbox" type="checkbox" data-action="select-all-visible" ${
               allVisibleSelected ? 'checked' : ''
             } ${disabled} /></label></th>
-            ${signupSortHeader(state, 'name', state.tr('adminBohPlayer', 'Player'))}
+            ${signupSortHeader(state, 'name', state.tr('adminBohPlayer', 'Player'), 'boh-admin-col-sticky boh-admin-col-sticky-2')}
+            ${signupSortHeader(state, 'status', state.tr('adminBohReviewStatus', 'Review status'), 'boh-admin-col-sticky boh-admin-col-sticky-3')}
+            <th scope="col" class="boh-admin-col-sticky boh-admin-col-sticky-4"><span class="boh-admin-sr">${escapeHtml(
+              state.tr('adminBohActions', 'Actions')
+            )}</span></th>
             ${signupSortHeader(state, 'power', state.tr('adminBohStatTotalPower', 'Total power'))}
             ${signupSortHeader(state, 'score', state.tr('adminBohFinalScore', 'Final score'))}
             <th scope="col">${escapeHtml(
               state.tr('adminBohPreferredTeammates', 'Preferred teammates')
             )}</th>
             <th scope="col">${escapeHtml(state.tr('adminBohSource', 'Capture'))}</th>
-            ${signupSortHeader(state, 'status', state.tr('adminBohReviewStatus', 'Review status'))}
             ${signupSortHeader(state, 'updated', state.tr('adminBohUpdated', 'Updated'))}
-            <th scope="col"><span class="boh-admin-sr">${escapeHtml(
-              state.tr('adminBohActions', 'Actions')
-            )}</span></th>
           </tr></thead>
           <tbody>${visible.length ? visible.map((item) => renderSignupRow(state, item)).join('') : renderEmptyRow(state, 9, 'adminBohNoSignups', 'No signups match these filters.')}</tbody>
         </table>
@@ -4535,31 +4903,31 @@ function renderSignupRow(state, submission) {
   });
   const preferredTeammates = getAdminPreferredTeammateNames(fields.effective);
   return `<tr ${state.selectedSubmissionId === id ? 'data-selected="true"' : ''}>
-    <td><input class="boh-admin-selection-checkbox" type="checkbox" data-action="select-submission-row" data-player-id="${escapeHtml(
+    <td class="boh-admin-col-sticky boh-admin-col-sticky-1"><input class="boh-admin-selection-checkbox" type="checkbox" data-action="select-submission-row" data-player-id="${escapeHtml(
       id
     )}" aria-label="${escapeHtml(
       state.tr('adminBohSelectSignupNamed', 'Select {player}', {
         player: fields.effectiveName || id,
       })
     )}" ${state.selectedSubmissionIds.has(id) ? 'checked' : ''} ${state.pending ? 'disabled' : ''} /></td>
-    <th scope="row"><strong>${escapeHtml(fields.effectiveName || id || '—')}</strong>
+    <th scope="row" class="boh-admin-col-sticky boh-admin-col-sticky-2"><strong>${escapeHtml(fields.effectiveName || id || '—')}</strong>
       <small>${escapeHtml(cleanText(submission?.server || submission?.alliance))}</small></th>
-    <td>${escapeHtml(formatNumber(state, fields.totalPower))}</td>
-    <td>${escapeHtml(formatNumber(state, fields.score))}${renderScoreDiagnostic(
+    <td class="boh-admin-col-sticky boh-admin-col-sticky-3" data-label="${escapeHtml(state.tr('adminBohReviewStatus', 'Review status'))}"><span class="boh-admin-status-chip" data-status="${escapeHtml(status)}">${escapeHtml(
+      statusLabel(state, status)
+    )}</span></td>
+    <td class="boh-admin-col-sticky boh-admin-col-sticky-4" data-label="${escapeHtml(state.tr('adminBohActions', 'Actions'))}"><button type="button" class="boh-admin-button boh-admin-button-small" data-action="select-submission" data-player-id="${escapeHtml(
+      id
+    )}">${escapeHtml(state.tr('adminBohReview', 'Review'))}</button></td>
+    <td data-label="${escapeHtml(state.tr('adminBohStatTotalPower', 'Total power'))}">${escapeHtml(formatNumber(state, fields.totalPower))}</td>
+    <td data-label="${escapeHtml(state.tr('adminBohFinalScore', 'Final score'))}">${escapeHtml(formatNumber(state, fields.score))}${renderScoreDiagnostic(
       state,
       submission?.scoreDiagnostic
     )}</td>
-    <td class="boh-admin-preferred-teammates-cell">${escapeHtml(
+    <td class="boh-admin-preferred-teammates-cell" data-label="${escapeHtml(state.tr('adminBohPreferredTeammates', 'Preferred teammates'))}">${escapeHtml(
       preferredTeammates.join(', ') || '—'
     )}</td>
-    <td>${escapeHtml(capture)}</td>
-    <td><span class="boh-admin-status-chip" data-status="${escapeHtml(status)}">${escapeHtml(
-      statusLabel(state, status)
-    )}</span></td>
-    <td>${escapeHtml(formatDate(state, submission?.updatedAt || submission?.submittedAt))}</td>
-    <td><button type="button" class="boh-admin-button boh-admin-button-small" data-action="select-submission" data-player-id="${escapeHtml(
-      id
-    )}">${escapeHtml(state.tr('adminBohReview', 'Review'))}</button></td>
+    <td data-label="${escapeHtml(state.tr('adminBohSource', 'Capture'))}">${escapeHtml(capture)}</td>
+    <td data-label="${escapeHtml(state.tr('adminBohUpdated', 'Updated'))}">${escapeHtml(formatDate(state, submission?.updatedAt || submission?.submittedAt))}</td>
   </tr>`;
 }
 
@@ -4873,9 +5241,7 @@ function renderSignupPlanningSignals(state, submission) {
     </div>
     ${
       signals.usableHeroCount
-        ? `<details class="boh-admin-signal-disclosure" ${
-            signals.usableHeroCount <= 12 ? 'open' : ''
-          }>
+        ? `<details class="boh-admin-signal-disclosure">
             <summary><span>${escapeHtml(
               state.tr('adminBohUsableHeroes', 'Usable heroes')
             )}</span><strong>${escapeHtml(
@@ -7437,11 +7803,89 @@ function renderPlanPreview(state) {
 
 function setStatus(state, message, tone = 'neutral') {
   state.status = { message: cleanText(message), tone };
-  const element = state.root.querySelector('#bohAdminStatus');
+  const element = document.getElementById('bohAdminStatus');
   if (!element) return;
   element.textContent = state.status.message;
   element.dataset.tone = tone;
   element.hidden = !state.status.message;
+}
+
+let confirmDialogActive = false;
+
+function showConfirmDialog(state, message) {
+  if (typeof document?.createElement !== 'function') {
+    return Promise.resolve(window.confirm(message));
+  }
+  return new Promise((resolve) => {
+    if (confirmDialogActive) {
+      resolve(false);
+      return;
+    }
+    confirmDialogActive = true;
+    const existing = state.root.querySelector('.boh-admin-confirm-dialog');
+    if (existing) existing.remove();
+    const dialog = document.createElement('div');
+    dialog.className = 'boh-admin-confirm-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'bohConfirmMsg');
+    dialog.innerHTML = `<div class="boh-admin-confirm-backdrop"></div>
+      <div class="boh-admin-confirm-panel" role="document">
+        <p id="bohConfirmMsg">${escapeHtml(message)}</p>
+        <div class="boh-admin-confirm-actions">
+          <button class="boh-admin-button" data-confirm-action="cancel">${escapeHtml(state.tr('adminBohCancel', 'Cancel'))}</button>
+          <button class="boh-admin-button boh-admin-button-primary" data-confirm-action="ok">${escapeHtml(state.tr('adminBohConfirm', 'Confirm'))}</button>
+        </div>
+      </div>`;
+    state.root.appendChild(dialog);
+    const focusable = dialog.querySelectorAll('button');
+    const firstFocusable = focusable[0];
+    const lastFocusable = focusable[focusable.length - 1];
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        cleanup();
+        resolve(false);
+        return;
+      }
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === firstFocusable) {
+          e.preventDefault();
+          lastFocusable.focus();
+        } else if (!e.shiftKey && document.activeElement === lastFocusable) {
+          e.preventDefault();
+          firstFocusable.focus();
+        }
+      }
+    };
+    const cleanup = () => {
+      confirmDialogActive = false;
+      dialog.remove();
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    dialog.querySelector('[data-confirm-action="ok"]')?.focus();
+    dialog.addEventListener('click', (e) => {
+      const action = e.target.closest('button')?.dataset?.confirmAction;
+      if (action === 'ok') {
+        cleanup();
+        resolve(true);
+      } else if (action === 'cancel') {
+        cleanup();
+        resolve(false);
+      }
+    });
+  });
+}
+
+function renderProgressOverlay(state) {
+  const existing = state.root.querySelector('.boh-admin-progress-overlay');
+  if (existing) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'boh-admin-progress-overlay';
+  overlay.innerHTML =
+    '<div class="boh-admin-progress-bar"><span class="boh-admin-progress-indeterminate"></span></div>';
+  overlay.setAttribute('role', 'progressbar');
+  state.root.appendChild(overlay);
 }
 
 function clearDeletedSubmissionState(state, playerIds) {
@@ -7511,20 +7955,53 @@ function pruneCorrectionDrafts(state) {
   }
 }
 
-function correctionFocusSnapshot(root) {
-  const active = root?.ownerDocument?.activeElement;
-  const form = active?.closest?.('[data-form="submission-corrections"]');
-  if (!form || !root.contains(active)) return null;
-  const name = cleanText(active.name);
-  if (!name) return null;
-  const controls = [...form.elements].filter((control) => control.name === name);
-  return {
-    playerId: cleanText(new FormData(form).get('playerId')),
-    name,
-    index: Math.max(0, controls.indexOf(active)),
-    selectionStart: Number.isInteger(active.selectionStart) ? active.selectionStart : null,
-    selectionEnd: Number.isInteger(active.selectionEnd) ? active.selectionEnd : null,
-  };
+function snapshotFocus(root) {
+  if (!root || typeof root?.contains !== 'function')
+    return { activeId: null, activeName: null, scrollLefts: {} };
+  const snapshot = { activeId: null, activeName: null, scrollLefts: {} };
+  let active = null;
+  try {
+    active = root.ownerDocument?.activeElement;
+  } catch {}
+  if (active && root.contains(active)) {
+    snapshot.activeId = active.id || null;
+    snapshot.activeName = active.name || null;
+    snapshot.activeDataFocusId = active.dataset?.focusId || null;
+  }
+  const tableWrap = root?.querySelector?.('.boh-admin-table-wrap');
+  if (tableWrap) snapshot.scrollLefts.tableWrap = tableWrap.scrollLeft;
+  const teamBoard = root?.querySelector?.('.boh-admin-team-board');
+  if (teamBoard) snapshot.scrollLefts.teamBoard = teamBoard.scrollLeft;
+  return snapshot;
+}
+
+function restoreFocus(root, snapshot) {
+  if (!snapshot || !root) return;
+  // Restore scroll positions
+  if (snapshot.scrollLefts) {
+    const tableWrap = root.querySelector('.boh-admin-table-wrap');
+    if (tableWrap && snapshot.scrollLefts.tableWrap != null)
+      tableWrap.scrollLeft = snapshot.scrollLefts.tableWrap;
+    const teamBoard = root.querySelector('.boh-admin-team-board');
+    if (teamBoard && snapshot.scrollLefts.teamBoard != null)
+      teamBoard.scrollLeft = snapshot.scrollLefts.teamBoard;
+  }
+  // Restore focus
+  if (!snapshot.activeId && !snapshot.activeName && !snapshot.activeDataFocusId) return;
+  const selector = snapshot.activeId
+    ? `#${CSS.escape(snapshot.activeId)}`
+    : snapshot.activeDataFocusId
+      ? `[data-focus-id="${snapshot.activeDataFocusId}"]`
+      : snapshot.activeName
+        ? `[name="${snapshot.activeName}"]`
+        : null;
+  if (!selector) return;
+  const el = root.querySelector(selector);
+  if (el && typeof el.focus === 'function') {
+    try {
+      el.focus({ preventScroll: true });
+    } catch {}
+  }
 }
 
 function restoreCorrectionFocus(state, snapshot) {
@@ -7906,8 +8383,8 @@ async function invokeAction(state, name, payload, successMessage) {
   }
   state.pending = true;
   state.root.setAttribute('aria-busy', 'true');
-  renderShell(state);
   setStatus(state, state.tr('adminBohSaving', 'Saving…'), 'loading');
+  renderProgressOverlay(state);
   try {
     const command = { ...payload, expectedRevision: state.snapshot.revision };
     const result = handler
@@ -7936,7 +8413,7 @@ async function invokeAction(state, name, payload, successMessage) {
     }
     setStatus(state, successMessage || state.tr('adminBohSaved', 'Saved.'), 'success');
     state.options.onActionComplete?.({ action: name, payload: command, result });
-    renderShell(state);
+    scheduleRender(state);
     return result;
   } catch (error) {
     if (name === 'batchReviewSubmissions') {
@@ -7951,13 +8428,28 @@ async function invokeAction(state, name, payload, successMessage) {
         state.options.onError?.(refreshError, { action: 'batchDeleteSubmissionsRefresh' });
       }
     }
+    if (error?.failedPlayerIds?.length) {
+      error.failedPlayerIds.forEach((id) => {
+        const row = state.root.querySelector(`[data-player-id="${CSS.escape(id)}"]`);
+        if (row) {
+          const tr = row.closest('tr');
+          if (tr) tr.dataset.error = 'true';
+        }
+      });
+    }
     setStatus(state, error?.message || String(error), 'error');
     state.options.onError?.(error, { action: name, payload });
     return null;
   } finally {
     state.pending = false;
     state.root.setAttribute('aria-busy', 'false');
-    renderShell(state);
+    const overlay = state.root.querySelector('.boh-admin-progress-overlay');
+    if (overlay) overlay.remove();
+    scheduleRender(state);
+    if (state._snapshotDirty) {
+      state._snapshotDirty = false;
+      state.options.onSnapshot?.(state.snapshot);
+    }
   }
 }
 
@@ -8001,6 +8493,22 @@ function downloadVisibleSignupCsv(state) {
   link.click();
   URL.revokeObjectURL(url);
   return records.length;
+}
+
+function downloadEpicPlanningCsv(state) {
+  const summary = buildAdminEpicShowdownPreferenceSummary(state.snapshot);
+  const csv = buildEpicShowdownPlanningCsv(summary, { includeBom: true });
+  if (typeof state.options.downloadEpicPlanningCsv === 'function') {
+    state.options.downloadEpicPlanningCsv(csv, summary.activePlayers);
+    return summary.activeCount;
+  }
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'epic-showdown-planning.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+  return summary.activeCount;
 }
 
 async function handleClick(state, event) {
@@ -8067,6 +8575,15 @@ async function handleClick(state, event) {
     );
     return;
   }
+  if (action === 'export-epic-planning') {
+    const count = downloadEpicPlanningCsv(state);
+    setStatus(
+      state,
+      state.tr('adminBohEpicExportedRows', 'Exported {count} active Epic players.', { count }),
+      'success'
+    );
+    return;
+  }
   if (action === 'delete-selected-submissions') {
     const playerIds = filteredSubmissions(state)
       .map(playerId)
@@ -8078,7 +8595,7 @@ async function handleClick(state, event) {
       { count: playerIds.length }
     );
     const confirmed = await Promise.resolve(
-      state.options.confirm?.(message) ?? window.confirm(message)
+      state.options.confirm?.(message) ?? showConfirmDialog(state, message)
     );
     if (!confirmed) return;
     await invokeAction(
@@ -8092,7 +8609,8 @@ async function handleClick(state, event) {
   if (action === 'stage') {
     state.stage = button.dataset.stage;
     state.selectedSourceSeat = null;
-    renderShell(state);
+    updateHash(state);
+    renderNow(state);
     state.root.querySelector(`[data-stage="${state.stage}"]`)?.focus();
     return;
   }
@@ -8104,6 +8622,7 @@ async function handleClick(state, event) {
   }
   if (action === 'select-submission') {
     state.selectedSubmissionId = cleanText(button.dataset.playerId);
+    updateHash(state);
     renderShell(state);
     state.root.querySelector('#bohSignupDetailTitle')?.focus?.();
     return;
@@ -8111,6 +8630,7 @@ async function handleClick(state, event) {
   if (action === 'close-submission') {
     const closingPlayerId = state.selectedSubmissionId;
     state.selectedSubmissionId = '';
+    updateHash(state);
     renderShell(state);
     [...state.root.querySelectorAll('[data-action="select-submission"]')]
       .find((candidate) => cleanText(candidate.dataset.playerId) === closingPlayerId)
@@ -8128,7 +8648,7 @@ async function handleClick(state, event) {
       { player: displayName }
     );
     const confirmed = await Promise.resolve(
-      state.options.confirm?.(message) ?? window.confirm(message)
+      state.options.confirm?.(message) ?? showConfirmDialog(state, message)
     );
     if (!confirmed) return;
     const result = await invokeAction(
@@ -8215,7 +8735,7 @@ async function handleClick(state, event) {
       'Apply this exact balance preview in one atomic save?'
     );
     const confirmed = await Promise.resolve(
-      state.options.confirm?.(message) ?? window.confirm(message)
+      state.options.confirm?.(message) ?? showConfirmDialog(state, message)
     );
     if (!confirmed) return;
     await invokeAction(
@@ -8232,7 +8752,7 @@ async function handleClick(state, event) {
       'Copy last year’s four phase timings and objective codes? The 15-seat roles and every legacy player name will be excluded.'
     );
     const confirmed = await Promise.resolve(
-      state.options.confirm?.(message) ?? window.confirm(message)
+      state.options.confirm?.(message) ?? showConfirmDialog(state, message)
     );
     if (!confirmed) return;
     await invokeAction(
@@ -8386,16 +8906,31 @@ function handleChange(state, event) {
     const id = cleanText(event.target.dataset.playerId);
     if (event.target.checked) state.selectedSubmissionIds.add(id);
     else state.selectedSubmissionIds.delete(id);
-    renderShell(state);
+    // Direct DOM update instead of full re-render
+    const selectAll = state.root.querySelector('[data-action="select-all-visible"]');
+    if (selectAll) {
+      const visible = filteredSubmissions(state);
+      const selectedCount = visible.filter((s) =>
+        state.selectedSubmissionIds.has(playerId(s))
+      ).length;
+      selectAll.indeterminate = selectedCount > 0 && selectedCount < visible.length;
+      selectAll.checked = selectedCount === visible.length && visible.length > 0;
+    }
+    syncBatchToolbar(state);
     return;
   }
   if (action === 'select-all-visible') {
+    const checked = event.target.checked;
     for (const submission of filteredSubmissions(state)) {
       const id = playerId(submission);
-      if (event.target.checked) state.selectedSubmissionIds.add(id);
+      if (checked) state.selectedSubmissionIds.add(id);
       else state.selectedSubmissionIds.delete(id);
     }
-    renderShell(state);
+    // Direct DOM update
+    state.root.querySelectorAll('[data-action="select-submission-row"]').forEach((cb) => {
+      cb.checked = checked;
+    });
+    syncBatchToolbar(state);
     return;
   }
   if (action === 'preview-team') {
@@ -8467,6 +9002,11 @@ async function handleSubmit(state, event) {
       minTotalPower: cleanText(data.get('minTotalPower')),
       maxTotalPower: cleanText(data.get('maxTotalPower')),
     };
+    try {
+      sessionStorage.setItem('bohAdminSignupFilter', state.signupFilter);
+      sessionStorage.setItem('bohAdminSignupSearch', state.signupSearch);
+      sessionStorage.setItem('bohAdminSignupSort', JSON.stringify(state.signupSort));
+    } catch {}
     renderShell(state);
     return;
   }
@@ -8480,7 +9020,7 @@ async function handleSubmit(state, event) {
       { count: playerIds.length }
     );
     const confirmed = await Promise.resolve(
-      state.options.confirm?.(message) ?? window.confirm(message)
+      state.options.confirm?.(message) ?? showConfirmDialog(state, message)
     );
     if (!confirmed) return;
     await invokeAction(
@@ -8492,6 +9032,22 @@ async function handleSubmit(state, event) {
         ...(cleanText(data.get('note')) ? { note: cleanText(data.get('note')) } : {}),
       },
       state.tr('adminBohBatchConfirmed', 'Selected visible signups confirmed.')
+    );
+    return;
+  }
+  if (kind === 'epic-planning') {
+    const summary = buildAdminEpicShowdownPreferenceSummary(state.snapshot);
+    const overrides = summary.players.map((player) => ({
+      playerId: player.playerId,
+      excluded: data.has(`excluded.${player.playerId}`),
+      laneOverride: cleanText(data.get(`laneOverride.${player.playerId}`)),
+      groupId: cleanText(data.get(`groupId.${player.playerId}`)),
+    }));
+    await invokeAction(
+      state,
+      'saveEpicPlanningOverrides',
+      { overrides },
+      state.tr('adminBohEpicPlanningSaved', 'Epic planning controls saved.')
     );
     return;
   }
@@ -8842,8 +9398,11 @@ function handleStageKeys(state, event) {
   if (event.key === 'ArrowRight') next = (current + direction + STAGES.length) % STAGES.length;
   if (event.key === 'ArrowLeft') next = (current - direction + STAGES.length) % STAGES.length;
   state.stage = STAGES[next][0];
-  renderShell(state);
+  renderNow(state);
   state.root.querySelector(`[data-stage="${state.stage}"]`)?.focus();
+  state.root
+    .querySelector(`[data-stage="${state.stage}"]`)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 }
 
 function bindEvents(state) {
@@ -8872,7 +9431,36 @@ function bindEvents(state) {
     },
     { signal }
   );
-  state.root.addEventListener('keydown', (event) => handleStageKeys(state, event), { signal });
+  state.root.addEventListener(
+    'keydown',
+    (event) => {
+      handleStageKeys(state, event);
+      if (event.key === 'Escape' && state.selectedSubmissionId) {
+        const closingPlayerId = state.selectedSubmissionId;
+        state.selectedSubmissionId = '';
+        updateHash(state);
+        renderNow(state);
+        const escapedId = CSS.escape(closingPlayerId);
+        state.root
+          .querySelector(`[data-action="select-submission"][data-player-id="${escapedId}"]`)
+          ?.focus();
+        event.preventDefault();
+      }
+    },
+    { signal }
+  );
+  state.root.addEventListener(
+    'toggle',
+    (event) => {
+      if (event.target?.classList?.contains('boh-admin-epic-preferences')) {
+        state.epicSummaryOpen = event.target.open;
+        try {
+          sessionStorage.setItem('bohAdminEpicSummaryOpen', event.target.open ? 'true' : '');
+        } catch {}
+      }
+    },
+    { signal, passive: true }
+  );
 }
 
 async function startController(state) {
@@ -8914,7 +9502,11 @@ async function startController(state) {
         pruneCorrectionDrafts(state);
         state.roleDrafts = null;
         state.phaseDrafts = null;
-        renderShell(state);
+        if (state.pending) {
+          state._snapshotDirty = true;
+          return;
+        }
+        scheduleRender(state);
         state.options.onSnapshot?.(state.snapshot);
       });
     }
@@ -8936,6 +9528,15 @@ export function createAdminAllStarBohController(options = {}) {
   const existing = CONTROLLERS.get(root);
   if (existing) return existing;
   const state = makeInitialState(root, options);
+  if (typeof document?.createElement === 'function' && !document.getElementById('bohAdminStatus')) {
+    const statusEl = document.createElement('div');
+    statusEl.id = 'bohAdminStatus';
+    statusEl.className = 'boh-admin-status';
+    statusEl.setAttribute('role', 'status');
+    statusEl.setAttribute('aria-live', 'polite');
+    statusEl.hidden = true;
+    root.parentNode?.insertBefore(statusEl, root);
+  }
   bindEvents(state);
   renderShell(state);
 
@@ -8948,7 +9549,7 @@ export function createAdminAllStarBohController(options = {}) {
       await refreshState(state, snapshot);
       state.roleDrafts = null;
       state.phaseDrafts = null;
-      renderShell(state);
+      renderNow(state);
       return controller.getState();
     },
     setLanguage(translatorOrOptions, locale) {
@@ -8973,7 +9574,8 @@ export function createAdminAllStarBohController(options = {}) {
     setStage(stage) {
       if (!STAGES.some(([id]) => id === stage)) return false;
       state.stage = stage;
-      renderShell(state);
+      updateHash(state);
+      renderNow(state);
       return true;
     },
     getState() {

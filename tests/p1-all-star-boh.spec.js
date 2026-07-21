@@ -1739,6 +1739,42 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(root.locator('#bohSignupDetailTitle')).toHaveCount(0);
   });
 
+  test('390px viewport has no horizontal overflow on the signup stage', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="signups"]').click();
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth))
+      .toBeLessThanOrEqual(0);
+  });
+
+  test('persistent live region survives renderShell cycles without losing DOM identity', async ({
+    page,
+  }) => {
+    await openInjectedAdmin(page);
+    const element = page.locator('#bohAdminStatus');
+    await expect(element).toBeAttached();
+    await element.evaluate((el) => el.setAttribute('data-mark', 'persist'));
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="scoring"]').click();
+    await root.locator('[data-stage="signups"]').click();
+    await expect(element).toHaveAttribute('data-mark', 'persist');
+  });
+
+  test('focus returns to review button after closing detail panel', async ({ page }) => {
+    await openInjectedAdmin(page);
+    const root = page.locator('#dashAllStarBohRoot');
+    await root.locator('[data-stage="signups"]').click();
+    const reviewBtn = root.locator(
+      '[data-action="select-submission"][data-player-id="player-1-1"]'
+    );
+    await reviewBtn.click();
+    await expect(root.locator('#bohSignupDetailTitle')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(reviewBtn).toBeFocused();
+  });
+
   test('local test auth renders five stages, 72 seats, plan controls, and safe legacy reuse', async ({
     page,
   }) => {

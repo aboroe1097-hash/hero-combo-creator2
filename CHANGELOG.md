@@ -1,5 +1,20 @@
 # Changelog
 
+## 14.2.6 - 2026-07-21
+
+- Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.
+- Evaluated every keep-together group as one shared lane, surfaced unresolved or conflicting groups, and showed active-versus-excluded totals in the admin workspace.
+- Added a formula-safe active Epic planning CSV with player locale, preferences, lane overrides, effective lanes, and group IDs.
+
+## 14.2.5 - 2026-07-21
+
+- Collapsed Epic Showdown preference summary by default (H1).
+- Collapsed player preference details and usable-heroes disclosure by default (H1).
+- Persisted Epic Showdown collapse state in sessionStorage (H1).
+- Moved review status/actions leftward in the signup table (H2).
+- Added sticky leading identity columns with LTR/RTL support (H2).
+- Added `data-label` attributes to all `<td>` for card-mode responsive layout (H2).
+
 ## 14.2.4 - 2026-07-21
 
 - Added audited All-Star admin corrections across player-entered profile, stats, roster, hero, research, availability, role, and commitment data while preserving the original submission.

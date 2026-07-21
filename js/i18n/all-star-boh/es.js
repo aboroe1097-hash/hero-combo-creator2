@@ -137,6 +137,9 @@ export default Object.freeze({
   'role.offensive': 'Equipo ofensivo',
   'role.rune': 'Equipo de runa',
   'role.top': 'Lado superior',
+  'signup.accountNoteDescription':
+    '¿Registrar otra cuenta? Usa un navegador diferente, una ventana privada/de incógnito o un dispositivo distinto. Este navegador solo guarda un borrador de registro local a la vez, por lo que cambiar de cuentas aquí puede reemplazar el borrador guardado para la cuenta anterior.',
+  'signup.accountNoteTitle': '¿Usas varias cuentas?',
   'signup.accountTitle': 'Tu cuenta',
   'signup.availabilityAll': 'Todas las batallas',
   'signup.availabilityAllHint': 'Espero estar disponible por completo.',

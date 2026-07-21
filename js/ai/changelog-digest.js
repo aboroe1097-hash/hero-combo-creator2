@@ -1,10 +1,31 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.4";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.6",
+    "date": "2026-07-21",
+    "highlights": [
+      "Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.",
+      "Evaluated every keep-together group as one shared lane, surfaced unresolved or conflicting groups, and showed active-versus-excluded totals in the admin workspace.",
+      "Added a formula-safe active Epic planning CSV with player locale, preferences, lane overrides, effective lanes, and group IDs."
+    ]
+  },
+  {
+    "version": "14.2.5",
+    "date": "2026-07-21",
+    "highlights": [
+      "Collapsed Epic Showdown preference summary by default (H1).",
+      "Collapsed player preference details and usable-heroes disclosure by default (H1).",
+      "Persisted Epic Showdown collapse state in sessionStorage (H1).",
+      "Moved review status/actions leftward in the signup table (H2).",
+      "Added sticky leading identity columns with LTR/RTL support (H2).",
+      "Added `data-label` attributes to all `<td>` for card-mode responsive layout (H2)."
+    ]
+  },
   {
     "version": "14.2.4",
     "date": "2026-07-21",
@@ -83,23 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Limited All-Star fighting-time choices to `+12`, `+14`, and `+16`, with exactly two choices still required; Epic Showdown time choices are unchanged.",
       "Completed localized All-Star participation, VTS membership, contact, state, reason, and troop-estimate copy across all twelve supported languages instead of falling back to English.",
       "Verified protected admin signup deletion removes only the selected signup, review, and feedback while preserving independent Epic Showdown preferences."
-    ]
-  },
-  {
-    "version": "14.1.17",
-    "date": "2026-07-19",
-    "highlights": [
-      "Audited all 200 Eden contribution entries, 180 duty records, 40 conduct records, management votes, and teammate votes against canonical player families while preserving the published Top 20 order.",
-      "Deduplicated reward families across Support, Contribution, Management, Team Players, and the 90 Power House positions so secondary accounts cannot receive a second season reward.",
-      "Mapped verified public aliases and duty-only workers without letting zero-contribution support accounts enter Contribution or Power House rankings, and retained all 142 banners, 30 pathers, 8 shield walls, and 44 net conduct points."
-    ]
-  },
-  {
-    "version": "14.1.16",
-    "date": "2026-07-19",
-    "highlights": [
-      "Added explicit Guild Master and Core reward tiers to the Final Top 20 while preserving each winner's support, contribution, management-vote, or team-vote selection reason.",
-      "Added a deduplicated 90-player Power House ranking for positions 21–110 and one-click PNG downloads for both reward tables."
     ]
   }
 ].map((release) =>
