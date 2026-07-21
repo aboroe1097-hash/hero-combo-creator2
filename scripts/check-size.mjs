@@ -65,7 +65,9 @@ const LIMITS = {
   // the tighter CSS, route, media, and file-count budgets remain unchanged.
   // The complete audited 14.2.4 artifact measures 26,327.7 KiB; retain roughly
   // 17 KiB while the tighter route, CSS, media, and file-count caps stay fixed.
-  totalDeployBytes: 26345 * 1024,
+  // The formatted multi-account signup note and Locale CSV column added ~0.2
+  // KiB of deployed output. Bump by 1 KiB to restore headroom.
+  totalDeployBytes: 26346 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
