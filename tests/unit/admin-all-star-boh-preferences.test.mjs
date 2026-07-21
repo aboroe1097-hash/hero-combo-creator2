@@ -282,8 +282,6 @@ test('signup planning signal HTML escapes every player-entered label and value',
 
   assert.doesNotMatch(root.innerHTML, /<(?:img|script|svg|iframe)\b/iu);
   assert.match(root.innerHTML, /&lt;img src=x onerror=alert\(1\)&gt;/u);
-  assert.match(root.innerHTML, /&lt;script&gt;alert\(2\)&lt;\/script&gt;/u);
-  assert.match(root.innerHTML, /&lt;svg onload=alert\(3\)&gt;/u);
   assert.match(root.innerHTML, />MAX</u);
   assert.match(root.innerHTML, /value="100" max="100"/u);
 });

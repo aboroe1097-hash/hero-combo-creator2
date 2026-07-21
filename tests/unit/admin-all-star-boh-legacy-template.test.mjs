@@ -276,7 +276,10 @@ test('admin review and rotation editors preserve canonical editable fields', () 
   assert.match(source, /bohAdminTroopInventoryTitle/u);
   assert.match(source, /\$\{renderTroopInventory\(state, effective\)\}/u);
   assert.match(source, /data-action="delete-submission"/u);
-  assert.match(source, /state\.options\.confirm\?\.\(message\) \?\? window\.confirm\(message\)/u);
+  assert.match(
+    source,
+    /state\.options\.confirm\?\.\(message\) \?\? (window\.confirm\(message\)|showConfirmDialog\(state, message\))/u
+  );
   assert.match(source, /else if \(type === 'deleteSubmission'\)/u);
   assert.match(source, /if \(result === null\) return;[\s\S]*?clearDeletedSubmissionState/u);
   assert.match(
@@ -360,7 +363,10 @@ test('manual commitment scoring has compact responsive audit styles', () => {
 
   assert.match(css, /\.boh-admin-commitment-score-toolbar\s*\{[\s\S]*?display:\s*grid;/u);
   assert.match(css, /\.boh-admin-score-input \.boh-admin-input\s*\{[\s\S]*?text-align:\s*end;/u);
-  assert.match(css, /\.boh-admin-legacy-override small\s*\{[\s\S]*?color:\s*var\(--boh-gold\);/u);
+  assert.match(
+    css,
+    /\.boh-admin-legacy-override small\s*\{[\s\S]*?color:\s*var\(--(boh|ff)-gold\);/u
+  );
   assert.match(css, /\.boh-admin-score-diagnostic\s*\{[\s\S]*?border:\s*1px solid/u);
   assert.match(
     css,
