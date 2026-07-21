@@ -4484,14 +4484,15 @@ function signupFilterOptions(state) {
   };
 }
 
-function signupSortHeader(state, key, label) {
+function signupSortHeader(state, key, label, extraClass = '') {
   const active = state.signupSort.key === key;
   const ariaSort = active
     ? state.signupSort.direction === 'asc'
       ? 'ascending'
       : 'descending'
     : 'none';
-  return `<th scope="col" aria-sort="${ariaSort}"><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="signup-sort" data-sort-key="${key}">${escapeHtml(
+  const cls = extraClass ? ` class="${escapeHtml(extraClass)}"` : '';
+  return `<th scope="col"${cls} aria-sort="${ariaSort}"><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="signup-sort" data-sort-key="${key}">${escapeHtml(
     label
   )}</button></th>`;
 }
@@ -4630,8 +4631,8 @@ function renderSignupReview(state) {
             )}</span><input class="boh-admin-selection-checkbox" type="checkbox" data-action="select-all-visible" ${
               allVisibleSelected ? 'checked' : ''
             } ${disabled} /></label></th>
-            ${signupSortHeader(state, 'name', state.tr('adminBohPlayer', 'Player'))}
-            ${signupSortHeader(state, 'status', state.tr('adminBohReviewStatus', 'Review status'))}
+            ${signupSortHeader(state, 'name', state.tr('adminBohPlayer', 'Player'), 'boh-admin-col-sticky boh-admin-col-sticky-2')}
+            ${signupSortHeader(state, 'status', state.tr('adminBohReviewStatus', 'Review status'), 'boh-admin-col-sticky boh-admin-col-sticky-3')}
             <th scope="col" class="boh-admin-col-sticky boh-admin-col-sticky-4"><span class="boh-admin-sr">${escapeHtml(
               state.tr('adminBohActions', 'Actions')
             )}</span></th>
