@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.2.7 - 2026-07-22
+
+- Fixed the All-Star BoH Team Builder eligible-player pool so checkbox changes immediately update the selected-player count and save-button count before saving.
+
 ## 14.2.6 - 2026-07-21
 
 - Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.

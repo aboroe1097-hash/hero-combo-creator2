@@ -4423,6 +4423,7 @@ function renderShell(state) {
     </section>`;
   root.setAttribute('aria-busy', String(state.pending));
   syncSignupSelectionCheckbox(state);
+  syncEligiblePoolCount(state);
   syncStickyOffsets(state);
   const stagePanel = root.querySelector('#bohAdminStagePanel');
   if (stagePanel) {
@@ -4486,6 +4487,21 @@ function syncBatchToolbar(state) {
     btn2.textContent = state.tr('adminBohDeleteSelected', 'Delete selected ({count})', {
       count: selectedCount,
     });
+  }
+}
+
+function syncEligiblePoolCount(state) {
+  const form = state.root.querySelector('[data-form="eligible-pool"]');
+  if (!form) return;
+  const fieldSize = integer(form.dataset.eligibleFieldSize);
+  const selectedCount = form.querySelectorAll('input[name="playerId"]:checked').length;
+  const text = `${selectedCount} / ${fieldSize}`;
+  const count = state.root.querySelector('[data-eligible-pool-count]');
+  if (count) count.textContent = text;
+  const save = form.querySelector('[data-eligible-pool-save]');
+  if (save) {
+    save.textContent = `${state.tr('adminBohSaveEligiblePool', 'Save eligible field')} (${text})`;
+    save.disabled = state.pending;
   }
 }
 
@@ -6283,7 +6299,7 @@ function renderEligiblePool(state, candidates, selectedIds) {
   return `<details class="boh-admin-card" open>
     <summary><strong>${escapeHtml(
       state.tr('adminBohEligiblePool', 'Eligible player pool')
-    )}</strong> <span>${selected.size} / ${fieldSize}</span></summary>
+    )}</strong> <span data-eligible-pool-count>${selected.size} / ${fieldSize}</span></summary>
     <p>${escapeHtml(
       state.tr(
         'adminBohEligiblePoolHelp',
@@ -6291,12 +6307,12 @@ function renderEligiblePool(state, candidates, selectedIds) {
         { count: fieldSize }
       )
     )}</p>
-    <form class="boh-admin-stack" data-form="eligible-pool">
+    <form class="boh-admin-stack" data-form="eligible-pool" data-eligible-field-size="${fieldSize}">
       <div class="boh-admin-repeat-list">
         ${candidates
           .map(
             (player) => `<label class="boh-admin-confirm">
-              <input type="checkbox" name="playerId" value="${escapeHtml(player.playerId)}" ${
+              <input type="checkbox" name="playerId" data-action="eligible-pool-player" value="${escapeHtml(player.playerId)}" ${
                 selected.has(player.playerId) ? 'checked' : ''
               } />
               <span class="boh-admin-eligible-player">
@@ -6309,7 +6325,7 @@ function renderEligiblePool(state, candidates, selectedIds) {
           )
           .join('')}
       </div>
-      <button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
+      <button class="boh-admin-button boh-admin-button-primary" type="submit" data-eligible-pool-save>${escapeHtml(
         state.tr('adminBohSaveEligiblePool', 'Save eligible field')
       )}</button>
     </form>
@@ -8902,6 +8918,10 @@ function handleChange(state, event) {
     return;
   }
   const action = cleanText(event.target.dataset.action);
+  if (action === 'eligible-pool-player') {
+    syncEligiblePoolCount(state);
+    return;
+  }
   if (action === 'select-submission-row') {
     const id = cleanText(event.target.dataset.playerId);
     if (event.target.checked) state.selectedSubmissionIds.add(id);

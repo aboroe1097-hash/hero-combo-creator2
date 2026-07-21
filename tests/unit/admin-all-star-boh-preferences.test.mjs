@@ -562,6 +562,13 @@ test('admin preference signals never feed automatic balance or assignment logic'
     /Preferences guide planning and never lock assignments\. Only enabled scoring components affect scores\./u
   );
   assert.match(source, /adapterNotify\(state, false\)/u);
+  assert.match(source, /data-action="eligible-pool-player"/u);
+  assert.match(source, /data-eligible-pool-count/u);
+  assert.match(source, /function syncEligiblePoolCount\(state\)/u);
+  assert.match(
+    source,
+    /if \(action === 'eligible-pool-player'\) \{\s+syncEligiblePoolCount\(state\);/u
+  );
 });
 
 test('admin submission filters compose against fresh effective names and corrected stats', () => {

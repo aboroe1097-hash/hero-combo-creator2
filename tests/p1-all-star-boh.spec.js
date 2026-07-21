@@ -1487,9 +1487,22 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(
       root.locator('[data-form="eligible-pool"] input[name="playerId"]:checked')
     ).toHaveCount(24);
+    const eligiblePool = root.locator('[data-form="eligible-pool"]');
+    const eligibleSummary = eligiblePool.locator('xpath=ancestor::details[1]/summary');
+    const firstEligibleCheckbox = eligiblePool.locator('input[name="playerId"]').first();
+    await firstEligibleCheckbox.uncheck();
+    await expect(eligibleSummary).toContainText('23 / 24');
+    await expect(
+      eligiblePool.getByRole('button', { name: 'Save eligible field (23 / 24)' })
+    ).toBeVisible();
+    await firstEligibleCheckbox.check();
+    await expect(eligibleSummary).toContainText('24 / 24');
+    await expect(
+      eligiblePool.getByRole('button', { name: 'Save eligible field (24 / 24)' })
+    ).toBeVisible();
     await root
       .locator('[data-form="eligible-pool"]')
-      .getByRole('button', { name: 'Save eligible field' })
+      .getByRole('button', { name: 'Save eligible field (24 / 24)' })
       .click();
 
     await root.locator('[data-action="preview-balance-teams"]').click();
