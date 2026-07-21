@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.7",
+    "date": "2026-07-22",
+    "highlights": [
+      "Fixed the All-Star BoH Team Builder eligible-player pool so checkbox changes immediately update the selected-player count and save-button count before saving."
+    ]
+  },
   {
     "version": "14.2.6",
     "date": "2026-07-21",
@@ -94,16 +101,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Kept all new and updated submissions restricted to exactly two current fighting times from `+12`, `+14`, and `+16`.",
       "Prioritized Research, YouTube, All-Star BoH, and Eden X1 Rankings in the mobile bottom navigation, restored a compact mobile version badge, and fully hid the off-screen skip-link outline until keyboard focus.",
       "Made shared tab links case-insensitive so common variants such as `#allstarboh` and `#AllStarBoh` open and normalize to the canonical `#allStarBoh` route."
-    ]
-  },
-  {
-    "version": "14.1.18",
-    "date": "2026-07-20",
-    "highlights": [
-      "Replaced unreliable multi-image troop OCR with four optional million-based estimates for Lofty (S), enhanced T10, regular T10, and T9 troops; entering `7` records an estimated `7,000,000` troops while preserving legacy reviewed troop rows.",
-      "Limited All-Star fighting-time choices to `+12`, `+14`, and `+16`, with exactly two choices still required; Epic Showdown time choices are unchanged.",
-      "Completed localized All-Star participation, VTS membership, contact, state, reason, and troop-estimate copy across all twelve supported languages instead of falling back to English.",
-      "Verified protected admin signup deletion removes only the selected signup, review, and feedback while preserving independent Epic Showdown preferences."
     ]
   }
 ].map((release) =>
