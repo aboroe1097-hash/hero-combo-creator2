@@ -563,8 +563,12 @@ test('admin preference signals never feed automatic balance or assignment logic'
   );
   assert.match(source, /adapterNotify\(state, false\)/u);
   assert.match(source, /data-action="eligible-pool-player"/u);
+  assert.match(source, /data-action="eligible-pool-search"/u);
+  assert.match(source, /data-action="eligible-pool-filter"/u);
   assert.match(source, /data-eligible-pool-count/u);
+  assert.match(source, /data-eligible-pool-row/u);
   assert.match(source, /function syncEligiblePoolCount\(state\)/u);
+  assert.match(source, /function syncEligiblePoolSearch\(state\)/u);
   assert.match(
     source,
     /if \(action === 'eligible-pool-player'\) \{\s+syncEligiblePoolCount\(state\);/u
