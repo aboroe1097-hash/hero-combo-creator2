@@ -601,6 +601,12 @@ export function buildSignupReviewCsv(records, options = {}) {
     'T10 Troop Types',
     'VTS Member',
     'Locale',
+    'Availability',
+    'Leadership Support',
+    'Can Teleport',
+    'Can Use Voice',
+    'Plan Commitment',
+    'Preferred Teammates',
   ];
   const rows = list(records).map((record) => {
     const fields = adminSubmissionFields(record);
@@ -643,6 +649,12 @@ export function buildSignupReviewCsv(records, options = {}) {
       uniqueTextList(stats.t10TroopTypes).join(' | '),
       fields.vtsMember == null ? '' : fields.vtsMember ? 'Yes' : 'No',
       effective?.locale || record?.locale || '',
+      commitment.availability || '',
+      commitment.canHelpLead == null ? '' : commitment.canHelpLead ? 'Yes' : 'No',
+      commitment.canTeleport == null ? '' : commitment.canTeleport ? 'Yes' : 'No',
+      commitment.canUseVoice == null ? '' : commitment.canUseVoice ? 'Yes' : 'No',
+      commitment.planCommitment == null ? '' : commitment.planCommitment ? 'Yes' : 'No',
+      getAdminPreferredTeammateNames(effective).join(' | '),
     ];
   });
   const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');

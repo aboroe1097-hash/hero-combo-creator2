@@ -685,7 +685,14 @@ test('admin submission sorting is stable and CSV quotes every protected effectiv
         fightingTimeIds: ['+12'],
         vts1097Member: true,
         currentState: '=Not a server',
+        availability: 'most',
+        canHelpLead: true,
+        canTeleport: false,
+        canUseVoice: true,
+        planCommitment: false,
       },
+      locale: 'en',
+      preferredTeammates: ['Bravo', 'Charlie'],
       review: {
         submissionRevision: 1,
         gameNameCorrection: { corrected: '@Reviewed\nOne', reason: 'Roster audit' },
@@ -717,6 +724,13 @@ test('admin submission sorting is stable and CSV quotes every protected effectiv
   );
 
   const csv = buildSignupReviewCsv(records, { includeBom: true });
+  const [headerRow, firstRow, secondRow] = csv.slice(1).split('\r\n');
+  assert.equal(
+    headerRow,
+    '"Player ID","Effective Name","Original Name","Server","Current State","Alliance","Total Power","Troop Power","Building Power","Technology Power","Hero Combat Power","Dragon Power","Unit Specialty Power","Artifact Power","Royal Tech Power","RoC Level","Calculated Score","Legacy Final Override","Commitment Adjustment","Final Score","Score Diagnostic","Canonical Troop Roster","Lofty Count","Enhanced T10 Count","Regular T10 Count","T9 Count","Status","Capture","Updated","Fighting Times","Role Preferences","T9 Troop Types","T10 Troop Types","VTS Member","Locale","Availability","Leadership Support","Can Teleport","Can Use Voice","Plan Commitment","Preferred Teammates"'
+  );
+  assert.ok(firstRow.endsWith('"Yes","en","most","Yes","No","Yes","No","Bravo | Charlie"'));
+  assert.ok(secondRow.endsWith('"","","","","","","",""'));
   assert.ok(csv.startsWith('\uFEFF"Player ID","Effective Name","Original Name"'));
   assert.match(csv, /"'@Reviewed One"/u);
   assert.match(csv, /"'=Original, ""One"""/u);
