@@ -15,6 +15,11 @@ const GATE_FALLBACKS = Object.freeze({
   title: 'Unlock the All-Star BoH hub',
   description:
     'Enter the current VTS member PIN. Team announcements and personal plans stay locked until secure access is confirmed.',
+  registrationClosedKicker: 'REGISTRATION CLOSED',
+  registrationClosedTitle: 'Teams are full',
+  registrationClosedDescription:
+    'Registration is closed. Team matching is now underway, and team assignments will be announced soon.',
+  registrationClosedNotice: 'Team matching will be announced soon.',
   pinLabel: 'Member PIN',
   pinHint: 'The PIN is checked securely and is never saved on this device.',
   unlock: 'Unlock hub',
@@ -255,7 +260,7 @@ export function createAllStarBohAccessGate(options = {}) {
   let copy = {};
   let unlockHandler = null;
   let retryHandler = null;
-  let state = 'checking';
+  let state = options.registrationClosed === true ? 'closed' : 'checking';
   let lastError = null;
 
   function resetPin() {
@@ -271,6 +276,26 @@ export function createAllStarBohAccessGate(options = {}) {
       kicker: accessText(catalog, 'Kicker', GATE_FALLBACKS.kicker),
       title: accessText(catalog, 'Title', GATE_FALLBACKS.title, 'tabAllStarBoh'),
       description: accessText(catalog, 'Description', GATE_FALLBACKS.description),
+      registrationClosedKicker: accessText(
+        catalog,
+        'RegistrationClosedKicker',
+        GATE_FALLBACKS.registrationClosedKicker
+      ),
+      registrationClosedTitle: accessText(
+        catalog,
+        'RegistrationClosedTitle',
+        GATE_FALLBACKS.registrationClosedTitle
+      ),
+      registrationClosedDescription: accessText(
+        catalog,
+        'RegistrationClosedDescription',
+        GATE_FALLBACKS.registrationClosedDescription
+      ),
+      registrationClosedNotice: accessText(
+        catalog,
+        'RegistrationClosedNotice',
+        GATE_FALLBACKS.registrationClosedNotice
+      ),
       pinLabel: accessText(catalog, 'PinLabel', GATE_FALLBACKS.pinLabel, 'adminEdenVotesPinLabel'),
       pinHint: accessText(catalog, 'PinHint', GATE_FALLBACKS.pinHint),
       unlock: accessText(catalog, 'Unlock', GATE_FALLBACKS.unlock, 'adminEdenVotesPinUnlock'),
@@ -299,9 +324,10 @@ export function createAllStarBohAccessGate(options = {}) {
       ),
       generic: accessText(catalog, 'ErrorGeneric', GATE_FALLBACKS.generic),
     };
-    kicker.textContent = copy.kicker;
-    title.textContent = copy.title;
-    description.textContent = copy.description;
+    const closed = state === 'closed';
+    kicker.textContent = closed ? copy.registrationClosedKicker : copy.kicker;
+    title.textContent = closed ? copy.registrationClosedTitle : copy.title;
+    description.textContent = closed ? copy.registrationClosedDescription : copy.description;
     pinLabel.textContent = copy.pinLabel;
     pinHint.textContent = copy.pinHint;
     retry.textContent = copy.retry;
@@ -319,18 +345,20 @@ export function createAllStarBohAccessGate(options = {}) {
 
   function render() {
     updateCopy();
+    const closed = state === 'closed';
     const busy = state === 'checking' || state === 'busy';
     const unlocking = state === 'busy';
     const secureError = state === 'secure-error';
     form.hidden = unlocking;
     progress.hidden = !unlocking;
-    field.hidden = secureError;
-    input.disabled = busy || secureError;
-    togglePin.disabled = busy || secureError;
+    field.hidden = secureError || closed;
+    actions.hidden = closed;
+    input.disabled = busy || secureError || closed;
+    togglePin.disabled = busy || secureError || closed;
     submit.hidden = secureError;
-    submit.disabled = busy || secureError;
+    submit.disabled = busy || secureError || closed;
     retry.hidden = !secureError;
-    retry.disabled = !secureError;
+    retry.disabled = !secureError || closed;
     submit.setAttribute('aria-busy', String(state === 'busy'));
     submit.textContent = state === 'busy' ? copy.busy : copy.unlock;
     feedback.dataset.tone =
@@ -338,7 +366,8 @@ export function createAllStarBohAccessGate(options = {}) {
     const assertive = state === 'error' || state === 'secure-error' || state === 'expired';
     feedback.setAttribute('role', assertive ? 'alert' : 'status');
     feedback.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
-    if (state === 'checking') feedback.textContent = copy.checking;
+    if (closed) feedback.textContent = copy.registrationClosedNotice;
+    else if (state === 'checking') feedback.textContent = copy.checking;
     else if (state === 'busy') feedback.textContent = copy.busy;
     else if (state === 'expired') feedback.textContent = copy.expired;
     else if (state === 'error' || state === 'secure-error')
@@ -363,7 +392,8 @@ export function createAllStarBohAccessGate(options = {}) {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (state === 'busy' || state === 'checking' || state === 'secure-error') return;
+    if (state === 'busy' || state === 'checking' || state === 'secure-error' || state === 'closed')
+      return;
     const pin = input.value;
     resetPin();
     await unlockHandler?.(pin);
@@ -383,6 +413,13 @@ export function createAllStarBohAccessGate(options = {}) {
     showChecking() {
       resetPin();
       state = 'checking';
+      lastError = null;
+      container.hidden = false;
+      render();
+    },
+    showClosed() {
+      resetPin();
+      state = 'closed';
       lastError = null;
       container.hidden = false;
       render();
@@ -499,6 +536,10 @@ export async function bootAllStarBohTab(options = {}) {
   if (!root) throw new TypeError('All-Star BoH player hub root was not found.');
   const existing = bootstraps.get(root);
   if (existing) return existing;
+  const registrationClosed =
+    typeof options.registrationClosed === 'boolean'
+      ? options.registrationClosed
+      : root.dataset?.registrationStatus === 'closed';
 
   concealBohRoot(root);
   const gate =
@@ -508,6 +549,7 @@ export async function bootAllStarBohTab(options = {}) {
       document: documentRef,
       locale: options.locale || currentLocale(documentRef),
       getCatalog: options.getCatalog,
+      registrationClosed,
     });
   const loadingPlaceholder =
     options.loadingPlaceholder || root.parentNode?.querySelector?.('.tab-loading');
@@ -577,6 +619,11 @@ export async function bootAllStarBohTab(options = {}) {
 
   function lockHub() {
     if (destroyed) return;
+    if (registrationClosed) {
+      concealBohRoot(root);
+      gate.showClosed();
+      return;
+    }
     lifecycleGeneration += 1;
     setManuallyLocked(true);
     unmountDomain();
@@ -772,7 +819,7 @@ export async function bootAllStarBohTab(options = {}) {
   }
 
   async function unlock(pin) {
-    if (destroyed || busy) return;
+    if (destroyed || busy || registrationClosed) return;
     busy = true;
     gate.showBusy();
     try {
@@ -791,7 +838,8 @@ export async function bootAllStarBohTab(options = {}) {
     }
   }
 
-  gate.showChecking();
+  if (registrationClosed) gate.showClosed();
+  else gate.showChecking();
 
   const languageHandler = async (event) => {
     const generation = ++languageGeneration;
@@ -816,6 +864,11 @@ export async function bootAllStarBohTab(options = {}) {
   const lifecycle = Object.freeze({
     async retry() {
       if (destroyed || busy) return lifecycle;
+      if (registrationClosed) {
+        concealBohRoot(root);
+        gate.showClosed();
+        return lifecycle;
+      }
       if (isManuallyLocked()) {
         concealBohRoot(root);
         gate.showLocked();

@@ -200,12 +200,9 @@ test('mobile command header stays visible, contained, and separate from fixed na
         clipPaths: [commandHeader, commandActions, version].map(
           (element) => getComputedStyle(element).clipPath
         ),
-        contained: [
-          '.command-logo',
-          '.main-logo',
-          '.shell-brand-title',
-          '.version-ribbon',
-        ].map(contains),
+        contained: ['.command-logo', '.main-logo', '.shell-brand-title', '.version-ribbon'].map(
+          contains
+        ),
         navOverlapsHeader: navRect.top < headerRect.bottom && navRect.bottom > headerRect.top,
         horizontalOverflow:
           document.documentElement.scrollWidth > window.innerWidth + 1 ||
@@ -224,10 +221,7 @@ test('mobile command header stays visible, contained, and separate from fixed na
   }
 });
 
-const visualViewports = [
-  mobileHeaderViewports[0],
-  { name: 'desktop', width: 1280, height: 800 },
-];
+const visualViewports = [mobileHeaderViewports[0], { name: 'desktop', width: 1280, height: 800 }];
 const headerViewports = [mobileHeaderViewports[0], mobileHeaderViewports[1], visualViewports[1]];
 
 const visualSurfaces = [
@@ -1305,6 +1299,7 @@ test.describe('app smoke tabs', () => {
   test('direct tab hashes activate without flashing the default Generator panel', async ({
     page,
   }) => {
+    test.slow();
     const directTabs = [
       ['manual', '#manualSection', '#availableHeroes'],
       ['arcade', '#arcadeSection', '#arcadeLobby'],

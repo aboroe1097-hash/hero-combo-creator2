@@ -1508,21 +1508,16 @@
 .boh-admin-team-board {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(var(--boh-team-count, 6), minmax(12rem, 1fr));
+  grid-template-columns: repeat(var(--boh-team-columns, 3), minmax(0, 1fr));
   min-width: 0;
-  overflow-x: auto;
-  padding-bottom: 0.65rem;
-  scrollbar-color: var(--ff-cyan) rgba(159, 176, 204, 0.1);
-  scroll-snap-type: inline proximity;
 }
 
 .boh-admin-team {
   background: var(--ff-panel-translucent);
   border: 1px solid var(--ff-border);
   border-radius: var(--ff-r-card);
-  min-width: 12rem;
+  min-width: 0;
   overflow: hidden;
-  scroll-snap-align: start;
 }
 
 .boh-admin-team-export-tools > header {
@@ -1836,8 +1831,42 @@
   margin: 0.9rem 0;
 }
 
-.boh-admin-eligible-pool > summary {
+.boh-admin-eligible-pool > summary,
+.boh-admin-balance-config > summary {
   cursor: pointer;
+}
+
+.boh-admin-balance-config > summary {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.boh-admin-balance-config > summary::-webkit-details-marker {
+  display: none;
+}
+
+.boh-admin-balance-config > summary::after {
+  color: var(--ff-cyan);
+  content: '\2304';
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.boh-admin-balance-config[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.boh-admin-balance-config > summary > span {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.boh-admin-balance-config > form {
+  margin-top: 1rem;
 }
 
 .boh-admin-eligible-toolbar {
@@ -1857,6 +1886,13 @@
   color: var(--ff-text-dim);
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.boh-admin-eligible-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: flex-end;
 }
 
 .boh-admin-eligible-grid {
@@ -2513,7 +2549,7 @@
   }
 
   .boh-admin-team-board {
-    grid-template-columns: repeat(var(--boh-team-count, 6), minmax(10rem, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
