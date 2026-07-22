@@ -4635,6 +4635,23 @@ function syncEligiblePoolSearch(state) {
   }
 }
 
+function selectHighestEligiblePlayers(state) {
+  const form = state.root.querySelector('[data-form="eligible-pool"]');
+  if (!form) return;
+  const fieldSize = integer(form.dataset.eligibleFieldSize);
+  const selectedIds = new Set(
+    teamBuilderCandidates(state)
+      .slice(0, fieldSize)
+      .map((player) => cleanText(player.playerId))
+      .filter(Boolean)
+  );
+  for (const checkbox of form.querySelectorAll('input[name="playerId"]')) {
+    checkbox.checked = selectedIds.has(cleanText(checkbox.value));
+  }
+  syncEligiblePoolCount(state);
+  syncEligiblePoolSearch(state);
+}
+
 function renderCurrentStage(state) {
   if (state.stage === 'scoring') return renderScoring(state);
   if (state.stage === 'teams') return renderTeamBuilder(state);
@@ -6518,7 +6535,14 @@ function renderEligiblePool(state, candidates, selectedIds) {
             state.tr('adminBohEligiblePoolFilterUnselected', 'Unselected only')
           )}</option>
         </select></label>
-        <small data-eligible-pool-search-count></small>
+        <div class="boh-admin-eligible-actions">
+          <button type="button" class="boh-admin-button boh-admin-button-small" data-action="select-highest-eligible">${escapeHtml(
+            state.tr('adminBohSelectHighestEligible', 'Select highest {count}', {
+              count: fieldSize,
+            })
+          )}</button>
+          <small data-eligible-pool-search-count></small>
+        </div>
       </div>
       <div class="boh-admin-repeat-list boh-admin-eligible-grid">
         ${candidates
@@ -6611,12 +6635,13 @@ function renderTeamBuilderSettings(state, candidates, selectedIds) {
   );
   const teamCount = snapshotTeamCount(state);
   const balanceMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric);
-  return `<form class="boh-admin-card boh-admin-stack" data-form="team-builder-settings">
-    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+  return `<details class="boh-admin-card boh-admin-balance-config">
+    <summary><span><span class="boh-admin-card-kicker">${escapeHtml(
       state.tr('adminBohBalanceConfiguration', 'BALANCE CONFIGURATION')
-    )}</p><h4>${escapeHtml(
+    )}</span><strong>${escapeHtml(
       state.tr('adminBohTeamCountAndMetric', 'Team count, metric, and exact-team placements')
-    )}</h4></div></header>
+    )}</strong></span></summary>
+    <form class="boh-admin-stack" data-form="team-builder-settings">
     <div class="boh-admin-field-pair">
       <label><span>${escapeHtml(state.tr('adminBohTeamCount', 'Team count'))}</span>
         <select class="boh-admin-select" name="teamCount">${Array.from(
@@ -6667,7 +6692,8 @@ function renderTeamBuilderSettings(state, candidates, selectedIds) {
     <button class="boh-admin-button" type="submit">${escapeHtml(
       state.tr('adminBohSaveBalanceConfiguration', 'Save balance configuration')
     )}</button>
-  </form>`;
+    </form>
+  </details>`;
 }
 
 function renderBalancePreview(state) {
@@ -6782,7 +6808,10 @@ function renderTeamBuilder(state) {
     ${renderBalancePreview(state)}
     ${renderSeatMoveNotice(state)}
     ${renderTeamExportTools(state, balance)}
-    <div class="boh-admin-team-board" style="--boh-team-count:${snapshotTeamCount(state)}" aria-label="${escapeHtml(
+    <div class="boh-admin-team-board" style="--boh-team-count:${snapshotTeamCount(state)};--boh-team-columns:${Math.min(
+      snapshotTeamCount(state),
+      3
+    )}" aria-label="${escapeHtml(
       state.tr('adminBohTeamBoard', '{count}-team assignment board', {
         count: snapshotTeamCount(state),
       })
@@ -9014,6 +9043,10 @@ async function handleClick(state, event) {
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'select-highest-eligible') {
+    selectHighestEligiblePlayers(state);
+    return;
+  }
   if (action === 'add-correction-troop-row') {
     const form = button.closest('[data-form="submission-corrections"]');
     const rows = form?.querySelector('[data-correction-troop-rows]');

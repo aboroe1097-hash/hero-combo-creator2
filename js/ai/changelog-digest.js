@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.8";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.9";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.9",
+    "date": "2026-07-22",
+    "highlights": [
+      "Closed the public All-Star BoH registration view with a clear “Teams are full” status and notice that team matching is underway and assignments will be announced soon.",
+      "Made the All-Star admin balance configuration collapsible and added a non-persisting “Select highest X” shortcut sized to the currently configured team field.",
+      "Reflowed the six-team admin board into a spacious 3-by-2 desktop grid, two columns on narrower screens, and one column on mobile."
+    ]
+  },
   {
     "version": "14.2.8",
     "date": "2026-07-22",
@@ -95,14 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.",
       "Localized the leadership-session warning across all twelve supported site languages and added rendered browser coverage for the exact message."
-    ]
-  },
-  {
-    "version": "14.1.20",
-    "date": "2026-07-20",
-    "highlights": [
-      "Blocked the member All-Star signup from inheriting an existing leadership/admin Firebase login, preventing shared admin browsers from opening or overwriting one member submission.",
-      "Added a fail-closed message directing leadership users to open the signup in a private window, where the site creates a separate anonymous member identity."
     ]
   }
 ].map((release) =>

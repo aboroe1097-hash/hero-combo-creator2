@@ -13,6 +13,7 @@ const GRANT = Object.freeze({
 function createRoot() {
   const attributes = new Map();
   return {
+    dataset: {},
     hidden: false,
     inert: false,
     setAttribute(name, value) {
@@ -41,6 +42,9 @@ function createGate(order = []) {
     },
     showChecking() {
       states.push('checking');
+    },
+    showClosed() {
+      states.push('closed');
     },
     showLocked() {
       states.push('locked');
@@ -313,6 +317,87 @@ test('PIN visibility is accessible and resets after submit and secure state tran
   assert.equal(retry.hidden, true);
   assert.equal(feedback.textContent, 'That PIN did not match. Check it and try again.');
   gate.destroy();
+});
+
+test('closed registration stays read-only and never initializes protected services', async () => {
+  const { document, parent, root } = createGateDocument();
+  root.inert = false;
+  root.dataset.registrationStatus = 'closed';
+  const eventTarget = createEventTarget();
+  const calls = { firebase: 0, access: 0, domain: 0 };
+  let gate;
+
+  const lifecycle = await bootAllStarBohTab({
+    root,
+    document,
+    eventTarget,
+    createGate(options) {
+      gate = createAllStarBohAccessGate(options);
+      return gate;
+    },
+    firebase: {
+      initFirebase() {
+        calls.firebase += 1;
+        return { configured: true, db: {} };
+      },
+    },
+    createAccessClient() {
+      calls.access += 1;
+      return {
+        async getAccessGrant() {
+          return GRANT;
+        },
+        async unlock() {
+          return GRANT;
+        },
+        destroy() {},
+      };
+    },
+    loadDomain: async () => {
+      calls.domain += 1;
+      return createDomain();
+    },
+    loadStylesheet: async () => {},
+  });
+
+  const kicker = parent.querySelector('.boh-eyebrow');
+  const title = parent.querySelector('h2');
+  const description = parent.querySelector('header').children[0].children[2];
+  const field = parent.querySelector('.boh-field');
+  const actions = parent.querySelector('.boh-form-actions');
+  const form = parent.querySelector('.boh-access-form');
+  const input = parent.querySelector('[data-role="boh-access-pin"]');
+  const progress = parent.querySelector('[data-role="boh-access-progress"]');
+  const notice = parent.querySelector('[data-role="boh-access-feedback"]');
+
+  assert.equal(kicker.textContent, 'REGISTRATION CLOSED');
+  assert.equal(title.textContent, 'Teams are full');
+  assert.equal(
+    description.textContent,
+    'Registration is closed. Team matching is now underway, and team assignments will be announced soon.'
+  );
+  assert.equal(notice.textContent, 'Team matching will be announced soon.');
+  assert.equal(field.hidden, true);
+  assert.equal(actions.hidden, true);
+  assert.equal(progress.hidden, true);
+  assert.equal(root.hidden, true);
+  assert.equal(root.inert, true);
+  assert.equal(root.getAttribute('aria-hidden'), 'true');
+  assert.equal(root.getAttribute('inert'), '');
+
+  input.value = 'ignored-pin';
+  await form.dispatch('submit', { preventDefault() {} });
+  await lifecycle.retry();
+  lifecycle.lock();
+  await eventTarget.listeners.get('vts:language-change')?.({ detail: { lang: 'ar' } });
+
+  assert.deepEqual(calls, { firebase: 0, access: 0, domain: 0 });
+  assert.equal(kicker.textContent, 'REGISTRATION CLOSED');
+  assert.equal(title.textContent, 'Teams are full');
+  assert.equal(notice.textContent, 'Team matching will be announced soon.');
+  assert.equal(progress.hidden, true);
+  assert.equal(root.hidden, true);
+  lifecycle.destroy();
 });
 
 test('refuses to mount the member hub under an inherited leadership account', async () => {

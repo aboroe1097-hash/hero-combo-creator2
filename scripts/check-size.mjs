@@ -46,7 +46,7 @@ const LIMITS = {
   // The 14.2.6 Epic planning controls, persisted overrides, keep-together
   // evaluation, and active CSV export measure 8269.7 KiB; keep roughly 18 KiB
   // while route, CSS, media, and entry budgets remain unchanged.
-  totalJsBytes: 8288 * 1024,
+  totalJsBytes: 8289 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -78,7 +78,7 @@ const LIMITS = {
   // 17 KiB while the route, media, CSS, and file-count caps stay fixed.
   // The complete audited 14.2.8 artifact measures 26,388.3 KiB; retain less
   // than 3 KiB while the tighter route, media, and file-count caps stay fixed.
-  totalDeployBytes: 26391 * 1024,
+  totalDeployBytes: 26392 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

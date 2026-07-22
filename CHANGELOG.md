@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.2.9 - 2026-07-22
+
+- Closed the public All-Star BoH registration view with a clear “Teams are full” status and notice that team matching is underway and assignments will be announced soon.
+- Made the All-Star admin balance configuration collapsible and added a non-persisting “Select highest X” shortcut sized to the currently configured team field.
+- Reflowed the six-team admin board into a spacious 3-by-2 desktop grid, two columns on narrower screens, and one column on mobile.
+
 ## 14.2.8 - 2026-07-22
 
 - Rebuilt mobile site headers and control grouping so centered branding/version, time/search/theme/language controls, fixed bottom navigation, and Generator action areas no longer overlap or float over content.

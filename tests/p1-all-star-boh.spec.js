@@ -506,6 +506,7 @@ async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
       window.__BOH_PLAYER_LIFECYCLE__ = await bootstrap.bootAllStarBohTab({
         root,
         locale: 'en',
+        registrationClosed: false,
         accessClient,
         firebase: {
           async initFirebase() {
@@ -1009,7 +1010,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root).toHaveAttribute('inert', '');
   });
 
-  test('direct hash fails closed and does not fetch private feature chunks before a grant', async ({
+  test('direct hash shows closed registration without fetching private feature chunks', async ({
     page,
   }) => {
     const requestedPaths = [];
@@ -1026,18 +1027,14 @@ test.describe('All-Star BoH secure player hub', () => {
     const gate = page.locator('[data-role="boh-access-gate"]');
     const root = page.locator('#allStarBohSection [data-role="boh-root"]');
     await expect(gate).toBeVisible({ timeout: 20_000 });
-    await expect(gate).toHaveAccessibleName(/Unlock the All-Star BoH hub/i);
+    await expect(gate).toHaveAccessibleName(/Teams are full/i);
     await expect(gate.locator('[data-role="boh-access-feedback"]')).toHaveText(
-      'The secure Google service required for signup cannot be reached from this network or region. Try a VPN or a different network, then press Retry. Your PIN has not been rejected.',
+      'Team matching will be announced soon.',
       { timeout: 20_000 }
     );
     await expect(gate.locator('[data-role="boh-access-pin"]')).toBeHidden();
     await expect(gate.locator('[data-role="boh-access-pin"]')).toBeDisabled();
-    const retry = gate.getByRole('button', { name: 'Retry', exact: true });
-    await expect(retry).toHaveCount(1);
-    await expect(retry).toBeVisible();
-    await expect(retry).toBeEnabled();
-    await expect(retry).toBeFocused();
+    await expect(gate.locator('.boh-form-actions')).toBeHidden();
     await expect(root).toBeHidden();
     await expect(root).toHaveAttribute('aria-hidden', 'true');
     await expect(root).toHaveAttribute('inert', '');
@@ -1513,8 +1510,38 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await openInjectedAdmin(page);
     const root = page.locator('#dashAllStarBohRoot');
     await root.locator('[data-stage="teams"]').click();
+    const teamBoard = root.locator('.boh-admin-team-board');
+    await expect(root.locator('.boh-admin-team')).toHaveCount(6);
+    await expect
+      .poll(() =>
+        teamBoard.evaluate(
+          (element) => getComputedStyle(element).gridTemplateColumns.split(/\s+/u).length
+        )
+      )
+      .toBe(3);
+    await page.setViewportSize({ width: 1000, height: 1000 });
+    await expect
+      .poll(() =>
+        teamBoard.evaluate(
+          (element) => getComputedStyle(element).gridTemplateColumns.split(/\s+/u).length
+        )
+      )
+      .toBe(2);
+    await page.setViewportSize({ width: 700, height: 1000 });
+    await expect
+      .poll(() =>
+        teamBoard.evaluate(
+          (element) => getComputedStyle(element).gridTemplateColumns.split(/\s+/u).length
+        )
+      )
+      .toBe(1);
+    await page.setViewportSize({ width: 1440, height: 1000 });
 
     const settings = root.locator('[data-form="team-builder-settings"]');
+    const settingsDetails = settings.locator('xpath=ancestor::details[1]');
+    await expect(settingsDetails).not.toHaveAttribute('open', '');
+    await settingsDetails.locator('summary').click();
+    await expect(settings).toBeVisible();
     await settings.locator('[name="teamCount"]').selectOption('2');
     await settings.locator('[name="balanceMetric"]').selectOption('balanced');
     await settings.locator('[name="forcedTeam.player-1-2"]').selectOption('team-2');
@@ -1547,8 +1574,11 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(
       eligiblePool.getByRole('button', { name: 'Save eligible field (23 / 24)' })
     ).toBeVisible();
-    await firstEligibleCheckbox.check();
+    await eligiblePool.getByRole('button', { name: 'Select highest 24' }).click();
     await expect(eligibleSummary).toContainText('24 / 24');
+    await expect
+      .poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.map((action) => action.type)))
+      .toEqual(['saveTeamBuilderSettings']);
     await expect(
       eligiblePool.getByRole('button', { name: 'Save eligible field (24 / 24)' })
     ).toBeVisible();

@@ -158,6 +158,7 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohScoreDiagnosticUnverifiable: 'Stored score cannot be verified',
   adminBohSelectAllVisible: 'Select all visible signups',
   adminBohSelectCoLeader: 'Select co-leader',
+  adminBohSelectHighestEligible: 'Select highest {count}',
   adminBohSelectSignupNamed: 'Select {player}',
   adminBohTeamCsvExported: 'Exported {count} teams as CSV.',
   adminBohTeamExportHelp:
