@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.7";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.8";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.8",
+    "date": "2026-07-22",
+    "highlights": [
+      "Rebuilt mobile site headers and control grouping so centered branding/version, time/search/theme/language controls, fixed bottom navigation, and Generator action areas no longer overlap or float over content.",
+      "Reduced and repositioned hero-card information controls in Combo Generator and Manual Builder, keeping card content readable and touch targets intentional.",
+      "Harmonized Specialization Towers with the shared site palette and added compact icon-only Cavalry/Archers/Footmen controls on mobile.",
+      "Converted the completed Eden X1 public page into an archive centered on the Final Top 20, player lookup, guild contribution, and analysis while keeping active-season voting/reward machinery reusable behind the season-state switch.",
+      "Fixed Structure Detail modal rows so long multilingual names, rank tags, large scores, and hit badges remain compact and fully visible on mobile."
+    ]
+  },
   {
     "version": "14.2.7",
     "date": "2026-07-22",
@@ -92,16 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Blocked the member All-Star signup from inheriting an existing leadership/admin Firebase login, preventing shared admin browsers from opening or overwriting one member submission.",
       "Added a fail-closed message directing leadership users to open the signup in a private window, where the site creates a separate anonymous member identity."
-    ]
-  },
-  {
-    "version": "14.1.19",
-    "date": "2026-07-20",
-    "highlights": [
-      "Restored backward-compatible All-Star signup reads for historical `+8` and `+20` fighting-time selections so one older record cannot prevent the admin dashboard or a player's saved form from loading.",
-      "Kept all new and updated submissions restricted to exactly two current fighting times from `+12`, `+14`, and `+16`.",
-      "Prioritized Research, YouTube, All-Star BoH, and Eden X1 Rankings in the mobile bottom navigation, restored a compact mobile version badge, and fully hid the off-screen skip-link outline until keyboard focus.",
-      "Made shared tab links case-insensitive so common variants such as `#allstarboh` and `#AllStarBoh` open and normalize to the canonical `#allStarBoh` route."
     ]
   }
 ].map((release) =>

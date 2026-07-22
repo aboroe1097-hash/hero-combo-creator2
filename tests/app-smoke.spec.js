@@ -201,7 +201,6 @@ test('mobile command header stays visible, contained, and separate from fixed na
           (element) => getComputedStyle(element).clipPath
         ),
         contained: [
-          '.command-brand',
           '.command-logo',
           '.main-logo',
           '.shell-brand-title',
@@ -218,7 +217,7 @@ test('mobile command header stays visible, contained, and separate from fixed na
       headerPosition: 'relative',
       navPosition: 'fixed',
       clipPaths: ['none', 'none', 'none'],
-      contained: [true, true, true, true, true],
+      contained: [true, true, true, true],
       navOverlapsHeader: false,
       horizontalOverflow: false,
     });
@@ -725,6 +724,7 @@ async function installEdenX1LiveRefreshMock(
         releaseLiveRefresh = resolve;
       });
       window.VTS_EDEN_X1_TEST_MODE = true;
+      window.VTS_EDEN_X1_SEASON_STATE = 'active';
       window.VTS_EDEN_X1_FIREBASE_MODULES = [
         {
           initFirebase: () => ({ configured: true, app: { name: 'eden-live-refresh-test' } }),
@@ -3075,6 +3075,7 @@ test.describe('app smoke tabs', () => {
     });
     await page.addInitScript(
       ({ data }) => {
+        window.VTS_EDEN_X1_SEASON_STATE = 'active';
         localStorage.setItem('vts_maintenance_bypass', '1');
         localStorage.setItem('vts_hero_lang', 'en');
         localStorage.setItem('vts_theme', 'dark');

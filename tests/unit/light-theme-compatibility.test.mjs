@@ -153,9 +153,9 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
   assert.match(sizeCheck, /totalJsBytes: 8288 \* 1024/);
-  assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1329 \* 1024/);
-  assert.match(sizeCheck, /'arcade\.html': \{ desktop: 432 \* 1024, mobile: 525 \* 1024 \}/);
+  assert.match(sizeCheck, /entryCssBytes: 407 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1343 \* 1024/);
+  assert.match(sizeCheck, /'arcade\.html': \{ desktop: 439 \* 1024, mobile: 532 \* 1024 \}/);
   assert.match(
     sizeCheck,
     /'battle-simulator\.html': \{ desktop: 52 \* 1024, mobile: 52 \* 1024 \}/

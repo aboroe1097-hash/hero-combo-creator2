@@ -23,7 +23,9 @@ const LIMITS = {
   // Shared light-theme surfaces and the explicit Generator selection state
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
-  entryCssBytes: 405 * 1024,
+  // The audited 14.2.8 shared mobile controls and Specialization palette
+  // measure 405.6 KiB; retain less than 1.5 KiB of headroom.
+  entryCssBytes: 407 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
@@ -51,7 +53,9 @@ const LIMITS = {
   // Hall of Honor and the mobile All-Star intake lift it to 1303.7 KiB after
   // production minification. The All-Star OCR progress UI measures 1312.1 KiB;
   // retain about 16 KiB of aggregate headroom while route-specific caps remain.
-  totalCssBytes: 1329 * 1024,
+  // The audited 14.2.8 mobile shell, Eden archive, and modal layout measure
+  // 1340.4 KiB; retain less than 3 KiB of aggregate headroom.
+  totalCssBytes: 1343 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -72,7 +76,9 @@ const LIMITS = {
   // KiB of deployed output. Bump by 1 KiB to restore headroom.
   // The 14.2.6 Epic planning controls measure 26,352.9 KiB; retain roughly
   // 17 KiB while the route, media, CSS, and file-count caps stay fixed.
-  totalDeployBytes: 26373 * 1024,
+  // The complete audited 14.2.8 artifact measures 26,388.3 KiB; retain less
+  // than 3 KiB while the tighter route, media, and file-count caps stay fixed.
+  totalDeployBytes: 26391 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
@@ -85,11 +91,13 @@ const LIMITS = {
     // Alliance View reuses the Admin/Eden design system. The shared Strife
     // Hall of Honor and the phone node inspector expand shared app.css. Admin
     // measures 630.8/723.7 KiB and Eden 747.3/840.1 KiB after minification.
-    'admin.html': { desktop: 632 * 1024, mobile: 725 * 1024 },
-    'eden-x1.html': { desktop: 749 * 1024, mobile: 842 * 1024 },
-    // Arcade measures 430.8/523.7 KiB with the combined lazy route graph;
-    // retain less than 1.5 KiB of route-specific headroom.
-    'arcade.html': { desktop: 432 * 1024, mobile: 525 * 1024 },
+    // The audited 14.2.8 shared controls measure 637.2/730.0 KiB on Admin,
+    // while the archive and modal layout measure 760.4/853.2 KiB on Eden.
+    'admin.html': { desktop: 639 * 1024, mobile: 732 * 1024 },
+    'eden-x1.html': { desktop: 763 * 1024, mobile: 856 * 1024 },
+    // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
+    // retain less than 2 KiB of route-specific headroom.
+    'arcade.html': { desktop: 439 * 1024, mobile: 532 * 1024 },
     // Battle Simulator v2's responsive source breakdown and equipment controls
     // load only shared tokens plus its standalone sheet, measuring 50.8 KiB on
     // desktop and mobile before unlock. Keep less than 1.5 KiB of headroom.
