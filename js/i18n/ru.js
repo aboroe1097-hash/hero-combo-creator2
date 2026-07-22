@@ -448,6 +448,11 @@ const ru = {
   bohAccessTitle: 'Открыть центр All-Star BoH',
   bohAccessDescription:
     'Введите актуальный PIN участников VTS. Объявления команд и личные планы останутся закрыты, пока безопасный доступ не будет подтверждён.',
+  bohAccessRegistrationClosedKicker: 'РЕГИСТРАЦИЯ ЗАКРЫТА',
+  bohAccessRegistrationClosedTitle: 'Команды заполнены',
+  bohAccessRegistrationClosedDescription:
+    'Регистрация закрыта. Сейчас идет подбор команд, а распределение по командам скоро объявят.',
+  bohAccessRegistrationClosedNotice: 'Подбор команд скоро объявят.',
   bohAccessPinLabel: 'PIN участника',
   bohAccessPinHint: 'PIN проверяется безопасно и не сохраняется на этом устройстве.',
   bohAccessUnlock: 'Открыть центр',

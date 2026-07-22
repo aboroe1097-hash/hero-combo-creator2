@@ -479,6 +479,11 @@ const fr = {
   bohAccessTitle: 'Déverrouiller l’espace All-Star BoH',
   bohAccessDescription:
     'Saisis le PIN VTS actuel. Les annonces d’équipes et les plans personnels restent verrouillés jusqu’à la confirmation de l’accès sécurisé.',
+  bohAccessRegistrationClosedKicker: 'INSCRIPTION FERMÉE',
+  bohAccessRegistrationClosedTitle: 'Les équipes sont complètes',
+  bohAccessRegistrationClosedDescription:
+    'Les inscriptions sont closes. La composition des équipes est en cours, et les affectations seront annoncées bientôt.',
+  bohAccessRegistrationClosedNotice: 'La composition des équipes sera annoncée bientôt.',
   bohAccessPinLabel: 'PIN membre',
   bohAccessPinHint:
     'Le PIN est vérifié de manière sécurisée et n’est jamais enregistré sur cet appareil.',
