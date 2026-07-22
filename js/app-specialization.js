@@ -214,7 +214,8 @@ function renderTroopTabs(summary) {
   return `<div class="spec-troop-tabs" role="tablist">${UI_TROOPS.map((troop) => {
     const p = pct(summary.troops[troop].percent);
     const active = troop === activeTroop;
-    return `<button type="button" class="spec-troop-tab${active ? ' active' : ''}" role="tab" aria-selected="${active}" data-spec-troop="${troop}"><span class="spec-troop-icon" aria-hidden="true">${TROOP_ICON[troop]}</span><span class="spec-troop-name">${escapeHtml(troopLabel(troop))}</span><span class="spec-troop-pct">${p}%</span></button>`;
+    const label = `${troopLabel(troop)} ${p}%`;
+    return `<button type="button" class="spec-troop-tab${active ? ' active' : ''}" role="tab" aria-selected="${active}" aria-label="${escapeHtml(label)}" data-spec-troop="${troop}"><span class="spec-troop-icon" aria-hidden="true">${TROOP_ICON[troop]}</span><span class="spec-troop-name">${escapeHtml(troopLabel(troop))}</span><span class="spec-troop-pct">${p}%</span></button>`;
   }).join('')}</div>`;
 }
 

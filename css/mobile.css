@@ -4318,9 +4318,12 @@ body[data-active-tab='loyalty'] .bug-report-fab {
   }
 
   .hero-card .info-btn {
-    position: relative !important;
-    inset: auto !important;
-    order: 4;
+    position: absolute !important;
+    inset-block-start: 36px !important;
+    inset-inline-end: 0 !important;
+    inset-block-end: auto !important;
+    inset-inline-start: auto !important;
+    order: initial;
     isolation: isolate;
     display: grid !important;
     place-items: center !important;
@@ -4332,13 +4335,27 @@ body[data-active-tab='loyalty'] .bug-report-fab {
     border: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    margin: 1px auto -5px !important;
+    margin: 0 !important;
+    z-index: 43 !important;
+  }
+
+  .hero-card:has(.paid-badge) .info-btn,
+  .hero-card:has(.generator-skin-badge) .info-btn,
+  .hero-card:has(.generator-skin-toggle) .info-btn,
+  .hero-card:not(:has(.paid-badge)):not(:has(.generator-skin-badge)):not(
+      :has(.generator-skin-toggle)
+    )
+    .info-btn {
+    top: 36px !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
   }
 
   .hero-card .info-btn::before {
     content: '';
     position: absolute;
-    inset: 8px;
+    inset: 12px;
     z-index: 0;
     border: 1px solid var(--border-hover);
     border-radius: 50%;
@@ -4349,6 +4366,8 @@ body[data-active-tab='loyalty'] .bug-report-fab {
   }
 
   .hero-card .info-btn svg {
+    width: 10px !important;
+    height: 10px !important;
     position: relative;
     z-index: 1;
   }
@@ -4676,42 +4695,8 @@ body[data-active-tab='loyalty'] .bug-report-fab {
     line-height: 1.05;
   }
 
-  #manualSection:has(#comboFooterBar:not(.hidden)),
-  #generatorSection:has(#genSelectedCount:not(.hidden)) {
+  #manualSection:has(#comboFooterBar:not(.hidden)) {
     padding-bottom: calc(172px + var(--safe-bottom));
-  }
-
-  /* Generator actions surface immediately after a real selection. */
-  #generatorSection:has(#genSelectedCount:not(.hidden)) .gen-buttons-row {
-    position: fixed;
-    z-index: 1070;
-    right: 9px;
-    bottom: calc(72px + var(--safe-bottom));
-    left: 9px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    width: auto;
-    max-width: 542px;
-    margin: 0 auto !important;
-    padding: 8px;
-    border-color: var(--border-hover);
-    border-radius: 15px;
-    background: var(--panel-strong);
-    box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.28);
-  }
-
-  #generatorSection:has(#genSelectedCount:not(.hidden)) .gen-big-btn {
-    width: 100%;
-    min-width: 0;
-    margin: 0;
-    padding: 6px 8px;
-    font-size: clamp(0.62rem, 2.7vw, 0.73rem);
-    line-height: 1.12;
-  }
-
-  #generatorSection:has(#genSelectedCount:not(.hidden)) #downloadGeneratorBtn:not(.hidden) {
-    grid-column: 1 / -1;
   }
 
   /* Atlas uses one body scroll and one compact sticky command deck. */
@@ -4924,10 +4909,14 @@ body[data-active-tab='loyalty'] .bug-report-fab {
   }
 
   #generatorSection .core-tool-commandbar {
+    position: relative;
+    z-index: auto;
+    top: auto;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto auto;
     gap: 7px;
+    box-shadow: none;
   }
 
   #generatorSection .core-tool-commandbar .section-row {

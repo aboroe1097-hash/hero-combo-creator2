@@ -1280,11 +1280,11 @@ body.shell-more-open #app .tool-nav-inner {
 
   #app .command-header {
     position: relative !important;
-    display: flex !important;
-    grid-template-columns: none !important;
-    flex-direction: column;
+    display: grid !important;
+    grid-template-columns: minmax(86px, 0.95fr) minmax(0, 2.35fr) !important;
+    grid-template-rows: auto auto !important;
     align-items: stretch !important;
-    gap: 6px !important;
+    gap: 7px 8px !important;
     min-height: 0 !important;
     margin-bottom: 9px !important;
     padding: 8px !important;
@@ -1299,31 +1299,32 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .command-brand {
-    position: relative;
-    flex: 0 0 auto;
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 4px !important;
-    width: 100%;
-    min-width: 0 !important;
-    padding: 0 !important;
+    display: contents !important;
   }
 
   #app .command-logo {
     display: grid !important;
-    grid-template-columns: 36px minmax(0, 1fr) !important;
-    grid-template-rows: auto !important;
-    align-items: center !important;
-    gap: 7px !important;
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: 58px auto !important;
+    justify-items: center !important;
+    align-items: start !important;
+    align-self: stretch !important;
+    gap: 4px !important;
     width: 100% !important;
+    max-width: 104px;
     min-width: 0;
+    margin: 0 auto !important;
   }
 
   #app .command-logo picture,
   #app .command-logo .main-logo {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 11px !important;
+    grid-column: 1;
+    grid-row: 1;
+    width: 58px !important;
+    height: 58px !important;
+    border-radius: 16px !important;
   }
 
   #app .command-logo .command-logo-copy {
@@ -1331,14 +1332,28 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .command-header .command-logo .shell-brand-title {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: 2;
     display: block !important;
-    overflow: visible;
-    font-size: 0.75rem !important;
-    line-height: 1.1 !important;
-    text-overflow: clip;
+    width: 100%;
+    overflow: hidden;
+    font-size: clamp(0.7rem, 3vw, 0.78rem) !important;
+    line-height: 1.05 !important;
+    text-align: center !important;
+    text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  #app .command-logo #appTitle {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
   }
 
   #app .command-kicker {
@@ -1346,25 +1361,40 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .version-ribbon {
+    grid-column: 1 / -1;
+    grid-row: 1;
     position: static;
     display: block !important;
-    width: auto !important;
-    max-width: 100%;
-    padding: 3px 7px !important;
-    font-size: 0.75rem !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none;
+    padding: 4px 8px !important;
+    overflow: hidden;
+    font-size: clamp(0.64rem, 2.7vw, 0.75rem) !important;
     line-height: 1.15 !important;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   #app .command-actions {
-    flex: 0 0 auto;
+    grid-column: 2;
+    grid-row: 2;
+    align-self: stretch !important;
     width: 100% !important;
+    min-width: 0 !important;
     padding: 0 !important;
   }
 
   #app .app-control-row {
-    display: flex !important;
-    grid-template-columns: none !important;
-    gap: 3px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 44px 44px !important;
+    grid-template-rows: 44px 44px !important;
+    grid-auto-rows: 44px;
+    align-items: stretch !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   #app #globalGameClock,
@@ -1379,8 +1409,10 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app #globalGameClock {
-    flex: 0 0 84px;
-    min-width: 84px !important;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100% !important;
+    min-width: 0 !important;
     max-width: none;
     padding: 0 8px !important;
     overflow: visible;
@@ -1400,39 +1432,47 @@ body.shell-more-open #app .tool-nav-inner {
   #app .lang-select-wrapper > div,
   #app .lang-select-shell {
     position: relative;
-    width: 44px !important;
-    min-width: 44px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
   }
 
   #app .lang-select-icon {
-    display: none !important;
+    display: inline-flex !important;
+  }
+
+  #app .app-control-row .lang-select-wrapper {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  #app .app-control-row .lang-select-wrapper > div,
+  #app .app-control-row .lang-select-shell {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   #app .language-menu-button {
-    grid-template-columns: minmax(0, 1fr) 10px;
-    gap: 2px;
-    padding: 0 4px 0 6px;
-    text-align: center;
+    grid-template-columns: 18px minmax(0, 1fr) 14px;
+    gap: 8px;
+    padding: 0 10px;
+    color: var(--text-primary) !important;
+    text-align: start;
   }
 
   [dir='rtl'] #app .language-menu-button {
-    padding: 0 6px 0 4px;
+    padding: 0 10px;
   }
 
   #app .language-menu-label {
-    font-size: 0 !important;
+    font-size: 0.75rem !important;
     font-weight: 800;
-    letter-spacing: 0.06em;
-  }
-
-  #app .language-menu-label::after {
-    content: attr(data-short);
-    font-size: 0.68rem;
+    letter-spacing: 0;
   }
 
   #app .lang-select-caret {
-    width: 10px !important;
-    height: 10px;
+    width: 14px !important;
+    height: 14px;
   }
 
   #app .shell-language-menu {
@@ -1449,9 +1489,29 @@ body.shell-more-open #app .tool-nav-inner {
   #app #themeToggle,
   #app #installAppBtn,
   #app #commandPaletteTrigger {
-    flex-basis: 44px;
     width: 44px !important;
     min-width: 44px !important;
+  }
+
+  #app #commandPaletteTrigger {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #app #themeToggle {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  #app #installAppBtn {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100% !important;
+  }
+
+  #app #installAppBtn.hidden,
+  #app #installAppBtn[hidden] {
+    display: none !important;
   }
 
   #app .tool-nav-shell {
@@ -1636,8 +1696,7 @@ body.shell-more-open #app .tool-nav-inner {
     bottom: calc(96px + var(--ff-safe-bottom)) !important;
   }
 
-  body #comboFooterBar:not(.hidden),
-  body #generatorSection:has(#genSelectedCount:not(.hidden)) .gen-buttons-row {
+  body #comboFooterBar:not(.hidden) {
     z-index: 1060 !important;
     bottom: var(--shell-mobile-nav-clearance) !important;
   }
@@ -1652,8 +1711,7 @@ body.shell-more-open #app .tool-nav-inner {
     pointer-events: none !important;
   }
 
-  body #manualSection:has(#comboFooterBar:not(.hidden)),
-  body #generatorSection:has(#genSelectedCount:not(.hidden)) {
+  body #manualSection:has(#comboFooterBar:not(.hidden)) {
     padding-bottom: calc(180px + var(--ff-safe-bottom)) !important;
   }
 
@@ -1706,8 +1764,7 @@ body.shell-more-open #app .tool-nav-inner {
 
 @media (max-width: 370px) {
   #app #globalGameClock {
-    flex-basis: 80px;
-    min-width: 80px !important;
+    min-width: 0 !important;
     max-width: none;
     font-size: 0.75rem !important;
   }
@@ -1715,16 +1772,19 @@ body.shell-more-open #app .tool-nav-inner {
   #app .lang-select-wrapper,
   #app .lang-select-wrapper > div,
   #app .lang-select-shell {
-    width: 44px !important;
-    min-width: 44px !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   #app #themeToggle,
-  #app #installAppBtn,
   #app #commandPaletteTrigger {
-    flex-basis: var(--ff-tap-min);
     width: var(--ff-tap-min) !important;
     min-width: var(--ff-tap-min) !important;
+  }
+
+  #app #installAppBtn {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 }
 

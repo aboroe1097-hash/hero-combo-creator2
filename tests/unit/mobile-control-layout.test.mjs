@@ -32,21 +32,28 @@ test('Hero Atlas keeps an always-loaded stacked command deck for wide mobile vie
 
 test('compact shell keeps readable brand, version, and controls in normal header flow', () => {
   const compactShell = shellCss.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
-  assert.match(compactShell, /#app #globalGameClock \{[\s\S]*?flex: 0 0 84px/);
+  const narrowShell = shellCss.match(/@media \(max-width: 370px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
-  assert.doesNotMatch(compactShell, /text-overflow: ellipsis/);
   assert.match(
     compactShell,
-    /#app \.command-header \{[\s\S]*?position: relative !important;[\s\S]*?flex-direction: column;[\s\S]*?overflow: visible !important/
+    /#app \.command-header \{[\s\S]*?position: relative !important;[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(86px, 0\.95fr\) minmax\(0, 2\.35fr\) !important;[\s\S]*?grid-template-rows: auto auto !important;[\s\S]*?overflow: visible !important/
   );
-  assert.match(compactShell, /#app \.command-brand \{[\s\S]*?flex-direction: column/);
+  assert.match(compactShell, /#app \.command-brand \{\s*display: contents !important;\s*\}/);
   assert.match(
     compactShell,
-    /#app \.version-ribbon \{[\s\S]*?display: block !important;[\s\S]*?width: auto !important;[\s\S]*?font-size: 0\.75rem !important;/
+    /#app \.version-ribbon \{[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?display: block !important;[\s\S]*?box-sizing: border-box;[\s\S]*?width: 100% !important;[\s\S]*?max-width: none;[\s\S]*?text-align: center;/
   );
   assert.match(
     compactShell,
-    /#app \.command-header \.command-logo \.shell-brand-title \{[\s\S]*?display: block !important;[\s\S]*?font-size: 0\.75rem !important;/
+    /#app \.command-logo \{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 2;[\s\S]*?grid-template-rows: 58px auto !important;[\s\S]*?justify-items: center !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.command-logo picture,[\s\S]*?#app \.command-logo \.main-logo \{[\s\S]*?width: 58px !important;[\s\S]*?height: 58px !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.command-header \.command-logo \.shell-brand-title \{[\s\S]*?display: block !important;[\s\S]*?text-align: center !important;/
   );
   assert.match(
     compactShell,
@@ -54,8 +61,47 @@ test('compact shell keeps readable brand, version, and controls in normal header
   );
   assert.match(
     compactShell,
-    /#app \.lang-select-wrapper,[\s\S]*?#app \.lang-select-shell \{[\s\S]*?width: 44px/
+    /#app \.app-control-row \{[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 44px 44px !important;[\s\S]*?grid-template-rows: 44px 44px !important;[\s\S]*?grid-auto-rows: 44px;/
   );
+  assert.match(
+    compactShell,
+    /#app #globalGameClock \{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 1;[\s\S]*?width: 100% !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app #commandPaletteTrigger \{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;/
+  );
+  assert.match(compactShell, /#app #themeToggle \{[\s\S]*?grid-column: 3;[\s\S]*?grid-row: 1;/);
+  assert.match(
+    compactShell,
+    /#app \.app-control-row \.lang-select-wrapper \{[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?grid-row: 2;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.lang-select-wrapper,[\s\S]*?#app \.lang-select-shell \{[\s\S]*?width: 100% !important;[\s\S]*?min-width: 0 !important;[\s\S]*?max-width: none !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.language-menu-button \{[\s\S]*?grid-template-columns: 18px minmax\(0, 1fr\) 14px;[\s\S]*?color: var\(--text-primary\) !important;[\s\S]*?text-align: start;/
+  );
+  assert.match(compactShell, /#app \.lang-select-icon \{\s*display: inline-flex !important;/);
+  assert.match(
+    compactShell,
+    /#app \.language-menu-label \{[\s\S]*?font-size: 0\.75rem !important;[\s\S]*?letter-spacing: 0;/
+  );
+  assert.match(
+    compactShell,
+    /#app #installAppBtn \{[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?grid-row: 3;[\s\S]*?width: 100% !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app #installAppBtn\.hidden,[\s\S]*?#app #installAppBtn\[hidden\] \{\s*display: none !important;\s*\}/
+  );
+  assert.match(
+    narrowShell,
+    /#app \.lang-select-wrapper,[\s\S]*?#app \.lang-select-shell \{[\s\S]*?width: 100% !important;[\s\S]*?min-width: 0 !important;/
+  );
+  assert.match(narrowShell, /#app #globalGameClock \{[\s\S]*?min-width: 0 !important;/);
 });
 
 test('mobile resets legacy clipping and keeps the safe-area nav separate from the header', () => {
@@ -151,6 +197,23 @@ test('Manual Builder keeps a compact floating drop dock without stealing hero-li
     /if \(distance > TOUCH_SCROLL_SLOP_PX\) clearTouchDragCandidate\(\);[\s\S]*?if \(!touchDragHero \|\| !touchDragGhost\) return;[\s\S]*?e\.preventDefault\(\)/
   );
   assert.match(manualBuilder, /if \(suppressTouchClickHero === hero\.name\)/);
+});
+
+test('Combo Generator mobile controls stay in document flow without an empty Velo launcher', () => {
+  assert.match(
+    mobileCss,
+    /#generatorSection \.core-tool-commandbar \{[\s\S]*?position: relative;[\s\S]*?top: auto;[\s\S]*?box-shadow: none;/
+  );
+  assert.doesNotMatch(
+    mobileCss,
+    /#generatorSection:has\(#genSelectedCount:not\(\.hidden\)\) \.gen-buttons-row \{[\s\S]*?position: fixed;/
+  );
+  assert.doesNotMatch(shellCss, /body #generatorSection:has\(#genSelectedCount:not\(\.hidden\)\)/);
+  assert.match(aiLauncherCss, /\.ai-drawer-launcher \.velo-mascot__stage \{\s*animation: none;/);
+  assert.match(
+    aiLauncherCss,
+    /body:has\(#generatorSection:not\(\.hidden\)\):has\(#shellMoreTools\) \.ai-drawer-launcher-shell \{[\s\S]*?position: relative;/
+  );
 });
 
 test('mobile shell and generator text keep a twelve-pixel legibility floor', () => {

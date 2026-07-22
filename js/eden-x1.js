@@ -55,7 +55,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.2.7';
+const APP_VERSION = '14.2.8';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -84,6 +84,26 @@ const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_PUBLIC_CACHE_KEY = 'vts_eden_x1_public_dashboard_cache_v1';
 const EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
+const EDEN_X1_SEASON_STATES = new Set(['archive', 'active']);
+
+function normalizeEdenX1SeasonState(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
+  return EDEN_X1_SEASON_STATES.has(normalized) ? normalized : 'archive';
+}
+
+function resolveEdenX1SeasonState() {
+  const override = globalThis.VTS_EDEN_X1_SEASON_STATE;
+  const state = normalizeEdenX1SeasonState(
+    override !== undefined ? override : document.body?.dataset?.edenSeasonState
+  );
+  if (document.body) document.body.dataset.edenSeasonState = state;
+  return state;
+}
+
+const EDEN_X1_SEASON_STATE = resolveEdenX1SeasonState();
+const EDEN_X1_IS_ARCHIVE = EDEN_X1_SEASON_STATE === 'archive';
 
 let currentLang = 'en';
 let currentRows = [];
@@ -91,7 +111,7 @@ let currentForfeitedRewardIdentities = createRewardPriorityIdentitySet();
 let currentRecordLabel = '';
 let currentSeason = '';
 let currentMemberOptions = [];
-let currentRewardView = 'team';
+let currentRewardView = EDEN_X1_IS_ARCHIVE ? 'announcement' : 'team';
 let currentContributionViewMode = EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED;
 let contributionViewModeWasChosen = false;
 let currentTableSearch = '';
@@ -2811,7 +2831,71 @@ function setRewardFlowReady(ready) {
   updateRewardFlowControls();
 }
 
+function setSeasonElementVisibility(element, hidden) {
+  if (!element) return;
+  element.hidden = hidden;
+  element.setAttribute('aria-hidden', String(hidden));
+}
+
+function applyEdenSeasonStateShell() {
+  if (document.body) document.body.dataset.edenSeasonState = EDEN_X1_SEASON_STATE;
+  document.querySelectorAll('.eden-x1-season-only').forEach((element) => {
+    setSeasonElementVisibility(element, EDEN_X1_IS_ARCHIVE);
+  });
+  const rewardPanel = $('edenX1RewardFlowPanel');
+  setSeasonElementVisibility(rewardPanel, EDEN_X1_IS_ARCHIVE);
+  if (EDEN_X1_IS_ARCHIVE) currentRewardView = 'announcement';
+
+  const noticeTitle = document.querySelector('.eden-x1-notice strong');
+  const noticeCopy = document.querySelector('.eden-x1-notice span');
+  if (noticeTitle) {
+    noticeTitle.dataset.i18n = EDEN_X1_IS_ARCHIVE ? 'edenX1PublicTitle' : 'edenX1NoticeTitle';
+    noticeTitle.textContent = t(noticeTitle.dataset.i18n);
+  }
+  if (noticeCopy) {
+    noticeCopy.dataset.i18n = EDEN_X1_IS_ARCHIVE ? 'edenX1PublicSubtitle' : 'edenX1NoticeCopy';
+    noticeCopy.textContent = t(noticeCopy.dataset.i18n);
+  }
+
+  const archiveQuickNav = [
+    ['rewards', 'edenX1RewardAnnouncementTitle'],
+    ['my-stats', 'edenX1MyStatsTitle'],
+    ['guild-contribution', 'edenX1QuickGuildContribution'],
+    ['public', 'edenX1QuickPublic'],
+  ];
+  if (EDEN_X1_IS_ARCHIVE) {
+    archiveQuickNav.forEach(([target, key], index) => {
+      const button = document.querySelector(`.eden-x1-quicknav [data-quicknav="${target}"]`);
+      if (!button) return;
+      button.dataset.i18n = key;
+      button.textContent = t(key);
+      button.style.order = String(index + 1);
+      button.hidden = false;
+      button.setAttribute('aria-hidden', 'false');
+    });
+  } else {
+    document.querySelectorAll('.eden-x1-quicknav [data-quicknav]').forEach((button) => {
+      button.style.order = '';
+    });
+    const keyMap = {
+      rewards: 'edenX1QuickRewards',
+      vote: 'edenX1QuickVote',
+      'my-stats': 'edenX1QuickMyStats',
+      team: 'edenX1QuickTeam',
+      'guild-contribution': 'edenX1QuickGuildContribution',
+      public: 'edenX1QuickPublic',
+    };
+    Object.entries(keyMap).forEach(([target, key]) => {
+      const button = document.querySelector(`.eden-x1-quicknav [data-quicknav="${target}"]`);
+      if (!button) return;
+      button.dataset.i18n = key;
+      button.textContent = t(key);
+    });
+  }
+}
+
 function setEdenPanelLoading(loading) {
+  applyEdenSeasonStateShell();
   const isLoading = Boolean(loading);
   const section = $('ocrDashboardSection');
   section?.classList.toggle('eden-x1-panel--loading', isLoading);
@@ -2960,9 +3044,12 @@ function bindEdenQuickNav() {
     const target = button.getAttribute('data-quicknav') || '';
     if (target === 'rewards') {
       runEdenNavigationTransition(() => {
-        queueEdenQuickNavScroll('#edenX1RewardFlowPanel, #edenX1RewardFlowTitle', {
-          focusTarget: true,
-        });
+        queueEdenQuickNavScroll(
+          EDEN_X1_IS_ARCHIVE
+            ? '#edenX1FinalRewardsCard'
+            : '#edenX1RewardFlowPanel, #edenX1RewardFlowTitle',
+          { focusTarget: true }
+        );
       });
       return;
     }
@@ -4827,7 +4914,7 @@ function renderPublicWeightedContributionTable() {
     publicPlayerRows.some((player) => player.key === row.playerKey)
   ).length;
   const metaParts = [
-    t('edenX1PublicDemoMeta'),
+    t(EDEN_X1_IS_ARCHIVE ? 'edenX1WeightedPublicMeta' : 'edenX1PublicDemoMeta'),
     allRows.length ? t('edenX1PlayersCount', { count: allRows.length }) : '',
     t('edenX1WeightedIncludesMeta'),
     clickableCount ? t('edenX1ClickMatchedRowsMeta') : '',
@@ -5381,7 +5468,7 @@ function renderPublicStructureDetail(structure) {
         (valueOf(a.rank) || 9999) - (valueOf(b.rank) || 9999) ||
         String(a.name || '').localeCompare(String(b.name || ''))
     );
-  return `<div class="dash-modal-grid">
+  return `<div class="eden-x1-structure-detail"><div class="dash-modal-grid eden-x1-structure-stat-grid">
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalTotalDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${formatScore(structure.total_demolition)}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${formatScore(structure.attack_count)}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalPlayers'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${formatScore(structure.unique_players)}</div></div>
@@ -5390,17 +5477,17 @@ function renderPublicStructureDetail(structure) {
     <div class="dash-main-grid eden-x1-public-detail-grid">
       <div class="dash-card-align-start">
         <div class="dash-modal-section-label">${esc(t('edenX1ModalTopPlayers'))}</div>
-        <div class="dash-chart">${players
+        <div class="dash-chart eden-x1-structure-player-list">${players
           .slice(0, 8)
           .map(
             (
               player,
               index
-            ) => `<button type="button" class="dash-top-item dash-top-item--wide eden-x1-clickable" style="appearance:none;border:0;background:transparent;color:inherit;font:inherit;text-align:left;width:100%" data-public-player="${esc(player.key)}">
-              <span class="dash-top-rank rank-${index + 1}">#${index + 1}</span>
-              <span class="dash-top-name">${renderTaggedPlayerName(player)}</span>
-              <span class="dash-top-val">${formatScore(player.total)}</span>
-              <span class="dash-top-meta">${esc(t('edenX1HitsCount', { count: player.hits }))}</span>
+            ) => `<button type="button" class="dash-top-item dash-top-item--wide eden-x1-clickable eden-x1-structure-player-row" data-public-player="${esc(player.key)}">
+              <span class="dash-top-rank eden-x1-structure-player-rank rank-${index + 1}">#${index + 1}</span>
+              <span class="dash-top-name eden-x1-structure-player-name">${renderTaggedPlayerName(player)}</span>
+              <span class="dash-top-val eden-x1-structure-player-score">${formatScore(player.total)}</span>
+              <span class="dash-top-meta eden-x1-structure-player-hits">${esc(t('edenX1HitsCount', { count: player.hits }))}</span>
             </button>`
           )
           .join('')}</div>
@@ -5420,7 +5507,7 @@ function renderPublicStructureDetail(structure) {
           )
           .join('')}</div>
       </div>
-    </div>`;
+    </div></div>`;
 }
 
 function renderPublicModal() {
@@ -5656,8 +5743,13 @@ async function renderPublicDashboard(data = publicDashboardData) {
     host.innerHTML = '';
     return;
   }
-  overviewHost.classList.remove('hidden');
-  overviewHost.innerHTML = renderEdenTopNamesOverview();
+  if (EDEN_X1_IS_ARCHIVE) {
+    overviewHost.classList.add('hidden');
+    overviewHost.innerHTML = '';
+  } else {
+    overviewHost.classList.remove('hidden');
+    overviewHost.innerHTML = renderEdenTopNamesOverview();
+  }
   host.classList.remove('hidden');
   host.innerHTML = `<div class="eden-x1-public-root">
     <div class="eden-x1-reward-heading">
@@ -5787,6 +5879,7 @@ function updateTextContent(lang) {
   document.documentElement.lang = resolveIntlLocale(lang);
   const languageSelect = $('languageSelect');
   if (languageSelect) languageSelect.value = lang;
+  applyEdenSeasonStateShell();
 
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
@@ -6113,7 +6206,7 @@ function renderAnnouncementTable() {
   const rows = getAnnouncementRows();
   const rewardViewClass = rewardViewAccentClass('announcement');
   return `<div class="dash-weighted-contribution-panel">
-    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card eden-x1-announcement-card${rewardViewClass}" data-announcement-export="top20">
+    <div id="edenX1FinalRewardsCard" class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card eden-x1-announcement-card${rewardViewClass}" data-announcement-export="top20" tabindex="-1">
       <div class="dash-card-hdr dash-card-hdr-wrap">
         <h2 class="dash-card-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6156,7 +6249,7 @@ function renderAnnouncementTable() {
             .join('')}</tbody>
         </table>
       </div>
-      <p class="eden-x1-announcement-footer"><strong>${esc(t('edenX1RewardAnnouncementCongrats'))}</strong> ${esc(t('edenX1RewardFlowSubtitle'))}</p>
+      <p class="eden-x1-announcement-footer"><strong>${esc(t('edenX1RewardAnnouncementCongrats'))}</strong> ${esc(t('edenX1RewardAnnouncementCopy'))}</p>
     </div>
   </div>`;
 }
@@ -6252,6 +6345,15 @@ function bindManagementVoteRetry(host) {
 function renderEdenVoteRail() {
   const rail = $('edenX1VoteRail');
   if (!rail) return;
+  if (EDEN_X1_IS_ARCHIVE) {
+    if (edenVoteCountdownTimer) {
+      clearInterval(edenVoteCountdownTimer);
+      edenVoteCountdownTimer = null;
+    }
+    rail.hidden = true;
+    rail.innerHTML = '';
+    return;
+  }
   if (!rewardFlowReady || !currentMemberOptions.length) {
     rail.hidden = true;
     rail.innerHTML = '';
@@ -6400,9 +6502,13 @@ function renderEdenMarquee(data = {}) {
     { label: tf('edenX1MarqueeWeighted'), value: formatEdenNumber(totalWeighted), tone: 'gold' },
   ];
 
-  const countdownHtml = status.countdown
+  const countdownHtml = !EDEN_X1_IS_ARCHIVE && status.countdown
     ? `<span class="eden-x1-marquee-countdown" aria-label="${esc(tf('edenX1VoteTimeRemaining'))}">${esc(status.countdown)}</span>`
     : '';
+
+  const statusHtml = EDEN_X1_IS_ARCHIVE
+    ? ''
+    : `<div class="eden-x1-marquee-status" data-state="${esc(status.state)}" aria-label="${esc(tf('edenX1VoteStatus'))}">${esc(status.label)}${countdownHtml}</div>`;
 
   const topPerformerHtml = topRow?.playerName
     ? `<div class="eden-x1-marquee-top">
@@ -6418,7 +6524,7 @@ function renderEdenMarquee(data = {}) {
         <span class="eden-x1-marquee-kicker">${esc(tf('edenX1MarqueeKicker'))}</span>
         <h2 class="eden-x1-marquee-title">${esc(seasonLabel)}</h2>
       </div>
-      <div class="eden-x1-marquee-status" data-state="${esc(status.state)}" aria-label="${esc(tf('edenX1VoteStatus'))}">${esc(status.label)}${countdownHtml}</div>
+      ${statusHtml}
     </div>
     <div class="eden-x1-marquee-stats">
       ${stats
@@ -6436,6 +6542,11 @@ function renderEdenMarquee(data = {}) {
 function renderEdenPodium() {
   const host = $('edenX1Podium');
   if (!host) return;
+  if (EDEN_X1_IS_ARCHIVE) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
   const rows = currentRows || [];
   if (!rows.length) {
     host.hidden = true;
@@ -6470,6 +6581,11 @@ function renderEdenPodium() {
 function renderEdenProgression(data = {}) {
   const host = $('edenX1Progression');
   if (!host) return;
+  if (EDEN_X1_IS_ARCHIVE) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
   const attacks = Array.isArray(data?.attacks) ? data.attacks : [];
   const closesAt = edenVoteSettings?.closesAt || '';
   const deadlineMs = edenVoteDeadlineMs(closesAt);
@@ -6537,9 +6653,12 @@ function renderCurrentTable(renderOptions = {}) {
   const panel = $('dashWeightedContributionPanel');
   if (!panel) return;
   if (!rewardFlowReady) return;
+  if (EDEN_X1_IS_ARCHIVE) currentRewardView = 'announcement';
   if (currentRewardView === 'announcement') {
     cancelProgressiveWeightedTablePlan('reward');
-    panel.innerHTML = `${renderAnnouncementTable()}${renderAnnouncementRemainingTable()}`;
+    panel.innerHTML = EDEN_X1_IS_ARCHIVE
+      ? renderAnnouncementTable()
+      : `${renderAnnouncementTable()}${renderAnnouncementRemainingTable()}`;
     bindAnnouncementDownloads(panel);
     renderEdenVoteRail();
     updateRewardFlowControls();
