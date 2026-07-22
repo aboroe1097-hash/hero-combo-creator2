@@ -683,6 +683,20 @@
     z-index: 1070;
   }
 
+  body:has(#shellMoreTools) .ai-drawer-launcher .velo-mascot__stage {
+    animation: none;
+  }
+
+  body:has(#generatorSection:not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
+    position: relative;
+    inset: auto;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: -48px auto calc(84px + env(safe-area-inset-bottom));
+    z-index: auto;
+  }
+
   .ai-drawer-launcher__copy {
     display: none;
   }
@@ -696,6 +710,22 @@
   }
   .ai-drawer-launcher__compact-toggle {
     display: none;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  body:has(#generatorSection:not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
+    position: relative;
+    inset: auto;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 12px auto 24px;
+    z-index: auto;
+  }
+
+  body:has(#shellMoreTools) .ai-drawer-launcher .velo-mascot__stage {
+    animation: none;
   }
 }
 

@@ -690,6 +690,7 @@ async function openEdenX1ForTest(page) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
     window.VTS_EDEN_X1_TEST_MODE = true;
+    window.VTS_EDEN_X1_SEASON_STATE = 'active';
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.setItem('vts_hero_lang', 'en');
     localStorage.setItem('vts_theme', 'dark');

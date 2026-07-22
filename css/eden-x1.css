@@ -694,6 +694,44 @@ body.eden-x1-page {
   outline: none;
 }
 
+body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-notice {
+  border-color: rgba(125, 211, 252, 0.28);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(125, 211, 252, 0.12), transparent 38%),
+    radial-gradient(circle at 86% 28%, rgba(251, 146, 60, 0.1), transparent 42%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 32px rgba(2, 8, 23, 0.24);
+}
+
+body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-notice strong {
+  color: var(--frost-cyan);
+}
+
+body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-notice span {
+  color: var(--frost-text-dim);
+}
+
+body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-quicknav {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 64rem;
+  overflow: hidden;
+}
+
+body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-quicknav-chip {
+  min-height: 44px;
+}
+
+body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-season-only,
+body.eden-x1-page[data-eden-season-state='archive'] #edenX1RewardFlowPanel,
+body.eden-x1-page[data-eden-season-state='archive'] #edenX1VoteRail,
+body.eden-x1-page[data-eden-season-state='archive'] #edenX1Podium,
+body.eden-x1-page[data-eden-season-state='archive'] #edenX1Progression,
+body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
+  display: none !important;
+}
+
 .eden-x1-nav-loader {
   position: fixed;
   inset: 0;
@@ -1176,6 +1214,157 @@ body.eden-x1-page {
 #ocrDashboardRoot .eden-x1-public-modal .dash-table-wrap {
   max-width: 100%;
   overflow-x: auto;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-detail,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-list,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name .dash-player-rank-name,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name .dash-player-rank-label {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-detail {
+  display: grid;
+  gap: 0.9rem;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-stat-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .dash-modal-stat-value {
+  direction: ltr;
+  unicode-bidi: isolate;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-list {
+  display: grid;
+  gap: 0.42rem;
+  width: 100%;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row {
+  appearance: none;
+  display: grid;
+  grid-template-areas: 'rank name score hits';
+  grid-template-columns: 2.35rem minmax(0, 1fr) max-content max-content;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.48rem 0.58rem;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.2);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row:hover,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row:focus-visible {
+  border-color: rgba(103, 232, 249, 0.42);
+  background: rgba(14, 165, 233, 0.12);
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row:focus-visible {
+  outline: 2px solid var(--frost-cyan);
+  outline-offset: 2px;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-rank {
+  grid-area: rank;
+  justify-self: start;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name {
+  grid-area: name;
+  display: block;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: normal;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name .dash-player-rank-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.22rem 0.32rem;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name .dash-player-rank-label {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-score,
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-hits {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-score {
+  grid-area: score;
+  justify-self: end;
+}
+
+#ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-hits {
+  grid-area: hits;
+  justify-self: end;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row {
+    grid-template-areas:
+      'rank name name'
+      'rank score hits';
+    grid-template-columns: 2.1rem minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 0.16rem 0.45rem;
+    min-height: 56px;
+    padding: 0.44rem 0.5rem;
+  }
+
+  #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-rank {
+    align-self: center;
+  }
+
+  #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-name {
+    align-self: end;
+    font-size: 0.83rem !important;
+    line-height: 1.14;
+  }
+
+  #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-score {
+    justify-self: start;
+    align-self: start;
+    font-size: 0.78rem !important;
+    line-height: 1.15;
+  }
+
+  #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-hits {
+    align-self: start;
+    font-size: 0.66rem !important;
+    line-height: 1.15;
+  }
 }
 
 .eden-x1-page .eden-x1-flow-vote-tag {
@@ -2862,6 +3051,12 @@ body.eden-x1-page {
 
   .eden-x1-quicknav-chip[data-quicknav='guild-contribution'] {
     flex-basis: auto !important;
+  }
+
+  body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-quicknav {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(44px, auto) !important;
+    overflow: hidden !important;
   }
 
   .eden-x1-notice {
@@ -4998,6 +5193,17 @@ body.eden-x1-page {
   .eden-x1-page #edenX1Error {
     grid-area: error;
   }
+
+  body.eden-x1-page[data-eden-season-state='archive'] #ocrDashboardSection.eden-x1-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'notice'
+      'marquee'
+      'quicknav'
+      'weighted'
+      'public'
+      'error';
+  }
 }
 
 /* ---- Ballot module: selection count, eligibility, submit state ---- */
@@ -5980,5 +6186,23 @@ body.eden-x1-page.eden-x1-overlay-open {
     tbody
     tr {
     margin-inline: 0.2rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-quicknav {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(44px, auto) !important;
+    overflow: hidden !important;
+    scroll-snap-type: none !important;
+  }
+
+  body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-quicknav-chip {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 44px !important;
+    flex: none !important;
   }
 }
