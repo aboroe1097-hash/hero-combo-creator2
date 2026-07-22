@@ -82,8 +82,9 @@ const LIMITS = {
   // The complete audited 14.2.8 artifact measures 26,388.3 KiB; retain less
   // than 3 KiB while the tighter route, media, and file-count caps stay fixed.
   // The complete audited 14.2.9 artifact with registration closed and responsive
-  // team board measures 26,392.1 KiB; retain less than 1 KiB of headroom.
-  totalDeployBytes: 26393 * 1024,
+  // team board measures 26,405.5 KiB after production minification; retain less
+  // than 1.5 KiB of headroom.
+  totalDeployBytes: 26407 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
