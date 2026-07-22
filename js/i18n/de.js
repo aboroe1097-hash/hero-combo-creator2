@@ -480,6 +480,11 @@ const de = {
   bohAccessTitle: 'All-Star-BoH-Bereich freischalten',
   bohAccessDescription:
     'Gib die aktuelle VTS-Mitglieder-PIN ein. Teamankündigungen und persönliche Pläne bleiben gesperrt, bis der sichere Zugang bestätigt ist.',
+  bohAccessRegistrationClosedKicker: 'REGISTRIERUNG GESCHLOSSEN',
+  bohAccessRegistrationClosedTitle: 'Teams sind voll',
+  bohAccessRegistrationClosedDescription:
+    'Die Registrierung ist geschlossen. Die Teamzuordnung läuft jetzt, und die Teamzuteilungen werden bald bekanntgegeben.',
+  bohAccessRegistrationClosedNotice: 'Die Teamzuordnung wird bald bekanntgegeben.',
   bohAccessPinLabel: 'Mitglieder-PIN',
   bohAccessPinHint: 'Die PIN wird sicher geprüft und nie auf diesem Gerät gespeichert.',
   bohAccessUnlock: 'Bereich freischalten',

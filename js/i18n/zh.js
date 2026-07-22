@@ -436,6 +436,10 @@ const zh = {
   bohAccessTitle: '解锁 All-Star BoH 中心',
   bohAccessDescription:
     '请输入当前 VTS 成员 PIN。安全访问确认前，队伍公告和个人作战方案将保持锁定。',
+  bohAccessRegistrationClosedKicker: '报名已关闭',
+  bohAccessRegistrationClosedTitle: '队伍已满',
+  bohAccessRegistrationClosedDescription: '报名已关闭。队伍匹配正在进行，队伍分配将很快公布。',
+  bohAccessRegistrationClosedNotice: '队伍匹配将很快公布。',
   bohAccessPinLabel: '成员 PIN',
   bohAccessPinHint: 'PIN 会经过安全验证，且不会保存在此设备上。',
   bohAccessUnlock: '解锁中心',

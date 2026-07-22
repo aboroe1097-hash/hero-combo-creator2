@@ -319,7 +319,22 @@ test('PIN visibility is accessible and resets after submit and secure state tran
   gate.destroy();
 });
 
-test('closed registration stays read-only and never initializes protected services', async () => {
+test('closed registration stays read-only and never initializes protected services', async (t) => {
+  const previousTranslations = globalThis.VTS_TRANSLATIONS;
+  globalThis.VTS_TRANSLATIONS = {
+    ar: {
+      bohAccessRegistrationClosedKicker: 'تم إغلاق التسجيل',
+      bohAccessRegistrationClosedTitle: 'اكتملت الفرق',
+      bohAccessRegistrationClosedDescription:
+        'تم إغلاق التسجيل. بدأت مطابقة الفرق الآن، وسيتم إعلان تعيينات الفرق قريبًا.',
+      bohAccessRegistrationClosedNotice: 'سيتم إعلان مطابقة الفرق قريبًا.',
+    },
+  };
+  t.after(() => {
+    if (previousTranslations === undefined) delete globalThis.VTS_TRANSLATIONS;
+    else globalThis.VTS_TRANSLATIONS = previousTranslations;
+  });
+
   const { document, parent, root } = createGateDocument();
   root.inert = false;
   root.dataset.registrationStatus = 'closed';
@@ -392,9 +407,13 @@ test('closed registration stays read-only and never initializes protected servic
   await eventTarget.listeners.get('vts:language-change')?.({ detail: { lang: 'ar' } });
 
   assert.deepEqual(calls, { firebase: 0, access: 0, domain: 0 });
-  assert.equal(kicker.textContent, 'REGISTRATION CLOSED');
-  assert.equal(title.textContent, 'Teams are full');
-  assert.equal(notice.textContent, 'Team matching will be announced soon.');
+  assert.equal(kicker.textContent, 'تم إغلاق التسجيل');
+  assert.equal(title.textContent, 'اكتملت الفرق');
+  assert.equal(
+    description.textContent,
+    'تم إغلاق التسجيل. بدأت مطابقة الفرق الآن، وسيتم إعلان تعيينات الفرق قريبًا.'
+  );
+  assert.equal(notice.textContent, 'سيتم إعلان مطابقة الفرق قريبًا.');
   assert.equal(progress.hidden, true);
   assert.equal(root.hidden, true);
   lifecycle.destroy();
@@ -1220,6 +1239,10 @@ test('regional copy and PIN controls are present in every main translation catal
     assert.match(sources[locale], new RegExp(`bohAccessRetry: '${retry}'`, 'u'));
     assert.match(sources[locale], new RegExp(`bohAccessShowPin: '${showPin}'`, 'u'));
     assert.match(sources[locale], new RegExp(`bohAccessHidePin: '${hidePin}'`, 'u'));
+    assert.match(sources[locale], /bohAccessRegistrationClosedKicker: '/u);
+    assert.match(sources[locale], /bohAccessRegistrationClosedTitle: '/u);
+    assert.match(sources[locale], /bohAccessRegistrationClosedDescription:/u);
+    assert.match(sources[locale], /bohAccessRegistrationClosedNotice: '/u);
   }
   assert.match(
     sources.en,

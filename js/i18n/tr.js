@@ -446,6 +446,11 @@ const tr = {
   bohAccessTitle: 'All-Star BoH merkezini aç',
   bohAccessDescription:
     'Güncel VTS üye PIN’ini gir. Güvenli erişim onaylanana kadar takım duyuruları ve kişisel planlar kilitli kalır.',
+  bohAccessRegistrationClosedKicker: 'KAYIT KAPANDI',
+  bohAccessRegistrationClosedTitle: 'Takımlar dolu',
+  bohAccessRegistrationClosedDescription:
+    'Kayıt kapandı. Takım eşleştirmesi şimdi devam ediyor ve takım atamaları yakında duyurulacak.',
+  bohAccessRegistrationClosedNotice: 'Takım eşleştirmesi yakında duyurulacak.',
   bohAccessPinLabel: 'Üye PIN’i',
   bohAccessPinHint: 'PIN güvenli biçimde kontrol edilir ve bu cihaza hiçbir zaman kaydedilmez.',
   bohAccessUnlock: 'Merkezi aç',

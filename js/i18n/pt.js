@@ -464,6 +464,11 @@ const pt = {
   bohAccessTitle: 'Desbloqueie a área All-Star BoH',
   bohAccessDescription:
     'Digite o PIN atual dos membros da VTS. Os anúncios das equipes e os planos pessoais permanecem bloqueados até a confirmação do acesso seguro.',
+  bohAccessRegistrationClosedKicker: 'INSCRIÇÕES ENCERRADAS',
+  bohAccessRegistrationClosedTitle: 'As equipes estão completas',
+  bohAccessRegistrationClosedDescription:
+    'As inscrições estão encerradas. A formação das equipes já está em andamento, e as designações serão anunciadas em breve.',
+  bohAccessRegistrationClosedNotice: 'A formação das equipes será anunciada em breve.',
   bohAccessPinLabel: 'PIN de membro',
   bohAccessPinHint: 'O PIN é verificado com segurança e nunca é salvo neste dispositivo.',
   bohAccessUnlock: 'Desbloquear área',

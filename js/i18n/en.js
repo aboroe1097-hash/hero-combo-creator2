@@ -475,6 +475,11 @@ const en = {
   bohAccessTitle: 'Unlock the All-Star BoH hub',
   bohAccessDescription:
     'Enter the current VTS member PIN. Team announcements and personal plans stay locked until secure access is confirmed.',
+  bohAccessRegistrationClosedKicker: 'REGISTRATION CLOSED',
+  bohAccessRegistrationClosedTitle: 'Teams are full',
+  bohAccessRegistrationClosedDescription:
+    'Registration is closed. Team matching is now underway, and team assignments will be announced soon.',
+  bohAccessRegistrationClosedNotice: 'Team matching will be announced soon.',
   bohAccessPinLabel: 'Member PIN',
   bohAccessPinHint: 'The PIN is checked securely and is never saved on this device.',
   bohAccessUnlock: 'Unlock hub',

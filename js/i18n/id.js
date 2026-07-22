@@ -446,6 +446,11 @@ const id = {
   bohAccessTitle: 'Buka hub All-Star BoH',
   bohAccessDescription:
     'Masukkan PIN anggota VTS saat ini. Pengumuman tim dan rencana pribadi tetap terkunci sampai akses aman dikonfirmasi.',
+  bohAccessRegistrationClosedKicker: 'PENDAFTARAN DITUTUP',
+  bohAccessRegistrationClosedTitle: 'Tim sudah penuh',
+  bohAccessRegistrationClosedDescription:
+    'Pendaftaran ditutup. Pencocokan tim sedang berlangsung, dan pembagian tim akan segera diumumkan.',
+  bohAccessRegistrationClosedNotice: 'Pencocokan tim akan segera diumumkan.',
   bohAccessPinLabel: 'PIN anggota',
   bohAccessPinHint: 'PIN diperiksa dengan aman dan tidak pernah disimpan di perangkat ini.',
   bohAccessUnlock: 'Buka hub',

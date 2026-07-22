@@ -445,6 +445,11 @@ const ar = {
   bohAccessTitle: 'افتح مركز All-Star BoH',
   bohAccessDescription:
     'أدخل رمز PIN الحالي لأعضاء VTS. ستظل إعلانات الفرق والخطط الشخصية مقفلة حتى تأكيد الدخول الآمن.',
+  bohAccessRegistrationClosedKicker: 'تم إغلاق التسجيل',
+  bohAccessRegistrationClosedTitle: 'اكتملت الفرق',
+  bohAccessRegistrationClosedDescription:
+    'تم إغلاق التسجيل. بدأت مطابقة الفرق الآن، وسيتم إعلان تعيينات الفرق قريبًا.',
+  bohAccessRegistrationClosedNotice: 'سيتم إعلان مطابقة الفرق قريبًا.',
   bohAccessPinLabel: 'رمز PIN للأعضاء',
   bohAccessPinHint: 'يُتحقق من الرمز بأمان ولا يُحفظ أبدًا على هذا الجهاز.',
   bohAccessUnlock: 'فتح المركز',

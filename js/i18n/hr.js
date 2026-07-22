@@ -34,6 +34,11 @@ const hr = Object.freeze({
   tabAllStarBoh: 'All-Star BoH',
   tabAllStarBohAria: 'Otvori All-Star BoH centar za članove',
   tabAllStarBohBadge: 'Sezonski',
+  bohAccessRegistrationClosedKicker: 'PRIJAVE ZATVORENE',
+  bohAccessRegistrationClosedTitle: 'Timovi su popunjeni',
+  bohAccessRegistrationClosedDescription:
+    'Prijave su zatvorene. Usklađivanje timova je u tijeku, a raspored timova bit će uskoro objavljen.',
+  bohAccessRegistrationClosedNotice: 'Usklađivanje timova bit će uskoro objavljeno.',
   bohAccessErrorIdentityConflict:
     'Ovaj je preglednik prijavljen na upravljačku ploču vodstva. Radi zaštite prijava igrača otvori ovu poveznicu u privatnom prozoru i tamo unesi članski PIN.',
   bohAccessRetry: 'Pokušaj ponovno',

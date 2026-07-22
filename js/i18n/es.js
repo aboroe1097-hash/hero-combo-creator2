@@ -451,6 +451,11 @@ const es = {
   bohAccessTitle: 'Desbloquea el centro All-Star BoH',
   bohAccessDescription:
     'Introduce el PIN actual de miembros de VTS. Los anuncios de equipos y los planes personales seguirán bloqueados hasta confirmar el acceso seguro.',
+  bohAccessRegistrationClosedKicker: 'INSCRIPCIÓN CERRADA',
+  bohAccessRegistrationClosedTitle: 'Los equipos están completos',
+  bohAccessRegistrationClosedDescription:
+    'La inscripción está cerrada. La asignación de equipos ya está en marcha y las asignaciones se anunciarán pronto.',
+  bohAccessRegistrationClosedNotice: 'La asignación de equipos se anunciará pronto.',
   bohAccessPinLabel: 'PIN de miembro',
   bohAccessPinHint: 'El PIN se comprueba de forma segura y nunca se guarda en este dispositivo.',
   bohAccessUnlock: 'Desbloquear centro',

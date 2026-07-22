@@ -360,6 +360,11 @@ const kr = {
   bohAccessTitle: 'All-Star BoH 허브 잠금 해제',
   bohAccessDescription:
     '현재 VTS 멤버 PIN을 입력하세요. 안전한 접근이 확인될 때까지 팀 발표와 개인 작전은 잠겨 있습니다.',
+  bohAccessRegistrationClosedKicker: '등록 마감',
+  bohAccessRegistrationClosedTitle: '팀이 모두 찼습니다',
+  bohAccessRegistrationClosedDescription:
+    '등록이 마감되었습니다. 팀 매칭이 진행 중이며, 팀 배정은 곧 공지됩니다.',
+  bohAccessRegistrationClosedNotice: '팀 매칭은 곧 공지됩니다.',
   bohAccessPinLabel: '멤버 PIN',
   bohAccessPinHint: 'PIN은 안전하게 확인되며 이 기기에 저장되지 않습니다.',
   bohAccessUnlock: '허브 열기',
