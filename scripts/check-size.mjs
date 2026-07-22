@@ -49,7 +49,9 @@ const LIMITS = {
   // The complete audited 14.2.9 artifact with registration closed, responsive
   // team board, and refined admin controls measures 8289.3 KiB; retain less
   // than 1 KiB of headroom while route, CSS, media, and entry budgets stay fixed.
-  totalJsBytes: 8290 * 1024,
+  // Localized closed-registration gate copy measures 8293.4 KiB; retain less
+  // than 2 KiB of aggregate headroom while the route-specific caps stay fixed.
+  totalJsBytes: 8295 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -84,7 +86,9 @@ const LIMITS = {
   // The complete audited 14.2.9 artifact with registration closed and responsive
   // team board measures 26,405.5 KiB after production minification; retain less
   // than 1.5 KiB of headroom.
-  totalDeployBytes: 26407 * 1024,
+  // Localized closed-registration gate copy measures 26,409.6 KiB after a
+  // fresh production build; retain less than 2.5 KiB of artifact headroom.
+  totalDeployBytes: 26412 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
