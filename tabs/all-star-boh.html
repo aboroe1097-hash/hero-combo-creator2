@@ -95,8 +95,8 @@
       >
         <span class="boh-subnav__step" aria-hidden="true">2</span>
         <span>
-          <strong data-boh-i18n="nav.announcement">Team Announcement</strong>
-          <small data-boh-i18n="nav.announcementHint">Meet your roster</small>
+          <strong data-boh-i18n="nav.announcement">Team Formation</strong>
+          <small data-boh-i18n="nav.announcementHint">See all six teams</small>
         </span>
       </button>
       <button
@@ -112,8 +112,25 @@
       >
         <span class="boh-subnav__step" aria-hidden="true">3</span>
         <span>
-          <strong data-boh-i18n="nav.plan">My Team Plan</strong>
-          <small data-boh-i18n="nav.planHint">Know every move</small>
+          <strong data-boh-i18n="nav.plan">Battle Map &amp; Plans</strong>
+          <small data-boh-i18n="nav.planHint">Follow your route</small>
+        </span>
+      </button>
+      <button
+        class="boh-subnav__tab"
+        id="bohScheduleTab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="bohSchedulePanel"
+        tabindex="-1"
+        data-role="section-tab"
+        data-section="schedule"
+      >
+        <span class="boh-subnav__step" aria-hidden="true">4</span>
+        <span>
+          <strong data-boh-i18n="schedule.title">Event schedule</strong>
+          <small data-boh-i18n="schedule.teamTimesAria">Team game times</small>
         </span>
       </button>
     </div>
@@ -1742,40 +1759,6 @@
         </div>
       </div>
 
-      <section
-        class="boh-schedule-card"
-        data-role="event-schedule"
-        aria-labelledby="bohScheduleTitle"
-        hidden
-      >
-        <div class="boh-card-heading">
-          <div>
-            <p class="boh-kicker" data-boh-i18n="schedule.kicker">EVENT CLOCK</p>
-            <h4 id="bohScheduleTitle" data-role="schedule-title" data-boh-i18n="schedule.title">
-              Event schedule
-            </h4>
-          </div>
-          <div class="boh-schedule-countdown" aria-live="polite">
-            <span data-role="schedule-countdown" data-boh-i18n="schedule.waiting">Waiting</span>
-            <small data-role="schedule-date" data-boh-i18n="status.notAvailable"
-              >Not available</small
-            >
-          </div>
-        </div>
-        <div
-          class="boh-schedule-rail"
-          data-role="schedule-rail"
-          aria-label="Event milestones"
-          data-boh-i18n-aria="schedule.railAria"
-        ></div>
-        <ol
-          class="boh-schedule-teams"
-          data-role="schedule-team-times"
-          aria-label="Team game times"
-          data-boh-i18n-aria="schedule.teamTimesAria"
-        ></ol>
-      </section>
-
       <section class="boh-now-next" aria-labelledby="bohNowNextTitle">
         <h4 class="sr-only" id="bohNowNextTitle" data-boh-i18n="plan.nowNextTitle">
           Current and next instructions
@@ -2087,6 +2070,48 @@
         </div>
       </aside>
     </div>
+  </section>
+
+  <section
+    class="boh-section"
+    id="bohSchedulePanel"
+    role="tabpanel"
+    aria-labelledby="bohScheduleTab"
+    data-role="section-panel"
+    data-section="schedule"
+    hidden
+  >
+    <section
+      class="boh-schedule-card"
+      data-role="event-schedule"
+      aria-labelledby="bohScheduleTitle"
+      hidden
+    >
+      <div class="boh-card-heading">
+        <div>
+          <p class="boh-kicker" data-boh-i18n="schedule.kicker">EVENT CLOCK</p>
+          <h4 id="bohScheduleTitle" data-role="schedule-title" data-boh-i18n="schedule.title">
+            Event schedule
+          </h4>
+        </div>
+        <div class="boh-schedule-countdown" aria-live="polite">
+          <span data-role="schedule-countdown" data-boh-i18n="schedule.waiting">Waiting</span>
+          <small data-role="schedule-date" data-boh-i18n="status.notAvailable">Not available</small>
+        </div>
+      </div>
+      <div
+        class="boh-schedule-rail"
+        data-role="schedule-rail"
+        aria-label="Event milestones"
+        data-boh-i18n-aria="schedule.railAria"
+      ></div>
+      <ol
+        class="boh-schedule-teams"
+        data-role="schedule-team-times"
+        aria-label="Team game times"
+        data-boh-i18n-aria="schedule.teamTimesAria"
+      ></ol>
+    </section>
   </section>
 
   <section class="boh-section boh-signup-addon" data-role="signup-addon">

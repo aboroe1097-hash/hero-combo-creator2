@@ -26,7 +26,7 @@ const REQUIRED_POWER_FIELDS = Object.freeze([
 const OPTIONAL_POWER_FIELDS = Object.freeze(['artifactPower', 'royalTechPower']);
 const POWER_FIELDS = Object.freeze([...REQUIRED_POWER_FIELDS, ...OPTIONAL_POWER_FIELDS]);
 
-const SECTION_ORDER = Object.freeze(['signup', 'announcement', 'plan']);
+const SECTION_ORDER = Object.freeze(['signup', 'announcement', 'plan', 'schedule']);
 const AVAILABILITY_VALUES = new Set(['all', 'most']);
 const ROLE_VALUES = new Set(['flexible', 'offensive', 'rune', 'top', 'bottom']);
 const FIGHTING_TIME_IDS = Object.freeze(['+12', '+14', '+16']);
@@ -1468,6 +1468,7 @@ export function buildBohRouteDescriptor(entry, plan = {}, options = {}) {
 }
 
 function initialState(options) {
+  const registrationClosed = options.registrationClosed === true;
   return {
     options,
     root: options.root,
@@ -1478,7 +1479,8 @@ function initialState(options) {
     language: textValue(options.language || 'en') || 'en',
     tr: makeTranslator(options.text, options.language || 'en'),
     accessGranted: Boolean(options.store && options.store.accessGranted !== false),
-    section: 'signup',
+    registrationClosed,
+    section: registrationClosed ? 'plan' : 'signup',
     entryMethod: 'ocr',
     selectedPhaseId: '',
     selectedLegionId: '',
@@ -1724,9 +1726,20 @@ function closeSubmissionConfirmation(state) {
 }
 
 function activateSection(state, section, focus = false) {
+  if (state.registrationClosed && section === 'signup') section = 'announcement';
   if (!SECTION_ORDER.includes(section)) return false;
   state.section = section;
+  let visibleStep = 0;
   for (const tab of queryAll(state.root, '[data-role="section-tab"]')) {
+    if (state.registrationClosed && tab.dataset.section === 'signup') {
+      tab.hidden = true;
+      tab.setAttribute('aria-disabled', 'true');
+      tab.tabIndex = -1;
+      continue;
+    }
+    if (state.registrationClosed) {
+      setText(query(tab, '.boh-subnav__step'), String(++visibleStep));
+    }
     const selected = tab.dataset.section === section;
     tab.setAttribute('aria-selected', String(selected));
     tab.tabIndex = selected ? 0 : -1;
@@ -1744,7 +1757,9 @@ function activateSection(state, section, focus = false) {
     }
   }
   for (const panel of queryAll(state.root, '[data-role="section-panel"]')) {
-    panel.hidden = panel.dataset.section !== section;
+    panel.hidden =
+      panel.dataset.section !== section ||
+      (state.registrationClosed && panel.dataset.section === 'signup');
   }
   setHidden(query(state.root, '[data-role="signup-addon"]'), section !== 'signup');
   return true;
@@ -4168,7 +4183,7 @@ function handleKeydown(state, event) {
   }
   const sectionTab = event.target?.closest?.('[data-role="section-tab"]');
   if (sectionTab) {
-    const tabs = queryAll(state.root, '[data-role="section-tab"]');
+    const tabs = queryAll(state.root, '[data-role="section-tab"]:not([hidden])');
     tabKeyMove(state, event, tabs, tabs.indexOf(sectionTab), (tab) =>
       activateSection(state, tab.dataset.section)
     );
@@ -4198,6 +4213,7 @@ async function handleClick(state, event) {
     return;
   }
   if (target.matches?.('[data-role="edit-signup"]')) {
+    if (state.registrationClosed) return;
     activateSection(state, 'signup');
     const form = query(state.root, '[data-role="signup-form"]');
     form?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
@@ -4396,6 +4412,7 @@ function handleSubmit(state, event) {
   const showdownForm = event.target?.closest?.('[data-role="showdown-form"]');
   if (!signupForm && !showdownForm) return;
   event.preventDefault();
+  if (state.registrationClosed) return;
   const action = submitCombinedParticipation(
     state,
     signupForm || query(state.root, '[data-role="signup-form"]'),

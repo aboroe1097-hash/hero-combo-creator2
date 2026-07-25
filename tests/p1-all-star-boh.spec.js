@@ -349,14 +349,14 @@ async function blockExternalServices(page) {
   await page.route(EXTERNAL_REQUEST, (route) => route.abort());
 }
 
-async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
+async function openInjectedPlayerHub(page, { ocrTransport = {}, registrationClosed = false } = {}) {
   await blockExternalServices(page);
   await page.goto('/tabs/all-star-boh.html', { waitUntil: 'domcontentloaded' });
   await page.addStyleTag({ url: '/css/_tokens.css' });
   await page.addStyleTag({ url: '/css/app.css' });
   await page.addStyleTag({ url: '/css/all-star-boh.css' });
   await page.evaluate(
-    async ({ fixture, ocrTransport: transportOptions }) => {
+    async ({ fixture, ocrTransport: transportOptions, registrationClosed: closed }) => {
       const [bootstrap, controller, model, ocr, i18n, heroData, researchData, researchI18n] =
         await Promise.all([
           import('/js/all-star-boh-bootstrap.js'),
@@ -532,7 +532,7 @@ async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
       window.__BOH_PLAYER_LIFECYCLE__ = await bootstrap.bootAllStarBohTab({
         root,
         locale: 'en',
-        registrationClosed: false,
+        registrationClosed: closed,
         accessClient,
         firebase: {
           async initFirebase() {
@@ -576,7 +576,7 @@ async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
         },
       });
     },
-    { fixture: createPlayerFixture(), ocrTransport }
+    { fixture: createPlayerFixture(), ocrTransport, registrationClosed }
   );
 
   const gate = page.locator('[data-role="boh-access-gate"]');
@@ -1036,7 +1036,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root).toHaveAttribute('inert', '');
   });
 
-  test('direct hash shows closed registration without fetching private feature chunks', async ({
+  test('direct hash keeps the member PIN gate available after registration closes', async ({
     page,
   }) => {
     const requestedPaths = [];
@@ -1053,20 +1053,14 @@ test.describe('All-Star BoH secure player hub', () => {
     const gate = page.locator('[data-role="boh-access-gate"]');
     const root = page.locator('#allStarBohSection [data-role="boh-root"]');
     await expect(gate).toBeVisible({ timeout: 20_000 });
-    await expect(gate).toHaveAccessibleName(/Teams are full/i);
-    await expect(gate.locator('[data-role="boh-access-feedback"]')).toHaveText(
-      'Team matching will be announced soon.',
-      { timeout: 20_000 }
-    );
-    await expect(gate.locator('[data-role="boh-access-pin"]')).toBeHidden();
-    await expect(gate.locator('[data-role="boh-access-pin"]')).toBeDisabled();
-    await expect(gate.locator('.boh-form-actions')).toBeHidden();
+    await expect(gate).toHaveAccessibleName(/Unlock the All-Star BoH hub/i);
+    await expect(gate).not.toHaveAccessibleName(/Teams are full/i);
     await expect(root).toBeHidden();
     await expect(root).toHaveAttribute('aria-hidden', 'true');
     await expect(root).toHaveAttribute('inert', '');
 
     for (const path of PRIVATE_PLAYER_MODULES) {
-      expect(requestedPaths, `${path} must stay lazy before the member grant`).not.toContain(path);
+      expect(requestedPaths, path + ' must stay lazy before the member grant').not.toContain(path);
     }
   });
 
@@ -1245,14 +1239,45 @@ test.describe('All-Star BoH secure player hub', () => {
     expect(saved.payload.rolePreferences).toEqual(['rune']);
   });
 
-  test('mocked grant renders three sections, six 12-player teams, and both planning tools', async ({
+  test('post-signup PIN login opens the mapper with formation and schedule side pages', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await openInjectedPlayerHub(page, { registrationClosed: true });
+    const root = page.locator('[data-role="boh-root"]');
+    const visibleTabs = root.locator('[data-role="section-tab"]:not([hidden])');
+
+    await expect(visibleTabs).toHaveCount(3);
+    await expect(root.locator('[data-section="signup"][data-role="section-tab"]')).toBeHidden();
+    await expect(root.locator('[data-section="plan"][data-role="section-tab"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(root.locator('[data-role="plan-state-published"]')).toBeVisible();
+    await expect(root.locator('[data-role="map-objectives"] > g')).toHaveCount(27);
+    await expect(root.locator('[data-role="signup-addon"]')).toBeHidden();
+
+    await root.locator('[data-section="announcement"][data-role="section-tab"]').click();
+    await expect(root.locator('[data-role="announcement-state-assigned"]')).toBeVisible();
+    await expect(root.locator('[data-role="team-overview"] .boh-team-summary')).toHaveCount(6);
+
+    await root.locator('[data-section="schedule"][data-role="section-tab"]').click();
+    await expect(root.locator('#bohSchedulePanel')).toBeVisible();
+    await expect(root.locator('[data-role="event-schedule"]')).toBeVisible();
+    await expect(
+      root.locator('[data-role="schedule-rail"] [data-role="schedule-milestone"]')
+    ).toHaveCount(3);
+    await expect(root.locator('[data-role="schedule-team-times"] > li')).toHaveCount(6);
+  });
+
+  test('mocked grant renders four sections, six 12-player teams, and both planning tools', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await openInjectedPlayerHub(page);
     const root = page.locator('[data-role="boh-root"]');
     const sectionTabs = root.locator('[data-role="section-tab"]');
-    await expect(sectionTabs).toHaveCount(3);
+    await expect(sectionTabs).toHaveCount(4);
     await expect(root.locator('[name="preferredTeammates"]')).toHaveValue(
       'Player 2-01\nPlayer 3-01'
     );
@@ -1329,14 +1354,7 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[data-role="current-action"]')).toHaveText(
       'Legion 1 phase 1 action'
     );
-    await expect(root.locator('[data-role="event-schedule"]')).toBeVisible();
-    await expect(
-      root.locator('[data-role="schedule-rail"] [data-role="schedule-milestone"]')
-    ).toHaveCount(3);
-    await expect(root.locator('[data-role="schedule-team-times"] > li')).toHaveCount(6);
-    await expect(root.locator('[data-role="schedule-team-times"] > li.is-mine')).toContainText(
-      'All-Star Team 1'
-    );
+    await expect(root.locator('[data-role="event-schedule"]')).toBeHidden();
     await expect(root.locator('[data-role="personal-route-text"]')).toContainText('South Spawn');
     await expect(root.locator('[data-role="personal-route-text"]')).toContainText('Tower 3');
     await expect(root.locator('[data-role="personal-route-text"]')).toContainText(
@@ -1381,6 +1399,16 @@ test.describe('All-Star BoH secure player hub', () => {
     );
     await expect(root.locator('[data-role="map-objective-detail"]')).not.toContainText(
       'Player 1-01'
+    );
+
+    await sectionTabs.nth(3).click();
+    await expect(root.locator('[data-role="event-schedule"]')).toBeVisible();
+    await expect(
+      root.locator('[data-role="schedule-rail"] [data-role="schedule-milestone"]')
+    ).toHaveCount(3);
+    await expect(root.locator('[data-role="schedule-team-times"] > li')).toHaveCount(6);
+    await expect(root.locator('[data-role="schedule-team-times"] > li.is-mine')).toContainText(
+      'All-Star Team 1'
     );
 
     await sectionTabs.nth(0).click();

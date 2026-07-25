@@ -524,6 +524,13 @@ service cloud.firestore {
         );
     }
 
+    function isAllStarBohRegistrationOpen(season) {
+      let configPath = /databases/$(database)/documents/boh_allstar_config/current;
+      return exists(configPath)
+        && get(configPath).data.activeSeason == season
+        && get(configPath).data.open == true;
+    }
+
     function validAllStarBohConfig() {
       return request.resource.data.keys().hasOnly([
         'activeSeason', 'open', 'grantDurationMinutes'
@@ -1226,7 +1233,8 @@ service cloud.firestore {
 
     function validAllStarBohPublishedSeats(values) {
       return values is list
-        && values.size() == 12
+        && values.size() > 0
+        && values.size() <= 12
         && validAllStarBohPublishedSeatItem(values, 0)
         && validAllStarBohPublishedSeatItem(values, 1)
         && validAllStarBohPublishedSeatItem(values, 2)
@@ -2032,9 +2040,11 @@ service cloud.firestore {
         allow list: if isAdmin();
         allow create: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohSubmissionCreate(season, uid);
         allow update: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohSubmissionUpdate(season, uid);
         allow delete: if isAdmin();
       }
@@ -2058,9 +2068,11 @@ service cloud.firestore {
         allow list: if isAdmin();
         allow create: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohEpicPreferencesCreate(season, uid);
         allow update: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohEpicPreferencesUpdate(season, uid);
         allow delete: if false;
       }

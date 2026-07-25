@@ -492,15 +492,16 @@ test('five invalid PINs lock both UID and IP digests and a correct PIN cannot by
   assert.doesNotMatch(serializedAttempts, /wrong-pin|firebase-user-1|203\.0\.113\.25/);
 });
 
-test('closed seasons and missing server secrets fail closed', async () => {
+test('closed registration preserves member grants while missing server secrets fail closed', async () => {
   const closedDb = createFirestoreFake({
     activeSeason: 'season-2026',
     open: false,
     grantDurationMinutes: 720,
   });
   const closed = await invoke(createHandlerFixture({ db: closedDb }));
-  assert.equal(closed.statusCode, 409);
-  assert.deepEqual(closed.body, { error: 'signups_closed' });
+  assert.equal(closed.statusCode, 200);
+  assert.equal(closed.body.season, 'season-2026');
+  assert.ok(closedDb.read(getAllStarBohGrantPath('firebase-user-1')));
 
   const missingSecret = await invoke(createHandlerFixture({ memberPin: '' }));
   assert.equal(missingSecret.statusCode, 503);

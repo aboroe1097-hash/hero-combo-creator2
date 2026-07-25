@@ -549,7 +549,6 @@ export async function bootAllStarBohTab(options = {}) {
       document: documentRef,
       locale: options.locale || currentLocale(documentRef),
       getCatalog: options.getCatalog,
-      registrationClosed,
     });
   const loadingPlaceholder =
     options.loadingPlaceholder || root.parentNode?.querySelector?.('.tab-loading');
@@ -619,11 +618,6 @@ export async function bootAllStarBohTab(options = {}) {
 
   function lockHub() {
     if (destroyed) return;
-    if (registrationClosed) {
-      concealBohRoot(root);
-      gate.showClosed();
-      return;
-    }
     lifecycleGeneration += 1;
     setManuallyLocked(true);
     unmountDomain();
@@ -803,6 +797,7 @@ export async function bootAllStarBohTab(options = {}) {
       researchTrees,
       researchTreeText: domain.researchI18n?.researchTreeText,
       loadResearchLocale: domain.researchI18n?.loadResearchLocale,
+      registrationClosed,
       onError(error, context) {
         if (error?.code === 'access_expired') {
           relockExpired();
@@ -819,7 +814,7 @@ export async function bootAllStarBohTab(options = {}) {
   }
 
   async function unlock(pin) {
-    if (destroyed || busy || registrationClosed) return;
+    if (destroyed || busy) return;
     busy = true;
     gate.showBusy();
     try {
@@ -838,8 +833,7 @@ export async function bootAllStarBohTab(options = {}) {
     }
   }
 
-  if (registrationClosed) gate.showClosed();
-  else gate.showChecking();
+  gate.showChecking();
 
   const languageHandler = async (event) => {
     const generation = ++languageGeneration;
@@ -864,11 +858,6 @@ export async function bootAllStarBohTab(options = {}) {
   const lifecycle = Object.freeze({
     async retry() {
       if (destroyed || busy) return lifecycle;
-      if (registrationClosed) {
-        concealBohRoot(root);
-        gate.showClosed();
-        return lifecycle;
-      }
       if (isManuallyLocked()) {
         concealBohRoot(root);
         gate.showLocked();

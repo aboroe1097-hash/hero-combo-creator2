@@ -28,12 +28,12 @@ Create the admin-only document `boh_allstar_config/current` with:
 ```
 
 - `activeSeason`: 1-80 ASCII letters, numbers, `_`, or `-`.
-- `open`: whether new member grants are allowed.
+- `open`: whether members can create or update signup and Epic Showdown preference documents.
 - `grantDurationMinutes`: 5-10080 minutes (maximum seven days).
 
 The Admin SDK reads this document. Firestore rules deny member access to it and to `boh_allstar_security_attempts`.
 
-The exact config document is readable directly by callers carrying the Firebase `admin` custom claim; it is not listable or member-readable. The Function reads it inside the same transaction that writes a grant, and Firestore compares every protected member request to it. Changing `activeSeason` therefore invalidates older grant documents immediately even when their timestamp has time remaining. The Admin VTS client must read this exact document after confirming the admin claim and use `activeSeason` for every BoH store path; the Eden vote season and client constants are not BoH season authorities.
+The exact config document is readable directly by callers carrying the Firebase `admin` custom claim; it is not listable or member-readable. The Function reads it inside the same transaction that writes a grant, and Firestore compares every protected member request to it. Changing `activeSeason` therefore invalidates older grant documents immediately even when their timestamp has time remaining. Setting `open` to `false` keeps PIN-protected team formation, plans, and schedules available while Firestore denies member signup and Epic preference writes. The Admin VTS client must read this exact document after confirming the admin claim and use `activeSeason` for every BoH store path; the Eden vote season and client constants are not BoH season authorities.
 
 ## Member grant contract
 

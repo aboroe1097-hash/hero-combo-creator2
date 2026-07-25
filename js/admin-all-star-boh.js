@@ -3992,9 +3992,7 @@ function adapterTeamMetadataErrors(state) {
     if (!cleanText(team.name)) errors.push(`all-star-boh-team-name-required (team: ${team.id})`);
     if (!cleanText(team.color)) errors.push(`all-star-boh-team-color-required (team: ${team.id})`);
     const teamPlayerIds = new Set(team.seats.map((seat) => seat.playerId).filter(Boolean));
-    if (!cleanText(team.captainId)) {
-      errors.push(`all-star-boh-team-captain-required (team: ${team.id})`);
-    } else if (!teamPlayerIds.has(team.captainId)) {
+    if (cleanText(team.captainId) && !teamPlayerIds.has(team.captainId)) {
       errors.push(`all-star-boh-team-captain-unassigned (team: ${team.id})`);
     }
     for (const coLeaderId of uniqueTextList(team.coLeaderIds)) {
@@ -4012,7 +4010,8 @@ function adapterValidate(state) {
   const teamValidation = BohModel.validateBohTeamAssignments(teams, {
     teamCount: adapterTeamCount(state.draft),
     roleGroups: plan.roleGroups,
-    expectedPlayerIds: adapterBalancedPlayers(state).map((player) => player.playerId),
+    expectedPlayerIds: adapterSelectedPlayerIds(state),
+    allowPartialTeams: true,
   });
   const planValidation = BohModel.validateBohPlan(plan, {
     teams,
@@ -4113,16 +4112,18 @@ function adapterPublicationBundle(state, kind) {
       color: team.color,
       captainId: team.captainId,
       coLeaderIds: uniqueTextList(team.coLeaderIds).slice(0, 2),
-      seats: team.seats.map((seat) => ({
-        id: seat.id,
-        seatNumber: seat.seatNumber,
-        playerId: seat.playerId,
-        displayName: seat.displayName,
-        roleGroupId: seat.roleGroupId,
-        roleLabel: seat.roleLabel,
-        side: seat.side,
-        lane: seat.lane,
-      })),
+      seats: team.seats
+        .filter((seat) => seat.playerId)
+        .map((seat) => ({
+          id: seat.id,
+          seatNumber: seat.seatNumber,
+          playerId: seat.playerId,
+          displayName: seat.displayName,
+          roleGroupId: seat.roleGroupId,
+          roleLabel: seat.roleLabel,
+          side: seat.side,
+          lane: seat.lane,
+        })),
     };
     teams[team.id] = publishedTeam;
     const modelTeam = {
@@ -8044,11 +8045,13 @@ function deriveValidation(state, kind) {
   const errors = [];
   const warnings = [];
   const fieldSize = snapshotFieldSize(state);
-  if (assigned.length !== fieldSize) {
+  const approvedPlayerCount = list(state.snapshot.eligiblePlayerIds).length;
+  const expectedAssignedCount = approvedPlayerCount || fieldSize;
+  if (assigned.length !== expectedAssignedCount) {
     errors.push(
       state.tr('adminBohValidationDynamicSeats', '{assigned} of {total} seats are assigned.', {
         assigned: assigned.length,
-        total: fieldSize,
+        total: expectedAssignedCount,
       })
     );
   }
@@ -8074,9 +8077,9 @@ function deriveValidation(state, kind) {
         })
       );
     }
-    if (!team.captainId || !team.seats.some((seat) => seat.playerId === team.captainId)) {
+    if (team.captainId && !team.seats.some((seat) => seat.playerId === team.captainId)) {
       errors.push(
-        state.tr('adminBohValidationCaptain', '{team} needs an assigned captain.', {
+        state.tr('adminBohValidationCaptain', '{team} has a captain who is not assigned.', {
           team: teamDisplayName(state, team),
         })
       );
