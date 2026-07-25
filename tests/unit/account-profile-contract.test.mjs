@@ -133,17 +133,19 @@ test('profile page is a build entry linked from public Firebase shells only', ()
   for (const path of ['index.html', 'arcade.html', 'eden-x1.html']) {
     const html = read(path);
     assert.match(html, /href="profile\.html"/, `${path} should link the account page`);
-    assert.match(
+    assert.doesNotMatch(
       html,
       /css\/account-profile\.css/,
-      `${path} should load the shared account-link styles`
+      `${path} should not load profile-only styles`
     );
+    assert.match(html, /css\/app\.css/, `${path} should load the shared account-link styles`);
   }
   for (const path of ['admin.html', 'battle-simulator.html', 'specialization-towers.html']) {
     assert.doesNotMatch(read(path), /href="profile\.html"/);
   }
 
   const profileHtml = read('profile.html');
+  assert.match(profileHtml, /css\/account-profile\.css/);
   assert.match(profileHtml, /id="accountAuthForm"/);
   assert.match(profileHtml, /id="accountProfileForm"/);
   assert.match(profileHtml, /id="profileIsPublic"/);
