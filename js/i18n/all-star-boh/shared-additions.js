@@ -42,6 +42,7 @@ export const ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   'schedule.countdownHours': '{hours}h {minutes}m',
   'schedule.countdownMinutes': '{minutes}m {seconds}s',
   'schedule.kicker': 'EVENT CLOCK',
+  'schedule.matchTimePending': 'Official event date - match time TBA',
   'schedule.now': 'Now',
   'schedule.railAria': 'Event milestones',
   'schedule.teamTimesAria': 'Team game times',

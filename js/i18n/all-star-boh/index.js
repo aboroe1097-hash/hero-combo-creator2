@@ -1,4 +1,5 @@
 import { resolveRuntimeLocale } from '../../locale-format.js';
+import { ALL_STAR_BOH_SHARED_ADDITIONS } from './shared-additions.js';
 
 export const ALL_STAR_BOH_EN = Object.freeze({
   'access.enterPin': 'Enter member PIN',
@@ -441,6 +442,7 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'signup.teamNameHint':
     'Optional and just for fun; leadership makes the final team-name decision.',
   'role.noPreference': 'No preference',
+  ...ALL_STAR_BOH_SHARED_ADDITIONS,
 });
 
 const LOCALE_LOADERS = Object.freeze({

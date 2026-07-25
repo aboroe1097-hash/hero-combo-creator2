@@ -138,9 +138,9 @@ test('canonical English exactly covers template and runtime translator contracts
     [],
     'Every player runtime translation call must use a literal key and English fallback'
   );
-  assert.equal(runtimeKeys.length, 144);
-  assert.equal(runtimeOnlyKeys.length, 105);
-  assert.equal(expectedKeys.length, 398);
+  assert.equal(runtimeKeys.length, 145);
+  assert.equal(runtimeOnlyKeys.length, 106);
+  assert.equal(expectedKeys.length, 399);
   assert.deepEqual(
     Object.keys(ALL_STAR_BOH_EN).sort(),
     expectedKeys,
