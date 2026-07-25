@@ -76,6 +76,7 @@ function createPlayerFixture() {
   const timeline = LEGIONS.flatMap((legion, legionIndex) =>
     PHASES.map((phase, phaseIndex) => {
       const role = ROLES[(phaseIndex + legionIndex) % ROLES.length];
+      const standby = legionIndex === 0 && phaseIndex === 2;
       return {
         phaseId: phase.id,
         phaseLabel: phase.label,
@@ -87,11 +88,13 @@ function createPlayerFixture() {
         roleLabel: role.label,
         rotated: phaseIndex === 2,
         instruction: {
+          ...(standby ? { standby: true } : {}),
           action: `${legion.label} phase ${phaseIndex + 1} action`,
           target: phaseIndex === 0 ? 'Command Center 1' : `Phase ${phaseIndex + 1} target`,
           loadout: phaseIndex < 2 ? 'T1s and speed heroes' : 'T9 combat march',
           teleport: phaseIndex === 1 ? 'Teleport to Tower 3' : 'No teleport',
           note: phaseIndex === 2 ? 'Follow the live R5 call if it changes.' : '',
+          ...(legionIndex === 1 && phaseIndex === 1 ? { gatherCrystals: true } : {}),
           startObjectiveId: 'spawn',
           viaObjectiveIds: phaseIndex === 3 ? [] : ['tower-3'],
           objectiveId: phaseIndex === 3 ? 'rune' : 'cc1',
@@ -178,6 +181,21 @@ function createPlayerFixture() {
       updatedAtMs: 1_787_000_000_000,
       plan: { roleGroups: ROLES, phases: PHASES, legions: LEGIONS, objectives },
       timeline,
+    },
+    eventSchedule: {
+      status: 'published',
+      eventStartsAt: '2026-08-01T12:00:00.000Z',
+      eventEndsAt: '2026-08-01T13:00:00.000Z',
+      revision: 2,
+      milestones: [
+        { id: 'check-in', label: 'Check in', startsAt: '2026-08-01T11:30:00.000Z' },
+        { id: 'gates-open', label: 'Gates open', startsAt: '2026-08-01T12:00:00.000Z' },
+        { id: 'rune', label: 'Rune fight', startsAt: '2026-08-01T12:15:00.000Z' },
+      ],
+      teamGameTimes: teams.map((team, index) => ({
+        teamId: team.id,
+        startsAt: `2026-08-01T${String(12 + Math.floor(index / 3)).padStart(2, '0')}:${String((index % 3) * 10).padStart(2, '0')}:00.000Z`,
+      })),
     },
     teams,
   };
@@ -396,6 +414,11 @@ async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
           subscribers.add(next);
           return () => subscribers.delete(next);
         },
+        subscribeEventSchedule(next) {
+          next(fixture.eventSchedule);
+          subscribers.add(next);
+          return () => subscribers.delete(next);
+        },
         subscribePublishedTeam(teamId, next) {
           next(teams.get(teamId) || null);
           subscribers.add(next);
@@ -415,6 +438,9 @@ async function openInjectedPlayerHub(page, { ocrTransport = {} } = {}) {
         },
         async getPersonalPlan() {
           return fixture.personalPlan;
+        },
+        async getEventSchedule() {
+          return fixture.eventSchedule;
         },
         async getPublishedTeam(teamId) {
           return teams.get(teamId) || null;
@@ -1303,20 +1329,58 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[data-role="current-action"]')).toHaveText(
       'Legion 1 phase 1 action'
     );
+    await expect(root.locator('[data-role="event-schedule"]')).toBeVisible();
+    await expect(
+      root.locator('[data-role="schedule-rail"] [data-role="schedule-milestone"]')
+    ).toHaveCount(3);
+    await expect(root.locator('[data-role="schedule-team-times"] > li')).toHaveCount(6);
+    await expect(root.locator('[data-role="schedule-team-times"] > li.is-mine')).toContainText(
+      'All-Star Team 1'
+    );
     await expect(root.locator('[data-role="personal-route-text"]')).toContainText('South Spawn');
     await expect(root.locator('[data-role="personal-route-text"]')).toContainText('Tower 3');
     await expect(root.locator('[data-role="personal-route-text"]')).toContainText(
       'Command Center 1'
     );
-    await expect(root.locator('[data-role="map-objectives"] > g')).toHaveCount(4);
+    await expect(root.locator('[data-role="map-objectives"] > g')).toHaveCount(27);
     await expect(root.locator('[data-objective-id="spawn"]')).toHaveAttribute(
       'transform',
-      'translate(85 359)'
+      'translate(78 446)'
     );
     await expect(root.locator('[data-objective-id="cc1"]')).toHaveClass(/is-target/);
+    await expect(root.locator('[data-role="map-objective"][role="button"]')).toHaveCount(27);
+    await expect(root.locator('[data-role="map-objective"] .boh-map__flag-cloth')).toHaveCount(27);
+    await expect(root.locator('[data-role="map-objective"] circle')).toHaveCount(0);
+    await expect(
+      root.locator('[data-role="map-objective"] .boh-map__objective-hit').first()
+    ).toHaveAttribute('width', '72');
     await expect(root.locator('[data-role="map-route"]')).toHaveAttribute(
       'd',
-      'M 85 359 L 320 215 L 533 71'
+      'M 78 446 L 486 254 L 855 61'
+    );
+    await expect(root.locator('[data-role="map-network"] .boh-map__network-path')).toHaveCount(3);
+    await expect(root.locator('[data-role="map-network"] [data-network-route="main"]')).toHaveCount(
+      1
+    );
+    await expect(root.locator('[data-role="map-network"] .is-branch')).toHaveCount(2);
+    await expect(root.locator('[data-role="map-network"] .boh-map__territory-square')).toHaveCount(
+      8
+    );
+
+    await root.locator('[data-objective-id="cc1"]').click();
+    await expect(root.locator('[data-role="map-objective-detail"]')).toContainText(
+      'CC1 · Command Center · 635:635'
+    );
+    await expect(root.locator('[data-role="map-objective-detail"]')).toContainText('Player 1-01');
+    await root.locator('[data-objective-id="objective-h1"]').click();
+    await expect(root.locator('[data-role="map-objective-detail"]')).toContainText(
+      'H1 · Hospital · 575:620'
+    );
+    await expect(root.locator('[data-role="map-objective-detail"]')).toContainText(
+      'No personal assignment at this structure in your current plan.'
+    );
+    await expect(root.locator('[data-role="map-objective-detail"]')).not.toContainText(
+      'Player 1-01'
     );
 
     await sectionTabs.nth(0).click();
@@ -1390,7 +1454,14 @@ test.describe('All-Star BoH secure player hub', () => {
     await expect(root.locator('[data-role="current-action"]')).toHaveText(
       'Legion 2 phase 2 action'
     );
+    await expect(root.locator('.boh-action-card--crystal')).toContainText('Gather crystals');
+    await expect(root.locator('.boh-action-card--teleport')).toContainText('Teleport to Tower 3');
     await expect(root.locator('[data-role="next-action"]')).toHaveText('Legion 2 phase 3 action');
+    await root.locator('label[for="bohLegion1"]').click();
+    await phaseTabs.nth(2).click();
+    await expect(root.locator('[data-role="current-action"]')).toHaveText('Standby assignment');
+    await expect(root.locator('[data-role="current-teleport"]')).toBeHidden();
+    await expect(root.locator('.boh-phase-summary .is-standby')).toHaveCount(1);
 
     const englishSignup = await sectionTabs.first().textContent();
     const englishRole = await root.locator('[data-role="plan-role"]').textContent();
@@ -1964,6 +2035,20 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(root.locator('.boh-admin-team')).toHaveCount(6);
     await expect(root.locator('.boh-admin-seat')).toHaveCount(72);
 
+    await root.locator('[data-stage="publish"]').click();
+    const schedule = root.locator('[data-form="event-schedule"]');
+    const scheduleStatus = schedule.locator('[data-action="schedule-status"]');
+    await expect(scheduleStatus).toHaveValue('hidden');
+    await expect(schedule.locator('[name="eventStartsAt"]')).not.toHaveAttribute('required', '');
+    await scheduleStatus.selectOption('published');
+    await expect(schedule.locator('[name="eventStartsAt"]')).toHaveAttribute('required', '');
+    await expect(schedule.getByRole('button', { name: 'Save schedule' })).toBeDisabled();
+    await schedule.locator('[data-action="schedule-status"]').selectOption('hidden');
+    await expect(schedule.locator('[name="eventStartsAt"]')).not.toHaveAttribute('required', '');
+    await schedule.getByRole('button', { name: 'Save schedule' }).click();
+    await expect
+      .poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.at(-1)?.type))
+      .toBe('saveEventSchedule');
     await root.locator('[data-stage="plans"]').click();
     await expect(root.locator('[data-form="role-groups"] input[name="roleLabel"]')).toHaveCount(4);
     await expect(root.locator('[data-form="phases"] input[name="phaseId"]')).toHaveCount(4);

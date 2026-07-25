@@ -2409,7 +2409,7 @@ test('announcement and plan publishing each require validation of their current 
   adapter.stop();
 });
 
-test('a complete assignment announcement can publish before plan instructions are ready', async () => {
+test('runtime Stage-1 defaults make a complete assignment plan-ready without authored role instructions', async () => {
   const primitiveStore = createPrimitiveStoreFixture();
   primitiveStore.draft.plan.roleDefaults = [];
   const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
@@ -2419,7 +2419,7 @@ test('a complete assignment announcement can publish before plan instructions ar
   snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
 
   assert.equal(snapshot.validation.announcement.valid, true);
-  assert.equal(snapshot.validation.plan.valid, false);
+  assert.equal(snapshot.validation.plan.valid, true);
   snapshot = (await dispatch(adapter, snapshot, 'publishAnnouncement')).snapshot;
   assert.equal(snapshot.publications.announcement.status, 'published');
   assert.equal(snapshot.publications.plan.status, 'draft');
@@ -2481,7 +2481,8 @@ test('global and player instructions preserve canonical routes without copying p
   const globalRule = snapshot.plan.instructions.find((rule) => rule.scope === 'global');
   assert.deepEqual(globalRule.pathObjectiveIds, ['objective-cc1', 'objective-t3', 'objective-fh1']);
   assert.equal(
-    snapshot.plan.instructions.find((rule) => rule.scope === 'player').playerId,
+    snapshot.plan.instructions.find((rule) => rule.scope === 'player' && rule.generated !== true)
+      .playerId,
     'player-07'
   );
 

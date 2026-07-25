@@ -1,4 +1,11 @@
 import * as BohModel from './all-star-boh-model.js';
+import {
+  BOH_STAGE1_LEGIONS,
+  BOH_STAGE1_PHASES,
+  BOH_STAGE1_PLAN_ID,
+  bohSeatRoleGroup,
+  bohStage1Timeline,
+} from './all-star-boh-plan.js';
 import { applyAllStarBohSubmissionCorrections } from './all-star-boh-store.js';
 
 function scheduleRender(state) {
@@ -56,6 +63,7 @@ const MIN_TEAM_COUNT = 2;
 const ROSTER_SIZE = 12;
 const EPIC_LANE_IDS = ['south', 'center', 'north'];
 const DEFAULT_EPIC_TIME_OPTIONS = ['+6', '+8', '+10', '+12', '+14', '+16', '+18', '+20'];
+const MAX_EVENT_MILESTONES = 8;
 const TEAM_NAME_LABELS = Object.freeze({
   'iron-wolves': 'Iron Wolves',
   'storm-ravens': 'Storm Ravens',
@@ -190,6 +198,30 @@ function clamp(value, min, max) {
 
 function list(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function normalizeEventDateTime(value) {
+  const raw = value?.toDate?.() || value?.toMillis?.() || value;
+  if (!raw) return '';
+  const date = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+}
+
+function localDateTimeInputValue(value) {
+  const iso = normalizeEventDateTime(value);
+  if (!iso) return '';
+  const date = new Date(iso);
+  const pad = (number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}`;
+}
+
+function localDateTimeToIso(value) {
+  const text = cleanText(value);
+  if (!text) return '';
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
 }
 
 function uniqueTextList(value) {
@@ -831,6 +863,33 @@ function normalizeLegions(snapshot) {
     : DEFAULT_LEGIONS.map((legion) => ({ ...legion, generatedLabel: true }));
 }
 
+function normalizeEventSchedule(source = {}) {
+  const schedule = source && typeof source === 'object' ? source : {};
+  const status = cleanText(schedule.status) === 'published' ? 'published' : 'hidden';
+  return {
+    schemaVersion: 1,
+    seasonId: cleanText(schedule.seasonId),
+    status,
+    eventStartsAt: normalizeEventDateTime(schedule.eventStartsAt),
+    eventEndsAt: normalizeEventDateTime(schedule.eventEndsAt),
+    milestones: list(schedule.milestones)
+      .slice(0, MAX_EVENT_MILESTONES)
+      .map((milestone, index) => ({
+        id: cleanText(milestone?.id) || `milestone-${index + 1}`,
+        label: cleanText(milestone?.label),
+        startsAt: normalizeEventDateTime(milestone?.startsAt),
+      })),
+    teamGameTimes: list(schedule.teamGameTimes).map((entry) => ({
+      teamId: cleanText(entry?.teamId),
+      startsAt: normalizeEventDateTime(entry?.startsAt),
+    })),
+    revision: adapterRevision(schedule.revision),
+    createdAt: schedule.createdAt || null,
+    updatedAt: schedule.updatedAt || null,
+    updatedBy: cleanText(schedule.updatedBy),
+  };
+}
+
 function normalizeSnapshot(source = {}) {
   const snapshot = source && typeof source === 'object' ? source : {};
   const scoring = snapshot.scoring && typeof snapshot.scoring === 'object' ? snapshot.scoring : {};
@@ -871,8 +930,17 @@ function normalizeSnapshot(source = {}) {
       snapshot.publications && typeof snapshot.publications === 'object'
         ? snapshot.publications
         : {},
+    eventSchedule: normalizeEventSchedule(snapshot.eventSchedule),
     validation:
       snapshot.validation && typeof snapshot.validation === 'object' ? snapshot.validation : {},
+    documentRevisions: {
+      ...(snapshot.documentRevisions && typeof snapshot.documentRevisions === 'object'
+        ? snapshot.documentRevisions
+        : {}),
+      eventSchedule: adapterRevision(
+        snapshot.documentRevisions?.eventSchedule ?? snapshot.eventSchedule?.revision
+      ),
+    },
   };
 }
 
@@ -1367,6 +1435,86 @@ function adapterSeatTemplate(plan) {
   }
 }
 
+function adapterPlanHasAuthoredContent(plan) {
+  if (!plan || typeof plan !== 'object' || Array.isArray(plan) || plan.generated === true)
+    return false;
+  return [
+    'roleGroups',
+    'phases',
+    'legions',
+    'objectives',
+    'roleDefaults',
+    'seatOverrides',
+    'playerOverrides',
+    'instructions',
+    'rotations',
+    'notes',
+  ].some((key) => list(plan[key]).length > 0);
+}
+
+/**
+ * Build a fresh Stage-1 tactical plan for one team from the exported Stage-1 template.
+ * Seats supply identity only (playerId plus gameName/displayName); every order, phase, legion,
+ * and typed instruction flag comes from `bohStage1Timeline`. Callers get a distinct object each
+ * time, so two teams never share mutable plan state.
+ */
+function adapterStage1PlayerOverrideRules(teamId, seats) {
+  const rules = [];
+  const occupiedSeats = list(seats)
+    .filter((seat) => cleanText(seat?.playerId))
+    .sort((left, right) => integer(left?.seatNumber) - integer(right?.seatNumber));
+  for (const seat of occupiedSeats) {
+    const seatNumber = integer(seat?.seatNumber);
+    const playerId = cleanText(seat?.playerId);
+    const gameName = cleanText(seat?.gameName || seat?.displayName) || playerId;
+    const entries = bohStage1Timeline(seatNumber, {
+      playerId,
+      displayName: gameName,
+      gameName,
+      roleGroupId: cleanText(seat?.roleGroupId) || bohSeatRoleGroup(seatNumber),
+    });
+    for (const entry of entries) {
+      rules.push({
+        id: `${BOH_STAGE1_PLAN_ID}-${teamId}-seat-${seatNumber}-${entry.phaseId}-${entry.legionId}`,
+        teamId,
+        phaseId: entry.phaseId,
+        legionId: entry.legionId,
+        seatNumber: entry.seatNumber,
+        playerId,
+        scope: 'player',
+        scopeId: playerId,
+        roleGroupId: entry.roleGroupId,
+        roleLabel: entry.roleLabel,
+        order: -100000 + rules.length,
+        generated: true,
+        instruction: { ...entry.instruction },
+      });
+    }
+  }
+  return rules;
+}
+
+function adapterStage1TeamPlan(teamId, seats, basePlan = adapterDefaultPlan()) {
+  const playerOverrides = adapterStage1PlayerOverrideRules(teamId, seats);
+  return {
+    schemaVersion: BohModel.BOH_PLAN_SCHEMA_VERSION,
+    id: BOH_STAGE1_PLAN_ID,
+    label: 'All-Star BoH Stage 1 Plan',
+    planId: BOH_STAGE1_PLAN_ID,
+    generated: true,
+    roleGroups: adapterClone(list(basePlan.roleGroups)),
+    phases: BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 })),
+    legions: BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 })),
+    objectives: adapterClone(list(basePlan.objectives)),
+    roleDefaults: adapterClone(list(basePlan.roleDefaults)),
+    seatOverrides: adapterClone(list(basePlan.seatOverrides)),
+    playerOverrides: [...playerOverrides, ...adapterClone(list(basePlan.playerOverrides))],
+    instructions: adapterClone(list(basePlan.instructions)),
+    rotations: adapterClone(list(basePlan.rotations)),
+    notes: adapterClone(list(basePlan.notes)),
+  };
+}
+
 function adapterMaterializeTeam(state, teamId, index) {
   const source = state.teams.get(teamId) || {};
   const plan = adapterPlan(state.draft);
@@ -1411,7 +1559,9 @@ function adapterMaterializeTeam(state, teamId, index) {
       2
     ),
     seats,
-    plan: source.plan && typeof source.plan === 'object' ? adapterClone(source.plan) : {},
+    plan: adapterPlanHasAuthoredContent(source.plan)
+      ? adapterClone(source.plan)
+      : adapterStage1TeamPlan(teamId, seats, plan),
     scoreTotal: seats.reduce((total, seat) => total + finiteNumber(seat.score), 0),
     totalCastlePower: seats.reduce((total, seat) => total + finiteNumber(seat.totalCastlePower), 0),
     notes: cleanText(source.notes),
@@ -1634,6 +1784,12 @@ function adapterDisplayRule(rule, scope) {
     pathObjectiveIds: adapterClone(list(instruction.pathObjectiveIds)),
     loadout: cleanText(instruction.loadout),
     teleport: instruction.teleport,
+    ...(hasOwn(instruction, 'standby') && typeof instruction.standby === 'boolean'
+      ? { standby: instruction.standby }
+      : {}),
+    ...(hasOwn(instruction, 'gatherCrystals') && typeof instruction.gatherCrystals === 'boolean'
+      ? { gatherCrystals: instruction.gatherCrystals }
+      : {}),
     note: cleanText(instruction.note),
     instruction: cleanText(instruction.summary || instruction.note),
   };
@@ -1641,11 +1797,25 @@ function adapterDisplayRule(rule, scope) {
 
 function adapterUiPlan(state) {
   const plan = adapterPlan(state.draft);
+  const runtimeDefaultTeams = adapterTeamIds(state.draft)
+    .map((teamId, index) => adapterMaterializeTeam(state, teamId, index))
+    .filter((team) => !adapterPlanHasAuthoredContent(state.teams.get(team.id)?.plan));
+  const generatedPlayerOverrides = runtimeDefaultTeams.flatMap((team) =>
+    adapterStage1PlayerOverrideRules(team.id, team.seats)
+  );
   return {
     ...adapterClone(plan),
+    phases: runtimeDefaultTeams.length
+      ? BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 }))
+      : adapterClone(plan.phases),
+    legions: runtimeDefaultTeams.length
+      ? BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 }))
+      : adapterClone(plan.legions),
+    playerOverrides: [...generatedPlayerOverrides, ...adapterClone(list(plan.playerOverrides))],
     instructions: [
       ...plan.roleDefaults.map((rule) => adapterDisplayRule(rule, 'role')),
       ...plan.seatOverrides.map((rule) => adapterDisplayRule(rule, 'seat')),
+      ...generatedPlayerOverrides.map((rule) => adapterDisplayRule(rule, 'player')),
       ...plan.playerOverrides.map((rule) => adapterDisplayRule(rule, 'player')),
       ...plan.instructions.map((rule) => adapterDisplayRule(rule, rule.scope || 'global')),
     ],
@@ -1723,10 +1893,12 @@ function adapterSnapshot(state) {
         publishedAt: planPublished ? publication.updatedAt || null : null,
       },
     },
+    eventSchedule: normalizeEventSchedule(state.eventSchedule),
     validation: adapterClone(state.validation || {}),
     documentRevisions: {
       draft: adapterRevision(draft.revision),
       publication: state.publicationRevision,
+      eventSchedule: state.eventScheduleRevision,
       teams: Object.fromEntries(
         adapterTeamIds(draft).map((teamId, index) => [
           teamId,
@@ -1819,6 +1991,13 @@ async function adapterReadPublication(state) {
   };
 }
 
+async function adapterReadEventSchedule(state) {
+  if (typeof state.adminStore.getEventSchedule !== 'function') {
+    return state.eventSchedule || normalizeEventSchedule();
+  }
+  return normalizeEventSchedule(await state.adminStore.getEventSchedule());
+}
+
 async function adapterReadEpicPreferences(state) {
   if (typeof state.adminStore.getEpicShowdownPreferencesList !== 'function') {
     return [];
@@ -1833,17 +2012,20 @@ async function adapterLoadAll(state, changed = true) {
   ]);
   const nextSubmissions = list(submissions);
   const nextDraft = draft || adapterDefaultDraft();
-  const [reviews, teams, publication, epicPreferences] = await Promise.all([
+  const [reviews, teams, publication, epicPreferences, eventSchedule] = await Promise.all([
     adapterReadReviews(state, nextSubmissions),
     adapterReadTeams(state, nextDraft),
     adapterReadPublication(state),
     adapterReadEpicPreferences(state),
+    adapterReadEventSchedule(state),
   ]);
   state.submissions = nextSubmissions;
   state.reviews = reviews;
   state.publication = publication.publication;
   state.publicationRevision = publication.publicationRevision;
   state.epicPreferences = epicPreferences;
+  state.eventSchedule = eventSchedule;
+  state.eventScheduleRevision = adapterRevision(eventSchedule?.revision);
   if (state.teamUnsubscribers.size || state.unsubscribers.size) {
     await adapterAdoptDraftTeams(state, { draft: nextDraft, teams }, 'loadAll', false);
   } else {
@@ -1968,6 +2150,19 @@ async function adapterStartSubscriptions(state) {
     );
     state.unsubscribers.add(unsubscribe);
   }
+
+  if (typeof state.adminStore.subscribeEventSchedule === 'function') {
+    const unsubscribe = await state.adminStore.subscribeEventSchedule(
+      (schedule) => {
+        if (state.stopped) return;
+        state.eventSchedule = normalizeEventSchedule(schedule);
+        state.eventScheduleRevision = adapterRevision(state.eventSchedule?.revision);
+        adapterNotify(state, false);
+      },
+      (error) => adapterHandleBackgroundError(state, error, 'subscribeEventSchedule')
+    );
+    state.unsubscribers.add(unsubscribe);
+  }
 }
 
 function adapterAssertRevision(state, payload, command) {
@@ -2005,6 +2200,35 @@ async function adapterSaveTeam(state, teamId, mutate, options = {}) {
   state.teams.set(teamId, saved || next);
   if (options.notify !== false) adapterNotify(state);
   return state.teams.get(teamId);
+}
+
+async function adapterSaveEventSchedule(state, payload) {
+  if (typeof state.adminStore.saveEventSchedule !== 'function') {
+    throw adapterError(
+      'all-star-boh-event-schedule-unavailable',
+      'Event schedule storage is unavailable.'
+    );
+  }
+  const teamIds = adapterTeamIds(state.draft).slice(0, TEAM_COUNT);
+  const expectedRevision = adapterRevision(
+    payload.expectedScheduleRevision ?? state.eventScheduleRevision
+  );
+  const schedule = normalizeEventSchedule({
+    ...payload,
+    revision: expectedRevision,
+    // Team game times are optional: a team with no chosen start is simply omitted. Submitting
+    // { startsAt: '' } would fail the canonical schedule normalizer.
+    teamGameTimes: list(payload.teamGameTimes).filter(
+      (entry) => teamIds.includes(cleanText(entry?.teamId)) && cleanText(entry?.startsAt)
+    ),
+  });
+  const saved = await state.adminStore.saveEventSchedule(schedule, {
+    expectedRevision,
+    teamIds,
+  });
+  state.eventSchedule = normalizeEventSchedule(saved || schedule);
+  state.eventScheduleRevision = adapterRevision(state.eventSchedule.revision);
+  adapterNotify(state, false);
 }
 
 async function adapterSaveTeams(state, teams) {
@@ -3392,6 +3616,12 @@ function adapterInstructionRule(state, payload, order) {
     viaObjectiveIds,
     pathObjectiveIds,
   };
+  if (hasOwn(payload, 'standby') && typeof payload.standby === 'boolean') {
+    instruction.standby = payload.standby;
+  }
+  if (hasOwn(payload, 'gatherCrystals') && typeof payload.gatherCrystals === 'boolean') {
+    instruction.gatherCrystals = payload.gatherCrystals;
+  }
   return {
     id: adapterUniqueId(scope === 'seat' ? 'seat-rule' : 'role-rule', state),
     teamId: cleanText(payload.teamId) || '*',
@@ -3777,7 +4007,7 @@ function adapterTeamMetadataErrors(state) {
 }
 
 function adapterValidate(state) {
-  const plan = adapterPlan(state.draft);
+  const plan = adapterUiPlan(state);
   const teams = adapterModelTeams(state);
   const teamValidation = BohModel.validateBohTeamAssignments(teams, {
     teamCount: adapterTeamCount(state.draft),
@@ -3835,7 +4065,34 @@ function adapterSanitizedPlan(state, includePlan) {
       notes: [],
     };
   }
-  return adapterPlan(state.draft);
+  const plan = adapterPlan(state.draft);
+  const usesRuntimeStage1Defaults = adapterTeamIds(state.draft).some(
+    (teamId) => !adapterPlanHasAuthoredContent(state.teams.get(teamId)?.plan)
+  );
+  if (!usesRuntimeStage1Defaults) return plan;
+  return {
+    ...plan,
+    phases: BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 })),
+    legions: BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 })),
+  };
+}
+
+function adapterCompactPublicationPlan(plan) {
+  return {
+    schemaVersion: plan.schemaVersion,
+    id: plan.id,
+    label: plan.label,
+    roleGroups: adapterClone(plan.roleGroups),
+    phases: adapterClone(plan.phases),
+    legions: adapterClone(plan.legions),
+    objectives: adapterClone(plan.objectives),
+    roleDefaults: [],
+    seatOverrides: [],
+    playerOverrides: [],
+    instructions: [],
+    rotations: [],
+    notes: [],
+  };
 }
 
 function adapterPublicationBundle(state, kind) {
@@ -3845,23 +4102,6 @@ function adapterPublicationBundle(state, kind) {
   const planPublished = kind === 'plan' || currentPublication.planPublished === true;
   const includePlan = planPublished;
   const plan = adapterSanitizedPlan(state, includePlan);
-  const compactPlan = includePlan
-    ? {
-        schemaVersion: plan.schemaVersion,
-        id: plan.id,
-        label: plan.label,
-        roleGroups: adapterClone(plan.roleGroups),
-        phases: adapterClone(plan.phases),
-        legions: adapterClone(plan.legions),
-        objectives: adapterClone(plan.objectives),
-        roleDefaults: [],
-        seatOverrides: [],
-        playerOverrides: [],
-        instructions: [],
-        rotations: [],
-        notes: [],
-      }
-    : null;
   const teams = {};
   const players = {};
   for (const team of adapterTeamIds(state.draft).map((teamId, index) =>
@@ -3897,6 +4137,12 @@ function adapterPublicationBundle(state, kind) {
           seatNumber: seat.seatNumber,
         })),
     };
+    const teamPlan = includePlan
+      ? adapterPlanHasAuthoredContent(team.plan)
+        ? adapterClone(team.plan)
+        : adapterStage1TeamPlan(team.id, team.seats, plan)
+      : null;
+    const compactPlan = teamPlan ? adapterCompactPublicationPlan(teamPlan) : null;
     for (const seat of team.seats.filter((item) => item.playerId)) {
       const submission = adapterFindSubmission(state, seat.playerId);
       const projectionUid = submission ? adapterSubmissionUid(submission) : '';
@@ -3926,9 +4172,11 @@ function adapterPublicationBundle(state, kind) {
       };
       if (includePlan) {
         projection.plan = compactPlan;
-        projection.timeline = BohModel.projectBohPlayerTimeline(plan, modelTeam, seat.playerId).map(
-          ({ instructionSources: _sources, ...entry }) => entry
-        );
+        projection.timeline = BohModel.projectBohPlayerTimeline(
+          teamPlan,
+          modelTeam,
+          seat.playerId
+        ).map(({ instructionSources: _sources, ...entry }) => entry);
       }
       players[projectionUid] = projection;
     }
@@ -4106,6 +4354,8 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     teams: new Map(),
     publication: null,
     publicationRevision: adapterRevision(options.publicationRevision),
+    eventSchedule: normalizeEventSchedule(options.eventSchedule),
+    eventScheduleRevision: adapterRevision(options.eventSchedule?.revision),
     validation: {},
     balancePreview: null,
     revision: 0,
@@ -4126,6 +4376,8 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     if (type === 'applyBalancePreview') {
       const expected = adapterRevision(payload?.expectedRevision ?? command?.expectedRevision);
       if (expected !== state.revision) throw adapterPreviewStale();
+    } else if (type === 'saveEventSchedule') {
+      // Event schedule has an independent document revision and must not stale tactical validation.
     } else {
       adapterAssertRevision(state, payload, command);
     }
@@ -4170,6 +4422,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'applyLegacyStructureTemplate') {
       await adapterApplyLegacyStructure(state, payload);
     } else if (type === 'validateRevision') adapterValidate(state);
+    else if (type === 'saveEventSchedule') await adapterSaveEventSchedule(state, payload);
     else if (type === 'publishAnnouncement') await adapterPublish(state, 'announcement');
     else if (type === 'publishPlan') await adapterPublish(state, 'plan');
     else {
@@ -4338,6 +4591,7 @@ function makeInitialState(root, options) {
     phaseDrafts: null,
     objectiveDraftId: '',
     rotationDraftId: '',
+    scheduleDraft: null,
     status: { message: '', tone: 'neutral' },
     pending: false,
     mounted: false,
@@ -7870,6 +8124,209 @@ function revisionValidation(state, kind) {
   };
 }
 
+function eventScheduleDraft(state) {
+  if (!state.scheduleDraft) {
+    const schedule = normalizeEventSchedule(state.snapshot.eventSchedule);
+    const currentTeamTimes = new Map(
+      list(schedule.teamGameTimes).map((entry) => [entry.teamId, entry.startsAt])
+    );
+    state.scheduleDraft = {
+      ...schedule,
+      milestones: schedule.milestones.map((milestone) => ({ ...milestone })),
+      teamGameTimes: state.snapshot.teams.slice(0, TEAM_COUNT).map((team) => ({
+        teamId: team.id,
+        startsAt: currentTeamTimes.get(team.id) || '',
+      })),
+    };
+  }
+  return state.scheduleDraft;
+}
+
+function captureEventScheduleDraft(state, form) {
+  if (!form) return eventScheduleDraft(state);
+  const data = new FormData(form);
+  const ids = data.getAll('milestoneId').map(cleanText);
+  const labels = data.getAll('milestoneLabel').map(cleanText);
+  const starts = data.getAll('milestoneStartsAt').map(localDateTimeToIso);
+  state.scheduleDraft = {
+    schemaVersion: 1,
+    seasonId: cleanText(data.get('seasonId')) || cleanText(state.snapshot.eventSchedule?.seasonId),
+    status: cleanText(data.get('status')) === 'published' ? 'published' : 'hidden',
+    eventStartsAt: localDateTimeToIso(data.get('eventStartsAt')),
+    eventEndsAt: localDateTimeToIso(data.get('eventEndsAt')),
+    milestones: ids.slice(0, MAX_EVENT_MILESTONES).map((id, index) => ({
+      id: id || `milestone-${Date.now().toString(36)}-${index + 1}`,
+      label: labels[index] || '',
+      startsAt: starts[index] || '',
+    })),
+    teamGameTimes: state.snapshot.teams.slice(0, TEAM_COUNT).map((team) => ({
+      teamId: team.id,
+      startsAt: localDateTimeToIso(data.get(`teamGameTime.${team.id}`)),
+    })),
+    revision: adapterRevision(state.snapshot.documentRevisions?.eventSchedule),
+  };
+  return state.scheduleDraft;
+}
+
+function eventScheduleValidationErrors(state, schedule) {
+  const errors = [];
+  // A hidden schedule is a private placeholder: it may be saved empty. Only a published schedule
+  // has to satisfy the canonical event window, milestone, and team-time contracts.
+  if (schedule.status !== 'published') return errors;
+  if (!schedule.eventStartsAt || !schedule.eventEndsAt) {
+    errors.push(
+      state.tr('adminBohScheduleEventTimeRequired', 'Add the event start and end times.')
+    );
+  } else if (
+    new Date(schedule.eventEndsAt).getTime() <= new Date(schedule.eventStartsAt).getTime()
+  ) {
+    errors.push(
+      state.tr('adminBohScheduleEventOrderInvalid', 'Event end must be after event start.')
+    );
+  }
+  for (const milestone of schedule.milestones) {
+    if (!milestone.label || !milestone.startsAt) {
+      errors.push(
+        state.tr('adminBohScheduleMilestoneRequired', 'Every milestone needs a label and time.')
+      );
+      break;
+    }
+  }
+  const milestoneTimes = schedule.milestones.map((milestone) =>
+    new Date(milestone.startsAt).getTime()
+  );
+  if (milestoneTimes.some((time) => !Number.isFinite(time))) {
+    errors.push(state.tr('adminBohScheduleMilestoneTimeInvalid', 'Use valid milestone times.'));
+  } else if (milestoneTimes.some((time, index) => index > 0 && time < milestoneTimes[index - 1])) {
+    errors.push(
+      state.tr(
+        'adminBohScheduleMilestoneOrderInvalid',
+        'Milestones must stay in chronological order.'
+      )
+    );
+  }
+  if (
+    schedule.teamGameTimes.some(
+      (entry) => entry.startsAt && Number.isNaN(new Date(entry.startsAt).getTime())
+    )
+  ) {
+    errors.push(state.tr('adminBohScheduleTeamTimeInvalid', 'Use valid team game times.'));
+  }
+  return [...new Set(errors)];
+}
+
+function renderEventScheduleEditor(state) {
+  const schedule = eventScheduleDraft(state);
+  const revision = adapterRevision(state.snapshot.documentRevisions?.eventSchedule);
+  const errors = eventScheduleValidationErrors(state, schedule);
+  // Native constraint validation would otherwise block saving a deliberately empty hidden schedule.
+  const requiredWhenPublished = schedule.status === 'published' ? 'required' : '';
+  return `<form class="boh-admin-card boh-admin-schedule-editor" data-form="event-schedule" aria-labelledby="bohScheduleTitle">
+    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohScheduleKicker', 'EVENT SCHEDULE')
+    )}</p><h4 id="bohScheduleTitle">${escapeHtml(
+      state.tr('adminBohScheduleTitle', 'Event schedule')
+    )}</h4><p>${escapeHtml(
+      state.tr(
+        'adminBohScheduleHelp',
+        'Publish or hide the public event window, milestones, and per-team game times without changing draft validation.'
+      )
+    )}</p></div><span class="boh-admin-status-chip" data-status="${escapeHtml(
+      schedule.status
+    )}">${escapeHtml(
+      schedule.status === 'published'
+        ? state.tr('adminBohPublishedStatus', 'Published')
+        : state.tr('adminBohScheduleHidden', 'Hidden')
+    )}</span></header>
+    <input type="hidden" name="seasonId" value="${escapeHtml(schedule.seasonId)}" />
+    <div class="boh-admin-schedule-grid">
+      <label><span>${escapeHtml(state.tr('adminBohScheduleStatus', 'Schedule status'))}</span>
+        <select class="boh-admin-select" name="status" data-action="schedule-status">
+          <option value="hidden" ${schedule.status === 'hidden' ? 'selected' : ''}>${escapeHtml(
+            state.tr('adminBohScheduleHidden', 'Hidden')
+          )}</option>
+          <option value="published" ${schedule.status === 'published' ? 'selected' : ''}>${escapeHtml(
+            state.tr('adminBohPublishedStatus', 'Published')
+          )}</option>
+        </select></label>
+      <label><span>${escapeHtml(state.tr('adminBohScheduleEventStart', 'Event start'))}</span>
+        <input class="boh-admin-input" name="eventStartsAt" type="datetime-local" value="${escapeHtml(
+          localDateTimeInputValue(schedule.eventStartsAt)
+        )}" ${requiredWhenPublished} /></label>
+      <label><span>${escapeHtml(state.tr('adminBohScheduleEventEnd', 'Event end'))}</span>
+        <input class="boh-admin-input" name="eventEndsAt" type="datetime-local" value="${escapeHtml(
+          localDateTimeInputValue(schedule.eventEndsAt)
+        )}" ${requiredWhenPublished} /></label>
+    </div>
+    <section class="boh-admin-schedule-section"><div><strong>${escapeHtml(
+      state.tr('adminBohScheduleMilestones', 'Milestones')
+    )}</strong><span>${escapeHtml(
+      state.tr('adminBohScheduleMilestoneLimit', '{count} / 8 milestones', {
+        count: schedule.milestones.length,
+      })
+    )}</span></div><div class="boh-admin-schedule-list">
+      ${schedule.milestones
+        .map(
+          (milestone, index) => `<div class="boh-admin-schedule-row">
+            <input type="hidden" name="milestoneId" value="${escapeHtml(milestone.id)}" />
+            <label><span>${escapeHtml(
+              state.tr('adminBohScheduleMilestoneLabel', 'Milestone label')
+            )}</span><input class="boh-admin-input" name="milestoneLabel" value="${escapeHtml(
+              milestone.label
+            )}" maxlength="80" ${requiredWhenPublished} /></label>
+            <label><span>${escapeHtml(
+              state.tr('adminBohScheduleMilestoneStartsAt', 'Milestone time')
+            )}</span><input class="boh-admin-input" name="milestoneStartsAt" type="datetime-local" value="${escapeHtml(
+              localDateTimeInputValue(milestone.startsAt)
+            )}" ${requiredWhenPublished} /></label>
+            <span class="boh-admin-schedule-row-actions"><button type="button" class="boh-admin-icon-button" data-action="move-schedule-milestone" data-direction="up" data-index="${index}" aria-label="${escapeHtml(
+              state.tr('adminBohScheduleMoveMilestoneUp', 'Move milestone up')
+            )}" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="boh-admin-icon-button" data-action="move-schedule-milestone" data-direction="down" data-index="${index}" aria-label="${escapeHtml(
+              state.tr('adminBohScheduleMoveMilestoneDown', 'Move milestone down')
+            )}" ${index === schedule.milestones.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="boh-admin-icon-button" data-action="remove-schedule-milestone" data-index="${index}" aria-label="${escapeHtml(
+              state.tr('adminBohScheduleRemoveMilestone', 'Remove milestone')
+            )}">×</button></span>
+          </div>`
+        )
+        .join('')}
+    </div><button type="button" class="boh-admin-button boh-admin-button-small" data-action="add-schedule-milestone" ${
+      schedule.milestones.length >= MAX_EVENT_MILESTONES ? 'disabled' : ''
+    }>${escapeHtml(state.tr('adminBohScheduleAddMilestone', 'Add milestone'))}</button></section>
+    <section class="boh-admin-schedule-section"><div><strong>${escapeHtml(
+      state.tr('adminBohScheduleTeamGameTimes', 'Team game times')
+    )}</strong><span>${escapeHtml(
+      state.tr(
+        'adminBohScheduleTeamGameTimesHelp',
+        'Optional per-team starts for the current six teams.'
+      )
+    )}</span></div><div class="boh-admin-schedule-team-grid">
+      ${state.snapshot.teams
+        .slice(0, TEAM_COUNT)
+        .map((team) => {
+          const entry = schedule.teamGameTimes.find((item) => item.teamId === team.id) || {};
+          return `<label><span>${escapeHtml(teamDisplayName(state, team))}</span><input class="boh-admin-input" name="teamGameTime.${escapeHtml(
+            team.id
+          )}" type="datetime-local" value="${escapeHtml(
+            localDateTimeInputValue(entry.startsAt)
+          )}" /></label>`;
+        })
+        .join('')}
+    </div></section>
+    ${
+      errors.length
+        ? `<div class="boh-admin-validation-list" data-tone="error"><strong>${escapeHtml(
+            state.tr('adminBohBlockingIssues', 'Blocking issues')
+          )}</strong><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>`
+        : ''
+    }
+    <footer><span>${escapeHtml(
+      state.tr('adminBohScheduleRevision', 'Schedule revision {revision}', { revision })
+    )}</span><button type="submit" class="boh-admin-button boh-admin-button-primary" ${
+      errors.length ? 'disabled' : ''
+    }>${escapeHtml(state.tr('adminBohScheduleSave', 'Save schedule'))}</button></footer>
+  </form>`;
+}
+
 function renderPublish(state) {
   const readiness = Object.fromEntries(
     ['announcement', 'plan'].map((kind) => {
@@ -7909,6 +8366,7 @@ function renderPublish(state) {
       ${renderValidationCard(state, 'plan', readiness.plan)}
       ${renderPublicationCard(state, 'plan', readiness.plan.ready)}
     </div>
+    ${renderEventScheduleEditor(state)}
     <section class="boh-admin-card boh-admin-preview" aria-labelledby="bohPublishPreviewTitle">
       <header><div><p class="boh-admin-card-kicker">${escapeHtml(
         state.tr('adminBohSanitizedPreview', 'SANITIZED PLAYER PREVIEW')
@@ -8837,6 +9295,7 @@ async function invokeAction(state, name, payload, successMessage) {
     else await refreshState(state);
     state.roleDrafts = null;
     state.phaseDrafts = null;
+    if (name === 'saveEventSchedule') state.scheduleDraft = null;
     if (name === 'batchReviewSubmissions') {
       list(payload.playerIds).forEach((id) => state.selectedSubmissionIds.delete(cleanText(id)));
     } else if (name === 'batchDeleteSubmissions') {
@@ -9378,6 +9837,34 @@ async function handleClick(state, event) {
     );
     return;
   }
+  if (action === 'add-schedule-milestone') {
+    captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
+    eventScheduleDraft(state).milestones.push({
+      id: `milestone-${Date.now().toString(36)}`,
+      label: '',
+      startsAt: '',
+    });
+    renderShell(state);
+    state.root.querySelector('[name="milestoneLabel"]:last-of-type')?.focus?.();
+    return;
+  }
+  if (action === 'remove-schedule-milestone') {
+    captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
+    eventScheduleDraft(state).milestones.splice(integer(button.dataset.index), 1);
+    renderShell(state);
+    return;
+  }
+  if (action === 'move-schedule-milestone') {
+    captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
+    const milestones = eventScheduleDraft(state).milestones;
+    const index = integer(button.dataset.index);
+    const target = button.dataset.direction === 'down' ? index + 1 : index - 1;
+    if (target >= 0 && target < milestones.length) {
+      [milestones[index], milestones[target]] = [milestones[target], milestones[index]];
+      renderShell(state);
+    }
+    return;
+  }
   if (action === 'edit-rotation') {
     state.rotationDraftId = cleanText(button.dataset.rotationId);
     renderShell(state);
@@ -9447,6 +9934,13 @@ function handleInput(state, event) {
     event.target.setCustomValidity?.('');
     event.target.removeAttribute?.('aria-invalid');
     captureCommitmentScoreDraft(state, scoreForm);
+    return;
+  }
+  const scheduleForm = event.target.closest?.('[data-form="event-schedule"]');
+  if (scheduleForm) {
+    captureEventScheduleDraft(state, scheduleForm);
+    // Switching status flips which fields are required and which errors apply, so re-render.
+    if (event.target.matches?.('[data-action="schedule-status"]')) scheduleRender(state);
     return;
   }
   const form = event.target.closest?.('[data-form="submission-corrections"]');
@@ -9920,6 +10414,25 @@ async function handleSubmit(state, event) {
     );
     return;
   }
+  if (kind === 'event-schedule') {
+    const schedule = captureEventScheduleDraft(state, form);
+    const errors = eventScheduleValidationErrors(state, schedule);
+    if (errors.length) {
+      setStatus(state, errors[0], 'error');
+      return;
+    }
+    await invokeAction(
+      state,
+      'saveEventSchedule',
+      {
+        ...schedule,
+        expectedScheduleRevision: adapterRevision(state.snapshot.documentRevisions?.eventSchedule),
+      },
+      state.tr('adminBohScheduleSaved', 'Event schedule saved.')
+    );
+    state.scheduleDraft = null;
+    return;
+  }
   if (kind === 'rotation') {
     await invokeAction(
       state,
@@ -10090,6 +10603,7 @@ async function startController(state) {
         pruneCorrectionDrafts(state);
         state.roleDrafts = null;
         state.phaseDrafts = null;
+        state.scheduleDraft = null;
         if (state.pending) {
           state._snapshotDirty = true;
           return;
@@ -10137,6 +10651,7 @@ export function createAdminAllStarBohController(options = {}) {
       await refreshState(state, snapshot);
       state.roleDrafts = null;
       state.phaseDrafts = null;
+      state.scheduleDraft = null;
       renderNow(state);
       return controller.getState();
     },

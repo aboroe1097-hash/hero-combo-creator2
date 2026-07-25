@@ -2488,6 +2488,12 @@
     linear-gradient(120deg, rgba(45, 212, 191, 0.1), rgba(56, 189, 248, 0.05)), var(--boh-panel);
 }
 
+.boh-now-next__card.is-standby {
+  border-color: rgba(251, 191, 36, 0.45);
+  background:
+    linear-gradient(120deg, rgba(251, 191, 36, 0.13), rgba(15, 23, 42, 0.08)), var(--boh-panel);
+}
+
 .boh-now-next__label {
   display: flex;
   align-items: center;
@@ -2550,6 +2556,115 @@
   grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
   min-width: 0;
   gap: 0.8rem;
+}
+
+.boh-schedule-card {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: var(--boh-radius);
+  background:
+    radial-gradient(circle at 8% 20%, rgba(56, 189, 248, 0.12), transparent 38%), var(--boh-panel);
+}
+
+.boh-schedule-countdown {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+  color: var(--boh-text);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.boh-schedule-countdown small {
+  color: var(--boh-muted);
+  font-size: 0.6rem;
+  font-weight: 650;
+}
+
+.boh-schedule-rail {
+  display: grid;
+  grid-auto-columns: minmax(8.5rem, 1fr);
+  grid-auto-flow: column;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-x: auto;
+  padding-block: 0.2rem 0.55rem;
+  scroll-snap-type: x proximity;
+}
+
+.boh-schedule-mile {
+  display: grid;
+  min-height: 4.8rem;
+  scroll-snap-align: start;
+  gap: 0.18rem;
+  padding: 0.65rem;
+  border: 1px solid var(--boh-line);
+  border-radius: var(--boh-radius-sm);
+  background: color-mix(in srgb, var(--boh-control) 86%, transparent);
+  color: var(--boh-muted);
+  text-align: start;
+  cursor: pointer;
+}
+
+.boh-schedule-mile[aria-current='step'] {
+  border-color: rgba(94, 234, 212, 0.42);
+  background: rgba(45, 212, 191, 0.09);
+  color: var(--boh-text);
+}
+
+.boh-schedule-mile[data-status='complete'] {
+  opacity: 0.72;
+}
+
+.boh-schedule-mile > span {
+  color: var(--boh-sky);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.boh-schedule-mile strong {
+  font-size: 0.72rem;
+}
+
+.boh-schedule-mile small {
+  color: var(--boh-muted);
+  font-size: 0.58rem;
+  line-height: 1.35;
+}
+
+.boh-schedule-teams {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boh-schedule-teams li {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.55rem;
+  border: 1px solid var(--boh-line);
+  border-radius: 0.75rem;
+  background: rgba(148, 163, 184, 0.04);
+}
+
+.boh-schedule-teams li.is-mine {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.boh-schedule-teams strong {
+  color: var(--boh-text);
+  font-size: 0.64rem;
+}
+
+.boh-schedule-teams span {
+  color: var(--boh-muted);
+  font-size: 0.57rem;
 }
 
 .boh-phase-tabs {
@@ -2733,6 +2848,11 @@
   border-color: rgba(251, 191, 36, 0.3);
 }
 
+.boh-phase-summary li.is-standby {
+  border-color: rgba(251, 191, 36, 0.36);
+  background: rgba(251, 191, 36, 0.06);
+}
+
 .boh-phase-summary span {
   color: var(--boh-sky);
   font-size: 0.57rem;
@@ -2758,7 +2878,11 @@
 .boh-map-wrap {
   min-width: 0;
   padding: 0.45rem;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--boh-line);
   border-radius: var(--boh-radius-sm);
   background:
@@ -2770,15 +2894,19 @@
 
 .boh-map {
   display: block;
-  width: 100%;
+  width: max(100%, 44rem);
   height: auto;
   max-height: 25rem;
 }
 
 .boh-map__field {
-  fill: rgba(15, 23, 42, 0.4);
+  fill: rgba(15, 23, 42, 0.22);
   stroke: rgba(125, 211, 252, 0.18);
   stroke-width: 2;
+}
+
+.boh-map__image {
+  opacity: 0.96;
 }
 
 .boh-map__lane {
@@ -2794,6 +2922,20 @@
   stroke-width: 2;
 }
 
+.boh-map__territory-square {
+  fill: rgba(56, 189, 248, 0.12);
+  stroke: rgba(125, 211, 252, 0.24);
+  stroke-width: 2;
+}
+
+.boh-map__network-path {
+  fill: none;
+  stroke: rgba(56, 189, 248, 0.44);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+}
+
 .boh-map__route {
   fill: none;
   stroke: var(--boh-teal);
@@ -2803,33 +2945,110 @@
   filter: drop-shadow(0 0 6px rgba(94, 234, 212, 0.45));
 }
 
-.boh-map__objective :is(circle, rect, polygon) {
-  fill: #17243a;
-  stroke: var(--boh-sky);
+.boh-map__objective {
+  --boh-flag-color: #38bdf8;
+  cursor: pointer;
+  outline: none;
+}
+
+.boh-map__objective.is-cc {
+  --boh-flag-color: #a78bfa;
+}
+
+.boh-map__objective.is-op {
+  --boh-flag-color: #f472b6;
+}
+
+.boh-map__objective.is-hospital {
+  --boh-flag-color: #34d399;
+}
+
+.boh-map__objective.is-arsenal {
+  --boh-flag-color: #60a5fa;
+}
+
+.boh-map__objective.is-relay {
+  --boh-flag-color: #fb7185;
+}
+
+.boh-map__objective:is(.is-fortress, .is-sanctuary) {
+  --boh-flag-color: #fbbf24;
+}
+
+.boh-map__objective.is-fort {
+  --boh-flag-color: #f87171;
+}
+
+.boh-map__objective-hit {
+  fill: transparent;
+  pointer-events: all;
+  stroke: transparent;
   stroke-width: 3;
 }
 
-.boh-map__objective.is-target :is(circle, rect, polygon) {
-  fill: rgba(251, 191, 36, 0.2);
-  stroke: var(--boh-amber);
+.boh-map__flag-pole {
+  fill: none;
+  stroke: #07111f;
+  stroke-linecap: round;
   stroke-width: 5;
 }
 
-.boh-map__objective.is-route:not(.is-target) :is(circle, rect, polygon) {
+.boh-map__flag-cloth,
+.boh-map__flag-base {
+  fill: var(--boh-flag-color);
+  stroke: #07111f;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.boh-map__flag-code-bg {
+  fill: rgba(7, 17, 31, 0.94);
+  stroke: var(--boh-flag-color);
+  stroke-width: 2;
+}
+
+.boh-map__objective :is(.boh-map__flag-pole, .boh-map__flag-cloth, .boh-map__flag-base, text) {
+  pointer-events: none;
+}
+
+.boh-map__objective:focus-visible .boh-map__objective-hit {
+  fill: rgba(248, 250, 252, 0.08);
+  stroke: #f8fafc;
+  stroke-width: 4;
+}
+
+.boh-map__objective.is-target {
+  --boh-flag-color: var(--boh-amber);
+}
+
+.boh-map__objective.is-route:not(.is-target) .boh-map__flag-code-bg {
   stroke: var(--boh-teal);
+  stroke-width: 4;
+}
+
+.boh-map__objective.is-selected
+  :is(.boh-map__flag-cloth, .boh-map__flag-base, .boh-map__flag-code-bg) {
+  filter: drop-shadow(0 0 9px rgba(125, 211, 252, 0.85));
+  stroke: #f8fafc;
   stroke-width: 4;
 }
 
 .boh-map__objective text {
   fill: #f8fafc;
-  font-size: 17px;
   font-weight: 900;
+}
+
+.boh-map__objective .boh-map__flag-code {
+  font-size: 15px;
 }
 
 .boh-map__objective .boh-map__label {
   fill: #cbd5e1;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(7, 17, 31, 0.9);
+  stroke-width: 3;
 }
 
 .boh-map-legend {
@@ -2866,6 +3085,49 @@
   background: var(--boh-sky);
 }
 
+.boh-map-selection {
+  margin-top: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: var(--boh-radius-sm);
+  background: rgba(14, 165, 233, 0.07);
+}
+
+.boh-map-selection h5,
+.boh-map-selection p {
+  margin: 0;
+}
+
+.boh-map-selection h5 {
+  color: var(--boh-text);
+  font-size: 0.74rem;
+}
+
+.boh-map-selection strong,
+.boh-map-selection p {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--boh-muted);
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+
+.boh-map-selection__meta {
+  color: var(--boh-sky) !important;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.boh-map-selection__structure {
+  color: var(--boh-text) !important;
+  font-weight: 800;
+}
+
+.boh-map-selection__empty {
+  font-style: italic;
+}
+
 .boh-route-text {
   margin-top: 0.7rem;
   padding: 0.7rem;
@@ -2892,6 +3154,36 @@
 
 .boh-route-text strong {
   color: var(--boh-text);
+}
+
+.boh-action-card {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--boh-line);
+  border-radius: var(--boh-radius-sm);
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.boh-action-card--crystal {
+  border-color: rgba(94, 234, 212, 0.32);
+  background: rgba(45, 212, 191, 0.07);
+}
+
+.boh-action-card--teleport {
+  border-color: rgba(167, 139, 250, 0.34);
+  background: rgba(167, 139, 250, 0.08);
+}
+
+.boh-action-card strong {
+  color: var(--boh-text);
+  font-size: 0.68rem;
+}
+
+.boh-action-card p {
+  margin: 0.25rem 0 0;
+  color: var(--boh-muted);
+  font-size: 0.63rem;
+  line-height: 1.45;
 }
 
 .boh-plan-reminder {
@@ -3000,6 +3292,10 @@
   }
 
   .boh-role-guide__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .boh-schedule-teams {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -3215,6 +3511,14 @@
     grid-template-columns: 1fr;
   }
 
+  .boh-schedule-teams {
+    grid-template-columns: 1fr;
+  }
+
+  .boh-schedule-countdown {
+    justify-items: start;
+  }
+
   .boh-role-guide__grid {
     grid-template-columns: 1fr;
   }
@@ -3369,6 +3673,10 @@
     display: block;
   }
 
+  .boh-map {
+    width: max(100%, 38rem);
+  }
+
   .boh-map-card .boh-route-text {
     margin-top: 0.7rem;
   }
@@ -3431,7 +3739,8 @@
   }
 
   .boh-map__route,
-  .boh-map__objective :is(circle, rect, polygon) {
+  .boh-map__objective
+    :is(.boh-map__flag-pole, .boh-map__flag-cloth, .boh-map__flag-base, .boh-map__flag-code-bg) {
     stroke: Highlight;
   }
 }

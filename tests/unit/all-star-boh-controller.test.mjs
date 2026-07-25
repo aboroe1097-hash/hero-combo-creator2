@@ -6,6 +6,7 @@ import {
   buildBohRouteDescriptor,
   buildBohSubmissionPayload,
   initializeAllStarBoh,
+  mergeBohFieldObjectives,
   parseBohInteger,
   parseBohPreferredTeammates,
   projectBohPlayerPlan,
@@ -567,7 +568,7 @@ test('route descriptor supplies matching visual path and text equivalent', () =>
     }
   );
   assert.equal(route.description, 'South spawn → Tower 3 → Primary Rune');
-  assert.equal(route.path, 'M 68 367 L 320 215 L 544 63');
+  assert.equal(route.path, 'M 49 456 L 486 254 L 875 51');
   assert.deepEqual(
     route.nodes.map(({ id, x, y, onRoute, isStart, isTarget }) => ({
       id,
@@ -578,11 +579,52 @@ test('route descriptor supplies matching visual path and text equivalent', () =>
       isTarget,
     })),
     [
-      { id: 'spawn-a', x: 68, y: 367, onRoute: true, isStart: true, isTarget: false },
-      { id: 'tower-3', x: 320, y: 215, onRoute: true, isStart: false, isTarget: false },
-      { id: 'rune-a', x: 544, y: 63, onRoute: true, isStart: false, isTarget: true },
+      { id: 'spawn-a', x: 49, y: 456, onRoute: true, isStart: true, isTarget: false },
+      { id: 'tower-3', x: 486, y: 254, onRoute: true, isStart: false, isTarget: false },
+      { id: 'rune-a', x: 875, y: 51, onRoute: true, isStart: false, isTarget: true },
     ]
   );
+});
+
+test('field objectives preserve authored nodes and de-duplicate canonical nodes by id or code', () => {
+  const authored = [
+    { id: 'cc1', code: 'CC1', label: 'Authored command center' },
+    { id: 'tower-3', code: 'T3', label: 'Authored tower' },
+    { id: 'spawn', code: 'SPAWN', label: 'Authored spawn' },
+  ];
+  const canonical = [
+    { id: 'objective-cc1', code: 'CC1', label: 'Canonical command center' },
+    { id: 'objective-t3', code: 'T3', label: 'Canonical tower' },
+    { id: 'objective-h1', code: 'H1', label: 'Canonical hospital' },
+  ];
+
+  assert.deepEqual(mergeBohFieldObjectives(authored, canonical), [...authored, canonical[2]]);
+});
+
+test('timeline view keeps standby and exact crystal flags on the selected legion entry', () => {
+  const entries = [
+    {
+      phaseId: 'phase-1',
+      legionId: 'legion-1',
+      startMinute: 0,
+      endMinute: 5,
+      instruction: { standby: true, action: 'Reserve line' },
+    },
+    {
+      phaseId: 'phase-1',
+      legionId: 'legion-2',
+      startMinute: 0,
+      endMinute: 5,
+      instruction: { action: 'Gather', gatherCrystals: true },
+    },
+  ];
+  const legionOne = selectBohTimelineView(entries, { legionId: 'legion-1' });
+  assert.equal(legionOne.current.instruction.standby, true);
+  assert.equal(legionOne.current.instruction.gatherCrystals, undefined);
+
+  const legionTwo = selectBohTimelineView(entries, { legionId: 'legion-2' });
+  assert.equal(legionTwo.current.instruction.standby, undefined);
+  assert.equal(legionTwo.current.instruction.gatherCrystals, true);
 });
 
 test('route descriptor never invents or bridges missing objective coordinates', () => {

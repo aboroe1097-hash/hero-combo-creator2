@@ -1,3 +1,5 @@
+import { normalizeAllStarBohEventSchedule } from './all-star-boh-schedule.js';
+
 export const ALL_STAR_BOH_ROOT_COLLECTION = 'boh_allstar';
 export const ALL_STAR_BOH_CONFIG_PATH = 'boh_allstar_config/current';
 export const ALL_STAR_BOH_SCHEMA_VERSION = 1;
@@ -44,6 +46,7 @@ const MAX_DRAFT_BYTES = 640 * 1024;
 const MAX_TEAM_BYTES = 256 * 1024;
 const MAX_PUBLICATION_BYTES = 128 * 1024;
 const MAX_PERSONAL_PLAN_BYTES = 96 * 1024;
+const MAX_SCHEDULE_BYTES = 24 * 1024;
 const MAX_PUBLISHED_TIMELINE_ITEMS = 8;
 const MAX_CORRECTION_REASON_LENGTH = 500;
 const FORBIDDEN_PERSISTED_KEY =
@@ -1537,7 +1540,7 @@ function normalizeInstructionContent(input = {}) {
   }
   const source = optionalRecord(input);
   const rawTeleport = source.teleport;
-  return {
+  const output = {
     summary: boundedString(source.summary, MAX_NOTE_LENGTH, 'Instruction summary'),
     action: boundedString(
       firstDefined(source, ['action', 'actionCode']),
@@ -1569,6 +1572,10 @@ function normalizeInstructionContent(input = {}) {
       identifiers: true,
     }),
   };
+  for (const flag of ['standby', 'gatherCrystals']) {
+    if (own(source, flag) && typeof source[flag] === 'boolean') output[flag] = source[flag];
+  }
+  return output;
 }
 
 function wildcardIdentifier(value, label, fallback = '*') {
@@ -1843,6 +1850,19 @@ function validateSeats(seats) {
   }
 }
 
+function normalizeCoLeaderIds(input) {
+  const coLeaderIds = boundedStringArray(input || [], {
+    label: 'Team co-leaders',
+    maxItems: 2,
+    maxLength: MAX_ID_LENGTH,
+    identifiers: true,
+  });
+  if (coLeaderIds.length !== (input || []).filter((value) => String(value ?? '').trim()).length) {
+    throw new AllStarBohValidationError('Team co-leaders must be unique.');
+  }
+  return coLeaderIds;
+}
+
 function normalizeTeam(input = {}, options = {}) {
   const source = requireRecord(input, options.published ? 'Published team' : 'Draft team');
   const seats = boundedObjectArray(source.seats || source.players || source.members || [], {
@@ -1858,14 +1878,7 @@ function normalizeTeam(input = {}, options = {}) {
     number: boundedInteger(source.number, 'Team number', { minimum: 1, maximum: 6 }),
     color: boundedString(source.color, 40, 'Team color'),
     captainId: boundedString(source.captainId, MAX_ID_LENGTH, 'Captain ID'),
-    coLeaderIds: boundedObjectArray(
-      source.coLeaderIds || source.coleaderIds || source.coLeaders || [],
-      {
-        label: 'Team co-leaders',
-        maxItems: 2,
-        normalize: (id) => boundedString(id, MAX_ID_LENGTH, 'Team co-leader ID'),
-      }
-    ).filter(Boolean),
+    coLeaderIds: normalizeCoLeaderIds(source.coLeaderIds || source.coleaderIds || source.coLeaders),
     seats,
   };
   const includePlan = !options.published || options.includePlan === true;
@@ -2274,6 +2287,13 @@ export function getAllStarBohPublishedPlayerPath(seasonId, uid) {
   return `${getAllStarBohSeasonPath(seasonId)}/publishedPlayers/${requiredIdentifier(uid, 'User ID')}`;
 }
 
+export function getAllStarBohEventSchedulePath(seasonId) {
+  return `${getAllStarBohSeasonPath(seasonId)}/schedules/current`;
+}
+
+// Compatibility alias for callers released before the event-schedule naming was made explicit.
+export const getAllStarBohSchedulePath = getAllStarBohEventSchedulePath;
+
 export class AllStarBohValidationError extends Error {
   constructor(message) {
     super(message);
@@ -2528,6 +2548,12 @@ function normalizePublishedPlayerDocument(raw, seasonId, uid) {
   return parseStoredDocument(raw, { seasonId, uid }, normalizeAllStarBohPublishedPlayer);
 }
 
+function normalizeScheduleDocument(raw, seasonId) {
+  return parseStoredDocument(raw, { seasonId }, (value) =>
+    normalizeAllStarBohEventSchedule(value, { seasonId })
+  );
+}
+
 function parseDocumentSnapshot(snapshot, normalize) {
   const raw = snapshotData(snapshot);
   return raw ? normalize(raw) : null;
@@ -2567,6 +2593,8 @@ export function createAllStarBohPlayerStore(options = {}) {
   const feedbackRef = documentRef(firestore, db, getAllStarBohFeedbackPath(seasonId, uid));
   const epicPreferencesPath = getAllStarBohEpicPreferencesPath(seasonId, uid);
   const epicPreferencesRef = documentRef(firestore, db, epicPreferencesPath);
+  const schedulePath = getAllStarBohEventSchedulePath(seasonId);
+  const scheduleRef = documentRef(firestore, db, schedulePath);
 
   async function getSubmission() {
     const snapshot = await firestore.getDoc(submissionRef);
@@ -2727,6 +2755,21 @@ export function createAllStarBohPlayerStore(options = {}) {
     );
   }
 
+  async function getEventSchedule() {
+    const snapshot = await firestore.getDoc(scheduleRef);
+    return parseDocumentSnapshot(snapshot, (raw) => normalizeScheduleDocument(raw, seasonId));
+  }
+
+  function subscribeEventSchedule(next, error) {
+    return subscriptions.subscribe(
+      scheduleRef,
+      (snapshot) =>
+        parseDocumentSnapshot(snapshot, (raw) => normalizeScheduleDocument(raw, seasonId)),
+      next,
+      error
+    );
+  }
+
   return Object.freeze({
     seasonId,
     uid,
@@ -2745,6 +2788,10 @@ export function createAllStarBohPlayerStore(options = {}) {
     subscribePublishedTeam,
     getPersonalPlan,
     subscribePersonalPlan,
+    getEventSchedule,
+    subscribeEventSchedule,
+    getSchedule: getEventSchedule,
+    subscribeSchedule: subscribeEventSchedule,
     stop: subscriptions.stop,
   });
 }
@@ -2784,7 +2831,8 @@ function normalizeBundleEntries(input, options) {
 }
 
 function instructionHasContent(instruction = {}) {
-  return Object.values(instruction).some((value) => {
+  return Object.entries(instruction).some(([key, value]) => {
+    if ((key === 'standby' || key === 'gatherCrystals') && value === false) return false;
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'string') return value.trim().length > 0;
     return value !== null && value !== undefined;
@@ -2988,6 +3036,18 @@ function validatePublicationReferences(current, teams, players) {
       throw new AllStarBohPublishValidationError(
         `Team ${teamId} requires a captain assigned to one of its seats.`
       );
+    }
+    for (const coLeaderId of team.coLeaderIds) {
+      if (coLeaderId === team.captainId) {
+        throw new AllStarBohPublishValidationError(
+          `Team ${teamId} co-leader cannot be the captain.`
+        );
+      }
+      if (!teamPlayerIds.has(coLeaderId)) {
+        throw new AllStarBohPublishValidationError(
+          `Team ${teamId} co-leader ${coLeaderId} must be assigned to one of its seats.`
+        );
+      }
     }
   }
   for (const [uid, player] of players) {
@@ -3252,6 +3312,66 @@ export function createAllStarBohAdminStore(options = {}) {
     const ref = documentRef(firestore, db, getAllStarBohPublishedPath(seasonId));
     const snapshot = await firestore.getDoc(ref);
     return parseDocumentSnapshot(snapshot, (raw) => normalizePublishedDocument(raw, seasonId));
+  }
+
+  async function getEventSchedule() {
+    await ensureAdmin();
+    const path = getAllStarBohEventSchedulePath(seasonId);
+    const snapshot = await firestore.getDoc(documentRef(firestore, db, path));
+    return parseDocumentSnapshot(snapshot, (raw) => normalizeScheduleDocument(raw, seasonId));
+  }
+
+  async function subscribeEventSchedule(next, error) {
+    await ensureAdmin();
+    const ref = documentRef(firestore, db, getAllStarBohEventSchedulePath(seasonId));
+    return subscriptions.subscribe(
+      ref,
+      (snapshot) =>
+        parseDocumentSnapshot(snapshot, (raw) => normalizeScheduleDocument(raw, seasonId)),
+      next,
+      error
+    );
+  }
+
+  async function saveEventSchedule(input, saveOptions = {}) {
+    await ensureAdmin();
+    if (!Array.isArray(saveOptions.teamIds)) {
+      throw new AllStarBohValidationError('Event schedule team IDs must be an array.');
+    }
+    const teamIds = boundedStringArray(saveOptions.teamIds, {
+      label: 'Event schedule team IDs',
+      maxItems: ALL_STAR_BOH_MAX_TEAMS,
+      maxLength: MAX_ID_LENGTH,
+      identifiers: true,
+    });
+    if (teamIds.length !== saveOptions.teamIds.length) {
+      throw new AllStarBohValidationError('Event schedule team IDs must be unique.');
+    }
+    const path = getAllStarBohEventSchedulePath(seasonId);
+    return saveRevisionedDocument({
+      db,
+      firestore,
+      ref: documentRef(firestore, db, path),
+      path,
+      identity: { seasonId },
+      input: requireRecord(input, 'Event schedule'),
+      expectedRevision: resolveExpectedRevision(input, saveOptions),
+      normalizeContent: (value) => {
+        const schedule = normalizeAllStarBohEventSchedule(value, { seasonId });
+        const allowedTeamIds = new Set(teamIds);
+        for (const gameTime of schedule.teamGameTimes) {
+          if (!allowedTeamIds.has(gameTime.teamId)) {
+            throw new AllStarBohValidationError(
+              `Event schedule team ${gameTime.teamId} is not part of this season.`
+            );
+          }
+        }
+        return schedule;
+      },
+      maxBytes: MAX_SCHEDULE_BYTES,
+      label: 'Event schedule',
+      uid,
+    });
   }
 
   async function subscribePublication(next, error) {
@@ -4122,6 +4242,12 @@ export function createAllStarBohAdminStore(options = {}) {
     subscribeEpicShowdownPreferences,
     getPublication,
     subscribePublication,
+    getEventSchedule,
+    subscribeEventSchedule,
+    saveEventSchedule,
+    getSchedule: getEventSchedule,
+    subscribeSchedule: subscribeEventSchedule,
+    saveSchedule: saveEventSchedule,
     getReview,
     subscribeReview,
     saveReview,
