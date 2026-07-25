@@ -853,19 +853,19 @@ const it = {
   arcadeModeC: 'Modalità C',
   arcadeModeD: 'Modalità D',
   arcadeModeE: 'Modalità E',
-  arcadeMergeRushTitle: 'Fusione lampo',
+  arcadeMergeRushTitle: 'Merge Rush',
   arcadeMergeRushDesc:
     'Tocca due pezzi dello stesso tipo e colore per salire di rarità. Una coppia d’oro vale il jackpot.',
-  arcadeSortHoardTitle: 'Ordina il tesoro',
+  arcadeSortHoardTitle: 'Sort the Hoard',
   arcadeSortHoardDesc:
     'I pezzi cadono dal cancello. Spostali o toccali verso il contenitore sinistro (blu) o destro (oro) prima che raggiungano il pavimento.',
-  arcadeCrystalRelayTitle: 'Staffetta di cristalli',
+  arcadeCrystalRelayTitle: 'Crystal Relay',
   arcadeCrystalRelayDesc:
     'Un pezzo si muove su una barra. Tocca quando la scintilla è nella zona verde e alterna i lati per creare combo.',
-  arcadeSetAssemblyTitle: 'Componi il set',
+  arcadeSetAssemblyTitle: 'Set Assembly',
   arcadeSetAssemblyDesc:
     'Completa un piccolo set, ad esempio tutte e tre le piume. Tocca solo i tipi corrispondenti: gli scarti servono a distrarti.',
-  arcadeHeroRumbleTitle: 'Scontro tra eroi',
+  arcadeHeroRumbleTitle: 'Hero Rumble',
   arcadeHeroRumbleDesc:
     'Le vere icone degli eroi combattono! Raccogli le armi blu per attaccare ed evita quelle dorate. Viola = SUPER!',
   arcadeProfileHeading: 'Profilo Arcade',
