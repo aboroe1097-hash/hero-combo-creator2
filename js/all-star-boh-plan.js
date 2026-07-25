@@ -1,364 +1,428 @@
 /**
  * All-Star BoH — Stage 1 match plan template.
  *
- * Four phases, twelve score-ranked positions, two legions each. Position 1 is the highest
- * scorer on the team, 12 the lowest. Positions 11 and 12 are the designated backups: they
- * enter the battlefield at 5:00, so they hold no orders during the opening phase.
+ * Emits timeline entries in the shape the published contract already uses, so the admin side
+ * can project this straight into `publishedPlayers/{uid}.timeline` without translation: four
+ * phases by two legions gives each member exactly eight entries.
  *
- * This is the default template. Leadership can override any assignment per team; the shape
- * here is what an override must conform to.
+ * Vocabulary follows production, not the prototype this came from:
+ *   seatNumber   1..12, score-ranked; seat 1 is the highest scorer
+ *   roleGroupId  offensive | rune | top | bottom
+ *   legionId     legion-1 | legion-2
+ *
+ * Seats 11 and 12 are the designated backups. They enter at 5:00, so their opening phase
+ * carries a stand-by instruction instead of orders.
+ *
+ * This is a default template only. A leadership override always wins, and nothing here is
+ * authoritative once a publication exists.
  */
 
-export const BOH_STAGE1_POSITIONS = 12;
-export const BOH_STAGE1_BACKUP_POSITIONS = Object.freeze([11, 12]);
-/** Backups are not deployed before this phase index. */
+export const BOH_STAGE1_PLAN_ID = 'stage-1';
+export const BOH_STAGE1_SEATS = 12;
+export const BOH_STAGE1_BACKUP_SEATS = Object.freeze([11, 12]);
+/** Backups are not on the field before this phase index. */
 export const BOH_STAGE1_BACKUP_ENTRY_PHASE = 1;
+export const BOH_STAGE1_BACKUP_ENTRY_MINUTE = 5;
 
-/** What unlocks in each phase, and the shared-alliance teleport and crystal guidance. */
+export const BOH_STAGE1_LEGIONS = Object.freeze([
+  Object.freeze({ id: 'legion-1', label: 'Legion 1', order: 1 }),
+  Object.freeze({ id: 'legion-2', label: 'Legion 2', order: 2 }),
+]);
+
+export const BOH_STAGE1_PHASES = Object.freeze([
+  Object.freeze({ id: 'phase-1', label: '0-5 Minutes', order: 1, startMinute: 0, endMinute: 5 }),
+  Object.freeze({ id: 'phase-2', label: '5-10 Minutes', order: 2, startMinute: 5, endMinute: 10 }),
+  Object.freeze({
+    id: 'phase-3',
+    label: '10-15 Minutes',
+    order: 3,
+    startMinute: 10,
+    endMinute: 15,
+  }),
+  Object.freeze({
+    id: 'phase-4',
+    label: '15-30 Minutes',
+    order: 4,
+    startMinute: 15,
+    endMinute: 30,
+  }),
+]);
+
+/** What unlocks each phase, plus the shared-alliance teleport and crystal guidance. */
 export const BOH_STAGE1_MILESTONES = Object.freeze([
   Object.freeze({
-    time: '0-5 Minutes',
-    unlocks: 'Stronghold · Watch Post · Command Center open',
+    phaseId: 'phase-1',
+    unlocks: 'Stronghold, Watch Post and Command Center open',
     teleportTag: 'Hold teleports',
-    teleport: 'Alliance starts with 5 shared teleports. First Command Center capture = +5.',
-    crystal: 'Send spare legions to Sacred Crystal Mines. 200 crystals = 1 Sentry Tower.',
-  }),
-  Object.freeze({
-    time: '5-10 Minutes',
-    unlocks: 'Hospital · Armory · Fortress of Honor unlock',
-    teleportTag: 'Bank +1 / 5 min',
-    teleport: 'Occupied Command Center generates +1 teleport every 5 min. Repeat capture = +2.',
-    crystal: 'Keep 1 legion gathering. Armory (+50% atk/def) and Hospital stack — take them.',
-  }),
-  Object.freeze({
-    time: '10-15 Minutes',
-    unlocks: 'Fortress of Honor pays large periodic Alliance Points',
-    teleportTag: 'Spend on FoH',
     teleport:
-      'Spend teleports to contest Fortress of Honor. You may only teleport into your own territory.',
-    crystal: 'Convert crystals into Sentry Towers to expand territory before the Rune.',
+      'The alliance starts with 5 shared teleports. The first Command Center capture adds 5.',
+    crystal: 'Send spare legions to Sacred Crystal Mines. 200 crystals builds one Sentry Tower.',
   }),
   Object.freeze({
-    time: '15-30 Minutes',
-    unlocks: 'Sanctuary opens and spawns the Divine Rune',
-    teleportTag: 'Reserve for Rune',
-    teleport: 'Reserve remaining teleports for Rune escort and Relay defense.',
-    crystal: 'Stop gathering — all legions to Rune escort. Losing your Relay fails the escort.',
-  }),
-]);
-
-/** Per-phase, per-position orders. Missing positions fall back to the backup support order. */
-export const BOH_STAGE1_FLOW = Object.freeze([
-  Object.freeze({
-    time: '0-5 Minutes',
-    rows: Object.freeze({
-      1: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Capture & Defend Our Command Center [CC1]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      2: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Capture & Defend Our Bot Outposts [OP1]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      3: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Capture Enemy Command Center [CC2]',
-        l2: 'Gather Crystals - T1s',
-        note: 'No Teleport',
-      }),
-      4: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Capture Enemy Outpost [OP2]',
-        l2: 'Gather Crystals - T1s',
-        note: 'No Teleport',
-      }),
-      5: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'No Teleport',
-      }),
-      6: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'No Teleport',
-      }),
-      7: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'Teleport to Tower 3 [T3] - Be on the Side Opposing Bot Map',
-      }),
-      8: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'Teleport to Tower 3 [T3] - Be on the Side Opposing Bot Map',
-      }),
-      9: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'Teleport to Tower 3 [T3] - Be on the Side Opposing Bot Map',
-      }),
-      10: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'Teleport to Tower 3 [T3] - Be on the Side Opposing Bot Map',
-      }),
-      11: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'Teleport to Tower 3 [T3] - Be on the Side Opposing Bot Map',
-      }),
-      12: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Build Towers - T1s & Speed Heroes',
-        l2: 'Gather Crystals - T1s',
-        note: 'Teleport to Tower 3 [T3] - Be on the Side Opposing Bot Map',
-      }),
-    }),
+    phaseId: 'phase-2',
+    unlocks: 'Hospital, Armory and Fortress of Honor unlock',
+    teleportTag: 'Bank one every 5 minutes',
+    teleport: 'A held Command Center generates one teleport every 5 minutes. Recapturing adds 2.',
+    crystal: 'Keep one legion gathering. Armory and Hospital bonuses stack, so take them.',
   }),
   Object.freeze({
-    time: '5-10 Minutes',
-    rows: Object.freeze({
-      1: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Secure TOP Fortress of Honor [FH1]',
-        l2: 'Capture & Defend Our Command Center [CC1]',
-        note: 'No Teleport',
-      }),
-      2: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Secure BOT Fortress of Honor [FH2]',
-        l2: 'Capture & Defend Our Bot Outposts [OP1]',
-        note: 'No Teleport',
-      }),
-      3: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Capture & Defend Our Hospital [H1]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      4: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Capture & Defend Our Arsenal [A1]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      5: Object.freeze({
-        stageRole: 'Joker Team',
-        l1: 'Attack Enemy Towers',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'Teleport to Relay1 [RP1] - Tower 5 [T5]',
-      }),
-      6: Object.freeze({
-        stageRole: 'Joker Team',
-        l1: 'Attack Enemy Towers',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'Teleport to Relay1 [RP1] - Tower 5 [T5]',
-      }),
-      7: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Attack Enemy Arsenal [A2]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      8: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Capture Enemy Hospital [H2]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      9: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Capture Enemy Command Center [CC2]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      10: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Capture Enemy Outpost [OP2]',
-        l2: 'Build Towers - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-    }),
+    phaseId: 'phase-3',
+    unlocks: 'Fortress of Honor pays large periodic Alliance Points',
+    teleportTag: 'Spend on the Fortress',
+    teleport:
+      'Spend teleports to contest the Fortress of Honor. You may only teleport into our own territory.',
+    crystal: 'Convert crystals into Sentry Towers to widen our territory before the Rune spawns.',
   }),
   Object.freeze({
-    time: '10-15 Minutes',
-    rows: Object.freeze({
-      1: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Build Towers - T9s',
-        l2: 'Attack Enemy Towers / Enemy Castles',
-        note: 'Teleport to Relay2 [RP2] - Tower 7 [T7]',
-      }),
-      2: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Build Towers - T9s',
-        l2: 'Attack Enemy Towers / Enemy Castles',
-        note: 'Teleport to Relay2 [RP2] - Tower 7 [T7]',
-      }),
-      3: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Build Towers - T9s',
-        l2: 'Attack Enemy Towers / Enemy Castles',
-        note: 'Teleport to Relay2 [RP2] - Tower 7 [T7]',
-      }),
-      4: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Build Towers - T9s',
-        l2: 'Attack Enemy Towers / Enemy Castles',
-        note: 'Teleport to Relay2 [RP2] - Tower 7 [T7]',
-      }),
-      5: Object.freeze({
-        stageRole: 'Joker Team',
-        l1: 'Secure TOP Fortress of Honor [FH1]',
-        l2: 'Build Towers - T9s',
-        note: 'No Teleport',
-      }),
-      6: Object.freeze({
-        stageRole: 'Joker Team',
-        l1: 'Secure BOT Fortress of Honor [FH2]',
-        l2: 'Build Towers - T9s',
-        note: 'No Teleport',
-      }),
-      7: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Capture & Defend Our Command Center [CC1]',
-        l2: 'Capture Enemy Command Center [CC2]',
-        note: 'No Teleport',
-      }),
-      8: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Capture & Defend Our Bot Outposts [OP1]',
-        l2: 'Capture Enemy Outpost [OP2]',
-        note: 'No Teleport',
-      }),
-      9: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Capture & Defend Our Hospital [H1]',
-        l2: 'Attack Enemy Arsenal [A2]',
-        note: 'No Teleport',
-      }),
-      10: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Capture & Defend Our Arsenal [A1]',
-        l2: 'Capture Enemy Hospital [H2]',
-        note: 'No Teleport',
-      }),
-    }),
-  }),
-  Object.freeze({
-    time: '15-30 Minutes',
-    rows: Object.freeze({
-      1: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Protect Rune at Relay (or attack enemy Rune path)',
-        l2: 'Protect Rune at Relay (or attack enemy Rune path)',
-        note: 'Teleport to Center Building [S] - Tower 8/9 [T8/T9]',
-      }),
-      2: Object.freeze({
-        stageRole: 'Offensive Team',
-        l1: 'Protect Rune at Relay (or attack enemy Rune path)',
-        l2: 'Protect Rune at Relay (or attack enemy Rune path)',
-        note: 'Teleport to Center Building [S] - Tower 8/9 [T8/T9]',
-      }),
-      3: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Protect Rune at Relay (Garrison/Defend Rune)',
-        l2: 'TAKE THE RUNE (Primary Rune Runner) - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      4: Object.freeze({
-        stageRole: 'Rune Team',
-        l1: 'Protect Rune at Relay (Garrison/Defend Rune)',
-        l2: 'TAKE THE RUNE (Primary Rune Runner) - T1s & Speed Heroes',
-        note: 'No Teleport',
-      }),
-      5: Object.freeze({
-        stageRole: 'Joker Team',
-        l1: 'Protect Rune at Relay (Garrison/Defend Rune)',
-        l2: 'Attack Enemy Towers',
-        note: 'No Teleport',
-      }),
-      6: Object.freeze({
-        stageRole: 'Joker Team',
-        l1: 'Protect Rune at Relay (Garrison/Defend Rune)',
-        l2: 'Attack Enemy Towers',
-        note: 'No Teleport',
-      }),
-      7: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Protect Rune at Relay (Reinforce as needed)',
-        l2: 'Capture & Defend Our Command Center [CC1]',
-        note: 'No Teleport',
-      }),
-      8: Object.freeze({
-        stageRole: 'Defensive Team - Top',
-        l1: 'Protect Rune at Relay (Reinforce as needed)',
-        l2: 'Capture & Defend Our Bot Outposts [OP1]',
-        note: 'No Teleport',
-      }),
-      9: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Protect Rune at Relay (Reinforce as needed)',
-        l2: 'Capture & Defend Our Hospital [H1]',
-        note: 'No Teleport',
-      }),
-      10: Object.freeze({
-        stageRole: 'Defensive Team - Bot',
-        l1: 'Protect Rune at Relay (Reinforce as needed)',
-        l2: 'Capture & Defend Our Arsenal [A1]',
-        note: 'No Teleport',
-      }),
-    }),
+    phaseId: 'phase-4',
+    unlocks: 'The Sanctuary opens and spawns the Divine Rune',
+    teleportTag: 'Reserve for the Rune',
+    teleport: 'Hold the remaining teleports for the Rune escort and Relay defence.',
+    crystal: 'Stop gathering. Every legion moves to the Rune escort; losing our Relay fails it.',
   }),
 ]);
 
 /**
- * Orders for a backup once they are on the field. The source template only specifies the ten
- * starters, so backups take a support brief rather than invented tactical detail: they cover
- * whichever role has gone quiet.
+ * Orders keyed by seat, then by phase index. Each row is
+ * [roleLabel, legion 1 action, legion 2 action, teleport note].
+ * Seats 1-10 come from the leadership template; 11-12 resolve through the backup rules.
  */
-export const BOH_STAGE1_BACKUP_ORDER = Object.freeze({
-  stageRole: 'Backup - Support',
-  l1: 'Replace any missing member and take over their Legion 1 task',
-  l2: 'Reinforce towers, gathering, or the rune escort as needed',
-  note: 'No Teleport',
+const STAGE1_ORDERS = Object.freeze({
+  1: [
+    [
+      'Offensive Team',
+      'Capture & Defend Our Command Center [CC1]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Offensive Team',
+      'Secure TOP Fortress of Honor [FH1]',
+      'Capture & Defend Our Command Center [CC1]',
+      'No Teleport',
+    ],
+    [
+      'Offensive Team',
+      'Build Towers - T9s',
+      'Attack Enemy Towers / Enemy Castles',
+      'Teleport to Relay2 [RP2] - Tower 7 [T7]',
+    ],
+    [
+      'Offensive Team',
+      'Protect Rune at Relay (or attack enemy Rune path)',
+      'Protect Rune at Relay (or attack enemy Rune path)',
+      'Teleport to Center Building [S] - Tower 8/9 [T8]',
+    ],
+  ],
+  2: [
+    [
+      'Offensive Team',
+      'Capture & Defend Our Bot Outposts [OP1]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Offensive Team',
+      'Secure BOT Fortress of Honor [FH2]',
+      'Capture & Defend Our Bot Outposts [OP1]',
+      'No Teleport',
+    ],
+    [
+      'Offensive Team',
+      'Build Towers - T9s',
+      'Attack Enemy Towers / Enemy Castles',
+      'Teleport to Relay2 [RP2] - Tower 7 [T7]',
+    ],
+    [
+      'Offensive Team',
+      'Protect Rune at Relay (or attack enemy Rune path)',
+      'Protect Rune at Relay (or attack enemy Rune path)',
+      'Teleport to Center Building [S] - Tower 8/9 [T8]',
+    ],
+  ],
+  3: [
+    [
+      'Offensive Team',
+      'Capture Enemy Command Center [CC2]',
+      'Gather Crystals - T1s',
+      'No Teleport',
+    ],
+    [
+      'Rune Team',
+      'Capture & Defend Our Hospital [H1]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Rune Team',
+      'Build Towers - T9s',
+      'Attack Enemy Towers / Enemy Castles',
+      'Teleport to Relay2 [RP2] - Tower 7 [T7]',
+    ],
+    [
+      'Rune Team',
+      'Protect Rune at Relay (Garrison/Defend Rune)',
+      'TAKE THE RUNE (Primary Rune Runner) - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+  ],
+  4: [
+    ['Rune Team', 'Capture Enemy Outpost [OP2]', 'Gather Crystals - T1s', 'No Teleport'],
+    [
+      'Rune Team',
+      'Capture & Defend Our Arsenal [A1]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Rune Team',
+      'Build Towers - T9s',
+      'Attack Enemy Towers / Enemy Castles',
+      'Teleport to Relay2 [RP2] - Tower 7 [T7]',
+    ],
+    [
+      'Rune Team',
+      'Protect Rune at Relay (Garrison/Defend Rune)',
+      'TAKE THE RUNE (Primary Rune Runner) - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+  ],
+  5: [
+    ['Rune Team', 'Build Towers - T1s & Speed Heroes', 'Gather Crystals - T1s', 'No Teleport'],
+    [
+      'Joker Team',
+      'Attack Enemy Towers',
+      'Build Towers - T1s & Speed Heroes',
+      'Teleport to Relay1 [RP1] - Tower 5 [T5]',
+    ],
+    ['Joker Team', 'Secure TOP Fortress of Honor [FH1]', 'Build Towers - T9s', 'No Teleport'],
+    [
+      'Joker Team',
+      'Protect Rune at Relay (Garrison/Defend Rune)',
+      'Attack Enemy Towers',
+      'No Teleport',
+    ],
+  ],
+  6: [
+    ['Rune Team', 'Build Towers - T1s & Speed Heroes', 'Gather Crystals - T1s', 'No Teleport'],
+    [
+      'Joker Team',
+      'Attack Enemy Towers',
+      'Build Towers - T1s & Speed Heroes',
+      'Teleport to Relay1 [RP1] - Tower 5 [T5]',
+    ],
+    ['Joker Team', 'Secure BOT Fortress of Honor [FH2]', 'Build Towers - T9s', 'No Teleport'],
+    [
+      'Joker Team',
+      'Protect Rune at Relay (Garrison/Defend Rune)',
+      'Attack Enemy Towers',
+      'No Teleport',
+    ],
+  ],
+  7: [
+    [
+      'Defensive Team - Top',
+      'Build Towers - T1s & Speed Heroes',
+      'Gather Crystals - T1s',
+      'Teleport to Tower 3 [T3] - be on the side opposing the bot map',
+    ],
+    [
+      'Defensive Team - Top',
+      'Attack Enemy Arsenal [A2]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Top',
+      'Capture & Defend Our Command Center [CC1]',
+      'Capture Enemy Command Center [CC2]',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Top',
+      'Protect Rune at Relay (Reinforce as needed)',
+      'Capture & Defend Our Command Center [CC1]',
+      'No Teleport',
+    ],
+  ],
+  8: [
+    [
+      'Defensive Team - Top',
+      'Build Towers - T1s & Speed Heroes',
+      'Gather Crystals - T1s',
+      'Teleport to Tower 3 [T3] - be on the side opposing the bot map',
+    ],
+    [
+      'Defensive Team - Top',
+      'Capture Enemy Hospital [H2]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Top',
+      'Capture & Defend Our Bot Outposts [OP1]',
+      'Capture Enemy Outpost [OP2]',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Top',
+      'Protect Rune at Relay (Reinforce as needed)',
+      'Capture & Defend Our Bot Outposts [OP1]',
+      'No Teleport',
+    ],
+  ],
+  9: [
+    [
+      'Defensive Team - Top',
+      'Build Towers - T1s & Speed Heroes',
+      'Gather Crystals - T1s',
+      'Teleport to Tower 3 [T3] - be on the side opposing the bot map',
+    ],
+    [
+      'Defensive Team - Bot',
+      'Capture Enemy Command Center [CC2]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Bot',
+      'Capture & Defend Our Hospital [H1]',
+      'Attack Enemy Arsenal [A2]',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Bot',
+      'Protect Rune at Relay (Reinforce as needed)',
+      'Capture & Defend Our Hospital [H1]',
+      'No Teleport',
+    ],
+  ],
+  10: [
+    [
+      'Defensive Team - Bot',
+      'Build Towers - T1s & Speed Heroes',
+      'Gather Crystals - T1s',
+      'Teleport to Tower 3 [T3] - be on the side opposing the bot map',
+    ],
+    [
+      'Defensive Team - Bot',
+      'Capture Enemy Outpost [OP2]',
+      'Build Towers - T1s & Speed Heroes',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Bot',
+      'Capture & Defend Our Arsenal [A1]',
+      'Attack Enemy Hospital [H2]',
+      'No Teleport',
+    ],
+    [
+      'Defensive Team - Bot',
+      'Protect Rune at Relay (Reinforce as needed)',
+      'Capture & Defend Our Arsenal [A1]',
+      'No Teleport',
+    ],
+  ],
 });
 
-/** Orders shown to a backup before they enter at 5:00. */
+/**
+ * A backup's opening instruction. The published contract carries no standby flag, so the late
+ * start is stated plainly in the action and note, where the member actually reads it.
+ */
 export const BOH_STAGE1_STANDBY_ORDER = Object.freeze({
-  stageRole: 'Standby',
-  l1: 'Not deployed - you enter at 5:00',
-  l2: 'Not deployed - stay ready',
+  roleLabel: 'Backup - Standby',
+  action: `Stand by until ${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00 - you are not on the field yet`,
+  note: `Not deployed. You enter at ${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00; hold both legions until then.`,
+});
+
+/** A backup's instruction once on the field. */
+export const BOH_STAGE1_BACKUP_ORDER = Object.freeze({
+  roleLabel: 'Backup - Support',
+  legion1: 'Replace any missing member and take over their Legion 1 task',
+  legion2: 'Reinforce towers, gathering, or the rune escort as needed',
   note: 'No Teleport',
 });
 
-export function bohIsBackupPosition(position) {
-  return BOH_STAGE1_BACKUP_POSITIONS.includes(Number(position));
+export function bohIsBackupSeat(seatNumber) {
+  return BOH_STAGE1_BACKUP_SEATS.includes(Number(seatNumber));
 }
 
-export function bohIsStandby(position, phaseIndex) {
-  return bohIsBackupPosition(position) && Number(phaseIndex) < BOH_STAGE1_BACKUP_ENTRY_PHASE;
+/** True while a backup has not yet entered the battlefield. */
+export function bohIsStandby(seatNumber, phaseIndex) {
+  return bohIsBackupSeat(seatNumber) && Number(phaseIndex) < BOH_STAGE1_BACKUP_ENTRY_PHASE;
+}
+
+/** Default role group for a seat, matching the score-rank rule leadership uses. */
+export function bohSeatRoleGroup(seatNumber) {
+  const seat = Number(seatNumber);
+  if ([1, 2, 8].includes(seat)) return 'offensive';
+  if ([3, 5, 12].includes(seat)) return 'top';
+  if ([4, 6, 11].includes(seat)) return 'bottom';
+  if ([7, 9, 10].includes(seat)) return 'rune';
+  return 'offensive';
 }
 
 /**
- * The order for one position in one phase, resolving backup standby and the support fallback.
- * Returns null when the phase does not exist.
+ * The eight timeline entries for one seat: four phases by two legions, in the published shape.
+ * `identity` supplies playerId and gameName; everything else derives from the template.
  */
-export function bohStage1Order(position, phaseIndex) {
-  const phase = BOH_STAGE1_FLOW[Number(phaseIndex)];
-  if (!phase) return null;
-  const slot = Number(position);
-  if (bohIsStandby(slot, phaseIndex)) return BOH_STAGE1_STANDBY_ORDER;
-  return phase.rows[slot] || BOH_STAGE1_BACKUP_ORDER;
+export function bohStage1Timeline(seatNumber, identity = {}) {
+  const seat = Number(seatNumber);
+  if (!Number.isInteger(seat) || seat < 1 || seat > BOH_STAGE1_SEATS) return [];
+  const roleGroupId = identity.roleGroupId || bohSeatRoleGroup(seat);
+  const rows = STAGE1_ORDERS[seat] || null;
+  const entries = [];
+
+  BOH_STAGE1_PHASES.forEach((phase, phaseIndex) => {
+    const standby = bohIsStandby(seat, phaseIndex);
+    const template = rows ? rows[phaseIndex] : null;
+    BOH_STAGE1_LEGIONS.forEach((legion) => {
+      const isLegionOne = legion.id === 'legion-1';
+      let roleLabel;
+      let action;
+      let note;
+      if (standby) {
+        roleLabel = BOH_STAGE1_STANDBY_ORDER.roleLabel;
+        action = BOH_STAGE1_STANDBY_ORDER.action;
+        note = BOH_STAGE1_STANDBY_ORDER.note;
+      } else if (template) {
+        roleLabel = template[0];
+        action = isLegionOne ? template[1] : template[2];
+        note = template[3];
+      } else {
+        roleLabel = BOH_STAGE1_BACKUP_ORDER.roleLabel;
+        action = isLegionOne ? BOH_STAGE1_BACKUP_ORDER.legion1 : BOH_STAGE1_BACKUP_ORDER.legion2;
+        note = BOH_STAGE1_BACKUP_ORDER.note;
+      }
+      entries.push({
+        playerId: identity.playerId || '',
+        gameName: identity.gameName || '',
+        phaseId: phase.id,
+        phaseLabel: phase.label,
+        startMinute: phase.startMinute,
+        endMinute: phase.endMinute,
+        legionId: legion.id,
+        legionLabel: legion.label,
+        seatNumber: seat,
+        baseSeatNumber: seat,
+        roleGroupId,
+        roleLabel,
+        rotated: false,
+        instruction: {
+          action,
+          target: '',
+          loadout: '',
+          teleport: note || null,
+          note: note || '',
+          priority: null,
+        },
+      });
+    });
+  });
+  return entries;
+}
+
+/** Milestone guidance for a phase id, for the shared teleport and crystal strips. */
+export function bohStage1Milestone(phaseId) {
+  return BOH_STAGE1_MILESTONES.find((milestone) => milestone.phaseId === phaseId) || null;
 }

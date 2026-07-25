@@ -2,98 +2,163 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  BOH_STAGE1_BACKUP_ENTRY_MINUTE,
   BOH_STAGE1_BACKUP_ENTRY_PHASE,
-  BOH_STAGE1_BACKUP_ORDER,
-  BOH_STAGE1_BACKUP_POSITIONS,
-  BOH_STAGE1_FLOW,
+  BOH_STAGE1_BACKUP_SEATS,
+  BOH_STAGE1_LEGIONS,
   BOH_STAGE1_MILESTONES,
-  BOH_STAGE1_POSITIONS,
-  BOH_STAGE1_STANDBY_ORDER,
-  bohIsBackupPosition,
+  BOH_STAGE1_PHASES,
+  BOH_STAGE1_PLAN_ID,
+  BOH_STAGE1_SEATS,
+  bohIsBackupSeat,
   bohIsStandby,
-  bohStage1Order,
+  bohSeatRoleGroup,
+  bohStage1Milestone,
+  bohStage1Timeline,
 } from '../../js/all-star-boh-plan.js';
-import { bohPhaseTargets } from '../../js/all-star-boh-field.js';
+import { bohStructureCodes } from '../../js/all-star-boh-field.js';
 
-test('stage 1 runs four phases with matching milestones', () => {
-  assert.equal(BOH_STAGE1_FLOW.length, 4);
-  assert.equal(BOH_STAGE1_MILESTONES.length, 4);
-  BOH_STAGE1_FLOW.forEach((phase, index) => {
-    assert.equal(phase.time, BOH_STAGE1_MILESTONES[index].time);
-  });
+test('stage 1 declares four phases and two legions', () => {
+  assert.equal(BOH_STAGE1_PLAN_ID, 'stage-1');
+  assert.equal(BOH_STAGE1_PHASES.length, 4);
+  assert.equal(BOH_STAGE1_LEGIONS.length, 2);
   assert.deepEqual(
-    BOH_STAGE1_FLOW.map((phase) => phase.time),
-    ['0-5 Minutes', '5-10 Minutes', '10-15 Minutes', '15-30 Minutes']
+    BOH_STAGE1_LEGIONS.map((legion) => legion.id),
+    ['legion-1', 'legion-2']
+  );
+  // Phases must tile 0-30 minutes without a gap.
+  BOH_STAGE1_PHASES.forEach((phase, index) => {
+    assert.equal(phase.order, index + 1);
+    if (index > 0) assert.equal(phase.startMinute, BOH_STAGE1_PHASES[index - 1].endMinute);
+  });
+  assert.equal(BOH_STAGE1_PHASES[0].startMinute, 0);
+  assert.equal(BOH_STAGE1_PHASES[3].endMinute, 30);
+});
+
+test('every phase has milestone guidance keyed by phase id', () => {
+  assert.equal(BOH_STAGE1_MILESTONES.length, BOH_STAGE1_PHASES.length);
+  BOH_STAGE1_PHASES.forEach((phase) => {
+    const milestone = bohStage1Milestone(phase.id);
+    assert.ok(milestone, `${phase.id} has no milestone`);
+    assert.ok(milestone.unlocks);
+    assert.ok(milestone.teleport);
+    assert.ok(milestone.crystal);
+  });
+  assert.equal(bohStage1Milestone('phase-99'), null);
+});
+
+test('each seat yields exactly four phases by two legions', () => {
+  for (let seat = 1; seat <= BOH_STAGE1_SEATS; seat += 1) {
+    const timeline = bohStage1Timeline(seat, { playerId: 'uid-1', gameName: 'Tester' });
+    assert.equal(timeline.length, 8, `seat ${seat} should have 8 entries`);
+    const keys = new Set(timeline.map((entry) => `${entry.legionId}:${entry.phaseId}`));
+    assert.equal(keys.size, 8, `seat ${seat} has duplicate phase/legion pairs`);
+  }
+});
+
+test('timeline entries carry the published contract fields', () => {
+  const [entry] = bohStage1Timeline(1, { playerId: 'uid-abc', gameName: 'MalakAbo' });
+  assert.equal(entry.playerId, 'uid-abc');
+  assert.equal(entry.gameName, 'MalakAbo');
+  assert.equal(entry.phaseId, 'phase-1');
+  assert.equal(entry.legionId, 'legion-1');
+  assert.equal(entry.seatNumber, 1);
+  assert.equal(entry.baseSeatNumber, 1);
+  assert.equal(entry.rotated, false);
+  assert.ok(entry.roleGroupId);
+  assert.ok(entry.roleLabel);
+  assert.ok(entry.instruction.action);
+  ['action', 'target', 'loadout', 'teleport', 'note', 'priority'].forEach((field) => {
+    assert.ok(field in entry.instruction, `instruction missing ${field}`);
+  });
+});
+
+test('identity is never inferred - a missing player id stays empty', () => {
+  const [entry] = bohStage1Timeline(1);
+  assert.equal(entry.playerId, '');
+  assert.equal(entry.gameName, '');
+});
+
+test('backups stand by through the opening phase and deploy from 5:00', () => {
+  assert.deepEqual([...BOH_STAGE1_BACKUP_SEATS], [11, 12]);
+  assert.equal(BOH_STAGE1_BACKUP_ENTRY_PHASE, 1);
+  BOH_STAGE1_BACKUP_SEATS.forEach((seat) => {
+    assert.equal(bohIsBackupSeat(seat), true);
+    const timeline = bohStage1Timeline(seat, { playerId: 'uid-b' });
+    const opening = timeline.filter((entry) => entry.phaseId === 'phase-1');
+    assert.equal(opening.length, 2);
+    opening.forEach((entry) => {
+      // The late start must be legible in the instruction itself, since the published
+      // contract carries no standby flag.
+      assert.match(entry.instruction.action, /stand by/iu);
+      assert.match(entry.instruction.note, new RegExp(`${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00`, 'u'));
+    });
+    // From phase 2 onward they hold real support orders.
+    timeline
+      .filter((entry) => entry.phaseId !== 'phase-1')
+      .forEach((entry) => {
+        assert.doesNotMatch(entry.instruction.action, /stand by/iu);
+      });
+  });
+});
+
+test('starters are never marked standby', () => {
+  for (let seat = 1; seat <= 10; seat += 1) {
+    assert.equal(bohIsBackupSeat(seat), false);
+    BOH_STAGE1_PHASES.forEach((_phase, index) => assert.equal(bohIsStandby(seat, index), false));
+    bohStage1Timeline(seat, { playerId: 'uid-s' }).forEach((entry) => {
+      assert.doesNotMatch(entry.instruction.action, /stand by/iu);
+    });
+  }
+});
+
+test('the two legions receive different orders in the opening phase', () => {
+  for (let seat = 1; seat <= 10; seat += 1) {
+    const opening = bohStage1Timeline(seat).filter((entry) => entry.phaseId === 'phase-1');
+    const [legionOne, legionTwo] = opening;
+    assert.notEqual(
+      legionOne.instruction.action,
+      legionTwo.instruction.action,
+      `seat ${seat} gives both legions the same opening order`
+    );
+  }
+});
+
+test('role groups cover the published catalogue and fill every seat', () => {
+  const allowed = new Set(['offensive', 'rune', 'top', 'bottom']);
+  const counts = {};
+  for (let seat = 1; seat <= BOH_STAGE1_SEATS; seat += 1) {
+    const group = bohSeatRoleGroup(seat);
+    assert.ok(allowed.has(group), `seat ${seat} has unknown role group ${group}`);
+    counts[group] = (counts[group] || 0) + 1;
+  }
+  // Role capacities are offensive 4, rune 2, top 3, bottom 3 in the model; the seat map
+  // spreads twelve seats across all four groups.
+  assert.equal(Object.keys(counts).length, 4);
+  assert.equal(
+    Object.values(counts).reduce((sum, value) => sum + value, 0),
+    BOH_STAGE1_SEATS
   );
 });
 
-test('every milestone carries unlock, teleport and crystal guidance', () => {
-  BOH_STAGE1_MILESTONES.forEach((milestone) => {
-    assert.ok(milestone.unlocks, `${milestone.time} missing unlocks`);
-    assert.ok(milestone.teleport, `${milestone.time} missing teleport guidance`);
-    assert.ok(milestone.crystal, `${milestone.time} missing crystal guidance`);
-    assert.ok(milestone.teleportTag, `${milestone.time} missing teleport tag`);
-  });
+test('an out-of-range seat yields no timeline rather than throwing', () => {
+  assert.deepEqual(bohStage1Timeline(0), []);
+  assert.deepEqual(bohStage1Timeline(13), []);
+  assert.deepEqual(bohStage1Timeline('x'), []);
 });
 
-test('every position in every phase resolves to a complete order', () => {
-  for (let phase = 0; phase < BOH_STAGE1_FLOW.length; phase += 1) {
-    for (let position = 1; position <= BOH_STAGE1_POSITIONS; position += 1) {
-      const order = bohStage1Order(position, phase);
-      assert.ok(order, `position ${position} phase ${phase} has no order`);
-      assert.ok(order.stageRole, `position ${position} phase ${phase} missing stageRole`);
-      assert.ok(order.l1, `position ${position} phase ${phase} missing legion 1`);
-      assert.ok(order.l2, `position ${position} phase ${phase} missing legion 2`);
-    }
-  }
-});
-
-test('backups stand by for the opening phase and deploy from 5:00', () => {
-  assert.deepEqual([...BOH_STAGE1_BACKUP_POSITIONS], [11, 12]);
-  assert.equal(BOH_STAGE1_BACKUP_ENTRY_PHASE, 1);
-  BOH_STAGE1_BACKUP_POSITIONS.forEach((position) => {
-    assert.equal(bohIsStandby(position, 0), true);
-    assert.equal(bohStage1Order(position, 0), BOH_STAGE1_STANDBY_ORDER);
-    for (let phase = 1; phase < BOH_STAGE1_FLOW.length; phase += 1) {
-      assert.equal(bohIsStandby(position, phase), false);
-      assert.equal(bohStage1Order(position, phase), BOH_STAGE1_BACKUP_ORDER);
-    }
-  });
-});
-
-test('starters are never treated as standby', () => {
-  for (let position = 1; position <= 10; position += 1) {
-    assert.equal(bohIsBackupPosition(position), false);
-    for (let phase = 0; phase < BOH_STAGE1_FLOW.length; phase += 1) {
-      assert.equal(bohIsStandby(position, phase), false);
-      assert.notEqual(bohStage1Order(position, phase), BOH_STAGE1_STANDBY_ORDER);
-    }
-  }
-});
-
-test('an unknown phase yields no order rather than throwing', () => {
-  assert.equal(bohStage1Order(1, 9), null);
-  assert.equal(bohStage1Order(1, -1), null);
-});
-
-test('orders reference structures the field model recognises', () => {
+test('orders reference only structures the field model recognises', () => {
   const known = /^(CC[1-4]|OP[1-4]|FH[12]|H[12]|A[12]|RP[1-4]|S|T[1-9])$/u;
   let referenced = 0;
-  for (let phase = 0; phase < BOH_STAGE1_FLOW.length; phase += 1) {
-    for (let position = 1; position <= BOH_STAGE1_POSITIONS; position += 1) {
-      bohPhaseTargets(bohStage1Order(position, phase)).forEach((code) => {
-        referenced += 1;
-        assert.match(code, known, `unknown structure code ${code}`);
+  for (let seat = 1; seat <= BOH_STAGE1_SEATS; seat += 1) {
+    bohStage1Timeline(seat).forEach((entry) => {
+      [entry.instruction.action, entry.instruction.note].forEach((text) => {
+        bohStructureCodes(text).forEach((code) => {
+          referenced += 1;
+          assert.match(code, known, `unknown structure code ${code}`);
+        });
       });
-    }
+    });
   }
-  // The plan should actually point people at the map, not just describe tasks.
-  assert.ok(referenced > 20, `expected plentiful structure references, saw ${referenced}`);
-});
-
-test('the opening phase keeps everyone off teleports except the defensive wings', () => {
-  // Positions 1-6 hold teleports at the start; 7-12 reposition to their tower.
-  for (let position = 1; position <= 6; position += 1) {
-    assert.match(bohStage1Order(position, 0).note, /no teleport/iu);
-  }
+  assert.ok(referenced > 40, `expected plentiful structure references, saw ${referenced}`);
 });
