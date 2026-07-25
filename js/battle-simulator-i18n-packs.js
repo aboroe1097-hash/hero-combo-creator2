@@ -1,5 +1,58 @@
+const INTEGRATION_MESSAGES = Object.freeze({
+  'coverage.title': 'Assumptions & Coverage',
+  'coverage.skills':
+    '{total} hero skill descriptions: {modeled} modeled, {partial} partial, {excluded} excluded.',
+  'coverage.skillValues': 'Skill descriptions use the listed maximum/latest values.',
+  'coverage.partialClauses': 'Partial clauses remain visible but are ignored by the engine.',
+  'coverage.missingHeroes': '{count} heroes have no extended placement or skill data.',
+  'coverage.research': 'Research coverage maps 316 known contributions.',
+  'coverage.specialization':
+    'Specialization contributions apply only when the selected scenario context matches.',
+  'coverage.equipment':
+    'Equipment combat stats are unavailable; provisional overrides must be user-observed.',
+  'coverage.tactical':
+    'Tactical stats remain inactive while the battle engine does not consume them.',
+  'coverage.acknowledge': 'I understand these assumptions and coverage limits.',
+  'scenario.kicker': 'Scenario context',
+  'scenario.title': 'Choose where this battle occurs',
+  'scenario.copy': 'Conditional specialization sources use these exact context values.',
+  'scenario.battleMode': 'Battle mode',
+  'scenario.engagement': 'Engagement',
+  'scenario.event': 'Event',
+  'scenario.formation': 'Formation',
+  'scenario.battleMode.pvp-field': 'PvP field',
+  'scenario.engagement.field': 'Field',
+  'scenario.engagement.siege-attack': 'Siege attack',
+  'scenario.engagement.siege-defense': 'Siege defense',
+  'scenario.event.*': 'Any event',
+  'scenario.event.eden': 'Eden',
+  'scenario.event.boh': 'Battle of Honor',
+  'scenario.formation.*': 'Any formation',
+  'scenario.formation.rally-lead': 'Rally lead',
+  'scenario.formation.rally-join': 'Rally join',
+  'scenario.formation.reinforce': 'Reinforce',
+  'equipment.overrides': 'Provisional equipment effects',
+  'equipment.overrideJson': 'Equipment effect override JSON',
+  'equipment.overrideHint':
+    'Only schema-valid, user-observed values matching this loadout are applied.',
+  'equipment.applyOverrides': 'Apply equipment effects',
+  'equipment.overrideInvalid': 'The equipment effect JSON is invalid.',
+  'equipment.overrideApplied': 'Equipment effects applied.',
+  'heroSkills.title': 'Hero skills',
+  'heroSkills.hero': 'Hero',
+  'heroSkills.none': 'No hero selected',
+  'heroSkills.skills': 'Listed skills',
+  'heroSkills.modeled': 'Modeled',
+  'heroSkills.partial': 'Partial',
+  'heroSkills.excluded': 'Excluded',
+  'heroSkills.missingData': 'Missing data',
+  'heroSkills.missingDescription':
+    'Placement and skill descriptions are unavailable for this hero.',
+  'heroSkills.placementWarning': 'This hero is not listed for the {row} row.',
+});
+
 function defineLocalePack(messages) {
-  return Object.freeze(messages);
+  return Object.freeze({ ...messages, ...INTEGRATION_MESSAGES });
 }
 
 const ar = defineLocalePack({

@@ -188,6 +188,86 @@ test('canonical unit overrides remain independent and never mutate input', () =>
   assert.deepEqual(unitValues, before);
 });
 
+test('unit percentage sources adjust the resolved unit base before battle multipliers', () => {
+  const unitSources = [
+    source({
+      sourceId: 'specialization.unit-attack',
+      statKey: 'attack',
+      amount: 10,
+      unit: 'percent',
+      appliesTo: { battleModes: ['pvp-field'], troopTypes: ['cavalry'], rowIds: ['front'] },
+    }),
+    source({
+      sourceId: 'specialization.unit-defense',
+      statKey: 'defense',
+      amount: 20,
+      unit: 'percent',
+      appliesTo: { battleModes: [], troopTypes: [], rowIds: [] },
+    }),
+    source({
+      sourceId: 'specialization.other-row',
+      statKey: 'hp',
+      amount: 50,
+      unit: 'percent',
+      appliesTo: { battleModes: [], troopTypes: [], rowIds: ['back'] },
+    }),
+  ];
+  const result = calculateTroopStats({
+    type: 'cavalry',
+    tier: 9,
+    unitValues: { attack: 100, defense: 50, hp: 20 },
+    values: { might: 100, resistance: 200, hp: 300 },
+    unitSources,
+    context: { battleMode: 'pvp-field', rowId: 'front' },
+  });
+
+  assert.deepEqual(result.unit.preSource, { attack: 100, defense: 50, hp: 20 });
+  assert.deepEqual(result.unit.sourceTotals, { attack: 10, defense: 20, hp: 0 });
+  assert.deepEqual(result.unit.resolved, { attack: 110, defense: 60, hp: 20 });
+  assert.deepEqual(result.effective, { attack: 220, defense: 180, hp: 80 });
+  assert.equal(result.unit.includedSources.length, 2);
+  assert.equal(result.unit.excludedSources[0].exclusionReason, 'row');
+  assert.deepEqual(unitSources[0].statKey, 'attack');
+});
+
+test('unit source validation fails closed for unknown stats, units, and overflowing bases', () => {
+  assert.throws(
+    () =>
+      calculateTroopStats({
+        type: 'cavalry',
+        tier: 9,
+        unitSources: [source({ statKey: 'speed', unit: 'percent' })],
+      }),
+    /Unsupported unit stat/
+  );
+  assert.throws(
+    () =>
+      calculateTroopStats({
+        type: 'cavalry',
+        tier: 9,
+        unitSources: [source({ statKey: 'attack', unit: 'raw' })],
+      }),
+    /must use unit "percent"/
+  );
+  assert.throws(
+    () =>
+      calculateTroopStats({
+        type: 'cavalry',
+        tier: 9,
+        unitValues: { attack: 5_000 },
+        unitSources: [
+          source({
+            statKey: 'attack',
+            unit: 'percent',
+            amount: 1,
+            appliesTo: { battleModes: [], troopTypes: [], rowIds: [] },
+          }),
+        ],
+      }),
+    /Attack cannot exceed 5000/
+  );
+});
+
 test('calculation enforces finite maxima and derives maximum effective stats without overflow', () => {
   const maximum = calculateTroopStats({
     type: 'footmen',

@@ -80,7 +80,7 @@ test('phase-1 additive reports remain explicitly archived and are never replayed
   for (const { fixture } of legacyFixtureRecords) {
     assert.equal(fixture.fixtureVersion, 1);
     assert.equal(fixture.evidenceStatus, 'legacy-phase1-archive');
-    assert.equal(fixture.setup.setupSchemaVersion, 2, 'inspection uses a canonical migrated setup');
+    assert.equal(fixture.setup.setupSchemaVersion, 3, 'inspection uses a canonical migrated setup');
     assert.equal(fixture.statContract, null);
   }
 });

@@ -11,6 +11,7 @@ import {
   buildBattleJsonExport,
   buildBattleSummaryCsv,
   makeBattleExportFilename,
+  parseBattleJsonExport,
 } from '../../js/battle-simulator-export.js';
 import {
   buildSetupSnapshot,
@@ -20,6 +21,10 @@ import {
 } from '../../js/battle-simulator-setup.js';
 
 const GENERATED_AT = '2026-07-16T00:48:45.000Z';
+const EVENT_HEADER =
+  'run_index,run_seed,round,action_group,combat_speed,attacker,target,troops_before,casualties,troops_after,strike_multiplier,casualty_rate,status';
+const SUMMARY_HEADER =
+  'schema_version,generated_at,model_version,run_mode,seed,variance,simulations,side_a_wins,side_a_win_rate,side_b_wins,side_b_win_rate,draws,draw_rate,stalemates,stalemate_rate,average_rounds,average_side_a_survivors,average_side_b_survivors,average_total_survivors,average_side_a_casualties,average_side_b_casualties,average_total_casualties,config_json,stat_contract_json,source_provenance_json,equipment_provenance_json';
 
 const ZERO_STATS = Object.freeze({
   might: 0,
@@ -192,12 +197,12 @@ function exportInput(result, overrides = {}) {
   };
 }
 
-test('full JSON schema v3 includes stat/source/equipment provenance and per-row outcomes', () => {
+test('full JSON schema v4 includes stat/source/equipment provenance and per-row outcomes', () => {
   const json = buildBattleJsonExport(exportInput(calibrationResult(), { seed: 42, variance: 0 }));
   const parsed = JSON.parse(json);
 
   assert.equal(parsed.schemaVersion, BATTLE_EXPORT_SCHEMA_VERSION);
-  assert.equal(parsed.schemaVersion, 3);
+  assert.equal(parsed.schemaVersion, 4);
   assert.equal(parsed.generatedAt, GENERATED_AT);
   assert.equal(parsed.model.version, 'phase1-beta-1');
   assert.deepEqual(parsed.model.assumptions, [
@@ -266,7 +271,7 @@ test('full JSON is deterministic even when nested input keys have a different or
 
 test('calibration fixture has the exact corpus shape and uses the selected run', () => {
   const selectedResult = calibrationResult({ seed: 202 });
-  const setup = setupSnapshot({ battleMode: 'siege' });
+  const setup = setupSnapshot();
   const fixture = JSON.parse(
     buildBattleCalibrationFixture(
       exportInput(
@@ -293,7 +298,7 @@ test('calibration fixture has the exact corpus shape and uses the selected run',
   assert.deepEqual(fixture, {
     fixtureVersion: 2,
     battleType: 'pvp-field',
-    battleMode: 'siege',
+    battleMode: 'pvp-field',
     createdAt: GENERATED_AT,
     statContract: BATTLE_STAT_CONTRACT,
     sourceProvenance,
@@ -355,7 +360,7 @@ test('summary CSV computes single-run outcomes and side averages', () => {
   assert.match(header, /average_side_a_survivors,average_side_b_survivors/);
   assert.match(
     row,
-    /^3,2026-07-16T00:48:45\.000Z,troops-v1,single,fixed,,1,1,1,0,0,0,0,0,0,4,40000,0,40000,22000,62000,84000,/
+    /^4,2026-07-16T00:48:45\.000Z,troops-v1,single,fixed,,1,1,1,0,0,0,0,0,0,4,40000,0,40000,22000,62000,84000,/
   );
   assert.match(row, /"\{""label"":""Baseline""/);
 });
@@ -551,7 +556,7 @@ test('rich JSON and debug prefer actual custom result model metadata', () => {
   assert.equal(parsed.model.appVersion, '14.0.11');
   assert.deepEqual(parsed.model.assumptions, actualAssumptions);
   assert.equal(parsed.coefficients.casualtyRateCap, 0.5);
-  assert.match(text, /Schema \/ model: 3 \/ phase1-beta-1\+custom-coefficients/);
+  assert.match(text, /Schema \/ model: 4 \/ phase1-beta-1\+custom-coefficients/);
   assert.match(text, /Assumptions: \{"casualtyRateCap":0\.5,"source":"selected-result"\}/);
   assert.match(text, /Coefficients: .*"casualtyRateCap":0\.5/);
   assert.doesNotMatch(text, /caller-default|"casualtyRateCap":0\.95/);
@@ -570,6 +575,159 @@ test('event-log CSV returns only its deterministic header when logs are unavaila
     csv,
     'run_index,run_seed,round,action_group,combat_speed,attacker,target,troops_before,casualties,troops_after,strike_multiplier,casualty_rate,status'
   );
+});
+
+test('v3 and v4 JSON imports round-trip through the bounded v4 migration', () => {
+  const v4 = JSON.parse(buildBattleJsonExport(exportInput(singleResult())));
+  assert.deepEqual(parseBattleJsonExport(JSON.stringify(v4)), v4);
+
+  const v3 = { ...v4, schemaVersion: 3 };
+  const migrated = parseBattleJsonExport(JSON.stringify(v3));
+  assert.equal(migrated.schemaVersion, 4);
+  assert.deepEqual({ ...migrated, schemaVersion: 3 }, v3);
+  assert.throws(() => parseBattleJsonExport(JSON.stringify({ schemaVersion: 2 })), /unsupported/i);
+  assert.throws(() => parseBattleJsonExport('x'.repeat(5_000_001)), /maximum supported size/i);
+});
+
+test('no-effect v4 exports preserve the legacy surfaces apart from the schema version', () => {
+  const input = exportInput(singleResult());
+  const json = JSON.parse(buildBattleJsonExport(input));
+  const summary = buildBattleSummaryCsv(input);
+  const events = buildBattleEventLogCsv(input);
+  const debug = buildBattleDebugSnapshot(input);
+
+  assert.equal(Object.hasOwn(json, 'effectProvenance'), false);
+  assert.equal(Object.hasOwn(json.perRow.A[0], 'heroName'), false);
+  assert.equal(summary.split('\n')[0], SUMMARY_HEADER);
+  assert.equal(events.split('\n')[0], EVENT_HEADER);
+  assert.doesNotMatch(debug, /Effect provenance:/);
+});
+
+test('effect-aware exports retain provenance, diagnostics, and deterministic event rows', () => {
+  const setup = setupSnapshot();
+  setup.scenarioContext = {
+    battleMode: 'pvp-field',
+    engagement: 'siege-attack',
+    event: 'eden',
+    formation: 'rally-lead',
+  };
+  setup.assumptions = {
+    acknowledged: true,
+    diagnostics: [
+      {
+        code: 'coverage-partial',
+        severity: 'warning',
+        message: 'Partial coverage.',
+        sourceId: null,
+      },
+    ],
+  };
+  setup.sides.A.rows[0].heroName = 'Jiguang Qi';
+  setup.sides.A.rows[0].skillIds = ['2'];
+  setup.sides.A.specializationCapture = {
+    snapshot: { schema: 'specialization-fixture' },
+    result: {
+      sources: [],
+      unitSources: [
+        {
+          sourceType: 'specialization',
+          sourceId: 'specialization:unit-attack',
+          label: 'Unit Attack',
+          statKey: 'attack',
+          amount: 10,
+          operation: 'add',
+          unit: 'percent',
+          appliesTo: {
+            battleModes: ['pvp-field'],
+            troopTypes: ['footmen'],
+            rowIds: ['front'],
+          },
+        },
+      ],
+      effects: [{ id: 'fixture-effect', active: true }],
+      excluded: [],
+      diagnostics: [{ code: 'specialization-note', message: 'Captured.' }],
+      summary: { effectCount: 1, activeEffectCount: 1, unitSourceCount: 1 },
+      revision: 'specialization-r7',
+    },
+  };
+  setup.sides.A.equipmentEffectOverrides = {
+    overrideSchemaVersion: 1,
+    overrides: [{ id: 'invalid-on-purpose' }],
+  };
+  const result = singleResult({
+    modelVersion: 'phase1-beta-1+effects-1',
+    effectRuntimeVersion: 1,
+    effectDiagnostics: [{ code: 'skill-not-executable', privateKey: 'redacted' }],
+    effectEvents: [
+      {
+        id: 'effect:1',
+        effectId: 'A:front:2:damage:1',
+        phase: 'before-action',
+        battleRound: 1,
+        group: 2,
+        source: 'A:front',
+        target: 'B:front',
+        type: 'damage',
+        amount: 125,
+        before: 1_000,
+        after: 875,
+        status: 'burn',
+      },
+      {
+        id: 'effect:2',
+        effectId: 'A:front:2:status:1',
+        phase: 'after-damage',
+        battleRound: 1,
+        group: 2,
+        source: 'A:front',
+        target: 'B:middle',
+        type: 'status',
+        skipped: 'condition',
+      },
+    ],
+  });
+  const input = exportInput(result, { setup });
+  const parsed = JSON.parse(buildBattleJsonExport(input));
+  const effect = parsed.effectProvenance;
+
+  assert.equal(parsed.perRow.A[0].heroName, 'Jiguang Qi');
+  assert.deepEqual(parsed.perRow.A[0].skillIds, ['2']);
+  assert.equal(effect.scenarioContext.engagement, 'siege-attack');
+  assert.equal(effect.skillClassifications.A[0].skills[0].skillId, '2');
+  assert.equal(typeof effect.skillClassifications.A[0].skills[0].description, 'string');
+  assert.equal(effect.specialization.A.revision, 'specialization-r7');
+  assert.equal(effect.specialization.A.summary.effectCount, 1);
+  assert.equal(effect.unitSources.A[0].sourceId, 'specialization:unit-attack');
+  assert.equal(effect.equipmentOverrides.A.summary.diagnosticCount, 1);
+  assert.equal(effect.effectRuntimeVersion, 1);
+  assert.equal(effect.activeEffectModelVersion, 'phase1-beta-1+effects-1');
+  assert.equal(effect.effectDiagnostics[0].code, 'skill-not-executable');
+  assert.equal(effect.effectEvents.length, 2);
+  assert.equal(effect.modeling.coverage.heroSkills.descriptions > 0, true);
+  assert.equal(effect.modeling.assumptions.setup.acknowledged, true);
+  assert.doesNotMatch(JSON.stringify(effect), /redacted/);
+
+  const summary = buildBattleSummaryCsv(input);
+  assert.match(summary.split('\n')[0], /,effect_provenance_json$/);
+  assert.match(summary, /specialization-r7/);
+
+  const firstEvents = buildBattleEventLogCsv(input);
+  const secondEvents = buildBattleEventLogCsv(input);
+  assert.equal(firstEvents, secondEvents);
+  assert.match(
+    firstEvents.split('\n')[0],
+    /event_kind,effect_phase,effect_source,effect_actor,effect_target,effect_type,effect_value,effect_status,effect_diagnostic$/
+  );
+  assert.match(
+    firstEvents,
+    /effect,before-action,A:front:2:damage:1,A:front,B:front,damage,"{""after"":875,""amount"":125,""before"":1000}",burn,/
+  );
+  assert.match(
+    firstEvents,
+    /effect,after-damage,A:front:2:status:1,A:front,B:middle,status,\{\},,condition/
+  );
+  assert.match(buildBattleDebugSnapshot(input), /Effect provenance: .*specialization-r7/);
 });
 
 test('debug snapshot is concise and reports aggregate batch diagnostics', () => {
@@ -592,7 +750,7 @@ test('debug snapshot is concise and reports aggregate batch diagnostics', () => 
   assert.match(text, /Coefficients: \{"baseCasualtyRate":0\.08/);
   assert.match(text, /Seeds: \{"base":null,"runs":\[\]\}/);
   assert.match(text, /Per-row results: \{"A":\[/);
-  assert.match(text, /Setup: \{"battleMode":"pvp-field","runOptions":/);
+  assert.match(text, /Setup: .*"battleMode":"pvp-field".*"runOptions":/);
   assert.match(text, /Stat contract: \{"battleKeys":/);
   assert.match(text, /Source provenance: \{"A":/);
   assert.match(text, /Equipment provenance: \{"A":/);
