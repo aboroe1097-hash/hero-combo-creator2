@@ -25,7 +25,7 @@ function placeholders(value) {
   return Array.from(String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g), (match) => match[1]).sort();
 }
 
-test('Battle Simulator publishes the requested 11 stable locale IDs and native labels', () => {
+test('Battle Simulator publishes the requested 12 stable locale IDs and native labels', () => {
   assert.deepEqual(BATTLE_SIMULATOR_LOCALES, [
     'en',
     'ar',
@@ -33,6 +33,7 @@ test('Battle Simulator publishes the requested 11 stable locale IDs and native l
     'es',
     'fr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',
@@ -44,6 +45,11 @@ test('Battle Simulator publishes the requested 11 stable locale IDs and native l
     BATTLE_SIMULATOR_LOCALES
   );
   assert.equal(normalizeBattleSimulatorLocale('ko-KR'), 'kr');
+  assert.equal(normalizeBattleSimulatorLocale('it-IT'), 'it');
+  assert.deepEqual(
+    BATTLE_SIMULATOR_LANGUAGE_OPTIONS.find(({ id }) => id === 'it'),
+    { id: 'it', label: 'Italiano', short: 'IT' }
+  );
   assert.equal(normalizeBattleSimulatorLocale('pt-BR'), 'pt');
   assert.equal(normalizeBattleSimulatorLocale('unsupported'), 'en');
 });
@@ -105,6 +111,12 @@ test('document language and direction update live while canonical setup IDs rema
   applyBattleSimulatorDocumentLocale(fakeDocument, 'kr');
   assert.equal(fakeDocument.documentElement.lang, 'ko');
   assert.equal(fakeDocument.documentElement.dir, 'ltr');
+
+  await loadBattleSimulatorLocale('it');
+  applyBattleSimulatorDocumentLocale(fakeDocument, 'it');
+  assert.equal(fakeDocument.documentElement.lang, 'it');
+  assert.equal(fakeDocument.documentElement.dir, 'ltr');
+  assert.equal(fakeDocument.title, 'Simulatore di battaglia Beta | VTS 1097');
 
   assert.doesNotMatch(packSource, /['"]pvp-field['"]\s*:/);
   assert.match(appSource, /battleMode:\s*'pvp-field'/);

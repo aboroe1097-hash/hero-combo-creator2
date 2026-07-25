@@ -223,6 +223,7 @@ test('locale resolution, English fallback, and lazy-loader contract stay stable'
     'fr',
     'hr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',
@@ -242,6 +243,6 @@ test('locale resolution, English fallback, and lazy-loader contract stay stable'
   }
   assert.doesNotMatch(
     source,
-    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|hr|id|kr|pt|ru|tr|zh)\.js['"]/
+    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|hr|id|it|kr|pt|ru|tr|zh)\.js['"]/
   );
 });

@@ -6,7 +6,7 @@ await import('../../js/i18n/standalone-copy.js');
 
 const i18n = globalThis.VTSStandaloneI18n;
 const root = new URL('../../', import.meta.url);
-const locales = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+const locales = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
 
 function read(relativePath) {
   return readFileSync(new URL(relativePath, root), 'utf8');
@@ -36,12 +36,16 @@ function assertSameShape(reference, candidate, path = '') {
   }
 }
 
-test('standalone domain copy resolves all twelve supported locales', () => {
+test('standalone domain copy resolves all thirteen supported locales', () => {
   assert.deepEqual(i18n.locales, locales);
   const english = i18n.getCopy('en');
   for (const locale of locales) assertSameShape(english, i18n.getCopy(locale), locale);
   assert.equal(i18n.normalizeLocale('ko-KR'), 'kr');
+  assert.equal(i18n.normalizeLocale('it-IT'), 'it');
   assert.equal(i18n.normalizeLocale('not-supported'), 'en');
+  assert.notEqual(i18n.getCopy('it'), english);
+  assert.equal(i18n.getCopy('it').standalone.maintenance.title, 'Modalità manutenzione');
+  assert.equal(i18n.getCopy('it').arcade.shell.again, 'Gioca ancora');
 });
 
 test('standalone page localization switches language, direction, title, and visible copy', () => {

@@ -26,6 +26,7 @@ const SUPPORTED_LANGUAGES = [
   'zh',
   'ar',
   'kr',
+  'it',
 ];
 
 function getPreferredTheme() {

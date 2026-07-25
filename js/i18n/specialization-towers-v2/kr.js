@@ -46,6 +46,7 @@ export const SPECIALIZATION_TOWERS_V2_KR = Object.freeze({
   medalsRequired: '필요 메달',
   medalsRemaining: '남은 메달',
   medalsUnknown: '메달 비용 미확인',
+  selectNodeBeforeMedals: '메달을 추가하기 전에 노드를 하나 이상 선택하세요.',
   noMedalsRequired: '메달 필요 없음',
   medalsCount: '메달 {count}개',
   exactMedalDataOnly:
@@ -87,7 +88,8 @@ export const SPECIALIZATION_TOWERS_V2_KR = Object.freeze({
   nodeNotLearned: '미학습',
   markNodeLearned: '학습 완료로 표시',
   markNodeUnlearned: '미학습으로 표시',
-  nodeMedalHelp: '정확한 메달 비용을 알 수 없습니다. 알고 있다면 이 노드를 채우는 데 도움을 주세요.',
+  nodeMedalHelp:
+    '정확한 메달 비용을 알 수 없습니다. 알고 있다면 이 노드를 채우는 데 도움을 주세요.',
   helpFillNodeMedals: '메달 정보 돕기',
   ackTitle: '감사의 마음을 담아',
   ackIntro: '커뮤니티가 모든 수치를 공유하고 시험하고 다듬어 주었기에 이 도구가 존재합니다.',

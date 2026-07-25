@@ -37,6 +37,7 @@ export const SUPPORTED_LOCALES = Object.freeze([
   'es',
   'fr',
   'id',
+  'it',
   'kr',
   'pt',
   'ru',

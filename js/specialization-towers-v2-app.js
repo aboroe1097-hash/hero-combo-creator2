@@ -73,6 +73,7 @@ const LANGUAGE_OPTIONS = Object.freeze([
   ['es', 'Español'],
   ['fr', 'Français'],
   ['id', 'Indonesia'],
+  ['it', 'Italiano'],
   ['kr', '한국어'],
   ['pt', 'Português'],
   ['ru', 'Русский'],

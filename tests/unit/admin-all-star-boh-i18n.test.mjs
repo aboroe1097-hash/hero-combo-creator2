@@ -175,6 +175,7 @@ test('admin locale resolution, fallback, and lazy-loader contract stay stable', 
     'es',
     'fr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',
@@ -202,6 +203,6 @@ test('admin locale resolution, fallback, and lazy-loader contract stay stable', 
   }
   assert.doesNotMatch(
     source,
-    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|id|kr|pt|ru|tr|zh)\.js['"]/
+    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|id|it|kr|pt|ru|tr|zh)\.js['"]/
   );
 });

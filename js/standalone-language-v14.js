@@ -6,7 +6,7 @@
   if (!shell || !select || shell.dataset.languagePopoverMounted === '1') return;
 
   const shortCodes = Object.freeze({
-    ar: 'AR', de: 'DE', en: 'EN', es: 'ES', fr: 'FR', id: 'ID',
+    ar: 'AR', de: 'DE', en: 'EN', es: 'ES', fr: 'FR', id: 'ID', it: 'IT',
     kr: 'KO', pt: 'PT', ru: 'RU', tr: 'TR', zh: 'ZH',
   });
   const originalIcon = shell.querySelector('.lang-select-icon');

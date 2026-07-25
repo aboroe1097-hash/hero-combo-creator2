@@ -1,9 +1,16 @@
 import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
 import { p1Copy } from './p1-copy.js';
+import { createDmMaterialsCatalog } from './dm-materials/index.js';
+import { DM_MATERIAL_PACKS } from './dm-materials/packs.js';
+import { getAiActionCopy } from './ai-action-copy.js';
+import { getRuntimeMiscCopy } from './runtime-misc.js';
 import { ADMIN_RUNTIME_KR } from './admin-runtime/kr.js';
 
 const kr = {
+  ...createDmMaterialsCatalog(DM_MATERIAL_PACKS.kr),
   ...ADMIN_RUNTIME_KR,
+  ...getAiActionCopy('kr'),
+  ...getRuntimeMiscCopy('kr'),
   ...edenX1ContributionModeCopy,
   ...p1Copy([
     '소유권',
@@ -383,6 +390,8 @@ const kr = {
     '이 브라우저는 운영진 대시보드에 로그인되어 있습니다. 플레이어 신청을 보호하려면 이 링크를 비공개 창에서 열고 멤버 PIN을 입력하세요.',
   bohAccessErrorAppCheck: '안전한 앱 확인을 완료하지 못했습니다. 다시 시도하세요.',
   bohAccessErrorNetwork: '보안 서비스에 연결할 수 없습니다. 인터넷 연결을 확인하세요.',
+  bohAccessErrorSecureServiceUnreachable:
+    '보안 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도하세요.',
   bohAccessErrorGeneric: '멤버 접근을 확인하지 못했습니다. 다시 시도하세요.',
   adminBohTab: 'All-Star BoH',
   adminBohTitle: 'All-Star BoH 지휘 센터',

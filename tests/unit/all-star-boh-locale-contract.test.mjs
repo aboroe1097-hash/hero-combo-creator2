@@ -79,7 +79,7 @@ async function assertLocaleParity({
   assert.equal(translate(sampleKey, {}, locale), pack[sampleKey]);
 }
 
-test('all eleven player locale chunks preserve canonical keys and safe fallback', async () => {
+test('all twelve player locale chunks preserve canonical keys and safe fallback', async () => {
   for (const locale of ALL_STAR_BOH_LOCALES.slice(1)) {
     await assertLocaleParity({
       locale,
@@ -107,7 +107,7 @@ test('Russian OCR failure safety copy is native instead of an English fallback',
   }
 });
 
-test('all ten admin locale chunks have complete keys, placeholders, and live lookup', async () => {
+test('all eleven admin locale chunks have complete keys, placeholders, and live lookup', async () => {
   for (const locale of ADMIN_ALL_STAR_BOH_LOCALES.slice(1)) {
     await assertLocaleParity({
       locale,

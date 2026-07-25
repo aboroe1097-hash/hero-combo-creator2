@@ -112,7 +112,7 @@ function getLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
     const primary = String(navigator.language || '')
       .toLowerCase()
       .split('-')[0];

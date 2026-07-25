@@ -450,6 +450,7 @@ const LOCALE_LOADERS = Object.freeze({
   fr: () => import('./fr.js'),
   hr: () => import('./hr.js'),
   id: () => import('./id.js'),
+  it: () => import('./it.js'),
   kr: () => import('./kr.js'),
   pt: () => import('./pt.js'),
   ru: () => import('./ru.js'),

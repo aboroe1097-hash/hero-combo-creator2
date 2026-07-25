@@ -225,6 +225,8 @@ export default Object.freeze({
   'signup.ocrFileRequired': '먼저 스크린샷 한 장을 선택하세요.',
   'signup.ocrProcessing': '스크린샷 판독 중…',
   'signup.ocrReviewReady': 'OCR 초안이 준비되었습니다. 제출 전에 모든 값을 확인하세요.',
+  'signup.ocrError':
+    '스크린샷을 읽지 못했습니다. 다시 시도하거나 값을 직접 입력 또는 수정하세요. 그래도 업데이트를 저장할 수 있습니다.',
   'signup.revisionConflict':
     '저장된 신청 정보가 다른 세션에서 변경되었습니다. 양식을 확인한 뒤 다시 제출하세요.',
   'signup.savedNotice': '계정 및 참가 정보가 성공적으로 제출되었습니다.',

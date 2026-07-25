@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import arCatalog from '../../js/i18n/ar.js';
+import itCatalog from '../../js/i18n/it.js';
+import krCatalog from '../../js/i18n/kr.js';
 import { AI_ACTION_LOCALES, getAiActionCopy } from '../../js/i18n/ai-action-copy.js';
+import {
+  loadTranslationsForLanguage,
+  translationCoverage,
+  translations,
+} from '../../js/translations.js';
 import { DM_MATERIAL_LOCALES, auditDmMaterialsPack } from '../../js/i18n/dm-materials/index.js';
 import { DM_MATERIAL_PACKS } from '../../js/i18n/dm-materials/packs.js';
 import {
@@ -25,6 +32,7 @@ const NON_ENGLISH_LOCALES = Object.freeze([
   'es',
   'fr',
   'id',
+  'it',
   'kr',
   'pt',
   'ru',
@@ -32,6 +40,34 @@ const NON_ENGLISH_LOCALES = Object.freeze([
   'zh',
 ]);
 
+test('Italian and Korean main catalogs own the complete current English key contract', async () => {
+  const englishKeys = Object.keys(translations.en).sort();
+  const placeholders = (value) =>
+    [...String(value || '').matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
+
+  for (const [locale, catalog] of [
+    ['it', itCatalog],
+    ['kr', krCatalog],
+  ]) {
+    assert.deepEqual(Object.keys(catalog).sort(), englishKeys, `${locale}: main key parity`);
+    for (const key of englishKeys) {
+      assert.deepEqual(
+        placeholders(catalog[key]),
+        placeholders(translations.en[key]),
+        `${locale}.${key}: placeholders`
+      );
+    }
+  }
+
+  const italianSource = await readFile(new URL('../../js/i18n/it.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(italianSource, /import en from/u);
+  assert.doesNotMatch(italianSource, /\.\.\.en\b/u);
+  assert.match(italianSource, /import \{ ADMIN_RUNTIME_IT \} from '\.\/admin-runtime\/it\.js'/u);
+  assert.match(italianSource, /\.\.\.ADMIN_RUNTIME_IT/u);
+
+  await loadTranslationsForLanguage('it');
+  assert.deepEqual(translationCoverage.it.missingBeforeFallback, []);
+});
 test('every Research locale covers every canonical tree and compound node ID', async () => {
   for (const locale of NON_ENGLISH_LOCALES) {
     const module = await import(`../../js/i18n/research/${locale}.js`);
@@ -55,7 +91,7 @@ test('every non-English DM Materials locale exports a complete placeholder-safe 
   assert.deepEqual(
     exportedLocales,
     expectedLocales,
-    'DM Materials must export all ten supported non-English locale packs'
+    'DM Materials must export all eleven supported non-English locale packs'
   );
 
   for (const locale of expectedLocales) {
@@ -200,6 +236,7 @@ test('AI navigation actions are translated for every supported locale', () => {
     'es',
     'fr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',

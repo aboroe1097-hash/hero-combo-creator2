@@ -14,6 +14,7 @@ const loaders = {
   fr: () => import('./i18n/fr.js'),
   hr: () => import('./i18n/hr.js'),
   id: () => import('./i18n/id.js'),
+  it: () => import('./i18n/it.js'),
   kr: () => import('./i18n/kr.js'),
   pt: () => import('./i18n/pt.js'),
   ru: () => import('./i18n/ru.js'),
