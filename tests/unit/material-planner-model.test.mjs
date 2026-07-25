@@ -476,6 +476,46 @@ test('campaign result exposes focused flow plus aggregate 30-piece and five-set 
   assert.equal(result.needed.superDragonite, DM_ROUTES.purple.perPiece.superDragonite * 22);
 });
 
+test('owned inventory counts exact remaining target-slot pieces without campaign double counting', () => {
+  let plan = createDefaultMaterialPlan();
+  for (const slot of DM_SLOT_IDS) plan.ownedPieces[slot] = 2;
+
+  let inventory = calculateMaterialPlan(plan).inventorySummary;
+  assert.deepEqual(
+    inventory.ownedBySlot,
+    Object.fromEntries(DM_SLOT_IDS.map((slot) => [slot, 2]))
+  );
+  assert.equal(inventory.completeFullSetCount, 2);
+  assert.equal(inventory.remainingFullSetCount, 3);
+  assert.equal(inventory.remainingPieceCountToTarget, 18);
+  assert.equal(inventory.resourceNeedToTarget.superDragonite, 1_152_000);
+
+  plan = applyMaterialPreset(plan, 'attack');
+  plan.ownedPieces = {
+    armor: 5,
+    dagger: 2,
+    ring: 4,
+    sword: 3,
+    helmet: 0,
+    boots: 0,
+  };
+  inventory = calculateMaterialPlan(plan).inventorySummary;
+  assert.deepEqual(inventory.ownedBySlot, {
+    armor: 5,
+    dagger: 2,
+    ring: 4,
+    sword: 3,
+  });
+  assert.deepEqual(inventory.remainingBySlot, {
+    armor: 0,
+    dagger: 3,
+    ring: 1,
+    sword: 2,
+  });
+  assert.equal(inventory.completeFullSetCount, 2);
+  assert.equal(inventory.remainingPieceCountToTarget, 6);
+});
+
 test('presets apply to every set while preserving the five-set campaign history', () => {
   const plan = createDefaultMaterialPlan();
   for (const set of plan.sets) {

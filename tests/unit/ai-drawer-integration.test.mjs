@@ -31,6 +31,10 @@ const assistantCss = fs.readFileSync(
   new URL('../../css/ai-assistant.css', import.meta.url),
   'utf8'
 );
+const drawerCss = fs.readFileSync(
+  new URL('../../css/ai-drawer.css', import.meta.url),
+  'utf8'
+);
 const translationsSource = fs.readFileSync(
   new URL('../../js/translations.js', import.meta.url),
   'utf8'
@@ -88,6 +92,44 @@ test('the eager launcher stylesheet is available during local Vite development',
   assert.match(viteConfig, /function serveAiLauncherCriticalCss\(\)/);
   assert.match(viteConfig, /pathname !== '\/ai-launcher-critical\.css'/);
   assert.match(viteConfig, /plugins: \[serveAiLauncherCriticalCss\(\)\]/);
+});
+
+test('Velo Beta 0.3 consent settings preserve grants and remain responsive', () => {
+  assert.match(assistantTemplate, /aria-label="Velo Beta 0\.3">Beta 0\.3</);
+  assert.match(
+    assistantTemplate,
+    /id="aiConsentDialog"[\s\S]*aria-labelledby="aiConsentTitle"[\s\S]*aria-describedby="aiConsentDescription"/
+  );
+  assert.match(assistantTemplate, /id="aiConsentKicker"/);
+  assert.match(assistantTemplate, /id="aiConsentTitle"/);
+  assert.match(assistantTemplate, /id="aiConsentBody" class="ai-dialog-body"/);
+  assert.match(
+    assistantTemplate,
+    /<p id="aiConsentDescription" data-i18n="ai\.consent\.recipients">/
+  );
+  assert.match(
+    assistantSource,
+    /const firstDisclosure = !settings && !hasAcceptedProviderDisclosure\(\)/
+  );
+  assert.match(
+    assistantSource,
+    /syncConsentUi\(category, \{[\s\S]*preselectAvailable: firstDisclosure,[\s\S]*preselectPreferred: !settings/
+  );
+  assert.match(assistantSource, /this\.grants\.has\(category\)/);
+  assert.match(assistantSource, /preselectPreferred && category === preferredCategory/);
+  assert.match(assistantSource, /this\.consentMode = settings \? 'settings' : 'disclosure'/);
+  assert.match(
+    assistantSource,
+    /syncConsentCopy\(settings = false\)[\s\S]*ai\.privacySettings[\s\S]*ai\.consent\.title[\s\S]*ai\.consent\.saveSettings[\s\S]*ai\.consent\.allowSelected/
+  );
+  assert.match(drawerCss, /width: clamp\(520px, 42vw, 680px\)/);
+  assert.match(assistantCss, /\.ai-dialog \{[\s\S]*overflow: hidden;/);
+  assert.match(assistantCss, /\.ai-dialog-body \{[\s\S]*overflow-y: auto;/);
+  assert.match(
+    assistantCss,
+    /@media \(max-width: 620px\)[\s\S]*\.ai-overlay \{[\s\S]*place-items: end center;[\s\S]*\.ai-dialog \{[\s\S]*width: 100%;[\s\S]*border-radius: 20px 20px 0 0;/
+  );
+  assert.match(assistantCss, /padding-block-end: max\(0rem, env\(safe-area-inset-bottom\)\)/);
 });
 
 test('Velo branding replaces provider-led assistant chrome with an animated mascot', () => {
@@ -225,10 +267,6 @@ test('saved Research status requests are routed through consented app progress',
   assert.match(
     assistantSource,
     /inferredCategory &&[\s\S]*?hasRawSavedState\(inferredCategory\)[\s\S]*?!this\.grants\.has\(inferredCategory\)[\s\S]*?openConsent\(\{ category: inferredCategory, prompt \}\)/
-  );
-  assert.match(
-    assistantSource,
-    /syncConsentUi\(preferredCategory = ''\)[\s\S]*?input\.checked = available;/
   );
   assert.match(assistantSource, /this\.pendingSetupCategories = new Set\(\)/);
   assert.match(

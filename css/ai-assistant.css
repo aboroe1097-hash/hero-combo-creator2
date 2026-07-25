@@ -498,7 +498,7 @@
   max-height: calc(
     100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
   );
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
@@ -511,6 +511,7 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 .ai-dialog-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -537,6 +538,9 @@
   outline: none;
 }
 .ai-dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -591,6 +595,7 @@
   font-size: 0.78rem;
 }
 .ai-dialog-actions {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -612,6 +617,7 @@
   color: #ffffff;
 }
 .ai-dialog--compact {
+  overflow-y: auto;
   width: min(460px, 100%);
 }
 .ai-confirm-body {
@@ -657,6 +663,29 @@
 
 /* -- Responsive -- */
 @media (max-width: 620px) {
+  .ai-overlay {
+    place-items: end center;
+    padding: max(0.75rem, env(safe-area-inset-top)) 0 0;
+  }
+  .ai-dialog {
+    width: 100%;
+    max-height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)));
+    border-block-end: 0;
+    border-radius: 20px 20px 0 0;
+  }
+  .ai-dialog-body {
+    min-width: 0;
+  }
+  .ai-consent-option {
+    min-height: 44px;
+  }
+  .ai-dialog-actions {
+    position: relative;
+    z-index: 1;
+    padding-block-end: max(0rem, env(safe-area-inset-bottom));
+    background: var(--ai-surface);
+  }
+
   .ai-assistant {
     max-height: none;
   }

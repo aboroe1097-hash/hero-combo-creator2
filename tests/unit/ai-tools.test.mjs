@@ -554,7 +554,19 @@ test('material and research tools never synthesize absent personal state', async
   assert.equal(missingMaterial.error.code, 'missing_saved_data');
 
   const materialStorage = new MemoryStorage({
-    [AI_SAVED_STATE_KEYS.dmPlan]: JSON.stringify({ route: 'purple', preset: 'full' }),
+    [AI_SAVED_STATE_KEYS.dmPlan]: JSON.stringify({
+      route: 'purple',
+      preset: 'full',
+      sets: [{ id: 1, completed: { armor: true } }],
+      ownedPieces: {
+        armor: 2,
+        dagger: 2,
+        ring: 2,
+        sword: 2,
+        helmet: 2,
+        boots: 2,
+      },
+    }),
   });
   const material = await executeAiToolCall(
     { name: 'get_material_plan_summary', arguments: {} },
@@ -567,6 +579,19 @@ test('material and research tools never synthesize absent personal state', async
   assert.equal(material.data.route, 'purple');
   assert.ok(material.data.nextPiece);
   assert.ok(material.data.shortfall.superDragonite > 0);
+
+  assert.match(material.data.campaign.basis, /not a count of whole sets/);
+  assert.equal(material.data.campaign.incompleteSetCount, 5);
+  assert.equal(material.data.campaign.remainingPieceCount, 29);
+  assert.equal(material.data.totalRemainingPieces, 29);
+  assert.match(material.data.inventory.basis, /owned-piece counts by slot/);
+  assert.equal(material.data.inventory.completeFullSetCount, 2);
+  assert.equal(material.data.inventory.remainingPieceCountToTarget, 18);
+  assert.equal(material.data.inventory.resourceNeedToTarget.superDragonite, 1_152_000);
+  assert.notEqual(
+    material.data.campaign.remainingPieceCount,
+    material.data.inventory.remainingPieceCountToTarget
+  );
 
   const catalogStorage = new MemoryStorage();
   const catalog = await executeAiToolCall(

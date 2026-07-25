@@ -1793,6 +1793,10 @@ function normalizeSeat(input, index = 0, options = {}) {
   const source = requireRecord(input, `Seat ${index + 1}`);
   const seat = {
     id: optionalIdentifier(firstDefined(source, ['id', 'seatId']), 'Seat ID'),
+    rosterKey: optionalIdentifier(
+      firstDefined(source, ['rosterKey', 'rosterSeatKey']),
+      'Roster seat key'
+    ),
     seatNumber: boundedInteger(
       firstDefined(source, ['seatNumber', 'number']) ?? index + 1,
       'Seat number',
@@ -1831,6 +1835,7 @@ function normalizeSeat(input, index = 0, options = {}) {
 
 function validateSeats(seats) {
   const seatIds = new Set();
+  const rosterKeys = new Set();
   const seatNumbers = new Set();
   const playerIds = new Set();
   for (const seat of seats) {
@@ -1838,6 +1843,10 @@ function validateSeats(seats) {
       throw new AllStarBohValidationError(`Duplicate seat ID ${seat.id}.`);
     }
     if (seat.id) seatIds.add(seat.id);
+    if (seat.rosterKey && rosterKeys.has(seat.rosterKey)) {
+      throw new AllStarBohValidationError(`Duplicate roster seat key ${seat.rosterKey}.`);
+    }
+    if (seat.rosterKey) rosterKeys.add(seat.rosterKey);
     if (seatNumbers.has(seat.seatNumber)) {
       throw new AllStarBohValidationError(`Duplicate seat number ${seat.seatNumber}.`);
     }
@@ -2941,9 +2950,9 @@ function validatePublicationReferences(current, teams, players) {
       `A team announcement requires between 2 and ${ALL_STAR_BOH_MAX_TEAMS} teams.`
     );
   }
-  if (players.size < teamCount || players.size > teamCount * 12) {
+  if (players.size > teamCount * 12) {
     throw new AllStarBohPublishValidationError(
-      `A ${teamCount}-team announcement requires between ${teamCount} and ${teamCount * 12} player projections.`
+      `A ${teamCount}-team announcement supports at most ${teamCount * 12} personal player projections.`
     );
   }
   if (current.teamCount !== null && current.teamCount !== teamCount) {
@@ -2969,6 +2978,7 @@ function validatePublicationReferences(current, teams, players) {
   }
 
   const assignedPlayers = new Set();
+  const assignedRosterKeys = new Set();
   const projectionByPlayerId = new Map();
   for (const [uid, player] of players) {
     if (projectionByPlayerId.has(player.playerId)) {
@@ -2986,18 +2996,25 @@ function validatePublicationReferences(current, teams, players) {
       );
     }
     teamNumbers.add(team.number);
-    if (team.seats.length < 1 || team.seats.length > 12) {
+    if (team.seats.length !== 12) {
       throw new AllStarBohPublishValidationError(
-        `Team ${teamId} must contain between 1 and 12 occupied seats.`
+        `Team ${teamId} must contain exactly 12 approved roster seats.`
       );
     }
     const teamPlayerIds = new Set();
     for (const seat of team.seats) {
-      if (!seat.playerId || !seat.roleGroupId) {
+      if (!seat.rosterKey || !seat.displayName || !seat.roleGroupId) {
         throw new AllStarBohPublishValidationError(
-          `Every seat in team ${teamId} requires a player and role.`
+          `Every seat in team ${teamId} requires a stable roster key, display name, and role.`
         );
       }
+      if (assignedRosterKeys.has(seat.rosterKey)) {
+        throw new AllStarBohPublishValidationError(
+          `Roster seat key ${seat.rosterKey} is assigned more than once.`
+        );
+      }
+      assignedRosterKeys.add(seat.rosterKey);
+      if (!seat.playerId) continue;
       if (assignedPlayers.has(seat.playerId)) {
         throw new AllStarBohPublishValidationError(
           `Player ${seat.playerId} is assigned to more than one published seat.`
@@ -3065,7 +3082,7 @@ function validatePublicationReferences(current, teams, players) {
   }
   if (assignedPlayers.size !== players.size) {
     throw new AllStarBohPublishValidationError(
-      'Published seats and personal projections must contain the same unique players.'
+      'UID-linked published seats and personal projections must contain the same unique players.'
     );
   }
 }

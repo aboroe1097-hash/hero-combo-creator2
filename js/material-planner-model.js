@@ -363,6 +363,36 @@ export function calculateMaterialPlan(inputPlan) {
     ? { setId: nextSetSummary.setId, slot: nextSetSummary.remainingSlots[0] }
     : null;
 
+  const ownedBySlot = Object.fromEntries(
+    targetSlots.map((slot) => [slot, Math.min(plan.targetSets, plan.ownedPieces[slot])])
+  );
+  const completeFullSetCount = targetSlots.length
+    ? Math.min(...targetSlots.map((slot) => ownedBySlot[slot]))
+    : 0;
+  const remainingFullSetCount = Math.max(0, plan.targetSets - completeFullSetCount);
+  const remainingBySlot = Object.fromEntries(
+    targetSlots.map((slot) => [slot, Math.max(0, plan.targetSets - ownedBySlot[slot])])
+  );
+  const remainingPieceCountToTarget = Object.values(remainingBySlot).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  const resourceNeedToTarget = multiplyResources(route.perPiece, remainingPieceCountToTarget);
+  const shortfallAfterStockpile = Object.fromEntries(
+    RESOURCE_KEYS.map((key) => [
+      key,
+      Math.max(0, resourceNeedToTarget[key] - plan.ownedResources[key]),
+    ])
+  );
+  const inventorySummary = {
+    ownedBySlot,
+    completeFullSetCount,
+    remainingFullSetCount,
+    remainingBySlot,
+    remainingPieceCountToTarget,
+    resourceNeedToTarget,
+    shortfallAfterStockpile,
+  };
   return {
     plan,
     route,
@@ -397,6 +427,7 @@ export function calculateMaterialPlan(inputPlan) {
     focusedSetProgress,
     nextSlot,
     nextPiece,
+    inventorySummary,
     allComplete: totalTargetPieces > 0 && totalRemainingPieces === 0,
   };
 }

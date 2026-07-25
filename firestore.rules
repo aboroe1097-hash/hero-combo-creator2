@@ -1208,19 +1208,19 @@ service cloud.firestore {
         || (
           values[index] is map
           && values[index].keys().hasOnly([
-            'id', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
+            'id', 'rosterKey', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
             'roleLabel', 'side', 'lane'
           ])
           && values[index].keys().hasAll([
-            'id', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
+            'id', 'rosterKey', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
             'roleLabel', 'side', 'lane'
           ])
           && validAllStarBohText(values[index].id, 128)
+          && validAllStarBohIdentifier(values[index].rosterKey, false)
           && values[index].seatNumber is int
           && values[index].seatNumber >= 1
           && values[index].seatNumber <= 12
-          && validAllStarBohText(values[index].playerId, 128)
-          && values[index].playerId.size() > 0
+          && validAllStarBohIdentifier(values[index].playerId, true)
           && validAllStarBohText(values[index].displayName, 160)
           && values[index].displayName.size() > 0
           && validAllStarBohText(values[index].roleGroupId, 128)

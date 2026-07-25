@@ -4,7 +4,7 @@
     <div class="ai-header-copy">
       <div class="ai-kicker-row">
         <span class="ai-kicker" data-i18n="ai.kicker">VTS Assistant</span>
-        <span class="ai-beta-badge" aria-label="Velo Beta 0.2">Beta 0.2</span>
+        <span class="ai-beta-badge" aria-label="Velo Beta 0.3">Beta 0.3</span>
       </div>
       <h2 class="ai-title" data-i18n="ai.title">Talk with Velo</h2>
       <p class="ai-disclaimer">
@@ -216,11 +216,14 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="aiConsentTitle"
+      aria-describedby="aiConsentDescription"
       tabindex="-1"
     >
       <div class="ai-dialog-header">
         <div>
-          <span class="ai-kicker" data-i18n="ai.consent.kicker">Before your first question</span>
+          <span id="aiConsentKicker" class="ai-kicker" data-i18n="ai.consent.kicker"
+            >Before your first question</span
+          >
           <h3 id="aiConsentTitle" data-i18n="ai.consent.title">Choose what this chat can use</h3>
         </div>
         <button
@@ -233,8 +236,8 @@
           ×
         </button>
       </div>
-      <div class="ai-dialog-body">
-        <p data-i18n="ai.consent.recipients">
+      <div id="aiConsentBody" class="ai-dialog-body">
+        <p id="aiConsentDescription" data-i18n="ai.consent.recipients">
           Your question is sent securely through the VTS Worker to an external AI service. Provider
           storage is disabled.
         </p>

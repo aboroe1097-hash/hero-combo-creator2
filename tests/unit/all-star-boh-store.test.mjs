@@ -153,6 +153,7 @@ function publishedTeam(teamId, playerIds = [], overrides = {}) {
       const role = seatRole(index);
       return {
         id: `${teamId}-seat-${index + 1}`,
+        rosterKey: `${teamId}-roster-${index + 1}`,
         seatNumber: index + 1,
         playerId,
         displayName: `Player ${playerId}`,
@@ -3367,7 +3368,7 @@ test('publication rejects dynamic team, overview, roster, and projection mismatc
   );
 
   const shortTeam = completePublicationBundle({ teamCount: 2 });
-  shortTeam.teams['team-2'].seats.pop();
+  shortTeam.teams['team-2'].seats.at(-1).playerId = '';
   await assert.rejects(
     admin.publish(shortTeam, { expectedRevision: 0 }),
     /has a personal plan but no published seat/
@@ -3381,7 +3382,7 @@ test('publication rejects dynamic team, overview, roster, and projection mismatc
   assert.equal(fake.transactionCount, 0);
 });
 
-test('publication preserves approved partially occupied teams without empty seat placeholders', async () => {
+test('publication rejects partially occupied teams that omit approved roster seats', async () => {
   const bundle = completePublicationBundle({ teamCount: 2 });
   for (const team of Object.values(bundle.teams)) {
     const removedSeats = team.seats.splice(-2);
@@ -3405,15 +3406,14 @@ test('publication preserves approved partially occupied teams without empty seat
     admin: true,
   });
 
-  const result = await admin.publish(bundle, {
-    expectedRevision: 0,
-    ...publicationSourceOptions(bundle),
-  });
-
-  assert.equal(result.current.revision, 1);
-  assert.equal(fake.read(getAllStarBohPublishedTeamPath(SEASON_ID, 'team-1')).seats.length, 10);
-  assert.equal(fake.read(getAllStarBohPublishedTeamPath(SEASON_ID, 'team-2')).seats.length, 10);
-  assert.equal(fake.read(getAllStarBohPublicationIndexPath(SEASON_ID)).playerIds.length, 20);
+  await assert.rejects(
+    admin.publish(bundle, {
+      expectedRevision: 0,
+      ...publicationSourceOptions(bundle),
+    }),
+    /must contain exactly 12 approved roster seats/
+  );
+  assert.equal(fake.transactionCount, 0);
 });
 
 test('hidden publication keeps members unlocked without exposing draft announcement data', async () => {

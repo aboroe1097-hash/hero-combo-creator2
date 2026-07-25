@@ -749,13 +749,121 @@ function defaultWeights() {
 function normalizeSeat(source, teamId, seatNumber) {
   return {
     id: cleanText(source?.id) || `${teamId}-seat-${seatNumber}`,
+    rosterKey: cleanText(source?.rosterKey || source?.rosterSeatKey),
     seatNumber,
     playerId: cleanText(source?.playerId || source?.memberId),
     displayName: cleanText(source?.displayName || source?.playerName),
     roleGroupId: cleanText(source?.roleGroupId || source?.roleId),
+    roleLabel: cleanText(source?.roleLabel),
     locked: Boolean(source?.locked),
     note: cleanText(source?.note),
   };
+}
+
+function parseApprovedRosterCsvRecords(input) {
+  const text = String(input ?? '').replace(/^\uFEFF/u, '');
+  const records = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (quoted) {
+      if (character === '"' && text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (character === '"') quoted = false;
+      else field += character;
+    } else if (character === '"') quoted = true;
+    else if (character === ',') {
+      row.push(field);
+      field = '';
+    } else if (character === '\n') {
+      row.push(field.replace(/\r$/u, ''));
+      if (row.some((value) => cleanText(value))) records.push(row);
+      row = [];
+      field = '';
+    } else field += character;
+  }
+  if (quoted) throw new Error('The approved roster CSV contains an unclosed quoted value.');
+  row.push(field.replace(/\r$/u, ''));
+  if (row.some((value) => cleanText(value))) records.push(row);
+  return records;
+}
+
+function approvedRosterHeaderKey(value) {
+  return cleanText(value)
+    .normalize('NFKC')
+    .toLocaleLowerCase('en')
+    .replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+function approvedRosterColumn(headers, aliases, required = false) {
+  const accepted = new Set(aliases.map(approvedRosterHeaderKey));
+  const index = headers.findIndex((header) => accepted.has(approvedRosterHeaderKey(header)));
+  if (index < 0 && required) {
+    throw new Error(`Approved roster CSV is missing the ${aliases[0]} column.`);
+  }
+  return index;
+}
+
+export function parseAdminAllStarBohApprovedRosterCsv(input) {
+  const records = parseApprovedRosterCsvRecords(input);
+  if (records.length < 2) throw new Error('The approved roster CSV has no player rows.');
+  const headers = records[0];
+  const teamColumn = approvedRosterColumn(
+    headers,
+    ['Team', 'Team name', 'Team number', 'Squad'],
+    true
+  );
+  const nameColumn = approvedRosterColumn(
+    headers,
+    ['Name', 'Player', 'Player name', 'Game name', 'In-game name'],
+    true
+  );
+  const seatColumn = approvedRosterColumn(headers, ['Seat', 'Seat number', 'Position']);
+  const languageColumn = approvedRosterColumn(headers, ['Language', 'Locale']);
+  const role1Column = approvedRosterColumn(headers, ['Role 1', 'Primary role', 'Role']);
+  const role2Column = approvedRosterColumn(headers, ['Role 2', 'Secondary role']);
+  const teams = new Map();
+  records.slice(1).forEach((record, rowIndex) => {
+    const teamName = cleanText(record[teamColumn]);
+    const name = cleanText(record[nameColumn]);
+    if (!teamName || !name) {
+      throw new Error(`Approved roster CSV row ${rowIndex + 2} requires Team and Name.`);
+    }
+    if (!teams.has(teamName)) teams.set(teamName, []);
+    const teamRows = teams.get(teamName);
+    const explicitSeat = seatColumn < 0 ? 0 : integer(record[seatColumn]);
+    const seatNumber = explicitSeat || teamRows.length + 1;
+    if (seatNumber < 1 || seatNumber > ROSTER_SIZE) {
+      throw new Error(`Approved roster CSV row ${rowIndex + 2} has an invalid seat.`);
+    }
+    if (teamRows.some((row) => row.seatNumber === seatNumber)) {
+      throw new Error(`Approved roster team ${teamName} repeats seat ${seatNumber}.`);
+    }
+    teamRows.push({
+      teamName,
+      seatNumber,
+      name,
+      language: languageColumn < 0 ? '' : cleanText(record[languageColumn]),
+      role1: role1Column < 0 ? '' : cleanText(record[role1Column]),
+      role2: role2Column < 0 ? '' : cleanText(record[role2Column]),
+      sourceRow: rowIndex + 2,
+    });
+  });
+  if (teams.size !== TEAM_COUNT) {
+    throw new Error(`Approved roster CSV requires exactly ${TEAM_COUNT} teams; found ${teams.size}.`);
+  }
+  const parsedTeams = [...teams].map(([teamName, rows]) => {
+    if (rows.length !== ROSTER_SIZE) {
+      throw new Error(
+        `Approved roster team ${teamName} requires ${ROSTER_SIZE} names; found ${rows.length}.`
+      );
+    }
+    return { teamName, rows: rows.sort((left, right) => left.seatNumber - right.seatNumber) };
+  });
+  return { teams: parsedTeams, playerCount: parsedTeams.length * ROSTER_SIZE };
 }
 
 function normalizeTeamCount(value, fallback = TEAM_COUNT) {
@@ -2229,6 +2337,144 @@ async function adapterSaveEventSchedule(state, payload) {
   state.eventSchedule = normalizeEventSchedule(saved || schedule);
   state.eventScheduleRevision = adapterRevision(state.eventSchedule.revision);
   adapterNotify(state, false);
+}
+
+function adapterApprovedRosterNameKey(value) {
+  return cleanText(value).normalize('NFKC').replace(/\s+/gu, ' ').toLocaleLowerCase('en');
+}
+
+function adapterMatchApprovedRoster(state, parsed) {
+  const verified = state.submissions
+    .map((submission) => {
+      const uid = adapterSubmissionUid(submission);
+      const review = state.reviews.get(uid) || null;
+      if (!adapterReviewIsFresh(submission, review)) return null;
+      const effective = adapterEffectiveSubmission(state, submission);
+      return {
+        playerId: adapterSubmissionId(submission),
+        names: uniqueTextList([playerName(effective), playerName(submission)]),
+      };
+    })
+    .filter((candidate) => candidate?.playerId);
+  const byName = new Map();
+  for (const candidate of verified) {
+    for (const name of candidate.names) {
+      const key = adapterApprovedRosterNameKey(name);
+      if (!key) continue;
+      if (!byName.has(key)) byName.set(key, new Map());
+      byName.get(key).set(candidate.playerId, candidate);
+    }
+  }
+  const warnings = [];
+  const matchedTeams = parsed.teams.map((team) => ({
+    ...team,
+    rows: team.rows.map((row) => {
+      const candidates = [...(byName.get(adapterApprovedRosterNameKey(row.name))?.values() || [])];
+      if (candidates.length !== 1) {
+        warnings.push({
+          code: candidates.length ? 'ambiguous' : 'unmatched',
+          teamName: row.teamName,
+          seatNumber: row.seatNumber,
+          name: row.name,
+          candidateIds: candidates.map((candidate) => candidate.playerId),
+        });
+        return { ...row, playerId: '' };
+      }
+      return { ...row, playerId: candidates[0].playerId };
+    }),
+  }));
+  const uses = new Map();
+  for (const team of matchedTeams) {
+    for (const row of team.rows) {
+      if (!row.playerId) continue;
+      if (!uses.has(row.playerId)) uses.set(row.playerId, []);
+      uses.get(row.playerId).push(row);
+    }
+  }
+  for (const [playerId, rows] of uses) {
+    if (rows.length === 1) continue;
+    for (const row of rows) row.playerId = '';
+    warnings.push({
+      code: 'duplicate-match',
+      name: rows.map((row) => row.name).join(' / '),
+      candidateIds: [playerId],
+    });
+  }
+  const matchedCount = matchedTeams
+    .flatMap((team) => team.rows)
+    .filter((row) => row.playerId).length;
+  return { teams: matchedTeams, matchedCount, warnings };
+}
+
+async function adapterImportApprovedRoster(state, payload) {
+  const parsed = parseAdminAllStarBohApprovedRosterCsv(payload.csvText);
+  const matched = adapterMatchApprovedRoster(state, parsed);
+  const targetTeamIds = adapterTeamIds(state.draft);
+  if (targetTeamIds.length !== TEAM_COUNT) {
+    throw adapterError(
+      'all-star-boh-approved-roster-team-count',
+      `The saved draft must contain exactly ${TEAM_COUNT} teams before import.`
+    );
+  }
+  const teams = targetTeamIds.map((teamId, teamIndex) => {
+    const current = adapterMaterializeTeam(state, teamId, teamIndex);
+    const approved = matched.teams[teamIndex];
+    const seats = approved.rows.map((row) => {
+      const existing = current.seats.find((seat) => seat.seatNumber === row.seatNumber) || {};
+      return {
+        ...existing,
+        id: cleanText(existing.id) || `${teamId}-seat-${row.seatNumber}`,
+        rosterKey: `approved-${teamId}-seat-${String(row.seatNumber).padStart(2, '0')}`,
+        seatNumber: row.seatNumber,
+        playerId: row.playerId,
+        displayName: row.name,
+        locked: true,
+        score: row.playerId
+          ? adapterScoreRecord(state, adapterFindSubmission(state, row.playerId)).score
+          : null,
+      };
+    });
+    const linkedIds = new Set(seats.map((seat) => seat.playerId).filter(Boolean));
+    return {
+      ...current,
+      seats,
+      captainId: linkedIds.has(current.captainId) ? current.captainId : '',
+      coLeaderIds: current.coLeaderIds.filter((playerId) => linkedIds.has(playerId)),
+    };
+  });
+  const playerIds = teams.flatMap((team) =>
+    team.seats.map((seat) => seat.playerId).filter(Boolean)
+  );
+  const nextDraft = {
+    ...adapterClone(state.draft),
+    teamCount: TEAM_COUNT,
+    playerIds,
+    forcedTeamAssignments: teams.flatMap((team) =>
+      team.seats
+        .filter((seat) => seat.playerId)
+        .map((seat) => ({ playerId: seat.playerId, teamId: team.id }))
+    ),
+  };
+  const teamEntries = Object.fromEntries(teams.map((team) => [team.id, team]));
+  const saved = await state.adminStore.saveDraftBundle(
+    { draft: nextDraft, teams: teamEntries },
+    {
+      expectedDraftRevision: adapterRevision(state.draft?.revision),
+      expectedTeamRevisions: Object.fromEntries(
+        teams.map((team) => [team.id, adapterRevision(state.teams.get(team.id)?.revision)])
+      ),
+    }
+  );
+  state.draft = saved?.draft || nextDraft;
+  for (const [teamId, team] of Object.entries(saved?.teams || teamEntries)) {
+    state.teams.set(teamId, team);
+  }
+  adapterNotify(state);
+  return {
+    matchedCount: matched.matchedCount,
+    totalCount: parsed.playerCount,
+    warnings: matched.warnings,
+  };
 }
 
 async function adapterSaveTeams(state, teams) {
@@ -4113,9 +4359,10 @@ function adapterPublicationBundle(state, kind) {
       captainId: team.captainId,
       coLeaderIds: uniqueTextList(team.coLeaderIds).slice(0, 2),
       seats: team.seats
-        .filter((seat) => seat.playerId)
+        .filter((seat) => seat.displayName)
         .map((seat) => ({
           id: seat.id,
+          rosterKey: seat.rosterKey || seat.id || `${team.id}-seat-${seat.seatNumber}`,
           seatNumber: seat.seatNumber,
           playerId: seat.playerId,
           displayName: seat.displayName,
@@ -4131,9 +4378,9 @@ function adapterPublicationBundle(state, kind) {
       number: team.number,
       label: team.name,
       players: team.seats
-        .filter((seat) => seat.playerId)
+        .filter((seat) => seat.displayName)
         .map((seat) => ({
-          playerId: seat.playerId,
+          playerId: seat.playerId || seat.rosterKey || seat.id,
           gameName: seat.displayName || seat.playerId,
           seatNumber: seat.seatNumber,
         })),
@@ -4227,26 +4474,29 @@ export function validateAdminAllStarBohPublicationBundle(bundle = {}) {
     number: team.number,
     label: team.name,
     players: list(team.seats)
-      .filter((seat) => seat.playerId)
+      .filter((seat) => seat.displayName)
       .map((seat) => ({
-        playerId: seat.playerId,
+        playerId: seat.playerId || seat.rosterKey || seat.id,
         gameName: seat.displayName || seat.playerId,
         seatNumber: seat.seatNumber,
       })),
   }));
   const players = Object.values(bundle.players || {});
+  const linkedSeatCount = Object.values(bundle.teams || {})
+    .flatMap((team) => list(team.seats))
+    .filter((seat) => seat.playerId).length;
   const roleGroups = players.find((player) => player?.plan)?.plan?.roleGroups || [];
   const errors = list(
     BohModel.validateBohTeamAssignments(teams, {
       teamCount,
       roleGroups,
-      expectedPlayerIds: players.map((player) => player.playerId),
+      expectedPlayerIds: teams.flatMap((team) => team.players.map((player) => player.playerId)),
     }).errors
   );
-  if (players.length !== teamCount * ROSTER_SIZE) {
+  if (players.length !== linkedSeatCount) {
     errors.push({
       code: 'boh_player_projection_count',
-      expected: teamCount * ROSTER_SIZE,
+      expected: linkedSeatCount,
       actual: players.length,
     });
   }
@@ -4383,6 +4633,9 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
       adapterAssertRevision(state, payload, command);
     }
     if (type === 'reviewSubmission') await adapterReviewSubmission(state, payload);
+    else if (type === 'importApprovedRoster') {
+      actionResult = await adapterImportApprovedRoster(state, payload);
+    }
     else if (type === 'batchReviewSubmissions') {
       actionResult = await adapterBatchReviewSubmissions(state, payload);
     } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
@@ -4581,6 +4834,7 @@ function makeInitialState(root, options) {
     correctionDrafts: new Map(),
     commitmentScoreDraft: null,
     selectedSourceSeat: null,
+    approvedRosterImportReport: null,
     planTeamId: snapshot.teams[0]?.id || 'team-1',
     planPhaseId: snapshot.plan.phases[0]?.id || DEFAULT_PHASES[0].id,
     planLegionId: snapshot.plan.legions[0]?.id || DEFAULT_LEGIONS[0].id,
@@ -7023,6 +7277,65 @@ function renderBalancePreview(state) {
   </section>`;
 }
 
+function renderApprovedRosterImport(state) {
+  const report = state.approvedRosterImportReport;
+  const warnings = list(report?.warnings);
+  return `<section class="boh-admin-card boh-admin-stack" aria-labelledby="bohApprovedRosterImportTitle">
+    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohApprovedRosterImportKicker', 'APPROVED ROSTER')
+    )}</p><h4 id="bohApprovedRosterImportTitle">${escapeHtml(
+      state.tr('adminBohApprovedRosterImportTitle', 'Import approved team seats')
+    )}</h4><p>${escapeHtml(
+      state.tr(
+        'adminBohApprovedRosterImportHelp',
+        'Choose the approved CSV. Team order maps to Teams 1–6 and row order within each team maps to seats 1–12. Exact verified signup-name matches receive personal plans; every approved name remains visible on the public roster.'
+      )
+    )}</p></div>
+    <label class="boh-admin-button boh-admin-button-primary">
+      ${escapeHtml(state.tr('adminBohChooseApprovedRosterCsv', 'Choose approved CSV'))}
+      <input class="sr-only" type="file" accept=".csv,text/csv" data-action="import-approved-roster" />
+    </label></header>
+    ${
+      report
+        ? `<p><strong>${escapeHtml(
+            state.tr('adminBohApprovedRosterMatched', '{matched} of {total} names matched verified signups.', {
+              matched: report.matchedCount,
+              total: report.totalCount,
+            })
+          )}</strong></p>`
+        : ''
+    }
+    ${
+      warnings.length
+        ? `<div class="boh-admin-callout boh-admin-callout-warning" role="alert">
+            <strong>${escapeHtml(
+              state.tr('adminBohApprovedRosterWarnings', 'Identity warnings ({count})', {
+                count: warnings.length,
+              })
+            )}</strong>
+            <ul>${warnings
+              .map((warning) => {
+                const location =
+                  warning.teamName && warning.seatNumber
+                    ? `${warning.teamName} · ${state.tr('adminBohSeatNumber', 'Seat {number}', {
+                        number: warning.seatNumber,
+                      })}: `
+                    : '';
+                const reason =
+                  warning.code === 'ambiguous'
+                    ? state.tr('adminBohApprovedRosterAmbiguous', 'matches multiple verified signups')
+                    : warning.code === 'duplicate-match'
+                      ? state.tr('adminBohApprovedRosterDuplicate', 'would reuse one signup for multiple seats')
+                      : state.tr('adminBohApprovedRosterUnmatched', 'has no exact verified signup match');
+                return `<li>${escapeHtml(`${location}${warning.name} — ${reason}`)}</li>`;
+              })
+              .join('')}</ul>
+          </div>`
+        : ''
+    }
+  </section>`;
+}
+
 function renderTeamBuilder(state) {
   const balance = teamBalance(state);
   const candidates = teamBuilderCandidates(state);
@@ -7069,6 +7382,7 @@ function renderTeamBuilder(state) {
       )}
       ${summaryCard(state.snapshot.teams.flatMap((team) => team.seats).filter((seat) => seat.locked).length, state.tr('adminBohLockedSeats', 'Locked seats'))}
     </div>
+    ${renderApprovedRosterImport(state)}
     ${renderTeamBuilderSettings(state, candidates, selectedIds)}
     ${renderEligiblePool(state, candidates, selectedIds)}
     ${renderDirectAssignment(state, candidates, selectedIds)}
@@ -9963,7 +10277,29 @@ function handleInput(state, event) {
   captureCorrectionDraft(state, form);
 }
 
-function handleChange(state, event) {
+async function handleChange(state, event) {
+  const action = cleanText(event.target.dataset.action);
+  if (action === 'import-approved-roster') {
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const csvText = await file.text();
+      parseAdminAllStarBohApprovedRosterCsv(csvText);
+      const result = await invokeAction(
+        state,
+        'importApprovedRoster',
+        { csvText },
+        state.tr('adminBohApprovedRosterImported', 'Approved roster imported.')
+      );
+      const report = result?.result || result?.actionResult;
+      if (report) state.approvedRosterImportReport = report;
+      renderShell(state);
+    } finally {
+      input.value = '';
+    }
+    return;
+  }
   const correctionForm = event.target.closest?.('[data-form="submission-corrections"]');
   if (correctionForm) {
     if (event.target.matches?.('[data-correction-troop-kind]')) {
@@ -9976,7 +10312,6 @@ function handleChange(state, event) {
     captureCorrectionDraft(state, correctionForm);
     return;
   }
-  const action = cleanText(event.target.dataset.action);
   if (action === 'eligible-pool-filter') {
     syncEligiblePoolSearch(state);
     return;
@@ -10524,7 +10859,16 @@ function bindEvents(state) {
     { signal }
   );
   state.root.addEventListener('input', (event) => handleInput(state, event), { signal });
-  state.root.addEventListener('change', (event) => handleChange(state, event), { signal });
+  state.root.addEventListener(
+    'change',
+    (event) => {
+      void handleChange(state, event).catch((error) => {
+        setStatus(state, error?.message || String(error), 'error');
+        state.options.onError?.(error, { action: 'change' });
+      });
+    },
+    { signal }
+  );
   state.root.addEventListener(
     'submit',
     (event) => {
