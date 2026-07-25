@@ -1736,6 +1736,7 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
       playerCount: 0,
     };
   }
+  const allowPartialTeams = options.allowPartialTeams === true;
   const fieldSize = teamCount * BOH_TEAM_SIZE;
   let roleGroups;
   try {
@@ -1782,7 +1783,10 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
         ? team.members
         : [];
     playerCount += players.length;
-    if (players.length !== BOH_TEAM_SIZE) {
+    if (
+      players.length > BOH_TEAM_SIZE ||
+      (!allowPartialTeams && players.length !== BOH_TEAM_SIZE)
+    ) {
       errors.push({
         code: 'boh_team_size_invalid',
         teamId,
@@ -1831,7 +1835,7 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
       }
     });
     roleGroups.forEach((group) => {
-      if (roleCounts.get(group.id) !== group.capacity) {
+      if (!allowPartialTeams && roleCounts.get(group.id) !== group.capacity) {
         errors.push({
           code: 'boh_role_coverage_invalid',
           teamId,
@@ -1842,7 +1846,7 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
       }
     });
   });
-  if (playerCount !== fieldSize) {
+  if (!allowPartialTeams && playerCount !== fieldSize) {
     errors.push({ code: 'boh_field_size_invalid', expected: fieldSize, actual: playerCount });
   }
   if (options.expectedPlayerIds) {

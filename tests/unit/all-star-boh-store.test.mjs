@@ -3363,14 +3363,14 @@ test('publication rejects dynamic team, overview, roster, and projection mismatc
   delete missingProjection.players['firebase-uid-2-12'];
   await assert.rejects(
     admin.publish(missingProjection, { expectedRevision: 0 }),
-    /requires exactly 24 player projections/
+    /has no personal published plan/
   );
 
   const shortTeam = completePublicationBundle({ teamCount: 2 });
   shortTeam.teams['team-2'].seats.pop();
   await assert.rejects(
     admin.publish(shortTeam, { expectedRevision: 0 }),
-    /Team team-2 must contain exactly 12 seats/
+    /has a personal plan but no published seat/
   );
 
   const oneTeam = completePublicationBundle({ teamCount: 1 });
@@ -3379,6 +3379,41 @@ test('publication rejects dynamic team, overview, roster, and projection mismatc
     /requires between 2 and 6 teams/
   );
   assert.equal(fake.transactionCount, 0);
+});
+
+test('publication preserves approved partially occupied teams without empty seat placeholders', async () => {
+  const bundle = completePublicationBundle({ teamCount: 2 });
+  for (const team of Object.values(bundle.teams)) {
+    const removedSeats = team.seats.splice(-2);
+    for (const seat of removedSeats) {
+      const projection = Object.entries(bundle.players).find(
+        ([, player]) => player.playerId === seat.playerId
+      );
+      if (projection) delete bundle.players[projection[0]];
+    }
+  }
+  const fake = createFirestoreFake({
+    ...submissionSeedsForPublication(bundle),
+    ...reviewSeedsForPublication(bundle),
+    ...draftSeedsForPublication(bundle),
+  });
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+
+  const result = await admin.publish(bundle, {
+    expectedRevision: 0,
+    ...publicationSourceOptions(bundle),
+  });
+
+  assert.equal(result.current.revision, 1);
+  assert.equal(fake.read(getAllStarBohPublishedTeamPath(SEASON_ID, 'team-1')).seats.length, 10);
+  assert.equal(fake.read(getAllStarBohPublishedTeamPath(SEASON_ID, 'team-2')).seats.length, 10);
+  assert.equal(fake.read(getAllStarBohPublicationIndexPath(SEASON_ID)).playerIds.length, 20);
 });
 
 test('hidden publication keeps members unlocked without exposing draft announcement data', async () => {

@@ -55,7 +55,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.2.10';
+const APP_VERSION = '14.2.11';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -6502,9 +6502,10 @@ function renderEdenMarquee(data = {}) {
     { label: tf('edenX1MarqueeWeighted'), value: formatEdenNumber(totalWeighted), tone: 'gold' },
   ];
 
-  const countdownHtml = !EDEN_X1_IS_ARCHIVE && status.countdown
-    ? `<span class="eden-x1-marquee-countdown" aria-label="${esc(tf('edenX1VoteTimeRemaining'))}">${esc(status.countdown)}</span>`
-    : '';
+  const countdownHtml =
+    !EDEN_X1_IS_ARCHIVE && status.countdown
+      ? `<span class="eden-x1-marquee-countdown" aria-label="${esc(tf('edenX1VoteTimeRemaining'))}">${esc(status.countdown)}</span>`
+      : '';
 
   const statusHtml = EDEN_X1_IS_ARCHIVE
     ? ''

@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.2.11 - 2026-07-25
+
+- Restored All-Star BoH member PIN access after registration closes and made the Stage-1 battle mapper the default post-login page, with separate Team Formation and Event Schedule pages.
+- Updated All-Star publication to use the six currently approved teams and their occupied seats instead of blocking on unused 72-seat placeholders; captain metadata is optional but validated when present.
+- Split the All-Star season switch so closed registration blocks member signup and Epic preference writes without hiding published teams, personal plans, or schedules.
+
 ## 14.2.10 - 2026-07-25
 
 - Added an interactive real Stage-1 map to the All-Star BoH plan view, replacing the schematic placeholder.

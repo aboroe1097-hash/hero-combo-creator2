@@ -2941,10 +2941,9 @@ function validatePublicationReferences(current, teams, players) {
       `A team announcement requires between 2 and ${ALL_STAR_BOH_MAX_TEAMS} teams.`
     );
   }
-  const expectedPlayerCount = teamCount * 12;
-  if (players.size !== expectedPlayerCount) {
+  if (players.size < teamCount || players.size > teamCount * 12) {
     throw new AllStarBohPublishValidationError(
-      `A ${teamCount}-team announcement requires exactly ${expectedPlayerCount} player projections.`
+      `A ${teamCount}-team announcement requires between ${teamCount} and ${teamCount * 12} player projections.`
     );
   }
   if (current.teamCount !== null && current.teamCount !== teamCount) {
@@ -2987,8 +2986,10 @@ function validatePublicationReferences(current, teams, players) {
       );
     }
     teamNumbers.add(team.number);
-    if (team.seats.length !== 12) {
-      throw new AllStarBohPublishValidationError(`Team ${teamId} must contain exactly 12 seats.`);
+    if (team.seats.length < 1 || team.seats.length > 12) {
+      throw new AllStarBohPublishValidationError(
+        `Team ${teamId} must contain between 1 and 12 occupied seats.`
+      );
     }
     const teamPlayerIds = new Set();
     for (const seat of team.seats) {
@@ -3032,9 +3033,9 @@ function validatePublicationReferences(current, teams, players) {
       }
       if (current.planPublished) validatePersonalPlanProjection(current, teamId, personal);
     }
-    if (!team.captainId || !teamPlayerIds.has(team.captainId)) {
+    if (team.captainId && !teamPlayerIds.has(team.captainId)) {
       throw new AllStarBohPublishValidationError(
-        `Team ${teamId} requires a captain assigned to one of its seats.`
+        `Team ${teamId} captain must be assigned to one of its seats.`
       );
     }
     for (const coLeaderId of team.coLeaderIds) {
@@ -3062,9 +3063,9 @@ function validatePublicationReferences(current, teams, players) {
       );
     }
   }
-  if (assignedPlayers.size !== expectedPlayerCount) {
+  if (assignedPlayers.size !== players.size) {
     throw new AllStarBohPublishValidationError(
-      `Published seats must contain ${expectedPlayerCount} unique players.`
+      'Published seats and personal projections must contain the same unique players.'
     );
   }
 }
