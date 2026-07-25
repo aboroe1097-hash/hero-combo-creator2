@@ -54,12 +54,72 @@ service cloud.firestore {
           || isAdmin());
     }
 
+    function validRosterProfile(data) {
+      return data is map
+      && data.keys().hasOnly(['roster'])
+      && data.roster is list
+      && data.roster.size() <= 120;
+    }
+
+    function validAccountProfile(data) {
+      return data is map
+      && data.keys().hasOnly([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio',
+        'isPublic', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasAll([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio',
+        'isPublic', 'createdAt', 'updatedAt'
+      ])
+      && data.displayName is string
+      && data.displayName.size() >= 1
+      && data.displayName.size() <= 50
+      && data.gameName is string
+      && data.gameName.size() <= 50
+      && data.alliance is string
+      && data.alliance.size() <= 50
+      && data.countryCode is string
+      && data.countryCode.matches('^([A-Z]{2})?$')
+      && data.bio is string
+      && data.bio.size() <= 280
+      && data.isPublic is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
     function validUserProfile() {
-      return request.resource.data.keys().hasOnly(['playerProfile'])
-      && request.resource.data.playerProfile is map
-      && request.resource.data.playerProfile.keys().hasOnly(['roster'])
-      && request.resource.data.playerProfile.roster is list
-      && request.resource.data.playerProfile.roster.size() <= 120;
+      return request.resource.data.keys().hasOnly(['playerProfile', 'accountProfile'])
+      && request.resource.data.keys().size() >= 1
+      && (
+        !('playerProfile' in request.resource.data)
+        || validRosterProfile(request.resource.data.playerProfile)
+      )
+      && (
+        !('accountProfile' in request.resource.data)
+        || validAccountProfile(request.resource.data.accountProfile)
+      );
+    }
+
+    function validPublicProfile(uid) {
+      return request.resource.data.keys().hasOnly([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio', 'updatedAt'
+      ])
+      && request.resource.data.keys().hasAll([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio', 'updatedAt'
+      ])
+      && request.resource.data.displayName is string
+      && request.resource.data.displayName.size() >= 1
+      && request.resource.data.displayName.size() <= 50
+      && request.resource.data.gameName is string
+      && request.resource.data.gameName.size() <= 50
+      && request.resource.data.alliance is string
+      && request.resource.data.alliance.size() <= 50
+      && request.resource.data.countryCode is string
+      && request.resource.data.countryCode.matches('^([A-Z]{2})?$')
+      && request.resource.data.bio is string
+      && request.resource.data.bio.size() <= 280
+      && request.resource.data.updatedAt is timestamp
+      && request.auth.uid == uid;
     }
 
     function validBestCombo() {
@@ -2002,6 +2062,12 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isOwner(uid);
       }
+    }
+
+    match /public_profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && validPublicProfile(uid);
+      allow delete: if isOwner(uid);
     }
 
     match /errors/{errorId} {

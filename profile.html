@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Create or manage your private VTS player profile." />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="vts-app-version" content="14.2.11" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src 'self' https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'"
+    />
+    <meta id="themeColorMeta" name="theme-color" content="#060b16" />
+    <title>Account &amp; Profile | VTS 1097</title>
+    <link rel="icon" type="image/webp" href="images/logo-40.webp" />
+    <script src="js/theme-prepaint.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap"
+    />
+    <link rel="stylesheet" href="css/_tokens.css" />
+    <link rel="stylesheet" href="css/account-profile.css" />
+  </head>
+  <body class="account-page">
+    <main class="account-shell">
+      <header class="account-topbar">
+        <a class="account-brand" href="index.html" aria-label="VTS 1097 home">
+          <img src="images/logo-120.webp" alt="" width="48" height="48" />
+          <span><strong>VTS 1097</strong><small>Player account</small></span>
+        </a>
+        <a class="account-back" href="index.html">Back to tools</a>
+      </header>
+
+      <section id="accountAuthPanel" class="account-panel" aria-labelledby="authTitle">
+        <p class="account-kicker">Optional cloud account</p>
+        <h1 id="authTitle">Keep your VTS profile with you</h1>
+        <p class="account-lead">
+          Guest mode still works as before. Create an account to keep the current guest identity, or
+          sign in to an account you already own.
+        </p>
+
+        <div class="account-tabs" role="tablist" aria-label="Account action">
+          <button
+            id="createTab"
+            type="button"
+            role="tab"
+            aria-controls="accountAuthForm"
+            aria-selected="true"
+            data-mode="create"
+          >
+            Create account
+          </button>
+          <button
+            id="signInTab"
+            type="button"
+            role="tab"
+            aria-controls="accountAuthForm"
+            aria-selected="false"
+            tabindex="-1"
+            data-mode="signin"
+          >
+            Sign in
+          </button>
+        </div>
+
+        <p id="sessionWarning" class="account-note" hidden>
+          Signing in switches away from this guest session. Guest-only cloud records cannot all be
+          merged into the returning account.
+        </p>
+
+        <form id="accountAuthForm" class="account-form" aria-labelledby="authTitle">
+          <label id="displayNameField" class="account-field">
+            Display name
+            <input id="accountDisplayName" name="displayName" required maxlength="50" />
+          </label>
+          <label class="account-field">
+            Email
+            <input id="accountEmailInput" name="email" type="email" autocomplete="email" required />
+          </label>
+          <label class="account-field">
+            Password
+            <input
+              id="accountPassword"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </label>
+          <div class="account-actions">
+            <button id="authSubmit" class="account-button account-button--primary" type="submit">
+              Create account
+            </button>
+            <button id="googleAuth" class="account-button" type="button">
+              Continue with Google
+            </button>
+            <button id="passwordReset" class="account-button account-button--text" type="button">
+              Reset password
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section id="accountEditorPanel" class="account-panel" aria-labelledby="profileTitle" hidden>
+        <p class="account-kicker">Account profile</p>
+        <h1 id="profileTitle">Your player details</h1>
+        <p class="account-lead">
+          Your profile is private unless you explicitly publish the fields shown here.
+        </p>
+        <div class="account-meta">
+          <span>Email: <strong id="accountEmail"></strong></span>
+          <span>Status: <strong id="verificationState"></strong></span>
+          <button id="resendVerification" class="account-button account-button--text" type="button">
+            Resend verification
+          </button>
+        </div>
+
+        <form id="accountProfileForm" class="account-form">
+          <div class="account-fields">
+            <label class="account-field">
+              Display name
+              <input id="profileDisplayName" required maxlength="50" />
+            </label>
+            <label class="account-field">
+              In-game name
+              <input id="profileGameName" maxlength="50" />
+            </label>
+            <label class="account-field">
+              Alliance
+              <input id="profileAlliance" maxlength="50" />
+            </label>
+            <label class="account-field">
+              Country code
+              <input id="profileCountryCode" maxlength="2" pattern="[A-Za-z]{2}" placeholder="US" />
+            </label>
+            <label class="account-field account-field--wide">
+              Bio
+              <textarea id="profileBio" maxlength="280"></textarea>
+            </label>
+          </div>
+          <div class="privacy-row">
+            <div>
+              <label for="profileIsPublic">Publish this profile</label>
+              <div class="account-note">
+                Only the profile fields above become visible to signed-in players. Your email is
+                never published.
+              </div>
+            </div>
+            <input id="profileIsPublic" type="checkbox" role="switch" />
+          </div>
+          <div class="account-actions">
+            <button class="account-button account-button--primary" type="submit">
+              Save profile
+            </button>
+            <button id="signOutAccount" class="account-button" type="button">Sign out</button>
+          </div>
+        </form>
+      </section>
+
+      <p id="accountStatus" class="account-status" role="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="js/account-profile-page.js"></script>
+  </body>
+</html>
