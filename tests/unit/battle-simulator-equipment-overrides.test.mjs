@@ -90,7 +90,10 @@ test('normal and Dragon Master identities match without consulting catalog stats
     statKey: 'damage',
     label: 'Observed Dragon Master damage',
   });
-  assert.equal(resolveEquipmentEffectOverrides(dragonMasterLoadout, document(dmOverride)).sources.length, 1);
+  assert.equal(
+    resolveEquipmentEffectOverrides(dragonMasterLoadout, document(dmOverride)).sources.length,
+    1
+  );
 });
 
 test('grade, enhancement, and advancement constraints require an exact observed identity', () => {
@@ -248,7 +251,11 @@ test('empty documents and empty equipment identity produce no effects', () => {
 });
 
 test('schema failures, bad JSON, and invalid loadouts fail closed', () => {
-  assert.equal(normalizeEquipmentEffectOverrides({ overrideSchemaVersion: 99, overrides: [] }).diagnostics[0].code, 'unsupported-schema-version');
+  assert.equal(
+    normalizeEquipmentEffectOverrides({ overrideSchemaVersion: 99, overrides: [] }).diagnostics[0]
+      .code,
+    'unsupported-schema-version'
+  );
   assert.equal(parseEquipmentEffectOverrides('{').diagnostics[0].code, 'invalid-json');
   const invalidLoadout = resolveEquipmentEffectOverrides(
     { mode: 'normal', setId: null, pieces: [] },

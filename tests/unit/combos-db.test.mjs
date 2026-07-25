@@ -91,17 +91,11 @@ test('X8 availability import contains 82 valid name-matched base formations', ()
 test('X8-only ownership produces the all-catch-up archer formation', () => {
   const selected = selectNonOverlappingCombos(rankedCombos, X8_AVAILABLE_HEROES, 5);
 
-  assert.ok(
-    selected.some((combo) => combo.heroes.join('|') === 'Eidolon|Warden|Ashen Verdict')
-  );
+  assert.ok(selected.some((combo) => combo.heroes.join('|') === 'Eidolon|Warden|Ashen Verdict'));
 });
 
 test('name-matched import restores a buildable Cyrus formation', () => {
-  const selected = selectNonOverlappingCombos(
-    rankedCombos,
-    ['Cyrus', 'Ragnar', 'Caesar'],
-    5
-  );
+  const selected = selectNonOverlappingCombos(rankedCombos, ['Cyrus', 'Ragnar', 'Caesar'], 5);
 
   assert.equal(selected[0]?.heroes.join('|'), 'Cyrus|Ragnar|Caesar');
 });

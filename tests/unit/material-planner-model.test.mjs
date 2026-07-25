@@ -481,10 +481,7 @@ test('owned inventory counts exact remaining target-slot pieces without campaign
   for (const slot of DM_SLOT_IDS) plan.ownedPieces[slot] = 2;
 
   let inventory = calculateMaterialPlan(plan).inventorySummary;
-  assert.deepEqual(
-    inventory.ownedBySlot,
-    Object.fromEntries(DM_SLOT_IDS.map((slot) => [slot, 2]))
-  );
+  assert.deepEqual(inventory.ownedBySlot, Object.fromEntries(DM_SLOT_IDS.map((slot) => [slot, 2])));
   assert.equal(inventory.completeFullSetCount, 2);
   assert.equal(inventory.remainingFullSetCount, 3);
   assert.equal(inventory.remainingPieceCountToTarget, 18);

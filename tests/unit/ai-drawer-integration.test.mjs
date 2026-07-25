@@ -31,10 +31,7 @@ const assistantCss = fs.readFileSync(
   new URL('../../css/ai-assistant.css', import.meta.url),
   'utf8'
 );
-const drawerCss = fs.readFileSync(
-  new URL('../../css/ai-drawer.css', import.meta.url),
-  'utf8'
-);
+const drawerCss = fs.readFileSync(new URL('../../css/ai-drawer.css', import.meta.url), 'utf8');
 const translationsSource = fs.readFileSync(
   new URL('../../js/translations.js', import.meta.url),
   'utf8'

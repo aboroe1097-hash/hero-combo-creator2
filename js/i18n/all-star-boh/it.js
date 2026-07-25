@@ -214,7 +214,8 @@ export default Object.freeze({
   'signup.reviewHint': 'L’ultimo invio confermato verrà usato per bilanciare le squadre.',
   'signup.reviewTitle': 'Controlla prima di inviare',
   'signup.rocLevel': 'Livello RoC',
-  'signup.speedHeroesHint': 'Seleziona tutti gli eroi velocità attualmente disponibili sul tuo account.',
+  'signup.speedHeroesHint':
+    'Seleziona tutti gli eroi velocità attualmente disponibili sul tuo account.',
   'signup.speedHeroesLegend': 'Quali eroi velocità possiedi?',
   'signup.submitAll': 'Invia iscrizione e scelte Epic',
   'signup.t9Archers': 'Arcieri',
@@ -286,7 +287,8 @@ export default Object.freeze({
   'signup.deviceIdentityDescription':
     'Questa iscrizione è collegata al profilo del browser, non a una password. Se cambi dispositivo o browser oppure cancelli i dati del sito, inviala di nuovo usando esattamente lo stesso nome nel gioco, poi contatta R5 per unire o confermare le voci.',
   'signup.deviceIdentityTitle': 'Mantieni collegata la tua iscrizione',
-  'signup.ocrCheckDescription': 'Confronta ogni valore con lo screenshot prima di confermare la bozza.',
+  'signup.ocrCheckDescription':
+    'Confronta ogni valore con lo screenshot prima di confermare la bozza.',
   'signup.ocrCheckTitle': 'Controlla i campi OCR evidenziati',
   'signup.ocrIssueCorrected': 'Corretto manualmente — controlla ancora una volta.',
   'signup.ocrIssueLowConfidence': 'Affidabilità OCR bassa — confronta il campo con lo screenshot.',
@@ -329,8 +331,7 @@ export default Object.freeze({
   'showdown.revisionConflict':
     'Sono state caricate le ultime preferenze salvate: controllale e modificale prima di salvare.',
   'showdown.savedNotice': 'Le tue preferenze Epic Showdown sono state salvate.',
-  'showdown.lockedTitle':
-    'Sblocca l’hub membri per salvare le preferenze Epic Showdown',
+  'showdown.lockedTitle': 'Sblocca l’hub membri per salvare le preferenze Epic Showdown',
   'showdown.lockedDescription':
     'Inserisci il PIN membri VTS attuale prima di salvare la tua disponibilità privata.',
   'showdown.noTimeOptions':
@@ -375,7 +376,8 @@ export default Object.freeze({
   'signup.roleGuideHint':
     'Scegli dove puoi contribuire di più. La leadership può modificare le assegnazioni per bilanciare le squadre finali.',
   'signup.roleFlexibleDescription': 'Si adatta senza difficoltà a qualsiasi squadra o percorso.',
-  'signup.roleOffensiveDescription': 'Dà priorità alla pressione, ai rally e al combattimento diretto.',
+  'signup.roleOffensiveDescription':
+    'Dà priorità alla pressione, ai rally e al combattimento diretto.',
   'signup.roleRuneDescription': 'Mette al sicuro le rune e reagisce rapidamente agli obiettivi.',
   'signup.roleTopDescription': 'Difende e contende gli obiettivi sul percorso superiore.',
   'signup.roleBottomDescription': 'Difende e contende gli obiettivi sul percorso inferiore.',
@@ -395,7 +397,8 @@ export default Object.freeze({
   'signup.teamNameTitle': 'Quali nomi di squadra ti piacciono?',
   'signup.teamNameDescription':
     'Scegli tutte le identità animali delle squadre a cui vorresti unirti.',
-  'signup.teamNameHint': 'È facoltativo e solo per divertimento; la leadership decide il nome finale.',
+  'signup.teamNameHint':
+    'È facoltativo e solo per divertimento; la leadership decide il nome finale.',
   'role.noPreference': 'Nessuna preferenza',
   ...ALL_STAR_BOH_SHARED_ADDITIONS,
   'common.no': 'No',

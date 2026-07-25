@@ -110,7 +110,8 @@ test('shared contract freezes the normalized event, history, and capability surf
     'ar',
     'kr',
     'it',
-  ]);  assert.deepEqual(normalizeAllowedToolGroups(['static', 'static', 'personal:raw_storage']), [
+  ]);
+  assert.deepEqual(normalizeAllowedToolGroups(['static', 'static', 'personal:raw_storage']), [
     'static',
   ]);
   const history = Array.from({ length: 20 }, (_, index) => ({

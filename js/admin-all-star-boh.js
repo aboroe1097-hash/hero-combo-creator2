@@ -853,7 +853,9 @@ export function parseAdminAllStarBohApprovedRosterCsv(input) {
     });
   });
   if (teams.size !== TEAM_COUNT) {
-    throw new Error(`Approved roster CSV requires exactly ${TEAM_COUNT} teams; found ${teams.size}.`);
+    throw new Error(
+      `Approved roster CSV requires exactly ${TEAM_COUNT} teams; found ${teams.size}.`
+    );
   }
   const parsedTeams = [...teams].map(([teamName, rows]) => {
     if (rows.length !== ROSTER_SIZE) {
@@ -4635,8 +4637,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     if (type === 'reviewSubmission') await adapterReviewSubmission(state, payload);
     else if (type === 'importApprovedRoster') {
       actionResult = await adapterImportApprovedRoster(state, payload);
-    }
-    else if (type === 'batchReviewSubmissions') {
+    } else if (type === 'batchReviewSubmissions') {
       actionResult = await adapterBatchReviewSubmissions(state, payload);
     } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
     else if (type === 'batchDeleteSubmissions') {
@@ -7298,10 +7299,14 @@ function renderApprovedRosterImport(state) {
     ${
       report
         ? `<p><strong>${escapeHtml(
-            state.tr('adminBohApprovedRosterMatched', '{matched} of {total} names matched verified signups.', {
-              matched: report.matchedCount,
-              total: report.totalCount,
-            })
+            state.tr(
+              'adminBohApprovedRosterMatched',
+              '{matched} of {total} names matched verified signups.',
+              {
+                matched: report.matchedCount,
+                total: report.totalCount,
+              }
+            )
           )}</strong></p>`
         : ''
     }
@@ -7323,10 +7328,19 @@ function renderApprovedRosterImport(state) {
                     : '';
                 const reason =
                   warning.code === 'ambiguous'
-                    ? state.tr('adminBohApprovedRosterAmbiguous', 'matches multiple verified signups')
+                    ? state.tr(
+                        'adminBohApprovedRosterAmbiguous',
+                        'matches multiple verified signups'
+                      )
                     : warning.code === 'duplicate-match'
-                      ? state.tr('adminBohApprovedRosterDuplicate', 'would reuse one signup for multiple seats')
-                      : state.tr('adminBohApprovedRosterUnmatched', 'has no exact verified signup match');
+                      ? state.tr(
+                          'adminBohApprovedRosterDuplicate',
+                          'would reuse one signup for multiple seats'
+                        )
+                      : state.tr(
+                          'adminBohApprovedRosterUnmatched',
+                          'has no exact verified signup match'
+                        );
                 return `<li>${escapeHtml(`${location}${warning.name} — ${reason}`)}</li>`;
               })
               .join('')}</ul>
