@@ -88,8 +88,7 @@ test('backups stand by through the opening phase and deploy from 5:00', () => {
     const opening = timeline.filter((entry) => entry.phaseId === 'phase-1');
     assert.equal(opening.length, 2);
     opening.forEach((entry) => {
-      // The late start must be legible in the instruction itself, since the published
-      // contract carries no standby flag.
+      assert.equal(entry.instruction.standby, true);
       assert.match(entry.instruction.action, /stand by/iu);
       assert.match(entry.instruction.note, new RegExp(`${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00`, 'u'));
     });
@@ -97,6 +96,7 @@ test('backups stand by through the opening phase and deploy from 5:00', () => {
     timeline
       .filter((entry) => entry.phaseId !== 'phase-1')
       .forEach((entry) => {
+        assert.equal('standby' in entry.instruction, false);
         assert.doesNotMatch(entry.instruction.action, /stand by/iu);
       });
   });
@@ -107,9 +107,38 @@ test('starters are never marked standby', () => {
     assert.equal(bohIsBackupSeat(seat), false);
     BOH_STAGE1_PHASES.forEach((_phase, index) => assert.equal(bohIsStandby(seat, index), false));
     bohStage1Timeline(seat, { playerId: 'uid-s' }).forEach((entry) => {
+      assert.equal('standby' in entry.instruction, false);
       assert.doesNotMatch(entry.instruction.action, /stand by/iu);
     });
   }
+});
+
+test('crystal gathering flag is specific to the assigned player legion entry', () => {
+  const seatThreeOpening = bohStage1Timeline(3).filter((entry) => entry.phaseId === 'phase-1');
+  const legionOne = seatThreeOpening.find((entry) => entry.legionId === 'legion-1');
+  const legionTwo = seatThreeOpening.find((entry) => entry.legionId === 'legion-2');
+  assert.equal('gatherCrystals' in legionOne.instruction, false);
+  assert.equal(legionTwo.instruction.gatherCrystals, true);
+  assert.equal(legionTwo.instruction.action, 'Gather Crystals - T1s');
+  assert.equal(legionTwo.instruction.loadout, '');
+
+  const unrelatedSeat = bohStage1Timeline(1).filter((entry) => entry.phaseId === 'phase-1');
+  unrelatedSeat.forEach((entry) => {
+    assert.equal('gatherCrystals' in entry.instruction, false);
+  });
+});
+
+test('crystal gathering is not global across both legions or phases', () => {
+  const timeline = bohStage1Timeline(7);
+  const gathering = timeline.filter((entry) => entry.instruction.gatherCrystals === true);
+  assert.equal(gathering.length, 1);
+  assert.equal(gathering[0].phaseId, 'phase-1');
+  assert.equal(gathering[0].legionId, 'legion-2');
+  timeline
+    .filter((entry) => entry !== gathering[0])
+    .forEach((entry) => {
+      assert.equal('gatherCrystals' in entry.instruction, false);
+    });
 });
 
 test('the two legions receive different orders in the opening phase', () => {

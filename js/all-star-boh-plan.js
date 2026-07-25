@@ -10,8 +10,12 @@
  *   roleGroupId  offensive | rune | top | bottom
  *   legionId     legion-1 | legion-2
  *
- * Seats 11 and 12 are the designated backups. They enter at 5:00, so their opening phase
- * carries a stand-by instruction instead of orders.
+ * Seats 11 and 12 are the designated backups. They enter at 5:00, so only their opening
+ * entries carry `instruction.standby: true`.
+ *
+ * Typed instruction flags are sparse and optional for backend/UI integrators:
+ *   standby        backup seat 11/12 is not deployed yet in the opening 0-5 phase
+ *   gatherCrystals this exact legion entry is assigned Sacred Crystal Mine gathering
  *
  * This is a default template only. A leadership override always wins, and nothing here is
  * authoritative once a publication exists.
@@ -326,8 +330,8 @@ const STAGE1_ORDERS = Object.freeze({
 });
 
 /**
- * A backup's opening instruction. The published contract carries no standby flag, so the late
- * start is stated plainly in the action and note, where the member actually reads it.
+ * A backup's opening instruction. The late start stays legible in action/note, with the typed
+ * `instruction.standby` flag emitted only on these opening backup entries.
  */
 export const BOH_STAGE1_STANDBY_ORDER = Object.freeze({
   roleLabel: 'Backup - Standby',
@@ -350,6 +354,13 @@ export function bohIsBackupSeat(seatNumber) {
 /** True while a backup has not yet entered the battlefield. */
 export function bohIsStandby(seatNumber, phaseIndex) {
   return bohIsBackupSeat(seatNumber) && Number(phaseIndex) < BOH_STAGE1_BACKUP_ENTRY_PHASE;
+}
+
+function bohInstructionExtras(action, standby) {
+  const extras = {};
+  if (standby) extras.standby = true;
+  if (/^Gather Crystals\b/iu.test(String(action || ''))) extras.gatherCrystals = true;
+  return extras;
 }
 
 /** Default role group for a seat, matching the score-rank rule leadership uses. */
@@ -415,6 +426,7 @@ export function bohStage1Timeline(seatNumber, identity = {}) {
           teleport: note || null,
           note: note || '',
           priority: null,
+          ...bohInstructionExtras(action, standby),
         },
       });
     });

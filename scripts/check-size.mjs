@@ -51,7 +51,9 @@ const LIMITS = {
   // than 1 KiB of headroom while route, CSS, media, and entry budgets stay fixed.
   // Localized closed-registration gate copy measures 8293.4 KiB; retain less
   // than 2 KiB of aggregate headroom while the route-specific caps stay fixed.
-  totalJsBytes: 8295 * 1024,
+  // The 14.2.10 route-isolated All-Star battlefield plan and independent event
+  // schedule measure 8333.8 KiB; retain roughly 16 KiB of aggregate headroom.
+  totalJsBytes: 8350 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -60,7 +62,9 @@ const LIMITS = {
   // retain about 16 KiB of aggregate headroom while route-specific caps remain.
   // The audited 14.2.8 mobile shell, Eden archive, and modal layout measure
   // 1340.4 KiB; retain less than 3 KiB of aggregate headroom.
-  totalCssBytes: 1343 * 1024,
+  // The 14.2.10 touch-safe All-Star map and schedule controls measure 1347.1 KiB;
+  // retain less than 5 KiB while every initial-route CSS cap stays unchanged.
+  totalCssBytes: 1352 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -88,7 +92,9 @@ const LIMITS = {
   // than 1.5 KiB of headroom.
   // Localized closed-registration gate copy measures 26,409.6 KiB after a
   // fresh production build; retain less than 2.5 KiB of artifact headroom.
-  totalDeployBytes: 26412 * 1024,
+  // The 14.2.10 artifact measures 26,685.1 KiB with one 240.1 KiB lossless
+  // battlefield WebP; retain roughly 19 KiB while media and route caps stay fixed.
+  totalDeployBytes: 26704 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

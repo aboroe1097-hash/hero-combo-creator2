@@ -1,5 +1,5 @@
 /**
- * All-Star BoH — Stage 1 battlefield model.
+ * All-Star BoH - Stage 1 battlefield model.
  *
  * Pure data + geometry. No DOM, no store access, so it can be unit tested directly.
  *
@@ -12,6 +12,11 @@
  */
 
 export const BOH_FIELD_CENTER = 600;
+export const BOH_STAGE1_MAP_ASSET_PATH = 'assets/boh/stage1-map.webp';
+export const BOH_STAGE1_MAP_SIZE = Object.freeze({ width: 972, height: 507 });
+export const BOH_STAGE1_DEFAULT_SIDE = 'blue';
+
+const BOH_STAGE1_TERRITORY_SIZE = 4.2;
 
 /** Stage 1 removes four buildings from the full field (two command centers, two outposts). */
 export const BOH_STAGE1_REMOVED = Object.freeze([
@@ -59,46 +64,178 @@ export function bohFieldPoint(x, y) {
   });
 }
 
+function bohStage1Side(side = BOH_STAGE1_DEFAULT_SIDE) {
+  return side === 'red' ? 'red' : BOH_STAGE1_DEFAULT_SIDE;
+}
+
+function bohPointForSide(x, y, side = BOH_STAGE1_DEFAULT_SIDE) {
+  if (bohStage1Side(side) !== 'red') return { x, y };
+  return { x: 2 * BOH_FIELD_CENTER - x, y: 2 * BOH_FIELD_CENTER - y };
+}
+
+function bohProjectedNetworkPoint(id, kind, x, y, side, options = {}) {
+  const coordinate = bohPointForSide(x, y, side);
+  const point = bohFieldPoint(coordinate.x, coordinate.y);
+  return Object.freeze({
+    id,
+    kind,
+    side: bohStage1Side(side),
+    x: coordinate.x,
+    y: coordinate.y,
+    mapX: Number(point.left.toFixed(2)),
+    mapY: Number(point.top.toFixed(2)),
+    clickable: options.clickable !== false,
+    label: options.label || id,
+  });
+}
+
+const BOH_STAGE1_BLUE_TOWER_CHAIN = Object.freeze([
+  Object.freeze({ id: 'T1', x: 596, y: 650 }),
+  Object.freeze({ id: 'T2', x: 593, y: 642 }),
+  Object.freeze({ id: 'T3', x: 591, y: 634 }),
+  Object.freeze({ id: 'T4', x: 590, y: 626 }),
+  Object.freeze({ id: 'T5', x: 592, y: 618 }),
+  Object.freeze({ id: 'T6', x: 595, y: 611 }),
+  Object.freeze({ id: 'T7', x: 598, y: 606 }),
+  Object.freeze({ id: 'T8', x: 600, y: 602 }),
+]);
+
 /** Towers are built outward from your own stronghold up your lane toward the Sanctuary. */
-export function bohLaneTowers(side = 'blue', count = 8) {
-  const total = Math.max(1, Math.min(12, Number(count) || 8));
-  const startY = side === 'red' ? 550 : 650;
-  const endY = side === 'red' ? 594 : 606;
-  const laneX = side === 'red' ? 612 : 588;
-  const towers = [];
-  for (let index = 0; index < total; index += 1) {
-    const ratio = total === 1 ? 0 : index / (total - 1);
-    towers.push(
-      Object.freeze({
+export function bohLaneTowers(side = BOH_STAGE1_DEFAULT_SIDE, count = 8) {
+  const laneSide = bohStage1Side(side);
+  const total = Math.max(1, Math.min(BOH_STAGE1_BLUE_TOWER_CHAIN.length, Number(count) || 8));
+  return Object.freeze(
+    BOH_STAGE1_BLUE_TOWER_CHAIN.slice(0, total).map((tower, index) => {
+      const coordinate = bohPointForSide(tower.x, tower.y, laneSide);
+      return Object.freeze({
         kind: 'tower',
-        id: `T${index + 1}`,
-        side,
-        x: laneX + (BOH_FIELD_CENTER - laneX) * ratio * 0.6,
-        y: startY + (endY - startY) * ratio,
-      })
-    );
-  }
-  return Object.freeze(towers);
+        id: tower.id,
+        side: laneSide,
+        order: index + 1,
+        x: coordinate.x,
+        y: coordinate.y,
+      });
+    })
+  );
+}
+
+function bohStructureByBlueCode(code) {
+  return BOH_STAGE1_FIELD.find((structure) => structure.blue === code) || null;
+}
+
+function bohStage1NetworkNodes(side) {
+  const networkSide = bohStage1Side(side);
+  const structurePoint = (code, label) => {
+    const structure = bohStructureByBlueCode(code);
+    return bohProjectedNetworkPoint(code, structure.kind, structure.x, structure.y, networkSide, {
+      label,
+    });
+  };
+
+  return Object.freeze([
+    structurePoint('HOME', 'HOME'),
+    ...BOH_STAGE1_BLUE_TOWER_CHAIN.map((tower) =>
+      bohProjectedNetworkPoint(tower.id, 'tower', tower.x, tower.y, networkSide)
+    ),
+    structurePoint('RP1', 'Relay 1'),
+    structurePoint('RP2', 'Relay 2'),
+    structurePoint('FH1', 'Top Fortress of Honor'),
+    structurePoint('FH2', 'Bottom Fortress of Honor'),
+    structurePoint('S', 'Sanctuary'),
+  ]);
+}
+
+function bohNetworkPolyline(pathIds, nodeById) {
+  return Object.freeze(
+    pathIds.map((id) => {
+      const node = nodeById.get(id);
+      return Object.freeze({ id, x: node.mapX, y: node.mapY });
+    })
+  );
+}
+
+function bohTowerTerritory(tower) {
+  const half = BOH_STAGE1_TERRITORY_SIZE / 2;
+  return Object.freeze({
+    id: `${tower.id}-territory`,
+    towerId: tower.id,
+    kind: 'territory-square',
+    x: Number((tower.mapX - half).toFixed(2)),
+    y: Number((tower.mapY - half).toFixed(2)),
+    width: BOH_STAGE1_TERRITORY_SIZE,
+    height: BOH_STAGE1_TERRITORY_SIZE,
+  });
+}
+
+/**
+ * Member-UI network geometry for the Stage 1 map. The canonical topology is authored once from
+ * Blue HOME; selecting Red rotates those coordinates 180 degrees without creating a second chain.
+ */
+export function bohStage1TerritoryNetwork(side = BOH_STAGE1_DEFAULT_SIDE) {
+  const networkSide = bohStage1Side(side);
+  const nodes = bohStage1NetworkNodes(networkSide);
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const mainPath = Object.freeze(['HOME', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'S']);
+  const branches = Object.freeze([
+    Object.freeze({
+      id: 'top-fortress',
+      label: 'Top Fortress of Honor',
+      path: ['T4', 'RP1', 'FH1'],
+    }),
+    Object.freeze({
+      id: 'bottom-fortress',
+      label: 'Bottom Fortress of Honor',
+      path: ['T4', 'RP2', 'FH2'],
+    }),
+  ]);
+
+  return Object.freeze({
+    side: networkSide,
+    rotated: networkSide === 'red',
+    assetPath: BOH_STAGE1_MAP_ASSET_PATH,
+    mapSize: BOH_STAGE1_MAP_SIZE,
+    mainPath,
+    branches,
+    nodes,
+    markers: Object.freeze(
+      nodes.filter((node) => node.clickable && ['relay', 'tower'].includes(node.kind))
+    ),
+    territories: Object.freeze(
+      nodes.filter((node) => node.kind === 'tower').map(bohTowerTerritory)
+    ),
+    routes: Object.freeze({
+      main: bohNetworkPolyline(mainPath, nodeById),
+      branches: Object.freeze(
+        branches.map((branch) =>
+          Object.freeze({
+            id: branch.id,
+            label: branch.label,
+            points: bohNetworkPolyline(branch.path, nodeById),
+          })
+        )
+      ),
+    }),
+  });
 }
 
 /** Label a structure for the side we start on. */
-export function bohStructureLabel(structure, side = 'blue') {
+export function bohStructureLabel(structure, side = BOH_STAGE1_DEFAULT_SIDE) {
   if (!structure) return '';
   if (structure.kind === 'tower') return structure.id || '';
-  return side === 'red' ? structure.red : structure.blue;
+  return bohStage1Side(side) === 'red' ? structure.red : structure.blue;
 }
 
 /**
  * Who a structure belongs to. Anything on the centre line (Sanctuary, both Fortresses of
  * Honor) is contested rather than owned.
  */
-export function bohStructureAllegiance(structure, side = 'blue') {
+export function bohStructureAllegiance(structure, side = BOH_STAGE1_DEFAULT_SIDE) {
   if (!structure) return 'neutral';
-  if (structure.kind === 'tower') return structure.side === side ? 'ours' : 'theirs';
+  if (structure.kind === 'tower') return structure.side === bohStage1Side(side) ? 'ours' : 'theirs';
   if (structure.kind === 'sanctuary' || structure.kind === 'fortress') return 'neutral';
   if (structure.y === BOH_FIELD_CENTER) return 'neutral';
   const half = structure.y > BOH_FIELD_CENTER ? 'blue' : 'red';
-  return half === side ? 'ours' : 'theirs';
+  return half === bohStage1Side(side) ? 'ours' : 'theirs';
 }
 
 /** The twin a structure becomes after the 180-degree flip to the other side. */
@@ -164,7 +301,7 @@ export function bohStructureLabelKey(kind) {
  *
  * `translate(key, fallback)` lets the caller localise the type labels; it defaults to English.
  */
-export function bohStage1Objectives(side = 'blue', translate = null) {
+export function bohStage1Objectives(side = BOH_STAGE1_DEFAULT_SIDE, translate = null) {
   const label = (kind, fallback) => {
     const key = bohStructureLabelKey(kind);
     if (typeof translate !== 'function') return fallback;

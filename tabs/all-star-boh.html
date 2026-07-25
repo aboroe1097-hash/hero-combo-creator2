@@ -1742,6 +1742,40 @@
         </div>
       </div>
 
+      <section
+        class="boh-schedule-card"
+        data-role="event-schedule"
+        aria-labelledby="bohScheduleTitle"
+        hidden
+      >
+        <div class="boh-card-heading">
+          <div>
+            <p class="boh-kicker" data-boh-i18n="schedule.kicker">EVENT CLOCK</p>
+            <h4 id="bohScheduleTitle" data-role="schedule-title" data-boh-i18n="schedule.title">
+              Event schedule
+            </h4>
+          </div>
+          <div class="boh-schedule-countdown" aria-live="polite">
+            <span data-role="schedule-countdown" data-boh-i18n="schedule.waiting">Waiting</span>
+            <small data-role="schedule-date" data-boh-i18n="status.notAvailable"
+              >Not available</small
+            >
+          </div>
+        </div>
+        <div
+          class="boh-schedule-rail"
+          data-role="schedule-rail"
+          aria-label="Event milestones"
+          data-boh-i18n-aria="schedule.railAria"
+        ></div>
+        <ol
+          class="boh-schedule-teams"
+          data-role="schedule-team-times"
+          aria-label="Team game times"
+          data-boh-i18n-aria="schedule.teamTimesAria"
+        ></ol>
+      </section>
+
       <section class="boh-now-next" aria-labelledby="bohNowNextTitle">
         <h4 class="sr-only" id="bohNowNextTitle" data-boh-i18n="plan.nowNextTitle">
           Current and next instructions
@@ -1949,36 +1983,48 @@
               <h4 id="bohMapTitle" data-boh-i18n="plan.mapTitle">Personal map</h4>
             </div>
             <span class="boh-chip" data-boh-i18n="plan.mapScaleHint"
-              >Schematic &middot; not to scale</span
+              >Projected from battlefield coordinates</span
             >
           </div>
 
           <div class="boh-map-wrap" data-role="personal-map">
             <svg
               class="boh-map"
-              viewBox="0 0 640 430"
+              viewBox="0 0 972 507"
               role="img"
               aria-labelledby="bohMapSvgTitle bohMapSvgDesc"
               data-role="personal-map-svg"
             >
               <title id="bohMapSvgTitle" data-boh-i18n="plan.mapSvgTitle">
-                Personal match route schematic
+                Personal battlefield route
               </title>
               <desc id="bohMapSvgDesc" data-boh-i18n="plan.mapSvgDescription">
-                A schematic arena map showing leadership-authored objectives and, when coordinates
-                are available, your assigned start, route, and target. The same route is written
-                below the map.
+                A projected battlefield map showing clickable objectives, tower territory, and your
+                assigned route. The same route is written below the map.
               </desc>
-              <rect class="boh-map__field" x="8" y="8" width="624" height="414" rx="28" />
-              <path class="boh-map__lane" d="M82 88 L320 215 L558 88" />
-              <path class="boh-map__lane" d="M82 342 L320 215 L558 342" />
-              <path class="boh-map__lane" d="M82 88 L82 342 M558 88 L558 342" />
-              <circle class="boh-map__zone" cx="320" cy="215" r="54" />
-              <path
-                class="boh-map__route"
-                d="M82 342 C160 328 210 274 270 242 S410 150 558 88"
-                data-role="map-route"
+              <defs>
+                <linearGradient id="bohMapFieldGradient" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0" stop-color="#0f2745" />
+                  <stop offset="0.52" stop-color="#13243b" />
+                  <stop offset="1" stop-color="#1e293b" />
+                </linearGradient>
+              </defs>
+              <image
+                class="boh-map__image"
+                data-role="map-image"
+                href="assets/boh/stage1-map.webp"
+                x="0"
+                y="0"
+                width="972"
+                height="507"
+                preserveAspectRatio="xMidYMid meet"
               />
+              <rect class="boh-map__field" x="0" y="0" width="972" height="507" rx="36" />
+              <path class="boh-map__lane" d="M486 56 L836 253 L486 451 L136 253 Z" />
+              <path class="boh-map__lane" d="M486 56 L486 451 M136 253 L836 253" />
+              <circle class="boh-map__zone" cx="486" cy="253" r="50" />
+              <g data-role="map-network"></g>
+              <path class="boh-map__route" d="" data-role="map-route" />
               <g data-role="map-objectives"></g>
             </svg>
           </div>
@@ -1997,6 +2043,13 @@
               ><span data-boh-i18n="plan.otherObjective">Other objective</span></span
             >
           </div>
+
+          <aside
+            class="boh-map-selection"
+            data-role="map-objective-detail"
+            aria-live="polite"
+            hidden
+          ></aside>
 
           <div class="boh-route-text" data-role="personal-route-text">
             <h5 data-boh-i18n="plan.routeTextTitle">Your route in text</h5>

@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.2.10 - 2026-07-25
+
+- Added an interactive real Stage-1 map to the All-Star BoH plan view, replacing the schematic placeholder.
+- Added personal plan behavior for each player, including standby and gather-crystals instruction options.
+- Added a member-facing event schedule with a live countdown to the next milestone or team game time.
+- Added an admin event-schedule editor for publishing event milestones and per-team game times.
+- Added a default Stage-1 plan template so new seasons start from a complete, editable plan.
+- Improved mobile layout and accessibility across the All-Star BoH member and admin views.
+
 ## 14.2.9 - 2026-07-22
 
 - Closed the public All-Star BoH registration view with a clear “Teams are full” status and notice that team matching is underway and assignments will be announced soon.

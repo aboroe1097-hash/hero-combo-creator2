@@ -21,6 +21,7 @@ import {
   getAllStarBohPublishedPlayerPath,
   getAllStarBohPublishedTeamPath,
   getAllStarBohReviewPath,
+  getAllStarBohEventSchedulePath,
   getAllStarBohSeasonPath,
   getAllStarBohSubmissionPath,
   normalizeAllStarBohDraft,
@@ -534,6 +535,10 @@ test('All-Star BoH path helpers use the season-scoped collection and reject path
     getAllStarBohPublishedPlayerPath(SEASON_ID, 'player-1'),
     'boh_allstar/season-2026/publishedPlayers/player-1'
   );
+  assert.equal(
+    getAllStarBohEventSchedulePath(SEASON_ID),
+    'boh_allstar/season-2026/schedules/current'
+  );
   assert.throws(() => getAllStarBohSeasonPath('../other'), AllStarBohValidationError);
   assert.throws(
     () => getAllStarBohSubmissionPath(SEASON_ID, 'other/player'),
@@ -574,6 +579,69 @@ test('admin season config reads the authoritative document and fails closed when
       AllStarBohValidationError
     );
   }
+});
+
+test('event schedule store APIs use independent current path and optimistic revision', async () => {
+  const fake = createFirestoreFake();
+  const admin = createAllStarBohAdminStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'admin-1',
+    admin: true,
+  });
+  const player = createAllStarBohPlayerStore({
+    db: {},
+    firestore: fake.firestore,
+    seasonId: SEASON_ID,
+    uid: 'player-1',
+  });
+  assert.equal(typeof admin.getEventSchedule, 'function');
+  assert.equal(typeof admin.subscribeEventSchedule, 'function');
+  assert.equal(typeof admin.saveEventSchedule, 'function');
+  assert.equal(typeof player.getEventSchedule, 'function');
+  assert.equal(typeof player.subscribeEventSchedule, 'function');
+  assert.equal('saveEventSchedule' in player, false);
+
+  const saved = await admin.saveEventSchedule(
+    {
+      seasonId: SEASON_ID,
+      status: 'published',
+      eventStartsAt: '2026-07-20T18:00:00.000Z',
+      eventEndsAt: '2026-07-24T18:00:00.000Z',
+      milestones: [{ id: 'm1', label: 'Check in', startsAt: '2026-07-21T18:00:00.000Z' }],
+      teamGameTimes: [{ teamId: 'team-1', startsAt: '2026-07-22T18:00:00.000Z' }],
+    },
+    { expectedRevision: 0, teamIds: ['team-1', 'team-2'] }
+  );
+  assert.equal(saved.revision, 1);
+  assert.deepEqual(saved.createdAt, SERVER_TIMESTAMP);
+  assert.equal(fake.read(getAllStarBohEventSchedulePath(SEASON_ID)).revision, 1);
+  assert.equal((await player.getEventSchedule()).teamGameTimes[0].teamId, 'team-1');
+
+  const updates = [];
+  const unsubscribe = player.subscribeEventSchedule((value) => updates.push(value));
+  assert.equal(updates.length, 1);
+  await admin.saveEventSchedule(
+    { seasonId: SEASON_ID, status: 'hidden', revision: 1 },
+    { expectedRevision: 1, teamIds: ['team-1', 'team-2'] }
+  );
+  assert.equal(updates.length, 2);
+  assert.equal(updates[1].status, 'hidden');
+  assert.deepEqual(updates[1].teamGameTimes, []);
+  unsubscribe();
+
+  await assert.rejects(
+    admin.saveEventSchedule(
+      { seasonId: SEASON_ID, status: 'hidden', revision: 1 },
+      { expectedRevision: 1, teamIds: ['team-1', 'team-2'] }
+    ),
+    (error) =>
+      error instanceof AllStarBohConflictError &&
+      error.path === getAllStarBohEventSchedulePath(SEASON_ID) &&
+      error.expectedRevision === 1 &&
+      error.actualRevision === 2
+  );
 });
 
 test('player store exposes only own-document methods and serializes an allowlisted signup', async () => {
@@ -3443,6 +3511,13 @@ test('plan publication requires complete validation, stores compact timelines, a
     { id: 'unused-objective', code: 'T9', label: 'Unused global marker', x: 90, y: 90 },
   ];
   bundle.players['firebase-uid-1-1'].timeline[0].instruction.objectiveId = 'used-objective';
+  bundle.players['firebase-uid-1-1'].timeline[0].instruction.standby = true;
+  bundle.players['firebase-uid-1-1'].timeline[1].instruction.standby = false;
+  bundle.players['firebase-uid-1-1'].timeline[0].instruction.gatherCrystals = true;
+  bundle.players['firebase-uid-1-1'].timeline[1].instruction.gatherCrystals = false;
+  bundle.players['firebase-uid-1-2'].timeline[0].instruction.standby = 'false';
+  bundle.players['firebase-uid-1-2'].timeline[0].instruction.gatherCrystals = 'true';
+  bundle.teams['team-1'].coLeaderIds = ['stable-player-2', 'stable-player-3'];
   bundle.players['firebase-uid-1-1'].plan.playerOverrides = Array.from(
     { length: 576 },
     (_, index) => ({
@@ -3518,6 +3593,16 @@ test('plan publication requires complete validation, stores compact timelines, a
   assert.equal(personal.timeline.length, 8);
   assert.equal(personal.timeline[0].teamId, 'team-1');
   assert.equal(personal.timeline[0].playerId, 'stable-player-1');
+  assert.equal(personal.timeline[0].instruction.standby, true);
+  assert.equal(personal.timeline[1].instruction.standby, false);
+  assert.equal(personal.timeline[0].instruction.gatherCrystals, true);
+  assert.equal(personal.timeline[1].instruction.gatherCrystals, false);
+  assert.equal('standby' in result.players['firebase-uid-1-2'].timeline[0].instruction, false);
+  assert.equal(
+    'gatherCrystals' in result.players['firebase-uid-1-2'].timeline[0].instruction,
+    false
+  );
+  assert.deepEqual(result.teams['team-1'].coLeaderIds, ['stable-player-2', 'stable-player-3']);
   assert.ok(Buffer.byteLength(JSON.stringify(personal), 'utf8') < 96 * 1024);
 });
 
@@ -3550,6 +3635,58 @@ test('plan publication rejects incomplete, empty, or mismatched personal timelin
       ...publicationSourceOptions(emptyInstruction),
     }),
     /timeline has an empty instruction/
+  );
+
+  const standbyFalseOnly = completePublicationBundle({ planPublished: true });
+  standbyFalseOnly.players['firebase-uid-1-1'].timeline[0].instruction = { standby: false };
+  await assert.rejects(
+    admin.publish(standbyFalseOnly, {
+      expectedRevision: 0,
+      ...publicationSourceOptions(standbyFalseOnly),
+    }),
+    /timeline has an empty instruction/
+  );
+
+  const gatherCrystalsFalseOnly = completePublicationBundle({ planPublished: true });
+  gatherCrystalsFalseOnly.players['firebase-uid-1-1'].timeline[0].instruction = {
+    gatherCrystals: false,
+  };
+  await assert.rejects(
+    admin.publish(gatherCrystalsFalseOnly, {
+      expectedRevision: 0,
+      ...publicationSourceOptions(gatherCrystalsFalseOnly),
+    }),
+    /timeline has an empty instruction/
+  );
+
+  const badCoLeader = completePublicationBundle({ planPublished: true });
+  badCoLeader.teams['team-1'].coLeaderIds = ['stable-player-1'];
+  await assert.rejects(
+    admin.publish(badCoLeader, {
+      expectedRevision: 0,
+      ...publicationSourceOptions(badCoLeader),
+    }),
+    /co-leader cannot be the captain/
+  );
+
+  const missingCoLeaderSeat = completePublicationBundle({ planPublished: true });
+  missingCoLeaderSeat.teams['team-1'].coLeaderIds = ['not-on-team'];
+  await assert.rejects(
+    admin.publish(missingCoLeaderSeat, {
+      expectedRevision: 0,
+      ...publicationSourceOptions(missingCoLeaderSeat),
+    }),
+    /must be assigned to one of its seats/
+  );
+
+  const duplicateCoLeader = completePublicationBundle({ planPublished: true });
+  duplicateCoLeader.teams['team-1'].coLeaderIds = ['stable-player-2', 'stable-player-2'];
+  await assert.rejects(
+    admin.publish(duplicateCoLeader, {
+      expectedRevision: 0,
+      ...publicationSourceOptions(duplicateCoLeader),
+    }),
+    /co-leaders must be unique/
   );
 
   const wrongIdentity = completePublicationBundle({ planPublished: true });

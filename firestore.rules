@@ -688,6 +688,11 @@ service cloud.firestore {
       return value == null || value is bool;
     }
 
+    function validAllStarBohIsoTimestampText(value) {
+      return value is string
+        && value.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$');
+    }
+
     function validAllStarBohUsableHeroNames(values) {
       return values is list
         && values.size() <= 78
@@ -1238,7 +1243,7 @@ service cloud.firestore {
 
     function validAllStarBohPublishedTeamData(data, season, teamId) {
       return data.keys().hasOnly([
-        'name', 'number', 'color', 'captainId', 'seats',
+        'name', 'number', 'color', 'captainId', 'coLeaderIds', 'seats',
         'seasonId', 'teamId', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
@@ -1254,6 +1259,15 @@ service cloud.firestore {
       && data.number <= 6
       && validAllStarBohText(data.color, 40)
       && validAllStarBohText(data.captainId, 128)
+      && (!('coLeaderIds' in data)
+        || (
+          data.coLeaderIds is list
+          && data.coLeaderIds.size() <= 2
+          && data.coLeaderIds.toSet().size() == data.coLeaderIds.size()
+          && validAllStarBohShortIdentifierList(data.coLeaderIds)
+          && (data.coLeaderIds.size() < 1 || validAllStarBohIdentifier(data.coLeaderIds[0], false))
+          && (data.coLeaderIds.size() < 2 || validAllStarBohIdentifier(data.coLeaderIds[1], false))
+        ))
       && validAllStarBohPublishedSeats(data.seats)
       && data.seasonId == season
       && data.teamId == teamId
@@ -1338,7 +1352,7 @@ service cloud.firestore {
         && instruction.keys().hasOnly([
           'summary', 'action', 'target', 'startObjectiveId', 'objectiveId',
           'targetLabel', 'loadout', 'teleport', 'note', 'priority',
-          'viaObjectiveIds', 'pathObjectiveIds'
+          'viaObjectiveIds', 'pathObjectiveIds', 'standby', 'gatherCrystals'
         ])
         && instruction.keys().hasAll([
           'summary', 'action', 'target', 'startObjectiveId', 'objectiveId',
@@ -1359,8 +1373,134 @@ service cloud.firestore {
         )
         && validAllStarBohText(instruction.note, 2000)
         && validAllStarBohNullableInt(instruction.priority, 0, 100)
+        && (!('standby' in instruction) || instruction.standby is bool)
+        && (!('gatherCrystals' in instruction) || instruction.gatherCrystals is bool)
         && validAllStarBohShortIdentifierList(instruction.viaObjectiveIds)
         && validAllStarBohShortIdentifierList(instruction.pathObjectiveIds);
+    }
+
+    function validAllStarBohScheduleMilestoneItem(values, index, eventStartsAt, eventEndsAt) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly(['id', 'label', 'startsAt'])
+          && values[index].keys().hasAll(['id', 'label', 'startsAt'])
+          && validAllStarBohIdentifier(values[index].id, false)
+          && validAllStarBohText(values[index].label, 160)
+          && values[index].label.size() > 0
+          && validAllStarBohIsoTimestampText(values[index].startsAt)
+          && values[index].startsAt >= eventStartsAt
+          && values[index].startsAt <= eventEndsAt
+        );
+    }
+
+    function validAllStarBohScheduleMilestones(values, eventStartsAt, eventEndsAt) {
+      return values is list
+        && values.size() <= 8
+        && values.toSet().size() == values.size()
+        && (values.size() < 2 || values[0].id != values[1].id)
+        && (values.size() < 3 || (values[0].id != values[2].id && values[1].id != values[2].id))
+        && (values.size() < 4 || (values[0].id != values[3].id && values[1].id != values[3].id && values[2].id != values[3].id))
+        && (values.size() < 5 || (values[0].id != values[4].id && values[1].id != values[4].id && values[2].id != values[4].id && values[3].id != values[4].id))
+        && (values.size() < 6 || (values[0].id != values[5].id && values[1].id != values[5].id && values[2].id != values[5].id && values[3].id != values[5].id && values[4].id != values[5].id))
+        && (values.size() < 7 || (values[0].id != values[6].id && values[1].id != values[6].id && values[2].id != values[6].id && values[3].id != values[6].id && values[4].id != values[6].id && values[5].id != values[6].id))
+        && (values.size() < 8 || (values[0].id != values[7].id && values[1].id != values[7].id && values[2].id != values[7].id && values[3].id != values[7].id && values[4].id != values[7].id && values[5].id != values[7].id && values[6].id != values[7].id))
+        && validAllStarBohScheduleMilestoneItem(values, 0, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 1, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 2, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 3, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 4, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 5, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 6, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 7, eventStartsAt, eventEndsAt);
+    }
+
+    function validAllStarBohScheduleTeamTimeItem(values, index, eventStartsAt, eventEndsAt) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly(['teamId', 'startsAt'])
+          && values[index].keys().hasAll(['teamId', 'startsAt'])
+          && validAllStarBohIdentifier(values[index].teamId, false)
+          && validAllStarBohIsoTimestampText(values[index].startsAt)
+          && values[index].startsAt >= eventStartsAt
+          && values[index].startsAt <= eventEndsAt
+        );
+    }
+
+    function validAllStarBohScheduleTeamTimes(values, eventStartsAt, eventEndsAt) {
+      return values is list
+        && values.size() <= 6
+        && values.toSet().size() == values.size()
+        && (values.size() < 2 || values[0].teamId != values[1].teamId)
+        && (values.size() < 3 || (values[0].teamId != values[2].teamId && values[1].teamId != values[2].teamId))
+        && (values.size() < 4 || (values[0].teamId != values[3].teamId && values[1].teamId != values[3].teamId && values[2].teamId != values[3].teamId))
+        && (values.size() < 5 || (values[0].teamId != values[4].teamId && values[1].teamId != values[4].teamId && values[2].teamId != values[4].teamId && values[3].teamId != values[4].teamId))
+        && (values.size() < 6 || (values[0].teamId != values[5].teamId && values[1].teamId != values[5].teamId && values[2].teamId != values[5].teamId && values[3].teamId != values[5].teamId && values[4].teamId != values[5].teamId))
+        && validAllStarBohScheduleTeamTimeItem(values, 0, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 1, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 2, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 3, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 4, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 5, eventStartsAt, eventEndsAt);
+    }
+
+    function validAllStarBohScheduleData(data, season) {
+      return data.keys().hasOnly([
+        'schemaVersion', 'seasonId', 'status', 'eventStartsAt', 'eventEndsAt',
+        'milestones', 'teamGameTimes', 'revision', 'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.keys().hasAll([
+        'schemaVersion', 'seasonId', 'status', 'eventStartsAt', 'eventEndsAt',
+        'milestones', 'teamGameTimes', 'revision', 'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.schemaVersion == 1
+      && data.seasonId == season
+      && data.status in ['hidden', 'published']
+      && data.revision is int
+      && data.revision > 0
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp
+      && data.updatedBy is string
+      && data.updatedBy.size() > 0
+      && data.updatedBy.size() <= 128
+      && (
+        (
+          data.status == 'hidden'
+          && data.eventStartsAt == ''
+          && data.eventEndsAt == ''
+          && data.milestones is list
+          && data.milestones.size() == 0
+          && data.teamGameTimes is list
+          && data.teamGameTimes.size() == 0
+        )
+        || (
+          data.status == 'published'
+          && validAllStarBohIsoTimestampText(data.eventStartsAt)
+          && validAllStarBohIsoTimestampText(data.eventEndsAt)
+          && data.eventStartsAt < data.eventEndsAt
+          && validAllStarBohScheduleMilestones(data.milestones, data.eventStartsAt, data.eventEndsAt)
+          && validAllStarBohScheduleTeamTimes(data.teamGameTimes, data.eventStartsAt, data.eventEndsAt)
+        )
+      );
+    }
+
+    function validAllStarBohScheduleCreate(season) {
+      return validAllStarBohScheduleData(request.resource.data, season)
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohScheduleUpdate(season) {
+      return validAllStarBohScheduleData(request.resource.data, season)
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
     }
 
     function validAllStarBohPublishedTimelineItem(values, index, uid, teamId, baseSeatNumber) {
@@ -1931,6 +2071,14 @@ service cloud.firestore {
 
       match /draftTeams/{teamId} {
         allow read, write: if isAdmin();
+      }
+
+      match /schedules/current {
+        allow get: if isAdmin() || hasActiveAllStarBohGrant(season);
+        allow list: if false;
+        allow create: if isAdmin() && validAllStarBohScheduleCreate(season);
+        allow update: if isAdmin() && validAllStarBohScheduleUpdate(season);
+        allow delete: if false;
       }
 
       match /published/current {

@@ -2,18 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  bohStage1Objectives,
   BOH_FIELD_CENTER,
+  BOH_STAGE1_DEFAULT_SIDE,
   BOH_STAGE1_FIELD,
+  BOH_STAGE1_MAP_ASSET_PATH,
+  BOH_STAGE1_MAP_SIZE,
   BOH_STAGE1_REMOVED,
   bohFieldPoint,
   bohLaneTowers,
   bohPhaseTargets,
+  bohStage1Objectives,
+  bohStage1TerritoryNetwork,
   bohStructureAllegiance,
   bohStructureCodes,
   bohStructureLabel,
   bohStructureTwin,
 } from '../../js/all-star-boh-field.js';
+
+test('stage 1 field exposes the production map asset and source dimensions', () => {
+  assert.equal(BOH_STAGE1_MAP_ASSET_PATH, 'assets/boh/stage1-map.webp');
+  assert.deepEqual(BOH_STAGE1_MAP_SIZE, { width: 972, height: 507 });
+  assert.equal(BOH_STAGE1_DEFAULT_SIDE, 'blue');
+});
 
 test('stage 1 field holds the expected structure set', () => {
   assert.equal(BOH_STAGE1_FIELD.length, 17);
@@ -120,6 +130,68 @@ test('tower lanes grow out of each stronghold toward the sanctuary', () => {
   assert.ok(red.every((tower) => tower.y < BOH_FIELD_CENTER));
 });
 
+test('territory network is blue-default with one ordered T1-T8 main chain', () => {
+  const network = bohStage1TerritoryNetwork();
+  assert.equal(network.side, 'blue');
+  assert.equal(network.rotated, false);
+  assert.equal(network.assetPath, BOH_STAGE1_MAP_ASSET_PATH);
+  assert.deepEqual(network.mapSize, BOH_STAGE1_MAP_SIZE);
+  assert.deepEqual(
+    network.nodes.filter((node) => node.kind === 'tower').map((tower) => tower.id),
+    ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8']
+  );
+  assert.deepEqual(network.mainPath, ['HOME', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'S']);
+  assert.deepEqual(
+    network.routes.main.map((point) => point.id),
+    network.mainPath
+  );
+});
+
+test('territory network has explicit branches, territory squares, and clickable markers', () => {
+  const network = bohStage1TerritoryNetwork('blue');
+  assert.deepEqual(
+    network.branches.map((branch) => branch.id),
+    ['top-fortress', 'bottom-fortress']
+  );
+  assert.deepEqual(network.branches[0].path, ['T4', 'RP1', 'FH1']);
+  assert.deepEqual(network.branches[1].path, ['T4', 'RP2', 'FH2']);
+  assert.deepEqual(
+    network.routes.branches.map((branch) => branch.points.map((point) => point.id)),
+    [
+      ['T4', 'RP1', 'FH1'],
+      ['T4', 'RP2', 'FH2'],
+    ]
+  );
+  assert.equal(network.territories.length, 8);
+  network.territories.forEach((territory) => {
+    assert.equal(territory.kind, 'territory-square');
+    assert.ok(territory.x >= 0 && territory.x <= 100);
+    assert.ok(territory.y >= 0 && territory.y <= 100);
+    assert.ok(territory.width > 0);
+    assert.ok(territory.height > 0);
+  });
+  assert.equal(network.markers.length, 10);
+  assert.equal(network.markers.filter((marker) => marker.kind === 'tower').length, 8);
+  assert.equal(network.markers.filter((marker) => marker.kind === 'relay').length, 2);
+  assert.ok(network.markers.every((marker) => marker.clickable === true));
+});
+
+test('territory network rotates to red without exposing both chains at once', () => {
+  const blue = bohStage1TerritoryNetwork('blue');
+  const red = bohStage1TerritoryNetwork('red');
+  assert.equal(red.side, 'red');
+  assert.equal(red.rotated, true);
+  assert.deepEqual(
+    red.nodes.map((node) => node.id),
+    blue.nodes.map((node) => node.id)
+  );
+  blue.nodes.forEach((blueNode, index) => {
+    const redNode = red.nodes[index];
+    assert.equal(redNode.x, 2 * BOH_FIELD_CENTER - blueNode.x);
+    assert.equal(redNode.y, 2 * BOH_FIELD_CENTER - blueNode.y);
+  });
+});
+
 test('structure codes are parsed out of order text', () => {
   assert.deepEqual(bohStructureCodes('Capture Enemy Command Center [CC2]'), ['CC2']);
   assert.deepEqual(bohStructureCodes('Teleport to Relay2 [RP2] - Tower 7 [T7]'), ['RP2', 'T7']);
@@ -143,6 +215,18 @@ test('the objective catalogue satisfies the published plan contract', async () =
   assert.equal(normalized.length, objectives.length);
   const ids = new Set(normalized.map((objective) => objective.id));
   assert.equal(ids.size, normalized.length, 'objective ids must be unique');
+});
+
+test('objective catalogue keeps real structures plus the single selected-side tower chain', () => {
+  const objectives = bohStage1Objectives();
+  const towerObjectives = objectives.filter((objective) => objective.type === 'tower');
+  assert.deepEqual(
+    towerObjectives.map((objective) => objective.code),
+    ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8']
+  );
+  assert.equal(objectives.filter((objective) => /^T\d+$/u.test(objective.code)).length, 8);
+  assert.ok(objectives.find((objective) => objective.code === 'FH1'));
+  assert.ok(objectives.find((objective) => objective.code === 'FH2'));
 });
 
 test('objective labels flip with the side we start on', () => {

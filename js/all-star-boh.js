@@ -3,6 +3,7 @@ import {
   getAllStarBohCountdownParts,
   getAllStarBohSignupWindowState,
 } from './all-star-boh-schedule.js';
+import * as BohField from './all-star-boh-field.js';
 import {
   BOH_TROOP_TIERS,
   BOH_TROOP_TYPES,
@@ -104,6 +105,7 @@ const DEFAULT_PHASE_LABELS = Object.freeze({
   'phase-15-30': Object.freeze(['15-30 Minutes', '15-30 min']),
 });
 const controllers = new WeakMap();
+const BOH_MAP_VIEWBOX = Object.freeze({ width: 972, height: 507 });
 
 const SIGNUP_WINDOW_COPY = Object.freeze({
   en: [
@@ -1259,9 +1261,64 @@ function objectiveFor(plan, value) {
 function pointForObjective(objective) {
   if (!objective || !Number.isFinite(objective.x) || !Number.isFinite(objective.y)) return null;
   return [
-    40 + (Math.max(0, Math.min(100, objective.x)) / 100) * 560,
-    25 + (Math.max(0, Math.min(100, objective.y)) / 100) * 380,
+    (Math.max(0, Math.min(100, objective.x)) / 100) * BOH_MAP_VIEWBOX.width,
+    (Math.max(0, Math.min(100, objective.y)) / 100) * BOH_MAP_VIEWBOX.height,
   ];
+}
+
+function fieldKindLabel(state, kind) {
+  if (kind === 'arsenal') return state.tr('field.arsenal', 'Arsenal');
+  if (kind === 'cc') return state.tr('field.commandCenter', 'Command Center');
+  if (kind === 'fort') return state.tr('field.stronghold', 'Stronghold');
+  if (kind === 'fortress') return state.tr('field.fortress', 'Fortress of Honor');
+  if (kind === 'hospital') return state.tr('field.hospital', 'Hospital');
+  if (kind === 'op') return state.tr('field.outpost', 'Outpost');
+  if (kind === 'relay') return state.tr('field.relay', 'Relay');
+  if (kind === 'sanctuary') return state.tr('field.sanctuary', 'Sanctuary');
+  if (kind === 'tower') return state.tr('field.tower', 'Tower');
+  return state.tr('plan.objectiveStructure', 'Structure');
+}
+
+function objectiveIdentityKeys(objective) {
+  return [objective?.id, objective?.code]
+    .map((value) => textValue(value).toLocaleLowerCase('en'))
+    .filter(Boolean);
+}
+
+export function mergeBohFieldObjectives(authored = [], field = []) {
+  const authoredKeys = new Set(authored.flatMap(objectiveIdentityKeys));
+  return authored.concat(
+    field.filter(
+      (objective) => !objectiveIdentityKeys(objective).some((key) => authoredKeys.has(key))
+    )
+  );
+}
+
+function fieldObjectivesFor(state) {
+  const authored = Array.isArray(state.personalPlan?.plan?.objectives)
+    ? state.personalPlan.plan.objectives
+    : [];
+  if (typeof BohField.bohStage1Objectives !== 'function') return authored;
+  const field = BohField.bohStage1Objectives(BohField.BOH_STAGE1_DEFAULT_SIDE).map((objective) => {
+    return {
+      ...objective,
+      label: `${fieldKindLabel(state, objective.type)} ${objective.code}`.trim(),
+    };
+  });
+  return mergeBohFieldObjectives(authored, field);
+}
+
+function planWithFieldObjectives(state) {
+  return { ...(state.personalPlan?.plan || {}), objectives: fieldObjectivesFor(state) };
+}
+
+function isStandbyInstruction(entry) {
+  return entry?.instruction?.standby === true;
+}
+
+function isMeaningfulTeleport(value) {
+  const text = textValue(value).toLowerCase();
+  return Boolean(text) && !/^(?:no teleport|no|none|n\/a|—|-)$/iu.test(text);
 }
 
 function routeReference(plan, value) {
@@ -1431,6 +1488,10 @@ function initialState(options) {
     epicPreferences: null,
     publication: null,
     personalPlan: null,
+    eventSchedule: null,
+    selectedMilestoneId: '',
+    selectedMilestoneIsManual: false,
+    selectedObjectiveId: '',
     teams: new Map(),
     ocrFile: null,
     ocrPreviewUrl: '',
@@ -1565,7 +1626,10 @@ function startSignupWindowTimer(state) {
     state.options.setInterval ||
     ownerWindow(state.root)?.setInterval?.bind(ownerWindow(state.root));
   if (typeof setIntervalImpl !== 'function' || state.scheduleTimer !== null) return;
-  state.scheduleTimer = setIntervalImpl(() => renderSignupWindow(state), 1000);
+  state.scheduleTimer = setIntervalImpl(() => {
+    renderSignupWindow(state);
+    renderEventSchedule(state);
+  }, 1000);
 }
 
 function stopSignupWindowTimer(state) {
@@ -2918,7 +2982,23 @@ function renderTeamDetail(state, teamId) {
   detail.hidden = false;
 }
 
-function displayInstruction(entry) {
+function displayInstruction(state, entry) {
+  if (isStandbyInstruction(entry)) {
+    return {
+      action:
+        instructionValue(entry, 'action', 'title') || state.tr('plan.standbyAction', 'Stand by'),
+      target:
+        instructionValue(entry, 'note', 'leadershipNote') ||
+        state.tr('plan.standbyTarget', 'Hold position and wait for call.'),
+      loadout: '',
+      teleport: '',
+      note: instructionValue(entry, 'note', 'leadershipNote'),
+      standby: true,
+      gatherCrystals: false,
+      hasTeleport: false,
+    };
+  }
+  const teleport = instructionValue(entry, 'teleport', 'teleportNote');
   return {
     action: instructionValue(entry, 'action', 'title', 'summary', 'instruction') || '—',
     target:
@@ -2931,8 +3011,11 @@ function displayInstruction(entry) {
         'objectiveId'
       ) || '—',
     loadout: instructionValue(entry, 'loadout', 'troopsHeroes', 'troops', 'heroes') || '—',
-    teleport: instructionValue(entry, 'teleport', 'teleportNote') || '—',
+    teleport: isMeaningfulTeleport(teleport) ? teleport : '',
     note: instructionValue(entry, 'note', 'leadershipNote'),
+    standby: false,
+    gatherCrystals: entry?.instruction?.gatherCrystals === true,
+    hasTeleport: isMeaningfulTeleport(teleport),
   };
 }
 
@@ -2945,23 +3028,38 @@ function phaseTime(state, entry) {
 }
 
 function renderNowNext(state, view) {
-  const current = displayInstruction(view.current);
-  const next = displayInstruction(view.next);
+  const current = displayInstruction(state, view.current);
+  const next = displayInstruction(state, view.next);
+  const currentCard = query(state.root, '[data-role="current-instruction"]');
+  const nextCard = query(state.root, '[data-role="next-instruction"]');
+  currentCard?.classList?.toggle('is-standby', current.standby);
+  nextCard?.classList?.toggle('is-standby', view.next ? next.standby : false);
   setText(query(state.root, '[data-role="current-phase-time"]'), phaseTime(state, view.current));
-  setText(query(state.root, '[data-role="current-action"]'), current.action);
-  setText(query(state.root, '[data-role="current-target"]'), current.target);
   setText(
-    query(state.root, '[data-role="current-loadout"]'),
+    query(state.root, '[data-role="current-action"]'),
+    current.standby ? state.tr('plan.standbyTitle', 'Standby assignment') : current.action
+  );
+  setText(query(state.root, '[data-role="current-target"]'), current.target);
+  const currentLoadout = query(state.root, '[data-role="current-loadout"]');
+  const currentTeleport = query(state.root, '[data-role="current-teleport"]');
+  setHidden(currentLoadout, current.standby || !current.loadout || current.loadout === '—');
+  setHidden(currentTeleport, current.standby || !current.hasTeleport);
+  setText(
+    currentLoadout,
     state.tr('plan.loadoutValue', 'Loadout: {value}', { value: current.loadout })
   );
   setText(
-    query(state.root, '[data-role="current-teleport"]'),
+    currentTeleport,
     state.tr('plan.teleportValue', 'Teleport: {value}', { value: current.teleport })
   );
   setText(query(state.root, '[data-role="next-phase-time"]'), phaseTime(state, view.next));
   setText(
     query(state.root, '[data-role="next-action"]'),
-    view.next ? next.action : state.tr('plan.noNextPhase', 'Final phase')
+    view.next
+      ? next.standby
+        ? state.tr('plan.standbyTitle', 'Standby assignment')
+        : next.action
+      : state.tr('plan.noNextPhase', 'Final phase')
   );
   setText(
     query(state.root, '[data-role="next-target"]'),
@@ -2970,7 +3068,7 @@ function renderNowNext(state, view) {
 }
 
 function buildPhasePanel(state, entry, index) {
-  const display = displayInstruction(entry);
+  const display = displayInstruction(state, entry);
   const heading = createElement(state.root, 'div', 'boh-phase-panel__head');
   const headingCopy = createElement(state.root, 'div');
   append(
@@ -3001,12 +3099,17 @@ function buildPhasePanel(state, entry, index) {
     )
   );
   const list = createElement(state.root, 'dl', 'boh-instruction-list');
-  const rows = [
-    [state.tr('plan.action', 'Action'), display.action],
-    [state.tr('plan.targetRoute', 'Target / route'), display.target],
-    [state.tr('plan.troopsHeroes', 'Troops & heroes'), display.loadout],
-    [state.tr('plan.teleport', 'Teleport'), display.teleport],
-  ];
+  const rows = display.standby
+    ? [
+        [state.tr('plan.action', 'Action'), state.tr('plan.standbyTitle', 'Standby assignment')],
+        [state.tr('plan.standbyStatus', 'Standby status'), display.target],
+      ]
+    : [
+        [state.tr('plan.action', 'Action'), display.action],
+        [state.tr('plan.targetRoute', 'Target / route'), display.target],
+        [state.tr('plan.troopsHeroes', 'Troops & heroes'), display.loadout],
+        ...(display.hasTeleport ? [[state.tr('plan.teleport', 'Teleport'), display.teleport]] : []),
+      ];
   for (const [label, value] of rows) {
     const row = createElement(state.root, 'div');
     append(
@@ -3023,7 +3126,43 @@ function buildPhasePanel(state, entry, index) {
     createElement(state.root, 'strong', '', state.tr('plan.leadershipNote', 'Leadership note')),
     createElement(state.root, 'p', '', display.note)
   );
-  return [heading, list, note];
+  const cards = [];
+  if (display.gatherCrystals) {
+    const crystal = createElement(state.root, 'aside', 'boh-action-card boh-action-card--crystal');
+    append(
+      crystal,
+      createElement(state.root, 'strong', '', state.tr('plan.crystalTitle', 'Gather crystals')),
+      createElement(
+        state.root,
+        'p',
+        '',
+        state.tr(
+          'plan.crystalDescription',
+          'Use this Legion for Sacred Crystal Mine gathering in this phase.'
+        )
+      )
+    );
+    cards.push(crystal);
+  }
+  if (display.hasTeleport) {
+    const teleport = createElement(
+      state.root,
+      'aside',
+      'boh-action-card boh-action-card--teleport'
+    );
+    append(
+      teleport,
+      createElement(
+        state.root,
+        'strong',
+        '',
+        state.tr('plan.teleportNowTitle', 'Teleport assigned')
+      ),
+      createElement(state.root, 'p', '', display.teleport)
+    );
+    cards.push(teleport);
+  }
+  return [heading, list, note, ...cards];
 }
 
 function renderTimeline(state, view) {
@@ -3062,6 +3201,7 @@ function renderTimeline(state, view) {
     item.dataset.phaseId = entry.phaseId;
     item.classList.toggle('is-current', entry.phaseId === view.phaseId);
     item.classList.toggle('has-rotation', entry.rotated === true);
+    item.classList.toggle('is-standby', isStandbyInstruction(entry));
     append(
       item,
       createElement(
@@ -3070,14 +3210,16 @@ function renderTimeline(state, view) {
         '',
         `${finiteInteger(entry.startMinute)}–${finiteInteger(entry.endMinute)}`
       ),
-      createElement(state.root, 'strong', '', displayInstruction(entry).action),
+      createElement(state.root, 'strong', '', displayInstruction(state, entry).action),
       createElement(
         state.root,
         'small',
         '',
-        entry.rotated
-          ? `↻ ${displayRoleLabel(state, entry.roleGroupId || entry.roleId, entry.roleLabel)}`
-          : displayRoleLabel(state, entry.roleGroupId || entry.roleId, entry.roleLabel)
+        isStandbyInstruction(entry)
+          ? state.tr('plan.standbySummary', 'Standby - wait for call')
+          : entry.rotated
+            ? `↻ ${displayRoleLabel(state, entry.roleGroupId || entry.roleId, entry.roleLabel)}`
+            : displayRoleLabel(state, entry.roleGroupId || entry.roleId, entry.roleLabel)
       )
     );
     return item;
@@ -3089,44 +3231,200 @@ function renderMapObjectives(state, descriptor) {
   const layer = query(state.root, '[data-role="map-objectives"]');
   if (!layer) return;
   const nodes = (descriptor.nodes || []).map((node) => {
+    const selected = node.id && node.id === state.selectedObjectiveId;
     const group = createSvgElement(state.root, 'g', {
-      class: `boh-map__objective${node.isTarget ? ' is-target' : ''}${node.onRoute ? ' is-route' : ''}`,
+      class: `boh-map__objective is-${node.type || 'objective'}${node.isTarget ? ' is-target' : ''}${node.onRoute ? ' is-route' : ''}${selected ? ' is-selected' : ''}`,
       transform: `translate(${node.x} ${node.y})`,
       'data-objective-id': node.id,
+      'data-role': 'map-objective',
+      role: 'button',
+      tabindex: '0',
       'aria-label': node.label,
+      'aria-pressed': String(selected),
     });
     const title = createSvgElement(state.root, 'title');
     if (title) title.textContent = node.label;
-    const marker = createSvgElement(state.root, 'circle', { cx: 0, cy: 0, r: 23 });
+    const hitTarget = createSvgElement(state.root, 'rect', {
+      class: 'boh-map__objective-hit',
+      // Sized so the smallest rendered scale (390px viewport, where the map
+      // projects at ~0.63 CSS px per user unit) still clears the 44 CSS-pixel
+      // minimum touch target on both axes.
+      x: -36,
+      y: -39,
+      width: 72,
+      height: 76,
+      rx: 8,
+    });
+    const pole = createSvgElement(state.root, 'path', {
+      class: 'boh-map__flag-pole',
+      d: 'M -8 13 L -8 -30',
+    });
+    const flag = createSvgElement(state.root, 'path', {
+      class: 'boh-map__flag-cloth',
+      d: 'M -7 -29 L 21 -23 L 12 -14 L -7 -17 Z',
+    });
+    const base = createSvgElement(state.root, 'path', {
+      class: 'boh-map__flag-base',
+      d: 'M -18 16 L 2 16 L 10 22 L -24 22 Z',
+    });
+    const badge = createSvgElement(state.root, 'rect', {
+      class: 'boh-map__flag-code-bg',
+      x: -23,
+      y: 20,
+      width: 46,
+      height: 23,
+      rx: 7,
+    });
     const code = createSvgElement(state.root, 'text', {
+      class: 'boh-map__flag-code',
       x: 0,
-      y: 6,
+      y: 37,
       'text-anchor': 'middle',
     });
     if (code) code.textContent = node.code;
     const label = createSvgElement(state.root, 'text', {
       class: 'boh-map__label',
       x: 0,
-      y: 38,
+      y: 58,
       'text-anchor': 'middle',
     });
     if (label) label.textContent = node.label;
-    append(group, title, marker, code, label);
+    append(group, title, hitTarget, pole, flag, base, badge, code, label);
     return group;
   });
   replaceChildren(layer, ...nodes);
 }
 
+function objectiveAssignmentNames(state, node) {
+  const isPersonalMatch = node?.onRoute === true || node?.isTarget === true;
+  if (!isPersonalMatch) return [];
+  const name = textValue(state.personalPlan?.displayName || state.submission?.gameName);
+  return name ? [name] : [];
+}
+
+function objectiveFieldStructure(node) {
+  const code = textValue(node?.code);
+  if (!code) return null;
+  const structures = [
+    ...(BohField.BOH_STAGE1_FIELD || []),
+    ...(BohField.bohLaneTowers?.(BohField.BOH_STAGE1_DEFAULT_SIDE) || []),
+  ];
+  return (
+    structures.find(
+      (structure) =>
+        BohField.bohStructureLabel(structure, BohField.BOH_STAGE1_DEFAULT_SIDE) === code
+    ) || null
+  );
+}
+
+function renderObjectiveDetail(state, descriptor) {
+  const panel = query(state.root, '[data-role="map-objective-detail"]');
+  if (!panel) return;
+  const selected = (descriptor.nodes || []).find((node) => node.id === state.selectedObjectiveId);
+  setHidden(panel, !selected);
+  if (!selected) return;
+  const assignments = objectiveAssignmentNames(state, selected);
+  const title = createElement(state.root, 'h5', '', selected.label);
+  const meta = createElement(
+    state.root,
+    'p',
+    'boh-map-selection__meta',
+    selected.isTarget
+      ? state.tr('plan.objectiveCurrentTarget', 'Current target')
+      : selected.onRoute
+        ? state.tr('plan.objectiveOnRoute', 'On your route')
+        : state.tr('plan.objectiveStructure', 'Structure')
+  );
+  const fieldStructure = objectiveFieldStructure(selected);
+  const coordinates =
+    Number.isFinite(fieldStructure?.x) && Number.isFinite(fieldStructure?.y)
+      ? `${fieldStructure.x}:${fieldStructure.y}`
+      : '';
+  const structureDetails = createElement(
+    state.root,
+    'p',
+    'boh-map-selection__structure',
+    [
+      textValue(selected.code),
+      fieldKindLabel(state, fieldStructure?.kind || selected.type),
+      coordinates,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+  );
+  const assignmentNodes = assignments.length
+    ? [
+        createElement(state.root, 'strong', '', state.tr('plan.yourRoute', 'Your route')),
+        createElement(state.root, 'p', '', assignments.join(', ')),
+      ]
+    : [
+        createElement(
+          state.root,
+          'p',
+          'boh-map-selection__empty',
+          state.tr(
+            'plan.objectiveNoAssignments',
+            'No personal assignment at this structure in your current plan.'
+          )
+        ),
+      ];
+  replaceChildren(panel, title, meta, structureDetails, ...assignmentNodes);
+}
+
+function renderTowerNetwork(state) {
+  const layer = query(state.root, '[data-role="map-network"]');
+  if (!layer) return;
+  const network = BohField.bohStage1TerritoryNetwork(BohField.BOH_STAGE1_DEFAULT_SIDE);
+  const mapPoint = (point) => [
+    (Number(point?.x) / 100) * BOH_MAP_VIEWBOX.width,
+    (Number(point?.y) / 100) * BOH_MAP_VIEWBOX.height,
+  ];
+  const pathFor = (points, className, routeId) => {
+    const projected = (points || []).map(mapPoint).filter(([x, y]) => Number.isFinite(x + y));
+    if (projected.length < 2) return null;
+    return createSvgElement(state.root, 'path', {
+      class: className,
+      'data-network-route': routeId,
+      d: projected
+        .map(([x, y], index) => `${index ? 'L' : 'M'} ${Math.round(x)} ${Math.round(y)}`)
+        .join(' '),
+    });
+  };
+  const squares = (network.territories || []).map((territory) =>
+    createSvgElement(state.root, 'rect', {
+      class: 'boh-map__territory-square',
+      'data-territory-tower': territory.towerId,
+      x: Math.round((territory.x / 100) * BOH_MAP_VIEWBOX.width),
+      y: Math.round((territory.y / 100) * BOH_MAP_VIEWBOX.height),
+      width: Math.round((territory.width / 100) * BOH_MAP_VIEWBOX.width),
+      height: Math.round((territory.height / 100) * BOH_MAP_VIEWBOX.height),
+      rx: 6,
+    })
+  );
+  const routes = [
+    pathFor(network.routes?.main, 'boh-map__network-path is-main', 'main'),
+    ...(network.routes?.branches || []).map((branch) =>
+      pathFor(branch.points, 'boh-map__network-path is-branch', branch.id)
+    ),
+  ].filter(Boolean);
+  replaceChildren(layer, ...squares, ...routes);
+}
+
 function renderMap(state, entry) {
-  const descriptor = buildBohRouteDescriptor(entry, state.personalPlan?.plan, {
+  const plan = planWithFieldObjectives(state);
+  const descriptor = buildBohRouteDescriptor(entry, plan, {
     startFallback: state.tr('plan.routeStartFallback', 'Assigned start'),
     viaFallback: state.tr('plan.directRoute', 'Direct route'),
     targetFallback: state.tr('plan.currentTarget', 'Current target'),
   });
   const route = query(state.root, '[data-role="map-route"]');
+  const image = query(state.root, '[data-role="map-image"]');
+  image?.setAttribute?.('href', BohField.BOH_STAGE1_MAP_ASSET_PATH || 'assets/boh/stage1-map.webp');
   route?.setAttribute?.('d', descriptor.path);
   setHidden(route, !descriptor.path);
+  renderTowerNetwork(state);
   renderMapObjectives(state, descriptor);
+  renderObjectiveDetail(state, descriptor);
   setText(query(state.root, '[data-role="route-start"]'), descriptor.start);
   setText(query(state.root, '[data-role="route-via"]'), descriptor.via);
   setText(query(state.root, '[data-role="route-target"]'), descriptor.target);
@@ -3223,6 +3521,7 @@ function renderPlan(state) {
     formatUpdatedAt(state, personal.updatedAtMs || state.publication?.updatedAtMs)
   );
   renderLegions(state, view);
+  renderEventSchedule(state);
   renderNowNext(state, view);
   renderTimeline(state, view);
   renderMap(state, view.current);
@@ -3335,6 +3634,121 @@ function renderEpicPreferences(state) {
   } else setText(saveState, state.tr('showdown.notSaved', 'Not saved'));
 }
 
+function scheduleTimestamp(value) {
+  const timestamp = typeof value === 'number' ? value : Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function formatScheduleDate(state, value) {
+  const timestamp = scheduleTimestamp(value);
+  if (!timestamp) return state.tr('status.notAvailable', 'Not available');
+  try {
+    return new Intl.DateTimeFormat(state.language, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(timestamp);
+  } catch {
+    return new Date(timestamp).toLocaleString();
+  }
+}
+
+function countdownLabel(state, timestamp) {
+  const remaining = Math.max(0, Math.floor((timestamp - Date.now()) / 1000));
+  if (!remaining) return state.tr('schedule.now', 'Now');
+  const parts = getAllStarBohCountdownParts(remaining);
+  if (parts.days) return state.tr('schedule.countdownDays', '{days}d {hours}h', parts);
+  if (parts.hours) return state.tr('schedule.countdownHours', '{hours}h {minutes}m', parts);
+  return state.tr('schedule.countdownMinutes', '{minutes}m {seconds}s', parts);
+}
+
+function renderEventSchedule(state) {
+  const schedule = state.eventSchedule;
+  const panel = query(state.root, '[data-role="event-schedule"]');
+  if (!panel) return;
+  const milestones = Array.isArray(schedule?.milestones) ? schedule.milestones : [];
+  const teamTimes = Array.isArray(schedule?.teamGameTimes) ? schedule.teamGameTimes : [];
+  const hasSchedule = Boolean(
+    schedule && (milestones.length || teamTimes.length || schedule.eventStartsAt)
+  );
+  setHidden(panel, !hasSchedule);
+  if (!hasSchedule) return;
+  const now = Date.now();
+  const ordered = milestones
+    .map((milestone, index) => ({
+      ...milestone,
+      index,
+      startsAtMs: scheduleTimestamp(milestone.startsAt),
+    }))
+    .filter((milestone) => milestone.startsAtMs)
+    .sort((a, b) => a.startsAtMs - b.startsAtMs);
+  const current =
+    [...ordered].reverse().find((milestone) => milestone.startsAtMs <= now) || ordered[0];
+  if (
+    !state.selectedMilestoneId ||
+    !ordered.some((milestone) => milestone.id === state.selectedMilestoneId) ||
+    (!state.selectedMilestoneIsManual && state.selectedMilestoneId !== current?.id)
+  ) {
+    state.selectedMilestoneId = current?.id || '';
+    state.selectedMilestoneIsManual = false;
+  }
+  const selected =
+    ordered.find((milestone) => milestone.id === state.selectedMilestoneId) || current;
+  const rail = query(state.root, '[data-role="schedule-rail"]');
+  const buttons = ordered.map((milestone) => {
+    const status =
+      milestone.startsAtMs <= now
+        ? milestone.id === current?.id
+          ? 'current'
+          : 'complete'
+        : 'upcoming';
+    const button = createElement(state.root, 'button', 'boh-schedule-mile');
+    button.type = 'button';
+    button.dataset.role = 'schedule-milestone';
+    button.dataset.milestoneId = milestone.id || `milestone-${milestone.index}`;
+    button.dataset.status = status;
+    button.setAttribute('aria-current', milestone.id === selected?.id ? 'step' : 'false');
+    append(
+      button,
+      createElement(
+        state.root,
+        'span',
+        '',
+        status === 'complete' ? '✓' : String(milestone.index + 1).padStart(2, '0')
+      ),
+      createElement(state.root, 'strong', '', milestone.label || milestone.id || ''),
+      createElement(state.root, 'small', '', formatScheduleDate(state, milestone.startsAtMs))
+    );
+    return button;
+  });
+  replaceChildren(rail, ...buttons);
+  setText(
+    query(state.root, '[data-role="schedule-title"]'),
+    selected?.label || state.tr('schedule.title', 'Event schedule')
+  );
+  setText(
+    query(state.root, '[data-role="schedule-date"]'),
+    formatScheduleDate(state, selected?.startsAtMs || schedule.eventStartsAt)
+  );
+  setText(
+    query(state.root, '[data-role="schedule-countdown"]'),
+    countdownLabel(state, selected?.startsAtMs || scheduleTimestamp(schedule.eventStartsAt))
+  );
+  const teamList = query(state.root, '[data-role="schedule-team-times"]');
+  const teamItems = teamTimes.map((item) => {
+    const teamId = textValue(item.teamId);
+    const team = state.teams.get(teamId) || { id: teamId, teamId };
+    const row = createElement(state.root, 'li');
+    row.className = teamId && teamId === state.personalPlan?.teamId ? 'is-mine' : '';
+    append(
+      row,
+      createElement(state.root, 'strong', '', displayTeamName(state, team)),
+      createElement(state.root, 'span', '', formatScheduleDate(state, item.startsAt))
+    );
+    return row;
+  });
+  replaceChildren(teamList, ...teamItems);
+}
+
 function render(state) {
   if (state.destroyed) return;
   renderSignupWindow(state);
@@ -3347,6 +3761,7 @@ function render(state) {
   renderParticipationMode(state);
   renderPublicationStates(state);
   renderEpicPreferences(state);
+  renderEventSchedule(state);
   const statusLabel = query(state.root, '[data-role="event-status-label"]');
   setText(
     statusLabel,
@@ -3744,6 +4159,13 @@ function tabKeyMove(state, event, tabs, activeIndex, activate) {
 }
 
 function handleKeydown(state, event) {
+  const mapObjective = event.target?.closest?.('[data-role="map-objective"]');
+  if (mapObjective && ['Enter', ' '].includes(event.key)) {
+    event.preventDefault();
+    state.selectedObjectiveId = mapObjective.dataset.objectiveId;
+    renderPlan(state);
+    return;
+  }
   const sectionTab = event.target?.closest?.('[data-role="section-tab"]');
   if (sectionTab) {
     const tabs = queryAll(state.root, '[data-role="section-tab"]');
@@ -3763,7 +4185,9 @@ function handleKeydown(state, event) {
 }
 
 async function handleClick(state, event) {
-  const target = event.target?.closest?.('button, [role="tab"]');
+  const target =
+    event.target?.closest?.('button, [role="tab"]') ||
+    event.target?.closest?.('[data-role="map-objective"]');
   if (!target || (state.root.contains && !state.root.contains(target))) return;
   if (target.matches?.('[data-role="lock-hub"]')) {
     state.options.onLockHub?.();
@@ -3852,6 +4276,17 @@ async function handleClick(state, event) {
   }
   if (target.matches?.('[data-role="phase-tabs"] [role="tab"]')) {
     state.selectedPhaseId = target.dataset.phaseId;
+    renderPlan(state);
+    return;
+  }
+  if (target.matches?.('[data-role="schedule-milestone"]')) {
+    state.selectedMilestoneId = target.dataset.milestoneId;
+    state.selectedMilestoneIsManual = true;
+    renderEventSchedule(state);
+    return;
+  }
+  if (target.matches?.('[data-role="map-objective"]')) {
+    state.selectedObjectiveId = target.dataset.objectiveId;
     renderPlan(state);
   }
 }
@@ -4080,6 +4515,15 @@ function startSubscriptions(state) {
   if (!state.store || !state.accessGranted) return;
   subscribe(
     state,
+    'subscribeEventSchedule',
+    (value) => {
+      state.eventSchedule = value;
+      renderEventSchedule(state);
+    },
+    'event-schedule'
+  );
+  subscribe(
+    state,
     'subscribeSubmission',
     (value) => {
       state.submission = value;
@@ -4146,6 +4590,7 @@ async function refreshState(state, snapshot) {
     if ('epicPreferences' in snapshot) state.epicPreferences = snapshot.epicPreferences;
     if ('publication' in snapshot) state.publication = snapshot.publication;
     if ('personalPlan' in snapshot) state.personalPlan = snapshot.personalPlan;
+    if ('eventSchedule' in snapshot) state.eventSchedule = snapshot.eventSchedule;
     if (snapshot.teams) {
       const entries =
         snapshot.teams instanceof Map ? snapshot.teams : Object.entries(snapshot.teams);
@@ -4159,19 +4604,27 @@ async function refreshState(state, snapshot) {
     render(state);
     return;
   }
-  const [submission, submissionFeedback, epicPreferences, publication, personalPlan] =
-    await Promise.all([
-      state.store.getSubmission?.(),
-      state.store.getSubmissionFeedback?.(),
-      state.store.getEpicShowdownPreferences?.(),
-      state.store.getPublication?.(),
-      state.store.getPersonalPlan?.(),
-    ]);
+  const [
+    submission,
+    submissionFeedback,
+    epicPreferences,
+    publication,
+    personalPlan,
+    eventSchedule,
+  ] = await Promise.all([
+    state.store.getSubmission?.(),
+    state.store.getSubmissionFeedback?.(),
+    state.store.getEpicShowdownPreferences?.(),
+    state.store.getPublication?.(),
+    state.store.getPersonalPlan?.(),
+    state.store.getEventSchedule?.(),
+  ]);
   if (submission !== undefined) state.submission = submission;
   if (submissionFeedback !== undefined) state.submissionFeedback = submissionFeedback;
   if (epicPreferences !== undefined) state.epicPreferences = epicPreferences;
   if (publication !== undefined) state.publication = publication;
   if (personalPlan !== undefined) state.personalPlan = personalPlan;
+  if (eventSchedule !== undefined) state.eventSchedule = eventSchedule;
   reconcileTeamSubscriptions(state);
   render(state);
 }

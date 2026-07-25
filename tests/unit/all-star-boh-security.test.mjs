@@ -1254,3 +1254,111 @@ test('Firestore keeps Epic Showdown preferences independent and owner-scoped', (
   );
   assert.doesNotMatch(signupValidator, /lanePreferences|timePreferences|epicPreferences/);
 });
+
+test('Firestore rules cover All-Star schedule, standby, and co-leader publication contracts', () => {
+  const rules = readRepositoryFile('firestore.rules');
+  const scheduleBlock = rulesMatch(
+    rules,
+    /match \/schedules\/current \{[\s\S]*?\n {6}\}/,
+    'event schedule current document'
+  );
+  assert.match(scheduleBlock, /allow get: if isAdmin\(\) \|\| hasActiveAllStarBohGrant\(season\)/);
+  assert.match(scheduleBlock, /allow list: if false/);
+  assert.match(scheduleBlock, /validAllStarBohScheduleCreate\(season\)/);
+  assert.match(scheduleBlock, /validAllStarBohScheduleUpdate\(season\)/);
+  assert.match(scheduleBlock, /allow delete: if false/);
+
+  const scheduleValidator = rulesMatch(
+    rules,
+    /function validAllStarBohScheduleData\(data, season\) \{[\s\S]*?\n {4}\}/,
+    'event schedule validator'
+  );
+  for (const key of [
+    'schemaVersion',
+    'seasonId',
+    'status',
+    'eventStartsAt',
+    'eventEndsAt',
+    'milestones',
+    'teamGameTimes',
+    'revision',
+    'createdAt',
+    'updatedAt',
+    'updatedBy',
+  ]) {
+    assert.match(scheduleValidator, new RegExp(`'${key}'`));
+  }
+  assert.match(scheduleValidator, /data\.status in \['hidden', 'published'\]/);
+  assert.match(scheduleValidator, /data\.eventStartsAt < data\.eventEndsAt/);
+  assert.match(scheduleValidator, /data\.milestones\.size\(\) == 0/);
+  assert.match(scheduleValidator, /data\.teamGameTimes\.size\(\) == 0/);
+  assert.match(scheduleValidator, /validAllStarBohScheduleMilestones/);
+  assert.match(scheduleValidator, /validAllStarBohScheduleTeamTimes/);
+  assert.doesNotMatch(scheduleBlock, /published\/current/);
+
+  const createValidator = rulesMatch(
+    rules,
+    /function validAllStarBohScheduleCreate\(season\) \{[\s\S]*?\n {4}\}/,
+    'event schedule create validator'
+  );
+  assert.match(createValidator, /revision == 1/);
+  assert.match(createValidator, /createdAt == request\.time/);
+  assert.match(createValidator, /updatedAt == request\.time/);
+  const updateValidator = rulesMatch(
+    rules,
+    /function validAllStarBohScheduleUpdate\(season\) \{[\s\S]*?\n {4}\}/,
+    'event schedule update validator'
+  );
+  assert.match(updateValidator, /revision == resource\.data\.revision \+ 1/);
+  assert.match(updateValidator, /createdAt == resource\.data\.createdAt/);
+
+  const instructionValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedInstruction\(instruction\) \{[\s\S]*?\n {4}\}/,
+    'published instruction validator'
+  );
+  const instructionHasOnly = rulesMatch(
+    instructionValidator,
+    /keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/,
+    'published instruction hasOnly'
+  );
+  const instructionHasAll = rulesMatch(
+    instructionValidator,
+    /keys\(\)\.hasAll\(\[[\s\S]*?\]\)/,
+    'published instruction hasAll'
+  );
+  assert.match(instructionHasOnly, /'standby'/);
+  assert.match(instructionHasOnly, /'gatherCrystals'/);
+  assert.doesNotMatch(instructionHasAll, /'standby'/);
+  assert.doesNotMatch(instructionHasAll, /'gatherCrystals'/);
+  assert.match(
+    instructionValidator,
+    /!\('standby' in instruction\) \|\| instruction\.standby is bool/
+  );
+  assert.match(
+    instructionValidator,
+    /!\('gatherCrystals' in instruction\) \|\| instruction\.gatherCrystals is bool/
+  );
+
+  const teamValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedTeamData\(data, season, teamId\) \{[\s\S]*?\n {4}\}/,
+    'published team validator'
+  );
+  assert.match(teamValidator, /'coLeaderIds'/);
+  const teamHasAll = rulesMatch(
+    teamValidator,
+    /keys\(\)\.hasAll\(\[[\s\S]*?\]\)/,
+    'published team hasAll'
+  );
+  assert.doesNotMatch(teamHasAll, /'coLeaderIds'/);
+  assert.match(teamValidator, /!\('coLeaderIds' in data\)/);
+  assert.match(teamValidator, /data\.coLeaderIds\.size\(\) <= 2/);
+  assert.match(
+    teamValidator,
+    /data\.coLeaderIds\.toSet\(\)\.size\(\) == data\.coLeaderIds\.size\(\)/
+  );
+  assert.match(teamValidator, /validAllStarBohShortIdentifierList\(data\.coLeaderIds\)/);
+  assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[0\], false\)/);
+  assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[1\], false\)/);
+});

@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.9";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.10";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.10",
+    "date": "2026-07-25",
+    "highlights": [
+      "Added an interactive real Stage-1 map to the All-Star BoH plan view, replacing the schematic placeholder.",
+      "Added personal plan behavior for each player, including standby and gather-crystals instruction options.",
+      "Added a member-facing event schedule with a live countdown to the next milestone or team game time.",
+      "Added an admin event-schedule editor for publishing event milestones and per-team game times.",
+      "Added a default Stage-1 plan template so new seasons start from a complete, editable plan.",
+      "Improved mobile layout and accessibility across the All-Star BoH member and admin views."
+    ]
+  },
   {
     "version": "14.2.9",
     "date": "2026-07-22",
@@ -96,14 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Prevented non-1097 applicants from exhausting Firestore's rules-expression budget when their required contact number, current state, and join reason are submitted; the client and store continue to require all three values.",
       "Added a visible screenshot-OCR progress bar, strengthened Unit Specialty Power extraction guidance, and kept duplicate OCR requests disabled while one read is running.",
       "Sorted research groups chronologically and pinned the verified S1 and X1 trees in regression coverage so those season sections remain visible in the cumulative X1 view."
-    ]
-  },
-  {
-    "version": "14.2.0",
-    "date": "2026-07-20",
-    "highlights": [
-      "Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.",
-      "Localized the leadership-session warning across all twelve supported site languages and added rendered browser coverage for the exact message."
     ]
   }
 ].map((release) =>

@@ -49,6 +49,54 @@ test('successful signup writes open an accessible revision confirmation dialog',
   assert.match(cssSource, /\.boh-confirmation-dialog \{[\s\S]*?z-index: 2147483000/);
 });
 
+test('member plan includes accessible schedule rail and projected battlefield map sockets', () => {
+  assert.match(tabSource, /data-role="event-schedule"/);
+  assert.match(tabSource, /data-role="schedule-rail"/);
+  assert.match(tabSource, /data-role="schedule-team-times"/);
+  assert.match(controllerSource, /subscribeEventSchedule/);
+  assert.match(controllerSource, /getEventSchedule/);
+  assert.match(controllerSource, /instruction\?\.standby === true/);
+  assert.match(controllerSource, /instruction\?\.gatherCrystals === true/);
+  assert.match(tabSource, /viewBox="0 0 972 507"/);
+  assert.match(tabSource, /data-role="map-image"/);
+  assert.match(tabSource, /data-role="map-network"/);
+  assert.match(tabSource, /data-role="map-objective-detail"/);
+  assert.match(controllerSource, /BohField\.bohStage1Objectives/);
+  assert.match(
+    controllerSource,
+    /BohField\.bohStage1TerritoryNetwork\(BohField\.BOH_STAGE1_DEFAULT_SIDE\)/
+  );
+  assert.match(controllerSource, /data-role': 'map-objective'/);
+  assert.match(controllerSource, /class: 'boh-map__flag-cloth'/);
+  assert.match(controllerSource, /class: 'boh-map__flag-pole'/);
+  // 72x76 user units keeps the touch target above 44 CSS px even at the 390px
+  // mobile projection scale (~0.63 CSS px per unit), measured in-browser.
+  assert.match(controllerSource, /class: 'boh-map__objective-hit'[\s\S]*?width: 72/);
+  assert.match(controllerSource, /class: 'boh-map__objective-hit'[\s\S]*?height: 76/);
+  assert.match(
+    controllerSource,
+    /BohField\.bohStructureLabel\(structure, BohField\.BOH_STAGE1_DEFAULT_SIDE\)/
+  );
+  assert.match(controllerSource, /`\$\{fieldStructure\.x\}:\$\{fieldStructure\.y\}`/);
+  assert.match(controllerSource, /No personal assignment at this structure in your current plan\./);
+  assert.doesNotMatch(controllerSource, /Current phase assignments/);
+  assert.doesNotMatch(
+    controllerSource,
+    /No assigned player for this objective in your current phase\./
+  );
+  assert.doesNotMatch(
+    controllerSource,
+    /createSvgElement\(state\.root,\s*'circle',\s*\{[^}]*\}\)/,
+    'objectives must use planted flags instead of circular pins'
+  );
+  assert.match(controllerSource, /selectedObjectiveId/);
+  assert.match(controllerSource, /selectedMilestoneIsManual/);
+  assert.match(cssSource, /\.boh-map__territory-square/);
+  assert.match(cssSource, /\.boh-map__objective:focus-visible \.boh-map__objective-hit/);
+  assert.match(cssSource, /\.boh-map-selection/);
+  assert.match(cssSource, /\.boh-schedule-rail/);
+});
+
 test('commitment questions have generous vertical separation', () => {
   assert.match(tabSource, /class="boh-card boh-commitment-card"/);
   assert.match(
@@ -734,6 +782,8 @@ test('the lazy template is CSP-friendly and its CSS covers mobile, RTL, and redu
     cssSource,
     /@media \(max-width: 620px\)[\s\S]*?\.boh-phase-tabs\s*\{[\s\S]*?overflow-x:\s*auto/
   );
+  assert.match(cssSource, /\.boh-map-wrap\s*\{[\s\S]*?overflow:\s*auto/);
+  assert.match(cssSource, /\.boh-map-wrap\s*\{[\s\S]*?touch-action:\s*pan-x pan-y/);
   assert.match(cssSource, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(
     cssSource,
