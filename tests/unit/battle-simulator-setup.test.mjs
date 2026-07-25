@@ -3,6 +3,9 @@ import test from 'node:test';
 
 import { BATTLE_STAT_CONTRACT } from '../../js/battle-simulator-data.js';
 import { resolveResearchSources } from '../../js/battle-simulator-research.js';
+import { resolveSpecializationBattleSources } from '../../js/battle-simulator-specialization.js';
+import { buildStatContributionSnapshot } from '../../js/specialization-towers-v2-contributions.js';
+import { createEmptySpecializationState } from '../../js/specialization-towers-v2-model.js';
 import {
   BATTLE_SETUP_PRESET_STORAGE_KEY,
   MAX_BATTLE_SETUP_PRESETS,
@@ -441,6 +444,33 @@ test('v3 persists scenario, heroes, specialization captures, and equipment overr
   assert.equal(config.sideA.unitSources.length, 1);
   assert.equal(config.sideA.effects[0].id, 'fixture-effect');
   assert.equal(config.sideA.rows[0].stats.unit.attack, 77);
+});
+
+test('canonical specialization captures retain bounded depth and sensitive-key guards', () => {
+  const state = createEmptySpecializationState();
+  const snapshot = snapshotFixture();
+  snapshot.sides.A.specializationCapture = {
+    snapshot: buildStatContributionSnapshot(state),
+    result: resolveSpecializationBattleSources(state),
+  };
+  assert.doesNotThrow(() => parseSetupSnapshot(JSON.stringify(snapshot)));
+
+  const sensitive = structuredClone(snapshot);
+  sensitive.sides.A.specializationCapture.snapshot.producer.localStorage = {
+    secret: 'not allowed',
+  };
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(sensitive)), /sensitive field/i);
+
+  const tooDeep = structuredClone(snapshot);
+  let cursor = tooDeep.sides.A.specializationCapture.snapshot;
+  for (let index = 0; index < 11; index += 1) {
+    cursor.nested = {};
+    cursor = cursor.nested;
+  }
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(tooDeep)),
+    /must not exceed 10 nested levels/i
+  );
 });
 
 test('scenario context defaults for legacy snapshots and rejects unsupported values', () => {

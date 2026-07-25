@@ -55,6 +55,7 @@ const MAX_IDENTIFIER_LENGTH = 128;
 const MAX_SOURCE_ID_LENGTH = 256;
 const MAX_RESEARCH_ENTRIES = 2_000;
 const MAX_METADATA_DEPTH = 6;
+const MAX_SPECIALIZATION_METADATA_DEPTH = 10;
 const MAX_METADATA_ENTRIES = 2_048;
 const RAW_BATTLE_STATS = new Set(['combatSpeed']);
 
@@ -195,7 +196,13 @@ function isSensitiveMetadataKey(key) {
   );
 }
 
-function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
+function normalizeMetadata(
+  value,
+  label,
+  depth = 0,
+  ancestors = new WeakSet(),
+  maximumDepth = MAX_METADATA_DEPTH
+) {
   if (value === null || typeof value === 'boolean') return value;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) throw new TypeError(`${label} must contain finite numbers.`);
@@ -210,8 +217,8 @@ function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
   if (!value || typeof value !== 'object') {
     throw new TypeError(`${label} must contain only JSON-compatible values.`);
   }
-  if (depth >= MAX_METADATA_DEPTH) {
-    throw new RangeError(`${label} must not exceed ${MAX_METADATA_DEPTH} nested levels.`);
+  if (depth >= maximumDepth) {
+    throw new RangeError(`${label} must not exceed ${maximumDepth} nested levels.`);
   }
   if (ancestors.has(value)) throw new TypeError(`${label} must not contain cycles.`);
   ancestors.add(value);
@@ -220,7 +227,9 @@ function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
     if (value.length > MAX_METADATA_ENTRIES) {
       throw new RangeError(`${label} arrays may contain at most ${MAX_METADATA_ENTRIES} entries.`);
     }
-    const normalized = value.map((item) => normalizeMetadata(item, label, depth + 1, ancestors));
+    const normalized = value.map((item) =>
+      normalizeMetadata(item, label, depth + 1, ancestors, maximumDepth)
+    );
     ancestors.delete(value);
     return normalized;
   }
@@ -234,7 +243,7 @@ function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
     if (isSensitiveMetadataKey(key)) {
       throw new TypeError(`${label} must not contain sensitive field "${key}".`);
     }
-    normalized[key] = normalizeMetadata(value[key], label, depth + 1, ancestors);
+    normalized[key] = normalizeMetadata(value[key], label, depth + 1, ancestors, maximumDepth);
   }
   ancestors.delete(value);
   return normalized;
@@ -652,11 +661,23 @@ function normalizeSpecializationCapture(value, label) {
     snapshot:
       capture.snapshot === undefined || capture.snapshot === null
         ? null
-        : normalizeMetadata(capture.snapshot, `${label} snapshot`),
+        : normalizeMetadata(
+            capture.snapshot,
+            `${label} snapshot`,
+            0,
+            new WeakSet(),
+            MAX_SPECIALIZATION_METADATA_DEPTH
+          ),
     result:
       capture.result === undefined || capture.result === null
         ? createEmptySpecializationCapture().result
-        : normalizeMetadata(capture.result, `${label} result`),
+        : normalizeMetadata(
+            capture.result,
+            `${label} result`,
+            0,
+            new WeakSet(),
+            MAX_SPECIALIZATION_METADATA_DEPTH
+          ),
   };
 }
 
