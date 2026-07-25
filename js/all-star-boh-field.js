@@ -139,3 +139,62 @@ export function bohPhaseTargets(assignment) {
   });
   return codes;
 }
+
+/** i18n key for a structure kind, so map labels translate with the rest of the hub. */
+const STRUCTURE_LABEL_KEYS = Object.freeze({
+  fort: 'field.stronghold',
+  cc: 'field.commandCenter',
+  op: 'field.outpost',
+  hospital: 'field.hospital',
+  arsenal: 'field.arsenal',
+  relay: 'field.relay',
+  sanctuary: 'field.sanctuary',
+  fortress: 'field.fortress',
+  tower: 'field.tower',
+});
+
+export function bohStructureLabelKey(kind) {
+  return STRUCTURE_LABEL_KEYS[kind] || 'field.tower';
+}
+
+/**
+ * The Stage 1 objective catalogue in the shape the published plan already accepts: id, code,
+ * label, type and 0-100 coordinates. Positions come from the real battlefield rather than a
+ * schematic guess, so a member's route is drawn where the buildings actually stand.
+ *
+ * `translate(key, fallback)` lets the caller localise the type labels; it defaults to English.
+ */
+export function bohStage1Objectives(side = 'blue', translate = null) {
+  const label = (kind, fallback) => {
+    const key = bohStructureLabelKey(kind);
+    if (typeof translate !== 'function') return fallback;
+    return translate(key, fallback) || fallback;
+  };
+  const kindFallback = {
+    fort: 'Stronghold',
+    cc: 'Command Center',
+    op: 'Outpost',
+    hospital: 'Hospital',
+    arsenal: 'Arsenal',
+    relay: 'Relay',
+    sanctuary: 'Sanctuary',
+    fortress: 'Fortress of Honor',
+    tower: 'Tower',
+  };
+  const entries = BOH_STAGE1_FIELD.concat(bohLaneTowers(side));
+  return entries.map((structure, index) => {
+    const code = bohStructureLabel(structure, side);
+    const point = bohFieldPoint(structure.x, structure.y);
+    return {
+      id: `objective-${String(code)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, '-')}`,
+      code,
+      label: `${label(structure.kind, kindFallback[structure.kind])} ${code}`.trim(),
+      type: structure.kind,
+      x: Number(point.left.toFixed(2)),
+      y: Number(point.top.toFixed(2)),
+      order: index + 1,
+    };
+  });
+}

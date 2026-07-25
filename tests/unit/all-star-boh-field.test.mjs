@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  bohStage1Objectives,
   BOH_FIELD_CENTER,
   BOH_STAGE1_FIELD,
   BOH_STAGE1_REMOVED,
@@ -125,6 +126,40 @@ test('structure codes are parsed out of order text', () => {
   assert.deepEqual(bohStructureCodes('Build Towers - T1s & Speed Heroes'), []);
   assert.deepEqual(bohStructureCodes(''), []);
   assert.deepEqual(bohStructureCodes(null), []);
+});
+
+test('the objective catalogue satisfies the published plan contract', async () => {
+  const { normalizeBohObjectives } = await import('../../js/all-star-boh-model.js');
+  const objectives = bohStage1Objectives('blue');
+  assert.equal(objectives.length, 25);
+  // Coordinates are percentages; the model rejects anything outside 0-100.
+  objectives.forEach((objective) => {
+    assert.ok(objective.x >= 0 && objective.x <= 100, `${objective.code} x out of range`);
+    assert.ok(objective.y >= 0 && objective.y <= 100, `${objective.code} y out of range`);
+    assert.ok(objective.id && objective.code && objective.label);
+  });
+  // The real gate: production must accept the catalogue unchanged.
+  const normalized = normalizeBohObjectives(objectives);
+  assert.equal(normalized.length, objectives.length);
+  const ids = new Set(normalized.map((objective) => objective.id));
+  assert.equal(ids.size, normalized.length, 'objective ids must be unique');
+});
+
+test('objective labels flip with the side we start on', () => {
+  const blue = bohStage1Objectives('blue');
+  const red = bohStage1Objectives('red');
+  const blueHospital = blue.find((objective) => objective.code === 'H1');
+  const redHospital = red.find((objective) => objective.code === 'H1');
+  // H1 is a different building depending on which side we hold.
+  assert.notEqual(blueHospital.x, redHospital.x);
+});
+
+test('objective labels can be localised without changing the code', () => {
+  const translate = (key, fallback) => (key === 'field.sanctuary' ? 'Святилище' : fallback);
+  const objectives = bohStage1Objectives('blue', translate);
+  const sanctuary = objectives.find((objective) => objective.code === 'S');
+  assert.match(sanctuary.label, /Святилище/u);
+  assert.equal(sanctuary.code, 'S');
 });
 
 test('phase targets merge both legions and the note without duplicates', () => {
