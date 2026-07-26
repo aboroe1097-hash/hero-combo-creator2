@@ -74,8 +74,15 @@ import {
   SPECIALIZATION_STORAGE_KEY,
   loadSpecializationState,
 } from './specialization-towers-v2-store.js';
+import {
+  BATTLE_PROFILE_OVERRIDE_STORAGE_KEY,
+  createBattleProfileOverride,
+  hasSavedEquipmentProfile,
+  readBattleProfileOverride,
+  writeBattleProfileOverride,
+} from './battle-simulator-profile-store.js';
 
-const APP_VERSION = '14.2.14';
+const APP_VERSION = '14.2.15';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [
@@ -370,6 +377,146 @@ function initializeFreshSourceState() {
   rebuildCapturedSourceSnapshot('B');
 }
 
+function cloneBattleProfileValue(value) {
+  return typeof structuredClone === 'function'
+    ? structuredClone(value)
+    : JSON.parse(JSON.stringify(value));
+}
+
+function readBattleProfileReadiness() {
+  const researchSnapshot = buildBattleResearchSnapshot({ battleMode: state.battleMode });
+  const researchEntries = Number(researchSnapshot.savedProgress?.entryCount) || 0;
+  const researchReady = researchSnapshot.savedProgress?.malformed !== true && researchEntries > 0;
+  const specializationState = loadSpecializationState();
+  const specializationSnapshot = buildStatContributionSnapshot(specializationState);
+  const towerEntries = specializationSnapshot.entries?.length || 0;
+  const storedProfile = readBattleProfileOverride();
+  const storageError = Boolean(storedProfile.error);
+  const equipmentReady = !storageError && hasSavedEquipmentProfile(storedProfile.profile);
+  return {
+    researchSnapshot,
+    researchEntries,
+    researchReady,
+    specializationSnapshot,
+    towerEntries,
+    towersReady: towerEntries > 0,
+    equipmentProfile: storedProfile.profile,
+    equipmentReady,
+    storageError,
+    allReady: researchReady && towerEntries > 0 && equipmentReady && !storageError,
+  };
+}
+
+function profileStatusMarkup(ready) {
+  const label = t(ready ? 'profile.ready' : 'profile.missing');
+  return `<span class="battle-profile-state ${ready ? 'is-ready' : 'is-missing'}" aria-label="${label}">${icon(ready ? 'play' : 'warning')}<strong>${label}</strong></span>`;
+}
+
+function renderBattleProfilePanel() {
+  const readiness = readBattleProfileReadiness();
+  const savedDate = readiness.equipmentProfile?.savedAt
+    ? translator.date(readiness.equipmentProfile.savedAt, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : '';
+  return `
+    <section class="battle-profile-panel" data-profile-checklist data-profile-storage-key="${escapeHtml(BATTLE_PROFILE_OVERRIDE_STORAGE_KEY)}" aria-labelledby="battleProfileTitle">
+      <div class="battle-profile-heading">
+        <div class="battle-panel-heading">
+          <p class="battle-section-kicker">${t('profile.kicker')}</p>
+          <h2 id="battleProfileTitle">${t('profile.title')}</h2>
+          <p>${t('profile.copy')}</p>
+        </div>
+        <span class="battle-profile-summary ${readiness.allReady ? 'is-ready' : 'is-incomplete'}">${t(readiness.allReady ? 'profile.complete' : 'profile.incomplete')}</span>
+      </div>
+      ${readiness.storageError ? `<p class="battle-profile-storage-warning" role="alert">${icon('warning')}<span>${t('profile.storageError')}</span></p>` : ''}
+      <div class="battle-profile-grid">
+        <article class="battle-profile-card ${readiness.researchReady ? 'is-ready' : 'is-missing'}">
+          <div class="battle-profile-card-heading"><h3>${t('profile.research')}</h3>${profileStatusMarkup(readiness.researchReady)}</div>
+          <p>${readiness.researchReady ? t('profile.researchReady', { count: formatInteger(readiness.researchEntries) }) : t('profile.researchMissing')}</p>
+          ${readiness.researchReady ? '' : `<a class="battle-profile-link" href="index.html#research">${t('profile.openResearch')}</a>`}
+        </article>
+        <article class="battle-profile-card ${readiness.equipmentReady ? 'is-ready' : 'is-missing'}">
+          <div class="battle-profile-card-heading"><h3>${t('profile.equipment')}</h3>${profileStatusMarkup(readiness.equipmentReady)}</div>
+          <p>${readiness.equipmentReady ? t('profile.equipmentReady', { date: savedDate }) : t('profile.equipmentMissing')}</p>
+          <div class="battle-profile-save-actions">
+            ${SIDE_IDS.map((sideId) => `<button class="battle-secondary-button" type="button" data-profile-save-equipment="${sideId}">${t(`profile.saveEquipment${sideId}`)}</button>`).join('')}
+          </div>
+        </article>
+        <article class="battle-profile-card ${readiness.towersReady ? 'is-ready' : 'is-missing'}">
+          <div class="battle-profile-card-heading"><h3>${t('profile.towers')}</h3>${profileStatusMarkup(readiness.towersReady)}</div>
+          <p>${readiness.towersReady ? t('profile.towersReady', { count: formatInteger(readiness.towerEntries) }) : t('profile.towersMissing')}</p>
+          ${readiness.towersReady ? '' : `<a class="battle-profile-link" href="index.html#specialization">${t('profile.openTowers')}</a>`}
+        </article>
+      </div>
+      <div class="battle-profile-footer">
+        <p>${t('profile.importHint')}</p>
+        <div class="battle-profile-actions">
+          <button class="battle-secondary-button" type="button" data-profile-refresh>${t('profile.refresh')}</button>
+          <button class="battle-primary-button" type="button" data-profile-import="A" ${readiness.allReady ? '' : 'disabled'}>${t('profile.importA')}</button>
+          <button class="battle-primary-button" type="button" data-profile-import="B" ${readiness.allReady ? '' : 'disabled'}>${t('profile.importB')}</button>
+        </div>
+      </div>
+    </section>`;
+}
+
+function replaceBattleProfilePanel() {
+  const current = form?.querySelector('[data-profile-checklist]');
+  if (current) current.outerHTML = renderBattleProfilePanel();
+}
+
+function sideHasSavableEquipment(side) {
+  return Boolean(
+    side?.equipmentLoadout?.setId ||
+    side?.equipmentLoadout?.pieces?.length > 0 ||
+    side?.equipmentEffectOverrides?.overrides?.length > 0
+  );
+}
+
+function saveBattleProfileEquipment(sideId) {
+  const side = state.sides[sideId];
+  if (!side || !sideHasSavableEquipment(side)) {
+    showToast(t('toast.profileEquipmentMissing'));
+    return;
+  }
+  try {
+    const profile = createBattleProfileOverride({
+      equipmentLoadout: cloneEquipmentLoadout(side.equipmentLoadout),
+      equipmentEffectOverrides: cloneBattleProfileValue(side.equipmentEffectOverrides),
+    });
+    writeBattleProfileOverride(profile);
+    replaceBattleProfilePanel();
+    showToast(t('toast.profileEquipmentSaved', { side: sideId }));
+  } catch (error) {
+    console.error('[battle-simulator] profile equipment save failed', error);
+    replaceBattleProfilePanel();
+    showToast(t('toast.profileSaveFailed'));
+  }
+}
+
+function importBattleProfile(sideId) {
+  const readiness = readBattleProfileReadiness();
+  if (!readiness.allReady) {
+    replaceBattleProfilePanel();
+    showToast(t('toast.profileIncomplete'));
+    return;
+  }
+  const side = state.sides[sideId];
+  if (!side) return;
+  side.researchEnabled = true;
+  side.researchSnapshot = readiness.researchSnapshot;
+  side.equipmentLoadout = cloneEquipmentLoadout(readiness.equipmentProfile.equipmentLoadout);
+  side.equipmentEffectOverrides = cloneBattleProfileValue(
+    readiness.equipmentProfile.equipmentEffectOverrides
+  );
+  rebuildCapturedSourceSnapshot(sideId);
+  replaceSide(sideId);
+  replaceBattleProfilePanel();
+  markResultsStale();
+  showToast(t('toast.profileImported', { side: sideId }));
+}
+
 function automaticSourcesForSide(sideId) {
   const side = state.sides[sideId];
   if (!side?.capturedSourceSnapshot) rebuildCapturedSourceSnapshot(sideId);
@@ -481,6 +628,7 @@ function pageTemplate() {
           ${renderRunPanel()}
           ${renderScenarioPanel()}
           ${renderSetupToolbar()}
+          ${renderBattleProfilePanel()}
           <div id="battleFormations" class="battle-formations">
             ${renderSide('A')}
             ${renderSide('B')}
@@ -2543,6 +2691,12 @@ function bindUI() {
         console.error('[battle-simulator] side swap failed', error);
         showToast(error.message || 'The sides could not be swapped.');
       }
+    } else if (button.matches('[data-profile-refresh]')) {
+      replaceBattleProfilePanel();
+    } else if (button.matches('[data-profile-save-equipment]')) {
+      saveBattleProfileEquipment(button.dataset.profileSaveEquipment);
+    } else if (button.matches('[data-profile-import]')) {
+      importBattleProfile(button.dataset.profileImport);
     } else if (button.matches('[data-refresh-research]')) {
       refreshSavedResearch(button.dataset.refreshResearch);
     } else if (button.matches('[data-apply-equipment-overrides]')) {

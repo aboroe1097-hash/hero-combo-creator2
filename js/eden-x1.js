@@ -55,7 +55,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.2.14';
+const APP_VERSION = '14.2.15';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';

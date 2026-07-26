@@ -14,6 +14,8 @@
   --boh-muted: var(--text-muted, #a5b4cc);
   --boh-radius: var(--radius-panel, 1.25rem);
   --boh-radius-sm: var(--radius-control, 0.75rem);
+  box-sizing: border-box;
+  max-width: 100%;
   display: grid;
   width: min(100%, 96rem);
   min-width: 0;
@@ -3765,5 +3767,171 @@
     border-color: #94a3b8;
     background: #fff;
     box-shadow: none;
+  }
+}
+
+.boh-command-workspace {
+  background: #08111f;
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
+}
+
+.boh-command-workspace__head,
+.boh-command-mode-tabs,
+.boh-command-phase-tabs,
+.boh-command-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.boh-command-workspace__head {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.boh-command-mode-tabs button,
+.boh-command-phase-tabs button {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.boh-command-mode-tabs button[aria-selected='true'],
+.boh-command-phase-tabs button[aria-selected='true'] {
+  background: rgba(34, 211, 238, 0.16);
+  border-color: rgba(34, 211, 238, 0.64);
+}
+
+.boh-command-phase-tabs button {
+  display: grid;
+  min-width: 7rem;
+  text-align: start;
+}
+
+.boh-command-context {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.boh-command-context > div,
+.boh-command-lane,
+.boh-command-map-list li {
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  padding: 0.7rem;
+}
+
+.boh-command-context span,
+.boh-command-context strong,
+.boh-command-lane span,
+.boh-command-lane strong {
+  display: block;
+}
+
+.boh-command-context span,
+.boh-command-roster small,
+.boh-command-lane span,
+.boh-command-map-list small {
+  color: var(--boh-muted, #aab4c8);
+  font-size: 0.75rem;
+}
+
+.boh-command-roster,
+.boh-command-phase-tabs {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.4rem;
+}
+
+.boh-command-roster li {
+  background: rgba(148, 163, 184, 0.07);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  flex: 0 0 11rem;
+  padding: 0.55rem;
+}
+
+.boh-command-roster .is-current,
+.boh-command-lane .is-current,
+.boh-command-map-list .is-current {
+  border-color: #22d3ee;
+  box-shadow: inset 3px 0 0 #22d3ee;
+}
+
+.boh-command-role-lanes {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.boh-command-lane ul,
+.boh-command-map-list {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+}
+
+.boh-command-lane li {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  padding-top: 0.5rem;
+}
+
+.boh-command-lane .is-standby {
+  color: #fbbf24;
+}
+.boh-command-map img {
+  border-radius: 8px;
+  display: block;
+  height: auto;
+  width: 100%;
+}
+.boh-command-intro {
+  color: var(--boh-muted, #aab4c8);
+  margin: 0;
+}
+
+.boh-plan[data-command-mode='team-plan'] > :not(.boh-command-workspace),
+.boh-plan[data-command-mode='map-briefing'] > :not(.boh-command-workspace) {
+  display: none !important;
+}
+
+@media (max-width: 620px) {
+  .boh-command-context {
+    grid-template-columns: 1fr 1fr;
+  }
+  .boh-command-workspace,
+  .boh-command-workspace > *,
+  .boh-command-role-lanes {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .boh-command-context {
+    grid-template-columns: 1fr;
+  }
+  .boh-command-mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .boh-command-mode-tabs button {
+    width: 100%;
   }
 }

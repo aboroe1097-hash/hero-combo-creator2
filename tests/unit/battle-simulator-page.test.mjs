@@ -179,6 +179,15 @@ test('Legion sources expose saved Research and truthful whole-legion equipment c
   assert.match(appSource, /catalogRevisions:/);
 });
 
+test('saved profile readiness requires Research, Equipment, and Towers before explicit side import', () => {
+  assert.match(appSource, /data-profile-checklist/);
+  assert.match(appSource, /data-profile-save-equipment/);
+  assert.match(appSource, /data-profile-import="A"/);
+  assert.match(appSource, /data-profile-import="B"/);
+  assert.match(appSource, /readiness\.allReady \? '' : 'disabled'/);
+  assert.match(appSource, /icon\(ready \? 'play' : 'warning'\)/);
+});
+
 test('copy and swap deep-clone Research, equipment, source audits, defaults, and rows', () => {
   const source = appStateFixture();
   const before = structuredClone(source);

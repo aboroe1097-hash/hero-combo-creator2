@@ -690,6 +690,175 @@ summary:focus-visible {
   cursor: not-allowed;
 }
 
+.battle-profile-panel {
+  display: grid;
+  gap: 1rem;
+  padding: var(--ff-card-padding);
+  border: 1px solid color-mix(in srgb, var(--ff-action) 22%, var(--ff-border));
+  border-radius: var(--ff-radius-sheet);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ff-action) 8%, transparent), transparent 45%),
+    var(--ff-panel);
+  box-shadow: var(--ff-shadow-card);
+}
+
+.battle-profile-heading,
+.battle-profile-footer,
+.battle-profile-card-heading,
+.battle-profile-actions,
+.battle-profile-save-actions,
+.battle-profile-state,
+.battle-profile-storage-warning {
+  display: flex;
+  align-items: center;
+}
+
+.battle-profile-heading,
+.battle-profile-footer {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.battle-profile-summary,
+.battle-profile-state {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.battle-profile-summary {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid currentColor;
+}
+
+.battle-profile-summary.is-ready,
+.battle-profile-state.is-ready {
+  color: var(--ff-success);
+}
+
+.battle-profile-summary.is-incomplete,
+.battle-profile-state.is-missing {
+  color: var(--ff-warning);
+}
+
+.battle-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.battle-profile-card {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-control);
+  background: var(--ff-control);
+}
+
+.battle-profile-card.is-ready {
+  border-color: color-mix(in srgb, var(--ff-success) 32%, var(--ff-border));
+}
+
+.battle-profile-card.is-missing {
+  border-color: color-mix(in srgb, var(--ff-warning) 32%, var(--ff-border));
+}
+
+.battle-profile-card-heading {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.battle-profile-card h3,
+.battle-profile-card p,
+.battle-profile-footer p {
+  margin: 0;
+}
+
+.battle-profile-card h3 {
+  color: var(--ff-text);
+  font-size: 0.9rem;
+}
+
+.battle-profile-card p,
+.battle-profile-footer p {
+  color: var(--ff-text-dim);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.battle-profile-state {
+  gap: 0.3rem;
+}
+
+.battle-profile-state svg,
+.battle-profile-storage-warning svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.battle-profile-link {
+  width: fit-content;
+  color: var(--ff-action);
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.battle-profile-save-actions,
+.battle-profile-actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.battle-profile-storage-warning {
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--ff-danger) 35%, var(--ff-border));
+  border-radius: var(--ff-radius-control);
+  color: var(--ff-danger);
+  background: color-mix(in srgb, var(--ff-danger) 8%, transparent);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.battle-profile-panel .battle-primary-button:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .battle-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .battle-profile-heading,
+  .battle-profile-footer,
+  .battle-profile-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .battle-profile-summary {
+    align-self: flex-start;
+  }
+
+  .battle-profile-actions,
+  .battle-profile-save-actions,
+  .battle-profile-actions > *,
+  .battle-profile-save-actions > * {
+    width: 100%;
+  }
+}
+
 .battle-formations {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

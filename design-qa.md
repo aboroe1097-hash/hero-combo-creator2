@@ -32,3 +32,35 @@ The side-by-side artifact is already cropped around the affected ballot and its 
 - Focused Playwright regression: passed.
 
 Final result: passed
+
+---
+
+# All-Star BoH mapper design QA
+
+- Source visual truth: `work/all-star-boh-mapper.html`
+- Reference state: six-team mapper board and current Team Plans modes.
+- Implementation states: member Team Plan and Map Briefing at 1440 ? 1000, plus Team Plan at 390 ? 844.
+- Protected constraint: no real mapper roster names or private planning data were copied into public source files.
+
+## All-Star full-view comparison evidence
+
+The side-by-side comparison used the standalone mapper board and rendered member Team Plan at the same 1440px viewport. The implementation keeps the dark command-center palette, compact rectangular cards, horizontal roster rail, phase controls, explicit role/deployment labels, and dense operational hierarchy. It intentionally reorganizes the private six-team master board into a member-safe single-team command view.
+
+## All-Star focused-region comparison evidence
+
+The command workspace preserves the reference's operational density while separating My Orders, Team Plan, and Map Briefing. The real Stage-1 map asset is used. At 390px, phase context becomes one column and the roster/phase rails scroll internally; the page itself has no horizontal overflow.
+
+## All-Star findings and comparison history
+
+1. Initial static capture selected the navigation control instead of the plan panel; the capture harness was corrected and rerun.
+2. Matched screenshots exposed root padding extending the standalone member view beyond the viewport. Root box sizing and max-width were added.
+3. Recheck measured `clientWidth === scrollWidth` at both 1440px and 390px.
+4. Mobile review confirmed readable duty cards, one-column cues, and no page-level clipping.
+
+## All-Star verification
+
+- Mapper contract/member/admin focused tests: passed.
+- Desktop and mobile document-width check: passed.
+- Source and implementation compared in one combined visual input: passed.
+
+Final result: passed

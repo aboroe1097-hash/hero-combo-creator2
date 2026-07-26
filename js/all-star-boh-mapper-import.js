@@ -1,4 +1,5 @@
 import { normalizeBohName, normalizeBohNameKey } from './all-star-boh-model.js';
+import { bohSeatRoleGroup } from './all-star-boh-plan.js';
 
 export const BOH_MAPPER_IMPORT_MAX_BYTES = 1024 * 1024;
 export const BOH_MAPPER_IMPORT_FORMAT = 'all-star-boh-exact-view';
@@ -6,20 +7,8 @@ export const BOH_MAPPER_IMPORT_VERSION = 1;
 
 const TEAM_IDS = Object.freeze(Array.from({ length: 6 }, (_, index) => `team-${index + 1}`));
 const ROLE_GROUPS = new Set(['offensive', 'top', 'bottom', 'rune']);
-const ROLE_BY_SCORE_RANK = Object.freeze({
-  1: 'offensive',
-  2: 'offensive',
-  3: 'top',
-  4: 'bottom',
-  5: 'top',
-  6: 'bottom',
-  7: 'offensive',
-  8: 'offensive',
-  9: 'rune',
-  10: 'rune',
-  11: 'bottom',
-  12: 'top',
-});
+const TITLE_ROLES = new Set(['kills', 'tower', 'escort', 'gathering']);
+const MAX_BACKUPS_PER_TEAM = 2;
 const MAX_NAME_LENGTH = 120;
 const MAX_METADATA_LENGTH = 80;
 const MAX_SCORE = 10_000_000;
@@ -52,6 +41,12 @@ function boundedNumber(value, { code, label, max }) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > max) {
     fail(code, `${label} must be a finite number from 0 to ${max}.`);
   }
+  return value;
+}
+
+function optionalBoolean(value, { code, label }) {
+  if (value === undefined) return false;
+  if (typeof value !== 'boolean') fail(code, `${label} must be true or false.`);
   return value;
 }
 
@@ -110,6 +105,16 @@ function normalizePlayer(value, teamId, seatNumber, ids, names) {
       `Team ${teamId} seat ${seatNumber} has an unsupported plan role.`
     );
   }
+  const titleRole = optionalText(player.titleRole, {
+    code: 'boh-mapper-player-title-role',
+    label: `Team ${teamId} seat ${seatNumber} title role`,
+  }).toLocaleLowerCase('en');
+  if (titleRole && !TITLE_ROLES.has(titleRole)) {
+    fail(
+      'boh-mapper-player-title-role',
+      `Team ${teamId} seat ${seatNumber} has an unsupported title role.`
+    );
+  }
   const rawRole = optionalText(player.commandRole, {
     code: 'boh-mapper-command-role',
     label: `Team ${teamId} seat ${seatNumber} command role`,
@@ -153,7 +158,16 @@ function normalizePlayer(value, teamId, seatNumber, ids, names) {
     }),
     locked: player.locked === true,
     userLockTeamId,
+    backup: optionalBoolean(player.backup, {
+      code: 'boh-mapper-player-backup',
+      label: `Team ${teamId} seat ${seatNumber} backup value`,
+    }),
+    main: optionalBoolean(player.main, {
+      code: 'boh-mapper-player-main',
+      label: `Team ${teamId} seat ${seatNumber} main value`,
+    }),
     planRole,
+    titleRole,
     commandRole: explicit ? rawRole : '',
     commandRoleSource: explicit ? 'explicit' : '',
   };
@@ -207,21 +221,28 @@ function normalizeTeam(value, index, ids, names) {
       `Team ${id} may contain at most one explicit leader and two explicit co-leaders.`
     );
   }
-  const derivedRoles = new Map(
-    players
-      .slice()
-      .sort(
-        (left, right) =>
-          right.score - left.score ||
-          right.power - left.power ||
-          left.displayName.localeCompare(right.displayName)
-      )
-      .map((player, rankIndex) => [player.mapperId, ROLE_BY_SCORE_RANK[rankIndex + 1]])
-  );
-  const normalizedPlayers = players.map(({ score, power, ...player }) => ({
-    ...player,
-    planRole: player.planRole || derivedRoles.get(player.mapperId),
-  }));
+  if (players.filter((player) => player.backup).length > MAX_BACKUPS_PER_TEAM) {
+    fail(
+      'boh-mapper-player-backup-count',
+      `Team ${id} may contain at most ${MAX_BACKUPS_PER_TEAM} backups.`
+    );
+  }
+  const normalizedPlayers = players
+    .slice()
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        right.power - left.power ||
+        normalizeBohNameKey(left.displayName).localeCompare(normalizeBohNameKey(right.displayName))
+    )
+    .map(({ score, power, ...player }, rankIndex) => {
+      const rankedSeatNumber = rankIndex + 1;
+      return {
+        ...player,
+        seatNumber: rankedSeatNumber,
+        planRole: player.planRole || bohSeatRoleGroup(rankedSeatNumber),
+      };
+    });
   return { id, name, color, fightTime, tier, players: normalizedPlayers };
 }
 

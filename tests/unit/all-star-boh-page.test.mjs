@@ -794,3 +794,16 @@ test('the lazy template is CSP-friendly and its CSS covers mobile, RTL, and redu
     /@media \(prefers-reduced-motion: reduce\)[\s\S]*?animation-duration:\s*0\.01ms !important/
   );
 });
+
+test('published plans expose mapper orders, team plan, and map briefing as one command workspace', () => {
+  for (const mode of ['my-orders', 'team-plan', 'map-briefing']) {
+    assert.match(tabSource, new RegExp(`data-command-mode="${mode}"`));
+  }
+  assert.match(tabSource, /data-role="command-roster"/);
+  assert.equal((tabSource.match(/data-role="command-phase-tab"/g) || []).length, 4);
+  assert.match(tabSource, /data-role="command-role-lanes"/);
+  assert.match(tabSource, /data-role="command-map-list"/);
+  assert.match(tabSource, /src="assets\/boh\/stage1-map\.webp"/);
+  assert.match(cssSource, /\.boh-command-roster[\s\S]*?overflow-x:\s*auto/);
+  assert.match(cssSource, /@media \(max-width: 390px\)[\s\S]*?\.boh-command-context/);
+});

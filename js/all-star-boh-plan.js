@@ -10,11 +10,12 @@
  *   roleGroupId  offensive | rune | top | bottom
  *   legionId     legion-1 | legion-2
  *
- * Seats 11 and 12 are the designated backups. They enter at 5:00, so only their opening
- * entries carry `instruction.standby: true`.
+ * An explicit `identity.backup` flag controls backup behavior when supplied. Without that
+ * flag, seats 11 and 12 remain the designated legacy backups. Backups enter at 5:00, so only
+ * their opening entries carry `instruction.standby: true`.
  *
  * Typed instruction flags are sparse and optional for backend/UI integrators:
- *   standby        backup seat 11/12 is not deployed yet in the opening 0-5 phase
+ *   standby        selected backup is not deployed yet in the opening 0-5 phase
  *   gatherCrystals this exact legion entry is assigned Sacred Crystal Mine gathering
  *
  * This is a default template only. A leadership override always wins, and nothing here is
@@ -375,17 +376,20 @@ export function bohSeatRoleGroup(seatNumber) {
 
 /**
  * The eight timeline entries for one seat: four phases by two legions, in the published shape.
- * `identity` supplies playerId and gameName; everything else derives from the template.
+ * `identity` supplies playerId, gameName, and optionally backup; everything else derives from
+ * the template. An explicit backup value overrides the legacy seat 11/12 fallback.
  */
 export function bohStage1Timeline(seatNumber, identity = {}) {
   const seat = Number(seatNumber);
   if (!Number.isInteger(seat) || seat < 1 || seat > BOH_STAGE1_SEATS) return [];
   const roleGroupId = identity.roleGroupId || bohSeatRoleGroup(seat);
-  const rows = STAGE1_ORDERS[seat] || null;
+  const hasExplicitBackup = typeof identity.backup === 'boolean';
+  const backup = hasExplicitBackup ? identity.backup === true : bohIsBackupSeat(seat);
+  const rows = backup ? null : STAGE1_ORDERS[seat] || null;
   const entries = [];
 
   BOH_STAGE1_PHASES.forEach((phase, phaseIndex) => {
-    const standby = bohIsStandby(seat, phaseIndex);
+    const standby = backup && phaseIndex < BOH_STAGE1_BACKUP_ENTRY_PHASE;
     const template = rows ? rows[phaseIndex] : null;
     BOH_STAGE1_LEGIONS.forEach((legion) => {
       const isLegionOne = legion.id === 'legion-1';

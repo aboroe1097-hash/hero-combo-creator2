@@ -44,6 +44,7 @@ function createRuntimeStore({ authoredTeamPlan = null } = {}) {
         seatNumber: index + 1,
         playerId: `player-${offset + index + 1}`,
         displayName: `Seat ${offset + index + 1}`,
+        lane: teamIndex === 0 && index === 1 ? 'backup' : 'main',
       })),
     };
   };
@@ -304,4 +305,9 @@ test('runtime Stage-1 defaults reach player publication projections', async () =
   assert.equal(player.timeline[0].instruction.action.length > 0, true);
   assert.equal(player.timeline[0].instructionSources, undefined);
   assert.equal(player.plan.phases[0].id, 'phase-1');
+  assert.equal(published.players['uid-2'].timeline[0].instruction.standby, true);
+  assert.equal(
+    published.players['uid-11'].timeline.some((entry) => entry.instruction.standby),
+    false
+  );
 });

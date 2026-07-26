@@ -4,6 +4,12 @@ import {
   getAllStarBohSignupWindowState,
 } from './all-star-boh-schedule.js';
 import * as BohField from './all-star-boh-field.js';
+import { buildBohCommandView } from './all-star-boh-command-view.js';
+import {
+  BOH_STAGE1_MILESTONES,
+  BOH_STAGE1_PHASES,
+  bohStage1Timeline,
+} from './all-star-boh-plan.js';
 import {
   BOH_TROOP_TIERS,
   BOH_TROOP_TYPES,
@@ -1546,6 +1552,8 @@ function initialState(options) {
     section: registrationClosed ? 'plan' : 'signup',
     entryMethod: 'ocr',
     selectedPhaseId: '',
+    selectedCommandMode: 'my-orders',
+    selectedCommandPhaseId: 'phase-1',
     selectedLegionId: '',
     selectedTeamId: '',
     submission: null,
@@ -3519,6 +3527,93 @@ function renderMap(state, entry) {
   svg?.setAttribute?.('aria-label', descriptor.description);
 }
 
+function renderCommandWorkspace(state) {
+  const team = currentTeam(state);
+  const workspace = query(state.root, '[data-role="command-workspace"]');
+  if (!team || !workspace) return;
+  const view = buildBohCommandView({
+    team,
+    playerId: state.store?.uid,
+    phaseId: state.selectedCommandPhaseId,
+    phases: BOH_STAGE1_PHASES,
+    milestones: BOH_STAGE1_MILESTONES,
+    timelineBuilder: bohStage1Timeline,
+    structureCodes: BohField.bohStructureCodes,
+    objectives: fieldObjectivesFor(state),
+  });
+  state.selectedCommandPhaseId = view.phaseId;
+  workspace.dataset.commandMode = state.selectedCommandMode;
+  workspace.closest?.('.boh-plan')?.setAttribute('data-command-mode', state.selectedCommandMode);
+  for (const tab of queryAll(workspace, '[data-role="command-mode-tab"]')) {
+    const selected = tab.dataset.commandMode === state.selectedCommandMode;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  }
+  for (const panel of queryAll(workspace, '[data-role="command-mode-panel"]')) {
+    setHidden(panel, panel.dataset.commandMode !== state.selectedCommandMode);
+  }
+  for (const tab of queryAll(workspace, '[data-role="command-phase-tab"]')) {
+    const phase = view.phases.find((item) => item.id === tab.dataset.phaseId);
+    const selected = phase?.id === view.phaseId;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    setText(query(tab, 'strong'), phase ? `${phase.startMinute}-${phase.endMinute}` : '');
+    setText(query(tab, 'small'), phase?.label || '');
+  }
+  setText(query(workspace, '[data-role="command-phase-title"]'), view.phase?.label || '');
+  setText(query(workspace, '[data-role="command-phase-unlocks"]'), view.milestone?.unlocks || '');
+  setText(query(workspace, '[data-role="command-teleport-cue"]'), view.milestone?.teleport || '');
+  setText(query(workspace, '[data-role="command-crystal-cue"]'), view.milestone?.crystal || '');
+  const rosterItems = view.roster.map((seat) => {
+    const item = createElement(state.root, 'li', seat.isCurrentPlayer ? 'is-current' : '');
+    const title = createElement(
+      state.root,
+      'strong',
+      '',
+      `${seat.seatNumber}. ${seat.displayName}`
+    );
+    const meta = [seat.isBackup ? 'Backup' : 'Main', seat.side, seat.commandRole]
+      .filter(Boolean)
+      .join(' / ');
+    append(item, title, createElement(state.root, 'small', '', meta));
+    return item;
+  });
+  replaceChildren(query(workspace, '[data-role="command-roster"]'), ...rosterItems);
+  const laneCards = view.roleLanes.map((lane) => {
+    const card = createElement(state.root, 'article', 'boh-command-lane');
+    append(card, createElement(state.root, 'h5', '', lane.label));
+    const list = createElement(state.root, 'ul');
+    for (const player of lane.players) {
+      const item = createElement(state.root, 'li', player.isCurrentPlayer ? 'is-current' : '');
+      append(item, createElement(state.root, 'strong', '', player.displayName));
+      const duties = player.orders.map((order) => {
+        const cue = [order.action, order.target, order.teleport].filter(Boolean).join(' / ');
+        return createElement(state.root, 'span', order.standby ? 'is-standby' : '', cue);
+      });
+      append(item, ...duties);
+      append(list, item);
+    }
+    append(card, list);
+    return card;
+  });
+  replaceChildren(query(workspace, '[data-role="command-role-lanes"]'), ...laneCards);
+  const activeAssignments = view.assignments.filter((assignment) =>
+    assignment.orders.some((order) => !order.standby)
+  );
+  const activeIds = new Set(activeAssignments.map((assignment) => assignment.playerId));
+  const mapItems = view.mapTargets
+    .filter((target) => activeIds.has(target.playerId))
+    .map((target) => {
+      const item = createElement(state.root, 'li', target.isCurrentPlayer ? 'is-current' : '');
+      append(
+        item,
+        createElement(state.root, 'strong', '', `${target.code} / ${target.label}`),
+        createElement(state.root, 'small', '', target.displayName)
+      );
+      return item;
+    });
+  replaceChildren(query(workspace, '[data-role="command-map-list"]'), ...mapItems);
+}
 function renderLegions(state, view) {
   const legions = state.personalPlan?.plan?.legions || [];
   const inputs = queryAll(state.root, '[name="bohLegion"]');
@@ -3600,6 +3695,7 @@ function renderPlan(state) {
     query(state.root, '[data-role="plan-updated-at"]'),
     formatUpdatedAt(state, personal.updatedAtMs || state.publication?.updatedAtMs)
   );
+  renderCommandWorkspace(state);
   renderLegions(state, view);
   renderEventSchedule(state);
   renderNowNext(state, view);
@@ -4287,6 +4383,24 @@ function handleKeydown(state, event) {
     );
     return;
   }
+  const commandModeTab = event.target?.closest?.('[data-role="command-mode-tab"]');
+  if (commandModeTab) {
+    const tabs = queryAll(state.root, '[data-role="command-mode-tab"]');
+    tabKeyMove(state, event, tabs, tabs.indexOf(commandModeTab), (tab) => {
+      state.selectedCommandMode = tab.dataset.commandMode;
+      renderPlan(state);
+    });
+    return;
+  }
+  const commandPhaseTab = event.target?.closest?.('[data-role="command-phase-tab"]');
+  if (commandPhaseTab) {
+    const tabs = queryAll(state.root, '[data-role="command-phase-tab"]');
+    tabKeyMove(state, event, tabs, tabs.indexOf(commandPhaseTab), (tab) => {
+      state.selectedCommandPhaseId = tab.dataset.phaseId;
+      renderPlan(state);
+    });
+    return;
+  }
   const phaseTab = event.target?.closest?.('[data-role="phase-tabs"] [role="tab"]');
   if (phaseTab) {
     const tabs = queryAll(state.root, '[data-role="phase-tabs"] [role="tab"]:not([hidden])');
@@ -4386,6 +4500,16 @@ async function handleClick(state, event) {
   if (target.matches?.('.boh-team-summary')) {
     state.selectedTeamId = target.dataset.teamId;
     renderTeamDetail(state, state.selectedTeamId);
+    return;
+  }
+  if (target.matches?.('[data-role="command-mode-tab"]')) {
+    state.selectedCommandMode = target.dataset.commandMode;
+    renderPlan(state);
+    return;
+  }
+  if (target.matches?.('[data-role="command-phase-tab"]')) {
+    state.selectedCommandPhaseId = target.dataset.phaseId;
+    renderPlan(state);
     return;
   }
   if (target.matches?.('[data-role="phase-tabs"] [role="tab"]')) {
