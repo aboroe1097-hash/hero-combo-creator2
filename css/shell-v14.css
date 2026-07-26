@@ -1388,7 +1388,7 @@ body.shell-more-open #app .tool-nav-inner {
 
   #app .app-control-row {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 44px 44px !important;
+    grid-template-columns: minmax(0, 1fr) 44px 44px 44px !important;
     grid-template-rows: 44px 44px !important;
     grid-auto-rows: 44px;
     align-items: stretch !important;
@@ -1401,6 +1401,7 @@ body.shell-more-open #app .tool-nav-inner {
   #app .lang-select-wrapper,
   #app .lang-select-wrapper > div,
   #app .lang-select-shell,
+  #app .account-link,
   #app #themeToggle,
   #app #installAppBtn,
   #app #commandPaletteTrigger {
@@ -1486,6 +1487,7 @@ body.shell-more-open #app .tool-nav-inner {
     font-size: 0.84rem;
   }
 
+  #app .account-link,
   #app #themeToggle,
   #app #installAppBtn,
   #app #commandPaletteTrigger {
@@ -1498,8 +1500,13 @@ body.shell-more-open #app .tool-nav-inner {
     grid-row: 1;
   }
 
-  #app #themeToggle {
+  #app .account-link {
     grid-column: 3;
+    grid-row: 1;
+  }
+
+  #app #themeToggle {
+    grid-column: 4;
     grid-row: 1;
   }
 

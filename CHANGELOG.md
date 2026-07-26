@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.2.14 - 2026-07-26
+
+- Fixed the mobile header so the Account control has its own touch-safe slot without displacing the clock, search, theme, or language controls.
+
 ## 14.2.13 - 2026-07-26
 
 - Made Battle Simulator hero skills and assignments explicitly canonical and added the verified Cavalry Movement in Unison specialization passive.

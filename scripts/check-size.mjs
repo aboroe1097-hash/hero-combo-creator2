@@ -56,7 +56,7 @@ const LIMITS = {
   // The audited 14.2.12 graph measures 8940.1 KiB after adding Italian and
   // Korean locale chunks, the profile route, and the battle runtime/catalog.
   // Retain roughly 1% aggregate headroom while entry and route caps stay fixed.
-  // The audited 14.2.13 graph measures 9199.3 KiB after adding canonical battle
+  // The audited 14.2.14 graph measures 9199.3 KiB after adding canonical battle
   // inputs, mapper draft import, and localized account onboarding. Retain roughly
   // 1% aggregate headroom while entry and route caps stay fixed.
   totalJsBytes: 9300 * 1024,

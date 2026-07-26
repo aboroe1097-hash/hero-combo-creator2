@@ -61,7 +61,7 @@ test('compact shell keeps readable brand, version, and controls in normal header
   );
   assert.match(
     compactShell,
-    /#app \.app-control-row \{[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 44px 44px !important;[\s\S]*?grid-template-rows: 44px 44px !important;[\s\S]*?grid-auto-rows: 44px;/
+    /#app \.app-control-row \{[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 44px 44px 44px !important;[\s\S]*?grid-template-rows: 44px 44px !important;[\s\S]*?grid-auto-rows: 44px;/
   );
   assert.match(
     compactShell,
@@ -71,7 +71,25 @@ test('compact shell keeps readable brand, version, and controls in normal header
     compactShell,
     /#app #commandPaletteTrigger \{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;/
   );
-  assert.match(compactShell, /#app #themeToggle \{[\s\S]*?grid-column: 3;[\s\S]*?grid-row: 1;/);
+  assert.match(compactShell, /#app \.account-link \{[\s\S]*?grid-column: 3;[\s\S]*?grid-row: 1;/);
+  assert.match(
+    compactShell,
+    /#app \.account-link,[\s\S]*?#app #commandPaletteTrigger \{[\s\S]*?width: 44px !important;[\s\S]*?min-width: 44px !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.account-link,[\s\S]*?#app #commandPaletteTrigger \{[\s\S]*?min-height: 44px !important;[\s\S]*?height: 44px !important;/
+  );
+  assert.match(appCss, /\.account-link \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 44px;/);
+  assert.match(
+    appCss,
+    /@media \(max-width: 640px\) \{[\s\S]*?\.account-link \{[\s\S]*?width: 44px;/
+  );
+  assert.match(
+    appCss,
+    /\.account-link-label \{[\s\S]*?position: absolute;[\s\S]*?width: 1px;[\s\S]*?height: 1px;[\s\S]*?overflow: hidden;[\s\S]*?clip: rect\(0 0 0 0\);/
+  );
+  assert.match(compactShell, /#app #themeToggle \{[\s\S]*?grid-column: 4;[\s\S]*?grid-row: 1;/);
   assert.match(
     compactShell,
     /#app \.app-control-row \.lang-select-wrapper \{[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?grid-row: 2;/
