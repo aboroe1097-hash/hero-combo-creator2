@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.14";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.14",
+    "date": "2026-07-26",
+    "highlights": [
+      "Fixed the mobile header so the Account control has its own touch-safe slot without displacing the clock, search, theme, or language controls."
+    ]
+  },
   {
     "version": "14.2.13",
     "date": "2026-07-26",
@@ -94,17 +101,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Moved review status/actions leftward in the signup table (H2).",
       "Added sticky leading identity columns with LTR/RTL support (H2).",
       "Added `data-label` attributes to all `<td>` for card-mode responsive layout (H2)."
-    ]
-  },
-  {
-    "version": "14.2.4",
-    "date": "2026-07-21",
-    "highlights": [
-      "Added audited All-Star admin corrections across player-entered profile, stats, roster, hero, research, availability, role, and commitment data while preserving the original submission.",
-      "Added reasoned 1-10,000 leadership commitment scores as an additive score component, stored-score diagnostics, and a balanced team-building mode that evaluates scoring points and Total Castle Power independently.",
-      "Expanded All-Star score and review tooling with richer score provenance, sortable audit data, roster-aware CSV export, clearer selection controls, and sequential batch confirmation and deletion.",
-      "Let existing All-Star signups save manual corrections when replacement screenshot OCR fails, with actionable Russian retry and fallback guidance; first-time OCR verification remains required.",
-      "Improved Specialization Towers on mobile and RTL layouts with scroll position cues, focus and modal-scroll preservation, touch accessibility, and explicit provenance that public totals are whole-research totals while per-node medal costs remain unknown."
     ]
   }
 ].map((release) =>
