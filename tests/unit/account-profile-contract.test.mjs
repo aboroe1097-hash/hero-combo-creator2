@@ -395,3 +395,106 @@ test('profile page has one name concept and required onboarding controls for bot
   assert.doesNotMatch(profileHtml, /Optional cloud account/);
   assert.match(profileHtml, /meta name="vts-app-version" content="\d+\.\d+\.\d+"/);
 });
+
+test('profile settings use real anchor sections and preserve every profile field contract', () => {
+  const profileHtml = read('profile.html');
+  const settingsNav = section(profileHtml, '<nav', '</nav>');
+  const profileSection = section(profileHtml, 'id="profileSection"', 'id="privacySection"');
+  const details = section(profileSection, '<details id="accountAboutDetails"', '</details>');
+
+  for (const target of ['profileSection', 'privacySection', 'accountSection']) {
+    assert.match(settingsNav, new RegExp(`href="#${target}"`));
+  }
+  assert.doesNotMatch(settingsNav, /role="tab"|role="tablist"/);
+  assert.match(profileHtml, /id="accountAuthPanel"[^>]*hidden/);
+  assert.match(profileHtml, /id="accountEditorPanel"[^>]*hidden/);
+  assert.match(profileHtml, /id="profileBioCount"[^>]*>0 \/ 280</);
+  assert.match(profileHtml, /id="profileCommentsCount"[^>]*>0 \/ 1,000</);
+  assert.match(profileHtml, /id="profileSaveState"[^>]*data-i18n="save\.clean"/);
+  assert.match(
+    details,
+    /id="profileReferralSource"[^>]*name="referralSource"[^>]*required[^>]*maxlength="160"/
+  );
+  assert.match(details, /id="profileComments"[^>]*name="comments"[^>]*maxlength="1000"/);
+
+  for (const [id, name] of [
+    ['profileGameName', 'gameName'],
+    ['profileState', 'state'],
+    ['profileAlliance', 'alliance'],
+    ['profileCountryCode', 'countryCode'],
+    ['profileBio', 'bio'],
+    ['profileIsPublic', 'isPublic'],
+  ]) {
+    assert.match(profileHtml, new RegExp(`id="${id}"[^>]*name="${name}"[^>]*data-profile-field`));
+  }
+  assert.match(profileHtml, /id="accountEmailInput"[^>]*dir="ltr"[^>]*spellcheck="false"/);
+  assert.match(
+    profileHtml,
+    /id="profileCountryCode"[^>]*dir="ltr"[^>]*autocapitalize="characters"[^>]*spellcheck="false"/
+  );
+});
+
+test('profile dirty state is success-bound and protects navigation without affecting settings anchors', () => {
+  const runActionSource = section(
+    pageSource,
+    'async function runAction',
+    'document.querySelectorAll(\'.account-tabs [role="tab"]\')'
+  );
+  const busySource = section(pageSource, 'function setBusy', 'function moveLanguageControl');
+
+  assert.match(pageSource, /let profileBaseline = null/);
+  assert.match(
+    pageSource,
+    /const profile = await loadAccountProfile\(\);[\s\S]*setProfileBaseline\(\)/
+  );
+  assert.match(pageSource, /onSuccess: \(\) => setProfileBaseline\(true\)/);
+  assert.match(runActionSource, /const result = await action\(\)/);
+  assert.match(runActionSource, /onSuccess\?\.\(result\)/);
+  assert.match(runActionSource, /catch \(error\)[\s\S]*return false/);
+  assert.doesNotMatch(runActionSource, /catch \(error\)[\s\S]*setProfileBaseline/);
+  assert.match(pageSource, /addEventListener\('beforeunload',[\s\S]*if \(!profileDirty\) return/);
+  assert.match(
+    pageSource,
+    /profileDirty && !globalThis\.confirm\(accountTr\('confirm\.dirtySignout'\)\)/
+  );
+  assert.match(pageSource, /event\.target\.matches\(profileFieldSelector\)/);
+  assert.match(pageSource, /passwordInput\.minLength = mode === 'create' \? 8 : 0/);
+  assert.match(
+    pageSource,
+    /saveInFlight[\s\S]*'save\.saving'[\s\S]*'save\.unsaved'[\s\S]*'save\.clean'/
+  );
+  const renderStart = pageSource.indexOf('async function render');
+  const profileLoad = pageSource.indexOf('const profile = await loadAccountProfile()', renderStart);
+  const baseline = pageSource.indexOf('setProfileBaseline();', profileLoad);
+  const editorReveal = pageSource.indexOf('editorPanel.hidden = false', profileLoad);
+  assert.ok(profileLoad < baseline && baseline < editorReveal);
+  assert.doesNotMatch(busySource, /querySelectorAll\([^)]*\ba\b/);
+});
+
+test('hidden required onboarding details are revealed and account page registers for offline caching', () => {
+  const metadataSource = read('scripts/update-build-metadata.mjs');
+  const entryFiles = section(metadataSource, 'const entryHtmlFiles = [', '];');
+  const shellFiles = section(metadataSource, 'const baseAppShellFiles = [', '];');
+
+  assert.match(pageSource, /profileForm\.addEventListener\('invalid', revealFirstInvalid, true\)/);
+  assert.match(pageSource, /if \(aboutDetails\.contains\(invalid\)\) aboutDetails\.open = true/);
+  assert.match(pageSource, /invalid\.focus\(\)/);
+  assert.match(pageSource, /invalid\.reportValidity\(\)/);
+  assert.equal([...pageSource.matchAll(/\bregisterServiceWorker\(\)/g)].length, 1);
+  assert.match(pageSource, /import \{ registerServiceWorker \} from '\.\/pwa-register\.js'/);
+  assert.match(entryFiles, /'profile\.html'/);
+  assert.match(shellFiles, /'\/profile\.html'/);
+});
+
+test('account profile CSS includes responsive, safe-area, focus, and RTL safeguards', () => {
+  const css = read('css/account-profile.css');
+  assert.match(css, /min-height:\s*100dvh/);
+  assert.match(css, /env\(safe-area-inset-bottom\)/);
+  assert.match(css, /\.account-save-bar\s*\{[\s\S]*position:\s*sticky/);
+  assert.match(css, /\.account-settings-section\s*\{[\s\S]*scroll-margin-top/);
+  assert.match(css, /font:\s*500 16px/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /@media \(max-width: 390px\)/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css, /html\[dir='rtl'\]/);
+});

@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -785,11 +785,11 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
-  // v14 adds the standalone Arcade, Battle Simulator, and Specialization Towers
-  // entries, the global command palette, and the two small Velo layers needed by
-  // Eden's first-paint loader. Keep a measured one-entry margin without allowing
-  // the shell to grow unbounded.
-  assert.ok(urls.length <= 55, `expected bounded app shell, found ${urls.length} URLs`);
+  // v14 adds the standalone Arcade, Battle Simulator, Specialization Towers, and
+  // Profile entries, the global command palette, and the two small Velo layers
+  // needed by Eden's first-paint loader. Keep a measured one-entry margin without
+  // allowing the shell to grow unbounded.
+  assert.ok(urls.length <= 58, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));

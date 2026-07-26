@@ -213,6 +213,9 @@ test('account errors map deterministically and never expose raw Firebase message
     'account/invalid-state',
     'account/invalid-referral-source',
     'account/comments-too-long',
+    'account/alliance-too-long',
+    'account/bio-too-long',
+    'account/invalid-country-code',
     'account/google-credential-unavailable',
   ];
   for (const code of supportedCodes) {

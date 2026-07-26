@@ -7,6 +7,7 @@ const buildVersion = process.env.BUILD_VERSION || makeBuildVersion();
 const cacheVersion = `vts-${buildVersion.replace(/_/g, '-')}`;
 const entryHtmlFiles = [
   'index.html',
+  'profile.html',
   'maintenance.html',
   'admin.html',
   'eden-x1.html',
@@ -17,6 +18,7 @@ const entryHtmlFiles = [
 const baseAppShellFiles = [
   '/',
   '/index.html',
+  '/profile.html',
   '/maintenance.html',
   '/404.html',
   '/site.webmanifest',

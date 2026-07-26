@@ -104,7 +104,9 @@ const LIMITS = {
   // battlefield WebP; retain roughly 19 KiB while media and route caps stay fixed.
   // Italian/Korean locales, the profile route, battle runtime/catalog, and
   // their new emitted files measure 27,327.1 KiB; retain roughly 1% headroom.
-  totalDeployBytes: 27601 * 1024,
+  // The audited v14.2.15 Account/Profile responsive settings update adds
+  // 19.0 KiB; retain about 5 KiB of complete-artifact headroom.
+  totalDeployBytes: 27625 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
@@ -116,6 +118,9 @@ const LIMITS = {
   deployFileCount: 604,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
+    // The audited v14.2.15 profile route links 24,013 bytes of responsive
+    // Account/Profile CSS; keep a focused 25 KiB ceiling.
+    'profile.html': { desktop: 25 * 1024, mobile: 25 * 1024 },
     // Alliance View reuses the Admin/Eden design system. The shared Strife
     // Hall of Honor and the phone node inspector expand shared app.css. Admin
     // measures 630.8/723.7 KiB and Eden 747.3/840.1 KiB after minification.
