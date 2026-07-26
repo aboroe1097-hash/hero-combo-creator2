@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.11";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.12";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.12",
+    "date": "2026-07-26",
+    "highlights": [
+      "Added Velo Beta 0.3 saved-data consent and optional Firebase-backed user profiles.",
+      "Expanded All-Star BoH with a six-team, 12-player roster and schedule, supporting rules, and X8 name-matched formations.",
+      "Completed Italian and Korean localization across the shipped experience.",
+      "Made Battle Simulator scenarios apply Research and Specialization through a deterministic runtime, with upgraded setup/export schemas and diagnostics.",
+      "Expanded Battle Simulator coverage to 78 heroes and 208 skills using conservative modeled effects, plus provisional observed equipment effects; partial or unverified battle clauses fail closed, and Dragon Master catalog stats are never invented."
+    ]
+  },
   {
     "version": "14.2.11",
     "date": "2026-07-25",
@@ -96,16 +107,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Made Team Builder support configurable 2–6 12-player teams, an explicit eligible pool, and exact-team forces, with preview/apply balancing by active score or Total Castle Power and both totals visible.",
       "Made reviewed player names and stats editable and applied those corrections throughout scoring, team building, publication, and export.",
       "Added compound review filters, stable sorting, and formula-safe CSV export limited to the current visible row order."
-    ]
-  },
-  {
-    "version": "14.2.2",
-    "date": "2026-07-20",
-    "highlights": [
-      "Added actionable VPN, different-network, and Retry guidance when regional or network restrictions prevent access to required Google signup security services, without presenting the failure as an incorrect PIN; semantic validation, authentication, and admin-session errors remain …",
-      "Kept the first paint fail-closed with a visible loader and access gate before CSS and security boot, added an accessible localized PIN visibility control, and accepted hash casing variants.",
-      "Made screenshot OCR a generation-safe single-flight flow with deterministic processing, ready, and error states plus retry support.",
-      "Prevented clipping of the header, logo, and version badge at 375 px and 390 px mobile widths while keeping the safe-area bottom navigation separate."
     ]
   }
 ].map((release) =>

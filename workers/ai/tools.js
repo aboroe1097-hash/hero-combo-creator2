@@ -130,7 +130,7 @@ export const TOOL_DECLARATIONS = Object.freeze([
     type: 'function',
     name: 'get_material_plan_summary',
     description:
-      'Read the explicitly allowed saved Dragon Master material plan and calculate exact per-piece/per-set costs, the next piece, and current shortfall.',
+      'Read the explicitly allowed saved Dragon Master plan. Returns separate campaign set-grid progress and owned-piece inventory math: an incomplete campaign set is only a row with missing pieces, not a whole set still owed; use inventory remaining pieces, exact resource need, and stockpile shortfall for saved-inventory calculations.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
   },
   {

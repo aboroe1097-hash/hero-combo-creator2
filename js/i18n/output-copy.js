@@ -110,6 +110,18 @@ const COPY = Object.freeze({
     'loyalty.unit.second.short': 'dtk',
     'loyalty.unit.second.long': 'Detik',
   }),
+  it: Object.freeze({
+    'export.team': 'TEAM',
+    'export.state': 'STATO',
+    'export.score': 'PUNTEGGIO',
+    'export.generatedBy': 'Generato da',
+    'loyalty.unit.hour.short': 'h',
+    'loyalty.unit.hour.long': 'Ore',
+    'loyalty.unit.minute.short': 'min',
+    'loyalty.unit.minute.long': 'Minuti',
+    'loyalty.unit.second.short': 's',
+    'loyalty.unit.second.long': 'Secondi',
+  }),
   zh: Object.freeze({
     'export.team': '战队',
     'export.state': '州',

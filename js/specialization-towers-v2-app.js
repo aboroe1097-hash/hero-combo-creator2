@@ -39,7 +39,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '14.2.11';
+export const APP_VERSION = '14.2.12';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];
@@ -73,6 +73,7 @@ const LANGUAGE_OPTIONS = Object.freeze([
   ['es', 'Español'],
   ['fr', 'Français'],
   ['id', 'Indonesia'],
+  ['it', 'Italiano'],
   ['kr', '한국어'],
   ['pt', 'Português'],
   ['ru', 'Русский'],

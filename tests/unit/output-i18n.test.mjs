@@ -27,9 +27,10 @@ const SUPPORTED_LOCALES = Object.freeze([
   'zh',
   'ar',
   'kr',
+  'it',
 ]);
 
-test('export and loyalty output copy covers every stable ID in all 11 locales', () => {
+test('export and loyalty output copy covers every stable ID in all 12 locales', () => {
   assert.deepEqual([...OUTPUT_COPY_LOCALES].sort(), [...SUPPORTED_LOCALES].sort());
   assert.deepEqual(OUTPUT_COPY_KEYS, [
     'export.team',

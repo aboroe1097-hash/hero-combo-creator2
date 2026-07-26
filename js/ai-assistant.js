@@ -259,6 +259,7 @@ class AiAssistantController {
     this.lastFocused = null;
     this.pendingPrompt = null;
     this.pendingConsentCategory = '';
+    this.consentMode = 'disclosure';
     this.pendingSetupCategories = new Set();
     this.confirmMode = '';
     this.confirmLineup = null;
@@ -303,6 +304,8 @@ class AiAssistantController {
       moreIdeasButton: byId('aiMoreIdeasBtn'),
       consentOverlay: byId('aiConsentOverlay'),
       consentDialog: byId('aiConsentDialog'),
+      consentKicker: byId('aiConsentKicker'),
+      consentTitle: byId('aiConsentTitle'),
       consentClose: byId('aiConsentCloseBtn'),
       consentGeneral: byId('aiConsentGeneralBtn'),
       consentAllow: byId('aiConsentAllowBtn'),
@@ -426,6 +429,7 @@ class AiAssistantController {
     this.elements.mode.textContent = this.grants.size
       ? translate('ai.personalMode', FALLBACKS['ai.personalMode'])
       : translate('ai.generalMode', FALLBACKS['ai.generalMode']);
+    this.syncConsentCopy(this.consentMode === 'settings');
     this.renderCurrentStatus();
     this.renderTranscript();
   }
@@ -1031,13 +1035,16 @@ class AiAssistantController {
   }
 
   openConsent({ category = '', prompt = null, settings = false } = {}) {
+    const firstDisclosure = !settings && !hasAcceptedProviderDisclosure();
+    this.consentMode = settings ? 'settings' : 'disclosure';
     this.lastFocused = document.activeElement;
     this.pendingPrompt = prompt;
     this.pendingConsentCategory = category;
-    this.syncConsentUi(category);
-    this.elements.consentAllow.textContent = settings
-      ? translate('ai.consent.saveSettings', 'Save privacy settings')
-      : translate('ai.consent.allowSelected', 'Allow selected data for this chat');
+    this.syncConsentUi(category, {
+      preselectAvailable: firstDisclosure,
+      preselectPreferred: !settings,
+    });
+    this.syncConsentCopy(settings);
     this.elements.consentOverlay.classList.remove('hidden');
     document.body.classList.add('ai-dialog-open');
     requestAnimationFrame(() => {
@@ -1048,16 +1055,33 @@ class AiAssistantController {
     });
   }
 
-  syncConsentUi(preferredCategory = '') {
+  syncConsentCopy(settings = false) {
+    this.elements.consentKicker.textContent = translate(
+      'ai.consent.kicker',
+      'Privacy and consent'
+    );
+    this.elements.consentTitle.textContent = settings
+      ? translate('ai.privacySettings', 'Privacy settings')
+      : translate('ai.consent.title', 'Choose what this chat can use');
+    this.elements.consentAllow.textContent = settings
+      ? translate('ai.consent.saveSettings', 'Save privacy settings')
+      : translate('ai.consent.allowSelected', 'Allow selected data for this chat');
+  }
+
+  syncConsentUi(
+    preferredCategory = '',
+    { preselectAvailable = false, preselectPreferred = false } = {}
+  ) {
     this.root.querySelectorAll('.ai-consent-option').forEach((option) => {
       const category = option.dataset.aiConsentOption;
       const input = option.querySelector('input');
       const available = hasRawSavedState(category);
       input.disabled = !available;
-      // Access still requires the explicit dialog action. Preselect every
-      // available category so a user can grant their complete saved toolkit
-      // context without four easy-to-miss checkbox clicks.
-      input.checked = available;
+      input.checked =
+        available &&
+        (preselectAvailable ||
+          this.grants.has(category) ||
+          (preselectPreferred && category === preferredCategory));
       option.classList.toggle('ai-consent-option--unavailable', !available);
     });
     this.elements.consentSetup.classList.toggle(

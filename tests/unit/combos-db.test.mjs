@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { allHeroesData } from '../../js/heroes-data.js';
 import {
   comboMeetsSkinRequirements,
   filterCombosForSkinMode,
@@ -9,6 +10,22 @@ import {
   scoreComboByRank,
   selectNonOverlappingCombos,
 } from '../../js/combos-db.js';
+
+const X8_AVAILABILITY_SOURCE = 'rocacademy-free-noskin-x8-name-match-2026-07-25';
+const X8_AVAILABLE_HEROES = [
+  'Bjorn',
+  'Skanda',
+  'Liberator',
+  'Ashen Verdict',
+  'Warden',
+  'Warhammer',
+  'Eidolon',
+  'Scarlet Reaver',
+  'Rainforest Ranger',
+  'Fortuneteller',
+  'Ragnar',
+  'Cyrus',
+];
 
 test('combo rank scoring maps first to 100 and last to 1', () => {
   assert.equal(scoreComboByRank(0, 3), '100.0');
@@ -52,6 +69,35 @@ test('non-overlap selection respects the result limit', () => {
     selectNonOverlappingCombos(combos, new Set(['A', 'B', 'C', 'D', 'E', 'F']), 1).length,
     1
   );
+});
+
+test('X8 availability import contains 82 valid name-matched base formations', () => {
+  const imported = rankedCombos.filter((combo) => combo.source === X8_AVAILABILITY_SOURCE);
+  const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
+  const targetHeroNames = new Set(X8_AVAILABLE_HEROES);
+
+  assert.equal(imported.length, 82);
+  assert.equal(new Set(imported.map((combo) => combo.heroes.join('|'))).size, 82);
+  imported.forEach((combo) => {
+    assert.equal(combo.heroes.length, 3);
+    assert.ok(combo.heroes.every((hero) => validHeroNames.has(hero)));
+    assert.ok(combo.heroes.some((hero) => targetHeroNames.has(hero)));
+    assert.match(combo.sourceTier, /^[SABC]$/);
+    assert.equal(Number.isFinite(combo.sourceScore), true);
+    assert.equal(Object.hasOwn(combo, 'skin'), false);
+  });
+});
+
+test('X8-only ownership produces the all-catch-up archer formation', () => {
+  const selected = selectNonOverlappingCombos(rankedCombos, X8_AVAILABLE_HEROES, 5);
+
+  assert.ok(selected.some((combo) => combo.heroes.join('|') === 'Eidolon|Warden|Ashen Verdict'));
+});
+
+test('name-matched import restores a buildable Cyrus formation', () => {
+  const selected = selectNonOverlappingCombos(rankedCombos, ['Cyrus', 'Ragnar', 'Caesar'], 5);
+
+  assert.equal(selected[0]?.heroes.join('|'), 'Cyrus|Ragnar|Caesar');
 });
 
 test('skin codes use 3 as must, 2 as recommended, and 1 as optional', () => {

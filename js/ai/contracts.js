@@ -12,6 +12,7 @@ export const AI_SUPPORTED_LOCALES = Object.freeze([
   'zh',
   'ar',
   'kr',
+  'it',
 ]);
 
 export const AI_LIMITS = Object.freeze({

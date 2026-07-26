@@ -138,9 +138,9 @@ test('canonical English exactly covers template and runtime translator contracts
     [],
     'Every player runtime translation call must use a literal key and English fallback'
   );
-  assert.equal(runtimeKeys.length, 144);
-  assert.equal(runtimeOnlyKeys.length, 105);
-  assert.equal(expectedKeys.length, 398);
+  assert.equal(runtimeKeys.length, 145);
+  assert.equal(runtimeOnlyKeys.length, 106);
+  assert.equal(expectedKeys.length, 399);
   assert.deepEqual(
     Object.keys(ALL_STAR_BOH_EN).sort(),
     expectedKeys,
@@ -223,6 +223,7 @@ test('locale resolution, English fallback, and lazy-loader contract stay stable'
     'fr',
     'hr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',
@@ -242,6 +243,6 @@ test('locale resolution, English fallback, and lazy-loader contract stay stable'
   }
   assert.doesNotMatch(
     source,
-    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|hr|id|kr|pt|ru|tr|zh)\.js['"]/
+    /import\s+.+\s+from\s+['"]\.\/(?:ar|de|es|fr|hr|id|it|kr|pt|ru|tr|zh)\.js['"]/
   );
 });

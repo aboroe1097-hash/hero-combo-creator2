@@ -14,16 +14,33 @@ import {
   normalizeEquipmentLoadout,
 } from './battle-simulator-equipment.js';
 import { createEmptyResearchSnapshot as createLiveEmptyResearchSnapshot } from './battle-simulator-research.js';
+import {
+  EQUIPMENT_EFFECT_OVERRIDE_SCHEMA_VERSION,
+  normalizeEquipmentEffectOverrides,
+} from './battle-simulator-equipment-overrides.js';
 
 export { EQUIPMENT_LOADOUT_SCHEMA_VERSION };
 
-export const SETUP_SCHEMA_VERSION = 2;
+export const SETUP_SCHEMA_VERSION = 3;
 export const LEGACY_SETUP_SCHEMA_VERSION = 1;
+export const PREVIOUS_SETUP_SCHEMA_VERSION = 2;
 export const RESEARCH_SNAPSHOT_SCHEMA_VERSION = 1;
 export const CAPTURED_SOURCE_SNAPSHOT_SCHEMA_VERSION = 1;
 
 const SIDE_IDS = Object.freeze(['A', 'B']);
 const DEFAULT_BATTLE_MODE = 'pvp-field';
+const DEFAULT_SCENARIO_CONTEXT = Object.freeze({
+  battleMode: DEFAULT_BATTLE_MODE,
+  engagement: 'field',
+  event: '*',
+  formation: '*',
+});
+const SCENARIO_VALUES = Object.freeze({
+  battleMode: Object.freeze(['pvp-field']),
+  engagement: Object.freeze(['field', 'siege-attack', 'siege-defense']),
+  event: Object.freeze(['*', 'eden', 'boh']),
+  formation: Object.freeze(['*', 'rally-lead', 'rally-join', 'reinforce']),
+});
 const ALLOWED_ITERATIONS = Object.freeze([1, 10, 50, 100, 500]);
 const DIAGNOSTIC_SEVERITIES = Object.freeze(['info', 'warning', 'error']);
 const UINT32_MAX = 0xffffffff;
@@ -38,7 +55,8 @@ const MAX_IDENTIFIER_LENGTH = 128;
 const MAX_SOURCE_ID_LENGTH = 256;
 const MAX_RESEARCH_ENTRIES = 2_000;
 const MAX_METADATA_DEPTH = 6;
-const MAX_METADATA_ENTRIES = 128;
+const MAX_SPECIALIZATION_METADATA_DEPTH = 10;
+const MAX_METADATA_ENTRIES = 2_048;
 const RAW_BATTLE_STATS = new Set(['combatSpeed']);
 
 function requireObject(value, label) {
@@ -178,7 +196,13 @@ function isSensitiveMetadataKey(key) {
   );
 }
 
-function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
+function normalizeMetadata(
+  value,
+  label,
+  depth = 0,
+  ancestors = new WeakSet(),
+  maximumDepth = MAX_METADATA_DEPTH
+) {
   if (value === null || typeof value === 'boolean') return value;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) throw new TypeError(`${label} must contain finite numbers.`);
@@ -193,8 +217,8 @@ function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
   if (!value || typeof value !== 'object') {
     throw new TypeError(`${label} must contain only JSON-compatible values.`);
   }
-  if (depth >= MAX_METADATA_DEPTH) {
-    throw new RangeError(`${label} must not exceed ${MAX_METADATA_DEPTH} nested levels.`);
+  if (depth >= maximumDepth) {
+    throw new RangeError(`${label} must not exceed ${maximumDepth} nested levels.`);
   }
   if (ancestors.has(value)) throw new TypeError(`${label} must not contain cycles.`);
   ancestors.add(value);
@@ -203,7 +227,9 @@ function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
     if (value.length > MAX_METADATA_ENTRIES) {
       throw new RangeError(`${label} arrays may contain at most ${MAX_METADATA_ENTRIES} entries.`);
     }
-    const normalized = value.map((item) => normalizeMetadata(item, label, depth + 1, ancestors));
+    const normalized = value.map((item) =>
+      normalizeMetadata(item, label, depth + 1, ancestors, maximumDepth)
+    );
     ancestors.delete(value);
     return normalized;
   }
@@ -217,7 +243,7 @@ function normalizeMetadata(value, label, depth = 0, ancestors = new WeakSet()) {
     if (isSensitiveMetadataKey(key)) {
       throw new TypeError(`${label} must not contain sensitive field "${key}".`);
     }
-    normalized[key] = normalizeMetadata(value[key], label, depth + 1, ancestors);
+    normalized[key] = normalizeMetadata(value[key], label, depth + 1, ancestors, maximumDepth);
   }
   ancestors.delete(value);
   return normalized;
@@ -574,6 +600,8 @@ function normalizeRow(rawRow, sideId, index, options) {
   const normalized = {
     id: rowDefinition.id,
     ...normalizeEditableFields(row, label, options),
+    heroName: normalizeOptionalText(row.heroName, `${label} heroName`),
+    skillIds: normalizeStringArray(row.skillIds, `${label} skillIds`),
     open: index === 0,
     customized: false,
   };
@@ -588,6 +616,69 @@ function normalizeRow(rawRow, sideId, index, options) {
     normalized.customized = row.customized;
   }
   return normalized;
+}
+
+function createEmptyEquipmentEffectOverrides() {
+  return {
+    overrideSchemaVersion: EQUIPMENT_EFFECT_OVERRIDE_SCHEMA_VERSION,
+    overrides: [],
+    diagnostics: [],
+  };
+}
+
+function normalizeEquipmentOverrides(value) {
+  if (value === undefined || value === null) return createEmptyEquipmentEffectOverrides();
+  return structuredClone(normalizeEquipmentEffectOverrides(value));
+}
+
+function createEmptySpecializationCapture() {
+  return {
+    snapshot: null,
+    result: {
+      sources: [],
+      unitSources: [],
+      effects: [],
+      excluded: [],
+      diagnostics: [],
+      summary: {
+        sourceCount: 0,
+        unitSourceCount: 0,
+        effectCount: 0,
+        activeEffectCount: 0,
+        excludedCount: 0,
+        totals: {},
+        unitTotals: {},
+      },
+      revision: null,
+    },
+  };
+}
+
+function normalizeSpecializationCapture(value, label) {
+  if (value === undefined || value === null) return createEmptySpecializationCapture();
+  const capture = requireObject(value, label);
+  return {
+    snapshot:
+      capture.snapshot === undefined || capture.snapshot === null
+        ? null
+        : normalizeMetadata(
+            capture.snapshot,
+            `${label} snapshot`,
+            0,
+            new WeakSet(),
+            MAX_SPECIALIZATION_METADATA_DEPTH
+          ),
+    result:
+      capture.result === undefined || capture.result === null
+        ? createEmptySpecializationCapture().result
+        : normalizeMetadata(
+            capture.result,
+            `${label} result`,
+            0,
+            new WeakSet(),
+            MAX_SPECIALIZATION_METADATA_DEPTH
+          ),
+  };
 }
 
 function normalizeSide(rawSide, sideId, battleMode, { legacy = false } = {}) {
@@ -611,6 +702,11 @@ function normalizeSide(rawSide, sideId, battleMode, { legacy = false } = {}) {
       battleMode
     ),
     equipmentLoadout: normalizeEquipmentLoadout(side.equipmentLoadout),
+    equipmentEffectOverrides: normalizeEquipmentOverrides(side.equipmentEffectOverrides),
+    specializationCapture: normalizeSpecializationCapture(
+      side.specializationCapture,
+      `${label} specialization capture`
+    ),
     capturedSourceSnapshot: normalizeCapturedSourceSnapshot(
       side.capturedSourceSnapshot,
       `${label} captured source snapshot`
@@ -639,6 +735,35 @@ function normalizeBattleMode(value) {
   if (value === undefined) return DEFAULT_BATTLE_MODE;
   if (typeof value !== 'string') throw new TypeError('Setup battleMode must be a string.');
   return value;
+}
+
+function normalizeScenarioContext(value, fallbackBattleMode = DEFAULT_BATTLE_MODE) {
+  const context = value === undefined || value === null ? {} : requireObject(value, 'Scenario');
+  const normalized = {
+    battleMode: context.battleMode ?? fallbackBattleMode,
+    engagement: context.engagement ?? DEFAULT_SCENARIO_CONTEXT.engagement,
+    event: context.event ?? DEFAULT_SCENARIO_CONTEXT.event,
+    formation: context.formation ?? DEFAULT_SCENARIO_CONTEXT.formation,
+  };
+  for (const [key, allowed] of Object.entries(SCENARIO_VALUES)) {
+    if (typeof normalized[key] !== 'string' || !allowed.includes(normalized[key])) {
+      throw new RangeError(`Scenario ${key} must be one of: ${allowed.join(', ')}.`);
+    }
+  }
+  return normalized;
+}
+
+function normalizeAssumptions(value) {
+  const assumptions =
+    value === undefined || value === null ? {} : requireObject(value, 'Setup assumptions');
+  const acknowledged = assumptions.acknowledged ?? false;
+  if (typeof acknowledged !== 'boolean') {
+    throw new TypeError('Setup assumptions acknowledged must be a boolean.');
+  }
+  return {
+    acknowledged,
+    diagnostics: normalizeDiagnostics(assumptions.diagnostics, 'Setup assumption diagnostics'),
+  };
 }
 
 function normalizeRunOptions(rawRunOptions) {
@@ -673,12 +798,19 @@ function normalizeRunOptions(rawRunOptions) {
 function normalizeSetupSnapshot(rawSnapshot) {
   const snapshot = requireObject(rawSnapshot, 'Battle setup');
   const version = requireOwn(snapshot, 'setupSchemaVersion', 'Battle setup');
-  if (![LEGACY_SETUP_SCHEMA_VERSION, SETUP_SCHEMA_VERSION].includes(version)) {
+  if (
+    ![LEGACY_SETUP_SCHEMA_VERSION, PREVIOUS_SETUP_SCHEMA_VERSION, SETUP_SCHEMA_VERSION].includes(
+      version
+    )
+  ) {
     throw new RangeError(
       `Unsupported battle setup schema version "${String(version)}". Expected version ${LEGACY_SETUP_SCHEMA_VERSION} or ${SETUP_SCHEMA_VERSION}.`
     );
   }
-  const battleMode = normalizeBattleMode(snapshot.battleMode);
+  const battleMode = normalizeBattleMode(
+    snapshot.battleMode ?? snapshot.scenarioContext?.battleMode
+  );
+  const scenarioContext = normalizeScenarioContext(snapshot.scenarioContext, battleMode);
   const sides = requireObject(requireOwn(snapshot, 'sides', 'Battle setup'), 'Battle setup sides');
   for (const sideId of SIDE_IDS) requireOwn(sides, sideId, 'Battle setup sides');
   const legacy = version === LEGACY_SETUP_SCHEMA_VERSION;
@@ -686,7 +818,9 @@ function normalizeSetupSnapshot(rawSnapshot) {
   return {
     setupSchemaVersion: SETUP_SCHEMA_VERSION,
     savedAt: normalizeSavedAt(snapshot.savedAt),
-    battleMode,
+    battleMode: scenarioContext.battleMode,
+    scenarioContext,
+    assumptions: normalizeAssumptions(snapshot.assumptions),
     sides: Object.fromEntries(
       SIDE_IDS.map((sideId) => [
         sideId,
@@ -703,6 +837,11 @@ export function buildSetupSnapshot(state) {
     setupSchemaVersion: SETUP_SCHEMA_VERSION,
     savedAt: null,
     battleMode: source.battleMode ?? DEFAULT_BATTLE_MODE,
+    scenarioContext: source.scenarioContext ?? {
+      ...DEFAULT_SCENARIO_CONTEXT,
+      battleMode: source.battleMode ?? DEFAULT_BATTLE_MODE,
+    },
+    assumptions: source.assumptions,
     sides: requireOwn(source, 'sides', 'Battle simulator state'),
     runOptions: {
       iterations: requireOwn(source, 'iterations', 'Battle simulator state'),
@@ -731,6 +870,8 @@ export function applySetupSnapshot(state, snapshot) {
   return {
     ...currentState,
     battleMode: normalized.battleMode,
+    scenarioContext: normalized.scenarioContext,
+    assumptions: normalized.assumptions,
     iterations: normalized.runOptions.iterations,
     seed: normalized.runOptions.seed,
     strikeVariancePct: normalized.runOptions.strikeVariancePct,
@@ -751,11 +892,17 @@ export function setupSnapshotToEngineConfig(snapshot) {
         normalized.battleMode
       ),
       equipmentLoadout: normalizeEquipmentLoadout(side.equipmentLoadout),
+      equipmentEffectOverrides: normalizeEquipmentOverrides(side.equipmentEffectOverrides),
       capturedSourceSnapshot: normalizeCapturedSourceSnapshot(
         side.capturedSourceSnapshot,
         `Side ${sideId} captured source snapshot`
       ),
+      specializationCapture: normalizeSpecializationCapture(
+        side.specializationCapture,
+        `Side ${sideId} specialization capture`
+      ),
       rows: side.rows.map((row) => {
+        const unitSources = side.specializationCapture.result?.unitSources || [];
         const calculation = calculateTroopStats({
           type: row.type,
           tier: row.tier,
@@ -763,6 +910,7 @@ export function setupSnapshotToEngineConfig(snapshot) {
           unitValues: row.unitValues,
           values: side.mode === STAT_INPUT_MODES.ADD_BONUSES ? row.bonuses : row.finals,
           sources: side.capturedSourceSnapshot.sources,
+          unitSources,
           context: {
             battleMode: normalized.battleMode,
             troopType: row.type,
@@ -771,6 +919,8 @@ export function setupSnapshotToEngineConfig(snapshot) {
         });
         return {
           id: row.id,
+          heroName: row.heroName,
+          skillIds: [...row.skillIds],
           type: row.type,
           tier: row.tier,
           troops: row.troops,
@@ -788,6 +938,9 @@ export function setupSnapshotToEngineConfig(snapshot) {
           },
         };
       }),
+      unitSources: structuredClone(side.specializationCapture.result?.unitSources || []),
+      effects: structuredClone(side.specializationCapture.result?.effects || []),
+      scenarioContext: structuredClone(normalized.scenarioContext),
     };
   };
 

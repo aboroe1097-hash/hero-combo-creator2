@@ -106,6 +106,30 @@ const DEFAULT_PHASE_LABELS = Object.freeze({
 });
 const controllers = new WeakMap();
 const BOH_MAP_VIEWBOX = Object.freeze({ width: 972, height: 507 });
+const OFFICIAL_EVENT_SCHEDULE = Object.freeze({
+  status: 'official-fallback',
+  eventStartsAt: '2026-07-31',
+  milestones: Object.freeze([
+    Object.freeze({ id: 'warm-up', label: 'Warm-up match', startsAt: '2026-07-31' }),
+    Object.freeze({
+      id: 'matchups',
+      label: 'Group matchups announced (Aug 1-2)',
+      startsAt: '2026-08-01',
+    }),
+    Object.freeze({ id: 'round-1', label: 'Round 1', startsAt: '2026-08-03' }),
+    Object.freeze({ id: 'round-2', label: 'Round 2', startsAt: '2026-08-05' }),
+    Object.freeze({ id: 'break', label: 'Tactics break (Aug 7-9)', startsAt: '2026-08-07' }),
+    Object.freeze({ id: 'round-3', label: 'Round 3', startsAt: '2026-08-10' }),
+    Object.freeze({ id: 'round-4', label: 'Round 4', startsAt: '2026-08-12' }),
+    Object.freeze({ id: 'round-5', label: 'Round 5 - final group match', startsAt: '2026-08-14' }),
+    Object.freeze({
+      id: 'qualification',
+      label: 'Qualification list (Aug 15-16)',
+      startsAt: '2026-08-15',
+    }),
+  ]),
+  teamGameTimes: Object.freeze([]),
+});
 
 const SIGNUP_WINDOW_COPY = Object.freeze({
   en: [
@@ -197,6 +221,21 @@ const SIGNUP_WINDOW_COPY = Object.freeze({
     'jam',
     'menit',
     'detik',
+  ],
+  it: [
+    'PERIODO DI ISCRIZIONE',
+    'Le iscrizioni aprono tra',
+    'Le iscrizioni chiudono tra',
+    'Le iscrizioni sono chiuse',
+    'Le date di iscrizione saranno annunciate a breve',
+    'La leadership pubblicherà qui gli orari di apertura e chiusura.',
+    'Apertura {date}',
+    'Aperto {opens} — chiusura {closes}',
+    'Chiuso {date}',
+    'giorni',
+    'ore',
+    'minuti',
+    'secondi',
   ],
   kr: [
     '가입 기간',
@@ -419,6 +458,30 @@ const TROOP_OCR_COPY = Object.freeze({
     'Jumlah',
     'Jenis',
     'Tingkat',
+  ],
+  it: [
+    'OCR TRUPPE FACOLTATIVO',
+    'Carica le schermate Dettagli truppe',
+    'Fino a 4 immagini',
+    'Aggiungi screenshot sovrapposti delle parti superiore e inferiore dell’elenco. Associeremo ogni truppa visibile a tipo, livello, stato potenziato e quantità.',
+    'Parte superiore dell’elenco truppe',
+    'Continua verso il basso',
+    'Scegli gli screenshot dei Dettagli truppe',
+    'Seleziona da 1 a 4 immagini nitide e abbastanza sovrapposte da non saltare righe.',
+    'Comprendo che queste immagini usano lo stesso fornitore OCR di terze parti e che devo controllare le righe.',
+    'Leggi gli screenshot delle truppe',
+    'Rimuovi tutto',
+    'Controlla ogni riga di truppe rilevata',
+    'Correggi tipo, livello, indicatore potenziato o quantità quando non sono certi.',
+    'Ho confrontato ogni riga di truppe con i miei screenshot.',
+    'Lettura dello screenshot {current} di {total}…',
+    'Rilevate {count} righe di truppe. Controllale qui sotto.',
+    'Normale',
+    'Potenziata',
+    'Incerto',
+    'Quantità',
+    'Tipo',
+    'Livello',
   ],
   kr: [
     '선택 병력 OCR',
@@ -1565,6 +1628,8 @@ function formatSignupWindowDate(value, locale) {
 function renderSignupWindow(state) {
   const card = query(state.root, '[data-role="signup-window"]');
   if (!card) return;
+  setHidden(card, state.registrationClosed);
+  if (state.registrationClosed) return;
   const now = typeof state.options.now === 'function' ? state.options.now() : Date.now();
   const windowState = getAllStarBohSignupWindowState(state.signupWindow, now);
   const locale = signupWindowLocale(state.language);
@@ -3667,6 +3732,18 @@ function formatScheduleDate(state, value) {
   }
 }
 
+function formatScheduleDay(state, value) {
+  const timestamp = scheduleTimestamp(value);
+  if (!timestamp) return state.tr('status.notAvailable', 'Not available');
+  try {
+    return new Intl.DateTimeFormat(state.language, {
+      dateStyle: 'medium',
+      timeZone: 'UTC',
+    }).format(timestamp);
+  } catch {
+    return new Date(timestamp).toISOString().slice(0, 10);
+  }
+}
 function countdownLabel(state, timestamp) {
   const remaining = Math.max(0, Math.floor((timestamp - Date.now()) / 1000));
   if (!remaining) return state.tr('schedule.now', 'Now');
@@ -3677,16 +3754,25 @@ function countdownLabel(state, timestamp) {
 }
 
 function renderEventSchedule(state) {
-  const schedule = state.eventSchedule;
+  const publishedSchedule = state.eventSchedule;
+  const publishedMilestones = Array.isArray(publishedSchedule?.milestones)
+    ? publishedSchedule.milestones
+    : [];
+  const publishedTeamTimes = Array.isArray(publishedSchedule?.teamGameTimes)
+    ? publishedSchedule.teamGameTimes
+    : [];
+  const hasPublishedSchedule = Boolean(
+    publishedSchedule?.status === 'published' &&
+    (publishedMilestones.length || publishedTeamTimes.length || publishedSchedule.eventStartsAt)
+  );
+  const schedule = hasPublishedSchedule ? publishedSchedule : OFFICIAL_EVENT_SCHEDULE;
+  const isOfficialFallback = !hasPublishedSchedule;
   const panel = query(state.root, '[data-role="event-schedule"]');
   if (!panel) return;
-  const milestones = Array.isArray(schedule?.milestones) ? schedule.milestones : [];
-  const teamTimes = Array.isArray(schedule?.teamGameTimes) ? schedule.teamGameTimes : [];
-  const hasSchedule = Boolean(
-    schedule && (milestones.length || teamTimes.length || schedule.eventStartsAt)
-  );
-  setHidden(panel, !hasSchedule);
-  if (!hasSchedule) return;
+  const milestones = Array.isArray(schedule.milestones) ? schedule.milestones : [];
+  const teamTimes = Array.isArray(schedule.teamGameTimes) ? schedule.teamGameTimes : [];
+  setHidden(panel, false);
+
   const now = Date.now();
   const ordered = milestones
     .map((milestone, index) => ({
@@ -3731,7 +3817,14 @@ function renderEventSchedule(state) {
         status === 'complete' ? '✓' : String(milestone.index + 1).padStart(2, '0')
       ),
       createElement(state.root, 'strong', '', milestone.label || milestone.id || ''),
-      createElement(state.root, 'small', '', formatScheduleDate(state, milestone.startsAtMs))
+      createElement(
+        state.root,
+        'small',
+        '',
+        isOfficialFallback
+          ? formatScheduleDay(state, milestone.startsAt)
+          : formatScheduleDate(state, milestone.startsAtMs)
+      )
     );
     return button;
   });
@@ -3742,11 +3835,15 @@ function renderEventSchedule(state) {
   );
   setText(
     query(state.root, '[data-role="schedule-date"]'),
-    formatScheduleDate(state, selected?.startsAtMs || schedule.eventStartsAt)
+    isOfficialFallback
+      ? formatScheduleDay(state, selected?.startsAt || schedule.eventStartsAt)
+      : formatScheduleDate(state, selected?.startsAtMs || schedule.eventStartsAt)
   );
   setText(
     query(state.root, '[data-role="schedule-countdown"]'),
-    countdownLabel(state, selected?.startsAtMs || scheduleTimestamp(schedule.eventStartsAt))
+    isOfficialFallback
+      ? state.tr('schedule.matchTimePending', 'Official event date - match time TBA')
+      : countdownLabel(state, selected?.startsAtMs || scheduleTimestamp(schedule.eventStartsAt))
   );
   const teamList = query(state.root, '[data-role="schedule-team-times"]');
   const teamItems = teamTimes.map((item) => {
@@ -3762,6 +3859,7 @@ function renderEventSchedule(state) {
     return row;
   });
   replaceChildren(teamList, ...teamItems);
+  setHidden(teamList, !teamItems.length);
 }
 
 function render(state) {

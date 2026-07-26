@@ -81,7 +81,7 @@ test('admin, public UI, and Firestore rules share vote settings contracts', () =
 });
 
 test('all supported locales include deadline controls and countdown copy', async () => {
-  const localeCodes = ['ar', 'de', 'en', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+  const localeCodes = ['ar', 'de', 'en', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
   const requiredKeys = [
     'adminEdenVotesDeadline',
     'adminEdenVotesDeadlineHint',

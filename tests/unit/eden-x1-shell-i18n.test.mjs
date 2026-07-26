@@ -9,7 +9,7 @@ import {
   localizeEdenX1Shell,
 } from '../../js/i18n/eden-x1-shell.js';
 
-const EXPECTED_LOCALES = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+const EXPECTED_LOCALES = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
 
 test('Eden X1 standalone shell copy covers all supported locales', () => {
   assert.deepEqual(EDEN_X1_SHELL_LOCALES, EXPECTED_LOCALES);

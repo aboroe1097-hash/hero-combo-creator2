@@ -14,6 +14,7 @@
     'zh',
     'ar',
     'kr',
+    'it',
   ]);
 
   const COPY = {
@@ -1474,6 +1475,138 @@
   // Croatian is available project-wide while specialist standalone copy is
   // reviewed incrementally; canonical English remains the explicit fallback.
   COPY.hr = COPY.en;
+  COPY.it = {
+    shell: {
+      more: 'Altro',
+      moreTools: 'Altri strumenti',
+      close: 'Chiudi',
+      deckLabel: 'Pannello S1097',
+      toolkitLabel: 'Strumenti VTS 1097',
+      teamLine: 'VTS · Stato 1097',
+      badges: { new: 'Nuovo', hot: 'Popolare', beta: 'Beta', seasonal: 'Stagionale' },
+      accessibility: {
+        primaryTools: 'Strumenti principali',
+        scrollTabsLeft: 'Scorri le schede degli strumenti a sinistra',
+        scrollTabsRight: 'Scorri le schede degli strumenti a destra',
+        installApp: 'Installa app',
+        themeToggle: 'Passa dal tema chiaro a quello scuro',
+        seasonalAdmin: 'Apri gli strumenti stagionali di VTS Admin',
+        arcadeGames: 'Gioca ai minigiochi VTS',
+        siteInfo: 'Informazioni sul sito',
+        quickTools: 'Strumenti rapidi',
+        notification: 'Notifica',
+        backToTop: 'Torna su',
+        scrollToTop: 'Scorri all\'inizio',
+        maintenanceStatus: 'Stato della manutenzione',
+      },
+    },
+    standalone: {
+      maintenance: {
+        documentTitle: 'Modalità manutenzione | Strumenti VTS 1097',
+        title: 'Modalità manutenzione',
+        message: 'Stiamo apportando alcuni miglioramenti. Torna a trovarci presto.',
+        status: 'Lavori in corso',
+      },
+      notFound: { documentTitle: 'Pagina non trovata', message: 'Pagina non trovata.' },
+    },
+    command: {
+      badges: { tool: 'strumento', page: 'pagina' },
+      aliases: {
+        manual: 'crea combo trascina squadra tre eroi',
+        generator: 'genera combo migliore classifica posseduti sorpresa squadra',
+        heroes: 'eroi atlante database abilità sinergia contromossa informazioni skin',
+        research: 'tecnologia ricerca accademia albero bonus nodi',
+        materials: 'dm dragon master equipaggiamento materiali crea',
+        edenMap: 'eden mappa tessere esplora percorso terreno squadre',
+        strife: 'conflitto drago mostro scontro',
+        loyalty: 'lealtà veleno accampamento deficit mitigazione eden',
+        youtube: 'youtube video playlist guarda',
+        admin: 'admin ocr roster regali classifica contributi voto pannello',
+        arcade: 'arcade giochi minigiochi gioca forgia unisci rissa',
+      },
+    },
+    arcade: {
+      hub: {
+        playerAria: 'Giocatore arcade',
+        switchGameAria: 'Cambia gioco',
+        frameTitle: 'Gioco arcade',
+        modeFallback: 'Modalità {number}',
+      },
+      shell: {
+        back: 'Torna alla lista dei giochi',
+        mode: 'Modalità',
+        score: 'Punteggio',
+        best: 'Migliore',
+        shield: 'Scudo',
+        ice: 'Ala di ghiaccio',
+        fire: 'Ala di fuoco',
+        again: 'Gioca ancora',
+        restart: 'Ricomincia',
+        pause: 'Pausa',
+        play: 'Gioca',
+        spaceKey: 'Spazio',
+        gameOver: 'Partita finita',
+        newBest: 'Nuovo record!',
+        overloadSafe: 'Sovraccarico: stabile',
+        overloadBuilding: 'Sovraccarico: {count}/10',
+        overloadCritical: 'Sovraccarico! {seconds}s',
+        overloadPaused: 'Sovraccarico in pausa',
+      },
+      games: {
+        arcadeModeA: {
+          mode: 'Modalità A',
+          title: 'Merge Rush',
+          hint: 'Tocca due pezzi dello stesso tipo e colore per unirli. Una coppia dorata fa jackpot.',
+        },
+        arcadeModeB: {
+          mode: 'Modalità B',
+          title: 'Sort the Hoard',
+          hint: 'Invia ogni pezzo in caduta verso l\'ala richiesta prima che raggiunga il cancello.',
+        },
+        arcadeModeC: {
+          mode: 'Modalità C',
+          title: 'Crystal Relay',
+          hint: 'Tocca nella zona verde. Alterna i lati per creare una combo mentre la scintilla accelera.',
+        },
+        arcadeModeD: {
+          mode: 'Modalità D',
+          title: 'Set Assembly',
+          hint: 'Raccogli i pezzi verdi, blu e dorati del tipo richiesto per completare un set.',
+        },
+        arcadeModeE: {
+          mode: 'Modalità E',
+          title: 'Hero Rumble',
+          hint: 'Prendi le armi blu per attaccare, evita quelle dorate e usa le viola per una super mossa.',
+        },
+      },
+      feedback: {
+        jackpot: 'JACKPOT +{points}',
+        merge: 'UNIONE +{points}',
+        forgeReady: 'Forgia pronta!',
+        setComplete: 'Set completo · +{points} · Set {sets}',
+        sweet: 'x2 PERFETTO!',
+        knockout: 'K.O.!',
+        miss: 'MANCATO!',
+        whiff: 'A VUOTO!',
+      },
+      materials: {
+        blue: 'blu',
+        gold: 'oro',
+        purple: 'viola',
+        green: 'verde',
+        white: 'bianco',
+        claw: 'artiglio',
+        coil: 'bobina',
+        feather: 'piuma',
+        ingot: 'lingotto',
+      },
+      fight: {
+        hit: ['SBAM!', 'WHAM!', 'POW!', 'PAM!', 'BAM!', 'CRASH!'],
+        dodge: ['WHOOSH!', 'MANCATO!', 'SVISH!', 'A VUOTO!'],
+        super: ['★ MONTANTE! ★', '★ COMBO! ★', '★ COLPO FINALE! ★', '★ MEGA! ★'],
+      },
+    },
+  };
 
   function deepFreeze(value) {
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;

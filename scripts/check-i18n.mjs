@@ -366,6 +366,7 @@ const RESEARCH_MAX_ALL_EXPECTATIONS = Object.freeze({
   es: 'Completar todo',
   fr: 'Tout terminer',
   id: 'Maksimalkan semua',
+  it: 'Completa tutto',
   kr: '전체 만렙',
   pt: 'Completar tudo',
   ru: 'Прокачать всё',

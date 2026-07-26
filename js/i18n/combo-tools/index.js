@@ -1,7 +1,7 @@
 import { COMBO_TOOL_ENGLISH } from './schema.js';
 import { COMBO_TOOL_PACKS } from './packs.js';
 
-const SUPPORTED = new Set(['en', 'ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh']);
+const SUPPORTED = new Set(['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh']);
 const SKIN_TYPE_IDS = Object.freeze({
   Mythic: 'skinType.mythic',
   Legendary: 'skinType.legendary',

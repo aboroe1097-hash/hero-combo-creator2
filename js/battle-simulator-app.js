@@ -36,6 +36,7 @@ import {
   applySetupSnapshot,
   buildSetupSnapshot,
   parseSetupSnapshot,
+  setupSnapshotToEngineConfig,
 } from './battle-simulator-setup.js';
 import {
   BATTLE_SIMULATOR_LANGUAGE_OPTIONS,
@@ -56,8 +57,25 @@ import {
   buildBattleResearchSnapshot,
   createEmptyResearchSnapshot,
 } from './battle-simulator-research.js';
+import {
+  BATTLE_HERO_SKILL_ASSUMPTIONS,
+  BATTLE_HERO_SKILL_COVERAGE,
+  battleHeroSkillCatalog,
+  getBattleHeroSkillCatalogEntry,
+} from './battle-simulator-hero-skills.js';
+import {
+  parseEquipmentEffectOverrides,
+  resolveEquipmentEffectOverrides,
+  serializeEquipmentEffectOverrides,
+} from './battle-simulator-equipment-overrides.js';
+import { resolveSpecializationBattleSources } from './battle-simulator-specialization.js';
+import { buildStatContributionSnapshot } from './specialization-towers-v2-contributions.js';
+import {
+  SPECIALIZATION_STORAGE_KEY,
+  loadSpecializationState,
+} from './specialization-towers-v2-store.js';
 
-const APP_VERSION = '14.2.11';
+const APP_VERSION = '14.2.12';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [
@@ -73,6 +91,7 @@ const STAT_DISPLAY_ORDER = [
 const TACTICAL_STATS = new Set(['tacticalMight', 'tacticalResistance']);
 const INVALID_CONTROL_SELECTOR = 'input:invalid, select:invalid, textarea:invalid';
 const VISIBLE_EVENT_LIMIT = 300;
+const BATCH_WORKER_TIMEOUT_MS = 30_000;
 
 let root = null;
 let form = null;
@@ -81,6 +100,7 @@ let lastRun = null;
 let setupRevision = 0;
 let presetStore = {};
 let translator = createBattleSimulatorTranslator('en');
+let activeBatchController = null;
 
 const t = (id, values = {}) => translator.t(id, values);
 const plural = (id, count, values = {}) => translator.plural(id, count, values);
@@ -95,6 +115,11 @@ const INTEGER_FORMAT = Object.freeze({ format: (value) => formatInteger(value) }
 const PERCENT_FORMAT = Object.freeze({ format: (value) => formatPercent(value) });
 const preferredScrollBehavior = () =>
   globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+function cancelActiveBatch() {
+  activeBatchController?.abort();
+  activeBatchController = null;
+}
 
 function emptyStats(value = 0) {
   return Object.fromEntries(BATTLE_STAT_KEYS.map((key) => [key, value]));
@@ -114,6 +139,8 @@ function createRow(type, tier, index) {
     unitValues: { ...unit },
     bonuses: emptyStats(0),
     finals: finalStatsDefaults(),
+    heroName: null,
+    skillIds: [],
     open: index === 0,
     customized: false,
   };
@@ -151,6 +178,12 @@ function createSide(defaultType, tier, rowTypes, researchEnabled = false) {
     researchEnabled,
     researchSnapshot: createEmptyResearchSnapshot(),
     equipmentLoadout: createDefaultEquipmentLoadout(),
+    equipmentEffectOverrides: {
+      overrideSchemaVersion: 1,
+      overrides: [],
+      diagnostics: [],
+    },
+    specializationCapture: null,
     capturedSourceSnapshot: {
       schemaVersion: 1,
       sources: [],
@@ -167,6 +200,13 @@ function createInitialState() {
   const sideTypes = ['footmen', 'cavalry', 'archers'];
   return {
     battleMode: 'pvp-field',
+    scenarioContext: {
+      battleMode: 'pvp-field',
+      engagement: 'field',
+      event: '*',
+      formation: '*',
+    },
+    assumptions: { acknowledged: false, diagnostics: [] },
     iterations: 1,
     seed: 1097,
     strikeVariancePct: 5,
@@ -248,6 +288,17 @@ function rebuildCapturedSourceSnapshot(sideId) {
   const research =
     side.researchSnapshot || createEmptyResearchSnapshot({ battleMode: state.battleMode });
   const equipment = resolveSideEquipment(sideId);
+  const equipmentOverrides = resolveEquipmentEffectOverrides(
+    side.equipmentLoadout,
+    side.equipmentEffectOverrides
+  );
+  const specializationState = loadSpecializationState();
+  const specializationSnapshot = buildStatContributionSnapshot(specializationState);
+  const specialization = resolveSpecializationBattleSources(
+    specializationState,
+    state.scenarioContext
+  );
+  side.specializationCapture = { snapshot: specializationSnapshot, result: specialization };
   const researchSources = side.researchEnabled ? [...(research.sources || [])] : [];
   const disabledResearch = side.researchEnabled
     ? []
@@ -264,11 +315,41 @@ function rebuildCapturedSourceSnapshot(sideId) {
     message: entry.message || t('equipment.partialWarning'),
     sourceId: entry.pieceId || entry.sourceId || `equipment:${index + 1}`,
   }));
+  const adapterDiagnostics = [
+    ...(specialization.diagnostics || []).map((entry, index) => ({
+      code: entry.code || 'specialization-diagnostic',
+      severity: 'warning',
+      message: entry.message || 'A specialization contribution was excluded.',
+      sourceId: entry.contributionId || `specialization:${index + 1}`,
+    })),
+    ...(equipmentOverrides.diagnostics || []).map((entry, index) => ({
+      code: entry.code || 'equipment-override-diagnostic',
+      severity: 'warning',
+      message: entry.message || 'An equipment override was excluded.',
+      sourceId: entry.overrideId || `equipment-override:${index + 1}`,
+    })),
+  ];
   side.capturedSourceSnapshot = {
     schemaVersion: 1,
-    sources: [...researchSources, ...(equipment.contributions || [])],
-    excludedSources: [...(research.excludedSources || []), ...disabledResearch],
-    diagnostics: [...(research.diagnostics || []), ...equipmentDiagnostics],
+    sources: [
+      ...researchSources,
+      ...(equipment.contributions || []),
+      ...(specialization.sources || []),
+      ...(equipmentOverrides.sources || []),
+    ],
+    excludedSources: [
+      ...(research.excludedSources || []),
+      ...disabledResearch,
+      ...(specialization.excluded || []).map((entry) => ({
+        sourceType: 'specialization',
+        sourceId: `specialization:${entry.id}`,
+        label: entry.id,
+        reason: entry.reason,
+        verification: { status: 'excluded' },
+        provenance: { contextField: entry.contextField || null },
+      })),
+    ],
+    diagnostics: [...(research.diagnostics || []), ...equipmentDiagnostics, ...adapterDiagnostics],
     catalogRevisions: {
       research: research.catalogVersion || null,
       equipment: equipment.catalogRevision || null,
@@ -375,16 +456,30 @@ function pageTemplate() {
         </aside>
 
         <details class="battle-assumptions battle-log-details">
-          <summary><span>${t('model.summary')}</span><span>${t('model.version', { version: BATTLE_MODEL_VERSION })}</span></summary>
+          <summary><span>${t('coverage.title')}</span><span>${t('model.version', { version: BATTLE_MODEL_VERSION })}</span></summary>
           <div class="battle-assumptions-body">
             <ul>
               ${Array.from({ length: 8 }, (_, index) => `<li>${t(`model.rule${index + 1}`, { rounds: BATTLE_MODEL_ASSUMPTIONS.maxRounds })}</li>`).join('')}
+              <li>${t('coverage.skills', { total: BATTLE_HERO_SKILL_COVERAGE.descriptions, modeled: BATTLE_HERO_SKILL_COVERAGE.classifications.modeled, partial: BATTLE_HERO_SKILL_COVERAGE.classifications.partial, excluded: BATTLE_HERO_SKILL_COVERAGE.classifications.excluded })}</li>
+              <li>${t('coverage.skillValues')}</li>
+              <li>${t('coverage.partialClauses')}</li>
+              <li>${t('coverage.missingHeroes', { count: BATTLE_HERO_SKILL_COVERAGE.missingExtendedHeroes.length })}</li>
+              <li>${t('coverage.research')}</li>
+              <li>${t('coverage.specialization')}</li>
+              <li>${t('coverage.equipment')}</li>
+              <li>${t('coverage.tactical')}</li>
+              <li>${escapeHtml(BATTLE_HERO_SKILL_ASSUMPTIONS.sourceOfTruth.join(' + '))} · ${escapeHtml(SPECIALIZATION_STORAGE_KEY)}</li>
             </ul>
+            <label class="battle-source-toggle">
+              <input type="checkbox" data-assumptions-acknowledged ${state.assumptions?.acknowledged ? 'checked' : ''} />
+              <span>${t('coverage.acknowledge')}</span>
+            </label>
           </div>
         </details>
 
         <form id="battleSimulatorForm" class="battle-simulator-form" novalidate>
           ${renderRunPanel()}
+          ${renderScenarioPanel()}
           ${renderSetupToolbar()}
           <div id="battleFormations" class="battle-formations">
             ${renderSide('A')}
@@ -409,6 +504,31 @@ function pageTemplate() {
       </footer>
     </div>
     <div class="battle-toast-region" aria-live="polite" aria-atomic="true"></div>`;
+}
+
+function renderScenarioPanel() {
+  const scenario = state.scenarioContext;
+  const field = (key, values) => `
+    <label class="battle-field">
+      <span>${t(`scenario.${key}`)}</span>
+      <select data-scenario-context="${key}" name="battleScenario${key[0].toUpperCase()}${key.slice(1)}">
+        ${values.map((value) => `<option value="${value}" ${scenario[key] === value ? 'selected' : ''}>${t(`scenario.${key}.${value}`)}</option>`).join('')}
+      </select>
+    </label>`;
+  return `
+    <section class="battle-scenario-panel" aria-labelledby="battleScenarioTitle">
+      <div class="battle-panel-heading">
+        <p class="battle-section-kicker">${t('scenario.kicker')}</p>
+        <h2 id="battleScenarioTitle">${t('scenario.title')}</h2>
+        <p>${t('scenario.copy')}</p>
+      </div>
+      <div class="battle-scenario-grid">
+        ${field('battleMode', ['pvp-field'])}
+        ${field('engagement', ['field', 'siege-attack', 'siege-defense'])}
+        ${field('event', ['*', 'eden', 'boh'])}
+        ${field('formation', ['*', 'rally-lead', 'rally-join', 'reinforce'])}
+      </div>
+    </section>`;
 }
 
 function renderRunPanel() {
@@ -510,6 +630,21 @@ function equipmentCompletenessKey(completeness) {
   return 'equipment.none';
 }
 
+function equipmentOverridesJson(document) {
+  try {
+    return serializeEquipmentEffectOverrides(document);
+  } catch {
+    return JSON.stringify(
+      {
+        overrideSchemaVersion: document?.overrideSchemaVersion || 1,
+        overrides: document?.overrides || [],
+      },
+      null,
+      2
+    );
+  }
+}
+
 function renderLegionSources(sideId) {
   const side = state.sides[sideId];
   const research = side.researchSnapshot || createEmptyResearchSnapshot();
@@ -607,6 +742,15 @@ function renderLegionSources(sideId) {
             <span>${equipment.activeSkills?.length ? formatInteger(equipment.activeSkills.length) : t('equipment.setSkillPending')}</span>
           </div>
           <p class="battle-source-help ${equipment.completeness === 'identity-only' || equipment.completeness === 'partial' || equipment.completeness === 'unresolved' ? 'battle-inline-warning' : ''}">${equipmentWarning}</p>
+          <details class="battle-equipment-overrides">
+            <summary>${t('equipment.overrides')}</summary>
+            <label class="battle-field">
+              <span>${t('equipment.overrideJson')}</span>
+              <textarea data-equipment-overrides="${sideId}" rows="7" spellcheck="false">${escapeHtml(equipmentOverridesJson(side.equipmentEffectOverrides))}</textarea>
+            </label>
+            <p class="battle-source-help">${t('equipment.overrideHint')}</p>
+            <button class="battle-secondary-button battle-compact-button" type="button" data-apply-equipment-overrides="${sideId}">${t('equipment.applyOverrides')}</button>
+          </details>
         </article>
       </div>
     </section>`;
@@ -665,6 +809,7 @@ function getEntityCalculation(sideId, entity, rowId = null) {
     unitValues: entity.unitValues,
     values,
     sources: automaticSourcesForSide(sideId),
+    unitSources: side.specializationCapture?.result?.unitSources || [],
     context: {
       battleMode: state.battleMode,
       troopType: entity.type,
@@ -953,6 +1098,43 @@ function renderSideDefaults(sideId) {
     </details>`;
 }
 
+function renderHeroSkills(sideId, row, index) {
+  const hero = getBattleHeroSkillCatalogEntry(row.heroName);
+  const placementWarning =
+    hero?.placement?.known && !hero.placement.rows.includes(row.id)
+      ? t('heroSkills.placementWarning', { row: rowLabel(index) })
+      : '';
+  const missingData = hero?.completeness === 'missing-extended';
+  return `
+    <section class="battle-hero-skills" aria-label="${t('heroSkills.title')}">
+      <label class="battle-field">
+        <span>${t('heroSkills.hero')}</span>
+        <select data-row-hero name="side${sideId}${row.id}Hero" autocomplete="off">
+          <option value="">${t('heroSkills.none')}</option>
+          ${battleHeroSkillCatalog.map((entry) => `<option value="${escapeHtml(entry.name)}" ${entry.name === row.heroName ? 'selected' : ''}>${escapeHtml(entry.name)}${entry.completeness === 'missing-extended' ? ` · ${t('heroSkills.missingData')}` : ''}</option>`).join('')}
+        </select>
+      </label>
+      ${placementWarning ? `<p class="battle-inline-warning" data-hero-placement-warning>${placementWarning}</p>` : ''}
+      ${missingData ? `<p class="battle-inline-warning">${t('heroSkills.missingDescription')}</p>` : ''}
+      ${
+        hero?.skills?.length
+          ? `<fieldset class="battle-skill-list">
+              <legend>${t('heroSkills.skills')}</legend>
+              ${hero.skills
+                .map(
+                  (skill) => `
+                <label class="battle-skill-option">
+                  <input type="checkbox" data-row-skill="${escapeHtml(String(skill.skillId))}" ${row.skillIds.includes(String(skill.skillId)) ? 'checked' : ''} />
+                  <span><strong>${t(`heroSkills.${skill.classification}`)}</strong><small>${escapeHtml(skill.description)}</small></span>
+                </label>`
+                )
+                .join('')}
+            </fieldset>`
+          : ''
+      }
+    </section>`;
+}
+
 function renderRow(sideId, row, index) {
   const contextLabel = rowLabel(index);
   const calculation = getRowCalculation(sideId, row);
@@ -968,6 +1150,7 @@ function renderRow(sideId, row, index) {
       </summary>
       <div class="battle-squad-body">
         ${renderTroopControls(sideId, row, 'row', contextLabel)}
+        ${renderHeroSkills(sideId, row, index)}
         ${renderStatNodes(sideId, contextLabel, row, calculation, 'row')}
         <div class="battle-row-footer">
           <p class="battle-tactical-note">${t('notice.copy')}</p>
@@ -1421,50 +1604,23 @@ function refreshValidationAfterInput(target) {
 }
 
 function buildBattleConfig() {
-  const sides = {};
   for (const sideId of SIDE_IDS) {
-    const sideState = state.sides[sideId];
-    const rows = sideState.rows.map((row, index) => {
+    state.sides[sideId].rows.forEach((row, index) => {
       const troops = Number(row.troops);
       if (!Number.isSafeInteger(troops) || troops < 0) {
         throw new RangeError(
           `Side ${sideId} ${BATTLE_ROWS[index].label} needs a whole troop count of 0 or more.`
         );
       }
-      const calculation = getRowCalculation(sideId, row);
-      if (!calculation) {
+      if (!getRowCalculation(sideId, row)) {
         throw new RangeError(`Complete every stat for Side ${sideId} ${BATTLE_ROWS[index].label}.`);
       }
-      return {
-        id: row.id,
-        type: row.type,
-        tier: row.tier,
-        troops,
-        presetUnitStats: { ...calculation.unit.preset },
-        unitStats: { ...calculation.unit.resolved },
-        statInputMode: sideState.mode,
-        enteredBattleStats: { ...calculation.battle.entered },
-        battleStats: { ...calculation.battle.totals },
-        statSources: {
-          included: [...calculation.battle.includedSources],
-          excluded: [...calculation.battle.excludedSources],
-        },
-        stats: {
-          unit: { ...calculation.engineStats.unit },
-          battle: { ...calculation.engineStats.battle },
-        },
-      };
     });
-    if (rows.every((row) => row.troops === 0)) {
+    if (state.sides[sideId].rows.every((row) => Number(row.troops) === 0)) {
       throw new RangeError(`Side ${sideId} needs troops in at least one row.`);
     }
-    sides[sideId] = {
-      label: `Side ${sideId}`,
-      capturedSourceSnapshot: structuredClone(sideState.capturedSourceSnapshot),
-      rows,
-    };
   }
-  return { sideA: sides.A, sideB: sides.B };
+  return setupSnapshotToEngineConfig(buildSetupSnapshot(state));
 }
 
 function chooseRepresentative(batch) {
@@ -1491,7 +1647,7 @@ export function calculateMedian(values, fallback = 0) {
   return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-function simulateBattleBatchOffThread(config, options) {
+function simulateBattleBatchOffThread(config, options, { signal } = {}) {
   if (typeof Worker !== 'function') {
     return Promise.resolve(simulateBattleBatch(config, options));
   }
@@ -1501,33 +1657,56 @@ function simulateBattleBatchOffThread(config, options) {
       type: 'module',
       name: 'vts-battle-simulator',
     });
-    const finish = (callback, value) => {
+    let settled = false;
+    const handleAbort = () => {
+      const error = new Error('The batch simulation was cancelled.');
+      error.name = 'AbortError';
+      finish(reject, error);
+    };
+    const handleMessage = (event) => {
+      if (event.data?.ok) {
+        finish(resolve, event.data.result);
+        return;
+      }
+      const error = new Error(event.data?.error?.message || 'The batch worker failed.');
+      error.name = event.data?.error?.name || 'Error';
+      finish(reject, error);
+    };
+    const handleError = (event) =>
+      finish(reject, new Error(event.message || 'The batch worker failed to load.'));
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      signal?.removeEventListener('abort', handleAbort);
+      worker.removeEventListener('message', handleMessage);
+      worker.removeEventListener('error', handleError);
       worker.terminate();
+    };
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
       callback(value);
     };
-    worker.addEventListener(
-      'message',
-      (event) => {
-        if (event.data?.ok) {
-          finish(resolve, event.data.result);
-          return;
-        }
-        const error = new Error(event.data?.error?.message || 'The batch worker failed.');
-        error.name = event.data?.error?.name || 'Error';
-        finish(reject, error);
-      },
-      { once: true }
-    );
-    worker.addEventListener(
-      'error',
-      (event) => finish(reject, new Error(event.message || 'The batch worker failed to load.')),
-      { once: true }
-    );
+    const timeoutId = setTimeout(() => {
+      const error = new Error(`The batch worker timed out after ${BATCH_WORKER_TIMEOUT_MS}ms.`);
+      error.name = 'TimeoutError';
+      finish(reject, error);
+    }, BATCH_WORKER_TIMEOUT_MS);
+    signal?.addEventListener('abort', handleAbort, { once: true });
+    worker.addEventListener('message', handleMessage);
+    worker.addEventListener('error', handleError);
+    if (signal?.aborted) {
+      handleAbort();
+      return;
+    }
     worker.postMessage({ config, options });
   });
 }
 
 async function runSimulations() {
+  activeBatchController?.abort();
+  const batchController = new AbortController();
+  activeBatchController = batchController;
   clearValidation();
   const firstInvalid = findFirstInvalid(form, { includeSideDefaults: true });
   if (firstInvalid) {
@@ -1587,13 +1766,19 @@ async function runSimulations() {
         setup,
       };
     } else {
-      const result = await simulateBattleBatchOffThread(config, {
-        iterations,
-        seed,
-        strikeVariancePct: variance,
-        includeResults: true,
-        includeEventLogs: false,
-      });
+      const result = await simulateBattleBatchOffThread(
+        config,
+        {
+          iterations,
+          seed,
+          strikeVariancePct: variance,
+          includeResults: true,
+          includeEventLogs: false,
+        },
+        {
+          signal: batchController.signal,
+        }
+      );
       if (runRevision !== setupRevision) {
         showToast('Setup changed while the batch was running. Run it again for current results.');
         return;
@@ -1623,9 +1808,11 @@ async function runSimulations() {
     }
     renderResults();
   } catch (error) {
+    if (error?.name === 'AbortError') return;
     console.error('[battle-simulator] simulation failed', error);
     showValidation(error.message || 'The simulation could not complete.');
   } finally {
+    if (activeBatchController === batchController) activeBatchController = null;
     form.removeAttribute('aria-busy');
     if (runButton) runButton.disabled = false;
     setRunControls();
@@ -2061,6 +2248,7 @@ function exportSetup() {
 }
 
 function replaceSetupState(nextState, message) {
+  cancelActiveBatch();
   setupRevision += 1;
   state = nextState;
   SIDE_IDS.forEach((sideId) => rebuildCapturedSourceSnapshot(sideId));
@@ -2078,6 +2266,41 @@ function importSetupText(jsonText) {
   const snapshot = parseSetupSnapshot(jsonText);
   const nextState = applySetupSnapshot(state, snapshot);
   replaceSetupState(nextState, t('toast.setupImported'));
+}
+
+function updateRowHeroControl(target) {
+  const card = target.closest('.battle-squad-card');
+  if (!card) return;
+  const sideId = card.dataset.side;
+  const rowIndex = Number(card.dataset.rowIndex);
+  const row = state.sides[sideId]?.rows[rowIndex];
+  if (!row) return;
+  if (target.matches('[data-row-hero]')) {
+    row.heroName = target.value || null;
+    row.skillIds = [];
+    replaceRow(sideId, rowIndex);
+  } else if (target.matches('[data-row-skill]')) {
+    const selected = new Set(row.skillIds);
+    if (target.checked) selected.add(String(target.dataset.rowSkill));
+    else selected.delete(String(target.dataset.rowSkill));
+    row.skillIds = [...selected].sort();
+  }
+  row.customized = true;
+  markResultsStale();
+}
+
+function applyEquipmentOverrides(sideId) {
+  const textarea = form?.querySelector(`[data-equipment-overrides="${sideId}"]`);
+  const parsed = parseEquipmentEffectOverrides(textarea?.value || '');
+  if (parsed.diagnostics.some(({ code }) => code !== 'duplicate-override')) {
+    showToast(parsed.diagnostics[0]?.message || t('equipment.overrideInvalid'));
+    textarea?.focus();
+    return;
+  }
+  state.sides[sideId].equipmentEffectOverrides = parsed;
+  rebuildCapturedSourceSnapshot(sideId);
+  markResultsStale();
+  showToast(t('equipment.overrideApplied'));
 }
 
 async function importSetupFile(input) {
@@ -2205,6 +2428,7 @@ function showToast(message) {
 }
 
 function resetSetup() {
+  cancelActiveBatch();
   setupRevision += 1;
   state = createInitialState();
   initializeFreshSourceState();
@@ -2219,6 +2443,7 @@ function resetSetup() {
 }
 
 async function changeLanguage(locale) {
+  cancelActiveBatch();
   const normalized = normalizeBattleSimulatorLocale(locale);
   await loadBattleSimulatorLocale(normalized);
   translator = createBattleSimulatorTranslator(normalized);
@@ -2237,6 +2462,9 @@ async function changeLanguage(locale) {
 function bindUI() {
   form = root.querySelector('#battleSimulatorForm');
   root.querySelector('#battleThemeToggle')?.addEventListener('click', toggleTheme);
+  root.querySelector('[data-assumptions-acknowledged]')?.addEventListener('change', (event) => {
+    state.assumptions = { ...state.assumptions, acknowledged: event.target.checked };
+  });
   root.querySelector('[data-battle-language]')?.addEventListener('change', (event) => {
     changeLanguage(event.target.value).catch((error) => {
       console.error('[battle-simulator] language change failed', error);
@@ -2264,6 +2492,13 @@ function bindUI() {
     const target = event.target;
     if (target.matches('[data-setup-file]')) {
       importSetupFile(target);
+    } else if (target.matches('[data-scenario-context]')) {
+      state.scenarioContext[target.dataset.scenarioContext] = target.value;
+      state.battleMode = state.scenarioContext.battleMode;
+      SIDE_IDS.forEach((sideId) => rebuildCapturedSourceSnapshot(sideId));
+      markResultsStale();
+    } else if (target.matches('[data-row-hero], [data-row-skill]')) {
+      updateRowHeroControl(target);
     } else if (target.matches('[data-research-enabled]')) {
       updateResearchEnabled(target.dataset.researchEnabled, target.checked);
     } else if (
@@ -2310,6 +2545,8 @@ function bindUI() {
       }
     } else if (button.matches('[data-refresh-research]')) {
       refreshSavedResearch(button.dataset.refreshResearch);
+    } else if (button.matches('[data-apply-equipment-overrides]')) {
+      applyEquipmentOverrides(button.dataset.applyEquipmentOverrides);
     } else if (button.matches('[data-setup-export]')) {
       exportSetup();
     } else if (button.matches('[data-setup-import-paste]')) {

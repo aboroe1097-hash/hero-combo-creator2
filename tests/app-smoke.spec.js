@@ -116,10 +116,21 @@ test.describe('Battle Simulator beta', () => {
     await page.locator('.pin-gate-btn-primary').click();
 
     await expect(page.locator('#battleSimulatorForm')).toBeVisible({ timeout: 20000 });
-    await expect(page.locator('[data-battle-language] option')).toHaveCount(11);
+    await expect(page.locator('[data-battle-language] option')).toHaveCount(12);
     await expect(page.locator('[data-research-enabled="A"]')).toBeChecked();
     await expect(page.locator('[data-research-enabled="B"]')).not.toBeChecked();
     await expect(page.locator('.battle-legion-sources')).toHaveCount(2);
+    await expect(page.locator('.battle-scenario-panel')).toBeVisible();
+    await expect(page.locator('[data-scenario-context]')).toHaveCount(4);
+    await page.locator('[data-scenario-context="engagement"]').selectOption('siege-attack');
+    await expect(page.locator('[data-scenario-context="engagement"]')).toHaveValue('siege-attack');
+
+    const coverage = page.locator('details.battle-assumptions');
+    await expect(coverage.locator('summary')).toBeVisible();
+    await coverage.locator('summary').click();
+    await expect(coverage.locator('.battle-assumptions-body')).toBeVisible();
+    await expect(coverage.locator('[data-assumptions-acknowledged]')).not.toBeChecked();
+    await coverage.locator('[data-assumptions-acknowledged]').check();
 
     const frontA = page.locator('.battle-squad-card[data-side="A"][data-row-index="0"]');
     await expect(frontA).toHaveAttribute('open', '');
@@ -130,9 +141,21 @@ test.describe('Battle Simulator beta', () => {
       frontA.locator('.battle-stat-source-row[data-source-type="manual"]')
     ).toContainText('+400%');
 
+    await page.locator('[data-battle-language]').selectOption('en');
     await page.locator('[data-equipment-set="A"]').selectOption('normal.dreadnaught');
     await expect(page.locator('[data-equipment-card="A"]')).toContainText(/Identity only|هوية/);
     await expect(page.locator('[data-equipment-enhancement="A"]')).toBeEnabled();
+    await page.locator('[data-battle-reset]').click();
+    await expect(page.locator('[data-equipment-set="A"]')).toHaveValue('');
+
+    const activeEffectRow = page.locator('.battle-squad-card[data-side="A"][data-row-index="0"]');
+    await expect(activeEffectRow.locator('[data-row-field="type"]')).toHaveValue('footmen');
+    await activeEffectRow.locator('[data-row-hero]').selectOption('Jiguang Qi');
+    const modeledSkill = activeEffectRow.locator('[data-row-skill="2"]');
+    await expect(modeledSkill).toBeVisible();
+    await expect(modeledSkill.locator('xpath=..')).toContainText('Modeled');
+    await modeledSkill.check();
+    await expect(modeledSkill).toBeChecked();
 
     await page.locator('[data-battle-language]').selectOption('de');
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
@@ -152,6 +175,60 @@ test.describe('Battle Simulator beta', () => {
     const box = await runBar.boundingBox();
     expect(box).not.toBeNull();
     expect(box.y + box.height).toBeLessThanOrEqual(await page.evaluate(() => innerHeight));
+
+    await page.locator('[data-battle-run]').click();
+    const results = page.locator('#battleResults');
+    await expect(results).toBeVisible();
+    await expect(results.locator('#battleResultsTitle')).toBeVisible();
+    await expect(results.locator('.battle-verdict-banner')).toBeVisible();
+    await expect(results.locator('.battle-model-note').last()).toContainText('Formula:');
+
+    const eventLog = results.locator('[data-battle-log]');
+    await expect(eventLog.locator('summary')).toBeVisible();
+    await eventLog.locator('summary').click();
+    await expect(eventLog.locator('.battle-log-table')).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await results.locator('[data-battle-export="json"]').click();
+    const download = await downloadPromise;
+    const exportPath = await download.path();
+    expect(exportPath).not.toBeNull();
+    const exported = JSON.parse(await fs.readFile(exportPath, 'utf8'));
+    expect(exported.runMode).toBe('single');
+    expect(exported.effectProvenance.skillClassifications.A).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          heroName: 'Jiguang Qi',
+          skills: expect.arrayContaining([
+            expect.objectContaining({
+              skillId: '2',
+              classification: 'modeled',
+            }),
+          ]),
+        }),
+      ])
+    );
+    expect(exported.results.modelVersion).toContain('+effects-');
+    expect(exported.results.effectRuntimeVersion).toBeTruthy();
+    expect(exported.results.effectDiagnostics).toEqual([]);
+    expect(exported.results.effectEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          effectId: 'A:front:2:damage:1',
+        }),
+      ])
+    );
+    expect(exported.effectProvenance.effectRuntimeVersion).toBe(
+      exported.results.effectRuntimeVersion
+    );
+    expect(exported.effectProvenance.activeEffectModelVersion).toContain('+effects-');
+    expect(exported.effectProvenance.effectEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          effectId: 'A:front:2:damage:1',
+        }),
+      ])
+    );
   });
 });
 
@@ -4032,6 +4109,7 @@ test.describe('app smoke tabs', () => {
       '中文',
       'العربية',
       '한국어',
+      'Italiano',
     ]);
     await page.locator('#languageSelect').selectOption('es');
     await expect(page.locator('.eden-x1-notice strong')).toHaveText('Vista demo - no final.');

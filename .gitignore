@@ -23,6 +23,12 @@ __pycache__/
 work/roc-combo-import/
 /.codex-remote-attachments
 /previews
+/outputs/
+/.codex/
+/.worktrees/
+/_test_*.mjs
+/output_test.txt
+/snippet.txt
 /~/
 /work/eden-scan
 /scripts/eden-scan

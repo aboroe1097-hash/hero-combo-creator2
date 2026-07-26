@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.2.12 - 2026-07-26
+
+- Added Velo Beta 0.3 saved-data consent and optional Firebase-backed user profiles.
+- Expanded All-Star BoH with a six-team, 12-player roster and schedule, supporting rules, and X8 name-matched formations.
+- Completed Italian and Korean localization across the shipped experience.
+- Made Battle Simulator scenarios apply Research and Specialization through a deterministic runtime, with upgraded setup/export schemas and diagnostics.
+- Expanded Battle Simulator coverage to 78 heroes and 208 skills using conservative modeled effects, plus provisional observed equipment effects; partial or unverified battle clauses fail closed, and Dragon Master catalog stats are never invented.
+
 ## 14.2.11 - 2026-07-25
 
 - Restored All-Star BoH member PIN access after registration closes and made the Stage-1 battle mapper the default post-login page, with separate Team Formation and Event Schedule pages.

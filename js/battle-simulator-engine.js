@@ -10,6 +10,13 @@ import {
   DEFAULT_BATTLE_COEFFICIENTS,
   normalizeBattleCoefficients,
 } from './battle-simulator-coefficients.js';
+import {
+  BATTLE_EFFECT_RUNTIME_VERSION,
+  createBattleEffectRuntime,
+  createEffectState,
+  getEffectiveStat,
+} from './battle-simulator-effect-runtime.js';
+import { adaptHeroAssignmentsToEffects } from './battle-simulator-hero-runtime.js';
 
 export const BATTLE_MODEL_VERSION = 'battle-stats-v2-beta-1';
 export const BATTLE_MAX_ROUNDS = 200;
@@ -304,7 +311,7 @@ function getLivingRowsInStableOrder(sides) {
   );
 }
 
-function buildRoundGroups(sides, round) {
+function buildRoundGroups(sides, round, getCombatSpeed = (row) => row.stats.battle.combatSpeed) {
   if (round > 1) {
     return [
       {
@@ -316,8 +323,8 @@ function buildRoundGroups(sides, round) {
   }
 
   const livingRows = getLivingRowsInStableOrder(sides);
-  const openingSpeed = Math.max(...livingRows.map((row) => row.stats.battle.combatSpeed));
-  const openingActors = livingRows.filter((row) => row.stats.battle.combatSpeed === openingSpeed);
+  const openingSpeed = Math.max(...livingRows.map(getCombatSpeed));
+  const openingActors = livingRows.filter((row) => getCombatSpeed(row) === openingSpeed);
   const openingActorSet = new Set(openingActors);
   return [
     {
@@ -420,19 +427,103 @@ function getOutcomeReason(outcome, rounds) {
   return 'side-eliminated';
 }
 
+function rowEffectiveStats(row) {
+  return {
+    attack: (row.stats.unit.attack * row.stats.battle.might) / 100,
+    defense: (row.stats.unit.defense * row.stats.battle.resistance) / 100,
+    hp: (row.stats.unit.hp * row.stats.battle.hp) / 100,
+    damage: row.stats.battle.damage,
+    damageMitigation: row.stats.battle.damageMitigation,
+    combatSpeed: row.stats.battle.combatSpeed,
+  };
+}
+
+function createRuntimeState(sides, previousState, round) {
+  const previousByKey = new Map(previousState?.actors.map((actor) => [actor.key, actor]) || []);
+  const actors = [...sides.A.rows, ...sides.B.rows].map((row) => {
+    const key = `${row.side}:${row.id}`;
+    const previous = previousByKey.get(key);
+    return {
+      id: row.id,
+      side: row.side,
+      row: row.id,
+      hp: row.troops,
+      maxHp: Math.max(1, row.initialTroops),
+      stats: rowEffectiveStats(row),
+      statuses: previous?.statuses || [],
+      modifiers: previous?.modifiers || [],
+    };
+  });
+  return createEffectState({ version: BATTLE_EFFECT_RUNTIME_VERSION, round, actors });
+}
+
+function syncRowsFromRuntime(sides, state, round) {
+  for (const actor of state.actors) {
+    const row = sides[actor.side].rows.find((candidate) => candidate.id === actor.id);
+    const delta = actor.hp - row.troops;
+    const wholeDelta = Math.sign(delta) * Math.floor(Math.abs(delta));
+    row.troops = clamp(row.troops + wholeDelta, 0, row.initialTroops);
+  }
+  return createRuntimeState(sides, state, round);
+}
+
+function runtimeActorForRow(state, row) {
+  return state?.actors.find((actor) => actor.key === `${row.side}:${row.id}`) || null;
+}
+
+function runtimeStatsForRow(state, row) {
+  const actor = runtimeActorForRow(state, row);
+  if (!actor) return row.stats;
+  return {
+    unit: {
+      attack: Math.max(0, getEffectiveStat(actor, 'attack')),
+      defense: Math.max(0, getEffectiveStat(actor, 'defense')),
+      hp: Math.max(0, getEffectiveStat(actor, 'hp')),
+    },
+    battle: {
+      might: 100,
+      resistance: 100,
+      hp: 100,
+      tacticalMight: row.stats.battle.tacticalMight,
+      tacticalResistance: row.stats.battle.tacticalResistance,
+      damage: Math.max(0, getEffectiveStat(actor, 'damage')),
+      damageMitigation: Math.max(0, getEffectiveStat(actor, 'damageMitigation')),
+      combatSpeed: Math.max(0, getEffectiveStat(actor, 'combatSpeed')),
+    },
+  };
+}
+
+function actorCanNormalAttack(state, row) {
+  const actor = runtimeActorForRow(state, row);
+  return !actor?.statuses.some(({ name }) => name === 'disarm' || name === 'suppress');
+}
+
+function actorCanCastEffects(state, source) {
+  const actor = state?.actors.find((candidate) => candidate.key === source);
+  return !actor?.statuses.some(({ name }) => name === 'silence' || name === 'suppress');
+}
+
+function normalizeEffectDefinitions(value, label) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new TypeError(`${label} must be an array.`);
+  return [...value];
+}
+
 export function simulateBattle(
-  { sideA, sideB } = {},
+  battleConfig = {},
   {
     seed: rawSeed = 1,
     strikeVariancePct: rawVariance = 0,
     includeEventLog = true,
     coefficients: rawCoefficients,
+    effectDefinitions: optionEffectDefinitions,
   } = {}
 ) {
+  const { sideA, sideB } = battleConfig || {};
   const seed = normalizeSeed(rawSeed);
   const strikeVariancePct = normalizeVariance(rawVariance);
   const coefficients = normalizeBattleCoefficients(rawCoefficients);
-  const modelVersion = getModelVersion(coefficients);
+  const baseModelVersion = getModelVersion(coefficients);
   const assumptions = getModelAssumptions(coefficients);
   const variance = strikeVariancePct / 100;
   const random = createSeededRandom(seed);
@@ -440,20 +531,70 @@ export function simulateBattle(
     A: normalizeSide(sideA, 'A'),
     B: normalizeSide(sideB, 'B'),
   };
+  const heroRuntime = adaptHeroAssignmentsToEffects({ sideA, sideB });
+  const effectDefinitions = [
+    ...heroRuntime.definitions,
+    ...normalizeEffectDefinitions(
+      battleConfig?.effectDefinitions,
+      'Battle config effectDefinitions'
+    ),
+    ...normalizeEffectDefinitions(optionEffectDefinitions, 'Effect definitions'),
+  ];
+  const effectsActive = effectDefinitions.length > 0;
+  const modelVersion = effectsActive
+    ? `${baseModelVersion}+effects-${BATTLE_EFFECT_RUNTIME_VERSION}`
+    : baseModelVersion;
+  const effectRuntime = effectsActive ? createBattleEffectRuntime({ random }) : null;
+  let effectState = effectsActive ? createRuntimeState(sides, null, 0) : null;
+  const effectEvents = [];
+  const applyRuntimePhase = (phase, round, definitions = effectDefinitions, group = null) => {
+    if (!effectRuntime) return;
+    effectState = createRuntimeState(sides, effectState, round);
+    const eligibleDefinitions =
+      phase === 'before-action'
+        ? definitions.filter((definition) => actorCanCastEffects(effectState, definition.source))
+        : definitions;
+    const applied = effectRuntime.applyPhase(effectState, eligibleDefinitions, phase);
+    effectState = syncRowsFromRuntime(sides, applied.state, round);
+    for (const event of applied.events) {
+      effectEvents.push({
+        ...event,
+        id: `effect:${effectEvents.length + 1}`,
+        battleRound: round,
+        ...(group === null ? {} : { group }),
+      });
+    }
+  };
   const roundLog = [];
   const actionLog = [];
   let openingInitiative = null;
+  if (effectsActive) applyRuntimePhase('battle-start', 0);
   let outcome = detectOutcome(sides);
   let rounds = 0;
 
   while (!outcome && rounds < BATTLE_MAX_ROUNDS) {
     rounds += 1;
-    const roundGroups = buildRoundGroups(sides, rounds);
+    if (effectsActive) {
+      applyRuntimePhase('round-start', rounds);
+      applyRuntimePhase('before-action', rounds);
+      outcome = detectOutcome(sides);
+      if (outcome) break;
+    }
+    const getCombatSpeed = (row) =>
+      effectsActive
+        ? runtimeStatsForRow(effectState, row).battle.combatSpeed
+        : row.stats.battle.combatSpeed;
+    const roundGroups = buildRoundGroups(sides, rounds, getCombatSpeed);
     const loggedGroups = [];
 
     for (let groupIndex = 0; groupIndex < roundGroups.length; groupIndex += 1) {
       const roundGroup = roundGroups[groupIndex];
-      const livingActors = roundGroup.getActors().filter((actor) => actor.troops > 0);
+      const livingActors = roundGroup
+        .getActors()
+        .filter(
+          (actor) =>
+            actor.troops > 0 && (!effectsActive || actorCanNormalAttack(effectState, actor))
+        );
       if (livingActors.length === 0) continue;
 
       const actions = [];
@@ -463,8 +604,8 @@ export function simulateBattle(
         if (!target) continue;
         const strikeMultiplier = variance === 0 ? 1 : 1 + (random() * 2 - 1) * variance;
         const casualtyRate = calculateCasualtyRateUnchecked(
-          actor.stats,
-          target.stats,
+          effectsActive ? runtimeStatsForRow(effectState, actor) : actor.stats,
+          effectsActive ? runtimeStatsForRow(effectState, target) : target.stats,
           strikeMultiplier,
           coefficients
         );
@@ -478,7 +619,7 @@ export function simulateBattle(
           group: groupIndex + 1,
           groupType: roundGroup.groupType,
           combatSpeed: roundGroup.combatSpeed,
-          actorCombatSpeed: actor.stats.battle.combatSpeed,
+          actorCombatSpeed: getCombatSpeed(actor),
           simultaneous: livingActors.length > 1,
           attackerSide: actor.side,
           attackerRowId: actor.id,
@@ -542,10 +683,29 @@ export function simulateBattle(
         actionLog.push(...publicActions);
       }
 
+      if (effectsActive) {
+        const actingSources = new Set(
+          actions.map((action) => `${action.attackerSide}:${action.attackerRowId}`)
+        );
+        applyRuntimePhase(
+          'after-normal-attack',
+          rounds,
+          effectDefinitions.filter(
+            (definition) =>
+              definition.phase !== 'after-normal-attack' || actingSources.has(definition.source)
+          ),
+          groupIndex + 1
+        );
+        applyRuntimePhase('after-damage', rounds, effectDefinitions, groupIndex + 1);
+      }
       outcome = detectOutcome(sides);
       if (outcome) break;
     }
 
+    if (effectsActive && !outcome) {
+      applyRuntimePhase('round-end', rounds);
+      outcome = detectOutcome(sides);
+    }
     if (includeEventLog) roundLog.push({ round: rounds, groups: loggedGroups });
   }
 
@@ -554,7 +714,7 @@ export function simulateBattle(
   const sideBSummary = createSideSummary(sides.B);
   const summaries = { A: sideASummary, B: sideBSummary };
 
-  return {
+  const result = {
     modelVersion,
     coefficients,
     assumptions,
@@ -572,6 +732,12 @@ export function simulateBattle(
     roundLog,
     actionLog,
   };
+  if (effectsActive || heroRuntime.diagnostics.length > 0) {
+    result.effectEvents = effectEvents;
+    result.effectDiagnostics = [...heroRuntime.diagnostics];
+  }
+  if (effectsActive) result.effectRuntimeVersion = BATTLE_EFFECT_RUNTIME_VERSION;
+  return result;
 }
 
 function normalizeIterations(value) {
@@ -596,13 +762,14 @@ export function simulateBattleBatch(
     includeResults = false,
     includeEventLogs = false,
     coefficients: rawCoefficients,
+    effectDefinitions,
   } = {}
 ) {
   const runCount = normalizeIterations(rawIterations);
   const seed = normalizeSeed(rawSeed);
   const strikeVariancePct = normalizeVariance(rawVariance);
   const coefficients = normalizeBattleCoefficients(rawCoefficients);
-  const modelVersion = getModelVersion(coefficients);
+  let modelVersion = getModelVersion(coefficients);
   const assumptions = getModelAssumptions(coefficients);
   const keepResults = Boolean(includeResults || includeEventLogs);
   const keepLogs = Boolean(includeEventLogs);
@@ -612,6 +779,7 @@ export function simulateBattleBatch(
   const results = [];
   const runSeeds = [];
   let totalRounds = 0;
+  let effectMetadata = null;
 
   for (let runIndex = 0; runIndex < runCount; runIndex += 1) {
     const runSeed = deriveRunSeed(seed, runIndex);
@@ -621,7 +789,17 @@ export function simulateBattleBatch(
       strikeVariancePct,
       includeEventLog: keepLogs,
       coefficients,
+      effectDefinitions,
     });
+    modelVersion = result.modelVersion;
+    if (Object.hasOwn(result, 'effectDiagnostics') && effectMetadata === null) {
+      effectMetadata = {
+        effectDiagnostics: result.effectDiagnostics,
+        ...(Object.hasOwn(result, 'effectRuntimeVersion')
+          ? { effectRuntimeVersion: result.effectRuntimeVersion }
+          : {}),
+      };
+    }
     outcomeCounts[result.outcome] += 1;
     totalRounds += result.rounds;
     totalSurvivors.A += result.survivors.A;
@@ -661,6 +839,7 @@ export function simulateBattleBatch(
       B: totalCasualties.B / runCount,
     },
   };
+  if (effectMetadata) Object.assign(batch, effectMetadata);
   if (keepResults) batch.results = results;
   return batch;
 }

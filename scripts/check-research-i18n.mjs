@@ -2,7 +2,7 @@ import { auditResearchPack, deriveResearchEffectLabel } from '../js/i18n/researc
 import { getNodeBuffEffects } from '../js/research-buffs.js';
 import { techDatabase } from '../js/tech-db.js';
 
-const locales = ['ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const locales = ['ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
 const errors = [];
 
 for (const locale of locales) {

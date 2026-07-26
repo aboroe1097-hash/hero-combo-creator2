@@ -19,7 +19,7 @@ import {
   specializationTowersV2Text,
 } from '../../js/i18n/specialization-towers-v2/index.js';
 
-const EXPECTED_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const EXPECTED_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
 const INTENTIONAL_EN_ONLY_KEYS = Object.freeze(['selectNodeBeforeMedals']);
 
 function placeholders(value) {
@@ -28,7 +28,7 @@ function placeholders(value) {
 
 await Promise.all(EXPECTED_LOCALES.map((locale) => loadSpecializationTowersV2Locale(locale)));
 
-test('Specialization Towers v2 exposes one strict UI key contract across all 11 locales', () => {
+test('Specialization Towers v2 exposes one strict UI key contract across all 12 locales', () => {
   assert.deepEqual(SPECIALIZATION_TOWERS_V2_LOCALES, EXPECTED_LOCALES);
   assert.ok(SPECIALIZATION_TOWERS_V2_KEYS.length >= 120, 'the complete feature UI is covered');
 
@@ -36,17 +36,16 @@ test('Specialization Towers v2 exposes one strict UI key contract across all 11 
   for (const locale of EXPECTED_LOCALES) {
     const pack = getSpecializationTowersV2Pack(locale);
     const localeKeys = Object.keys(pack).sort();
-    const expectedKeys =
-      locale === 'en'
-        ? englishKeys
-        : englishKeys.filter((key) => !INTENTIONAL_EN_ONLY_KEYS.includes(key));
+    const expectedKeys = ['en', 'it', 'kr'].includes(locale)
+      ? englishKeys
+      : englishKeys.filter((key) => !INTENTIONAL_EN_ONLY_KEYS.includes(key));
     assert.deepEqual(localeKeys, expectedKeys, `${locale} key parity`);
     const audit = auditSpecializationTowersV2Pack(pack);
     assert.deepEqual(audit, {
-      complete: locale === 'en',
-      missing: locale === 'en' ? [] : INTENTIONAL_EN_ONLY_KEYS,
+      complete: ['en', 'it', 'kr'].includes(locale),
+      missing: ['en', 'it', 'kr'].includes(locale) ? [] : INTENTIONAL_EN_ONLY_KEYS,
       extra: [],
-      blank: locale === 'en' ? [] : INTENTIONAL_EN_ONLY_KEYS,
+      blank: ['en', 'it', 'kr'].includes(locale) ? [] : INTENTIONAL_EN_ONLY_KEYS,
       placeholderMismatches: [],
     });
 
@@ -58,7 +57,7 @@ test('Specialization Towers v2 exposes one strict UI key contract across all 11 
         `${locale}.${key} interpolation contract`
       );
     }
-    if (locale !== 'en') {
+    if (!['en', 'it', 'kr'].includes(locale)) {
       assert.equal(
         specializationTowersV2Text('selectNodeBeforeMedals', {}, locale),
         SPECIALIZATION_TOWERS_V2_EN.selectNodeBeforeMedals,

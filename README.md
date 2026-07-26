@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.2.11)
+# Hero Combo Creator - VTS 1097 (v14.2.12)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management.
 
@@ -46,6 +46,8 @@ be copied into Velo's reusable guide dataset.
 ## Screenshots And Demos
 
 Current screenshot captures live in `docs/media/` and should be refreshed when a major UI flow changes. These previews are captured in dark mode from the local app with demo data where needed.
+
+Capture All-Star BoH demos from `http://127.0.0.1:5174` so the registered Firebase App Check local flow is exercised. The maintained capture set should show the PIN-unlocked Team Formation, Battle Map & Plans, and Event Schedule member pages plus the six-team Admin command center. Use sanitized demo data only; never capture member PINs, App Check debug tokens, private signup/OCR records, or unpublished personal instructions.
 
 <table>
   <tr>
@@ -318,6 +320,8 @@ Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned
 
 GitHub Pages deployment publishes the static app only; it does not deploy `firestore.rules`. After changing public vote validation or any Firestore write contract, deploy the rules to Firebase before expecting live writes to pass:
 
+For local Firebase and App Check testing, run Vite on `http://127.0.0.1:5174`; port 5174 is the project's registered local preview origin. Use `npm run dev -- --host 127.0.0.1 --port 5174` and do not substitute Vite's default or another local port for protected flows.
+
 ```bash
 npx firebase-tools deploy --only firestore:rules --project abocombo
 ```
@@ -427,6 +431,10 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 The site auto-deploys at **https://roc-vts.com/** when a pull request is merged into `gh-pages` (custom domain configured in repo Settings > Pages).
 
 Because `gh-pages` is production, do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, open a pull request into `gh-pages`, wait for checks/review, and let the owner merge. See [AGENTS.md](AGENTS.md) for the required agent workflow.
+
+### Quick Updates Mode
+
+For owner-led batches of rapid fixes, follow [Quick Updates Mode](docs/quick-updates-mode.md): accumulate edits without running checks during the queue, and run release metadata plus the full verification/PR workflow only after the owner sends the exact confirmation `last queue`.
 
 ## Contributing
 

@@ -223,7 +223,7 @@ test('legacy phase-1 reports remain inspectable but are archive-only for calibra
   assert.equal(legacy.fixtureVersion, 1);
   assert.equal(legacy.isLegacy, true);
   assert.equal(legacy.evidenceStatus, 'legacy-phase1-archive');
-  assert.equal(legacy.setup.setupSchemaVersion, 2);
+  assert.equal(legacy.setup.setupSchemaVersion, 3);
 
   const { result, warnings } = await captureWarnings(() => loadFixtureCorpus(FIXTURE_DIRECTORY));
   assert.equal(result.archivedFiles.length, 12);

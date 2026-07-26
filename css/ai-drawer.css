@@ -11,7 +11,8 @@
   inset-block: 0;
   inset-inline-end: 0;
   z-index: 10001;
-  width: min(520px, 94vw);
+  width: clamp(520px, 42vw, 680px);
+  max-width: calc(100vw - 1.5rem);
   padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
   overflow: hidden;
   color: #eef7ff;
@@ -82,6 +83,7 @@ body.ai-drawer-modal-open {
 @media (max-width: 620px) {
   .ai-drawer {
     width: 100%;
+    max-width: 100%;
     padding-inline: 0.75rem;
   }
 }

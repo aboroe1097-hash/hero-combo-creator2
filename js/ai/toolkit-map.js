@@ -3,7 +3,7 @@
 // and route users to the right tab instead of guessing. Keep entries factual
 // and short; hashes must match js/shell-v14.js internalHashes and page hrefs
 // must be real deployed routes.
-export const TOOLKIT_MAP_VERSION = '2026.07.18.1';
+export const TOOLKIT_MAP_VERSION = '2026.07.25.1';
 
 const entries = [
   {
@@ -57,7 +57,7 @@ const entries = [
     kind: 'tab',
     hash: 'materials',
     summary:
-      'Exact Dragon Master gear costs by blue/purple/gold route, plus a saved personal inventory plan with shortfalls.',
+      'Exact Dragon Master gear costs by blue/purple/gold route, plus separate saved campaign progress and per-slot inventory needs with stockpile shortfalls.',
     answers: ['What does a full DM set cost?', 'How much is missing from my DM plan?'],
     keywords: ['dragon master', 'dm', 'materials', 'gear', 'set', 'diamonds', 'gems'],
   },
@@ -147,9 +147,9 @@ const entries = [
     name: 'Talk with Velo',
     kind: 'drawer',
     summary:
-      'This assistant (build Velo b0.2), opened from the floating launcher. Velo answers with read-only app data and curated VTS guide knowledge, in all eleven app languages.',
+      'This assistant (build Velo b0.3), opened from the floating launcher. Velo gives answer-first, read-only help from app data and curated VTS guide knowledge in all eleven app languages.',
     answers: ['What can Velo do?', 'What Velo version is this?'],
-    keywords: ['velo', 'assistant', 'ai', 'chat', 'help', 'version', 'b0.2'],
+    keywords: ['velo', 'assistant', 'ai', 'chat', 'help', 'version', 'b0.3'],
   },
 ];
 

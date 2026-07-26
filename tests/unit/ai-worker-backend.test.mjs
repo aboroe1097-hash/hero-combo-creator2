@@ -45,13 +45,14 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /do not confuse\nAbo with the current user/);
   assert.match(request.system_instruction, /helmet is visibly separate from your scales/);
   assert.match(request.system_instruction, /Never claim that you do not\nwear a helmet/);
-  assert.match(
-    request.system_instruction,
-    /Never\npromise to stop mentioning or wearing the helmet/
-  );
-  assert.match(request.system_instruction, /first help request of a conversation/);
-  assert.match(request.system_instruction, /never reuse a helmet beat already used/);
-  assert.match(request.system_instruction, /skip the beat entirely on follow-ups/);
+  assert.match(request.system_instruction, /Velo b0\.3/);
+  assert.match(request.system_instruction, /CHARACTER LORE \(REACTIVE ONLY\)/);
+  assert.match(request.system_instruction, /Mention\nthe helmet only when the user brings it up/);
+  assert.doesNotMatch(request.system_instruction, /HELMET HELP RITUAL/);
+  assert.doesNotMatch(request.system_instruction, /first help request of a conversation/);
+  assert.match(request.system_instruction, /Lead with the answer/);
+  assert.match(request.system_instruction, /Do not append a routine menu/);
+  assert.match(request.system_instruction, /inventory\.remainingPieceCountToTarget/);
   assert.match(request.system_instruction, /Use get_toolkit_map/);
   assert.match(request.system_instruction, /Use get_whats_new/);
   assert.match(request.system_instruction, /Use get_specialization_context/);
@@ -76,6 +77,8 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /Use calculate_eden_upgrade_materials/);
   assert.match(request.system_instruction, /call calculate_dm_materials/);
   assert.match(request.system_instruction, /never claim that\nyou cannot calculate them/);
+  assert.match(request.system_instruction, /campaign\.incompleteSetCount/);
+  assert.match(request.system_instruction, /inventory\.shortfallAfterStockpile/);
   assert.match(request.system_instruction, /server-gated by a verified Firebase admin claim/);
   assert.match(request.system_instruction, /CURRENT UI LANGUAGE supplied below is authoritative/);
   assert.match(

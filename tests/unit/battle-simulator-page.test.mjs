@@ -160,8 +160,7 @@ test('UI state separates unit points from Battle multipliers and passes source-a
   assert.match(appSource, /class="battle-stat-equation"/);
   assert.match(appSource, /class="battle-stat-source-breakdown"/);
   assert.match(appSource, /sources: automaticSourcesForSide\(sideId\)/);
-  assert.match(appSource, /unit: \{ \.\.\.calculation\.engineStats\.unit \}/);
-  assert.match(appSource, /battle: \{ \.\.\.calculation\.engineStats\.battle \}/);
+  assert.match(appSource, /setupSnapshotToEngineConfig\(buildSetupSnapshot\(state\)\)/);
 });
 
 test('Legion sources expose saved Research and truthful whole-legion equipment completeness', () => {
@@ -314,6 +313,9 @@ test('batch controls, worker boundary, and result averages remain reproducible',
   assert.equal(calculateMedian([22, 25, 26, 28, 28, 30, 30, 34, 40, 50]), 29);
   assert.equal(calculateMedian([3, 1, 2]), 2);
   assert.match(appSource, /new Worker\(new URL\('\.\/battle-simulator-worker\.js'/);
+  assert.match(appSource, /BATCH_WORKER_TIMEOUT_MS/);
+  assert.match(appSource, /AbortController/);
+  assert.match(appSource, /worker\.removeEventListener/);
 
   const stats = {
     unit: { attack: 70, defense: 70, hp: 20 },
@@ -328,6 +330,28 @@ test('batch controls, worker boundary, and result averages remain reproducible',
     runBattleBatchWorkerRequest({ config: workerConfig, options: workerOptions }),
     simulateBattleBatch(workerConfig, workerOptions)
   );
+});
+
+test('scenario, hero skills, specialization, overrides, and coverage UI are wired', () => {
+  for (const marker of [
+    'data-scenario-context',
+    'data-row-hero',
+    'data-row-skill',
+    'data-equipment-overrides',
+    'data-apply-equipment-overrides',
+    'data-assumptions-acknowledged',
+  ]) {
+    assert.match(appSource, new RegExp(marker));
+  }
+  assert.match(appSource, /battleHeroSkillCatalog/);
+  assert.match(appSource, /loadSpecializationState\(\)/);
+  assert.match(appSource, /resolveSpecializationBattleSources/);
+  assert.match(appSource, /resolveEquipmentEffectOverrides/);
+  assert.match(appSource, /specialization\.sources/);
+  assert.match(appSource, /equipmentOverrides\.sources/);
+  assert.match(appSource, /Assumptions|coverage\.title/);
+  assert.match(battleCssSource, /\.battle-scenario-grid/);
+  assert.match(battleCssSource, /\.battle-hero-skills/);
 });
 
 test('theme, responsive RTL, reduced-motion, version, and tool navigation contracts remain intact', () => {

@@ -20510,3 +20510,53 @@ html[dir='rtl'] .gen-buttons-row {
     transition: none;
   }
 }
+/* Public-shell account entry. Profile-page styles remain route-isolated. */
+.account-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(103, 232, 249, 0.34);
+  border-radius: 10px;
+  color: var(--text-primary, #f8fafc);
+  background: rgba(8, 19, 36, 0.72);
+  font:
+    600 0.78rem/1 'Sora',
+    sans-serif;
+  text-decoration: none;
+}
+
+.account-link:hover,
+.account-link:focus-visible {
+  border-color: #67e8f9;
+  color: #facc15;
+  outline: none;
+}
+
+.account-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+[data-theme='light'] .account-link {
+  border-color: rgba(8, 145, 178, 0.34);
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+@media (max-width: 640px) {
+  .account-link {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .account-link-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}

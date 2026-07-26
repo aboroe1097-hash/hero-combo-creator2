@@ -19,7 +19,7 @@ const visibleModes = [
   ['f-set-assembly.html', 'D', 'Set Assembly', 'arcadeModeD'],
   ['h-hero-rumble.html', 'E', 'Hero Rumble', 'arcadeModeE'],
 ];
-const localeIds = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+const localeIds = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
 const localizedGameKeys = [
   'arcadeModeA',
   'arcadeModeB',

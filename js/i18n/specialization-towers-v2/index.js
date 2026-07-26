@@ -7,6 +7,7 @@ const LOADERS = Object.freeze({
   es: () => import('./es.js'),
   fr: () => import('./fr.js'),
   id: () => import('./id.js'),
+  it: () => import('./it.js'),
   kr: () => import('./kr.js'),
   pt: () => import('./pt.js'),
   ru: () => import('./ru.js'),

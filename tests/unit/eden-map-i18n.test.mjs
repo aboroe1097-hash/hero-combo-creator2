@@ -36,6 +36,7 @@ test('every Eden Map domain pack covers canonical structures, sectors, and runti
     'es',
     'fr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',

@@ -3,6 +3,9 @@ import test from 'node:test';
 
 import { BATTLE_STAT_CONTRACT } from '../../js/battle-simulator-data.js';
 import { resolveResearchSources } from '../../js/battle-simulator-research.js';
+import { resolveSpecializationBattleSources } from '../../js/battle-simulator-specialization.js';
+import { buildStatContributionSnapshot } from '../../js/specialization-towers-v2-contributions.js';
+import { createEmptySpecializationState } from '../../js/specialization-towers-v2-model.js';
 import {
   BATTLE_SETUP_PRESET_STORAGE_KEY,
   MAX_BATTLE_SETUP_PRESETS,
@@ -14,6 +17,7 @@ import {
 import {
   CAPTURED_SOURCE_SNAPSHOT_SCHEMA_VERSION,
   LEGACY_SETUP_SCHEMA_VERSION,
+  PREVIOUS_SETUP_SCHEMA_VERSION,
   SETUP_SCHEMA_VERSION,
   applySetupSnapshot,
   buildSetupSnapshot,
@@ -174,12 +178,19 @@ function deepFreeze(value) {
   return value;
 }
 
-test('v2 build, stringify, parse, and apply round-trip complete source-aware setup', () => {
+test('v3 build, stringify, parse, and apply round-trip complete source-aware setup', () => {
   const state = deepFreeze(stateFixture());
   const before = structuredClone(state);
   const snapshot = buildSetupSnapshot(state);
 
-  assert.equal(snapshot.setupSchemaVersion, 2);
+  assert.equal(snapshot.setupSchemaVersion, 3);
+  assert.deepEqual(snapshot.scenarioContext, {
+    battleMode: 'pvp-field',
+    engagement: 'field',
+    event: '*',
+    formation: '*',
+  });
+  assert.deepEqual(snapshot.assumptions, { acknowledged: false, diagnostics: [] });
   assert.equal(snapshot.savedAt, null);
   assert.equal(snapshot.sides.A.researchEnabled, true);
   assert.equal(snapshot.sides.B.researchEnabled, false);
@@ -211,7 +222,7 @@ test('v2 build, stringify, parse, and apply round-trip complete source-aware set
   assert.deepEqual(state, before);
 });
 
-test('v1 snapshots migrate to v2 unit points, safe empty sources, and correct mode semantics', () => {
+test('v1 snapshots migrate to v3 unit points, safe empty integrations, and correct mode semantics', () => {
   const legacy = legacySnapshotFixture();
   const parsed = parseSetupSnapshot(JSON.stringify(legacy));
 
@@ -220,6 +231,9 @@ test('v1 snapshots migrate to v2 unit points, safe empty sources, and correct mo
   assert.equal(parsed.sides.A.rows[0].bonuses.damageMitigation, 0);
   assert.equal(parsed.sides.A.researchEnabled, false);
   assert.equal(parsed.sides.A.equipmentLoadout.mode, 'none');
+  assert.deepEqual(parsed.sides.A.equipmentEffectOverrides.overrides, []);
+  assert.equal(parsed.sides.A.rows[0].heroName, null);
+  assert.deepEqual(parsed.sides.A.rows[0].skillIds, []);
   assert.deepEqual(parsed.sides.A.capturedSourceSnapshot.sources, []);
   assert.deepEqual(parsed.sides.A.researchSnapshot.sources, []);
   assert.deepEqual(parsed.sides.A.researchSnapshot.savedProgress, {
@@ -261,6 +275,8 @@ test('parser canonicalizes unknown keys at every setup and stat layer', () => {
     'setupSchemaVersion',
     'savedAt',
     'battleMode',
+    'scenarioContext',
+    'assumptions',
     'sides',
     'runOptions',
   ]);
@@ -369,19 +385,109 @@ test('setup-to-engine config supplies nested stats, captured sources, and detach
   assert.notStrictEqual(front.stats, snapshot.sides.A.rows[0].bonuses);
 });
 
-test('battleMode defaults for legacy snapshots, preserves future strings, and rejects non-strings', () => {
+test('v3 persists scenario, heroes, specialization captures, and equipment override documents', () => {
+  const snapshot = snapshotFixture();
+  snapshot.scenarioContext = {
+    battleMode: 'pvp-field',
+    engagement: 'siege-attack',
+    event: 'eden',
+    formation: 'rally-lead',
+  };
+  snapshot.assumptions = {
+    acknowledged: true,
+    diagnostics: [
+      {
+        code: 'coverage-partial',
+        severity: 'warning',
+        message: 'Partial clauses ignored.',
+        sourceId: null,
+      },
+    ],
+  };
+  snapshot.sides.A.rows[0].heroName = "Jeanne d'Arc";
+  snapshot.sides.A.rows[0].skillIds = ['2', '8'];
+  snapshot.sides.A.equipmentEffectOverrides = {
+    overrideSchemaVersion: 1,
+    overrides: [],
+  };
+  snapshot.sides.A.specializationCapture = {
+    snapshot: { schema: 'fixture', entries: [] },
+    result: {
+      sources: [],
+      unitSources: [
+        {
+          sourceType: 'specialization',
+          sourceId: 'specialization:unit-attack',
+          label: 'Unit Attack',
+          statKey: 'attack',
+          amount: 10,
+          operation: 'add',
+          unit: 'percent',
+          appliesTo: { battleModes: ['pvp-field'], troopTypes: ['footmen'], rowIds: ['front'] },
+        },
+      ],
+      effects: [{ id: 'fixture-effect', active: true }],
+      excluded: [],
+      diagnostics: [],
+      summary: {},
+      revision: 'fixture',
+    },
+  };
+
+  const parsed = parseSetupSnapshot(JSON.stringify(snapshot));
+  const config = setupSnapshotToEngineConfig(parsed);
+  assert.equal(parsed.setupSchemaVersion, 3);
+  assert.equal(parsed.sides.A.rows[0].heroName, "Jeanne d'Arc");
+  assert.deepEqual(parsed.sides.A.rows[0].skillIds, ['2', '8']);
+  assert.equal(parsed.assumptions.acknowledged, true);
+  assert.equal(config.sideA.scenarioContext.engagement, 'siege-attack');
+  assert.equal(config.sideA.unitSources.length, 1);
+  assert.equal(config.sideA.effects[0].id, 'fixture-effect');
+  assert.equal(config.sideA.rows[0].stats.unit.attack, 77);
+});
+
+test('canonical specialization captures retain bounded depth and sensitive-key guards', () => {
+  const state = createEmptySpecializationState();
+  const snapshot = snapshotFixture();
+  snapshot.sides.A.specializationCapture = {
+    snapshot: buildStatContributionSnapshot(state),
+    result: resolveSpecializationBattleSources(state),
+  };
+  assert.doesNotThrow(() => parseSetupSnapshot(JSON.stringify(snapshot)));
+
+  const sensitive = structuredClone(snapshot);
+  sensitive.sides.A.specializationCapture.snapshot.producer.localStorage = {
+    secret: 'not allowed',
+  };
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(sensitive)), /sensitive field/i);
+
+  const tooDeep = structuredClone(snapshot);
+  let cursor = tooDeep.sides.A.specializationCapture.snapshot;
+  for (let index = 0; index < 11; index += 1) {
+    cursor.nested = {};
+    cursor = cursor.nested;
+  }
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(tooDeep)),
+    /must not exceed 10 nested levels/i
+  );
+});
+
+test('scenario context defaults for legacy snapshots and rejects unsupported values', () => {
   const legacy = legacySnapshotFixture();
   delete legacy.battleMode;
+  delete legacy.scenarioContext;
   assert.equal(parseSetupSnapshot(JSON.stringify(legacy)).battleMode, 'pvp-field');
 
-  const future = snapshotFixture();
-  future.battleMode = 'siege';
-  future.sides.A.researchSnapshot.battleMode = 'siege';
-  assert.equal(parseSetupSnapshot(JSON.stringify(future)).battleMode, 'siege');
+  const previous = snapshotFixture();
+  previous.setupSchemaVersion = PREVIOUS_SETUP_SCHEMA_VERSION;
+  delete previous.scenarioContext;
+  delete previous.assumptions;
+  assert.equal(parseSetupSnapshot(JSON.stringify(previous)).setupSchemaVersion, 3);
 
   const invalid = snapshotFixture();
-  invalid.battleMode = 7;
-  assert.throws(() => parseSetupSnapshot(JSON.stringify(invalid)), /battleMode must be a string/i);
+  invalid.scenarioContext.engagement = 'space';
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(invalid)), /Scenario engagement/i);
 });
 
 test('parser rejects unsupported versions, malformed formations, values, and source contracts', () => {
@@ -389,7 +495,7 @@ test('parser rejects unsupported versions, malformed formations, values, and sou
   assert.throws(() => parseSetupSnapshot({}), /provided as text/i);
 
   const wrongVersion = snapshotFixture();
-  wrongVersion.setupSchemaVersion = 3;
+  wrongVersion.setupSchemaVersion = 4;
   assert.throws(() => parseSetupSnapshot(JSON.stringify(wrongVersion)), /unsupported.*schema/i);
 
   const missingSide = snapshotFixture();

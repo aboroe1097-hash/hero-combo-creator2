@@ -1,13 +1,3 @@
-function isEnglishOnlyBattleSimulator() {
-  var root = document.documentElement;
-  if (!root) return false;
-  var className = typeof root.className === 'string' ? root.className : '';
-  if (!className && typeof root.getAttribute === 'function') {
-    className = root.getAttribute('class') || '';
-  }
-  return /(?:^|\s)battle-simulator-root(?:\s|$)/.test(className);
-}
-
 (function installPwaRuntimeCopy(global) {
   'use strict';
 
@@ -24,6 +14,7 @@ function isEnglishOnlyBattleSimulator() {
     'zh',
     'ar',
     'kr',
+    'it',
   ]);
   var IDS = Object.freeze([
     'updateAvailable',
@@ -216,6 +207,21 @@ function isEnglishOnlyBattleSimulator() {
         '업데이트된 사이트 파일을 불러오지 못했습니다. 준비가 되면 새로고침하세요.',
       refresh: '새로고침',
     }),
+    it: Object.freeze({
+      updateAvailable: 'Nuova versione disponibile - aggiorna per applicarla.',
+      dismiss: 'Chiudi',
+      installTitle: 'Installa VTS Combos',
+      installSubtitle: 'Accesso con un tocco · funziona offline',
+      installAction: 'Installa',
+      installing: 'Installazione...',
+      iosTitle: 'Aggiungi alla schermata Home',
+      iosTap: 'Tocca',
+      iosShare: 'Condividi',
+      iosAddToHome: 'Aggiungi alla schermata Home',
+      assetRecoveryMessage:
+        'Un file aggiornato del sito non e stato caricato. Aggiorna quando sei pronto.',
+      refresh: 'Aggiorna',
+    }),
   });
 
   function normalizeLocale(value) {
@@ -241,6 +247,7 @@ function isEnglishOnlyBattleSimulator() {
       zh: 'zh-CN',
       ar: 'ar',
       kr: 'ko-KR',
+      it: 'it-IT',
     };
     return localeMap[locale];
   }
@@ -302,12 +309,6 @@ function isEnglishOnlyBattleSimulator() {
 
 (function applyStoredLanguageBeforePaint() {
   try {
-    if (isEnglishOnlyBattleSimulator()) {
-      window.VTS_INITIAL_LANGUAGE = 'en';
-      document.documentElement.setAttribute('lang', 'en');
-      document.documentElement.setAttribute('dir', 'ltr');
-      return;
-    }
     var runtime = window.VTS_PWA_I18N;
     var language = runtime.detectLocale();
     window.VTS_INITIAL_LANGUAGE = language;
@@ -391,7 +392,7 @@ function isEnglishOnlyBattleSimulator() {
   function recoveryText(id, locale) {
     var runtime = window.VTS_PWA_I18N;
     return runtime
-      ? runtime.text(id, isEnglishOnlyBattleSimulator() ? 'en' : locale)
+      ? runtime.text(id, locale)
       : id === 'refresh'
         ? 'Refresh'
         : 'Asset load error.';
