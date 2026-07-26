@@ -9,7 +9,7 @@
       data-i18n-content="meta.description"
     />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="vts-app-version" content="14.2.14" />
+    <meta name="vts-app-version" content="14.2.15" />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src 'self' https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'"
@@ -42,208 +42,313 @@
           >
         </a>
         <div class="account-topbar-actions">
-          <label class="account-language">
-            <span class="sr-only" data-i18n="nav.language">Language</span>
-            <select id="accountLanguage" aria-label="Language" data-i18n-aria-label="nav.language">
-              <option value="en">English</option>
-              <option value="es">Español</option>
-              <option value="pt">Português</option>
-              <option value="de">Deutsch</option>
-              <option value="fr">Français</option>
-              <option value="hr">Hrvatski</option>
-              <option value="tr">Türkçe</option>
-              <option value="ru">Русский</option>
-              <option value="id">Bahasa Indonesia</option>
-              <option value="zh">中文</option>
-              <option value="ar">العربية</option>
-              <option value="kr">한국어</option>
-              <option value="it">Italiano</option>
-            </select>
-          </label>
-          <a class="account-back" href="index.html" data-i18n="nav.back">Back to tools</a>
+          <span id="accountLanguageTopbarSlot"></span
+          ><a class="account-back" href="index.html" data-i18n="nav.back">Back to tools</a>
         </div>
       </header>
 
-      <section id="accountAuthPanel" class="account-panel" aria-labelledby="authTitle">
-        <h1 id="authTitle" data-i18n="auth.title">Keep your VTS profile with you</h1>
-        <p class="account-lead" data-i18n="auth.lead">
-          Guest mode still works as before. Create an account to keep the current guest identity, or
-          sign in to an account you already own.
-        </p>
-
-        <div
-          class="account-tabs"
-          role="tablist"
-          aria-label="Account action"
-          data-i18n-aria-label="tabs.aria"
-        >
-          <button
-            id="createTab"
-            type="button"
-            role="tab"
-            aria-controls="accountAuthForm"
-            aria-selected="true"
-            data-mode="create"
-          >
-            <span data-i18n="tabs.create">Create account</span>
-          </button>
-          <button
-            id="signInTab"
-            type="button"
-            role="tab"
-            aria-controls="accountAuthForm"
-            aria-selected="false"
-            tabindex="-1"
-            data-mode="signin"
-          >
-            <span data-i18n="tabs.signin">Sign in</span>
-          </button>
+      <section id="accountAuthPanel" class="account-auth-panel" aria-labelledby="authTitle" hidden>
+        <div class="account-auth-intro">
+          <h1 id="authTitle" data-i18n="auth.title">Account &amp; Profile</h1>
+          <p class="account-lead" data-i18n="auth.lead">
+            Guest mode still works. Create an account to keep this guest identity, or sign in to an
+            account you already own.
+          </p>
         </div>
-
-        <p id="sessionWarning" class="account-note" hidden data-i18n="auth.warning">
-          Signing in switches away from this guest session. Guest-only cloud records cannot all be
-          merged into the returning account.
-        </p>
-
-        <form id="accountAuthForm" class="account-form" aria-labelledby="authTitle">
-          <fieldset
-            id="accountOnboardingFields"
-            class="account-fields account-onboarding"
-            aria-labelledby="authTitle"
+        <div class="account-auth-surface">
+          <div
+            class="account-tabs"
+            role="tablist"
+            aria-label="Player account"
+            data-i18n-aria-label="tabs.aria"
           >
-            <label class="account-field account-field--wide">
-              <span data-i18n="field.gameName">In-game name</span>
-              <input
-                id="accountGameName"
-                name="gameName"
-                required
-                maxlength="50"
-                autocomplete="nickname"
-              />
-            </label>
-            <label class="account-field">
-              <span data-i18n="field.state">Current state</span>
-              <input id="accountState" name="state" required maxlength="160" />
-            </label>
-            <label class="account-field">
-              <span data-i18n="field.referralSource">How did you hear about us?</span>
-              <input id="accountReferralSource" name="referralSource" required maxlength="160" />
-            </label>
-            <label class="account-field account-field--wide">
-              <span data-i18n="field.comments">Comments (optional)</span>
-              <textarea id="accountComments" name="comments" maxlength="1000"></textarea>
-            </label>
-          </fieldset>
-          <label class="account-field">
-            <span data-i18n="field.email">Email</span>
-            <input id="accountEmailInput" name="email" type="email" autocomplete="email" required />
-          </label>
-          <label class="account-field">
-            <span data-i18n="field.password">Password</span>
-            <input
-              id="accountPassword"
-              name="password"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              required
-            />
-          </label>
-          <div class="account-actions">
-            <button id="authSubmit" class="account-button account-button--primary" type="submit">
-              <span data-i18n="action.create">Create account</span>
-            </button>
-            <button id="googleAuth" class="account-button" type="button">
-              <span data-i18n="action.googleCreate">Continue with Google</span>
-            </button>
-            <button id="passwordReset" class="account-button account-button--text" type="button">
-              <span data-i18n="action.reset">Reset password</span>
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section id="accountEditorPanel" class="account-panel" aria-labelledby="profileTitle" hidden>
-        <p class="account-kicker" data-i18n="editor.kicker">Account profile</p>
-        <h1 id="profileTitle" data-i18n="editor.title">Your player details</h1>
-        <p class="account-lead" data-i18n="editor.lead">
-          Your profile is private unless you explicitly publish the fields shown here.
-        </p>
-        <div class="account-meta">
-          <span
-            ><span data-i18n="meta.email">Email:</span> <strong id="accountEmail"></strong
-          ></span>
-          <span
-            ><span data-i18n="meta.status">Status:</span> <strong id="verificationState"></strong
-          ></span>
-          <button id="resendVerification" class="account-button account-button--text" type="button">
-            <span data-i18n="verification.resend">Resend verification</span>
-          </button>
-        </div>
-
-        <form id="accountProfileForm" class="account-form">
-          <div class="account-fields">
-            <label class="account-field">
-              <span data-i18n="field.gameName">In-game name</span>
-              <input id="profileGameName" required maxlength="50" autocomplete="nickname" />
-            </label>
-            <label class="account-field">
-              <span data-i18n="field.state">Current state</span>
-              <input id="profileState" required maxlength="160" />
-            </label>
-            <label class="account-field">
-              <span data-i18n="field.referralSource">How did you hear about us?</span>
-              <input id="profileReferralSource" required maxlength="160" />
-            </label>
-            <label class="account-field account-field--wide">
-              <span data-i18n="field.comments">Comments (optional)</span>
-              <textarea id="profileComments" maxlength="1000"></textarea>
-            </label>
-            <label class="account-field">
-              <span data-i18n="field.alliance">Alliance</span>
-              <input id="profileAlliance" maxlength="50" />
-            </label>
-            <label class="account-field">
-              <span data-i18n="field.countryCode">Country code</span>
-              <input
-                id="profileCountryCode"
-                maxlength="2"
-                pattern="[A-Za-z]{2}"
-                placeholder="US"
-                data-i18n-placeholder="field.countryPlaceholder"
-              />
-            </label>
-            <label class="account-field account-field--wide">
-              <span data-i18n="field.bio">Bio</span>
-              <textarea id="profileBio" maxlength="280"></textarea>
-            </label>
-          </div>
-          <div class="privacy-row">
-            <div>
-              <label for="profileIsPublic" data-i18n="privacy.label">Publish this profile</label>
-              <div class="account-note" data-i18n="privacy.note">
-                Only the public profile fields become visible to signed-in players. Your email and
-                onboarding details are never published.
-              </div>
-            </div>
-            <input id="profileIsPublic" type="checkbox" role="switch" />
-          </div>
-          <div class="account-actions">
-            <button class="account-button account-button--primary" type="submit">
-              <span data-i18n="action.save">Save profile</span>
-            </button>
             <button
-              id="signOutAccount"
-              class="account-button"
+              id="createTab"
               type="button"
-              data-i18n="action.signout"
+              role="tab"
+              aria-controls="accountAuthForm"
+              aria-selected="true"
+              data-mode="create"
             >
-              Sign out
+              <span data-i18n="tabs.create">Create account</span></button
+            ><button
+              id="signInTab"
+              type="button"
+              role="tab"
+              aria-controls="accountAuthForm"
+              aria-selected="false"
+              tabindex="-1"
+              data-mode="signin"
+            >
+              <span data-i18n="tabs.signin">Sign in</span>
             </button>
           </div>
-        </form>
+          <p id="sessionWarning" class="account-note" hidden data-i18n="auth.warning">
+            Signing in leaves this guest session. Some guest-only cloud records cannot be merged
+            into the returning account.
+          </p>
+          <form id="accountAuthForm" class="account-form" aria-labelledby="authTitle">
+            <fieldset
+              id="accountOnboardingFields"
+              class="account-fields account-onboarding"
+              aria-labelledby="authTitle"
+            >
+              <label class="account-field account-field--wide"
+                ><span data-i18n="field.gameName">In-game name</span
+                ><input
+                  id="accountGameName"
+                  name="gameName"
+                  required
+                  maxlength="50"
+                  autocomplete="nickname"
+              /></label>
+              <label class="account-field"
+                ><span data-i18n="field.state">Current state</span
+                ><input id="accountState" name="state" required maxlength="160"
+              /></label>
+              <label class="account-field"
+                ><span data-i18n="field.referralSource">How did you hear about us?</span
+                ><input id="accountReferralSource" name="referralSource" required maxlength="160"
+              /></label>
+              <label class="account-field account-field--wide"
+                ><span data-i18n="field.comments">Comments (optional)</span
+                ><textarea id="accountComments" name="comments" maxlength="1000"></textarea>
+              </label>
+            </fieldset>
+            <label class="account-field"
+              ><span data-i18n="field.email">Email</span
+              ><input
+                id="accountEmailInput"
+                name="email"
+                type="email"
+                dir="ltr"
+                spellcheck="false"
+                autocomplete="email"
+                required
+            /></label>
+            <label class="account-field"
+              ><span data-i18n="field.password">Password</span
+              ><input
+                id="accountPassword"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+            /></label>
+            <div class="account-actions account-auth-actions">
+              <button id="authSubmit" class="account-button account-button--primary" type="submit">
+                <span data-i18n="action.create">Create account</span></button
+              ><button id="googleAuth" class="account-button" type="button">
+                <span data-i18n="action.googleCreate">Continue with Google</span></button
+              ><button id="passwordReset" class="account-button account-button--text" type="button">
+                <span data-i18n="action.reset">Reset password</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </section>
 
+      <div id="accountEditorPanel" class="account-editor" hidden>
+        <div class="account-settings-layout">
+          <aside class="account-settings-rail">
+            <nav
+              class="account-settings-nav"
+              aria-label="Account settings"
+              data-i18n-aria-label="nav.settingsAria"
+            >
+              <a href="#profileSection" aria-current="true" data-settings-anchor
+                ><span data-i18n="nav.profile">Profile</span></a
+              ><a href="#privacySection" data-settings-anchor
+                ><span data-i18n="nav.privacy">Privacy</span></a
+              ><a href="#accountSection" data-settings-anchor
+                ><span data-i18n="nav.account">Account</span></a
+              >
+            </nav>
+          </aside>
+          <form id="accountProfileForm" class="account-profile-form">
+            <section
+              id="profileSection"
+              class="account-settings-section"
+              aria-labelledby="profileTitle"
+            >
+              <p class="account-kicker" data-i18n="editor.kicker">Account profile</p>
+              <h1 id="profileTitle" data-i18n="editor.title">Your player details</h1>
+              <p class="account-lead" data-i18n="editor.lead">
+                Your profile stays private unless you explicitly publish the fields shown here.
+              </p>
+              <div class="account-verification-summary">
+                <span class="sr-only" data-i18n="meta.email">Email:</span
+                ><strong id="profileEmailSummary" dir="ltr"></strong
+                ><span aria-hidden="true">·</span
+                ><span class="sr-only" data-i18n="meta.status">Status:</span
+                ><span id="profileVerificationSummary"></span>
+              </div>
+              <div class="account-fields">
+                <label class="account-field"
+                  ><span data-i18n="field.gameName">In-game name</span
+                  ><input
+                    id="profileGameName"
+                    name="gameName"
+                    required
+                    maxlength="50"
+                    autocomplete="nickname"
+                    data-profile-field
+                /></label>
+                <label class="account-field"
+                  ><span data-i18n="field.state">Current state</span
+                  ><input
+                    id="profileState"
+                    name="state"
+                    required
+                    maxlength="160"
+                    data-profile-field
+                /></label>
+                <label class="account-field"
+                  ><span data-i18n="field.alliance">Alliance</span
+                  ><input id="profileAlliance" name="alliance" maxlength="50" data-profile-field
+                /></label>
+                <label class="account-field"
+                  ><span data-i18n="field.countryCode">Country code</span
+                  ><input
+                    id="profileCountryCode"
+                    name="countryCode"
+                    maxlength="2"
+                    pattern="[A-Za-z]{2}"
+                    placeholder="US"
+                    dir="ltr"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    data-i18n-placeholder="field.countryPlaceholder"
+                    data-profile-field
+                /></label>
+                <label class="account-field account-field--wide"
+                  ><span data-i18n="field.bio">Bio</span
+                  ><textarea
+                    id="profileBio"
+                    name="bio"
+                    maxlength="280"
+                    aria-describedby="profileBioCount"
+                    data-profile-field
+                  ></textarea
+                  ><span id="profileBioCount" class="account-counter">0 / 280</span></label
+                >
+              </div>
+              <details id="accountAboutDetails" class="account-details">
+                <summary data-i18n="editor.about">About your account</summary>
+                <div class="account-details-fields">
+                  <label class="account-field"
+                    ><span data-i18n="field.referralSource">How did you hear about us?</span
+                    ><input
+                      id="profileReferralSource"
+                      name="referralSource"
+                      required
+                      maxlength="160"
+                      data-profile-field /></label
+                  ><label class="account-field"
+                    ><span data-i18n="field.comments">Comments (optional)</span
+                    ><textarea
+                      id="profileComments"
+                      name="comments"
+                      maxlength="1000"
+                      aria-describedby="profileCommentsCount"
+                      data-profile-field
+                    ></textarea
+                    ><span id="profileCommentsCount" class="account-counter">0 / 1,000</span></label
+                  >
+                </div>
+              </details>
+            </section>
+            <section
+              id="privacySection"
+              class="account-settings-section"
+              aria-labelledby="privacyTitle"
+            >
+              <h2 id="privacyTitle" data-i18n="nav.privacy">Privacy</h2>
+              <div class="privacy-row">
+                <div>
+                  <label for="profileIsPublic" data-i18n="privacy.label"
+                    >Publish this profile</label
+                  >
+                  <p class="account-note" data-i18n="privacy.note">
+                    Only the profile fields above are visible to signed-in players. Your email is
+                    never published.
+                  </p>
+                </div>
+                <input
+                  id="profileIsPublic"
+                  name="isPublic"
+                  type="checkbox"
+                  role="switch"
+                  data-profile-field
+                />
+              </div>
+            </section>
+            <section
+              id="accountSection"
+              class="account-settings-section"
+              aria-labelledby="accountSectionTitle"
+            >
+              <h2 id="accountSectionTitle" data-i18n="nav.account">Account</h2>
+              <div class="account-meta">
+                <div>
+                  <span data-i18n="meta.email">Email:</span>
+                  <strong id="accountEmail" dir="ltr"></strong>
+                </div>
+                <div>
+                  <span data-i18n="meta.status">Status:</span>
+                  <strong id="verificationState"></strong>
+                </div>
+                <button
+                  id="resendVerification"
+                  class="account-button account-button--text"
+                  type="button"
+                >
+                  <span data-i18n="verification.resend">Resend verification</span>
+                </button>
+              </div>
+              <div class="account-preferences">
+                <div id="accountLanguageSettingsSlot"></div>
+                <button id="signOutAccount" class="account-button" type="button">
+                  <span data-i18n="action.signout">Sign out</span>
+                </button>
+              </div>
+            </section>
+            <div class="account-save-bar">
+              <p id="profileSaveState" class="account-save-state" data-i18n="save.clean">
+                All changes saved
+              </p>
+              <button
+                id="saveProfile"
+                class="account-button account-button--primary"
+                type="submit"
+                disabled
+              >
+                <span data-i18n="action.save">Save profile</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <label id="accountLanguageControl" class="account-language" hidden
+        ><span data-i18n="nav.language">Language</span
+        ><select id="accountLanguage" aria-label="Language" data-i18n-aria-label="nav.language">
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="pt">Português</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="hr">Hrvatski</option>
+          <option value="tr">Türkçe</option>
+          <option value="ru">Русский</option>
+          <option value="id">Bahasa Indonesia</option>
+          <option value="zh">中文</option>
+          <option value="ar">العربية</option>
+          <option value="kr">한국어</option>
+          <option value="it">Italiano</option>
+        </select></label
+      >
       <p id="accountStatus" class="account-status" role="status" aria-live="polite"></p>
     </main>
     <script type="module" src="js/account-profile-page.js"></script>

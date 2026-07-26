@@ -2947,3 +2947,54 @@
 .boh-admin-mapper-actions p {
   margin: 0;
 }
+
+.boh-admin-mapper-workflow,
+.boh-admin-advanced-tools {
+  background: rgba(10, 18, 34, 0.72);
+  border: 1px solid var(--ff-border);
+  border-radius: 8px;
+  margin-block: 1rem;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.boh-admin-mapper-workflow ol {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+}
+
+.boh-admin-mapper-workflow li {
+  background: rgba(125, 211, 252, 0.06);
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.boh-admin-advanced-tools summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.boh-admin-advanced-tools__body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  min-width: 0;
+}
+
+@media (max-width: 620px) {
+  .boh-admin-mapper-workflow ol {
+    grid-template-columns: 1fr;
+  }
+  .boh-admin-mapper-workflow,
+  .boh-admin-advanced-tools,
+  .boh-admin-advanced-tools__body {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}

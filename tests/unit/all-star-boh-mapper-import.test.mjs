@@ -32,7 +32,10 @@ function exactView() {
             name: `Synthetic Player ${number}`,
             locked: seatIndex === 1,
             userLockTeamId: seatIndex === 1 ? `team-${teamIndex + 1}` : '',
+            backup: false,
+            main: false,
             planRole: seatIndex === 0 ? 'offensive' : '',
+            titleRole: '',
             commandRole: seatIndex === 0 ? 'leader' : '',
             commandRoleSource: seatIndex === 0 ? 'explicit' : '',
             score: 100_000 - number,
@@ -74,11 +77,17 @@ test('strict parser returns only the allowlisted ordered 6x12 mapper data', () =
     'displayName',
     'locked',
     'userLockTeamId',
+    'backup',
+    'main',
     'planRole',
+    'titleRole',
     'commandRole',
     'commandRoleSource',
   ]);
   assert.equal(parsed.teams[0].players[0].planRole, 'offensive');
+  assert.equal(parsed.teams[0].players[0].backup, false);
+  assert.equal(parsed.teams[0].players[0].main, false);
+  assert.equal(parsed.teams[0].players[0].titleRole, '');
   assert.equal(parsed.teams[0].players[0].power, undefined);
   assert.equal(parsed.ignored, undefined);
 });
@@ -132,14 +141,74 @@ test('strict parser rejects duplicate mapper IDs and normalized imported names',
   );
 });
 
-test('blank plan roles follow mapper score, power, and name ranking instead of import order', () => {
+test('optional mapper flags and title roles preserve zero, one, or two backups per team', () => {
+  const payload = exactView();
+  payload.state.teams[0].players[0].backup = true;
+  payload.state.teams[0].players[0].titleRole = 'kills';
+  payload.state.teams[0].players[1].backup = true;
+  payload.state.teams[0].players[1].titleRole = 'tower';
+  payload.state.teams[0].players[2].main = true;
+  payload.state.teams[0].players[2].titleRole = 'escort';
+  payload.state.teams[0].players[3].titleRole = 'gathering';
+  payload.state.teams[0].players[11].planRole = 'rune';
+  payload.state.teams[1].players[0].backup = true;
+
+  const parsed = parseAllStarBohMapperExactView(json(payload));
+  assert.deepEqual(
+    parsed.teams.slice(0, 3).map((team) => team.players.filter((player) => player.backup).length),
+    [2, 1, 0]
+  );
+  assert.deepEqual(
+    parsed.teams[0].players.slice(0, 4).map((player) => player.titleRole),
+    ['kills', 'tower', 'escort', 'gathering']
+  );
+  assert.equal(parsed.teams[0].players[2].main, true);
+  assert.equal(parsed.teams[0].players[11].planRole, 'rune');
+});
+
+test('mapper backup, main, title-role, and backup-count validation is strict', () => {
+  const badBackup = exactView();
+  badBackup.state.teams[0].players[0].backup = 'true';
+  expectCode(() => parseAllStarBohMapperExactView(json(badBackup)), 'boh-mapper-player-backup');
+
+  const badMain = exactView();
+  badMain.state.teams[0].players[0].main = 1;
+  expectCode(() => parseAllStarBohMapperExactView(json(badMain)), 'boh-mapper-player-main');
+
+  const badTitleRole = exactView();
+  badTitleRole.state.teams[0].players[0].titleRole = 'unsupported';
+  expectCode(
+    () => parseAllStarBohMapperExactView(json(badTitleRole)),
+    'boh-mapper-player-title-role'
+  );
+
+  const tooManyBackups = exactView();
+  tooManyBackups.state.teams[0].players.slice(0, 3).forEach((player) => {
+    player.backup = true;
+  });
+  expectCode(
+    () => parseAllStarBohMapperExactView(json(tooManyBackups)),
+    'boh-mapper-player-backup-count'
+  );
+});
+
+test('teams are score-ranked, reseated, and assigned the canonical rank roles', () => {
   const payload = exactView();
   const originalPlayers = payload.state.teams[0].players;
   originalPlayers.forEach((player, index) => {
     player.planRole = '';
-    player.score = index < 3 ? 5_000 : 5_000 - index;
-    player.power = index < 2 ? 900 : 800;
+    player.score = 4_900 - index;
+    player.power = 700;
   });
+  originalPlayers[0].name = 'Rank Tie Zulu';
+  originalPlayers[0].score = 5_000;
+  originalPlayers[0].power = 900;
+  originalPlayers[1].name = 'Rank Tie Alpha';
+  originalPlayers[1].score = 5_000;
+  originalPlayers[1].power = 900;
+  originalPlayers[2].name = 'Rank Tie Middle';
+  originalPlayers[2].score = 5_000;
+  originalPlayers[2].power = 800;
   payload.state.teams[0].players = [
     originalPlayers[11],
     originalPlayers[6],
@@ -155,29 +224,45 @@ test('blank plan roles follow mapper score, power, and name ranking instead of i
     originalPlayers[5],
   ];
 
-  const parsed = parseAllStarBohMapperExactView(json(payload));
-  const roleById = Object.fromEntries(
-    parsed.teams[0].players.map((player) => [player.mapperId, player.planRole])
+  const ranked = parseAllStarBohMapperExactView(json(payload)).teams[0].players;
+  assert.deepEqual(
+    ranked.map((player) => player.mapperId),
+    [
+      'mapper-2',
+      'mapper-1',
+      'mapper-3',
+      'mapper-4',
+      'mapper-5',
+      'mapper-6',
+      'mapper-7',
+      'mapper-8',
+      'mapper-9',
+      'mapper-10',
+      'mapper-11',
+      'mapper-12',
+    ]
   );
-  const roleCounts = parsed.teams[0].players.reduce((counts, player) => {
-    counts[player.planRole] = (counts[player.planRole] || 0) + 1;
-    return counts;
-  }, {});
-  assert.deepEqual(roleCounts, { top: 3, offensive: 4, rune: 2, bottom: 3 });
-  assert.deepEqual(roleById, {
-    'mapper-12': 'top',
-    'mapper-7': 'offensive',
-    'mapper-3': 'top',
-    'mapper-1': 'offensive',
-    'mapper-10': 'rune',
-    'mapper-5': 'top',
-    'mapper-9': 'rune',
-    'mapper-2': 'offensive',
-    'mapper-11': 'bottom',
-    'mapper-4': 'bottom',
-    'mapper-8': 'offensive',
-    'mapper-6': 'bottom',
-  });
+  assert.deepEqual(
+    ranked.map((player) => player.seatNumber),
+    Array.from({ length: 12 }, (_, index) => index + 1)
+  );
+  assert.deepEqual(
+    ranked.map((player) => player.planRole),
+    [
+      'offensive',
+      'offensive',
+      'top',
+      'bottom',
+      'top',
+      'bottom',
+      'rune',
+      'offensive',
+      'rune',
+      'rune',
+      'bottom',
+      'top',
+    ]
+  );
 });
 
 function createStore() {

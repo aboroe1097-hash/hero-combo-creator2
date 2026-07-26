@@ -1,5 +1,15 @@
 # Changelog
 
+## 14.2.15 - 2026-07-26
+
+- Made the approved All-Star BoH mapper exact view the source of truth for ranked team order, role distribution, command roles, and explicit main or backup deployment.
+- Added member My Orders, Team Plan, and Map Briefing views with shared four-phase teleport, crystal, roster, duty, and real-map context.
+- Reframed the admin team workspace around mapper preview, draft save, review, validation, and announcement while retaining legacy balancing tools as advanced compatibility controls.
+- Added a Battle Simulator saved-profile checklist that validates Research, Equipment, and Specialization Towers before explicitly importing those automatic sources into either side.
+- Redesigned Account & Profile into responsive Profile, Privacy, and Account settings sections with a clearer create/sign-in flow.
+- Added safer dirty/save handling, required-field reveal, localized save and error states, counters, and RTL/mobile safe-area behavior.
+- Registered the standalone profile route with the service worker and generated precache inputs.
+
 ## 14.2.14 - 2026-07-26
 
 - Fixed the mobile header so the Account control has its own touch-safe slot without displacing the clock, search, theme, or language controls.

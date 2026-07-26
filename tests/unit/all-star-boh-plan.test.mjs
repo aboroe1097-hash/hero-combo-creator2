@@ -57,9 +57,9 @@ test('each seat yields exactly four phases by two legions', () => {
 });
 
 test('timeline entries carry the published contract fields', () => {
-  const [entry] = bohStage1Timeline(1, { playerId: 'uid-abc', gameName: 'MalakAbo' });
+  const [entry] = bohStage1Timeline(1, { playerId: 'uid-abc', gameName: 'Synthetic Tester' });
   assert.equal(entry.playerId, 'uid-abc');
-  assert.equal(entry.gameName, 'MalakAbo');
+  assert.equal(entry.gameName, 'Synthetic Tester');
   assert.equal(entry.phaseId, 'phase-1');
   assert.equal(entry.legionId, 'legion-1');
   assert.equal(entry.seatNumber, 1);
@@ -99,6 +99,28 @@ test('backups stand by through the opening phase and deploy from 5:00', () => {
         assert.equal('standby' in entry.instruction, false);
         assert.doesNotMatch(entry.instruction.action, /stand by/iu);
       });
+  });
+});
+
+test('an explicit backup flag overrides numeric seat behavior', () => {
+  const flaggedBackup = bohStage1Timeline(1, { playerId: 'uid-b', backup: true });
+  flaggedBackup
+    .filter((entry) => entry.phaseId === 'phase-1')
+    .forEach((entry) => {
+      assert.equal(entry.instruction.standby, true);
+      assert.match(entry.instruction.action, /stand by/iu);
+    });
+  flaggedBackup
+    .filter((entry) => entry.phaseId !== 'phase-1')
+    .forEach((entry) => {
+      assert.equal('standby' in entry.instruction, false);
+      assert.equal(entry.roleLabel, 'Backup - Support');
+    });
+
+  const explicitMain = bohStage1Timeline(11, { playerId: 'uid-m', main: true, backup: false });
+  explicitMain.forEach((entry) => {
+    assert.equal('standby' in entry.instruction, false);
+    assert.doesNotMatch(entry.instruction.action, /stand by/iu);
   });
 });
 

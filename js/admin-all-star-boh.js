@@ -79,10 +79,10 @@ const TEAM_NAME_LABELS = Object.freeze({
 
 const STAGES = [
   ['signups', 'adminBohStageSignups', 'Signup Review'],
-  ['scoring', 'adminBohStageScoring', 'Scoring'],
-  ['teams', 'adminBohStageTeams', 'Team Builder'],
-  ['plans', 'adminBohStagePlans', 'Plans & Roles'],
-  ['publish', 'adminBohStagePublish', 'Publish'],
+  ['scoring', 'adminBohStageScoring', 'Advanced Scoring'],
+  ['teams', 'adminBohStageTeams', 'Mapper Teams & Roles'],
+  ['plans', 'adminBohStagePlans', 'Advanced Plans'],
+  ['publish', 'adminBohStagePublish', 'Publish / Announcement'],
 ];
 
 const SCORE_COMPONENTS = [
@@ -759,6 +759,8 @@ function normalizeSeat(source, teamId, seatNumber) {
     displayName: cleanText(source?.displayName || source?.playerName),
     roleGroupId: cleanText(source?.roleGroupId || source?.roleId),
     roleLabel: cleanText(source?.roleLabel),
+    lane: cleanText(source?.lane),
+    side: cleanText(source?.side),
     locked: Boolean(source?.locked),
     note: cleanText(source?.note),
   };
@@ -1586,6 +1588,9 @@ function adapterStage1PlayerOverrideRules(teamId, seats) {
       displayName: gameName,
       gameName,
       roleGroupId: cleanText(seat?.roleGroupId) || bohSeatRoleGroup(seatNumber),
+      backup: ['backup', 'main'].includes(cleanText(seat?.lane))
+        ? cleanText(seat?.lane) === 'backup'
+        : undefined,
     });
     for (const entry of entries) {
       rules.push({
@@ -2552,6 +2557,8 @@ async function adapterSaveMapperExactView(state) {
         playerId: player.playerId,
         displayName: player.displayName,
         roleGroupId: player.planRole || existing.roleGroupId || bohSeatRoleGroup(player.seatNumber),
+        lane: player.backup ? 'backup' : player.main ? 'main' : '',
+        side: player.titleRole || '',
         locked: player.locked || player.userLockTeamId === importedTeam.id,
         score: player.playerId
           ? adapterScoreRecord(state, adapterFindSubmission(state, player.playerId)).finalScore
@@ -2647,7 +2654,7 @@ async function adapterImportApprovedRoster(state, payload) {
         displayName: row.name,
         locked: true,
         score: row.playerId
-          ? adapterScoreRecord(state, adapterFindSubmission(state, row.playerId)).score
+          ? adapterScoreRecord(state, adapterFindSubmission(state, row.playerId)).finalScore
           : null,
       };
     });
@@ -7706,12 +7713,12 @@ function renderTeamBuilder(state) {
   const activeMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric);
   return `
     <header class="boh-admin-stage-header">
-      <div><p class="boh-admin-eyebrow">${escapeHtml(state.tr('adminBohStageThree', 'STAGE 3 OF 5'))}</p>
+      <div><p class="boh-admin-eyebrow">${escapeHtml(state.tr('adminBohStageThree', 'MAPPER WORKSPACE'))}</p>
         <h3>${escapeHtml(stageLabel(state, 'teams'))}</h3>
         <p>${escapeHtml(
           state.tr(
             'adminBohTeamsHelp',
-            'Build {count} teams of 12. Locked seats survive preview and apply; direct moves remain available.',
+            'Import the approved mapper exact view, verify all {count} teams, then edit only what changed before publishing.',
             { count: snapshotTeamCount(state) }
           )
         )}</p></div>
@@ -7744,7 +7751,20 @@ function renderTeamBuilder(state) {
       )}
       ${summaryCard(state.snapshot.teams.flatMap((team) => team.seats).filter((seat) => seat.locked).length, state.tr('adminBohLockedSeats', 'Locked seats'))}
     </div>
+    <section class="boh-admin-mapper-workflow" aria-label="Mapper publishing workflow">
+      <strong>Current workflow</strong>
+      <ol>
+        <li><span>1</span> Preview mapper JSON</li>
+        <li><span>2</span> Save teams and roles to draft</li>
+        <li><span>3</span> Review the six team cards</li>
+        <li><span>4</span> Validate and publish the announcement</li>
+      </ol>
+      <p>The mapper is the source of truth for order, main/backup deployment, command roles, and title roles. Changes here remain draft-only until Publish.</p>
+    </section>
     ${renderMapperExactViewImport(state)}
+    <details class="boh-admin-advanced-tools" open>
+      <summary>Advanced compatibility tools</summary>
+      <div class="boh-admin-advanced-tools__body">
     ${renderApprovedRosterImport(state)}
     ${renderTeamBuilderSettings(state, candidates, selectedIds)}
     ${renderEligiblePool(state, candidates, selectedIds)}
@@ -7752,6 +7772,8 @@ function renderTeamBuilder(state) {
     ${renderBalancePreview(state)}
     ${renderSeatMoveNotice(state)}
     ${renderTeamExportTools(state, balance)}
+      </div>
+    </details>
     <div class="boh-admin-team-board" style="--boh-team-count:${snapshotTeamCount(state)};--boh-team-columns:${Math.min(
       snapshotTeamCount(state),
       3

@@ -1707,6 +1707,161 @@
     </div>
 
     <div class="boh-plan" data-role="plan-state-published" hidden>
+      <section
+        class="boh-command-workspace"
+        data-role="command-workspace"
+        data-command-mode="my-orders"
+        aria-labelledby="bohCommandWorkspaceTitle"
+      >
+        <div class="boh-command-workspace__head">
+          <div>
+            <p class="boh-kicker">TEAM COMMAND</p>
+            <h4 id="bohCommandWorkspaceTitle">Orders, team plan, and map briefing</h4>
+          </div>
+          <div
+            class="boh-command-mode-tabs"
+            data-role="command-mode-tabs"
+            role="tablist"
+            aria-label="Command view"
+          >
+            <button
+              id="bohCommandMyOrdersTab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="bohCommandMyOrdersPanel"
+              data-role="command-mode-tab"
+              data-command-mode="my-orders"
+            >
+              My Orders
+            </button>
+            <button
+              id="bohCommandTeamPlanTab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="bohCommandTeamPlanPanel"
+              tabindex="-1"
+              data-role="command-mode-tab"
+              data-command-mode="team-plan"
+            >
+              Team Plan
+            </button>
+            <button
+              id="bohCommandMapBriefingTab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="bohCommandMapBriefingPanel"
+              tabindex="-1"
+              data-role="command-mode-tab"
+              data-command-mode="map-briefing"
+            >
+              Map Briefing
+            </button>
+          </div>
+        </div>
+        <div class="boh-command-phase-tabs" role="tablist" aria-label="Command phases">
+          <button
+            type="button"
+            role="tab"
+            aria-selected="true"
+            data-role="command-phase-tab"
+            data-phase-id="phase-1"
+          >
+            <strong>0-5</strong><small>Opening</small>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            tabindex="-1"
+            data-role="command-phase-tab"
+            data-phase-id="phase-2"
+          >
+            <strong>5-10</strong><small>Setup</small>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            tabindex="-1"
+            data-role="command-phase-tab"
+            data-phase-id="phase-3"
+          >
+            <strong>10-15</strong><small>Pressure</small>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            tabindex="-1"
+            data-role="command-phase-tab"
+            data-phase-id="phase-4"
+          >
+            <strong>15-30</strong><small>Endgame</small>
+          </button>
+        </div>
+        <div class="boh-command-context">
+          <div><span>Phase</span><strong data-role="command-phase-title">0-5 Minutes</strong></div>
+          <div>
+            <span>Unlocks</span
+            ><strong data-role="command-phase-unlocks">Opening structures</strong>
+          </div>
+          <div>
+            <span>Teleport call</span
+            ><strong data-role="command-teleport-cue">Hold teleports</strong>
+          </div>
+          <div>
+            <span>Crystal call</span
+            ><strong data-role="command-crystal-cue">Gather crystals</strong>
+          </div>
+        </div>
+        <ol class="boh-command-roster" data-role="command-roster" aria-label="Team roster"></ol>
+        <section
+          id="bohCommandMyOrdersPanel"
+          role="tabpanel"
+          aria-labelledby="bohCommandMyOrdersTab"
+          data-role="command-mode-panel"
+          data-command-mode="my-orders"
+        >
+          <p class="boh-command-intro">
+            Your personal assignment, detailed timeline, and route are shown below.
+          </p>
+        </section>
+        <section
+          id="bohCommandTeamPlanPanel"
+          role="tabpanel"
+          aria-labelledby="bohCommandTeamPlanTab"
+          data-role="command-mode-panel"
+          data-command-mode="team-plan"
+          hidden
+        >
+          <div class="boh-command-role-lanes" data-role="command-role-lanes"></div>
+        </section>
+        <section
+          id="bohCommandMapBriefingPanel"
+          role="tabpanel"
+          aria-labelledby="bohCommandMapBriefingTab"
+          data-role="command-mode-panel"
+          data-command-mode="map-briefing"
+          hidden
+        >
+          <div class="boh-command-map">
+            <img
+              src="assets/boh/stage1-map.webp"
+              alt="Stage 1 battlefield map"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <ol
+            class="boh-command-map-list"
+            data-role="command-map-list"
+            aria-label="Active map targets"
+          ></ol>
+        </section>
+      </section>
       <article class="boh-plan-identity">
         <div class="boh-plan-identity__main">
           <span class="boh-team-mark" data-role="plan-team-number" data-boh-i18n="common.team1"

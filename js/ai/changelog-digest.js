@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.14";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.15";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.15",
+    "date": "2026-07-26",
+    "highlights": [
+      "Made the approved All-Star BoH mapper exact view the source of truth for ranked team order, role distribution, command roles, and explicit main or backup deployment.",
+      "Added member My Orders, Team Plan, and Map Briefing views with shared four-phase teleport, crystal, roster, duty, and real-map context.",
+      "Reframed the admin team workspace around mapper preview, draft save, review, validation, and announcement while retaining legacy balancing tools as advanced compatibility controls.",
+      "Added a Battle Simulator saved-profile checklist that validates Research, Equipment, and Specialization Towers before explicitly importing those automatic sources into either side.",
+      "Redesigned Account & Profile into responsive Profile, Privacy, and Account settings sections with a clearer create/sign-in flow.",
+      "Added safer dirty/save handling, required-field reveal, localized save and error states, counters, and RTL/mobile safe-area behavior."
+    ]
+  },
   {
     "version": "14.2.14",
     "date": "2026-07-26",
@@ -89,18 +101,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.",
       "Evaluated every keep-together group as one shared lane, surfaced unresolved or conflicting groups, and showed active-versus-excluded totals in the admin workspace.",
       "Added a formula-safe active Epic planning CSV with player locale, preferences, lane overrides, effective lanes, and group IDs."
-    ]
-  },
-  {
-    "version": "14.2.5",
-    "date": "2026-07-21",
-    "highlights": [
-      "Collapsed Epic Showdown preference summary by default (H1).",
-      "Collapsed player preference details and usable-heroes disclosure by default (H1).",
-      "Persisted Epic Showdown collapse state in sessionStorage (H1).",
-      "Moved review status/actions leftward in the signup table (H2).",
-      "Added sticky leading identity columns with LTR/RTL support (H2).",
-      "Added `data-label` attributes to all `<td>` for card-mode responsive layout (H2)."
     ]
   }
 ].map((release) =>
