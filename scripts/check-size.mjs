@@ -71,8 +71,10 @@ const LIMITS = {
   // The 14.2.10 touch-safe All-Star map and schedule controls measure 1347.1 KiB;
   // retain less than 5 KiB while every initial-route CSS cap stays unchanged.
   // Profile-route styling brings the audited aggregate to 1364.7 KiB after
-  // shell-only account-link rules are kept in app.css; retain roughly 1%.
-  totalCssBytes: 1379 * 1024,
+  // shell-only account-link rules are kept in app.css. The combined 14.2.15
+  // All-Star command view and Battle profile checklist measure 1379.7 KiB;
+  // retain less than 1.5 KiB of aggregate headroom.
+  totalCssBytes: 1381 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -104,9 +106,10 @@ const LIMITS = {
   // battlefield WebP; retain roughly 19 KiB while media and route caps stay fixed.
   // Italian/Korean locales, the profile route, battle runtime/catalog, and
   // their new emitted files measure 27,327.1 KiB; retain roughly 1% headroom.
-  // The audited v14.2.15 Account/Profile responsive settings update adds
-  // 19.0 KiB; retain about 5 KiB of complete-artifact headroom.
-  totalDeployBytes: 27625 * 1024,
+  // The combined v14.2.15 Account/Profile, All-Star mapper, and Battle profile
+  // checklist artifact measures 27,657.1 KiB after production minification;
+  // retain less than 8 KiB while route and media caps remain focused.
+  totalDeployBytes: 27665 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
@@ -131,10 +134,9 @@ const LIMITS = {
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 439 * 1024, mobile: 532 * 1024 },
-    // Battle Simulator v2's responsive source breakdown and equipment controls
-    // load only shared tokens plus its standalone sheet, measuring 50.8 KiB on
-    // desktop and mobile before unlock. Keep less than 1.5 KiB of headroom.
-    'battle-simulator.html': { desktop: 52 * 1024, mobile: 52 * 1024 },
+    // The Battle saved-profile checklist lifts the audited standalone route to
+    // 54.9 KiB on desktop and mobile; retain roughly 1 KiB of headroom.
+    'battle-simulator.html': { desktop: 56 * 1024, mobile: 56 * 1024 },
     // Specialization Towers is route-isolated and loads only shared tokens plus
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
