@@ -76,6 +76,279 @@ function readAssignment(row) {
   };
 }
 
+const SIDE_IDS = Object.freeze(['A', 'B']);
+const ROW_IDS = Object.freeze(['front', 'middle', 'back']);
+
+function explicitDiagnostic(diagnostics, code, message, context = {}) {
+  diagnostics.push(diagnostic(code, message, { source: 'explicit-options', ...context }));
+}
+
+function normalizeExplicitSkillSelections(heroSkills, diagnostics) {
+  const selections = new Map();
+  if (heroSkills === undefined || heroSkills === null) return selections;
+
+  const add = (heroName, skillId, context) => {
+    const name = typeof heroName === 'string' ? heroName.trim() : '';
+    const canonicalSkill = name ? getBattleHeroSkill(name, skillId) : null;
+    if (!canonicalSkill) {
+      explicitDiagnostic(
+        diagnostics,
+        'unknown-explicit-hero-skill',
+        'An explicit hero skill did not match the canonical catalog.',
+        context
+      );
+      return;
+    }
+    const selected = selections.get(name) ?? new Set();
+    selected.add(String(canonicalSkill.skillId));
+    selections.set(name, selected);
+  };
+
+  if (Array.isArray(heroSkills)) {
+    heroSkills.forEach((item, index) => {
+      if (typeof item === 'string') {
+        const separator = item.lastIndexOf(':');
+        add(item.slice(0, separator), item.slice(separator + 1), { skillIndex: index });
+        return;
+      }
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        explicitDiagnostic(
+          diagnostics,
+          'invalid-explicit-hero-skill',
+          'Explicit hero skills must be canonical IDs or objects.',
+          { skillIndex: index }
+        );
+        return;
+      }
+      add(item.heroName ?? item.hero ?? item.name, item.skillId ?? item.id, {
+        skillIndex: index,
+      });
+    });
+    return selections;
+  }
+
+  if (typeof heroSkills === 'object') {
+    Object.entries(heroSkills)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .forEach(([heroName, heroSelection]) => {
+        const skillIds = Array.isArray(heroSelection)
+          ? heroSelection
+          : heroSelection &&
+              typeof heroSelection === 'object' &&
+              !Array.isArray(heroSelection) &&
+              Array.isArray(heroSelection.skills)
+            ? heroSelection.skills
+            : null;
+        if (!Array.isArray(skillIds)) {
+          explicitDiagnostic(
+            diagnostics,
+            'invalid-explicit-hero-skill',
+            'Explicit hero skill maps must contain skill arrays or objects with a skills array.',
+            { heroName }
+          );
+          return;
+        }
+        skillIds.forEach((skill, skillIndex) => {
+          let skillId =
+            skill && typeof skill === 'object' && !Array.isArray(skill)
+              ? (skill.skillId ?? skill.id)
+              : skill;
+          if (typeof skillId === 'string' && skillId.startsWith(`${heroName}:`)) {
+            skillId = skillId.slice(heroName.length + 1);
+          }
+          add(heroName, skillId, { heroName, skillIndex });
+        });
+      });
+    return selections;
+  }
+
+  explicitDiagnostic(
+    diagnostics,
+    'invalid-explicit-hero-skills',
+    'heroSkills must be an array or hero-name map.'
+  );
+  return selections;
+}
+
+function normalizeExplicitAssignments(heroAssignments, selections, diagnostics, selectionRequired) {
+  if (heroAssignments === undefined || heroAssignments === null) return [];
+  const records = [];
+  const add = (side, rowId, raw, assignmentIndex) => {
+    if (!SIDE_IDS.includes(side) || !ROW_IDS.includes(rowId)) {
+      explicitDiagnostic(
+        diagnostics,
+        'invalid-explicit-assignment-slot',
+        'Explicit hero assignments require side A/B and front/middle/back.',
+        { assignmentIndex, side, rowId }
+      );
+      return;
+    }
+    const value = typeof raw === 'string' ? { heroName: raw } : raw;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      explicitDiagnostic(
+        diagnostics,
+        'invalid-explicit-assignment',
+        'An explicit hero assignment must be a hero name or object.',
+        { assignmentIndex, side, rowId }
+      );
+      return;
+    }
+    const heroValue = value.heroName ?? value.hero ?? value.name;
+    const heroName = typeof heroValue === 'string' ? heroValue.trim() : '';
+    if (!heroName) {
+      explicitDiagnostic(
+        diagnostics,
+        'invalid-explicit-assignment',
+        'An explicit hero assignment requires a hero name.',
+        { assignmentIndex, side, rowId }
+      );
+      return;
+    }
+    const suppliedSkillIds = value.skillIds ?? value.heroSkillIds;
+    const selected = selections.get(heroName);
+    let skillIds;
+    if (suppliedSkillIds !== undefined) {
+      if (!Array.isArray(suppliedSkillIds)) {
+        explicitDiagnostic(
+          diagnostics,
+          'invalid-explicit-assignment-skills',
+          'Explicit assignment skill IDs must be an array.',
+          { assignmentIndex, side, rowId, heroName }
+        );
+        return;
+      }
+      skillIds = suppliedSkillIds.map(String);
+      if (selectionRequired) {
+        const mismatch = skillIds.find((skillId) => !selected?.has(skillId));
+        if (mismatch !== undefined) {
+          explicitDiagnostic(
+            diagnostics,
+            'explicit-skill-assignment-mismatch',
+            'An assigned skill was not selected for the assigned hero.',
+            { assignmentIndex, side, rowId, heroName, skillId: mismatch }
+          );
+          return;
+        }
+      }
+    } else {
+      skillIds = selected ? [...selected] : [];
+    }
+    if (skillIds.length === 0) {
+      explicitDiagnostic(
+        diagnostics,
+        'empty-explicit-assignment',
+        'An explicit hero assignment requires at least one canonical selected skill.',
+        { assignmentIndex, side, rowId, heroName }
+      );
+      return;
+    }
+    records.push({ side, rowId, heroName, skillIds });
+  };
+
+  if (Array.isArray(heroAssignments)) {
+    heroAssignments.forEach((assignment, index) => {
+      add(assignment?.side, assignment?.rowId ?? assignment?.row, assignment, index);
+    });
+    return records;
+  }
+  if (typeof heroAssignments === 'object') {
+    SIDE_IDS.forEach((side) => {
+      const assignments = heroAssignments[side] ?? heroAssignments[side.toLowerCase()];
+      if (assignments === undefined) return;
+      if (!assignments || typeof assignments !== 'object' || Array.isArray(assignments)) {
+        explicitDiagnostic(
+          diagnostics,
+          'invalid-explicit-assignment-side',
+          'Each explicit assignment side must be a row map.',
+          { side }
+        );
+        return;
+      }
+      Object.entries(assignments)
+        .sort(([left], [right]) => ROW_IDS.indexOf(left) - ROW_IDS.indexOf(right))
+        .forEach(([rowId, assignment], index) => add(side, rowId, assignment, index));
+    });
+    const validSideKeys = [...SIDE_IDS, ...SIDE_IDS.map((side) => side.toLowerCase())];
+    Object.keys(heroAssignments)
+      .filter((side) => !validSideKeys.includes(side))
+      .sort()
+      .forEach((side) =>
+        explicitDiagnostic(
+          diagnostics,
+          'invalid-explicit-assignment-slot',
+          'Explicit hero assignments require side A/B.',
+          { side }
+        )
+      );
+    return records;
+  }
+
+  explicitDiagnostic(
+    diagnostics,
+    'invalid-explicit-hero-assignments',
+    'heroAssignments must be an array or side/row map.'
+  );
+  return records;
+}
+
+function consolidateExplicitAssignments(assignments, diagnostics) {
+  const bySlot = new Map();
+  for (const assignment of assignments) {
+    const slot = `${assignment.side}:${assignment.rowId}`;
+    const records = bySlot.get(slot) ?? [];
+    records.push(assignment);
+    bySlot.set(slot, records);
+  }
+
+  const consolidated = [];
+  for (const slot of [...bySlot.keys()].sort()) {
+    const records = bySlot.get(slot);
+    const heroNames = [...new Set(records.map(({ heroName }) => heroName))].sort();
+    if (heroNames.length > 1) {
+      const { side, rowId } = records[0];
+      explicitDiagnostic(
+        diagnostics,
+        'conflicting-explicit-assignment',
+        'Conflicting explicit heroes targeted the same side and row; that explicit slot was ignored.',
+        { side, rowId, heroNames }
+      );
+      continue;
+    }
+    consolidated.push({
+      side: records[0].side,
+      rowId: records[0].rowId,
+      heroName: heroNames[0],
+      skillIds: [...new Set(records.flatMap(({ skillIds }) => skillIds.map(String)))].sort(),
+    });
+  }
+  return consolidated;
+}
+
+function mergeAssignmentIntoRow(row, assignment, diagnostics) {
+  const embedded = readAssignment(row);
+  if (embedded.heroName && embedded.heroName !== assignment.heroName) {
+    explicitDiagnostic(
+      diagnostics,
+      'embedded-explicit-hero-conflict',
+      'The explicit hero conflicts with the embedded row hero and was ignored.',
+      {
+        side: assignment.side,
+        rowId: assignment.rowId,
+        embeddedHeroName: embedded.heroName,
+        explicitHeroName: assignment.heroName,
+      }
+    );
+    return row;
+  }
+
+  const embeddedSkillIds = Array.isArray(embedded.skillIds) ? embedded.skillIds.map(String) : [];
+  return {
+    ...row,
+    heroName: assignment.heroName,
+    heroSkillIds: [...new Set([...embeddedSkillIds, ...assignment.skillIds.map(String)])].sort(),
+  };
+}
+
 function runtimeTarget(skill) {
   const { side, selection, count } = skill.target;
   const range = Math.min(2, Math.max(0, skill.normalizedRange));
@@ -303,9 +576,8 @@ function projectSkillEffects({ skill, source, row, phase, target, chance, diagno
   return definitions;
 }
 
-export function adaptHeroAssignmentsToEffects({ sideA, sideB } = {}) {
+function adaptRowsToEffects({ sideA, sideB }, diagnostics) {
   const definitions = [];
-  const diagnostics = [];
   for (const [sideId, side] of [
     ['A', sideA],
     ['B', sideB],
@@ -404,6 +676,49 @@ export function adaptHeroAssignmentsToEffects({ sideA, sideB } = {}) {
       }
     });
   }
+
+  return definitions;
+}
+
+export function adaptHeroAssignmentsToEffects({ sideA, sideB, heroSkills, heroAssignments } = {}) {
+  const diagnostics = [];
+  const selections = normalizeExplicitSkillSelections(heroSkills, diagnostics);
+  const explicitAssignments = consolidateExplicitAssignments(
+    normalizeExplicitAssignments(
+      heroAssignments,
+      selections,
+      diagnostics,
+      heroSkills !== undefined && heroSkills !== null
+    ),
+    diagnostics
+  );
+  const effectiveSides = { A: sideA, B: sideB };
+  for (const assignment of explicitAssignments) {
+    const side = effectiveSides[assignment.side];
+    const rowIndex = ROW_IDS.indexOf(assignment.rowId);
+    const row = Array.isArray(side?.rows) ? side.rows[rowIndex] : null;
+    if (!row) {
+      explicitDiagnostic(
+        diagnostics,
+        'explicit-assignment-row-missing',
+        'The explicit assignment references a missing configured row.',
+        assignment
+      );
+      continue;
+    }
+    const rows = side.rows.map((candidate, index) =>
+      index === rowIndex ? mergeAssignmentIntoRow(candidate, assignment, diagnostics) : candidate
+    );
+    effectiveSides[assignment.side] = {
+      ...side,
+      rows,
+    };
+  }
+
+  const definitions = adaptRowsToEffects(
+    { sideA: effectiveSides.A, sideB: effectiveSides.B },
+    diagnostics
+  );
 
   return Object.freeze({
     version: BATTLE_HERO_RUNTIME_VERSION,

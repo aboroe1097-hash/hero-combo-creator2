@@ -47,7 +47,7 @@ export default Object.freeze({
   'hero.description':
     '하나의 비공개 허브에서 현재 전투 스탯을 제출하고, 팀 배정과 개인 경기 작전을 확인하세요.',
   'hero.eyebrow': 'VTS 멤버 · ALL-STAR BOH',
-  'hero.title': '최강의 팀을 완성하세요',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': '팀 발표',
   'nav.announcementHint': '내 로스터 확인',
   'nav.ariaLabel': 'All-Star BoH 메뉴',

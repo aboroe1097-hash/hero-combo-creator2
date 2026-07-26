@@ -379,5 +379,35 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Todos los tipos de tropa',
   adminBohTroopInventory: 'Inventario de tropas por OCR',
   adminBohTroopRows: 'filas revisadas',
+  adminBohMapperSavedState:
+    'Guardado como borrador, sin publicar. Los nombres sin resolver siguen abajo para su conciliación.',
+  adminBohMapperPreviewState: 'Solo vista previa; no se ha guardado ni publicado.',
+  adminBohMapperContinueEditing:
+    'Continúa con los editores de equipos y planes y, cuando esté listo, publícalo expresamente.',
+  adminBohMapperSaveWarning:
+    'Al guardar se reemplazan los seis documentos de borrador de los equipos. La publicación sigue siendo una acción expresa independiente.',
+  adminBohMapperSaveDraft: 'Guardar importación como borrador',
+  adminBohMapperLinkedCount: '{matched} de {total} nombres vinculados',
+  adminBohMapperUnresolvedCount: '{count} sin resolver',
+  adminBohMapperAllLinked:
+    'Todos los nombres importados tienen coincidencias únicas, recientes y verificadas.',
+  adminBohMapperKicker: 'VISTA EXACTA DEL MAPA',
+  adminBohMapperTitle: 'Previsualizar importación de equipos del mapa',
+  adminBohMapperDescription:
+    'Elige una copia JSON de la vista exacta para conciliar sus 6 equipos y 72 nombres con inscripciones recientes y verificadas. La vista previa no guarda ni publica nada.',
+  adminBohMapperChooseFile: 'Elegir JSON del mapa',
+  adminBohMapperAmbiguous: '{name} coincide con varias inscripciones recientes y verificadas.',
+  adminBohMapperDuplicateMatch:
+    'Una inscripción reciente y verificada se reutilizaría para varios puestos importados.',
+  adminBohMapperUnmatched:
+    '{name} no tiene ninguna coincidencia exacta entre las inscripciones recientes y verificadas.',
+  adminBohMapperSeat: '{team} · Puesto {seat}',
+  adminBohMapperUnresolved: 'Sin resolver',
+  adminBohMapperSavedDraftOnly:
+    'La importación del mapa solo se guardó como borrador. No se ha publicado.',
+  adminBohMapperFileType: 'Elige un archivo .json del mapa de All-Star BoH.',
+  adminBohMapperFileTooLarge: 'La importación del mapa supera el límite de {bytes} bytes.',
+  adminBohMapperPreviewReady:
+    'La vista previa del mapa está lista. No se ha guardado ni publicado nada.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

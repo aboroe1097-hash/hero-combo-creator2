@@ -49,7 +49,7 @@ export default Object.freeze({
   'hero.description':
     'Teile deine aktuellen Kampfwerte, prüfe deine Teameinteilung und folge deinem persönlichen Matchplan – alles in einem privaten Bereich.',
   'hero.eyebrow': 'VTS-MITGLIEDER · ALL-STAR BOH',
-  'hero.title': 'Baue dein stärkstes Team',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Teambekanntgabe',
   'nav.announcementHint': 'Lerne deinen Kader kennen',
   'nav.ariaLabel': 'Bereiche von All-Star BoH',

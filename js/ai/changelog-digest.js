@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.12";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.13";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.13",
+    "date": "2026-07-26",
+    "highlights": [
+      "Made Battle Simulator hero skills and assignments explicitly canonical and added the verified Cavalry Movement in Unison specialization passive.",
+      "Renamed the team-planning surface to All-Star BoH Hub and added Admin exact-view mapper reconciliation into editable drafts with explicit publication.",
+      "Simplified accounts to one in-game name, restored private state/referral/comments onboarding, localized the full flow across all 13 locales, and recovered Google signup when a guest selects an existing Google account.",
+      "Made Dragon Master completion advance to the next unfinished targeted piece."
+    ]
+  },
   {
     "version": "14.2.12",
     "date": "2026-07-26",
@@ -95,18 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Expanded All-Star score and review tooling with richer score provenance, sortable audit data, roster-aware CSV export, clearer selection controls, and sequential batch confirmation and deletion.",
       "Let existing All-Star signups save manual corrections when replacement screenshot OCR fails, with actionable Russian retry and fallback guidance; first-time OCR verification remains required.",
       "Improved Specialization Towers on mobile and RTL layouts with scroll position cues, focus and modal-scroll preservation, touch accessibility, and explicit provenance that public totals are whole-research totals while per-node medal costs remain unknown."
-    ]
-  },
-  {
-    "version": "14.2.3",
-    "date": "2026-07-20",
-    "highlights": [
-      "Added five configurable All-Star scoring components for Unit Specialty Power, RoC level, paid usable heroes, Lofty troops per million, and Enhanced T10 troops per million, all defaulting to zero.",
-      "Derived paid usable hero counts from the canonical hero catalog and preserved all five component weights through scoring-version and admin-draft store round trips.",
-      "Kept legacy scoring totals unchanged until an admin explicitly creates and enables a new scoring version with nonzero weights.",
-      "Made Team Builder support configurable 2–6 12-player teams, an explicit eligible pool, and exact-team forces, with preview/apply balancing by active score or Total Castle Power and both totals visible.",
-      "Made reviewed player names and stats editable and applied those corrections throughout scoring, team building, publication, and export.",
-      "Added compound review filters, stable sorting, and formula-safe CSV export limited to the current visible row order."
     ]
   }
 ].map((release) =>

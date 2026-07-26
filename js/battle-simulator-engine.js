@@ -17,6 +17,7 @@ import {
   getEffectiveStat,
 } from './battle-simulator-effect-runtime.js';
 import { adaptHeroAssignmentsToEffects } from './battle-simulator-hero-runtime.js';
+import { adaptSpecializationEffectsToRuntime } from './battle-simulator-specialization.js';
 
 export const BATTLE_MODEL_VERSION = 'battle-stats-v2-beta-1';
 export const BATTLE_MAX_ROUNDS = 200;
@@ -509,6 +510,17 @@ function normalizeEffectDefinitions(value, label) {
   return [...value];
 }
 
+function dedupeExactEffectDefinitions(definitions) {
+  const seen = new Set();
+  return definitions.filter((definition) => {
+    const serialized = JSON.stringify(definition);
+    const key = `${String(definition?.id)}\u0000${serialized}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function simulateBattle(
   battleConfig = {},
   {
@@ -517,6 +529,8 @@ export function simulateBattle(
     includeEventLog = true,
     coefficients: rawCoefficients,
     effectDefinitions: optionEffectDefinitions,
+    heroSkills,
+    heroAssignments,
   } = {}
 ) {
   const { sideA, sideB } = battleConfig || {};
@@ -531,15 +545,22 @@ export function simulateBattle(
     A: normalizeSide(sideA, 'A'),
     B: normalizeSide(sideB, 'B'),
   };
-  const heroRuntime = adaptHeroAssignmentsToEffects({ sideA, sideB });
-  const effectDefinitions = [
+  const heroRuntime = adaptHeroAssignmentsToEffects({
+    sideA,
+    sideB,
+    heroSkills,
+    heroAssignments,
+  });
+  const specializationRuntime = adaptSpecializationEffectsToRuntime({ sideA, sideB });
+  const effectDefinitions = dedupeExactEffectDefinitions([
     ...heroRuntime.definitions,
+    ...specializationRuntime.definitions,
     ...normalizeEffectDefinitions(
       battleConfig?.effectDefinitions,
       'Battle config effectDefinitions'
     ),
     ...normalizeEffectDefinitions(optionEffectDefinitions, 'Effect definitions'),
-  ];
+  ]);
   const effectsActive = effectDefinitions.length > 0;
   const modelVersion = effectsActive
     ? `${baseModelVersion}+effects-${BATTLE_EFFECT_RUNTIME_VERSION}`
@@ -732,9 +753,13 @@ export function simulateBattle(
     roundLog,
     actionLog,
   };
-  if (effectsActive || heroRuntime.diagnostics.length > 0) {
+  const effectDiagnostics = [
+    ...heroRuntime.diagnostics,
+    ...specializationRuntime.diagnostics,
+  ];
+  if (effectsActive || effectDiagnostics.length > 0) {
     result.effectEvents = effectEvents;
-    result.effectDiagnostics = [...heroRuntime.diagnostics];
+    result.effectDiagnostics = effectDiagnostics;
   }
   if (effectsActive) result.effectRuntimeVersion = BATTLE_EFFECT_RUNTIME_VERSION;
   return result;
@@ -763,6 +788,8 @@ export function simulateBattleBatch(
     includeEventLogs = false,
     coefficients: rawCoefficients,
     effectDefinitions,
+    heroSkills,
+    heroAssignments,
   } = {}
 ) {
   const runCount = normalizeIterations(rawIterations);
@@ -790,6 +817,8 @@ export function simulateBattleBatch(
       includeEventLog: keepLogs,
       coefficients,
       effectDefinitions,
+      heroSkills,
+      heroAssignments,
     });
     modelVersion = result.modelVersion;
     if (Object.hasOwn(result, 'effectDiagnostics') && effectMetadata === null) {

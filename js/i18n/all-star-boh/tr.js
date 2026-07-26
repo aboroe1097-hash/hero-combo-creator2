@@ -49,7 +49,7 @@ export default Object.freeze({
   'hero.description':
     'Güncel savaş istatistiklerini paylaş, takım görevini öğren ve kişisel maç planını tek bir özel merkezden takip et.',
   'hero.eyebrow': 'VTS ÜYELERİ · ALL-STAR BOH',
-  'hero.title': 'En güçlü takımını kur',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Takım Duyurusu',
   'nav.announcementHint': 'Kadronla tanış',
   'nav.ariaLabel': 'All-Star BoH bölümleri',

@@ -4,6 +4,10 @@ import {
   STAT_CONTRIBUTION_SCHEMA_VERSION,
   buildStatContributionSnapshot,
 } from './specialization-towers-v2-contributions.js';
+import {
+  SPECIALIZATION_DATA_REVISION,
+  SPECIALIZATION_RESEARCH,
+} from './specialization-towers-v2-data.js';
 import { normalizeStatSource } from './battle-simulator-stat-sources.js';
 
 export const SPECIALIZATION_BATTLE_ADAPTER_REVISION = 1;
@@ -205,6 +209,7 @@ function effect(snapshot, record, exclusionReason) {
     appliesWhen,
     active: exclusionReason === null,
     exclusionReason,
+    parameters: canonical(entry.parameters ?? null),
     verification: verification(),
     provenance: provenance(snapshot, entry),
   };
@@ -453,4 +458,159 @@ export function resolveSpecializationBattleSources(state, context = {}) {
     return emptyResult(null, [diagnostic('invalid-state', error.message)]);
   }
   return adaptSpecializationBattleSources(snapshot, context);
+}
+
+function canonicalCombatSpeedIdentity(entry) {
+  const source = entry?.provenance?.specializationSource;
+  const research = SPECIALIZATION_RESEARCH[source?.researchId];
+  const passive = research?.passiveSkill?.cavalry;
+  if (
+    !research ||
+    research.passiveSkillNodeId === null ||
+    passive?.name !== 'Movement in Unison' ||
+    passive?.effect !== 'When all are Cavalry, Combat Speed +10' ||
+    passive?.isAttribute !== true ||
+    passive?.context !== 'general' ||
+    passive?.bonusName !== 'Combat Speed (All Cavalry)' ||
+    passive?.bonusValue !== 10 ||
+    passive?.isFlat !== true
+  ) {
+    return null;
+  }
+
+  const nodeId = research.passiveSkillNodeId;
+  const contributionId =
+    `${SPECIALIZATION_DATA_REVISION}/cavalry/${research.id}/passive/` +
+    `${nodeId}/troop-specific/effect`;
+  const effectKey = [
+    STAT_CONTRIBUTION_PRODUCER,
+    'cavalry',
+    research.id,
+    'passive',
+    nodeId,
+    'troop-specific',
+  ].join('.');
+  const expectedProvenance = {
+    adapterRevision: SPECIALIZATION_BATTLE_ADAPTER_REVISION,
+    contributionId,
+    dataRevision: SPECIALIZATION_DATA_REVISION,
+    specializationSource: {
+      columnId: research.column,
+      kind: 'passive',
+      nodeId,
+      researchId: research.id,
+      troopId: 'cavalry',
+      type: 'specialization-tower',
+    },
+  };
+  if (
+    entry?.id !== contributionId ||
+    entry?.effectKey !== effectKey ||
+    JSON.stringify(canonical(entry?.provenance)) !==
+      JSON.stringify(canonical(expectedProvenance))
+  ) {
+    return null;
+  }
+  return { contributionId };
+}
+
+export function adaptSpecializationEffectsToRuntime({ sideA, sideB } = {}) {
+  const definitions = [];
+  const diagnostics = [];
+
+  for (const [sideId, side] of [
+    ['A', sideA],
+    ['B', sideB],
+  ]) {
+    const rows = Array.isArray(side?.rows) ? side.rows : [];
+    const effects = Array.isArray(side?.effects) ? side.effects : [];
+    const allCavalry =
+      rows.length === 3 &&
+      rows.every((row) => plainObject(row) && normalizeTroopId(row.type) === 'cavalry');
+    const activeCombatSpeedIds = new Set();
+
+    effects.forEach((entry, effectIndex) => {
+      const contributionId =
+        typeof entry?.id === 'string' && entry.id.trim()
+          ? entry.id.trim()
+          : `unknown-${effectIndex + 1}`;
+      const context = {
+        side: sideId,
+        contributionId,
+        provenance: canonical(entry?.provenance ?? null),
+      };
+      const source = entry?.provenance?.specializationSource;
+      const parameters = entry?.parameters;
+      const canonicalIdentity = canonicalCombatSpeedIdentity(entry);
+      const verifiedPassive =
+        entry?.active === true &&
+        entry?.exclusionReason === null &&
+        entry?.verification?.basis === STAT_CONTRIBUTION_PRODUCER &&
+        entry?.verification?.status === 'modeled' &&
+        canonicalIdentity !== null;
+      const exactCombatSpeed =
+        plainObject(parameters) &&
+        entry?.description === 'When all are Cavalry, Combat Speed +10' &&
+        parameters.bonusName === 'Combat Speed (All Cavalry)' &&
+        parameters.bonusValue === 10 &&
+        parameters.conditional === true &&
+        parameters.isFlat === true &&
+        entry?.troopType === 'cavalry' &&
+        entry?.rowId === null &&
+        source?.type === 'specialization-tower';
+
+      if (!verifiedPassive || !exactCombatSpeed) {
+        diagnostics.push(
+          diagnostic(
+            entry?.active === false
+              ? 'inactive-specialization-effect'
+              : 'unsupported-specialization-effect',
+            'The specialization effect is inactive or lacks the exact verified battle semantics.',
+            context
+          )
+        );
+        return;
+      }
+      if (!allCavalry) {
+        diagnostics.push(
+          diagnostic(
+            'specialization-formation-mismatch',
+            'Combat Speed (All Cavalry) requires all three configured rows to be Cavalry.',
+            context
+          )
+        );
+        return;
+      }
+      activeCombatSpeedIds.add(canonicalIdentity.contributionId);
+    });
+
+    if (activeCombatSpeedIds.size > 0) {
+      [...activeCombatSpeedIds].sort(compareText).forEach((contributionId) => {
+        rows.forEach((row, rowIndex) => {
+          const rowId = ['front', 'middle', 'back'][rowIndex];
+          definitions.push({
+            id: `specialization:${sideId}:${contributionId}:${rowId}`,
+            version: '1.0.0',
+            phase: 'round-start',
+            source: `${sideId}:${rowId}`,
+            target: { type: 'self', count: 1, range: 0 },
+            type: 'stat-modifier',
+            chance: 1,
+            conditions: [],
+            stat: 'combatSpeed',
+            amount: 10,
+            duration: 1,
+            stacks: 1,
+            maxStacks: activeCombatSpeedIds.size,
+          });
+        });
+      });
+    }
+  }
+
+  definitions.sort((left, right) => compareText(left.id, right.id));
+  diagnostics.sort((left, right) =>
+    JSON.stringify(canonical(left)).localeCompare(JSON.stringify(canonical(right)))
+  );
+  return deepFreeze({ definitions, diagnostics });
 }

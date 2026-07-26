@@ -49,7 +49,7 @@ export default Object.freeze({
   'hero.description':
     'Comparte tus estadísticas de combate actuales, consulta tu equipo y sigue tu plan personal de batalla desde un único centro privado.',
   'hero.eyebrow': 'MIEMBROS DE VTS · ALL-STAR BOH',
-  'hero.title': 'Construye tu equipo más fuerte',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Anuncio de equipos',
   'nav.announcementHint': 'Conoce tu plantilla',
   'nav.ariaLabel': 'Secciones de All-Star BoH',

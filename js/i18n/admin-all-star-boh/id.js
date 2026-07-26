@@ -378,5 +378,34 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Semua jenis pasukan',
   adminBohTroopInventory: 'Inventaris pasukan OCR',
   adminBohTroopRows: 'baris ditinjau',
+  adminBohMapperSavedState:
+    'Disimpan ke draf—belum diterbitkan. Nama yang belum terselesaikan tetap tercantum di bawah untuk dicocokkan.',
+  adminBohMapperPreviewState: 'Hanya pratinjau—belum disimpan atau diterbitkan.',
+  adminBohMapperContinueEditing:
+    'Lanjutkan dengan editor tim dan rencana, lalu terbitkan secara eksplisit saat sudah siap.',
+  adminBohMapperSaveWarning:
+    'Penyimpanan akan mengganti enam dokumen draf tim. Penerbitan tetap merupakan tindakan eksplisit yang terpisah.',
+  adminBohMapperSaveDraft: 'Simpan impor ke draf',
+  adminBohMapperLinkedCount: '{matched} dari {total} nama ditautkan',
+  adminBohMapperUnresolvedCount: '{count} belum terselesaikan',
+  adminBohMapperAllLinked:
+    'Semua nama yang diimpor memiliki kecocokan terverifikasi terbaru yang unik.',
+  adminBohMapperKicker: 'TAMPILAN PERSIS PEMETA',
+  adminBohMapperTitle: 'Pratinjau impor tim pemeta',
+  adminBohMapperDescription:
+    'Pilih cadangan JSON tampilan persis untuk mencocokkan 6 tim dan 72 namanya dengan pendaftaran terverifikasi terbaru. Pratinjau tidak menyimpan atau menerbitkan apa pun.',
+  adminBohMapperChooseFile: 'Pilih JSON pemeta',
+  adminBohMapperAmbiguous: '{name} cocok dengan beberapa pendaftaran terverifikasi terbaru.',
+  adminBohMapperDuplicateMatch:
+    'Satu pendaftaran terverifikasi terbaru akan digunakan kembali untuk beberapa kursi yang diimpor.',
+  adminBohMapperUnmatched:
+    '{name} tidak memiliki kecocokan persis dengan pendaftaran terverifikasi terbaru.',
+  adminBohMapperSeat: '{team} · Kursi {seat}',
+  adminBohMapperUnresolved: 'Belum terselesaikan',
+  adminBohMapperSavedDraftOnly:
+    'Impor pemeta hanya disimpan ke draf. Impor tersebut belum diterbitkan.',
+  adminBohMapperFileType: 'Pilih file .json pemeta All-Star BoH.',
+  adminBohMapperFileTooLarge: 'Impor pemeta melampaui batas {bytes} byte.',
+  adminBohMapperPreviewReady: 'Pratinjau pemeta siap. Tidak ada yang disimpan atau diterbitkan.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

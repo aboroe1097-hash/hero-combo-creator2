@@ -377,5 +377,35 @@ export default Object.freeze({
   adminBohTroopInventory: 'Inventario truppe da OCR',
   adminBohTroopRows: 'righe revisionate',
   adminBohHeroGroupAll: 'Tutti i tipi di truppe',
+  adminBohMapperSavedState:
+    'Salvato come bozza, non pubblicato. I nomi non risolti restano qui sotto per la riconciliazione.',
+  adminBohMapperPreviewState: 'Solo anteprima: non salvata né pubblicata.',
+  adminBohMapperContinueEditing:
+    'Continua con gli editor delle squadre e dei piani, quindi pubblica esplicitamente quando è tutto pronto.',
+  adminBohMapperSaveWarning:
+    'Il salvataggio sostituisce i sei documenti bozza delle squadre. La pubblicazione resta un’azione esplicita separata.',
+  adminBohMapperSaveDraft: 'Salva importazione come bozza',
+  adminBohMapperLinkedCount: '{matched} nomi collegati su {total}',
+  adminBohMapperUnresolvedCount: '{count} non risolti',
+  adminBohMapperAllLinked:
+    'Tutti i nomi importati hanno corrispondenze univoche, recenti e verificate.',
+  adminBohMapperKicker: 'VISTA ESATTA DEL MAPPER',
+  adminBohMapperTitle: 'Anteprima dell’importazione squadre dal mapper',
+  adminBohMapperDescription:
+    'Scegli un backup JSON della vista esatta per riconciliare le sue 6 squadre e i 72 nomi con le iscrizioni recenti e verificate. L’anteprima non salva né pubblica nulla.',
+  adminBohMapperChooseFile: 'Scegli JSON del mapper',
+  adminBohMapperAmbiguous: '{name} corrisponde a più iscrizioni recenti e verificate.',
+  adminBohMapperDuplicateMatch:
+    'Una singola iscrizione recente e verificata verrebbe riutilizzata per più posti importati.',
+  adminBohMapperUnmatched:
+    '{name} non ha una corrispondenza esatta tra le iscrizioni recenti e verificate.',
+  adminBohMapperSeat: '{team} · Posto {seat}',
+  adminBohMapperUnresolved: 'Non risolto',
+  adminBohMapperSavedDraftOnly:
+    'L’importazione dal mapper è stata salvata solo come bozza. Non è stata pubblicata.',
+  adminBohMapperFileType: 'Scegli un file .json del mapper All-Star BoH.',
+  adminBohMapperFileTooLarge: 'L’importazione dal mapper supera il limite di {bytes} byte.',
+  adminBohMapperPreviewReady:
+    'L’anteprima del mapper è pronta. Non è stato salvato o pubblicato nulla.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

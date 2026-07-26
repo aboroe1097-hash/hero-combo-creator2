@@ -1923,6 +1923,11 @@ test.describe('app smoke tabs', () => {
 
     await page.locator('.dm-recipe-panel [data-dm-toggle-complete]').click();
     await expect(page.locator('.dm-summary-panel')).toContainText('1 / 30');
+    await expect(page.locator(`[data-dm-focus-set='1']`)).toHaveAttribute('aria-pressed', 'true');
+    const selectedDagger = page.locator(`.dm-slot-card[data-dm-slot='dagger']`);
+    await expect(selectedDagger).toHaveClass(/is-active/);
+    await expect(selectedDagger).toHaveAttribute('aria-pressed', 'true');
+    await expect(selectedDagger).toBeFocused();
     await expect(page.locator('.dm-slot-card[data-dm-slot="armor"]')).toHaveClass(/is-complete/);
 
     await page.locator('.dm-resource-panel [data-dm-toggle-breakdown]').first().click();

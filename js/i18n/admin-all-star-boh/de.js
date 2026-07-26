@@ -379,5 +379,35 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Alle Truppentypen',
   adminBohTroopInventory: 'OCR-Truppenbestand',
   adminBohTroopRows: 'geprüfte Zeilen',
+  adminBohMapperSavedState:
+    'Als Entwurf gespeichert – nicht veröffentlicht. Nicht zugeordnete Namen bleiben unten zur Abstimmung.',
+  adminBohMapperPreviewState: 'Nur Vorschau – nicht gespeichert oder veröffentlicht.',
+  adminBohMapperContinueEditing:
+    'Fahre mit den Team- und Planeditoren fort und veröffentliche anschließend ausdrücklich, wenn alles bereit ist.',
+  adminBohMapperSaveWarning:
+    'Beim Speichern werden die sechs Team-Entwurfsdokumente ersetzt. Die Veröffentlichung bleibt eine separate ausdrückliche Aktion.',
+  adminBohMapperSaveDraft: 'Import als Entwurf speichern',
+  adminBohMapperLinkedCount: '{matched} von {total} Namen verknüpft',
+  adminBohMapperUnresolvedCount: '{count} nicht zugeordnet',
+  adminBohMapperAllLinked:
+    'Alle importierten Namen haben eindeutige, aktuelle und bestätigte Übereinstimmungen.',
+  adminBohMapperKicker: 'EXAKTANSICHT DES MAPPERS',
+  adminBohMapperTitle: 'Mapper-Teamimport in der Vorschau anzeigen',
+  adminBohMapperDescription:
+    'Wähle eine JSON-Sicherung der Exaktansicht, um ihre 6 Teams und 72 Namen mit aktuellen bestätigten Anmeldungen abzugleichen. Die Vorschau speichert oder veröffentlicht nichts.',
+  adminBohMapperChooseFile: 'Mapper-JSON auswählen',
+  adminBohMapperAmbiguous: '{name} stimmt mit mehreren aktuellen bestätigten Anmeldungen überein.',
+  adminBohMapperDuplicateMatch:
+    'Eine aktuelle bestätigte Anmeldung würde für mehrere importierte Plätze wiederverwendet.',
+  adminBohMapperUnmatched:
+    'Für {name} gibt es keine exakte Übereinstimmung mit einer aktuellen bestätigten Anmeldung.',
+  adminBohMapperSeat: '{team} · Platz {seat}',
+  adminBohMapperUnresolved: 'Nicht zugeordnet',
+  adminBohMapperSavedDraftOnly:
+    'Der Mapper-Import wurde nur als Entwurf gespeichert. Er wurde nicht veröffentlicht.',
+  adminBohMapperFileType: 'Wähle eine .json-Mapperdatei für All-Star BoH.',
+  adminBohMapperFileTooLarge: 'Der Mapper-Import überschreitet das Limit von {bytes} Byte.',
+  adminBohMapperPreviewReady:
+    'Die Mapper-Vorschau ist bereit. Nichts wurde gespeichert oder veröffentlicht.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

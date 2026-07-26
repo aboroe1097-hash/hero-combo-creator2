@@ -379,5 +379,34 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Tous les types de troupes',
   adminBohTroopInventory: 'Inventaire des troupes OCR',
   adminBohTroopRows: 'lignes vérifiées',
+  adminBohMapperSavedState:
+    'Enregistré comme brouillon, sans publication. Les noms non résolus restent ci-dessous pour rapprochement.',
+  adminBohMapperPreviewState: 'Aperçu uniquement : ni enregistré ni publié.',
+  adminBohMapperContinueEditing:
+    'Poursuivez avec les éditeurs d’équipes et de plans, puis publiez explicitement lorsque tout est prêt.',
+  adminBohMapperSaveWarning:
+    'L’enregistrement remplace les six documents de brouillon des équipes. La publication reste une action explicite distincte.',
+  adminBohMapperSaveDraft: 'Enregistrer l’importation comme brouillon',
+  adminBohMapperLinkedCount: '{matched} noms liés sur {total}',
+  adminBohMapperUnresolvedCount: '{count} non résolus',
+  adminBohMapperAllLinked:
+    'Tous les noms importés correspondent de manière unique à des inscriptions récentes et vérifiées.',
+  adminBohMapperKicker: 'VUE EXACTE DU MAPPER',
+  adminBohMapperTitle: 'Prévisualiser l’importation des équipes du mapper',
+  adminBohMapperDescription:
+    'Choisissez une sauvegarde JSON de la vue exacte afin de rapprocher ses 6 équipes et 72 noms des inscriptions récentes et vérifiées. La prévisualisation n’enregistre et ne publie rien.',
+  adminBohMapperChooseFile: 'Choisir le JSON du mapper',
+  adminBohMapperAmbiguous: '{name} correspond à plusieurs inscriptions récentes et vérifiées.',
+  adminBohMapperDuplicateMatch:
+    'Une même inscription récente et vérifiée serait réutilisée pour plusieurs places importées.',
+  adminBohMapperUnmatched:
+    '{name} ne correspond exactement à aucune inscription récente et vérifiée.',
+  adminBohMapperSeat: '{team} · Place {seat}',
+  adminBohMapperUnresolved: 'Non résolu',
+  adminBohMapperSavedDraftOnly:
+    'L’importation du mapper a été enregistrée uniquement comme brouillon. Elle n’a pas été publiée.',
+  adminBohMapperFileType: 'Choisissez un fichier .json de mapper All-Star BoH.',
+  adminBohMapperFileTooLarge: 'L’importation du mapper dépasse la limite de {bytes} octets.',
+  adminBohMapperPreviewReady: 'L’aperçu du mapper est prêt. Rien n’a été enregistré ni publié.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

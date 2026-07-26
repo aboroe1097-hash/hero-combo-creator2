@@ -44,7 +44,7 @@ export default Object.freeze({
   'common.teamName': '战队名称',
   'hero.description': '在一个内部专区中提交当前战斗数据、查看战队安排，并按个人比赛方案行动。',
   'hero.eyebrow': 'VTS 成员 · ALL-STAR BOH',
-  'hero.title': '打造你的最强战队',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': '战队公布',
   'nav.announcementHint': '查看你的阵容',
   'nav.ariaLabel': 'All-Star BoH 分区',
