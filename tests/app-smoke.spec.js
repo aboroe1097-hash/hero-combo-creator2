@@ -4109,6 +4109,7 @@ test.describe('app smoke tabs', () => {
       '中文',
       'العربية',
       '한국어',
+      'Italiano',
     ]);
     await page.locator('#languageSelect').selectOption('es');
     await expect(page.locator('.eden-x1-notice strong')).toHaveText('Vista demo - no final.');
