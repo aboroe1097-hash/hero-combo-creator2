@@ -6,7 +6,11 @@ import {
   waitForAuthReady,
 } from './firebase.js';
 import { importFirebaseAuth, importFirestore } from './firebase-sdk.js';
-import { ACCOUNT_PROFILE_LIMITS, normalizeAccountProfile } from './account-profile-model.js';
+import {
+  confirmExistingGoogleAccountSwitch,
+  normalizeAccountProfile,
+  planExistingGoogleAccountRecovery,
+} from './account-profile-model.js';
 
 export { normalizeAccountProfile } from './account-profile-model.js';
 
@@ -35,19 +39,56 @@ function requireLinkedUser() {
   return user;
 }
 
-async function saveInitialPrivateProfile(user, requestedName = '') {
-  const displayName = cleanText(requestedName || user.displayName || 'VTS Player').slice(
-    0,
-    ACCOUNT_PROFILE_LIMITS.displayName
-  );
-  return saveAccountProfile({
-    displayName: displayName || 'VTS Player',
-    gameName: '',
+function normalizeInitialProfile(onboarding) {
+  return normalizeAccountProfile({
+    ...onboarding,
     alliance: '',
     countryCode: '',
     bio: '',
     isPublic: false,
   });
+}
+
+async function saveInitialPrivateProfile(profile) {
+  return saveAccountProfile(profile);
+}
+
+async function fillMissingExistingAccountProfile(user, onboarding) {
+  const { doc, getDoc, serverTimestamp, writeBatch } = await importFirestore();
+  const privateRef = doc(getDb(), 'users', user.uid);
+  const publicRef = doc(getDb(), 'public_profiles', user.uid);
+  const [privateSnapshot, publicSnapshot] = await Promise.all([
+    getDoc(privateRef),
+    getDoc(publicRef),
+  ]);
+  const privateProfile = privateSnapshot.data()?.accountProfile || null;
+  const publicProfile = publicSnapshot.exists() ? publicSnapshot.data() : null;
+  const recovery = planExistingGoogleAccountRecovery(privateProfile, publicProfile, onboarding);
+  if (recovery.kind === 'none') return recovery;
+
+  const updatedAt = serverTimestamp();
+  const batch = writeBatch(getDb());
+  if (recovery.kind === 'update') {
+    const updates = { 'accountProfile.updatedAt': updatedAt };
+    for (const [field, value] of Object.entries(recovery.patch)) {
+      updates[`accountProfile.${field}`] = value;
+    }
+    batch.update(privateRef, updates);
+  } else {
+    batch.set(
+      privateRef,
+      {
+        accountProfile: {
+          ...recovery.profile,
+          createdAt: updatedAt,
+          updatedAt,
+        },
+      },
+      { merge: true }
+    );
+  }
+  await batch.commit();
+  return recovery;
 }
 
 export async function getAccountState() {
@@ -62,18 +103,18 @@ export async function getAccountState() {
   };
 }
 
-export async function upgradeGuestWithEmail(email, password, displayName) {
+export async function upgradeGuestWithEmail(email, password, onboarding) {
+  const initialProfile = normalizeInitialProfile(onboarding);
   await requireFirebase();
   const guest = getCurrentUser() || (await ensureAnonymousAuth());
   if (!guest?.isAnonymous) throw new Error('The current session is already linked to an account.');
 
   const { EmailAuthProvider, linkWithCredential, sendEmailVerification, updateProfile } =
     await importFirebaseAuth();
-  const normalizedName = normalizeAccountProfile({ displayName }).displayName;
   const credential = EmailAuthProvider.credential(cleanText(email), String(password || ''));
   const result = await linkWithCredential(guest, credential);
-  await updateProfile(result.user, { displayName: normalizedName });
-  await saveInitialPrivateProfile(result.user, normalizedName);
+  await updateProfile(result.user, { displayName: initialProfile.gameName });
+  await saveInitialPrivateProfile(initialProfile);
 
   let verificationSent = false;
   try {
@@ -91,15 +132,38 @@ export async function signInExistingEmail(email, password) {
   return signInWithEmailAndPassword(auth, cleanText(email), String(password || ''));
 }
 
-export async function upgradeGuestWithGoogle() {
-  await requireFirebase();
+export async function upgradeGuestWithGoogle(onboarding, { confirmExistingAccount } = {}) {
+  const initialProfile = normalizeInitialProfile(onboarding);
+  const { auth } = await requireFirebase();
   const guest = getCurrentUser() || (await ensureAnonymousAuth());
   if (!guest?.isAnonymous) throw new Error('The current session is already linked to an account.');
 
-  const { GoogleAuthProvider, linkWithPopup } = await importFirebaseAuth();
-  const result = await linkWithPopup(guest, new GoogleAuthProvider());
-  await saveInitialPrivateProfile(result.user);
-  return result;
+  const { GoogleAuthProvider, linkWithPopup, signInWithCredential, updateProfile } =
+    await importFirebaseAuth();
+  const provider = new GoogleAuthProvider();
+  let result;
+  try {
+    result = await linkWithPopup(guest, provider);
+  } catch (error) {
+    if (error?.code !== 'auth/credential-already-in-use') throw error;
+    const credential = GoogleAuthProvider.credentialFromError?.(error) || error?.credential || null;
+    if (!credential) {
+      const credentialError = new Error('Google credential unavailable.');
+      credentialError.code = 'account/google-credential-unavailable';
+      throw credentialError;
+    }
+
+    const confirmed = await confirmExistingGoogleAccountSwitch(confirmExistingAccount);
+    if (!confirmed) return { user: guest, canceled: true, signedInExisting: false };
+
+    result = await signInWithCredential(auth, credential);
+    await fillMissingExistingAccountProfile(result.user, initialProfile);
+    return { user: result.user, signedInExisting: true };
+  }
+
+  await updateProfile(result.user, { displayName: initialProfile.gameName });
+  await saveInitialPrivateProfile(initialProfile);
+  return { user: result.user, signedInExisting: false };
 }
 
 export async function signInExistingGoogle() {
@@ -135,7 +199,16 @@ export async function loadAccountProfile() {
   const { doc, getDoc } = await importFirestore();
   const snapshot = await getDoc(doc(getDb(), 'users', user.uid));
   if (!snapshot.exists() || !snapshot.data().accountProfile) return null;
-  return snapshot.data().accountProfile;
+  const stored = snapshot.data().accountProfile;
+  const gameName = cleanText(stored.gameName || stored.displayName || user.displayName);
+  return {
+    ...stored,
+    displayName: gameName,
+    gameName,
+    state: cleanText(stored.state),
+    referralSource: cleanText(stored.referralSource),
+    comments: cleanText(stored.comments),
+  };
 }
 
 export async function saveAccountProfile(input) {
@@ -164,32 +237,21 @@ export async function saveAccountProfile(input) {
   );
 
   if (profile.isPublic) {
-    const { isPublic: _isPublic, ...publicProfile } = profile;
-    batch.set(publicRef, { ...publicProfile, updatedAt });
+    batch.set(publicRef, {
+      displayName: profile.displayName,
+      gameName: profile.gameName,
+      alliance: profile.alliance,
+      countryCode: profile.countryCode,
+      bio: profile.bio,
+      updatedAt,
+    });
   } else {
     batch.delete(publicRef);
   }
   await batch.commit();
 
-  if (user.displayName !== profile.displayName) {
-    await updateProfile(user, { displayName: profile.displayName });
+  if (user.displayName !== profile.gameName) {
+    await updateProfile(user, { displayName: profile.gameName });
   }
   return profile;
-}
-
-export function accountErrorMessage(error) {
-  const code = String(error?.code || '');
-  const messages = {
-    'auth/email-already-in-use': 'That email is already registered. Use the Sign in tab.',
-    'auth/credential-already-in-use':
-      'That Google account already exists. Use the Sign in tab to open it.',
-    'auth/invalid-credential': 'The email or password is incorrect.',
-    'auth/invalid-email': 'Enter a valid email address.',
-    'auth/popup-blocked': 'The browser blocked the Google sign-in window.',
-    'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
-    'auth/requires-recent-login': 'Please sign in again before continuing.',
-    'auth/too-many-requests': 'Too many attempts. Please wait and try again.',
-    'auth/weak-password': 'Use a stronger password with at least eight characters.',
-  };
-  return messages[code] || error?.message || 'Something went wrong. Please try again.';
 }

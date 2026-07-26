@@ -376,5 +376,31 @@ export default Object.freeze({
   adminBohHeroGroupAll: '모든 병종',
   adminBohTroopInventory: 'OCR 병력 목록',
   adminBohTroopRows: '검토된 행',
+  adminBohMapperSavedState:
+    '초안에 저장되었으며 게시되지 않았습니다. 확인되지 않은 이름은 대조를 위해 아래에 남아 있습니다.',
+  adminBohMapperPreviewState: '미리보기 전용이며 저장되거나 게시되지 않았습니다.',
+  adminBohMapperContinueEditing:
+    '팀 및 계획 편집기에서 계속 작업한 뒤, 준비가 완료되면 명시적으로 게시하세요.',
+  adminBohMapperSaveWarning:
+    '저장하면 6개 팀 초안 문서가 교체됩니다. 게시는 별도의 명시적 작업으로 유지됩니다.',
+  adminBohMapperSaveDraft: '가져오기를 초안에 저장',
+  adminBohMapperLinkedCount: '이름 {total}개 중 {matched}개 연결됨',
+  adminBohMapperUnresolvedCount: '{count}개 미확인',
+  adminBohMapperAllLinked: '가져온 모든 이름에 고유한 최신 검증 제출 항목이 일치합니다.',
+  adminBohMapperKicker: '매퍼 정확 보기',
+  adminBohMapperTitle: '매퍼 팀 가져오기 미리보기',
+  adminBohMapperDescription:
+    '정확 보기 JSON 백업을 선택하여 6개 팀과 72개 이름을 최신 검증 제출 항목과 대조하세요. 미리보기는 아무것도 저장하거나 게시하지 않습니다.',
+  adminBohMapperChooseFile: '매퍼 JSON 선택',
+  adminBohMapperAmbiguous: '{name}이(가) 여러 최신 검증 제출 항목과 일치합니다.',
+  adminBohMapperDuplicateMatch: '하나의 최신 검증 제출 항목이 가져온 여러 좌석에 중복 사용됩니다.',
+  adminBohMapperUnmatched: '{name}과(와) 정확히 일치하는 최신 검증 제출 항목이 없습니다.',
+  adminBohMapperSeat: '{team} · 좌석 {seat}',
+  adminBohMapperUnresolved: '미확인',
+  adminBohMapperSavedDraftOnly: '매퍼 가져오기가 초안에만 저장되었습니다. 게시되지 않았습니다.',
+  adminBohMapperFileType: 'All-Star BoH 매퍼 .json 파일을 선택하세요.',
+  adminBohMapperFileTooLarge: '매퍼 가져오기가 {bytes}바이트 제한을 초과합니다.',
+  adminBohMapperPreviewReady:
+    '매퍼 미리보기가 준비되었습니다. 아무것도 저장되거나 게시되지 않았습니다.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

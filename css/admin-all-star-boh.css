@@ -2925,3 +2925,25 @@
     outline: 2px solid Highlight;
   }
 }
+.boh-admin-mapper-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.boh-admin-mapper-summary span {
+  color: var(--boh-admin-muted, #aab4c8);
+}
+
+.boh-admin-mapper-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.boh-admin-mapper-actions p {
+  margin: 0;
+}

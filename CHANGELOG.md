@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.2.13 - 2026-07-26
+
+- Made Battle Simulator hero skills and assignments explicitly canonical and added the verified Cavalry Movement in Unison specialization passive.
+- Renamed the team-planning surface to All-Star BoH Hub and added Admin exact-view mapper reconciliation into editable drafts with explicit publication.
+- Simplified accounts to one in-game name, restored private state/referral/comments onboarding, localized the full flow across all 13 locales, and recovered Google signup when a guest selects an existing Google account.
+- Made Dragon Master completion advance to the next unfinished targeted piece.
+
 ## 14.2.12 - 2026-07-26
 
 - Added Velo Beta 0.3 saved-data consent and optional Firebase-backed user profiles.

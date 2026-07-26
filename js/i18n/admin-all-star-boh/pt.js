@@ -378,5 +378,34 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Todos os tipos de tropa',
   adminBohTroopInventory: 'Inventário de tropas por OCR',
   adminBohTroopRows: 'linhas revisadas',
+  adminBohMapperSavedState:
+    'Salvo como rascunho, sem publicação. Os nomes não resolvidos permanecem abaixo para conciliação.',
+  adminBohMapperPreviewState: 'Somente prévia; não foi salva nem publicada.',
+  adminBohMapperContinueEditing:
+    'Continue nos editores de equipes e planos e, quando tudo estiver pronto, publique explicitamente.',
+  adminBohMapperSaveWarning:
+    'Salvar substitui os seis documentos de rascunho das equipes. A publicação continua sendo uma ação explícita separada.',
+  adminBohMapperSaveDraft: 'Salvar importação como rascunho',
+  adminBohMapperLinkedCount: '{matched} de {total} nomes vinculados',
+  adminBohMapperUnresolvedCount: '{count} não resolvidos',
+  adminBohMapperAllLinked:
+    'Todos os nomes importados têm correspondências únicas, recentes e verificadas.',
+  adminBohMapperKicker: 'VISUALIZAÇÃO EXATA DO MAPEADOR',
+  adminBohMapperTitle: 'Visualizar importação de equipes do mapeador',
+  adminBohMapperDescription:
+    'Escolha um backup JSON da visualização exata para conciliar suas 6 equipes e 72 nomes com inscrições recentes e verificadas. A prévia não salva nem publica nada.',
+  adminBohMapperChooseFile: 'Escolher JSON do mapeador',
+  adminBohMapperAmbiguous: '{name} corresponde a várias inscrições recentes e verificadas.',
+  adminBohMapperDuplicateMatch:
+    'Uma mesma inscrição recente e verificada seria reutilizada em vários lugares importados.',
+  adminBohMapperUnmatched:
+    '{name} não tem correspondência exata entre as inscrições recentes e verificadas.',
+  adminBohMapperSeat: '{team} · Lugar {seat}',
+  adminBohMapperUnresolved: 'Não resolvido',
+  adminBohMapperSavedDraftOnly:
+    'A importação do mapeador foi salva apenas como rascunho. Ela não foi publicada.',
+  adminBohMapperFileType: 'Escolha um arquivo .json do mapeador All-Star BoH.',
+  adminBohMapperFileTooLarge: 'A importação do mapeador excede o limite de {bytes} bytes.',
+  adminBohMapperPreviewReady: 'A prévia do mapeador está pronta. Nada foi salvo ou publicado.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

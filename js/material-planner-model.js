@@ -268,6 +268,37 @@ export function focusMaterialSet(plan, setId) {
   return syncFocusedCompletion(next);
 }
 
+export function toggleSelectedMaterialPieceCompletion(plan) {
+  const next = normalizeMaterialPlan(plan);
+  const selectedSlot = next.selectedSlot;
+  const wasComplete = next.completed[selectedSlot];
+  next.completed[selectedSlot] = !wasComplete;
+
+  if (wasComplete) return next;
+
+  const selectedIndex = DM_SLOT_IDS.indexOf(selectedSlot);
+  const nextSlot = DM_SLOT_IDS.slice(selectedIndex + 1).find(
+    (slot) => next.targets[slot] && !next.completed[slot]
+  );
+  if (nextSlot) {
+    next.selectedSlot = nextSlot;
+    return next;
+  }
+
+  for (let setId = next.focusedSet + 1; setId <= next.targetSets; setId += 1) {
+    const set = next.sets[setId - 1];
+    const firstUnfinishedSlot = DM_SLOT_IDS.find(
+      (slot) => next.targets[slot] && !set.completed[slot]
+    );
+    if (!firstUnfinishedSlot) continue;
+    next.focusedSet = setId;
+    next.selectedSlot = firstUnfinishedSlot;
+    return syncFocusedCompletion(next);
+  }
+
+  return next;
+}
+
 export function applyMaterialPreset(plan, presetId) {
   const preset = DM_PRESETS[presetId];
   if (!preset) return normalizeMaterialPlan(plan);

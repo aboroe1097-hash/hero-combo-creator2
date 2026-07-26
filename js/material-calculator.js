@@ -25,6 +25,7 @@ import {
   getNormalGearRequirement,
   normalizeMaterialPlan,
   computeEnhancementNeed,
+  toggleSelectedMaterialPieceCompletion,
 } from './material-planner-model.js';
 
 export { DM_COPY_FALLBACKS, DM_ENHANCE_FALLBACKS } from './i18n/dm-materials/index.js';
@@ -951,10 +952,10 @@ function render() {
   alignMobileScrollers();
 }
 
-function rerender({ focusSelector = null } = {}) {
+function rerender({ focusSelector = null, preventScroll = true } = {}) {
   savePlan();
   render();
-  if (focusSelector) rootEl.querySelector(focusSelector)?.focus({ preventScroll: true });
+  if (focusSelector) rootEl.querySelector(focusSelector)?.focus({ preventScroll });
 }
 
 function normalizeMaterialLanguage(language) {
@@ -1054,8 +1055,21 @@ function handleClick(event) {
 
   const completeButton = event.target.closest('[data-dm-toggle-complete]');
   if (completeButton) {
-    plan.completed[plan.selectedSlot] = !plan.completed[plan.selectedSlot];
+    const previousFocusedSet = plan.focusedSet;
+    const previousSelectedSlot = plan.selectedSlot;
+    const wasComplete = plan.completed[previousSelectedSlot];
+    plan = toggleSelectedMaterialPieceCompletion(plan);
+    const advanced =
+      !wasComplete &&
+      (plan.focusedSet !== previousFocusedSet || plan.selectedSlot !== previousSelectedSlot);
     const location = completeButton.dataset.dmCompleteLocation;
+    if (advanced) {
+      rerender({
+        focusSelector: `[data-dm-slot='${plan.selectedSlot}']`,
+        preventScroll: false,
+      });
+      return;
+    }
     rerender({
       focusSelector: location
         ? `[data-dm-toggle-complete][data-dm-complete-location="${location}"]`

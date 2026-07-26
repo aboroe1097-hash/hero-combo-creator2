@@ -399,6 +399,32 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohDeleteSignupConfirm:
     'Permanently delete the signup for {player}? Its review will also be deleted. Epic Showdown preferences will be kept.',
   adminBohSignupDeleted: 'Signup deleted.',
+  adminBohMapperSavedState:
+    'Saved to draft - not published. Unresolved names remain below for reconciliation.',
+  adminBohMapperPreviewState: 'Preview only - not saved or published.',
+  adminBohMapperContinueEditing:
+    'Continue with the team and plan editors, then publish explicitly when ready.',
+  adminBohMapperSaveWarning:
+    'Saving replaces the six draft team documents. Publishing remains a separate explicit action.',
+  adminBohMapperSaveDraft: 'Save import to draft',
+  adminBohMapperLinkedCount: '{matched} of {total} names linked',
+  adminBohMapperUnresolvedCount: '{count} unresolved',
+  adminBohMapperAllLinked: 'All imported names have unique fresh verified matches.',
+  adminBohMapperKicker: 'MAPPER EXACT VIEW',
+  adminBohMapperTitle: 'Preview mapper team import',
+  adminBohMapperDescription:
+    'Choose an exact-view JSON backup to reconcile its 6 teams and 72 names against fresh verified submissions. Previewing does not save or publish anything.',
+  adminBohMapperChooseFile: 'Choose mapper JSON',
+  adminBohMapperAmbiguous: '{name} matches multiple fresh verified submissions.',
+  adminBohMapperDuplicateMatch:
+    'One fresh verified submission would be reused for multiple imported seats.',
+  adminBohMapperUnmatched: '{name} has no exact fresh verified submission match.',
+  adminBohMapperSeat: '{team} · Seat {seat}',
+  adminBohMapperUnresolved: 'Unresolved',
+  adminBohMapperSavedDraftOnly: 'Mapper import saved to the draft only. It has not been published.',
+  adminBohMapperFileType: 'Choose an All-Star BoH mapper .json file.',
+  adminBohMapperFileTooLarge: 'Mapper import exceeds the {bytes}-byte limit.',
+  adminBohMapperPreviewReady: 'Mapper preview ready. Nothing has been saved or published.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });
 

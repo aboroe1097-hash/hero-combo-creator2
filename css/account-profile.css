@@ -16,6 +16,7 @@
 
 .account-topbar,
 .account-brand,
+.account-topbar-actions,
 .account-meta,
 .account-actions,
 .account-tabs,
@@ -53,7 +54,45 @@
   color: #9fb0c8;
 }
 
+.account-topbar-actions {
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.account-language select {
+  min-height: 44px;
+  max-width: 10rem;
+  padding: 0.55rem 2rem 0.55rem 0.7rem;
+  border: 1px solid #3b506b;
+  border-radius: 9px;
+  color: #eef7ff;
+  background: #11223a;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.account-language select:focus-visible {
+  border-color: #22d3ee;
+  outline: 3px solid rgba(34, 211, 238, 0.16);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .account-back {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: #67e8f9;
   text-underline-offset: 0.25rem;
 }
@@ -116,6 +155,17 @@
 
 .account-fields {
   grid-template-columns: 1fr 1fr;
+}
+
+.account-onboarding {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.account-onboarding[hidden] {
+  display: none;
 }
 
 .account-field {
@@ -253,7 +303,18 @@
   }
 
   .account-topbar {
+    align-items: flex-start;
     margin-bottom: 1.5rem;
+  }
+
+  .account-topbar-actions {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .account-language select {
+    max-width: 8.5rem;
   }
 }
 
@@ -294,7 +355,8 @@
   background: #fff;
 }
 
-[data-theme='light'] .account-button {
+[data-theme='light'] .account-button,
+[data-theme='light'] .account-language select {
   border-color: #a8b6c8;
   color: #172033;
   background: #eef3f8;
@@ -320,4 +382,14 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+html[dir='rtl'] .account-note {
+  border-left: 0;
+  border-right: 3px solid #facc15;
+}
+
+html[dir='rtl'] .account-language select {
+  padding-right: 0.7rem;
+  padding-left: 2rem;
 }

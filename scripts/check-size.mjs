@@ -56,7 +56,10 @@ const LIMITS = {
   // The audited 14.2.12 graph measures 8940.1 KiB after adding Italian and
   // Korean locale chunks, the profile route, and the battle runtime/catalog.
   // Retain roughly 1% aggregate headroom while entry and route caps stay fixed.
-  totalJsBytes: 9030 * 1024,
+  // The audited 14.2.13 graph measures 9199.3 KiB after adding canonical battle
+  // inputs, mapper draft import, and localized account onboarding. Retain roughly
+  // 1% aggregate headroom while entry and route caps stay fixed.
+  totalJsBytes: 9300 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

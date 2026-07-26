@@ -377,5 +377,33 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Все типы войск',
   adminBohTroopInventory: 'Состав войск из OCR',
   adminBohTroopRows: 'проверенных строк',
+  adminBohMapperSavedState:
+    'Сохранено в черновик, но не опубликовано. Нераспознанные имена остаются ниже для сопоставления.',
+  adminBohMapperPreviewState: 'Только предварительный просмотр — без сохранения и публикации.',
+  adminBohMapperContinueEditing:
+    'Продолжите работу в редакторах команд и планов, а когда всё будет готово, выполните публикацию отдельно.',
+  adminBohMapperSaveWarning:
+    'При сохранении будут заменены шесть черновиков команд. Публикация остаётся отдельным явным действием.',
+  adminBohMapperSaveDraft: 'Сохранить импорт в черновик',
+  adminBohMapperLinkedCount: 'Связано имён: {matched} из {total}',
+  adminBohMapperUnresolvedCount: 'Не распознано: {count}',
+  adminBohMapperAllLinked:
+    'Для всех импортированных имён найдены уникальные актуальные подтверждённые заявки.',
+  adminBohMapperKicker: 'ТОЧНОЕ ПРЕДСТАВЛЕНИЕ СХЕМЫ',
+  adminBohMapperTitle: 'Предпросмотр импорта команд из схемы',
+  adminBohMapperDescription:
+    'Выберите резервную копию точного представления в формате JSON, чтобы сопоставить её 6 команд и 72 имени с актуальными подтверждёнными заявками. Предпросмотр ничего не сохраняет и не публикует.',
+  adminBohMapperChooseFile: 'Выбрать JSON-файл схемы',
+  adminBohMapperAmbiguous: '{name} соответствует нескольким актуальным подтверждённым заявкам.',
+  adminBohMapperDuplicateMatch:
+    'Одна актуальная подтверждённая заявка будет повторно использована для нескольких импортированных мест.',
+  adminBohMapperUnmatched:
+    'Для {name} нет точного совпадения среди актуальных подтверждённых заявок.',
+  adminBohMapperSeat: '{team} · Место {seat}',
+  adminBohMapperUnresolved: 'Не распознано',
+  adminBohMapperSavedDraftOnly: 'Импорт схемы сохранён только в черновик. Он не был опубликован.',
+  adminBohMapperFileType: 'Выберите .json-файл схемы All-Star BoH.',
+  adminBohMapperFileTooLarge: 'Размер импорта схемы превышает лимит в {bytes} байт.',
+  adminBohMapperPreviewReady: 'Предпросмотр схемы готов. Ничего не сохранено и не опубликовано.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

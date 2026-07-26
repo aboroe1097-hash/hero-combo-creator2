@@ -2409,6 +2409,39 @@ test('announcement and plan publishing each require validation of their current 
   adapter.stop();
 });
 
+test('announcement-only publication cannot replace an already-published plan with draft edits', async () => {
+  const { adapter, primitiveStore } = await createBalancedFixture();
+  let snapshot = adapter.getSnapshot();
+
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+  snapshot = (await dispatch(adapter, snapshot, 'publishAnnouncement')).snapshot;
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+  snapshot = (await dispatch(adapter, snapshot, 'publishPlan')).snapshot;
+  const publishedPlan = clone(primitiveStore.publishCalls[1].bundle);
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'saveInstruction', {
+      teamId: 'team-1',
+      phaseId: snapshot.plan.phases[0].id,
+      legionId: snapshot.plan.legions[0].id,
+      scope: 'role',
+      scopeId: 'offensive',
+      roleGroupId: 'offensive',
+      action: 'Unpublished draft action',
+      instruction: 'This private draft edit must not become public.',
+    })
+  ).snapshot;
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'publishAnnouncement'),
+    (error) => error?.code === 'all-star-boh-plan-publication-protected'
+  );
+  assert.equal(primitiveStore.publishCalls.length, 2);
+  assert.deepEqual(primitiveStore.publishCalls[1].bundle, publishedPlan);
+  adapter.stop();
+});
+
 test('runtime Stage-1 defaults make a complete assignment plan-ready without authored role instructions', async () => {
   const primitiveStore = createPrimitiveStoreFixture();
   primitiveStore.draft.plan.roleDefaults = [];

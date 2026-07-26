@@ -379,5 +379,33 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'Tüm birlik türleri',
   adminBohTroopInventory: 'OCR birlik envanteri',
   adminBohTroopRows: 'incelenen satır',
+  adminBohMapperSavedState:
+    'Taslağa kaydedildi, yayımlanmadı. Çözümlenmemiş adlar eşleştirme için aşağıda kalır.',
+  adminBohMapperPreviewState: 'Yalnızca önizleme; kaydedilmedi veya yayımlanmadı.',
+  adminBohMapperContinueEditing:
+    'Takım ve plan düzenleyicileriyle devam edin, ardından hazır olduğunda açıkça yayımlayın.',
+  adminBohMapperSaveWarning:
+    'Kaydetme işlemi altı takım taslak belgesinin yerini alır. Yayımlama ayrı ve açık bir işlem olarak kalır.',
+  adminBohMapperSaveDraft: 'İçe aktarımı taslağa kaydet',
+  adminBohMapperLinkedCount: '{total} addan {matched} tanesi bağlandı',
+  adminBohMapperUnresolvedCount: '{count} çözümlenmemiş',
+  adminBohMapperAllLinked:
+    'İçe aktarılan tüm adların benzersiz, güncel ve doğrulanmış eşleşmeleri var.',
+  adminBohMapperKicker: 'EŞLEYİCİ TAM GÖRÜNÜMÜ',
+  adminBohMapperTitle: 'Eşleyici takım içe aktarımını önizle',
+  adminBohMapperDescription:
+    '6 takımı ve 72 adı güncel doğrulanmış başvurularla eşleştirmek için tam görünüm JSON yedeği seçin. Önizleme hiçbir şeyi kaydetmez veya yayımlamaz.',
+  adminBohMapperChooseFile: 'Eşleyici JSON dosyası seç',
+  adminBohMapperAmbiguous: '{name} birden fazla güncel doğrulanmış başvuruyla eşleşiyor.',
+  adminBohMapperDuplicateMatch:
+    'Bir güncel doğrulanmış başvuru, içe aktarılan birden fazla koltuk için yeniden kullanılacak.',
+  adminBohMapperUnmatched: '{name} için güncel doğrulanmış başvurularda tam eşleşme yok.',
+  adminBohMapperSeat: '{team} · Koltuk {seat}',
+  adminBohMapperUnresolved: 'Çözümlenmemiş',
+  adminBohMapperSavedDraftOnly: 'Eşleyici içe aktarımı yalnızca taslağa kaydedildi. Yayımlanmadı.',
+  adminBohMapperFileType: 'Bir All-Star BoH eşleyici .json dosyası seçin.',
+  adminBohMapperFileTooLarge: 'Eşleyici içe aktarımı {bytes} bayt sınırını aşıyor.',
+  adminBohMapperPreviewReady:
+    'Eşleyici önizlemesi hazır. Hiçbir şey kaydedilmedi veya yayımlanmadı.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

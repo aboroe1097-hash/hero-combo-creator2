@@ -75,7 +75,7 @@ import {
   loadSpecializationState,
 } from './specialization-towers-v2-store.js';
 
-const APP_VERSION = '14.2.12';
+const APP_VERSION = '14.2.13';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [

@@ -113,7 +113,7 @@ test('canonical English covers every current All-Star BoH template key', async (
     [],
     'English must cover every template key'
   );
-  assert.equal(ALL_STAR_BOH_EN['hero.title'], 'Build your strongest team');
+  assert.equal(ALL_STAR_BOH_EN['hero.title'], 'All-Star BoH Hub');
   assert.equal(ALL_STAR_BOH_EN['nav.ariaLabel'], 'All-Star BoH sections');
   assert.equal(ALL_STAR_BOH_EN['signup.ocrPreviewAlt'], 'Selected account-stat screenshot preview');
 });
@@ -179,7 +179,7 @@ test('DOM translation routes text and accessible attributes without writing unsa
   };
 
   assert.equal(applyAllStarBohTranslations(root, 'en'), root);
-  assert.equal(textNode.textContent, 'Build your strongest team');
+  assert.equal(textNode.textContent, 'All-Star BoH Hub');
   assert.equal(ariaNode.attributes['aria-label'], 'All-Star BoH sections');
   assert.equal(altNode.attributes.alt, 'Selected account-stat screenshot preview');
   assert.equal(placeholderNode.attributes.placeholder, 'Example: PlayerOne, PlayerTwo');

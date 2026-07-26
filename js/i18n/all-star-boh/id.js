@@ -49,7 +49,7 @@ export default Object.freeze({
   'hero.description':
     'Bagikan stat tempurmu, cek penugasan tim, dan ikuti rencana pertandingan pribadimu dari satu hub privat.',
   'hero.eyebrow': 'ANGGOTA VTS · ALL-STAR BOH',
-  'hero.title': 'Bangun tim terkuatmu',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Pengumuman Tim',
   'nav.announcementHint': 'Kenali rostermu',
   'nav.ariaLabel': 'Bagian All-Star BoH',

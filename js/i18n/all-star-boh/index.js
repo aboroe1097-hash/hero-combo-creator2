@@ -78,7 +78,7 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'hero.description':
     'Share your current combat stats, check your team assignment, and follow your personal match plan from one private hub.',
   'hero.eyebrow': 'VTS MEMBERS · ALL-STAR BOH',
-  'hero.title': 'Build your strongest team',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Team Formation',
   'nav.announcementHint': 'See all six teams',
   'nav.ariaLabel': 'All-Star BoH sections',

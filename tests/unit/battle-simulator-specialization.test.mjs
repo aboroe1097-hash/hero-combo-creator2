@@ -14,6 +14,7 @@ import {
 } from '../../js/specialization-towers-v2-model.js';
 import {
   SPECIALIZATION_BATTLE_ADAPTER_REVISION,
+  adaptSpecializationEffectsToRuntime,
   adaptSpecializationBattleSources,
   resolveSpecializationBattleSources,
 } from '../../js/battle-simulator-specialization.js';
@@ -252,4 +253,150 @@ test('results are deterministic, detached, and deeply immutable', () => {
   );
   assert.equal(Object.isFrozen(forward.sources[0].provenance.specializationSource), true);
   assert.equal(Object.isFrozen(forward.summary), true);
+});
+
+function passiveEffects(troopId, researchId) {
+  const research = SPECIALIZATION_RESEARCH[researchId];
+  const state = setResearchNodes(createEmptySpecializationState(), troopId, researchId, [
+    research.passiveSkillNodeId,
+  ]);
+  return resolveSpecializationBattleSources(state).effects;
+}
+
+function runtimeSide(effects, types = ['cavalry', 'cavalry', 'cavalry']) {
+  return { rows: types.map((type) => ({ type })), effects };
+}
+
+test('canonical passive parameters survive adaptation for conservative runtime matching', () => {
+  const effects = passiveEffects('cavalry', 'encounter2');
+
+  assert.equal(effects.length, 1);
+  assert.deepEqual(effects[0].parameters, {
+    bonusName: 'Combat Speed (All Cavalry)',
+    bonusValue: 10,
+    conditional: true,
+    isFlat: true,
+  });
+  assert.equal(effects[0].provenance.specializationSource.kind, 'passive');
+});
+
+test('selected Cavalry encounter passives emit +10 per passive for each all-Cavalry row', () => {
+  const effects = [
+    ...passiveEffects('cavalry', 'encounter2'),
+    ...passiveEffects('cavalry', 'encounter3'),
+  ];
+  const result = adaptSpecializationEffectsToRuntime({ sideA: runtimeSide(effects) });
+
+  assert.equal(result.definitions.length, 6);
+  assert.deepEqual(
+    result.definitions.map(({ source, amount, stacks, phase, duration }) => ({
+      source,
+      amount,
+      stacks,
+      phase,
+      duration,
+    })),
+    ['A:back', 'A:front', 'A:middle', 'A:back', 'A:front', 'A:middle'].map((source) => ({
+      source,
+      amount: 10,
+      stacks: 1,
+      phase: 'round-start',
+      duration: 1,
+    }))
+  );
+  assert.deepEqual(result.diagnostics, []);
+  assert.equal(Object.isFrozen(result), true);
+});
+
+test('mixed formations and unsupported, inactive, or Marching passives diagnose and do not execute', () => {
+  const cavalry = passiveEffects('cavalry', 'encounter2');
+  const mixed = adaptSpecializationEffectsToRuntime({
+    sideA: runtimeSide(cavalry, ['cavalry', 'footmen', 'cavalry']),
+  });
+  assert.deepEqual(mixed.definitions, []);
+  assert.equal(mixed.diagnostics[0].code, 'specialization-formation-mismatch');
+  assert.equal(mixed.diagnostics[0].side, 'A');
+
+  const marching = [
+    ...passiveEffects('footman', 'encounter2'),
+    ...passiveEffects('archer', 'encounter2'),
+  ];
+  const unsupported = adaptSpecializationEffectsToRuntime({
+    sideB: runtimeSide(marching),
+  });
+  assert.deepEqual(unsupported.definitions, []);
+  assert.ok(
+    unsupported.diagnostics.every(({ code }) => code === 'unsupported-specialization-effect')
+  );
+  assert.ok(unsupported.diagnostics.every(({ side }) => side === 'B'));
+
+  const inactiveEffect = { ...cavalry[0], active: false, exclusionReason: 'engagement' };
+  const inactive = adaptSpecializationEffectsToRuntime({
+    sideA: runtimeSide([inactiveEffect]),
+  });
+  assert.deepEqual(inactive.definitions, []);
+  assert.equal(inactive.diagnostics[0].code, 'inactive-specialization-effect');
+});
+
+test('forged specialization identities and provenance diagnose and emit nothing', () => {
+  const canonicalEffect = structuredClone(passiveEffects('cavalry', 'encounter2')[0]);
+  const forgeries = [
+    (effect) => {
+      effect.id = 'forged-id';
+    },
+    (effect) => {
+      effect.effectKey = 'forged.effect';
+    },
+    (effect) => {
+      effect.provenance.dataRevision = 'forged-revision';
+    },
+    (effect) => {
+      effect.provenance.adapterRevision += 1;
+    },
+    (effect) => {
+      effect.provenance.contributionId = 'forged-contribution';
+    },
+    (effect) => {
+      effect.provenance.specializationSource.type = 'forged-source';
+    },
+    (effect) => {
+      effect.provenance.specializationSource.kind = 'node';
+    },
+    (effect) => {
+      effect.provenance.specializationSource.troopId = 'footman';
+    },
+    (effect) => {
+      effect.provenance.specializationSource.researchId = 'encounter3';
+    },
+    (effect) => {
+      effect.provenance.specializationSource.columnId += 1;
+    },
+    (effect) => {
+      effect.provenance.specializationSource.nodeId += 1;
+    },
+  ];
+
+  for (const forge of forgeries) {
+    const effect = structuredClone(canonicalEffect);
+    forge(effect);
+    const result = adaptSpecializationEffectsToRuntime({
+      sideA: runtimeSide([effect]),
+    });
+    assert.deepEqual(result.definitions, []);
+    assert.equal(result.diagnostics.length, 1);
+    assert.equal(result.diagnostics[0].code, 'unsupported-specialization-effect');
+  }
+});
+
+test('duplicate canonical specialization effects execute once and ignore raw magnitudes', () => {
+  const effect = structuredClone(passiveEffects('cavalry', 'encounter2')[0]);
+  effect.amount = 999_999;
+  effect.value = -999_999;
+  const result = adaptSpecializationEffectsToRuntime({
+    sideA: runtimeSide([effect, structuredClone(effect)]),
+  });
+
+  assert.equal(result.definitions.length, 3);
+  assert.ok(result.definitions.every(({ amount, maxStacks }) => amount === 10 && maxStacks === 1));
+  assert.deepEqual(result.diagnostics, []);
 });

@@ -49,7 +49,7 @@ export default Object.freeze({
   'hero.description':
     'Отправьте актуальные боевые данные, узнайте свою команду и следуйте личному плану матча в одном закрытом разделе.',
   'hero.eyebrow': 'УЧАСТНИКИ VTS · ALL-STAR BOH',
-  'hero.title': 'Соберём сильнейшие команды',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Объявление команд',
   'nav.announcementHint': 'Узнать свой состав',
   'nav.ariaLabel': 'Разделы All-Star BoH',

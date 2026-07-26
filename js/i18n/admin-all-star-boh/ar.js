@@ -376,5 +376,30 @@ export default Object.freeze({
   adminBohHeroGroupAll: 'جميع أنواع القوات',
   adminBohTroopInventory: 'قائمة القوات من OCR',
   adminBohTroopRows: 'صفوف تمت مراجعتها',
+  adminBohMapperSavedState:
+    'تم الحفظ في المسودة - لم يتم النشر. تبقى الأسماء غير المحلولة أدناه للمطابقة.',
+  adminBohMapperPreviewState: 'معاينة فقط - لم يتم الحفظ أو النشر.',
+  adminBohMapperContinueEditing:
+    'تابع باستخدام محرري الفرق والخطط، ثم انشر بشكل صريح عندما تصبح جاهزًا.',
+  adminBohMapperSaveWarning:
+    'يؤدي الحفظ إلى استبدال مستندات مسودات الفرق الستة. يظل النشر إجراءً صريحًا منفصلًا.',
+  adminBohMapperSaveDraft: 'حفظ الاستيراد في المسودة',
+  adminBohMapperLinkedCount: 'تم ربط {matched} من أصل {total} اسمًا',
+  adminBohMapperUnresolvedCount: '{count} غير محلول',
+  adminBohMapperAllLinked: 'جميع الأسماء المستوردة لها مطابقات فريدة وحديثة وتم التحقق منها.',
+  adminBohMapperKicker: 'العرض الدقيق للمخطط',
+  adminBohMapperTitle: 'معاينة استيراد فرق المخطط',
+  adminBohMapperDescription:
+    'اختر نسخة JSON احتياطية من العرض الدقيق لمطابقة فرقها الستة وأسمائها الـ72 مع الطلبات الحديثة التي تم التحقق منها. لا تؤدي المعاينة إلى حفظ أو نشر أي شيء.',
+  adminBohMapperChooseFile: 'اختيار ملف JSON للمخطط',
+  adminBohMapperAmbiguous: 'يطابق {name} عدة طلبات حديثة تم التحقق منها.',
+  adminBohMapperDuplicateMatch: 'سيُعاد استخدام طلب حديث واحد تم التحقق منه لعدة مقاعد مستوردة.',
+  adminBohMapperUnmatched: 'لا توجد لـ {name} مطابقة تامة في الطلبات الحديثة التي تم التحقق منها.',
+  adminBohMapperSeat: '{team} · المقعد {seat}',
+  adminBohMapperUnresolved: 'غير محلول',
+  adminBohMapperSavedDraftOnly: 'تم حفظ استيراد المخطط في المسودة فقط. لم يتم نشره.',
+  adminBohMapperFileType: 'اختر ملف مخطط All-Star BoH بامتداد .json.',
+  adminBohMapperFileTooLarge: 'يتجاوز استيراد المخطط حد {bytes} بايت.',
+  adminBohMapperPreviewReady: 'معاينة المخطط جاهزة. لم يتم حفظ أو نشر أي شيء.',
   ...ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS,
 });

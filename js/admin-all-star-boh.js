@@ -1,5 +1,9 @@
 import * as BohModel from './all-star-boh-model.js';
 import {
+  BOH_MAPPER_IMPORT_MAX_BYTES,
+  parseAllStarBohMapperExactView,
+} from './all-star-boh-mapper-import.js';
+import {
   BOH_STAGE1_LEGIONS,
   BOH_STAGE1_PHASES,
   BOH_STAGE1_PLAN_ID,
@@ -2408,6 +2412,217 @@ function adapterMatchApprovedRoster(state, parsed) {
   return { teams: matchedTeams, matchedCount, warnings };
 }
 
+function adapterMatchMapperExactView(state, parsed) {
+  const byName = new Map();
+  for (const submission of state.submissions) {
+    const uid = adapterSubmissionUid(submission);
+    const review = state.reviews.get(uid) || null;
+    if (!adapterReviewIsFresh(submission, review)) continue;
+    const matchedPlayerId = adapterSubmissionId(submission);
+    const effective = adapterEffectiveSubmission(state, submission);
+    for (const name of uniqueTextList([playerName(effective), playerName(submission)])) {
+      const key = BohModel.normalizeBohNameKey(name);
+      if (!key) continue;
+      if (!byName.has(key)) byName.set(key, new Map());
+      byName.get(key).set(matchedPlayerId, { playerId: matchedPlayerId });
+    }
+  }
+  const diagnostics = [];
+  const teams = parsed.teams.map((team) => ({
+    ...team,
+    players: team.players.map((player) => {
+      const candidates = [
+        ...(byName.get(BohModel.normalizeBohNameKey(player.displayName))?.values() || []),
+      ];
+      if (candidates.length !== 1) {
+        diagnostics.push({
+          code: candidates.length ? 'boh-mapper-match-ambiguous' : 'boh-mapper-match-unmatched',
+          message: candidates.length
+            ? `${player.displayName} matches multiple fresh verified submissions.`
+            : `${player.displayName} has no exact fresh verified submission match.`,
+          teamId: team.id,
+          seatNumber: player.seatNumber,
+          displayName: player.displayName,
+          candidateIds: candidates.map((candidate) => candidate.playerId),
+        });
+        return { ...player, teamId: team.id, playerId: '' };
+      }
+      return { ...player, teamId: team.id, playerId: candidates[0].playerId };
+    }),
+  }));
+  const uses = new Map();
+  for (const player of teams.flatMap((team) => team.players)) {
+    if (!player.playerId) continue;
+    if (!uses.has(player.playerId)) uses.set(player.playerId, []);
+    uses.get(player.playerId).push(player);
+  }
+  for (const [matchedPlayerId, players] of uses) {
+    if (players.length === 1) continue;
+    for (const player of players) player.playerId = '';
+    for (const player of players) {
+      diagnostics.push({
+        code: 'boh-mapper-match-duplicate-use',
+        message: 'One fresh verified submission would be reused for multiple imported seats.',
+        teamId: player.teamId,
+        seatNumber: player.seatNumber,
+        displayName: player.displayName,
+        candidateIds: [matchedPlayerId],
+      });
+    }
+  }
+  const matchedCount = teams
+    .flatMap((team) => team.players)
+    .filter((player) => player.playerId).length;
+  return {
+    format: parsed.format,
+    version: parsed.version,
+    teamCount: parsed.teamCount,
+    playerCount: parsed.playerCount,
+    matchedCount,
+    unresolvedCount: parsed.playerCount - matchedCount,
+    diagnostics,
+    teams,
+  };
+}
+
+function adapterPreviewMapperExactView(state, payload) {
+  const parsed = parseAllStarBohMapperExactView(payload.jsonText);
+  const preview = adapterMatchMapperExactView(state, parsed);
+  const matchedIds = new Set(
+    preview.teams.flatMap((team) => team.players.map((player) => player.playerId).filter(Boolean))
+  );
+  const matchedSubmissions = state.submissions.filter((submission) =>
+    matchedIds.has(adapterSubmissionId(submission))
+  );
+  state.mapperImportPreview = {
+    ...adapterClone(preview),
+    sourceRevision: state.revision,
+    submissionRevisions: matchedSubmissions
+      .map((submission) => [adapterSubmissionUid(submission), adapterRevision(submission.revision)])
+      .sort(([left], [right]) => left.localeCompare(right)),
+    reviewRevisions: matchedSubmissions
+      .map((submission) => {
+        const uid = adapterSubmissionUid(submission);
+        const review = state.reviews.get(uid);
+        return [
+          uid,
+          adapterRevision(review?.revision),
+          adapterRevision(review?.submissionRevision),
+        ];
+      })
+      .sort(([left], [right]) => left.localeCompare(right)),
+  };
+  return adapterClone(preview);
+}
+
+function adapterMapperSafePlan(draft) {
+  const plan = adapterPlan(draft);
+  const hasNoPlayer = (rule) => !cleanText(rule?.playerId) && cleanText(rule?.scope) !== 'player';
+  return {
+    ...plan,
+    phases: BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 })),
+    legions: BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 })),
+    roleDefaults: plan.roleDefaults.filter(hasNoPlayer),
+    seatOverrides: plan.seatOverrides.filter(hasNoPlayer),
+    playerOverrides: [],
+    instructions: plan.instructions.filter(hasNoPlayer),
+    rotations: [],
+  };
+}
+
+async function adapterSaveMapperExactView(state) {
+  const preview = state.mapperImportPreview;
+  if (!preview) {
+    throw adapterError(
+      'boh-mapper-preview-required',
+      'Choose and preview a mapper JSON file before saving.'
+    );
+  }
+  if (preview.sourceRevision !== state.revision) throw adapterPreviewStale();
+  const teamIds = preview.teams.map((team) => team.id);
+  const seatSets = preview.teams.map((importedTeam, teamIndex) => {
+    const current = adapterMaterializeTeam(state, importedTeam.id, teamIndex);
+    const seats = importedTeam.players.map((player) => {
+      const existing = current.seats.find((seat) => seat.seatNumber === player.seatNumber) || {};
+      return {
+        ...existing,
+        id: cleanText(existing.id) || `${importedTeam.id}-seat-${player.seatNumber}`,
+        rosterKey: `mapper-${importedTeam.id}-seat-${String(player.seatNumber).padStart(2, '0')}`,
+        seatNumber: player.seatNumber,
+        playerId: player.playerId,
+        displayName: player.displayName,
+        roleGroupId: player.planRole || existing.roleGroupId || bohSeatRoleGroup(player.seatNumber),
+        locked: player.locked || player.userLockTeamId === importedTeam.id,
+        score: player.playerId
+          ? adapterScoreRecord(state, adapterFindSubmission(state, player.playerId)).finalScore
+          : null,
+      };
+    });
+    return { importedTeam, current, seats };
+  });
+  const playerIds = seatSets.flatMap(({ seats }) =>
+    seats.map((seat) => seat.playerId).filter(Boolean)
+  );
+  const nextDraft = {
+    ...adapterClone(state.draft),
+    teamCount: TEAM_COUNT,
+    teamIds,
+    playerIds,
+    forcedTeamAssignments: seatSets.flatMap(({ importedTeam, seats }) =>
+      seats
+        .filter((seat) => seat.playerId)
+        .map((seat) => ({ playerId: seat.playerId, teamId: importedTeam.id }))
+    ),
+    plan: adapterMapperSafePlan(state.draft),
+  };
+  const teams = seatSets.map(({ importedTeam, current, seats }) => {
+    const linkedIds = new Set(seats.map((seat) => seat.playerId).filter(Boolean));
+    const explicitLeader = importedTeam.players.find(
+      (player) => player.commandRole === 'leader' && linkedIds.has(player.playerId)
+    );
+    const explicitColeaders = importedTeam.players
+      .filter((player) => player.commandRole === 'coleader' && linkedIds.has(player.playerId))
+      .map((player) => player.playerId)
+      .slice(0, 2);
+    const nextTeam = { ...current };
+    delete nextTeam.plan;
+    return {
+      ...nextTeam,
+      id: importedTeam.id,
+      teamId: importedTeam.id,
+      number: teamIds.indexOf(importedTeam.id) + 1,
+      name: importedTeam.name,
+      color: importedTeam.color,
+      seats,
+      captainId: explicitLeader?.playerId || '',
+      coLeaderIds: explicitColeaders,
+    };
+  });
+  const teamEntries = Object.fromEntries(teams.map((team) => [team.id, team]));
+  const saved = await state.adminStore.saveDraftBundle(
+    { draft: nextDraft, teams: teamEntries },
+    {
+      expectedDraftRevision: adapterRevision(state.draft?.revision),
+      expectedTeamRevisions: Object.fromEntries(
+        teamIds.map((teamId) => [teamId, adapterRevision(state.teams.get(teamId)?.revision)])
+      ),
+      expectedSubmissionRevisions: adapterClone(preview.submissionRevisions),
+      expectedReviewRevisions: adapterClone(preview.reviewRevisions),
+    }
+  );
+  state.draft = saved?.draft || nextDraft;
+  for (const [teamId, team] of Object.entries(saved?.teams || teamEntries)) {
+    state.teams.set(teamId, team);
+  }
+  state.mapperImportPreview = null;
+  adapterNotify(state);
+  return {
+    matchedCount: preview.matchedCount,
+    totalCount: preview.playerCount,
+    unresolvedCount: preview.unresolvedCount,
+  };
+}
+
 async function adapterImportApprovedRoster(state, payload) {
   const parsed = parseAdminAllStarBohApprovedRosterCsv(payload.csvText);
   const matched = adapterMatchApprovedRoster(state, parsed);
@@ -4539,6 +4754,12 @@ export function validateAdminAllStarBohPublicationBundle(bundle = {}) {
 }
 
 async function adapterPublish(state, kind) {
+  if (kind === 'announcement' && state.publication?.planPublished === true) {
+    throw adapterError(
+      'all-star-boh-plan-publication-protected',
+      'The published player plan is already live. Publish plan changes separately.'
+    );
+  }
   const readiness = state.validation?.[kind];
   if (readiness?.valid !== true || adapterRevision(state.validation?.revision) !== state.revision) {
     throw adapterError(
@@ -4611,6 +4832,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     eventScheduleRevision: adapterRevision(options.eventSchedule?.revision),
     validation: {},
     balancePreview: null,
+    mapperImportPreview: null,
     revision: 0,
     listeners: new Set(),
     unsubscribers: new Set(),
@@ -4637,6 +4859,10 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     if (type === 'reviewSubmission') await adapterReviewSubmission(state, payload);
     else if (type === 'importApprovedRoster') {
       actionResult = await adapterImportApprovedRoster(state, payload);
+    } else if (type === 'previewMapperExactView') {
+      actionResult = adapterPreviewMapperExactView(state, payload);
+    } else if (type === 'saveMapperExactViewImport') {
+      actionResult = await adapterSaveMapperExactView(state);
     } else if (type === 'batchReviewSubmissions') {
       actionResult = await adapterBatchReviewSubmissions(state, payload);
     } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
@@ -4836,6 +5062,7 @@ function makeInitialState(root, options) {
     commitmentScoreDraft: null,
     selectedSourceSeat: null,
     approvedRosterImportReport: null,
+    mapperImportPreview: null,
     planTeamId: snapshot.teams[0]?.id || 'team-1',
     planPhaseId: snapshot.plan.phases[0]?.id || DEFAULT_PHASES[0].id,
     planLegionId: snapshot.plan.legions[0]?.id || DEFAULT_LEGIONS[0].id,
@@ -7278,6 +7505,127 @@ function renderBalancePreview(state) {
   </section>`;
 }
 
+function renderMapperExactViewPreview(state, preview, rows) {
+  if (!preview) return '';
+  const stateLabel = preview.savedToDraft
+    ? state.tr(
+        'adminBohMapperSavedState',
+        'Saved to draft - not published. Unresolved names remain below for reconciliation.'
+      )
+    : state.tr('adminBohMapperPreviewState', 'Preview only - not saved or published.');
+  const saveAction = preview.savedToDraft
+    ? `<p>${escapeHtml(
+        state.tr(
+          'adminBohMapperContinueEditing',
+          'Continue with the team and plan editors, then publish explicitly when ready.'
+        )
+      )}</p>`
+    : `<p>${escapeHtml(
+        state.tr(
+          'adminBohMapperSaveWarning',
+          'Saving replaces the six draft team documents. Publishing remains a separate explicit action.'
+        )
+      )}</p>
+      <button type='button' class='boh-admin-button boh-admin-button-primary' data-action='save-mapper-import'>${escapeHtml(
+        state.tr('adminBohMapperSaveDraft', 'Save import to draft')
+      )}</button>`;
+  return `<div class='boh-admin-mapper-summary' role='status'><strong>${escapeHtml(
+    state.tr('adminBohMapperLinkedCount', '{matched} of {total} names linked', {
+      matched: preview.matchedCount,
+      total: preview.playerCount,
+    })
+  )}</strong><span>${escapeHtml(
+    state.tr('adminBohMapperUnresolvedCount', '{count} unresolved', {
+      count: preview.unresolvedCount,
+    })
+  )}</span>
+    <span>${escapeHtml(stateLabel)}</span></div>
+    <div class='boh-admin-table-wrap' tabindex='0'><table class='boh-admin-table'>
+      <thead><tr><th>${escapeHtml(state.tr('adminBohTeam', 'Team'))}</th><th>${escapeHtml(
+        state.tr('adminBohPlayer', 'Player')
+      )}</th><th>${escapeHtml(state.tr('adminBohTroopStatus', 'Status'))}</th></tr></thead>
+      <tbody>${
+        rows ||
+        `<tr><td colspan='3'>${escapeHtml(
+          state.tr(
+            'adminBohMapperAllLinked',
+            'All imported names have unique fresh verified matches.'
+          )
+        )}</td></tr>`
+      }</tbody></table></div>
+    <footer class='boh-admin-mapper-actions'>${saveAction}</footer>`;
+}
+
+function renderMapperExactViewCard(state, preview, rows) {
+  return `<section class='boh-admin-card boh-admin-stack boh-admin-mapper-import' aria-labelledby='bohMapperImportTitle'>
+    <header><div><p class='boh-admin-card-kicker'>${escapeHtml(
+      state.tr('adminBohMapperKicker', 'MAPPER EXACT VIEW')
+    )}</p>
+      <h4 id='bohMapperImportTitle'>${escapeHtml(
+        state.tr('adminBohMapperTitle', 'Preview mapper team import')
+      )}</h4>
+      <p>${escapeHtml(
+        state.tr(
+          'adminBohMapperDescription',
+          'Choose an exact-view JSON backup to reconcile its 6 teams and 72 names against fresh verified submissions. Previewing does not save or publish anything.'
+        )
+      )}</p></div>
+      <label class='boh-admin-button boh-admin-button-primary'>${escapeHtml(
+        state.tr('adminBohMapperChooseFile', 'Choose mapper JSON')
+      )}
+        <input class='sr-only' type='file' accept='.json,application/json' data-action='preview-mapper-import' />
+      </label></header>${renderMapperExactViewPreview(state, preview, rows)}
+  </section>`;
+}
+
+function mapperImportIssueMessage(state, issue) {
+  if (issue?.code === 'boh-mapper-match-ambiguous') {
+    return state.tr(
+      'adminBohMapperAmbiguous',
+      '{name} matches multiple fresh verified submissions.',
+      { name: issue.displayName }
+    );
+  }
+  if (issue?.code === 'boh-mapper-match-duplicate-use') {
+    return state.tr(
+      'adminBohMapperDuplicateMatch',
+      'One fresh verified submission would be reused for multiple imported seats.'
+    );
+  }
+  return state.tr(
+    'adminBohMapperUnmatched',
+    '{name} has no exact fresh verified submission match.',
+    { name: issue?.displayName || '' }
+  );
+}
+
+function renderMapperExactViewImport(state) {
+  const preview = state.mapperImportPreview;
+  const rows = list(preview?.teams)
+    .flatMap((team) =>
+      list(team.players)
+        .filter((player) => !player.playerId)
+        .map((player) => {
+          const issue = list(preview?.diagnostics).find(
+            (item) => item.teamId === team.id && item.seatNumber === player.seatNumber
+          );
+          return `<tr><td>${escapeHtml(
+            state.tr('adminBohMapperSeat', '{team} · Seat {seat}', {
+              team: team.name,
+              seat: player.seatNumber,
+            })
+          )}</td>
+            <td>${escapeHtml(player.displayName)}</td><td>${escapeHtml(
+              issue
+                ? mapperImportIssueMessage(state, issue)
+                : state.tr('adminBohMapperUnresolved', 'Unresolved')
+            )}</td></tr>`;
+        })
+    )
+    .join('');
+  return renderMapperExactViewCard(state, preview, rows);
+}
+
 function renderApprovedRosterImport(state) {
   const report = state.approvedRosterImportReport;
   const warnings = list(report?.warnings);
@@ -7396,6 +7744,7 @@ function renderTeamBuilder(state) {
       )}
       ${summaryCard(state.snapshot.teams.flatMap((team) => team.seats).filter((seat) => seat.locked).length, state.tr('adminBohLockedSeats', 'Locked seats'))}
     </div>
+    ${renderMapperExactViewImport(state)}
     ${renderApprovedRosterImport(state)}
     ${renderTeamBuilderSettings(state, candidates, selectedIds)}
     ${renderEligiblePool(state, candidates, selectedIds)}
@@ -9845,6 +10194,21 @@ async function handleClick(state, event) {
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'save-mapper-import') {
+    const preview = state.mapperImportPreview;
+    const result = await invokeAction(
+      state,
+      'saveMapperExactViewImport',
+      {},
+      state.tr(
+        'adminBohMapperSavedDraftOnly',
+        'Mapper import saved to the draft only. It has not been published.'
+      )
+    );
+    if (result && preview) state.mapperImportPreview = { ...preview, savedToDraft: true };
+    renderShell(state);
+    return result;
+  }
   if (action === 'select-highest-eligible') {
     selectHighestEligiblePlayers(state);
     return;
@@ -10293,6 +10657,43 @@ function handleInput(state, event) {
 
 async function handleChange(state, event) {
   const action = cleanText(event.target.dataset.action);
+  if (action === 'preview-mapper-import') {
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const acceptedMimeTypes = new Set(['', 'application/json', 'text/json']);
+      if (!/\.json$/iu.test(file.name || '') || !acceptedMimeTypes.has(file.type || '')) {
+        throw adapterError(
+          'boh-mapper-file-type',
+          state.tr('adminBohMapperFileType', 'Choose an All-Star BoH mapper .json file.')
+        );
+      }
+      if (file.size > BOH_MAPPER_IMPORT_MAX_BYTES) {
+        throw adapterError(
+          'boh-mapper-file-too-large',
+          state.tr('adminBohMapperFileTooLarge', 'Mapper import exceeds the {bytes}-byte limit.', {
+            bytes: BOH_MAPPER_IMPORT_MAX_BYTES,
+          })
+        );
+      }
+      const jsonText = await file.text();
+      const result = await invokeAction(
+        state,
+        'previewMapperExactView',
+        { jsonText },
+        state.tr(
+          'adminBohMapperPreviewReady',
+          'Mapper preview ready. Nothing has been saved or published.'
+        )
+      );
+      state.mapperImportPreview = result?.result || result?.actionResult || null;
+      renderShell(state);
+    } finally {
+      input.value = '';
+    }
+    return;
+  }
   if (action === 'import-approved-roster') {
     const input = event.target;
     const file = input.files?.[0];

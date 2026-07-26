@@ -25,7 +25,7 @@ export default Object.freeze({
   'hero.description':
     'Podijeli trenutačne borbene statistike, provjeri raspored tima i prati osobni plan meča iz jednog privatnog centra.',
   'hero.eyebrow': 'VTS ČLANOVI · ALL-STAR BOH',
-  'hero.title': 'Sastavi svoj najjači tim',
+  'hero.title': 'All-Star BoH Hub',
   'nav.announcement': 'Objava timova',
   'nav.announcementHint': 'Upoznaj svoj tim',
   'nav.ariaLabel': 'All-Star BoH odjeljci',

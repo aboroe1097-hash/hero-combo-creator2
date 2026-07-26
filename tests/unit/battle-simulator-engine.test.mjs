@@ -15,6 +15,12 @@ import {
   simulateBattleBatch,
 } from '../../js/battle-simulator-engine.js';
 import { BATTLE_EFFECT_RUNTIME_VERSION } from '../../js/battle-simulator-effect-runtime.js';
+import { resolveSpecializationBattleSources } from '../../js/battle-simulator-specialization.js';
+import { SPECIALIZATION_RESEARCH } from '../../js/specialization-towers-v2-data.js';
+import {
+  createEmptySpecializationState,
+  setResearchNodes,
+} from '../../js/specialization-towers-v2-model.js';
 
 function stats(overrides = {}) {
   const {
@@ -350,6 +356,126 @@ test('no-effect formations preserve the legacy model and result surface exactly'
   assert.equal(Object.hasOwn(baseline, 'effectDiagnostics'), false);
 });
 
+test('absent and empty explicit hero options preserve exact legacy output', () => {
+  const config = equalBattleConfig();
+  const options = { seed: 42, strikeVariancePct: 5 };
+  const baseline = simulateBattle(config, options);
+  const empty = simulateBattle(config, {
+    ...options,
+    heroSkills: [],
+    heroAssignments: {},
+  });
+
+  assert.deepEqual(empty, baseline);
+});
+
+test('explicit canonical hero options are deterministic, immutable, side-qualified, and forwarded by batch', () => {
+  const config = equalBattleConfig();
+  config.sideA.rows[0].type = 'footmen';
+  const options = {
+    seed: 9,
+    strikeVariancePct: 5,
+    heroSkills: {
+      'Jiguang Qi': { skills: [{ id: 2, amount: 999_999, effect: 'untrusted override' }] },
+    },
+    heroAssignments: { A: { front: 'Jiguang Qi' } },
+  };
+  const before = structuredClone({ config, options });
+  const first = simulateBattle(config, options);
+  const second = simulateBattle(config, options);
+  const batch = simulateBattleBatch(config, {
+    ...options,
+    iterations: 1,
+    includeResults: true,
+  });
+
+  assert.deepEqual(first, second);
+  assert.deepEqual({ config, options }, before);
+  assert.ok(first.effectEvents.some(({ effectId }) => effectId === 'A:front:2:damage:1'));
+  assert.ok(first.effectEvents.every(({ effectId }) => !String(effectId).includes('999999')));
+  assert.deepEqual(batch.results[0].effectEvents, first.effectEvents);
+  assert.deepEqual(batch.effectDiagnostics, first.effectDiagnostics);
+});
+
+test('malformed and unknown explicit hero options fail closed with result diagnostics', () => {
+  const config = equalBattleConfig();
+  const baseline = simulateBattle(config, { seed: 42 });
+  const result = simulateBattle(config, {
+    seed: 42,
+    heroSkills: [{ heroName: 'Nobody', skillId: 2 }],
+    heroAssignments: { C: { front: 'Nobody' } },
+  });
+
+  assert.deepEqual(result.survivors, baseline.survivors);
+  assert.equal(result.modelVersion, BATTLE_MODEL_VERSION);
+  assert.deepEqual(result.effectEvents, []);
+  assert.ok(result.effectDiagnostics.length >= 2);
+  assert.ok(result.effectDiagnostics.every(({ source }) => source === 'explicit-options'));
+});
+
+test('duplicate row and explicit hero definitions execute only once', () => {
+  const config = equalBattleConfig();
+  config.sideA.rows[0] = row(
+    1_000,
+    {},
+    {
+      type: 'footmen',
+      heroName: 'Jiguang Qi',
+      skillIds: [2],
+    }
+  );
+  const baseline = simulateBattle(config, { seed: 3 });
+  const result = simulateBattle(config, {
+    seed: 3,
+    heroSkills: ['Jiguang Qi:2'],
+    heroAssignments: { A: { front: 'Jiguang Qi' } },
+  });
+
+  assert.deepEqual(result, baseline);
+});
+
+test('Jiguang Qi and Cao Cao explicit A:middle collision diagnoses without RangeError', () => {
+  const config = equalBattleConfig();
+  let result;
+  assert.doesNotThrow(() => {
+    result = simulateBattle(config, {
+      seed: 3,
+      heroSkills: ['Jiguang Qi:2', 'Cao Cao:2'],
+      heroAssignments: [
+        { side: 'A', rowId: 'middle', heroName: 'Jiguang Qi' },
+        { side: 'A', rowId: 'middle', heroName: 'Cao Cao' },
+      ],
+    });
+  });
+
+  assert.deepEqual(result.effectEvents, []);
+  assert.equal(result.effectDiagnostics.length, 1);
+  assert.equal(result.effectDiagnostics[0].code, 'conflicting-explicit-assignment');
+  assert.deepEqual(result.effectDiagnostics[0].heroNames, ['Cao Cao', 'Jiguang Qi']);
+});
+
+test('embedded A:middle hero ignores conflicting explicit hero and keeps canonical behavior', () => {
+  const config = equalBattleConfig();
+  config.sideA.rows[1] = row(
+    1_000,
+    {},
+    {
+      type: 'footmen',
+      heroName: 'Jiguang Qi',
+      skillIds: [2],
+    }
+  );
+  const baseline = simulateBattle(config, { seed: 3 });
+  const result = simulateBattle(config, {
+    seed: 3,
+    heroSkills: ['Cao Cao:2'],
+    heroAssignments: { A: { middle: 'Cao Cao' } },
+  });
+
+  assert.deepEqual(result.effectEvents, baseline.effectEvents);
+  assert.equal(result.effectDiagnostics[0].code, 'embedded-explicit-hero-conflict');
+});
+
 test('known hero effects are seeded, deterministic, and publish the effect model only when active', () => {
   const config = equalBattleConfig();
   config.sideA.rows[0] = row(1_000, {}, { type: 'footmen', heroName: 'Jiguang Qi', skillIds: [2] });
@@ -403,6 +529,63 @@ test('unsupported hero projections return diagnostics without executing or chang
   assert.deepEqual(withUnsupported.casualties, withoutHero.casualties);
   assert.deepEqual(withUnsupported.effectEvents, []);
   assert.equal(withUnsupported.effectDiagnostics[0].code, 'skill-not-executable');
+});
+
+function selectedSpecializationEffects(researchIds) {
+  let state = createEmptySpecializationState();
+  for (const researchId of researchIds) {
+    const research = SPECIALIZATION_RESEARCH[researchId];
+    state = setResearchNodes(state, 'cavalry', researchId, [research.passiveSkillNodeId]);
+  }
+  return resolveSpecializationBattleSources(state).effects;
+}
+
+test('selected all-Cavalry specialization passives apply +10 each and change opening initiative', () => {
+  const config = equalBattleConfig();
+  config.sideA.effects = selectedSpecializationEffects(['encounter2', 'encounter3']);
+  config.sideB.rows.forEach((battleRow) => {
+    battleRow.stats.battle.combatSpeed = 15;
+  });
+  const before = structuredClone(config);
+  const baseline = simulateBattle(
+    { ...config, sideA: { ...config.sideA, effects: [] } },
+    { seed: 4 }
+  );
+  const result = simulateBattle(config, { seed: 4 });
+
+  assert.equal(baseline.openingInitiative.side, 'B');
+  assert.equal(result.openingInitiative.side, 'A');
+  assert.equal(result.openingInitiative.combatSpeed, 20);
+  assert.equal(
+    result.effectEvents.filter(
+      ({ type, stat, amount, stacks, target, battleRound }) =>
+        type === 'stat-modifier' &&
+        stat === 'combatSpeed' &&
+        amount === 10 &&
+        stacks === 1 &&
+        target === 'A:front' &&
+        battleRound === 1
+    ).length,
+    2
+  );
+  assert.deepEqual(result.effectDiagnostics, []);
+  assert.deepEqual(config, before);
+});
+
+test('mixed Cavalry specialization formations diagnose without changing the battle model', () => {
+  const config = equalBattleConfig();
+  config.sideA.effects = selectedSpecializationEffects(['encounter2']);
+  config.sideA.rows[1].type = 'footmen';
+  const baselineConfig = structuredClone(config);
+  baselineConfig.sideA.effects = [];
+  const baseline = simulateBattle(baselineConfig, { seed: 5 });
+  const result = simulateBattle(config, { seed: 5 });
+
+  assert.equal(result.modelVersion, BATTLE_MODEL_VERSION);
+  assert.deepEqual(result.survivors, baseline.survivors);
+  assert.deepEqual(result.effectEvents, []);
+  assert.equal(result.effectDiagnostics[0].code, 'specialization-formation-mismatch');
+  assert.equal(result.effectDiagnostics[0].side, 'A');
 });
 
 test('runtime status, healing, DoT, and stat modifiers map through troop state conservatively', () => {

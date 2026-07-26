@@ -65,6 +65,7 @@ service cloud.firestore {
       return data is map
       && data.keys().hasOnly([
         'displayName', 'gameName', 'alliance', 'countryCode', 'bio',
+        'state', 'referralSource', 'comments',
         'isPublic', 'createdAt', 'updatedAt'
       ])
       && data.keys().hasAll([
@@ -72,7 +73,6 @@ service cloud.firestore {
         'isPublic', 'createdAt', 'updatedAt'
       ])
       && data.displayName is string
-      && data.displayName.size() >= 1
       && data.displayName.size() <= 50
       && data.gameName is string
       && data.gameName.size() <= 50
@@ -82,9 +82,93 @@ service cloud.firestore {
       && data.countryCode.matches('^([A-Z]{2})?$')
       && data.bio is string
       && data.bio.size() <= 280
+      && (!('state' in data)
+        || (data.state is string
+          && data.state.size() <= 160))
+      && (!('referralSource' in data)
+        || (data.referralSource is string
+          && data.referralSource.size() <= 160))
+      && (!('comments' in data)
+        || (data.comments is string
+          && data.comments.size() <= 1000))
       && data.isPublic is bool
       && data.createdAt is timestamp
       && data.updatedAt is timestamp;
+    }
+
+    function validCanonicalAccountName(data) {
+      return data.displayName is string
+      && data.displayName.size() >= 1
+      && data.displayName.size() <= 50
+      && data.gameName is string
+      && data.gameName == data.displayName;
+    }
+
+    function validRequiredAccountState(data) {
+      return 'state' in data
+      && data.state is string
+      && data.state.size() >= 1
+      && data.state.size() <= 160;
+    }
+
+    function validRequiredAccountReferral(data) {
+      return 'referralSource' in data
+      && data.referralSource is string
+      && data.referralSource.size() >= 1
+      && data.referralSource.size() <= 160;
+    }
+
+    function validNewAccountProfile(data) {
+      return validAccountProfile(data)
+      && validCanonicalAccountName(data)
+      && validRequiredAccountState(data)
+      && validRequiredAccountReferral(data);
+    }
+
+    function validAccountNameTransition(before, after) {
+      return validCanonicalAccountName(after)
+      || (
+        !validCanonicalAccountName(before)
+        && after.displayName == before.displayName
+        && after.gameName == before.gameName
+      );
+    }
+
+    function validAccountStateTransition(before, after) {
+      return validRequiredAccountState(after)
+      || (
+        !validRequiredAccountState(before)
+        && (
+          (!('state' in before) && !('state' in after))
+          || (
+            'state' in before
+            && 'state' in after
+            && after.state == before.state
+          )
+        )
+      );
+    }
+
+    function validAccountReferralTransition(before, after) {
+      return validRequiredAccountReferral(after)
+      || (
+        !validRequiredAccountReferral(before)
+        && (
+          (!('referralSource' in before) && !('referralSource' in after))
+          || (
+            'referralSource' in before
+            && 'referralSource' in after
+            && after.referralSource == before.referralSource
+          )
+        )
+      );
+    }
+
+    function validAccountProfileUpdate(before, after) {
+      return validAccountProfile(after)
+      && validAccountNameTransition(before, after)
+      && validAccountStateTransition(before, after)
+      && validAccountReferralTransition(before, after);
     }
 
     function validUserProfile() {
@@ -97,6 +181,32 @@ service cloud.firestore {
       && (
         !('accountProfile' in request.resource.data)
         || validAccountProfile(request.resource.data.accountProfile)
+      );
+    }
+
+    function validUserProfileCreate() {
+      return validUserProfile()
+      && (
+        !('accountProfile' in request.resource.data)
+        || validNewAccountProfile(request.resource.data.accountProfile)
+      );
+    }
+
+    function validUserProfileUpdate() {
+      return validUserProfile()
+      && (
+        !('accountProfile' in request.resource.data)
+        || (
+          !('accountProfile' in resource.data)
+          && validNewAccountProfile(request.resource.data.accountProfile)
+        )
+        || (
+          'accountProfile' in resource.data
+          && validAccountProfileUpdate(
+            resource.data.accountProfile,
+            request.resource.data.accountProfile
+          )
+        )
       );
     }
 
@@ -2053,7 +2163,8 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid) && validUserProfile();
+      allow create: if isOwner(uid) && validUserProfileCreate();
+      allow update: if isOwner(uid) && validUserProfileUpdate();
       allow delete: if false;
 
       match /bestCombos/{comboId} {
