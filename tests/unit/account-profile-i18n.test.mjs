@@ -13,6 +13,23 @@ import {
   resolveAccountLocale,
 } from '../../js/account-profile-i18n.js';
 
+const ENGLISH_FALLBACK_KEYS = new Set([
+  'action.continue',
+  'action.finishProfile',
+  'onboarding.step',
+  'onboarding.title',
+  'onboarding.lead',
+  'referral.placeholder',
+  'referral.youtube',
+  'referral.in_game',
+  'referral.vts_1097',
+  'referral.alliance_friend',
+  'referral.search',
+  'referral.other',
+  'status.authenticated',
+  'status.dismiss',
+]);
+
 const placeholders = (value) =>
   [...String(value).matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
 
@@ -63,7 +80,7 @@ test('account packs are complete, deeply frozen, and preserve placeholder parity
         placeholders(ACCOUNT_I18N_PACKS.en[key]),
         `${locale}.${key} placeholders`
       );
-      if (locale !== 'en') {
+      if (locale !== 'en' && !ENGLISH_FALLBACK_KEYS.has(key)) {
         assert.notEqual(
           pack[key],
           ACCOUNT_I18N_PACKS.en[key],
@@ -102,6 +119,7 @@ test('HTML and runtime account keys exist in every locale', () => {
     'verification.verified',
     'verification.unverified',
     'status.created',
+    'status.authenticated',
     'status.signedIn',
     'status.googleSwitchCanceled',
     'status.enterEmail',
@@ -134,6 +152,12 @@ test('translator falls back to English and replaces named placeholders without H
   assert.equal(createAccountTranslator('kr')('action.googleCreate'), 'Google로 계속');
   assert.equal(accountTr('missing.key'), 'missing.key');
   assert.equal(createAccountTranslator('es')('status.saved'), 'Perfil guardado.');
+  for (const locale of ACCOUNT_LOCALES) {
+    const translator = createAccountTranslator(locale);
+    for (const key of ENGLISH_FALLBACK_KEYS) {
+      assert.notEqual(translator(key), key, `${locale}.${key} should resolve`);
+    }
+  }
 });
 
 test('stored locale resolution and document preferences are deterministic', () => {

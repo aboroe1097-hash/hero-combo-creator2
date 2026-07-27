@@ -3,10 +3,14 @@ import { normalizeBohName, normalizeBohNameKey } from './all-star-boh-model.js';
 export const BOH_MAPPER_PLAN_IMPORT_MAX_BYTES = 256 * 1024;
 export const BOH_MAPPER_PLAN_IMPORT_FORMAT = 'all-star-boh-stage1-role-plan';
 export const BOH_MAPPER_PLAN_IMPORT_VERSION = 2;
+export const BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES = 2 * 1024 * 1024;
+export const BOH_MAPPER_PLAN_BUNDLE_FORMAT = 'all-star-boh-stage1-role-plan-bundle';
+export const BOH_MAPPER_PLAN_BUNDLE_VERSION = 1;
 
 const ROLE_KEYS = new Set(['offensive', 'top', 'bottom', 'rune']);
 const PHASE_TIMES = Object.freeze(['0-5', '5-10', '10-15', '15-30', '30-60']);
 const BUILD_FOCUS_KEYS = Object.freeze(['center', 'top', 'bottom', 'rune']);
+const BUNDLE_PLAN_COUNT = 6;
 const MAX_TEAM_ID_LENGTH = 80;
 const MAX_NAME_LENGTH = 120;
 const MAX_METADATA_LENGTH = 160;
@@ -274,22 +278,17 @@ function normalizePlayer(value, index, names, ranks) {
   };
 }
 
-export function parseAllStarBohMapperStage1RolePlan(input) {
-  if (typeof input !== 'string') {
-    fail('boh-mapper-plan-input-type', 'Role-plan import must be JSON text.');
+function normalizeSavedAt(value, { code, label, required = false }) {
+  const savedAt = required
+    ? normalizedText(value, { code, label, max: 40, required: true })
+    : optionalText(value, { code, label, max: 40 });
+  if (savedAt && Number.isNaN(Date.parse(savedAt))) {
+    fail(code, `${label} must be an ISO date-time string.`);
   }
-  if (new TextEncoder().encode(input).byteLength > BOH_MAPPER_PLAN_IMPORT_MAX_BYTES) {
-    fail(
-      'boh-mapper-plan-file-too-large',
-      `Role-plan import exceeds the ${BOH_MAPPER_PLAN_IMPORT_MAX_BYTES}-byte limit.`
-    );
-  }
-  let payload;
-  try {
-    payload = JSON.parse(input);
-  } catch {
-    fail('boh-mapper-plan-invalid-json', 'Role-plan import is not valid JSON.');
-  }
+  return savedAt;
+}
+
+function normalizeRolePlan(payload) {
   const root = record(
     payload,
     'boh-mapper-plan-package-shape',
@@ -310,14 +309,10 @@ export function parseAllStarBohMapperStage1RolePlan(input) {
   if (!Array.isArray(root.players) || root.players.length !== 12) {
     fail('boh-mapper-plan-player-count', 'Role-plan import must contain exactly 12 players.');
   }
-  const savedAt = optionalText(root.savedAt, {
+  const savedAt = normalizeSavedAt(root.savedAt, {
     code: 'boh-mapper-plan-saved-at',
     label: 'Role-plan save timestamp',
-    max: 40,
   });
-  if (savedAt && Number.isNaN(Date.parse(savedAt))) {
-    fail('boh-mapper-plan-saved-at', 'Role-plan save timestamp must be an ISO date-time string.');
-  }
   const names = new Set();
   const ranks = new Set();
   return {
@@ -335,5 +330,92 @@ export function parseAllStarBohMapperStage1RolePlan(input) {
     playerCount: 12,
     phaseCount: PHASE_TIMES.length,
     players: root.players.map((player, index) => normalizePlayer(player, index, names, ranks)),
+  };
+}
+
+export function parseAllStarBohMapperStage1RolePlan(input) {
+  if (typeof input !== 'string') {
+    fail('boh-mapper-plan-input-type', 'Role-plan import must be JSON text.');
+  }
+  if (new TextEncoder().encode(input).byteLength > BOH_MAPPER_PLAN_IMPORT_MAX_BYTES) {
+    fail(
+      'boh-mapper-plan-file-too-large',
+      `Role-plan import exceeds the ${BOH_MAPPER_PLAN_IMPORT_MAX_BYTES}-byte limit.`
+    );
+  }
+  let payload;
+  try {
+    payload = JSON.parse(input);
+  } catch {
+    fail('boh-mapper-plan-invalid-json', 'Role-plan import is not valid JSON.');
+  }
+  return normalizeRolePlan(payload);
+}
+
+export function parseAllStarBohMapperStage1RolePlanBundle(input) {
+  if (typeof input !== 'string') {
+    fail('boh-mapper-plan-bundle-input-type', 'Role-plan bundle import must be JSON text.');
+  }
+  if (new TextEncoder().encode(input).byteLength > BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES) {
+    fail(
+      'boh-mapper-plan-bundle-file-too-large',
+      `Role-plan bundle import exceeds the ${BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES}-byte limit.`
+    );
+  }
+  let payload;
+  try {
+    payload = JSON.parse(input);
+  } catch {
+    fail('boh-mapper-plan-bundle-invalid-json', 'Role-plan bundle import is not valid JSON.');
+  }
+  const root = record(
+    payload,
+    'boh-mapper-plan-bundle-package-shape',
+    'Role-plan bundle import must be a JSON object.'
+  );
+  if (root.format !== BOH_MAPPER_PLAN_BUNDLE_FORMAT) {
+    fail(
+      'boh-mapper-plan-bundle-wrong-format',
+      `Role-plan bundle import format must be ${BOH_MAPPER_PLAN_BUNDLE_FORMAT}.`
+    );
+  }
+  if (root.version !== BOH_MAPPER_PLAN_BUNDLE_VERSION) {
+    fail(
+      'boh-mapper-plan-bundle-wrong-version',
+      `Role-plan bundle import version must be ${BOH_MAPPER_PLAN_BUNDLE_VERSION}.`
+    );
+  }
+  if (!Array.isArray(root.plans) || root.plans.length !== BUNDLE_PLAN_COUNT) {
+    fail(
+      'boh-mapper-plan-bundle-plan-count',
+      `Role-plan bundle import must contain exactly ${BUNDLE_PLAN_COUNT} plans.`
+    );
+  }
+  const savedAt = normalizeSavedAt(root.savedAt, {
+    code: 'boh-mapper-plan-bundle-saved-at',
+    label: 'Role-plan bundle save timestamp',
+    required: true,
+  });
+  const teamIds = new Set();
+  const plans = root.plans.map((plan) => {
+    const normalized = normalizeRolePlan(plan);
+    const teamIdKey = normalizeBohNameKey(normalized.team.id);
+    if (teamIds.has(teamIdKey)) {
+      fail(
+        'boh-mapper-plan-bundle-duplicate-team-id',
+        `Role-plan bundle team ID ${normalized.team.id} is duplicated after normalization.`
+      );
+    }
+    teamIds.add(teamIdKey);
+    return normalized;
+  });
+  return {
+    format: BOH_MAPPER_PLAN_BUNDLE_FORMAT,
+    version: BOH_MAPPER_PLAN_BUNDLE_VERSION,
+    savedAt,
+    planCount: BUNDLE_PLAN_COUNT,
+    playerCount: BUNDLE_PLAN_COUNT * 12,
+    phaseCount: BUNDLE_PLAN_COUNT * PHASE_TIMES.length,
+    plans,
   };
 }

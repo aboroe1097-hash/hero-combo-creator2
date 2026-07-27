@@ -2,6 +2,7 @@ export const ALL_STAR_BOH_UNLOCK_ENDPOINT =
   'https://us-central1-abocombo.cloudfunctions.net/unlockAllStarBoh';
 export const ALL_STAR_BOH_OCR_ENDPOINT =
   'https://delicate-term-725f.aboroe1097.workers.dev/boh/stats-ocr';
+export const VTS_SCORE_ENDPOINT = 'https://us-central1-abocombo.cloudfunctions.net/vtsScore';
 export const ALL_STAR_BOH_GRANT_ENDPOINT =
   'https://firestore.googleapis.com/v1/projects/abocombo/databases/(default)/documents/boh_allstar_member_grants';
 export const ALL_STAR_BOH_GRANT_SCHEMA_VERSION = 1;
@@ -10,6 +11,7 @@ const MAX_PIN_LENGTH = 128;
 const MAX_RESPONSE_BYTES = 1024 * 1024;
 const UNLOCK_TIMEOUT_MS = 30_000;
 const OCR_TIMEOUT_MS = 90_000;
+const SCORE_TIMEOUT_MS = 30_000;
 const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 const SEASON_PATTERN = /^[a-z0-9_-]{1,80}$/iu;
 const OCR_REQUEST_KEYS = Object.freeze(['imageData', 'screenshotType', 'seasonId']);
@@ -170,6 +172,9 @@ function responseError(response, payload, fallbackCode) {
     'rate_limited',
     'request_too_large',
     'service_unavailable',
+    'signup_changed',
+    'signup_not_found',
+    'already_submitted',
     'signups_closed',
     'temporarily_locked',
     'unsupported_media_type',
@@ -233,6 +238,7 @@ export function createAllStarBohAccessClient(options = {}) {
     'Unlock'
   );
   const ocrEndpoint = validateEndpoint(options.ocrEndpoint || ALL_STAR_BOH_OCR_ENDPOINT, 'OCR');
+  const scoreEndpoint = validateEndpoint(options.scoreEndpoint || VTS_SCORE_ENDPOINT, 'VtsScore');
   const grantEndpoint = validateEndpoint(
     options.grantEndpoint || ALL_STAR_BOH_GRANT_ENDPOINT,
     'Member grant'
@@ -415,6 +421,77 @@ export function createAllStarBohAccessClient(options = {}) {
     );
   }
 
+  async function getVtsScorePlayers() {
+    const user = await resolveUser();
+    const grant = await getAccessGrant({ minimumRemainingSeconds: 5 });
+    if (!grant) throw accessError('access_expired', 'Member access has expired.');
+    const credentials = await requestCredentials(user, false);
+    const response = await requestJson(
+      scoreEndpoint,
+      { method: 'GET' },
+      credentials,
+      options.scoreTimeoutMs || SCORE_TIMEOUT_MS,
+      'score_failed'
+    );
+    if (
+      response.schemaVersion !== 1 ||
+      normalizeSeason(response.seasonId) !== grant.seasonId ||
+      !Array.isArray(response.players)
+    ) {
+      throw accessError('invalid_response', 'The VtsScore player list is invalid.');
+    }
+    const players = response.players.map((player) => {
+      const keys = player && typeof player === 'object' ? Object.keys(player).sort() : [];
+      const submissionUid =
+        typeof player?.submissionUid === 'string' ? player.submissionUid.trim() : '';
+      const gameName = typeof player?.gameName === 'string' ? player.gameName.trim() : '';
+      if (
+        keys.length !== 2 ||
+        keys[0] !== 'gameName' ||
+        keys[1] !== 'submissionUid' ||
+        !submissionUid ||
+        !gameName ||
+        submissionUid.length > 128 ||
+        Array.from(gameName).length > 160
+      ) {
+        throw accessError('invalid_response', 'The VtsScore player list is invalid.');
+      }
+      return Object.freeze({ submissionUid, gameName });
+    });
+    return Object.freeze({ seasonId: grant.seasonId, players: Object.freeze(players) });
+  }
+
+  async function submitVtsScore(payload) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw accessError('invalid_score_request', 'The VtsScore submission is invalid.');
+    }
+    const seasonId = normalizeSeason(payload.seasonId);
+    const user = await resolveUser();
+    const grant = await getAccessGrant({ expectedSeason: seasonId, minimumRemainingSeconds: 5 });
+    if (!grant) throw accessError('access_expired', 'Member access has expired.');
+    const credentials = await requestCredentials(user, false);
+    const response = await requestJson(
+      scoreEndpoint,
+      { method: 'POST', body: JSON.stringify(payload) },
+      credentials,
+      options.scoreTimeoutMs || SCORE_TIMEOUT_MS,
+      'score_failed'
+    );
+    const score = response?.score;
+    if (
+      response?.schemaVersion !== 1 ||
+      !score ||
+      typeof score !== 'object' ||
+      !Number.isSafeInteger(score.dragonPower) ||
+      !Number.isSafeInteger(score.revision) ||
+      typeof score.submissionUid !== 'string' ||
+      typeof score.gameName !== 'string'
+    ) {
+      throw accessError('invalid_response', 'The VtsScore response is invalid.');
+    }
+    return Object.freeze({ ...score });
+  }
+
   function destroy() {
     if (destroyed) return;
     destroyed = true;
@@ -427,6 +504,8 @@ export function createAllStarBohAccessClient(options = {}) {
     unlock,
     process: processOcr,
     processOcr,
+    getVtsScorePlayers,
+    submitVtsScore,
     destroy,
   });
 }

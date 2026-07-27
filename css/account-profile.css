@@ -220,6 +220,17 @@ html {
   border: 0;
 }
 
+.account-step-heading {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.account-step-heading h2 {
+  margin: 0;
+  color: #f7fbff;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
 .account-field {
   display: grid;
   min-width: 0;
@@ -235,6 +246,7 @@ html {
 
 .account-field input,
 .account-field textarea,
+.account-field select,
 .account-language select {
   width: 100%;
   min-height: 48px;
@@ -249,7 +261,8 @@ html {
 }
 
 .account-field input,
-.account-field textarea {
+.account-field textarea,
+.account-field select {
   padding: 0.75rem 0.85rem;
 }
 
@@ -266,12 +279,14 @@ html {
 
 .account-field input:hover,
 .account-field textarea:hover,
+.account-field select:hover,
 .account-language select:hover {
   border-color: #526982;
 }
 
 .account-field input:focus-visible,
 .account-field textarea:focus-visible,
+.account-field select:focus-visible,
 .account-language select:focus-visible,
 .account-button:focus-visible,
 .account-tabs button:focus-visible,
@@ -285,6 +300,7 @@ html {
 
 .account-field input:focus-visible,
 .account-field textarea:focus-visible,
+.account-field select:focus-visible,
 .account-language select:focus-visible {
   border-color: #2fd5e9;
 }
@@ -336,6 +352,19 @@ html {
 .account-button--primary:hover:not(:disabled) {
   border-color: transparent;
   background: linear-gradient(135deg, #8cecf6, #48d6e4 68%, #d8ba70);
+}
+
+.account-button--google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.account-google-icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
 }
 
 .account-button--text {
@@ -571,20 +600,32 @@ html {
   z-index: 8;
   inset-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
   bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   width: fit-content;
   max-width: min(32rem, calc(100% - 2rem));
-  min-height: 0;
+  min-height: 44px;
   margin: 0 auto;
-  padding: 0;
+  padding: 0.65rem 0.7rem 0.65rem 0.9rem;
   border-radius: 8px;
   background: #0b1728;
   font-size: 0.84rem;
   line-height: 1.45;
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
-.account-status:not(:empty) {
-  padding: 0.7rem 0.9rem;
+.account-status button {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: currentColor;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 1.2rem;
+  cursor: pointer;
 }
 
 .account-status[data-kind='error'] {
@@ -805,12 +846,17 @@ html {
   color: #101827;
 }
 
+[data-theme='light'] .account-step-heading h2 {
+  color: #101827;
+}
+
 [data-theme='light'] .account-field {
   color: #334155;
 }
 
 [data-theme='light'] .account-field input,
 [data-theme='light'] .account-field textarea,
+[data-theme='light'] .account-field select,
 [data-theme='light'] .account-language select {
   border-color: #b8c5d4;
   color: #101827;

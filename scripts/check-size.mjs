@@ -25,7 +25,8 @@ const LIMITS = {
   // 1.5 KiB of headroom.
   // The audited 14.2.8 shared mobile controls and Specialization palette
   // measure 405.6 KiB; retain less than 1.5 KiB of headroom.
-  entryCssBytes: 407 * 1024,
+  // The 14.2.18 semantic Specialization controls measure 407.2 KiB.
+  entryCssBytes: 408 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
@@ -62,7 +63,9 @@ const LIMITS = {
   // The v14.2.16 mapper-first Admin and five-phase plan plus independent
   // per-side Battle profiles measure 9300.9 KiB. Retain about 9 KiB while
   // entry and route caps remain unchanged.
-  totalJsBytes: 9340 * 1024,
+  // The 14.2.18 guided builder, event progress, and provider-first account
+  // flow measure 9356.6 KiB; retain roughly 13 KiB of aggregate headroom.
+  totalJsBytes: 9380 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -80,7 +83,9 @@ const LIMITS = {
   // The v14.2.16 mapper-first Admin and deferred embedded Battle Tower editor
   // measure about 1397.0 KiB. Retain about 8 KiB while initial-route caps stay
   // fixed.
-  totalCssBytes: 1410 * 1024,
+  // The 14.2.18 guided admin, timeline, account, and semantic control styles
+  // measure 1419.6 KiB; retain roughly 10 KiB of aggregate headroom.
+  totalCssBytes: 1440 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -119,7 +124,9 @@ const LIMITS = {
   // profile editor artifact measures about 27,739.0 KiB with deferred Tower
   // CSS. Retain about 11 KiB while route, entry, media, and file-count caps stay
   // unchanged.
-  totalDeployBytes: 27800 * 1024,
+  // The complete 14.2.18 artifact measures 27,824.1 KiB; retain roughly
+  // 16 KiB while route, media, and file-count caps remain unchanged.
+  totalDeployBytes: 27880 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
@@ -128,7 +135,7 @@ const LIMITS = {
   // 585 files; retain a one-file guard.
   // The audited locale/profile/battle artifact emits 601 files. Keep three
   // files of headroom so unexpected chunk proliferation remains visible.
-  deployFileCount: 604,
+  deployFileCount: 610,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

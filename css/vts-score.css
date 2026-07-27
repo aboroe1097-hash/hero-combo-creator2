@@ -1,0 +1,355 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter,
+    Outfit,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background: #060c16;
+  color: #edf6ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 15% 0%, rgb(22 119 146 / 28%), transparent 34rem),
+    radial-gradient(circle at 90% 20%, rgb(194 126 32 / 20%), transparent 30rem), #060c16;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vts-score-shell {
+  width: min(780px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 24px;
+}
+
+.vts-score-hero,
+.vts-score-card {
+  border: 1px solid rgb(142 204 224 / 18%);
+  border-radius: 24px;
+  background: rgb(9 20 35 / 88%);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 34%);
+  backdrop-filter: blur(18px);
+}
+
+.vts-score-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+}
+
+.vts-score-hero::after {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #22d3ee, #f5a524);
+  content: '';
+}
+
+.vts-score-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vts-score-brand img {
+  border-radius: 16px;
+  filter: drop-shadow(0 0 14px rgb(34 211 238 / 35%));
+}
+
+.vts-score-brand span {
+  display: grid;
+}
+
+.vts-score-brand strong {
+  font-size: 1.3rem;
+}
+
+.vts-score-brand small,
+.vts-score-kicker,
+.vts-score-deadline span {
+  color: #91a8bb;
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.vts-score-hero__copy {
+  margin-top: 32px;
+}
+
+.vts-score-hero h1 {
+  max-width: 620px;
+  margin: 8px 0 12px;
+  font-size: clamp(2rem, 7vw, 3.7rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.vts-score-hero p,
+.vts-score-card p {
+  color: #b6c7d5;
+  line-height: 1.65;
+}
+
+.vts-score-deadline {
+  display: grid;
+  gap: 4px;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgb(245 165 36 / 28%);
+  border-radius: 15px;
+  background: rgb(245 165 36 / 8%);
+}
+
+.vts-score-status {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border: 1px solid rgb(148 163 184 / 25%);
+  border-radius: 14px;
+  background: rgb(15 28 44 / 94%);
+  color: #dbeafe;
+}
+
+.vts-score-status[data-tone='success'] {
+  border-color: rgb(52 211 153 / 38%);
+  color: #a7f3d0;
+}
+
+.vts-score-status[data-tone='warning'] {
+  border-color: rgb(251 191 36 / 42%);
+  color: #fde68a;
+}
+
+.vts-score-status[data-tone='error'] {
+  border-color: rgb(248 113 113 / 42%);
+  color: #fecaca;
+}
+
+.vts-score-card {
+  margin-top: 18px;
+  padding: 26px;
+}
+
+.vts-score-card h2 {
+  margin: 7px 0;
+}
+
+.vts-score-gate label,
+.vts-score-step label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 800;
+}
+
+.vts-score-inline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+input[type='password'],
+input[type='search'],
+input[type='number'],
+input[type='file'] {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid #30465c;
+  border-radius: 12px;
+  background: #081522;
+  color: #f8fafc;
+}
+
+input[type='password'],
+input[type='search'],
+input[type='number'] {
+  padding: 0 14px;
+}
+
+input[type='file'] {
+  padding: 9px;
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible,
+.vts-score-success:focus-visible {
+  outline: 3px solid rgb(34 211 238 / 55%);
+  outline-offset: 3px;
+}
+
+button {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #16a9c3, #0e7490);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.vts-score-step {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 14px;
+  padding: 22px 0;
+  border-bottom: 1px solid rgb(148 163 184 / 14%);
+}
+
+.vts-score-step:first-child {
+  padding-top: 0;
+}
+
+.vts-score-step__number {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgb(34 211 238 / 35%);
+  border-radius: 50%;
+  background: rgb(34 211 238 / 10%);
+  color: #67e8f9;
+  font-weight: 900;
+}
+
+.vts-score-step p {
+  margin: 0 0 14px;
+}
+
+.vts-score-consent {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 !important;
+  color: #b6c7d5;
+  font-size: 0.9rem;
+  font-weight: 500 !important;
+  line-height: 1.5;
+}
+
+.vts-score-consent input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #22d3ee;
+}
+
+.vts-score-secondary {
+  border: 1px solid rgb(34 211 238 / 28%);
+  background: rgb(34 211 238 / 9%);
+}
+
+.vts-score-ocr-result {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: rgb(52 211 153 / 9%);
+  color: #a7f3d0;
+}
+
+.vts-score-submit {
+  width: 100%;
+  margin-top: 22px;
+  min-height: 56px;
+  background: linear-gradient(135deg, #f5a524, #d97706);
+  color: #140d03;
+}
+
+.vts-score-success {
+  padding: 22px 4px 8px;
+  text-align: center;
+}
+
+.vts-score-success > span {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(52 211 153 / 15%);
+  color: #6ee7b7;
+  font-size: 2rem;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 4px 0;
+  color: #7890a3;
+  font-size: 0.82rem;
+}
+
+footer a {
+  color: #67e8f9;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 560px) {
+  .vts-score-shell {
+    width: min(100% - 20px, 780px);
+    padding-top: 10px;
+  }
+
+  .vts-score-hero,
+  .vts-score-card {
+    border-radius: 18px;
+  }
+
+  .vts-score-hero,
+  .vts-score-card {
+    padding: 20px;
+  }
+
+  .vts-score-inline,
+  footer {
+    grid-template-columns: 1fr;
+  }
+
+  .vts-score-inline {
+    display: grid;
+  }
+
+  footer {
+    display: grid;
+  }
+
+  .vts-score-ocr-result {
+    display: grid;
+  }
+}

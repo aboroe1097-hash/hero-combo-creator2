@@ -2256,6 +2256,13 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /raceScores/{submissionUid} {
+        // Members use the authenticated vtsScore Function. Keeping this
+        // collection admin-only prevents clients from listing names, forging
+        // another player's final value, or bypassing the OCR audit contract.
+        allow read, write: if isAdmin();
+      }
+
       match /drafts/{draftId} {
         allow read, write: if isAdmin();
       }

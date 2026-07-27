@@ -4050,10 +4050,41 @@ function scheduleMilestoneStatus(view, milestone, now) {
   return milestone.startsAtMs < now ? 'complete' : 'upcoming';
 }
 
+export function deriveBohScheduleProgress(view, nowMs = Date.now()) {
+  const ordered = Array.isArray(view?.ordered) ? view.ordered : [];
+  const total = ordered.length;
+  if (!total) return Object.freeze({ ratio: 0, percent: 0, current: 0, total: 0 });
+  if (view.source === 'fallback') {
+    return Object.freeze({ ratio: 0, percent: 0, current: 1, total });
+  }
+  const now = Number(nowMs);
+  const startsAtMs =
+    ordered[0]?.startsAtMs || scheduleTimestamp(view.schedule?.eventStartsAt) || now;
+  const endsAtMs =
+    scheduleTimestamp(view.schedule?.eventEndsAt) || ordered[total - 1]?.startsAtMs || startsAtMs;
+  const ratio =
+    endsAtMs > startsAtMs && Number.isFinite(now)
+      ? Math.max(0, Math.min(1, (now - startsAtMs) / (endsAtMs - startsAtMs)))
+      : view.phase === 'ended'
+        ? 1
+        : 0;
+  const active = view.current || view.next || ordered[total - 1];
+  const activeIndex = Math.max(
+    0,
+    ordered.findIndex((milestone) => milestone.id === active?.id)
+  );
+  return Object.freeze({
+    ratio,
+    percent: Math.round(ratio * 100),
+    current: view.phase === 'ended' ? total : activeIndex + 1,
+    total,
+  });
+}
+
 function centerSelectedScheduleMilestone(state) {
   if (state.section !== 'schedule' || !state.scheduleNeedsCenter) return;
   const rail = query(state.root, '[data-role="schedule-rail"]');
-  const selected = query(rail, '[aria-current="step"]');
+  const selected = query(rail, '[data-selected="true"]');
   if (!selected?.scrollIntoView) return;
   const reducedMotion = ownerWindow(state.root)?.matchMedia?.(
     '(prefers-reduced-motion: reduce)'
@@ -4082,15 +4113,38 @@ function renderEventScheduleStructure(state, view, selected, statuses, signature
   if (!panel || !rail) return;
   panel.dataset.phase = view.phase;
   rail.dataset.phase = view.phase;
+  rail.style?.setProperty?.('--boh-schedule-count', String(Math.max(1, view.ordered.length)));
   const buttons = view.ordered.map((milestone, index) => {
     const status = statuses[index];
+    const selectedStatus = scheduleSelectedStatus(state, view, milestone, status);
+    const date =
+      view.source === 'fallback'
+        ? formatScheduleDay(state, milestone.startsAt)
+        : formatScheduleDate(state, milestone.startsAtMs);
+    const stage = state.tr('schedule.stagePosition', 'Stage {current} of {total}', {
+      current: index + 1,
+      total: view.ordered.length,
+    });
     const button = createElement(state.root, 'button', 'boh-schedule-mile');
     button.type = 'button';
     button.dataset.role = 'schedule-milestone';
     button.dataset.milestoneId = milestone.id;
     button.dataset.status = status;
+    button.dataset.selected = String(milestone.id === selected?.id);
     button.style?.setProperty?.('--boh-reveal-index', String(index));
-    button.setAttribute('aria-current', milestone.id === selected?.id ? 'step' : 'false');
+    button.tabIndex = milestone.id === selected?.id ? 0 : -1;
+    button.setAttribute('aria-controls', 'bohScheduleMilestoneDetail');
+    button.setAttribute('aria-current', status === 'current' ? 'step' : 'false');
+    button.setAttribute('aria-pressed', milestone.id === selected?.id ? 'true' : 'false');
+    button.setAttribute(
+      'aria-label',
+      state.tr('schedule.milestoneAria', '{stage}: {label}. {status}. {time}.', {
+        stage,
+        label: milestone.label || milestone.id,
+        status: selectedStatus,
+        time: date,
+      })
+    );
     append(
       button,
       createElement(
@@ -4100,25 +4154,28 @@ function renderEventScheduleStructure(state, view, selected, statuses, signature
         String(index + 1).padStart(2, '0')
       ),
       createElement(state.root, 'strong', '', milestone.label || milestone.id),
-      createElement(
-        state.root,
-        'small',
-        '',
-        view.source === 'fallback'
-          ? formatScheduleDay(state, milestone.startsAt)
-          : formatScheduleDate(state, milestone.startsAtMs)
-      )
+      createElement(state.root, 'small', '', date)
     );
     return button;
   });
   replaceChildren(rail, ...buttons);
-  setText(
-    query(state.root, '[data-role="schedule-title"]'),
-    selected?.label || state.tr('schedule.title', 'Event schedule')
-  );
   const selectedStatus = selected
     ? scheduleMilestoneStatus(view, selected, scheduleNow(state))
     : 'upcoming';
+  const selectedIndex = Math.max(
+    0,
+    view.ordered.findIndex((milestone) => milestone.id === selected?.id)
+  );
+  setText(query(state.root, '[data-role="schedule-selected-label"]'), selected?.label || '');
+  setText(
+    query(state.root, '[data-role="schedule-selected-stage"]'),
+    selected
+      ? state.tr('schedule.stagePosition', 'Stage {current} of {total}', {
+          current: selectedIndex + 1,
+          total: view.ordered.length,
+        })
+      : ''
+  );
   setText(
     query(state.root, '[data-role="schedule-selected-status"]'),
     scheduleSelectedStatus(state, view, selected, selectedStatus)
@@ -4129,6 +4186,13 @@ function renderEventScheduleStructure(state, view, selected, statuses, signature
       ? formatScheduleDay(state, selected?.startsAt || view.schedule.eventStartsAt)
       : formatScheduleDate(state, selected?.startsAtMs || view.schedule.eventStartsAt)
   );
+  const detail = query(state.root, '[data-role="schedule-milestone-detail"]');
+  if (detail) {
+    detail.dataset.status = selectedStatus;
+    detail.classList?.remove?.('is-revealing');
+    void detail.offsetWidth;
+    detail.classList?.add?.('is-revealing');
+  }
   const teamList = query(state.root, '[data-role="schedule-team-times"]');
   const teamTimes = Array.isArray(view.schedule.teamGameTimes) ? view.schedule.teamGameTimes : [];
   const teamItems = teamTimes.map((item) => {
@@ -4165,11 +4229,22 @@ function updateEventScheduleClock(state, view, selected, now) {
   if (!panel) return;
   panel.dataset.phase = view.phase;
   if (rail) rail.dataset.phase = view.phase;
-  const firstAt = view.ordered[0]?.startsAtMs || 0;
-  const lastAt = view.ordered[view.ordered.length - 1]?.startsAtMs || firstAt;
-  const progress =
-    lastAt > firstAt ? Math.max(0, Math.min(1, (now - firstAt) / (lastAt - firstAt))) : 0;
-  rail?.style?.setProperty?.('--boh-schedule-progress', `${(progress * 100).toFixed(2)}%`);
+  const progress = deriveBohScheduleProgress(view, now);
+  const progressValue = `${(progress.ratio * 100).toFixed(2)}%`;
+  rail?.style?.setProperty?.('--boh-schedule-progress', progressValue);
+  const progressBar = query(state.root, '[data-role="schedule-progress"]');
+  progressBar?.style?.setProperty?.('--boh-schedule-progress', progressValue);
+  progressBar?.setAttribute?.('aria-valuenow', String(progress.percent));
+  const progressCopy =
+    view.source === 'fallback'
+      ? state.tr('schedule.stagePosition', 'Stage {current} of {total}', progress)
+      : state.tr(
+          'schedule.progressSummary',
+          '{percent}% complete · Stage {current} of {total}',
+          progress
+        );
+  progressBar?.setAttribute?.('aria-valuetext', progressCopy);
+  setText(query(state.root, '[data-role="schedule-progress-copy"]'), progressCopy);
   const target = selectBohScheduleCountdownTarget(
     view,
     selected,
@@ -4658,6 +4733,35 @@ function handleKeydown(state, event) {
     event.preventDefault();
     state.selectedObjectiveId = mapObjective.dataset.objectiveId;
     renderPlan(state);
+    return;
+  }
+  const scheduleMilestone = event.target?.closest?.('[data-role="schedule-milestone"]');
+  if (scheduleMilestone) {
+    const milestones = queryAll(state.root, '[data-role="schedule-milestone"]');
+    const activeIndex = milestones.indexOf(scheduleMilestone);
+    if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const direction =
+        ownerWindow(state.root)?.getComputedStyle?.(state.root)?.direction === 'rtl' ? -1 : 1;
+      let index = activeIndex;
+      if (event.key === 'Home') index = 0;
+      if (event.key === 'End') index = milestones.length - 1;
+      if (event.key === 'ArrowRight') {
+        index = (activeIndex + direction + milestones.length) % milestones.length;
+      }
+      if (event.key === 'ArrowLeft') {
+        index = (activeIndex - direction + milestones.length) % milestones.length;
+      }
+      const milestoneId = milestones[index]?.dataset.milestoneId;
+      if (!milestoneId) return;
+      state.selectedMilestoneId = milestoneId;
+      state.selectedMilestoneIsManual = true;
+      state.scheduleNeedsCenter = true;
+      renderEventSchedule(state);
+      queryAll(state.root, '[data-role="schedule-milestone"]')
+        .find((milestone) => milestone.dataset.milestoneId === milestoneId)
+        ?.focus?.({ preventScroll: true });
+    }
     return;
   }
   const sectionTab = event.target?.closest?.('[data-role="section-tab"]');

@@ -1264,9 +1264,32 @@ test.describe('All-Star BoH secure player hub', () => {
     await root.locator('[data-section="schedule"][data-role="section-tab"]').click();
     await expect(root.locator('#bohSchedulePanel')).toBeVisible();
     await expect(root.locator('[data-role="event-schedule"]')).toBeVisible();
-    await expect(
-      root.locator('[data-role="schedule-rail"] [data-role="schedule-milestone"]')
-    ).toHaveCount(3);
+    const milestones = root.locator('[data-role="schedule-rail"] [data-role="schedule-milestone"]');
+    await expect(milestones).toHaveCount(3);
+    await expect(milestones.first()).toHaveAttribute('tabindex', '0');
+    await expect(milestones.first()).toHaveAttribute('aria-pressed', 'true');
+    await expect(milestones.first()).toHaveAttribute('aria-controls', 'bohScheduleMilestoneDetail');
+    await expect(milestones.first()).toHaveAttribute(
+      'aria-label',
+      /Stage 1 of 3: Check in\. Upcoming milestone\./
+    );
+    await expect(root.locator('[data-role="schedule-progress"]')).toHaveAttribute(
+      'aria-valuenow',
+      '0'
+    );
+    await expect(root.locator('[data-role="schedule-milestone-detail"]')).toContainText('Check in');
+
+    await milestones.first().focus();
+    await page.keyboard.press('End');
+    await expect(milestones.nth(2)).toBeFocused();
+    await expect(milestones.nth(2)).toHaveAttribute('tabindex', '0');
+    await expect(root.locator('[data-role="schedule-selected-label"]')).toHaveText('Rune fight');
+    await page.keyboard.press('ArrowLeft');
+    await expect(milestones.nth(1)).toBeFocused();
+    await expect(root.locator('[data-role="schedule-selected-label"]')).toHaveText('Gates open');
+    await page.keyboard.press('Home');
+    await expect(milestones.first()).toBeFocused();
+    await expect(root.locator('[data-role="schedule-selected-label"]')).toHaveText('Check in');
     await expect(root.locator('[data-role="schedule-team-times"] > li')).toHaveCount(6);
   });
 
@@ -1641,11 +1664,13 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(root.locator('.boh-admin-team')).toHaveCount(6);
     await expect(root.locator('.boh-admin-seat')).toHaveCount(72);
 
-    const advancedTools = root.locator('details.boh-admin-advanced-tools');
+    const advancedTools = root.locator('details.boh-admin-advanced-tools').first();
     const previewBalance = root.locator('[data-action=preview-balance-teams]');
     const applyPreview = root.getByRole('button', { name: 'Apply preview' });
     const discardPreview = root.getByRole('button', { name: 'Discard preview' });
     await expect(advancedTools).not.toHaveAttribute('open', '');
+    await advancedTools.locator(':scope > summary').click();
+    await expect(advancedTools).toHaveAttribute('open', '');
     await expect(applyPreview).toBeDisabled();
     await expect(discardPreview).toBeDisabled();
 

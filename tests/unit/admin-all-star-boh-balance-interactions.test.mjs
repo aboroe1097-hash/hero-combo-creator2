@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -2883,7 +2884,9 @@ test('role-plan JSON exact-matches one saved team and writes only authored perso
   const saved = await dispatch(adapter, snapshot, 'saveMapperRolePlanImport');
   snapshot = saved.snapshot;
   const storedTeam = primitiveStore.teams.get(team.id);
-  assert.equal(primitiveStore.singleTeamSaveCount, saveCount + 1);
+  assert.equal(primitiveStore.singleTeamSaveCount, saveCount);
+  assert.equal(primitiveStore.bundleCalls.length > 0, true);
+  assert.deepEqual(Object.keys(primitiveStore.bundleCalls.at(-1).bundle.teams), [team.id]);
   assert.equal(primitiveStore.draft.revision, draftRevision);
   assert.deepEqual(storedTeam.seats, beforeSeats);
   assert.equal(storedTeam.plan.generated, false);
@@ -2899,6 +2902,48 @@ test('role-plan JSON exact-matches one saved team and writes only authored perso
   assert.equal(importedRule.instruction.action, 'Legion 1 action 1');
   assert.equal(importedRule.instruction.teleport, 'No Teleport');
   assert.equal(saved.result.teamId, team.id);
+  adapter.stop();
+});
+
+test('player value command keeps identity immutable and supports reasoned override clearing', async () => {
+  const { adapter, primitiveStore } = await createBalancedFixture();
+  let snapshot = adapter.getSnapshot();
+  snapshot = (
+    await dispatch(adapter, snapshot, 'savePlayerValues', {
+      playerId: 'player-01',
+      uid: 'attempted-uid-change',
+      displayName: 'Player 01 corrected',
+      totalCastlePower: 987654321,
+      correctionReason: 'Verified against retained evidence',
+      baseScoreOverride: 7654321,
+      overrideReason: 'Leadership audit',
+    })
+  ).snapshot;
+  const savedReview = await primitiveStore.getReview('firebase-uid-01');
+  assert.equal(savedReview.submissionCorrection.values.gameName, 'Player 01 corrected');
+  assert.equal(savedReview.submissionCorrection.values.stats.totalCastlePower, 987654321);
+  assert.equal(
+    primitiveStore.draft.scoreOverrides.find((item) => item.playerId === 'player-01').reason,
+    'Leadership audit'
+  );
+  assert.equal(
+    snapshot.submissions.find((item) => item.playerId === 'player-01').uid,
+    'firebase-uid-01'
+  );
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'setScoreOverride', {
+      playerId: 'player-01',
+      score: 1,
+      reason: '',
+    }),
+    (error) => error?.code === 'all-star-boh-score-override-reason-required'
+  );
+  snapshot = (await dispatch(adapter, snapshot, 'removeScoreOverride', { playerId: 'player-01' }))
+    .snapshot;
+  assert.equal(
+    primitiveStore.draft.scoreOverrides.some((item) => item.playerId === 'player-01'),
+    false
+  );
   adapter.stop();
 });
 
@@ -2924,4 +2969,30 @@ test('combined publication is one atomic publish while plan-only still needs a l
   assert.equal(snapshot.publications.announcement.status, 'published');
   assert.equal(snapshot.publications.plan.status, 'published');
   adapter.stop();
+});
+
+test('team workspace view controls persist safe density and column preferences', () => {
+  const source = readFileSync('js/admin-all-star-boh.js', 'utf8');
+
+  assert.match(source, /TEAM_WORKSPACE_VIEW_STORAGE_KEY = 'bohAdminTeamWorkspaceView'/u);
+  assert.match(
+    source,
+    /function normalizeTeamWorkspaceView[\s\S]*?'compact'[\s\S]*?'comfortable'[\s\S]*?\[1, 2, 3\][\s\S]*?: 2/u
+  );
+  assert.match(
+    source,
+    /function readTeamWorkspaceView\(\)[\s\S]*?try \{[\s\S]*?globalThis\.localStorage\?\.getItem[\s\S]*?catch \{/u
+  );
+  assert.match(
+    source,
+    /function saveTeamWorkspaceView\(state\)[\s\S]*?globalThis\.localStorage\?\.setItem/u
+  );
+  assert.match(
+    source,
+    /if \(action === 'team-board-density'\)[\s\S]*?saveTeamWorkspaceView\(state\)[\s\S]*?renderShell\(state\)/u
+  );
+  assert.match(
+    source,
+    /if \(action === 'team-board-columns'\)[\s\S]*?\[1, 2, 3\]\.includes\(columns\)[\s\S]*?saveTeamWorkspaceView\(state\)/u
+  );
 });

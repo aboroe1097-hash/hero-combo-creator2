@@ -9,7 +9,6 @@ import { importFirebaseAuth, importFirestore } from './firebase-sdk.js';
 import {
   confirmExistingGoogleAccountSwitch,
   normalizeAccountProfile,
-  planExistingGoogleAccountRecovery,
 } from './account-profile-model.js';
 
 export { normalizeAccountProfile } from './account-profile-model.js';
@@ -39,58 +38,6 @@ function requireLinkedUser() {
   return user;
 }
 
-function normalizeInitialProfile(onboarding) {
-  return normalizeAccountProfile({
-    ...onboarding,
-    alliance: '',
-    countryCode: '',
-    bio: '',
-    isPublic: false,
-  });
-}
-
-async function saveInitialPrivateProfile(profile) {
-  return saveAccountProfile(profile);
-}
-
-async function fillMissingExistingAccountProfile(user, onboarding) {
-  const { doc, getDoc, serverTimestamp, writeBatch } = await importFirestore();
-  const privateRef = doc(getDb(), 'users', user.uid);
-  const publicRef = doc(getDb(), 'public_profiles', user.uid);
-  const [privateSnapshot, publicSnapshot] = await Promise.all([
-    getDoc(privateRef),
-    getDoc(publicRef),
-  ]);
-  const privateProfile = privateSnapshot.data()?.accountProfile || null;
-  const publicProfile = publicSnapshot.exists() ? publicSnapshot.data() : null;
-  const recovery = planExistingGoogleAccountRecovery(privateProfile, publicProfile, onboarding);
-  if (recovery.kind === 'none') return recovery;
-
-  const updatedAt = serverTimestamp();
-  const batch = writeBatch(getDb());
-  if (recovery.kind === 'update') {
-    const updates = { 'accountProfile.updatedAt': updatedAt };
-    for (const [field, value] of Object.entries(recovery.patch)) {
-      updates[`accountProfile.${field}`] = value;
-    }
-    batch.update(privateRef, updates);
-  } else {
-    batch.set(
-      privateRef,
-      {
-        accountProfile: {
-          ...recovery.profile,
-          createdAt: updatedAt,
-          updatedAt,
-        },
-      },
-      { merge: true }
-    );
-  }
-  await batch.commit();
-  return recovery;
-}
-
 export async function getAccountState() {
   await requireFirebase();
   const user = getCurrentUser() || (await ensureAnonymousAuth());
@@ -103,18 +50,15 @@ export async function getAccountState() {
   };
 }
 
-export async function upgradeGuestWithEmail(email, password, onboarding) {
-  const initialProfile = normalizeInitialProfile(onboarding);
+export async function upgradeGuestWithEmail(email, password) {
   await requireFirebase();
   const guest = getCurrentUser() || (await ensureAnonymousAuth());
   if (!guest?.isAnonymous) throw new Error('The current session is already linked to an account.');
 
-  const { EmailAuthProvider, linkWithCredential, sendEmailVerification, updateProfile } =
+  const { EmailAuthProvider, linkWithCredential, sendEmailVerification } =
     await importFirebaseAuth();
   const credential = EmailAuthProvider.credential(cleanText(email), String(password || ''));
   const result = await linkWithCredential(guest, credential);
-  await updateProfile(result.user, { displayName: initialProfile.gameName });
-  await saveInitialPrivateProfile(initialProfile);
 
   let verificationSent = false;
   try {
@@ -132,14 +76,12 @@ export async function signInExistingEmail(email, password) {
   return signInWithEmailAndPassword(auth, cleanText(email), String(password || ''));
 }
 
-export async function upgradeGuestWithGoogle(onboarding, { confirmExistingAccount } = {}) {
-  const initialProfile = normalizeInitialProfile(onboarding);
+export async function upgradeGuestWithGoogle({ confirmExistingAccount } = {}) {
   const { auth } = await requireFirebase();
   const guest = getCurrentUser() || (await ensureAnonymousAuth());
   if (!guest?.isAnonymous) throw new Error('The current session is already linked to an account.');
 
-  const { GoogleAuthProvider, linkWithPopup, signInWithCredential, updateProfile } =
-    await importFirebaseAuth();
+  const { GoogleAuthProvider, linkWithPopup, signInWithCredential } = await importFirebaseAuth();
   const provider = new GoogleAuthProvider();
   let result;
   try {
@@ -157,12 +99,10 @@ export async function upgradeGuestWithGoogle(onboarding, { confirmExistingAccoun
     if (!confirmed) return { user: guest, canceled: true, signedInExisting: false };
 
     result = await signInWithCredential(auth, credential);
-    await fillMissingExistingAccountProfile(result.user, initialProfile);
+
     return { user: result.user, signedInExisting: true };
   }
 
-  await updateProfile(result.user, { displayName: initialProfile.gameName });
-  await saveInitialPrivateProfile(initialProfile);
   return { user: result.user, signedInExisting: false };
 }
 

@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import {
   deriveBohMemberScheduleView,
+  deriveBohScheduleProgress,
   projectBohPublicationBanner,
   sanitizeBohTeamAccent,
   selectBohScheduleCountdownTarget,
@@ -46,6 +47,34 @@ test('member schedule distinguishes missing fallback, explicit hidden, and publi
   assert.equal(published.phase, 'live');
   assert.equal(published.current.id, 'opening');
   assert.equal(published.next.id, 'final');
+});
+
+test('schedule progress derives percentage and stage position from existing timestamps', () => {
+  const live = deriveBohMemberScheduleView(
+    PUBLISHED_SCHEDULE,
+    Date.parse('2026-08-01T19:00:00.000Z')
+  );
+  assert.deepEqual(deriveBohScheduleProgress(live, Date.parse('2026-08-01T19:00:00.000Z')), {
+    ratio: 0.25,
+    percent: 25,
+    current: 1,
+    total: 2,
+  });
+
+  const ended = deriveBohMemberScheduleView(
+    PUBLISHED_SCHEDULE,
+    Date.parse('2026-08-01T23:00:00.000Z')
+  );
+  assert.deepEqual(deriveBohScheduleProgress(ended, Date.parse('2026-08-01T23:00:00.000Z')), {
+    ratio: 1,
+    percent: 100,
+    current: 2,
+    total: 2,
+  });
+
+  const fallback = deriveBohMemberScheduleView(null, Date.parse('2026-07-27T00:00:00.000Z'));
+  assert.equal(deriveBohScheduleProgress(fallback).percent, 0);
+  assert.equal(deriveBohScheduleProgress(fallback).current, 1);
 });
 
 test('injected schedule time targets the next milestone unless a future milestone is selected', () => {
@@ -113,6 +142,12 @@ test('timeline DOM is cached across clock ticks and nested controls resolve thro
     controllerSource,
     /event\.target\?\.closest\?\.\('\[data-role="schedule-milestone"\]'\)/u
   );
+  assert.match(controllerSource, /button\.tabIndex = milestone\.id === selected\?\.id \? 0 : -1/u);
+  assert.match(
+    controllerSource,
+    /button\.setAttribute\('aria-controls', 'bohScheduleMilestoneDetail'\)/u
+  );
+  assert.match(controllerSource, /\['ArrowLeft', 'ArrowRight', 'Home', 'End'\]/u);
 });
 
 test('member markup and styles expose a connected reduced-motion-aware timeline and release banner', () => {
@@ -124,11 +159,19 @@ test('member markup and styles expose a connected reduced-motion-aware timeline 
     'announcement-publication-message',
     'announcement-publication-revision',
     'schedule-selected-status',
+    'schedule-progress',
+    'schedule-progress-copy',
+    'schedule-milestone-detail',
+    'schedule-selected-label',
+    'schedule-selected-stage',
   ]) {
     assert.match(tabSource, new RegExp(`data-role="${role}"`));
   }
   assert.doesNotMatch(tabSource, /boh-schedule-countdown" aria-live="polite"/u);
   assert.match(cssSource, /--boh-schedule-progress/u);
+  assert.match(cssSource, /boh-schedule-progress__fill/u);
+  assert.match(cssSource, /boh-schedule-progress__marker/u);
+  assert.match(cssSource, /boh-schedule-detail-in/u);
   assert.match(cssSource, /boh-schedule-current-pulse/u);
   assert.match(cssSource, /boh-announcement-reveal/u);
   assert.match(cssSource, /@media \(prefers-reduced-motion: reduce\)/u);

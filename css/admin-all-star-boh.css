@@ -5,6 +5,25 @@
   min-width: 0;
 }
 
+.boh-admin-vts-score-table tr[data-vts-score-status='missing'] {
+  opacity: 0.7;
+}
+
+.boh-admin-vts-score-table td[data-growth='positive'] {
+  color: var(--success, #34d399);
+  font-weight: 800;
+}
+
+.boh-admin-vts-score-table td[data-growth='negative'] {
+  color: var(--danger, #f87171);
+  font-weight: 800;
+}
+
+.boh-admin-vts-score-table th,
+.boh-admin-vts-score-table td {
+  white-space: nowrap;
+}
+
 .boh-admin *,
 .boh-admin *::before,
 .boh-admin *::after {
@@ -3481,5 +3500,458 @@
 @media (max-width: 760px) {
   .boh-admin-plan-details__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Guided team-plan import and private player value editor */
+.boh-admin .boh-admin-button-primary {
+  background: #2dd4bf;
+  border-color: #5eead4;
+  color: #042f2e;
+}
+
+.boh-admin .boh-admin-button-primary:hover:not(:disabled) {
+  background: #5eead4;
+  border-color: #99f6e4;
+}
+
+.boh-admin .boh-admin-button-plan {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(196, 181, 253, 0.62);
+  color: #ede9fe;
+}
+
+.boh-admin .boh-admin-button-plan:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.26);
+  border-color: #c4b5fd;
+}
+
+.boh-admin .boh-admin-button-validate {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(252, 211, 77, 0.62);
+  color: #fde68a;
+}
+
+.boh-admin .boh-admin-button-validate:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.24);
+  border-color: #fcd34d;
+}
+
+.boh-admin-role-plan-actions,
+.boh-admin-player-editor footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.boh-admin-role-plan-team-summary {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.boh-admin-role-plan-team-summary li {
+  align-items: center;
+  background: rgba(5, 11, 24, 0.34);
+  border: 1px solid rgba(159, 176, 204, 0.14);
+  border-radius: var(--ff-r-card-small);
+  display: flex;
+  font-size: 0.7rem;
+  justify-content: space-between;
+  padding: 0.55rem 0.65rem;
+}
+
+.boh-admin-role-plan-team-summary span {
+  color: var(--ff-mint);
+  font-family: var(--ff-font-mono, 'JetBrains Mono', monospace);
+}
+
+.boh-admin-player-editor {
+  display: grid;
+  inset: 0;
+  padding: 1rem;
+  place-items: center;
+  position: fixed;
+  z-index: 1100;
+}
+
+.boh-admin-player-editor__backdrop {
+  background: rgb(2 6 23 / 80%);
+  border: 0;
+  inset: 0;
+  position: absolute;
+}
+
+.boh-admin-player-editor__panel {
+  background: var(--boh-admin-surface, #111827);
+  border: 1px solid rgba(196, 181, 253, 0.48);
+  border-radius: 1rem;
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 48%);
+  display: grid;
+  gap: 1rem;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1rem;
+  position: relative;
+  width: min(38rem, 100%);
+}
+
+.boh-admin-player-editor__panel > header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.boh-admin-player-editor__panel h3 {
+  margin: 0;
+}
+
+.boh-admin-player-editor__identity,
+.boh-admin-player-editor__score {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.boh-admin-player-editor__score {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(196, 181, 253, 0.22);
+  border-radius: var(--ff-r-card-small);
+  padding: 0.75rem;
+}
+
+.boh-admin-player-equation {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.boh-admin-player-equation strong {
+  color: var(--ff-violet);
+  font-family: var(--ff-font-mono, 'JetBrains Mono', monospace);
+}
+
+.boh-admin-player-editor__privacy {
+  color: var(--ff-text-dim);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .boh-admin-role-plan-actions,
+  .boh-admin-player-editor footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .boh-admin-role-plan-actions .boh-admin-button,
+  .boh-admin-player-editor footer .boh-admin-button {
+    width: 100%;
+  }
+
+  .boh-admin-player-editor__identity,
+  .boh-admin-player-editor__score {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boh-admin-player-editor__panel {
+    scroll-behavior: auto;
+  }
+}
+
+/* Guided team builder command surfaces */
+.boh-admin-command-deck {
+  margin-block: 1rem;
+}
+
+.boh-admin-command-deck ol {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.boh-admin-command-deck li {
+  align-items: flex-start;
+  background: rgba(10, 18, 34, 0.78);
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r-card-small);
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 0.7rem;
+}
+
+.boh-admin-command-deck li[data-step-status='current'] {
+  border-color: #67e8f9;
+  box-shadow: inset 0 0 0 1px #67e8f9;
+}
+
+.boh-admin-command-deck li[data-step-status='done'] {
+  border-color: rgba(94, 234, 212, 0.62);
+}
+
+.boh-admin-command-deck__number {
+  align-items: center;
+  background: rgba(125, 211, 252, 0.12);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #bae6fd;
+  display: inline-flex;
+  font-family: var(--ff-font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.68rem;
+  font-weight: 900;
+  gap: 0.25rem;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2rem;
+  padding-inline: 0.4rem;
+}
+
+.boh-admin-command-deck li > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.boh-admin-command-deck__status {
+  color: #cbd5e1;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.boh-admin-command-deck strong {
+  color: var(--ff-text);
+  font-size: 0.78rem;
+}
+
+.boh-admin-command-deck small {
+  color: var(--ff-text-dim);
+  line-height: 1.4;
+}
+
+.boh-admin-readiness-bar {
+  align-items: center;
+  background: #0d1728;
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  border-radius: var(--ff-r-card-small);
+  box-shadow: 0 0.65rem 1.8rem rgb(2 6 23 / 34%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block: 1rem;
+  padding: 0.7rem;
+  position: sticky;
+  top: 0.75rem;
+  z-index: 30;
+}
+
+.boh-admin-readiness-bar dl {
+  display: flex;
+  flex: 1 1 28rem;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin: 0;
+}
+
+.boh-admin-readiness-bar dl div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.boh-admin-readiness-bar dt {
+  color: var(--ff-text-dim);
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.boh-admin-readiness-bar dd {
+  color: var(--ff-text);
+  font-family: var(--ff-font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.boh-admin-readiness-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.boh-admin .boh-admin-readiness-primary,
+.boh-admin .boh-admin-readiness-primary:hover:not(:disabled) {
+  background: #2dd4bf;
+  border-color: #5eead4;
+  box-shadow: none;
+  color: #042f2e;
+}
+
+.boh-admin-import-center {
+  background: rgba(10, 18, 34, 0.62);
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r-card);
+  display: grid;
+  gap: 0.85rem;
+  margin-block: 1rem;
+  padding: 1rem;
+}
+
+.boh-admin-import-center > header h4,
+.boh-admin-import-center > header p {
+  margin: 0;
+}
+
+.boh-admin-import-center > header > p:last-child {
+  color: var(--ff-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  margin-top: 0.25rem;
+}
+
+.boh-admin-import-center__grid {
+  align-items: start;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.boh-admin-import-center__grid > .boh-admin-card {
+  height: 100%;
+}
+
+.boh-admin-advanced-tools summary {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.boh-admin-advanced-tools summary small {
+  color: var(--ff-text-dim);
+  font-weight: 500;
+}
+
+.boh-admin-board-view-controls {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.boh-admin-board-view-controls .boh-admin-segmented {
+  min-width: max-content;
+}
+
+.boh-admin-team-board[data-columns='1'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.boh-admin-team-board[data-columns='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.boh-admin-team-board[data-columns='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.boh-admin-team-board[data-density='compact'] {
+  gap: 0.5rem;
+}
+
+.boh-admin-team-board[data-density='compact'] .boh-admin-team > header {
+  padding: 0.5rem;
+}
+
+.boh-admin-team-board[data-density='compact'] .boh-admin-seat-list {
+  gap: 0.2rem;
+  padding: 0.35rem;
+}
+
+.boh-admin-team-board[data-density='compact'] .boh-admin-seat-editor {
+  gap: 0.25rem;
+}
+
+.boh-admin-team-board[data-density='compact'] .boh-admin-seat {
+  min-height: 2.7rem;
+}
+
+@media (max-width: 1120px) {
+  .boh-admin-team-board[data-columns='3'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.boh-admin-command-deck li:focus-within,
+.boh-admin-readiness-bar :is(button, [tabindex]):focus-visible,
+.boh-admin-board-view-controls button:focus-visible,
+.boh-admin-advanced-tools summary:focus-visible {
+  outline: 3px solid #f8fafc;
+  outline-offset: 3px;
+}
+
+@media (max-width: 980px) {
+  .boh-admin-command-deck ol,
+  .boh-admin-import-center__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .boh-admin-command-deck ol,
+  .boh-admin-import-center__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .boh-admin-readiness-bar {
+    position: static;
+  }
+
+  .boh-admin-readiness-bar__actions,
+  .boh-admin-readiness-bar__actions .boh-admin-button,
+  .boh-admin-board-view-controls {
+    width: 100%;
+  }
+
+  .boh-admin-team-board[data-columns] {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boh-admin-command-deck *,
+  .boh-admin-readiness-bar *,
+  .boh-admin-import-center *,
+  .boh-admin-board-view-controls * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .boh-admin-command-deck li[data-step-status],
+  .boh-admin-readiness-bar,
+  .boh-admin-import-center {
+    border: 1px solid CanvasText;
+  }
+
+  .boh-admin-command-deck li[data-step-status='current'] {
+    outline: 2px solid Highlight;
   }
 }

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="VtsScore Competition #11 final Dragon Power screenshot submission for VTS 1097."
+    />
+    <meta name="theme-color" content="#08111f" />
+    <title>VtsScore · Competition #11</title>
+    <link rel="icon" href="images/logo.png" />
+    <link rel="stylesheet" href="css/_tokens.css?v=14.2.19" />
+    <link rel="stylesheet" href="css/vts-score.css?v=14.2.19" />
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+          "firebase/analytics": "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js",
+          "firebase/app-check": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main id="vtsScoreApp" class="vts-score-shell">
+      <header class="vts-score-hero">
+        <a class="vts-score-brand" href="index.html" aria-label="VTS 1097 toolkit home">
+          <img src="images/logo.png" alt="" width="64" height="64" />
+          <span><strong>VtsScore</strong><small>VTS 1097 · Competition #11</small></span>
+        </a>
+        <div class="vts-score-hero__copy">
+          <p class="vts-score-kicker">DEVELOPMENT RACE · FINAL CHECK</p>
+          <h1>Upload tonight’s Dragon Power</h1>
+          <p>
+            Choose the same game name used for last week’s All-Star sign-up, upload one current
+            power screenshot, review the number, and submit. Leadership will compare it with your
+            sign-up baseline.
+          </p>
+        </div>
+        <div class="vts-score-deadline">
+          <span>Final deadline</span>
+          <strong>Monday, 27 July · 20:00 Game Time</strong>
+        </div>
+      </header>
+
+      <div
+        id="vtsScoreStatus"
+        class="vts-score-status"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></div>
+
+      <section id="vtsScoreGate" class="vts-score-card vts-score-gate" hidden>
+        <p class="vts-score-kicker">VTS MEMBERS</p>
+        <h2>Unlock final score upload</h2>
+        <p>Use the same VTS member PIN as the All-Star sign-up hub.</p>
+        <form id="vtsScorePinForm">
+          <label for="vtsScorePin">Member PIN</label>
+          <div class="vts-score-inline">
+            <input
+              id="vtsScorePin"
+              type="password"
+              autocomplete="current-password"
+              maxlength="128"
+              required
+            />
+            <button type="submit">Unlock</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="vtsScoreWorkspace" class="vts-score-card" hidden>
+        <form id="vtsScoreForm">
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">1</span>
+            <div>
+              <label for="vtsScorePlayer">Your game name</label>
+              <p>Select the exact name you used in the All-Star sign-up.</p>
+              <input
+                id="vtsScorePlayer"
+                type="search"
+                list="vtsScorePlayers"
+                placeholder="Start typing your game name"
+                autocomplete="off"
+                disabled
+                required
+              />
+              <datalist id="vtsScorePlayers"></datalist>
+            </div>
+          </div>
+
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">2</span>
+            <div>
+              <label for="vtsScoreImage">Current power screenshot</label>
+              <p>Upload one clear account power-breakdown image. PNG, JPEG, or WebP; max 10 MB.</p>
+              <input
+                id="vtsScoreImage"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                disabled
+                required
+              />
+              <label class="vts-score-consent" for="vtsScoreConsent">
+                <input id="vtsScoreConsent" type="checkbox" required />
+                <span>
+                  I understand the image is sent to the secured OCR service to read visible numbers.
+                  The image itself is not saved.
+                </span>
+              </label>
+              <button id="vtsScoreReadButton" class="vts-score-secondary" type="button">
+                Read Dragon Power
+              </button>
+            </div>
+          </div>
+
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">3</span>
+            <div>
+              <label for="vtsScoreDragonPower">Confirmed Dragon Power</label>
+              <p>Check this number against the screenshot and correct it if OCR made a mistake.</p>
+              <div id="vtsScoreOcrDetails" class="vts-score-ocr-result" hidden>
+                <span>OCR read <strong id="vtsScoreOcrValue">—</strong></span>
+                <small id="vtsScoreOcrConfidence"></small>
+              </div>
+              <input
+                id="vtsScoreDragonPower"
+                type="number"
+                min="0"
+                max="100000000000"
+                step="1"
+                inputmode="numeric"
+                required
+              />
+            </div>
+          </div>
+
+          <button id="vtsScoreSubmitButton" class="vts-score-submit" type="submit">
+            Submit final Dragon Power
+          </button>
+        </form>
+
+        <section id="vtsScoreSuccess" class="vts-score-success" tabindex="-1" hidden>
+          <span aria-hidden="true">✓</span>
+          <p class="vts-score-kicker">FINAL SCORE SAVED</p>
+          <h2>Thank you, <strong id="vtsScoreSuccessName"></strong></h2>
+          <p>
+            Your final Dragon Power is
+            <strong id="vtsScoreSuccessPower"></strong>. Leadership can now compare it with last
+            week’s sign-up value.
+          </p>
+        </section>
+      </section>
+
+      <footer>
+        <span>VTS 1097 community tool · v14.2.19</span>
+        <a href="index.html">Back to toolkit</a>
+      </footer>
+    </main>
+    <script type="module" src="js/vts-score.js?v=14.2.19"></script>
+  </body>
+</html>

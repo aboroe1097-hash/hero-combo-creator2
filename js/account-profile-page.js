@@ -23,15 +23,26 @@ const byId = (id) => document.getElementById(id);
 const authPanel = byId('accountAuthPanel');
 const editorPanel = byId('accountEditorPanel');
 const status = byId('accountStatus');
+const statusMessage = byId('accountStatusMessage');
 const authForm = byId('accountAuthForm');
+const onboardingForm = byId('accountOnboardingForm');
 const profileForm = byId('accountProfileForm');
-const onboardingFields = byId('accountOnboardingFields');
+
+const accountTabs = document.querySelector('.account-tabs');
 const languageSelect = byId('accountLanguage');
 const languageControl = byId('accountLanguageControl');
 const saveButton = byId('saveProfile');
 const saveState = byId('profileSaveState');
 const aboutDetails = byId('accountAboutDetails');
 const profileFieldSelector = '[data-profile-field]';
+const referralValues = new Set([
+  'youtube',
+  'in_game',
+  'vts_1097',
+  'alliance_friend',
+  'search',
+  'other',
+]);
 let mode = 'create';
 let locale = resolveAccountLocale(globalThis.localStorage);
 let accountTr = createAccountTranslator(locale);
@@ -41,10 +52,22 @@ let profileDirty = false;
 let busy = false;
 let saveInFlight = false;
 let saveJustSucceeded = false;
+let statusTimer = 0;
+
+function dismissStatus() {
+  globalThis.clearTimeout(statusTimer);
+  statusTimer = 0;
+  statusMessage.textContent = '';
+  status.hidden = true;
+  delete status.dataset.kind;
+}
 
 function announce(message, kind = 'info') {
-  status.textContent = message;
+  globalThis.clearTimeout(statusTimer);
+  statusMessage.textContent = message;
   status.dataset.kind = kind;
+  status.hidden = !message;
+  if (message) statusTimer = globalThis.setTimeout(dismissStatus, kind === 'error' ? 5000 : 3500);
 }
 
 function updateSaveState() {
@@ -130,18 +153,16 @@ function setMode(nextMode) {
     tab.setAttribute('aria-selected', String(selected));
     tab.tabIndex = selected ? 0 : -1;
   });
-  onboardingFields.hidden = mode !== 'create';
-  onboardingFields.disabled = mode !== 'create' || busy;
   const passwordInput = byId('accountPassword');
   passwordInput.autocomplete = mode === 'create' ? 'new-password' : 'current-password';
   passwordInput.minLength = mode === 'create' ? 8 : 0;
   byId('authSubmit').querySelector('span').textContent = accountTr(
-    mode === 'create' ? 'action.create' : 'action.signin'
+    mode === 'create' ? 'action.continue' : 'action.signin'
   );
   byId('googleAuth').querySelector('span').textContent = accountTr(
     mode === 'create' ? 'action.googleCreate' : 'action.googleSignin'
   );
-  byId('sessionWarning').hidden = mode !== 'signin';
+  byId('sessionWarning').hidden = mode !== 'signin' || !onboardingForm.hidden;
 }
 
 function collectProfile() {
@@ -178,7 +199,17 @@ function updateDirtyState() {
 function fillProfile(profile, fallbackName = '') {
   byId('profileGameName').value = profile?.gameName || profile?.displayName || fallbackName;
   byId('profileState').value = profile?.state || '';
-  byId('profileReferralSource').value = profile?.referralSource || '';
+  const referralSource = profile?.referralSource || '';
+  const referralSelect = byId('profileReferralSource');
+  referralSelect.querySelector('[data-legacy-referral]')?.remove();
+  if (referralSource && !referralValues.has(referralSource)) {
+    const legacyOption = document.createElement('option');
+    legacyOption.value = referralSource;
+    legacyOption.textContent = `${accountTr('referral.other')}: ${referralSource}`;
+    legacyOption.dataset.legacyReferral = 'true';
+    referralSelect.append(legacyOption);
+  }
+  referralSelect.value = referralSource;
   byId('profileComments').value = profile?.comments || '';
   byId('profileAlliance').value = profile?.alliance || '';
   byId('profileCountryCode').value = profile?.countryCode || '';
@@ -198,12 +229,28 @@ function renderAccountMeta(account) {
   byId('profileVerificationSummary').textContent = verification;
 }
 
+function showAuthStep() {
+  accountTabs.hidden = false;
+  authForm.hidden = false;
+  onboardingForm.hidden = true;
+  byId('sessionWarning').hidden = mode !== 'signin' || !onboardingForm.hidden;
+}
+
+function showOnboardingStep(account) {
+  accountTabs.hidden = true;
+  authForm.hidden = true;
+  byId('sessionWarning').hidden = true;
+  onboardingForm.hidden = false;
+  byId('accountGameName').value = account.displayName || '';
+}
+
 async function render() {
   const account = await getAccountState();
   currentAccount = account;
   authPanel.hidden = true;
   editorPanel.hidden = true;
   if (account.isGuest) {
+    showAuthStep();
     moveLanguageControl(true);
     profileBaseline = null;
     saveJustSucceeded = false;
@@ -213,9 +260,17 @@ async function render() {
     return;
   }
 
+  const profile = await loadAccountProfile();
+  if (!profile) {
+    showOnboardingStep(account);
+    moveLanguageControl(true);
+    authPanel.hidden = false;
+    document.body.dataset.accountReady = 'true';
+    return;
+  }
+
   renderAccountMeta(account);
   byId('resendVerification').hidden = !account.email || account.emailVerified;
-  const profile = await loadAccountProfile();
   fillProfile(profile, account.displayName);
   setProfileBaseline();
   moveLanguageControl(false);
@@ -278,13 +333,6 @@ function collectOnboarding() {
   };
 }
 
-function reportOnboardingValidity() {
-  const invalid = onboardingFields.querySelector(':invalid');
-  if (!invalid) return true;
-  invalid.reportValidity();
-  return false;
-}
-
 function revealFirstInvalid() {
   const invalid = profileForm.querySelector(':invalid');
   if (!invalid) return;
@@ -302,26 +350,48 @@ authForm.addEventListener('submit', (event) => {
   runAction(
     () =>
       mode === 'create'
-        ? upgradeGuestWithEmail(email, password, collectOnboarding())
+        ? upgradeGuestWithEmail(email, password)
         : signInExistingEmail(email, password),
-    mode === 'create' ? 'status.created' : 'status.signedIn',
+    mode === 'create' ? 'status.authenticated' : 'status.signedIn',
     { refresh: true }
   );
 });
 
 byId('googleAuth').addEventListener('click', () => {
-  if (mode === 'create' && !reportOnboardingValidity()) return;
   runAction(
     () =>
       mode === 'create'
-        ? upgradeGuestWithGoogle(collectOnboarding(), {
+        ? upgradeGuestWithGoogle({
             confirmExistingAccount: () =>
               globalThis.confirm(accountTr('confirm.googleExistingAccount')),
           })
         : signInExistingGoogle(),
-    mode === 'create' ? 'status.created' : 'status.signedIn',
+    mode === 'create' ? 'status.authenticated' : 'status.signedIn',
     { refresh: true }
   );
+});
+
+onboardingForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!onboardingForm.checkValidity()) return;
+  runAction(
+    () =>
+      saveAccountProfile({
+        ...collectOnboarding(),
+        alliance: '',
+        countryCode: '',
+        bio: '',
+        isPublic: false,
+      }),
+    'status.created',
+    { refresh: true }
+  );
+});
+
+byId('accountStatusDismiss').addEventListener('click', dismissStatus);
+status.addEventListener('click', dismissStatus);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !status.hidden) dismissStatus();
 });
 
 byId('passwordReset').addEventListener('click', () => {

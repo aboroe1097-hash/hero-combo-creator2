@@ -19130,10 +19130,16 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-tool {
   --spec-panel: var(--ff-panel-translucent, var(--surface-glass, rgba(10, 18, 31, 0.78)));
-  --spec-panel-strong: var(--ff-panel-translucent-strong, var(--surface-glass-strong, rgba(7, 13, 24, 0.94)));
+  --spec-panel-strong: var(
+    --ff-panel-translucent-strong,
+    var(--surface-glass-strong, rgba(7, 13, 24, 0.94))
+  );
   --spec-panel-soft: var(--ff-surface-soft, var(--surface-soft, rgba(159, 176, 204, 0.075)));
   --spec-panel-hover: var(--ff-surface-hover, var(--surface-hover, rgba(125, 211, 252, 0.085)));
-  --spec-panel-selected: var(--ff-surface-selected, var(--surface-selected, rgba(125, 211, 252, 0.14)));
+  --spec-panel-selected: var(
+    --ff-surface-selected,
+    var(--surface-selected, rgba(125, 211, 252, 0.14))
+  );
   --spec-border: var(--ff-border, var(--border, rgba(159, 176, 204, 0.22)));
   --spec-border-subtle: var(--ff-border-subtle, var(--border-subtle, rgba(159, 176, 204, 0.14)));
   --spec-border-strong: var(--ff-border-strong, var(--border-strong, rgba(159, 176, 204, 0.34)));
@@ -19147,8 +19153,15 @@ html[dir='rtl'] .gen-buttons-row {
   --spec-seasonal: var(--ff-seasonal, var(--ff-violet, var(--violet, #a78bfa)));
   --spec-urgency: var(--ff-urgency, var(--ff-fire, var(--accent, #fb923c)));
   --spec-gold: var(--ff-gold, var(--gold, #f5c451));
-  --spec-primary-gradient: var(--ff-gradient-primary, var(--grad-primary, linear-gradient(90deg, var(--spec-action), var(--spec-urgency))));
-  --spec-focus-ring: var(--ff-focus-ring, 0 0 0 2px var(--spec-action), 0 0 0 5px rgba(125, 211, 252, 0.28));
+  --spec-primary-gradient: var(
+    --ff-gradient-primary,
+    var(--grad-primary, linear-gradient(90deg, var(--spec-action), var(--spec-urgency)))
+  );
+  --spec-focus-ring: var(
+    --ff-focus-ring,
+    0 0 0 2px var(--spec-action),
+    0 0 0 5px rgba(125, 211, 252, 0.28)
+  );
   --spec-banner-accent: var(--spec-action);
   display: flex;
   flex-direction: column;
@@ -19238,7 +19251,11 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-troop-tab.active {
   border-color: var(--spec-action);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--spec-action) 18%, transparent), var(--spec-panel));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--spec-action) 18%, transparent),
+    var(--spec-panel)
+  );
   color: var(--spec-text);
   box-shadow: var(--spec-focus-ring);
 }
@@ -19352,29 +19369,41 @@ html[dir='rtl'] .gen-buttons-row {
   min-width: 3.2rem;
   min-height: 1.55rem;
   padding: 0.2rem 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--spec-banner-accent, var(--spec-action)) 72%, var(--spec-text));
+  border: 1px solid color-mix(in srgb, var(--spec-success) 68%, var(--spec-border));
   border-radius: 999px;
-  background: var(--spec-panel);
-  color: var(--spec-action);
+  background: color-mix(in srgb, var(--spec-success) 12%, var(--spec-panel));
+  color: var(--spec-success);
   font-size: 0.58rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   cursor: pointer;
   touch-action: manipulation;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .spec-badge-max:hover,
 .spec-badge-max:focus-visible {
-  background: color-mix(in srgb, var(--spec-banner-accent, var(--spec-action)) 34%, var(--spec-panel-strong));
+  border-color: var(--spec-success);
+  background: color-mix(in srgb, var(--spec-success) 22%, var(--spec-panel));
+}
+.spec-badge-max:focus-visible {
+  outline: 2px solid var(--spec-success);
+  outline-offset: 2px;
 }
 .spec-badge-max.is-unmax {
-  border-color: color-mix(in srgb, var(--spec-danger) 62%, transparent);
+  border-color: color-mix(in srgb, var(--spec-danger) 68%, var(--spec-border));
   color: var(--spec-danger);
-  background: color-mix(in srgb, var(--spec-danger) 14%, transparent);
+  background: color-mix(in srgb, var(--spec-danger) 12%, var(--spec-panel));
 }
 .spec-badge-max.is-unmax:hover,
 .spec-badge-max.is-unmax:focus-visible {
   border-color: var(--spec-danger);
-  background: color-mix(in srgb, var(--spec-danger) 24%, transparent);
+  background: color-mix(in srgb, var(--spec-danger) 22%, var(--spec-panel));
+}
+.spec-badge-max.is-unmax:focus-visible {
+  outline-color: var(--spec-danger);
 }
 .spec-badge:hover {
   background: var(--spec-panel-hover);
@@ -19467,7 +19496,11 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-crest.is-unlocked .spec-crest-emblem {
   border-color: var(--spec-success);
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--spec-success) 34%, var(--spec-panel)), var(--spec-panel-strong));
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--spec-success) 34%, var(--spec-panel)),
+    var(--spec-panel-strong)
+  );
   box-shadow: 0 0 12px color-mix(in srgb, var(--spec-success) 42%, transparent);
 }
 .spec-crest-name {
@@ -19491,7 +19524,11 @@ html[dir='rtl'] .gen-buttons-row {
   border: 1px solid color-mix(in srgb, var(--spec-success) 52%, transparent);
   border-radius: 12px;
   background:
-    radial-gradient(circle at 0 0, color-mix(in srgb, var(--spec-success) 14%, transparent), transparent 40%),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--spec-success) 14%, transparent),
+      transparent 40%
+    ),
     var(--spec-panel-strong);
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
 }
@@ -19506,7 +19543,11 @@ html[dir='rtl'] .gen-buttons-row {
   height: 3.35rem;
   border: 2px solid var(--spec-success);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--spec-success) 34%, var(--spec-panel)), var(--spec-panel-strong));
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--spec-success) 34%, var(--spec-panel)),
+    var(--spec-panel-strong)
+  );
   box-shadow: 0 0 16px color-mix(in srgb, var(--spec-success) 34%, transparent);
   font-size: 1.45rem;
 }
@@ -19683,7 +19724,11 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-ring-node[data-state='learned'] {
   border-color: var(--spec-success);
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--spec-success) 30%, var(--spec-panel)), var(--spec-panel-strong));
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--spec-success) 30%, var(--spec-panel)),
+    var(--spec-panel-strong)
+  );
   box-shadow: 0 0 10px color-mix(in srgb, var(--spec-success) 48%, transparent);
 }
 .spec-ring-node[data-state='available'] {
@@ -20006,6 +20051,37 @@ html[dir='rtl'] .gen-buttons-row {
 [data-theme='light'] .spec-troop-tab {
   background: var(--spec-panel);
 }
+[data-theme='light'] .spec-badge-max {
+  border-color: #0f7a55;
+  color: #0b6245;
+  background: #e8f6f0;
+}
+[data-theme='light'] .spec-badge-max:hover,
+[data-theme='light'] .spec-badge-max:focus-visible {
+  border-color: #0b6245;
+  background: #d2eee3;
+}
+[data-theme='light'] .spec-badge-max.is-unmax {
+  border-color: #be123c;
+  color: #a3123a;
+  background: #fff0f3;
+}
+[data-theme='light'] .spec-badge-max.is-unmax:hover,
+[data-theme='light'] .spec-badge-max.is-unmax:focus-visible {
+  border-color: #9f1239;
+  background: #ffe0e7;
+}
+[data-theme='light'] .spec-badge[data-status='unstarted'] .spec-badge-pct {
+  border: 1px solid #c7d2df;
+  color: #475569;
+  background: #e2e8f0;
+}
+[data-theme='light'] .spec-ring-node[disabled] {
+  border-color: #94a3b8;
+  color: #475569;
+  background: #e2e8f0;
+  opacity: 0.72;
+}
 [data-theme='light'] .spec-node-inspector {
   border-color: rgba(2, 132, 199, 0.34);
   background:
@@ -20289,7 +20365,11 @@ html[dir='rtl'] .gen-buttons-row {
   border: 1px solid var(--spec-border);
   border-radius: 12px;
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--spec-gold) 12%, transparent), transparent 42%),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--spec-gold) 12%, transparent),
+      transparent 42%
+    ),
     linear-gradient(145deg, var(--spec-panel), var(--spec-panel-strong));
   box-shadow: inset 0 1px color-mix(in srgb, var(--spec-text) 8%, transparent);
   text-align: center;
@@ -20304,13 +20384,21 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-ack-rule::after {
   height: 1px;
   flex: 1;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--spec-gold) 68%, transparent));
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--spec-gold) 68%, transparent)
+  );
   content: '';
   transform-origin: 100% 50%;
   animation: specAckRuleDraw 480ms ease-out both;
 }
 .spec-ack-rule::after {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--spec-gold) 68%, transparent), transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--spec-gold) 68%, transparent),
+    transparent
+  );
   transform-origin: 0 50%;
 }
 .spec-ack-seal {
@@ -20382,7 +20470,11 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-ack-plate--lead {
   border-color: color-mix(in srgb, var(--spec-gold) 58%, transparent);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--spec-gold) 14%, var(--spec-panel)), var(--spec-panel-strong));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--spec-gold) 14%, var(--spec-panel)),
+    var(--spec-panel-strong)
+  );
   box-shadow:
     inset 0 1px color-mix(in srgb, var(--spec-gold) 12%, transparent),
     0 0 20px color-mix(in srgb, var(--spec-gold) 12%, transparent);
@@ -20423,7 +20515,11 @@ html[dir='rtl'] .gen-buttons-row {
 [data-theme='light'] .spec-ack {
   border-color: var(--spec-border);
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--spec-gold) 14%, transparent), transparent 42%),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--spec-gold) 14%, transparent),
+      transparent 42%
+    ),
     linear-gradient(145deg, var(--spec-panel), var(--spec-panel-strong));
   box-shadow: inset 0 1px color-mix(in srgb, var(--spec-text) 18%, transparent);
 }
@@ -20441,7 +20537,11 @@ html[dir='rtl'] .gen-buttons-row {
 }
 [data-theme='light'] .spec-ack-plate--lead {
   border-color: color-mix(in srgb, var(--spec-gold) 52%, transparent);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--spec-gold) 12%, var(--spec-panel)), var(--spec-panel-strong));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--spec-gold) 12%, var(--spec-panel)),
+    var(--spec-panel-strong)
+  );
 }
 [data-theme='light'] .spec-ack-tail {
   color: var(--spec-text-dim);

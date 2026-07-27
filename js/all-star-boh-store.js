@@ -3,6 +3,8 @@ import { normalizeAllStarBohEventSchedule } from './all-star-boh-schedule.js';
 export const ALL_STAR_BOH_ROOT_COLLECTION = 'boh_allstar';
 export const ALL_STAR_BOH_CONFIG_PATH = 'boh_allstar_config/current';
 export const ALL_STAR_BOH_SCHEMA_VERSION = 1;
+export const VTS_SCORE_SCHEMA_VERSION = 1;
+export const VTS_SCORE_MAX_DRAGON_POWER = 100_000_000_000;
 export const ALL_STAR_BOH_MAX_TEAMS = 6;
 export const ALL_STAR_BOH_MAX_PLAYERS = 72;
 export const ALL_STAR_BOH_MAX_PREFERRED_TEAMMATES = 6;
@@ -930,6 +932,47 @@ export function normalizeAllStarBohEpicPreferences(input = {}, options = {}) {
   };
   assertDocumentSize(normalized, MAX_EPIC_PREFERENCES_BYTES, 'Epic Showdown preferences');
   return normalized;
+}
+
+export function normalizeAllStarBohRaceScore(input = {}) {
+  const source = requireRecord(input, 'VtsScore record');
+  const ocr = requireRecord(source.ocr, 'VtsScore OCR audit');
+  const confidence =
+    ocr.confidence === null || ocr.confidence === undefined
+      ? null
+      : boundedNumber(ocr.confidence, 'VtsScore OCR confidence', {
+          minimum: 0,
+          maximum: 1,
+        });
+  if (typeof ocr.corrected !== 'boolean') {
+    throw new AllStarBohValidationError('VtsScore OCR corrected flag must be a boolean.');
+  }
+  return {
+    gameName: normalizedUnicodePlayerName(source.gameName, 'VtsScore game name', {
+      required: true,
+    }),
+    baselineSubmissionRevision: boundedInteger(
+      source.baselineSubmissionRevision,
+      'VtsScore baseline submission revision',
+      { minimum: 0, maximum: Number.MAX_SAFE_INTEGER }
+    ),
+    dragonPower: boundedInteger(source.dragonPower, 'VtsScore Dragon Power', {
+      minimum: 0,
+      maximum: VTS_SCORE_MAX_DRAGON_POWER,
+    }),
+    ocr: {
+      requestId: boundedString(ocr.requestId, 160, 'VtsScore OCR request ID', {
+        required: true,
+      }),
+      originalDragonPower: boundedInteger(ocr.originalDragonPower, 'VtsScore OCR Dragon Power', {
+        minimum: 0,
+        maximum: VTS_SCORE_MAX_DRAGON_POWER,
+      }),
+      confidence,
+      corrected: ocr.corrected,
+    },
+    submittedByUid: requiredIdentifier(source.submittedByUid, 'VtsScore submitter ID'),
+  };
 }
 
 function normalizeScore(input = {}) {
@@ -2501,6 +2544,13 @@ export function getAllStarBohEventSchedulePath(seasonId) {
   return `${getAllStarBohSeasonPath(seasonId)}/schedules/current`;
 }
 
+export function getAllStarBohRaceScorePath(seasonId, submissionUid) {
+  return `${getAllStarBohSeasonPath(seasonId)}/raceScores/${requiredIdentifier(
+    submissionUid,
+    'Submission user ID'
+  )}`;
+}
+
 // Compatibility alias for callers released before the event-schedule naming was made explicit.
 export const getAllStarBohSchedulePath = getAllStarBohEventSchedulePath;
 
@@ -3360,6 +3410,34 @@ export function createAllStarBohAdminStore(options = {}) {
   async function subscribeSubmissions(next, error) {
     await ensureAdmin();
     return subscriptions.subscribe(submissionsRef(), parseSubmissionCollection, next, error);
+  }
+
+  function raceScoresRef() {
+    return collectionRef(firestore, db, `${getAllStarBohSeasonPath(seasonId)}/raceScores`);
+  }
+
+  function parseRaceScoreCollection(snapshot) {
+    return entriesFromCollectionSnapshot(snapshot)
+      .map((docSnapshot) => {
+        const submissionUid = requiredIdentifier(
+          snapshotId(docSnapshot),
+          'VtsScore submission user ID'
+        );
+        const raw = snapshotData(docSnapshot);
+        if (!raw) return null;
+        return parseStoredDocument(raw, { seasonId, submissionUid }, normalizeAllStarBohRaceScore);
+      })
+      .filter(Boolean);
+  }
+
+  async function listRaceScores() {
+    await ensureAdmin();
+    return cloneValue(parseRaceScoreCollection(await firestore.getDocs(raceScoresRef())));
+  }
+
+  async function subscribeRaceScores(next, error) {
+    await ensureAdmin();
+    return subscriptions.subscribe(raceScoresRef(), parseRaceScoreCollection, next, error);
   }
 
   async function deleteSubmission(targetUidInput, deleteOptions = {}) {
@@ -4456,6 +4534,8 @@ export function createAllStarBohAdminStore(options = {}) {
     epicTimeSlotIds,
     listSubmissions,
     subscribeSubmissions,
+    listRaceScores,
+    subscribeRaceScores,
     deleteSubmission,
     getEpicShowdownPreferencesList,
     subscribeEpicShowdownPreferences,

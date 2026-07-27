@@ -9,7 +9,7 @@
       data-i18n-content="meta.description"
     />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="vts-app-version" content="14.2.15" />
+    <meta name="vts-app-version" content="14.2.19" />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src 'self' https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'"
@@ -88,33 +88,6 @@
             into the returning account.
           </p>
           <form id="accountAuthForm" class="account-form" aria-labelledby="authTitle">
-            <fieldset
-              id="accountOnboardingFields"
-              class="account-fields account-onboarding"
-              aria-labelledby="authTitle"
-            >
-              <label class="account-field account-field--wide"
-                ><span data-i18n="field.gameName">In-game name</span
-                ><input
-                  id="accountGameName"
-                  name="gameName"
-                  required
-                  maxlength="50"
-                  autocomplete="nickname"
-              /></label>
-              <label class="account-field"
-                ><span data-i18n="field.state">Current state</span
-                ><input id="accountState" name="state" required maxlength="160"
-              /></label>
-              <label class="account-field"
-                ><span data-i18n="field.referralSource">How did you hear about us?</span
-                ><input id="accountReferralSource" name="referralSource" required maxlength="160"
-              /></label>
-              <label class="account-field account-field--wide"
-                ><span data-i18n="field.comments">Comments (optional)</span
-                ><textarea id="accountComments" name="comments" maxlength="1000"></textarea>
-              </label>
-            </fieldset>
             <label class="account-field"
               ><span data-i18n="field.email">Email</span
               ><input
@@ -138,13 +111,80 @@
             /></label>
             <div class="account-actions account-auth-actions">
               <button id="authSubmit" class="account-button account-button--primary" type="submit">
-                <span data-i18n="action.create">Create account</span></button
-              ><button id="googleAuth" class="account-button" type="button">
-                <span data-i18n="action.googleCreate">Continue with Google</span></button
+                <span data-i18n="action.continue">Continue</span></button
+              ><button id="googleAuth" class="account-button account-button--google" type="button">
+                <svg class="account-google-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="#4285f4"
+                    d="M21.6 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.4a4.6 4.6 0 0 1-2 3v2.6h3.2c1.9-1.7 3-4.3 3-7.5Z"
+                  />
+                  <path
+                    fill="#34a853"
+                    d="M12 22c2.7 0 5-.9 6.6-2.3l-3.2-2.6c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.7A10 10 0 0 0 12 22Z"
+                  />
+                  <path
+                    fill="#fbbc05"
+                    d="M6.4 14a6 6 0 0 1 0-3.9V7.4H3.1a10 10 0 0 0 0 9.3L6.4 14Z"
+                  />
+                  <path
+                    fill="#ea4335"
+                    d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.1 7.4l3.3 2.7C7.2 7.7 9.4 6 12 6Z"
+                  /></svg
+                ><span data-i18n="action.googleCreate">Continue with Google</span></button
               ><button id="passwordReset" class="account-button account-button--text" type="button">
                 <span data-i18n="action.reset">Reset password</span>
               </button>
             </div>
+          </form>
+          <form
+            id="accountOnboardingForm"
+            class="account-form"
+            aria-labelledby="onboardingTitle"
+            hidden
+          >
+            <div class="account-step-heading">
+              <p class="account-kicker" data-i18n="onboarding.step">Step 2 of 2</p>
+              <h2 id="onboardingTitle" data-i18n="onboarding.title">Finish your private profile</h2>
+              <p class="account-note" data-i18n="onboarding.lead">
+                These details are private unless you choose to publish your profile later.
+              </p>
+            </div>
+            <fieldset id="accountOnboardingFields" class="account-fields account-onboarding">
+              <label class="account-field account-field--wide"
+                ><span data-i18n="field.gameName">In-game name</span
+                ><input
+                  id="accountGameName"
+                  name="gameName"
+                  required
+                  maxlength="50"
+                  autocomplete="nickname"
+              /></label>
+              <label class="account-field"
+                ><span data-i18n="field.state">Current state</span
+                ><input id="accountState" name="state" required maxlength="160"
+              /></label>
+              <label class="account-field"
+                ><span data-i18n="field.referralSource">How did you hear about us?</span
+                ><select id="accountReferralSource" name="referralSource" required>
+                  <option value="" data-i18n="referral.placeholder">Choose one</option>
+                  <option value="youtube" data-i18n="referral.youtube">YouTube</option>
+                  <option value="in_game" data-i18n="referral.in_game">In game</option>
+                  <option value="vts_1097" data-i18n="referral.vts_1097">VTS 1097</option>
+                  <option value="alliance_friend" data-i18n="referral.alliance_friend">
+                    Alliance or friend
+                  </option>
+                  <option value="search" data-i18n="referral.search">Search</option>
+                  <option value="other" data-i18n="referral.other">Other</option>
+                </select></label
+              >
+              <label class="account-field account-field--wide"
+                ><span data-i18n="field.comments">Comments (optional)</span
+                ><textarea id="accountComments" name="comments" maxlength="1000"></textarea>
+              </label>
+            </fieldset>
+            <button id="finishProfile" class="account-button account-button--primary" type="submit">
+              <span data-i18n="action.finishProfile">Finish profile</span>
+            </button>
           </form>
         </div>
       </section>
@@ -239,12 +279,22 @@
                 <div class="account-details-fields">
                   <label class="account-field"
                     ><span data-i18n="field.referralSource">How did you hear about us?</span
-                    ><input
+                    ><select
                       id="profileReferralSource"
                       name="referralSource"
                       required
-                      maxlength="160"
-                      data-profile-field /></label
+                      data-profile-field
+                    >
+                      <option value="" data-i18n="referral.placeholder">Choose one</option>
+                      <option value="youtube" data-i18n="referral.youtube">YouTube</option>
+                      <option value="in_game" data-i18n="referral.in_game">In game</option>
+                      <option value="vts_1097" data-i18n="referral.vts_1097">VTS 1097</option>
+                      <option value="alliance_friend" data-i18n="referral.alliance_friend">
+                        Alliance or friend
+                      </option>
+                      <option value="search" data-i18n="referral.search">Search</option>
+                      <option value="other" data-i18n="referral.other">Other</option>
+                    </select></label
                   ><label class="account-field"
                     ><span data-i18n="field.comments">Comments (optional)</span
                     ><textarea
@@ -349,7 +399,17 @@
           <option value="it">Italiano</option>
         </select></label
       >
-      <p id="accountStatus" class="account-status" role="status" aria-live="polite"></p>
+      <div id="accountStatus" class="account-status" role="status" aria-live="polite" hidden>
+        <span id="accountStatusMessage"></span
+        ><button
+          id="accountStatusDismiss"
+          type="button"
+          aria-label="Dismiss notification"
+          data-i18n-aria-label="status.dismiss"
+        >
+          ×
+        </button>
+      </div>
     </main>
     <script type="module" src="js/account-profile-page.js"></script>
   </body>
