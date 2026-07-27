@@ -12612,16 +12612,16 @@ async function handleClick(state, event) {
     if (result !== null) renderShell(state);
     return;
   }
+  if (action === 'export-mapper-plan-bundle') {
+    const count = downloadMapperPlanBundle(state);
+    setStatus(
+      state,
+      state.tr('adminBohExportedPlanBundle', 'Exported {count} team plans.', { count }),
+      'success'
+    );
+    return;
+  }
   if (action === 'save-mapper-role-plan') {
-    if (action === 'export-mapper-plan-bundle') {
-      const count = downloadMapperPlanBundle(state);
-      setStatus(
-        state,
-        state.tr('adminBohExportedPlanBundle', 'Exported {count} team plans.', { count }),
-        'success'
-      );
-      return;
-    }
     const result = await invokeAction(
       state,
       'saveMapperRolePlanImport',
