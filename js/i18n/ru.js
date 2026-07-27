@@ -437,6 +437,7 @@ const ru = {
   tabResearch: 'Исследования',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Симулятор битв',
   tabSpecializationTowers: 'Башни специализации',
   tabSpecializationTowersAliases:

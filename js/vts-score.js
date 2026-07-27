@@ -96,6 +96,14 @@ function initializePreferences(i18n) {
   });
 }
 
+function setProgress(busy) {
+  const progress = element('vtsScoreProgress');
+  const status = element('vtsScoreStatus');
+  if (!progress) return;
+  progress.hidden = !busy;
+  if (status) status.hidden = busy || !status.textContent;
+}
+
 function setBusy(button, busy, busyText) {
   if (!button) return;
   if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
@@ -345,7 +353,7 @@ export async function bootVtsScore(options = {}) {
       return;
     }
     setBusy(readButton, true, 'Reading screenshot…');
-    setStatus('Reading every power value from your screenshot…');
+    setProgress(true);
     try {
       const prepared = await prepareBohStatsScreenshot(state.file);
       const request = buildBohStatsOcrRequest({
@@ -362,6 +370,7 @@ export async function bootVtsScore(options = {}) {
       clearPowerFields();
       setStatus(friendlyError(error), 'error');
     } finally {
+      setProgress(false);
       setBusy(readButton, false);
     }
   });

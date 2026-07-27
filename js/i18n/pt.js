@@ -453,6 +453,7 @@ const pt = {
   tabResearch: 'Pesquisa',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Simulador de batalhas',
   tabSpecializationTowers: 'Torres de especialização',
   tabSpecializationTowersAliases:

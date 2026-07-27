@@ -790,6 +790,7 @@ const it = {
   tabResearch: 'Ricerche',
   tabOcrDashboard: 'Amministrazione VTS',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Simulatore di battaglia',
   tabSpecializationTowers: 'Torri di specializzazione',
   tabSpecializationTowersAliases:

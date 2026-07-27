@@ -434,6 +434,7 @@ const ar = {
   tabResearch: 'الأبحاث',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'محاكي المعارك',
   tabSpecializationTowers: 'أبراج التخصص',
   tabSpecializationTowersAliases:

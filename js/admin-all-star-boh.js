@@ -6592,11 +6592,16 @@ function renderVtsScores(state) {
             comparison.growth === null
               ? '—'
               : `${comparison.growth > 0 ? '+' : ''}${formatNumber(state, comparison.growth)}`;
+          const fieldGrowthPercent =
+            comparison.growthPercent === null
+              ? '—'
+              : `${comparison.growthPercent > 0 ? '+' : ''}${formatNumber(state, comparison.growthPercent, 2)}%`;
           return `<tr>
             <th scope="row">${escapeHtml(label)}</th>
             <td>${comparison.baseline === null ? '—' : escapeHtml(formatNumber(state, comparison.baseline))}</td>
             <td>${comparison.final === null ? '—' : escapeHtml(formatNumber(state, comparison.final))}</td>
             <td data-growth="${comparison.growth === null ? 'missing' : comparison.growth >= 0 ? 'positive' : 'negative'}">${escapeHtml(fieldGrowth)}</td>
+            <td data-growth="${comparison.growthPercent === null ? 'missing' : comparison.growthPercent >= 0 ? 'positive' : 'negative'}">${escapeHtml(fieldGrowthPercent)}</td>
           </tr>`;
         })
         .join('');
@@ -6607,7 +6612,7 @@ function renderVtsScores(state) {
             <summary>All power changes</summary>
             <div class="boh-admin-table-wrap">
               <table class="boh-admin-table">
-                <thead><tr><th>Power type</th><th>Sign-up</th><th>Final</th><th>Change</th></tr></thead>
+                <thead><tr><th>Power type</th><th>Sign-up</th><th>Final</th><th>Change</th><th>Change %</th></tr></thead>
                 <tbody>${breakdownRows}</tbody>
               </table>
             </div>
@@ -6673,6 +6678,63 @@ function renderVtsScores(state) {
         </table>
       </div>
     </section>
+    ${renderBestVtsScoreGrowth(rows, state)}
+  </section>`;
+}
+
+function renderBestVtsScoreGrowth(rows, state) {
+  const submitted = rows.filter((r) => r.submitted);
+  if (!submitted.length) return '';
+  const best = VTS_SCORE_COMPARISON_FIELDS.map(([field, i18nKey, label]) => {
+    let bestRow = null;
+    let bestGrowth = Number.NEGATIVE_INFINITY;
+    for (const row of submitted) {
+      const comparison = row.comparisons.find((c) => c.field === field);
+      if (comparison?.growth !== null && comparison.growth > bestGrowth) {
+        bestGrowth = comparison.growth;
+        bestRow = row;
+      }
+    }
+    return {
+      field,
+      label: state.tr(i18nKey, label),
+      player: bestRow?.gameName || '\u2014',
+      growth: bestGrowth === Number.NEGATIVE_INFINITY ? null : bestGrowth,
+    };
+  });
+  const bestRows = best
+    .map(
+      (entry) => `<tr>
+        <th scope="row">${escapeHtml(entry.label)}</th>
+        <td><strong>${escapeHtml(entry.player)}</strong></td>
+        <td data-growth="${entry.growth === null ? 'missing' : entry.growth >= 0 ? 'positive' : 'negative'}">${
+          entry.growth === null ? '\u2014' : `+${escapeHtml(formatNumber(state, entry.growth))}`
+        }</td>
+      </tr>`
+    )
+    .join('');
+  return `<section class="boh-admin-card">
+    <div class="boh-admin-card-heading">
+      <div>
+        <h4>${escapeHtml(state.tr('adminVtsScoreBestTitle', 'Best growth per category'))}</h4>
+        <p>${escapeHtml(
+          state.tr(
+            'adminVtsScoreBestHint',
+            'The player with the highest growth in each power category among submitted full-breakdown entries.'
+          )
+        )}</p>
+      </div>
+    </div>
+    <div class="boh-admin-table-wrap">
+      <table class="boh-admin-table boh-admin-vts-score-table">
+        <thead><tr>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreCategory', 'Category'))}</th>
+          <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowth', 'Growth'))}</th>
+        </tr></thead>
+        <tbody>${bestRows}</tbody>
+      </table>
+    </div>
   </section>`;
 }
 

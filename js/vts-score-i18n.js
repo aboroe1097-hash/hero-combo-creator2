@@ -11,7 +11,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Choose the same game name used for the All-Star sign-up, upload one current power screenshot, review your Total Power, and submit it for comparison with your sign-up baseline.',
     deadlineLabel: 'Final deadline',
-    deadline: 'Monday, 27 July · 20:00 Game Time',
+    deadline: 'Tuesday, 28 July · 20:00 Game Time',
     members: 'VTS MEMBERS',
     unlockTitle: 'Unlock final score upload',
     unlockHelp: 'Use the same VTS member PIN as the All-Star sign-up hub.',
@@ -45,7 +45,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'اختر اسم اللعبة نفسه المستخدم في تسجيل All-Star، وارفع صورة حديثة للقوة، وراجع إجمالي القوة ثم أرسله لمقارنته بقيمة التسجيل.',
     deadlineLabel: 'الموعد النهائي',
-    deadline: 'الاثنين، 27 يوليو · 20:00 بتوقيت اللعبة',
+    deadline: 'الثلاثاء، 28 يوليو · 20:00 بتوقيت اللعبة',
     members: 'أعضاء VTS',
     unlockTitle: 'فتح رفع النتيجة النهائية',
     unlockHelp: 'استخدم رمز PIN نفسه الخاص بأعضاء VTS في مركز تسجيل All-Star.',
@@ -78,7 +78,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Elige el mismo nombre usado en la inscripción All-Star, sube una captura actual, revisa tu Poder Total y envíalo para compararlo con tu valor inicial.',
     deadlineLabel: 'Fecha límite',
-    deadline: 'Lunes, 27 de julio · 20:00 hora del juego',
+    deadline: 'Martes, 28 de julio · 20:00 hora del juego',
     members: 'MIEMBROS VTS',
     unlockTitle: 'Desbloquear la carga final',
     unlockHelp: 'Usa el mismo PIN de miembro VTS del registro All-Star.',
@@ -111,7 +111,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Escolha o mesmo nome da inscrição All-Star, envie uma captura atual, revise seu Poder Total e confirme para comparar com o valor inicial.',
     deadlineLabel: 'Prazo final',
-    deadline: 'Segunda-feira, 27 de julho · 20:00 no jogo',
+    deadline: 'Terça-feira, 28 de julho · 20:00 no jogo',
     members: 'MEMBROS VTS',
     unlockTitle: 'Desbloquear envio final',
     unlockHelp: 'Use o mesmo PIN de membro VTS da inscrição All-Star.',
@@ -145,7 +145,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Choisissez le nom utilisé lors de l’inscription All-Star, ajoutez une capture actuelle, vérifiez votre Puissance totale et envoyez-la pour comparaison.',
     deadlineLabel: 'Date limite',
-    deadline: 'Lundi 27 juillet · 20:00 heure du jeu',
+    deadline: 'Mardi 28 juillet · 20:00 heure du jeu',
     members: 'MEMBRES VTS',
     unlockTitle: 'Déverrouiller l’envoi final',
     unlockHelp: 'Utilisez le même code PIN VTS que pour l’inscription All-Star.',
@@ -179,7 +179,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Wähle denselben Namen wie bei der All-Star-Anmeldung, lade einen aktuellen Screenshot hoch, prüfe deine Gesamtstärke und sende sie zum Vergleich.',
     deadlineLabel: 'Letzte Frist',
-    deadline: 'Montag, 27. Juli · 20:00 Spielzeit',
+    deadline: 'Dienstag, 28. Juli · 20:00 Spielzeit',
     members: 'VTS-MITGLIEDER',
     unlockTitle: 'Finalen Upload freischalten',
     unlockHelp: 'Nutze dieselbe VTS-Mitglieder-PIN wie bei der All-Star-Anmeldung.',
@@ -232,6 +232,7 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     notDetected: 'Not detected',
     confidence: 'confidence',
     reviewRequired: 'Review required',
+    readingProgress: 'Reading power values from your screenshot\u2026',
   },
   ar: {
     title: 'ارفع تفاصيل القوة الليلة',
@@ -256,6 +257,7 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     notDetected: 'لم يتم اكتشافه',
     confidence: 'ثقة',
     reviewRequired: 'تحتاج مراجعة',
+    readingProgress: 'جارٍ قراءة قيم القوة من صورتك\u2026',
   },
   es: {
     title: 'Sube el desglose de poder de esta noche',
@@ -281,6 +283,7 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     notDetected: 'No detectado',
     confidence: 'confianza',
     reviewRequired: 'Revisión necesaria',
+    readingProgress: 'Leyendo valores de poder de tu captura\u2026',
   },
   pt: {
     title: 'Envie o detalhamento de poder de hoje',
@@ -305,6 +308,7 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     notDetected: 'Não detectado',
     confidence: 'confiança',
     reviewRequired: 'Revisão necessária',
+    readingProgress: 'Lendo valores de poder da sua captura\u2026',
   },
   fr: {
     title: 'Envoyez le détail de puissance',
@@ -329,6 +333,7 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     notDetected: 'Non détecté',
     confidence: 'confiance',
     reviewRequired: 'Vérification requise',
+    readingProgress: 'Lecture des valeurs de puissance depuis votre capture\u2026',
   },
   de: {
     title: 'Lade die heutige Stärkeübersicht hoch',
@@ -353,6 +358,7 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     notDetected: 'Nicht erkannt',
     confidence: 'Sicherheit',
     reviewRequired: 'Prüfung erforderlich',
+    readingProgress: 'Stärkewerte werden aus Ihrem Screenshot gelesen\u2026',
   },
 });
 

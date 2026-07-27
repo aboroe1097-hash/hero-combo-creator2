@@ -509,6 +509,39 @@ footer a {
   display: none !important;
 }
 
+.vts-score-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 0;
+  color: var(--vts-subtle);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.vts-score-progress__bar {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--vts-accent) 0%,
+    var(--vts-accent-strong) 25%,
+    var(--vts-accent) 50%,
+    var(--vts-accent-strong) 75%,
+    var(--vts-accent) 100%
+  );
+  background-size: 200% 100%;
+  animation: vtsProgressSlide 1.2s linear infinite;
+}
+
+@keyframes vtsProgressSlide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @media (max-width: 560px) {
   .vts-score-shell {
     width: min(100% - 20px, 780px);
@@ -518,20 +551,16 @@ footer a {
   .vts-score-hero,
   .vts-score-card {
     border-radius: 18px;
-  }
-
-  .vts-score-hero,
-  .vts-score-card {
     padding: 20px;
   }
 
-  .vts-score-inline,
-  footer {
-    grid-template-columns: 1fr;
+  .vts-score-topbar {
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .vts-score-topbar {
-    align-items: flex-start;
+  .vts-score-brand small {
+    font-size: 0.65rem;
   }
 
   .vts-score-brand img {
@@ -541,7 +570,18 @@ footer a {
 
   .vts-score-preferences {
     display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
     gap: 8px;
+  }
+
+  .vts-score-language {
+    min-width: 0;
+  }
+
+  .vts-score-language select {
+    width: 100%;
+    min-width: 0;
   }
 
   .vts-score-language span,
@@ -553,23 +593,43 @@ footer a {
     clip: rect(0 0 0 0);
   }
 
-  .vts-score-language select {
-    min-width: 90px;
+  .vts-score-inline {
+    grid-template-columns: 1fr;
   }
 
-  .vts-score-inline {
-    display: grid;
+  .vts-score-step {
+    grid-template-columns: 32px 1fr;
+    gap: 10px;
+    padding: 16px 0;
+  }
+
+  .vts-score-step__number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem;
+  }
+
+  .vts-score-deadline {
+    margin-top: 18px;
+    padding: 12px 14px;
   }
 
   footer {
     display: grid;
-  }
-
-  .vts-score-ocr-result {
-    display: grid;
+    gap: 8px;
+    text-align: center;
   }
 
   .vts-score-power-fields {
     grid-template-columns: 1fr;
+  }
+
+  .vts-score-progress {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vts-score-progress__bar {
+    width: 100%;
   }
 }
