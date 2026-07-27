@@ -243,6 +243,12 @@ export async function bootVtsScore(options = {}) {
 if (typeof document !== 'undefined' && document.getElementById('vtsScoreApp')) {
   bootVtsScore().catch((error) => {
     console.error('VtsScore failed to start', error);
-    setStatus(friendlyError(error), 'error');
+    setHidden(element('vtsScoreGate'), false);
+    element('vtsScorePinForm')
+      ?.querySelectorAll('input, button')
+      .forEach((control) => {
+        control.disabled = true;
+      });
+    setStatus(`${friendlyError(error)} Refresh the page to try again.`, 'error');
   });
 }
