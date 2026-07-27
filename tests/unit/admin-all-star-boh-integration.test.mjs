@@ -226,6 +226,14 @@ test('Admin All-Star publish stage owns the event schedule editor hooks', () => 
   assert.match(adminModule, /data-action="add-schedule-milestone"/);
   assert.match(adminModule, /data-action="move-schedule-milestone"/);
   assert.match(adminModule, /data-action="remove-schedule-milestone"/);
+  assert.match(adminModule, /data-action="duplicate-schedule-milestone"/);
+  assert.match(adminModule, /data-action="clear-schedule-milestones"/);
+  assert.match(adminModule, /data-action="clear-schedule-team-time"/);
+  assert.match(adminModule, /Move earlier/);
+  assert.match(adminModule, /Move later/);
+  assert.match(adminModule, /Milestone times must stay within the event start and end/);
+  assert.match(adminModule, /Team game times must stay within the event start and end/);
+  assert.match(adminModule, /state\.options\.confirm\?\.\(message\) \?\? showConfirmDialog/);
   assert.match(adminModule, /'saveEventSchedule'/);
   assert.match(adminModule, /adminStore\.saveEventSchedule\(schedule, \{\s*expectedRevision,/);
   assert.doesNotMatch(adminTab, /event-schedule|bohScheduleTitle/);
@@ -279,6 +287,13 @@ test('mapper-first admin source keeps the board primary and exposes safe direct 
   assert.match(adminModule, /entry minute must be from 3 through 60/iu);
   assert.match(adminModule, /phases.length !== 5/u);
   assert.match(adminCss, /\.boh-admin-plan-details/u);
+  assert.match(adminModule, /previewMapperRolePlan/u);
+  assert.match(adminModule, /saveMapperRolePlanImport/u);
+  assert.match(adminModule, /data-action="preview-mapper-role-plan"/u);
+  assert.match(adminModule, /data-form="publish-scope"/u);
+  assert.match(adminModule, /publishBoth/u);
+  assert.match(adminCss, /\.boh-admin-role-plan-import/u);
+  assert.match(adminCss, /\.boh-admin-publish-scope-options/u);
 });
 
 test('hidden event schedules can save without native or adapter time requirements', () => {
@@ -290,6 +305,24 @@ test('hidden event schedules can save without native or adapter time requirement
   assert.doesNotMatch(adminModule, /name="eventStartsAt"[\s\S]{0,140}required \/><\/label>/);
   assert.match(adminModule, /name="eventStartsAt"[\s\S]{0,180}\$\{requiredWhenPublished\}/);
   assert.match(adminModule, /name="milestoneStartsAt"[\s\S]{0,220}\$\{requiredWhenPublished\}/);
+  assert.match(adminModule, /Hidden removes the member schedule/);
+  assert.match(adminModule, /Hidden is an explicit public reset/);
+  assert.match(adminModule, /eventStartsAt: published \? payload\.eventStartsAt : ''/);
+  assert.match(adminModule, /class="boh-admin-button boh-admin-button-save"/);
+});
+
+test('publish stage exposes a draft-only announcement composer with safe copy preview', () => {
+  assert.match(adminModule, /function renderPublicationCopyCard\(state\)/);
+  assert.match(adminModule, /data-form="publication-copy"/);
+  assert.match(adminModule, /name="eventName" maxlength="160"/);
+  assert.match(adminModule, /name="title" maxlength="160"/);
+  assert.match(adminModule, /name="subtitle" maxlength="240"/);
+  assert.match(adminModule, /name="message" maxlength="2000"/);
+  assert.match(adminModule, /data-action="clear-publication-copy-message"/);
+  assert.match(adminModule, /'savePublicationCopy'/);
+  assert.match(adminModule, /publicationCopy\.eventName/);
+  assert.match(adminModule, /publicationCopy\.message/);
+  assert.match(adminCss, /\.boh-admin-publication-copy-preview/);
 });
 
 test('runtime Stage-1 team plans use occupied seats without overwriting authored team plans', async () => {

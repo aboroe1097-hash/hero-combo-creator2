@@ -2152,14 +2152,124 @@
   line-height: 1.5;
 }
 
+.boh-publication-banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.32fr) minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--boh-team-accent, var(--boh-sky)) 48%, var(--boh-line));
+  border-radius: var(--boh-radius);
+  background:
+    linear-gradient(
+      118deg,
+      color-mix(in srgb, var(--boh-team-accent, var(--boh-sky)) 18%, transparent),
+      transparent 58%
+    ),
+    var(--boh-panel);
+  box-shadow: var(--shadow-low, 0 10px 28px rgba(0, 0, 0, 0.14));
+}
+
+.boh-publication-banner::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 0.28rem;
+  background: var(--boh-team-accent, var(--boh-sky));
+  content: '';
+}
+
+.boh-publication-banner__status,
+.boh-publication-banner__copy {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  gap: 0.3rem;
+  padding: clamp(0.9rem, 2vw, 1.25rem);
+}
+
+.boh-publication-banner__status {
+  border-inline-end: 1px solid var(--boh-line);
+  color: var(--boh-team-accent, var(--boh-sky));
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.boh-publication-banner__status small {
+  color: var(--boh-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.boh-publication-banner__copy h4,
+.boh-publication-banner__copy p {
+  margin: 0;
+}
+
+.boh-publication-banner__copy h4 {
+  color: var(--boh-text);
+  font-size: clamp(1rem, 2.2vw, 1.45rem);
+  line-height: 1.2;
+}
+
+.boh-publication-banner__copy p {
+  max-width: 58rem;
+  color: var(--boh-muted);
+  font-size: 0.69rem;
+  line-height: 1.55;
+}
+
+.boh-publication-banner__copy p:last-child:not([hidden]) {
+  margin-top: 0.2rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--boh-line);
+  color: var(--boh-text);
+}
+
+.boh-announcement.is-revealing
+  :is(.boh-publication-banner, .boh-my-team, .boh-roster-section, .boh-all-teams) {
+  animation: boh-announcement-reveal 0.46s both;
+}
+
+.boh-announcement.is-revealing .boh-my-team {
+  animation-delay: 70ms;
+}
+
+.boh-announcement.is-revealing .boh-roster-section {
+  animation-delay: 140ms;
+}
+
+.boh-announcement.is-revealing .boh-all-teams {
+  animation-delay: 210ms;
+}
+
+@keyframes boh-announcement-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .boh-my-team {
   display: grid;
   grid-template-columns: minmax(14rem, 1fr) minmax(19rem, 1.2fr) auto;
   align-items: center;
   gap: 1rem;
-  border-color: rgba(125, 211, 252, 0.38);
+  border-color: color-mix(in srgb, var(--boh-team-accent, var(--boh-sky)) 46%, var(--boh-line));
+  border-inline-start-width: 0.28rem;
   background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(167, 139, 250, 0.055)), var(--boh-panel);
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--boh-team-accent, var(--boh-sky)) 14%, transparent),
+      rgba(167, 139, 250, 0.055)
+    ),
+    var(--boh-panel);
 }
 
 .boh-my-team__identity,
@@ -2183,10 +2293,10 @@
   min-height: 4rem;
   place-items: center;
   padding: 0.45rem;
-  border: 1px solid rgba(125, 211, 252, 0.46);
+  border: 1px solid color-mix(in srgb, var(--boh-team-accent, var(--boh-sky)) 52%, transparent);
   border-radius: 1rem;
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--boh-sky);
+  background: color-mix(in srgb, var(--boh-team-accent, var(--boh-sky)) 15%, transparent);
+  color: var(--boh-team-accent, var(--boh-sky));
   font-size: 0.68rem;
   font-weight: 900;
   text-align: center;
@@ -2308,8 +2418,13 @@
 }
 
 .boh-team-summary.is-mine {
-  border-color: rgba(94, 234, 212, 0.37);
-  background: rgba(45, 212, 191, 0.07);
+  border-color: color-mix(in srgb, var(--boh-team-accent, var(--boh-teal)) 50%, var(--boh-line));
+  border-inline-start-width: 0.24rem;
+  background: color-mix(in srgb, var(--boh-team-accent, var(--boh-teal)) 10%, var(--boh-control));
+}
+
+.boh-team-summary.is-mine :is(.boh-team-summary__number, .boh-chip--success) {
+  color: var(--boh-team-accent, var(--boh-teal));
 }
 
 .boh-team-summary__number {
@@ -2562,19 +2677,38 @@
 
 .boh-schedule-card {
   display: grid;
-  gap: 0.7rem;
-  padding: 0.9rem;
-  border: 1px solid rgba(56, 189, 248, 0.28);
+  gap: 0.9rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(0.9rem, 2vw, 1.25rem);
+  border: 1px solid rgba(56, 189, 248, 0.3);
   border-radius: var(--boh-radius);
   background:
-    radial-gradient(circle at 8% 20%, rgba(56, 189, 248, 0.12), transparent 38%), var(--boh-panel);
+    radial-gradient(circle at 8% 20%, rgba(56, 189, 248, 0.14), transparent 38%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.16), rgba(167, 139, 250, 0.035)), var(--boh-panel);
+}
+
+.boh-schedule-card[data-phase='live'] {
+  border-color: rgba(94, 234, 212, 0.4);
+}
+
+.boh-schedule-card[data-phase='ended'] {
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.boh-schedule-selected-status {
+  margin: 0.25rem 0 0;
+  color: var(--boh-muted);
+  font-size: 0.64rem;
+  font-weight: 650;
 }
 
 .boh-schedule-countdown {
   display: grid;
   justify-items: end;
-  gap: 0.1rem;
+  gap: 0.12rem;
   color: var(--boh-text);
+  font-size: clamp(0.82rem, 1.7vw, 1.04rem);
   font-weight: 850;
   font-variant-numeric: tabular-nums;
 }
@@ -2586,60 +2720,154 @@
 }
 
 .boh-schedule-rail {
+  --boh-schedule-progress: 0%;
+  position: relative;
   display: grid;
-  grid-auto-columns: minmax(8.5rem, 1fr);
+  grid-auto-columns: minmax(9.25rem, 1fr);
   grid-auto-flow: column;
-  gap: 0.5rem;
   min-width: 0;
+  max-width: 100%;
+  gap: 0.75rem;
   overflow-x: auto;
-  padding-block: 0.2rem 0.55rem;
+  padding: 0.25rem 0.1rem 0.75rem;
+  scroll-padding-inline: 0.1rem;
   scroll-snap-type: x proximity;
+  scrollbar-color: rgba(125, 211, 252, 0.34) transparent;
+}
+
+.boh-schedule-rail::before {
+  position: absolute;
+  z-index: 0;
+  inset-inline: 1.1rem;
+  top: 1.33rem;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--boh-teal) 0 var(--boh-schedule-progress),
+    var(--boh-line-strong) var(--boh-schedule-progress) 100%
+  );
+  content: '';
+  pointer-events: none;
 }
 
 .boh-schedule-mile {
+  position: relative;
+  z-index: 1;
   display: grid;
-  min-height: 4.8rem;
-  scroll-snap-align: start;
-  gap: 0.18rem;
-  padding: 0.65rem;
+  min-height: 6.1rem;
+  align-content: start;
+  scroll-snap-align: center;
+  gap: 0.28rem;
+  padding: 2.35rem 0.72rem 0.72rem;
   border: 1px solid var(--boh-line);
   border-radius: var(--boh-radius-sm);
-  background: color-mix(in srgb, var(--boh-control) 86%, transparent);
+  background: color-mix(in srgb, var(--boh-control) 92%, transparent);
   color: var(--boh-muted);
   text-align: start;
   cursor: pointer;
+  animation: boh-schedule-reveal 0.42s both;
+  animation-delay: calc(var(--boh-reveal-index, 0) * 45ms);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.boh-schedule-mile:hover {
+  border-color: var(--boh-line-strong);
+  transform: translateY(-2px);
 }
 
 .boh-schedule-mile[aria-current='step'] {
-  border-color: rgba(94, 234, 212, 0.42);
-  background: rgba(45, 212, 191, 0.09);
+  border-color: rgba(125, 211, 252, 0.52);
+  background:
+    linear-gradient(145deg, rgba(56, 189, 248, 0.12), rgba(167, 139, 250, 0.06)), var(--boh-control);
   color: var(--boh-text);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.08);
 }
 
 .boh-schedule-mile[data-status='complete'] {
   opacity: 0.72;
 }
 
-.boh-schedule-mile > span {
+.boh-schedule-mile[data-status='current'] {
+  border-color: rgba(94, 234, 212, 0.5);
+  background: color-mix(in srgb, var(--boh-teal) 10%, var(--boh-control));
+  color: var(--boh-text);
+}
+
+.boh-schedule-mile__marker {
+  position: absolute;
+  z-index: 2;
+  top: 0.48rem;
+  inset-inline-start: 0.68rem;
+  display: grid;
+  width: 1.72rem;
+  height: 1.72rem;
+  place-items: center;
+  border: 2px solid var(--boh-line-strong);
+  border-radius: 50%;
+  background: var(--boh-panel);
   color: var(--boh-sky);
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   font-weight: 900;
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--boh-panel) 85%, transparent);
+}
+
+.boh-schedule-mile[data-status='complete'] .boh-schedule-mile__marker {
+  border-color: var(--boh-teal);
+  background: color-mix(in srgb, var(--boh-teal) 20%, var(--boh-panel));
+  color: var(--boh-teal);
+}
+
+.boh-schedule-mile[data-status='current'] .boh-schedule-mile__marker {
+  border-color: var(--boh-teal);
+  background: var(--boh-teal);
+  color: #052e2b;
+  animation: boh-schedule-current-pulse 2.2s ease-out infinite;
 }
 
 .boh-schedule-mile strong {
-  font-size: 0.72rem;
+  color: inherit;
+  font-size: 0.73rem;
+  line-height: 1.35;
 }
 
 .boh-schedule-mile small {
   color: var(--boh-muted);
   font-size: 0.58rem;
-  line-height: 1.35;
+  line-height: 1.4;
+}
+
+@keyframes boh-schedule-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(0.7rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes boh-schedule-current-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--boh-teal) 30%, transparent),
+      0 0 0 0.25rem color-mix(in srgb, var(--boh-panel) 85%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 0.42rem transparent,
+      0 0 0 0.25rem color-mix(in srgb, var(--boh-panel) 85%, transparent);
+  }
 }
 
 .boh-schedule-teams {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
+  gap: 0.45rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2647,16 +2875,17 @@
 
 .boh-schedule-teams li {
   display: grid;
-  gap: 0.12rem;
-  padding: 0.55rem;
+  gap: 0.15rem;
+  padding: 0.62rem;
   border: 1px solid var(--boh-line);
   border-radius: 0.75rem;
   background: rgba(148, 163, 184, 0.04);
 }
 
 .boh-schedule-teams li.is-mine {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: color-mix(in srgb, var(--boh-team-accent, var(--boh-amber)) 50%, var(--boh-line));
+  border-inline-start-width: 0.24rem;
+  background: color-mix(in srgb, var(--boh-team-accent, var(--boh-amber)) 10%, transparent);
 }
 
 .boh-schedule-teams strong {
@@ -3704,6 +3933,32 @@
   }
 }
 
+@media (max-width: 620px) {
+  .boh-publication-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .boh-publication-banner__status {
+    padding-bottom: 0.7rem;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--boh-line);
+  }
+
+  .boh-publication-banner__copy {
+    padding-top: 0.8rem;
+  }
+
+  .boh-schedule-card {
+    padding-inline: 0.75rem;
+  }
+
+  .boh-schedule-rail {
+    grid-auto-columns: minmax(9rem, 78vw);
+    margin-inline: -0.15rem;
+    scroll-snap-type: x mandatory;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .boh-hub *,
   .boh-hub *::before,
@@ -3714,7 +3969,8 @@
     animation-iteration-count: 1 !important;
   }
 
-  .boh-button:hover {
+  .boh-button:hover,
+  .boh-schedule-mile:hover {
     transform: none;
   }
 }

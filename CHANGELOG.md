@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.2.17 - 2026-07-27
+
+- Improved the All-Star BoH Mapper workspace action hierarchy with distinct colors for importing, validating, opening team plans, saving team edits, and publishing.
+- Added strict per-team Stage-1 role-plan JSON preview and draft import, with exact player matching and 120 canonical personal instructions.
+- Added one explicit publication-scope control for team lists, plan updates, or an atomic combined release.
+- Added a draft-only announcement composer and clearer schedule controls for adding, duplicating, reordering, clearing, hiding, and validating public milestones and team times.
+- Redesigned the member announcement and event schedule with editable release copy, team accents, a connected animated timeline, accurate next-event countdowns, and reduced-motion support.
+
 ## 14.2.16 - 2026-07-26
 
 - Fixed the All-Star published-player Firestore contract so UID and playerId identity fields remain consistent.

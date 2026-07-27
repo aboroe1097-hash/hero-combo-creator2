@@ -2601,6 +2601,45 @@ test('mapper plan details save canonical private substitutions, resources, and a
   adapter.stop();
 });
 
+test('announcement copy saves to the draft and feeds the sanitized publication bundle', async () => {
+  const { adapter, primitiveStore, snapshot: initialSnapshot } = await createBalancedFixture();
+  let snapshot = initialSnapshot;
+
+  snapshot = (
+    await dispatch(adapter, snapshot, 'savePublicationCopy', {
+      eventName: 'All-Star BoH Finals',
+      title: 'Teams are ready',
+      subtitle: 'Review your assignment.',
+      message: 'Follow leadership calls and arrive early.',
+    })
+  ).snapshot;
+
+  assert.deepEqual(snapshot.publicationCopy, {
+    eventName: 'All-Star BoH Finals',
+    title: 'Teams are ready',
+    subtitle: 'Review your assignment.',
+    message: 'Follow leadership calls and arrive early.',
+  });
+  assert.deepEqual(primitiveStore.draft.publicationCopy, snapshot.publicationCopy);
+
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+  snapshot = (await dispatch(adapter, snapshot, 'publishAnnouncement')).snapshot;
+  const current = primitiveStore.publishCalls.at(-1).bundle.current;
+  assert.equal(current.eventName, 'All-Star BoH Finals');
+  assert.equal(current.title, 'Teams are ready');
+  assert.equal(current.subtitle, 'Review your assignment.');
+  assert.equal(current.message, 'Follow leadership calls and arrive early.');
+  assert.equal(
+    'publicationCopy' in primitiveStore.publishCalls.at(-1).bundle.teams['team-1'],
+    false
+  );
+  assert.equal(
+    'publicationCopy' in primitiveStore.publishCalls.at(-1).bundle.players['firebase-uid-01'],
+    false
+  );
+  adapter.stop();
+});
+
 test('announcement and plan publishing each require validation of their current revision', async () => {
   const { adapter, primitiveStore } = await createBalancedFixture();
   let snapshot = adapter.getSnapshot();
@@ -2805,5 +2844,84 @@ test('global and player instructions preserve canonical routes without copying p
     ),
     false
   );
+  adapter.stop();
+});
+
+test('role-plan JSON exact-matches one saved team and writes only authored personal overrides', async () => {
+  const { adapter, primitiveStore } = await createBalancedFixture();
+  let snapshot = adapter.getSnapshot();
+  const team = snapshot.teams.find((candidate) => candidate.id === 'team-1');
+  const phases = ['0-5', '5-10', '10-15', '15-30', '30-60'];
+  const beforeSeats = clone(primitiveStore.teams.get(team.id).seats);
+  const draftRevision = primitiveStore.draft.revision;
+  const saveCount = primitiveStore.singleTeamSaveCount;
+  const jsonText = JSON.stringify({
+    format: 'all-star-boh-stage1-role-plan',
+    version: 2,
+    team: { id: team.id, name: team.name },
+    players: team.seats.map((seat, index) => ({
+      scoreRank: index + 1,
+      name: seat.displayName,
+      roleKey: seat.roleGroupId,
+      role: { label: seat.roleLabel || seat.roleGroupId, description: 'Imported role' },
+      phases: phases.map((time, phaseIndex) => ({
+        time,
+        stageRole: 'Stage role ' + (phaseIndex + 1),
+        legion1: 'Legion 1 action ' + (phaseIndex + 1),
+        legion2: 'Legion 2 action ' + (phaseIndex + 1),
+        note: phaseIndex === 0 ? 'No Teleport' : '',
+      })),
+    })),
+  });
+
+  const preview = await dispatch(adapter, snapshot, 'previewMapperRolePlan', { jsonText });
+  snapshot = preview.snapshot;
+  assert.equal(preview.result.matchedCount, 12);
+  assert.equal(preview.result.instructionCount, 120);
+  assert.equal(preview.result.diagnostics.length, 0);
+
+  const saved = await dispatch(adapter, snapshot, 'saveMapperRolePlanImport');
+  snapshot = saved.snapshot;
+  const storedTeam = primitiveStore.teams.get(team.id);
+  assert.equal(primitiveStore.singleTeamSaveCount, saveCount + 1);
+  assert.equal(primitiveStore.draft.revision, draftRevision);
+  assert.deepEqual(storedTeam.seats, beforeSeats);
+  assert.equal(storedTeam.plan.generated, false);
+  assert.equal(storedTeam.plan.phases.length, 5);
+  assert.equal(storedTeam.plan.legions.length, 2);
+  assert.equal(
+    storedTeam.plan.playerOverrides.filter((rule) => rule.id.startsWith('mapper-plan-v2-')).length,
+    120
+  );
+  const importedRule = storedTeam.plan.playerOverrides.find((rule) =>
+    rule.id.startsWith('mapper-plan-v2-')
+  );
+  assert.equal(importedRule.instruction.action, 'Legion 1 action 1');
+  assert.equal(importedRule.instruction.teleport, 'No Teleport');
+  assert.equal(saved.result.teamId, team.id);
+  adapter.stop();
+});
+
+test('combined publication is one atomic publish while plan-only still needs a live team list', async () => {
+  const { adapter, primitiveStore } = await createBalancedFixture();
+  let snapshot = adapter.getSnapshot();
+  snapshot = (await dispatch(adapter, snapshot, 'validateRevision')).snapshot;
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'publishPlan'),
+    (error) => error?.code === 'all-star-boh-announcement-required'
+  );
+  assert.equal(primitiveStore.publishCalls.length, 0);
+
+  const published = await dispatch(adapter, snapshot, 'publishBoth');
+  snapshot = published.snapshot;
+  assert.equal(primitiveStore.publishCalls.length, 1);
+  const call = primitiveStore.publishCalls[0];
+  assert.equal(call.bundle.current.announcementPublished, true);
+  assert.equal(call.bundle.current.planPublished, true);
+  assert.equal(call.bundle.current.status, 'live');
+  assert.equal(call.bundle.current.phases.length, 5);
+  assert.equal(snapshot.publications.announcement.status, 'published');
+  assert.equal(snapshot.publications.plan.status, 'published');
   adapter.stop();
 });

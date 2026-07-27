@@ -292,6 +292,64 @@
   border-color: transparent;
 }
 
+.boh-admin .boh-admin-button-import {
+  background: linear-gradient(135deg, #7dd3fc, #22d3ee);
+  display: inline-flex;
+  border-color: #67e8f9;
+  box-shadow: 0 0.4rem 1.2rem rgba(34, 211, 238, 0.16);
+  color: #07141d;
+}
+
+.boh-admin .boh-admin-button-import:hover:not(:disabled) {
+  background: linear-gradient(135deg, #bae6fd, #67e8f9);
+  border-color: #a5f3fc;
+}
+
+.boh-admin .boh-admin-button-validate {
+  background: rgba(167, 139, 250, 0.13);
+  border-color: rgba(196, 181, 253, 0.58);
+  color: #ddd6fe;
+}
+
+.boh-admin .boh-admin-button-validate:hover:not(:disabled) {
+  background: rgba(167, 139, 250, 0.22);
+  border-color: #c4b5fd;
+}
+
+.boh-admin .boh-admin-button-plan {
+  background: rgba(56, 189, 248, 0.11);
+  border-color: rgba(125, 211, 252, 0.52);
+  color: #bae6fd;
+}
+
+.boh-admin .boh-admin-button-plan:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #7dd3fc;
+}
+
+.boh-admin .boh-admin-button-save {
+  background: rgba(52, 211, 153, 0.11);
+  border-color: rgba(110, 231, 183, 0.5);
+  color: #a7f3d0;
+}
+
+.boh-admin .boh-admin-button-save:hover:not(:disabled) {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: #6ee7b7;
+}
+
+.boh-admin .boh-admin-button-publish {
+  background: linear-gradient(135deg, #fdba74, #f97316);
+  border-color: #fb923c;
+  box-shadow: 0 0.45rem 1.3rem rgba(249, 115, 22, 0.2);
+  color: #1f0b02;
+}
+
+.boh-admin .boh-admin-button-publish:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fed7aa, #fb923c);
+  border-color: #fdba74;
+}
+
 .boh-admin-button-danger {
   border-color: rgba(251, 113, 133, 0.45);
   color: var(--ff-rose);
@@ -2340,6 +2398,214 @@
   line-height: 1.5;
 }
 
+.boh-admin-role-plan-import {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.boh-admin-role-plan-import > header p,
+.boh-admin-role-plan-import-empty,
+.boh-admin-publication-scope > header p,
+.boh-admin-publication-note {
+  color: var(--ff-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  margin: 0.35rem 0 0;
+  max-width: 72ch;
+}
+
+.boh-admin-role-plan-import-summary {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.boh-admin-role-plan-import-summary dl {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 0;
+}
+
+.boh-admin-role-plan-import-summary dl > div {
+  align-items: start;
+  background: rgba(5, 11, 24, 0.34);
+  border: 1px solid rgba(159, 176, 204, 0.12);
+  border-radius: var(--ff-r-card-small);
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem;
+}
+
+.boh-admin-role-plan-import-summary dd {
+  color: var(--ff-text);
+  font-size: 0.8rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.boh-admin-role-plan-import-summary .boh-admin-button {
+  justify-self: start;
+}
+
+.boh-admin-publication-copy {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.boh-admin-publication-copy > header p {
+  color: var(--ff-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  margin: 0.35rem 0 0;
+  max-width: 72ch;
+}
+
+.boh-admin-publication-copy-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.boh-admin-publication-copy-wide {
+  grid-column: 1 / -1;
+}
+
+.boh-admin-publication-copy-preview {
+  background: linear-gradient(135deg, rgba(125, 211, 252, 0.08), rgba(167, 139, 250, 0.06));
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  border-radius: var(--ff-r-card-small);
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.8rem;
+}
+
+.boh-admin-publication-copy-preview > span {
+  color: var(--ff-cyan);
+  font-family: var(--ff-font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.boh-admin-publication-copy-preview h5,
+.boh-admin-publication-copy-preview p,
+.boh-admin-publication-copy-preview blockquote {
+  margin: 0;
+}
+
+.boh-admin-publication-copy-preview h5 {
+  font-size: 1rem;
+}
+
+.boh-admin-publication-copy-preview p,
+.boh-admin-publication-copy-preview blockquote {
+  color: var(--ff-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.boh-admin-publication-copy-preview blockquote {
+  border-inline-start: 3px solid var(--ff-violet);
+  padding-inline-start: 0.7rem;
+  white-space: pre-wrap;
+}
+
+.boh-admin-publication-copy-event {
+  color: var(--ff-cyan) !important;
+  font-size: 0.66rem !important;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.boh-admin-publication-copy > footer {
+  justify-content: flex-end;
+}
+
+.boh-admin-publication-scope {
+  gap: 0.85rem;
+  grid-column: 1 / -1;
+}
+
+.boh-admin-publish-scope-options {
+  border: 0;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+}
+
+.boh-admin-publish-scope-options legend {
+  color: var(--ff-text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+}
+
+.boh-admin-publish-scope-options label {
+  align-items: flex-start;
+  background: rgba(5, 11, 24, 0.34);
+  border: 1px solid rgba(159, 176, 204, 0.16);
+  border-radius: var(--ff-r-card-small);
+  cursor: pointer;
+  display: flex;
+  gap: 0.55rem;
+  min-height: 4.25rem;
+  padding: 0.7rem;
+}
+
+.boh-admin-publish-scope-options label:has(input:checked) {
+  background: rgba(251, 146, 60, 0.1);
+  border-color: rgba(251, 146, 60, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.14);
+}
+
+.boh-admin-publish-scope-options label[data-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.boh-admin-publish-scope-options input {
+  accent-color: var(--ff-orange);
+  margin-top: 0.15rem;
+}
+
+.boh-admin-publish-scope-options span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.boh-admin-publish-scope-options strong {
+  color: var(--ff-text);
+  font-size: 0.78rem;
+}
+
+.boh-admin-publish-scope-options small {
+  color: var(--ff-text-dim);
+  font-size: 0.67rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .boh-admin-publication-copy-grid,
+  .boh-admin-publish-scope-options {
+    grid-template-columns: 1fr;
+  }
+
+  .boh-admin-publication-copy-wide {
+    grid-column: auto;
+  }
+
+  .boh-admin-role-plan-import-summary .boh-admin-button,
+  .boh-admin-publication-scope > .boh-admin-button {
+    width: 100%;
+  }
+}
+
 .boh-admin-schedule-editor {
   display: grid;
   gap: 1rem;
@@ -2385,11 +2651,34 @@
   font-size: 0.82rem;
 }
 
-.boh-admin-schedule-section > div:first-child span,
+.boh-admin-schedule-section > div:first-child > div:first-child > span,
 .boh-admin-schedule-editor > footer {
   color: var(--ff-text-dim);
   font-size: 0.68rem;
   font-weight: 750;
+}
+
+.boh-admin-schedule-section-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.boh-admin-schedule-hidden-warning {
+  background: rgba(245, 196, 81, 0.08);
+  border: 1px solid rgba(245, 196, 81, 0.32);
+  border-radius: var(--ff-r-card-small);
+  color: var(--ff-gold);
+  padding: 0.75rem 0.85rem;
+}
+
+.boh-admin-schedule-hidden-warning p {
+  color: var(--ff-text-dim);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  margin: 0.25rem 0 0;
 }
 
 .boh-admin-schedule-list {
@@ -2401,7 +2690,7 @@
   align-items: end;
   display: grid;
   gap: 0.55rem;
-  grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 0.8fr) auto;
+  grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 0.8fr) minmax(20rem, auto);
 }
 
 .boh-admin-schedule-row-actions {
@@ -2410,9 +2699,24 @@
   gap: 0.35rem;
 }
 
-.boh-admin-schedule-row-actions .boh-admin-icon-button {
-  height: 2.55rem;
-  width: 2.55rem;
+.boh-admin-schedule-row-actions {
+  flex-wrap: wrap;
+}
+
+.boh-admin-schedule-row-actions .boh-admin-button {
+  min-height: 2.3rem;
+  white-space: nowrap;
+}
+
+.boh-admin-schedule-team-time {
+  align-items: end;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.boh-admin-schedule-team-time .boh-admin-button {
+  margin-bottom: 0.05rem;
 }
 
 .boh-admin-schedule-editor > footer {
@@ -2687,7 +2991,8 @@
 
   .boh-admin-schedule-grid,
   .boh-admin-schedule-team-grid,
-  .boh-admin-schedule-row {
+  .boh-admin-schedule-row,
+  .boh-admin-schedule-team-time {
     grid-template-columns: 1fr;
   }
 
