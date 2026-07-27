@@ -1,0 +1,585 @@
+/* Battle Simulator-only Specialization Tower board.
+   Loaded lazily when a side profile editor opens. */
+.battle-profile-towers {
+  --specialization-column-width: clamp(136px, 10vw, 164px);
+  --specialization-panel-border: color-mix(in srgb, var(--ff-border) 84%, transparent);
+  --specialization-gold: var(--ff-warning);
+  --specialization-gold-strong: color-mix(in srgb, var(--ff-warning) 82%, #fff);
+  --specialization-complete: var(--ff-success);
+  --specialization-progress: var(--ff-action);
+  --specialization-locked: var(--ff-text-tertiary);
+}
+
+.battle-profile-towers .specialization-tower-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.battle-profile-towers .specialization-tower-tab {
+  position: relative;
+  display: grid;
+  min-height: 3.5rem;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-control);
+  color: var(--ff-text-supporting);
+  background: var(--ff-surface-raised);
+  text-align: start;
+}
+
+.battle-profile-towers .specialization-tower-tab:hover {
+  border-color: var(--ff-border-hover);
+  background: var(--ff-surface-hover);
+}
+
+.battle-profile-towers .specialization-tower-tab[aria-selected='true'] {
+  border-color: var(--tower-accent, var(--ff-action));
+  color: var(--ff-text);
+  background: color-mix(
+    in srgb,
+    var(--tower-accent, var(--ff-action)) 12%,
+    var(--ff-surface-raised)
+  );
+  box-shadow: inset 0 0 1.5rem
+    color-mix(in srgb, var(--tower-accent, var(--ff-action)) 7%, transparent);
+}
+
+.battle-profile-towers .specialization-tower-tab[data-troop-id='cavalry'] {
+  --tower-accent: #d5a84c;
+}
+
+.battle-profile-towers .specialization-tower-tab[data-troop-id='archer'] {
+  --tower-accent: #58a3d8;
+}
+
+.battle-profile-towers .specialization-tower-tab[data-troop-id='footman'] {
+  --tower-accent: #89a7c2;
+}
+
+.battle-profile-towers .specialization-tower-tab-copy,
+.battle-profile-towers .specialization-research {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+}
+
+.battle-profile-towers .specialization-tower-tab-name {
+  overflow: hidden;
+  color: var(--ff-text);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-profile-towers .specialization-tower-tab-progress {
+  color: var(--tower-accent, var(--ff-text-dim));
+  font-family: var(--ff-font-data);
+  font-size: 0.7rem;
+}
+
+.battle-profile-towers .specialization-workspace {
+  display: grid;
+  min-height: 34rem;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  overflow: hidden;
+  border: 1px solid var(--specialization-panel-border);
+  border-radius: var(--ff-radius-card);
+  background: var(--ff-panel-strong);
+}
+
+.battle-profile-towers .specialization-graph-shell {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse at 50% 28%,
+      color-mix(in srgb, var(--ff-action) 8%, transparent),
+      transparent 46%
+    ),
+    var(--ff-surface-subtle);
+}
+
+.battle-profile-towers .specialization-graph-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--ff-border-strong) transparent;
+  scrollbar-width: thin;
+  scroll-snap-type: inline proximity;
+}
+
+.battle-profile-towers .specialization-columns {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  align-items: stretch;
+  gap: 0.9rem;
+  padding: 1.7rem 1.8rem 1.2rem;
+  direction: ltr;
+}
+
+.battle-profile-towers .specialization-column {
+  --column-accent: var(--ff-action);
+  position: relative;
+  display: grid;
+  width: var(--specialization-column-width);
+  min-width: var(--specialization-column-width);
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 1rem 0.6rem 1.4rem;
+  border: 1px solid color-mix(in srgb, var(--column-accent) 32%, var(--ff-border));
+  border-block-start-width: 3px;
+  border-radius: 4px 4px 18px 18px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--column-accent) 14%, transparent),
+      transparent 38%
+    ),
+    color-mix(in srgb, var(--column-accent) 10%, var(--ff-surface-subtle));
+  box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.2);
+  scroll-snap-align: center;
+  text-align: center;
+}
+
+.battle-profile-towers .specialization-column::before {
+  position: absolute;
+  inset-block-start: -0.7rem;
+  inset-inline: -0.45rem;
+  height: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--column-accent) 45%, var(--ff-border));
+  border-radius: var(--ff-radius-pill);
+  background: linear-gradient(
+    90deg,
+    #64748b,
+    color-mix(in srgb, var(--column-accent) 72%, #3a2a14) 12% 88%,
+    #64748b
+  );
+  content: '';
+}
+
+.battle-profile-towers .specialization-column:nth-child(8n + 1) {
+  --column-accent: #8fa7ba;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 2) {
+  --column-accent: #6b9ec1;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 3) {
+  --column-accent: #5b89b0;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 4) {
+  --column-accent: #b29158;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 5) {
+  --column-accent: #c17a55;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 6) {
+  --column-accent: #a86b78;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 7) {
+  --column-accent: #8469a8;
+}
+.battle-profile-towers .specialization-column:nth-child(8n + 8) {
+  --column-accent: #9c7647;
+}
+
+.battle-profile-towers .specialization-column-header {
+  display: grid;
+  grid-template-columns: 1.8rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  margin-block-end: 0.5rem;
+  text-align: start;
+}
+
+.battle-profile-towers .specialization-column-number {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--column-accent) 48%, var(--ff-border));
+  border-radius: 0.45rem;
+  font-family: var(--ff-font-data);
+  font-weight: 800;
+}
+
+.battle-profile-towers .specialization-column-title {
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-profile-towers .specialization-column-progress {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ff-text-dim);
+  font-family: var(--ff-font-data);
+  font-size: 0.65rem;
+}
+
+.battle-profile-towers .specialization-column-progress-track {
+  width: 100%;
+  height: 0.2rem;
+  appearance: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--ff-radius-pill);
+  background: var(--ff-border);
+}
+
+.battle-profile-towers .specialization-column-progress-track::-webkit-progress-value,
+.battle-profile-towers .specialization-column-progress-track::-moz-progress-bar {
+  background: var(--column-accent);
+}
+
+.battle-profile-towers .specialization-node-list {
+  position: relative;
+  display: flex;
+  min-height: 26rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+}
+
+.battle-profile-towers .specialization-node-list::before {
+  position: absolute;
+  inset-block: 2rem;
+  inset-inline-start: 50%;
+  width: 1px;
+  background: color-mix(in srgb, var(--column-accent) 38%, var(--ff-border));
+  content: '';
+}
+
+.battle-profile-towers .specialization-research {
+  position: relative;
+  z-index: 1;
+  gap: 0.2rem;
+}
+
+.battle-profile-towers .specialization-research-node {
+  --node-color: var(--specialization-locked);
+  position: relative;
+  display: grid;
+  width: 4rem;
+  min-width: 4rem;
+  height: 4rem;
+  min-height: 4rem;
+  padding: 0.35rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ff-text-supporting);
+  background: var(--ff-surface-raised);
+  box-shadow:
+    0 0 0 2px var(--ff-panel-strong),
+    0 0 0 3px color-mix(in srgb, var(--node-color) 52%, var(--ff-border)),
+    0 0.45rem 1.1rem rgba(0, 0, 0, 0.35);
+}
+
+.battle-profile-towers .specialization-research-node:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+}
+
+.battle-profile-towers .specialization-research-node[data-state='complete'] {
+  --node-color: var(--specialization-complete);
+  color: var(--ff-text);
+}
+
+.battle-profile-towers .specialization-research-node[data-state='in-progress'] {
+  --node-color: var(--specialization-progress);
+  color: var(--ff-text);
+}
+
+.battle-profile-towers .specialization-research-node[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 2px var(--ff-panel-strong),
+    0 0 0 4px var(--ff-action),
+    0 0 1.5rem color-mix(in srgb, var(--ff-action) 42%, transparent);
+}
+
+.battle-profile-towers .specialization-node-progress-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.battle-profile-towers
+  :is(.specialization-circular-progress-track, .specialization-circular-progress-value) {
+  fill: none;
+  stroke-width: 3;
+}
+
+.battle-profile-towers .specialization-circular-progress-track {
+  stroke: var(--ff-border);
+}
+
+.battle-profile-towers .specialization-circular-progress-value {
+  stroke: var(--node-color);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.battle-profile-towers .specialization-node-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.battle-profile-towers .specialization-research-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.48));
+}
+
+.battle-profile-towers .specialization-node-percent {
+  position: absolute;
+  z-index: 1;
+  inset-block-end: -0.55rem;
+  inset-inline-start: 50%;
+  min-width: 2.5rem;
+  padding: 0.08rem 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--node-color) 42%, var(--ff-border));
+  border-radius: var(--ff-radius-pill);
+  background: var(--ff-panel-strong);
+  font: 800 0.62rem var(--ff-font-data);
+  transform: translateX(-50%);
+}
+
+.battle-profile-towers :is(.specialization-skill-name, .specialization-node-cost) {
+  max-width: 8rem;
+  color: var(--ff-text-dim);
+  font-size: 0.62rem;
+  line-height: 1.25;
+}
+
+.battle-profile-towers .specialization-inspector {
+  min-width: 0;
+  overflow: auto;
+  border-inline-start: 1px solid var(--specialization-panel-border);
+  background: var(--ff-panel-strong);
+}
+
+.battle-profile-towers .specialization-inspector-inner {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.battle-profile-towers .specialization-inspector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.battle-profile-towers .specialization-inspector-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.battle-profile-towers .specialization-field-label {
+  display: block;
+  margin-block-end: 0.45rem;
+  color: var(--ff-text-dim);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.battle-profile-towers .specialization-progress-control {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(3.5rem, 1fr) 2.75rem repeat(4, minmax(2.75rem, auto));
+  gap: 0.35rem;
+}
+
+.battle-profile-towers .specialization-progress-control :is(button, output),
+.battle-profile-towers .specialization-action,
+.battle-profile-towers .specialization-node {
+  display: grid;
+  min-height: 2.75rem;
+  place-items: center;
+  border: 1px solid var(--ff-border);
+  border-radius: 0.5rem;
+  color: var(--ff-text-supporting);
+  background: var(--ff-control);
+  font: 700 0.7rem var(--ff-font-data);
+}
+
+.battle-profile-towers .specialization-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.battle-profile-towers .specialization-action {
+  padding-inline: 0.8rem;
+}
+
+.battle-profile-towers :is(.specialization-action, .specialization-node):not(:disabled):hover {
+  border-color: var(--ff-border-hover);
+  color: var(--ff-text);
+  background: var(--ff-control-hover);
+}
+
+.battle-profile-towers .specialization-action--primary {
+  border-color: var(--ff-action);
+  color: var(--ff-on-accent);
+  background: var(--ff-action);
+}
+
+.battle-profile-towers .specialization-node-path {
+  position: relative;
+  display: grid;
+  min-height: 18rem;
+  grid-template-columns: repeat(6, minmax(2.75rem, 1fr));
+  grid-template-rows: repeat(5, 3rem);
+  align-items: center;
+  justify-items: center;
+  gap: 0.3rem 0.1rem;
+  padding: 0.6rem 0.25rem;
+  isolation: isolate;
+  direction: ltr;
+}
+
+.battle-profile-towers .specialization-node-path::before {
+  position: absolute;
+  z-index: -1;
+  inset: 1.5rem 1.7rem;
+  border: 1px solid color-mix(in srgb, var(--ff-action) 48%, var(--ff-border));
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ff-action) 7%, transparent),
+    transparent 62%
+  );
+  content: '';
+}
+
+.battle-profile-towers .specialization-node-path > .specialization-node {
+  position: relative;
+  z-index: 1;
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--ff-panel-strong);
+}
+
+.battle-profile-towers .specialization-node-path > :nth-child(1) {
+  grid-area: 1 / 3;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(2) {
+  grid-area: 1 / 4;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(3) {
+  grid-area: 2 / 5;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(4) {
+  grid-area: 3 / 6;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(5) {
+  grid-area: 4 / 5;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(6) {
+  grid-area: 5 / 4;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(7) {
+  grid-area: 5 / 3;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(8) {
+  grid-area: 4 / 2;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(9) {
+  grid-area: 3 / 1;
+}
+.battle-profile-towers .specialization-node-path > :nth-child(10) {
+  grid-area: 2 / 2;
+}
+
+.battle-profile-towers .specialization-node[data-node-state='available'] {
+  border-color: var(--ff-action);
+  box-shadow:
+    0 0 0 3px var(--ff-panel-strong),
+    0 0 1rem color-mix(in srgb, var(--ff-action) 22%, transparent);
+}
+
+.battle-profile-towers .specialization-node[data-node-state='locked'] {
+  opacity: 0.58;
+  filter: grayscale(0.72);
+}
+
+.battle-profile-towers .specialization-node[aria-pressed='true'] {
+  border-color: var(--ff-action);
+  color: var(--ff-text);
+  background: var(--ff-surface-selected);
+}
+
+@media (max-width: 800px) {
+  .battle-profile-towers .specialization-workspace {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .battle-profile-towers .specialization-inspector {
+    border-block-start: 1px solid var(--specialization-panel-border);
+    border-inline-start: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .battle-profile-towers {
+    --specialization-column-width: min(72vw, 10rem);
+  }
+
+  .battle-profile-towers .specialization-tower-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-profile-towers .specialization-progress-control {
+    grid-template-columns: repeat(3, minmax(2.75rem, 1fr));
+  }
+
+  .battle-profile-towers .specialization-node-path {
+    grid-template-columns: repeat(5, minmax(2.75rem, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-profile-towers *,
+  .battle-profile-towers *::before,
+  .battle-profile-towers *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .battle-profile-towers
+    :is(.specialization-tower-tab, .specialization-column, .specialization-research-node) {
+    border: 1px solid CanvasText;
+    forced-color-adjust: none;
+  }
+}

@@ -799,11 +799,31 @@ test('Firestore private and published paths enforce admin/member boundaries with
     'published player validator'
   );
   assert.match(playerValidator, /data\.keys\(\)\.hasOnly/);
-  assert.match(playerValidator, /data\.playerId == uid/);
+  assert.match(playerValidator, /validAllStarBohIdentifier\(data\.playerId, false\)/);
+  assert.doesNotMatch(playerValidator, /data\.playerId == uid/);
   assert.match(playerValidator, /data\.uid == uid/);
   assert.match(playerValidator, /data\.seasonId == season/);
   assert.match(playerValidator, /validAllStarBohPublishedPlan/);
-  assert.match(playerValidator, /validAllStarBohPublishedTimeline/);
+  assert.match(
+    playerValidator,
+    /validAllStarBohPublishedTimeline\(\s*data\.timeline,\s*data\.playerId,/
+  );
+  const timelineValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedTimeline\(values, uid, teamId, baseSeatNumber\) \{[\s\S]*?\n {4}\}/,
+    'published player timeline validator'
+  );
+  assert.match(timelineValidator, /values\.size\(\) == 10/);
+  assert.match(
+    timelineValidator,
+    /validAllStarBohPublishedTimelineItem\(values, 9, uid, teamId, baseSeatNumber\)/
+  );
+  const publishedPlanValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedPlan\(plan\) \{[\s\S]*?\n {4}\}/,
+    'published player plan validator'
+  );
+  assert.match(publishedPlanValidator, /plan\.phases\.size\(\) == 5/);
   const playerCreateValidator = rulesMatch(
     rules,
     /function validAllStarBohPublishedPlayerCreate\(season, uid\) \{[\s\S]*?\n {4}\}/,
@@ -851,6 +871,7 @@ test('Firestore private and published paths enforce admin/member boundaries with
   assert.match(publicationReadGate, /data\.teamCount <= 6/);
   assert.match(publicationReadGate, /data\.rosterSize == 12/);
   assert.match(publicationReadGate, /data\.teamIds\.size\(\) == data\.teamCount/);
+  assert.match(publicationReadGate, /data\.phases\.size\(\) == 5/);
   assert.doesNotMatch(publicationReadGate, /data\.teamCount == 6/);
   assert.doesNotMatch(publicationReadGate, /data\.teamIds\.size\(\) == 6/);
   assert.match(

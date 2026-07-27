@@ -1602,7 +1602,7 @@ test.describe('All-Star BoH secure player hub', () => {
 });
 
 test.describe('All-Star BoH Admin VTS command center', () => {
-  test('configures a 24-player balanced two-team field, forces an exact team, and previews before apply', async ({
+  test('previews, discards, and applies the current six-team mapper workspace', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
@@ -1636,116 +1636,64 @@ test.describe('All-Star BoH Admin VTS command center', () => {
       .toBe(1);
     await page.setViewportSize({ width: 1440, height: 1000 });
 
-    const settings = root.locator('[data-form="team-builder-settings"]');
-    const settingsDetails = settings.locator('xpath=ancestor::details[1]');
-    await expect(settingsDetails).not.toHaveAttribute('open', '');
-    await settingsDetails.locator('summary').click();
-    await expect(settings).toBeVisible();
-    await settings.locator('[name="teamCount"]').selectOption('2');
-    await settings.locator('[name="balanceMetric"]').selectOption('balanced');
-    await settings.locator('[name="forcedTeam.player-1-2"]').selectOption('team-2');
-    await settings.getByRole('button', { name: 'Save balance configuration' }).click();
+    await expect(root.locator('.boh-admin-mapper-import')).toBeVisible();
+    await expect(root.locator('.boh-admin-board-toolbar')).toBeVisible();
+    await expect(root.locator('.boh-admin-team')).toHaveCount(6);
+    await expect(root.locator('.boh-admin-seat')).toHaveCount(72);
 
-    await expect(root.locator('.boh-admin-team')).toHaveCount(2);
-    await expect(root.locator('.boh-admin-seat')).toHaveCount(24);
-    const eligiblePool = root.locator('[data-form="eligible-pool"]');
-    const eligibleSummary = eligiblePool.locator('xpath=ancestor::details[1]/summary');
-    await expect(eligibleSummary).toContainText('24 / 24');
-    await expect(
-      root.locator('[data-form="eligible-pool"] input[name="playerId"]:checked')
-    ).toHaveCount(24);
-    await eligibleSummary.click();
-    await expect(eligiblePool.getByLabel('Search eligible players')).toBeVisible();
-    const firstEligibleLabel = await eligiblePool
-      .locator('[data-eligible-pool-row] .boh-admin-eligible-player > span')
-      .first()
-      .textContent();
-    await eligiblePool
-      .getByLabel('Search eligible players')
-      .fill(firstEligibleLabel?.split(' Â· ')[0] || 'player');
-    await expect(eligiblePool.locator('[data-eligible-pool-search-count]')).toContainText(
-      /matches/u
-    );
-    await eligiblePool.getByLabel('Search eligible players').fill('');
-    const firstEligibleCheckbox = eligiblePool.locator('input[name="playerId"]').first();
-    await firstEligibleCheckbox.uncheck();
-    await expect(eligibleSummary).toContainText('23 / 24');
-    await expect(
-      eligiblePool.getByRole('button', { name: 'Save eligible field (23 / 24)' })
-    ).toBeVisible();
-    await eligiblePool.getByRole('button', { name: 'Select highest 24' }).click();
-    await expect(eligibleSummary).toContainText('24 / 24');
-    await expect
-      .poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.map((action) => action.type)))
-      .toEqual(['saveTeamBuilderSettings']);
-    await expect(
-      eligiblePool.getByRole('button', { name: 'Save eligible field (24 / 24)' })
-    ).toBeVisible();
-    await root
-      .locator('[data-form="eligible-pool"]')
-      .getByRole('button', { name: 'Save eligible field (24 / 24)' })
-      .click();
+    const advancedTools = root.locator('details.boh-admin-advanced-tools');
+    const previewBalance = root.locator('[data-action=preview-balance-teams]');
+    const applyPreview = root.getByRole('button', { name: 'Apply preview' });
+    const discardPreview = root.getByRole('button', { name: 'Discard preview' });
+    await expect(advancedTools).not.toHaveAttribute('open', '');
+    await expect(applyPreview).toBeDisabled();
+    await expect(discardPreview).toBeDisabled();
 
-    await root.locator('[data-action="preview-balance-teams"]').click();
-    await expect(root.locator('#bohBalancePreviewTitle')).toContainText(
-      'Active metric: Balanced score + power'
-    );
-    await expect(
-      root.locator('#bohBalancePreviewTitle').locator('xpath=ancestor::section[1]')
-    ).toContainText('=Formula Pilot');
-    const previewSection = root
-      .locator('#bohBalancePreviewTitle')
-      .locator('xpath=ancestor::section[1]');
-    await expect(previewSection).toContainText('Score spread');
-    await expect(previewSection).toContainText('Power spread');
-    await expect(previewSection).not.toContainText('Active metric spread');
-    await expect(root.locator('[data-action="apply-balance-preview"]')).toBeEnabled();
-    await root.locator('[data-action="apply-balance-preview"]').click();
-    const balancedTeamScoreTexts = await root.locator('.boh-admin-team-score').allTextContents();
-    expect(balancedTeamScoreTexts).toHaveLength(2);
-    await expect(root.locator('.boh-admin-team-score [data-balance-primary-total]')).toHaveCount(0);
-    for (const text of balancedTeamScoreTexts) {
-      expect(text).toContain('Balanced score + power');
-      expect(text).toContain('Scoring points');
-      expect(text).toContain('Total in-game power');
-      expect(text).not.toContain('vs avg');
-    }
-    await expect(root.getByRole('button', { name: 'Roles PNG' })).toBeVisible();
-    await expect(root.getByRole('button', { name: 'Scores PNG' })).toBeVisible();
-    await expect(root.getByText('Co-leader 1').first()).toBeVisible();
-    await root.getByRole('button', { name: 'Auto roles by rank' }).click();
+    await previewBalance.click();
+    await expect(applyPreview).toBeEnabled();
+    await expect(discardPreview).toBeEnabled();
+    const firstPreview = await page.evaluate(() => window.__BOH_ADMIN_SNAPSHOT__.balancePreview);
+    expect(firstPreview.teams).toHaveLength(6);
+    expect(firstPreview.teams.every((team) => team.seats.length === 12)).toBe(true);
+    expect(firstPreview.scoreSpread).toEqual(expect.any(Number));
+    expect(firstPreview.powerSpread).toEqual(expect.any(Number));
+
+    await discardPreview.click();
+    await expect(applyPreview).toBeDisabled();
+    await expect(discardPreview).toBeDisabled();
     await expect
-      .poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.map((action) => action.type)))
-      .toContain('autoAssignRankedRoles');
+      .poll(() => page.evaluate(() => window.__BOH_ADMIN_SNAPSHOT__.balancePreview))
+      .toBeNull();
+
+    await previewBalance.click();
+    const expectedAssignments = await page.evaluate(() =>
+      window.__BOH_ADMIN_SNAPSHOT__.balancePreview.teams.map((team) =>
+        team.seats.map((seat) => seat.playerId)
+      )
+    );
+    await applyPreview.click();
+    await expect(root.locator('.boh-admin-team')).toHaveCount(6);
+    await expect(root.locator('.boh-admin-seat')).toHaveCount(72);
+    const appliedAssignments = await page.evaluate(() =>
+      window.__BOH_ADMIN_SNAPSHOT__.teams.map((team) => team.seats.map((seat) => seat.playerId))
+    );
+    expect(appliedAssignments).toEqual(expectedAssignments);
+    await expect
+      .poll(() => page.evaluate(() => window.__BOH_ADMIN_SNAPSHOT__.balancePreview))
+      .toBeNull();
 
     const result = await page.evaluate(() => ({
       actions: window.__BOH_ADMIN_ACTIONS__,
       confirms: window.__BOH_ADMIN_CONFIRMS__,
-      forcedSeat: window.__BOH_ADMIN_SNAPSHOT__.teams
-        .find((team) => team.id === 'team-2')
-        .seats.find((seat) => seat.playerId === 'player-1-2'),
     }));
     expect(result.actions.map((action) => action.type)).toEqual([
-      'saveTeamBuilderSettings',
-      'saveEligiblePool',
+      'previewBalanceTeams',
+      'discardBalancePreview',
       'previewBalanceTeams',
       'applyBalancePreview',
-      'autoAssignRankedRoles',
     ]);
-    expect(result.actions[0].payload).toMatchObject({
-      teamCount: 2,
-      balanceMetric: 'balanced',
-      forcedTeamAssignments: [{ playerId: 'player-1-2', teamId: 'team-2' }],
-    });
-    expect(result.actions[1].payload.playerIds).toHaveLength(24);
     expect(result.confirms.at(-1)).toMatch(/apply this exact balance preview/iu);
-    expect(result.forcedSeat).toMatchObject({
-      playerId: 'player-1-2',
-      displayName: '=Formula Pilot',
-      locked: false,
-    });
   });
-
   test('edits the reviewed player name and an individual confirmed stat with audit reasons', async ({
     page,
   }) => {
@@ -1977,16 +1925,24 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(reviewBtn).toBeFocused();
   });
 
-  test('local test auth renders five stages, 72 seats, plan controls, and safe legacy reuse', async ({
+  test('local test auth renders five navigation tabs, 72 seats, plan controls, and safe legacy reuse', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openInjectedAdmin(page);
     const root = page.locator('#dashAllStarBohRoot');
-    const stageTabs = root.locator('[data-action="stage"]');
+    const workspace = root.locator('nav.boh-admin-workspace-bar');
+    const stageActions = root.locator('[data-action=stage]');
+    const stageTabs = workspace.locator('[role=tab][data-action=stage]');
+    const tabFor = (stage) =>
+      workspace.locator('[role=tab][data-action=stage][data-stage=' + stage + ']');
+    await expect(stageActions).toHaveCount(6);
     await expect(stageTabs).toHaveCount(5);
+    await expect
+      .poll(() => stageTabs.evaluateAll((tabs) => tabs.map((tab) => tab.dataset.stage)))
+      .toEqual(['teams', 'plans', 'publish', 'signups', 'scoring']);
 
-    await root.locator('[data-stage="signups"]').click();
+    await tabFor('signups').click();
     await root.locator('[data-action="select-submission"][data-player-id="player-1-1"]').click();
     const planningSignals = root.locator('.boh-admin-planning-signal');
     await expect(planningSignals).toBeVisible();
@@ -2003,9 +1959,10 @@ test.describe('All-Star BoH Admin VTS command center', () => {
       planningSignals.getByRole('progressbar', { name: 'Town Development: MAX' })
     ).toBeVisible();
 
-    await stageTabs.first().focus();
+    await tabFor('teams').focus();
     await page.keyboard.press('ArrowRight');
-    await expect(root.locator('[data-stage="scoring"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(tabFor('plans')).toHaveAttribute('aria-selected', 'true');
+    await tabFor('scoring').click();
     await expect(root).toContainText(
       'Commitment adjustments are a separate subjective input and may double-count judgment'
     );
@@ -2020,8 +1977,8 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await totalPowerSort.focus();
     await page.keyboard.press('Enter');
     await expect(totalPowerHeader).toHaveAttribute('aria-sort', 'descending');
-    await root.locator('[data-stage="signups"]').click();
-    await root.locator('[data-stage="scoring"]').click();
+    await tabFor('signups').click();
+    await tabFor('scoring').click();
     await expect(totalPowerHeader).toHaveAttribute('aria-sort', 'descending');
     const commitmentForm = root.locator('[data-form="commitment-scores"]');
     const formulaPilotScore = commitmentForm.locator('[data-commitment-score-player="player-1-2"]');
@@ -2051,19 +2008,16 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     });
 
     for (const stage of ['signups', 'scoring', 'teams', 'plans', 'publish']) {
-      await root.locator(`[data-stage="${stage}"]`).click();
-      await expect(root.locator(`[data-stage="${stage}"]`)).toHaveAttribute(
-        'aria-selected',
-        'true'
-      );
+      await tabFor(stage).click();
+      await expect(tabFor(stage)).toHaveAttribute('aria-selected', 'true');
       await expect(root.locator('#bohAdminStagePanel')).toBeVisible();
     }
 
-    await root.locator('[data-stage="teams"]').click();
+    await tabFor('teams').click();
     await expect(root.locator('.boh-admin-team')).toHaveCount(6);
     await expect(root.locator('.boh-admin-seat')).toHaveCount(72);
 
-    await root.locator('[data-stage="publish"]').click();
+    await tabFor('publish').click();
     const schedule = root.locator('[data-form="event-schedule"]');
     const scheduleStatus = schedule.locator('[data-action="schedule-status"]');
     await expect(scheduleStatus).toHaveValue('hidden');
@@ -2077,7 +2031,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect
       .poll(() => page.evaluate(() => window.__BOH_ADMIN_ACTIONS__.at(-1)?.type))
       .toBe('saveEventSchedule');
-    await root.locator('[data-stage="plans"]').click();
+    await tabFor('plans').click();
     await expect(root.locator('[data-form="role-groups"] input[name="roleLabel"]')).toHaveCount(4);
     await expect(root.locator('[data-form="phases"] input[name="phaseId"]')).toHaveCount(4);
     await expect(root.locator('[data-plan-filter="phase"] option')).toHaveCount(4);

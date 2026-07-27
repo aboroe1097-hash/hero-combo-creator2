@@ -2998,3 +2998,183 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Mapper-first admin workspace */
+.boh-admin-workspace-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--boh-admin-accent, #7dd3fc) 28%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--boh-admin-surface, #111827) 92%, transparent);
+}
+
+.boh-admin-workspace-bar__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-inline-start: auto;
+  opacity: 0.78;
+}
+
+.boh-admin-board-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.boh-admin-board-toolbar label {
+  min-width: min(100%, 18rem);
+}
+
+.boh-admin-seat-editor {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.boh-admin-seat-editor__identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem;
+}
+
+.boh-admin-seat-editor__controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.boh-admin-seat-editor .boh-admin-select,
+.boh-admin-seat-editor .boh-admin-button {
+  min-width: 0;
+  font-size: 0.74rem;
+}
+
+.boh-admin-mapper-reconcile {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(14rem, 2fr);
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.boh-admin-team-plan-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.boh-admin-team-plan-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(2 6 23 / 78%);
+  backdrop-filter: blur(4px);
+}
+
+.boh-admin-team-plan-dialog__panel {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  width: min(66rem, 100%);
+  max-height: min(88vh, 56rem);
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--boh-admin-accent, #7dd3fc) 38%, transparent);
+  border-radius: 1rem;
+  background: var(--boh-admin-surface, #111827);
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 45%);
+}
+
+.boh-admin-team-plan-dialog__header,
+.boh-admin-team-plan-dialog__footer,
+.boh-admin-team-plan-dialog__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.boh-admin-team-plan-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.boh-admin-team-plan-dialog__grid > section {
+  padding: 0.75rem;
+  border: 1px solid rgb(148 163 184 / 20%);
+  border-radius: 0.75rem;
+  background: rgb(15 23 42 / 55%);
+}
+
+.boh-admin-team-plan-dialog__grid ol,
+.boh-admin-team-plan-dialog__grid ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0;
+  padding-inline-start: 1.2rem;
+}
+
+@media (max-width: 760px) {
+  .boh-admin-workspace-bar__secondary {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+
+  .boh-admin-mapper-reconcile,
+  .boh-admin-team-plan-dialog__grid,
+  .boh-admin-seat-editor__controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.boh-admin-plan-details {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.boh-admin-plan-details__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.boh-admin-plan-details fieldset {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.7rem;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.7rem;
+}
+
+.boh-admin-plan-details legend {
+  padding-inline: 0.25rem;
+  font-weight: 700;
+}
+
+.boh-admin-plan-details__skills {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.boh-admin-plan-details__skills label {
+  display: flex;
+  flex-direction: row;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .boh-admin-plan-details__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -84,6 +84,32 @@ test('every non-English pack fully translates visible copy and preserves placeho
   }
 });
 
+test('per-side draft copy uses named shared-English keys with exact locale parity', () => {
+  const keys = [
+    'profile.sourceHint',
+    'profile.researchRestore',
+    'profile.researchZero',
+    'profile.towerMax',
+    'profile.towerUnmax',
+    'profile.applySummary',
+    'profile.diffSummary',
+    'profile.preserveSummary',
+    'toast.profileDraftIncomplete',
+    'toast.profileApplied',
+  ];
+  for (const key of keys) {
+    assert.equal(typeof BATTLE_SIMULATOR_ENGLISH[key], 'string', key);
+    for (const locale of BATTLE_SIMULATOR_LOCALES.filter((entry) => entry !== 'en')) {
+      assert.equal(
+        BATTLE_SIMULATOR_LOCALE_PACKS[locale][key],
+        BATTLE_SIMULATOR_ENGLISH[key],
+        `${locale}:${key}`
+      );
+    }
+  }
+  assert.doesNotMatch(appSource, />Edit Side [AB]</);
+  assert.doesNotMatch(appSource, />Apply to Side [AB]</);
+});
 test('locale loading, pluralization, and number formatting stay scoped to the selected language', async () => {
   await loadBattleSimulatorLocale('de');
   const german = createBattleSimulatorTranslator('de');

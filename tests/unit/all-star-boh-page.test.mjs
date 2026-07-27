@@ -721,7 +721,7 @@ test('team announcement encodes six 12-player rosters without embedding real pla
   }
 });
 
-test('personal plans expose both Legions, all four phases, and an accessible text map equivalent', () => {
+test('personal plans seed accessible phase sockets and expand the published timeline dynamically', () => {
   assert.match(tabSource, /name="bohLegion" value="legion-1" id="bohLegion1" checked/);
   assert.match(tabSource, /name="bohLegion" value="legion-2" id="bohLegion2"/);
   assert.match(tabSource, /for="bohLegion1" data-boh-i18n="plan\.legion1">Legion 1/);
@@ -744,6 +744,15 @@ test('personal plans expose both Legions, all four phases, and an accessible tex
       `Missing ${ranges[index]} phase`
     );
   }
+
+  assert.match(controllerSource, /function ensureTimelinePhaseSockets\(state, count\)/);
+  assert.match(controllerSource, /index < count/);
+  assert.match(controllerSource, /aria-controls', panelId/);
+  assert.match(controllerSource, /aria-labelledby', tabId/);
+  assert.match(
+    controllerSource,
+    /state\.tr\('plan\.timelineTitleDynamic', 'Your \{count\} phases'/
+  );
 
   assert.match(tabSource, /data-role="current-instruction"/);
   assert.match(tabSource, /data-role="next-instruction"/);
@@ -800,7 +809,10 @@ test('published plans expose mapper orders, team plan, and map briefing as one c
     assert.match(tabSource, new RegExp(`data-command-mode="${mode}"`));
   }
   assert.match(tabSource, /data-role="command-roster"/);
-  assert.equal((tabSource.match(/data-role="command-phase-tab"/g) || []).length, 4);
+  assert.ok((tabSource.match(/data-role="command-phase-tab"/g) || []).length > 0);
+  assert.match(controllerSource, /index < view\.phases\.length/);
+  assert.match(controllerSource, /tab\.dataset\.role = 'command-phase-tab'/);
+  assert.match(controllerSource, /const phase = view\.phases\[index\]/);
   assert.match(tabSource, /data-role="command-role-lanes"/);
   assert.match(tabSource, /data-role="command-map-list"/);
   assert.match(tabSource, /src="assets\/boh\/stage1-map\.webp"/);

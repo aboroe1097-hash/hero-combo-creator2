@@ -12,6 +12,7 @@ import {
   BOH_FIELD_SIZE,
   BOH_MAX_USABLE_HERO_NAMES,
   BOH_MAX_PREFERRED_TEAMMATES,
+  BOH_PLAYER_RESOURCE_SKILLS,
   BOH_TEAM_COUNT,
   BOH_TEAM_SIZE,
   balanceBohTeams,
@@ -1603,7 +1604,7 @@ test('field size and duplicate account failures are explicit before a draft is r
   assert.throws(() => balanceBohTeams(duplicate), /boh_player_id_duplicate/);
 });
 
-test('the default plan normalizes four time phases, two Legions, and twelve seats', () => {
+test('the default plan normalizes five time phases, two Legions, and twelve seats', () => {
   const plan = normalizeBohPlan({ id: 'final-plan' });
   assert.equal(plan.id, 'final-plan');
   assert.deepEqual(
@@ -1631,6 +1632,194 @@ test('the default plan normalizes four time phases, two Legions, and twelve seat
   );
 });
 
+test('private plan schedules and resource reservations normalize to an allowlisted schema', () => {
+  const plan = normalizeBohPlan({
+    substitutions: [
+      {
+        teamId: 'team-1',
+        backupPlayerId: 'backup-1',
+        replacesPlayerId: 'starter-1',
+        entryMinute: '30',
+        note: 'Enter after the midpoint call.',
+        ignoredSecret: 'drop-me',
+      },
+    ],
+    playerResources: [
+      {
+        playerId: 'backup-1',
+        meritBudget: '7000',
+        queueCapacity: 3,
+        allianceTeleport: true,
+        skillReservations: [
+          {
+            id: 'battlefield-teleport',
+            meritCost: 1,
+            effect: { allianceTeleports: 99 },
+          },
+          { id: 'meteor-fall' },
+        ],
+      },
+      { playerId: 'starter-1' },
+    ],
+    buildingAnnotations: [
+      {
+        buildingId: 'command-center',
+        note: 'Configurable marching or occupation speed note; queue capacity may vary.',
+        marchingSpeed: 25,
+      },
+    ],
+  });
+
+  assert.deepEqual(plan.substitutions, [
+    {
+      id: 'substitution-1',
+      teamId: 'team-1',
+      backupPlayerId: 'backup-1',
+      replacesPlayerId: 'starter-1',
+      entryMinute: 30,
+      order: 1,
+      note: 'Enter after the midpoint call.',
+    },
+  ]);
+  assert.deepEqual(plan.playerResources, [
+    {
+      playerId: 'backup-1',
+      meritBudget: 7000,
+      queueCapacity: 3,
+      skillReservations: [
+        {
+          id: 'battlefield-teleport',
+          meritCost: 1000,
+          order: 1,
+          effect: { personalTeleports: 1 },
+        },
+        { id: 'meteor-fall', meritCost: 6000, order: 2, effect: {} },
+      ],
+    },
+    { playerId: 'starter-1', meritBudget: null, queueCapacity: null, skillReservations: [] },
+  ]);
+  assert.deepEqual(plan.buildingAnnotations, [
+    {
+      id: 'building-annotation-1',
+      buildingId: 'command-center',
+      note: 'Configurable marching or occupation speed note; queue capacity may vary.',
+      order: 1,
+    },
+  ]);
+  assert.equal('ignoredSecret' in plan.substitutions[0], false);
+  assert.equal('allianceTeleport' in plan.playerResources[0], false);
+  assert.equal('marchingSpeed' in plan.buildingAnnotations[0], false);
+  assert.deepEqual(
+    BOH_PLAYER_RESOURCE_SKILLS.map(({ id, meritCost }) => ({ id, meritCost })),
+    [
+      { id: 'battlefield-teleport', meritCost: 1000 },
+      { id: 'emergency-treatment', meritCost: 1000 },
+      { id: 'rapid-freeze', meritCost: 3000 },
+      { id: 'meteor-fall', meritCost: 6000 },
+    ]
+  );
+
+  const defaults = normalizeBohPlan();
+  assert.deepEqual(defaults.substitutions, []);
+  assert.deepEqual(defaults.playerResources, []);
+  assert.deepEqual(defaults.buildingAnnotations, []);
+  assert.equal(
+    normalizeBohPlan({
+      substitutions: Array.from({ length: 11 }, (_, index) => ({
+        teamId: 'team-1',
+        backupPlayerId: `backup-${index + 1}`,
+        replacesPlayerId: `starter-${index + 1}`,
+        entryMinute: index + 3,
+      })),
+    }).substitutions.length,
+    11
+  );
+});
+
+test('private plan schedule structure rejects invalid bounds and duplicate identities', () => {
+  const substitution = {
+    id: 'swap-1',
+    teamId: 'team-1',
+    backupPlayerId: 'backup-1',
+    replacesPlayerId: 'starter-1',
+    entryMinute: 30,
+  };
+  assert.throws(
+    () => normalizeBohPlan({ substitutions: [{ ...substitution, entryMinute: 2 }] }),
+    /boh_plan_integer_invalid/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        substitutions: [substitution, { ...substitution, replacesPlayerId: 'starter-2' }],
+      }),
+    /boh_substitution_id_duplicate/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        substitutions: [
+          substitution,
+          { ...substitution, id: 'swap-2', replacesPlayerId: 'starter-2' },
+        ],
+      }),
+    /boh_substitution_incoming_duplicate/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        substitutions: [
+          substitution,
+          { ...substitution, id: 'swap-2', backupPlayerId: 'backup-2' },
+        ],
+      }),
+    /boh_substitution_outgoing_duplicate/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        substitutions: [{ ...substitution, backupPlayerId: 'starter-1' }],
+      }),
+    /boh_substitution_players_must_differ/
+  );
+  assert.throws(
+    () => normalizeBohPlan({ playerResources: [{ playerId: 'p1', queueCapacity: 5 }] }),
+    /boh_plan_integer_invalid/
+  );
+  assert.throws(
+    () => normalizeBohPlan({ playerResources: [{ playerId: 'p1', meritBudget: -1 }] }),
+    /boh_plan_integer_invalid/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        playerResources: [{ playerId: 'p1', skillReservations: [{ id: 'unknown-skill' }] }],
+      }),
+    /boh_skill_reservation_unsupported/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        playerResources: [
+          {
+            playerId: 'p1',
+            skillReservations: [{ id: 'rapid-freeze' }, { id: 'rapid-freeze' }],
+          },
+        ],
+      }),
+    /boh_skill_reservation_duplicate/
+  );
+  assert.throws(
+    () =>
+      normalizeBohPlan({
+        buildingAnnotations: [
+          { id: 'building-note', buildingId: 'tower-1' },
+          { id: 'building-note', buildingId: 'tower-2' },
+        ],
+      }),
+    /boh_building_annotation_id_duplicate/
+  );
+});
 test('plan objectives preserve only admin-authored schematic coordinates', () => {
   const objectives = normalizeBohObjectives([
     { id: 'south-spawn', code: 'SP', label: 'South Spawn', type: 'spawn', x: 8, y: 88 },
@@ -1795,11 +1984,11 @@ test('a player timeline follows rotations and exposes both Legion alternatives b
   };
 
   const allAlternatives = projectBohPlayerTimeline(plan, team, 'player-1');
-  assert.equal(allAlternatives.length, 8);
+  assert.equal(allAlternatives.length, 10);
   const legionOne = projectBohPlayerTimeline(plan, team, 'player-1', {
     legionId: 'legion-1',
   });
-  assert.equal(legionOne.length, 4);
+  assert.equal(legionOne.length, 5);
   assert.deepEqual(
     legionOne.map((entry) => entry.phaseId),
     BOH_DEFAULT_PHASES.map((phase) => phase.id)

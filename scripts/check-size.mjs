@@ -59,7 +59,10 @@ const LIMITS = {
   // The audited 14.2.14 graph measures 9199.3 KiB after adding canonical battle
   // inputs, mapper draft import, and localized account onboarding. Retain roughly
   // 1% aggregate headroom while entry and route caps stay fixed.
-  totalJsBytes: 9300 * 1024,
+  // The v14.2.16 mapper-first Admin and five-phase plan plus independent
+  // per-side Battle profiles measure 9300.9 KiB. Retain about 9 KiB while
+  // entry and route caps remain unchanged.
+  totalJsBytes: 9310 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -74,7 +77,10 @@ const LIMITS = {
   // shell-only account-link rules are kept in app.css. The combined 14.2.15
   // All-Star command view and Battle profile checklist measure 1379.7 KiB;
   // retain less than 1.5 KiB of aggregate headroom.
-  totalCssBytes: 1381 * 1024,
+  // The v14.2.16 mapper-first Admin and deferred embedded Battle Tower editor
+  // measure about 1397.0 KiB. Retain about 8 KiB while initial-route caps stay
+  // fixed.
+  totalCssBytes: 1405 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -109,7 +115,11 @@ const LIMITS = {
   // The combined v14.2.15 Account/Profile, All-Star mapper, and Battle profile
   // checklist artifact measures 27,657.1 KiB after production minification;
   // retain less than 8 KiB while route and media caps remain focused.
-  totalDeployBytes: 27665 * 1024,
+  // The complete v14.2.16 mapper-first five-phase plan and independent Battle
+  // profile editor artifact measures about 27,739.0 KiB with deferred Tower
+  // CSS. Retain about 11 KiB while route, entry, media, and file-count caps stay
+  // unchanged.
+  totalDeployBytes: 27750 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

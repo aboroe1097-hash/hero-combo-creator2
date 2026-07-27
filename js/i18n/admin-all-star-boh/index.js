@@ -80,14 +80,11 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohLoadout: 'Troops / heroes',
   adminBohLoadoutPlaceholder: 'T1s, T9s, speed heroes…',
   adminBohLocalChecksPassed: 'Local structure checks passed.',
-  adminBohLockedSeats: 'Locked seats',
-  adminBohLockSeat: 'Lock seat {seat}',
   adminBohManualJudgment: 'MANUAL JUDGMENT',
   adminBohMapAria: 'Editable schematic objective map',
   adminBohMapObjectives: 'Map objectives',
   adminBohMapHelp:
     'Place labeled anchors on a neutral schematic. A future arena image can sit beneath the same coordinates without changing plan data.',
-  adminBohMoveHereLabel: 'Move to empty seat {seat}',
   adminBohMoveSelected: 'Move selected',
   adminBohNeedsCorrection: 'Needs correction',
   adminBohNewRole: 'New role',
@@ -209,7 +206,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohSelectPlayer: 'Select player',
   adminBohSelectRole: 'Select role',
   adminBohSelectSeat: 'Select seat',
-  adminBohSelectSeatLabel: 'Select seat {seat}: {player}',
   adminBohSelectSignup: 'Select a signup',
   adminBohSelectSignupHelp: 'Open a player to inspect confirmed values and OCR warnings.',
   adminBohSelectTeam: 'Select team',
@@ -244,7 +240,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohStatusExcluded: 'Excluded',
   adminBohStatusPending: 'Pending review',
   adminBohStatusUnknown: 'Unknown',
-  adminBohSwapHereLabel: 'Swap with {player}',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Team',
   adminBohTeamAnnouncement: 'Team Announcement',
@@ -264,7 +259,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohTotalSignups: 'Total signups',
   adminBohUnassigned: 'Unassigned',
   adminBohUnavailable: 'All-Star administration is unavailable. Refresh and try again.',
-  adminBohUnlockSeat: 'Unlock seat {seat}',
   adminBohUpdated: 'Updated',
   adminBohUpdateObjective: 'Update objective',
   adminBohValidated: 'Validated',
@@ -456,7 +450,16 @@ function normalizePack(module) {
   const candidate =
     module?.default ?? module?.ADMIN_ALL_STAR_BOH_TRANSLATIONS ?? module?.translations;
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null;
-  return Object.freeze({ ...candidate });
+  return Object.freeze(
+    Object.fromEntries(
+      Object.keys(ADMIN_ALL_STAR_BOH_EN).map((key) => [
+        key,
+        typeof candidate[key] === 'string' && candidate[key].trim()
+          ? candidate[key]
+          : ADMIN_ALL_STAR_BOH_EN[key],
+      ])
+    )
+  );
 }
 
 function format(template, vars = {}) {

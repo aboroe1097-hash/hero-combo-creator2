@@ -104,6 +104,9 @@ function emptyPlan(overrides = {}) {
     playerOverrides: [],
     instructions: [],
     rotations: [],
+    substitutions: [],
+    playerResources: [],
+    buildingAnnotations: [],
     notes: [],
     ...overrides,
   };
@@ -120,6 +123,7 @@ const RELEASE_PHASES = [
   { id: 'phase-5-10', label: '5–10 Minutes', startMinute: 5, endMinute: 10, order: 2 },
   { id: 'phase-10-15', label: '10–15 Minutes', startMinute: 10, endMinute: 15, order: 3 },
   { id: 'phase-15-30', label: '15–30 Minutes', startMinute: 15, endMinute: 30, order: 4 },
+  { id: 'phase-30-60', label: '30–60 Minutes', startMinute: 30, endMinute: 60, order: 5 },
 ];
 const RELEASE_LEGIONS = [
   { id: 'legion-1', label: 'Legion 1', order: 1 },
@@ -1423,6 +1427,157 @@ test('admin deletion reads fallback teams for incomplete legacy drafts and rolls
   }
 });
 
+test('private plan substitutions and resource annotations persist through the store allowlist', () => {
+  const draft = normalizeAllStarBohDraft({
+    title: 'Private plan schema',
+    plan: emptyPlan({
+      substitutions: [
+        {
+          teamId: 'team-1',
+          backupPlayerId: 'provider:backup-1',
+          replacesPlayerId: 'starter-1',
+          entryMinute: 30,
+          note: 'Backup enters on the call.',
+          ignoredField: 'drop-me',
+        },
+      ],
+      playerResources: [
+        {
+          playerId: 'provider:backup-1',
+          meritBudget: 7000,
+          queueCapacity: 3,
+          allianceTeleport: true,
+          skillReservations: [
+            { id: 'battlefield-teleport', meritCost: 5, effect: { allianceTeleports: 4 } },
+            { id: 'rapid-freeze' },
+          ],
+        },
+        { playerId: 'starter-1' },
+      ],
+      buildingAnnotations: [
+        {
+          buildingId: 'center-tower',
+          note: 'Configurable marching or occupation speed; queue capacity may vary.',
+          buff: 50,
+        },
+      ],
+    }),
+  });
+
+  assert.deepEqual(draft.plan.substitutions, [
+    {
+      id: 'substitution-1',
+      teamId: 'team-1',
+      backupPlayerId: 'provider:backup-1',
+      replacesPlayerId: 'starter-1',
+      entryMinute: 30,
+      order: 1,
+      note: 'Backup enters on the call.',
+    },
+  ]);
+  assert.deepEqual(draft.plan.playerResources, [
+    {
+      playerId: 'provider:backup-1',
+      meritBudget: 7000,
+      queueCapacity: 3,
+      skillReservations: [
+        {
+          id: 'battlefield-teleport',
+          meritCost: 1000,
+          order: 1,
+          effect: { personalTeleports: 1 },
+        },
+        { id: 'rapid-freeze', meritCost: 3000, order: 2, effect: {} },
+      ],
+    },
+    { playerId: 'starter-1', meritBudget: null, queueCapacity: null, skillReservations: [] },
+  ]);
+  assert.deepEqual(draft.plan.buildingAnnotations, [
+    {
+      id: 'building-annotation-1',
+      buildingId: 'center-tower',
+      note: 'Configurable marching or occupation speed; queue capacity may vary.',
+      order: 1,
+    },
+  ]);
+  assert.equal('ignoredField' in draft.plan.substitutions[0], false);
+  assert.equal('allianceTeleport' in draft.plan.playerResources[0], false);
+  assert.equal('buff' in draft.plan.buildingAnnotations[0], false);
+  assert.equal(
+    normalizeAllStarBohDraft({
+      plan: emptyPlan({
+        substitutions: Array.from({ length: 11 }, (_, index) => ({
+          teamId: 'team-1',
+          backupPlayerId: `backup-${index + 1}`,
+          replacesPlayerId: `starter-${index + 1}`,
+          entryMinute: index + 3,
+        })),
+      }),
+    }).plan.substitutions.length,
+    11
+  );
+
+  assert.throws(
+    () =>
+      normalizeAllStarBohDraft({
+        plan: emptyPlan({
+          substitutions: [
+            {
+              id: 'swap-1',
+              teamId: 'team-1',
+              backupPlayerId: 'p1',
+              replacesPlayerId: 'p1',
+              entryMinute: 30,
+            },
+          ],
+        }),
+      }),
+    /different incoming and outgoing/
+  );
+  assert.throws(
+    () =>
+      normalizeAllStarBohDraft({
+        plan: emptyPlan({
+          substitutions: [
+            {
+              id: 'swap-1',
+              teamId: 'team-1',
+              backupPlayerId: 'backup-1',
+              replacesPlayerId: 'starter-1',
+              entryMinute: 30,
+            },
+            {
+              id: 'swap-2',
+              teamId: 'team-1',
+              backupPlayerId: 'backup-2',
+              replacesPlayerId: 'starter-1',
+              entryMinute: 40,
+            },
+          ],
+        }),
+      }),
+    /Outgoing player starter-1 has multiple substitutions/
+  );
+  assert.throws(
+    () =>
+      normalizeAllStarBohDraft({
+        plan: emptyPlan({
+          playerResources: [
+            { playerId: 'p1', skillReservations: [{ id: 'meteor-fall' }] },
+            { playerId: 'p1' },
+          ],
+        }),
+      }),
+    /Duplicate player resource/
+  );
+  assert.throws(
+    () =>
+      normalizeAllStarBohDraft({
+        plan: emptyPlan({ playerResources: [{ playerId: 'p1', queueCapacity: 5 }] }),
+      }),
+    /queue capacity must be between 1 and 4/
+  );
+});
 test('draft and private review extensions normalize legacy values and reject unsafe input', () => {
   const legacyDraft = normalizeAllStarBohDraft({ title: 'Legacy draft' });
   assert.equal(legacyDraft.teamCount, 6);
@@ -3541,6 +3696,25 @@ test('hidden publication keeps members unlocked without exposing draft announcem
 test('plan publication requires complete validation, stores compact timelines, and pins the active revision', async () => {
   const bundle = completePublicationBundle({ planPublished: true });
   bundle.current.activePlanRevision = 999;
+  bundle.players['firebase-uid-1-1'].plan.substitutions = [
+    {
+      id: 'private-swap',
+      teamId: 'team-1',
+      backupPlayerId: 'stable-player-12',
+      replacesPlayerId: 'stable-player-1',
+      entryMinute: 30,
+    },
+  ];
+  bundle.players['firebase-uid-1-1'].plan.playerResources = [
+    {
+      playerId: 'stable-player-1',
+      meritBudget: 1000,
+      skillReservations: [{ id: 'battlefield-teleport' }],
+    },
+  ];
+  bundle.players['firebase-uid-1-1'].plan.buildingAnnotations = [
+    { buildingId: 'center-tower', note: 'Private configurable building note.' },
+  ];
   bundle.players['firebase-uid-1-1'].plan.objectives = [
     { id: 'used-objective', code: 'T1', label: 'Center Tower', x: 50, y: 40 },
     { id: 'unused-objective', code: 'T9', label: 'Unused global marker', x: 90, y: 90 },
@@ -3612,11 +3786,11 @@ test('plan publication requires complete validation, stores compact timelines, a
   ]);
   assert.equal(result.current.activePlanRevision, 1);
   assert.equal(result.current.revision, 1);
-  assert.equal(result.current.phases.length, 4);
+  assert.equal(result.current.phases.length, 5);
   assert.equal(result.current.legions.length, 2);
   assert.equal('plan' in result.teams['team-1'], false);
   const personal = result.players['firebase-uid-1-1'];
-  assert.equal(personal.plan.phases.length, 4);
+  assert.equal(personal.plan.phases.length, 5);
   assert.equal(personal.plan.legions.length, 2);
   assert.deepEqual(
     personal.plan.objectives.map((objective) => objective.id),
@@ -3625,7 +3799,10 @@ test('plan publication requires complete validation, stores compact timelines, a
   assert.deepEqual(personal.plan.playerOverrides, []);
   assert.deepEqual(personal.plan.seatOverrides, []);
   assert.deepEqual(personal.plan.instructions, []);
-  assert.equal(personal.timeline.length, 8);
+  assert.equal('substitutions' in personal.plan, false);
+  assert.equal('playerResources' in personal.plan, false);
+  assert.equal('buildingAnnotations' in personal.plan, false);
+  assert.equal(personal.timeline.length, 10);
   assert.equal(personal.timeline[0].teamId, 'team-1');
   assert.equal(personal.timeline[0].playerId, 'stable-player-1');
   assert.equal(personal.timeline[0].instruction.standby, true);
@@ -3659,7 +3836,7 @@ test('plan publication rejects incomplete, empty, or mismatched personal timelin
       expectedRevision: 0,
       ...publicationSourceOptions(incomplete),
     }),
-    /requires all eight phase and Legion assignments/
+    /requires all 10 phase and Legion assignments/
   );
 
   const emptyInstruction = completePublicationBundle({ planPublished: true });

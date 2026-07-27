@@ -91,6 +91,7 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohCorrectionTroopRowsTooMany: 'Use no more than 60 troop rows.',
   adminBohCorrectionUseValue: 'Use value',
   adminBohChooseApprovedRosterCsv: 'Choose approved CSV',
+  adminBohDeploymentFilter: 'Deployment',
   adminBohDiscardPreview: 'Discard preview',
   adminBohDynamicKicker: 'ALL-STAR BoH / {teams} TEAMS / {players} PLAYERS',
   adminBohDynamicSubtitle:
@@ -145,6 +146,16 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
     'Existing exact score replacements remain visible in the audit table. New leadership ratings are additive and are edited there.',
   adminBohLegacyOverrideWarning: 'Legacy exact replacement',
   adminBohLegacyReadOnly: 'legacy, read-only',
+  adminBohMapperBoardControls: 'Mapper board controls',
+  adminBohMapperCardSaved: 'Mapper player card saved.',
+  adminBohMapperChooseVerified: 'Choose a fresh verified signup for {name}',
+  adminBohMapperLeaveUnresolved: 'Leave unresolved',
+  adminBohMapperManualMatch: 'Manually linked',
+  adminBohMapperReconciledPreview:
+    'Mapper preview reconciliation updated. Nothing has been saved or published.',
+  adminBohMapperRoughEstimate: 'Mapper rough/manual estimate: {score}',
+  adminBohMapperTeamsHelp:
+    'Import the mapper exact view, reconcile verified identities, edit the six ranked team cards, inspect mapper-style plans, then validate and publish explicitly.',
   adminBohNoBalancePreview: 'Create a preview to compare both team totals before applying.',
   adminBohPowerComparison: 'Current -> proposed total power',
   adminBohPower: 'Power',
@@ -211,8 +222,9 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohTeamCountAndMetric: 'Team count, metric, and exact-team placements',
   adminBohTeamSettingsHelp:
     'Save configuration separately. Changing it never changes the saved eligible player IDs.',
-  adminBohTeamsHelp:
-    'Build {count} teams of 12. Locked seats survive preview and apply; direct moves remain available.',
+  adminBohReviewPublish: 'Review and publish',
+  adminBohSearchPlayersPlaceholder: 'Name, team, role, or rank',
+  adminBohSecondaryUtilities: 'Secondary review utilities',
   adminBohTotalGamePower: 'Total in-game power',
   adminBohStatLevel50Heroes: 'Level 50 hero count',
   adminBohT10Types: 'T10 troop types',
@@ -224,6 +236,9 @@ export const ADMIN_ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   adminBohTroopRowKind: 'Row kind',
   adminBohUnavailableTimes: 'Unavailable times',
   adminBohUnsavedCorrection: 'Unsaved draft',
+  adminBohValidateDraft: 'Validate draft',
+  adminBohValidationBackups:
+    '{team} has {count} designated backups; release requires exactly 2 backups and 10 starters.',
   adminBohValidationCoLeader: '{team} has a co-leader who is not assigned.',
   adminBohValidationDynamicSeats: '{assigned} of {total} seats are assigned.',
   adminBohVtsMember: 'Plays in VTS 1097',

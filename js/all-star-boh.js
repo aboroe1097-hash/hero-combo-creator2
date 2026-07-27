@@ -1294,7 +1294,16 @@ function teamForProjection(team) {
 }
 
 export function projectBohPlayerPlan(input = {}) {
-  if (Array.isArray(input.personalPlan?.timeline)) return input.personalPlan.timeline;
+  if (Array.isArray(input.personalPlan?.timeline)) {
+    const playerId = textValue(input.playerId);
+    const projectionOwnerId = textValue(input.personalPlan.playerId || input.personalPlan.uid);
+    if (playerId && projectionOwnerId && projectionOwnerId !== playerId) return [];
+    return input.personalPlan.timeline.filter((entry) => {
+      const entryPlayerId = textValue(entry?.playerId);
+      if (entryPlayerId) return Boolean(playerId) && entryPlayerId === playerId;
+      return !projectionOwnerId || projectionOwnerId === playerId;
+    });
+  }
   const projector = input.model?.projectBohPlayerTimeline;
   if (typeof projector !== 'function' || !input.personalPlan?.plan || !input.team) return [];
   const seat = (input.team.seats || []).find(
@@ -3253,14 +3262,53 @@ function buildPhasePanel(state, entry, index) {
   return [heading, list, note, ...cards];
 }
 
+function ensureTimelinePhaseSockets(state, count) {
+  const tabList = query(state.root, '[data-role="phase-tabs"]');
+  const summary = query(state.root, '[data-role="phase-summary-list"]');
+  const firstPanel = query(state.root, '[data-role="phase-panel"]');
+  const panelHost = summary?.parentElement || firstPanel?.parentElement;
+  const tabs = queryAll(tabList, '[role="tab"]');
+  const panels = queryAll(panelHost, '[data-role="phase-panel"]');
+  for (let index = tabs.length; index < count; index += 1) {
+    const tabId = `bohPhase${index}Tab`;
+    const panelId = `bohPhase${index}Panel`;
+    const tab = createElement(state.root, 'button');
+    tab.type = 'button';
+    tab.id = tabId;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', panelId);
+    tab.setAttribute('aria-selected', 'false');
+    tab.tabIndex = -1;
+    tabList?.append?.(tab);
+    tabs.push(tab);
+
+    const panel = createElement(state.root, 'article', 'boh-phase-panel');
+    panel.id = panelId;
+    panel.dataset.role = 'phase-panel';
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', tabId);
+    panel.hidden = true;
+    if (summary && panelHost?.insertBefore) panelHost.insertBefore(panel, summary);
+    else panelHost?.append?.(panel);
+    panels.push(panel);
+  }
+  return { tabs, panels };
+}
+
 function renderTimeline(state, view) {
-  const tabs = queryAll(state.root, '[data-role="phase-tabs"] [role="tab"]');
-  const panels = queryAll(state.root, '[data-role="phase-panel"]');
+  const { tabs, panels } = ensureTimelinePhaseSockets(state, view.timeline.length);
+  setText(
+    query(state.root, '[data-boh-i18n="plan.timelineTitle"]'),
+    state.tr('plan.timelineTitleDynamic', 'Your {count} phases', {
+      count: view.timeline.length,
+    })
+  );
   view.timeline.forEach((entry, index) => {
     const tab = tabs[index];
     const panel = panels[index];
     if (!tab || !panel) return;
     const selected = entry.phaseId === view.phaseId;
+    tab.hidden = false;
     tab.dataset.phaseId = entry.phaseId;
     tab.setAttribute('aria-selected', String(selected));
     tab.tabIndex = selected ? 0 : -1;
@@ -3552,14 +3600,30 @@ function renderCommandWorkspace(state) {
   for (const panel of queryAll(workspace, '[data-role="command-mode-panel"]')) {
     setHidden(panel, panel.dataset.commandMode !== state.selectedCommandMode);
   }
-  for (const tab of queryAll(workspace, '[data-role="command-phase-tab"]')) {
-    const phase = view.phases.find((item) => item.id === tab.dataset.phaseId);
-    const selected = phase?.id === view.phaseId;
+  const commandTabList = query(workspace, '.boh-command-phase-tabs');
+  const commandTabs = queryAll(commandTabList, '[data-role="command-phase-tab"]');
+  for (let index = commandTabs.length; index < view.phases.length; index += 1) {
+    const tab = createElement(state.root, 'button');
+    tab.type = 'button';
+    tab.dataset.role = 'command-phase-tab';
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', 'false');
+    tab.tabIndex = -1;
+    append(tab, createElement(state.root, 'strong'), createElement(state.root, 'small'));
+    commandTabList?.append?.(tab);
+    commandTabs.push(tab);
+  }
+  commandTabs.forEach((tab, index) => {
+    const phase = view.phases[index];
+    tab.hidden = !phase;
+    if (!phase) return;
+    tab.dataset.phaseId = phase.id;
+    const selected = phase.id === view.phaseId;
     tab.setAttribute('aria-selected', String(selected));
     tab.tabIndex = selected ? 0 : -1;
-    setText(query(tab, 'strong'), phase ? `${phase.startMinute}-${phase.endMinute}` : '');
-    setText(query(tab, 'small'), phase?.label || '');
-  }
+    setText(query(tab, 'strong'), `${phase.startMinute}-${phase.endMinute}`);
+    setText(query(tab, 'small'), phase.label || '');
+  });
   setText(query(workspace, '[data-role="command-phase-title"]'), view.phase?.label || '');
   setText(query(workspace, '[data-role="command-phase-unlocks"]'), view.milestone?.unlocks || '');
   setText(query(workspace, '[data-role="command-teleport-cue"]'), view.milestone?.teleport || '');

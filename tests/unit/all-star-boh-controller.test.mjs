@@ -552,6 +552,72 @@ test('personal projection adapts published seats and selects Legion current/next
   assert.equal(view.hasRotation, true);
 });
 
+test('published personal projection keeps only the signed-in player instructions', () => {
+  const ownTimeline = Array.from({ length: 5 }, (_, phaseIndex) =>
+    ['legion-1', 'legion-2'].map((legionId) => ({
+      playerId: 'player-7',
+      phaseId: `phase-${phaseIndex + 1}`,
+      legionId,
+      startMinute: phaseIndex < 3 ? phaseIndex * 5 : phaseIndex === 3 ? 15 : 30,
+      instruction: { action: `Own instruction ${phaseIndex + 1} / ${legionId}` },
+    }))
+  ).flat();
+  const projected = projectBohPlayerPlan({
+    playerId: 'player-7',
+    personalPlan: {
+      playerId: 'player-7',
+      timeline: [
+        ...ownTimeline,
+        {
+          playerId: 'player-8',
+          phaseId: 'phase-5',
+          legionId: 'legion-1',
+          instruction: { action: 'Another player instruction' },
+        },
+      ],
+      plan: {
+        substitutions: [
+          { playerId: 'player-7', replacementPlayerId: 'player-8', note: '<img src=x>' },
+        ],
+      },
+    },
+  });
+
+  assert.equal(projected.length, 10);
+  assert.equal(
+    projected.every((entry) => entry.playerId === 'player-7'),
+    true
+  );
+  assert.equal(
+    projected.some((entry) => entry.instruction.action.includes('Another')),
+    false
+  );
+  assert.equal(
+    projected.some((entry) => JSON.stringify(entry).includes('substitutions')),
+    false
+  );
+  assert.equal(
+    projected.find((entry) => entry.phaseId === 'phase-5' && entry.legionId === 'legion-2')
+      .instruction.action,
+    'Own instruction 5 / legion-2'
+  );
+
+  assert.deepEqual(
+    projectBohPlayerPlan({
+      playerId: 'player-8',
+      personalPlan: { playerId: 'player-7', timeline: ownTimeline },
+    }),
+    []
+  );
+  assert.equal(
+    projectBohPlayerPlan({
+      playerId: 'player-7',
+      personalPlan: { timeline: [{ phaseId: 'legacy', legionId: 'legion-1' }] },
+    }).length,
+    1
+  );
+});
+
 test('route descriptor supplies matching visual path and text equivalent', () => {
   const route = buildBohRouteDescriptor(
     {

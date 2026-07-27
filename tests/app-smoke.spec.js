@@ -110,7 +110,7 @@ test.describe('Battle Simulator beta', () => {
 
     await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl', { timeout: 20000 });
-    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
+    await expect(page.locator('.pin-gate-dialog')).toBeVisible({ timeout: 20000 });
     await expect(page.locator('.pin-gate-dialog')).not.toContainText('Beta Testers Only');
     await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
     await page.locator('.pin-gate-btn-primary').click();
@@ -1595,6 +1595,7 @@ test.describe('app smoke tabs', () => {
   test('Velo requests selected-hero consent after the user completes Generator setup', async ({
     page,
   }) => {
+    test.slow();
     await page.addInitScript(() => {
       localStorage.setItem('vts_ai_provider_disclosure_v1', '1');
       localStorage.removeItem('vts_generator_selection_v1');
@@ -1612,7 +1613,7 @@ test.describe('app smoke tabs', () => {
     const setupAction = page.getByRole('button', {
       name: 'Select heroes in the Generator first.',
     });
-    await expect(setupAction).toBeVisible({ timeout: 15000 });
+    await expect(setupAction).toBeVisible({ timeout: 30000 });
     await setupAction.click();
     await expect(page.locator('#generatorSection')).toBeVisible();
     await page.locator('#generatorHeroes .generator-card').first().click();

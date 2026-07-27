@@ -160,6 +160,7 @@ export const ALL_STAR_BOH_EN = Object.freeze({
   'plan.teleportPlaceholder': 'Teleport: —',
   'plan.timelineKicker': 'MATCH TIMELINE',
   'plan.timelineTitle': 'Your four phases',
+  'plan.timelineTitleDynamic': 'Your {count} phases',
   'plan.title': 'My Team Plan',
   'plan.towerPlaceholder': 'Assigned tower',
   'plan.troopsHeroes': 'Troops & heroes',

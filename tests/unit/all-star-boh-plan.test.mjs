@@ -2,37 +2,44 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  BOH_STAGE1_BACKUP_ENTRY_MINUTE,
-  BOH_STAGE1_BACKUP_ENTRY_PHASE,
   BOH_STAGE1_BACKUP_SEATS,
+  BOH_STAGE1_BATTLEFIELD_SKILLS,
+  BOH_STAGE1_BATTLE_MERIT,
+  BOH_STAGE1_BUILDING_BUFFS,
   BOH_STAGE1_LEGIONS,
+  BOH_STAGE1_MAX_ACTIVE_PLAYERS,
   BOH_STAGE1_MILESTONES,
   BOH_STAGE1_PHASES,
   BOH_STAGE1_PLAN_ID,
   BOH_STAGE1_SEATS,
+  BOH_STAGE1_TOWER_TOPOLOGY,
   bohIsBackupSeat,
   bohIsStandby,
   bohSeatRoleGroup,
   bohStage1Milestone,
+  bohStage1SubstitutionEvents,
   bohStage1Timeline,
+  bohValidateStage1Roster,
+  bohValidateStage1Substitutions,
+  bohValidateStage1TowerTopology,
 } from '../../js/all-star-boh-plan.js';
 import { bohStructureCodes } from '../../js/all-star-boh-field.js';
 
-test('stage 1 declares four phases and two legions', () => {
+test('stage 1 declares five phases and two legions', () => {
   assert.equal(BOH_STAGE1_PLAN_ID, 'stage-1');
-  assert.equal(BOH_STAGE1_PHASES.length, 4);
+  assert.equal(BOH_STAGE1_PHASES.length, 5);
   assert.equal(BOH_STAGE1_LEGIONS.length, 2);
   assert.deepEqual(
     BOH_STAGE1_LEGIONS.map((legion) => legion.id),
     ['legion-1', 'legion-2']
   );
-  // Phases must tile 0-30 minutes without a gap.
+  // Phases must tile 0-60 minutes without a gap.
   BOH_STAGE1_PHASES.forEach((phase, index) => {
     assert.equal(phase.order, index + 1);
     if (index > 0) assert.equal(phase.startMinute, BOH_STAGE1_PHASES[index - 1].endMinute);
   });
   assert.equal(BOH_STAGE1_PHASES[0].startMinute, 0);
-  assert.equal(BOH_STAGE1_PHASES[3].endMinute, 30);
+  assert.equal(BOH_STAGE1_PHASES[4].endMinute, 60);
 });
 
 test('every phase has milestone guidance keyed by phase id', () => {
@@ -42,17 +49,17 @@ test('every phase has milestone guidance keyed by phase id', () => {
     assert.ok(milestone, `${phase.id} has no milestone`);
     assert.ok(milestone.unlocks);
     assert.ok(milestone.teleport);
-    assert.ok(milestone.crystal);
+    assert.equal('crystal' in milestone, false);
   });
   assert.equal(bohStage1Milestone('phase-99'), null);
 });
 
-test('each seat yields exactly four phases by two legions', () => {
+test('each seat yields exactly five phases by two legions', () => {
   for (let seat = 1; seat <= BOH_STAGE1_SEATS; seat += 1) {
     const timeline = bohStage1Timeline(seat, { playerId: 'uid-1', gameName: 'Tester' });
-    assert.equal(timeline.length, 8, `seat ${seat} should have 8 entries`);
+    assert.equal(timeline.length, 10, `seat ${seat} should have 10 entries`);
     const keys = new Set(timeline.map((entry) => `${entry.legionId}:${entry.phaseId}`));
-    assert.equal(keys.size, 8, `seat ${seat} has duplicate phase/legion pairs`);
+    assert.equal(keys.size, 10, `seat ${seat} has duplicate phase/legion pairs`);
   }
 });
 
@@ -79,51 +86,59 @@ test('identity is never inferred - a missing player id stays empty', () => {
   assert.equal(entry.gameName, '');
 });
 
-test('backups stand by through the opening phase and deploy from 5:00', () => {
+test('backups default to no play for the full match', () => {
   assert.deepEqual([...BOH_STAGE1_BACKUP_SEATS], [11, 12]);
-  assert.equal(BOH_STAGE1_BACKUP_ENTRY_PHASE, 1);
   BOH_STAGE1_BACKUP_SEATS.forEach((seat) => {
-    assert.equal(bohIsBackupSeat(seat), true);
-    const timeline = bohStage1Timeline(seat, { playerId: 'uid-b' });
-    const opening = timeline.filter((entry) => entry.phaseId === 'phase-1');
-    assert.equal(opening.length, 2);
-    opening.forEach((entry) => {
+    const timeline = bohStage1Timeline(seat, { playerId: `backup-${seat}` });
+    assert.equal(timeline.length, 10);
+    timeline.forEach((entry) => {
       assert.equal(entry.instruction.standby, true);
-      assert.match(entry.instruction.action, /stand by/iu);
-      assert.match(entry.instruction.note, new RegExp(`${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00`, 'u'));
+      assert.match(entry.instruction.action, /default no play/iu);
     });
-    // From phase 2 onward they hold real support orders.
-    timeline
-      .filter((entry) => entry.phaseId !== 'phase-1')
-      .forEach((entry) => {
-        assert.equal('standby' in entry.instruction, false);
-        assert.doesNotMatch(entry.instruction.action, /stand by/iu);
-      });
+    BOH_STAGE1_PHASES.forEach((_phase, index) => assert.equal(bohIsStandby(seat, index), true));
   });
 });
 
-test('an explicit backup flag overrides numeric seat behavior', () => {
-  const flaggedBackup = bohStage1Timeline(1, { playerId: 'uid-b', backup: true });
-  flaggedBackup
+test('a paired substitution projects both players at the exact shared minute', () => {
+  const players = substitutionRoster();
+  const substitutions = [
+    { backupPlayerId: 'player-11', replacesPlayerId: 'player-1', entryMinute: 3 },
+  ];
+  const plan = { players, substitutions };
+  const incoming = bohStage1Timeline(11, { playerId: 'player-11', backup: true }, plan);
+  incoming
     .filter((entry) => entry.phaseId === 'phase-1')
     .forEach((entry) => {
-      assert.equal(entry.instruction.standby, true);
-      assert.match(entry.instruction.action, /stand by/iu);
+      assert.equal(entry.startMinute, 3);
+      assert.equal('standby' in entry.instruction, false);
+      assert.match(entry.instruction.note, /@3:00 replace the starter in seat 1/u);
     });
-  flaggedBackup
+  const outgoing = bohStage1Timeline(1, { playerId: 'player-1' }, plan);
+  outgoing
+    .filter((entry) => entry.phaseId === 'phase-1')
+    .forEach((entry) => {
+      assert.equal(entry.startMinute, 0);
+      assert.equal(entry.endMinute, 3);
+      assert.match(entry.instruction.action, /swap out for the designated backup/u);
+    });
+  outgoing
     .filter((entry) => entry.phaseId !== 'phase-1')
     .forEach((entry) => {
-      assert.equal('standby' in entry.instruction, false);
-      assert.equal(entry.roleLabel, 'Backup - Support');
+      assert.equal(entry.instruction.standby, true);
+      assert.match(entry.instruction.action, /remain off the battlefield/u);
     });
-
-  const explicitMain = bohStage1Timeline(11, { playerId: 'uid-m', main: true, backup: false });
-  explicitMain.forEach((entry) => {
-    assert.equal('standby' in entry.instruction, false);
-    assert.doesNotMatch(entry.instruction.action, /stand by/iu);
-  });
+  const boundaryPlan = {
+    players,
+    substitutions: [{ backupPlayerId: 'player-11', replacesPlayerId: 'player-1', entryMinute: 5 }],
+  };
+  bohStage1Timeline(1, { playerId: 'player-1' }, boundaryPlan)
+    .filter((entry) => entry.phaseId === 'phase-2')
+    .forEach((entry) => {
+      assert.equal(entry.startMinute, 5);
+      assert.equal(entry.endMinute, 10);
+      assert.equal(entry.instruction.standby, true);
+    });
 });
-
 test('starters are never marked standby', () => {
   for (let seat = 1; seat <= 10; seat += 1) {
     assert.equal(bohIsBackupSeat(seat), false);
@@ -212,4 +227,100 @@ test('orders reference only structures the field model recognises', () => {
     });
   }
   assert.ok(referenced > 40, `expected plentiful structure references, saw ${referenced}`);
+});
+
+test('tower topology has the canonical trunk, branch, and connected objectives', () => {
+  const blue = BOH_STAGE1_TOWER_TOPOLOGY.sides.blue;
+  const byId = new Map(blue.nodes.map((node) => [node.id, node]));
+  assert.equal(BOH_STAGE1_TOWER_TOPOLOGY.coordinateSystem.kind, 'schematic');
+  assert.match(BOH_STAGE1_TOWER_TOPOLOGY.coordinateSystem.label, /not in-game coordinates/iu);
+  assert.equal(byId.get('T1').parentId, 'HOME');
+  for (let tower = 2; tower <= 14; tower += 1)
+    assert.equal(byId.get(`T${tower}`).parentId, tower === 5 ? 'T4' : `T${tower - 1}`);
+  assert.equal(byId.get('T15').parentId, 'T4');
+  for (let tower = 16; tower <= 19; tower += 1)
+    assert.equal(byId.get(`T${tower}`).parentId, `T${tower - 1}`);
+  assert.ok(blue.links.some((link) => link.from === 'T14' && link.to === 'FH1'));
+  assert.ok(blue.links.some((link) => link.from === 'T19' && link.to === 'FH2'));
+  assert.deepEqual(bohValidateStage1TowerTopology(), { valid: true, errors: [] });
+});
+test('tower footprints are 5x5 and red is an exact 180-degree mirror', () => {
+  const blue = new Map(BOH_STAGE1_TOWER_TOPOLOGY.sides.blue.nodes.map((node) => [node.id, node]));
+  const red = new Map(BOH_STAGE1_TOWER_TOPOLOGY.sides.red.nodes.map((node) => [node.id, node]));
+  blue.forEach((node, id) => {
+    assert.equal(node.coverage.width, 5);
+    assert.equal(node.coverage.height, 5);
+    assert.equal(red.get(id).x, 100 - node.x);
+    assert.equal(red.get(id).y, 100 - node.y);
+  });
+});
+
+test('tower validation rejects a disconnected claimed footprint', () => {
+  const topology = structuredClone(BOH_STAGE1_TOWER_TOPOLOGY);
+  const tower = topology.sides.blue.nodes.find((node) => node.id === 'T7');
+  tower.coverage = { minX: 90, minY: 90, maxX: 94, maxY: 94, width: 5, height: 5 };
+  const result = bohValidateStage1TowerTopology(topology);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => /T7 territory is disconnected/u.test(error)));
+});
+function substitutionRoster() {
+  return Array.from({ length: 12 }, (_, index) => ({
+    playerId: `player-${index + 1}`,
+    seatNumber: index + 1,
+    backup: index >= 10,
+    active: true,
+  }));
+}
+
+test('draft rosters allow zero to two backups while release requires ten plus two', () => {
+  assert.equal(BOH_STAGE1_MAX_ACTIVE_PLAYERS, 10);
+  const draft = substitutionRoster()
+    .slice(0, 10)
+    .map((player) => ({ ...player, backup: false }));
+  assert.equal(bohValidateStage1Roster(draft).valid, true);
+  assert.equal(bohValidateStage1Roster(draft, { release: true }).valid, false);
+  const release = bohValidateStage1Roster(substitutionRoster(), { release: true });
+  assert.equal(release.valid, true);
+  assert.deepEqual(release.counts, { roster: 12, backups: 2, activeStarters: 10 });
+});
+
+test('paired substitution events require an inactive backup and exact outgoing starter', () => {
+  const roster = substitutionRoster();
+  const substitutions = [
+    { backupPlayerId: 'player-11', replacesPlayerId: 'player-1', entryMinute: 3 },
+  ];
+  const result = bohValidateStage1Substitutions(roster, substitutions);
+  assert.equal(result.valid, true);
+  assert.deepEqual(bohStage1SubstitutionEvents(roster, substitutions), result.events);
+  assert.equal(result.events[0].entryMinute, 3);
+});
+test('substitution validation rejects early, unpaired, duplicate, and over-capacity play', () => {
+  const roster = substitutionRoster();
+  const invalid = bohValidateStage1Substitutions(roster, [
+    { backupPlayerId: 'player-11', replacesPlayerId: 'player-1', entryMinute: 2 },
+    { backupPlayerId: 'player-12', replacesPlayerId: 'player-1', entryMinute: 8 },
+  ]);
+  assert.equal(invalid.valid, false);
+  assert.ok(invalid.errors.some((error) => /minute must be 3\.\.60/u.test(error)));
+  assert.ok(invalid.errors.some((error) => /replaced twice/u.test(error)));
+  const overCapacity = substitutionRoster().map((player, index) => ({
+    ...player,
+    backup: index === 11,
+  }));
+  assert.equal(bohValidateStage1Substitutions(overCapacity, []).valid, false);
+});
+
+test('personal skill costs stay separate and unknown mechanics remain explicit', () => {
+  const skills = new Map(BOH_STAGE1_BATTLEFIELD_SKILLS.map((skill) => [skill.id, skill]));
+  assert.equal(skills.get('battlefield-teleport').battleMeritCost, 1000);
+  assert.match(skills.get('battlefield-teleport').effect, /personal battlefield teleport/iu);
+  assert.equal(skills.get('emergency-treatment').battleMeritCost, 1000);
+  assert.equal(skills.get('rapid-freeze').battleMeritCost, 3000);
+  assert.equal(skills.get('meteor-fall').battleMeritCost, 6000);
+  ['emergency-treatment', 'rapid-freeze', 'meteor-fall'].forEach((id) =>
+    assert.equal(skills.get(id).effect, null)
+  );
+  assert.equal(BOH_STAGE1_BATTLE_MERIT.conversionRate, null);
+  assert.equal(BOH_STAGE1_BUILDING_BUFFS.provisional, true);
+  assert.equal(BOH_STAGE1_BUILDING_BUFFS.exactStructureMapping, null);
 });

@@ -21,6 +21,7 @@ import {
   SETUP_SCHEMA_VERSION,
   applySetupSnapshot,
   buildSetupSnapshot,
+  createDefaultBattleProfileDraft,
   createEmptyCapturedSourceSnapshot,
   parseSetupSnapshot,
   setupSnapshotToEngineConfig,
@@ -156,6 +157,7 @@ function legacySnapshotFixture() {
     delete side.researchEnabled;
     delete side.researchSnapshot;
     delete side.equipmentLoadout;
+    delete side.profileDraft;
     delete side.capturedSourceSnapshot;
     for (const fields of [side.sideDefaults, ...side.rows]) {
       fields.baseValues = {
@@ -194,6 +196,8 @@ test('v3 build, stringify, parse, and apply round-trip complete source-aware set
   assert.equal(snapshot.savedAt, null);
   assert.equal(snapshot.sides.A.researchEnabled, true);
   assert.equal(snapshot.sides.B.researchEnabled, false);
+  assert.deepEqual(snapshot.sides.A.profileDraft, createDefaultBattleProfileDraft('A'));
+  assert.deepEqual(snapshot.sides.B.profileDraft, createDefaultBattleProfileDraft('B'));
   assert.deepEqual(Object.keys(snapshot.sides.A.rows[0].unitValues), ['attack', 'defense', 'hp']);
   assert.equal(snapshot.sides.A.rows[0].bonuses.damageMitigation, 5);
   assert.equal(snapshot.sides.A.equipmentLoadout.mode, 'none');
@@ -230,6 +234,7 @@ test('v1 snapshots migrate to v3 unit points, safe empty integrations, and corre
   assert.deepEqual(parsed.sides.A.rows[0].unitValues, { attack: 70, defense: 50, hp: 20 });
   assert.equal(parsed.sides.A.rows[0].bonuses.damageMitigation, 0);
   assert.equal(parsed.sides.A.researchEnabled, false);
+  assert.deepEqual(parsed.sides.A.profileDraft, createDefaultBattleProfileDraft('A'));
   assert.equal(parsed.sides.A.equipmentLoadout.mode, 'none');
   assert.deepEqual(parsed.sides.A.equipmentEffectOverrides.overrides, []);
   assert.equal(parsed.sides.A.rows[0].heroName, null);
@@ -444,6 +449,105 @@ test('v3 persists scenario, heroes, specialization captures, and equipment overr
   assert.equal(config.sideA.unitSources.length, 1);
   assert.equal(config.sideA.effects[0].id, 'fixture-effect');
   assert.equal(config.sideA.rows[0].stats.unit.attack, 77);
+});
+
+test('v3 profile drafts round-trip canonical optional equipment and full tower state', () => {
+  const snapshot = snapshotFixture();
+  const towerState = createEmptySpecializationState();
+  snapshot.sides.A.profileDraft = {
+    label: '  Rally Lead  ',
+    sources: { research: false, equipment: true, towers: false, future: true },
+    researchOverrides: [
+      { sourceId: ' research:z ', amount: 25, future: true },
+      { sourceId: 'research:a', amount: 0 },
+    ],
+    equipmentLoadout: snapshot.sides.A.equipmentLoadout,
+    equipmentEffectOverrides: snapshot.sides.A.equipmentEffectOverrides,
+    towerState,
+    towersApplied: true,
+    future: true,
+  };
+
+  const parsed = parseSetupSnapshot(JSON.stringify(snapshot));
+  const profileDraft = parsed.sides.A.profileDraft;
+  assert.equal(profileDraft.label, 'Rally Lead');
+  assert.deepEqual(profileDraft.sources, {
+    research: false,
+    equipment: true,
+    towers: false,
+  });
+  assert.deepEqual(profileDraft.researchOverrides, [
+    { sourceId: 'research:a', amount: 0 },
+    { sourceId: 'research:z', amount: 25 },
+  ]);
+  assert.equal(profileDraft.equipmentLoadout.mode, 'none');
+  assert.deepEqual(profileDraft.equipmentEffectOverrides.overrides, []);
+  assert.deepEqual(profileDraft.towerState, towerState);
+  assert.notStrictEqual(profileDraft.towerState, towerState);
+  assert.equal(profileDraft.towersApplied, true);
+  assert.equal(Object.hasOwn(profileDraft, 'future'), false);
+
+  const reparsed = parseSetupSnapshot(JSON.stringify(parsed));
+  assert.deepEqual(reparsed.sides.A.profileDraft, profileDraft);
+  assert.notStrictEqual(reparsed.sides.A.profileDraft.towerState, profileDraft.towerState);
+});
+
+test('profile drafts default missing fields and reject invalid canonical metadata', () => {
+  assert.deepEqual(createDefaultBattleProfileDraft('A'), {
+    label: 'Side A Profile',
+    sources: { research: true, equipment: true, towers: true },
+    researchOverrides: [],
+    towersApplied: false,
+  });
+  assert.throws(() => createDefaultBattleProfileDraft('C'), /sideId must be one of/i);
+
+  const missingFields = snapshotFixture();
+  missingFields.sides.A.profileDraft = {};
+  assert.deepEqual(
+    parseSetupSnapshot(JSON.stringify(missingFields)).sides.A.profileDraft,
+    createDefaultBattleProfileDraft('A')
+  );
+
+  const invalidLabel = snapshotFixture();
+  invalidLabel.sides.A.profileDraft.label = 'x'.repeat(49);
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(invalidLabel)), /at most 48/i);
+
+  const invalidSource = snapshotFixture();
+  invalidSource.sides.A.profileDraft.sources.research = 'yes';
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(invalidSource)),
+    /research must be a boolean/i
+  );
+
+  const duplicateOverride = snapshotFixture();
+  duplicateOverride.sides.A.profileDraft.researchOverrides = [
+    { sourceId: 'research:a', amount: 1 },
+    { sourceId: ' research:a ', amount: 2 },
+  ];
+  assert.throws(() => parseSetupSnapshot(JSON.stringify(duplicateOverride)), /duplicate sourceId/i);
+
+  const invalidAmount = snapshotFixture();
+  invalidAmount.sides.A.profileDraft.researchOverrides = [
+    { sourceId: 'research:a', amount: 5_001 },
+  ];
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(invalidAmount)),
+    /amount.*between 0 and 5000/i
+  );
+
+  const invalidTowerState = snapshotFixture();
+  invalidTowerState.sides.A.profileDraft.towerState = { schema: 'wrong', schemaVersion: 1 };
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(invalidTowerState)),
+    /specialization schema/i
+  );
+
+  const invalidAppliedFlag = snapshotFixture();
+  invalidAppliedFlag.sides.A.profileDraft.towersApplied = 1;
+  assert.throws(
+    () => parseSetupSnapshot(JSON.stringify(invalidAppliedFlag)),
+    /towersApplied.*boolean/i
+  );
 });
 
 test('canonical specialization captures retain bounded depth and sensitive-key guards', () => {

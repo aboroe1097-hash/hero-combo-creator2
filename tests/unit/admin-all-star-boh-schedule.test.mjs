@@ -423,14 +423,14 @@ test('a team with no authored plan receives a hydrated Stage-1 default plan', as
   const team = snapshot.teams.find((entry) => entry.id === 'team-1');
   assert.equal(team.plan.planId, 'stage-1');
   assert.equal(team.plan.generated, true);
-  // Stage-1 orders land as player override rules: 12 seats x 4 phases x 2 legions.
-  assert.equal(team.plan.playerOverrides.length, 96);
-  assert.equal(team.plan.phases.length, 4);
+  // Stage-1 orders land as player override rules: 12 seats x 5 phases x 2 legions.
+  assert.equal(team.plan.playerOverrides.length, 120);
+  assert.equal(team.plan.phases.length, 5);
   assert.equal(team.plan.legions.length, 2);
 
   // Hydrated from that team's real ordered seats, never from hard-coded roster data.
   const seatOne = team.plan.playerOverrides.filter((item) => item.seatNumber === 1);
-  assert.equal(seatOne.length, 8);
+  assert.equal(seatOne.length, 10);
   assert.equal(seatOne[0].playerId, 'p1-1');
   assert.equal(seatOne[0].teamId, 'team-1');
   const seatTwelve = team.plan.playerOverrides.filter((item) => item.seatNumber === 12);

@@ -47,7 +47,7 @@ const MAX_TEAM_BYTES = 256 * 1024;
 const MAX_PUBLICATION_BYTES = 128 * 1024;
 const MAX_PERSONAL_PLAN_BYTES = 96 * 1024;
 const MAX_SCHEDULE_BYTES = 24 * 1024;
-const MAX_PUBLISHED_TIMELINE_ITEMS = 8;
+const MAX_PUBLISHED_TIMELINE_ITEMS = 10;
 const MAX_CORRECTION_REASON_LENGTH = 500;
 const FORBIDDEN_PERSISTED_KEY =
   /(?:base64|data[_-]?url|image[_-]?(?:bytes|data|file)|screenshot|raw[_-]?image|arraybuffer|blob|file[_-]?data|pin(?:code)?|password|secret)/i;
@@ -160,6 +160,12 @@ const PREFERRED_ROLE_VALUES = new Set([
 ]);
 const PUBLICATION_STATUS = new Set(['hidden', 'announcement', 'plan', 'live']);
 const INSTRUCTION_SCOPES = new Set(['', 'global', 'role', 'seat', 'player']);
+const PLAN_RESOURCE_SKILLS = new Map([
+  ['battlefield-teleport', { meritCost: 1000, effect: { personalTeleports: 1 } }],
+  ['emergency-treatment', { meritCost: 1000, effect: {} }],
+  ['rapid-freeze', { meritCost: 3000, effect: {} }],
+  ['meteor-fall', { meritCost: 6000, effect: {} }],
+]);
 
 function own(source, key) {
   return Object.prototype.hasOwnProperty.call(source || {}, key);
@@ -1638,6 +1644,159 @@ function normalizeRotation(input, index = 0) {
   };
 }
 
+function normalizeSubstitution(input, index = 0) {
+  const source = requireRecord(input, `Substitution ${index + 1}`);
+  const id = requiredIdentifier(source.id || `substitution-${index + 1}`, 'Substitution ID');
+  const backupPlayerId = boundedString(
+    source.backupPlayerId,
+    MAX_ID_LENGTH,
+    'Substitution backup player ID',
+    { required: true }
+  );
+  const replacesPlayerId = boundedString(
+    source.replacesPlayerId,
+    MAX_ID_LENGTH,
+    'Substitution replaced player ID',
+    { required: true }
+  );
+  if (backupPlayerId === replacesPlayerId) {
+    throw new AllStarBohValidationError(
+      `Substitution ${id} must use different incoming and outgoing players.`
+    );
+  }
+  const entryMinute = boundedInteger(source.entryMinute, 'Substitution entry minute', {
+    minimum: 3,
+    maximum: 60,
+  });
+  if (entryMinute === null) {
+    throw new AllStarBohValidationError('Substitution entry minute is required.');
+  }
+  return {
+    id,
+    teamId: requiredIdentifier(source.teamId, 'Substitution team ID'),
+    backupPlayerId,
+    replacesPlayerId,
+    entryMinute,
+    order: boundedNumber(source.order ?? index + 1, 'Substitution order', {
+      minimum: 0,
+      maximum: 100_000,
+    }),
+    note: boundedString(source.note, MAX_NOTE_LENGTH, 'Substitution note'),
+  };
+}
+
+function validateSubstitutions(substitutions) {
+  const ids = new Set();
+  const incomingPlayerIds = new Set();
+  const outgoingPlayerIds = new Set();
+  for (const substitution of substitutions) {
+    if (ids.has(substitution.id)) {
+      throw new AllStarBohValidationError(`Duplicate substitution ID ${substitution.id}.`);
+    }
+    if (incomingPlayerIds.has(substitution.backupPlayerId)) {
+      throw new AllStarBohValidationError(
+        `Backup player ${substitution.backupPlayerId} has multiple substitutions.`
+      );
+    }
+    if (outgoingPlayerIds.has(substitution.replacesPlayerId)) {
+      throw new AllStarBohValidationError(
+        `Outgoing player ${substitution.replacesPlayerId} has multiple substitutions.`
+      );
+    }
+    ids.add(substitution.id);
+    incomingPlayerIds.add(substitution.backupPlayerId);
+    outgoingPlayerIds.add(substitution.replacesPlayerId);
+  }
+}
+
+function normalizeSkillReservation(input, index) {
+  const source = requireRecord(input, `Skill reservation ${index + 1}`);
+  const id = requiredIdentifier(source.id, 'Skill reservation ID');
+  const skill = PLAN_RESOURCE_SKILLS.get(id);
+  if (!skill) {
+    throw new AllStarBohValidationError(`Skill reservation ${id} is unsupported.`);
+  }
+  return {
+    id,
+    meritCost: skill.meritCost,
+    order: boundedNumber(source.order ?? index + 1, 'Skill reservation order', {
+      minimum: 0,
+      maximum: 100_000,
+    }),
+    effect: skill.effect.personalTeleports === 1 ? { personalTeleports: 1 } : {},
+  };
+}
+
+function normalizePlayerResource(input, index = 0) {
+  const source = requireRecord(input, `Player resource ${index + 1}`);
+  const playerId = boundedString(source.playerId, MAX_ID_LENGTH, 'Resource player ID', {
+    required: true,
+  });
+  const skillReservations = boundedObjectArray(source.skillReservations ?? [], {
+    label: 'Skill reservations',
+    maxItems: PLAN_RESOURCE_SKILLS.size,
+    normalize: (reservation, reservationIndex) =>
+      normalizeSkillReservation(reservation, reservationIndex),
+  });
+  const skillIds = new Set();
+  for (const reservation of skillReservations) {
+    if (skillIds.has(reservation.id)) {
+      throw new AllStarBohValidationError(
+        `Player ${playerId} has duplicate skill reservation ${reservation.id}.`
+      );
+    }
+    skillIds.add(reservation.id);
+  }
+  return {
+    playerId,
+    meritBudget: boundedInteger(source.meritBudget, 'Player merit budget', {
+      minimum: 0,
+      maximum: 10 ** 12,
+    }),
+    queueCapacity: boundedInteger(source.queueCapacity, 'Player queue capacity', {
+      minimum: 1,
+      maximum: 4,
+    }),
+    skillReservations,
+  };
+}
+
+function validatePlayerResources(playerResources) {
+  const playerIds = new Set();
+  for (const resource of playerResources) {
+    if (playerIds.has(resource.playerId)) {
+      throw new AllStarBohValidationError(`Duplicate player resource for ${resource.playerId}.`);
+    }
+    playerIds.add(resource.playerId);
+  }
+}
+
+function normalizeBuildingAnnotation(input, index = 0) {
+  const source = requireRecord(input, `Building annotation ${index + 1}`);
+  return {
+    id: requiredIdentifier(
+      source.id || `building-annotation-${index + 1}`,
+      'Building annotation ID'
+    ),
+    buildingId: requiredIdentifier(source.buildingId, 'Annotated building ID'),
+    note: boundedString(source.note, MAX_NOTE_LENGTH, 'Building annotation note'),
+    order: boundedNumber(source.order ?? index + 1, 'Building annotation order', {
+      minimum: 0,
+      maximum: 100_000,
+    }),
+  };
+}
+
+function validateBuildingAnnotations(buildingAnnotations) {
+  const ids = new Set();
+  for (const annotation of buildingAnnotations) {
+    if (ids.has(annotation.id)) {
+      throw new AllStarBohValidationError(`Duplicate building annotation ID ${annotation.id}.`);
+    }
+    ids.add(annotation.id);
+  }
+}
+
 function normalizePlan(input = {}) {
   const source = optionalRecord(input);
   const plan = {
@@ -1689,6 +1848,21 @@ function normalizePlan(input = {}) {
       maxItems: 500,
       normalize: normalizeRotation,
     }),
+    substitutions: boundedObjectArray(source.substitutions ?? [], {
+      label: 'Substitutions',
+      maxItems: 500,
+      normalize: normalizeSubstitution,
+    }),
+    playerResources: boundedObjectArray(source.playerResources ?? [], {
+      label: 'Player resources',
+      maxItems: ALL_STAR_BOH_MAX_PLAYERS,
+      normalize: normalizePlayerResource,
+    }),
+    buildingAnnotations: boundedObjectArray(source.buildingAnnotations ?? [], {
+      label: 'Building annotations',
+      maxItems: 100,
+      normalize: normalizeBuildingAnnotation,
+    }),
     notes: boundedStringArray(source.notes || [], {
       label: 'Plan notes',
       maxItems: 100,
@@ -1699,6 +1873,9 @@ function normalizePlan(input = {}) {
   if (objectiveIds.size !== plan.objectives.length) {
     throw new AllStarBohValidationError('Plan objective IDs must be unique.');
   }
+  validateSubstitutions(plan.substitutions);
+  validatePlayerResources(plan.playerResources);
+  validateBuildingAnnotations(plan.buildingAnnotations);
   for (const rule of [
     ...plan.roleDefaults,
     ...plan.seatOverrides,
@@ -2107,13 +2284,20 @@ function resolveDraftTeamIds(draft) {
 }
 
 function planReferencesPlayer(plan, playerIds) {
-  return [
-    ...plan.roleDefaults,
-    ...plan.seatOverrides,
-    ...plan.playerOverrides,
-    ...plan.instructions,
-    ...plan.rotations,
-  ].some((item) => playerIds.has(item.playerId));
+  return (
+    [
+      ...plan.roleDefaults,
+      ...plan.seatOverrides,
+      ...plan.playerOverrides,
+      ...plan.instructions,
+      ...plan.rotations,
+      ...plan.playerResources,
+    ].some((item) => playerIds.has(item.playerId)) ||
+    plan.substitutions.some(
+      (substitution) =>
+        playerIds.has(substitution.backupPlayerId) || playerIds.has(substitution.replacesPlayerId)
+    )
+  );
 }
 
 function removePlanPlayerReferences(plan, playerIds) {
@@ -2124,6 +2308,11 @@ function removePlanPlayerReferences(plan, playerIds) {
     playerOverrides: plan.playerOverrides.filter((rule) => !playerIds.has(rule.playerId)),
     instructions: plan.instructions.filter((rule) => !playerIds.has(rule.playerId)),
     rotations: plan.rotations.filter((rotation) => !playerIds.has(rotation.playerId)),
+    substitutions: plan.substitutions.filter(
+      (substitution) =>
+        !playerIds.has(substitution.backupPlayerId) && !playerIds.has(substitution.replacesPlayerId)
+    ),
+    playerResources: plan.playerResources.filter((resource) => !playerIds.has(resource.playerId)),
   };
 }
 
@@ -2860,7 +3049,7 @@ function validatePersonalPlanProjection(current, teamId, player) {
     [...legionById.keys()].some((legionId) => !planLegionIds.has(legionId))
   ) {
     throw new AllStarBohPublishValidationError(
-      `Player ${player.playerId} requires the published four-phase, two-Legion plan metadata.`
+      `Player ${player.playerId} requires the published five-phase, two-Legion plan metadata.`
     );
   }
 
@@ -2910,7 +3099,7 @@ function validatePersonalPlanProjection(current, teamId, player) {
     [...expectedKeys].some((key) => !actualKeys.has(key))
   ) {
     throw new AllStarBohPublishValidationError(
-      `Player ${player.playerId} timeline requires all eight phase and Legion assignments.`
+      `Player ${player.playerId} timeline requires all ${expectedKeys.size} phase and Legion assignments.`
     );
   }
 }
@@ -2971,9 +3160,9 @@ function validatePublicationReferences(current, teams, players) {
   if (current.rosterSize !== null && current.rosterSize !== 12) {
     throw new AllStarBohPublishValidationError('Published roster size must be 12.');
   }
-  if (current.planPublished && (current.phases.length !== 4 || current.legions.length !== 2)) {
+  if (current.planPublished && (current.phases.length !== 5 || current.legions.length !== 2)) {
     throw new AllStarBohPublishValidationError(
-      'A published plan requires exactly four phases and two Legions.'
+      'A published plan requires exactly five phases and two Legions.'
     );
   }
 

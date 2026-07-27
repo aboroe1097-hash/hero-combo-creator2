@@ -1,23 +1,22 @@
 /**
  * All-Star BoH — Stage 1 match plan template.
  *
- * Emits timeline entries in the shape the published contract already uses, so the admin side
- * can project this straight into `publishedPlayers/{uid}.timeline` without translation: four
- * phases by two legions gives each member exactly eight entries.
+ * Emits timeline entries in the published shape: five phases by two legions gives each member
+ * exactly ten entries. A canonical team plan may project paired substitutions without changing
+ * that phase contract.
  *
  * Vocabulary follows production, not the prototype this came from:
  *   seatNumber   1..12, score-ranked; seat 1 is the highest scorer
  *   roleGroupId  offensive | rune | top | bottom
  *   legionId     legion-1 | legion-2
  *
- * An explicit `identity.backup` flag controls backup behavior when supplied. Without that
- * flag, seats 11 and 12 remain the designated legacy backups. Backups enter at 5:00, so only
- * their opening entries carry `instruction.standby: true`.
+ * Backups default to no play. A substitution is explicit plan data with `backupPlayerId`,
+ * `replacesPlayerId`, and an exact `entryMinute` from 3 through 60. The outgoing timeline ends
+ * and the incoming timeline starts at the same minute, preserving the ten-player active cap.
  *
  * Typed instruction flags are sparse and optional for backend/UI integrators:
- *   standby        selected backup is not deployed yet in the opening 0-5 phase
- *   gatherCrystals this exact legion entry is assigned Sacred Crystal Mine gathering
- *
+ *   standby        player is not deployed in this phase
+ *   gatherCrystals this exact legion entry is assigned Sacred Crystal Mine gathering *
  * This is a default template only. A leadership override always wins, and nothing here is
  * authoritative once a publication exists.
  */
@@ -25,9 +24,9 @@
 export const BOH_STAGE1_PLAN_ID = 'stage-1';
 export const BOH_STAGE1_SEATS = 12;
 export const BOH_STAGE1_BACKUP_SEATS = Object.freeze([11, 12]);
-/** Backups are not on the field before this phase index. */
-export const BOH_STAGE1_BACKUP_ENTRY_PHASE = 1;
-export const BOH_STAGE1_BACKUP_ENTRY_MINUTE = 5;
+export const BOH_STAGE1_MAX_ACTIVE_PLAYERS = 10;
+export const BOH_STAGE1_MIN_SUBSTITUTION_MINUTE = 3;
+export const BOH_STAGE1_MATCH_END_MINUTE = 60;
 
 export const BOH_STAGE1_LEGIONS = Object.freeze([
   Object.freeze({ id: 'legion-1', label: 'Legion 1', order: 1 }),
@@ -51,9 +50,16 @@ export const BOH_STAGE1_PHASES = Object.freeze([
     startMinute: 15,
     endMinute: 30,
   }),
+  Object.freeze({
+    id: 'phase-5',
+    label: '30-60 Minutes',
+    order: 5,
+    startMinute: 30,
+    endMinute: 60,
+  }),
 ]);
 
-/** What unlocks each phase, plus the shared-alliance teleport and crystal guidance. */
+/** What unlocks each phase, plus shared-alliance teleport guidance. */
 export const BOH_STAGE1_MILESTONES = Object.freeze([
   Object.freeze({
     phaseId: 'phase-1',
@@ -61,14 +67,12 @@ export const BOH_STAGE1_MILESTONES = Object.freeze([
     teleportTag: 'Hold teleports',
     teleport:
       'The alliance starts with 5 shared teleports. The first Command Center capture adds 5.',
-    crystal: 'Send spare legions to Sacred Crystal Mines. 200 crystals builds one Sentry Tower.',
   }),
   Object.freeze({
     phaseId: 'phase-2',
     unlocks: 'Hospital, Armory and Fortress of Honor unlock',
     teleportTag: 'Bank one every 5 minutes',
     teleport: 'A held Command Center generates one teleport every 5 minutes. Recapturing adds 2.',
-    crystal: 'Keep one legion gathering. Armory and Hospital bonuses stack, so take them.',
   }),
   Object.freeze({
     phaseId: 'phase-3',
@@ -76,17 +80,162 @@ export const BOH_STAGE1_MILESTONES = Object.freeze([
     teleportTag: 'Spend on the Fortress',
     teleport:
       'Spend teleports to contest the Fortress of Honor. You may only teleport into our own territory.',
-    crystal: 'Convert crystals into Sentry Towers to widen our territory before the Rune spawns.',
   }),
   Object.freeze({
     phaseId: 'phase-4',
     unlocks: 'The Sanctuary opens and spawns the Divine Rune',
     teleportTag: 'Reserve for the Rune',
     teleport: 'Hold the remaining teleports for the Rune escort and Relay defence.',
-    crystal: 'Stop gathering. Every legion moves to the Rune escort; losing our Relay fails it.',
+  }),
+  Object.freeze({
+    phaseId: 'phase-5',
+    unlocks: 'The final 30 minutes remain editable as the battlefield changes',
+    teleportTag: 'Leadership call',
+    teleport: 'Use the shared alliance pool only on the active leadership call.',
   }),
 ]);
 
+/** Personal skills are separate from the shared alliance teleport pool. */
+export const BOH_STAGE1_BATTLEFIELD_SKILLS = Object.freeze([
+  Object.freeze({
+    id: 'battlefield-teleport',
+    label: 'Battlefield Teleport',
+    battleMeritCost: 1000,
+    effect: 'Adds one personal battlefield teleport.',
+  }),
+  Object.freeze({
+    id: 'emergency-treatment',
+    label: 'Emergency Treatment',
+    battleMeritCost: 1000,
+    effect: null,
+  }),
+  Object.freeze({ id: 'rapid-freeze', label: 'Rapid Freeze', battleMeritCost: 3000, effect: null }),
+  Object.freeze({ id: 'meteor-fall', label: 'Meteor Fall', battleMeritCost: 6000, effect: null }),
+]);
+
+export const BOH_STAGE1_BATTLE_MERIT = Object.freeze({
+  conversionRate: null,
+  configurablePerPlayer: true,
+});
+
+export const BOH_STAGE1_BUILDING_BUFFS = Object.freeze({
+  provisional: true,
+  exactStructureMapping: null,
+  knownBuffs: Object.freeze(['march-speed', 'occupation-speed', 'four-march-queues']),
+});
+const BOH_STAGE1_SCHEMATIC_BOUNDS = Object.freeze({ minX: 0, minY: 0, maxX: 100, maxY: 100 });
+function bohDeepFreeze(value) {
+  if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+  Object.values(value).forEach(bohDeepFreeze);
+  return Object.freeze(value);
+}
+function bohSchematicNode([id, kind, x, y, parentId = null]) {
+  return {
+    id,
+    kind,
+    parentId,
+    x,
+    y,
+    coordinateKind: 'schematic',
+    coverage: { minX: x - 2, minY: y - 2, maxX: x + 2, maxY: y + 2, width: 5, height: 5 },
+  };
+}
+const BOH_STAGE1_BLUE_SCHEMATIC_NODES = [
+  ['HOME', 'home', 50, 90],
+  ['T1', 'tower', 50, 85, 'HOME'],
+  ['T2', 'tower', 50, 80, 'T1'],
+  ['T3', 'tower', 50, 75, 'T2'],
+  ['T4', 'tower', 50, 70, 'T3'],
+  ['T5', 'tower', 48, 65, 'T4'],
+  ['T6', 'tower', 46, 60, 'T5'],
+  ['T7', 'tower', 44, 55, 'T6'],
+  ['T8', 'tower', 42, 50, 'T7'],
+  ['T9', 'tower', 40, 45, 'T8'],
+  ['T10', 'tower', 38, 40, 'T9'],
+  ['T11', 'tower', 36, 35, 'T10'],
+  ['T12', 'tower', 34, 30, 'T11'],
+  ['T13', 'tower', 32, 25, 'T12'],
+  ['T14', 'tower', 30, 20, 'T13'],
+  ['T15', 'tower', 54, 67, 'T4'],
+  ['T16', 'tower', 58, 64, 'T15'],
+  ['T17', 'tower', 62, 61, 'T16'],
+  ['T18', 'tower', 66, 58, 'T17'],
+  ['T19', 'tower', 70, 55, 'T18'],
+  ['FH1', 'fortress-of-honor', 30, 15],
+  ['FH2', 'fortress-of-honor', 75, 55],
+].map(bohSchematicNode);
+const BOH_STAGE1_SCHEMATIC_LINKS = BOH_STAGE1_BLUE_SCHEMATIC_NODES.filter((n) => n.parentId)
+  .map((n) => ({ from: n.parentId, to: n.id, kind: 'territory' }))
+  .concat([
+    { from: 'T14', to: 'FH1', kind: 'objective' },
+    { from: 'T19', to: 'FH2', kind: 'objective' },
+  ]);
+function bohMirrorSchematicNode(n) {
+  return bohSchematicNode([n.id, n.kind, 100 - n.x, 100 - n.y, n.parentId]);
+}
+export const BOH_STAGE1_TOWER_TOPOLOGY = bohDeepFreeze({
+  coordinateSystem: {
+    kind: 'schematic',
+    label: 'Schematic planning grid; not in-game coordinates',
+    bounds: BOH_STAGE1_SCHEMATIC_BOUNDS,
+    coverage: 'Each node claims a 5x5 grid footprint.',
+    redTransform: '180-degree mirror of blue',
+  },
+  sides: {
+    blue: { nodes: BOH_STAGE1_BLUE_SCHEMATIC_NODES, links: BOH_STAGE1_SCHEMATIC_LINKS },
+    red: {
+      nodes: BOH_STAGE1_BLUE_SCHEMATIC_NODES.map(bohMirrorSchematicNode),
+      links: BOH_STAGE1_SCHEMATIC_LINKS.map((link) => ({ ...link })),
+    },
+  },
+});
+function bohFootprintsTouch(a, b) {
+  return (
+    a.minX <= b.maxX + 1 && a.maxX + 1 >= b.minX && a.minY <= b.maxY + 1 && a.maxY + 1 >= b.minY
+  );
+}
+export function bohValidateStage1TowerTopology(topology = BOH_STAGE1_TOWER_TOPOLOGY) {
+  const errors = [];
+  if (topology?.coordinateSystem?.kind !== 'schematic')
+    errors.push('coordinate system must be schematic');
+  ['blue', 'red'].forEach((sideName) => {
+    const side = topology?.sides?.[sideName],
+      nodes = Array.isArray(side?.nodes) ? side.nodes : [],
+      links = Array.isArray(side?.links) ? side.links : [],
+      byId = new Map(nodes.map((n) => [n.id, n]));
+    if (byId.size !== nodes.length) errors.push(`${sideName}: duplicate node id`);
+    nodes.forEach((n) => {
+      if (n.coverage?.width !== 5 || n.coverage?.height !== 5)
+        errors.push(`${sideName}:${n.id} must claim 5x5 coverage`);
+      if (n.kind === 'tower') {
+        const p = byId.get(n.parentId);
+        if (!p)
+          errors.push(`${sideName}:${n.id} parent ${n.parentId || '(missing)'} does not exist`);
+        else if (!bohFootprintsTouch(n.coverage, p.coverage))
+          errors.push(`${sideName}:${n.id} territory is disconnected from ${p.id}`);
+      }
+    });
+    links.forEach((l) => {
+      if (!byId.has(l.from) || !byId.has(l.to))
+        errors.push(`${sideName}: invalid link ${l.from}->${l.to}`);
+    });
+    const reachable = new Set(['HOME']);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      links.forEach((l) => {
+        if (reachable.has(l.from) && !reachable.has(l.to)) {
+          reachable.add(l.to);
+          changed = true;
+        }
+      });
+    }
+    nodes.forEach((n) => {
+      if (!reachable.has(n.id)) errors.push(`${sideName}:${n.id} is not connected to HOME`);
+    });
+  });
+  return Object.freeze({ valid: errors.length === 0, errors: Object.freeze(errors) });
+}
 /**
  * Orders keyed by seat, then by phase index. Each row is
  * [roleLabel, legion 1 action, legion 2 action, teleport note].
@@ -330,33 +479,32 @@ const STAGE1_ORDERS = Object.freeze({
   ],
 });
 
-/**
- * A backup's opening instruction. The late start stays legible in action/note, with the typed
- * `instruction.standby` flag emitted only on these opening backup entries.
- */
+/** Default instruction for a backup who has no paired substitution event. */
 export const BOH_STAGE1_STANDBY_ORDER = Object.freeze({
   roleLabel: 'Backup - Standby',
-  action: `Stand by until ${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00 - you are not on the field yet`,
-  note: `Not deployed. You enter at ${BOH_STAGE1_BACKUP_ENTRY_MINUTE}:00; hold both legions until then.`,
+  action: 'Default no play - stand by unless leadership records a paired substitution',
+  note: 'Not deployed. A backup enters only through a paired substitution at minute 3 or later.',
 });
 
-/** A backup's instruction once on the field. */
+/** A backup's instruction after a valid paired substitution event. */
 export const BOH_STAGE1_BACKUP_ORDER = Object.freeze({
-  roleLabel: 'Backup - Support',
-  legion1: 'Replace any missing member and take over their Legion 1 task',
-  legion2: 'Reinforce towers, gathering, or the rune escort as needed',
-  note: 'No Teleport',
+  roleLabel: 'Backup - Substitution',
+  legion1: 'Take over the outgoing starter Legion 1 task',
+  legion2: 'Take over the outgoing starter Legion 2 task',
+  note: 'Use the outgoing starter plan unless leadership edits it.',
 });
 
 export function bohIsBackupSeat(seatNumber) {
   return BOH_STAGE1_BACKUP_SEATS.includes(Number(seatNumber));
 }
 
-/** True while a backup has not yet entered the battlefield. */
-export function bohIsStandby(seatNumber, phaseIndex) {
-  return bohIsBackupSeat(seatNumber) && Number(phaseIndex) < BOH_STAGE1_BACKUP_ENTRY_PHASE;
+/** True when a backup has no substitution, or the substitution has not reached this phase. */
+export function bohIsStandby(seatNumber, phaseIndex, substitution = null) {
+  if (!bohIsBackupSeat(seatNumber)) return false;
+  if (!substitution?.plays) return true;
+  const phase = BOH_STAGE1_PHASES[Number(phaseIndex)];
+  return !phase || Number(substitution.entryMinute) >= phase.endMinute;
 }
-
 function bohInstructionExtras(action, standby) {
   const extras = {};
   if (standby) extras.standby = true;
@@ -374,32 +522,161 @@ export function bohSeatRoleGroup(seatNumber) {
   return 'offensive';
 }
 
+function bohRosterPlayer(p, i) {
+  return {
+    playerId: String(p?.playerId || p?.id || ''),
+    seatNumber: Number(p?.seatNumber ?? i + 1),
+    backup: p?.backup === true,
+    active: p?.active !== false,
+  };
+}
+export function bohValidateStage1Roster(players = [], { release = false } = {}) {
+  const roster = Array.isArray(players) ? players.map(bohRosterPlayer) : [],
+    errors = [],
+    ids = new Set(),
+    seats = new Set();
+  roster.forEach((p) => {
+    if (!p.playerId) errors.push('every roster player requires playerId');
+    else if (ids.has(p.playerId)) errors.push(`duplicate playerId ${p.playerId}`);
+    ids.add(p.playerId);
+    if (!Number.isInteger(p.seatNumber) || p.seatNumber < 1 || p.seatNumber > 12)
+      errors.push(`invalid seat ${p.seatNumber}`);
+    else if (seats.has(p.seatNumber)) errors.push(`duplicate seat ${p.seatNumber}`);
+    seats.add(p.seatNumber);
+  });
+  const backups = roster.filter((p) => p.backup),
+    starters = roster.filter((p) => !p.backup && p.active);
+  if (roster.length > 12) errors.push('roster cannot exceed 12 players');
+  if (backups.length > 2) errors.push('draft cannot exceed 2 backups');
+  if (starters.length > BOH_STAGE1_MAX_ACTIVE_PLAYERS)
+    errors.push('no more than 10 starters may be active');
+  if (release && roster.length !== 12) errors.push('release roster requires exactly 12 players');
+  if (release && backups.length !== 2)
+    errors.push('release roster requires exactly 2 explicit backups');
+  if (release && starters.length !== 10)
+    errors.push('release roster requires exactly 10 active starters');
+  return Object.freeze({
+    valid: errors.length === 0,
+    errors: Object.freeze(errors),
+    counts: Object.freeze({
+      roster: roster.length,
+      backups: backups.length,
+      activeStarters: starters.length,
+    }),
+  });
+}
+export function bohValidateStage1Substitutions(players = [], subs = []) {
+  const roster = (Array.isArray(players) ? players : []).map(bohRosterPlayer),
+    base = bohValidateStage1Roster(players),
+    errors = [...base.errors],
+    byId = new Map(roster.map((p) => [p.playerId, p])),
+    usedB = new Set(),
+    usedR = new Set(),
+    events = [];
+  (Array.isArray(subs) ? subs : []).forEach((s, i) => {
+    const bId = String(s?.backupPlayerId || ''),
+      rId = String(s?.replacesPlayerId || ''),
+      minute = Number(s?.entryMinute),
+      backup = byId.get(bId),
+      replaced = byId.get(rId),
+      tag = `substitution ${i + 1}`;
+    if (!backup?.backup) errors.push(`${tag} requires a designated backup`);
+    if (!replaced || replaced.backup || !replaced.active)
+      errors.push(`${tag} requires an active replaced starter`);
+    if (bId && bId === rId) errors.push(`${tag} cannot replace the same player`);
+    if (!Number.isInteger(minute) || minute < 3 || minute > 60)
+      errors.push(`${tag} minute must be 3..60`);
+    if (usedB.has(bId)) errors.push(`backup ${bId} has multiple events`);
+    if (usedR.has(rId)) errors.push(`starter ${rId} is replaced twice`);
+    usedB.add(bId);
+    usedR.add(rId);
+    events.push(
+      Object.freeze({
+        id: s?.id || '',
+        teamId: s?.teamId || '',
+        backupPlayerId: bId,
+        replacesPlayerId: rId,
+        entryMinute: minute,
+        order: Number.isFinite(Number(s?.order)) ? Number(s.order) : i + 1,
+        note: String(s?.note || ''),
+      })
+    );
+  });
+  return Object.freeze({
+    valid: errors.length === 0,
+    errors: Object.freeze(errors),
+    events: Object.freeze(events),
+  });
+}
+export function bohStage1SubstitutionEvents(players = [], subs = []) {
+  const r = bohValidateStage1Substitutions(players, subs);
+  return r.valid ? r.events : Object.freeze([]);
+}
+
+function bohTimelineSubstitution(identity, plan) {
+  const players = Array.isArray(plan?.players)
+      ? plan.players
+      : Array.isArray(plan?.roster)
+        ? plan.roster
+        : [],
+    events = bohStage1SubstitutionEvents(players, plan?.substitutions || []),
+    playerId = String(identity?.playerId || ''),
+    event = events.find(
+      (item) => item.backupPlayerId === playerId || item.replacesPlayerId === playerId
+    );
+  if (!event) return null;
+  const roster = players.map(bohRosterPlayer),
+    backup = roster.find((player) => player.playerId === event.backupPlayerId),
+    replaced = roster.find((player) => player.playerId === event.replacesPlayerId);
+  return {
+    kind: event.backupPlayerId === playerId ? 'incoming' : 'outgoing',
+    event,
+    backup,
+    replaced,
+  };
+}
+
 /**
- * The eight timeline entries for one seat: four phases by two legions, in the published shape.
+ * The ten timeline entries for one seat: five phases by two legions, in the published shape.
  * `identity` supplies playerId, gameName, and optionally backup; everything else derives from
  * the template. An explicit backup value overrides the legacy seat 11/12 fallback.
  */
-export function bohStage1Timeline(seatNumber, identity = {}) {
+export function bohStage1Timeline(seatNumber, identity = {}, plan = {}) {
   const seat = Number(seatNumber);
   if (!Number.isInteger(seat) || seat < 1 || seat > BOH_STAGE1_SEATS) return [];
   const roleGroupId = identity.roleGroupId || bohSeatRoleGroup(seat);
   const hasExplicitBackup = typeof identity.backup === 'boolean';
   const backup = hasExplicitBackup ? identity.backup === true : bohIsBackupSeat(seat);
   const rows = backup ? null : STAGE1_ORDERS[seat] || null;
+  const swap = bohTimelineSubstitution(identity, plan);
+  const substitution = swap?.event || null;
+  const incoming = swap?.kind === 'incoming';
+  const outgoing = swap?.kind === 'outgoing';
   const entries = [];
 
   BOH_STAGE1_PHASES.forEach((phase, phaseIndex) => {
-    const standby = backup && phaseIndex < BOH_STAGE1_BACKUP_ENTRY_PHASE;
-    const template = rows ? rows[phaseIndex] : null;
+    const entryInPhase =
+      substitution &&
+      substitution.entryMinute >= phase.startMinute &&
+      substitution.entryMinute < phase.endMinute;
+    const standby = backup && (!incoming || substitution.entryMinute >= phase.endMinute);
+    const substitutedOut = outgoing && substitution.entryMinute <= phase.startMinute;
+    const template = rows ? rows[Math.min(phaseIndex, rows.length - 1)] : null;
     BOH_STAGE1_LEGIONS.forEach((legion) => {
       const isLegionOne = legion.id === 'legion-1';
       let roleLabel;
       let action;
       let note;
-      if (standby) {
-        roleLabel = BOH_STAGE1_STANDBY_ORDER.roleLabel;
-        action = BOH_STAGE1_STANDBY_ORDER.action;
-        note = BOH_STAGE1_STANDBY_ORDER.note;
+      if (standby || substitutedOut) {
+        roleLabel = substitutedOut
+          ? 'Starter - Substituted Out'
+          : BOH_STAGE1_STANDBY_ORDER.roleLabel;
+        action = substitutedOut
+          ? `Substituted out at @${substitution.entryMinute}:00 - remain off the battlefield`
+          : BOH_STAGE1_STANDBY_ORDER.action;
+        note = substitutedOut
+          ? 'The designated backup is active; follow leadership from off field.'
+          : BOH_STAGE1_STANDBY_ORDER.note;
       } else if (template) {
         roleLabel = template[0];
         action = isLegionOne ? template[1] : template[2];
@@ -407,15 +684,29 @@ export function bohStage1Timeline(seatNumber, identity = {}) {
       } else {
         roleLabel = BOH_STAGE1_BACKUP_ORDER.roleLabel;
         action = isLegionOne ? BOH_STAGE1_BACKUP_ORDER.legion1 : BOH_STAGE1_BACKUP_ORDER.legion2;
-        note = BOH_STAGE1_BACKUP_ORDER.note;
+        note =
+          (entryInPhase
+            ? '@' +
+              substitution.entryMinute +
+              ':00 replace the starter in seat ' +
+              swap.replaced.seatNumber +
+              '. '
+            : '') + BOH_STAGE1_BACKUP_ORDER.note;
+      }
+      if (outgoing && entryInPhase) {
+        action += ` until @${substitution.entryMinute}:00, then swap out for the designated backup`;
+        note = `Leave the battlefield at @${substitution.entryMinute}:00; the incoming backup starts at the same minute.`;
       }
       entries.push({
         playerId: identity.playerId || '',
         gameName: identity.gameName || '',
         phaseId: phase.id,
         phaseLabel: phase.label,
-        startMinute: phase.startMinute,
-        endMinute: phase.endMinute,
+        startMinute: incoming && entryInPhase ? substitution.entryMinute : phase.startMinute,
+        endMinute:
+          outgoing && entryInPhase && substitution.entryMinute > phase.startMinute
+            ? substitution.entryMinute
+            : phase.endMinute,
         legionId: legion.id,
         legionLabel: legion.label,
         seatNumber: seat,
@@ -430,7 +721,7 @@ export function bohStage1Timeline(seatNumber, identity = {}) {
           teleport: note || null,
           note: note || '',
           priority: null,
-          ...bohInstructionExtras(action, standby),
+          ...bohInstructionExtras(action, standby || substitutedOut),
         },
       });
     });
