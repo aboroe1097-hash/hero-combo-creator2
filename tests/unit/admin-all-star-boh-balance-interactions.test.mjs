@@ -427,6 +427,34 @@ async function dispatch(adapter, snapshot, type, payload = {}) {
   return adapter.dispatch({ type, payload, expectedRevision: snapshot.revision });
 }
 
+function mapperExactView({ unresolvedPlayerNumber = 2 } = {}) {
+  return JSON.stringify({
+    format: 'all-star-boh-exact-view',
+    version: 1,
+    savedAt: '2026-07-27T00:00:00.000Z',
+    state: {
+      teams: TEAM_IDS.map((teamId, teamIndex) => ({
+        id: teamId,
+        name: `Synthetic Team ${teamIndex + 1}`,
+        color: '#123456',
+        players: Array.from({ length: 12 }, (_, seatIndex) => {
+          const number = teamIndex * 12 + seatIndex + 1;
+          return {
+            id: `mapper-${number}`,
+            name:
+              number === unresolvedPlayerNumber
+                ? 'Synthetic Manual Link'
+                : `Player ${String(number).padStart(2, '0')}`,
+            score: 10_000 - number,
+            power: 1_000_000 + number,
+          };
+        }),
+      })),
+    },
+    view: { ignoreLeadership: false, search: '', language: 'all' },
+  });
+}
+
 function storedCalculatedScore(entry, overrides = {}) {
   return {
     profileId: entry.score.profileId,
@@ -440,14 +468,26 @@ function storedCalculatedScore(entry, overrides = {}) {
 
 async function saveTeamCaptains(adapter, snapshot) {
   let current = snapshot;
-  for (const team of current.teams) {
+  for (const initialTeam of snapshot.teams) {
+    const team = current.teams.find((item) => item.id === initialTeam.id);
+    const occupied = team.seats
+      .filter((seatEntry) => seatEntry.playerId)
+      .sort((left, right) => left.seatNumber - right.seatNumber);
+    const backupSeats = occupied.slice(-2);
     current = (
       await dispatch(adapter, current, 'saveTeamMetadata', {
         teamId: team.id,
         name: team.name,
         color: team.color,
-        captainId: team.seats[0].playerId,
+        captainId: occupied[0].playerId,
         notes: '',
+        seatEdit: { seatNumber: backupSeats[0].seatNumber, deployment: 'backup' },
+      })
+    ).snapshot;
+    current = (
+      await dispatch(adapter, current, 'saveTeamMetadata', {
+        teamId: team.id,
+        seatEdit: { seatNumber: backupSeats[1].seatNumber, deployment: 'backup' },
       })
     ).snapshot;
   }
@@ -2072,6 +2112,113 @@ test('direct seat assignment adds, replaces, moves, removes, and respects select
   adapter.stop();
 });
 
+test('mapper reconciliation stays memory-only and enforces exact, eligibility, duplicate, and save guards', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  const snapshot = await adapter.start();
+  const previewed = await dispatch(adapter, snapshot, 'previewMapperExactView', {
+    jsonText: mapperExactView(),
+  });
+  const preview = previewed.result;
+
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  assert.equal(preview.matchedCount, 71);
+  assert.equal(preview.unresolvedCount, 1);
+  assert.equal(preview.sourceRevision, undefined);
+  assert.equal(preview.submissionRevisions, undefined);
+  assert.equal(preview.reviewRevisions, undefined);
+  assert.deepEqual(Object.keys(preview.candidates[0]).sort(), [
+    'displayName',
+    'originalDisplayName',
+    'playerId',
+    'score',
+  ]);
+  assert.equal(preview.candidates[0].playerId, 'player-02');
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'reconcileMapperExactView', {
+      teamId: 'team-1',
+      seatNumber: 1,
+      playerId: 'player-02',
+    }),
+    (error) => error?.code === 'boh-mapper-reconcile-exact'
+  );
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'reconcileMapperExactView', {
+      teamId: 'team-1',
+      seatNumber: 2,
+      playerId: 'player-01',
+    }),
+    (error) => error?.code === 'boh-mapper-reconcile-duplicate'
+  );
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'reconcileMapperExactView', {
+      teamId: 'team-9',
+      seatNumber: 2,
+      playerId: 'player-02',
+    }),
+    (error) => error?.code === 'boh-mapper-reconcile-seat'
+  );
+
+  const reconciled = await dispatch(adapter, snapshot, 'reconcileMapperExactView', {
+    teamId: 'team-1',
+    seatNumber: 2,
+    playerId: 'player-02',
+  });
+  assert.equal(reconciled.result.matchedCount, 72);
+  assert.equal(reconciled.result.unresolvedCount, 0);
+  assert.equal(reconciled.result.candidates.length, 0);
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+
+  const cleared = await dispatch(adapter, snapshot, 'reconcileMapperExactView', {
+    teamId: 'team-1',
+    seatNumber: 2,
+    playerId: '',
+  });
+  assert.equal(cleared.result.unresolvedCount, 1);
+  assert.equal(cleared.result.candidates[0].playerId, 'player-02');
+  await dispatch(adapter, snapshot, 'reconcileMapperExactView', {
+    teamId: 'team-1',
+    seatNumber: 2,
+    playerId: 'player-02',
+  });
+
+  await assert.rejects(
+    adapter.dispatch({
+      type: 'reconcileMapperExactView',
+      payload: { teamId: 'team-1', seatNumber: 2, playerId: '', expectedRevision: 999 },
+    }),
+    (error) => error?.code === 'all-star-boh-ui-conflict'
+  );
+  primitiveStore.bumpSubmissionRevision('player-02');
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'saveMapperExactViewImport'),
+    (error) => error?.code === 'all-star-boh-conflict'
+  );
+  assert.equal(primitiveStore.bundleCalls.length, 0);
+  adapter.stop();
+
+  const unverifiedStore = createPrimitiveStoreFixture({
+    mutateSubmissions(submissions) {
+      submissions[1].status = 'draft';
+    },
+  });
+  const unverifiedAdapter = createAdminAllStarBohStoreAdapter(unverifiedStore);
+  const unverifiedSnapshot = await unverifiedAdapter.start();
+  await dispatch(unverifiedAdapter, unverifiedSnapshot, 'previewMapperExactView', {
+    jsonText: mapperExactView(),
+  });
+  await assert.rejects(
+    dispatch(unverifiedAdapter, unverifiedSnapshot, 'reconcileMapperExactView', {
+      teamId: 'team-1',
+      seatNumber: 2,
+      playerId: 'player-02',
+    }),
+    (error) => error?.code === 'boh-mapper-reconcile-unverified'
+  );
+  unverifiedAdapter.stop();
+});
+
 test('more than 72 verified signups require an explicit eligible pool before balancing', async () => {
   const primitiveStore = createPrimitiveStoreFixture({ playerCount: 80 });
   const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
@@ -2333,6 +2480,127 @@ test('rotations can be created, edited in place, and removed', async () => {
   adapter.stop();
 });
 
+test('mapper plan details save canonical private substitutions, resources, and annotations atomically', async () => {
+  const primitiveStore = createPrimitiveStoreFixture();
+  primitiveStore.teams.set('team-1', {
+    ...primitiveStore.teams.get('team-1'),
+    seats: Array.from({ length: 12 }, (_, index) => ({
+      id: `team-1-seat-${index + 1}`,
+      seatNumber: index + 1,
+      playerId: playerId(index),
+      displayName: `Player ${String(index + 1).padStart(2, '0')}`,
+      roleGroupId: ROLE_BY_SEAT[index],
+      lane: index < 10 ? 'main' : 'backup',
+      locked: false,
+      score: fixtureScore(index),
+    })),
+  });
+  primitiveStore.draft.plan.substitutions = [
+    {
+      id: 'existing-team-2-substitution',
+      teamId: 'team-2',
+      backupPlayerId: 'player-20',
+      replacesPlayerId: 'player-19',
+      entryMinute: 12,
+      order: 1,
+      note: 'Preserve another team.',
+    },
+  ];
+  primitiveStore.draft.plan.playerResources = [
+    { playerId: 'player-20', meritBudget: 5000, queueCapacity: 2, skillReservations: [] },
+  ];
+  primitiveStore.draft.plan.buildingAnnotations = [
+    {
+      id: 'mapper-team-2-building-1',
+      buildingId: 'team-2-fh',
+      note: 'Preserve this configurable annotation.',
+      order: 1,
+    },
+  ];
+
+  const adapter = createAdminAllStarBohStoreAdapter(primitiveStore);
+  let snapshot = await adapter.start();
+  snapshot = (
+    await dispatch(adapter, snapshot, 'saveMapperPlanDetails', {
+      teamId: 'team-1',
+      substitutions: [
+        {
+          backupPlayerId: 'player-11',
+          replacesPlayerId: 'player-01',
+          entryMinute: 3,
+          note: 'Paired replacement.',
+        },
+      ],
+      playerResources: [
+        {
+          playerId: 'player-01',
+          meritBudget: 6000,
+          queueCapacity: 3,
+          skillIds: ['battlefield-teleport', 'emergency-treatment'],
+        },
+      ],
+      buildingAnnotations: [
+        { buildingId: 'center-fortress', note: 'Configurable mapping note only.' },
+      ],
+    })
+  ).snapshot;
+
+  assert.equal(snapshot.plan.substitutions.length, 2);
+  const savedSubstitution = snapshot.plan.substitutions.find((item) => item.teamId === 'team-1');
+  assert.deepEqual(Object.keys(savedSubstitution).sort(), [
+    'backupPlayerId',
+    'entryMinute',
+    'id',
+    'note',
+    'order',
+    'replacesPlayerId',
+    'teamId',
+  ]);
+  assert.equal(savedSubstitution.entryMinute, 3);
+  assert.equal(
+    snapshot.plan.playerResources.some((item) => item.playerId === 'player-20'),
+    true
+  );
+  const resources = snapshot.plan.playerResources.find((item) => item.playerId === 'player-01');
+  assert.equal(resources.meritBudget, 6000);
+  assert.equal(resources.queueCapacity, 3);
+  assert.deepEqual(resources.skillReservations[0].effect, { personalTeleports: 1 });
+  assert.deepEqual(resources.skillReservations[1].effect, {});
+  assert.equal(
+    snapshot.plan.buildingAnnotations.some((item) => item.id === 'mapper-team-2-building-1'),
+    true
+  );
+  assert.equal(
+    snapshot.plan.buildingAnnotations.find((item) => item.buildingId === 'center-fortress').note,
+    'Configurable mapping note only.'
+  );
+
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'saveMapperPlanDetails', {
+      teamId: 'team-1',
+      substitutions: [
+        { backupPlayerId: 'player-11', replacesPlayerId: 'player-01', entryMinute: 3 },
+        { backupPlayerId: 'player-12', replacesPlayerId: 'player-01', entryMinute: 4 },
+      ],
+      playerResources: [],
+      buildingAnnotations: [],
+    }),
+    (error) => error?.code === 'all-star-boh-substitution-duplicate'
+  );
+  await assert.rejects(
+    dispatch(adapter, snapshot, 'saveMapperPlanDetails', {
+      teamId: 'team-1',
+      substitutions: [
+        { backupPlayerId: 'player-01', replacesPlayerId: 'player-02', entryMinute: 2 },
+      ],
+      playerResources: [],
+      buildingAnnotations: [],
+    }),
+    (error) => error?.code === 'all-star-boh-substitution-backup-required'
+  );
+  adapter.stop();
+});
+
 test('announcement and plan publishing each require validation of their current revision', async () => {
   const { adapter, primitiveStore } = await createBalancedFixture();
   let snapshot = adapter.getSnapshot();
@@ -2393,11 +2661,11 @@ test('announcement and plan publishing each require validation of their current 
   assert.equal(planCall.bundle.current.announcementPublished, true);
   assert.equal(planCall.bundle.current.planPublished, true);
   assert.equal(planCall.bundle.current.status, 'live');
-  assert.equal(planCall.bundle.current.phases.length, 4);
+  assert.equal(planCall.bundle.current.phases.length, 5);
   assert.equal(planCall.bundle.current.legions.length, 2);
   assert.equal('plan' in planCall.bundle.teams['team-1'], false);
   assert.equal(planCall.bundle.players['firebase-uid-01'].plan.roleDefaults.length, 0);
-  assert.equal(planCall.bundle.players['firebase-uid-01'].timeline.length, 8);
+  assert.equal(planCall.bundle.players['firebase-uid-01'].timeline.length, 10);
   assert.equal(
     planCall.bundle.players['firebase-uid-01'].timeline.every(
       (entry) => Object.keys(entry.instruction || {}).length > 0

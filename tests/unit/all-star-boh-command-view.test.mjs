@@ -57,6 +57,30 @@ test('command view preserves mapper lanes, roles, leadership, and explicit backu
   assert.equal(view.milestone.phaseId, 'phase-1');
 });
 
+test('command view fallback and supplied phase lists render every published phase dynamically', () => {
+  const fallback = buildBohCommandView({ phaseId: 'phase-5' });
+  assert.equal(fallback.phases.length, 5);
+  assert.deepEqual(
+    fallback.phases.map(({ id, startMinute, endMinute }) => ({ id, startMinute, endMinute })),
+    [
+      { id: 'phase-1', startMinute: 0, endMinute: 5 },
+      { id: 'phase-2', startMinute: 5, endMinute: 10 },
+      { id: 'phase-3', startMinute: 10, endMinute: 15 },
+      { id: 'phase-4', startMinute: 15, endMinute: 30 },
+      { id: 'phase-5', startMinute: 30, endMinute: 60 },
+    ]
+  );
+  assert.equal(fallback.phaseId, 'phase-5');
+
+  const supplied = buildBohCommandView({
+    phaseId: 'phase-6',
+    phases: [...fallback.phases, { id: 'phase-6', startMinute: 60, endMinute: 90, order: 6 }],
+  });
+  assert.equal(supplied.phases.length, 6);
+  assert.equal(supplied.phaseId, 'phase-6');
+  assert.equal(supplied.phase.label, 'Phase 6');
+});
+
 test('map target extraction deduplicates each player/code and preserves coordinates', () => {
   const objectives = bohStage1Objectives();
   const targets = extractBohMapTargets(

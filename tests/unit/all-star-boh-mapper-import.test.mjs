@@ -17,7 +17,12 @@ function exactView() {
     format: 'all-star-boh-exact-view',
     version: 1,
     ignored: '<script>outside allowlist</script>',
+    savedAt: '2026-07-26T12:00:00.000Z',
+    view: { ignoreLeadership: true, search: '<mapper search>', language: 'all' },
     state: {
+      schemaVersion: 7,
+      rosterRevision: 3,
+      tierConfig: { tier1Count: 4, tier2Count: 1, tier3Count: 1 },
       teams: Array.from({ length: 6 }, (_, teamIndex) => ({
         id: `team-${teamIndex + 1}`,
         name: teamIndex === 0 ? '<img src=x onerror=alert(1)>' : `Synthetic Team ${teamIndex + 1}`,
@@ -40,6 +45,7 @@ function exactView() {
             commandRoleSource: seatIndex === 0 ? 'explicit' : '',
             score: 100_000 - number,
             power: 999999999,
+            scoreSource: seatIndex === 1 ? 'manual-rough-estimate' : '',
           };
         }),
       })),
@@ -75,12 +81,16 @@ test('strict parser returns only the allowlisted ordered 6x12 mapper data', () =
     'seatNumber',
     'mapperId',
     'displayName',
+    'score',
+    'power',
+    'scoreSource',
     'locked',
     'userLockTeamId',
     'backup',
     'main',
     'planRole',
     'titleRole',
+    'titleRoleNote',
     'commandRole',
     'commandRoleSource',
   ]);
@@ -88,7 +98,18 @@ test('strict parser returns only the allowlisted ordered 6x12 mapper data', () =
   assert.equal(parsed.teams[0].players[0].backup, false);
   assert.equal(parsed.teams[0].players[0].main, false);
   assert.equal(parsed.teams[0].players[0].titleRole, '');
-  assert.equal(parsed.teams[0].players[0].power, undefined);
+  assert.equal(parsed.teams[0].players[0].score, 99_999);
+  assert.equal(parsed.teams[0].players[0].power, 999999999);
+  assert.equal(parsed.teams[0].players[1].scoreSource, 'manual-rough-estimate');
+  assert.deepEqual(parsed.planner, {
+    savedAt: '2026-07-26T12:00:00.000Z',
+    schemaVersion: 7,
+    rosterRevision: 3,
+    tierConfig: { tier1Count: 4, tier2Count: 1, tier3Count: 1 },
+    view: { ignoreLeadership: true, search: '<mapper search>', language: 'all' },
+    plan: null,
+    unsupportedFields: [],
+  });
   assert.equal(parsed.ignored, undefined);
 });
 
@@ -124,6 +145,18 @@ test('strict parser rejects malformed, oversized, wrong-contract, and corrupt sh
   const badPower = exactView();
   badPower.state.teams[0].players[0].power = -1;
   expectCode(() => parseAllStarBohMapperExactView(json(badPower)), 'boh-mapper-player-power');
+  const badScoreSource = exactView();
+  badScoreSource.state.teams[0].players[0].scoreSource = 'verified';
+  expectCode(
+    () => parseAllStarBohMapperExactView(json(badScoreSource)),
+    'boh-mapper-player-score-source'
+  );
+  const badView = exactView();
+  badView.view.ignoreLeadership = 'true';
+  expectCode(
+    () => parseAllStarBohMapperExactView(json(badView)),
+    'boh-mapper-view-ignore-leadership'
+  );
 });
 
 test('strict parser rejects duplicate mapper IDs and normalized imported names', () => {
@@ -139,6 +172,23 @@ test('strict parser rejects duplicate mapper IDs and normalized imported names',
     () => parseAllStarBohMapperExactView(json(duplicateName)),
     'boh-mapper-duplicate-player-name'
   );
+});
+
+test('strict parser ignores unsupported authored plan and map fields', () => {
+  const payload = exactView();
+  payload.state.reservePlayers = [{ ignored: true }];
+  payload.state.solverConflicts = [{ ignored: true }];
+  payload.state.plan = ['unsupported'];
+  payload.state.map = 'unsupported';
+
+  const planner = parseAllStarBohMapperExactView(json(payload)).planner;
+  assert.equal(planner.plan, null);
+  assert.deepEqual(planner.unsupportedFields.sort(), [
+    'state.map',
+    'state.plan',
+    'state.reservePlayers',
+    'state.solverConflicts',
+  ]);
 });
 
 test('optional mapper flags and title roles preserve zero, one, or two backups per team', () => {
@@ -175,6 +225,14 @@ test('mapper backup, main, title-role, and backup-count validation is strict', (
   badMain.state.teams[0].players[0].main = 1;
   expectCode(() => parseAllStarBohMapperExactView(json(badMain)), 'boh-mapper-player-main');
 
+  const conflictingDeployment = exactView();
+  conflictingDeployment.state.teams[0].players[0].backup = true;
+  conflictingDeployment.state.teams[0].players[0].main = true;
+  expectCode(
+    () => parseAllStarBohMapperExactView(json(conflictingDeployment)),
+    'boh-mapper-player-deployment'
+  );
+
   const badTitleRole = exactView();
   badTitleRole.state.teams[0].players[0].titleRole = 'unsupported';
   expectCode(
@@ -192,23 +250,12 @@ test('mapper backup, main, title-role, and backup-count validation is strict', (
   );
 });
 
-test('teams are score-ranked, reseated, and assigned the canonical rank roles', () => {
+test('exact-view import preserves mapper player order and derives only missing seat roles', () => {
   const payload = exactView();
   const originalPlayers = payload.state.teams[0].players;
-  originalPlayers.forEach((player, index) => {
+  originalPlayers.forEach((player) => {
     player.planRole = '';
-    player.score = 4_900 - index;
-    player.power = 700;
   });
-  originalPlayers[0].name = 'Rank Tie Zulu';
-  originalPlayers[0].score = 5_000;
-  originalPlayers[0].power = 900;
-  originalPlayers[1].name = 'Rank Tie Alpha';
-  originalPlayers[1].score = 5_000;
-  originalPlayers[1].power = 900;
-  originalPlayers[2].name = 'Rank Tie Middle';
-  originalPlayers[2].score = 5_000;
-  originalPlayers[2].power = 800;
   payload.state.teams[0].players = [
     originalPlayers[11],
     originalPlayers[6],
@@ -224,45 +271,51 @@ test('teams are score-ranked, reseated, and assigned the canonical rank roles', 
     originalPlayers[5],
   ];
 
-  const ranked = parseAllStarBohMapperExactView(json(payload)).teams[0].players;
+  const parsed = parseAllStarBohMapperExactView(json(payload)).teams[0].players;
   assert.deepEqual(
-    ranked.map((player) => player.mapperId),
+    parsed.map((player) => player.mapperId),
     [
-      'mapper-2',
-      'mapper-1',
-      'mapper-3',
-      'mapper-4',
-      'mapper-5',
-      'mapper-6',
-      'mapper-7',
-      'mapper-8',
-      'mapper-9',
-      'mapper-10',
-      'mapper-11',
       'mapper-12',
+      'mapper-7',
+      'mapper-3',
+      'mapper-1',
+      'mapper-10',
+      'mapper-5',
+      'mapper-9',
+      'mapper-2',
+      'mapper-11',
+      'mapper-4',
+      'mapper-8',
+      'mapper-6',
     ]
   );
   assert.deepEqual(
-    ranked.map((player) => player.seatNumber),
+    parsed.map((player) => player.seatNumber),
     Array.from({ length: 12 }, (_, index) => index + 1)
   );
   assert.deepEqual(
-    ranked.map((player) => player.planRole),
-    [
-      'offensive',
-      'offensive',
-      'top',
-      'bottom',
-      'top',
-      'bottom',
-      'rune',
-      'offensive',
-      'rune',
-      'rune',
-      'bottom',
-      'top',
-    ]
+    parsed.map((player) => player.planRole),
+    Array.from(
+      { length: 12 },
+      (_, index) =>
+        [
+          'offensive',
+          'offensive',
+          'top',
+          'bottom',
+          'top',
+          'bottom',
+          'rune',
+          'offensive',
+          'rune',
+          'rune',
+          'bottom',
+          'top',
+        ][index]
+    )
   );
+  assert.equal(parsed[0].score, originalPlayers[11].score);
+  assert.equal(parsed[0].power, originalPlayers[11].power);
 });
 
 function createStore() {
@@ -280,6 +333,14 @@ function createStore() {
     uid: 'uid-ambiguous',
     playerId: 'player-ambiguous',
     gameName: 'Synthetic Player 3',
+    status: 'submitted',
+    revision: 1,
+  });
+  submissions.push({
+    id: 'player-manual',
+    uid: 'uid-manual',
+    playerId: 'player-manual',
+    gameName: 'Manual Candidate',
     status: 'submitted',
     revision: 1,
   });
@@ -377,6 +438,83 @@ test('mapper preview matches only unique fresh verified names without writing', 
   adapter.stop();
 });
 
+test('manual mapper reconciliation stays in memory, enforces fresh unused identities, and saves guarded once', async () => {
+  const store = createStore();
+  const adapter = createAdminAllStarBohStoreAdapter(store);
+  const snapshot = await adapter.start();
+  const previewed = await adapter.dispatch({
+    type: 'previewMapperExactView',
+    payload: { jsonText: json(), expectedRevision: snapshot.revision },
+  });
+  assert.equal(store.calls.bundles.length, 0);
+  assert.ok(
+    previewed.result.candidates.some((candidate) => candidate.playerId === 'player-manual')
+  );
+
+  const reconciled = await adapter.dispatch({
+    type: 'reconcileMapperExactView',
+    payload: {
+      teamId: 'team-1',
+      seatNumber: 2,
+      playerId: 'player-manual',
+      expectedRevision: snapshot.revision,
+    },
+  });
+  assert.equal(store.calls.bundles.length, 0);
+  assert.equal(reconciled.result.matchedCount, 70);
+  assert.equal(reconciled.result.unresolvedCount, 2);
+  assert.equal(reconciled.result.teams[0].players[1].matchSource, 'manual');
+
+  await assert.rejects(
+    adapter.dispatch({
+      type: 'reconcileMapperExactView',
+      payload: {
+        teamId: 'team-1',
+        seatNumber: 3,
+        playerId: 'player-manual',
+        expectedRevision: snapshot.revision,
+      },
+    }),
+    (error) => error?.code === 'boh-mapper-reconcile-duplicate'
+  );
+  await assert.rejects(
+    adapter.dispatch({
+      type: 'reconcileMapperExactView',
+      payload: {
+        teamId: 'team-1',
+        seatNumber: 3,
+        playerId: 'player-2',
+        expectedRevision: snapshot.revision,
+      },
+    }),
+    (error) => error?.code === 'boh-mapper-reconcile-unverified'
+  );
+  await assert.rejects(
+    adapter.dispatch({
+      type: 'reconcileMapperExactView',
+      payload: {
+        teamId: 'team-1',
+        seatNumber: 3,
+        playerId: '',
+        expectedRevision: snapshot.revision + 1,
+      },
+    }),
+    (error) => error?.code === 'all-star-boh-ui-conflict'
+  );
+
+  await adapter.dispatch({
+    type: 'saveMapperExactViewImport',
+    payload: { expectedRevision: snapshot.revision },
+  });
+  assert.equal(store.calls.bundles.length, 1);
+  assert.equal(store.calls.publishes.length, 0);
+  const saved = store.calls.bundles[0];
+  assert.equal(saved.bundle.teams['team-1'].seats[1].playerId, 'player-manual');
+  assert.ok(saved.options.expectedSubmissionRevisions.some(([uid]) => uid === 'uid-manual'));
+  assert.ok(saved.options.expectedReviewRevisions.some(([uid]) => uid === 'uid-manual'));
+  adapter.stop();
+});
+
 test('explicit mapper save writes one draft bundle and never publishes private unresolved plans', async () => {
   const store = createStore();
   const adapter = createAdminAllStarBohStoreAdapter(store);
@@ -415,8 +553,16 @@ test('explicit mapper save writes one draft bundle and never publishes private u
   assert.equal(team1.seats[0].roleGroupId, 'offensive');
   assert.equal(team1.captainId, 'player-1');
   assert.equal(team1.seats[1].playerId, '');
+  assert.equal(
+    team1.seats[1].score,
+    99_998,
+    'rough mapper estimates persist only on private draft seats'
+  );
   assert.equal(team1.seats[1].locked, true);
-  assert.equal(team1.plan, undefined);
+  assert.equal(team1.plan.generated, true);
+  assert.equal(team1.plan.id, 'stage-1');
+  assert.deepEqual(team1.plan.notes, ['Keep this authored non-player note.']);
+  assert.ok(team1.plan.playerOverrides.length > 0);
   assert.equal(bundle.draft.plan.playerOverrides.length, 0);
   assert.equal(bundle.draft.plan.instructions.length, 0);
   assert.equal(bundle.draft.plan.rotations.length, 0);

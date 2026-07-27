@@ -138,6 +138,7 @@ test('safe legacy template matches the supplied structure without importing any 
       [5, 10],
       [10, 15],
       [15, 30],
+      [30, 60],
     ]
   );
   assert.deepEqual(
@@ -171,6 +172,7 @@ test('safe legacy template matches the supplied structure without importing any 
       [5, 10],
       [10, 15],
       [15, 30],
+      [30, 60],
     ]
   );
   const persistedStructure = JSON.stringify({

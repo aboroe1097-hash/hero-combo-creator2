@@ -8,6 +8,7 @@ import { BOH_STAGE1_LEGIONS, BOH_STAGE1_PHASES } from '../../js/all-star-boh-pla
 const adminPage = readFileSync('admin.html', 'utf8');
 const adminTab = readFileSync('tabs/admin.html', 'utf8');
 const adminModule = readFileSync('js/admin-all-star-boh.js', 'utf8');
+const adminCss = readFileSync('css/admin-all-star-boh.css', 'utf8');
 const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
 const roleGroups = [
@@ -228,6 +229,56 @@ test('Admin All-Star publish stage owns the event schedule editor hooks', () => 
   assert.match(adminModule, /'saveEventSchedule'/);
   assert.match(adminModule, /adminStore\.saveEventSchedule\(schedule, \{\s*expectedRevision,/);
   assert.doesNotMatch(adminTab, /event-schedule|bohScheduleTitle/);
+});
+
+test('mapper-first admin source keeps the board primary and exposes safe direct controls', () => {
+  assert.match(adminModule, /const STAGES = \[\s*\['teams',[\s\S]*?\['plans',[\s\S]*?\['publish'/u);
+  assert.match(adminModule, /options\.initialStage[\s\S]*?: 'teams'/u);
+  assert.match(adminModule, /boh-admin-workspace-bar/u);
+  assert.match(adminModule, /data-action=\x22mapper-board-search\x22/u);
+  assert.match(adminModule, /data-action=\x22mapper-board-filter\x22/u);
+  assert.match(adminModule, /data-form=\x22mapper-seat-details\x22/u);
+  assert.match(adminModule, /name=\x22deployment\x22/u);
+  assert.match(adminModule, /name=\x22roleGroupId\x22/u);
+  assert.match(adminModule, /name=\x22commandRole\x22/u);
+  assert.match(adminModule, /data-action=\x22validate-revision\x22/u);
+  assert.match(adminModule, /data-stage=\x22publish\x22/u);
+  assert.match(adminModule, /role=\x22dialog\x22 aria-modal=\x22true\x22/u);
+  assert.match(
+    adminModule,
+    /\['overview', 'Overview'\][\s\S]*?\['roles', 'Roles'\][\s\S]*?\['timeline', 'Timeline'\]/u
+  );
+  assert.match(adminModule, /escapeHtml\(player\.displayName\)/u);
+  assert.match(adminModule, /escapeHtml\(candidate\.displayName\)/u);
+  assert.match(adminModule, /'reconcileMapperExactView'/u);
+  assert.match(
+    adminModule,
+    /boh-admin-team-board[\s\S]*?boh-admin-advanced-tools/u,
+    'secondary compatibility tools should follow the six-team board'
+  );
+  assert.match(adminModule, /\['signups',/u);
+  assert.match(adminModule, /\['scoring',/u);
+  assert.match(adminModule, /setAttribute\('tabindex', '-1'\)/u);
+  assert.match(adminModule, /dialogPanel\?\.focus\?\.\(\)/u);
+  assert.match(adminCss, /\.boh-admin-workspace-bar/u);
+  assert.match(adminCss, /\.boh-admin-board-toolbar/u);
+  assert.match(adminCss, /\.boh-admin-seat-editor/u);
+  assert.match(adminCss, /\.boh-admin-team-plan-dialog/u);
+  assert.match(adminModule, /saveMapperPlanDetails/u);
+  assert.match(adminModule, /data-form="mapper-plan-details"/u);
+  assert.match(adminModule, /BOH_PLAYER_RESOURCE_SKILLS/u);
+  assert.match(adminModule, /Standby - does not play/u);
+  assert.match(
+    adminModule,
+    /const unresolvedMapperScore =[\s\S]*?Boolean\(cleanText\(seat\.displayName\)\)[\s\S]*?finiteNumber\(seat\.score\) > 0/u
+  );
+  assert.match(
+    adminModule,
+    /!player\.playerId &&[\s\S]{0,220}Boolean\(cleanText\(player\.displayName\)\)[\s\S]{0,220}finiteNumber\(player\.score\) > 0/u
+  );
+  assert.match(adminModule, /entry minute must be from 3 through 60/iu);
+  assert.match(adminModule, /phases.length !== 5/u);
+  assert.match(adminCss, /\.boh-admin-plan-details/u);
 });
 
 test('hidden event schedules can save without native or adapter time requirements', () => {

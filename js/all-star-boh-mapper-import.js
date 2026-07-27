@@ -11,8 +11,26 @@ const TITLE_ROLES = new Set(['kills', 'tower', 'escort', 'gathering']);
 const MAX_BACKUPS_PER_TEAM = 2;
 const MAX_NAME_LENGTH = 120;
 const MAX_METADATA_LENGTH = 80;
+const MAX_SEARCH_LENGTH = 160;
 const MAX_SCORE = 10_000_000;
 const MAX_POWER = 10_000_000_000_000;
+const SCORE_SOURCES = new Set(['', 'manual-rough-estimate']);
+const UNSUPPORTED_STATE_FIELDS = Object.freeze([
+  'reservePlayers',
+  'commandOverrides',
+  'disabledOverrideRules',
+  'benchedPlayerIds',
+  'selectedId',
+  'manualMode',
+  'whaleCurve',
+  'overridesEnabled',
+  'preferredNotes',
+  'solverConflicts',
+  'playerOverrides',
+  'rotations',
+  'plan',
+  'map',
+]);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -48,6 +66,18 @@ function optionalBoolean(value, { code, label }) {
   if (value === undefined) return false;
   if (typeof value !== 'boolean') fail(code, `${label} must be true or false.`);
   return value;
+}
+
+function optionalInteger(value, { code, label, minimum = 0, maximum = 1_000_000_000 }) {
+  if (value === undefined) return null;
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    fail(code, `${label} must be an integer from ${minimum} to ${maximum}.`);
+  }
+  return value;
+}
+
+function optionalRecord(value, code, message) {
+  return value === undefined ? {} : record(value, code, message);
 }
 
 function normalizePlayer(value, teamId, seatNumber, ids, names) {
@@ -142,6 +172,30 @@ function normalizePlayer(value, teamId, seatNumber, ids, names) {
     );
   }
   const explicit = rawSource === 'explicit' && ['leader', 'coleader'].includes(rawRole);
+  const scoreSource = optionalText(player.scoreSource, {
+    code: 'boh-mapper-player-score-source',
+    label: `Team ${teamId} seat ${seatNumber} score source`,
+  }).toLocaleLowerCase('en');
+  if (!SCORE_SOURCES.has(scoreSource)) {
+    fail(
+      'boh-mapper-player-score-source',
+      `Team ${teamId} seat ${seatNumber} has an unsupported score source.`
+    );
+  }
+  const backup = optionalBoolean(player.backup, {
+    code: 'boh-mapper-player-backup',
+    label: `Team ${teamId} seat ${seatNumber} backup value`,
+  });
+  const main = optionalBoolean(player.main, {
+    code: 'boh-mapper-player-main',
+    label: `Team ${teamId} seat ${seatNumber} main value`,
+  });
+  if (backup && main) {
+    fail(
+      'boh-mapper-player-deployment',
+      `Team ${teamId} seat ${seatNumber} cannot be both main and backup.`
+    );
+  }
   return {
     seatNumber,
     mapperId,
@@ -156,18 +210,18 @@ function normalizePlayer(value, teamId, seatNumber, ids, names) {
       label: `Team ${teamId} seat ${seatNumber} power`,
       max: MAX_POWER,
     }),
+    scoreSource,
     locked: player.locked === true,
     userLockTeamId,
-    backup: optionalBoolean(player.backup, {
-      code: 'boh-mapper-player-backup',
-      label: `Team ${teamId} seat ${seatNumber} backup value`,
-    }),
-    main: optionalBoolean(player.main, {
-      code: 'boh-mapper-player-main',
-      label: `Team ${teamId} seat ${seatNumber} main value`,
-    }),
+    backup,
+    main,
     planRole,
     titleRole,
+    titleRoleNote: optionalText(player.titleRoleNote, {
+      code: 'boh-mapper-player-title-role-note',
+      label: `Team ${teamId} seat ${seatNumber} title role note`,
+      max: MAX_SEARCH_LENGTH,
+    }),
     commandRole: explicit ? rawRole : '',
     commandRoleSource: explicit ? 'explicit' : '',
   };
@@ -227,23 +281,83 @@ function normalizeTeam(value, index, ids, names) {
       `Team ${id} may contain at most ${MAX_BACKUPS_PER_TEAM} backups.`
     );
   }
-  const normalizedPlayers = players
-    .slice()
-    .sort(
-      (left, right) =>
-        right.score - left.score ||
-        right.power - left.power ||
-        normalizeBohNameKey(left.displayName).localeCompare(normalizeBohNameKey(right.displayName))
-    )
-    .map(({ score, power, ...player }, rankIndex) => {
-      const rankedSeatNumber = rankIndex + 1;
-      return {
-        ...player,
-        seatNumber: rankedSeatNumber,
-        planRole: player.planRole || bohSeatRoleGroup(rankedSeatNumber),
-      };
-    });
+  // Exact-view player order is the mapper's visible seat order. Re-sorting here would
+  // silently change rank-derived roles, command assignments, and Stage-1 instructions.
+  const normalizedPlayers = players.map((player, playerIndex) => ({
+    ...player,
+    seatNumber: playerIndex + 1,
+    planRole: player.planRole || bohSeatRoleGroup(playerIndex + 1),
+  }));
   return { id, name, color, fightTime, tier, players: normalizedPlayers };
+}
+
+function normalizePlannerMetadata(root, state) {
+  const view = optionalRecord(
+    root.view,
+    'boh-mapper-view-shape',
+    'Mapper import view must be an object.'
+  );
+  const tierConfig = optionalRecord(
+    state.tierConfig,
+    'boh-mapper-tier-config',
+    'Mapper tier config must be an object.'
+  );
+  const savedAt = optionalText(root.savedAt, {
+    code: 'boh-mapper-saved-at',
+    label: 'Mapper save timestamp',
+    max: 40,
+  });
+  if (savedAt && Number.isNaN(Date.parse(savedAt))) {
+    fail('boh-mapper-saved-at', 'Mapper save timestamp must be an ISO date-time string.');
+  }
+  return {
+    savedAt,
+    schemaVersion: optionalInteger(state.schemaVersion, {
+      code: 'boh-mapper-schema-version',
+      label: 'Mapper schema version',
+    }),
+    rosterRevision: optionalInteger(state.rosterRevision, {
+      code: 'boh-mapper-roster-revision',
+      label: 'Mapper roster revision',
+    }),
+    tierConfig: {
+      tier1Count: optionalInteger(tierConfig.tier1Count, {
+        code: 'boh-mapper-tier-config',
+        label: 'Mapper tier 1 count',
+        maximum: 6,
+      }),
+      tier2Count: optionalInteger(tierConfig.tier2Count, {
+        code: 'boh-mapper-tier-config',
+        label: 'Mapper tier 2 count',
+        maximum: 6,
+      }),
+      tier3Count: optionalInteger(tierConfig.tier3Count, {
+        code: 'boh-mapper-tier-config',
+        label: 'Mapper tier 3 count',
+        maximum: 6,
+      }),
+    },
+    view: {
+      ignoreLeadership: optionalBoolean(view.ignoreLeadership, {
+        code: 'boh-mapper-view-ignore-leadership',
+        label: 'Mapper view ignoreLeadership',
+      }),
+      search: optionalText(view.search, {
+        code: 'boh-mapper-view-search',
+        label: 'Mapper view search',
+        max: MAX_SEARCH_LENGTH,
+      }),
+      language: optionalText(view.language, {
+        code: 'boh-mapper-view-language',
+        label: 'Mapper view language',
+        max: 20,
+      }),
+    },
+    plan: null,
+    unsupportedFields: UNSUPPORTED_STATE_FIELDS.filter((field) => state[field] !== undefined).map(
+      (field) => `state.${field}`
+    ),
+  };
 }
 
 export function parseAllStarBohMapperExactView(input) {
@@ -291,6 +405,7 @@ export function parseAllStarBohMapperExactView(input) {
     version: BOH_MAPPER_IMPORT_VERSION,
     teamCount: 6,
     playerCount: 72,
+    planner: normalizePlannerMetadata(root, state),
     teams,
   };
 }

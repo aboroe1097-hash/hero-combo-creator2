@@ -121,11 +121,18 @@ export const BOH_DEFAULT_PHASES = deepFreeze([
   { id: 'phase-5-10', label: '5–10 Minutes', startMinute: 5, endMinute: 10, order: 2 },
   { id: 'phase-10-15', label: '10–15 Minutes', startMinute: 10, endMinute: 15, order: 3 },
   { id: 'phase-15-30', label: '15–30 Minutes', startMinute: 15, endMinute: 30, order: 4 },
+  { id: 'phase-30-60', label: '30–60 Minutes', startMinute: 30, endMinute: 60, order: 5 },
 ]);
 
 export const BOH_DEFAULT_LEGIONS = deepFreeze([
   { id: 'legion-1', label: 'Legion 1', order: 1 },
   { id: 'legion-2', label: 'Legion 2', order: 2 },
+]);
+export const BOH_PLAYER_RESOURCE_SKILLS = deepFreeze([
+  { id: 'battlefield-teleport', meritCost: 1000, effect: { personalTeleports: 1 } },
+  { id: 'emergency-treatment', meritCost: 1000, effect: {} },
+  { id: 'rapid-freeze', meritCost: 3000, effect: {} },
+  { id: 'meteor-fall', meritCost: 6000, effect: {} },
 ]);
 
 function modelError(code, details = {}) {
@@ -2069,6 +2076,168 @@ function normalizeRotations(source, context) {
   });
 }
 
+function planBoundedInteger(value, field, minimum, maximum, options = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (options.optional) return null;
+    throw modelError('boh_plan_integer_invalid', { field, minimum, maximum });
+  }
+  const parsed = typeof value === 'number' ? value : Number(normalizeNumericText(String(value)));
+  if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw modelError('boh_plan_integer_invalid', { field, minimum, maximum });
+  }
+  return parsed;
+}
+
+function planBoundedOrder(value, index, field) {
+  const parsed = value === undefined || value === null || value === '' ? index + 1 : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100_000) {
+    throw modelError('boh_plan_order_invalid', { field });
+  }
+  return parsed;
+}
+
+function normalizePlanSubstitutions(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_substitutions_invalid');
+  if (source.length > 500) {
+    throw modelError('boh_substitution_count_invalid', { maximum: 500 });
+  }
+  const ids = new Set();
+  const incomingPlayerIds = new Set();
+  const outgoingPlayerIds = new Set();
+  return source.map((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw modelError('boh_substitution_invalid', { index });
+    }
+    const id = normalizeBohId(entry.id, `substitution-${index + 1}`);
+    const teamId = normalizeBohId(entry.teamId);
+    const backupPlayerId = normalizeBohId(entry.backupPlayerId);
+    const replacesPlayerId = normalizeBohId(entry.replacesPlayerId);
+    if (!teamId || !backupPlayerId || !replacesPlayerId) {
+      throw modelError('boh_substitution_identity_required', { substitutionId: id });
+    }
+    if (backupPlayerId === replacesPlayerId) {
+      throw modelError('boh_substitution_players_must_differ', { substitutionId: id });
+    }
+    if (ids.has(id)) throw modelError('boh_substitution_id_duplicate', { substitutionId: id });
+    if (incomingPlayerIds.has(backupPlayerId)) {
+      throw modelError('boh_substitution_incoming_duplicate', { playerId: backupPlayerId });
+    }
+    if (outgoingPlayerIds.has(replacesPlayerId)) {
+      throw modelError('boh_substitution_outgoing_duplicate', { playerId: replacesPlayerId });
+    }
+    ids.add(id);
+    incomingPlayerIds.add(backupPlayerId);
+    outgoingPlayerIds.add(replacesPlayerId);
+    return {
+      id,
+      teamId,
+      backupPlayerId,
+      replacesPlayerId,
+      entryMinute: planBoundedInteger(entry.entryMinute, 'entryMinute', 3, 60),
+      order: planBoundedOrder(entry.order, index, 'substitutionOrder'),
+      note: boundedPlainText(entry.note, 2000, 'substitutionNote', { multiline: true }),
+    };
+  });
+}
+
+function normalizePlanPlayerResources(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_player_resources_invalid');
+  if (source.length > BOH_FIELD_SIZE) {
+    throw modelError('boh_player_resource_count_invalid', { maximum: BOH_FIELD_SIZE });
+  }
+  const skillById = new Map(BOH_PLAYER_RESOURCE_SKILLS.map((skill) => [skill.id, skill]));
+  const playerIds = new Set();
+  return source.map((entry, resourceIndex) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw modelError('boh_player_resource_invalid', { index: resourceIndex });
+    }
+    const playerId = normalizeBohId(entry.playerId);
+    if (!playerId) throw modelError('boh_player_resource_player_required');
+    if (playerIds.has(playerId)) {
+      throw modelError('boh_player_resource_player_duplicate', { playerId });
+    }
+    playerIds.add(playerId);
+    const reservations = entry.skillReservations ?? [];
+    if (!Array.isArray(reservations)) {
+      throw modelError('boh_skill_reservations_invalid', { playerId });
+    }
+    const skillIds = new Set();
+    const skillReservations = reservations.map((reservation, index) => {
+      if (!reservation || typeof reservation !== 'object' || Array.isArray(reservation)) {
+        throw modelError('boh_skill_reservation_invalid', { playerId, index });
+      }
+      const id = normalizeBohId(reservation.id);
+      const skill = skillById.get(id);
+      if (!skill) throw modelError('boh_skill_reservation_unsupported', { playerId, skillId: id });
+      if (skillIds.has(id)) {
+        throw modelError('boh_skill_reservation_duplicate', { playerId, skillId: id });
+      }
+      skillIds.add(id);
+      return {
+        id,
+        meritCost: skill.meritCost,
+        order: planBoundedOrder(reservation.order, index, 'skillReservationOrder'),
+        effect: normalizeJsonValue(skill.effect),
+      };
+    });
+    return {
+      playerId,
+      meritBudget: planBoundedInteger(entry.meritBudget, 'meritBudget', 0, 10 ** 12, {
+        optional: true,
+      }),
+      queueCapacity: planBoundedInteger(entry.queueCapacity, 'queueCapacity', 1, 4, {
+        optional: true,
+      }),
+      skillReservations,
+    };
+  });
+}
+
+function normalizePlanBuildingAnnotations(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_building_annotations_invalid');
+  if (source.length > 100) {
+    throw modelError('boh_building_annotation_count_invalid', { maximum: 100 });
+  }
+  const ids = new Set();
+  return source.map((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw modelError('boh_building_annotation_invalid', { index });
+    }
+    const id = normalizeBohId(entry.id, `building-annotation-${index + 1}`);
+    const buildingId = normalizeBohId(entry.buildingId);
+    if (!buildingId) {
+      throw modelError('boh_building_annotation_building_required', { annotationId: id });
+    }
+    if (ids.has(id)) {
+      throw modelError('boh_building_annotation_id_duplicate', { annotationId: id });
+    }
+    ids.add(id);
+    return {
+      id,
+      buildingId,
+      note: boundedPlainText(entry.note, 2000, 'buildingAnnotationNote', { multiline: true }),
+      order: planBoundedOrder(entry.order, index, 'buildingAnnotationOrder'),
+    };
+  });
+}
+function normalizePlanNotes(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_plan_notes_invalid');
+  if (source.length > 100) throw modelError('boh_plan_note_count_invalid', { maximum: 100 });
+  const seen = new Set();
+  return source
+    .map((note) => boundedPlainText(note, 2000, 'planNote', { multiline: true }))
+    .filter((note) => {
+      const key = note.toLocaleLowerCase('en');
+      if (!note || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 /** Normalize and validate the admin-editable phase/Legion plan document. */
 export function normalizeBohPlan(input = {}) {
   const roleGroups = normalizeBohRoleGroups(input.roleGroups);
@@ -2103,6 +2272,10 @@ export function normalizeBohPlan(input = {}) {
     seatOverrides: normalizePlanRules(input.seatOverrides, 'seat-override', context),
     playerOverrides: normalizePlanRules(input.playerOverrides, 'player-override', context),
     rotations: normalizeRotations(input.rotations, context),
+    substitutions: normalizePlanSubstitutions(input.substitutions),
+    playerResources: normalizePlanPlayerResources(input.playerResources),
+    buildingAnnotations: normalizePlanBuildingAnnotations(input.buildingAnnotations),
+    notes: normalizePlanNotes(input.notes),
   };
 }
 

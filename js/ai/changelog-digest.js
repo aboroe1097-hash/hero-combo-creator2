@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.15";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.16";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.16",
+    "date": "2026-07-26",
+    "highlights": [
+      "Fixed the All-Star published-player Firestore contract so UID and playerId identity fields remain consistent.",
+      "Replaced the Admin All-Star five-stage Team Builder/Plans wizard with a mapper-first workflow.",
+      "Added explicit manual reconciliation from unmatched mapper names to fresh verified signups.",
+      "Added five-phase personal plans with connected 5x5 tower routes, player-specific crystal and Battle Merit assignments, and paired minute-3-or-later substitutions that preserve the ten-player field limit.",
+      "Added private per-team resource, skill, building-buff, and substitution editing without exposing draft-only identities or tactics in player publications.",
+      "Added independent editable Battle Simulator profile drafts for Side A and Side B, including a visual Specialization Towers board, selective source application, and aligned header controls."
+    ]
+  },
   {
     "version": "14.2.15",
     "date": "2026-07-26",
@@ -92,15 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed the All-Star BoH Team Builder eligible-player pool so checkbox changes immediately update the selected-player count and save-button count before saving, with a compact searchable/filterable manager that starts collapsed when the saved count is already valid.",
       "Improved All-Star Team Builder outputs with exact team-count columns, leader plus co-leader metadata, ranked role assignment, batch commitment-score helpers, and shareable CSV/PNG team exports for roles or scores/power."
-    ]
-  },
-  {
-    "version": "14.2.6",
-    "date": "2026-07-21",
-    "highlights": [
-      "Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.",
-      "Evaluated every keep-together group as one shared lane, surfaced unresolved or conflicting groups, and showed active-versus-excluded totals in the admin workspace.",
-      "Added a formula-safe active Epic planning CSV with player locale, preferences, lane overrides, effective lanes, and group IDs."
     ]
   }
 ].map((release) =>

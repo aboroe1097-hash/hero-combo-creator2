@@ -35,6 +35,7 @@ import {
 import {
   applySetupSnapshot,
   buildSetupSnapshot,
+  createDefaultBattleProfileDraft,
   parseSetupSnapshot,
   setupSnapshotToEngineConfig,
 } from './battle-simulator-setup.js';
@@ -75,6 +76,24 @@ import {
   loadSpecializationState,
 } from './specialization-towers-v2-store.js';
 import {
+  SPECIALIZATION_COLUMNS,
+  SPECIALIZATION_RESEARCH,
+  SPECIALIZATION_TROOPS,
+  getSpecializationResearchImage,
+} from './specialization-towers-v2-data.js';
+import { SPECIALIZATION_PLANNER_ASSETS } from './specialization-towers-v2-assets.js';
+import {
+  buildSpecializationSnapshot,
+  createEmptySpecializationState,
+  getColumnProgress,
+  getResearchNodeAccess,
+  getResearchProgress,
+  resetResearch,
+  resetTower,
+  setResearchNodes,
+  toggleResearchNode,
+} from './specialization-towers-v2-model.js';
+import {
   BATTLE_PROFILE_OVERRIDE_STORAGE_KEY,
   createBattleProfileOverride,
   hasSavedEquipmentProfile,
@@ -82,7 +101,7 @@ import {
   writeBattleProfileOverride,
 } from './battle-simulator-profile-store.js';
 
-const APP_VERSION = '14.2.15';
+const APP_VERSION = '14.2.16';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [
@@ -108,6 +127,16 @@ let setupRevision = 0;
 let presetStore = {};
 let translator = createBattleSimulatorTranslator('en');
 let activeBatchController = null;
+let battleProfileTowersStylesPromise = null;
+const profileDraftUi = new Map(
+  SIDE_IDS.map((sideId) => [
+    sideId,
+    {
+      activeTroop: 'cavalry',
+      researchId: SPECIALIZATION_COLUMNS[1].researches[0],
+    },
+  ])
+);
 
 const t = (id, values = {}) => translator.t(id, values);
 const plural = (id, count, values = {}) => translator.plural(id, count, values);
@@ -122,6 +151,16 @@ const INTEGER_FORMAT = Object.freeze({ format: (value) => formatInteger(value) }
 const PERCENT_FORMAT = Object.freeze({ format: (value) => formatPercent(value) });
 const preferredScrollBehavior = () =>
   globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+function loadBattleProfileTowersStyles() {
+  battleProfileTowersStylesPromise ??= import('../css/battle-profile-towers-embedded.css').catch(
+    (error) => {
+      console.error('[battle-simulator] profile tower styles failed to load', error);
+      return null;
+    }
+  );
+  return battleProfileTowersStylesPromise;
+}
 
 function cancelActiveBatch() {
   activeBatchController?.abort();
@@ -299,7 +338,10 @@ function rebuildCapturedSourceSnapshot(sideId) {
     side.equipmentLoadout,
     side.equipmentEffectOverrides
   );
-  const specializationState = loadSpecializationState();
+  const specializationState =
+    side.profileDraft?.towersApplied && side.profileDraft?.towerState
+      ? buildSpecializationSnapshot(side.profileDraft.towerState)
+      : loadSpecializationState();
   const specializationSnapshot = buildStatContributionSnapshot(specializationState);
   const specialization = resolveSpecializationBattleSources(
     specializationState,
@@ -383,6 +425,195 @@ function cloneBattleProfileValue(value) {
     : JSON.parse(JSON.stringify(value));
 }
 
+function selectedProfileSources(draft) {
+  const sources = draft?.sources || {};
+  return {
+    research: sources.research === true,
+    equipment: sources.equipment === true,
+    towers: sources.towers === true,
+  };
+}
+
+function researchSnapshotWithOverrides(snapshot, overrides = []) {
+  const base = cloneBattleProfileValue(snapshot || createEmptyResearchSnapshot());
+  const amounts = new Map(
+    (Array.isArray(overrides) ? overrides : []).map((entry) => [
+      String(entry?.sourceId || ''),
+      Number(entry?.amount),
+    ])
+  );
+  base.sources = (base.sources || []).map((source) => {
+    if (!amounts.has(source.sourceId)) return source;
+    const maximum = Math.max(0, Number(source.amount) || 0);
+    const amount = Math.min(maximum, Math.max(0, amounts.get(source.sourceId) || 0));
+    return { ...source, amount };
+  });
+  return base;
+}
+
+function replaceCapturedSourceType(snapshot, sourceTypes, sources, excludedSources = []) {
+  const typeSet = new Set(sourceTypes);
+  const next = cloneBattleProfileValue(
+    snapshot || {
+      schemaVersion: 1,
+      sources: [],
+      excludedSources: [],
+      diagnostics: [],
+      catalogRevisions: {},
+    }
+  );
+  next.sources = [
+    ...(next.sources || []).filter((source) => !typeSet.has(source.sourceType)),
+    ...cloneBattleProfileValue(sources || []),
+  ];
+  next.excludedSources = [
+    ...(next.excludedSources || []).filter((source) => !typeSet.has(source.sourceType)),
+    ...cloneBattleProfileValue(excludedSources || []),
+  ];
+  return next;
+}
+
+export function createBattleProfileDraft(base = {}, options = {}) {
+  const sideId = SIDE_IDS.includes(options.sideId) ? options.sideId : 'A';
+  const defaults = createDefaultBattleProfileDraft(sideId);
+  const label = String(options.label || defaults.label)
+    .trim()
+    .slice(0, 48);
+  const researchSnapshot = base.researchSnapshot || createEmptyResearchSnapshot();
+  const equipmentProfile = base.equipmentProfile || null;
+  const towerState = base.specializationState || base.towerState || null;
+  return {
+    ...defaults,
+    label: label || defaults.label,
+    researchOverrides: (researchSnapshot.sources || []).map((source) => ({
+      sourceId: source.sourceId,
+      amount: Math.max(0, Number(source.amount) || 0),
+    })),
+    ...(equipmentProfile?.equipmentLoadout
+      ? { equipmentLoadout: cloneEquipmentLoadout(equipmentProfile.equipmentLoadout) }
+      : {}),
+    ...(equipmentProfile?.equipmentEffectOverrides
+      ? {
+          equipmentEffectOverrides: cloneBattleProfileValue(
+            equipmentProfile.equipmentEffectOverrides
+          ),
+        }
+      : {}),
+    ...(towerState ? { towerState: buildSpecializationSnapshot(towerState) } : {}),
+    towersApplied: false,
+  };
+}
+
+export function applySavedProfileDraftToSide(
+  targetSide,
+  draft,
+  base = {},
+  { scenarioContext = {} } = {}
+) {
+  const next = cloneBattleProfileValue(targetSide);
+  const profileDraft = cloneBattleProfileValue(draft || {});
+  const selected = selectedProfileSources(profileDraft);
+  if (!selected.research && !selected.equipment && !selected.towers) {
+    throw new RangeError('A saved-profile draft must select at least one source.');
+  }
+
+  let capture = cloneBattleProfileValue(next.capturedSourceSnapshot);
+  if (selected.research) {
+    const baseResearch = base.researchSnapshot;
+    if (!(baseResearch?.sources?.length > 0)) {
+      throw new RangeError('The selected Research source is missing.');
+    }
+    next.researchEnabled = true;
+    next.researchSnapshot = researchSnapshotWithOverrides(
+      baseResearch,
+      profileDraft.researchOverrides
+    );
+    capture = replaceCapturedSourceType(
+      capture,
+      ['research'],
+      next.researchSnapshot.sources,
+      next.researchSnapshot.excludedSources
+    );
+    capture.catalogRevisions = {
+      ...(capture.catalogRevisions || {}),
+      research: next.researchSnapshot.catalogVersion || null,
+    };
+  }
+
+  if (selected.equipment) {
+    const equipmentLoadout =
+      profileDraft.equipmentLoadout || base.equipmentProfile?.equipmentLoadout;
+    if (!equipmentLoadout) throw new RangeError('The selected Equipment source is missing.');
+    next.equipmentLoadout = cloneEquipmentLoadout(equipmentLoadout);
+    next.equipmentEffectOverrides = cloneBattleProfileValue(
+      profileDraft.equipmentEffectOverrides ||
+        profileDraft.effectOverrides ||
+        base.equipmentProfile?.equipmentEffectOverrides || {
+          overrideSchemaVersion: 1,
+          overrides: [],
+          diagnostics: [],
+        }
+    );
+    const equipment = resolveEquipmentLoadout(next.equipmentLoadout);
+    const overrides = resolveEquipmentEffectOverrides(
+      next.equipmentLoadout,
+      next.equipmentEffectOverrides
+    );
+    capture = replaceCapturedSourceType(
+      capture,
+      ['equipment', 'equipment-override'],
+      [...(equipment.contributions || []), ...(overrides.sources || [])]
+    );
+    capture.catalogRevisions = {
+      ...(capture.catalogRevisions || {}),
+      equipment: equipment.catalogRevision || null,
+    };
+  }
+
+  if (selected.towers) {
+    const towerState = profileDraft.towerState || base.specializationState || base.towerState;
+    if (!towerState) throw new RangeError('The selected Towers source is missing.');
+    const normalizedTowerState = buildSpecializationSnapshot(towerState);
+    const specializationSnapshot = buildStatContributionSnapshot(normalizedTowerState);
+    if (!(specializationSnapshot.entries?.length > 0)) {
+      throw new RangeError('The selected Towers source is missing.');
+    }
+    const specialization = resolveSpecializationBattleSources(
+      normalizedTowerState,
+      scenarioContext
+    );
+    profileDraft.towerState = normalizedTowerState;
+    profileDraft.towersApplied = true;
+    next.specializationCapture = {
+      snapshot: specializationSnapshot,
+      result: specialization,
+    };
+    capture = replaceCapturedSourceType(
+      capture,
+      ['specialization'],
+      specialization.sources,
+      (specialization.excluded || []).map((entry) => ({
+        sourceType: 'specialization',
+        sourceId: `specialization:${entry.id}`,
+        label: entry.id,
+        reason: entry.reason,
+        verification: { status: 'excluded' },
+        provenance: { contextField: entry.contextField || null },
+      }))
+    );
+  } else {
+    profileDraft.towersApplied = Boolean(
+      targetSide?.profileDraft?.towersApplied || draft?.towersApplied
+    );
+    if (!profileDraft.towerState && targetSide?.profileDraft?.towerState) {
+      profileDraft.towerState = cloneBattleProfileValue(targetSide.profileDraft.towerState);
+    }
+  }
+
+  next.profileDraft = profileDraft;
+  next.capturedSourceSnapshot = capture;
+  return next;
+}
 function readBattleProfileReadiness() {
   const researchSnapshot = buildBattleResearchSnapshot({ battleMode: state.battleMode });
   const researchEntries = Number(researchSnapshot.savedProgress?.entryCount) || 0;
@@ -397,6 +628,7 @@ function readBattleProfileReadiness() {
     researchSnapshot,
     researchEntries,
     researchReady,
+    specializationState: buildSpecializationSnapshot(specializationState),
     specializationSnapshot,
     towerEntries,
     towersReady: towerEntries > 0,
@@ -412,6 +644,233 @@ function profileStatusMarkup(ready) {
   return `<span class="battle-profile-state ${ready ? 'is-ready' : 'is-missing'}" aria-label="${label}">${icon(ready ? 'play' : 'warning')}<strong>${label}</strong></span>`;
 }
 
+function ensureBattleProfileDraft(sideId, readiness) {
+  const side = state.sides[sideId];
+  if (!side.profileDraft) {
+    side.profileDraft = createBattleProfileDraft(readiness, { sideId });
+  }
+  side.profileDraft.sources = {
+    research: side.profileDraft.sources?.research === true,
+    equipment: side.profileDraft.sources?.equipment === true,
+    towers: side.profileDraft.sources?.towers === true,
+  };
+  side.profileDraft.researchOverrides = Array.isArray(side.profileDraft.researchOverrides)
+    ? side.profileDraft.researchOverrides
+    : [];
+  if (!side.profileDraft.equipmentLoadout && readiness.equipmentProfile?.equipmentLoadout) {
+    side.profileDraft.equipmentLoadout = cloneEquipmentLoadout(
+      readiness.equipmentProfile.equipmentLoadout
+    );
+  }
+  if (
+    !side.profileDraft.equipmentEffectOverrides &&
+    readiness.equipmentProfile?.equipmentEffectOverrides
+  ) {
+    side.profileDraft.equipmentEffectOverrides = cloneBattleProfileValue(
+      readiness.equipmentProfile.equipmentEffectOverrides
+    );
+  }
+  if (!side.profileDraft.towerState && readiness.specializationState) {
+    side.profileDraft.towerState = buildSpecializationSnapshot(readiness.specializationState);
+  }
+  return side.profileDraft;
+}
+
+function profileDraftSourceReady(sideId, sourceId, readiness) {
+  const draft = state.sides[sideId].profileDraft;
+  if (sourceId === 'research') return readiness.researchReady;
+  if (sourceId === 'equipment') {
+    return Boolean(
+      readiness.equipmentReady ||
+      draft.equipmentLoadout?.setId ||
+      draft.equipmentLoadout?.pieces?.length
+    );
+  }
+  if (!draft.towerState) return false;
+  return (buildStatContributionSnapshot(draft.towerState).entries?.length || 0) > 0;
+}
+
+function profileDraftCanApply(sideId, readiness) {
+  const draft = state.sides[sideId].profileDraft;
+  const selected = selectedProfileSources(draft);
+  const selectedIds = Object.keys(selected).filter((sourceId) => selected[sourceId]);
+  return (
+    selectedIds.length > 0 &&
+    selectedIds.every((sourceId) => profileDraftSourceReady(sideId, sourceId, readiness))
+  );
+}
+
+function researchOverrideAmount(draft, source) {
+  const override = draft.researchOverrides.find((entry) => entry.sourceId === source.sourceId);
+  return Math.min(
+    Math.max(0, Number(source.amount) || 0),
+    Math.max(0, Number(override?.amount ?? source.amount) || 0)
+  );
+}
+
+function renderProfileResearchEditor(sideId, draft, readiness) {
+  const sources = readiness.researchSnapshot?.sources || [];
+  return `<section class="battle-profile-source-editor" data-profile-research-editor="${sideId}">
+    <div class="battle-profile-source-heading"><div><strong>${t('profile.research')}</strong><span>${t('profile.researchEditorHint')}</span></div><div class="battle-profile-mini-actions"><button type="button" class="battle-secondary-button" data-profile-research-restore="${sideId}">${t('profile.researchRestore')}</button><button type="button" class="battle-secondary-button" data-profile-research-zero="${sideId}">${t('profile.researchZero')}</button></div></div>
+    <div class="battle-profile-research-list">
+      ${
+        sources.length
+          ? sources
+              .map((source) => {
+                const maximum = Math.max(0, Number(source.amount) || 0);
+                const amount = researchOverrideAmount(draft, source);
+                const category = source.provenance?.progressKey || source.statKey;
+                return `<label class="battle-profile-research-row"><span><strong>${escapeHtml(source.label)}</strong><small>${escapeHtml(category)}</small></span><input type="number" min="0" max="${maximum}" step="any" value="${amount}" data-profile-research-amount="${sideId}" data-source-id="${escapeHtml(source.sourceId)}" aria-label="${t('profile.researchAmount', { name: source.label })}" /></label>`;
+              })
+              .join('')
+          : `<p class="battle-profile-empty">${t('profile.researchMissing')}</p>`
+      }
+    </div>
+  </section>`;
+}
+
+function renderProfileEquipmentEditor(sideId, draft) {
+  const loadout = draft.equipmentLoadout || createDefaultEquipmentLoadout();
+  const setId = loadout.setId || '';
+  const resolved = resolveEquipmentLoadout(loadout);
+  const gradeId = resolved.loadout?.pieces?.[0]?.gradeId || 'gold';
+  const enhancement = resolved.loadout?.pieces?.[0]?.enhancementLevel || 0;
+  const grades = equipmentGradesForSet(setId);
+  return `<section class="battle-profile-source-editor" data-profile-equipment-editor="${sideId}">
+    <div class="battle-profile-source-heading"><div><strong>${t('profile.equipment')}</strong><span>${t('profile.equipmentEditorHint')}</span></div></div>
+    <div class="battle-profile-equipment-controls">
+      <label class="battle-field"><span>${t('equipment.set')}</span><select data-profile-equipment-set="${sideId}"><option value="">${t('equipment.none')}</option>${EQUIPMENT_SET_OPTIONS.map((option) => `<option value="${option.id}" ${option.id === setId ? 'selected' : ''}>${t(option.labelKey)}</option>`).join('')}</select></label>
+      <label class="battle-field"><span>${t('equipment.grade')}</span><select data-profile-equipment-grade="${sideId}" ${setId ? '' : 'disabled'}>${grades.map((grade) => `<option value="${grade}" ${grade === gradeId ? 'selected' : ''}>${t(`equipment.grade.${grade}`)}</option>`).join('')}</select></label>
+      <label class="battle-field"><span>${t('equipment.enhancement')}</span><input type="number" min="0" max="100" step="1" value="${enhancement}" data-profile-equipment-enhancement="${sideId}" ${setId ? '' : 'disabled'} /></label>
+    </div>
+  </section>`;
+}
+
+function profileTowerSprite(asset) {
+  if (!asset) return '';
+  const viewBox = `${asset.column * 120} ${288 + asset.row * 129} 120 129`;
+  return `<svg class="specialization-research-image specialization-planner-sprite" viewBox="${viewBox}" focusable="false" aria-hidden="true"><image href="${escapeHtml(asset.src)}" width="960" height="933"></image></svg>`;
+}
+
+function profileTowerResearchName(research, troopId) {
+  return /^Training\b/u.test(research.name)
+    ? `${t(`profile.troop.${troopId}`)} ${research.name}`
+    : research.name;
+}
+
+function profileTowerNodeIds(research) {
+  const ids = research.nodes.map((node) => node.id);
+  if (research.passiveSkillNodeId !== null && research.passiveSkillNodeId !== undefined) {
+    ids.push(research.passiveSkillNodeId);
+  }
+  return ids;
+}
+
+function renderProfileTowerResearch(sideId, towerState, troopId, researchId, selectedId) {
+  const research = SPECIALIZATION_RESEARCH[researchId];
+  const progress = getResearchProgress(towerState, troopId, researchId);
+  const percent = Math.round(progress.percent);
+  const name = profileTowerResearchName(research, troopId);
+  return `<article class="specialization-research" data-specialization-research="${researchId}"><button type="button" class="specialization-research-node" data-profile-tower-research="${sideId}" data-troop-id="${troopId}" data-research-id="${researchId}" data-state="${progress.isComplete ? 'complete' : progress.completedNodes ? 'in-progress' : 'unstarted'}" aria-pressed="${researchId === selectedId}" aria-label="${t('profile.towerResearchAria', { name, percent })}"><svg class="specialization-node-progress-ring" viewBox="0 0 42 42" aria-hidden="true"><circle class="specialization-circular-progress-track" cx="21" cy="21" r="17"></circle><circle class="specialization-circular-progress-value" cx="21" cy="21" r="17" pathLength="100" stroke-dasharray="${percent} 100"></circle></svg><span class="specialization-node-icon">${profileTowerSprite(
+    getSpecializationResearchImage(researchId, troopId) ||
+      SPECIALIZATION_PLANNER_ASSETS['research/encounter.webp']
+  )}</span><span class="specialization-node-percent">${percent}%</span></button><strong class="specialization-skill-name">${escapeHtml(name)}</strong><span class="specialization-node-cost">${formatInteger(research.cost)}</span></article>`;
+}
+
+function renderProfileTowerInspector(sideId, towerState, troopId, researchId) {
+  const research = SPECIALIZATION_RESEARCH[researchId];
+  const progress = getResearchProgress(towerState, troopId, researchId);
+  const access = getResearchNodeAccess(towerState, troopId, researchId);
+  const partial = access.mode === 'partial-evidence';
+  return `<aside class="specialization-inspector" data-profile-tower-inspector="${sideId}" aria-label="${t('profile.towerInspectorAria')}"><div class="specialization-inspector-inner"><div class="specialization-inspector-header"><h4>${escapeHtml(profileTowerResearchName(research, troopId))}</h4></div><section class="specialization-progress-editor"><span class="specialization-field-label">${t('profile.towerProgress')}</span><div class="specialization-progress-control" role="group" aria-label="${t('profile.towerProgressControls')}"><button type="button" data-profile-tower-step="${sideId}" data-step="-1" aria-label="${t('profile.decrease')}" ${partial ? 'disabled' : ''}>-</button><output>${Math.round(progress.percent)}%</output><button type="button" data-profile-tower-step="${sideId}" data-step="1" aria-label="${t('profile.increase')}" ${partial ? 'disabled' : ''}>+</button>${[25, 50, 75, 100].map((value) => `<button type="button" data-profile-tower-set="${sideId}" data-percent="${value}" ${partial ? 'disabled' : ''}>${value}%</button>`).join('')}</div></section><div class="specialization-actions"><button type="button" class="specialization-action specialization-action--primary" data-profile-tower-max="${sideId}" ${partial ? 'disabled' : ''}>${t('profile.max')}</button><button type="button" class="specialization-action" data-profile-tower-unmax="${sideId}">${t('profile.unmax')}</button></div>${
+    partial
+      ? `<section class="specialization-node-path" data-layout="evidence-branches" aria-label="${t('profile.attributeNodes')}">${access.entries
+          .filter((entry) => entry.visible)
+          .map(
+            (entry, index) =>
+              `<button type="button" class="specialization-node" data-profile-tower-node="${sideId}" data-node-id="${entry.nodeId}" data-node-state="${entry.state}" aria-pressed="${entry.state === 'learned'}" aria-label="${t('profile.attributeNode', { number: index + 1 })}" ${!entry.selectable && entry.state !== 'learned' ? 'disabled' : ''}><span class="specialization-node-icon">${entry.state === 'learned' ? '&#10003;' : index + 1}</span></button>`
+          )
+          .join('')}</section>`
+      : ''
+  }</div></aside>`;
+}
+
+function profileTowerPercent(towerState, troopId) {
+  const columnIds = Object.keys(SPECIALIZATION_COLUMNS).map(Number);
+  return Math.round(
+    columnIds.reduce(
+      (sum, columnId) => sum + getColumnProgress(towerState, troopId, columnId).percent,
+      0
+    ) / columnIds.length
+  );
+}
+
+function renderProfileTowersEditor(sideId, draft) {
+  const towerState = buildSpecializationSnapshot(
+    draft.towerState || createEmptySpecializationState()
+  );
+  const ui = profileDraftUi.get(sideId);
+  const troopId = SPECIALIZATION_TROOPS.includes(ui.activeTroop) ? ui.activeTroop : 'cavalry';
+  const selectedId = SPECIALIZATION_RESEARCH[ui.researchId]
+    ? ui.researchId
+    : SPECIALIZATION_COLUMNS[1].researches[0];
+  const columnIds = Object.keys(SPECIALIZATION_COLUMNS)
+    .map(Number)
+    .sort((left, right) => left - right);
+  return `<section class="battle-profile-source-editor battle-profile-towers" data-profile-towers-editor="${sideId}"><div class="battle-profile-source-heading"><div><strong>${t('profile.towers')}</strong><span>${t('profile.towersEditorHint')}</span></div><div class="battle-profile-mini-actions"><button type="button" class="battle-secondary-button" data-profile-tower-max-all="${sideId}">${t('profile.towerMax')}</button><button type="button" class="battle-secondary-button" data-profile-tower-unmax-all="${sideId}">${t('profile.towerUnmax')}</button></div></div><div class="specialization-tower-tabs" role="tablist" aria-label="${t('profile.towerTabsAria')}">${SPECIALIZATION_TROOPS.map((troop) => `<button type="button" class="specialization-tower-tab" data-profile-tower-tab="${sideId}" data-troop-id="${troop}" role="tab" aria-selected="${troop === troopId}" aria-label="${t('profile.towerTabAria', { troop: t(`profile.troop.${troop}`), percent: profileTowerPercent(towerState, troop) })}"><span class="specialization-tower-tab-copy"><span class="specialization-tower-tab-name">${t(`profile.troop.${troop}`)}</span><span class="specialization-tower-tab-progress">${profileTowerPercent(towerState, troop)}%</span></span></button>`).join('')}</div><section class="specialization-workspace"><div class="specialization-graph-shell"><div class="specialization-graph-scroll" data-specialization-tower-graph tabindex="0" role="region" aria-label="${t('profile.towerGraphAria', { troop: t(`profile.troop.${troopId}`) })}"><div class="specialization-columns">${columnIds
+    .map((columnId) => {
+      const column = SPECIALIZATION_COLUMNS[columnId];
+      const progress = getColumnProgress(towerState, troopId, columnId);
+      return `<section class="specialization-column" data-specialization-column="${columnId}"><header class="specialization-column-header"><span class="specialization-column-number">${columnId}</span><span class="specialization-column-title">${escapeHtml(column.name)}</span><div class="specialization-column-progress"><progress class="specialization-column-progress-track" max="100" value="${Math.round(progress.percent)}"></progress><span>${Math.round(progress.percent)}%</span></div></header><div class="specialization-node-list">${column.researches.map((researchId) => renderProfileTowerResearch(sideId, towerState, troopId, researchId, selectedId)).join('')}</div></section>`;
+    })
+    .join(
+      ''
+    )}</div></div></div>${renderProfileTowerInspector(sideId, towerState, troopId, selectedId)}</section></section>`;
+}
+function profileDraftDiff(sideId, readiness) {
+  const draft = state.sides[sideId].profileDraft;
+  const baseResearch = new Map(
+    (readiness.researchSnapshot?.sources || []).map((source) => [source.sourceId, source])
+  );
+  const research = draft.researchOverrides.filter((entry) => {
+    const base = baseResearch.get(entry.sourceId);
+    return base && Number(entry.amount) !== Number(base.amount);
+  }).length;
+  const draftEquipment = draft.equipmentLoadout || createDefaultEquipmentLoadout();
+  const baseEquipment =
+    readiness.equipmentProfile?.equipmentLoadout || createDefaultEquipmentLoadout();
+  const equipment =
+    JSON.stringify(draftEquipment) === JSON.stringify(baseEquipment)
+      ? t('profile.same')
+      : t('profile.changed');
+  const draftTower = buildSpecializationSnapshot(
+    draft.towerState || createEmptySpecializationState()
+  );
+  const baseTower = buildSpecializationSnapshot(
+    readiness.specializationState || createEmptySpecializationState()
+  );
+  let towers = 0;
+  for (const troopId of SPECIALIZATION_TROOPS) {
+    for (const researchId of Object.keys(SPECIALIZATION_RESEARCH)) {
+      const left = draftTower.troops[troopId].researches[researchId].selectedNodeIds;
+      const right = baseTower.troops[troopId].researches[researchId].selectedNodeIds;
+      if (JSON.stringify(left) !== JSON.stringify(right)) towers += 1;
+    }
+  }
+  return { research, equipment, towers };
+}
+function renderBattleProfileDraft(sideId, readiness) {
+  const draft = ensureBattleProfileDraft(sideId, readiness);
+  const selected = selectedProfileSources(draft);
+  const selectedLabels = Object.keys(selected)
+    .filter((sourceId) => selected[sourceId])
+    .map((sourceId) => t(`profile.source.${sourceId}`))
+    .join(', ');
+  const canApply = profileDraftCanApply(sideId, readiness);
+  const diff = profileDraftDiff(sideId, readiness);
+  return `<article class="battle-profile-draft" data-profile-draft="${sideId}"><div class="battle-profile-draft-heading"><label class="battle-field"><span>${t('profile.label')}</span><input type="text" minlength="1" maxlength="48" required value="${escapeHtml(draft.label)}" data-profile-label="${sideId}" /></label>${profileStatusMarkup(canApply)}</div><fieldset class="battle-profile-source-toggles"><legend>${t('profile.sources')}<small>${t('profile.sourceHint')}</small></legend>${['research', 'equipment', 'towers'].map((sourceId) => `<label><input type="checkbox" data-profile-source="${sideId}" data-source-id="${sourceId}" ${selected[sourceId] ? 'checked' : ''} /><span>${t(`profile.source.${sourceId}`)}</span>${profileStatusMarkup(profileDraftSourceReady(sideId, sourceId, readiness))}</label>`).join('')}</fieldset><details class="battle-profile-editor" data-profile-editor="${sideId}"><summary>${t('profile.editSide', { side: sideId })}</summary><div class="battle-profile-editor-body">${renderProfileResearchEditor(sideId, draft, readiness)}${renderProfileEquipmentEditor(sideId, draft)}${renderProfileTowersEditor(sideId, draft)}</div></details><div class="battle-profile-apply"><p><strong>${t('profile.applySummary', { side: sideId, sources: selectedLabels || t('profile.noneSelected') })}</strong><span class="battle-profile-diff-summary">${t('profile.diffSummary', diff)}</span><span>${t('profile.preserveSummary')}</span></p><button class="battle-primary-button" type="button" data-profile-apply="${sideId}" ${canApply ? '' : 'disabled'}>${t('profile.applySide', { side: sideId })}</button></div></article>`;
+}
+
 function renderBattleProfilePanel() {
   const readiness = readBattleProfileReadiness();
   const savedDate = readiness.equipmentProfile?.savedAt
@@ -420,50 +879,34 @@ function renderBattleProfilePanel() {
         timeStyle: 'short',
       })
     : '';
-  return `
-    <section class="battle-profile-panel" data-profile-checklist data-profile-storage-key="${escapeHtml(BATTLE_PROFILE_OVERRIDE_STORAGE_KEY)}" aria-labelledby="battleProfileTitle">
-      <div class="battle-profile-heading">
-        <div class="battle-panel-heading">
-          <p class="battle-section-kicker">${t('profile.kicker')}</p>
-          <h2 id="battleProfileTitle">${t('profile.title')}</h2>
-          <p>${t('profile.copy')}</p>
-        </div>
-        <span class="battle-profile-summary ${readiness.allReady ? 'is-ready' : 'is-incomplete'}">${t(readiness.allReady ? 'profile.complete' : 'profile.incomplete')}</span>
-      </div>
-      ${readiness.storageError ? `<p class="battle-profile-storage-warning" role="alert">${icon('warning')}<span>${t('profile.storageError')}</span></p>` : ''}
-      <div class="battle-profile-grid">
-        <article class="battle-profile-card ${readiness.researchReady ? 'is-ready' : 'is-missing'}">
-          <div class="battle-profile-card-heading"><h3>${t('profile.research')}</h3>${profileStatusMarkup(readiness.researchReady)}</div>
-          <p>${readiness.researchReady ? t('profile.researchReady', { count: formatInteger(readiness.researchEntries) }) : t('profile.researchMissing')}</p>
-          ${readiness.researchReady ? '' : `<a class="battle-profile-link" href="index.html#research">${t('profile.openResearch')}</a>`}
-        </article>
-        <article class="battle-profile-card ${readiness.equipmentReady ? 'is-ready' : 'is-missing'}">
-          <div class="battle-profile-card-heading"><h3>${t('profile.equipment')}</h3>${profileStatusMarkup(readiness.equipmentReady)}</div>
-          <p>${readiness.equipmentReady ? t('profile.equipmentReady', { date: savedDate }) : t('profile.equipmentMissing')}</p>
-          <div class="battle-profile-save-actions">
-            ${SIDE_IDS.map((sideId) => `<button class="battle-secondary-button" type="button" data-profile-save-equipment="${sideId}">${t(`profile.saveEquipment${sideId}`)}</button>`).join('')}
-          </div>
-        </article>
-        <article class="battle-profile-card ${readiness.towersReady ? 'is-ready' : 'is-missing'}">
-          <div class="battle-profile-card-heading"><h3>${t('profile.towers')}</h3>${profileStatusMarkup(readiness.towersReady)}</div>
-          <p>${readiness.towersReady ? t('profile.towersReady', { count: formatInteger(readiness.towerEntries) }) : t('profile.towersMissing')}</p>
-          ${readiness.towersReady ? '' : `<a class="battle-profile-link" href="index.html#specialization">${t('profile.openTowers')}</a>`}
-        </article>
-      </div>
-      <div class="battle-profile-footer">
-        <p>${t('profile.importHint')}</p>
-        <div class="battle-profile-actions">
-          <button class="battle-secondary-button" type="button" data-profile-refresh>${t('profile.refresh')}</button>
-          <button class="battle-primary-button" type="button" data-profile-import="A" ${readiness.allReady ? '' : 'disabled'}>${t('profile.importA')}</button>
-          <button class="battle-primary-button" type="button" data-profile-import="B" ${readiness.allReady ? '' : 'disabled'}>${t('profile.importB')}</button>
-        </div>
-      </div>
-    </section>`;
+  return `<section class="battle-profile-panel" data-profile-checklist data-profile-storage-key="${escapeHtml(BATTLE_PROFILE_OVERRIDE_STORAGE_KEY)}" aria-labelledby="battleProfileTitle"><div class="battle-profile-heading"><div class="battle-panel-heading"><p class="battle-section-kicker">${t('profile.kicker')}</p><h2 id="battleProfileTitle">${t('profile.title')}</h2><p>${t('profile.copy')}</p></div><button class="battle-secondary-button" type="button" data-profile-refresh>${t('profile.refresh')}</button></div>${readiness.storageError ? `<p class="battle-profile-storage-warning" role="alert">${icon('warning')}<span>${t('profile.storageError')}</span></p>` : ''}<div class="battle-profile-readiness" aria-label="${t('profile.baseReadiness')}"><span>${t('profile.baseReadiness')}</span><span>${t('profile.research')}${profileStatusMarkup(readiness.researchReady)}</span><span>${t('profile.equipment')}${profileStatusMarkup(readiness.equipmentReady)}${readiness.equipmentReady ? `<small>${savedDate}</small>` : ''}</span><span>${t('profile.towers')}${profileStatusMarkup(readiness.towersReady)}</span><div class="battle-profile-save-actions">${SIDE_IDS.map((sideId) => `<button class="battle-secondary-button" type="button" data-profile-save-equipment="${sideId}">${t(`profile.saveEquipment${sideId}`)}</button>`).join('')}</div></div><div class="battle-profile-drafts">${SIDE_IDS.map((sideId) => renderBattleProfileDraft(sideId, readiness)).join('')}</div></section>`;
 }
 
 function replaceBattleProfilePanel() {
   const current = form?.querySelector('[data-profile-checklist]');
-  if (current) current.outerHTML = renderBattleProfilePanel();
+  if (!current) return;
+  const openSides = [...current.querySelectorAll('[data-profile-editor][open]')].map(
+    (details) => details.dataset.profileEditor
+  );
+  const active = document.activeElement;
+  const focus = active?.closest?.('[data-profile-draft]')
+    ? {
+        sideId: active.closest('[data-profile-draft]').dataset.profileDraft,
+        name: active.getAttribute('data-source-id') || active.getAttribute('data-research-id'),
+        marker: [...active.attributes].find((attribute) =>
+          attribute.name.startsWith('data-profile-')
+        )?.name,
+      }
+    : null;
+  current.outerHTML = renderBattleProfilePanel();
+  openSides.forEach((sideId) => {
+    const details = form.querySelector(`[data-profile-editor="${sideId}"]`);
+    if (details) details.open = true;
+  });
+  if (focus?.marker) {
+    const selector = `[data-profile-draft="${focus.sideId}"] [${focus.marker}]${focus.name ? `[data-source-id="${focus.name}"], [data-research-id="${focus.name}"]` : ''}`;
+    form.querySelector(selector)?.focus({ preventScroll: true });
+  }
 }
 
 function sideHasSavableEquipment(side) {
@@ -495,28 +938,236 @@ function saveBattleProfileEquipment(sideId) {
   }
 }
 
-function importBattleProfile(sideId) {
+function applyBattleProfileDraft(sideId) {
   const readiness = readBattleProfileReadiness();
-  if (!readiness.allReady) {
+  const draft = ensureBattleProfileDraft(sideId, readiness);
+  if (!profileDraftCanApply(sideId, readiness)) {
     replaceBattleProfilePanel();
-    showToast(t('toast.profileIncomplete'));
+    showToast(t('toast.profileDraftIncomplete', { side: sideId }));
     return;
   }
-  const side = state.sides[sideId];
-  if (!side) return;
-  side.researchEnabled = true;
-  side.researchSnapshot = readiness.researchSnapshot;
-  side.equipmentLoadout = cloneEquipmentLoadout(readiness.equipmentProfile.equipmentLoadout);
-  side.equipmentEffectOverrides = cloneBattleProfileValue(
-    readiness.equipmentProfile.equipmentEffectOverrides
-  );
-  rebuildCapturedSourceSnapshot(sideId);
-  replaceSide(sideId);
+  try {
+    state.sides[sideId] = applySavedProfileDraftToSide(state.sides[sideId], draft, readiness, {
+      scenarioContext: state.scenarioContext,
+    });
+    replaceSide(sideId);
+    replaceBattleProfilePanel();
+    markResultsStale();
+    showToast(t('toast.profileApplied', { side: sideId }));
+  } catch (error) {
+    console.error('[battle-simulator] profile draft apply failed', error);
+    replaceBattleProfilePanel();
+    showToast(t('toast.profileDraftIncomplete', { side: sideId }));
+  }
+}
+function setProfileResearchAmounts(sideId, useSavedValues) {
+  const readiness = readBattleProfileReadiness();
+  const draft = ensureBattleProfileDraft(sideId, readiness);
+  draft.researchOverrides = (readiness.researchSnapshot?.sources || []).map((source) => ({
+    sourceId: source.sourceId,
+    amount: useSavedValues ? Math.max(0, Number(source.amount) || 0) : 0,
+  }));
   replaceBattleProfilePanel();
-  markResultsStale();
-  showToast(t('toast.profileImported', { side: sideId }));
 }
 
+function updateProfileDraftEquipment(sideId) {
+  const readiness = readBattleProfileReadiness();
+  const draft = ensureBattleProfileDraft(sideId, readiness);
+  const panel = form?.querySelector(`[data-profile-equipment-editor="${sideId}"]`);
+  const setId = panel?.querySelector(`[data-profile-equipment-set="${sideId}"]`)?.value || '';
+  if (!setId) {
+    draft.equipmentLoadout = createDefaultEquipmentLoadout();
+  } else {
+    const validGrades = equipmentGradesForSet(setId);
+    const selectedGrade =
+      panel?.querySelector(`[data-profile-equipment-grade="${sideId}"]`)?.value || 'gold';
+    const enhancement = Number(
+      panel?.querySelector(`[data-profile-equipment-enhancement="${sideId}"]`)?.value || 0
+    );
+    draft.equipmentLoadout = createEquipmentSetLoadout({
+      setId,
+      gradeId: validGrades.includes(selectedGrade) ? selectedGrade : validGrades[0],
+      enhancementLevel: Math.min(100, Math.max(0, Math.floor(enhancement) || 0)),
+    });
+  }
+  replaceBattleProfilePanel();
+}
+
+function profileTowerContext(sideId) {
+  const readiness = readBattleProfileReadiness();
+  const draft = ensureBattleProfileDraft(sideId, readiness);
+  draft.towerState = buildSpecializationSnapshot(
+    draft.towerState || createEmptySpecializationState()
+  );
+  const ui = profileDraftUi.get(sideId);
+  return { draft, ui, troopId: ui.activeTroop, researchId: ui.researchId };
+}
+
+function setProfileTowerResearchProgress(sideId, targetCount) {
+  const { draft, troopId, researchId } = profileTowerContext(sideId);
+  const research = SPECIALIZATION_RESEARCH[researchId];
+  const nodeIds = profileTowerNodeIds(research);
+  const count = Math.min(nodeIds.length, Math.max(0, Number(targetCount) || 0));
+  draft.towerState = setResearchNodes(
+    draft.towerState,
+    troopId,
+    researchId,
+    nodeIds.slice(0, count)
+  );
+  replaceBattleProfilePanel();
+}
+
+function setProfileTowerMaximum(sideId, maximum) {
+  const { draft, troopId } = profileTowerContext(sideId);
+  let towerState = draft.towerState;
+  if (!maximum) {
+    towerState = resetTower(towerState, troopId);
+  } else {
+    for (const column of Object.values(SPECIALIZATION_COLUMNS)) {
+      for (const researchId of column.researches) {
+        if (getResearchNodeAccess(towerState, troopId, researchId).mode === 'partial-evidence') {
+          continue;
+        }
+        towerState = setResearchNodes(
+          towerState,
+          troopId,
+          researchId,
+          profileTowerNodeIds(SPECIALIZATION_RESEARCH[researchId])
+        );
+      }
+    }
+  }
+  draft.towerState = towerState;
+  replaceBattleProfilePanel();
+}
+
+function handleProfileDraftInput(target) {
+  const labelSide = target.dataset.profileLabel;
+  if (labelSide) {
+    const draft = ensureBattleProfileDraft(labelSide, readBattleProfileReadiness());
+    draft.label = target.value.slice(0, 48);
+    return true;
+  }
+  const researchSide = target.dataset.profileResearchAmount;
+  if (researchSide) {
+    const draft = ensureBattleProfileDraft(researchSide, readBattleProfileReadiness());
+    const maximum = Math.max(0, Number(target.max) || 0);
+    const amount = Math.min(maximum, Math.max(0, Number(target.value) || 0));
+    const sourceId = target.dataset.sourceId;
+    const existing = draft.researchOverrides.find((entry) => entry.sourceId === sourceId);
+    if (existing) existing.amount = amount;
+    else draft.researchOverrides.push({ sourceId, amount });
+    return true;
+  }
+  return false;
+}
+
+function handleProfileDraftChange(target) {
+  const sourceSide = target.dataset.profileSource;
+  if (sourceSide) {
+    const draft = ensureBattleProfileDraft(sourceSide, readBattleProfileReadiness());
+    draft.sources[target.dataset.sourceId] = target.checked;
+    replaceBattleProfilePanel();
+    return true;
+  }
+  const equipmentSide =
+    target.dataset.profileEquipmentSet ||
+    target.dataset.profileEquipmentGrade ||
+    target.dataset.profileEquipmentEnhancement;
+  if (equipmentSide) {
+    updateProfileDraftEquipment(equipmentSide);
+    return true;
+  }
+  return false;
+}
+
+function handleProfileDraftClick(button) {
+  const researchRestore = button.dataset.profileResearchRestore;
+  if (researchRestore) {
+    setProfileResearchAmounts(researchRestore, true);
+    return true;
+  }
+  const researchZero = button.dataset.profileResearchZero;
+  if (researchZero) {
+    setProfileResearchAmounts(researchZero, false);
+    return true;
+  }
+  const towerTabSide = button.dataset.profileTowerTab;
+  if (towerTabSide) {
+    const ui = profileDraftUi.get(towerTabSide);
+    ui.activeTroop = button.dataset.troopId;
+    ui.researchId = SPECIALIZATION_COLUMNS[1].researches[0];
+    replaceBattleProfilePanel();
+    return true;
+  }
+  const towerResearchSide = button.dataset.profileTowerResearch;
+  if (towerResearchSide) {
+    const ui = profileDraftUi.get(towerResearchSide);
+    ui.activeTroop = button.dataset.troopId;
+    ui.researchId = button.dataset.researchId;
+    replaceBattleProfilePanel();
+    return true;
+  }
+  const towerStepSide = button.dataset.profileTowerStep;
+  if (towerStepSide) {
+    const { draft, troopId, researchId } = profileTowerContext(towerStepSide);
+    const current = getResearchProgress(draft.towerState, troopId, researchId).completedNodes;
+    setProfileTowerResearchProgress(towerStepSide, current + Number(button.dataset.step));
+    return true;
+  }
+  const towerSetSide = button.dataset.profileTowerSet;
+  if (towerSetSide) {
+    const { draft, troopId, researchId } = profileTowerContext(towerSetSide);
+    const total = getResearchProgress(draft.towerState, troopId, researchId).totalNodes;
+    setProfileTowerResearchProgress(
+      towerSetSide,
+      Math.ceil((Number(button.dataset.percent) / 100) * total)
+    );
+    return true;
+  }
+  const towerMaxSide = button.dataset.profileTowerMax;
+  if (towerMaxSide) {
+    const { draft, troopId, researchId } = profileTowerContext(towerMaxSide);
+    const total = getResearchProgress(draft.towerState, troopId, researchId).totalNodes;
+    setProfileTowerResearchProgress(towerMaxSide, total);
+    return true;
+  }
+  const towerUnmaxSide = button.dataset.profileTowerUnmax;
+  if (towerUnmaxSide) {
+    const { draft, troopId, researchId } = profileTowerContext(towerUnmaxSide);
+    draft.towerState = resetResearch(draft.towerState, troopId, researchId);
+    replaceBattleProfilePanel();
+    return true;
+  }
+  const towerMaxAllSide = button.dataset.profileTowerMaxAll;
+  if (towerMaxAllSide) {
+    setProfileTowerMaximum(towerMaxAllSide, true);
+    return true;
+  }
+  const towerUnmaxAllSide = button.dataset.profileTowerUnmaxAll;
+  if (towerUnmaxAllSide) {
+    setProfileTowerMaximum(towerUnmaxAllSide, false);
+    return true;
+  }
+  const towerNodeSide = button.dataset.profileTowerNode;
+  if (towerNodeSide) {
+    const { draft, troopId, researchId } = profileTowerContext(towerNodeSide);
+    draft.towerState = toggleResearchNode(
+      draft.towerState,
+      troopId,
+      researchId,
+      Number(button.dataset.nodeId)
+    );
+    replaceBattleProfilePanel();
+    return true;
+  }
+  const applySide = button.dataset.profileApply;
+  if (applySide) {
+    applyBattleProfileDraft(applySide);
+    return true;
+  }
+  return false;
+}
 function automaticSourcesForSide(sideId) {
   const side = state.sides[sideId];
   if (!side?.capturedSourceSnapshot) rebuildCapturedSourceSnapshot(sideId);
@@ -2625,6 +3276,7 @@ function bindUI() {
   form?.addEventListener('input', (event) => {
     const target = event.target;
     refreshValidationAfterInput(target);
+    if (handleProfileDraftInput(target)) return;
     if (target.name === 'battleSeed') {
       state.seed = target.value === '' ? '' : Number(target.value);
       markResultsStale();
@@ -2638,6 +3290,7 @@ function bindUI() {
   });
   form?.addEventListener('change', (event) => {
     const target = event.target;
+    if (handleProfileDraftChange(target)) return;
     if (target.matches('[data-setup-file]')) {
       importSetupFile(target);
     } else if (target.matches('[data-scenario-context]')) {
@@ -2672,6 +3325,7 @@ function bindUI() {
   form?.addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button) return;
+    if (handleProfileDraftClick(button)) return;
     if (button.matches('[data-focus-first-invalid]')) {
       const firstInvalid = findFirstInvalid(form, { includeSideDefaults: true });
       if (firstInvalid) {
@@ -2695,8 +3349,6 @@ function bindUI() {
       replaceBattleProfilePanel();
     } else if (button.matches('[data-profile-save-equipment]')) {
       saveBattleProfileEquipment(button.dataset.profileSaveEquipment);
-    } else if (button.matches('[data-profile-import]')) {
-      importBattleProfile(button.dataset.profileImport);
     } else if (button.matches('[data-refresh-research]')) {
       refreshSavedResearch(button.dataset.refreshResearch);
     } else if (button.matches('[data-apply-equipment-overrides]')) {
@@ -2726,6 +3378,10 @@ function bindUI() {
   form?.addEventListener(
     'toggle',
     (event) => {
+      if (event.target.matches?.('[data-profile-editor]')) {
+        if (event.target.open) void loadBattleProfileTowersStyles();
+        return;
+      }
       const details = event.target.closest?.('.battle-squad-card');
       if (!details) return;
       const row = state.sides[details.dataset.side]?.rows[Number(details.dataset.rowIndex)];

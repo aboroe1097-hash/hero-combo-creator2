@@ -1326,7 +1326,7 @@ service cloud.firestore {
             && data.status in ['plan', 'live']
             && data.activePlanRevision == data.revision
             && data.phases is list
-            && data.phases.size() == 4
+            && data.phases.size() == 5
             && data.legions is list
             && data.legions.size() == 2
           )
@@ -1728,7 +1728,7 @@ service cloud.firestore {
 
     function validAllStarBohPublishedTimeline(values, uid, teamId, baseSeatNumber) {
       return values is list
-        && values.size() == 8
+        && values.size() == 10
         && validAllStarBohPublishedTimelineItem(values, 0, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 1, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 2, uid, teamId, baseSeatNumber)
@@ -1736,7 +1736,9 @@ service cloud.firestore {
         && validAllStarBohPublishedTimelineItem(values, 4, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 5, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 6, uid, teamId, baseSeatNumber)
-        && validAllStarBohPublishedTimelineItem(values, 7, uid, teamId, baseSeatNumber);
+        && validAllStarBohPublishedTimelineItem(values, 7, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 8, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 9, uid, teamId, baseSeatNumber);
     }
 
     function validAllStarBohPublishedRoleItem(values, index) {
@@ -1796,7 +1798,7 @@ service cloud.firestore {
         && validAllStarBohText(plan.label, 160)
         && validAllStarBohPublishedRoles(plan.roleGroups)
         && validAllStarBohPublishedPhases(plan.phases)
-        && plan.phases.size() == 4
+        && plan.phases.size() == 5
         && validAllStarBohPublishedLegions(plan.legions)
         && plan.legions.size() == 2
         && validAllStarBohPublishedObjectives(plan.objectives)
@@ -1827,7 +1829,7 @@ service cloud.firestore {
         'seasonId', 'uid', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
-      && data.playerId == uid
+      && validAllStarBohIdentifier(data.playerId, false)
       && data.uid == uid
       && data.seasonId == season
       && data.schemaVersion == 1
@@ -1855,7 +1857,7 @@ service cloud.firestore {
           && validAllStarBohPublishedPlan(data.plan)
           && validAllStarBohPublishedTimeline(
             data.timeline,
-            uid,
+            data.playerId,
             data.teamId,
             data.seatNumber
           )

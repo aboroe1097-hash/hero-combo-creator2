@@ -3,6 +3,7 @@ const DEFAULT_PHASES = Object.freeze([
   Object.freeze({ id: 'phase-2', label: '5-10 Minutes', startMinute: 5, endMinute: 10 }),
   Object.freeze({ id: 'phase-3', label: '10-15 Minutes', startMinute: 10, endMinute: 15 }),
   Object.freeze({ id: 'phase-4', label: '15-30 Minutes', startMinute: 15, endMinute: 30 }),
+  Object.freeze({ id: 'phase-5', label: '30-60 Minutes', startMinute: 30, endMinute: 60 }),
 ]);
 
 export const BOH_COMMAND_MODES = Object.freeze([

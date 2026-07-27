@@ -257,6 +257,7 @@ test('signup planning signal HTML escapes every player-entered label and value',
   globalThis.document = { documentElement: { lang: 'en' } };
   const controller = createAdminAllStarBohController({
     root,
+    initialStage: 'signups',
     initialSnapshot: {
       submissions: [
         {

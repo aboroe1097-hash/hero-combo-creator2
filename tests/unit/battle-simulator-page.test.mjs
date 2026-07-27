@@ -16,8 +16,10 @@ import {
   simulateBattleBatch,
 } from '../../js/battle-simulator-engine.js';
 import {
+  applySavedProfileDraftToSide,
   calculateMedian,
   copyBattleSideSetup,
+  createBattleProfileDraft,
   getBatchVerdict,
   shouldDisableStrikeVariance,
   swapBattleSides,
@@ -34,6 +36,7 @@ const pageSource = readFileSync('battle-simulator.html', 'utf8');
 const bootstrapSource = readFileSync('js/battle-simulator.js', 'utf8');
 const appSource = readFileSync('js/battle-simulator-app.js', 'utf8');
 const battleCssSource = readFileSync('css/battle-simulator.css', 'utf8');
+const embeddedTowerCssSource = readFileSync('css/battle-profile-towers-embedded.css', 'utf8');
 const viteSource = readFileSync('vite.config.js', 'utf8');
 const indexSource = readFileSync('index.html', 'utf8');
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -179,13 +182,98 @@ test('Legion sources expose saved Research and truthful whole-legion equipment c
   assert.match(appSource, /catalogRevisions:/);
 });
 
-test('saved profile readiness requires Research, Equipment, and Towers before explicit side import', () => {
-  assert.match(appSource, /data-profile-checklist/);
-  assert.match(appSource, /data-profile-save-equipment/);
-  assert.match(appSource, /data-profile-import="A"/);
-  assert.match(appSource, /data-profile-import="B"/);
-  assert.match(appSource, /readiness\.allReady \? '' : 'disabled'/);
-  assert.match(appSource, /icon\(ready \? 'play' : 'warning'\)/);
+test('saved profile drafts expose independent per-side editors and the visual Tower workspace', () => {
+  for (const marker of [
+    'data-profile-draft',
+    'data-profile-label',
+    'data-profile-source',
+    'data-profile-editor',
+    'data-profile-research-amount',
+    'data-profile-equipment-set',
+    'data-profile-tower-tab',
+    'data-profile-tower-research',
+    'data-profile-tower-node',
+    'data-profile-apply',
+  ]) {
+    assert.match(appSource, new RegExp(marker));
+  }
+  assert.doesNotMatch(pageSource, /css\/specialization-towers-v2\.css/);
+  assert.match(appSource, /import\('\.\.\/css\/battle-profile-towers-embedded\.css'\)/);
+  assert.match(appSource, /event\.target\.matches\?\.\('\[data-profile-editor\]'\)/);
+  assert.match(embeddedTowerCssSource, /\.battle-profile-towers/);
+  assert.match(embeddedTowerCssSource, /--specialization-column-width/);
+  assert.doesNotMatch(
+    embeddedTowerCssSource,
+    /\.specialization-(?:app|header|dialog|toast|community|boot-message)/
+  );
+  assert.match(appSource, /class="specialization-workspace"/);
+  assert.match(appSource, /class="specialization-columns"/);
+  assert.match(appSource, /class="specialization-node-progress-ring"/);
+  assert.match(appSource, /getResearchNodeAccess/);
+  assert.match(appSource, /toggleResearchNode/);
+});
+
+test('applying a Research-only draft isolates Side A and preserves base and unselected sources', () => {
+  const target = sideFixture('footmen', 9, 31_000, 10, false, true);
+  target.capturedSourceSnapshot.sources = [
+    { sourceType: 'research', sourceId: 'research:old:0', amount: 2 },
+    { sourceType: 'equipment', sourceId: 'equipment:keep', amount: 3 },
+    { sourceType: 'specialization', sourceId: 'specialization:keep', amount: 4 },
+  ];
+  const researchSnapshot = {
+    ...createEmptyResearchSnapshot(),
+    sources: [
+      {
+        sourceType: 'research',
+        sourceId: 'research:test:0',
+        label: 'Test effect',
+        statKey: 'might',
+        amount: 10,
+        operation: 'add',
+        unit: 'percent',
+        appliesTo: { battleModes: [], troopTypes: [], rowIds: [] },
+      },
+    ],
+    savedProgress: { exists: true, malformed: false, entryCount: 1 },
+  };
+  const base = { researchSnapshot };
+  const draft = createBattleProfileDraft(base, { sideId: 'A' });
+  draft.sources = { research: true, equipment: false, towers: false };
+  draft.researchOverrides[0].amount = 4;
+  const sideB = sideFixture('cavalry', 10, 42_000, 20, true, true);
+  sideB.profileDraft = createBattleProfileDraft({}, { sideId: 'B' });
+  sideB.capturedSourceSnapshot.sources = [
+    { sourceType: 'research', sourceId: 'research:b', amount: 7 },
+    { sourceType: 'equipment', sourceId: 'equipment:b', amount: 8 },
+    { sourceType: 'specialization', sourceId: 'specialization:b', amount: 9 },
+  ];
+  const targetBefore = structuredClone(target);
+  const sideBBefore = structuredClone(sideB);
+  const baseBefore = structuredClone(base);
+  const draftBefore = structuredClone(draft);
+  const battleState = { sides: { A: target, B: sideB } };
+
+  const nextState = {
+    ...battleState,
+    sides: {
+      ...battleState.sides,
+      A: applySavedProfileDraftToSide(target, draft, base),
+    },
+  };
+  const applied = nextState.sides.A;
+
+  assert.deepEqual(nextState.sides.B, sideBBefore);
+  assert.deepEqual(target, targetBefore);
+  assert.deepEqual(base, baseBefore);
+  assert.deepEqual(draft, draftBefore);
+  assert.deepEqual(applied.rows, target.rows);
+  assert.deepEqual(applied.equipmentLoadout, target.equipmentLoadout);
+  assert.equal(applied.researchSnapshot.sources[0].amount, 4);
+  assert.deepEqual(
+    applied.capturedSourceSnapshot.sources.filter(({ sourceType }) => sourceType !== 'research'),
+    target.capturedSourceSnapshot.sources.filter(({ sourceType }) => sourceType !== 'research')
+  );
+  assert.equal(applied.profileDraft.towersApplied, false);
 });
 
 test('copy and swap deep-clone Research, equipment, source audits, defaults, and rows', () => {
@@ -391,6 +479,15 @@ test('theme, responsive RTL, reduced-motion, version, and tool navigation contra
   assert.match(battleCssSource, /border-inline-start/);
   assert.match(battleCssSource, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(battleCssSource, /transition-duration: 0\.01ms !important/);
+  const topbarActions = between(battleCssSource, '.battle-topbar-actions {', '}');
+  assert.match(topbarActions, /align-items:\s*flex-end/);
+  const languageSelect = between(battleCssSource, '.battle-language-field select {', '}');
+  assert.match(languageSelect, /height:\s*var\(--ff-tap-min\)/);
+  assert.match(languageSelect, /min-height:\s*var\(--ff-tap-min\)/);
+  assert.match(
+    battleCssSource,
+    /\.battle-topbar-actions \.battle-icon-button,[\s\S]*?\.battle-topbar-actions \.battle-back-link\s*\{\s*height:\s*var\(--ff-tap-min\)/
+  );
   assert.match(appSource, /preferredScrollBehavior/);
   assert.match(
     appSource,

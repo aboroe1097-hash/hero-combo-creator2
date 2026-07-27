@@ -78,11 +78,11 @@ const TEAM_NAME_LABELS = Object.freeze({
 });
 
 const STAGES = [
-  ['signups', 'adminBohStageSignups', 'Signup Review'],
-  ['scoring', 'adminBohStageScoring', 'Advanced Scoring'],
-  ['teams', 'adminBohStageTeams', 'Mapper Teams & Roles'],
-  ['plans', 'adminBohStagePlans', 'Advanced Plans'],
-  ['publish', 'adminBohStagePublish', 'Publish / Announcement'],
+  ['teams', 'adminBohStageTeams', 'Mapper workspace'],
+  ['plans', 'adminBohStagePlans', 'Advanced plans'],
+  ['publish', 'adminBohStagePublish', 'Validate / publish'],
+  ['signups', 'adminBohStageSignups', 'Signup review'],
+  ['scoring', 'adminBohStageScoring', 'Scoring'],
 ];
 
 const SCORE_COMPONENTS = [
@@ -113,10 +113,11 @@ const SCORE_COMPONENTS = [
 ];
 
 const DEFAULT_PHASES = [
-  { id: 'phase-0-5', label: '0–5 min', startMinute: 0, endMinute: 5, order: 1 },
-  { id: 'phase-5-10', label: '5–10 min', startMinute: 5, endMinute: 10, order: 2 },
-  { id: 'phase-10-15', label: '10–15 min', startMinute: 10, endMinute: 15, order: 3 },
-  { id: 'phase-15-30', label: '15–30 min', startMinute: 15, endMinute: 30, order: 4 },
+  { id: 'phase-0-5', label: '0-5 min', startMinute: 0, endMinute: 5, order: 1 },
+  { id: 'phase-5-10', label: '5-10 min', startMinute: 5, endMinute: 10, order: 2 },
+  { id: 'phase-10-15', label: '10-15 min', startMinute: 10, endMinute: 15, order: 3 },
+  { id: 'phase-15-30', label: '15-30 min', startMinute: 15, endMinute: 30, order: 4 },
+  { id: 'phase-30-60', label: '30-60 min', startMinute: 30, endMinute: 60, order: 5 },
 ];
 
 const DEFAULT_LEGIONS = [
@@ -763,6 +764,8 @@ function normalizeSeat(source, teamId, seatNumber) {
     side: cleanText(source?.side),
     locked: Boolean(source?.locked),
     note: cleanText(source?.note),
+    score:
+      source?.score === null || source?.score === undefined ? null : finiteNumber(source.score),
   };
 }
 
@@ -1454,6 +1457,9 @@ function adapterDefaultPlan() {
     playerOverrides: [],
     instructions: [],
     rotations: [],
+    substitutions: [],
+    playerResources: [],
+    buildingAnnotations: [],
     notes: [],
   };
 }
@@ -1522,6 +1528,9 @@ function adapterPlan(draft) {
     playerOverrides: adapterClone(list(source.playerOverrides)),
     instructions: adapterClone(list(source.instructions)),
     rotations: adapterClone(list(source.rotations)),
+    substitutions: adapterClone(list(source.substitutions)),
+    playerResources: adapterClone(list(source.playerResources)),
+    buildingAnnotations: adapterClone(list(source.buildingAnnotations)),
     notes: adapterClone(list(source.notes)),
   };
 }
@@ -1564,6 +1573,9 @@ function adapterPlanHasAuthoredContent(plan) {
     'playerOverrides',
     'instructions',
     'rotations',
+    'substitutions',
+    'playerResources',
+    'buildingAnnotations',
     'notes',
   ].some((key) => list(plan[key]).length > 0);
 }
@@ -1631,6 +1643,17 @@ function adapterStage1TeamPlan(teamId, seats, basePlan = adapterDefaultPlan()) {
     instructions: adapterClone(list(basePlan.instructions)),
     rotations: adapterClone(list(basePlan.rotations)),
     notes: adapterClone(list(basePlan.notes)),
+  };
+}
+
+function adapterPersistedStage1TeamPlan(teamId, seats, basePlan) {
+  const plan = adapterStage1TeamPlan(teamId, seats, basePlan);
+  return {
+    ...plan,
+    playerOverrides: plan.playerOverrides.map((rule, index) => ({
+      ...rule,
+      order: index + 1,
+    })),
   };
 }
 
@@ -2450,9 +2473,14 @@ function adapterMatchMapperExactView(state, parsed) {
           displayName: player.displayName,
           candidateIds: candidates.map((candidate) => candidate.playerId),
         });
-        return { ...player, teamId: team.id, playerId: '' };
+        return { ...player, teamId: team.id, playerId: '', matchSource: '' };
       }
-      return { ...player, teamId: team.id, playerId: candidates[0].playerId };
+      return {
+        ...player,
+        teamId: team.id,
+        playerId: candidates[0].playerId,
+        matchSource: 'exact',
+      };
     }),
   }));
   const uses = new Map();
@@ -2463,7 +2491,10 @@ function adapterMatchMapperExactView(state, parsed) {
   }
   for (const [matchedPlayerId, players] of uses) {
     if (players.length === 1) continue;
-    for (const player of players) player.playerId = '';
+    for (const player of players) {
+      player.playerId = '';
+      player.matchSource = '';
+    }
     for (const player of players) {
       diagnostics.push({
         code: 'boh-mapper-match-duplicate-use',
@@ -2490,48 +2521,153 @@ function adapterMatchMapperExactView(state, parsed) {
   };
 }
 
+function adapterMapperRefreshPreviewMetadata(state, preview) {
+  const linkedIds = new Set(
+    preview.teams.flatMap((team) =>
+      team.players.map((player) => cleanText(player.playerId)).filter(Boolean)
+    )
+  );
+  const candidates = state.submissions
+    .filter((submission) =>
+      adapterReviewIsFresh(submission, state.reviews.get(adapterSubmissionUid(submission)) || null)
+    )
+    .map((submission) => {
+      const effective = adapterEffectiveSubmission(state, submission);
+      const score = adapterScoreRecord(state, submission);
+      return {
+        playerId: adapterSubmissionId(submission),
+        displayName: playerName(effective) || adapterSubmissionId(submission),
+        originalDisplayName: playerName(submission) || adapterSubmissionId(submission),
+        score: score.finalScore,
+      };
+    })
+    .filter((candidate) => candidate.playerId)
+    .sort((left, right) =>
+      left.displayName.localeCompare(right.displayName, 'en', { sensitivity: 'base' })
+    );
+  const candidatesById = new Map(candidates.map((candidate) => [candidate.playerId, candidate]));
+  for (const player of preview.teams.flatMap((team) => team.players)) {
+    player.linkedCandidate = player.playerId
+      ? adapterClone(candidatesById.get(player.playerId) || null)
+      : null;
+    player.linkedScore = player.linkedCandidate?.score ?? null;
+  }
+  const linkedSubmissions = state.submissions.filter((submission) =>
+    linkedIds.has(adapterSubmissionId(submission))
+  );
+  preview.matchedCount = linkedIds.size;
+  preview.unresolvedCount = preview.playerCount - linkedIds.size;
+  preview.candidates = candidates.filter((candidate) => !linkedIds.has(candidate.playerId));
+  preview.submissionRevisions = linkedSubmissions
+    .map((submission) => [adapterSubmissionUid(submission), adapterRevision(submission.revision)])
+    .sort(([left], [right]) => left.localeCompare(right));
+  preview.reviewRevisions = linkedSubmissions
+    .map((submission) => {
+      const uid = adapterSubmissionUid(submission);
+      const review = state.reviews.get(uid);
+      return [uid, adapterRevision(review?.revision), adapterRevision(review?.submissionRevision)];
+    })
+    .sort(([left], [right]) => left.localeCompare(right));
+  return preview;
+}
+
+function adapterPublicMapperPreview(preview) {
+  if (!preview) return null;
+  const {
+    sourceRevision: _sourceRevision,
+    submissionRevisions: _submissionRevisions,
+    reviewRevisions: _reviewRevisions,
+    ...publicPreview
+  } = preview;
+  return adapterClone(publicPreview);
+}
+
 function adapterPreviewMapperExactView(state, payload) {
   const parsed = parseAllStarBohMapperExactView(payload.jsonText);
   const preview = adapterMatchMapperExactView(state, parsed);
-  const matchedIds = new Set(
-    preview.teams.flatMap((team) => team.players.map((player) => player.playerId).filter(Boolean))
-  );
-  const matchedSubmissions = state.submissions.filter((submission) =>
-    matchedIds.has(adapterSubmissionId(submission))
-  );
-  state.mapperImportPreview = {
+  state.mapperImportPreview = adapterMapperRefreshPreviewMetadata(state, {
     ...adapterClone(preview),
+    planner: adapterClone(parsed.planner),
     sourceRevision: state.revision,
-    submissionRevisions: matchedSubmissions
-      .map((submission) => [adapterSubmissionUid(submission), adapterRevision(submission.revision)])
-      .sort(([left], [right]) => left.localeCompare(right)),
-    reviewRevisions: matchedSubmissions
-      .map((submission) => {
-        const uid = adapterSubmissionUid(submission);
-        const review = state.reviews.get(uid);
-        return [
-          uid,
-          adapterRevision(review?.revision),
-          adapterRevision(review?.submissionRevision),
-        ];
-      })
-      .sort(([left], [right]) => left.localeCompare(right)),
-  };
-  return adapterClone(preview);
+  });
+  return adapterPublicMapperPreview(state.mapperImportPreview);
 }
 
-function adapterMapperSafePlan(draft) {
-  const plan = adapterPlan(draft);
+function adapterReconcileMapperExactView(state, payload) {
+  const preview = state.mapperImportPreview;
+  if (!preview) {
+    throw adapterError(
+      'boh-mapper-preview-required',
+      'Choose and preview a mapper JSON file before reconciling names.'
+    );
+  }
+  if (preview.sourceRevision !== state.revision) throw adapterPreviewStale();
+  const team = preview.teams.find((item) => item.id === cleanText(payload.teamId));
+  const player = team?.players.find((item) => item.seatNumber === integer(payload.seatNumber));
+  if (!team || !player) {
+    throw adapterError('boh-mapper-reconcile-seat', 'The imported mapper seat no longer exists.');
+  }
+  if (player.matchSource === 'exact') {
+    throw adapterError(
+      'boh-mapper-reconcile-exact',
+      'Automatic exact matches cannot be replaced manually.'
+    );
+  }
+  const nextPlayerId = cleanText(payload.playerId);
+  if (!nextPlayerId) {
+    player.playerId = '';
+    player.matchSource = '';
+    adapterMapperRefreshPreviewMetadata(state, preview);
+    return adapterPublicMapperPreview(preview);
+  }
+  const submission = adapterFindSubmission(state, nextPlayerId);
+  if (!submission) {
+    throw adapterError('boh-mapper-reconcile-unknown', 'The selected signup no longer exists.');
+  }
+  const review = state.reviews.get(adapterSubmissionUid(submission)) || null;
+  if (!adapterReviewIsFresh(submission, review)) {
+    throw adapterError('boh-mapper-reconcile-unverified', 'Choose a fresh verified submission.');
+  }
+  const alreadyUsed = preview.teams
+    .flatMap((item) => item.players)
+    .find((item) => item !== player && cleanText(item.playerId) === nextPlayerId);
+  if (alreadyUsed) {
+    throw adapterError(
+      'boh-mapper-reconcile-duplicate',
+      'That verified submission is already linked to another imported seat.'
+    );
+  }
+  player.playerId = nextPlayerId;
+  player.matchSource = 'manual';
+  adapterMapperRefreshPreviewMetadata(state, preview);
+  return adapterPublicMapperPreview(preview);
+}
+
+function adapterMapperSafePlan(draft, planner) {
+  const previous = adapterPlan(draft);
+  const imported = planner?.plan;
+  const provided = new Set(list(imported?.providedFields));
+  const planField = (field) =>
+    adapterClone(imported && provided.has(field) ? list(imported[field]) : list(previous[field]));
   const hasNoPlayer = (rule) => !cleanText(rule?.playerId) && cleanText(rule?.scope) !== 'player';
   return {
-    ...plan,
-    phases: BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 })),
-    legions: BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 })),
-    roleDefaults: plan.roleDefaults.filter(hasNoPlayer),
-    seatOverrides: plan.seatOverrides.filter(hasNoPlayer),
+    ...previous,
+    ...(imported
+      ? {
+          id: cleanText(imported.id) || previous.id,
+          label: cleanText(imported.label) || previous.label,
+        }
+      : {}),
+    roleGroups: planField('roleGroups'),
+    phases: planField('phases'),
+    legions: planField('legions'),
+    objectives: planField('objectives'),
+    roleDefaults: planField('roleDefaults').filter(hasNoPlayer),
+    seatOverrides: planField('seatOverrides').filter(hasNoPlayer),
     playerOverrides: [],
-    instructions: plan.instructions.filter(hasNoPlayer),
+    instructions: planField('instructions').filter(hasNoPlayer),
     rotations: [],
+    notes: planField('notes'),
   };
 }
 
@@ -2544,6 +2680,26 @@ async function adapterSaveMapperExactView(state) {
     );
   }
   if (preview.sourceRevision !== state.revision) throw adapterPreviewStale();
+  const linkedPlayers = preview.teams
+    .flatMap((team) => team.players)
+    .filter((player) => player.playerId);
+  const linkedIds = linkedPlayers.map((player) => player.playerId);
+  if (new Set(linkedIds).size !== linkedIds.length) {
+    throw adapterError(
+      'boh-mapper-reconcile-duplicate',
+      'One verified submission cannot be saved to multiple imported seats.'
+    );
+  }
+  for (const player of linkedPlayers) {
+    const submission = adapterFindSubmission(state, player.playerId);
+    const review = submission ? state.reviews.get(adapterSubmissionUid(submission)) || null : null;
+    if (!submission || !adapterReviewIsFresh(submission, review)) {
+      throw adapterError(
+        'boh-mapper-reconcile-unverified',
+        'Every linked mapper seat must still use a fresh verified submission.'
+      );
+    }
+  }
   const teamIds = preview.teams.map((team) => team.id);
   const seatSets = preview.teams.map((importedTeam, teamIndex) => {
     const current = adapterMaterializeTeam(state, importedTeam.id, teamIndex);
@@ -2562,7 +2718,7 @@ async function adapterSaveMapperExactView(state) {
         locked: player.locked || player.userLockTeamId === importedTeam.id,
         score: player.playerId
           ? adapterScoreRecord(state, adapterFindSubmission(state, player.playerId)).finalScore
-          : null,
+          : finiteNumber(player.score),
       };
     });
     return { importedTeam, current, seats };
@@ -2580,7 +2736,7 @@ async function adapterSaveMapperExactView(state) {
         .filter((seat) => seat.playerId)
         .map((seat) => ({ playerId: seat.playerId, teamId: importedTeam.id }))
     ),
-    plan: adapterMapperSafePlan(state.draft),
+    plan: adapterMapperSafePlan(state.draft, preview.planner),
   };
   const teams = seatSets.map(({ importedTeam, current, seats }) => {
     const linkedIds = new Set(seats.map((seat) => seat.playerId).filter(Boolean));
@@ -2592,7 +2748,6 @@ async function adapterSaveMapperExactView(state) {
       .map((player) => player.playerId)
       .slice(0, 2);
     const nextTeam = { ...current };
-    delete nextTeam.plan;
     return {
       ...nextTeam,
       id: importedTeam.id,
@@ -2603,6 +2758,13 @@ async function adapterSaveMapperExactView(state) {
       seats,
       captainId: explicitLeader?.playerId || '',
       coLeaderIds: explicitColeaders,
+      scoreTotal: seats.reduce((total, seat) => total + finiteNumber(seat.score), 0),
+      scoreAverage:
+        seats.filter((seat) => seat.playerId || seat.displayName).length > 0
+          ? seats.reduce((total, seat) => total + finiteNumber(seat.score), 0) /
+            seats.filter((seat) => seat.playerId || seat.displayName).length
+          : 0,
+      plan: adapterPersistedStage1TeamPlan(importedTeam.id, seats, nextDraft.plan),
     };
   });
   const teamEntries = Object.fromEntries(teams.map((team) => [team.id, team]));
@@ -2627,6 +2789,7 @@ async function adapterSaveMapperExactView(state) {
     matchedCount: preview.matchedCount,
     totalCount: preview.playerCount,
     unresolvedCount: preview.unresolvedCount,
+    unsupportedFields: adapterClone(list(preview.planner?.unsupportedFields)),
   };
 }
 
@@ -2729,8 +2892,73 @@ async function adapterSaveTeams(state, teams) {
 
 async function adapterSaveTeamMetadata(state, payload) {
   const team = adapterFindTeam(state, payload.teamId);
-  const captainId = cleanText(payload.captainId);
-  const coLeaderIds = uniqueTextList(payload.coLeaderIds).slice(0, 2);
+  let captainId = hasOwn(payload, 'captainId') ? cleanText(payload.captainId) : team.captainId;
+  let coLeaderIds = hasOwn(payload, 'coLeaderIds')
+    ? uniqueTextList(payload.coLeaderIds).slice(0, 2)
+    : uniqueTextList(team.coLeaderIds).slice(0, 2);
+  const seatEdit =
+    payload.seatEdit && typeof payload.seatEdit === 'object' ? payload.seatEdit : null;
+  const targetSeat = seatEdit
+    ? team.seats.find((seat) => seat.seatNumber === integer(seatEdit.seatNumber))
+    : null;
+  if (seatEdit && !targetSeat) {
+    throw adapterError('all-star-boh-seat-unknown', 'The mapper seat no longer exists.');
+  }
+  if (targetSeat) {
+    const deployment = cleanText(seatEdit.deployment);
+    const roleGroupId = cleanText(seatEdit.roleGroupId);
+    const titleRole = cleanText(seatEdit.titleRole);
+    const commandRole = cleanText(seatEdit.commandRole);
+    if (deployment && !['main', 'backup'].includes(deployment)) {
+      throw adapterError('all-star-boh-deployment-invalid', 'Choose Main, Backup, or Not set.');
+    }
+    if (
+      roleGroupId &&
+      !adapterPlan(state.draft).roleGroups.some((role) => role.id === roleGroupId)
+    ) {
+      throw adapterError('all-star-boh-role-unknown', 'Choose a current mapper plan role.');
+    }
+    if (titleRole && !['kills', 'tower', 'escort', 'gathering'].includes(titleRole)) {
+      throw adapterError('all-star-boh-title-role-invalid', 'Choose a supported title role.');
+    }
+    if (commandRole && !['leader', 'coleader'].includes(commandRole)) {
+      throw adapterError('all-star-boh-command-role-invalid', 'Choose Leader, Co-leader, or none.');
+    }
+    if (commandRole && !targetSeat.playerId) {
+      throw adapterError(
+        'all-star-boh-command-role-empty',
+        'Assign a verified player before setting command role.'
+      );
+    }
+    if (commandRole === 'leader') {
+      captainId = targetSeat.playerId;
+      coLeaderIds = coLeaderIds.filter((playerId) => playerId !== targetSeat.playerId);
+    } else if (commandRole === 'coleader') {
+      if (captainId === targetSeat.playerId) captainId = '';
+      coLeaderIds = [
+        ...coLeaderIds.filter((playerId) => playerId !== targetSeat.playerId),
+        targetSeat.playerId,
+      ];
+      if (coLeaderIds.length > 2) {
+        throw adapterError(
+          'all-star-boh-co-leader-count',
+          'A team may have at most two co-leaders.'
+        );
+      }
+    } else {
+      if (captainId === targetSeat.playerId) captainId = '';
+      coLeaderIds = coLeaderIds.filter((playerId) => playerId !== targetSeat.playerId);
+    }
+    const backupCount = team.seats.filter(
+      (seat) => (seat === targetSeat ? deployment : cleanText(seat.lane)) === 'backup'
+    ).length;
+    if (backupCount > 2) {
+      throw adapterError(
+        'all-star-boh-backup-count',
+        'A mapper draft may designate at most two backups per team.'
+      );
+    }
+  }
   if (captainId && !team.seats.some((seat) => seat.playerId === captainId)) {
     throw adapterError(
       'all-star-boh-captain-not-on-team',
@@ -2752,11 +2980,17 @@ async function adapterSaveTeamMetadata(state, payload) {
     );
   }
   await adapterSaveTeam(state, team.id, (draftTeam) => {
-    draftTeam.name = cleanText(payload.name);
-    draftTeam.color = cleanText(payload.color);
+    if (hasOwn(payload, 'name')) draftTeam.name = cleanText(payload.name);
+    if (hasOwn(payload, 'color')) draftTeam.color = cleanText(payload.color);
+    if (hasOwn(payload, 'notes')) draftTeam.notes = cleanText(payload.notes);
     draftTeam.captainId = captainId;
     draftTeam.coLeaderIds = coLeaderIds;
-    draftTeam.notes = cleanText(payload.notes);
+    if (targetSeat) {
+      const draftSeat = adapterFindSeat(draftTeam, targetSeat.seatNumber);
+      draftSeat.lane = cleanText(seatEdit.deployment);
+      draftSeat.roleGroupId = cleanText(seatEdit.roleGroupId) || draftSeat.roleGroupId;
+      draftSeat.side = cleanText(seatEdit.titleRole);
+    }
     return draftTeam;
   });
 }
@@ -4003,12 +4237,140 @@ async function adapterSavePhases(state, payload) {
     endMinute: Math.max(0, finiteNumber(phase.endMinute)),
     order: index + 1,
   }));
-  if (phases.length !== 4) {
-    throw adapterError('all-star-boh-phase-count', 'The plan must contain exactly four phases.');
+  if (phases.length !== 5) {
+    throw adapterError('all-star-boh-phase-count', 'The plan must contain exactly five phases.');
   }
   await adapterSaveDraft(state, (draft) => {
     draft.plan = adapterPlan(draft);
     draft.plan.phases = phases;
+    return draft;
+  });
+}
+
+async function adapterSaveMapperPlanDetails(state, payload) {
+  const team = adapterFindTeam(state, payload.teamId);
+  const occupiedSeats = team.seats.filter((seat) => cleanText(seat.playerId));
+  const teamPlayerIds = new Set(occupiedSeats.map((seat) => cleanText(seat.playerId)));
+  const backupIds = new Set(
+    occupiedSeats
+      .filter((seat) => cleanText(seat.lane) === 'backup')
+      .map((seat) => cleanText(seat.playerId))
+  );
+  const starterIds = new Set(
+    occupiedSeats
+      .filter((seat) => cleanText(seat.lane) !== 'backup')
+      .map((seat) => cleanText(seat.playerId))
+  );
+  if (starterIds.size > 10) {
+    throw adapterError(
+      'all-star-boh-active-player-limit',
+      'A team may have at most 10 active starters.'
+    );
+  }
+
+  const incoming = new Set();
+  const outgoing = new Set();
+  const substitutions = list(payload.substitutions).map((entry, index) => {
+    const backupPlayerId = cleanText(entry.backupPlayerId);
+    const replacesPlayerId = cleanText(entry.replacesPlayerId);
+    const entryMinute = integer(entry.entryMinute);
+    if (!backupIds.has(backupPlayerId)) {
+      throw adapterError(
+        'all-star-boh-substitution-backup-required',
+        'Only a designated backup may enter the active roster.'
+      );
+    }
+    if (!starterIds.has(replacesPlayerId)) {
+      throw adapterError(
+        'all-star-boh-substitution-starter-required',
+        'A backup must replace an active starter on the same team.'
+      );
+    }
+    if (
+      backupPlayerId === replacesPlayerId ||
+      incoming.has(backupPlayerId) ||
+      outgoing.has(replacesPlayerId)
+    ) {
+      throw adapterError(
+        'all-star-boh-substitution-duplicate',
+        'Substitutions cannot reuse an incoming or outgoing player.'
+      );
+    }
+    if (entryMinute < 3 || entryMinute > 60) {
+      throw adapterError(
+        'all-star-boh-substitution-minute',
+        'Backup entry minute must be from 3 through 60.'
+      );
+    }
+    incoming.add(backupPlayerId);
+    outgoing.add(replacesPlayerId);
+    return {
+      id: cleanText(entry.id) || `mapper-substitution-${team.id}-${index + 1}`,
+      teamId: team.id,
+      backupPlayerId,
+      replacesPlayerId,
+      entryMinute,
+      order: index + 1,
+      note: cleanText(entry.note),
+    };
+  });
+
+  const playerResources = list(payload.playerResources).map((entry) => {
+    const playerId = cleanText(entry.playerId);
+    const submission = adapterFindSubmission(state, playerId);
+    const review = submission ? state.reviews.get(adapterSubmissionUid(submission)) : null;
+    if (!teamPlayerIds.has(playerId) || !adapterReviewIsFresh(submission, review)) {
+      throw adapterError(
+        'all-star-boh-player-resource-unverified',
+        'Player resources may be saved only for current verified players assigned to this team.'
+      );
+    }
+    const meritBudget =
+      entry.meritBudget === null || entry.meritBudget === undefined || entry.meritBudget === ''
+        ? null
+        : Number(entry.meritBudget);
+    const queueCapacity =
+      entry.queueCapacity === null ||
+      entry.queueCapacity === undefined ||
+      entry.queueCapacity === ''
+        ? null
+        : Number(entry.queueCapacity);
+    return {
+      playerId,
+      meritBudget,
+      queueCapacity,
+      skillReservations: uniqueTextList(entry.skillIds).map((id, skillIndex) => ({
+        id,
+        order: skillIndex + 1,
+      })),
+    };
+  });
+
+  const annotationPrefix = `mapper-${team.id}-building-`;
+  const buildingAnnotations = list(payload.buildingAnnotations).map((entry, index) => ({
+    id: cleanText(entry.id) || `${annotationPrefix}${index + 1}`,
+    buildingId: cleanText(entry.buildingId),
+    note: cleanText(entry.note),
+    order: index + 1,
+  }));
+
+  await adapterSaveDraft(state, (draft) => {
+    const plan = adapterPlan(draft);
+    plan.substitutions = [
+      ...plan.substitutions.filter((entry) => cleanText(entry.teamId) !== team.id),
+      ...substitutions,
+    ];
+    plan.playerResources = [
+      ...plan.playerResources.filter((entry) => !teamPlayerIds.has(cleanText(entry.playerId))),
+      ...playerResources,
+    ];
+    plan.buildingAnnotations = [
+      ...plan.buildingAnnotations.filter(
+        (entry) => !cleanText(entry.id).startsWith(annotationPrefix)
+      ),
+      ...buildingAnnotations,
+    ];
+    draft.plan = BohModel.normalizeBohPlan(plan);
     return draft;
   });
 }
@@ -4706,17 +5068,27 @@ export function validateAdminAllStarBohPublicationBundle(bundle = {}) {
       })),
   }));
   const players = Object.values(bundle.players || {});
+  const deploymentErrors = Object.entries(bundle.teams || {}).flatMap(([teamId, team]) => {
+    const occupiedSeats = list(team.seats).filter((seat) => seat.displayName || seat.playerId);
+    const backups = occupiedSeats.filter((seat) => cleanText(seat.lane) === 'backup');
+    return backups.length === 2 && occupiedSeats.length - backups.length <= 10
+      ? []
+      : [{ code: 'boh_backup_designation', teamId, expected: 2, actual: backups.length }];
+  });
   const linkedSeatCount = Object.values(bundle.teams || {})
     .flatMap((team) => list(team.seats))
     .filter((seat) => seat.playerId).length;
   const roleGroups = players.find((player) => player?.plan)?.plan?.roleGroups || [];
-  const errors = list(
-    BohModel.validateBohTeamAssignments(teams, {
-      teamCount,
-      roleGroups,
-      expectedPlayerIds: teams.flatMap((team) => team.players.map((player) => player.playerId)),
-    }).errors
-  );
+  const errors = [
+    ...deploymentErrors,
+    ...list(
+      BohModel.validateBohTeamAssignments(teams, {
+        teamCount,
+        roleGroups,
+        expectedPlayerIds: teams.flatMap((team) => team.players.map((player) => player.playerId)),
+      }).errors
+    ),
+  ];
   if (players.length !== linkedSeatCount) {
     errors.push({
       code: 'boh_player_projection_count',
@@ -4868,6 +5240,8 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
       actionResult = await adapterImportApprovedRoster(state, payload);
     } else if (type === 'previewMapperExactView') {
       actionResult = adapterPreviewMapperExactView(state, payload);
+    } else if (type === 'reconcileMapperExactView') {
+      actionResult = adapterReconcileMapperExactView(state, payload);
     } else if (type === 'saveMapperExactViewImport') {
       actionResult = await adapterSaveMapperExactView(state);
     } else if (type === 'batchReviewSubmissions') {
@@ -4897,7 +5271,9 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'saveTeamMetadata') await adapterSaveTeamMetadata(state, payload);
     else if (type === 'saveRoleGroups') await adapterSaveRoleGroups(state, payload);
     else if (type === 'savePhases') await adapterSavePhases(state, payload);
-    else if (type === 'saveInstruction') await adapterSaveInstruction(state, payload);
+    else if (type === 'saveMapperPlanDetails') {
+      await adapterSaveMapperPlanDetails(state, payload);
+    } else if (type === 'saveInstruction') await adapterSaveInstruction(state, payload);
     else if (type === 'removeInstruction') await adapterRemoveInstruction(state, payload);
     else if (type === 'saveRotation') await adapterSaveRotation(state, payload);
     else if (type === 'removeRotation') await adapterRemoveRotation(state, payload);
@@ -5008,11 +5384,9 @@ function makeInitialState(root, options) {
           ? m[1]
           : STAGES.some(([id]) => id === options.initialStage)
             ? options.initialStage
-            : 'signups';
+            : 'teams';
       } catch {
-        return STAGES.some(([id]) => id === options.initialStage)
-          ? options.initialStage
-          : 'signups';
+        return STAGES.some(([id]) => id === options.initialStage) ? options.initialStage : 'teams';
       }
     })(),
     signupFilter: (() => {
@@ -5070,6 +5444,10 @@ function makeInitialState(root, options) {
     selectedSourceSeat: null,
     approvedRosterImportReport: null,
     mapperImportPreview: null,
+    mapperBoardSearch: '',
+    mapperBoardFilter: 'all',
+    mapperPlanDialogTeamId: '',
+    mapperPlanMode: 'overview',
     planTeamId: snapshot.teams[0]?.id || 'team-1',
     planPhaseId: snapshot.plan.phases[0]?.id || DEFAULT_PHASES[0].id,
     planLegionId: snapshot.plan.legions[0]?.id || DEFAULT_LEGIONS[0].id,
@@ -5212,7 +5590,7 @@ function renderStageNavigation(state) {
   const pending = state.snapshot.submissions.filter(
     (submission) => submissionStatus(submission) === 'pending'
   ).length;
-  return STAGES.map(([id, key, fallback], index) => {
+  const buttonFor = ([id, key, fallback]) => {
     const selected = state.stage === id;
     const badge =
       id === 'signups' && pending ? `<span class="boh-admin-nav-count">${pending}</span>` : '';
@@ -5220,10 +5598,15 @@ function renderStageNavigation(state) {
       class="boh-admin-nav-button" data-action="stage" data-stage="${id}"
       aria-selected="${selected}" aria-controls="bohAdminStagePanel"
       tabindex="${selected ? '0' : '-1'}">
-      <span class="boh-admin-nav-index" aria-hidden="true">${index + 1}</span>
       <span>${escapeHtml(state.tr(key, fallback))}</span>${badge}
     </button>`;
-  }).join('');
+  };
+  return `<div class="boh-admin-workspace-bar__primary">${STAGES.slice(0, 3)
+    .map(buttonFor)
+    .join('')}</div>
+    <div class="boh-admin-workspace-bar__secondary" aria-label="${escapeHtml(
+      state.tr('adminBohSecondaryUtilities', 'Secondary review utilities')
+    )}">${STAGES.slice(3).map(buttonFor).join('')}</div>`;
 }
 
 function renderShell(state) {
@@ -5247,12 +5630,12 @@ function renderShell(state) {
             })
           )}</p>
           <h2 id="bohAdminTitle">${escapeHtml(
-            state.tr('adminBohTitle', 'All-Star BoH Command Center')
+            state.tr('adminBohTitle', 'All-Star BoH Mapper Workspace')
           )}</h2>
           <p>${escapeHtml(
             state.tr(
               'adminBohDynamicSubtitle',
-              'Review signups, balance the selected field, author role plans, and publish player-safe views.'
+              'Import the mapper exact view, reconcile verified signups, edit six teams and plans, then validate and publish explicitly.'
             )
           )}</p>
         </div>
@@ -5267,8 +5650,8 @@ function renderShell(state) {
 
       <!-- bohAdminStatus rendered separately as persistent live region -->
 
-      <nav class="boh-admin-nav" role="tablist" aria-label="${escapeHtml(
-        state.tr('adminBohWorkflow', 'All-Star administration workflow')
+      <nav class="boh-admin-nav boh-admin-workspace-bar" role="tablist" aria-label="${escapeHtml(
+        state.tr('adminBohWorkflow', 'All-Star mapper workspace and secondary utilities')
       )}">
         ${renderStageNavigation(state)}
       </nav>
@@ -5282,6 +5665,7 @@ function renderShell(state) {
   syncSignupSelectionCheckbox(state);
   syncEligiblePoolCount(state);
   syncEligiblePoolSearch(state);
+  syncMapperBoardFilter(state);
   syncStickyOffsets(state);
   const stagePanel = root.querySelector('#bohAdminStagePanel');
   if (stagePanel) {
@@ -5388,6 +5772,22 @@ function syncEligiblePoolSearch(state) {
     counter.textContent = query
       ? state.tr('adminBohEligiblePoolSearchCount', '{count} matches', { count: matches })
       : '';
+  }
+}
+
+function syncMapperBoardFilter(state) {
+  const query = cleanText(state.mapperBoardSearch).toLocaleLowerCase();
+  const filter = cleanText(state.mapperBoardFilter) || 'all';
+  for (const seat of state.root.querySelectorAll?.('.boh-admin-seat') || []) {
+    const searchMatches =
+      !query || cleanText(seat.dataset.search).toLocaleLowerCase().includes(query);
+    const deployment = cleanText(seat.dataset.deployment);
+    const filterMatches = filter === 'all' || deployment === filter;
+    seat.hidden = !(searchMatches && filterMatches);
+  }
+  for (const team of state.root.querySelectorAll?.('.boh-admin-team') || []) {
+    const visibleSeats = [...team.querySelectorAll('.boh-admin-seat')].some((seat) => !seat.hidden);
+    team.hidden = !visibleSeats;
   }
 }
 
@@ -7606,27 +8006,79 @@ function mapperImportIssueMessage(state, issue) {
   );
 }
 
+function renderMapperReconciliationSelect(state, preview, team, player) {
+  const used = new Set(
+    preview.teams
+      .flatMap((item) => item.players)
+      .filter((item) => item !== player && item.playerId)
+      .map((item) => item.playerId)
+  );
+  const candidates = [player.linkedCandidate, ...list(preview.candidates)]
+    .filter((candidate) => candidate?.playerId)
+    .filter(
+      (candidate, index, items) =>
+        items.findIndex((item) => item.playerId === candidate.playerId) === index &&
+        (candidate.playerId === player.playerId || !used.has(candidate.playerId))
+    );
+  return `<label class="boh-admin-mapper-reconcile"><span class="sr-only">${escapeHtml(
+    state.tr('adminBohMapperChooseVerified', 'Choose a fresh verified signup for {name}', {
+      name: player.displayName,
+    })
+  )}</span><select class="boh-admin-select" data-action="reconcile-mapper-player"
+    data-team-id="${escapeHtml(team.id)}" data-seat-number="${player.seatNumber}">
+    <option value="">${escapeHtml(
+      state.tr('adminBohMapperLeaveUnresolved', 'Leave unresolved')
+    )}</option>
+    ${candidates
+      .map(
+        (candidate) =>
+          `<option value="${escapeHtml(candidate.playerId)}" ${
+            candidate.playerId === player.playerId ? 'selected' : ''
+          }>${escapeHtml(candidate.displayName)} - ${escapeHtml(
+            state.tr('adminBohScore', 'Score')
+          )} ${escapeHtml(formatNumber(state, candidate.score))}</option>`
+      )
+      .join('')}
+  </select></label>`;
+}
+
 function renderMapperExactViewImport(state) {
   const preview = state.mapperImportPreview;
   const rows = list(preview?.teams)
     .flatMap((team) =>
       list(team.players)
-        .filter((player) => !player.playerId)
+        .filter((player) => player.matchSource !== 'exact')
         .map((player) => {
           const issue = list(preview?.diagnostics).find(
             (item) => item.teamId === team.id && item.seatNumber === player.seatNumber
           );
+          const estimate =
+            !player.playerId &&
+            Boolean(cleanText(player.displayName)) &&
+            Number.isFinite(Number(player.score)) &&
+            finiteNumber(player.score) > 0
+              ? `<small>${escapeHtml(
+                  state.tr('adminBohMapperRoughEstimate', 'Mapper rough/manual estimate: {score}', {
+                    score: formatNumber(state, player.score),
+                  })
+                )}</small>`
+              : '';
           return `<tr><td>${escapeHtml(
-            state.tr('adminBohMapperSeat', '{team} · Seat {seat}', {
+            state.tr('adminBohMapperSeat', '{team} - Seat {seat}', {
               team: team.name,
               seat: player.seatNumber,
             })
           )}</td>
-            <td>${escapeHtml(player.displayName)}</td><td>${escapeHtml(
-              issue
-                ? mapperImportIssueMessage(state, issue)
-                : state.tr('adminBohMapperUnresolved', 'Unresolved')
-            )}</td></tr>`;
+            <td><strong>${escapeHtml(player.displayName)}</strong>${estimate}</td><td>
+              <span>${escapeHtml(
+                player.matchSource === 'manual'
+                  ? state.tr('adminBohMapperManualMatch', 'Manually linked')
+                  : issue
+                    ? mapperImportIssueMessage(state, issue)
+                    : state.tr('adminBohMapperUnresolved', 'Unresolved')
+              )}</span>
+              ${renderMapperReconciliationSelect(state, preview, team, player)}
+            </td></tr>`;
         })
     )
     .join('');
@@ -7705,6 +8157,249 @@ function renderApprovedRosterImport(state) {
   </section>`;
 }
 
+function renderMapperBoardToolbar(state) {
+  return `<section class="boh-admin-board-toolbar" aria-label="${escapeHtml(
+    state.tr('adminBohMapperBoardControls', 'Mapper board controls')
+  )}">
+    <label><span>${escapeHtml(state.tr('adminBohSearchPlayers', 'Search players'))}</span>
+      <input class="boh-admin-input" type="search" data-action="mapper-board-search"
+        value="${escapeHtml(state.mapperBoardSearch)}" placeholder="${escapeHtml(
+          state.tr('adminBohSearchPlayersPlaceholder', 'Name, team, role, or rank')
+        )}" /></label>
+    <label><span>${escapeHtml(state.tr('adminBohDeploymentFilter', 'Deployment'))}</span>
+      <select class="boh-admin-select" data-action="mapper-board-filter">
+        ${[
+          ['all', 'All players'],
+          ['main', 'Main'],
+          ['backup', 'Backup'],
+          ['unresolved', 'Unresolved identity'],
+        ]
+          .map(
+            ([value, label]) =>
+              `<option value="${value}" ${
+                state.mapperBoardFilter === value ? 'selected' : ''
+              }>${escapeHtml(label)}</option>`
+          )
+          .join('')}
+      </select></label>
+    <div class="boh-admin-stage-actions">
+      <button type="button" class="boh-admin-button" data-action="validate-revision">${escapeHtml(
+        state.tr('adminBohValidateDraft', 'Validate draft')
+      )}</button>
+      <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="stage" data-stage="publish">${escapeHtml(
+        state.tr('adminBohReviewPublish', 'Review and publish')
+      )}</button>
+    </div>
+  </section>`;
+}
+
+function renderMapperPlanDialog(state) {
+  const team = state.snapshot.teams.find((item) => item.id === state.mapperPlanDialogTeamId);
+  if (!team) return '';
+  const occupied = team.seats.filter((seat) => seat.playerId || seat.displayName);
+  const playerIds = new Set(occupied.map((seat) => seat.playerId).filter(Boolean));
+  const starters = occupied.filter((seat) => seat.playerId && cleanText(seat.lane) !== 'backup');
+  const backups = occupied.filter((seat) => seat.playerId && cleanText(seat.lane) === 'backup');
+  const instructions = list(state.snapshot.plan.instructions).filter(
+    (item) => item.teamId === team.id && (!item.playerId || playerIds.has(item.playerId))
+  );
+  const substitutions = list(state.snapshot.plan.substitutions).filter(
+    (item) => item.teamId === team.id
+  );
+  const resourceByPlayer = new Map(
+    list(state.snapshot.plan.playerResources).map((item) => [item.playerId, item])
+  );
+  const annotationPrefix = `mapper-${team.id}-building-`;
+  const buildingAnnotation = list(state.snapshot.plan.buildingAnnotations).find((item) =>
+    cleanText(item.id).startsWith(annotationPrefix)
+  );
+  const verifiedAssigned = occupied.filter((seat) => {
+    if (!seat.playerId) return false;
+    const player = playerById(state, seat.playerId);
+    return ['confirmed', 'approved'].includes(submissionStatus(player));
+  });
+  const modes = ['overview', 'roles', 'timeline', 'resources', 'map'];
+  const mode = modes.includes(state.mapperPlanMode) ? state.mapperPlanMode : 'overview';
+  let content = '';
+
+  if (mode === 'roles') {
+    content = `<div class="boh-admin-team-plan-dialog__grid">${state.snapshot.plan.roleGroups
+      .map((role) => {
+        const members = occupied.filter((seat) => seat.roleGroupId === role.id);
+        return `<section><h4>${escapeHtml(roleDisplayName(state, role))}</h4><ol>${members
+          .map(
+            (seat) =>
+              `<li><strong>#${seat.seatNumber} ${escapeHtml(
+                seat.displayName || playerName(playerById(state, seat.playerId)) || 'Unresolved'
+              )}</strong><span>${escapeHtml(seat.lane || 'deployment not set')}</span></li>`
+          )
+          .join('')}</ol></section>`;
+      })
+      .join('')}</div>`;
+  } else if (mode === 'timeline') {
+    content = `<div class="boh-admin-team-plan-dialog__grid">${state.snapshot.plan.phases
+      .map((phase) => {
+        const rows = instructions.filter((item) => item.phaseId === phase.id);
+        const phaseSwaps = substitutions.filter(
+          (item) =>
+            item.entryMinute >= finiteNumber(phase.startMinute) &&
+            item.entryMinute <= finiteNumber(phase.endMinute)
+        );
+        return `<section><h4>${escapeHtml(phaseDisplayName(state, phase))}</h4>
+          ${phaseSwaps
+            .map((item) => {
+              const incoming = occupied.find((seat) => seat.playerId === item.backupPlayerId);
+              const outgoing = occupied.find((seat) => seat.playerId === item.replacesPlayerId);
+              return `<p><strong>Minute ${item.entryMinute} substitution:</strong> ${escapeHtml(
+                incoming?.displayName || item.backupPlayerId
+              )} replaces ${escapeHtml(outgoing?.displayName || item.replacesPlayerId)}.</p>`;
+            })
+            .join('')}
+          <ul>${rows
+            .map((item) => {
+              const seat = occupied.find((candidate) => candidate.playerId === item.playerId);
+              const action = cleanText(item.action || item.instruction?.action || item.instruction);
+              const crystal = item.instruction?.gatherCrystals === true;
+              return `<li><strong>${escapeHtml(
+                seat?.displayName ||
+                  playerName(playerById(state, item.playerId)) ||
+                  item.playerId ||
+                  'Team'
+              )} - ${escapeHtml(item.legionId || '')}</strong><span>${escapeHtml(action)}${
+                crystal ? ' - Sacred Crystal duty' : ''
+              }</span></li>`;
+            })
+            .join('')}</ul></section>`;
+      })
+      .join('')}</div>`;
+  } else if (mode === 'resources') {
+    content = `<form class="boh-admin-plan-details" data-form="mapper-plan-details">
+      <input type="hidden" name="teamId" value="${escapeHtml(team.id)}" />
+      <section class="boh-admin-card"><header><div><h4>Backup substitutions</h4><p>Private draft only. Standby is the default. An enabled backup must replace one active starter at minute 3-60; no more than 10 starters are active at once.</p></div><strong>${starters.length} / 10 active</strong></header>
+        <div class="boh-admin-plan-details__grid">${
+          backups
+            .map((seat, index) => {
+              const existing = substitutions.find((item) => item.backupPlayerId === seat.playerId);
+              return `<fieldset><legend>#${seat.seatNumber} ${escapeHtml(
+                seat.displayName || playerName(playerById(state, seat.playerId)) || seat.playerId
+              )}</legend>
+              <input type="hidden" name="substitutionId.${escapeHtml(
+                seat.playerId
+              )}" value="${escapeHtml(existing?.id || '')}" />
+              <label><span>Deployment</span><select class="boh-admin-select" name="substitutionReplaces.${escapeHtml(
+                seat.playerId
+              )}"><option value="">Standby - does not play</option>${starters
+                .map(
+                  (starter) =>
+                    `<option value="${escapeHtml(starter.playerId)}" ${
+                      existing?.replacesPlayerId === starter.playerId ? 'selected' : ''
+                    }>Replace #${starter.seatNumber} ${escapeHtml(
+                      starter.displayName || starter.playerId
+                    )}</option>`
+                )
+                .join('')}</select></label>
+              <label><span>Entry minute</span><input class="boh-admin-input" type="number" min="3" max="60" name="substitutionMinute.${escapeHtml(
+                seat.playerId
+              )}" value="${escapeHtml(existing?.entryMinute ?? 3)}" /></label>
+              <label><span>Private note</span><input class="boh-admin-input" maxlength="2000" name="substitutionNote.${escapeHtml(
+                seat.playerId
+              )}" value="${escapeHtml(existing?.note || '')}" /></label>
+              <input type="hidden" name="substitutionOrder.${escapeHtml(
+                seat.playerId
+              )}" value="${index + 1}" />
+            </fieldset>`;
+            })
+            .join('') || '<p>No designated backups on this team.</p>'
+        }</div>
+      </section>
+      <section class="boh-admin-card"><header><div><h4>Player resources</h4><p>Private planning inputs for current verified assigned players. No merit conversion is calculated here. Battlefield Teleport reserves one personal teleport; other skills carry no invented effect.</p></div></header>
+        <div class="boh-admin-plan-details__grid">${
+          verifiedAssigned
+            .map((seat) => {
+              const resource = resourceByPlayer.get(seat.playerId) || {};
+              const reserved = new Set(list(resource.skillReservations).map((item) => item.id));
+              return `<fieldset><legend>#${seat.seatNumber} ${escapeHtml(
+                seat.displayName || playerName(playerById(state, seat.playerId)) || seat.playerId
+              )}</legend>
+              <input type="hidden" name="resourcePlayerId" value="${escapeHtml(seat.playerId)}" />
+              <label><span>Merit budget</span><input class="boh-admin-input" type="number" min="0" name="resourceMerit.${escapeHtml(
+                seat.playerId
+              )}" value="${escapeHtml(resource.meritBudget ?? '')}" /></label>
+              <label><span>Queue capacity</span><input class="boh-admin-input" type="number" min="1" max="4" name="resourceQueue.${escapeHtml(
+                seat.playerId
+              )}" value="${escapeHtml(resource.queueCapacity ?? '')}" /></label>
+              <div class="boh-admin-plan-details__skills">${BohModel.BOH_PLAYER_RESOURCE_SKILLS.map(
+                (skill) =>
+                  `<label><input type="checkbox" name="resourceSkill.${escapeHtml(
+                    seat.playerId
+                  )}" value="${escapeHtml(skill.id)}" ${
+                    reserved.has(skill.id) ? 'checked' : ''
+                  } /><span>${escapeHtml(skill.id)}${
+                    skill.id === 'battlefield-teleport' ? ' (+1 personal teleport)' : ''
+                  }</span></label>`
+              ).join('')}</div>
+            </fieldset>`;
+            })
+            .join('') || '<p>No current verified assigned players.</p>'
+        }</div>
+      </section>
+      <section class="boh-admin-card"><header><div><h4>Building annotation</h4><p>This is configurable private mapping text, not a known building effect.</p></div></header>
+        <input type="hidden" name="annotationId" value="${escapeHtml(
+          buildingAnnotation?.id || ''
+        )}" />
+        <div class="boh-admin-field-pair"><label><span>Building ID</span><input class="boh-admin-input" name="annotationBuildingId" maxlength="160" value="${escapeHtml(
+          buildingAnnotation?.buildingId || ''
+        )}" /></label><label><span>Annotation</span><input class="boh-admin-input" name="annotationNote" maxlength="2000" value="${escapeHtml(
+          buildingAnnotation?.note || ''
+        )}" /></label></div>
+      </section>
+      <footer class="boh-admin-team-plan-dialog__footer"><p>These fields remain private in the draft and never publish automatically.</p><button type="submit" class="boh-admin-button boh-admin-button-primary">Save private plan details</button></footer>
+    </form>`;
+  } else if (mode === 'map') {
+    content = `<section class="boh-admin-card"><h4>Connected tower territory route</h4><p>Each tower covers an adjacent or overlapping 5x5 footprint from HOME. Blue routes toward center and both Fortresses of Honor; red mirrors the route by 180 degrees.</p><ol><li>HOME - T1 - T2 - T3 - T4</li><li>Main: T4 - T5 through T14 - center / FH1</li><li>Branch: T4 - T15 - T16 - T17 - T18 - T19 - FH2</li></ol></section>`;
+  } else {
+    content = `<div class="boh-admin-team-plan-dialog__grid"><section><h4>Ranked roster</h4><ol>${occupied
+      .map((seat) => {
+        const command =
+          seat.playerId === team.captainId
+            ? 'Leader'
+            : uniqueTextList(team.coLeaderIds).includes(seat.playerId)
+              ? 'Co-leader'
+              : '';
+        return `<li><strong>#${seat.seatNumber} ${escapeHtml(
+          seat.displayName || playerName(playerById(state, seat.playerId)) || 'Unresolved'
+        )}</strong><span>${escapeHtml(
+          [seat.lane || 'deployment not set', seat.side, command].filter(Boolean).join(' - ')
+        )}</span></li>`;
+      })
+      .join(
+        ''
+      )}</ol></section><section><h4>Plan safety</h4><p>Draft only. Crystal tasks appear only on the assigned player, Legion, and phase. Publishing remains a separate validated action.</p></section></div>`;
+  }
+
+  return `<section class="boh-admin-team-plan-dialog" role="dialog" aria-modal="true" aria-labelledby="bohMapperPlanTitle">
+    <button type="button" class="boh-admin-team-plan-dialog__backdrop" data-action="close-mapper-plan" aria-label="Close team plan"></button>
+    <div class="boh-admin-team-plan-dialog__panel"><header class="boh-admin-team-plan-dialog__header"><div><p class="boh-admin-card-kicker">TEAM PLAN</p><h3 id="bohMapperPlanTitle" tabindex="-1">${escapeHtml(
+      teamDisplayName(state, team)
+    )}</h3></div><button type="button" class="boh-admin-button" data-action="close-mapper-plan">Close</button></header>
+    <div class="boh-admin-team-plan-dialog__toolbar" role="tablist">${[
+      ['overview', 'Overview'],
+      ['roles', 'Roles'],
+      ['timeline', 'Timeline'],
+      ['resources', 'Resources'],
+      ['map', 'Map'],
+    ]
+      .map(
+        ([value, label]) =>
+          `<button type="button" class="boh-admin-button" role="tab" data-action="mapper-plan-mode" data-mode="${value}" aria-selected="${
+            mode === value
+          }">${escapeHtml(label)}</button>`
+      )
+      .join('')}</div>
+    ${content}<footer class="boh-admin-team-plan-dialog__footer"><button type="button" class="boh-admin-button" data-action="validate-revision">Validate draft</button><button type="button" class="boh-admin-button boh-admin-button-primary" data-action="stage" data-stage="publish">Review and publish</button></footer></div>
+  </section>`;
+}
+
 function renderTeamBuilder(state) {
   const balance = teamBalance(state);
   const candidates = teamBuilderCandidates(state);
@@ -7713,67 +8408,38 @@ function renderTeamBuilder(state) {
   const activeMetric = normalizeBalanceMetric(state.snapshot.event?.balanceMetric);
   return `
     <header class="boh-admin-stage-header">
-      <div><p class="boh-admin-eyebrow">${escapeHtml(state.tr('adminBohStageThree', 'MAPPER WORKSPACE'))}</p>
-        <h3>${escapeHtml(stageLabel(state, 'teams'))}</h3>
-        <p>${escapeHtml(
-          state.tr(
-            'adminBohTeamsHelp',
-            'Import the approved mapper exact view, verify all {count} teams, then edit only what changed before publishing.',
-            { count: snapshotTeamCount(state) }
-          )
-        )}</p></div>
-      <div class="boh-admin-stage-actions">
-        <button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
-          state.selectedSourceSeat ? '' : 'disabled'
-        }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button>
-        <button type="button" class="boh-admin-button" data-action="discard-balance-preview" ${
-          preview ? '' : 'disabled'
-        }>${escapeHtml(state.tr('adminBohDiscardPreview', 'Discard preview'))}</button>
-        <button type="button" class="boh-admin-button" data-action="preview-balance-teams">${escapeHtml(
-          state.tr('adminBohPreviewBalance', 'Preview balance')
-        )}</button>
-        <button type="button" class="boh-admin-button" data-action="auto-assign-ranked-roles">${escapeHtml(
-          state.tr('adminBohAutoAssignRankedRoles', 'Auto roles by rank')
-        )}</button>
-        <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="apply-balance-preview" ${
-          preview ? '' : 'disabled'
-        }>${escapeHtml(state.tr('adminBohApplyPreview', 'Apply preview'))}</button>
-      </div>
+      <div><p class="boh-admin-eyebrow">${escapeHtml(
+        state.tr('adminBohStageThree', 'MAPPER WORKSPACE')
+      )}</p><h3>${escapeHtml(stageLabel(state, 'teams'))}</h3><p>${escapeHtml(
+        state.tr(
+          'adminBohMapperTeamsHelp',
+          'Import the mapper exact view, reconcile verified identities, edit the six ranked team cards, inspect mapper-style plans, then validate and publish explicitly.'
+        )
+      )}</p></div>
+      <div class="boh-admin-stage-actions"><button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
+        state.selectedSourceSeat ? '' : 'disabled'
+      }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button><button type="button" class="boh-admin-button" data-action="preview-balance-teams">${escapeHtml(
+        state.tr('adminBohPreviewBalance', 'Preview balance')
+      )}</button><button type="button" class="boh-admin-button boh-admin-button-primary" data-action="apply-balance-preview" ${
+        preview ? '' : 'disabled'
+      }>${escapeHtml(
+        state.tr('adminBohApplyPreview', 'Apply preview')
+      )}</button><button type="button" class="boh-admin-button" data-action="discard-balance-preview" ${preview ? '' : 'disabled'}>${escapeHtml(
+        state.tr('adminBohDiscardPreview', 'Discard preview')
+      )}</button><button type="button" class="boh-admin-button" data-action="auto-assign-ranked-roles">${escapeHtml(
+        state.tr('adminBohAutoAssignRankedRoles', 'Auto roles by rank')
+      )}</button></div>
     </header>
     <div class="boh-admin-summary-grid">
       ${summaryCard(`${balance.assigned} / ${snapshotFieldSize(state)}`, state.tr('adminBohAssignedSeats', 'Assigned seats'))}
       ${summaryCard(formatNumber(state, balance.scoreAverage), state.tr('adminBohAverageTeamScore', 'Average team score'))}
       ${summaryCard(formatNumber(state, balance.powerAverage), state.tr('adminBohAverageTeamPower', 'Average team power'))}
-      ${summaryCard(
-        balanceMetricLabel(state, activeMetric),
-        state.tr('adminBohActiveBalanceMetricLabel', 'Active balance metric'),
-        'success'
-      )}
-      ${summaryCard(state.snapshot.teams.flatMap((team) => team.seats).filter((seat) => seat.locked).length, state.tr('adminBohLockedSeats', 'Locked seats'))}
+      ${summaryCard(balanceMetricLabel(state, activeMetric), state.tr('adminBohActiveBalanceMetricLabel', 'Active balance metric'), 'success')}
     </div>
-    <section class="boh-admin-mapper-workflow" aria-label="Mapper publishing workflow">
-      <strong>Current workflow</strong>
-      <ol>
-        <li><span>1</span> Preview mapper JSON</li>
-        <li><span>2</span> Save teams and roles to draft</li>
-        <li><span>3</span> Review the six team cards</li>
-        <li><span>4</span> Validate and publish the announcement</li>
-      </ol>
-      <p>The mapper is the source of truth for order, main/backup deployment, command roles, and title roles. Changes here remain draft-only until Publish.</p>
-    </section>
+    <section class="boh-admin-mapper-workflow" aria-label="Mapper publishing workflow"><strong>Current workflow</strong><ol><li><span>1</span> Preview and reconcile mapper JSON</li><li><span>2</span> Save exact teams and roles to draft</li><li><span>3</span> Edit the six ranked team cards and plans</li><li><span>4</span> Validate and publish explicitly</li></ol><p>Exact seat order, main/backup deployment, plan/title roles, and command roles remain draft-only until Publish.</p></section>
     ${renderMapperExactViewImport(state)}
-    <details class="boh-admin-advanced-tools" open>
-      <summary>Advanced compatibility tools</summary>
-      <div class="boh-admin-advanced-tools__body">
-    ${renderApprovedRosterImport(state)}
-    ${renderTeamBuilderSettings(state, candidates, selectedIds)}
-    ${renderEligiblePool(state, candidates, selectedIds)}
-    ${renderDirectAssignment(state, candidates, selectedIds)}
-    ${renderBalancePreview(state)}
+    ${renderMapperBoardToolbar(state)}
     ${renderSeatMoveNotice(state)}
-    ${renderTeamExportTools(state, balance)}
-      </div>
-    </details>
     <div class="boh-admin-team-board" style="--boh-team-count:${snapshotTeamCount(state)};--boh-team-columns:${Math.min(
       snapshotTeamCount(state),
       3
@@ -7781,14 +8447,24 @@ function renderTeamBuilder(state) {
       state.tr('adminBohTeamBoard', '{count}-team assignment board', {
         count: snapshotTeamCount(state),
       })
-    )}">
-      ${state.snapshot.teams.map((team, index) => renderTeamColumn(state, team, balance, index)).join('')}
-    </div>
+    )}">${state.snapshot.teams
+      .map((team, index) => renderTeamColumn(state, team, balance, index))
+      .join('')}</div>
+    <details class="boh-admin-advanced-tools"><summary>Advanced compatibility tools</summary><div class="boh-admin-advanced-tools__body">
+      ${renderApprovedRosterImport(state)}${renderTeamBuilderSettings(state, candidates, selectedIds)}${renderEligiblePool(
+        state,
+        candidates,
+        selectedIds
+      )}${renderDirectAssignment(state, candidates, selectedIds)}${renderBalancePreview(
+        state
+      )}${renderTeamExportTools(state, balance)}
+    </div></details>
     <div class="boh-admin-team-export-host" aria-hidden="true">${renderTeamExportCard(
       state,
       balance,
       'roles'
-    )}${renderTeamExportCard(state, balance, 'scores')}</div>`;
+    )}${renderTeamExportCard(state, balance, 'scores')}</div>
+    ${renderMapperPlanDialog(state)}`;
 }
 
 function renderTeamExportTools(state, balance) {
@@ -7924,7 +8600,7 @@ function renderTeamColumn(state, team, balance, index) {
   const displayedTotal = powerMetric ? power : score;
   const difference = powerMetric ? power - balance.powerAverage : score - balance.scoreAverage;
   const assigned = team.seats.filter((seat) => seat.playerId).length;
-  return `<section class="boh-admin-team" aria-labelledby="bohTeamTitle-${team.number}">
+  return `<section class="boh-admin-team" data-team-id="${escapeHtml(team.id)}" aria-labelledby="bohTeamTitle-${team.number}">
     <header style="--boh-team-color:${escapeHtml(team.color || '#7dd3fc')}">
       <div><span>${escapeHtml(state.tr('adminBohTeamNumber', 'TEAM {number}', { number: team.number }))}</span>
         <h4 id="bohTeamTitle-${team.number}">${escapeHtml(teamDisplayName(state, team))}</h4></div>
@@ -7947,6 +8623,7 @@ function renderTeamColumn(state, team, balance, index) {
                 state.tr('adminBohVsAverage', 'vs avg')
               )}</span>`
         }</div>
+      <button type="button" class="boh-admin-button boh-admin-button-small" data-action="open-mapper-plan" data-team-id="${escapeHtml(team.id)}">Open team plan</button>
     </header>
     <form class="boh-admin-stack" data-form="team-metadata">
       <input type="hidden" name="teamId" value="${escapeHtml(team.id)}" />
@@ -8022,54 +8699,109 @@ function renderSeat(state, team, seat) {
   const sourceSelected = Boolean(state.selectedSourceSeat);
   const destinationDisabled = selected || seat.locked;
   const role = state.snapshot.plan.roleGroups.find((item) => item.id === seat.roleGroupId);
-  const playerScore = occupied && player ? formatNumber(state, scoreValue(player)) : '';
+  const unresolvedMapperScore =
+    !seat.playerId &&
+    Boolean(cleanText(seat.displayName)) &&
+    Number.isFinite(Number(seat.score)) &&
+    finiteNumber(seat.score) > 0;
+  const playerScore = player
+    ? formatNumber(state, scoreValue(player))
+    : unresolvedMapperScore
+      ? formatNumber(state, seat.score)
+      : '';
   const playerPower = occupied
     ? formatNumber(state, seat.totalCastlePower || scoreAuditTotalPower(player))
     : '';
-  return `<li class="boh-admin-seat" data-occupied="${occupied}" data-locked="${seat.locked}" data-selected="${selected}">
-    <span class="boh-admin-seat-number">${seat.seatNumber}</span>
-    <button type="button" class="boh-admin-seat-main" data-action="${
-      sourceSelected ? 'move-seat-here' : 'select-seat'
-    }" data-team-id="${escapeHtml(team.id)}" data-seat-number="${seat.seatNumber}"
-      ${sourceSelected && destinationDisabled ? 'disabled' : ''}
-      aria-pressed="${selected}" aria-label="${escapeHtml(
-        sourceSelected
-          ? state.tr(
-              occupied ? 'adminBohSwapHereLabel' : 'adminBohMoveHereLabel',
-              occupied ? 'Swap with {player}' : 'Move to empty seat {seat}',
-              {
-                player: seat.displayName || playerName(player) || '',
-                seat: seat.seatNumber,
-              }
-            )
-          : state.tr('adminBohSelectSeatLabel', 'Select seat {seat}: {player}', {
-              seat: seat.seatNumber,
-              player:
-                seat.displayName || playerName(player) || state.tr('adminBohEmptySeat', 'Empty'),
-            })
-      )}">
-      <strong>${escapeHtml(seat.displayName || playerName(player) || state.tr('adminBohEmptySeat', 'Empty seat'))}</strong>
-      <small>${escapeHtml(
-        [
-          roleDisplayName(state, role) || state.tr('adminBohRoleUnassigned', 'Role unassigned'),
-          playerScore ? `${state.tr('adminBohScore', 'Score')}: ${playerScore}` : '',
-          playerPower ? `${state.tr('adminBohPower', 'Power')}: ${playerPower}` : '',
+  const commandRole =
+    seat.playerId === team.captainId
+      ? 'leader'
+      : uniqueTextList(team.coLeaderIds).includes(seat.playerId)
+        ? 'coleader'
+        : '';
+  const candidates = teamBuilderCandidates(state);
+  const searchText = [
+    teamDisplayName(state, team),
+    seat.displayName || playerName(player),
+    roleDisplayName(state, role),
+    seat.lane,
+    seat.side,
+    commandRole,
+    seat.seatNumber,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const estimate =
+    !seat.playerId && playerScore
+      ? state.tr('adminBohMapperRoughEstimate', 'Mapper rough/manual estimate: {score}', {
+          score: playerScore,
+        })
+      : '';
+  return `<li class="boh-admin-seat" data-occupied="${occupied}" data-locked="${seat.locked}"
+    data-selected="${selected}" data-search="${escapeHtml(searchText)}"
+    data-deployment="${escapeHtml(seat.playerId ? seat.lane || 'main' : 'unresolved')}">
+    <span class="boh-admin-seat-number">#${seat.seatNumber}</span>
+    <div class="boh-admin-seat-editor"><div class="boh-admin-seat-editor__identity">
+      <button type="button" class="boh-admin-seat-main" data-action="${
+        sourceSelected ? 'move-seat-here' : 'select-seat'
+      }" data-team-id="${escapeHtml(team.id)}" data-seat-number="${seat.seatNumber}"
+        ${sourceSelected && destinationDisabled ? 'disabled' : ''} aria-pressed="${selected}">
+        <strong>${escapeHtml(
+          seat.displayName || playerName(player) || state.tr('adminBohEmptySeat', 'Empty seat')
+        )}</strong><small>${escapeHtml(
+          [
+            roleDisplayName(state, role) || state.tr('adminBohRoleUnassigned', 'Role unassigned'),
+            playerScore ? `${state.tr('adminBohScore', 'Score')}: ${playerScore}` : '',
+            playerPower ? `${state.tr('adminBohPower', 'Power')}: ${playerPower}` : '',
+            estimate,
+          ]
+            .filter(Boolean)
+            .join(' - ')
+        )}</small></button>
+      <button type="button" class="boh-admin-lock-button" data-action="toggle-seat-lock"
+        data-team-id="${escapeHtml(team.id)}" data-seat-number="${seat.seatNumber}"
+        aria-pressed="${seat.locked}" aria-label="${escapeHtml(
+          seat.locked ? 'Unlock seat' : 'Lock seat'
+        )}">${seat.locked ? 'Locked' : 'Open'}</button></div>
+      <label><span class="sr-only">Player</span><select class="boh-admin-select" data-action="mapper-seat-player"
+        data-team-id="${escapeHtml(team.id)}" data-seat-number="${seat.seatNumber}">
+        <option value="">Unresolved / empty</option>
+        ${candidates
+          .map(
+            (candidate) =>
+              `<option value="${escapeHtml(candidate.playerId)}" ${
+                candidate.playerId === seat.playerId ? 'selected' : ''
+              }>${escapeHtml(candidate.gameName || candidate.displayName || candidate.playerId)}</option>`
+          )
+          .join('')}</select></label>
+      <form class="boh-admin-seat-editor__controls" data-form="mapper-seat-details">
+        <input type="hidden" name="teamId" value="${escapeHtml(team.id)}" /><input type="hidden" name="seatNumber" value="${seat.seatNumber}" />
+        <label><span class="sr-only">Deployment</span><select class="boh-admin-select" name="deployment"><option value="">Not set</option><option value="main" ${
+          seat.lane === 'main' ? 'selected' : ''
+        }>Main</option><option value="backup" ${seat.lane === 'backup' ? 'selected' : ''}>Backup</option></select></label>
+        <label><span class="sr-only">Plan role</span><select class="boh-admin-select" name="roleGroupId">${state.snapshot.plan.roleGroups
+          .map(
+            (item) =>
+              `<option value="${escapeHtml(item.id)}" ${
+                item.id === seat.roleGroupId ? 'selected' : ''
+              }>${escapeHtml(roleDisplayName(state, item))}</option>`
+          )
+          .join('')}</select></label>
+        <label><span class="sr-only">Title role</span><select class="boh-admin-select" name="titleRole"><option value="">No title role</option>${[
+          ['kills', 'Kills'],
+          ['tower', 'Tower'],
+          ['escort', 'Escort'],
+          ['gathering', 'Gathering'],
         ]
-          .filter(Boolean)
-          .join(' · ')
-      )}</small>
-    </button>
-    <button type="button" class="boh-admin-lock-button" data-action="toggle-seat-lock"
-      data-team-id="${escapeHtml(team.id)}" data-seat-number="${seat.seatNumber}"
-      aria-pressed="${seat.locked}" aria-label="${escapeHtml(
-        state.tr(
-          seat.locked ? 'adminBohUnlockSeat' : 'adminBohLockSeat',
-          seat.locked ? 'Unlock seat {seat}' : 'Lock seat {seat}',
-          {
-            seat: seat.seatNumber,
-          }
-        )
-      )}">${seat.locked ? '🔒' : '○'}</button>
+          .map(
+            ([value, label]) =>
+              `<option value="${value}" ${seat.side === value ? 'selected' : ''}>${label}</option>`
+          )
+          .join('')}</select></label>
+        <label><span class="sr-only">Command role</span><select class="boh-admin-select" name="commandRole"><option value="">No command role</option><option value="leader" ${
+          commandRole === 'leader' ? 'selected' : ''
+        }>Leader</option><option value="coleader" ${commandRole === 'coleader' ? 'selected' : ''}>Co-leader</option></select></label>
+        <button class="boh-admin-button boh-admin-button-small" type="submit">Save card</button>
+      </form></div>
   </li>`;
 }
 
@@ -8769,6 +9501,16 @@ function deriveValidation(state, kind) {
     );
   }
   for (const team of state.snapshot.teams) {
+    const backupCount = team.seats.filter((seat) => cleanText(seat.lane) === 'backup').length;
+    if (backupCount !== 2) {
+      errors.push(
+        state.tr(
+          'adminBohValidationBackups',
+          '{team} has {count} designated backups; release requires exactly 2 backups and 10 starters.',
+          { team: teamDisplayName(state, team), count: backupCount }
+        )
+      );
+    }
     if (!cleanText(team.name) || !cleanText(team.color)) {
       errors.push(
         state.tr('adminBohValidationTeamMetadata', '{team} needs a name and color.', {
@@ -8794,8 +9536,8 @@ function deriveValidation(state, kind) {
       }
     }
   }
-  if (kind === 'plan' && state.snapshot.plan.phases.length !== 4) {
-    errors.push(state.tr('adminBohValidationPhases', 'The plan must contain exactly four phases.'));
+  if (kind === 'plan' && state.snapshot.plan.phases.length !== 5) {
+    errors.push(state.tr('adminBohValidationPhases', 'The plan must contain exactly five phases.'));
   }
   if (kind === 'plan' && state.snapshot.plan.legions.length !== 2) {
     errors.push(
@@ -10347,7 +11089,35 @@ async function handleClick(state, event) {
     );
     return;
   }
+  if (action === 'open-mapper-plan') {
+    state.mapperPlanDialogTeamId = cleanText(button.dataset.teamId);
+    state.mapperPlanMode = 'overview';
+    renderShell(state);
+    const dialogPanel = state.root.querySelector('.boh-admin-team-plan-dialog__panel');
+    dialogPanel?.setAttribute('tabindex', '-1');
+    dialogPanel?.focus?.();
+    return;
+  }
+  if (action === 'close-mapper-plan') {
+    const teamId = state.mapperPlanDialogTeamId;
+    state.mapperPlanDialogTeamId = '';
+    renderShell(state);
+    state.root
+      .querySelector(`[data-action="open-mapper-plan"][data-team-id="${CSS.escape(teamId)}"]`)
+      ?.focus?.();
+    return;
+  }
+  if (action === 'mapper-plan-mode') {
+    state.mapperPlanMode = ['overview', 'roles', 'timeline', 'resources', 'map'].includes(
+      button.dataset.mode
+    )
+      ? button.dataset.mode
+      : 'overview';
+    renderShell(state);
+    return;
+  }
   if (action === 'stage') {
+    state.mapperPlanDialogTeamId = '';
     state.stage = button.dataset.stage;
     state.selectedSourceSeat = null;
     updateHash(state);
@@ -10642,6 +11412,11 @@ function clearCorrectionValidity(form) {
 }
 
 function handleInput(state, event) {
+  if (event.target.matches?.('[data-action="mapper-board-search"]')) {
+    state.mapperBoardSearch = cleanText(event.target.value);
+    syncMapperBoardFilter(state);
+    return;
+  }
   if (event.target.matches?.('[data-action="eligible-pool-search"]')) {
     syncEligiblePoolSearch(state);
     return;
@@ -10679,6 +11454,42 @@ function handleInput(state, event) {
 
 async function handleChange(state, event) {
   const action = cleanText(event.target.dataset.action);
+  if (action === 'mapper-board-filter') {
+    state.mapperBoardFilter = cleanText(event.target.value) || 'all';
+    syncMapperBoardFilter(state);
+    return;
+  }
+  if (action === 'mapper-seat-player') {
+    await invokeAction(
+      state,
+      'assignSeatPlayer',
+      {
+        teamId: cleanText(event.target.dataset.teamId),
+        seatNumber: integer(event.target.dataset.seatNumber),
+        playerId: cleanText(event.target.value),
+      },
+      state.tr('adminBohAssignmentApplied', 'Seat assignment updated.')
+    );
+    return;
+  }
+  if (action === 'reconcile-mapper-player') {
+    const result = await invokeAction(
+      state,
+      'reconcileMapperExactView',
+      {
+        teamId: cleanText(event.target.dataset.teamId),
+        seatNumber: integer(event.target.dataset.seatNumber),
+        playerId: cleanText(event.target.value),
+      },
+      state.tr(
+        'adminBohMapperReconciledPreview',
+        'Mapper preview reconciliation updated. Nothing has been saved or published.'
+      )
+    );
+    state.mapperImportPreview = result?.result || result?.actionResult || state.mapperImportPreview;
+    renderShell(state);
+    return;
+  }
   if (action === 'preview-mapper-import') {
     const input = event.target;
     const file = input.files?.[0];
@@ -11108,6 +11919,82 @@ async function handleSubmit(state, event) {
     );
     return;
   }
+  if (kind === 'mapper-plan-details') {
+    const teamId = cleanText(data.get('teamId'));
+    const team = state.snapshot.teams.find((item) => item.id === teamId);
+    if (!team) return;
+    const substitutions = team.seats
+      .filter((seat) => seat.playerId && cleanText(seat.lane) === 'backup')
+      .map((seat, index) => {
+        const replacesPlayerId = cleanText(data.get(`substitutionReplaces.${seat.playerId}`));
+        if (!replacesPlayerId) return null;
+        return {
+          id: cleanText(data.get(`substitutionId.${seat.playerId}`)),
+          backupPlayerId: seat.playerId,
+          replacesPlayerId,
+          entryMinute: integer(data.get(`substitutionMinute.${seat.playerId}`)),
+          order: index + 1,
+          note: cleanText(data.get(`substitutionNote.${seat.playerId}`)),
+        };
+      })
+      .filter(Boolean);
+    const playerResources = uniqueTextList(data.getAll('resourcePlayerId')).flatMap((playerId) => {
+      const meritText = cleanText(data.get(`resourceMerit.${playerId}`));
+      const queueText = cleanText(data.get(`resourceQueue.${playerId}`));
+      const skillIds = uniqueTextList(data.getAll(`resourceSkill.${playerId}`));
+      if (!meritText && !queueText && !skillIds.length) return [];
+      return [
+        {
+          playerId,
+          meritBudget: meritText ? Number(meritText) : null,
+          queueCapacity: queueText ? Number(queueText) : null,
+          skillIds,
+        },
+      ];
+    });
+    const annotationId = cleanText(data.get('annotationId'));
+    const annotationBuildingId = cleanText(data.get('annotationBuildingId'));
+    const annotationNote = cleanText(data.get('annotationNote'));
+    if (annotationNote && !annotationBuildingId) {
+      setStatus(state, 'Choose a building ID before saving its annotation.', 'error');
+      return;
+    }
+    const buildingAnnotations = annotationBuildingId
+      ? [
+          {
+            id: annotationId,
+            buildingId: annotationBuildingId,
+            note: annotationNote,
+            order: 1,
+          },
+        ]
+      : [];
+    await invokeAction(
+      state,
+      'saveMapperPlanDetails',
+      { teamId, substitutions, playerResources, buildingAnnotations },
+      'Private mapper plan details saved to the draft.'
+    );
+    return;
+  }
+  if (kind === 'mapper-seat-details') {
+    await invokeAction(
+      state,
+      'saveTeamMetadata',
+      {
+        teamId: cleanText(data.get('teamId')),
+        seatEdit: {
+          seatNumber: integer(data.get('seatNumber')),
+          deployment: cleanText(data.get('deployment')),
+          roleGroupId: cleanText(data.get('roleGroupId')),
+          titleRole: cleanText(data.get('titleRole')),
+          commandRole: cleanText(data.get('commandRole')),
+        },
+      },
+      state.tr('adminBohMapperCardSaved', 'Mapper player card saved.')
+    );
+    return;
+  }
   if (kind === 'team-metadata') {
     await invokeAction(
       state,
@@ -11140,10 +12027,10 @@ async function handleSubmit(state, event) {
       if (phase.endMinute <= phase.startMinute) return true;
       return index > 0 && phase.startMinute < phases[index - 1].endMinute;
     });
-    if (invalid || phases.length !== 4) {
+    if (invalid || phases.length !== 5) {
       setStatus(
         state,
-        state.tr('adminBohInvalidTimeline', 'Use exactly four ordered, non-overlapping phases.'),
+        state.tr('adminBohInvalidTimeline', 'Use exactly five ordered, non-overlapping phases.'),
         'error'
       );
       return;
@@ -11320,6 +12207,12 @@ function bindEvents(state) {
     'keydown',
     (event) => {
       handleStageKeys(state, event);
+      if (event.key === 'Escape' && state.mapperPlanDialogTeamId) {
+        state.mapperPlanDialogTeamId = '';
+        renderNow(state);
+        event.preventDefault();
+        return;
+      }
       if (event.key === 'Escape' && state.selectedSubmissionId) {
         const closingPlayerId = state.selectedSubmissionId;
         state.selectedSubmissionId = '';

@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.2.16 - 2026-07-26
+
+- Fixed the All-Star published-player Firestore contract so UID and playerId identity fields remain consistent.
+- Replaced the Admin All-Star five-stage Team Builder/Plans wizard with a mapper-first workflow.
+- Added explicit manual reconciliation from unmatched mapper names to fresh verified signups.
+- Added five-phase personal plans with connected 5x5 tower routes, player-specific crystal and Battle Merit assignments, and paired minute-3-or-later substitutions that preserve the ten-player field limit.
+- Added private per-team resource, skill, building-buff, and substitution editing without exposing draft-only identities or tactics in player publications.
+- Added independent editable Battle Simulator profile drafts for Side A and Side B, including a visual Specialization Towers board, selective source application, and aligned header controls.
+
 ## 14.2.15 - 2026-07-26
 
 - Made the approved All-Star BoH mapper exact view the source of truth for ranked team order, role distribution, command roles, and explicit main or backup deployment.

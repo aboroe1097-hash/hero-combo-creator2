@@ -18,6 +18,7 @@ import {
   EQUIPMENT_EFFECT_OVERRIDE_SCHEMA_VERSION,
   normalizeEquipmentEffectOverrides,
 } from './battle-simulator-equipment-overrides.js';
+import { buildSpecializationSnapshot } from './specialization-towers-v2-model.js';
 
 export { EQUIPMENT_LOADOUT_SCHEMA_VERSION };
 
@@ -54,6 +55,7 @@ const MAX_TEXT_LENGTH = 512;
 const MAX_IDENTIFIER_LENGTH = 128;
 const MAX_SOURCE_ID_LENGTH = 256;
 const MAX_RESEARCH_ENTRIES = 2_000;
+const MAX_PROFILE_LABEL_LENGTH = 48;
 const MAX_METADATA_DEPTH = 6;
 const MAX_SPECIALIZATION_METADATA_DEPTH = 10;
 const MAX_METADATA_ENTRIES = 2_048;
@@ -631,6 +633,103 @@ function normalizeEquipmentOverrides(value) {
   return structuredClone(normalizeEquipmentEffectOverrides(value));
 }
 
+export function createDefaultBattleProfileDraft(sideId) {
+  if (!SIDE_IDS.includes(sideId)) {
+    throw new RangeError(
+      'Battle profile draft sideId must be one of: ' + SIDE_IDS.join(', ') + '.'
+    );
+  }
+  return {
+    label: 'Side ' + sideId + ' Profile',
+    sources: {
+      research: true,
+      equipment: true,
+      towers: true,
+    },
+    researchOverrides: [],
+    towersApplied: false,
+  };
+}
+
+function normalizeBattleProfileSources(value, label) {
+  const sources = value === undefined || value === null ? {} : requireObject(value, label);
+  return Object.fromEntries(
+    ['research', 'equipment', 'towers'].map((key) => {
+      const enabled = sources[key] ?? true;
+      if (typeof enabled !== 'boolean') {
+        throw new TypeError(label + ' ' + key + ' must be a boolean.');
+      }
+      return [key, enabled];
+    })
+  );
+}
+
+function normalizeResearchOverrides(value, label) {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new TypeError(label + ' must be an array.');
+  if (value.length > MAX_RESEARCH_ENTRIES) {
+    throw new RangeError(label + ' may contain at most ' + MAX_RESEARCH_ENTRIES + ' overrides.');
+  }
+  const normalized = value
+    .map((entry, index) => {
+      const overrideLabel = label + ' ' + (index + 1);
+      const override = requireObject(entry, overrideLabel);
+      return {
+        sourceId: normalizeText(
+          requireOwn(override, 'sourceId', overrideLabel),
+          overrideLabel + ' sourceId',
+          { maximum: MAX_SOURCE_ID_LENGTH }
+        ),
+        amount: normalizeBoundedNumber(
+          requireOwn(override, 'amount', overrideLabel),
+          overrideLabel + ' amount',
+          MAX_STAT_VALUE
+        ),
+      };
+    })
+    .sort((left, right) => left.sourceId.localeCompare(right.sourceId));
+  const sourceIds = new Set();
+  for (const override of normalized) {
+    if (sourceIds.has(override.sourceId)) {
+      throw new RangeError(label + ' contains duplicate sourceId ' + override.sourceId + '.');
+    }
+    sourceIds.add(override.sourceId);
+  }
+  return normalized;
+}
+
+function normalizeBattleProfileDraft(value, sideId, label) {
+  if (value === undefined || value === null) return createDefaultBattleProfileDraft(sideId);
+  const draft = requireObject(value, label);
+  const defaults = createDefaultBattleProfileDraft(sideId);
+  const normalized = {
+    label: normalizeText(draft.label ?? defaults.label, label + ' label', {
+      maximum: MAX_PROFILE_LABEL_LENGTH,
+    }),
+    sources: normalizeBattleProfileSources(draft.sources, label + ' sources'),
+    researchOverrides: normalizeResearchOverrides(
+      draft.researchOverrides,
+      label + ' researchOverrides'
+    ),
+    towersApplied: draft.towersApplied ?? false,
+  };
+  if (typeof normalized.towersApplied !== 'boolean') {
+    throw new TypeError(label + ' towersApplied must be a boolean.');
+  }
+  if (draft.equipmentLoadout !== undefined && draft.equipmentLoadout !== null) {
+    normalized.equipmentLoadout = normalizeEquipmentLoadout(draft.equipmentLoadout);
+  }
+  if (draft.equipmentEffectOverrides !== undefined && draft.equipmentEffectOverrides !== null) {
+    normalized.equipmentEffectOverrides = normalizeEquipmentOverrides(
+      draft.equipmentEffectOverrides
+    );
+  }
+  if (draft.towerState !== undefined && draft.towerState !== null) {
+    normalized.towerState = structuredClone(buildSpecializationSnapshot(draft.towerState));
+  }
+  return normalized;
+}
+
 function createEmptySpecializationCapture() {
   return {
     snapshot: null,
@@ -695,6 +794,7 @@ function normalizeSide(rawSide, sideId, battleMode, { legacy = false } = {}) {
 
   return {
     mode: normalizeMode(requireOwn(side, 'mode', label), label),
+    profileDraft: normalizeBattleProfileDraft(side.profileDraft, sideId, label + ' profile draft'),
     researchEnabled,
     researchSnapshot: normalizeResearchSnapshot(
       side.researchSnapshot,
