@@ -1432,6 +1432,18 @@
     </div>
 
     <div class="boh-announcement" data-role="announcement-state-assigned" hidden>
+      <article class="boh-publication-banner" data-role="announcement-publication-banner">
+        <div class="boh-publication-banner__status">
+          <span data-role="announcement-publication-event-name">OFFICIAL TEAM RELEASE</span>
+          <small data-role="announcement-publication-revision">Published</small>
+        </div>
+        <div class="boh-publication-banner__copy">
+          <h4 data-role="announcement-publication-title">All-Star BoH team announcement</h4>
+          <p data-role="announcement-publication-subtitle" hidden></p>
+          <p data-role="announcement-publication-message" hidden></p>
+        </div>
+      </article>
+
       <article class="boh-my-team" data-role="my-team-card">
         <div class="boh-my-team__identity">
           <span class="boh-team-mark" data-role="my-team-number" data-boh-i18n="common.team1"
@@ -2249,8 +2261,9 @@
           <h4 id="bohScheduleTitle" data-role="schedule-title" data-boh-i18n="schedule.title">
             Event schedule
           </h4>
+          <p class="boh-schedule-selected-status" data-role="schedule-selected-status"></p>
         </div>
-        <div class="boh-schedule-countdown" aria-live="polite">
+        <div class="boh-schedule-countdown">
           <span data-role="schedule-countdown" data-boh-i18n="schedule.waiting">Waiting</span>
           <small data-role="schedule-date" data-boh-i18n="status.notAvailable">Not available</small>
         </div>

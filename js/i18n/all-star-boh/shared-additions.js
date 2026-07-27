@@ -48,4 +48,13 @@ export const ALL_STAR_BOH_SHARED_ADDITIONS = Object.freeze({
   'schedule.teamTimesAria': 'Team game times',
   'schedule.title': 'Event schedule',
   'schedule.waiting': 'Waiting',
+  'announcement.publicationKicker': 'OFFICIAL TEAM RELEASE',
+  'announcement.publicationTitleFallback': 'All-Star BoH team announcement',
+  'schedule.completedMilestone': 'Completed milestone',
+  'schedule.currentMilestone': 'Current milestone',
+  'schedule.eventComplete': 'Event complete',
+  'schedule.liveNow': 'Live now',
+  'schedule.noMilestones': 'Milestones will appear here.',
+  'schedule.officialDatePending': 'Official date; match time to be announced',
+  'schedule.upcomingMilestone': 'Upcoming milestone',
 });

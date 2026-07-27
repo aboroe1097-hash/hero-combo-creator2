@@ -12,8 +12,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohAddRole: 'Add role',
   adminBohAllStatuses: 'All statuses',
   adminBohAnnouncement: 'Announcement',
-  adminBohAnnouncementPublishHelp:
-    'Reveal team, seat, and role assignments without exposing player stats.',
   adminBohApplyDefault: 'Apply default',
   adminBohApplyFilters: 'Apply filters',
   adminBohApplyRoleDefault: 'Apply role default',
@@ -119,8 +117,6 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohPhaseNameFallback: 'Phase {number}',
   adminBohPhaseRule: 'Phases must be ordered and non-overlapping.',
   adminBohPlanMatrix: 'Team plan matrix',
-  adminBohPlanPublishHelp:
-    'Reveal the timed Legion plan and personal instructions after assignments are ready.',
   adminBohPlansHelp:
     'Set role capacity, four timed phases, Legion-specific defaults, seat overrides, rotations, and schematic objectives.',
   adminBohPlayer: 'Player',
@@ -133,16 +129,11 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohPreviewPrivacy:
     'Private signup values, OCR notes, review notes, score overrides, and admin audit fields are excluded.',
   adminBohPreviewType: 'Preview type',
-  adminBohPublishAssignments: 'ASSIGNMENTS',
   adminBohPublishConfirmation: 'I reviewed the sanitized preview for revision {revision}.',
   adminBohPublished: '{title} published.',
-  adminBohPublishedAt: 'Published at',
-  adminBohPublishedRevision: 'Published revision',
   adminBohPublishedStatus: 'Published',
   adminBohPublishHelp:
     'Validate the exact draft revision, inspect the player-safe preview, then publish announcements and plans independently.',
-  adminBohPublishInstructions: 'INSTRUCTIONS',
-  adminBohPublishNow: 'Publish {title}',
   adminBohReady: 'All-Star administration is live.',
   adminBohRefresh: 'Refresh',
   adminBohRefreshed: 'All-Star data refreshed.',
@@ -242,12 +233,10 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohStatusUnknown: 'Unknown',
   adminBohTab: 'All-Star BoH',
   adminBohTeam: 'Team',
-  adminBohTeamAnnouncement: 'Team Announcement',
   adminBohTeamNameFallback: 'Team {number}',
   adminBohTeamNumber: 'TEAM {number}',
   adminBohTeamPlan: 'Team plan',
   adminBohTeamPlanCopied: 'Team plan copied without player assignments.',
-  adminBohTeamPlans: 'Team Plans',
   adminBohTeamSeatsFilled: '{assigned} of 12 seats filled',
   adminBohTeleport: 'Teleport instruction',
   adminBohTeleportPlaceholder: 'No teleport or destination',

@@ -336,12 +336,12 @@ test('hidden schedules save with no window, milestones, or team times', async ()
       schemaVersion: 1,
       seasonId: 'season-1',
       status: 'hidden',
-      eventStartsAt: '',
-      eventEndsAt: '',
-      milestones: [],
+      eventStartsAt: '2026-08-01T10:00:00.000Z',
+      eventEndsAt: '2026-08-01T11:00:00.000Z',
+      milestones: [{ id: 'check-in', label: 'Check in', startsAt: '2026-08-01T10:15:00.000Z' }],
       teamGameTimes: [
-        { teamId: 'team-1', startsAt: '' },
-        { teamId: 'team-2', startsAt: '' },
+        { teamId: 'team-1', startsAt: '2026-08-01T10:05:00.000Z' },
+        { teamId: 'team-2', startsAt: '2026-08-01T10:10:00.000Z' },
       ],
     },
   });
@@ -350,6 +350,7 @@ test('hidden schedules save with no window, milestones, or team times', async ()
   assert.equal(submitted.status, 'hidden');
   assert.equal(submitted.eventStartsAt, '');
   assert.equal(submitted.eventEndsAt, '');
+  assert.deepEqual(submitted.milestones, []);
   assert.deepEqual(submitted.teamGameTimes, []);
   // The canonical validator accepts an empty hidden schedule.
   const normalized = normalizeAllStarBohEventSchedule(submitted);

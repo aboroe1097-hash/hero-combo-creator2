@@ -4,6 +4,10 @@ import {
   parseAllStarBohMapperExactView,
 } from './all-star-boh-mapper-import.js';
 import {
+  BOH_MAPPER_PLAN_IMPORT_MAX_BYTES,
+  parseAllStarBohMapperStage1RolePlan,
+} from './all-star-boh-mapper-plan-import.js';
+import {
   BOH_STAGE1_LEGIONS,
   BOH_STAGE1_PHASES,
   BOH_STAGE1_PLAN_ID,
@@ -1490,6 +1494,20 @@ function adapterDefaultTeamIds(teamCount = TEAM_COUNT) {
   return Array.from({ length: normalizeTeamCount(teamCount) }, (_, index) => `team-${index + 1}`);
 }
 
+function adapterPublicationCopy(draft, options = {}) {
+  const source =
+    draft?.publicationCopy && typeof draft.publicationCopy === 'object'
+      ? draft.publicationCopy
+      : {};
+  return {
+    eventName: cleanText(source.eventName),
+    title:
+      cleanText(source.title) || (options.fallbackTitle === false ? '' : cleanText(draft?.title)),
+    subtitle: cleanText(source.subtitle),
+    message: cleanText(source.message),
+  };
+}
+
 function adapterDefaultDraft() {
   const scoringVersion = adapterDefaultScoringVersion();
   return {
@@ -1507,6 +1525,7 @@ function adapterDefaultDraft() {
     teamIds: adapterDefaultTeamIds(),
     playerIds: [],
     plan: adapterDefaultPlan(),
+    publicationCopy: { eventName: '', title: '', subtitle: '', message: '' },
     publications: { announcement: false, plan: false },
   };
 }
@@ -2023,6 +2042,7 @@ function adapterSnapshot(state) {
       adapterMaterializeTeam(state, teamId, index)
     ),
     plan: adapterUiPlan(state),
+    publicationCopy: adapterPublicationCopy(draft),
     publications: {
       announcement: {
         status: announcementPublished ? 'published' : 'draft',
@@ -2331,6 +2351,18 @@ async function adapterSaveDraft(state, mutate, options = {}) {
   return state.draft;
 }
 
+async function adapterSavePublicationCopy(state, payload) {
+  return adapterSaveDraft(state, (draft) => ({
+    ...draft,
+    publicationCopy: {
+      eventName: cleanText(payload.eventName),
+      title: cleanText(payload.title),
+      subtitle: cleanText(payload.subtitle),
+      message: cleanText(payload.message),
+    },
+  }));
+}
+
 async function adapterSaveTeam(state, teamId, mutate, options = {}) {
   const teamIds = adapterTeamIds(state.draft);
   const index = Math.max(0, teamIds.indexOf(teamId));
@@ -2355,14 +2387,22 @@ async function adapterSaveEventSchedule(state, payload) {
   const expectedRevision = adapterRevision(
     payload.expectedScheduleRevision ?? state.eventScheduleRevision
   );
+  const published = cleanText(payload.status) === 'published';
   const schedule = normalizeEventSchedule({
     ...payload,
     revision: expectedRevision,
+    status: published ? 'published' : 'hidden',
+    // Hidden is an explicit public reset. Its save clears every public schedule field.
+    eventStartsAt: published ? payload.eventStartsAt : '',
+    eventEndsAt: published ? payload.eventEndsAt : '',
+    milestones: published ? list(payload.milestones) : [],
     // Team game times are optional: a team with no chosen start is simply omitted. Submitting
     // { startsAt: '' } would fail the canonical schedule normalizer.
-    teamGameTimes: list(payload.teamGameTimes).filter(
-      (entry) => teamIds.includes(cleanText(entry?.teamId)) && cleanText(entry?.startsAt)
-    ),
+    teamGameTimes: published
+      ? list(payload.teamGameTimes).filter(
+          (entry) => teamIds.includes(cleanText(entry?.teamId)) && cleanText(entry?.startsAt)
+        )
+      : [],
   });
   const saved = await state.adminStore.saveEventSchedule(schedule, {
     expectedRevision,
@@ -2790,6 +2830,209 @@ async function adapterSaveMapperExactView(state) {
     totalCount: preview.playerCount,
     unresolvedCount: preview.unresolvedCount,
     unsupportedFields: adapterClone(list(preview.planner?.unsupportedFields)),
+  };
+}
+
+function adapterPublicMapperPlanPreview(preview) {
+  if (!preview) return null;
+  const {
+    sourceRevision: _sourceRevision,
+    teamRevision: _teamRevision,
+    ...publicPreview
+  } = preview;
+  return adapterClone(publicPreview);
+}
+
+function adapterMapperPlanSeatAliases(state, team, seat) {
+  const rawTeam = state.teams.get(team.id) || {};
+  const rawSeat = list(rawTeam.seats).find(
+    (candidate) => integer(candidate?.seatNumber || candidate?.number) === seat.seatNumber
+  );
+  const submission = seat.playerId ? adapterFindSubmission(state, seat.playerId) : null;
+  const review = submission ? state.reviews.get(adapterSubmissionUid(submission)) || null : null;
+  const verifiedNames =
+    submission && adapterReviewIsFresh(submission, review)
+      ? [playerName(adapterEffectiveSubmission(state, submission)), playerName(submission)]
+      : [];
+  return uniqueTextList([
+    seat.displayName,
+    rawSeat?.displayName,
+    rawSeat?.gameName,
+    rawSeat?.name,
+    ...verifiedNames,
+  ]);
+}
+
+function adapterPreviewMapperRolePlan(state, payload) {
+  const parsed = parseAllStarBohMapperStage1RolePlan(payload.jsonText);
+  const teamIds = adapterTeamIds(state.draft);
+  const teamIndex = teamIds.indexOf(parsed.team.id);
+  if (teamIndex < 0) {
+    throw adapterError(
+      'boh-mapper-plan-team-missing',
+      'Role-plan team ' +
+        parsed.team.id +
+        ' is not present in the current draft. Import its team list first.'
+    );
+  }
+  const team = adapterMaterializeTeam(state, parsed.team.id, teamIndex);
+  const occupiedSeats = team.seats.filter((seat) => cleanText(seat.playerId));
+  const byName = new Map();
+  for (const seat of occupiedSeats) {
+    for (const alias of adapterMapperPlanSeatAliases(state, team, seat)) {
+      const key = BohModel.normalizeBohNameKey(alias);
+      if (!key) continue;
+      if (!byName.has(key)) byName.set(key, new Map());
+      byName.get(key).set(seat.seatNumber, seat);
+    }
+  }
+  const diagnostics = [];
+  const players = parsed.players.map((player) => {
+    const candidates = [...(byName.get(BohModel.normalizeBohNameKey(player.name))?.values() || [])];
+    if (candidates.length !== 1) {
+      diagnostics.push({
+        code: candidates.length
+          ? 'boh-mapper-plan-match-ambiguous'
+          : 'boh-mapper-plan-match-unmatched',
+        name: player.name,
+        candidateSeatNumbers: candidates.map((seat) => seat.seatNumber),
+        message: candidates.length
+          ? player.name + ' matches more than one occupied seat.'
+          : player.name + ' has no exact match in the current team draft.',
+      });
+      return { ...adapterClone(player), playerId: '', seatNumber: 0 };
+    }
+    const seat = candidates[0];
+    return { ...adapterClone(player), playerId: seat.playerId, seatNumber: seat.seatNumber };
+  });
+  const seatUses = new Map();
+  for (const player of players) {
+    if (!player.seatNumber) continue;
+    if (!seatUses.has(player.seatNumber)) seatUses.set(player.seatNumber, []);
+    seatUses.get(player.seatNumber).push(player);
+  }
+  for (const [seatNumber, matches] of seatUses) {
+    if (matches.length === 1) continue;
+    for (const player of matches) {
+      player.playerId = '';
+      player.seatNumber = 0;
+      diagnostics.push({
+        code: 'boh-mapper-plan-match-duplicate-seat',
+        name: player.name,
+        candidateSeatNumbers: [seatNumber],
+        message: 'More than one imported player resolves to the same occupied seat.',
+      });
+    }
+  }
+  const matchedCount = players.filter((player) => player.playerId).length;
+  state.mapperPlanImportPreview = {
+    format: parsed.format,
+    version: parsed.version,
+    team: adapterClone(parsed.team),
+    playerCount: parsed.playerCount,
+    phaseCount: parsed.phaseCount,
+    instructionCount: parsed.playerCount * parsed.phaseCount * BOH_STAGE1_LEGIONS.length,
+    matchedCount,
+    unresolvedCount: parsed.playerCount - matchedCount,
+    diagnostics,
+    players,
+    sourceRevision: state.revision,
+    teamRevision: adapterRevision(state.teams.get(team.id)?.revision),
+  };
+  return adapterPublicMapperPlanPreview(state.mapperPlanImportPreview);
+}
+
+async function adapterSaveMapperRolePlanImport(state) {
+  const preview = state.mapperPlanImportPreview;
+  if (!preview) {
+    throw adapterError(
+      'boh-mapper-plan-preview-required',
+      'Choose and preview a role-plan JSON file before saving it.'
+    );
+  }
+  const teamId = cleanText(preview.team?.id);
+  if (
+    preview.sourceRevision !== state.revision ||
+    preview.teamRevision !== adapterRevision(state.teams.get(teamId)?.revision)
+  ) {
+    throw adapterError(
+      'boh-mapper-plan-preview-stale',
+      'The role-plan preview is stale. Preview the JSON again before saving.'
+    );
+  }
+  if (preview.matchedCount !== 12 || preview.unresolvedCount !== 0 || preview.diagnostics.length) {
+    throw adapterError(
+      'boh-mapper-plan-match-incomplete',
+      'All 12 imported players must match exactly one occupied team seat before saving.'
+    );
+  }
+  const prefix = 'mapper-plan-v2-';
+  const saved = await adapterSaveTeam(
+    state,
+    teamId,
+    (team) => {
+      const previousPlan = adapterPlan({ plan: team.plan });
+      const retainedOverrides = previousPlan.playerOverrides.filter(
+        (rule) => !cleanText(rule?.id).startsWith(prefix)
+      );
+      const firstOrder = adapterNextPlanOrder(retainedOverrides);
+      const importedOverrides = preview.players.flatMap((player, playerIndex) =>
+        player.phases.flatMap((phase, phaseIndex) =>
+          BOH_STAGE1_LEGIONS.map((legion, legionIndex) => {
+            const note = cleanText(phase.note);
+            return {
+              id:
+                prefix +
+                teamId +
+                '-seat-' +
+                player.seatNumber +
+                '-phase-' +
+                (phaseIndex + 1) +
+                '-legion-' +
+                (legionIndex + 1),
+              teamId,
+              phaseId: BOH_STAGE1_PHASES[phaseIndex].id,
+              legionId: legion.id,
+              seatNumber: player.seatNumber,
+              playerId: player.playerId,
+              scope: 'player',
+              scopeId: player.playerId,
+              roleGroupId: player.roleKey,
+              roleLabel: player.role.label,
+              order:
+                firstOrder +
+                playerIndex * BOH_STAGE1_PHASES.length * BOH_STAGE1_LEGIONS.length +
+                phaseIndex * BOH_STAGE1_LEGIONS.length +
+                legionIndex,
+              generated: false,
+              instruction: {
+                action: cleanText(legionIndex === 0 ? phase.legion1 : phase.legion2),
+                teleport: note || null,
+                note,
+              },
+            };
+          })
+        )
+      );
+      team.plan = {
+        ...previousPlan,
+        schemaVersion: BohModel.BOH_PLAN_SCHEMA_VERSION,
+        phases: BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 })),
+        legions: BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 })),
+        playerOverrides: [...retainedOverrides, ...importedOverrides],
+        generated: false,
+      };
+      return team;
+    },
+    { notify: false }
+  );
+  state.mapperPlanImportPreview = null;
+  adapterNotify(state);
+  return {
+    teamId,
+    teamName: cleanText(saved?.name || preview.team?.name),
+    matchedCount: preview.matchedCount,
+    instructionCount: preview.instructionCount,
   };
 }
 
@@ -4928,9 +5171,11 @@ function adapterCompactPublicationPlan(plan) {
 
 function adapterPublicationBundle(state, kind) {
   const currentPublication = state.publication || {};
+  const publicationCopy = adapterPublicationCopy(state.draft, { fallbackTitle: false });
   const announcementPublished =
-    kind === 'announcement' || currentPublication.announcementPublished === true;
-  const planPublished = kind === 'plan' || currentPublication.planPublished === true;
+    kind === 'announcement' || kind === 'both' || currentPublication.announcementPublished === true;
+  const planPublished =
+    kind === 'plan' || kind === 'both' || currentPublication.planPublished === true;
   const includePlan = planPublished;
   const plan = adapterSanitizedPlan(state, includePlan);
   const teams = {};
@@ -5020,10 +5265,16 @@ function adapterPublicationBundle(state, kind) {
       revision: state.publicationRevision,
       status:
         planPublished && announcementPublished ? 'live' : planPublished ? 'plan' : 'announcement',
-      eventName: cleanText(state.options.eventName) || cleanText(state.draft?.title),
-      title: cleanText(state.options.publicationTitle) || cleanText(state.draft?.title),
-      subtitle: cleanText(state.options.publicationSubtitle),
-      message: cleanText(state.options.publicationMessage),
+      eventName:
+        publicationCopy.eventName ||
+        cleanText(state.options.eventName) ||
+        cleanText(state.draft?.title),
+      title:
+        publicationCopy.title ||
+        cleanText(state.options.publicationTitle) ||
+        cleanText(state.draft?.title),
+      subtitle: publicationCopy.subtitle || cleanText(state.options.publicationSubtitle),
+      message: publicationCopy.message || cleanText(state.options.publicationMessage),
       announcementPublished,
       planPublished,
       activePlanRevision: state.revision,
@@ -5133,13 +5384,17 @@ export function validateAdminAllStarBohPublicationBundle(bundle = {}) {
 }
 
 async function adapterPublish(state, kind) {
+  if (!['announcement', 'plan', 'both'].includes(kind)) {
+    throw adapterError('all-star-boh-publish-kind-invalid', 'Choose a valid publication scope.');
+  }
   if (kind === 'announcement' && state.publication?.planPublished === true) {
     throw adapterError(
       'all-star-boh-plan-publication-protected',
       'The published player plan is already live. Publish plan changes separately.'
     );
   }
-  const readiness = state.validation?.[kind];
+  const readinessKind = kind === 'announcement' ? 'announcement' : 'plan';
+  const readiness = state.validation?.[readinessKind];
   if (readiness?.valid !== true || adapterRevision(state.validation?.revision) !== state.revision) {
     throw adapterError(
       'all-star-boh-publish-not-validated',
@@ -5212,6 +5467,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     validation: {},
     balancePreview: null,
     mapperImportPreview: null,
+    mapperPlanImportPreview: null,
     revision: 0,
     listeners: new Set(),
     unsubscribers: new Set(),
@@ -5244,6 +5500,10 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
       actionResult = adapterReconcileMapperExactView(state, payload);
     } else if (type === 'saveMapperExactViewImport') {
       actionResult = await adapterSaveMapperExactView(state);
+    } else if (type === 'previewMapperRolePlan') {
+      actionResult = adapterPreviewMapperRolePlan(state, payload);
+    } else if (type === 'saveMapperRolePlanImport') {
+      actionResult = await adapterSaveMapperRolePlanImport(state);
     } else if (type === 'batchReviewSubmissions') {
       actionResult = await adapterBatchReviewSubmissions(state, payload);
     } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
@@ -5252,7 +5512,9 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     } else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
     else if (type === 'setScoreOverride') await adapterSetScoreOverride(state, payload);
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
-    else if (type === 'saveCommitmentScores') {
+    else if (type === 'savePublicationCopy') {
+      await adapterSavePublicationCopy(state, payload);
+    } else if (type === 'saveCommitmentScores') {
       await adapterSaveCommitmentScores(state, payload);
     } else if (type === 'saveEpicPlanningOverrides') {
       await adapterSaveEpicPlanningOverrides(state, payload);
@@ -5289,6 +5551,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     else if (type === 'saveEventSchedule') await adapterSaveEventSchedule(state, payload);
     else if (type === 'publishAnnouncement') await adapterPublish(state, 'announcement');
     else if (type === 'publishPlan') await adapterPublish(state, 'plan');
+    else if (type === 'publishBoth') await adapterPublish(state, 'both');
     else {
       throw adapterError(
         'all-star-boh-action-unknown',
@@ -5444,6 +5707,7 @@ function makeInitialState(root, options) {
     selectedSourceSeat: null,
     approvedRosterImportReport: null,
     mapperImportPreview: null,
+    mapperPlanImportPreview: null,
     mapperBoardSearch: '',
     mapperBoardFilter: 'all',
     mapperPlanDialogTeamId: '',
@@ -5453,6 +5717,7 @@ function makeInitialState(root, options) {
     planLegionId: snapshot.plan.legions[0]?.id || DEFAULT_LEGIONS[0].id,
     planScope: 'role',
     previewKind: 'announcement',
+    publishScope: 'both',
     selectedPreviewTeamId: snapshot.teams[0]?.id || '',
     selectedPreviewPlayerId: snapshot.teams[0]?.seats.find((seat) => seat.playerId)?.playerId || '',
     roleDrafts: null,
@@ -7977,7 +8242,7 @@ function renderMapperExactViewCard(state, preview, rows) {
           'Choose an exact-view JSON backup to reconcile its 6 teams and 72 names against fresh verified submissions. Previewing does not save or publish anything.'
         )
       )}</p></div>
-      <label class='boh-admin-button boh-admin-button-primary'>${escapeHtml(
+      <label class='boh-admin-button boh-admin-button-import'>${escapeHtml(
         state.tr('adminBohMapperChooseFile', 'Choose mapper JSON')
       )}
         <input class='sr-only' type='file' accept='.json,application/json' data-action='preview-mapper-import' />
@@ -8183,10 +8448,10 @@ function renderMapperBoardToolbar(state) {
           .join('')}
       </select></label>
     <div class="boh-admin-stage-actions">
-      <button type="button" class="boh-admin-button" data-action="validate-revision">${escapeHtml(
+      <button type="button" class="boh-admin-button boh-admin-button-validate" data-action="validate-revision">${escapeHtml(
         state.tr('adminBohValidateDraft', 'Validate draft')
       )}</button>
-      <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="stage" data-stage="publish">${escapeHtml(
+      <button type="button" class="boh-admin-button boh-admin-button-publish" data-action="stage" data-stage="publish">${escapeHtml(
         state.tr('adminBohReviewPublish', 'Review and publish')
       )}</button>
     </div>
@@ -8396,7 +8661,7 @@ function renderMapperPlanDialog(state) {
           }">${escapeHtml(label)}</button>`
       )
       .join('')}</div>
-    ${content}<footer class="boh-admin-team-plan-dialog__footer"><button type="button" class="boh-admin-button" data-action="validate-revision">Validate draft</button><button type="button" class="boh-admin-button boh-admin-button-primary" data-action="stage" data-stage="publish">Review and publish</button></footer></div>
+    ${content}<footer class="boh-admin-team-plan-dialog__footer"><button type="button" class="boh-admin-button boh-admin-button-validate" data-action="validate-revision">Validate draft</button><button type="button" class="boh-admin-button boh-admin-button-publish" data-action="stage" data-stage="publish">Review and publish</button></footer></div>
   </section>`;
 }
 
@@ -8623,7 +8888,7 @@ function renderTeamColumn(state, team, balance, index) {
                 state.tr('adminBohVsAverage', 'vs avg')
               )}</span>`
         }</div>
-      <button type="button" class="boh-admin-button boh-admin-button-small" data-action="open-mapper-plan" data-team-id="${escapeHtml(team.id)}">Open team plan</button>
+      <button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-plan" data-action="open-mapper-plan" data-team-id="${escapeHtml(team.id)}">Open team plan</button>
     </header>
     <form class="boh-admin-stack" data-form="team-metadata">
       <input type="hidden" name="teamId" value="${escapeHtml(team.id)}" />
@@ -8677,7 +8942,7 @@ function renderTeamColumn(state, team, balance, index) {
           team.notes || ''
         )}</textarea>
       </label>
-      <button class="boh-admin-button boh-admin-button-small" type="submit">${escapeHtml(
+      <button class="boh-admin-button boh-admin-button-small boh-admin-button-save" type="submit">${escapeHtml(
         state.tr('adminBohSaveTeamMetadata', 'Save team details')
       )}</button>
     </form>
@@ -8800,9 +9065,88 @@ function renderSeat(state, team, seat) {
         <label><span class="sr-only">Command role</span><select class="boh-admin-select" name="commandRole"><option value="">No command role</option><option value="leader" ${
           commandRole === 'leader' ? 'selected' : ''
         }>Leader</option><option value="coleader" ${commandRole === 'coleader' ? 'selected' : ''}>Co-leader</option></select></label>
-        <button class="boh-admin-button boh-admin-button-small" type="submit">Save card</button>
+        <button class="boh-admin-button boh-admin-button-small boh-admin-button-save" type="submit">Save card</button>
       </form></div>
   </li>`;
+}
+
+function renderMapperRolePlanImport(state) {
+  const preview = state.mapperPlanImportPreview;
+  const complete =
+    preview &&
+    preview.matchedCount === 12 &&
+    preview.unresolvedCount === 0 &&
+    !list(preview.diagnostics).length;
+  return (
+    '<section class="boh-admin-card boh-admin-role-plan-import" aria-labelledby="bohRolePlanImportTitle">' +
+    '<header><div><p class="boh-admin-card-kicker">' +
+    escapeHtml(state.tr('adminBohRolePlanImportKicker', 'MAPPER ROLE-PLAN JSON')) +
+    '</p><h4 id="bohRolePlanImportTitle">' +
+    escapeHtml(state.tr('adminBohRolePlanImportTitle', 'Import one team plan')) +
+    '</h4><p>' +
+    escapeHtml(
+      state.tr(
+        'adminBohRolePlanImportHelp',
+        'Exact-match all 12 names against one saved team. This updates that team draft only and never publishes.'
+      )
+    ) +
+    '</p></div><label class="boh-admin-button boh-admin-button-import">' +
+    escapeHtml(state.tr('adminBohChooseRolePlanJson', 'Choose role-plan JSON')) +
+    '<input class="sr-only" type="file" accept="application/json,.json" data-action="preview-mapper-role-plan" /></label></header>' +
+    (preview
+      ? '<div class="boh-admin-role-plan-import-summary" data-complete="' +
+        complete +
+        '">' +
+        '<dl><div><dt>' +
+        escapeHtml(state.tr('adminBohTeam', 'Team')) +
+        '</dt><dd>' +
+        escapeHtml(preview.team?.name || preview.team?.id) +
+        '</dd></div>' +
+        '<div><dt>' +
+        escapeHtml(state.tr('adminBohPlayersLinked', 'Players linked')) +
+        '</dt><dd>' +
+        preview.matchedCount +
+        ' / ' +
+        preview.playerCount +
+        '</dd></div>' +
+        '<div><dt>' +
+        escapeHtml(state.tr('adminBohPhases', 'Phases')) +
+        '</dt><dd>' +
+        preview.phaseCount +
+        '</dd></div>' +
+        '<div><dt>' +
+        escapeHtml(state.tr('adminBohPersonalInstructions', 'Personal instructions')) +
+        '</dt><dd>' +
+        preview.instructionCount +
+        '</dd></div></dl>' +
+        (list(preview.diagnostics).length
+          ? '<div class="boh-admin-validation-list" data-tone="error"><strong>' +
+            escapeHtml(state.tr('adminBohBlockingIssues', 'Blocking issues')) +
+            '</strong><ul>' +
+            preview.diagnostics
+              .map((item) => '<li>' + escapeHtml(item.message) + '</li>')
+              .join('') +
+            '</ul></div>'
+          : '<p class="boh-admin-check-line">' +
+            escapeHtml(
+              state.tr('adminBohRolePlanReady', 'Ready: all 12 players are linked by exact name.')
+            ) +
+            '</p>') +
+        '<button type="button" class="boh-admin-button boh-admin-button-save" data-action="save-mapper-role-plan" ' +
+        (complete ? '' : 'disabled') +
+        '>' +
+        escapeHtml(state.tr('adminBohSaveRolePlanDraft', 'Save plan to draft')) +
+        '</button></div>'
+      : '<p class="boh-admin-role-plan-import-empty">' +
+        escapeHtml(
+          state.tr(
+            'adminBohRolePlanImportEmpty',
+            'Import the matching team list first, then choose its all-star-boh-stage1-role-plan version 2 JSON.'
+          )
+        ) +
+        '</p>') +
+    '</section>'
+  );
 }
 
 function renderPlans(state) {
@@ -8823,6 +9167,7 @@ function renderPlans(state) {
           )
         )}</p></div>
     </header>
+    ${renderMapperRolePlanImport(state)}
     <div class="boh-admin-plan-config">
       ${renderRoleConfiguration(state)}
       ${renderPhaseConfiguration(state)}
@@ -8905,7 +9250,7 @@ function renderPlanTemplateTools(state, selectedTeam, selectedPhase, selectedLeg
         'Template actions copy instructions or structure only. Team assignments, legacy player names, signup data, and scores never move with them.'
       )
     )}</p></div>
-      <button type="button" class="boh-admin-button" data-action="start-legacy-structure">${escapeHtml(
+      <button type="button" class="boh-admin-button boh-admin-button-plan" data-action="start-legacy-structure">${escapeHtml(
         state.tr('adminBohStartLegacyStructure', 'Start from last-year structure')
       )}</button>
     </header>
@@ -8925,7 +9270,7 @@ function renderPlanTemplateTools(state, selectedTeam, selectedPhase, selectedLeg
               )
               .join('')}
           </select></label>
-        <button class="boh-admin-button" type="submit" ${targetPhases.length ? '' : 'disabled'}>${escapeHtml(
+        <button class="boh-admin-button boh-admin-button-plan" type="submit" ${targetPhases.length ? '' : 'disabled'}>${escapeHtml(
           state.tr('adminBohCopyPhase', 'Copy phase')
         )}</button>
       </form>
@@ -8944,7 +9289,7 @@ function renderPlanTemplateTools(state, selectedTeam, selectedPhase, selectedLeg
               )
               .join('')}
           </select></label>
-        <button class="boh-admin-button" type="submit" ${targetTeams.length ? '' : 'disabled'}>${escapeHtml(
+        <button class="boh-admin-button boh-admin-button-plan" type="submit" ${targetTeams.length ? '' : 'disabled'}>${escapeHtml(
           state.tr('adminBohCopyTeam', 'Copy team')
         )}</button>
       </form>
@@ -8963,7 +9308,7 @@ function renderPlanTemplateTools(state, selectedTeam, selectedPhase, selectedLeg
               )
               .join('')}
           </select></label>
-        <button class="boh-admin-button" type="submit" ${targetLegions.length ? '' : 'disabled'}>${escapeHtml(
+        <button class="boh-admin-button boh-admin-button-plan" type="submit" ${targetLegions.length ? '' : 'disabled'}>${escapeHtml(
           state.tr('adminBohCopyLegion', 'Copy Legion')
         )}</button>
       </form>
@@ -8999,7 +9344,7 @@ function renderPlanTemplateTools(state, selectedTeam, selectedPhase, selectedLeg
               )
               .join('')}
           </select></label>
-        <button class="boh-admin-button" type="submit">${escapeHtml(
+        <button class="boh-admin-button boh-admin-button-plan" type="submit">${escapeHtml(
           state.tr('adminBohApplyDefault', 'Apply default')
         )}</button>
       </form>
@@ -9059,9 +9404,9 @@ function renderRoleConfiguration(state) {
         )
         .join('')}
     </div>
-    <footer><button type="button" class="boh-admin-button" data-action="add-role">${escapeHtml(
+    <footer><button type="button" class="boh-admin-button boh-admin-button-plan" data-action="add-role">${escapeHtml(
       state.tr('adminBohAddRole', 'Add role')
-    )}</button><button type="submit" class="boh-admin-button boh-admin-button-primary" ${
+    )}</button><button type="submit" class="boh-admin-button boh-admin-button-save" ${
       capacity === ROSTER_SIZE ? '' : 'disabled'
     }>${escapeHtml(state.tr('adminBohSaveRoles', 'Save role structure'))}</button></footer>
   </form>`;
@@ -9095,7 +9440,7 @@ function renderPhaseConfiguration(state) {
     </div>
     <footer><span>${escapeHtml(
       state.tr('adminBohPhaseRule', 'Phases must be ordered and non-overlapping.')
-    )}</span><button type="submit" class="boh-admin-button boh-admin-button-primary">${escapeHtml(
+    )}</span><button type="submit" class="boh-admin-button boh-admin-button-save">${escapeHtml(
       state.tr('adminBohSaveTimeline', 'Save timeline')
     )}</button></footer>
   </form>`;
@@ -9224,7 +9569,7 @@ function renderInstructionForm(state, team, phase, legion) {
       <textarea class="boh-admin-textarea" name="instruction" rows="4" maxlength="800" required></textarea></label>
     <label><span>${escapeHtml(state.tr('adminBohChangeNote', 'Plan note'))}</span>
       <textarea class="boh-admin-textarea" name="note" rows="2" maxlength="800"></textarea></label>
-    <button type="submit" class="boh-admin-button boh-admin-button-primary">${escapeHtml(
+    <button type="submit" class="boh-admin-button boh-admin-button-save">${escapeHtml(
       state.tr('adminBohSaveInstruction', 'Save instruction')
     )}</button>
   </form>`;
@@ -9343,7 +9688,7 @@ function renderRotationEditor(state, team, phase, legion) {
               );
               return `<li><span>${escapeHtml(playerName(player) || rotation.playerId)} → ${escapeHtml(
                 roleDisplayName(state, targetRole) || String(rotation.seatNumber)
-              )}</span><span><button type="button" class="boh-admin-button boh-admin-button-small" data-action="edit-rotation" data-rotation-id="${escapeHtml(
+              )}</span><span><button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-plan" data-action="edit-rotation" data-rotation-id="${escapeHtml(
                 rotation.id
               )}">${escapeHtml(state.tr('adminBohRoleRotation', 'Edit rotation'))}</button><button type="button" class="boh-admin-icon-button" data-action="remove-rotation" data-rotation-id="${escapeHtml(
                 rotation.id
@@ -9361,7 +9706,7 @@ function renderRotationEditor(state, team, phase, legion) {
           )}</button>`
         : ''
     }
-    <button class="boh-admin-button" type="submit">${escapeHtml(
+    <button class="boh-admin-button boh-admin-button-save" type="submit">${escapeHtml(
       state.tr('adminBohSaveRotation', 'Save rotation')
     )}</button>
   </form>`;
@@ -9445,7 +9790,7 @@ function renderMapEditor(state, phase, legion) {
           0,
           100
         )}" required /></label></div>
-        <div class="boh-admin-form-actions"><button class="boh-admin-button boh-admin-button-primary" type="submit">${escapeHtml(
+        <div class="boh-admin-form-actions"><button class="boh-admin-button boh-admin-button-save" type="submit">${escapeHtml(
           state.tr(
             draft.id ? 'adminBohUpdateObjective' : 'adminBohAddObjective',
             draft.id ? 'Update objective' : 'Add objective'
@@ -9614,16 +9959,21 @@ function captureEventScheduleDraft(state, form) {
 
 function eventScheduleValidationErrors(state, schedule) {
   const errors = [];
-  // A hidden schedule is a private placeholder: it may be saved empty. Only a published schedule
-  // has to satisfy the canonical event window, milestone, and team-time contracts.
+  // Hidden is an intentional public reset and may be saved with every public field empty.
   if (schedule.status !== 'published') return errors;
-  if (!schedule.eventStartsAt || !schedule.eventEndsAt) {
+  const startTime = new Date(schedule.eventStartsAt).getTime();
+  const endTime = new Date(schedule.eventEndsAt).getTime();
+  const hasWindow = schedule.eventStartsAt && schedule.eventEndsAt;
+  const validWindow = hasWindow && Number.isFinite(startTime) && Number.isFinite(endTime);
+  if (!hasWindow) {
     errors.push(
       state.tr('adminBohScheduleEventTimeRequired', 'Add the event start and end times.')
     );
-  } else if (
-    new Date(schedule.eventEndsAt).getTime() <= new Date(schedule.eventStartsAt).getTime()
-  ) {
+  } else if (!validWindow) {
+    errors.push(
+      state.tr('adminBohScheduleEventTimeInvalid', 'Use valid event start and end times.')
+    );
+  } else if (endTime <= startTime) {
     errors.push(
       state.tr('adminBohScheduleEventOrderInvalid', 'Event end must be after event start.')
     );
@@ -9641,6 +9991,17 @@ function eventScheduleValidationErrors(state, schedule) {
   );
   if (milestoneTimes.some((time) => !Number.isFinite(time))) {
     errors.push(state.tr('adminBohScheduleMilestoneTimeInvalid', 'Use valid milestone times.'));
+  } else if (
+    validWindow &&
+    endTime > startTime &&
+    milestoneTimes.some((time) => time < startTime || time > endTime)
+  ) {
+    errors.push(
+      state.tr(
+        'adminBohScheduleMilestoneOutsideWindow',
+        'Milestone times must stay within the event start and end.'
+      )
+    );
   } else if (milestoneTimes.some((time, index) => index > 0 && time < milestoneTimes[index - 1])) {
     errors.push(
       state.tr(
@@ -9649,12 +10010,22 @@ function eventScheduleValidationErrors(state, schedule) {
       )
     );
   }
-  if (
-    schedule.teamGameTimes.some(
-      (entry) => entry.startsAt && Number.isNaN(new Date(entry.startsAt).getTime())
-    )
-  ) {
+  const teamTimes = schedule.teamGameTimes
+    .filter((entry) => entry.startsAt)
+    .map((entry) => new Date(entry.startsAt).getTime());
+  if (teamTimes.some((time) => !Number.isFinite(time))) {
     errors.push(state.tr('adminBohScheduleTeamTimeInvalid', 'Use valid team game times.'));
+  } else if (
+    validWindow &&
+    endTime > startTime &&
+    teamTimes.some((time) => time < startTime || time > endTime)
+  ) {
+    errors.push(
+      state.tr(
+        'adminBohScheduleTeamTimeOutsideWindow',
+        'Team game times must stay within the event start and end.'
+      )
+    );
   }
   return [...new Set(errors)];
 }
@@ -9673,7 +10044,7 @@ function renderEventScheduleEditor(state) {
     )}</h4><p>${escapeHtml(
       state.tr(
         'adminBohScheduleHelp',
-        'Publish or hide the public event window, milestones, and per-team game times without changing draft validation.'
+        'Set the public event window, ordered milestones, and optional per-team game times. Schedule edits do not change tactical draft validation.'
       )
     )}</p></div><span class="boh-admin-status-chip" data-status="${escapeHtml(
       schedule.status
@@ -9702,13 +10073,32 @@ function renderEventScheduleEditor(state) {
           localDateTimeInputValue(schedule.eventEndsAt)
         )}" ${requiredWhenPublished} /></label>
     </div>
-    <section class="boh-admin-schedule-section"><div><strong>${escapeHtml(
+    ${
+      schedule.status === 'hidden'
+        ? `<div class="boh-admin-schedule-hidden-warning" role="note"><strong>${escapeHtml(
+            state.tr('adminBohScheduleHiddenWarningTitle', 'Hidden removes the member schedule')
+          )}</strong><p>${escapeHtml(
+            state.tr(
+              'adminBohScheduleHiddenWarning',
+              'Saving while Hidden clears the public event window, milestones, and team times. Members will see no schedule.'
+            )
+          )}</p></div>`
+        : ''
+    }
+    <section class="boh-admin-schedule-section"><div><div><strong>${escapeHtml(
       state.tr('adminBohScheduleMilestones', 'Milestones')
     )}</strong><span>${escapeHtml(
       state.tr('adminBohScheduleMilestoneLimit', '{count} / 8 milestones', {
         count: schedule.milestones.length,
       })
-    )}</span></div><div class="boh-admin-schedule-list">
+    )}</span></div><div class="boh-admin-schedule-section-actions">
+      <button type="button" class="boh-admin-button boh-admin-button-small" data-action="add-schedule-milestone" ${
+        schedule.milestones.length >= MAX_EVENT_MILESTONES ? 'disabled' : ''
+      }>${escapeHtml(state.tr('adminBohScheduleAddMilestone', 'Add milestone'))}</button>
+      <button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-danger" data-action="clear-schedule-milestones" ${
+        schedule.milestones.length ? '' : 'disabled'
+      }>${escapeHtml(state.tr('adminBohScheduleClearMilestones', 'Clear all milestones'))}</button>
+    </div></div><div class="boh-admin-schedule-list">
       ${schedule.milestones
         .map(
           (milestone, index) => `<div class="boh-admin-schedule-row">
@@ -9723,51 +10113,132 @@ function renderEventScheduleEditor(state) {
             )}</span><input class="boh-admin-input" name="milestoneStartsAt" type="datetime-local" value="${escapeHtml(
               localDateTimeInputValue(milestone.startsAt)
             )}" ${requiredWhenPublished} /></label>
-            <span class="boh-admin-schedule-row-actions"><button type="button" class="boh-admin-icon-button" data-action="move-schedule-milestone" data-direction="up" data-index="${index}" aria-label="${escapeHtml(
-              state.tr('adminBohScheduleMoveMilestoneUp', 'Move milestone up')
-            )}" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="boh-admin-icon-button" data-action="move-schedule-milestone" data-direction="down" data-index="${index}" aria-label="${escapeHtml(
-              state.tr('adminBohScheduleMoveMilestoneDown', 'Move milestone down')
-            )}" ${index === schedule.milestones.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="boh-admin-icon-button" data-action="remove-schedule-milestone" data-index="${index}" aria-label="${escapeHtml(
-              state.tr('adminBohScheduleRemoveMilestone', 'Remove milestone')
-            )}">×</button></span>
+            <span class="boh-admin-schedule-row-actions">
+              <button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-quiet" data-action="move-schedule-milestone" data-direction="up" data-index="${index}" ${
+                index === 0 ? 'disabled' : ''
+              }>${escapeHtml(state.tr('adminBohScheduleMoveMilestoneUp', 'Move earlier'))}</button>
+              <button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-quiet" data-action="move-schedule-milestone" data-direction="down" data-index="${index}" ${
+                index === schedule.milestones.length - 1 ? 'disabled' : ''
+              }>${escapeHtml(state.tr('adminBohScheduleMoveMilestoneDown', 'Move later'))}</button>
+              <button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-plan" data-action="duplicate-schedule-milestone" data-index="${index}" ${
+                schedule.milestones.length >= MAX_EVENT_MILESTONES ? 'disabled' : ''
+              }>${escapeHtml(state.tr('adminBohScheduleDuplicateMilestone', 'Duplicate'))}</button>
+              <button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-danger" data-action="remove-schedule-milestone" data-index="${index}">${escapeHtml(
+                state.tr('adminBohScheduleRemoveMilestone', 'Remove')
+              )}</button>
+            </span>
           </div>`
         )
         .join('')}
-    </div><button type="button" class="boh-admin-button boh-admin-button-small" data-action="add-schedule-milestone" ${
-      schedule.milestones.length >= MAX_EVENT_MILESTONES ? 'disabled' : ''
-    }>${escapeHtml(state.tr('adminBohScheduleAddMilestone', 'Add milestone'))}</button></section>
-    <section class="boh-admin-schedule-section"><div><strong>${escapeHtml(
+    </div></section>
+    <section class="boh-admin-schedule-section"><div><div><strong>${escapeHtml(
       state.tr('adminBohScheduleTeamGameTimes', 'Team game times')
     )}</strong><span>${escapeHtml(
       state.tr(
         'adminBohScheduleTeamGameTimesHelp',
-        'Optional per-team starts for the current six teams.'
+        'Optional starts for the current six teams; each published time must stay inside the event window.'
       )
-    )}</span></div><div class="boh-admin-schedule-team-grid">
+    )}</span></div></div><div class="boh-admin-schedule-team-grid">
       ${state.snapshot.teams
         .slice(0, TEAM_COUNT)
         .map((team) => {
           const entry = schedule.teamGameTimes.find((item) => item.teamId === team.id) || {};
-          return `<label><span>${escapeHtml(teamDisplayName(state, team))}</span><input class="boh-admin-input" name="teamGameTime.${escapeHtml(
+          return `<div class="boh-admin-schedule-team-time"><label><span>${escapeHtml(
+            teamDisplayName(state, team)
+          )}</span><input class="boh-admin-input" name="teamGameTime.${escapeHtml(
             team.id
           )}" type="datetime-local" value="${escapeHtml(
             localDateTimeInputValue(entry.startsAt)
-          )}" /></label>`;
+          )}" /></label><button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-quiet" data-action="clear-schedule-team-time" data-team-id="${escapeHtml(
+            team.id
+          )}" ${entry.startsAt ? '' : 'disabled'}>${escapeHtml(
+            state.tr('adminBohScheduleClearTeamTime', 'Clear time')
+          )}</button></div>`;
         })
         .join('')}
     </div></section>
     ${
       errors.length
         ? `<div class="boh-admin-validation-list" data-tone="error"><strong>${escapeHtml(
-            state.tr('adminBohBlockingIssues', 'Blocking issues')
-          )}</strong><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>`
+            state.tr('adminBohFixFirst', 'Fix this first')
+          )}</strong><ul><li>${escapeHtml(errors[0])}</li></ul></div>`
         : ''
     }
     <footer><span>${escapeHtml(
       state.tr('adminBohScheduleRevision', 'Schedule revision {revision}', { revision })
-    )}</span><button type="submit" class="boh-admin-button boh-admin-button-primary" ${
+    )}</span><button type="submit" class="boh-admin-button boh-admin-button-save" ${
       errors.length ? 'disabled' : ''
     }>${escapeHtml(state.tr('adminBohScheduleSave', 'Save schedule'))}</button></footer>
+  </form>`;
+}
+
+function renderPublicationCopyCard(state) {
+  const source =
+    state.snapshot.publicationCopy && typeof state.snapshot.publicationCopy === 'object'
+      ? state.snapshot.publicationCopy
+      : {};
+  const copy = {
+    eventName: cleanText(source.eventName),
+    title: cleanText(source.title),
+    subtitle: cleanText(source.subtitle),
+    message: cleanText(source.message),
+  };
+  const previewRows = [
+    copy.eventName
+      ? `<p class="boh-admin-publication-copy-event">${escapeHtml(copy.eventName)}</p>`
+      : '',
+    copy.title ? `<h5>${escapeHtml(copy.title)}</h5>` : '',
+    copy.subtitle ? `<p>${escapeHtml(copy.subtitle)}</p>` : '',
+    copy.message ? `<blockquote>${escapeHtml(copy.message)}</blockquote>` : '',
+  ].filter(Boolean);
+  return `<form class="boh-admin-card boh-admin-publication-copy" data-form="publication-copy" aria-labelledby="bohPublicationCopyTitle">
+    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
+      state.tr('adminBohAnnouncementComposerKicker', 'ANNOUNCEMENT COMPOSER')
+    )}</p><h4 id="bohPublicationCopyTitle">${escapeHtml(
+      state.tr('adminBohAnnouncementComposerTitle', 'Shape the public announcement')
+    )}</h4><p>${escapeHtml(
+      state.tr(
+        'adminBohAnnouncementComposerHelp',
+        'Save player-safe copy to this private draft. Nothing goes live until you publish the selected scope below.'
+      )
+    )}</p></div><span class="boh-admin-status-chip" data-status="draft">${escapeHtml(
+      state.tr('adminBohDraftOnly', 'Draft only')
+    )}</span></header>
+    <div class="boh-admin-publication-copy-grid">
+      <label><span>${escapeHtml(state.tr('adminBohEventLabel', 'Event label'))}</span>
+        <input class="boh-admin-input" name="eventName" maxlength="160" value="${escapeHtml(copy.eventName)}" placeholder="All-Star BoH 2026" /></label>
+      <label><span>${escapeHtml(state.tr('adminBohAnnouncementTitle', 'Announcement title'))}</span>
+        <input class="boh-admin-input" name="title" maxlength="160" value="${escapeHtml(copy.title)}" placeholder="Teams are ready" /></label>
+      <label class="boh-admin-publication-copy-wide"><span>${escapeHtml(
+        state.tr('adminBohAnnouncementSubtitle', 'Subtitle')
+      )}</span><input class="boh-admin-input" name="subtitle" maxlength="240" value="${escapeHtml(
+        copy.subtitle
+      )}" placeholder="A short line players see under the title" /></label>
+      <label class="boh-admin-publication-copy-wide"><span>${escapeHtml(
+        state.tr('adminBohLeadershipMessage', 'Leadership message')
+      )}</span><textarea class="boh-admin-input" name="message" maxlength="2000" rows="4" placeholder="Add final reminders, expectations, or encouragement.">${escapeHtml(
+        copy.message
+      )}</textarea></label>
+    </div>
+    <section class="boh-admin-publication-copy-preview" aria-label="${escapeHtml(
+      state.tr('adminBohAnnouncementCopyPreview', 'Announcement copy preview')
+    )}"><span>${escapeHtml(state.tr('adminBohSavedCopyPreview', 'SAVED COPY PREVIEW'))}</span>
+      ${
+        previewRows.length
+          ? previewRows.join('')
+          : `<p>${escapeHtml(
+              state.tr('adminBohAnnouncementCopyEmpty', 'No optional announcement copy saved yet.')
+            )}</p>`
+      }
+    </section>
+    <footer class="boh-admin-form-actions">
+      <button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="clear-publication-copy-message">${escapeHtml(
+        state.tr('adminBohClearAnnouncementMessage', 'Clear subtitle + message')
+      )}</button>
+      <button type="submit" class="boh-admin-button boh-admin-button-save">${escapeHtml(
+        state.tr('adminBohSaveAnnouncementDraft', 'Save announcement draft')
+      )}</button>
+    </footer>
   </form>`;
 }
 
@@ -9795,20 +10266,20 @@ function renderPublish(state) {
         <p>${escapeHtml(
           state.tr(
             'adminBohPublishHelp',
-            'Validate the exact draft revision, inspect the player-safe preview, then publish announcements and plans independently.'
+            'Validate the exact draft revision, inspect the player-safe preview, then publish the selected scope in one revision-aligned snapshot.'
           )
         )}</p></div>
-      <button type="button" class="boh-admin-button boh-admin-button-primary" data-action="validate-revision">${escapeHtml(
+      <button type="button" class="boh-admin-button boh-admin-button-validate" data-action="validate-revision">${escapeHtml(
         state.tr('adminBohValidateRevision', 'Validate revision {revision}', {
           revision: state.snapshot.revision,
         })
       )}</button>
     </header>
+    ${renderPublicationCopyCard(state)}
     <div class="boh-admin-publish-grid">
       ${renderValidationCard(state, 'announcement', readiness.announcement)}
-      ${renderPublicationCard(state, 'announcement', readiness.announcement.ready)}
       ${renderValidationCard(state, 'plan', readiness.plan)}
-      ${renderPublicationCard(state, 'plan', readiness.plan.ready)}
+      ${renderPublicationScopeCard(state, readiness)}
     </div>
     ${renderEventScheduleEditor(state)}
     <section class="boh-admin-card boh-admin-preview" aria-labelledby="bohPublishPreviewTitle">
@@ -9860,7 +10331,7 @@ function renderValidationCard(state, kind, readiness) {
         ? `<div class="boh-admin-validation-list" data-tone="error"><strong>${escapeHtml(
             state.tr('adminBohBlockingIssues', 'Blocking issues')
           )}</strong><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>`
-        : `<p class="boh-admin-check-line">✓ ${escapeHtml(
+        : `<p class="boh-admin-check-line">Ready: ${escapeHtml(
             state.tr('adminBohLocalChecksPassed', 'Local structure checks passed.')
           )}</p>`
     }
@@ -9878,50 +10349,135 @@ function publicationRecord(state, kind) {
   return state.snapshot.publications?.[kind] || {};
 }
 
-function renderPublicationCard(state, kind, ready) {
-  const isAnnouncement = kind === 'announcement';
-  const record = publicationRecord(state, kind);
-  const title = state.tr(
-    isAnnouncement ? 'adminBohTeamAnnouncement' : 'adminBohTeamPlans',
-    isAnnouncement ? 'Team Announcement' : 'Team Plans'
+function renderPublicationScopeCard(state, readiness) {
+  const announcementLive = publicationRecord(state, 'announcement').status === 'published';
+  const planLive = publicationRecord(state, 'plan').status === 'published';
+  const selected = ['announcement', 'plan', 'both'].includes(state.publishScope)
+    ? state.publishScope
+    : 'both';
+  const announcementDisabled = planLive;
+  const planDisabled = !announcementLive;
+  const selectedReady =
+    selected === 'announcement'
+      ? readiness.announcement.ready && !announcementDisabled
+      : selected === 'plan'
+        ? readiness.plan.ready && !planDisabled
+        : readiness.plan.ready;
+  const scopeLabel =
+    selected === 'announcement'
+      ? state.tr('adminBohPublishTeamListOnly', 'Team list only')
+      : selected === 'plan'
+        ? state.tr('adminBohPublishPlanOnly', 'Plan update only')
+        : state.tr('adminBohPublishBoth', 'Team list + plan');
+  const scopeOptions = [
+    {
+      id: 'announcement',
+      label: state.tr('adminBohPublishTeamListOnly', 'Team list only'),
+      description: state.tr(
+        'adminBohPublishTeamListOnlyHelp',
+        'Publish assignments without personal plan instructions.'
+      ),
+      disabled: announcementDisabled,
+    },
+    {
+      id: 'plan',
+      label: state.tr('adminBohPublishPlanOnly', 'Plan update only'),
+      description: state.tr(
+        'adminBohPublishPlanOnlyHelp',
+        'Update the plan while keeping the already-live team list visible.'
+      ),
+      disabled: planDisabled,
+    },
+    {
+      id: 'both',
+      label: state.tr('adminBohPublishBoth', 'Team list + plan'),
+      description: state.tr(
+        'adminBohPublishBothHelp',
+        'Publish assignments and personal instructions together in one transaction.'
+      ),
+      disabled: false,
+    },
+  ];
+  return (
+    '<form class="boh-admin-card boh-admin-publication boh-admin-publication-scope" data-form="publish-scope">' +
+    '<header><div><p class="boh-admin-card-kicker">' +
+    escapeHtml(state.tr('adminBohPublicationScopeKicker', 'PUBLICATION SCOPE')) +
+    '</p><h4>' +
+    escapeHtml(state.tr('adminBohChoosePublishScope', 'Choose what goes live')) +
+    '</h4><p>' +
+    escapeHtml(
+      state.tr(
+        'adminBohPublishSnapshotCaveat',
+        'All scopes publish one revision-aligned snapshot. A plan update retains team-list visibility but uses the current draft assignments.'
+      )
+    ) +
+    '</p></div><span class="boh-admin-status-chip" data-status="' +
+    (planLive ? 'live' : announcementLive ? 'published' : 'draft') +
+    '">' +
+    escapeHtml(
+      planLive
+        ? state.tr('adminBohLive', 'Live')
+        : announcementLive
+          ? state.tr('adminBohTeamListLive', 'Team list live')
+          : state.tr('adminBohDraft', 'Draft')
+    ) +
+    '</span></header>' +
+    '<fieldset class="boh-admin-publish-scope-options"><legend>' +
+    escapeHtml(state.tr('adminBohPublicationScope', 'Publication scope')) +
+    '</legend>' +
+    scopeOptions
+      .map(
+        (option) =>
+          '<label data-disabled="' +
+          option.disabled +
+          '"><input type="radio" name="scope" value="' +
+          option.id +
+          '" data-action="publish-scope" ' +
+          (selected === option.id ? 'checked ' : '') +
+          (option.disabled ? 'disabled ' : '') +
+          '/><span><strong>' +
+          escapeHtml(option.label) +
+          '</strong><small>' +
+          escapeHtml(option.description) +
+          '</small></span></label>'
+      )
+      .join('') +
+    '</fieldset>' +
+    (announcementDisabled
+      ? '<p class="boh-admin-publication-note">' +
+        escapeHtml(
+          state.tr(
+            'adminBohTeamOnlyProtected',
+            'Team-list-only publishing is disabled while a player plan is live.'
+          )
+        ) +
+        '</p>'
+      : '') +
+    (planDisabled
+      ? '<p class="boh-admin-publication-note">' +
+        escapeHtml(
+          state.tr(
+            'adminBohPlanNeedsTeamList',
+            'Plan update only becomes available after the team list is live. Use Team list + plan for the first combined release.'
+          )
+        ) +
+        '</p>'
+      : '') +
+    '<label class="boh-admin-confirm"><input type="checkbox" name="confirmed" required /><span>' +
+    escapeHtml(
+      state.tr(
+        'adminBohPublishConfirmation',
+        'I reviewed the sanitized preview for revision {revision}.',
+        { revision: state.snapshot.revision }
+      )
+    ) +
+    '</span></label>' +
+    '<button type="submit" class="boh-admin-button boh-admin-button-publish" ' +
+    (selectedReady ? '' : 'disabled') +
+    '>' +
+    escapeHtml(state.tr('adminBohPublishSelectedScope', 'Publish {scope}', { scope: scopeLabel })) +
+    '</button></form>'
   );
-  return `<form class="boh-admin-card boh-admin-publication" data-form="publish" data-kind="${kind}">
-    <header><div><p class="boh-admin-card-kicker">${escapeHtml(
-      state.tr(
-        isAnnouncement ? 'adminBohPublishAssignments' : 'adminBohPublishInstructions',
-        isAnnouncement ? 'ASSIGNMENTS' : 'INSTRUCTIONS'
-      )
-    )}</p><h4>${escapeHtml(title)}</h4></div>
-      <span class="boh-admin-status-chip" data-status="${escapeHtml(record.status || 'draft')}">${escapeHtml(
-        statusLabel(state, cleanText(record.status) || 'draft')
-      )}</span></header>
-    <p>${escapeHtml(
-      state.tr(
-        isAnnouncement ? 'adminBohAnnouncementPublishHelp' : 'adminBohPlanPublishHelp',
-        isAnnouncement
-          ? 'Reveal team, seat, and role assignments without exposing player stats.'
-          : 'Reveal the timed Legion plan and personal instructions after assignments are ready.'
-      )
-    )}</p>
-    <dl><div><dt>${escapeHtml(state.tr('adminBohPublishedRevision', 'Published revision'))}</dt><dd>${escapeHtml(
-      record.revision ?? '—'
-    )}</dd></div><div><dt>${escapeHtml(state.tr('adminBohPublishedAt', 'Published at'))}</dt><dd>${escapeHtml(
-      formatDate(state, record.publishedAt)
-    )}</dd></div></dl>
-    <label class="boh-admin-confirm"><input type="checkbox" name="confirmed" required />
-      <span>${escapeHtml(
-        state.tr(
-          'adminBohPublishConfirmation',
-          'I reviewed the sanitized preview for revision {revision}.',
-          {
-            revision: state.snapshot.revision,
-          }
-        )
-      )}</span></label>
-    <button type="submit" class="boh-admin-button boh-admin-button-primary" ${ready ? '' : 'disabled'}>${escapeHtml(
-      state.tr('adminBohPublishNow', 'Publish {title}', { title })
-    )}</button>
-  </form>`;
 }
 
 function renderAnnouncementPreview(state) {
@@ -10958,6 +11514,20 @@ async function handleClick(state, event) {
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'save-mapper-role-plan') {
+    const result = await invokeAction(
+      state,
+      'saveMapperRolePlanImport',
+      {},
+      state.tr(
+        'adminBohRolePlanSavedDraftOnly',
+        'Role plan saved to the team draft only. It has not been published.'
+      )
+    );
+    if (result) state.mapperPlanImportPreview = null;
+    renderShell(state);
+    return result;
+  }
   if (action === 'save-mapper-import') {
     const preview = state.mapperImportPreview;
     const result = await invokeAction(
@@ -11324,6 +11894,15 @@ async function handleClick(state, event) {
     );
     return;
   }
+  if (action === 'clear-publication-copy-message') {
+    const form = button.closest('[data-form="publication-copy"]');
+    for (const name of ['subtitle', 'message']) {
+      const control = form?.querySelector?.(`[name="${name}"]`);
+      if (control) control.value = '';
+    }
+    form?.querySelector?.('[name="subtitle"]')?.focus?.();
+    return;
+  }
   if (action === 'add-schedule-milestone') {
     captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
     eventScheduleDraft(state).milestones.push({
@@ -11333,6 +11912,50 @@ async function handleClick(state, event) {
     });
     renderShell(state);
     state.root.querySelector('[name="milestoneLabel"]:last-of-type')?.focus?.();
+    return;
+  }
+  if (action === 'duplicate-schedule-milestone') {
+    captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
+    const milestones = eventScheduleDraft(state).milestones;
+    if (milestones.length >= MAX_EVENT_MILESTONES) return;
+    const index = integer(button.dataset.index);
+    const sourceMilestone = milestones[index];
+    if (!sourceMilestone) return;
+    milestones.splice(index + 1, 0, {
+      ...sourceMilestone,
+      id: `milestone-${Date.now().toString(36)}-copy-${index + 1}`,
+      label: sourceMilestone.label
+        ? state.tr('adminBohScheduleMilestoneCopy', '{label} copy', {
+            label: sourceMilestone.label,
+          })
+        : '',
+    });
+    renderShell(state);
+    return;
+  }
+  if (action === 'clear-schedule-milestones') {
+    captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
+    const milestones = eventScheduleDraft(state).milestones;
+    if (!milestones.length) return;
+    const message = state.tr(
+      'adminBohScheduleClearMilestonesConfirm',
+      'Clear all {count} milestones from this draft? They are not removed publicly until you save the schedule.',
+      { count: milestones.length }
+    );
+    const confirmed = await Promise.resolve(
+      state.options.confirm?.(message) ?? showConfirmDialog(state, message)
+    );
+    if (!confirmed) return;
+    milestones.splice(0, milestones.length);
+    renderShell(state);
+    return;
+  }
+  if (action === 'clear-schedule-team-time') {
+    captureEventScheduleDraft(state, button.closest('[data-form="event-schedule"]'));
+    const teamId = cleanText(button.dataset.teamId);
+    const entry = eventScheduleDraft(state).teamGameTimes.find((item) => item.teamId === teamId);
+    if (entry) entry.startsAt = '';
+    renderShell(state);
     return;
   }
   if (action === 'remove-schedule-milestone') {
@@ -11454,6 +12077,14 @@ function handleInput(state, event) {
 
 async function handleChange(state, event) {
   const action = cleanText(event.target.dataset.action);
+  if (action === 'publish-scope') {
+    state.publishScope = ['announcement', 'plan', 'both'].includes(event.target.value)
+      ? event.target.value
+      : 'both';
+    state.previewKind = state.publishScope === 'announcement' ? 'announcement' : 'plan';
+    renderShell(state);
+    return;
+  }
   if (action === 'mapper-board-filter') {
     state.mapperBoardFilter = cleanText(event.target.value) || 'all';
     syncMapperBoardFilter(state);
@@ -11488,6 +12119,47 @@ async function handleChange(state, event) {
     );
     state.mapperImportPreview = result?.result || result?.actionResult || state.mapperImportPreview;
     renderShell(state);
+    return;
+  }
+  if (action === 'preview-mapper-role-plan') {
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const acceptedMimeTypes = new Set(['', 'application/json', 'text/json']);
+      if (!/\.json$/iu.test(file.name || '') || !acceptedMimeTypes.has(file.type || '')) {
+        throw adapterError(
+          'boh-mapper-plan-file-type',
+          state.tr('adminBohRolePlanFileType', 'Choose an All-Star BoH role-plan .json file.')
+        );
+      }
+      if (file.size > BOH_MAPPER_PLAN_IMPORT_MAX_BYTES) {
+        throw adapterError(
+          'boh-mapper-plan-file-too-large',
+          state.tr(
+            'adminBohRolePlanFileTooLarge',
+            'Role-plan import exceeds the {bytes}-byte limit.',
+            {
+              bytes: BOH_MAPPER_PLAN_IMPORT_MAX_BYTES,
+            }
+          )
+        );
+      }
+      const jsonText = await file.text();
+      const result = await invokeAction(
+        state,
+        'previewMapperRolePlan',
+        { jsonText },
+        state.tr(
+          'adminBohRolePlanPreviewReady',
+          'Role-plan preview ready. Nothing has been saved or published.'
+        )
+      );
+      state.mapperPlanImportPreview = result?.result || result?.actionResult || null;
+      renderShell(state);
+    } finally {
+      input.value = '';
+    }
     return;
   }
   if (action === 'preview-mapper-import') {
@@ -12076,6 +12748,20 @@ async function handleSubmit(state, event) {
     );
     return;
   }
+  if (kind === 'publication-copy') {
+    await invokeAction(
+      state,
+      'savePublicationCopy',
+      {
+        eventName: cleanText(data.get('eventName')),
+        title: cleanText(data.get('title')),
+        subtitle: cleanText(data.get('subtitle')),
+        message: cleanText(data.get('message')),
+      },
+      state.tr('adminBohAnnouncementDraftSaved', 'Announcement draft saved.')
+    );
+    return;
+  }
   if (kind === 'event-schedule') {
     const schedule = captureEventScheduleDraft(state, form);
     const errors = eventScheduleValidationErrors(state, schedule);
@@ -12130,21 +12816,30 @@ async function handleSubmit(state, event) {
     state.objectiveDraftId = '';
     return;
   }
-  if (kind === 'publish') {
-    const publicationKind = form.dataset.kind === 'plan' ? 'plan' : 'announcement';
+  if (kind === 'publish-scope') {
+    const publicationKind = ['announcement', 'plan', 'both'].includes(cleanText(data.get('scope')))
+      ? cleanText(data.get('scope'))
+      : state.publishScope;
+    const command =
+      publicationKind === 'announcement'
+        ? 'publishAnnouncement'
+        : publicationKind === 'plan'
+          ? 'publishPlan'
+          : 'publishBoth';
+    const title =
+      publicationKind === 'announcement'
+        ? state.tr('adminBohPublishTeamListOnly', 'Team list only')
+        : publicationKind === 'plan'
+          ? state.tr('adminBohPublishPlanOnly', 'Plan update only')
+          : state.tr('adminBohPublishBoth', 'Team list + plan');
     await invokeAction(
       state,
-      publicationKind === 'plan' ? 'publishPlan' : 'publishAnnouncement',
+      command,
       {
         revision: state.snapshot.revision,
         sanitizedPreviewConfirmed: data.get('confirmed') === 'on',
       },
-      state.tr('adminBohPublished', '{title} published.', {
-        title: state.tr(
-          publicationKind === 'plan' ? 'adminBohTeamPlans' : 'adminBohTeamAnnouncement',
-          publicationKind === 'plan' ? 'Team Plans' : 'Team Announcement'
-        ),
-      })
+      state.tr('adminBohPublished', '{title} published.', { title })
     );
   }
 }

@@ -2208,6 +2208,17 @@ function normalizeCommitmentScoreAdjustments(input) {
   }
   return adjustments;
 }
+
+function normalizeDraftPublicationCopy(input) {
+  const source = input == null ? {} : requireRecord(input, 'Draft publication copy');
+  return {
+    eventName: boundedString(source.eventName, MAX_NAME_LENGTH, 'Draft event name'),
+    title: boundedString(source.title, MAX_NAME_LENGTH, 'Draft announcement title'),
+    subtitle: boundedString(source.subtitle, MAX_SHORT_TEXT_LENGTH, 'Draft announcement subtitle'),
+    message: boundedString(source.message, MAX_NOTE_LENGTH, 'Draft leadership message'),
+  };
+}
+
 export function normalizeAllStarBohDraft(input = {}) {
   const source = requireRecord(input, 'Admin draft');
   assertNoPrivateBinary(source, 'Admin draft');
@@ -2219,6 +2230,7 @@ export function normalizeAllStarBohDraft(input = {}) {
     epicPlanningOverrides: normalizeEpicPlanningOverrides(source.epicPlanningOverrides),
     title: boundedString(source.title, MAX_NAME_LENGTH, 'Draft title'),
     note: boundedString(source.note, MAX_NOTE_LENGTH, 'Draft note'),
+    publicationCopy: normalizeDraftPublicationCopy(source.publicationCopy),
     activeScoringVersionId: optionalIdentifier(
       firstDefined(scoringSource, ['activeVersionId', 'activeVersion']) ||
         source.activeScoringVersionId,

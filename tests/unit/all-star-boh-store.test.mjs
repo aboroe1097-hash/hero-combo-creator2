@@ -1586,6 +1586,12 @@ test('draft and private review extensions normalize legacy values and reject uns
   assert.deepEqual(legacyDraft.epicPlanningOverrides, []);
   assert.deepEqual(legacyDraft.commitmentScoreAdjustments, []);
   assert.equal(legacyDraft.title, 'Legacy draft');
+  assert.deepEqual(legacyDraft.publicationCopy, {
+    eventName: '',
+    title: '',
+    subtitle: '',
+    message: '',
+  });
 
   const configuredDraft = normalizeAllStarBohDraft({
     teamCount: 2,
@@ -1599,6 +1605,12 @@ test('draft and private review extensions normalize legacy values and reject uns
       { playerId: ' player-1 ', excluded: true, laneOverride: ' NORTH ', groupId: ' Turkish ' },
       { playerId: 'Player_2', laneOverride: '', groupId: '' },
     ],
+    publicationCopy: {
+      eventName: ' All-Star BoH Finals ',
+      title: ' Teams are ready ',
+      subtitle: ' Review your assignment. ',
+      message: ' Follow leadership calls. ',
+    },
   });
   assert.equal(configuredDraft.teamCount, 2);
   assert.equal(configuredDraft.balanceMetric, 'totalPower');
@@ -1610,6 +1622,24 @@ test('draft and private review extensions normalize legacy values and reject uns
     { playerId: 'player-1', excluded: true, laneOverride: 'north', groupId: 'Turkish' },
     { playerId: 'Player_2', excluded: false, laneOverride: '', groupId: '' },
   ]);
+  assert.deepEqual(configuredDraft.publicationCopy, {
+    eventName: 'All-Star BoH Finals',
+    title: 'Teams are ready',
+    subtitle: 'Review your assignment.',
+    message: 'Follow leadership calls.',
+  });
+  assert.throws(
+    () => normalizeAllStarBohDraft({ publicationCopy: 'not-an-object' }),
+    AllStarBohValidationError
+  );
+  for (const publicationCopy of [
+    { eventName: 'x'.repeat(161) },
+    { title: 'x'.repeat(161) },
+    { subtitle: 'x'.repeat(241) },
+    { message: 'x'.repeat(2001) },
+  ]) {
+    assert.throws(() => normalizeAllStarBohDraft({ publicationCopy }), AllStarBohValidationError);
+  }
 
   const balancedDraft = normalizeAllStarBohDraft({
     balanceMetric: ' balanced ',
@@ -1771,6 +1801,12 @@ test('draft balanced metric and commitment score adjustments round-trip without 
     scoreOverrides: [
       { playerId: 'player-1', score: -50, reason: 'Legacy score override remains separate.' },
     ],
+    publicationCopy: {
+      eventName: ' Summer event ',
+      title: ' Teams are live ',
+      subtitle: ' Check your route. ',
+      message: ' Be online ten minutes early. ',
+    },
     plan: emptyPlan(),
   });
 
@@ -1782,6 +1818,14 @@ test('draft balanced metric and commitment score adjustments round-trip without 
   assert.deepEqual(draft.scoreOverrides, [
     { playerId: 'player-1', score: -50, reason: 'Legacy score override remains separate.' },
   ]);
+  assert.deepEqual(draft.publicationCopy, {
+    eventName: 'Summer event',
+    title: 'Teams are live',
+    subtitle: 'Check your route.',
+    message: 'Be online ten minutes early.',
+  });
+  assert.deepEqual(fake.read(draftPath).publicationCopy, draft.publicationCopy);
+  assert.deepEqual((await admin.getDraft()).publicationCopy, draft.publicationCopy);
   assert.deepEqual(
     fake.read(draftPath).commitmentScoreAdjustments,
     draft.commitmentScoreAdjustments
