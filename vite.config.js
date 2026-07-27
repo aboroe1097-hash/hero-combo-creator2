@@ -38,6 +38,7 @@ export default defineConfig({
         maintenance: resolve(__dirname, 'maintenance.html'),
         admin: resolve(__dirname, 'admin.html'),
         vtsscore: resolve(__dirname, 'vtsscore.html'),
+        'vtsscore/index': resolve(__dirname, 'vtsscore/index.html'),
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
@@ -64,6 +65,9 @@ export default defineConfig({
             normalizedId.includes('node_modules/@firebase')
           )
             return 'firebase';
+          if (normalizedPath.endsWith('/js/all-star-boh-access.js')) {
+            return 'all-star-boh-bootstrap-access';
+          }
           // Large data files: split into dedicated chunks so feature chunks stay lean
           if (normalizedId.includes('/js/tech-db.js')) return 'tech-db';
           if (normalizedId.includes('/js/heroes-info.js')) return 'heroes-info';
