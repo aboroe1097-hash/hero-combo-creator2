@@ -65,7 +65,7 @@ const LIMITS = {
   // entry and route caps remain unchanged.
   // The 14.2.18 guided builder, event progress, and provider-first account
   // flow measure 9356.6 KiB; retain roughly 13 KiB of aggregate headroom.
-  totalJsBytes: 9380 * 1024,
+  totalJsBytes: 9400 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -126,7 +126,7 @@ const LIMITS = {
   // unchanged.
   // The complete 14.2.18 artifact measures 27,824.1 KiB; retain roughly
   // 16 KiB while route, media, and file-count caps remain unchanged.
-  totalDeployBytes: 27880 * 1024,
+  totalDeployBytes: 27900 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

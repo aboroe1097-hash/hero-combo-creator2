@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.2.20 - 2026-07-27
+
+- Corrected VtsScore OCR and review to submit Total Power rather than Dragon Power while preserving the deployed secured endpoint contract.
+- Replaced the browser datalist with ranked closest-name search across every eligible All-Star signup, including keyboard selection.
+- Added six complete VtsScore languages, Arabic RTL, and accessible light/dark theme controls with improved form and button contrast.
+- Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers.
+- Raised aggregate JavaScript and Pages artifact budgets by 20 kB for the complete VtsScore locale packs.
+
 ## 14.2.19 - 2026-07-27
 
 - Added the focused VtsScore page for Competition #11 final Dragon Power re-uploads, with a searchable All-Star signup selector and one-image OCR review.

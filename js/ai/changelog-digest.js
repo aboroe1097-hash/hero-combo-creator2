@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.19";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.20";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.20",
+    "date": "2026-07-27",
+    "highlights": [
+      "Corrected VtsScore OCR and review to submit Total Power rather than Dragon Power while preserving the deployed secured endpoint contract.",
+      "Replaced the browser datalist with ranked closest-name search across every eligible All-Star signup, including keyboard selection.",
+      "Added six complete VtsScore languages, Arabic RTL, and accessible light/dark theme controls with improved form and button contrast.",
+      "Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers."
+    ]
+  },
   {
     "version": "14.2.19",
     "date": "2026-07-27",
@@ -96,18 +106,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Restored All-Star BoH member PIN access after registration closes and made the Stage-1 battle mapper the default post-login page, with separate Team Formation and Event Schedule pages.",
       "Updated All-Star publication to use the six currently approved teams and their occupied seats instead of blocking on unused 72-seat placeholders; captain metadata is optional but validated when present.",
       "Split the All-Star season switch so closed registration blocks member signup and Epic preference writes without hiding published teams, personal plans, or schedules."
-    ]
-  },
-  {
-    "version": "14.2.10",
-    "date": "2026-07-25",
-    "highlights": [
-      "Added an interactive real Stage-1 map to the All-Star BoH plan view, replacing the schematic placeholder.",
-      "Added personal plan behavior for each player, including standby and gather-crystals instruction options.",
-      "Added a member-facing event schedule with a live countdown to the next milestone or team game time.",
-      "Added an admin event-schedule editor for publishing event milestones and per-team game times.",
-      "Added a default Stage-1 plan template so new seasons start from a complete, editable plan.",
-      "Improved mobile layout and accessibility across the All-Star BoH member and admin views."
     ]
   }
 ].map((release) =>

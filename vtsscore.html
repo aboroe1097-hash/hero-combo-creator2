@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="VtsScore Competition #11 final Dragon Power screenshot submission for VTS 1097."
+      content="VtsScore Competition #11 final Total Power screenshot submission for VTS 1097."
     />
-    <meta name="theme-color" content="#08111f" />
+    <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #11</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=14.2.19" />
-    <link rel="stylesheet" href="css/vts-score.css?v=14.2.19" />
+    <link rel="stylesheet" href="css/_tokens.css?v=14.2.20" />
+    <link rel="stylesheet" href="css/vts-score.css?v=14.2.20" />
+    <script src="js/theme-prepaint.js?v=14.2.20"></script>
     <script type="importmap">
       {
         "imports": {
@@ -27,22 +28,46 @@
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
       <header class="vts-score-hero">
-        <a class="vts-score-brand" href="index.html" aria-label="VTS 1097 toolkit home">
-          <img src="images/logo.png" alt="" width="64" height="64" />
-          <span><strong>VtsScore</strong><small>VTS 1097 · Competition #11</small></span>
-        </a>
+        <div class="vts-score-topbar">
+          <a class="vts-score-brand" href="index.html" aria-label="VTS 1097 toolkit home">
+            <img src="images/logo.png" alt="" width="64" height="64" />
+            <span><strong>VtsScore</strong><small>VTS 1097 · Competition #11</small></span>
+          </a>
+          <div class="vts-score-preferences">
+            <label class="vts-score-language" for="vtsScoreLanguage">
+              <span data-vts-i18n="language">Language</span>
+              <select id="vtsScoreLanguage" aria-label="Language">
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+              </select>
+            </label>
+            <button
+              id="vtsScoreThemeToggle"
+              class="vts-score-theme-toggle"
+              type="button"
+              aria-label="Switch color theme"
+            >
+              <span aria-hidden="true">◐</span>
+              <span data-vts-i18n="theme">Theme</span>
+            </button>
+          </div>
+        </div>
         <div class="vts-score-hero__copy">
-          <p class="vts-score-kicker">DEVELOPMENT RACE · FINAL CHECK</p>
-          <h1>Upload tonight’s Dragon Power</h1>
-          <p>
-            Choose the same game name used for last week’s All-Star sign-up, upload one current
-            power screenshot, review the number, and submit. Leadership will compare it with your
-            sign-up baseline.
+          <p class="vts-score-kicker" data-vts-i18n="kicker">DEVELOPMENT RACE · FINAL CHECK</p>
+          <h1 data-vts-i18n="title">Upload tonight’s Total Power</h1>
+          <p data-vts-i18n="intro">
+            Choose the same game name used for the All-Star sign-up, upload one current power
+            screenshot, review your Total Power, and submit it for comparison with your sign-up
+            baseline.
           </p>
         </div>
         <div class="vts-score-deadline">
-          <span>Final deadline</span>
-          <strong>Monday, 27 July · 20:00 Game Time</strong>
+          <span data-vts-i18n="deadlineLabel">Final deadline</span>
+          <strong data-vts-i18n="deadline">Monday, 27 July · 20:00 Game Time</strong>
         </div>
       </header>
 
@@ -55,11 +80,11 @@
       ></div>
 
       <section id="vtsScoreGate" class="vts-score-card vts-score-gate" hidden>
-        <p class="vts-score-kicker">VTS MEMBERS</p>
-        <h2>Unlock final score upload</h2>
-        <p>Use the same VTS member PIN as the All-Star sign-up hub.</p>
+        <p class="vts-score-kicker" data-vts-i18n="members">VTS MEMBERS</p>
+        <h2 data-vts-i18n="unlockTitle">Unlock final score upload</h2>
+        <p data-vts-i18n="unlockHelp">Use the same VTS member PIN as the All-Star sign-up hub.</p>
         <form id="vtsScorePinForm">
-          <label for="vtsScorePin">Member PIN</label>
+          <label for="vtsScorePin" data-vts-i18n="pin">Member PIN</label>
           <div class="vts-score-inline">
             <input
               id="vtsScorePin"
@@ -68,7 +93,7 @@
               maxlength="128"
               required
             />
-            <button type="submit">Unlock</button>
+            <button type="submit" data-vts-i18n="unlock">Unlock</button>
           </div>
         </form>
       </section>
@@ -78,26 +103,45 @@
           <div class="vts-score-step">
             <span class="vts-score-step__number" aria-hidden="true">1</span>
             <div>
-              <label for="vtsScorePlayer">Your game name</label>
-              <p>Select the exact name you used in the All-Star sign-up.</p>
+              <label for="vtsScorePlayer" data-vts-i18n="gameName">Your game name</label>
+              <p data-vts-i18n="gameNameHelp">
+                Search all signed-up players, then choose your exact name.
+              </p>
               <input
                 id="vtsScorePlayer"
                 type="search"
-                list="vtsScorePlayers"
                 placeholder="Start typing your game name"
+                data-vts-i18n-placeholder="gameNamePlaceholder"
                 autocomplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="vtsScorePlayerResults"
+                aria-expanded="false"
                 disabled
                 required
               />
-              <datalist id="vtsScorePlayers"></datalist>
+              <div
+                id="vtsScorePlayerResults"
+                class="vts-score-player-results"
+                role="listbox"
+                aria-label="Closest signed-up player names"
+                hidden
+              ></div>
+              <p id="vtsScorePlayerHint" class="vts-score-field-hint" data-vts-i18n="searchHint">
+                Type part of the name; the closest sign-up matches will appear.
+              </p>
             </div>
           </div>
 
           <div class="vts-score-step">
             <span class="vts-score-step__number" aria-hidden="true">2</span>
             <div>
-              <label for="vtsScoreImage">Current power screenshot</label>
-              <p>Upload one clear account power-breakdown image. PNG, JPEG, or WebP; max 10 MB.</p>
+              <label for="vtsScoreImage" data-vts-i18n="screenshot">
+                Current power screenshot
+              </label>
+              <p data-vts-i18n="screenshotHelp">
+                Upload one clear account power-breakdown image. PNG, JPEG, or WebP; max 10 MB.
+              </p>
               <input
                 id="vtsScoreImage"
                 type="file"
@@ -107,13 +151,18 @@
               />
               <label class="vts-score-consent" for="vtsScoreConsent">
                 <input id="vtsScoreConsent" type="checkbox" required />
-                <span>
+                <span data-vts-i18n="consent">
                   I understand the image is sent to the secured OCR service to read visible numbers.
                   The image itself is not saved.
                 </span>
               </label>
-              <button id="vtsScoreReadButton" class="vts-score-secondary" type="button">
-                Read Dragon Power
+              <button
+                id="vtsScoreReadButton"
+                class="vts-score-secondary"
+                type="button"
+                data-vts-i18n="readPower"
+              >
+                Read Total Power
               </button>
             </div>
           </div>
@@ -121,14 +170,18 @@
           <div class="vts-score-step">
             <span class="vts-score-step__number" aria-hidden="true">3</span>
             <div>
-              <label for="vtsScoreDragonPower">Confirmed Dragon Power</label>
-              <p>Check this number against the screenshot and correct it if OCR made a mistake.</p>
+              <label for="vtsScoreTotalPower" data-vts-i18n="confirmedPower">
+                Confirmed Total Power
+              </label>
+              <p data-vts-i18n="confirmedHelp">
+                Check this number against the screenshot and correct it if OCR made a mistake.
+              </p>
               <div id="vtsScoreOcrDetails" class="vts-score-ocr-result" hidden>
                 <span>OCR read <strong id="vtsScoreOcrValue">—</strong></span>
                 <small id="vtsScoreOcrConfidence"></small>
               </div>
               <input
-                id="vtsScoreDragonPower"
+                id="vtsScoreTotalPower"
                 type="number"
                 min="0"
                 max="100000000000"
@@ -139,28 +192,38 @@
             </div>
           </div>
 
-          <button id="vtsScoreSubmitButton" class="vts-score-submit" type="submit">
-            Submit final Dragon Power
+          <button
+            id="vtsScoreSubmitButton"
+            class="vts-score-submit"
+            type="submit"
+            data-vts-i18n="submit"
+          >
+            Submit final Total Power
           </button>
         </form>
 
         <section id="vtsScoreSuccess" class="vts-score-success" tabindex="-1" hidden>
           <span aria-hidden="true">✓</span>
-          <p class="vts-score-kicker">FINAL SCORE SAVED</p>
-          <h2>Thank you, <strong id="vtsScoreSuccessName"></strong></h2>
+          <p class="vts-score-kicker" data-vts-i18n="saved">FINAL SCORE SAVED</p>
+          <h2>
+            <span data-vts-i18n="thankYou">Thank you,</span>
+            <strong id="vtsScoreSuccessName"></strong>
+          </h2>
           <p>
-            Your final Dragon Power is
-            <strong id="vtsScoreSuccessPower"></strong>. Leadership can now compare it with last
-            week’s sign-up value.
+            <span data-vts-i18n="successPrefix">Your final Total Power is</span>
+            <strong id="vtsScoreSuccessPower"></strong>.
+            <span data-vts-i18n="successSuffix">
+              Leadership can now compare it with your sign-up value.
+            </span>
           </p>
         </section>
       </section>
 
       <footer>
-        <span>VTS 1097 community tool · v14.2.19</span>
-        <a href="index.html">Back to toolkit</a>
+        <span>VTS 1097 community tool · v14.2.20</span>
+        <a href="index.html" data-vts-i18n="back">Back to toolkit</a>
       </footer>
     </main>
-    <script type="module" src="js/vts-score.js?v=14.2.19"></script>
+    <script type="module" src="js/vts-score.js?v=14.2.20"></script>
   </body>
 </html>
