@@ -12,7 +12,20 @@ import {
   buildVtsScoreSubmission,
   rankVtsScorePlayers,
   resolveVtsScorePlayer,
+  VTS_SCORE_POWER_FIELDS,
 } from '../../js/vts-score-model.js';
+
+const BASE_POWER_VALUES = Object.freeze({
+  totalCastlePower: 1_112_473_195,
+  troopPower: 999_076_138,
+  buildingPower: 6_477_467,
+  technologyPower: 38_902_234,
+  heroCombatPower: 30_585_714,
+  dragonPower: 16_306_050,
+  unitSpecialtyPower: 21_125_570,
+  artifactPower: 0,
+  royalTechPower: null,
+});
 
 test('VtsScore page is one focused, searchable, single-image OCR flow', () => {
   const page = readFileSync('vtsscore.html', 'utf8');
@@ -20,10 +33,10 @@ test('VtsScore page is one focused, searchable, single-image OCR flow', () => {
   assert.match(page, /id="vtsScorePlayerResults"[\s\S]*role="listbox"/);
   assert.match(page, /id="vtsScoreImage"[\s\S]*accept="image\/png,image\/jpeg,image\/webp"/);
   assert.match(page, /id="vtsScoreReadButton"/);
-  assert.match(page, /id="vtsScoreTotalPower"/);
+  assert.match(page, /id="vtsScorePowerFields"/);
   assert.match(page, /id="vtsScoreLanguage"/);
   assert.match(page, /id="vtsScoreThemeToggle"/);
-  assert.doesNotMatch(page, />[^<]*Dragon Power[^<]*</);
+  assert.match(page, /Submit full power breakdown/);
   assert.match(page, /Monday, 27 July[\s\S]*20:00 Game Time/);
   assert.doesNotMatch(page, /\bmultiple\b/);
 });
@@ -35,7 +48,7 @@ test('VtsScore light/dark and every offered language have complete UI copy', () 
   assert.deepEqual(auditVtsScoreI18n(), { ok: true, missing: [] });
 });
 
-test('VtsScore ranks close signup names and emits a strict Total Power OCR payload', () => {
+test('VtsScore ranks close signup names and emits a strict full-breakdown OCR payload', () => {
   const players = [
     { submissionUid: 'uid-a', gameName: 'MalakAbo' },
     { submissionUid: 'uid-b', gameName: 'Malika Zena' },
@@ -49,23 +62,23 @@ test('VtsScore ranks close signup names and emits a strict Total Power OCR paylo
   const payload = buildVtsScoreSubmission({
     seasonId: 'competition-11',
     player: players[0],
-    totalPower: 1_745_000_000,
+    powerValues: { ...BASE_POWER_VALUES, totalCastlePower: 1_117_000_000 },
     review: {
       requestId: 'ocr-request-1',
-      ocrValues: { totalCastlePower: 1_740_000_000 },
-      confidence: { totalCastlePower: 0.93 },
+      ocrValues: BASE_POWER_VALUES,
+      confidence: Object.fromEntries(VTS_SCORE_POWER_FIELDS.map((field) => [field, 0.93])),
     },
   });
   assert.deepEqual(payload, {
     seasonId: 'competition-11',
     submissionUid: 'uid-a',
     gameName: 'MalakAbo',
-    dragonPower: 1_745_000_000,
+    powerValues: { ...BASE_POWER_VALUES, totalCastlePower: 1_117_000_000 },
     ocr: {
       requestId: 'ocr-request-1',
-      originalDragonPower: 1_740_000_000,
-      confidence: 0.93,
-      corrected: true,
+      sourceValues: BASE_POWER_VALUES,
+      confidence: Object.fromEntries(VTS_SCORE_POWER_FIELDS.map((field) => [field, 0.93])),
+      correctedFields: ['totalCastlePower'],
     },
   });
   assert.doesNotMatch(JSON.stringify(payload), /image|base64|screenshot/i);
@@ -77,20 +90,21 @@ test('VtsScore store contract is season-scoped, bounded, and image-free', () => 
     'boh_allstar/competition-11/raceScores/signup-uid'
   );
   const normalized = normalizeAllStarBohRaceScore({
+    schemaVersion: 2,
     gameName: 'Dragon One',
     baselineSubmissionRevision: 3,
-    dragonPower: 7_450_000,
+    powerValues: BASE_POWER_VALUES,
     submittedByUid: 'uploader-uid',
     ocr: {
       requestId: 'ocr-request-1',
-      originalDragonPower: 7_400_000,
-      confidence: 0.93,
-      corrected: true,
+      sourceValues: BASE_POWER_VALUES,
+      confidence: Object.fromEntries(VTS_SCORE_POWER_FIELDS.map((field) => [field, 0.93])),
+      correctedFields: [],
     },
     screenshot: 'must be dropped',
   });
-  assert.equal(normalized.dragonPower, 7_450_000);
-  assert.equal(normalized.ocr.corrected, true);
+  assert.equal(normalized.powerValues.totalCastlePower, 1_112_473_195);
+  assert.deepEqual(normalized.ocr.correctedFields, []);
   assert.equal(Object.hasOwn(normalized, 'screenshot'), false);
 });
 
@@ -113,9 +127,13 @@ test('admin VtsScore rows compare baseline and final values by original tier', (
     [
       {
         submissionUid: 'tier-2',
-        dragonPower: 1_250_000_000,
+        schemaVersion: 2,
+        powerValues: { ...BASE_POWER_VALUES, totalCastlePower: 1_250_000_000 },
         updatedAtMs: 100,
-        ocr: { corrected: false, confidence: 0.9 },
+        ocr: {
+          correctedFields: [],
+          confidence: Object.fromEntries(VTS_SCORE_POWER_FIELDS.map((field) => [field, 0.9])),
+        },
       },
     ]
   );
@@ -128,6 +146,8 @@ test('admin VtsScore rows compare baseline and final values by original tier', (
   assert.equal(rows[1].tier, 2);
   assert.equal(rows[1].growth, 50_000_000);
   assert.equal(rows[1].growthPercent, (50_000_000 / 1_200_000_000) * 100);
+  assert.equal(rows[1].comparisons.length, 9);
+  assert.equal(rows[1].comparisons.find(({ field }) => field === 'dragonPower').final, 16_306_050);
 });
 
 test('admin and Firestore expose a dedicated, admin-only VtsScore surface', () => {

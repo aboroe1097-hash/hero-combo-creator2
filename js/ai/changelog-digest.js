@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.20";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.0";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.0",
+    "date": "2026-07-28",
+    "highlights": [
+      "Corrected VtsScore to OCR, review, submit, and compare the complete nine-field power breakdown instead of a single Total or Dragon Power value.",
+      "Added editable per-field OCR review with confidence context for Total, Troop, Building, Technology, Hero, Dragon, Unit Specialty, Artifact, and Royal Tech power.",
+      "Added migration-safe VtsScore storage: new uploads use the full versioned contract while earlier one-field uploads remain visible as incomplete and require re-upload.",
+      "Expanded the All-Star admin comparison to show sign-up, final, and growth values for every power category."
+    ]
+  },
   {
     "version": "14.2.20",
     "date": "2026-07-27",
@@ -12,7 +22,8 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Corrected VtsScore OCR and review to submit Total Power rather than Dragon Power while preserving the deployed secured endpoint contract.",
       "Replaced the browser datalist with ranked closest-name search across every eligible All-Star signup, including keyboard selection.",
       "Added six complete VtsScore languages, Arabic RTL, and accessible light/dark theme controls with improved form and button contrast.",
-      "Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers."
+      "Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers.",
+      "Raised aggregate JavaScript and Pages artifact budgets by 20 kB for the complete VtsScore locale packs."
     ]
   },
   {
@@ -97,15 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Completed Italian and Korean localization across the shipped experience.",
       "Made Battle Simulator scenarios apply Research and Specialization through a deterministic runtime, with upgraded setup/export schemas and diagnostics.",
       "Expanded Battle Simulator coverage to 78 heroes and 208 skills using conservative modeled effects, plus provisional observed equipment effects; partial or unverified battle clauses fail closed, and Dragon Master catalog stats are never invented."
-    ]
-  },
-  {
-    "version": "14.2.11",
-    "date": "2026-07-25",
-    "highlights": [
-      "Restored All-Star BoH member PIN access after registration closes and made the Stage-1 battle mapper the default post-login page, with separate Team Formation and Event Schedule pages.",
-      "Updated All-Star publication to use the six currently approved teams and their occupied seats instead of blocking on unused 72-seat placeholders; captain metadata is optional but validated when present.",
-      "Split the All-Star season switch so closed registration blocks member signup and Epic preference writes without hiding published teams, personal plans, or schedules."
     ]
   }
 ].map((release) =>

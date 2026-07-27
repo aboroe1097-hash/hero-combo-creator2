@@ -2,6 +2,7 @@ import { createAllStarBohAccessClient, AllStarBohAccessError } from './all-star-
 import {
   buildBohStatsOcrRequest,
   buildBohStatsReviewModel,
+  BOH_STATS_REQUIRED_POWER_FIELDS,
   getSingleBohStatsScreenshot,
   prepareBohStatsScreenshot,
 } from './all-star-boh-ocr.js';
@@ -11,7 +12,20 @@ import {
   buildVtsScoreSubmission,
   rankVtsScorePlayers,
   resolveVtsScorePlayer,
+  VTS_SCORE_POWER_FIELDS,
 } from './vts-score-model.js';
+
+const POWER_FIELD_I18N = Object.freeze({
+  totalCastlePower: 'fieldTotalCastlePower',
+  troopPower: 'fieldTroopPower',
+  buildingPower: 'fieldBuildingPower',
+  technologyPower: 'fieldTechnologyPower',
+  heroCombatPower: 'fieldHeroCombatPower',
+  dragonPower: 'fieldDragonPower',
+  unitSpecialtyPower: 'fieldUnitSpecialtyPower',
+  artifactPower: 'fieldArtifactPower',
+  royalTechPower: 'fieldRoyalTechPower',
+});
 
 function element(id) {
   return document.getElementById(id);
@@ -109,10 +123,83 @@ export async function bootVtsScore(options = {}) {
   const readButton = element('vtsScoreReadButton');
   const submitButton = element('vtsScoreSubmitButton');
   const fileInput = element('vtsScoreImage');
-  const powerInput = element('vtsScoreTotalPower');
+  const powerFields = element('vtsScorePowerFields');
   const playerInput = element('vtsScorePlayer');
   const playerResults = element('vtsScorePlayerResults');
-  const ocrDetails = element('vtsScoreOcrDetails');
+
+  function powerInput(field) {
+    return powerFields?.querySelector(`[data-vts-power-field="${field}"]`);
+  }
+
+  function clearPowerFields() {
+    powerFields?.replaceChildren();
+    setHidden(powerFields, true);
+  }
+
+  function renderPowerFields() {
+    if (!powerFields || !state.review) return;
+    powerFields.replaceChildren();
+    for (const field of VTS_SCORE_POWER_FIELDS) {
+      const value = state.review.confirmedValues?.[field] ?? null;
+      const original = state.review.ocrValues?.[field] ?? null;
+      const confidence = state.review.confidence?.[field];
+      const required = BOH_STATS_REQUIRED_POWER_FIELDS.includes(field);
+      const card = document.createElement('label');
+      card.className = 'vts-score-power-field';
+      card.htmlFor = `vtsScorePower-${field}`;
+
+      const heading = document.createElement('span');
+      heading.className = 'vts-score-power-field__heading';
+      const name = document.createElement('strong');
+      name.dataset.vtsI18n = POWER_FIELD_I18N[field];
+      name.textContent = i18n.text(POWER_FIELD_I18N[field]);
+      heading.append(name);
+      if (!required) {
+        const optional = document.createElement('small');
+        optional.className = 'vts-score-power-field__optional';
+        optional.dataset.vtsI18n = 'optional';
+        optional.textContent = i18n.text('optional');
+        heading.append(optional);
+      }
+
+      const input = document.createElement('input');
+      input.id = `vtsScorePower-${field}`;
+      input.type = 'number';
+      input.min = '0';
+      input.max = '100000000000';
+      input.step = '1';
+      input.inputMode = 'numeric';
+      input.autocomplete = 'off';
+      input.required = required;
+      input.dataset.vtsPowerField = field;
+      input.value = value === null ? '' : String(value);
+
+      const meta = document.createElement('span');
+      meta.className = 'vts-score-power-field__meta';
+      const ocrValue = original === null ? i18n.text('notDetected') : i18n.formatNumber(original);
+      const confidenceText =
+        typeof confidence === 'number'
+          ? `${Math.round(confidence * 100)}% ${i18n.text('confidence')}`
+          : i18n.text('reviewRequired');
+      meta.textContent = `${i18n.text('ocrRead')}: ${ocrValue} · ${confidenceText}`;
+      card.append(heading, input, meta);
+      powerFields.append(card);
+    }
+    setHidden(powerFields, false);
+  }
+
+  function collectPowerValues() {
+    return Object.fromEntries(
+      VTS_SCORE_POWER_FIELDS.map((field) => {
+        const value = powerInput(field)?.value.trim() ?? '';
+        return [field, value === '' ? null : Number(value)];
+      })
+    );
+  }
+
+  element('vtsScoreLanguage')?.addEventListener('change', () => {
+    if (state.review) renderPowerFields();
+  });
 
   function closePlayerResults() {
     state.visiblePlayers = [];
@@ -237,8 +324,7 @@ export async function bootVtsScore(options = {}) {
     try {
       state.file = getSingleBohStatsScreenshot(fileInput.files);
       state.review = null;
-      powerInput.value = '';
-      setHidden(ocrDetails, true);
+      clearPowerFields();
       setStatus(`${state.file.name} is ready to read.`, 'success');
     } catch (error) {
       state.file = null;
@@ -259,7 +345,7 @@ export async function bootVtsScore(options = {}) {
       return;
     }
     setBusy(readButton, true, 'Reading screenshot…');
-    setStatus('Reading Total Power from your screenshot…');
+    setStatus('Reading every power value from your screenshot…');
     try {
       const prepared = await prepareBohStatsScreenshot(state.file);
       const request = buildBohStatsOcrRequest({
@@ -268,21 +354,12 @@ export async function bootVtsScore(options = {}) {
       });
       const response = await state.client.processOcr(request);
       state.review = buildBohStatsReviewModel(response?.result || response);
-      const totalPower = state.review.confirmedValues.totalCastlePower;
-      powerInput.value = String(totalPower);
-      const confidence = state.review.confidence.totalCastlePower;
-      element('vtsScoreOcrValue').textContent = i18n.formatNumber(totalPower);
-      element('vtsScoreOcrConfidence').textContent =
-        typeof confidence === 'number'
-          ? `${Math.round(confidence * 100)}% confidence`
-          : 'Review required';
-      setHidden(ocrDetails, false);
-      setStatus('Total Power is ready. Check the number, then submit.', 'success');
-      powerInput.focus();
+      renderPowerFields();
+      setStatus('Power breakdown is ready. Check every value, then submit.', 'success');
+      powerInput(VTS_SCORE_POWER_FIELDS[0])?.focus();
     } catch (error) {
       state.review = null;
-      powerInput.value = '';
-      setHidden(ocrDetails, true);
+      clearPowerFields();
       setStatus(friendlyError(error), 'error');
     } finally {
       setBusy(readButton, false);
@@ -297,7 +374,7 @@ export async function bootVtsScore(options = {}) {
       payload = buildVtsScoreSubmission({
         seasonId: state.grant?.seasonId,
         player,
-        totalPower: Number(powerInput.value),
+        powerValues: collectPowerValues(),
         review: state.review,
       });
     } catch (error) {
@@ -309,10 +386,12 @@ export async function bootVtsScore(options = {}) {
     try {
       const saved = await state.client.submitVtsScore(payload);
       element('vtsScoreSuccessName').textContent = saved.gameName;
-      element('vtsScoreSuccessPower').textContent = i18n.formatNumber(saved.dragonPower);
+      element('vtsScoreSuccessPower').textContent = i18n.formatNumber(
+        saved.powerValues.totalCastlePower
+      );
       setHidden(scoreForm, true);
       setHidden(element('vtsScoreSuccess'), false);
-      setStatus('Final Total Power submitted successfully.', 'success');
+      setStatus('Full power breakdown submitted successfully.', 'success');
       element('vtsScoreSuccess')?.focus();
     } catch (error) {
       if (error instanceof AllStarBohAccessError && error.code === 'access_expired') {

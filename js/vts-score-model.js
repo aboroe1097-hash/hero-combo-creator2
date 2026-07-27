@@ -1,7 +1,15 @@
-import { normalizeBohPowerNumber } from './all-star-boh-ocr.js';
+import {
+  BOH_STATS_OPTIONAL_POWER_FIELDS,
+  BOH_STATS_REQUIRED_POWER_FIELDS,
+  normalizeBohPowerNumber,
+} from './all-star-boh-ocr.js';
 
-export const VTS_SCORE_VERSION = 1;
-export const VTS_SCORE_MAX_DRAGON_POWER = 100_000_000_000;
+export const VTS_SCORE_VERSION = 2;
+export const VTS_SCORE_MAX_POWER = 100_000_000_000;
+export const VTS_SCORE_POWER_FIELDS = Object.freeze([
+  ...BOH_STATS_REQUIRED_POWER_FIELDS,
+  ...BOH_STATS_OPTIONAL_POWER_FIELDS,
+]);
 
 export function normalizeVtsScoreSearch(value) {
   return String(value || '')
@@ -65,34 +73,43 @@ export function resolveVtsScorePlayer(players, gameNameInput) {
   return matches.length === 1 ? matches[0] : null;
 }
 
-export function buildVtsScoreSubmission({ seasonId, player, totalPower, review } = {}) {
+export function buildVtsScoreSubmission({ seasonId, player, powerValues, review } = {}) {
   if (!player?.submissionUid || !player?.gameName) {
     throw new TypeError('Choose your exact game name from the signup list.');
   }
   if (!review?.requestId || !review?.ocrValues) {
     throw new TypeError('Read your power screenshot before submitting.');
   }
-  const confirmedPower = normalizeBohPowerNumber(totalPower, {
-    max: VTS_SCORE_MAX_DRAGON_POWER,
-  });
-  const originalDragonPower = normalizeBohPowerNumber(review.ocrValues.totalCastlePower, {
-    max: VTS_SCORE_MAX_DRAGON_POWER,
-  });
+  const confirmed = {};
+  const sourceValues = {};
+  const confidence = {};
+  const correctedFields = [];
+  for (const field of VTS_SCORE_POWER_FIELDS) {
+    const value = normalizeBohPowerNumber(powerValues?.[field], {
+      max: VTS_SCORE_MAX_POWER,
+    });
+    const original = normalizeBohPowerNumber(review.ocrValues[field], {
+      max: VTS_SCORE_MAX_POWER,
+    });
+    if (BOH_STATS_REQUIRED_POWER_FIELDS.includes(field) && value === null) {
+      throw new TypeError(`Confirm ${field} before submitting.`);
+    }
+    confirmed[field] = value;
+    sourceValues[field] = original;
+    confidence[field] =
+      typeof review.confidence?.[field] === 'number' ? review.confidence[field] : null;
+    if (value !== original) correctedFields.push(field);
+  }
   return {
     seasonId: String(seasonId || '').trim(),
     submissionUid: String(player.submissionUid),
     gameName: String(player.gameName),
-    // The deployed v1 endpoint names this field dragonPower. Keep that wire key during the
-    // emergency hotfix while sending the reviewed Total Power value.
-    dragonPower: confirmedPower,
+    powerValues: confirmed,
     ocr: {
       requestId: String(review.requestId),
-      originalDragonPower,
-      confidence:
-        typeof review.confidence?.totalCastlePower === 'number'
-          ? review.confidence.totalCastlePower
-          : null,
-      corrected: confirmedPower !== originalDragonPower,
+      sourceValues,
+      confidence,
+      correctedFields,
     },
   };
 }
