@@ -1665,16 +1665,23 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(root.locator('.boh-admin-seat')).toHaveCount(72);
 
     const advancedTools = root.locator('details.boh-admin-advanced-tools').first();
+    const advancedToolsSummary = advancedTools.locator(':scope > summary');
+    const openAdvancedTools = async () => {
+      if (!(await advancedTools.evaluate((element) => element.open))) {
+        await advancedToolsSummary.click();
+        await expect(advancedTools).toHaveAttribute('open', '');
+      }
+    };
     const previewBalance = root.locator('[data-action=preview-balance-teams]');
     const applyPreview = root.getByRole('button', { name: 'Apply preview' });
     const discardPreview = root.getByRole('button', { name: 'Discard preview' });
     await expect(advancedTools).not.toHaveAttribute('open', '');
-    await advancedTools.locator(':scope > summary').click();
-    await expect(advancedTools).toHaveAttribute('open', '');
+    await openAdvancedTools();
     await expect(applyPreview).toBeDisabled();
     await expect(discardPreview).toBeDisabled();
 
     await previewBalance.click();
+    await openAdvancedTools();
     await expect(applyPreview).toBeEnabled();
     await expect(discardPreview).toBeEnabled();
     const firstPreview = await page.evaluate(() => window.__BOH_ADMIN_SNAPSHOT__.balancePreview);
@@ -1684,6 +1691,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     expect(firstPreview.powerSpread).toEqual(expect.any(Number));
 
     await discardPreview.click();
+    await openAdvancedTools();
     await expect(applyPreview).toBeDisabled();
     await expect(discardPreview).toBeDisabled();
     await expect
@@ -1691,6 +1699,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
       .toBeNull();
 
     await previewBalance.click();
+    await openAdvancedTools();
     const expectedAssignments = await page.evaluate(() =>
       window.__BOH_ADMIN_SNAPSHOT__.balancePreview.teams.map((team) =>
         team.seats.map((seat) => seat.playerId)
@@ -1950,7 +1959,7 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     await expect(reviewBtn).toBeFocused();
   });
 
-  test('local test auth renders five navigation tabs, 72 seats, plan controls, and safe legacy reuse', async ({
+  test('local test auth renders six navigation tabs, 72 seats, plan controls, and safe legacy reuse', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
@@ -1961,11 +1970,11 @@ test.describe('All-Star BoH Admin VTS command center', () => {
     const stageTabs = workspace.locator('[role=tab][data-action=stage]');
     const tabFor = (stage) =>
       workspace.locator('[role=tab][data-action=stage][data-stage=' + stage + ']');
-    await expect(stageActions).toHaveCount(6);
-    await expect(stageTabs).toHaveCount(5);
+    await expect(stageActions).toHaveCount(7);
+    await expect(stageTabs).toHaveCount(6);
     await expect
       .poll(() => stageTabs.evaluateAll((tabs) => tabs.map((tab) => tab.dataset.stage)))
-      .toEqual(['teams', 'plans', 'publish', 'signups', 'scoring']);
+      .toEqual(['teams', 'plans', 'publish', 'signups', 'scores', 'scoring']);
 
     await tabFor('signups').click();
     await root.locator('[data-action="select-submission"][data-player-id="player-1-1"]').click();
