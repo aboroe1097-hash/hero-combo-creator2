@@ -6,7 +6,12 @@ import {
   prepareBohStatsScreenshot,
 } from './all-star-boh-ocr.js';
 import { ensureAnonymousAuth, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
-import { buildVtsScoreSubmission, resolveVtsScorePlayer } from './vts-score-model.js';
+import { createVtsScoreI18n } from './vts-score-i18n.js';
+import {
+  buildVtsScoreSubmission,
+  rankVtsScorePlayers,
+  resolveVtsScorePlayer,
+} from './vts-score-model.js';
 
 function element(id) {
   return document.getElementById(id);
@@ -44,15 +49,37 @@ function friendlyError(error) {
   );
 }
 
-function fillPlayerOptions(players) {
-  const list = element('vtsScorePlayers');
-  if (!list) return;
-  list.replaceChildren();
-  for (const player of players) {
-    const option = document.createElement('option');
-    option.value = player.gameName;
-    list.append(option);
+function applyTheme(themeInput) {
+  const theme = themeInput === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem('vts_theme', theme);
+    localStorage.setItem('theme', theme);
+  } catch {
+    // The active document still receives the selected theme when storage is restricted.
   }
+  const meta = element('themeColorMeta');
+  if (meta) meta.content = theme === 'light' ? '#eef6fa' : '#08111f';
+  const toggle = element('vtsScoreThemeToggle');
+  if (!toggle) return;
+  toggle.dataset.theme = theme;
+  toggle.setAttribute(
+    'aria-label',
+    theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'
+  );
+  const icon = toggle.querySelector('[aria-hidden="true"]');
+  if (icon) icon.textContent = theme === 'light' ? '☀' : '☾';
+}
+
+function initializePreferences(i18n) {
+  i18n.apply();
+  element('vtsScoreLanguage')?.addEventListener('change', (event) => {
+    i18n.apply(event.target.value);
+  });
+  applyTheme(document.documentElement.dataset.theme);
+  element('vtsScoreThemeToggle')?.addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  });
 }
 
 function setBusy(button, busy, busyText) {
@@ -63,11 +90,16 @@ function setBusy(button, busy, busyText) {
 }
 
 export async function bootVtsScore(options = {}) {
+  const i18n = createVtsScoreI18n();
+  initializePreferences(i18n);
   const state = {
     client: null,
     file: null,
     grant: null,
     players: [],
+    selectedPlayer: null,
+    visiblePlayers: [],
+    highlightedPlayerIndex: -1,
     review: null,
   };
   const pinPanel = element('vtsScoreGate');
@@ -77,16 +109,92 @@ export async function bootVtsScore(options = {}) {
   const readButton = element('vtsScoreReadButton');
   const submitButton = element('vtsScoreSubmitButton');
   const fileInput = element('vtsScoreImage');
-  const powerInput = element('vtsScoreDragonPower');
+  const powerInput = element('vtsScoreTotalPower');
   const playerInput = element('vtsScorePlayer');
+  const playerResults = element('vtsScorePlayerResults');
   const ocrDetails = element('vtsScoreOcrDetails');
+
+  function closePlayerResults() {
+    state.visiblePlayers = [];
+    state.highlightedPlayerIndex = -1;
+    setHidden(playerResults, true);
+    playerInput?.setAttribute('aria-expanded', 'false');
+    playerInput?.removeAttribute('aria-activedescendant');
+  }
+
+  function choosePlayer(player) {
+    state.selectedPlayer = player;
+    playerInput.value = player.gameName;
+    closePlayerResults();
+    setStatus(`${player.gameName} selected.`, 'success');
+  }
+
+  function highlightPlayer(index) {
+    if (!state.visiblePlayers.length) return;
+    state.highlightedPlayerIndex =
+      (index + state.visiblePlayers.length) % state.visiblePlayers.length;
+    const options = [...playerResults.querySelectorAll('.vts-score-player-option')];
+    options.forEach((option, optionIndex) => {
+      const selected = optionIndex === state.highlightedPlayerIndex;
+      option.setAttribute('aria-selected', String(selected));
+      if (selected) {
+        playerInput.setAttribute('aria-activedescendant', option.id);
+        option.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
+  function renderPlayerResults() {
+    state.visiblePlayers = rankVtsScorePlayers(state.players, playerInput.value, 8);
+    state.highlightedPlayerIndex = -1;
+    playerResults.replaceChildren();
+    for (const [index, player] of state.visiblePlayers.entries()) {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.id = `vtsScorePlayerOption${index}`;
+      option.className = 'vts-score-player-option';
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', 'false');
+      option.textContent = player.gameName;
+      option.addEventListener('pointerdown', (event) => event.preventDefault());
+      option.addEventListener('click', () => choosePlayer(player));
+      playerResults.append(option);
+    }
+    const open = state.visiblePlayers.length > 0;
+    setHidden(playerResults, !open);
+    playerInput.setAttribute('aria-expanded', String(open));
+  }
+
+  playerInput?.addEventListener('input', () => {
+    state.selectedPlayer = null;
+    renderPlayerResults();
+  });
+  playerInput?.addEventListener('focus', () => {
+    if (playerInput.value.trim()) renderPlayerResults();
+  });
+  playerInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (playerResults.hidden) renderPlayerResults();
+      highlightPlayer(state.highlightedPlayerIndex + (event.key === 'ArrowDown' ? 1 : -1));
+    } else if (event.key === 'Enter' && state.highlightedPlayerIndex >= 0) {
+      event.preventDefault();
+      choosePlayer(state.visiblePlayers[state.highlightedPlayerIndex]);
+    } else if (event.key === 'Escape') {
+      closePlayerResults();
+    }
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (event.target !== playerInput && !playerResults?.contains(event.target)) {
+      closePlayerResults();
+    }
+  });
 
   async function openWorkspace(grant) {
     state.grant = grant;
     setStatus('Loading eligible Competition #11 signups…');
     const result = await state.client.getVtsScorePlayers();
     state.players = [...result.players];
-    fillPlayerOptions(state.players);
     setHidden(pinPanel, true);
     setHidden(scorePanel, false);
     playerInput.disabled = false;
@@ -151,7 +259,7 @@ export async function bootVtsScore(options = {}) {
       return;
     }
     setBusy(readButton, true, 'Reading screenshot…');
-    setStatus('Reading Dragon Power from your screenshot…');
+    setStatus('Reading Total Power from your screenshot…');
     try {
       const prepared = await prepareBohStatsScreenshot(state.file);
       const request = buildBohStatsOcrRequest({
@@ -160,16 +268,16 @@ export async function bootVtsScore(options = {}) {
       });
       const response = await state.client.processOcr(request);
       state.review = buildBohStatsReviewModel(response?.result || response);
-      const dragonPower = state.review.confirmedValues.dragonPower;
-      powerInput.value = String(dragonPower);
-      const confidence = state.review.confidence.dragonPower;
-      element('vtsScoreOcrValue').textContent = new Intl.NumberFormat().format(dragonPower);
+      const totalPower = state.review.confirmedValues.totalCastlePower;
+      powerInput.value = String(totalPower);
+      const confidence = state.review.confidence.totalCastlePower;
+      element('vtsScoreOcrValue').textContent = i18n.formatNumber(totalPower);
       element('vtsScoreOcrConfidence').textContent =
         typeof confidence === 'number'
           ? `${Math.round(confidence * 100)}% confidence`
           : 'Review required';
       setHidden(ocrDetails, false);
-      setStatus('Dragon Power is ready. Check the number, then submit.', 'success');
+      setStatus('Total Power is ready. Check the number, then submit.', 'success');
       powerInput.focus();
     } catch (error) {
       state.review = null;
@@ -183,13 +291,13 @@ export async function bootVtsScore(options = {}) {
 
   scoreForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const player = resolveVtsScorePlayer(state.players, playerInput.value);
+    const player = state.selectedPlayer || resolveVtsScorePlayer(state.players, playerInput.value);
     let payload;
     try {
       payload = buildVtsScoreSubmission({
         seasonId: state.grant?.seasonId,
         player,
-        dragonPower: Number(powerInput.value),
+        totalPower: Number(powerInput.value),
         review: state.review,
       });
     } catch (error) {
@@ -201,12 +309,10 @@ export async function bootVtsScore(options = {}) {
     try {
       const saved = await state.client.submitVtsScore(payload);
       element('vtsScoreSuccessName').textContent = saved.gameName;
-      element('vtsScoreSuccessPower').textContent = new Intl.NumberFormat().format(
-        saved.dragonPower
-      );
+      element('vtsScoreSuccessPower').textContent = i18n.formatNumber(saved.dragonPower);
       setHidden(scoreForm, true);
       setHidden(element('vtsScoreSuccess'), false);
-      setStatus('Final Dragon Power submitted successfully.', 'success');
+      setStatus('Final Total Power submitted successfully.', 'success');
       element('vtsScoreSuccess')?.focus();
     } catch (error) {
       if (error instanceof AllStarBohAccessError && error.code === 'access_expired') {

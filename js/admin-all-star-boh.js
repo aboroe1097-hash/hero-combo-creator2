@@ -1088,6 +1088,17 @@ export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = 
         submission?.submissionUid || submission?.uid || submission?.playerId || submission?.id
       );
       const score = scoreBySubmission.get(submissionUid) || null;
+      const baselineTotalPower = Math.max(
+        0,
+        finiteNumber(
+          submission?.confirmedStats?.totalCastlePower ??
+            submission?.confirmedStats?.totalPower ??
+            submission?.stats?.totalCastlePower ??
+            submission?.stats?.totalPower ??
+            submission?.totalCastlePower ??
+            submission?.totalPower
+        )
+      );
       const baselineDragonPower = Math.max(
         0,
         finiteNumber(
@@ -1100,16 +1111,16 @@ export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = 
         score && Number.isFinite(Number(score.dragonPower))
           ? Math.max(0, Number(score.dragonPower))
           : null;
-      const growth = finalDragonPower === null ? null : finalDragonPower - baselineDragonPower;
+      const growth = finalDragonPower === null ? null : finalDragonPower - baselineTotalPower;
       return {
         submissionUid,
         gameName: playerName(submission) || cleanText(score?.gameName) || submissionUid,
         tier: baselineDragonPower >= 7_000_000 ? 1 : 2,
-        baselineDragonPower,
-        finalDragonPower,
+        baselineTotalPower,
+        finalTotalPower: finalDragonPower,
         growth,
         growthPercent:
-          growth === null || baselineDragonPower <= 0 ? null : (growth / baselineDragonPower) * 100,
+          growth === null || baselineTotalPower <= 0 ? null : (growth / baselineTotalPower) * 100,
         submitted: Boolean(score),
         submittedAt: score?.updatedAt || score?.updatedAtMs || null,
         revision: integer(score?.revision),
@@ -6515,8 +6526,8 @@ function renderVtsScores(state) {
       return `<tr data-vts-score-status="${row.submitted ? 'submitted' : 'missing'}">
         <th scope="row">${escapeHtml(row.gameName)}</th>
         <td><span class="boh-admin-chip">Tier ${row.tier}</span></td>
-        <td>${escapeHtml(formatNumber(state, row.baselineDragonPower))}</td>
-        <td>${row.finalDragonPower === null ? '—' : escapeHtml(formatNumber(state, row.finalDragonPower))}</td>
+        <td>${escapeHtml(formatNumber(state, row.baselineTotalPower))}</td>
+        <td>${row.finalTotalPower === null ? '—' : escapeHtml(formatNumber(state, row.finalTotalPower))}</td>
         <td data-growth="${row.growth === null ? 'missing' : row.growth >= 0 ? 'positive' : 'negative'}">${escapeHtml(growth)}</td>
         <td>${escapeHtml(growthPercent)}</td>
         <td>${escapeHtml(ocrStatus)}</td>
@@ -6532,7 +6543,7 @@ function renderVtsScores(state) {
         <p>${escapeHtml(
           state.tr(
             'adminVtsScoreDescription',
-            'Compare each signed-up player’s original Dragon Power with tonight’s reviewed OCR upload.'
+            'Compare each signed-up player’s original Total Power with tonight’s reviewed OCR upload.'
           )
         )}</p>
       </div>
@@ -6540,8 +6551,8 @@ function renderVtsScores(state) {
     <div class="boh-admin-summary-grid">
       ${summaryCard(submitted, state.tr('adminVtsScoreSubmitted', 'Final uploads'), 'positive')}
       ${summaryCard(missing, state.tr('adminVtsScoreMissing', 'Still missing'), missing ? 'warning' : 'positive')}
-      ${summaryCard(tierOne, state.tr('adminVtsScoreTierOne', 'Tier 1 · 7M+'))}
-      ${summaryCard(tierTwo, state.tr('adminVtsScoreTierTwo', 'Tier 2 · below 7M'))}
+      ${summaryCard(tierOne, state.tr('adminVtsScoreTierOne', 'Tier 1 · Dragon 7M+'))}
+      ${summaryCard(tierTwo, state.tr('adminVtsScoreTierTwo', 'Tier 2 · Dragon below 7M'))}
     </div>
     <section class="boh-admin-card">
       <div class="boh-admin-card-heading">
@@ -6549,7 +6560,7 @@ function renderVtsScores(state) {
         <p>${escapeHtml(
           state.tr(
             'adminVtsScoreSortHint',
-            'Grouped by original tier, then sorted by Dragon Power growth.'
+            'Grouped by the original Dragon tier, then sorted by Total Power growth.'
           )
         )}</p></div>
       </div>
@@ -6558,8 +6569,8 @@ function renderVtsScores(state) {
           <thead><tr>
             <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
             <th scope="col">${escapeHtml(state.tr('adminVtsScoreTier', 'Tier'))}</th>
-            <th scope="col">${escapeHtml(state.tr('adminVtsScoreBaseline', 'Sign-up Dragon Power'))}</th>
-            <th scope="col">${escapeHtml(state.tr('adminVtsScoreFinal', 'Final Dragon Power'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreBaseline', 'Sign-up Total Power'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreFinal', 'Final Total Power'))}</th>
             <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowth', 'Growth'))}</th>
             <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowthPercent', 'Growth %'))}</th>
             <th scope="col">${escapeHtml(state.tr('adminVtsScoreOcr', 'OCR review'))}</th>

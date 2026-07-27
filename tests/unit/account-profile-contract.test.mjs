@@ -355,7 +355,7 @@ test('profile page separates provider auth from required private profile complet
   assert.match(pageSource, /setTimeout\(dismissStatus, kind === 'error' \? 5000 : 3500\)/);
   assert.match(pageSource, /event\.key === 'Escape'/);
   assert.match(profileHtml, /id="accountStatusDismiss"/);
-  assert.match(profileHtml, /meta name="vts-app-version" content="14\.2\.19"/);
+  assert.match(profileHtml, /meta name="vts-app-version" content="14\.2\.20"/);
 });
 test('profile settings use real anchor sections and preserve every profile field contract', () => {
   const profileHtml = read('profile.html');
