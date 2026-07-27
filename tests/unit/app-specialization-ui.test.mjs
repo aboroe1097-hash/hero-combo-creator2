@@ -59,7 +59,7 @@ test('integrated Specialization uses scoped semantic VTS tokens', () => {
     '--spec-gold',
     '--spec-primary-gradient',
   ]) {
-    assert.match(integratedSpecCss, new RegExp(`${token}:\\s*var\\(--ff-`, 'u'));
+    assert.match(integratedSpecCss, new RegExp(`${token}:\\s*var\\(\\s*--ff-`, 'u'));
   }
 
   assert.match(
@@ -85,6 +85,44 @@ test('integrated Specialization uses scoped semantic VTS tokens', () => {
   assert.match(
     integratedSpecCss,
     /\.spec-banner:nth-child\(6n \+ 6\)\s*\{\s*--spec-banner-accent:\s*var\(--spec-danger\)/u
+  );
+});
+
+test('integrated quick actions expose semantic MAX and UNMAX states', () => {
+  assert.match(
+    appSource,
+    /class="spec-badge-max\$\{progress\.isComplete \? ' is-unmax' : ''\}"[^>]*data-spec-quick-set="\$\{progress\.isComplete \? 'reset' : 'complete'\}"/u
+  );
+  assert.match(
+    integratedSpecCss,
+    /\.spec-badge-max\s*\{[\s\S]*?border:[^;]*var\(--spec-success\)[\s\S]*?color:\s*var\(--spec-success\)/u
+  );
+  assert.match(
+    integratedSpecCss,
+    /\.spec-badge-max\.is-unmax\s*\{[\s\S]*?border-color:[^;]*var\(--spec-danger\)[\s\S]*?color:\s*var\(--spec-danger\)/u
+  );
+  assert.doesNotMatch(
+    integratedSpecCss,
+    /\.spec-badge-max\s*\{[\s\S]*?border:[^;]*var\(--spec-banner-accent/u
+  );
+});
+
+test('light Specialization actions and disabled progress use legible semantic colors', () => {
+  assert.match(
+    integratedSpecCss,
+    /\[data-theme='light'\] \.spec-badge-max\s*\{[\s\S]*?color:\s*#0b6245[\s\S]*?background:\s*#e8f6f0/u
+  );
+  assert.match(
+    integratedSpecCss,
+    /\[data-theme='light'\] \.spec-badge-max\.is-unmax\s*\{[\s\S]*?color:\s*#a3123a[\s\S]*?background:\s*#fff0f3/u
+  );
+  assert.match(
+    integratedSpecCss,
+    /\[data-theme='light'\] \.spec-badge\[data-status='unstarted'\] \.spec-badge-pct\s*\{[\s\S]*?color:\s*#475569[\s\S]*?background:\s*#e2e8f0/u
+  );
+  assert.match(
+    integratedSpecCss,
+    /\[data-theme='light'\] \.spec-ring-node\[disabled\]\s*\{[\s\S]*?color:\s*#475569[\s\S]*?opacity:\s*0\.72/u
   );
 });
 

@@ -52,6 +52,18 @@ const BASE_ACCOUNT_TRANSLATIONS = {
     'field.countryPlaceholder': 'US',
     'field.bio': 'Bio',
     'action.create': 'Create account',
+    'action.continue': 'Continue',
+    'action.finishProfile': 'Finish profile',
+    'onboarding.step': 'Step 2 of 2',
+    'onboarding.title': 'Finish your private profile',
+    'onboarding.lead': 'These details are private unless you choose to publish your profile later.',
+    'referral.placeholder': 'Choose one',
+    'referral.youtube': 'YouTube',
+    'referral.in_game': 'In game',
+    'referral.vts_1097': 'VTS 1097',
+    'referral.alliance_friend': 'Alliance or friend',
+    'referral.search': 'Search',
+    'referral.other': 'Other',
     'action.signin': 'Sign in',
     'action.googleCreate': 'Continue with Google',
     'action.googleSignin': 'Sign in with Google',
@@ -72,6 +84,8 @@ const BASE_ACCOUNT_TRANSLATIONS = {
     'action.save': 'Save profile',
     'action.signout': 'Sign out',
     'status.created': 'Account created. Your profile is private.',
+    'status.authenticated': 'Account secured. Finish your private profile.',
+    'status.dismiss': 'Dismiss notification',
     'status.signedIn': 'Signed in successfully.',
     'status.googleSwitchCanceled': 'Account switch canceled. You are still signed in as a guest.',
     'status.enterEmail': 'Enter your email first.',
@@ -1206,7 +1220,12 @@ export const ACCOUNT_TRANSLATIONS = deepFreeze(
   Object.fromEntries(
     ACCOUNT_LOCALES.map((accountLocale) => [
       accountLocale,
-      { ...BASE_ACCOUNT_TRANSLATIONS[accountLocale], ...ACCOUNT_UI_TRANSLATIONS[accountLocale] },
+      {
+        ...BASE_ACCOUNT_TRANSLATIONS.en,
+        ...ACCOUNT_UI_TRANSLATIONS.en,
+        ...BASE_ACCOUNT_TRANSLATIONS[accountLocale],
+        ...ACCOUNT_UI_TRANSLATIONS[accountLocale],
+      },
     ])
   )
 );

@@ -6,7 +6,6 @@ import {
   ACCOUNT_PROFILE_LIMITS,
   confirmExistingGoogleAccountSwitch,
   normalizeAccountProfile,
-  planExistingGoogleAccountRecovery,
 } from '../../js/account-profile-model.js';
 
 const read = (path) => readFileSync(path, 'utf8');
@@ -139,13 +138,15 @@ test('Google conflict recovery requires explicit confirmation before leaving the
     'export async function sendAccountPasswordReset'
   );
 
-  assert.ok(
-    emailUpgrade.indexOf('normalizeInitialProfile') < emailUpgrade.indexOf('linkWithCredential')
+  assert.doesNotMatch(
+    emailUpgrade,
+    /normalizeInitialProfile|saveAccountProfile|importFirestore|updateProfile/
   );
   assert.match(emailUpgrade, /EmailAuthProvider\.credential/);
   assert.match(emailUpgrade, /linkWithCredential\(guest, credential\)/);
-  assert.ok(
-    googleUpgrade.indexOf('normalizeInitialProfile') < googleUpgrade.indexOf('linkWithPopup')
+  assert.doesNotMatch(
+    googleUpgrade,
+    /normalizeInitialProfile|saveAccountProfile|importFirestore|updateProfile/
   );
   assert.match(googleUpgrade, /linkWithPopup\(guest, provider\)/);
   assert.match(googleUpgrade, /auth\/credential-already-in-use/);
@@ -175,89 +176,45 @@ test('Google conflict recovery requires explicit confirmation before leaving the
   assert.match(pageSource, /result\?\.signedInExisting \? 'status\.signedIn' : successKey/);
 });
 
-test('existing Google account recovery fills only missing required private fields', () => {
-  const completePrivate = {
-    displayName: 'Existing Display',
-    gameName: 'Existing Game',
-    alliance: 'VTS',
-    countryCode: 'EG',
-    bio: 'Existing bio',
-    state: '1097',
-    referralSource: 'Existing source',
-    comments: 'Existing comments',
-    isPublic: true,
-    createdAt: 'created',
-    updatedAt: 'updated',
-  };
-  const onboarding = {
-    gameName: 'Signup Name',
-    state: 'Signup state',
-    referralSource: 'Signup source',
-    comments: 'Signup comments',
-  };
-
-  assert.deepEqual(
-    planExistingGoogleAccountRecovery(completePrivate, { gameName: 'Public Name' }, onboarding),
-    { kind: 'none' },
-    'a complete existing profile must not be rewritten'
-  );
-
-  const missingRequired = {
-    ...completePrivate,
-    gameName: '',
-    state: '',
-    referralSource: undefined,
-  };
-  assert.deepEqual(
-    planExistingGoogleAccountRecovery(missingRequired, { gameName: 'Public Name' }, onboarding),
-    {
-      kind: 'update',
-      patch: {
-        gameName: 'Existing Display',
-        state: 'Signup state',
-        referralSource: 'Signup source',
-      },
-    }
-  );
-
-  const fromPublic = planExistingGoogleAccountRecovery(
-    null,
-    {
-      displayName: 'Public Display',
-      gameName: 'Public Game',
-      alliance: 'PUBLIC',
-      countryCode: 'US',
-      bio: 'Public bio',
-    },
-    onboarding
-  );
-  assert.deepEqual(fromPublic, {
-    kind: 'create',
-    profile: {
-      displayName: 'Public Game',
-      gameName: 'Public Game',
-      alliance: 'PUBLIC',
-      countryCode: 'US',
-      bio: 'Public bio',
-      state: 'Signup state',
-      referralSource: 'Signup source',
-      comments: '',
-      isPublic: true,
-    },
-  });
-
-  const recoveryWriter = section(
+test('provider-only upgrades never write Firestore and profile completion owns the first save', () => {
+  const emailUpgrade = section(
     serviceSource,
-    'async function fillMissingExistingAccountProfile',
-    'export async function getAccountState'
+    'export async function upgradeGuestWithEmail',
+    'export async function signInExistingEmail'
   );
-  assert.match(recoveryWriter, /batch\.update\(privateRef, updates\)/);
-  assert.match(recoveryWriter, /batch\.set\(\s*privateRef/);
-  assert.doesNotMatch(recoveryWriter, /batch\.(?:set|update|delete)\(publicRef/);
-  assert.doesNotMatch(recoveryWriter, /saveAccountProfile/);
-  assert.doesNotMatch(recoveryWriter, /updateProfile/);
-});
+  const googleUpgrade = section(
+    serviceSource,
+    'export async function upgradeGuestWithGoogle',
+    'export async function signInExistingGoogle'
+  );
+  const googleHandler = section(
+    pageSource,
+    "byId('googleAuth').addEventListener",
+    'onboardingForm.addEventListener'
+  );
+  const onboardingSubmit = section(
+    pageSource,
+    'onboardingForm.addEventListener',
+    "byId('accountStatusDismiss').addEventListener"
+  );
 
+  for (const provider of [emailUpgrade, googleUpgrade]) {
+    assert.doesNotMatch(
+      provider,
+      /saveAccountProfile|importFirestore|writeBatch|normalizeInitialProfile/
+    );
+  }
+  assert.match(emailUpgrade, /upgradeGuestWithEmail\(email, password\)/);
+  assert.match(googleUpgrade, /upgradeGuestWithGoogle\(\{ confirmExistingAccount \} = \{\}\)/);
+  assert.doesNotMatch(
+    googleHandler,
+    /collectOnboarding|accountEmailInput|accountPassword|reportValidity|checkValidity/
+  );
+  assert.match(onboardingSubmit, /saveAccountProfile\(\{/);
+  assert.match(onboardingSubmit, /\.\.\.collectOnboarding\(\)/);
+  assert.match(pageSource, /if \(!profile\) \{[\s\S]*showOnboardingStep\(account\)/);
+  assert.match(pageSource, /byId\('accountGameName'\)\.value = account\.displayName \|\| ''/);
+});
 test('private onboarding never reaches the public profile payload', () => {
   const saveProfile = section(serviceSource, 'export async function saveAccountProfile', '\n}');
   const publicWrite = section(saveProfile, 'batch.set(publicRef', '} else {');
@@ -368,34 +325,38 @@ test('Firestore requires new onboarding and permits legacy invalid values only w
   assert.match(publicRules, /allow create, update: if isOwner\(uid\)/);
 });
 
-test('profile page has one name concept and required onboarding controls for both create methods', () => {
+test('profile page separates provider auth from required private profile completion', () => {
   assert.match(viteSource, /profile:\s*resolve\(__dirname,\s*'profile\.html'\)/);
   const profileHtml = read('profile.html');
-  assert.match(profileHtml, /id="accountOnboardingFields"/);
-  assert.match(profileHtml, /id="accountGameName"[\s\S]*?required[\s\S]*?maxlength="50"/);
+  const authForm = section(profileHtml, 'id="accountAuthForm"', '</form>');
+  const onboardingForm = section(profileHtml, 'id="accountOnboardingForm"', '</form>');
+  assert.doesNotMatch(
+    authForm,
+    /accountGameName|accountState|accountReferralSource|accountComments/
+  );
+  assert.match(authForm, /id="accountEmailInput"[\s\S]*required/);
+  assert.match(authForm, /id="accountPassword"[\s\S]*minlength="8"[\s\S]*required/);
+  assert.match(authForm, /id="googleAuth"[\s\S]*type="button"/);
+  assert.match(authForm, /class="account-google-icon"[\s\S]*aria-hidden="true"/);
+  assert.match(onboardingForm, /data-i18n="onboarding\.title"/);
+  assert.match(onboardingForm, /id="accountGameName"[\s\S]*required[\s\S]*maxlength="50"/);
+  assert.match(onboardingForm, /id="accountState"[^>]*required[^>]*maxlength="160"/);
+  assert.match(onboardingForm, /id="accountReferralSource"[^>]*required/);
+  assert.match(onboardingForm, /id="accountComments"[^>]*maxlength="1000"/);
   assert.match(profileHtml, /id="profileGameName"[^>]*required[^>]*maxlength="50"/);
   assert.doesNotMatch(profileHtml, /id="(?:account|profile)DisplayName"|>Display name</i);
-  for (const [prefix, required] of [
-    ['account', true],
-    ['profile', true],
-  ]) {
-    const state = new RegExp(`id="${prefix}State"[^>]*required[^>]*maxlength="160"`);
-    const referral = new RegExp(`id="${prefix}ReferralSource"[^>]*required[^>]*maxlength="160"`);
-    const comments = new RegExp(`id="${prefix}Comments"[^>]*maxlength="1000"`);
-    assert.match(profileHtml, state);
-    assert.match(profileHtml, referral);
-    assert.match(profileHtml, comments);
-    assert.equal(required, true);
+  for (const value of ['youtube', 'in_game', 'vts_1097', 'alliance_friend', 'search', 'other']) {
+    assert.equal([...profileHtml.matchAll(new RegExp(`value="${value}"`, 'g'))].length, 2, value);
   }
-  assert.match(pageSource, /onboardingFields\.hidden = mode !== 'create'/);
-  assert.match(pageSource, /onboardingFields\.disabled = mode !== 'create'/);
-  assert.match(pageSource, /upgradeGuestWithEmail\(email, password, collectOnboarding\(\)\)/);
-  assert.match(pageSource, /upgradeGuestWithGoogle\(collectOnboarding\(\), \{/);
-  assert.match(pageSource, /reportOnboardingValidity\(\)/);
-  assert.doesNotMatch(profileHtml, /Optional cloud account/);
-  assert.match(profileHtml, /meta name="vts-app-version" content="\d+\.\d+\.\d+"/);
+  assert.match(pageSource, /upgradeGuestWithEmail\(email, password\)/);
+  assert.match(pageSource, /upgradeGuestWithGoogle\(\{/);
+  assert.doesNotMatch(pageSource, /upgradeGuestWithGoogle\([^)]*collectOnboarding/);
+  assert.doesNotMatch(pageSource, /reportOnboardingValidity/);
+  assert.match(pageSource, /setTimeout\(dismissStatus, kind === 'error' \? 5000 : 3500\)/);
+  assert.match(pageSource, /event\.key === 'Escape'/);
+  assert.match(profileHtml, /id="accountStatusDismiss"/);
+  assert.match(profileHtml, /meta name="vts-app-version" content="14\.2\.19"/);
 });
-
 test('profile settings use real anchor sections and preserve every profile field contract', () => {
   const profileHtml = read('profile.html');
   const settingsNav = section(profileHtml, '<nav', '</nav>');
@@ -413,7 +374,7 @@ test('profile settings use real anchor sections and preserve every profile field
   assert.match(profileHtml, /id="profileSaveState"[^>]*data-i18n="save\.clean"/);
   assert.match(
     details,
-    /id="profileReferralSource"[^>]*name="referralSource"[^>]*required[^>]*maxlength="160"/
+    /id="profileReferralSource"[^>]*name="referralSource"[^>]*required[^>]*data-profile-field/
   );
   assert.match(details, /id="profileComments"[^>]*name="comments"[^>]*maxlength="1000"/);
 

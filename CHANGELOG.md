@@ -1,5 +1,21 @@
 # Changelog
 
+## 14.2.19 - 2026-07-27
+
+- Added the focused VtsScore page for Competition #11 final Dragon Power re-uploads, with a searchable All-Star signup selector and one-image OCR review.
+- Added a secured Auth, App Check, and member-grant verified score endpoint that stores confirmed numbers and bounded OCR audit metadata without retaining screenshots.
+- Added an All-Star admin VtsScore stage comparing sign-up and final Dragon Power, growth, percentage, original reward tier, and missing uploads.
+
+## 14.2.18 - 2026-07-27
+
+- Added a guided All-Star admin team builder with semantic action colors.
+- Added safe player display-name and total-power corrections, plus reasoned base-score overrides derived from occupied team seats.
+- Added atomic import for one to six role-plan files or a complete six-team bundle, plus admin export of every team plan.
+- Polished member event progress with a connected timeline, selected-milestone state, accessibility improvements, and reduced-motion behavior.
+- Rebuilt account creation as provider-first authentication followed by a focused private-profile confirmation step, with direct Google sign-in, a referral dropdown, and dismissible timed notices.
+- Improved Specialization Towers light-theme MAX, UNMAX, zero-progress, and disabled-state contrast with consistent semantic colors.
+- This release does not change the Firestore rules or schema; production rules deployment remains separate for the existing UID/playerId 403 fix.
+
 ## 14.2.17 - 2026-07-27
 
 - Improved the All-Star BoH Mapper workspace action hierarchy with distinct colors for importing, validating, opening team plans, saving team edits, and publishing.

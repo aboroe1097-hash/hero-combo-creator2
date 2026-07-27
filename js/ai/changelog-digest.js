@@ -1,10 +1,31 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.17";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.19";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.2.19",
+    "date": "2026-07-27",
+    "highlights": [
+      "Added the focused VtsScore page for Competition #11 final Dragon Power re-uploads, with a searchable All-Star signup selector and one-image OCR review.",
+      "Added a secured Auth, App Check, and member-grant verified score endpoint that stores confirmed numbers and bounded OCR audit metadata without retaining screenshots.",
+      "Added an All-Star admin VtsScore stage comparing sign-up and final Dragon Power, growth, percentage, original reward tier, and missing uploads."
+    ]
+  },
+  {
+    "version": "14.2.18",
+    "date": "2026-07-27",
+    "highlights": [
+      "Added a guided All-Star admin team builder with semantic action colors.",
+      "Added safe player display-name and total-power corrections, plus reasoned base-score overrides derived from occupied team seats.",
+      "Added atomic import for one to six role-plan files or a complete six-team bundle, plus admin export of every team plan.",
+      "Polished member event progress with a connected timeline, selected-milestone state, accessibility improvements, and reduced-motion behavior.",
+      "Rebuilt account creation as provider-first authentication followed by a focused private-profile confirmation step, with direct Google sign-in, a referral dropdown, and dismissible timed notices.",
+      "Improved Specialization Towers light-theme MAX, UNMAX, zero-progress, and disabled-state contrast with consistent semantic colors."
+    ]
+  },
   {
     "version": "14.2.17",
     "date": "2026-07-27",
@@ -87,26 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added an admin event-schedule editor for publishing event milestones and per-team game times.",
       "Added a default Stage-1 plan template so new seasons start from a complete, editable plan.",
       "Improved mobile layout and accessibility across the All-Star BoH member and admin views."
-    ]
-  },
-  {
-    "version": "14.2.9",
-    "date": "2026-07-22",
-    "highlights": [
-      "Closed the public All-Star BoH registration view with a clear “Teams are full” status and notice that team matching is underway and assignments will be announced soon.",
-      "Made the All-Star admin balance configuration collapsible and added a non-persisting “Select highest X” shortcut sized to the currently configured team field.",
-      "Reflowed the six-team admin board into a spacious 3-by-2 desktop grid, two columns on narrower screens, and one column on mobile."
-    ]
-  },
-  {
-    "version": "14.2.8",
-    "date": "2026-07-22",
-    "highlights": [
-      "Rebuilt mobile site headers and control grouping so centered branding/version, time/search/theme/language controls, fixed bottom navigation, and Generator action areas no longer overlap or float over content.",
-      "Reduced and repositioned hero-card information controls in Combo Generator and Manual Builder, keeping card content readable and touch targets intentional.",
-      "Harmonized Specialization Towers with the shared site palette and added compact icon-only Cavalry/Archers/Footmen controls on mobile.",
-      "Converted the completed Eden X1 public page into an archive centered on the Final Top 20, player lookup, guild contribution, and analysis while keeping active-season voting/reward machinery reusable behind the season-state switch.",
-      "Fixed Structure Detail modal rows so long multilingual names, rank tags, large scores, and hit badges remain compact and fully visible on mobile."
     ]
   }
 ].map((release) =>

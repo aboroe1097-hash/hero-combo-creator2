@@ -1,10 +1,13 @@
-# Hero Combo Creator - VTS 1097 (v14.2.17)
+# Hero Combo Creator - VTS 1097 (v14.2.19)
 
-A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management. This release overhauls Account & Profile with a modern responsive settings workspace, safer unsaved-change handling, and direct profile-route offline caching.
+A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management. This release adds the standalone VtsScore final Dragon Power re-upload and an admin growth-comparison stage for Competition #11.
 
 ## Features
 
 Fourteen top-level tools are exposed from the main navigation in `index.html`, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
+
+`vtsscore.html` is a focused, PIN-gated Competition #11 final-score intake route. It reuses the
+All-Star signup roster and OCR service without exposing private signup stats or storing screenshots.
 
 | Tool                      | Source files                                                                                                                                                                                                                     | Purpose                                                                                                                                                                                                                                      | Dependencies                                                                                                                | Perf notes                                                                                                 |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |

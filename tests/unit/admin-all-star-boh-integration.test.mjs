@@ -290,6 +290,15 @@ test('mapper-first admin source keeps the board primary and exposes safe direct 
   assert.match(adminModule, /previewMapperRolePlan/u);
   assert.match(adminModule, /saveMapperRolePlanImport/u);
   assert.match(adminModule, /data-action="preview-mapper-role-plan"/u);
+  assert.match(adminModule, /data-action="preview-mapper-role-plan" multiple/u);
+  assert.match(adminModule, /data-action="export-mapper-plan-bundle"/u);
+  assert.match(adminModule, /data-action="edit-player-values"/u);
+  assert.match(adminModule, /data-form="player-value-editor"/u);
+  assert.match(adminModule, /readonly aria-readonly="true"/u);
+  assert.match(adminModule, /data-action="clear-player-score-override"/u);
+  assert.match(adminCss, /\.boh-admin-player-editor/u);
+  assert.match(adminCss, /\.boh-admin-button-plan/u);
+  assert.match(adminCss, /\.boh-admin-button-validate/u);
   assert.match(adminModule, /data-form="publish-scope"/u);
   assert.match(adminModule, /publishBoth/u);
   assert.match(adminCss, /\.boh-admin-role-plan-import/u);

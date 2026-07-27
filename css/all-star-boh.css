@@ -2696,11 +2696,12 @@
   border-color: rgba(148, 163, 184, 0.28);
 }
 
-.boh-schedule-selected-status {
+.boh-schedule-progress-copy {
   margin: 0.25rem 0 0;
-  color: var(--boh-muted);
-  font-size: 0.64rem;
-  font-weight: 650;
+  color: var(--boh-sky);
+  font-size: 0.66rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 
 .boh-schedule-countdown {
@@ -2719,8 +2720,45 @@
   font-weight: 650;
 }
 
+.boh-schedule-progress {
+  --boh-schedule-progress: 0%;
+  position: relative;
+  height: 0.42rem;
+  margin-inline: 0.15rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--boh-line-strong) 70%, transparent);
+  box-shadow: inset 0 1px 2px rgba(2, 6, 23, 0.32);
+}
+
+.boh-schedule-progress__fill {
+  position: absolute;
+  inset: 0;
+  width: var(--boh-schedule-progress);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--boh-sky), var(--boh-teal));
+  box-shadow: 0 0 0.75rem rgba(94, 234, 212, 0.26);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.boh-schedule-progress__marker {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: var(--boh-schedule-progress);
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid var(--boh-panel);
+  border-radius: 50%;
+  background: var(--boh-teal);
+  box-shadow:
+    0 0 0 0.18rem rgba(94, 234, 212, 0.18),
+    0 0 0.9rem rgba(94, 234, 212, 0.48);
+  transform: translate(-50%, -50%);
+  transition: inset-inline-start 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .boh-schedule-rail {
   --boh-schedule-progress: 0%;
+  --boh-schedule-count: 1;
   position: relative;
   display: grid;
   grid-auto-columns: minmax(9.25rem, 1fr);
@@ -2732,7 +2770,8 @@
   padding: 0.25rem 0.1rem 0.75rem;
   scroll-padding-inline: 0.1rem;
   scroll-snap-type: x proximity;
-  scrollbar-color: rgba(125, 211, 252, 0.34) transparent;
+  scrollbar-color: rgba(125, 211, 252, 0.24) transparent;
+  scrollbar-width: thin;
 }
 
 .boh-schedule-rail::before {
@@ -2778,7 +2817,7 @@
   transform: translateY(-2px);
 }
 
-.boh-schedule-mile[aria-current='step'] {
+.boh-schedule-mile[data-selected='true'] {
   border-color: rgba(125, 211, 252, 0.52);
   background:
     linear-gradient(145deg, rgba(56, 189, 248, 0.12), rgba(167, 139, 250, 0.06)), var(--boh-control);
@@ -2787,7 +2826,9 @@
 }
 
 .boh-schedule-mile[data-status='complete'] {
-  opacity: 0.72;
+  border-color: color-mix(in srgb, var(--boh-teal) 28%, var(--boh-line));
+  background: color-mix(in srgb, var(--boh-teal) 5%, var(--boh-control));
+  opacity: 0.78;
 }
 
 .boh-schedule-mile[data-status='current'] {
@@ -2839,6 +2880,67 @@
   line-height: 1.4;
 }
 
+.boh-schedule-detail {
+  display: grid;
+  gap: 0.34rem;
+  min-height: 5.2rem;
+  padding: 0.82rem 0.9rem;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: var(--boh-radius-sm);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.08), transparent 62%),
+    color-mix(in srgb, var(--boh-control) 88%, transparent);
+}
+
+.boh-schedule-detail.is-revealing {
+  animation: boh-schedule-detail-in 0.3s ease-out both;
+}
+
+.boh-schedule-detail__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.boh-schedule-detail__stage,
+.boh-schedule-detail__status {
+  color: var(--boh-muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.boh-schedule-detail__status {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--boh-line);
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.boh-schedule-detail[data-status='current'] .boh-schedule-detail__status {
+  border-color: rgba(94, 234, 212, 0.4);
+  background: rgba(94, 234, 212, 0.1);
+  color: var(--boh-teal);
+}
+
+.boh-schedule-detail[data-status='complete'] .boh-schedule-detail__status {
+  color: var(--boh-sky);
+}
+
+.boh-schedule-detail h5 {
+  margin: 0;
+  color: var(--boh-text);
+  font-size: clamp(0.83rem, 1.7vw, 1.02rem);
+}
+
+.boh-schedule-detail__time {
+  color: var(--boh-muted);
+  font-size: 0.63rem;
+  font-weight: 650;
+}
+
 @keyframes boh-schedule-reveal {
   from {
     opacity: 0;
@@ -2847,6 +2949,17 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes boh-schedule-detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -3955,7 +4068,26 @@
   .boh-schedule-rail {
     grid-auto-columns: minmax(9rem, 78vw);
     margin-inline: -0.15rem;
+    padding-inline: 0.15rem;
+    overscroll-behavior-inline: contain;
     scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .boh-schedule-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .boh-schedule-detail {
+    min-height: 5.6rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .boh-schedule-rail {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(var(--boh-schedule-count), minmax(0, 1fr));
+    overflow: visible;
   }
 }
 
@@ -3972,6 +4104,10 @@
   .boh-button:hover,
   .boh-schedule-mile:hover {
     transform: none;
+  }
+
+  .boh-schedule-mile[data-status='current'] .boh-schedule-mile__marker {
+    animation: none;
   }
 }
 

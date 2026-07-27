@@ -375,3 +375,54 @@ test('manual commitment scoring has compact responsive audit styles', () => {
     /@media \(max-width: 760px\)[\s\S]*?\.boh-admin-commitment-score-toolbar\s*\{[\s\S]*?grid-template-columns:\s*1fr;/u
   );
 });
+
+test('guided team builder exposes stateful steps, readiness commands, imports, and advanced tools', () => {
+  const source = readFileSync('js/admin-all-star-boh.js', 'utf8');
+
+  assert.match(source, /class="boh-admin-command-deck"/u);
+  assert.match(source, /aria-current="step"/u);
+  assert.match(source, /data-step-status="\$\{status\}"/u);
+  assert.match(source, /adminBohWorkflowImportRoster/u);
+  assert.match(source, /adminBohWorkflowShapeTeams/u);
+  assert.match(source, /adminBohWorkflowAddPlans/u);
+  assert.match(source, /adminBohWorkflowValidatePublish/u);
+  assert.match(source, /function renderTeamBuilderReadiness/u);
+  assert.match(source, /class="boh-admin-readiness-bar"/u);
+  assert.match(source, /data-action="validate-revision"/u);
+  assert.match(source, /data-action="stage" data-stage="publish"/u);
+  assert.match(
+    source,
+    /function renderTeamBuilderImportCenter[\s\S]*?renderMapperExactViewImport[\s\S]*?renderMapperRolePlanImport/u
+  );
+  assert.match(source, /<details class="boh-admin-advanced-tools">/u);
+  assert.match(source, /adminBohAdvancedTeamTools/u);
+  assert.match(source, /function renderAdvancedTeamActions[\s\S]*?preview-balance-teams/u);
+  assert.match(source, /function renderAdvancedTeamActions[\s\S]*?auto-assign-ranked-roles/u);
+  assert.match(source, /data-density="\$\{state\.teamBoardDensity\}"/u);
+  assert.match(source, /data-columns="\$\{state\.teamBoardColumns\}"/u);
+});
+
+test('guided team builder styles keep desktop commands sticky and mobile content in flow', () => {
+  const css = readFileSync('css/admin-all-star-boh.css', 'utf8');
+  const primary = css.match(/\.boh-admin \.boh-admin-readiness-primary,[\s\S]*?\n\}/u)?.[0];
+
+  assert.match(css, /\.boh-admin-command-deck ol\s*\{[\s\S]*?repeat\(4,/u);
+  assert.match(css, /\.boh-admin-readiness-bar\s*\{[\s\S]*?position:\s*sticky;/u);
+  assert.ok(primary, 'readiness primary action styles should exist');
+  assert.doesNotMatch(primary, /gradient/u);
+  assert.match(css, /\.boh-admin-import-center__grid\s*\{[\s\S]*?repeat\(2,/u);
+  assert.match(css, /\.boh-admin-team-board\[data-columns='1'\]/u);
+  assert.match(css, /\.boh-admin-team-board\[data-columns='2'\]/u);
+  assert.match(css, /\.boh-admin-team-board\[data-columns='3'\]/u);
+  assert.match(css, /\.boh-admin-team-board\[data-density='compact'\]/u);
+  assert.match(css, /\.boh-admin-board-view-controls button:focus-visible/u);
+  assert.match(
+    css,
+    /@media \(max-width: 760px\)[\s\S]*?\.boh-admin-readiness-bar\s*\{[\s\S]*?position:\s*static;/u
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 760px\)[\s\S]*?\.boh-admin-team-board\[data-columns\][\s\S]*?grid-template-columns:\s*1fr;/u
+  );
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.boh-admin-command-deck/u);
+});

@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  BOH_MAPPER_PLAN_BUNDLE_FORMAT,
+  BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES,
+  BOH_MAPPER_PLAN_BUNDLE_VERSION,
   BOH_MAPPER_PLAN_IMPORT_FORMAT,
   BOH_MAPPER_PLAN_IMPORT_MAX_BYTES,
   BOH_MAPPER_PLAN_IMPORT_VERSION,
   parseAllStarBohMapperStage1RolePlan,
+  parseAllStarBohMapperStage1RolePlanBundle,
 } from '../../js/all-star-boh-mapper-plan-import.js';
 
 const PHASE_TIMES = ['0-5', '5-10', '10-15', '15-30', '30-60'];
@@ -59,6 +63,21 @@ function rolePlan() {
       })),
       ignored: { private: true },
     })),
+  };
+}
+
+function rolePlanBundle() {
+  return {
+    format: BOH_MAPPER_PLAN_BUNDLE_FORMAT,
+    version: BOH_MAPPER_PLAN_BUNDLE_VERSION,
+    savedAt: '2026-07-27T12:30:00.000Z',
+    ignored: 'not imported',
+    plans: Array.from({ length: 6 }, (_, index) => {
+      const plan = rolePlan();
+      plan.team.id = `team-${index + 1}`;
+      plan.team.name = `Team ${index + 1}`;
+      return plan;
+    }),
   };
 }
 
@@ -266,5 +285,92 @@ test('strict role-plan parser bounds optional metadata and finite scores', () =>
   expectCode(
     () => parseAllStarBohMapperStage1RolePlan(json(longInstruction)),
     'boh-mapper-plan-phase-legion'
+  );
+});
+
+test('strict role-plan bundle parser normalizes exactly six v2 child plans', () => {
+  const parsed = parseAllStarBohMapperStage1RolePlanBundle(json(rolePlanBundle()));
+
+  assert.equal(parsed.format, BOH_MAPPER_PLAN_BUNDLE_FORMAT);
+  assert.equal(parsed.version, BOH_MAPPER_PLAN_BUNDLE_VERSION);
+  assert.equal(parsed.savedAt, '2026-07-27T12:30:00.000Z');
+  assert.equal(parsed.planCount, 6);
+  assert.equal(parsed.playerCount, 72);
+  assert.equal(parsed.phaseCount, 30);
+  assert.equal(parsed.plans.length, 6);
+  assert.deepEqual(
+    parsed.plans.map((plan) => plan.team.id),
+    ['team-1', 'team-2', 'team-3', 'team-4', 'team-5', 'team-6']
+  );
+  assert.equal(parsed.ignored, undefined);
+  assert.equal(parsed.plans[0].ignored, undefined);
+  assert.equal(parsed.plans[0].players[0].ignored, undefined);
+});
+
+test('strict role-plan bundle parser rejects duplicate normalized team IDs', () => {
+  const payload = rolePlanBundle();
+  payload.plans[1].team.id = '  TEAM-1  ';
+
+  expectCode(
+    () => parseAllStarBohMapperStage1RolePlanBundle(json(payload)),
+    'boh-mapper-plan-bundle-duplicate-team-id'
+  );
+});
+
+test('strict role-plan bundle parser rejects a wrong plan count and malformed child', () => {
+  const short = rolePlanBundle();
+  short.plans.pop();
+  expectCode(
+    () => parseAllStarBohMapperStage1RolePlanBundle(json(short)),
+    'boh-mapper-plan-bundle-plan-count'
+  );
+
+  const malformedChild = rolePlanBundle();
+  malformedChild.plans[2].players.pop();
+  expectCode(
+    () => parseAllStarBohMapperStage1RolePlanBundle(json(malformedChild)),
+    'boh-mapper-plan-player-count'
+  );
+});
+
+test('strict role-plan bundle parser rejects wrong root format, version, and savedAt', () => {
+  expectCode(
+    () =>
+      parseAllStarBohMapperStage1RolePlanBundle(
+        json({ ...rolePlanBundle(), format: BOH_MAPPER_PLAN_IMPORT_FORMAT })
+      ),
+    'boh-mapper-plan-bundle-wrong-format'
+  );
+  expectCode(
+    () =>
+      parseAllStarBohMapperStage1RolePlanBundle(
+        json({ ...rolePlanBundle(), version: BOH_MAPPER_PLAN_IMPORT_VERSION })
+      ),
+    'boh-mapper-plan-bundle-wrong-version'
+  );
+  expectCode(
+    () =>
+      parseAllStarBohMapperStage1RolePlanBundle(
+        json({ ...rolePlanBundle(), savedAt: 'not-a-date' })
+      ),
+    'boh-mapper-plan-bundle-saved-at'
+  );
+  const missingSavedAt = rolePlanBundle();
+  delete missingSavedAt.savedAt;
+  expectCode(
+    () => parseAllStarBohMapperStage1RolePlanBundle(json(missingSavedAt)),
+    'boh-mapper-plan-bundle-saved-at'
+  );
+});
+
+test('strict role-plan bundle parser enforces the aggregate two-MiB limit', () => {
+  assert.equal(BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES, 2 * 1024 * 1024);
+  const oversized = {
+    ...rolePlanBundle(),
+    ignored: 'x'.repeat(BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES),
+  };
+  expectCode(
+    () => parseAllStarBohMapperStage1RolePlanBundle(json(oversized)),
+    'boh-mapper-plan-bundle-file-too-large'
   );
 });

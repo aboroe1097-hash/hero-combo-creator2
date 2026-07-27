@@ -4,8 +4,14 @@ import {
   parseAllStarBohMapperExactView,
 } from './all-star-boh-mapper-import.js';
 import {
+  BOH_MAPPER_PLAN_BUNDLE_FORMAT,
+  BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES,
+  BOH_MAPPER_PLAN_BUNDLE_VERSION,
+  BOH_MAPPER_PLAN_IMPORT_FORMAT,
   BOH_MAPPER_PLAN_IMPORT_MAX_BYTES,
+  BOH_MAPPER_PLAN_IMPORT_VERSION,
   parseAllStarBohMapperStage1RolePlan,
+  parseAllStarBohMapperStage1RolePlanBundle,
 } from './all-star-boh-mapper-plan-import.js';
 import {
   BOH_STAGE1_LEGIONS,
@@ -86,6 +92,7 @@ const STAGES = [
   ['plans', 'adminBohStagePlans', 'Advanced plans'],
   ['publish', 'adminBohStagePublish', 'Validate / publish'],
   ['signups', 'adminBohStageSignups', 'Signup review'],
+  ['scores', 'adminVtsScoreStage', 'VtsScore'],
   ['scoring', 'adminBohStageScoring', 'Scoring'],
 ];
 
@@ -1033,6 +1040,7 @@ function normalizeSnapshot(source = {}) {
       ),
     },
     submissions: list(snapshot.submissions),
+    raceScores: list(snapshot.raceScores),
     scores: list(snapshot.scores || snapshot.scoredPlayers),
     scoring: {
       ...scoring,
@@ -1065,6 +1073,57 @@ function normalizeSnapshot(source = {}) {
       ),
     },
   };
+}
+
+export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = []) {
+  const scoreBySubmission = new Map(
+    list(raceScoresInput)
+      .map((score) => [cleanText(score?.submissionUid), score])
+      .filter(([submissionUid]) => submissionUid)
+  );
+  return list(submissionsInput)
+    .filter((submission) => cleanText(submission?.status) === 'submitted')
+    .map((submission) => {
+      const submissionUid = cleanText(
+        submission?.submissionUid || submission?.uid || submission?.playerId || submission?.id
+      );
+      const score = scoreBySubmission.get(submissionUid) || null;
+      const baselineDragonPower = Math.max(
+        0,
+        finiteNumber(
+          submission?.confirmedStats?.dragonPower ??
+            submission?.stats?.dragonPower ??
+            submission?.dragonPower
+        )
+      );
+      const finalDragonPower =
+        score && Number.isFinite(Number(score.dragonPower))
+          ? Math.max(0, Number(score.dragonPower))
+          : null;
+      const growth = finalDragonPower === null ? null : finalDragonPower - baselineDragonPower;
+      return {
+        submissionUid,
+        gameName: playerName(submission) || cleanText(score?.gameName) || submissionUid,
+        tier: baselineDragonPower >= 7_000_000 ? 1 : 2,
+        baselineDragonPower,
+        finalDragonPower,
+        growth,
+        growthPercent:
+          growth === null || baselineDragonPower <= 0 ? null : (growth / baselineDragonPower) * 100,
+        submitted: Boolean(score),
+        submittedAt: score?.updatedAt || score?.updatedAtMs || null,
+        revision: integer(score?.revision),
+        ocrCorrected: score?.ocr?.corrected === true,
+        ocrConfidence: typeof score?.ocr?.confidence === 'number' ? score.ocr.confidence : null,
+      };
+    })
+    .sort(
+      (left, right) =>
+        left.tier - right.tier ||
+        Number(right.submitted) - Number(left.submitted) ||
+        (right.growth ?? Number.NEGATIVE_INFINITY) - (left.growth ?? Number.NEGATIVE_INFINITY) ||
+        left.gameName.localeCompare(right.gameName, 'en', { sensitivity: 'base' })
+    );
 }
 
 function preferenceRecords(source) {
@@ -2027,6 +2086,7 @@ function adapterSnapshot(state) {
       balanceMetric: normalizeBalanceMetric(draft.balanceMetric),
     },
     submissions,
+    raceScores: adapterClone(state.raceScores),
     epicPreferences: adapterClone(state.epicPreferences),
     epicTimeSlotIds: adapterClone(list(state.adminStore?.epicTimeSlotIds)),
     epicPlanningOverrides: adapterClone(list(draft.epicPlanningOverrides)),
@@ -2167,6 +2227,11 @@ async function adapterReadEpicPreferences(state) {
   return list(await state.adminStore.getEpicShowdownPreferencesList());
 }
 
+async function adapterReadRaceScores(state) {
+  if (typeof state.adminStore.listRaceScores !== 'function') return [];
+  return list(await state.adminStore.listRaceScores());
+}
+
 async function adapterLoadAll(state, changed = true) {
   const [submissions, draft] = await Promise.all([
     state.adminStore.listSubmissions(),
@@ -2174,19 +2239,22 @@ async function adapterLoadAll(state, changed = true) {
   ]);
   const nextSubmissions = list(submissions);
   const nextDraft = draft || adapterDefaultDraft();
-  const [reviews, teams, publication, epicPreferences, eventSchedule] = await Promise.all([
-    adapterReadReviews(state, nextSubmissions),
-    adapterReadTeams(state, nextDraft),
-    adapterReadPublication(state),
-    adapterReadEpicPreferences(state),
-    adapterReadEventSchedule(state),
-  ]);
+  const [reviews, teams, publication, epicPreferences, eventSchedule, raceScores] =
+    await Promise.all([
+      adapterReadReviews(state, nextSubmissions),
+      adapterReadTeams(state, nextDraft),
+      adapterReadPublication(state),
+      adapterReadEpicPreferences(state),
+      adapterReadEventSchedule(state),
+      adapterReadRaceScores(state),
+    ]);
   state.submissions = nextSubmissions;
   state.reviews = reviews;
   state.publication = publication.publication;
   state.publicationRevision = publication.publicationRevision;
   state.epicPreferences = epicPreferences;
   state.eventSchedule = eventSchedule;
+  state.raceScores = raceScores;
   state.eventScheduleRevision = adapterRevision(eventSchedule?.revision);
   if (state.teamUnsubscribers.size || state.unsubscribers.size) {
     await adapterAdoptDraftTeams(state, { draft: nextDraft, teams }, 'loadAll', false);
@@ -2264,6 +2332,18 @@ async function adapterStartSubscriptions(state) {
     (error) => adapterHandleBackgroundError(state, error, 'subscribeSubmissions')
   );
   state.unsubscribers.add(submissionsUnsubscribe);
+
+  if (typeof state.adminStore.subscribeRaceScores === 'function') {
+    const unsubscribe = await state.adminStore.subscribeRaceScores(
+      (scores) => {
+        if (state.stopped) return;
+        state.raceScores = list(scores);
+        adapterNotify(state, false);
+      },
+      (error) => adapterHandleBackgroundError(state, error, 'subscribeRaceScores')
+    );
+    state.unsubscribers.add(unsubscribe);
+  }
 
   const draftUnsubscribe = await state.adminStore.subscribeDraft(
     (draft) => {
@@ -2838,6 +2918,7 @@ function adapterPublicMapperPlanPreview(preview) {
   const {
     sourceRevision: _sourceRevision,
     teamRevision: _teamRevision,
+    teamRevisions: _teamRevisions,
     ...publicPreview
   } = preview;
   return adapterClone(publicPreview);
@@ -3031,6 +3112,204 @@ async function adapterSaveMapperRolePlanImport(state) {
   return {
     teamId,
     teamName: cleanText(saved?.name || preview.team?.name),
+    matchedCount: preview.matchedCount,
+    instructionCount: preview.instructionCount,
+  };
+}
+
+function adapterMapperRolePlanPayloads(jsonTexts) {
+  if (jsonTexts.length < 1 || jsonTexts.length > TEAM_COUNT) {
+    throw adapterError(
+      'boh-mapper-plan-file-count',
+      `Choose between 1 and ${TEAM_COUNT} single-team role-plan files, or one bundle.`
+    );
+  }
+  if (jsonTexts.length === 1) {
+    let root;
+    try {
+      root = JSON.parse(jsonTexts[0]);
+    } catch {
+      return { bundle: false, plans: [parseAllStarBohMapperStage1RolePlan(jsonTexts[0])] };
+    }
+    if (root?.format === BOH_MAPPER_PLAN_BUNDLE_FORMAT) {
+      return {
+        bundle: true,
+        plans: parseAllStarBohMapperStage1RolePlanBundle(jsonTexts[0]).plans,
+      };
+    }
+  }
+  return {
+    bundle: false,
+    plans: jsonTexts.map((jsonText) => parseAllStarBohMapperStage1RolePlan(jsonText)),
+  };
+}
+
+function adapterPreviewMapperRolePlanFiles(state, payload) {
+  const jsonTexts = list(payload.jsonTexts).filter((value) => typeof value === 'string');
+  const previousPreview = state.mapperPlanImportPreview;
+  try {
+    const { bundle, plans } = adapterMapperRolePlanPayloads(jsonTexts);
+    const teamIds = plans.map((plan) => cleanText(plan.team?.id));
+    if (new Set(teamIds).size !== teamIds.length) {
+      throw adapterError(
+        'boh-mapper-plan-duplicate-team',
+        'Each imported role plan must target a different team.'
+      );
+    }
+    if (bundle) {
+      const currentIds = [...adapterTeamIds(state.draft)].sort();
+      const importedIds = [...teamIds].sort();
+      if (
+        currentIds.length !== TEAM_COUNT ||
+        importedIds.length !== TEAM_COUNT ||
+        currentIds.some((teamId, index) => teamId !== importedIds[index])
+      ) {
+        throw adapterError(
+          'boh-mapper-plan-bundle-team-mismatch',
+          'The role-plan bundle must contain exactly the current six draft teams.'
+        );
+      }
+    }
+    const teams = plans.map((plan) => {
+      adapterPreviewMapperRolePlan(state, {
+        jsonText: JSON.stringify(plan, (_key, value) => (value === null ? undefined : value)),
+      });
+      return adapterClone(state.mapperPlanImportPreview);
+    });
+    const diagnostics = teams.flatMap((team) =>
+      team.diagnostics.map((diagnostic) => ({
+        ...diagnostic,
+        teamId: team.team.id,
+        teamName: team.team.name,
+      }))
+    );
+    state.mapperPlanImportPreview = {
+      format: bundle ? BOH_MAPPER_PLAN_BUNDLE_FORMAT : BOH_MAPPER_PLAN_IMPORT_FORMAT,
+      version: bundle ? BOH_MAPPER_PLAN_BUNDLE_VERSION : BOH_MAPPER_PLAN_IMPORT_VERSION,
+      bundle,
+      planCount: teams.length,
+      team: teams.length === 1 ? adapterClone(teams[0].team) : null,
+      teams,
+      playerCount: teams.reduce((total, team) => total + team.playerCount, 0),
+      phaseCount: teams.reduce((total, team) => total + team.phaseCount, 0),
+      instructionCount: teams.reduce((total, team) => total + team.instructionCount, 0),
+      matchedCount: teams.reduce((total, team) => total + team.matchedCount, 0),
+      unresolvedCount: teams.reduce((total, team) => total + team.unresolvedCount, 0),
+      diagnostics,
+      sourceRevision: state.revision,
+      teamRevisions: Object.fromEntries(teams.map((team) => [team.team.id, team.teamRevision])),
+    };
+    return adapterPublicMapperPlanPreview(state.mapperPlanImportPreview);
+  } catch (error) {
+    state.mapperPlanImportPreview = previousPreview;
+    throw error;
+  }
+}
+
+function adapterTeamWithMapperRolePlan(state, preview) {
+  const teamId = cleanText(preview.team?.id);
+  const team = adapterFindTeam(state, teamId);
+  const previousPlan = adapterPlan({ plan: team.plan });
+  const prefix = 'mapper-plan-v2-';
+  const retainedOverrides = previousPlan.playerOverrides.filter(
+    (rule) => !cleanText(rule?.id).startsWith(prefix)
+  );
+  const firstOrder = adapterNextPlanOrder(retainedOverrides);
+  const importedOverrides = preview.players.flatMap((player, playerIndex) =>
+    player.phases.flatMap((phase, phaseIndex) =>
+      BOH_STAGE1_LEGIONS.map((legion, legionIndex) => {
+        const note = cleanText(phase.note);
+        return {
+          id: `${prefix}${teamId}-seat-${player.seatNumber}-phase-${phaseIndex + 1}-legion-${legionIndex + 1}`,
+          teamId,
+          phaseId: BOH_STAGE1_PHASES[phaseIndex].id,
+          legionId: legion.id,
+          seatNumber: player.seatNumber,
+          playerId: player.playerId,
+          scope: 'player',
+          scopeId: player.playerId,
+          roleGroupId: player.roleKey,
+          roleLabel: player.role.label,
+          order:
+            firstOrder +
+            playerIndex * BOH_STAGE1_PHASES.length * BOH_STAGE1_LEGIONS.length +
+            phaseIndex * BOH_STAGE1_LEGIONS.length +
+            legionIndex,
+          generated: false,
+          instruction: {
+            summary: cleanText(phase.stageRole),
+            action: cleanText(legionIndex === 0 ? phase.legion1 : phase.legion2),
+            target: cleanText(player.role.description),
+            teleport: note || null,
+            note,
+          },
+        };
+      })
+    )
+  );
+  team.plan = {
+    ...previousPlan,
+    schemaVersion: BohModel.BOH_PLAN_SCHEMA_VERSION,
+    phases: BOH_STAGE1_PHASES.map((phase, order) => ({ ...phase, order: order + 1 })),
+    legions: BOH_STAGE1_LEGIONS.map((legion, order) => ({ ...legion, order: order + 1 })),
+    playerOverrides: [...retainedOverrides, ...importedOverrides],
+    generated: false,
+  };
+  return team;
+}
+
+async function adapterSaveMapperRolePlanFiles(state) {
+  const preview = state.mapperPlanImportPreview;
+  if (!preview) {
+    throw adapterError(
+      'boh-mapper-plan-preview-required',
+      'Choose and preview role-plan JSON before saving it.'
+    );
+  }
+  const teams = list(preview.teams);
+  const stale =
+    preview.sourceRevision !== state.revision ||
+    teams.some(
+      (team) =>
+        preview.teamRevisions?.[team.team.id] !==
+        adapterRevision(state.teams.get(team.team.id)?.revision)
+    );
+  if (stale) {
+    throw adapterError(
+      'boh-mapper-plan-preview-stale',
+      'The role-plan preview is stale. Preview the JSON again before saving.'
+    );
+  }
+  if (
+    !teams.length ||
+    teams.some(
+      (team) =>
+        team.matchedCount !== ROSTER_SIZE ||
+        team.unresolvedCount !== 0 ||
+        list(team.diagnostics).length
+    )
+  ) {
+    throw adapterError(
+      'boh-mapper-plan-match-incomplete',
+      'Every imported team must match all 12 players to occupied draft seats before saving.'
+    );
+  }
+  const teamEntries = Object.fromEntries(
+    teams.map((team) => [team.team.id, adapterTeamWithMapperRolePlan(state, team)])
+  );
+  const saved = await state.adminStore.saveDraftBundle(
+    { teams: teamEntries },
+    { expectedTeamRevisions: adapterClone(preview.teamRevisions) }
+  );
+  for (const [teamId, team] of Object.entries(saved?.teams || teamEntries)) {
+    state.teams.set(teamId, team);
+  }
+  state.mapperPlanImportPreview = null;
+  adapterNotify(state);
+  return {
+    planCount: teams.length,
+    teamIds: teams.map((team) => team.team.id),
+    ...(teams.length === 1 ? { teamId: teams[0].team.id, teamName: teams[0].team.name } : {}),
     matchedCount: preview.matchedCount,
     instructionCount: preview.instructionCount,
   };
@@ -3717,13 +3996,20 @@ async function adapterSetScoreOverride(state, payload) {
   if (!adapterFindSubmission(state, id)) {
     throw adapterError('all-star-boh-submission-unknown', 'The selected player no longer exists.');
   }
+  const reason = cleanText(payload.reason);
+  if (!reason) {
+    throw adapterError(
+      'all-star-boh-score-override-reason-required',
+      'A reason is required for a base score override.'
+    );
+  }
   await adapterSaveDraft(state, (draft) => {
     draft.scoreOverrides = [
       ...list(draft.scoreOverrides).filter((override) => override.playerId !== id),
       {
         playerId: id,
         score: Math.max(0, finiteNumber(payload.score)),
-        reason: cleanText(payload.reason),
+        reason,
       },
     ];
     return draft;
@@ -3738,6 +4024,98 @@ async function adapterRemoveScoreOverride(state, payload) {
     );
     return draft;
   });
+}
+
+async function adapterSavePlayerValues(state, payload) {
+  const id = cleanText(payload.playerId);
+  const submission = adapterFindSubmission(state, id);
+  if (!submission) {
+    throw adapterError('all-star-boh-submission-unknown', 'The selected player no longer exists.');
+  }
+  const uid = adapterSubmissionUid(submission);
+  const review = state.reviews.get(uid) || {};
+  const currentCorrection = adapterReviewMatchesSubmissionRevision(submission, review)
+    ? adapterClone(review.submissionCorrection || null)
+    : null;
+  const original = originalCorrectionSubmission(submission);
+  const values = adapterClone(currentCorrection?.values || {});
+  const correctedName = cleanText(payload.displayName);
+  if (!correctedName) {
+    throw adapterError('all-star-boh-correction-name-required', 'Player name is required.');
+  }
+  if (correctionValuesEqual(correctedName, cleanText(original.gameName))) {
+    delete values.gameName;
+  } else {
+    values.gameName = correctedName;
+  }
+  const totalPowerRaw = payload.totalCastlePower;
+  if (totalPowerRaw === '' || totalPowerRaw === null || totalPowerRaw === undefined) {
+    if (values.stats) delete values.stats.totalCastlePower;
+  } else {
+    const totalPower = Number(totalPowerRaw);
+    if (
+      !Number.isInteger(totalPower) ||
+      totalPower < 0 ||
+      totalPower > CORRECTION_NUMBER_LIMITS.totalCastlePower
+    ) {
+      throw adapterError(
+        'all-star-boh-correction-power-invalid',
+        `Total power must be a whole number from 0 to ${CORRECTION_NUMBER_LIMITS.totalCastlePower}.`
+      );
+    }
+    const originalPower = originalCorrectionStatValue(original, 'totalCastlePower');
+    if (correctionValuesEqual(totalPower, originalPower)) {
+      if (values.stats) delete values.stats.totalCastlePower;
+    } else {
+      values.stats = { ...(values.stats || {}), totalCastlePower: totalPower };
+    }
+  }
+  if (values.stats && !Object.keys(values.stats).length) delete values.stats;
+  const correction = Object.keys(values).length
+    ? {
+        schemaVersion: 1,
+        reason: cleanText(payload.correctionReason || currentCorrection?.reason),
+        values,
+      }
+    : null;
+  if (correction && !correction.reason) {
+    throw adapterError(
+      'all-star-boh-correction-reason-required',
+      'A reason is required for a name or total-power correction.'
+    );
+  }
+  const overrideRaw = payload.baseScoreOverride;
+  const hasOverride = overrideRaw !== '' && overrideRaw !== null && overrideRaw !== undefined;
+  const overrideScore = hasOverride ? Number(overrideRaw) : null;
+  if (hasOverride && (!Number.isFinite(overrideScore) || overrideScore < 0)) {
+    throw adapterError(
+      'all-star-boh-score-override-invalid',
+      'Base score override must be a non-negative number.'
+    );
+  }
+  const overrideReason = cleanText(payload.overrideReason);
+  if (hasOverride && !overrideReason) {
+    throw adapterError(
+      'all-star-boh-score-override-reason-required',
+      'A reason is required for a base score override.'
+    );
+  }
+  await adapterReviewSubmission(state, {
+    playerId: id,
+    status: adapterReviewStatusToUi(review.status),
+    note: cleanText(review.note),
+    internalNote: cleanText(review.internalNote),
+    submissionCorrection: correction,
+  });
+  if (!hasOverride) {
+    await adapterRemoveScoreOverride(state, { playerId: id });
+  } else {
+    await adapterSetScoreOverride(state, {
+      playerId: id,
+      score: overrideScore,
+      reason: overrideReason,
+    });
+  }
 }
 
 async function adapterSaveCommitmentScores(state, payload) {
@@ -5456,6 +5834,7 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     options,
     paidUsableHeroNames: uniqueTextList(options.paidUsableHeroNames),
     submissions: [],
+    raceScores: [],
     epicPreferences: [],
     reviews: new Map(),
     draft: adapterDefaultDraft(),
@@ -5501,15 +5880,18 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
     } else if (type === 'saveMapperExactViewImport') {
       actionResult = await adapterSaveMapperExactView(state);
     } else if (type === 'previewMapperRolePlan') {
-      actionResult = adapterPreviewMapperRolePlan(state, payload);
+      actionResult = adapterPreviewMapperRolePlanFiles(state, {
+        jsonTexts: payload.jsonTexts || [payload.jsonText],
+      });
     } else if (type === 'saveMapperRolePlanImport') {
-      actionResult = await adapterSaveMapperRolePlanImport(state);
+      actionResult = await adapterSaveMapperRolePlanFiles(state);
     } else if (type === 'batchReviewSubmissions') {
       actionResult = await adapterBatchReviewSubmissions(state, payload);
     } else if (type === 'deleteSubmission') await adapterDeleteSubmission(state, payload);
     else if (type === 'batchDeleteSubmissions') {
       actionResult = await adapterBatchDeleteSubmissions(state, payload);
     } else if (type === 'createScoringVersion') await adapterCreateScoringVersion(state, payload);
+    else if (type === 'savePlayerValues') await adapterSavePlayerValues(state, payload);
     else if (type === 'setScoreOverride') await adapterSetScoreOverride(state, payload);
     else if (type === 'removeScoreOverride') await adapterRemoveScoreOverride(state, payload);
     else if (type === 'savePublicationCopy') {
@@ -5629,7 +6011,36 @@ export function createAdminAllStarBohStoreAdapter(adminStore, options = {}) {
   return Object.freeze(adapter);
 }
 
+const TEAM_WORKSPACE_VIEW_STORAGE_KEY = 'bohAdminTeamWorkspaceView';
+
+function normalizeTeamWorkspaceView(value = {}) {
+  const density = value?.density === 'compact' ? 'compact' : 'comfortable';
+  const columns = [1, 2, 3].includes(Number(value?.columns)) ? Number(value.columns) : 3;
+  return { density, columns };
+}
+
+function readTeamWorkspaceView() {
+  try {
+    const stored = globalThis.localStorage?.getItem(TEAM_WORKSPACE_VIEW_STORAGE_KEY);
+    return normalizeTeamWorkspaceView(stored ? JSON.parse(stored) : {});
+  } catch {
+    return normalizeTeamWorkspaceView();
+  }
+}
+
+function saveTeamWorkspaceView(state) {
+  try {
+    globalThis.localStorage?.setItem(
+      TEAM_WORKSPACE_VIEW_STORAGE_KEY,
+      JSON.stringify({ density: state.teamBoardDensity, columns: state.teamBoardColumns })
+    );
+  } catch {
+    // Browser privacy modes may deny storage; the in-memory preference still applies.
+  }
+}
+
 function makeInitialState(root, options) {
+  const teamWorkspaceView = readTeamWorkspaceView();
   const snapshot = normalizeSnapshot(options.initialSnapshot);
   return {
     root,
@@ -5710,6 +6121,9 @@ function makeInitialState(root, options) {
     mapperPlanImportPreview: null,
     mapperBoardSearch: '',
     mapperBoardFilter: 'all',
+    playerValueEditor: null,
+    teamBoardDensity: teamWorkspaceView.density,
+    teamBoardColumns: teamWorkspaceView.columns,
     mapperPlanDialogTeamId: '',
     mapperPlanMode: 'overview',
     planTeamId: snapshot.teams[0]?.id || 'team-1',
@@ -6073,7 +6487,98 @@ function selectHighestEligiblePlayers(state) {
   syncEligiblePoolSearch(state);
 }
 
+function renderVtsScores(state) {
+  const rows = buildAdminVtsScoreRows(state.snapshot.submissions, state.snapshot.raceScores);
+  const submitted = rows.filter((row) => row.submitted).length;
+  const missing = rows.length - submitted;
+  const tierOne = rows.filter((row) => row.tier === 1).length;
+  const tierTwo = rows.length - tierOne;
+  const tableRows = rows
+    .map((row) => {
+      const growth =
+        row.growth === null
+          ? '—'
+          : `${row.growth > 0 ? '+' : ''}${formatNumber(state, row.growth)}`;
+      const growthPercent =
+        row.growthPercent === null
+          ? '—'
+          : `${row.growthPercent > 0 ? '+' : ''}${formatNumber(state, row.growthPercent, 2)}%`;
+      const ocrStatus = !row.submitted
+        ? state.tr('adminVtsScoreAwaiting', 'Awaiting upload')
+        : row.ocrCorrected
+          ? state.tr('adminVtsScoreCorrected', 'OCR corrected')
+          : row.ocrConfidence === null
+            ? state.tr('adminVtsScoreReviewed', 'Reviewed')
+            : state.tr('adminVtsScoreConfidence', '{confidence}% OCR', {
+                confidence: Math.round(row.ocrConfidence * 100),
+              });
+      return `<tr data-vts-score-status="${row.submitted ? 'submitted' : 'missing'}">
+        <th scope="row">${escapeHtml(row.gameName)}</th>
+        <td><span class="boh-admin-chip">Tier ${row.tier}</span></td>
+        <td>${escapeHtml(formatNumber(state, row.baselineDragonPower))}</td>
+        <td>${row.finalDragonPower === null ? '—' : escapeHtml(formatNumber(state, row.finalDragonPower))}</td>
+        <td data-growth="${row.growth === null ? 'missing' : row.growth >= 0 ? 'positive' : 'negative'}">${escapeHtml(growth)}</td>
+        <td>${escapeHtml(growthPercent)}</td>
+        <td>${escapeHtml(ocrStatus)}</td>
+        <td>${row.submitted ? escapeHtml(formatDate(state, row.submittedAt)) : '—'}</td>
+      </tr>`;
+    })
+    .join('');
+  return `<section class="boh-admin-stack boh-admin-vts-score">
+    <header class="boh-admin-stage-heading">
+      <div>
+        <p class="boh-admin-kicker">COMPETITION #11 · FINAL POWER</p>
+        <h3>${escapeHtml(state.tr('adminVtsScoreTitle', 'VtsScore growth comparison'))}</h3>
+        <p>${escapeHtml(
+          state.tr(
+            'adminVtsScoreDescription',
+            'Compare each signed-up player’s original Dragon Power with tonight’s reviewed OCR upload.'
+          )
+        )}</p>
+      </div>
+    </header>
+    <div class="boh-admin-summary-grid">
+      ${summaryCard(submitted, state.tr('adminVtsScoreSubmitted', 'Final uploads'), 'positive')}
+      ${summaryCard(missing, state.tr('adminVtsScoreMissing', 'Still missing'), missing ? 'warning' : 'positive')}
+      ${summaryCard(tierOne, state.tr('adminVtsScoreTierOne', 'Tier 1 · 7M+'))}
+      ${summaryCard(tierTwo, state.tr('adminVtsScoreTierTwo', 'Tier 2 · below 7M'))}
+    </div>
+    <section class="boh-admin-card">
+      <div class="boh-admin-card-heading">
+        <div><h4>${escapeHtml(state.tr('adminVtsScoreTable', 'Competition standings data'))}</h4>
+        <p>${escapeHtml(
+          state.tr(
+            'adminVtsScoreSortHint',
+            'Grouped by original tier, then sorted by Dragon Power growth.'
+          )
+        )}</p></div>
+      </div>
+      <div class="boh-admin-table-wrap">
+        <table class="boh-admin-table boh-admin-vts-score-table">
+          <thead><tr>
+            <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreTier', 'Tier'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreBaseline', 'Sign-up Dragon Power'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreFinal', 'Final Dragon Power'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowth', 'Growth'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowthPercent', 'Growth %'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreOcr', 'OCR review'))}</th>
+            <th scope="col">${escapeHtml(state.tr('adminVtsScoreUpdated', 'Submitted'))}</th>
+          </tr></thead>
+          <tbody>${
+            tableRows ||
+            `<tr><td colspan="8">${escapeHtml(
+              state.tr('adminVtsScoreEmpty', 'No submitted All-Star signups are available yet.')
+            )}</td></tr>`
+          }</tbody>
+        </table>
+      </div>
+    </section>
+  </section>`;
+}
+
 function renderCurrentStage(state) {
+  if (state.stage === 'scores') return renderVtsScores(state);
   if (state.stage === 'scoring') return renderScoring(state);
   if (state.stage === 'teams') return renderTeamBuilder(state);
   if (state.stage === 'plans') return renderPlans(state);
@@ -8422,6 +8927,187 @@ function renderApprovedRosterImport(state) {
   </section>`;
 }
 
+function teamBuilderPlanActionCount(plan) {
+  return [
+    'instructions',
+    'roleDefaults',
+    'seatOverrides',
+    'playerOverrides',
+    'rotations',
+    'substitutions',
+    'playerResources',
+    'buildingAnnotations',
+    'notes',
+  ].reduce((total, key) => total + list(plan?.[key]).length, 0);
+}
+
+function teamBuilderProgress(state, balance) {
+  const teamCount = snapshotTeamCount(state);
+  const expectedSeats = snapshotFieldSize(state);
+  const occupiedSeats = balance.assigned;
+  const teamsWithPlans = state.snapshot.teams.filter(
+    (team) => teamBuilderPlanActionCount(team.plan) > 0
+  ).length;
+  const globalPlanActions = teamBuilderPlanActionCount(state.snapshot.plan);
+  const validated = revisionValidation(state, 'plan').valid;
+  const published = publicationRecord(state, 'plan').status === 'published';
+  const completed = [
+    occupiedSeats > 0,
+    occupiedSeats === expectedSeats && state.snapshot.teams.length === teamCount,
+    globalPlanActions > 0 || teamsWithPlans === teamCount,
+    published,
+  ];
+  const currentIndex = completed.findIndex((value) => !value);
+  return {
+    currentIndex,
+    expectedSeats,
+    occupiedSeats,
+    teamCount,
+    teamsWithPlans,
+    validated,
+    published,
+  };
+}
+
+function renderTeamBuilderWorkflow(state, balance) {
+  const progress = teamBuilderProgress(state, balance);
+  const steps = [
+    {
+      title: state.tr('adminBohWorkflowImportRoster', 'Import roster'),
+      detail:
+        progress.occupiedSeats > 0
+          ? state.tr('adminBohWorkflowImportedSeats', '{count} occupied seats are in the draft.', {
+              count: progress.occupiedSeats,
+            })
+          : state.tr('adminBohWorkflowNoImportedSeats', 'No imported seats yet.'),
+    },
+    {
+      title: state.tr('adminBohWorkflowShapeTeams', 'Shape teams'),
+      detail: state.tr(
+        'adminBohWorkflowTeamShapeStatus',
+        '{teams} teams ? {occupied}/{expected} occupied seats.',
+        {
+          teams: progress.teamCount,
+          occupied: progress.occupiedSeats,
+          expected: progress.expectedSeats,
+        }
+      ),
+    },
+    {
+      title: state.tr('adminBohWorkflowAddPlans', 'Add plans'),
+      detail: state.tr('adminBohWorkflowPlanStatus', '{count} of {teams} teams have saved plans.', {
+        count: progress.teamsWithPlans,
+        teams: progress.teamCount,
+      }),
+    },
+    {
+      title: state.tr('adminBohWorkflowValidatePublish', 'Validate & publish'),
+      detail: progress.published
+        ? state.tr('adminBohWorkflowPublished', 'A player plan is live.')
+        : progress.validated
+          ? state.tr('adminBohWorkflowValidated', 'This draft revision is validated.')
+          : state.tr('adminBohWorkflowNeedsValidation', 'This draft revision needs validation.'),
+    },
+  ];
+  return `<nav class="boh-admin-command-deck" aria-label="${escapeHtml(
+    state.tr('adminBohGuidedBuilderWorkflow', 'Guided team builder workflow')
+  )}"><ol>${steps
+    .map((step, index) => {
+      const status =
+        progress.currentIndex < 0 || index < progress.currentIndex
+          ? 'done'
+          : index === progress.currentIndex
+            ? 'current'
+            : index === progress.currentIndex + 1
+              ? 'next'
+              : 'later';
+      const statusLabel =
+        status === 'done'
+          ? state.tr('adminBohWorkflowDone', 'Done')
+          : status === 'current'
+            ? state.tr('adminBohWorkflowCurrent', 'Current')
+            : status === 'next'
+              ? state.tr('adminBohWorkflowNext', 'Next')
+              : state.tr('adminBohWorkflowLater', 'Later');
+      const icon =
+        status === 'done'
+          ? '&#10003;'
+          : status === 'current'
+            ? '&#9679;'
+            : status === 'next'
+              ? '&#8594;'
+              : '&#183;';
+      return `<li data-step-status="${status}" ${
+        status === 'current' ? 'aria-current="step"' : ''
+      }><span class="boh-admin-command-deck__number"><span aria-hidden="true">${icon}</span>${
+        index + 1
+      }</span><div><span class="boh-admin-command-deck__status">${escapeHtml(
+        statusLabel
+      )}</span><strong>${escapeHtml(step.title)}</strong><small>${escapeHtml(
+        step.detail
+      )}</small></div></li>`;
+    })
+    .join('')}</ol></nav>`;
+}
+
+function renderTeamBuilderReadiness(state, balance) {
+  const progress = teamBuilderProgress(state, balance);
+  return `<aside class="boh-admin-readiness-bar" aria-label="${escapeHtml(
+    state.tr('adminBohDraftReadinessCommands', 'Draft readiness commands')
+  )}"><dl><div><dt>${escapeHtml(
+    state.tr('adminBohDraftRevision', 'Draft revision')
+  )}</dt><dd>${state.snapshot.revision}</dd></div><div><dt>${escapeHtml(
+    state.tr('adminBohAssignedSeats', 'Assigned seats')
+  )}</dt><dd>${progress.occupiedSeats} / ${progress.expectedSeats}</dd></div><div><dt>${escapeHtml(
+    state.tr('adminBohTeamCount', 'Team count')
+  )}</dt><dd>${progress.teamCount}</dd></div></dl><span class="boh-admin-status-chip" data-status="pending">${escapeHtml(
+    state.tr('adminBohDraftOnly', 'Draft only')
+  )}</span><div class="boh-admin-readiness-bar__actions"><button type="button" class="boh-admin-button ${
+    progress.validated ? '' : 'boh-admin-readiness-primary'
+  }" data-action="validate-revision">${escapeHtml(
+    state.tr('adminBohValidateDraft', 'Validate draft')
+  )}</button><button type="button" class="boh-admin-button ${
+    progress.validated ? 'boh-admin-readiness-primary' : ''
+  }" data-action="stage" data-stage="publish">${escapeHtml(
+    state.tr('adminBohReviewPublish', 'Review and publish')
+  )}</button></div></aside>`;
+}
+
+function renderTeamBuilderImportCenter(state) {
+  return `<section class="boh-admin-import-center" aria-labelledby="bohImportCenterTitle"><header><p class="boh-admin-card-kicker">${escapeHtml(
+    state.tr('adminBohImportCenterKicker', 'IMPORT CENTER')
+  )}</p><h4 id="bohImportCenterTitle">${escapeHtml(
+    state.tr('adminBohImportCenterTitle', 'Bring in rosters and plans')
+  )}</h4><p>${escapeHtml(
+    state.tr(
+      'adminBohImportCenterHelp',
+      'Preview exact roster data first, then add one or more matching role-plan files. Imports remain draft-only.'
+    )
+  )}</p></header><div class="boh-admin-import-center__grid">${renderMapperExactViewImport(
+    state
+  )}${renderMapperRolePlanImport(state)}</div></section>`;
+}
+
+function renderAdvancedTeamActions(state, preview) {
+  return `<section class="boh-admin-card boh-admin-advanced-team-actions"><header><div><p class="boh-admin-card-kicker">${escapeHtml(
+    state.tr('adminBohBalanceAndRoleTools', 'BALANCE & ROLE TOOLS')
+  )}</p><h4>${escapeHtml(
+    state.tr('adminBohAdvancedTeamActions', 'Preview changes before applying them')
+  )}</h4></div></header><div class="boh-admin-stage-actions"><button type="button" class="boh-admin-button" data-action="preview-balance-teams">${escapeHtml(
+    state.tr('adminBohPreviewBalance', 'Preview balance')
+  )}</button><button type="button" class="boh-admin-button" data-action="apply-balance-preview" ${
+    preview ? '' : 'disabled'
+  }>${escapeHtml(
+    state.tr('adminBohApplyPreview', 'Apply preview')
+  )}</button><button type="button" class="boh-admin-button" data-action="discard-balance-preview" ${
+    preview ? '' : 'disabled'
+  }>${escapeHtml(
+    state.tr('adminBohDiscardPreview', 'Discard preview')
+  )}</button><button type="button" class="boh-admin-button" data-action="auto-assign-ranked-roles">${escapeHtml(
+    state.tr('adminBohAutoAssignRankedRoles', 'Auto roles by rank')
+  )}</button></div></section>`;
+}
+
 function renderMapperBoardToolbar(state) {
   return `<section class="boh-admin-board-toolbar" aria-label="${escapeHtml(
     state.tr('adminBohMapperBoardControls', 'Mapper board controls')
@@ -8447,13 +9133,30 @@ function renderMapperBoardToolbar(state) {
           )
           .join('')}
       </select></label>
-    <div class="boh-admin-stage-actions">
-      <button type="button" class="boh-admin-button boh-admin-button-validate" data-action="validate-revision">${escapeHtml(
-        state.tr('adminBohValidateDraft', 'Validate draft')
-      )}</button>
-      <button type="button" class="boh-admin-button boh-admin-button-publish" data-action="stage" data-stage="publish">${escapeHtml(
-        state.tr('adminBohReviewPublish', 'Review and publish')
-      )}</button>
+    <div class="boh-admin-board-view-controls">
+      <fieldset class="boh-admin-segmented"><legend>${escapeHtml(
+        state.tr('adminBohTeamBoardDensity', 'Density')
+      )}</legend>${[
+        ['comfortable', state.tr('adminBohComfortableDensity', 'Comfortable')],
+        ['compact', state.tr('adminBohCompactDensity', 'Compact')],
+      ]
+        .map(
+          ([value, label]) =>
+            `<button type="button" data-action="team-board-density" data-value="${value}" aria-pressed="${
+              state.teamBoardDensity === value
+            }">${escapeHtml(label)}</button>`
+        )
+        .join('')}</fieldset>
+      <fieldset class="boh-admin-segmented"><legend>${escapeHtml(
+        state.tr('adminBohTeamBoardColumns', 'Columns')
+      )}</legend>${[1, 2, 3]
+        .map(
+          (value) =>
+            `<button type="button" data-action="team-board-columns" data-value="${value}" aria-pressed="${
+              state.teamBoardColumns === value
+            }">${value}</button>`
+        )
+        .join('')}</fieldset>
     </div>
   </section>`;
 }
@@ -8681,19 +9384,9 @@ function renderTeamBuilder(state) {
           'Import the mapper exact view, reconcile verified identities, edit the six ranked team cards, inspect mapper-style plans, then validate and publish explicitly.'
         )
       )}</p></div>
-      <div class="boh-admin-stage-actions"><button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
+      <button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
         state.selectedSourceSeat ? '' : 'disabled'
-      }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button><button type="button" class="boh-admin-button" data-action="preview-balance-teams">${escapeHtml(
-        state.tr('adminBohPreviewBalance', 'Preview balance')
-      )}</button><button type="button" class="boh-admin-button boh-admin-button-primary" data-action="apply-balance-preview" ${
-        preview ? '' : 'disabled'
-      }>${escapeHtml(
-        state.tr('adminBohApplyPreview', 'Apply preview')
-      )}</button><button type="button" class="boh-admin-button" data-action="discard-balance-preview" ${preview ? '' : 'disabled'}>${escapeHtml(
-        state.tr('adminBohDiscardPreview', 'Discard preview')
-      )}</button><button type="button" class="boh-admin-button" data-action="auto-assign-ranked-roles">${escapeHtml(
-        state.tr('adminBohAutoAssignRankedRoles', 'Auto roles by rank')
-      )}</button></div>
+      }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button>
     </header>
     <div class="boh-admin-summary-grid">
       ${summaryCard(`${balance.assigned} / ${snapshotFieldSize(state)}`, state.tr('adminBohAssignedSeats', 'Assigned seats'))}
@@ -8701,21 +9394,28 @@ function renderTeamBuilder(state) {
       ${summaryCard(formatNumber(state, balance.powerAverage), state.tr('adminBohAverageTeamPower', 'Average team power'))}
       ${summaryCard(balanceMetricLabel(state, activeMetric), state.tr('adminBohActiveBalanceMetricLabel', 'Active balance metric'), 'success')}
     </div>
-    <section class="boh-admin-mapper-workflow" aria-label="Mapper publishing workflow"><strong>Current workflow</strong><ol><li><span>1</span> Preview and reconcile mapper JSON</li><li><span>2</span> Save exact teams and roles to draft</li><li><span>3</span> Edit the six ranked team cards and plans</li><li><span>4</span> Validate and publish explicitly</li></ol><p>Exact seat order, main/backup deployment, plan/title roles, and command roles remain draft-only until Publish.</p></section>
-    ${renderMapperExactViewImport(state)}
+    ${renderTeamBuilderWorkflow(state, balance)}
+    ${renderTeamBuilderReadiness(state, balance)}
+    ${renderTeamBuilderImportCenter(state)}
     ${renderMapperBoardToolbar(state)}
     ${renderSeatMoveNotice(state)}
-    <div class="boh-admin-team-board" style="--boh-team-count:${snapshotTeamCount(state)};--boh-team-columns:${Math.min(
-      snapshotTeamCount(state),
-      3
-    )}" aria-label="${escapeHtml(
-      state.tr('adminBohTeamBoard', '{count}-team assignment board', {
-        count: snapshotTeamCount(state),
-      })
-    )}">${state.snapshot.teams
-      .map((team, index) => renderTeamColumn(state, team, balance, index))
-      .join('')}</div>
-    <details class="boh-admin-advanced-tools"><summary>Advanced compatibility tools</summary><div class="boh-admin-advanced-tools__body">
+    <div class="boh-admin-team-board" data-density="${state.teamBoardDensity}"
+      data-columns="${state.teamBoardColumns}" style="--boh-team-count:${snapshotTeamCount(state)}" aria-label="${escapeHtml(
+        state.tr('adminBohTeamBoard', '{count}-team assignment board', {
+          count: snapshotTeamCount(state),
+        })
+      )}">${state.snapshot.teams
+        .map((team, index) => renderTeamColumn(state, team, balance, index))
+        .join('')}</div>
+    <details class="boh-admin-advanced-tools"><summary><span>${escapeHtml(
+      state.tr('adminBohAdvancedTeamTools', 'Advanced team tools')
+    )}</span><small>${escapeHtml(
+      state.tr(
+        'adminBohAdvancedTeamToolsHelp',
+        'Balance previews, automatic roles, compatibility imports, and exports'
+      )
+    )}</small></summary><div class="boh-admin-advanced-tools__body">
+      ${renderAdvancedTeamActions(state, preview)}
       ${renderApprovedRosterImport(state)}${renderTeamBuilderSettings(state, candidates, selectedIds)}${renderEligiblePool(
         state,
         candidates,
@@ -8729,7 +9429,8 @@ function renderTeamBuilder(state) {
       balance,
       'roles'
     )}${renderTeamExportCard(state, balance, 'scores')}</div>
-    ${renderMapperPlanDialog(state)}`;
+    ${renderMapperPlanDialog(state)}
+    ${renderPlayerValueEditor(state)}`;
 }
 
 function renderTeamExportTools(state, balance) {
@@ -9038,6 +9739,11 @@ function renderSeat(state, team, seat) {
               }>${escapeHtml(candidate.gameName || candidate.displayName || candidate.playerId)}</option>`
           )
           .join('')}</select></label>
+      ${
+        occupied
+          ? `<button type="button" class="boh-admin-button boh-admin-button-small boh-admin-button-plan" data-action="edit-player-values" data-team-id="${escapeHtml(team.id)}" data-seat-number="${seat.seatNumber}">${escapeHtml(state.tr('adminBohEditPlayerValues', 'Edit player values'))}</button>`
+          : ''
+      }
       <form class="boh-admin-seat-editor__controls" data-form="mapper-seat-details">
         <input type="hidden" name="teamId" value="${escapeHtml(team.id)}" /><input type="hidden" name="seatNumber" value="${seat.seatNumber}" />
         <label><span class="sr-only">Deployment</span><select class="boh-admin-select" name="deployment"><option value="">Not set</option><option value="main" ${
@@ -9070,29 +9776,92 @@ function renderSeat(state, team, seat) {
   </li>`;
 }
 
+function renderPlayerValueEditor(state) {
+  const editor = state.playerValueEditor;
+  if (!editor) return '';
+  const team = state.snapshot.teams.find((item) => item.id === editor.teamId);
+  const seat = team?.seats.find((item) => item.seatNumber === editor.seatNumber);
+  const submission = state.snapshot.submissions.find(
+    (item) => playerId(item) === cleanText(seat?.playerId)
+  );
+  if (!seat?.playerId || !submission) return '';
+  const score = state.snapshot.scores.find((item) => playerId(item) === seat.playerId) || {};
+  const review = submission.review || {};
+  const effectivePower =
+    score.totalCastlePower ??
+    submission.stats?.totalCastlePower ??
+    submission.totalCastlePower ??
+    '';
+  const base = score.overrideScore ?? score.calculatedScore ?? 0;
+  const commitment = score.commitmentScore ?? 0;
+  const final = score.finalScore ?? base + commitment;
+  return `<section class="boh-admin-player-editor" role="dialog" aria-modal="true" aria-labelledby="bohPlayerValueEditorTitle">
+    <button type="button" class="boh-admin-player-editor__backdrop" data-action="close-player-values" aria-label="${escapeHtml(state.tr('adminBohClosePlayerValues', 'Close player values'))}"></button>
+    <div class="boh-admin-player-editor__panel" tabindex="-1"><header><div><p class="boh-admin-card-kicker">${escapeHtml(state.tr('adminBohPrivatePlayerEditor', 'PRIVATE PLAYER EDITOR'))}</p><h3 id="bohPlayerValueEditorTitle">${escapeHtml(state.tr('adminBohEditPlayerValues', 'Edit player values'))}</h3></div><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="close-player-values">${escapeHtml(state.tr('adminBohClose', 'Close'))}</button></header>
+    <form class="boh-admin-stack" data-form="player-value-editor">
+      <input type="hidden" name="playerId" value="${escapeHtml(seat.playerId)}" />
+      <div class="boh-admin-player-editor__identity">
+        <label><span>${escapeHtml(state.tr('adminBohPlayerId', 'Player ID'))}</span><input class="boh-admin-input" value="${escapeHtml(seat.playerId)}" readonly aria-readonly="true" /></label>
+        <label><span>${escapeHtml(state.tr('adminBohFirebaseUid', 'Firebase UID'))}</span><input class="boh-admin-input" value="${escapeHtml(submission.uid || seat.playerId)}" readonly aria-readonly="true" /></label>
+      </div>
+      <label><span>${escapeHtml(state.tr('adminBohCorrectedPlayerName', 'Corrected player name'))}</span><input class="boh-admin-input" name="displayName" maxlength="160" value="${escapeHtml(playerName(submission) || seat.displayName || seat.playerId)}" required /></label>
+      <label><span>${escapeHtml(state.tr('adminBohCorrectedTotalPowerOptional', 'Corrected total power (optional)'))}</span><input class="boh-admin-input" type="number" name="totalCastlePower" min="0" max="${CORRECTION_NUMBER_LIMITS.totalCastlePower}" step="1" value="${escapeHtml(effectivePower)}" /></label>
+      <label><span>${escapeHtml(state.tr('adminBohCorrectionReason', 'Correction reason'))}</span><textarea class="boh-admin-textarea" name="correctionReason" maxlength="500" rows="2">${escapeHtml(review.submissionCorrection?.reason || review.gameNameCorrection?.reason || '')}</textarea></label>
+      <div class="boh-admin-player-editor__score">
+        <label><span>${escapeHtml(state.tr('adminBohBaseScoreOverrideOptional', 'Base score override (optional)'))}</span><input class="boh-admin-input" type="number" name="baseScoreOverride" min="0" step="any" value="${score.overrideScore == null ? '' : escapeHtml(score.overrideScore)}" /></label>
+        <label><span>${escapeHtml(state.tr('adminBohOverrideReason', 'Override reason'))}</span><input class="boh-admin-input" name="overrideReason" maxlength="2000" value="${escapeHtml(score.overrideReason || '')}" /></label>
+        <p class="boh-admin-player-equation"><strong>${escapeHtml(formatNumber(state, base))}</strong><span>+ ${escapeHtml(formatNumber(state, commitment))} ${escapeHtml(state.tr('adminBohCommitmentScore', 'Commitment'))}</span><span>= ${escapeHtml(formatNumber(state, final))} ${escapeHtml(state.tr('adminBohTeamListScore', 'team-list score'))}</span></p>
+      </div>
+      <p class="boh-admin-player-editor__privacy">${escapeHtml(state.tr('adminBohPlayerEditorPrivacy', 'Corrected names become public on the next publish. Score and power remain private to admins and exports. Saving never publishes.'))}</p>
+      <footer><button type="button" class="boh-admin-button boh-admin-button-quiet" data-action="clear-player-score-override" data-player-id="${escapeHtml(seat.playerId)}" ${score.overrideScore == null ? 'disabled' : ''}>${escapeHtml(state.tr('adminBohClearOverride', 'Clear override'))}</button><button type="submit" class="boh-admin-button boh-admin-button-save">${escapeHtml(state.tr('adminBohSavePlayerValues', 'Save player values'))}</button></footer>
+    </form></div>
+  </section>`;
+}
+
 function renderMapperRolePlanImport(state) {
   const preview = state.mapperPlanImportPreview;
   const complete =
     preview &&
-    preview.matchedCount === 12 &&
+    preview.matchedCount === preview.playerCount &&
     preview.unresolvedCount === 0 &&
     !list(preview.diagnostics).length;
+  const teamSummary = preview
+    ? '<ul class="boh-admin-role-plan-team-summary">' +
+      list(preview.teams)
+        .map(
+          (team) =>
+            `<li><strong>${escapeHtml(team.team?.name || team.team?.id)}</strong><span>${team.matchedCount} / ${team.playerCount}</span></li>`
+        )
+        .join('') +
+      '</ul>'
+    : '';
+  let exportReason = '';
+  try {
+    buildAdminAllStarBohMapperPlanBundle(state.snapshot);
+  } catch (error) {
+    exportReason = cleanText(error?.message);
+  }
+
   return (
     '<section class="boh-admin-card boh-admin-role-plan-import" aria-labelledby="bohRolePlanImportTitle">' +
     '<header><div><p class="boh-admin-card-kicker">' +
     escapeHtml(state.tr('adminBohRolePlanImportKicker', 'MAPPER ROLE-PLAN JSON')) +
     '</p><h4 id="bohRolePlanImportTitle">' +
-    escapeHtml(state.tr('adminBohRolePlanImportTitle', 'Import one team plan')) +
+    escapeHtml(state.tr('adminBohRolePlanImportTitle', 'Import team plans')) +
     '</h4><p>' +
     escapeHtml(
       state.tr(
         'adminBohRolePlanImportHelp',
-        'Exact-match all 12 names against one saved team. This updates that team draft only and never publishes.'
+        'Choose 1-6 single-team v2 files or one six-team bundle v1. Every file is validated before one atomic draft save.'
       )
     ) +
-    '</p></div><label class="boh-admin-button boh-admin-button-import">' +
+    '</p></div><div class="boh-admin-role-plan-actions"><button type="button" class="boh-admin-button boh-admin-button-plan" data-action="export-mapper-plan-bundle" ' +
+    (exportReason ? `disabled title="${escapeHtml(exportReason)}"` : '') +
+    '>' +
+    escapeHtml(state.tr('adminBohExportAllPlansJson', 'Export all plans JSON')) +
+    '</button><label class="boh-admin-button boh-admin-button-import">' +
     escapeHtml(state.tr('adminBohChooseRolePlanJson', 'Choose role-plan JSON')) +
-    '<input class="sr-only" type="file" accept="application/json,.json" data-action="preview-mapper-role-plan" /></label></header>' +
+    '<input class="sr-only" type="file" accept="application/json,.json" data-action="preview-mapper-role-plan" multiple /></label></div></header>' +
     (preview
       ? '<div class="boh-admin-role-plan-import-summary" data-complete="' +
         complete +
@@ -9100,7 +9869,11 @@ function renderMapperRolePlanImport(state) {
         '<dl><div><dt>' +
         escapeHtml(state.tr('adminBohTeam', 'Team')) +
         '</dt><dd>' +
-        escapeHtml(preview.team?.name || preview.team?.id) +
+        escapeHtml(
+          preview.planCount === 1
+            ? preview.team?.name || preview.team?.id
+            : `${preview.planCount} teams`
+        ) +
         '</dd></div>' +
         '<div><dt>' +
         escapeHtml(state.tr('adminBohPlayersLinked', 'Players linked')) +
@@ -9132,6 +9905,7 @@ function renderMapperRolePlanImport(state) {
               state.tr('adminBohRolePlanReady', 'Ready: all 12 players are linked by exact name.')
             ) +
             '</p>') +
+        teamSummary +
         '<button type="button" class="boh-admin-button boh-admin-button-save" data-action="save-mapper-role-plan" ' +
         (complete ? '' : 'disabled') +
         '>' +
@@ -11448,6 +12222,124 @@ function buildTeamBoardCsv(state) {
   return `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n')}\r\n`;
 }
 
+function mapperPlanExportError(message) {
+  const error = new Error(message);
+  error.code = 'boh-mapper-plan-export-incomplete';
+  return error;
+}
+
+export function buildAdminAllStarBohMapperPlanBundle(snapshot, savedAt = new Date().toISOString()) {
+  const teams = list(snapshot?.teams);
+  if (teams.length !== TEAM_COUNT) {
+    throw mapperPlanExportError('Export needs exactly six draft teams.');
+  }
+  const names = new Map(
+    list(snapshot?.submissions).map((submission) => [playerId(submission), playerName(submission)])
+  );
+  const plans = teams.map((team) => {
+    const occupied = list(team.seats)
+      .filter((seat) => cleanText(seat?.playerId))
+      .sort((left, right) => integer(left.seatNumber) - integer(right.seatNumber));
+    if (occupied.length !== ROSTER_SIZE) {
+      throw mapperPlanExportError(
+        `${cleanText(team.name) || cleanText(team.id)} needs 12 occupied seats before export.`
+      );
+    }
+    const rules = list(team.plan?.playerOverrides).filter((rule) =>
+      cleanText(rule?.id).startsWith('mapper-plan-v2-')
+    );
+    const players = occupied.map((seat, index) => {
+      const roleKeyRaw = cleanText(seat.roleGroupId).toLocaleLowerCase('en');
+      const roleKey = roleKeyRaw === 'bot' ? 'bottom' : roleKeyRaw;
+      if (!['offensive', 'top', 'bottom', 'rune'].includes(roleKey)) {
+        throw mapperPlanExportError(
+          `${cleanText(seat.displayName) || seat.playerId} needs a supported mapper role.`
+        );
+      }
+      const phases = BOH_STAGE1_PHASES.map((phase, phaseIndex) => {
+        const phaseRules = BOH_STAGE1_LEGIONS.map((legion) =>
+          rules.find(
+            (rule) =>
+              cleanText(rule.playerId) === cleanText(seat.playerId) &&
+              cleanText(rule.phaseId) === phase.id &&
+              cleanText(rule.legionId) === legion.id
+          )
+        );
+        if (phaseRules.some((rule) => !cleanText(rule?.instruction?.action))) {
+          throw mapperPlanExportError(
+            `${cleanText(seat.displayName) || seat.playerId} is missing a phase instruction.`
+          );
+        }
+        const firstInstruction = phaseRules[0].instruction || {};
+        return {
+          time: ['0-5', '5-10', '10-15', '15-30', '30-60'][phaseIndex],
+          stageRole: cleanText(firstInstruction.summary) || `Follow ${roleKey} assignment`,
+          legion1: cleanText(phaseRules[0].instruction.action),
+          legion2: cleanText(phaseRules[1].instruction.action),
+          note: cleanText(firstInstruction.note || firstInstruction.teleport),
+        };
+      });
+      const roleDescription =
+        cleanText(
+          rules.find((rule) => cleanText(rule.playerId) === cleanText(seat.playerId))?.instruction
+            ?.target
+        ) || `Stage-1 ${roleKey} role`;
+      return {
+        scoreRank: index + 1,
+        name: cleanText(seat.displayName) || names.get(cleanText(seat.playerId)) || seat.playerId,
+        locale: '',
+        score: Number.isFinite(Number(seat.score)) ? Number(seat.score) : 0,
+        power: Number.isFinite(Number(seat.totalCastlePower)) ? Number(seat.totalCastlePower) : 0,
+        roleKey,
+        role: {
+          label: cleanText(seat.roleLabel) || roleKey,
+          description: roleDescription,
+        },
+        phases,
+      };
+    });
+    return {
+      format: BOH_MAPPER_PLAN_IMPORT_FORMAT,
+      version: BOH_MAPPER_PLAN_IMPORT_VERSION,
+      savedAt,
+      team: {
+        id: cleanText(team.id),
+        name: cleanText(team.name) || cleanText(team.id),
+        score: players.reduce((total, player) => total + player.score, 0),
+        power: players.reduce((total, player) => total + player.power, 0),
+        displayLocale: '',
+        dominantPlayerLocale: '',
+      },
+      rule: '',
+      buildFocus: { center: '', top: '', bottom: '', rune: '' },
+      titleBadges: [],
+      players,
+    };
+  });
+  return {
+    format: BOH_MAPPER_PLAN_BUNDLE_FORMAT,
+    version: BOH_MAPPER_PLAN_BUNDLE_VERSION,
+    savedAt,
+    plans,
+  };
+}
+
+function downloadMapperPlanBundle(state) {
+  const bundle = buildAdminAllStarBohMapperPlanBundle(state.snapshot);
+  const json = JSON.stringify(bundle, null, 2) + '\n';
+  if (typeof state.options.downloadMapperPlanBundle === 'function') {
+    state.options.downloadMapperPlanBundle(json, bundle);
+    return bundle.plans.length;
+  }
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'all-star-boh-stage1-role-plan-bundle.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  return bundle.plans.length;
+}
+
 function downloadTeamBoardCsv(state) {
   const csv = buildTeamBoardCsv(state);
   if (typeof state.options.downloadTeamBoardCsv === 'function') {
@@ -11514,7 +12406,61 @@ async function handleClick(state, event) {
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'team-board-density') {
+    state.teamBoardDensity = button.dataset.value === 'compact' ? 'compact' : 'comfortable';
+    saveTeamWorkspaceView(state);
+    renderShell(state);
+    return;
+  }
+  if (action === 'team-board-columns') {
+    const columns = Number(button.dataset.value);
+    if (![1, 2, 3].includes(columns)) return;
+    state.teamBoardColumns = columns;
+    saveTeamWorkspaceView(state);
+    renderShell(state);
+    return;
+  }
+
+  if (action === 'edit-player-values') {
+    state.playerValueEditor = {
+      teamId: cleanText(button.dataset.teamId),
+      seatNumber: integer(button.dataset.seatNumber),
+    };
+    renderShell(state);
+    state.root.querySelector('.boh-admin-player-editor__panel')?.focus?.();
+    return;
+  }
+  if (action === 'close-player-values') {
+    const focusId = state.playerValueEditor;
+    state.playerValueEditor = null;
+    renderShell(state);
+    state.root
+      .querySelector(
+        `[data-action="edit-player-values"][data-team-id="${CSS.escape(focusId?.teamId || '')}"][data-seat-number="${integer(focusId?.seatNumber)}"]`
+      )
+      ?.focus?.();
+    return;
+  }
+  if (action === 'clear-player-score-override') {
+    const result = await invokeAction(
+      state,
+      'removeScoreOverride',
+      { playerId: cleanText(button.dataset.playerId) },
+      state.tr('adminBohScoreOverrideCleared', 'Base score override cleared.')
+    );
+    if (result !== null) renderShell(state);
+    return;
+  }
   if (action === 'save-mapper-role-plan') {
+    if (action === 'export-mapper-plan-bundle') {
+      const count = downloadMapperPlanBundle(state);
+      setStatus(
+        state,
+        state.tr('adminBohExportedPlanBundle', 'Exported {count} team plans.', { count }),
+        'success'
+      );
+      return;
+    }
     const result = await invokeAction(
       state,
       'saveMapperRolePlanImport',
@@ -12123,36 +13069,60 @@ async function handleChange(state, event) {
   }
   if (action === 'preview-mapper-role-plan') {
     const input = event.target;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = [...(input.files || [])];
+    if (!files.length) return;
     try {
+      if (files.length > TEAM_COUNT) {
+        throw adapterError(
+          'boh-mapper-plan-file-count',
+          state.tr(
+            'adminBohRolePlanFileCount',
+            'Choose at most six single-team files or one bundle.'
+          )
+        );
+      }
       const acceptedMimeTypes = new Set(['', 'application/json', 'text/json']);
-      if (!/\.json$/iu.test(file.name || '') || !acceptedMimeTypes.has(file.type || '')) {
+      if (
+        files.some(
+          (file) => !/\.json$/iu.test(file.name || '') || !acceptedMimeTypes.has(file.type || '')
+        )
+      ) {
         throw adapterError(
           'boh-mapper-plan-file-type',
           state.tr('adminBohRolePlanFileType', 'Choose an All-Star BoH role-plan .json file.')
         );
       }
-      if (file.size > BOH_MAPPER_PLAN_IMPORT_MAX_BYTES) {
+      const fileNames = files.map((file) => cleanText(file.name).toLocaleLowerCase());
+      if (new Set(fileNames).size !== fileNames.length) {
+        throw adapterError(
+          'boh-mapper-plan-duplicate-file',
+          state.tr('adminBohRolePlanDuplicateFile', 'Remove duplicate role-plan files.')
+        );
+      }
+      const maximumBytes =
+        files.length === 1
+          ? BOH_MAPPER_PLAN_BUNDLE_IMPORT_MAX_BYTES
+          : BOH_MAPPER_PLAN_IMPORT_MAX_BYTES;
+      if (files.some((file) => file.size > maximumBytes)) {
         throw adapterError(
           'boh-mapper-plan-file-too-large',
           state.tr(
             'adminBohRolePlanFileTooLarge',
             'Role-plan import exceeds the {bytes}-byte limit.',
             {
-              bytes: BOH_MAPPER_PLAN_IMPORT_MAX_BYTES,
+              bytes: maximumBytes,
             }
           )
         );
       }
-      const jsonText = await file.text();
+      const jsonTexts = await Promise.all(files.map((file) => file.text()));
       const result = await invokeAction(
         state,
         'previewMapperRolePlan',
-        { jsonText },
+        { jsonTexts },
         state.tr(
           'adminBohRolePlanPreviewReady',
-          'Role-plan preview ready. Nothing has been saved or published.'
+          'Role-plan preview ready. All files passed validation; nothing has been saved or published.'
         )
       );
       state.mapperPlanImportPreview = result?.result || result?.actionResult || null;
@@ -12494,6 +13464,34 @@ async function handleSubmit(state, event) {
       state.correctionDrafts.delete(parsed.playerId);
       renderShell(state);
     }
+    return;
+  }
+  if (kind === 'player-value-editor') {
+    const baseScoreOverride = cleanText(data.get('baseScoreOverride'));
+    const overrideReason = cleanText(data.get('overrideReason'));
+    if (baseScoreOverride && !overrideReason) {
+      const control = form.elements?.overrideReason;
+      control?.setCustomValidity?.(
+        state.tr('adminBohOverrideReasonRequired', 'Add a reason for the base score override.')
+      );
+      control?.reportValidity?.();
+      control?.focus?.();
+      return;
+    }
+    const result = await invokeAction(
+      state,
+      'savePlayerValues',
+      {
+        playerId: cleanText(data.get('playerId')),
+        displayName: cleanText(data.get('displayName')),
+        totalCastlePower: cleanText(data.get('totalCastlePower')),
+        correctionReason: cleanText(data.get('correctionReason')),
+        baseScoreOverride,
+        overrideReason,
+      },
+      state.tr('adminBohPlayerValuesSaved', 'Player values saved to the draft.')
+    );
+    if (result !== null) renderShell(state);
     return;
   }
   if (kind === 'scoring-version') {

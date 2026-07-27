@@ -37,6 +37,7 @@ export default defineConfig({
         profile: resolve(__dirname, 'profile.html'),
         maintenance: resolve(__dirname, 'maintenance.html'),
         admin: resolve(__dirname, 'admin.html'),
+        vtsscore: resolve(__dirname, 'vtsscore.html'),
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
