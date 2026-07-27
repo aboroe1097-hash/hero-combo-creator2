@@ -8,14 +8,43 @@ import {
 } from './all-star-boh-auth.js';
 
 export const VTS_SCORE_SCHEMA_VERSION = 1;
-export const VTS_SCORE_MAX_DRAGON_POWER = 100_000_000_000;
+export const VTS_SCORE_RECORD_SCHEMA_VERSION = 2;
+export const VTS_SCORE_MAX_POWER = 100_000_000_000;
 export const VTS_SCORE_MAX_PLAYERS = 200;
-export const VTS_SCORE_MAX_REQUEST_BYTES = 4096;
+export const VTS_SCORE_MAX_REQUEST_BYTES = 8192;
+export const VTS_SCORE_REQUIRED_POWER_FIELDS = Object.freeze([
+  'totalCastlePower',
+  'troopPower',
+  'buildingPower',
+  'technologyPower',
+  'heroCombatPower',
+  'dragonPower',
+  'unitSpecialtyPower',
+]);
+export const VTS_SCORE_OPTIONAL_POWER_FIELDS = Object.freeze(['artifactPower', 'royalTechPower']);
+export const VTS_SCORE_POWER_FIELDS = Object.freeze([
+  ...VTS_SCORE_REQUIRED_POWER_FIELDS,
+  ...VTS_SCORE_OPTIONAL_POWER_FIELDS,
+]);
 
 const SEASON_PATTERN = /^[A-Za-z0-9_-]{1,80}$/;
 const UID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
-const REQUEST_KEYS = Object.freeze(['dragonPower', 'gameName', 'ocr', 'seasonId', 'submissionUid']);
-const OCR_KEYS = Object.freeze(['confidence', 'corrected', 'originalDragonPower', 'requestId']);
+const LEGACY_REQUEST_KEYS = Object.freeze([
+  'dragonPower',
+  'gameName',
+  'ocr',
+  'seasonId',
+  'submissionUid',
+]);
+const LEGACY_OCR_KEYS = Object.freeze([
+  'confidence',
+  'corrected',
+  'originalDragonPower',
+  'requestId',
+]);
+const REQUEST_KEYS = Object.freeze(['gameName', 'ocr', 'powerValues', 'seasonId', 'submissionUid']);
+const OCR_KEYS = Object.freeze(['confidence', 'correctedFields', 'requestId', 'sourceValues']);
+const POWER_KEYS = Object.freeze([...VTS_SCORE_POWER_FIELDS].sort());
 
 export class VtsScoreError extends Error {
   constructor(status, code, message) {
@@ -109,6 +138,139 @@ function parseInteger(value, maximum, label) {
   return value;
 }
 
+function parseNullableInteger(value, maximum, label) {
+  if (value === null) return null;
+  return parseInteger(value, maximum, label);
+}
+
+function parseConfidence(value, label = 'Invalid OCR confidence.') {
+  if (
+    value !== null &&
+    (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1)
+  ) {
+    throw new VtsScoreError(400, 'invalid_request', label);
+  }
+  return value;
+}
+
+function readIdentity(body) {
+  const seasonId = normalizedText(body.seasonId, 80, 'Invalid season.');
+  const submissionUid = normalizedText(body.submissionUid, 128, 'Invalid signup.');
+  if (!SEASON_PATTERN.test(seasonId) || !UID_PATTERN.test(submissionUid)) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid score identity.');
+  }
+  return {
+    seasonId,
+    submissionUid,
+    gameName: normalizedText(body.gameName, 160, 'Invalid game name.'),
+  };
+}
+
+function readLegacyVtsScoreRequest(body) {
+  if (!strictKeys(body, LEGACY_REQUEST_KEYS) || !strictKeys(body.ocr, LEGACY_OCR_KEYS)) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid score request.');
+  }
+  const identity = readIdentity(body);
+  const dragonPower = parseInteger(body.dragonPower, VTS_SCORE_MAX_POWER, 'Invalid Dragon Power.');
+  const originalDragonPower = parseInteger(
+    body.ocr.originalDragonPower,
+    VTS_SCORE_MAX_POWER,
+    'Invalid OCR audit.'
+  );
+  if (typeof body.ocr.corrected !== 'boolean') {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR correction flag.');
+  }
+  return Object.freeze({
+    schemaVersion: 1,
+    ...identity,
+    dragonPower,
+    ocr: Object.freeze({
+      requestId: normalizedText(body.ocr.requestId, 160, 'Invalid OCR audit.'),
+      originalDragonPower,
+      confidence: parseConfidence(body.ocr.confidence),
+      corrected: body.ocr.corrected,
+    }),
+  });
+}
+
+function readPowerMap(value, { required = false, label }) {
+  if (!strictKeys(value, POWER_KEYS)) {
+    throw new VtsScoreError(400, 'invalid_request', `Invalid ${label}.`);
+  }
+  const result = {};
+  for (const field of VTS_SCORE_POWER_FIELDS) {
+    const fieldRequired = required && VTS_SCORE_REQUIRED_POWER_FIELDS.includes(field);
+    if (fieldRequired && value[field] === null) {
+      throw new VtsScoreError(400, 'invalid_request', `Invalid ${label}.`);
+    }
+    result[field] = parseNullableInteger(value[field], VTS_SCORE_MAX_POWER, `Invalid ${label}.`);
+  }
+  return Object.freeze(result);
+}
+
+function readConfidenceMap(value) {
+  if (!strictKeys(value, POWER_KEYS)) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR confidence.');
+  }
+  return Object.freeze(
+    Object.fromEntries(
+      VTS_SCORE_POWER_FIELDS.map((field) => [
+        field,
+        parseConfidence(value[field], 'Invalid OCR confidence.'),
+      ])
+    )
+  );
+}
+
+function readCurrentVtsScoreRequest(body) {
+  if (!strictKeys(body, REQUEST_KEYS) || !strictKeys(body.ocr, OCR_KEYS)) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid score request.');
+  }
+  const identity = readIdentity(body);
+  const powerValues = readPowerMap(body.powerValues, {
+    required: true,
+    label: 'power breakdown',
+  });
+  const sourceValues = readPowerMap(body.ocr.sourceValues, {
+    required: false,
+    label: 'OCR source values',
+  });
+  const confidence = readConfidenceMap(body.ocr.confidence);
+  if (
+    !Array.isArray(body.ocr.correctedFields) ||
+    body.ocr.correctedFields.length > VTS_SCORE_POWER_FIELDS.length
+  ) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR corrections.');
+  }
+  const correctedSet = new Set(body.ocr.correctedFields);
+  if (
+    correctedSet.size !== body.ocr.correctedFields.length ||
+    [...correctedSet].some((field) => !VTS_SCORE_POWER_FIELDS.includes(field))
+  ) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR corrections.');
+  }
+  const correctedFields = VTS_SCORE_POWER_FIELDS.filter(
+    (field) => powerValues[field] !== sourceValues[field]
+  );
+  if (
+    correctedFields.length !== correctedSet.size ||
+    correctedFields.some((field) => !correctedSet.has(field))
+  ) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR corrections.');
+  }
+  return Object.freeze({
+    schemaVersion: VTS_SCORE_RECORD_SCHEMA_VERSION,
+    ...identity,
+    powerValues,
+    ocr: Object.freeze({
+      requestId: normalizedText(body.ocr.requestId, 160, 'Invalid OCR audit.'),
+      sourceValues,
+      confidence,
+      correctedFields: Object.freeze(correctedFields),
+    }),
+  });
+}
+
 export function readVtsScoreRequest(request) {
   const contentType = requestHeader(request, 'content-type').toLowerCase();
   if (!contentType.startsWith('application/json')) {
@@ -135,51 +297,9 @@ export function readVtsScoreRequest(request) {
       throw new VtsScoreError(400, 'invalid_json', 'Invalid JSON.');
     }
   }
-  if (!strictKeys(body, REQUEST_KEYS) || !strictKeys(body.ocr, OCR_KEYS)) {
-    throw new VtsScoreError(400, 'invalid_request', 'Invalid score request.');
-  }
-  const seasonId = normalizedText(body.seasonId, 80, 'Invalid season.');
-  const submissionUid = normalizedText(body.submissionUid, 128, 'Invalid signup.');
-  if (!SEASON_PATTERN.test(seasonId) || !UID_PATTERN.test(submissionUid)) {
-    throw new VtsScoreError(400, 'invalid_request', 'Invalid score identity.');
-  }
-  const gameName = normalizedText(body.gameName, 160, 'Invalid game name.');
-  const dragonPower = parseInteger(
-    body.dragonPower,
-    VTS_SCORE_MAX_DRAGON_POWER,
-    'Invalid Dragon Power.'
-  );
-  const requestId = normalizedText(body.ocr.requestId, 160, 'Invalid OCR audit.');
-  const originalDragonPower = parseInteger(
-    body.ocr.originalDragonPower,
-    VTS_SCORE_MAX_DRAGON_POWER,
-    'Invalid OCR audit.'
-  );
-  const confidence = body.ocr.confidence;
-  if (
-    confidence !== null &&
-    (typeof confidence !== 'number' ||
-      !Number.isFinite(confidence) ||
-      confidence < 0 ||
-      confidence > 1)
-  ) {
-    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR confidence.');
-  }
-  if (typeof body.ocr.corrected !== 'boolean') {
-    throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR correction flag.');
-  }
-  return Object.freeze({
-    seasonId,
-    submissionUid,
-    gameName,
-    dragonPower,
-    ocr: Object.freeze({
-      requestId,
-      originalDragonPower,
-      confidence,
-      corrected: body.ocr.corrected,
-    }),
-  });
+  return Object.prototype.hasOwnProperty.call(body || {}, 'powerValues')
+    ? readCurrentVtsScoreRequest(body)
+    : readLegacyVtsScoreRequest(body);
 }
 
 async function verifyRequestIdentity(request, dependencies) {
@@ -284,14 +404,17 @@ async function saveScore(dependencies, uid, input) {
       throw new VtsScoreError(409, 'already_submitted', 'A final score already exists.');
     }
     const revision = Number.isInteger(existing?.revision) ? existing.revision + 1 : 1;
+    const scorePayload =
+      input.schemaVersion === VTS_SCORE_RECORD_SCHEMA_VERSION
+        ? { powerValues: input.powerValues, ocr: input.ocr }
+        : { dragonPower: input.dragonPower, ocr: input.ocr };
     saved = {
-      schemaVersion: VTS_SCORE_SCHEMA_VERSION,
+      schemaVersion: input.schemaVersion,
       seasonId: input.seasonId,
       submissionUid: input.submissionUid,
       gameName: input.gameName,
       baselineSubmissionRevision: Number.isInteger(submission.revision) ? submission.revision : 0,
-      dragonPower: input.dragonPower,
-      ocr: input.ocr,
+      ...scorePayload,
       submittedByUid: existing?.submittedByUid || uid,
       revision,
       createdAt: existing?.createdAt || dependencies.serverTimestamp(),
@@ -299,12 +422,18 @@ async function saveScore(dependencies, uid, input) {
     };
     transaction.set(scoreRef, saved);
   });
-  return {
+  const response = {
     submissionUid: saved.submissionUid,
     gameName: saved.gameName,
-    dragonPower: saved.dragonPower,
     revision: saved.revision,
   };
+  if (saved.schemaVersion === VTS_SCORE_RECORD_SCHEMA_VERSION) {
+    response.schemaVersion = VTS_SCORE_RECORD_SCHEMA_VERSION;
+    response.powerValues = saved.powerValues;
+  } else {
+    response.dragonPower = saved.dragonPower;
+  }
+  return response;
 }
 
 function safeError(error) {

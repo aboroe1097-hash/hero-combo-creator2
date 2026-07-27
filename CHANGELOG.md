@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.3.0 - 2026-07-28
+
+- Corrected VtsScore to OCR, review, submit, and compare the complete nine-field power breakdown instead of a single Total or Dragon Power value.
+- Added editable per-field OCR review with confidence context for Total, Troop, Building, Technology, Hero, Dragon, Unit Specialty, Artifact, and Royal Tech power.
+- Added migration-safe VtsScore storage: new uploads use the full versioned contract while earlier one-field uploads remain visible as incomplete and require re-upload.
+- Expanded the All-Star admin comparison to show sign-up, final, and growth values for every power category.
+
 ## 14.2.20 - 2026-07-27
 
 - Corrected VtsScore OCR and review to submit Total Power rather than Dragon Power while preserving the deployed secured endpoint contract.

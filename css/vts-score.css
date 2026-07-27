@@ -227,6 +227,18 @@ input {
   color: #fecaca;
 }
 
+:root[data-theme='light'] .vts-score-status[data-tone='success'] {
+  color: #08734f;
+}
+
+:root[data-theme='light'] .vts-score-status[data-tone='warning'] {
+  color: #8a4900;
+}
+
+:root[data-theme='light'] .vts-score-status[data-tone='error'] {
+  color: #a72c38;
+}
+
 .vts-score-card {
   margin-top: 18px;
   padding: 26px;
@@ -415,6 +427,46 @@ input:disabled {
   color: #a7f3d0;
 }
 
+.vts-score-power-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vts-score-power-field {
+  display: grid !important;
+  gap: 9px;
+  margin: 0 !important;
+  padding: 14px;
+  border: 1px solid var(--vts-border);
+  border-radius: 14px;
+  background: var(--vts-surface-soft);
+}
+
+.vts-score-power-field__heading,
+.vts-score-power-field__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vts-score-power-field__optional {
+  padding: 3px 7px;
+  border: 1px solid var(--vts-border-strong);
+  border-radius: 999px;
+  color: var(--vts-subtle);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.vts-score-power-field__meta {
+  color: var(--vts-subtle);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
 .vts-score-submit {
   width: 100%;
   margin-top: 22px;
@@ -515,5 +567,9 @@ footer a {
 
   .vts-score-ocr-result {
     display: grid;
+  }
+
+  .vts-score-power-fields {
+    grid-template-columns: 1fr;
   }
 }

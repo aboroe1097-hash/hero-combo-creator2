@@ -15,6 +15,17 @@ const SCORE_TIMEOUT_MS = 30_000;
 const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 const SEASON_PATTERN = /^[a-z0-9_-]{1,80}$/iu;
 const OCR_REQUEST_KEYS = Object.freeze(['imageData', 'screenshotType', 'seasonId']);
+const VTS_SCORE_POWER_FIELDS = Object.freeze([
+  'totalCastlePower',
+  'troopPower',
+  'buildingPower',
+  'technologyPower',
+  'heroCombatPower',
+  'dragonPower',
+  'unitSpecialtyPower',
+  'artifactPower',
+  'royalTechPower',
+]);
 
 export class AllStarBohAccessError extends Error {
   constructor(code, message, options = {}) {
@@ -478,11 +489,23 @@ export function createAllStarBohAccessClient(options = {}) {
       'score_failed'
     );
     const score = response?.score;
+    const powerKeys =
+      score?.powerValues && typeof score.powerValues === 'object'
+        ? Object.keys(score.powerValues).sort()
+        : [];
+    const expectedPowerKeys = [...VTS_SCORE_POWER_FIELDS].sort();
     if (
       response?.schemaVersion !== 1 ||
       !score ||
       typeof score !== 'object' ||
-      !Number.isSafeInteger(score.dragonPower) ||
+      score.schemaVersion !== 2 ||
+      powerKeys.length !== expectedPowerKeys.length ||
+      !powerKeys.every((key, index) => key === expectedPowerKeys[index]) ||
+      !VTS_SCORE_POWER_FIELDS.every(
+        (field) =>
+          score.powerValues[field] === null ||
+          (Number.isSafeInteger(score.powerValues[field]) && score.powerValues[field] >= 0)
+      ) ||
       !Number.isSafeInteger(score.revision) ||
       typeof score.submissionUid !== 'string' ||
       typeof score.gameName !== 'string'

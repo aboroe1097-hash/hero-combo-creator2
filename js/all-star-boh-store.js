@@ -4,7 +4,22 @@ export const ALL_STAR_BOH_ROOT_COLLECTION = 'boh_allstar';
 export const ALL_STAR_BOH_CONFIG_PATH = 'boh_allstar_config/current';
 export const ALL_STAR_BOH_SCHEMA_VERSION = 1;
 export const VTS_SCORE_SCHEMA_VERSION = 1;
-export const VTS_SCORE_MAX_DRAGON_POWER = 100_000_000_000;
+export const VTS_SCORE_RECORD_SCHEMA_VERSION = 2;
+export const VTS_SCORE_MAX_POWER = 100_000_000_000;
+export const VTS_SCORE_REQUIRED_POWER_FIELDS = Object.freeze([
+  'totalCastlePower',
+  'troopPower',
+  'buildingPower',
+  'technologyPower',
+  'heroCombatPower',
+  'dragonPower',
+  'unitSpecialtyPower',
+]);
+export const VTS_SCORE_OPTIONAL_POWER_FIELDS = Object.freeze(['artifactPower', 'royalTechPower']);
+export const VTS_SCORE_POWER_FIELDS = Object.freeze([
+  ...VTS_SCORE_REQUIRED_POWER_FIELDS,
+  ...VTS_SCORE_OPTIONAL_POWER_FIELDS,
+]);
 export const ALL_STAR_BOH_MAX_TEAMS = 6;
 export const ALL_STAR_BOH_MAX_PLAYERS = 72;
 export const ALL_STAR_BOH_MAX_PREFERRED_TEAMMATES = 6;
@@ -937,17 +952,7 @@ export function normalizeAllStarBohEpicPreferences(input = {}, options = {}) {
 export function normalizeAllStarBohRaceScore(input = {}) {
   const source = requireRecord(input, 'VtsScore record');
   const ocr = requireRecord(source.ocr, 'VtsScore OCR audit');
-  const confidence =
-    ocr.confidence === null || ocr.confidence === undefined
-      ? null
-      : boundedNumber(ocr.confidence, 'VtsScore OCR confidence', {
-          minimum: 0,
-          maximum: 1,
-        });
-  if (typeof ocr.corrected !== 'boolean') {
-    throw new AllStarBohValidationError('VtsScore OCR corrected flag must be a boolean.');
-  }
-  return {
+  const common = {
     gameName: normalizedUnicodePlayerName(source.gameName, 'VtsScore game name', {
       required: true,
     }),
@@ -956,22 +961,97 @@ export function normalizeAllStarBohRaceScore(input = {}) {
       'VtsScore baseline submission revision',
       { minimum: 0, maximum: Number.MAX_SAFE_INTEGER }
     ),
-    dragonPower: boundedInteger(source.dragonPower, 'VtsScore Dragon Power', {
-      minimum: 0,
-      maximum: VTS_SCORE_MAX_DRAGON_POWER,
-    }),
-    ocr: {
-      requestId: boundedString(ocr.requestId, 160, 'VtsScore OCR request ID', {
-        required: true,
-      }),
-      originalDragonPower: boundedInteger(ocr.originalDragonPower, 'VtsScore OCR Dragon Power', {
-        minimum: 0,
-        maximum: VTS_SCORE_MAX_DRAGON_POWER,
-      }),
-      confidence,
-      corrected: ocr.corrected,
-    },
     submittedByUid: requiredIdentifier(source.submittedByUid, 'VtsScore submitter ID'),
+  };
+  const requestId = boundedString(ocr.requestId, 160, 'VtsScore OCR request ID', {
+    required: true,
+  });
+  if (source.schemaVersion === VTS_SCORE_RECORD_SCHEMA_VERSION) {
+    const storedValues = requireRecord(source.powerValues, 'VtsScore power breakdown');
+    const sourceValues = requireRecord(ocr.sourceValues, 'VtsScore OCR source values');
+    const confidenceValues = requireRecord(ocr.confidence, 'VtsScore OCR confidence');
+    const powerValues = {};
+    const normalizedSourceValues = {};
+    const confidence = {};
+    for (const field of VTS_SCORE_POWER_FIELDS) {
+      const required = VTS_SCORE_REQUIRED_POWER_FIELDS.includes(field);
+      powerValues[field] = boundedInteger(storedValues[field], `VtsScore ${field}`, {
+        minimum: 0,
+        maximum: VTS_SCORE_MAX_POWER,
+      });
+      if (required && powerValues[field] === null) {
+        throw new AllStarBohValidationError(`VtsScore ${field} is required.`);
+      }
+      normalizedSourceValues[field] = boundedInteger(sourceValues[field], `VtsScore OCR ${field}`, {
+        minimum: 0,
+        maximum: VTS_SCORE_MAX_POWER,
+      });
+      confidence[field] = boundedNumber(
+        confidenceValues[field],
+        `VtsScore OCR ${field} confidence`,
+        { minimum: 0, maximum: 1 }
+      );
+    }
+    const correctedFields = boundedStringArray(ocr.correctedFields, {
+      label: 'VtsScore corrected field',
+      maxItems: VTS_SCORE_POWER_FIELDS.length,
+      maxLength: 40,
+    });
+    if (correctedFields.some((field) => !VTS_SCORE_POWER_FIELDS.includes(field))) {
+      throw new AllStarBohValidationError('VtsScore corrected field is invalid.');
+    }
+    return {
+      ...common,
+      schemaVersion: VTS_SCORE_RECORD_SCHEMA_VERSION,
+      powerValues,
+      ocr: {
+        requestId,
+        sourceValues: normalizedSourceValues,
+        confidence,
+        correctedFields,
+      },
+    };
+  }
+
+  const dragonPower = boundedInteger(source.dragonPower, 'VtsScore Dragon Power', {
+    minimum: 0,
+    maximum: VTS_SCORE_MAX_POWER,
+  });
+  const legacyConfidence = boundedNumber(ocr.confidence, 'VtsScore OCR confidence', {
+    minimum: 0,
+    maximum: 1,
+  });
+  if (typeof ocr.corrected !== 'boolean') {
+    throw new AllStarBohValidationError('VtsScore OCR corrected flag must be a boolean.');
+  }
+  return {
+    ...common,
+    schemaVersion: 1,
+    legacy: true,
+    powerValues: Object.fromEntries(
+      VTS_SCORE_POWER_FIELDS.map((field) => [field, field === 'dragonPower' ? dragonPower : null])
+    ),
+    ocr: {
+      requestId,
+      sourceValues: Object.fromEntries(
+        VTS_SCORE_POWER_FIELDS.map((field) => [
+          field,
+          field === 'dragonPower'
+            ? boundedInteger(ocr.originalDragonPower, 'VtsScore OCR Dragon Power', {
+                minimum: 0,
+                maximum: VTS_SCORE_MAX_POWER,
+              })
+            : null,
+        ])
+      ),
+      confidence: Object.fromEntries(
+        VTS_SCORE_POWER_FIELDS.map((field) => [
+          field,
+          field === 'dragonPower' ? legacyConfidence : null,
+        ])
+      ),
+      correctedFields: ocr.corrected ? ['dragonPower'] : [],
+    },
   };
 }
 

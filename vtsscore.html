@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="VtsScore Competition #11 final Total Power screenshot submission for VTS 1097."
+      content="VtsScore Competition #11 full power breakdown submission for VTS 1097."
     />
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #11</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=14.2.20" />
-    <link rel="stylesheet" href="css/vts-score.css?v=14.2.20" />
-    <script src="js/theme-prepaint.js?v=14.2.20"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=14.3.0" />
+    <link rel="stylesheet" href="css/vts-score.css?v=14.3.0" />
+    <script src="js/theme-prepaint.js?v=14.3.0"></script>
     <script type="importmap">
       {
         "imports": {
@@ -58,11 +58,11 @@
         </div>
         <div class="vts-score-hero__copy">
           <p class="vts-score-kicker" data-vts-i18n="kicker">DEVELOPMENT RACE · FINAL CHECK</p>
-          <h1 data-vts-i18n="title">Upload tonight’s Total Power</h1>
+          <h1 data-vts-i18n="title">Upload tonight’s power breakdown</h1>
           <p data-vts-i18n="intro">
             Choose the same game name used for the All-Star sign-up, upload one current power
-            screenshot, review your Total Power, and submit it for comparison with your sign-up
-            baseline.
+            screenshot, review every power value, and submit the full breakdown for comparison with
+            your sign-up baseline.
           </p>
         </div>
         <div class="vts-score-deadline">
@@ -162,7 +162,7 @@
                 type="button"
                 data-vts-i18n="readPower"
               >
-                Read Total Power
+                Read all power values
               </button>
             </div>
           </div>
@@ -170,25 +170,11 @@
           <div class="vts-score-step">
             <span class="vts-score-step__number" aria-hidden="true">3</span>
             <div>
-              <label for="vtsScoreTotalPower" data-vts-i18n="confirmedPower">
-                Confirmed Total Power
-              </label>
+              <h2 data-vts-i18n="confirmedPower">Confirm every power value</h2>
               <p data-vts-i18n="confirmedHelp">
-                Check this number against the screenshot and correct it if OCR made a mistake.
+                Check every number against the screenshot and correct any OCR mistakes.
               </p>
-              <div id="vtsScoreOcrDetails" class="vts-score-ocr-result" hidden>
-                <span>OCR read <strong id="vtsScoreOcrValue">—</strong></span>
-                <small id="vtsScoreOcrConfidence"></small>
-              </div>
-              <input
-                id="vtsScoreTotalPower"
-                type="number"
-                min="0"
-                max="100000000000"
-                step="1"
-                inputmode="numeric"
-                required
-              />
+              <div id="vtsScorePowerFields" class="vts-score-power-fields" hidden></div>
             </div>
           </div>
 
@@ -198,7 +184,7 @@
             type="submit"
             data-vts-i18n="submit"
           >
-            Submit final Total Power
+            Submit full power breakdown
           </button>
         </form>
 
@@ -210,20 +196,20 @@
             <strong id="vtsScoreSuccessName"></strong>
           </h2>
           <p>
-            <span data-vts-i18n="successPrefix">Your final Total Power is</span>
+            <span data-vts-i18n="successPrefix">Your full breakdown was saved. Total Power:</span>
             <strong id="vtsScoreSuccessPower"></strong>.
             <span data-vts-i18n="successSuffix">
-              Leadership can now compare it with your sign-up value.
+              Leadership can now compare every value with your sign-up baseline.
             </span>
           </p>
         </section>
       </section>
 
       <footer>
-        <span>VTS 1097 community tool · v14.2.20</span>
+        <span>VTS 1097 community tool · v14.3.0</span>
         <a href="index.html" data-vts-i18n="back">Back to toolkit</a>
       </footer>
     </main>
-    <script type="module" src="js/vts-score.js?v=14.2.20"></script>
+    <script type="module" src="js/vts-score.js?v=14.3.0"></script>
   </body>
 </html>

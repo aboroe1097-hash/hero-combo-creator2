@@ -9,6 +9,10 @@
   opacity: 0.7;
 }
 
+.boh-admin-vts-score-table tr[data-vts-score-status='incomplete'] {
+  background: color-mix(in srgb, var(--warning, #f59e0b) 8%, transparent);
+}
+
 .boh-admin-vts-score-table td[data-growth='positive'] {
   color: var(--success, #34d399);
   font-weight: 800;
@@ -22,6 +26,27 @@
 .boh-admin-vts-score-table th,
 .boh-admin-vts-score-table td {
   white-space: nowrap;
+}
+
+.boh-admin-vts-score-breakdown {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.boh-admin-vts-score-breakdown summary {
+  width: max-content;
+  color: var(--ff-cyan);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.boh-admin-vts-score-breakdown[open] {
+  min-width: min(42rem, 78vw);
+}
+
+.boh-admin-vts-score-breakdown .boh-admin-table-wrap {
+  margin-top: 0.55rem;
 }
 
 .boh-admin *,

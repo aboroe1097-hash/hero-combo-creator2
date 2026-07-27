@@ -1075,6 +1075,21 @@ function normalizeSnapshot(source = {}) {
   };
 }
 
+const VTS_SCORE_COMPARISON_FIELDS = Object.freeze([
+  ['totalCastlePower', 'adminBohStatTotalPower', 'Total power'],
+  ['troopPower', 'adminBohStatTroopPower', 'Troop power'],
+  ['buildingPower', 'adminBohStatBuildingPower', 'Building power'],
+  ['technologyPower', 'adminBohStatTechnologyPower', 'Technology power'],
+  ['heroCombatPower', 'adminBohStatHeroPower', 'Hero combat power'],
+  ['dragonPower', 'adminBohStatDragonPower', 'Dragon power'],
+  ['unitSpecialtyPower', 'adminBohStatUnitSpecialtyPower', 'Unit specialty power'],
+  ['artifactPower', 'adminBohStatArtifactPower', 'Artifact power'],
+  ['royalTechPower', 'adminBohStatRoyalTechPower', 'Royal Tech power'],
+]);
+const VTS_SCORE_REQUIRED_COMPARISON_FIELDS = new Set(
+  VTS_SCORE_COMPARISON_FIELDS.slice(0, 7).map(([field]) => field)
+);
+
 export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = []) {
   const scoreBySubmission = new Map(
     list(raceScoresInput)
@@ -1088,17 +1103,55 @@ export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = 
         submission?.submissionUid || submission?.uid || submission?.playerId || submission?.id
       );
       const score = scoreBySubmission.get(submissionUid) || null;
-      const baselineTotalPower = Math.max(
-        0,
-        finiteNumber(
-          submission?.confirmedStats?.totalCastlePower ??
-            submission?.confirmedStats?.totalPower ??
-            submission?.stats?.totalCastlePower ??
-            submission?.stats?.totalPower ??
-            submission?.totalCastlePower ??
-            submission?.totalPower
-        )
+      const baselineSource =
+        submission?.confirmedStats && typeof submission.confirmedStats === 'object'
+          ? submission.confirmedStats
+          : submission?.stats && typeof submission.stats === 'object'
+            ? submission.stats
+            : submission;
+      const finalSource =
+        score?.powerValues && typeof score.powerValues === 'object'
+          ? score.powerValues
+          : score && Number.isFinite(Number(score.dragonPower))
+            ? { dragonPower: Number(score.dragonPower) }
+            : {};
+      const comparisons = VTS_SCORE_COMPARISON_FIELDS.map(([field]) => {
+        const baselineRaw =
+          field === 'totalCastlePower'
+            ? (baselineSource?.totalCastlePower ?? baselineSource?.totalPower)
+            : baselineSource?.[field];
+        const baseline =
+          baselineRaw !== null &&
+          baselineRaw !== undefined &&
+          baselineRaw !== '' &&
+          Number.isFinite(Number(baselineRaw))
+            ? Math.max(0, Number(baselineRaw))
+            : null;
+        const final =
+          finalSource?.[field] !== null &&
+          finalSource?.[field] !== undefined &&
+          finalSource?.[field] !== '' &&
+          Number.isFinite(Number(finalSource[field]))
+            ? Math.max(0, Number(finalSource[field]))
+            : null;
+        const growth = baseline === null || final === null ? null : final - baseline;
+        return {
+          field,
+          baseline,
+          final,
+          growth,
+          growthPercent: growth === null || baseline <= 0 ? null : (growth / baseline) * 100,
+        };
+      });
+      const comparisonByField = Object.fromEntries(
+        comparisons.map((comparison) => [comparison.field, comparison])
       );
+      const totalComparison = comparisonByField.totalCastlePower;
+      const fullBreakdown =
+        score?.schemaVersion === 2 &&
+        [...VTS_SCORE_REQUIRED_COMPARISON_FIELDS].every(
+          (field) => comparisonByField[field]?.final !== null
+        );
       const baselineDragonPower = Math.max(
         0,
         finiteNumber(
@@ -1107,25 +1160,31 @@ export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = 
             submission?.dragonPower
         )
       );
-      const finalDragonPower =
-        score && Number.isFinite(Number(score.dragonPower))
-          ? Math.max(0, Number(score.dragonPower))
-          : null;
-      const growth = finalDragonPower === null ? null : finalDragonPower - baselineTotalPower;
+      const confidenceValues = Object.values(score?.ocr?.confidence || {}).filter((value) =>
+        Number.isFinite(Number(value))
+      );
       return {
         submissionUid,
         gameName: playerName(submission) || cleanText(score?.gameName) || submissionUid,
         tier: baselineDragonPower >= 7_000_000 ? 1 : 2,
-        baselineTotalPower,
-        finalTotalPower: finalDragonPower,
-        growth,
-        growthPercent:
-          growth === null || baselineTotalPower <= 0 ? null : (growth / baselineTotalPower) * 100,
-        submitted: Boolean(score),
+        comparisons,
+        baselineTotalPower: totalComparison.baseline ?? 0,
+        finalTotalPower: totalComparison.final,
+        growth: totalComparison.growth,
+        growthPercent: totalComparison.growthPercent,
+        submitted: fullBreakdown,
+        hasUpload: Boolean(score),
+        legacyUpload: Boolean(score) && !fullBreakdown,
         submittedAt: score?.updatedAt || score?.updatedAtMs || null,
         revision: integer(score?.revision),
-        ocrCorrected: score?.ocr?.corrected === true,
-        ocrConfidence: typeof score?.ocr?.confidence === 'number' ? score.ocr.confidence : null,
+        ocrCorrected:
+          score?.ocr?.corrected === true || (score?.ocr?.correctedFields?.length || 0) > 0,
+        ocrConfidence: confidenceValues.length
+          ? confidenceValues.reduce((sum, value) => sum + Number(value), 0) /
+            confidenceValues.length
+          : typeof score?.ocr?.confidence === 'number'
+            ? score.ocr.confidence
+            : null,
       };
     })
     .sort(
@@ -6514,17 +6573,46 @@ function renderVtsScores(state) {
         row.growthPercent === null
           ? '—'
           : `${row.growthPercent > 0 ? '+' : ''}${formatNumber(state, row.growthPercent, 2)}%`;
-      const ocrStatus = !row.submitted
-        ? state.tr('adminVtsScoreAwaiting', 'Awaiting upload')
-        : row.ocrCorrected
-          ? state.tr('adminVtsScoreCorrected', 'OCR corrected')
-          : row.ocrConfidence === null
-            ? state.tr('adminVtsScoreReviewed', 'Reviewed')
-            : state.tr('adminVtsScoreConfidence', '{confidence}% OCR', {
-                confidence: Math.round(row.ocrConfidence * 100),
-              });
-      return `<tr data-vts-score-status="${row.submitted ? 'submitted' : 'missing'}">
-        <th scope="row">${escapeHtml(row.gameName)}</th>
+      const ocrStatus = row.legacyUpload
+        ? 'Previous one-field upload · re-upload required'
+        : !row.submitted
+          ? state.tr('adminVtsScoreAwaiting', 'Awaiting upload')
+          : row.ocrCorrected
+            ? state.tr('adminVtsScoreCorrected', 'OCR corrected')
+            : row.ocrConfidence === null
+              ? state.tr('adminVtsScoreReviewed', 'Reviewed')
+              : state.tr('adminVtsScoreConfidence', '{confidence}% OCR', {
+                  confidence: Math.round(row.ocrConfidence * 100),
+                });
+      const breakdownRows = row.comparisons
+        .map((comparison) => {
+          const config = VTS_SCORE_COMPARISON_FIELDS.find(([field]) => field === comparison.field);
+          const label = state.tr(config?.[1] || '', config?.[2] || comparison.field);
+          const fieldGrowth =
+            comparison.growth === null
+              ? '—'
+              : `${comparison.growth > 0 ? '+' : ''}${formatNumber(state, comparison.growth)}`;
+          return `<tr>
+            <th scope="row">${escapeHtml(label)}</th>
+            <td>${comparison.baseline === null ? '—' : escapeHtml(formatNumber(state, comparison.baseline))}</td>
+            <td>${comparison.final === null ? '—' : escapeHtml(formatNumber(state, comparison.final))}</td>
+            <td data-growth="${comparison.growth === null ? 'missing' : comparison.growth >= 0 ? 'positive' : 'negative'}">${escapeHtml(fieldGrowth)}</td>
+          </tr>`;
+        })
+        .join('');
+      return `<tr data-vts-score-status="${row.submitted ? 'submitted' : row.legacyUpload ? 'incomplete' : 'missing'}">
+        <th scope="row">
+          <strong>${escapeHtml(row.gameName)}</strong>
+          <details class="boh-admin-vts-score-breakdown">
+            <summary>All power changes</summary>
+            <div class="boh-admin-table-wrap">
+              <table class="boh-admin-table">
+                <thead><tr><th>Power type</th><th>Sign-up</th><th>Final</th><th>Change</th></tr></thead>
+                <tbody>${breakdownRows}</tbody>
+              </table>
+            </div>
+          </details>
+        </th>
         <td><span class="boh-admin-chip">Tier ${row.tier}</span></td>
         <td>${escapeHtml(formatNumber(state, row.baselineTotalPower))}</td>
         <td>${row.finalTotalPower === null ? '—' : escapeHtml(formatNumber(state, row.finalTotalPower))}</td>
