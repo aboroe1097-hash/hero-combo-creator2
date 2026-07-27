@@ -29,6 +29,7 @@ const hr = Object.freeze({
   tabResearch: 'Istraživanje',
   tabOcrDashboard: 'VTS administracija',
   tabArcade: 'Arkada',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Simulator bitke',
   tabSpecializationTowers: 'Tornjevi specijalizacije',
   tabAllStarBoh: 'All-Star BoH',

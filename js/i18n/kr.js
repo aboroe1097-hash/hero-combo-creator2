@@ -356,6 +356,7 @@ const kr = {
   tabResearch: '연구',
   tabOcrDashboard: 'VTS 관리자',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: '전투 시뮬레이터',
   tabSpecializationTowers: '전문화 타워',
   tabSpecializationTowersAliases:

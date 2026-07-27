@@ -9,15 +9,16 @@ const navigationPlacements = new Map([
       tabResearch: 'primary',
       tabYouTube: 'primary',
       tabAllStarBoh: 'primary',
+      tabVtsScore: 'primary',
       tabEdenX1: 'primary',
       tabGenerator: 'more',
       tabArcade: 'more',
     },
   ],
-  [641, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
-  [1439, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
-  [1440, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary' }],
-  [1760, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary' }],
+  [641, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [1439, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [1440, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary', tabVtsScore: 'primary' }],
+  [1760, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary', tabVtsScore: 'primary' }],
 ]);
 
 async function openHome(page, path = '/#generator') {
@@ -67,7 +68,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1']);
+    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore', 'tabEdenX1']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });

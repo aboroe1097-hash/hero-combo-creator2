@@ -435,6 +435,7 @@ const tr = {
   tabResearch: 'Araştırma',
   tabOcrDashboard: 'VTS Yönetici',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Savaş Simülatörü',
   tabSpecializationTowers: 'Uzmanlık Kuleleri',
   tabSpecializationTowersAliases:

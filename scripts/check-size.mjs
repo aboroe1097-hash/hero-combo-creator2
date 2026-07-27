@@ -85,7 +85,9 @@ const LIMITS = {
   // fixed.
   // The 14.2.18 guided admin, timeline, account, and semantic control styles
   // measure 1419.6 KiB; retain roughly 10 KiB of aggregate headroom.
-  totalCssBytes: 1440 * 1024,
+  // The v14.3 VtsScore standings, deadline, progress bar, and mobile styles
+  // measure 1440.4 KiB; bump by 1 KiB to restore headroom.
+  totalCssBytes: 1441 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The

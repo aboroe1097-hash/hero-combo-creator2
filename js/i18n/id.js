@@ -435,6 +435,7 @@ const id = {
   tabResearch: 'Penelitian',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Simulator Pertempuran',
   tabSpecializationTowers: 'Menara Spesialisasi',
   tabSpecializationTowersAliases:

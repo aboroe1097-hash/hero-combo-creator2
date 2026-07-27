@@ -426,6 +426,7 @@ const zh = {
   tabResearch: '科技研究',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: '战斗模拟器',
   tabSpecializationTowers: '专精塔',
   tabSpecializationTowersAliases: '专精 塔 徽章 勋章 节点 分支 科技树 进度 骑兵 弓兵 步兵',

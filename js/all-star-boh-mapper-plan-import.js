@@ -154,7 +154,7 @@ function normalizePhase(value, playerName, index) {
     .toLocaleLowerCase('en')
     .replace(/[\u2013\u2014]/gu, '-')
     .replace(/\s+/gu, '')
-    .replace(/(?:minutes?|mins?|\u5206\u949f)$/u, '');
+    .replace(/[^\d-]+$/u, '');
   if (canonicalTime !== PHASE_TIMES[index]) {
     fail(
       'boh-mapper-plan-phase-time',
