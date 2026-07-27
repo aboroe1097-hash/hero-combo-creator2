@@ -33,6 +33,7 @@
     'tabLoyalty',
     'tabEdenX1',
     'tabAllStarBoh',
+    'tabVtsScore',
     'tabYouTube',
     'tabOcrDashboard',
   ];
@@ -42,6 +43,7 @@
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
+    'tabVtsScore',
     'tabMaterials',
   ];
   const wideDesktopPrimaryIds = [
@@ -51,7 +53,7 @@
     'tabLoyalty',
     'tabYouTube',
   ];
-  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1'];
+  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore', 'tabEdenX1'];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
     ['tabManual', 'manual'],
