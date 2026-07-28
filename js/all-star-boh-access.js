@@ -1,5 +1,7 @@
 export const ALL_STAR_BOH_UNLOCK_ENDPOINT =
   'https://us-central1-abocombo.cloudfunctions.net/unlockAllStarBoh';
+export const VTS_COMP11_UNLOCK_ENDPOINT =
+  'https://us-central1-abocombo.cloudfunctions.net/unlockVtsScore';
 export const ALL_STAR_BOH_OCR_ENDPOINT =
   'https://delicate-term-725f.aboroe1097.workers.dev/boh/stats-ocr';
 export const VTS_SCORE_ENDPOINT = 'https://us-central1-abocombo.cloudfunctions.net/vtsScore';
