@@ -1,4 +1,8 @@
-import { createAllStarBohAccessClient, AllStarBohAccessError } from './all-star-boh-access.js';
+import {
+  createAllStarBohAccessClient,
+  AllStarBohAccessError,
+  VTS_COMP11_UNLOCK_ENDPOINT,
+} from './all-star-boh-access.js';
 import {
   buildBohStatsOcrRequest,
   buildBohStatsReviewModel,
@@ -310,6 +314,7 @@ export async function bootVtsScore(options = {}) {
     getUser: () => user,
     getAppCheckToken: options.getAppCheckToken || getFirebaseAppCheckToken,
     fetch: options.fetch,
+    unlockEndpoint: VTS_COMP11_UNLOCK_ENDPOINT,
   });
 
   pinForm?.addEventListener('submit', async (event) => {
