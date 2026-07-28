@@ -146,7 +146,7 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   );
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1'\];/
+    /const mobilePrimaryIds = \['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore', 'tabEdenX1'\];/
   );
 
   for (const id of ['tabStrife', 'tabSpecialization', 'tabLoyalty', 'tabYouTube']) {
