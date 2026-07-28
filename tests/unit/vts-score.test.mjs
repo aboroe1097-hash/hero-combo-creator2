@@ -58,6 +58,7 @@ test('VtsScore ranks close signup names and emits a strict full-breakdown OCR pa
   assert.equal(resolveVtsScorePlayer(players, 'Unknown'), null);
   assert.deepEqual(rankVtsScorePlayers(players, 'malak', 2), [players[0], players[1]]);
   assert.equal(rankVtsScorePlayers(players, 'malika z', 1)[0], players[1]);
+  assert.deepEqual(rankVtsScorePlayers(players, '', 2), [players[2], players[0]]);
 
   const payload = buildVtsScoreSubmission({
     seasonId: 'competition-11',

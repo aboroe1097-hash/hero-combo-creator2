@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.3.1 - 2026-07-28
+
+- Improved VtsScore search autocomplete UX by displaying the first 8 matching players alphabetically when the search input is focused while empty.
+- Triggered instant autocomplete results rendering as soon as the search input gains focus.
+
 ## 14.3.0 - 2026-07-28
 
 - Corrected VtsScore to OCR, review, submit, and compare the complete nine-field power breakdown instead of a single Total or Dragon Power value.

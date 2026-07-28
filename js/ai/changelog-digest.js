@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.1",
+    "date": "2026-07-28",
+    "highlights": [
+      "Improved VtsScore search autocomplete UX by displaying the first 8 matching players alphabetically when the search input is focused while empty.",
+      "Triggered instant autocomplete results rendering as soon as the search input gains focus."
+    ]
+  },
   {
     "version": "14.3.0",
     "date": "2026-07-28",
@@ -97,17 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Renamed the team-planning surface to All-Star BoH Hub and added Admin exact-view mapper reconciliation into editable drafts with explicit publication.",
       "Simplified accounts to one in-game name, restored private state/referral/comments onboarding, localized the full flow across all 13 locales, and recovered Google signup when a guest selects an existing Google account.",
       "Made Dragon Master completion advance to the next unfinished targeted piece."
-    ]
-  },
-  {
-    "version": "14.2.12",
-    "date": "2026-07-26",
-    "highlights": [
-      "Added Velo Beta 0.3 saved-data consent and optional Firebase-backed user profiles.",
-      "Expanded All-Star BoH with a six-team, 12-player roster and schedule, supporting rules, and X8 name-matched formations.",
-      "Completed Italian and Korean localization across the shipped experience.",
-      "Made Battle Simulator scenarios apply Research and Specialization through a deterministic runtime, with upgraded setup/export schemas and diagnostics.",
-      "Expanded Battle Simulator coverage to 78 heroes and 208 skills using conservative modeled effects, plus provisional observed equipment effects; partial or unverified battle clauses fail closed, and Dragon Master catalog stats are never invented."
     ]
   }
 ].map((release) =>

@@ -48,8 +48,19 @@ function playerSearchScore(player, query) {
 
 export function rankVtsScorePlayers(players, queryInput, limit = 8) {
   const query = normalizeVtsScoreSearch(queryInput);
-  if (!query) return [];
-  return (Array.isArray(players) ? players : [])
+  const normalizedLimit = Math.max(1, Math.trunc(Number(limit)) || 8);
+  const eligible = Array.isArray(players) ? players : [];
+  if (!query) {
+    return eligible
+      .slice()
+      .sort((left, right) =>
+        String(left?.gameName || '').localeCompare(String(right?.gameName || ''), 'en', {
+          sensitivity: 'base',
+        })
+      )
+      .slice(0, normalizedLimit);
+  }
+  return eligible
     .map((player, index) => ({ player, index, score: playerSearchScore(player, query) }))
     .sort(
       (left, right) =>
@@ -61,7 +72,7 @@ export function rankVtsScorePlayers(players, queryInput, limit = 8) {
         ) ||
         left.index - right.index
     )
-    .slice(0, Math.max(1, Math.trunc(Number(limit)) || 8))
+    .slice(0, normalizedLimit)
     .map(({ player }) => player);
 }
 

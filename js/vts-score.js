@@ -265,7 +265,7 @@ export async function bootVtsScore(options = {}) {
     renderPlayerResults();
   });
   playerInput?.addEventListener('focus', () => {
-    if (playerInput.value.trim()) renderPlayerResults();
+    renderPlayerResults();
   });
   playerInput?.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
