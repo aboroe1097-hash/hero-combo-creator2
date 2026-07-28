@@ -37,7 +37,7 @@ test('VtsScore page is one focused, searchable, single-image OCR flow', () => {
   assert.match(page, /id="vtsScoreLanguage"/);
   assert.match(page, /id="vtsScoreThemeToggle"/);
   assert.match(page, /Submit full power breakdown/);
-  assert.match(page, /Tuesday, 28 July[\s\S]*20:00 Game Time/);
+  assert.match(page, /Wednesday, 29 July[\s\S]*20:00 Game Time/);
   assert.doesNotMatch(page, /\bmultiple\b/);
 });
 
