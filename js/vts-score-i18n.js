@@ -11,7 +11,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Choose the same game name used for the All-Star sign-up, upload one current power screenshot, review your Total Power, and submit it for comparison with your sign-up baseline.',
     deadlineLabel: 'Final deadline',
-    deadline: 'Tuesday, 28 July · 20:00 Game Time',
+    deadline: 'Wednesday, 29 July · 20:00 Game Time',
     members: 'VTS MEMBERS',
     unlockTitle: 'Unlock final score upload',
     unlockHelp: 'Use the same VTS member PIN as the All-Star sign-up hub.',
