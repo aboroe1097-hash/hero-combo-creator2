@@ -48,6 +48,26 @@ test('VtsScore light/dark and every offered language have complete UI copy', () 
   assert.deepEqual(auditVtsScoreI18n(), { ok: true, missing: [] });
 });
 
+test('VtsScore deadline day matches the page in every language', () => {
+  const page = readFileSync('vtsscore.html', 'utf8');
+  const pageDeadline = page.match(/data-vts-i18n="deadline">([^<]+)</u)?.[1] ?? '';
+  const expectedDay = pageDeadline.match(/\d{1,2}/u)?.[0] ?? '';
+  assert.ok(expectedDay, 'the page must state a deadline day');
+
+  const translations = readFileSync('js/vts-score-i18n.js', 'utf8');
+  const deadlines = [...translations.matchAll(/^\s*deadline: '([^']+)',$/gmu)].map(
+    (match) => match[1]
+  );
+  assert.equal(deadlines.length, VTS_SCORE_LANGUAGES.length);
+  for (const deadline of deadlines) {
+    assert.equal(
+      deadline.match(/\d{1,2}/u)?.[0],
+      expectedDay,
+      `translated deadline "${deadline}" must use day ${expectedDay}`
+    );
+  }
+});
+
 test('VtsScore ranks close signup names and emits a strict full-breakdown OCR payload', () => {
   const players = [
     { submissionUid: 'uid-a', gameName: 'MalakAbo' },

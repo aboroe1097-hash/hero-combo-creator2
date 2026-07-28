@@ -45,7 +45,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'اختر اسم اللعبة نفسه المستخدم في تسجيل All-Star، وارفع صورة حديثة للقوة، وراجع إجمالي القوة ثم أرسله لمقارنته بقيمة التسجيل.',
     deadlineLabel: 'الموعد النهائي',
-    deadline: 'الثلاثاء، 28 يوليو · 20:00 بتوقيت اللعبة',
+    deadline: 'الأربعاء، 29 يوليو · 20:00 بتوقيت اللعبة',
     members: 'أعضاء VTS',
     unlockTitle: 'فتح رفع النتيجة النهائية',
     unlockHelp: 'استخدم رمز PIN نفسه الخاص بأعضاء VTS في مركز تسجيل All-Star.',
@@ -78,7 +78,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Elige el mismo nombre usado en la inscripción All-Star, sube una captura actual, revisa tu Poder Total y envíalo para compararlo con tu valor inicial.',
     deadlineLabel: 'Fecha límite',
-    deadline: 'Martes, 28 de julio · 20:00 hora del juego',
+    deadline: 'Miércoles, 29 de julio · 20:00 hora del juego',
     members: 'MIEMBROS VTS',
     unlockTitle: 'Desbloquear la carga final',
     unlockHelp: 'Usa el mismo PIN de miembro VTS del registro All-Star.',
@@ -111,7 +111,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Escolha o mesmo nome da inscrição All-Star, envie uma captura atual, revise seu Poder Total e confirme para comparar com o valor inicial.',
     deadlineLabel: 'Prazo final',
-    deadline: 'Terça-feira, 28 de julho · 20:00 no jogo',
+    deadline: 'Quarta-feira, 29 de julho · 20:00 no jogo',
     members: 'MEMBROS VTS',
     unlockTitle: 'Desbloquear envio final',
     unlockHelp: 'Use o mesmo PIN de membro VTS da inscrição All-Star.',
@@ -145,7 +145,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Choisissez le nom utilisé lors de l’inscription All-Star, ajoutez une capture actuelle, vérifiez votre Puissance totale et envoyez-la pour comparaison.',
     deadlineLabel: 'Date limite',
-    deadline: 'Mardi 28 juillet · 20:00 heure du jeu',
+    deadline: 'Mercredi 29 juillet · 20:00 heure du jeu',
     members: 'MEMBRES VTS',
     unlockTitle: 'Déverrouiller l’envoi final',
     unlockHelp: 'Utilisez le même code PIN VTS que pour l’inscription All-Star.',
@@ -179,7 +179,7 @@ const BASE_COPY = Object.freeze({
     intro:
       'Wähle denselben Namen wie bei der All-Star-Anmeldung, lade einen aktuellen Screenshot hoch, prüfe deine Gesamtstärke und sende sie zum Vergleich.',
     deadlineLabel: 'Letzte Frist',
-    deadline: 'Dienstag, 28. Juli · 20:00 Spielzeit',
+    deadline: 'Mittwoch, 29. Juli · 20:00 Spielzeit',
     members: 'VTS-MITGLIEDER',
     unlockTitle: 'Finalen Upload freischalten',
     unlockHelp: 'Nutze dieselbe VTS-Mitglieder-PIN wie bei der All-Star-Anmeldung.',
