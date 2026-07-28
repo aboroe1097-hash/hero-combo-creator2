@@ -6682,9 +6682,24 @@ function renderVtsScores(state) {
   </section>`;
 }
 
-function renderBestVtsScoreGrowth(rows, state) {
-  const submitted = rows.filter((r) => r.submitted);
-  if (!submitted.length) return '';
+function renderBestGrowthCard(submitted, title, hint, state) {
+  if (!submitted.length) {
+    return `<section class="boh-admin-card">
+      <div class="boh-admin-card-heading">
+        <div>
+          <h4>${escapeHtml(title)}</h4>
+          <p>${escapeHtml(hint)}</p>
+        </div>
+      </div>
+      <div class="boh-admin-table-wrap">
+        <table class="boh-admin-table boh-admin-vts-score-table">
+          <tbody>
+            <tr><td colspan="3">${escapeHtml(state.tr('adminVtsScoreNoResults', 'No submitted entries match this tier.'))}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>`;
+  }
   const best = VTS_SCORE_COMPARISON_FIELDS.map(([field, i18nKey, label]) => {
     let bestRow = null;
     let bestGrowth = Number.NEGATIVE_INFINITY;
@@ -6716,13 +6731,8 @@ function renderBestVtsScoreGrowth(rows, state) {
   return `<section class="boh-admin-card">
     <div class="boh-admin-card-heading">
       <div>
-        <h4>${escapeHtml(state.tr('adminVtsScoreBestTitle', 'Best growth per category'))}</h4>
-        <p>${escapeHtml(
-          state.tr(
-            'adminVtsScoreBestHint',
-            'The player with the highest growth in each power category among submitted full-breakdown entries.'
-          )
-        )}</p>
+        <h4>${escapeHtml(title)}</h4>
+        <p>${escapeHtml(hint)}</p>
       </div>
     </div>
     <div class="boh-admin-table-wrap">
@@ -6736,6 +6746,46 @@ function renderBestVtsScoreGrowth(rows, state) {
       </table>
     </div>
   </section>`;
+}
+
+function renderBestVtsScoreGrowth(rows, state) {
+  const submitted = rows.filter((r) => r.submitted);
+  if (!submitted.length) return '';
+
+  const tier1 = submitted.filter((r) => r.tier === 1);
+  const tier2 = submitted.filter((r) => r.tier === 2);
+
+  const cardAll = renderBestGrowthCard(
+    submitted,
+    state.tr('adminVtsScoreBestTitle', 'Best growth per category (All)'),
+    state.tr(
+      'adminVtsScoreBestHint',
+      'The player with the highest growth in each power category among submitted full-breakdown entries.'
+    ),
+    state
+  );
+
+  const cardTier1 = renderBestGrowthCard(
+    tier1,
+    state.tr('adminVtsScoreBestTier1Title', 'Best growth per category (Tier 1)'),
+    state.tr(
+      'adminVtsScoreBestTier1Hint',
+      'The player with the highest growth in each power category among submitted Tier 1 entries.'
+    ),
+    state
+  );
+
+  const cardTier2 = renderBestGrowthCard(
+    tier2,
+    state.tr('adminVtsScoreBestTier2Title', 'Best growth per category (Tier 2)'),
+    state.tr(
+      'adminVtsScoreBestTier2Hint',
+      'The player with the highest growth in each power category among submitted Tier 2 entries.'
+    ),
+    state
+  );
+
+  return `<div class="boh-admin-best-growth-grid">${cardAll}${cardTier1}${cardTier2}</div>`;
 }
 
 function renderCurrentStage(state) {
