@@ -6,7 +6,7 @@ import {
   getSingleBohStatsScreenshot,
   prepareBohStatsScreenshot,
 } from './all-star-boh-ocr.js';
-import { ensureAnonymousAuth, getCurrentUser, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
+import { ensureAnonymousAuth, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
 import {
   buildVtsScoreSubmission,
@@ -67,16 +67,43 @@ function friendlyError(error) {
     already_submitted:
       'A final score is already saved for this player. Contact leadership if it needs correction.',
     app_check_required: 'Secure app verification is not ready. Refresh and try again.',
+    auth_required: 'Secure sign-in is required. Refresh the page and try again.',
+    boh_ocr_not_configured: 'The OCR service is not configured. Contact leadership.',
     invalid_app_check: 'Secure app verification failed. Refresh and try again.',
     invalid_auth: 'Secure sign-in expired. Refresh and try again.',
+    invalid_json: 'The secure service rejected the request format. Refresh and try again.',
+    invalid_request: 'The secure service rejected the request. Refresh and try again.',
+    method_not_allowed: 'The secure service rejected the request method. Refresh and try again.',
+    origin_denied:
+      'This address is not allowed to use the secure service. Open the official site and try again.',
+    rate_limited: 'Too many attempts. Wait a few minutes and try again.',
+    request_too_large:
+      'The screenshot is too large for the secure service. Try a smaller or cropped image.',
+    service_unavailable:
+      'The secure service is temporarily unavailable. Try again in a few minutes.',
     signup_changed: 'That signup name changed. Refresh the player list and select it again.',
     signup_not_found: 'That signup is no longer eligible.',
+    signups_closed: 'Signups are closed for this competition.',
+    temporarily_locked: 'This account is temporarily locked. Wait a few minutes and try again.',
+    unsupported_media_type: 'That image type is not supported. Use PNG, JPEG, or WebP.',
   };
-  return (
-    messages[error?.code] ||
+  const code = typeof error?.code === 'string' ? error.code : '';
+  let message =
+    (code && messages[code]) ||
     error?.message ||
-    'VtsScore could not complete that request. Please try again.'
-  );
+    'VtsScore could not complete that request. Please try again.';
+  if (
+    code === 'rate_limited' &&
+    Number.isInteger(error?.retryAfterSeconds) &&
+    error.retryAfterSeconds > 0
+  ) {
+    const minutes = Math.max(1, Math.ceil(error.retryAfterSeconds / 60));
+    message = `Too many attempts. Wait about ${minutes} ${
+      minutes === 1 ? 'minute' : 'minutes'
+    } and try again.`;
+  }
+  // Members report screenshots of this banner; the machine code identifies the exact failure.
+  return code ? `${message} (${code})` : message;
 }
 
 function applyTheme(themeInput) {
@@ -332,13 +359,10 @@ export async function bootVtsScore(options = {}) {
 
   const initialized = await (options.initFirebase || initFirebase)();
   if (!initialized?.configured) throw new Error('Firebase is not configured.');
-  const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
-  if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
+  const user = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
+  if (!user?.uid) throw new Error('Secure member sign-in is unavailable.');
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
-    getUser: async () => {
-      const currentUser = getCurrentUser() || await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
-      return currentUser;
-    },
+    getUser: () => user,
     getAppCheckToken: options.getAppCheckToken || getFirebaseAppCheckToken,
     fetch: options.fetch,
   });

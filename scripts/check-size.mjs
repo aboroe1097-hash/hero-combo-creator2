@@ -128,7 +128,9 @@ const LIMITS = {
   // unchanged.
   // The complete 14.2.18 artifact measures 27,824.1 KiB; retain roughly
   // 16 KiB while route, media, and file-count caps remain unchanged.
-  totalDeployBytes: 27900 * 1024,
+  // The 14.3.1 VtsScore error-diagnostics artifact measures 27,904.0 KiB;
+  // retain roughly 16 KiB while route, media, and file-count caps stay fixed.
+  totalDeployBytes: 27920 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,

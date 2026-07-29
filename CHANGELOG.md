@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.3.1 - 2026-07-29
+
+- Replaced the generic VtsScore failure banner with specific messages for every secure-service outcome: rate limits (with the wait time), oversized screenshots, service outages, unsupported image types, locked accounts, closed signups, and rejected requests.
+- Appended the machine-readable error code to VtsScore failure banners so member screenshots identify the exact failure for support.
+- Restored the stable captured sign-in reference for the All-Star secure client on the VtsScore and BoH pages.
+
 ## 14.3.0 - 2026-07-28
 
 - Corrected VtsScore to OCR, review, submit, and compare the complete nine-field power breakdown instead of a single Total or Dragon Power value.
