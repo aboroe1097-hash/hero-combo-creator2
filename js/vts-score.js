@@ -36,12 +36,28 @@ function setHidden(target, hidden) {
   target.hidden = Boolean(hidden);
 }
 
+/**
+ * The status banner sits above the workspace, so on a phone it is hundreds of
+ * pixels off-screen while the member is looking at the Read or Submit button.
+ * Without this, a failed upload looks like nothing happened at all.
+ */
+function revealElement(target) {
+  if (!target || target.hidden || typeof target.getBoundingClientRect !== 'function') return;
+  const rect = target.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  if (rect.top >= 0 && rect.bottom <= viewportHeight) return;
+  // Instant, not smooth: a smooth scroll can be dropped or interrupted, and an
+  // error the member is waiting on must never depend on an animation landing.
+  target.scrollIntoView({ block: 'center' });
+}
+
 function setStatus(message, tone = 'neutral') {
   const status = element('vtsScoreStatus');
   if (!status) return;
   status.textContent = message || '';
   status.dataset.tone = tone;
   status.hidden = !message;
+  if (message && (tone === 'error' || tone === 'warning')) revealElement(status);
 }
 
 function friendlyError(error) {
@@ -102,6 +118,7 @@ function setProgress(busy) {
   if (!progress) return;
   progress.hidden = !busy;
   if (status) status.hidden = busy || !status.textContent;
+  if (busy) revealElement(progress);
 }
 
 function setBusy(button, busy, busyText) {
