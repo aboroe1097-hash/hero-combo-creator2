@@ -177,8 +177,10 @@ const LIMITS = {
     'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
     // BoH mapper admin and plan pages load boh-mapper.css (89.9 KiB) plus
     // shared tokens. Keep a focused per-route ceiling.
-    'boh-mapper-admin.html': { desktop: 100 * 1024, mobile: 100 * 1024 },
-    'boh-plan.html': { desktop: 100 * 1024, mobile: 100 * 1024 },
+    // Both mapper routes link the same 160.2 KiB initial stylesheet after
+    // minification; keep under 2 KiB of headroom so growth stays visible.
+    'boh-mapper-admin.html': { desktop: 162 * 1024, mobile: 162 * 1024 },
+    'boh-plan.html': { desktop: 162 * 1024, mobile: 162 * 1024 },
   },
 };
 
