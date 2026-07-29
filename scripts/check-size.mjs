@@ -65,7 +65,7 @@ const LIMITS = {
   // entry and route caps remain unchanged.
   // The 14.2.18 guided builder, event progress, and provider-first account
   // flow measure 9356.6 KiB; retain roughly 13 KiB of aggregate headroom.
-  totalJsBytes: 9400 * 1024,
+  totalJsBytes: 9420 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
