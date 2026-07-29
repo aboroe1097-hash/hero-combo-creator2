@@ -128,8 +128,12 @@ const LIMITS = {
   // unchanged.
   // The complete 14.2.18 artifact measures 27,824.1 KiB; retain roughly
   // 16 KiB while route, media, and file-count caps remain unchanged.
-  totalDeployBytes: 27900 * 1024,
-  totalMediaBytes: 16 * 1024 * 1024,
+  // The BoH mapper integration adds 6.2 MB for the team planner pages,
+  // battlefield map images, and supporting assets. Bump to 34,100 KiB.
+  totalDeployBytes: 34100 * 1024,
+  // The BoH mapper adds 10 image files (6 team icons, 2 plan icons, 2 map PNGs)
+  // totaling 5.2 MB. Bump media budget from 16 MB to 22 MB.
+  totalMediaBytes: 22 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -137,7 +141,8 @@ const LIMITS = {
   // 585 files; retain a one-file guard.
   // The audited locale/profile/battle artifact emits 601 files. Keep three
   // files of headroom so unexpected chunk proliferation remains visible.
-  deployFileCount: 610,
+  // The BoH mapper adds 15 files (2 HTML, 2 JS, 1 CSS, 10 images). Bump to 630.
+  deployFileCount: 630,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -160,6 +165,10 @@ const LIMITS = {
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
     'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
+    // BoH mapper admin and plan pages load boh-mapper.css (89.9 KiB) plus
+    // shared tokens. Keep a focused per-route ceiling.
+    'boh-mapper-admin.html': { desktop: 100 * 1024, mobile: 100 * 1024 },
+    'boh-plan.html': { desktop: 100 * 1024, mobile: 100 * 1024 },
   },
 };
 
