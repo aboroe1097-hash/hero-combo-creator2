@@ -2324,18 +2324,6 @@ return locale.slice(0, 8);
         return rows.filter((row) => row.roleKey === roleKey).map((row) => row.player.name).join(", ");
       }
 
-      function titleBadgeSummary(team, locale) {
-        const labels = rolePlanSummaryCopy(locale);
-        const wanted = ["kills", "tower", "escort", "gathering"];
-        return wanted.map((roleKey) => {
-          const assigned = team.players.filter((player) => player.titleRole === roleKey).map((player) => player.name).join(", ");
-          return {
-            label: titleRoles[roleKey]?.label || roleKey,
-            value: assigned || labels.available,
-          };
-        });
-      }
-
       function stage1Assignment(position, phase) {
         const row = phase.rows[position];
         if (row) return row;
@@ -3002,10 +2990,14 @@ return locale.slice(0, 8);
         const totalPlayers = tier2.reduce((sum, team) => sum + team.players.length, 0);
         const minimum = Math.floor(totalPlayers / tier2.length);
         const maximum = Math.ceil(totalPlayers / tier2.length);
-        while (true) {
+        let rebalanceComplete = false;
+        while (!rebalanceComplete) {
           const donor = tier2.slice().sort((a, b) => b.players.length - a.players.length || a.id.localeCompare(b.id))[0];
           const recipient = tier2.slice().sort((a, b) => a.players.length - b.players.length || a.id.localeCompare(b.id))[0];
-          if (!donor || !recipient || donor.players.length <= maximum || recipient.players.length >= minimum) break;
+          if (!donor || !recipient || donor.players.length <= maximum || recipient.players.length >= minimum) {
+            rebalanceComplete = true;
+            break;
+          }
           const candidateIndex = donor.players.findIndex((player) => !isAllocationProtected(player, donor.id));
           if (candidateIndex === -1) {
             conflicts.push(`Tier2 size balance blocked: ${donor.name} has ${donor.players.length} players and no unlocked player can move to ${recipient.name}.`);
