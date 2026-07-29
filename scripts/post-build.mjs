@@ -71,6 +71,8 @@ const copyFiles = [
   'js/loader-v14.js',
   'js/shell-v14.js',
   'js/standalone-language-v14.js',
+  'js/boh-mapper/mapper-core.js',
+  'css/boh-mapper.css',
 ];
 const copyDest = {
   'public/404.html': '404.html',
@@ -85,6 +87,8 @@ const copyDest = {
   'js/loader-v14.js': 'js/loader-v14.js',
   'js/shell-v14.js': 'js/shell-v14.js',
   'js/standalone-language-v14.js': 'js/standalone-language-v14.js',
+  'js/boh-mapper/mapper-core.js': 'js/boh-mapper/mapper-core.js',
+  'css/boh-mapper.css': 'css/boh-mapper.css',
 };
 
 function copyRecursive(src, dest) {

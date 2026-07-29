@@ -43,6 +43,8 @@ export default defineConfig({
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
         'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
+        'boh-mapper-admin': resolve(__dirname, 'boh-mapper-admin.html'),
+        'boh-plan': resolve(__dirname, 'boh-plan.html'),
       },
       output: {
         onlyExplicitManualChunks: true,

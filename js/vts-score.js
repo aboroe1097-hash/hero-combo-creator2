@@ -6,7 +6,7 @@ import {
   getSingleBohStatsScreenshot,
   prepareBohStatsScreenshot,
 } from './all-star-boh-ocr.js';
-import { ensureAnonymousAuth, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
+import { ensureAnonymousAuth, getCurrentUser, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
 import {
   buildVtsScoreSubmission,
@@ -359,10 +359,13 @@ export async function bootVtsScore(options = {}) {
 
   const initialized = await (options.initFirebase || initFirebase)();
   if (!initialized?.configured) throw new Error('Firebase is not configured.');
-  const user = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
-  if (!user?.uid) throw new Error('Secure member sign-in is unavailable.');
+  const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
+  if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
-    getUser: () => user,
+    getUser: async () => {
+      const currentUser = getCurrentUser() || await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
+      return currentUser;
+    },
     getAppCheckToken: options.getAppCheckToken || getFirebaseAppCheckToken,
     fetch: options.fetch,
   });

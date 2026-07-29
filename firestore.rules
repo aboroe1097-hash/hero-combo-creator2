@@ -716,6 +716,18 @@ service cloud.firestore {
       && request.resource.data.grantDurationMinutes <= 10080;
     }
 
+    function validBohMapperPublish(season) {
+      return request.resource.data.keys().hasOnly(['schemaVersion', 'publishedAt', 'publishedBy', 'seasonId', 'state'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'publishedAt', 'publishedBy', 'seasonId', 'state'])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.schemaVersion >= 1
+        && request.resource.data.publishedAt == request.time
+        && request.resource.data.publishedBy == request.auth.uid
+        && request.resource.data.seasonId == season
+        && request.resource.data.state is string
+        && request.resource.data.state.size() <= 900000;
+    }
+
     function canReadOwnActiveAllStarBohGrant(uid) {
       return isOwner(uid)
         && resource.data.keys().hasOnly([
@@ -2213,6 +2225,13 @@ service cloud.firestore {
 
     match /boh_allstar/{season} {
       allow read, write: if isAdmin();
+
+      match /mapper/current {
+        allow get: if hasActiveAllStarBohGrant(season);
+        allow list: if false;
+        allow create, update: if isAdmin() && validBohMapperPublish(season);
+        allow delete: if isAdmin();
+      }
 
       match /submissions/{uid} {
         allow get: if isAdmin() || (isOwner(uid) && hasActiveAllStarBohGrant(season));
