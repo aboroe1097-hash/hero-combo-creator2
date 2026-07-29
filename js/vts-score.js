@@ -6,7 +6,7 @@ import {
   getSingleBohStatsScreenshot,
   prepareBohStatsScreenshot,
 } from './all-star-boh-ocr.js';
-import { ensureAnonymousAuth, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
+import { ensureAnonymousAuth, getCurrentUser, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
 import {
   buildVtsScoreSubmission,
@@ -332,10 +332,13 @@ export async function bootVtsScore(options = {}) {
 
   const initialized = await (options.initFirebase || initFirebase)();
   if (!initialized?.configured) throw new Error('Firebase is not configured.');
-  let user = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
-  if (!user?.uid) throw new Error('Secure member sign-in is unavailable.');
+  const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
+  if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
-    getUser: () => user,
+    getUser: async () => {
+      const currentUser = getCurrentUser() || await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
+      return currentUser;
+    },
     getAppCheckToken: options.getAppCheckToken || getFirebaseAppCheckToken,
     fetch: options.fetch,
   });
@@ -396,7 +399,16 @@ export async function bootVtsScore(options = {}) {
     } catch (error) {
       state.review = null;
       clearPowerFields();
-      setStatus(friendlyError(error), 'error');
+      if (
+        error instanceof AllStarBohAccessError &&
+        (error.code === 'access_expired' || error.code === 'access_denied')
+      ) {
+        setHidden(scorePanel, true);
+        setHidden(pinPanel, false);
+        setStatus('Enter the VTS member PIN to continue.', 'error');
+      } else {
+        setStatus(friendlyError(error), 'error');
+      }
     } finally {
       setProgress(false);
       setBusy(readButton, false);
@@ -431,7 +443,10 @@ export async function bootVtsScore(options = {}) {
       setStatus('Full power breakdown submitted successfully.', 'success');
       element('vtsScoreSuccess')?.focus();
     } catch (error) {
-      if (error instanceof AllStarBohAccessError && error.code === 'access_expired') {
+      if (
+        error instanceof AllStarBohAccessError &&
+        (error.code === 'access_expired' || error.code === 'access_denied')
+      ) {
         setHidden(scorePanel, true);
         setHidden(pinPanel, false);
       }
