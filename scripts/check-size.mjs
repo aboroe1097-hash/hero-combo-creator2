@@ -87,7 +87,10 @@ const LIMITS = {
   // measure 1419.6 KiB; retain roughly 10 KiB of aggregate headroom.
   // The v14.3 VtsScore standings, deadline, progress bar, and mobile styles
   // measure 1440.4 KiB; bump by 1 KiB to restore headroom.
-  totalCssBytes: 1441 * 1024,
+  // The route-isolated BoH mapper stylesheet adds 90 KiB, bringing the audited
+  // aggregate to 1530.6 KiB. It loads only on the mapper pages, so every
+  // initial-route CSS cap below stays unchanged.
+  totalCssBytes: 1532 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -130,8 +133,16 @@ const LIMITS = {
   // 16 KiB while route, media, and file-count caps remain unchanged.
   // The 14.3.1 VtsScore error-diagnostics artifact measures 27,904.0 KiB;
   // retain roughly 16 KiB while route, media, and file-count caps stay fixed.
-  totalDeployBytes: 27920 * 1024,
-  totalMediaBytes: 16 * 1024 * 1024,
+  // The BoH mapper route adds the member-gated planner, two map plates, and six
+  // team crests, bringing the artifact to 30,020.7 KiB. The crests were shipped
+  // at 512x512 (one at 1254x1254) but render at 22-52 px, so they were resized
+  // to 160 px and every plate re-encoded losslessly: 5516 KiB of source media
+  // became 1466 KiB. Retain roughly 19 KiB of headroom.
+  totalDeployBytes: 30040 * 1024,
+  // Raised from 16 MiB for the two mapper map plates, which keep their pixel
+  // dimensions because stage1-labeled.png carries fine label text that
+  // quantisation would smudge. Audited at 17,566.1 KiB.
+  totalMediaBytes: 17580 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -139,7 +150,9 @@ const LIMITS = {
   // 585 files; retain a one-file guard.
   // The audited locale/profile/battle artifact emits 601 files. Keep three
   // files of headroom so unexpected chunk proliferation remains visible.
-  deployFileCount: 610,
+  // The BoH mapper route adds two entry pages, its stylesheet and core chunk,
+  // and ten assets, emitting 625 files. Keep three files of headroom.
+  deployFileCount: 628,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
