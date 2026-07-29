@@ -681,7 +681,8 @@ export async function bootAllStarBohTab(options = {}) {
         if (!accessClient) {
           accessClient = (options.createAccessClient || createAllStarBohAccessClient)({
             getUser: async () => {
-              const currentUser = firebase.getCurrentUser?.() || await firebase.ensureAnonymousAuth?.();
+              const currentUser =
+                firebase.getCurrentUser?.() || (await firebase.ensureAnonymousAuth?.());
               return currentUser;
             },
             getAppCheckToken: (forceRefresh) =>
