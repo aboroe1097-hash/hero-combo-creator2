@@ -21,6 +21,7 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Search all signed-up players, then choose your exact name.',
     gameNamePlaceholder: 'Start typing your game name',
     searchHint: 'Type part of the name; the closest sign-up matches will appear.',
+    noMatch: 'No sign-up found with that name. Check the spelling, or contact leadership.',
     screenshot: 'Current power screenshot',
     screenshotHelp:
       'Upload one clear account power-breakdown image. PNG, JPEG, or WebP; max 10 MB.',
@@ -55,6 +56,7 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'ابحث في جميع اللاعبين المسجلين ثم اختر اسمك الصحيح.',
     gameNamePlaceholder: 'ابدأ بكتابة اسمك في اللعبة',
     searchHint: 'اكتب جزءًا من الاسم وستظهر أقرب نتائج التسجيل.',
+    noMatch: 'لا يوجد تسجيل بهذا الاسم. تحقق من الإملاء أو تواصل مع القيادة.',
     screenshot: 'صورة القوة الحالية',
     screenshotHelp: 'ارفع صورة واضحة لتفاصيل قوة الحساب. PNG أو JPEG أو WebP؛ بحد أقصى 10 MB.',
     consent:
@@ -88,6 +90,8 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Busca entre todos los inscritos y elige tu nombre exacto.',
     gameNamePlaceholder: 'Empieza a escribir tu nombre',
     searchHint: 'Escribe parte del nombre para ver las coincidencias más cercanas.',
+    noMatch:
+      'No hay ninguna inscripción con ese nombre. Revisa la ortografía o contacta con el liderazgo.',
     screenshot: 'Captura de poder actual',
     screenshotHelp: 'Sube una imagen clara del desglose de poder. PNG, JPEG o WebP; máximo 10 MB.',
     consent:
@@ -121,6 +125,8 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Pesquise todos os inscritos e escolha seu nome exato.',
     gameNamePlaceholder: 'Comece a digitar seu nome',
     searchHint: 'Digite parte do nome para ver as correspondências mais próximas.',
+    noMatch:
+      'Nenhuma inscrição encontrada com esse nome. Verifique a grafia ou fale com a liderança.',
     screenshot: 'Captura do poder atual',
     screenshotHelp:
       'Envie uma imagem clara do detalhamento de poder. PNG, JPEG ou WebP; até 10 MB.',
@@ -155,6 +161,8 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Recherchez tous les inscrits, puis choisissez votre nom exact.',
     gameNamePlaceholder: 'Commencez à saisir votre nom',
     searchHint: 'Saisissez une partie du nom pour afficher les correspondances les plus proches.',
+    noMatch:
+      'Aucune inscription trouvée à ce nom. Vérifiez l’orthographe ou contactez la direction.',
     screenshot: 'Capture de puissance actuelle',
     screenshotHelp:
       'Ajoutez une image nette du détail de puissance. PNG, JPEG ou WebP ; 10 Mo max.',
@@ -189,6 +197,8 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Durchsuche alle Anmeldungen und wähle deinen exakten Namen.',
     gameNamePlaceholder: 'Beginne deinen Namen einzugeben',
     searchHint: 'Gib einen Teil des Namens ein, um die ähnlichsten Treffer zu sehen.',
+    noMatch:
+      'Keine Anmeldung mit diesem Namen gefunden. Prüfe die Schreibweise oder wende dich an die Leitung.',
     screenshot: 'Aktueller Stärke-Screenshot',
     screenshotHelp:
       'Lade ein klares Bild der Stärkeübersicht hoch. PNG, JPEG oder WebP; max. 10 MB.',

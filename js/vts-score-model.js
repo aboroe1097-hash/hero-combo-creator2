@@ -35,6 +35,16 @@ function editDistance(left, right) {
   return previous[right.length];
 }
 
+/** Typo tolerance only; a name sharing nothing with the query must never be offered. */
+const FUZZY_MIN_SHARED_PREFIX = 3;
+
+function sharedPrefixLength(left, right) {
+  const limit = Math.min(left.length, right.length);
+  let index = 0;
+  while (index < limit && left[index] === right[index]) index += 1;
+  return index;
+}
+
 function playerSearchScore(player, query) {
   const name = normalizeVtsScoreSearch(player?.gameName);
   if (!name || !query) return 0;
@@ -43,7 +53,11 @@ function playerSearchScore(player, query) {
   const substringIndex = name.indexOf(query);
   if (substringIndex >= 0) return 6_000 - substringIndex * 10 - name.length;
   const distance = editDistance(name, query);
-  return 3_000 - distance * 100 - Math.abs(name.length - query.length);
+  const allowedDistance = Math.max(1, Math.floor(query.length / 2));
+  if (distance > allowedDistance && sharedPrefixLength(name, query) < FUZZY_MIN_SHARED_PREFIX) {
+    return 0;
+  }
+  return Math.max(1, 3_000 - distance * 100 - Math.abs(name.length - query.length));
 }
 
 export function rankVtsScorePlayers(players, queryInput, limit = 8) {
@@ -51,6 +65,7 @@ export function rankVtsScorePlayers(players, queryInput, limit = 8) {
   if (!query) return [];
   return (Array.isArray(players) ? players : [])
     .map((player, index) => ({ player, index, score: playerSearchScore(player, query) }))
+    .filter(({ score }) => score > 0)
     .sort(
       (left, right) =>
         right.score - left.score ||

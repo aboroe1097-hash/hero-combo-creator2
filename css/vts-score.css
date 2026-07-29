@@ -364,6 +364,14 @@ input:disabled {
   font-size: 0.82rem;
 }
 
+.vts-score-field-hint[data-tone='warning'] {
+  color: #fde68a !important;
+}
+
+:root[data-theme='light'] .vts-score-field-hint[data-tone='warning'] {
+  color: #8a4900 !important;
+}
+
 .vts-score-step {
   display: grid;
   grid-template-columns: 42px 1fr;
@@ -538,8 +546,12 @@ footer a {
 }
 
 @keyframes vtsProgressSlide {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @media (max-width: 560px) {
