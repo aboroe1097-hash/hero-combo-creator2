@@ -78,6 +78,13 @@ test('VtsScore ranks close signup names and emits a strict full-breakdown OCR pa
   assert.equal(resolveVtsScorePlayer(players, 'Unknown'), null);
   assert.deepEqual(rankVtsScorePlayers(players, 'malak', 2), [players[0], players[1]]);
   assert.equal(rankVtsScorePlayers(players, 'malika z', 1)[0], players[1]);
+  assert.equal(rankVtsScorePlayers(players, 'malkabo', 1)[0], players[0], 'tolerates a typo');
+  assert.deepEqual(
+    rankVtsScorePlayers(players, 'Jasper', 8),
+    [],
+    'a name nobody signed up with must never suggest unrelated players'
+  );
+  assert.deepEqual(rankVtsScorePlayers(players, 'zzzzzz', 8), []);
 
   const payload = buildVtsScoreSubmission({
     seasonId: 'competition-11',

@@ -215,6 +215,7 @@ export async function bootVtsScore(options = {}) {
     setHidden(playerResults, true);
     playerInput?.setAttribute('aria-expanded', 'false');
     playerInput?.removeAttribute('aria-activedescendant');
+    setSearchHint(false);
   }
 
   function choosePlayer(player) {
@@ -239,6 +240,15 @@ export async function bootVtsScore(options = {}) {
     });
   }
 
+  function setSearchHint(noMatch) {
+    const hint = element('vtsScorePlayerHint');
+    if (!hint) return;
+    const key = noMatch ? 'noMatch' : 'searchHint';
+    hint.dataset.vtsI18n = key;
+    hint.textContent = i18n.text(key);
+    hint.dataset.tone = noMatch ? 'warning' : 'neutral';
+  }
+
   function renderPlayerResults() {
     state.visiblePlayers = rankVtsScorePlayers(state.players, playerInput.value, 8);
     state.highlightedPlayerIndex = -1;
@@ -258,6 +268,7 @@ export async function bootVtsScore(options = {}) {
     const open = state.visiblePlayers.length > 0;
     setHidden(playerResults, !open);
     playerInput.setAttribute('aria-expanded', String(open));
+    setSearchHint(!open && Boolean(playerInput.value.trim()));
   }
 
   playerInput?.addEventListener('input', () => {
