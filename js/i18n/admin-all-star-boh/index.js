@@ -22,6 +22,7 @@ export const ADMIN_ALL_STAR_BOH_EN = Object.freeze({
   adminBohCalculated: 'Calculated',
   adminBohCancel: 'Cancel',
   adminBohCancelMove: 'Cancel move',
+  adminBohOpenFullMapper: 'Open full battlefield mapper',
   adminBohCapacity: 'Capacity',
   adminBohCapacityCount: '{count} / 12 seats',
   adminBohCaptureManual: 'Manual',

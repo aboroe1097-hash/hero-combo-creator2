@@ -281,6 +281,19 @@
   font-size: clamp(1.15rem, 2vw, 1.55rem);
 }
 
+.boh-admin-stage-header-actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.boh-admin-stage-header-actions a.boh-admin-button {
+  text-decoration: none;
+}
+
 .boh-admin-stage-actions,
 .boh-admin-form-actions {
   align-items: center;

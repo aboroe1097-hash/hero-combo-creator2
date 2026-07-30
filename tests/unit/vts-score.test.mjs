@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { buildAdminVtsScoreRows } from '../../js/admin-all-star-boh.js';
+import {
+  buildAdminVtsScoreRows,
+  buildVtsScoreTierSummary,
+  VTS_SCORE_TIERS,
+} from '../../js/admin-all-star-boh.js';
 import { auditVtsScoreI18n, VTS_SCORE_LANGUAGES } from '../../js/vts-score-i18n.js';
 import {
   getAllStarBohRaceScorePath,
@@ -186,4 +190,71 @@ test('admin and Firestore expose a dedicated, admin-only VtsScore surface', () =
     rules,
     /match \/raceScores\/\{submissionUid\}\s*\{[\s\S]*allow read, write: if isAdmin\(\);/
   );
+});
+
+test('VtsScore tier summary ranks raw growth and percentage growth separately', () => {
+  const power = (total, dragon) => ({
+    totalCastlePower: total,
+    troopPower: 0,
+    buildingPower: 0,
+    technologyPower: 0,
+    heroCombatPower: 0,
+    dragonPower: dragon,
+    unitSpecialtyPower: 0,
+    artifactPower: 0,
+    royalTechPower: null,
+  });
+  const submissions = [
+    {
+      submissionUid: 'small',
+      gameName: 'Small',
+      status: 'submitted',
+      stats: power(1000, 8_000_000),
+    },
+    { submissionUid: 'big', gameName: 'Big', status: 'submitted', stats: power(10_000, 9_000_000) },
+    { submissionUid: 'low', gameName: 'Low', status: 'submitted', stats: power(500, 1_000_000) },
+  ];
+  const raceScores = [
+    { submissionUid: 'small', schemaVersion: 2, powerValues: power(2000, 8_000_000) },
+    { submissionUid: 'big', schemaVersion: 2, powerValues: power(12_000, 9_000_000) },
+  ];
+  const rows = buildAdminVtsScoreRows(submissions, raceScores);
+  assert.deepEqual(VTS_SCORE_TIERS, [1, 2]);
+
+  const tierOne = buildVtsScoreTierSummary(rows, 1);
+  assert.equal(tierOne.players, 2);
+  assert.equal(tierOne.submitted, 2);
+  const total = tierOne.categories.find(({ field }) => field === 'totalCastlePower');
+  // Big gains more raw power, Small grows by a larger share - both must surface.
+  assert.equal(total.growthPlayer, 'Big');
+  assert.equal(total.growth, 2000);
+  assert.equal(total.percentPlayer, 'Small');
+  assert.equal(total.growthPercent, 100);
+  assert.equal(tierOne.growth, 3000);
+  assert.equal(tierOne.finalTotalPower, 14_000);
+  assert.equal(tierOne.growthPercent, (3000 / 11_000) * 100);
+
+  // A tier with no uploads must not invent leaders.
+  const tierTwo = buildVtsScoreTierSummary(rows, 2);
+  assert.equal(tierTwo.players, 1);
+  assert.equal(tierTwo.submitted, 0);
+  assert.equal(tierTwo.growthPercent, null);
+  assert.equal(
+    tierTwo.categories.find(({ field }) => field === 'totalCastlePower').growthPlayer,
+    ''
+  );
+});
+
+test('the BoH mapper pages are reachable from the app, not orphaned entry points', () => {
+  const index = readFileSync('index.html', 'utf8');
+  const shell = readFileSync('js/shell-v14.js', 'utf8');
+  const admin = readFileSync('js/admin-all-star-boh.js', 'utf8');
+
+  // Member route: a real nav link the shell knows how to place.
+  assert.match(index, /id="tabBohPlan"[\s\S]{0,200}href="boh-plan\.html"/);
+  assert.match(shell, /const sourceIds = \[[\s\S]*?'tabBohPlan'[\s\S]*?\];/);
+
+  // Admin route: reachable from the existing Mapper workspace stage.
+  assert.match(admin, /href="boh-mapper-admin\.html"/);
+  assert.match(admin, /data-boh-mapper-link="admin"/);
 });
