@@ -34,6 +34,7 @@
     'tabEdenX1',
     'tabAllStarBoh',
     'tabVtsScore',
+    'tabBohPlan',
     'tabYouTube',
     'tabOcrDashboard',
   ];

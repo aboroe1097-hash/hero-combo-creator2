@@ -6682,59 +6682,157 @@ function renderVtsScores(state) {
   </section>`;
 }
 
-function renderBestVtsScoreGrowth(rows, state) {
-  const submitted = rows.filter((r) => r.submitted);
-  if (!submitted.length) return '';
-  const best = VTS_SCORE_COMPARISON_FIELDS.map(([field, i18nKey, label]) => {
-    let bestRow = null;
-    let bestGrowth = Number.NEGATIVE_INFINITY;
+export const VTS_SCORE_TIERS = Object.freeze([1, 2]);
+
+/**
+ * Leaders per power category for one tier, ranked two ways at once. Absolute
+ * growth favours the biggest accounts, percentage growth favours the smallest,
+ * so neither alone tells leadership who actually pushed hardest.
+ */
+export function buildVtsScoreTierSummary(rows = [], tier = 1) {
+  const all = list(rows).filter((row) => row?.tier === tier);
+  const submitted = all.filter((row) => row?.submitted);
+  const categories = VTS_SCORE_COMPARISON_FIELDS.map(([field, i18nKey, label]) => {
+    let growthRow = null;
+    let growthValue = null;
+    let percentRow = null;
+    let percentValue = null;
     for (const row of submitted) {
-      const comparison = row.comparisons.find((c) => c.field === field);
-      if (comparison?.growth !== null && comparison.growth > bestGrowth) {
-        bestGrowth = comparison.growth;
-        bestRow = row;
+      const comparison = row.comparisons?.find((entry) => entry.field === field);
+      if (!comparison) continue;
+      if (comparison.growth !== null && (growthValue === null || comparison.growth > growthValue)) {
+        growthValue = comparison.growth;
+        growthRow = row;
+      }
+      if (
+        comparison.growthPercent !== null &&
+        (percentValue === null || comparison.growthPercent > percentValue)
+      ) {
+        percentValue = comparison.growthPercent;
+        percentRow = row;
       }
     }
     return {
       field,
-      label: state.tr(i18nKey, label),
-      player: bestRow?.gameName || '\u2014',
-      growth: bestGrowth === Number.NEGATIVE_INFINITY ? null : bestGrowth,
+      i18nKey,
+      label,
+      growthPlayer: growthRow?.gameName || '',
+      growth: growthValue,
+      percentPlayer: percentRow?.gameName || '',
+      growthPercent: percentValue,
     };
   });
-  const bestRows = best
+  const totals = submitted.reduce(
+    (accumulator, row) => {
+      if (Number.isFinite(row.finalTotalPower)) accumulator.finalTotalPower += row.finalTotalPower;
+      if (Number.isFinite(row.baselineTotalPower)) {
+        accumulator.baselineTotalPower += row.baselineTotalPower;
+      }
+      if (Number.isFinite(row.growth)) accumulator.growth += row.growth;
+      return accumulator;
+    },
+    { finalTotalPower: 0, baselineTotalPower: 0, growth: 0 }
+  );
+  return {
+    tier,
+    players: all.length,
+    submitted: submitted.length,
+    missing: all.length - submitted.length,
+    categories,
+    ...totals,
+    growthPercent:
+      totals.baselineTotalPower > 0 ? (totals.growth / totals.baselineTotalPower) * 100 : null,
+  };
+}
+
+function renderVtsScoreTierSection(rows, state, tier) {
+  const summary = buildVtsScoreTierSummary(rows, tier);
+  if (!summary.players) return '';
+  const signedNumber = (value, decimals = 0) =>
+    value === null ? '\u2014' : `${value > 0 ? '+' : ''}${formatNumber(state, value, decimals)}`;
+  const tone = (value) => (value === null ? 'missing' : value >= 0 ? 'positive' : 'negative');
+  const categoryRows = summary.categories
     .map(
       (entry) => `<tr>
-        <th scope="row">${escapeHtml(entry.label)}</th>
-        <td><strong>${escapeHtml(entry.player)}</strong></td>
-        <td data-growth="${entry.growth === null ? 'missing' : entry.growth >= 0 ? 'positive' : 'negative'}">${
-          entry.growth === null ? '\u2014' : `+${escapeHtml(formatNumber(state, entry.growth))}`
-        }</td>
+        <th scope="row">${escapeHtml(state.tr(entry.i18nKey, entry.label))}</th>
+        <td><strong>${escapeHtml(entry.growthPlayer || '\u2014')}</strong></td>
+        <td data-growth="${tone(entry.growth)}">${escapeHtml(signedNumber(entry.growth))}</td>
+        <td><strong>${escapeHtml(entry.percentPlayer || '\u2014')}</strong></td>
+        <td data-growth="${tone(entry.growthPercent)}">${escapeHtml(
+          entry.growthPercent === null ? '\u2014' : `${signedNumber(entry.growthPercent, 2)}%`
+        )}</td>
       </tr>`
     )
     .join('');
-  return `<section class="boh-admin-card">
+  const heading =
+    tier === 1
+      ? state.tr('adminVtsScoreTierOne', 'Tier 1 \u00b7 Dragon 7M+')
+      : state.tr('adminVtsScoreTierTwo', 'Tier 2 \u00b7 Dragon below 7M');
+  return `<section class="boh-admin-card boh-admin-vts-score-tier" data-vts-score-tier="${tier}">
+    <div class="boh-admin-card-heading">
+      <div>
+        <h4>${escapeHtml(heading)}</h4>
+        <p>${escapeHtml(
+          state.tr(
+            'adminVtsScoreTierHint',
+            'Category leaders by raw growth and by percentage growth, plus the tier total.'
+          )
+        )}</p>
+      </div>
+    </div>
+    <div class="boh-admin-summary-grid">
+      ${summaryCard(
+        `${summary.submitted}/${summary.players}`,
+        state.tr('adminVtsScoreTierUploads', 'Uploads in'),
+        summary.missing ? 'warning' : 'positive'
+      )}
+      ${summaryCard(
+        formatNumber(state, summary.finalTotalPower),
+        state.tr('adminVtsScoreTierTotalPower', 'Combined final Total Power')
+      )}
+      ${summaryCard(
+        signedNumber(summary.growth),
+        state.tr('adminVtsScoreTierTotalGrowth', 'Combined growth'),
+        summary.growth >= 0 ? 'positive' : 'warning'
+      )}
+      ${summaryCard(
+        summary.growthPercent === null ? '\u2014' : `${signedNumber(summary.growthPercent, 2)}%`,
+        state.tr('adminVtsScoreTierTotalGrowthPercent', 'Tier growth %')
+      )}
+    </div>
+    <div class="boh-admin-table-wrap">
+      <table class="boh-admin-table boh-admin-vts-score-table">
+        <thead><tr>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreCategory', 'Category'))}</th>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreTopGrowthPlayer', 'Top growth'))}</th>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowth', 'Growth'))}</th>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreTopPercentPlayer', 'Top growth %'))}</th>
+          <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowthPercent', 'Growth %'))}</th>
+        </tr></thead>
+        <tbody>${categoryRows}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
+
+function renderBestVtsScoreGrowth(rows, state) {
+  const sections = VTS_SCORE_TIERS.map((tier) => renderVtsScoreTierSection(rows, state, tier))
+    .filter(Boolean)
+    .join('');
+  if (!sections) return '';
+  return `<section class="boh-admin-stack boh-admin-vts-score-tiers">
     <div class="boh-admin-card-heading">
       <div>
         <h4>${escapeHtml(state.tr('adminVtsScoreBestTitle', 'Best growth per category'))}</h4>
         <p>${escapeHtml(
           state.tr(
             'adminVtsScoreBestHint',
-            'The player with the highest growth in each power category among submitted full-breakdown entries.'
+            'Category leaders within each Dragon tier, ranked by raw growth and by percentage growth side by side.'
           )
         )}</p>
       </div>
     </div>
-    <div class="boh-admin-table-wrap">
-      <table class="boh-admin-table boh-admin-vts-score-table">
-        <thead><tr>
-          <th scope="col">${escapeHtml(state.tr('adminVtsScoreCategory', 'Category'))}</th>
-          <th scope="col">${escapeHtml(state.tr('adminBohPlayer', 'Player'))}</th>
-          <th scope="col">${escapeHtml(state.tr('adminVtsScoreGrowth', 'Growth'))}</th>
-        </tr></thead>
-        <tbody>${bestRows}</tbody>
-      </table>
-    </div>
+    ${sections}
   </section>`;
 }
 
@@ -9545,9 +9643,18 @@ function renderTeamBuilder(state) {
           'Import the mapper exact view, reconcile verified identities, edit the six ranked team cards, inspect mapper-style plans, then validate and publish explicitly.'
         )
       )}</p></div>
-      <button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
-        state.selectedSourceSeat ? '' : 'disabled'
-      }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button>
+      <div class="boh-admin-stage-header-actions">
+        <a
+          class="boh-admin-button"
+          href="boh-mapper-admin.html"
+          target="_blank"
+          rel="noopener"
+          data-boh-mapper-link="admin"
+        >${escapeHtml(state.tr('adminBohOpenFullMapper', 'Open full battlefield mapper'))}</a>
+        <button type="button" class="boh-admin-button" data-action="clear-seat-selection" ${
+          state.selectedSourceSeat ? '' : 'disabled'
+        }>${escapeHtml(state.tr('adminBohCancelMove', 'Cancel move'))}</button>
+      </div>
     </header>
     <div class="boh-admin-summary-grid">
       ${summaryCard(`${balance.assigned} / ${snapshotFieldSize(state)}`, state.tr('adminBohAssignedSeats', 'Assigned seats'))}
