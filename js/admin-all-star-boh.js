@@ -6683,14 +6683,54 @@ function renderVtsScores(state) {
 }
 
 export const VTS_SCORE_TIERS = Object.freeze([1, 2]);
+export const VTS_SCORE_ALL_TIERS = 'all';
+const VTS_SCORE_EXEMPT_STORAGE_KEY = 'vts_score_exempt_names';
+
+/** Exact name match, case-insensitive — leadership types the name they see. */
+export function vtsScoreExemptKey(value) {
+  return cleanText(value).toLocaleLowerCase();
+}
+
+export function readVtsScoreExemptions() {
+  try {
+    const raw = globalThis.localStorage?.getItem(VTS_SCORE_EXEMPT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set();
+    return parsed
+      .map((entry) => cleanText(entry))
+      .filter((name) => {
+        const key = vtsScoreExemptKey(name);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  } catch {
+    return [];
+  }
+}
+
+function writeVtsScoreExemptions(names) {
+  try {
+    globalThis.localStorage?.setItem(VTS_SCORE_EXEMPT_STORAGE_KEY, JSON.stringify(list(names)));
+  } catch {
+    // A locked-down browser still shows the current session's exemptions.
+  }
+}
 
 /**
- * Leaders per power category for one tier, ranked two ways at once. Absolute
- * growth favours the biggest accounts, percentage growth favours the smallest,
- * so neither alone tells leadership who actually pushed hardest.
+ * Leaders per power category, ranked two ways at once. Absolute growth favours
+ * the biggest accounts, percentage growth favours the smallest, so neither
+ * alone tells leadership who actually pushed hardest. Pass VTS_SCORE_ALL_TIERS
+ * to rank every tier together.
  */
-export function buildVtsScoreTierSummary(rows = [], tier = 1) {
-  const all = list(rows).filter((row) => row?.tier === tier);
+export function buildVtsScoreTierSummary(rows = [], tier = 1, exemptions = []) {
+  const exempt = new Set(list(exemptions).map(vtsScoreExemptKey).filter(Boolean));
+  const all = list(rows).filter(
+    (row) =>
+      (tier === VTS_SCORE_ALL_TIERS || row?.tier === tier) &&
+      !exempt.has(vtsScoreExemptKey(row?.gameName))
+  );
   const submitted = all.filter((row) => row?.submitted);
   const categories = VTS_SCORE_COMPARISON_FIELDS.map(([field, i18nKey, label]) => {
     let growthRow = null;
@@ -6745,8 +6785,8 @@ export function buildVtsScoreTierSummary(rows = [], tier = 1) {
   };
 }
 
-function renderVtsScoreTierSection(rows, state, tier) {
-  const summary = buildVtsScoreTierSummary(rows, tier);
+function renderVtsScoreTierSection(rows, state, tier, exemptions = []) {
+  const summary = buildVtsScoreTierSummary(rows, tier, exemptions);
   if (!summary.players) return '';
   const signedNumber = (value, decimals = 0) =>
     value === null ? '\u2014' : `${value > 0 ? '+' : ''}${formatNumber(state, value, decimals)}`;
@@ -6765,9 +6805,11 @@ function renderVtsScoreTierSection(rows, state, tier) {
     )
     .join('');
   const heading =
-    tier === 1
-      ? state.tr('adminVtsScoreTierOne', 'Tier 1 \u00b7 Dragon 7M+')
-      : state.tr('adminVtsScoreTierTwo', 'Tier 2 \u00b7 Dragon below 7M');
+    tier === VTS_SCORE_ALL_TIERS
+      ? state.tr('adminVtsScoreAllTiers', 'Both tiers combined')
+      : tier === 1
+        ? state.tr('adminVtsScoreTierOne', 'Tier 1 \u00b7 Dragon 7M+')
+        : state.tr('adminVtsScoreTierTwo', 'Tier 2 \u00b7 Dragon below 7M');
   return `<section class="boh-admin-card boh-admin-vts-score-tier" data-vts-score-tier="${tier}">
     <div class="boh-admin-card-heading">
       <div>
@@ -6815,11 +6857,63 @@ function renderVtsScoreTierSection(rows, state, tier) {
   </section>`;
 }
 
+function renderVtsScoreExemptions(state, exemptions) {
+  const chips = exemptions.length
+    ? exemptions
+        .map(
+          (name) => `<span class="boh-admin-chip boh-admin-vts-exempt-chip">${escapeHtml(name)}
+      <button
+        type="button"
+        data-action="vts-exempt-remove"
+        data-name="${escapeHtml(name)}"
+        aria-label="${escapeHtml(
+          state.tr('adminVtsScoreExemptRemove', 'Remove {name} from the exempt list', { name })
+        )}"
+      >&times;</button></span>`
+        )
+        .join('')
+    : `<span class="boh-admin-muted">${escapeHtml(
+        state.tr('adminVtsScoreExemptNone', 'Nobody is exempt.')
+      )}</span>`;
+  return `<div class="boh-admin-card boh-admin-vts-exempt">
+    <div class="boh-admin-card-heading">
+      <div>
+        <h4>${escapeHtml(state.tr('adminVtsScoreExemptTitle', 'Exempt from the leader boards'))}</h4>
+        <p>${escapeHtml(
+          state.tr(
+            'adminVtsScoreExemptHint',
+            'Exempt players are hidden from all three leader tables and the exported image. The standings table above still shows them. Saved in this browser only.'
+          )
+        )}</p>
+      </div>
+    </div>
+    <div class="boh-admin-vts-exempt-controls">
+      <label class="boh-admin-field">
+        <span>${escapeHtml(state.tr('adminVtsScoreExemptName', 'Player name'))}</span>
+        <input type="text" id="adminVtsScoreExemptInput" autocomplete="off" list="adminVtsScoreExemptOptions" />
+      </label>
+      <button type="button" class="boh-admin-button" data-action="vts-exempt-add">${escapeHtml(
+        state.tr('adminVtsScoreExemptAdd', 'Exempt')
+      )}</button>
+    </div>
+    <div class="boh-admin-vts-exempt-list">${chips}</div>
+  </div>`;
+}
+
 function renderBestVtsScoreGrowth(rows, state) {
-  const sections = VTS_SCORE_TIERS.map((tier) => renderVtsScoreTierSection(rows, state, tier))
+  const exemptions = readVtsScoreExemptions();
+  const tiers = [...VTS_SCORE_TIERS, VTS_SCORE_ALL_TIERS];
+  const sections = tiers
+    .map((tier) => renderVtsScoreTierSection(rows, state, tier, exemptions))
     .filter(Boolean)
     .join('');
   if (!sections) return '';
+  const nameOptions = list(rows)
+    .map((row) => cleanText(row?.gameName))
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right))
+    .map((name) => `<option value="${escapeHtml(name)}"></option>`)
+    .join('');
   return `<section class="boh-admin-stack boh-admin-vts-score-tiers">
     <div class="boh-admin-card-heading">
       <div>
@@ -6827,13 +6921,127 @@ function renderBestVtsScoreGrowth(rows, state) {
         <p>${escapeHtml(
           state.tr(
             'adminVtsScoreBestHint',
-            'Category leaders within each Dragon tier, ranked by raw growth and by percentage growth side by side.'
+            'Category leaders per Dragon tier and across both tiers, ranked by raw growth and by percentage growth side by side.'
           )
         )}</p>
       </div>
+      <button type="button" class="boh-admin-button" data-action="vts-export-leaders">${escapeHtml(
+        state.tr('adminVtsScoreExportPng', 'Export PNG')
+      )}</button>
     </div>
+    <datalist id="adminVtsScoreExemptOptions">${nameOptions}</datalist>
+    ${renderVtsScoreExemptions(state, exemptions)}
     ${sections}
   </section>`;
+}
+
+/**
+ * Draws the combined leader board to a canvas and downloads it. Canvas rather
+ * than a screenshot library: no dependency, no CSP exception, and the output is
+ * identical regardless of the admin's theme, zoom, or viewport.
+ */
+export function drawVtsScoreLeaderCanvas(canvas, summary, options = {}) {
+  const format = options.formatNumber || ((value) => String(value));
+  const labelFor = options.labelFor || ((entry) => entry.label);
+  const rowHeight = 46;
+  const headerHeight = 132;
+  const width = 900;
+  const height = headerHeight + summary.categories.length * rowHeight + 58;
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+  ctx.fillStyle = '#0b1726';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(0, 0, width, 4);
+
+  ctx.fillStyle = '#edf6ff';
+  ctx.font = 'bold 30px Inter, system-ui, sans-serif';
+  ctx.fillText(options.title || 'VtsScore — best growth', 32, 58);
+  ctx.fillStyle = '#8fa8bc';
+  ctx.font = '16px Inter, system-ui, sans-serif';
+  ctx.fillText(options.subtitle || '', 32, 86);
+
+  const columns = [32, 300, 520, 700];
+  ctx.fillStyle = '#8fa8bc';
+  ctx.font = 'bold 13px Inter, system-ui, sans-serif';
+  ['CATEGORY', 'PLAYER', 'GROWTH', 'GROWTH %'].forEach((heading, index) => {
+    ctx.fillText(heading, columns[index], headerHeight - 14);
+  });
+
+  summary.categories.forEach((entry, index) => {
+    const y = headerHeight + index * rowHeight;
+    if (index % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fillRect(24, y - 22, width - 48, rowHeight - 6);
+    }
+    ctx.fillStyle = '#edf6ff';
+    ctx.font = 'bold 17px Inter, system-ui, sans-serif';
+    ctx.fillText(labelFor(entry), columns[0], y);
+    ctx.font = '17px Inter, system-ui, sans-serif';
+    ctx.fillText(entry.growthPlayer || '—', columns[1], y);
+    ctx.fillStyle = entry.growth === null || entry.growth < 0 ? '#8fa8bc' : '#34d399';
+    ctx.fillText(entry.growth === null ? '—' : `+${format(entry.growth)}`, columns[2], y);
+    ctx.fillStyle = entry.growthPercent === null || entry.growthPercent < 0 ? '#8fa8bc' : '#34d399';
+    ctx.fillText(
+      entry.growthPercent === null ? '—' : `+${format(entry.growthPercent, 2)}%`,
+      columns[3],
+      y
+    );
+  });
+
+  ctx.fillStyle = '#587086';
+  ctx.font = '14px Inter, system-ui, sans-serif';
+  ctx.fillText(options.footer || '', 32, height - 22);
+  return canvas;
+}
+
+function exportVtsScoreLeaderPng(state) {
+  const rows = buildAdminVtsScoreRows(state.snapshot.submissions, state.snapshot.raceScores);
+  const exemptions = readVtsScoreExemptions();
+  const summary = buildVtsScoreTierSummary(rows, VTS_SCORE_ALL_TIERS, exemptions);
+  if (!summary.submitted) {
+    setStatus(state, state.tr('adminVtsScoreExportEmpty', 'No uploads to export yet.'), 'warning');
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  drawVtsScoreLeaderCanvas(canvas, summary, {
+    title: state.tr('adminVtsScoreExportTitle', 'VtsScore — best growth per category'),
+    subtitle: state.tr('adminVtsScoreExportSubtitle', '{count} uploads across both tiers', {
+      count: summary.submitted,
+    }),
+    footer: exemptions.length
+      ? state.tr('adminVtsScoreExportExempt', 'Excluded: {names}', {
+          names: exemptions.join(', '),
+        })
+      : '',
+    formatNumber: (value, decimals = 0) => formatNumber(state, value, decimals),
+    labelFor: (entry) => state.tr(entry.i18nKey, entry.label),
+  });
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      setStatus(
+        state,
+        state.tr('adminVtsScoreExportFailed', 'Could not build the image.'),
+        'error'
+      );
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'vtsscore-best-growth.png';
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setStatus(
+      state,
+      state.tr('adminVtsScoreExportDone', 'Leader board image downloaded.'),
+      'positive'
+    );
+  }, 'image/png');
 }
 
 function renderCurrentStage(state) {
@@ -12674,6 +12882,32 @@ async function handleClick(state, event) {
   if (!button || !state.root.contains(button) || button.disabled) return;
   const action = button.dataset.action;
   if (!action) return;
+  if (action === 'vts-exempt-add') {
+    const input = state.root.querySelector('#adminVtsScoreExemptInput');
+    const name = cleanText(input?.value);
+    if (!name) return;
+    const current = readVtsScoreExemptions();
+    if (!current.some((entry) => vtsScoreExemptKey(entry) === vtsScoreExemptKey(name))) {
+      writeVtsScoreExemptions([...current, name]);
+    }
+    if (input) input.value = '';
+    renderShell(state);
+    return;
+  }
+  if (action === 'vts-exempt-remove') {
+    const name = cleanText(button.dataset.name);
+    writeVtsScoreExemptions(
+      readVtsScoreExemptions().filter(
+        (entry) => vtsScoreExemptKey(entry) !== vtsScoreExemptKey(name)
+      )
+    );
+    renderShell(state);
+    return;
+  }
+  if (action === 'vts-export-leaders') {
+    exportVtsScoreLeaderPng(state);
+    return;
+  }
   if (action === 'team-board-density') {
     state.teamBoardDensity = button.dataset.value === 'compact' ? 'compact' : 'comfortable';
     saveTeamWorkspaceView(state);

@@ -170,7 +170,7 @@ const requestAdminLanguage = createLatestLanguageLoader((lang) => {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260730_075130');
+  const res = await fetch('tabs/admin.html?v=20260801_143141');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -199,7 +199,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20260730_075130');
+  const mod = await import('./ocr-dashboard.js?v=20260801_143141');
   await mod.bootOcrDashboard();
 }
 

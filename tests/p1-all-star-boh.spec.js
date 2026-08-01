@@ -33,6 +33,14 @@ const ROLES = [
   { id: 'bottom', label: 'Bottom Side', capacity: 3, color: '#22c55e', order: 4 },
 ];
 
+// The first milestone must still be upcoming when the suite runs, so the
+// schedule rail marks it as "next" and gives it the roving tabindex.
+const SCHEDULE_ANCHOR_MINUTES = 90;
+
+function scheduleTime(offsetMinutes) {
+  return new Date(Date.now() + offsetMinutes * 60_000).toISOString();
+}
+
 function roleForSeat(seatNumber) {
   if (seatNumber <= 4) return ROLES[0];
   if (seatNumber <= 6) return ROLES[1];
@@ -184,17 +192,23 @@ function createPlayerFixture() {
     },
     eventSchedule: {
       status: 'published',
-      eventStartsAt: '2026-08-01T12:00:00.000Z',
-      eventEndsAt: '2026-08-01T13:00:00.000Z',
+      // Anchored to run time, not a fixed date. With hard-coded timestamps the
+      // whole schedule became "complete" once that day passed, the rail
+      // selected the last milestone instead of the first, and the roving
+      // tabindex assertions below failed for good.
+      eventStartsAt: scheduleTime(SCHEDULE_ANCHOR_MINUTES),
+      eventEndsAt: scheduleTime(SCHEDULE_ANCHOR_MINUTES + 60),
       revision: 2,
       milestones: [
-        { id: 'check-in', label: 'Check in', startsAt: '2026-08-01T11:30:00.000Z' },
-        { id: 'gates-open', label: 'Gates open', startsAt: '2026-08-01T12:00:00.000Z' },
-        { id: 'rune', label: 'Rune fight', startsAt: '2026-08-01T12:15:00.000Z' },
+        { id: 'check-in', label: 'Check in', startsAt: scheduleTime(SCHEDULE_ANCHOR_MINUTES - 30) },
+        { id: 'gates-open', label: 'Gates open', startsAt: scheduleTime(SCHEDULE_ANCHOR_MINUTES) },
+        { id: 'rune', label: 'Rune fight', startsAt: scheduleTime(SCHEDULE_ANCHOR_MINUTES + 15) },
       ],
       teamGameTimes: teams.map((team, index) => ({
         teamId: team.id,
-        startsAt: `2026-08-01T${String(12 + Math.floor(index / 3)).padStart(2, '0')}:${String((index % 3) * 10).padStart(2, '0')}:00.000Z`,
+        startsAt: scheduleTime(
+          SCHEDULE_ANCHOR_MINUTES + Math.floor(index / 3) * 60 + (index % 3) * 10
+        ),
       })),
     },
     teams,
