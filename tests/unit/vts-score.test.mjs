@@ -5,6 +5,8 @@ import test from 'node:test';
 import {
   buildAdminVtsScoreRows,
   buildVtsScoreTierSummary,
+  drawVtsScoreLeaderCanvas,
+  VTS_SCORE_ALL_TIERS,
   VTS_SCORE_TIERS,
 } from '../../js/admin-all-star-boh.js';
 import { auditVtsScoreI18n, VTS_SCORE_LANGUAGES } from '../../js/vts-score-i18n.js';
@@ -257,4 +259,95 @@ test('the BoH mapper pages are reachable from the app, not orphaned entry points
   // Admin route: reachable from the existing Mapper workspace stage.
   assert.match(admin, /href="boh-mapper-admin\.html"/);
   assert.match(admin, /data-boh-mapper-link="admin"/);
+});
+
+test('combined leader board spans both tiers and honours exemptions', () => {
+  const power = (total, dragon) => ({
+    totalCastlePower: total,
+    troopPower: 0,
+    buildingPower: 0,
+    technologyPower: 0,
+    heroCombatPower: 0,
+    dragonPower: dragon,
+    unitSpecialtyPower: 0,
+    artifactPower: 0,
+    royalTechPower: null,
+  });
+  const submissions = [
+    {
+      submissionUid: 't1',
+      gameName: 'TierOne',
+      status: 'submitted',
+      stats: power(1000, 9_000_000),
+    },
+    {
+      submissionUid: 't2',
+      gameName: 'TierTwo',
+      status: 'submitted',
+      stats: power(1000, 1_000_000),
+    },
+  ];
+  const raceScores = [
+    { submissionUid: 't1', schemaVersion: 2, powerValues: power(1500, 9_000_000) },
+    { submissionUid: 't2', schemaVersion: 2, powerValues: power(9000, 1_000_000) },
+  ];
+  const rows = buildAdminVtsScoreRows(submissions, raceScores);
+
+  // Combined ranks across tiers: the Tier 2 player out-grew the Tier 1 player.
+  const combined = buildVtsScoreTierSummary(rows, VTS_SCORE_ALL_TIERS);
+  assert.equal(combined.players, 2);
+  const total = combined.categories.find(({ field }) => field === 'totalCastlePower');
+  assert.equal(total.growthPlayer, 'TierTwo');
+  assert.equal(total.growth, 8000);
+
+  // Exempting the leader promotes the next player and removes them from the totals.
+  const exempt = buildVtsScoreTierSummary(rows, VTS_SCORE_ALL_TIERS, ['  tiertwo  ']);
+  assert.equal(exempt.players, 1, 'exemption is case- and whitespace-insensitive');
+  const exemptTotal = exempt.categories.find(({ field }) => field === 'totalCastlePower');
+  assert.equal(exemptTotal.growthPlayer, 'TierOne');
+  assert.equal(exempt.growth, 500);
+
+  // Per-tier summaries still filter by tier.
+  assert.equal(buildVtsScoreTierSummary(rows, 1).players, 1);
+  assert.deepEqual(VTS_SCORE_TIERS, [1, 2]);
+});
+
+test('leader board PNG renders without a DOM canvas implementation', () => {
+  const calls = [];
+  const ctx = new Proxy(
+    { fillStyle: '', font: '' },
+    {
+      get: (target, prop) =>
+        prop in target ? target[prop] : (...args) => calls.push([prop, ...args]),
+      set: (target, prop, value) => {
+        target[prop] = value;
+        return true;
+      },
+    }
+  );
+  const canvas = { width: 0, height: 0, getContext: () => ctx };
+  const summary = {
+    submitted: 1,
+    categories: [
+      {
+        field: 'totalCastlePower',
+        i18nKey: 'k',
+        label: 'Total power',
+        growthPlayer: 'ANGEL',
+        growth: 5,
+        percentPlayer: 'ANGEL',
+        growthPercent: 1.5,
+      },
+    ],
+  };
+  drawVtsScoreLeaderCanvas(canvas, summary, {
+    title: 'T',
+    formatNumber: (value) => String(value),
+    labelFor: (entry) => entry.label,
+  });
+  assert.ok(canvas.width > 0 && canvas.height > 0, 'canvas is sized');
+  const text = calls.filter(([name]) => name === 'fillText').map(([, value]) => value);
+  assert.ok(text.includes('Total power'));
+  assert.ok(text.includes('ANGEL'));
+  assert.ok(text.includes('+5'));
 });
