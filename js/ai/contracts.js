@@ -25,7 +25,7 @@ export const AI_LIMITS = Object.freeze({
   maxToolResultBytes: 8 * 1024,
   maxCombinedToolResultBytes: 24 * 1024,
   maxToolRounds: 2,
-  maxToolCalls: 6,
+  maxToolCalls: 8,
   maxUpstreamInteractions: 3,
   requestTimeoutMs: 180_000,
 });

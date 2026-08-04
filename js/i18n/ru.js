@@ -1889,6 +1889,8 @@ const ru = {
   'ai.askAnother': 'Задать другой вопрос',
   'ai.copy': 'Копировать',
   'ai.copied': 'Скопировано',
+  'ai.copyAnswer': 'Копировать ответ',
+  'ai.answerCopied': 'Ответ скопирован',
   'ai.copyCode': 'Копировать код',
   'ai.incomplete': 'Неполный ответ',
   'ai.jumpLatest': 'К последнему сообщению',

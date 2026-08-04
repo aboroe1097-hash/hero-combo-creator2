@@ -91,8 +91,8 @@ test('the eager launcher stylesheet is available during local Vite development',
   assert.match(viteConfig, /plugins: \[serveAiLauncherCriticalCss\(\)\]/);
 });
 
-test('Velo Beta 0.3 consent settings preserve grants and remain responsive', () => {
-  assert.match(assistantTemplate, /aria-label="Velo Beta 0\.3">Beta 0\.3</);
+test('Velo Beta 0.4 consent settings preserve grants and remain responsive', () => {
+  assert.match(assistantTemplate, /aria-label="Velo Beta 0\.4">Beta 0\.4</);
   assert.match(
     assistantTemplate,
     /id="aiConsentDialog"[\s\S]*aria-labelledby="aiConsentTitle"[\s\S]*aria-describedby="aiConsentDescription"/

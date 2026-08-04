@@ -1868,6 +1868,8 @@ const kr = {
   'ai.askAnother': '다른 질문 하기',
   'ai.copy': '복사',
   'ai.copied': '복사됨',
+  'ai.copyAnswer': '답변 복사',
+  'ai.answerCopied': '답변 복사됨',
   'ai.copyCode': '코드 복사',
   'ai.incomplete': '불완전한 응답',
   'ai.jumpLatest': '최신 메시지로 이동',

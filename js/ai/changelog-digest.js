@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.1";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.2";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.2",
+    "date": "2026-08-03",
+    "highlights": [
+      "Upgraded Velo to the smarter gemini-3.5-flash model while keeping the lighter model for short chat turns, so simple questions stay fast and big questions get better answers.",
+      "Added Velo retry support that automatically falls back to the alternate model when the first request is rate-limited or the service is unavailable.",
+      "Gave Velo three new capabilities: live Arcade leaderboards for all five games, All-Star BoH public mechanics and scoring, and the public VtsScore power-field contract.",
+      "Expanded Velo's output limit and tool budget so answers can include compact markdown tables that stay readable on phones.",
+      "Added a copy-answer button to completed Velo replies, plus table-aware rendering for tool-generated data.",
+      "Enabled Velo's active-tab context so follow-up questions know which tool page you are looking at."
+    ]
+  },
   {
     "version": "14.3.1",
     "date": "2026-07-29",
@@ -96,16 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-07-26",
     "highlights": [
       "Fixed the mobile header so the Account control has its own touch-safe slot without displacing the clock, search, theme, or language controls."
-    ]
-  },
-  {
-    "version": "14.2.13",
-    "date": "2026-07-26",
-    "highlights": [
-      "Made Battle Simulator hero skills and assignments explicitly canonical and added the verified Cavalry Movement in Unison specialization passive.",
-      "Renamed the team-planning surface to All-Star BoH Hub and added Admin exact-view mapper reconciliation into editable drafts with explicit publication.",
-      "Simplified accounts to one in-game name, restored private state/referral/comments onboarding, localized the full flow across all 13 locales, and recovered Google signup when a guest selects an existing Google account.",
-      "Made Dragon Master completion advance to the next unfinished targeted piece."
     ]
   }
 ].map((release) =>

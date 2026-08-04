@@ -1833,6 +1833,8 @@ const zh = {
   'ai.askAnother': '再问一个问题',
   'ai.copy': '复制',
   'ai.copied': '已复制',
+  'ai.copyAnswer': '复制回答',
+  'ai.answerCopied': '已复制回答',
   'ai.copyCode': '复制代码',
   'ai.incomplete': '回答不完整',
   'ai.jumpLatest': '跳到最新消息',

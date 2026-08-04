@@ -1922,6 +1922,8 @@ const en = {
   'ai.askAnother': 'Ask another question',
   'ai.copy': 'Copy',
   'ai.copied': 'Copied',
+  'ai.copyAnswer': 'Copy answer',
+  'ai.answerCopied': 'Answer copied',
   'ai.copyCode': 'Copy code',
   'ai.incomplete': 'Incomplete response',
   'ai.jumpLatest': 'Jump to latest',

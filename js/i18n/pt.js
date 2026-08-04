@@ -1888,6 +1888,8 @@ const pt = {
   'ai.askAnother': 'Fazer outra pergunta',
   'ai.copy': 'Copiar',
   'ai.copied': 'Copiado',
+  'ai.copyAnswer': 'Copiar resposta',
+  'ai.answerCopied': 'Resposta copiada',
   'ai.copyCode': 'Copiar código',
   'ai.incomplete': 'Resposta incompleta',
   'ai.jumpLatest': 'Ir para a mensagem mais recente',

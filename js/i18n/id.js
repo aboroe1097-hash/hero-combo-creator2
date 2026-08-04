@@ -1886,6 +1886,8 @@ const id = {
   'ai.askAnother': 'Ajukan pertanyaan lain',
   'ai.copy': 'Salin',
   'ai.copied': 'Disalin',
+  'ai.copyAnswer': 'Salin jawaban',
+  'ai.answerCopied': 'Jawaban disalin',
   'ai.copyCode': 'Salin kode',
   'ai.incomplete': 'Respons belum lengkap',
   'ai.jumpLatest': 'Ke pesan terbaru',
