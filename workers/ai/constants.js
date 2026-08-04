@@ -13,7 +13,7 @@ export const LIMITS = Object.freeze({
   toolResultsBytes: 24 * 1024,
   providerStateBytes: 80 * 1024,
   toolRounds: 2,
-  toolCalls: 6,
+  toolCalls: 8,
   upstreamInteractions: 3,
   firstProviderEventMs: 30_000,
   idleProviderEventMs: 30_000,
@@ -25,7 +25,7 @@ export const LIMITS = Object.freeze({
   globalTurnsPerUtcDay: 500,
   globalInteractionsPerUtcDay: 1_500,
   requestReplayTtlMs: 24 * 60 * 60_000,
-  maxOutputTokens: 1_536,
+  maxOutputTokens: 4_096,
 });
 
 export const ALLOWED_MODELS = Object.freeze(['gemini-3.1-flash-lite', 'gemini-3.5-flash']);

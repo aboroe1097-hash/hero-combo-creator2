@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { allHeroesData } from '../../js/heroes-data.js';
 import {
+  baseRankedCombos,
   comboMeetsSkinRequirements,
   filterCombosForSkinMode,
   getComboSkinRequirements,
@@ -139,4 +140,53 @@ test('skin mode ranks Octavius Rozen Caesar above Alfred Black Prince Jeanne', (
     comboKeys.indexOf('Octavius|Rozen Blade|Caesar') <
       comboKeys.indexOf("Alfred|Black Prince|Jeanne d'Arc")
   );
+});
+
+test('fresh ROC import contains 32 curated A/B/S formations with valid heroes', () => {
+  const ROC_FRESH_SOURCE = 'roc-combos-2026-08-02';
+  const imported = rankedCombos.filter((combo) => combo.source === ROC_FRESH_SOURCE);
+  const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
+
+  assert.equal(imported.length, 32);
+  assert.equal(new Set(imported.map((combo) => combo.heroes.join('|'))).size, 25);
+  imported.forEach((combo) => {
+    assert.equal(combo.heroes.length, 3);
+    assert.ok(combo.heroes.every((hero) => validHeroNames.has(hero)));
+    assert.match(combo.sourceTier, /^[SAB]$/);
+    assert.equal(Number.isFinite(combo.sourceScore), true);
+  });
+  assert.equal(
+    imported.filter((combo) => !combo.skin).length,
+    7,
+    'exactly 7 noskin base entries enter the shared database'
+  );
+  assert.equal(
+    imported.filter((combo) => combo.skin === '222').length,
+    25,
+    'exactly 25 skin-mode entries stay gated to skin mode'
+  );
+});
+
+test('fresh noskin entries appear in base mode and fresh skin entries stay gated', () => {
+  const ROC_FRESH_SOURCE = 'roc-combos-2026-08-02';
+  const fresh = rankedCombos.filter((combo) => combo.source === ROC_FRESH_SOURCE);
+  const freshInBase = fresh.filter((combo) => baseRankedCombos.includes(combo));
+
+  assert.equal(freshInBase.length, 7);
+  assert.ok(freshInBase.every((combo) => !combo.skin));
+  assert.equal(
+    fresh.filter((combo) => combo.skin).every((combo) => !baseRankedCombos.includes(combo)),
+    true,
+    'skin-gated fresh entries must not leak into the base database'
+  );
+});
+
+test('fresh Alexander Bleeding Steed Theodora is buildable from owned heroes', () => {
+  const selected = selectNonOverlappingCombos(
+    rankedCombos,
+    ['Alexander', 'Bleeding Steed', 'Theodora'],
+    5
+  );
+
+  assert.equal(selected[0]?.heroes.join('|'), 'Alexander|Bleeding Steed|Theodora');
 });

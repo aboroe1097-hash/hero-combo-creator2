@@ -3,7 +3,7 @@
 // and route users to the right tab instead of guessing. Keep entries factual
 // and short; hashes must match js/shell-v14.js internalHashes and page hrefs
 // must be real deployed routes.
-export const TOOLKIT_MAP_VERSION = '2026.07.25.1';
+export const TOOLKIT_MAP_VERSION = '2026.08.03.1';
 
 const entries = [
   {
@@ -118,9 +118,10 @@ const entries = [
     name: 'Arcade',
     kind: 'page',
     href: 'arcade.html',
-    summary: 'Community mini-games with a shared leaderboard.',
-    answers: ['Where are the mini-games?'],
-    keywords: ['arcade', 'games', 'leaderboard', 'merge rush'],
+    summary:
+      'Community mini-games with a shared leaderboard across all five games and an overall sum ranking.',
+    answers: ['Where are the mini-games?', 'Who leads the Arcade leaderboard?'],
+    keywords: ['arcade', 'games', 'leaderboard', 'merge rush', 'sort hoard', 'crystal relay', 'set assembly', 'hero rumble', 'high score'],
   },
   {
     id: 'edenX1',
@@ -147,9 +148,9 @@ const entries = [
     name: 'Talk with Velo',
     kind: 'drawer',
     summary:
-      'This assistant (build Velo b0.3), opened from the floating launcher. Velo gives answer-first, read-only help from app data and curated VTS guide knowledge in all eleven app languages.',
+      'This assistant (build Velo b0.4), opened from the floating launcher. Velo gives answer-first, read-only help from app data and curated VTS guide knowledge in all eleven app languages.',
     answers: ['What can Velo do?', 'What Velo version is this?'],
-    keywords: ['velo', 'assistant', 'ai', 'chat', 'help', 'version', 'b0.3'],
+    keywords: ['velo', 'assistant', 'ai', 'chat', 'help', 'version', 'b0.4'],
   },
 ];
 

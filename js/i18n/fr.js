@@ -1941,6 +1941,8 @@ const fr = {
   'ai.askAnother': 'Poser une autre question',
   'ai.copy': 'Copier',
   'ai.copied': 'Copié',
+  'ai.copyAnswer': 'Copier la réponse',
+  'ai.answerCopied': 'Réponse copiée',
   'ai.copyCode': 'Copier le code',
   'ai.incomplete': 'Réponse incomplète',
   'ai.jumpLatest': 'Aller au plus récent',

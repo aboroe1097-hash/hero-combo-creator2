@@ -106,6 +106,54 @@ function x8AvailabilityTier(tier) {
   return x8AvailabilityCombos.filter((combo) => combo.sourceTier === tier);
 }
 
+const ROC_FRESH_SOURCE = 'roc-combos-2026-08-02';
+
+const rocNoskinFreshCombos = [
+  { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'], source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 277.5 },
+  { heroes: ['Hunk', 'Cleopatra VII', 'Alexander'], source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 244.2 },
+  { heroes: ['King Arthur', 'Bleeding Steed', 'Alexander'], source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 239.2 },
+  { heroes: ['The Brave', 'Rozen Blade', 'The Avalanche'], source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 236.7 },
+  { heroes: ['Bleeding Steed', 'Cleopatra VII', 'Alexander'], source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 235.8 },
+  { heroes: ['Black Prince', "Jeanne d'Arc", 'Lionheart'], source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 234 },
+  { heroes: ['Hunk', 'Bleeding Steed', 'Alexander'], source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 229.2 },
+];
+
+const rocSkinFreshCombos = [
+  { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'S', sourceScore: 304.4 },
+  { heroes: ['The Brave', 'Rozen Blade', 'The Avalanche'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 287.6 },
+  { heroes: ['King Arthur', 'Bleeding Steed', 'Alexander'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 271.8 },
+  { heroes: ['Boudica', 'Jade Eagle', 'Ramses II'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 270.4 },
+  { heroes: ['Hunk', 'Bleeding Steed', 'Alexander'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 270 },
+  { heroes: ['Hunk', 'Cleopatra VII', 'Alexander'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 269.6 },
+  { heroes: ['The Brave', 'Rozen Blade', 'Immortal'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 264.6 },
+  { heroes: ['King Arthur', 'Bleeding Steed', 'Jade Eagle'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 262.8 },
+  { heroes: ['Black Prince', "Jeanne d'Arc", 'Lionheart'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'A', sourceScore: 258.5 },
+  { heroes: ['Bleeding Steed', 'Cleopatra VII', 'Alexander'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 256.3 },
+  { heroes: ['The Brave', "Jeanne d'Arc", 'The Avalanche'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 255.5 },
+  { heroes: ['The Brave', 'Ramses II', 'Beowulf'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 255.1 },
+  { heroes: ['Black Prince', 'The Brave', 'Lionheart'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 253 },
+  { heroes: ['The Brave', 'Alfred', 'The Avalanche'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 240.4 },
+  { heroes: ['Boudica', 'Sakura', 'ELK'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 236.8 },
+  { heroes: ['Octavius', 'Black Prince', 'Lionheart'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 235.5 },
+  { heroes: ['Hunk', 'Boudica', 'Ramses II'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 235.4 },
+  { heroes: ["Jeanne d'Arc", 'Constantine the Great', 'Lionheart'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 233.8 },
+  { heroes: ['BeastQueen', 'Black Prince', 'Immortal'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 232.6 },
+  { heroes: ['War Lord', 'The Brave', 'The Avalanche'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 232.1 },
+  { heroes: ['The Brave', 'Black Prince', 'Immortal'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 231.7 },
+  { heroes: ['War Lord', "Jeanne d'Arc", 'The Avalanche'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 230.8 },
+  { heroes: ['Hunk', 'Cleopatra VII', 'Caesar'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 228.4 },
+  { heroes: ['BeastQueen', 'Cleopatra VII', 'Immortal'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 227.7 },
+  { heroes: ['King Arthur', 'Cleopatra VII', 'Jade Eagle'], skin: '222', source: ROC_FRESH_SOURCE, sourceTier: 'B', sourceScore: 227.3 },
+];
+
+function rocNoskinFreshTier(tier) {
+  return rocNoskinFreshCombos.filter((combo) => combo.sourceTier === tier);
+}
+
+function rocSkinFreshTier(tier) {
+  return rocSkinFreshCombos.filter((combo) => combo.sourceTier === tier);
+}
+
 export const rankedCombos = [
   // --- SKIN MODE RANK OVERRIDES ---
   // skin code slots: 3 = must own skin, 2 = recommended skin, 1 = optional skin.
@@ -117,6 +165,10 @@ export const rankedCombos = [
   { heroes: ["Hunk", "Boudica", "Sakura"], skin: '233', note: 'Skin-mode lane placed above Boudica / Sakura / Jade Eagle: Hunk recommended, Boudica and Sakura required.' },
   { heroes: ["Octavius", "Rozen Blade", "Caesar"], skin: '232', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
 
+  // --- ROC fresh skin-mode additions: source tiers S-A ---
+  ...rocSkinFreshTier('S'),
+  ...rocSkinFreshTier('A'),
+
   { heroes: ["Beowulf", "Ramses II", "Theodora"], note: 'Beowulf front-row skill spam triggers Theodora healing, producing a stable high-damage sustain combo.' },
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
   { heroes: ["King Arthur","Theodora", "Alexander"] },
@@ -125,6 +177,9 @@ export const rankedCombos = [
   // --- X8 availability additions: source tiers S-A ---
   ...x8AvailabilityTier('S'),
   ...x8AvailabilityTier('A'),
+
+  // --- ROC fresh noskin additions: source tier A ---
+  ...rocNoskinFreshTier('A'),
 
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
@@ -188,6 +243,12 @@ export const rankedCombos = [
   
   // --- X8 availability additions: source tier B ---
   ...x8AvailabilityTier('B'),
+
+  // --- ROC fresh noskin additions: source tier B ---
+  ...rocNoskinFreshTier('B'),
+
+  // --- ROC fresh skin-mode additions: source tier B ---
+  ...rocSkinFreshTier('B'),
 
   // --- TIER 2: STRONG COMPETITIVE META ---
   { heroes: ["Sky Breaker", "Boudica", "Sakura"] },

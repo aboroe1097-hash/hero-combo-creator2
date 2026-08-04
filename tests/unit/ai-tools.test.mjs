@@ -29,9 +29,9 @@ class MemoryStorage {
 
 const staticContext = { allowedToolGroups: [AI_TOOL_GROUPS.STATIC], appVersion: '14.0.0' };
 
-test('tool registry exposes exactly eighteen frozen, explicitly mapped read-only tools', () => {
-  assert.equal(AI_TOOL_NAMES.length, 18);
-  assert.equal(AI_TOOL_DECLARATIONS.length, 18);
+test('tool registry exposes exactly twenty-one frozen, explicitly mapped read-only tools', () => {
+  assert.equal(AI_TOOL_NAMES.length, 21);
+  assert.equal(AI_TOOL_DECLARATIONS.length, 21);
   assert.equal(Object.isFrozen(AI_TOOL_EXECUTORS), true);
   assert.deepEqual(Object.keys(AI_TOOL_EXECUTORS), AI_TOOL_NAMES);
   assert.equal('eval' in AI_TOOL_EXECUTORS, false);
@@ -878,16 +878,137 @@ test('Eden loyalty calculations and admin data both enforce their contracts', as
   assert.equal(JSON.stringify(allowed.data).includes('Kika'), false);
 });
 
-test('parallel execution assigns deterministic evidence IDs and enforces six calls', async () => {
-  const calls = Array.from({ length: 7 }, (_, index) => ({
+test('parallel execution assigns deterministic evidence IDs and enforces eight calls', async () => {
+  const calls = Array.from({ length: 9 }, (_, index) => ({
     callId: `fc_${index + 1}`,
     name: 'get_hero_details',
     arguments: { names: ['Theodora'] },
   }));
   const results = await executeAiToolCalls(calls, staticContext);
-  assert.equal(results.length, 7);
+  assert.equal(results.length, 9);
   assert.equal(results[0].meta.evidenceId, 'E1');
-  assert.equal(results[5].meta.evidenceId, 'E6');
-  assert.equal(results[6].ok, false);
-  assert.equal(results[6].error.code, 'tool_call_limit');
+  assert.equal(results[7].meta.evidenceId, 'E8');
+  assert.equal(results[8].ok, false);
+  assert.equal(results[8].error.code, 'tool_call_limit');
+});
+
+test('arcade leaderboard adapter reads public boards and strips auth identifiers', async () => {
+  const boards = {
+    empty: false,
+    perGame: {
+      merge_rush: [
+        {
+          rank: 1,
+          name: 'Abo',
+          state: 'VTS 1097',
+          score: 42_000,
+          uid: 'secret-uid-1',
+          playerId: 'p1',
+          playerKey: 'k1',
+          gameId: 'merge_rush',
+          updatedAtMs: 1,
+        },
+      ],
+    },
+    overall: [
+      {
+        rank: 1,
+        name: 'Kika',
+        state: 'VTS 1097',
+        rating: 130_000,
+        gamesPlayed: 5,
+        totalGames: 5,
+        perGame: { merge_rush: { score: 42_000 }, sort_hoard: { score: 30_000 } },
+        uid: 'secret-uid-2',
+        playerId: 'p2',
+        playerKey: 'k2',
+      },
+    ],
+  };
+  const perGame = await executeAiToolCall(
+    { name: 'get_arcade_leaderboard', arguments: { kind: 'per_game', gameId: 'merge_rush' } },
+    { ...staticContext, fetchLeaderboards: async () => boards }
+  );
+  assert.equal(perGame.ok, true);
+  assert.equal(perGame.data.rows.length, 1);
+  assert.equal(perGame.data.rows[0].name, 'Abo');
+  assert.equal(perGame.data.rows[0].score, 42_000);
+  assert.equal(JSON.stringify(perGame.data).includes('secret-uid'), false);
+  assert.equal(JSON.stringify(perGame.data).includes('playerKey'), false);
+
+  const overall = await executeAiToolCall(
+    { name: 'get_arcade_leaderboard', arguments: { kind: 'overall', topN: 10 } },
+    { ...staticContext, fetchLeaderboards: async () => boards }
+  );
+  assert.equal(overall.ok, true);
+  assert.equal(overall.data.rows[0].rating, 130_000);
+  assert.equal(overall.data.rows[0].perGame.merge_rush, 42_000);
+  assert.equal(JSON.stringify(overall.data).includes('secret-uid'), false);
+
+  const unavailable = await executeAiToolCall(
+    { name: 'get_arcade_leaderboard', arguments: { kind: 'overall' } },
+    {
+      ...staticContext,
+      fetchLeaderboards: async () => {
+        throw new Error('offline');
+      },
+    }
+  );
+  assert.equal(unavailable.ok, false);
+  assert.equal(unavailable.error.code, 'data_unavailable');
+
+  const badGame = await executeAiToolCall(
+    { name: 'get_arcade_leaderboard', arguments: { kind: 'per_game', gameId: 'no_such_game' } },
+    { ...staticContext, fetchLeaderboards: async () => boards }
+  );
+  assert.equal(badGame.ok, false);
+  assert.equal(badGame.error.code, 'malformed_arguments');
+});
+
+test('all-star-boh mechanics adapter serves the public overview and scoring formula', async () => {
+  const nowMs = Date.parse('2026-08-03T00:00:00.000Z');
+  const overview = await executeAiToolCall(
+    { name: 'get_all_star_boh_mechanics', arguments: { kind: 'overview' } },
+    { ...staticContext, nowMs }
+  );
+  assert.equal(overview.ok, true);
+  assert.equal(overview.data.teamCount, 6);
+  assert.equal(overview.data.teamSize, 12);
+  assert.deepEqual(overview.data.fightingTimeIds, ['+12', '+14', '+16']);
+  assert.deepEqual(overview.data.entryMethods, ['manual', 'ocr']);
+  assert.equal(overview.data.roleGroups.length, 4);
+  assert.equal(overview.data.phases.length, 5);
+  assert.equal(overview.data.signupWindow.phase, 'unconfigured');
+  assert.equal(JSON.stringify(overview.data).includes('roster'), false);
+
+  const scoring = await executeAiToolCall(
+    { name: 'get_all_star_boh_mechanics', arguments: { kind: 'scoring' } },
+    staticContext
+  );
+  assert.equal(scoring.ok, true);
+  assert.equal(scoring.data.id, 'all-star-boh-2025-v1');
+  assert.equal(scoring.data.powerWeights.dragonPower, 1);
+  assert.equal(scoring.data.powerWeights.troopPower, 0.05);
+  assert.equal(scoring.data.bonusWeights.t9TroopType, 3000);
+
+  const denied = await executeAiToolCall(
+    { name: 'get_all_star_boh_mechanics', arguments: { kind: 'roster' } },
+    staticContext
+  );
+  assert.equal(denied.ok, false);
+  assert.equal(denied.error.code, 'malformed_arguments');
+});
+
+test('vts-score mechanics adapter exposes the public power fields and version', async () => {
+  const result = await executeAiToolCall(
+    { name: 'get_vts_score_mechanics', arguments: {} },
+    staticContext
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.data.version, 2);
+  assert.ok(result.data.requiredPowerFields.includes('totalCastlePower'));
+  assert.ok(result.data.requiredPowerFields.includes('troopPower'));
+  assert.ok(result.data.optionalPowerFields.includes('artifactPower'));
+  assert.ok(result.data.allPowerFields.includes('royalTechPower'));
+  assert.ok(result.meta.warnings.some((warning) => warning.includes('member-only')));
 });

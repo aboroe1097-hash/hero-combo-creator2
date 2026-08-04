@@ -65,7 +65,11 @@ const LIMITS = {
   // entry and route caps remain unchanged.
   // The 14.2.18 guided builder, event progress, and provider-first account
   // flow measure 9356.6 KiB; retain roughly 13 KiB of aggregate headroom.
-  totalJsBytes: 9420 * 1024,
+  // The 14.3.2 Velo b0.4 model-upgrade release adds live Arcade/BoH/VtsScore
+  // tool adapters, retry fallback, table-aware rendering, and the fresh ROC
+  // combo imports, measuring 9431.6 KiB after production minification; retain
+  // roughly 8 KiB while entry and route caps remain unchanged.
+  totalJsBytes: 9440 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -90,7 +94,9 @@ const LIMITS = {
   // The route-isolated BoH mapper stylesheet adds 90 KiB, bringing the audited
   // aggregate to 1530.6 KiB. It loads only on the mapper pages, so every
   // initial-route CSS cap below stays unchanged.
-  totalCssBytes: 1532 * 1024,
+  // The 14.3.2 Velo copy-answer and table-aware reply styling brings the
+  // audited aggregate to 1532.4 KiB; retain roughly 3 KiB of headroom.
+  totalCssBytes: 1535 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -138,7 +144,9 @@ const LIMITS = {
   // at 512x512 (one at 1254x1254) but render at 22-52 px, so they were resized
   // to 160 px and every plate re-encoded losslessly: 5516 KiB of source media
   // became 1466 KiB. Retain roughly 19 KiB of headroom.
-  totalDeployBytes: 30040 * 1024,
+  // The 14.3.2 Velo b0.4 and combo-expansion artifact measures 30,049.9 KiB
+  // after production minification; retain roughly 10 KiB of headroom.
+  totalDeployBytes: 30060 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.

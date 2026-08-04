@@ -2053,6 +2053,8 @@ const de = {
   'ai.askAnother': 'Weitere Frage stellen',
   'ai.copy': 'Kopieren',
   'ai.copied': 'Kopiert',
+  'ai.copyAnswer': 'Antwort kopieren',
+  'ai.answerCopied': 'Antwort kopiert',
   'ai.copyCode': 'Code kopieren',
   'ai.incomplete': 'Unvollständige Antwort',
   'ai.jumpLatest': 'Zum Neuesten springen',

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { filterAllowedToolGroupsForAuth, handleRequest } from '../../workers/ai-handler.js';
-import { ProviderStreamAssembler, buildGeminiRequest } from '../../workers/ai/gemini.js';
+import { ProviderStreamAssembler, buildGeminiRequest, pickModel } from '../../workers/ai/gemini.js';
 import { validateToolArguments } from '../../workers/ai/tools.js';
 import { buildManagementVotesSheetUrl } from '../../workers/ai/management-votes.js';
 import {
@@ -45,13 +45,17 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /do not confuse\nAbo with the current user/);
   assert.match(request.system_instruction, /helmet is visibly separate from your scales/);
   assert.match(request.system_instruction, /Never claim that you do not\nwear a helmet/);
-  assert.match(request.system_instruction, /Velo b0\.3/);
+  assert.match(request.system_instruction, /Velo b0\.4/);
   assert.match(request.system_instruction, /CHARACTER LORE \(REACTIVE ONLY\)/);
   assert.match(request.system_instruction, /Mention\nthe helmet only when the user brings it up/);
   assert.doesNotMatch(request.system_instruction, /HELMET HELP RITUAL/);
   assert.doesNotMatch(request.system_instruction, /first help request of a conversation/);
   assert.match(request.system_instruction, /Lead with the answer/);
   assert.match(request.system_instruction, /Do not append a routine menu/);
+  assert.match(request.system_instruction, /compact markdown table with short cell text/);
+  assert.match(request.system_instruction, /get_arcade_leaderboard/);
+  assert.match(request.system_instruction, /get_all_star_boh_mechanics/);
+  assert.match(request.system_instruction, /get_vts_score_mechanics/);
   assert.match(request.system_instruction, /inventory\.remainingPieceCountToTarget/);
   assert.match(request.system_instruction, /Use get_toolkit_map/);
   assert.match(request.system_instruction, /Use get_whats_new/);
@@ -201,6 +205,80 @@ test('Gemini tool contract supports Mary formations and public VTS player lookup
       limit: 10,
     }),
     true
+  );
+});
+
+test('Velo b0.4 exposes the new public tools and validates their contracts', () => {
+  const request = buildGeminiRequest({
+    model: 'gemini-3.5-flash',
+    providerInput: [{ type: 'user_input', content: [{ type: 'text', text: 'Arcade?' }] }],
+    allowedToolGroups: ['static'],
+    locale: 'en',
+  });
+  const names = request.tools.map((tool) => tool.name);
+  assert.ok(names.includes('get_arcade_leaderboard'));
+  assert.ok(names.includes('get_all_star_boh_mechanics'));
+  assert.ok(names.includes('get_vts_score_mechanics'));
+
+  const arcade = request.tools.find((tool) => tool.name === 'get_arcade_leaderboard');
+  assert.deepEqual(arcade.parameters.properties.kind.enum, ['overall', 'per_game']);
+  assert.deepEqual(arcade.parameters.required, ['kind']);
+
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', topN: 10 }),
+    true
+  );
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', {
+      kind: 'per_game',
+      gameId: 'merge_rush',
+      topN: 25,
+    }),
+    true
+  );
+  assert.equal(validateToolArguments('get_arcade_leaderboard', { kind: 'per_game' }), false);
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', gameId: 'merge_rush' }),
+    false
+  );
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', topN: 0 }),
+    false
+  );
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', gameId: 'unknown_game' }),
+    false
+  );
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', { kind: 'overview' }), true);
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', { kind: 'scoring' }), true);
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', { kind: 'roster' }), false);
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', {}), false);
+  assert.equal(validateToolArguments('get_vts_score_mechanics', {}), true);
+  assert.equal(validateToolArguments('get_vts_score_mechanics', { player: 'Abo' }), false);
+});
+
+test('model routing picks the fast model for simple turns and the primary otherwise', () => {
+  const env = { AI_MODEL: 'gemini-3.5-flash', AI_MODEL_FAST: 'gemini-3.1-flash-lite' };
+  const simple = [{ type: 'user_input', content: [{ type: 'text', text: 'Who is Abo?' }] }];
+  assert.equal(pickModel(env, simple), 'gemini-3.1-flash-lite');
+  const longPrompt = [
+    {
+      type: 'user_input',
+      content: [{ type: 'text', text: 'x'.repeat(300) }],
+    },
+  ];
+  assert.equal(pickModel(env, longPrompt), 'gemini-3.5-flash');
+  const withHistory = [
+    { type: 'user_input', content: [{ type: 'text', text: 'Hi' }] },
+    { type: 'model_output', content: [{ type: 'text', text: 'Hello!' }] },
+    { type: 'user_input', content: [{ type: 'text', text: 'Who is Abo?' }] },
+  ];
+  assert.equal(pickModel(env, withHistory), 'gemini-3.5-flash');
+  assert.equal(pickModel(env, simple, 'generator'), 'gemini-3.5-flash');
+  assert.equal(pickModel({ AI_MODEL: 'gemini-3.5-flash' }, simple), 'gemini-3.5-flash');
+  assert.equal(
+    pickModel({ AI_MODEL: 'gemini-3.5-flash', AI_MODEL_FAST: 'nope' }, simple),
+    'gemini-3.5-flash'
   );
 });
 

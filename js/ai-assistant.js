@@ -39,6 +39,8 @@ import {
 const FALLBACKS = Object.freeze({
   'ai.copy': 'Copy',
   'ai.copied': 'Copied',
+  'ai.copyAnswer': 'Copy answer',
+  'ai.answerCopied': 'Answer copied',
   'ai.usedAppData': 'Used App Data',
   'ai.generalMode': 'General advice only',
   'ai.personalMode': 'Using selected saved data',
@@ -218,10 +220,9 @@ function normalizeLocale(value) {
   return AI_SUPPORTED_LOCALES.includes(locale) ? locale : 'en';
 }
 
-// Flip to true only after the Worker deploy that accepts input.activeTab
-// (workers/ai/schema.js) — the previously deployed schema rejects unknown
-// request fields, so sending it early would fail every chat turn.
-const SEND_ACTIVE_TAB_CONTEXT = false;
+// The Worker schema accepts input.activeTab since the b0.4 release; the
+// deployed Worker must be at least that schema before this ships.
+const SEND_ACTIVE_TAB_CONTEXT = true;
 
 function currentActiveTabContext() {
   const tab = String(document.body?.dataset?.activeTab || '').trim();
@@ -904,7 +905,33 @@ class AiAssistantController {
     if (message.sources?.length) item.append(this.createSources(message.sources));
     if (message.actions?.length) item.append(this.createActions(message.actions, index));
     if (message.followups?.length) item.append(this.createFollowups(message.followups));
+    if (message.role === 'assistant' && !pending && message.text) {
+      item.append(this.createCopyAnswer(message.text));
+    }
     return item;
+  }
+
+  createCopyAnswer(text) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'ai-message-toolbar';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ai-message-copy';
+    button.textContent = translate('ai.copyAnswer', FALLBACKS['ai.copyAnswer']);
+    button.setAttribute('aria-label', translate('ai.copyAnswer', FALLBACKS['ai.copyAnswer']));
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = translate('ai.answerCopied', FALLBACKS['ai.answerCopied']);
+        setTimeout(() => {
+          button.textContent = translate('ai.copyAnswer', FALLBACKS['ai.copyAnswer']);
+        }, 1400);
+      } catch {
+        button.textContent = translate('ai.copyAnswer', FALLBACKS['ai.copyAnswer']);
+      }
+    });
+    toolbar.append(button);
+    return toolbar;
   }
 
   renderMessageAt(index) {

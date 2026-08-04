@@ -1,5 +1,16 @@
 # Changelog
 
+## 14.3.2 - 2026-08-03
+
+- Upgraded Velo to the smarter gemini-3.5-flash model while keeping the lighter model for short chat turns, so simple questions stay fast and big questions get better answers.
+- Added Velo retry support that automatically falls back to the alternate model when the first request is rate-limited or the service is unavailable.
+- Gave Velo three new capabilities: live Arcade leaderboards for all five games, All-Star BoH public mechanics and scoring, and the public VtsScore power-field contract.
+- Expanded Velo's output limit and tool budget so answers can include compact markdown tables that stay readable on phones.
+- Added a copy-answer button to completed Velo replies, plus table-aware rendering for tool-generated data.
+- Enabled Velo's active-tab context so follow-up questions know which tool page you are looking at.
+- Expanded the hero combos database with 32 curated A/B/S-tier formations from the public Rise of Castles community dataset: 7 new no-skin base combos (led by Alexander / Bleeding Steed / Theodora) enter the shared generator, and 25 skin-mode formations (e.g. the all-skins Alexander / Bleeding Steed / Theodora and Boudica / Jade Eagle / Ramses II lanes) join the skin-mode pool.
+- This release requires the Worker deploy (`workers/ai`) to ship together with the browser bundle.
+
 ## 14.3.1 - 2026-07-29
 
 - Replaced the generic VtsScore failure banner with specific messages for every secure-service outcome: rate limits (with the wait time), oversized screenshots, service outages, unsupported image types, locked accounts, closed signups, and rejected requests.

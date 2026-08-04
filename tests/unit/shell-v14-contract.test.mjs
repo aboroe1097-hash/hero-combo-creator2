@@ -14,10 +14,10 @@ const veloPrompt = readFileSync('workers/ai/prompt.js', 'utf8');
 
 const countId = (id) => (index.match(new RegExp(`id="${id}"`, 'g')) || []).length;
 
-test('Velo frontend badge matches the deployed b0.3 prompt contract', () => {
-  assert.match(aiAssistantTemplate, /aria-label="Velo Beta 0\.3">Beta 0\.3</);
+test('Velo frontend badge matches the deployed b0.4 prompt contract', () => {
+  assert.match(aiAssistantTemplate, /aria-label="Velo Beta 0\.4">Beta 0\.4</);
   assert.doesNotMatch(aiAssistantTemplate, /Beta 0\.1/);
-  assert.match(veloPrompt, /Velo b0\.3/);
+  assert.match(veloPrompt, /Velo b0\.4/);
 });
 
 test('v14 shell assets load last without replacing established tool ids', () => {

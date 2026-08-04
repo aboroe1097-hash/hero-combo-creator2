@@ -337,6 +337,46 @@ export const TOOL_DECLARATIONS = Object.freeze([
       'Read the three hero-skin tiers (Mythic, Legendary, Everlasting) with Star 1 activation, star-up costs, maximize totals, and acquisition paths including Premium-shop perfect-crystal exchange.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
   },
+  {
+    type: 'function',
+    name: 'get_arcade_leaderboard',
+    description:
+      'Read the public Arcade leaderboard: kind=overall ranks players by summed personal-best scores across all five mini-games, kind=per_game returns one mini-game ranking. Leaderboard rows are public aggregate data; never claim they show private rosters.',
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['overall', 'per_game'] },
+        gameId: {
+          type: 'string',
+          enum: ['merge_rush', 'sort_hoard', 'crystal_relay', 'set_assembly', 'hero_rumble'],
+        },
+        topN: { type: 'integer', minimum: 1, maximum: 50 },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_all_star_boh_mechanics',
+    description:
+      'Read the public All-Star BoH mechanics: kind=overview returns team size and count, fighting time slots (+12/+14/+16), entry methods, default role groups, battle phases, legions, and the signup window state; kind=scoring returns the 2025 scoring formula weights. Use for "how does BoH work", "what are the BoH phases", or "how is BoH scored". Never request signup contents, rosters, or access status.',
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['overview', 'scoring'] },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_vts_score_mechanics',
+    description:
+      'Read the public VtsScore scoring mechanics: the power fields used for final score upload, how a score is computed and reviewed, and the tier bands. Use for "how does VtsScore work", "which power fields matter", or "what do the score tiers mean". It never returns any player\'s scores or signup data.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
 ]);
 
 export const TOOL_NAMES = Object.freeze(TOOL_DECLARATIONS.map(({ name }) => name));
@@ -632,5 +672,32 @@ export function validateToolArguments(name, args) {
     return args.columnId === undefined && args.researchName === undefined;
   }
   if (name === 'get_skin_tier_details') return hasOnlyKeys(args, []);
+  if (name === 'get_arcade_leaderboard') {
+    if (
+      !hasOnlyKeys(args, ['kind', 'gameId', 'topN']) ||
+      !['overall', 'per_game'].includes(args.kind)
+    ) {
+      return false;
+    }
+    if (args.kind === 'per_game') {
+      if (
+        !['merge_rush', 'sort_hoard', 'crystal_relay', 'set_assembly', 'hero_rumble'].includes(
+          args.gameId
+        )
+      ) {
+        return false;
+      }
+    } else if (args.gameId !== undefined) {
+      return false;
+    }
+    return (
+      args.topN === undefined ||
+      (Number.isInteger(args.topN) && args.topN >= 1 && args.topN <= 50)
+    );
+  }
+  if (name === 'get_all_star_boh_mechanics') {
+    return hasOnlyKeys(args, ['kind']) && ['overview', 'scoring'].includes(args.kind);
+  }
+  if (name === 'get_vts_score_mechanics') return hasOnlyKeys(args, []);
   return false;
 }

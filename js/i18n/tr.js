@@ -1885,6 +1885,8 @@ const tr = {
   'ai.askAnother': 'Başka bir soru sor',
   'ai.copy': 'Kopyala',
   'ai.copied': 'Kopyalandı',
+  'ai.copyAnswer': 'Yanıtı kopyala',
+  'ai.answerCopied': 'Yanıt kopyalandı',
   'ai.copyCode': 'Kodu kopyala',
   'ai.incomplete': 'Eksik yanıt',
   'ai.jumpLatest': 'En yeni mesaja git',

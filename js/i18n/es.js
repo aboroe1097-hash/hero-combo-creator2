@@ -1910,6 +1910,8 @@ const es = {
   'ai.askAnother': 'Hacer otra pregunta',
   'ai.copy': 'Copiar',
   'ai.copied': 'Copiado',
+  'ai.copyAnswer': 'Copiar respuesta',
+  'ai.answerCopied': 'Respuesta copiada',
   'ai.copyCode': 'Copiar código',
   'ai.incomplete': 'Respuesta incompleta',
   'ai.jumpLatest': 'Ir a lo más reciente',

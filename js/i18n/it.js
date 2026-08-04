@@ -2036,6 +2036,8 @@ const it = {
   'ai.askAnother': 'Fai un’altra domanda',
   'ai.copy': 'Copia',
   'ai.copied': 'Copiato',
+  'ai.copyAnswer': 'Copia risposta',
+  'ai.answerCopied': 'Risposta copiata',
   'ai.copyCode': 'Copia codice',
   'ai.incomplete': 'Risposta incompleta',
   'ai.jumpLatest': 'Vai al più recente',

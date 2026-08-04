@@ -23,6 +23,11 @@ import { getVtsPlayerContextAdapter } from './tool-adapters-community.js';
 import { getVtsGuideContextAdapter } from './tool-adapters-knowledge.js';
 import { getAdminContextAdapter } from './tool-adapters-admin.js';
 import {
+  getAllStarBohMechanicsAdapter,
+  getArcadeLeaderboardAdapter,
+  getVtsScoreMechanicsAdapter,
+} from './tool-adapters-public-data.js';
+import {
   getSkinTierDetailsAdapter,
   getSpecializationContextAdapter,
   getToolkitMapAdapter,
@@ -115,6 +120,18 @@ const DEFINITIONS = {
   },
   get_skin_tier_details: {
     execute: getSkinTierDetailsAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_arcade_leaderboard: {
+    execute: getArcadeLeaderboardAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_all_star_boh_mechanics: {
+    execute: getAllStarBohMechanicsAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_vts_score_mechanics: {
+    execute: getVtsScoreMechanicsAdapter,
     requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
   },
 };
@@ -418,6 +435,43 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
     name: 'get_skin_tier_details',
     description:
       'Read the three hero-skin tiers with star-up costs, maximize totals, and acquisition paths.',
+    parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
+  }),
+  Object.freeze({
+    name: 'get_arcade_leaderboard',
+    description:
+      'Read the public Arcade leaderboard: overall summed personal-best ranking or one mini-game ranking.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['kind'],
+      properties: {
+        kind: { type: 'string', enum: ['overall', 'per_game'] },
+        gameId: {
+          type: 'string',
+          enum: ['merge_rush', 'sort_hoard', 'crystal_relay', 'set_assembly', 'hero_rumble'],
+        },
+        topN: { type: 'integer', minimum: 1, maximum: 50 },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_all_star_boh_mechanics',
+    description:
+      'Read the public All-Star BoH mechanics: team format, fighting time slots, entry methods, role groups, phases, legions, signup window state, or the 2025 scoring formula.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['kind'],
+      properties: {
+        kind: { type: 'string', enum: ['overview', 'scoring'] },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_vts_score_mechanics',
+    description:
+      'Read the public VtsScore mechanics: version, power fields (required and optional), and maximum power.',
     parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
   }),
 ]);

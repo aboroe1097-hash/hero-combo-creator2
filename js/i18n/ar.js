@@ -1862,6 +1862,8 @@ const ar = {
   'ai.askAnother': 'طرح سؤال آخر',
   'ai.copy': 'نسخ',
   'ai.copied': 'تم النسخ',
+  'ai.copyAnswer': 'نسخ الرد',
+  'ai.answerCopied': 'تم نسخ الرد',
   'ai.copyCode': 'نسخ الرمز',
   'ai.incomplete': 'إجابة غير مكتملة',
   'ai.jumpLatest': 'الانتقال إلى الأحدث',
