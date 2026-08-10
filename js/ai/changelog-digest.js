@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.3",
+    "date": "2026-08-10",
+    "highlights": [
+      "Rebuilt the hero combos database as one plain ranked list. Every entry is now just the three heroes plus an optional skin code and an optional note, replacing the imported tier-and-score format that came from the external combo datasets.",
+      "Limited the combos database to heroes from seasons up to X2 and removed the 82 imported formations that depended on X8 heroes, leaving 205 ranked combos.",
+      "Added database guards so a combo can only use known hero names, can never reintroduce an X8 hero, and can only carry the heroes/skin/note fields."
+    ]
+  },
   {
     "version": "14.3.2",
     "date": "2026-08-03",
@@ -101,13 +110,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added a Battle Simulator saved-profile checklist that validates Research, Equipment, and Specialization Towers before explicitly importing those automatic sources into either side.",
       "Redesigned Account & Profile into responsive Profile, Privacy, and Account settings sections with a clearer create/sign-in flow.",
       "Added safer dirty/save handling, required-field reveal, localized save and error states, counters, and RTL/mobile safe-area behavior."
-    ]
-  },
-  {
-    "version": "14.2.14",
-    "date": "2026-07-26",
-    "highlights": [
-      "Fixed the mobile header so the Account control has its own touch-safe slot without displacing the clock, search, theme, or language controls."
     ]
   }
 ].map((release) =>

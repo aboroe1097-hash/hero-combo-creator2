@@ -12,8 +12,8 @@ import {
   selectNonOverlappingCombos,
 } from '../../js/combos-db.js';
 
-const X8_AVAILABILITY_SOURCE = 'rocacademy-free-noskin-x8-name-match-2026-07-25';
-const X8_AVAILABLE_HEROES = [
+// Seasons up to X2 are in scope for the combo database; X8 heroes are excluded for now.
+const X8_HEROES = [
   'Bjorn',
   'Skanda',
   'Liberator',
@@ -72,33 +72,48 @@ test('non-overlap selection respects the result limit', () => {
   );
 });
 
-test('X8 availability import contains 82 valid name-matched base formations', () => {
-  const imported = rankedCombos.filter((combo) => combo.source === X8_AVAILABILITY_SOURCE);
+test('every combo uses known hero names and no X8 hero', () => {
   const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
-  const targetHeroNames = new Set(X8_AVAILABLE_HEROES);
+  const excluded = new Set(X8_HEROES);
 
-  assert.equal(imported.length, 82);
-  assert.equal(new Set(imported.map((combo) => combo.heroes.join('|'))).size, 82);
-  imported.forEach((combo) => {
+  assert.ok(rankedCombos.length > 0);
+  rankedCombos.forEach((combo) => {
     assert.equal(combo.heroes.length, 3);
-    assert.ok(combo.heroes.every((hero) => validHeroNames.has(hero)));
-    assert.ok(combo.heroes.some((hero) => targetHeroNames.has(hero)));
-    assert.match(combo.sourceTier, /^[SABC]$/);
-    assert.equal(Number.isFinite(combo.sourceScore), true);
-    assert.equal(Object.hasOwn(combo, 'skin'), false);
+    assert.ok(
+      combo.heroes.every((hero) => validHeroNames.has(hero)),
+      `unknown hero name in ${combo.heroes.join('|')}`
+    );
+    assert.ok(
+      combo.heroes.every((hero) => !excluded.has(hero)),
+      `X8 hero is out of scope for now: ${combo.heroes.join('|')}`
+    );
   });
 });
 
-test('X8-only ownership produces the all-catch-up archer formation', () => {
-  const selected = selectNonOverlappingCombos(rankedCombos, X8_AVAILABLE_HEROES, 5);
+test('entries carry only heroes, an optional skin code, and an optional note', () => {
+  const allowed = new Set(['heroes', 'skin', 'note']);
 
-  assert.ok(selected.some((combo) => combo.heroes.join('|') === 'Eidolon|Warden|Ashen Verdict'));
+  rankedCombos.forEach((combo) => {
+    Object.keys(combo).forEach((key) => {
+      assert.ok(allowed.has(key), `unexpected field "${key}" on ${combo.heroes.join('|')}`);
+    });
+    if (combo.skin !== undefined) {
+      assert.match(combo.skin, /^[123]{3}$/, `bad skin code on ${combo.heroes.join('|')}`);
+    }
+    if (combo.note !== undefined) {
+      assert.equal(typeof combo.note, 'string');
+    }
+  });
 });
 
-test('name-matched import restores a buildable Cyrus formation', () => {
-  const selected = selectNonOverlappingCombos(rankedCombos, ['Cyrus', 'Ragnar', 'Caesar'], 5);
+test('X8-free ownership still produces a buildable formation', () => {
+  const selected = selectNonOverlappingCombos(
+    rankedCombos,
+    ['Alexander', 'Bleeding Steed', 'Theodora'],
+    5
+  );
 
-  assert.equal(selected[0]?.heroes.join('|'), 'Cyrus|Ragnar|Caesar');
+  assert.equal(selected[0]?.heroes.join('|'), 'Alexander|Bleeding Steed|Theodora');
 });
 
 test('skin codes use 3 as must, 2 as recommended, and 1 as optional', () => {
@@ -142,43 +157,43 @@ test('skin mode ranks Octavius Rozen Caesar above Alfred Black Prince Jeanne', (
   );
 });
 
-test('fresh ROC import contains 32 curated A/B/S formations with valid heroes', () => {
-  const ROC_FRESH_SOURCE = 'roc-combos-2026-08-02';
-  const imported = rankedCombos.filter((combo) => combo.source === ROC_FRESH_SOURCE);
-  const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
+test('the curated 222 skin-mode formations survive as plain entries', () => {
+  const key = (combo) => combo.heroes.join('|');
+  const skinned = rankedCombos.filter((combo) => combo.skin === '222');
 
-  assert.equal(imported.length, 32);
-  assert.equal(new Set(imported.map((combo) => combo.heroes.join('|'))).size, 25);
-  imported.forEach((combo) => {
-    assert.equal(combo.heroes.length, 3);
-    assert.ok(combo.heroes.every((hero) => validHeroNames.has(hero)));
-    assert.match(combo.sourceTier, /^[SAB]$/);
-    assert.equal(Number.isFinite(combo.sourceScore), true);
-  });
-  assert.equal(
-    imported.filter((combo) => !combo.skin).length,
-    7,
-    'exactly 7 noskin base entries enter the shared database'
-  );
-  assert.equal(
-    imported.filter((combo) => combo.skin === '222').length,
-    25,
-    'exactly 25 skin-mode entries stay gated to skin mode'
-  );
+  assert.equal(skinned.length, 25);
+  assert.equal(new Set(skinned.map(key)).size, 25);
 });
 
-test('fresh noskin entries appear in base mode and fresh skin entries stay gated', () => {
-  const ROC_FRESH_SOURCE = 'roc-combos-2026-08-02';
-  const fresh = rankedCombos.filter((combo) => combo.source === ROC_FRESH_SOURCE);
-  const freshInBase = fresh.filter((combo) => baseRankedCombos.includes(combo));
+test('the seven no-skin counterparts stay available in base mode', () => {
+  const key = (combo) => combo.heroes.join('|');
+  const wanted = [
+    'Alexander|Bleeding Steed|Theodora',
+    'Hunk|Cleopatra VII|Alexander',
+    'King Arthur|Bleeding Steed|Alexander',
+    'The Brave|Rozen Blade|The Avalanche',
+    'Bleeding Steed|Cleopatra VII|Alexander',
+    "Black Prince|Jeanne d'Arc|Lionheart",
+    'Hunk|Bleeding Steed|Alexander',
+  ];
 
-  assert.equal(freshInBase.length, 7);
-  assert.ok(freshInBase.every((combo) => !combo.skin));
-  assert.equal(
-    fresh.filter((combo) => combo.skin).every((combo) => !baseRankedCombos.includes(combo)),
-    true,
-    'skin-gated fresh entries must not leak into the base database'
+  wanted.forEach((entry) => {
+    assert.ok(
+      baseRankedCombos.some((combo) => key(combo) === entry && !combo.skin),
+      `missing no-skin base entry ${entry}`
+    );
+  });
+});
+
+test('skin-gated entries stay out of the base database', () => {
+  const gated = rankedCombos.filter((combo) => combo.skin && combo.skin !== '111');
+
+  assert.ok(gated.length > 0);
+  assert.ok(
+    gated.every((combo) => !baseRankedCombos.includes(combo)),
+    'skin-gated entries must not leak into the base database'
   );
+  assert.equal(baseRankedCombos.length, rankedCombos.length - gated.length);
 });
 
 test('fresh Alexander Bleeding Steed Theodora is buildable from owned heroes', () => {

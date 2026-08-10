@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.3.3 - 2026-08-10
+
+- Rebuilt the hero combos database as one plain ranked list. Every entry is now just the three heroes plus an optional skin code and an optional note, replacing the imported tier-and-score format that came from the external combo datasets.
+- Limited the combos database to heroes from seasons up to X2 and removed the 82 imported formations that depended on X8 heroes, leaving 205 ranked combos.
+- Added database guards so a combo can only use known hero names, can never reintroduce an X8 hero, and can only carry the heroes/skin/note fields.
+
 ## 14.3.2 - 2026-08-03
 
 - Upgraded Velo to the smarter gemini-3.5-flash model while keeping the lighter model for short chat turns, so simple questions stay fast and big questions get better answers.
