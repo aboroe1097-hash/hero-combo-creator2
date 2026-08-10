@@ -90,6 +90,20 @@ test('every combo uses known hero names and no X8 hero', () => {
   });
 });
 
+test('no two entries share the same heroes and skin code', () => {
+  // A duplicate renders two identical counter buttons and breaks strict-mode selectors
+  // in the browser smoke tests. A trio may still appear twice with different skin codes.
+  const counts = new Map();
+
+  rankedCombos.forEach((combo) => {
+    const key = `${combo.heroes.join('|')}#${combo.skin || ''}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+
+  const duplicates = [...counts].filter(([, count]) => count > 1).map(([key]) => key);
+  assert.deepEqual(duplicates, [], `duplicate combo entries: ${duplicates.join(', ')}`);
+});
+
 test('entries carry only heroes, an optional skin code, and an optional note', () => {
   const allowed = new Set(['heroes', 'skin', 'note']);
 

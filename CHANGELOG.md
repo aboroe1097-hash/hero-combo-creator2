@@ -3,8 +3,9 @@
 ## 14.3.3 - 2026-08-10
 
 - Rebuilt the hero combos database as one plain ranked list. Every entry is now just the three heroes plus an optional skin code and an optional note, replacing the imported tier-and-score format that came from the external combo datasets.
-- Limited the combos database to heroes from seasons up to X2 and removed the 82 imported formations that depended on X8 heroes, leaving 205 ranked combos.
-- Added database guards so a combo can only use known hero names, can never reintroduce an X8 hero, and can only carry the heroes/skin/note fields.
+- Limited the combos database to heroes from seasons up to X2 and removed the 82 imported formations that depended on X8 heroes, leaving 203 ranked combos.
+- Fixed the two promoted top-rank combos being listed twice, which rendered duplicate "Use this counter" buttons in the counter panels.
+- Added database guards so a combo can only use known hero names, can never reintroduce an X8 hero, can only carry the heroes/skin/note fields, and can never be listed twice with the same heroes and skin code.
 
 ## 14.3.2 - 2026-08-03
 

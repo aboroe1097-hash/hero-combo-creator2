@@ -36,8 +36,6 @@ export const rankedCombos = [
   { heroes: ['King Arthur', 'Bleeding Steed', 'Jade Eagle'], skin: '222' },
   { heroes: ['Black Prince', "Jeanne d'Arc", 'Lionheart'], skin: '222' },
   { heroes: ['Beowulf', 'Ramses II', 'Theodora'], note: 'Beowulf front-row skill spam triggers Theodora healing, producing a stable high-damage sustain combo.' },
-  { heroes: ['Alexander', 'Cleopatra VII', 'Theodora'] },
-  { heroes: ['King Arthur', 'Theodora', 'Alexander'] },
   { heroes: ['King Arthur', 'Cleopatra VII', 'Alexander'] },
   { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'] },
   { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'] },
