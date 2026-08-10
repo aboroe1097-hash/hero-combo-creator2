@@ -158,6 +158,8 @@ export const rankedCombos = [
   // --- SKIN MODE RANK OVERRIDES ---
   // skin code slots: 3 = must own skin, 2 = recommended skin, 1 = optional skin.
   // Missing skin metadata behaves like 111, so the combo keeps its normal rank with or without skins.
+  { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
+  { heroes: ["King Arthur","Theodora", "Alexander"] },
   { heroes: ["Beowulf", "Ramses II", "Theodora"], skin: '123', note: 'Highest observed S0-X1 sustain combo: Theodora skin is required, Ramses II skin is recommended, Beowulf skin is optional. No counter found yet.' },
   { heroes: ["King Arthur", "Cleopatra VII", "Theodora"], skin: '113', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"], skin: '321', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
