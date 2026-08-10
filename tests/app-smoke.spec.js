@@ -2255,9 +2255,11 @@ test.describe('app smoke tabs', () => {
     expect(counterUseValue).toBeTruthy();
 
     await page.locator('#genClearAllBtn').click();
-    const freshUseCounterButton = page.locator(
-      `.counter-use-btn[data-counter-use="${counterUseValue}"]`
-    );
+    // One counter can legitimately counter several generated combos, so this value is not
+    // unique on the page. Take the first match rather than assuming a single button.
+    const freshUseCounterButton = page
+      .locator(`.counter-use-btn[data-counter-use="${counterUseValue}"]`)
+      .first();
     await expect(freshUseCounterButton).toBeVisible();
     await freshUseCounterButton.scrollIntoViewIfNeeded();
     await freshUseCounterButton.click();
