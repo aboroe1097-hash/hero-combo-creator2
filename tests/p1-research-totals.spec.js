@@ -89,6 +89,60 @@ test('card-layout trees expose idle, progress and complete node states', async (
   }
 });
 
+test('a research row stays locked until the row above it is fully started', async ({ page }) => {
+  test.setTimeout(120000);
+  await openApp(page);
+  await openResearch(page);
+  await openTree(page, DUAL_TREE);
+  await page.locator('#resetAllTechBtn').click();
+  await page.waitForTimeout(250);
+
+  const rows = await page.evaluate(() => {
+    const wraps = [...document.querySelectorAll('.game-tech-node-wrap')];
+    return wraps.map((w) => ({
+      id: w.dataset.nodeId,
+      locked: w.dataset.nodeLocked,
+    }));
+  });
+
+  // On an empty tree only the first row is reachable.
+  const unlocked = rows.filter((r) => r.locked === 'false');
+  const locked = rows.filter((r) => r.locked === 'true');
+  expect(unlocked.length, 'first row is reachable').toBeGreaterThan(0);
+  expect(locked.length, 'later rows start locked').toBeGreaterThan(0);
+
+  // Tapping a locked node must not raise it.
+  const lockedId = locked[0].id;
+  const before = await page.evaluate(
+    (id) =>
+      document.querySelector(`.game-tech-node-wrap[data-node-id="${id}"] .tech-node-input`).value,
+    lockedId
+  );
+  await page
+    .locator(`.game-tech-node-wrap[data-node-id="${lockedId}"] .game-tech-tap`)
+    .click({ force: true });
+  await page.waitForTimeout(250);
+  const after = await page.evaluate(
+    (id) =>
+      document.querySelector(`.game-tech-node-wrap[data-node-id="${id}"] .tech-node-input`).value,
+    lockedId
+  );
+  expect(after, 'a locked node cannot be raised').toBe(before);
+
+  // Completing the whole tree unlocks everything.
+  await page.locator('#maxAllTechBtn').click();
+  await page.waitForTimeout(400);
+  const afterMax = await page.evaluate(() =>
+    [...document.querySelectorAll('.game-tech-node-wrap')].map((w) => w.dataset.nodeLocked)
+  );
+  expect(new Set(afterMax), 'nothing is locked once the tree is complete').toEqual(
+    new Set(['false'])
+  );
+
+  await page.locator('#resetAllTechBtn').click();
+  await page.waitForTimeout(200);
+});
+
 test('tree totals report spent alongside remaining for every currency', async ({ page }) => {
   test.setTimeout(120000);
   await openApp(page);

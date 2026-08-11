@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.4";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.5";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.5",
+    "date": "2026-08-11",
+    "highlights": [
+      "Added Spenders and F2P suggested routes to Specialization Towers. Picking one numbers every research in order and marks the next one to take, and the choice is remembered.",
+      "Added an easy medal fill toggle to Specialization Towers, with 25/50/75/100% quick fills so medals can be recorded without stepping through nodes first.",
+      "Node data contributions now require a signed-in account and are credited to it, which also removes the per-node contributor field so a whole column is just one number per row.",
+      "Added the exact in-game node topologies for Encounter Battle IV, Cavalry Training VII and Neat Formation III, including the three battle-row loops that make up Neat Formation III.",
+      "Corrected Army Breaker to season X1 and Defender to the Archers troop type.",
+      "Raised the minimum copies for free X1 and X2 heroes to 22; paid heroes stay at 14 and the maximum is unchanged at 34."
+    ]
+  },
   {
     "version": "14.3.4",
     "date": "2026-08-10",
@@ -96,18 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added one explicit publication-scope control for team lists, plan updates, or an atomic combined release.",
       "Added a draft-only announcement composer and clearer schedule controls for adding, duplicating, reordering, clearing, hiding, and validating public milestones and team times.",
       "Redesigned the member announcement and event schedule with editable release copy, team accents, a connected animated timeline, accurate next-event countdowns, and reduced-motion support."
-    ]
-  },
-  {
-    "version": "14.2.16",
-    "date": "2026-07-26",
-    "highlights": [
-      "Fixed the All-Star published-player Firestore contract so UID and playerId identity fields remain consistent.",
-      "Replaced the Admin All-Star five-stage Team Builder/Plans wizard with a mapper-first workflow.",
-      "Added explicit manual reconciliation from unmatched mapper names to fresh verified signups.",
-      "Added five-phase personal plans with connected 5x5 tower routes, player-specific crystal and Battle Merit assignments, and paired minute-3-or-later substitutions that preserve the ten-player field limit.",
-      "Added private per-team resource, skill, building-buff, and substitution editing without exposing draft-only identities or tactics in player publications.",
-      "Added independent editable Battle Simulator profile drafts for Side A and Side B, including a visual Specialization Towers board, selective source application, and aligned header controls."
     ]
   }
 ].map((release) =>

@@ -25,6 +25,24 @@ async function openApp(page, path = '/') {
   await waitForAppReady(page);
 }
 
+const ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
+
+// Season pills are toggles, so clicking one blindly depends on the current default.
+// These helpers drive them to an explicit state instead.
+async function setGeneratorSeason(page, season, checked) {
+  const input = page.locator(`#generatorSeasonFilters input[value="${season}"]`);
+  if ((await input.isChecked()) !== checked) {
+    await page.locator(`#generatorSeasonFilters .${season.toLowerCase()}-pill`).click();
+  }
+  await expect(input).toBeChecked({ checked });
+}
+
+async function setGeneratorSeasons(page, seasons) {
+  for (const season of ALL_SEASONS) {
+    await setGeneratorSeason(page, season, seasons.includes(season));
+  }
+}
+
 async function openDirectTabHash(page, tabName, sectionId, marker, search = '') {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
@@ -316,6 +334,10 @@ const visualSurfaces = [
     marker: '#generatorHeroes',
     target: '#generatorResults',
     setup: async (page) => {
+      // Pin the season filter so the captured surface is a fixed, small set of heroes.
+      // Left on the default the shot would depend on every season's remote portraits
+      // decoding in time, which is slow and not what this snapshot is checking.
+      await setGeneratorSeasons(page, ['S0', 'S1']);
       await page.locator('#genSelectAllBtn').click();
       await page.locator('#generateCombosBtn').click();
       await expect(page.locator('#generatorResults .generated-combo-card').first()).toBeVisible({
@@ -1452,9 +1474,10 @@ test.describe('app smoke tabs', () => {
     await page.locator('[data-spec-help-node]').click();
     await expect(page.locator('.spec-tool')).toHaveAttribute('data-view', 'overview');
     await expect(page.locator('[data-contribution-key="training1:2"]')).toBeVisible();
+    // Submitting node data needs an account, so signed out the field is present but inert.
     await expect(
       page.locator('[data-contribution-key="training1:2"] [data-spec-node-medal]')
-    ).toBeFocused();
+    ).toBeDisabled();
   });
 
   test('Specialization unlocks, previews, and reverses a Legion Skill', async ({ page }) => {
@@ -1500,27 +1523,27 @@ test.describe('app smoke tabs', () => {
     await expect(node.locator('.spec-contrib-node-identity')).toBeVisible();
     await expect(node.locator('.spec-contrib-stage')).toHaveCount(2);
 
-    const fields = [
-      ['[data-spec-node-contributor]', 'Alice'],
-      ['[data-spec-node-medal]', '120'],
-      ['[data-spec-node-reviewer]', 'Bob'],
-      ['[data-spec-node-reviewed-medal]', '120'],
-    ];
-    for (const [selector, value] of fields) {
-      await node.locator(selector).fill(value);
-      await node.locator(selector).dispatchEvent('change');
+    // Submitting a value is now credited to a signed-in account, so the per-node
+    // contributor field is gone and every input is inert until you sign in.
+    await expect(page.locator('.spec-community')).toHaveAttribute(
+      'data-contrib-signed-in',
+      'false'
+    );
+    await expect(page.locator('.spec-contrib-signin')).toBeVisible();
+    await expect(node.locator('[data-spec-node-contributor]')).toHaveCount(0);
+    for (const selector of [
+      '[data-spec-node-medal]',
+      '[data-spec-node-reviewer]',
+      '[data-spec-node-reviewed-medal]',
+    ]) {
+      await expect(node.locator(selector)).toBeDisabled();
     }
+
+    // The submitted and reviewed stages still travel together as one row.
+    await expect(node.locator('.spec-contrib-stage--review')).toHaveCount(1);
     await expect(
       page.locator('.spec-contrib-research').nth(1).locator('[data-spec-node-medal]').first()
     ).toHaveValue('');
-
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#specializationSection')).toBeVisible({ timeout: 20000 });
-    await page.locator('.spec-contrib-column').first().locator('summary').click();
-    const restored = page.locator('.spec-contrib-node').first();
-    for (const [selector, value] of fields) {
-      await expect(restored.locator(selector)).toHaveValue(value);
-    }
 
     const acknowledgments = page.locator('.spec-ack');
     await expect(acknowledgments).toBeVisible();
@@ -2005,7 +2028,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
   });
 
-  test('generator filters default to S0/S1 and update visible heroes', async ({ page }) => {
+  test('generator filters default to S0-X2 and update visible heroes', async ({ page }) => {
     await openApp(page);
     await page.locator('#heroInfoToggleLabel').click();
     await expect(page.locator('body')).toHaveClass(/hide-hero-info/);
@@ -2022,13 +2045,16 @@ test.describe('app smoke tabs', () => {
     await expect(cards.first()).not.toHaveClass(/generator-card-selected/);
     await expect(page.locator('#genSelectedCount')).toHaveClass(/hidden/);
 
-    await expect(page.locator('#generatorSeasonFilters input[value="S0"]')).toBeChecked();
-    await expect(page.locator('#generatorSeasonFilters input[value="S1"]')).toBeChecked();
+    // The generator opens on every season a live player can own; X8 stays off.
+    for (const season of ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']) {
+      await expect(page.locator(`#generatorSeasonFilters input[value="${season}"]`)).toBeChecked();
+    }
+    await expect(page.locator('#generatorSeasonFilters input[value="X8"]')).not.toBeChecked();
 
     const initialSeasons = await page
       .locator('#generatorHeroes .hero-tag')
       .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()))].sort());
-    expect(initialSeasons).toEqual(['S0', 'S1']);
+    expect(initialSeasons).toEqual(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
 
     await page.locator('#generatorTroopFilters .archers-pill').click();
     await expect(page.locator('#generatorTroopFilters input[value="All"]')).not.toBeChecked();
@@ -2048,8 +2074,14 @@ test.describe('app smoke tabs', () => {
     expect(filteredTroops).toContain('Archers');
     expect(filteredTroops.every((troop) => troop === 'Archers' || troop === 'All')).toBe(true);
 
-    await page.locator('#generatorSeasonFilters .s2-pill').click();
-    await expect(page.locator('#generatorSeasonFilters input[value="S2"]')).toBeChecked();
+    // Turning a season off removes its heroes, and turning it back on restores them.
+    await setGeneratorSeason(page, 'S2', false);
+    const seasonsWithoutS2 = await page
+      .locator('#generatorHeroes .hero-tag')
+      .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()))].sort());
+    expect(seasonsWithoutS2).not.toContain('S2');
+
+    await setGeneratorSeason(page, 'S2', true);
     const seasonsWithS2 = await page
       .locator('#generatorHeroes .hero-tag')
       .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()))].sort());
@@ -2146,7 +2178,8 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
     await expect(page.locator('#skinMetaCombosTable')).toHaveCount(0);
 
-    await page.locator('#generatorSeasonFilters .s4-pill').click();
+    // Arthur is S4; X1 must start off so enabling it later flips his skin badge.
+    await setGeneratorSeasons(page, ['S0', 'S1', 'S2', 'S3', 'S4']);
     const normalFilteredCount = await page.locator('#generatorHeroes .generator-card').count();
     await page.locator('#genSkinToggleLabel').click();
     await expect(page.locator('#genSkinToggle')).toBeChecked();
@@ -2170,7 +2203,7 @@ test.describe('app smoke tabs', () => {
     await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toBeVisible();
     await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveCount(1);
 
-    await page.locator('#generatorSeasonFilters .x1-pill').click();
+    await setGeneratorSeason(page, 'X1', true);
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toContainText('E');
     await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveAttribute(
@@ -2221,16 +2254,7 @@ test.describe('app smoke tabs', () => {
     });
     expect(counterIssues).toEqual([]);
 
-    for (const seasonPill of [
-      '.s2-pill',
-      '.s3-pill',
-      '.s4-pill',
-      '.x1-pill',
-      '.x2-pill',
-      '.x8-pill',
-    ]) {
-      await page.locator(`#generatorSeasonFilters ${seasonPill}`).click();
-    }
+    await setGeneratorSeasons(page, ALL_SEASONS);
     await page.locator('#genSelectAllBtn').click();
     await expect(page.locator('#genSelectedCount')).toContainText('selected');
     await page.locator('#generateCombosBtn').click();

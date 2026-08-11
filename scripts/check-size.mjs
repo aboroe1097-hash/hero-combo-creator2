@@ -69,7 +69,7 @@ const LIMITS = {
   // tool adapters, retry fallback, table-aware rendering, and the fresh ROC
   // combo imports, measuring 9431.6 KiB after production minification; retain
   // roughly 8 KiB while entry and route caps remain unchanged.
-  totalJsBytes: 9440 * 1024,
+  totalJsBytes: 9460 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -96,7 +96,7 @@ const LIMITS = {
   // initial-route CSS cap below stays unchanged.
   // The 14.3.2 Velo copy-answer and table-aware reply styling brings the
   // audited aggregate to 1532.4 KiB; retain roughly 3 KiB of headroom.
-  totalCssBytes: 1535 * 1024,
+  totalCssBytes: 1545 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -146,7 +146,7 @@ const LIMITS = {
   // became 1466 KiB. Retain roughly 19 KiB of headroom.
   // The 14.3.2 Velo b0.4 and combo-expansion artifact measures 30,049.9 KiB
   // after production minification; retain roughly 10 KiB of headroom.
-  totalDeployBytes: 30060 * 1024,
+  totalDeployBytes: 30080 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.

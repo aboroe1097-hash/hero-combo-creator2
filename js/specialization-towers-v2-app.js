@@ -32,6 +32,11 @@ import {
   saveSpecializationState,
 } from './specialization-towers-v2-store.js';
 import {
+  SPECIALIZATION_ROUTE_IDS,
+  getNextRouteResearch,
+  getRouteStep,
+} from './specialization-routes.js';
+import {
   bindSpecializationTowersV2LanguageChange,
   getSpecializationTowersV2Direction,
   loadSpecializationTowersV2Locale,
@@ -39,7 +44,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '14.3.4';
+export const APP_VERSION = '14.3.5';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];
@@ -83,6 +88,8 @@ const LANGUAGE_OPTIONS = Object.freeze([
 const THEME_KEY = 'vts_theme';
 const LANGUAGE_KEY = 'vts_hero_lang';
 const ACTIVE_TOWER_KEY = 'vts_specialization_towers_v2_active_tower';
+const ROUTE_KEY = 'vts_specialization_towers_v2_route';
+const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
 const MOBILE_INSPECTOR_QUERY = '(max-width: 900px)';
 const MAX_HISTORY = 60;
 const TROOP_ICONS = Object.freeze({ cavalry: '♞', archer: '⌁', footman: '⬟' });
@@ -100,6 +107,10 @@ let toastTimer = 0;
 let graphScrollFrame = 0;
 let graphScrollTarget = null;
 let currentGraphColumn = 1;
+// '' means no suggested route is being followed.
+let activeRoute = '';
+// Easy medal fill lifts the "pick a node first" gate so medals can be typed straight in.
+let easyMedalMode = false;
 let unbindLanguageChange = () => {};
 
 function escapeHtml(value) {
@@ -270,6 +281,14 @@ function renderHeader() {
             <button type="button" data-specialization-action="reset">${iconSvg('reset')}<span>${escapeHtml(t('resetAll'))}</span></button>
             <button type="button" data-specialization-action="breakdown">${iconSvg('breakdown')}<span>${escapeHtml(t('breakdown'))}</span></button>
           </div>
+          <button type="button" class="specialization-easy-medals-toggle" data-specialization-action="easy-medals" aria-pressed="${easyMedalMode}">${escapeHtml(t('easyMedalsLabel'))}</button>
+          <label class="specialization-route-control">
+            <span class="specialization-route-control-label">${escapeHtml(t('routeLabel'))}</span>
+            <select class="specialization-route-select" data-specialization-route-select aria-label="${escapeAttribute(t('routeLabel'))}">
+              <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(t('routeNone'))}</option>
+              ${SPECIALIZATION_ROUTE_IDS.map((routeId) => `<option value="${routeId}" ${activeRoute === routeId ? 'selected' : ''}>${escapeHtml(t(routeId === 'spender' ? 'routeSpender' : 'routeF2p'))}</option>`).join('')}
+            </select>
+          </label>
           <button type="button" data-specialization-theme-toggle aria-label="${escapeAttribute(t('themeLabel'))}" aria-pressed="${light}">${iconSvg('theme')}<span class="specialization-sr-only">${escapeHtml(t('themeLabel'))}</span></button>
           <label class="specialization-language-control">
             <span class="specialization-sr-only">${escapeHtml(t('languageLabel'))}</span>
@@ -356,16 +375,31 @@ function renderColumnPositionPill(columnId = currentGraphColumn) {
   </div>`;
 }
 
+// A research counts as done for routing purposes once every node in it is complete.
+function isResearchCompleteForRoute(researchId) {
+  const progress = getResearchProgress(state, activeTroop, researchId);
+  return progress.completedNodes >= progress.totalNodes;
+}
+
+function getRouteNextResearchId() {
+  if (!activeRoute) return null;
+  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute);
+}
+
 function renderResearchButton(researchId, columnId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   const progress = getResearchProgress(state, activeTroop, researchId);
   const percent = roundedPercent(progress.percent);
+  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId) : 0;
+  const isRouteNext = activeRoute && getRouteNextResearchId() === researchId;
   const selected = selectedItem.kind === 'research' && selectedItem.researchId === researchId;
   const stateName = statusForProgress(progress);
   const displayName = researchDisplayName(research, activeTroop);
   const image = getSpecializationResearchImage(researchId, activeTroop);
   return `
-    <article class="specialization-research" data-specialization-research="${researchId}">
+    <article class="specialization-research" data-specialization-research="${researchId}" data-route-step="${routeStep || ''}" data-route-next="${isRouteNext ? 'true' : 'false'}">
+      ${routeStep ? `<span class="specialization-route-step" aria-hidden="true">${routeStep}</span>` : ''}
+      ${isRouteNext ? `<span class="specialization-route-next">${escapeHtml(t('routeNextUp'))}</span>` : ''}
       <button type="button" class="specialization-research-node" data-specialization-open-research="${researchId}" data-column-id="${columnId}" data-state="${stateName}" aria-pressed="${selected}" aria-label="${escapeAttribute(t('nodeStatusAria', { name: displayName, status: statusLabel(progress), current: progress.completedNodes, maximum: progress.totalNodes }))}">
         ${renderCircularProgress('specialization-node-progress-ring', percent)}
         <span class="specialization-node-icon" aria-hidden="true">${plannerSprite(image, 'specialization-research-image')}</span>
@@ -531,7 +565,9 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
   const progressGroupId = `${titleId}-progress-label`;
   const pathNoticeId = `${titleId}-path-notice`;
   const requiresExactNodeSelection = nodeAccess.mode === 'partial-evidence';
-  const needsNodeBeforeMedals = progress.completedNodes === 0;
+  // Easy mode trades the evidence-first gate for speed: medals can be entered before any
+  // node is picked. A completed research still reports its full cost and stays read-only.
+  const needsNodeBeforeMedals = progress.completedNodes === 0 && !easyMedalMode;
   const medalInputDisabled = progress.isComplete || needsNodeBeforeMedals;
   const medalDescriptionIds = [
     ...(needsNodeBeforeMedals ? [recordedMedalsHelpId] : []),
@@ -563,6 +599,14 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
         <label for="${recordedMedalsId}">${escapeHtml(t('medalsRecorded'))}</label>
         <input id="${recordedMedalsId}" data-specialization-recorded-medals data-research-id="${research.id}" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeAttribute(t('medalsUnknown'))}" aria-describedby="${medalDescriptionIds}" ${medalInputDisabled ? 'disabled' : ''} />
         ${needsNodeBeforeMedals ? `<p class="specialization-inline-notice" id="${recordedMedalsHelpId}">${escapeHtml(t('selectNodeBeforeMedals'))}</p>` : ''}
+        ${
+          easyMedalMode && !progress.isComplete
+            ? `<div class="specialization-medal-quickfill" role="group" aria-label="${escapeAttribute(t('easyMedalsLabel'))}">
+                ${[25, 50, 75, 100].map((share) => `<button type="button" data-specialization-medal-fill="${share}" data-research-id="${research.id}">${share}%</button>`).join('')}
+                <button type="button" data-specialization-medal-fill="0" data-research-id="${research.id}">${escapeHtml(t('easyMedalsClear'))}</button>
+              </div>`
+            : ''
+        }
         <div class="specialization-cost-table">
           <div class="specialization-cost-row"><span>${escapeHtml(t('medalsRequired'))}</span><strong>${formatNumber(research.cost)}</strong></div>
           <div class="specialization-cost-row"><span>${escapeHtml(t('medalsRemaining'))}</span><strong>${remaining === null ? escapeHtml(t('medalsUnknown')) : formatNumber(remaining)}</strong></div>
@@ -908,11 +952,17 @@ function selectSkill(columnId, opener) {
   }
 }
 
+// Returns the next state without committing it, so callers can chain another edit
+// (easy medal fill sets node count and medals in one history entry).
+function setResearchCompletionState(baseState, troopId, researchId, targetCount) {
+  const ids = selectableNodeIds(SPECIALIZATION_RESEARCH[researchId]);
+  const count = Math.max(0, Math.min(ids.length, Number(targetCount) || 0));
+  return setResearchNodes(baseState, troopId, researchId, ids.slice(0, count));
+}
+
 function setResearchCompletion(researchId, targetCount) {
   const research = SPECIALIZATION_RESEARCH[researchId];
-  const ids = selectableNodeIds(research);
-  const count = Math.max(0, Math.min(ids.length, Number(targetCount) || 0));
-  const next = setResearchNodes(state, activeTroop, researchId, ids.slice(0, count));
+  const next = setResearchCompletionState(state, activeTroop, researchId, targetCount);
   const progress = getResearchProgress(next, activeTroop, researchId);
   remember(
     next,
@@ -1101,6 +1151,13 @@ function closeDialog(dialog) {
 }
 
 function handleToolbarAction(action, trigger) {
+  if (action === 'easy-medals') {
+    easyMedalMode = !easyMedalMode;
+    safeStorageSet(EASY_MEDALS_KEY, easyMedalMode ? '1' : '');
+    refresh({ preserveScroll: true });
+    toast(easyMedalMode ? t('easyMedalsOn') : t('easyMedalsOff'));
+    return;
+  }
   if (action === 'undo') {
     if (!undoStack.length) return toast(t('undoUnavailable'));
     redoStack.push(state);
@@ -1140,6 +1197,31 @@ function handleClick(event) {
     };
     refresh({ preserveScroll: false });
     root.querySelector(`[data-specialization-tower="${tower}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  if (target.dataset.specializationMedalFill) {
+    // The model drops medalsSpent unless nodes are selected, so a quick fill sets both:
+    // "I am roughly N% through this" means N% of the nodes and N% of the medals.
+    const researchId = target.dataset.researchId;
+    const share = Number(target.dataset.specializationMedalFill);
+    const research = SPECIALIZATION_RESEARCH[researchId];
+    const total = selectableNodeIds(research).length;
+    const nodeCount = share === 0 ? 0 : Math.ceil((share / 100) * total);
+    let nextState = setResearchCompletionState(state, activeTroop, researchId, nodeCount);
+    const cost = Number(research?.cost) || 0;
+    const medals = share === 0 ? null : Math.round((cost * share) / 100);
+    try {
+      nextState = setResearchMedalsSpent(nextState, activeTroop, researchId, medals);
+    } catch {
+      // A rejected medal value still leaves the node selection applied.
+    }
+    remember(
+      nextState,
+      t('learningUpdated', {
+        name: researchDisplayName(research, activeTroop),
+        level: share,
+      })
+    );
     return;
   }
   if (target.dataset.specializationOpenResearch) {
@@ -1237,6 +1319,12 @@ function handleClick(event) {
 
 function handleChange(event) {
   const target = event.target;
+  if (target.matches('[data-specialization-route-select]')) {
+    activeRoute = SPECIALIZATION_ROUTE_IDS.includes(target.value) ? target.value : '';
+    safeStorageSet(ROUTE_KEY, activeRoute);
+    refresh({ preserveScroll: true });
+    return;
+  }
   if (target.matches('[data-specialization-language-select]')) {
     const nextLocale = resolveSpecializationTowersV2Locale(target.value);
     safeStorageSet(LANGUAGE_KEY, nextLocale);
@@ -1355,6 +1443,9 @@ export function mountSpecializationTowers(mount) {
   state = loadSpecializationState();
   const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'cavalry');
   activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'cavalry';
+  const storedRoute = safeStorageGet(ROUTE_KEY, '');
+  activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
+  easyMedalMode = safeStorageGet(EASY_MEDALS_KEY, '') === '1';
   currentGraphColumn = 1;
   selectedItem = {
     kind: 'research',
