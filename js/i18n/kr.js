@@ -794,6 +794,7 @@ const kr = {
   researchSelectNodePrompt: '비용과 진행도를 보려면 노드를 선택하세요.',
   researchSetMax: 'MAX 설정',
   researchTreeTotal: '트리 합계',
+  researchTreeSpent: '사용함',
   researchTreeTotalHint: '이 트리의 남은 비용',
   researchTroopBranchArchers: '궁병',
   researchTroopBranchCavalry: '기병',

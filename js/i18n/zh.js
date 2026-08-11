@@ -780,6 +780,7 @@ const zh = {
   researchSelectNodePrompt: '选择节点以查看消耗和进度。',
   researchSetMax: '设为满级',
   researchTreeTotal: '科技树总计',
+  researchTreeSpent: '已花费',
   researchTreeTotalHint: '此科技树的剩余消耗',
   researchTroopBranchArchers: '弓兵',
   researchTroopBranchCavalry: '骑兵',

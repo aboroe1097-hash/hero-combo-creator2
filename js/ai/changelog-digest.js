@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.3";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.4";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.4",
+    "date": "2026-08-10",
+    "highlights": [
+      "Added a spent total to the research calculator, so each tech tree now reports how many War Badges and Courage Medals you have already invested next to how many are still remaining.",
+      "Kept the tree footer naming its real currencies once a tree is fully maxed, instead of collapsing to a generic resource row when nothing is left to buy.",
+      "Made partially levelled nodes look the same in every tech tree. Trees using the card layout only ever showed \"maxed or not\", so a half-finished node was indistinguishable from an untouched one; they now use the same idle, in-progress, and complete states as the rest of the trees."
+    ]
+  },
   {
     "version": "14.3.3",
     "date": "2026-08-10",
@@ -99,18 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added five-phase personal plans with connected 5x5 tower routes, player-specific crystal and Battle Merit assignments, and paired minute-3-or-later substitutions that preserve the ten-player field limit.",
       "Added private per-team resource, skill, building-buff, and substitution editing without exposing draft-only identities or tactics in player publications.",
       "Added independent editable Battle Simulator profile drafts for Side A and Side B, including a visual Specialization Towers board, selective source application, and aligned header controls."
-    ]
-  },
-  {
-    "version": "14.2.15",
-    "date": "2026-07-26",
-    "highlights": [
-      "Made the approved All-Star BoH mapper exact view the source of truth for ranked team order, role distribution, command roles, and explicit main or backup deployment.",
-      "Added member My Orders, Team Plan, and Map Briefing views with shared four-phase teleport, crystal, roster, duty, and real-map context.",
-      "Reframed the admin team workspace around mapper preview, draft save, review, validation, and announcement while retaining legacy balancing tools as advanced compatibility controls.",
-      "Added a Battle Simulator saved-profile checklist that validates Research, Equipment, and Specialization Towers before explicitly importing those automatic sources into either side.",
-      "Redesigned Account & Profile into responsive Profile, Privacy, and Account settings sections with a clearer create/sign-in flow.",
-      "Added safer dirty/save handling, required-field reveal, localized save and error states, counters, and RTL/mobile safe-area behavior."
     ]
   }
 ].map((release) =>

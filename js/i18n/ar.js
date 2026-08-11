@@ -779,6 +779,7 @@ const ar = {
   researchSelectNodePrompt: 'اختر عقدة لفحص التكلفة والتقدم.',
   researchSetMax: 'تعيين للحد الأقصى',
   researchTreeTotal: 'إجمالي الشجرة',
+  researchTreeSpent: 'المُنفَق',
   researchTreeTotalHint: 'التكلفة المتبقية لهذه الشجرة',
   researchTroopBranchArchers: 'الرماة',
   researchTroopBranchCavalry: 'الفرسان',

@@ -803,6 +803,7 @@ const tr = {
   researchSelectNodePrompt: 'Maliyetleri ve ilerlemeyi görmek için bir düğüm seçin.',
   researchSetMax: 'MAKS yap',
   researchTreeTotal: 'Ağaç toplamı',
+  researchTreeSpent: 'Harcanan',
   researchTreeTotalHint: 'Bu ağacın kalan maliyeti',
   researchTroopBranchArchers: 'Okçular',
   researchTroopBranchCavalry: 'Süvari',

@@ -797,6 +797,7 @@ const es = {
   researchSelectNodePrompt: 'Selecciona un nodo para revisar costes y progreso.',
   researchSetMax: 'Fijar MÁX.',
   researchTreeTotal: 'Total del árbol',
+  researchTreeSpent: 'Gastado',
   researchTreeTotalHint: 'Coste restante de este árbol',
   researchTroopBranchArchers: 'Arqueros',
   researchTroopBranchCavalry: 'Caballería',

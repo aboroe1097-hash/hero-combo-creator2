@@ -643,6 +643,7 @@ const en = {
   researchSelectNodePrompt: 'Select a node to inspect costs and progress.',
   researchSetMax: 'Set MAX',
   researchTreeTotal: 'Tree total',
+  researchTreeSpent: 'Spent',
   researchTreeTotalHint: 'Remaining cost for this tree',
   researchTroopBranchArchers: 'Archers',
   researchTroopBranchCavalry: 'Cavalry',

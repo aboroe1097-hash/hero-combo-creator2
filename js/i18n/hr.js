@@ -98,6 +98,7 @@ const hr = Object.freeze({
   researchSelectNodePrompt: 'Odaberi čvor za pregled troškova i napretka.',
   researchSetMax: 'Postavi MAKS.',
   researchTreeTotal: 'Ukupno za stablo',
+  researchTreeSpent: 'Potrošeno',
   researchTroopBranchArchers: 'Strijelci',
   researchTroopBranchCavalry: 'Konjica',
   researchTroopBranchFootmen: 'Pješaci',

@@ -1350,7 +1350,19 @@ body.research-calculator-open {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
-:is(#researchSection, .research-v14-workspace) .research-node-card--maxed {
+/* The card list shares the game tree's three-state language:
+   idle = untouched, progress = partially levelled (cyan), complete = maxed (flame). */
+:is(#researchSection, .research-v14-workspace)
+  .research-node-card[data-node-state='progress']:not(.research-node-card--maxed) {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(125, 211, 252, 0.32);
+  background: linear-gradient(150deg, rgba(125, 211, 252, 0.075), rgba(13, 22, 38, 0.92));
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-card--maxed,
+:is(#researchSection, .research-v14-workspace)
+  .research-node-card[data-node-state='complete'] {
   opacity: 1;
   filter: none;
   border-color: rgba(251, 146, 60, 0.32);
@@ -1430,6 +1442,55 @@ body.research-calculator-open {
   background: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none;
+}
+
+/* Spent and remaining sit side by side so the tree footer answers both
+   "what did this cost me" and "what is left". */
+:is(#researchSection, .research-v14-workspace) .research-total-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-total-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-total-group-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .research-total-group--spent
+  .research-total-group-label {
+  color: rgba(125, 211, 252, 0.92);
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .research-total-group--remaining
+  .research-total-group-label {
+  color: var(--rv-flame);
+}
+
+/* Spent is reference information, so it reads one step quieter than remaining. */
+:is(#researchSection, .research-v14-workspace) .research-total-group--spent .research-total-costs {
+  opacity: 0.86;
+}
+
+@media (max-width: 480px) {
+  :is(#researchSection, .research-v14-workspace) .research-total-groups {
+    gap: 4px 12px;
+  }
 }
 
 :is(#researchSection, .research-v14-workspace) .research-tree-total-label {

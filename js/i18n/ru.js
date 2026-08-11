@@ -792,6 +792,7 @@ const ru = {
   researchSelectNodePrompt: 'Выберите узел, чтобы проверить стоимость и прогресс.',
   researchSetMax: 'Установить МАКС',
   researchTreeTotal: 'Всего по дереву',
+  researchTreeSpent: 'Потрачено',
   researchTreeTotalHint: 'Оставшаяся стоимость этого дерева',
   researchTroopBranchArchers: 'Лучники',
   researchTroopBranchCavalry: 'Кавалерия',
