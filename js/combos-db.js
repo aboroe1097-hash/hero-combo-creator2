@@ -38,6 +38,7 @@ export const rankedCombos = [
   { heroes: ['Beowulf', 'Ramses II', 'Theodora'], note: 'Beowulf front-row skill spam triggers Theodora healing, producing a stable high-damage sustain combo.' },
   { heroes: ['King Arthur', 'Cleopatra VII', 'Alexander'] },
   { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'] },
+  { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '333', note: 'With all three skins this outranks the no-skin Immortal Guardian / Ramses II / Beowulf lane below.' },
   { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'] },
   { heroes: ['Hunk', 'Ramses II', 'Beowulf'] },
   { heroes: ['Bleeding Steed', 'Ramses II', 'Beowulf'] },

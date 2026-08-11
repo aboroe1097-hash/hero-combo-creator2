@@ -882,6 +882,105 @@ html[data-theme='light'] {
   gap: 3px;
 }
 
+/* Suggested route: a small step number on every research the route covers, and a clear
+   marker on the one to take next. Both are inert decoration over the existing node. */
+.specialization-route-step {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  color: rgba(226, 232, 240, 0.9);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+[data-route-next='true'] .specialization-route-step {
+  border-color: rgba(251, 191, 36, 0.9);
+  background: rgb(251, 191, 36);
+  color: rgb(23, 20, 8);
+}
+
+.specialization-route-next {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  z-index: 3;
+  padding: 2px 7px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgb(251, 191, 36);
+  color: rgb(23, 20, 8);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+[data-route-next='true'] .specialization-research-node {
+  outline: 2px solid rgba(251, 191, 36, 0.85);
+  outline-offset: 3px;
+}
+
+.specialization-medal-quickfill {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.specialization-medal-quickfill button {
+  padding: 5px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.1);
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.specialization-medal-quickfill button:hover {
+  border-color: rgba(251, 191, 36, 0.7);
+  background: rgba(251, 191, 36, 0.16);
+}
+
+.specialization-easy-medals-toggle[aria-pressed='true'] {
+  border-color: rgba(251, 191, 36, 0.85);
+  background: rgba(251, 191, 36, 0.18);
+}
+
+.specialization-route-control {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.specialization-route-control-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-route-next='true'] .specialization-research-node {
+    transition: outline-color 200ms ease;
+  }
+}
+
 .specialization-research-node,
 [data-specialization-open-research] {
   position: relative;
@@ -3212,4 +3311,41 @@ dialog[data-specialization-dialog][open] {
   .specialization-medal-field {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Node-data contributions are attributed to a signed-in account. When signed out the
+   fields are disabled and the panel explains why rather than silently ignoring input. */
+.spec-contrib-signin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.1);
+  font-size: 0.78rem;
+}
+
+.spec-contrib-signin-link {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.spec-contrib-identity {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  opacity: 0.8;
+}
+
+.spec-contrib-credit {
+  margin: 4px 0 0;
+  font-size: 0.68rem;
+  opacity: 0.7;
+}
+
+.spec-community[data-contrib-signed-in='false'] .spec-contrib-stage input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

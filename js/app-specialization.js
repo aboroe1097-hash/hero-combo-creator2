@@ -5,6 +5,7 @@
 
 import { currentLanguage } from './state.js';
 import { escapeHtml } from './utils.js';
+import { getCurrentUser, onUserChanged } from './firebase.js';
 import {
   SPECIALIZATION_COLUMNS,
   SPECIALIZATION_RESEARCH,
@@ -281,16 +282,34 @@ function renderLegionSkillInspector() {
     </section>`;
 }
 
+// Submitted numbers are attributed to a signed-in account rather than a typed name, so
+// the per-node contributor field disappears and one node is a single number to type.
+//
+function getContributorIdentity() {
+  const user = getCurrentUser?.();
+  if (!user || user.isAnonymous) return null;
+  return {
+    uid: user.uid,
+    label: user.displayName || user.email || user.uid,
+  };
+}
+
 function renderCommunity() {
   const data = loadContributions();
   const { rows } = buildContributionTemplateRows();
   const columns = Object.values(SPECIALIZATION_COLUMNS).sort((a, b) => Number(a.id) - Number(b.id));
+  const identity = getContributorIdentity();
   return `
-    <section class="spec-community">
+    <section class="spec-community" data-contrib-signed-in="${identity ? 'true' : 'false'}">
       <div class="spec-community-copy">
         <h4>${escapeHtml(sp('communityDataTitle'))}</h4>
         <p>${escapeHtml(sp('communityDataDescription'))}</p>
       </div>
+      ${
+        identity
+          ? `<p class="spec-contrib-identity">${escapeHtml(sp('communitySignedInAs', { name: identity.label }))}</p>`
+          : `<p class="spec-contrib-signin"><span>${escapeHtml(sp('communitySignInRequired'))}</span><a class="spec-contrib-signin-link" href="profile.html">${escapeHtml(sp('communitySignInCta'))}</a></p>`
+      }
       <span class="spec-contrib-count">${escapeHtml(sp('communityNodesWithData', { count: contributionCount(data) }))}</span>
       <div class="spec-contrib-nodes">
         ${columns
@@ -322,21 +341,19 @@ function renderCommunity() {
                     </div>
                     <fieldset class="spec-contrib-stage">
                       <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
-                      <label><span>${escapeHtml(sp('communityContributorName'))}</span>
-                        <input type="text" data-spec-node-contributor="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.contributor || data.contributorName || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityContributorPlaceholder'))}" />
-                      </label>
                       <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
-                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeKey)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeKey)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" ${identity ? '' : 'disabled'} />
                       </label>
+                      ${saved.contributor ? `<p class="spec-contrib-credit">${escapeHtml(sp('communitySubmittedBy', { name: saved.contributor }))}</p>` : ''}
                     </fieldset>
                     <span class="spec-contrib-flow" aria-hidden="true">→</span>
                     <fieldset class="spec-contrib-stage spec-contrib-stage--review">
                       <legend>${escapeHtml(sp('verificationVerified'))}</legend>
                       <label><span>${escapeHtml(sp('communityReviewer'))}</span>
-                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" />
+                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" ${identity ? '' : 'disabled'} />
                       </label>
                       <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
-                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeKey)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeKey)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" ${identity ? '' : 'disabled'} />
                       </label>
                     </fieldset>
                   </div>`;
@@ -788,20 +805,22 @@ function onChange(event) {
     render();
     return;
   }
-  const contributorInput = event.target.closest('[data-spec-node-contributor]');
-  if (contributorInput) {
-    const nodeId = contributorInput.dataset.specNodeContributor;
-    const data = loadContributions();
-    contributionRecord(data, nodeId).contributor = contributorInput.value.trim();
-    saveContributions(data);
-    return;
-  }
   const medalInput = event.target.closest('[data-spec-node-medal]');
   if (medalInput) {
+    const identity = getContributorIdentity();
+    // Where accounts exist, only a signed-in one may submit. The input is also disabled
+    // in that state, so this is the belt to that braces.
+    if (!identity) {
+      medalInput.value = '';
+      return;
+    }
     const nodeId = medalInput.dataset.specNodeMedal;
     const raw = medalInput.value.trim();
     const data = loadContributions();
-    contributionRecord(data, nodeId).medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    const record = contributionRecord(data, nodeId);
+    record.medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    record.contributor = record.medalCost === null ? '' : identity.label;
+    record.contributorUid = record.medalCost === null ? '' : identity.uid;
     saveContributions(data);
     const countEl = root?.querySelector('.spec-contrib-count');
     if (countEl) {
@@ -845,6 +864,12 @@ export function initSpecializationTool() {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
     window.addEventListener('vts:language-change', () => render());
+    // Signing in or out changes whether the contribution fields accept input.
+    try {
+      onUserChanged?.(() => render());
+    } catch {
+      // Firebase may be unconfigured; the panel then stays in its signed-out state.
+    }
     wired = true;
   }
   render();

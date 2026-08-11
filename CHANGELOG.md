@@ -1,5 +1,17 @@
 # Changelog
 
+## 14.3.5 - 2026-08-11
+
+- Added Spenders and F2P suggested routes to Specialization Towers. Picking one numbers every research in order and marks the next one to take, and the choice is remembered.
+- Added an easy medal fill toggle to Specialization Towers, with 25/50/75/100% quick fills so medals can be recorded without stepping through nodes first.
+- Node data contributions now require a signed-in account and are credited to it, which also removes the per-node contributor field so a whole column is just one number per row.
+- Added the exact in-game node topologies for Encounter Battle IV, Cavalry Training VII and Neat Formation III, including the three battle-row loops that make up Neat Formation III.
+- Corrected Army Breaker to season X1 and Defender to the Archers troop type.
+- Raised the minimum copies for free X1 and X2 heroes to 22; paid heroes stay at 14 and the maximum is unchanged at 34.
+- The Combo Generator now opens with every season from S0 to X2 selected instead of just S0 and S1.
+- Ranked the all-skins Rozen Blade / Ramses II / Beowulf lane above the no-skin Immortal Guardian / Ramses II / Beowulf lane.
+- Tightened the research calculator tree spacing and replaced the empty inspector panel with a live summary of tree progress, completed nodes and the next available node.
+
 ## 14.3.4 - 2026-08-10
 
 - Added a spent total to the research calculator, so each tech tree now reports how many War Badges and Courage Medals you have already invested next to how many are still remaining.
