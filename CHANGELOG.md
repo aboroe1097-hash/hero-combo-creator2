@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.3.4 - 2026-08-10
+
+- Added a spent total to the research calculator, so each tech tree now reports how many War Badges and Courage Medals you have already invested next to how many are still remaining.
+- Kept the tree footer naming its real currencies once a tree is fully maxed, instead of collapsing to a generic resource row when nothing is left to buy.
+- Made partially levelled nodes look the same in every tech tree. Trees using the card layout only ever showed "maxed or not", so a half-finished node was indistinguishable from an untouched one; they now use the same idle, in-progress, and complete states as the rest of the trees.
+
 ## 14.3.3 - 2026-08-10
 
 - Rebuilt the hero combos database as one plain ranked list. Every entry is now just the three heroes plus an optional skin code and an optional note, replacing the imported tier-and-score format that came from the external combo datasets.

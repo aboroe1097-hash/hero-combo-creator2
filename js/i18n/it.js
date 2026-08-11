@@ -954,6 +954,7 @@ const it = {
   researchSelectNodePrompt: 'Seleziona un nodo per esaminare costi e progressi.',
   researchSetMax: 'Imposta MAX',
   researchTreeTotal: 'Totale albero',
+  researchTreeSpent: 'Speso',
   researchTreeTotalHint: 'Costo rimanente per questo albero',
   researchTroopBranchesAria: 'Rami delle truppe',
   researchWarBadges: 'Distintivi di guerra',

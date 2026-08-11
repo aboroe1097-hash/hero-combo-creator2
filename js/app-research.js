@@ -1700,7 +1700,16 @@ function renderGameCalculator(tech, container) {
           <span class="research-tree-total-label">${escapeHtml(appT('researchTreeTotal'))}</span>
           <span class="research-tree-total-hint">${escapeHtml(appT('researchTreeTotalHint'))}</span>
         </div>
-        <div id="totalTechCost" class="research-total-costs"></div>
+        <div class="research-total-groups">
+          <div class="research-total-group research-total-group--spent">
+            <span class="research-total-group-label">${escapeHtml(appT('researchTreeSpent'))}</span>
+            <div id="spentTechCost" class="research-total-costs"></div>
+          </div>
+          <div class="research-total-group research-total-group--remaining">
+            <span class="research-total-group-label">${escapeHtml(appT('researchRemaining'))}</span>
+            <div id="totalTechCost" class="research-total-costs"></div>
+          </div>
+        </div>
       </div>`;
 
   container.setAttribute('role', 'dialog');
@@ -1846,7 +1855,7 @@ function renderCalculator(tech) {
 
     return `
             <div class="research-tree-node-cell"${colAttr}>
-                <div class="tech-node-container research-node-card${maxedContainerClass}" data-node-id="${node.id}">
+                <div class="tech-node-container research-node-card${maxedContainerClass}" data-node-id="${node.id}" data-node-state="${getGameNodeState(node, savedLevel)}">
                     <div class="research-node-head">
                         <div class="research-node-copy">
                             <span class="research-node-title">${safeName}</span>
@@ -2016,7 +2025,16 @@ function renderCalculator(tech) {
                 <span class="research-tree-total-label">${escapeHtml(appT('researchTreeTotal'))}</span>
                 <span class="research-tree-total-hint">${escapeHtml(appT('researchTreeTotalHint'))}</span>
             </div>
-            <div id="totalTechCost" class="research-total-costs"></div>
+            <div class="research-total-groups">
+                <div class="research-total-group research-total-group--spent">
+                    <span class="research-total-group-label">${escapeHtml(appT('researchTreeSpent'))}</span>
+                    <div id="spentTechCost" class="research-total-costs"></div>
+                </div>
+                <div class="research-total-group research-total-group--remaining">
+                    <span class="research-total-group-label">${escapeHtml(appT('researchRemaining'))}</span>
+                    <div id="totalTechCost" class="research-total-costs"></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -2073,6 +2091,9 @@ function renderCalculator(tech) {
       input.value = v;
       setStoredNodeLevel(tech.id, nodeId, v);
 
+      // Keep the card's three-state styling in step with the game-tree view.
+      cont.dataset.nodeState = v >= max ? 'complete' : v > 0 ? 'progress' : 'idle';
+
       // Dynamic Gray-out & Button Swap
       if (v === max) {
         cont.classList.add('research-node-card--maxed');
@@ -2118,10 +2139,49 @@ function renderCalculator(tech) {
   calculateTechTotals(tech);
 }
 
+// Split one node's cost across the currencies it uses, over the level range [from, to).
+// Remaining uses [currentLevel, maxLevel); spent uses [0, currentLevel).
+function sumNodeCostRange(node, from, to) {
+  let wisdom = 0;
+  let courage = 0;
+  let other = 0;
+
+  for (let i = from; i < to; i++) {
+    const genericCost = (node.costs && node.costs[i]) || 0;
+    const wbCost =
+      (node.warBadgeCosts && node.warBadgeCosts[i]) ||
+      (node.wisdomCosts && node.wisdomCosts[i]) ||
+      (node.wb_costs && node.wb_costs[i]) ||
+      0;
+    const cmCost =
+      (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
+
+    if (node.costType === 'Dual') {
+      wisdom += wbCost > 0 ? wbCost : genericCost;
+      courage += cmCost;
+    } else if (node.costType === 'Courage') {
+      courage += genericCost > 0 ? genericCost : cmCost;
+    } else if (
+      node.costType === 'Wisdom' ||
+      node.costType === 'War Badge' ||
+      node.costType === 'War Badges'
+    ) {
+      wisdom += genericCost > 0 ? genericCost : wbCost;
+    } else {
+      other += genericCost;
+    }
+  }
+
+  return { wisdom, courage, other };
+}
+
 function calculateTechTotals(tech) {
   let grandTotalCourage = 0;
   let grandTotalWisdom = 0;
   let grandTotalOther = 0;
+  let grandSpentCourage = 0;
+  let grandSpentWisdom = 0;
+  let grandSpentOther = 0;
 
   const iconCM = `<img src="images/CM.png" class="research-cost-icon" alt="CM">`;
   const iconWB = `<img src="images/WB.png" class="research-cost-icon" alt="WB">`;
@@ -2136,35 +2196,11 @@ function calculateTechTotals(tech) {
       ? parseInt(input.value, 10) || 0
       : getStoredNodeLevel(tech.id, node.id);
 
-    let nodeWisdom = 0;
-    let nodeCourage = 0;
-    let nodeOther = 0;
-
-    for (let i = currentLevel; i < node.maxLevel; i++) {
-      let genericCost = (node.costs && node.costs[i]) || 0;
-      let wbCost =
-        (node.warBadgeCosts && node.warBadgeCosts[i]) ||
-        (node.wisdomCosts && node.wisdomCosts[i]) ||
-        (node.wb_costs && node.wb_costs[i]) ||
-        0;
-      let cmCost =
-        (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
-
-      if (node.costType === 'Dual') {
-        nodeWisdom += wbCost > 0 ? wbCost : genericCost;
-        nodeCourage += cmCost;
-      } else if (node.costType === 'Courage') {
-        nodeCourage += genericCost > 0 ? genericCost : cmCost;
-      } else if (
-        node.costType === 'Wisdom' ||
-        node.costType === 'War Badge' ||
-        node.costType === 'War Badges'
-      ) {
-        nodeWisdom += genericCost > 0 ? genericCost : wbCost;
-      } else {
-        nodeOther += genericCost;
-      }
-    }
+    const remaining = sumNodeCostRange(node, currentLevel, node.maxLevel);
+    const spent = sumNodeCostRange(node, 0, currentLevel);
+    const nodeWisdom = remaining.wisdom;
+    const nodeCourage = remaining.courage;
+    const nodeOther = remaining.other;
 
     if (display) {
       const isGamePill = display.classList.contains('game-tech-cost-pill');
@@ -2207,48 +2243,61 @@ function calculateTechTotals(tech) {
     grandTotalWisdom += nodeWisdom;
     grandTotalCourage += nodeCourage;
     grandTotalOther += nodeOther;
+    grandSpentWisdom += spent.wisdom;
+    grandSpentCourage += spent.courage;
+    grandSpentOther += spent.other;
   });
 
-  const totalContainer = document.getElementById('totalTechCost');
-  let hasBoth = grandTotalCourage > 0 && grandTotalWisdom > 0;
-  let isDualString = tech.primaryResource.includes('Dual');
-
-  if (isDualString || hasBoth) {
-    totalContainer.innerHTML = `
-            <span class="research-cost-summary research-cost-summary--wb">
-                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalWisdom)}</span>
-            </span>
-            <span class="research-cost-summary research-cost-summary--cm">
-                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalCourage)}</span>
-            </span>
-        `;
-  } else if (
+  // Which currencies this tree uses is a property of the tree, not of how far the player
+  // has progressed, so remaining and spent must show the same set of currencies. Deciding
+  // it from the remaining totals alone would hide War Badges once a tree is fully maxed.
+  const usesWisdom =
     grandTotalWisdom > 0 ||
+    grandSpentWisdom > 0 ||
     tech.primaryResource.includes('Wisdom') ||
-    tech.primaryResource.includes('War Badge')
-  ) {
-    totalContainer.innerHTML = `
+    tech.primaryResource.includes('War Badge');
+  const usesCourage =
+    grandTotalCourage > 0 || grandSpentCourage > 0 || tech.primaryResource.includes('Courage');
+  const isDual = tech.primaryResource.includes('Dual') || (usesWisdom && usesCourage);
+
+  const renderCostSummary = (wisdom, courage, other) => {
+    const wbHtml = `
             <span class="research-cost-summary research-cost-summary--wb">
                 <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalWisdom)}</span>
-            </span>
-        `;
-  } else if (grandTotalCourage > 0 || tech.primaryResource.includes('Courage')) {
-    totalContainer.innerHTML = `
+                <span>${formatResearchNumber(wisdom)}</span>
+            </span>`;
+    const cmHtml = `
             <span class="research-cost-summary research-cost-summary--cm">
                 <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalCourage)}</span>
-            </span>
-        `;
-  } else {
-    totalContainer.innerHTML = `
+                <span>${formatResearchNumber(courage)}</span>
+            </span>`;
+
+    if (isDual) return `${wbHtml}${cmHtml}`;
+    if (usesWisdom) return wbHtml;
+    if (usesCourage) return cmHtml;
+    return `
             <span class="research-cost-summary research-cost-summary--res">
                 <span class="research-cost-summary-label"><span class="research-cost-summary-label-full">${escapeHtml(appT('researchResources'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchResourcesShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalOther)}</span>
-            </span>
-        `;
+                <span>${formatResearchNumber(other)}</span>
+            </span>`;
+  };
+
+  const totalContainer = document.getElementById('totalTechCost');
+  if (totalContainer) {
+    totalContainer.innerHTML = renderCostSummary(
+      grandTotalWisdom,
+      grandTotalCourage,
+      grandTotalOther
+    );
+  }
+
+  const spentContainer = document.getElementById('spentTechCost');
+  if (spentContainer) {
+    spentContainer.innerHTML = renderCostSummary(
+      grandSpentWisdom,
+      grandSpentCourage,
+      grandSpentOther
+    );
   }
 
   updateGlobalSummary();

@@ -824,6 +824,7 @@ const fr = {
   researchSelectNodePrompt: 'Sélectionnez un nœud pour voir les coûts et la progression.',
   researchSetMax: 'Régler au MAX',
   researchTreeTotal: "Total de l'arbre",
+  researchTreeSpent: 'Dépensé',
   researchTreeTotalHint: 'Coût restant pour cet arbre',
   researchTroopBranchArchers: 'Archers',
   researchTroopBranchCavalry: 'Cavalerie',

@@ -781,6 +781,7 @@ const id = {
   researchSelectNodePrompt: 'Pilih simpul untuk melihat biaya dan progres.',
   researchSetMax: 'Atur MAKS',
   researchTreeTotal: 'Total pohon',
+  researchTreeSpent: 'Terpakai',
   researchTreeTotalHint: 'Sisa biaya untuk pohon ini',
   researchTroopBranchArchers: 'Pemanah',
   researchTroopBranchCavalry: 'Kavaleri',

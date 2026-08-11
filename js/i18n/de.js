@@ -827,6 +827,7 @@ const de = {
   researchSelectNodePrompt: 'Wähle einen Knoten, um Kosten und Fortschritt zu prüfen.',
   researchSetMax: 'Auf MAX setzen',
   researchTreeTotal: 'Baum gesamt',
+  researchTreeSpent: 'Ausgegeben',
   researchTreeTotalHint: 'Verbleibende Kosten für diesen Baum',
   researchTroopBranchArchers: 'Bogenschützen',
   researchTroopBranchCavalry: 'Kavallerie',
