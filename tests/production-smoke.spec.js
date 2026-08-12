@@ -39,13 +39,19 @@ function observeTargetFailures(page) {
     }
   });
   page.on('console', (message) => {
+    if (message.type() !== 'error') return;
+    const text = message.text();
+    // Chrome's generic resource error carries no URL, so it cannot be attributed to an
+    // origin. It fired for third-party 404s (auth, reCAPTCHA) and failed runs that were
+    // otherwise clean. Same-origin resource failures are already caught precisely, with
+    // the full URL, by the origin-filtered response handler above.
+    if (/^Failed to load resource/iu.test(text)) return;
     if (
-      message.type() === 'error' &&
       /content security policy|failed to load module|dynamically imported module|\b404\b/iu.test(
-        message.text()
+        text
       )
     ) {
-      failures.push(`${page.url()}: ${message.text()}`);
+      failures.push(`${page.url()}: ${text}`);
     }
   });
   page.on('pageerror', (error) => {
