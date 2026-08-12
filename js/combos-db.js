@@ -246,8 +246,12 @@ function normalizeComboSkinCode(combo) {
   return code.padEnd(3, '1').slice(0, 3);
 }
 
+// Only a "must own" slot (3) gates a lane out of normal mode. A "recommended" slot (2)
+// says the skin makes the lane stronger, not that it is unplayable without it, so those
+// lanes stay visible to everyone. Treating 2 as gating hid the 19 highest-ranked lanes
+// from every player who was not in skin mode.
 function hasSkinRankOverride(combo) {
-  return /[23]/.test(normalizeComboSkinCode(combo));
+  return /3/.test(normalizeComboSkinCode(combo));
 }
 
 export function getComboSkinRequirements(combo) {

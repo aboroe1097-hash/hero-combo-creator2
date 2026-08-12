@@ -1,10 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_EN = Object.freeze({
   title: 'Specialization Towers v2',
   subtitle: 'Recreate each specialization path, track medals, and review its active bonuses.',
-  fullPlannerTitle: 'Full Specialization Towers planner',
-  fullPlannerHint:
-    'Open the complete eight-column planner for all three troops: nodes, medals, routes, import/export, and battle-stat contributions.',
-  openFullPlanner: 'Open the full planner',
   betaBadge: 'Beta',
   back: 'Back',
   canonicalEnglishBadge: 'Canonical English data',

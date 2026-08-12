@@ -176,11 +176,11 @@ const LIMITS = {
     // while the archive and modal layout measure 760.4/853.2 KiB on Eden.
     // The 14.3.6 thin Specialization tab planner card adds 639.7/732.5 KiB
     // on Admin and 439.8/532.5 KiB on Arcade after minification.
-    'admin.html': { desktop: 640 * 1024, mobile: 733 * 1024 },
-    'eden-x1.html': { desktop: 763 * 1024, mobile: 856 * 1024 },
+    'admin.html': { desktop: 642 * 1024, mobile: 735 * 1024 },
+    'eden-x1.html': { desktop: 765 * 1024, mobile: 858 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
-    'arcade.html': { desktop: 440 * 1024, mobile: 533 * 1024 },
+    'arcade.html': { desktop: 442 * 1024, mobile: 535 * 1024 },
     // The Battle saved-profile checklist lifts the audited standalone route to
     // 54.9 KiB on desktop and mobile; retain roughly 1 KiB of headroom.
     'battle-simulator.html': { desktop: 56 * 1024, mobile: 56 * 1024 },

@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.3.7 - 2026-08-13
+
+- Brought back the full Specialization tool inside the main site. The tab is the interactive planner again, not a summary card that sends you to another page.
+- Moved the suggested routes and the easy medal fill onto that tab, so both surfaces now offer the same tools and share the route you pick.
+- Fixed the Combo Generator hiding its best combos. A hero with a "recommended" skin no longer removes a combo from the normal list; only a combo that truly requires a skin is held back for skin mode. The top of the list now matches the ranking, starting with Alexander / Bleeding Steed / Theodora.
+
 ## 14.3.6 - 2026-08-12
 
 - The Specialization tab on the main site is now a thin summary card that links to the full standalone planner; the duplicate in-tab graph renderer is gone, and the community node-data submission section stays on the main site.

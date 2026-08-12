@@ -215,18 +215,14 @@ test('Specialization uses only the integrated tab destination', () => {
     specializationJs,
     /\$\{renderCommunity\(\)\}[\s\S]*?\$\{renderAcknowledgments\(\)\}/
   );
-  assert.match(specializationJs, /data-spec-open-planner/);
-  assert.match(specializationJs, /href="specialization-towers\.html"/);
-  assert.doesNotMatch(specializationJs, /data-spec-set-selected-node/);
-  assert.doesNotMatch(specializationJs, /data-spec-help-node/);
-  assert.doesNotMatch(specializationJs, /renderRing|renderTree|BADGE_ICON|NODE_ICON/);
+  assert.match(specializationJs, /data-spec-set-selected-node/);
+  assert.match(specializationJs, /data-spec-help-node/);
   assert.match(specializationJs, /function contributionNodeKey\(/);
-  assert.match(appCss, /\.spec-planner-card\s*\{[\s\S]*?var\(--spec-panel\)/);
-  assert.match(appCss, /\.spec-planner-card-link:focus-visible\s*\{[\s\S]*?--spec-focus-ring/);
-  assert.match(
-    appCss,
-    /\.spec-troop-tab:focus-visible\s*\{[\s\S]*?box-shadow:\s*var\(--spec-focus-ring\)/
-  );
+  assert.match(specializationJs, /getSpecializationResearchImage/);
+  assert.match(specializationJs, /getSpecializationLegionSkillImage/);
+  assert.match(appCss, /\.spec-badge-emblem \.specialization-planner-sprite/);
+  assert.match(appCss, /\.spec-crest-emblem \.specialization-planner-sprite/);
+  assert.match(appCss, /\.spec-ring-node\[data-selected='true'\]/);
   assert.match(appCss, /\/\* Acknowledgments \/ Hall of Honor \*\//);
   assert.match(appCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.spec-ack-plate/);
 });

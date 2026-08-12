@@ -233,15 +233,24 @@ test('the seven no-skin counterparts stay available in base mode', () => {
   });
 });
 
-test('skin-gated entries stay out of the base database', () => {
-  const gated = rankedCombos.filter((combo) => combo.skin && combo.skin !== '111');
+test('only must-own skin lanes stay out of the base database', () => {
+  // A "must own" slot (3) makes a lane unplayable without the skin, so it is hidden in
+  // normal mode. A "recommended" slot (2) only makes the lane stronger, so it stays
+  // visible; gating on 2 as well used to hide the highest-ranked lanes from everyone.
+  const mustOwn = rankedCombos.filter((combo) => /3/.test(combo.skin || ''));
+  const recommendedOnly = rankedCombos.filter((combo) => /^[12]+$/.test(combo.skin || 'x'));
 
-  assert.ok(gated.length > 0);
+  assert.ok(mustOwn.length > 0);
+  assert.ok(recommendedOnly.length > 0);
   assert.ok(
-    gated.every((combo) => !baseRankedCombos.includes(combo)),
-    'skin-gated entries must not leak into the base database'
+    mustOwn.every((combo) => !baseRankedCombos.includes(combo)),
+    'must-own skin lanes must not leak into the base database'
   );
-  assert.equal(baseRankedCombos.length, rankedCombos.length - gated.length);
+  assert.ok(
+    recommendedOnly.every((combo) => baseRankedCombos.includes(combo)),
+    'recommended-skin lanes stay available in normal mode'
+  );
+  assert.equal(baseRankedCombos.length, rankedCombos.length - mustOwn.length);
 });
 
 test('fresh Alexander Bleeding Steed Theodora is buildable from owned heroes', () => {
