@@ -26,7 +26,8 @@ const LIMITS = {
   // The audited 14.2.8 shared mobile controls and Specialization palette
   // measure 405.6 KiB; retain less than 1.5 KiB of headroom.
   // The 14.2.18 semantic Specialization controls measure 407.2 KiB.
-  entryCssBytes: 408 * 1024,
+  // The 14.3.6 thin-tab Specialization planner card measures 408.1 KiB.
+  entryCssBytes: 409 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
@@ -69,6 +70,8 @@ const LIMITS = {
   // tool adapters, retry fallback, table-aware rendering, and the fresh ROC
   // combo imports, measuring 9431.6 KiB after production minification; retain
   // roughly 8 KiB while entry and route caps remain unchanged.
+  // The 14.3.6 thin-tab Specialization planner card lifts the shared entry
+  // stylesheet to 408.1 KiB after minification.
   totalJsBytes: 9460 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
@@ -171,11 +174,13 @@ const LIMITS = {
     // measures 630.8/723.7 KiB and Eden 747.3/840.1 KiB after minification.
     // The audited 14.2.8 shared controls measure 637.2/730.0 KiB on Admin,
     // while the archive and modal layout measure 760.4/853.2 KiB on Eden.
-    'admin.html': { desktop: 639 * 1024, mobile: 732 * 1024 },
+    // The 14.3.6 thin Specialization tab planner card adds 639.7/732.5 KiB
+    // on Admin and 439.8/532.5 KiB on Arcade after minification.
+    'admin.html': { desktop: 640 * 1024, mobile: 733 * 1024 },
     'eden-x1.html': { desktop: 763 * 1024, mobile: 856 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
-    'arcade.html': { desktop: 439 * 1024, mobile: 532 * 1024 },
+    'arcade.html': { desktop: 440 * 1024, mobile: 533 * 1024 },
     // The Battle saved-profile checklist lifts the audited standalone route to
     // 54.9 KiB on desktop and mobile; retain roughly 1 KiB of headroom.
     'battle-simulator.html': { desktop: 56 * 1024, mobile: 56 * 1024 },

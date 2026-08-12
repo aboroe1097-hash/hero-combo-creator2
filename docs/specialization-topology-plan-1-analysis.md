@@ -1,7 +1,7 @@
 # Specialization Topology — Plan 1: Analysis
 
-**Audience:** DeepSeek (implementation) + owner review  
-**Status:** Analysis complete — implement via Plan 2  
+**Audience:** Vision analysis by OpenCode + implementation by DeepSeek
+**Status:** Analysis complete — first cavalry batch limited to four researches
 **Date:** 2026-08-12  
 **Goal:** Stop paying a full monorepo `npm run check` (10–20+ min) after every Towers/topology edit. Treat Specialization Towers as a **local-first, separately gated tool**, then fold verified work back into production through the normal `gh-pages` PR flow.
 
@@ -128,6 +128,68 @@ From cavalry/footman/archer evidence modules and README:
 | Leave `prerequisiteNodeIds` absent/empty and mark partial evidence | Fabricate costs by dividing research totals |
 | Keep troop overlays read-only evidence; do not silently mutate canonical corpus | Replace contaminated/missing art with redrawn approximations without owner approval |
 | Prefer standalone UI as the topology editor surface | Drive topology QA only through the dual tab renderer |
+
+### 3.4 Vision/implementation split
+
+DeepSeek is not responsible for interpreting screenshots. OpenCode performs the visual analysis and
+returns a structured, reviewable data handoff. DeepSeek implements only that handoff.
+
+**OpenCode owns:**
+
+- Identifying the research and every visible node in each supplied image.
+- Reading node icons, labels, effects, visible costs, state highlighting, and large/extra nodes.
+- Reconstructing visible coordinates and undirected connection arrangement.
+- Separating confirmed facts from visual ambiguity.
+- Producing the final topology payload, evidence manifest, and confidence notes.
+
+**DeepSeek owns:**
+
+- Adding the supplied payload to the existing Cavalry data overlay/canonical data at the exact IDs
+  specified by OpenCode.
+- Adding tests for counts, labels, effects, costs, states, and any explicitly approved edges.
+- Rendering the result in the standalone Towers UI and running the focused local gate.
+- Never reinterpreting screenshots or filling values that are absent from the handoff.
+
+**Current intake:** `C:\Users\alsel\Downloads\WhatsApp Unknown 2026-08-12 at 14.23.40`
+
+This intake is **Cavalry only** and is restricted to the first four researches:
+
+1. Cavalry Training I
+2. Encounter Battle I
+3. Call of Glory I
+4. Enhanced Tactics I
+
+The supplied images show completed graph layouts and selected-node detail states. They provide useful
+node names/effects and state examples, including large/extra nodes and high-cost or extreme states.
+They do not automatically prove directed prerequisite order. OpenCode must mark graph connections as
+`arrangement-only` unless the image sequence visibly proves locked-to-unlocked order.
+
+**Required OpenCode handoff format:**
+
+```json
+{
+  "troopId": "cavalry",
+  "researchId": "training1",
+  "evidence": [{ "file": "...jpeg", "kind": "graph|node-detail|state" }],
+  "nodes": [{
+    "visualKey": "top-01",
+    "icon": "hourglass",
+    "name": "...",
+    "effect": "...",
+    "cost": null,
+    "state": "complete|selected|unknown",
+    "position": { "x": 0, "y": 0 },
+    "size": "normal|large|extra",
+    "confidence": "confirmed|probable|ambiguous"
+  }],
+  "connections": [{ "from": "top-01", "to": "right-01", "evidence": "arrangement-only" }],
+  "directedPrerequisites": [],
+  "notes": []
+}
+```
+
+The payload is a working analysis artifact until owner review. `cost: null` and an empty
+`directedPrerequisites` list are correct when the screenshots do not prove those fields.
 
 ---
 

@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.5";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.6",
+    "date": "2026-08-12",
+    "highlights": [
+      "The Specialization tab on the main site is now a thin summary card that links to the full standalone planner; the duplicate in-tab graph renderer is gone, and the community node-data submission section stays on the main site.",
+      "Added a local Towers dev/test loop: `npm run towers:dev`, `towers:test`, and `towers:check` run only the Specialization Towers unit slice and its focused Playwright spec."
+    ]
+  },
   {
     "version": "14.3.5",
     "date": "2026-08-11",
@@ -97,17 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Polished member event progress with a connected timeline, selected-milestone state, accessibility improvements, and reduced-motion behavior.",
       "Rebuilt account creation as provider-first authentication followed by a focused private-profile confirmation step, with direct Google sign-in, a referral dropdown, and dismissible timed notices.",
       "Improved Specialization Towers light-theme MAX, UNMAX, zero-progress, and disabled-state contrast with consistent semantic colors."
-    ]
-  },
-  {
-    "version": "14.2.17",
-    "date": "2026-07-27",
-    "highlights": [
-      "Improved the All-Star BoH Mapper workspace action hierarchy with distinct colors for importing, validating, opening team plans, saving team edits, and publishing.",
-      "Added strict per-team Stage-1 role-plan JSON preview and draft import, with exact player matching and 120 canonical personal instructions.",
-      "Added one explicit publication-scope control for team lists, plan updates, or an atomic combined release.",
-      "Added a draft-only announcement composer and clearer schedule controls for adding, duplicating, reordering, clearing, hiding, and validating public milestones and team times.",
-      "Redesigned the member announcement and event schedule with editable release copy, team accents, a connected animated timeline, accurate next-event countdowns, and reduced-motion support."
     ]
   }
 ].map((release) =>

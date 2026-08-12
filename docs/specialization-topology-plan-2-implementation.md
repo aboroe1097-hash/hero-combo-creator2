@@ -1,6 +1,6 @@
 # Specialization Topology — Plan 2: Implementation (DeepSeek)
 
-**Audience:** DeepSeek implementer  
+**Audience:** DeepSeek implementer receiving OpenCode visual-analysis payloads
 **Depends on:** `docs/specialization-topology-plan-1-analysis.md`  
 **Date:** 2026-08-12  
 **Product version at write time:** 14.3.2 (bump only when shipping user-visible changes)  
@@ -11,6 +11,16 @@
 ## 0. Mission (one paragraph)
 
 Make Specialization Towers a **local-first tool**: add `towers:*` npm scripts so topology/UI/data work is verified in minutes against `/specialization-towers.html` only; make the standalone page the **canonical UI**; thin or deep-link the main-site tab so we stop maintaining two full renderers; keep data/model/store as the single shared contract for Battle Simulator and AI. Do **not** invent prerequisite edges. Do **not** run full `npm run check` inside the daily Towers loop.
+
+**Important division of labor:** DeepSeek must not inspect or interpret screenshots. OpenCode analyzes
+the supplied images first and provides a structured payload with exact research IDs, visual node keys,
+labels, effects, costs, states, sizes, coordinates, evidence references, confidence, and approved
+directed edges. Implement exactly that payload; unresolved values remain `null`/unknown.
+
+**Current visual handoff:** `docs/specialization/cavalry-topology-analysis-batch-1.md`. Implement only
+the four Cavalry column-I researches covered there: `training1`, `encounter1`, `callofglory1`, and
+`enhanced1`. The handoff records completed-graph arrangement and selected details; it intentionally
+does not approve directed prerequisites.
 
 ---
 
@@ -180,7 +190,7 @@ app-specialization.js
 
 ---
 
-### Phase C — Topology pipeline (data honesty)
+### Phase C — Topology pipeline (data honesty and visual handoff)
 
 Only after A+B are usable.
 
@@ -194,7 +204,22 @@ Add a dev-only unit test or script that reports:
 
 Do not “fix” by filling empties.
 
-**C2. Evidence → edge encoding rules**
+**C2. OpenCode visual-analysis handoff**
+
+For each image batch, wait for an OpenCode payload before editing data. The first batch is only these
+four Cavalry researches:
+
+- `training1` — Cavalry Training I
+- `encounter1` — Encounter Battle I
+- `callofglory1` — Call of Glory I
+- `enhanced1` — Enhanced Tactics I
+
+OpenCode is the visual authority for this batch. DeepSeek must not rename visual nodes, infer missing
+effects, map repeated icons to numeric IDs, or decide whether a line is directed. Use the payload's
+stable visual keys and evidence references. If a field is `ambiguous`, preserve it as unknown and add
+or update a test/fixture rather than guessing.
+
+**C3. Evidence → edge encoding rules**
 
 When owner supplies **partial unlock** screenshots later:
 
@@ -204,13 +229,17 @@ When owner supplies **partial unlock** screenshots later:
 4. Unit-test the specific research graph.  
 5. Run `npm run towers:test`.
 
-**C3. Medal costs**
+If OpenCode marks a connection `arrangement-only`, do not encode it as `prerequisiteNodeIds`.
+
+**C4. Medal costs and extreme nodes**
 
 - Keep whole-research totals.  
 - Per-node costs stay `null`/unknown until per-node UI captures exist.  
 - Never divide totals across nodes.
+- Preserve large/extra node size and high-cost/extreme-state details exactly when supplied in the
+  OpenCode payload; do not normalize them to ordinary nodes.
 
-**C4. Enhanced Tactics II**
+**C5. Enhanced Tactics II**
 
 - Continue left/right pan evidence; do not require a single full-frame image to ship layout.
 
@@ -252,6 +281,9 @@ Copy this into the PR body and tick as you go.
 ### Data / topology (only if this PR includes corpus edits)
 
 - [ ] No invented edges  
+- [ ] OpenCode visual payload received for the exact batch
+- [ ] Only the first four Cavalry researches changed in this batch
+- [ ] Ambiguous fields remain unknown/null
 - [ ] Evidence paths updated  
 - [ ] Model access tests still pass  
 - [ ] Store schema unchanged **or** version bumped with migration + Simulator test  
@@ -327,6 +359,11 @@ title: Encode verified specialization prerequisites for <research>
 ```text
 Implement docs/specialization-topology-plan-2-implementation.md Phase A fully.
 Then Phase B using B2-mount if straightforward, else B2-link.
+Do not inspect screenshots yourself. Use `docs/specialization/cavalry-topology-analysis-batch-1.md`
+as the OpenCode visual-analysis payload.
+For the current batch implement only Cavalry researches training1, encounter1, callofglory1, and enhanced1.
+Treat OpenCode as the authority for node labels, effects, costs, sizes, states, coordinates, and evidence links.
+Do not reinterpret image topology. Do not convert arrangement-only connections into prerequisites.
 Do not invent prerequisiteNodeIds.
 Do not run full npm run check unless integrating a ship PR.
 Use npm run towers:test as the local gate.

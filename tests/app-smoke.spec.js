@@ -1435,7 +1435,9 @@ test.describe('app smoke tabs', () => {
     await expect(page).toHaveURL(new RegExp(`#combo=${encoded}$`));
   });
 
-  test('integrated Specialization persists node, complete, and reset actions', async ({ page }) => {
+  test('integrated Specialization tab links to the standalone planner and keeps community data', async ({
+    page,
+  }) => {
     test.slow();
     await openDirectTabHash(
       page,
@@ -1445,42 +1447,27 @@ test.describe('app smoke tabs', () => {
     );
     await expect(page.locator('#specializationSection .specialization-loading')).toHaveCount(0);
 
-    const firstBadge = page.locator('.spec-badge-wrap').first();
-    await firstBadge.locator('[data-spec-quick-set="complete"]').click();
-    await expect(firstBadge.locator('.spec-badge-pct')).toHaveText('100%');
-    await expect(firstBadge.locator('[data-spec-quick-set="reset"]')).toContainText('UNMAX');
+    await expect(page.locator('.spec-summary')).toBeVisible();
+    await expect(page.locator('.spec-summary .spec-title')).toContainText('Specialization Towers');
+    await expect(page.locator('.spec-troop-tab')).toHaveCount(3);
 
-    await firstBadge.locator('[data-spec-research]').click();
-    const reset = page.locator('[data-spec-reset]');
-    await expect(reset).toContainText('(11/11)');
-    await reset.click();
-    await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
+    const archerTab = page.locator('.spec-troop-tab[data-spec-troop="archer"]');
+    await archerTab.click();
+    await expect(archerTab).toHaveAttribute('aria-selected', 'true');
 
-    const secondNode = page.locator('[data-spec-node]:not([disabled])').nth(1);
-    await secondNode.click();
-    await expect(secondNode).toHaveAttribute('data-selected', 'true');
-    await expect(page.locator('#spec-node-inspector h4')).toHaveText('Revival');
-    await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
-    await expect(reset).toContainText('(0/11)');
+    const plannerLink = page.locator('[data-spec-open-planner]');
+    await expect(plannerLink).toBeVisible();
+    await expect(plannerLink).toHaveAttribute('href', 'specialization-towers.html');
 
-    await page.locator('[data-spec-set-selected-node="learned"]').click();
-    await expect(reset).toContainText('(1/11)');
-
-    await page.locator('[data-spec-complete]').click();
-    await expect(reset).toContainText('(11/11)');
-    await reset.click();
-    await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
-
-    await page.locator('[data-spec-help-node]').click();
-    await expect(page.locator('.spec-tool')).toHaveAttribute('data-view', 'overview');
-    await expect(page.locator('[data-contribution-key="training1:2"]')).toBeVisible();
-    // Submitting node data needs an account, so signed out the field is present but inert.
-    await expect(
-      page.locator('[data-contribution-key="training1:2"] [data-spec-node-medal]')
-    ).toBeDisabled();
+    const community = page.locator('.spec-community');
+    await expect(community).toBeVisible();
+    await expect(community).toHaveAttribute('data-contrib-signed-in', 'false');
+    await expect(page.locator('.spec-ack')).toBeVisible();
   });
 
-  test('Specialization unlocks, previews, and reverses a Legion Skill', async ({ page }) => {
+  test('integrated Specialization renders no second graph and defers to the standalone planner', async ({
+    page,
+  }) => {
     test.slow();
     await openDirectTabHash(
       page,
@@ -1489,22 +1476,24 @@ test.describe('app smoke tabs', () => {
       '#specializationToolRoot .spec-tool'
     );
 
-    const firstColumn = page.locator('.spec-banner').first();
-    for (let index = 0; index < 4; index += 1) {
-      await firstColumn.locator('[data-spec-quick-set="complete"]').first().click();
+    for (const selector of [
+      '.spec-badge',
+      '.spec-banner',
+      '.spec-ring',
+      '.spec-legion-inspector',
+      '[data-spec-research]',
+      '[data-spec-quick-set]',
+    ]) {
+      await expect(page.locator(selector)).toHaveCount(0);
     }
-    const crest = firstColumn.locator('[data-spec-legion="1"]');
-    await expect(crest).toBeEnabled();
-    await expect(crest).toHaveAttribute('title', /.+ — .+/);
-    await crest.hover();
-    await crest.click();
-    await expect(page.locator('#spec-legion-inspector')).toBeVisible();
-    await expect(page.locator('#spec-legion-inspector h4')).not.toBeEmpty();
-    await expect(page.locator('#spec-legion-inspector p')).toContainText('Buff');
 
-    await firstColumn.locator('[data-spec-quick-set="reset"]').first().click();
-    await expect(firstColumn.locator('[data-spec-legion="1"]')).toBeDisabled();
-    await expect(page.locator('#spec-legion-inspector')).toHaveCount(0);
+    const plannerCard = page.locator('.spec-planner-card');
+    await expect(plannerCard).toBeVisible();
+    await expect(plannerCard).toContainText('Open the full planner');
+    await expect(plannerCard.locator('[data-spec-open-planner]')).toHaveAttribute(
+      'href',
+      /specialization-towers\.html$/
+    );
   });
 
   test('Specialization contribution nodes keep submitted and reviewed medals together', async ({
@@ -1551,7 +1540,9 @@ test.describe('app smoke tabs', () => {
     await expect(acknowledgments).toContainText('VTS 1097 Community');
   });
 
-  test('Specialization mobile view keeps node details and actions touch-safe', async ({ page }) => {
+  test('Specialization mobile tab keeps the summary, troop tabs, and planner link reachable', async ({
+    page,
+  }) => {
     test.slow();
     await page.setViewportSize({ width: 390, height: 844 });
     await openDirectTabHash(
@@ -1561,40 +1552,31 @@ test.describe('app smoke tabs', () => {
       '#specializationToolRoot .spec-tool'
     );
 
-    await page.locator('[data-spec-research]').first().click();
-    const node = page.locator('[data-spec-node]:not([disabled])').nth(1);
-    await node.click();
-    await expect(page.locator('#spec-node-inspector')).toBeVisible();
-    await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
-    await expect(page.locator('[data-spec-help-node]')).toBeVisible();
+    await expect(page.locator('.spec-summary')).toBeVisible();
+    const plannerCard = page.locator('.spec-planner-card');
+    await expect(plannerCard).toBeVisible();
+    expect(
+      await plannerCard.evaluate(
+        (element) => getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/u).length
+      )
+    ).toBe(1);
 
-    const nodeBox = await node.boundingBox();
-    expect(nodeBox?.width).toBeGreaterThanOrEqual(44);
-    expect(nodeBox?.height).toBeGreaterThanOrEqual(44);
-    await expect(page.locator('.spec-detail-actions')).toHaveCSS('position', 'sticky');
-    await expect(page.locator('.spec-summary')).toBeHidden();
-    const overflow = await page.locator('#specializationToolRoot').evaluate((element) => {
-      const bounds = element.getBoundingClientRect();
-      return [...element.querySelectorAll('*')]
-        .filter((candidate) => {
-          const rect = candidate.getBoundingClientRect();
-          const clippedPlannerImage =
-            candidate.tagName.toLowerCase() === 'image' &&
-            candidate.closest('svg.specialization-planner-sprite');
-          return (
-            !clippedPlannerImage &&
-            rect.width > 0 &&
-            rect.height > 0 &&
-            (rect.right > bounds.right + 1 || rect.left < bounds.left - 1)
-          );
-        })
-        .map((candidate) => ({
-          className: candidate.className,
-          left: Math.round(candidate.getBoundingClientRect().left),
-          right: Math.round(candidate.getBoundingClientRect().right),
-        }));
-    });
-    expect(overflow).toEqual([]);
+    for (const tab of await page.locator('.spec-troop-tab').all()) {
+      const box = await tab.boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
+
+    const plannerLink = plannerCard.locator('[data-spec-open-planner]');
+    const linkBox = await plannerLink.boundingBox();
+    expect(linkBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await expect(plannerLink).toHaveAttribute('href', 'specialization-towers.html');
+
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      )
+    ).toBe(true);
   });
 
   test('shared roster link wins over restored selection and selects known heroes', async ({
