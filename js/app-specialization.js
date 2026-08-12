@@ -716,6 +716,13 @@ function renderDetail() {
 
 function render() {
   if (!root) return;
+  // render() replaces the whole subtree, which would otherwise collapse any contribution
+  // column the reader had expanded. Carry the open ones across.
+  const openColumns = new Set(
+    Array.from(root.querySelectorAll('.spec-contrib-column[open]'), (element) =>
+      element.querySelector('summary')?.textContent?.trim()
+    ).filter(Boolean)
+  );
   const summary = getSpecializationSummary(state);
   root.dir = getSpecializationTowersV2Direction(locale());
   root.innerHTML = `
@@ -723,6 +730,12 @@ function render() {
       ${renderSummary(summary)}
       ${view === 'detail' && selectedResearchId ? renderDetail() : renderOverview(summary)}
     </div>`;
+  if (openColumns.size) {
+    root.querySelectorAll('.spec-contrib-column').forEach((element) => {
+      const label = element.querySelector('summary')?.textContent?.trim();
+      if (label && openColumns.has(label)) element.open = true;
+    });
+  }
 }
 
 /* ---------- Events ---------- */
@@ -959,9 +972,17 @@ export function initSpecializationTool() {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
     window.addEventListener('vts:language-change', () => render());
-    // Signing in or out changes whether the contribution fields accept input.
+    // Signing in or out changes whether the contribution fields accept input. Firebase
+    // also fires this once on boot with the state we already render, so only re-render
+    // when the identity actually changed - a needless rebuild discards UI state.
     try {
-      onUserChanged?.(() => render());
+      let lastIdentityKey = getContributorIdentity()?.uid || '';
+      onUserChanged?.(() => {
+        const nextKey = getContributorIdentity()?.uid || '';
+        if (nextKey === lastIdentityKey) return;
+        lastIdentityKey = nextKey;
+        render();
+      });
     } catch {
       // Firebase may be unconfigured; the panel then stays in its signed-out state.
     }
