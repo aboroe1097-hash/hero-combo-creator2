@@ -172,11 +172,45 @@ test('skin mode ranks Octavius Rozen Caesar above Alfred Black Prince Jeanne', (
 });
 
 test('the curated 222 skin-mode formations survive as plain entries', () => {
+  // Guards that the imported curated set is still present. New 222 lanes may be added by
+  // hand, so this checks survival rather than an exact count, which would break on every
+  // legitimate addition.
+  const CURATED_222 = [
+    'Alexander|Bleeding Steed|Theodora',
+    'The Brave|Rozen Blade|The Avalanche',
+    'King Arthur|Bleeding Steed|Alexander',
+    'Boudica|Jade Eagle|Ramses II',
+    'Hunk|Bleeding Steed|Alexander',
+    'Hunk|Cleopatra VII|Alexander',
+    'The Brave|Rozen Blade|Immortal',
+    'King Arthur|Bleeding Steed|Jade Eagle',
+    "Black Prince|Jeanne d'Arc|Lionheart",
+    'Bleeding Steed|Cleopatra VII|Alexander',
+    "The Brave|Jeanne d'Arc|The Avalanche",
+    'The Brave|Ramses II|Beowulf',
+    'Black Prince|The Brave|Lionheart',
+    'The Brave|Alfred|The Avalanche',
+    'Boudica|Sakura|ELK',
+    'Octavius|Black Prince|Lionheart',
+    'Hunk|Boudica|Ramses II',
+    "Jeanne d'Arc|Constantine the Great|Lionheart",
+    'BeastQueen|Black Prince|Immortal',
+    'War Lord|The Brave|The Avalanche',
+    'The Brave|Black Prince|Immortal',
+    "War Lord|Jeanne d'Arc|The Avalanche",
+    'Hunk|Cleopatra VII|Caesar',
+    'BeastQueen|Cleopatra VII|Immortal',
+    'King Arthur|Cleopatra VII|Jade Eagle',
+  ];
+
   const key = (combo) => combo.heroes.join('|');
   const skinned = rankedCombos.filter((combo) => combo.skin === '222');
+  const present = new Set(skinned.map(key));
 
-  assert.equal(skinned.length, 25);
-  assert.equal(new Set(skinned.map(key)).size, 25);
+  const missing = CURATED_222.filter((entry) => !present.has(entry));
+  assert.deepEqual(missing, [], `curated 222 lanes went missing: ${missing.join(', ')}`);
+  assert.equal(present.size, skinned.length, 'every 222 lane is a distinct hero trio');
+  assert.ok(skinned.length >= CURATED_222.length);
 });
 
 test('the seven no-skin counterparts stay available in base mode', () => {

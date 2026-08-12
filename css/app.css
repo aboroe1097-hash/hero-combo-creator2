@@ -20132,6 +20132,52 @@ html[dir='rtl'] .gen-buttons-row {
   gap: 0.5rem;
   flex-wrap: wrap;
 }
+.spec-planner-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--spec-border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--spec-panel), var(--spec-panel-strong));
+}
+.spec-planner-card-copy h4 {
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 820;
+  color: var(--spec-text);
+}
+.spec-planner-card-copy p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--spec-text-dim);
+  max-width: 52ch;
+}
+.spec-planner-card-link {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 9px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--ff-on-accent, #06121d);
+  background: var(--spec-primary-gradient);
+}
+.spec-planner-card-link:focus-visible {
+  outline: none;
+  box-shadow: var(--spec-focus-ring);
+}
+@media (max-width: 640px) {
+  .spec-planner-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .spec-planner-card-link {
+    justify-self: stretch;
+    text-align: center;
+  }
+}
 .spec-btn {
   display: inline-flex;
   align-items: center;

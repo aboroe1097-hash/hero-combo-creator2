@@ -418,18 +418,22 @@ test('combo recommendations deduplicate ordered formations and preserve tri-stat
   assert.equal(result.ok, true);
   const keys = result.data.combos.map((combo) => combo.heroes.join('|'));
   assert.equal(new Set(keys).size, keys.length);
-  const theodora = result.data.combos.find(
-    (combo) => combo.heroes.join('|') === 'Beowulf|Ramses II|Theodora'
-  );
-  assert.ok(theodora);
-  assert.equal(
-    theodora.skinRequirements.find((item) => item.hero === 'Theodora').ownership,
-    'owned'
-  );
-  assert.equal(
-    theodora.skinRequirements.find((item) => item.hero === 'Ramses II').ownership,
-    'unknown'
-  );
+  // Any returned lane containing Theodora proves the tri-state: the explicitly owned skin
+  // reads 'owned' and an unspecified team-mate reads 'unknown'. Naming one exact lane made
+  // this test break whenever that lane's skin code changed.
+  const withTheodora = result.data.combos.filter((combo) => combo.heroes.includes('Theodora'));
+  assert.ok(withTheodora.length > 0, 'expected at least one recommended lane with Theodora');
+
+  for (const combo of withTheodora) {
+    assert.equal(
+      combo.skinRequirements.find((item) => item.hero === 'Theodora').ownership,
+      'owned'
+    );
+    for (const item of combo.skinRequirements) {
+      if (item.hero === 'Theodora') continue;
+      assert.equal(item.ownership, 'unknown', `${item.hero} should be unknown`);
+    }
+  }
   assert.equal(result.data.rankDisclaimer.includes('not a win probability'), true);
 });
 

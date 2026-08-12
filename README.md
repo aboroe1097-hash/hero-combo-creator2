@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.3.5)
+# Hero Combo Creator - VTS 1097 (v14.3.6)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management. This release corrects VtsScore to use Total Power, adds closest-name signup search, and supports accessible light/dark themes plus six complete languages.
 
@@ -95,6 +95,22 @@ unknown node-level medal costs remain unknown instead of being estimated from th
 Progress is stored under `vts_specialization_towers_v2`. The standalone
 `specialization-towers.html` route supports JSON import/export and contribution CSV debugging; the
 main site loads its integrated renderer only when the Specialization tab opens.
+
+## Specialization Towers Local Loop
+
+Iterate on the standalone planner without the full monorepo gate:
+
+```bash
+npm run towers:dev    # http://127.0.0.1:5173/specialization-towers.html
+npm run towers:test   # unit + focused Playwright
+npm run towers:check  # local Towers gate
+# integrate only when shipping:
+npm run check:fast    # or npm run check if high-risk
+```
+
+`towers:test:unit` runs only the Specialization Towers unit slice; `towers:test:ui` runs
+`p1-specialization-towers-v2.spec.js` against a Vite dev server. Run the full `npm run check` only
+when integrating a release PR, per AGENTS.md.
 
 ## Quick Start
 
