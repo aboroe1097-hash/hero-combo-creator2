@@ -9,7 +9,9 @@ const devBaseURL = `http://127.0.0.1:${devPort}`;
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: 'p1-specialization-towers-v2.spec.js',
+  // Every browser spec that exercises Specialization Towers, so the local lane catches a
+  // Towers regression without waiting on the full smoke suite.
+  testMatch: /p1-specialization-.*\.spec\.js$/,
   timeout: 120000,
   workers: 1,
   use: {
