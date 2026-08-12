@@ -2,10 +2,6 @@ export const SPECIALIZATION_TOWERS_V2_IT = Object.freeze({
   title: 'Torri di specializzazione v2',
   subtitle:
     'Ricrea ogni percorso di specializzazione, tieni traccia delle medaglie e consulta i bonus attivi.',
-  fullPlannerTitle: 'Pianificatore completo delle torri di specializzazione',
-  fullPlannerHint:
-    'Apri il pianificatore completo a otto colonne per tutti e tre gli eserciti: nodi, medaglie, percorsi, import/export e contributi alle statistiche di battaglia.',
-  openFullPlanner: 'Apri il pianificatore completo',
   betaBadge: 'Beta',
   back: 'Indietro',
   canonicalEnglishBadge: 'Dati canonici in inglese',

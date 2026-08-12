@@ -20,12 +20,7 @@ import {
 } from '../../js/i18n/specialization-towers-v2/index.js';
 
 const EXPECTED_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
-const INTENTIONAL_EN_ONLY_KEYS = Object.freeze([
-  'fullPlannerTitle',
-  'fullPlannerHint',
-  'openFullPlanner',
-  'selectNodeBeforeMedals',
-]);
+const INTENTIONAL_EN_ONLY_KEYS = Object.freeze(['selectNodeBeforeMedals']);
 
 function placeholders(value) {
   return [...String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();

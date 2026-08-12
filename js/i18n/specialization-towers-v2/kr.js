@@ -1,10 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_KR = Object.freeze({
   title: '전문화 타워 v2',
   subtitle: '각 전문화 경로를 재현하고 메달을 추적하며 활성 보너스를 확인하세요.',
-  fullPlannerTitle: '전문화 타워 전체 플래너',
-  fullPlannerHint:
-    '세 부대에 대한 전체 8열 플래너를 엽니다: 노드, 메달, 경로, 가져오기/내보내기, 전투 능력치 기여.',
-  openFullPlanner: '전체 플래너 열기',
   betaBadge: '베타',
   back: '뒤로',
   canonicalEnglishBadge: '표준 영문 데이터',

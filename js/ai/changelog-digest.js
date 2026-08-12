@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.7",
+    "date": "2026-08-13",
+    "highlights": [
+      "Brought back the full Specialization tool inside the main site. The tab is the interactive planner again, not a summary card that sends you to another page.",
+      "Moved the suggested routes and the easy medal fill onto that tab, so both surfaces now offer the same tools and share the route you pick.",
+      "Fixed the Combo Generator hiding its best combos. A hero with a \"recommended\" skin no longer removes a combo from the normal list; only a combo that truly requires a skin is held back for skin mode. The top of the list now matches the ranking, starting with Alexander / Bleeding …"
+    ]
+  },
   {
     "version": "14.3.6",
     "date": "2026-08-12",
@@ -94,18 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added the focused VtsScore page for Competition #11 final Dragon Power re-uploads, with a searchable All-Star signup selector and one-image OCR review.",
       "Added a secured Auth, App Check, and member-grant verified score endpoint that stores confirmed numbers and bounded OCR audit metadata without retaining screenshots.",
       "Added an All-Star admin VtsScore stage comparing sign-up and final Dragon Power, growth, percentage, original reward tier, and missing uploads."
-    ]
-  },
-  {
-    "version": "14.2.18",
-    "date": "2026-07-27",
-    "highlights": [
-      "Added a guided All-Star admin team builder with semantic action colors.",
-      "Added safe player display-name and total-power corrections, plus reasoned base-score overrides derived from occupied team seats.",
-      "Added atomic import for one to six role-plan files or a complete six-team bundle, plus admin export of every team plan.",
-      "Polished member event progress with a connected timeline, selected-milestone state, accessibility improvements, and reduced-motion behavior.",
-      "Rebuilt account creation as provider-first authentication followed by a focused private-profile confirmation step, with direct Google sign-in, a referral dropdown, and dismissible timed notices.",
-      "Improved Specialization Towers light-theme MAX, UNMAX, zero-progress, and disabled-state contrast with consistent semantic colors."
     ]
   }
 ].map((release) =>
