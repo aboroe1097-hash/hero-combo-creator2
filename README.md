@@ -96,6 +96,22 @@ Progress is stored under `vts_specialization_towers_v2`. The standalone
 `specialization-towers.html` route supports JSON import/export and contribution CSV debugging; the
 main site loads its integrated renderer only when the Specialization tab opens.
 
+## Specialization Towers Local Loop
+
+Iterate on the standalone planner without the full monorepo gate:
+
+```bash
+npm run towers:dev    # http://127.0.0.1:5173/specialization-towers.html
+npm run towers:test   # unit + focused Playwright
+npm run towers:check  # local Towers gate
+# integrate only when shipping:
+npm run check:fast    # or npm run check if high-risk
+```
+
+`towers:test:unit` runs only the Specialization Towers unit slice; `towers:test:ui` runs
+`p1-specialization-towers-v2.spec.js` against a Vite dev server. Run the full `npm run check` only
+when integrating a release PR, per AGENTS.md.
+
 ## Quick Start
 
 ```bash
