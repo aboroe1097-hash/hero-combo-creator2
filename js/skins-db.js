@@ -10,7 +10,7 @@ export const SKIN_TYPES = {
   S1: { label: 'S1', color: '#fbbf24', icon: 'S1' },
   S4: { label: 'S4', color: '#22d3ee', icon: 'S4' },
   S3: { label: 'S3', color: '#c084fc', icon: 'S3' },
-  S2: { label: 'S2', color: '#60a5fa', icon: 'S2' }
+  S2: { label: 'S2', color: '#60a5fa', icon: 'S2' },
 };
 
 // Skin Atlas tier catalog. The game groups hero skins into three tiers, each
@@ -44,7 +44,7 @@ export const SKIN_TIERS = [
       { name: 'Epic Hero Medal', qty: 18 },
     ],
     acquisition: [
-      'Buy directly during that hero\'s launch event — yours to keep once purchased.',
+      "Buy directly during that hero's launch event — yours to keep once purchased.",
       "Trade for it in the Eden Skin Store: Beast Queen's Mythic skin runs 400 Biography Skin coins.",
     ],
     knownHeroes: ['Queen Anne', 'Beast Queen'],
@@ -127,16 +127,11 @@ export const SKIN_TIERS = [
     knownHeroes: [
       'Cleopatra VII',
       'Ramses II',
-      'Ramses III',
       'Caesar',
-      'Gustav',
       'King Arthur',
       'Beowulf',
       'Boudica',
       'Alexander',
-      'Spectral Reaper',
-      'Poison Mango',
-      'Lilith',
     ],
     heroesNote: '',
   },
@@ -146,18 +141,18 @@ export const SKIN_STAR_STAGES = {
   1: {
     label: 'Star 1',
     title: 'Biography Attributes',
-    unlock: 'Owned skin bonus'
+    unlock: 'Owned skin bonus',
   },
   2: {
     label: 'Star 2',
     title: 'Inheriting Skill',
-    unlock: 'Skin advancement complete'
+    unlock: 'Skin advancement complete',
   },
   3: {
     label: 'Star 3',
     title: 'Preserving Skill',
-    unlock: 'Preserving unlock items'
-  }
+    unlock: 'Preserving unlock items',
+  },
 };
 
 export const heroHiddenPowers = {
@@ -166,8 +161,10 @@ export const heroHiddenPowers = {
     capturedVariants: 1,
     totalVariants: 2,
     requirement: 'Own 2 Biography Skin variants',
-    mechanic: 'Some heroes have more than one Biography Skin variant. Those variants share the same Biography Attributes and progress; owning more than one variant unlocks Hidden Power.',
-    scalingNote: 'More unlocked Biography Skin variants can add stronger Hidden Power when a hero has additional variants.',
+    mechanic:
+      'Some heroes have more than one Biography Skin variant. Those variants share the same Biography Attributes and progress; owning more than one variant unlocks Hidden Power.',
+    scalingNote:
+      'More unlocked Biography Skin variants can add stronger Hidden Power when a hero has additional variants.',
     tiers: [
       {
         collected: 2,
@@ -175,11 +172,11 @@ export const heroHiddenPowers = {
         effect: "The hero's squad gains 4% HP and takes 2% less damage.",
         stats: [
           { label: 'Army HP', value: '+4%' },
-          { label: 'Damage taken', value: '-2%' }
-        ]
-      }
-    ]
-  }
+          { label: 'Damage taken', value: '-2%' },
+        ],
+      },
+    ],
+  },
 };
 
 const pendingBioAttributes = {
@@ -188,35 +185,38 @@ const pendingBioAttributes = {
   tacticalMight: 0,
   tacticalResistance: 0,
   hp: 0,
-  damage: 0
+  damage: 0,
 };
 
 const pendingStarStages = [
   {
     star: 1,
     title: 'Biography',
-    detail: 'Skin ownership grants biography attributes once details are captured.'
+    detail: 'Skin ownership grants biography attributes once details are captured.',
   },
   {
     star: 2,
     title: 'Inheriting',
-    detail: 'Inheriting skill details pending.'
+    detail: 'Inheriting skill details pending.',
   },
   {
     star: 3,
     title: 'Preserving',
-    detail: 'Preserving skill and dynamic icon details pending.'
-  }
+    detail: 'Preserving skill and dynamic icon details pending.',
+  },
 ];
 
-function createPendingSkin(heroName, {
-  id,
-  name = `${heroName} Biography Skin`,
-  title = 'Biography skin details pending',
-  type = 'Mythic',
-  rank = null,
-  imageUrl
-}) {
+function createPendingSkin(
+  heroName,
+  {
+    id,
+    name = `${heroName} Biography Skin`,
+    title = 'Biography skin details pending',
+    type = 'Mythic',
+    rank = null,
+    imageUrl,
+  }
+) {
   return {
     id,
     name,
@@ -232,17 +232,15 @@ function createPendingSkin(heroName, {
     starStages: pendingStarStages,
     iconBehavior: {
       star2: 'Unique skin icon available when the inheriting skill is unlocked.',
-      star3: 'Dynamic icon behavior pending capture.'
+      star3: 'Dynamic icon behavior pending capture.',
     },
     bioAttributes: { ...pendingBioAttributes },
     maxBioAttributes: { ...pendingBioAttributes },
     biographyAttributes: {
       unlockStar: 1,
       effectiveOn: "The Hero's squad",
-      attributes: [
-        { label: 'Biography attributes', value: 'Details pending' }
-      ],
-      status: 'Details pending'
+      attributes: [{ label: 'Biography attributes', value: 'Details pending' }],
+      status: 'Details pending',
     },
     inheritingSkill: {
       unlockStar: 2,
@@ -255,7 +253,7 @@ function createPendingSkin(heroName, {
       target: 'Details pending',
       description: 'Inheriting skill details will be added after capture.',
       status: 'Details pending',
-      levels: []
+      levels: [],
     },
     preservingSkill: {
       unlockStar: 3,
@@ -265,8 +263,8 @@ function createPendingSkin(heroName, {
       target: 'Details pending',
       description: 'Preserving skill details will be added after capture.',
       dynamicIcon: true,
-      dynamicIconNote: 'Dynamic icon capture pending.'
-    }
+      dynamicIconNote: 'Dynamic icon capture pending.',
+    },
   };
 }
 
@@ -276,24 +274,24 @@ export const heroSkins = {
       id: 'jeanne-darc-idling',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/jeanne-darc-idling-icon.webp'
-    })
+      imageUrl: 'assets/skins/jeanne-darc-idling-icon.webp',
+    }),
   ],
-  'Alfred': [
+  Alfred: [
     createPendingSkin('Alfred', {
       id: 'alfred-idling',
       type: 'S1',
       rank: 'S1',
-      imageUrl: 'assets/skins/alfred-idling-icon.webp'
-    })
+      imageUrl: 'assets/skins/alfred-idling-icon.webp',
+    }),
   ],
   'Mary Tudor': [
     createPendingSkin('Mary Tudor', {
       id: 'mary-tudor-skin',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/mary-tudor-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/mary-tudor-skin-icon.webp',
+    }),
   ],
   'King Arthur': [
     {
@@ -312,22 +310,23 @@ export const heroSkins = {
         {
           star: 1,
           title: 'Biography',
-          detail: 'Skin ownership grants the biography attributes by default.'
+          detail: 'Skin ownership grants the biography attributes by default.',
         },
         {
           star: 2,
           title: 'Inheriting',
-          detail: 'Skin advancement unlocks the upgraded hero skill.'
+          detail: 'Skin advancement unlocks the upgraded hero skill.',
         },
         {
           star: 3,
           title: 'Preserving',
-          detail: 'Special preserving unlock items add the preserving skill and moving icon.'
-        }
+          detail: 'Special preserving unlock items add the preserving skill and moving icon.',
+        },
       ],
       iconBehavior: {
         star2: 'Unique icon becomes available with the inheriting skill.',
-        star3: 'The same unique icon moves slightly in place after the preserving skill is unlocked.'
+        star3:
+          'The same unique icon moves slightly in place after the preserving skill is unlocked.',
       },
       bioAttributes: {
         might: 10,
@@ -335,7 +334,7 @@ export const heroSkins = {
         tacticalMight: 6,
         tacticalResistance: 18,
         hp: 18,
-        damage: 3
+        damage: 3,
       },
       maxBioAttributes: {
         might: 10,
@@ -343,7 +342,7 @@ export const heroSkins = {
         tacticalMight: 6,
         tacticalResistance: 18,
         hp: 18,
-        damage: 3
+        damage: 3,
       },
       biographyAttributes: {
         unlockStar: 1,
@@ -354,9 +353,9 @@ export const heroSkins = {
           { label: 'Tactical Might', value: '+6%' },
           { label: 'Tactical Resistance', value: '+18%' },
           { label: 'Army HP', value: '+18%' },
-          { label: 'Troop Damage', value: '+3%' }
+          { label: 'Troop Damage', value: '+3%' },
         ],
-        status: 'All Biography Attributes activated'
+        status: 'All Biography Attributes activated',
       },
       inheritingSkill: {
         unlockStar: 2,
@@ -369,18 +368,19 @@ export const heroSkins = {
         worksOn: 'Footmen',
         target: '1 random friendly squad within effective range',
         influencedBy: 'Resistance',
-        description: 'Damage taken by the hero is reduced by 80% at the start of battle. Each time the hero takes damage, the mitigation is reduced by 8% (reduced by 4% each time for the first 3 rounds), while Resistance increases by 20% and Damage dealt increases by 10%, stackable up to 20 layers, until battle ends.',
+        description:
+          'Damage taken by the hero is reduced by 80% at the start of battle. Each time the hero takes damage, the mitigation is reduced by 8% (reduced by 4% each time for the first 3 rounds), while Resistance increases by 20% and Damage dealt increases by 10%, stackable up to 20 layers, until battle ends.',
         status: 'Skill activated',
         levels: [
           {
             level: 2,
-            desc: 'Replaces Wheel of Fortune with Eternity when the skin reaches Star 2.'
+            desc: 'Replaces Wheel of Fortune with Eternity when the skin reaches Star 2.',
           },
           {
             level: 10,
-            desc: 'Captured screenshot shows Eternity at Lv.10 and max level reached.'
-          }
-        ]
+            desc: 'Captured screenshot shows Eternity at Lv.10 and max level reached.',
+          },
+        ],
       },
       preservingSkill: {
         unlockStar: 3,
@@ -388,164 +388,165 @@ export const heroSkins = {
         type: 'Pre-Battle Skill',
         effectiveRange: 2,
         target: '3 random friendly squads within effective range',
-        description: "The Hero's squad takes -10% Skill Damage; the Hero's Legion gains 13% Resistance.",
+        description:
+          "The Hero's squad takes -10% Skill Damage; the Hero's Legion gains 13% Resistance.",
         dynamicIcon: true,
-        dynamicIconNote: 'Star 3 uses the same unique icon with a small in-place movement.'
-      }
-    }
+        dynamicIconNote: 'Star 3 uses the same unique icon with a small in-place movement.',
+      },
+    },
   ],
   'Cleopatra VII': [
     createPendingSkin('Cleopatra VII', {
       id: 'cleopatra-vii-legion-i',
       type: 'S3',
       rank: 'S3',
-      imageUrl: 'assets/skins/cleopatra-vii-legion-i-icon.webp'
-    })
+      imageUrl: 'assets/skins/cleopatra-vii-legion-i-icon.webp',
+    }),
   ],
-  'Theodora': [
+  Theodora: [
     createPendingSkin('Theodora', {
       id: 'theodora-royal',
       type: 'S4',
       rank: 'S4',
-      imageUrl: 'assets/skins/theodora-royal-icon.webp'
-    })
+      imageUrl: 'assets/skins/theodora-royal-icon.webp',
+    }),
   ],
-  'Octavius': [
+  Octavius: [
     createPendingSkin('Octavius', {
       id: 'octavius-legion-ii',
       type: 'S2',
       rank: 'S2',
-      imageUrl: 'assets/skins/octavius-legion-ii-icon.webp'
-    })
+      imageUrl: 'assets/skins/octavius-legion-ii-icon.webp',
+    }),
   ],
   'Black Prince': [
     createPendingSkin('Black Prince', {
       id: 'black-prince-skin',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/black-prince-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/black-prince-skin-icon.webp',
+    }),
   ],
-  'Lionheart': [
+  Lionheart: [
     createPendingSkin('Lionheart', {
       id: 'lionheart-skin',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/lionheart-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/lionheart-skin-icon.webp',
+    }),
   ],
   'Edward the Confessor': [
     createPendingSkin('Edward the Confessor', {
       id: 'edward-the-confessor-skin',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/edward-the-confessor-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/edward-the-confessor-skin-icon.webp',
+    }),
   ],
-  'BeastQueen': [
+  BeastQueen: [
     createPendingSkin('BeastQueen', {
       id: 'beastqueen-skin',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/beastqueen-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/beastqueen-skin-icon.webp',
+    }),
   ],
-  'Jade': [
+  Jade: [
     createPendingSkin('Jade', {
       id: 'jade-rakshasa',
       type: 'S2',
       rank: 'S2',
-      imageUrl: 'assets/skins/jade-rakshasa-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/jade-rakshasa-skin-icon.webp',
+    }),
   ],
-  'Immortal': [
+  Immortal: [
     createPendingSkin('Immortal', {
       id: 'immortal-skin',
       type: 'S2',
       rank: 'S2',
-      imageUrl: 'assets/skins/immortal-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/immortal-skin-icon.webp',
+    }),
   ],
   'Sky Breaker': [
     createPendingSkin('Sky Breaker', {
       id: 'sky-breaker-skin',
       type: 'S3',
       rank: 'S3',
-      imageUrl: 'assets/skins/sky-breaker-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/sky-breaker-skin-icon.webp',
+    }),
   ],
   'Rozen Blade': [
     createPendingSkin('Rozen Blade', {
       id: 'rozen-blade-legion-ii',
       type: 'S3',
       rank: 'S3',
-      imageUrl: 'assets/skins/rozen-blade-legion-ii-icon.webp'
-    })
+      imageUrl: 'assets/skins/rozen-blade-legion-ii-icon.webp',
+    }),
   ],
-  'Caesar': [
+  Caesar: [
     createPendingSkin('Caesar', {
       id: 'caesar-legion-iii',
       type: 'SP',
       rank: 'SP',
-      imageUrl: 'assets/skins/caesar-legion-iii-icon.webp'
-    })
+      imageUrl: 'assets/skins/caesar-legion-iii-icon.webp',
+    }),
   ],
   'Bleeding Steed': [
     createPendingSkin('Bleeding Steed', {
       id: 'bleeding-steed-legion-iii',
       type: 'S2',
       rank: 'S2',
-      imageUrl: 'assets/skins/bleeding-steed-legion-iii-icon.webp'
-    })
+      imageUrl: 'assets/skins/bleeding-steed-legion-iii-icon.webp',
+    }),
   ],
   'Jade Eagle': [
     createPendingSkin('Jade Eagle', {
       id: 'jade-eagle-legion-iii',
       type: 'S4',
       rank: 'S4',
-      imageUrl: 'assets/skins/jade-eagle-dragon-icon.webp'
-    })
+      imageUrl: 'assets/skins/jade-eagle-dragon-icon.webp',
+    }),
   ],
   'Charles the Great': [
     createPendingSkin('Charles the Great', {
       id: 'charles-the-great-reflection',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/charles-the-great-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/charles-the-great-skin-icon.webp',
+    }),
   ],
   'Al Fatih': [
     createPendingSkin('Al Fatih', {
       id: 'al-fatih-reflection',
       type: 'S',
       rank: 'S',
-      imageUrl: 'assets/skins/al-fatih-skin-icon.webp'
-    })
+      imageUrl: 'assets/skins/al-fatih-skin-icon.webp',
+    }),
   ],
   'Immortal Guardian': [
     createPendingSkin('Immortal Guardian', {
       id: 'immortal-guardian-tass-legion',
       type: 'S4',
       rank: 'S4',
-      imageUrl: 'assets/skins/immortal-guardian-tass-legion-icon.webp'
-    })
+      imageUrl: 'assets/skins/immortal-guardian-tass-legion-icon.webp',
+    }),
   ],
   'Ramses II': [
     createPendingSkin('Ramses II', {
       id: 'ramses-ii-tass-legion',
       type: 'SP',
       rank: 'SP',
-      imageUrl: 'assets/skins/ramses-ii-tass-legion-icon.webp'
-    })
+      imageUrl: 'assets/skins/ramses-ii-tass-legion-icon.webp',
+    }),
   ],
-  'Beowulf': [
+  Beowulf: [
     createPendingSkin('Beowulf', {
       id: 'beowulf-tass-legion',
       type: 'SP',
       rank: 'SP',
-      imageUrl: 'assets/skins/beowulf-tass-legion-icon.webp'
-    })
-  ]
+      imageUrl: 'assets/skins/beowulf-tass-legion-icon.webp',
+    }),
+  ],
 };
 
 export function getHeroSkins(heroName) {

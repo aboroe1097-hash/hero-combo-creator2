@@ -16,12 +16,17 @@ import {
 } from '../../js/specialization-towers-v2-contributions.js';
 import {
   createEmptySpecializationState,
+  getNodeUpgradeCount,
   setResearchNodes,
 } from '../../js/specialization-towers-v2-model.js';
 
+// Every upgrade, not every node: base-attribute nodes take two.
 function allNodeIds(researchId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
-  const ids = research.nodes.map((node) => node.id);
+  const ids = [];
+  research.nodes.forEach((node) => {
+    for (let index = 0; index < getNodeUpgradeCount(node); index += 1) ids.push(node.id);
+  });
   if (research.passiveSkillNodeId !== null) ids.push(research.passiveSkillNodeId);
   return ids;
 }

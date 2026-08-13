@@ -1496,7 +1496,7 @@
         quickTools: 'Strumenti rapidi',
         notification: 'Notifica',
         backToTop: 'Torna su',
-        scrollToTop: 'Scorri all\'inizio',
+        scrollToTop: "Scorri all'inizio",
         maintenanceStatus: 'Stato della manutenzione',
       },
     },
@@ -1561,7 +1561,7 @@
         arcadeModeB: {
           mode: 'Modalità B',
           title: 'Sort the Hoard',
-          hint: 'Invia ogni pezzo in caduta verso l\'ala richiesta prima che raggiunga il cancello.',
+          hint: "Invia ogni pezzo in caduta verso l'ala richiesta prima che raggiunga il cancello.",
         },
         arcadeModeC: {
           mode: 'Modalità C',

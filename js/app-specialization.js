@@ -19,6 +19,7 @@ import {
   getResearchNodeAccess,
   toggleResearchNode,
   setResearchNodes,
+  maxResearchNode,
   setResearchMedalsSpent,
   resetResearch,
 } from './specialization-towers-v2-model.js';
@@ -31,6 +32,9 @@ import {
   SPECIALIZATION_ROUTE_IDS,
   getNextRouteResearch,
   getRouteStep,
+  getRouteRationale,
+  getRouteLabel,
+  getRouteHeroes,
 } from './specialization-routes.js';
 import {
   specializationTowersV2Text,
@@ -45,32 +49,82 @@ import {
 } from './i18n/specialization-towers-v2/display.js';
 
 const UI_TROOPS = ['cavalry', 'archer', 'footman'];
-const TROOP_ICON = { cavalry: '🐴', archer: '🏹', footman: '🛡️' };
-// Placeholder badge glyphs by research family until the real in-game art is supplied.
+
+// Line-art glyphs drawn to match the in-game icon families, so a node here reads
+// as the same kind of node it is on the phone. All inherit `currentColor`, which
+// each surface tints (Might warm, Resistance blue, HP green, and so on).
+function svgIcon(name, body) {
+  return `<svg class="spec-glyph spec-glyph--${name}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">${body}</svg>`;
+}
+
+const ICON = {
+  // Crossed swords — Might and Tactical Might.
+  might: svgIcon(
+    'might',
+    '<path d="M18.5 3.5h-2L7 14.5"/><path d="M5.5 3.5h2L17 14.5"/><path d="m7 14.5-2 2 2.5 2.5 2-2"/><path d="m17 14.5 2 2-2.5 2.5-2-2"/><path d="M4 20.5 6 18.5M20 20.5 18 18.5"/>'
+  ),
+  // Shield — Resistance.
+  resistance: svgIcon('resistance', '<path d="M12 3 5 6v6c0 4 3 7.2 7 9 4-1.8 7-5 7-9V6z"/>'),
+  // Heart — HP and Revival.
+  hp: svgIcon(
+    'hp',
+    '<path d="M12 20s-7-4.4-7-9.4A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.6c0 5-7 9.4-7 9.4z"/>'
+  ),
+  // Starburst on a shield — the "Intel" family (Tactical Resistance).
+  intel: svgIcon(
+    'intel',
+    '<path d="M12 3 5 6v6c0 4 3 7.2 7 9 4-1.8 7-5 7-9V6z"/><path d="M12 7.5v7M8.5 11h7M9.6 8.6l4.8 4.8M14.4 8.6l-4.8 4.8"/>'
+  ),
+  // Helmet — the rally-join family.
+  rally: svgIcon(
+    'rally',
+    '<path d="M5 12a7 7 0 0 1 14 0v4.5a2.5 2.5 0 0 1-2.5 2.5H14v-3.5h-4V19H7.5A2.5 2.5 0 0 1 5 16.5z"/><path d="M12 5.5V12"/><path d="M8.5 12h7"/>'
+  ),
+  // Hourglass — the passive skill each research ends on.
+  passive: svgIcon(
+    'passive',
+    '<path d="M7 3h10M7 21h10"/><path d="M7 3v3.5L12 12 7 17.5V21"/><path d="M17 3v3.5L12 12l5 5.5V21"/>'
+  ),
+  // Chevrons — march and combat speed.
+  speed: svgIcon('speed', '<path d="m5 7 6 5-6 5"/><path d="m13 7 6 5-6 5"/>'),
+  // Banner — research badge fallback where no in-game art is mapped yet.
+  badge: svgIcon('badge', '<path d="M6 3h12v18l-6-4-6 4z"/>'),
+  cavalry: svgIcon(
+    'cavalry',
+    '<path d="M6 20c0-5 2.5-8 6-8.5L14 6l-2-1 1-2 4 1.5L19 8l-2 1-1.5 3.5C17.5 14 19 16.5 19 20"/><path d="M6 20h13"/>'
+  ),
+  archer: svgIcon(
+    'archer',
+    '<path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 19a12 12 0 0 1 12-12"/>'
+  ),
+  footman: svgIcon(
+    'footman',
+    '<path d="M12 3 5 6v6c0 4 3 7.2 7 9 4-1.8 7-5 7-9V6z"/><path d="M12 8v8"/>'
+  ),
+};
+
+const TROOP_ICON = { cavalry: ICON.cavalry, archer: ICON.archer, footman: ICON.footman };
+
+// Research badge glyphs by family, used only until real in-game art is mapped.
 const BADGE_ICON = [
-  { test: /^Training/i, icon: '🐴' },
-  { test: /^Encounter/i, icon: '⚔️' },
-  { test: /^Siege/i, icon: '🏹' },
-  { test: /^Call of Glory/i, icon: '🚩' },
-  { test: /^Defensive/i, icon: '🏰' },
-  { test: /^Neat/i, icon: '⚔️' },
-  { test: /^Enhanced/i, icon: '📜' },
-];
-// Placeholder node glyphs by attribute effect.
-const NODE_ICON = [
-  { test: /Might/i, icon: '⚔️' },
-  { test: /Resistance|Defense/i, icon: '🛡️' },
-  { test: /HP|Revival/i, icon: '❤️' },
-  { test: /Speed/i, icon: '⏳' },
+  { test: /^Training/i, icon: ICON.cavalry },
+  { test: /^Encounter/i, icon: ICON.might },
+  { test: /^Siege/i, icon: ICON.archer },
+  { test: /^Call of Glory/i, icon: ICON.badge },
+  { test: /^Defensive/i, icon: ICON.resistance },
+  { test: /^Neat/i, icon: ICON.might },
+  { test: /^Enhanced/i, icon: ICON.intel },
 ];
 
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
 const ROUTE_KEY = 'vts_specialization_towers_v2_route';
 const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
+const ROUTE_PROMPT_KEY = 'vts_specialization_towers_v2_route_prompt_seen';
 
 let root = null;
 let state = null;
-let activeTroop = 'cavalry';
+// Archers are the tower most players plan first, so the tab lands there.
+let activeTroop = 'archer';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
 let selectedNodeId = null;
@@ -104,7 +158,7 @@ function isResearchCompleteForRoute(researchId) {
 
 function routeNextResearchId() {
   if (!activeRoute) return null;
-  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute);
+  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute, activeTroop);
 }
 
 function contributionNodeKey(researchId, nodeId) {
@@ -179,8 +233,39 @@ function plannerSprite(asset, className = '') {
   return `<svg class="${className} specialization-planner-sprite" viewBox="${viewBox}" focusable="false"><image href="${escapeHtml(asset.src)}" width="960" height="933"></image></svg>`;
 }
 
-function nodeIcon(effect) {
-  return NODE_ICON.find((entry) => entry.test.test(effect || ''))?.icon || '◆';
+// Node glyph + colour family, chosen the way the game chooses its node art: the
+// passive skill is an hourglass, rally-join buffs are helmets, "Intel" buffs
+// (Tactical Resistance) are the starburst shield, and the rest fall back to the
+// plain attribute the buff moves.
+function nodeIconKind(node, passive = false) {
+  if (passive) return 'passive';
+  if (node?.context === 'rallyJoin') return 'rally';
+  const effect = node?.effect || '';
+  if (/Tactical Resistance/i.test(effect)) return 'intel';
+  if (/Tactical Might|Might/i.test(effect)) return 'might';
+  if (/Resistance|Defense/i.test(effect)) return 'resistance';
+  if (/HP|Revival/i.test(effect)) return 'hp';
+  if (/Speed|Marching/i.test(effect)) return 'speed';
+  return 'badge';
+}
+
+function nodeIcon(node, passive = false) {
+  return ICON[nodeIconKind(node, passive)];
+}
+
+// In game a node shows one pip per upgrade it takes. The base-attribute nodes
+// (Frenzy Fighter, Tough Armor, Energetic) are the two-upgrade ones; everything
+// else is a single upgrade.
+function nodeUpgradeCount(node) {
+  return node?.context === 'baseAttributes' ? 2 : 1;
+}
+
+function upgradePips(count, level = 0) {
+  if (count < 2) return '';
+  const pips = Array.from({ length: count }, (unused, index) =>
+    index < level ? '<i data-filled="true"></i>' : '<i></i>'
+  ).join('');
+  return `<span class="spec-node-pips" aria-hidden="true">${pips}</span>`;
 }
 
 function troopLabel(troop) {
@@ -239,16 +324,6 @@ function renderSummary(summary) {
         <h2 class="spec-title">${escapeHtml(sp('title'))}</h2>
         <p class="spec-subtitle">${escapeHtml(sp('subtitle'))}</p>
       </div>
-      <div class="spec-tool-controls">
-        <label class="spec-route-control">
-          <span>${escapeHtml(sp('routeLabel'))}</span>
-          <select data-spec-route-select aria-label="${escapeHtml(sp('routeLabel'))}">
-            <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(sp('routeNone'))}</option>
-            ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(sp(id === 'spender' ? 'routeSpender' : 'routeF2p'))}</option>`).join('')}
-          </select>
-        </label>
-        <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
-      </div>
       <div class="spec-stat-row">
         ${stat(sp('currentTowerProgress'), `${pct(troop.percent)}%`)}
         ${stat(sp('fundedResearches'), `${fmt(troop.completedResearchCount)} / ${fmt(troop.totalResearchCount)}`)}
@@ -272,17 +347,26 @@ function renderBadge(researchId) {
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
   const image = getSpecializationResearchImage(researchId, activeTroop);
-  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId) : 0;
+  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId, activeTroop) : 0;
   const isRouteNext = activeRoute && routeNextResearchId() === researchId;
+  // The plan author's reason for this position, where one was captured.
+  const routeReason = routeStep ? getRouteRationale(researchId, activeTroop) : '';
   return `
     <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isRouteNext ? 'true' : 'false'}">
-      ${routeStep ? `<span class="spec-route-step" aria-hidden="true">${routeStep}</span>` : ''}
-      ${isRouteNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
-      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
+      ${
+        routeStep || isRouteNext
+          ? `<span class="spec-badge-meta">
+        ${routeStep ? `<span class="spec-route-step" aria-hidden="true"><small>#</small>${routeStep}</span>` : ''}
+        ${isRouteNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
+      </span>`
+          : ''
+      }
+      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" ${routeReason ? `title="${escapeHtml(routeReason)}"` : ''} aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%${routeStep ? ` · ${escapeHtml(sp('routeLabel'))} #${routeStep}` : ''}${routeReason ? ` · ${escapeHtml(routeReason)}` : ''}">
         <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
         <span class="spec-badge-pct">${pct(progress.percent)}%</span>
       </button>
+      ${isRouteNext && routeReason ? `<p class="spec-route-reason">${escapeHtml(routeReason)}</p>` : ''}
       <button type="button" class="spec-badge-max${progress.isComplete ? ' is-unmax' : ''}" data-spec-quick-set="${progress.isComplete ? 'reset' : 'complete'}" data-spec-research-id="${researchId}" aria-label="${escapeHtml(`${progress.isComplete ? sp('resetLearning') : sp('completeLearning')}: ${researchName(research)}`)}" title="${escapeHtml(progress.isComplete ? sp('resetLearning') : sp('completeLearning'))}">${escapeHtml(progress.isComplete ? sd('quickUnmax') : sp('quickMax'))}</button>
     </div>`;
 }
@@ -387,7 +471,7 @@ function renderCommunity() {
                     const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
                     return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
                     <div class="spec-contrib-node-identity">
-                      <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon(nodeEffect)}</span>
+                      <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon({ effect: nodeEffect })}</span>
                       <span><small>#${fmt(nodePosition)}</small><strong>${escapeHtml(nodeName(nodeLabel))}</strong>${nodeEffect ? `<em>${escapeHtml(effectText(nodeEffect))}</em>` : ''}</span>
                     </div>
                     <fieldset class="spec-contrib-stage">
@@ -446,8 +530,76 @@ function renderAcknowledgments() {
     </section>`;
 }
 
+// Route picking and the easy-medal toggle are planning tools for the tower
+// overview; inside a single research they have nothing to act on, so they only
+// render on the main page.
+function renderToolControls() {
+  return `
+    <div class="spec-tool-controls">
+      <label class="spec-route-control">
+        <span class="spec-route-control-label">${escapeHtml(sp('routeLabel'))}</span>
+        <select class="spec-select" data-spec-route-select aria-label="${escapeHtml(sp('routeLabel'))}">
+          <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(sp('routeNone'))}</option>
+          ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(routeOptionLabel(id))}</option>`).join('')}
+        </select>
+      </label>
+      <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
+    </div>`;
+}
+
+// The two archer plans differ by whether you own these rally heroes, so the
+// picker shows them rather than describing them.
+const ROUTE_HERO_ART = {
+  'Ramses II': 'https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png',
+  Boudica: 'https://i.ibb.co/7HrC86g/Boudica.png',
+};
+
+// Portraits for the heroes this troop's plan assumes you own.
+function routeHeroStrip(routeId) {
+  const heroes = getRouteHeroes(routeId, activeTroop).filter((name) => ROUTE_HERO_ART[name]);
+  if (!heroes.length) return '';
+  return `<span class="spec-route-heroes" aria-hidden="true">${heroes
+    .map(
+      (name) =>
+        `<img src="${escapeHtml(ROUTE_HERO_ART[name])}" alt="" loading="lazy" decoding="async" title="${escapeHtml(name)}" />`
+    )
+    .join('')}</span>`;
+}
+
+// The hero-specific plan name where the chart names heroes, generic otherwise.
+function routeOptionLabel(routeId) {
+  return (
+    getRouteLabel(routeId, activeTroop) || sp(routeId === 'spender' ? 'routeSpender' : 'routeF2p')
+  );
+}
+
+// Shown once, until a route is picked or the note is dismissed: choosing a path
+// is the first decision the tower asks of you, and nothing else on the page
+// explains that the two plans assume different hero rosters.
+function renderRoutePrompt() {
+  if (activeRoute || safeGet(ROUTE_PROMPT_KEY, '') === '1') return '';
+  return `
+    <section class="spec-route-prompt" aria-label="${escapeHtml(sp('routeLabel'))}">
+      <div class="spec-route-prompt-head">
+        <h3>${escapeHtml(sp('routeLabel'))}</h3>
+        <button type="button" class="spec-route-prompt-close" data-spec-dismiss-route-prompt aria-label="${escapeHtml(sd('closePreview'))}">×</button>
+      </div>
+      <div class="spec-route-prompt-options">
+        ${SPECIALIZATION_ROUTE_IDS.map(
+          (id) => `
+          <button type="button" class="spec-route-prompt-option" data-spec-pick-route="${id}">
+            ${routeHeroStrip(id)}
+            <span class="spec-route-prompt-name">${escapeHtml(routeOptionLabel(id))}</span>
+          </button>`
+        ).join('')}
+      </div>
+    </section>`;
+}
+
 function renderOverview(summary) {
   return `
+    ${renderRoutePrompt()}
+    ${renderToolControls()}
     ${renderTroopTabs(summary)}
     <p class="spec-hint">${escapeHtml(sp('seasonPlanningNote'))}</p>
     <div class="spec-banners" role="list">
@@ -483,14 +635,21 @@ function resolveNode(research, entry) {
   return { id: entry.nodeId, name: '', effect: '' };
 }
 
-function nodeButton(research, entry, x, y) {
+function nodeButton(research, entry, x, y, order = 0) {
   const node = resolveNode(research, entry);
   const disabled = entry.state === 'hidden';
   const selected = entry.nodeId === selectedNodeId;
   const localizedName = nodeName(node.name);
   const localizedEffect = effectText(node.effect);
-  const tip = `${escapeHtml(localizedName)}${localizedEffect ? ' — ' + escapeHtml(localizedEffect) : ''}`;
-  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-selected="${selected}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}${selected ? 'aria-current="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
+  const step = order ? `${order}. ` : '';
+  const tip = `${step}${escapeHtml(localizedName)}${localizedEffect ? ' — ' + escapeHtml(localizedEffect) : ''}`;
+  const passive = research.passiveSkillNodeId === entry.nodeId;
+  const kind = nodeIconKind(node, passive);
+  // The order chip turns the graph into a plan you can read: it is the learning
+  // order the research is stored in, so "learn through here" is unambiguous.
+  const chip = order ? `<span class="spec-ring-num" aria-hidden="true">${order}</span>` : '';
+  const upgrades = nodeUpgradeCount(node);
+  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-kind="${kind}" data-passive="${passive}" data-upgrades="${upgrades}" data-selected="${selected}" data-order="${order}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}${selected ? 'aria-current="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector"><span class="spec-ring-node-glyph" aria-hidden="true">${ICON[kind]}</span>${upgradePips(upgrades, entry.level ?? 0)}${chip}</button>`;
 }
 
 // Enhanced Tactics is a small dependency tree in-game; everything else is a
@@ -504,7 +663,253 @@ function isTreeLayout(research) {
   );
 }
 
+// Graph geometry transcribed from in-game screenshots (2026-08-12 capture, all
+// graphs at 100%). `points[i]` is where dataset entry `i` sits, as a percentage
+// of the graph box; `aspect` is that box's width/height so the layout keeps its
+// in-game proportions instead of being squashed into a square. `edges` are node
+// index pairs and `centerEdges` are nodes wired inward to the research emblem,
+// which sits at `center`. Node order was verified against the screenshots by
+// matching each slot's icon and the names revealed on selection.
+// Researches without an entry here fall back to the generic even ellipse.
+const RING_SHAPES = {
+  // Single loop: entry 1 hangs off the emblem, the chain runs down the left,
+  // around the bottom and up the right, ending at the passive skill on top.
+  training1: {
+    aspect: 0.757,
+    center: { x: 49.9, y: 50.3 },
+    points: [
+      { x: 19.6, y: 32.3 },
+      { x: 10.1, y: 50.3 },
+      { x: 13.7, y: 68.3 },
+      { x: 25.9, y: 82.5 },
+      { x: 49.9, y: 94.2 },
+      { x: 74.6, y: 82.5 },
+      { x: 86.3, y: 68.3 },
+      { x: 90.2, y: 50.3 },
+      { x: 86.3, y: 32.3 },
+      { x: 73.9, y: 18.0 },
+      { x: 49.9, y: 5.8 },
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [8, 9],
+      [9, 10],
+    ],
+    centerEdges: [0],
+  },
+  // Outer loop closed through the top hub, plus two inner nodes that drop from
+  // the hub into the emblem.
+  encounter1: {
+    aspect: 0.785,
+    center: { x: 49.9, y: 48.6 },
+    points: [
+      { x: 66.0, y: 30.6 },
+      { x: 33.6, y: 30.6 },
+      { x: 49.9, y: 6.0 },
+      { x: 77.8, y: 8.3 },
+      { x: 90.1, y: 25.7 },
+      { x: 95.5, y: 48.6 },
+      { x: 83.9, y: 66.2 },
+      { x: 70.2, y: 81.0 },
+      { x: 30.1, y: 81.0 },
+      { x: 16.4, y: 66.2 },
+      { x: 6.4, y: 48.6 },
+      { x: 10.1, y: 25.7 },
+      { x: 22.7, y: 8.3 },
+      { x: 49.9, y: 94.0 },
+    ],
+    edges: [
+      [2, 0],
+      [2, 1],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 13],
+      [13, 8],
+      [8, 9],
+      [9, 10],
+      [10, 11],
+      [11, 12],
+      [12, 2],
+    ],
+    centerEdges: [0, 1],
+  },
+  // Four branches off the emblem: two Resistance arms sweeping down, two Might
+  // arms sweeping up and meeting at the passive skill.
+  callofglory1: {
+    aspect: 0.72,
+    center: { x: 49.9, y: 52.7 },
+    points: [
+      { x: 67.4, y: 63.8 },
+      { x: 90.1, y: 66.3 },
+      { x: 73.9, y: 78.7 },
+      { x: 73.9, y: 94.5 },
+      { x: 32.5, y: 63.8 },
+      { x: 10.1, y: 66.3 },
+      { x: 26.3, y: 78.7 },
+      { x: 26.3, y: 94.5 },
+      { x: 67.4, y: 41.8 },
+      { x: 83.9, y: 31.8 },
+      { x: 90.1, y: 16.6 },
+      { x: 71.3, y: 5.5 },
+      { x: 32.5, y: 41.8 },
+      { x: 15.1, y: 31.8 },
+      { x: 10.1, y: 16.6 },
+      { x: 28.7, y: 5.5 },
+      { x: 49.9, y: 19.1 },
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [8, 9],
+      [9, 10],
+      [10, 11],
+      [11, 16],
+      [12, 13],
+      [13, 14],
+      [14, 15],
+      [15, 16],
+    ],
+    centerEdges: [0, 4, 8, 12],
+  },
+  // Two mirrored wings off the scroll emblem — siege defense down the left,
+  // siege attack down the right — laced together by a middle band through the
+  // rally helmets, with the passive hourglass on the spine above the HP node.
+  enhanced1: {
+    aspect: 0.672,
+    center: { x: 50.1, y: 24.1 },
+    points: [
+      { x: 36.1, y: 9.5 },
+      { x: 12.3, y: 4.7 },
+      { x: 13.7, y: 20.9 },
+      { x: 20.0, y: 35.9 },
+      { x: 6.4, y: 47.8 },
+      { x: 7.6, y: 64.3 },
+      { x: 20.2, y: 79.1 },
+      { x: 6.4, y: 91.1 },
+      { x: 27.5, y: 95.3 },
+      { x: 27.5, y: 57.0 },
+      { x: 63.7, y: 9.5 },
+      { x: 87.7, y: 4.7 },
+      { x: 86.6, y: 20.9 },
+      { x: 80.4, y: 35.9 },
+      { x: 93.8, y: 47.8 },
+      { x: 92.5, y: 64.3 },
+      { x: 72.7, y: 57.0 },
+      { x: 80.0, y: 79.1 },
+      { x: 93.8, y: 91.1 },
+      { x: 72.7, y: 95.3 },
+      { x: 50.1, y: 91.1 },
+      { x: 50.1, y: 58.6 },
+      { x: 50.1, y: 42.5 },
+      { x: 50.1, y: 75.0 },
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [4, 9],
+      [9, 21],
+      [10, 11],
+      [11, 12],
+      [12, 13],
+      [13, 14],
+      [14, 15],
+      [15, 17],
+      [17, 18],
+      [18, 19],
+      [14, 16],
+      [16, 21],
+      [22, 21],
+      [21, 23],
+      [23, 20],
+      [20, 8],
+      [20, 19],
+    ],
+    centerEdges: [0, 10],
+  },
+};
+
+// A research keeps one graph across all three towers; the game just presents it
+// at a different orientation per troop. Cavalry is the reference capture, so the
+// other two are expressed as a flip of it. Researches with no entry for a troop
+// render the reference orientation until that troop is captured.
+const SHAPE_ORIENTATION = {
+  training1: { cavalry: 'identity', archer: 'rotate180', footman: 'mirrorX' },
+  callofglory1: { cavalry: 'identity', archer: 'rotate180', footman: 'identity' },
+};
+
+const ORIENT = {
+  identity: (p) => p,
+  mirrorX: (p) => ({ x: 100 - p.x, y: p.y }),
+  mirrorY: (p) => ({ x: p.x, y: 100 - p.y }),
+  rotate180: (p) => ({ x: 100 - p.x, y: 100 - p.y }),
+};
+
+function orientShape(researchId, shape) {
+  const name = SHAPE_ORIENTATION[researchId]?.[activeTroop] || 'identity';
+  const move = ORIENT[name] || ORIENT.identity;
+  if (move === ORIENT.identity) return shape;
+  return { ...shape, points: shape.points.map(move), center: move(shape.center) };
+}
+
+function getRingShape(research, access) {
+  const shape = RING_SHAPES[research.id];
+  if (!shape || shape.points.length !== access.entries.length) return null;
+  return orientShape(research.id, shape);
+}
+
+function renderShapedRing(research, access, shape) {
+  const nodes = access.entries
+    .map((entry, i) => nodeButton(research, entry, shape.points[i].x, shape.points[i].y, i + 1))
+    .join('');
+  const lines = shape.edges
+    .map(([a, b]) => {
+      const from = shape.points[a];
+      const to = shape.points[b];
+      return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" />`;
+    })
+    .concat(
+      (shape.centerEdges || []).map((i) => {
+        const from = shape.points[i];
+        return `<line x1="${from.x}" y1="${from.y}" x2="${shape.center.x}" y2="${shape.center.y}" />`;
+      })
+    )
+    .join('');
+  const progress = getResearchProgress(state, activeTroop, research.id);
+  const image = getSpecializationResearchImage(research.id, activeTroop);
+  return `
+    <div class="spec-ring spec-ring--shaped" role="group" aria-label="${escapeHtml(researchName(research))}" style="aspect-ratio:${shape.aspect}">
+      <svg class="spec-ring-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
+      <div class="spec-ring-center" style="left:${shape.center.x}%;top:${shape.center.y}%">
+        <span class="spec-ring-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
+        <span class="spec-ring-pct">${pct(progress.percent)}%</span>
+      </div>
+      ${nodes}
+    </div>`;
+}
+
 function renderRing(research, access) {
+  const shape = getRingShape(research, access);
+  if (shape) return renderShapedRing(research, access, shape);
   const entries = access.entries;
   const n = entries.length || 1;
   const nodes = entries
@@ -613,6 +1018,10 @@ function renderTree(research, access) {
 }
 
 function renderNodeGraph(research, access) {
+  // A transcribed shape always wins: it is the real in-game graph, so it beats
+  // both the generic ellipse and the inferred tree fallback.
+  const shape = getRingShape(research, access);
+  if (shape) return renderShapedRing(research, access, shape);
   return isTreeLayout(research) ? renderTree(research, access) : renderRing(research, access);
 }
 
@@ -626,13 +1035,15 @@ function renderSelectedNode(research, access) {
   const knownMedals = saved.reviewedMedalCost ?? saved.medalCost ?? null;
   const learned = entry.state === 'learned';
   const canToggle = learned || entry.selectable;
+  const maxLevel = entry.maxLevel ?? nodeUpgradeCount(node);
+  const level = entry.level ?? (learned ? maxLevel : 0);
   const position = access.entries.findIndex((candidate) => candidate.nodeId === entry.nodeId) + 1;
   return `
     <section id="spec-node-inspector" class="spec-node-inspector" data-state="${entry.state}" aria-live="polite">
-      <div class="spec-node-inspector-icon" aria-hidden="true">${nodeIcon(node.effect)}</div>
+      <div class="spec-node-inspector-icon" data-kind="${nodeIconKind(node, research.passiveSkillNodeId === entry.nodeId)}" aria-hidden="true">${nodeIcon(node, research.passiveSkillNodeId === entry.nodeId)}</div>
       <div class="spec-node-inspector-copy">
         <span class="spec-node-inspector-kicker">${escapeHtml(sp('selectedLearning'))} · ${escapeHtml(sd('nodePosition', { current: position, total: access.entries.length }))}</span>
-        <h4>${escapeHtml(nodeName(node.name))}</h4>
+        <h4>${escapeHtml(nodeName(node.name))}${maxLevel > 1 ? ` <span class="spec-node-upgrade-tag">${level}/${maxLevel}</span>${upgradePips(maxLevel, level)}` : ''}</h4>
         <div class="spec-node-inspector-buff"><span>${escapeHtml(sp('nodeBuffLabel'))}</span><strong>${escapeHtml(effectText(node.effect) || sp('nodeBuffUnknown'))}</strong></div>
       </div>
       <fieldset class="spec-node-inspector-state">
@@ -640,6 +1051,7 @@ function renderSelectedNode(research, access) {
         <div class="spec-node-state-options">
           <button type="button" data-spec-set-selected-node="unlearned" aria-pressed="${!learned}">${escapeHtml(sp('nodeNotLearned'))}</button>
           <button type="button" data-spec-set-selected-node="learned" aria-pressed="${learned}" ${canToggle ? '' : 'disabled aria-disabled="true"'}>${escapeHtml(sp('nodeLearned'))}</button>
+          ${maxLevel > 1 ? `<button type="button" class="spec-node-max" data-spec-max-node aria-label="${escapeHtml(`${sp('quickMax')}: ${nodeName(node.name)}`)}" ${learned ? 'disabled aria-disabled="true"' : ''}>${escapeHtml(sp('quickMax'))}</button>` : ''}
         </div>
       </fieldset>
       <div class="spec-node-medal-status${knownMedals === null ? ' is-unknown' : ''}">
@@ -769,10 +1181,80 @@ function focusContributionNode(researchId, nodeId) {
   row.querySelector('[data-spec-node-medal]')?.focus({ preventScroll: true });
 }
 
+// Repaints only what selection actually changes: the node buttons' selected
+// flags and the inspector panel. Keeps the graph geometry untouched so rapid
+// clicking works.
+function refreshNodeSelection() {
+  if (!root || !selectedResearchId) return;
+  root.querySelectorAll('[data-spec-node]').forEach((button) => {
+    const isSelected = Number(button.dataset.specNode) === selectedNodeId;
+    button.dataset.selected = String(isSelected);
+    if (isSelected) button.setAttribute('aria-current', 'true');
+    else button.removeAttribute('aria-current');
+  });
+  const research = SPECIALIZATION_RESEARCH[selectedResearchId];
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const inspector = root.querySelector('#spec-node-inspector');
+  if (inspector && research) inspector.outerHTML = renderSelectedNode(research, access);
+  root.querySelector(`[data-spec-node="${selectedNodeId}"]`)?.focus({ preventScroll: true });
+}
+
+function onKeyDown(event) {
+  if (!event.target.closest?.('[data-spec-node]')) return;
+  const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+  const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+  if (!back && !forward) return;
+  if (moveSelectionAlongPath(forward ? 1 : -1)) event.preventDefault();
+}
+
+// Toggling from the graph keeps the node selected, so a second click undoes the
+// first without the pointer ever leaving the node.
+function toggleSelectedNode(nodeId) {
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const entry = access.entries.find((candidate) => candidate.nodeId === nodeId);
+  if (!entry || (entry.state !== 'learned' && !entry.selectable)) return;
+  state = toggleResearchNode(state, activeTroop, selectedResearchId, nodeId);
+  persist();
+  render();
+  root?.querySelector(`[data-spec-node="${nodeId}"]`)?.focus({ preventScroll: true });
+}
+
+// "I am here on the path": everything up to and including this node is learned,
+// everything after it is not. One gesture instead of clicking a dozen nodes.
+function setProgressThroughNode(nodeId) {
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const index = access.entries.findIndex((entry) => entry.nodeId === nodeId);
+  if (index < 0) return;
+  const ids = access.entries.slice(0, index + 1).map((entry) => entry.nodeId);
+  state = setResearchNodes(state, activeTroop, selectedResearchId, ids);
+  selectedNodeId = nodeId;
+  persist();
+  render();
+  root?.querySelector(`[data-spec-node="${nodeId}"]`)?.focus({ preventScroll: true });
+}
+
+// Arrow keys walk the learning order rather than the DOM, so the graph is usable
+// without a pointer whatever shape it is drawn in.
+function moveSelectionAlongPath(step) {
+  if (!selectedResearchId) return false;
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const entries = access.entries.filter((entry) => entry.state !== 'hidden');
+  if (!entries.length) return false;
+  const current = entries.findIndex((entry) => entry.nodeId === selectedNodeId);
+  const next = current < 0 ? 0 : (current + step + entries.length) % entries.length;
+  selectedNodeId = entries[next].nodeId;
+  refreshNodeSelection();
+  return true;
+}
+
 function completeResearch(researchId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   if (!research) return;
-  const allNodes = research.nodes.map((node) => node.id);
+  // Every upgrade, not every node: a base-attribute node is listed twice.
+  const allNodes = [];
+  research.nodes.forEach((node) => {
+    for (let index = 0; index < nodeUpgradeCount(node); index += 1) allNodes.push(node.id);
+  });
   if (research.passiveSkillNodeId !== null && research.passiveSkillNodeId !== undefined) {
     allNodes.push(research.passiveSkillNodeId);
   }
@@ -804,6 +1286,19 @@ function onClick(event) {
       // A rejected medal value still leaves the node selection applied.
     }
     persist();
+    render();
+    return;
+  }
+  const pickRoute = event.target.closest('[data-spec-pick-route]');
+  if (pickRoute) {
+    activeRoute = pickRoute.dataset.specPickRoute;
+    safeSet(ROUTE_KEY, activeRoute);
+    safeSet(ROUTE_PROMPT_KEY, '1');
+    render();
+    return;
+  }
+  if (event.target.closest('[data-spec-dismiss-route-prompt]')) {
+    safeSet(ROUTE_PROMPT_KEY, '1');
     render();
     return;
   }
@@ -856,16 +1351,48 @@ function onClick(event) {
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
   if (nodeBtn && !nodeBtn.disabled && selectedResearchId) {
-    selectedNodeId = Number(nodeBtn.dataset.specNode);
+    const nodeId = Number(nodeBtn.dataset.specNode);
+    // Three gestures on one control, cheapest to most powerful:
+    //   shift/ctrl-click  -> set the whole path's progress to this node
+    //   click the node you already have selected -> toggle just it
+    //   click any other node -> select it
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      setProgressThroughNode(nodeId);
+      return;
+    }
+    if (nodeId === selectedNodeId) {
+      toggleSelectedNode(nodeId);
+      return;
+    }
+    selectedNodeId = nodeId;
+    // Selecting must not rebuild the tab. A full render replaces every node
+    // button and resizes the inspector underneath, which moves the graph out
+    // from under the pointer — that is what made a second click land on
+    // nothing. Patch the selection in place instead.
+    refreshNodeSelection();
+    return;
+  }
+  if (event.target.closest('[data-spec-max-node]') && selectedResearchId) {
+    state = maxResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
+    persist();
     render();
-    root?.querySelector(`[data-spec-node="${selectedNodeId}"]`)?.focus({ preventScroll: true });
     return;
   }
   const nodeState = event.target.closest('[data-spec-set-selected-node]');
   if (nodeState && selectedResearchId) {
     const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
-    const learned =
-      access.entries.find((entry) => entry.nodeId === selectedNodeId)?.state === 'learned';
+    const entry = access.entries.find((candidate) => candidate.nodeId === selectedNodeId);
+    const learned = entry?.state === 'learned';
+    // "Learned" on a two-upgrade node means fully upgraded, so buy the rest.
+    if (!learned && nodeState.dataset.specSetSelectedNode === 'learned') {
+      state = maxResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
+      persist();
+      render();
+      root
+        ?.querySelector('[data-spec-set-selected-node="learned"]')
+        ?.focus({ preventScroll: true });
+      return;
+    }
     const wantsLearned = nodeState.dataset.specSetSelectedNode === 'learned';
     if (learned !== wantsLearned) {
       state = toggleResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
@@ -971,6 +1498,7 @@ export function initSpecializationTool() {
   if (!wired) {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
+    root.addEventListener('keydown', onKeyDown);
     window.addEventListener('vts:language-change', () => render());
     // Signing in or out changes whether the contribution fields accept input. Firebase
     // also fires this once on boot with the state we already render, so only re-render
