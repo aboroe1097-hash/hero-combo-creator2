@@ -7450,301 +7450,6 @@ body.admin-standalone-page .admin-footer .footer-divider {
   letter-spacing: 0.04em;
 }
 
-/* ── VTS EDEN: season-format briefing + map sub-tabs ───────────────────── */
-.vts-eden {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.vts-eden-subtabs {
-  display: flex;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.55);
-}
-.vts-eden-subtab {
-  flex: 1 1 auto;
-  padding: 0.5rem 0.9rem;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: rgba(226, 232, 240, 0.78);
-  font: inherit;
-  font-size: 0.84rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-.vts-eden-subtab:hover {
-  color: rgb(241, 245, 249);
-}
-.vts-eden-subtab.is-active {
-  background: rgba(56, 189, 248, 0.18);
-  color: rgb(241, 245, 249);
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.5);
-}
-.vts-eden-subtab:focus-visible {
-  outline: 2px solid rgb(56, 189, 248);
-  outline-offset: 2px;
-}
-.vts-eden-panel[hidden] {
-  display: none;
-}
-#vtsEdenFormatPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.vts-eden-hero {
-  padding: 1.1rem 1.2rem;
-  border: 1px solid rgba(56, 189, 248, 0.32);
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
-    rgba(15, 23, 42, 0.62);
-}
-.vts-eden-eyebrow {
-  display: inline-block;
-  margin-bottom: 0.35rem;
-  color: rgb(125, 211, 252);
-  font-size: 0.66rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-.vts-eden-title {
-  margin: 0 0 0.4rem;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: rgb(241, 245, 249);
-}
-.vts-eden-lede {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 0.9rem;
-  line-height: 1.55;
-  color: rgba(226, 232, 240, 0.82);
-}
-
-.vts-eden-steps {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.vts-eden-step {
-  display: flex;
-  gap: 0.85rem;
-  padding: 0.95rem 1.05rem;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  border-radius: 13px;
-  background: rgba(15, 23, 42, 0.5);
-}
-.vts-eden-step-mark {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: rgba(56, 189, 248, 0.16);
-  color: rgb(125, 211, 252);
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-.vts-eden-step-body h3 {
-  margin: 0 0 0.3rem;
-  font-size: 0.98rem;
-  font-weight: 750;
-  color: rgb(241, 245, 249);
-}
-.vts-eden-step-body p {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 0.85rem;
-  line-height: 1.55;
-  color: rgba(226, 232, 240, 0.78);
-}
-.vts-eden-figures {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.6rem;
-}
-.vts-eden-figure {
-  display: flex;
-  gap: 0.35rem;
-  align-items: baseline;
-  padding: 0.25rem 0.6rem;
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 999px;
-  background: rgba(56, 189, 248, 0.1);
-}
-.vts-eden-figure strong {
-  font-size: 1rem;
-  font-weight: 800;
-  color: rgb(125, 211, 252);
-}
-.vts-eden-figure span {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(226, 232, 240, 0.75);
-}
-.vts-eden-inline-link {
-  margin-top: 0.55rem;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 999px;
-  background: transparent;
-  color: rgb(125, 211, 252);
-  font: inherit;
-  font-size: 0.76rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.vts-eden-inline-link:hover {
-  background: rgba(56, 189, 248, 0.14);
-}
-
-.vts-eden-card {
-  padding: 1rem 1.1rem;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  border-radius: 13px;
-  background: rgba(15, 23, 42, 0.5);
-}
-.vts-eden-card h3 {
-  margin: 0 0 0.55rem;
-  font-size: 0.95rem;
-  font-weight: 750;
-  color: rgb(241, 245, 249);
-}
-.vts-eden-rule-list {
-  display: grid;
-  gap: 0.4rem;
-  margin: 0;
-  padding-inline-start: 1.1rem;
-}
-.vts-eden-rule-list li {
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: rgba(226, 232, 240, 0.8);
-}
-.vts-eden-priority {
-  border-color: rgba(251, 191, 36, 0.4);
-  background:
-    radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.13), transparent 60%),
-    rgba(15, 23, 42, 0.5);
-}
-.vts-eden-priority-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-}
-.vts-eden-priority-item {
-  padding: 0.7rem 0.85rem;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  border-radius: 11px;
-  background: rgba(251, 191, 36, 0.08);
-}
-.vts-eden-priority-item h4 {
-  margin: 0 0 0.25rem;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: rgb(253, 224, 71);
-}
-.vts-eden-priority-item p {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: rgba(226, 232, 240, 0.85);
-}
-.vts-eden-note {
-  margin: 0 0 0.6rem;
-  max-width: 62ch;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: rgba(226, 232, 240, 0.65);
-}
-.vts-eden-note:last-child {
-  margin: 0.6rem 0 0;
-}
-.vts-eden-hero-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.vts-eden-hero-chip {
-  display: inline-flex;
-  gap: 0.35rem;
-  align-items: baseline;
-  padding: 0.32rem 0.7rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 999px;
-  background: rgba(30, 41, 59, 0.7);
-  font-size: 0.8rem;
-  font-weight: 650;
-  color: rgba(226, 232, 240, 0.9);
-}
-.vts-eden-hero-chip em {
-  font-size: 0.66rem;
-  font-style: normal;
-  font-weight: 800;
-  color: rgba(148, 163, 184, 0.9);
-}
-.vts-eden-hero-chip.is-priority {
-  border-color: rgba(251, 191, 36, 0.6);
-  background: rgba(251, 191, 36, 0.12);
-  color: rgb(253, 224, 71);
-}
-
-[data-theme='light'] .vts-eden-subtabs,
-[data-theme='light'] .vts-eden-hero,
-[data-theme='light'] .vts-eden-step,
-[data-theme='light'] .vts-eden-card {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(15, 23, 42, 0.14);
-}
-[data-theme='light'] .vts-eden-title,
-[data-theme='light'] .vts-eden-step-body h3,
-[data-theme='light'] .vts-eden-card h3,
-[data-theme='light'] .vts-eden-subtab.is-active {
-  color: rgb(15, 23, 42);
-}
-[data-theme='light'] .vts-eden-lede,
-[data-theme='light'] .vts-eden-step-body p,
-[data-theme='light'] .vts-eden-rule-list li,
-[data-theme='light'] .vts-eden-hero-chip {
-  color: rgb(51, 65, 85);
-}
-[data-theme='light'] .vts-eden-eyebrow,
-[data-theme='light'] .vts-eden-figure strong,
-[data-theme='light'] .vts-eden-inline-link {
-  color: rgb(2, 105, 161);
-}
-[data-theme='light'] .vts-eden-priority-item h4 {
-  color: rgb(146, 94, 18);
-}
-[data-theme='light'] .vts-eden-note {
-  color: rgb(71, 85, 105);
-}
-
-@media (max-width: 640px) {
-  .vts-eden-title {
-    font-size: 1.25rem;
-  }
-  .vts-eden-step {
-    padding: 0.8rem 0.85rem;
-  }
-}
-
 .eden-map-root {
   display: flex;
   flex-direction: column;
@@ -21269,6 +20974,121 @@ html[dir='rtl'] .gen-buttons-row {
   border-color: var(--spec-gold);
   background: color-mix(in srgb, var(--spec-gold) 18%, var(--spec-panel));
   color: var(--spec-gold);
+}
+/* Hero plan (skill-semantics auto-path) bar in the Specialization tab. */
+.spec-hero-plan {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.55), rgba(30, 41, 59, 0.35));
+}
+.spec-hero-plan-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.spec-hero-plan-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.spec-hero-plan-roster {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.spec-plan-mode-control select {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.7);
+  color: inherit;
+}
+.spec-auto-path {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.6);
+  background: rgba(251, 191, 36, 0.16);
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.spec-auto-path:hover {
+  background: rgba(251, 191, 36, 0.28);
+}
+.spec-hero-plan-note {
+  margin: 10px 0 0;
+  font-size: 0.76rem;
+  opacity: 0.85;
+}
+.spec-hero-plan-hint {
+  margin: 8px 0 0;
+  font-size: 0.72rem;
+  color: #fbbf24;
+}
+.spec-hero-plan-jump {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.55);
+  background: rgba(99, 102, 241, 0.16);
+  color: #a5b4fc;
+  font-weight: 700;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.spec-hero-plan-jump:hover {
+  background: rgba(99, 102, 241, 0.3);
+}
+.spec-plan-troop-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.spec-plan-troop-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.55);
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.spec-plan-troop-chip.active {
+  border-color: rgba(251, 191, 36, 0.75);
+  background: rgba(251, 191, 36, 0.14);
+}
+.spec-plan-troop-rank {
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+.spec-hero-plan-why {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.25);
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+.spec-hero-plan-why-label {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+[data-plan-reason='true'] {
+  cursor: help;
 }
 .spec-badge-wrap {
   position: relative;

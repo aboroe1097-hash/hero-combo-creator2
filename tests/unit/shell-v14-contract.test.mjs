@@ -33,7 +33,6 @@ test('v14 shell assets load last without replacing established tool ids', () => 
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
-    'tabLoyalty',
     'tabYouTube',
     'tabOcrDashboard',
   ]) {
@@ -72,7 +71,7 @@ test('pending All-Star first paint exposes only its static route loader', () => 
   assert.doesNotMatch(appCss, /data-initial-tab-pending='allStarBoh'[^\n]*boh-root/);
 });
 
-test('mobile exposes exactly four primary destinations and an accessible More sheet', () => {
+test('mobile exposes exactly three primary destinations and an accessible More sheet', () => {
   const mobilePrimaryIds = Array.from(
     index.matchAll(
       /<div\b(?=[^>]*class="[^"]*\btab-item\b)(?=[^>]*\bdata-shell-mobile-primary\b)[^>]*>\s*<(?:button|a)\b[^>]*\bid="([^"]+)"/g
@@ -80,7 +79,7 @@ test('mobile exposes exactly four primary destinations and an accessible More sh
     (match) => match[1]
   );
 
-  assert.deepEqual(mobilePrimaryIds, ['tabResearch', 'tabEdenX1', 'tabAllStarBoh', 'tabYouTube']);
+  assert.deepEqual(mobilePrimaryIds, ['tabResearch', 'tabAllStarBoh', 'tabYouTube']);
   assert.match(
     index,
     /id="shellMoreButton"[^>]*aria-expanded="false"[^>]*aria-controls="shellMorePanel"/
@@ -93,7 +92,7 @@ test('mobile exposes exactly four primary destinations and an accessible More sh
 });
 
 test('translated mobile labels preserve their icon-library artwork', () => {
-  for (const id of ['tabResearch', 'tabEdenX1', 'tabAllStarBoh', 'tabYouTube']) {
+  for (const id of ['tabResearch', 'tabAllStarBoh', 'tabYouTube']) {
     assert.match(index, new RegExp(`id="${id}"[\\s\\S]*?<svg[\\s\\S]*?<span`));
   }
   assert.doesNotMatch(index, /id="(?:tabResearch|tabYouTube)"[^>]*data-i18n=/);
@@ -142,14 +141,14 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
   assert.match(
     shellJs,
-    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabSpecialization',\s*'tabLoyalty',\s*'tabYouTube',?\s*\];/
+    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabSpecialization',\s*'tabYouTube',?\s*\];/
   );
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore', 'tabEdenX1'\];/
+    /const mobilePrimaryIds = \['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore'\];/
   );
 
-  for (const id of ['tabStrife', 'tabSpecialization', 'tabLoyalty', 'tabYouTube']) {
+  for (const id of ['tabStrife', 'tabSpecialization', 'tabYouTube']) {
     assert.match(
       index,
       new RegExp(

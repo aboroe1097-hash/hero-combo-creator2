@@ -3,7 +3,7 @@
 // column banners of badges -> tap a badge -> a node ring you learn along.
 // Reuses the verified data/model/store/i18n foundation; no game data defined here.
 
-import { currentLanguage } from './state.js';
+import { currentLanguage, generatorSelectedHeroes } from './state.js';
 import { escapeHtml } from './utils.js';
 import { getCurrentUser, onUserChanged } from './firebase.js';
 import {
@@ -32,10 +32,15 @@ import {
   SPECIALIZATION_ROUTE_IDS,
   getNextRouteResearch,
   getRouteStep,
-  getRouteRationale,
-  getRouteLabel,
-  getRouteHeroes,
 } from './specialization-routes.js';
+import {
+  HERO_PLAN_DATA_REVISION,
+  HERO_PLAN_MODES,
+  buildHeroPlans,
+  getHeroPlanRanking,
+  getHeroPlanStep,
+  getNextHeroPlanResearch,
+} from './specialization-hero-plans.js';
 import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
@@ -49,7 +54,6 @@ import {
 } from './i18n/specialization-towers-v2/display.js';
 
 const UI_TROOPS = ['cavalry', 'archer', 'footman'];
-
 // Line-art glyphs drawn to match the in-game icon families, so a node here reads
 // as the same kind of node it is on the phone. All inherit `currentColor`, which
 // each surface tints (Might warm, Resistance blue, HP green, and so on).
@@ -119,12 +123,12 @@ const BADGE_ICON = [
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
 const ROUTE_KEY = 'vts_specialization_towers_v2_route';
 const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
-const ROUTE_PROMPT_KEY = 'vts_specialization_towers_v2_route_prompt_seen';
+const HERO_PLAN_KEY = 'vts_specialization_hero_plan';
+const HERO_PLAN_MODE_KEY = 'vts_specialization_hero_plan_mode';
 
 let root = null;
 let state = null;
-// Archers are the tower most players plan first, so the tab lands there.
-let activeTroop = 'archer';
+let activeTroop = 'cavalry';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
 let selectedNodeId = null;
@@ -134,6 +138,10 @@ let wired = false;
 // one surface is the route the other shows.
 let activeRoute = '';
 let easyMedalMode = false;
+// Hero-plan state: computed from the Heroes tab roster (generatorSelectedHeroes).
+let heroPlanMode = 'balanced';
+let heroPlans = null; // buildHeroPlans() result or null
+let heroPlanRoster = []; // roster snapshot the stored plan was built from
 
 function safeGet(key, fallback = '') {
   try {
@@ -158,7 +166,82 @@ function isResearchCompleteForRoute(researchId) {
 
 function routeNextResearchId() {
   if (!activeRoute) return null;
-  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute, activeTroop);
+  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute);
+}
+
+// ---------------------------------------------------------------------------
+// Hero plan (skill-semantics auto-path) state
+// ---------------------------------------------------------------------------
+
+function currentRoster() {
+  return [...(generatorSelectedHeroes || [])].sort((a, b) => a.localeCompare(b));
+}
+
+function heroPlanForTroop(troopId) {
+  return heroPlans?.plans?.[troopId] || null;
+}
+
+function heroPlanNextResearchId() {
+  const plan = heroPlanForTroop(activeTroop);
+  if (!plan) return null;
+  return getNextHeroPlanResearch(plan, isResearchCompleteForRoute);
+}
+
+function saveHeroPlan() {
+  try {
+    localStorage.setItem(
+      HERO_PLAN_KEY,
+      JSON.stringify({
+        revision: HERO_PLAN_DATA_REVISION,
+        plan: heroPlans,
+        roster: heroPlanRoster,
+        mode: heroPlanMode,
+      })
+    );
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function loadStoredHeroPlan() {
+  try {
+    const raw = localStorage.getItem(HERO_PLAN_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !parsed.plan?.plans) return;
+    // A cached plan is only valid for the engine that produced it. Without this
+    // check a plan survives every later release untouched, because the only
+    // other staleness signal is the roster changing. Keep the mode, drop the
+    // stale plan, and let the bar offer a fresh build.
+    heroPlanMode = HERO_PLAN_MODES.includes(parsed.mode) ? parsed.mode : 'balanced';
+    safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
+    if (parsed.revision !== HERO_PLAN_DATA_REVISION) {
+      try {
+        localStorage.removeItem(HERO_PLAN_KEY);
+      } catch {
+        /* storage unavailable */
+      }
+      return;
+    }
+    heroPlans = parsed.plan;
+    heroPlanRoster = Array.isArray(parsed.roster) ? parsed.roster : [];
+  } catch {
+    /* corrupted plan storage */
+  }
+}
+
+function recomputeHeroPlans() {
+  const roster = currentRoster();
+  heroPlanRoster = roster.slice();
+  heroPlans = buildHeroPlans({ heroes: roster, mode: heroPlanMode });
+  saveHeroPlan();
+  render();
+}
+
+function heroPlanRosterChanged() {
+  const roster = currentRoster();
+  if (roster.length !== heroPlanRoster.length) return true;
+  return roster.some((name, index) => name !== heroPlanRoster[index]);
 }
 
 function contributionNodeKey(researchId, nodeId) {
@@ -324,12 +407,89 @@ function renderSummary(summary) {
         <h2 class="spec-title">${escapeHtml(sp('title'))}</h2>
         <p class="spec-subtitle">${escapeHtml(sp('subtitle'))}</p>
       </div>
+      <div class="spec-tool-controls">
+        <label class="spec-route-control">
+          <span>${escapeHtml(sp('routeLabel'))}</span>
+          <select data-spec-route-select aria-label="${escapeHtml(sp('routeLabel'))}">
+            <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(sp('routeNone'))}</option>
+            ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(sp(id === 'spender' ? 'routeSpender' : 'routeF2p'))}</option>`).join('')}
+          </select>
+        </label>
+        <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
+      </div>
+      ${renderHeroPlanBar()}
       <div class="spec-stat-row">
         ${stat(sp('currentTowerProgress'), `${pct(troop.percent)}%`)}
         ${stat(sp('fundedResearches'), `${fmt(troop.completedResearchCount)} / ${fmt(troop.totalResearchCount)}`)}
         ${stat(sp('legionSkills'), `${fmt(troop.completedColumnCount)} / ${fmt(troop.totalColumnCount)}`)}
         ${stat(sp('medalProgress'), escapeHtml(medalText), 'spec-stat-value--medals')}
       </div>
+    </div>`;
+}
+
+function renderHeroPlanBar() {
+  const roster = currentRoster();
+  const hasStoredPlan = Boolean(heroPlans);
+  const changed = hasStoredPlan && heroPlanRosterChanged();
+  const modeOptions = HERO_PLAN_MODES.map(
+    (mode) =>
+      `<option value="${mode}" ${heroPlanMode === mode ? 'selected' : ''}>${escapeHtml(sp(`planMode${mode[0].toUpperCase()}${mode.slice(1)}`))}</option>`
+  ).join('');
+
+  if (!hasStoredPlan && roster.length === 0) {
+    return `
+    <div class="spec-hero-plan spec-hero-plan--empty" data-spec-hero-plan>
+      <div class="spec-hero-plan-head">
+        <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
+        <label class="spec-plan-mode-control">
+          <span class="spec-sr-only">${escapeHtml(sp('planModeLabel'))}</span>
+          <select data-spec-plan-mode aria-label="${escapeHtml(sp('planModeLabel'))}">
+            ${modeOptions}
+          </select>
+        </label>
+        <button type="button" class="spec-auto-path" data-spec-auto-path>${escapeHtml(sp('planAutoPath'))}</button>
+      </div>
+      <p class="spec-hero-plan-note">${escapeHtml(sp('planEmptyNote'))}</p>
+      <button type="button" class="spec-hero-plan-jump" data-spec-plan-go-heroes>${escapeHtml(sp('planGoToHeroes'))}</button>
+    </div>`;
+  }
+
+  const plan = heroPlanForTroop(activeTroop);
+  const ranking = heroPlans ? getHeroPlanRanking(heroPlans.plans) : [];
+  const chips = ranking
+    .map(
+      (entry, index) =>
+        `<button type="button" class="spec-plan-troop-chip${entry.troop === activeTroop ? ' active' : ''}" data-spec-plan-troop="${entry.troop}" title="${escapeHtml(sp('planPriority'))} #${index + 1}">
+          <span class="spec-plan-troop-icon" aria-hidden="true">${TROOP_ICON[entry.troop]}</span>
+          <span class="spec-plan-troop-name">${escapeHtml(troopLabel(entry.troop))}</span>
+          <span class="spec-plan-troop-rank" aria-hidden="true">${'★'.repeat(Math.max(1, ranking.length - index))}</span>
+        </button>`
+    )
+    .join('');
+
+  const nextId = plan ? heroPlanNextResearchId() : null;
+  const nextReasons = plan && nextId ? plan.reasons[nextId] || [] : [];
+
+  return `
+    <div class="spec-hero-plan" data-spec-hero-plan>
+      <div class="spec-hero-plan-head">
+        <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
+        <span class="spec-hero-plan-roster">${escapeHtml(sp('planRosterCount', { count: heroPlanRoster.length }))}</span>
+        <label class="spec-plan-mode-control">
+          <span class="spec-sr-only">${escapeHtml(sp('planModeLabel'))}</span>
+          <select data-spec-plan-mode aria-label="${escapeHtml(sp('planModeLabel'))}">
+            ${modeOptions}
+          </select>
+        </label>
+        <button type="button" class="spec-auto-path" data-spec-auto-path>${escapeHtml(sp('planAutoPath'))}</button>
+      </div>
+      <div class="spec-plan-troop-chips" aria-label="${escapeHtml(sp('planPriority'))}">${chips}</div>
+      ${changed ? `<p class="spec-hero-plan-hint">${escapeHtml(sp('planRosterChanged'))}</p>` : ''}
+      ${
+        nextReasons.length
+          ? `<div class="spec-hero-plan-why"><span class="spec-hero-plan-why-label">${escapeHtml(sp('planWhyNext'))}:</span><span>${nextReasons.map(escapeHtml).join(' · ')}</span></div>`
+          : ''
+      }
     </div>`;
 }
 
@@ -347,26 +507,28 @@ function renderBadge(researchId) {
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
   const image = getSpecializationResearchImage(researchId, activeTroop);
-  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId, activeTroop) : 0;
+  const plan = !activeRoute ? heroPlanForTroop(activeTroop) : null;
+  const routeStep = activeRoute
+    ? getRouteStep(activeRoute, researchId)
+    : plan
+      ? getHeroPlanStep(plan, researchId)
+      : 0;
   const isRouteNext = activeRoute && routeNextResearchId() === researchId;
-  // The plan author's reason for this position, where one was captured.
-  const routeReason = routeStep ? getRouteRationale(researchId, activeTroop) : '';
+  const isPlanNext = plan && heroPlanNextResearchId() === researchId;
+  const isNext = isRouteNext || isPlanNext;
+  const planReasons = plan?.reasons?.[researchId] || [];
+  const planTip = planReasons.length
+    ? `${escapeHtml(sp('planWhyNext'))}: ${planReasons.join(' · ')}`
+    : '';
   return `
-    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isRouteNext ? 'true' : 'false'}">
-      ${
-        routeStep || isRouteNext
-          ? `<span class="spec-badge-meta">
-        ${routeStep ? `<span class="spec-route-step" aria-hidden="true"><small>#</small>${routeStep}</span>` : ''}
-        ${isRouteNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
-      </span>`
-          : ''
-      }
-      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" ${routeReason ? `title="${escapeHtml(routeReason)}"` : ''} aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%${routeStep ? ` · ${escapeHtml(sp('routeLabel'))} #${routeStep}` : ''}${routeReason ? ` · ${escapeHtml(routeReason)}` : ''}">
+    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isNext ? 'true' : 'false'}"${planReasons.length ? ` data-plan-reason="true" title="${planTip}"` : ''}>
+      ${routeStep ? `<span class="spec-route-step" aria-hidden="true">${routeStep}</span>` : ''}
+      ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
+      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
         <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
         <span class="spec-badge-pct">${pct(progress.percent)}%</span>
       </button>
-      ${isRouteNext && routeReason ? `<p class="spec-route-reason">${escapeHtml(routeReason)}</p>` : ''}
       <button type="button" class="spec-badge-max${progress.isComplete ? ' is-unmax' : ''}" data-spec-quick-set="${progress.isComplete ? 'reset' : 'complete'}" data-spec-research-id="${researchId}" aria-label="${escapeHtml(`${progress.isComplete ? sp('resetLearning') : sp('completeLearning')}: ${researchName(research)}`)}" title="${escapeHtml(progress.isComplete ? sp('resetLearning') : sp('completeLearning'))}">${escapeHtml(progress.isComplete ? sd('quickUnmax') : sp('quickMax'))}</button>
     </div>`;
 }
@@ -530,76 +692,8 @@ function renderAcknowledgments() {
     </section>`;
 }
 
-// Route picking and the easy-medal toggle are planning tools for the tower
-// overview; inside a single research they have nothing to act on, so they only
-// render on the main page.
-function renderToolControls() {
-  return `
-    <div class="spec-tool-controls">
-      <label class="spec-route-control">
-        <span class="spec-route-control-label">${escapeHtml(sp('routeLabel'))}</span>
-        <select class="spec-select" data-spec-route-select aria-label="${escapeHtml(sp('routeLabel'))}">
-          <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(sp('routeNone'))}</option>
-          ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(routeOptionLabel(id))}</option>`).join('')}
-        </select>
-      </label>
-      <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
-    </div>`;
-}
-
-// The two archer plans differ by whether you own these rally heroes, so the
-// picker shows them rather than describing them.
-const ROUTE_HERO_ART = {
-  'Ramses II': 'https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png',
-  Boudica: 'https://i.ibb.co/7HrC86g/Boudica.png',
-};
-
-// Portraits for the heroes this troop's plan assumes you own.
-function routeHeroStrip(routeId) {
-  const heroes = getRouteHeroes(routeId, activeTroop).filter((name) => ROUTE_HERO_ART[name]);
-  if (!heroes.length) return '';
-  return `<span class="spec-route-heroes" aria-hidden="true">${heroes
-    .map(
-      (name) =>
-        `<img src="${escapeHtml(ROUTE_HERO_ART[name])}" alt="" loading="lazy" decoding="async" title="${escapeHtml(name)}" />`
-    )
-    .join('')}</span>`;
-}
-
-// The hero-specific plan name where the chart names heroes, generic otherwise.
-function routeOptionLabel(routeId) {
-  return (
-    getRouteLabel(routeId, activeTroop) || sp(routeId === 'spender' ? 'routeSpender' : 'routeF2p')
-  );
-}
-
-// Shown once, until a route is picked or the note is dismissed: choosing a path
-// is the first decision the tower asks of you, and nothing else on the page
-// explains that the two plans assume different hero rosters.
-function renderRoutePrompt() {
-  if (activeRoute || safeGet(ROUTE_PROMPT_KEY, '') === '1') return '';
-  return `
-    <section class="spec-route-prompt" aria-label="${escapeHtml(sp('routeLabel'))}">
-      <div class="spec-route-prompt-head">
-        <h3>${escapeHtml(sp('routeLabel'))}</h3>
-        <button type="button" class="spec-route-prompt-close" data-spec-dismiss-route-prompt aria-label="${escapeHtml(sd('closePreview'))}">×</button>
-      </div>
-      <div class="spec-route-prompt-options">
-        ${SPECIALIZATION_ROUTE_IDS.map(
-          (id) => `
-          <button type="button" class="spec-route-prompt-option" data-spec-pick-route="${id}">
-            ${routeHeroStrip(id)}
-            <span class="spec-route-prompt-name">${escapeHtml(routeOptionLabel(id))}</span>
-          </button>`
-        ).join('')}
-      </div>
-    </section>`;
-}
-
 function renderOverview(summary) {
   return `
-    ${renderRoutePrompt()}
-    ${renderToolControls()}
     ${renderTroopTabs(summary)}
     <p class="spec-hint">${escapeHtml(sp('seasonPlanningNote'))}</p>
     <div class="spec-banners" role="list">
@@ -1181,9 +1275,6 @@ function focusContributionNode(researchId, nodeId) {
   row.querySelector('[data-spec-node-medal]')?.focus({ preventScroll: true });
 }
 
-// Repaints only what selection actually changes: the node buttons' selected
-// flags and the inspector panel. Keeps the graph geometry untouched so rapid
-// clicking works.
 function refreshNodeSelection() {
   if (!root || !selectedResearchId) return;
   root.querySelectorAll('[data-spec-node]').forEach((button) => {
@@ -1269,6 +1360,26 @@ function onClick(event) {
     render();
     return;
   }
+  if (event.target.closest('[data-spec-auto-path]')) {
+    recomputeHeroPlans();
+    return;
+  }
+  if (event.target.closest('[data-spec-plan-go-heroes]')) {
+    if (typeof window.vtsSwitchTab === 'function') {
+      window.vtsSwitchTab('heroes', false, { scrollToSection: true });
+    }
+    return;
+  }
+  const planTroop = event.target.closest('[data-spec-plan-troop]');
+  if (planTroop) {
+    const troop = planTroop.dataset.specPlanTroop;
+    if (UI_TROOPS.includes(troop)) {
+      activeTroop = troop;
+      selectedLegionColumnId = null;
+      render();
+    }
+    return;
+  }
   const medalFill = event.target.closest('[data-spec-medal-fill]');
   if (medalFill) {
     // The model drops medalsSpent unless nodes are selected, so a quick fill sets the
@@ -1286,19 +1397,6 @@ function onClick(event) {
       // A rejected medal value still leaves the node selection applied.
     }
     persist();
-    render();
-    return;
-  }
-  const pickRoute = event.target.closest('[data-spec-pick-route]');
-  if (pickRoute) {
-    activeRoute = pickRoute.dataset.specPickRoute;
-    safeSet(ROUTE_KEY, activeRoute);
-    safeSet(ROUTE_PROMPT_KEY, '1');
-    render();
-    return;
-  }
-  if (event.target.closest('[data-spec-dismiss-route-prompt]')) {
-    safeSet(ROUTE_PROMPT_KEY, '1');
     render();
     return;
   }
@@ -1354,7 +1452,7 @@ function onClick(event) {
     const nodeId = Number(nodeBtn.dataset.specNode);
     // Three gestures on one control, cheapest to most powerful:
     //   shift/ctrl-click  -> set the whole path's progress to this node
-    //   click the node you already have selected -> toggle just it
+    //   click the node you already have selected -> step its upgrades
     //   click any other node -> select it
     if (event.shiftKey || event.ctrlKey || event.metaKey) {
       setProgressThroughNode(nodeId);
@@ -1381,8 +1479,8 @@ function onClick(event) {
   const nodeState = event.target.closest('[data-spec-set-selected-node]');
   if (nodeState && selectedResearchId) {
     const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
-    const entry = access.entries.find((candidate) => candidate.nodeId === selectedNodeId);
-    const learned = entry?.state === 'learned';
+    const learned =
+      access.entries.find((entry) => entry.nodeId === selectedNodeId)?.state === 'learned';
     // "Learned" on a two-upgrade node means fully upgraded, so buy the rest.
     if (!learned && nodeState.dataset.specSetSelectedNode === 'learned') {
       state = maxResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
@@ -1421,6 +1519,19 @@ function onClick(event) {
 }
 
 function onChange(event) {
+  const planModeSelect = event.target.closest('[data-spec-plan-mode]');
+  if (planModeSelect) {
+    heroPlanMode = HERO_PLAN_MODES.includes(planModeSelect.value)
+      ? planModeSelect.value
+      : 'balanced';
+    safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
+    if (heroPlans) {
+      heroPlans = buildHeroPlans({ heroes: heroPlanRoster, mode: heroPlanMode });
+      saveHeroPlan();
+      render();
+    }
+    return;
+  }
   const routeSelect = event.target.closest('[data-spec-route-select]');
   if (routeSelect) {
     activeRoute = SPECIALIZATION_ROUTE_IDS.includes(routeSelect.value) ? routeSelect.value : '';
@@ -1494,6 +1605,10 @@ export function initSpecializationTool() {
   const storedRoute = safeGet(ROUTE_KEY, '');
   activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
   easyMedalMode = safeGet(EASY_MEDALS_KEY, '') === '1';
+  heroPlanMode = HERO_PLAN_MODES.includes(safeGet(HERO_PLAN_MODE_KEY, 'balanced'))
+    ? safeGet(HERO_PLAN_MODE_KEY, 'balanced')
+    : 'balanced';
+  loadStoredHeroPlan();
   selectedResearchId = SPECIALIZATION_COLUMNS[1].researches[0];
   if (!wired) {
     root.addEventListener('click', onClick);

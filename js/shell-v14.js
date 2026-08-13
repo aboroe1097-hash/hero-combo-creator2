@@ -51,10 +51,9 @@
     ...desktopPrimaryIds,
     'tabStrife',
     'tabSpecialization',
-    'tabLoyalty',
     'tabYouTube',
   ];
-  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore', 'tabEdenX1'];
+  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore'];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
     ['tabManual', 'manual'],
@@ -65,9 +64,16 @@
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
     ['tabSpecialization', 'specialization'],
-    ['tabLoyalty', 'loyalty'],
     ['tabAllStarBoh', 'allStarBoh'],
     ['tabYouTube', 'youtube'],
+  ]);
+  // Legacy hashes that moved inside the VTS Eden Hub keep working: the shell
+  // opens the hub tab and hands the sub-tab intent to the hub controller.
+  const legacyEdenHubHashes = new Map([
+    ['loyalty', 'loyalty'],
+    ['bounty', 'bounty'],
+    ['royalbounty', 'bounty'],
+    ['edenx1', 'previous'],
   ]);
   const moreHistoryKey = 'vtsShellMoreOpen';
 
@@ -154,6 +160,14 @@
       .split('?')[0]
       .toLowerCase();
     if (!normalizedHash) return '';
+    if (legacyEdenHubHashes.has(normalizedHash)) {
+      try {
+        document.body.dataset.edenHubSubtab = legacyEdenHubHashes.get(normalizedHash);
+      } catch {
+        /* dataset unavailable */
+      }
+      return 'edenMap';
+    }
     return (
       Array.from(internalHashes.values()).find(
         (tabName) => tabName.toLowerCase() === normalizedHash

@@ -94,5 +94,9 @@ export default {
     guideSteps: 'Pasos de la sección',
     allSectors: 'Mapa completo',
     genericSector: 'Sector {code}',
+    subTabMap: 'Mapa de Edén',
+    subTabLoyalty: 'Lealtad de Edén',
+    subTabBounty: 'Recompensa Real',
+    subTabPrevious: 'Temporadas anteriores',
   },
 };

@@ -21,39 +21,7 @@ const hr = Object.freeze({
   tabGenerator: 'Generator kombinacija',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas heroja',
-  tabEdenMap: 'VTS EDEN',
-  vtsEdenTabFormat: 'Format sezone',
-  vtsEdenTabMap: 'Eden karta',
-  vtsEdenEyebrow: 'Trenutna sezona',
-  vtsEdenFormatTitle: 'Bounty Eden X2',
-  vtsEdenFormatLede:
-    'Sezona ide na uobičajenu podjelu Sjever protiv Juga. Bounty sloj nam je nov, ali nije težak — većina ga skuži prvi dan. Ovo su dobici koje vrijedi uzeti prve.',
-  vtsEdenStepMissionsTitle: 'Odradi dnevne Eden misije',
-  vtsEdenStepMissionsCopy:
-    'Dobivaš 12 misija dnevno i možeš pokrenuti 3 odjednom. Drži sva tri mjesta zauzeta i završi set svaki dan — to je najstabilniji bounty prihod u sezoni.',
-  vtsEdenFigurePerDay: 'dnevno',
-  vtsEdenFigureAtOnce: 'odjednom',
-  vtsEdenStepLobbiesTitle: 'Zauzmi predvorja i zgrade',
-  vtsEdenStepLobbiesCopy:
-    'Karta ima nekoliko predvorja i zgrada koje možemo držati. Koristi karticu Eden karta za planiranje koje napasti i kojim redom.',
-  vtsEdenOpenMap: 'Otvori Eden kartu',
-  vtsEdenStepAidingTitle: 'Opremi Aiding vještine',
-  vtsEdenStepAidingCopy:
-    'Aiding vještine su velika nova moć sezone. Svaka legija može opremiti jednu na sezonskoj karti, pa cijeli savez profitira od zajedničkog planiranja.',
-  vtsEdenRulesTitle: 'Pravila Aiding vještina',
-  vtsEdenRuleOwn: 'Moraš posjedovati heroja.',
-  vtsEdenRuleUnlocked: 'Vještine tog heroja moraju biti otključane.',
-  vtsEdenRuleConflict:
-    'Ne možeš koristiti Aiding vještinu heroja u legiji dok je taj isti heroj u njoj raspoređen.',
-  vtsEdenRuleOnePerLegion: 'Svaka legija oprema jednu Aiding vještinu na sezonskoj karti.',
-  vtsEdenPriorityTitle: 'Prvo se fokusiraj na ova dva',
-  vtsEdenPriorityCaoCao: 'Snaga svih odreda +50% i Brzina marša +50%.',
-  vtsEdenPriorityAvalanche: 'X2 konjanička vještina.',
-  vtsEdenHeroesTitle: 'Bounty heroji',
-  vtsEdenHeroesNote:
-    'Heroji čije su Aiding vještine u bounty skupu. Posjeduj heroja i otključaj mu vještine prije nego što je možeš opremiti.',
-  vtsEdenHeroesSource:
-    'Popis heroja iz saveznog bounty lista; oznake sezone prikazane su samo ondje gdje ih list navodi.',
+  tabEdenMap: 'VTS Eden Hub',
   tabEdenMapBadge: 'Uskoro',
   tabLoyalty: 'Eden odanost',
   tabEdenX1: 'Eden X1 poredak',

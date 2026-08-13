@@ -3,7 +3,7 @@
 // and route users to the right tab instead of guessing. Keep entries factual
 // and short; hashes must match js/shell-v14.js internalHashes and page hrefs
 // must be real deployed routes.
-export const TOOLKIT_MAP_VERSION = '2026.08.03.1';
+export const TOOLKIT_MAP_VERSION = '2026.08.14.1';
 
 const entries = [
   {
@@ -77,31 +77,53 @@ const entries = [
     kind: 'tab',
     hash: 'specialization',
     summary:
-      'The Season 3 / SX1 Specialization Towers: eight columns of researches per troop type, node graphs, medal costs, milestones, Legion Skills, and a community medal-cost contribution form.',
+      'The Season 3 / SX1 Specialization Towers: eight columns of researches per troop type, node graphs, medal costs, milestones, Legion Skills, a community medal-cost contribution form, and a Hero Plan Auto-Path that orders researches from the owned heroes selected in the Combo Generator.',
     answers: [
       'Where do I plan my specialization medals?',
       'What unlocks a Legion Skill?',
+      'Which research order fits the heroes I own?',
     ],
-    keywords: ['specialization', 'spec', 'towers', 'legion skill', 'medals', 'columns', 'sx1'],
+    keywords: [
+      'specialization',
+      'spec',
+      'towers',
+      'legion skill',
+      'medals',
+      'columns',
+      'sx1',
+      'auto-path',
+      'auto path',
+      'hero plan',
+    ],
   },
   {
     id: 'edenMap',
-    name: 'Eden Map Planner',
+    name: 'VTS Eden Hub',
     kind: 'tab',
     hash: 'edenMap',
-    summary: 'Interactive Eden map with layers, guild intel, and route planning.',
-    answers: ['Where is a tile or site on the Eden map?'],
-    keywords: ['eden', 'map', 'tiles', 'planner', 'routes'],
-  },
-  {
-    id: 'loyalty',
-    name: 'Eden Loyalty Calculator',
-    kind: 'tab',
-    hash: 'loyalty',
     summary:
-      'Loyalty, extraction-site thresholds, poison limits, and Alliance Center upgrade material paths from exact app tables.',
-    answers: ['What loyalty do I need for a T-site?', 'What do AC upgrades cost?'],
-    keywords: ['loyalty', 'extraction', 'alliance center', 'ac', 'poison', 'upgrade'],
+      'The Eden hub with three sub-tabs: the interactive Eden map (layers, guild intel, route planning), the Eden Loyalty calculator, and Previous Seasons with the Eden X1 rankings archive.',
+    answers: [
+      'Where is a tile or site on the Eden map?',
+      'What loyalty do I need for a T-site?',
+      'Where is the Eden X1 ranking?',
+    ],
+    keywords: [
+      'eden',
+      'hub',
+      'map',
+      'tiles',
+      'planner',
+      'routes',
+      'loyalty',
+      'extraction',
+      'bounty',
+      'royal bounty',
+      'aiding skill',
+      'previous seasons',
+      'x1',
+      'rankings',
+    ],
   },
   {
     id: 'allStarBoh',

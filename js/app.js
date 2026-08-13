@@ -85,7 +85,6 @@ import {
   messageBoxCancelBtn,
   manualSection,
   generatorSection,
-  loyaltySection,
   youtubeSection,
   researchSection,
   materialsSection,
@@ -174,7 +173,6 @@ let researchModulePromise = null;
 let materialModulePromise = null;
 let exportModulePromise = null;
 let arcadeModulePromise = null;
-let loyaltyModulePromise = null;
 
 function reportDynamicImportFailure(error) {
   window.VTS_ASSET_RECOVERY?.reportFailure?.(error, '');
@@ -182,7 +180,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260813_200019').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260813_234930').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -202,20 +200,9 @@ function loadMaterialModule() {
   return materialModulePromise;
 }
 
-function loadLoyaltyModule() {
-  if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260813_200019').catch((error) => {
-      loyaltyModulePromise = null;
-      reportDynamicImportFailure(error);
-      throw error;
-    });
-  }
-  return loyaltyModulePromise;
-}
-
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260813_200019').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260813_234930').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -226,7 +213,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260813_200019').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260813_234930').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -916,7 +903,6 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     edenMapSection,
     strifeSection,
     specializationSection,
-    loyaltySection,
     youtubeSection,
     arcadeSection,
     allStarBohSection,
@@ -986,7 +972,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   }
 
   function recoverFromStaleAssetGraph(reason) {
-    return window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false;
+    return (
+      window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false
+    );
   }
 
   function onTabActivated(tabName) {
@@ -998,15 +986,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        // Sub-tabs first: the briefing must be readable even if the map module
-        // never loads, and the map panel starts hidden behind it.
-        import('./vts-eden-tabs.js?v=20260813_194137')
-          .then((mod) => mod.initVtsEdenTabs())
-          .catch((err) => console.error('VTS Eden sub-tabs failed to load', err));
-        import('./eden-map.js?v=20260813_200019')
+        import('./eden-map.js?v=20260813_234930')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
+            return import('./eden-hub.js?v=20260813_061728').then((hub) => hub.bootEdenHub());
           })
           .catch((err) => {
             console.error('Eden map failed to load', err);
@@ -1033,7 +1017,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260813_200019')
+      import('./app-hero-atlas.js?v=20260813_234930')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1105,7 +1089,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260813_200019')
+      import('./app-strife.js?v=20260813_234930')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1147,7 +1131,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260813_200019')
+      import('./youtube-v14.js?v=20260813_234930')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1202,12 +1186,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         });
     }
     if (tabName === 'loyalty') {
-      Promise.all([loadTabTemplate('loyalty'), loadLoyaltyModule()])
-        .then(([, module]) => module.initLoyaltyCalculator())
-        .catch((error) => {
-          console.error('Loyalty calculator failed to load', error);
-          renderTabLoadError(loyaltySection, 'loyalty');
-        });
+      // Legacy: Eden Loyalty now lives inside the VTS Eden Hub. The shell maps
+      // this tab name to the hub, which owns loading the loyalty fragment.
+      if (typeof switchTab === 'function') {
+        switchTab('edenMap', true, { preserveHash: false });
+      }
     }
   }
 
@@ -1266,7 +1249,10 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       tabName === 'manual' || tabName === 'generator'
     );
     document.body.classList.toggle('tab-strife-active', tabName === 'strife');
-    document.body.classList.toggle('tab-specialization-active', tabName === 'specialization');
+    document.body.classList.toggle(
+      'tab-specialization-active',
+      tabName === 'specialization'
+    );
 
     onTabActivated(tabName);
     _lastTab = tabName;
@@ -1409,10 +1395,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       );
     };
   }
-  const hashTab = resolveTabName(
-    window.location.hash?.replace('#', '').split('?')[0],
-    validTabNames
-  );
+  const hashTab = resolveTabName(window.location.hash?.replace('#', '').split('?')[0], validTabNames);
   const startTab = hashTab || 'generator';
   switchTab(startTab, true, {
     scrollToSection: startTab !== 'generator',
