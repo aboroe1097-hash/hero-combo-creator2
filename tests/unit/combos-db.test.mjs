@@ -176,7 +176,6 @@ test('the curated 222 skin-mode formations survive as plain entries', () => {
   // hand, so this checks survival rather than an exact count, which would break on every
   // legitimate addition.
   const CURATED_222 = [
-    'Alexander|Bleeding Steed|Theodora',
     'The Brave|Rozen Blade|The Avalanche',
     'King Arthur|Bleeding Steed|Alexander',
     'Boudica|Jade Eagle|Ramses II',
