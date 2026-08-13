@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.7";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.8";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.8",
+    "date": "2026-08-13",
+    "highlights": [
+      "The Combo Generator now opens in skin mode. Skin icons, skin toggles and skin-aware combos are on by default; the toggle still turns them off.",
+      "Hero cards in the generator now stay in seasonal order (S0 first, X2 last) instead of floating heroes that own a skin to the top, so a hero stays where you expect when you switch skin mode on or off.",
+      "Replaced Beowulf's skin icon with a clean portrait crop, without the level and name overlay from the old capture."
+    ]
+  },
   {
     "version": "14.3.7",
     "date": "2026-08-13",
@@ -94,15 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added six complete VtsScore languages, Arabic RTL, and accessible light/dark theme controls with improved form and button contrast.",
       "Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers.",
       "Raised aggregate JavaScript and Pages artifact budgets by 20 kB for the complete VtsScore locale packs."
-    ]
-  },
-  {
-    "version": "14.2.19",
-    "date": "2026-07-27",
-    "highlights": [
-      "Added the focused VtsScore page for Competition #11 final Dragon Power re-uploads, with a searchable All-Star signup selector and one-image OCR review.",
-      "Added a secured Auth, App Check, and member-grant verified score endpoint that stores confirmed numbers and bounded OCR audit metadata without retaining screenshots.",
-      "Added an All-Star admin VtsScore stage comparing sign-up and final Dragon Power, growth, percentage, original reward tier, and missing uploads."
     ]
   }
 ].map((release) =>

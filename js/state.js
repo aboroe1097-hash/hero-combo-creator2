@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.3.7';
+export const APP_VERSION = '14.3.8';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -53,7 +53,7 @@ export let generatorSelectedStates = ['Free', 'Paid'];
 export let generatorSelectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 export const generatorSelectedHeroes = runtimeState.generatorSelectedHeroes || new Set();
 runtimeState.generatorSelectedHeroes = generatorSelectedHeroes;
-export let generatorSkinsOnly = false;
+export let generatorSkinsOnly = true;
 export let manualSkinsOnly = false;
 
 export let userId = 'anonymous';
