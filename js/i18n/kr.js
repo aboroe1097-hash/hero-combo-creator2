@@ -353,6 +353,7 @@ const kr = {
   tabLoyalty: '에덴 충성도 계산기',
   tabEdenX1: '에덴 X1 랭킹',
   tabEdenX1Badge: '공개',
+  tabEdenBounty: '로열 바운티',
   tabResearch: '연구',
   tabOcrDashboard: 'VTS 관리자',
   tabArcade: 'Arcade',

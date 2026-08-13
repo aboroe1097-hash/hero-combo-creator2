@@ -787,6 +787,7 @@ const it = {
   tabLoyalty: 'Lealtà Eden',
   tabEdenX1: 'Classifiche Eden X1',
   tabEdenX1Badge: 'Pubblico',
+  tabEdenBounty: 'Taglia Reale',
   tabResearch: 'Ricerche',
   tabOcrDashboard: 'Amministrazione VTS',
   tabArcade: 'Arcade',
