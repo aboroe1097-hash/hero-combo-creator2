@@ -5,20 +5,19 @@ const navigationPlacements = new Map([
     640,
     {
       tabStrife: 'more',
-      tabLoyalty: 'more',
+      tabEdenMap: 'more',
       tabResearch: 'primary',
       tabYouTube: 'primary',
       tabAllStarBoh: 'primary',
       tabVtsScore: 'primary',
-      tabEdenX1: 'primary',
       tabGenerator: 'more',
       tabArcade: 'more',
     },
   ],
-  [641, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
-  [1439, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
-  [1440, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary', tabVtsScore: 'primary' }],
-  [1760, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary', tabVtsScore: 'primary' }],
+  [641, { tabStrife: 'more', tabEdenMap: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [1439, { tabStrife: 'more', tabEdenMap: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [1440, { tabStrife: 'primary', tabEdenMap: 'more', tabYouTube: 'primary', tabVtsScore: 'primary' }],
+  [1760, { tabStrife: 'primary', tabEdenMap: 'more', tabYouTube: 'primary', tabVtsScore: 'primary' }],
 ]);
 
 async function openHome(page, path = '/#generator') {
@@ -68,7 +67,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore', 'tabEdenX1']);
+    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });
@@ -163,14 +162,18 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   await moreButton.focus();
   await page.keyboard.press('Enter');
   await expect.poll(() => activeElementId(page)).toBe('shellMoreClose');
-  await page.locator('#tabLoyalty').click();
-  await expect(page.locator('#loyaltySection')).toBeVisible();
-  await expect(page.locator('#loyaltySection .loyalty-root')).toBeVisible({ timeout: 20000 });
-  await expect(skipLink).toHaveAttribute('href', '#loyaltySection');
+  // Eden Loyalty lives inside the VTS Eden Hub as a sub-tab.
+  await page.locator('#tabEdenMap').click();
+  await expect(page.locator('#edenMapSection')).toBeVisible();
+  await page.locator('[data-eden-subtab="loyalty"]').click();
+  await expect(page.locator('[data-eden-subtab-panel="loyalty"] .loyalty-root')).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(skipLink).toHaveAttribute('href', '#edenMapSection');
 
   await skipLink.focus();
   await page.keyboard.press('Enter');
-  await expect.poll(() => activeElementId(page)).toBe('loyaltySection');
+  await expect.poll(() => activeElementId(page)).toBe('edenMapSection');
 
   await page.goBack();
   await expect(page.locator('#generatorSection')).toBeVisible();
