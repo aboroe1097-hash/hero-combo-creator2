@@ -94,5 +94,9 @@ export default {
     guideSteps: 'خطوات القسم',
     allSectors: 'الخريطة الكاملة',
     genericSector: 'قطاع {code}',
+    subTabMap: 'خريطة إيدن',
+    subTabLoyalty: 'ولاء إيدن',
+    subTabBounty: 'المكافأة الملكية',
+    subTabPrevious: 'المواسم السابقة',
   },
 };

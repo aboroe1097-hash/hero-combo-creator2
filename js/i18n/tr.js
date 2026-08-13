@@ -428,7 +428,7 @@ const tr = {
   tabGenerator: 'Kombo Oluşturucu',
   tabYouTube: 'YouTube',
   tabHeroes: 'Kahraman Atlası',
-  tabEdenMap: 'Eden Haritası',
+  tabEdenMap: 'VTS Eden Hub',
   tabLoyalty: 'Eden Sadakat',
   tabEdenX1: 'Eden X1 Sıralaması',
   tabEdenX1Badge: 'Herkese Açık',
@@ -658,7 +658,7 @@ const tr = {
   errAcLevels: 'Geçersiz AC seviyeleri (0-20).',
   errProcTime: 'İşleme süresi > 0 olmalı.',
   errProcRate: 'İşleme hızı sıfır.',
-  edenMapTitle: 'Eden Harita Planlayıcı',
+  edenMapTitle: 'VTS Eden Hub',
   edenMapDesc:
     'Wonder X1 haritası, yapılar ve rotalar — araç çubuğu kontrollerinin üzerine gelerek ayrıntıları görün.',
   edenToolNavigate: 'Gezin',

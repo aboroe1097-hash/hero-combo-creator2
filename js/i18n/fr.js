@@ -461,7 +461,7 @@ const fr = {
   tabGenerator: 'Générateur de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas des Héros',
-  tabEdenMap: 'Carte Eden',
+  tabEdenMap: 'VTS Eden Hub',
   tabLoyalty: 'Calc. Fidélité Eden',
   tabEdenX1: 'Classement Eden X1',
   tabEdenX1Badge: 'Public',
@@ -695,7 +695,7 @@ const fr = {
   errAcLevels: 'Niveaux AC invalides (0-20).',
   errProcTime: 'Le temps de traitement doit être > 0.',
   errProcRate: 'Le taux de traitement est nul.',
-  edenMapTitle: 'Planificateur Carte Eden',
+  edenMapTitle: 'VTS Eden Hub',
   edenMapDesc:
     "Carte Wonder X1, structures et routes — survolez la barre d'outils pour les détails.",
   edenToolNavigate: 'Naviguer',

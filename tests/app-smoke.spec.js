@@ -376,13 +376,6 @@ const visualSurfaces = [
       });
     },
   },
-  {
-    name: 'loyalty',
-    buttonId: '#tabLoyalty',
-    sectionId: '#loyaltySection',
-    marker: '#loyaltyPresets',
-    target: '#loyaltySection',
-  },
 ];
 
 const WEIGHTED_TITLE_TEXT =
@@ -414,8 +407,7 @@ async function stabilizeVisuals(page) {
       }
       .visual-surface-crop #availableHeroes,
       .visual-surface-crop #heroesSection,
-      .visual-surface-crop #techListContainer,
-      .visual-surface-crop #loyaltySection {
+      .visual-surface-crop #techListContainer {
         max-height: min(560px, calc(100vh - 140px)) !important;
         overflow: hidden !important;
       }
@@ -1740,8 +1732,6 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
 
     await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#tabEdenX1')).toHaveAttribute('href', 'eden-x1.html');
-    await expect(page.locator('#tabEdenX1')).toContainText('Eden X1 Rankings');
     await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'false');
 
     await page.locator('#tabManual').click();
@@ -2031,7 +2021,20 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#edenZoomLevel')).toContainText('120%');
     await expect(page.locator('.eden-struct-row', { hasText: '800:800' })).toBeVisible();
     await expectEdenTerrainPainted(page);
-    await expectTab(page, '#tabLoyalty', '#loyaltySection', '#loyaltyPresets');
+    // Eden Loyalty now lives inside the VTS Eden Hub as a sub-tab.
+    await page.locator('[data-eden-subtab="loyalty"]').click();
+    await expect(page.locator('[data-eden-subtab-panel="loyalty"] #loyaltyPresets')).toBeVisible({
+      timeout: 15000,
+    });
+    // Royal Bounty guide renders inside the hub as its own sub-tab.
+    await page.locator('[data-eden-subtab="bounty"]').click();
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-guide-root')).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
+      'Royal Bounty Alliance'
+    );
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-card').first()).toBeVisible();
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
   });
 
@@ -2141,7 +2144,6 @@ test.describe('app smoke tabs', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openApp(page, '/?v12qa=mobile');
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
-    await expect(page.locator('#tabEdenX1')).toHaveAttribute('href', 'eden-x1.html');
 
     const darkLayout = await page.evaluate(() => {
       const nav = document.getElementById('tabNavScroll');

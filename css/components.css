@@ -49,6 +49,63 @@
   line-height: 1.45;
 }
 
+/* =============================================================
+   VTS Eden Hub Sub-Tab Bar & Season Format Infographics
+   ============================================================= */
+.vts-eden-subtab-bar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--space-2);
+  overflow-x: auto;
+}
+
+.vts-eden-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.vts-eden-subtab-btn:hover {
+  background: rgba(30, 41, 59, 0.8);
+  color: #fff;
+}
+
+.vts-eden-subtab-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #f8fafc;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
+.vts-eden-subtab-panel {
+  display: none;
+}
+
+.vts-eden-subtab-panel.active {
+  display: block;
+}
+
+.vts-eden-hub-frame {
+  display: block;
+  width: 100%;
+  min-height: 78vh;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: rgba(15, 23, 42, 0.5);
+}
+
 /* Footer utility migration: migrated 1:1 from Tailwind utilities, scoped to
    explicit footer variants so the shared .footer-content base remains stable.
    Replaces:

@@ -58,8 +58,8 @@ const DESTS = [
     key: 'tabEdenMap',
     name: 'edenMap',
     kind: 'tab',
-    fallback: 'Eden Map',
-    kw: 'eden map tiles scout route terrain teams',
+    fallback: 'VTS Eden Hub',
+    kw: 'eden map tiles scout route terrain teams loyalty poison previous seasons rankings x1',
   },
   {
     key: 'tabStrife',
@@ -70,10 +70,17 @@ const DESTS = [
   },
   {
     key: 'tabLoyalty',
-    name: 'loyalty',
+    name: 'edenMap',
     kind: 'tab',
     fallback: 'Eden Loyalty',
-    kw: 'loyalty poison camp deficit mitigation eden',
+    kw: 'loyalty poison camp deficit mitigation eden hub calculator',
+  },
+  {
+    key: 'tabEdenBounty',
+    name: 'edenMap',
+    kind: 'tab',
+    fallback: 'Royal Bounty',
+    kw: 'royal bounty alliance aiding skill commission level lobby missions heroes guide',
   },
   {
     key: 'tabYouTube',
@@ -269,6 +276,15 @@ function onInputKeydown(e) {
 function go(dest) {
   close();
   if (dest.kind === 'tab') {
+    if (dest.key === 'tabLoyalty' || dest.key === 'tabEdenBounty') {
+      const subtab = dest.key === 'tabLoyalty' ? 'loyalty' : 'bounty';
+      try {
+        document.body.dataset.edenHubSubtab = subtab;
+      } catch {
+        /* dataset unavailable */
+      }
+      window.dispatchEvent(new CustomEvent('vts:eden-hub-subtab', { detail: subtab }));
+    }
     if (typeof window.vtsSwitchTab === 'function') {
       window.vtsSwitchTab(dest.name, false, { scrollToSection: true });
     } else {

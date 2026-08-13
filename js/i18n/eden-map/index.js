@@ -154,6 +154,10 @@ const EN = Object.freeze({
     guideSteps: 'Steps in section',
     allSectors: 'Full Map',
     genericSector: '{code} Sector',
+    subTabMap: 'Eden Map',
+    subTabLoyalty: 'Eden Loyalty',
+    subTabBounty: 'Royal Bounty',
+    subTabPrevious: 'Previous Seasons',
   },
 });
 

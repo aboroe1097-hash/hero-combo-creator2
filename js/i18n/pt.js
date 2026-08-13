@@ -445,7 +445,7 @@ const pt = {
   tabGenerator: 'Gerador de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Heróis',
-  tabEdenMap: 'Mapa Eden',
+  tabEdenMap: 'VTS Eden Hub',
   tabEdenMapBadge: 'Soon',
   tabLoyalty: 'Calculadora de Lealdade',
   tabEdenX1: 'Ranking Eden X1',
@@ -778,7 +778,7 @@ const pt = {
   errAcLevels: 'Níveis inválidos (0-20).',
   errProcTime: 'Tempo de processamento deve ser > 0.',
   errProcRate: 'Taxa zero. Verifique os lotes.',
-  edenMapTitle: 'Planejador do Mapa Eden',
+  edenMapTitle: 'VTS Eden Hub',
   edenMapDesc:
     'Mapa Wonder X1 com coordenadas in-game. Navegue, aplique zoom e rotas — passe o mouse nos controles da barra para ver detalhes.',
   edenMapConstructionTitle: 'Mapa Eden — Em Construção',

@@ -3,7 +3,7 @@
 // column banners of badges -> tap a badge -> a node ring you learn along.
 // Reuses the verified data/model/store/i18n foundation; no game data defined here.
 
-import { currentLanguage } from './state.js';
+import { currentLanguage, generatorSelectedHeroes } from './state.js';
 import { escapeHtml } from './utils.js';
 import { getCurrentUser, onUserChanged } from './firebase.js';
 import {
@@ -32,6 +32,14 @@ import {
   getNextRouteResearch,
   getRouteStep,
 } from './specialization-routes.js';
+import {
+  HERO_PLAN_DATA_REVISION,
+  HERO_PLAN_MODES,
+  buildHeroPlans,
+  getHeroPlanRanking,
+  getHeroPlanStep,
+  getNextHeroPlanResearch,
+} from './specialization-hero-plans.js';
 import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
@@ -67,6 +75,8 @@ const NODE_ICON = [
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
 const ROUTE_KEY = 'vts_specialization_towers_v2_route';
 const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
+const HERO_PLAN_KEY = 'vts_specialization_hero_plan';
+const HERO_PLAN_MODE_KEY = 'vts_specialization_hero_plan_mode';
 
 let root = null;
 let state = null;
@@ -80,6 +90,10 @@ let wired = false;
 // one surface is the route the other shows.
 let activeRoute = '';
 let easyMedalMode = false;
+// Hero-plan state: computed from the Heroes tab roster (generatorSelectedHeroes).
+let heroPlanMode = 'balanced';
+let heroPlans = null; // buildHeroPlans() result or null
+let heroPlanRoster = []; // roster snapshot the stored plan was built from
 
 function safeGet(key, fallback = '') {
   try {
@@ -105,6 +119,81 @@ function isResearchCompleteForRoute(researchId) {
 function routeNextResearchId() {
   if (!activeRoute) return null;
   return getNextRouteResearch(activeRoute, isResearchCompleteForRoute);
+}
+
+// ---------------------------------------------------------------------------
+// Hero plan (skill-semantics auto-path) state
+// ---------------------------------------------------------------------------
+
+function currentRoster() {
+  return [...(generatorSelectedHeroes || [])].sort((a, b) => a.localeCompare(b));
+}
+
+function heroPlanForTroop(troopId) {
+  return heroPlans?.plans?.[troopId] || null;
+}
+
+function heroPlanNextResearchId() {
+  const plan = heroPlanForTroop(activeTroop);
+  if (!plan) return null;
+  return getNextHeroPlanResearch(plan, isResearchCompleteForRoute);
+}
+
+function saveHeroPlan() {
+  try {
+    localStorage.setItem(
+      HERO_PLAN_KEY,
+      JSON.stringify({
+        revision: HERO_PLAN_DATA_REVISION,
+        plan: heroPlans,
+        roster: heroPlanRoster,
+        mode: heroPlanMode,
+      })
+    );
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function loadStoredHeroPlan() {
+  try {
+    const raw = localStorage.getItem(HERO_PLAN_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !parsed.plan?.plans) return;
+    // A cached plan is only valid for the engine that produced it. Without this
+    // check a plan survives every later release untouched, because the only
+    // other staleness signal is the roster changing. Keep the mode, drop the
+    // stale plan, and let the bar offer a fresh build.
+    heroPlanMode = HERO_PLAN_MODES.includes(parsed.mode) ? parsed.mode : 'balanced';
+    safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
+    if (parsed.revision !== HERO_PLAN_DATA_REVISION) {
+      try {
+        localStorage.removeItem(HERO_PLAN_KEY);
+      } catch {
+        /* storage unavailable */
+      }
+      return;
+    }
+    heroPlans = parsed.plan;
+    heroPlanRoster = Array.isArray(parsed.roster) ? parsed.roster : [];
+  } catch {
+    /* corrupted plan storage */
+  }
+}
+
+function recomputeHeroPlans() {
+  const roster = currentRoster();
+  heroPlanRoster = roster.slice();
+  heroPlans = buildHeroPlans({ heroes: roster, mode: heroPlanMode });
+  saveHeroPlan();
+  render();
+}
+
+function heroPlanRosterChanged() {
+  const roster = currentRoster();
+  if (roster.length !== heroPlanRoster.length) return true;
+  return roster.some((name, index) => name !== heroPlanRoster[index]);
 }
 
 function contributionNodeKey(researchId, nodeId) {
@@ -249,12 +338,79 @@ function renderSummary(summary) {
         </label>
         <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
       </div>
+      ${renderHeroPlanBar()}
       <div class="spec-stat-row">
         ${stat(sp('currentTowerProgress'), `${pct(troop.percent)}%`)}
         ${stat(sp('fundedResearches'), `${fmt(troop.completedResearchCount)} / ${fmt(troop.totalResearchCount)}`)}
         ${stat(sp('legionSkills'), `${fmt(troop.completedColumnCount)} / ${fmt(troop.totalColumnCount)}`)}
         ${stat(sp('medalProgress'), escapeHtml(medalText), 'spec-stat-value--medals')}
       </div>
+    </div>`;
+}
+
+function renderHeroPlanBar() {
+  const roster = currentRoster();
+  const hasStoredPlan = Boolean(heroPlans);
+  const changed = hasStoredPlan && heroPlanRosterChanged();
+  const modeOptions = HERO_PLAN_MODES.map(
+    (mode) =>
+      `<option value="${mode}" ${heroPlanMode === mode ? 'selected' : ''}>${escapeHtml(sp(`planMode${mode[0].toUpperCase()}${mode.slice(1)}`))}</option>`
+  ).join('');
+
+  if (!hasStoredPlan && roster.length === 0) {
+    return `
+    <div class="spec-hero-plan spec-hero-plan--empty" data-spec-hero-plan>
+      <div class="spec-hero-plan-head">
+        <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
+        <label class="spec-plan-mode-control">
+          <span class="spec-sr-only">${escapeHtml(sp('planModeLabel'))}</span>
+          <select data-spec-plan-mode aria-label="${escapeHtml(sp('planModeLabel'))}">
+            ${modeOptions}
+          </select>
+        </label>
+        <button type="button" class="spec-auto-path" data-spec-auto-path>${escapeHtml(sp('planAutoPath'))}</button>
+      </div>
+      <p class="spec-hero-plan-note">${escapeHtml(sp('planEmptyNote'))}</p>
+      <button type="button" class="spec-hero-plan-jump" data-spec-plan-go-heroes>${escapeHtml(sp('planGoToHeroes'))}</button>
+    </div>`;
+  }
+
+  const plan = heroPlanForTroop(activeTroop);
+  const ranking = heroPlans ? getHeroPlanRanking(heroPlans.plans) : [];
+  const chips = ranking
+    .map(
+      (entry, index) =>
+        `<button type="button" class="spec-plan-troop-chip${entry.troop === activeTroop ? ' active' : ''}" data-spec-plan-troop="${entry.troop}" title="${escapeHtml(sp('planPriority'))} #${index + 1}">
+          <span class="spec-plan-troop-icon" aria-hidden="true">${TROOP_ICON[entry.troop]}</span>
+          <span class="spec-plan-troop-name">${escapeHtml(troopLabel(entry.troop))}</span>
+          <span class="spec-plan-troop-rank" aria-hidden="true">${'★'.repeat(Math.max(1, ranking.length - index))}</span>
+        </button>`
+    )
+    .join('');
+
+  const nextId = plan ? heroPlanNextResearchId() : null;
+  const nextReasons = plan && nextId ? plan.reasons[nextId] || [] : [];
+
+  return `
+    <div class="spec-hero-plan" data-spec-hero-plan>
+      <div class="spec-hero-plan-head">
+        <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
+        <span class="spec-hero-plan-roster">${escapeHtml(sp('planRosterCount', { count: heroPlanRoster.length }))}</span>
+        <label class="spec-plan-mode-control">
+          <span class="spec-sr-only">${escapeHtml(sp('planModeLabel'))}</span>
+          <select data-spec-plan-mode aria-label="${escapeHtml(sp('planModeLabel'))}">
+            ${modeOptions}
+          </select>
+        </label>
+        <button type="button" class="spec-auto-path" data-spec-auto-path>${escapeHtml(sp('planAutoPath'))}</button>
+      </div>
+      <div class="spec-plan-troop-chips" aria-label="${escapeHtml(sp('planPriority'))}">${chips}</div>
+      ${changed ? `<p class="spec-hero-plan-hint">${escapeHtml(sp('planRosterChanged'))}</p>` : ''}
+      ${
+        nextReasons.length
+          ? `<div class="spec-hero-plan-why"><span class="spec-hero-plan-why-label">${escapeHtml(sp('planWhyNext'))}:</span><span>${nextReasons.map(escapeHtml).join(' · ')}</span></div>`
+          : ''
+      }
     </div>`;
 }
 
@@ -272,12 +428,23 @@ function renderBadge(researchId) {
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
   const image = getSpecializationResearchImage(researchId, activeTroop);
-  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId) : 0;
+  const plan = !activeRoute ? heroPlanForTroop(activeTroop) : null;
+  const routeStep = activeRoute
+    ? getRouteStep(activeRoute, researchId)
+    : plan
+      ? getHeroPlanStep(plan, researchId)
+      : 0;
   const isRouteNext = activeRoute && routeNextResearchId() === researchId;
+  const isPlanNext = plan && heroPlanNextResearchId() === researchId;
+  const isNext = isRouteNext || isPlanNext;
+  const planReasons = plan?.reasons?.[researchId] || [];
+  const planTip = planReasons.length
+    ? `${escapeHtml(sp('planWhyNext'))}: ${planReasons.join(' · ')}`
+    : '';
   return `
-    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isRouteNext ? 'true' : 'false'}">
+    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isNext ? 'true' : 'false'}"${planReasons.length ? ` data-plan-reason="true" title="${planTip}"` : ''}>
       ${routeStep ? `<span class="spec-route-step" aria-hidden="true">${routeStep}</span>` : ''}
-      ${isRouteNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
+      ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
       <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
         <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
@@ -787,6 +954,26 @@ function onClick(event) {
     render();
     return;
   }
+  if (event.target.closest('[data-spec-auto-path]')) {
+    recomputeHeroPlans();
+    return;
+  }
+  if (event.target.closest('[data-spec-plan-go-heroes]')) {
+    if (typeof window.vtsSwitchTab === 'function') {
+      window.vtsSwitchTab('heroes', false, { scrollToSection: true });
+    }
+    return;
+  }
+  const planTroop = event.target.closest('[data-spec-plan-troop]');
+  if (planTroop) {
+    const troop = planTroop.dataset.specPlanTroop;
+    if (UI_TROOPS.includes(troop)) {
+      activeTroop = troop;
+      selectedLegionColumnId = null;
+      render();
+    }
+    return;
+  }
   const medalFill = event.target.closest('[data-spec-medal-fill]');
   if (medalFill) {
     // The model drops medalsSpent unless nodes are selected, so a quick fill sets the
@@ -894,6 +1081,19 @@ function onClick(event) {
 }
 
 function onChange(event) {
+  const planModeSelect = event.target.closest('[data-spec-plan-mode]');
+  if (planModeSelect) {
+    heroPlanMode = HERO_PLAN_MODES.includes(planModeSelect.value)
+      ? planModeSelect.value
+      : 'balanced';
+    safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
+    if (heroPlans) {
+      heroPlans = buildHeroPlans({ heroes: heroPlanRoster, mode: heroPlanMode });
+      saveHeroPlan();
+      render();
+    }
+    return;
+  }
   const routeSelect = event.target.closest('[data-spec-route-select]');
   if (routeSelect) {
     activeRoute = SPECIALIZATION_ROUTE_IDS.includes(routeSelect.value) ? routeSelect.value : '';
@@ -967,6 +1167,10 @@ export function initSpecializationTool() {
   const storedRoute = safeGet(ROUTE_KEY, '');
   activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
   easyMedalMode = safeGet(EASY_MEDALS_KEY, '') === '1';
+  heroPlanMode = HERO_PLAN_MODES.includes(safeGet(HERO_PLAN_MODE_KEY, 'balanced'))
+    ? safeGet(HERO_PLAN_MODE_KEY, 'balanced')
+    : 'balanced';
+  loadStoredHeroPlan();
   selectedResearchId = SPECIALIZATION_COLUMNS[1].researches[0];
   if (!wired) {
     root.addEventListener('click', onClick);
