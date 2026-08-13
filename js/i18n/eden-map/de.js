@@ -94,5 +94,8 @@ export default {
     guideSteps: 'Schritte im Abschnitt',
     allSectors: 'Gesamte Karte',
     genericSector: 'Sektor {code}',
+    subTabMap: 'Eden-Karte',
+    subTabLoyalty: 'Eden-Loyalität',
+    subTabPrevious: 'Frühere Saisons',
   },
 };

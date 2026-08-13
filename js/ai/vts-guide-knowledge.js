@@ -1,4 +1,4 @@
-export const VTS_GUIDE_KNOWLEDGE_VERSION = '2026.07.18.1';
+export const VTS_GUIDE_KNOWLEDGE_VERSION = '2026.08.14.1';
 
 const entries = [
   {
@@ -726,6 +726,66 @@ const entries = [
       'edward',
       'ramses',
       'beowulf',
+    ],
+  },
+  {
+    id: 'specialization-hero-plan-auto-path',
+    topic: 'Specialization Towers hero planning',
+    title: 'Hero Plan Auto-Path for the Specialization Towers',
+    season: 'X28',
+    phase: 'Specialization Towers',
+    sourceDate: '2026-08-14',
+    status: 'app_feature_snapshot',
+    requiresCurrentConfirmation: true,
+    summary:
+      'The Specialization tab can reorder the tower researches around the hero skills of the owned heroes selected in the Combo Generator.',
+    guidance: [
+      'Select owned heroes in the Combo Generator (Heroes tab) first, then open the Specialization tab and press Auto-Path.',
+      'Auto-Path matches hero skill mechanics (Fatal Blow, Destructive Strike, Combat Speed, prep skips, healing, control statuses) against tower nodes, troop milestones, and column Legion Skills.',
+      'The plan keeps the game column order (I-VIII) and only reorders the four researches inside each column, per troop type.',
+      'Tower priority chips rank cavalry, archers, and footmen by how strongly the roster benefits each tower.',
+      'Research cards show a step number and a "Why this path" tooltip citing the hero skill, such as Ramses II Fatal Blow pointing at Column II Sniper Archer.',
+      'Balanced, Field, Rally, and Siege modes reweight the context of each research; the plan and mode are remembered between visits.',
+    ],
+    tags: [
+      'specialization',
+      'towers',
+      'auto-path',
+      'auto path',
+      'hero plan',
+      'roster',
+      'legion skill',
+      'fatal blow',
+      'destructive strike',
+      'combat speed',
+    ],
+  },
+  {
+    id: 'vts-eden-hub-structure',
+    topic: 'VTS Eden Hub navigation',
+    title: 'VTS Eden Hub sub-tabs: map, loyalty, and previous seasons',
+    season: 'X28',
+    phase: 'Eden',
+    sourceDate: '2026-08-14',
+    status: 'app_feature_snapshot',
+    requiresCurrentConfirmation: true,
+    summary:
+      'The Eden Map tab is now the VTS Eden Hub with three sub-tabs: Eden Map, Eden Loyalty, and Previous Seasons.',
+    guidance: [
+      'The Eden Map sub-tab holds the interactive map planner and is the default landing.',
+      'The Eden Loyalty sub-tab embeds the loyalty calculator; the old top-level Loyalty tab is removed.',
+      'The Previous Seasons sub-tab embeds the Eden X1 rankings archive; the old standalone tab link is removed but eden-x1.html still opens directly.',
+      'Legacy deep links still work: #loyalty opens the hub on the Loyalty sub-tab, and the command palette Loyalty entry lands there too.',
+    ],
+    tags: [
+      'eden',
+      'hub',
+      'map',
+      'loyalty',
+      'previous seasons',
+      'x1',
+      'rankings',
+      'navigation',
     ],
   },
 ];

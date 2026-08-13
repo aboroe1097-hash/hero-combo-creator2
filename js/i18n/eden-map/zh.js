@@ -93,5 +93,8 @@ export default {
     guideSteps: '章节步骤',
     allSectors: '完整地图',
     genericSector: '{code} 区域',
+    subTabMap: '伊甸地图',
+    subTabLoyalty: '伊甸忠诚',
+    subTabPrevious: '往期赛季',
   },
 };

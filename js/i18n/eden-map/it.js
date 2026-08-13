@@ -94,5 +94,8 @@ export default {
     guideSteps: 'Passaggi della sezione',
     allSectors: 'Mappa completa',
     genericSector: 'Settore {code}',
+    subTabMap: 'Mappa Eden',
+    subTabLoyalty: 'Lealtà Eden',
+    subTabPrevious: 'Stagioni precedenti',
   },
 };

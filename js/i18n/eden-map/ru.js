@@ -94,5 +94,8 @@ export default {
     guideSteps: 'Шаги раздела',
     allSectors: 'Вся карта',
     genericSector: 'Сектор {code}',
+    subTabMap: 'Карта Эдема',
+    subTabLoyalty: 'Верность Эдема',
+    subTabPrevious: 'Прошлые сезоны',
   },
 };

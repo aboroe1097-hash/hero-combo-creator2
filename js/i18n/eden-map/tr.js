@@ -94,5 +94,8 @@ export default {
     guideSteps: 'Bölüm adımları',
     allSectors: 'Tam harita',
     genericSector: '{code} sektörü',
+    subTabMap: 'Eden Haritası',
+    subTabLoyalty: 'Eden Sadakati',
+    subTabPrevious: 'Önceki sezonlar',
   },
 };

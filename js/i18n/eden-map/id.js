@@ -94,5 +94,8 @@ export default {
     guideSteps: 'Langkah di bagian',
     allSectors: 'Peta penuh',
     genericSector: 'Sektor {code}',
+    subTabMap: 'Peta Eden',
+    subTabLoyalty: 'Loyalitas Eden',
+    subTabPrevious: 'Musim sebelumnya',
   },
 };

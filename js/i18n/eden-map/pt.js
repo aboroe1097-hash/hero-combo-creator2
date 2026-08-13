@@ -94,5 +94,8 @@ export default {
     guideSteps: 'Etapas da seção',
     allSectors: 'Mapa completo',
     genericSector: 'Setor {code}',
+    subTabMap: 'Mapa Eden',
+    subTabLoyalty: 'Lealdade Eden',
+    subTabPrevious: 'Temporadas anteriores',
   },
 };

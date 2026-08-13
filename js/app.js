@@ -85,7 +85,6 @@ import {
   messageBoxCancelBtn,
   manualSection,
   generatorSection,
-  loyaltySection,
   youtubeSection,
   researchSection,
   materialsSection,
@@ -174,7 +173,6 @@ let researchModulePromise = null;
 let materialModulePromise = null;
 let exportModulePromise = null;
 let arcadeModulePromise = null;
-let loyaltyModulePromise = null;
 
 function reportDynamicImportFailure(error) {
   window.VTS_ASSET_RECOVERY?.reportFailure?.(error, '');
@@ -200,17 +198,6 @@ function loadMaterialModule() {
     });
   }
   return materialModulePromise;
-}
-
-function loadLoyaltyModule() {
-  if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260813_061728').catch((error) => {
-      loyaltyModulePromise = null;
-      reportDynamicImportFailure(error);
-      throw error;
-    });
-  }
-  return loyaltyModulePromise;
 }
 
 function loadExportModule() {
@@ -916,7 +903,6 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     edenMapSection,
     strifeSection,
     specializationSection,
-    loyaltySection,
     youtubeSection,
     arcadeSection,
     allStarBohSection,
@@ -1004,6 +990,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
+            return import('./eden-hub.js?v=20260813_061728').then((hub) => hub.bootEdenHub());
           })
           .catch((err) => {
             console.error('Eden map failed to load', err);
@@ -1199,12 +1186,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         });
     }
     if (tabName === 'loyalty') {
-      Promise.all([loadTabTemplate('loyalty'), loadLoyaltyModule()])
-        .then(([, module]) => module.initLoyaltyCalculator())
-        .catch((error) => {
-          console.error('Loyalty calculator failed to load', error);
-          renderTabLoadError(loyaltySection, 'loyalty');
-        });
+      // Legacy: Eden Loyalty now lives inside the VTS Eden Hub. The shell maps
+      // this tab name to the hub, which owns loading the loyalty fragment.
+      if (typeof switchTab === 'function') {
+        switchTab('edenMap', true, { preserveHash: false });
+      }
     }
   }
 
