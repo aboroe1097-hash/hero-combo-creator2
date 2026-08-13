@@ -22,14 +22,14 @@ export const rankedCombos = [
   { heroes: ['Alexander', 'Cleopatra VII', 'Theodora'], skin: '122' },
   { heroes: ['King Arthur', 'Theodora', 'Alexander'] , skin: '121'},
   { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '323', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
-  { heroes: ['Beowulf', 'Ramses II', 'Theodora'], skin: '333', note: 'Highest observed S0-X1 sustain combo: Theodora skin is required, Ramses II skin is recommended, Beowulf skin is optional. No counter found yet.' },
+  { heroes: ['Beowulf', 'Ramses II', 'Theodora'], skin: '333', note: 'Highest observed S0-X1 sustain combo: Theodora skin required; Ramses II recommended; Beowulf optional.' },
   { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], skin: '113', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
   
   { heroes: ['King Arthur', 'Cleopatra VII', 'Caesar'], skin: '222', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
   { heroes: ['Hunk', 'Ramses II', 'Beowulf'], skin: '221', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
   { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], skin: '321', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
   
-  { heroes: ['King Arthur', 'Cleopatra VII', 'Bleeding Steed'], skin: '233', note: 'Requested 2333 skin lane mapped to the app three-slot skin code: Arthur recommended, Cleopatra and Bleeding Steed required.' },
+  { heroes: ['King Arthur', 'Cleopatra VII', 'Bleeding Steed'], skin: '233', note: 'Requested 2333 skin lane mapped to the app three-slot skin code: Arthur recommended, Cleopatra and Bleeding Steed recommended.' },
   { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], skin: '232', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
   
   { heroes: ['Black Prince', "Jeanne d'Arc", 'The Avalanche'], skin: '232' },
