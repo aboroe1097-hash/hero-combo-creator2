@@ -2026,6 +2026,15 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('[data-eden-subtab-panel="loyalty"] #loyaltyPresets')).toBeVisible({
       timeout: 15000,
     });
+    // Royal Bounty guide renders inside the hub as its own sub-tab.
+    await page.locator('[data-eden-subtab="bounty"]').click();
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-guide-root')).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
+      'Royal Bounty Alliance'
+    );
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-card').first()).toBeVisible();
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
   });
 

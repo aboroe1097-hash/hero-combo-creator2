@@ -6,6 +6,7 @@
   <nav class="vts-eden-subtab-bar" role="tablist" aria-label="VTS Eden Hub sections">
     <button type="button" class="vts-eden-subtab-btn active" role="tab" aria-selected="true" data-eden-subtab="map" data-eden-i18n="subTabMap">Eden Map</button>
     <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="loyalty" data-eden-i18n="subTabLoyalty">Eden Loyalty</button>
+    <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="bounty" data-eden-i18n="subTabBounty">Royal Bounty</button>
     <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="previous" data-eden-i18n="subTabPrevious">Previous Seasons</button>
   </nav>
   <div class="vts-eden-subtab-panel active" data-eden-subtab-panel="map" role="tabpanel">
@@ -1122,6 +1123,12 @@
   </details>
   </div>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="loyalty" role="tabpanel">
+    <div class="tab-loading">
+      <div class="spinner"></div>
+      <span>Loading…</span>
+    </div>
+  </div>
+  <div class="vts-eden-subtab-panel" data-eden-subtab-panel="bounty" role="tabpanel">
     <div class="tab-loading">
       <div class="spinner"></div>
       <span>Loading…</span>

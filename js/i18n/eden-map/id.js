@@ -96,6 +96,7 @@ export default {
     genericSector: 'Sektor {code}',
     subTabMap: 'Peta Eden',
     subTabLoyalty: 'Loyalitas Eden',
+    subTabBounty: 'Hadiah Kerajaan',
     subTabPrevious: 'Musim sebelumnya',
   },
 };

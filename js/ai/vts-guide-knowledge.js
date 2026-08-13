@@ -1,4 +1,4 @@
-export const VTS_GUIDE_KNOWLEDGE_VERSION = '2026.08.14.1';
+export const VTS_GUIDE_KNOWLEDGE_VERSION = '2026.08.14.2';
 
 const entries = [
   {
@@ -786,6 +786,38 @@ const entries = [
       'x1',
       'rankings',
       'navigation',
+    ],
+  },
+  {
+    id: 'royal-bounty-overview',
+    topic: 'Royal Bounty Alliance event',
+    title: 'Royal Bounty: the full season loop',
+    season: 'X28',
+    phase: 'Eden',
+    sourceDate: '2024-10-04',
+    status: 'community_guide',
+    requiresCurrentConfirmation: true,
+    summary:
+      'Royal Bounty is an Eden-season event: nine bounty heroes, ten Commission Levels each, and an Aiding Skill unlocked at Commission Level 6. The in-app guide lives in the VTS Eden Hub Royal Bounty sub-tab.',
+    guidance: [
+      'Each bounty hero runs a mission lobby on the map; lobbies work like Eden strongholds (capture, connect, hold) and give the occupying faction +10% Commission Points.',
+      'Complete hero-specific missions to earn Commission Points; there are 10 missions per day, 3 active at once, with a daily reset and purchasable rerolls.',
+      'Every Commission Level adds attributes (Processing Speed, Might, Resistance examples); Commission Level 6 unlocks the Aiding Skill.',
+      'An Aiding Skill is a copy of the hero skill for your legions: the hero skill must be maxed appropriately, it cannot go on a legion already containing that hero, and each legion takes only one Aiding Skill.',
+      'The Sept 5, 2024 roster: Cao Cao (S, Rampage), The Brave (S4, Freezing Gaze), Cicero (X, Intermission), Dach Tengri (X, The Gods Smite), Charles the Great (S, Legend of Europe), Avalanche (X, Cavalry Awakened), Sakura Blossom (X, Sannrennsoukatui), Rozen Blade (S3, Swarming Attack), The Elk (X, Fix Bayonets!).',
+      'Cao Cao lobby opens day 1; the rest unlock later in the season. Always confirm the in-game timer under each hero portrait.',
+      'Direct users to the VTS Eden Hub Royal Bounty sub-tab (open Eden Map, then the Royal Bounty sub-tab) for the interactive guide.',
+    ],
+    tags: [
+      'bounty',
+      'royal bounty',
+      'aiding skill',
+      'commission level',
+      'mission lobby',
+      'eden',
+      'cao cao',
+      'rozen blade',
+      'heroes',
     ],
   },
 ];

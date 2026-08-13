@@ -76,6 +76,13 @@ const DESTS = [
     kw: 'loyalty poison camp deficit mitigation eden hub calculator',
   },
   {
+    key: 'tabEdenBounty',
+    name: 'edenMap',
+    kind: 'tab',
+    fallback: 'Royal Bounty',
+    kw: 'royal bounty alliance aiding skill commission level lobby missions heroes guide',
+  },
+  {
     key: 'tabYouTube',
     name: 'youtube',
     kind: 'tab',
@@ -269,13 +276,14 @@ function onInputKeydown(e) {
 function go(dest) {
   close();
   if (dest.kind === 'tab') {
-    if (dest.key === 'tabLoyalty') {
+    if (dest.key === 'tabLoyalty' || dest.key === 'tabEdenBounty') {
+      const subtab = dest.key === 'tabLoyalty' ? 'loyalty' : 'bounty';
       try {
-        document.body.dataset.edenHubSubtab = 'loyalty';
+        document.body.dataset.edenHubSubtab = subtab;
       } catch {
         /* dataset unavailable */
       }
-      window.dispatchEvent(new CustomEvent('vts:eden-hub-subtab', { detail: 'loyalty' }));
+      window.dispatchEvent(new CustomEvent('vts:eden-hub-subtab', { detail: subtab }));
     }
     if (typeof window.vtsSwitchTab === 'function') {
       window.vtsSwitchTab(dest.name, false, { scrollToSection: true });

@@ -461,6 +461,7 @@ const en = {
   tabLoyalty: 'Eden Loyalty',
   tabEdenX1: 'Eden X1 Rankings',
   tabEdenX1Badge: 'Public',
+  tabEdenBounty: 'Royal Bounty',
   tabResearch: 'Research',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

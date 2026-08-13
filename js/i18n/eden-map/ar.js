@@ -96,6 +96,7 @@ export default {
     genericSector: 'قطاع {code}',
     subTabMap: 'خريطة إيدن',
     subTabLoyalty: 'ولاء إيدن',
+    subTabBounty: 'المكافأة الملكية',
     subTabPrevious: 'المواسم السابقة',
   },
 };

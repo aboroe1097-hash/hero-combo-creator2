@@ -71,6 +71,8 @@
   // opens the hub tab and hands the sub-tab intent to the hub controller.
   const legacyEdenHubHashes = new Map([
     ['loyalty', 'loyalty'],
+    ['bounty', 'bounty'],
+    ['royalbounty', 'bounty'],
     ['edenx1', 'previous'],
   ]);
   const moreHistoryKey = 'vtsShellMoreOpen';

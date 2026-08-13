@@ -96,6 +96,7 @@ export default {
     genericSector: '{code} sektörü',
     subTabMap: 'Eden Haritası',
     subTabLoyalty: 'Eden Sadakati',
+    subTabBounty: 'Kraliyet Ödülü',
     subTabPrevious: 'Önceki sezonlar',
   },
 };

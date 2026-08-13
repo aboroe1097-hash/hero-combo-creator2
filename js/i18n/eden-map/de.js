@@ -96,6 +96,7 @@ export default {
     genericSector: 'Sektor {code}',
     subTabMap: 'Eden-Karte',
     subTabLoyalty: 'Eden-Loyalität',
+    subTabBounty: 'Königliche Prämie',
     subTabPrevious: 'Frühere Saisons',
   },
 };

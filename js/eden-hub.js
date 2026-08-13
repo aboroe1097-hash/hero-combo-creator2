@@ -13,11 +13,14 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 
 const LOYALTY_SRC = 'tabs/loyalty.html?v=20260813_061728';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260813_061728';
 const PREVIOUS_SRC = 'eden-x1.html';
 
 let booted = false;
 let loyaltyLoaded = false;
 let loyaltyLoading = false;
+let bountyLoaded = false;
+let bountyLoading = false;
 
 function localizeFragment(root) {
   const t = translations[currentLanguage] || translations.en || {};
@@ -83,6 +86,25 @@ function loadPrevious(panel) {
   panel.dataset.edenHubLoaded = '1';
 }
 
+async function loadBounty(panel) {
+  if (bountyLoaded || bountyLoading) return;
+  bountyLoading = true;
+  try {
+    const response = await fetch(BOUNTY_SRC);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    panel.innerHTML = await response.text();
+    const module = await import('./bounty-guide.js?v=20260813_061728');
+    const mount = panel.querySelector('#bountyGuideRoot');
+    if (mount) module.renderBountyGuide(mount);
+    bountyLoaded = true;
+  } catch (error) {
+    console.warn('[eden-hub] Royal Bounty guide failed to load', error);
+    panel.innerHTML = `<div class="tab-loading"><span>Royal Bounty failed to load. Refresh and try again.</span></div>`;
+  } finally {
+    bountyLoading = false;
+  }
+}
+
 function readSubtabIntent() {
   try {
     const intent = document.body?.dataset?.edenHubSubtab;
@@ -103,11 +125,12 @@ export function bootEdenHub() {
   booted = true;
 
   function openIntent(name) {
-    if (name !== 'loyalty' && name !== 'previous') return;
+    if (name !== 'loyalty' && name !== 'bounty' && name !== 'previous') return;
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
     if (!panel) return;
     if (name === 'loyalty') loadLoyalty(root, panel);
+    if (name === 'bounty') loadBounty(panel);
     if (name === 'previous') loadPrevious(panel);
   }
 
@@ -122,6 +145,7 @@ export function bootEdenHub() {
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
     if (!panel) return;
     if (name === 'loyalty') loadLoyalty(root, panel);
+    if (name === 'bounty') loadBounty(panel);
     if (name === 'previous') loadPrevious(panel);
   });
 
@@ -142,6 +166,9 @@ export function bootEdenHub() {
 
   // Explicit sub-tab navigation from other tools (e.g. the command palette).
   window.addEventListener('vts:eden-hub-subtab', (event) => {
-    openIntent(event?.detail === 'loyalty' ? 'loyalty' : event?.detail === 'previous' ? 'previous' : '');
+    const detail = event?.detail;
+    openIntent(
+      detail === 'loyalty' || detail === 'bounty' || detail === 'previous' ? detail : ''
+    );
   });
 }

@@ -96,6 +96,7 @@ export default {
     genericSector: 'Setor {code}',
     subTabMap: 'Mapa Eden',
     subTabLoyalty: 'Lealdade Eden',
+    subTabBounty: 'Recompensa Real',
     subTabPrevious: 'Temporadas anteriores',
   },
 };

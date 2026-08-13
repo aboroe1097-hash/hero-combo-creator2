@@ -156,6 +156,7 @@ const EN = Object.freeze({
     genericSector: '{code} Sector',
     subTabMap: 'Eden Map',
     subTabLoyalty: 'Eden Loyalty',
+    subTabBounty: 'Royal Bounty',
     subTabPrevious: 'Previous Seasons',
   },
 });
