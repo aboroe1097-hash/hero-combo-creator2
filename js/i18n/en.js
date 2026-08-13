@@ -456,7 +456,7 @@ const en = {
   tabGenerator: 'Combo Generator',
   tabYouTube: 'YouTube',
   tabHeroes: 'Hero Atlas',
-  tabEdenMap: 'Eden Map',
+  tabEdenMap: 'VTS Eden Hub',
   tabEdenMapBadge: 'Soon',
   tabLoyalty: 'Eden Loyalty',
   tabEdenX1: 'Eden X1 Rankings',
@@ -838,7 +838,7 @@ const en = {
   errAcLevels: 'Please enter valid AC levels (0-20).',
   errProcTime: 'Processing time must be > 0.',
   errProcRate: 'Processing rate is zero. Check patch values.',
-  edenMapTitle: 'Eden Map Planner',
+  edenMapTitle: 'VTS Eden Hub',
   edenMapDesc:
     'Wonder X1 map with in-game structure coords. Pan, zoom, path routes, and layer toggles — hover any toolbar control for details.',
   edenMapConstructionTitle: 'Eden Map — Under Construction',

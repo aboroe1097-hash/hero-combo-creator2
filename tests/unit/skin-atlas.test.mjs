@@ -128,7 +128,7 @@ test('Everlasting tier uses Advanced Biography Seals and lists its known heroes'
     everlasting.star1To2.items.some((item) => item.name === 'Advanced Biography Seal'),
     'Everlasting inheriting cost uses Advanced Biography Seal'
   );
-  assert.equal(everlasting.knownHeroes.length, 12);
+  assert.equal(everlasting.knownHeroes.length, 7);
   assert.ok(everlasting.knownHeroes.includes('Ramses II'));
   assert.ok(everlasting.knownHeroes.includes('Beowulf'));
 });

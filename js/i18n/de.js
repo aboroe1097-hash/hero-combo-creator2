@@ -462,7 +462,7 @@ const de = {
   tabGenerator: 'Kombi-Generator',
   tabYouTube: 'YouTube',
   tabHeroes: 'Helden-Atlas',
-  tabEdenMap: 'Eden-Karte',
+  tabEdenMap: 'VTS Eden Hub',
   tabLoyalty: 'Eden Loyalität',
   tabEdenX1: 'Eden X1 Rangliste',
   tabEdenX1Badge: 'Öffentlich',
@@ -695,7 +695,7 @@ const de = {
   errAcLevels: 'Ungültige Lagerlevel (0-20).',
   errProcTime: 'Verarbeitungszeit muss > 0 sein.',
   errProcRate: 'Verarbeitungsrate ist null.',
-  edenMapTitle: 'Eden-Kartenplaner',
+  edenMapTitle: 'VTS Eden Hub',
   edenMapDesc:
     'Wonder-X1-Karte, Strukturen und Routen — Toolbar-Steuerelemente für Details anzeigen.',
   edenToolNavigate: 'Navigieren',
