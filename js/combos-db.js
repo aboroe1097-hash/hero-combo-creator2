@@ -19,17 +19,20 @@ export const rankedCombos = [
   // skin code slots: 3 = must own skin, 2 = recommended skin, 1 = optional skin.
   // Missing skin metadata behaves like 111, so the combo keeps its normal rank with or without skins.
   { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'], skin: '122' },
-  { heroes: ['Alexander', 'Cleopatra VII', 'Theodora'], skin: '123' },
+  { heroes: ['Alexander', 'Cleopatra VII', 'Theodora'], skin: '122' },
   { heroes: ['King Arthur', 'Theodora', 'Alexander'] , skin: '121'},
   { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '323', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
   { heroes: ['Beowulf', 'Ramses II', 'Theodora'], skin: '333', note: 'Highest observed S0-X1 sustain combo: Theodora skin is required, Ramses II skin is recommended, Beowulf skin is optional. No counter found yet.' },
   { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], skin: '113', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
-  { heroes: ['King Arthur', 'Cleopatra VII', 'Caesar'], skin: '113', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
+  
+  { heroes: ['King Arthur', 'Cleopatra VII', 'Caesar'], skin: '222', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
+  { heroes: ['Hunk', 'Ramses II', 'Beowulf'], skin: '221', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
   { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], skin: '321', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
+  
   { heroes: ['King Arthur', 'Cleopatra VII', 'Bleeding Steed'], skin: '233', note: 'Requested 2333 skin lane mapped to the app three-slot skin code: Arthur recommended, Cleopatra and Bleeding Steed required.' },
   { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], skin: '232', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
-  { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'], skin: '222' },
-  { heroes: ['Black Prince', "Jeanne d'Arc", 'The Avalanche'], skin: '222' },
+  
+  { heroes: ['Black Prince', "Jeanne d'Arc", 'The Avalanche'], skin: '232' },
   { heroes: ['Lawman', 'Army Breaker', 'The Avalanche'], skin: '222' },
   { heroes: ['The Brave', 'Rozen Blade', 'The Avalanche'], skin: '222' },
   { heroes: ['King Arthur', 'Bleeding Steed', 'Alexander'], skin: '222' },
@@ -37,11 +40,12 @@ export const rankedCombos = [
   { heroes: ['Hunk', 'Bleeding Steed', 'Alexander'], skin: '222' },
   { heroes: ['Hunk', 'Cleopatra VII', 'Alexander'], skin: '222' },
   { heroes: ['The Brave', 'Rozen Blade', 'Immortal'], skin: '222' },
+  { heroes: ['BeastQueen', 'Rozen Blade', 'Immortal'], skin: '333' },
   { heroes: ['Defender', 'Sakura', 'Jade Eagle'] },
   { heroes: ['Defender', 'Ramses II', 'Al Fatih'] },
   { heroes: ['Defender', 'Sakura', 'Spectral Reaper'] },
   { heroes: ['Hunk', 'Boudica', 'Sakura'] },
-  { heroes: ['BeastQueen', 'Rozen Blade', 'Immortal'], skin: '333' },
+  { heroes: ['BeastQueen', 'Rozen Blade', 'Immortal'], skin: '222' },
   { heroes: ['King Arthur', 'Bleeding Steed', 'Jade Eagle'], skin: '222' },
   { heroes: ['Black Prince', "Jeanne d'Arc", 'Lionheart'], skin: '222' },
   { heroes: ['Beowulf', 'Ramses II', 'Theodora'], note: 'Beowulf front-row skill spam triggers Theodora healing, producing a stable high-damage sustain combo.' },
