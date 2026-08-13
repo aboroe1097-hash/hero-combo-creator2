@@ -33,6 +33,7 @@ import {
   getRouteStep,
 } from './specialization-routes.js';
 import {
+  HERO_PLAN_DATA_REVISION,
   HERO_PLAN_MODES,
   buildHeroPlans,
   getHeroPlanRanking,
@@ -143,6 +144,7 @@ function saveHeroPlan() {
     localStorage.setItem(
       HERO_PLAN_KEY,
       JSON.stringify({
+        revision: HERO_PLAN_DATA_REVISION,
         plan: heroPlans,
         roster: heroPlanRoster,
         mode: heroPlanMode,
@@ -159,10 +161,22 @@ function loadStoredHeroPlan() {
     if (!raw) return;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || !parsed.plan?.plans) return;
-    heroPlans = parsed.plan;
-    heroPlanRoster = Array.isArray(parsed.roster) ? parsed.roster : [];
+    // A cached plan is only valid for the engine that produced it. Without this
+    // check a plan survives every later release untouched, because the only
+    // other staleness signal is the roster changing. Keep the mode, drop the
+    // stale plan, and let the bar offer a fresh build.
     heroPlanMode = HERO_PLAN_MODES.includes(parsed.mode) ? parsed.mode : 'balanced';
     safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
+    if (parsed.revision !== HERO_PLAN_DATA_REVISION) {
+      try {
+        localStorage.removeItem(HERO_PLAN_KEY);
+      } catch {
+        /* storage unavailable */
+      }
+      return;
+    }
+    heroPlans = parsed.plan;
+    heroPlanRoster = Array.isArray(parsed.roster) ? parsed.roster : [];
   } catch {
     /* corrupted plan storage */
   }
@@ -415,7 +429,11 @@ function renderBadge(researchId) {
   const status = statusOf(progress);
   const image = getSpecializationResearchImage(researchId, activeTroop);
   const plan = !activeRoute ? heroPlanForTroop(activeTroop) : null;
-  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId) : plan ? getHeroPlanStep(plan, researchId) : 0;
+  const routeStep = activeRoute
+    ? getRouteStep(activeRoute, researchId)
+    : plan
+      ? getHeroPlanStep(plan, researchId)
+      : 0;
   const isRouteNext = activeRoute && routeNextResearchId() === researchId;
   const isPlanNext = plan && heroPlanNextResearchId() === researchId;
   const isNext = isRouteNext || isPlanNext;
@@ -1065,7 +1083,9 @@ function onClick(event) {
 function onChange(event) {
   const planModeSelect = event.target.closest('[data-spec-plan-mode]');
   if (planModeSelect) {
-    heroPlanMode = HERO_PLAN_MODES.includes(planModeSelect.value) ? planModeSelect.value : 'balanced';
+    heroPlanMode = HERO_PLAN_MODES.includes(planModeSelect.value)
+      ? planModeSelect.value
+      : 'balanced';
     safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
     if (heroPlans) {
       heroPlans = buildHeroPlans({ heroes: heroPlanRoster, mode: heroPlanMode });

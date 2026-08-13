@@ -52,7 +52,14 @@ const MECHANIC_PATTERNS = Object.freeze([
   [MECHANIC_IDS.DESTRUCTIVE_STRIKE, ['destructive strike']],
   [
     MECHANIC_IDS.COMBAT_SPEED,
-    ['combat speed', 'cambat speed', 'acts before', 'move first', 'first to attack', 'first attack'],
+    [
+      'combat speed',
+      'cambat speed',
+      'acts before',
+      'move first',
+      'first to attack',
+      'first attack',
+    ],
   ],
   [
     MECHANIC_IDS.PREP_SKIP,
@@ -80,10 +87,7 @@ const MECHANIC_PATTERNS = Object.freeze([
       'on turn 1',
     ],
   ],
-  [
-    MECHANIC_IDS.HEALING,
-    ['restore', 'recover', 'healing', 'recovery rate', 'first-aid', 'revive'],
-  ],
+  [MECHANIC_IDS.HEALING, ['restore', 'recover', 'healing', 'recovery rate', 'first-aid', 'revive']],
   [MECHANIC_IDS.CONTROL, ['silence', 'disarm', 'suppress', 'confuse', 'taunt', 'interrupt']],
   [
     MECHANIC_IDS.SOBER,
@@ -96,7 +100,14 @@ const MECHANIC_PATTERNS = Object.freeze([
   [MECHANIC_IDS.PHYSICAL_DAMAGE, ['physical damage', 'normal attack']],
   [
     MECHANIC_IDS.ADDITIONAL_ATTACK,
-    ['additional attack', 'attack again', 'attacks 2 times', 'attack 2 times', '2 basic attacks', 'normal attacks 2 times'],
+    [
+      'additional attack',
+      'attack again',
+      'attacks 2 times',
+      'attack 2 times',
+      '2 basic attacks',
+      'normal attacks 2 times',
+    ],
   ],
   [MECHANIC_IDS.BLEED_BURN, ['bleed', 'burn', 'flammable', 'poison', 'curse']],
   [
@@ -271,7 +282,14 @@ function modeMultiplierForResearch(research, mode) {
 
 function heroAppliesToTroop(profile, troop) {
   if (profile.type === 'All') return 0.75;
-  const mapped = profile.type === 'Archers' ? 'archer' : profile.type === 'Cavalry' ? 'cavalry' : profile.type === 'Footmen' ? 'footman' : null;
+  const mapped =
+    profile.type === 'Archers'
+      ? 'archer'
+      : profile.type === 'Cavalry'
+        ? 'cavalry'
+        : profile.type === 'Footmen'
+          ? 'footman'
+          : null;
   return mapped === troop ? 1 : 0;
 }
 
@@ -284,7 +302,11 @@ function scoreResearchForTroop(researchId, columnId, troop, profiles, mode) {
   let legionMatch = 0;
   let affinity = 0;
 
-  const SIGNATURE_MECHANICS = new Set([MECHANIC_IDS.FATAL_BLOW, MECHANIC_IDS.DESTRUCTIVE_STRIKE, MECHANIC_IDS.COMBAT_SPEED]);
+  const SIGNATURE_MECHANICS = new Set([
+    MECHANIC_IDS.FATAL_BLOW,
+    MECHANIC_IDS.DESTRUCTIVE_STRIKE,
+    MECHANIC_IDS.COMBAT_SPEED,
+  ]);
 
   function addReason(weight, text) {
     reasonEntries.push({ weight, text });

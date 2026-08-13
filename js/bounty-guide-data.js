@@ -25,14 +25,23 @@ export const BOUNTY_STATS = [
 ];
 
 export const BOUNTY_LOOP = [
-  { title: 'Mission Lobby', detail: 'Each bounty hero has a lobby that hands out hero-specific missions.' },
+  {
+    title: 'Mission Lobby',
+    detail: 'Each bounty hero has a lobby that hands out hero-specific missions.',
+  },
   { title: 'Accept Missions', detail: 'Pick up to 3 missions at a time from the mission pool.' },
   { title: 'Complete Activities', detail: 'Train troops, occupy territory, run quests, and more.' },
   { title: 'Earn Commission Points', detail: 'Every completed mission pays Commission Points.' },
-  { title: 'Raise Commission Level', detail: 'Points fill the hero\'s commission bar, level 1 to 10.' },
-  { title: 'Unlock Attributes', detail: 'Each level improves attributes like Processing Speed, Might, and Resistance.' },
-  { title: 'Reach Level 6', detail: 'The milestone: the hero\'s Aiding Skill becomes available.' },
-  { title: 'Unlock Aiding Skill', detail: 'A copy of the hero\'s skill that any legion can use.' },
+  {
+    title: 'Raise Commission Level',
+    detail: "Points fill the hero's commission bar, level 1 to 10.",
+  },
+  {
+    title: 'Unlock Attributes',
+    detail: 'Each level improves attributes like Processing Speed, Might, and Resistance.',
+  },
+  { title: 'Reach Level 6', detail: "The milestone: the hero's Aiding Skill becomes available." },
+  { title: 'Unlock Aiding Skill', detail: "A copy of the hero's skill that any legion can use." },
   { title: 'Assign to Legion', detail: 'Attach it to a legion slot and the skill becomes usable.' },
 ];
 
@@ -67,7 +76,7 @@ export const BOUNTY_COMMISSION_LEVELS = [
 export const BOUNTY_COMMISSION_ATTRIBUTES = ['Processing Speed', 'Might', 'Resistance'];
 
 export const BOUNTY_AIDING_RULES = [
-  'Reach Commission Level 6 on a bounty hero to unlock a copy of that hero\'s skill for your legions.',
+  "Reach Commission Level 6 on a bounty hero to unlock a copy of that hero's skill for your legions.",
   'The relevant hero skill must be unlocked and maxed appropriately for the Aiding Skill to function.',
   'An Aiding Skill cannot be added to a legion that already contains that bounty hero.',
   'Only one Aiding Skill can be added to a legion.',
@@ -82,7 +91,7 @@ export const BOUNTY_SETUP_STEPS = [
   {
     step: 2,
     title: 'Choose Aiding Skill',
-    detail: 'Pick the bounty hero\'s Aiding Skill from the skill-selection interface.',
+    detail: "Pick the bounty hero's Aiding Skill from the skill-selection interface.",
   },
   {
     step: 3,
@@ -175,7 +184,7 @@ export const BOUNTY_HEROES = [
 
 export const BOUNTY_QUICK_RULES = [
   'Lobbies work like Eden strongholds: capture and connect them, then hold them for the +10% Commission Point buff.',
-  'Cao Cao\'s lobby opens on day 1; the rest unlock later in the season — always read the in-game timer under each hero portrait.',
+  "Cao Cao's lobby opens on day 1; the rest unlock later in the season — always read the in-game timer under each hero portrait.",
   'Level 6 is the payoff: attributes from every level, plus a usable Aiding Skill from level 6.',
   'Never trust the printed dates blindly — confirm lobby timers in-game each Eden season.',
 ];

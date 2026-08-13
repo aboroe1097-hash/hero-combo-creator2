@@ -167,8 +167,6 @@ export function bootEdenHub() {
   // Explicit sub-tab navigation from other tools (e.g. the command palette).
   window.addEventListener('vts:eden-hub-subtab', (event) => {
     const detail = event?.detail;
-    openIntent(
-      detail === 'loyalty' || detail === 'bounty' || detail === 'previous' ? detail : ''
-    );
+    openIntent(detail === 'loyalty' || detail === 'bounty' || detail === 'previous' ? detail : '');
   });
 }
