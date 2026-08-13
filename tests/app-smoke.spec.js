@@ -2181,21 +2181,31 @@ test.describe('app smoke tabs', () => {
     expect(lightLayout.filterPanelReadable).toBe(true);
   });
 
-  test('skin data uses Arthur skill 2 and generator skin priority mode', async ({ page }) => {
+  test('skin data uses Arthur skill 2 and generator skin default mode', async ({ page }) => {
     await openApp(page);
     await expect(page.locator('#skinMetaCombosTable')).toHaveCount(0);
 
+    // Skin mode is the default generator view.
+    await expect(page.locator('#genSkinToggle')).toBeChecked();
+
     // Arthur is S4; X1 must start off so enabling it later flips his skin badge.
     await setGeneratorSeasons(page, ['S0', 'S1', 'S2', 'S3', 'S4']);
-    const normalFilteredCount = await page.locator('#generatorHeroes .generator-card').count();
+    const skinFilteredCount = await page.locator('#generatorHeroes .generator-card').count();
+    await page.locator('#genSkinToggleLabel').click();
+    await expect(page.locator('#genSkinToggle')).not.toBeChecked();
+    await expect(page.locator('#generatorHeroes .generator-card')).toHaveCount(skinFilteredCount);
     await page.locator('#genSkinToggleLabel').click();
     await expect(page.locator('#genSkinToggle')).toBeChecked();
-    await expect(page.locator('#generatorHeroes .generator-card')).toHaveCount(normalFilteredCount);
 
-    const firstGeneratorCard = page.locator('#generatorHeroes .generator-card').first();
-    await expect(firstGeneratorCard).toHaveClass(/skin-priority-card/);
-    await expect(firstGeneratorCard).toHaveClass(/skin-animated-portrait/);
-    await expect(firstGeneratorCard.locator('.generator-skin-badge--priority')).toBeVisible();
+    // Cards follow seasonal order, not skin priority.
+    const cardSeasons = await page
+      .locator('#generatorHeroes .generator-card')
+      .evaluateAll((cards) => cards.map((card) => card.dataset.heroSeason));
+    const seasonOrder = ['S0', 'S1', 'S2', 'S3', 'S4'];
+    const seasonRanks = cardSeasons.map((season) => seasonOrder.indexOf(season));
+    expect(seasonRanks.every((rank) => rank >= 0)).toBe(true);
+    expect(seasonRanks).toEqual([...seasonRanks].sort((a, b) => a - b));
+
     await expect(page.locator('#generatorHeroes .generator-card.skin-priority-muted')).toHaveCount(
       0
     );

@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.3.8 - 2026-08-13
+
+- The Combo Generator now opens in skin mode. Skin icons, skin toggles and skin-aware combos are on by default; the toggle still turns them off.
+- Hero cards in the generator now stay in seasonal order (S0 first, X2 last) instead of floating heroes that own a skin to the top, so a hero stays where you expect when you switch skin mode on or off.
+- Replaced Beowulf's skin icon with a clean portrait crop, without the level and name overlay from the old capture.
+
 ## 14.3.7 - 2026-08-13
 
 - Brought back the full Specialization tool inside the main site. The tab is the interactive planner again, not a summary card that sends you to another page.

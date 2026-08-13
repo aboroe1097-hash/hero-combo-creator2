@@ -1,4 +1,4 @@
-const DEFAULT_APP_VERSION = '14.3.7';
+const DEFAULT_APP_VERSION = '14.3.8';
 
 function cleanWarnings(value) {
   if (!Array.isArray(value)) return [];
