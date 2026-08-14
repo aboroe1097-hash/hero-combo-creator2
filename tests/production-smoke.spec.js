@@ -191,30 +191,20 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   await page.locator('.cmdk-input').press('Escape');
   await expect(page.locator('.cmdk-overlay')).toBeHidden();
 
-  // This suite runs against the deployed site, which may be either side of the
-  // hub rollout: before it ships, production still has the standalone
-  // #tabGenerator and #tabSpecialization pills. Each entry therefore lists the
-  // hub pill first and the pre-hub pill as a fallback, and the loop uses
-  // whichever one the deployed page actually has. The markers are unchanged by
-  // the rollout, so only the pill id needs the alternative.
+  // A hub pill only opens its default sub-tab, so reaching the Hero Atlas and
+  // Research chunks now takes a second click. Without `subtab` here the
+  // hero-atlas and research chunks are never requested and the chunk assertion
+  // below fails — which is what this loop exists to prove.
   const lazySurfaces = [
-    [['#tabHeroesCombos', '#tabGenerator'], '#generatorHeroes'],
-    // The Research & Towers Hub opens on Towers Specialization, so its own
-    // marker is the tower planner; Research is reached from the sub-tab and is
-    // covered by the local app smoke suite.
-    [['#tabResearchTowers', '#tabSpecialization'], '#specializationToolRoot .spec-tool'],
-    [['#tabMaterials'], '#materialCalculatorRoot .dm-plan-panel'],
-    [['#tabStrife'], '#strifeToolRoot .strife-monster-card'],
-    [['#tabEdenMap'], '#edenMapRoot'],
+    { tab: '#tabHeroesCombos', marker: '#generatorHeroes' },
+    { tab: '#tabHeroesCombos', subtab: 'heroes', marker: '#heroesTabContent .heroes-tab-inner' },
+    { tab: '#tabResearchTowers', marker: '#specializationToolRoot .spec-tool' },
+    { tab: '#tabResearchTowers', subtab: 'research', marker: '#techListContainer' },
+    { tab: '#tabMaterials', marker: '#materialCalculatorRoot .dm-plan-panel' },
+    { tab: '#tabStrife', marker: '#strifeToolRoot .strife-monster-card' },
+    { tab: '#tabEdenMap', marker: '#edenMapRoot' },
   ];
-  for (const [candidates, marker] of lazySurfaces) {
-    let tab = candidates[0];
-    for (const candidate of candidates) {
-      if ((await page.locator(candidate).count()) > 0) {
-        tab = candidate;
-        break;
-      }
-    }
+  for (const { tab, subtab, marker } of lazySurfaces) {
     const tool = page.locator(tab);
     let openedMore = false;
     if (!(await tool.isVisible())) {
@@ -225,6 +215,7 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
     }
     await tool.click();
     if (openedMore) await expect(page.locator('#shellMorePanel')).toBeHidden();
+    if (subtab) await page.locator(`[data-hub-subtab="${subtab}"]`).click();
     await expect(page.locator(marker).first()).toBeVisible({ timeout: 30000 });
   }
 

@@ -54,6 +54,12 @@ async function refresh() {
     const account = await peekAccountState();
     const profile = account.isGuest ? null : await loadAccountProfile();
     const admin = !account.isGuest && (await isAdminAuthUser(account.user));
+    // Sync only exists for a real account, and booting it pulls in the adapter
+    // module — which statically imports every synced tool's store, including the
+    // Battle Simulator ones. Booting it for guests dragged a battle-simulator
+    // chunk onto public routes like specialization-towers.html, which is exactly
+    // the route isolation the production smoke suite guards.
+    if (!account.isGuest) bootAccountSync();
     renderChip(account, profile, getAccountSyncState(), admin);
   } catch {
     renderChip({ isGuest: true, displayName: '' }, null, getAccountSyncState(), false);
@@ -61,7 +67,6 @@ async function refresh() {
 }
 
 if (!document.body.classList.contains('account-page')) {
-  bootAccountSync();
   void refresh();
   onAccountSyncUpdate(() => void refresh());
 }
