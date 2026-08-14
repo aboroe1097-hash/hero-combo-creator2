@@ -1989,12 +1989,24 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
       'Royal Bounty Alliance'
     );
-    // The existing map planner remains available as a sub-tab.
-    await page.locator('[data-eden-subtab="map"]').evaluate((button) => button.click());
+    // The existing map planner remains available as a sub-tab. The hub wires its
+    // click listener when bootEdenHub() runs, which can land after this click on
+    // a slow runner — a single click then silently does nothing and the map
+    // panel stays hidden. Retry until the sub-tab actually reports selected.
+    const mapSubtab = page.locator('[data-eden-subtab="map"]');
+    await expect
+      .poll(
+        async () => {
+          await mapSubtab.evaluate((button) => button.click());
+          return mapSubtab.getAttribute('aria-selected');
+        },
+        { timeout: 30000 }
+      )
+      .toBe('true');
     await expect(page.locator('#edenMapConstruction')).toHaveClass(/hidden/);
     await expect(page.locator('[data-eden-layer="strategyFloor"]')).toHaveClass(/active/);
     await expect(page.locator('[data-eden-layer="reference"]')).not.toHaveClass(/active/);
-    await expect(page.locator('#edenMapCanvas')).toBeVisible();
+    await expect(page.locator('#edenMapCanvas')).toBeVisible({ timeout: 30000 });
     await expectEdenTerrainPainted(page);
     await page.evaluate(() => document.getElementById('edenSeasonModal')?.classList.add('hidden'));
     await page.locator('#edenCoordSearch').fill('800:800');
