@@ -86,7 +86,11 @@ const LIMITS = {
   // planner, and the account chip shipped on every page re-audit to 9617.3 KiB;
   // retain roughly 7 KiB while entry and route caps remain unchanged. The
   // remaining headroom covers the deterministic Eden Hub activation bridge.
-  totalJsBytes: 9624 * 1024,
+  // Dropping the account chip from the two strict-CSP standalone routes
+  // re-splits their shared chunks; the CI build (which injects admin auth config
+  // before building, so it measures larger than a bare local build) audits to
+  // 9630.2 KiB. Retain roughly 7 KiB.
+  totalJsBytes: 9637 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -196,7 +200,9 @@ const LIMITS = {
   // keep two files of headroom so unexpected chunk proliferation stays visible.
   // The four Royal Bounty figures emit 636 files; keep the guard tight so
   // unexpected chunk proliferation still shows up.
-  deployFileCount: 637,
+  // Dropping the account chip from the two strict-CSP standalone routes
+  // re-splits their shared chunks, emitting 639 files; keep two of headroom.
+  deployFileCount: 641,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
