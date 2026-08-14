@@ -86,7 +86,11 @@ const LIMITS = {
   // planner, and the account chip shipped on every page re-audit to 9617.3 KiB;
   // retain roughly 7 KiB while entry and route caps remain unchanged. The
   // remaining headroom covers the deterministic Eden Hub activation bridge.
-  totalJsBytes: 9624 * 1024,
+  // Dropping the account chip from the two strict-CSP standalone routes
+  // re-splits their shared chunks; the CI build (which injects admin auth config
+  // before building, so it measures larger than a bare local build) audits to
+  // 9630.2 KiB. Retain roughly 7 KiB.
+  totalJsBytes: 9637 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
