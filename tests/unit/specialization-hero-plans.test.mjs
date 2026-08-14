@@ -214,8 +214,7 @@ test('the two paths reorder every tower differently', () => {
   // pinning two ids that any reweighting would move.
   for (const troop of HERO_PLAN_TROOPS) {
     assert.ok(
-      siegeWeightedPosition(planFor(siege, troop)) <
-        siegeWeightedPosition(planFor(field, troop)),
+      siegeWeightedPosition(planFor(siege, troop)) < siegeWeightedPosition(planFor(field, troop)),
       `${troop} funds siege content earlier on the siege path`
     );
   }

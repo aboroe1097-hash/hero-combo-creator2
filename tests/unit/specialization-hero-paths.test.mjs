@@ -37,10 +37,7 @@ test('every paid hero in the roster has a tower profile', () => {
 
 test('profiles only reference real supply tags, columns and researches', () => {
   for (const [name, profile] of Object.entries(PAID_HERO_TOWER_PROFILES)) {
-    assert.ok(
-      [...HERO_PATH_TROOPS, 'all'].includes(profile.troop),
-      `${name} targets a real tower`
-    );
+    assert.ok([...HERO_PATH_TROOPS, 'all'].includes(profile.troop), `${name} targets a real tower`);
     assert.ok(profile.siegeBias >= -1 && profile.siegeBias <= 1, `${name} siegeBias in range`);
     assert.ok(profile.note.length > 60, `${name} explains itself`);
     assert.ok(profile.keyMechanics.length > 0, `${name} names its mechanics`);
