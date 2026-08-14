@@ -462,6 +462,9 @@ const de = {
   tabGenerator: 'Kombi-Generator',
   tabYouTube: 'YouTube',
   tabHeroes: 'Helden-Atlas',
+  tabHeroesCombos: 'Helden & Combos',
+  tabHeroesOnly: 'Helden',
+  tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
   tabLoyalty: 'Eden Loyalität',
   tabEdenX1: 'Eden X1 Rangliste',
@@ -1766,6 +1769,8 @@ const de = {
   strifeVerifiedLineup: 'Bestätigte Monsteraufstellung',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spezialisierung',
+  tabResearchTowers: 'Forschung & Türme',
+  tabTowersSpecialization: 'Turm-Spezialisierung',
 
   adminEdenVotesClearDeadline: 'Frist löschen',
   adminEdenVotesDeadline: 'Abstimmungsende',
@@ -3011,6 +3016,9 @@ const de = {
     edenX1VoteStatusSaving: 'Stimme wird gespeichert…',
     edenX1VoteTopStructureHint: 'Feindliche Bauwerke, die dieser Spieler getroffen hat',
   },
+  tabEdenBounty: 'Royal Bounty',
+  bohAccessErrorSecureServiceUnreachable:
+    'Der sichere Google-Dienst, der für die Anmeldung benötigt wird, ist über dieses Netzwerk oder diese Region nicht erreichbar. Versuche ein VPN oder ein anderes Netzwerk und drücke dann auf „Erneut versuchen“. Deine PIN wurde nicht abgelehnt.',
 };
 
 export default de;

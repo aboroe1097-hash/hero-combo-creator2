@@ -25,11 +25,8 @@ test('v14 shell assets load last without replacing established tool ids', () => 
   assert.ok(index.indexOf('js/shell-v14.js') > index.indexOf('js/app.js'));
 
   for (const id of [
-    'tabManual',
-    'tabGenerator',
-    'tabHeroes',
-    'tabResearch',
-    'tabSpecialization',
+    'tabHeroesCombos',
+    'tabResearchTowers',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
@@ -79,7 +76,13 @@ test('mobile exposes exactly three primary destinations and an accessible More s
     (match) => match[1]
   );
 
-  assert.deepEqual(mobilePrimaryIds, ['tabResearch', 'tabAllStarBoh', 'tabYouTube']);
+  // Heroes & Combos is the tab the app opens on, so it holds the first slot.
+  assert.deepEqual(mobilePrimaryIds, [
+    'tabHeroesCombos',
+    'tabResearchTowers',
+    'tabAllStarBoh',
+    'tabVtsScore',
+  ]);
   assert.match(
     index,
     /id="shellMoreButton"[^>]*aria-expanded="false"[^>]*aria-controls="shellMorePanel"/
@@ -92,10 +95,10 @@ test('mobile exposes exactly three primary destinations and an accessible More s
 });
 
 test('translated mobile labels preserve their icon-library artwork', () => {
-  for (const id of ['tabResearch', 'tabAllStarBoh', 'tabYouTube']) {
+  for (const id of ['tabResearchTowers', 'tabAllStarBoh', 'tabYouTube']) {
     assert.match(index, new RegExp(`id="${id}"[\\s\\S]*?<svg[\\s\\S]*?<span`));
   }
-  assert.doesNotMatch(index, /id="(?:tabResearch|tabYouTube)"[^>]*data-i18n=/);
+  assert.doesNotMatch(index, /id="(?:tabResearchTowers|tabYouTube)"[^>]*data-i18n=/);
 });
 
 test('language picker uses the branded accessible popover instead of the native menu', () => {
@@ -113,18 +116,17 @@ test('language picker uses the branded accessible popover instead of the native 
 test('desktop rail is a single non-overlaying row with deterministic overflow', () => {
   const desktopPrimaryIds = Array.from(
     index.matchAll(
-      /<div\b(?=[^>]*class="[^"]*\btab-item\b)(?=[^>]*\bdata-shell-desktop-primary\b)[^>]*>\s*<button\b[^>]*\bid="([^"]+)"/g
+      /<div\b(?=[^>]*class="[^"]*\btab-item\b)(?=[^>]*\bdata-shell-desktop-primary\b)[^>]*>\s*<(?:button|a)\b[^>]*\bid="([^"]+)"/g
     ),
     (match) => match[1]
   );
 
   assert.deepEqual(desktopPrimaryIds, [
-    'tabManual',
-    'tabGenerator',
-    'tabHeroes',
-    'tabResearch',
+    'tabHeroesCombos',
+    'tabResearchTowers',
     'tabMaterials',
-    'tabArcade',
+    'tabEdenMap',
+    'tabVtsScore',
   ]);
   assert.match(shellCss, /#app \.tool-nav-shell\s*\{[\s\S]*?position:\s*relative !important/);
   assert.match(shellCss, /#app #tabNavScroll\s*\{[\s\S]*?flex-wrap:\s*nowrap !important/);
@@ -139,16 +141,23 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
 test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', () => {
   assert.match(shellJs, /matchMedia\('\(max-width: 640px\)'\)/);
   assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
+  // The three hubs lead the rail: layoutNavigation() appends in array order.
+  assert.match(shellJs, /const hubIds = \['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'\];/);
   assert.match(
     shellJs,
-    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabSpecialization',\s*'tabYouTube',?\s*\];/
+    /const desktopPrimaryIds = \[\.\.\.hubIds, 'tabVtsScore', 'tabMaterials'\];/
   );
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore'\];/
+    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabAllStarBoh',\s*'tabStrife',\s*'tabYouTube',?\s*\];/
+  );
+  // The landing tool must hold a mobile slot — it had none before the hubs.
+  assert.match(
+    shellJs,
+    /const mobilePrimaryIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabAllStarBoh',\s*'tabVtsScore',?\s*\];/
   );
 
-  for (const id of ['tabStrife', 'tabSpecialization', 'tabYouTube']) {
+  for (const id of ['tabStrife', 'tabYouTube', 'tabAllStarBoh']) {
     assert.match(
       index,
       new RegExp(
@@ -158,8 +167,17 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   }
   assert.match(
     index,
-    /<div\b(?=[^>]*\bdata-shell-mobile-primary\b)[^>]*>\s*<button\b[^>]*\bid="tabYouTube"/
+    /<div\b(?=[^>]*\bdata-shell-mobile-primary\b)[^>]*>\s*<button\b[^>]*\bid="tabHeroesCombos"/
   );
+  // Each hub pill is marked so the rail can show a container differently from a
+  // leaf tool without a separator, which reordering would break.
+  for (const id of ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']) {
+    assert.match(
+      index,
+      new RegExp(`<div\\b(?=[^>]*\\bdata-shell-hub\\b)[^>]*>\\s*<button\\b[^>]*\\bid="${id}"`)
+    );
+  }
+  assert.match(shellCss, /#app #tabNavScroll \[data-shell-hub\] \.tab-pill::before/);
 });
 
 test('first-focus skip link follows the active tool and respects reduced motion', () => {
@@ -203,10 +221,20 @@ test('More controller localizes all supported languages and preserves keyboard f
   assert.ok(readyIndex > shellJs.indexOf('window.vtsShellOpenMore'));
 });
 
-test('Specialization uses only the integrated tab destination', () => {
+test('Towers Specialization lives inside the Research & Towers Hub', () => {
   assert.doesNotMatch(index, /specialization-towers\.html/);
-  assert.match(index, /id="tabSpecialization"[\s\S]*?data-i18n="tabSpecialization"/);
-  assert.match(shellJs, /\['tabSpecialization',\s*'specialization'\]/);
+  // The tab pill is the hub; Towers Specialization is its default sub-tab.
+  assert.doesNotMatch(index, /id="tabSpecialization"/);
+  assert.match(index, /id="tabResearchTowers"[\s\S]*?data-i18n="tabResearchTowers"/);
+  assert.match(
+    index,
+    /data-hub-subtab="towers"[\s\S]*?data-i18n="tabTowersSpecialization"/
+  );
+  assert.match(index, /data-hub-subtab="research"[\s\S]*?data-i18n="tabResearch"/);
+  // Both former tabs keep working as deep links through the hub.
+  assert.match(shellJs, /\['tabResearchTowers',\s*'researchTowers'\]/);
+  assert.match(shellJs, /legacyResearchTowersHashes/);
+  assert.match(shellJs, /\['specialization',\s*'towers'\]/);
   assert.doesNotMatch(shellJs, /tabSpecializationTowers/);
   assert.match(specializationJs, /querySelector\('\.specialization-loading'\)\?\.remove\(\)/);
   assert.doesNotMatch(specializationJs, /ACKNOWLEDGMENTS|Old\.Faithful|Raven G|\bPtr\b/);

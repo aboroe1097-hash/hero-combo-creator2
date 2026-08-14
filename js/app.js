@@ -90,16 +90,15 @@ import {
   materialsSection,
   arcadeSection,
   allStarBohSection,
-  tabManualBtn,
-  tabGeneratorBtn,
+  tabHeroesCombosBtn,
+  heroesCombosSection,
   tabLoyaltyBtn,
   tabYouTubeBtn,
-  tabResearchBtn,
+  tabResearchTowersBtn,
+  researchTowersSection,
   tabMaterialsBtn,
-  tabHeroesBtn,
   tabEdenMapBtn,
   tabStrifeBtn,
-  tabSpecializationBtn,
   tabArcadeBtn,
   tabAllStarBohBtn,
   heroesSection,
@@ -180,7 +179,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260813_234930').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260814_125122').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -202,7 +201,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260813_234930').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260814_125122').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -213,7 +212,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260813_234930').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260814_125122').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -344,15 +343,27 @@ document.addEventListener('click', (e) => {
   btn.classList.toggle('counter-toggle-btn--open', willOpen);
 });
 
+// Old top-level tab names that now open the Research & Towers Hub, mapped to
+// the sub-tab each one lands on.
+const HUB_TAB_ALIASES = new Map([
+  ['research', 'research'],
+  ['specialization', 'towers'],
+]);
+
+// The same arrangement for the Heroes & Combos Hub.
+const HEROES_HUB_ALIASES = new Map([
+  ['manual', 'manual'],
+  ['generator', 'generator'],
+  ['heroes', 'heroes'],
+  ['skins', 'skins'],
+]);
+
 const TAB_BTN_IDS = {
-  manual: 'tabManual',
-  generator: 'tabGenerator',
-  heroes: 'tabHeroes',
-  research: 'tabResearch',
+  heroesCombos: 'tabHeroesCombos',
+  researchTowers: 'tabResearchTowers',
   materials: 'tabMaterials',
   edenMap: 'tabEdenMap',
   strife: 'tabStrife',
-  specialization: 'tabSpecialization',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
   arcade: 'tabArcade',
@@ -826,20 +837,25 @@ function resolveTabName(rawTabName, validTabNames) {
 function wireUIActions({ preserveInitialHash = false } = {}) {
   // === TAB BUTTON HANDLERS ===
   const tabs = [
-    { btn: tabManualBtn, name: 'manual' },
-    { btn: tabGeneratorBtn, name: 'generator' },
-    { btn: tabHeroesBtn, name: 'heroes' },
-    { btn: tabResearchBtn, name: 'research' },
+    { btn: tabHeroesCombosBtn, name: 'heroesCombos' },
+    { btn: tabResearchTowersBtn, name: 'researchTowers' },
     { btn: tabMaterialsBtn, name: 'materials' },
     { btn: tabEdenMapBtn, name: 'edenMap' },
     { btn: tabStrifeBtn, name: 'strife' },
-    { btn: tabSpecializationBtn, name: 'specialization' },
     { btn: tabLoyaltyBtn, name: 'loyalty' },
     { btn: tabYouTubeBtn, name: 'youtube' },
     { btn: tabArcadeBtn, name: 'arcade' },
     { btn: tabAllStarBohBtn, name: 'allStarBoh' },
   ];
-  const validTabNames = new Set(tabs.map((tab) => tab.name));
+  // 'research' and 'specialization' are no longer tabs of their own, but they
+  // stay valid names: deep links, footer links, the command palette and the
+  // keyboard shortcuts all still use them, and each resolves to the hub with a
+  // sub-tab already selected.
+  const validTabNames = new Set([
+    ...tabs.map((tab) => tab.name),
+    ...HUB_TAB_ALIASES.keys(),
+    ...HEROES_HUB_ALIASES.keys(),
+  ]);
 
   tabs.forEach((tab) => {
     if (tab.btn) {
@@ -895,14 +911,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _allStarBohBooting = false;
 
   const tabPanels = [
-    manualSection,
-    generatorSection,
-    heroesSection,
-    researchSection,
+    heroesCombosSection,
+    researchTowersSection,
     materialsSection,
     edenMapSection,
     strifeSection,
-    specializationSection,
     youtubeSection,
     arcadeSection,
     allStarBohSection,
@@ -986,7 +999,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260813_234930')
+        import('./eden-map.js?v=20260814_125122')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1017,7 +1030,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260813_234930')
+      import('./app-hero-atlas.js?v=20260814_125122')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1089,7 +1102,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260813_234930')
+      import('./app-strife.js?v=20260814_125122')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1106,6 +1119,17 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
             );
           }
         });
+    }
+    // Opening the hub tab boots only the sub-tab you land on. The two hub tools
+    // still boot through their own names below, which is how the sub-tab
+    // handler reaches them.
+    if (tabName === 'heroesCombos') {
+      bootHeroesCombosHubOnce();
+      return;
+    }
+    if (tabName === 'researchTowers') {
+      bootResearchTowersHubOnce();
+      return;
     }
     if (tabName === 'specialization' && !_specializationReady) {
       if (_specializationBooting) return;
@@ -1131,7 +1155,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260813_234930')
+      import('./youtube-v14.js?v=20260814_125122')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1204,8 +1228,166 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     window.scrollTo({ top, behavior: getHomeNavigationScrollBehavior() });
   }
 
-  function switchTab(tabName, force = false, options = {}) {
-    if (!force && tabName === _lastTab) return;
+  // --- Research & Towers Hub -------------------------------------------------
+  let _hubModule = null;
+  let _hubReady = false;
+  let _hubBooting = false;
+
+  // A sub-tab reveal boots that sub-tab's tool through its original tab name,
+  // so both keep the lazy-import, toast and retry behaviour they always had.
+  function onHubSubtabShown(subtab) {
+    document.body.classList.toggle('tab-specialization-active', subtab === 'towers');
+    onTabActivated(subtab === 'research' ? 'research' : 'specialization');
+  }
+
+  function applyResearchTowersIntent() {
+    let intent = '';
+    try {
+      intent = document.body?.dataset?.researchTowersSubtab || '';
+      if (intent) delete document.body.dataset.researchTowersSubtab;
+    } catch {
+      /* dataset unavailable */
+    }
+    if (intent) _hubModule?.openResearchTowersSubtab(intent);
+  }
+
+  function bootResearchTowersHubOnce() {
+    if (_hubReady) {
+      applyResearchTowersIntent();
+      return;
+    }
+    if (_hubBooting) return;
+    _hubBooting = true;
+    import('./research-towers-hub.js')
+      .then((mod) => {
+        _hubModule = mod;
+        window.addEventListener('vts:research-towers-subtab', (event) => {
+          onHubSubtabShown(event?.detail?.subtab || 'towers');
+        });
+        // bootResearchTowersHub() consumes any deep-link intent itself and
+        // announces the sub-tab it settled on, which boots that tool.
+        mod.bootResearchTowersHub();
+        _hubReady = true;
+      })
+      .catch((err) => {
+        _hubBooting = false;
+        console.error('Research & Towers Hub failed to load', err);
+        if (isDynamicImportLoadFailure(err)) {
+          recoverFromStaleAssetGraph(err);
+          return;
+        }
+        // The hub chrome is only a switcher: if it will not load, fall back to
+        // the towers planner rather than leaving the tab empty.
+        onTabActivated('specialization');
+      });
+  }
+
+  // --- Heroes & Combos Hub ---------------------------------------------------
+  let _heroesHubModule = null;
+  let _heroesHubReady = false;
+  let _heroesHubBooting = false;
+
+  function heroesCombosSubtab() {
+    return _heroesHubModule?.getActiveHeroesCombosSubtab?.() || 'generator';
+  }
+
+  // The global filter row and the combo footer belong to the Manual Builder and
+  // the Combo Generator, not to the hub as a whole.
+  function syncComboChrome(subtab) {
+    const isCombo = subtab === 'manual' || subtab === 'generator';
+    if (globalToggleRow) globalToggleRow.classList.toggle('hidden', !isCombo);
+    if (comboFooterBar) comboFooterBar.classList.toggle('hidden', subtab !== 'manual');
+    document.body.classList.toggle('tab-manual-active', subtab === 'manual');
+    document.body.classList.toggle('tab-combo-active', isCombo);
+  }
+
+  function onHeroesHubSubtabShown(subtab, atlasMode) {
+    syncComboChrome(subtab);
+    if (subtab === 'manual') onTabActivated('manual');
+    else if (subtab === 'generator') onTabActivated('generator');
+    else {
+      onTabActivated('heroes');
+      // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
+      // applying the mode again after it renders is harmless.
+      import('./app-hero-atlas.js?v=20260814_125122')
+        .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
+        .catch(() => {
+          /* the Atlas boot path reports its own failure */
+        });
+    }
+  }
+
+  function applyHeroesCombosIntent() {
+    let intent = '';
+    try {
+      intent = document.body?.dataset?.heroesCombosSubtab || '';
+      if (intent) delete document.body.dataset.heroesCombosSubtab;
+    } catch {
+      /* dataset unavailable */
+    }
+    if (intent) _heroesHubModule?.openHeroesCombosSubtab(intent);
+  }
+
+  function bootHeroesCombosHubOnce() {
+    if (_heroesHubReady) {
+      applyHeroesCombosIntent();
+      return;
+    }
+    if (_heroesHubBooting) return;
+    _heroesHubBooting = true;
+    import('./heroes-combos-hub.js')
+      .then((mod) => {
+        _heroesHubModule = mod;
+        window.addEventListener('vts:heroes-combos-subtab', (event) => {
+          onHeroesHubSubtabShown(
+            event?.detail?.subtab || 'generator',
+            event?.detail?.atlasMode || ''
+          );
+        });
+        mod.bootHeroesCombosHub();
+        _heroesHubReady = true;
+      })
+      .catch((err) => {
+        _heroesHubBooting = false;
+        console.error('Heroes & Combos Hub failed to load', err);
+        if (isDynamicImportLoadFailure(err)) {
+          recoverFromStaleAssetGraph(err);
+          return;
+        }
+        // The hub chrome is only a switcher; fall back to the Generator rather
+        // than leaving the tab empty.
+        syncComboChrome('generator');
+        onTabActivated('generator');
+      });
+  }
+
+  function switchTab(requestedTab, force = false, options = {}) {
+    // A hub alias ('research' / 'specialization') resolves to the hub tab, and
+    // the sub-tab it asked for is handed to the hub controller. Re-selecting an
+    // alias for the tab already open must still move the sub-tab, so the
+    // early-out below is skipped whenever a sub-tab was requested.
+    const towersSubtab = HUB_TAB_ALIASES.get(requestedTab) || '';
+    const heroesSubtab = HEROES_HUB_ALIASES.get(requestedTab) || '';
+    const hubSubtab = towersSubtab || heroesSubtab;
+    const tabName = towersSubtab
+      ? 'researchTowers'
+      : heroesSubtab
+        ? 'heroesCombos'
+        : requestedTab;
+    if (!force && !hubSubtab && tabName === _lastTab) return;
+    if (hubSubtab) {
+      try {
+        if (towersSubtab) document.body.dataset.researchTowersSubtab = towersSubtab;
+        else document.body.dataset.heroesCombosSubtab = heroesSubtab;
+      } catch {
+        /* dataset unavailable */
+      }
+    }
+    if (!force && hubSubtab && tabName === _lastTab) {
+      if (towersSubtab) applyResearchTowersIntent();
+      else applyHeroesCombosIntent();
+      return;
+    }
 
     const targetSection = document.getElementById(`${tabName}Section`);
 
@@ -1232,27 +1414,13 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     document.documentElement.removeAttribute('data-initial-tab-pending');
 
-    if (tabName === 'manual' || tabName === 'generator') {
-      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
-    } else if (globalToggleRow) {
-      globalToggleRow.classList.add('hidden');
-    }
-
-    if (tabName === 'manual' && comboFooterBar) {
-      comboFooterBar.classList.remove('hidden');
-    }
+    // The combo chrome belongs to two sub-tabs of the Heroes & Combos Hub, so
+    // it is driven by the sub-tab rather than the tab. syncComboChrome() runs
+    // again whenever the hub switches sub-tab.
+    syncComboChrome(tabName === 'heroesCombos' ? heroesCombosSubtab() : '');
 
     document.body.dataset.activeTab = tabName;
-    document.body.classList.toggle('tab-manual-active', tabName === 'manual');
-    document.body.classList.toggle(
-      'tab-combo-active',
-      tabName === 'manual' || tabName === 'generator'
-    );
     document.body.classList.toggle('tab-strife-active', tabName === 'strife');
-    document.body.classList.toggle(
-      'tab-specialization-active',
-      tabName === 'specialization'
-    );
 
     onTabActivated(tabName);
     _lastTab = tabName;
@@ -1260,8 +1428,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       requestAnimationFrame(() => scrollToTabStart(targetSection));
     }
     try {
-      if (!options.preserveHash && window.location.hash !== '#' + tabName) {
-        history.replaceState({ tab: tabName }, '', '#' + tabName);
+      // Keep the hash the caller asked for. Arriving on #specialization must
+      // stay shareable as #specialization even though the hub owns the tab.
+      const hash = hubSubtab ? requestedTab : tabName;
+      if (!options.preserveHash && window.location.hash !== '#' + hash) {
+        history.replaceState({ tab: hash }, '', '#' + hash);
       }
     } catch {}
   }

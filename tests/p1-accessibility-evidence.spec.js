@@ -326,7 +326,8 @@ test('explicit transition components retain pointer, keyboard, selection, and st
   await expect(toggleThumb).toHaveClass(/checked/);
   await expect(page.locator('body')).not.toHaveClass(/hide-hero-info/);
 
-  await page.locator('#tabManual').click();
+  await page.locator('#tabHeroesCombos').click();
+  await page.locator('[data-hub-subtab="manual"]').click();
   await expect(page.locator('#manualSection')).toBeVisible();
   await expect(page.locator('#availableHeroes .hero-card').first()).toBeVisible({
     timeout: 20000,

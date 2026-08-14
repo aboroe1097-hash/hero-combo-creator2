@@ -104,6 +104,12 @@ import {
 } from './i18n/eden-map/index.js';
 
 let _edenLiveMapApi = null;
+let refreshEdenMapPlannerViewport = () => false;
+
+/** Re-measure the canvas after the Eden Hub reveals the Map sub-tab. */
+export function refreshEdenMapViewport() {
+  return refreshEdenMapPlannerViewport();
+}
 let edenMapLanguageGeneration = 0;
 let refreshEdenMapLanguage = async () => {
   const requestId = ++edenMapLanguageGeneration;
@@ -2823,6 +2829,15 @@ export function initEdenMapPlanner() {
     populateFilters(true);
     renderSidebar();
     draw();
+    return true;
+  };
+
+  // Royal Bounty is the hub landing page, which means the map initializes
+  // while its panel is hidden. Re-measure only when the Map sub-tab is shown.
+  refreshEdenMapPlannerViewport = () => {
+    if (root.closest('[hidden]') || canvas.closest('[hidden]')) return false;
+    resize();
+    scheduleDraw({ sidebar: true });
     return true;
   };
 

@@ -1,4 +1,5 @@
 import { cssToken, debounce, escapeHtml } from './utils.js';
+import { queueAccountSync } from './account-sync.js';
 // js/app-generator.js
 import { translations } from './translations.js';
 import {
@@ -119,6 +120,7 @@ export function persistGeneratorSelection() {
         heroes: Array.from(generatorSelectedHeroes),
       })
     );
+    queueAccountSync('generator-selection');
   } catch {
     // Local storage can fail in private browsing or quota exhaustion.
   }
@@ -193,6 +195,7 @@ function setGeneratorSkinOwned(heroName, owned) {
         heroes: ownership,
       })
     );
+    queueAccountSync('generator-skins');
   } catch {
     // Ignore storage failures; the current render still reflects the click.
   }

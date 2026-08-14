@@ -29,20 +29,22 @@ import {
 } from './specialization-towers-v2-store.js';
 import { buildContributionTemplateRows } from './specialization-towers-v2-template.js';
 import {
-  SPECIALIZATION_ROUTE_IDS,
-  getNextRouteResearch,
-  getRouteStep,
-  getRouteLabel,
-  getRouteRationale,
-} from './specialization-routes.js';
-import {
-  HERO_PLAN_DATA_REVISION,
+  HERO_PLAN_DEFAULT_MODE,
   HERO_PLAN_MODES,
   buildHeroPlans,
+  getHeroPlanLength,
   getHeroPlanRanking,
   getHeroPlanStep,
   getNextHeroPlanResearch,
 } from './specialization-hero-plans.js';
+import {
+  F2P_PATH_ID,
+  getHeroImage,
+  getPathPreset,
+  getPathPresets,
+  paidHeroesForTroop,
+  rankPathPresets,
+} from './specialization-hero-paths.js';
 import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
@@ -95,6 +97,16 @@ const ICON = {
   speed: svgIcon('speed', '<path d="m5 7 6 5-6 5"/><path d="m13 7 6 5-6 5"/>'),
   // Banner — research badge fallback where no in-game art is mapped yet.
   badge: svgIcon('badge', '<path d="M6 3h12v18l-6-4-6 4z"/>'),
+  // Battering ram against a gate — the siege/rally path.
+  siege: svgIcon(
+    'siege',
+    '<path d="M4 20h16"/><path d="M7 20V9a5 5 0 0 1 10 0v11"/><path d="M3 13h5"/><path d="M2 11.5v3"/>'
+  ),
+  // Crossed banners on open ground — the non-siege field path.
+  field: svgIcon(
+    'field',
+    '<path d="M6 21V4l7 2.5L6 9"/><path d="M18 21V4l-5 1.8"/><path d="M3 21h18"/>'
+  ),
   cavalry: svgIcon(
     'cavalry',
     '<path d="M6 20c0-5 2.5-8 6-8.5L14 6l-2-1 1-2 4 1.5L19 8l-2 1-1.5 3.5C17.5 14 19 16.5 19 20"/><path d="M6 20h13"/>'
@@ -123,10 +135,10 @@ const BADGE_ICON = [
 ];
 
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
-const ROUTE_KEY = 'vts_specialization_towers_v2_route';
 const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
-const HERO_PLAN_KEY = 'vts_specialization_hero_plan';
 const HERO_PLAN_MODE_KEY = 'vts_specialization_hero_plan_mode';
+const HERO_PATH_PRESET_KEY = 'vts_specialization_hero_path_presets';
+const HERO_PATH_OVERRIDE_KEY = 'vts_specialization_hero_path_overrides';
 
 let root = null;
 let state = null;
@@ -137,14 +149,16 @@ let selectedResearchId = null;
 let selectedNodeId = null;
 let selectedLegionColumnId = null;
 let wired = false;
-// Shared with the standalone planner through the same storage keys, so a route picked in
-// one surface is the route the other shows.
-let activeRoute = '';
 let easyMedalMode = false;
-// Hero-plan state: computed from the Heroes tab roster (generatorSelectedHeroes).
-let heroPlanMode = 'balanced';
-let heroPlans = null; // buildHeroPlans() result or null
-let heroPlanRoster = []; // roster snapshot the stored plan was built from
+// Path-planner state. Every troop plans on one of two paths — siege/rally or
+// non-siege field — and picks a hero preset inside it.
+let heroPlanMode = HERO_PLAN_DEFAULT_MODE;
+let pathPresets = {}; // { troop: presetId } — user overrides; unset means best fit
+// Heroes the planner adds to or removes from the Heroes-tab roster, so a path
+// can be adjusted here without leaving the tab. { heroName: true | false }
+let heroOverrides = {};
+let heroPlans = null; // buildHeroPlans() result for the current signature
+let heroPlanSignature = '';
 
 function safeGet(key, fallback = '') {
   try {
@@ -167,21 +181,52 @@ function isResearchCompleteForRoute(researchId) {
   return progress.completedNodes >= progress.totalNodes;
 }
 
-function routeNextResearchId() {
-  if (!activeRoute) return null;
-  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute, activeTroop);
+// ---------------------------------------------------------------------------
+// Path planner state
+// ---------------------------------------------------------------------------
+
+/** Heroes picked on the Heroes tab, before this panel's add/remove overrides. */
+function baseRoster() {
+  return [...(generatorSelectedHeroes || [])];
 }
 
-// ---------------------------------------------------------------------------
-// Hero plan (skill-semantics auto-path) state
-// ---------------------------------------------------------------------------
-
+/**
+ * The roster the plan is actually built from: the Heroes tab selection with the
+ * panel's own toggles applied. Sorted so the signature is stable.
+ */
 function currentRoster() {
-  return [...(generatorSelectedHeroes || [])].sort((a, b) => a.localeCompare(b));
+  const names = new Set(baseRoster());
+  for (const [name, owned] of Object.entries(heroOverrides)) {
+    if (owned) names.add(name);
+    else names.delete(name);
+  }
+  return [...names].sort((a, b) => a.localeCompare(b));
+}
+
+function isHeroOwned(heroName) {
+  if (Object.prototype.hasOwnProperty.call(heroOverrides, heroName)) {
+    return Boolean(heroOverrides[heroName]);
+  }
+  return baseRoster().includes(heroName);
+}
+
+// The plan is a pure function of these three, so it is cheaper to recompute on
+// change than to cache a plan in storage and reason about when it went stale.
+function planSignature(roster) {
+  return JSON.stringify([heroPlanMode, roster, pathPresets]);
+}
+
+function ensureHeroPlans() {
+  const roster = currentRoster();
+  const signature = planSignature(roster);
+  if (heroPlans && signature === heroPlanSignature) return heroPlans;
+  heroPlans = buildHeroPlans({ heroes: roster, mode: heroPlanMode, presets: pathPresets });
+  heroPlanSignature = signature;
+  return heroPlans;
 }
 
 function heroPlanForTroop(troopId) {
-  return heroPlans?.plans?.[troopId] || null;
+  return ensureHeroPlans()?.plans?.[troopId] || null;
 }
 
 function heroPlanNextResearchId() {
@@ -190,61 +235,53 @@ function heroPlanNextResearchId() {
   return getNextHeroPlanResearch(plan, isResearchCompleteForRoute);
 }
 
-function saveHeroPlan() {
+/** The preset actually in force for a troop, user-chosen or best fit. */
+function activePresetId(troopId) {
+  return heroPlanForTroop(troopId)?.presetId || F2P_PATH_ID;
+}
+
+function savePathState() {
+  safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
   try {
-    localStorage.setItem(
-      HERO_PLAN_KEY,
-      JSON.stringify({
-        revision: HERO_PLAN_DATA_REVISION,
-        plan: heroPlans,
-        roster: heroPlanRoster,
-        mode: heroPlanMode,
-      })
-    );
+    localStorage.setItem(HERO_PATH_PRESET_KEY, JSON.stringify(pathPresets));
+    localStorage.setItem(HERO_PATH_OVERRIDE_KEY, JSON.stringify(heroOverrides));
   } catch {
     /* storage unavailable */
   }
 }
 
-function loadStoredHeroPlan() {
+function loadPathState() {
+  const storedMode = safeGet(HERO_PLAN_MODE_KEY, HERO_PLAN_DEFAULT_MODE);
+  heroPlanMode = HERO_PLAN_MODES.includes(storedMode) ? storedMode : HERO_PLAN_DEFAULT_MODE;
   try {
-    const raw = localStorage.getItem(HERO_PLAN_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || !parsed.plan?.plans) return;
-    // A cached plan is only valid for the engine that produced it. Without this
-    // check a plan survives every later release untouched, because the only
-    // other staleness signal is the roster changing. Keep the mode, drop the
-    // stale plan, and let the bar offer a fresh build.
-    heroPlanMode = HERO_PLAN_MODES.includes(parsed.mode) ? parsed.mode : 'balanced';
-    safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
-    if (parsed.revision !== HERO_PLAN_DATA_REVISION) {
-      try {
-        localStorage.removeItem(HERO_PLAN_KEY);
-      } catch {
-        /* storage unavailable */
+    const presets = JSON.parse(localStorage.getItem(HERO_PATH_PRESET_KEY) || '{}');
+    if (presets && typeof presets === 'object') {
+      for (const [troop, presetId] of Object.entries(presets)) {
+        if (!UI_TROOPS.includes(troop)) continue;
+        if (presetId === F2P_PATH_ID || getPathPreset(presetId)?.troop === troop) {
+          pathPresets[troop] = presetId;
+        }
       }
-      return;
     }
-    heroPlans = parsed.plan;
-    heroPlanRoster = Array.isArray(parsed.roster) ? parsed.roster : [];
   } catch {
-    /* corrupted plan storage */
+    /* corrupted preset storage */
+  }
+  try {
+    const overrides = JSON.parse(localStorage.getItem(HERO_PATH_OVERRIDE_KEY) || '{}');
+    if (overrides && typeof overrides === 'object') {
+      for (const [name, owned] of Object.entries(overrides)) {
+        if (typeof name === 'string' && name) heroOverrides[name] = Boolean(owned);
+      }
+    }
+  } catch {
+    /* corrupted override storage */
   }
 }
 
-function recomputeHeroPlans() {
-  const roster = currentRoster();
-  heroPlanRoster = roster.slice();
-  heroPlans = buildHeroPlans({ heroes: roster, mode: heroPlanMode });
-  saveHeroPlan();
+function invalidatePlans() {
+  heroPlanSignature = '';
+  savePathState();
   render();
-}
-
-function heroPlanRosterChanged() {
-  const roster = currentRoster();
-  if (roster.length !== heroPlanRoster.length) return true;
-  return roster.some((name, index) => name !== heroPlanRoster[index]);
 }
 
 function contributionNodeKey(researchId, nodeId) {
@@ -396,13 +433,6 @@ function statusOf(progress) {
 
 /* ---------- Overview: troop tabs + column banners ---------- */
 
-// The hero-specific plan name where the chart names heroes, generic otherwise.
-function routeOptionLabel(routeId) {
-  return (
-    getRouteLabel(routeId, activeTroop) || sp(routeId === 'spender' ? 'routeSpender' : 'routeF2p')
-  );
-}
-
 function renderSummary(summary) {
   const troop = summary.troops[activeTroop];
   const medals = summary.overall.medals;
@@ -418,16 +448,9 @@ function renderSummary(summary) {
         <p class="spec-subtitle">${escapeHtml(sp('subtitle'))}</p>
       </div>
       <div class="spec-tool-controls">
-        <label class="spec-route-control">
-          <span>${escapeHtml(sp('routeLabel'))}</span>
-          <select data-spec-route-select aria-label="${escapeHtml(sp('routeLabel'))}">
-            <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(sp('routeNone'))}</option>
-            ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(routeOptionLabel(id))}</option>`).join('')}
-          </select>
-        </label>
         <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
       </div>
-      ${renderHeroPlanBar()}
+      ${renderPathPlanner()}
       <div class="spec-stat-row">
         ${stat(sp('currentTowerProgress'), `${pct(troop.percent)}%`)}
         ${stat(sp('fundedResearches'), `${fmt(troop.completedResearchCount)} / ${fmt(troop.totalResearchCount)}`)}
@@ -437,35 +460,100 @@ function renderSummary(summary) {
     </div>`;
 }
 
-function renderHeroPlanBar() {
-  const roster = currentRoster();
-  const hasStoredPlan = Boolean(heroPlans);
-  const changed = hasStoredPlan && heroPlanRosterChanged();
-  const modeOptions = HERO_PLAN_MODES.map(
-    (mode) =>
-      `<option value="${mode}" ${heroPlanMode === mode ? 'selected' : ''}>${escapeHtml(sp(`planMode${mode[0].toUpperCase()}${mode.slice(1)}`))}</option>`
-  ).join('');
+const MODE_ICON = { siege: ICON.siege, nonSiege: ICON.field };
 
-  if (!hasStoredPlan && roster.length === 0) {
-    return `
-    <div class="spec-hero-plan spec-hero-plan--empty" data-spec-hero-plan>
-      <div class="spec-hero-plan-head">
-        <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
-        <label class="spec-plan-mode-control">
-          <span class="spec-sr-only">${escapeHtml(sp('planModeLabel'))}</span>
-          <select data-spec-plan-mode aria-label="${escapeHtml(sp('planModeLabel'))}">
-            ${modeOptions}
-          </select>
-        </label>
-        <button type="button" class="spec-auto-path" data-spec-auto-path>${escapeHtml(sp('planAutoPath'))}</button>
-      </div>
-      <p class="spec-hero-plan-note">${escapeHtml(sp('planEmptyNote'))}</p>
-      <button type="button" class="spec-hero-plan-jump" data-spec-plan-go-heroes>${escapeHtml(sp('planGoToHeroes'))}</button>
-    </div>`;
+function modeLabel(mode) {
+  return sp(mode === 'siege' ? 'planModeSiege' : 'planModeField');
+}
+
+function pathLabel(presetId) {
+  const preset = getPathPreset(presetId);
+  return preset ? sp(preset.labelKey) : sp('planPathF2p');
+}
+
+function heroAvatar(heroName, className = 'spec-plan-hero-avatar') {
+  const image = getHeroImage(heroName);
+  if (!image) {
+    return `<span class="${className} ${className}--blank" aria-hidden="true">${escapeHtml(heroName.slice(0, 1))}</span>`;
   }
+  return `<img class="${className}" src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" width="32" height="32" />`;
+}
 
+// The two default paths, as a segmented control rather than a dropdown: there
+// are exactly two and the choice reorders everything below it, so it should be
+// visible at a glance instead of collapsed into a select.
+function renderPathModes() {
+  return `
+    <div class="spec-path-modes" role="radiogroup" aria-label="${escapeHtml(sp('planPathBasis'))}">
+      ${HERO_PLAN_MODES.map((mode) => {
+        const active = mode === heroPlanMode;
+        return `<button type="button" class="spec-path-mode" role="radio" aria-checked="${active}" data-spec-plan-mode="${mode}">
+          <span class="spec-path-mode-icon" aria-hidden="true">${MODE_ICON[mode]}</span>
+          <span class="spec-path-mode-name">${escapeHtml(modeLabel(mode))}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+}
+
+// One card per suggested path for this tower, plus the free-to-play order.
+// Each card shows the paid heroes it is built around, so picking a path and
+// understanding why it exists are the same gesture.
+function renderPathPresets() {
+  const roster = currentRoster();
+  const ranked = rankPathPresets(activeTroop, roster);
+  const active = activePresetId(activeTroop);
+  const cards = ranked.map(({ preset, owned, total }) => {
+    const isActive = preset.id === active;
+    return `<button type="button" class="spec-path-card${isActive ? ' is-active' : ''}" data-spec-path-preset="${preset.id}" aria-pressed="${isActive}">
+      <span class="spec-path-card-heroes" aria-hidden="true">${preset.heroes.map((name) => heroAvatar(name, 'spec-path-card-hero')).join('')}</span>
+      <span class="spec-path-card-copy">
+        <strong>${escapeHtml(sp(preset.labelKey))}</strong>
+        <small>${escapeHtml(sp('planPresetMatch', { owned: owned.length, total }))}</small>
+      </span>
+      <span class="spec-path-card-state">${escapeHtml(isActive ? sp('planPresetActive') : sp('planPresetUse'))}</span>
+    </button>`;
+  });
+  const f2pActive = active === F2P_PATH_ID;
+  cards.push(`<button type="button" class="spec-path-card${f2pActive ? ' is-active' : ''}" data-spec-path-preset="${F2P_PATH_ID}" aria-pressed="${f2pActive}">
+      <span class="spec-path-card-heroes" aria-hidden="true">${ICON.badge}</span>
+      <span class="spec-path-card-copy"><strong>${escapeHtml(sp('planPathF2p'))}</strong></span>
+      <span class="spec-path-card-state">${escapeHtml(f2pActive ? sp('planPresetActive') : sp('planPresetUse'))}</span>
+    </button>`);
+  return `
+    <section class="spec-path-presets" aria-label="${escapeHtml(sp('planPresetLabel'))}">
+      <h4 class="spec-path-section-title">${escapeHtml(sp('planPresetLabel'))}</h4>
+      <div class="spec-path-cards">${cards.join('')}</div>
+    </section>`;
+}
+
+// Every paid hero that can move this tower, as an on/off chip. Toggling one
+// rebuilds the path immediately, which is the whole point: "what changes if I
+// pull this hero?" is answered without leaving the tab.
+function renderPathHeroes() {
+  const heroes = paidHeroesForTroop(activeTroop);
+  if (!heroes.length) {
+    return `<p class="spec-path-empty">${escapeHtml(sp('planNoPaidHeroes'))}</p>`;
+  }
+  const chips = heroes
+    .map((name) => {
+      const owned = isHeroOwned(name);
+      return `<button type="button" class="spec-path-hero${owned ? ' is-owned' : ''}" data-spec-path-hero="${escapeHtml(name)}" aria-pressed="${owned}">
+        ${heroAvatar(name)}
+        <span class="spec-path-hero-name">${escapeHtml(name)}</span>
+      </button>`;
+    })
+    .join('');
+  return `
+    <section class="spec-path-heroes" aria-label="${escapeHtml(sp('planOwnedHeroes'))}">
+      <h4 class="spec-path-section-title">${escapeHtml(sp('planOwnedHeroes'))}</h4>
+      <div class="spec-path-hero-chips">${chips}</div>
+      <p class="spec-path-hint">${escapeHtml(sp('planOwnedHeroesHint'))}</p>
+    </section>`;
+}
+
+function renderPathPlanner() {
   const plan = heroPlanForTroop(activeTroop);
-  const ranking = heroPlans ? getHeroPlanRanking(heroPlans.plans) : [];
+  const ranking = getHeroPlanRanking(ensureHeroPlans().plans);
   const chips = ranking
     .map(
       (entry, index) =>
@@ -479,22 +567,37 @@ function renderHeroPlanBar() {
 
   const nextId = plan ? heroPlanNextResearchId() : null;
   const nextReasons = plan && nextId ? plan.reasons[nextId] || [] : [];
+  // The catalog note explains the hero, not the step: it is the standing reason
+  // this hero pulls the path where it does, which the per-step reasons assume.
+  const heroNotes = (plan?.heroNotes || []).slice(0, 3);
 
   return `
     <div class="spec-hero-plan" data-spec-hero-plan>
       <div class="spec-hero-plan-head">
         <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
-        <span class="spec-hero-plan-roster">${escapeHtml(sp('planRosterCount', { count: heroPlanRoster.length }))}</span>
-        <label class="spec-plan-mode-control">
-          <span class="spec-sr-only">${escapeHtml(sp('planModeLabel'))}</span>
-          <select data-spec-plan-mode aria-label="${escapeHtml(sp('planModeLabel'))}">
-            ${modeOptions}
-          </select>
-        </label>
-        <button type="button" class="spec-auto-path" data-spec-auto-path>${escapeHtml(sp('planAutoPath'))}</button>
+        <span class="spec-hero-plan-roster">${escapeHtml(pathLabel(activePresetId(activeTroop)))} · ${escapeHtml(modeLabel(heroPlanMode))}</span>
+        <button type="button" class="spec-hero-plan-jump" data-spec-plan-go-heroes>${escapeHtml(sp('planGoToHeroes'))}</button>
       </div>
+      ${renderPathModes()}
       <div class="spec-plan-troop-chips" aria-label="${escapeHtml(sp('planPriority'))}">${chips}</div>
-      ${changed ? `<p class="spec-hero-plan-hint">${escapeHtml(sp('planRosterChanged'))}</p>` : ''}
+      ${renderPathPresets()}
+      ${renderPathHeroes()}
+      ${
+        heroNotes.length
+          ? `<section class="spec-path-notes" aria-label="${escapeHtml(sp('planHeroNotes'))}">
+              <h4 class="spec-path-section-title">${escapeHtml(sp('planHeroNotes'))}</h4>
+              <ul class="spec-path-note-list">
+                ${heroNotes
+                  .map(
+                    (entry) =>
+                      `<li>${heroAvatar(entry.hero, 'spec-path-note-avatar')}<span><strong>${escapeHtml(entry.hero)}</strong> ${escapeHtml(entry.note)}</span></li>`
+                  )
+                  .join('')}
+              </ul>
+              ${locale() === 'en' ? '' : `<small class="spec-path-canonical">${escapeHtml(sp('canonicalEnglishBadge'))}</small>`}
+            </section>`
+          : ''
+      }
       ${
         nextReasons.length
           ? `<div class="spec-hero-plan-why"><span class="spec-hero-plan-why-label">${escapeHtml(sp('planWhyNext'))}:</span><span>${nextReasons.map(escapeHtml).join(' · ')}</span></div>`
@@ -517,28 +620,25 @@ function renderBadge(researchId) {
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
   const image = getSpecializationResearchImage(researchId, activeTroop);
-  const plan = !activeRoute ? heroPlanForTroop(activeTroop) : null;
-  const routeStep = activeRoute
-    ? getRouteStep(activeRoute, researchId, activeTroop)
-    : plan
-      ? getHeroPlanStep(plan, researchId)
-      : 0;
-  const isRouteNext = activeRoute && routeNextResearchId() === researchId;
-  const isPlanNext = plan && heroPlanNextResearchId() === researchId;
-  const isNext = isRouteNext || isPlanNext;
+  const plan = heroPlanForTroop(activeTroop);
+  const routeStep = plan ? getHeroPlanStep(plan, researchId) : 0;
+  const totalSteps = getHeroPlanLength(plan);
+  const isNext = Boolean(plan) && heroPlanNextResearchId() === researchId;
   const planReasons = plan?.reasons?.[researchId] || [];
-  // A picked route carries the plan author's reason for the position; the hero
-  // plan carries its own. Whichever is driving the order explains itself.
-  const routeReason = routeStep && activeRoute ? getRouteRationale(researchId, activeTroop) : '';
   const planTip = planReasons.length
     ? `${escapeHtml(sp('planWhyNext'))}: ${planReasons.join(' · ')}`
-    : routeReason
-      ? escapeHtml(routeReason)
-      : '';
+    : '';
+  // Three states rather than one number: what is finished, what to fund next,
+  // and what is still ahead. The step chip carries its position in the whole
+  // path (12/32) so a badge is legible without counting the columns.
+  const stepState = progress.isComplete ? 'done' : isNext ? 'next' : 'todo';
+  const stepAria = sp('planStepAria', { step: routeStep, total: totalSteps });
   return `
-    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isNext ? 'true' : 'false'}"${planTip ? ` data-plan-reason="true" title="${planTip}"` : ''}>
-      ${routeStep ? `<span class="spec-route-step" aria-hidden="true">${routeStep}</span>` : ''}
-      ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
+    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-step-state="${stepState}" data-route-next="${isNext ? 'true' : 'false'}"${planTip ? ` data-plan-reason="true" title="${planTip}"` : ''}>
+      <span class="spec-badge-meta">
+        ${routeStep ? `<span class="spec-route-step" role="img" aria-label="${escapeHtml(stepAria)}">${progress.isComplete ? '✓' : routeStep}<small>/${totalSteps}</small></span>` : ''}
+        ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
+      </span>
       <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
         <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
@@ -1375,8 +1475,33 @@ function onClick(event) {
     render();
     return;
   }
-  if (event.target.closest('[data-spec-auto-path]')) {
-    recomputeHeroPlans();
+  const modeButton = event.target.closest('[data-spec-plan-mode]');
+  if (modeButton) {
+    const mode = modeButton.dataset.specPlanMode;
+    if (HERO_PLAN_MODES.includes(mode) && mode !== heroPlanMode) {
+      heroPlanMode = mode;
+      invalidatePlans();
+    }
+    return;
+  }
+  const presetButton = event.target.closest('[data-spec-path-preset]');
+  if (presetButton) {
+    const presetId = presetButton.dataset.specPathPreset;
+    if (presetId === F2P_PATH_ID || getPathPreset(presetId)?.troop === activeTroop) {
+      pathPresets = { ...pathPresets, [activeTroop]: presetId };
+      invalidatePlans();
+    }
+    return;
+  }
+  const heroButton = event.target.closest('[data-spec-path-hero]');
+  if (heroButton) {
+    const heroName = heroButton.dataset.specPathHero;
+    const nextOwned = !isHeroOwned(heroName);
+    // An override that agrees with the Heroes tab is noise, so drop it and let
+    // the tab keep owning the answer.
+    if (baseRoster().includes(heroName) === nextOwned) delete heroOverrides[heroName];
+    else heroOverrides = { ...heroOverrides, [heroName]: nextOwned };
+    invalidatePlans();
     return;
   }
   if (event.target.closest('[data-spec-plan-go-heroes]')) {
@@ -1534,26 +1659,6 @@ function onClick(event) {
 }
 
 function onChange(event) {
-  const planModeSelect = event.target.closest('[data-spec-plan-mode]');
-  if (planModeSelect) {
-    heroPlanMode = HERO_PLAN_MODES.includes(planModeSelect.value)
-      ? planModeSelect.value
-      : 'balanced';
-    safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
-    if (heroPlans) {
-      heroPlans = buildHeroPlans({ heroes: heroPlanRoster, mode: heroPlanMode });
-      saveHeroPlan();
-      render();
-    }
-    return;
-  }
-  const routeSelect = event.target.closest('[data-spec-route-select]');
-  if (routeSelect) {
-    activeRoute = SPECIALIZATION_ROUTE_IDS.includes(routeSelect.value) ? routeSelect.value : '';
-    safeSet(ROUTE_KEY, activeRoute);
-    render();
-    return;
-  }
   const medals = event.target.closest('[data-spec-medals]');
   if (medals && selectedResearchId) {
     const raw = medals.value.trim();
@@ -1617,13 +1722,8 @@ export function initSpecializationTool() {
   if (!root) return;
   state = loadSpecializationState();
   view = 'overview';
-  const storedRoute = safeGet(ROUTE_KEY, '');
-  activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
   easyMedalMode = safeGet(EASY_MEDALS_KEY, '') === '1';
-  heroPlanMode = HERO_PLAN_MODES.includes(safeGet(HERO_PLAN_MODE_KEY, 'balanced'))
-    ? safeGet(HERO_PLAN_MODE_KEY, 'balanced')
-    : 'balanced';
-  loadStoredHeroPlan();
+  loadPathState();
   selectedResearchId = SPECIALIZATION_COLUMNS[1].researches[0];
   if (!wired) {
     root.addEventListener('click', onClick);

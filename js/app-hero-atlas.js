@@ -387,6 +387,20 @@ function applyHeroAtlasUrlParams() {
   }
 }
 
+/**
+ * Show the Atlas in hero or skin mode. The Heroes & Combos Hub calls this when
+ * its Heroes / Skins sub-tabs are selected; the Atlas no longer carries its own
+ * toggle. Returns true when the mode actually changed.
+ */
+export function setHeroAtlasMode(mode) {
+  const next = mode === 'skins' ? 'skins' : 'heroes';
+  if (_heroesTabState.mode === next) return false;
+  _heroesTabState.mode = next;
+  updateHeroAtlasUrlParams();
+  renderHeroesTab();
+  return true;
+}
+
 function updateHeroAtlasUrlParams() {
   const params = new URLSearchParams(window.location.search);
   if (_heroesTabState.mode === 'skins') params.set('atlas', 'skins');
@@ -547,18 +561,6 @@ function wireHeroesTabEvents(container) {
   _heroesTabEventsWired = true;
 
   container.addEventListener('click', (e) => {
-    const modeBtn = e.target?.closest?.('[data-atlas-mode]');
-    if (modeBtn) {
-      const nextMode = modeBtn.dataset.atlasMode === 'skins' ? 'skins' : 'heroes';
-      if (_heroesTabState.mode !== nextMode) {
-        _heroesTabState.mode = nextMode;
-        updateHeroAtlasUrlParams();
-        renderHeroesTab();
-        container.querySelector(`[data-atlas-mode="${nextMode}"]`)?.focus({ preventScroll: true });
-      }
-      return;
-    }
-
     const seasonBtn = e.target.closest('[data-hero-season]');
     if (seasonBtn) {
       toggleHeroAtlasSeason(seasonBtn.dataset.heroSeason);
@@ -710,14 +712,6 @@ function wireHeroesTabEvents(container) {
   });
 }
 
-function renderAtlasModeToggle(mode) {
-  return `
-    <div class="atlas-mode-toggle" role="group" aria-label="${escapeHtml(heroUi('skinAtlasTitle'))}">
-      <button type="button" class="atlas-mode-btn ${mode === 'heroes' ? 'active' : ''}" data-atlas-mode="heroes" aria-pressed="${mode === 'heroes'}">${escapeHtml(heroUi('atlasModeHeroes'))}</button>
-      <button type="button" class="atlas-mode-btn ${mode === 'skins' ? 'active' : ''}" data-atlas-mode="skins" aria-pressed="${mode === 'skins'}">${escapeHtml(heroUi('atlasModeSkins'))}</button>
-    </div>`;
-}
-
 function renderSkinReqList(items) {
   if (!Array.isArray(items) || !items.length) return '';
   return `<ul class="skin-req-list">${items
@@ -848,7 +842,6 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
     container.innerHTML = `
       <div class="heroes-tab-inner heroes-tab-inner--skins">
         <div class="heroes-toolbar-sticky heroes-toolbar-sticky--modeonly">
-          ${renderAtlasModeToggle(mode)}
         </div>
         ${renderSkinAtlas()}
       </div>`;
@@ -1306,7 +1299,6 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
     container.innerHTML = `
       <div class="heroes-tab-inner${selected ? ' heroes-tab-inner--detail-open' : ''}">
         <div class="heroes-toolbar-sticky">
-          ${renderAtlasModeToggle(mode)}
           <div class="heroes-toolbar">
             <div class="hero-search-wrap heroes-search-field">
               <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>

@@ -1,6 +1,7 @@
 import {
   getAccountState,
   loadAccountProfile,
+  loadPublicAccountProfile,
   resendAccountVerification,
   saveAccountProfile,
   sendAccountPasswordReset,
@@ -244,7 +245,60 @@ function showOnboardingStep(account) {
   byId('accountGameName').value = account.displayName || '';
 }
 
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = text;
+  return node;
+}
+
+// Every field here belongs to *another* player, so none of it may reach the DOM
+// as markup. Built with textContent rather than an innerHTML template — inert by
+// construction, instead of relying on escaping each interpolation.
+function buildPublicProfile(profile) {
+  if (!profile) {
+    const surface = el('article', 'account-auth-surface');
+    surface.append(el('h1', '', 'Profile unavailable'));
+    surface.append(el('p', '', 'This profile is private or no longer exists.'));
+    const back = el('a', 'account-button', 'Back to tools');
+    back.href = 'index.html';
+    surface.append(back);
+    return [surface];
+  }
+
+  const topbar = el('header', 'account-topbar');
+  const brand = el('a', 'account-brand');
+  brand.href = 'index.html';
+  const brandCopy = el('span');
+  brandCopy.append(el('strong', '', 'VTS 1097'), el('small', '', 'Public player profile'));
+  brand.append(brandCopy);
+  const back = el('a', 'account-back', 'My account');
+  back.href = 'profile.html';
+  topbar.append(brand, back);
+
+  const surface = el('article', 'account-auth-surface');
+  surface.append(el('p', 'account-kicker', 'Public player profile'));
+  surface.append(el('h1', '', profile.gameName || 'Player'));
+
+  const meta = [
+    profile.alliance ? `Alliance: ${profile.alliance}` : '',
+    profile.countryCode || '',
+  ].filter(Boolean);
+  if (meta.length) surface.append(el('p', '', meta.join(' · ')));
+
+  surface.append(el('p', '', profile.bio || 'No public bio yet.'));
+  return [topbar, surface];
+}
+
+async function renderPublicProfile(uid) {
+  const profile = await loadPublicAccountProfile(uid);
+  document.querySelector('.account-shell').replaceChildren(...buildPublicProfile(profile));
+  document.body.dataset.accountReady = 'true';
+}
+
 async function render() {
+  const publicUid = new URL(globalThis.location.href).searchParams.get('u');
+  if (publicUid) return renderPublicProfile(publicUid);
   const account = await getAccountState();
   currentAccount = account;
   authPanel.hidden = true;

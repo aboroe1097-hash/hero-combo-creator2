@@ -1859,3 +1859,36 @@ body.shell-more-open #app .tool-nav-inner {
     animation: none !important;
   }
 }
+
+/* =============================================================
+   Hub pills in the tool rail
+   -------------------------------------------------------------
+   Heroes & Combos, Research & Towers and the VTS Eden Hub each stand for
+   several tools that used to carry their own pill. A leading marker
+   distinguishes a container from a leaf tool without adding a separator,
+   which would not survive the rail reordering itself at each breakpoint.
+   ============================================================= */
+#app #tabNavScroll [data-shell-hub] .tab-pill::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 3px;
+  height: 1.05em;
+  margin-inline-end: 0.45rem;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+/* On the active pill the marker would fight the gradient, and in the More
+   sheet the rail metaphor does not apply. */
+#app #tabNavScroll [data-shell-hub] .tab-pill-active::before,
+#app [data-shell-in-more] .tab-pill::before {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  /* The mobile rail is icon-only, so the marker has nothing to sit beside. */
+  #app #tabNavScroll [data-shell-hub] .tab-pill::before {
+    display: none;
+  }
+}

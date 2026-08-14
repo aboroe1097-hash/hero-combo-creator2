@@ -50,18 +50,28 @@ const ROUTE_RATIONALE = Object.freeze({
 });
 
 // Where a plan is defined by owning specific heroes, say so instead of leaving
-// the generic "paid heroes" wording: the archer charts are explicitly the
-// Boudica/Ramses build and the without-them build. Troops whose plan does not
-// hinge on a hero keep the generic label.
+// the generic "paid heroes" wording. Each troop names the paid heroes whose kits
+// the paid plan is built around; the full per-hero reasoning lives in
+// `specialization-hero-paths.js`, which is what the in-tab path planner reads.
 const ROUTE_LABELS = Object.freeze({
   archer: Object.freeze({
-    spender: 'Boudica / Ramses II — full archers',
-    f2p: 'No Boudica / Ramses II — archers in a mixed march',
+    spender: 'Boudica / Ramses II / Beowulf — full archers',
+    f2p: 'No paid archers — archers in a mixed march',
+  }),
+  cavalry: Object.freeze({
+    spender: "Jeanne d'Arc / Lancelot / Cyrus — full cavalry",
+    f2p: 'No paid cavalry — cavalry in a mixed march',
+  }),
+  footman: Object.freeze({
+    spender: 'King Arthur / Theodora / Alexander — full footmen',
+    f2p: 'No paid footmen — footmen in a mixed march',
   }),
 });
 
 const ROUTE_HEROES = Object.freeze({
-  archer: Object.freeze({ spender: Object.freeze(['Boudica', 'Ramses II']) }),
+  archer: Object.freeze({ spender: Object.freeze(['Boudica', 'Ramses II', 'Beowulf']) }),
+  cavalry: Object.freeze({ spender: Object.freeze(["Jeanne d'Arc", 'Lancelot', 'Cyrus']) }),
+  footman: Object.freeze({ spender: Object.freeze(['King Arthur', 'Theodora', 'Alexander']) }),
 });
 
 /** Hero-specific label for a plan, or '' when the generic one should be used. */

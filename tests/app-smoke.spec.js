@@ -9,7 +9,7 @@ const TEST_SENSITIVE_ADMIN_PIN_HASH =
 
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
-  await expect(page.locator('#tabGenerator')).toHaveCount(1);
+  await expect(page.locator('#tabHeroesCombos')).toHaveCount(1);
   await expect(page.locator('#generatorSection')).toBeVisible();
   await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
 }
@@ -67,11 +67,7 @@ async function expectTab(page, buttonId, sectionId, marker) {
     if (!tabName) {
       throw new Error(`Cannot derive a public tab route from ${sectionId}`);
     }
-    await page.evaluate((name) => {
-      const nextHash = `#${name}`;
-      if (window.location.hash === nextHash) window.vtsSwitchTab?.(name, true);
-      else window.location.hash = nextHash;
-    }, tabName);
+    await page.evaluate((name) => window.vtsSwitchTab?.(name, true), tabName);
   }
 
   await expect(page.locator(sectionId)).toBeVisible({ timeout: 15000 });
@@ -322,14 +318,14 @@ const headerViewports = [mobileHeaderViewports[0], mobileHeaderViewports[1], vis
 const visualSurfaces = [
   {
     name: 'combo-manual',
-    buttonId: '#tabManual',
+    buttonId: '[data-hub-subtab="manual"]',
     sectionId: '#manualSection',
     marker: '#availableHeroes',
     target: '#availableHeroes',
   },
   {
     name: 'combo-generator',
-    buttonId: '#tabGenerator',
+    buttonId: '[data-hub-subtab="generator"]',
     sectionId: '#generatorSection',
     marker: '#generatorHeroes',
     target: '#generatorResults',
@@ -347,14 +343,14 @@ const visualSurfaces = [
   },
   {
     name: 'hero-atlas',
-    buttonId: '#tabHeroes',
+    buttonId: '[data-hub-subtab="heroes"]',
     sectionId: '#heroesSection',
     marker: '#heroesSection .heroes-layout',
     target: '#heroesSection',
   },
   {
     name: 'research',
-    buttonId: '#tabResearch',
+    buttonId: '[data-hub-subtab="research"]',
     sectionId: '#researchSection',
     marker: '#techListContainer',
     target: '#techListContainer',
@@ -1649,7 +1645,7 @@ test.describe('app smoke tabs', () => {
 
   test('manual and generator tabs render', async ({ page }) => {
     await openApp(page);
-    await expectTab(page, '#tabManual', '#manualSection', '#availableHeroes');
+    await expectTab(page, '[data-hub-subtab="manual"]', '#manualSection', '#availableHeroes');
     const firstHero = page.locator('#availableHeroes .hero-card').first();
     const firstHeroName = await firstHero.getAttribute('data-hero-name');
     await firstHero.click();
@@ -1708,12 +1704,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.combo-slot').nth(1)).toContainText(
       /Drag|Arraste|Buraya|Перетащите|Arrastra|Glissez|Hierher|Seret|拖到|اسحب|여기로/
     );
-    await expectTab(page, '#tabGenerator', '#generatorSection', '#generatorHeroes');
+    await expectTab(page, '[data-hub-subtab="generator"]', '#generatorSection', '#generatorHeroes');
   });
 
   test('manual builder can show skin icons and data', async ({ page }) => {
     await openApp(page);
-    await expectTab(page, '#tabManual', '#manualSection', '#availableHeroes');
+    await expectTab(page, '[data-hub-subtab="manual"]', '#manualSection', '#availableHeroes');
     const toggle = page.locator('#manualSkinToggle');
     await expect(toggle).not.toBeChecked();
     await page.locator('#manualSkinToggleLabel').click();
@@ -1731,14 +1727,16 @@ test.describe('app smoke tabs', () => {
   test('main tab pills and theme toggle expose accessible state', async ({ page }) => {
     await openApp(page);
 
-    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#generatorSection')).toBeVisible();
 
-    await page.locator('#tabManual').click();
-    await expect(page.locator('#tabManual')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'false');
-    await expect(page.locator('#manualSection')).toHaveAttribute('aria-hidden', 'false');
-    await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'true');
+    await page.locator('[data-hub-subtab="manual"]').click();
+    await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-hub-subtab="manual"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute('aria-selected', 'false');
+    await expect(page.locator('#manualSection')).toBeVisible();
+    await expect(page.locator('#generatorSection')).toBeHidden();
 
     const themeToggle = page.locator('#themeToggle');
     await expect(themeToggle).toHaveAttribute('aria-pressed', 'false');
@@ -1751,42 +1749,32 @@ test.describe('app smoke tabs', () => {
 
     await page.locator('[data-footer-tab="manual"]').click();
     await expect(page.locator('#manualSection')).toBeVisible();
-    await expect(page.locator('#tabManual')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-hub-subtab="manual"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/#manual$/);
 
     await page.locator('[data-footer-tab="generator"]').click();
     await expect(page.locator('#generatorSection')).toBeVisible();
-    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/#generator$/);
   });
 
   test('hero atlas and research tabs render', async ({ page }) => {
     await openApp(page);
-    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
-    await expectTab(page, '#tabResearch', '#researchSection', '#techListContainer');
+    await expectTab(page, '[data-hub-subtab="heroes"]', '#heroesSection', '#heroesSection .heroes-layout');
+    await expectTab(page, '[data-hub-subtab="research"]', '#researchSection', '#techListContainer');
   });
 
-  test('Skin Atlas deep link preserves mode, focus, localization, and mobile layout', async ({
-    page,
-  }) => {
+  test('Skins sub-tab deep link preserves localization and mobile layout', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('vts_hero_lang', 'en'));
-    await openDirectTabHash(
-      page,
-      'heroes',
-      '#heroesSection',
-      '#heroesSection .skin-atlas',
-      '?atlas=skins'
-    );
+    await openDirectTabHash(page, 'skins', '#heroesSection', '#heroesSection .skin-atlas');
 
-    const modeGroup = page.getByRole('group', { name: 'Skin Atlas' });
-    const heroesMode = page.locator('[data-atlas-mode="heroes"]');
-    const skinsMode = page.locator('[data-atlas-mode="skins"]');
+    const heroesSubtab = page.locator('[data-hub-subtab="heroes"]');
+    const skinsSubtab = page.locator('[data-hub-subtab="skins"]');
     const cards = page.locator('.skin-tier-card');
 
-    await expect(modeGroup).toBeVisible();
-    await expect(modeGroup.locator('[aria-pressed="true"]')).toHaveCount(1);
-    await expect(heroesMode).toHaveAttribute('aria-pressed', 'false');
-    await expect(skinsMode).toHaveAttribute('aria-pressed', 'true');
+    await expect(skinsSubtab).toHaveAttribute('aria-selected', 'true');
     await expect(cards).toHaveCount(3);
     await expect(cards.locator('.skin-tier-name')).toHaveText([
       'Mythic',
@@ -1795,40 +1783,27 @@ test.describe('app smoke tabs', () => {
     ]);
     await expect(page.locator('#skinAtlasHeading')).toHaveText('Skin Atlas');
 
-    await heroesMode.focus();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('[data-atlas-mode="heroes"]')).toBeFocused();
-    await expect(page.locator('[data-atlas-mode="heroes"]')).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
+    await heroesSubtab.click();
+    await expect(heroesSubtab).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#heroesSection .heroes-layout')).toBeVisible();
     await expect(page.locator('.skin-atlas')).toHaveCount(0);
-    await expect
-      .poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get('atlas')))
-      .toBeNull();
 
-    await page.locator('[data-atlas-mode="skins"]').focus();
-    await page.keyboard.press('Space');
-    await expect(page.locator('[data-atlas-mode="skins"]')).toBeFocused();
-    await expect(page.locator('[data-atlas-mode="skins"]')).toHaveAttribute('aria-pressed', 'true');
+    await skinsSubtab.click();
+    await expect(skinsSubtab).toHaveAttribute('aria-selected', 'true');
     await expect(cards).toHaveCount(3);
-    await expect
-      .poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get('atlas')))
-      .toBe('skins');
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('#languageSelect').selectOption('ar');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page.locator('#skinAtlasHeading')).toHaveText('أطلس الأزياء');
-    await expect(cards.first().locator('.skin-tier-rank')).toHaveText('أساسي');
+    await expect(page.locator('#skinAtlasHeading')).toHaveText('\u0623\u0637\u0644\u0633 \u0627\u0644\u0623\u0632\u064a\u0627\u0621');
+    await expect(cards.first().locator('.skin-tier-rank')).toHaveText('\u0623\u0633\u0627\u0633\u064a');
     await expect(cards.first().locator('.skin-tier-summary')).toContainText(
-      'فئة المظاهر للمبتدئين'
+      '\u0641\u0626\u0629 \u0627\u0644\u0645\u0638\u0627\u0647\u0631 \u0644\u0644\u0645\u0628\u062a\u062f\u0626\u064a\u0646'
     );
     await expect(
-      cards.first().locator('.skin-req-name').filter({ hasText: 'ختم السيرة' }).first()
-    ).toHaveText('ختم السيرة');
+      cards.first().locator('.skin-req-name').filter({ hasText: '\u062e\u062a\u0645 \u0627\u0644\u0633\u064a\u0631\u0629' }).first()
+    ).toHaveText('\u062e\u062a\u0645 \u0627\u0644\u0633\u064a\u0631\u0629');
 
     const layout = await page.locator('#heroesSection').evaluate((section) => {
       const root = document.documentElement;
@@ -2009,6 +1984,13 @@ test.describe('app smoke tabs', () => {
   test('lazy-loaded eden map, loyalty, and admin tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabEdenMap', '#edenMapSection', '#edenMapRoot');
+    // Royal Bounty is the Eden Hub landing page.
+    await expect(page.locator('[data-eden-subtab="bounty"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
+      'Royal Bounty Alliance'
+    );
+    // The existing map planner remains available as a sub-tab.
+    await page.locator('[data-eden-subtab="map"]').click();
     await expect(page.locator('#edenMapConstruction')).toHaveClass(/hidden/);
     await expect(page.locator('[data-eden-layer="strategyFloor"]')).toHaveClass(/active/);
     await expect(page.locator('[data-eden-layer="reference"]')).not.toHaveClass(/active/);
@@ -2116,7 +2098,7 @@ test.describe('app smoke tabs', () => {
     await page.locator('#languageSelect').selectOption('ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
-    await expect(page.locator('#tabGenerator')).toContainText('مولد');
+    await expect(page.locator('[data-hub-subtab="generator"]')).toContainText('مولد');
     await expect(page.locator('#generatorHeroes .generator-card').first()).toBeVisible();
 
     const layout = await page.locator('#generatorSection').evaluate((section) => {
@@ -2250,7 +2232,7 @@ test.describe('app smoke tabs', () => {
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
 
     await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
-    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .hero-detail-panel');
+    await expectTab(page, '[data-hub-subtab="heroes"]', '#heroesSection', '#heroesSection .hero-detail-panel');
     await page.locator('[data-detail-section="skins"]').click();
     await expect(page.locator('#detail-section-skins')).toContainText(
       'Upgrades SKILL 2: Wheel of Fortune -> Eternity'
@@ -2333,7 +2315,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#genSelectedCount')).toContainText('3 selected');
 
     await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
-    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .hero-detail-panel');
+    await expectTab(page, '[data-hub-subtab="heroes"]', '#heroesSection', '#heroesSection .hero-detail-panel');
     await expect(page.locator('[data-detail-section="counters"]')).toBeVisible();
     await page.locator('[data-detail-section="counters"]').click();
     await expect(page.locator('#detail-section-counters')).toContainText(

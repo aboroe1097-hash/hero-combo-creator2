@@ -6,18 +6,35 @@ const navigationPlacements = new Map([
     {
       tabStrife: 'more',
       tabEdenMap: 'more',
-      tabResearch: 'primary',
-      tabYouTube: 'primary',
+      tabHeroesCombos: 'primary',
+      tabResearchTowers: 'primary',
       tabAllStarBoh: 'primary',
       tabVtsScore: 'primary',
-      tabGenerator: 'more',
+      tabYouTube: 'more',
       tabArcade: 'more',
     },
   ],
-  [641, { tabStrife: 'more', tabEdenMap: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
-  [1439, { tabStrife: 'more', tabEdenMap: 'more', tabYouTube: 'more', tabVtsScore: 'primary' }],
-  [1440, { tabStrife: 'primary', tabEdenMap: 'more', tabYouTube: 'primary', tabVtsScore: 'primary' }],
-  [1760, { tabStrife: 'primary', tabEdenMap: 'more', tabYouTube: 'primary', tabVtsScore: 'primary' }],
+  // Eden Map is the third hub, so it is primary from the plain desktop rail up.
+  [641, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [1439, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [
+    1440,
+    {
+      tabStrife: 'primary',
+      tabEdenMap: 'primary',
+      tabYouTube: 'primary',
+      tabVtsScore: 'primary',
+    },
+  ],
+  [
+    1760,
+    {
+      tabStrife: 'primary',
+      tabEdenMap: 'primary',
+      tabYouTube: 'primary',
+      tabVtsScore: 'primary',
+    },
+  ],
 ]);
 
 async function openHome(page, path = '/#generator') {
@@ -67,7 +84,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore']);
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabAllStarBoh', 'tabVtsScore']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });
@@ -182,8 +199,10 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   await page.evaluate(() => {
     window.location.hash = '#research';
   });
+  // #research still deep-links to Research, now as a hub sub-tab, so the skip
+  // link targets the hub panel that contains it.
   await expect(page.locator('#researchSection')).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#researchSection');
+  await expect(skipLink).toHaveAttribute('href', '#researchTowersSection');
 
   await page.goBack();
   await expect(page.locator('#generatorSection')).toBeVisible();
@@ -197,7 +216,7 @@ test('rendered Home tab scroll paths use auto under reduced motion', async ({ pa
 
   await page.evaluate(() => {
     const scrollContainer = document.getElementById('tabNavScroll');
-    const researchTab = document.getElementById('tabResearch');
+    const researchTab = document.getElementById('tabResearchTowers');
     if (!scrollContainer || !researchTab) throw new Error('Home navigation did not initialize');
 
     window.__p1HomeScrollCalls = { page: [], tabs: [] };

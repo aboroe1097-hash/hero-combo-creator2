@@ -2,15 +2,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  HERO_PLAN_DEFAULT_MODE,
   HERO_PLAN_MODES,
   HERO_PLAN_TROOPS,
   MECHANIC_IDS,
   analyzeHeroMechanics,
   buildHeroPlans,
+  getHeroPlanLength,
   getHeroPlanRanking,
   getHeroPlanStep,
   getNextHeroPlanResearch,
 } from '../../js/specialization-hero-plans.js';
+import { SPECIALIZATION_RESEARCH } from '../../js/specialization-towers-v2-data.js';
 
 function planFor(result, troop) {
   return result.plans[troop];
@@ -25,10 +28,55 @@ function reasonsFor(result, troop, researchId) {
   return planFor(result, troop).reasons[researchId] || [];
 }
 
+const SIEGE_CONTEXTS = new Set([
+  'siege',
+  'siegeAttacks',
+  'siegeDefense',
+  'reinforcingAllies',
+  'initiatingRally',
+]);
+
+/** How much of a research's bonus is siege-context, 0..1. */
+function siegeShare(researchId) {
+  const research = SPECIALIZATION_RESEARCH[researchId];
+  let siege = 0;
+  let total = 0;
+  for (const node of research?.nodes || []) {
+    const value = Math.abs(Number(node.bonusValue) || 0);
+    total += value;
+    if (SIEGE_CONTEXTS.has(node.context || 'general')) siege += value;
+  }
+  return total ? siege / total : 0;
+}
+
+/** Siege-weighted mean position: lower means siege content is funded sooner. */
+function siegeWeightedPosition(plan) {
+  return plan.researchOrder.reduce(
+    (total, researchId, index) => total + siegeShare(researchId) * (index + 1),
+    0
+  );
+}
+
+function columnReasons(result, troop, columnId) {
+  return columnSlice(planFor(result, troop), columnId)
+    .flatMap((researchId) => reasonsFor(result, troop, researchId))
+    .join(' | ');
+}
+
+test('there are exactly two paths, and siege is the default', () => {
+  assert.deepEqual([...HERO_PLAN_MODES], ['siege', 'nonSiege']);
+  assert.equal(HERO_PLAN_DEFAULT_MODE, 'siege');
+  for (const mode of HERO_PLAN_MODES) {
+    assert.equal(buildHeroPlans({ heroes: ['Boudica'], mode }).mode, mode);
+  }
+  assert.equal(buildHeroPlans({ heroes: ['Boudica'], mode: 'teleport' }).mode, 'siege');
+});
+
 test('analyzeHeroMechanics tags the signature hero mechanics', () => {
   const ramses = analyzeHeroMechanics('Ramses II');
   assert.ok(ramses.mechanics.includes(MECHANIC_IDS.FATAL_BLOW), 'Ramses II has Fatal Blow');
   assert.equal(ramses.type, 'Archers');
+  assert.equal(ramses.paid, true);
 
   const boudica = analyzeHeroMechanics('Boudica');
   assert.ok(
@@ -52,24 +100,23 @@ test('analyzeHeroMechanics falls back gracefully for heroes without skill text',
 });
 
 test('Ramses II + Boudica ranks the Archer tower first', () => {
-  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'balanced' });
+  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'siege' });
   const ranking = getHeroPlanRanking(result.plans);
   assert.equal(ranking[0].troop, 'archer');
   assert.ok(ranking[0].towerScore > ranking[1].towerScore, 'archer tower clearly leads');
 });
 
 test('Ramses II + Boudica cites Column II Sniper Archer for Fatal Blow and Destructive Strike', () => {
-  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'balanced' });
-  const c2 = columnSlice(planFor(result, 'archer'), 2);
-  assert.equal(c2[0], 'training2', 'archer damage milestones lead Column II');
-  const training2Reasons = reasonsFor(result, 'archer', 'training2').join(' | ');
-  assert.ok(training2Reasons.includes('Sniper Archer'), 'cites Sniper Archer');
-  assert.ok(training2Reasons.includes('Fatal Blow'), 'cites Fatal Blow');
-  assert.ok(training2Reasons.includes('Destructive Strike'), 'cites Destructive Strike');
+  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'nonSiege' });
+  assert.equal(columnSlice(planFor(result, 'archer'), 2)[0], 'training2');
+  const reasons = columnReasons(result, 'archer', 2);
+  assert.ok(reasons.includes('Sniper Archer'), 'cites Sniper Archer');
+  assert.ok(reasons.includes('Fatal Blow'), 'cites Fatal Blow');
+  assert.ok(reasons.includes('Destructive Strike'), 'cites Destructive Strike');
 });
 
 test('Boudica combat speed is cited on the Training I speed milestone', () => {
-  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'balanced' });
+  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'siege' });
   const training1Reasons = reasonsFor(result, 'archer', 'training1').join(' | ');
   assert.ok(training1Reasons.includes('Combat Speed'), 'cites Combat Speed');
   assert.ok(
@@ -79,49 +126,50 @@ test('Boudica combat speed is cited on the Training I speed milestone', () => {
 });
 
 test('Theodora ranks Footmen first and cites Impenetrable Formation healing', () => {
-  const result = buildHeroPlans({ heroes: ['Theodora'], mode: 'balanced' });
+  const result = buildHeroPlans({ heroes: ['Theodora'], mode: 'siege' });
   assert.equal(getHeroPlanRanking(result.plans)[0].troop, 'footman');
-  const c7Reasons = columnSlice(planFor(result, 'footman'), 7)
-    .flatMap((rid) => reasonsFor(result, 'footman', rid))
-    .join(' | ');
-  assert.ok(c7Reasons.includes('Impenetrable Formation'), 'cites Column VII healing Legion Skill');
+  assert.ok(
+    columnReasons(result, 'footman', 7).includes('Impenetrable Formation'),
+    'cites Column VII healing Legion Skill'
+  );
 });
 
 test('Lancelot ranks Cavalry first and cites Bash From the Back', () => {
-  const result = buildHeroPlans({ heroes: ['Lancelot'], mode: 'balanced' });
+  const result = buildHeroPlans({ heroes: ['Lancelot'], mode: 'siege' });
   assert.equal(getHeroPlanRanking(result.plans)[0].troop, 'cavalry');
-  const c7Reasons = columnSlice(planFor(result, 'cavalry'), 7)
-    .flatMap((rid) => reasonsFor(result, 'cavalry', rid))
-    .join(' | ');
-  assert.ok(c7Reasons.includes('Bash From the Back'), 'cites Column VII cavalry Legion Skill');
+  assert.ok(
+    columnReasons(result, 'cavalry', 7).includes('Bash From the Back'),
+    'cites Column VII cavalry Legion Skill'
+  );
 });
 
 test('Rozen Blade cites Column VIII Headstarter through Combat Speed', () => {
-  const result = buildHeroPlans({ heroes: ['Rozen Blade'], mode: 'balanced' });
+  const result = buildHeroPlans({ heroes: ['Rozen Blade'], mode: 'nonSiege' });
   assert.equal(getHeroPlanRanking(result.plans)[0].troop, 'cavalry');
-  const c8Reasons = columnSlice(planFor(result, 'cavalry'), 8)
-    .flatMap((rid) => reasonsFor(result, 'cavalry', rid))
-    .join(' | ');
-  assert.ok(c8Reasons.includes('Headstarter'), 'cites Column VIII cavalry Legion Skill');
+  assert.ok(
+    columnReasons(result, 'cavalry', 8).includes('Headstarter'),
+    'cites Column VIII cavalry Legion Skill'
+  );
 });
 
-test('mixed roster builds all three plans and keeps archers on top', () => {
+test('mixed roster builds all three plans and keeps the deepest tower on top', () => {
   const result = buildHeroPlans({
-    heroes: ['Ramses II', 'Theodora', 'Octavius'],
-    mode: 'balanced',
+    heroes: ['Ramses II', 'Boudica', 'Beowulf', 'Theodora'],
+    mode: 'siege',
   });
-  assert.equal(result.heroCount, 3);
+  assert.equal(result.heroCount, 4);
   for (const troop of HERO_PLAN_TROOPS) {
     const plan = planFor(result, troop);
     assert.equal(plan.researchOrder.length, 32, `${troop} plan covers all 32 researches`);
     assert.equal(new Set(plan.researchOrder).size, 32, `${troop} plan has no duplicates`);
+    assert.equal(getHeroPlanLength(plan), 32);
   }
   assert.equal(getHeroPlanRanking(result.plans)[0].troop, 'archer');
 });
 
 test('All-type heroes boost every tower over the empty-roster baseline', () => {
-  const empty = buildHeroPlans({ heroes: [], mode: 'balanced' });
-  const cleo = buildHeroPlans({ heroes: ['Cleopatra VII'], mode: 'balanced' });
+  const empty = buildHeroPlans({ heroes: [], mode: 'siege' });
+  const cleo = buildHeroPlans({ heroes: ['Cleopatra VII'], mode: 'siege' });
   for (const troop of HERO_PLAN_TROOPS) {
     assert.ok(
       planFor(cleo, troop).towerScore > planFor(empty, troop).towerScore,
@@ -130,41 +178,94 @@ test('All-type heroes boost every tower over the empty-roster baseline', () => {
   }
 });
 
-test('empty roster still produces a deterministic generic plan without reasons', () => {
-  const result = buildHeroPlans({ heroes: [], mode: 'balanced' });
+test('empty roster still produces a deterministic free-to-play plan without reasons', () => {
+  const result = buildHeroPlans({ heroes: [], mode: 'siege' });
   assert.equal(result.heroCount, 0);
   for (const troop of HERO_PLAN_TROOPS) {
-    assert.equal(planFor(result, troop).researchOrder.length, 32);
-    assert.equal(Object.keys(planFor(result, troop).reasons).length, 0);
+    const plan = planFor(result, troop);
+    assert.equal(plan.researchOrder.length, 32);
+    assert.equal(Object.keys(plan.reasons).length, 0);
+    assert.equal(plan.presetId, 'f2p');
+    assert.deepEqual([...plan.pathHeroes], []);
   }
 });
 
 test('unknown and duplicate hero names are filtered from the roster', () => {
   const result = buildHeroPlans({
     heroes: ['Ramses II', 'Ramses II', 'Not A Hero', ''],
-    mode: 'balanced',
+    mode: 'siege',
   });
   assert.deepEqual([...result.roster], ['Ramses II']);
 });
 
-test('siege mode reweights contexts: Column II siege research rises', () => {
-  const balanced = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'balanced' });
-  const siege = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'siege' });
-  assert.equal(columnSlice(planFor(balanced, 'archer'), 2)[0], 'training2');
-  assert.equal(columnSlice(planFor(siege, 'archer'), 2)[0], 'siege1');
+test('the two paths reorder every tower differently', () => {
+  const heroes = ['Ramses II', 'Boudica', 'Lancelot', 'King Arthur'];
+  const siege = buildHeroPlans({ heroes, mode: 'siege' });
+  const field = buildHeroPlans({ heroes, mode: 'nonSiege' });
+  for (const troop of HERO_PLAN_TROOPS) {
+    assert.notDeepEqual(
+      [...planFor(siege, troop).researchOrder],
+      [...planFor(field, troop).researchOrder],
+      `${troop} siege and field paths differ`
+    );
+  }
+  // The siege path funds siege-context researches earlier. Measured across the
+  // whole order rather than one pair, so it states the property instead of
+  // pinning two ids that any reweighting would move.
+  for (const troop of HERO_PLAN_TROOPS) {
+    assert.ok(
+      siegeWeightedPosition(planFor(siege, troop)) <
+        siegeWeightedPosition(planFor(field, troop)),
+      `${troop} funds siege content earlier on the siege path`
+    );
+  }
 });
 
-test('mode and hero plans honor HERO_PLAN_MODES and reject invalid modes', () => {
+test('unconditional "general" researches are not penalized on either path', () => {
+  // Training I is entirely general-context. If a path treated general as
+  // off-path it would sink in both, which is what the ALWAYS_CONTEXTS list
+  // prevents — so it never falls to the back of Column I on either path.
   for (const mode of HERO_PLAN_MODES) {
-    const result = buildHeroPlans({ heroes: ['Boudica'], mode });
-    assert.equal(result.mode, mode);
+    for (const troop of HERO_PLAN_TROOPS) {
+      const plan = planFor(buildHeroPlans({ heroes: [], mode }), troop);
+      assert.ok(
+        columnSlice(plan, 1).indexOf('training1') <= 2,
+        `training1 stays early for ${troop} on ${mode}`
+      );
+    }
   }
-  const invalid = buildHeroPlans({ heroes: ['Boudica'], mode: 'teleport' });
-  assert.equal(invalid.mode, 'balanced');
+});
+
+test('a preset override is honoured and reshapes the plan', () => {
+  const heroes = ['Leonidas', 'Ramses II'];
+  const auto = buildHeroPlans({ heroes, mode: 'siege' });
+  const forced = buildHeroPlans({
+    heroes,
+    mode: 'siege',
+    presets: { archer: 'archer-resilient' },
+  });
+  assert.equal(planFor(forced, 'archer').presetId, 'archer-resilient');
+  assert.notDeepEqual(
+    [...planFor(auto, 'archer').researchOrder],
+    [...planFor(forced, 'archer').researchOrder]
+  );
+  // A preset belonging to another troop is ignored rather than applied.
+  const wrong = buildHeroPlans({ heroes, mode: 'siege', presets: { archer: 'cavalry-prep-skip' } });
+  assert.equal(planFor(wrong, 'archer').presetId, planFor(auto, 'archer').presetId);
+});
+
+test('Alexander pulls the burning-damage milestones forward for Footmen', () => {
+  const result = buildHeroPlans({ heroes: ['Alexander'], mode: 'nonSiege' });
+  const plan = planFor(result, 'footman');
+  assert.equal(plan.presetId, 'footman-bleed-shock');
+  // Encounter Battle I ends on "-5% damage taken when subject to burning
+  // status", and his own mitigation skill takes +300% burning damage.
+  assert.equal(columnSlice(plan, 1)[0], 'encounter1');
+  assert.ok(plan.heroNotes.some((entry) => entry.hero === 'Alexander' && entry.note.length > 40));
 });
 
 test('plan step helpers walk the ordered plan and find the next research', () => {
-  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'balanced' });
+  const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'siege' });
   const plan = planFor(result, 'archer');
   assert.equal(getHeroPlanStep(plan, plan.researchOrder[0]), 1);
   assert.equal(getHeroPlanStep(plan, plan.researchOrder[31]), 32);
@@ -175,4 +276,5 @@ test('plan step helpers walk the ordered plan and find the next research', () =>
     getNextHeroPlanResearch(null, () => false),
     null
   );
+  assert.equal(getHeroPlanLength(null), 0);
 });

@@ -38,6 +38,32 @@ function requireLinkedUser() {
   return user;
 }
 
+/**
+ * Account state without creating a session.
+ *
+ * `getAccountState()` calls `ensureAnonymousAuth()`, which is right on
+ * profile.html — a guest there is about to be upgraded to a real account. It is
+ * wrong for anything that merely *displays* whether you are signed in: it fires
+ * an identitytoolkit signUp on every page load, which the strict `connect-src
+ * 'self'` CSP on battle-simulator.html and specialization-towers.html blocks
+ * outright. Read-only callers use this instead.
+ */
+export async function peekAccountState() {
+  try {
+    await requireFirebase();
+  } catch {
+    return { user: null, isGuest: true, email: '', displayName: '', emailVerified: false };
+  }
+  const user = getCurrentUser();
+  return {
+    user,
+    isGuest: !user || user.isAnonymous,
+    email: user?.isAnonymous ? '' : user?.email || '',
+    displayName: user?.displayName || '',
+    emailVerified: Boolean(user?.emailVerified),
+  };
+}
+
 export async function getAccountState() {
   await requireFirebase();
   const user = getCurrentUser() || (await ensureAnonymousAuth());
@@ -148,6 +174,24 @@ export async function loadAccountProfile() {
     state: cleanText(stored.state),
     referralSource: cleanText(stored.referralSource),
     comments: cleanText(stored.comments),
+  };
+}
+
+export async function loadPublicAccountProfile(uid) {
+  const safeUid = String(uid || '').trim();
+  if (!/^[A-Za-z0-9_-]{8,128}$/u.test(safeUid)) return null;
+  await requireFirebase();
+  await ensureAnonymousAuth();
+  const { doc, getDoc } = await importFirestore();
+  const snapshot = await getDoc(doc(getDb(), 'public_profiles', safeUid));
+  if (!snapshot.exists()) return null;
+  const value = snapshot.data() || {};
+  return {
+    displayName: cleanText(value.displayName || value.gameName).slice(0, 50),
+    gameName: cleanText(value.gameName || value.displayName).slice(0, 50),
+    alliance: cleanText(value.alliance).slice(0, 50),
+    countryCode: cleanText(value.countryCode).slice(0, 2),
+    bio: cleanText(value.bio).slice(0, 280),
   };
 }
 

@@ -2175,11 +2175,45 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+
+    function validFeatureSyncId(featureId) {
+      return featureId in [
+        'research', 'specialization-towers', 'specialization-contributions',
+        'battle-sim-setups', 'battle-sim-profile-override', 'material-planner',
+        'generator-selection', 'generator-skins'
+      ];
+    }
+
+    function validFeatureSync() {
+      return request.resource.data.keys().hasOnly([
+        'schemaVersion', 'payload', 'savedAt', 'savedAtMs', 'deviceId'
+      ])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.schemaVersion >= 1
+        && request.resource.data.schemaVersion <= 3
+        && request.resource.data.savedAt is timestamp
+        && request.resource.data.savedAtMs is int
+        && request.resource.data.savedAtMs >= 0
+        && request.resource.data.deviceId is string
+        && request.resource.data.deviceId.size() >= 12
+        && request.resource.data.deviceId.size() <= 40
+        && request.resource.data.payload is map
+        && request.resource.data.payload.keys().hasOnly(['json'])
+        && request.resource.data.payload.json is string
+        && request.resource.data.payload.json.size() <= 720000;
+    }
+
     match /users/{uid} {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid) && validUserProfileCreate();
       allow update: if isOwner(uid) && validUserProfileUpdate();
       allow delete: if false;
+
+      match /featureSync/{featureId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validFeatureSyncId(featureId) && validFeatureSync();
+        allow delete: if false;
+      }
 
       match /bestCombos/{comboId} {
         allow read: if isOwner(uid);

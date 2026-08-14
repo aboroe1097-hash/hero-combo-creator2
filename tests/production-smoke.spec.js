@@ -192,8 +192,11 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   await expect(page.locator('.cmdk-overlay')).toBeHidden();
 
   const lazySurfaces = [
-    ['#tabHeroes', '#heroesSection .heroes-layout'],
-    ['#tabResearch', '#techListContainer .research-tech-card'],
+    ['#tabHeroesCombos', '#generatorHeroes'],
+    // The Research & Towers Hub opens on Towers Specialization, so its own
+    // marker is the tower planner; Research is reached from the sub-tab and is
+    // covered by the local app smoke suite.
+    ['#tabResearchTowers', '#specializationToolRoot .spec-tool'],
     ['#tabMaterials', '#materialCalculatorRoot .dm-plan-panel'],
     ['#tabStrife', '#strifeToolRoot .strife-monster-card'],
     ['#tabEdenMap', '#edenMapRoot'],

@@ -782,6 +782,9 @@ const it = {
   tabGenerator: 'Generatore di combo',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlante eroi',
+  tabHeroesCombos: 'Eroi e combo',
+  tabHeroesOnly: 'Eroi',
+  tabSkinsOnly: 'Skin',
   tabEdenMap: 'VTS Eden Hub',
   tabEdenMapBadge: 'Prossimamente',
   tabLoyalty: 'Lealtà Eden',
@@ -1863,6 +1866,8 @@ const it = {
   strifeRankOneRewardNote:
     'Ricompensa esclusiva assegnata al giocatore al rango 1 nella classifica dell’evento.',
   tabSpecialization: 'Specializzazione',
+  tabResearchTowers: 'Ricerca e torri',
+  tabTowersSpecialization: 'Specializzazione torri',
   adminEdenVotesClearDeadline: 'Cancella scadenza',
   adminEdenVotesDeadline: 'Scadenza della votazione',
   adminEdenVotesDeadlineExpired: 'Chiusa il {date}.',

@@ -22,14 +22,11 @@
   const sourceIds = [
     'tabArcade',
     'tabBattleSimulator',
-    'tabManual',
-    'tabGenerator',
-    'tabHeroes',
-    'tabResearch',
+    'tabHeroesCombos',
+    'tabResearchTowers',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
-    'tabSpecialization',
     'tabLoyalty',
     'tabEdenX1',
     'tabAllStarBoh',
@@ -38,32 +35,34 @@
     'tabYouTube',
     'tabOcrDashboard',
   ];
-  const desktopPrimaryIds = [
-    'tabArcade',
-    'tabManual',
-    'tabGenerator',
-    'tabHeroes',
-    'tabResearch',
-    'tabVtsScore',
-    'tabMaterials',
-  ];
+  // Rail order. These arrays are the source of truth for both *which* tools are
+  // primary and the order they sit in — layoutNavigation() appends in this
+  // sequence. The three hubs lead, because each one now stands for several tools
+  // that used to have their own pill; standalone tools follow.
+  const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
+  const desktopPrimaryIds = [...hubIds, 'tabVtsScore', 'tabMaterials'];
   const wideDesktopPrimaryIds = [
     ...desktopPrimaryIds,
+    'tabAllStarBoh',
     'tabStrife',
-    'tabSpecialization',
     'tabYouTube',
   ];
-  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabVtsScore'];
+  // Four slots, and the first must be the tab the app actually opens on —
+  // Heroes & Combos was missing here entirely, so the landing tool had no rail
+  // entry on phones.
+  const mobilePrimaryIds = [
+    'tabHeroesCombos',
+    'tabResearchTowers',
+    'tabAllStarBoh',
+    'tabVtsScore',
+  ];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
-    ['tabManual', 'manual'],
-    ['tabGenerator', 'generator'],
-    ['tabHeroes', 'heroes'],
-    ['tabResearch', 'research'],
+    ['tabHeroesCombos', 'heroesCombos'],
+    ['tabResearchTowers', 'researchTowers'],
     ['tabMaterials', 'materials'],
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
-    ['tabSpecialization', 'specialization'],
     ['tabAllStarBoh', 'allStarBoh'],
     ['tabYouTube', 'youtube'],
   ]);
@@ -74,6 +73,21 @@
     ['bounty', 'bounty'],
     ['royalbounty', 'bounty'],
     ['edenx1', 'previous'],
+  ]);
+  // The same arrangement for the Research & Towers Hub: #research and
+  // #specialization were top-level tabs and stay valid deep links.
+  const legacyResearchTowersHashes = new Map([
+    ['research', 'research'],
+    ['specialization', 'towers'],
+    ['towers', 'towers'],
+  ]);
+  // Manual Builder, Combo Generator and the Hero Atlas moved into the Heroes &
+  // Combos Hub; all four hashes stay valid deep links.
+  const legacyHeroesCombosHashes = new Map([
+    ['manual', 'manual'],
+    ['generator', 'generator'],
+    ['heroes', 'heroes'],
+    ['skins', 'skins'],
   ]);
   const moreHistoryKey = 'vtsShellMoreOpen';
 
@@ -168,6 +182,23 @@
       }
       return 'edenMap';
     }
+    if (legacyResearchTowersHashes.has(normalizedHash)) {
+      try {
+        document.body.dataset.researchTowersSubtab =
+          legacyResearchTowersHashes.get(normalizedHash);
+      } catch {
+        /* dataset unavailable */
+      }
+      return 'researchTowers';
+    }
+    if (legacyHeroesCombosHashes.has(normalizedHash)) {
+      try {
+        document.body.dataset.heroesCombosSubtab = legacyHeroesCombosHashes.get(normalizedHash);
+      } catch {
+        /* dataset unavailable */
+      }
+      return 'heroesCombos';
+    }
     return (
       Array.from(internalHashes.values()).find(
         (tabName) => tabName.toLowerCase() === normalizedHash
@@ -186,7 +217,7 @@
     const activeSource = sourceIds
       .map(sourceFor)
       .find((source) => source?.classList.contains('tab-pill-active'));
-    return internalHashes.get(activeSource?.id) || 'generator';
+    return internalHashes.get(activeSource?.id) || 'heroesCombos';
   }
 
   function syncSkipDestination() {

@@ -72,6 +72,12 @@ export default defineConfig({
           }
           // Large data files: split into dedicated chunks so feature chunks stay lean
           if (normalizedId.includes('/js/tech-db.js')) return 'tech-db';
+          // ~10k lines of tower data, statically imported by the specialization
+          // tab, the standalone planner and nine battle-simulator modules. With
+          // no entry here it is inlined into every one of those chunks.
+          if (normalizedId.includes('/js/specialization-towers-v2-data.js')) {
+            return 'specialization-towers-data';
+          }
           if (normalizedId.includes('/js/heroes-info.js')) return 'heroes-info';
           if (normalizedPath.endsWith('/js/eden-map.js')) return 'eden-map';
           if (normalizedPath.endsWith('/js/ocr-dashboard.js')) return 'ocr-dashboard';
