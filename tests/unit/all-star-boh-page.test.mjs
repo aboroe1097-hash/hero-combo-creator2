@@ -155,7 +155,7 @@ test('All-Star BoH is an internal lazy tab wired through the shell and command p
   assert.match(appSource, /\{ btn: tabAllStarBohBtn, name: 'allStarBoh' \}/);
 
   const lazyBlock = appSource.match(
-    /if \(tabName === 'allStarBoh'[\s\S]*?\n\s*}\n\s*if \(tabName === 'loyalty'\)/
+    /if \(tabName === 'allStarBoh'[\s\S]*?\n\s*}\n\s*\/\/ Legacy: Eden Loyalty/
   )?.[0];
   assert.ok(lazyBlock, 'Missing the All-Star BoH lazy bootstrap block');
   const templateIndex = lazyBlock.indexOf("loadTabTemplate('allStarBoh')");

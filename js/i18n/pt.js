@@ -445,6 +445,9 @@ const pt = {
   tabGenerator: 'Gerador de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Heróis',
+  tabHeroesCombos: 'Heróis e combos',
+  tabHeroesOnly: 'Heróis',
+  tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
   tabEdenMapBadge: 'Soon',
   tabLoyalty: 'Calculadora de Lealdade',
@@ -1711,6 +1714,8 @@ const pt = {
   strifeVerifiedLineup: 'Formação de monstro verificada',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Especialização',
+  tabResearchTowers: 'Investigação e torres',
+  tabTowersSpecialization: 'Especialização de torres',
 
   adminEdenVotesClearDeadline: 'Limpar prazo',
   adminEdenVotesDeadline: 'Prazo de votação',
@@ -2670,6 +2675,9 @@ const pt = {
     dmEnhanceReached: 'Objetivo já alcançado',
     dmEnhanceCredit: 'Agradecemos a Roha e Redbull pelos dados usados na ferramenta Dragon Master.',
   },
+  tabEdenBounty: 'Royal Bounty',
+  bohAccessErrorSecureServiceUnreachable:
+    'O serviço seguro do Google necessário para a inscrição não pode ser alcançado a partir desta rede ou região. Tente usar uma VPN ou outra rede e pressione Tentar novamente. Seu PIN não foi rejeitado.',
 };
 
 export default pt;

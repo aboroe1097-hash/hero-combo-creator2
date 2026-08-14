@@ -12,6 +12,7 @@ import {
   BOUNTY_COMMISSION_ATTRIBUTES,
   BOUNTY_COMMISSION_LEVELS,
   BOUNTY_DAILY_RULES,
+  BOUNTY_FIGURES,
   BOUNTY_GUIDE_CREDITS,
   BOUNTY_GUIDE_ROSTER_DATE,
   BOUNTY_GUIDE_SOURCE_DATE,
@@ -52,8 +53,10 @@ function heroMeta(appName) {
 }
 
 function unlockLabel(hero) {
-  if (hero.unlock === 'day1') return 'Lobby opens day 1';
-  return 'Unlocks later in the season';
+  if (hero.unlock === 'day1') return 'Opens day 1';
+  // The roster capture shows a countdown per hero, e.g. "5d". It is relative to
+  // the season start, so it is a guide, not a date.
+  return hero.unlockLabel ? `Opens ~${hero.unlockLabel} in` : 'Unlocks later in the season';
 }
 
 function renderStatCards() {
@@ -103,6 +106,7 @@ function renderLobbies() {
       <h2 class="bounty-section-title">Mission Lobbies</h2>
       <p class="bounty-section-sub">Every bounty hero runs a lobby on the map.</p>
     </header>
+    ${renderFigure(BOUNTY_FIGURES.lobbyMap, "bounty-figure--portrait")}
     <div class="bounty-lobby-layout">
       <article class="bounty-panel">
         <h3 class="bounty-panel-title">What a lobby is</h3>
@@ -151,6 +155,7 @@ function renderMissions() {
       <h2 class="bounty-section-title">Bounty Missions</h2>
       <p class="bounty-section-sub">Accept, complete, get paid in Commission Points.</p>
     </header>
+    ${renderFigure(BOUNTY_FIGURES.missionExamples)}
     <div class="bounty-mission-layout">
       <article class="bounty-panel">
         <h3 class="bounty-panel-title">Every mission shows</h3>
@@ -181,6 +186,7 @@ function renderMissions() {
           ).join('')}
         </div>
         <p class="bounty-panel-note">Perfect completion earns Commission Master rewards by mail.</p>
+        ${renderFigure(BOUNTY_FIGURES.rewards)}
       </article>
     </div>
   </section>`;
@@ -202,6 +208,7 @@ function renderCommission() {
       <p class="bounty-section-sub">Points become levels; levels become attributes.</p>
     </header>
     <ol class="bounty-level-track">${nodes}</ol>
+    ${renderFigure(BOUNTY_FIGURES.lobbyPanel, "bounty-figure--portrait")}
     <div class="bounty-commission-layout">
       <article class="bounty-panel bounty-panel--attributes">
         <h3 class="bounty-panel-title">Every Commission Level adds attributes</h3>
@@ -278,19 +285,40 @@ function renderHeroCard(hero) {
         <span class="bounty-hero-skill">${escapeHtml(hero.skillName)}</span>
         <span class="bounty-hero-meta">${escapeHtml(meta?.Type || '')} · ${escapeHtml(meta?.season || '')}</span>
       </span>
+      <span class="bounty-hero-unlock" title="Lobby opens">${escapeHtml(hero.unlockLabel || '—')}</span>
     </button>
     <div class="bounty-hero-detail" id="bounty-hero-detail-${hero.id}" hidden>
+      <div class="bounty-skill-card">
+        <span class="bounty-skill-kicker">Aiding Skill</span>
+        <strong class="bounty-skill-name">${escapeHtml(hero.skillName)}</strong>
+        <dl class="bounty-skill-facts">
+          <div><dt>Type</dt><dd>${escapeHtml(hero.skillType)}</dd></div>
+          ${hero.range ? `<div><dt>Effective range</dt><dd>${escapeHtml(String(hero.range))}</dd></div>` : ''}
+          ${hero.worksOn ? `<div><dt>Works on</dt><dd>${escapeHtml(hero.worksOn)}</dd></div>` : ''}
+          <div><dt>Target</dt><dd>${escapeHtml(hero.target)}</dd></div>
+        </dl>
+        <p class="bounty-skill-effect">${escapeHtml(hero.effect)}</p>
+      </div>
       <dl class="bounty-hero-facts">
         <div><dt>Bounty tier</dt><dd>${escapeHtml(hero.tier)}</dd></div>
-        <div><dt>Aiding Skill</dt><dd>${escapeHtml(hero.skillName)}</dd></div>
         <div><dt>Troop</dt><dd>${escapeHtml(meta?.Type || '—')}</dd></div>
         <div><dt>Season</dt><dd>${escapeHtml(meta?.season || '—')}</dd></div>
-        <div><dt>Lobby</dt><dd>${escapeHtml(unlockLabel(hero))}</dd></div>
+        <div><dt>Lobby opens</dt><dd>${escapeHtml(unlockLabel(hero))}</dd></div>
       </dl>
-      <p class="bounty-hero-detail-note">Full skill text, range, and effects are in the Hero Atlas. The Aiding Skill unlocks at Commission Level 6 and needs the hero's own skill maxed appropriately.</p>
+      <p class="bounty-hero-detail-note">Unlocks at Commission Level 6, and needs the hero's own skill maxed appropriately. Timers are from the Sept 2024 capture — confirm them in game.</p>
       <a class="bounty-hero-atlas-link" href="#heroes" data-bounty-atlas-link="${escapeHtml(hero.appName)}">View ${escapeHtml(hero.appName)} in the Hero Atlas →</a>
     </div>
   </article>`;
+}
+
+// A cropped in-game capture with a caption that says what it is showing.
+function renderFigure(figure, className = '') {
+  if (!figure) return '';
+  return `
+  <figure class="bounty-figure ${className}">
+    <img src="${escapeHtml(figure.src)}" alt="${escapeHtml(figure.alt)}" width="${figure.width}" height="${figure.height}" loading="lazy" decoding="async" />
+    <figcaption>${escapeHtml(figure.caption)}</figcaption>
+  </figure>`;
 }
 
 function renderHeroes() {

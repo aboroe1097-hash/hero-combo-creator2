@@ -97,6 +97,94 @@
   display: block;
 }
 
+/* =============================================================
+   Research & Towers Hub Sub-Tab Bar
+   -------------------------------------------------------------
+   Same shape as the Eden hub bar, but built on the --ff-* tokens so it
+   follows the light/dark theme instead of assuming a dark surface, and it
+   collapses to two equal full-width targets on phones.
+   ============================================================= */
+.vts-hub-subtabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--ff-border-subtle);
+}
+
+.vts-hub-subtab {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--radius-md);
+  background: var(--ff-surface-soft);
+  color: var(--ff-text-dim);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.vts-hub-subtab svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+}
+
+.vts-hub-subtab:hover {
+  border-color: var(--ff-border-hover);
+  color: var(--ff-text);
+}
+
+.vts-hub-subtab:focus-visible {
+  outline: 2px solid var(--ff-accent, var(--ff-border-hover));
+  outline-offset: 2px;
+}
+
+.vts-hub-subtab.active {
+  border-color: var(--ff-border-hover);
+  background: var(--ff-surface-selected);
+  color: var(--ff-text);
+}
+
+.vts-hub-subtabs--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.vts-hub-subtab-panel {
+  display: none;
+}
+
+.vts-hub-subtab-panel.active {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .vts-hub-subtab {
+    padding: 10px 8px;
+    font-size: 0.82rem;
+  }
+  .vts-hub-subtab svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  /* Four labels do not fit one phone row legibly, so they wrap to 2x2 rather
+     than shrinking below a readable size. */
+  .vts-hub-subtabs--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .vts-eden-hub-frame {
   display: block;
   width: 100%;

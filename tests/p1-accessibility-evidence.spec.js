@@ -160,6 +160,8 @@ test('named controls and repaired ARIA expose equivalent accessibility-tree cont
   await page.setViewportSize({ width: 390, height: 844 });
   await openHome(page, '/#edenMap');
   await expect(page.locator('#edenMapRoot')).toBeVisible({ timeout: 20000 });
+  await page.locator('[data-eden-subtab="map"]').click();
+  await expect(page.locator('#edenDatasetSelect option').first()).toBeAttached({ timeout: 20000 });
   await page.evaluate(() => document.getElementById('edenSeasonModal')?.classList.add('hidden'));
 
   for (const id of [
@@ -326,7 +328,8 @@ test('explicit transition components retain pointer, keyboard, selection, and st
   await expect(toggleThumb).toHaveClass(/checked/);
   await expect(page.locator('body')).not.toHaveClass(/hide-hero-info/);
 
-  await page.locator('#tabManual').click();
+  await page.locator('#tabHeroesCombos').click();
+  await page.locator('[data-hub-subtab="manual"]').click();
   await expect(page.locator('#manualSection')).toBeVisible();
   await expect(page.locator('#availableHeroes .hero-card').first()).toBeVisible({
     timeout: 20000,

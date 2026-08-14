@@ -8,8 +8,8 @@ test('node data contributions require a signed-in account', async ({ page }) => 
     localStorage.setItem('vts_intro_v1_seen', '1');
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.locator('#shellMoreButton').click();
-  await page.locator('#tabSpecialization').click();
+  // Towers Specialization is the default sub-tab of the Research & Towers Hub.
+  await page.locator('#tabResearchTowers').click();
   const community = page.locator('.spec-community');
   await expect(community).toBeVisible();
 

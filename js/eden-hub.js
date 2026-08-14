@@ -1,8 +1,9 @@
 // js/eden-hub.js
 // VTS Eden Hub sub-tab controller for the integrated Eden Map tab.
 //
-// The hub hosts three sub-tabs inside #edenMapRoot:
-//   - map:      the existing Eden map planner (default)
+// The hub hosts four sub-tabs inside #edenMapRoot:
+//   - bounty:   the Royal Bounty guide (default)
+//   - map:      the existing Eden map planner
 //   - loyalty:  the Eden Loyalty calculator, fetched from tabs/loyalty.html
 //   - previous: previous-season rankings (eden-x1.html) in a lazy iframe
 //
@@ -43,6 +44,20 @@ function localizeFragment(root) {
   });
 }
 
+function refreshMapViewport() {
+  // The canvas may have initialized behind the default Royal Bounty panel.
+  // Wait for the browser to apply the newly visible Map panel before sizing it.
+  requestAnimationFrame(() => {
+    // Use the same module identity as the planner boot. A different query
+    // string creates a second module instance with no canvas state to refresh.
+    import('./eden-map.js?v=20260814_125122')
+      .then((module) => module.refreshEdenMapViewport?.())
+      .catch(() => {
+        /* Eden map boot reports its own load errors. */
+      });
+  });
+}
+
 function activateSubTab(root, name) {
   root.querySelectorAll('[data-eden-subtab]').forEach((button) => {
     const active = button.dataset.edenSubtab === name;
@@ -54,6 +69,7 @@ function activateSubTab(root, name) {
     panel.classList.toggle('active', active);
     panel.hidden = !active;
   });
+  if (name === 'map') refreshMapViewport();
 }
 
 async function loadLoyalty(root, panel) {
@@ -110,7 +126,7 @@ function readSubtabIntent() {
     const intent = document.body?.dataset?.edenHubSubtab;
     if (intent) {
       delete document.body.dataset.edenHubSubtab;
-      return intent === 'loyalty' ? 'loyalty' : 'previous';
+      return ['map', 'loyalty', 'bounty', 'previous'].includes(intent) ? intent : null;
     }
   } catch {
     /* dataset unavailable */
@@ -125,7 +141,7 @@ export function bootEdenHub() {
   booted = true;
 
   function openIntent(name) {
-    if (name !== 'loyalty' && name !== 'bounty' && name !== 'previous') return;
+    if (name !== 'map' && name !== 'loyalty' && name !== 'bounty' && name !== 'previous') return;
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
     if (!panel) return;
@@ -134,8 +150,9 @@ export function bootEdenHub() {
     if (name === 'previous') loadPrevious(panel);
   }
 
-  const initialIntent = readSubtabIntent();
-  if (initialIntent) openIntent(initialIntent);
+  // Royal Bounty is the Eden Hub landing page; the map remains one click away
+  // and legacy sub-tab intents still take precedence.
+  openIntent(readSubtabIntent() || 'bounty');
 
   root.addEventListener('click', (event) => {
     const button = event.target.closest('[data-eden-subtab]');

@@ -1,16 +1,22 @@
 // js/specialization-hero-plans.js
 // Skill-semantics auto-path engine for the Specialization Towers.
 //
-// Pure data module: no DOM. Reads the S0-X2 hero skill catalog and matches each
-// owned hero's mechanics against tower content per troop type:
-//   - attribute nodes (Might/HP/Resistance/Base Attributes/Countering/Speed)
-//   - troop-specific 25/50/75/100% milestones (combat speed, troop damage,
-//     countering, control-damage reduction)
-//   - per-column Legion Skills (Sniper Archer, Combo, Impenetrable Formation, ...)
+// Pure data module: no DOM. Three inputs decide an order:
 //
-// Output is one ordered research plan per troop (cavalry/archer/footman) that
-// keeps the game's column order (I-VIII) and only reorders the four researches
-// inside each column, plus human-readable reasons citing the owned hero skills.
+//   1. The hero skill catalog (S0-X2), keyword-matched into mechanics, scored
+//      against the tower content per troop type — attribute nodes, the
+//      25/50/75/100% milestones, and the per-column Legion Skills.
+//   2. The hand-checked paid-hero catalog in `specialization-hero-paths.js`,
+//      which states outright which columns and researches a paid kit needs.
+//   3. The captured community charts in `specialization-routes.js`, used as the
+//      seed order so two researches the heroes do not distinguish still come out
+//      in the order the charts recommend rather than alphabetically.
+//
+// Every troop plans on one of two paths, and only two: a siege path (rally, city
+// attack, city defense, reinforcement) and a non-siege field path (encounter,
+// battlefield, RoC). Output is one ordered plan per troop that keeps the game's
+// column order (I-VIII) and only reorders the four researches inside a column,
+// plus human-readable reasons citing the owned hero skills.
 
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
@@ -19,10 +25,20 @@ import {
   SPECIALIZATION_LEGION_SKILLS,
   SPECIALIZATION_RESEARCH,
 } from './specialization-towers-v2-data.js';
+import { getRouteOrder } from './specialization-routes.js';
+import {
+  F2P_PATH_ID,
+  HERO_PATH_MODES,
+  HERO_PATH_TROOPS,
+  getPathPreset,
+  pathDemandFor,
+  suggestedPathId,
+} from './specialization-hero-paths.js';
 
-export const HERO_PLAN_MODES = Object.freeze(['balanced', 'field', 'rally', 'siege']);
-export const HERO_PLAN_TROOPS = Object.freeze(['cavalry', 'archer', 'footman']);
-export const HERO_PLAN_DATA_REVISION = '2026-08-13-skill-semantics-v1';
+export const HERO_PLAN_MODES = HERO_PATH_MODES;
+export const HERO_PLAN_TROOPS = HERO_PATH_TROOPS;
+export const HERO_PLAN_DEFAULT_MODE = 'siege';
+export const HERO_PLAN_DATA_REVISION = '2026-08-14-paid-hero-paths-v2';
 
 // ---------------------------------------------------------------------------
 // Hero mechanic vocabulary
@@ -124,16 +140,16 @@ const DEMAND_WEIGHTS = Object.freeze({
   [MECHANIC_IDS.COMBAT_SPEED]: { speed: 3.0 },
   [MECHANIC_IDS.PREP_SKIP]: { speed: 2.0, skillDamage: 1.0 },
   [MECHANIC_IDS.PRE_BATTLE]: { speed: 1.0, might: 1.0, skillDamage: 0.8 },
-  [MECHANIC_IDS.HEALING]: { hp: 1.6, resistance: 0.8 },
+  [MECHANIC_IDS.HEALING]: { hp: 1.6, resistance: 0.8, healing: 1.6 },
   [MECHANIC_IDS.CONTROL]: { skillDamage: 0.8, resistance: 0.8 },
-  [MECHANIC_IDS.SOBER]: { hp: 1.0, resistance: 1.6 },
-  [MECHANIC_IDS.EVASION]: { hp: 1.0 },
+  [MECHANIC_IDS.SOBER]: { hp: 1.0, resistance: 1.6, defense: 1.0 },
+  [MECHANIC_IDS.EVASION]: { hp: 1.0, defense: 1.0 },
   [MECHANIC_IDS.COUNTER_ATTACK]: { resistance: 2.0, hp: 1.0 },
   [MECHANIC_IDS.ARMOR_BREAK]: { might: 1.0, physicalDamage: 1.0 },
   [MECHANIC_IDS.SKILL_DAMAGE]: { might: 1.2, skillDamage: 2.0 },
   [MECHANIC_IDS.PHYSICAL_DAMAGE]: { might: 1.2, physicalDamage: 2.0 },
   [MECHANIC_IDS.ADDITIONAL_ATTACK]: { physicalDamage: 2.0, speed: 1.0 },
-  [MECHANIC_IDS.BLEED_BURN]: { skillDamage: 1.0 },
+  [MECHANIC_IDS.BLEED_BURN]: { skillDamage: 1.0, defense: 0.8 },
   [MECHANIC_IDS.VULNERABLE]: { skillDamage: 1.2, physicalDamage: 1.2 },
 });
 
@@ -209,6 +225,7 @@ export function analyzeHeroMechanics(heroName) {
     name: heroName,
     type,
     season,
+    paid: heroMeta?.State === 'Paid',
     mechanics: Object.freeze([...mechanics]),
     skills: Object.freeze(skills),
     hasSkillText: Boolean(heroInfo?.skills?.length),
@@ -232,6 +249,8 @@ function nodeSupplyTags(node) {
   if (context === 'baseAttributes') tags.add('baseMight');
   if (bonusName.includes('Combat Speed') || bonusName.includes('Speed')) tags.add('speed');
   if (bonusName.includes('Countering')) tags.add('countering');
+  if (/Physical Damage/i.test(bonusName)) tags.add('physicalDamage');
+  if (/Damage Taken|Immunity/i.test(bonusName) || /less damage/i.test(effect)) tags.add('defense');
   return tags;
 }
 
@@ -244,6 +263,12 @@ function milestoneSupplyTags(milestone) {
   if (lowered.includes('hp')) tags.add('hp');
   if (lowered.includes('resistance')) tags.add('resistance');
   if (lowered.includes('countering')) tags.add('countering');
+  if (lowered.includes('physical damage dealt') || lowered.includes('physical damage taken by')) {
+    tags.add('physicalDamage');
+  }
+  if (lowered.includes('skill damage dealt') || lowered.includes('skill damage taken by')) {
+    tags.add('skillDamage');
+  }
   if (lowered.includes('damage dealt by') || lowered.includes('damage increased')) {
     tags.add(text.includes(MECHANIC_IDS.PHYSICAL_DAMAGE) ? 'physicalDamage' : 'skillDamage');
   }
@@ -258,26 +283,44 @@ function milestoneSupplyTags(milestone) {
 // Scoring
 // ---------------------------------------------------------------------------
 
+// The two paths, expressed as the node contexts each one actually fights in.
 const MODE_CONTEXTS = Object.freeze({
-  field: ['nonSiege', 'battlefield', 'roc', 'general'],
-  rally: ['rallyJoin', 'initiatingRally', 'roc', 'battlefield'],
-  siege: ['siege', 'siegeAttacks', 'siegeDefense', 'reinforcingAllies'],
+  siege: ['siege', 'siegeAttacks', 'siegeDefense', 'reinforcingAllies', 'initiatingRally'],
+  nonSiege: ['nonSiege', 'battlefield', 'roc'],
 });
 
+// Unconditional bonuses. They apply in every fight, so neither path may treat
+// them as off-path — without this the whole Training and Neat Formation line,
+// which is almost entirely `general`, sinks in both paths at once.
+const ALWAYS_CONTEXTS = Object.freeze(['general', 'baseAttributes', 'skill']);
+
+// Rally-join buffs apply when you send troops into someone else's rally, which
+// is siege work, but they are also the only thing a joiner contributes in a
+// field rally — so they count for both paths, at less than a full context.
+const SHARED_CONTEXTS = Object.freeze(['rallyJoin']);
+
+function normalizeMode(mode) {
+  return HERO_PLAN_MODES.includes(mode) ? mode : HERO_PLAN_DEFAULT_MODE;
+}
+
+// A path is only worth picking if the two orders visibly differ, so the context
+// share moves the score by up to 60% rather than the 25% the old four-mode
+// version used.
 function modeMultiplierForResearch(research, mode) {
-  const preferred = MODE_CONTEXTS[mode];
-  if (!preferred) return 1.0;
+  const preferred = MODE_CONTEXTS[normalizeMode(mode)];
   const nodes = research.nodes || [];
   if (!nodes.length) return 1.0;
   let covered = 0;
   let total = 0;
   nodes.forEach((node) => {
-    const value = Number(node.bonusValue) || 0;
-    total += Math.abs(value);
-    if (preferred.includes(node.context || 'general')) covered += Math.abs(value);
+    const value = Math.abs(Number(node.bonusValue) || 0);
+    const context = node.context || 'general';
+    total += value;
+    if (preferred.includes(context) || ALWAYS_CONTEXTS.includes(context)) covered += value;
+    else if (SHARED_CONTEXTS.includes(context)) covered += value * 0.5;
   });
   if (!total) return 1.0;
-  return 1 + 0.25 * (covered / total);
+  return 0.75 + 0.6 * (covered / total);
 }
 
 function heroAppliesToTroop(profile, troop) {
@@ -293,7 +336,7 @@ function heroAppliesToTroop(profile, troop) {
   return mapped === troop ? 1 : 0;
 }
 
-function scoreResearchForTroop(researchId, columnId, troop, profiles, mode) {
+function scoreResearchForTroop(researchId, columnId, troop, profiles, mode, pathDemand, seedRank) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   if (!research) return { score: 0, reasons: [] };
   const reasonEntries = [];
@@ -382,6 +425,33 @@ function scoreResearchForTroop(researchId, columnId, troop, profiles, mode) {
     }
   }
 
+  // Hand-checked paid-hero demand. Keyword matching cannot see that Alexander
+  // needs the burning-damage milestones or that Lancelot wants Null-Heal set up
+  // first, so the catalog states those directly and they are scored here.
+  let catalogMatch = 0;
+  const nodeCountRaw = (research.nodes || []).length || 1;
+  for (const [tag, weight] of Object.entries(pathDemand.demand || {})) {
+    let supplied = 0;
+    for (const node of research.nodes || []) {
+      if (nodeSupplyTags(node).has(tag)) supplied += 1;
+    }
+    for (const milestone of research.skillMilestones?.[troop] || []) {
+      if (milestoneSupplyTags(milestone).tags.has(tag)) supplied += 1.5;
+    }
+    if (supplied > 0) catalogMatch += (weight * supplied) / Math.sqrt(nodeCountRaw);
+  }
+  const columnDemand = Number(pathDemand.columns?.[columnId]) || 0;
+  if (columnDemand > 0) {
+    catalogMatch += columnDemand * 2.5;
+    if (columnSkill?.name) {
+      // Below the per-hero Legion Skill reasons (50+): this one is true of all
+      // four researches in the column, so a hero-specific reason says more.
+      addReason(45 + columnDemand, `Column ${columnId} · ${columnSkill.name} — path payoff`);
+    }
+  }
+  const researchDemand = Number(pathDemand.research?.[researchId]) || 0;
+  if (researchDemand > 0) catalogMatch += researchDemand * 3.0;
+
   let positiveBonus = 0;
   let defensiveBonus = 0;
   for (const node of research.nodes || []) {
@@ -397,14 +467,19 @@ function scoreResearchForTroop(researchId, columnId, troop, profiles, mode) {
   const modeMultiplier = modeMultiplierForResearch(research, mode);
   // Node matches are diluted by research size so 23-node researches cannot
   // snowball past concentrated 10-node ones on raw hit count alone.
-  const nodeCount = (research.nodes || []).length || 1;
+  const nodeCount = nodeCountRaw;
+  // The community chart order, as a small prior. It never outvotes a hero
+  // reason; it just decides the ties the heroes are indifferent to.
+  const seedBonus = seedRank >= 0 ? (32 - seedRank) * 0.05 : 0;
   const score =
     (2.0 * affinity +
       (0.6 * nodeMatch) / Math.sqrt(nodeCount) +
       2.2 * milestoneMatch +
       1.2 * legionMatch +
+      1.5 * catalogMatch +
       efficiency) *
-    modeMultiplier;
+      modeMultiplier +
+    seedBonus;
 
   const bestByText = new Map();
   for (const entry of reasonEntries) {
@@ -436,13 +511,36 @@ function normalizeHeroNames(heroes) {
   return result;
 }
 
-export function buildHeroPlans({ heroes = [], mode = 'balanced' } = {}) {
-  const normalizedMode = HERO_PLAN_MODES.includes(mode) ? mode : 'balanced';
+// Which community chart seeds a troop: the paid-hero chart once the roster owns
+// any of that troop's paid heroes, the free-to-play chart otherwise.
+function seedRouteFor(troop, pathDemand) {
+  return getRouteOrder(pathDemand.heroCount > 0 ? 'spender' : 'f2p', troop);
+}
+
+/**
+ * Build one ordered plan per troop.
+ *
+ * @param {object}   options
+ * @param {string[]} options.heroes   Hero names the player owns.
+ * @param {string}   options.mode     'siege' | 'nonSiege'.
+ * @param {object}   options.presets  Optional `{troop: presetId}` override; any
+ *                                    troop left out picks its best-fit preset.
+ */
+export function buildHeroPlans({ heroes = [], mode = HERO_PLAN_DEFAULT_MODE, presets = {} } = {}) {
+  const normalizedMode = normalizeMode(mode);
   const roster = normalizeHeroNames(heroes);
   const profiles = roster.map(analyzeHeroMechanics);
 
   const plans = {};
   for (const troop of HERO_PLAN_TROOPS) {
+    const requested = presets?.[troop];
+    const presetId =
+      requested === F2P_PATH_ID || getPathPreset(requested)?.troop === troop
+        ? requested
+        : suggestedPathId(troop, roster);
+    const pathDemand = pathDemandFor(troop, roster, presetId);
+    const seed = seedRouteFor(troop, pathDemand);
+
     const researchOrder = [];
     const steps = {};
     const reasons = {};
@@ -455,10 +553,18 @@ export function buildHeroPlans({ heroes = [], mode = 'balanced' } = {}) {
       const researches = (SPECIALIZATION_COLUMNS[columnId]?.researches || [])
         .map((researchId) => ({
           researchId,
-          ...scoreResearchForTroop(researchId, columnId, troop, profiles, normalizedMode),
+          ...scoreResearchForTroop(
+            researchId,
+            columnId,
+            troop,
+            profiles,
+            normalizedMode,
+            pathDemand,
+            seed.indexOf(researchId)
+          ),
         }))
         .sort((a, b) => b.score - a.score || a.researchId.localeCompare(b.researchId));
-      researches.forEach((entry, index) => {
+      researches.forEach((entry) => {
         researchOrder.push(entry.researchId);
         towerScore += entry.score;
         steps[entry.researchId] = researchOrder.length;
@@ -468,6 +574,10 @@ export function buildHeroPlans({ heroes = [], mode = 'balanced' } = {}) {
 
     plans[troop] = Object.freeze({
       troop,
+      presetId: pathDemand.presetId,
+      pathHeroes: Object.freeze(pathDemand.notes.map((entry) => entry.hero)),
+      heroNotes: Object.freeze(pathDemand.notes.map((entry) => Object.freeze({ ...entry }))),
+      siegeBias: pathDemand.siegeBias,
       towerScore: Number(towerScore.toFixed(3)),
       researchOrder: Object.freeze(researchOrder),
       steps: Object.freeze(steps),
@@ -485,6 +595,10 @@ export function buildHeroPlans({ heroes = [], mode = 'balanced' } = {}) {
 
 export function getHeroPlanStep(plan, researchId) {
   return plan?.steps?.[researchId] || 0;
+}
+
+export function getHeroPlanLength(plan) {
+  return plan?.researchOrder?.length || 0;
 }
 
 export function getNextHeroPlanResearch(plan, isComplete) {

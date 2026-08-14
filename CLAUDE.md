@@ -5,6 +5,32 @@ human and coding agent in this repository. Read and follow it before making a
 change. This file contains only Claude-oriented reminders that supplement it;
 if the two files ever disagree, `AGENTS.md` wins.
 
+## Delegating work in this repo
+
+DeepSeek is the owner's only worker and has effectively unlimited tokens. Hand it
+bulk mechanical work without asking first — i18n key fills, repetitive renames,
+test scaffolding, docs. Keep design, architecture and judgement calls yourself.
+
+```bash
+bash ~/.claude/scripts/delegate.sh mid -R "why" -C "<abs repo dir>" "<prompt>"
+```
+
+Three rules, learned the hard way here: **one file per call** (a work order spanning
+many files returns with nothing done), **inline the exact list** the worker must act
+on rather than making it search, and **quick-check the diff yourself** before
+reporting — `delegate.sh summary` showing ok with no diff means it never edited.
+
+Repo-specific gotchas for delegated work:
+
+- Always pass `-C` with the absolute worktree path. Without it a worker will edit
+  the main checkout at `D:\Project\hero-combo-creator2` instead.
+- `js/i18n/*.js` must keep every `{placeholder}` token identical to `en.js`;
+  `js/i18n/specialization-towers-v2/*.js` is under a strict 12-locale key-parity
+  test. Tell workers explicitly which of the two they may touch.
+- `js/i18n/hr.js` is an intentionally partial stub — never "fix" its missing keys.
+
+Full protocol: `~/.claude/ORCHESTRATION.md` §0.
+
 ## Workflow reminder
 
 Use a separate branch from the latest `origin/gh-pages`, run the full gate,

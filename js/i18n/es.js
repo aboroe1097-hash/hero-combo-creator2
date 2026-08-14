@@ -433,6 +433,9 @@ const es = {
   tabGenerator: 'Generador de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Héroes',
+  tabHeroesCombos: 'Héroes y combos',
+  tabHeroesOnly: 'Héroes',
+  tabSkinsOnly: 'Aspectos',
   tabEdenMap: 'VTS Eden Hub',
   tabLoyalty: 'Calc. de Lealtad',
   tabEdenX1: 'Clasificación Eden X1',
@@ -1732,6 +1735,8 @@ const es = {
   strifeVerifiedLineup: 'Alineación de monstruo verificada',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Especialización',
+  tabResearchTowers: 'Investigación y torres',
+  tabTowersSpecialization: 'Especialización de torres',
 
   adminEdenVotesClearDeadline: 'Borrar fecha límite',
   adminEdenVotesDeadline: 'Fecha límite de votación',
@@ -2958,6 +2963,9 @@ const es = {
     edenGuideDoneTip1:
       'La guía v2.7 incluye el mapa de pergamino, el plan de equipos opcional y el salto por coordenadas. Usa Reiniciar progreso para repetirla.',
   },
+  tabEdenBounty: 'Royal Bounty',
+  bohAccessErrorSecureServiceUnreachable:
+    'El servicio seguro de Google necesario para el registro no se puede alcanzar desde esta red o región. Prueba con una VPN o una red diferente y luego pulsa Reintentar. Tu PIN no ha sido rechazado.',
 };
 
 export default es;

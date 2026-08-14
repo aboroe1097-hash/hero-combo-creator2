@@ -17,7 +17,9 @@ async function openApp(page, path = '/') {
 }
 
 async function openResearch(page) {
-  await page.locator('#tabResearch').click();
+  // Research moved inside the Research & Towers Hub; the hub opens on Towers.
+  await page.locator('#tabResearchTowers').click();
+  await page.locator('[data-hub-subtab="research"]').click();
   await expect(page.locator('#techListContainer')).toBeVisible();
 }
 

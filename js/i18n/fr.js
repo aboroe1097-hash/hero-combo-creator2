@@ -461,6 +461,9 @@ const fr = {
   tabGenerator: 'Générateur de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas des Héros',
+  tabHeroesCombos: 'Héros et combos',
+  tabHeroesOnly: 'Héros',
+  tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
   tabLoyalty: 'Calc. Fidélité Eden',
   tabEdenX1: 'Classement Eden X1',
@@ -1763,6 +1766,8 @@ const fr = {
   strifeVerifiedLineup: 'Composition de monstre vérifiée',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spécialisation',
+  tabResearchTowers: 'Recherche et tours',
+  tabTowersSpecialization: 'Spécialisation des tours',
 
   adminEdenVotesClearDeadline: 'Effacer la date limite',
   adminEdenVotesDeadline: 'Date limite de vote',
@@ -3122,6 +3127,9 @@ const fr = {
     strifeSourceGuide: 'Guide de référence',
     arcadeIntro: 'Vous pensez pouvoir battre les meilleurs scores de l’Arcade ? À vous de jouer.',
   },
+  tabEdenBounty: 'Royal Bounty',
+  bohAccessErrorSecureServiceUnreachable:
+    "Le service Google sécurisé requis pour l'inscription est inaccessible depuis ce réseau ou cette région. Essayez avec un VPN ou un autre réseau, puis appuyez sur Réessayer. Votre PIN n'a pas été rejeté.",
 };
 
 export default fr;

@@ -19156,6 +19156,10 @@ html[dir='rtl'] .gen-buttons-row {
   --spec-seasonal: var(--ff-seasonal, var(--ff-violet, var(--violet, #a78bfa)));
   --spec-urgency: var(--ff-urgency, var(--ff-fire, var(--accent, #fb923c)));
   --spec-gold: var(--ff-gold, var(--gold, #f5c451));
+  /* Gold as *text*. The surface gold is a light amber that reads well on the
+     dark tab but drops under 3:1 on the light theme's near-white panels, so
+     anything using gold as a foreground colour uses this instead. */
+  --spec-gold-ink: var(--spec-gold);
   --spec-primary-gradient: var(
     --ff-gradient-primary,
     var(--grad-primary, linear-gradient(90deg, var(--spec-action), var(--spec-urgency)))
@@ -20042,6 +20046,33 @@ html[dir='rtl'] .gen-buttons-row {
 [data-theme='light'] .spec-banner {
   background: linear-gradient(180deg, var(--spec-panel), var(--spec-panel-strong));
   border-color: var(--spec-border);
+}
+/* Light theme: gold-as-text darkens to an amber that clears 4.5:1 on the pale
+   panels, while gold-as-surface stays the same so the tab keeps its look. */
+/* Must sit on .spec-tool, the element that declares the --spec-* tokens: an
+   override on an ancestor loses to that block's own declaration. */
+[data-theme='light'] .spec-tool {
+  --spec-gold-ink: #8a5a00;
+}
+[data-theme='light'] .spec-path-mode[aria-checked='true'],
+[data-theme='light'] .spec-path-card.is-active .spec-path-card-state,
+[data-theme='light'] .spec-plan-troop-rank,
+[data-theme='light'] .spec-hero-plan-hint,
+[data-theme='light'] .spec-auto-path {
+  color: var(--spec-gold-ink);
+}
+[data-theme='light'] .spec-path-mode[aria-checked='true'],
+[data-theme='light'] .spec-path-card.is-active,
+[data-theme='light'] .spec-path-hero.is-owned {
+  border-color: var(--spec-gold-ink);
+}
+/* The unowned hero chip is greyed on purpose, but on white it must still be
+   readable rather than merely faint. */
+[data-theme='light'] .spec-path-hero {
+  color: var(--spec-text-dim);
+}
+[data-theme='light'] .spec-plan-hero-avatar {
+  opacity: 0.7;
 }
 [data-theme='light'] .spec-title,
 [data-theme='light'] .spec-detail-title h3 {
@@ -20975,13 +21006,16 @@ html[dir='rtl'] .gen-buttons-row {
   background: color-mix(in srgb, var(--spec-gold) 18%, var(--spec-panel));
   color: var(--spec-gold);
 }
-/* Hero plan (skill-semantics auto-path) bar in the Specialization tab. */
+/* Path planner panel in the Specialization tab. Tokens, not fixed navy: this
+   panel used to be a thin bar where a dark gradient behind theme-coloured text
+   went unnoticed, and it is now the tallest thing on the tab. */
 .spec-hero-plan {
   margin: 0 0 14px;
   padding: 12px 14px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid var(--spec-border);
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.55), rgba(30, 41, 59, 0.35));
+  background: var(--spec-panel);
+  color: var(--spec-text);
 }
 .spec-hero-plan-head {
   display: flex;
@@ -20997,29 +21031,29 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-hero-plan-roster {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: var(--spec-text-dim);
 }
 .spec-plan-mode-control select {
   font: inherit;
   font-size: 0.78rem;
   padding: 5px 8px;
   border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--spec-border-strong);
+  background: var(--spec-panel-strong);
   color: inherit;
 }
 .spec-auto-path {
   padding: 7px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.6);
-  background: rgba(251, 191, 36, 0.16);
-  color: #fbbf24;
+  border: 1px solid color-mix(in srgb, var(--spec-gold) 60%, transparent);
+  background: color-mix(in srgb, var(--spec-gold) 16%, var(--spec-panel));
+  color: var(--spec-gold);
   font-weight: 700;
   font-size: 0.78rem;
   cursor: pointer;
 }
 .spec-auto-path:hover {
-  background: rgba(251, 191, 36, 0.28);
+  background: color-mix(in srgb, var(--spec-gold) 28%, var(--spec-panel));
 }
 .spec-hero-plan-note {
   margin: 10px 0 0;
@@ -21029,21 +21063,21 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-hero-plan-hint {
   margin: 8px 0 0;
   font-size: 0.72rem;
-  color: #fbbf24;
+  color: var(--spec-gold);
 }
 .spec-hero-plan-jump {
   margin-top: 10px;
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(99, 102, 241, 0.55);
-  background: rgba(99, 102, 241, 0.16);
-  color: #a5b4fc;
+  border: 1px solid color-mix(in srgb, var(--spec-action) 55%, transparent);
+  background: color-mix(in srgb, var(--spec-action) 16%, var(--spec-panel));
+  color: var(--spec-action);
   font-weight: 700;
   font-size: 0.76rem;
   cursor: pointer;
 }
 .spec-hero-plan-jump:hover {
-  background: rgba(99, 102, 241, 0.3);
+  background: color-mix(in srgb, var(--spec-action) 30%, var(--spec-panel));
 }
 .spec-plan-troop-chips {
   display: flex;
@@ -21057,19 +21091,19 @@ html[dir='rtl'] .gen-buttons-row {
   align-items: center;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--spec-border);
+  background: var(--spec-panel-strong);
   color: inherit;
   font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
 }
 .spec-plan-troop-chip.active {
-  border-color: rgba(251, 191, 36, 0.75);
-  background: rgba(251, 191, 36, 0.14);
+  border-color: color-mix(in srgb, var(--spec-gold) 75%, transparent);
+  background: color-mix(in srgb, var(--spec-gold) 14%, var(--spec-panel));
 }
 .spec-plan-troop-rank {
-  color: #fbbf24;
+  color: var(--spec-gold);
   letter-spacing: 1px;
 }
 .spec-hero-plan-why {
@@ -21077,7 +21111,7 @@ html[dir='rtl'] .gen-buttons-row {
   gap: 8px;
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px dashed rgba(148, 163, 184, 0.25);
+  border-top: 1px dashed var(--spec-border);
   font-size: 0.72rem;
   opacity: 0.9;
 }
@@ -21086,6 +21120,250 @@ html[dir='rtl'] .gen-buttons-row {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
+}
+/* Path planner: the two default paths, the hero presets inside them, and the
+   owned-hero toggles that adjust one. */
+.spec-path-section-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--spec-text-dim);
+}
+/* Two paths, so a segmented control rather than a select: the choice reorders
+   everything beneath it and must stay visible. */
+.spec-path-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.spec-path-mode {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 10px;
+  background: var(--spec-panel);
+  color: var(--spec-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.spec-path-mode:hover {
+  border-color: var(--spec-action);
+}
+.spec-path-mode:focus-visible {
+  outline: 2px solid var(--spec-action);
+  outline-offset: 2px;
+}
+.spec-path-mode[aria-checked='true'] {
+  border-color: var(--spec-gold);
+  background: color-mix(in srgb, var(--spec-gold) 16%, var(--spec-panel));
+  color: var(--spec-gold);
+}
+.spec-path-mode-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+.spec-path-presets,
+.spec-path-heroes,
+.spec-path-notes {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--spec-border);
+}
+.spec-path-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  gap: 0.5rem;
+}
+.spec-path-card {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 10px;
+  background: var(--spec-panel);
+  color: var(--spec-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.spec-path-card:hover {
+  border-color: var(--spec-action);
+}
+.spec-path-card:focus-visible {
+  outline: 2px solid var(--spec-action);
+  outline-offset: 2px;
+}
+.spec-path-card.is-active {
+  border-color: var(--spec-gold);
+  background: color-mix(in srgb, var(--spec-gold) 12%, var(--spec-panel));
+}
+.spec-path-card-heroes {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+.spec-path-card-heroes svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.spec-path-card-hero {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid var(--spec-panel);
+  border-radius: 50%;
+  background: var(--spec-panel-strong);
+  object-fit: cover;
+}
+.spec-path-card-hero + .spec-path-card-hero {
+  margin-inline-start: -0.6rem;
+}
+.spec-path-card-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.spec-path-card-copy strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.spec-path-card-copy small {
+  font-size: 0.68rem;
+  color: var(--spec-text-dim);
+}
+.spec-path-card-state {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--spec-text-dim);
+}
+.spec-path-card.is-active .spec-path-card-state {
+  color: var(--spec-gold);
+}
+.spec-path-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+/* Owned/not-owned is the whole point of the chip, so an unowned hero is dimmed
+   and unfilled rather than merely unhighlighted. */
+.spec-path-hero {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  min-height: 2.2rem;
+  padding: 0.25rem 0.6rem 0.25rem 0.3rem;
+  border: 1px solid var(--spec-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--spec-text-dim);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.spec-path-hero:hover {
+  border-color: var(--spec-action);
+}
+.spec-path-hero:focus-visible {
+  outline: 2px solid var(--spec-action);
+  outline-offset: 2px;
+}
+.spec-path-hero.is-owned {
+  border-color: var(--spec-gold);
+  background: color-mix(in srgb, var(--spec-gold) 14%, transparent);
+  color: var(--spec-text);
+}
+.spec-plan-hero-avatar {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--spec-panel-strong);
+  object-fit: cover;
+  filter: grayscale(1);
+  opacity: 0.55;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease;
+}
+.spec-path-hero.is-owned .spec-plan-hero-avatar {
+  filter: none;
+  opacity: 1;
+}
+.spec-plan-hero-avatar--blank {
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.spec-path-hint,
+.spec-path-empty {
+  margin: 0.5rem 0 0;
+  font-size: 0.7rem;
+  color: var(--spec-text-dim);
+}
+.spec-path-note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.spec-path-note-list li {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+.spec-path-note-avatar {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--spec-panel-strong);
+  object-fit: cover;
+}
+.spec-path-canonical {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--spec-text-dim);
+}
+@media (max-width: 640px) {
+  .spec-path-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .spec-path-hero-name {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 [data-plan-reason='true'] {
   cursor: help;
@@ -21126,10 +21404,22 @@ html[dir='rtl'] .gen-buttons-row {
   font-weight: 700;
   opacity: 0.6;
 }
-[data-route-next='true'] .spec-route-step {
+/* Three step states, so a badge answers "where am I on this path?" without
+   reading the number: finished, fund this next, still ahead. */
+[data-step-state='done'] .spec-route-step {
+  border-color: color-mix(in srgb, var(--spec-success) 60%, transparent);
+  background: color-mix(in srgb, var(--spec-success) 22%, rgba(15, 23, 42, 0.95));
+  color: var(--spec-success);
+}
+[data-step-state='todo'] .spec-route-step {
+  opacity: 0.8;
+}
+[data-route-next='true'] .spec-route-step,
+[data-step-state='next'] .spec-route-step {
   border-color: rgba(251, 191, 36, 0.9);
   background: rgb(251, 191, 36);
   color: rgb(23, 20, 8);
+  opacity: 1;
 }
 .spec-route-next {
   padding: 2px 7px;

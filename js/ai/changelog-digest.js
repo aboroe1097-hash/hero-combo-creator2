@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.8";
+export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.9";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "14.3.9",
+    "date": "2026-08-14",
+    "highlights": [
+      "Combined Manual Builder, Combo Generator, Hero Atlas, and skins into the new Heroes & Combos Hub. The generator is its default view; Heroes and Skins are separate hub sub-tabs, while existing deep links keep working.",
+      "Combined Tech Research and Towers Specialization into the new Research & Towers Hub, opening on the Towers planner by default and preserving both legacy routes.",
+      "Reworked the Towers planner around exactly two paths ? Siege / Rally and Field (Non-Siege) ? with paid-hero presets, owned-hero controls, clear 1/32 path numbering, and full troop coverage.",
+      "Made Royal Bounty the VTS Eden Hub landing page, with its visual 9-hero guide, mission/commission loop, Aiding Skill rules, and a one-click return to the Eden map.",
+      "Completed the public app locale contract across every shipped language and updated Velo?s tower, hero-path, and Royal Bounty guidance."
+    ]
+  },
   {
     "version": "14.3.8",
     "date": "2026-08-13",
@@ -92,17 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added editable per-field OCR review with confidence context for Total, Troop, Building, Technology, Hero, Dragon, Unit Specialty, Artifact, and Royal Tech power.",
       "Added migration-safe VtsScore storage: new uploads use the full versioned contract while earlier one-field uploads remain visible as incomplete and require re-upload.",
       "Expanded the All-Star admin comparison to show sign-up, final, and growth values for every power category."
-    ]
-  },
-  {
-    "version": "14.2.20",
-    "date": "2026-07-27",
-    "highlights": [
-      "Corrected VtsScore OCR and review to submit Total Power rather than Dragon Power while preserving the deployed secured endpoint contract.",
-      "Replaced the browser datalist with ranked closest-name search across every eligible All-Star signup, including keyboard selection.",
-      "Added six complete VtsScore languages, Arabic RTL, and accessible light/dark theme controls with improved form and button contrast.",
-      "Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers.",
-      "Raised aggregate JavaScript and Pages artifact budgets by 20 kB for the complete VtsScore locale packs."
     ]
   }
 ].map((release) =>

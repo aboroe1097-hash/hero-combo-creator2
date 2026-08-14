@@ -42,7 +42,9 @@
   --ff-text: #eef4ff;
   --ff-text-dim: #9fb0cc;
   --ff-text-supporting: #c8d4e8;
-  --ff-text-tertiary: #6b7c96;
+  /* WCAG AA: #6b7c96 measured 4.19:1 on --ff-surface and only 3.76:1 on
+     --ff-surface-raised. This clears 4.5:1 on every dark surface. */
+  --ff-text-tertiary: #8494ad;
   --ff-text-muted: #41527a;
   --ff-text-mute: var(--ff-text-muted);
   --ff-action: var(--ff-cyan);
@@ -301,7 +303,8 @@
   --ff-text: #101827;
   --ff-text-dim: #4b5c73;
   --ff-text-supporting: #334155;
-  --ff-text-tertiary: #65768c;
+  /* WCAG AA: #65768c measured 4.18:1 on --ff-surface-raised. */
+  --ff-text-tertiary: #5b6b80;
   --ff-text-muted: #8090a8;
   --ff-action: #0e7490;
   --ff-action-hover: #0891b2;

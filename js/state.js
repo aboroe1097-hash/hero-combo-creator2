@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.3.8';
+export const APP_VERSION = '14.3.9';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -222,16 +222,20 @@ export const materialsSection = document.getElementById('materialsSection');
 export const arcadeSection = document.getElementById('arcadeSection');
 export const allStarBohSection = document.getElementById('allStarBohSection');
 
-export const tabManualBtn = document.getElementById('tabManual');
-export const tabGeneratorBtn = document.getElementById('tabGenerator');
+// Manual Builder, Combo Generator and the Hero Atlas now live inside the
+// Heroes & Combos Hub, so the hub owns the pill. Their sections keep their ids
+// as the hub's sub-panels.
+export const tabHeroesCombosBtn = document.getElementById('tabHeroesCombos');
+export const heroesCombosSection = document.getElementById('heroesCombosSection');
 export const tabLoyaltyBtn = document.getElementById('tabLoyalty');
 export const tabYouTubeBtn = document.getElementById('tabYouTube');
-export const tabResearchBtn = document.getElementById('tabResearch');
+// Research and Specialization now live inside the Research & Towers Hub, so the
+// hub owns the pill. Their sections keep their ids as the hub's sub-panels.
+export const tabResearchTowersBtn = document.getElementById('tabResearchTowers');
+export const researchTowersSection = document.getElementById('researchTowersSection');
 export const tabMaterialsBtn = document.getElementById('tabMaterials');
-export const tabHeroesBtn = document.getElementById('tabHeroes');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
-export const tabSpecializationBtn = document.getElementById('tabSpecialization');
 export const tabArcadeBtn = document.getElementById('tabArcade');
 export const tabAllStarBohBtn = document.getElementById('tabAllStarBoh');
 export const heroesSection = document.getElementById('heroesSection');

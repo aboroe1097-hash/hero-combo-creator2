@@ -1,4 +1,5 @@
 import { escapeHtml } from './utils.js';
+import { queueAccountSync } from './account-sync.js';
 import {
   ENABLE_RESEARCH_FEATURE,
   activeTechSeasons,
@@ -146,6 +147,7 @@ function setStoredNodeLevels(updates) {
   try {
     localStorage.setItem(RESEARCH_PROGRESS_KEY, JSON.stringify(progress));
     legacyKeys.forEach((key) => localStorage.removeItem(key));
+    queueAccountSync('research');
   } catch {}
 }
 

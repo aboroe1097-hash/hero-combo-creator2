@@ -42,6 +42,7 @@ export function saveSpecializationState(state, storage) {
   if (!target || typeof target.setItem !== 'function') return false;
   try {
     target.setItem(SPECIALIZATION_STORAGE_KEY, serialized);
+    try { globalThis.dispatchEvent?.(new CustomEvent('vts:account-sync-request', { detail: { featureId: 'specialization-towers' } })); } catch {}
     return true;
   } catch {
     return false;

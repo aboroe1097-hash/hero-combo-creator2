@@ -1,4 +1,5 @@
 import { cssToken, debounce, escapeHtml } from './utils.js';
+import { queueAccountSync } from './account-sync.js';
 // js/app-generator.js
 import { translations } from './translations.js';
 import {
@@ -119,6 +120,7 @@ export function persistGeneratorSelection() {
         heroes: Array.from(generatorSelectedHeroes),
       })
     );
+    queueAccountSync('generator-selection');
   } catch {
     // Local storage can fail in private browsing or quota exhaustion.
   }
@@ -193,6 +195,7 @@ function setGeneratorSkinOwned(heroName, owned) {
         heroes: ownership,
       })
     );
+    queueAccountSync('generator-skins');
   } catch {
     // Ignore storage failures; the current render still reflects the click.
   }
@@ -451,6 +454,7 @@ export function renderGeneratorHeroes(options = {}) {
 
     const skinToggleEl = card.querySelector('.generator-skin-toggle');
     if (skinToggleEl) {
+      let pointerToggleHandled = false;
       const toggleSkin = (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -468,11 +472,21 @@ export function renderGeneratorHeroes(options = {}) {
           eventName,
           (e) => {
             e.stopPropagation();
+            if (eventName === 'pointerup') {
+              pointerToggleHandled = true;
+              toggleSkin(e);
+            }
           },
           { passive: false }
         );
       });
-      skinToggleEl.addEventListener('click', toggleSkin);
+      skinToggleEl.addEventListener('click', (e) => {
+        if (pointerToggleHandled) {
+          pointerToggleHandled = false;
+          return;
+        }
+        toggleSkin(e);
+      });
       skinToggleEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') toggleSkin(e);
       });

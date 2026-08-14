@@ -1,4 +1,5 @@
 import '../css/materials.css';
+import { queueAccountSync } from './account-sync.js';
 
 import { currentLanguage, setCurrentLanguage } from './state.js';
 import { escapeHtml, formatLocaleNumber } from './utils.js';
@@ -262,6 +263,7 @@ function loadPlan() {
 function savePlan() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+    queueAccountSync('material-planner');
   } catch {
     // The planner remains fully usable when storage is disabled.
   }
