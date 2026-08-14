@@ -191,17 +191,30 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   await page.locator('.cmdk-input').press('Escape');
   await expect(page.locator('.cmdk-overlay')).toBeHidden();
 
+  // This suite runs against the deployed site, which may be either side of the
+  // hub rollout: before it ships, production still has the standalone
+  // #tabGenerator and #tabSpecialization pills. Each entry therefore lists the
+  // hub pill first and the pre-hub pill as a fallback, and the loop uses
+  // whichever one the deployed page actually has. The markers are unchanged by
+  // the rollout, so only the pill id needs the alternative.
   const lazySurfaces = [
-    ['#tabHeroesCombos', '#generatorHeroes'],
+    [['#tabHeroesCombos', '#tabGenerator'], '#generatorHeroes'],
     // The Research & Towers Hub opens on Towers Specialization, so its own
     // marker is the tower planner; Research is reached from the sub-tab and is
     // covered by the local app smoke suite.
-    ['#tabResearchTowers', '#specializationToolRoot .spec-tool'],
-    ['#tabMaterials', '#materialCalculatorRoot .dm-plan-panel'],
-    ['#tabStrife', '#strifeToolRoot .strife-monster-card'],
-    ['#tabEdenMap', '#edenMapRoot'],
+    [['#tabResearchTowers', '#tabSpecialization'], '#specializationToolRoot .spec-tool'],
+    [['#tabMaterials'], '#materialCalculatorRoot .dm-plan-panel'],
+    [['#tabStrife'], '#strifeToolRoot .strife-monster-card'],
+    [['#tabEdenMap'], '#edenMapRoot'],
   ];
-  for (const [tab, marker] of lazySurfaces) {
+  for (const [candidates, marker] of lazySurfaces) {
+    let tab = candidates[0];
+    for (const candidate of candidates) {
+      if ((await page.locator(candidate).count()) > 0) {
+        tab = candidate;
+        break;
+      }
+    }
     const tool = page.locator(tab);
     let openedMore = false;
     if (!(await tool.isVisible())) {

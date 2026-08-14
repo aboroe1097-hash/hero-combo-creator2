@@ -773,3 +773,123 @@
     animation: none !important;
   }
 }
+
+/* =============================================================
+   Guide figures + Aiding Skill cards
+   -------------------------------------------------------------
+   Cropped in-game captures from the community PDFs. Each is a <figure> with a
+   caption that says what it shows, so it explains rather than decorates.
+   ============================================================= */
+.bounty-figure {
+  margin: 0 0 1.25rem;
+  padding: 0.6rem;
+  border: 1px solid var(--ff-border, rgba(159, 176, 204, 0.22));
+  border-radius: 14px;
+  background: var(--ff-surface-soft, rgba(159, 176, 204, 0.075));
+}
+
+.bounty-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+/* Tall phone captures must not run the full column width, or they dominate the
+   section they are illustrating. */
+.bounty-figure--portrait img {
+  max-width: 22rem;
+  margin-inline: auto;
+}
+
+.bounty-figure figcaption {
+  margin-top: 0.55rem;
+  color: var(--ff-text-dim, #9fb0cc);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.bounty-hero-unlock {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--ff-border, rgba(159, 176, 204, 0.22));
+  border-radius: 999px;
+  color: var(--ff-text-dim, #9fb0cc);
+  font-size: 0.66rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bounty-skill-card {
+  margin-bottom: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ff-border-strong, rgba(159, 176, 204, 0.34));
+  border-radius: 12px;
+  background: var(--ff-surface-raised, rgba(22, 34, 54, 0.6));
+}
+
+.bounty-skill-kicker {
+  display: block;
+  color: var(--ff-text-dim, #9fb0cc);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.bounty-skill-name {
+  display: block;
+  margin: 0.15rem 0 0.6rem;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.bounty-skill-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.4rem 0.9rem;
+  margin: 0 0 0.6rem;
+}
+
+.bounty-skill-facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.bounty-skill-facts dt {
+  color: var(--ff-text-dim, #9fb0cc);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bounty-skill-facts dd {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.bounty-skill-effect {
+  margin: 0;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--ff-border, rgba(159, 176, 204, 0.22));
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .bounty-figure--portrait img {
+    max-width: 100%;
+  }
+  .bounty-skill-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

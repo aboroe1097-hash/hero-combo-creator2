@@ -843,6 +843,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     { btn: tabEdenMapBtn, name: 'edenMap' },
     { btn: tabStrifeBtn, name: 'strife' },
     { btn: tabLoyaltyBtn, name: 'loyalty' },
+    // No pill of its own; it exists so the #bounty deep link resolves.
+    { btn: null, name: 'bounty' },
     { btn: tabYouTubeBtn, name: 'youtube' },
     { btn: tabArcadeBtn, name: 'arcade' },
     { btn: tabAllStarBohBtn, name: 'allStarBoh' },
@@ -1209,9 +1211,12 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
           _allStarBohBooting = false;
         });
     }
-    if (tabName === 'loyalty') {
-      // Legacy: Eden Loyalty now lives inside the VTS Eden Hub. The shell maps
-      // this tab name to the hub, which owns loading the loyalty fragment.
+    // Legacy: Eden Loyalty and Royal Bounty now live inside the VTS Eden Hub.
+    // The shell has already stashed the sub-tab intent on document.body; these
+    // names just need to resolve to the hub tab, which owns loading the
+    // fragment. Without 'bounty' here a #bounty deep link fell through to the
+    // default tab entirely.
+    if (tabName === 'loyalty' || tabName === 'bounty') {
       if (typeof switchTab === 'function') {
         switchTab('edenMap', true, { preserveHash: false });
       }
