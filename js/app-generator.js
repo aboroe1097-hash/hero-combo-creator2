@@ -454,6 +454,7 @@ export function renderGeneratorHeroes(options = {}) {
 
     const skinToggleEl = card.querySelector('.generator-skin-toggle');
     if (skinToggleEl) {
+      let pointerToggleHandled = false;
       const toggleSkin = (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -471,11 +472,21 @@ export function renderGeneratorHeroes(options = {}) {
           eventName,
           (e) => {
             e.stopPropagation();
+            if (eventName === 'pointerup') {
+              pointerToggleHandled = true;
+              toggleSkin(e);
+            }
           },
           { passive: false }
         );
       });
-      skinToggleEl.addEventListener('click', toggleSkin);
+      skinToggleEl.addEventListener('click', (e) => {
+        if (pointerToggleHandled) {
+          pointerToggleHandled = false;
+          return;
+        }
+        toggleSkin(e);
+      });
       skinToggleEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') toggleSkin(e);
       });

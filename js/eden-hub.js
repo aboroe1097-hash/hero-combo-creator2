@@ -48,7 +48,9 @@ function refreshMapViewport() {
   // The canvas may have initialized behind the default Royal Bounty panel.
   // Wait for the browser to apply the newly visible Map panel before sizing it.
   requestAnimationFrame(() => {
-    import('./eden-map.js?v=20260813_234930')
+    // Use the same module identity as the planner boot. A different query
+    // string creates a second module instance with no canvas state to refresh.
+    import('./eden-map.js?v=20260814_125122')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */

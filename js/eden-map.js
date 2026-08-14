@@ -2833,11 +2833,18 @@ export function initEdenMapPlanner() {
   };
 
   // Royal Bounty is the hub landing page, which means the map initializes
-  // while its panel is hidden. Re-measure only when the Map sub-tab is shown.
+  // while its panel is hidden. The first visible measurement must also fit
+  // the camera: the hidden 1px canvas otherwise leaves terrain off-screen.
+  let fittedForVisibleViewport = false;
   refreshEdenMapPlannerViewport = () => {
     if (root.closest('[hidden]') || canvas.closest('[hidden]')) return false;
     resize();
-    scheduleDraw({ sidebar: true });
+    if (!fittedForVisibleViewport) {
+      fittedForVisibleViewport = true;
+      fitView(false);
+    } else {
+      scheduleDraw({ sidebar: true });
+    }
     return true;
   };
 

@@ -1256,6 +1256,14 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (intent) _hubModule?.openResearchTowersSubtab(intent);
   }
 
+  function researchTowersHashIntent() {
+    const hash = String(window.location.hash || '')
+      .replace(/^#/, '')
+      .split('?')[0]
+      .toLowerCase();
+    return HUB_TAB_ALIASES.get(hash) || '';
+  }
+
   function bootResearchTowersHubOnce() {
     if (_hubReady) {
       applyResearchTowersIntent();
@@ -1273,6 +1281,22 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // announces the sub-tab it settled on, which boots that tool.
         mod.bootResearchTowersHub();
         _hubReady = true;
+        // A hashchange can arrive while this dynamic import is resolving.
+        // Consume an intent written during that narrow window after the hub
+        // is marked ready, not only during the hub's initial boot.
+        applyResearchTowersIntent();
+        // shell-v14 and app.js both preserve old hashes. When they initialize
+        // in different orders, make the hash authoritative so an earlier hub
+        // intent cannot leave the requested child panel hidden.
+        const reconcileHashIntent = () => {
+          const hashIntent = researchTowersHashIntent();
+          if (hashIntent) mod.openResearchTowersSubtab(hashIntent);
+        };
+        reconcileHashIntent();
+        // shell-v14 completes its initial active-state synchronization on the
+        // next task. Reconcile once more so its delayed legacy-route intent
+        // cannot overwrite a just-booted child panel.
+        setTimeout(reconcileHashIntent, 0);
       })
       .catch((err) => {
         _hubBooting = false;
@@ -1439,7 +1463,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       if (!options.preserveHash && window.location.hash !== '#' + hash) {
         // User-initiated tool changes must be Back/Forward navigable. Initial
         // hash normalization and hashchange handling pass preserveHash instead.
-        history.pushState({ tab: hash }, '', '#' + hash);
+        const historyMethod = options.replaceHash ? 'replaceState' : 'pushState';
+        history[historyMethod]({ tab: hash }, '', '#' + hash);
       }
     } catch {}
   }
@@ -1578,6 +1603,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   switchTab(startTab, true, {
     scrollToSection: startTab !== 'generator',
     preserveHash: preserveInitialHash,
+    replaceHash: !preserveInitialHash,
   });
 }
 
@@ -1859,26 +1885,30 @@ async function startApp() {
     });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
     const restoreHashRoute = () => {
-      const tab = resolveTabName(
-        window.location.hash?.replace('#', '').split('?')[0],
-        window.vtsTabNames
-      );
+      const rawHash = window.location.hash?.replace('#', '').split('?')[0] || '';
+      const tab = resolveTabName(rawHash, window.vtsTabNames);
       const targetSection = tab ? document.getElementById(`${tab}Section`) : null;
-      const needsCanonicalHash = tab && window.location.hash !== `#${tab}`;
+      const needsCanonicalHash =
+        tab && rawHash !== tab && rawHash.toLowerCase() === tab.toLowerCase();
       if (
         tab &&
         window.vtsTabNames?.has?.(tab) &&
-        (
+        (targetSection?.hidden ||
           targetSection?.classList.contains('hidden') ||
+          targetSection?.closest('[hidden]') ||
           targetSection?.closest('.tab-panel')?.classList.contains('hidden') ||
-          needsCanonicalHash
-        )
+          needsCanonicalHash)
       ) {
-        window.vtsSwitchTab?.(tab, true, { preserveHash: true });
+        window.vtsSwitchTab?.(tab, true, { preserveHash: !needsCanonicalHash, replaceHash: true });
       }
     };
     window.addEventListener('hashchange', restoreHashRoute);
     window.addEventListener('popstate', restoreHashRoute);
+    // shell-v14 can preserve a legacy hash while its own initial sync is still
+    // settling. Replaying the route after all app handlers are registered
+    // gives a hub child the same deterministic result as Back/Forward.
+    restoreHashRoute();
+    setTimeout(restoreHashRoute, 0);
   } finally {
     await notifyAppReady();
     window.VTS_ASSET_RECOVERY?.markBootComplete?.();
