@@ -173,11 +173,15 @@ const LIMITS = {
   // 30,133.8 KiB after production minification; retain roughly 6 KiB.
   // The 14.3.9 Specialization node glyphs, upgrade pips, and shaped-ring styles
   // re-audit to 30,155.1 KiB; retain roughly 7 KiB of headroom.
-  totalDeployBytes: 30162 * 1024,
+  // The four Royal Bounty guide figures cropped from the community PDFs
+  // (assets/bounty/*.webp, 196 KiB total) bring the artifact to 30,476.1 KiB;
+  // retain roughly 14 KiB of headroom.
+  totalDeployBytes: 30490 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
-  totalMediaBytes: 17580 * 1024,
+  // The Royal Bounty figures add 196 KiB of media; audited at 17,760.4 KiB.
+  totalMediaBytes: 17775 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -189,7 +193,9 @@ const LIMITS = {
   // and ten assets, emitting 625 files. Keep three files of headroom.
   // The 14.3.9 bounty guide fragment and its route chunks emit 631 files;
   // keep two files of headroom so unexpected chunk proliferation stays visible.
-  deployFileCount: 633,
+  // The four Royal Bounty figures emit 636 files; keep the guard tight so
+  // unexpected chunk proliferation still shows up.
+  deployFileCount: 637,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
