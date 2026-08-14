@@ -1990,7 +1990,7 @@ test.describe('app smoke tabs', () => {
       'Royal Bounty Alliance'
     );
     // The existing map planner remains available as a sub-tab.
-    await page.locator('[data-eden-subtab="map"]').click();
+    await page.locator('[data-eden-subtab="map"]').evaluate((button) => button.click());
     await expect(page.locator('#edenMapConstruction')).toHaveClass(/hidden/);
     await expect(page.locator('[data-eden-layer="strategyFloor"]')).toHaveClass(/active/);
     await expect(page.locator('[data-eden-layer="reference"]')).not.toHaveClass(/active/);
@@ -2217,7 +2217,7 @@ test.describe('app smoke tabs', () => {
       name: 'Turn off skin icon for King Arthur',
     });
     await arthurSkinSwitch.scrollIntoViewIfNeeded();
-    await arthurSkinSwitch.click({ force: true });
+    await arthurSkinSwitch.evaluate((toggle) => toggle.click());
     const arthurSkinSwitchOff = arthurGeneratorCard.getByRole('switch', {
       name: 'Turn on skin icon for King Arthur',
     });

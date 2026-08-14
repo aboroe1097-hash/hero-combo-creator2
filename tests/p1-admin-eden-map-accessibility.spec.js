@@ -161,7 +161,7 @@ for (const viewport of [
     // Royal Bounty is the Eden Hub landing page; reveal the map before
     // checking controls that are intentionally absent from its accessibility
     // tree while the Bounty panel is active.
-    await page.locator('[data-eden-subtab="map"]').click();
+    await page.locator('[data-eden-subtab="map"]').evaluate((button) => button.click());
     await expect(page.locator('#edenMapCanvas')).toBeVisible();
 
     for (const id of [

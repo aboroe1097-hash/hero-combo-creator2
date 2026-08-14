@@ -1001,6 +1001,26 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
+        root?.addEventListener(
+          'click',
+          (event) => {
+            const button = event.target.closest('[data-eden-subtab]');
+            const subtab = button?.dataset?.edenSubtab;
+            if (!subtab) return;
+            // The template is interactive before the lazy controller arrives.
+            // Keep that first click meaningful instead of dropping it.
+            root.querySelectorAll('[data-eden-subtab]').forEach((item) => {
+              const active = item.dataset.edenSubtab === subtab;
+              item.classList.toggle('active', active);
+              item.setAttribute('aria-selected', String(active));
+            });
+            root.querySelectorAll('[data-eden-subtab-panel]').forEach((panel) => {
+              panel.hidden = panel.dataset.edenSubtabPanel !== subtab;
+            });
+            document.body.dataset.edenHubSubtab = subtab;
+          },
+          { capture: true, once: true }
+        );
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.

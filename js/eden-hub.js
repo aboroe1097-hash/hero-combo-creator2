@@ -126,7 +126,7 @@ function readSubtabIntent() {
     const intent = document.body?.dataset?.edenHubSubtab;
     if (intent) {
       delete document.body.dataset.edenHubSubtab;
-      return ['loyalty', 'bounty', 'previous'].includes(intent) ? intent : null;
+      return ['map', 'loyalty', 'bounty', 'previous'].includes(intent) ? intent : null;
     }
   } catch {
     /* dataset unavailable */
@@ -141,7 +141,7 @@ export function bootEdenHub() {
   booted = true;
 
   function openIntent(name) {
-    if (name !== 'loyalty' && name !== 'bounty' && name !== 'previous') return;
+    if (name !== 'map' && name !== 'loyalty' && name !== 'bounty' && name !== 'previous') return;
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
     if (!panel) return;
