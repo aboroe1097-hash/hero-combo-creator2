@@ -84,8 +84,9 @@ const LIMITS = {
   // re-audit to 9506.1 KiB; retain roughly 5 KiB of headroom.
   // The 14.3.9 Heroes & Combos and Research & Towers hubs, the two-path tower
   // planner, and the account chip shipped on every page re-audit to 9617.3 KiB;
-  // retain roughly 6 KiB while entry and route caps remain unchanged.
-  totalJsBytes: 9623 * 1024,
+  // retain roughly 7 KiB while entry and route caps remain unchanged. The
+  // remaining headroom covers the deterministic Eden Hub activation bridge.
+  totalJsBytes: 9624 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
