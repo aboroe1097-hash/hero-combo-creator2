@@ -1444,24 +1444,24 @@ test.describe('app smoke tabs', () => {
 
     await firstBadge.locator('[data-spec-research]').click();
     const reset = page.locator('[data-spec-reset]');
-    await expect(reset).toContainText('(11/11)');
+    await expect(reset).toContainText('(12/12)');
     await reset.click();
-    await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
+    await expect(page.locator('[data-spec-reset]')).toContainText('(0/12)');
 
     const secondNode = page.locator('[data-spec-node]:not([disabled])').nth(1);
     await secondNode.click();
     await expect(secondNode).toHaveAttribute('data-selected', 'true');
     await expect(page.locator('#spec-node-inspector h4')).toHaveText('Revival');
     await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
-    await expect(reset).toContainText('(0/11)');
+    await expect(reset).toContainText('(0/12)');
 
     await page.locator('[data-spec-set-selected-node="learned"]').click();
-    await expect(reset).toContainText('(1/11)');
+    await expect(reset).toContainText('(1/12)');
 
     await page.locator('[data-spec-complete]').click();
-    await expect(reset).toContainText('(11/11)');
+    await expect(reset).toContainText('(12/12)');
     await reset.click();
-    await expect(page.locator('[data-spec-reset]')).toContainText('(0/11)');
+    await expect(page.locator('[data-spec-reset]')).toContainText('(0/12)');
 
     await page.locator('[data-spec-help-node]').click();
     await expect(page.locator('.spec-tool')).toHaveAttribute('data-view', 'overview');
@@ -2031,10 +2031,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-guide-root')).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
-      'Royal Bounty Alliance'
-    );
-    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-card').first()).toBeVisible();
+    await expect(
+      page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')
+    ).toContainText('Royal Bounty Alliance');
+    await expect(
+      page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-card').first()
+    ).toBeVisible();
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
   });
 

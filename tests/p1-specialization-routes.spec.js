@@ -16,7 +16,9 @@ function routeState(page) {
     return {
       total: cards.length,
       withStep: cards.filter((c) => c.dataset.routeStep).length,
-      next: cards.filter((c) => c.dataset.routeNext === 'true').map((c) => c.dataset.specializationResearch),
+      next: cards
+        .filter((c) => c.dataset.routeNext === 'true')
+        .map((c) => c.dataset.specializationResearch),
       steps: Object.fromEntries(
         cards.map((c) => [c.dataset.specializationResearch, c.dataset.routeStep || ''])
       ),
@@ -76,21 +78,23 @@ test('route presets annotate researches and mark the next one', async ({ page })
   expect(none.withStep, 'no annotations without a route').toBe(0);
   expect(none.next).toEqual([]);
 
-  // F2P route: cheapest-first, so Encounter Battle I leads.
+  // Both archer community plans open on Training I.
   await select.selectOption('f2p');
   await expect(page.locator('[data-route-next="true"]')).toHaveCount(1);
   const f2p = await routeState(page);
   expect(f2p.withStep, 'every visible research is on the route').toBe(f2p.total);
-  expect(f2p.steps.encounter1).toBe('1');
-  expect(f2p.next).toEqual(['encounter1']);
+  expect(f2p.steps.training1).toBe('1');
+  expect(f2p.next).toEqual(['training1']);
 
-  // Spender route: offence-weighted, so Call of Glory I leads instead.
+  // The plans diverge after that: the paid-hero plan takes Call of Glory I
+  // second, the F2P plan stays on the training line.
   await select.selectOption('spender');
   const spender = await routeState(page);
-  expect(spender.steps.callofglory1).toBe('1');
-  expect(spender.next).toEqual(['callofglory1']);
-  expect(spender.steps.encounter1, 'the two routes really differ').not.toBe(
-    f2p.steps.encounter1
+  expect(spender.steps.training1).toBe('1');
+  expect(spender.next).toEqual(['training1']);
+  expect(spender.steps.callofglory1).toBe('2');
+  expect(spender.steps.callofglory1, 'the two routes really differ').not.toBe(
+    f2p.steps.callofglory1
   );
 
   // The choice survives a reload.

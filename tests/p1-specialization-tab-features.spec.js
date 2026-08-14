@@ -38,14 +38,26 @@ test('route presets annotate the tab badges and mark the next research', async (
     .locator('[data-route-next="true"] [data-spec-research]')
     .getAttribute('data-spec-research');
 
+  const f2pSecond = await page
+    .locator('[data-route-step="2"] [data-spec-research]')
+    .getAttribute('data-spec-research');
+
   await select.selectOption('spender');
   await expect(page.locator('[data-route-next="true"]')).toHaveCount(1);
   const spenderFirst = await page
     .locator('[data-route-next="true"] [data-spec-research]')
     .getAttribute('data-spec-research');
+  const spenderSecond = await page
+    .locator('[data-route-step="2"] [data-spec-research]')
+    .getAttribute('data-spec-research');
 
-  expect(f2pFirst).toBe('encounter1');
-  expect(spenderFirst).toBe('callofglory1');
+  // Both archer community plans open on Training I; they diverge from step 2,
+  // which is what proves the chosen route is actually driving the order.
+  expect(f2pFirst).toBe('training1');
+  expect(spenderFirst).toBe('training1');
+  expect(f2pSecond).toBe('training2');
+  expect(spenderSecond).toBe('callofglory1');
+  expect(f2pSecond).not.toBe(spenderSecond);
 
   await select.selectOption('');
   expect(await page.locator('[data-route-next="true"]').count()).toBe(0);

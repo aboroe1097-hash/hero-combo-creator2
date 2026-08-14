@@ -32,6 +32,8 @@ import {
   SPECIALIZATION_ROUTE_IDS,
   getNextRouteResearch,
   getRouteStep,
+  getRouteLabel,
+  getRouteRationale,
 } from './specialization-routes.js';
 import {
   HERO_PLAN_DATA_REVISION,
@@ -128,7 +130,8 @@ const HERO_PLAN_MODE_KEY = 'vts_specialization_hero_plan_mode';
 
 let root = null;
 let state = null;
-let activeTroop = 'cavalry';
+// Archers are the tower most players plan first, so the tab lands there.
+let activeTroop = 'archer';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
 let selectedNodeId = null;
@@ -166,7 +169,7 @@ function isResearchCompleteForRoute(researchId) {
 
 function routeNextResearchId() {
   if (!activeRoute) return null;
-  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute);
+  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute, activeTroop);
 }
 
 // ---------------------------------------------------------------------------
@@ -393,6 +396,13 @@ function statusOf(progress) {
 
 /* ---------- Overview: troop tabs + column banners ---------- */
 
+// The hero-specific plan name where the chart names heroes, generic otherwise.
+function routeOptionLabel(routeId) {
+  return (
+    getRouteLabel(routeId, activeTroop) || sp(routeId === 'spender' ? 'routeSpender' : 'routeF2p')
+  );
+}
+
 function renderSummary(summary) {
   const troop = summary.troops[activeTroop];
   const medals = summary.overall.medals;
@@ -412,7 +422,7 @@ function renderSummary(summary) {
           <span>${escapeHtml(sp('routeLabel'))}</span>
           <select data-spec-route-select aria-label="${escapeHtml(sp('routeLabel'))}">
             <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(sp('routeNone'))}</option>
-            ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(sp(id === 'spender' ? 'routeSpender' : 'routeF2p'))}</option>`).join('')}
+            ${SPECIALIZATION_ROUTE_IDS.map((id) => `<option value="${id}" ${activeRoute === id ? 'selected' : ''}>${escapeHtml(routeOptionLabel(id))}</option>`).join('')}
           </select>
         </label>
         <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
@@ -509,7 +519,7 @@ function renderBadge(researchId) {
   const image = getSpecializationResearchImage(researchId, activeTroop);
   const plan = !activeRoute ? heroPlanForTroop(activeTroop) : null;
   const routeStep = activeRoute
-    ? getRouteStep(activeRoute, researchId)
+    ? getRouteStep(activeRoute, researchId, activeTroop)
     : plan
       ? getHeroPlanStep(plan, researchId)
       : 0;
@@ -517,11 +527,16 @@ function renderBadge(researchId) {
   const isPlanNext = plan && heroPlanNextResearchId() === researchId;
   const isNext = isRouteNext || isPlanNext;
   const planReasons = plan?.reasons?.[researchId] || [];
+  // A picked route carries the plan author's reason for the position; the hero
+  // plan carries its own. Whichever is driving the order explains itself.
+  const routeReason = routeStep && activeRoute ? getRouteRationale(researchId, activeTroop) : '';
   const planTip = planReasons.length
     ? `${escapeHtml(sp('planWhyNext'))}: ${planReasons.join(' · ')}`
-    : '';
+    : routeReason
+      ? escapeHtml(routeReason)
+      : '';
   return `
-    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isNext ? 'true' : 'false'}"${planReasons.length ? ` data-plan-reason="true" title="${planTip}"` : ''}>
+    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-route-next="${isNext ? 'true' : 'false'}"${planTip ? ` data-plan-reason="true" title="${planTip}"` : ''}>
       ${routeStep ? `<span class="spec-route-step" aria-hidden="true">${routeStep}</span>` : ''}
       ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
       <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">

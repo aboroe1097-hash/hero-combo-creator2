@@ -1441,8 +1441,8 @@ export function mountSpecializationTowers(mount) {
   }
   root = mount;
   state = loadSpecializationState();
-  const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'cavalry');
-  activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'cavalry';
+  const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'archer');
+  activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'archer';
   const storedRoute = safeStorageGet(ROUTE_KEY, '');
   activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
   easyMedalMode = safeStorageGet(EASY_MEDALS_KEY, '') === '1';
