@@ -23,44 +23,42 @@ test('the tab renders the real tool, not a link-out card', async ({ page }) => {
   expect(await page.locator('[data-spec-research]').count()).toBe(32);
 });
 
-test('route presets annotate the tab badges and mark the next research', async ({ page }) => {
+test('the path planner numbers every badge and marks the next research', async ({ page }) => {
   test.slow();
   await openTab(page);
 
-  const select = page.locator('[data-spec-route-select]');
-  await expect(select).toBeVisible();
-  await expect(select).toHaveValue('');
-  expect(await page.locator('[data-route-next="true"]').count()).toBe(0);
-
-  await select.selectOption('f2p');
+  // The Route dropdown is gone: the tab always shows a path now, chosen with the
+  // siege/field toggle and a hero preset, so a step number is never absent.
+  await expect(page.locator('[data-spec-route-select]')).toHaveCount(0);
+  const planner = page.locator('[data-spec-hero-plan]');
+  await expect(planner).toBeVisible();
   await expect(page.locator('[data-route-next="true"]')).toHaveCount(1);
-  const f2pFirst = await page
-    .locator('[data-route-next="true"] [data-spec-research]')
-    .getAttribute('data-spec-research');
+  await expect(page.locator('.spec-badge-wrap[data-route-step="1"]')).toHaveCount(1);
 
-  const f2pSecond = await page
-    .locator('[data-route-step="2"] [data-spec-research]')
-    .getAttribute('data-spec-research');
+  const stepFor = (research) =>
+    page
+      .locator(`.spec-badge-wrap:has([data-spec-research="${research}"])`)
+      .getAttribute('data-route-step');
 
-  await select.selectOption('spender');
-  await expect(page.locator('[data-route-next="true"]')).toHaveCount(1);
-  const spenderFirst = await page
-    .locator('[data-route-next="true"] [data-spec-research]')
-    .getAttribute('data-spec-research');
-  const spenderSecond = await page
-    .locator('[data-route-step="2"] [data-spec-research]')
-    .getAttribute('data-spec-research');
+  const siege = page.locator('[data-spec-plan-mode="siege"]');
+  const field = page.locator('[data-spec-plan-mode="nonSiege"]');
+  await expect(siege).toHaveAttribute('aria-checked', 'true');
+  const siegeSiege1 = await stepFor('siege1');
 
-  // Both archer community plans open on Training I; they diverge from step 2,
-  // which is what proves the chosen route is actually driving the order.
-  expect(f2pFirst).toBe('training1');
-  expect(spenderFirst).toBe('training1');
-  expect(f2pSecond).toBe('training2');
-  expect(spenderSecond).toBe('callofglory1');
-  expect(f2pSecond).not.toBe(spenderSecond);
+  // Switching path must reorder the badges — that is the whole point of having
+  // two paths rather than one.
+  await field.click();
+  await expect(field).toHaveAttribute('aria-checked', 'true');
+  const fieldSiege1 = await stepFor('siege1');
+  expect(Number(siegeSiege1)).toBeLessThan(Number(fieldSiege1));
 
-  await select.selectOption('');
-  expect(await page.locator('[data-route-next="true"]').count()).toBe(0);
+  // Owning a paid archer re-sorts the path and selects its preset.
+  await page.locator('[data-spec-path-hero="Ramses II"]').click();
+  await expect(page.locator('[data-spec-path-hero="Ramses II"]')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await expect(page.locator('.spec-path-card.is-active')).toContainText('Fatal Blow');
 });
 
 test('easy medal fill offers quick fills inside the tab', async ({ page }) => {
