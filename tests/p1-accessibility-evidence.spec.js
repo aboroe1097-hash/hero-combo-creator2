@@ -160,6 +160,8 @@ test('named controls and repaired ARIA expose equivalent accessibility-tree cont
   await page.setViewportSize({ width: 390, height: 844 });
   await openHome(page, '/#edenMap');
   await expect(page.locator('#edenMapRoot')).toBeVisible({ timeout: 20000 });
+  await page.locator('[data-eden-subtab="map"]').click();
+  await expect(page.locator('#edenDatasetSelect option').first()).toBeAttached({ timeout: 20000 });
   await page.evaluate(() => document.getElementById('edenSeasonModal')?.classList.add('hidden'));
 
   for (const id of [

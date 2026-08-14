@@ -1437,7 +1437,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       // stay shareable as #specialization even though the hub owns the tab.
       const hash = hubSubtab ? requestedTab : tabName;
       if (!options.preserveHash && window.location.hash !== '#' + hash) {
-        history.replaceState({ tab: hash }, '', '#' + hash);
+        // User-initiated tool changes must be Back/Forward navigable. Initial
+        // hash normalization and hashchange handling pass preserveHash instead.
+        history.pushState({ tab: hash }, '', '#' + hash);
       }
     } catch {}
   }
@@ -1856,7 +1858,7 @@ async function startApp() {
       }
     });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
-    window.addEventListener('hashchange', () => {
+    const restoreHashRoute = () => {
       const tab = resolveTabName(
         window.location.hash?.replace('#', '').split('?')[0],
         window.vtsTabNames
@@ -1866,11 +1868,17 @@ async function startApp() {
       if (
         tab &&
         window.vtsTabNames?.has?.(tab) &&
-        (targetSection?.classList.contains('hidden') || needsCanonicalHash)
+        (
+          targetSection?.classList.contains('hidden') ||
+          targetSection?.closest('.tab-panel')?.classList.contains('hidden') ||
+          needsCanonicalHash
+        )
       ) {
-        window.vtsSwitchTab?.(tab, true);
+        window.vtsSwitchTab?.(tab, true, { preserveHash: true });
       }
-    });
+    };
+    window.addEventListener('hashchange', restoreHashRoute);
+    window.addEventListener('popstate', restoreHashRoute);
   } finally {
     await notifyAppReady();
     window.VTS_ASSET_RECOVERY?.markBootComplete?.();

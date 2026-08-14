@@ -129,7 +129,7 @@ test('YouTube activation survives responsive reparenting and reaches its declare
   await openHome(page);
 
   const youtubeTab = page.locator('#tabYouTube');
-  await expect.poll(() => navigationPlacement(page, 'tabYouTube')).toBe('primary');
+  await expect.poll(() => navigationPlacement(page, 'tabYouTube')).toBe('more');
   await expect(youtubeTab).toHaveAttribute('aria-controls', 'youtubeSection');
 
   await page.setViewportSize({ width: 641, height: 900 });
@@ -171,9 +171,9 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   const skipLink = page.locator('#skipCurrentTool');
   await expect.poll(() => activeElementId(page)).toBe('skipCurrentTool');
   await expect(skipLink).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#generatorSection');
+  await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
   await page.keyboard.press('Enter');
-  await expect.poll(() => activeElementId(page)).toBe('generatorSection');
+  await expect.poll(() => activeElementId(page)).toBe('heroesCombosSection');
 
   const moreButton = page.locator('#shellMoreButton');
   await moreButton.focus();
@@ -193,8 +193,8 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   await expect.poll(() => activeElementId(page)).toBe('edenMapSection');
 
   await page.goBack();
-  await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#generatorSection');
+  await expect(page.locator('#heroesCombosSection')).toBeVisible();
+  await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
 
   await page.evaluate(() => {
     window.location.hash = '#research';
@@ -205,8 +205,8 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   await expect(skipLink).toHaveAttribute('href', '#researchTowersSection');
 
   await page.goBack();
-  await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#generatorSection');
+  await expect(page.locator('#heroesCombosSection')).toBeVisible();
+  await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
 });
 
 test('rendered Home tab scroll paths use auto under reduced motion', async ({ page }) => {
@@ -246,6 +246,7 @@ test('rendered Home tab scroll paths use auto under reduced motion', async ({ pa
     });
     researchTab.click();
   });
+  await page.locator('[data-hub-subtab="research"]').click();
 
   await expect(page.locator('#researchSection')).toBeVisible();
   await expect
