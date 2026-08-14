@@ -1001,11 +1001,15 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260814_125122')
+        // The Eden Hub owns the visible sub-tabs, so bind its controls as
+        // soon as the template exists. Waiting for the map engine left a
+        // short window where a real click on Map was silently dropped.
+        import('./eden-hub.js?v=20260813_061728')
+          .then((hub) => hub.bootEdenHub())
+          .then(() => import('./eden-map.js?v=20260814_125122'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
-            return import('./eden-hub.js?v=20260813_061728').then((hub) => hub.bootEdenHub());
           })
           .catch((err) => {
             console.error('Eden map failed to load', err);
