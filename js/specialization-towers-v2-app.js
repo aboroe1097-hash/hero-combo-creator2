@@ -95,7 +95,7 @@ const MAX_HISTORY = 60;
 const TROOP_ICONS = Object.freeze({ cavalry: '♞', archer: '⌁', footman: '⬟' });
 let root = null;
 let state = null;
-let activeTroop = 'cavalry';
+let activeTroop = 'archer';
 let selectedItem = { kind: 'research', researchId: 'training1', columnId: 1 };
 let locale = 'en';
 let undoStack = [];
@@ -383,14 +383,14 @@ function isResearchCompleteForRoute(researchId) {
 
 function getRouteNextResearchId() {
   if (!activeRoute) return null;
-  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute);
+  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute, activeTroop);
 }
 
 function renderResearchButton(researchId, columnId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   const progress = getResearchProgress(state, activeTroop, researchId);
   const percent = roundedPercent(progress.percent);
-  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId) : 0;
+  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId, activeTroop) : 0;
   const isRouteNext = activeRoute && getRouteNextResearchId() === researchId;
   const selected = selectedItem.kind === 'research' && selectedItem.researchId === researchId;
   const stateName = statusForProgress(progress);
@@ -1441,8 +1441,8 @@ export function mountSpecializationTowers(mount) {
   }
   root = mount;
   state = loadSpecializationState();
-  const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'cavalry');
-  activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'cavalry';
+  const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'archer');
+  activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'archer';
   const storedRoute = safeStorageGet(ROUTE_KEY, '');
   activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
   easyMedalMode = safeStorageGet(EASY_MEDALS_KEY, '') === '1';

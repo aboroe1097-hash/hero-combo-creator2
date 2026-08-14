@@ -29,7 +29,9 @@ const LIMITS = {
   // The 14.3.6 thin-tab Specialization planner card measures 408.1 KiB.
   // The 14.3.9 hero-plan bar in the Specialization tab lifts the shared entry
   // stylesheet to 411.3 KiB after minification; retain less than 1 KiB.
-  entryCssBytes: 412 * 1024,
+  // The 14.3.9 Specialization node glyphs, upgrade pips, and shaped-ring styles
+  // re-audit to 416.9 KiB; retain roughly 1 KiB of headroom.
+  entryCssBytes: 418 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
@@ -75,7 +77,9 @@ const LIMITS = {
   // The 14.3.9 skill-semantics hero auto-path engine, Eden Hub controller, and
   // Royal Bounty guide measure 9490.3 KiB after production minification;
   // retain roughly 5 KiB while entry and route caps remain unchanged.
-  totalJsBytes: 9495 * 1024,
+  // The 14.3.9 Specialization node glyphs, upgrade pips, and shaped-ring styles
+  // re-audit to 9506.1 KiB; retain roughly 5 KiB of headroom.
+  totalJsBytes: 9511 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -104,7 +108,9 @@ const LIMITS = {
   // audited aggregate to 1532.4 KiB; retain roughly 3 KiB of headroom.
   // The 14.3.9 Royal Bounty codex styles and the hero-plan bar bring the
   // audited aggregate to 1553.5 KiB; retain roughly 4.5 KiB of headroom.
-  totalCssBytes: 1558 * 1024,
+  // The 14.3.9 Specialization node glyphs, upgrade pips, and shaped-ring styles
+  // re-audit to 1559.1 KiB; retain roughly 4 KiB of headroom.
+  totalCssBytes: 1563 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -156,7 +162,9 @@ const LIMITS = {
   // after production minification; retain roughly 10 KiB of headroom.
   // The 14.3.9 auto-path, Eden Hub, and Royal Bounty artifact measures
   // 30,133.8 KiB after production minification; retain roughly 6 KiB.
-  totalDeployBytes: 30140 * 1024,
+  // The 14.3.9 Specialization node glyphs, upgrade pips, and shaped-ring styles
+  // re-audit to 30,155.1 KiB; retain roughly 7 KiB of headroom.
+  totalDeployBytes: 30162 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -187,11 +195,13 @@ const LIMITS = {
     // on Admin and 439.8/532.5 KiB on Arcade after minification.
     // The 14.3.9 hero-plan bar and Eden Hub additions measure 643.0/735.7 KiB
     // on Admin, 766.2/858.9 KiB on Eden, and 443.0/535.7 KiB on Arcade.
-    'admin.html': { desktop: 644 * 1024, mobile: 737 * 1024 },
-    'eden-x1.html': { desktop: 767 * 1024, mobile: 860 * 1024 },
+    // Re-audited for the 14.3.9 Specialization node styling: 648.6/741.3 KiB on
+    // Admin, 771.8/864.5 KiB on Eden, and 448.6/541.3 KiB on Arcade.
+    'admin.html': { desktop: 650 * 1024, mobile: 743 * 1024 },
+    'eden-x1.html': { desktop: 773 * 1024, mobile: 866 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
-    'arcade.html': { desktop: 444 * 1024, mobile: 537 * 1024 },
+    'arcade.html': { desktop: 450 * 1024, mobile: 543 * 1024 },
     // The Battle saved-profile checklist lifts the audited standalone route to
     // 54.9 KiB on desktop and mobile; retain roughly 1 KiB of headroom.
     'battle-simulator.html': { desktop: 56 * 1024, mobile: 56 * 1024 },

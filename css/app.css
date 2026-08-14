@@ -1050,6 +1050,9 @@ html.maintenance-mode .maintenance-preload {
   .spec-ring--tree {
     width: min(100%, 19rem);
   }
+  .spec-ring--shaped {
+    width: min(100%, 18rem);
+  }
   .spec-node-inspector {
     gap: 0.6rem;
     padding: 0.65rem;
@@ -19742,6 +19745,11 @@ html[dir='rtl'] .gen-buttons-row {
     0 0 16px color-mix(in srgb, var(--spec-action) 38%, transparent);
   transform: translate(-50%, -50%) scale(1.12);
 }
+/* Selection is carried by the halo, so it must not repaint the learned ring and
+   make a learned node look unlearned. */
+.spec-ring-node[data-selected='true'][data-state='learned'] {
+  border-color: var(--spec-success);
+}
 .spec-ring-node:focus-visible {
   z-index: 3;
   outline: 3px solid #f8fafc;
@@ -20147,6 +20155,171 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-ring--tree {
   max-width: 22rem;
   aspect-ratio: 3 / 4;
+}
+/* Rings drawn on transcribed in-game geometry: the box aspect comes from the
+   shape record inline, and the emblem is positioned by the shape's centre. */
+.spec-ring--shaped {
+  max-width: 20rem;
+}
+.spec-ring--shaped .spec-ring-center {
+  width: 5.6rem;
+  height: 5.6rem;
+}
+/* The passive-skill node is the large, distinct badge the game puts at the end
+   of every research path. */
+.spec-ring-node[data-passive='true'] {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-color: var(--spec-gold);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--spec-gold) 40%, transparent);
+}
+
+/* Tap target. The visible node stays small so the graph keeps its in-game
+   proportions, but the hit area is padded out to a comfortable size. */
+.spec-ring-node::before {
+  content: '';
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 50%;
+}
+.spec-ring-node-glyph {
+  display: grid;
+  place-items: center;
+}
+/* Learning-order chip: which step of the path this node is. */
+.spec-ring-num {
+  position: absolute;
+  right: -0.3rem;
+  bottom: -0.3rem;
+  min-width: 1.05rem;
+  padding: 0 0.2rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 999px;
+  background: var(--spec-panel-strong);
+  color: var(--spec-text-dim);
+  font-size: 0.58rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  pointer-events: none;
+}
+.spec-ring-node[data-state='learned'] .spec-ring-num {
+  border-color: var(--spec-success);
+  color: var(--spec-success);
+}
+.spec-ring-node[data-selected='true'] .spec-ring-num {
+  border-color: var(--spec-action);
+  color: var(--spec-text);
+}
+
+/* Upgrade pips: one diamond per upgrade the node takes, as the game shows under
+   its icon. Only multi-upgrade nodes draw them. */
+.spec-node-pips {
+  position: absolute;
+  left: 50%;
+  bottom: -0.42rem;
+  display: flex;
+  gap: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.spec-node-pips i {
+  width: 4px;
+  height: 4px;
+  border: 1px solid var(--spec-gold);
+  background: transparent;
+  transform: rotate(45deg);
+}
+.spec-node-pips i[data-filled='true'] {
+  background: var(--spec-gold);
+}
+.spec-node-max {
+  border-color: var(--spec-gold);
+  color: var(--spec-gold);
+}
+.spec-node-inspector .spec-node-pips {
+  position: static;
+  display: inline-flex;
+  transform: none;
+  vertical-align: middle;
+  margin-inline-start: 0.3rem;
+}
+.spec-node-upgrade-tag {
+  padding: 0 0.35rem;
+  border: 1px solid var(--spec-gold);
+  border-radius: 999px;
+  color: var(--spec-gold);
+  font-size: 0.66rem;
+  font-weight: 800;
+  vertical-align: middle;
+}
+.spec-route-reason {
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--spec-text-dim);
+}
+
+/* Node glyphs. Each buff family gets the colour the game gives it, so a graph
+   is scannable by icon alone. */
+.spec-glyph {
+  width: 1.35em;
+  height: 1.35em;
+  display: block;
+}
+.spec-ring-node .spec-glyph {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.spec-ring-node[data-passive='true'] .spec-glyph {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+.spec-ring-node[data-kind='might'],
+.spec-node-inspector-icon[data-kind='might'] {
+  color: rgb(248, 154, 122);
+}
+.spec-ring-node[data-kind='resistance'],
+.spec-node-inspector-icon[data-kind='resistance'] {
+  color: rgb(125, 179, 245);
+}
+.spec-ring-node[data-kind='hp'],
+.spec-node-inspector-icon[data-kind='hp'] {
+  color: rgb(124, 214, 158);
+}
+.spec-ring-node[data-kind='intel'],
+.spec-node-inspector-icon[data-kind='intel'] {
+  color: rgb(167, 165, 246);
+}
+.spec-ring-node[data-kind='rally'],
+.spec-node-inspector-icon[data-kind='rally'] {
+  color: rgb(214, 166, 240);
+}
+.spec-ring-node[data-kind='passive'],
+.spec-ring-node[data-kind='speed'],
+.spec-node-inspector-icon[data-kind='passive'],
+.spec-node-inspector-icon[data-kind='speed'] {
+  color: var(--spec-gold);
+}
+[data-theme='light'] .spec-ring-node[data-kind='might'],
+[data-theme='light'] .spec-node-inspector-icon[data-kind='might'] {
+  color: rgb(180, 63, 32);
+}
+[data-theme='light'] .spec-ring-node[data-kind='resistance'],
+[data-theme='light'] .spec-node-inspector-icon[data-kind='resistance'] {
+  color: rgb(29, 92, 168);
+}
+[data-theme='light'] .spec-ring-node[data-kind='hp'],
+[data-theme='light'] .spec-node-inspector-icon[data-kind='hp'] {
+  color: rgb(21, 122, 71);
+}
+[data-theme='light'] .spec-ring-node[data-kind='intel'],
+[data-theme='light'] .spec-node-inspector-icon[data-kind='intel'] {
+  color: rgb(78, 66, 186);
+}
+[data-theme='light'] .spec-ring-node[data-kind='rally'],
+[data-theme='light'] .spec-node-inspector-icon[data-kind='rally'] {
+  color: rgb(122, 55, 166);
 }
 .spec-tree-pct {
   position: absolute;
@@ -20668,21 +20841,139 @@ html[dir='rtl'] .gen-buttons-row {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
+}
+/* First-run path picker. */
+.spec-route-prompt {
+  margin: 0 0 14px;
+  padding: 0.7rem 0.85rem 0.85rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 12px;
+  background: var(--spec-panel);
+}
+.spec-route-prompt-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.spec-route-prompt-head h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--spec-text);
+}
+.spec-route-prompt-close {
+  border: 0;
+  background: transparent;
+  color: var(--spec-text-dim);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.spec-route-prompt-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.spec-route-prompt-option {
+  display: flex;
+  flex: 1 1 12rem;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 10px;
+  background: var(--spec-panel-strong);
+  color: var(--spec-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.spec-route-prompt-option:hover,
+.spec-route-prompt-option:focus-visible {
+  border-color: var(--spec-action);
+}
+.spec-route-heroes {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.spec-route-heroes img {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--spec-border-strong);
+  border-radius: 50%;
+  background: var(--spec-panel);
+  object-fit: cover;
+}
+.spec-route-heroes img + img {
+  margin-inline-start: -0.65rem;
 }
 .spec-route-control {
   display: inline-flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  font-size: 0.72rem;
-  font-weight: 700;
+}
+.spec-route-control-label {
+  font-size: 0.68rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.85;
+  letter-spacing: 0.08em;
+  color: var(--spec-text-dim);
+}
+/* The route picker and medal toggle were unstyled native widgets; give them the
+   same panel treatment as the rest of the tower chrome. */
+.spec-select,
+.spec-easy-medals {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 8px;
+  background: var(--spec-panel);
+  color: var(--spec-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.spec-select {
+  padding-right: 1.9rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 1.05rem center,
+    right 0.7rem center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+.spec-select:hover,
+.spec-easy-medals:hover {
+  border-color: var(--spec-action);
+}
+.spec-select:focus-visible,
+.spec-easy-medals:focus-visible {
+  outline: 2px solid var(--spec-action);
+  outline-offset: 2px;
 }
 .spec-easy-medals[aria-pressed='true'] {
-  border-color: rgba(251, 191, 36, 0.85);
-  background: rgba(251, 191, 36, 0.18);
+  border-color: var(--spec-gold);
+  background: color-mix(in srgb, var(--spec-gold) 18%, var(--spec-panel));
+  color: var(--spec-gold);
 }
 /* Hero plan (skill-semantics auto-path) bar in the Specialization tab. */
 .spec-hero-plan {
@@ -20802,24 +21093,38 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-badge-wrap {
   position: relative;
 }
+/* Route order chip. Sits in its own row above the badge rather than floating
+   over the emblem art, where it used to collide with the next-up pill and the
+   neighbouring badges. */
+.spec-badge-meta {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.05rem;
+}
 .spec-route-step {
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  min-width: 19px;
-  height: 19px;
-  padding: 0 4px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  display: inline-flex;
+  gap: 1px;
+  align-items: baseline;
+  justify-content: center;
+  min-width: 25px;
+  padding: 3px 6px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.92);
-  color: rgba(226, 232, 240, 0.9);
-  font-size: 0.6rem;
-  font-weight: 700;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 1px 4px rgba(2, 6, 23, 0.55);
+  color: rgb(226, 232, 240);
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   pointer-events: none;
+}
+.spec-route-step small {
+  font-size: 0.75em;
+  font-weight: 700;
+  opacity: 0.6;
 }
 [data-route-next='true'] .spec-route-step {
   border-color: rgba(251, 191, 36, 0.9);
@@ -20827,12 +21132,7 @@ html[dir='rtl'] .gen-buttons-row {
   color: rgb(23, 20, 8);
 }
 .spec-route-next {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  z-index: 3;
   padding: 2px 7px;
-  transform: translateX(-50%);
   border-radius: 999px;
   background: rgb(251, 191, 36);
   color: rgb(23, 20, 8);

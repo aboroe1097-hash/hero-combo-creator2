@@ -16,6 +16,8 @@ import {
   getColumnProgress,
   getResearchNodeAccess,
   getResearchProgress,
+  getNodeUpgradeCount,
+  getResearchUpgradeTotal,
   getResearchSelection,
   getSpecializationSummary,
   parseSpecializationState,
@@ -28,9 +30,14 @@ import {
   toggleResearchNode,
 } from '../../js/specialization-towers-v2-model.js';
 
+// Every upgrade, not every node: base-attribute nodes take two, so they appear
+// twice in a fully learned selection.
 function allNodeIds(researchId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
-  const ids = research.nodes.map((node) => node.id);
+  const ids = [];
+  research.nodes.forEach((node) => {
+    for (let index = 0; index < getNodeUpgradeCount(node); index += 1) ids.push(node.id);
+  });
   if (research.passiveSkillNodeId !== null) ids.push(research.passiveSkillNodeId);
   return ids;
 }
@@ -118,6 +125,8 @@ test('progressive node access distinguishes available, hidden, locked, and impor
       visible: true,
       selectable: true,
       selected: true,
+      level: 1,
+      maxLevel: 1,
       prerequisitesVerified: false,
       prerequisiteNodeIds: null,
       pathBranch: null,
@@ -170,15 +179,16 @@ test('Enhanced Tactics IV exposes all public nodes without inventing downstream 
 test('research milestones use the exact selected-node ratio, including the passive node', () => {
   const research = SPECIALIZATION_RESEARCH.training1;
   assert.notEqual(research.passiveSkillNodeId, null);
-  const totalNodes = research.nodes.length + 1;
+  const totalNodes = getResearchUpgradeTotal(research);
   const firstThresholdCount = Math.ceil(totalNodes * 0.25);
   let state = createEmptySpecializationState();
 
+  const upgradeSequence = allNodeIds('training1');
   state = setResearchNodes(
     state,
     'cavalry',
     'training1',
-    research.nodes.slice(0, firstThresholdCount - 1).map((node) => node.id)
+    upgradeSequence.slice(0, firstThresholdCount - 1)
   );
   assert.equal(getResearchProgress(state, 'cavalry', 'training1').unlockedMilestones.length, 0);
 
@@ -186,7 +196,7 @@ test('research milestones use the exact selected-node ratio, including the passi
     state,
     'cavalry',
     'training1',
-    research.nodes[firstThresholdCount - 1].id
+    upgradeSequence[firstThresholdCount - 1]
   );
   const atThreshold = getResearchProgress(state, 'cavalry', 'training1');
   assert.equal(atThreshold.completedNodes, firstThresholdCount);
@@ -196,11 +206,12 @@ test('research milestones use the exact selected-node ratio, including the passi
     [25]
   );
 
+  // Every regular upgrade bought, passive still missing.
   const regularOnly = setResearchNodes(
     state,
     'cavalry',
     'training1',
-    research.nodes.map((node) => node.id)
+    upgradeSequence.filter((nodeId) => nodeId !== research.passiveSkillNodeId)
   );
   assert.equal(getResearchProgress(regularOnly, 'cavalry', 'training1').isComplete, false);
   const complete = toggleResearchNode(

@@ -318,13 +318,15 @@ export const TOOL_DECLARATIONS = Object.freeze([
     type: 'function',
     name: 'get_specialization_context',
     description:
-      'Read canonical Specialization Towers data. kind=overview lists all eight columns with researches, medal costs, seasons, and Legion Skills; kind=column with columnId details one column; kind=research with researchName details one research including nodes and milestones. Unknown medal values stay unknown and must never be estimated.',
+      'Read canonical Specialization Towers data. kind=overview lists all eight columns; kind=column details one column; kind=research details one research including nodes, per-node upgradeCount (base-attribute nodes take 2 upgrades) and milestones; kind=route returns the recommended funding order for a troop (troop=archer|cavalry|footman, routeId=spender for owners of Ramses II/Boudica or f2p otherwise). Unknown medal values stay unknown and must never be estimated.',
     parameters: {
       type: 'object',
       properties: {
-        kind: { type: 'string', enum: ['overview', 'column', 'research'] },
+        kind: { type: 'string', enum: ['overview', 'column', 'research', 'route'] },
         columnId: { type: 'integer', minimum: 1, maximum: 8 },
         researchName: { type: 'string', minLength: 1, maxLength: 80 },
+        troop: { type: 'string', enum: ['archer', 'cavalry', 'footman'] },
+        routeId: { type: 'string', enum: ['spender', 'f2p'] },
       },
       required: ['kind'],
       additionalProperties: false,
@@ -654,8 +656,8 @@ export function validateToolArguments(name, args) {
   }
   if (name === 'get_specialization_context') {
     if (
-      !hasOnlyKeys(args, ['kind', 'columnId', 'researchName']) ||
-      !['overview', 'column', 'research'].includes(args.kind)
+      !hasOnlyKeys(args, ['kind', 'columnId', 'researchName', 'troop', 'routeId']) ||
+      !['overview', 'column', 'research', 'route'].includes(args.kind)
     ) {
       return false;
     }
@@ -669,7 +671,20 @@ export function validateToolArguments(name, args) {
         args.researchName.length <= 80
       );
     }
-    return args.columnId === undefined && args.researchName === undefined;
+    if (args.kind === 'route') {
+      return (
+        (args.troop === undefined || ['archer', 'cavalry', 'footman'].includes(args.troop)) &&
+        (args.routeId === undefined || ['spender', 'f2p'].includes(args.routeId)) &&
+        args.columnId === undefined &&
+        args.researchName === undefined
+      );
+    }
+    return (
+      args.columnId === undefined &&
+      args.researchName === undefined &&
+      args.troop === undefined &&
+      args.routeId === undefined
+    );
   }
   if (name === 'get_skin_tier_details') return hasOnlyKeys(args, []);
   if (name === 'get_arcade_leaderboard') {
@@ -691,8 +706,7 @@ export function validateToolArguments(name, args) {
       return false;
     }
     return (
-      args.topN === undefined ||
-      (Number.isInteger(args.topN) && args.topN >= 1 && args.topN <= 50)
+      args.topN === undefined || (Number.isInteger(args.topN) && args.topN >= 1 && args.topN <= 50)
     );
   }
   if (name === 'get_all_star_boh_mechanics') {

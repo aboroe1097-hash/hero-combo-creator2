@@ -419,14 +419,16 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
   Object.freeze({
     name: 'get_specialization_context',
     description:
-      'Read canonical Specialization Towers data: column overview, one column, or one research with nodes, milestones, and Legion Skills.',
+      'Read canonical Specialization Towers data. kind=overview lists all eight columns; kind=column details one column; kind=research details one research including nodes, per-node upgradeCount (base-attribute nodes take 2 upgrades) and milestones; kind=route returns the recommended funding order for a troop (troop=archer|cavalry|footman, routeId=spender for owners of Ramses II/Boudica or f2p otherwise). Unknown medal values stay unknown and must never be estimated.',
     parameters: Object.freeze({
       type: 'object',
       required: ['kind'],
       properties: {
-        kind: { type: 'string', enum: ['overview', 'column', 'research'] },
+        kind: { type: 'string', enum: ['overview', 'column', 'research', 'route'] },
         columnId: { type: 'integer', minimum: 1, maximum: 8 },
         researchName: { type: 'string', minLength: 1, maxLength: 80 },
+        troop: { type: 'string', enum: ['archer', 'cavalry', 'footman'] },
+        routeId: { type: 'string', enum: ['spender', 'f2p'] },
       },
       additionalProperties: false,
     }),
