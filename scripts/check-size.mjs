@@ -196,7 +196,9 @@ const LIMITS = {
   // keep two files of headroom so unexpected chunk proliferation stays visible.
   // The four Royal Bounty figures emit 636 files; keep the guard tight so
   // unexpected chunk proliferation still shows up.
-  deployFileCount: 637,
+  // Dropping the account chip from the two strict-CSP standalone routes
+  // re-splits their shared chunks, emitting 639 files; keep two of headroom.
+  deployFileCount: 641,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
