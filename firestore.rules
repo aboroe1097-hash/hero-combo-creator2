@@ -638,6 +638,49 @@ service cloud.firestore {
       && request.resource.data.updatedBy == request.auth.uid;
     }
 
+    // Eden X2 published projection: the ONLY Eden X2 document a non-admin can
+    // read. It carries just the allowlisted public season fields; the working
+    // eden_x2_* records stay admin-only.
+    function validEdenX2PublicProjection() {
+      return request.resource.data.keys().hasOnly([
+        'schemaVersion', 'workspace', 'season', 'published', 'revision', 'publishedAtMs',
+        'updatedBy', 'dashboard', 'rosterSnapshots', 'voteSettings', 'publicVoteResults'
+      ])
+      && request.resource.data.schemaVersion == 1
+      && request.resource.data.workspace == 'eden-x2'
+      && request.resource.data.season is string
+      && request.resource.data.season.size() > 0
+      && request.resource.data.season.size() <= 40
+      && request.resource.data.published is bool
+      && request.resource.data.revision is int
+      && request.resource.data.revision >= 1
+      && request.resource.data.publishedAtMs is number
+      && request.resource.data.updatedBy is string
+      && request.resource.data.dashboard is map
+      && request.resource.data.rosterSnapshots is list
+      && request.resource.data.rosterSnapshots.size() <= 50
+      && request.resource.data.voteSettings is map
+      && request.resource.data.publicVoteResults is map;
+    }
+
+    function validEdenWorkspaceRecord(workspaceId) {
+      return request.resource.data.keys().hasOnly([
+        'id', 'lifecycle', 'active', 'createdAtMs', 'archivedAtMs', 'publication', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.id == workspaceId
+      && (workspaceId == 'eden-x1' || workspaceId == 'eden-x2')
+      && (
+        request.resource.data.lifecycle == 'archived'
+        || request.resource.data.lifecycle == 'draft'
+        || request.resource.data.lifecycle == 'active'
+      )
+      && request.resource.data.active is bool
+      && request.resource.data.createdAtMs is number
+      && (!('archivedAtMs' in request.resource.data) || request.resource.data.archivedAtMs is number)
+      && (!('publication' in request.resource.data) || request.resource.data.publication is map)
+      && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy is string);
+    }
+
     function hasStableConductMetadata() {
       return ('createdAt' in resource.data)
         && resource.data.createdAt is timestamp
@@ -2465,6 +2508,92 @@ service cloud.firestore {
     match /vts_admin/eden_x1_public_vote_results {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
+      allow delete: if false;
+    }
+
+    // --- Eden X2 workspace (current season) ---
+    // Working eden_x2_* records are admin-only; the public Eden X2 page reads
+    // only the allowlisted published projection. Member votes keep the exact
+    // X1 contract (any signed-in visitor may vote; only their own doc edits).
+
+    match /vts_admin/eden_x2_dashboard_data {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validDashboardData()
+        && request.resource.data.syncRevision == 1;
+      allow update: if isAdmin()
+        && validDashboardData()
+        && (
+          (!('syncRevision' in resource.data)
+            && request.resource.data.syncRevision == 1)
+          || ('syncRevision' in resource.data
+            && request.resource.data.syncRevision == resource.data.syncRevision + 1)
+        )
+        && (!('updatedAtMs' in resource.data)
+          || request.resource.data.updatedAtMs >= resource.data.updatedAtMs);
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_roster_data {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && validRosterData();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_conduct_adjustments/records/{adjustmentId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validConductAdjustment()
+        && request.resource.data.id == adjustmentId
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        && validConductAdjustment()
+        && request.resource.data.id == adjustmentId
+        && (keepsConductMetadata() || repairsHistoricalConductMetadata());
+      allow delete: if isAdmin();
+    }
+
+    match /vts_admin/eden_x2_votes/records/{voteId} {
+      allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
+      allow list, delete: if isAdmin();
+      allow create: if signedIn()
+        && validEdenX1Vote()
+        && validEdenX1VotePath(voteId);
+      allow update: if signedIn()
+        && validEdenX1Vote()
+        && validEdenX1VotePath(voteId)
+        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid);
+    }
+
+    match /vts_admin/eden_x2_vote_history/records/{historyId} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && validEdenX1VoteHistory()
+        && validEdenX1VoteHistoryPath(historyId);
+      allow update, delete: if false;
+    }
+
+    match /vts_admin/eden_x2_vote_settings {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && validEdenX1VoteSettings();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_public_vote_results {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_public_projection {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenX2PublicProjection();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_workspaces/records/{workspaceId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenWorkspaceRecord(workspaceId);
       allow delete: if false;
     }
 

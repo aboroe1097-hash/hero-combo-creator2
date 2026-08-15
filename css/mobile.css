@@ -2958,11 +2958,12 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   body.admin-standalone-page .admin-command-actions .admin-control-row {
     display: grid !important;
     grid-template-columns:
-      minmax(112px, 0.8fr)
-      minmax(160px, 1.15fr)
+      minmax(108px, 0.8fr)
+      minmax(148px, 1.1fr)
       44px
-      minmax(118px, 0.85fr)
-      minmax(118px, 0.85fr) !important;
+      minmax(96px, 0.8fr)
+      minmax(104px, 0.85fr)
+      minmax(104px, 0.85fr) !important;
     align-items: center !important;
     gap: 8px !important;
   }
@@ -2970,7 +2971,8 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   body.admin-standalone-page .admin-command-actions .global-game-clock,
   body.admin-standalone-page .admin-command-actions .lang-select-wrapper,
   body.admin-standalone-page .admin-command-actions .lang-select-wrapper > div,
-  body.admin-standalone-page .admin-command-actions .admin-back-tools {
+  body.admin-standalone-page .admin-command-actions .admin-back-tools,
+  body.admin-standalone-page .admin-command-actions .admin-account-slot {
     grid-column: auto !important;
     width: 100% !important;
     max-width: none !important;
@@ -3083,12 +3085,23 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
 
   body.admin-standalone-page .admin-command-actions .admin-back-tools:first-of-type {
     grid-column: 1 / 2 !important;
-    grid-row: 3 !important;
+    grid-row: 4 !important;
   }
 
   body.admin-standalone-page .admin-command-actions .admin-back-tools:last-of-type {
     grid-column: 2 / -1 !important;
+    grid-row: 4 !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-account-slot {
+    grid-column: 1 / -1 !important;
     grid-row: 3 !important;
+    width: 100% !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-account-slot .vts-account-chip {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 

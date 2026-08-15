@@ -263,6 +263,16 @@ test('Alexander pulls the burning-damage milestones forward for Footmen', () => 
   assert.ok(plan.heroNotes.some((entry) => entry.hero === 'Alexander' && entry.note.length > 40));
 });
 
+test('hero notes carry the key mechanics the synergies disclosure renders', () => {
+  const result = buildHeroPlans({ heroes: ['Ramses II'], mode: 'siege' });
+  const entry = planFor(result, 'archer').heroNotes.find((note) => note.hero === 'Ramses II');
+  assert.ok(entry, 'Ramses II is on the archer plan notes');
+  // The catalog's keyMechanics ride along with the note so the planner can
+  // show the full mechanic explanation, not a capped preview.
+  assert.deepEqual([...entry.mechanics], ['Fatal Blow', 'Additional Attack']);
+  assert.ok(entry.note.length > 40);
+});
+
 test('plan step helpers walk the ordered plan and find the next research', () => {
   const result = buildHeroPlans({ heroes: ['Ramses II', 'Boudica'], mode: 'siege' });
   const plan = planFor(result, 'archer');

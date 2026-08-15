@@ -54,8 +54,21 @@ import {
   hasAuthoritativeEdenVoteSettings,
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
+import { edenWorkspaceFirestorePath, getEdenWorkspace } from './eden-workspaces.js';
 
 const APP_VERSION = '14.3.9';
+// Season-configured viewer: eden-x1.html keeps its archive defaults, while
+// eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
+// switches to the published-projection read path, X2 vote collections, and
+// workspace-namespaced caches. X1 behavior is byte-identical to before.
+const EDEN_WORKSPACE_ID = (() => {
+  const raw = String(document.body?.dataset?.edenWorkspace || '')
+    .trim()
+    .toLowerCase();
+  return raw === 'x2' || raw === 'eden-x2' ? 'eden-x2' : 'eden-x1';
+})();
+const EDEN_WORKSPACE = getEdenWorkspace(EDEN_WORKSPACE_ID);
+const EDEN_IS_X2 = EDEN_WORKSPACE_ID === 'eden-x2';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -63,6 +76,16 @@ const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
 const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
 const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
+const EDEN_X2_PROJECTION_PATH = edenWorkspaceFirestorePath('eden-x2', 'publicProjection');
+const EDEN_ACTIVE_VOTE_SETTINGS_PATH = EDEN_IS_X2
+  ? edenWorkspaceFirestorePath('eden-x2', 'voteSettings')
+  : EDEN_X1_VOTE_SETTINGS_DOC_PATH;
+const EDEN_ACTIVE_VOTES_PATH = EDEN_IS_X2
+  ? edenWorkspaceFirestorePath('eden-x2', 'votes')
+  : EDEN_X1_VOTES_COLLECTION_PATH;
+const EDEN_ACTIVE_VOTE_HISTORY_PATH = EDEN_IS_X2
+  ? edenWorkspaceFirestorePath('eden-x2', 'voteHistory')
+  : EDEN_X1_VOTE_HISTORY_COLLECTION_PATH;
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
 const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
@@ -82,6 +105,9 @@ const MS_PER_DAY = 86_400_000;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_PUBLIC_CACHE_KEY = 'vts_eden_x1_public_dashboard_cache_v1';
+const EDEN_PUBLIC_CACHE_KEY = EDEN_IS_X2
+  ? 'vts_eden_x2_public_dashboard_cache_v1'
+  : EDEN_X1_PUBLIC_CACHE_KEY;
 const EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 const EDEN_X1_SEASON_STATES = new Set(['archive', 'active']);
@@ -348,6 +374,9 @@ function t(key, vars = {}) {
   Object.entries({ version: APP_VERSION, ...vars }).forEach(([name, replacement]) => {
     value = value.replaceAll(`{${name}}`, String(replacement));
   });
+  // The X2 page reuses the X1 catalogs; only the season label differs, so the
+  // label is swapped at read time instead of duplicating every catalog key.
+  if (EDEN_IS_X2) value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel);
   return value;
 }
 

@@ -45,6 +45,8 @@
     <link rel="stylesheet" href="css/app.css?v=20260814_125122" />
     <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260814_125122" />
     <link rel="stylesheet" href="css/components.css?v=20260814_125122" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260814_125122" />
+    <link rel="stylesheet" href="css/admin-account-chip.css?v=20260814_125122" />
     <link rel="stylesheet" href="css/atmosphere.css?v=20260814_125122" />
     <link rel="stylesheet" href="css/mobile.css?v=20260814_125122" media="(max-width: 768px)" />
     <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260814_125122" />
@@ -63,7 +65,7 @@
     </script>
     <script src="js/admin-auth-config.js?v=20260814_125122"></script>
   </head>
-  <body class="admin-standalone-page">
+  <body class="admin-standalone-page" data-account-return-to="/admin.html">
     <div class="maintenance-preload" role="status" aria-live="polite">
       <section class="maintenance-card" aria-label="Maintenance status">
         <img src="images/logo.png" alt="" class="maintenance-logo" width="92" height="92" />
@@ -191,6 +193,13 @@
                 </svg>
               </span>
             </button>
+
+            <div
+              id="adminAccountChip"
+              class="admin-account-slot"
+              data-account-chip
+              aria-label="Account"
+            ></div>
 
             <a href="eden-x1.html" class="admin-back-tools" data-i18n="edenX1ViewLink"
               >Eden X1 View</a

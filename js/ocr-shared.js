@@ -2,6 +2,11 @@
 import { isLocalDevHost } from './utils.js';
 import { resolvePlayerRegistryAlias } from './player-registry.js';
 import {
+  edenWorkspaceFirestorePath,
+  edenWorkspaceStorageKey,
+  getActiveAdminWorkspaceId,
+} from './eden-workspaces.js';
+import {
   ADMIN_LOG_STORAGE_KEY,
   formatAdminLogMessage,
   listAdminLogEntries,
@@ -11,15 +16,31 @@ import {
 } from './admin-log-store.js';
 
 // --- Storage Keys ---
-export const STORAGE_KEY = 'vts_ocr_dashboard';
-export const ROSTER_KEY = 'vts_ocr_roster';
-export const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
-export const BANNER_KEY = 'vts_ocr_banners';
-export const DUTY_LIST_KEY = 'vts_ocr_duty_lists';
-export const CONTRIBUTION_KEY = 'vts_ocr_contribution_lists';
-export const EX_GUILD_CONTRIBUTION_KEY = 'vts_ocr_ex_guild_contributions';
-export const FS_PATH = 'vts_admin/dashboard_data';
-export const FS_ROSTER_PATH = 'vts_admin/roster_data';
+// Season records are workspace-scoped: the active workspace is resolved once
+// at module load (a workspace switch reloads the admin page), and every
+// season-scoped localStorage key and Firestore path resolves through it. The
+// eden-x1 workspace keeps the historical keys and paths so the archive's
+// mirrors stay untouched; eden-x2 gets its own namespaced keys and paths.
+const ACTIVE_EDEN_WORKSPACE_ID = getActiveAdminWorkspaceId();
+
+export const STORAGE_KEY = edenWorkspaceStorageKey('vts_ocr_dashboard', ACTIVE_EDEN_WORKSPACE_ID);
+export const ROSTER_KEY = edenWorkspaceStorageKey('vts_ocr_roster', ACTIVE_EDEN_WORKSPACE_ID);
+export const ROSTER_SNAPSHOTS_KEY = edenWorkspaceStorageKey(
+  'vts_roster_snapshots',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+export const BANNER_KEY = edenWorkspaceStorageKey('vts_ocr_banners', ACTIVE_EDEN_WORKSPACE_ID);
+export const DUTY_LIST_KEY = edenWorkspaceStorageKey('vts_ocr_duty_lists', ACTIVE_EDEN_WORKSPACE_ID);
+export const CONTRIBUTION_KEY = edenWorkspaceStorageKey(
+  'vts_ocr_contribution_lists',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+export const EX_GUILD_CONTRIBUTION_KEY = edenWorkspaceStorageKey(
+  'vts_ocr_ex_guild_contributions',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+export const FS_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'dashboardData');
+export const FS_ROSTER_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData');
 export const LOG_KEY = ADMIN_LOG_STORAGE_KEY;
 export const MAX_ROSTER_SNAPSHOTS = 50;
 
