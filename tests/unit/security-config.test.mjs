@@ -612,7 +612,7 @@ test('Eden X1 requires authoritative vote settings while tolerating optional sid
   assert.match(eden, /const EDEN_X1_OPTIONAL_READ_TIMEOUT_MS = 3500;/);
   assert.match(eden, /async function loadEdenOptionalData/);
   assert.match(eden, /'roster data'/);
-  assert.match(eden, /getDoc\(doc\(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH\)\)/);
+  assert.match(eden, /getDoc\(doc\(db, EDEN_ACTIVE_VOTE_SETTINGS_PATH\)\)/);
   assert.match(eden, /requireAuthoritativeEdenVoteSettings/);
   assert.doesNotMatch(eden, /loadEdenOptionalData\([^)]*vote settings/);
   assert.match(eden, /'public vote results'/);
