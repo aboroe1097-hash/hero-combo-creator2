@@ -32,16 +32,16 @@ export const SKIN_TIERS = [
     star1: { unlock: 'Granted on activation (owning the skin).' },
     star1To2: {
       items: [
-        { name: 'Epic Hero Medal', qty: 18 },
-        { name: 'Legendary Hero Medal', qty: 9 },
-        { name: 'Biography Seal', qty: 240 },
+        { name: 'Epic Hero Medal', qty: 18, iconId: 'epic-hero-medal' },
+        { name: 'Legendary Hero Medal', qty: 9, iconId: 'legendary-hero-medal' },
+        { name: 'Biography Seal', qty: 240, iconId: 'biography-seal' },
       ],
     },
     star2To3: null,
     maximizeTotal: [
-      { name: 'Biography Seal', qty: 240 },
-      { name: 'Legendary Hero Medal', qty: 9 },
-      { name: 'Epic Hero Medal', qty: 18 },
+      { name: 'Biography Seal', qty: 240, iconId: 'biography-seal' },
+      { name: 'Legendary Hero Medal', qty: 9, iconId: 'legendary-hero-medal' },
+      { name: 'Epic Hero Medal', qty: 18, iconId: 'epic-hero-medal' },
     ],
     acquisition: [
       "Buy directly during that hero's launch event — yours to keep once purchased.",
@@ -62,23 +62,23 @@ export const SKIN_TIERS = [
     star1: { unlock: 'Granted on activation (owning the skin).' },
     star1To2: {
       items: [
-        { name: 'Epic Hero Medal', qty: 32 },
-        { name: 'Legendary Hero Medal', qty: 16 },
-        { name: 'Biography Seal', qty: 480 },
+        { name: 'Epic Hero Medal', qty: 32, iconId: 'epic-hero-medal' },
+        { name: 'Legendary Hero Medal', qty: 16, iconId: 'legendary-hero-medal' },
+        { name: 'Biography Seal', qty: 480, iconId: 'biography-seal' },
       ],
     },
     star2To3: {
       items: [
-        { name: 'Legendary Hero Medal', qty: 2 },
-        { name: 'Seasonal Legendary Hero Medal', qty: 2 },
-        { name: 'Biography Seal', qty: 450 },
+        { name: 'Legendary Hero Medal', qty: 2, iconId: 'legendary-hero-medal' },
+        { name: 'Seasonal Legendary Hero Medal', qty: 2, iconId: 'seasonal-legendary-hero-medal' },
+        { name: 'Biography Seal', qty: 450, iconId: 'biography-seal' },
       ],
     },
     maximizeTotal: [
-      { name: 'Biography Seal', qty: 930 },
-      { name: 'Epic Hero Medal', qty: 32 },
-      { name: 'Legendary Hero Medal', qty: 18 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 2 },
+      { name: 'Biography Seal', qty: 930, iconId: 'biography-seal' },
+      { name: 'Epic Hero Medal', qty: 32, iconId: 'epic-hero-medal' },
+      { name: 'Legendary Hero Medal', qty: 18, iconId: 'legendary-hero-medal' },
+      { name: 'Seasonal Legendary Hero Medal', qty: 2, iconId: 'seasonal-legendary-hero-medal' },
     ],
     acquisition: [
       'Pull from launch or return event packs (about a 1.4% drop rate per pack).',
@@ -100,24 +100,24 @@ export const SKIN_TIERS = [
     star1: { unlock: 'Granted on activation (owning the skin).' },
     star1To2: {
       items: [
-        { name: 'Epic Hero Medal', qty: 96 },
-        { name: 'Legendary Hero Medal', qty: 32 },
-        { name: 'Seasonal Legendary Hero Medal', qty: 4 },
-        { name: 'Advanced Biography Seal', qty: 480 },
+        { name: 'Epic Hero Medal', qty: 96, iconId: 'epic-hero-medal' },
+        { name: 'Legendary Hero Medal', qty: 32, iconId: 'legendary-hero-medal' },
+        { name: 'Seasonal Legendary Hero Medal', qty: 4, iconId: 'seasonal-legendary-hero-medal' },
+        { name: 'Advanced Biography Seal', qty: 480, iconId: 'advanced-biography-seal' },
       ],
     },
     star2To3: {
       items: [
-        { name: 'Legendary Hero Medal', qty: 6 },
-        { name: 'Seasonal Legendary Hero Medal', qty: 6 },
-        { name: 'Advanced Biography Seal', qty: 280 },
+        { name: 'Legendary Hero Medal', qty: 6, iconId: 'legendary-hero-medal' },
+        { name: 'Seasonal Legendary Hero Medal', qty: 6, iconId: 'seasonal-legendary-hero-medal' },
+        { name: 'Advanced Biography Seal', qty: 280, iconId: 'advanced-biography-seal' },
       ],
     },
     maximizeTotal: [
-      { name: 'Advanced Biography Seal', qty: 760 },
-      { name: 'Epic Hero Medal', qty: 96 },
-      { name: 'Legendary Hero Medal', qty: 38 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 10 },
+      { name: 'Advanced Biography Seal', qty: 760, iconId: 'advanced-biography-seal' },
+      { name: 'Epic Hero Medal', qty: 96, iconId: 'epic-hero-medal' },
+      { name: 'Legendary Hero Medal', qty: 38, iconId: 'legendary-hero-medal' },
+      { name: 'Seasonal Legendary Hero Medal', qty: 10, iconId: 'seasonal-legendary-hero-medal' },
     ],
     acquisition: [
       'Pull from launch or return event packs (about a 1.4% drop rate per pack).',
@@ -579,6 +579,22 @@ export function getSkinIconHtml(skin, maximized = false) {
   const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
   const animClass = maximized ? 'skin-icon-animated' : '';
   return `<span class="skin-icon ${animClass}" style="color:${typeInfo.color};border-color:${typeInfo.color}" title="${skin.name} (${skin.type})">${typeInfo.icon}</span>`;
+}
+
+// In-game item icons live in assets/skins/items/<iconId>.webp. The Atlas
+// renderer always reserves an icon slot per cost item and swaps in the image
+// once the asset exists, so icons can be added without touching code.
+export function getSkinItemIconUrl(item) {
+  const iconId = String(item?.iconId || '').trim();
+  if (!/^[a-z0-9-]+$/i.test(iconId)) return null;
+  return `assets/skins/items/${iconId}.webp`;
+}
+
+// Flat list of every catalogued hero skin, in database order.
+export function getAllSkinHeroEntries() {
+  return Object.entries(heroSkins).flatMap(([heroName, skins]) =>
+    skins.map((skin) => ({ heroName, skin }))
+  );
 }
 
 // The ordered Skin Atlas tier catalog with verified star-up costs.

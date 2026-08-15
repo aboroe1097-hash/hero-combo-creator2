@@ -24,6 +24,8 @@ import {
   getSkinCount,
   getHeroHiddenPower,
   getSkinTiers,
+  getSkinItemIconUrl,
+  getAllSkinHeroEntries,
   SKIN_TYPES,
 } from './skins-db.js';
 import {
@@ -217,7 +219,9 @@ function renderHiddenPowerCard(hiddenPower) {
 }
 
 const _heroSeasonByName = new Map(allHeroesData.map((h) => [h.name, h.season]));
+const _allHeroNames = new Set(allHeroesData.map((h) => h.name));
 const HERO_SEASON_INDEX = Object.fromEntries(HERO_ATLAS_ALL_SEASONS.map((s, i) => [s, i]));
+const SKIN_TYPE_ORDER = Object.freeze(Object.keys(SKIN_TYPES));
 
 function getHeroSeason(name) {
   return _heroSeasonByName.get(name) || null;
@@ -327,9 +331,13 @@ let _heroesTabState = {
   comboScope: 'season-capped',
   sort: 'rating',
   limit: 20,
+  skinView: 'tiers',
+  skinSearch: '',
+  skinType: 'all',
 };
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
+let _skinsSearchTimer = null;
 let _heroesUrlParamsApplied = false;
 let _heroesDetailFocusRequested = false;
 let _heroesReturnFocusName = null;
@@ -556,6 +564,28 @@ function selectHeroInAtlas(name) {
   renderHeroesTab();
 }
 
+/**
+ * Opens a hero's detail panel no matter which Atlas mode is showing. From the
+ * Skins sub-tab the detail panel only exists in hero mode, so the hub is moved
+ * to the Heroes sub-tab first to keep the chrome and the panel in sync.
+ */
+function openHeroDetailFromAnyMode(heroName) {
+  _heroesDetailFocusRequested = true;
+  _heroesReturnFocusName = null;
+  _heroesTabState.selected = heroName;
+  updateHeroAtlasUrlParams();
+  if (_heroesTabState.mode !== 'skins') {
+    renderHeroesTab();
+    return;
+  }
+  import('./heroes-combos-hub.js')
+    .then((mod) => {
+      const opened = mod?.openHeroesCombosSubtab?.('heroes');
+      if (!opened) setHeroAtlasMode('heroes');
+    })
+    .catch(() => setHeroAtlasMode('heroes'));
+}
+
 function wireHeroesTabEvents(container) {
   if (_heroesTabEventsWired || !container) return;
   _heroesTabEventsWired = true;
@@ -608,6 +638,20 @@ function wireHeroesTabEvents(container) {
       return;
     }
 
+    const skinsViewBtn = e.target.closest('[data-skins-view]');
+    if (skinsViewBtn) {
+      _heroesTabState.skinView = skinsViewBtn.dataset.skinsView === 'gallery' ? 'gallery' : 'tiers';
+      renderHeroesTab();
+      return;
+    }
+
+    const skinsTypeBtn = e.target.closest('[data-skins-type]');
+    if (skinsTypeBtn) {
+      _heroesTabState.skinType = skinsTypeBtn.dataset.skinsType;
+      renderHeroesTab();
+      return;
+    }
+
     const scopeBtn = e.target.closest('[data-combo-scope]');
     if (scopeBtn) {
       _heroesTabState.comboScope = scopeBtn.dataset.comboScope;
@@ -618,11 +662,7 @@ function wireHeroesTabEvents(container) {
     const pickHero = e.target.closest('[data-hero-pick]');
     if (pickHero) {
       e.stopPropagation();
-      _heroesDetailFocusRequested = true;
-      _heroesReturnFocusName = null;
-      _heroesTabState.selected = pickHero.dataset.heroPick;
-      updateHeroAtlasUrlParams();
-      renderHeroesTab();
+      openHeroDetailFromAnyMode(pickHero.dataset.heroPick);
       return;
     }
 
@@ -669,21 +709,43 @@ function wireHeroesTabEvents(container) {
   });
 
   container.addEventListener('input', (e) => {
-    if (e.target.id !== 'heroesTabSearch') return;
-    clearTimeout(_heroesSearchTimer);
-    _heroesSearchTimer = setTimeout(() => {
-      _heroesTabState.search = e.target.value;
-      _heroesTabState.limit = 20;
-      syncHeroSelectionWithFilters();
-      updateHeroAtlasUrlParams();
-      renderHeroesTab();
-    }, 180);
+    if (e.target.id === 'heroesTabSearch') {
+      clearTimeout(_heroesSearchTimer);
+      _heroesSearchTimer = setTimeout(() => {
+        _heroesTabState.search = e.target.value;
+        _heroesTabState.limit = 20;
+        syncHeroSelectionWithFilters();
+        updateHeroAtlasUrlParams();
+        renderHeroesTab();
+      }, 180);
+      return;
+    }
+    if (e.target.id === 'skinsGallerySearch') {
+      clearTimeout(_skinsSearchTimer);
+      _skinsSearchTimer = setTimeout(() => {
+        _heroesTabState.skinSearch = e.target.value;
+        renderHeroesTab();
+      }, 180);
+    }
   });
+
+  container.addEventListener('load', (event) => {
+    const image = event.target;
+    if (image?.matches?.('img[data-skin-item-art]')) {
+      image.parentElement?.classList.add('has-art');
+    }
+  }, true);
 
   container.addEventListener(
     'error',
     (event) => {
       const image = event.target;
+      if (image?.matches?.('img[data-skin-item-art]')) {
+        const slot = image.parentElement;
+        image.remove();
+        slot?.classList.add('skin-item-icon--empty');
+        return;
+      }
       if (image?.matches?.('img[data-skin-art]')) {
         image.hidden = true;
         const artFrame = image.closest('[data-skin-art-frame]');
@@ -712,12 +774,44 @@ function wireHeroesTabEvents(container) {
   });
 }
 
+function skinItemMonogram(name) {
+  const words = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return '';
+  return words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * Cost item icon slot. Real in-game art swaps in automatically once
+ * assets/skins/items/<iconId>.webp exists; until then the slot keeps a
+ * monogram placeholder so the layout already reserves space for the icons.
+ */
+function renderSkinItemIcon(item) {
+  const iconUrl = getSkinItemIconUrl(item);
+  const monogram = skinItemMonogram(item?.name || '');
+  return `
+    <span class="skin-item-icon${iconUrl ? '' : ' skin-item-icon--empty'}" title="${escapeHtml(heroUi('skinItemIconPlaceholder'))}" aria-hidden="true">
+      <span class="skin-item-icon-fallback">${escapeHtml(monogram)}</span>
+      ${
+        iconUrl
+          ? `<img class="skin-item-icon-img" src="${escapeHtml(iconUrl)}" alt="" width="28" height="28" loading="lazy" decoding="async" data-skin-item-art>`
+          : ''
+      }
+    </span>`;
+}
+
 function renderSkinReqList(items) {
   if (!Array.isArray(items) || !items.length) return '';
   return `<ul class="skin-req-list">${items
     .map(
       (item) =>
-        `<li class="skin-req-item"><span class="skin-req-name">${escapeHtml(heroContentText(item.name))}</span><bdi class="skin-req-qty">×${escapeHtml(formatLocaleNumber(item.qty, currentLanguage))}</bdi></li>`
+        `<li class="skin-req-item"><span class="skin-req-left">${renderSkinItemIcon(item)}<span class="skin-req-name">${escapeHtml(heroContentText(item.name))}</span></span><bdi class="skin-req-qty">×${escapeHtml(formatLocaleNumber(item.qty, currentLanguage))}</bdi></li>`
     )
     .join('')}</ul>`;
 }
@@ -726,6 +820,7 @@ function renderSkinStarStep({ label, sublabel, body }) {
   return `
     <div class="skin-star-step">
       <div class="skin-star-head">
+        <span class="skin-star-glyph" aria-hidden="true">★</span>
         <span class="skin-star-badge">${escapeHtml(label)}</span>
         <span class="skin-star-title">${escapeHtml(sublabel)}</span>
       </div>
@@ -733,9 +828,17 @@ function renderSkinStarStep({ label, sublabel, body }) {
     </div>`;
 }
 
+function renderTierHeroChip(name) {
+  if (!_allHeroNames.has(name)) {
+    return `<bdi class="skin-tier-hero-chip" dir="auto" translate="no">${escapeHtml(name)}</bdi>`;
+  }
+  return `<button type="button" class="skin-tier-hero-chip skin-tier-hero-chip--link" data-hero-pick="${escapeHtml(name)}" title="${escapeHtml(heroUi('viewHero', { hero: name }))}"><bdi dir="auto" translate="no">${escapeHtml(name)}</bdi></button>`;
+}
+
 function renderSkinTierCard(tier) {
   const starWord = heroUi('star');
   const starLabel = (value) => `${starWord} ${formatLocaleNumber(value, currentLanguage)}`;
+  const typeInfo = SKIN_TYPES[tier.typeKey] || SKIN_TYPES.Mythic;
   const star1 = renderSkinStarStep({
     label: starLabel(1),
     sublabel: heroUi('biographyAttributes'),
@@ -761,12 +864,7 @@ function renderSkinTierCard(tier) {
   const heroesBlock = tier.knownHeroes.length
     ? `<div class="skin-tier-heroes">
         <span class="skin-tier-heroes-label">${escapeHtml(heroUi('skinKnownHeroes'))}</span>
-        <div class="skin-tier-hero-chips">${tier.knownHeroes
-          .map(
-            (name) =>
-              `<bdi class="skin-tier-hero-chip" dir="auto" translate="no">${escapeHtml(name)}</bdi>`
-          )
-          .join('')}</div>
+        <div class="skin-tier-hero-chips">${tier.knownHeroes.map(renderTierHeroChip).join('')}</div>
       </div>`
     : tier.heroesNote
       ? `<p class="skin-tier-heroes-note">${escapeHtml(heroContentText(tier.heroesNote))}</p>`
@@ -775,6 +873,7 @@ function renderSkinTierCard(tier) {
   return `
     <article class="skin-tier-card" style="--skin-accent:${escapeHtml(tier.color)}">
       <header class="skin-tier-head">
+        <span class="skin-tier-badge" aria-hidden="true">${escapeHtml(typeInfo.icon)}</span>
         <div class="skin-tier-title-row">
           <h3 class="skin-tier-name">${escapeHtml(heroContentText(tier.name))}</h3>
           <span class="skin-tier-rank">${escapeHtml(heroContentText(tier.rank))}</span>
@@ -796,16 +895,144 @@ function renderSkinTierCard(tier) {
     </article>`;
 }
 
+function renderSkinAtlasIntro() {
+  const tiers = getSkinTiers();
+  const totalSkins = getAllSkinHeroEntries().length;
+  const itemCount = new Set(
+    tiers.flatMap((tier) => [...(tier.star1To2?.items || []), ...(tier.star2To3?.items || [])].map((item) => item.name))
+  ).size;
+  return `
+    <header class="skin-atlas-intro">
+      <div class="skin-atlas-intro-copy">
+        <h2 id="skinAtlasHeading">${escapeHtml(heroUi('skinAtlasTitle'))}</h2>
+        <p>${escapeHtml(heroUi('skinAtlasDescription'))}</p>
+      </div>
+      <div class="skin-atlas-facts" aria-label="${escapeHtml(heroUi('skinAtlasFactsAria'))}">
+        <span class="skin-atlas-fact">${escapeHtml(heroUi('skinAtlasTierCount', { n: tiers.length }))}</span>
+        <span class="skin-atlas-fact">${escapeHtml(heroUi('skinGalleryCount', { n: totalSkins }))}</span>
+        <span class="skin-atlas-fact">${escapeHtml(heroUi('skinAtlasItemCount', { n: itemCount }))}</span>
+      </div>
+    </header>`;
+}
+
 function renderSkinAtlas() {
   const tiers = getSkinTiers();
   return `
     <section class="skin-atlas" aria-labelledby="skinAtlasHeading">
-      <header class="skin-atlas-intro">
-        <h2 id="skinAtlasHeading">${escapeHtml(heroUi('skinAtlasTitle'))}</h2>
-        <p>${escapeHtml(heroUi('skinAtlasDescription'))}</p>
-      </header>
+      ${renderSkinAtlasIntro()}
       <div class="skin-atlas-grid">${tiers.map(renderSkinTierCard).join('')}</div>
     </section>`;
+}
+
+function getSkinGalleryTypes() {
+  const present = new Set(getAllSkinHeroEntries().map((entry) => entry.skin.type));
+  return SKIN_TYPE_ORDER.filter((type) => present.has(type));
+}
+
+function renderSkinGalleryCard(entry, hero) {
+  const { heroName, skin } = entry;
+  const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
+  const assetUrl = getExactSkinAssetUrl(skin);
+  const status = skin.detailsStatus
+    ? heroContentText(skin.detailsStatus)
+    : heroUi('skinDetailsComplete');
+  const statusClass = skin.detailsStatus ? skin.detailsStatus : 'complete';
+  const monogram = Array.from(String(heroName).trim())[0]?.toUpperCase() || '';
+  const season = hero?.season;
+  return `
+  <button type="button" class="skin-gallery-card" data-hero-pick="${escapeHtml(heroName)}" style="--skin-accent:${escapeHtml(typeInfo.color)}" aria-label="${escapeHtml(heroUi('viewHero', { hero: heroName }))}">
+    <span class="skin-gallery-art" data-skin-art-frame>
+      <span class="skin-gallery-monogram" aria-hidden="true">${escapeHtml(monogram)}</span>
+      ${
+        assetUrl
+          ? `<img src="${escapeHtml(assetUrl)}" alt="" width="64" height="64" loading="lazy" decoding="async" data-skin-art>`
+          : ''
+      }
+    </span>
+    <span class="skin-gallery-body">
+      <span class="skin-gallery-hero">${escapeHtml(heroName)}</span>
+      <span class="skin-gallery-meta">
+        <span class="skin-gallery-type">${escapeHtml(heroContentText(typeInfo.label || skin.type))}</span>
+        <span class="skin-gallery-status skin-gallery-status--${escapeHtml(statusClass)}">${escapeHtml(status)}</span>
+        ${season ? `<span class="skin-gallery-season" style="--sc:${escapeHtml(seasonColors[season] || '#f97316')}">${escapeHtml(season)}</span>` : ''}
+      </span>
+    </span>
+  </button>`;
+}
+
+function renderSkinGallery() {
+  const { skinSearch, skinType } = _heroesTabState;
+  const query = (skinSearch || '').trim().toLowerCase();
+  const heroByName = new Map(allHeroesData.map((h) => [h.name, h]));
+  let entries = getAllSkinHeroEntries()
+    .map((entry) => ({ ...entry, hero: heroByName.get(entry.heroName) || null }))
+    .sort((a, b) => a.heroName.localeCompare(b.heroName));
+  if (skinType !== 'all') {
+    entries = entries.filter((entry) => entry.skin.type === skinType);
+  }
+  if (query) {
+    entries = entries.filter((entry) => {
+      const typeInfo = SKIN_TYPES[entry.skin.type] || SKIN_TYPES.Mythic;
+      return (
+        entry.heroName.toLowerCase().includes(query) ||
+        String(entry.skin.name || '').toLowerCase().includes(query) ||
+        String(typeInfo.label || '').toLowerCase().includes(query)
+      );
+    });
+  }
+  const cardsHtml = entries.length
+    ? entries.map((entry) => renderSkinGalleryCard(entry, entry.hero)).join('')
+    : `<p class="skin-gallery-empty">${escapeHtml(heroUi('skinGalleryEmpty'))}</p>`;
+  return `
+    <section class="skin-gallery" aria-labelledby="skinGalleryHeading">
+      <header class="skin-gallery-intro">
+        <h2 id="skinGalleryHeading">${escapeHtml(heroUi('skinGalleryTitle'))}</h2>
+        <p>${escapeHtml(heroUi('skinGalleryDescription'))}</p>
+      </header>
+      <div class="skin-gallery-grid">${cardsHtml}</div>
+    </section>`;
+}
+
+function renderSkinsView() {
+  const { skinView, skinSearch, skinType } = _heroesTabState;
+  const view = skinView === 'gallery' ? 'gallery' : 'tiers';
+  const totalSkins = getAllSkinHeroEntries().length;
+
+  const galleryToolsHtml =
+    view === 'gallery'
+      ? `
+    <div class="skins-gallery-tools">
+      <div class="hero-search-wrap skins-gallery-search">
+        <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+        <input id="skinsGallerySearch" class="hero-search-input" type="search" placeholder="${escapeHtml(heroUi('skinGallerySearchPh'))}" aria-label="${escapeHtml(heroUi('skinGallerySearchPh'))}" value="${escapeHtml(skinSearch)}" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="skins-type-pills" role="group" aria-label="${escapeHtml(heroUi('skinTypeFilterAria'))}">
+        <button type="button" class="skins-type-pill ${skinType === 'all' ? 'active' : ''}" data-skins-type="all" aria-pressed="${skinType === 'all'}">${escapeHtml(heroUi('all'))}</button>
+        ${getSkinGalleryTypes()
+          .map(
+            (type) => `
+        <button type="button" class="skins-type-pill ${skinType === type ? 'active' : ''}" data-skins-type="${type}" aria-pressed="${skinType === type}">${escapeHtml(heroContentText((SKIN_TYPES[type] || {}).label || type))}</button>`
+          )
+          .join('')}
+      </div>
+      <span class="skins-gallery-count" aria-live="polite">${escapeHtml(heroUi('skinGalleryCount', { n: totalSkins }))}</span>
+    </div>`
+      : '';
+
+  return `
+      <div class="heroes-tab-inner heroes-tab-inner--skins heroes-tab-inner--skin-${view}">
+        <div class="heroes-toolbar-sticky heroes-toolbar-sticky--skins">
+          <div class="skins-view-bar">
+            <div class="skins-view-toggle" role="group" aria-label="${escapeHtml(heroUi('skinsViewAria'))}">
+              <button type="button" class="skins-view-btn ${view === 'tiers' ? 'active' : ''}" data-skins-view="tiers" aria-pressed="${view === 'tiers'}">${escapeHtml(heroUi('skinsViewTierGuide'))}</button>
+              <button type="button" class="skins-view-btn ${view === 'gallery' ? 'active' : ''}" data-skins-view="gallery" aria-pressed="${view === 'gallery'}">${escapeHtml(heroUi('skinsViewGallery'))}</button>
+            </div>
+            <span class="skins-total-chip">${escapeHtml(heroUi('skinGalleryCount', { n: totalSkins }))}</span>
+          </div>
+          ${galleryToolsHtml}
+        </div>
+        ${view === 'gallery' ? renderSkinGallery() : renderSkinAtlas()}
+      </div>`;
 }
 
 function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
@@ -823,6 +1050,8 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
 
   const searchHadFocus = document.activeElement?.id === 'heroesTabSearch';
   const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
+  const gallerySearchHadFocus = document.activeElement?.id === 'skinsGallerySearch';
+  const gallerySearchCaret = document.getElementById('skinsGallerySearch')?.selectionStart ?? null;
 
   const stats = computeHeroRankings();
   const {
@@ -839,12 +1068,16 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
 
   const mode = _heroesTabState.mode || 'heroes';
   if (mode === 'skins') {
-    container.innerHTML = `
-      <div class="heroes-tab-inner heroes-tab-inner--skins">
-        <div class="heroes-toolbar-sticky heroes-toolbar-sticky--modeonly">
-        </div>
-        ${renderSkinAtlas()}
-      </div>`;
+    container.innerHTML = renderSkinsView();
+    if (gallerySearchHadFocus) {
+      const galleryInput = document.getElementById('skinsGallerySearch');
+      if (galleryInput) {
+        galleryInput.focus();
+        if (gallerySearchCaret != null) {
+          galleryInput.setSelectionRange(gallerySearchCaret, gallerySearchCaret);
+        }
+      }
+    }
     return;
   }
 

@@ -1819,6 +1819,66 @@ test.describe('app smoke tabs', () => {
       };
     });
     expect(layout).toEqual({ documentFits: true, sectionFits: true, cardsInBounds: true });
+
+    // The gallery toggle exposes every catalogued skin icon and its filters.
+    const galleryBtn = page.locator('[data-skins-view="gallery"]');
+    await galleryBtn.click();
+    await expect(galleryBtn).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#heroesSection .skin-gallery')).toBeVisible();
+    const galleryCards = page.locator('.skin-gallery-card');
+    await expect(galleryCards).toHaveCount(23);
+
+    const arthurCard = page.locator('.skin-gallery-card[data-hero-pick="King Arthur"]');
+    await expect(arthurCard).toBeVisible();
+    await expect(arthurCard.locator('img[data-skin-art]')).toHaveAttribute(
+      'src',
+      /assets\/skins\/king-arthur-arthur-pendragon-icon\.webp/
+    );
+    await expect(arthurCard.locator('.skin-gallery-status')).toHaveClass(/skin-gallery-status--complete/);
+
+    await page.fill('#skinsGallerySearch', 'Arthur');
+    await expect(galleryCards).toHaveCount(1);
+    await page.fill('#skinsGallerySearch', '');
+    await expect(galleryCards).toHaveCount(23);
+
+    await page.locator('[data-skins-type="S"]').click();
+    await expect(galleryCards).toHaveCount(8);
+    await expect(galleryCards.locator('.skin-gallery-type')).toHaveText([
+      'S',
+      'S',
+      'S',
+      'S',
+      'S',
+      'S',
+      'S',
+      'S',
+    ]);
+    await page.locator('[data-skins-type="all"]').click();
+    await expect(galleryCards).toHaveCount(23);
+
+    // A gallery card hands off to the Heroes sub-tab detail panel.
+    await arthurCard.click();
+    await expect(heroesSubtab).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#heroesSection .hero-detail-panel')).toBeVisible();
+    await expect(page.locator('#hero-detail-title')).toHaveText('King Arthur');
+
+    // Returning to Skins remembers the last view and keeps the layout in bounds.
+    await skinsSubtab.click();
+    await expect(page.locator('#heroesSection .skin-gallery')).toBeVisible();
+    const galleryLayout = await page.locator('#heroesSection').evaluate((section) => {
+      const root = document.documentElement;
+      const sectionRect = section.getBoundingClientRect();
+      const cardsInBounds = [...section.querySelectorAll('.skin-gallery-card')].every((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left >= sectionRect.left - 1 && rect.right <= sectionRect.right + 1;
+      });
+      return {
+        documentFits: root.scrollWidth <= root.clientWidth + 1,
+        sectionFits: section.scrollWidth <= section.clientWidth + 1,
+        cardsInBounds,
+      };
+    });
+    expect(galleryLayout).toEqual({ documentFits: true, sectionFits: true, cardsInBounds: true });
   });
 
   test('dragon master materials tab renders interactive calculator', async ({ page }) => {
