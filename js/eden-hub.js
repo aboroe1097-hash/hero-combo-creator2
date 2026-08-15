@@ -1,10 +1,12 @@
 // js/eden-hub.js
 // VTS Eden Hub sub-tab controller for the integrated Eden Map tab.
 //
-// The hub hosts four sub-tabs inside #edenMapRoot:
+// The hub hosts five sub-tabs inside #edenMapRoot:
 //   - bounty:   the Royal Bounty guide (default)
 //   - map:      the existing Eden map planner
 //   - loyalty:  the Eden Loyalty calculator, fetched from tabs/loyalty.html
+//   - season:   the current Eden season (eden-x2.html), revealed only after an
+//               admin publishes that workspace's projection
 //   - previous: previous-season rankings (eden-x1.html) in a lazy iframe
 //
 // Legacy deep links (#loyalty, #edenX1) are routed here by shell-v14.js,
@@ -12,10 +14,13 @@
 
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
+import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 
 const LOYALTY_SRC = 'tabs/loyalty.html?v=20260813_061728';
 const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260813_061728';
 const PREVIOUS_SRC = 'eden-x1.html';
+const SEASON_SRC = 'eden-x2.html';
+const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'season', 'previous'];
 
 let booted = false;
 let loyaltyLoaded = false;
@@ -91,15 +96,50 @@ async function loadLoyalty(root, panel) {
   }
 }
 
-function loadPrevious(panel) {
+function loadFramedSeason(panel, src, title) {
   if (panel.dataset.edenHubLoaded === '1') return;
   const frame = document.createElement('iframe');
   frame.className = 'vts-eden-hub-frame';
-  frame.title = 'Previous Seasons';
-  frame.src = PREVIOUS_SRC;
+  frame.title = title;
+  frame.src = src;
   frame.setAttribute('loading', 'lazy');
   panel.appendChild(frame);
   panel.dataset.edenHubLoaded = '1';
+}
+
+function loadPrevious(panel) {
+  loadFramedSeason(panel, PREVIOUS_SRC, 'Previous Seasons');
+}
+
+function loadSeason(panel) {
+  const t = translations[currentLanguage] || translations.en || {};
+  loadFramedSeason(panel, SEASON_SRC, t.subTabSeason || 'Current Season');
+}
+
+// The current season is hidden until an admin publishes it. This reads the one
+// document the public is allowed to see and fails closed: any error, missing
+// document or unpublished revision leaves the sub-tab hidden, so a draft season
+// is never reachable from the hub.
+async function revealPublishedSeason(root) {
+  const button = root.querySelector('[data-eden-subtab="season"]');
+  if (!button || !button.hidden) return;
+  try {
+    const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
+      import('./firebase-eden.js'),
+      import('./firebase-sdk.js'),
+    ]);
+    const { configured, app } = initFirebase();
+    if (!configured || !app) return;
+    await ensureAnonymousAuth();
+    const { getFirestore, doc, getDoc } = await importFirestoreLite();
+    const snap = await getDoc(
+      doc(getFirestore(app), edenWorkspaceFirestorePath('eden-x2', 'publicProjection'))
+    );
+    if (!snap.exists() || !isPublishedEdenProjection(snap.data())) return;
+    button.hidden = false;
+  } catch (error) {
+    console.warn('[eden-hub] Current season availability unknown', error);
+  }
 }
 
 async function loadBounty(panel) {
@@ -126,7 +166,7 @@ function readSubtabIntent() {
     const intent = document.body?.dataset?.edenHubSubtab;
     if (intent) {
       delete document.body.dataset.edenHubSubtab;
-      return ['map', 'loyalty', 'bounty', 'previous'].includes(intent) ? intent : null;
+      return EDEN_HUB_SUBTABS.includes(intent) ? intent : null;
     }
   } catch {
     /* dataset unavailable */
@@ -140,19 +180,27 @@ export function bootEdenHub() {
   if (!root) return;
   booted = true;
 
-  function openIntent(name) {
-    if (name !== 'map' && name !== 'loyalty' && name !== 'bounty' && name !== 'previous') return;
-    activateSubTab(root, name);
-    const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
-    if (!panel) return;
+  function loadPanelFor(name, panel) {
     if (name === 'loyalty') loadLoyalty(root, panel);
     if (name === 'bounty') loadBounty(panel);
     if (name === 'previous') loadPrevious(panel);
+    if (name === 'season') loadSeason(panel);
+  }
+
+  function openIntent(name) {
+    if (!EDEN_HUB_SUBTABS.includes(name)) return;
+    // A season nobody has published has no sub-tab to open: treat the intent as
+    // stale rather than revealing the hidden panel.
+    if (name === 'season' && root.querySelector('[data-eden-subtab="season"]')?.hidden) return;
+    activateSubTab(root, name);
+    const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
+    if (panel) loadPanelFor(name, panel);
   }
 
   // Royal Bounty is the Eden Hub landing page; the map remains one click away
   // and legacy sub-tab intents still take precedence.
   openIntent(readSubtabIntent() || 'bounty');
+  void revealPublishedSeason(root);
 
   root.addEventListener('click', (event) => {
     const button = event.target.closest('[data-eden-subtab]');
@@ -160,10 +208,7 @@ export function bootEdenHub() {
     const name = button.dataset.edenSubtab;
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
-    if (!panel) return;
-    if (name === 'loyalty') loadLoyalty(root, panel);
-    if (name === 'bounty') loadBounty(panel);
-    if (name === 'previous') loadPrevious(panel);
+    if (panel) loadPanelFor(name, panel);
   });
 
   // Deep links (#loyalty / #edenX1) reach the hub through the shell, which
@@ -184,6 +229,6 @@ export function bootEdenHub() {
   // Explicit sub-tab navigation from other tools (e.g. the command palette).
   window.addEventListener('vts:eden-hub-subtab', (event) => {
     const detail = event?.detail;
-    openIntent(detail === 'loyalty' || detail === 'bounty' || detail === 'previous' ? detail : '');
+    openIntent(detail === 'map' ? '' : detail);
   });
 }

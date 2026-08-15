@@ -1361,6 +1361,7 @@ const zh = {
   edenX1ViewOnly: '仅查看',
   edenX1NoFirebase: 'Firebase 未配置。无法加载数据。',
   edenX1NoData: '未找到贡献数据。',
+  edenSeasonUnpublished: '本赛季尚未发布。管理员发布后将显示结果。',
   edenX1NoRows: '没有可显示的加权贡献行。',
   edenX1ShowAllRows: '显示全部 {count} 名玩家',
   edenX1LoadMoreRows: '再加载 {count} 名（剩余 {remaining} 名）',

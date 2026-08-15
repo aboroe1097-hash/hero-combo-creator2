@@ -449,6 +449,17 @@
         </div>
       </div>
 
+      <!-- Everything inside this scope follows the selected Eden workspace:
+           changing the season changes the records these tabs read and write.
+           Standing programs live in their own nav below, outside the switch. -->
+      <section
+        class="dash-season-scope"
+        data-subtab-scope="season"
+        aria-labelledby="dashWorkspaceScopeTitle"
+      >
+        <h2 class="sr-only" id="dashWorkspaceScopeTitle" data-i18n="adminSeasonScopeTitle">
+          Eden season workspace
+        </h2>
       <!-- Eden Workspace Command Strip — season selector, lifecycle state, and
            safe season actions. The archived X1 workspace stays viewable and
            exportable but refuses every mutation. -->
@@ -683,6 +694,20 @@
                 >Alliance View</span
               >
             </button>
+          </div>
+        </section>
+      </div>
+      </section>
+
+      <!-- Standing programs run every season and sit deliberately outside the
+           Eden workspace switch above: their records are global, so changing
+           the active season must never change what these tabs show. -->
+      <div class="dash-subtab-nav dash-subtab-nav-grouped" data-subtab-scope="global">
+        <section class="dash-subtab-group">
+          <h3 class="dash-subtab-group-title" data-i18n="adminNavGroupStanding">
+            Standing programs
+          </h3>
+          <div class="dash-subtab-group-tabs" data-subtab-group="standing">
             <button class="dash-subtab-btn" data-subtab="allStarBoh">
               <svg
                 width="14"

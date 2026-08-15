@@ -97,6 +97,7 @@ export default {
     subTabMap: "Carte d'Eden",
     subTabLoyalty: "Loyauté d'Eden",
     subTabBounty: 'Prime Royale',
+    subTabSeason: 'Saison en cours',
     subTabPrevious: 'Saisons précédentes',
   },
 };

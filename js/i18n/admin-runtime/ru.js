@@ -468,6 +468,8 @@ export const ADMIN_RUNTIME_RU = Object.freeze({
   adminNavGroupDashboard: 'Обзор',
   adminNavGroupOperations: 'Операции',
   adminNavGroupPrograms: 'Программы',
+  adminNavGroupStanding: 'Постоянные программы',
+  adminSeasonScopeTitle: 'Рабочая область сезона Eden',
   adminWorkspaceLabel: 'Рабочее пространство Eden',
   adminWorkspaceLifecycleActive: 'Активный',
   adminWorkspaceLifecycleArchived: 'Архив',

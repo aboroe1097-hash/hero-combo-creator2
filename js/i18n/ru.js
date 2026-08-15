@@ -1388,6 +1388,7 @@ const ru = {
   edenX1ViewOnly: 'Только просмотр',
   edenX1NoFirebase: 'Firebase не настроен. Данные нельзя загрузить.',
   edenX1NoData: 'Данные вклада не найдены.',
+  edenSeasonUnpublished: 'Этот сезон ещё не опубликован. Результаты появятся после публикации администратором.',
   edenX1NoRows: 'Нет строк взвешенного вклада для отображения.',
   edenX1ShowAllRows: 'Показать всех игроков ({count})',
   edenX1LoadMoreRows: 'Загрузить ещё {count} (осталось {remaining})',

@@ -97,6 +97,7 @@ export default {
     subTabMap: 'خريطة إيدن',
     subTabLoyalty: 'ولاء إيدن',
     subTabBounty: 'المكافأة الملكية',
+    subTabSeason: 'الموسم الحالي',
     subTabPrevious: 'المواسم السابقة',
   },
 };

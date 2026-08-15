@@ -1429,6 +1429,7 @@ const de = {
   edenX1ViewOnly: 'Nur Ansicht',
   edenX1NoFirebase: 'Firebase ist nicht konfiguriert. Daten können nicht geladen werden.',
   edenX1NoData: 'Keine Beitragsdaten gefunden.',
+  edenSeasonUnpublished: 'Diese Saison wurde noch nicht veröffentlicht. Die Ergebnisse erscheinen, sobald ein Admin sie veröffentlicht.',
   edenX1NoRows: 'Keine gewichteten Beitragszeilen zum Anzeigen.',
   edenX1ShowAllRows: 'Alle {count} Spieler anzeigen',
   edenX1LoadMoreRows: '{count} weitere laden ({remaining} verbleibend)',

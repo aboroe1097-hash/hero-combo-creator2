@@ -477,6 +477,8 @@ export const ADMIN_RUNTIME_ES = Object.freeze({
   adminNavGroupDashboard: 'Panel',
   adminNavGroupOperations: 'Operaciones',
   adminNavGroupPrograms: 'Programas',
+  adminNavGroupStanding: 'Programas permanentes',
+  adminSeasonScopeTitle: 'Espacio de temporada de Eden',
   adminWorkspaceLabel: 'Espacio de Eden',
   adminWorkspaceLifecycleActive: 'Activa',
   adminWorkspaceLifecycleArchived: 'Archivo',

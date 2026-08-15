@@ -438,6 +438,8 @@ export const ADMIN_RUNTIME_ZH = Object.freeze({
   adminNavGroupDashboard: '仪表板',
   adminNavGroupOperations: '运营',
   adminNavGroupPrograms: '项目',
+  adminNavGroupStanding: '常设项目',
+  adminSeasonScopeTitle: '伊甸赛季工作区',
   adminWorkspaceLabel: 'Eden 工作区',
   adminWorkspaceLifecycleActive: '活跃',
   adminWorkspaceLifecycleArchived: '归档',

@@ -7,6 +7,8 @@
     <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="map" data-eden-i18n="subTabMap">Eden Map</button>
     <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="loyalty" data-eden-i18n="subTabLoyalty">Eden Loyalty</button>
     <button type="button" class="vts-eden-subtab-btn active" role="tab" aria-selected="true" data-eden-subtab="bounty" data-eden-i18n="subTabBounty">Royal Bounty</button>
+    <!-- The current season appears only once an admin publishes its projection; eden-hub.js unhides this after that check succeeds. -->
+    <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="season" data-eden-i18n="subTabSeason" hidden>Current Season</button>
     <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="previous" data-eden-i18n="subTabPrevious">Previous Seasons</button>
   </nav>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="map" role="tabpanel" hidden>
@@ -1134,5 +1136,6 @@
       <span>Loading…</span>
     </div>
   </div>
+  <div class="vts-eden-subtab-panel" data-eden-subtab-panel="season" role="tabpanel" hidden></div>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="previous" role="tabpanel"></div>
 </div>

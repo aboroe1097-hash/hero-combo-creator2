@@ -77,7 +77,13 @@ captureVersion(
   expectedVersion
 );
 
-for (const relativePath of ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html']) {
+for (const relativePath of [
+  'index.html',
+  'admin.html',
+  'eden-x1.html',
+  'eden-x2.html',
+  'arcade.html',
+]) {
   captureVersion(
     relativePath,
     /VTS 1097[\s\S]{0,100}?&middot;[\s\S]{0,100}?v(\d+\.\d+\.\d+)/,

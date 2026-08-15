@@ -1432,6 +1432,7 @@ const en = {
   edenX1ViewOnly: 'View Only',
   edenX1NoFirebase: 'Firebase is not configured. Cannot load data.',
   edenX1NoData: 'No contribution data found.',
+  edenSeasonUnpublished: 'This season has not been published yet. Results appear once an admin publishes them.',
   edenX1NoRows: 'No weighted contribution rows to display.',
   edenX1ShowAllRows: 'Show all {count} players',
   edenX1LoadMoreRows: 'Load {count} more ({remaining} remaining)',

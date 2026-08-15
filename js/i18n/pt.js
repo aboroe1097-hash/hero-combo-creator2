@@ -1378,6 +1378,7 @@ const pt = {
   edenX1ViewOnly: 'Somente leitura',
   edenX1NoFirebase: 'Firebase não está configurado. Não é possível carregar dados.',
   edenX1NoData: 'Nenhum dado de contribuição encontrado.',
+  edenSeasonUnpublished: 'Esta temporada ainda não foi publicada. Os resultados aparecerão quando um administrador os publicar.',
   edenX1NoRows: 'Não há linhas de contribuição ponderada para exibir.',
   edenX1ShowAllRows: 'Mostrar todos os {count} jogadores',
   edenX1LoadMoreRows: 'Carregar mais {count} ({remaining} restantes)',

@@ -3572,6 +3572,17 @@ body[style*='overflow: hidden'] .tab-panel {
   }
 }
 
+/* The season scope draws one boundary around the workspace strip and the tabs
+   it governs, so it reads as visibly separate from the Standing programs nav
+   below, which the season switch must never affect. Semantic tokens only, so
+   it holds contrast in both themes. */
+#ocrDashboardRoot .dash-season-scope {
+  position: relative;
+  margin-bottom: 0.9rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid color-mix(in srgb, var(--ff-cyan) 45%, transparent);
+}
+
 /* Eden workspace command strip */
 #ocrDashboardRoot .dash-workspace-strip {
   display: flex;

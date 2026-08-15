@@ -1399,6 +1399,7 @@ const es = {
   edenX1ViewOnly: 'Solo lectura',
   edenX1NoFirebase: 'Firebase no está configurado. No se pueden cargar los datos.',
   edenX1NoData: 'No se encontraron datos de contribución.',
+  edenSeasonUnpublished: 'Esta temporada aún no se ha publicado. Los resultados aparecerán cuando un administrador los publique.',
   edenX1NoRows: 'No hay filas de contribución ponderada para mostrar.',
   edenX1ShowAllRows: 'Mostrar los {count} jugadores',
   edenX1LoadMoreRows: 'Cargar {count} más ({remaining} restantes)',

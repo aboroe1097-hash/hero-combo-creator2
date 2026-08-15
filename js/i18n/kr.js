@@ -1387,6 +1387,7 @@ const kr = {
   edenX1ViewOnly: '보기 전용',
   edenX1NoFirebase: 'Firebase가 설정되지 않았습니다. 데이터를 불러올 수 없습니다.',
   edenX1NoData: '기여도 데이터를 찾을 수 없습니다.',
+  edenSeasonUnpublished: '이 시즌은 아직 공개되지 않았습니다. 관리자가 게시하면 결과가 표시됩니다.',
   edenX1NoRows: '표시할 가중 기여도 행이 없습니다.',
   edenX1ShowAllRows: '전체 {count}명 표시',
   edenX1LoadMoreRows: '{count}명 더 불러오기 ({remaining}명 남음)',

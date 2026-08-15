@@ -457,6 +457,8 @@ export const ADMIN_RUNTIME_KR = Object.freeze({
   adminNavGroupDashboard: '대시보드',
   adminNavGroupOperations: '운영',
   adminNavGroupPrograms: '프로그램',
+  adminNavGroupStanding: '상시 프로그램',
+  adminSeasonScopeTitle: '에덴 시즌 작업 공간',
   adminWorkspaceLabel: '에덴 작업 공간',
   adminWorkspaceLifecycleActive: '활성',
   adminWorkspaceLifecycleArchived: '아카이브',

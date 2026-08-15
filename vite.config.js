@@ -40,6 +40,7 @@ export default defineConfig({
         vtsscore: resolve(__dirname, 'vtsscore.html'),
         'vtsscore/index': resolve(__dirname, 'vtsscore/index.html'),
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
+        'eden-x2': resolve(__dirname, 'eden-x2.html'),
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
         'specialization-towers': resolve(__dirname, 'specialization-towers.html'),

@@ -462,6 +462,8 @@ export const ADMIN_RUNTIME_TR = Object.freeze({
   adminNavGroupDashboard: 'Panel',
   adminNavGroupOperations: 'Operasyonlar',
   adminNavGroupPrograms: 'Programlar',
+  adminNavGroupStanding: 'Kalıcı programlar',
+  adminSeasonScopeTitle: 'Eden sezon çalışma alanı',
   adminWorkspaceLabel: 'Eden çalışma alanı',
   adminWorkspaceLifecycleActive: 'Etkin',
   adminWorkspaceLifecycleArchived: 'Arşiv',

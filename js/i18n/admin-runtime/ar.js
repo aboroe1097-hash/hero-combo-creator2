@@ -456,6 +456,8 @@ export const ADMIN_RUNTIME_AR = Object.freeze({
   adminNavGroupDashboard: 'اللوحة',
   adminNavGroupOperations: 'العمليات',
   adminNavGroupPrograms: 'البرامج',
+  adminNavGroupStanding: 'البرامج الدائمة',
+  adminSeasonScopeTitle: 'مساحة عمل موسم إيدن',
   adminWorkspaceLabel: 'مساحة عمل Eden',
   adminWorkspaceLifecycleActive: 'نشط',
   adminWorkspaceLifecycleArchived: 'أرشيف',
