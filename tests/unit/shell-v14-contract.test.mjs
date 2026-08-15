@@ -80,8 +80,8 @@ test('mobile exposes exactly three primary destinations and an accessible More s
   assert.deepEqual(mobilePrimaryIds, [
     'tabHeroesCombos',
     'tabResearchTowers',
+    'tabMaterials',
     'tabAllStarBoh',
-    'tabVtsScore',
   ]);
   assert.match(
     index,
@@ -126,7 +126,6 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
     'tabResearchTowers',
     'tabMaterials',
     'tabEdenMap',
-    'tabVtsScore',
   ]);
   assert.match(shellCss, /#app \.tool-nav-shell\s*\{[\s\S]*?position:\s*relative !important/);
   assert.match(shellCss, /#app #tabNavScroll\s*\{[\s\S]*?flex-wrap:\s*nowrap !important/);
@@ -143,10 +142,7 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
   // The three hubs lead the rail: layoutNavigation() appends in array order.
   assert.match(shellJs, /const hubIds = \['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'\];/);
-  assert.match(
-    shellJs,
-    /const desktopPrimaryIds = \[\.\.\.hubIds, 'tabVtsScore', 'tabMaterials'\];/
-  );
+  assert.match(shellJs, /const desktopPrimaryIds = \[\.\.\.hubIds, 'tabMaterials'\];/);
   assert.match(
     shellJs,
     /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabAllStarBoh',\s*'tabStrife',\s*'tabYouTube',?\s*\];/
@@ -154,7 +150,7 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   // The landing tool must hold a mobile slot — it had none before the hubs.
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabAllStarBoh',\s*'tabVtsScore',?\s*\];/
+    /const mobilePrimaryIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabMaterials',\s*'tabAllStarBoh',?\s*\];/
   );
 
   for (const id of ['tabStrife', 'tabYouTube', 'tabAllStarBoh']) {

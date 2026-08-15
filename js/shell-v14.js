@@ -30,7 +30,6 @@
     'tabLoyalty',
     'tabEdenX1',
     'tabAllStarBoh',
-    'tabVtsScore',
     'tabBohPlan',
     'tabYouTube',
     'tabOcrDashboard',
@@ -40,7 +39,7 @@
   // sequence. The three hubs lead, because each one now stands for several tools
   // that used to have their own pill; standalone tools follow.
   const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
-  const desktopPrimaryIds = [...hubIds, 'tabVtsScore', 'tabMaterials'];
+  const desktopPrimaryIds = [...hubIds, 'tabMaterials'];
   const wideDesktopPrimaryIds = [
     ...desktopPrimaryIds,
     'tabAllStarBoh',
@@ -53,8 +52,8 @@
   const mobilePrimaryIds = [
     'tabHeroesCombos',
     'tabResearchTowers',
+    'tabMaterials',
     'tabAllStarBoh',
-    'tabVtsScore',
   ];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
