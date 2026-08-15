@@ -146,11 +146,7 @@ test('Every cost item reserves a valid game icon slot', () => {
           /^[a-z0-9-]+$/i,
           `${tier.id}: ${item.name} iconId must be an asset slug`
         );
-        assert.equal(
-          getSkinItemIconUrl(item),
-          `assets/skins/items/${item.iconId}.webp`,
-          item.name
-        );
+        assert.equal(getSkinItemIconUrl(item), `assets/skins/items/${item.iconId}.webp`, item.name);
       }
     }
   }

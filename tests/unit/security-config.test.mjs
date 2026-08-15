@@ -787,9 +787,10 @@ test('service worker precaches a complete, version-stamped app shell', () => {
 
   // v14 adds the standalone Arcade, Battle Simulator, Specialization Towers, and
   // Profile entries, the global command palette, and the two small Velo layers
-  // needed by Eden's first-paint loader. Keep a measured one-entry margin without
-  // allowing the shell to grow unbounded.
-  assert.ok(urls.length <= 58, `expected bounded app shell, found ${urls.length} URLs`);
+  // needed by Eden's first-paint loader. 15.0.0 adds the Eden X2 season route
+  // and its stylesheet. Keep a measured margin without letting the shell grow
+  // unbounded.
+  assert.ok(urls.length <= 63, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));

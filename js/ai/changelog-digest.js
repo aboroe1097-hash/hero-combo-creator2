@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.3.9";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.0";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.0",
+    "date": "2026-08-15",
+    "highlights": [
+      "Added the Eden X2 season workspace. Eden X1 becomes a read-only archive that stays exactly as it was, while X2 starts empty in its own isolated space, so a new season never overwrites the last one.",
+      "Added a public Eden X2 page that only ever shows what an admin has explicitly published. Before publication it says the season is not published yet instead of showing an empty scoreboard, and it appears in the Eden Hub only once it is live.",
+      "Reorganised VTS Admin around what actually changes each season. The Eden workspace switch now governs only the season surfaces; All-Star BoH sits in a separate Standing programs area that a season rollover never touches.",
+      "Added an Eden workspace command strip with the season selector, its draft or published state, and safe publish, unpublish and snapshot actions. The archived X1 season stays viewable and exportable but refuses every change.",
+      "Added the Throne Buffs weekly assignment groundwork: the nine throne titles with their real effects, weekly assignments with optional reasoning, and rotation fairness that tracks who has held which buff and how long ago.",
+      "Rebuilt the Towers planner around a path decision card that names the mode, tower, chosen preset and next upgrade at a glance, and moved the long hero mechanics into a collapsed Hero synergies panel."
+    ]
+  },
   {
     "version": "14.3.9",
     "date": "2026-08-14",
@@ -93,16 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Replaced the generic VtsScore failure banner with specific messages for every secure-service outcome: rate limits (with the wait time), oversized screenshots, service outages, unsupported image types, locked accounts, closed signups, and rejected requests.",
       "Appended the machine-readable error code to VtsScore failure banners so member screenshots identify the exact failure for support.",
       "Restored the stable captured sign-in reference for the All-Star secure client on the VtsScore and BoH pages."
-    ]
-  },
-  {
-    "version": "14.3.0",
-    "date": "2026-07-28",
-    "highlights": [
-      "Corrected VtsScore to OCR, review, submit, and compare the complete nine-field power breakdown instead of a single Total or Dragon Power value.",
-      "Added editable per-field OCR review with confidence context for Total, Troop, Building, Technology, Hero, Dragon, Unit Specialty, Artifact, and Royal Tech power.",
-      "Added migration-safe VtsScore storage: new uploads use the full versioned contract while earlier one-field uploads remain visible as incomplete and require re-upload.",
-      "Expanded the All-Star admin comparison to show sign-up, final, and growth values for every power category."
     ]
   }
 ].map((release) =>

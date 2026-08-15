@@ -150,7 +150,10 @@ test('the path decision card summarizes mode, tower, preset, and next upgrade fr
   // Preset cell states the ownership match with the same counting rule as the
   // preset cards (preset heroes the panel counts as owned).
   assert.match(appSource, /preset\.heroes\.filter\(\(name\) => isHeroOwned\(name\)\)\.length/u);
-  assert.match(appSource, /sp\('planPresetMatch', \{ owned: presetOwned, total: preset\.heroes\.length \}\)/u);
+  assert.match(
+    appSource,
+    /sp\('planPresetMatch', \{ owned: presetOwned, total: preset\.heroes\.length \}\)/u
+  );
   // Next cell names the research and its step position out of the full length.
   assert.match(appSource, /getHeroPlanStep\(plan, nextId\)/u);
   assert.match(appSource, /sp\('planDecisionNextStep', \{ step: nextStep, total: totalSteps \}\)/u);
@@ -174,10 +177,7 @@ test('the plan rationale renders as condensed tags next to the decision card', (
   assert.match(appSource, /class="spec-why-tag"/u);
   // The old single-sentence why line is gone.
   assert.doesNotMatch(appSource, /spec-hero-plan-why/u);
-  assert.match(
-    plannerCss,
-    /\.spec-why-tag\s*\{[\s\S]*?color:\s*var\(--spec-text\)/u
-  );
+  assert.match(plannerCss, /\.spec-why-tag\s*\{[\s\S]*?color:\s*var\(--spec-text\)/u);
 });
 
 test('the path decision card is a horizontal summary on desktop and stacks on mobile', () => {

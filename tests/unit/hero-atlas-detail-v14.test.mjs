@@ -79,10 +79,19 @@ test('Skins view reserves item icon slots and styles the gallery for both themes
   assert.match(detailCss, /\.skin-gallery-card:focus-visible \{[\s\S]*?outline: 3px/);
   assert.match(detailCss, /\.skin-star-track::before \{[\s\S]*?inset-inline-start: 0\.34rem/);
   assert.match(detailCss, /\.skin-tier-hero-chip--link:focus-visible \{[\s\S]*?outline: 3px/);
-  assert.match(detailCss, /\[data-theme='light'\] \.skin-gallery-card \{[\s\S]*?linear-gradient\(180deg, rgba\(255, 255, 255, 0\.98\)/);
+  assert.match(
+    detailCss,
+    /\[data-theme='light'\] \.skin-gallery-card \{[\s\S]*?linear-gradient\(180deg, rgba\(255, 255, 255, 0\.98\)/
+  );
   assert.match(detailCss, /\[data-theme='light'\] \.skin-item-icon \{/);
-  assert.match(detailCss, /@media \(max-width: 768px\) \{[\s\S]*?\.skin-gallery-grid \{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(detailCss, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.skin-gallery-card/);
+  assert.match(
+    detailCss,
+    /@media \(max-width: 768px\) \{[\s\S]*?\.skin-gallery-grid \{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/
+  );
+  assert.match(
+    detailCss,
+    /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.skin-gallery-card/
+  );
   assert.match(atlasSource, /data-skins-view="gallery"/);
   assert.match(atlasSource, /data-skins-view="tiers"/);
   assert.match(atlasSource, /id="skinsGallerySearch"/);

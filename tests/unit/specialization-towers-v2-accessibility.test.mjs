@@ -176,20 +176,18 @@ test('the integrated path radiogroup wires roving tabindex and arrow-key navigat
   assert.ok(keydownStart >= 0, 'onKeyDown exists');
   assert.match(keydownBody, /\[data-spec-plan-mode\]/u);
   for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']) {
-    assert.match(keydownBody, new RegExp(`["']${key}["']`, 'u'), `${key} handled by the radiogroup`);
+    assert.match(
+      keydownBody,
+      new RegExp(`["']${key}["']`, 'u'),
+      `${key} handled by the radiogroup`
+    );
   }
   assert.match(keydownBody, /\[data-spec-plan-mode="\$\{target\}"\]`\)\?\.focus\(/u);
 });
 
 test('per-step plan reasons are exposed to assistive tech, not only the title tooltip', () => {
-  assert.match(
-    integratedAppSource,
-    /<span class="spec-sr-only" id="\$\{reasonId\}">/u
-  );
-  assert.match(
-    integratedAppSource,
-    /aria-describedby="\$\{reasonId\}"/u
-  );
+  assert.match(integratedAppSource, /<span class="spec-sr-only" id="\$\{reasonId\}">/u);
+  assert.match(integratedAppSource, /aria-describedby="\$\{reasonId\}"/u);
   assert.match(integratedCssSource, /\.spec-sr-only\s*\{[\s\S]*?clip-path:\s*inset\(50%\)/u);
 });
 
@@ -198,9 +196,7 @@ test('route step chips use theme tokens instead of hardcoded colors', () => {
   // so the light theme can supply its own AA pair (as it already did for text).
   // Light-theme blocks are the one sanctioned exception: their literal inks are
   // AA overrides in the .spec-badge-max tradition.
-  const stepRules = [
-    ...integratedCssSource.matchAll(/([^{}]+)\.spec-route-step\s*\{([^}]*)\}/gu),
-  ];
+  const stepRules = [...integratedCssSource.matchAll(/([^{}]+)\.spec-route-step\s*\{([^}]*)\}/gu)];
   assert.ok(stepRules.length >= 3, 'the step chip base and state rules exist');
   for (const [, selector, body] of stepRules) {
     if (selector.includes("[data-theme='light']")) continue;
@@ -221,10 +217,7 @@ test('route step chips use theme tokens instead of hardcoded colors', () => {
     '--spec-step-next-bg',
     '--spec-step-next-ink',
   ]) {
-    assert.match(
-      integratedCssSource,
-      new RegExp(`\\.spec-tool\\s*\\{[\\s\\S]*?${token}:`, 'u')
-    );
+    assert.match(integratedCssSource, new RegExp(`\\.spec-tool\\s*\\{[\\s\\S]*?${token}:`, 'u'));
   }
   for (const token of ['--spec-step-bg', '--spec-step-ink']) {
     assert.match(

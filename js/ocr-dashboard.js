@@ -365,10 +365,7 @@ const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
 // Vote records are season records: they follow the active Eden workspace.
 // eden-x1 keeps the historical eden_x1_* paths (read-only archive), eden-x2
 // writes to dedicated eden_x2_* collections.
-const EDEN_X1_VOTES_COLLECTION_PATH = edenWorkspaceFirestorePath(
-  ACTIVE_EDEN_WORKSPACE_ID,
-  'votes'
-);
+const EDEN_X1_VOTES_COLLECTION_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'votes');
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = edenWorkspaceFirestorePath(
   ACTIVE_EDEN_WORKSPACE_ID,
   'voteHistory'
@@ -2359,7 +2356,9 @@ function bindSubtabNavigation() {
   document
     .querySelectorAll('#ocrDashboardRoot .dash-subtab-group-tabs')
     .forEach((group) => group.setAttribute('role', 'tablist'));
-  const nav = document.querySelector('#ocrDashboardRoot .dash-subtab-nav:not(.dash-subtab-nav-grouped)');
+  const nav = document.querySelector(
+    '#ocrDashboardRoot .dash-subtab-nav:not(.dash-subtab-nav-grouped)'
+  );
   if (nav) nav.setAttribute('role', 'tablist');
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach((panel) => {
     panel.setAttribute('role', 'tabpanel');
@@ -2472,7 +2471,9 @@ async function loadEdenWorkspaceCloudRecord() {
 async function readEdenWorkspaceRosterSnapshots(db) {
   try {
     const { doc, getDoc } = await loadFirestoreApi();
-    const snap = await getDoc(doc(db, edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData')));
+    const snap = await getDoc(
+      doc(db, edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'))
+    );
     const data = snap.exists() ? snap.data() : null;
     return Array.isArray(data?.snapshots) ? data.snapshots : [];
   } catch {
@@ -2558,7 +2559,11 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
   } catch (err) {
     showCloudSyncFailure(err, 'Workspace publish failed');
     if (typeof window.showToast === 'function') {
-      window.showToast(dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }), 'error', 9000);
+      window.showToast(
+        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
+        'error',
+        9000
+      );
     }
     return false;
   }
@@ -2608,12 +2613,21 @@ async function exportActiveEdenWorkspaceSnapshot() {
     if (typeof window.showToast === 'function') {
       window.showToast(dashT('adminWorkspaceSnapshotToast'), 'success', 5000);
     }
-    logDashboardEvent('adminLogWorkspaceSnapshot', 'success', { workspace: ws.label }, { source: 'workspace' });
+    logDashboardEvent(
+      'adminLogWorkspaceSnapshot',
+      'success',
+      { workspace: ws.label },
+      { source: 'workspace' }
+    );
   } catch (err) {
     console.error('Workspace snapshot export failed:', err);
     showCloudSyncFailure(err, 'Workspace snapshot failed');
     if (typeof window.showToast === 'function') {
-      window.showToast(dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }), 'error', 9000);
+      window.showToast(
+        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
+        'error',
+        9000
+      );
     }
   }
 }
@@ -2649,7 +2663,11 @@ function bindEdenWorkspaceStrip() {
       }
       setActiveAdminWorkspaceId(next);
       if (typeof window.showToast === 'function') {
-        window.showToast(dashT('adminWorkspaceSwitchToast', { workspace: getEdenWorkspaceLabel(next) }), 'info', 4000);
+        window.showToast(
+          dashT('adminWorkspaceSwitchToast', { workspace: getEdenWorkspaceLabel(next) }),
+          'info',
+          4000
+        );
       }
       setTimeout(() => window.location.reload(), 350);
     };

@@ -1,5 +1,18 @@
 # Changelog
 
+## 15.0.0 - 2026-08-15
+
+- Added the Eden X2 season workspace. Eden X1 becomes a read-only archive that stays exactly as it was, while X2 starts empty in its own isolated space, so a new season never overwrites the last one.
+- Added a public Eden X2 page that only ever shows what an admin has explicitly published. Before publication it says the season is not published yet instead of showing an empty scoreboard, and it appears in the Eden Hub only once it is live.
+- Reorganised VTS Admin around what actually changes each season. The Eden workspace switch now governs only the season surfaces; All-Star BoH sits in a separate Standing programs area that a season rollover never touches.
+- Added an Eden workspace command strip with the season selector, its draft or published state, and safe publish, unpublish and snapshot actions. The archived X1 season stays viewable and exportable but refuses every change.
+- Added the Throne Buffs weekly assignment groundwork: the nine throne titles with their real effects, weekly assignments with optional reasoning, and rotation fairness that tracks who has held which buff and how long ago.
+- Rebuilt the Towers planner around a path decision card that names the mode, tower, chosen preset and next upgrade at a glance, and moved the long hero mechanics into a collapsed Hero synergies panel.
+- Rebuilt the Skins sub-tab with a skin gallery and tier guide, including search, type filters, real skin art, and a jump from any gallery card straight to that hero.
+- Reworked Eden Loyalty and DM Materials on phones and tablets: single-column loyalty inputs, readable type, larger tap targets, and an equipment grid that no longer squeezes six columns onto a small screen.
+- Removed the VtsScore pill from the navigation rail and promoted DM Materials in its place; the VtsScore page itself is unchanged and every existing link still works.
+- Signed-in members now see their account on the admin deck, with a sign-in that returns them to the page they came from.
+
 ## 14.3.9 - 2026-08-14
 
 - Combined Manual Builder, Combo Generator, Hero Atlas, and skins into the new Heroes & Combos Hub. The generator is its default view; Heroes and Skins are separate hub sub-tabs, while existing deep links keep working.
