@@ -6299,6 +6299,11 @@ test.describe('app smoke tabs', () => {
     await page.addInitScript(() => {
       localStorage.setItem('vts_hero_lang', 'en');
       localStorage.setItem('vts_theme', 'dark');
+      // Bonus Team Effort Points is PIN-gated and is Alliance View's left-hand
+      // neighbour in the grouped rail, so roving to Alliance View passes
+      // through it. Unlock the gate here; this test is about Alliance View's
+      // layout and keyboard reachability, not the PIN prompt.
+      localStorage.setItem('vts_sensitive_admin_pin_ok', '1');
     });
     const fixture = createAllianceViewSmokeFixture();
 
