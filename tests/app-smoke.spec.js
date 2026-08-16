@@ -6305,9 +6305,14 @@ test.describe('app smoke tabs', () => {
     await openAdmin(page);
     await openLocalAdminDashboard(page);
     await seedAllianceViewContributions(page, fixture);
-    await page.evaluate(() => window.switchDashSubtab('contributions'));
-    const contributionsTab = page.locator('.dash-subtab-btn[data-subtab="contributions"]');
-    await contributionsTab.focus();
+    // Arrow keys rove across the whole rail in DOM order. Since the rail was
+    // grouped, Contributions sits in Operations and Alliance View in Programs,
+    // so the tab immediately before Alliance View is now Bonus Team Effort
+    // Points. Step from there to keep testing the roving contract rather than
+    // an adjacency the grouping changed.
+    await page.evaluate(() => window.switchDashSubtab('conduct'));
+    const conductTab = page.locator('.dash-subtab-btn[data-subtab="conduct"]');
+    await conductTab.focus();
     await page.keyboard.press('ArrowRight');
     const allianceTab = page.locator('.dash-subtab-btn[data-subtab="allianceView"]');
     await expect(allianceTab).toBeFocused();
