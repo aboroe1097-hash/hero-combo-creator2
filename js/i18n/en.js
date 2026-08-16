@@ -1371,9 +1371,9 @@ const en = {
   edenX1AdminDashboard: 'Admin Dashboard',
   edenX1ExploreWebsite: 'Explore VTS Website',
   edenX1ExploreWebsiteTitle: 'New here? Explore the full VTS website.',
-  edenX1NoticeTitle: 'Demo view - not final.',
+  edenX1NoticeTitle: 'Season data coming soon.',
   edenX1NoticeCopy:
-    'This page is open for early tracking only. Final rewards will be reviewed and confirmed at season end after all contribution, banner, pathing, shield wall, and eligibility records are checked.',
+    'Early tracking is live while the season runs. Final rewards are confirmed at season end, once contribution, banner, pathing, shield wall, and eligibility records have all been checked.',
   edenX1RewardFlowEyebrow: 'Reward flow',
   edenX1RewardFlowTitle: 'Planned Top 20 reward distribution',
   edenX1RewardFlowSubtitle:

@@ -1302,9 +1302,9 @@ const zh = {
   edenX1AdminDashboard: '管理员面板',
   edenX1ExploreWebsite: '浏览 VTS 网站',
   edenX1ExploreWebsiteTitle: '第一次来？浏览完整的 VTS 网站。',
-  edenX1NoticeTitle: '演示视图 - 非最终版。',
+  edenX1NoticeTitle: '赛季数据即将上线。',
   edenX1NoticeCopy:
-    '此页面仅用于早期追踪。最终奖励将在赛季结束时审核并确认，需检查所有贡献、旗帜、铺路、盾墙和资格记录。',
+    '赛季进行期间可提前查看进度。最终奖励将在赛季结束、核对全部贡献、旗帜、路线、盾墙与资格记录后确认。',
   edenX1RewardFlowEyebrow: '奖励流程',
   edenX1RewardFlowTitle: '计划的前20名奖励分配',
   edenX1RewardFlowSubtitle: '公开列表显示当前公式；领导层会在审核所有任务记录后确认赛季最终奖励。',

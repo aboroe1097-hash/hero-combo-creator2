@@ -1332,9 +1332,9 @@ const es = {
   edenX1AdminDashboard: 'Panel de administración',
   edenX1ExploreWebsite: 'Explorar sitio web VTS',
   edenX1ExploreWebsiteTitle: '¿Nuevo aquí? Explora el sitio web completo de VTS.',
-  edenX1NoticeTitle: 'Vista demo - no final.',
+  edenX1NoticeTitle: 'Los datos de la temporada llegarán pronto.',
   edenX1NoticeCopy:
-    'Esta página está abierta solo para seguimiento temprano. Las recompensas finales se revisarán y confirmarán al final de la temporada después de comprobar todos los registros de contribución, banderas, caminos, muros de escudo y elegibilidad.',
+    'El seguimiento anticipado está activo durante la temporada. Las recompensas finales se confirman al final de la temporada, una vez comprobados los registros de contribución, estandartes, rutas, muro de escudos y elegibilidad.',
   edenX1RewardFlowEyebrow: 'Flujo de recompensas',
   edenX1RewardFlowTitle: 'Distribución prevista de las 20 mejores recompensas',
   edenX1RewardFlowSubtitle:

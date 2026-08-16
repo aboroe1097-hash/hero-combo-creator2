@@ -1364,9 +1364,9 @@ const de = {
   edenX1AdminDashboard: 'Adminbereich',
   edenX1ExploreWebsite: 'VTS-Website entdecken',
   edenX1ExploreWebsiteTitle: 'Neu hier? Entdecke die komplette VTS-Website.',
-  edenX1NoticeTitle: 'Demoansicht - nicht final.',
+  edenX1NoticeTitle: 'Saisondaten folgen in Kürze.',
   edenX1NoticeCopy:
-    'Diese Seite ist nur für frühes Tracking geöffnet. Die finalen Belohnungen werden am Saisonende geprüft und bestätigt, nachdem alle Beitrags-, Banner-, Pfad-, Schildwall- und Berechtigungsdaten kontrolliert wurden.',
+    'Die frühe Verfolgung läuft während der Saison. Die endgültigen Belohnungen werden zum Saisonende bestätigt, sobald alle Beitrags-, Banner-, Pfad-, Schildwall- und Berechtigungsnachweise geprüft sind.',
   edenX1RewardFlowEyebrow: 'Belohnungsablauf',
   edenX1RewardFlowTitle: 'Geplante Verteilung der besten 20 Belohnungen',
   edenX1RewardFlowSubtitle:
