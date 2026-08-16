@@ -428,7 +428,7 @@ const id = {
   tabGenerator: 'Generator Kombo',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas Hero',
-  tabHeroesCombos: 'Hero & Kombo',
+  tabHeroesCombos: 'Hub Hero & Kombo',
   tabHeroesOnly: 'Hero',
   tabSkinsOnly: 'Skin',
   tabEdenMap: 'VTS Eden Hub',
@@ -1719,7 +1719,7 @@ const id = {
   strifeVerifiedLineup: 'Susunan monster terverifikasi',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spesialisasi',
-  tabResearchTowers: 'Penelitian & Menara',
+  tabResearchTowers: 'Hub Riset & Menara',
   tabTowersSpecialization: 'Spesialisasi Menara',
 
   adminEdenVotesClearDeadline: 'Hapus batas waktu',

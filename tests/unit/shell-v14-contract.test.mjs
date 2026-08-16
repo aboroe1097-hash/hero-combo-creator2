@@ -81,7 +81,7 @@ test('mobile exposes exactly three primary destinations and an accessible More s
     'tabHeroesCombos',
     'tabResearchTowers',
     'tabMaterials',
-    'tabAllStarBoh',
+    'tabOcrDashboard',
   ]);
   assert.match(
     index,
@@ -126,6 +126,7 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
     'tabResearchTowers',
     'tabMaterials',
     'tabEdenMap',
+    'tabOcrDashboard',
   ]);
   assert.match(shellCss, /#app \.tool-nav-shell\s*\{[\s\S]*?position:\s*relative !important/);
   assert.match(shellCss, /#app #tabNavScroll\s*\{[\s\S]*?flex-wrap:\s*nowrap !important/);
@@ -142,18 +143,24 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
   assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
   // The three hubs lead the rail: layoutNavigation() appends in array order.
   assert.match(shellJs, /const hubIds = \['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'\];/);
-  assert.match(shellJs, /const desktopPrimaryIds = \[\.\.\.hubIds, 'tabMaterials'\];/);
+  // VTS Admin holds the fifth desktop slot; All-Star BoH lives in More.
   assert.match(
     shellJs,
-    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabAllStarBoh',\s*'tabStrife',\s*'tabYouTube',?\s*\];/
+    /const desktopPrimaryIds = \[\.\.\.hubIds, 'tabMaterials', 'tabOcrDashboard'\];/
+  );
+  assert.match(
+    shellJs,
+    /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabYouTube',?\s*\];/
   );
   // The landing tool must hold a mobile slot — it had none before the hubs.
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabMaterials',\s*'tabAllStarBoh',?\s*\];/
+    /const mobilePrimaryIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabMaterials',\s*'tabOcrDashboard',?\s*\];/
   );
 
-  for (const id of ['tabStrife', 'tabYouTube', 'tabAllStarBoh']) {
+  // All-Star BoH is deliberately absent: it runs for a few weeks a season, so
+  // it lives in More rather than holding a rail slot year-round.
+  for (const id of ['tabStrife', 'tabYouTube']) {
     assert.match(
       index,
       new RegExp(

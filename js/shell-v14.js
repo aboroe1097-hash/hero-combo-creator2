@@ -39,13 +39,12 @@
   // sequence. The three hubs lead, because each one now stands for several tools
   // that used to have their own pill; standalone tools follow.
   const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
-  const desktopPrimaryIds = [...hubIds, 'tabMaterials'];
-  const wideDesktopPrimaryIds = [
-    ...desktopPrimaryIds,
-    'tabAllStarBoh',
-    'tabStrife',
-    'tabYouTube',
-  ];
+  // VTS Admin sits fifth, straight after the hubs and Materials: it is opened
+  // far more often than the standalone tools yet was reachable only through
+  // More. All-Star BoH moves the other way, into More, because it runs for a
+  // few weeks a season rather than every day.
+  const desktopPrimaryIds = [...hubIds, 'tabMaterials', 'tabOcrDashboard'];
+  const wideDesktopPrimaryIds = [...desktopPrimaryIds, 'tabStrife', 'tabYouTube'];
   // Four slots, and the first must be the tab the app actually opens on —
   // Heroes & Combos was missing here entirely, so the landing tool had no rail
   // entry on phones.
@@ -53,7 +52,7 @@
     'tabHeroesCombos',
     'tabResearchTowers',
     'tabMaterials',
-    'tabAllStarBoh',
+    'tabOcrDashboard',
   ];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],

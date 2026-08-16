@@ -428,7 +428,7 @@ const tr = {
   tabGenerator: 'Kombo Oluşturucu',
   tabYouTube: 'YouTube',
   tabHeroes: 'Kahraman Atlası',
-  tabHeroesCombos: 'Kahramanlar ve Kombolar',
+  tabHeroesCombos: 'Kahraman ve kombo merkezi',
   tabHeroesOnly: 'Kahramanlar',
   tabSkinsOnly: 'Kostümler',
   tabEdenMap: 'VTS Eden Hub',
@@ -1718,7 +1718,7 @@ const tr = {
   strifeVerifiedLineup: 'Onaylanmış canavar düzeni',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Uzmanlık',
-  tabResearchTowers: 'Araştırma ve Kuleler',
+  tabResearchTowers: 'Araştırma ve kule merkezi',
   tabTowersSpecialization: 'Kule Uzmanlığı',
 
   adminEdenVotesClearDeadline: 'Son tarihi temizle',

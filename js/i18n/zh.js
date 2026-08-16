@@ -419,7 +419,7 @@ const zh = {
   tabGenerator: '组合生成器',
   tabYouTube: 'YouTube',
   tabHeroes: '英雄图鉴',
-  tabHeroesCombos: '英雄与组合',
+  tabHeroesCombos: '英雄与组合中心',
   tabHeroesOnly: '英雄',
   tabSkinsOnly: '皮肤',
   tabEdenMap: 'VTS Eden Hub',
@@ -1673,7 +1673,7 @@ const zh = {
   strifeVerifiedLineup: '已验证的怪物阵容',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: '专精',
-  tabResearchTowers: '研究与专精塔',
+  tabResearchTowers: '研究与塔中心',
   tabTowersSpecialization: '专精塔',
 
   adminEdenVotesClearDeadline: '清除截止日期',

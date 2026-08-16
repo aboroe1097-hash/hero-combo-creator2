@@ -349,7 +349,7 @@ const kr = {
   tabGenerator: '조합 생성기',
   tabYouTube: 'YouTube',
   tabHeroes: '영웅 도감',
-  tabHeroesCombos: '영웅 & 조합',
+  tabHeroesCombos: '영웅 & 조합 허브',
   tabHeroesOnly: '영웅',
   tabSkinsOnly: '스킨',
   tabEdenMap: 'VTS Eden Hub',
@@ -1707,7 +1707,7 @@ const kr = {
   strifeVerifiedLineup: '확인된 몬스터 전열',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: '특성화',
-  tabResearchTowers: '연구 & 타워',
+  tabResearchTowers: '연구 & 타워 허브',
   tabTowersSpecialization: '타워 특화',
 
   adminEdenVotesClearDeadline: '마감 지우기',

@@ -430,7 +430,7 @@ const ru = {
   tabGenerator: 'Генератор Комбо',
   tabYouTube: 'YouTube',
   tabHeroes: 'Атлас героев',
-  tabHeroesCombos: 'Герои и комбинации',
+  tabHeroesCombos: 'Хаб героев и комбо',
   tabHeroesOnly: 'Герои',
   tabSkinsOnly: 'Скины',
   tabEdenMap: 'VTS Eden Hub',
@@ -1719,7 +1719,7 @@ const ru = {
   strifeVerifiedLineup: 'Проверенная расстановка монстра',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Специализация',
-  tabResearchTowers: 'Исследования и башни',
+  tabResearchTowers: 'Хаб исследований и башен',
   tabTowersSpecialization: 'Специализация башен',
 
   adminEdenVotesClearDeadline: 'Очистить дедлайн',

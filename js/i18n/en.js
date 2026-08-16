@@ -456,7 +456,7 @@ const en = {
   tabGenerator: 'Combo Generator',
   tabYouTube: 'YouTube',
   tabHeroes: 'Hero Atlas',
-  tabHeroesCombos: 'Heroes & Combos',
+  tabHeroesCombos: 'Heroes & Combos Hub',
   tabHeroesOnly: 'Heroes',
   tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
@@ -1759,7 +1759,7 @@ const en = {
   strifeVerifiedLineup: 'Verified monster lineup',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Specialization',
-  tabResearchTowers: 'Research & Towers',
+  tabResearchTowers: 'Research & Towers Hub',
   tabTowersSpecialization: 'Towers Specialization',
 
   adminEdenVotesClearDeadline: 'Clear deadline',

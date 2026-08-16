@@ -461,7 +461,7 @@ const fr = {
   tabGenerator: 'Générateur de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas des Héros',
-  tabHeroesCombos: 'Héros et combos',
+  tabHeroesCombos: 'Hub héros et combos',
   tabHeroesOnly: 'Héros',
   tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
@@ -1767,7 +1767,7 @@ const fr = {
   strifeVerifiedLineup: 'Composition de monstre vérifiée',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spécialisation',
-  tabResearchTowers: 'Recherche et tours',
+  tabResearchTowers: 'Hub recherche et tours',
   tabTowersSpecialization: 'Spécialisation des tours',
 
   adminEdenVotesClearDeadline: 'Effacer la date limite',

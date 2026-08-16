@@ -462,7 +462,7 @@ const de = {
   tabGenerator: 'Kombi-Generator',
   tabYouTube: 'YouTube',
   tabHeroes: 'Helden-Atlas',
-  tabHeroesCombos: 'Helden & Combos',
+  tabHeroesCombos: 'Helden- & Combo-Hub',
   tabHeroesOnly: 'Helden',
   tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
@@ -1770,7 +1770,7 @@ const de = {
   strifeVerifiedLineup: 'Bestätigte Monsteraufstellung',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spezialisierung',
-  tabResearchTowers: 'Forschung & Türme',
+  tabResearchTowers: 'Forschungs- & Turm-Hub',
   tabTowersSpecialization: 'Turm-Spezialisierung',
 
   adminEdenVotesClearDeadline: 'Frist löschen',

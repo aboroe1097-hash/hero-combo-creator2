@@ -427,7 +427,7 @@ const ar = {
   tabGenerator: 'مولد التشكيلات',
   tabYouTube: 'يوتيوب',
   tabHeroes: 'أطلس الأبطال',
-  tabHeroesCombos: 'الأبطال والتركيبات',
+  tabHeroesCombos: 'مركز الأبطال والتركيبات',
   tabHeroesOnly: 'الأبطال',
   tabSkinsOnly: 'الأزياء',
   tabEdenMap: 'VTS Eden Hub',
@@ -1701,7 +1701,7 @@ const ar = {
   strifeVerifiedLineup: 'تشكيلة وحش مؤكدة',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'التخصص',
-  tabResearchTowers: 'الأبحاث والأبراج',
+  tabResearchTowers: 'مركز البحث والأبراج',
   tabTowersSpecialization: 'تخصص الأبراج',
 
   adminEdenVotesClearDeadline: 'إلغاء الموعد',
