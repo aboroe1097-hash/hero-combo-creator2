@@ -1323,10 +1323,12 @@ test.describe('admin dashboard visual regression', () => {
       expect(check.clippedCyrillicName, `${check.name} nowrap-clip a Cyrillic cell`).toBe(false);
     }
 
-    const mobileDock = await page.locator('#ocrDashboardRoot .dash-subtab-nav').evaluate((dock) => {
-      const style = window.getComputedStyle(dock);
-      return { position: style.position, overflowX: style.overflowX };
-    });
+    const mobileDock = await page
+      .locator('#ocrDashboardRoot .dash-season-scope .dash-subtab-nav')
+      .evaluate((dock) => {
+        const style = window.getComputedStyle(dock);
+        return { position: style.position, overflowX: style.overflowX };
+      });
     expect(mobileDock.position).toBe('fixed');
     expect(mobileDock.overflowX).toBe('auto');
   });
@@ -2012,7 +2014,7 @@ test.describe('app smoke tabs', () => {
       '#strifeSection',
       '#strifeToolRoot .strife-monster-card:first-child'
     );
-    await expect(page.locator('#strifeToolRoot .strife-monster-card')).toHaveCount(11);
+    await expect(page.locator('#strifeToolRoot .strife-monster-card')).toHaveCount(12);
     await page.locator('[data-strife-monster="pivana"]').click();
     await expect(page.locator('.strife-monster-summary')).toContainText('Pilvana');
     await expect(page.locator('.strife-guide-notes')).toContainText('normal-attack pressure');
@@ -2479,6 +2481,7 @@ test.describe('app smoke tabs', () => {
         localStorage.setItem('vts_maintenance_bypass', '1');
         localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
         localStorage.setItem('vts_admin_local_test_auth', '1');
+        localStorage.setItem('vts_admin_eden_workspace', 'eden-x1');
         localStorage.setItem('vts_ocr_dashboard', JSON.stringify(data));
         navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
           registrations.forEach((registration) => registration.unregister());
@@ -4245,10 +4248,12 @@ test.describe('app smoke tabs', () => {
       'Italiano',
     ]);
     await page.locator('#languageSelect').selectOption('es');
-    await expect(page.locator('.eden-x1-notice strong')).toHaveText('Vista demo - no final.');
+    await expect(page.locator('.eden-x1-notice strong')).toHaveText(
+      'Los datos de la temporada llegarán pronto.'
+    );
     await expect(page.locator('.eden-x1-notice')).toContainText('recompensas finales');
     await page.locator('#languageSelect').selectOption('zh');
-    await expect(page.locator('.eden-x1-notice strong')).toHaveText('演示视图 - 非最终版。');
+    await expect(page.locator('.eden-x1-notice strong')).toHaveText('赛季数据即将上线。');
     await expect(page.locator('.eden-x1-reward-panel')).toContainText('奖励流程');
     await expect(page.locator('.eden-x1-reward-panel')).toContainText('计划的前20名奖励分配');
     await expect(page.locator('.eden-x1-reward-flow')).toHaveAttribute(
@@ -6310,16 +6315,13 @@ test.describe('app smoke tabs', () => {
     await openAdmin(page);
     await openLocalAdminDashboard(page);
     await seedAllianceViewContributions(page, fixture);
-    // Arrow keys rove across the whole rail in DOM order. Since the rail was
-    // grouped, Contributions sits in Operations and Alliance View in Programs,
-    // so the tab immediately before Alliance View is now Bonus Team Effort
-    // Points. Step from there to keep testing the roving contract rather than
-    // an adjacency the grouping changed.
-    await page.evaluate(() => window.switchDashSubtab('conduct'));
-    const conductTab = page.locator('.dash-subtab-btn[data-subtab="conduct"]');
-    await conductTab.focus();
-    await page.keyboard.press('ArrowRight');
+    // Arrow keys rove within one tab group. Alliance View now leads the new
+    // Alliance management group (allianceView, allStarBoh, throneBuffs) in its
+    // own nav, so focus it directly and activate it with the keyboard rather
+    // than roving in from a season tab that no longer shares its rail.
     const allianceTab = page.locator('.dash-subtab-btn[data-subtab="allianceView"]');
+    await allianceTab.focus();
+    await page.keyboard.press('Enter');
     await expect(allianceTab).toBeFocused();
     await expect(allianceTab).toHaveAttribute('aria-selected', 'true');
     await waitForAllianceViewReady(page);

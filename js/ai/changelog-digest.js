@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.1",
+    "date": "2026-08-16",
+    "highlights": [
+      "Split VTS Admin into two sides. Alliance management now holds Alliance View, All-Star BoH and the new Throne Buffs tab, and sits deliberately outside the Eden season scope, so a season rollover never moves or clears it.",
+      "Added the Throne Buffs assignment tab: pick any week, assign the nine throne titles to members with optional reasons, watch the rotation fairness table flag who is overdue, search past weeks, and export the week as a PNG card.",
+      "Added the Banners Planner groundwork: a 19-banner alliance catalog transcribed from the retired planning sheet, plus the pure planning model that normalizes weekly event blocks and tracks banner usage, pilot workload and banners that silently dropped out of a week.",
+      "Added Vialfiend to the Strife monster lab with its four skills verbatim from the game: Death's Aura, Intimidate, Demon Wraith and Power of the Legion.",
+      "Removed the Velo runner sprite that travelled along the loading bar; the loader keeps its identity art and the progress bar still animates.",
+      "Embedded the Eden X2 season page and Previous Seasons into the Eden Hub without their standalone chrome, and fixed the white-on-white workspace select and the cramped admin command strip on mid-width screens."
+    ]
+  },
   {
     "version": "15.0.0",
     "date": "2026-08-15",
@@ -14,7 +26,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Reorganised VTS Admin around what actually changes each season. The Eden workspace switch now governs only the season surfaces; All-Star BoH sits in a separate Standing programs area that a season rollover never touches.",
       "Added an Eden workspace command strip with the season selector, its draft or published state, and safe publish, unpublish and snapshot actions. The archived X1 season stays viewable and exportable but refuses every change.",
       "Added the Throne Buffs weekly assignment groundwork: the nine throne titles with their real effects, weekly assignments with optional reasoning, and rotation fairness that tracks who has held which buff and how long ago.",
-      "Rebuilt the Towers planner around a path decision card that names the mode, tower, chosen preset and next upgrade at a glance, and moved the long hero mechanics into a collapsed Hero synergies panel."
+      "Shipped the nine Throne title icons in `images/throne/`, cropped from the in-game Province panel. A slot whose icon file is absent still falls back to its two-letter initials, and the Emperor's effect list stays empty until its in-game tab is captured."
     ]
   },
   {
@@ -96,15 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Expanded Velo's output limit and tool budget so answers can include compact markdown tables that stay readable on phones.",
       "Added a copy-answer button to completed Velo replies, plus table-aware rendering for tool-generated data.",
       "Enabled Velo's active-tab context so follow-up questions know which tool page you are looking at."
-    ]
-  },
-  {
-    "version": "14.3.1",
-    "date": "2026-07-29",
-    "highlights": [
-      "Replaced the generic VtsScore failure banner with specific messages for every secure-service outcome: rate limits (with the wait time), oversized screenshots, service outages, unsupported image types, locked accounts, closed signups, and rejected requests.",
-      "Appended the machine-readable error code to VtsScore failure banners so member screenshots identify the exact failure for support.",
-      "Restored the stable captured sign-in reference for the All-Star secure client on the VtsScore and BoH pages."
     ]
   }
 ].map((release) =>

@@ -91,10 +91,11 @@ const LIMITS = {
   // before building, so it measures larger than a bare local build) audits to
   // 9630.2 KiB. Retain roughly 7 KiB.
   // The 15.0.0 release adds the Eden X2 route and workspace contract, the
-  // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
-  // Loyalty/Materials polish. Measured 9688.0 KiB of built JS; retain
-  // roughly 7 KiB.
-  totalJsBytes: 9695 * 1024,
+  // Throne Buffs model and PNG canvas export, Banners catalog and planner model,
+  // the Skins gallery and its lazy detail styles, Vialfiend monster data, and
+  // Loyalty/Materials polish. Measured 9699.7 KiB of built JS; retain
+  // roughly 10 KiB.
+  totalJsBytes: 9730 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

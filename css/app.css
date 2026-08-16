@@ -17006,9 +17006,11 @@ body.admin-standalone-page .command-actions {
 
   body.admin-standalone-page .admin-command-actions .admin-control-row {
     width: 100%;
-    grid-template-columns:
-      minmax(120px, 0.9fr) minmax(170px, 1.25fr) 44px minmax(116px, 0.8fr)
-      minmax(116px, 0.8fr) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
   }
 }
 

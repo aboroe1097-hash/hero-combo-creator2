@@ -105,11 +105,11 @@ function createRuntimeStore({ authoredTeamPlan = null } = {}) {
   return store;
 }
 
-test('Admin VTS keeps the lazy All-Star BoH tab outside the Eden season scope', () => {
-  // All-Star BoH is a standing program: its records are global, so it belongs to
-  // the Standing programs nav rather than the season-scoped section the Eden
-  // workspace switch governs. The boundary is the contract worth asserting —
-  // position among the season tabs is free to change.
+test('Admin VTS keeps the Alliance management nav outside the Eden season scope', () => {
+  // Alliance management programs (Alliance View, All-Star BoH, Throne Buffs) are
+  // standing programs: their records are global, so they belong to the Alliance
+  // management nav rather than the season-scoped section the Eden workspace
+  // switch governs.
   const allianceTab = adminTab.indexOf('data-subtab="allianceView"');
   const allStarTab = adminTab.indexOf('data-subtab="allStarBoh"');
   const standingNav = adminTab.indexOf('data-subtab-scope="global"');
@@ -119,7 +119,7 @@ test('Admin VTS keeps the lazy All-Star BoH tab outside the Eden season scope', 
   assert.ok(seasonScope >= 0, 'Season scope section should exist');
   assert.ok(standingNav > seasonScope, 'Standing programs nav should follow the season scope');
   assert.ok(allStarTab > standingNav, 'All-Star BoH should sit in the Standing programs nav');
-  assert.ok(allianceTab < standingNav, 'Alliance View should stay season-scoped');
+  assert.ok(allianceTab > standingNav, 'Alliance View should sit in the Standing programs nav');
   assert.match(adminTab, /data-subtab-group="standing"[\s\S]*?data-subtab="allStarBoh"/);
   assert.match(adminTab, /id="dashSubtabAllStarBoh"[\s\S]*?id="dashAllStarBohRoot"/);
   assert.match(adminTab, /data-i18n="adminBohTab">All-Star BoH</);

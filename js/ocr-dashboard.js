@@ -179,7 +179,12 @@ let allStarBohMountPromise = null;
 let allStarBohController = null;
 let allStarBohAdminI18n = null;
 let allStarBohResearchI18n = null;
+let throneBuffsModulePromise = null;
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
+// Throne Buffs is a standing program: its history key is deliberately global,
+// never scoped to the Eden season workspace, so a season rollover cannot
+// move or clear the assignment history.
+const THRONE_BUFFS_HISTORY_LOCAL_KEY = 'vtsThroneBuffsHistory';
 
 function isDynamicImportLoadFailure(err) {
   const message = String(err?.message || err?.reason?.message || err || '');
@@ -680,8 +685,66 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'contributions') renderContributions();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') void ensureAllStarBohMountedOrUpdated();
+  if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
+}
+
+function loadThroneBuffsHistory() {
+  try {
+    const raw = localStorage.getItem(THRONE_BUFFS_HISTORY_LOCAL_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('THRONE BUFFS HISTORY LOAD ERROR:', error);
+    return [];
+  }
+}
+
+function saveThroneBuffsHistory(record) {
+  const history = loadThroneBuffsHistory();
+  const index = history.findIndex((item) => item?.weekKey === record.weekKey);
+  if (index >= 0) history[index] = record;
+  else history.push(record);
+  try {
+    localStorage.setItem(THRONE_BUFFS_HISTORY_LOCAL_KEY, JSON.stringify(history));
+  } catch (error) {
+    console.warn('THRONE BUFFS HISTORY SAVE ERROR:', error);
+  }
+}
+
+async function ensureThroneBuffsMounted() {
+  if (!throneBuffsModulePromise) {
+    throneBuffsModulePromise = import('./admin-throne-buffs.js').catch((error) => {
+      throneBuffsModulePromise = null;
+      void recoverFromStaleAssetGraph(error);
+      throw error;
+    });
+  }
+  try {
+    const module = await throneBuffsModulePromise;
+    const mount = $id('dashThroneRoot');
+    if (!mount) return;
+    // The Throne Buffs UI reads its strings through the dashboard's own
+    // translator, so publish it once for the module's embedded t() helper.
+    window.dashT = dashT;
+    module.renderThroneBuffs(mount, {
+      history: loadThroneBuffsHistory(),
+      rosterMembers: Array.isArray(state.rosterNames)
+        ? state.rosterNames.map((name) => ({ name }))
+        : [],
+      onSave: saveThroneBuffsHistory,
+    });
+  } catch (error) {
+    console.error('THRONE BUFFS LOAD ERROR:', error);
+    const mount = $id('dashThroneRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminThroneEmptyHistory')
+      )}</div>`;
+    }
+  }
 }
 
 const CONDUCT_CATEGORY_I18N_KEYS = {
@@ -2336,6 +2399,13 @@ function switchDashSubtab(name) {
     btn.setAttribute('aria-selected', 'true');
     btn.tabIndex = 0;
   }
+  // On mobile the grouped rail becomes a fixed bottom dock. Only the nav of
+  // the active scope can dock; the other nav stays in the page flow so its
+  // tabs remain reachable on a phone.
+  const activeNav = btn?.closest('.dash-subtab-nav') || null;
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((nav) => {
+    nav.classList.toggle('dash-subtab-nav-docked', nav === activeNav);
+  });
   if (name !== 'analytics') state._analyticsAnimated = false;
   // Let the newly selected panel paint before any data-heavy table/chart work.
   // Previously every hidden admin panel rendered synchronously inside the click.
@@ -2362,6 +2432,12 @@ function bindSubtabNavigation() {
   if (nav) nav.setAttribute('role', 'tablist');
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach((panel) => {
     panel.setAttribute('role', 'tabpanel');
+  });
+  const initiallyActiveNav = document
+    .querySelector('#ocrDashboardRoot .dash-subtab-btn.dash-subtab-active')
+    ?.closest('.dash-subtab-nav');
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((navEl) => {
+    navEl.classList.toggle('dash-subtab-nav-docked', navEl === initiallyActiveNav);
   });
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach((btn) => {
     btn.setAttribute('role', 'tab');

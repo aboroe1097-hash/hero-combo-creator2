@@ -3611,10 +3611,15 @@ body[style*='overflow: hidden'] .tab-panel {
   border: 1px solid var(--ff-hairline);
   border-radius: var(--ff-r-pill);
   color: var(--ff-text);
+  color-scheme: dark;
   font-size: 0.78rem;
   font-weight: 600;
   font-family: var(--ff-font-ui);
   cursor: pointer;
+}
+#ocrDashboardRoot .dash-workspace-select option {
+  background-color: #0b1524;
+  color: #f7fbff;
 }
 #ocrDashboardRoot .dash-workspace-select:focus-visible {
   outline: 2px solid var(--ff-cyan);
@@ -3719,6 +3724,11 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 [data-theme='light'] #ocrDashboardRoot .dash-workspace-select {
   background: #ffffff;
+  color: #0f172a;
+  color-scheme: light;
+}
+[data-theme='light'] #ocrDashboardRoot .dash-workspace-select option {
+  background-color: #ffffff;
   color: #0f172a;
 }
 [data-theme='light'] #ocrDashboardRoot .dash-workspace-lifecycle[data-lifecycle='draft'] {
@@ -8718,13 +8728,15 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
 /* Standalone Admin mobile dock
    Keep the eleven internal Admin tools available without leaving their tab rail
    between dashboard content. The signed-out and connecting states do not show
-   it because the rail remains inside #dashApp. */
+   it because the rail remains inside #dashApp. Only one grouped nav docks at a
+   time — the nav of the active scope gets `dash-subtab-nav-docked`; the other
+   nav stays in the page flow so Alliance tabs stay reachable on a phone. */
 @media (max-width: 768px) {
   body.admin-has-subtool-dock {
     padding-bottom: calc(88px + var(--safe-bottom)) !important;
   }
 
-  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav {
+  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-docked {
     position: fixed !important;
     z-index: 1080 !important;
     inset: auto 0 0 !important;
@@ -8845,7 +8857,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     left: 8px;
   }
 
-  [data-theme='light'] body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav {
+  [data-theme='light']
+    body.admin-has-subtool-dock
+    #ocrDashboardRoot
+    .dash-subtab-nav.dash-subtab-nav-docked {
     border-top-color: rgba(71, 85, 105, 0.2) !important;
     background: rgba(255, 255, 255, 0.95) !important;
     box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.13) !important;

@@ -18,9 +18,19 @@ async function openApp(page, path = '/') {
 
 async function openResearch(page) {
   // Research moved inside the Research & Towers Hub; the hub opens on Towers.
-  await page.locator('#tabResearchTowers').click();
+  const tool = page.locator('#tabResearchTowers');
+  if (!(await tool.isVisible())) {
+    const moreBtn = page.locator('#shellMoreButton');
+    if (await moreBtn.isVisible()) {
+      await moreBtn.click();
+      await expect(page.locator('#shellMorePanel')).toBeVisible();
+    }
+  }
+  await tool.click();
+  await expect(page.locator('#researchTowersSection')).toBeVisible();
   await page.locator('[data-hub-subtab="research"]').click();
-  await expect(page.locator('#techListContainer')).toBeVisible();
+  await expect(page.locator('#techListContainer')).toBeVisible({ timeout: 25000 });
+  await page.locator('#techSeasonAllBtn').click();
 }
 
 async function openTree(page, techId) {
