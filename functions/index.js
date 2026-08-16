@@ -78,10 +78,11 @@ export const setUserRole = onCall(
       return await setUserRoleHandler(request);
     } catch (error) {
       if (error?.name === 'RoleError') throw new HttpsError(error.code, error.message);
-      // Never surface an unexpected error's text to the client: it can carry
-      // uids, tokens or internal paths.
-      console.error('setUserRole failed', error?.message || error);
-      throw new HttpsError('internal', 'The role change could not be completed.');
+      // Anything else propagates untouched. The callable runtime logs it
+      // server-side and returns a generic INTERNAL to the caller, so the real
+      // message — which can carry uids or internal paths — never reaches the
+      // client and nothing is logged from this entrypoint.
+      throw error;
     }
   }
 );
