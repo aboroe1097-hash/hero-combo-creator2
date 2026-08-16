@@ -6201,24 +6201,18 @@ body.eden-x1-page.eden-x1-overlay-open {
   }
 }
 
-/* Embedded mode when loaded inside Eden Hub iframe (?embed=1) */
+/* Embedded mode when loaded inside Eden Hub iframe (?embed=1).
+   The class lands on <html> from theme-prepaint, so html-selector rules only. */
 html.is-embedded .command-header,
 html.is-embedded .admin-command-header,
 html.is-embedded footer.roc-footer,
 html.is-embedded .admin-footer,
-html.is-embedded .standalone-footer-v14,
-body.is-embedded .command-header,
-body.is-embedded .admin-command-header,
-body.is-embedded footer.roc-footer,
-body.is-embedded .admin-footer,
-body.is-embedded .standalone-footer-v14 {
+html.is-embedded .standalone-footer-v14 {
   display: none !important;
 }
 
 html.is-embedded #ocrDashboardRoot > .app-shell,
-body.is-embedded #ocrDashboardRoot > .app-shell,
-html.is-embedded .app-shell,
-body.is-embedded .app-shell {
+html.is-embedded .app-shell {
   max-width: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
