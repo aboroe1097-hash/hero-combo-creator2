@@ -1428,6 +1428,7 @@ const fr = {
   edenX1ViewOnly: 'Lecture seule',
   edenX1NoFirebase: 'Firebase n’est pas configuré. Impossible de charger les données.',
   edenX1NoData: 'Aucune donnée de contribution trouvée.',
+  edenSeasonUnpublished: "Cette saison n'a pas encore été publiée. Les résultats apparaîtront dès qu'un administrateur les publiera.",
   edenX1NoRows: 'Aucune ligne de contribution pondérée à afficher.',
   edenX1ShowAllRows: 'Afficher les {count} joueurs',
   edenX1LoadMoreRows: 'Charger {count} de plus ({remaining} restants)',

@@ -481,13 +481,14 @@ function heroAvatar(heroName, className = 'spec-plan-hero-avatar') {
 
 // The two default paths, as a segmented control rather than a dropdown: there
 // are exactly two and the choice reorders everything below it, so it should be
-// visible at a glance instead of collapsed into a select.
+// visible at a glance instead of collapsed into a select. Roving tabindex: the
+// checked radio is the tab stop, the rest are reached with the arrow keys.
 function renderPathModes() {
   return `
     <div class="spec-path-modes" role="radiogroup" aria-label="${escapeHtml(sp('planPathBasis'))}">
       ${HERO_PLAN_MODES.map((mode) => {
         const active = mode === heroPlanMode;
-        return `<button type="button" class="spec-path-mode" role="radio" aria-checked="${active}" data-spec-plan-mode="${mode}">
+        return `<button type="button" class="spec-path-mode" role="radio" aria-checked="${active}" tabindex="${active ? 0 : -1}" data-spec-plan-mode="${mode}">
           <span class="spec-path-mode-icon" aria-hidden="true">${MODE_ICON[mode]}</span>
           <span class="spec-path-mode-name">${escapeHtml(modeLabel(mode))}</span>
         </button>`;
@@ -551,6 +552,99 @@ function renderPathHeroes() {
     </section>`;
 }
 
+// A plan reason is canonical English data ("Ramses II · Fatal Blow → Column 2 ·
+// Sniper Archer"); the decision card wants the scannable half — who, and which
+// mechanic — so the tag keeps everything before the arrow and drops the
+// research/column coordinates it points at.
+function reasonTag(reason) {
+  const source = String(reason || '');
+  const head = (source.includes('→') ? source.split('→')[0] : source.split('—')[0]).trim();
+  return head
+    .replace(/^Column\s+\d+\s*·\s*/i, '')
+    .replace(/\s*·\s*$/, '')
+    .trim();
+}
+
+function rationaleTags(reasons) {
+  const tags = [];
+  for (const reason of reasons || []) {
+    const tag = reasonTag(reason);
+    if (tag && !tags.includes(tag) && tags.length < 4) tags.push(tag);
+  }
+  return tags;
+}
+
+// The one-glance summary of the planner's current answer: which of the two
+// paths, which tower it is planning, which preset won, and what to fund next.
+// Everything below it (modes, presets, hero chips) explains or changes this
+// card, so it re-renders on the same invalidatePlans() path as the rest.
+function renderPathDecision(plan, nextId, nextReasons) {
+  const presetId = activePresetId(activeTroop);
+  const preset = getPathPreset(presetId);
+  const presetOwned = preset
+    ? preset.heroes.filter((name) => isHeroOwned(name)).length
+    : 0;
+  const nextResearch = nextId ? SPECIALIZATION_RESEARCH[nextId] : null;
+  const nextStep = nextId && plan ? getHeroPlanStep(plan, nextId) : 0;
+  const totalSteps = getHeroPlanLength(plan);
+  const tags = rationaleTags(nextReasons);
+  const cell = (labelKey, valueHtml) => `
+      <div class="spec-path-decision-cell">
+        <span class="spec-path-decision-label">${escapeHtml(sp(labelKey))}</span>
+        <span class="spec-path-decision-value">${valueHtml}</span>
+      </div>`;
+  const presetValue = escapeHtml(pathLabel(presetId)) + (preset
+    ? ` <small>${escapeHtml(sp('planPresetMatch', { owned: presetOwned, total: preset.heroes.length }))}</small>`
+    : '');
+  const nextValue = nextResearch
+    ? `${escapeHtml(researchName(nextResearch))} <small>${escapeHtml(sp('planDecisionNextStep', { step: nextStep, total: totalSteps }))}</small>`
+    : escapeHtml(sp('planDecisionAllFunded'));
+  return `
+      <section class="spec-path-decision" data-spec-path-decision aria-label="${escapeHtml(sp('planDecisionLabel'))}">
+        <div class="spec-path-decision-grid">
+          ${cell('planModeLabel', escapeHtml(modeLabel(heroPlanMode)))}
+          ${cell('planDecisionTower', escapeHtml(troopLabel(activeTroop)))}
+          ${cell('planPathBasis', presetValue)}
+          ${cell('planDecisionNext', nextValue)}
+        </div>
+        ${
+          tags.length
+            ? `<div class="spec-why-tags" aria-label="${escapeHtml(sp('planWhyNext'))}">
+                <span class="spec-why-tags-label">${escapeHtml(sp('planWhyNext'))}</span>
+                ${tags.map((tag) => `<span class="spec-why-tag">${escapeHtml(tag)}</span>`).join('')}
+              </div>`
+            : ''
+        }
+      </section>`;
+}
+
+// Full per-hero mechanics, behind a disclosure. The long notes are reference
+// material next to a decision card that must stay scannable, so they default to
+// collapsed and are keyboard reachable by construction (native details).
+function renderHeroSynergies(plan) {
+  const notes = plan?.heroNotes || [];
+  if (!notes.length) return '';
+  return `
+      <details class="spec-synergy" data-spec-synergies>
+        <summary>
+          <strong class="spec-synergy-title">${escapeHtml(sp('planSynergiesLabel'))}</strong>
+          <span class="spec-synergy-count">${fmt(notes.length)}</span>
+        </summary>
+        <ul class="spec-path-note-list">
+          ${notes
+            .map(
+              (entry) => `<li>${heroAvatar(entry.hero, 'spec-path-note-avatar')}<span>
+                <strong>${escapeHtml(entry.hero)}</strong>
+                ${(entry.mechanics || []).length ? `<span class="spec-synergy-mechanics" aria-label="${escapeHtml(sp('planSynergiesKey'))}">${entry.mechanics.map((mechanic) => `<span class="spec-synergy-mechanic">${escapeHtml(mechanic)}</span>`).join('')}</span>` : ''}
+                <span class="spec-synergy-note">${escapeHtml(entry.note)}</span>
+              </span></li>`
+            )
+            .join('')}
+        </ul>
+        ${locale() === 'en' ? '' : `<small class="spec-path-canonical">${escapeHtml(sp('canonicalEnglishBadge'))}</small>`}
+      </details>`;
+}
+
 function renderPathPlanner() {
   const plan = heroPlanForTroop(activeTroop);
   const ranking = getHeroPlanRanking(ensureHeroPlans().plans);
@@ -567,42 +661,19 @@ function renderPathPlanner() {
 
   const nextId = plan ? heroPlanNextResearchId() : null;
   const nextReasons = plan && nextId ? plan.reasons[nextId] || [] : [];
-  // The catalog note explains the hero, not the step: it is the standing reason
-  // this hero pulls the path where it does, which the per-step reasons assume.
-  const heroNotes = (plan?.heroNotes || []).slice(0, 3);
 
   return `
     <div class="spec-hero-plan" data-spec-hero-plan>
       <div class="spec-hero-plan-head">
         <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
-        <span class="spec-hero-plan-roster">${escapeHtml(pathLabel(activePresetId(activeTroop)))} · ${escapeHtml(modeLabel(heroPlanMode))}</span>
         <button type="button" class="spec-hero-plan-jump" data-spec-plan-go-heroes>${escapeHtml(sp('planGoToHeroes'))}</button>
       </div>
+      ${renderPathDecision(plan, nextId, nextReasons)}
       ${renderPathModes()}
       <div class="spec-plan-troop-chips" aria-label="${escapeHtml(sp('planPriority'))}">${chips}</div>
       ${renderPathPresets()}
       ${renderPathHeroes()}
-      ${
-        heroNotes.length
-          ? `<section class="spec-path-notes" aria-label="${escapeHtml(sp('planHeroNotes'))}">
-              <h4 class="spec-path-section-title">${escapeHtml(sp('planHeroNotes'))}</h4>
-              <ul class="spec-path-note-list">
-                ${heroNotes
-                  .map(
-                    (entry) =>
-                      `<li>${heroAvatar(entry.hero, 'spec-path-note-avatar')}<span><strong>${escapeHtml(entry.hero)}</strong> ${escapeHtml(entry.note)}</span></li>`
-                  )
-                  .join('')}
-              </ul>
-              ${locale() === 'en' ? '' : `<small class="spec-path-canonical">${escapeHtml(sp('canonicalEnglishBadge'))}</small>`}
-            </section>`
-          : ''
-      }
-      ${
-        nextReasons.length
-          ? `<div class="spec-hero-plan-why"><span class="spec-hero-plan-why-label">${escapeHtml(sp('planWhyNext'))}:</span><span>${nextReasons.map(escapeHtml).join(' · ')}</span></div>`
-          : ''
-      }
+      ${renderHeroSynergies(plan)}
     </div>`;
 }
 
@@ -633,13 +704,17 @@ function renderBadge(researchId) {
   // path (12/32) so a badge is legible without counting the columns.
   const stepState = progress.isComplete ? 'done' : isNext ? 'next' : 'todo';
   const stepAria = sp('planStepAria', { step: routeStep, total: totalSteps });
+  // The reasons exist as text for assistive tech too: a title tooltip is the
+  // pointer-only half, the visually-hidden span is the keyboard/AT half.
+  const reasonId = `spec-plan-reason-${researchId}`;
   return `
     <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-step-state="${stepState}" data-route-next="${isNext ? 'true' : 'false'}"${planTip ? ` data-plan-reason="true" title="${planTip}"` : ''}>
+      ${planTip ? `<span class="spec-sr-only" id="${reasonId}">${planTip}</span>` : ''}
       <span class="spec-badge-meta">
         ${routeStep ? `<span class="spec-route-step" role="img" aria-label="${escapeHtml(stepAria)}">${progress.isComplete ? '✓' : routeStep}<small>/${totalSteps}</small></span>` : ''}
         ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
       </span>
-      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
+      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}"${planTip ? ` aria-describedby="${reasonId}"` : ''} aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
         <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
         <span class="spec-badge-pct">${pct(progress.percent)}%</span>
@@ -1337,13 +1412,15 @@ function renderDetail() {
 
 function render() {
   if (!root) return;
-  // render() replaces the whole subtree, which would otherwise collapse any contribution
-  // column the reader had expanded. Carry the open ones across.
+  // render() replaces the whole subtree, which would otherwise collapse any
+  // contribution column the reader had expanded. Carry the open ones across —
+  // and the hero-synergies disclosure with them.
   const openColumns = new Set(
     Array.from(root.querySelectorAll('.spec-contrib-column[open]'), (element) =>
       element.querySelector('summary')?.textContent?.trim()
     ).filter(Boolean)
   );
+  const synergiesOpen = Boolean(root.querySelector('.spec-synergy[open]'));
   const summary = getSpecializationSummary(state);
   root.dir = getSpecializationTowersV2Direction(locale());
   root.innerHTML = `
@@ -1356,6 +1433,9 @@ function render() {
       const label = element.querySelector('summary')?.textContent?.trim();
       if (label && openColumns.has(label)) element.open = true;
     });
+  }
+  if (synergiesOpen) {
+    root.querySelector('.spec-synergy')?.setAttribute('open', '');
   }
 }
 
@@ -1406,6 +1486,31 @@ function refreshNodeSelection() {
 }
 
 function onKeyDown(event) {
+  // Radiogroup pattern for the two paths: arrows/Home/End move (and, as with
+  // radio groups, select) instead of Tab, so Tab keeps flowing past the group.
+  const modeButton = event.target.closest?.('[data-spec-plan-mode]');
+  if (modeButton) {
+    const index = HERO_PLAN_MODES.indexOf(modeButton.dataset.specPlanMode);
+    let target = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      target = HERO_PLAN_MODES[(index + 1) % HERO_PLAN_MODES.length];
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      target = HERO_PLAN_MODES[(index - 1 + HERO_PLAN_MODES.length) % HERO_PLAN_MODES.length];
+    } else if (event.key === 'Home') {
+      target = HERO_PLAN_MODES[0];
+    } else if (event.key === 'End') {
+      target = HERO_PLAN_MODES[HERO_PLAN_MODES.length - 1];
+    }
+    if (target !== null) {
+      event.preventDefault();
+      if (target !== heroPlanMode) {
+        heroPlanMode = target;
+        invalidatePlans();
+      }
+      root?.querySelector(`[data-spec-plan-mode="${target}"]`)?.focus({ preventScroll: true });
+    }
+    return;
+  }
   if (!event.target.closest?.('[data-spec-node]')) return;
   const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
   const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';

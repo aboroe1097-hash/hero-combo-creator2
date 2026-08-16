@@ -17,6 +17,7 @@ const htmlFiles = [
   'admin.html',
   'arcade.html',
   'eden-x1.html',
+  'eden-x2.html',
   ...fs
     .readdirSync(path.join(rootDir, 'tabs'))
     .filter((name) => name.endsWith('.html'))

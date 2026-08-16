@@ -30,8 +30,26 @@ import {
   expandDutyRawNames,
   getDutyCreditedNames,
 } from './ocr-shared.js';
+import {
+  ACTIVE_EDEN_WORKSPACE,
+  ACTIVE_EDEN_WORKSPACE_ID,
+  edenWorkspaceMutationError,
+} from './eden-workspaces.js';
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
+
+// Season record mirrors refuse writes while the archived workspace is the
+// active one, so the X1 archive's local mirrors stay exactly as loaded.
+function blockArchiveMirrorWrite(action) {
+  const err = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID);
+  if (!err) return false;
+  console.warn(err.message, action);
+  log(`${err.message} Blocked: ${action}.`, 'warn');
+  if (typeof window.showToast === 'function') {
+    window.showToast(`${ACTIVE_EDEN_WORKSPACE.label} is read-only.`, 'warn', 6000);
+  }
+  return true;
+}
 import { translations } from './translations.js';
 import { resolveRuntimeLocale } from './locale-format.js';
 import {
@@ -366,6 +384,7 @@ function loadRoster() {
 }
 
 function saveRoster(text) {
+  if (blockArchiveMirrorWrite('save roster')) return;
   const previous = localStorage.getItem(ROSTER_KEY) || '';
   localStorage.setItem(ROSTER_KEY, text);
   loadRoster();
@@ -432,6 +451,7 @@ function syncRosterSnapshotsToFirestore(snapshots, baseUpdated) {
 }
 
 function saveRosterSnapshots() {
+  if (blockArchiveMirrorWrite('save roster snapshots')) return;
   state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
   const snapshots = state.rosterSnapshots.slice();
   const baseUpdated = state._rosterCloudBaseUpdated ?? null;
@@ -1036,6 +1056,7 @@ function loadBannerRecords() {
 }
 
 function saveBannerRecords(options = {}) {
+  if (blockArchiveMirrorWrite('save banner records')) return Promise.resolve(false);
   try {
     localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords));
   } catch (e) {}
@@ -1299,6 +1320,7 @@ function loadDutyRecords() {
 }
 
 function saveDutyRecords(options = {}) {
+  if (blockArchiveMirrorWrite('save duty records')) return Promise.resolve(false);
   try {
     localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords));
   } catch (e) {}
@@ -2235,6 +2257,7 @@ function loadContributionRecords() {
 }
 
 function saveContributionRecords(options = {}) {
+  if (blockArchiveMirrorWrite('save contribution records')) return Promise.resolve(false);
   try {
     localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || []));
   } catch (e) {}
@@ -2252,6 +2275,7 @@ export function loadExGuildContributions() {
 }
 
 function saveExGuildContributions(options = {}) {
+  if (blockArchiveMirrorWrite('save ex-guild contributions')) return Promise.resolve(false);
   try {
     localStorage.setItem(
       EX_GUILD_CONTRIBUTION_KEY,

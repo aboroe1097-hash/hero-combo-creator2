@@ -8,22 +8,22 @@ const navigationPlacements = new Map([
       tabEdenMap: 'more',
       tabHeroesCombos: 'primary',
       tabResearchTowers: 'primary',
+      tabMaterials: 'primary',
       tabAllStarBoh: 'primary',
-      tabVtsScore: 'primary',
       tabYouTube: 'more',
       tabArcade: 'more',
     },
   ],
   // Eden Map is the third hub, so it is primary from the plain desktop rail up.
-  [641, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabVtsScore: 'primary' }],
-  [1439, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabVtsScore: 'primary' }],
+  [641, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabMaterials: 'primary' }],
+  [1439, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabMaterials: 'primary' }],
   [
     1440,
     {
       tabStrife: 'primary',
       tabEdenMap: 'primary',
       tabYouTube: 'primary',
-      tabVtsScore: 'primary',
+      tabMaterials: 'primary',
     },
   ],
   [
@@ -32,7 +32,7 @@ const navigationPlacements = new Map([
       tabStrife: 'primary',
       tabEdenMap: 'primary',
       tabYouTube: 'primary',
-      tabVtsScore: 'primary',
+      tabMaterials: 'primary',
     },
   ],
 ]);
@@ -84,7 +84,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabAllStarBoh', 'tabVtsScore']);
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabMaterials', 'tabAllStarBoh']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });

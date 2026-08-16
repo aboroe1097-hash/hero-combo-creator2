@@ -70,6 +70,32 @@ import {
   displayGameTime,
 } from './ocr-engine.js';
 import { translations } from './translations.js';
+import {
+  ACTIVE_EDEN_WORKSPACE,
+  ACTIVE_EDEN_WORKSPACE_ID,
+  EDEN_WORKSPACE_COLLECTION_PATH,
+  buildEdenPublicProjection,
+  buildEmptyEdenWorkspaceDashboard,
+  edenWorkspaceFirestorePath,
+  edenWorkspaceMutationError,
+  edenWorkspaceStorageKey,
+  isEdenWorkspaceMutable,
+  getEdenWorkspace,
+  parseEdenWorkspaceRecord,
+  setActiveAdminWorkspaceId,
+} from './eden-workspaces.js';
+const ACTIVE_EDEN_WORKSPACE_DEFAULT_SEASON = ACTIVE_EDEN_WORKSPACE.defaultSeason;
+
+// The archived Eden X1 workspace refuses every mutation: writes log a warning,
+// surface a sync failure, and the caller aborts. Reads and exports stay open.
+function blockEdenArchiveWrite(action = 'write') {
+  const err = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID);
+  if (!err) return false;
+  console.warn(err.message, action);
+  log(`${err.message} Blocked: ${action}.`, 'warn');
+  showCloudSyncFailure(err, `${ACTIVE_EDEN_WORKSPACE.label} is read-only`);
+  return true;
+}
 import { formatLocaleDate, formatLocaleNumber, resolveRuntimeLocale } from './locale-format.js';
 import {
   fromEdenVoteDatetimeLocal,
@@ -305,7 +331,10 @@ state.adminUser = null;
 state.adminIsAdmin = false;
 
 const DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS = 1200;
-const DASHBOARD_CLOUD_RETRY_QUEUE_KEY = 'vts_dashboard_cloud_retry_queue';
+const DASHBOARD_CLOUD_RETRY_QUEUE_KEY = edenWorkspaceStorageKey(
+  'vts_dashboard_cloud_retry_queue',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
 const DASHBOARD_CLOUD_RETRY_LIMIT = 6;
 const ADMIN_LOCAL_TEST_KEY = 'vts_admin_local_test_auth';
 const DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = (() => {
@@ -333,11 +362,30 @@ const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
   return Number.isFinite(override) && override > 0 ? override : 20000;
 })();
 const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
-const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
-const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
-const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
-const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
-const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = 'vts_eden_x1_vote_admin_settings';
+// Vote records are season records: they follow the active Eden workspace.
+// eden-x1 keeps the historical eden_x1_* paths (read-only archive), eden-x2
+// writes to dedicated eden_x2_* collections.
+const EDEN_X1_VOTES_COLLECTION_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'votes');
+const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'voteHistory'
+);
+const EDEN_X1_VOTE_SETTINGS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'voteSettings'
+);
+const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'publicVoteResults'
+);
+const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_eden_x1_vote_admin_settings',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+const R5_ADJUSTMENT_SEASON_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_r5_adjustment_season',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
@@ -653,10 +701,10 @@ const CONDUCT_MANUAL_PLAYER_VALUE = '__manual_conduct_player__';
 
 function getDashboardR5SeasonKey() {
   try {
-    const saved = localStorage.getItem('vts_r5_adjustment_season');
+    const saved = localStorage.getItem(R5_ADJUSTMENT_SEASON_LOCAL_KEY);
     if (saved) return saved;
   } catch (e) {}
-  return `season-${new Date().getUTCFullYear()}`;
+  return ACTIVE_EDEN_WORKSPACE_DEFAULT_SEASON || `season-${new Date().getUTCFullYear()}`;
 }
 
 state.r5Season = state.r5Season || getDashboardR5SeasonKey();
@@ -1042,6 +1090,7 @@ function buildEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
 }
 
 async function publishEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
+  if (blockEdenArchiveWrite('publish public vote results')) return false;
   if (hasEdenX1VoteSeasonMismatch(settings)) return false;
   if (state.adminIsAdmin !== true) return false;
   const db = await ensureCloudSyncReady();
@@ -1289,6 +1338,7 @@ async function loadEdenX1VoteSettings() {
 }
 
 async function saveEdenX1VoteSettings(nextSettings) {
+  if (blockEdenArchiveWrite('save vote settings')) return false;
   edenX1VoteSettingsVersion += 1;
   const settings = normalizeEdenX1VoteSettings(nextSettings);
   state.edenX1VoteSettings = settings;
@@ -1329,6 +1379,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
 }
 
 async function activateCurrentEdenX1VoteSeason() {
+  if (blockEdenArchiveWrite('activate vote season')) return false;
   const previousSettings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
   );
@@ -1905,6 +1956,7 @@ async function loadConductAdjustmentsForSeason() {
 }
 
 async function savePublicConductSnapshot() {
+  if (blockEdenArchiveWrite('save conduct snapshot')) return false;
   const canCloudSave = state.cloudSyncConfigured !== false && state.adminIsAdmin === true;
   return saveDashboardAuxiliaryRecords({
     cloud: canCloudSave,
@@ -2299,7 +2351,14 @@ window.seedDashboardForSmokeTest = function (dashData, rosterSnapshots = []) {
 };
 
 function bindSubtabNavigation() {
-  const nav = document.querySelector('#ocrDashboardRoot .dash-subtab-nav');
+  // Each labelled group is its own tablist, so arrow-key roving focus stays
+  // inside one area instead of walking the whole former 11-tab rail.
+  document
+    .querySelectorAll('#ocrDashboardRoot .dash-subtab-group-tabs')
+    .forEach((group) => group.setAttribute('role', 'tablist'));
+  const nav = document.querySelector(
+    '#ocrDashboardRoot .dash-subtab-nav:not(.dash-subtab-nav-grouped)'
+  );
   if (nav) nav.setAttribute('role', 'tablist');
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach((panel) => {
     panel.setAttribute('role', 'tabpanel');
@@ -2317,7 +2376,8 @@ function bindSubtabNavigation() {
     btn.onkeydown = (event) => {
       if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key))
         return;
-      const tabs = Array.from(document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn'));
+      const scope = btn.closest('[role="tablist"]') || document;
+      const tabs = Array.from(scope.querySelectorAll('.dash-subtab-btn'));
       const current = tabs.indexOf(btn);
       if (current < 0) return;
       event.preventDefault();
@@ -2334,6 +2394,310 @@ function bindSubtabNavigation() {
       tabs[nextIndex]?.click();
     };
   });
+}
+
+// --- Eden workspace command strip ---
+// The strip shows the selected workspace's lifecycle and publication state and
+// hosts the safe season actions. Switching workspaces persists the choice and
+// reloads, which disposes every Firestore listener and re-resolves all
+// workspace-scoped paths and cache keys in one step.
+let edenWorkspaceCloudRecord = null;
+
+function currentEdenWorkspaceView() {
+  return parseEdenWorkspaceRecord(edenWorkspaceCloudRecord) || ACTIVE_EDEN_WORKSPACE;
+}
+
+function edenWorkspaceLifecycleI18nKey(lifecycle) {
+  if (lifecycle === 'archived') return 'adminWorkspaceLifecycleArchived';
+  if (lifecycle === 'active') return 'adminWorkspaceLifecycleActive';
+  return 'adminWorkspaceLifecycleDraft';
+}
+
+function refreshEdenWorkspaceStrip() {
+  const select = $id('dashWorkspaceSelect');
+  if (select) select.value = ACTIVE_EDEN_WORKSPACE_ID;
+  const ws = currentEdenWorkspaceView();
+  const lifecycleBadge = $id('dashWorkspaceLifecycle');
+  if (lifecycleBadge) {
+    lifecycleBadge.dataset.lifecycle = ws.lifecycle;
+    lifecycleBadge.textContent = ws.legacy
+      ? `${dashT('adminWorkspaceLifecycleArchived')} · ${dashT('adminWorkspaceReadonlyBadge')}`
+      : dashT(edenWorkspaceLifecycleI18nKey(ws.lifecycle));
+  }
+  const publication = $id('dashWorkspacePublication');
+  const publishBtn = $id('dashWorkspacePublishBtn');
+  const unpublishBtn = $id('dashWorkspaceUnpublishBtn');
+  if (publication) {
+    if (ws.legacy) {
+      publication.hidden = true;
+    } else {
+      publication.hidden = false;
+      publication.dataset.published = ws.publication ? 'true' : 'false';
+      publication.textContent = ws.publication
+        ? dashT('adminWorkspacePublishState', { n: ws.publication.revision })
+        : dashT('adminWorkspaceUnpublishedState');
+    }
+  }
+  if (publishBtn) {
+    publishBtn.hidden = ws.legacy;
+    publishBtn.setAttribute(
+      'aria-label',
+      ws.publication
+        ? dashT('adminWorkspaceRepublishBtn', { workspace: ws.label })
+        : dashT('adminWorkspacePublishBtn')
+    );
+  }
+  if (unpublishBtn) unpublishBtn.hidden = ws.legacy || !ws.publication;
+}
+
+async function loadEdenWorkspaceCloudRecord() {
+  if (ACTIVE_EDEN_WORKSPACE.legacy) {
+    edenWorkspaceCloudRecord = null;
+    refreshEdenWorkspaceStrip();
+    return;
+  }
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID));
+    edenWorkspaceCloudRecord = snap.exists() ? snap.data() : null;
+  } catch (err) {
+    console.warn('Eden workspace record unavailable:', err?.message || err);
+  }
+  refreshEdenWorkspaceStrip();
+}
+
+async function readEdenWorkspaceRosterSnapshots(db) {
+  try {
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(
+      doc(db, edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'))
+    );
+    const data = snap.exists() ? snap.data() : null;
+    return Array.isArray(data?.snapshots) ? data.snapshots : [];
+  } catch {
+    return [];
+  }
+}
+
+async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
+  if (ACTIVE_EDEN_WORKSPACE.legacy) return false;
+  if (state.adminIsAdmin !== true) {
+    showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Publish blocked');
+    return false;
+  }
+  const ws = currentEdenWorkspaceView();
+  const confirmKey = unpublish ? 'adminWorkspaceUnpublishConfirm' : 'adminWorkspacePublishConfirm';
+  if (!window.confirm(dashT(confirmKey, { workspace: ws.label }))) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const { doc, getDoc, setDoc, serverTimestamp } = await loadFirestoreApi();
+    const projectionRef = doc(
+      db,
+      edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicProjection')
+    );
+    const previousSnap = await getDoc(projectionRef);
+    const previous = previousSnap.exists() ? previousSnap.data() : null;
+    const previousRevision = Number(previous?.revision) || 0;
+    let rosterSnapshots = [];
+    let publicVoteResults = {};
+    if (!unpublish) {
+      rosterSnapshots = await readEdenWorkspaceRosterSnapshots(db);
+      const settings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {});
+      if (settings.showPublicResults && typeof buildEdenX1PublicVoteResults === 'function') {
+        publicVoteResults = buildEdenX1PublicVoteResults(settings);
+      }
+    }
+    const projection = buildEdenPublicProjection({
+      workspace: ACTIVE_EDEN_WORKSPACE_ID,
+      revision: unpublish ? Math.max(1, previousRevision) : previousRevision + 1,
+      published: !unpublish,
+      updatedBy: state.adminUser?.uid || '',
+      dashboardData: unpublish
+        ? buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
+        : state.dashData || buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason),
+      voteSettings: unpublish ? {} : normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {}),
+      publicVoteResults,
+      rosterSnapshots,
+    });
+    await setDoc(projectionRef, projection);
+    await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
+      id: ACTIVE_EDEN_WORKSPACE_ID,
+      lifecycle: unpublish ? 'draft' : 'active',
+      active: !unpublish,
+      createdAtMs: ws.createdAtMs || Date.now(),
+      publication: unpublish
+        ? null
+        : {
+            revision: projection.revision,
+            publishedAtMs: projection.publishedAtMs,
+            updatedBy: projection.updatedBy,
+          },
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    edenWorkspaceCloudRecord = null;
+    await loadEdenWorkspaceCloudRecord();
+    logDashboardEvent(
+      unpublish ? 'adminLogWorkspaceUnpublished' : 'adminLogWorkspacePublished',
+      'success',
+      { workspace: ws.label, revision: String(projection.revision) },
+      { source: 'workspace' }
+    );
+    if (typeof window.showToast === 'function') {
+      window.showToast(
+        unpublish
+          ? dashT('adminWorkspaceUnpublishedToast')
+          : dashT('adminWorkspacePublishedToast', { n: projection.revision }),
+        'success',
+        6000
+      );
+    }
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Workspace publish failed');
+    if (typeof window.showToast === 'function') {
+      window.showToast(
+        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
+        'error',
+        9000
+      );
+    }
+    return false;
+  }
+}
+
+async function exportActiveEdenWorkspaceSnapshot() {
+  const ws = currentEdenWorkspaceView();
+  try {
+    const db = await ensureCloudSyncReady();
+    const { doc, getDoc, collection, getDocs } = await loadFirestoreApi();
+    const paths = edenWorkspaceFirestorePathsForExport();
+    const readDoc = async (path) => {
+      if (!path) return null;
+      const snap = await getDoc(doc(db, path));
+      return snap.exists() ? snap.data() : null;
+    };
+    const readCollection = async (path) => {
+      if (!path) return [];
+      const snap = await getDocs(collection(db, path));
+      return snap.docs.map((entry) => ({ id: entry.id, data: entry.data() }));
+    };
+    const snapshot = {
+      schema: 'vts-eden-workspace-snapshot-v1',
+      workspace: ws.id,
+      label: ws.label,
+      exportedAt: new Date().toISOString(),
+      docs: {
+        dashboardData: await readDoc(paths.dashboardData),
+        rosterData: await readDoc(paths.rosterData),
+        voteSettings: await readDoc(paths.voteSettings),
+        publicVoteResults: await readDoc(paths.publicVoteResults),
+        publicProjection: await readDoc(paths.publicProjection),
+        votes: await readCollection(paths.votes),
+        voteHistory: await readCollection(paths.voteHistory),
+        conductAdjustments: await readCollection(paths.conductAdjustments),
+      },
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `vts-${ws.id}-snapshot-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    if (typeof window.showToast === 'function') {
+      window.showToast(dashT('adminWorkspaceSnapshotToast'), 'success', 5000);
+    }
+    logDashboardEvent(
+      'adminLogWorkspaceSnapshot',
+      'success',
+      { workspace: ws.label },
+      { source: 'workspace' }
+    );
+  } catch (err) {
+    console.error('Workspace snapshot export failed:', err);
+    showCloudSyncFailure(err, 'Workspace snapshot failed');
+    if (typeof window.showToast === 'function') {
+      window.showToast(
+        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
+        'error',
+        9000
+      );
+    }
+  }
+}
+
+function edenWorkspaceFirestorePathsForExport() {
+  return {
+    dashboardData: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'dashboardData'),
+    rosterData: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'),
+    voteSettings: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteSettings'),
+    publicVoteResults: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicVoteResults'),
+    publicProjection: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicProjection'),
+    votes: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'votes'),
+    voteHistory: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteHistory'),
+    conductAdjustments: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'conductAdjustments'),
+  };
+}
+
+function bindEdenWorkspaceStrip() {
+  const select = $id('dashWorkspaceSelect');
+  if (select && !select.dataset.bound) {
+    select.dataset.bound = '1';
+    select.value = ACTIVE_EDEN_WORKSPACE_ID;
+    select.onchange = () => {
+      const next = select.value;
+      if (!next || next === ACTIVE_EDEN_WORKSPACE_ID) return;
+      if (
+        !window.confirm(
+          dashT('adminWorkspaceSwitchConfirm', { workspace: getEdenWorkspaceLabel(next) })
+        )
+      ) {
+        select.value = ACTIVE_EDEN_WORKSPACE_ID;
+        return;
+      }
+      setActiveAdminWorkspaceId(next);
+      if (typeof window.showToast === 'function') {
+        window.showToast(
+          dashT('adminWorkspaceSwitchToast', { workspace: getEdenWorkspaceLabel(next) }),
+          'info',
+          4000
+        );
+      }
+      setTimeout(() => window.location.reload(), 350);
+    };
+  }
+  const publishBtn = $id('dashWorkspacePublishBtn');
+  if (publishBtn && !publishBtn.dataset.bound) {
+    publishBtn.dataset.bound = '1';
+    publishBtn.onclick = () => {
+      void publishActiveEdenWorkspace();
+    };
+  }
+  const unpublishBtn = $id('dashWorkspaceUnpublishBtn');
+  if (unpublishBtn && !unpublishBtn.dataset.bound) {
+    unpublishBtn.dataset.bound = '1';
+    unpublishBtn.onclick = () => {
+      void publishActiveEdenWorkspace({ unpublish: true });
+    };
+  }
+  const snapshotBtn = $id('dashWorkspaceSnapshotBtn');
+  if (snapshotBtn && !snapshotBtn.dataset.bound) {
+    snapshotBtn.dataset.bound = '1';
+    snapshotBtn.onclick = () => {
+      void exportActiveEdenWorkspaceSnapshot();
+    };
+  }
+  refreshEdenWorkspaceStrip();
+}
+
+function getEdenWorkspaceLabel(workspaceId) {
+  return getEdenWorkspace(workspaceId).label;
 }
 
 function hydrateDashboardStateFromLocalStorage() {
@@ -2542,6 +2906,7 @@ export function saveRosterSnapshotsToFirestore(
   snapshotInput = state.rosterSnapshots,
   baseUpdated = state._rosterCloudBaseUpdated ?? null
 ) {
+  if (blockEdenArchiveWrite('save roster snapshots')) return Promise.resolve(false);
   const sourceSnapshots = cloneRosterSnapshots(Array.isArray(snapshotInput) ? snapshotInput : []);
   const snapshots = trimRosterSnapshots(sourceSnapshots);
   state._rosterCloudSaveInFlight = true;
@@ -3466,6 +3831,7 @@ async function openAdminDashboardAfterAuth(options = {}) {
       showApp();
       scheduleDashboardRender();
     }
+    void loadEdenWorkspaceCloudRecord();
     void startAdminLogCloudSync();
   } finally {
     state._adminDashboardOpening = false;
@@ -3792,6 +4158,7 @@ function handleDashboardCloudConflict(localData, err) {
 }
 
 async function writeDashboardSnapshotToCloud(db, firestore, payload, baseRevision) {
+  if (blockEdenArchiveWrite('dashboard cloud write')) return null;
   const { doc, runTransaction } = firestore;
   const expectedBaseRevision =
     Number.isInteger(baseRevision) && baseRevision >= 0 ? baseRevision : null;
@@ -3934,6 +4301,7 @@ async function writeDashboardOcrUploadToCloud(db, firestore, incomingAttacks) {
 }
 
 export async function saveDashboardOcrUpload(localData, incomingAttacks = []) {
+  if (blockEdenArchiveWrite('save OCR upload')) return false;
   state.dashData = normalizeDashboardDataForCache(localData);
   const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
   state.dashData = normalizeDashboardDataForCache(persistedData);
@@ -3972,6 +4340,9 @@ export async function saveDashboardOcrUpload(localData, incomingAttacks = []) {
 }
 
 async function saveDashboardAttackMutation(mutation) {
+  if (blockEdenArchiveWrite('edit attack record')) {
+    return { ok: false, error: edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID) };
+  }
   if (state.cloudSyncConfigured === false) {
     const localResult = buildDashboardAttackMutationSnapshot(state.dashData, mutation);
     if (!localResult.applied) {
@@ -4267,6 +4638,7 @@ function scheduleDashboardCloudSave(persistedData, options = {}) {
 }
 
 export async function saveData(data, options = {}) {
+  if (blockEdenArchiveWrite('save dashboard data')) return false;
   state.dashData = normalizeDashboardDataForCache(data);
   if (state.dashData && typeof state.dashData === 'object') {
     delete state.dashData.logs;
@@ -4522,6 +4894,7 @@ async function loadData(options = {}) {
 }
 
 async function clearData() {
+  if (blockEdenArchiveWrite('clear workspace data')) return;
   state.dashData = null;
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -4573,7 +4946,7 @@ const ADMIN_EXPORT_STORAGE_KEYS = [
   ALLIANCE_KEY,
   LOG_KEY,
   R5_ADJUSTMENTS_LOCAL_KEY,
-  'vts_r5_adjustment_season',
+  R5_ADJUSTMENT_SEASON_LOCAL_KEY,
 ];
 
 const ADMIN_EXPORT_COLUMNS = [
@@ -5735,6 +6108,7 @@ export async function bootOcrDashboard() {
   const loginUser = $id('dashLoginUser');
   if (loginUser && !loginUser.value) loginUser.value = '1097';
   bindSubtabNavigation();
+  bindEdenWorkspaceStrip();
   bindConductControls();
   bindExGuildControls();
   loadRosterSnapshots();

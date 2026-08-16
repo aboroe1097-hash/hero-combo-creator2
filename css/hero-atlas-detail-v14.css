@@ -1734,3 +1734,591 @@
   background: rgba(248, 250, 252, 0.8);
   border-color: rgba(148, 163, 184, 0.4);
 }
+
+/* Hero Atlas: Skins view chrome (Tier Guide / Skin Gallery toggle + tools) */
+.skins-view-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 14px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.skins-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  max-width: 100%;
+  overflow-x: auto;
+}
+.skins-view-btn {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  background: transparent;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  touch-action: manipulation;
+}
+.skins-view-btn:hover {
+  color: #f8fafc;
+}
+.skins-view-btn.active {
+  color: #05203a;
+  background: linear-gradient(135deg, #67e8f9, #22d3ee);
+}
+.skins-view-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, #67e8f9 72%, white);
+  outline-offset: 2px;
+}
+.skins-total-chip,
+.skins-gallery-count {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  padding: 5px 11px;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.skins-gallery-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.skins-gallery-search {
+  flex: 1 1 180px;
+  min-width: 140px;
+  margin-bottom: 0 !important;
+}
+.skins-type-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
+  mask-image: linear-gradient(to right, black 90%, transparent 100%);
+  max-width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+}
+.skins-type-pills::-webkit-scrollbar {
+  display: none;
+}
+.skins-type-pill {
+  appearance: none;
+  border: 1px solid rgba(71, 85, 105, 0.7);
+  background: rgba(30, 41, 59, 0.72);
+  color: #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 6px 12px;
+  min-height: 32px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+  touch-action: manipulation;
+}
+.skins-type-pill:hover {
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.8);
+}
+.skins-type-pill.active {
+  color: #05203a;
+  background: linear-gradient(135deg, #67e8f9, #22d3ee);
+  border-color: transparent;
+}
+.skins-type-pill:focus-visible {
+  outline: 3px solid color-mix(in srgb, #67e8f9 72%, white);
+  outline-offset: 2px;
+}
+.skins-gallery-count {
+  margin-inline-start: auto;
+}
+
+/* Hero Atlas: Tier Guide intro facts */
+.skin-atlas-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem 1rem;
+  flex-wrap: wrap;
+}
+.skin-atlas-intro-copy {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+.skin-atlas-intro-copy h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  text-wrap: balance;
+}
+.skin-atlas-intro-copy p {
+  max-width: 68ch;
+  margin: 0.35rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.skin-atlas-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+.skin-atlas-fact {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+/* Hero Atlas: tier card head badge + star-up timeline */
+.skin-tier-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.2rem 0.65rem;
+  align-items: start;
+}
+.skin-tier-badge {
+  grid-row: 1 / span 2;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #05203a;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--skin-accent, #67e8f9) 85%, #f8fafc),
+    var(--skin-accent, #67e8f9)
+  );
+  box-shadow: 0 0 18px color-mix(in srgb, var(--skin-accent, #67e8f9) 32%, transparent);
+  margin-top: 0.1rem;
+}
+.skin-star-track {
+  position: relative;
+  display: grid;
+  gap: 0.55rem;
+  padding-inline-start: 1.05rem;
+  margin-top: 0.15rem;
+}
+.skin-star-track::before {
+  content: '';
+  position: absolute;
+  inset-block: 0.7rem;
+  inset-inline-start: 0.34rem;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--skin-accent, #67e8f9) 55%, transparent),
+    color-mix(in srgb, var(--skin-accent, #67e8f9) 14%, transparent)
+  );
+}
+.skin-star-step {
+  position: relative;
+}
+.skin-star-step::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -1.05rem;
+  top: 0.55rem;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+  background: var(--skin-accent, #67e8f9);
+  box-shadow:
+    0 0 0 3px rgba(2, 6, 23, 0.92),
+    0 0 10px color-mix(in srgb, var(--skin-accent, #67e8f9) 45%, transparent);
+}
+.skin-star-glyph {
+  font-size: 0.82rem;
+  line-height: 1;
+  color: var(--skin-accent, #67e8f9);
+}
+
+/* Hero Atlas: cost item icon slots (game art swaps in when assets exist) */
+.skin-req-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.skin-item-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--skin-accent, #67e8f9) 14%, rgba(15, 23, 42, 0.6));
+  border: 1px solid color-mix(in srgb, var(--skin-accent, #67e8f9) 35%, transparent);
+}
+.skin-item-icon--empty {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--skin-accent, #67e8f9) 45%, transparent);
+}
+.skin-item-icon-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--skin-accent, #67e8f9) 78%, #e2e8f0);
+}
+.skin-item-icon-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.skin-tier-hero-chip--link {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  background: transparent;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+.skin-tier-hero-chip--link:hover,
+.skin-tier-hero-chip--link:focus-visible {
+  color: var(--skin-accent, #67e8f9);
+  border-color: color-mix(in srgb, var(--skin-accent, #67e8f9) 65%, transparent);
+  background: color-mix(in srgb, var(--skin-accent, #67e8f9) 10%, transparent);
+}
+.skin-tier-hero-chip--link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--skin-accent, #67e8f9) 72%, white);
+  outline-offset: 2px;
+}
+
+/* Hero Atlas: Skin Gallery */
+.skin-gallery {
+  width: 100%;
+  min-width: 0;
+}
+.skin-gallery-intro {
+  margin: 0 0 1rem;
+}
+.skin-gallery-intro h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  text-wrap: balance;
+}
+.skin-gallery-intro p {
+  max-width: 68ch;
+  margin: 0.35rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.skin-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr));
+  gap: 0.75rem;
+}
+.skin-gallery-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+  padding: 0.85rem 0.6rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--skin-accent, #67e8f9) 30%, rgba(71, 85, 105, 0.6));
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.5)),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--skin-accent, #67e8f9) 14%, transparent),
+      transparent 55%
+    );
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  min-width: 0;
+  min-height: 44px;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  touch-action: manipulation;
+}
+.skin-gallery-card:hover,
+.skin-gallery-card:focus-visible {
+  border-color: color-mix(in srgb, var(--skin-accent, #67e8f9) 65%, transparent);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--skin-accent, #67e8f9) 16%, transparent);
+}
+.skin-gallery-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--skin-accent, #67e8f9) 70%, white);
+  outline-offset: 2px;
+}
+.skin-gallery-art {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at 50% 35%,
+    color-mix(in srgb, var(--skin-accent, #67e8f9) 22%, transparent),
+    rgba(2, 6, 23, 0.6) 70%
+  );
+  border: 1px solid color-mix(in srgb, var(--skin-accent, #67e8f9) 40%, transparent);
+  overflow: hidden;
+}
+.skin-gallery-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.skin-gallery-art.is-missing img {
+  display: none;
+}
+.skin-gallery-monogram {
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: color-mix(in srgb, var(--skin-accent, #67e8f9) 70%, #e2e8f0);
+}
+.skin-gallery-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  width: 100%;
+}
+.skin-gallery-hero {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.skin-gallery-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+}
+.skin-gallery-type {
+  font-size: 0.62rem;
+  font-weight: 850;
+  color: var(--skin-accent, #67e8f9);
+  border: 1px solid color-mix(in srgb, var(--skin-accent, #67e8f9) 55%, transparent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.skin-gallery-status {
+  font-size: 0.62rem;
+  font-weight: 750;
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.skin-gallery-status--complete {
+  color: #86efac;
+  border-color: rgba(134, 239, 172, 0.4);
+}
+.skin-gallery-season {
+  font-size: 0.62rem;
+  font-weight: 850;
+  color: var(--sc, #f97316);
+  border: 1px solid color-mix(in srgb, var(--sc, #f97316) 55%, transparent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.skin-gallery-empty {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  padding: 1rem 0;
+}
+
+/* Hero Atlas: Skins view light theme */
+[data-theme='light'] .skins-view-bar {
+  background: rgba(248, 250, 252, 0.92);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+[data-theme='light'] .skins-view-toggle {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+[data-theme='light'] .skins-view-btn {
+  color: #475569;
+}
+[data-theme='light'] .skins-view-btn.active {
+  color: #05203a;
+}
+[data-theme='light'] .skins-total-chip,
+[data-theme='light'] .skins-gallery-count,
+[data-theme='light'] .skin-atlas-fact {
+  color: #475569;
+  background: rgba(241, 245, 249, 0.92);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+[data-theme='light'] .skins-type-pill {
+  color: #475569;
+  background: rgba(241, 245, 249, 0.92);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+[data-theme='light'] .skins-type-pill:hover {
+  color: #0f172a;
+}
+[data-theme='light'] .skins-type-pill.active {
+  color: #05203a;
+}
+[data-theme='light'] .skin-atlas-intro-copy h2,
+[data-theme='light'] .skin-gallery-intro h2 {
+  color: #0f172a;
+}
+[data-theme='light'] .skin-atlas-intro-copy p,
+[data-theme='light'] .skin-gallery-intro p {
+  color: #334155;
+}
+[data-theme='light'] .skin-gallery-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92)),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--skin-accent, #0e7490) 10%, transparent),
+      transparent 55%
+    );
+}
+[data-theme='light'] .skin-gallery-hero {
+  color: #1e293b;
+}
+[data-theme='light'] .skin-gallery-status {
+  color: #64748b;
+  border-color: rgba(100, 116, 139, 0.4);
+}
+[data-theme='light'] .skin-gallery-status--complete {
+  color: #15803d;
+  border-color: rgba(21, 128, 61, 0.4);
+}
+[data-theme='light'] .skin-gallery-empty {
+  color: #64748b;
+}
+[data-theme='light'] .skin-gallery-art {
+  background: radial-gradient(
+    circle at 50% 35%,
+    color-mix(in srgb, var(--skin-accent, #0e7490) 16%, transparent),
+    rgba(241, 245, 249, 0.85) 70%
+  );
+}
+[data-theme='light'] .skin-item-icon {
+  background: color-mix(in srgb, var(--skin-accent, #0e7490) 10%, rgba(248, 250, 252, 0.9));
+}
+[data-theme='light'] .skin-item-icon-fallback {
+  color: color-mix(in srgb, var(--skin-accent, #0e7490) 62%, #111827);
+}
+[data-theme='light'] .skin-star-step::before {
+  box-shadow:
+    0 0 0 3px rgba(248, 250, 252, 0.95),
+    0 0 10px color-mix(in srgb, var(--skin-accent, #0e7490) 30%, transparent);
+}
+
+/* Hero Atlas: Skins view responsive + motion */
+@media (max-width: 768px) {
+  .skins-view-bar {
+    padding: 6px 8px;
+  }
+  .skins-view-toggle {
+    flex: 1 1 100%;
+  }
+  .skins-view-btn {
+    flex: 1 1 50%;
+    padding: 0 10px;
+  }
+  .skins-total-chip {
+    display: none;
+  }
+  .skins-gallery-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .skins-gallery-search {
+    width: 100%;
+    flex-basis: auto;
+  }
+  .skins-type-pills {
+    width: 100%;
+  }
+  .skins-gallery-count {
+    margin-inline-start: 0;
+    align-self: flex-start;
+  }
+  .skin-atlas-facts {
+    justify-content: flex-start;
+  }
+  .skin-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .skin-gallery-art {
+    width: 56px;
+    height: 56px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skins-view-btn,
+  .skins-type-pill,
+  .skin-gallery-card,
+  .skin-tier-hero-chip--link {
+    transition: none;
+  }
+}

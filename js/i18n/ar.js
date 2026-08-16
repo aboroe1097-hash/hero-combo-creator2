@@ -1381,6 +1381,7 @@ const ar = {
   edenX1ViewOnly: 'عرض فقط',
   edenX1NoFirebase: 'لم يتم إعداد Firebase. لا يمكن تحميل البيانات.',
   edenX1NoData: 'لم يتم العثور على بيانات مساهمة.',
+  edenSeasonUnpublished: 'لم يتم نشر هذا الموسم بعد. تظهر النتائج بمجرد نشرها من قبل المشرف.',
   edenX1NoRows: 'لا توجد صفوف مساهمة موزونة للعرض.',
   edenX1ShowAllRows: 'عرض جميع اللاعبين ({count})',
   edenX1LoadMoreRows: 'تحميل {count} إضافيين ({remaining} متبقٍ)',

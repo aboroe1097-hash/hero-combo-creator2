@@ -1,8 +1,24 @@
 import { compactPlayerIdentity, resolveCanonicalPlayerIdentity } from './ocr-name-normalizer.js';
 import { conductAdjustmentFingerprint } from './admin-sync-guard.js';
+import {
+  edenWorkspaceFirestorePath,
+  edenWorkspaceMutationError,
+  edenWorkspaceStorageKey,
+  getActiveAdminWorkspaceId,
+} from './eden-workspaces.js';
 
-export const R5_ADJUSTMENTS_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
-export const R5_ADJUSTMENTS_LOCAL_KEY = 'vts_r5_conduct_adjustments';
+// Conduct adjustments are season records, so they follow the active Eden
+// workspace: eden-x1 keeps the historical collection and mirror key, eden-x2
+// writes to its own collection so the archive stays untouched.
+const ACTIVE_ADJUSTMENTS_WORKSPACE_ID = getActiveAdminWorkspaceId();
+export const R5_ADJUSTMENTS_COLLECTION_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_ADJUSTMENTS_WORKSPACE_ID,
+  'conductAdjustments'
+);
+export const R5_ADJUSTMENTS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_r5_conduct_adjustments',
+  ACTIVE_ADJUSTMENTS_WORKSPACE_ID
+);
 
 export const R5_ADJUSTMENT_CATEGORIES = Object.freeze({
   banner_help: Object.freeze({
@@ -291,6 +307,8 @@ function readLocalR5AdjustmentRecords() {
 }
 
 function writeLocalR5AdjustmentRecords(records) {
+  const archiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (archiveError) throw archiveError;
   if (!canUseLocalStorage()) return;
   localStorage.setItem(
     R5_ADJUSTMENTS_LOCAL_KEY,
@@ -451,6 +469,8 @@ export async function loadR5Adjustments(season) {
 }
 
 export async function createR5Adjustment(input) {
+  const createArchiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (createArchiveError) throw createArchiveError;
   try {
     const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
     const { collection, doc, serverTimestamp, setDoc } = firestore;
@@ -471,6 +491,8 @@ export async function createR5Adjustment(input) {
 }
 
 export async function updateR5Adjustment(adjustmentId, patch, options = {}) {
+  const updateArchiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (updateArchiveError) throw updateArchiveError;
   try {
     const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
     const { doc, getDoc, runTransaction, serverTimestamp, setDoc } = firestore;
@@ -562,6 +584,8 @@ export async function updateR5Adjustment(adjustmentId, patch, options = {}) {
 }
 
 export async function deleteR5Adjustment(adjustmentId, options = {}) {
+  const deleteArchiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (deleteArchiveError) throw deleteArchiveError;
   try {
     const { db, firestore } = await ensureR5AdjustmentAdminContext();
     const { deleteDoc, doc, runTransaction } = firestore;

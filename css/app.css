@@ -19160,6 +19160,15 @@ html[dir='rtl'] .gen-buttons-row {
      dark tab but drops under 3:1 on the light theme's near-white panels, so
      anything using gold as a foreground colour uses this instead. */
   --spec-gold-ink: var(--spec-gold);
+  /* Route-step chip pair. The step chip used to hardcode a near-black pill
+     with light text; that disappears on the light theme's pale panels, so the
+     background/ink pair is a token each theme supplies at AA contrast. */
+  --spec-step-bg: rgba(15, 23, 42, 0.95);
+  --spec-step-ink: rgb(226, 232, 240);
+  --spec-step-border: rgba(148, 163, 184, 0.55);
+  --spec-step-shadow: 0 1px 4px rgba(2, 6, 23, 0.55);
+  --spec-step-next-bg: rgb(251, 191, 36);
+  --spec-step-next-ink: rgb(23, 20, 8);
   --spec-primary-gradient: var(
     --ff-gradient-primary,
     var(--grad-primary, linear-gradient(90deg, var(--spec-action), var(--spec-urgency)))
@@ -20053,6 +20062,17 @@ html[dir='rtl'] .gen-buttons-row {
    override on an ancestor loses to that block's own declaration. */
 [data-theme='light'] .spec-tool {
   --spec-gold-ink: #8a5a00;
+  /* Step chips flip to a light pill with dark ink; the amber "next" fill keeps
+     its near-black ink, which clears AA on the amber in both themes. */
+  --spec-step-bg: #ffffff;
+  --spec-step-ink: #1e293b;
+  --spec-step-border: rgba(100, 116, 139, 0.45);
+  --spec-step-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+}
+/* The mint success ink clears AA on the dark chip base but not on the light
+   theme's pale-mint fill, so the done chip darkens its ink there. */
+[data-theme='light'] [data-step-state='done'] .spec-route-step {
+  color: #0b6245;
 }
 [data-theme='light'] .spec-path-mode[aria-checked='true'],
 [data-theme='light'] .spec-path-card.is-active .spec-path-card-state,
@@ -21106,20 +21126,157 @@ html[dir='rtl'] .gen-buttons-row {
   color: var(--spec-gold);
   letter-spacing: 1px;
 }
-.spec-hero-plan-why {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--spec-border);
-  font-size: 0.72rem;
-  opacity: 0.9;
+/* Path decision card: the planner's answer in one row — mode, tower, preset,
+   next upgrade — with the per-step rationale condensed into tags underneath.
+   Stacks on narrow screens, one horizontal summary line from 1024px up. */
+.spec-path-decision {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--spec-border);
+  border-radius: 10px;
+  background: var(--spec-panel-strong);
 }
-.spec-hero-plan-why-label {
+.spec-path-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.55rem 1.1rem;
+}
+.spec-path-decision-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.spec-path-decision-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--spec-text-dim);
+}
+.spec-path-decision-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--spec-text);
+}
+.spec-path-decision-value small {
+  margin-inline-start: 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--spec-text-dim);
+}
+.spec-why-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+.spec-why-tags-label {
+  flex-shrink: 0;
+  font-size: 0.62rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  flex-shrink: 0;
+  color: var(--spec-text-dim);
+}
+.spec-why-tag {
+  padding: 0.18rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--spec-action) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--spec-action) 12%, transparent);
+  color: var(--spec-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* Hero synergies: the long per-hero mechanic notes behind a native disclosure,
+   so the planner stays scannable and the reference material stays keyboard
+   reachable without extra wiring. */
+.spec-synergy {
+  margin-top: 0.9rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--spec-border);
+}
+.spec-synergy summary {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--spec-text);
+  font-size: 0.78rem;
+}
+.spec-synergy summary::-webkit-details-marker {
+  display: none;
+}
+.spec-synergy summary::before {
+  content: '▸';
+  color: var(--spec-text-dim);
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+}
+.spec-synergy[open] summary::before {
+  transform: rotate(90deg);
+}
+.spec-synergy summary:focus-visible {
+  outline: 2px solid var(--spec-action);
+  outline-offset: 2px;
+}
+.spec-synergy-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.spec-synergy-count {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--spec-border-strong);
+  border-radius: 999px;
+  background: var(--spec-panel-strong);
+  color: var(--spec-text-dim);
+  font-size: 0.62rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.spec-synergy .spec-path-note-list {
+  margin-top: 0.6rem;
+}
+.spec-synergy-mechanics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.2rem 0 0.25rem;
+}
+/* Gold as text: uses the gold-ink token, which the light theme darkens to an
+   AA amber, matching the path-mode and preset-state precedent. */
+.spec-synergy-mechanic {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--spec-gold-ink) 45%, transparent);
+  border-radius: 999px;
+  color: var(--spec-gold-ink);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+.spec-synergy-note {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+/* Screen-reader text for plan reasons on badges: visible summary stays in the
+   decision card, this is the AT copy the badge points at via aria-describedby. */
+.spec-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
 }
 /* Path planner: the two default paths, the hero presets inside them, and the
    owned-hero toggles that adjust one. */
@@ -21175,8 +21332,7 @@ html[dir='rtl'] .gen-buttons-row {
   height: 1.15rem;
 }
 .spec-path-presets,
-.spec-path-heroes,
-.spec-path-notes {
+.spec-path-heroes {
   margin-top: 0.9rem;
   padding-top: 0.75rem;
   border-top: 1px dashed var(--spec-border);
@@ -21354,6 +21510,18 @@ html[dir='rtl'] .gen-buttons-row {
   font-size: 0.65rem;
   color: var(--spec-text-dim);
 }
+/* Desktop: the decision card is one horizontal summary line with separators,
+   so the whole planner answer reads without scrolling. */
+@media (min-width: 1024px) {
+  .spec-path-decision-grid {
+    grid-template-columns: repeat(3, minmax(0, auto)) minmax(14rem, 1fr);
+    gap: 0.55rem 1.4rem;
+  }
+  .spec-path-decision-cell + .spec-path-decision-cell {
+    padding-inline-start: 1.4rem;
+    border-inline-start: 1px solid var(--spec-border);
+  }
+}
 @media (max-width: 640px) {
   .spec-path-cards {
     grid-template-columns: minmax(0, 1fr);
@@ -21388,11 +21556,11 @@ html[dir='rtl'] .gen-buttons-row {
   justify-content: center;
   min-width: 25px;
   padding: 3px 6px;
-  border: 1px solid rgba(148, 163, 184, 0.55);
+  border: 1px solid var(--spec-step-border);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.95);
-  box-shadow: 0 1px 4px rgba(2, 6, 23, 0.55);
-  color: rgb(226, 232, 240);
+  background: var(--spec-step-bg);
+  box-shadow: var(--spec-step-shadow);
+  color: var(--spec-step-ink);
   font-size: 0.68rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -21408,7 +21576,7 @@ html[dir='rtl'] .gen-buttons-row {
    reading the number: finished, fund this next, still ahead. */
 [data-step-state='done'] .spec-route-step {
   border-color: color-mix(in srgb, var(--spec-success) 60%, transparent);
-  background: color-mix(in srgb, var(--spec-success) 22%, rgba(15, 23, 42, 0.95));
+  background: color-mix(in srgb, var(--spec-success) 22%, var(--spec-step-bg));
   color: var(--spec-success);
 }
 [data-step-state='todo'] .spec-route-step {
@@ -21416,9 +21584,9 @@ html[dir='rtl'] .gen-buttons-row {
 }
 [data-route-next='true'] .spec-route-step,
 [data-step-state='next'] .spec-route-step {
-  border-color: rgba(251, 191, 36, 0.9);
-  background: rgb(251, 191, 36);
-  color: rgb(23, 20, 8);
+  border-color: var(--spec-step-next-bg);
+  background: var(--spec-step-next-bg);
+  color: var(--spec-step-next-ink);
   opacity: 1;
 }
 .spec-route-next {

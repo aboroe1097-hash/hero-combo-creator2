@@ -90,7 +90,11 @@ const LIMITS = {
   // re-splits their shared chunks; the CI build (which injects admin auth config
   // before building, so it measures larger than a bare local build) audits to
   // 9630.2 KiB. Retain roughly 7 KiB.
-  totalJsBytes: 9637 * 1024,
+  // The 15.0.0 release adds the Eden X2 route and workspace contract, the
+  // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
+  // Loyalty/Materials polish. Measured 9688.0 KiB of built JS; retain
+  // roughly 7 KiB.
+  totalJsBytes: 9695 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -181,12 +185,20 @@ const LIMITS = {
   // The four Royal Bounty guide figures cropped from the community PDFs
   // (assets/bounty/*.webp, 196 KiB total) bring the artifact to 30,476.1 KiB;
   // retain roughly 14 KiB of headroom.
-  totalDeployBytes: 30490 * 1024,
+  // The 15.0.0 release adds the Eden X2 route and workspace contract, the
+  // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
+  // Loyalty/Materials polish. The artifact measures 30629.5 KiB;
+  // retain roughly 70 KiB.
+  // The nine Throne title icons (images/throne/*.webp, 62.8 KiB total) bring
+  // the artifact to 30692.3 KiB; retain roughly 68 KiB.
+  totalDeployBytes: 30760 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
   // The Royal Bounty figures add 196 KiB of media; audited at 17,760.4 KiB.
-  totalMediaBytes: 17775 * 1024,
+  // The nine Throne title icons add 62.8 KiB of media; audited at
+  // 17823.2 KiB. Retain roughly 17 KiB of headroom.
+  totalMediaBytes: 17840 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -202,7 +214,13 @@ const LIMITS = {
   // unexpected chunk proliferation still shows up.
   // Dropping the account chip from the two strict-CSP standalone routes
   // re-splits their shared chunks, emitting 639 files; keep two of headroom.
-  deployFileCount: 641,
+  // The 15.0.0 release adds the Eden X2 route and workspace contract, the
+  // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
+  // Loyalty/Materials polish. The eden-x2 route and its chunks emit 644
+  // files; keep four of headroom.
+  // The nine Throne title icons emit nine more files (653 total); keep four
+  // of headroom.
+  deployFileCount: 657,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -221,8 +239,12 @@ const LIMITS = {
     // Admin, 771.8/864.5 KiB on Eden, and 448.6/541.3 KiB on Arcade.
     // The 14.3.9 hubs and the every-page account chip re-audit to 661.1/782.7
     // KiB on Admin, 784.8/906.5 KiB on Eden, and 460.7/582.3 KiB on Arcade.
-    'admin.html': { desktop: 663 * 1024, mobile: 785 * 1024 },
+    // The season-scope strip and grouped Admin rail measure 663.9/759.7 KiB.
+    'admin.html': { desktop: 665 * 1024, mobile: 785 * 1024 },
     'eden-x1.html': { desktop: 787 * 1024, mobile: 909 * 1024 },
+    // Eden X2 is the same page shell and the same module graph as Eden X1, so
+    // it inherits the audited Eden budget rather than getting its own.
+    'eden-x2.html': { desktop: 787 * 1024, mobile: 909 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

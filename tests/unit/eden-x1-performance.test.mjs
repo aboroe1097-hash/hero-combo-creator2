@@ -193,7 +193,7 @@ test('Eden keeps the last verified contribution authority when live settings are
     eden,
     /const data = \{ \.\.\.dashboardData, edenX1VoteSettings: verifiedVoteSettings \};/
   );
-  assert.match(eden, /getDoc\(doc\(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH\)\)/);
+  assert.match(eden, /getDoc\(doc\(db, EDEN_ACTIVE_VOTE_SETTINGS_PATH\)\)/);
   assert.match(
     eden,
     /requireAuthoritativeEdenVoteSettings\(\s*voteSettingsSnap,\s*dashboardData\?\.r5Season\s*\)/
@@ -205,7 +205,7 @@ test('Eden keeps the last verified contribution authority when live settings are
   );
   assert.doesNotMatch(
     eden,
-    /loadEdenOptionalData\(getDoc\(doc\(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH\)\)/
+    /loadEdenOptionalData\(getDoc\(doc\(db, EDEN_ACTIVE_VOTE_SETTINGS_PATH\)\)/
   );
 });
 

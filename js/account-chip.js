@@ -21,7 +21,10 @@ function renderChip(account, profile, sync, admin) {
 
   const link = document.createElement('a');
   link.className = 'vts-account-chip';
-  link.href = 'profile.html';
+  // Pages that opt in via data-account-return-to send the visitor back to
+  // themselves after signing in through the profile flow.
+  const returnTo = document.body?.dataset?.accountReturnTo;
+  link.href = returnTo ? `profile.html?return=${encodeURIComponent(returnTo)}` : 'profile.html';
   link.setAttribute('aria-label', 'Open account and sync settings');
 
   const avatar = document.createElement('span');

@@ -157,6 +157,7 @@ const EN = Object.freeze({
     subTabMap: 'Eden Map',
     subTabLoyalty: 'Eden Loyalty',
     subTabBounty: 'Royal Bounty',
+    subTabSeason: 'Current Season',
     subTabPrevious: 'Previous Seasons',
   },
 });

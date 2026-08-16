@@ -97,6 +97,7 @@ export default {
     subTabMap: 'Mapa de Edén',
     subTabLoyalty: 'Lealtad de Edén',
     subTabBounty: 'Recompensa Real',
+    subTabSeason: 'Temporada actual',
     subTabPrevious: 'Temporadas anteriores',
   },
 };

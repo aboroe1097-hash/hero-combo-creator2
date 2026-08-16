@@ -97,6 +97,7 @@ export default {
     subTabMap: 'Eden Haritası',
     subTabLoyalty: 'Eden Sadakati',
     subTabBounty: 'Kraliyet Ödülü',
+    subTabSeason: 'Mevcut sezon',
     subTabPrevious: 'Önceki sezonlar',
   },
 };

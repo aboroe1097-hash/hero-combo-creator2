@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SKIN_TIERS, getSkinTiers, SKIN_TYPES } from '../../js/skins-db.js';
+import {
+  SKIN_TIERS,
+  getSkinTiers,
+  SKIN_TYPES,
+  getSkinItemIconUrl,
+  getAllSkinHeroEntries,
+} from '../../js/skins-db.js';
+
+function namesAndQuantities(items) {
+  return items.map(({ name, qty }) => ({ name, qty }));
+}
 
 function sumItems(steps) {
   const totals = new Map();
@@ -38,7 +48,7 @@ test('Mythic tier has an inheriting cost but no preserving skill', () => {
   const mythic = SKIN_TIERS.find((tier) => tier.id === 'mythic');
   assert.equal(mythic.hasPreserving, false);
   assert.equal(mythic.star2To3, null);
-  assert.deepEqual(mythic.star1To2.items, [
+  assert.deepEqual(namesAndQuantities(mythic.star1To2.items), [
     { name: 'Epic Hero Medal', qty: 18 },
     { name: 'Legendary Hero Medal', qty: 9 },
     { name: 'Biography Seal', qty: 240 },
@@ -47,56 +57,50 @@ test('Mythic tier has an inheriting cost but no preserving skill', () => {
 });
 
 test('Skin Atlas preserves every verified star-up cost', () => {
-  assert.deepEqual(costsFor(SKIN_TIERS[0]), {
-    inheriting: [
-      { name: 'Epic Hero Medal', qty: 18 },
-      { name: 'Legendary Hero Medal', qty: 9 },
-      { name: 'Biography Seal', qty: 240 },
-    ],
-    preserving: [],
-    maximize: [
-      { name: 'Biography Seal', qty: 240 },
-      { name: 'Legendary Hero Medal', qty: 9 },
-      { name: 'Epic Hero Medal', qty: 18 },
-    ],
-  });
-  assert.deepEqual(costsFor(SKIN_TIERS[1]), {
-    inheriting: [
-      { name: 'Epic Hero Medal', qty: 32 },
-      { name: 'Legendary Hero Medal', qty: 16 },
-      { name: 'Biography Seal', qty: 480 },
-    ],
-    preserving: [
-      { name: 'Legendary Hero Medal', qty: 2 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 2 },
-      { name: 'Biography Seal', qty: 450 },
-    ],
-    maximize: [
-      { name: 'Biography Seal', qty: 930 },
-      { name: 'Epic Hero Medal', qty: 32 },
-      { name: 'Legendary Hero Medal', qty: 18 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 2 },
-    ],
-  });
-  assert.deepEqual(costsFor(SKIN_TIERS[2]), {
-    inheriting: [
-      { name: 'Epic Hero Medal', qty: 96 },
-      { name: 'Legendary Hero Medal', qty: 32 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 4 },
-      { name: 'Advanced Biography Seal', qty: 480 },
-    ],
-    preserving: [
-      { name: 'Legendary Hero Medal', qty: 6 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 6 },
-      { name: 'Advanced Biography Seal', qty: 280 },
-    ],
-    maximize: [
-      { name: 'Advanced Biography Seal', qty: 760 },
-      { name: 'Epic Hero Medal', qty: 96 },
-      { name: 'Legendary Hero Medal', qty: 38 },
-      { name: 'Seasonal Legendary Hero Medal', qty: 10 },
-    ],
-  });
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[0]).inheriting), [
+    { name: 'Epic Hero Medal', qty: 18 },
+    { name: 'Legendary Hero Medal', qty: 9 },
+    { name: 'Biography Seal', qty: 240 },
+  ]);
+  assert.deepEqual(costsFor(SKIN_TIERS[0]).preserving, []);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[0]).maximize), [
+    { name: 'Biography Seal', qty: 240 },
+    { name: 'Legendary Hero Medal', qty: 9 },
+    { name: 'Epic Hero Medal', qty: 18 },
+  ]);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[1]).inheriting), [
+    { name: 'Epic Hero Medal', qty: 32 },
+    { name: 'Legendary Hero Medal', qty: 16 },
+    { name: 'Biography Seal', qty: 480 },
+  ]);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[1]).preserving), [
+    { name: 'Legendary Hero Medal', qty: 2 },
+    { name: 'Seasonal Legendary Hero Medal', qty: 2 },
+    { name: 'Biography Seal', qty: 450 },
+  ]);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[1]).maximize), [
+    { name: 'Biography Seal', qty: 930 },
+    { name: 'Epic Hero Medal', qty: 32 },
+    { name: 'Legendary Hero Medal', qty: 18 },
+    { name: 'Seasonal Legendary Hero Medal', qty: 2 },
+  ]);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[2]).inheriting), [
+    { name: 'Epic Hero Medal', qty: 96 },
+    { name: 'Legendary Hero Medal', qty: 32 },
+    { name: 'Seasonal Legendary Hero Medal', qty: 4 },
+    { name: 'Advanced Biography Seal', qty: 480 },
+  ]);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[2]).preserving), [
+    { name: 'Legendary Hero Medal', qty: 6 },
+    { name: 'Seasonal Legendary Hero Medal', qty: 6 },
+    { name: 'Advanced Biography Seal', qty: 280 },
+  ]);
+  assert.deepEqual(namesAndQuantities(costsFor(SKIN_TIERS[2]).maximize), [
+    { name: 'Advanced Biography Seal', qty: 760 },
+    { name: 'Epic Hero Medal', qty: 96 },
+    { name: 'Legendary Hero Medal', qty: 38 },
+    { name: 'Seasonal Legendary Hero Medal', qty: 10 },
+  ]);
 });
 
 test('Skin Atlas costs are positive integers without duplicate items per list', () => {
@@ -131,4 +135,32 @@ test('Everlasting tier uses Advanced Biography Seals and lists its known heroes'
   assert.equal(everlasting.knownHeroes.length, 7);
   assert.ok(everlasting.knownHeroes.includes('Ramses II'));
   assert.ok(everlasting.knownHeroes.includes('Beowulf'));
+});
+
+test('Every cost item reserves a valid game icon slot', () => {
+  for (const tier of SKIN_TIERS) {
+    for (const items of [tier.star1To2.items, tier.star2To3?.items || [], tier.maximizeTotal]) {
+      for (const item of items) {
+        assert.match(
+          item.iconId,
+          /^[a-z0-9-]+$/i,
+          `${tier.id}: ${item.name} iconId must be an asset slug`
+        );
+        assert.equal(getSkinItemIconUrl(item), `assets/skins/items/${item.iconId}.webp`, item.name);
+      }
+    }
+  }
+  assert.equal(getSkinItemIconUrl({ name: 'Unknown Item', qty: 1 }), null);
+  assert.equal(getSkinItemIconUrl(null), null);
+});
+
+test('Skin gallery entries expose every catalogued hero skin with its hero', () => {
+  const entries = getAllSkinHeroEntries();
+  assert.ok(entries.length >= 20, `expected 20+ skins, got ${entries.length}`);
+  const names = entries.map((entry) => entry.heroName);
+  assert.deepEqual(names, [...new Set(names)], 'one entry per hero skin pairing');
+  assert.ok(entries.some((entry) => entry.heroName === 'King Arthur'));
+  assert.ok(
+    entries.every((entry) => typeof entry.skin.name === 'string' && entry.skin.type in SKIN_TYPES)
+  );
 });

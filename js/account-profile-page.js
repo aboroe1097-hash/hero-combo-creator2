@@ -55,6 +55,25 @@ let saveInFlight = false;
 let saveJustSucceeded = false;
 let statusTimer = 0;
 
+// Same-origin return path (?return=/admin.html): a page that sent the visitor
+// here to sign in gets them back after auth. Only absolute same-origin paths
+// are accepted — no protocol, no leading double slash, no backslash — so a
+// hostile ?return= can never redirect off-site.
+function safeAccountReturnPath() {
+  const raw = new URL(globalThis.location.href).searchParams.get('return') || '';
+  if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\') || raw.includes(':')) {
+    return '';
+  }
+  return raw;
+}
+const accountReturnPath = safeAccountReturnPath();
+
+function returnToReferringPage() {
+  if (!accountReturnPath) return false;
+  globalThis.location.replace(accountReturnPath);
+  return true;
+}
+
 function dismissStatus() {
   globalThis.clearTimeout(statusTimer);
   statusTimer = 0;
@@ -407,7 +426,7 @@ authForm.addEventListener('submit', (event) => {
         ? upgradeGuestWithEmail(email, password)
         : signInExistingEmail(email, password),
     mode === 'create' ? 'status.authenticated' : 'status.signedIn',
-    { refresh: true }
+    { refresh: true, onSuccess: returnToReferringPage }
   );
 });
 
@@ -421,7 +440,7 @@ byId('googleAuth').addEventListener('click', () => {
           })
         : signInExistingGoogle(),
     mode === 'create' ? 'status.authenticated' : 'status.signedIn',
-    { refresh: true }
+    { refresh: true, onSuccess: returnToReferringPage }
   );
 });
 
@@ -438,7 +457,7 @@ onboardingForm.addEventListener('submit', (event) => {
         isPublic: false,
       }),
     'status.created',
-    { refresh: true }
+    { refresh: true, onSuccess: returnToReferringPage }
   );
 });
 

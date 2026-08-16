@@ -54,8 +54,25 @@ import {
   hasAuthoritativeEdenVoteSettings,
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
+import {
+  edenWorkspaceFirestorePath,
+  getEdenWorkspace,
+  isPublishedEdenProjection,
+} from './eden-workspaces.js';
 
-const APP_VERSION = '14.3.9';
+const APP_VERSION = '15.0.0';
+// Season-configured viewer: eden-x1.html keeps its archive defaults, while
+// eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
+// switches to the published-projection read path, X2 vote collections, and
+// workspace-namespaced caches. X1 behavior is byte-identical to before.
+const EDEN_WORKSPACE_ID = (() => {
+  const raw = String(document.body?.dataset?.edenWorkspace || '')
+    .trim()
+    .toLowerCase();
+  return raw === 'x2' || raw === 'eden-x2' ? 'eden-x2' : 'eden-x1';
+})();
+const EDEN_WORKSPACE = getEdenWorkspace(EDEN_WORKSPACE_ID);
+const EDEN_IS_X2 = EDEN_WORKSPACE_ID === 'eden-x2';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -63,6 +80,16 @@ const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
 const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
 const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
+const EDEN_X2_PROJECTION_PATH = edenWorkspaceFirestorePath('eden-x2', 'publicProjection');
+const EDEN_ACTIVE_VOTE_SETTINGS_PATH = EDEN_IS_X2
+  ? edenWorkspaceFirestorePath('eden-x2', 'voteSettings')
+  : EDEN_X1_VOTE_SETTINGS_DOC_PATH;
+const EDEN_ACTIVE_VOTES_PATH = EDEN_IS_X2
+  ? edenWorkspaceFirestorePath('eden-x2', 'votes')
+  : EDEN_X1_VOTES_COLLECTION_PATH;
+const EDEN_ACTIVE_VOTE_HISTORY_PATH = EDEN_IS_X2
+  ? edenWorkspaceFirestorePath('eden-x2', 'voteHistory')
+  : EDEN_X1_VOTE_HISTORY_COLLECTION_PATH;
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
 const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
@@ -82,6 +109,9 @@ const MS_PER_DAY = 86_400_000;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_PUBLIC_CACHE_KEY = 'vts_eden_x1_public_dashboard_cache_v1';
+const EDEN_PUBLIC_CACHE_KEY = EDEN_IS_X2
+  ? 'vts_eden_x2_public_dashboard_cache_v1'
+  : EDEN_X1_PUBLIC_CACHE_KEY;
 const EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 const EDEN_X1_SEASON_STATES = new Set(['archive', 'active']);
@@ -348,6 +378,9 @@ function t(key, vars = {}) {
   Object.entries({ version: APP_VERSION, ...vars }).forEach(([name, replacement]) => {
     value = value.replaceAll(`{${name}}`, String(replacement));
   });
+  // The X2 page reuses the X1 catalogs; only the season label differs, so the
+  // label is swapped at read time instead of duplicating every catalog key.
+  if (EDEN_IS_X2) value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel);
   return value;
 }
 
@@ -2359,7 +2392,7 @@ async function submitEdenTeamVoteForm(form) {
     if (edenVoteWriteContext) {
       const { db, firestore, user } = edenVoteWriteContext;
       const { collection, doc, getDoc, serverTimestamp, writeBatch } = firestore;
-      const voteRef = doc(db, EDEN_X1_VOTES_COLLECTION_PATH, id);
+      const voteRef = doc(db, EDEN_ACTIVE_VOTES_PATH, id);
       let previousVote = null;
       let previousVoteKnown = true;
       try {
@@ -2394,7 +2427,7 @@ async function submitEdenTeamVoteForm(form) {
         updatedAt: serverTimestamp(),
       });
       if (changed) {
-        const historyRef = doc(collection(db, EDEN_X1_VOTE_HISTORY_COLLECTION_PATH));
+        const historyRef = doc(collection(db, EDEN_ACTIVE_VOTE_HISTORY_PATH));
         batch.set(historyRef, {
           id: historyRef.id,
           voteId: id,
@@ -4513,7 +4546,21 @@ function getLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
+    const supported = [
+      'en',
+      'es',
+      'pt',
+      'de',
+      'fr',
+      'hr',
+      'tr',
+      'ru',
+      'id',
+      'zh',
+      'ar',
+      'kr',
+      'it',
+    ];
     const primary = String(navigator.language || '')
       .toLowerCase()
       .split('-')[0];
@@ -6830,7 +6877,7 @@ function withEdenBootTimeout(promise) {
 
 function readEdenPublicDashboardCache() {
   try {
-    const cached = JSON.parse(localStorage.getItem(EDEN_X1_PUBLIC_CACHE_KEY) || 'null');
+    const cached = JSON.parse(localStorage.getItem(EDEN_PUBLIC_CACHE_KEY) || 'null');
     const savedAt = Number(cached?.savedAt);
     if (!Number.isFinite(savedAt) || Date.now() - savedAt > EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS) {
       return null;
@@ -6860,7 +6907,7 @@ function edenDashboardLiveStateVersion(data) {
 function writeEdenPublicDashboardCache(data) {
   if (!hasUsableDashboardCache(data)) return;
   try {
-    localStorage.setItem(EDEN_X1_PUBLIC_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+    localStorage.setItem(EDEN_PUBLIC_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
   } catch {
     // A full or restricted storage area must never block the live public view.
   }
@@ -6868,7 +6915,7 @@ function writeEdenPublicDashboardCache(data) {
 
 function clearEdenPublicDashboardCache() {
   try {
-    localStorage.removeItem(EDEN_X1_PUBLIC_CACHE_KEY);
+    localStorage.removeItem(EDEN_PUBLIC_CACHE_KEY);
   } catch {}
 }
 
@@ -6982,10 +7029,55 @@ async function loadEdenX1Dashboard() {
         setEdenLoadingProgress(generation, 58);
         const { getFirestore, doc, getDoc } = firestore;
         const db = getFirestore(app);
+
+        // The X2 season page never touches a working admin document: the whole
+        // public view is one allowlisted projection, written by an explicit
+        // admin publish. Until that document says published, the page shows the
+        // draft state rather than an empty season.
+        if (EDEN_IS_X2) {
+          const projectionSnap = await getDoc(doc(db, EDEN_X2_PROJECTION_PATH));
+          setEdenLoadingProgress(generation, 76);
+          const projection = projectionSnap.exists() ? projectionSnap.data() : null;
+          if (!isPublishedEdenProjection(projection)) {
+            return { kind: 'unpublished', db, firestore, voteUser };
+          }
+          // The projection carries the vote settings inline, so wrap them in the
+          // snapshot shape the shared authority check already expects instead of
+          // duplicating its season-match logic.
+          const verifiedVoteSettings = requireAuthoritativeEdenVoteSettings(
+            { exists: () => true, data: () => projection.voteSettings || {} },
+            projection.dashboard?.r5Season || projection.season
+          );
+          const data = {
+            ...(projection.dashboard || {}),
+            edenX1VoteSettings: verifiedVoteSettings,
+          };
+          if (Array.isArray(projection.rosterSnapshots)) {
+            data.rosterSnapshots = projection.rosterSnapshots;
+          }
+          data.publicEdenX1VoteResults = normalizePublicEdenVoteResults(
+            verifiedVoteSettings.showPublicResults !== true
+              ? {}
+              : projection.publicVoteResults || {}
+          );
+          setEdenLoadingProgress(generation, 88);
+          // Every field arrived in one document, so there is no partial sidecar
+          // read to recover from and the cache write is always safe.
+          return {
+            kind: 'ok',
+            db,
+            firestore,
+            voteUser,
+            verifiedVoteSettings,
+            data,
+            sidecarReadIncomplete: false,
+          };
+        }
+
         const [snap, rosterSnap, voteSettingsSnap, publicVoteResultsSnap] = await Promise.all([
           getDoc(doc(db, FS_PATH)),
           loadEdenOptionalData(getDoc(doc(db, FS_ROSTER_PATH)), 'roster data'),
-          getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)),
+          getDoc(doc(db, EDEN_ACTIVE_VOTE_SETTINGS_PATH)),
           loadEdenOptionalData(
             getDoc(doc(db, EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH)),
             'public vote results'
@@ -7079,6 +7171,19 @@ async function loadEdenX1Dashboard() {
       stopEdenLoadingProgress(generation, 100);
       clearObsoleteEdenDashboardCache();
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
+      setEdenPanelLoading(false);
+      return;
+    }
+
+    // Draft season: the admin has not published this workspace yet. Say so
+    // explicitly — an empty table would read as "the season happened and nobody
+    // scored", and any stale cache from a previous publish must go.
+    if (result.kind === 'unpublished') {
+      stopEdenLoadingProgress(generation, 100);
+      clearObsoleteEdenDashboardCache();
+      setRewardFlowReady(false);
+      if (panel)
+        panel.innerHTML = `<div class="dash-empty">${esc(t('edenSeasonUnpublished'))}</div>`;
       setEdenPanelLoading(false);
       return;
     }

@@ -97,6 +97,7 @@ export default {
     subTabMap: 'Карта Эдема',
     subTabLoyalty: 'Верность Эдема',
     subTabBounty: 'Королевская награда',
+    subTabSeason: 'Текущий сезон',
     subTabPrevious: 'Прошлые сезоны',
   },
 };

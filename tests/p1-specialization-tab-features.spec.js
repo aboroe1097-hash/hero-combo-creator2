@@ -35,6 +35,14 @@ test('the path planner numbers every badge and marks the next research', async (
   await expect(page.locator('[data-route-next="true"]')).toHaveCount(1);
   await expect(page.locator('.spec-badge-wrap[data-route-step="1"]')).toHaveCount(1);
 
+  // The decision card summarizes the current answer and updates live: it names
+  // the next research with its step position, and flips its mode cell when the
+  // path basis changes.
+  const decision = page.locator('[data-spec-path-decision]');
+  await expect(decision).toBeVisible();
+  await expect(decision).toContainText(/Step \d+ of 32/);
+  await expect(decision).toContainText('Siege / Rally');
+
   const stepFor = (research) =>
     page
       .locator(`.spec-badge-wrap:has([data-spec-research="${research}"])`)
@@ -49,6 +57,7 @@ test('the path planner numbers every badge and marks the next research', async (
   // two paths rather than one.
   await field.click();
   await expect(field).toHaveAttribute('aria-checked', 'true');
+  await expect(decision).toContainText('Field (Non-Siege)');
   const fieldSiege1 = await stepFor('siege1');
   expect(Number(siegeSiege1)).toBeLessThan(Number(fieldSiege1));
 
@@ -59,6 +68,18 @@ test('the path planner numbers every badge and marks the next research', async (
     'true'
   );
   await expect(page.locator('.spec-path-card.is-active')).toContainText('Fatal Blow');
+  await expect(decision).toContainText('1/3 owned');
+
+  // Hero synergies stay behind a collapsed disclosure: the long mechanic notes
+  // appear only after expanding it, and then show the full explanation.
+  const synergies = page.locator('[data-spec-synergies]');
+  await expect(synergies).toHaveCount(1);
+  await expect(synergies).not.toHaveAttribute('open', '');
+  await expect(synergies.locator('.spec-synergy-note')).toBeHidden();
+  await synergies.locator('summary').click();
+  await expect(synergies.locator('.spec-synergy-note').first()).toBeVisible();
+  await expect(synergies.locator('.spec-synergy-mechanic').first()).toContainText('Fatal Blow');
+  await expect(synergies.locator('.spec-synergy-note').first()).toContainText('Sniper Archer');
 });
 
 test('easy medal fill offers quick fills inside the tab', async ({ page }) => {

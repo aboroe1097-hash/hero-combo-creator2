@@ -1385,6 +1385,7 @@ const tr = {
   edenX1ViewOnly: 'Sadece görüntüleme',
   edenX1NoFirebase: 'Firebase yapılandırılmamış. Veriler yüklenemiyor.',
   edenX1NoData: 'Katkı verisi bulunamadı.',
+  edenSeasonUnpublished: 'Bu sezon henüz yayınlanmadı. Sonuçlar bir yönetici yayınladığında görünecek.',
   edenX1NoRows: 'Gösterilecek ağırlıklı katkı satırı yok.',
   edenX1ShowAllRows: 'Tüm {count} oyuncuyu göster',
   edenX1LoadMoreRows: '{count} oyuncu daha yükle ({remaining} kaldı)',

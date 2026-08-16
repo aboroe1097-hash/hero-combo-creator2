@@ -18,6 +18,10 @@ test('admin explicitly activates a stale vote season with safe defaults', async 
       window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
       localStorage.setItem('vts_admin_local_test_auth', '1');
       localStorage.setItem('vts_maintenance_bypass', '1');
+      // The vote and adjustment keys below are workspace-namespaced now, and
+      // the admin opens the X2 season by default. Pin the workspace those
+      // seeded keys belong to so the fixture and the app agree.
+      localStorage.setItem('vts_admin_eden_workspace', 'eden-x1');
       localStorage.setItem('vts_hero_lang', 'en');
       localStorage.setItem('vts_sensitive_admin_pin_ok', '1');
       localStorage.setItem('vts_r5_adjustment_season', currentSeason);

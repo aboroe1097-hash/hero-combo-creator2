@@ -96,6 +96,7 @@ export default {
     subTabMap: '伊甸地图',
     subTabLoyalty: '伊甸忠诚',
     subTabBounty: '皇家赏金',
+    subTabSeason: '当前赛季',
     subTabPrevious: '往期赛季',
   },
 };

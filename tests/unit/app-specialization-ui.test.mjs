@@ -13,6 +13,7 @@ const integratedSpecCss = cssSource.slice(
   cssSource.indexOf('Specialization Towers — integrated tab'),
   cssSource.indexOf('@keyframes specAckRuleDraw')
 );
+const plannerCss = cssSource.slice(cssSource.indexOf('.spec-hero-plan {'));
 const mobileSpecCss = cssSource.slice(
   cssSource.indexOf('/* Specialization mobile command view */')
 );
@@ -134,5 +135,58 @@ test('integrated Specialization no longer hardcodes known brown surfaces and bor
   assert.doesNotMatch(
     integratedSpecCss,
     /#(?:b45309|7c2d12|4b3a1c|1a120a|78350f|92400e|725c38)\b/iu
+  );
+});
+
+test('the path decision card summarizes mode, tower, preset, and next upgrade from the model', () => {
+  // One card above the mode selector carrying the planner's whole answer, each
+  // cell fed by the same model calls the rest of the planner uses.
+  assert.match(appSource, /renderPathDecision\(plan, nextId, nextReasons\)/u);
+  assert.match(appSource, /data-spec-path-decision/u);
+  assert.match(appSource, /cell\('planModeLabel', escapeHtml\(modeLabel\(heroPlanMode\)\)\)/u);
+  assert.match(appSource, /cell\('planDecisionTower', escapeHtml\(troopLabel\(activeTroop\)\)\)/u);
+  assert.match(appSource, /cell\('planPathBasis', presetValue\)/u);
+  assert.match(appSource, /cell\('planDecisionNext', nextValue\)/u);
+  // Preset cell states the ownership match with the same counting rule as the
+  // preset cards (preset heroes the panel counts as owned).
+  assert.match(appSource, /preset\.heroes\.filter\(\(name\) => isHeroOwned\(name\)\)\.length/u);
+  assert.match(
+    appSource,
+    /sp\('planPresetMatch', \{ owned: presetOwned, total: preset\.heroes\.length \}\)/u
+  );
+  // Next cell names the research and its step position out of the full length.
+  assert.match(appSource, /getHeroPlanStep\(plan, nextId\)/u);
+  assert.match(appSource, /sp\('planDecisionNextStep', \{ step: nextStep, total: totalSteps \}\)/u);
+  assert.match(appSource, /sp\('planDecisionAllFunded'\)/u);
+  // The card sits before the mode selector and updates on the same render path.
+  const decisionIndex = appSource.indexOf('renderPathDecision(plan, nextId, nextReasons)');
+  const modesIndex = appSource.indexOf('${renderPathModes()}');
+  assert.ok(decisionIndex >= 0 && decisionIndex < modesIndex, 'decision card precedes the modes');
+});
+
+test('the plan rationale renders as condensed tags next to the decision card', () => {
+  // Each canonical-English reason is condensed to its scannable half (the part
+  // before the arrow/dash), deduped, and capped at four chips.
+  assert.match(appSource, /function reasonTag\(/u);
+  assert.match(appSource, /source\.split\('→'\)\[0\]/u);
+  assert.ok(
+    appSource.includes("replace(/^Column\\s+\\d+\\s*·\\s*/i, '')"),
+    'column coordinates are stripped from the tag text'
+  );
+  assert.match(appSource, /tags\.length < 4/u);
+  assert.match(appSource, /class="spec-why-tag"/u);
+  // The old single-sentence why line is gone.
+  assert.doesNotMatch(appSource, /spec-hero-plan-why/u);
+  assert.match(plannerCss, /\.spec-why-tag\s*\{[\s\S]*?color:\s*var\(--spec-text\)/u);
+});
+
+test('the path decision card is a horizontal summary on desktop and stacks on mobile', () => {
+  assert.match(
+    plannerCss,
+    /@media\s*\(min-width:\s*1024px\)\s*\{[\s\S]*?\.spec-path-decision-grid\s*\{[\s\S]*?grid-template-columns:/u
+  );
+  assert.match(
+    plannerCss,
+    /\.spec-path-decision-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(auto-fit, minmax\(9\.5rem, 1fr\)\)/u
   );
 });

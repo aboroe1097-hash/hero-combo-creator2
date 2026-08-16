@@ -1386,6 +1386,7 @@ const id = {
   edenX1ViewOnly: 'Hanya lihat',
   edenX1NoFirebase: 'Firebase belum dikonfigurasi. Data tidak dapat dimuat.',
   edenX1NoData: 'Data kontribusi tidak ditemukan.',
+  edenSeasonUnpublished: 'Musim ini belum dipublikasikan. Hasil akan muncul setelah admin mempublikasikannya.',
   edenX1NoRows: 'Tidak ada baris kontribusi berbobot untuk ditampilkan.',
   edenX1ShowAllRows: 'Tampilkan semua {count} pemain',
   edenX1LoadMoreRows: 'Muat {count} lagi ({remaining} tersisa)',

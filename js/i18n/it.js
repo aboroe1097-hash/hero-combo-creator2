@@ -101,6 +101,7 @@ const it = {
   edenX1ViewOnly: 'Sola lettura',
   edenX1NoFirebase: 'Firebase non è configurato. Impossibile caricare i dati.',
   edenX1NoData: 'Nessun dato contributo trovato.',
+  edenSeasonUnpublished: 'Questa stagione non è ancora stata pubblicata. I risultati appariranno quando un amministratore li pubblicherà.',
   edenX1NoRows: 'Nessuna riga di contributo ponderato da mostrare.',
   edenX1LoadFailed: 'Caricamento dati non riuscito: {error}',
   edenX1ThShieldWalls: 'Shield Wall',
