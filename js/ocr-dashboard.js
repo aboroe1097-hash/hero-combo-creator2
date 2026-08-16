@@ -686,8 +686,84 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') void ensureAllStarBohMountedOrUpdated();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
+  if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
+}
+
+let userRolesModulePromise = null;
+
+/**
+ * Reveals the Users & Roles tab only for a superadmin. This is presentation:
+ * the setUserRole callable re-checks the caller's claim server-side and
+ * firestore.rules gate the audit trail independently, so hiding the button is
+ * a courtesy, never the boundary.
+ */
+async function refreshSuperAdminSurfaces() {
+  let superadmin = false;
+  try {
+    const { isSuperAdminAuthUser } = await import('./firebase.js');
+    superadmin = await isSuperAdminAuthUser();
+  } catch {
+    // Treat an unreadable claim as "not a superadmin": failing closed keeps a
+    // transient auth error from exposing the surface.
+    superadmin = false;
+  }
+  document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
+    element.hidden = !superadmin;
+  });
+  return superadmin;
+}
+
+/**
+ * Candidate accounts come from users/{uid} profiles, which only exist once
+ * someone has signed in. Roles themselves are never read from there — a
+ * profile document is member-writable, so treating it as authority would be an
+ * escalation path. The claim is the only source of truth.
+ */
+async function loadRoleCandidates() {
+  const { collection, getDocs } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs
+    .map((entry) => ({
+      uid: entry.id,
+      displayName: String(entry.data()?.displayName || '').slice(0, 80),
+      admin: entry.data()?.admin === true,
+      superadmin: entry.data()?.superadmin === true,
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName) || a.uid.localeCompare(b.uid));
+}
+
+async function ensureUserRolesMounted() {
+  if (!(await refreshSuperAdminSurfaces())) return;
+  if (!userRolesModulePromise) {
+    userRolesModulePromise = import('./admin-roles-controller.js').catch((error) => {
+      userRolesModulePromise = null;
+      void recoverFromStaleAssetGraph(error);
+      throw error;
+    });
+  }
+  try {
+    const module = await userRolesModulePromise;
+    const mount = $id('dashUserRolesRoot');
+    if (!mount) return;
+    const { callSetUserRole, currentAuthUid } = await import('./firebase.js');
+    module.renderRolesController(mount, {
+      currentUid: currentAuthUid(),
+      listMembers: loadRoleCandidates,
+      setUserRole: callSetUserRole,
+      t: dashT,
+    });
+  } catch (error) {
+    console.error('USER ROLES LOAD ERROR:', error);
+    const mount = $id('dashUserRolesRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminRolesLoadFailed')
+      )}</div>`;
+    }
+  }
 }
 
 function loadThroneBuffsHistory() {

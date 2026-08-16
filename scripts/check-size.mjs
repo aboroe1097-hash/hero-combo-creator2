@@ -95,7 +95,11 @@ const LIMITS = {
   // the Skins gallery and its lazy detail styles, Vialfiend monster data, and
   // Loyalty/Materials polish. Measured 9699.7 KiB of built JS; retain
   // roughly 10 KiB.
-  totalJsBytes: 9730 * 1024,
+  // The superadmin roles system (callable bridge, controller, admin wiring) and
+  // the DeepSeek provider adapter measure 9738.0 KiB locally. CI measures
+  // larger because it injects admin auth config before building, so retain
+  // roughly 20 KiB rather than the usual single-digit margin.
+  totalJsBytes: 9758 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

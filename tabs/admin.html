@@ -726,6 +726,10 @@
               <span data-i18n="adminBohTab">All-Star BoH</span>
             </button>
             <button class="dash-subtab-btn" data-subtab="throneBuffs"><span data-i18n="adminThroneTab">Throne Buffs</span></button>
+            <!-- Superadmin only. Hidden by default and revealed from the claim,
+                 so an admin without the level never sees it; the callable and
+                 firestore.rules enforce the boundary independently. -->
+            <button class="dash-subtab-btn" data-subtab="userRoles" data-requires-superadmin hidden><span data-i18n="adminRolesTab">Users &amp; Roles</span></button>
           </div>
         </section>
       </div>
@@ -1695,6 +1699,7 @@
 
       <!-- Sub-tab: Throne Buffs -->
       <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
 
       <!-- Sub-tab: Eden X1 Votes -->
       <div class="dash-subtab-panel hidden" id="dashSubtabEdenVotes">
