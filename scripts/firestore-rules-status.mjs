@@ -20,20 +20,38 @@ import path from 'node:path';
 const PROJECT = process.env.FIREBASE_PROJECT || 'abocombo';
 const RELEASE = 'cloud.firestore';
 
-function configStorePath() {
-  const appData =
-    process.env.APPDATA ||
-    (process.platform === 'darwin'
-      ? path.join(process.env.HOME || '', 'Library', 'Preferences')
-      : path.join(process.env.HOME || '', '.config'));
-  return path.join(appData, 'configstore', 'firebase-tools.json');
+// The `configstore` package firebase-tools uses does not resolve to one fixed
+// location: depending on version and platform it lands under the home
+// directory, under APPDATA, or under XDG_CONFIG_HOME. Probe each rather than
+// assuming, because guessing wrong reports "not logged in" for a CLI that is
+// in fact authenticated.
+function configStoreCandidates() {
+  const home = process.env.USERPROFILE || process.env.HOME || '';
+  const dirs = [
+    process.env.XDG_CONFIG_HOME,
+    path.join(home, '.config'),
+    process.env.APPDATA,
+    process.env.LOCALAPPDATA,
+    process.platform === 'darwin' ? path.join(home, 'Library', 'Preferences') : null,
+  ].filter(Boolean);
+  return dirs.map((dir) => path.join(dir, 'configstore', 'firebase-tools.json'));
 }
 
 async function accessToken() {
-  const file = configStorePath();
-  if (!fs.existsSync(file)) {
-    throw new Error(`No firebase-tools credentials at ${file}. Run: npx firebase login`);
+  // An explicit CI token wins when present, so this also works headless.
+  if (process.env.FIREBASE_TOKEN) {
+    const { getAccessToken } = await import('firebase-tools/lib/auth.js');
+    const token = await getAccessToken(process.env.FIREBASE_TOKEN, []);
+    return token?.access_token || token;
   }
+  const candidates = configStoreCandidates();
+  const file = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!file) {
+    throw new Error(
+      `No firebase-tools credentials found. Looked in:\n  ${candidates.join('\n  ')}\nRun: npx firebase login`
+    );
+  }
+  console.log(`credentials  : ${file}`);
   const cfg = JSON.parse(fs.readFileSync(file, 'utf8'));
   const refresh = cfg?.tokens?.refresh_token || cfg?.user?.tokens?.refresh_token;
   if (!refresh) throw new Error('No refresh token in the firebase-tools configstore.');
