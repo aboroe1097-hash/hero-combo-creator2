@@ -524,6 +524,35 @@
   list-style: none;
   counter-reset: bounty-setup;
 }
+
+/* In-game captures of the Aiding Skill slot. Auto-fit rather than a fixed
+   column count so a single surviving figure still fills the row when the other
+   image has not shipped yet. */
+.bounty-setup-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.bounty-setup-figure {
+  margin: 0;
+  padding: 8px;
+  background: var(--ff-glass);
+  border: 1px solid var(--ff-hairline);
+  border-radius: var(--ff-r-card);
+}
+.bounty-setup-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--ff-r-card) - 4px);
+}
+.bounty-setup-figure figcaption {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ff-text-dim);
+}
 .bounty-setup-step {
   display: flex;
   gap: 12px;

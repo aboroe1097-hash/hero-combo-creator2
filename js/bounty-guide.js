@@ -266,8 +266,46 @@ function renderAiding() {
         </li>`
         ).join('')}
       </ol>
+      ${renderAidingSkillFigures()}
     </div>
   </section>`;
+}
+
+// The written steps describe an interface most people only recognise once they
+// have seen it: the Aiding Skill lives in its own slot to the left of a
+// legion's heroes, which is easy to miss in the game's own UI. Two in-game
+// captures do more than four sentences.
+//
+// A missing file removes its whole figure rather than leaving a broken image
+// icon in the guide, so the artwork can land after the copy ships.
+const BOUNTY_AIDING_FIGURES = [
+  {
+    src: 'images/bounty/aiding-skill-slot.webp',
+    caption: 'The Aiding Skill slot sits to the left of the legion, before its heroes.',
+  },
+  {
+    src: 'images/bounty/aiding-skill-assigned.webp',
+    caption: 'Once assigned, the skill shows in that slot and is usable in battle.',
+  },
+];
+
+function renderAidingSkillFigures() {
+  return `
+      <div class="bounty-setup-figures">
+        ${BOUNTY_AIDING_FIGURES.map(
+          (figure) => `
+        <figure class="bounty-setup-figure">
+          <img
+            src="${escapeHtml(figure.src)}"
+            alt="${escapeHtml(figure.caption)}"
+            loading="lazy"
+            decoding="async"
+            onerror="this.closest('figure')?.remove()"
+          />
+          <figcaption>${escapeHtml(figure.caption)}</figcaption>
+        </figure>`
+        ).join('')}
+      </div>`;
 }
 
 function renderHeroCard(hero) {
