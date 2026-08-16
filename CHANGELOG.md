@@ -7,6 +7,7 @@
 - Reorganised VTS Admin around what actually changes each season. The Eden workspace switch now governs only the season surfaces; All-Star BoH sits in a separate Standing programs area that a season rollover never touches.
 - Added an Eden workspace command strip with the season selector, its draft or published state, and safe publish, unpublish and snapshot actions. The archived X1 season stays viewable and exportable but refuses every change.
 - Added the Throne Buffs weekly assignment groundwork: the nine throne titles with their real effects, weekly assignments with optional reasoning, and rotation fairness that tracks who has held which buff and how long ago.
+- Shipped the nine Throne title icons in `images/throne/`, cropped from the in-game Province panel. A slot whose icon file is absent still falls back to its two-letter initials, and the Emperor's effect list stays empty until its in-game tab is captured.
 - Rebuilt the Towers planner around a path decision card that names the mode, tower, chosen preset and next upgrade at a glance, and moved the long hero mechanics into a collapsed Hero synergies panel.
 - Rebuilt the Skins sub-tab with a skin gallery and tier guide, including search, type filters, real skin art, and a jump from any gallery card straight to that hero.
 - Reworked Eden Loyalty and DM Materials on phones and tablets: single-column loyalty inputs, readable type, larger tap targets, and an equipment grid that no longer squeezes six columns onto a small screen.

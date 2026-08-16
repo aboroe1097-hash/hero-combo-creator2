@@ -5,10 +5,11 @@
 // Firestore paths and browser cache keys, so a new season starts empty and an
 // archived season stays byte-identical instead of being overwritten.
 //
-// eden-x1 is the legacy archive: every path below is the historical one the
-// live X1 data already occupies, and the workspace is immutable. eden-x2 is
-// the active draft workspace: its records live in dedicated eden_x2_* paths
-// and reach the public site only through the allowlisted published projection.
+// eden-x1 is the legacy season: every path below is the historical one the live
+// X1 data already occupies, and it stays the writable working season until an
+// admin archives it at rollover. eden-x2 is the draft for the next season: its
+// records live in dedicated eden_x2_* paths and reach the public site only
+// through the allowlisted published projection.
 
 export const EDEN_WORKSPACE_IDS = Object.freeze(['eden-x1', 'eden-x2']);
 export const EDEN_WORKSPACE_COLLECTION_PATH = 'vts_admin/eden_workspaces/records';
@@ -17,13 +18,19 @@ export const EDEN_WORKSPACE_LIFECYCLES = Object.freeze(['archived', 'draft', 'ac
 
 const EDEN_X2_DEFAULT_SEASON = 'season-2027';
 
+// Shipping defaults describe the season as it stands the day this releases, not
+// the end state after a rollover. X1 is still the season being played and must
+// stay writable; X2 exists as an empty draft to prepare. Archiving X1 and
+// activating X2 is a deliberate act the admin performs at rollover, recorded in
+// the stored workspace record — which is exactly what the plan means by
+// snapshotting X1 "before X2 activation".
 const EDEN_WORKSPACE_DEFAULTS = Object.freeze({
   'eden-x1': Object.freeze({
     id: 'eden-x1',
     label: 'Eden X1',
     seasonLabel: 'Eden X1',
-    lifecycle: 'archived',
-    active: false,
+    lifecycle: 'active',
+    active: true,
     defaultSeason: 'season-2026',
     createdAtMs: 0,
     archivedAtMs: 0,
@@ -35,7 +42,7 @@ const EDEN_WORKSPACE_DEFAULTS = Object.freeze({
     label: 'Eden X2',
     seasonLabel: 'Eden X2',
     lifecycle: 'draft',
-    active: true,
+    active: false,
     defaultSeason: EDEN_X2_DEFAULT_SEASON,
     createdAtMs: 0,
     archivedAtMs: 0,
@@ -75,7 +82,7 @@ export function normalizeEdenWorkspaceId(value) {
 }
 
 export function getEdenWorkspace(workspaceId) {
-  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
+  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x1';
   return EDEN_WORKSPACE_DEFAULTS[id];
 }
 
@@ -84,7 +91,7 @@ export function listEdenWorkspaces() {
 }
 
 export function edenWorkspaceFirestorePaths(workspaceId) {
-  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
+  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x1';
   return EDEN_WORKSPACE_FIRESTORE_PATHS[id];
 }
 
@@ -106,9 +113,9 @@ export function isEdenWorkspaceArchived(workspace) {
   return workspace?.lifecycle === 'archived';
 }
 
-// Returns an Error when the given workspace refuses mutations (the archived
-// X1 season), or null when writes are allowed. Callers log/announce the error
-// and abort the save; the archive's records stay untouched.
+// Returns an Error when the given workspace refuses mutations (any season an
+// admin has archived), or null when writes are allowed. Callers log/announce
+// the error and abort the save; the archived records stay untouched.
 export function edenWorkspaceMutationError(workspaceId) {
   const ws = getEdenWorkspace(workspaceId);
   if (!isEdenWorkspaceArchived(ws)) return null;
@@ -131,8 +138,13 @@ export function normalizeEdenWorkspacePublication(value) {
 }
 
 // Merges a stored workspace record over the static defaults. Unknown or
-// malformed fields fall back to the defaults so a bad cloud record can never
-// flip an archive back to mutable.
+// malformed fields fall back to the defaults, so a malformed cloud record can
+// never silently change a season's lifecycle.
+//
+// Archiving is one-way: once a stored record marks a workspace archived, no
+// later record can return it to a writable state. That keeps the rollover
+// guarantee — a finished season stays frozen — without pretending X1 is already
+// finished before the admin says so.
 export function parseEdenWorkspaceRecord(record) {
   if (!record || typeof record !== 'object') return null;
   const id = normalizeEdenWorkspaceId(record.id);
@@ -141,15 +153,15 @@ export function parseEdenWorkspaceRecord(record) {
   const lifecycle = EDEN_WORKSPACE_LIFECYCLES.includes(record.lifecycle)
     ? record.lifecycle
     : defaults.lifecycle;
-  // The archived X1 contract is static history: a stored record can confirm
-  // it but never resurrect write access.
-  const effectiveLifecycle = defaults.legacy ? 'archived' : lifecycle;
+  const archived = lifecycle === 'archived' || defaults.lifecycle === 'archived';
   return {
     ...defaults,
-    lifecycle: effectiveLifecycle,
-    active: defaults.legacy ? false : record.active === true,
+    lifecycle: archived ? 'archived' : lifecycle,
+    active: archived ? false : record.active === true,
     createdAtMs: Number(record.createdAtMs) || defaults.createdAtMs,
     archivedAtMs: Number(record.archivedAtMs) || defaults.archivedAtMs,
+    // A legacy season has no published projection of its own; the archive route
+    // renders it directly.
     publication: defaults.legacy ? null : normalizeEdenWorkspacePublication(record.publication),
   };
 }
@@ -157,9 +169,9 @@ export function parseEdenWorkspaceRecord(record) {
 export function getActiveAdminWorkspaceId() {
   try {
     const stored = globalThis.localStorage?.getItem(EDEN_ADMIN_WORKSPACE_STORAGE_KEY);
-    return normalizeEdenWorkspaceId(stored) || 'eden-x2';
+    return normalizeEdenWorkspaceId(stored) || 'eden-x1';
   } catch {
-    return 'eden-x2';
+    return 'eden-x1';
   }
 }
 

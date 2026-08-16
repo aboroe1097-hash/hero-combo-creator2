@@ -189,12 +189,16 @@ const LIMITS = {
   // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
   // Loyalty/Materials polish. The artifact measures 30629.5 KiB;
   // retain roughly 70 KiB.
-  totalDeployBytes: 30700 * 1024,
+  // The nine Throne title icons (images/throne/*.webp, 62.8 KiB total) bring
+  // the artifact to 30692.3 KiB; retain roughly 68 KiB.
+  totalDeployBytes: 30760 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
   // The Royal Bounty figures add 196 KiB of media; audited at 17,760.4 KiB.
-  totalMediaBytes: 17775 * 1024,
+  // The nine Throne title icons add 62.8 KiB of media; audited at
+  // 17823.2 KiB. Retain roughly 17 KiB of headroom.
+  totalMediaBytes: 17840 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -214,7 +218,9 @@ const LIMITS = {
   // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
   // Loyalty/Materials polish. The eden-x2 route and its chunks emit 644
   // files; keep four of headroom.
-  deployFileCount: 648,
+  // The nine Throne title icons emit nine more files (653 total); keep four
+  // of headroom.
+  deployFileCount: 657,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
