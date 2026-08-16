@@ -517,6 +517,10 @@ async function openAdmin(page) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
+    // Pin the Eden workspace these fixtures belong to. The admin opens the new
+    // X2 season by default, and X2 has its own Firestore paths and its own
+    // cache keys, so an unpinned run would correctly find nothing to show.
+    localStorage.setItem('vts_admin_eden_workspace', 'eden-x1');
     localStorage.removeItem('vts_admin_local_test_auth');
     navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
       registrations.forEach((registration) => registration.unregister());
