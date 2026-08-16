@@ -226,18 +226,26 @@ The grep must return nothing.
 
 ---
 
-## Open question for the owner
+## Member list — decided: `users/{uid}` profiles
 
-**Where does the member list come from?** The controller needs to show accounts
-to promote. Firebase Auth has no client-readable user list, so one of:
+The controller lists accounts from the existing `users/{uid}` profile documents
+rather than from Firebase Auth, which has no client-readable user list.
 
-- **a.** Type or paste a uid — trivial, ugly, works today.
-- **b.** A second callable `listAdminCandidates` wrapping `auth.listUsers()`,
-  superadmin-only, returning uid and display name only.
-- **c.** Read `users/{uid}` profile documents that already exist for signed-in
-  members, and promote from there.
+`listMembers` therefore reads those profiles and returns
+`{ uid, displayName }` only — never email addresses, and never anything else the
+profile happens to carry. Rules must allow a superadmin to list them; check
+whether `users/{uid}` is currently self-read-only before assuming a list query
+is permitted, and if it is, add a superadmin-only list rule rather than opening
+the collection.
 
-**c** is the nicest if those profiles are reliably created; **b** is the most
-complete; **a** unblocks everything immediately. WO-R3 takes `listMembers` as an
-injected function specifically so this can be decided late without rewriting the
-UI.
+Two consequences worth designing around:
+
+- **Only members who have signed in at least once appear.** A profile document
+  is created on first sign-in, so someone who has never opened the site cannot
+  be promoted from the UI. That is the case where
+  `scripts/firebase-set-admin-claim.mjs` stays the answer, and the empty state
+  should say so instead of looking broken.
+- **A profile is not a role.** The document is member-writable; the claim is
+  not. Never read a role out of `users/{uid}` — the profile supplies the
+  candidate list and nothing more. Authorization comes from the claim, checked
+  server-side.
