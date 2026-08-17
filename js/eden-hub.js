@@ -222,7 +222,8 @@ export function bootEdenHub() {
         return;
       }
       const hash = window.location.hash.replace(/^#/, '').split('?')[0].toLowerCase();
-      if (hash === 'edenmap') activateSubTab(root, 'map');
+      // Both the canonical #edenHub and the original #edenMap land on the map.
+      if (hash === 'edenmap' || hash === 'edenhub') activateSubTab(root, 'map');
     }, 0);
   });
 

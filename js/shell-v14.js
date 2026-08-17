@@ -59,6 +59,9 @@
     ['tabHeroesCombos', 'heroesCombos'],
     ['tabResearchTowers', 'researchTowers'],
     ['tabMaterials', 'materials'],
+    // These values double as the section-id prefix in syncSkipDestination
+    // (`#${tabName}Section`), so they must stay the internal tab names. The
+    // shareable #edenHub hash is handled by tabHashAliases below.
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
     ['tabAllStarBoh', 'allStarBoh'],
@@ -87,6 +90,10 @@
     ['heroes', 'heroes'],
     ['skins', 'skins'],
   ]);
+  // #edenHub is the canonical share link for the Eden tab; #edenMap is the name
+  // it shipped under and stays valid permanently, because it is already live in
+  // the toolkit map, Velo's knowledge base and links members have shared.
+  const tabHashAliases = new Map([['edenhub', 'edenMap']]);
   const moreHistoryKey = 'vtsShellMoreOpen';
 
   const supportedShellLanguages = new Set([
@@ -197,6 +204,7 @@
       }
       return 'heroesCombos';
     }
+    if (tabHashAliases.has(normalizedHash)) return tabHashAliases.get(normalizedHash);
     return (
       Array.from(internalHashes.values()).find(
         (tabName) => tabName.toLowerCase() === normalizedHash
