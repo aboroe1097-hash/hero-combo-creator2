@@ -5478,7 +5478,10 @@ test.describe('app smoke tabs', () => {
     await expect(history).toContainText('Alpha, Bravo, Charlie, Delta');
   });
 
-  test('admin sensitive tabs show setup dialog when owner PIN is missing', async ({ page }) => {
+  test('admin sensitive tabs open for a superadmin with no PIN anywhere', async ({ page }) => {
+    // The PIN is gone: these tabs follow the superadmin claim, which local test
+    // auth carries. The old setup-dialog flow has no subject any more, so this
+    // asserts the replacement — no dialog, and the panel simply opens.
     await openAdmin(page);
     await openLocalAdminDashboard(page);
     await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
@@ -5486,14 +5489,8 @@ test.describe('app smoke tabs', () => {
       window.switchDashSubtab('edenVotes');
     });
 
-    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
-    await expect(page.locator('.pin-gate-kicker')).toContainText('Eden X1 Votes');
-    await expect(page.locator('.pin-gate-dialog')).toContainText('Owner PIN not configured');
-    await expect(page.locator('.pin-gate-input')).toHaveCount(0);
-    await expect(page.locator('.pin-gate-btn-primary')).toHaveCount(0);
-    await expect(page.locator('#dashSubtabEdenVotes')).toBeHidden();
-    await page.locator('[data-pin-cancel]').click();
     await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
+    await expect(page.locator('#dashSubtabEdenVotes')).toBeVisible();
   });
 
   test('eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names', async ({

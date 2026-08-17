@@ -139,7 +139,7 @@ import {
 } from './player-registry.js';
 // Cached superadmin claim, refreshed by refreshSuperAdminSurfaces(). UI gating
 // only — the rules and the callable are the real boundary.
-let dashSuperAdmin = false;
+let dashSuperAdmin = null;
 import {
   applyDashboardAttackMutation,
   dashboardAttackFingerprint,
@@ -704,6 +704,11 @@ let userRolesModulePromise = null;
 async function refreshSuperAdminSurfaces() {
   let superadmin = false;
   try {
+    // The local test bypass already stands in for the admin claim on
+    // localhost; it stands in for superadmin too, so the specs exercise the
+    // same code path a real superadmin takes. isLocalAdminTestBypass() is
+    // hostname-locked, so this cannot apply in production.
+    if (isLocalAdminTestBypass()) return applySuperAdminSurfaces(true);
     const { isSuperAdminAuthUser } = await import('./firebase.js');
     superadmin = await isSuperAdminAuthUser();
   } catch {
@@ -711,6 +716,10 @@ async function refreshSuperAdminSurfaces() {
     // transient auth error from exposing the surface.
     superadmin = false;
   }
+  return applySuperAdminSurfaces(superadmin);
+}
+
+function applySuperAdminSurfaces(superadmin) {
   dashSuperAdmin = superadmin;
   document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
     element.hidden = !superadmin;
@@ -2450,8 +2459,18 @@ window.getVtsAdminFirestoreContext = async function () {
 const SUPERADMIN_DASH_SUBTABS = new Set(['edenVotes', 'conduct', 'userRoles']);
 
 function switchDashSubtab(name) {
-  if (SUPERADMIN_DASH_SUBTABS.has(name) && !dashSuperAdmin) {
-    // Fail closed and say why, rather than doing nothing and looking broken.
+  if (SUPERADMIN_DASH_SUBTABS.has(name) && dashSuperAdmin !== true) {
+    // The claim resolves asynchronously. Refusing while it is merely unknown
+    // would lock a real superadmin out of their own tab whenever they clicked
+    // faster than the token check, so resolve first and decide once.
+    if (dashSuperAdmin === null) {
+      void refreshSuperAdminSurfaces().then((allowed) => {
+        if (allowed) switchDashSubtab(name);
+        else window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
+      });
+      return;
+    }
+    // Known not to be a superadmin: say why rather than doing nothing.
     window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
     return;
   }
