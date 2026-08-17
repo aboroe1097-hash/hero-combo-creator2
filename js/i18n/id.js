@@ -434,6 +434,7 @@ const id = {
   tabEdenX1: 'Peringkat Eden X1',
   tabEdenX1Badge: 'Publik',
   tabResearch: 'Penelitian',
+  tabArtifact: 'Artefak',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

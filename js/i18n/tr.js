@@ -434,6 +434,7 @@ const tr = {
   tabEdenX1: 'Eden X1 Sıralaması',
   tabEdenX1Badge: 'Herkese Açık',
   tabResearch: 'Araştırma',
+  tabArtifact: 'Eserler',
   tabOcrDashboard: 'VTS Yönetici',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

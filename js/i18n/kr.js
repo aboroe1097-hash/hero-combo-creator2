@@ -357,6 +357,7 @@ const kr = {
   tabEdenX1Badge: '공개',
   tabEdenBounty: '로열 바운티 Eden X2',
   tabResearch: '연구',
+  tabArtifact: '아티팩트',
   tabOcrDashboard: 'VTS 관리자',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

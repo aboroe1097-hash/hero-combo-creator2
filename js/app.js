@@ -348,6 +348,8 @@ document.addEventListener('click', (e) => {
 const HUB_TAB_ALIASES = new Map([
   ['research', 'research'],
   ['specialization', 'towers'],
+  ['artifact', 'artifact'],
+  ['artifacts', 'artifact'],
 ]);
 
 // The same arrangement for the Heroes & Combos Hub.
@@ -916,6 +918,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _heroesTabBooting = false;
   let _researchReady = false;
   let _researchBooting = false;
+  let _artifactReady = false;
+  let _artifactBooting = false;
   let _materialsReady = false;
   let _materialsBooting = false;
   let _strifeReady = false;
@@ -1112,6 +1116,32 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
           }
         });
     }
+    if (tabName === 'artifact' && !_artifactReady) {
+      if (_artifactBooting) return;
+      _artifactBooting = true;
+      import('./app-artifact.js')
+        .then(async (mod) => {
+          await mod.initArtifactCalculator();
+          _artifactReady = true;
+        })
+        .catch((err) => {
+          _artifactBooting = false;
+          console.error('Artifact calculator failed to load', err);
+          if (isDynamicImportLoadFailure(err)) {
+            recoverFromStaleAssetGraph(err);
+            return;
+          }
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Artifact') ||
+                'Artifact Calculator failed to load.',
+              'error',
+              4000
+            );
+          }
+        });
+    }
     if (tabName === 'materials' && !_materialsReady) {
       if (_materialsBooting) return;
       _materialsBooting = true;
@@ -1283,7 +1313,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   // so both keep the lazy-import, toast and retry behaviour they always had.
   function onHubSubtabShown(subtab) {
     document.body.classList.toggle('tab-specialization-active', subtab === 'towers');
-    onTabActivated(subtab === 'research' ? 'research' : 'specialization');
+    if (subtab === 'artifact') onTabActivated('artifact');
+    else if (subtab === 'research') onTabActivated('research');
+    else onTabActivated('specialization');
   }
 
   function applyResearchTowersIntent() {

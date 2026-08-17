@@ -81,6 +81,8 @@
     ['research', 'research'],
     ['specialization', 'towers'],
     ['towers', 'towers'],
+    ['artifact', 'artifact'],
+    ['artifacts', 'artifact'],
   ]);
   // Manual Builder, Combo Generator and the Hero Atlas moved into the Heroes &
   // Combos Hub; all four hashes stay valid deep links.

@@ -18,8 +18,12 @@ import {
   SPECIALIZATION_LEGION_SKILL_IMAGES,
   SPECIALIZATION_RESEARCH,
   SPECIALIZATION_RESEARCH_IMAGES,
+  SPECIALIZATION_ROYAL_TECH_BOOKS,
   SPECIALIZATION_SOURCE_METADATA,
+  SPECIALIZATION_TECHNOLOGY_SUMMARY,
   SPECIALIZATION_TROOPS,
+  getRoyalTechBook,
+  getRoyalTechBooks,
   getSpecializationLegionSkillImage,
   getSpecializationResearch,
   getSpecializationResearchImage,
@@ -353,4 +357,33 @@ test('canonical records are immutable and lookup returns null for unknown IDs', 
   assert.equal(Object.isFrozen(SPECIALIZATION_LEGION_SKILLS[1].footman), true);
   assert.equal(getSpecializationResearch('missing'), null);
   assert.equal(getSpecializationResearch(null), null);
+});
+
+test('royal tech books VII, VIII, IX, and full 13-book series are recorded with exact FM counts', () => {
+  assert.equal(SPECIALIZATION_ROYAL_TECH_BOOKS.length, 13);
+  assert.equal(Object.isFrozen(SPECIALIZATION_ROYAL_TECH_BOOKS), true);
+
+  const book7 = getRoyalTechBook(7);
+  assert.equal(book7.name, 'Judgement of Order');
+  assert.equal(book7.roman, 'VII');
+  assert.equal(book7.fmCount, 1_555_200);
+
+  const book8 = getRoyalTechBook(8);
+  assert.equal(book8.name, 'Ultimate Oath');
+  assert.equal(book8.roman, 'VIII');
+  assert.equal(book8.fmCount, 2_565_489);
+
+  const book9 = getRoyalTechBook(9);
+  assert.equal(book9.name, 'Throne of Justice');
+  assert.equal(book9.roman, 'IX');
+  assert.equal(book9.fmCount, 3_521_166);
+
+  const totalFM = getRoyalTechBooks().reduce((sum, b) => sum + b.fmCount, 0);
+  assert.equal(totalFM, 24_350_468);
+
+  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY.length, 3);
+  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[0].cmCount, 3_476_740);
+  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[1].cmCount, 4_763_500);
+  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[2].cmCount, 4_792_600);
+  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[2].fmCount, 1_959_520);
 });

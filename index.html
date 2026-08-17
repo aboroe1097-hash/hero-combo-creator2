@@ -1208,6 +1208,22 @@
                 /></svg
               >Research
             </button>
+            <button
+              type="button"
+              class="vts-hub-subtab"
+              role="tab"
+              aria-selected="false"
+              data-hub-subtab="artifact"
+              data-i18n="tabArtifact"
+            >
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                /></svg
+              >Artifacts
+            </button>
           </div>
 
           <section
@@ -1324,6 +1340,20 @@
             class="research-calculator hidden"
             aria-live="polite"
           ></div>
+          </section>
+
+          <section
+            id="artifactSection"
+            class="vts-hub-subtab-panel"
+            data-hub-subtab-panel="artifact"
+            role="tabpanel"
+            hidden
+          >
+            <div class="artifact-loading tab-loading" aria-busy="true">
+              <div class="spinner"></div>
+              <span data-i18n="loadingEllipsis">Loading…</span>
+            </div>
+            <div id="artifactToolRoot" class="artifact-tool-root"></div>
           </section>
         </section>
 
@@ -1656,6 +1686,7 @@
               data-i18n="tabTowersSpecialization"
               >Towers Specialization</a
             >
+            <a href="#artifact" data-footer-tab="artifact" data-i18n="tabArtifact">Artifacts</a>
             <a href="#materials" data-footer-tab="materials" data-i18n="tabMaterials"
               >DM Materials</a
             >
@@ -1672,7 +1703,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v15.0.4</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v15.0.5</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">

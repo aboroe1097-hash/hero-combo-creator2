@@ -231,6 +231,7 @@ test('Towers Specialization lives inside the Research & Towers Hub', () => {
   assert.match(index, /id="tabResearchTowers"[\s\S]*?data-i18n="tabResearchTowers"/);
   assert.match(index, /data-hub-subtab="towers"[\s\S]*?data-i18n="tabTowersSpecialization"/);
   assert.match(index, /data-hub-subtab="research"[\s\S]*?data-i18n="tabResearch"/);
+  assert.match(index, /data-hub-subtab="artifact"[\s\S]*?data-i18n="tabArtifact"/);
   // Both former tabs keep working as deep links through the hub.
   assert.match(shellJs, /\['tabResearchTowers',\s*'researchTowers'\]/);
   assert.match(shellJs, /legacyResearchTowersHashes/);

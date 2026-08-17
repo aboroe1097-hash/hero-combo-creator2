@@ -468,6 +468,7 @@ const de = {
   tabEdenX1: 'Eden X1 Rangliste',
   tabEdenX1Badge: 'Öffentlich',
   tabResearch: 'Forschung',
+  tabArtifact: 'Artefakte',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

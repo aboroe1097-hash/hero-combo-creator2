@@ -464,6 +464,7 @@ const en = {
   tabEdenX1Badge: 'Public',
   tabEdenBounty: 'Royal Bounty Eden X2',
   tabResearch: 'Research',
+  tabArtifact: 'Artifacts',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

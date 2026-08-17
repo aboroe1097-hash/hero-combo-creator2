@@ -425,6 +425,7 @@ const zh = {
   tabEdenX1: '伊甸 X1 排名',
   tabEdenX1Badge: '公开',
   tabResearch: '科技研究',
+  tabArtifact: '神器',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

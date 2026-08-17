@@ -11,7 +11,7 @@
 // tab names onto this hub and hands the intended sub-tab over through
 // document.body.dataset.researchTowersSubtab.
 
-export const RESEARCH_TOWERS_SUBTABS = Object.freeze(['towers', 'research']);
+export const RESEARCH_TOWERS_SUBTABS = Object.freeze(['towers', 'research', 'artifact']);
 export const RESEARCH_TOWERS_DEFAULT_SUBTAB = 'towers';
 
 // Which sub-tab an old tab name or hash lands on.
@@ -19,6 +19,8 @@ export const RESEARCH_TOWERS_TAB_ALIASES = Object.freeze({
   specialization: 'towers',
   towers: 'towers',
   research: 'research',
+  artifact: 'artifact',
+  artifacts: 'artifact',
 });
 
 let booted = false;

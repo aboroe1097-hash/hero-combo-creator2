@@ -21,6 +21,7 @@ test('command palette exposes the fourteen deterministic tool destinations', () 
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
+    'tabArtifact',
     'tabSpecialization',
     'tabMaterials',
     'tabEdenMap',
