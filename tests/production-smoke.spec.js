@@ -288,23 +288,23 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   // directly instead of behind a gate.
   await expect(page.getByRole('dialog', { name: 'Beta Testers Only' })).toHaveCount(0);
   await expect(page.locator('#battleSimulatorMount')).toBeVisible({ timeout: 30000 });
-  const lockedBattleResources = await page.evaluate(() =>
+  const battleResources = await page.evaluate(() =>
     performance
       .getEntriesByType('resource')
       .map((entry) => new URL(entry.name, window.location.href).pathname)
   );
   expect(
-    lockedBattleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.js$/u.test(path)),
+    battleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.js$/u.test(path)),
     'Battle Simulator bootstrap asset should load'
   ).toBe(true);
   expect(
-    lockedBattleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.css$/u.test(path)),
+    battleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.css$/u.test(path)),
     'Battle Simulator stylesheet should load'
   ).toBe(true);
   expect(
-    lockedBattleResources.some((path) => /\/assets\/battle-simulator-app-[^/]+\.js$/u.test(path)),
-    'protected simulator app chunk must not load before PIN unlock'
-  ).toBe(false);
+    battleResources.some((path) => /\/assets\/battle-simulator-app-[^/]+\.js$/u.test(path)),
+    'simulator app chunk should load now that the route has no gate'
+  ).toBe(true);
 
   await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.admin-shell-title')).toContainText('Eden X1');
