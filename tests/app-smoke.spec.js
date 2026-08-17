@@ -3,9 +3,6 @@ import fs from 'node:fs/promises';
 import { encodeCombos } from '../js/combo-share.js';
 import { encodeRoster } from '../js/roster-share.js';
 
-const TEST_SENSITIVE_ADMIN_PIN = '232323';
-const TEST_SENSITIVE_ADMIN_PIN_HASH =
-  'c81ce2684a7b8d8738cd9a978e5e1acc846eca4b92686420bc1e641d287c4e80';
 
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
@@ -109,25 +106,17 @@ async function readPopoverPaintState(popover) {
 }
 
 test.describe('Battle Simulator beta', () => {
-  test('localizes the PIN gate and renders source-aware unit equations', async ({ page }) => {
+  test('localizes the simulator and renders source-aware unit equations', async ({ page }) => {
     await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
-    await page.addInitScript(
-      ({ pin }) => {
-        window.VTS_ADMIN_AUTH = { adminPin: pin };
-        localStorage.setItem('vts_maintenance_bypass', '1');
-        localStorage.setItem('vts_hero_lang', 'ar');
-        localStorage.removeItem('vts_sensitive_admin_pin_ok');
-        localStorage.removeItem('vts_eden_votes_pin_ok');
-      },
-      { pin: TEST_SENSITIVE_ADMIN_PIN }
-    );
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_maintenance_bypass', '1');
+      localStorage.setItem('vts_hero_lang', 'ar');
+    });
 
     await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl', { timeout: 20000 });
-    await expect(page.locator('.pin-gate-dialog')).toBeVisible({ timeout: 20000 });
-    await expect(page.locator('.pin-gate-dialog')).not.toContainText('Beta Testers Only');
-    await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
-    await page.locator('.pin-gate-btn-primary').click();
+    // The simulator is a calculator over public game data — no gate at all now.
+    await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
 
     await expect(page.locator('#battleSimulatorForm')).toBeVisible({ timeout: 20000 });
     await expect(page.locator('[data-battle-language] option')).toHaveCount(12);
@@ -2709,20 +2698,9 @@ test.describe('app smoke tabs', () => {
       );
     expect(visibleLeaderRows).toBe(20);
     await expect(page.locator('#dashLeaderBody .dash-load-more-btn')).toContainText('Show More');
-    await page.evaluate((hash) => {
-      localStorage.removeItem('vts_sensitive_admin_pin_ok');
-      localStorage.removeItem('vts_eden_votes_pin_ok');
-      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: hash };
-      window.switchDashSubtab('conduct');
-    }, TEST_SENSITIVE_ADMIN_PIN_HASH);
-    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
-    await expect(page.locator('.pin-gate-kicker')).toContainText('Bonus Team Effort Points');
-    await expect(page.locator('#dashSubtabConduct')).toBeHidden();
-    await page.locator('.pin-gate-input').fill('111111');
-    await page.locator('.pin-gate-btn-primary').click();
-    await expect(page.locator('.pin-gate-error')).toBeVisible();
-    await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
-    await page.locator('.pin-gate-btn-primary').click();
+    // Bonus Team Effort Points is superadmin-gated now, not PIN-gated. Local
+    // test auth carries the claim, so the panel opens directly.
+    await page.evaluate(() => window.switchDashSubtab('conduct'));
     await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
     await expect(page.locator('#dashSubtabConduct')).toBeVisible();
     await expect(page.locator('#dashConductList')).toContainText('Bravo');
@@ -2813,13 +2791,11 @@ test.describe('app smoke tabs', () => {
         typeof window.switchDashSubtab === 'function'
     );
     await page.evaluate(
-      ({ seededDash, seededRoster, pinHash }) => {
-        localStorage.setItem('vts_sensitive_admin_pin_ok', '1');
-        window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: pinHash };
+      ({ seededDash, seededRoster }) => {
         window.setOcrDashboardDataForTest(seededDash, seededRoster);
         window.switchDashSubtab('conduct');
       },
-      { seededDash, seededRoster, pinHash: TEST_SENSITIVE_ADMIN_PIN_HASH }
+      { seededDash, seededRoster }
     );
 
     await page.locator('#dashConductPlayerSearchBtn').click();
@@ -5297,10 +5273,7 @@ test.describe('app smoke tabs', () => {
         typeof window.setEdenX1VotesForTest === 'function' &&
         typeof window.switchDashSubtab === 'function'
     );
-    await page.evaluate((hash) => {
-      localStorage.removeItem('vts_sensitive_admin_pin_ok');
-      localStorage.removeItem('vts_eden_votes_pin_ok');
-      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: hash };
+    await page.evaluate(() => {
       window.setEdenX1VotesForTest(
         [
           {
@@ -5455,21 +5428,12 @@ test.describe('app smoke tabs', () => {
         }
       );
       window.switchDashSubtab('edenVotes');
-    }, TEST_SENSITIVE_ADMIN_PIN_HASH);
+    });
 
     const results = page.locator('#dashEdenVoteResults');
-    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
-    await expect(page.locator('#dashSubtabEdenVotes')).toBeHidden();
-    await page.locator('.pin-gate-input').fill('111111');
-    await page.locator('.pin-gate-btn-primary').click();
-    await expect(page.locator('.pin-gate-error')).toBeVisible();
-    await expect(page.locator('#dashSubtabEdenVotes')).toBeHidden();
-    await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
-    await page.locator('.pin-gate-btn-primary').click();
+    // Eden Workspace is superadmin-gated now; local test auth carries the claim,
+    // so the panel opens directly instead of through a PIN dialog.
     await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('vts_sensitive_admin_pin_ok')))
-      .toBe('1');
     await expect(page.locator('#dashSubtabEdenVotes')).toContainText('Eden X1 Team Players Vote');
     await expect(page.locator('#dashEdenVoteOpenToggle')).toBeChecked();
     await expect(page.locator('#dashEdenVoteEditingToggle')).not.toBeChecked();
@@ -5519,13 +5483,6 @@ test.describe('app smoke tabs', () => {
     await openLocalAdminDashboard(page);
     await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
     await page.evaluate(() => {
-      localStorage.removeItem('vts_sensitive_admin_pin_ok');
-      localStorage.removeItem('vts_eden_votes_pin_ok');
-      window.VTS_ADMIN_AUTH = {
-        ...(window.VTS_ADMIN_AUTH || {}),
-        adminPin: '',
-        edenVotesPinHash: '',
-      };
       window.switchDashSubtab('edenVotes');
     });
 
@@ -6308,7 +6265,6 @@ test.describe('app smoke tabs', () => {
       // neighbour in the grouped rail, so roving to Alliance View passes
       // through it. Unlock the gate here; this test is about Alliance View's
       // layout and keyboard reachability, not the PIN prompt.
-      localStorage.setItem('vts_sensitive_admin_pin_ok', '1');
     });
     const fixture = createAllianceViewSmokeFixture();
 

@@ -459,6 +459,7 @@ export const ADMIN_RUNTIME_KR = Object.freeze({
   adminNavGroupPrograms: '프로그램',
   adminNavGroupStanding: '상시 프로그램',
   adminRolesTab: '사용자 및 권한',
+  adminRolesSuperadminRequired: '이 탭은 최고 관리자 권한이 필요합니다.',
   adminRolesMember: '멤버',
   adminRolesAdmin: '관리자',
   adminRolesSuperadmin: '최고 관리자',

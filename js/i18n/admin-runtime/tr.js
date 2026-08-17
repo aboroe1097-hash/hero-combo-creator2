@@ -464,6 +464,7 @@ export const ADMIN_RUNTIME_TR = Object.freeze({
   adminNavGroupPrograms: 'Programlar',
   adminNavGroupStanding: 'Kalıcı programlar',
   adminRolesTab: 'Kullanıcılar ve roller',
+  adminRolesSuperadminRequired: 'Bu sekme süper yönetici erişimi gerektirir.',
   adminRolesMember: 'Üye',
   adminRolesAdmin: 'Yönetici',
   adminRolesSuperadmin: 'Süper yönetici',

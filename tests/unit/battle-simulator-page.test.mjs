@@ -129,14 +129,12 @@ test('bootstrap localizes PIN and boot copy before importing the protected app',
   assert.doesNotMatch(bootstrapSource, /import \{ mountBattleSimulator \} from/);
   const start = between(bootstrapSource, 'async function start()', '\n}\n\nstart();');
   const localeIndex = start.indexOf('await loadBattleSimulatorLocale(locale)');
-  const gateIndex = start.indexOf('await requireSensitiveAdminPin({');
-  const deniedIndex = start.indexOf('if (!unlocked)');
   const appImportIndex = start.indexOf("await import('./battle-simulator-app.js')");
-  assert.ok(localeIndex >= 0 && localeIndex < gateIndex);
-  assert.ok(gateIndex < deniedIndex && deniedIndex < appImportIndex);
-  for (const key of ['gate.kicker', 'gate.title', 'gate.prompt', 'gate.label', 'gate.error']) {
-    assert.ok(start.includes(`translator.t('${key}')`), key);
-  }
+  assert.ok(localeIndex >= 0 && localeIndex < appImportIndex);
+  // The shared admin PIN is gone. It guarded nothing server-side — firestore
+  // rules had no concept of it — and this route is a calculator over public
+  // game data with no privileged reads, so it needs no gate at all.
+  assert.doesNotMatch(start, /requireSensitiveAdminPin/);
   assert.match(start, /await mountBattleSimulator\(mount, \{ locale \}\)/);
   assert.match(bootstrapSource, /translator\.t\('boot\.title'\)/);
   assert.match(bootstrapSource, /translator\.t\('boot\.copy'\)/);

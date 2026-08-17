@@ -458,6 +458,7 @@ export const ADMIN_RUNTIME_AR = Object.freeze({
   adminNavGroupPrograms: 'البرامج',
   adminNavGroupStanding: 'البرامج الدائمة',
   adminRolesTab: 'المستخدمون والأدوار',
+  adminRolesSuperadminRequired: 'يتطلب هذا التبويب صلاحية مشرف أعلى.',
   adminRolesMember: 'العضو',
   adminRolesAdmin: 'مشرف',
   adminRolesSuperadmin: 'مشرف أعلى',

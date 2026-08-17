@@ -470,6 +470,7 @@ export const ADMIN_RUNTIME_RU = Object.freeze({
   adminNavGroupPrograms: 'Программы',
   adminNavGroupStanding: 'Постоянные программы',
   adminRolesTab: 'Пользователи и роли',
+  adminRolesSuperadminRequired: 'Для этой вкладки нужен доступ суперадмина.',
   adminRolesMember: 'Участник',
   adminRolesAdmin: 'Админ',
   adminRolesSuperadmin: 'Суперадмин',

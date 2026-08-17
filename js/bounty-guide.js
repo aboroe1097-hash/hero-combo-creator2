@@ -280,12 +280,9 @@ function renderAiding() {
 // icon in the guide, so the artwork can land after the copy ships.
 const BOUNTY_AIDING_FIGURES = [
   {
-    src: 'images/bounty/aiding-skill-slot.webp',
-    caption: 'The Aiding Skill slot sits to the left of the legion, before its heroes.',
-  },
-  {
-    src: 'images/bounty/aiding-skill-assigned.webp',
-    caption: 'Once assigned, the skill shows in that slot and is usable in battle.',
+    src: 'images/bounty/aiding-skill-slot.jpg',
+    caption:
+      'Each legion carries its Aiding Skill in the leftmost slot, before its three heroes. The timer on the second legion is that skill cooling down.',
   },
 ];
 

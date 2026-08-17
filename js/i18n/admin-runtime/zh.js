@@ -440,6 +440,7 @@ export const ADMIN_RUNTIME_ZH = Object.freeze({
   adminNavGroupPrograms: '项目',
   adminNavGroupStanding: '常设项目',
   adminRolesTab: '用户与角色',
+  adminRolesSuperadminRequired: '此标签需要超级管理员权限。',
   adminRolesMember: '成员',
   adminRolesAdmin: '管理员',
   adminRolesSuperadmin: '超级管理员',

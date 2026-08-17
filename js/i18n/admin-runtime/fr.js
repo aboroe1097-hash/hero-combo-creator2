@@ -477,6 +477,7 @@ export const ADMIN_RUNTIME_FR = Object.freeze({
   adminNavGroupPrograms: 'Programmes',
   adminNavGroupStanding: 'Programmes permanents',
   adminRolesTab: 'Utilisateurs et rôles',
+  adminRolesSuperadminRequired: 'Cet onglet nécessite un accès superadmin.',
   adminRolesMember: 'Membre',
   adminRolesAdmin: 'Admin',
   adminRolesSuperadmin: 'Superadmin',

@@ -137,7 +137,9 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
-import { requireSensitiveAdminPin, sensitiveAdminUnlocked } from './admin-pin-gate.js';
+// Cached superadmin claim, refreshed by refreshSuperAdminSurfaces(). UI gating
+// only — the rules and the callable are the real boundary.
+let dashSuperAdmin = false;
 import {
   applyDashboardAttackMutation,
   dashboardAttackFingerprint,
@@ -709,8 +711,14 @@ async function refreshSuperAdminSurfaces() {
     // transient auth error from exposing the surface.
     superadmin = false;
   }
+  dashSuperAdmin = superadmin;
   document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
     element.hidden = !superadmin;
+  });
+  // The two formerly PIN-gated tabs follow the same claim.
+  document.querySelectorAll('[data-subtab="edenVotes"], [data-subtab="conduct"]').forEach((btn) => {
+    btn.disabled = !superadmin;
+    btn.title = superadmin ? '' : dashT('adminRolesSuperadminRequired');
   });
   return superadmin;
 }
@@ -2413,7 +2421,7 @@ function getLocalAllianceViewFirestoreContext() {
   };
   const user = {
     uid: 'local-alliance-view-admin',
-    getIdTokenResult: async () => ({ claims: { admin: true } }),
+    getIdTokenResult: async () => ({ claims: { admin: true, superadmin: true } }),
   };
   localAllianceViewFirestoreContext = { db: { kind: 'local-alliance-view' }, user, firestore };
   return localAllianceViewFirestoreContext;
@@ -2435,28 +2443,16 @@ window.getVtsAdminFirestoreContext = async function () {
 // --- Roster ---
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-const PIN_GATED_DASH_SUBTABS = new Set(['edenVotes', 'conduct']);
-
-function dashSubtabPinOptions(name) {
-  if (name === 'conduct') {
-    return {
-      kicker: dashT('adminConductTab'),
-      title: dashT('adminEdenVotesPinTitle'),
-      prompt: dashT('adminConductPinPrompt'),
-    };
-  }
-  return {
-    kicker: dashT('adminEdenVotesTab'),
-    title: dashT('adminEdenVotesPinTitle'),
-    prompt: dashT('adminEdenVotesPinPrompt'),
-  };
-}
+// These two were behind a shared PIN, which protected nothing: firestore.rules
+// had no concept of it, so any admin could read and write eden vote settings
+// and conduct adjustments directly. They are now gated on the superadmin claim,
+// which the rules and the setUserRole callable enforce independently.
+const SUPERADMIN_DASH_SUBTABS = new Set(['edenVotes', 'conduct', 'userRoles']);
 
 function switchDashSubtab(name) {
-  if (PIN_GATED_DASH_SUBTABS.has(name) && !sensitiveAdminUnlocked()) {
-    requireSensitiveAdminPin(dashSubtabPinOptions(name)).then((ok) => {
-      if (ok) switchDashSubtab(name);
-    });
+  if (SUPERADMIN_DASH_SUBTABS.has(name) && !dashSuperAdmin) {
+    // Fail closed and say why, rather than doing nothing and looking broken.
+    window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
     return;
   }
   document

@@ -196,14 +196,18 @@ const LIMITS = {
   // retain roughly 70 KiB.
   // The nine Throne title icons (images/throne/*.webp, 62.8 KiB total) bring
   // the artifact to 30692.3 KiB; retain roughly 68 KiB.
-  totalDeployBytes: 30760 * 1024,
+  // The Aiding Skill capture lifts the artifact to 30788.1 KiB.
+  totalDeployBytes: 30820 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
   // The Royal Bounty figures add 196 KiB of media; audited at 17,760.4 KiB.
   // The nine Throne title icons add 62.8 KiB of media; audited at
   // 17823.2 KiB. Retain roughly 17 KiB of headroom.
-  totalMediaBytes: 17840 * 1024,
+  // The Royal Bounty guide gains one in-game capture of the Aiding Skill slot
+  // (36.9 KiB JPEG). Media had 12 KiB of headroom, so raise it rather than
+  // ship the guide without the illustration its steps describe.
+  totalMediaBytes: 17880 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581

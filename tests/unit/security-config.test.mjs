@@ -8,7 +8,6 @@ const INLINE_EVENT_HANDLER_ATTRIBUTE = /\son[a-z][a-z0-9:_-]*\s*=/i;
 
 test('public admin auth config only keeps destructive action override hashes', () => {
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
-  assert.match(source, /adminPin:\s*''/);
   const hasBuildTimeInjection = process.env.VTS_ADMIN_AUTH_INJECTED === '1';
 
   // clearHash / deleteHashes are empty in the committed source, but the deploy
@@ -32,49 +31,42 @@ test('public admin auth config only keeps destructive action override hashes', (
     assert.equal(deleteHashes.length, 0);
   }
 
-  const edenVotesPinHash = source.match(/edenVotesPinHash:\s*'([^']*)'/)?.[1];
-  assert.notEqual(edenVotesPinHash, undefined);
-  if (hasBuildTimeInjection) {
-    assert.match(edenVotesPinHash, /^(?:|[a-f0-9]{64})$/);
-  } else {
-    assert.equal(edenVotesPinHash, '');
-  }
+  // The sensitive-admin PIN is gone; its tabs are gated on the superadmin
+  // custom claim, which firestore.rules enforces server-side.
+  assert.doesNotMatch(source, /edenVotesPinHash|adminPin/);
   assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
   assert.doesNotMatch(source, /232323/);
   assert.doesNotMatch(source, /5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5/);
 });
 
-test('sensitive PIN gate has no committed fallback secret', () => {
-  const source = readFileSync('js/admin-pin-gate.js', 'utf8');
-  assert.match(source, /window\.VTS_ADMIN_AUTH\?\.edenVotesPinHash/);
-  assert.match(source, /window\.VTS_ADMIN_AUTH\?\.adminPin \|\| ''/);
-  assert.match(source, /if \(!hasConfiguredPinGate\(\)\) return false;/);
-  assert.doesNotMatch(source, /if \(!hasConfiguredPinGate\(\)\) return Promise\.resolve\(true\);/);
-  assert.match(source, /Owner PIN not configured/);
-  assert.match(source, /subtle\.digest\('SHA-256'/);
-  assert.doesNotMatch(source, /232323/);
+test('the sensitive admin PIN is gone, replaced by the superadmin claim', () => {
+  // The PIN protected nothing on the server: firestore.rules had no concept of
+  // it, so any admin could read and write eden vote settings and conduct
+  // adjustments directly. Those tabs are gated on the superadmin claim now,
+  // which the rules enforce independently of any UI.
+  assert.ok(!existsSync('js/admin-pin-gate.js'), 'admin-pin-gate.js should be deleted');
+
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  assert.doesNotMatch(dashboard, /requireSensitiveAdminPin|sensitiveAdminUnlocked/);
+  assert.match(dashboard, /SUPERADMIN_DASH_SUBTABS/);
+
+  const rules = readFileSync('firestore.rules', 'utf8');
+  assert.match(rules, /function isSuperAdmin\(\)/);
+  assert.match(rules, /request\.auth\.token\.superadmin == true/);
 });
 
-test('Battle Simulator remains private-indexed and fail-closed before PIN unlock', () => {
+test('Battle Simulator stays private-indexed with no PIN gate', () => {
   const page = readFileSync('battle-simulator.html', 'utf8');
   const bootstrap = readFileSync('js/battle-simulator.js', 'utf8');
-  const simulatorI18n = readFileSync('js/battle-simulator-i18n.js', 'utf8');
-  const gateCall = bootstrap.indexOf('await requireSensitiveAdminPin');
-  const appImport = bootstrap.indexOf("await import('./battle-simulator-app.js')");
 
   assert.match(page, /<meta name="robots" content="noindex, nofollow" \/>/);
   assert.match(page, /<body class="battle-simulator-page is-locked">/);
   assert.match(page, /<div id="battleSimulatorMount" hidden><\/div>/);
-  assert.ok(gateCall >= 0, 'Battle Simulator should request the shared sensitive PIN');
-  assert.ok(appImport > gateCall, 'simulator code must load only after the PIN gate resolves');
-  assert.match(bootstrap, /if \(!unlocked\) \{\s*location\.assign\('index\.html'\);/);
+  // A calculator over public game data with no privileged reads needs no gate
+  // now that the shared PIN is gone.
+  assert.doesNotMatch(bootstrap, /requireSensitiveAdminPin/);
   assert.match(bootstrap, /await loadBattleSimulatorLocale\(locale\)/);
-  assert.match(bootstrap, /title: translator\.t\('gate\.title'\)/);
-  assert.match(bootstrap, /prompt: translator\.t\('gate\.prompt'\)/);
-  assert.match(bootstrap, /unconfiguredTitle: translator\.t\('gate\.title'\)/);
-  assert.match(simulatorI18n, /'gate\.title': 'Beta Testers Only'/);
-  assert.match(simulatorI18n, /Only Beta Testers can access the Battle Simulator/);
 });
 
 test('admin boot does not preload gated Eden vote records', () => {
@@ -86,14 +78,10 @@ test('admin boot does not preload gated Eden vote records', () => {
   assert.doesNotMatch(bootBlock, /loadEdenX1VoteAdminData/);
 });
 
-test('deploy can inject sensitive admin PIN hash without committing raw PIN', () => {
-  const workflow = readFileSync('.github/workflows/deploy.yml', 'utf8');
+test('deploy injects the destructive-action override hash without committing it', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
   const script = readFileSync('scripts/inject-admin-auth-config.mjs', 'utf8');
   const verifyScript = readFileSync('scripts/verify-deploy.mjs', 'utf8');
-  assert.match(workflow, /VTS_EDEN_VOTES_PIN:/);
-  assert.match(workflow, /VTS_EDEN_VOTES_PIN_HASH:/);
-  assert.match(workflow, /npm run verify:deploy/);
   assert.equal(
     packageJson.scripts['admin-auth:inject'],
     'node scripts/inject-admin-auth-config.mjs'
@@ -103,7 +91,9 @@ test('deploy can inject sensitive admin PIN hash without committing raw PIN', ()
   assert.match(verifyScript, /delete sanitizedEnvironment\[key\]/);
   assert.match(verifyScript, /writeFileSync\(adminConfigPath, originalAdminConfig\)/);
   assert.match(script, /createHash\('sha256'\)/);
-  assert.match(script, /edenVotesPinHash:\s*'\$\{nextHash\}'/);
+  assert.match(script, /clearHash:\s*'\$\{overrideHash\}'/);
+  // The PIN hash is no longer injected at all.
+  assert.doesNotMatch(script, /edenVotesPinHash|VTS_EDEN_VOTES_PIN/);
   assert.doesNotMatch(script, /232323/);
 });
 
