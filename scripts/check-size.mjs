@@ -250,10 +250,11 @@ const LIMITS = {
     // KiB on Admin, 784.8/906.5 KiB on Eden, and 460.7/582.3 KiB on Arcade.
     // The season-scope strip and grouped Admin rail measure 663.9/759.7 KiB.
     'admin.html': { desktop: 665 * 1024, mobile: 785 * 1024 },
-    'eden-x1.html': { desktop: 787 * 1024, mobile: 909 * 1024 },
+    // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
+    'eden-x1.html': { desktop: 789 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 787 * 1024, mobile: 909 * 1024 },
+    'eden-x2.html': { desktop: 789 * 1024, mobile: 909 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

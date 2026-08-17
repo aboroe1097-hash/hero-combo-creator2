@@ -8779,6 +8779,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     inset: auto 0 0 !important;
     box-sizing: border-box;
     display: flex !important;
+    flex-wrap: nowrap !important;
     align-items: stretch !important;
     gap: 2px !important;
     width: auto !important;
@@ -8801,6 +8802,27 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     scrollbar-width: none;
     touch-action: pan-x;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* The docked rail must stay a single scrollable row. The grouped layout
+     would otherwise keep each group's button grid inside the fixed dock and
+     stack it into a multi-row panel that covers half a phone screen. */
+  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-docked .dash-subtab-group {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-docked .dash-subtab-group-title {
+    margin: 0 0.2rem 0 0;
+    white-space: nowrap;
+  }
+  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-docked .dash-subtab-group-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
   }
 
   body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-btn {
