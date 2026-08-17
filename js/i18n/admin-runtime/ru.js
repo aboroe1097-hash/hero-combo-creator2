@@ -481,6 +481,7 @@ export const ADMIN_RUNTIME_RU = Object.freeze({
   adminRolesUnnamed: 'Участник без имени',
   adminRolesEmpty: 'Профилей участников пока нет. Профиль появляется после первого входа.',
   adminRolesNoMatches: 'Нет участников, соответствующих поиску.',
+  adminRolesCount: 'Показано {shown} из {total}',
   adminRolesSaving: 'Сохранение…',
   adminRolesSaved: 'Роль обновлена.',
   adminRolesFailed: 'Не удалось изменить роль.',

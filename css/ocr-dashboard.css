@@ -3717,6 +3717,43 @@ body[style*='overflow: hidden'] .tab-panel {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+/* Desktop: the grouped nav stops acting like three narrow columns of
+   stretched buttons — a layout that wrapped every group into a tall stack and
+   pushed the page content far below the fold. Each group becomes one compact
+   row: mono label on the left, pills sized to their content on the right. */
+@media (min-width: 769px) {
+  #ocrDashboardRoot .dash-subtab-nav-grouped {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  #ocrDashboardRoot .dash-subtab-group {
+    flex: 0 1 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  #ocrDashboardRoot .dash-subtab-group-title {
+    flex: 0 0 7.5rem;
+    text-align: right;
+  }
+  #ocrDashboardRoot .dash-subtab-group-tabs {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  #ocrDashboardRoot .dash-subtab-group-tabs .dash-subtab-btn {
+    flex: 0 1 auto;
+    min-height: 38px;
+    padding: 0.42rem 0.85rem;
+    white-space: nowrap;
+  }
+  #ocrDashboardRoot .dash-subtab-group-tabs .dash-subtab-btn span {
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+}
+
 [data-theme='light'] #ocrDashboardRoot .dash-workspace-strip,
 [data-theme='light'] #ocrDashboardRoot .dash-subtab-nav-grouped {
   background: #f1f5f9;

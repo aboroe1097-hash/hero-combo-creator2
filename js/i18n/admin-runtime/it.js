@@ -444,6 +444,7 @@ export const ADMIN_RUNTIME_IT = Object.freeze({
   adminRolesUnnamed: 'Membro senza nome',
   adminRolesEmpty: 'Nessun profilo membro ancora. Un profilo compare dopo il primo accesso.',
   adminRolesNoMatches: 'Nessun membro corrisponde a questa ricerca.',
+  adminRolesCount: 'Mostrati {shown} di {total}',
   adminRolesSaving: 'Salvataggio…',
   adminRolesSaved: 'Ruolo aggiornato.',
   adminRolesFailed: 'La modifica del ruolo non è riuscita.',

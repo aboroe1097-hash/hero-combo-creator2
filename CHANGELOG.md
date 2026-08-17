@@ -1,5 +1,15 @@
 # Changelog
 
+## 15.0.2 - 2026-08-17
+
+- Fixed the reversed typing in Users & Roles: the member search no longer rebuilds its own input on every keystroke, so the caret stays put and characters land where you typed them, and it now shows a live "showing X of Y" count.
+- Superadmins can now list every member profile in Users & Roles. The Firestore rules previously limited `users/{uid}` reads to the account owner, which silently emptied the roster; superadmin read access is now granted alongside self-read.
+- The account chip now says "Superadmin" with its own violet badge when you hold the higher claim, instead of showing both roles the same gold "Admin".
+- Locked the whole Alliance management side of VTS Admin — Alliance View, All-Star BoH, Throne Buffs and Users & Roles — behind the superadmin claim. A plain admin no longer sees a nav row whose tabs would all refuse them.
+- Gave the Throne Buffs tab its stylesheet: one compact header row for the week picker, slot badges and actions, a bordered assignment table with the title icons and effects, pill badges for slot counts and duplicate warnings, styled history search results, and a rotation fairness table. It ships as a lazy CSS chunk with the tab instead of padding the dashboard bundle.
+- Rebuilt the desktop admin navigation layout: each tab group is now a single compact row of mono label plus content-sized pills instead of three narrow columns of stretched buttons, which had wrapped every group into a tall stack and pushed the page content far below the header.
+- Styled the Users & Roles roster: search toolbar with live count, tone-coloured save status, compact member rows with stacked name and account id, and touch-friendly toggle rows on phones.
+
 ## 15.0.1 - 2026-08-16
 
 - Split VTS Admin into two sides. Alliance management now holds Alliance View, All-Star BoH and the new Throne Buffs tab, and sits deliberately outside the Eden season scope, so a season rollover never moves or clears it.

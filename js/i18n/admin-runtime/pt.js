@@ -480,6 +480,7 @@ export const ADMIN_RUNTIME_PT = Object.freeze({
   adminRolesUnnamed: 'Membro sem nome',
   adminRolesEmpty: 'Ainda não há perfis de membros. Um perfil aparece após o primeiro início de sessão.',
   adminRolesNoMatches: 'Nenhum membro corresponde a essa procura.',
+  adminRolesCount: 'A mostrar {shown} de {total}',
   adminRolesSaving: 'A guardar…',
   adminRolesSaved: 'Função atualizada.',
   adminRolesFailed: 'A alteração de função falhou.',

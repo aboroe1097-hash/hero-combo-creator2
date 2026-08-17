@@ -475,6 +475,7 @@ export const ADMIN_RUNTIME_TR = Object.freeze({
   adminRolesUnnamed: 'Adsız üye',
   adminRolesEmpty: 'Henüz üye profili yok. Profil, bir kez giriş yapıldıktan sonra oluşur.',
   adminRolesNoMatches: 'Bu aramayla eşleşen üye yok.',
+  adminRolesCount: '{total} üyeden {shown} tanesi gösteriliyor',
   adminRolesSaving: 'Kaydediliyor…',
   adminRolesSaved: 'Rol güncellendi.',
   adminRolesFailed: 'Rol değişikliği başarısız oldu.',

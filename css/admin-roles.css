@@ -1,0 +1,174 @@
+/* Users & Roles Admin — lazy feature styles.
+   Loaded with the admin-roles-controller module, so only superadmin
+   sessions that open the tab download it. Scoped to the dashboard root to
+   sit above the generic .dash-table rules in ocr-dashboard.css. */
+/* =============================================================
+   Users & Roles (superadmin) — roster table and toolbar
+   ============================================================= */
+#ocrDashboardRoot .dash-roles {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+#ocrDashboardRoot .dash-roles-lag {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 2px solid color-mix(in srgb, var(--ff-cyan) 45%, transparent);
+  border-radius: 0 var(--ff-r-card) var(--ff-r-card) 0;
+  background: var(--ff-glass);
+  color: var(--ff-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+#ocrDashboardRoot .dash-roles-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+#ocrDashboardRoot .dash-roles-search {
+  display: grid;
+  gap: 0.28rem;
+  min-width: min(20rem, 100%);
+  flex: 1 1 16rem;
+}
+
+#ocrDashboardRoot .dash-roles-search > span {
+  font-size: 0.6rem;
+  font-weight: 800;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ff-text-dim);
+}
+
+#ocrDashboardRoot .dash-roles-search input[type='search'] {
+  min-height: 44px;
+}
+
+#ocrDashboardRoot .dash-roles-count {
+  padding-bottom: 0.55rem;
+  color: var(--ff-text-dim);
+  font-size: 0.68rem;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+#ocrDashboardRoot .dash-roles-status {
+  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--ff-hairline);
+  background: var(--ff-glass);
+  color: var(--ff-text-dim);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+#ocrDashboardRoot .dash-roles-status[data-tone='success'] {
+  color: var(--ff-success);
+  border-color: color-mix(in srgb, var(--ff-success) 45%, transparent);
+  background: color-mix(in srgb, var(--ff-success) 10%, transparent);
+}
+
+#ocrDashboardRoot .dash-roles-status[data-tone='error'] {
+  color: var(--ff-danger);
+  border-color: color-mix(in srgb, var(--ff-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--ff-danger) 10%, transparent);
+}
+
+#ocrDashboardRoot .dash-roles-table th {
+  font-size: 0.62rem;
+}
+
+#ocrDashboardRoot .dash-roles-table td {
+  vertical-align: middle;
+}
+
+#ocrDashboardRoot .dash-roles-member {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+#ocrDashboardRoot .dash-roles-name {
+  font-weight: 700;
+  font-family: var(--ff-font-ui);
+  color: var(--ff-text);
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .dash-roles-uid {
+  color: var(--ff-text-dim);
+  font-size: 0.66rem;
+  font-family: var(--ff-font-mono);
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .dash-roles-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ff-text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#ocrDashboardRoot .dash-roles-toggle:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+#ocrDashboardRoot .dash-roles-toggle input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--ff-cyan);
+  cursor: inherit;
+}
+
+#ocrDashboardRoot .dash-roles-empty {
+  margin: 0;
+  padding: 1rem 0.75rem;
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  #ocrDashboardRoot .dash-roles-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  #ocrDashboardRoot .dash-roles-count {
+    padding-bottom: 0;
+  }
+
+  #ocrDashboardRoot .dash-roles-table thead {
+    display: none;
+  }
+
+  #ocrDashboardRoot .dash-roles-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.65rem 0.4rem;
+    border-bottom: 1px solid var(--ff-hairline);
+  }
+
+  #ocrDashboardRoot .dash-roles-table td {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: space-between;
+  }
+}

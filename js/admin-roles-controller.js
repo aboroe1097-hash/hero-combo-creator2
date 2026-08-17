@@ -124,9 +124,34 @@ export function renderRolesController(mount, options = {}) {
     status.hidden = !message;
   }
 
+  // The chrome is built exactly once. Re-rendering it on every keystroke
+  // destroyed and recreated the search input, which reset the caret to position
+  // zero — so each typed character landed at the front and the query came out
+  // reversed. Only the results region is ever repainted.
+  shell.innerHTML = `
+    <p class="dash-roles-lag">${escapeHtml(t('adminRolesTokenLag'))}</p>
+    <div class="dash-roles-toolbar">
+      <label class="dash-roles-search">
+        <span>${escapeHtml(t('adminRolesSearchLabel'))}</span>
+        <input type="search" data-role-search
+               placeholder="${escapeHtml(t('adminRolesSearchPlaceholder'))}" />
+      </label>
+      <span class="dash-roles-count" data-role-count></span>
+    </div>
+    <p class="dash-roles-status" data-role-status hidden></p>
+    <div data-role-results></div>`;
+
   function paint() {
+    const results = shell.querySelector('[data-role-results]');
+    const count = shell.querySelector('[data-role-count]');
+    if (!results) return;
     const rows = filterMembers(members, query);
-    const table = rows.length
+    if (count) {
+      count.textContent = members.length
+        ? t('adminRolesCount').replace('{shown}', rows.length).replace('{total}', members.length)
+        : '';
+    }
+    results.innerHTML = rows.length
       ? `<table class="dash-table dash-roles-table">
            <thead><tr>
              <th>${escapeHtml(t('adminRolesMember'))}</th>
@@ -140,16 +165,6 @@ export function renderRolesController(mount, options = {}) {
         `<p class="dash-roles-empty">${escapeHtml(
           members.length ? t('adminRolesNoMatches') : t('adminRolesEmpty')
         )}</p>`;
-
-    shell.innerHTML = `
-      <p class="dash-roles-lag">${escapeHtml(t('adminRolesTokenLag'))}</p>
-      <label class="dash-roles-search">
-        <span>${escapeHtml(t('adminRolesSearchLabel'))}</span>
-        <input type="search" data-role-search value="${escapeHtml(query)}"
-               placeholder="${escapeHtml(t('adminRolesSearchPlaceholder'))}" />
-      </label>
-      <p class="dash-roles-status" data-role-status hidden></p>
-      ${table}`;
   }
 
   async function applyChange(uid, role, granted, input) {
@@ -180,8 +195,8 @@ export function renderRolesController(mount, options = {}) {
     const search = event.target.closest('[data-role-search]');
     if (!search) return;
     query = search.value;
+    // No refocus needed: the input element itself is never replaced.
     paint();
-    shell.querySelector('[data-role-search]')?.focus();
   });
 
   shell.addEventListener('change', (event) => {

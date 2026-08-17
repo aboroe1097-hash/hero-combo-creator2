@@ -470,6 +470,7 @@ export const ADMIN_RUNTIME_KR = Object.freeze({
   adminRolesUnnamed: '이름 없는 멤버',
   adminRolesEmpty: '아직 멤버 프로필이 없습니다. 한 번 로그인하면 프로필이 생성됩니다.',
   adminRolesNoMatches: '검색과 일치하는 멤버가 없습니다.',
+  adminRolesCount: '{total}명 중 {shown}명 표시',
   adminRolesSaving: '저장 중…',
   adminRolesSaved: '권한이 업데이트되었습니다.',
   adminRolesFailed: '권한 변경에 실패했습니다.',

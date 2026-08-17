@@ -451,6 +451,7 @@ export const ADMIN_RUNTIME_ZH = Object.freeze({
   adminRolesUnnamed: '未命名成员',
   adminRolesEmpty: '暂无成员资料。成员登录一次后会生成资料。',
   adminRolesNoMatches: '没有匹配该搜索的成员。',
+  adminRolesCount: '显示 {shown} / {total} 位成员',
   adminRolesSaving: '保存中…',
   adminRolesSaved: '角色已更新。',
   adminRolesFailed: '角色变更失败。',
