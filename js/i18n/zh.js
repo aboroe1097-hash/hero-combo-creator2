@@ -14,7 +14,6 @@ const zh = {
     '使用 ← 和 → 键滚动。',
   ]),
   adminLoginPass: '密码',
-  adminLoginUser: '用户名',
   adminLoginBtn: '以管理员身份登录',
   adminLoginInvalid: '嗯，用户名和密码对不上——检查一下再试一次吧。',
   adminLoginTooMany: '刚才尝试次数有点多——歇一会儿，一分钟后再试。',
@@ -37,7 +36,6 @@ const zh = {
   adminConnectingTitle: '正在连接到仪表板',
   adminConnectingSub: '正在从安全云端加载联盟数据…',
   adminConnectingInit: '正在初始化安全会话…',
-  adminConnectingAuth: '正在验证凭据…',
   adminConnectingData: '正在同步联盟数据…',
   adminHeaderTitle: '建筑攻击数据分析',
   adminHeaderSub: '联盟拆除记录',
@@ -2021,7 +2019,7 @@ const zh = {
   dmEnhanceShortfall: '缺少',
   dmEnhanceReached: '已达到目标',
   dmEnhanceCredit: '感谢 Roha 和 Redbull 提供 DM 工具所使用的数据。',
-  tabEdenBounty: '皇家悬赏',
+  tabEdenBounty: '皇家悬赏 Eden X2',
 };
 
 // Semantic overrides replace shared English defaults and legacy literal wording.

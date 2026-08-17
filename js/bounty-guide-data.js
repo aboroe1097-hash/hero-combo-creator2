@@ -1,5 +1,5 @@
 // js/bounty-guide-data.js
-// Royal Bounty Alliance — structured guide content.
+// Royal Bounty Eden X2 — structured guide content.
 //
 // Single source of truth for the Royal Bounty explainer inside the VTS Eden
 // Hub. Transcribed from the community guide PDFs:

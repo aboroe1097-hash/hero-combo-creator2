@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.3",
+    "date": "2026-08-17",
+    "highlights": [
+      "Renamed Royal Bounty Alliance to Royal Bounty Eden X2 across the Eden Hub: the guide's hero title and credits, the hub sub-tab, the command-palette entry and every locale now carry the season name.",
+      "Removed the admin username and password form. VTS Admin now runs entirely off your VTS account: the gate links into the normal sign-in flow, and access is decided by the admin claim on whichever account you are already signed in with. A shared admin login meant a single identity…",
+      "A signed-in account without admin access is now told so plainly and pointed at an R5 to request it, instead of being shown a sign-in it has already completed.",
+      "The admin claim is re-read with a forced token refresh at boot, so an account promoted moments ago gets in immediately instead of waiting for its old ID token to expire."
+    ]
+  },
   {
     "version": "15.0.2",
     "date": "2026-08-17",
@@ -98,16 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added a spent total to the research calculator, so each tech tree now reports how many War Badges and Courage Medals you have already invested next to how many are still remaining.",
       "Kept the tree footer naming its real currencies once a tree is fully maxed, instead of collapsing to a generic resource row when nothing is left to buy.",
       "Made partially levelled nodes look the same in every tech tree. Trees using the card layout only ever showed \"maxed or not\", so a half-finished node was indistinguishable from an untouched one; they now use the same idle, in-progress, and complete states as the rest of the trees."
-    ]
-  },
-  {
-    "version": "14.3.3",
-    "date": "2026-08-10",
-    "highlights": [
-      "Rebuilt the hero combos database as one plain ranked list. Every entry is now just the three heroes plus an optional skin code and an optional note, replacing the imported tier-and-score format that came from the external combo datasets.",
-      "Limited the combos database to heroes from seasons up to X2 and removed the 82 imported formations that depended on X8 heroes, leaving 203 ranked combos.",
-      "Fixed the two promoted top-rank combos being listed twice, which rendered duplicate \"Use this counter\" buttons in the counter panels.",
-      "Added database guards so a combo can only use known hero names, can never reintroduce an X8 hero, can only carry the heroes/skin/note fields, and can never be listed twice with the same heroes and skin code."
     ]
   }
 ].map((release) =>

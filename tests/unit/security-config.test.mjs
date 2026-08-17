@@ -276,7 +276,12 @@ test('theme manifests include dark and light install colors', () => {
 test('admin dashboard uses Firebase auth instead of local password markers', () => {
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
   const firebase = readFileSync('js/firebase.js', 'utf8');
-  assert.match(source, /signInWithUsername/);
+  // The dashboard has no sign-in of its own at all: admin access follows the
+  // site account, so the only thing it does is read the claim off whoever is
+  // already signed in. A username/password path here would recreate the shared
+  // credential that made every admin action unattributable.
+  assert.doesNotMatch(source, /signInWithUsername/);
+  assert.doesNotMatch(source, /dashLoginUser|dashLoginPass|dashLoginForm/);
   assert.match(source, /isAdminAuthUser/);
   assert.match(source, /adminIsAdmin/);
   assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
@@ -628,7 +633,12 @@ test('admin gate uses the Firebase admin claim and sign-out cannot auto re-login
   // Auth-state changes must validate a candidate before replacing the stored
   // admin session; anonymous/public auth events can arrive while the admin UI
   // is still open and should not poison later conduct writes.
-  assert.match(dashboard, /const candidateIsAdmin = await isAdminAuthUser\(user\)/);
+  // forceRefresh, so an account promoted seconds ago is not turned away until
+  // its hour-old ID token happens to roll over.
+  assert.match(
+    dashboard,
+    /const candidateIsAdmin = await isAdminAuthUser\(user, \{ forceRefresh: true \}\)/
+  );
   assert.doesNotMatch(
     dashboard,
     /state\.adminUser = user;\s*state\.adminIsAdmin = await isAdminAuthUser\(user\);/

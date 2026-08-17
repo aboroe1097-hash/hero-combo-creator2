@@ -125,7 +125,6 @@ const hr = Object.freeze({
   seoFeatureEden: 'Planer Eden karte — strukture, putanje i plan ekipe',
   seoFeatureResearch: 'Kalkulator istraživanja — značke, medalje i tehnološka stabla',
   adminLoginPass: 'Lozinka',
-  adminLoginUser: 'Korisničko ime',
   adminLoginBtn: 'Prijavi se kao administrator',
   adminSignOutBtn: 'Odjava',
   adminGuestBtn: 'Nastavi kao gost',

@@ -154,8 +154,8 @@ async function loadBounty(panel) {
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
   } catch (error) {
-    console.warn('[eden-hub] Royal Bounty guide failed to load', error);
-    panel.innerHTML = `<div class="tab-loading"><span>Royal Bounty failed to load. Refresh and try again.</span></div>`;
+    console.warn('[eden-hub] Royal Bounty Eden X2 guide failed to load', error);
+    panel.innerHTML = `<div class="tab-loading"><span>Royal Bounty Eden X2 failed to load. Refresh and try again.</span></div>`;
   } finally {
     bountyLoading = false;
   }

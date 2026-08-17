@@ -96,7 +96,7 @@ export default {
     genericSector: 'قطاع {code}',
     subTabMap: 'خريطة إيدن',
     subTabLoyalty: 'ولاء إيدن',
-    subTabBounty: 'المكافأة الملكية',
+    subTabBounty: 'المكافأة الملكية Eden X2',
     subTabSeason: 'الموسم الحالي',
     subTabPrevious: 'المواسم السابقة',
   },

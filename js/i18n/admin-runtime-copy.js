@@ -51,6 +51,9 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminUnsavedRefreshConfirm:
     'This form has unsaved edits and newer cloud data is available. Refreshing will discard the open form. Continue?',
   adminShareUnsupported: 'Sharing is not supported in this browser. Use Download instead.',
+  adminAccessAccountHint: 'VTS Admin uses your VTS account. Sign in, then an R5 can grant you access.',
+  adminAccessNoPrivilege: 'This account does not have admin access. Ask an R5 to grant it, then reload this page.',
+  adminAccessSignIn: 'Sign in to your account',
   adminLoginFirebaseUnavailable: 'Firebase is not configured for admin sign-in.',
   adminOverrideUnavailable: 'The admin override is not configured for this deployment.',
   adminOverrideCodePrompt: 'Enter the admin override code:',

@@ -1,5 +1,12 @@
 # Changelog
 
+## 15.0.3 - 2026-08-17
+
+- Renamed Royal Bounty Alliance to Royal Bounty Eden X2 across the Eden Hub: the guide's hero title and credits, the hub sub-tab, the command-palette entry and every locale now carry the season name.
+- Removed the admin username and password form. VTS Admin now runs entirely off your VTS account: the gate links into the normal sign-in flow, and access is decided by the admin claim on whichever account you are already signed in with. A shared admin login meant a single identity for everyone who knew it, so no admin action could be attributed to a person.
+- A signed-in account without admin access is now told so plainly and pointed at an R5 to request it, instead of being shown a sign-in it has already completed.
+- The admin claim is re-read with a forced token refresh at boot, so an account promoted moments ago gets in immediately instead of waiting for its old ID token to expire.
+
 ## 15.0.2 - 2026-08-17
 
 - Fixed the reversed typing in Users & Roles: the member search no longer rebuilds its own input on every keystroke, so the caret stays put and characters land where you typed them, and it now shows a live "showing X of Y" count.

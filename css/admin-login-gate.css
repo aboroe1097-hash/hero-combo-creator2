@@ -1,0 +1,23 @@
+/* Admin account access gate — eager on admin.html only.
+   The dashboard stylesheet is shared with the Eden season pages, and this
+   markup only ever renders on the admin route, so these rules live here to
+   keep the Eden CSS budget untouched (ocr-dashboard.css has ~0 headroom). */
+
+#ocrDashboardRoot .dash-login-hint {
+  color: var(--ff-text-dim);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+#ocrDashboardRoot #dashAccountSignInBtn {
+  width: 100%;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* .dash-btn sets display:inline-flex, which outranks the hidden attribute, so
+   the no-privilege state needs this rule to actually drop the sign-in link. */
+#ocrDashboardRoot #dashAccountSignInBtn[hidden] {
+  display: none;
+}

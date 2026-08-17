@@ -52,6 +52,9 @@ export const ADMIN_RUNTIME_TR = Object.freeze({
   adminUnsavedRefreshConfirm:
     'Bu formda kaydedilmemiş düzenlemeler var ve daha yeni bulut verileri mevcut. Yenileme açık formu siler. Devam etmek?',
   adminShareUnsupported: "Paylaşım bu tarayıcıda desteklenmiyor. Bunun yerine İndir'i kullanın.",
+  adminAccessAccountHint: 'VTS Admin, VTS hesabınızı kullanır. Oturum açın, ardından bir R5 size erişim verebilir.',
+  adminAccessNoPrivilege: "Bu hesabın yönetici erişimi yok. Bir R5'ten isteyin ve sayfayı yeniden yükleyin.",
+  adminAccessSignIn: 'Hesabınızda oturum açın',
   adminLoginFirebaseUnavailable: 'Firebase yönetici oturum açma için yapılandırılmadı.',
   adminOverrideUnavailable: 'Yönetici geçersiz kılma bu dağıtım için yapılandırılmadı.',
   adminOverrideCodePrompt: 'Yönetici geçersiz kılma kodunu girin:',

@@ -903,7 +903,7 @@ const entries = [
   },
   {
     id: 'royal-bounty-overview',
-    topic: 'Royal Bounty Alliance event',
+    topic: 'Royal Bounty Eden X2 event',
     title: 'Royal Bounty: the full season loop',
     season: 'X28',
     phase: 'Eden',

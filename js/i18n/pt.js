@@ -14,7 +14,6 @@ const pt = {
     'Role com as teclas ← e →.',
   ]),
   adminLoginPass: 'Senha',
-  adminLoginUser: 'Usuário',
   adminLoginBtn: 'Entrar como administrador',
   adminLoginInvalid: 'Hmm, esse usuário e senha não conferem — confira e tente de novo.',
   adminLoginTooMany: 'Muitas tentativas agora — respire um pouco e tente novamente em um minuto.',
@@ -38,7 +37,6 @@ const pt = {
   adminConnectingTitle: 'Conectando ao painel',
   adminConnectingSub: 'Carregando dados da aliança da nuvem segura…',
   adminConnectingInit: 'Inicializando sessão segura…',
-  adminConnectingAuth: 'Verificando credenciais…',
   adminConnectingData: 'Sincronizando dados da aliança…',
   adminHeaderTitle: 'Análise de Ataques a Estruturas',
   adminHeaderSub: 'Rastreador de Demolição da Aliança',
@@ -2676,7 +2674,7 @@ const pt = {
     dmEnhanceReached: 'Objetivo já alcançado',
     dmEnhanceCredit: 'Agradecemos a Roha e Redbull pelos dados usados na ferramenta Dragon Master.',
   },
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'O serviço seguro do Google necessário para a inscrição não pode ser alcançado a partir desta rede ou região. Tente usar uma VPN ou outra rede e pressione Tentar novamente. Seu PIN não foi rejeitado.',
 };

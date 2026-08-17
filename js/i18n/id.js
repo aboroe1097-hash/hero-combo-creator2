@@ -14,7 +14,6 @@ const id = {
     'Geser dengan tombol ← dan →.',
   ]),
   adminLoginPass: 'Kata Sandi',
-  adminLoginUser: 'Nama Pengguna',
   adminLoginBtn: 'Masuk sebagai Admin',
   adminLoginInvalid: 'Hmm, username dan password itu belum cocok — cek lagi lalu coba ulang.',
   adminLoginTooMany: 'Terlalu banyak percobaan — tarik napas dulu, coba lagi semenit lagi.',
@@ -38,7 +37,6 @@ const id = {
   adminConnectingTitle: 'Menghubungkan ke Dasbor',
   adminConnectingSub: 'Memuat data aliansi dari cloud aman…',
   adminConnectingInit: 'Menginisialisasi sesi aman…',
-  adminConnectingAuth: 'Memverifikasi kredensial…',
   adminConnectingData: 'Menyinkronkan data aliansi…',
   adminHeaderTitle: 'Analisis Serangan Struktur',
   adminHeaderSub: 'Pelacak Penghancuran Aliansi',
@@ -2920,7 +2918,7 @@ Object.assign(id, {
   dmEnhanceReached: 'Target sudah tercapai',
   dmEnhanceCredit:
     'Terima kasih kepada Roha dan Redbull atas kontribusi data yang dipakai alat DM.',
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Layanan Google aman yang dibutuhkan untuk pendaftaran tidak dapat dijangkau dari jaringan atau wilayah ini. Coba VPN atau jaringan lain, lalu tekan Coba Lagi. PIN-mu belum ditolak.',
 });

@@ -14,7 +14,6 @@ const ru = {
     'Прокручивайте клавишами ← и →.',
   ]),
   adminLoginPass: 'Пароль',
-  adminLoginUser: 'Логин',
   adminLoginBtn: 'Войти как админ',
   adminLoginInvalid: 'Хм, логин и пароль не совпадают — проверьте и попробуйте ещё раз.',
   adminLoginTooMany: 'Слишком много попыток подряд — передохните минутку и попробуйте снова.',
@@ -38,7 +37,6 @@ const ru = {
   adminConnectingTitle: 'Подключение к панели управления',
   adminConnectingSub: 'Загрузка данных альянса из защищённого облака…',
   adminConnectingInit: 'Инициализация защищённого сеанса…',
-  adminConnectingAuth: 'Проверка учётных данных…',
   adminConnectingData: 'Синхронизация данных альянса…',
   adminHeaderTitle: 'Аналитика атак на строения',
   adminHeaderSub: 'Трекер разрушения альянса',
@@ -2085,7 +2083,7 @@ const ru = {
   dmEnhanceShortfall: 'Нехватка',
   dmEnhanceReached: 'Цель уже достигнута',
   dmEnhanceCredit: 'Спасибо Roha и Redbull за предоставленные данные для инструмента DM.',
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Защищённый сервис Google, необходимый для входа, недоступен из этой сети или региона. Попробуйте VPN или другую сеть, затем нажмите «Повторить». Ваш PIN не был отклонён.',
 };

@@ -280,7 +280,7 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   }
 
   await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#dashLoginForm')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#dashAccountSignInBtn')).toBeVisible({ timeout: 30000 });
 
   await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
   // The shared admin PIN is gone — it guarded nothing server-side, and this

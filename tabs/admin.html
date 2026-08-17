@@ -18,49 +18,21 @@
       </div>
       <h2 class="dash-login-title" data-i18n="adminLoginTitle">VTS Admin</h2>
       <p class="dash-login-sub" data-i18n="adminLoginSub">Alliance Structure Attack Analytics</p>
-      <form id="dashLoginForm">
-        <div
-          id="dashLoginErr"
-          class="dash-login-err hidden"
-          role="alert"
-          aria-live="assertive"
-        ></div>
-        <label class="sr-only" for="dashLoginUser" data-i18n="adminLoginUser">Username</label>
-        <input
-          type="text"
-          id="dashLoginUser"
-          name="username"
-          class="dash-input"
-          placeholder="Username"
-          data-i18n-ph="adminLoginUser"
-          autocomplete="username"
-          spellcheck="false"
-          aria-describedby="dashLoginErr"
-          aria-invalid="false"
-          required
-        />
-        <label class="sr-only" for="dashLoginPass" data-i18n="adminLoginPass">Password</label>
-        <input
-          type="password"
-          id="dashLoginPass"
-          name="password"
-          class="dash-input"
-          placeholder="Password"
-          data-i18n-ph="adminLoginPass"
-          autocomplete="current-password"
-          aria-describedby="dashLoginErr"
-          aria-invalid="false"
-          required
-        />
-        <button
-          id="dashLoginBtn"
-          type="submit"
-          class="dash-btn dash-btn-primary"
-          data-i18n="adminLoginBtn"
-        >
-          Sign In as Admin
-        </button>
-      </form>
+      <!-- Access follows the site account, not a separate admin password. A
+           shared admin login made individual roles meaningless: everyone who
+           knew it shared one identity, so the audit trail could not name who
+           did what. Signing in happens once, in the normal account flow. -->
+      <div id="dashLoginErr" class="dash-login-err hidden" role="alert" aria-live="assertive"></div>
+      <p class="dash-login-hint" data-i18n="adminAccessAccountHint">
+        VTS Admin uses your VTS account. Sign in, then an R5 can grant you access.
+      </p>
+      <a
+        id="dashAccountSignInBtn"
+        class="dash-btn dash-btn-primary"
+        href="profile.html?return=/admin.html"
+        data-i18n="adminAccessSignIn"
+        >Sign in to your account</a
+      >
       <p id="dashServerStatus" class="dash-server-status" role="status" aria-live="polite"></p>
     </div>
   </div>

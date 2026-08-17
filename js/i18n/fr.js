@@ -43,7 +43,6 @@ const fr = {
     'Défilez avec ← et →.',
   ]),
   adminLoginPass: 'Mot de passe',
-  adminLoginUser: "Nom d'utilisateur",
   adminLoginBtn: "Se connecter en tant qu'administrateur",
   adminLoginInvalid:
     'Hmm, cet identifiant et ce mot de passe ne correspondent pas — vérifiez et réessayez.',
@@ -69,7 +68,6 @@ const fr = {
   adminConnectingTitle: 'Connexion au tableau de bord',
   adminConnectingSub: "Chargement des données d'alliance depuis le cloud sécurisé…",
   adminConnectingInit: 'Initialisation de la session sécurisée…',
-  adminConnectingAuth: 'Vérification des identifiants…',
   adminConnectingData: "Synchronisation des données d'alliance…",
   adminHeaderTitle: 'Analytique des Attaques',
   adminHeaderSub: "Suivi de Démolition d'Alliance",
@@ -3128,7 +3126,7 @@ const fr = {
     strifeSourceGuide: 'Guide de référence',
     arcadeIntro: 'Vous pensez pouvoir battre les meilleurs scores de l’Arcade ? À vous de jouer.',
   },
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     "Le service Google sécurisé requis pour l'inscription est inaccessible depuis ce réseau ou cette région. Essayez avec un VPN ou un autre réseau, puis appuyez sur Réessayer. Votre PIN n'a pas été rejeté.",
 };

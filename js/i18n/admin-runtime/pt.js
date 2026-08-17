@@ -53,6 +53,9 @@ export const ADMIN_RUNTIME_PT = Object.freeze({
     'Este formulário tem edições não salvas e dados mais recentes na nuvem estão disponíveis. A atualização descartará o formulário aberto. Continuar?',
   adminShareUnsupported:
     'O compartilhamento não é compatível com este navegador. Use Baixar em vez disso.',
+  adminAccessAccountHint: 'O VTS Admin usa a sua conta VTS. Entre e um R5 poderá conceder-lhe acesso.',
+  adminAccessNoPrivilege: 'Esta conta não tem acesso de administrador. Peça a um R5 para conceder e recarregue a página.',
+  adminAccessSignIn: 'Entrar na sua conta',
   adminLoginFirebaseUnavailable: 'O Firebase não está configurado para login de administrador.',
   adminOverrideUnavailable:
     'A substituição administrativa não está configurada para esta implantação.',
