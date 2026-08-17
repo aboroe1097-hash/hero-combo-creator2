@@ -152,11 +152,11 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  assert.match(sizeCheck, /totalJsBytes: 9758 \* 1024/);
+  assert.match(sizeCheck, /totalJsBytes: 9810 \* 1024/);
   assert.match(sizeCheck, /entryCssBytes: 429 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1610 \* 1024/);
-  assert.match(sizeCheck, /totalDeployBytes: 30820 \* 1024/);
-  assert.match(sizeCheck, /deployFileCount: 657/);
+  assert.match(sizeCheck, /totalCssBytes: 1625 \* 1024/);
+  assert.match(sizeCheck, /totalDeployBytes: 30910 \* 1024/);
+  assert.match(sizeCheck, /deployFileCount: 665/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
