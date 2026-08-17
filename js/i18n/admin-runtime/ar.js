@@ -469,6 +469,7 @@ export const ADMIN_RUNTIME_AR = Object.freeze({
   adminRolesUnnamed: 'عضو بلا اسم',
   adminRolesEmpty: 'لا توجد ملفات أعضاء بعد. يظهر الملف بعد تسجيل الدخول مرة واحدة.',
   adminRolesNoMatches: 'لا يوجد أعضاء مطابقون لهذا البحث.',
+  adminRolesCount: 'عرض {shown} من {total}',
   adminRolesSaving: 'جارٍ الحفظ…',
   adminRolesSaved: 'تم تحديث الدور.',
   adminRolesFailed: 'فشل تغيير الدور.',

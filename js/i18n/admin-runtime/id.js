@@ -479,6 +479,7 @@ export const ADMIN_RUNTIME_ID = Object.freeze({
   adminRolesUnnamed: 'Anggota tanpa nama',
   adminRolesEmpty: 'Belum ada profil anggota. Profil muncul setelah seseorang login sekali.',
   adminRolesNoMatches: 'Tidak ada anggota yang cocok dengan pencarian itu.',
+  adminRolesCount: 'Menampilkan {shown} dari {total}',
   adminRolesSaving: 'Menyimpan…',
   adminRolesSaved: 'Peran diperbarui.',
   adminRolesFailed: 'Perubahan peran gagal.',

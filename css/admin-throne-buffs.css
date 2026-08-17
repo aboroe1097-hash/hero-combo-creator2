@@ -1,0 +1,341 @@
+/* Throne Buffs Admin — lazy feature styles.
+   Loaded with the admin-throne-buffs module, so it only reaches clients that
+   open the tab. Scoped to the dashboard root to sit above the generic
+   .dash-table/.dash-input rules in ocr-dashboard.css. */
+
+#ocrDashboardRoot .throne-admin-wrap {
+  display: grid;
+  gap: 0.9rem;
+  padding: clamp(0.75rem, 1.4vw, 1.15rem);
+  background: var(--ff-glass);
+  border: 1px solid var(--ff-hairline);
+  border-radius: var(--ff-r-card);
+  backdrop-filter: blur(var(--ff-blur));
+  min-width: 0;
+}
+
+/* Header — one compact row on wide screens: week picker on the left, live
+   slot badges beside it, actions pushed right. Stacks on narrow ones. */
+#ocrDashboardRoot .throne-admin-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+#ocrDashboardRoot .throne-week-picker-group {
+  display: grid;
+  gap: 0.28rem;
+}
+
+#ocrDashboardRoot .throne-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ff-text-dim);
+}
+
+#ocrDashboardRoot .throne-week-input {
+  min-height: 44px;
+  width: 11.5rem;
+  color-scheme: dark;
+}
+
+[data-theme='light'] #ocrDashboardRoot .throne-week-input {
+  color-scheme: light;
+}
+
+#ocrDashboardRoot .throne-summary-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-bottom: 0.55rem;
+}
+
+#ocrDashboardRoot .throne-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--ff-hairline);
+  background: var(--ff-glass-raised);
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#ocrDashboardRoot .throne-badge-slots {
+  color: var(--ff-cyan);
+  border-color: color-mix(in srgb, var(--ff-cyan) 45%, transparent);
+  background: color-mix(in srgb, var(--ff-cyan) 10%, transparent);
+}
+
+#ocrDashboardRoot .throne-badge-warning {
+  color: var(--ff-gold);
+  border-color: color-mix(in srgb, var(--ff-gold) 45%, transparent);
+  background: color-mix(in srgb, var(--ff-gold) 12%, transparent);
+  text-transform: none;
+}
+
+#ocrDashboardRoot .throne-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-left: auto;
+  padding-bottom: 0.3rem;
+}
+
+#ocrDashboardRoot .throne-header-actions .dash-btn {
+  min-height: 44px;
+}
+
+/* Assignment table */
+#ocrDashboardRoot .throne-table-responsive {
+  overflow-x: auto;
+  border: 1px solid var(--ff-hairline);
+  border-radius: var(--ff-r-card);
+}
+
+#ocrDashboardRoot .throne-table {
+  min-width: 46rem;
+}
+
+#ocrDashboardRoot .throne-table th {
+  border-bottom: 1px solid var(--ff-hairline);
+  background: var(--ff-glass);
+  color: var(--ff-text-dim);
+  font-size: 0.62rem;
+  padding: 0.55rem 0.7rem;
+}
+
+#ocrDashboardRoot .throne-table td {
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--ff-hairline);
+  vertical-align: middle;
+  cursor: default;
+  background: transparent;
+  transition: background var(--ff-t-hover);
+}
+
+#ocrDashboardRoot .throne-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+#ocrDashboardRoot .throne-table tbody tr:hover td {
+  background: var(--ff-glass);
+}
+
+#ocrDashboardRoot .throne-table tbody tr:focus-within td {
+  background: color-mix(in srgb, var(--ff-cyan) 7%, transparent);
+}
+
+#ocrDashboardRoot .throne-col-icon {
+  width: 3.4rem;
+}
+
+#ocrDashboardRoot .throne-buff-icon {
+  display: block;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--ff-hairline);
+  background: var(--ff-glass-raised);
+  object-fit: cover;
+}
+
+#ocrDashboardRoot .throne-buff-fallback-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--ff-hairline);
+  background: var(--ff-glass-raised);
+  color: var(--ff-gold);
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.04em;
+}
+
+#ocrDashboardRoot .throne-title-name {
+  font-weight: 700;
+  font-family: var(--ff-font-ui);
+  color: var(--ff-text);
+  line-height: 1.25;
+}
+
+#ocrDashboardRoot .throne-title-effects {
+  margin-top: 0.14rem;
+  color: var(--ff-text-dim);
+  font-size: 0.66rem;
+  line-height: 1.45;
+  max-width: 26rem;
+}
+
+#ocrDashboardRoot .throne-input-member,
+#ocrDashboardRoot .throne-input-reason {
+  width: 100%;
+  min-width: 9rem;
+}
+
+#ocrDashboardRoot .throne-col-member {
+  width: 22%;
+}
+
+/* Search — history lookup */
+#ocrDashboardRoot .throne-search-section {
+  display: grid;
+  gap: 0.45rem;
+}
+
+#ocrDashboardRoot .throne-search-input {
+  max-width: 24rem;
+}
+
+#ocrDashboardRoot .throne-search-results {
+  display: grid;
+  gap: 0.35rem;
+}
+
+#ocrDashboardRoot .throne-hits-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+#ocrDashboardRoot .throne-hit-item {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--ff-hairline);
+  border-radius: var(--ff-r-card);
+  background: var(--ff-glass);
+  font-size: 0.74rem;
+}
+
+#ocrDashboardRoot .throne-hit-week {
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ff-glass-raised);
+  border: 1px solid var(--ff-hairline);
+  color: var(--ff-cyan);
+  font-size: 0.62rem;
+  font-weight: 800;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.04em;
+}
+
+#ocrDashboardRoot .throne-hit-title {
+  color: var(--ff-text);
+  font-family: var(--ff-font-ui);
+}
+
+#ocrDashboardRoot .throne-hit-member {
+  color: var(--ff-gold);
+  font-weight: 700;
+}
+
+#ocrDashboardRoot .throne-hit-reason {
+  color: var(--ff-text-dim);
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .throne-empty-text {
+  margin: 0;
+  color: var(--ff-text-dim);
+  font-size: 0.76rem;
+}
+
+/* Rotation fairness */
+#ocrDashboardRoot .throne-fairness-section {
+  display: grid;
+  gap: 0.45rem;
+}
+
+#ocrDashboardRoot .throne-section-title {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 800;
+  font-family: var(--ff-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ff-text-dim);
+}
+
+#ocrDashboardRoot .throne-fairness-table {
+  max-width: 30rem;
+}
+
+#ocrDashboardRoot .throne-fairness-table th {
+  background: var(--ff-glass);
+  color: var(--ff-text-dim);
+  font-size: 0.62rem;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--ff-hairline);
+}
+
+#ocrDashboardRoot .throne-fairness-table td {
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--ff-hairline);
+  cursor: default;
+}
+
+#ocrDashboardRoot .throne-fairness-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+#ocrDashboardRoot .throne-fairness-member {
+  font-weight: 700;
+  font-family: var(--ff-font-ui);
+  color: var(--ff-text);
+}
+
+#ocrDashboardRoot .throne-fairness-total,
+#ocrDashboardRoot .throne-fairness-last {
+  width: 7rem;
+  font-family: var(--ff-font-mono);
+  color: var(--ff-text-dim);
+}
+
+#ocrDashboardRoot .throne-fairness-table th:nth-child(2),
+#ocrDashboardRoot .throne-fairness-table th:nth-child(3),
+#ocrDashboardRoot .throne-fairness-table td:nth-child(2),
+#ocrDashboardRoot .throne-fairness-table td:nth-child(3) {
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  #ocrDashboardRoot .throne-admin-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  #ocrDashboardRoot .throne-header-actions {
+    margin-left: 0;
+    padding-bottom: 0;
+  }
+
+  #ocrDashboardRoot .throne-header-actions .dash-btn,
+  #ocrDashboardRoot .throne-week-input,
+  #ocrDashboardRoot .throne-search-input {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #ocrDashboardRoot .throne-summary-badges {
+    padding-bottom: 0;
+  }
+}

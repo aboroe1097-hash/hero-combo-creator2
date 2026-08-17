@@ -724,10 +724,17 @@ function applySuperAdminSurfaces(superadmin) {
   document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
     element.hidden = !superadmin;
   });
-  // The two formerly PIN-gated tabs follow the same claim.
-  document.querySelectorAll('[data-subtab="edenVotes"], [data-subtab="conduct"]').forEach((btn) => {
-    btn.disabled = !superadmin;
-    btn.title = superadmin ? '' : dashT('adminRolesSuperadminRequired');
+  // Every superadmin-only tab reflects the claim, and the whole Alliance
+  // Management nav hides when the claim is absent so a plain admin is not
+  // shown a row of buttons that all refuse them.
+  SUPERADMIN_DASH_SUBTABS.forEach((name) => {
+    document.querySelectorAll(`[data-subtab="${name}"]`).forEach((btn) => {
+      btn.disabled = !superadmin;
+      btn.title = superadmin ? '' : dashT('adminRolesSuperadminRequired');
+    });
+  });
+  document.querySelectorAll('[data-subtab-scope="global"]').forEach((nav) => {
+    nav.hidden = !superadmin;
   });
   return superadmin;
 }
@@ -755,11 +762,16 @@ async function loadRoleCandidates() {
 async function ensureUserRolesMounted() {
   if (!(await refreshSuperAdminSurfaces())) return;
   if (!userRolesModulePromise) {
-    userRolesModulePromise = import('./admin-roles-controller.js').catch((error) => {
-      userRolesModulePromise = null;
-      void recoverFromStaleAssetGraph(error);
-      throw error;
-    });
+    userRolesModulePromise = Promise.all([
+      import('./admin-roles-controller.js'),
+      import('../css/admin-roles.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        userRolesModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
   }
   try {
     const module = await userRolesModulePromise;
@@ -809,11 +821,16 @@ function saveThroneBuffsHistory(record) {
 
 async function ensureThroneBuffsMounted() {
   if (!throneBuffsModulePromise) {
-    throneBuffsModulePromise = import('./admin-throne-buffs.js').catch((error) => {
-      throneBuffsModulePromise = null;
-      void recoverFromStaleAssetGraph(error);
-      throw error;
-    });
+    throneBuffsModulePromise = Promise.all([
+      import('./admin-throne-buffs.js'),
+      import('../css/admin-throne-buffs.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        throneBuffsModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
   }
   try {
     const module = await throneBuffsModulePromise;
@@ -2456,7 +2473,16 @@ window.getVtsAdminFirestoreContext = async function () {
 // had no concept of it, so any admin could read and write eden vote settings
 // and conduct adjustments directly. They are now gated on the superadmin claim,
 // which the rules and the setUserRole callable enforce independently.
-const SUPERADMIN_DASH_SUBTABS = new Set(['edenVotes', 'conduct', 'userRoles']);
+// Eden Votes and Bonus Team Effort Points were PIN-hidden; the whole Alliance
+// Management side is superadmin-only, so its four tabs join them here.
+const SUPERADMIN_DASH_SUBTABS = new Set([
+  'edenVotes',
+  'conduct',
+  'allianceView',
+  'allStarBoh',
+  'throneBuffs',
+  'userRoles',
+]);
 
 function switchDashSubtab(name) {
   if (SUPERADMIN_DASH_SUBTABS.has(name) && dashSuperAdmin !== true) {

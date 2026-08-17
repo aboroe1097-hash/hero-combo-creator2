@@ -2256,7 +2256,11 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if isOwner(uid);
+      // Self-read, plus superadmin read so the Users & Roles controller can
+      // list candidates. Without this the controller shows an empty roster and
+      // no roles can be granted. Read only: a profile is member-writable, so
+      // nothing here is ever treated as authority — the custom claim is.
+      allow read: if isOwner(uid) || isSuperAdmin();
       allow create: if isOwner(uid) && validUserProfileCreate();
       allow update: if isOwner(uid) && validUserProfileUpdate();
       allow delete: if false;
