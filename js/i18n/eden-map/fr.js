@@ -96,7 +96,7 @@ export default {
     genericSector: 'Secteur {code}',
     subTabMap: "Carte d'Eden",
     subTabLoyalty: "Loyauté d'Eden",
-    subTabBounty: 'Prime Royale',
+    subTabBounty: 'Prime Royale Eden X2',
     subTabSeason: 'Saison en cours',
     subTabPrevious: 'Saisons précédentes',
   },

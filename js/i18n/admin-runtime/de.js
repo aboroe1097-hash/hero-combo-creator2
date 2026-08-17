@@ -53,6 +53,9 @@ export const ADMIN_RUNTIME_DE = Object.freeze({
     'Dieses Formular enthält nicht gespeicherte Änderungen und neuere Cloud-Daten sind verfügbar. Beim Aktualisieren wird das geöffnete Formular verworfen. Weitermachen?',
   adminShareUnsupported:
     'Das Teilen wird in diesem Browser nicht unterstützt. Verwenden Sie stattdessen „Herunterladen“.',
+  adminAccessAccountHint: 'VTS Admin nutzt dein VTS-Konto. Melde dich an, dann kann dir ein R5 Zugriff geben.',
+  adminAccessNoPrivilege: 'Dieses Konto hat keinen Adminzugriff. Bitte einen R5 darum und lade die Seite neu.',
+  adminAccessSignIn: 'Bei deinem Konto anmelden',
   adminLoginFirebaseUnavailable: 'Firebase ist nicht für die Administratoranmeldung konfiguriert.',
   adminOverrideUnavailable:
     'Die Administratorüberschreibung ist für diese Bereitstellung nicht konfiguriert.',

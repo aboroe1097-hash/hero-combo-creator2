@@ -52,6 +52,9 @@ export const ADMIN_RUNTIME_ID = Object.freeze({
   adminUnsavedRefreshConfirm:
     'Formulir ini memiliki hasil edit yang belum disimpan dan data cloud yang lebih baru tersedia. Menyegarkan akan membuang formulir yang terbuka. Melanjutkan?',
   adminShareUnsupported: 'Berbagi tidak didukung di browser ini. Gunakan Unduh sebagai gantinya.',
+  adminAccessAccountHint: 'VTS Admin memakai akun VTS Anda. Masuk dulu, lalu R5 dapat memberi Anda akses.',
+  adminAccessNoPrivilege: 'Akun ini tidak punya akses admin. Minta R5 untuk memberikannya, lalu muat ulang halaman.',
+  adminAccessSignIn: 'Masuk ke akun Anda',
   adminLoginFirebaseUnavailable: 'Firebase tidak dikonfigurasi untuk login admin.',
   adminOverrideUnavailable: 'Penggantian admin tidak dikonfigurasi untuk penerapan ini.',
   adminOverrideCodePrompt: 'Masukkan kode penggantian admin:',

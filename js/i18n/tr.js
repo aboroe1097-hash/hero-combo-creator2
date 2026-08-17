@@ -14,7 +14,6 @@ const tr = {
     '← ve → tuşlarıyla kaydırın.',
   ]),
   adminLoginPass: 'Şifre',
-  adminLoginUser: 'Kullanıcı Adı',
   adminLoginBtn: 'Yönetici olarak oturum aç',
   adminLoginInvalid: 'Hmm, kullanıcı adı ile şifre eşleşmedi — kontrol edip tekrar dene.',
   adminLoginTooMany: 'Art arda çok deneme oldu — kısa bir nefes al, bir dakika sonra tekrar dene.',
@@ -38,7 +37,6 @@ const tr = {
   adminConnectingTitle: 'Panele Bağlanılıyor',
   adminConnectingSub: 'Güvenli buluttan ittifak verileri yükleniyor…',
   adminConnectingInit: 'Güvenli oturum başlatılıyor…',
-  adminConnectingAuth: 'Kimlik bilgileri doğrulanıyor…',
   adminConnectingData: 'İttifak verileri senkronize ediliyor…',
   adminHeaderTitle: 'Yapı Saldırı Analizi',
   adminHeaderSub: 'İttifak Yıkım Takipçisi',
@@ -3031,7 +3029,7 @@ Object.assign(tr, {
   dmEnhanceReached: 'Hedefe zaten ulaşıldı',
   dmEnhanceCredit:
     'DM aracının kullandığı verilere katkı sağladıkları için Roha ve Redbull’a teşekkürler.',
-  tabEdenBounty: 'Kraliyet Ödülü',
+  tabEdenBounty: 'Kraliyet Ödülü Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Kayıt için gereken güvenli Google hizmetine bu ağdan veya bölgeden erişilemiyor. Bir VPN veya farklı bir ağ dene, ardından Tekrar Dene’ye bas. PIN’in reddedilmedi.',
 });

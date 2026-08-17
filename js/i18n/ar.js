@@ -14,7 +14,6 @@ const ar = {
     'مرّر بمفتاحي ← و→.',
   ]),
   adminLoginPass: 'كلمة المرور',
-  adminLoginUser: 'اسم المستخدم',
   adminLoginBtn: 'تسجيل الدخول كمسؤول',
   adminLoginInvalid: 'همم، اسم المستخدم وكلمة المرور غير متطابقين — تحقق منهما وحاول مرة أخرى.',
   adminLoginTooMany: 'محاولات كثيرة الآن — خذ نفسًا قصيرًا وحاول مجددًا بعد دقيقة.',
@@ -38,7 +37,6 @@ const ar = {
   adminConnectingTitle: 'جارٍ الاتصال بلوحة التحكم',
   adminConnectingSub: 'جارٍ تحميل بيانات التحالف من السحابة الآمنة…',
   adminConnectingInit: 'جارٍ تهيئة الجلسة الآمنة…',
-  adminConnectingAuth: 'جارٍ التحقق من بيانات الاعتماد…',
   adminConnectingData: 'جارٍ مزامنة بيانات التحالف…',
   adminHeaderTitle: 'تحليلات هجوم الهيكل',
   adminHeaderSub: 'متتبع هدم التحالف',
@@ -2055,7 +2053,7 @@ const ar = {
   dmEnhanceShortfall: 'العجز',
   dmEnhanceReached: 'تم الوصول إلى الهدف بالفعل',
   dmEnhanceCredit: 'شكرًا لـ Roha وRedbull على المساهمة بالبيانات التي يستخدمها أداة DM.',
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'لا يمكن الوصول إلى خدمة Google الآمنة المطلوبة للتسجيل من هذه الشبكة أو المنطقة. جرّب VPN أو شبكة مختلفة، ثم اضغط إعادة المحاولة. لم يُرفض رمز PIN الخاص بك.',
 };

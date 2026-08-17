@@ -1,5 +1,5 @@
 // js/bounty-guide.js
-// Royal Bounty Alliance — interactive guide renderer for the VTS Eden Hub.
+// Royal Bounty Eden X2 — interactive guide renderer for the VTS Eden Hub.
 //
 // Data-driven like the Strife guide: every section is built from
 // bounty-guide-data.js so a roster or rule change is a data edit, not a
@@ -385,7 +385,7 @@ function renderRules() {
 function renderCredits() {
   return `
   <footer class="bounty-credits">
-    <p><strong>Royal Bounty Alliance guide</strong> — compiled from the community PDFs <em>Royal_Bounty_Updated_4-Oct-2024.pdf</em> and <em>Updated_Bounty_Heroes.pdf</em>.</p>
+    <p><strong>Royal Bounty Eden X2 guide</strong> — compiled from the community PDFs <em>Royal_Bounty_Updated_4-Oct-2024.pdf</em> and <em>Updated_Bounty_Heroes.pdf</em>.</p>
     <p>Credits: ${BOUNTY_GUIDE_CREDITS.map(escapeHtml).join(' / ')} · Roster as of ${escapeHtml(BOUNTY_GUIDE_ROSTER_DATE)} · Guide version ${escapeHtml(BOUNTY_GUIDE_VERSION)} · Published ${escapeHtml(BOUNTY_GUIDE_SOURCE_DATE)}.</p>
     <p class="bounty-credits-note">Lobby timers change every Eden season — always confirm the in-game timer under each hero portrait.</p>
   </footer>`;
@@ -396,7 +396,7 @@ function renderHero() {
   <section class="bounty-hero" id="bounty-top">
     <div class="bounty-hero-inner">
       <span class="bounty-hero-kicker">VTS Eden Hub</span>
-      <h1 class="bounty-hero-title">Royal Bounty Alliance</h1>
+      <h1 class="bounty-hero-title">Royal Bounty Eden X2</h1>
       <p class="bounty-hero-tagline">Complete bounty missions. Raise Commission Levels. Unlock powerful Aiding Skills.</p>
       <a class="bounty-hero-cta" href="#bounty-overview">Explore the Bounty System ↓</a>
     </div>

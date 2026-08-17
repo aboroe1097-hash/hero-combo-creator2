@@ -14,7 +14,6 @@ const es = {
     'Desplázate con ← y →.',
   ]),
   adminLoginPass: 'Contraseña',
-  adminLoginUser: 'Usuario',
   adminLoginBtn: 'Iniciar sesión como administrador',
   adminLoginInvalid: 'Mmm, ese usuario y contraseña no coinciden. Revísalos y vuelve a intentarlo.',
   adminLoginTooMany: 'Muchos intentos seguidos: respira un momento y prueba de nuevo en un minuto.',
@@ -38,7 +37,6 @@ const es = {
   adminConnectingTitle: 'Conectando al panel',
   adminConnectingSub: 'Cargando datos de alianza desde la nube segura…',
   adminConnectingInit: 'Inicializando sesión segura…',
-  adminConnectingAuth: 'Verificando credenciales…',
   adminConnectingData: 'Sincronizando datos de alianza…',
   adminHeaderTitle: 'Analítica de Ataques a Estructuras',
   adminHeaderSub: 'Rastreador de Demolición de Alianza',
@@ -2964,7 +2962,7 @@ const es = {
     edenGuideDoneTip1:
       'La guía v2.7 incluye el mapa de pergamino, el plan de equipos opcional y el salto por coordenadas. Usa Reiniciar progreso para repetirla.',
   },
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'El servicio seguro de Google necesario para el registro no se puede alcanzar desde esta red o región. Prueba con una VPN o una red diferente y luego pulsa Reintentar. Tu PIN no ha sido rechazado.',
 };

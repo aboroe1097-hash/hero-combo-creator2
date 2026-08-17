@@ -79,7 +79,7 @@ const DESTS = [
     key: 'tabEdenBounty',
     name: 'edenMap',
     kind: 'tab',
-    fallback: 'Royal Bounty',
+    fallback: 'Royal Bounty Eden X2',
     kw: 'royal bounty alliance aiding skill commission level lobby missions heroes guide',
   },
   {

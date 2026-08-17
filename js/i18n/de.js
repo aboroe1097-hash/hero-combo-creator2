@@ -42,7 +42,6 @@ const de = {
     'Mit ← und → scrollen.',
   ]),
   adminLoginPass: 'Passwort',
-  adminLoginUser: 'Benutzername',
   adminLoginBtn: 'Als Admin anmelden',
   adminLoginInvalid:
     'Hmm, Benutzername und Passwort passen nicht zusammen — kurz prüfen und nochmal versuchen.',
@@ -68,7 +67,6 @@ const de = {
   adminConnectingTitle: 'Verbindung zum Dashboard wird hergestellt',
   adminConnectingSub: 'Allianzdaten werden aus der sicheren Cloud geladen…',
   adminConnectingInit: 'Sichere Sitzung wird initialisiert…',
-  adminConnectingAuth: 'Anmeldedaten werden überprüft…',
   adminConnectingData: 'Allianzdaten werden synchronisiert…',
   adminHeaderTitle: 'Struktur-Angriffsanalyse',
   adminHeaderSub: 'Allianz-Zerstörungs-Tracker',
@@ -3017,7 +3015,7 @@ const de = {
     edenX1VoteStatusSaving: 'Stimme wird gespeichert…',
     edenX1VoteTopStructureHint: 'Feindliche Bauwerke, die dieser Spieler getroffen hat',
   },
-  tabEdenBounty: 'Royal Bounty',
+  tabEdenBounty: 'Royal Bounty Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Der sichere Google-Dienst, der für die Anmeldung benötigt wird, ist über dieses Netzwerk oder diese Region nicht erreichbar. Versuche ein VPN oder ein anderes Netzwerk und drücke dann auf „Erneut versuchen“. Deine PIN wurde nicht abgelehnt.',
 };

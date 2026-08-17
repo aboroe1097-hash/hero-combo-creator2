@@ -3330,30 +3330,11 @@ function isAuthed() {
   return state.adminIsAdmin === true || isLocalAdminTestBypass();
 }
 
-function getAdminLoginUsername() {
-  return String($id('dashLoginUser')?.value || '').trim();
-}
-
-function getAdminLoginPassword() {
-  return String($id('dashLoginPass')?.value || '');
-}
-
 function setLoginError(message = '') {
   const err = $id('dashLoginErr');
   if (!err) return;
   err.textContent = message;
   err.classList.toggle('hidden', !message);
-  ['dashLoginUser', 'dashLoginPass'].forEach((id) => {
-    $id(id)?.setAttribute('aria-invalid', message ? 'true' : 'false');
-  });
-}
-
-function setLoginBusy(busy) {
-  const loginBtn = $id('dashLoginBtn');
-  if (!loginBtn) return;
-  loginBtn.disabled = busy;
-  loginBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
-  loginBtn.textContent = busy ? dashT('adminConnectingAuth') : dashT('adminLoginBtn');
 }
 
 function describeAdminAuthError(err) {
@@ -3852,30 +3833,25 @@ function showApp() {
   $id('dashApp')?.classList.remove('hidden');
   restoreAdminControls();
 }
-function showLogin() {
+/**
+ * The access card. There is no admin password any more: either the signed-in
+ * account carries the admin claim or it does not, so this only ever explains
+ * which of those is true and what to do next.
+ */
+function showLogin({ signedIn = false } = {}) {
   stopAdminLogCloudSync();
   hideConnecting();
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
   $id('dashApp')?.classList.add('hidden');
-  const loginBtn = $id('dashLoginBtn');
-  const userInput = $id('dashLoginUser');
-  const passInput = $id('dashLoginPass');
-  if (loginBtn) {
-    loginBtn.disabled = false;
-    loginBtn.style.display = '';
-    loginBtn.textContent = dashT('adminLoginBtn');
+  const hint = document.querySelector('.dash-login-hint');
+  const signInBtn = $id('dashAccountSignInBtn');
+  // A signed-in account that lacks the claim cannot fix that itself, so point
+  // it at the person who can rather than offering a sign-in it already did.
+  if (hint) {
+    hint.textContent = signedIn ? dashT('adminAccessNoPrivilege') : dashT('adminAccessAccountHint');
   }
-  if (userInput) {
-    userInput.disabled = false;
-    userInput.style.display = '';
-    if (!userInput.value) userInput.value = '1097';
-  }
-  if (passInput) {
-    passInput.disabled = false;
-    passInput.style.display = '';
-    passInput.placeholder = dashT('adminLoginPass');
-  }
+  if (signInBtn) signInBtn.hidden = signedIn;
 }
 
 function mountStructureUploadPanel() {
@@ -3883,52 +3859,6 @@ function mountStructureUploadPanel() {
   const uploadZone = $id('dashUploadZone');
   if (!mount) return;
   if (uploadZone && uploadZone.parentElement !== mount) mount.appendChild(uploadZone);
-}
-
-async function doLogin() {
-  const usernameInput = $id('dashLoginUser');
-  const passwordInput = $id('dashLoginPass');
-  const username = getAdminLoginUsername();
-  const password = getAdminLoginPassword();
-  setLoginError('');
-  if (!username) {
-    usernameInput?.focus();
-    usernameInput?.reportValidity?.();
-    return;
-  }
-  if (!password) {
-    passwordInput?.focus();
-    passwordInput?.reportValidity?.();
-    return;
-  }
-  setLoginBusy(true);
-  state._signingOut = false;
-  showConnecting(dashT('adminConnectingAuth'));
-  setConnectingProgress(10, dashT('adminConnectingAuth'));
-  try {
-    const { signInWithUsername, isAdminAuthUser } = await loadFirebaseApi();
-    setConnectingProgress(18, dashT('adminConnectingAuth'));
-    const credential = await signInWithUsername(username, password);
-    setConnectingProgress(32, dashT('adminConnectingAuth'));
-    state.adminUser = credential.user;
-    state.adminIsAdmin = await isAdminAuthUser(credential.user, { forceRefresh: true });
-    setConnectingProgress(42, dashT('adminConnectingData'));
-    if (!state.adminIsAdmin) {
-      const { signOutUser } = await loadFirebaseApi();
-      await signOutUser();
-      throw new Error(dashT('adminCloudAdminRequired'));
-    }
-    await openAdminDashboardAfterAuth({ preferCloudFirst: true });
-  } catch (e) {
-    console.error('Dashboard sign-in failed', e);
-    if (await recoverFromStaleAssetGraph(e)) return;
-    state.adminUser = null;
-    state.adminIsAdmin = false;
-    setLoginError(describeAdminAuthError(e));
-    showLogin();
-  } finally {
-    setLoginBusy(false);
-  }
 }
 
 async function doSignOut() {
@@ -6288,18 +6218,10 @@ export async function bootOcrDashboard() {
     state._adminLanguageRefreshBound = true;
     window.addEventListener('vts:admin-language-change', scheduleAdminLanguageRefresh);
   }
-  const loginForm = $id('dashLoginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      doLogin();
-    });
-  } else {
-    $id('dashLoginBtn').onclick = doLogin;
-  }
+  // No admin password form to bind any more: access follows the site account,
+  // and the auth listener opens the dashboard as soon as it sees a signed-in
+  // account carrying the admin claim.
   $id('dashSignOutBtn')?.addEventListener('click', doSignOut);
-  const loginUser = $id('dashLoginUser');
-  if (loginUser && !loginUser.value) loginUser.value = '1097';
   bindSubtabNavigation();
   bindEdenWorkspaceStrip();
   bindConductControls();
@@ -6405,7 +6327,7 @@ export async function bootOcrDashboard() {
             }
             try {
               const wasAdmin = state.adminIsAdmin === true;
-              const candidateIsAdmin = await isAdminAuthUser(user);
+              const candidateIsAdmin = await isAdminAuthUser(user, { forceRefresh: true });
               if (!candidateIsAdmin) {
                 const restoredUser = wasAdmin ? await waitForAdminAuthUser(1500) : null;
                 if (restoredUser) {
@@ -6414,8 +6336,7 @@ export async function bootOcrDashboard() {
                   await openAdminDashboardAfterAuth({ preferCloudFirst: true });
                   return;
                 }
-                setLoginError(dashT('adminCloudAdminRequired'));
-                showLogin();
+                showLogin({ signedIn: true });
                 return;
               }
               state.adminUser = user;
@@ -6432,16 +6353,24 @@ export async function bootOcrDashboard() {
         }
         const restoredUser = await waitForAdminAuthUser(1500);
         const currentUser = restoredUser || getCurrentUser();
-        if (currentUser && (await isAdminAuthUser(currentUser))) {
+        if (currentUser && (await isAdminAuthUser(currentUser, { forceRefresh: true }))) {
           state.adminUser = currentUser;
           state.adminIsAdmin = true;
           await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+        } else {
+          // Signed in without the claim, or signed out entirely — showLogin
+          // picks which of the two the gate should explain.
+          showLogin({ signedIn: Boolean(currentUser) });
         }
       } else {
         setLoginError(dashT('adminLoginFirebaseUnavailable'));
       }
     } catch (e) {
       console.error('Admin auth boot failed', e);
+      // A stale asset graph looks like an auth failure here: the auth module
+      // itself failed to import. Recovery reloads once and returns, so do not
+      // paint a misleading credential error over it.
+      if (await recoverFromStaleAssetGraph(e)) return;
       setLoginError(describeAdminAuthError(e));
       showLogin();
     }

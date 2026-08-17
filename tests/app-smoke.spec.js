@@ -2042,7 +2042,7 @@ test.describe('app smoke tabs', () => {
     // Royal Bounty is the Eden Hub landing page.
     await expect(page.locator('[data-eden-subtab="bounty"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
-      'Royal Bounty Alliance'
+      'Royal Bounty Eden X2'
     );
     // The existing map planner remains available as a sub-tab. The hub wires its
     // click listener when bootEdenHub() runs, which can land after this click on
@@ -2082,7 +2082,7 @@ test.describe('app smoke tabs', () => {
     });
     await expect(
       page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')
-    ).toContainText('Royal Bounty Alliance');
+    ).toContainText('Royal Bounty Eden X2');
     await expect(
       page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-card').first()
     ).toBeVisible();
@@ -2394,13 +2394,16 @@ test.describe('app smoke tabs', () => {
     );
   });
 
-  test('admin dashboard requires shared admin sign-in', async ({ page }) => {
+  test('admin dashboard sends signed-out visitors to the account sign-in', async ({ page }) => {
     await openAdmin(page);
 
     await expect(page.locator('#dashLogin')).toBeVisible();
-    await expect(page.locator('#dashLoginUser')).toBeVisible();
-    await expect(page.locator('#dashLoginPass')).toBeVisible();
-    await expect(page.locator('#dashLoginBtn')).toBeVisible();
+    await expect(page.locator('#dashAccountSignInBtn')).toBeVisible();
+    await expect(page.locator('.dash-login-hint')).toBeVisible();
+    // The shared admin username/password is gone: one credential meant one
+    // identity for everyone who knew it, so roles could not be attributed.
+    await expect(page.locator('#dashLoginUser')).toHaveCount(0);
+    await expect(page.locator('#dashLoginPass')).toHaveCount(0);
     await expect(page.locator('#dashGuestBtn')).toHaveCount(0);
     await expect(page.locator('#dashGuestBanner')).toHaveCount(0);
     await expect(page.locator('#dashApp')).not.toBeVisible();

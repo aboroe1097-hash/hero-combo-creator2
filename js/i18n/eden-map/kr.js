@@ -96,7 +96,7 @@ export default {
     genericSector: '{code} 구역',
     subTabMap: '에덴 지도',
     subTabLoyalty: '에덴 로열티',
-    subTabBounty: '로열 바운티',
+    subTabBounty: '로열 바운티 Eden X2',
     subTabSeason: '현재 시즌',
     subTabPrevious: '이전 시즌',
   },

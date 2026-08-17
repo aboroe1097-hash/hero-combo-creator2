@@ -44,6 +44,9 @@ export const ADMIN_RUNTIME_ZH = Object.freeze({
   adminUnsavedRefreshConfirm:
     '此表单具有未保存的编辑内容，并且可以使用更新的云数据。刷新将丢弃打开的表单。继续？',
   adminShareUnsupported: '此浏览器不支持共享。请改用下载。',
+  adminAccessAccountHint: 'VTS 管理后台使用你的 VTS 账号。登录后，R5 可以为你开通权限。',
+  adminAccessNoPrivilege: '该账号没有管理员权限。请联系 R5 开通后重新加载本页。',
+  adminAccessSignIn: '登录你的账号',
   adminLoginFirebaseUnavailable: 'Firebase 未配置为管理员登录。',
   adminOverrideUnavailable: '未为此部署配置管理员覆盖。',
   adminOverrideCodePrompt: '输入管理员覆盖代码：',

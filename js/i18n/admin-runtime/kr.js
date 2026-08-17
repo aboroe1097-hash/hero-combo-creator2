@@ -51,6 +51,9 @@ export const ADMIN_RUNTIME_KR = Object.freeze({
   adminUnsavedRefreshConfirm:
     '저장하지 않은 수정 사항이 있고 더 최신 클라우드 데이터가 있습니다. 새로고침하면 열린 양식이 사라집니다. 계속할까요?',
   adminShareUnsupported: '이 브라우저에서는 공유가 지원되지 않습니다. 대신 다운로드를 사용하세요.',
+  adminAccessAccountHint: 'VTS 관리자는 VTS 계정을 사용합니다. 로그인하면 R5가 권한을 부여할 수 있습니다.',
+  adminAccessNoPrivilege: '이 계정에는 관리자 권한이 없습니다. R5에게 요청한 뒤 페이지를 새로고침하세요.',
+  adminAccessSignIn: '계정으로 로그인',
   adminLoginFirebaseUnavailable: 'Firebase가 관리자 로그인을 위해 구성되지 않았습니다.',
   adminOverrideUnavailable: '이 배포에는 관리자 재정의가 구성되지 않았습니다.',
   adminOverrideCodePrompt: '관리자 재정의 코드를 입력하세요:',

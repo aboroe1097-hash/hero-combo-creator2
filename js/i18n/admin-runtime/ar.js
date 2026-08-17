@@ -52,6 +52,9 @@ export const ADMIN_RUNTIME_AR = Object.freeze({
   adminUnsavedRefreshConfirm:
     'يحتوي هذا النموذج على تعديلات غير محفوظة، وتتوفر بيانات أحدث في السحابة. سيؤدي التحديث إلى تجاهل النموذج المفتوح. هل تريد المتابعة؟',
   adminShareUnsupported: 'المشاركة غير مدعومة في هذا المتصفح. استخدم التنزيل بدلاً من ذلك.',
+  adminAccessAccountHint: 'تستخدم إدارة VTS حسابك في VTS. سجّل الدخول، ثم يمكن لـ R5 منحك الوصول.',
+  adminAccessNoPrivilege: 'هذا الحساب لا يملك صلاحية الإدارة. اطلب من R5 منحها، ثم أعد تحميل الصفحة.',
+  adminAccessSignIn: 'سجّل الدخول إلى حسابك',
   adminLoginFirebaseUnavailable: 'لم يتم تكوين Firebase لتسجيل دخول المسؤول.',
   adminOverrideUnavailable: 'لم يتم تكوين تجاوز المسؤول لهذا النشر.',
   adminOverrideCodePrompt: 'أدخل رمز تجاوز المسؤول:',
