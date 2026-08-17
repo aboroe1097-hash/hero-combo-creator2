@@ -9,14 +9,39 @@ const navigationPlacements = new Map([
       tabHeroesCombos: 'primary',
       tabResearchTowers: 'primary',
       tabMaterials: 'primary',
-      tabAllStarBoh: 'primary',
+      // VTS Admin took the fourth mobile slot; All-Star BoH moved to More,
+      // because it runs a few weeks a season rather than every day.
+      tabOcrDashboard: 'primary',
+      tabAllStarBoh: 'more',
       tabYouTube: 'more',
       tabArcade: 'more',
     },
   ],
   // Eden Map is the third hub, so it is primary from the plain desktop rail up.
-  [641, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabMaterials: 'primary' }],
-  [1439, { tabStrife: 'more', tabEdenMap: 'primary', tabYouTube: 'more', tabMaterials: 'primary' }],
+  // VTS Admin holds the fifth desktop slot at every width; All-Star BoH is in
+  // More at every width.
+  [
+    641,
+    {
+      tabStrife: 'more',
+      tabEdenMap: 'primary',
+      tabYouTube: 'more',
+      tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+      tabAllStarBoh: 'more',
+    },
+  ],
+  [
+    1439,
+    {
+      tabStrife: 'more',
+      tabEdenMap: 'primary',
+      tabYouTube: 'more',
+      tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+      tabAllStarBoh: 'more',
+    },
+  ],
   [
     1440,
     {
@@ -24,6 +49,8 @@ const navigationPlacements = new Map([
       tabEdenMap: 'primary',
       tabYouTube: 'primary',
       tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+      tabAllStarBoh: 'more',
     },
   ],
   [
@@ -33,6 +60,8 @@ const navigationPlacements = new Map([
       tabEdenMap: 'primary',
       tabYouTube: 'primary',
       tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+      tabAllStarBoh: 'more',
     },
   ],
 ]);
@@ -84,7 +113,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabMaterials', 'tabAllStarBoh']);
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabMaterials', 'tabOcrDashboard']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });
