@@ -11,9 +11,9 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Added the new **Artifact Calculator** subtool under the Research & Towers Hub with full support for **Artifact One: Redemption Grail**.",
       "Transcribed all 40 nodes across 4 tiers directly from the community research database: Skill 1 (Sacred Light, 10 levels RGE), Skill 2 (Sacred Flame, 20 levels RGE), Branch 2a/2b Apex (Holy Grail & Enhanced Grail, 25 levels RGE each), and Skill 4 (Divine Radiance, 50 levels RGE),…",
-      "Built interactive tree flow with branch columns (Offensive Path `a` & Defensive Path `b`), dynamic active buffs breakdown, permanent attribute unlock tracking, daily CoP chest rate adjuster, table view, search filtering, quick tier/branch maxing, and clipboard stat sharing.",
-      "Integrated Royal Tech Book medal requirements (Books I–XIII, including Books VII Judgement of Order, VIII Ultimate Oath, and IX Throne of Justice) and technology medal summaries into the specialization data model.",
-      "Localized the Artifact subtool tab across all 13 supported languages."
+      "Recreated the Redemption Grail's in-game branching board as 40 interactive gold-framed nodes, with exact Emblem and Artifact Soulstone icons, per-node level controls, resource totals, search highlighting, tier shortcuts, permanent-attribute tracking, account sync, and responsive…",
+      "Added separately sourced Unit Specialisation VII–IX medal evidence without introducing the unrelated Royal Tech Books feature or inventing values for blank spreadsheet cells.",
+      "Localized the complete Artifact interface across all 13 supported languages and added keyboard, focus, touch, reduced-motion, RTL, and screen-reader support."
     ]
   },
   {

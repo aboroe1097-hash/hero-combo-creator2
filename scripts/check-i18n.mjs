@@ -291,6 +291,9 @@ for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
   // Specialization Towers owns a strict, independently audited lazy locale pack.
   // Its keys must not be mistaken for the main application catalog.
   if (relPath.startsWith('js/specialization-towers-v2-')) continue;
+  // Artifact follows the same domain-pack contract; artifact-i18n-ui.test.mjs
+  // enforces all thirteen locales and placeholder parity independently.
+  if (relPath === 'js/app-artifact.js') continue;
   if (STANDALONE_RUNTIME_I18N_MODULE_RE.test(relPath)) continue;
   const source = fs.readFileSync(absolutePath, 'utf8');
   let match;

@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_TR = Object.freeze({
-  title: 'Uzmanlık Kuleleri v2',
+  title: 'Uzmanlık Kuleleri',
   subtitle: 'Her uzmanlık yolunu yeniden oluştur, madalyaları takip et ve etkin bonusları incele.',
   betaBadge: 'Beta',
   back: 'Geri',
@@ -153,8 +153,8 @@ export const SPECIALIZATION_TOWERS_V2_TR = Object.freeze({
   cancel: 'İptal',
   close: 'Kapat',
   importTitle: 'Kule ilerlemesini içe aktar',
-  importInstructions: 'Bu kurulumu değiştirmek için bir Uzmanlık Kuleleri v2 ilerleme dosyası seç.',
-  importInvalid: 'Bu dosya geçerli bir Uzmanlık Kuleleri v2 ilerleme dosyası değil.',
+  importInstructions: 'Bu kurulumu değiştirmek için bir Uzmanlık Kuleleri ilerleme dosyası seç.',
+  importInvalid: 'Bu dosya geçerli bir Uzmanlık Kuleleri ilerleme dosyası değil.',
   importSuccess: 'Kule ilerlemesi içe aktarıldı.',
   exportSuccess: 'Kule ilerlemesi dışa aktarıldı.',
   resetSuccess: 'Tüm kule ilerlemesi sıfırlandı.',

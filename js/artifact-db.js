@@ -72,6 +72,8 @@ export const ARTIFACT_RESOURCES = Object.freeze({
   }),
 });
 
+export const ARTIFACT_PROGRESS_STORAGE_KEY = 'vts_artifact_progress_redemption-grail_v1';
+
 export const ARTIFACT_DATABASE = Object.freeze([
   {
     id: 'redemption-grail',
@@ -795,21 +797,44 @@ export function getArtifactNodeById(nodeId, artifact = ARTIFACT_DATABASE[0]) {
 }
 
 /**
+ * Keeps persisted progress bounded to the canonical node catalog. Unknown keys,
+ * fractions, negative values and levels beyond the node maximum are discarded
+ * or clamped before they can enter calculations or account sync.
+ */
+export function normalizeArtifactProgress(value, artifact = ARTIFACT_DATABASE[0]) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const normalized = {};
+
+  for (const node of getAllArtifactNodes(artifact)) {
+    const rawLevel = Number(source[node.id]);
+    if (!Number.isFinite(rawLevel)) continue;
+    const level = Math.max(0, Math.min(node.maxLevel, Math.trunc(rawLevel)));
+    if (level > 0) normalized[node.id] = level;
+  }
+
+  return Object.freeze(normalized);
+}
+
+export function parseArtifactProgress(value, artifact = ARTIFACT_DATABASE[0]) {
+  if (typeof value !== 'string') return normalizeArtifactProgress(value, artifact);
+  try {
+    return normalizeArtifactProgress(JSON.parse(value), artifact);
+  } catch {
+    return normalizeArtifactProgress({}, artifact);
+  }
+}
+
+/**
  * Calculates total costs and completion metrics for an artifact.
  * @param {ArtifactItem} artifact
  * @param {Record<string, number>} [currentLevels] - Map of nodeId -> current level (0..maxLevel)
  * @param {Record<string, number>} [targetLevels] - Map of nodeId -> target level
- * @param {{ dailyRGE?: number, dailyAS?: number }} [customRates]
  */
 export function calculateArtifactMetrics(
   artifact = ARTIFACT_DATABASE[0],
   currentLevels = {},
-  targetLevels = null,
-  customRates = {}
+  targetLevels = null
 ) {
-  const dailyRGE = Math.max(1, Number(customRates.dailyRGE) || artifact.resources.RGE.dailyReward);
-  const dailyAS = Math.max(1, Number(customRates.dailyAS) || artifact.resources.AS.dailyReward);
-
   let totalRGE = 0;
   let totalAS = 0;
   let investedRGE = 0;
@@ -862,15 +887,8 @@ export function calculateArtifactMetrics(
     }
   }
 
-  const completionPercent = totalLevelPoints > 0 ? (investedLevelPoints / totalLevelPoints) * 100 : 0;
-  const daysRemainingRGE = Math.ceil(remainingRGE / dailyRGE);
-  const daysRemainingAS = Math.ceil(remainingAS / dailyAS);
-  const daysRemainingTotal = Math.max(daysRemainingRGE, daysRemainingAS);
-
-  const daysTargetRGE = Math.ceil(targetNeededRGE / dailyRGE);
-  const daysTargetAS = Math.ceil(targetNeededAS / dailyAS);
-  const daysTargetTotal = Math.max(daysTargetRGE, daysTargetAS);
-
+  const completionPercent =
+    totalLevelPoints > 0 ? (investedLevelPoints / totalLevelPoints) * 100 : 0;
   return {
     totalRGE,
     totalAS,
@@ -885,14 +903,6 @@ export function calculateArtifactMetrics(
     totalLevelPoints,
     investedLevelPoints,
     completionPercent,
-    dailyRGE,
-    dailyAS,
-    daysRemainingRGE,
-    daysRemainingAS,
-    daysRemainingTotal,
-    daysTargetRGE,
-    daysTargetAS,
-    daysTargetTotal,
   };
 }
 
@@ -941,7 +951,8 @@ export function calculateArtifactActiveBuffs(artifact = ARTIFACT_DATABASE[0], cu
       else if (node.statType === 'speed') stats.combatSpeed += val;
       else if (node.statType === 'sacred_might') stats.sacredMight += val;
       else if (node.statType === 'sacred_resistance') stats.sacredResistance += val;
-      else if (node.statType === 'destructive_strike_immunity') stats.destructiveStrikeImmunity += val;
+      else if (node.statType === 'destructive_strike_immunity')
+        stats.destructiveStrikeImmunity += val;
     }
 
     if (node.id === 'rg_2_5a' && lvl >= 1) {

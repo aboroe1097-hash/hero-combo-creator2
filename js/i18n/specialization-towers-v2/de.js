@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_DE = Object.freeze({
-  title: 'Spezialisierungstürme v2',
+  title: 'Spezialisierungstürme',
   subtitle:
     'Stelle jeden Spezialisierungspfad nach, erfasse Medaillen und prüfe seine aktiven Boni.',
   betaBadge: 'Beta',
@@ -159,8 +159,8 @@ export const SPECIALIZATION_TOWERS_V2_DE = Object.freeze({
   close: 'Schließen',
   importTitle: 'Turmfortschritt importieren',
   importInstructions:
-    'Wähle eine Fortschrittsdatei für Spezialisierungstürme v2 aus, um diese Konfiguration zu ersetzen.',
-  importInvalid: 'Diese Datei enthält keinen gültigen Fortschritt für Spezialisierungstürme v2.',
+    'Wähle eine Fortschrittsdatei für Spezialisierungstürme aus, um diese Konfiguration zu ersetzen.',
+  importInvalid: 'Diese Datei enthält keinen gültigen Fortschritt für Spezialisierungstürme.',
   importSuccess: 'Turmfortschritt importiert.',
   exportSuccess: 'Turmfortschritt exportiert.',
   resetSuccess: 'Der gesamte Turmfortschritt wurde zurückgesetzt.',

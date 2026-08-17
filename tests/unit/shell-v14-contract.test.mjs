@@ -77,12 +77,7 @@ test('mobile exposes exactly three primary destinations and an accessible More s
   );
 
   // Heroes & Combos is the tab the app opens on, so it holds the first slot.
-  assert.deepEqual(mobilePrimaryIds, [
-    'tabHeroesCombos',
-    'tabResearchTowers',
-    'tabMaterials',
-    'tabOcrDashboard',
-  ]);
+  assert.deepEqual(mobilePrimaryIds, ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']);
   assert.match(
     index,
     /id="shellMoreButton"[^>]*aria-expanded="false"[^>]*aria-controls="shellMorePanel"/
@@ -135,7 +130,8 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
     shellCss,
     /@media \(max-width: 640px\)[\s\S]*?#app \.tool-nav-shell\s*\{[\s\S]*?position:\s*fixed !important/
   );
-  assert.match(shellCss, /grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\) !important/);
+  assert.match(shellCss, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\) !important/);
+  assert.match(shellCss, /#app \.shell-more-button\s*\{\s*display:\s*none !important/);
 });
 
 test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', () => {
@@ -152,10 +148,11 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
     shellJs,
     /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabYouTube',?\s*\];/
   );
-  // The landing tool must hold a mobile slot — it had none before the hubs.
+  // Phones expose exactly the three hub destinations, with no truncated fourth
+  // leaf tool competing for label width.
   assert.match(
     shellJs,
-    /const mobilePrimaryIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabMaterials',\s*'tabOcrDashboard',?\s*\];/
+    /const mobilePrimaryIds = \['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'\];/
   );
 
   // All-Star BoH is deliberately absent: it runs for a few weeks a season, so

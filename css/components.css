@@ -161,6 +161,10 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.vts-hub-subtabs--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .vts-hub-subtab-panel {
   display: none;
 }

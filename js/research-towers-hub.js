@@ -1,9 +1,10 @@
 // js/research-towers-hub.js
 // Research & Towers Hub sub-tab controller for the integrated hub tab.
 //
-// The hub hosts two sub-tabs inside #researchTowersSection:
+// The hub hosts three sub-tabs inside #researchTowersSection:
 //   - towers:   the Specialization Towers path planner (default landing)
 //   - research: the tech research tracker
+//   - artifact: the Artifact tracker
 //
 // Both were top-level tabs before. Their sections keep their original ids
 // (#specializationSection, #researchSection) so every existing deep link,
@@ -36,6 +37,15 @@ export function getActiveResearchTowersSubtab() {
   return activeSubtab;
 }
 
+function updateSubtabHash(subtab) {
+  const hash = subtab === 'towers' ? 'specialization' : subtab;
+  try {
+    window.history.replaceState(window.history.state, '', `#${hash}`);
+  } catch {
+    // Hash persistence is helpful but not required for tab interaction.
+  }
+}
+
 function applySubtab(root, name) {
   root.querySelectorAll('[data-hub-subtab]').forEach((button) => {
     const active = button.dataset.hubSubtab === name;
@@ -64,9 +74,7 @@ export function openResearchTowersSubtab(name, { notify = true } = {}) {
   applySubtab(root, subtab);
   if (notify) {
     try {
-      window.dispatchEvent(
-        new CustomEvent('vts:research-towers-subtab', { detail: { subtab } })
-      );
+      window.dispatchEvent(new CustomEvent('vts:research-towers-subtab', { detail: { subtab } }));
     } catch {
       /* CustomEvent unavailable */
     }
@@ -95,7 +103,8 @@ export function bootResearchTowersHub() {
   root.addEventListener('click', (event) => {
     const button = event.target.closest('[data-hub-subtab]');
     if (!button) return;
-    openResearchTowersSubtab(button.dataset.hubSubtab);
+    const subtab = openResearchTowersSubtab(button.dataset.hubSubtab);
+    updateSubtabHash(subtab);
   });
 
   // Arrow-key navigation across the two tabs, per the tablist pattern.
@@ -112,6 +121,7 @@ export function bootResearchTowersHub() {
       RESEARCH_TOWERS_SUBTABS.length;
     const target = RESEARCH_TOWERS_SUBTABS[next];
     openResearchTowersSubtab(target);
+    updateSubtabHash(target);
     root.querySelector(`[data-hub-subtab="${target}"]`)?.focus({ preventScroll: true });
   });
 

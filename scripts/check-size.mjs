@@ -99,7 +99,10 @@ const LIMITS = {
   // the DeepSeek provider adapter measure 9738.0 KiB locally. CI measures
   // larger because it injects admin auth config before building, so retain
   // roughly 20 KiB rather than the usual single-digit margin.
-  totalJsBytes: 9758 * 1024,
+  // Artifact One adds a lazy 17.7 KiB controller, 15.3 KiB canonical dataset,
+  // and an 8.4 KiB VII-IX evidence chunk. The audited graph is 9796.0 KiB;
+  // retain 14 KiB while entry and route caps remain unchanged.
+  totalJsBytes: 9810 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -133,7 +136,9 @@ const LIMITS = {
   // The 14.3.9 Heroes & Combos and Research & Towers hubs, the two-path tower
   // planner, and the account chip shipped on every page re-audit to 1605.4 KiB;
   // retain roughly 5 KiB of headroom.
-  totalCssBytes: 1610 * 1024,
+  // The route-isolated Redemption Grail board plus the verified tower-source
+  // presentation measure 1616.9 KiB total; retain roughly 8 KiB.
+  totalCssBytes: 1625 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -197,7 +202,9 @@ const LIMITS = {
   // The nine Throne title icons (images/throne/*.webp, 62.8 KiB total) bring
   // the artifact to 30692.3 KiB; retain roughly 68 KiB.
   // The Aiding Skill capture lifts the artifact to 30788.1 KiB.
-  totalDeployBytes: 30820 * 1024,
+  // Artifact One and the VII-IX evidence chunks bring the optimized Pages
+  // artifact to 30886.7 KiB; retain roughly 23 KiB.
+  totalDeployBytes: 30910 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -229,7 +236,9 @@ const LIMITS = {
   // files; keep four of headroom.
   // The nine Throne title icons emit nine more files (653 total); keep four
   // of headroom.
-  deployFileCount: 657,
+  // Artifact and its evidence/localization split emit 663 files; keep two of
+  // headroom so unplanned chunk proliferation remains visible.
+  deployFileCount: 665,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -249,7 +258,9 @@ const LIMITS = {
     // The 14.3.9 hubs and the every-page account chip re-audit to 661.1/782.7
     // KiB on Admin, 784.8/906.5 KiB on Eden, and 460.7/582.3 KiB on Arcade.
     // The season-scope strip and grouped Admin rail measure 663.9/759.7 KiB.
-    'admin.html': { desktop: 665 * 1024, mobile: 785 * 1024 },
+    // The compact inline account slot and corrected desktop action grid measure
+    // 666.5 KiB; retain about 1.5 KiB without changing the mobile ceiling.
+    'admin.html': { desktop: 668 * 1024, mobile: 785 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
     'eden-x1.html': { desktop: 789 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so

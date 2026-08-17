@@ -13,7 +13,10 @@ function renderChip(account, profile, sync, admin, superadmin) {
     document.querySelector('[data-account-chip]') ||
     document.body.appendChild(document.createElement('div'));
   mount.dataset.accountChip = '';
-  mount.className = 'vts-account-chip-mount';
+  // Keep page-owned layout classes (for example the inline admin header slot).
+  // Replacing className moved the shared chip out of responsive grid rules and
+  // made it behave like the global floating chip again.
+  mount.classList.add('vts-account-chip-mount');
 
   const name = profile?.gameName || profile?.displayName || account.displayName || 'Player';
   const syncLabel =

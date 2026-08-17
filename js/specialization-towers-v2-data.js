@@ -1,4 +1,9 @@
 import { SPECIALIZATION_PLANNER_ASSETS } from './specialization-towers-v2-assets.js';
+export {
+  SPECIALIZATION_MEDAL_EVIDENCE_SOURCE,
+  SPECIALIZATION_TROOP_MEDAL_EVIDENCE,
+  getSpecializationMedalEvidence,
+} from './specialization-towers-medal-evidence.js';
 
 /**
  * Canonical Unit Specialization tower data.
@@ -9909,28 +9914,6 @@ export const SPECIALIZATION_LEGION_SKILLS = deepFreeze(LEGION_SKILLS);
 export const SPECIALIZATION_RESEARCH_IMAGES = deepFreeze(RESEARCH_IMAGES);
 export const SPECIALIZATION_LEGION_SKILL_IMAGES = deepFreeze(LEGION_SKILL_IMAGES);
 
-export const SPECIALIZATION_ROYAL_TECH_BOOKS = deepFreeze([
-  { book: 1, name: 'Glorious Gala', roman: 'I', fmCount: 109714, completion: '100%', unlocks: 'White Crow Missions' },
-  { book: 2, name: "Vanguard's Arrival", roman: 'II', fmCount: 356894, completion: '100%', unlocks: 'SSS Troops (Front Row)' },
-  { book: 3, name: 'Promotion Trial', roman: 'III', fmCount: 966821, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 4, name: 'Lofty Path', roman: 'IV', fmCount: 2018181, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 5, name: 'Heroic Glory', roman: 'V', fmCount: 3343416, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 6, name: 'Central Force', roman: 'VI', fmCount: 850287, completion: '100%', unlocks: 'SSS Troops (Mid Row)' },
-  { book: 7, name: 'Judgement of Order', roman: 'VII', fmCount: 1555200, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 8, name: 'Ultimate Oath', roman: 'VIII', fmCount: 2565489, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 9, name: 'Throne of Justice', roman: 'IX', fmCount: 3521166, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 10, name: 'Rear Iron Rule', roman: 'X', fmCount: 741573, completion: '100%', unlocks: 'SSS Troops (Back Row)' },
-  { book: 11, name: 'Glory Codex', roman: 'XI', fmCount: 1100361, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 12, name: 'Throne Mark', roman: 'XII', fmCount: 2578566, completion: '100%', unlocks: 'Buffs/Caps' },
-  { book: 13, name: 'Vigil Oath', roman: 'XIII', fmCount: 4642800, completion: '100%', unlocks: 'Buffs/Caps' },
-]);
-
-export const SPECIALIZATION_TECHNOLOGY_SUMMARY = deepFreeze([
-  { id: 1, name: 'Solid Tactics', cmCount: 3476740, fmCount: 0, completion: '100%' },
-  { id: 2, name: 'Melee Legion - Charge', cmCount: 4763500, fmCount: 0, completion: '100%' },
-  { id: 3, name: 'Elite Troop', cmCount: 4792600, fmCount: 1959520, completion: '100%' },
-]);
-
 export function getSpecializationResearch(id) {
   return typeof id === 'string' ? (SPECIALIZATION_RESEARCH[id] ?? null) : null;
 }
@@ -9947,13 +9930,4 @@ export function getSpecializationLegionSkillImage(columnId, troopId) {
   const columnIndex = Number(columnId) - 1;
   if (!Number.isInteger(columnIndex) || columnIndex < 0) return null;
   return SPECIALIZATION_LEGION_SKILL_IMAGES[troopId]?.[columnIndex] ?? null;
-}
-
-export function getRoyalTechBooks() {
-  return SPECIALIZATION_ROYAL_TECH_BOOKS;
-}
-
-export function getRoyalTechBook(bookNumber) {
-  const num = Number(bookNumber);
-  return SPECIALIZATION_ROYAL_TECH_BOOKS.find((b) => b.book === num) ?? null;
 }

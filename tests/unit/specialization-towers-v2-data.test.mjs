@@ -18,12 +18,11 @@ import {
   SPECIALIZATION_LEGION_SKILL_IMAGES,
   SPECIALIZATION_RESEARCH,
   SPECIALIZATION_RESEARCH_IMAGES,
-  SPECIALIZATION_ROYAL_TECH_BOOKS,
+  SPECIALIZATION_MEDAL_EVIDENCE_SOURCE,
+  SPECIALIZATION_TROOP_MEDAL_EVIDENCE,
   SPECIALIZATION_SOURCE_METADATA,
-  SPECIALIZATION_TECHNOLOGY_SUMMARY,
   SPECIALIZATION_TROOPS,
-  getRoyalTechBook,
-  getRoyalTechBooks,
+  getSpecializationMedalEvidence,
   getSpecializationLegionSkillImage,
   getSpecializationResearch,
   getSpecializationResearchImage,
@@ -359,31 +358,38 @@ test('canonical records are immutable and lookup returns null for unknown IDs', 
   assert.equal(getSpecializationResearch(null), null);
 });
 
-test('royal tech books VII, VIII, IX, and full 13-book series are recorded with exact FM counts', () => {
-  assert.equal(SPECIALIZATION_ROYAL_TECH_BOOKS.length, 13);
-  assert.equal(Object.isFrozen(SPECIALIZATION_ROYAL_TECH_BOOKS), true);
+test('Unit Specialisation VII–IX medal evidence preserves complete and partial sheet data', () => {
+  assert.equal(Object.isFrozen(SPECIALIZATION_TROOP_MEDAL_EVIDENCE), true);
+  assert.equal(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[7].gid, '1492876894');
+  assert.equal(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[8].gid, '542598214');
+  assert.equal(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[9].gid, '1153935173');
 
-  const book7 = getRoyalTechBook(7);
-  assert.equal(book7.name, 'Judgement of Order');
-  assert.equal(book7.roman, 'VII');
-  assert.equal(book7.fmCount, 1_555_200);
+  const tower7 = getSpecializationMedalEvidence({ tower: 7, troop: 'archer' });
+  assert.equal(tower7.length, 4);
+  assert.equal(
+    tower7.every((section) => section.complete),
+    true
+  );
+  assert.deepEqual(
+    tower7.map((section) => section.knownCostTotal),
+    [15_896, 32_100, 48_000, 64_700]
+  );
 
-  const book8 = getRoyalTechBook(8);
-  assert.equal(book8.name, 'Ultimate Oath');
-  assert.equal(book8.roman, 'VIII');
-  assert.equal(book8.fmCount, 2_565_489);
+  const tower8 = getSpecializationMedalEvidence({ tower: 8, troop: 'archer' });
+  assert.equal(tower8.length, 4);
+  assert.deepEqual(
+    tower8.map((section) => section.complete),
+    [true, false, false, true]
+  );
+  assert.equal(tower8[0].knownCostTotal, 27_982);
+  assert.equal(tower8[3].knownCostTotal, 84_900);
 
-  const book9 = getRoyalTechBook(9);
-  assert.equal(book9.name, 'Throne of Justice');
-  assert.equal(book9.roman, 'IX');
-  assert.equal(book9.fmCount, 3_521_166);
-
-  const totalFM = getRoyalTechBooks().reduce((sum, b) => sum + b.fmCount, 0);
-  assert.equal(totalFM, 24_350_468);
-
-  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY.length, 3);
-  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[0].cmCount, 3_476_740);
-  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[1].cmCount, 4_763_500);
-  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[2].cmCount, 4_792_600);
-  assert.equal(SPECIALIZATION_TECHNOLOGY_SUMMARY[2].fmCount, 1_959_520);
+  const tower9 = getSpecializationMedalEvidence({ tower: 9, troop: 'footman' });
+  assert.equal(tower9.length, 4);
+  assert.deepEqual(
+    tower9.map((section) => section.complete),
+    [true, false, true, false]
+  );
+  assert.equal(tower9[0].knownCostTotal, 31_500);
+  assert.equal(tower9[2].knownCostTotal, 44_900);
 });

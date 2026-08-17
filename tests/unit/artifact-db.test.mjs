@@ -6,6 +6,8 @@ import {
   getArtifactNodeById,
   calculateArtifactMetrics,
   calculateArtifactActiveBuffs,
+  normalizeArtifactProgress,
+  parseArtifactProgress,
 } from '../../js/artifact-db.js';
 
 test('Artifact One: Redemption Grail structure and completeness', () => {
@@ -48,11 +50,7 @@ test('Artifact One: Redemption Grail cost math matches public sheet data', () =>
   assert.equal(metrics.maxedNodes, 0);
   assert.equal(metrics.completionPercent, 0);
 
-  // Daily rate calculations
-  assert.equal(metrics.dailyRGE, 4);
-  assert.equal(metrics.dailyAS, 80);
-  assert.equal(metrics.daysRemainingRGE, Math.ceil(11707 / 4));
-  assert.equal(metrics.daysRemainingAS, Math.ceil(107280 / 80));
+  assert.equal('daysRemainingRGE' in metrics, false, 'ETA metrics are intentionally excluded');
 });
 
 test('Artifact One: Level progression, partial upgrades and active buffs', () => {
@@ -76,4 +74,19 @@ test('Artifact One: Level progression, partial upgrades and active buffs', () =>
   assert.equal(buffs.sacredMight, 50); // 10 * 5
   assert.equal(buffs.artifactDamageBoost, 10);
   assert.equal(buffs.permanentAttributes.length, 2);
+});
+
+test('Artifact progress persistence accepts only canonical integer node levels', () => {
+  const normalized = normalizeArtifactProgress({
+    rg_1_0: 4.9,
+    rg_1_1a: 999,
+    rg_1_2a: -4,
+    unknown: 8,
+    rg_1_3a: '3',
+  });
+
+  assert.deepEqual(normalized, { rg_1_0: 4, rg_1_1a: 10, rg_1_3a: 3 });
+  assert.equal(Object.isFrozen(normalized), true);
+  assert.deepEqual(parseArtifactProgress('{"rg_1_0":7,"unknown":2}'), { rg_1_0: 7 });
+  assert.deepEqual(parseArtifactProgress('{broken'), {});
 });

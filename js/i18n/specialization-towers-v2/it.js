@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_IT = Object.freeze({
-  title: 'Torri di specializzazione v2',
+  title: 'Torri di specializzazione',
   subtitle:
     'Ricrea ogni percorso di specializzazione, tieni traccia delle medaglie e consulta i bonus attivi.',
   betaBadge: 'Beta',
@@ -162,8 +162,8 @@ export const SPECIALIZATION_TOWERS_V2_IT = Object.freeze({
   close: 'Chiudi',
   importTitle: 'Importa progresso delle torri',
   importInstructions:
-    'Scegli un file di progresso di Torri di specializzazione v2 per sostituire questa configurazione.',
-  importInvalid: 'Questo non è un file di progresso valido per Torri di specializzazione v2.',
+    'Scegli un file di progresso di Torri di specializzazione per sostituire questa configurazione.',
+  importInvalid: 'Questo non è un file di progresso valido per Torri di specializzazione.',
   importSuccess: 'Progresso delle torri importato.',
   exportSuccess: 'Progresso delle torri esportato.',
   resetSuccess: 'Tutto il progresso delle torri è stato azzerato.',

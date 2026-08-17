@@ -2636,6 +2636,26 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   }
 }
 
+/* The account control belongs to the admin header flow on phones. Keep the
+   identity and sign-in affordance visible instead of collapsing it to a lone
+   question-mark avatar that reads like a floating help button. */
+@media (max-width: 600px) {
+  body.admin-standalone-page .admin-command-actions .admin-account-slot {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+  body.admin-standalone-page .admin-command-actions .admin-account-slot .vts-account-chip {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  body.admin-standalone-page
+    .admin-command-actions
+    .admin-account-slot
+    .vts-account-chip__copy {
+    display: grid !important;
+  }
+}
+
 .heroes-season-tabs,
 .heroes-filter-pills,
 .research-deck-row,
