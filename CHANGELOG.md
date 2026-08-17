@@ -1,5 +1,9 @@
 # Changelog
 
+## 15.0.4 - 2026-08-17
+
+- Fixed the VTS Admin mobile dock covering half the screen. The grouped season rail kept its in-page grid layout inside the fixed bottom dock, stacking every group's buttons and pinning a 400px panel over the content; the dock is now a single scrollable row that keeps the group labels and clears the reserved bottom padding on both the season and Alliance sides.
+
 ## 15.0.3 - 2026-08-17
 
 - Renamed Royal Bounty Alliance to Royal Bounty Eden X2 across the Eden Hub: the guide's hero title and credits, the hub sub-tab, the command-palette entry and every locale now carry the season name.
