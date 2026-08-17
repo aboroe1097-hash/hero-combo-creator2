@@ -428,7 +428,7 @@ const tr = {
   tabGenerator: 'Kombo Oluşturucu',
   tabYouTube: 'YouTube',
   tabHeroes: 'Kahraman Atlası',
-  tabHeroesCombos: 'Kahramanlar ve Kombolar',
+  tabHeroesCombos: 'Kahraman ve kombo merkezi',
   tabHeroesOnly: 'Kahramanlar',
   tabSkinsOnly: 'Kostümler',
   tabEdenMap: 'VTS Eden Hub',
@@ -1323,9 +1323,9 @@ const tr = {
   edenX1AdminDashboard: 'Yönetici paneli',
   edenX1ExploreWebsite: 'VTS web sitesini keşfet',
   edenX1ExploreWebsiteTitle: 'Yeni misin? Tüm VTS web sitesini keşfet.',
-  edenX1NoticeTitle: 'Demo görünüm - final değil.',
+  edenX1NoticeTitle: 'Sezon verileri yakında geliyor.',
   edenX1NoticeCopy:
-    'Bu sayfa yalnızca erken takip için açıktır. Final ödülleri sezon sonunda tüm katkı, bayrak, yol, kalkan duvarı ve uygunluk kayıtları kontrol edildikten sonra incelenip onaylanacaktır.',
+    'Sezon sürerken erken takip açıktır. Nihai ödüller; katkı, sancak, rota, kalkan duvarı ve uygunluk kayıtları kontrol edildikten sonra sezon sonunda onaylanır.',
   edenX1RewardFlowEyebrow: 'Ödül akışı',
   edenX1RewardFlowTitle: 'Planlanan en iyi 20 ödül dağılımı',
   edenX1RewardFlowSubtitle:
@@ -1718,7 +1718,7 @@ const tr = {
   strifeVerifiedLineup: 'Onaylanmış canavar düzeni',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Uzmanlık',
-  tabResearchTowers: 'Araştırma ve Kuleler',
+  tabResearchTowers: 'Araştırma ve kule merkezi',
   tabTowersSpecialization: 'Kule Uzmanlığı',
 
   adminEdenVotesClearDeadline: 'Son tarihi temizle',

@@ -179,7 +179,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260815_131421').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260817_094706').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -201,7 +201,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260815_131421').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260817_094706').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -212,7 +212,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260815_131421').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260817_094706').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -828,10 +828,27 @@ const requestAppLanguage = createLatestLanguageLoader((lang) => {
   if (typeof window.vtsRenderStrifeTool === 'function') window.vtsRenderStrifeTool();
 });
 
+// The tab is still called edenMap internally — that identifier is keyed off by
+// a dozen modules — but the shareable URL is #edenHub, because the tab has been
+// a hub of four tools since 14.3.9 and the old name undersells it.
+const CANONICAL_TAB_HASHES = Object.freeze({ edenMap: 'edenHub' });
+
+// Every hash the tab has ever answered to, kept permanently. #edenMap is
+// already live in toolkit-map.js, in Velo's knowledge base and in links members
+// have shared; a rename that drops it breaks those silently.
+const TAB_HASH_ALIASES = Object.freeze({ edenhub: 'edenMap', edenmap: 'edenMap' });
+
+function canonicalTabHash(tabName) {
+  return CANONICAL_TAB_HASHES[tabName] || tabName;
+}
+
 function resolveTabName(rawTabName, validTabNames) {
   const normalized = String(rawTabName || '').toLowerCase();
   if (!normalized) return '';
-  return Array.from(validTabNames || []).find((name) => name.toLowerCase() === normalized) || '';
+  const names = Array.from(validTabNames || []);
+  const aliased = TAB_HASH_ALIASES[normalized];
+  if (aliased && names.includes(aliased)) return aliased;
+  return names.find((name) => name.toLowerCase() === normalized) || '';
 }
 
 function wireUIActions({ preserveInitialHash = false } = {}) {
@@ -1026,7 +1043,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // short window where a real click on Map was silently dropped.
         import('./eden-hub.js?v=20260813_061728')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260815_131421'))
+          .then(() => import('./eden-map.js?v=20260817_094706'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1056,7 +1073,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260815_131421')
+      import('./app-hero-atlas.js?v=20260817_094706')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1128,7 +1145,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260815_131421')
+      import('./app-strife.js?v=20260817_094706')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1181,7 +1198,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260815_131421')
+      import('./youtube-v14.js?v=20260817_094706')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1362,7 +1379,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260815_131421')
+      import('./app-hero-atlas.js?v=20260817_094706')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */
@@ -1483,7 +1500,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     try {
       // Keep the hash the caller asked for. Arriving on #specialization must
       // stay shareable as #specialization even though the hub owns the tab.
-      const hash = hubSubtab ? requestedTab : tabName;
+      const hash = hubSubtab ? requestedTab : canonicalTabHash(tabName);
       if (!options.preserveHash && window.location.hash !== '#' + hash) {
         // User-initiated tool changes must be Back/Forward navigable. Initial
         // hash normalization and hashchange handling pass preserveHash instead.

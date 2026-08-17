@@ -18,8 +18,8 @@ import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-wo
 
 const LOYALTY_SRC = 'tabs/loyalty.html?v=20260813_061728';
 const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260813_061728';
-const PREVIOUS_SRC = 'eden-x1.html';
-const SEASON_SRC = 'eden-x2.html';
+const PREVIOUS_SRC = 'eden-x1.html?embed=1';
+const SEASON_SRC = 'eden-x2.html?embed=1';
 const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'season', 'previous'];
 
 let booted = false;
@@ -222,7 +222,8 @@ export function bootEdenHub() {
         return;
       }
       const hash = window.location.hash.replace(/^#/, '').split('?')[0].toLowerCase();
-      if (hash === 'edenmap') activateSubTab(root, 'map');
+      // Both the canonical #edenHub and the original #edenMap land on the map.
+      if (hash === 'edenmap' || hash === 'edenhub') activateSubTab(root, 'map');
     }, 0);
   });
 

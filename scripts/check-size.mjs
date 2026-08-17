@@ -91,10 +91,15 @@ const LIMITS = {
   // before building, so it measures larger than a bare local build) audits to
   // 9630.2 KiB. Retain roughly 7 KiB.
   // The 15.0.0 release adds the Eden X2 route and workspace contract, the
-  // Throne Buffs model, the Skins gallery and its lazy detail styles, and the
-  // Loyalty/Materials polish. Measured 9688.0 KiB of built JS; retain
-  // roughly 7 KiB.
-  totalJsBytes: 9695 * 1024,
+  // Throne Buffs model and PNG canvas export, Banners catalog and planner model,
+  // the Skins gallery and its lazy detail styles, Vialfiend monster data, and
+  // Loyalty/Materials polish. Measured 9699.7 KiB of built JS; retain
+  // roughly 10 KiB.
+  // The superadmin roles system (callable bridge, controller, admin wiring) and
+  // the DeepSeek provider adapter measure 9738.0 KiB locally. CI measures
+  // larger because it injects admin auth config before building, so retain
+  // roughly 20 KiB rather than the usual single-digit margin.
+  totalJsBytes: 9758 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -191,14 +196,18 @@ const LIMITS = {
   // retain roughly 70 KiB.
   // The nine Throne title icons (images/throne/*.webp, 62.8 KiB total) bring
   // the artifact to 30692.3 KiB; retain roughly 68 KiB.
-  totalDeployBytes: 30760 * 1024,
+  // The Aiding Skill capture lifts the artifact to 30788.1 KiB.
+  totalDeployBytes: 30820 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
   // The Royal Bounty figures add 196 KiB of media; audited at 17,760.4 KiB.
   // The nine Throne title icons add 62.8 KiB of media; audited at
   // 17823.2 KiB. Retain roughly 17 KiB of headroom.
-  totalMediaBytes: 17840 * 1024,
+  // The Royal Bounty guide gains one in-game capture of the Aiding Skill slot
+  // (36.9 KiB JPEG). Media had 12 KiB of headroom, so raise it rather than
+  // ship the guide without the illustration its steps describe.
+  totalMediaBytes: 17880 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581

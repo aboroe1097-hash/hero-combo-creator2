@@ -18,9 +18,33 @@ async function openApp(page, path = '/') {
 
 async function openResearch(page) {
   // Research moved inside the Research & Towers Hub; the hub opens on Towers.
-  await page.locator('#tabResearchTowers').click();
-  await page.locator('[data-hub-subtab="research"]').click();
-  await expect(page.locator('#techListContainer')).toBeVisible();
+  const tool = page.locator('#tabResearchTowers');
+  if (!(await tool.isVisible())) {
+    const moreBtn = page.locator('#shellMoreButton');
+    if (await moreBtn.isVisible()) {
+      await moreBtn.click();
+      await expect(page.locator('#shellMorePanel')).toBeVisible();
+    }
+  }
+  // The hub button's listener attaches a beat after DOMContentLoaded, so a
+  // click fired immediately can land before the wiring and be dropped. Retry
+  // until the section actually opens instead of failing on that race.
+  await expect(async () => {
+    if (!(await page.locator('#researchTowersSection').isVisible())) {
+      await tool.click();
+    }
+    expect(await page.locator('#researchTowersSection').isVisible()).toBe(true);
+  }).toPass({ timeout: 30000 });
+  // The hub's sub-tab buttons mount with the lazy hub module, and the hub can
+  // settle back onto its default Towers sub-tab after an early click. Retry
+  // until the research list actually opens.
+  await expect(async () => {
+    if (!(await page.locator('#techListContainer').isVisible())) {
+      await page.locator('[data-hub-subtab="research"]').click();
+    }
+    expect(await page.locator('#techListContainer').isVisible()).toBe(true);
+  }).toPass({ timeout: 30000 });
+  await page.locator('#techSeasonAllBtn').click();
 }
 
 async function openTree(page, techId) {

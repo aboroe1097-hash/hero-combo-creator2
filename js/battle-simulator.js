@@ -1,4 +1,3 @@
-import { requireSensitiveAdminPin } from './admin-pin-gate.js';
 import {
   applyBattleSimulatorDocumentLocale,
   createBattleSimulatorTranslator,
@@ -32,22 +31,11 @@ async function start() {
   translator = createBattleSimulatorTranslator(locale);
   applyBattleSimulatorDocumentLocale(document, locale);
 
-  const unlocked = await requireSensitiveAdminPin({
-    kicker: translator.t('gate.kicker'),
-    title: translator.t('gate.title'),
-    prompt: translator.t('gate.prompt'),
-    label: translator.t('gate.label'),
-    error: translator.t('gate.error'),
-    cancel: translator.t('gate.cancel'),
-    unlock: translator.t('gate.unlock'),
-    unconfiguredTitle: translator.t('gate.title'),
-    unconfiguredPrompt: translator.t('gate.unconfigured'),
-  });
-
-  if (!unlocked) {
-    location.assign('index.html');
-    return;
-  }
+  // The Battle Simulator was behind the shared admin PIN. That PIN is gone —
+  // it protected nothing on the server — and this route is a calculator over
+  // public game data with no privileged reads, so it needs no gate at all.
+  // Anything genuinely privileged lives in VTS Admin behind the superadmin
+  // claim, which Firestore rules enforce.
 
   try {
     const { mountBattleSimulator } = await import('./battle-simulator-app.js');

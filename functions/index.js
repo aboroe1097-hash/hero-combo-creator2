@@ -3,8 +3,9 @@ import { getAppCheck } from 'firebase-admin/app-check';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineSecret } from 'firebase-functions/params';
-import { onRequest } from 'firebase-functions/v2/https';
+import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
+import { createSetUserRoleHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
 
 const firebaseApp = getApps()[0] || initializeApp();
@@ -54,4 +55,34 @@ export const vtsScore = onRequest(
     cors: false,
   },
   vtsScoreHandler
+);
+
+const setUserRoleHandler = createSetUserRoleHandler({
+  auth: getAuth(firebaseApp),
+  db: firestore,
+});
+
+// onCall rather than onRequest: the callable protocol verifies the caller's ID
+// token and hands the decoded claims to the handler, which is exactly the
+// authority this decision rests on. The handler stays free of
+// firebase-functions imports and signals failure with RoleError, mapped here.
+export const setUserRole = onCall(
+  {
+    region: 'us-central1',
+    memory: '256MiB',
+    timeoutSeconds: 30,
+    maxInstances: 5,
+  },
+  async (request) => {
+    try {
+      return await setUserRoleHandler(request);
+    } catch (error) {
+      if (error?.name === 'RoleError') throw new HttpsError(error.code, error.message);
+      // Anything else propagates untouched. The callable runtime logs it
+      // server-side and returns a generic INTERNAL to the caller, so the real
+      // message — which can carry uids or internal paths — never reaches the
+      // client and nothing is logged from this entrypoint.
+      throw error;
+    }
+  }
 );

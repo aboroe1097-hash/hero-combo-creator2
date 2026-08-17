@@ -48,7 +48,6 @@ test('standalone language handlers use the latest-request gate', () => {
 
 test('dynamic localized tools share normalized first-visit locale resolution', () => {
   for (const file of [
-    'js/admin-pin-gate.js',
     'js/command-palette.js',
     'js/eden-map-construction.js',
     'js/eden-map-guide.js',

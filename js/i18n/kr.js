@@ -349,7 +349,7 @@ const kr = {
   tabGenerator: '조합 생성기',
   tabYouTube: 'YouTube',
   tabHeroes: '영웅 도감',
-  tabHeroesCombos: '영웅 & 조합',
+  tabHeroesCombos: '영웅 & 조합 허브',
   tabHeroesOnly: '영웅',
   tabSkinsOnly: '스킨',
   tabEdenMap: 'VTS Eden Hub',
@@ -1326,9 +1326,9 @@ const kr = {
   edenX1AdminDashboard: '관리자 대시보드',
   edenX1ExploreWebsite: 'VTS 웹사이트 둘러보기',
   edenX1ExploreWebsiteTitle: '처음 오셨나요? 전체 VTS 웹사이트를 둘러보세요.',
-  edenX1NoticeTitle: '데모 보기 - 최종 아님.',
+  edenX1NoticeTitle: '시즌 데이터가 곧 제공됩니다.',
   edenX1NoticeCopy:
-    '이 페이지는 초기 추적용으로만 열려 있습니다. 최종 보상은 시즌 종료 후 모든 기여도, 배너, 경로, 실드 월, 자격 기록을 확인한 뒤 검토 및 확정됩니다.',
+    '시즌 진행 중에는 사전 추적이 제공됩니다. 최종 보상은 기여도, 배너, 경로, 실드 월, 자격 기록을 모두 확인한 뒤 시즌 종료 시 확정됩니다.',
   edenX1RewardFlowEyebrow: '보상 흐름',
   edenX1RewardFlowTitle: '상위 20개 보상 예정 분배',
   edenX1RewardFlowSubtitle:
@@ -1707,7 +1707,7 @@ const kr = {
   strifeVerifiedLineup: '확인된 몬스터 전열',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: '특성화',
-  tabResearchTowers: '연구 & 타워',
+  tabResearchTowers: '연구 & 타워 허브',
   tabTowersSpecialization: '타워 특화',
 
   adminEdenVotesClearDeadline: '마감 지우기',

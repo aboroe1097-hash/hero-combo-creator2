@@ -67,9 +67,9 @@ const it = {
   edenX1AdminDashboard: 'Dashboard admin',
   edenX1ExploreWebsite: 'Esplora il sito VTS',
   edenX1ExploreWebsiteTitle: 'Nuovo qui? Esplora tutto il sito VTS.',
-  edenX1NoticeTitle: 'Vista demo - non definitiva.',
+  edenX1NoticeTitle: 'I dati della stagione arriveranno presto.',
   edenX1NoticeCopy:
-    'Questa pagina è aperta solo per il tracciamento iniziale. Le ricompense finali saranno riviste e confermate a fine stagione dopo il controllo di contributi, banner, tracciati, shield wall e idoneità.',
+    'Il tracciamento anticipato è attivo durante la stagione. I premi finali vengono confermati a fine stagione, una volta verificati i registri di contributo, stendardi, percorsi, muro di scudi e idoneità.',
   edenX1RewardFlowEyebrow: 'Flusso ricompense',
   edenX1RewardFlowTitle: 'Distribuzione prevista delle ricompense Top 20',
   edenX1RewardFlowSubtitle:
@@ -783,7 +783,7 @@ const it = {
   tabGenerator: 'Generatore di combo',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlante eroi',
-  tabHeroesCombos: 'Eroi e combo',
+  tabHeroesCombos: 'Hub eroi e combo',
   tabHeroesOnly: 'Eroi',
   tabSkinsOnly: 'Skin',
   tabEdenMap: 'VTS Eden Hub',
@@ -1867,7 +1867,7 @@ const it = {
   strifeRankOneRewardNote:
     'Ricompensa esclusiva assegnata al giocatore al rango 1 nella classifica dell’evento.',
   tabSpecialization: 'Specializzazione',
-  tabResearchTowers: 'Ricerca e torri',
+  tabResearchTowers: 'Hub ricerca e torri',
   tabTowersSpecialization: 'Specializzazione torri',
   adminEdenVotesClearDeadline: 'Cancella scadenza',
   adminEdenVotesDeadline: 'Scadenza della votazione',

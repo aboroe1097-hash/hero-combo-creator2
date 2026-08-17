@@ -323,12 +323,6 @@
     return figure;
   }
 
-  function makeVeloRunner() {
-    const runner = makeVeloFigure();
-    runner.classList.add('vts-loader__runner', 'vts-loader__runner--velo', 'vts-loader__visual');
-    return runner;
-  }
-
   function describe(root) {
     const titleSource =
       root.querySelector(
@@ -528,9 +522,6 @@
     copyAttribute(descriptor.fillSource, fill, 'id');
     rail.appendChild(fill);
     trail.appendChild(rail);
-
-    const runner = makeVeloRunner();
-    if (runner) trail.appendChild(runner);
     trailWrap.appendChild(trail);
 
     const percent = global.document.createElement('span');

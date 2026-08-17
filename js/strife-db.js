@@ -459,6 +459,56 @@ export const STRIFE_MONSTERS = [
       },
     ],
   },
+  {
+    id: 'vialfiend',
+    name: 'Vialfiend',
+    accent: '#a855f7',
+    imageUrl: 'images/strife/monsters/vialfiend.jpg',
+    skills: [
+      {
+        id: 'deaths-aura',
+        name: "Death's Aura",
+        timing: 'Every round',
+        target: '2-3 random squads',
+        effect:
+          'Each round, 90% chance to deal 200% Skill Damage to 2-3 random enemy squads and make their Skill Damage taken +50%, stackable up to 8 stacks, lasting until the end of battle',
+        answer:
+          'Stacking Skill Damage amplification punishes long fights — burst it down before the stacks build.',
+        tags: ['Skill Damage', 'Stacking Debuff'],
+      },
+      {
+        id: 'intimidate',
+        name: 'Intimidate',
+        timing: 'Every round',
+        target: '1 random squad each',
+        effect:
+          'Each round, make 1 random enemy squad enter timid state: 70% chance to fail when releasing an Active Skill and take 500% Skill Damage; each round, make 1 random enemy squad enter hesitation state: 70% chance to fail when releasing an additional attack and take 500% Physical Damage',
+        answer: 'Bring squads that do not depend on Active Skills or extra attacks landing.',
+        tags: ['Control', 'Skill Denial'],
+      },
+      {
+        id: 'demon-wraith',
+        name: 'Demon Wraith',
+        timing: 'Passive',
+        target: 'Vialfiend',
+        effect:
+          'In battle, Physical Damage taken reduced by 80%, and each instance of damage taken does not exceed 5% of max Troop Power',
+        answer: 'Physical damage is capped and cut by 80% — bring Skill Damage instead.',
+        tags: ['Damage Cap', 'Physical Reduction'],
+      },
+      {
+        id: 'power-of-the-legion',
+        name: 'Power of the Legion',
+        timing: 'Passive',
+        target: 'Vialfiend',
+        effect:
+          "The Hero's Legion will have 500% more Might and 70% more Damage, with the marching soldier cap increased by 4875750.",
+        answer:
+          'Expect far more Might than the listed level; do not read the tier as the real threat.',
+        tags: ['Might Buff', 'Troop Cap'],
+      },
+    ],
+  },
 ];
 
 export const STRIFE_TIERS = {
@@ -684,6 +734,7 @@ const STRIFE_RECOMMENDED_FORMATIONS = {
       note: 'Recommended P2W formation: Alexander / Bleeding Steed / Immortal Guardian.',
     },
   ],
+  vialfiend: [],
 };
 
 export const STRIFE_MONSTER_COMBOS = Object.freeze(

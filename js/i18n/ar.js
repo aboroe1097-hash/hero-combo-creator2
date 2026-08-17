@@ -427,7 +427,7 @@ const ar = {
   tabGenerator: 'مولد التشكيلات',
   tabYouTube: 'يوتيوب',
   tabHeroes: 'أطلس الأبطال',
-  tabHeroesCombos: 'الأبطال والتركيبات',
+  tabHeroesCombos: 'مركز الأبطال والتركيبات',
   tabHeroesOnly: 'الأبطال',
   tabSkinsOnly: 'الأزياء',
   tabEdenMap: 'VTS Eden Hub',
@@ -1320,9 +1320,9 @@ const ar = {
   edenX1AdminDashboard: 'لوحة الإدارة',
   edenX1ExploreWebsite: 'استكشف موقع VTS',
   edenX1ExploreWebsiteTitle: 'هل أنت جديد هنا؟ استكشف موقع VTS الكامل.',
-  edenX1NoticeTitle: 'عرض تجريبي - ليس نهائيا.',
+  edenX1NoticeTitle: 'بيانات الموسم قادمة قريبًا.',
   edenX1NoticeCopy:
-    'هذه الصفحة مفتوحة للتتبع المبكر فقط. ستتم مراجعة المكافآت النهائية وتأكيدها في نهاية الموسم بعد فحص كل سجلات المساهمة والرايات والطرق وجدران الدرع والأهلية.',
+    'التتبع المبكر متاح أثناء الموسم. تُعتمد المكافآت النهائية عند انتهاء الموسم بعد التحقق من سجلات المساهمة والرايات والمسارات وجدار الدروع والأهلية.',
   edenX1RewardFlowEyebrow: 'مسار المكافآت',
   edenX1RewardFlowTitle: 'توزيع مخطط لأفضل 20 مكافأة',
   edenX1RewardFlowSubtitle:
@@ -1701,7 +1701,7 @@ const ar = {
   strifeVerifiedLineup: 'تشكيلة وحش مؤكدة',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'التخصص',
-  tabResearchTowers: 'الأبحاث والأبراج',
+  tabResearchTowers: 'مركز البحث والأبراج',
   tabTowersSpecialization: 'تخصص الأبراج',
 
   adminEdenVotesClearDeadline: 'إلغاء الموعد',

@@ -445,7 +445,7 @@ const pt = {
   tabGenerator: 'Gerador de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Heróis',
-  tabHeroesCombos: 'Heróis e combos',
+  tabHeroesCombos: 'Centro de heróis e combos',
   tabHeroesOnly: 'Heróis',
   tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
@@ -1313,9 +1313,9 @@ const pt = {
   edenX1AdminDashboard: 'Painel de administração',
   edenX1ExploreWebsite: 'Explorar site VTS',
   edenX1ExploreWebsiteTitle: 'Novo aqui? Explore o site VTS completo.',
-  edenX1NoticeTitle: 'Vista demo - não final.',
+  edenX1NoticeTitle: 'Os dados da temporada chegam em breve.',
   edenX1NoticeCopy:
-    'Esta página está aberta apenas para acompanhamento inicial. As recompensas finais serão revisadas e confirmadas no fim da temporada depois que todos os registros de contribuição, banners, caminhos, shield walls e elegibilidade forem verificados.',
+    'O acompanhamento antecipado fica ativo durante a temporada. As recompensas finais são confirmadas no fim da temporada, depois de verificados os registos de contribuição, estandartes, rotas, muro de escudos e elegibilidade.',
   edenX1RewardFlowEyebrow: 'Fluxo de recompensas',
   edenX1RewardFlowTitle: 'Distribuição planejada das 20 melhores recompensas',
   edenX1RewardFlowSubtitle:
@@ -1715,7 +1715,7 @@ const pt = {
   strifeVerifiedLineup: 'Formação de monstro verificada',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Especialização',
-  tabResearchTowers: 'Investigação e torres',
+  tabResearchTowers: 'Centro de pesquisa e torres',
   tabTowersSpecialization: 'Especialização de torres',
 
   adminEdenVotesClearDeadline: 'Limpar prazo',

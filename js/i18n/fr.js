@@ -461,7 +461,7 @@ const fr = {
   tabGenerator: 'Générateur de Combos',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas des Héros',
-  tabHeroesCombos: 'Héros et combos',
+  tabHeroesCombos: 'Hub héros et combos',
   tabHeroesOnly: 'Héros',
   tabSkinsOnly: 'Skins',
   tabEdenMap: 'VTS Eden Hub',
@@ -1360,9 +1360,9 @@ const fr = {
   edenX1AdminDashboard: 'Tableau admin',
   edenX1ExploreWebsite: 'Explorer le site VTS',
   edenX1ExploreWebsiteTitle: 'Nouveau ici ? Explore le site VTS complet.',
-  edenX1NoticeTitle: 'Vue démo - non finale.',
+  edenX1NoticeTitle: 'Les données de la saison arrivent bientôt.',
   edenX1NoticeCopy:
-    'Cette page est ouverte uniquement pour le suivi anticipé. Les récompenses finales seront vérifiées et confirmées à la fin de la saison après contrôle des contributions, bannières, chemins, murs de boucliers et critères d’éligibilité.',
+    "Le suivi anticipé est actif pendant la saison. Les récompenses finales sont confirmées à la fin de la saison, une fois vérifiés les relevés de contribution, de bannières, de trajets, de mur de boucliers et d'éligibilité.",
   edenX1RewardFlowEyebrow: 'Flux des récompenses',
   edenX1RewardFlowTitle: 'Répartition prévue des 20 meilleures récompenses',
   edenX1RewardFlowSubtitle:
@@ -1767,7 +1767,7 @@ const fr = {
   strifeVerifiedLineup: 'Composition de monstre vérifiée',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spécialisation',
-  tabResearchTowers: 'Recherche et tours',
+  tabResearchTowers: 'Hub recherche et tours',
   tabTowersSpecialization: 'Spécialisation des tours',
 
   adminEdenVotesClearDeadline: 'Effacer la date limite',

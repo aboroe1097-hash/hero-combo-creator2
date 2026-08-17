@@ -428,7 +428,7 @@ const id = {
   tabGenerator: 'Generator Kombo',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas Hero',
-  tabHeroesCombos: 'Hero & Kombo',
+  tabHeroesCombos: 'Hub Hero & Kombo',
   tabHeroesOnly: 'Hero',
   tabSkinsOnly: 'Skin',
   tabEdenMap: 'VTS Eden Hub',
@@ -1322,9 +1322,9 @@ const id = {
   edenX1AdminDashboard: 'Dasbor Admin',
   edenX1ExploreWebsite: 'Jelajahi Situs VTS',
   edenX1ExploreWebsiteTitle: 'Baru di sini? Jelajahi situs VTS lengkap.',
-  edenX1NoticeTitle: 'Tampilan demo - belum final.',
+  edenX1NoticeTitle: 'Data musim segera hadir.',
   edenX1NoticeCopy:
-    'Halaman ini hanya dibuka untuk pelacakan awal. Hadiah final akan ditinjau dan dikonfirmasi pada akhir musim setelah semua catatan kontribusi, banner, jalur, shield wall, dan kelayakan diperiksa.',
+    'Pelacakan awal aktif selama musim berlangsung. Hadiah akhir dikonfirmasi pada akhir musim setelah catatan kontribusi, panji, jalur, dinding perisai, dan kelayakan diperiksa.',
   edenX1RewardFlowEyebrow: 'Alur hadiah',
   edenX1RewardFlowTitle: 'Rencana distribusi 20 hadiah teratas',
   edenX1RewardFlowSubtitle:
@@ -1719,7 +1719,7 @@ const id = {
   strifeVerifiedLineup: 'Susunan monster terverifikasi',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Spesialisasi',
-  tabResearchTowers: 'Penelitian & Menara',
+  tabResearchTowers: 'Hub Riset & Menara',
   tabTowersSpecialization: 'Spesialisasi Menara',
 
   adminEdenVotesClearDeadline: 'Hapus batas waktu',

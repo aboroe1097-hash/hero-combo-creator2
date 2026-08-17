@@ -5,11 +5,10 @@
 // Firestore paths and browser cache keys, so a new season starts empty and an
 // archived season stays byte-identical instead of being overwritten.
 //
-// eden-x1 is the legacy season: every path below is the historical one the live
-// X1 data already occupies, and it stays the writable working season until an
-// admin archives it at rollover. eden-x2 is the draft for the next season: its
-// records live in dedicated eden_x2_* paths and reach the public site only
-// through the allowlisted published projection.
+// eden-x1 is the previous season: every path below is the historical one the
+// live X1 data already occupies. eden-x2 is the season now running: its records
+// live in dedicated eden_x2_* paths and reach the public site only through the
+// allowlisted published projection.
 
 export const EDEN_WORKSPACE_IDS = Object.freeze(['eden-x1', 'eden-x2']);
 export const EDEN_WORKSPACE_COLLECTION_PATH = 'vts_admin/eden_workspaces/records';
@@ -18,19 +17,18 @@ export const EDEN_WORKSPACE_LIFECYCLES = Object.freeze(['archived', 'draft', 'ac
 
 const EDEN_X2_DEFAULT_SEASON = 'season-2027';
 
-// Shipping defaults describe the season as it stands the day this releases, not
-// the end state after a rollover. X1 is still the season being played and must
-// stay writable; X2 exists as an empty draft to prepare. Archiving X1 and
-// activating X2 is a deliberate act the admin performs at rollover, recorded in
-// the stored workspace record — which is exactly what the plan means by
-// snapshotting X1 "before X2 activation".
+// X2 is the season now being played, so it is what the admin opens by default.
+// X1 stays writable rather than archived: a finished season still needs late
+// corrections, and freezing it is a deliberate act the admin performs from the
+// command strip, recorded in the stored workspace record. Archiving is one-way
+// once done.
 const EDEN_WORKSPACE_DEFAULTS = Object.freeze({
   'eden-x1': Object.freeze({
     id: 'eden-x1',
     label: 'Eden X1',
     seasonLabel: 'Eden X1',
     lifecycle: 'active',
-    active: true,
+    active: false,
     defaultSeason: 'season-2026',
     createdAtMs: 0,
     archivedAtMs: 0,
@@ -41,8 +39,8 @@ const EDEN_WORKSPACE_DEFAULTS = Object.freeze({
     id: 'eden-x2',
     label: 'Eden X2',
     seasonLabel: 'Eden X2',
-    lifecycle: 'draft',
-    active: false,
+    lifecycle: 'active',
+    active: true,
     defaultSeason: EDEN_X2_DEFAULT_SEASON,
     createdAtMs: 0,
     archivedAtMs: 0,
@@ -82,7 +80,7 @@ export function normalizeEdenWorkspaceId(value) {
 }
 
 export function getEdenWorkspace(workspaceId) {
-  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x1';
+  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
   return EDEN_WORKSPACE_DEFAULTS[id];
 }
 
@@ -91,7 +89,7 @@ export function listEdenWorkspaces() {
 }
 
 export function edenWorkspaceFirestorePaths(workspaceId) {
-  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x1';
+  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
   return EDEN_WORKSPACE_FIRESTORE_PATHS[id];
 }
 
@@ -169,9 +167,9 @@ export function parseEdenWorkspaceRecord(record) {
 export function getActiveAdminWorkspaceId() {
   try {
     const stored = globalThis.localStorage?.getItem(EDEN_ADMIN_WORKSPACE_STORAGE_KEY);
-    return normalizeEdenWorkspaceId(stored) || 'eden-x1';
+    return normalizeEdenWorkspaceId(stored) || 'eden-x2';
   } catch {
-    return 'eden-x1';
+    return 'eden-x2';
   }
 }
 

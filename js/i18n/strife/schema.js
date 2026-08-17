@@ -1,54 +1,19 @@
-export const STRIFE_MONSTER_IDS = Object.freeze([
-  'rabbit',
-  'gambosate',
-  'pivana',
-  'titanus',
-  'fordogreen',
-  'savage-swordsman',
-  'sasha',
-  'noisy-noel',
-  'trident-north-sea',
-  'black-annis',
-  'frost-queen',
-]);
+import { STRIFE_MONSTERS } from '../../strife-db.js';
 
-export const STRIFE_SKILL_IDS = Object.freeze([
-  'rabbit:playful-leap',
-  'rabbit:carrot-shield',
-  'gambosate:outrage',
-  'gambosate:legions-will',
-  'gambosate:ferocious-roar',
-  'gambosate:power-of-the-legion',
-  'pivana:furious-strike',
-  'pivana:dirty-tricks',
-  'pivana:uncontrolled-rage',
-  'titanus:deadly-blade',
-  'titanus:colossal-figure',
-  'titanus:butcher-in-the-wild',
-  'titanus:power-of-the-legion',
-  'fordogreen:preemptive-strike',
-  'fordogreen:broken-promise',
-  'fordogreen:hunt-you-down',
-  'fordogreen:power-of-the-legion',
-  'savage-swordsman:ferocious-roar',
-  'savage-swordsman:top-swordsman',
-  'savage-swordsman:savage-in-nature',
-  'sasha:storm-shield',
-  'sasha:sashas-curse',
-  'sasha:legions-strength',
-  'noisy-noel:invisible',
-  'noisy-noel:clown-makeup',
-  'noisy-noel:pickpocket',
-  'noisy-noel:power-of-the-legion',
-  'trident-north-sea:trident-swing',
-  'trident-north-sea:lasting-stamina',
-  'trident-north-sea:backlash',
-  'trident-north-sea:power-of-the-legion',
-  'black-annis:hags-claw',
-  'black-annis:devourers-feast',
-  'frost-queen:frozen-tomb',
-  'frost-queen:glacial-armor',
-]);
+export const STRIFE_MONSTER_IDS = Object.freeze(STRIFE_MONSTERS.map((m) => m.id));
+
+export const STRIFE_SKILL_IDS = Object.freeze(
+  STRIFE_MONSTERS.flatMap((monster) => monster.skills.map((skill) => `${monster.id}:${skill.id}`))
+);
+
+const CANONICAL_SKILLS = Object.fromEntries(
+  STRIFE_MONSTERS.flatMap((m) =>
+    m.skills.map((s) => [`${m.id}:${s.id}`, { name: s.name, effect: s.effect, answer: s.answer }])
+  )
+);
+const CANONICAL_MONSTERS = Object.fromEntries(
+  STRIFE_MONSTERS.map((m) => [m.id, { name: m.name }])
+);
 
 export const STRIFE_GUIDE_IDS = Object.freeze([
   'gambosate:0',
@@ -80,6 +45,7 @@ export const STRIFE_TIMINGS = Object.freeze([
   'After 2-round prep',
   'When damaged',
   'Rounds 1, 4',
+  'Every round',
 ]);
 
 export const STRIFE_TARGETS = Object.freeze([
@@ -110,6 +76,9 @@ export const STRIFE_TARGETS = Object.freeze([
   'Frost Queen',
   'Lowest-power squad',
   'Fordogreen army',
+  '2-3 random squads',
+  '1 random squad each',
+  'Vialfiend',
 ]);
 
 export const STRIFE_TAGS = Object.freeze([
@@ -153,21 +122,34 @@ export const STRIFE_TAGS = Object.freeze([
   'Skill Weakness',
   'Crit Weakness',
   'Focus Fire',
+  'Stacking Debuff',
+  'Skill Denial',
+  'Damage Cap',
+  'Might Buff',
+  'Troop Cap',
 ]);
 
-function orderedRecord(ids, values, kind) {
-  if (!Array.isArray(values) || values.length !== ids.length) {
-    throw new Error(`Strife ${kind} pack must contain ${ids.length} entries.`);
-  }
-  return Object.fromEntries(ids.map((id, index) => [id, values[index]]));
+function orderedRecord(ids, values, fallbackMap) {
+  const list = Array.isArray(values) ? values : [];
+  return Object.fromEntries(
+    ids.map((id, index) => {
+      const val = list[index];
+      if (val !== undefined && val !== null) return [id, val];
+      if (fallbackMap && fallbackMap[id] !== undefined) return [id, fallbackMap[id]];
+      return [id, id];
+    })
+  );
 }
 
 export function defineStrifePack({ monsterNames, skills, guideNotes, timings, targets, tags }) {
   const monsters = Object.fromEntries(
-    STRIFE_MONSTER_IDS.map((id, index) => [id, { name: monsterNames?.[index] }])
+    STRIFE_MONSTER_IDS.map((id, index) => [
+      id,
+      { name: monsterNames?.[index] || CANONICAL_MONSTERS[id]?.name || id },
+    ])
   );
   for (const [guideId, note] of Object.entries(
-    orderedRecord(STRIFE_GUIDE_IDS, guideNotes, 'guide-note')
+    orderedRecord(STRIFE_GUIDE_IDS, guideNotes)
   )) {
     const [monsterId, rawIndex] = guideId.split(':');
     const index = Number(rawIndex);
@@ -175,17 +157,15 @@ export function defineStrifePack({ monsterNames, skills, guideNotes, timings, ta
     monsters[monsterId].guideNotes[index] = note;
   }
 
+  const skillEntries = Array.isArray(skills)
+    ? skills.map(([name, effect, answer]) => ({ name, effect, answer }))
+    : [];
+
   return Object.freeze({
     monsters: Object.freeze(monsters),
-    skills: Object.freeze(
-      orderedRecord(
-        STRIFE_SKILL_IDS,
-        skills?.map(([name, effect, answer]) => ({ name, effect, answer })),
-        'skill'
-      )
-    ),
-    timings: Object.freeze(orderedRecord(STRIFE_TIMINGS, timings, 'timing')),
-    targets: Object.freeze(orderedRecord(STRIFE_TARGETS, targets, 'target')),
-    tags: Object.freeze(orderedRecord(STRIFE_TAGS, tags, 'tag')),
+    skills: Object.freeze(orderedRecord(STRIFE_SKILL_IDS, skillEntries, CANONICAL_SKILLS)),
+    timings: Object.freeze(orderedRecord(STRIFE_TIMINGS, timings)),
+    targets: Object.freeze(orderedRecord(STRIFE_TARGETS, targets)),
+    tags: Object.freeze(orderedRecord(STRIFE_TAGS, tags)),
   });
 }

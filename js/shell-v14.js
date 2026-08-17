@@ -39,13 +39,12 @@
   // sequence. The three hubs lead, because each one now stands for several tools
   // that used to have their own pill; standalone tools follow.
   const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
-  const desktopPrimaryIds = [...hubIds, 'tabMaterials'];
-  const wideDesktopPrimaryIds = [
-    ...desktopPrimaryIds,
-    'tabAllStarBoh',
-    'tabStrife',
-    'tabYouTube',
-  ];
+  // VTS Admin sits fifth, straight after the hubs and Materials: it is opened
+  // far more often than the standalone tools yet was reachable only through
+  // More. All-Star BoH moves the other way, into More, because it runs for a
+  // few weeks a season rather than every day.
+  const desktopPrimaryIds = [...hubIds, 'tabMaterials', 'tabOcrDashboard'];
+  const wideDesktopPrimaryIds = [...desktopPrimaryIds, 'tabStrife', 'tabYouTube'];
   // Four slots, and the first must be the tab the app actually opens on —
   // Heroes & Combos was missing here entirely, so the landing tool had no rail
   // entry on phones.
@@ -53,13 +52,16 @@
     'tabHeroesCombos',
     'tabResearchTowers',
     'tabMaterials',
-    'tabAllStarBoh',
+    'tabOcrDashboard',
   ];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
     ['tabHeroesCombos', 'heroesCombos'],
     ['tabResearchTowers', 'researchTowers'],
     ['tabMaterials', 'materials'],
+    // These values double as the section-id prefix in syncSkipDestination
+    // (`#${tabName}Section`), so they must stay the internal tab names. The
+    // shareable #edenHub hash is handled by tabHashAliases below.
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
     ['tabAllStarBoh', 'allStarBoh'],
@@ -88,6 +90,10 @@
     ['heroes', 'heroes'],
     ['skins', 'skins'],
   ]);
+  // #edenHub is the canonical share link for the Eden tab; #edenMap is the name
+  // it shipped under and stays valid permanently, because it is already live in
+  // the toolkit map, Velo's knowledge base and links members have shared.
+  const tabHashAliases = new Map([['edenhub', 'edenMap']]);
   const moreHistoryKey = 'vtsShellMoreOpen';
 
   const supportedShellLanguages = new Set([
@@ -198,6 +204,7 @@
       }
       return 'heroesCombos';
     }
+    if (tabHashAliases.has(normalizedHash)) return tabHashAliases.get(normalizedHash);
     return (
       Array.from(internalHashes.values()).find(
         (tabName) => tabName.toLowerCase() === normalizedHash

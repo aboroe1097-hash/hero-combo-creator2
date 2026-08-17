@@ -14,6 +14,15 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
+    // Second privilege level, granted by the setUserRole callable. A claim
+    // rather than a roles document on purpose: a document would force a get()
+    // into every admin evaluation, and this file has already hit the
+    // 1000-expressions-per-request limit once. Reading the token costs no
+    // document read. superadmin always implies admin.
+    function isSuperAdmin() {
+      return signedIn() && request.auth.token.superadmin == true;
+    }
+
     // Admin writes (dashboard/roster/conduct, eden_x1 vote moderation) require
     // the `admin` custom claim (set on the admin UID via
     // `node scripts/firebase-set-admin-claim.mjs <uid-or-email>`), NOT a mere
@@ -2595,6 +2604,27 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenWorkspaceRecord(workspaceId);
       allow delete: if false;
+    }
+
+    // Append-only trail of every admin/superadmin grant and revoke. Written by
+    // the setUserRole callable, which runs with Admin SDK privileges and so
+    // bypasses these rules; the create rule exists to keep the shape honest if
+    // anything else ever writes here. Never updatable or deletable: an audit
+    // record that can be edited is not an audit record.
+    match /vts_admin/role_audit/records/{recordId} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly([
+          'targetUid', 'role', 'granted', 'changedBy', 'changedAtMs'
+        ])
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid.size() > 0
+        && request.resource.data.targetUid.size() <= 128
+        && (request.resource.data.role == 'admin' || request.resource.data.role == 'superadmin')
+        && request.resource.data.granted is bool
+        && request.resource.data.changedBy == request.auth.uid
+        && request.resource.data.changedAtMs is number;
+      allow update, delete: if false;
     }
 
     match /arcade_scores/{scoreId} {

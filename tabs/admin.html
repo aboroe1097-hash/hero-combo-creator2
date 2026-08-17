@@ -468,8 +468,8 @@
           >Eden workspace</label
         >
         <select id="dashWorkspaceSelect" class="dash-workspace-select">
-          <option value="eden-x1" data-i18n="adminWorkspaceOptionX1">Eden X1 (current season)</option>
-          <option value="eden-x2" data-i18n="adminWorkspaceOptionX2">Eden X2 (next season draft)</option>
+          <option value="eden-x2" data-i18n="adminWorkspaceOptionX2">Eden X2 (current season)</option>
+          <option value="eden-x1" data-i18n="adminWorkspaceOptionX1">Eden X1 (previous season)</option>
         </select>
         <span
           id="dashWorkspaceLifecycle"
@@ -676,6 +676,21 @@
                 <path d="M12 3 5 6v5c0 4 3 8 7 10 4-2 7-6 7-10V6l-7-3z" /></svg
               ><span data-i18n="adminConductTab">Bonus Team Effort Points</span>
             </button>
+          </div>
+        </section>
+      </div>
+      </section>
+
+      <!-- Standing programs run every season and sit deliberately outside the
+           Eden workspace switch above: their records are global, so changing
+           the active season must never change what these tabs show. -->
+      <div class="dash-subtab-nav dash-subtab-nav-grouped" data-subtab-scope="global" aria-labelledby="dashAllianceScopeTitle">
+        <h2 class="sr-only" id="dashAllianceScopeTitle" data-i18n="adminAllianceScopeTitle">Alliance management</h2>
+        <section class="dash-subtab-group">
+          <h3 class="dash-subtab-group-title" data-i18n="adminNavGroupAlliance">
+            Alliance management
+          </h3>
+          <div class="dash-subtab-group-tabs" data-subtab-group="standing">
             <button class="dash-subtab-btn" data-subtab="allianceView">
               <svg
                 width="14"
@@ -694,20 +709,6 @@
                 >Alliance View</span
               >
             </button>
-          </div>
-        </section>
-      </div>
-      </section>
-
-      <!-- Standing programs run every season and sit deliberately outside the
-           Eden workspace switch above: their records are global, so changing
-           the active season must never change what these tabs show. -->
-      <div class="dash-subtab-nav dash-subtab-nav-grouped" data-subtab-scope="global">
-        <section class="dash-subtab-group">
-          <h3 class="dash-subtab-group-title" data-i18n="adminNavGroupStanding">
-            Standing programs
-          </h3>
-          <div class="dash-subtab-group-tabs" data-subtab-group="standing">
             <button class="dash-subtab-btn" data-subtab="allStarBoh">
               <svg
                 width="14"
@@ -724,6 +725,11 @@
               </svg>
               <span data-i18n="adminBohTab">All-Star BoH</span>
             </button>
+            <button class="dash-subtab-btn" data-subtab="throneBuffs"><span data-i18n="adminThroneTab">Throne Buffs</span></button>
+            <!-- Superadmin only. Hidden by default and revealed from the claim,
+                 so an admin without the level never sees it; the callable and
+                 firestore.rules enforce the boundary independently. -->
+            <button class="dash-subtab-btn" data-subtab="userRoles" data-requires-superadmin hidden><span data-i18n="adminRolesTab">Users &amp; Roles</span></button>
           </div>
         </section>
       </div>
@@ -1690,6 +1696,10 @@
           </div>
         </section>
       </div>
+
+      <!-- Sub-tab: Throne Buffs -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
 
       <!-- Sub-tab: Eden X1 Votes -->
       <div class="dash-subtab-panel hidden" id="dashSubtabEdenVotes">

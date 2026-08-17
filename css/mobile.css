@@ -2956,15 +2956,10 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   }
 
   body.admin-standalone-page .admin-command-actions .admin-control-row {
-    display: grid !important;
-    grid-template-columns:
-      minmax(108px, 0.8fr)
-      minmax(148px, 1.1fr)
-      44px
-      minmax(96px, 0.8fr)
-      minmax(104px, 0.85fr)
-      minmax(104px, 0.85fr) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
     align-items: center !important;
+    justify-content: flex-end !important;
     gap: 8px !important;
   }
 

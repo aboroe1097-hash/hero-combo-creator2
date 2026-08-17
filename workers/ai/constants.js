@@ -29,6 +29,7 @@ export const LIMITS = Object.freeze({
 });
 
 export const ALLOWED_MODELS = Object.freeze(['gemini-3.1-flash-lite', 'gemini-3.5-flash']);
+export const ALLOWED_DEEPSEEK_MODELS = Object.freeze(['deepseek-chat', 'deepseek-reasoner']);
 
 export const SUPPORTED_LOCALES = Object.freeze([
   'ar',
@@ -57,6 +58,7 @@ export const TOOL_GROUPS = Object.freeze([
 export const GEMINI_INTERACTIONS_URL =
   'https://generativelanguage.googleapis.com/v1beta/interactions';
 export const GEMINI_API_REVISION = '2026-05-20';
+export const DEEPSEEK_CHAT_URL = 'https://api.deepseek.com/chat/completions';
 
 export const SAFE_ERROR_CODES = Object.freeze({
   disabled: 'ai_disabled',

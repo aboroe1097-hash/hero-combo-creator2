@@ -339,6 +339,19 @@
   }
 })();
 
+(function applyEmbeddedStateBeforePaint() {
+  try {
+    if (
+      new URLSearchParams(window.location.search).get('embed') === '1' ||
+      window.self !== window.top
+    ) {
+      document.documentElement.classList.add('is-embedded');
+    }
+  } catch (e) {
+    // Ignore restricted window.top
+  }
+})();
+
 (function prepareInitialTabBeforePaint() {
   try {
     var deferredTabs = [

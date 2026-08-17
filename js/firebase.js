@@ -344,6 +344,54 @@ export async function isAdminAuthUser(userOverride = null, options = {}) {
   return getFirebaseAdminClaim(Boolean(options.forceRefresh), user);
 }
 
+// The second privilege level. UI hiding is never authorization — Firestore
+// rules and the setUserRole callable enforce this independently — but the
+// dashboard still needs to know whether to render the superadmin surfaces.
+//
+// A claim reaches a signed-in browser only when its ID token refreshes, which
+// can lag up to an hour behind the change. Pass forceRefresh straight after a
+// grant, or wherever a refusal would otherwise look like a bug.
+export async function getFirebaseSuperAdminClaim(forceRefresh = false, userOverride = null) {
+  if (!auth) throw new Error('Firebase not initialized');
+  const user = userOverride || auth.currentUser;
+  if (!user || user.isAnonymous) return false;
+  const token = await getIdTokenResult(user, forceRefresh);
+  return token?.claims?.superadmin === true;
+}
+
+export async function isSuperAdminAuthUser(userOverride = null, options = {}) {
+  const user = userOverride || auth?.currentUser || null;
+  if (!user || user.isAnonymous) return false;
+  return getFirebaseSuperAdminClaim(Boolean(options.forceRefresh), user);
+}
+
+export function currentAuthUid() {
+  return auth?.currentUser?.uid || '';
+}
+
+/**
+ * Bridge to the setUserRole callable. Kept here rather than in the controller
+ * so that module stays free of Firebase and testable, and so the callable's
+ * error codes are translated once.
+ *
+ * The caller's own claim is re-verified server-side; nothing sent from here is
+ * trusted as authority.
+ */
+export async function callSetUserRole({ targetUid, role, granted }) {
+  const { getFunctions, httpsCallable } = await import(
+    'https://www.gstatic.com/firebasejs/12.7.0/firebase-functions.js'
+  );
+  if (!app) throw new Error('Firebase not initialized');
+  const callable = httpsCallable(getFunctions(app, 'us-central1'), 'setUserRole');
+  const result = await callable({ targetUid, role, granted });
+  // Force a token refresh for the operator's own row so the UI and the claim
+  // agree immediately rather than after the token's own hour-long lifetime.
+  if (targetUid === currentAuthUid()) {
+    await getIdTokenResult(auth.currentUser, true).catch(() => undefined);
+  }
+  return result?.data;
+}
+
 // Legacy loose admin check: true if the user signed in with an email/password
 // provider. Firestore rules NO LONGER gate on this (they require the `admin`
 // custom claim via isAdmin()); the login flow uses isAdminAuthUser() instead.

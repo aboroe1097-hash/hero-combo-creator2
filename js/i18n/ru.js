@@ -430,7 +430,7 @@ const ru = {
   tabGenerator: 'Генератор Комбо',
   tabYouTube: 'YouTube',
   tabHeroes: 'Атлас героев',
-  tabHeroesCombos: 'Герои и комбинации',
+  tabHeroesCombos: 'Хаб героев и комбо',
   tabHeroesOnly: 'Герои',
   tabSkinsOnly: 'Скины',
   tabEdenMap: 'VTS Eden Hub',
@@ -1325,9 +1325,9 @@ const ru = {
   edenX1AdminDashboard: 'Панель администратора',
   edenX1ExploreWebsite: 'Открыть сайт VTS',
   edenX1ExploreWebsiteTitle: 'Новичок здесь? Открой полный сайт VTS.',
-  edenX1NoticeTitle: 'Демо-вид - не финал.',
+  edenX1NoticeTitle: 'Данные сезона появятся скоро.',
   edenX1NoticeCopy:
-    'Страница открыта для раннего отслеживания. Итоговые награды будут проверены и подтверждены в конце сезона после проверки вклада, баннеров, дорог, щитов и права на награды.',
+    'Предварительное отслеживание работает во время сезона. Итоговые награды подтверждаются в конце сезона после проверки записей о вкладе, знамёнах, маршрутах, стене щитов и праве на участие.',
   edenX1RewardFlowEyebrow: 'Схема наград',
   edenX1RewardFlowTitle: 'План распределения Top 20 наград',
   edenX1RewardFlowSubtitle:
@@ -1719,7 +1719,7 @@ const ru = {
   strifeVerifiedLineup: 'Проверенная расстановка монстра',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Специализация',
-  tabResearchTowers: 'Исследования и башни',
+  tabResearchTowers: 'Хаб исследований и башен',
   tabTowersSpecialization: 'Специализация башен',
 
   adminEdenVotesClearDeadline: 'Очистить дедлайн',

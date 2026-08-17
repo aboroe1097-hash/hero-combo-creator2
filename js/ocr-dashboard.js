@@ -137,7 +137,9 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
-import { requireSensitiveAdminPin, sensitiveAdminUnlocked } from './admin-pin-gate.js';
+// Cached superadmin claim, refreshed by refreshSuperAdminSurfaces(). UI gating
+// only — the rules and the callable are the real boundary.
+let dashSuperAdmin = null;
 import {
   applyDashboardAttackMutation,
   dashboardAttackFingerprint,
@@ -179,7 +181,12 @@ let allStarBohMountPromise = null;
 let allStarBohController = null;
 let allStarBohAdminI18n = null;
 let allStarBohResearchI18n = null;
+let throneBuffsModulePromise = null;
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
+// Throne Buffs is a standing program: its history key is deliberately global,
+// never scoped to the Eden season workspace, so a season rollover cannot
+// move or clear the assignment history.
+const THRONE_BUFFS_HISTORY_LOCAL_KEY = 'vtsThroneBuffsHistory';
 
 function isDynamicImportLoadFailure(err) {
   const message = String(err?.message || err?.reason?.message || err || '');
@@ -680,8 +687,157 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'contributions') renderContributions();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') void ensureAllStarBohMountedOrUpdated();
+  if (name === 'throneBuffs') void ensureThroneBuffsMounted();
+  if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
+}
+
+let userRolesModulePromise = null;
+
+/**
+ * Reveals the Users & Roles tab only for a superadmin. This is presentation:
+ * the setUserRole callable re-checks the caller's claim server-side and
+ * firestore.rules gate the audit trail independently, so hiding the button is
+ * a courtesy, never the boundary.
+ */
+async function refreshSuperAdminSurfaces() {
+  let superadmin = false;
+  try {
+    // The local test bypass already stands in for the admin claim on
+    // localhost; it stands in for superadmin too, so the specs exercise the
+    // same code path a real superadmin takes. isLocalAdminTestBypass() is
+    // hostname-locked, so this cannot apply in production.
+    if (isLocalAdminTestBypass()) return applySuperAdminSurfaces(true);
+    const { isSuperAdminAuthUser } = await import('./firebase.js');
+    superadmin = await isSuperAdminAuthUser();
+  } catch {
+    // Treat an unreadable claim as "not a superadmin": failing closed keeps a
+    // transient auth error from exposing the surface.
+    superadmin = false;
+  }
+  return applySuperAdminSurfaces(superadmin);
+}
+
+function applySuperAdminSurfaces(superadmin) {
+  dashSuperAdmin = superadmin;
+  document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
+    element.hidden = !superadmin;
+  });
+  // The two formerly PIN-gated tabs follow the same claim.
+  document.querySelectorAll('[data-subtab="edenVotes"], [data-subtab="conduct"]').forEach((btn) => {
+    btn.disabled = !superadmin;
+    btn.title = superadmin ? '' : dashT('adminRolesSuperadminRequired');
+  });
+  return superadmin;
+}
+
+/**
+ * Candidate accounts come from users/{uid} profiles, which only exist once
+ * someone has signed in. Roles themselves are never read from there — a
+ * profile document is member-writable, so treating it as authority would be an
+ * escalation path. The claim is the only source of truth.
+ */
+async function loadRoleCandidates() {
+  const { collection, getDocs } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs
+    .map((entry) => ({
+      uid: entry.id,
+      displayName: String(entry.data()?.displayName || '').slice(0, 80),
+      admin: entry.data()?.admin === true,
+      superadmin: entry.data()?.superadmin === true,
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName) || a.uid.localeCompare(b.uid));
+}
+
+async function ensureUserRolesMounted() {
+  if (!(await refreshSuperAdminSurfaces())) return;
+  if (!userRolesModulePromise) {
+    userRolesModulePromise = import('./admin-roles-controller.js').catch((error) => {
+      userRolesModulePromise = null;
+      void recoverFromStaleAssetGraph(error);
+      throw error;
+    });
+  }
+  try {
+    const module = await userRolesModulePromise;
+    const mount = $id('dashUserRolesRoot');
+    if (!mount) return;
+    const { callSetUserRole, currentAuthUid } = await import('./firebase.js');
+    module.renderRolesController(mount, {
+      currentUid: currentAuthUid(),
+      listMembers: loadRoleCandidates,
+      setUserRole: callSetUserRole,
+      t: dashT,
+    });
+  } catch (error) {
+    console.error('USER ROLES LOAD ERROR:', error);
+    const mount = $id('dashUserRolesRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminRolesLoadFailed')
+      )}</div>`;
+    }
+  }
+}
+
+function loadThroneBuffsHistory() {
+  try {
+    const raw = localStorage.getItem(THRONE_BUFFS_HISTORY_LOCAL_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('THRONE BUFFS HISTORY LOAD ERROR:', error);
+    return [];
+  }
+}
+
+function saveThroneBuffsHistory(record) {
+  const history = loadThroneBuffsHistory();
+  const index = history.findIndex((item) => item?.weekKey === record.weekKey);
+  if (index >= 0) history[index] = record;
+  else history.push(record);
+  try {
+    localStorage.setItem(THRONE_BUFFS_HISTORY_LOCAL_KEY, JSON.stringify(history));
+  } catch (error) {
+    console.warn('THRONE BUFFS HISTORY SAVE ERROR:', error);
+  }
+}
+
+async function ensureThroneBuffsMounted() {
+  if (!throneBuffsModulePromise) {
+    throneBuffsModulePromise = import('./admin-throne-buffs.js').catch((error) => {
+      throneBuffsModulePromise = null;
+      void recoverFromStaleAssetGraph(error);
+      throw error;
+    });
+  }
+  try {
+    const module = await throneBuffsModulePromise;
+    const mount = $id('dashThroneRoot');
+    if (!mount) return;
+    // The Throne Buffs UI reads its strings through the dashboard's own
+    // translator, so publish it once for the module's embedded t() helper.
+    window.dashT = dashT;
+    module.renderThroneBuffs(mount, {
+      history: loadThroneBuffsHistory(),
+      rosterMembers: Array.isArray(state.rosterNames)
+        ? state.rosterNames.map((name) => ({ name }))
+        : [],
+      onSave: saveThroneBuffsHistory,
+    });
+  } catch (error) {
+    console.error('THRONE BUFFS LOAD ERROR:', error);
+    const mount = $id('dashThroneRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminThroneEmptyHistory')
+      )}</div>`;
+    }
+  }
 }
 
 const CONDUCT_CATEGORY_I18N_KEYS = {
@@ -2274,7 +2430,7 @@ function getLocalAllianceViewFirestoreContext() {
   };
   const user = {
     uid: 'local-alliance-view-admin',
-    getIdTokenResult: async () => ({ claims: { admin: true } }),
+    getIdTokenResult: async () => ({ claims: { admin: true, superadmin: true } }),
   };
   localAllianceViewFirestoreContext = { db: { kind: 'local-alliance-view' }, user, firestore };
   return localAllianceViewFirestoreContext;
@@ -2296,28 +2452,26 @@ window.getVtsAdminFirestoreContext = async function () {
 // --- Roster ---
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-const PIN_GATED_DASH_SUBTABS = new Set(['edenVotes', 'conduct']);
-
-function dashSubtabPinOptions(name) {
-  if (name === 'conduct') {
-    return {
-      kicker: dashT('adminConductTab'),
-      title: dashT('adminEdenVotesPinTitle'),
-      prompt: dashT('adminConductPinPrompt'),
-    };
-  }
-  return {
-    kicker: dashT('adminEdenVotesTab'),
-    title: dashT('adminEdenVotesPinTitle'),
-    prompt: dashT('adminEdenVotesPinPrompt'),
-  };
-}
+// These two were behind a shared PIN, which protected nothing: firestore.rules
+// had no concept of it, so any admin could read and write eden vote settings
+// and conduct adjustments directly. They are now gated on the superadmin claim,
+// which the rules and the setUserRole callable enforce independently.
+const SUPERADMIN_DASH_SUBTABS = new Set(['edenVotes', 'conduct', 'userRoles']);
 
 function switchDashSubtab(name) {
-  if (PIN_GATED_DASH_SUBTABS.has(name) && !sensitiveAdminUnlocked()) {
-    requireSensitiveAdminPin(dashSubtabPinOptions(name)).then((ok) => {
-      if (ok) switchDashSubtab(name);
-    });
+  if (SUPERADMIN_DASH_SUBTABS.has(name) && dashSuperAdmin !== true) {
+    // The claim resolves asynchronously. Refusing while it is merely unknown
+    // would lock a real superadmin out of their own tab whenever they clicked
+    // faster than the token check, so resolve first and decide once.
+    if (dashSuperAdmin === null) {
+      void refreshSuperAdminSurfaces().then((allowed) => {
+        if (allowed) switchDashSubtab(name);
+        else window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
+      });
+      return;
+    }
+    // Known not to be a superadmin: say why rather than doing nothing.
+    window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
     return;
   }
   document
@@ -2336,6 +2490,13 @@ function switchDashSubtab(name) {
     btn.setAttribute('aria-selected', 'true');
     btn.tabIndex = 0;
   }
+  // On mobile the grouped rail becomes a fixed bottom dock. Only the nav of
+  // the active scope can dock; the other nav stays in the page flow so its
+  // tabs remain reachable on a phone.
+  const activeNav = btn?.closest('.dash-subtab-nav') || null;
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((nav) => {
+    nav.classList.toggle('dash-subtab-nav-docked', nav === activeNav);
+  });
   if (name !== 'analytics') state._analyticsAnimated = false;
   // Let the newly selected panel paint before any data-heavy table/chart work.
   // Previously every hidden admin panel rendered synchronously inside the click.
@@ -2362,6 +2523,12 @@ function bindSubtabNavigation() {
   if (nav) nav.setAttribute('role', 'tablist');
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach((panel) => {
     panel.setAttribute('role', 'tabpanel');
+  });
+  const initiallyActiveNav = document
+    .querySelector('#ocrDashboardRoot .dash-subtab-btn.dash-subtab-active')
+    ?.closest('.dash-subtab-nav');
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((navEl) => {
+    navEl.classList.toggle('dash-subtab-nav-docked', navEl === initiallyActiveNav);
   });
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach((btn) => {
     btn.setAttribute('role', 'tab');

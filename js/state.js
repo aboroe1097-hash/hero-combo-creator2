@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '15.0.0';
+export const APP_VERSION = '15.0.1';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -31,7 +31,10 @@ function detectInitialLanguage() {
 
 export let currentLanguage = detectInitialLanguage();
 export let heroInfoEnabled = true;
-export let activeTechSeasons = new Set(['S0', 'S1', 'S2', 'S3', 'S4', 'X1']);
+// Research opens on the seasons people are actually still teching: the newest
+// three. Everything earlier is one click away and the choice is remembered, so
+// a returning visitor keeps whatever they picked.
+export let activeTechSeasons = new Set(['S4', 'X1', 'X2']);
 export let techSearchQuery = '';
 
 export const DEFAULT_HERO_FILTER_SEASONS = ['S0', 'S1'];

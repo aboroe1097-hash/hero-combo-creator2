@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260815_131421"></script>
-    <script src="js/theme-prepaint.js?v=20260815_131421"></script>
+    <script src="js/maintenance-config.js?v=20260817_094706"></script>
+    <script src="js/theme-prepaint.js?v=20260817_094706"></script>
     <style>
       html[data-initial-tab-pending='allStarBoh'] #allStarBohSection {
         display: block !important;
@@ -113,16 +113,16 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260815_131421" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/app.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/components.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260815_131421" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260815_131421" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260815_131421" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260817_094706" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/app.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/components.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260817_094706" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260817_094706" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260817_094706" />
     <script type="importmap">
       {
         "imports": {
@@ -134,7 +134,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260815_131421"></script>
+    <script src="js/admin-auth-config.js?v=20260817_094706"></script>
   </head>
   <body>
     <a
@@ -419,7 +419,7 @@
                       stroke-linejoin="round"
                       d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
                     /></svg
-                  ><span data-i18n="tabHeroesCombos">Heroes &amp; Combos</span></button
+                  ><span data-i18n="tabHeroesCombos">Heroes &amp; Combos Hub</span></button
                 ><span class="tab-badge tab-badge-new">NEW</span>
               </div>
               <div
@@ -435,7 +435,7 @@
                       stroke-linejoin="round"
                       d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
                     /></svg
-                  ><span data-i18n="tabResearchTowers">Research &amp; Towers</span></button
+                  ><span data-i18n="tabResearchTowers">Research &amp; Towers Hub</span></button
                 ><span class="tab-badge tab-badge-hot">HOT</span>
               </div>
               <div
@@ -487,11 +487,7 @@
                   >Strife over Dragon</button
                 ><span class="tab-badge tab-badge-new">NEW</span>
               </div>
-              <div
-                class="tab-item tab-badge-wrap"
-                data-shell-mobile-primary
-                data-shell-wide-primary
-              >
+              <div class="tab-item tab-badge-wrap">
                 <button
                   id="tabAllStarBoh"
                   class="tab-pill tab-pill-inactive"
@@ -551,7 +547,11 @@
                   ><span data-i18n="tabYouTube">YouTube</span>
                 </button>
               </div>
-              <div class="tab-item tab-badge-wrap seasonal-admin-wrap">
+              <div
+                class="tab-item tab-badge-wrap seasonal-admin-wrap"
+                data-shell-desktop-primary
+                data-shell-mobile-primary
+              >
                 <a
                   id="tabOcrDashboard"
                   href="admin.html"
@@ -1339,7 +1339,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260815_131421"
+          data-tab-src="tabs/eden-map.html?v=20260817_094706"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1358,7 +1358,7 @@
         <section
           id="allStarBohSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/all-star-boh.html?v=20260815_131421"
+          data-tab-src="tabs/all-star-boh.html?v=20260817_094706"
         >
           <div class="tab-loading" role="status" aria-live="polite">
             <div class="spinner"></div>
@@ -1672,7 +1672,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v15.0.0</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v15.0.1</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1716,12 +1716,12 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260815_131421"></script>
-    <script type="module" src="js/app.js?v=20260815_131421"></script>
-    <script type="module" src="js/command-palette.js?v=20260815_131421"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260815_131421"></script>
-    <script src="js/index-page-enhancements.js?v=20260815_131421"></script>
-    <script src="js/shell-v14.js?v=20260815_131421"></script>
+    <script src="js/loader-v14.js?v=20260817_094706"></script>
+    <script type="module" src="js/app.js?v=20260817_094706"></script>
+    <script type="module" src="js/command-palette.js?v=20260817_094706"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260817_094706"></script>
+    <script src="js/index-page-enhancements.js?v=20260817_094706"></script>
+    <script src="js/shell-v14.js?v=20260817_094706"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>
