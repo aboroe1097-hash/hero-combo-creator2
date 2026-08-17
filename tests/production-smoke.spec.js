@@ -283,10 +283,11 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   await expect(page.locator('#dashLoginForm')).toBeVisible({ timeout: 30000 });
 
   await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('body')).toHaveClass(/\bis-locked\b/u);
-  await expect(page.getByRole('dialog', { name: 'Beta Testers Only' })).toBeVisible();
-  await expect(page.locator('#battleSimulatorMount')).toBeHidden();
-  await expect(page.locator('.battle-app-shell')).toHaveCount(0);
+  // The shared admin PIN is gone — it guarded nothing server-side, and this
+  // route is a calculator over public game data — so the simulator mounts
+  // directly instead of behind a gate.
+  await expect(page.getByRole('dialog', { name: 'Beta Testers Only' })).toHaveCount(0);
+  await expect(page.locator('#battleSimulatorMount')).toBeVisible({ timeout: 30000 });
   const lockedBattleResources = await page.evaluate(() =>
     performance
       .getEntriesByType('resource')
