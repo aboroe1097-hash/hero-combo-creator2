@@ -1,5 +1,10 @@
 # Changelog
 
+## 15.0.12 - 2026-08-18
+
+- Reworked the playbook Day 1 route around the loyalty build: unlock and build the Assault and Guardian Fortresses before resetting, run the all-Green Frontline Workshop honor setup, then reset into the Blue tree (left & right) for loyalty and processing; tile Farm, Marble, and Ale nodes for Coalition Base Camp upgrades, and stay in the loyalty build for the first weeks before switching to an alliance role.
+- Replaced the Eden Tips & Guides screenshots with the actual in-game specialization captures: Demolition, Speed Tiling (main plus the optional 14–20 Blue reference), Structure Honor (40 Green), Tiling Honor, and Fortress Unlock.
+
 ## 15.0.11 - 2026-08-18
 
 - Fixed a crash in the Artifact calculator that showed “Artifact Calculator failed to load” whenever heroes were selected in the generator (or synced from an account roster); the Sword path planning now reads the analyzed hero mechanics correctly.

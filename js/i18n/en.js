@@ -2193,6 +2193,8 @@ const en = {
   edenPlaybookAltDemolition: 'Blue demolition specialization route',
   edenPlaybookAltBanner: 'Red banner specialization route',
   edenPlaybookAltSpeed: 'Green speed tiling specialization route',
+  edenPlaybookAltSpeedOptional:
+    'Optional 14–20 Blue points for speed tiling: Field Cartography march speed and Instant Recall with a 30% discount at the full 20 points',
   edenPlaybookAltHonor: 'Green structure Honor specialization route',
   edenPlaybookAltTiling: 'Green tiling Honor specialization route',
   edenPlaybookAltFort: 'Blue Down fortress unlock specialization route',
