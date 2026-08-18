@@ -60,6 +60,10 @@ function applySubtab(root, name) {
 
 function updateSubtabHash(subtab) {
   try {
+    // Share-intent hashes carry their own payload and must survive the
+    // generator subtab opening underneath them (#combo=..., #roster=...).
+    const base = (window.location.hash || '').replace(/^#/, '').split('?')[0].toLowerCase();
+    if (base.startsWith('combo=') || base.startsWith('roster=')) return;
     window.history.replaceState(window.history.state, '', `#heroesCombos?subtab=${subtab}`);
   } catch {
     /* URL state is progressive enhancement. */

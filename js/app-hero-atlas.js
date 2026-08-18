@@ -371,7 +371,13 @@ function applyHeroAtlasUrlParams() {
   if (_heroesUrlParamsApplied) return;
   _heroesUrlParamsApplied = true;
   const params = new URLSearchParams(window.location.search);
-  _heroesTabState.mode = params.get('atlas') === 'skins' ? 'skins' : 'heroes';
+  // The legacy ?atlas=skins deep link still works, but the Heroes & Combos
+  // hub is the canonical mode source: only an explicit URL parameter may
+  // override the mode, otherwise a hub-selected mode could be clobbered by
+  // the first render racing ahead of setHeroAtlasMode.
+  if (params.has('atlas')) {
+    _heroesTabState.mode = params.get('atlas') === 'skins' ? 'skins' : 'heroes';
+  }
   const seasonParam = params.get('season') || params.get('seasons');
   if (seasonParam) {
     const seasons = seasonParam
