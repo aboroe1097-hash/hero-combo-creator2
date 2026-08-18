@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260818_123956"></script>
-    <script src="js/theme-prepaint.js?v=20260818_123956"></script>
+    <script src="js/maintenance-config.js?v=20260818_131912"></script>
+    <script src="js/theme-prepaint.js?v=20260818_131912"></script>
     <style>
       html[data-initial-tab-pending='allStarBoh'] #allStarBohSection {
         display: block !important;
@@ -113,16 +113,16 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260818_123956" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/app.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/components.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260818_123956" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260818_123956" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260818_123956" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260818_131912" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/app.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/components.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260818_131912" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260818_131912" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260818_131912" />
     <script type="importmap">
       {
         "imports": {
@@ -134,7 +134,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260818_123956"></script>
+    <script src="js/admin-auth-config.js?v=20260818_131912"></script>
   </head>
   <body>
     <a
@@ -310,6 +310,16 @@
               <span class="cmdk-trigger-kbd">Ctrl K</span>
             </button>
 
+            <button
+              id="shareCurrentViewBtn"
+              class="cmdk-trigger"
+              type="button"
+              aria-label="Share this exact view"
+              title="Share this exact view"
+            >
+              <span aria-hidden="true">🔗</span><span class="cmdk-trigger-kbd">Share</span>
+            </button>
+
             <a
               class="account-link"
               href="profile.html"
@@ -420,7 +430,7 @@
                       d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
                     /></svg
                   ><span data-i18n="tabHeroesCombos">Heroes &amp; Combos Hub</span></button
-                ><span class="tab-badge tab-badge-new">NEW</span>
+                ><span class="tab-badge tab-badge-hub">HUB</span>
               </div>
               <div
                 class="tab-item tab-badge-wrap"
@@ -436,12 +446,9 @@
                       d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
                     /></svg
                   ><span data-i18n="tabResearchTowers">Research &amp; Towers Hub</span></button
-                ><span class="tab-badge tab-badge-hot">HOT</span>
+                ><span class="tab-badge tab-badge-hub">HUB</span>
               </div>
-              <div
-                class="tab-item tab-badge-wrap"
-                data-shell-desktop-primary
-              >
+              <div class="tab-item tab-badge-wrap" data-shell-desktop-primary>
                 <button id="tabMaterials" class="tab-pill tab-pill-inactive">
                   <svg
                     fill="none"
@@ -477,7 +484,7 @@
                       d="M9 6.75V15m0 0v2.25m0-10.5V4.5m0 10.5H4.5m4.5 0h10.5M9 15l-3-3m3 3 3-3"
                     /></svg
                   >Eden Map</button
-                ><span class="tab-badge tab-badge-beta" data-i18n="tabEdenMapBadge">Soon</span>
+                ><span class="tab-badge tab-badge-hub">HUB</span>
               </div>
               <div class="tab-item tab-badge-wrap" data-shell-wide-primary>
                 <button id="tabStrife" class="tab-pill tab-pill-inactive">
@@ -551,10 +558,7 @@
                   ><span data-i18n="tabYouTube">YouTube</span>
                 </button>
               </div>
-              <div
-                class="tab-item tab-badge-wrap seasonal-admin-wrap"
-                data-shell-desktop-primary
-              >
+              <div class="tab-item tab-badge-wrap seasonal-admin-wrap" data-shell-desktop-primary>
                 <a
                   id="tabOcrDashboard"
                   href="admin.html"
@@ -727,446 +731,508 @@
              instead of an in-panel toggle. The sections keep their ids so every
              deep link, footer link and command-palette entry still resolves. -->
         <section id="heroesCombosSection" class="tab-panel animate-fade-in">
-          <div class="vts-hub-subtabs vts-hub-subtabs--4" role="tablist" aria-label="Heroes &amp; Combos Hub">
-            <button type="button" class="vts-hub-subtab" role="tab" aria-selected="false" data-hub-subtab="manual" data-i18n="tabManual">Manual Builder</button>
-            <button type="button" class="vts-hub-subtab active" role="tab" aria-selected="true" data-hub-subtab="generator" data-i18n="tabGenerator">Combo Generator</button>
-            <button type="button" class="vts-hub-subtab" role="tab" aria-selected="false" data-hub-subtab="heroes" data-i18n="tabHeroesOnly">Heroes</button>
-            <button type="button" class="vts-hub-subtab" role="tab" aria-selected="false" data-hub-subtab="skins" data-i18n="tabSkinsOnly">Skins</button>
+          <div
+            class="vts-hub-subtabs vts-hub-subtabs--4"
+            role="tablist"
+            aria-label="Heroes &amp; Combos Hub"
+          >
+            <button
+              type="button"
+              class="vts-hub-subtab"
+              role="tab"
+              aria-selected="false"
+              data-hub-subtab="manual"
+              data-i18n="tabManual"
+            >
+              Manual Builder
+            </button>
+            <button
+              type="button"
+              class="vts-hub-subtab active"
+              role="tab"
+              aria-selected="true"
+              data-hub-subtab="generator"
+              data-i18n="tabGenerator"
+              data-subtool-badge="NEW"
+            >
+              Combo Generator
+            </button>
+            <button
+              type="button"
+              class="vts-hub-subtab"
+              role="tab"
+              aria-selected="false"
+              data-hub-subtab="heroes"
+              data-i18n="tabHeroesOnly"
+            >
+              Heroes
+            </button>
+            <button
+              type="button"
+              class="vts-hub-subtab"
+              role="tab"
+              aria-selected="false"
+              data-hub-subtab="skins"
+              data-i18n="tabSkinsOnly"
+            >
+              Skins
+            </button>
           </div>
 
-        <section
-          id="manualSection"
-          class="vts-hub-subtab-panel"
-          data-hub-subtab-panel="manual"
-          role="tabpanel"
-          hidden
-          data-core-tool="manual"
-          aria-labelledby="manualToolTitle"
-        >
-          <header class="core-tool-header core-tool-header--manual">
-            <div class="core-tool-header-copy">
-              <h2 id="manualToolTitle" data-i18n="tabManual">Manual Builder</h2>
-            </div>
-          </header>
-
-          <div class="tool-filter-panel manual-filter-panel">
-            <div class="tool-filter-block tool-filter-block--season">
-              <h3 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="section-heading">
-                Filter by Season
-              </h3>
-              <div id="seasonFilters" class="season-filter-strip">
-                <label class="filter-pill s0-pill"
-                  ><input type="checkbox" value="S0" checked /><span data-i18n="season0"
-                    >S0</span
-                  ></label
-                >
-                <label class="filter-pill s1-pill"
-                  ><input type="checkbox" value="S1" checked /><span data-i18n="season1"
-                    >S1</span
-                  ></label
-                >
-                <label class="filter-pill s2-pill"
-                  ><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label
-                >
-                <label class="filter-pill s3-pill"
-                  ><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label
-                >
-                <label class="filter-pill s4-pill"
-                  ><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label
-                >
-                <label class="filter-pill x1-pill"
-                  ><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label
-                >
-                <label class="filter-pill x2-pill"
-                  ><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label
-                >
-                <label class="filter-pill x8-pill"
-                  ><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label
-                >
+          <section
+            id="manualSection"
+            class="vts-hub-subtab-panel"
+            data-hub-subtab-panel="manual"
+            role="tabpanel"
+            hidden
+            data-core-tool="manual"
+            aria-labelledby="manualToolTitle"
+          >
+            <header class="core-tool-header core-tool-header--manual">
+              <div class="core-tool-header-copy">
+                <h2 id="manualToolTitle" data-i18n="tabManual">Manual Builder</h2>
               </div>
-              <p id="seasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
-            </div>
+            </header>
 
-            <div class="tool-filter-block">
-              <h3 id="filterByStateTitle" data-i18n="filterByStateTitle" class="section-heading">
-                Filter Paid or Free
-              </h3>
-              <div id="stateFilters" class="pill-group">
-                <label class="filter-pill free-pill"
-                  ><input type="checkbox" value="free" checked /><span data-i18n="stateFree"
-                    >Free</span
-                  ></label
+            <div class="tool-filter-panel manual-filter-panel">
+              <div class="tool-filter-block tool-filter-block--season">
+                <h3
+                  id="filterBySeasonTitle"
+                  data-i18n="filterBySeasonTitle"
+                  class="section-heading"
                 >
-                <label class="filter-pill paid-pill"
-                  ><input type="checkbox" value="paid" checked /><span data-i18n="statePaid"
-                    >Paid</span
-                  ></label
-                >
+                  Filter by Season
+                </h3>
+                <div id="seasonFilters" class="season-filter-strip">
+                  <label class="filter-pill s0-pill"
+                    ><input type="checkbox" value="S0" checked /><span data-i18n="season0"
+                      >S0</span
+                    ></label
+                  >
+                  <label class="filter-pill s1-pill"
+                    ><input type="checkbox" value="S1" checked /><span data-i18n="season1"
+                      >S1</span
+                    ></label
+                  >
+                  <label class="filter-pill s2-pill"
+                    ><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label
+                  >
+                  <label class="filter-pill s3-pill"
+                    ><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label
+                  >
+                  <label class="filter-pill s4-pill"
+                    ><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label
+                  >
+                  <label class="filter-pill x1-pill"
+                    ><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label
+                  >
+                  <label class="filter-pill x2-pill"
+                    ><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label
+                  >
+                  <label class="filter-pill x8-pill"
+                    ><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label
+                  >
+                </div>
+                <p id="seasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
               </div>
-            </div>
 
-            <div class="tool-filter-block tool-filter-block--troops">
-              <h3 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="section-heading">
-                Filter Troops
-              </h3>
-              <div id="troopFilters" class="pill-group">
-                <label class="filter-pill archers-pill"
-                  ><input type="checkbox" value="Archers" /><span data-i18n="troopArchers"
-                    >Archers</span
-                  ></label
-                >
-                <label class="filter-pill footmen-pill"
-                  ><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen"
-                    >Footmen</span
-                  ></label
-                >
-                <label class="filter-pill cavalry-pill"
-                  ><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry"
-                    >Cavalry</span
-                  ></label
-                >
-                <label class="filter-pill all-pill"
-                  ><input type="checkbox" value="All" checked /><span data-i18n="troopAll"
-                    >All</span
-                  ></label
-                >
+              <div class="tool-filter-block">
+                <h3 id="filterByStateTitle" data-i18n="filterByStateTitle" class="section-heading">
+                  Filter Paid or Free
+                </h3>
+                <div id="stateFilters" class="pill-group">
+                  <label class="filter-pill free-pill"
+                    ><input type="checkbox" value="free" checked /><span data-i18n="stateFree"
+                      >Free</span
+                    ></label
+                  >
+                  <label class="filter-pill paid-pill"
+                    ><input type="checkbox" value="paid" checked /><span data-i18n="statePaid"
+                      >Paid</span
+                    ></label
+                  >
+                </div>
               </div>
-            </div>
 
-            <div class="tool-filter-block tool-filter-block--skin">
-              <h3 class="section-heading" data-i18n="skinFilterTitle">Hero Skins</h3>
-              <div class="skin-filter-row">
-                <label id="manualSkinToggleLabel" class="toggle-switch" for="manualSkinToggle">
-                  <input
-                    type="checkbox"
-                    id="manualSkinToggle"
-                    role="switch"
-                    aria-labelledby="manualSkinToggleText"
-                  />
-                  <span class="toggle-slider"></span>
-                </label>
-                <span
-                  id="manualSkinToggleText"
-                  class="generator-skin-label"
-                  data-i18n="genSkinsOnly"
-                  >Apply skin effects & skin icons</span
-                >
-                <span id="manualSkinCount" class="skin-count-badge hidden"></span>
+              <div class="tool-filter-block tool-filter-block--troops">
+                <h3 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="section-heading">
+                  Filter Troops
+                </h3>
+                <div id="troopFilters" class="pill-group">
+                  <label class="filter-pill archers-pill"
+                    ><input type="checkbox" value="Archers" /><span data-i18n="troopArchers"
+                      >Archers</span
+                    ></label
+                  >
+                  <label class="filter-pill footmen-pill"
+                    ><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen"
+                      >Footmen</span
+                    ></label
+                  >
+                  <label class="filter-pill cavalry-pill"
+                    ><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry"
+                      >Cavalry</span
+                    ></label
+                  >
+                  <label class="filter-pill all-pill"
+                    ><input type="checkbox" value="All" checked /><span data-i18n="troopAll"
+                      >All</span
+                    ></label
+                  >
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div class="content-section core-tool-workspace">
-            <div class="core-tool-commandbar">
-              <div class="filter-row">
-                <h3 id="availableHeroesTitle" class="section-heading">Available Heroes</h3>
-                <span id="manualHeroCount" class="hero-count-badge"></span>
-              </div>
-              <div class="hero-search-wrap">
-                <svg
-                  class="hero-search-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="2.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
-                  />
-                </svg>
-                <input
-                  id="manualHeroSearch"
-                  name="manualHeroSearch"
-                  class="hero-search-input"
-                  type="search"
-                  data-i18n-ph="heroSearchPh"
-                  data-i18n-aria="heroSearchPh"
-                  aria-label="Search heroes"
-                  placeholder="Search heroes..."
-                  autocomplete="off"
-                  spellcheck="false"
-                />
-              </div>
-            </div>
-            <div id="availableHeroes" class="gen-grid-gap"></div>
-          </div>
-
-          <div id="comboFooterBar" class="combo-footer-bar hidden">
-            <h2 id="createComboTitle" class="combo-footer-title">Create Your Combo</h2>
-            <div id="comboRow" class="combo-row">
-              <div class="combo-slot" data-slot-index="0"></div>
-              <div class="combo-slot" data-slot-index="1"></div>
-              <div class="combo-slot" data-slot-index="2"></div>
-            </div>
-            <div id="comboButtonsRow" class="combo-btn-grid">
-              <button id="saveComboBtn" class="btn--save">Save</button>
-              <button id="clearComboBtn" class="btn--clear">Clear</button>
-              <button id="downloadCombosBtn" class="btn--image">Image</button>
-              <button id="shareAllCombosBtn" class="btn--text">Text</button>
-            </div>
-          </div>
-
-          <div class="last-best-section">
-            <h2 id="lastBestCombosTitle" class="last-best-title">Last Best Combos</h2>
-            <p id="noCombosMessage" class="last-best-empty">
-              No combos saved yet. Drag heroes to start!
-            </p>
-            <div id="savedCombos" class="last-best-list"></div>
-          </div>
-        </section>
-
-        <section
-          id="generatorSection"
-          class="vts-hub-subtab-panel active"
-          data-hub-subtab-panel="generator"
-          role="tabpanel"
-          data-core-tool="generator"
-          aria-labelledby="genToolTitle"
-        >
-          <header class="gen-content-section core-tool-header">
-            <div class="core-tool-header-copy">
-              <h2 id="genToolTitle" data-i18n="generatorTitle" class="gen-section-title">
-                Combo Generator (Top 5)
-              </h2>
-              <p id="genIntroText" data-i18n="generatorIntro" class="section-intro-text">
-                Select heroes you own and Generate Best Combos.
-              </p>
-            </div>
-          </header>
-
-          <div class="tool-filter-panel generator-filter-panel">
-            <div class="tool-filter-block tool-filter-block--season">
-              <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="sub-section-heading">
-                Filter by Season
-              </h3>
-              <div id="generatorSeasonFilters" class="season-filter-strip">
-                <label class="filter-pill s0-pill"
-                  ><input type="checkbox" value="S0" checked /><span data-i18n="season0"
-                    >S0</span
-                  ></label
-                >
-                <label class="filter-pill s1-pill"
-                  ><input type="checkbox" value="S1" checked /><span data-i18n="season1"
-                    >S1</span
-                  ></label
-                >
-                <label class="filter-pill s2-pill"
-                  ><input type="checkbox" value="S2" checked /><span data-i18n="season2">S2</span></label
-                >
-                <label class="filter-pill s3-pill"
-                  ><input type="checkbox" value="S3" checked /><span data-i18n="season3">S3</span></label
-                >
-                <label class="filter-pill s4-pill"
-                  ><input type="checkbox" value="S4" checked /><span data-i18n="season4">S4</span></label
-                >
-                <label class="filter-pill x1-pill"
-                  ><input type="checkbox" value="X1" checked /><span data-i18n="seasonX1">X1</span></label
-                >
-                <label class="filter-pill x2-pill"
-                  ><input type="checkbox" value="X2" checked /><span data-i18n="seasonX2">X2</span></label
-                >
-                <label class="filter-pill x8-pill"
-                  ><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label
-                >
-              </div>
-              <p
-                id="generatorSeasonCatchupHint"
-                class="season-catchup-hint hidden"
-                aria-live="polite"
-              ></p>
-            </div>
-
-            <div class="tool-filter-block">
-              <h3 data-i18n="filterByStateTitle" class="sub-section-heading">
-                Filter Paid or Free
-              </h3>
-              <div id="generatorStateFilters" class="pill-group">
-                <label class="filter-pill free-pill"
-                  ><input type="checkbox" value="free" checked /><span data-i18n="stateFree"
-                    >Free</span
-                  ></label
-                >
-                <label class="filter-pill paid-pill"
-                  ><input type="checkbox" value="paid" checked /><span data-i18n="statePaid"
-                    >Paid</span
-                  ></label
-                >
-              </div>
-            </div>
-
-            <div class="tool-filter-block tool-filter-block--troops">
-              <h3 data-i18n="filterByTroopTitle" class="sub-section-heading">Filter Troops</h3>
-              <div id="generatorTroopFilters" class="pill-group">
-                <label class="filter-pill archers-pill"
-                  ><input type="checkbox" value="Archers" /><span data-i18n="troopArchers"
-                    >Archers</span
-                  ></label
-                >
-                <label class="filter-pill footmen-pill"
-                  ><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen"
-                    >Footmen</span
-                  ></label
-                >
-                <label class="filter-pill cavalry-pill"
-                  ><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry"
-                    >Cavalry</span
-                  ></label
-                >
-                <label class="filter-pill all-pill"
-                  ><input type="checkbox" value="All" checked /><span data-i18n="troopAll"
-                    >All</span
-                  ></label
-                >
-              </div>
-            </div>
-
-            <div class="tool-filter-block tool-filter-block--skin">
-              <h3 class="sub-section-heading" data-i18n="skinFilterTitle">Hero Skins</h3>
-              <div class="skin-filter-row">
-                <label id="genSkinToggleLabel" class="toggle-switch" for="genSkinToggle">
-                  <input
-                    type="checkbox"
-                    id="genSkinToggle"
-                    role="switch"
-                    aria-labelledby="genSkinToggleText"
-                    checked
-                  />
-                  <span class="toggle-slider"></span>
-                </label>
-                <span id="genSkinToggleText" class="generator-skin-label" data-i18n="genSkinsOnly"
-                  >Apply skin effects & skin icons</span
-                >
-                <span id="genSkinCount" class="skin-count-badge hidden"></span>
-              </div>
-              <div id="genSkinNudge" class="gen-skin-nudge hidden" role="status" aria-live="polite">
-                <div>
-                  <strong>Try skin mode</strong>
+              <div class="tool-filter-block tool-filter-block--skin">
+                <h3 class="section-heading" data-i18n="skinFilterTitle">Hero Skins</h3>
+                <div class="skin-filter-row">
+                  <label id="manualSkinToggleLabel" class="toggle-switch" for="manualSkinToggle">
+                    <input
+                      type="checkbox"
+                      id="manualSkinToggle"
+                      role="switch"
+                      aria-labelledby="manualSkinToggleText"
+                    />
+                    <span class="toggle-slider"></span>
+                  </label>
                   <span
-                    >Use skin icons and skin-priority rankings when you want the stronger skin-aware
-                    combo list.</span
+                    id="manualSkinToggleText"
+                    class="generator-skin-label"
+                    data-i18n="genSkinsOnly"
+                    >Apply skin effects & skin icons</span
                   >
-                </div>
-                <div class="gen-skin-nudge-actions">
-                  <button type="button" id="genSkinNudgeTry">Try skin mode</button>
-                  <button type="button" id="genSkinNudgeDismiss">Later</button>
+                  <span id="manualSkinCount" class="skin-count-badge hidden"></span>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="gen-content-section core-tool-workspace">
-            <div class="core-tool-commandbar">
-              <div class="section-row">
-                <div class="gen-select-row">
-                  <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="gen-select-title">
-                    Select Your Heroes
-                  </h3>
-                  <span id="genSelectedCount" class="selected-count-badge hidden"></span>
+            <div class="content-section core-tool-workspace">
+              <div class="core-tool-commandbar">
+                <div class="filter-row">
+                  <h3 id="availableHeroesTitle" class="section-heading">Available Heroes</h3>
+                  <span id="manualHeroCount" class="hero-count-badge"></span>
                 </div>
-                <div class="generator-selection-actions">
-                  <button
-                    id="genSelectAllBtn"
-                    data-i18n="generatorSelectAll"
-                    class="selection-action-btn selection-action-btn--select"
+                <div class="hero-search-wrap">
+                  <svg
+                    class="hero-search-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                    stroke="currentColor"
                   >
-                    Select All
-                  </button>
-                  <button
-                    id="genClearAllBtn"
-                    data-i18n="generatorClearAll"
-                    class="selection-action-btn selection-action-btn--clear"
-                  >
-                    Clear All
-                  </button>
-                  <button
-                    id="genResetFiltersBtn"
-                    class="selection-action-btn selection-action-btn--reset"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
-              </div>
-              <div class="hero-search-wrap">
-                <svg
-                  class="hero-search-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="2.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
+                    />
+                  </svg>
+                  <input
+                    id="manualHeroSearch"
+                    name="manualHeroSearch"
+                    class="hero-search-input"
+                    type="search"
+                    data-i18n-ph="heroSearchPh"
+                    data-i18n-aria="heroSearchPh"
+                    aria-label="Search heroes"
+                    placeholder="Search heroes..."
+                    autocomplete="off"
+                    spellcheck="false"
                   />
-                </svg>
-                <input
-                  id="generatorHeroSearch"
-                  name="generatorHeroSearch"
-                  class="hero-search-input"
-                  type="search"
-                  data-i18n-ph="heroSearchPh"
-                  data-i18n-aria="heroSearchPh"
-                  aria-label="Search heroes"
-                  placeholder="Search heroes..."
-                  autocomplete="off"
-                  spellcheck="false"
-                />
+                </div>
+              </div>
+              <div id="availableHeroes" class="gen-grid-gap"></div>
+            </div>
+
+            <div id="comboFooterBar" class="combo-footer-bar hidden">
+              <h2 id="createComboTitle" class="combo-footer-title">Create Your Combo</h2>
+              <div id="comboRow" class="combo-row">
+                <div class="combo-slot" data-slot-index="0"></div>
+                <div class="combo-slot" data-slot-index="1"></div>
+                <div class="combo-slot" data-slot-index="2"></div>
+              </div>
+              <div id="comboButtonsRow" class="combo-btn-grid">
+                <button id="saveComboBtn" class="btn--save">Save</button>
+                <button id="clearComboBtn" class="btn--clear">Clear</button>
+                <button id="downloadCombosBtn" class="btn--image">Image</button>
+                <button id="shareAllCombosBtn" class="btn--text">Text</button>
               </div>
             </div>
-            <div id="generatorHeroes" class="gen-grid-gap"></div>
-          </div>
 
-          <div class="gen-buttons-row">
-            <button id="generateCombosBtn" class="gen-big-btn gen-big-btn--generate">
-              GENERATE BEST COMBOS
-            </button>
-            <button id="generateRandomBtn" class="gen-big-btn gen-big-btn--random">
-              SURPRISE ME
-            </button>
-            <button id="downloadGeneratorBtn" class="gen-big-btn gen-big-btn--download hidden">
-              DOWNLOAD AS IMAGE
-            </button>
-          </div>
-
-          <p
-            id="generatorRunStatus"
-            class="sr-only"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          ></p>
-          <div id="generatorResults" class="gen-results-section">
-            <div class="generator-empty-state" data-i18n="generatorIntro">
-              Select heroes you own and Generate Best Combos.
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="heroesSection"
-          class="vts-hub-subtab-panel"
-          data-hub-subtab-panel="heroes"
-          role="tabpanel"
-          hidden
-          data-core-tool="heroes"
-          aria-labelledby="heroAtlasTitle"
-        >
-          <header class="hero-atlas-header core-tool-header">
-            <div class="core-tool-header-copy">
-              <h2 id="heroAtlasTitle" class="hero-atlas-title" data-i18n="tabHeroes">Hero Atlas</h2>
-              <p class="hero-atlas-desc" data-i18n="heroesTabDesc">
-                Rankings from the combo database. Search, filter, then tap a hero for skills,
-                synergies &amp; top combos.
+            <div class="last-best-section">
+              <h2 id="lastBestCombosTitle" class="last-best-title">Last Best Combos</h2>
+              <p id="noCombosMessage" class="last-best-empty">
+                No combos saved yet. Drag heroes to start!
               </p>
+              <div id="savedCombos" class="last-best-list"></div>
             </div>
-          </header>
-          <div id="heroesTabContent"></div>
-        </section>
+          </section>
+
+          <section
+            id="generatorSection"
+            class="vts-hub-subtab-panel active"
+            data-hub-subtab-panel="generator"
+            role="tabpanel"
+            data-core-tool="generator"
+            aria-labelledby="genToolTitle"
+          >
+            <header class="gen-content-section core-tool-header">
+              <div class="core-tool-header-copy">
+                <h2 id="genToolTitle" data-i18n="generatorTitle" class="gen-section-title">
+                  Combo Generator (Top 5)
+                </h2>
+                <p id="genIntroText" data-i18n="generatorIntro" class="section-intro-text">
+                  Select heroes you own and Generate Best Combos.
+                </p>
+              </div>
+            </header>
+
+            <div class="tool-filter-panel generator-filter-panel">
+              <div class="tool-filter-block tool-filter-block--season">
+                <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="sub-section-heading">
+                  Filter by Season
+                </h3>
+                <div id="generatorSeasonFilters" class="season-filter-strip">
+                  <label class="filter-pill s0-pill"
+                    ><input type="checkbox" value="S0" checked /><span data-i18n="season0"
+                      >S0</span
+                    ></label
+                  >
+                  <label class="filter-pill s1-pill"
+                    ><input type="checkbox" value="S1" checked /><span data-i18n="season1"
+                      >S1</span
+                    ></label
+                  >
+                  <label class="filter-pill s2-pill"
+                    ><input type="checkbox" value="S2" checked /><span data-i18n="season2"
+                      >S2</span
+                    ></label
+                  >
+                  <label class="filter-pill s3-pill"
+                    ><input type="checkbox" value="S3" checked /><span data-i18n="season3"
+                      >S3</span
+                    ></label
+                  >
+                  <label class="filter-pill s4-pill"
+                    ><input type="checkbox" value="S4" checked /><span data-i18n="season4"
+                      >S4</span
+                    ></label
+                  >
+                  <label class="filter-pill x1-pill"
+                    ><input type="checkbox" value="X1" checked /><span data-i18n="seasonX1"
+                      >X1</span
+                    ></label
+                  >
+                  <label class="filter-pill x2-pill"
+                    ><input type="checkbox" value="X2" checked /><span data-i18n="seasonX2"
+                      >X2</span
+                    ></label
+                  >
+                  <label class="filter-pill x8-pill"
+                    ><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label
+                  >
+                </div>
+                <p
+                  id="generatorSeasonCatchupHint"
+                  class="season-catchup-hint hidden"
+                  aria-live="polite"
+                ></p>
+              </div>
+
+              <div class="tool-filter-block">
+                <h3 data-i18n="filterByStateTitle" class="sub-section-heading">
+                  Filter Paid or Free
+                </h3>
+                <div id="generatorStateFilters" class="pill-group">
+                  <label class="filter-pill free-pill"
+                    ><input type="checkbox" value="free" checked /><span data-i18n="stateFree"
+                      >Free</span
+                    ></label
+                  >
+                  <label class="filter-pill paid-pill"
+                    ><input type="checkbox" value="paid" checked /><span data-i18n="statePaid"
+                      >Paid</span
+                    ></label
+                  >
+                </div>
+              </div>
+
+              <div class="tool-filter-block tool-filter-block--troops">
+                <h3 data-i18n="filterByTroopTitle" class="sub-section-heading">Filter Troops</h3>
+                <div id="generatorTroopFilters" class="pill-group">
+                  <label class="filter-pill archers-pill"
+                    ><input type="checkbox" value="Archers" /><span data-i18n="troopArchers"
+                      >Archers</span
+                    ></label
+                  >
+                  <label class="filter-pill footmen-pill"
+                    ><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen"
+                      >Footmen</span
+                    ></label
+                  >
+                  <label class="filter-pill cavalry-pill"
+                    ><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry"
+                      >Cavalry</span
+                    ></label
+                  >
+                  <label class="filter-pill all-pill"
+                    ><input type="checkbox" value="All" checked /><span data-i18n="troopAll"
+                      >All</span
+                    ></label
+                  >
+                </div>
+              </div>
+
+              <div class="tool-filter-block tool-filter-block--skin">
+                <h3 class="sub-section-heading" data-i18n="skinFilterTitle">Hero Skins</h3>
+                <div class="skin-filter-row">
+                  <label id="genSkinToggleLabel" class="toggle-switch" for="genSkinToggle">
+                    <input
+                      type="checkbox"
+                      id="genSkinToggle"
+                      role="switch"
+                      aria-labelledby="genSkinToggleText"
+                      checked
+                    />
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span id="genSkinToggleText" class="generator-skin-label" data-i18n="genSkinsOnly"
+                    >Apply skin effects & skin icons</span
+                  >
+                  <span id="genSkinCount" class="skin-count-badge hidden"></span>
+                </div>
+                <div
+                  id="genSkinNudge"
+                  class="gen-skin-nudge hidden"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div>
+                    <strong>Try skin mode</strong>
+                    <span
+                      >Use skin icons and skin-priority rankings when you want the stronger
+                      skin-aware combo list.</span
+                    >
+                  </div>
+                  <div class="gen-skin-nudge-actions">
+                    <button type="button" id="genSkinNudgeTry">Try skin mode</button>
+                    <button type="button" id="genSkinNudgeDismiss">Later</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gen-content-section core-tool-workspace">
+              <div class="core-tool-commandbar">
+                <div class="section-row">
+                  <div class="gen-select-row">
+                    <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="gen-select-title">
+                      Select Your Heroes
+                    </h3>
+                    <span id="genSelectedCount" class="selected-count-badge hidden"></span>
+                  </div>
+                  <div class="generator-selection-actions">
+                    <button
+                      id="genSelectAllBtn"
+                      data-i18n="generatorSelectAll"
+                      class="selection-action-btn selection-action-btn--select"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      id="genClearAllBtn"
+                      data-i18n="generatorClearAll"
+                      class="selection-action-btn selection-action-btn--clear"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      id="genResetFiltersBtn"
+                      class="selection-action-btn selection-action-btn--reset"
+                    >
+                      Reset Filters
+                    </button>
+                  </div>
+                </div>
+                <div class="hero-search-wrap">
+                  <svg
+                    class="hero-search-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
+                    />
+                  </svg>
+                  <input
+                    id="generatorHeroSearch"
+                    name="generatorHeroSearch"
+                    class="hero-search-input"
+                    type="search"
+                    data-i18n-ph="heroSearchPh"
+                    data-i18n-aria="heroSearchPh"
+                    aria-label="Search heroes"
+                    placeholder="Search heroes..."
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </div>
+              </div>
+              <div id="generatorHeroes" class="gen-grid-gap"></div>
+            </div>
+
+            <div class="gen-buttons-row">
+              <button id="generateCombosBtn" class="gen-big-btn gen-big-btn--generate">
+                GENERATE BEST COMBOS
+              </button>
+              <button id="generateRandomBtn" class="gen-big-btn gen-big-btn--random">
+                SURPRISE ME
+              </button>
+              <button id="downloadGeneratorBtn" class="gen-big-btn gen-big-btn--download hidden">
+                DOWNLOAD AS IMAGE
+              </button>
+            </div>
+
+            <p
+              id="generatorRunStatus"
+              class="sr-only"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></p>
+            <div id="generatorResults" class="gen-results-section">
+              <div class="generator-empty-state" data-i18n="generatorIntro">
+                Select heroes you own and Generate Best Combos.
+              </div>
+            </div>
+          </section>
+
+          <section
+            id="heroesSection"
+            class="vts-hub-subtab-panel"
+            data-hub-subtab-panel="heroes"
+            role="tabpanel"
+            hidden
+            data-core-tool="heroes"
+            aria-labelledby="heroAtlasTitle"
+          >
+            <header class="hero-atlas-header core-tool-header">
+              <div class="core-tool-header-copy">
+                <h2 id="heroAtlasTitle" class="hero-atlas-title" data-i18n="tabHeroes">
+                  Hero Atlas
+                </h2>
+                <p class="hero-atlas-desc" data-i18n="heroesTabDesc">
+                  Rankings from the combo database. Search, filter, then tap a hero for skills,
+                  synergies &amp; top combos.
+                </p>
+              </div>
+            </header>
+            <div id="heroesTabContent"></div>
+          </section>
         </section>
 
         <!-- Research & Towers Hub. Three tools that answer the same question —
@@ -1178,7 +1244,11 @@
           id="researchTowersSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-lg"
         >
-          <div class="vts-hub-subtabs vts-hub-subtabs--3" role="tablist" aria-label="Research &amp; Towers Hub">
+          <div
+            class="vts-hub-subtabs vts-hub-subtabs--3"
+            role="tablist"
+            aria-label="Research &amp; Towers Hub"
+          >
             <button
               id="researchTowersTabTowers"
               type="button"
@@ -1188,8 +1258,15 @@
               aria-controls="specializationSection"
               data-hub-subtab="towers"
               data-i18n="tabTowersSpecialization"
+              data-subtool-badge="BETA"
             >
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -1207,7 +1284,13 @@
               data-hub-subtab="research"
               data-i18n="tabResearch"
             >
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -1224,12 +1307,19 @@
               aria-controls="artifactSection"
               data-hub-subtab="artifact"
               data-i18n="tabArtifact"
+              data-subtool-badge="NEW"
             >
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                  d="M14.5 3.5 20.5 9.5 9 21l-6-6L14.5 3.5ZM13 5l6 6M7.5 16.5l-3 3M3 21l1.5-1.5"
                 /></svg
               >Artifacts
             </button>
@@ -1249,107 +1339,127 @@
             <div id="specializationToolRoot" class="specialization-tool-root"></div>
           </section>
 
-        <section id="researchSection" class="vts-hub-subtab-panel" data-hub-subtab-panel="research" role="tabpanel" aria-labelledby="researchTowersTabResearch" hidden>
-          <div class="research-header">
-            <div>
-              <h2 id="researchTitle" class="research-title" data-i18n="researchTitle">
-                Tech Research Calculator
-              </h2>
-              <p id="researchDesc" class="research-desc" data-i18n="researchDesc">
-                Track tech progress and calculate remaining War Badges and Courage Medals. Season 0
-                and military trees use in-game layouts; troop branches use dedicated branch views.
-              </p>
+          <section
+            id="researchSection"
+            class="vts-hub-subtab-panel"
+            data-hub-subtab-panel="research"
+            role="tabpanel"
+            aria-labelledby="researchTowersTabResearch"
+            hidden
+          >
+            <div class="research-header">
+              <div>
+                <h2 id="researchTitle" class="research-title" data-i18n="researchTitle">
+                  Tech Research Calculator
+                </h2>
+                <p id="researchDesc" class="research-desc" data-i18n="researchDesc">
+                  Track tech progress and calculate remaining War Badges and Courage Medals. Season
+                  0 and military trees use in-game layouts; troop branches use dedicated branch
+                  views.
+                </p>
+              </div>
+              <span id="techTreeCount" class="research-tree-count"></span>
             </div>
-            <span id="techTreeCount" class="research-tree-count"></span>
-          </div>
 
-          <div id="globalTechSummary" class="research-summary-slot"></div>
+            <div id="globalTechSummary" class="research-summary-slot"></div>
 
-          <div class="research-control-deck">
-            <div class="research-deck-row">
-              <span class="research-deck-label" data-i18n="researchSeasonLabel">Seasons</span>
-              <div
-                class="research-season-segment"
-                role="group"
-                aria-label="Filter by season"
-                data-i18n-aria="researchSeasonFilterAria"
-              >
-                <div class="research-season-bar">
-                  <button type="button" class="tech-season-btn active" data-season="S0">S0</button>
-                  <button type="button" class="tech-season-btn active" data-season="S1">S1</button>
-                  <button type="button" class="tech-season-btn active" data-season="S2">S2</button>
-                  <button type="button" class="tech-season-btn active" data-season="S3">S3</button>
-                  <button type="button" class="tech-season-btn active" data-season="S4">S4</button>
-                  <button type="button" class="tech-season-btn active" data-season="X1">X1</button>
-                  <button type="button" class="tech-season-btn" data-season="X2">X2</button>
-                  <button type="button" class="tech-season-btn" data-season="X8">X8</button>
+            <div class="research-control-deck">
+              <div class="research-deck-row">
+                <span class="research-deck-label" data-i18n="researchSeasonLabel">Seasons</span>
+                <div
+                  class="research-season-segment"
+                  role="group"
+                  aria-label="Filter by season"
+                  data-i18n-aria="researchSeasonFilterAria"
+                >
+                  <div class="research-season-bar">
+                    <button type="button" class="tech-season-btn active" data-season="S0">
+                      S0
+                    </button>
+                    <button type="button" class="tech-season-btn active" data-season="S1">
+                      S1
+                    </button>
+                    <button type="button" class="tech-season-btn active" data-season="S2">
+                      S2
+                    </button>
+                    <button type="button" class="tech-season-btn active" data-season="S3">
+                      S3
+                    </button>
+                    <button type="button" class="tech-season-btn active" data-season="S4">
+                      S4
+                    </button>
+                    <button type="button" class="tech-season-btn active" data-season="X1">
+                      X1
+                    </button>
+                    <button type="button" class="tech-season-btn" data-season="X2">X2</button>
+                    <button type="button" class="tech-season-btn" data-season="X8">X8</button>
+                  </div>
+                </div>
+              </div>
+              <div class="research-deck-row research-deck-row-tools">
+                <span class="research-deck-label" data-i18n="researchQuickLabel">Quick</span>
+                <div
+                  class="research-quick-segment"
+                  role="group"
+                  aria-label="Season presets"
+                  data-i18n-aria="researchSeasonPresetsAria"
+                >
+                  <button
+                    type="button"
+                    id="techSeasonAllBtn"
+                    class="research-quick-btn"
+                    data-quick="all"
+                    data-i18n="researchSelectAll"
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    id="techSeasonX1Btn"
+                    class="research-quick-btn active"
+                    data-quick="x1"
+                    data-i18n="researchSelectCurrent"
+                  >
+                    X1
+                  </button>
+                </div>
+                <div class="research-search-wrap">
+                  <svg
+                    class="research-search-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
+                    />
+                  </svg>
+                  <input
+                    type="search"
+                    id="techSearchInput"
+                    name="techSearch"
+                    class="research-search-input"
+                    data-i18n-ph="researchSearchPh"
+                    data-i18n-aria="researchSearchPh"
+                    aria-label="Search tech trees"
+                    placeholder="Search tech trees..."
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
                 </div>
               </div>
             </div>
-            <div class="research-deck-row research-deck-row-tools">
-              <span class="research-deck-label" data-i18n="researchQuickLabel">Quick</span>
-              <div
-                class="research-quick-segment"
-                role="group"
-                aria-label="Season presets"
-                data-i18n-aria="researchSeasonPresetsAria"
-              >
-                <button
-                  type="button"
-                  id="techSeasonAllBtn"
-                  class="research-quick-btn"
-                  data-quick="all"
-                  data-i18n="researchSelectAll"
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  id="techSeasonX1Btn"
-                  class="research-quick-btn active"
-                  data-quick="x1"
-                  data-i18n="researchSelectCurrent"
-                >
-                  X1
-                </button>
-              </div>
-              <div class="research-search-wrap">
-                <svg
-                  class="research-search-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="2.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
-                  />
-                </svg>
-                <input
-                  type="search"
-                  id="techSearchInput"
-                  name="techSearch"
-                  class="research-search-input"
-                  data-i18n-ph="researchSearchPh"
-                  data-i18n-aria="researchSearchPh"
-                  aria-label="Search tech trees"
-                  placeholder="Search tech trees..."
-                  autocomplete="off"
-                  spellcheck="false"
-                />
-              </div>
-            </div>
-          </div>
 
-          <div id="techListContainer" class="research-list"></div>
-          <div
-            id="techCalculatorContainer"
-            class="research-calculator hidden"
-            aria-live="polite"
-          ></div>
+            <div id="techListContainer" class="research-list"></div>
+            <div
+              id="techCalculatorContainer"
+              class="research-calculator hidden"
+              aria-live="polite"
+            ></div>
           </section>
 
           <section
@@ -1380,7 +1490,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260818_123956"
+          data-tab-src="tabs/eden-map.html?v=20260818_131912"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1399,7 +1509,7 @@
         <section
           id="allStarBohSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/all-star-boh.html?v=20260818_123956"
+          data-tab-src="tabs/all-star-boh.html?v=20260818_131912"
         >
           <div class="tab-loading" role="status" aria-live="polite">
             <div class="spinner"></div>
@@ -1758,12 +1868,12 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260818_123956"></script>
-    <script type="module" src="js/app.js?v=20260818_123956"></script>
-    <script type="module" src="js/command-palette.js?v=20260818_123956"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260818_123956"></script>
-    <script src="js/index-page-enhancements.js?v=20260818_123956"></script>
-    <script src="js/shell-v14.js?v=20260818_123956"></script>
-      <script type="module" src="js/account-chip-bootstrap.js"></script>
+    <script src="js/loader-v14.js?v=20260818_131912"></script>
+    <script type="module" src="js/app.js?v=20260818_131912"></script>
+    <script type="module" src="js/command-palette.js?v=20260818_131912"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260818_131912"></script>
+    <script src="js/index-page-enhancements.js?v=20260818_131912"></script>
+    <script src="js/shell-v14.js?v=20260818_131912"></script>
+    <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

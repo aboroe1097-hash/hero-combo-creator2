@@ -38,9 +38,8 @@ export function getActiveResearchTowersSubtab() {
 }
 
 function updateSubtabHash(subtab) {
-  const hash = subtab === 'towers' ? 'specialization' : subtab;
   try {
-    window.history.replaceState(window.history.state, '', `#${hash}`);
+    window.history.replaceState(window.history.state, '', `#researchTowers?subtab=${subtab}`);
   } catch {
     // Hash persistence is helpful but not required for tab interaction.
   }
@@ -86,9 +85,13 @@ export function openResearchTowersSubtab(name, { notify = true } = {}) {
 export function readResearchTowersIntent() {
   try {
     const intent = document.body?.dataset?.researchTowersSubtab;
-    if (!intent) return '';
-    delete document.body.dataset.researchTowersSubtab;
-    return normalizeResearchTowersSubtab(intent);
+    if (intent) {
+      delete document.body.dataset.researchTowersSubtab;
+      return normalizeResearchTowersSubtab(intent);
+    }
+    return normalizeResearchTowersSubtab(
+      new URLSearchParams(location.hash.split('?')[1] || '').get('subtab')
+    );
   } catch {
     return '';
   }

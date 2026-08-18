@@ -73,7 +73,11 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
   white-space: nowrap;
 }
 
@@ -139,6 +143,19 @@
   width: 1.1rem;
   height: 1.1rem;
   flex: 0 0 auto;
+}
+[data-subtool-badge]::after {
+  content: attr(data-subtool-badge);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #245f86;
+  color: #dff5ff;
+  padding: 2px 6px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
 }
 
 .vts-hub-subtab:hover {

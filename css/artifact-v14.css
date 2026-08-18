@@ -608,6 +608,45 @@
   height: 28px;
   border-radius: 5px;
 }
+.artifact-hero-path {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--artifact-border);
+  border-radius: 14px;
+  background: var(--artifact-panel-raised);
+  padding: 14px;
+}
+.artifact-hero-path h2 {
+  font-size: 1rem;
+}
+.artifact-hero-path p {
+  color: var(--artifact-muted);
+}
+.artifact-path-next {
+  display: grid;
+  gap: 5px;
+}
+.artifact-path-next span {
+  color: var(--artifact-muted);
+  font-size: 0.75rem;
+}
+.artifact-path-step {
+  position: absolute;
+  inset-inline-start: -7px;
+  inset-block-start: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #07101c;
+  background: #76d6ff;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
 
 .artifact-tier-actions {
   display: grid;
@@ -694,6 +733,12 @@
 }
 
 @media (max-width: 760px) {
+  .artifact-hero-path {
+    grid-template-columns: 1fr;
+  }
+  .artifact-hero-path > button {
+    width: 100%;
+  }
   .artifact-hero,
   .artifact-level-line {
     align-items: stretch;

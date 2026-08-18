@@ -11,6 +11,8 @@ import {
 import { artifactText, resolveArtifactLocale } from './i18n/artifact.js';
 import { formatLocaleNumber } from './locale-format.js';
 import { currentLanguage } from './state.js';
+import { generatorSelectedHeroes } from './state.js';
+import { analyzeHeroMechanics } from './specialization-hero-plans.js';
 import { escapeHtml } from './utils.js';
 import '../css/artifact-v14.css';
 
@@ -72,6 +74,36 @@ let initialized = false;
 let eventsBound = false;
 let languageBound = false;
 let centerSelectedNode = false;
+
+function heroPathPlan() {
+  const heroes = [...generatorSelectedHeroes].slice(0, 6);
+  const mechanics = heroes.flatMap((hero) => [...analyzeHeroMechanics(hero)]);
+  const defensive = mechanics.filter((id) =>
+    ['healing', 'control', 'sober', 'evasion'].includes(id)
+  ).length;
+  const tactical = mechanics.filter((id) =>
+    ['skillDamage', 'prepSkip', 'bleedBurn', 'vulnerable'].includes(id)
+  ).length;
+  const score = (node) => {
+    const type = node.statType || '';
+    if (/special|sacred_might|might_pct|damage/.test(type)) return 5 + mechanics.length;
+    if (/tactmight/.test(type)) return 4 + tactical * 3;
+    if (/hp|resist|sacred_resist/.test(type)) return 3 + defensive * 3;
+    return 2;
+  };
+  const ordered = [];
+  const seen = new Set();
+  const add = (node) => {
+    if (!node || seen.has(node.id)) return;
+    (node.unlockRequirements || []).forEach((req) =>
+      add(getArtifactNodeById(req.nodeId, artifact))
+    );
+    seen.add(node.id);
+    ordered.push(node);
+  };
+  [...getAllArtifactNodes(artifact)].sort((a, b) => score(b) - score(a)).forEach(add);
+  return { heroes, ordered, stepById: new Map(ordered.map((node, index) => [node.id, index + 1])) };
+}
 
 function locale() {
   return resolveArtifactLocale(currentLanguage);
@@ -230,13 +262,14 @@ function treeNode(node) {
   const dimmed = !matchesSearch(node);
   const progress = node.maxLevel > 0 ? current / node.maxLevel : 0;
   const displayCode = node.code.includes('amp') ? '−' : node.code.replace('.0', '');
+  const pathStep = heroPathPlan().stepById.get(node.id);
   const label = `${node.name}, ${t('level', { current, max: node.maxLevel })}`;
   return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${current > 0 ? ' has-progress' : ''}${dimmed ? ' is-dimmed' : ''}${locked ? ' is-locked' : ''}"
     style="--node-x:${layout.x}%;--node-y:${layout.y}%;--node-progress:${progress}turn" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
       ${node.icon ? `<img class="artifact-tree-node-icon" src="${escapeHtml(node.icon)}" alt="" aria-hidden="true" />` : ''}
       <span class="artifact-node-state" aria-hidden="true">${locked ? '⌁' : maxed ? '✦' : current > 0 ? current : '+'}</span>
       <span class="artifact-tree-code" translate="no">${escapeHtml(displayCode)}</span>
-      <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>
+      <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>${pathStep ? `<span class="artifact-path-step" aria-hidden="true">${pathStep}</span>` : ''}
     </button>`;
 }
 
@@ -294,6 +327,7 @@ function render() {
   const metrics = calculateArtifactMetrics(artifact, nodeLevels);
   const completion = metrics.completionPercent.toFixed(1);
   const nodes = getAllArtifactNodes(artifact);
+  const path = heroPathPlan();
 
   root.dir = locale() === 'ar' ? 'rtl' : 'ltr';
   root.innerHTML = `<div class="artifact-workspace">
@@ -320,6 +354,11 @@ function render() {
       <label for="artifact-search">${escapeHtml(t('searchLabel'))}</label>
       <input id="artifact-search" type="search" autocomplete="off" placeholder="${escapeHtml(t('searchPlaceholder'))}" value="${escapeHtml(searchQuery)}" />
       <p>${escapeHtml(artifact.farmingNote)}</p>
+    </section>
+    <section class="artifact-hero-path" aria-label="Hero-targeted Artifact path">
+      <div><p class="artifact-kicker">HERO-TARGETED PATH</p><h2>${path.heroes.length ? path.heroes.join(' · ') : 'Balanced Sword path'}</h2><p>${path.heroes.length ? 'Uses the heroes selected in Heroes & Combos and their actual skill mechanics.' : 'Select heroes in Heroes & Combos to personalize this prerequisite-valid order.'}</p></div>
+      <div class="artifact-path-next"><span>Next recommended node</span><button type="button" data-artifact-action="select-node" data-node-id="${escapeHtml(path.ordered.find((node) => (Number(nodeLevels[node.id]) || 0) < node.maxLevel)?.id || path.ordered[0]?.id)}">${escapeHtml(path.ordered.find((node) => (Number(nodeLevels[node.id]) || 0) < node.maxLevel)?.name || 'Path complete')}</button></div>
+      <button type="button" data-artifact-action="share-view">Share this path</button>
     </section>
 
     <div class="artifact-game-layout">
@@ -375,9 +414,19 @@ function bindEvents() {
       selectedNodeId = nodeId;
       centerSelectedNode = true;
       render();
+      history.replaceState(
+        history.state,
+        '',
+        `#researchTowers?subtab=artifact&node=${encodeURIComponent(nodeId)}`
+      );
       if (window.matchMedia('(max-width: 1000px)').matches) {
         root.querySelector('.artifact-node-detail')?.scrollIntoView({ block: 'nearest' });
       }
+    }
+    if (action === 'share-view') {
+      const url = location.href;
+      if (navigator.share) void navigator.share({ title: artifact.title, url });
+      else void navigator.clipboard?.writeText(url);
     }
     if (action === 'max-all') setAllLevel('max');
     if (action === 'reset-all' && window.confirm(t('resetConfirm'))) setAllLevel(0);
@@ -435,6 +484,8 @@ export async function initArtifactCalculator() {
   document.querySelector('#artifactSection .artifact-loading')?.remove();
   if (!initialized) {
     loadProgress();
+    const linkedNode = new URLSearchParams(location.hash.split('?')[1] || '').get('node');
+    if (getArtifactNodeById(linkedNode, artifact)) selectedNodeId = linkedNode;
     initialized = true;
   }
   bindEvents();

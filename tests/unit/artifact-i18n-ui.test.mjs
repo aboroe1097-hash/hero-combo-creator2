@@ -41,6 +41,9 @@ test('Artifact UI uses safe persistence, translated labels, and confirmed destru
   assert.match(appSource, /data-artifact-level-input/);
   assert.match(appSource, /data-artifact-action="max-node-path"/);
   assert.match(appSource, /data-step="5"/);
+  assert.match(appSource, /heroPathPlan/);
+  assert.match(appSource, /analyzeHeroMechanics/);
+  assert.match(appSource, /#researchTowers\?subtab=artifact&node=/);
   assert.match(appSource, /NODE_LAYOUT/);
   assert.doesNotMatch(appSource, /estimated|daysRemaining|dailyRGE|dailyAS/i);
   assert.doesNotMatch(appSource, /transition:\s*all/);

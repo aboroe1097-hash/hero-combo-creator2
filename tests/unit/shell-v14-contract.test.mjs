@@ -11,6 +11,7 @@ const specializationJs = readFileSync('js/app-specialization.js', 'utf8');
 const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
 const aiAssistantTemplate = readFileSync('tabs/ai-assistant.html', 'utf8');
 const veloPrompt = readFileSync('workers/ai/prompt.js', 'utf8');
+const edenHubTemplate = readFileSync('tabs/eden-map.html', 'utf8');
 
 const countId = (id) => (index.match(new RegExp(`id="${id}"`, 'g')) || []).length;
 
@@ -252,8 +253,15 @@ test('Towers Specialization lives inside the Research & Towers Hub', () => {
   assert.match(appCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.spec-ack-plate/);
 });
 
-test('Eden Map uses a compact Soon badge without an injected building note', () => {
-  assert.match(index, /id="tabEdenMap"[\s\S]*?data-i18n="tabEdenMapBadge">Soon<\/span>/);
+test('main destinations use Hub badges while status badges stay on their subtools', () => {
+  for (const id of ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']) {
+    assert.match(index, new RegExp(`id="${id}"[\\s\\S]*?<span class="tab-badge[^>]*>HUB<`));
+  }
+  assert.match(edenHubTemplate, /data-eden-subtab="map"[\s\S]*?data-subtool-badge="SOON"/);
+  assert.match(edenHubTemplate, /data-eden-subtab="playbook"[\s\S]*?data-subtool-badge="NEW"/);
+  assert.match(edenHubTemplate, /data-eden-subtab="bounty"[\s\S]*?data-subtool-badge="NEW"/);
+  assert.match(index, /data-hub-subtab="towers"[\s\S]*?data-subtool-badge="BETA"/);
+  assert.match(index, /data-hub-subtab="artifact"[\s\S]*?data-subtool-badge="NEW"/);
   assert.doesNotMatch(shellJs, /shell-more-building-note|To be completed before next season/);
   assert.doesNotMatch(shellCss, /shell-more-tool--building|shell-more-building-note/);
 });

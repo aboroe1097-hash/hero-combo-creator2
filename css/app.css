@@ -2895,6 +2895,11 @@ input[type='number'] {
   color: #fff;
   border: 1px solid rgba(248, 113, 113, 0.5);
 }
+.tab-badge-hub {
+  background: #0e7490;
+  color: #fff;
+  border: 1px solid #67e8f9;
+}
 
 /* â”€â”€ Research tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes research-card-enter {
@@ -11435,6 +11440,11 @@ button:active,
   background: #b91c1c !important;
   color: #ffffff !important;
   border-color: #991b1b !important;
+}
+[data-theme='light'] .tab-badge-hub {
+  background: #0e7490 !important;
+  color: #ffffff !important;
+  border-color: #155e75 !important;
 }
 
 /* Light theme overrides for message box / alerts / modal dialogs */

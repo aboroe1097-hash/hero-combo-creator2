@@ -411,8 +411,9 @@ export function setHeroAtlasMode(mode) {
 
 function updateHeroAtlasUrlParams() {
   const params = new URLSearchParams(window.location.search);
-  if (_heroesTabState.mode === 'skins') params.set('atlas', 'skins');
-  else params.delete('atlas');
+  // The hub subtab is the canonical mode source. Keep accepting the legacy
+  // ?atlas=skins input above, but do not duplicate it in newly shared URLs.
+  params.delete('atlas');
   const normalizedSeasons = normalizeHeroAtlasSeasons(_heroesTabState.seasons);
   if (normalizedSeasons.length === HERO_ATLAS_ALL_SEASONS.length) params.delete('season');
   else params.set('season', normalizedSeasons.join(','));
@@ -729,12 +730,16 @@ function wireHeroesTabEvents(container) {
     }
   });
 
-  container.addEventListener('load', (event) => {
-    const image = event.target;
-    if (image?.matches?.('img[data-skin-item-art]')) {
-      image.parentElement?.classList.add('has-art');
-    }
-  }, true);
+  container.addEventListener(
+    'load',
+    (event) => {
+      const image = event.target;
+      if (image?.matches?.('img[data-skin-item-art]')) {
+        image.parentElement?.classList.add('has-art');
+      }
+    },
+    true
+  );
 
   container.addEventListener(
     'error',
@@ -899,7 +904,9 @@ function renderSkinAtlasIntro() {
   const tiers = getSkinTiers();
   const totalSkins = getAllSkinHeroEntries().length;
   const itemCount = new Set(
-    tiers.flatMap((tier) => [...(tier.star1To2?.items || []), ...(tier.star2To3?.items || [])].map((item) => item.name))
+    tiers.flatMap((tier) =>
+      [...(tier.star1To2?.items || []), ...(tier.star2To3?.items || [])].map((item) => item.name)
+    )
   ).size;
   return `
     <header class="skin-atlas-intro">
@@ -975,8 +982,12 @@ function renderSkinGallery() {
       const typeInfo = SKIN_TYPES[entry.skin.type] || SKIN_TYPES.Mythic;
       return (
         entry.heroName.toLowerCase().includes(query) ||
-        String(entry.skin.name || '').toLowerCase().includes(query) ||
-        String(typeInfo.label || '').toLowerCase().includes(query)
+        String(entry.skin.name || '')
+          .toLowerCase()
+          .includes(query) ||
+        String(typeInfo.label || '')
+          .toLowerCase()
+          .includes(query)
       );
     });
   }
