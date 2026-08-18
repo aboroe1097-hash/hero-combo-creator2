@@ -18,15 +18,17 @@ import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-wo
 
 const LOYALTY_SRC = 'tabs/loyalty.html?v=20260813_061728';
 const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260813_061728';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
-const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'season', 'previous'];
+const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'playbook', 'season', 'previous'];
 
 let booted = false;
 let loyaltyLoaded = false;
 let loyaltyLoading = false;
 let bountyLoaded = false;
 let bountyLoading = false;
+let playbookLoaded = false;
 
 function localizeFragment(root) {
   const t = translations[currentLanguage] || translations.en || {};
@@ -161,6 +163,21 @@ async function loadBounty(panel) {
   }
 }
 
+async function loadPlaybook(panel) {
+  if (playbookLoaded) return;
+  try {
+    const response = await fetch(PLAYBOOK_SRC);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    panel.innerHTML = await response.text();
+    const module = await import('./eden-playbook.js');
+    module.initEdenPlaybook?.(panel);
+    playbookLoaded = true;
+  } catch (error) {
+    console.warn('[eden-hub] Eden playbook failed to load', error);
+    panel.innerHTML = `<div class="tab-loading"><span>Eden Playbook failed to load. Refresh and try again.</span></div>`;
+  }
+}
+
 function readSubtabIntent() {
   try {
     const intent = document.body?.dataset?.edenHubSubtab;
@@ -168,6 +185,9 @@ function readSubtabIntent() {
       delete document.body.dataset.edenHubSubtab;
       return EDEN_HUB_SUBTABS.includes(intent) ? intent : null;
     }
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const linked = params.get('subtab');
+    if (EDEN_HUB_SUBTABS.includes(linked)) return linked;
   } catch {
     /* dataset unavailable */
   }
@@ -183,6 +203,7 @@ export function bootEdenHub() {
   function loadPanelFor(name, panel) {
     if (name === 'loyalty') loadLoyalty(root, panel);
     if (name === 'bounty') loadBounty(panel);
+    if (name === 'playbook') loadPlaybook(panel);
     if (name === 'previous') loadPrevious(panel);
     if (name === 'season') loadSeason(panel);
   }
@@ -206,6 +227,7 @@ export function bootEdenHub() {
     const button = event.target.closest('[data-eden-subtab]');
     if (!button) return;
     const name = button.dataset.edenSubtab;
+    window.history.replaceState(window.history.state, '', `#edenHub?subtab=${name}`);
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
     if (panel) loadPanelFor(name, panel);

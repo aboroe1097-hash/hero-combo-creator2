@@ -48,4 +48,5 @@ tmp-eden-marker-candidates.png
 /scratch_*
 work/
 media-player/
+.tmp-*/
 .firebaserc
