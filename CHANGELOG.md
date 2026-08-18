@@ -1,5 +1,10 @@
 # Changelog
 
+## 15.0.8 - 2026-08-18
+
+- Added the official Royal Bounty Alliance 2.0 Aiding Skills overview to the Eden X2 bounty guide, with responsive sizing, accessible context, and source credit to riseofcastles.net.
+- Optimized the reference image for fast mobile loading while preserving the original in-game text and visual detail.
+
 ## 15.0.7 - 2026-08-18
 
 - Corrected the X2 Artifact tool to make **Sword of Judgment** the current default instead of the not-yet-available Redemption Grail.
