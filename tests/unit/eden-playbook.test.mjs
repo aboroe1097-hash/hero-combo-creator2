@@ -28,6 +28,22 @@ test('playbook content is fully localized through the main catalog', () => {
   assert.match(app, /vts:language-change/);
 });
 
+test('playbook days share the two DrThunder route references and Role carries none', () => {
+  const sharedVisuals = app.match(/visuals: \[10, 12\]/g) || [];
+  assert.equal(sharedVisuals.length, 3);
+  assert.match(app, /visuals: \[\],/);
+  assert.match(app, /phaseVisuals = images\.length/);
+});
+
+test('hub subtab intent prefers the fresh hash over a stale body dataset intent', () => {
+  const intentSource = hub.split('function readSubtabIntent')[1]?.split('export function')[0] || '';
+  const hashRead = intentSource.indexOf("params.get('subtab')");
+  const datasetRead = intentSource.indexOf('dataset?.edenHubSubtab');
+  assert.equal(hashRead > -1, true);
+  assert.equal(datasetRead === -1 || hashRead < datasetRead, true);
+  assert.match(hub, /delete document\.body\.dataset\.edenHubSubtab/);
+});
+
 test('playbook ships all optimized visuals and responsive theme contracts', () => {
   for (let index = 3; index <= 12; index += 1) {
     const name = `visual-${String(index).padStart(2, '0')}.webp`;

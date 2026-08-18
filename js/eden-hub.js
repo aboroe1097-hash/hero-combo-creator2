@@ -16,9 +16,9 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260818_175829';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260818_175829';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260818_175829';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260818_193201';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260818_193201';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260818_193201';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'playbook', 'season', 'previous'];
@@ -73,7 +73,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260818_175829')
+    import('./eden-map.js?v=20260818_193201')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -103,7 +103,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260818_175829');
+    const module = await import('./loyalty-spa.js?v=20260818_193201');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -167,7 +167,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260818_175829');
+    const module = await import('./bounty-guide.js?v=20260818_193201');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -197,14 +197,22 @@ async function loadPlaybook(panel) {
 
 function readSubtabIntent() {
   try {
+    // The canonical hash is the freshest signal. A subtab button clicked
+    // before the lazy controller arrived stashes its intent on the body
+    // dataset and that value can go stale (e.g. the playbook's loyalty tool
+    // link then navigates to #edenHub?subtab=loyalty). Always prefer an
+    // explicit subtab in the hash and clear the stale stash when we win.
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const linked = params.get('subtab');
+    if (EDEN_HUB_SUBTABS.includes(linked)) {
+      if (document.body) delete document.body.dataset.edenHubSubtab;
+      return linked;
+    }
     const intent = document.body?.dataset?.edenHubSubtab;
     if (intent) {
       delete document.body.dataset.edenHubSubtab;
       return EDEN_HUB_SUBTABS.includes(intent) ? intent : null;
     }
-    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    const linked = params.get('subtab');
-    if (EDEN_HUB_SUBTABS.includes(linked)) return linked;
   } catch {
     /* dataset unavailable */
   }
@@ -216,6 +224,10 @@ export function bootEdenHub() {
   const root = document.getElementById('edenMapRoot');
   if (!root) return;
   booted = true;
+  // From here on the hub's own click handler owns subtab activation. The
+  // shell-side pre-boot click catcher checks this marker so it never stashes
+  // a stale intent after the hub has already consumed the boot intent.
+  root.dataset.edenHubBooted = '1';
 
   function loadPanelFor(name, panel) {
     if (name === 'loyalty') loadLoyalty(root, panel);
