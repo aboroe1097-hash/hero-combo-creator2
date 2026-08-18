@@ -219,7 +219,10 @@ const LIMITS = {
   // two lazy route chunks; the complete audited artifact is 31766.7 KiB.
   // Localized playbook catalog entries lift the audited artifact to
   // 31897.5 KiB; keep ~23 KiB of headroom without changing per-route caps.
-  totalDeployBytes: 31920 * 1024,
+  // The 15.0.12 playbook Day-1 rework and six in-game specialization captures
+  // (69 KiB of optimized WebP media) audit to 31968.3 KiB; retain roughly
+  // 8 KiB of headroom without changing per-route caps.
+  totalDeployBytes: 31976 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -233,7 +236,9 @@ const LIMITS = {
   // roughly 12 KiB while keeping the 4 MiB single-file guard unchanged.
   // The replacement Day 0 routes and poison-legion capture audit to
   // 18692.3 KiB of deployed media after removing redundant screenshots.
-  totalMediaBytes: 18700 * 1024,
+  // The six in-game specialization captures (69 KiB) audit to 18763.8 KiB;
+  // retain roughly 6 KiB of headroom.
+  totalMediaBytes: 18770 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
