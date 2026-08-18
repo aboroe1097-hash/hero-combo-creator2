@@ -38,9 +38,16 @@ export function getActiveResearchTowersSubtab() {
 }
 
 function updateSubtabHash(subtab) {
-  const hash = subtab === 'towers' ? 'specialization' : subtab;
   try {
-    window.history.replaceState(window.history.state, '', `#${hash}`);
+    // Keep non-subtab parameters (e.g. the Artifact node deep link) when the
+    // subtab state is rewritten.
+    const current = new URLSearchParams(location.hash.split('?')[1] || '');
+    const next = new URLSearchParams();
+    next.set('subtab', subtab);
+    current.forEach((value, key) => {
+      if (key !== 'subtab') next.set(key, value);
+    });
+    window.history.replaceState(window.history.state, '', `#researchTowers?${next}`);
   } catch {
     // Hash persistence is helpful but not required for tab interaction.
   }
@@ -86,9 +93,13 @@ export function openResearchTowersSubtab(name, { notify = true } = {}) {
 export function readResearchTowersIntent() {
   try {
     const intent = document.body?.dataset?.researchTowersSubtab;
-    if (!intent) return '';
-    delete document.body.dataset.researchTowersSubtab;
-    return normalizeResearchTowersSubtab(intent);
+    if (intent) {
+      delete document.body.dataset.researchTowersSubtab;
+      return normalizeResearchTowersSubtab(intent);
+    }
+    return normalizeResearchTowersSubtab(
+      new URLSearchParams(location.hash.split('?')[1] || '').get('subtab')
+    );
   } catch {
     return '';
   }

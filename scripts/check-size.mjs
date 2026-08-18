@@ -102,7 +102,11 @@ const LIMITS = {
   // Artifact One adds a lazy 17.7 KiB controller, 15.3 KiB canonical dataset,
   // and an 8.4 KiB VII-IX evidence chunk. The audited graph is 9796.0 KiB;
   // retain 14 KiB while entry and route caps remain unchanged.
-  totalJsBytes: 9830 * 1024,
+  // Hero-targeted Artifact scoring reuses the lazy Tower skill-semantics module;
+  // the combined graph audits to 9828 KiB locally, with CI injection headroom.
+  // Full 13-locale DrThunder playbook translation adds ~125 KiB across the
+  // twelve lazy language chunks; the audited graph is now 9953.6 KiB.
+  totalJsBytes: 9970 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -138,7 +142,9 @@ const LIMITS = {
   // retain roughly 5 KiB of headroom.
   // The route-isolated Redemption Grail board plus the verified tower-source
   // presentation measure 1616.9 KiB total; retain roughly 8 KiB.
-  totalCssBytes: 1625 * 1024,
+  // The two-flow DrThunder guide and its responsive topic/table layouts audit
+  // to 1629.9 KiB; retain roughly 5 KiB without changing entry CSS limits.
+  totalCssBytes: 1635 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -209,7 +215,11 @@ const LIMITS = {
   // 30941.0 KiB; retain roughly 14 KiB.
   // The 15.0.8 Eden X2 Aiding Skills reference adds one optimized 55 KiB WebP;
   // retain about 19 KiB of artifact headroom without changing JS or CSS caps.
-  totalDeployBytes: 31380 * 1024,
+  // The expanded DrThunder playbook adds 13 contextual optimized visuals and
+  // two lazy route chunks; the complete audited artifact is 31766.7 KiB.
+  // Localized playbook catalog entries lift the audited artifact to
+  // 31897.5 KiB; keep ~23 KiB of headroom without changing per-route caps.
+  totalDeployBytes: 31920 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -221,7 +231,9 @@ const LIMITS = {
   // ship the guide without the illustration its steps describe.
   // The optimized Grail board raises audited media to 17932.4 KiB; retain
   // roughly 12 KiB while keeping the 4 MiB single-file guard unchanged.
-  totalMediaBytes: 18345 * 1024,
+  // The replacement Day 0 routes and poison-legion capture audit to
+  // 18692.3 KiB of deployed media after removing redundant screenshots.
+  totalMediaBytes: 18700 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -245,7 +257,7 @@ const LIMITS = {
   // of headroom.
   // Artifact and its evidence/localization split emit 663 files; keep two of
   // headroom so unplanned chunk proliferation remains visible.
-  deployFileCount: 670,
+  deployFileCount: 690,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -269,7 +281,7 @@ const LIMITS = {
     // 666.5 KiB; retain about 1.5 KiB without changing the mobile ceiling.
     'admin.html': { desktop: 668 * 1024, mobile: 785 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
-    'eden-x1.html': { desktop: 789 * 1024, mobile: 909 * 1024 },
+    'eden-x1.html': { desktop: 790 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
     'eden-x2.html': { desktop: 789 * 1024, mobile: 909 * 1024 },

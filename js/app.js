@@ -179,7 +179,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260818_121345').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260818_175829').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -201,7 +201,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260818_121345').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260818_175829').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -212,7 +212,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260818_121345').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260818_175829').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -301,6 +301,23 @@ function initTheme() {
 
 installShowToast();
 initTheme();
+
+document.getElementById('shareCurrentViewBtn')?.addEventListener('click', async () => {
+  const url = window.location.href;
+  const copy = (translations[currentLanguage] || translations.en || {});
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: document.title, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      if (typeof window.showToast === 'function') {
+        window.showToast(copy.shareViewCopied || 'Link copied to clipboard');
+      }
+    }
+  } catch (error) {
+    if (error?.name !== 'AbortError') console.warn('[share-view] Unable to share link', error);
+  }
+});
 
 function addCounterHeroesToGenerator(heroNames) {
   heroNames.filter(Boolean).forEach((name) => generatorSelectedHeroes.add(name));
@@ -1008,9 +1025,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   }
 
   function recoverFromStaleAssetGraph(reason) {
-    return (
-      window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false
-    );
+    return window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false;
   }
 
   function onTabActivated(tabName) {
@@ -1045,9 +1060,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.
-        import('./eden-hub.js?v=20260813_061728')
+        import('./eden-hub.js?v=20260818_175829')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260818_121345'))
+          .then(() => import('./eden-map.js?v=20260818_175829'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1077,7 +1092,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260818_121345')
+      import('./app-hero-atlas.js?v=20260818_175829')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1119,7 +1134,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'artifact' && !_artifactReady) {
       if (_artifactBooting) return;
       _artifactBooting = true;
-      import('./app-artifact.js?v=20260818_121345')
+      import('./app-artifact.js?v=20260818_175829')
         .then(async (mod) => {
           await mod.initArtifactCalculator();
           _artifactReady = true;
@@ -1175,7 +1190,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260818_121345')
+      import('./app-strife.js?v=20260818_175829')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1228,7 +1243,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260818_121345')
+      import('./youtube-v14.js?v=20260818_175829')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1411,7 +1426,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260818_121345')
+      import('./app-hero-atlas.js?v=20260818_175829')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */
@@ -1471,11 +1486,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     const towersSubtab = HUB_TAB_ALIASES.get(requestedTab) || '';
     const heroesSubtab = HEROES_HUB_ALIASES.get(requestedTab) || '';
     const hubSubtab = towersSubtab || heroesSubtab;
-    const tabName = towersSubtab
-      ? 'researchTowers'
-      : heroesSubtab
-        ? 'heroesCombos'
-        : requestedTab;
+    const tabName = towersSubtab ? 'researchTowers' : heroesSubtab ? 'heroesCombos' : requestedTab;
     if (!force && !hubSubtab && tabName === _lastTab) return;
     if (hubSubtab) {
       try {
@@ -1532,7 +1543,17 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     try {
       // Keep the hash the caller asked for. Arriving on #specialization must
       // stay shareable as #specialization even though the hub owns the tab.
-      const hash = hubSubtab ? requestedTab : canonicalTabHash(tabName);
+      const currentHash = window.location.hash.replace(/^#/, '');
+      const currentBase = currentHash.split('?')[0];
+      const canonical = canonicalTabHash(tabName);
+      const hash =
+        !hubSubtab &&
+        currentHash.includes('?') &&
+        currentBase.toLowerCase() === canonical.toLowerCase()
+          ? currentHash
+          : hubSubtab
+            ? requestedTab
+            : canonical;
       if (!options.preserveHash && window.location.hash !== '#' + hash) {
         // User-initiated tool changes must be Back/Forward navigable. Initial
         // hash normalization and hashchange handling pass preserveHash instead.
@@ -1671,7 +1692,10 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       );
     };
   }
-  const hashTab = resolveTabName(window.location.hash?.replace('#', '').split('?')[0], validTabNames);
+  const hashTab = resolveTabName(
+    window.location.hash?.replace('#', '').split('?')[0],
+    validTabNames
+  );
   const startTab = hashTab || 'generator';
   switchTab(startTab, true, {
     scrollToSection: startTab !== 'generator',
@@ -1783,6 +1807,16 @@ function updateTextContent() {
   document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
     const key = el.getAttribute('data-i18n-aria');
     if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
+  });
+
+  document.querySelectorAll('[data-i18n-alt]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-alt');
+    if (t[key]) el.setAttribute('alt', t[key].replace('{version}', APP_VERSION));
+  });
+
+  document.querySelectorAll('[data-i18n-badge]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-badge');
+    if (t[key]) el.setAttribute('data-subtool-badge', t[key].replace('{version}', APP_VERSION));
   });
 
   updateAllSeasonCatchupHints();

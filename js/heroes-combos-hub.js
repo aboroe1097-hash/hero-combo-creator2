@@ -58,11 +58,24 @@ function applySubtab(root, name) {
   activeSubtab = name;
 }
 
+function updateSubtabHash(subtab) {
+  try {
+    // Share-intent hashes carry their own payload and must survive the
+    // generator subtab opening underneath them (#combo=..., #roster=...).
+    const base = (window.location.hash || '').replace(/^#/, '').split('?')[0].toLowerCase();
+    if (base.startsWith('combo=') || base.startsWith('roster=')) return;
+    window.history.replaceState(window.history.state, '', `#heroesCombos?subtab=${subtab}`);
+  } catch {
+    /* URL state is progressive enhancement. */
+  }
+}
+
 export function openHeroesCombosSubtab(name, { notify = true } = {}) {
   const subtab = normalizeHeroesCombosSubtab(name) || HEROES_COMBOS_DEFAULT_SUBTAB;
   const root = document.getElementById('heroesCombosSection');
   if (!root) return '';
   applySubtab(root, subtab);
+  updateSubtabHash(subtab);
   if (notify) {
     try {
       window.dispatchEvent(
@@ -80,9 +93,13 @@ export function openHeroesCombosSubtab(name, { notify = true } = {}) {
 export function readHeroesCombosIntent() {
   try {
     const intent = document.body?.dataset?.heroesCombosSubtab;
-    if (!intent) return '';
-    delete document.body.dataset.heroesCombosSubtab;
-    return normalizeHeroesCombosSubtab(intent);
+    if (intent) {
+      delete document.body.dataset.heroesCombosSubtab;
+      return normalizeHeroesCombosSubtab(intent);
+    }
+    return normalizeHeroesCombosSubtab(
+      new URLSearchParams(location.hash.split('?')[1] || '').get('subtab')
+    );
   } catch {
     return '';
   }

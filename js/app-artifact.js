@@ -11,6 +11,8 @@ import {
 import { artifactText, resolveArtifactLocale } from './i18n/artifact.js';
 import { formatLocaleNumber } from './locale-format.js';
 import { currentLanguage } from './state.js';
+import { generatorSelectedHeroes } from './state.js';
+import { analyzeHeroMechanics } from './specialization-hero-plans.js';
 import { escapeHtml } from './utils.js';
 import '../css/artifact-v14.css';
 
@@ -73,6 +75,36 @@ let eventsBound = false;
 let languageBound = false;
 let centerSelectedNode = false;
 
+function heroPathPlan() {
+  const heroes = [...generatorSelectedHeroes].slice(0, 6);
+  const mechanics = heroes.flatMap((hero) => [...analyzeHeroMechanics(hero)]);
+  const defensive = mechanics.filter((id) =>
+    ['healing', 'control', 'sober', 'evasion'].includes(id)
+  ).length;
+  const tactical = mechanics.filter((id) =>
+    ['skillDamage', 'prepSkip', 'bleedBurn', 'vulnerable'].includes(id)
+  ).length;
+  const score = (node) => {
+    const type = node.statType || '';
+    if (/special|sacred_might|might_pct|damage/.test(type)) return 5 + mechanics.length;
+    if (/tactmight/.test(type)) return 4 + tactical * 3;
+    if (/hp|resist|sacred_resist/.test(type)) return 3 + defensive * 3;
+    return 2;
+  };
+  const ordered = [];
+  const seen = new Set();
+  const add = (node) => {
+    if (!node || seen.has(node.id)) return;
+    (node.unlockRequirements || []).forEach((req) =>
+      add(getArtifactNodeById(req.nodeId, artifact))
+    );
+    seen.add(node.id);
+    ordered.push(node);
+  };
+  [...getAllArtifactNodes(artifact)].sort((a, b) => score(b) - score(a)).forEach(add);
+  return { heroes, ordered, stepById: new Map(ordered.map((node, index) => [node.id, index + 1])) };
+}
+
 function locale() {
   return resolveArtifactLocale(currentLanguage);
 }
@@ -116,6 +148,29 @@ function setNodeLevel(nodeId, rawLevel, { render: shouldRender = true, save = tr
   nodeLevels = { ...nodeLevels, [nodeId]: level };
   if (save) saveProgress();
   if (shouldRender) render();
+}
+
+function setNodeWithRequirements(nodeId, rawLevel) {
+  const node = getArtifactNodeById(nodeId, artifact);
+  if (!node) return;
+  const visited = new Set();
+  const fundRequirements = (target) => {
+    if (!target || visited.has(target.id)) return;
+    visited.add(target.id);
+    (target.unlockRequirements || []).forEach((requirement) => {
+      const prerequisite = getArtifactNodeById(requirement.nodeId, artifact);
+      fundRequirements(prerequisite);
+      nodeLevels[requirement.nodeId] = Math.max(
+        Number(nodeLevels[requirement.nodeId]) || 0,
+        requirement.minLevel
+      );
+    });
+  };
+  nodeLevels = { ...nodeLevels };
+  fundRequirements(node);
+  nodeLevels[node.id] = Math.max(0, Math.min(node.maxLevel, Math.trunc(Number(rawLevel)) || 0));
+  saveProgress();
+  render();
 }
 
 function requirementsMet(node) {
@@ -197,7 +252,7 @@ function connectorMarkup() {
     .join('');
 }
 
-function treeNode(node) {
+function treeNode(node, stepById) {
   const layout = node.layout || NODE_LAYOUT[node.id];
   if (!layout) return '';
   const current = Number(nodeLevels[node.id]) || 0;
@@ -207,13 +262,14 @@ function treeNode(node) {
   const dimmed = !matchesSearch(node);
   const progress = node.maxLevel > 0 ? current / node.maxLevel : 0;
   const displayCode = node.code.includes('amp') ? '−' : node.code.replace('.0', '');
+  const pathStep = stepById.get(node.id);
   const label = `${node.name}, ${t('level', { current, max: node.maxLevel })}`;
   return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${current > 0 ? ' has-progress' : ''}${dimmed ? ' is-dimmed' : ''}${locked ? ' is-locked' : ''}"
     style="--node-x:${layout.x}%;--node-y:${layout.y}%;--node-progress:${progress}turn" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
       ${node.icon ? `<img class="artifact-tree-node-icon" src="${escapeHtml(node.icon)}" alt="" aria-hidden="true" />` : ''}
       <span class="artifact-node-state" aria-hidden="true">${locked ? '⌁' : maxed ? '✦' : current > 0 ? current : '+'}</span>
       <span class="artifact-tree-code" translate="no">${escapeHtml(displayCode)}</span>
-      <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>
+      <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>${pathStep ? `<span class="artifact-path-step" aria-hidden="true">${pathStep}</span>` : ''}
     </button>`;
 }
 
@@ -231,15 +287,28 @@ function selectedNodeMarkup() {
       <span class="artifact-detail-resource">${resourceIcon(node.resource)}<b translate="no">${escapeHtml(artifact.resources[node.resource]?.shortName || node.resource)}</b></span>
     </header>
     <p class="artifact-node-buff">${escapeHtml(node.buff)}</p>
-    ${locked ? `<p class="artifact-prerequisite">${(node.unlockRequirements || []).map((requirement) => `${t('requiresLevel', { level: requirement.minLevel })}: ${getArtifactNodeById(requirement.nodeId, artifact)?.name || requirement.nodeId}`).map(escapeHtml).join(', ')}</p>` : ''}
+    ${
+      locked
+        ? `<p class="artifact-prerequisite">${(node.unlockRequirements || [])
+            .map(
+              (requirement) =>
+                `${t('requiresLevel', { level: requirement.minLevel })}: ${getArtifactNodeById(requirement.nodeId, artifact)?.name || requirement.nodeId}`
+            )
+            .map(escapeHtml)
+            .join(', ')}</p>`
+        : ''
+    }
     ${node.permanentAttribute ? `<p class="artifact-permanent"><strong>${escapeHtml(t('permanent'))}:</strong> ${escapeHtml(node.permanentAttribute)}</p>` : ''}
     <div class="artifact-level-line">
       <strong data-artifact-level-label>${escapeHtml(levelLabel)}</strong>
-      <span>
-        <button type="button" data-artifact-action="decrease" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−</button>
-        <button type="button" data-artifact-action="increase" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+</button>
-        <button type="button" class="artifact-max-button" data-artifact-action="max-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>MAX</button>
-      </span>
+      <label class="artifact-level-number"><span class="sr-only">${escapeHtml(levelLabel)}</span><input type="number" min="0" max="${node.maxLevel}" value="${current}" inputmode="numeric" data-artifact-level-input="${escapeHtml(node.id)}" /></label>
+    </div>
+    <div class="artifact-level-actions" aria-label="${escapeHtml(levelLabel)}">
+      <button type="button" data-artifact-action="decrease" data-step="5" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−5</button>
+      <button type="button" data-artifact-action="decrease" data-step="1" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−1</button>
+      <button type="button" data-artifact-action="increase" data-step="1" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+1</button>
+      <button type="button" data-artifact-action="increase" data-step="5" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+5</button>
+      <button type="button" class="artifact-max-button" data-artifact-action="max-node-path" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed ? 'disabled' : ''}>↟ MAX</button>
     </div>
     <label class="sr-only" for="artifact-level-${escapeHtml(node.id)}">${escapeHtml(levelLabel)}</label>
     <input id="artifact-level-${escapeHtml(node.id)}" type="range" min="0" max="${node.maxLevel}" value="${current}" data-artifact-slider="${escapeHtml(node.id)}" aria-valuetext="${escapeHtml(levelLabel)}" />
@@ -258,6 +327,8 @@ function render() {
   const metrics = calculateArtifactMetrics(artifact, nodeLevels);
   const completion = metrics.completionPercent.toFixed(1);
   const nodes = getAllArtifactNodes(artifact);
+  const path = heroPathPlan();
+  const nextPathNode = path.ordered.find((node) => (Number(nodeLevels[node.id]) || 0) < node.maxLevel);
 
   root.dir = locale() === 'ar' ? 'rtl' : 'ltr';
   root.innerHTML = `<div class="artifact-workspace">
@@ -285,13 +356,18 @@ function render() {
       <input id="artifact-search" type="search" autocomplete="off" placeholder="${escapeHtml(t('searchPlaceholder'))}" value="${escapeHtml(searchQuery)}" />
       <p>${escapeHtml(artifact.farmingNote)}</p>
     </section>
+    <section class="artifact-hero-path" aria-label="${escapeHtml(t('heroPathAria'))}">
+      <div><p class="artifact-kicker">${escapeHtml(t('heroPathKicker'))}</p><h2>${path.heroes.length ? path.heroes.join(' · ') : escapeHtml(t('heroPathBalanced'))}</h2><p>${escapeHtml(path.heroes.length ? t('heroPathDescSelected') : t('heroPathDescEmpty'))}</p></div>
+      <div class="artifact-path-next"><span>${escapeHtml(t('heroPathNext'))}</span><button type="button" data-artifact-action="select-node" data-node-id="${escapeHtml(nextPathNode?.id || path.ordered[0]?.id)}">${escapeHtml(nextPathNode?.name || t('heroPathComplete'))}</button></div>
+      <button type="button" data-artifact-action="share-view">${escapeHtml(t('sharePath'))}</button>
+    </section>
 
     <div class="artifact-game-layout">
       <section class="artifact-tree-shell" aria-label="${escapeHtml(artifact.title)}">
         <div class="artifact-tree-scroll"><div class="artifact-tree" style="--artifact-board-image:url('${escapeHtml(artifact.boardImage)}')">
           <div class="artifact-tree-backdrop" aria-hidden="true"></div>
           <svg class="artifact-tree-paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${connectorMarkup()}</svg>
-          ${nodes.map(treeNode).join('')}
+          ${nodes.map((node) => treeNode(node, path.stepById)).join('')}
         </div></div>
       </section>
       <aside class="artifact-inspector">
@@ -339,18 +415,46 @@ function bindEvents() {
       selectedNodeId = nodeId;
       centerSelectedNode = true;
       render();
+      history.replaceState(
+        history.state,
+        '',
+        `#researchTowers?subtab=artifact&node=${encodeURIComponent(nodeId)}`
+      );
       if (window.matchMedia('(max-width: 1000px)').matches) {
         root.querySelector('.artifact-node-detail')?.scrollIntoView({ block: 'nearest' });
       }
     }
+    if (action === 'share-view') {
+      const url = location.href;
+      void (async () => {
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: artifact.title, url });
+          } else {
+            await navigator.clipboard?.writeText(url);
+            if (typeof window.showToast === 'function') {
+              window.showToast(t('sharePathCopied'));
+            }
+          }
+        } catch (error) {
+          if (error?.name !== 'AbortError') console.warn('[artifact] Unable to share path', error);
+        }
+      })();
+    }
     if (action === 'max-all') setAllLevel('max');
     if (action === 'reset-all' && window.confirm(t('resetConfirm'))) setAllLevel(0);
     if (action === 'max-tier') setTierLevel(button.dataset.tier);
-    if (action === 'decrease') setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) - 1);
-    if (action === 'increase') setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) + 1);
+    if (action === 'decrease')
+      setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) - (Number(button.dataset.step) || 1));
+    if (action === 'increase')
+      setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) + (Number(button.dataset.step) || 1));
     if (action === 'max-node') {
       const node = getArtifactNodeById(nodeId, artifact);
       if (node) setNodeLevel(nodeId, node.maxLevel);
+    }
+    if (action === 'max-node-path') {
+      const node = getArtifactNodeById(nodeId, artifact);
+      if (node) setNodeWithRequirements(nodeId, node.maxLevel);
     }
   });
 
@@ -379,6 +483,10 @@ function bindEvents() {
   });
 
   root.addEventListener('change', (event) => {
+    if (event.target.matches('[data-artifact-level-input]')) {
+      setNodeWithRequirements(event.target.dataset.artifactLevelInput, event.target.value);
+      return;
+    }
     if (event.target.matches('[data-artifact-slider]')) {
       setNodeLevel(event.target.dataset.artifactSlider, event.target.value);
     }
@@ -389,6 +497,8 @@ export async function initArtifactCalculator() {
   document.querySelector('#artifactSection .artifact-loading')?.remove();
   if (!initialized) {
     loadProgress();
+    const linkedNode = new URLSearchParams(location.hash.split('?')[1] || '').get('node');
+    if (getArtifactNodeById(linkedNode, artifact)) selectedNodeId = linkedNode;
     initialized = true;
   }
   bindEvents();

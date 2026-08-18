@@ -16,20 +16,30 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260813_061728';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260813_061728';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260818_175829';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260818_175829';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260818_175829';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
-const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'season', 'previous'];
+const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'playbook', 'season', 'previous'];
 
 let booted = false;
 let loyaltyLoaded = false;
 let loyaltyLoading = false;
 let bountyLoaded = false;
 let bountyLoading = false;
+let playbookLoaded = false;
+
+function catalogFor(language) {
+  // Prefer the entry page's canonical catalog: a stale-stamped import chain
+  // can give this hub a second translations instance whose lazy locales are
+  // never populated, leaving subtab panels on the English fallback.
+  const canonical = globalThis.VTS_TRANSLATIONS || translations;
+  return canonical[language] || canonical.en || {};
+}
 
 function localizeFragment(root) {
-  const t = translations[currentLanguage] || translations.en || {};
+  const t = catalogFor(currentLanguage);
   if (!root?.querySelectorAll) return;
   root.querySelectorAll('[data-i18n]').forEach((element) => {
     const key = element.getAttribute('data-i18n');
@@ -47,6 +57,14 @@ function localizeFragment(root) {
     const key = element.getAttribute('data-i18n-aria');
     if (t[key]) element.setAttribute('aria-label', t[key]);
   });
+  root.querySelectorAll('[data-i18n-alt]').forEach((element) => {
+    const key = element.getAttribute('data-i18n-alt');
+    if (t[key]) element.setAttribute('alt', t[key]);
+  });
+  root.querySelectorAll('[data-i18n-badge]').forEach((element) => {
+    const key = element.getAttribute('data-i18n-badge');
+    if (t[key]) element.setAttribute('data-subtool-badge', t[key]);
+  });
 }
 
 function refreshMapViewport() {
@@ -55,7 +73,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260814_125122')
+    import('./eden-map.js?v=20260818_175829')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -85,7 +103,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260813_061728');
+    const module = await import('./loyalty-spa.js?v=20260818_175829');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -112,7 +130,7 @@ function loadPrevious(panel) {
 }
 
 function loadSeason(panel) {
-  const t = translations[currentLanguage] || translations.en || {};
+  const t = catalogFor(currentLanguage);
   loadFramedSeason(panel, SEASON_SRC, t.subTabSeason || 'Current Season');
 }
 
@@ -149,7 +167,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260813_061728');
+    const module = await import('./bounty-guide.js?v=20260818_175829');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -161,6 +179,22 @@ async function loadBounty(panel) {
   }
 }
 
+async function loadPlaybook(panel) {
+  if (playbookLoaded) return;
+  try {
+    const response = await fetch(PLAYBOOK_SRC);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    panel.innerHTML = await response.text();
+    localizeFragment(panel);
+    const module = await import('./eden-playbook.js');
+    module.initEdenPlaybook?.(panel);
+    playbookLoaded = true;
+  } catch (error) {
+    console.warn('[eden-hub] Eden playbook failed to load', error);
+    panel.innerHTML = `<div class="tab-loading"><span>Eden Playbook failed to load. Refresh and try again.</span></div>`;
+  }
+}
+
 function readSubtabIntent() {
   try {
     const intent = document.body?.dataset?.edenHubSubtab;
@@ -168,6 +202,9 @@ function readSubtabIntent() {
       delete document.body.dataset.edenHubSubtab;
       return EDEN_HUB_SUBTABS.includes(intent) ? intent : null;
     }
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const linked = params.get('subtab');
+    if (EDEN_HUB_SUBTABS.includes(linked)) return linked;
   } catch {
     /* dataset unavailable */
   }
@@ -183,6 +220,7 @@ export function bootEdenHub() {
   function loadPanelFor(name, panel) {
     if (name === 'loyalty') loadLoyalty(root, panel);
     if (name === 'bounty') loadBounty(panel);
+    if (name === 'playbook') loadPlaybook(panel);
     if (name === 'previous') loadPrevious(panel);
     if (name === 'season') loadSeason(panel);
   }
@@ -206,6 +244,7 @@ export function bootEdenHub() {
     const button = event.target.closest('[data-eden-subtab]');
     if (!button) return;
     const name = button.dataset.edenSubtab;
+    window.history.replaceState(window.history.state, '', `#edenHub?subtab=${name}`);
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
     if (panel) loadPanelFor(name, panel);
@@ -226,6 +265,10 @@ export function bootEdenHub() {
       if (hash === 'edenmap' || hash === 'edenhub') activateSubTab(root, 'map');
     }, 0);
   });
+
+  // Language changes re-apply the main catalog to every loaded panel; the
+  // playbook re-renders its JS-built content through its own listener.
+  window.addEventListener('vts:language-change', () => localizeFragment(root));
 
   // Explicit sub-tab navigation from other tools (e.g. the command palette).
   window.addEventListener('vts:eden-hub-subtab', (event) => {

@@ -245,6 +245,7 @@ const I18N_ATTRS = [
   'data-i18n-aria',
   'data-i18n-label',
   'data-i18n-alt',
+  'data-i18n-badge',
 ];
 
 const referencedKeys = new Map();

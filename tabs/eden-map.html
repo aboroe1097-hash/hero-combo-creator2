@@ -1,1128 +1,1289 @@
-<div
-  id="edenMapRoot"
-  class="eden-map-root"
-  data-eden-loading-label="Loading Eden Map…"
->
+<div id="edenMapRoot" class="eden-map-root" data-eden-loading-label="Loading Eden Map…">
   <nav class="vts-eden-subtab-bar" role="tablist" aria-label="VTS Eden Hub sections">
-    <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="map" data-eden-i18n="subTabMap">Eden Map</button>
-    <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="loyalty" data-eden-i18n="subTabLoyalty">Eden Loyalty</button>
-    <button type="button" class="vts-eden-subtab-btn active" role="tab" aria-selected="true" data-eden-subtab="bounty" data-eden-i18n="subTabBounty">Royal Bounty Eden X2</button>
+    <button
+      type="button"
+      class="vts-eden-subtab-btn"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="map"
+      data-eden-i18n="subTabMap"
+      data-subtool-badge="SOON" data-i18n-badge="badgeSoon"
+    >
+      Eden Map
+    </button>
+    <button
+      type="button"
+      class="vts-eden-subtab-btn"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="loyalty"
+      data-eden-i18n="subTabLoyalty"
+    >
+      Eden Loyalty
+    </button>
+    <button
+      type="button"
+      class="vts-eden-subtab-btn active"
+      role="tab"
+      aria-selected="true"
+      data-eden-subtab="bounty"
+      data-eden-i18n="subTabBounty"
+      data-subtool-badge="NEW" data-i18n-badge="badgeNew"
+    >
+      Royal Bounty Eden X2
+    </button>
+    <button
+      type="button"
+      class="vts-eden-subtab-btn"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="playbook"
+      data-subtool-badge="NEW" data-i18n-badge="badgeNew"
+    >
+      Eden Playbook
+    </button>
     <!-- The current season appears only once an admin publishes its projection; eden-hub.js unhides this after that check succeeds. -->
-    <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="season" data-eden-i18n="subTabSeason" hidden>Current Season</button>
-    <button type="button" class="vts-eden-subtab-btn" role="tab" aria-selected="false" data-eden-subtab="previous" data-eden-i18n="subTabPrevious">Previous Seasons</button>
+    <button
+      type="button"
+      class="vts-eden-subtab-btn"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="season"
+      data-eden-i18n="subTabSeason"
+      hidden
+    >
+      Current Season
+    </button>
+    <button
+      type="button"
+      class="vts-eden-subtab-btn"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="previous"
+      data-eden-i18n="subTabPrevious"
+    >
+      Previous Seasons
+    </button>
   </nav>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="map" role="tabpanel" hidden>
-  <div class="eden-map-header">
-    <div>
-      <h2 class="eden-page-title" data-i18n="edenMapTitle">Eden Map Planner</h2>
-      <p class="eden-page-desc" data-i18n="edenMapDesc">
-        Wonder X1 map with in-game structure coords. Pan, zoom, path routes, and layer toggles —
-        hover any toolbar control for details.
-      </p>
-      <span id="edenDatasetBadge" class="eden-dataset-badge hidden"></span>
-    </div>
-    <div
-      id="edenSeasonModal"
-      class="eden-season-modal hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-hidden="true"
-      aria-labelledby="edenSeasonModalTitle"
-      aria-describedby="edenSeasonModalDesc"
-    >
-      <div class="eden-season-card">
-        <h3 id="edenSeasonModalTitle" class="eden-season-title" data-i18n="edenSeasonPickTitle">
-          Choose your Eden map data
-        </h3>
-        <p id="edenSeasonModalDesc" class="eden-season-intro" data-i18n="edenSeasonPickDesc">
-          Structure positions can differ by season. Pick the dataset that matches your current Eden
-          server. You can change this anytime from the toolbar.
+    <div class="eden-map-header">
+      <div>
+        <h2 class="eden-page-title" data-i18n="edenMapTitle">Eden Map Planner</h2>
+        <p class="eden-page-desc" data-i18n="edenMapDesc">
+          Wonder X1 map with in-game structure coords. Pan, zoom, path routes, and layer toggles —
+          hover any toolbar control for details.
         </p>
-        <p id="edenSeasonStatus" class="eden-season-intro" role="status" aria-live="polite"></p>
-        <div id="edenSeasonChoices" class="eden-season-choices" aria-live="polite"></div>
-        <div class="eden-season-choices">
-          <button type="button" id="edenSeasonRetry" class="eden-season-choice hidden">
-            <span class="eden-season-choice-title" data-i18n="edenX1Retry">Retry</span>
-            <span class="eden-season-choice-desc" data-i18n="edenMapLoadFailed"
-              >Eden map failed to load. Refresh and try again.</span
+        <span id="edenDatasetBadge" class="eden-dataset-badge hidden"></span>
+      </div>
+      <div
+        id="edenSeasonModal"
+        class="eden-season-modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="edenSeasonModalTitle"
+        aria-describedby="edenSeasonModalDesc"
+      >
+        <div class="eden-season-card">
+          <h3 id="edenSeasonModalTitle" class="eden-season-title" data-i18n="edenSeasonPickTitle">
+            Choose your Eden map data
+          </h3>
+          <p id="edenSeasonModalDesc" class="eden-season-intro" data-i18n="edenSeasonPickDesc">
+            Structure positions can differ by season. Pick the dataset that matches your current
+            Eden server. You can change this anytime from the toolbar.
+          </p>
+          <p id="edenSeasonStatus" class="eden-season-intro" role="status" aria-live="polite"></p>
+          <div id="edenSeasonChoices" class="eden-season-choices" aria-live="polite"></div>
+          <div class="eden-season-choices">
+            <button type="button" id="edenSeasonRetry" class="eden-season-choice hidden">
+              <span class="eden-season-choice-title" data-i18n="edenX1Retry">Retry</span>
+              <span class="eden-season-choice-desc" data-i18n="edenMapLoadFailed"
+                >Eden map failed to load. Refresh and try again.</span
+              >
+            </button>
+            <button
+              type="button"
+              id="edenSeasonClose"
+              class="eden-season-choice"
+              data-i18n="edenX1ModalClose"
             >
-          </button>
-          <button
-            type="button"
-            id="edenSeasonClose"
-            class="eden-season-choice"
-            data-i18n="edenX1ModalClose"
-          >
-            Close
-          </button>
+              Close
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="eden-control-deck">
-      <div class="eden-deck-row eden-deck-nav">
-        <span class="eden-deck-label" data-i18n="edenDeckNav">Map</span>
-        <div class="eden-deck-cluster">
-          <label class="eden-mode-label eden-dataset-label">
-            <span data-i18n="edenDatasetLabel">Season</span>
+      <div class="eden-control-deck">
+        <div class="eden-deck-row eden-deck-nav">
+          <span class="eden-deck-label" data-i18n="edenDeckNav">Map</span>
+          <div class="eden-deck-cluster">
+            <label class="eden-mode-label eden-dataset-label">
+              <span data-i18n="edenDatasetLabel">Season</span>
+              <select
+                id="edenDatasetSelect"
+                class="eden-dataset-select"
+                aria-label="Season"
+                data-i18n-aria="edenDatasetLabel"
+                data-i18n-title="edenDatasetLabelTitle"
+                title="Eden season / map data"
+              ></select>
+            </label>
+            <button
+              type="button"
+              id="edenChangeSeasonBtn"
+              class="eden-tool-btn eden-tool-compact"
+              data-i18n="edenChangeSeason"
+              data-i18n-title="edenChangeSeasonTitle"
+            >
+              Change
+            </button>
+          </div>
+          <div class="eden-deck-cluster">
             <select
-              id="edenDatasetSelect"
-              class="eden-dataset-select"
-              aria-label="Season"
-              data-i18n-aria="edenDatasetLabel"
-              data-i18n-title="edenDatasetLabelTitle"
-              title="Eden season / map data"
-            ></select>
-          </label>
-          <button
-            type="button"
-            id="edenChangeSeasonBtn"
-            class="eden-tool-btn eden-tool-compact"
-            data-i18n="edenChangeSeason"
-            data-i18n-title="edenChangeSeasonTitle"
-          >
-            Change
-          </button>
-        </div>
-        <div class="eden-deck-cluster">
-          <select
-            id="edenSectorSelect"
-            class="eden-sector-select"
-            aria-label="Sector"
-            data-i18n-aria="edenSectorTitle"
-            data-i18n-title="edenSectorTitle"
-            title="Sector"
-          >
-            <option value="FULL" data-i18n="edenSectorFull">Full Map</option>
-            <optgroup label="─ Cardinal Sectors ─" data-i18n-label="edenSectorCardinal">
-              <option value="N" data-eden-sector-option="N">North (N)</option>
-              <option value="NE" data-eden-sector-option="NE">North East (NE)</option>
-              <option value="E" data-eden-sector-option="E">East (E)</option>
-              <option value="SE" data-eden-sector-option="SE">South East (SE)</option>
-              <option value="S" data-eden-sector-option="S">South (S)</option>
-              <option value="SW" data-eden-sector-option="SW">South West (SW)</option>
-              <option value="W" data-eden-sector-option="W">West (W)</option>
-              <option value="NW" data-eden-sector-option="NW">North West (NW)</option>
-            </optgroup>
-            <optgroup label="─ Central Sectors ─" data-i18n-label="edenSectorCentral">
-              <option value="C" data-eden-sector-option="C">Central (C)</option>
-              <option value="NC" data-eden-sector-option="NC">North Central (NC)</option>
-              <option value="EC" data-eden-sector-option="EC">Eastern Central (EC)</option>
-              <option value="WC" data-eden-sector-option="WC">West Central (WC)</option>
-              <option value="SC" data-eden-sector-option="SC">South Central (SC)</option>
-            </optgroup>
-          </select>
-          <button
-            type="button"
-            id="edenIsolateSector"
-            class="eden-tool-btn eden-has-tip"
-            data-i18n-title="edenIsolateSectorTitle"
-            aria-pressed="false"
-          >
-            <svg
-              class="eden-inline-icon"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
+              id="edenSectorSelect"
+              class="eden-sector-select"
+              aria-label="Sector"
+              data-i18n-aria="edenSectorTitle"
+              data-i18n-title="edenSectorTitle"
+              title="Sector"
             >
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-            </svg>
-            <span data-i18n="edenIsolateSector">Isolate</span>
-          </button>
-        </div>
-        <div
-          class="eden-deck-cluster eden-zoom-cluster"
-          role="group"
-          aria-label="Zoom controls"
-          data-eden-i18n-aria="zoomControls"
-        >
-          <button
-            type="button"
-            id="edenZoomOut"
-            class="eden-tool-btn eden-tool-icon"
-            aria-label="Zoom out"
-            data-i18n-aria="edenZoomOutTitle"
-            data-i18n-title="edenZoomOutTitle"
-            title="Zoom out"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <span id="edenZoomLevel" class="eden-zoom-level">42%</span>
-          <button
-            type="button"
-            id="edenZoomIn"
-            class="eden-tool-btn eden-tool-icon"
-            aria-label="Zoom in"
-            data-i18n-aria="edenZoomInTitle"
-            data-i18n-title="edenZoomInTitle"
-            title="Zoom in"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </div>
-        <div class="eden-deck-cluster eden-deck-cluster-end">
-          <button
-            type="button"
-            id="edenResetView"
-            class="eden-tool-btn"
-            data-i18n-title="edenResetViewTitle"
-          >
-            <svg
-              class="eden-inline-icon"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-            <span data-i18n="edenResetView">Reset</span>
-          </button>
-          <button
-            type="button"
-            id="edenFitView"
-            class="eden-tool-btn"
-            data-i18n-title="edenFitViewTitle"
-          >
-            <svg
-              class="eden-inline-icon"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M15 3h6v6" />
-              <path d="M9 21H3v-6" />
-              <path d="M21 3l-7 7" />
-              <path d="M3 21l7-7" />
-            </svg>
-            <span data-i18n="edenFitView">Fit</span>
-          </button>
-          <button
-            type="button"
-            id="edenFullscreen"
-            class="eden-tool-btn"
-            title="Fullscreen map"
-            data-eden-i18n="fullscreen"
-            data-eden-i18n-title="fullscreenTitle"
-            aria-pressed="false"
-          >
-            Fullscreen
-          </button>
-          <button
-            type="button"
-            id="edenOpenGuide"
-            class="eden-tool-btn eden-tool-accent"
-            data-i18n-title="edenGuideBtnTitle"
-          >
-            <svg
-              class="eden-inline-icon"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-            </svg>
-            <span data-i18n="edenGuideBtn">Guide</span>
-          </button>
-        </div>
-      </div>
-
-      <details class="eden-mission-panel">
-        <summary
-          class="eden-mission-head"
-          aria-label="Mission controls"
-          data-eden-i18n-aria="missionControls"
-        >
-          <span class="eden-mission-title" data-eden-i18n="mission">Mission</span>
-          <span id="edenMissionPreview" class="eden-mission-preview">VTS</span>
-        </summary>
-        <div class="eden-mission-grid">
-          <label class="eden-mission-field eden-mission-field--alliance">
-            <span data-eden-i18n="alliance">Alliance</span>
-            <select
-              id="edenMissionAlliance"
-              class="eden-mission-select"
-              title="Alliance color for targets, paths, and drawing"
-              data-eden-i18n-title="allianceTitle"
-            >
-              <option value="vts" data-canonical-name="VTS" data-eden-mission-option="vts" data-color="#22d3ee" data-side="ours">VTS</option>
-              <option value="ally-north" data-canonical-name="Our ally N" data-eden-mission-option="ally-north" data-color="#38bdf8" data-side="ours">Our ally N</option>
-              <option value="ally-south" data-canonical-name="Our ally S" data-eden-mission-option="ally-south" data-color="#22c55e" data-side="ours">Our ally S</option>
-              <option value="enemy-red" data-canonical-name="Enemy red" data-eden-mission-option="enemy-red" data-color="#ef4444" data-side="enemy">Enemy red</option>
-              <option value="enemy-purple" data-canonical-name="Enemy purple" data-eden-mission-option="enemy-purple" data-color="#a855f7" data-side="enemy">
-                Enemy purple
-              </option>
-              <option value="enemy-gold" data-canonical-name="Enemy gold" data-eden-mission-option="enemy-gold" data-color="#f59e0b" data-side="enemy">Enemy gold</option>
-              <option value="neutral" data-canonical-name="Neutral" data-eden-mission-option="neutral" data-color="#94a3b8" data-side="neutral">Neutral</option>
+              <option value="FULL" data-i18n="edenSectorFull">Full Map</option>
+              <optgroup label="─ Cardinal Sectors ─" data-i18n-label="edenSectorCardinal">
+                <option value="N" data-eden-sector-option="N">North (N)</option>
+                <option value="NE" data-eden-sector-option="NE">North East (NE)</option>
+                <option value="E" data-eden-sector-option="E">East (E)</option>
+                <option value="SE" data-eden-sector-option="SE">South East (SE)</option>
+                <option value="S" data-eden-sector-option="S">South (S)</option>
+                <option value="SW" data-eden-sector-option="SW">South West (SW)</option>
+                <option value="W" data-eden-sector-option="W">West (W)</option>
+                <option value="NW" data-eden-sector-option="NW">North West (NW)</option>
+              </optgroup>
+              <optgroup label="─ Central Sectors ─" data-i18n-label="edenSectorCentral">
+                <option value="C" data-eden-sector-option="C">Central (C)</option>
+                <option value="NC" data-eden-sector-option="NC">North Central (NC)</option>
+                <option value="EC" data-eden-sector-option="EC">Eastern Central (EC)</option>
+                <option value="WC" data-eden-sector-option="WC">West Central (WC)</option>
+                <option value="SC" data-eden-sector-option="SC">South Central (SC)</option>
+              </optgroup>
             </select>
-          </label>
-          <label class="eden-mission-field">
-            <span data-eden-i18n="label">Label</span>
-            <input
-              id="edenMissionLabel"
-              class="eden-mission-input"
-              type="text"
-              placeholder="Gate / Rally"
-              data-eden-i18n-ph="gateRally"
-              maxlength="24"
-            />
-          </label>
-          <label class="eden-mission-field eden-mission-field--time">
-            <span data-eden-i18n="time">Time</span>
-            <input
-              id="edenMissionTime"
-              class="eden-mission-input"
-              type="text"
-              inputmode="numeric"
-              placeholder="07:30"
-              maxlength="5"
-            />
-          </label>
+            <button
+              type="button"
+              id="edenIsolateSector"
+              class="eden-tool-btn eden-has-tip"
+              data-i18n-title="edenIsolateSectorTitle"
+              aria-pressed="false"
+            >
+              <svg
+                class="eden-inline-icon"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </svg>
+              <span data-i18n="edenIsolateSector">Isolate</span>
+            </button>
+          </div>
           <div
-            class="eden-mission-field eden-mission-teams"
+            class="eden-deck-cluster eden-zoom-cluster"
             role="group"
-            aria-label="VTS teams"
-            data-eden-i18n-aria="vtsTeams"
+            aria-label="Zoom controls"
+            data-eden-i18n-aria="zoomControls"
           >
-            <span data-eden-i18n="vtsTeam">VTS team</span>
-            <div class="eden-mission-team-row">
+            <button
+              type="button"
+              id="edenZoomOut"
+              class="eden-tool-btn eden-tool-icon"
+              aria-label="Zoom out"
+              data-i18n-aria="edenZoomOutTitle"
+              data-i18n-title="edenZoomOutTitle"
+              title="Zoom out"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+            <span id="edenZoomLevel" class="eden-zoom-level">42%</span>
+            <button
+              type="button"
+              id="edenZoomIn"
+              class="eden-tool-btn eden-tool-icon"
+              aria-label="Zoom in"
+              data-i18n-aria="edenZoomInTitle"
+              data-i18n-title="edenZoomInTitle"
+              title="Zoom in"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          </div>
+          <div class="eden-deck-cluster eden-deck-cluster-end">
+            <button
+              type="button"
+              id="edenResetView"
+              class="eden-tool-btn"
+              data-i18n-title="edenResetViewTitle"
+            >
+              <svg
+                class="eden-inline-icon"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              <span data-i18n="edenResetView">Reset</span>
+            </button>
+            <button
+              type="button"
+              id="edenFitView"
+              class="eden-tool-btn"
+              data-i18n-title="edenFitViewTitle"
+            >
+              <svg
+                class="eden-inline-icon"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 3h6v6" />
+                <path d="M9 21H3v-6" />
+                <path d="M21 3l-7 7" />
+                <path d="M3 21l7-7" />
+              </svg>
+              <span data-i18n="edenFitView">Fit</span>
+            </button>
+            <button
+              type="button"
+              id="edenFullscreen"
+              class="eden-tool-btn"
+              title="Fullscreen map"
+              data-eden-i18n="fullscreen"
+              data-eden-i18n-title="fullscreenTitle"
+              aria-pressed="false"
+            >
+              Fullscreen
+            </button>
+            <button
+              type="button"
+              id="edenOpenGuide"
+              class="eden-tool-btn eden-tool-accent"
+              data-i18n-title="edenGuideBtnTitle"
+            >
+              <svg
+                class="eden-inline-icon"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <span data-i18n="edenGuideBtn">Guide</span>
+            </button>
+          </div>
+        </div>
+
+        <details class="eden-mission-panel">
+          <summary
+            class="eden-mission-head"
+            aria-label="Mission controls"
+            data-eden-i18n-aria="missionControls"
+          >
+            <span class="eden-mission-title" data-eden-i18n="mission">Mission</span>
+            <span id="edenMissionPreview" class="eden-mission-preview">VTS</span>
+          </summary>
+          <div class="eden-mission-grid">
+            <label class="eden-mission-field eden-mission-field--alliance">
+              <span data-eden-i18n="alliance">Alliance</span>
+              <select
+                id="edenMissionAlliance"
+                class="eden-mission-select"
+                title="Alliance color for targets, paths, and drawing"
+                data-eden-i18n-title="allianceTitle"
+              >
+                <option
+                  value="vts"
+                  data-canonical-name="VTS"
+                  data-eden-mission-option="vts"
+                  data-color="#22d3ee"
+                  data-side="ours"
+                >
+                  VTS
+                </option>
+                <option
+                  value="ally-north"
+                  data-canonical-name="Our ally N"
+                  data-eden-mission-option="ally-north"
+                  data-color="#38bdf8"
+                  data-side="ours"
+                >
+                  Our ally N
+                </option>
+                <option
+                  value="ally-south"
+                  data-canonical-name="Our ally S"
+                  data-eden-mission-option="ally-south"
+                  data-color="#22c55e"
+                  data-side="ours"
+                >
+                  Our ally S
+                </option>
+                <option
+                  value="enemy-red"
+                  data-canonical-name="Enemy red"
+                  data-eden-mission-option="enemy-red"
+                  data-color="#ef4444"
+                  data-side="enemy"
+                >
+                  Enemy red
+                </option>
+                <option
+                  value="enemy-purple"
+                  data-canonical-name="Enemy purple"
+                  data-eden-mission-option="enemy-purple"
+                  data-color="#a855f7"
+                  data-side="enemy"
+                >
+                  Enemy purple
+                </option>
+                <option
+                  value="enemy-gold"
+                  data-canonical-name="Enemy gold"
+                  data-eden-mission-option="enemy-gold"
+                  data-color="#f59e0b"
+                  data-side="enemy"
+                >
+                  Enemy gold
+                </option>
+                <option
+                  value="neutral"
+                  data-canonical-name="Neutral"
+                  data-eden-mission-option="neutral"
+                  data-color="#94a3b8"
+                  data-side="neutral"
+                >
+                  Neutral
+                </option>
+              </select>
+            </label>
+            <label class="eden-mission-field">
+              <span data-eden-i18n="label">Label</span>
+              <input
+                id="edenMissionLabel"
+                class="eden-mission-input"
+                type="text"
+                placeholder="Gate / Rally"
+                data-eden-i18n-ph="gateRally"
+                maxlength="24"
+              />
+            </label>
+            <label class="eden-mission-field eden-mission-field--time">
+              <span data-eden-i18n="time">Time</span>
+              <input
+                id="edenMissionTime"
+                class="eden-mission-input"
+                type="text"
+                inputmode="numeric"
+                placeholder="07:30"
+                maxlength="5"
+              />
+            </label>
+            <div
+              class="eden-mission-field eden-mission-teams"
+              role="group"
+              aria-label="VTS teams"
+              data-eden-i18n-aria="vtsTeams"
+            >
+              <span data-eden-i18n="vtsTeam">VTS team</span>
+              <div class="eden-mission-team-row">
+                <button
+                  type="button"
+                  class="eden-mission-team-btn active"
+                  data-eden-mission-team="all"
+                >
+                  VTS
+                </button>
+                <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t1">
+                  1
+                </button>
+                <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t2">
+                  2
+                </button>
+                <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t3">
+                  3
+                </button>
+                <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t4">
+                  4
+                </button>
+              </div>
+            </div>
+            <div class="eden-mission-actions">
               <button
                 type="button"
-                class="eden-mission-team-btn active"
-                data-eden-mission-team="all"
+                id="edenMissionUseTarget"
+                class="eden-tool-btn eden-tool-accent"
+                data-eden-i18n="placeTarget"
               >
-                VTS
+                Place target
               </button>
-              <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t1">
-                1
+              <button
+                type="button"
+                id="edenMissionUsePath"
+                class="eden-tool-btn"
+                data-eden-i18n="path"
+              >
+                Path
               </button>
-              <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t2">
-                2
+              <button
+                type="button"
+                id="edenMissionUseDraw"
+                class="eden-tool-btn"
+                data-eden-i18n="draw"
+              >
+                Draw
               </button>
-              <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t3">
-                3
-              </button>
-              <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t4">
-                4
+              <button
+                type="button"
+                id="edenDeleteLastTarget"
+                class="eden-tool-btn eden-tool-danger"
+                data-eden-i18n="undoTarget"
+              >
+                Undo target
               </button>
             </div>
           </div>
-          <div class="eden-mission-actions">
-            <button type="button" id="edenMissionUseTarget" class="eden-tool-btn eden-tool-accent" data-eden-i18n="placeTarget">
-              Place target
+        </details>
+
+        <div class="eden-deck-row eden-deck-tools">
+          <span class="eden-deck-label" data-i18n="edenDeckTools">Tools</span>
+          <div
+            class="eden-tool-segment"
+            role="tablist"
+            aria-label="Map tools"
+            data-eden-i18n-aria="mapTools"
+          >
+            <button
+              type="button"
+              role="tab"
+              data-eden-tool="navigate"
+              class="eden-tool-btn active"
+              data-i18n="edenToolNavigate"
+              data-i18n-title="edenToolNavigateTitle"
+            >
+              Navigate
             </button>
-            <button type="button" id="edenMissionUsePath" class="eden-tool-btn" data-eden-i18n="path">Path</button>
-            <button type="button" id="edenMissionUseDraw" class="eden-tool-btn" data-eden-i18n="draw">Draw</button>
-            <button type="button" id="edenDeleteLastTarget" class="eden-tool-btn eden-tool-danger" data-eden-i18n="undoTarget">
-              Undo target
+            <button
+              type="button"
+              role="tab"
+              data-eden-tool="measure"
+              class="eden-tool-btn"
+              data-i18n="edenToolMeasure"
+              data-i18n-title="edenToolMeasureTitle"
+            >
+              Measure
+            </button>
+            <button
+              type="button"
+              role="tab"
+              data-eden-tool="path"
+              class="eden-tool-btn"
+              data-i18n="edenToolPath"
+              data-i18n-title="edenToolPathTitle"
+            >
+              Path
+            </button>
+            <button
+              type="button"
+              role="tab"
+              data-eden-tool="target"
+              class="eden-tool-btn"
+              data-i18n="edenToolTarget"
+              data-i18n-title="edenToolTargetTitle"
+            >
+              Target
+            </button>
+            <button
+              type="button"
+              role="tab"
+              data-eden-tool="draw"
+              class="eden-tool-btn"
+              data-i18n="edenToolDraw"
+              data-i18n-title="edenToolDrawTitle"
+            >
+              Draw
+            </button>
+          </div>
+          <div
+            id="edenPathTools"
+            class="eden-path-tools"
+            aria-label="Path options"
+            data-eden-i18n-aria="pathOptions"
+          >
+            <select
+              id="edenPathColor"
+              class="eden-path-color-select"
+              aria-label="Path alliance color"
+              data-i18n-aria="edenPathColorTitle"
+              data-i18n-title="edenPathColorTitle"
+              title="Path alliance color"
+            >
+              <option value="#ef4444" data-i18n="edenPathRed">Red</option>
+              <option value="#3b82f6" data-i18n="edenPathBlue">Blue</option>
+              <option value="#a855f7" data-i18n="edenPathPurple">Purple</option>
+              <option value="#eab308" data-i18n="edenPathYellow">Yellow</option>
+              <option value="#22c55e" data-i18n="edenPathGreen">Green</option>
+              <option value="#f97316" data-i18n="edenPathScout">Scout</option>
+            </select>
+            <input
+              id="edenPathLabel"
+              class="eden-path-label-input"
+              type="text"
+              data-i18n-ph="edenRouteNamePh"
+              data-i18n-title="edenRouteNameTitle"
+              placeholder="Route name"
+              maxlength="24"
+            />
+            <button
+              type="button"
+              id="edenUndoPath"
+              class="eden-tool-btn"
+              data-i18n="edenUndoPath"
+              data-i18n-title="edenUndoPathTitle"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              id="edenFinishPath"
+              class="eden-tool-btn eden-tool-accent"
+              data-i18n="edenFinishPath"
+              data-i18n-title="edenFinishPathTitle"
+            >
+              Finish Path
+            </button>
+            <button
+              type="button"
+              id="edenClearPaths"
+              class="eden-tool-btn eden-tool-danger"
+              data-i18n="edenClearPaths"
+              data-i18n-title="edenClearPathsTitle"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              id="edenLoadX1Targets"
+              class="eden-tool-btn"
+              data-i18n="edenX1Targets"
+              data-i18n-title="edenX1TargetsTitle"
+            >
+              X1 Targets
+            </button>
+            <button
+              type="button"
+              id="edenDeletePath"
+              class="eden-tool-btn eden-tool-danger"
+              data-i18n="edenDeletePath"
+              data-i18n-title="edenDeletePathTitle"
+            >
+              Del Path
+            </button>
+          </div>
+          <div
+            id="edenDrawTools"
+            class="eden-path-tools"
+            aria-label="Draw options"
+            data-eden-i18n-aria="drawOptions"
+          >
+            <select
+              id="edenDrawColor"
+              class="eden-path-color-select"
+              aria-label="Ink color"
+              data-i18n-aria="edenDrawColorTitle"
+              data-i18n-title="edenDrawColorTitle"
+              title="Ink color"
+            >
+              <option value="#ef4444" data-i18n="edenPathRed">Red</option>
+              <option value="#3b82f6" data-i18n="edenPathBlue">Blue</option>
+              <option value="#a855f7" data-i18n="edenPathPurple">Purple</option>
+              <option value="#eab308" data-i18n="edenPathYellow">Yellow</option>
+              <option value="#22c55e" data-i18n="edenPathGreen">Green</option>
+              <option value="#f97316" selected data-i18n="edenPathScout">Scout</option>
+              <option value="#f8fafc" data-i18n="edenDrawWhite">White</option>
+            </select>
+            <button
+              type="button"
+              id="edenUndoDraw"
+              class="eden-tool-btn"
+              data-i18n="edenUndoDraw"
+              data-i18n-title="edenUndoDrawTitle"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              id="edenClearDraw"
+              class="eden-tool-btn eden-tool-danger"
+              data-i18n="edenClearDraw"
+              data-i18n-title="edenClearDrawTitle"
+            >
+              Clear
             </button>
           </div>
         </div>
-      </details>
 
-      <div class="eden-deck-row eden-deck-tools">
-        <span class="eden-deck-label" data-i18n="edenDeckTools">Tools</span>
-        <div class="eden-tool-segment" role="tablist" aria-label="Map tools" data-eden-i18n-aria="mapTools">
-          <button
-            type="button"
-            role="tab"
-            data-eden-tool="navigate"
-            class="eden-tool-btn active"
-            data-i18n="edenToolNavigate"
-            data-i18n-title="edenToolNavigateTitle"
-          >
-            Navigate
-          </button>
-          <button
-            type="button"
-            role="tab"
-            data-eden-tool="measure"
-            class="eden-tool-btn"
-            data-i18n="edenToolMeasure"
-            data-i18n-title="edenToolMeasureTitle"
-          >
-            Measure
-          </button>
-          <button
-            type="button"
-            role="tab"
-            data-eden-tool="path"
-            class="eden-tool-btn"
-            data-i18n="edenToolPath"
-            data-i18n-title="edenToolPathTitle"
-          >
-            Path
-          </button>
-          <button
-            type="button"
-            role="tab"
-            data-eden-tool="target"
-            class="eden-tool-btn"
-            data-i18n="edenToolTarget"
-            data-i18n-title="edenToolTargetTitle"
-          >
-            Target
-          </button>
-          <button
-            type="button"
-            role="tab"
-            data-eden-tool="draw"
-            class="eden-tool-btn"
-            data-i18n="edenToolDraw"
-            data-i18n-title="edenToolDrawTitle"
-          >
-            Draw
-          </button>
-        </div>
-        <div id="edenPathTools" class="eden-path-tools" aria-label="Path options" data-eden-i18n-aria="pathOptions">
-          <select
-            id="edenPathColor"
-            class="eden-path-color-select"
-            aria-label="Path alliance color"
-            data-i18n-aria="edenPathColorTitle"
-            data-i18n-title="edenPathColorTitle"
-            title="Path alliance color"
-          >
-            <option value="#ef4444" data-i18n="edenPathRed">Red</option>
-            <option value="#3b82f6" data-i18n="edenPathBlue">Blue</option>
-            <option value="#a855f7" data-i18n="edenPathPurple">Purple</option>
-            <option value="#eab308" data-i18n="edenPathYellow">Yellow</option>
-            <option value="#22c55e" data-i18n="edenPathGreen">Green</option>
-            <option value="#f97316" data-i18n="edenPathScout">Scout</option>
-          </select>
-          <input
-            id="edenPathLabel"
-            class="eden-path-label-input"
-            type="text"
-            data-i18n-ph="edenRouteNamePh"
-            data-i18n-title="edenRouteNameTitle"
-            placeholder="Route name"
-            maxlength="24"
-          />
-          <button
-            type="button"
-            id="edenUndoPath"
-            class="eden-tool-btn"
-            data-i18n="edenUndoPath"
-            data-i18n-title="edenUndoPathTitle"
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            id="edenFinishPath"
-            class="eden-tool-btn eden-tool-accent"
-            data-i18n="edenFinishPath"
-            data-i18n-title="edenFinishPathTitle"
-          >
-            Finish Path
-          </button>
-          <button
-            type="button"
-            id="edenClearPaths"
-            class="eden-tool-btn eden-tool-danger"
-            data-i18n="edenClearPaths"
-            data-i18n-title="edenClearPathsTitle"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            id="edenLoadX1Targets"
-            class="eden-tool-btn"
-            data-i18n="edenX1Targets"
-            data-i18n-title="edenX1TargetsTitle"
-          >
-            X1 Targets
-          </button>
-          <button
-            type="button"
-            id="edenDeletePath"
-            class="eden-tool-btn eden-tool-danger"
-            data-i18n="edenDeletePath"
-            data-i18n-title="edenDeletePathTitle"
-          >
-            Del Path
-          </button>
-        </div>
-        <div id="edenDrawTools" class="eden-path-tools" aria-label="Draw options" data-eden-i18n-aria="drawOptions">
-          <select
-            id="edenDrawColor"
-            class="eden-path-color-select"
-            aria-label="Ink color"
-            data-i18n-aria="edenDrawColorTitle"
-            data-i18n-title="edenDrawColorTitle"
-            title="Ink color"
-          >
-            <option value="#ef4444" data-i18n="edenPathRed">Red</option>
-            <option value="#3b82f6" data-i18n="edenPathBlue">Blue</option>
-            <option value="#a855f7" data-i18n="edenPathPurple">Purple</option>
-            <option value="#eab308" data-i18n="edenPathYellow">Yellow</option>
-            <option value="#22c55e" data-i18n="edenPathGreen">Green</option>
-            <option value="#f97316" selected data-i18n="edenPathScout">Scout</option>
-            <option value="#f8fafc" data-i18n="edenDrawWhite">White</option>
-          </select>
-          <button
-            type="button"
-            id="edenUndoDraw"
-            class="eden-tool-btn"
-            data-i18n="edenUndoDraw"
-            data-i18n-title="edenUndoDrawTitle"
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            id="edenClearDraw"
-            class="eden-tool-btn eden-tool-danger"
-            data-i18n="edenClearDraw"
-            data-i18n-title="edenClearDrawTitle"
-          >
-            Clear
-          </button>
-        </div>
-      </div>
-
-      <div class="eden-deck-row eden-deck-meta eden-toolbar-modes">
-        <div
-          id="edenGameClock"
-          class="eden-game-clock"
-          data-i18n-title="gameClockTitle"
-          title="Game time"
-        ></div>
-        <label class="eden-mode-label"
-          ><span data-i18n="edenViewLabel">View</span>
-          <select
-            id="edenViewMode"
-            class="eden-view-select"
-            data-i18n-title="edenViewModeTitle"
-            title="View mode"
-          >
-            <option value="strategic" data-i18n="edenViewStrategic">Strategic</option>
-            <option value="scout" data-i18n="edenViewScout">Scout Mode</option>
-            <option value="route" data-i18n="edenViewRoute">Route Planner</option>
-            <option value="teams" data-i18n="edenViewTeams">Team Plan</option>
-          </select>
-        </label>
-        <label
-          class="eden-mode-label eden-march-label"
-          data-i18n-title="edenMarchSpeedTitle"
-          title="March speed multiplier"
-          ><span data-i18n="edenMarchSpeedLabel">March speed</span>
-          <input
-            type="range"
-            id="edenMarchSpeed"
-            min="25"
-            max="300"
-            value="100"
-            data-i18n-title="edenMarchSpeedTitle"
-            title="March speed multiplier"
-          />
-          <span id="edenMarchSpeedVal" class="eden-speed-val">1.00×</span>
-        </label>
-        <div class="eden-deck-cluster eden-scout-cluster">
-          <button
-            type="button"
-            id="edenScoutPull"
-            class="eden-tool-btn"
-            data-i18n="edenScoutPull"
-            data-i18n-title="edenScoutPullTitle"
-          >
-            Pull Intel
-          </button>
-          <button
-            type="button"
-            id="edenScoutPush"
-            class="eden-tool-btn"
-            data-i18n="edenScoutPush"
-            data-i18n-title="edenScoutPushTitle"
-          >
-            Push Intel
-          </button>
-        </div>
-      </div>
-
-      <details class="eden-plans-panel">
-        <summary
-          data-i18n="edenPlansPanel"
-          data-i18n-title="edenPlansPanelTitle"
-          title="Plans and export"
-        >
-          Plans &amp; export
-        </summary>
-        <div class="eden-plans-body">
-          <button
-            type="button"
-            id="edenImportPlan"
-            class="eden-tool-btn"
-            data-i18n="edenImport"
-            data-i18n-title="edenImportTitle"
-          >
-            Import
-          </button>
-          <input type="file" id="edenImportFile" accept="application/json,.json" class="hidden" />
-          <button
-            type="button"
-            id="edenExportPlan"
-            class="eden-tool-btn eden-tool-accent"
-            data-i18n="edenExport"
-            data-i18n-title="edenExportTitle"
-          >
-            Export
-          </button>
-          <button
-            type="button"
-            id="edenSharePlan"
-            class="eden-tool-btn"
-            data-i18n="edenShare"
-            data-i18n-title="edenShareTitle"
-          >
-            Share
-          </button>
-          <button
-            type="button"
-            id="edenExportImage"
-            class="eden-tool-btn"
-            data-i18n="edenExportPng"
-            data-i18n-title="edenExportPngTitle"
-          >
-            PNG
-          </button>
-          <select
-            id="edenPlanSelect"
-            class="eden-plan-select"
-            data-i18n-title="edenPlanTitle"
-            title="Saved plans"
-          ></select>
-          <button
-            type="button"
-            id="edenPlanNew"
-            class="eden-tool-btn"
-            data-i18n="edenPlanNew"
-            data-i18n-title="edenPlanNewTitle"
-          >
-            + Plan
-          </button>
-          <button
-            type="button"
-            id="edenPlanRename"
-            class="eden-tool-btn"
-            data-i18n="edenPlanRename"
-            data-i18n-title="edenPlanRenameTitle"
-          >
-            Rename
-          </button>
-          <button
-            type="button"
-            id="edenPlanDelete"
-            class="eden-tool-btn eden-tool-danger"
-            data-i18n="edenPlanDelete"
-            data-i18n-title="edenPlanDeleteTitle"
-          >
-            Del
-          </button>
-        </div>
-      </details>
-
-      <div class="eden-deck-row eden-deck-layers eden-layer-bar">
-        <span class="eden-layer-label" data-i18n="edenLayersLabel">Layers</span>
-        <div class="eden-layer-scroll">
-          <button
-            type="button"
-            data-eden-layer="strategyFloor"
-            class="eden-layer-btn eden-layer-floor active"
-            data-i18n="edenLayerStrategyFloor"
-            data-i18n-title="edenLayerStrategyFloorTitle"
-          >
-            Floor
-          </button>
-          <button
-            type="button"
-            data-eden-layer="reference"
-            class="eden-layer-btn"
-            data-i18n="edenLayerRef"
-            data-i18n-title="edenLayerRefTitle"
-          >
-            Map
-          </button>
-          <button
-            type="button"
-            data-eden-layer="screenshots"
-            class="eden-layer-btn"
-            data-i18n="edenLayerScreenshots"
-            data-i18n-title="edenLayerScreenshotsTitle"
-          >
-            Shots
-          </button>
-          <button
-            type="button"
-            data-eden-layer="terrain"
-            class="eden-layer-btn"
-            data-i18n="edenLayerTerrain"
-            data-i18n-title="edenLayerTerrainTitle"
-          >
-            Terrain
-          </button>
-          <button
-            type="button"
-            data-eden-layer="structures"
-            class="eden-layer-btn"
-            data-i18n="edenLayerStruct"
-            data-i18n-title="edenLayerStructTitle"
-          >
-            Struct
-          </button>
-          <button
-            type="button"
-            data-eden-layer="paths"
-            class="eden-layer-btn active"
-            data-i18n="edenLayerPaths"
-            data-i18n-title="edenLayerPathsTitle"
-          >
-            Paths
-          </button>
-          <button
-            type="button"
-            data-eden-layer="targets"
-            class="eden-layer-btn active"
-            data-i18n="edenLayerTargets"
-            data-i18n-title="edenLayerTargetsTitle"
-          >
-            Targets
-          </button>
-          <button
-            type="button"
-            data-eden-layer="teams"
-            class="eden-layer-btn"
-            data-i18n="edenLayerTeams"
-            data-i18n-title="edenLayerTeamsTitle"
-          >
-            Teams
-          </button>
-          <button
-            type="button"
-            data-eden-layer="labels"
-            class="eden-layer-btn"
-            data-i18n="edenLayerLabels"
-            data-i18n-title="edenLayerLabelsTitle"
-          >
-            Labels
-          </button>
-          <button
-            type="button"
-            data-eden-layer="zones"
-            class="eden-layer-btn"
-            data-i18n="edenLayerZones"
-            data-i18n-title="edenLayerZonesTitle"
-          >
-            Zones
-          </button>
-          <button
-            type="button"
-            data-eden-layer="territory"
-            class="eden-layer-btn"
-            data-i18n="edenLayerTerritory"
-            data-i18n-title="edenLayerTerritoryTitle"
-          >
-            Territory
-          </button>
-          <button
-            type="button"
-            data-eden-layer="fog"
-            class="eden-layer-btn"
-            data-i18n="edenLayerFog"
-            data-i18n-title="edenLayerFogTitle"
-          >
-            Fog
-          </button>
-          <button
-            type="button"
-            data-eden-layer="heatmap"
-            class="eden-layer-btn"
-            data-i18n="edenLayerHeat"
-            data-i18n-title="edenLayerHeatTitle"
-          >
-            Heat
-          </button>
-          <button
-            type="button"
-            data-eden-layer="sectorTiles"
-            class="eden-layer-btn"
-            data-i18n="edenLayerSectorHd"
-            data-i18n-title="edenLayerSectorHdTitle"
-          >
-            Sector HD
-          </button>
-        </div>
-        <label
-          class="eden-ref-opacity"
-          data-i18n-title="edenRefOpacityTitle"
-          title="Reference map opacity"
-        >
-          <span data-i18n="edenRefOpacityLabel">Ref</span>
-          <input type="range" id="edenRefOpacity" min="0" max="100" value="88" />
-        </label>
-      </div>
-
-      <div class="eden-deck-row eden-deck-jump eden-quick-jump">
-        <span class="eden-quick-label" data-i18n="edenZoneLabel">Zone</span>
-        <div class="eden-quick-scroll">
-          <button
-            type="button"
-            data-eden-faction="all"
-            class="eden-quick-btn active"
-            data-i18n="edenFactionAll"
-            data-i18n-title="edenFactionAllTitle"
-          >
-            All
-          </button>
-          <button
-            type="button"
-            data-eden-faction="north"
-            class="eden-quick-btn eden-faction-n"
-            data-i18n="edenZoneNorth"
-            data-i18n-title="edenZoneNorthTitle"
-          >
-            North
-          </button>
-          <button
-            type="button"
-            data-eden-faction="central"
-            class="eden-quick-btn eden-faction-c"
-            data-i18n="edenZoneCentral"
-            data-i18n-title="edenZoneCentralTitle"
-          >
-            Central
-          </button>
-          <button
-            type="button"
-            data-eden-faction="south"
-            class="eden-quick-btn eden-faction-s"
-            data-i18n="edenZoneSouth"
-            data-i18n-title="edenZoneSouthTitle"
-          >
-            South
-          </button>
-          <span class="eden-quick-divider"></span>
-          <span class="eden-quick-label" data-i18n="edenQuickLabel">Quick</span>
-          <span id="edenQuickJumpSectors" class="eden-quick-sector-btns"></span>
-          <button
-            type="button"
-            data-eden-jump="AT"
-            class="eden-quick-btn eden-quick-temple"
-            data-i18n="edenTemple"
-            data-i18n-title="edenTempleTitle"
-          >
-            ★ Temple
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="eden-map-body">
-    <div id="edenMapConstruction" class="eden-map-construction hidden" aria-hidden="true">
-      <div class="eden-construction-card">
-        <span class="eden-construction-badge" data-i18n="edenMapConstructionBadge"
-          >Coming Soon</span
-        >
-        <h3 class="eden-construction-heading" data-i18n="edenMapConstructionHeading">
-          Under Construction
-        </h3>
-        <p class="eden-construction-body" data-i18n="edenMapConstructionBody">
-          We are stitching in-game screenshots into a full 1700×1600 live map. Check back soon.
-        </p>
-        <p
-          id="edenConstructionEngineStatus"
-          class="eden-construction-status"
-          data-i18n="edenConstructionEngineLoading"
-        >
-          Preparing tile engine…
-        </p>
-      </div>
-    </div>
-    <div class="eden-canvas-wrap">
-      <div
-        id="edenOfflineStatus"
-        class="eden-offline-status hidden"
-        role="status"
-        aria-live="polite"
-      ></div>
-      <div id="edenIsolateBadge" class="eden-isolate-badge hidden" aria-live="polite"></div>
-      <canvas
-        id="edenMapCanvas"
-        role="img"
-        data-i18n-aria="edenMapCanvasLabel"
-        data-eden-i18n-aria="canvas"
-        aria-label="Eden map canvas"
-      ></canvas>
-      <canvas
-        id="edenMinimap"
-        class="eden-minimap"
-        width="150"
-        height="150"
-        role="button"
-        tabindex="0"
-        data-i18n-aria="edenMinimapLabel"
-        data-eden-i18n-aria="minimap"
-        aria-label="Minimap — press Enter to jump"
-        data-i18n-title="edenMinimapTitle"
-        title="Click to jump"
-      ></canvas>
-      <div id="edenCoordHud" class="eden-coord-hud hidden"></div>
-      <div class="eden-map-legend">
-        <span
-          ><i class="eden-legend-plains"></i> <span data-i18n="edenLegendPlains">Plains</span></span
-        >
-        <span
-          ><i class="eden-legend-desert"></i> <span data-i18n="edenLegendDesert">Desert</span></span
-        >
-        <span
-          ><i class="eden-legend-river"></i> <span data-i18n="edenLegendRiver">River</span></span
-        >
-        <span
-          ><i class="eden-legend-mountain"></i>
-          <span data-i18n="edenLegendMountain">Mountain</span></span
-        >
-        <span><i class="eden-legend-path"></i> <span data-i18n="edenLegendPath">Path</span></span>
-      </div>
-    </div>
-    <aside id="edenMapSidebar" class="eden-sidebar">
-      <button
-        type="button"
-        id="edenSidebarClose"
-        class="eden-sidebar-close"
-        data-i18n-aria="edenSidebarClose"
-        data-eden-i18n-aria="closeSidebar"
-        aria-label="Close sidebar"
-      >
-        ×
-      </button>
-      <div id="edenMapStats" class="eden-stats"></div>
-      <div id="edenHoverInfo" class="eden-hover-info hidden"></div>
-      <details id="edenTeamPanel" class="eden-team-panel">
-        <summary data-i18n="edenTeamPanelTitle">Team plan</summary>
-        <div class="eden-team-plan-settings">
-          <label class="eden-team-plan-toggle">
-            <input type="checkbox" id="edenTeamPlanEnabled" />
-            <span data-i18n="edenTeamPlanEnable">Enable team plan</span>
-          </label>
-          <label id="edenTeamCountWrap" class="eden-team-count-label hidden">
-            <span data-i18n="edenTeamCountLabel">Number of teams</span>
-            <select id="edenTeamCount" class="eden-filter-select">
-              <option value="2" data-i18n="edenTeamCount2">2 teams</option>
-              <option value="3" data-i18n="edenTeamCount3">3 teams</option>
-              <option value="4" data-i18n="edenTeamCount4" selected>4 teams</option>
+        <div class="eden-deck-row eden-deck-meta eden-toolbar-modes">
+          <div
+            id="edenGameClock"
+            class="eden-game-clock"
+            data-i18n-title="gameClockTitle"
+            title="Game time"
+          ></div>
+          <label class="eden-mode-label"
+            ><span data-i18n="edenViewLabel">View</span>
+            <select
+              id="edenViewMode"
+              class="eden-view-select"
+              data-i18n-title="edenViewModeTitle"
+              title="View mode"
+            >
+              <option value="strategic" data-i18n="edenViewStrategic">Strategic</option>
+              <option value="scout" data-i18n="edenViewScout">Scout Mode</option>
+              <option value="route" data-i18n="edenViewRoute">Route Planner</option>
+              <option value="teams" data-i18n="edenViewTeams">Team Plan</option>
             </select>
           </label>
-        </div>
-        <p class="eden-team-panel-desc" data-i18n="edenTeamPanelDesc">
-          Optional — assign structures to teams with game-time windows.
-        </p>
-        <p id="edenTeamPlanOffHint" class="eden-team-plan-off-hint" data-i18n="edenTeamPlanOffHint">
-          Turn on team plan to assign structures and show the timeline board.
-        </p>
-        <div id="edenTeamBoard" class="eden-team-board hidden"></div>
-      </details>
-      <div id="edenSelectedPanel" class="eden-selected-panel"></div>
-      <div class="eden-filter-row">
-        <div id="edenTeamFilterWrap" class="eden-team-filter-wrap hidden">
-          <select
-            id="edenTeamFilter"
-            class="eden-filter-select"
-            aria-label="Filter structure list by team assignment"
-            data-i18n-aria="edenTeamFilterTitle"
-            data-i18n-title="edenTeamFilterTitle"
-            title="Filter structure list by team assignment"
-          ></select>
-        </div>
-        <span class="eden-ownership-dot" id="edenOwnershipDot" aria-hidden="true"></span>
-        <select
-          id="edenOwnershipFilter"
-          class="eden-filter-select eden-filter-select--with-dot"
-          aria-label="Ownership filter"
-          data-i18n-aria="edenOwnershipFilterLabel"
-        >
-          <option value="all" data-i18n="edenOwnershipAll">All ownership</option>
-          <option value="owned" data-i18n="edenOwnershipOwned">Owned</option>
-          <option value="contested" data-i18n="edenOwnershipContested">Contested</option>
-          <option value="enemy" data-i18n="edenOwnershipEnemy">Enemy</option>
-          <option value="neutral" data-i18n="edenOwnershipNeutral">Neutral</option>
-        </select>
-        <select
-          id="edenZoneFilter"
-          class="eden-filter-select"
-          aria-label="Zone"
-          data-i18n-aria="edenZoneLabel"
-        ></select>
-        <select
-          id="edenTypeFilter"
-          class="eden-filter-select"
-          aria-label="Structure type filter"
-          data-i18n-aria="edenTypeFilterLabel"
-        ></select>
-        <select
-          id="edenSortSelect"
-          class="eden-filter-select eden-sort-select"
-          aria-label="Sort structure list"
-          data-i18n-aria="edenSortSelectLabel"
-        >
-          <option value="points" data-i18n="edenSortPoints">Sort: Points</option>
-          <option value="zone" data-i18n="edenSortZone">Sort: Zone</option>
-          <option value="type" data-i18n="edenSortType">Sort: Type</option>
-        </select>
-      </div>
-      <div class="eden-coord-search">
-        <label
-          class="eden-coord-search-label"
-          for="edenCoordSearch"
-          data-i18n="edenCoordSearchLabel"
-          >Go to coords</label
-        >
-        <div class="eden-coord-search-row">
-          <input
-            id="edenCoordSearch"
-            class="eden-coord-input"
-            type="text"
-            inputmode="numeric"
-            data-i18n-ph="edenCoordSearchPh"
-            placeholder="X:Y e.g. 800:800"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button
-            type="button"
-            id="edenCoordGo"
-            class="eden-coord-go-btn"
-            data-i18n="edenCoordGo"
-            data-i18n-title="edenCoordGoTitle"
-          >
-            Go
-          </button>
-        </div>
-      </div>
-      <div class="eden-sidebar-list-section">
-        <div class="hero-search-wrap eden-search-wrap">
-          <svg
-            class="hero-search-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2.5"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
+          <label
+            class="eden-mode-label eden-march-label"
+            data-i18n-title="edenMarchSpeedTitle"
+            title="March speed multiplier"
+            ><span data-i18n="edenMarchSpeedLabel">March speed</span>
+            <input
+              type="range"
+              id="edenMarchSpeed"
+              min="25"
+              max="300"
+              value="100"
+              data-i18n-title="edenMarchSpeedTitle"
+              title="March speed multiplier"
             />
-          </svg>
-          <input
-            id="edenStructSearch"
-            class="hero-search-input"
-            type="text"
-            data-i18n-ph="edenSearchPh"
-            data-i18n-aria="edenSearchStructLabel"
-            aria-label="Search structures"
-            placeholder="Search structures..."
-            autocomplete="off"
-          />
+            <span id="edenMarchSpeedVal" class="eden-speed-val">1.00×</span>
+          </label>
+          <div class="eden-deck-cluster eden-scout-cluster">
+            <button
+              type="button"
+              id="edenScoutPull"
+              class="eden-tool-btn"
+              data-i18n="edenScoutPull"
+              data-i18n-title="edenScoutPullTitle"
+            >
+              Pull Intel
+            </button>
+            <button
+              type="button"
+              id="edenScoutPush"
+              class="eden-tool-btn"
+              data-i18n="edenScoutPush"
+              data-i18n-title="edenScoutPushTitle"
+            >
+              Push Intel
+            </button>
+          </div>
         </div>
-        <div id="edenStructList" class="eden-struct-list"></div>
-      </div>
-    </aside>
-  </div>
-  <details id="edenHelpPanel" class="eden-help-panel">
-    <summary class="eden-help-summary" data-i18n="edenGuidePanelTitle">
-      Interactive Eden Map Guide
-    </summary>
-    <div id="edenGuideRoot" class="eden-guide-root">
-      <div class="eden-guide-header">
-        <div class="eden-guide-header-row">
-          <p class="eden-guide-intro" data-i18n="edenGuideIntro">
-            Step-by-step walkthrough — try each action on the real map. Progress is saved locally.
-          </p>
-          <span class="eden-guide-version"></span>
-        </div>
-        <div class="eden-guide-progress-wrap">
-          <div class="eden-guide-progress-bar"><div class="eden-guide-progress-fill"></div></div>
-          <span class="eden-guide-progress-text"></span>
-        </div>
-        <div class="eden-guide-toolbar">
-          <button
-            type="button"
-            class="eden-guide-meta-btn"
-            data-start-tour
-            data-i18n="edenGuideStartTour"
+
+        <details class="eden-plans-panel">
+          <summary
+            data-i18n="edenPlansPanel"
+            data-i18n-title="edenPlansPanelTitle"
+            title="Plans and export"
           >
-            ▶ Start tour
-          </button>
-          <button
-            type="button"
-            class="eden-guide-meta-btn eden-guide-meta-muted"
-            data-reset-guide
-            data-i18n="edenGuideReset"
+            Plans &amp; export
+          </summary>
+          <div class="eden-plans-body">
+            <button
+              type="button"
+              id="edenImportPlan"
+              class="eden-tool-btn"
+              data-i18n="edenImport"
+              data-i18n-title="edenImportTitle"
+            >
+              Import
+            </button>
+            <input type="file" id="edenImportFile" accept="application/json,.json" class="hidden" />
+            <button
+              type="button"
+              id="edenExportPlan"
+              class="eden-tool-btn eden-tool-accent"
+              data-i18n="edenExport"
+              data-i18n-title="edenExportTitle"
+            >
+              Export
+            </button>
+            <button
+              type="button"
+              id="edenSharePlan"
+              class="eden-tool-btn"
+              data-i18n="edenShare"
+              data-i18n-title="edenShareTitle"
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              id="edenExportImage"
+              class="eden-tool-btn"
+              data-i18n="edenExportPng"
+              data-i18n-title="edenExportPngTitle"
+            >
+              PNG
+            </button>
+            <select
+              id="edenPlanSelect"
+              class="eden-plan-select"
+              data-i18n-title="edenPlanTitle"
+              title="Saved plans"
+            ></select>
+            <button
+              type="button"
+              id="edenPlanNew"
+              class="eden-tool-btn"
+              data-i18n="edenPlanNew"
+              data-i18n-title="edenPlanNewTitle"
+            >
+              + Plan
+            </button>
+            <button
+              type="button"
+              id="edenPlanRename"
+              class="eden-tool-btn"
+              data-i18n="edenPlanRename"
+              data-i18n-title="edenPlanRenameTitle"
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              id="edenPlanDelete"
+              class="eden-tool-btn eden-tool-danger"
+              data-i18n="edenPlanDelete"
+              data-i18n-title="edenPlanDeleteTitle"
+            >
+              Del
+            </button>
+          </div>
+        </details>
+
+        <div class="eden-deck-row eden-deck-layers eden-layer-bar">
+          <span class="eden-layer-label" data-i18n="edenLayersLabel">Layers</span>
+          <div class="eden-layer-scroll">
+            <button
+              type="button"
+              data-eden-layer="strategyFloor"
+              class="eden-layer-btn eden-layer-floor active"
+              data-i18n="edenLayerStrategyFloor"
+              data-i18n-title="edenLayerStrategyFloorTitle"
+            >
+              Floor
+            </button>
+            <button
+              type="button"
+              data-eden-layer="reference"
+              class="eden-layer-btn"
+              data-i18n="edenLayerRef"
+              data-i18n-title="edenLayerRefTitle"
+            >
+              Map
+            </button>
+            <button
+              type="button"
+              data-eden-layer="screenshots"
+              class="eden-layer-btn"
+              data-i18n="edenLayerScreenshots"
+              data-i18n-title="edenLayerScreenshotsTitle"
+            >
+              Shots
+            </button>
+            <button
+              type="button"
+              data-eden-layer="terrain"
+              class="eden-layer-btn"
+              data-i18n="edenLayerTerrain"
+              data-i18n-title="edenLayerTerrainTitle"
+            >
+              Terrain
+            </button>
+            <button
+              type="button"
+              data-eden-layer="structures"
+              class="eden-layer-btn"
+              data-i18n="edenLayerStruct"
+              data-i18n-title="edenLayerStructTitle"
+            >
+              Struct
+            </button>
+            <button
+              type="button"
+              data-eden-layer="paths"
+              class="eden-layer-btn active"
+              data-i18n="edenLayerPaths"
+              data-i18n-title="edenLayerPathsTitle"
+            >
+              Paths
+            </button>
+            <button
+              type="button"
+              data-eden-layer="targets"
+              class="eden-layer-btn active"
+              data-i18n="edenLayerTargets"
+              data-i18n-title="edenLayerTargetsTitle"
+            >
+              Targets
+            </button>
+            <button
+              type="button"
+              data-eden-layer="teams"
+              class="eden-layer-btn"
+              data-i18n="edenLayerTeams"
+              data-i18n-title="edenLayerTeamsTitle"
+            >
+              Teams
+            </button>
+            <button
+              type="button"
+              data-eden-layer="labels"
+              class="eden-layer-btn"
+              data-i18n="edenLayerLabels"
+              data-i18n-title="edenLayerLabelsTitle"
+            >
+              Labels
+            </button>
+            <button
+              type="button"
+              data-eden-layer="zones"
+              class="eden-layer-btn"
+              data-i18n="edenLayerZones"
+              data-i18n-title="edenLayerZonesTitle"
+            >
+              Zones
+            </button>
+            <button
+              type="button"
+              data-eden-layer="territory"
+              class="eden-layer-btn"
+              data-i18n="edenLayerTerritory"
+              data-i18n-title="edenLayerTerritoryTitle"
+            >
+              Territory
+            </button>
+            <button
+              type="button"
+              data-eden-layer="fog"
+              class="eden-layer-btn"
+              data-i18n="edenLayerFog"
+              data-i18n-title="edenLayerFogTitle"
+            >
+              Fog
+            </button>
+            <button
+              type="button"
+              data-eden-layer="heatmap"
+              class="eden-layer-btn"
+              data-i18n="edenLayerHeat"
+              data-i18n-title="edenLayerHeatTitle"
+            >
+              Heat
+            </button>
+            <button
+              type="button"
+              data-eden-layer="sectorTiles"
+              class="eden-layer-btn"
+              data-i18n="edenLayerSectorHd"
+              data-i18n-title="edenLayerSectorHdTitle"
+            >
+              Sector HD
+            </button>
+          </div>
+          <label
+            class="eden-ref-opacity"
+            data-i18n-title="edenRefOpacityTitle"
+            title="Reference map opacity"
           >
-            Reset progress
-          </button>
+            <span data-i18n="edenRefOpacityLabel">Ref</span>
+            <input type="range" id="edenRefOpacity" min="0" max="100" value="88" />
+          </label>
+        </div>
+
+        <div class="eden-deck-row eden-deck-jump eden-quick-jump">
+          <span class="eden-quick-label" data-i18n="edenZoneLabel">Zone</span>
+          <div class="eden-quick-scroll">
+            <button
+              type="button"
+              data-eden-faction="all"
+              class="eden-quick-btn active"
+              data-i18n="edenFactionAll"
+              data-i18n-title="edenFactionAllTitle"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              data-eden-faction="north"
+              class="eden-quick-btn eden-faction-n"
+              data-i18n="edenZoneNorth"
+              data-i18n-title="edenZoneNorthTitle"
+            >
+              North
+            </button>
+            <button
+              type="button"
+              data-eden-faction="central"
+              class="eden-quick-btn eden-faction-c"
+              data-i18n="edenZoneCentral"
+              data-i18n-title="edenZoneCentralTitle"
+            >
+              Central
+            </button>
+            <button
+              type="button"
+              data-eden-faction="south"
+              class="eden-quick-btn eden-faction-s"
+              data-i18n="edenZoneSouth"
+              data-i18n-title="edenZoneSouthTitle"
+            >
+              South
+            </button>
+            <span class="eden-quick-divider"></span>
+            <span class="eden-quick-label" data-i18n="edenQuickLabel">Quick</span>
+            <span id="edenQuickJumpSectors" class="eden-quick-sector-btns"></span>
+            <button
+              type="button"
+              data-eden-jump="AT"
+              class="eden-quick-btn eden-quick-temple"
+              data-i18n="edenTemple"
+              data-i18n-title="edenTempleTitle"
+            >
+              ★ Temple
+            </button>
+          </div>
         </div>
       </div>
-      <nav class="eden-guide-sections" aria-label="Guide sections" data-eden-i18n-aria="guideSections"></nav>
-      <div class="eden-guide-steps" aria-label="Steps in section" data-eden-i18n-aria="guideSteps"></div>
-      <div class="eden-guide-main"></div>
     </div>
-  </details>
+    <div class="eden-map-body">
+      <div id="edenMapConstruction" class="eden-map-construction hidden" aria-hidden="true">
+        <div class="eden-construction-card">
+          <span class="eden-construction-badge" data-i18n="edenMapConstructionBadge"
+            >Coming Soon</span
+          >
+          <h3 class="eden-construction-heading" data-i18n="edenMapConstructionHeading">
+            Under Construction
+          </h3>
+          <p class="eden-construction-body" data-i18n="edenMapConstructionBody">
+            We are stitching in-game screenshots into a full 1700×1600 live map. Check back soon.
+          </p>
+          <p
+            id="edenConstructionEngineStatus"
+            class="eden-construction-status"
+            data-i18n="edenConstructionEngineLoading"
+          >
+            Preparing tile engine…
+          </p>
+        </div>
+      </div>
+      <div class="eden-canvas-wrap">
+        <div
+          id="edenOfflineStatus"
+          class="eden-offline-status hidden"
+          role="status"
+          aria-live="polite"
+        ></div>
+        <div id="edenIsolateBadge" class="eden-isolate-badge hidden" aria-live="polite"></div>
+        <canvas
+          id="edenMapCanvas"
+          role="img"
+          data-i18n-aria="edenMapCanvasLabel"
+          data-eden-i18n-aria="canvas"
+          aria-label="Eden map canvas"
+        ></canvas>
+        <canvas
+          id="edenMinimap"
+          class="eden-minimap"
+          width="150"
+          height="150"
+          role="button"
+          tabindex="0"
+          data-i18n-aria="edenMinimapLabel"
+          data-eden-i18n-aria="minimap"
+          aria-label="Minimap — press Enter to jump"
+          data-i18n-title="edenMinimapTitle"
+          title="Click to jump"
+        ></canvas>
+        <div id="edenCoordHud" class="eden-coord-hud hidden"></div>
+        <div class="eden-map-legend">
+          <span
+            ><i class="eden-legend-plains"></i>
+            <span data-i18n="edenLegendPlains">Plains</span></span
+          >
+          <span
+            ><i class="eden-legend-desert"></i>
+            <span data-i18n="edenLegendDesert">Desert</span></span
+          >
+          <span
+            ><i class="eden-legend-river"></i> <span data-i18n="edenLegendRiver">River</span></span
+          >
+          <span
+            ><i class="eden-legend-mountain"></i>
+            <span data-i18n="edenLegendMountain">Mountain</span></span
+          >
+          <span><i class="eden-legend-path"></i> <span data-i18n="edenLegendPath">Path</span></span>
+        </div>
+      </div>
+      <aside id="edenMapSidebar" class="eden-sidebar">
+        <button
+          type="button"
+          id="edenSidebarClose"
+          class="eden-sidebar-close"
+          data-i18n-aria="edenSidebarClose"
+          data-eden-i18n-aria="closeSidebar"
+          aria-label="Close sidebar"
+        >
+          ×
+        </button>
+        <div id="edenMapStats" class="eden-stats"></div>
+        <div id="edenHoverInfo" class="eden-hover-info hidden"></div>
+        <details id="edenTeamPanel" class="eden-team-panel">
+          <summary data-i18n="edenTeamPanelTitle">Team plan</summary>
+          <div class="eden-team-plan-settings">
+            <label class="eden-team-plan-toggle">
+              <input type="checkbox" id="edenTeamPlanEnabled" />
+              <span data-i18n="edenTeamPlanEnable">Enable team plan</span>
+            </label>
+            <label id="edenTeamCountWrap" class="eden-team-count-label hidden">
+              <span data-i18n="edenTeamCountLabel">Number of teams</span>
+              <select id="edenTeamCount" class="eden-filter-select">
+                <option value="2" data-i18n="edenTeamCount2">2 teams</option>
+                <option value="3" data-i18n="edenTeamCount3">3 teams</option>
+                <option value="4" data-i18n="edenTeamCount4" selected>4 teams</option>
+              </select>
+            </label>
+          </div>
+          <p class="eden-team-panel-desc" data-i18n="edenTeamPanelDesc">
+            Optional — assign structures to teams with game-time windows.
+          </p>
+          <p
+            id="edenTeamPlanOffHint"
+            class="eden-team-plan-off-hint"
+            data-i18n="edenTeamPlanOffHint"
+          >
+            Turn on team plan to assign structures and show the timeline board.
+          </p>
+          <div id="edenTeamBoard" class="eden-team-board hidden"></div>
+        </details>
+        <div id="edenSelectedPanel" class="eden-selected-panel"></div>
+        <div class="eden-filter-row">
+          <div id="edenTeamFilterWrap" class="eden-team-filter-wrap hidden">
+            <select
+              id="edenTeamFilter"
+              class="eden-filter-select"
+              aria-label="Filter structure list by team assignment"
+              data-i18n-aria="edenTeamFilterTitle"
+              data-i18n-title="edenTeamFilterTitle"
+              title="Filter structure list by team assignment"
+            ></select>
+          </div>
+          <span class="eden-ownership-dot" id="edenOwnershipDot" aria-hidden="true"></span>
+          <select
+            id="edenOwnershipFilter"
+            class="eden-filter-select eden-filter-select--with-dot"
+            aria-label="Ownership filter"
+            data-i18n-aria="edenOwnershipFilterLabel"
+          >
+            <option value="all" data-i18n="edenOwnershipAll">All ownership</option>
+            <option value="owned" data-i18n="edenOwnershipOwned">Owned</option>
+            <option value="contested" data-i18n="edenOwnershipContested">Contested</option>
+            <option value="enemy" data-i18n="edenOwnershipEnemy">Enemy</option>
+            <option value="neutral" data-i18n="edenOwnershipNeutral">Neutral</option>
+          </select>
+          <select
+            id="edenZoneFilter"
+            class="eden-filter-select"
+            aria-label="Zone"
+            data-i18n-aria="edenZoneLabel"
+          ></select>
+          <select
+            id="edenTypeFilter"
+            class="eden-filter-select"
+            aria-label="Structure type filter"
+            data-i18n-aria="edenTypeFilterLabel"
+          ></select>
+          <select
+            id="edenSortSelect"
+            class="eden-filter-select eden-sort-select"
+            aria-label="Sort structure list"
+            data-i18n-aria="edenSortSelectLabel"
+          >
+            <option value="points" data-i18n="edenSortPoints">Sort: Points</option>
+            <option value="zone" data-i18n="edenSortZone">Sort: Zone</option>
+            <option value="type" data-i18n="edenSortType">Sort: Type</option>
+          </select>
+        </div>
+        <div class="eden-coord-search">
+          <label
+            class="eden-coord-search-label"
+            for="edenCoordSearch"
+            data-i18n="edenCoordSearchLabel"
+            >Go to coords</label
+          >
+          <div class="eden-coord-search-row">
+            <input
+              id="edenCoordSearch"
+              class="eden-coord-input"
+              type="text"
+              inputmode="numeric"
+              data-i18n-ph="edenCoordSearchPh"
+              placeholder="X:Y e.g. 800:800"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button
+              type="button"
+              id="edenCoordGo"
+              class="eden-coord-go-btn"
+              data-i18n="edenCoordGo"
+              data-i18n-title="edenCoordGoTitle"
+            >
+              Go
+            </button>
+          </div>
+        </div>
+        <div class="eden-sidebar-list-section">
+          <div class="hero-search-wrap eden-search-wrap">
+            <svg
+              class="hero-search-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"
+              />
+            </svg>
+            <input
+              id="edenStructSearch"
+              class="hero-search-input"
+              type="text"
+              data-i18n-ph="edenSearchPh"
+              data-i18n-aria="edenSearchStructLabel"
+              aria-label="Search structures"
+              placeholder="Search structures..."
+              autocomplete="off"
+            />
+          </div>
+          <div id="edenStructList" class="eden-struct-list"></div>
+        </div>
+      </aside>
+    </div>
+    <details id="edenHelpPanel" class="eden-help-panel">
+      <summary class="eden-help-summary" data-i18n="edenGuidePanelTitle">
+        Interactive Eden Map Guide
+      </summary>
+      <div id="edenGuideRoot" class="eden-guide-root">
+        <div class="eden-guide-header">
+          <div class="eden-guide-header-row">
+            <p class="eden-guide-intro" data-i18n="edenGuideIntro">
+              Step-by-step walkthrough — try each action on the real map. Progress is saved locally.
+            </p>
+            <span class="eden-guide-version"></span>
+          </div>
+          <div class="eden-guide-progress-wrap">
+            <div class="eden-guide-progress-bar"><div class="eden-guide-progress-fill"></div></div>
+            <span class="eden-guide-progress-text"></span>
+          </div>
+          <div class="eden-guide-toolbar">
+            <button
+              type="button"
+              class="eden-guide-meta-btn"
+              data-start-tour
+              data-i18n="edenGuideStartTour"
+            >
+              ▶ Start tour
+            </button>
+            <button
+              type="button"
+              class="eden-guide-meta-btn eden-guide-meta-muted"
+              data-reset-guide
+              data-i18n="edenGuideReset"
+            >
+              Reset progress
+            </button>
+          </div>
+        </div>
+        <nav
+          class="eden-guide-sections"
+          aria-label="Guide sections"
+          data-eden-i18n-aria="guideSections"
+        ></nav>
+        <div
+          class="eden-guide-steps"
+          aria-label="Steps in section"
+          data-eden-i18n-aria="guideSteps"
+        ></div>
+        <div class="eden-guide-main"></div>
+      </div>
+    </details>
   </div>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="loyalty" role="tabpanel">
     <div class="tab-loading">
@@ -1136,6 +1297,7 @@
       <span>Loading…</span>
     </div>
   </div>
+  <div class="vts-eden-subtab-panel" data-eden-subtab-panel="playbook" role="tabpanel"></div>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="season" role="tabpanel" hidden></div>
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="previous" role="tabpanel"></div>
 </div>
