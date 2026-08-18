@@ -2269,6 +2269,19 @@ test.describe('app smoke tabs', () => {
       .filter({ hasText: 'King Arthur' })
       .first();
     await expect(arthurGeneratorCard).toBeVisible();
+
+    // Production deploy verification enables the real account-sync configuration,
+    // so normalize user-owned generator state before asserting the skin UI contract.
+    if ((await arthurGeneratorCard.getAttribute('aria-pressed')) === 'true') {
+      await arthurGeneratorCard.locator('.hero-portrait-frame').click();
+      await expect(arthurGeneratorCard).toHaveAttribute('aria-pressed', 'false');
+    }
+    const arthurSkinToggle = arthurGeneratorCard.locator('.generator-skin-toggle');
+    if ((await arthurSkinToggle.getAttribute('aria-checked')) !== 'true') {
+      await arthurSkinToggle.click();
+      await expect(arthurSkinToggle).toHaveAttribute('aria-checked', 'true');
+    }
+
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toBeVisible();
     await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveCount(1);
