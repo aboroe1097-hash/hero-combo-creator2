@@ -280,7 +280,16 @@ function renderAiding() {
 // icon in the guide, so the artwork can land after the copy ships.
 const BOUNTY_AIDING_FIGURES = [
   {
+    src: 'assets/bounty/royal-bounty-aiding-skills.webp',
+    width: 540,
+    height: 593,
+    caption:
+      'Royal Bounty Alliance 2.0 overview: the 9 Aiding Skills, their hero requirements, targets, and effects. Source: riseofcastles.net.',
+  },
+  {
     src: 'images/bounty/aiding-skill-slot.jpg',
+    width: 377,
+    height: 321,
     caption:
       'Each legion carries its Aiding Skill in the leftmost slot, before its three heroes. The timer on the second legion is that skill cooling down.',
   },
@@ -295,6 +304,8 @@ function renderAidingSkillFigures() {
           <img
             src="${escapeHtml(figure.src)}"
             alt="${escapeHtml(figure.caption)}"
+            width="${figure.width}"
+            height="${figure.height}"
             loading="lazy"
             decoding="async"
             onerror="this.closest('figure')?.remove()"
@@ -387,6 +398,7 @@ function renderCredits() {
   <footer class="bounty-credits">
     <p><strong>Royal Bounty Eden X2 guide</strong> — compiled from the community PDFs <em>Royal_Bounty_Updated_4-Oct-2024.pdf</em> and <em>Updated_Bounty_Heroes.pdf</em>.</p>
     <p>Credits: ${BOUNTY_GUIDE_CREDITS.map(escapeHtml).join(' / ')} · Roster as of ${escapeHtml(BOUNTY_GUIDE_ROSTER_DATE)} · Guide version ${escapeHtml(BOUNTY_GUIDE_VERSION)} · Published ${escapeHtml(BOUNTY_GUIDE_SOURCE_DATE)}.</p>
+    <p>Royal Bounty Alliance 2.0 reference image: <a href="https://www.riseofcastles.net/en/eden-bounty" target="_blank" rel="noopener noreferrer">Rise of Castles Eden Bounty guide</a>.</p>
     <p class="bounty-credits-note">Lobby timers change every Eden season — always confirm the in-game timer under each hero portrait.</p>
   </footer>`;
 }

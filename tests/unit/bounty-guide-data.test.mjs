@@ -22,6 +22,7 @@ import { allHeroesData } from '../../js/heroes-data.js';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const edenMapHtml = readFileSync(path.join(rootDir, 'tabs', 'eden-map.html'), 'utf8');
+const bountyGuideJs = readFileSync(path.join(rootDir, 'js', 'bounty-guide.js'), 'utf8');
 
 test('Royal Bounty guide data covers the nine-hero roster with unique ids', () => {
   assert.equal(BOUNTY_HEROES.length, 9);
@@ -67,4 +68,11 @@ test('the Eden Hub fragment hosts the Royal Bounty sub-tab', () => {
   assert.match(edenMapHtml, /data-eden-subtab-panel="bounty"/);
   assert.match(edenMapHtml, /data-eden-subtab="loyalty"/);
   assert.match(edenMapHtml, /data-eden-subtab-panel="previous"/);
+});
+
+test('the Aiding Skills section includes the credited Royal Bounty 2.0 reference', () => {
+  assert.match(bountyGuideJs, /assets\/bounty\/royal-bounty-aiding-skills\.webp/);
+  assert.match(bountyGuideJs, /width: 540/);
+  assert.match(bountyGuideJs, /height: 593/);
+  assert.match(bountyGuideJs, /https:\/\/www\.riseofcastles\.net\/en\/eden-bounty/);
 });

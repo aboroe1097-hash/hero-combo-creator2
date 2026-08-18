@@ -207,7 +207,9 @@ const LIMITS = {
   // The exact Redemption Grail game-board capture is a single 54.5 KiB lazy
   // WebP after removing the duplicate static copy. The artifact now measures
   // 30941.0 KiB; retain roughly 14 KiB.
-  totalDeployBytes: 31320 * 1024,
+  // The 15.0.8 Eden X2 Aiding Skills reference adds one optimized 55 KiB WebP;
+  // retain about 19 KiB of artifact headroom without changing JS or CSS caps.
+  totalDeployBytes: 31380 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -219,7 +221,7 @@ const LIMITS = {
   // ship the guide without the illustration its steps describe.
   // The optimized Grail board raises audited media to 17932.4 KiB; retain
   // roughly 12 KiB while keeping the 4 MiB single-file guard unchanged.
-  totalMediaBytes: 18285 * 1024,
+  totalMediaBytes: 18345 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581

@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.7";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.8";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.8",
+    "date": "2026-08-18",
+    "highlights": [
+      "Added the official Royal Bounty Alliance 2.0 Aiding Skills overview to the Eden X2 bounty guide, with responsive sizing, accessible context, and source credit to riseofcastles.net.",
+      "Optimized the reference image for fast mobile loading while preserving the original in-game text and visual detail."
+    ]
+  },
   {
     "version": "15.0.7",
     "date": "2026-08-18",
@@ -96,15 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Reworked the Towers planner around exactly two paths ? Siege / Rally and Field (Non-Siege) ? with paid-hero presets, owned-hero controls, clear 1/32 path numbering, and full troop coverage.",
       "Made Royal Bounty the VTS Eden Hub landing page, with its visual 9-hero guide, mission/commission loop, Aiding Skill rules, and a one-click return to the Eden map.",
       "Completed the public app locale contract across every shipped language and updated Velo?s tower, hero-path, and Royal Bounty guidance."
-    ]
-  },
-  {
-    "version": "14.3.8",
-    "date": "2026-08-13",
-    "highlights": [
-      "The Combo Generator now opens in skin mode. Skin icons, skin toggles and skin-aware combos are on by default; the toggle still turns them off.",
-      "Hero cards in the generator now stay in seasonal order (S0 first, X2 last) instead of floating heroes that own a skin to the top, so a hero stays where you expect when you switch skin mode on or off.",
-      "Replaced Beowulf's skin icon with a clean portrait crop, without the level and name overlay from the old capture."
     ]
   }
 ].map((release) =>
