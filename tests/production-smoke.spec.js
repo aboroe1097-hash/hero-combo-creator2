@@ -46,6 +46,16 @@ function observeTargetFailures(page) {
     // otherwise clean. Same-origin resource failures are already caught precisely, with
     // the full URL, by the origin-filtered response handler above.
     if (/^Failed to load resource/iu.test(text)) return;
+    // A real reCAPTCHA Enterprise key embeds Google in a third-party iframe. Chrome
+    // reports Google's own report-only frame-ancestors policy as a console error even
+    // though the iframe loads and no same-origin Pages resource is blocked.
+    if (
+      /Framing 'https:\/\/www\.google\.com\/' violates the following report-only Content Security Policy directive: "frame-ancestors 'self'"/iu.test(
+        text
+      )
+    ) {
+      return;
+    }
     if (
       /content security policy|failed to load module|dynamically imported module|\b404\b/iu.test(
         text
