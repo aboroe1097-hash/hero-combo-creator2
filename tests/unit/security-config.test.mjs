@@ -247,13 +247,17 @@ test('build metadata refreshes cache-busted modules while Material shares the ma
   assert.match(script, /updateCspHashes\(\)/);
   assert.match(script, /'specialization-towers\.html'/);
   assert.match(script, /'\/specialization-towers\.html'/);
-  assert.match(script, /app-research\|app-artifact\|eden-map\|app-strife\|app-export\|arcade-spa/);
+  assert.match(
+    script,
+    /app-research\|app-artifact\|eden-map\|eden-hub\|app-strife\|app-export\|arcade-spa/
+  );
   assert.doesNotMatch(script, /material-calculator/);
   assert.doesNotMatch(app, /20260708_101500/);
   assert.doesNotMatch(app, /app-whats-new\.js/);
   assert.match(app, /app-export\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /arcade-spa\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /app-research\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /eden-hub\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /import\('\.\/material-calculator\.js'\)/);
   assert.doesNotMatch(app, /material-calculator\.js\?v=/);
   assert.match(

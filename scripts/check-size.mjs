@@ -104,7 +104,9 @@ const LIMITS = {
   // retain 14 KiB while entry and route caps remain unchanged.
   // Hero-targeted Artifact scoring reuses the lazy Tower skill-semantics module;
   // the combined graph audits to 9828 KiB locally, with CI injection headroom.
-  totalJsBytes: 9850 * 1024,
+  // Full 13-locale DrThunder playbook translation adds ~125 KiB across the
+  // twelve lazy language chunks; the audited graph is now 9953.6 KiB.
+  totalJsBytes: 9970 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -215,7 +217,9 @@ const LIMITS = {
   // retain about 19 KiB of artifact headroom without changing JS or CSS caps.
   // The expanded DrThunder playbook adds 13 contextual optimized visuals and
   // two lazy route chunks; the complete audited artifact is 31766.7 KiB.
-  totalDeployBytes: 31780 * 1024,
+  // Localized playbook catalog entries lift the audited artifact to
+  // 31897.5 KiB; keep ~23 KiB of headroom without changing per-route caps.
+  totalDeployBytes: 31920 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
