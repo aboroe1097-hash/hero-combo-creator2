@@ -16,7 +16,7 @@ import '../css/artifact-v14.css';
 
 const artifact = ARTIFACT_DATABASE[0];
 const RESOURCE_ICONS = Object.freeze({
-  RGE: 'assets/artifact/redemption-grail-emblem.png',
+  RGE: 'assets/artifact/sword/Artifacts_icon_jian.png',
   AS: 'assets/artifact/artifact-soulstone.png',
 });
 
@@ -67,7 +67,7 @@ const NODE_LAYOUT = Object.freeze({
 
 let nodeLevels = {};
 let searchQuery = '';
-let selectedNodeId = 'rg_1_0';
+let selectedNodeId = 'sj_1001';
 let initialized = false;
 let eventsBound = false;
 let languageBound = false;
@@ -111,9 +111,17 @@ function setNodeLevel(nodeId, rawLevel, { render: shouldRender = true, save = tr
   const node = getArtifactNodeById(nodeId, artifact);
   if (!node) return;
   const level = Math.max(0, Math.min(node.maxLevel, Math.trunc(Number(rawLevel)) || 0));
+  const current = Number(nodeLevels[nodeId]) || 0;
+  if (level > current && !requirementsMet(node)) return;
   nodeLevels = { ...nodeLevels, [nodeId]: level };
   if (save) saveProgress();
   if (shouldRender) render();
+}
+
+function requirementsMet(node) {
+  return (node.unlockRequirements || []).every(
+    (requirement) => (Number(nodeLevels[requirement.nodeId]) || 0) >= requirement.minLevel
+  );
 }
 
 function setTierLevel(tierNumber) {
@@ -143,9 +151,10 @@ function resourceIcon(resource, className = '') {
 }
 
 function metricCard(kind, title, remaining, invested, total) {
+  const shortName = artifact.resources[kind]?.shortName || kind;
   return `<article class="artifact-card artifact-card-${kind.toLowerCase()}">
     ${resourceIcon(kind)}
-    <div><header><h2>${escapeHtml(title)}</h2><span translate="no">${kind}</span></header>
+    <div><header><h2>${escapeHtml(title)}</h2><span translate="no">${escapeHtml(shortName)}</span></header>
     <p class="artifact-card-total"><strong>${fmt(remaining)}</strong> ${escapeHtml(t('remaining'))}</p>
     <p>${escapeHtml(t('invested'))}: ${fmt(invested)} / ${fmt(total)}</p></div>
   </article>`;
@@ -174,10 +183,13 @@ function matchesSearch(node) {
 }
 
 function connectorMarkup() {
-  return Object.entries(NODE_LAYOUT)
+  const layoutMap = Object.fromEntries(
+    getAllArtifactNodes(artifact).map((node) => [node.id, node.layout || NODE_LAYOUT[node.id]])
+  );
+  return Object.entries(layoutMap)
     .flatMap(([, layout]) =>
       (layout.parents || []).map((parentId) => {
-        const parent = NODE_LAYOUT[parentId];
+        const parent = layoutMap[parentId];
         if (!parent) return '';
         return `<line x1="${parent.x}" y1="${parent.y}" x2="${layout.x}" y2="${layout.y}" />`;
       })
@@ -186,16 +198,20 @@ function connectorMarkup() {
 }
 
 function treeNode(node) {
-  const layout = NODE_LAYOUT[node.id];
+  const layout = node.layout || NODE_LAYOUT[node.id];
   if (!layout) return '';
   const current = Number(nodeLevels[node.id]) || 0;
   const maxed = current >= node.maxLevel;
   const selected = node.id === selectedNodeId;
+  const locked = !requirementsMet(node);
   const dimmed = !matchesSearch(node);
+  const progress = node.maxLevel > 0 ? current / node.maxLevel : 0;
   const displayCode = node.code.includes('amp') ? '−' : node.code.replace('.0', '');
   const label = `${node.name}, ${t('level', { current, max: node.maxLevel })}`;
-  return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${current > 0 ? ' has-progress' : ''}${dimmed ? ' is-dimmed' : ''}"
-    style="--node-x:${layout.x}%;--node-y:${layout.y}%" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
+  return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${current > 0 ? ' has-progress' : ''}${dimmed ? ' is-dimmed' : ''}${locked ? ' is-locked' : ''}"
+    style="--node-x:${layout.x}%;--node-y:${layout.y}%;--node-progress:${progress}turn" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
+      ${node.icon ? `<img class="artifact-tree-node-icon" src="${escapeHtml(node.icon)}" alt="" aria-hidden="true" />` : ''}
+      <span class="artifact-node-state" aria-hidden="true">${locked ? '⌁' : maxed ? '✦' : current > 0 ? current : '+'}</span>
       <span class="artifact-tree-code" translate="no">${escapeHtml(displayCode)}</span>
       <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>
     </button>`;
@@ -205,22 +221,24 @@ function selectedNodeMarkup() {
   const node = getArtifactNodeById(selectedNodeId, artifact) || getAllArtifactNodes(artifact)[0];
   const current = Math.max(0, Math.min(node.maxLevel, Number(nodeLevels[node.id]) || 0));
   const maxed = current === node.maxLevel;
+  const locked = !requirementsMet(node);
   const remaining = node.costs.slice(current).reduce((sum, cost) => sum + cost, 0);
   const next = node.costs[current] || 0;
   const levelLabel = t('level', { current, max: node.maxLevel });
   return `<article class="artifact-node-detail" data-artifact-node="${escapeHtml(node.id)}">
     <header>
       <div><span class="artifact-node-code" translate="no">${escapeHtml(node.code.includes('amp') ? '−' : node.code.replace('.0', ''))}</span><h2>${escapeHtml(node.name)}</h2></div>
-      <span class="artifact-detail-resource">${resourceIcon(node.resource)}<b translate="no">${node.resource}</b></span>
+      <span class="artifact-detail-resource">${resourceIcon(node.resource)}<b translate="no">${escapeHtml(artifact.resources[node.resource]?.shortName || node.resource)}</b></span>
     </header>
     <p class="artifact-node-buff">${escapeHtml(node.buff)}</p>
+    ${locked ? `<p class="artifact-prerequisite">${(node.unlockRequirements || []).map((requirement) => `${t('requiresLevel', { level: requirement.minLevel })}: ${getArtifactNodeById(requirement.nodeId, artifact)?.name || requirement.nodeId}`).map(escapeHtml).join(', ')}</p>` : ''}
     ${node.permanentAttribute ? `<p class="artifact-permanent"><strong>${escapeHtml(t('permanent'))}:</strong> ${escapeHtml(node.permanentAttribute)}</p>` : ''}
     <div class="artifact-level-line">
       <strong data-artifact-level-label>${escapeHtml(levelLabel)}</strong>
       <span>
         <button type="button" data-artifact-action="decrease" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−</button>
-        <button type="button" data-artifact-action="increase" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed ? 'disabled' : ''}>+</button>
-        <button type="button" class="artifact-max-button" data-artifact-action="max-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed ? 'disabled' : ''}>MAX</button>
+        <button type="button" data-artifact-action="increase" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+</button>
+        <button type="button" class="artifact-max-button" data-artifact-action="max-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>MAX</button>
       </span>
     </div>
     <label class="sr-only" for="artifact-level-${escapeHtml(node.id)}">${escapeHtml(levelLabel)}</label>
@@ -252,8 +270,8 @@ function render() {
     </header>
 
     <section class="artifact-metrics" aria-label="${escapeHtml(t('completion'))}">
-      ${metricCard('RGE', t('emblems'), metrics.remainingRGE, metrics.investedRGE, metrics.totalRGE)}
-      ${metricCard('AS', t('soulstones'), metrics.remainingAS, metrics.investedAS, metrics.totalAS)}
+      ${metricCard('RGE', artifact.resources.RGE.name, metrics.remainingRGE, metrics.investedRGE, metrics.totalRGE)}
+      ${metricCard('AS', artifact.resources.AS.name, metrics.remainingAS, metrics.investedAS, metrics.totalAS)}
       <article class="artifact-card artifact-card-progress"><div>
         <header><h2>${escapeHtml(t('completion'))}</h2><span>${metrics.maxedNodes}/${metrics.totalNodes} ${escapeHtml(t('nodes'))}</span></header>
         <p class="artifact-card-total"><strong>${completion}%</strong></p>
@@ -265,12 +283,12 @@ function render() {
     <section class="artifact-search">
       <label for="artifact-search">${escapeHtml(t('searchLabel'))}</label>
       <input id="artifact-search" type="search" autocomplete="off" placeholder="${escapeHtml(t('searchPlaceholder'))}" value="${escapeHtml(searchQuery)}" />
-      <p>${escapeHtml(t('sourceNote'))}</p>
+      <p>${escapeHtml(artifact.farmingNote)}</p>
     </section>
 
     <div class="artifact-game-layout">
       <section class="artifact-tree-shell" aria-label="${escapeHtml(artifact.title)}">
-        <div class="artifact-tree-scroll"><div class="artifact-tree">
+        <div class="artifact-tree-scroll"><div class="artifact-tree" style="--artifact-board-image:url('${escapeHtml(artifact.boardImage)}')">
           <div class="artifact-tree-backdrop" aria-hidden="true"></div>
           <svg class="artifact-tree-paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${connectorMarkup()}</svg>
           ${nodes.map(treeNode).join('')}

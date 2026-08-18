@@ -33,9 +33,10 @@ test('Artifact UI uses safe persistence, translated labels, and confirmed destru
   assert.match(appSource, /aria-live="polite"/);
   assert.match(appSource, /role="progressbar"/);
   assert.match(appSource, /autocomplete="off"/);
-  assert.match(appSource, /redemption-grail-emblem\.png/);
+  assert.match(appSource, /Artifacts_icon_jian\.png/);
   assert.match(appSource, /artifact-soulstone\.png/);
-  assert.match(cssSource, /redemption-grail-board\.webp/);
+  assert.match(appSource, /artifact\.boardImage/);
+  assert.match(appSource, /requirementsMet/);
   assert.match(appSource, /NODE_LAYOUT/);
   assert.doesNotMatch(appSource, /estimated|daysRemaining|dailyRGE|dailyAS/i);
   assert.doesNotMatch(appSource, /transition:\s*all/);

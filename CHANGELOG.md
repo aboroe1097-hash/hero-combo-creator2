@@ -1,5 +1,11 @@
 # Changelog
 
+## 15.0.7 - 2026-08-18
+
+- Corrected the X2 Artifact tool to make **Sword of Judgment** the current default instead of the not-yet-available Redemption Grail.
+- Added the complete 33-node Sword tree with exact level costs, prerequisites, stage layout, Sword Emblem and Artifact Soulstone totals, node icons, and in-game Sword artwork.
+- Kept Redemption Grail data available for a future release without presenting it as current X2 content.
+
 ## 15.0.6 - 2026-08-18
 
 - Replaced the Artifact board's synthetic gradient with the exact in-game Redemption Grail capture embedded in the source sheet, including its Grail silhouette, ruins, node rings, and branching frame.

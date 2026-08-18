@@ -34,7 +34,7 @@ test('Artifact One: Redemption Grail structure and completeness', () => {
 });
 
 test('Artifact One: Redemption Grail cost math matches public sheet data', () => {
-  const grail = ARTIFACT_DATABASE[0];
+  const grail = ARTIFACT_DATABASE.find((a) => a.id === 'redemption-grail');
   const metrics = calculateArtifactMetrics(grail, {});
 
   // Total RGE: 416 (Skill 1) + 1412 (Skill 2) + 2204 (3.0a) + 2204 (3.0b) + 5471 (Skill 4) = 11,707
@@ -54,7 +54,7 @@ test('Artifact One: Redemption Grail cost math matches public sheet data', () =>
 });
 
 test('Artifact One: Level progression, partial upgrades and active buffs', () => {
-  const grail = ARTIFACT_DATABASE[0];
+  const grail = ARTIFACT_DATABASE.find((a) => a.id === 'redemption-grail');
   const testLevels = {
     rg_1_0: 10, // Maxed root 1 -> activates Permanent: Artifact's Damage Boost +10%
     rg_1_1a: 5, // Might +5%
@@ -77,16 +77,36 @@ test('Artifact One: Level progression, partial upgrades and active buffs', () =>
 });
 
 test('Artifact progress persistence accepts only canonical integer node levels', () => {
-  const normalized = normalizeArtifactProgress({
-    rg_1_0: 4.9,
-    rg_1_1a: 999,
-    rg_1_2a: -4,
-    unknown: 8,
-    rg_1_3a: '3',
-  });
+  const grail = ARTIFACT_DATABASE.find((a) => a.id === 'redemption-grail');
+  const normalized = normalizeArtifactProgress(
+    {
+      rg_1_0: 4.9,
+      rg_1_1a: 999,
+      rg_1_2a: -4,
+      unknown: 8,
+      rg_1_3a: '3',
+    },
+    grail
+  );
 
   assert.deepEqual(normalized, { rg_1_0: 4, rg_1_1a: 10, rg_1_3a: 3 });
   assert.equal(Object.isFrozen(normalized), true);
-  assert.deepEqual(parseArtifactProgress('{"rg_1_0":7,"unknown":2}'), { rg_1_0: 7 });
-  assert.deepEqual(parseArtifactProgress('{broken'), {});
+  assert.deepEqual(parseArtifactProgress('{"rg_1_0":7,"unknown":2}', grail), { rg_1_0: 7 });
+  assert.deepEqual(parseArtifactProgress('{broken', grail), {});
+});
+
+test('Sword of Judgment is the current X2 default with exact public tree totals', () => {
+  const sword = ARTIFACT_DATABASE[0];
+  assert.equal(sword.id, 'sword-of-judgment');
+  assert.equal(sword.name, 'Sword of Judgment');
+  assert.equal(getAllArtifactNodes(sword).length, 33);
+  assert.equal(sword.tiers.length, 6);
+
+  const metrics = calculateArtifactMetrics(sword, {});
+  assert.equal(metrics.totalRGE, 36950);
+  assert.equal(metrics.totalAS, 60480);
+
+  const locked = getArtifactNodeById('sj_1003', sword);
+  assert.deepEqual(locked.unlockRequirements, [{ nodeId: 'sj_1002', minLevel: 3 }]);
+  assert.equal(locked.layout.parents[0], 'sj_1002');
 });
