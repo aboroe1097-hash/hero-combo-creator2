@@ -287,3 +287,12 @@ test('plan step helpers walk the ordered plan and find the next research', () =>
   );
   assert.equal(getHeroPlanLength(null), 0);
 });
+
+test('analyzeHeroMechanics exposes mechanics as an iterable array for the Artifact path planner', () => {
+  for (const hero of ['Leonidas', 'Ramses II', 'Alexander', 'Jeanne d\u0027Arc']) {
+    const profile = analyzeHeroMechanics(hero);
+    assert.ok(profile, `${hero} has a mechanics profile`);
+    assert.ok(Array.isArray(profile.mechanics), `${hero} mechanics must be an array`);
+    assert.ok([...profile.mechanics].every((id) => typeof id === 'string'));
+  }
+});

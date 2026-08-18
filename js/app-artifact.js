@@ -77,7 +77,7 @@ let centerSelectedNode = false;
 
 function heroPathPlan() {
   const heroes = [...generatorSelectedHeroes].slice(0, 6);
-  const mechanics = heroes.flatMap((hero) => [...analyzeHeroMechanics(hero)]);
+  const mechanics = heroes.flatMap((hero) => [...analyzeHeroMechanics(hero).mechanics]);
   const defensive = mechanics.filter((id) =>
     ['healing', 'control', 'sober', 'evasion'].includes(id)
   ).length;

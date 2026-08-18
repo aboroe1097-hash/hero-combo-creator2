@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.10";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.11";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.11",
+    "date": "2026-08-18",
+    "highlights": [
+      "Fixed a crash in the Artifact calculator that showed “Artifact Calculator failed to load” whenever heroes were selected in the generator (or synced from an account roster); the Sword path planning now reads the analyzed hero mechanics correctly.",
+      "Fixed the Artifact tree board image on the live site, which loaded from a doubled asset path."
+    ]
+  },
   {
     "version": "15.0.10",
     "date": "2026-08-18",
@@ -90,18 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Locked the whole Alliance management side of VTS Admin — Alliance View, All-Star BoH, Throne Buffs and Users & Roles — behind the superadmin claim. A plain admin no longer sees a nav row whose tabs would all refuse them.",
       "Gave the Throne Buffs tab its stylesheet: one compact header row for the week picker, slot badges and actions, a bordered assignment table with the title icons and effects, pill badges for slot counts and duplicate warnings, styled history search results, and a rotation fairness…",
       "Rebuilt the desktop admin navigation layout: each tab group is now a single compact row of mono label plus content-sized pills instead of three narrow columns of stretched buttons, which had wrapped every group into a tall stack and pushed the page content far below the header."
-    ]
-  },
-  {
-    "version": "15.0.1",
-    "date": "2026-08-16",
-    "highlights": [
-      "Split VTS Admin into two sides. Alliance management now holds Alliance View, All-Star BoH and the new Throne Buffs tab, and sits deliberately outside the Eden season scope, so a season rollover never moves or clears it.",
-      "Added the Throne Buffs assignment tab: pick any week, assign the nine throne titles to members with optional reasons, watch the rotation fairness table flag who is overdue, search past weeks, and export the week as a PNG card.",
-      "Added the Banners Planner groundwork: a 19-banner alliance catalog transcribed from the retired planning sheet, plus the pure planning model that normalizes weekly event blocks and tracks banner usage, pilot workload and banners that silently dropped out of a week.",
-      "Added Vialfiend to the Strife monster lab with its four skills verbatim from the game: Death's Aura, Intimidate, Demon Wraith and Power of the Legion.",
-      "Removed the Velo runner sprite that travelled along the loading bar; the loader keeps its identity art and the progress bar still animates.",
-      "Embedded the Eden X2 season page and Previous Seasons into the Eden Hub without their standalone chrome, and fixed the white-on-white workspace select and the cramped admin command strip on mid-width screens."
     ]
   }
 ].map((release) =>
