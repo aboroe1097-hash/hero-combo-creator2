@@ -115,8 +115,13 @@ const EXTRA_VISUALS = Object.freeze({
 });
 
 function copyFor(language) {
-  const catalog = translations[language] || translations.en || {};
-  const en = translations.en || {};
+  // The playbook module can load through a differently-stamped import chain
+  // than the app entry, which would give it a second translations instance
+  // whose lazy locales are never populated. The entry page publishes its
+  // canonical catalog on globalThis; prefer it and fall back to our own.
+  const canonical = globalThis.VTS_TRANSLATIONS || translations;
+  const catalog = canonical[language] || canonical.en || {};
+  const en = canonical.en || {};
   return (key, values = {}) => {
     const template = String(catalog[key] ?? en[key] ?? key);
     return template.replace(/\{([A-Za-z0-9_]+)\}/g, (match, name) =>

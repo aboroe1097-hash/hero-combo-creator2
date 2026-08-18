@@ -1060,7 +1060,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.
-        import('./eden-hub.js?v=20260813_061728')
+        import('./eden-hub.js?v=20260818_131912')
           .then((hub) => hub.bootEdenHub())
           .then(() => import('./eden-map.js?v=20260818_131912'))
           .then((mod) => mod.bootEdenMapPlanner())
