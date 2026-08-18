@@ -204,7 +204,10 @@ const LIMITS = {
   // The Aiding Skill capture lifts the artifact to 30788.1 KiB.
   // Artifact One and the VII-IX evidence chunks bring the optimized Pages
   // artifact to 30886.7 KiB; retain roughly 23 KiB.
-  totalDeployBytes: 30910 * 1024,
+  // The exact Redemption Grail game-board capture is a single 54.5 KiB lazy
+  // WebP after removing the duplicate static copy. The artifact now measures
+  // 30941.0 KiB; retain roughly 14 KiB.
+  totalDeployBytes: 30955 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -214,7 +217,9 @@ const LIMITS = {
   // The Royal Bounty guide gains one in-game capture of the Aiding Skill slot
   // (36.9 KiB JPEG). Media had 12 KiB of headroom, so raise it rather than
   // ship the guide without the illustration its steps describe.
-  totalMediaBytes: 17880 * 1024,
+  // The optimized Grail board raises audited media to 17932.4 KiB; retain
+  // roughly 12 KiB while keeping the 4 MiB single-file guard unchanged.
+  totalMediaBytes: 17945 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581

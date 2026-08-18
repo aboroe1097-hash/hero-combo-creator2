@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v15.0.5)
+# Hero Combo Creator - VTS 1097 (v15.0.6)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech and Artifact tracking, loyalty math, OCR attack analysis, and roster management. This release adds the interactive Artifact One: Redemption Grail board, verified Unit Specialisation VII–IX medal evidence, and complete Artifact localization across all 13 supported languages.
 

@@ -227,17 +227,33 @@
 }
 
 .artifact-tree-shell {
+  position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #665027;
-  border-radius: 16px;
+  border: 1px solid #8e7137;
+  border-radius: 18px 18px 28px 28px;
   background: #080807;
-  box-shadow: 0 18px 60px rgb(0 0 0 / 35%);
+  box-shadow:
+    inset 0 0 0 2px rgb(20 14 7 / 88%),
+    0 18px 60px rgb(0 0 0 / 35%);
+}
+
+.artifact-tree-shell::before {
+  position: absolute;
+  z-index: 5;
+  inset: 7px 10% auto;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #c9a952 18% 82%, transparent);
+  content: '';
+  pointer-events: none;
 }
 
 .artifact-tree-scroll {
   overflow-x: auto;
   overscroll-behavior-inline: contain;
+  scrollbar-color: #9d7b32 #17130b;
+  scrollbar-width: thin;
 }
 
 .artifact-tree {
@@ -248,9 +264,9 @@
   overflow: hidden;
   isolation: isolate;
   background:
-    linear-gradient(90deg, rgb(0 0 0 / 42%), transparent 23% 77%, rgb(0 0 0 / 42%)),
-    radial-gradient(ellipse at 50% 62%, rgb(84 53 17 / 32%), transparent 42%),
-    linear-gradient(180deg, #0a0a09, #17130d 54%, #070706);
+    linear-gradient(90deg, rgb(0 0 0 / 12%), transparent 14% 86%, rgb(0 0 0 / 12%)),
+    url('../assets/artifact/redemption-grail-board.webp') center / 100% 100% no-repeat,
+    #080807;
 }
 
 .artifact-tree-backdrop,
@@ -264,27 +280,21 @@
 }
 
 .artifact-tree-backdrop {
-  opacity: 0.8;
+  z-index: -1;
+  opacity: 1;
   background:
-    radial-gradient(ellipse at 50% 48%, transparent 0 17%, rgb(0 0 0 / 45%) 57%),
-    repeating-linear-gradient(90deg, transparent 0 11%, rgb(120 104 74 / 5%) 11% 12%);
+    linear-gradient(180deg, rgb(0 0 0 / 5%), transparent 18% 78%, rgb(0 0 0 / 24%)),
+    radial-gradient(ellipse at 50% 50%, transparent 0 55%, rgb(0 0 0 / 18%) 92%);
 }
 
 .artifact-tree-backdrop::before {
-  inset: 20% 27% 0;
-  border-radius: 50% 50% 6% 6%;
-  background:
-    linear-gradient(90deg, transparent 42%, rgb(161 83 210 / 18%) 48% 52%, transparent 58%),
-    linear-gradient(155deg, transparent 34%, rgb(137 72 190 / 22%) 35% 42%, transparent 43%),
-    linear-gradient(205deg, transparent 34%, rgb(137 72 190 / 22%) 35% 42%, transparent 43%);
-  filter: blur(2px);
+  display: none;
 }
 
 .artifact-tree-backdrop::after {
-  inset: 4% 14% 12%;
-  border: 2px solid rgb(145 121 74 / 9%);
-  border-bottom: 0;
-  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  inset: 5px;
+  border: 1px solid rgb(217 184 101 / 18%);
+  border-radius: 10px 10px 20px 20px;
 }
 
 .artifact-tree-paths {
@@ -294,12 +304,13 @@
   width: 100%;
   height: 100%;
   overflow: visible;
+  opacity: 0;
 }
 
 .artifact-tree-paths line {
   vector-effect: non-scaling-stroke;
-  stroke: #796b32;
-  stroke-width: 3;
+  stroke: rgb(232 207 101 / 28%);
+  stroke-width: 2;
   stroke-linecap: round;
   filter: drop-shadow(0 0 4px rgb(240 204 87 / 22%));
 }
@@ -315,13 +326,11 @@
   min-height: 0;
   aspect-ratio: 1;
   translate: -50% -50%;
-  border: 3px solid #6d5725;
+  border: 2px solid transparent;
   border-radius: 50%;
-  color: #fff1a5;
-  background: radial-gradient(circle, #292419 0 45%, #0a0906 47% 63%, #735b25 65% 69%, #17130c 71%);
-  box-shadow:
-    inset 0 0 0 2px #1c160d,
-    0 3px 10px rgb(0 0 0 / 80%);
+  color: transparent;
+  background: rgb(15 11 5 / 4%);
+  box-shadow: none;
   cursor: pointer;
   padding: 0;
 }
@@ -330,16 +339,16 @@
 .artifact-tree-node.is-selected {
   z-index: 4;
   border-color: #ffe06a;
-  color: #fff;
   box-shadow:
-    inset 0 0 0 2px #7b5c12,
+    inset 0 0 0 2px rgb(123 92 18 / 72%),
     0 0 0 4px rgb(255 210 60 / 18%),
     0 0 22px rgb(255 196 44 / 55%);
 }
 
 .artifact-tree-node.is-maxed {
   border-color: #f3cf52;
-  background: radial-gradient(circle, #61531f 0 44%, #181308 47% 63%, #c29c30 65% 69%, #221805 71%);
+  background: radial-gradient(circle, rgb(255 216 78 / 22%), rgb(104 76 13 / 12%) 62%, transparent 64%);
+  box-shadow: inset 0 0 0 2px rgb(97 75 24 / 68%);
 }
 
 .artifact-tree-node.is-dimmed {
@@ -351,24 +360,32 @@
 }
 
 .artifact-tree-code {
-  color: #ffe23e;
+  color: transparent;
   font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   font-size: clamp(0.84rem, 2vw, 1.35rem);
   line-height: 1;
-  text-shadow:
-    -1px -1px 0 #5a3b00,
-    1px -1px 0 #5a3b00,
-    -1px 1px 0 #5a3b00,
-    1px 1px 0 #5a3b00;
+  text-shadow: none;
 }
 
 .artifact-tree-level {
   position: absolute;
   inset-inline: 3px;
-  bottom: 5px;
-  color: #d7c68f;
-  font-size: 0.52rem;
+  bottom: -10px;
+  width: max-content;
+  margin-inline: auto;
+  border: 1px solid rgb(211 176 77 / 52%);
+  border-radius: 999px;
+  color: #fff3bd;
+  background: rgb(8 7 4 / 86%);
+  font-size: 0.56rem;
   line-height: 1;
+  padding: 2px 5px;
+  display: none;
+}
+
+.artifact-tree-node.is-selected .artifact-tree-level,
+.artifact-tree-node.has-progress .artifact-tree-level {
+  display: block;
 }
 
 .artifact-inspector {
@@ -564,11 +581,11 @@
 
   .artifact-inspector {
     position: static;
-    grid-row: 1;
+    grid-row: 2;
   }
 
   .artifact-tree-shell {
-    grid-row: 2;
+    grid-row: 1;
   }
 }
 
@@ -580,7 +597,21 @@
   }
 
   .artifact-metrics {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artifact-card-progress {
+    grid-column: 1 / -1;
+  }
+
+  .artifact-card {
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .artifact-resource-icon {
+    width: 42px;
+    height: 42px;
   }
 
   .artifact-search {
@@ -596,7 +627,7 @@
   }
 
   .artifact-tree {
-    min-width: 660px;
+    min-width: 560px;
   }
 }
 
@@ -611,8 +642,25 @@
     width: 100%;
   }
 
+  .artifact-primary-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .artifact-card header span {
+    display: none;
+  }
+
   .artifact-tree {
-    min-width: 620px;
+    min-width: 520px;
+  }
+
+  .artifact-tree-node {
+    width: 44px;
+  }
+
+  .artifact-tree-node-rge {
+    width: 52px;
   }
 
   .artifact-permanent-item {
