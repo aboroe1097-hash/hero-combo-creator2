@@ -118,6 +118,29 @@ function setNodeLevel(nodeId, rawLevel, { render: shouldRender = true, save = tr
   if (shouldRender) render();
 }
 
+function setNodeWithRequirements(nodeId, rawLevel) {
+  const node = getArtifactNodeById(nodeId, artifact);
+  if (!node) return;
+  const visited = new Set();
+  const fundRequirements = (target) => {
+    if (!target || visited.has(target.id)) return;
+    visited.add(target.id);
+    (target.unlockRequirements || []).forEach((requirement) => {
+      const prerequisite = getArtifactNodeById(requirement.nodeId, artifact);
+      fundRequirements(prerequisite);
+      nodeLevels[requirement.nodeId] = Math.max(
+        Number(nodeLevels[requirement.nodeId]) || 0,
+        requirement.minLevel
+      );
+    });
+  };
+  nodeLevels = { ...nodeLevels };
+  fundRequirements(node);
+  nodeLevels[node.id] = Math.max(0, Math.min(node.maxLevel, Math.trunc(Number(rawLevel)) || 0));
+  saveProgress();
+  render();
+}
+
 function requirementsMet(node) {
   return (node.unlockRequirements || []).every(
     (requirement) => (Number(nodeLevels[requirement.nodeId]) || 0) >= requirement.minLevel
@@ -231,15 +254,28 @@ function selectedNodeMarkup() {
       <span class="artifact-detail-resource">${resourceIcon(node.resource)}<b translate="no">${escapeHtml(artifact.resources[node.resource]?.shortName || node.resource)}</b></span>
     </header>
     <p class="artifact-node-buff">${escapeHtml(node.buff)}</p>
-    ${locked ? `<p class="artifact-prerequisite">${(node.unlockRequirements || []).map((requirement) => `${t('requiresLevel', { level: requirement.minLevel })}: ${getArtifactNodeById(requirement.nodeId, artifact)?.name || requirement.nodeId}`).map(escapeHtml).join(', ')}</p>` : ''}
+    ${
+      locked
+        ? `<p class="artifact-prerequisite">${(node.unlockRequirements || [])
+            .map(
+              (requirement) =>
+                `${t('requiresLevel', { level: requirement.minLevel })}: ${getArtifactNodeById(requirement.nodeId, artifact)?.name || requirement.nodeId}`
+            )
+            .map(escapeHtml)
+            .join(', ')}</p>`
+        : ''
+    }
     ${node.permanentAttribute ? `<p class="artifact-permanent"><strong>${escapeHtml(t('permanent'))}:</strong> ${escapeHtml(node.permanentAttribute)}</p>` : ''}
     <div class="artifact-level-line">
       <strong data-artifact-level-label>${escapeHtml(levelLabel)}</strong>
-      <span>
-        <button type="button" data-artifact-action="decrease" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−</button>
-        <button type="button" data-artifact-action="increase" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+</button>
-        <button type="button" class="artifact-max-button" data-artifact-action="max-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>MAX</button>
-      </span>
+      <label class="artifact-level-number"><span class="sr-only">${escapeHtml(levelLabel)}</span><input type="number" min="0" max="${node.maxLevel}" value="${current}" inputmode="numeric" data-artifact-level-input="${escapeHtml(node.id)}" /></label>
+    </div>
+    <div class="artifact-level-actions" aria-label="${escapeHtml(levelLabel)}">
+      <button type="button" data-artifact-action="decrease" data-step="5" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−5</button>
+      <button type="button" data-artifact-action="decrease" data-step="1" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−1</button>
+      <button type="button" data-artifact-action="increase" data-step="1" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+1</button>
+      <button type="button" data-artifact-action="increase" data-step="5" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed || locked ? 'disabled' : ''}>+5</button>
+      <button type="button" class="artifact-max-button" data-artifact-action="max-node-path" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed ? 'disabled' : ''}>↟ MAX</button>
     </div>
     <label class="sr-only" for="artifact-level-${escapeHtml(node.id)}">${escapeHtml(levelLabel)}</label>
     <input id="artifact-level-${escapeHtml(node.id)}" type="range" min="0" max="${node.maxLevel}" value="${current}" data-artifact-slider="${escapeHtml(node.id)}" aria-valuetext="${escapeHtml(levelLabel)}" />
@@ -346,11 +382,17 @@ function bindEvents() {
     if (action === 'max-all') setAllLevel('max');
     if (action === 'reset-all' && window.confirm(t('resetConfirm'))) setAllLevel(0);
     if (action === 'max-tier') setTierLevel(button.dataset.tier);
-    if (action === 'decrease') setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) - 1);
-    if (action === 'increase') setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) + 1);
+    if (action === 'decrease')
+      setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) - (Number(button.dataset.step) || 1));
+    if (action === 'increase')
+      setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) + (Number(button.dataset.step) || 1));
     if (action === 'max-node') {
       const node = getArtifactNodeById(nodeId, artifact);
       if (node) setNodeLevel(nodeId, node.maxLevel);
+    }
+    if (action === 'max-node-path') {
+      const node = getArtifactNodeById(nodeId, artifact);
+      if (node) setNodeWithRequirements(nodeId, node.maxLevel);
     }
   });
 
@@ -379,6 +421,10 @@ function bindEvents() {
   });
 
   root.addEventListener('change', (event) => {
+    if (event.target.matches('[data-artifact-level-input]')) {
+      setNodeWithRequirements(event.target.dataset.artifactLevelInput, event.target.value);
+      return;
+    }
     if (event.target.matches('[data-artifact-slider]')) {
       setNodeLevel(event.target.dataset.artifactSlider, event.target.value);
     }

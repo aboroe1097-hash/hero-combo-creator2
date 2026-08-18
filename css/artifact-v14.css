@@ -361,7 +361,12 @@
 
 .artifact-tree-node.is-maxed {
   border-color: #f3cf52;
-  background: radial-gradient(circle, rgb(255 216 78 / 22%), rgb(104 76 13 / 12%) 62%, transparent 64%);
+  background: radial-gradient(
+    circle,
+    rgb(255 216 78 / 22%),
+    rgb(104 76 13 / 12%) 62%,
+    transparent 64%
+  );
   box-shadow: inset 0 0 0 2px rgb(97 75 24 / 68%);
 }
 
@@ -549,17 +554,32 @@
   margin-top: 18px;
 }
 
-.artifact-level-line > span {
-  display: flex;
+.artifact-level-number input {
+  width: 5.25rem;
+  min-height: 44px;
+  border: 1px solid var(--artifact-border);
+  border-radius: 10px;
+  color: var(--artifact-text);
+  background: var(--artifact-panel);
+  padding: 8px 10px;
+  text-align: center;
+  font: inherit;
+  font-weight: 800;
+}
+
+.artifact-level-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(44px, 1fr)) minmax(78px, 1.35fr);
   gap: 6px;
+  margin: 8px 0 2px;
 }
 
-.artifact-level-line button {
-  min-width: 44px;
-  padding: 6px 10px;
+.artifact-level-actions button {
+  min-height: 44px;
+  padding: 6px 8px;
 }
 
-.artifact-level-line button:disabled {
+.artifact-level-actions button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -678,6 +698,18 @@
   .artifact-level-line {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .artifact-level-number input {
+    width: 100%;
+  }
+
+  .artifact-level-actions {
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+  }
+
+  .artifact-level-actions .artifact-max-button {
+    grid-column: 1 / -1;
   }
 
   .artifact-metrics {

@@ -37,6 +37,10 @@ test('Artifact UI uses safe persistence, translated labels, and confirmed destru
   assert.match(appSource, /artifact-soulstone\.png/);
   assert.match(appSource, /artifact\.boardImage/);
   assert.match(appSource, /requirementsMet/);
+  assert.match(appSource, /setNodeWithRequirements/);
+  assert.match(appSource, /data-artifact-level-input/);
+  assert.match(appSource, /data-artifact-action="max-node-path"/);
+  assert.match(appSource, /data-step="5"/);
   assert.match(appSource, /NODE_LAYOUT/);
   assert.doesNotMatch(appSource, /estimated|daysRemaining|dailyRGE|dailyAS/i);
   assert.doesNotMatch(appSource, /transition:\s*all/);
