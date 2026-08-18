@@ -3211,6 +3211,7 @@ Object.assign(tr, {
   edenPlaybookAltHonor: 'Yeşil yapı Onur uzmanlık rotası',
   edenPlaybookAltTiling: 'Yeşil kare alma Onur uzmanlık rotası',
   edenPlaybookAltFort: 'Mavi Aşağı kale açma uzmanlık rotası',
+  shareViewCopied: 'Bağlantı panoya kopyalandı',
 });
 
 export default tr;

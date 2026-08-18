@@ -45,6 +45,7 @@ const EN = Object.freeze({
   heroPathNext: 'Next recommended node',
   heroPathComplete: 'Path complete',
   sharePath: 'Share this path',
+  sharePathCopied: 'Path link copied',
 });
 
 const PACKS = Object.freeze({
@@ -92,6 +93,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'العقدة الموصى بها التالية',
     heroPathComplete: 'اكتمل المسار',
     sharePath: 'مشاركة هذا المسار',
+    sharePathCopied: 'تم نسخ رابط المسار',
   }),
   de: Object.freeze({
     badge: 'Rise of Castles-Artefakt',
@@ -136,6 +138,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Nächster empfohlener Knoten',
     heroPathComplete: 'Pfad abgeschlossen',
     sharePath: 'Diesen Pfad teilen',
+    sharePathCopied: 'Pfad-Link kopiert',
   }),
   es: Object.freeze({
     badge: 'Artefacto de Rise of Castles',
@@ -180,6 +183,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Siguiente nodo recomendado',
     heroPathComplete: 'Ruta completada',
     sharePath: 'Compartir esta ruta',
+    sharePathCopied: 'Enlace de ruta copiado',
   }),
   fr: Object.freeze({
     badge: 'Artefact Rise of Castles',
@@ -224,6 +228,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Nœud recommandé suivant',
     heroPathComplete: 'Chemin terminé',
     sharePath: 'Partager ce chemin',
+    sharePathCopied: 'Lien du chemin copié',
   }),
   hr: Object.freeze({
     badge: 'Rise of Castles artefakt',
@@ -268,6 +273,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Sljedeći preporučeni čvor',
     heroPathComplete: 'Staza dovršena',
     sharePath: 'Podijeli ovu stazu',
+    sharePathCopied: 'Veza staze kopirana',
   }),
   id: Object.freeze({
     badge: 'Artefak Rise of Castles',
@@ -312,6 +318,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Node rekomendasi berikutnya',
     heroPathComplete: 'Jalur selesai',
     sharePath: 'Bagikan jalur ini',
+    sharePathCopied: 'Tautan jalur disalin',
   }),
   it: Object.freeze({
     badge: 'Artefatto di Rise of Castles',
@@ -356,6 +363,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Prossimo nodo consigliato',
     heroPathComplete: 'Percorso completato',
     sharePath: 'Condividi questo percorso',
+    sharePathCopied: 'Link del percorso copiato',
   }),
   kr: Object.freeze({
     badge: 'Rise of Castles 유물',
@@ -400,6 +408,7 @@ const PACKS = Object.freeze({
     heroPathNext: '다음 권장 노드',
     heroPathComplete: '경로 완료',
     sharePath: '이 경로 공유',
+    sharePathCopied: '경로 링크가 복사되었습니다',
   }),
   pt: Object.freeze({
     badge: 'Artefato de Rise of Castles',
@@ -444,6 +453,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Próximo nó recomendado',
     heroPathComplete: 'Caminho concluído',
     sharePath: 'Compartilhar este caminho',
+    sharePathCopied: 'Link do caminho copiado',
   }),
   ru: Object.freeze({
     badge: 'Артефакт Rise of Castles',
@@ -488,6 +498,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Следующий рекомендуемый узел',
     heroPathComplete: 'Путь завершён',
     sharePath: 'Поделиться этим путём',
+    sharePathCopied: 'Ссылка на путь скопирована',
   }),
   tr: Object.freeze({
     badge: 'Rise of Castles Eseri',
@@ -532,6 +543,7 @@ const PACKS = Object.freeze({
     heroPathNext: 'Sonraki önerilen düğüm',
     heroPathComplete: 'Yol tamamlandı',
     sharePath: 'Bu yolu paylaş',
+    sharePathCopied: 'Yol bağlantısı kopyalandı',
   }),
   zh: Object.freeze({
     badge: 'Rise of Castles 神器',
@@ -576,6 +588,7 @@ const PACKS = Object.freeze({
     heroPathNext: '下一个推荐节点',
     heroPathComplete: '路径已完成',
     sharePath: '分享此路径',
+    sharePathCopied: '路径链接已复制',
   }),
 });
 

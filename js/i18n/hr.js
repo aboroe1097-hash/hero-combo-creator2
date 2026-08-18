@@ -286,6 +286,7 @@ const hr = Object.freeze({
   edenPlaybookAltHonor: 'Zelena ruta specijalizacije za Honor struktura',
   edenPlaybookAltTiling: 'Zelena ruta specijalizacije za Honor zauzimanjem polja',
   edenPlaybookAltFort: 'Plava ruta specijalizacije dolje za otključavanje tvrđava',
+  shareViewCopied: 'Poveznica kopirana u međuspremnik',
 });
 
 export default hr;

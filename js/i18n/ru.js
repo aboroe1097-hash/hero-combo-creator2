@@ -2931,6 +2931,7 @@ Object.assign(ru, {
   edenPlaybookAltHonor: 'Маршрут специализации Honor за постройки в Зелёный',
   edenPlaybookAltTiling: 'Маршрут специализации Honor за захват плиток в Зелёный',
   edenPlaybookAltFort: 'Маршрут специализации «Синий вниз» для открытия крепостей',
+  shareViewCopied: 'Ссылка скопирована в буфер обмена',
 });
 
 export default ru;

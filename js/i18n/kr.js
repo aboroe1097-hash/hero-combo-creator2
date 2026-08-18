@@ -2908,6 +2908,7 @@ Object.assign(kr, {
   edenPlaybookAltHonor: '초록 구조물 명예 전문화 경로',
   edenPlaybookAltTiling: '초록 타일링 명예 전문화 경로',
   edenPlaybookAltFort: '파랑 하향 요새 잠금 해제 전문화 경로',
+  shareViewCopied: '링크가 클립보드에 복사되었습니다.',
 });
 
 export default kr;

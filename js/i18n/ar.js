@@ -3041,6 +3041,7 @@ Object.assign(ar, {
   edenPlaybookAltHonor: 'مسار تخصص شرف الهياكل الأخضر',
   edenPlaybookAltTiling: 'مسار تخصص شرف البلاطات الأخضر',
   edenPlaybookAltFort: 'مسار تخصص فتح الحصون الأزرق السفلي',
+  shareViewCopied: 'تم نسخ الرابط إلى الحافظة',
 });
 
 export default ar;

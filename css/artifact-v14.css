@@ -621,6 +621,7 @@
 }
 .artifact-hero-path h2 {
   font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 .artifact-hero-path p {
   color: var(--artifact-muted);
@@ -628,6 +629,10 @@
 .artifact-path-next {
   display: grid;
   gap: 5px;
+  min-width: 0;
+}
+.artifact-path-next button {
+  overflow-wrap: anywhere;
 }
 .artifact-path-next span {
   color: var(--artifact-muted);

@@ -2125,6 +2125,7 @@ const it = {
   adminAllianceViewMetricPathers: 'Tracciatori',
   shareView: 'Condividi esattamente questa vista',
   shareViewLabel: 'Condividi',
+  shareViewCopied: 'Link copiato negli appunti',
   tabBadgeHub: 'HUB',
   badgeNew: 'NUOVO',
   badgeSoon: 'PROSSIMAMENTE',

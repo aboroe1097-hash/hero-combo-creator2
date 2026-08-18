@@ -2008,6 +2008,7 @@ const en = {
     "Requires this chat's consent and a verified signed-in admin account",
   shareView: 'Share this exact view',
   shareViewLabel: 'Share',
+  shareViewCopied: 'Link copied to clipboard',
   tabBadgeHub: 'HUB',
   badgeNew: 'NEW',
   badgeSoon: 'SOON',

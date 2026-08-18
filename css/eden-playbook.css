@@ -16,6 +16,19 @@
   --tp-muted: #526078;
   --tp-line: #ccd5e4;
 }
+/* Cyan and gold accents are tuned for the dark surface; on the light theme
+   they fall back to darker tints that keep WCAG-readable contrast. */
+[data-theme='light'] .thunder-kicker,
+[data-theme='light'] .thunder-role-guides article b,
+[data-theme='light'] .thunder-ratios b {
+  color: #0b6ea8;
+}
+[data-theme='light'] .thunder-jump-cards b,
+[data-theme='light'] .thunder-table-wrap tbody th,
+[data-theme='light'] .thunder-table-wrap tr.is-jump th,
+[data-theme='light'] .thunder-table-wrap tr.is-jump td:first-of-type {
+  color: #8a6508;
+}
 .thunder-playbook button {
   min-height: 44px;
   touch-action: manipulation;

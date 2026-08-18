@@ -2936,6 +2936,7 @@ Object.assign(zh, {
   edenPlaybookAltHonor: '绿色建筑荣耀专精路线',
   edenPlaybookAltTiling: '绿色铺地荣耀专精路线',
   edenPlaybookAltFort: '向下蓝线解锁要塞专精路线',
+  shareViewCopied: '链接已复制到剪贴板',
 });
 
 export default zh;

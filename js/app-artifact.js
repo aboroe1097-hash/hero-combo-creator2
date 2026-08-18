@@ -426,8 +426,20 @@ function bindEvents() {
     }
     if (action === 'share-view') {
       const url = location.href;
-      if (navigator.share) void navigator.share({ title: artifact.title, url });
-      else void navigator.clipboard?.writeText(url);
+      void (async () => {
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: artifact.title, url });
+          } else {
+            await navigator.clipboard?.writeText(url);
+            if (typeof window.showToast === 'function') {
+              window.showToast(t('sharePathCopied'));
+            }
+          }
+        } catch (error) {
+          if (error?.name !== 'AbortError') console.warn('[artifact] Unable to share path', error);
+        }
+      })();
     }
     if (action === 'max-all') setAllLevel('max');
     if (action === 'reset-all' && window.confirm(t('resetConfirm'))) setAllLevel(0);

@@ -304,9 +304,16 @@ initTheme();
 
 document.getElementById('shareCurrentViewBtn')?.addEventListener('click', async () => {
   const url = window.location.href;
+  const copy = (translations[currentLanguage] || translations.en || {});
   try {
-    if (navigator.share) await navigator.share({ title: document.title, url });
-    else await navigator.clipboard.writeText(url);
+    if (navigator.share) {
+      await navigator.share({ title: document.title, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      if (typeof window.showToast === 'function') {
+        window.showToast(copy.shareViewCopied || 'Link copied to clipboard');
+      }
+    }
   } catch (error) {
     if (error?.name !== 'AbortError') console.warn('[share-view] Unable to share link', error);
   }

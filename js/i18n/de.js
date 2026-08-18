@@ -3179,6 +3179,7 @@ const de = {
   edenPlaybookAltHonor: 'Grüne Bauwerks-Ehren-Spezialisierungsroute',
   edenPlaybookAltTiling: 'Grüne Feldlegen-Ehren-Spezialisierungsroute',
   edenPlaybookAltFort: 'Blaue Festungs-Freischaltungs-Spezialisierungsroute',
+  shareViewCopied: 'Link in die Zwischenablage kopiert',
 };
 
 export default de;

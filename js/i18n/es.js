@@ -3126,6 +3126,7 @@ const es = {
   edenPlaybookAltHonor: 'Ruta de especialización de Honor de estructuras Verde',
   edenPlaybookAltTiling: 'Ruta de especialización de Honor por colocación de casillas Verde',
   edenPlaybookAltFort: 'Ruta de especialización de desbloqueo de fortalezas Azul Abajo',
+  shareViewCopied: 'Enlace copiado al portapapeles',
 };
 
 export default es;

@@ -2844,6 +2844,7 @@ const pt = {
   edenPlaybookAltHonor: 'Rota de especialização de Honor de estruturas Verde',
   edenPlaybookAltTiling: 'Rota de especialização de Honor de tiles Verde',
   edenPlaybookAltFort: 'Rota de especialização de desbloqueio de fortalezas Azul Baixo',
+  shareViewCopied: 'Link copiado para a área de transferência',
 };
 
 export default pt;

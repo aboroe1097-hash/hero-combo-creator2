@@ -3136,6 +3136,7 @@ Object.assign(id, {
   edenPlaybookAltHonor: 'Rute spesialisasi Kehormatan struktur Hijau',
   edenPlaybookAltTiling: 'Rute spesialisasi Kehormatan tiling Hijau',
   edenPlaybookAltFort: 'Rute spesialisasi buka benteng Biru Bawah',
+  shareViewCopied: 'Tautan disalin ke papan klip',
 });
 
 export default id;

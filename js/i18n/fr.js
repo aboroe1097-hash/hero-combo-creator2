@@ -3309,6 +3309,7 @@ const fr = {
   edenPlaybookAltHonor: 'Route de spécialisation Vert d’Honneur par les structures',
   edenPlaybookAltTiling: 'Route de spécialisation Vert d’Honneur par la conquête de tuiles',
   edenPlaybookAltFort: 'Route de spécialisation Bleu Bas de déblocage de forteresses',
+  shareViewCopied: 'Lien copié dans le presse-papiers',
 };
 
 export default fr;
