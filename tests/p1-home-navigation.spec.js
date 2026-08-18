@@ -234,6 +234,35 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
 });
 
+test('playbook Week 1 loyalty tool link switches the hub to the loyalty subtab', async ({
+  page,
+}) => {
+  await openHome(page);
+
+  await page.locator('#tabEdenMap').click();
+  await expect(page.locator('#edenMapSection')).toBeVisible();
+  await page.locator('[data-eden-subtab="playbook"]').click();
+  await expect(page.locator('[data-playbook-flow="timeline"]')).toBeVisible({ timeout: 20000 });
+  await page.locator('[data-week="week-1"]').click();
+  const toolLink = page.locator('.thunder-tool-link');
+  await expect(toolLink).toBeVisible();
+  await expect(toolLink).toHaveAttribute('href', '#edenHub?subtab=loyalty');
+
+  // A real click through the hub UI used to leave a stale subtab intent on
+  // the body dataset, so the hash change below silently re-opened the
+  // playbook instead of the loyalty panel.
+  await toolLink.click();
+  await expect(page).toHaveURL(/#edenHub\?subtab=loyalty$/);
+  await expect(page.locator('[data-eden-subtab="loyalty"]')).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+  await expect(page.locator('[data-eden-subtab-panel="loyalty"] .loyalty-root')).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(page.locator('[data-eden-subtab-panel="playbook"]')).toBeHidden();
+});
+
 test('rendered Home tab scroll paths use auto under reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 641, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });

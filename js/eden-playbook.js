@@ -25,7 +25,9 @@ const WEEKS = Object.freeze([
     tone: 'blue',
     whyKey: 'edenPlaybookDay1Why',
     watchKey: 'edenPlaybookDay1Watch',
-    visuals: [3, 4, 5],
+    // The DrThunder route screenshots that pair with Day 1's build steps are
+    // the same two in-game references shared across Day 1, Day 2, and Week 1.
+    visuals: [10, 12],
     taskKeys: [
       'edenPlaybookDay1Task1',
       'edenPlaybookDay1Task2',
@@ -40,7 +42,7 @@ const WEEKS = Object.freeze([
     tone: 'gold',
     whyKey: 'edenPlaybookDay2Why',
     watchKey: 'edenPlaybookDay2Watch',
-    visuals: [6, 7],
+    visuals: [10, 12],
     taskKeys: ['edenPlaybookDay2Task1', 'edenPlaybookDay2Task2', 'edenPlaybookDay2Task3'],
   },
   {
@@ -55,7 +57,7 @@ const WEEKS = Object.freeze([
       labelKey: 'edenPlaybookWeek1ToolLabel',
       descriptionKey: 'edenPlaybookWeek1ToolDesc',
     },
-    visuals: [8, 9],
+    visuals: [10, 12],
     taskKeys: ['edenPlaybookWeek1Task1', 'edenPlaybookWeek1Task2', 'edenPlaybookWeek1Task3'],
   },
   {
@@ -65,7 +67,9 @@ const WEEKS = Object.freeze([
     tone: 'red',
     whyKey: 'edenPlaybookRoleWhy',
     watchKey: 'edenPlaybookRoleWatch',
-    visuals: [10, 11, 12],
+    // Role build routes live with their screenshots in Eden Tips & Guides, so
+    // the timeline entry carries no visuals of its own.
+    visuals: [],
     taskKeys: [
       'edenPlaybookRoleTask1',
       'edenPlaybookRoleTask2',
@@ -180,8 +184,16 @@ export function initEdenPlaybook(panel) {
       week: t(week.labelKey),
       index: '{index}',
     });
+    const phaseVisuals = images.length
+      ? `<div class="thunder-phase-visuals">${images
+          .map(
+            (visual, index) =>
+              `<figure><img src="${visual.src}" width="${visual.width}" height="${visual.height}" loading="lazy" decoding="async" alt="${escapeHtml(visual.alt)}" /><figcaption>${escapeHtml(visual.caption || captionFallback.replace('{index}', String(index + 1)))}</figcaption></figure>`
+          )
+          .join('')}</div>`
+      : '';
     root.querySelector('.thunder-focus').innerHTML =
-      `<article data-tone="${week.tone}" id="playbook-${week.id}"><p>${escapeHtml(t('edenPlaybookFocusKicker'))}</p><h3>${escapeHtml(t(week.titleKey))}</h3><div class="thunder-explain"><div><b>${escapeHtml(t('edenPlaybookWhyTitle'))}</b><span>${escapeHtml(t(week.whyKey))}</span></div><div><b>${escapeHtml(t('edenPlaybookWatchTitle'))}</b><span>${escapeHtml(t(week.watchKey))}</span></div></div><ol>${week.taskKeys.map((taskKey) => `<li><button type="button" aria-pressed="false"><span>✓</span>${escapeHtml(t(taskKey))}</button></li>`).join('')}</ol>${toolLink}<div class="thunder-phase-visuals">${images.map((visual, index) => `<figure><img src="${visual.src}" width="${visual.width}" height="${visual.height}" loading="lazy" decoding="async" alt="${escapeHtml(visual.alt)}" /><figcaption>${escapeHtml(visual.caption || captionFallback.replace('{index}', String(index + 1)))}</figcaption></figure>`).join('')}</div></article>`;
+      `<article data-tone="${week.tone}" id="playbook-${week.id}"><p>${escapeHtml(t('edenPlaybookFocusKicker'))}</p><h3>${escapeHtml(t(week.titleKey))}</h3><div class="thunder-explain"><div><b>${escapeHtml(t('edenPlaybookWhyTitle'))}</b><span>${escapeHtml(t(week.whyKey))}</span></div><div><b>${escapeHtml(t('edenPlaybookWatchTitle'))}</b><span>${escapeHtml(t(week.watchKey))}</span></div></div><ol>${week.taskKeys.map((taskKey) => `<li><button type="button" aria-pressed="false"><span>✓</span>${escapeHtml(t(taskKey))}</button></li>`).join('')}</ol>${toolLink}${phaseVisuals}</article>`;
   };
   root.addEventListener('click', (event) => {
     const week = event.target.closest('[data-week]');
