@@ -45,15 +45,9 @@
   // few weeks a season rather than every day.
   const desktopPrimaryIds = [...hubIds, 'tabMaterials', 'tabOcrDashboard'];
   const wideDesktopPrimaryIds = [...desktopPrimaryIds, 'tabStrife', 'tabYouTube'];
-  // Four slots, and the first must be the tab the app actually opens on —
-  // Heroes & Combos was missing here entirely, so the landing tool had no rail
-  // entry on phones.
-  const mobilePrimaryIds = [
-    'tabHeroesCombos',
-    'tabResearchTowers',
-    'tabMaterials',
-    'tabOcrDashboard',
-  ];
+  // Phones get three stable destinations with enough room for readable labels.
+  // Each is a hub, so secondary tools remain organized inside those destinations.
+  const mobilePrimaryIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
     ['tabHeroesCombos', 'heroesCombos'],
@@ -81,6 +75,8 @@
     ['research', 'research'],
     ['specialization', 'towers'],
     ['towers', 'towers'],
+    ['artifact', 'artifact'],
+    ['artifacts', 'artifact'],
   ]);
   // Manual Builder, Combo Generator and the Hero Atlas moved into the Heroes &
   // Combos Hub; all four hashes stay valid deep links.

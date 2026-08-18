@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_AR = Object.freeze({
-  title: 'أبراج التخصص v2',
+  title: 'أبراج التخصص',
   subtitle: 'أعد إنشاء كل مسار تخصص، وتتبع الميداليات، وراجع مكافآته النشطة.',
   betaBadge: 'تجريبي',
   back: 'رجوع',
@@ -149,8 +149,8 @@ export const SPECIALIZATION_TOWERS_V2_AR = Object.freeze({
   cancel: 'إلغاء',
   close: 'إغلاق',
   importTitle: 'استيراد تقدم الأبراج',
-  importInstructions: 'اختر ملف تقدم أبراج التخصص v2 لاستبدال هذا الإعداد.',
-  importInvalid: 'هذا الملف ليس ملفًا صالحًا لتقدم أبراج التخصص v2.',
+  importInstructions: 'اختر ملف تقدم أبراج التخصص لاستبدال هذا الإعداد.',
+  importInvalid: 'هذا الملف ليس ملفًا صالحًا لتقدم أبراج التخصص.',
   importSuccess: 'تم استيراد تقدم الأبراج.',
   exportSuccess: 'تم تصدير تقدم الأبراج.',
   resetSuccess: 'تمت إعادة تعيين تقدم جميع الأبراج.',

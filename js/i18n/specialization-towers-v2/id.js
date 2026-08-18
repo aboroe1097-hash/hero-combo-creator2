@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_ID = Object.freeze({
-  title: 'Menara Spesialisasi v2',
+  title: 'Menara Spesialisasi',
   subtitle: 'Susun kembali setiap jalur spesialisasi, lacak medali, dan tinjau bonus aktifnya.',
   betaBadge: 'Beta',
   back: 'Kembali',
@@ -154,8 +154,8 @@ export const SPECIALIZATION_TOWERS_V2_ID = Object.freeze({
   cancel: 'Batal',
   close: 'Tutup',
   importTitle: 'Impor progres menara',
-  importInstructions: 'Pilih file progres Menara Spesialisasi v2 untuk mengganti pengaturan ini.',
-  importInvalid: 'File ini bukan progres Menara Spesialisasi v2 yang valid.',
+  importInstructions: 'Pilih file progres Menara Spesialisasi untuk mengganti pengaturan ini.',
+  importInvalid: 'File ini bukan progres Menara Spesialisasi yang valid.',
   importSuccess: 'Progres menara berhasil diimpor.',
   exportSuccess: 'Progres menara berhasil diekspor.',
   resetSuccess: 'Semua progres menara telah diatur ulang.',

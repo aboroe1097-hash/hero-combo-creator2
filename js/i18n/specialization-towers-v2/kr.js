@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_KR = Object.freeze({
-  title: '전문화 타워 v2',
+  title: '전문화 타워',
   subtitle: '각 전문화 경로를 재현하고 메달을 추적하며 활성 보너스를 확인하세요.',
   betaBadge: '베타',
   back: '뒤로',
@@ -151,8 +151,8 @@ export const SPECIALIZATION_TOWERS_V2_KR = Object.freeze({
   cancel: '취소',
   close: '닫기',
   importTitle: '타워 진행도 가져오기',
-  importInstructions: '현재 설정을 교체할 전문화 타워 v2 진행도 파일을 선택하세요.',
-  importInvalid: '올바른 전문화 타워 v2 진행도 파일이 아닙니다.',
+  importInstructions: '현재 설정을 교체할 전문화 타워 진행도 파일을 선택하세요.',
+  importInvalid: '올바른 전문화 타워 진행도 파일이 아닙니다.',
   importSuccess: '타워 진행도를 가져왔습니다.',
   exportSuccess: '타워 진행도를 내보냈습니다.',
   resetSuccess: '모든 타워 진행도를 초기화했습니다.',

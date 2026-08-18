@@ -40,6 +40,13 @@ const DESTS = [
     kw: 'tech research academy tree buffs nodes',
   },
   {
+    key: 'tabArtifact',
+    name: 'artifact',
+    kind: 'tab',
+    fallback: 'Artifacts (Redemption Grail)',
+    kw: 'artifact artifacts redemption grail rge as soulstones sacred light flame holy enhanced radiance stats',
+  },
+  {
     key: 'tabSpecialization',
     aliasesKey: 'tabSpecializationTowersAliases',
     name: 'specialization',

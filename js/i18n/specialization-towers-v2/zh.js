@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_ZH = Object.freeze({
-  title: '专精塔 v2',
+  title: '专精塔',
   subtitle: '还原每条专精路线，记录勋章并查看已生效的加成。',
   betaBadge: '测试版',
   back: '返回',
@@ -144,8 +144,8 @@ export const SPECIALIZATION_TOWERS_V2_ZH = Object.freeze({
   cancel: '取消',
   close: '关闭',
   importTitle: '导入专精塔进度',
-  importInstructions: '选择一个专精塔 v2 进度文件以替换当前设置。',
-  importInvalid: '此文件不是有效的专精塔 v2 进度文件。',
+  importInstructions: '选择一个专精塔 进度文件以替换当前设置。',
+  importInvalid: '此文件不是有效的专精塔 进度文件。',
   importSuccess: '已导入专精塔进度。',
   exportSuccess: '已导出专精塔进度。',
   resetSuccess: '已重置所有专精塔进度。',

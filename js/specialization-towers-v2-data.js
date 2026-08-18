@@ -1,4 +1,9 @@
 import { SPECIALIZATION_PLANNER_ASSETS } from './specialization-towers-v2-assets.js';
+export {
+  SPECIALIZATION_MEDAL_EVIDENCE_SOURCE,
+  SPECIALIZATION_TROOP_MEDAL_EVIDENCE,
+  getSpecializationMedalEvidence,
+} from './specialization-towers-medal-evidence.js';
 
 /**
  * Canonical Unit Specialization tower data.

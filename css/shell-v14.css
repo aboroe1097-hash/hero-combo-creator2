@@ -1540,7 +1540,7 @@ body.shell-more-open #app .tool-nav-inner {
 
   #app .tool-nav-inner {
     display: grid !important;
-    grid-template-columns: minmax(0, 4fr) minmax(62px, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 2px !important;
     width: min(100%, 560px);
     min-height: calc(68px + var(--ff-safe-bottom));
@@ -1562,7 +1562,7 @@ body.shell-more-open #app .tool-nav-inner {
 
   #app #tabNavScroll {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 2px !important;
     width: 100% !important;
     padding: 0 !important;
@@ -1628,7 +1628,7 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .shell-more-button {
-    display: inline-flex !important;
+    display: none !important;
   }
 
   #app .shell-more-panel {

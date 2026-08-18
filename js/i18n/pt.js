@@ -452,6 +452,7 @@ const pt = {
   tabEdenX1: 'Ranking Eden X1',
   tabEdenX1Badge: 'Público',
   tabResearch: 'Pesquisa',
+  tabArtifact: 'Artefatos',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

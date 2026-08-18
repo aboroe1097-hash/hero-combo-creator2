@@ -179,7 +179,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260817_203956').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260817_235235').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -201,7 +201,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260817_203956').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260817_235235').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -212,7 +212,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260817_203956').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260817_235235').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -348,6 +348,8 @@ document.addEventListener('click', (e) => {
 const HUB_TAB_ALIASES = new Map([
   ['research', 'research'],
   ['specialization', 'towers'],
+  ['artifact', 'artifact'],
+  ['artifacts', 'artifact'],
 ]);
 
 // The same arrangement for the Heroes & Combos Hub.
@@ -916,6 +918,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _heroesTabBooting = false;
   let _researchReady = false;
   let _researchBooting = false;
+  let _artifactReady = false;
+  let _artifactBooting = false;
   let _materialsReady = false;
   let _materialsBooting = false;
   let _strifeReady = false;
@@ -1043,7 +1047,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // short window where a real click on Map was silently dropped.
         import('./eden-hub.js?v=20260813_061728')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260817_203956'))
+          .then(() => import('./eden-map.js?v=20260817_235235'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1073,7 +1077,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260817_203956')
+      import('./app-hero-atlas.js?v=20260817_235235')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1106,6 +1110,32 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
             const t = translations[currentLanguage] || translations.en;
             window.showToast(
               t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.',
+              'error',
+              4000
+            );
+          }
+        });
+    }
+    if (tabName === 'artifact' && !_artifactReady) {
+      if (_artifactBooting) return;
+      _artifactBooting = true;
+      import('./app-artifact.js?v=20260817_235235')
+        .then(async (mod) => {
+          await mod.initArtifactCalculator();
+          _artifactReady = true;
+        })
+        .catch((err) => {
+          _artifactBooting = false;
+          console.error('Artifact calculator failed to load', err);
+          if (isDynamicImportLoadFailure(err)) {
+            recoverFromStaleAssetGraph(err);
+            return;
+          }
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Artifact') ||
+                'Artifact Calculator failed to load.',
               'error',
               4000
             );
@@ -1145,7 +1175,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260817_203956')
+      import('./app-strife.js?v=20260817_235235')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1198,7 +1228,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260817_203956')
+      import('./youtube-v14.js?v=20260817_235235')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1283,7 +1313,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   // so both keep the lazy-import, toast and retry behaviour they always had.
   function onHubSubtabShown(subtab) {
     document.body.classList.toggle('tab-specialization-active', subtab === 'towers');
-    onTabActivated(subtab === 'research' ? 'research' : 'specialization');
+    if (subtab === 'artifact') onTabActivated('artifact');
+    else if (subtab === 'research') onTabActivated('research');
+    else onTabActivated('specialization');
   }
 
   function applyResearchTowersIntent() {
@@ -1379,7 +1411,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260817_203956')
+      import('./app-hero-atlas.js?v=20260817_235235')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */

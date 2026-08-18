@@ -436,6 +436,7 @@ const ru = {
   tabEdenX1: 'Рейтинг Eden X1',
   tabEdenX1Badge: 'Публично',
   tabResearch: 'Исследования',
+  tabArtifact: 'Артефакты',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

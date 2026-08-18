@@ -433,6 +433,7 @@ const ar = {
   tabEdenX1: 'تصنيفات Eden X1',
   tabEdenX1Badge: 'عام',
   tabResearch: 'الأبحاث',
+  tabArtifact: 'القطع الأثرية',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

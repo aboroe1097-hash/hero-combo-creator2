@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_EN = Object.freeze({
-  title: 'Specialization Towers v2',
+  title: 'Specialization Towers',
   subtitle: 'Recreate each specialization path, track medals, and review its active bonuses.',
   betaBadge: 'Beta',
   back: 'Back',
@@ -148,8 +148,8 @@ export const SPECIALIZATION_TOWERS_V2_EN = Object.freeze({
   cancel: 'Cancel',
   close: 'Close',
   importTitle: 'Import tower progress',
-  importInstructions: 'Choose a Specialization Towers v2 progress file to replace this setup.',
-  importInvalid: 'This file is not valid Specialization Towers v2 progress.',
+  importInstructions: 'Choose a Specialization Towers progress file to replace this setup.',
+  importInvalid: 'This file is not valid Specialization Towers progress.',
   importSuccess: 'Tower progress imported.',
   exportSuccess: 'Tower progress exported.',
   resetSuccess: 'All tower progress reset.',

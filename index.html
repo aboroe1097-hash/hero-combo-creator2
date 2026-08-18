@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260817_203956"></script>
-    <script src="js/theme-prepaint.js?v=20260817_203956"></script>
+    <script src="js/maintenance-config.js?v=20260817_235235"></script>
+    <script src="js/theme-prepaint.js?v=20260817_235235"></script>
     <style>
       html[data-initial-tab-pending='allStarBoh'] #allStarBohSection {
         display: block !important;
@@ -113,16 +113,16 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260817_203956" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/app.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/components.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260817_203956" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260817_203956" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260817_203956" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260817_235235" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/app.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/components.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260817_235235" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260817_235235" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260817_235235" />
     <script type="importmap">
       {
         "imports": {
@@ -134,7 +134,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260817_203956"></script>
+    <script src="js/admin-auth-config.js?v=20260817_235235"></script>
   </head>
   <body>
     <a
@@ -441,7 +441,6 @@
               <div
                 class="tab-item tab-badge-wrap"
                 data-shell-desktop-primary
-                data-shell-mobile-primary
               >
                 <button id="tabMaterials" class="tab-pill tab-pill-inactive">
                   <svg
@@ -464,7 +463,12 @@
                   ><span id="tabMaterialsLabel">DM Materials</span></button
                 ><span class="tab-badge tab-badge-beta">BETA</span>
               </div>
-              <div class="tab-item tab-badge-wrap" data-shell-hub data-shell-desktop-primary>
+              <div
+                class="tab-item tab-badge-wrap"
+                data-shell-hub
+                data-shell-desktop-primary
+                data-shell-mobile-primary
+              >
                 <button id="tabEdenMap" class="tab-pill tab-pill-inactive" data-i18n="tabEdenMap">
                   <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path
@@ -550,7 +554,6 @@
               <div
                 class="tab-item tab-badge-wrap seasonal-admin-wrap"
                 data-shell-desktop-primary
-                data-shell-mobile-primary
               >
                 <a
                   id="tabOcrDashboard"
@@ -1166,7 +1169,7 @@
         </section>
         </section>
 
-        <!-- Research & Towers Hub. Two tools that answer the same question —
+        <!-- Research & Towers Hub. Three tools that answer the same question —
              "what do I fund next?" — so they live behind one tab with the
              Towers planner as the landing sub-tab. #researchSection and
              #specializationSection keep their ids so every existing deep link,
@@ -1175,12 +1178,14 @@
           id="researchTowersSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-lg"
         >
-          <div class="vts-hub-subtabs" role="tablist" aria-label="Research &amp; Towers Hub">
+          <div class="vts-hub-subtabs vts-hub-subtabs--3" role="tablist" aria-label="Research &amp; Towers Hub">
             <button
+              id="researchTowersTabTowers"
               type="button"
               class="vts-hub-subtab active"
               role="tab"
               aria-selected="true"
+              aria-controls="specializationSection"
               data-hub-subtab="towers"
               data-i18n="tabTowersSpecialization"
             >
@@ -1193,10 +1198,12 @@
               >Towers Specialization
             </button>
             <button
+              id="researchTowersTabResearch"
               type="button"
               class="vts-hub-subtab"
               role="tab"
               aria-selected="false"
+              aria-controls="researchSection"
               data-hub-subtab="research"
               data-i18n="tabResearch"
             >
@@ -1208,6 +1215,24 @@
                 /></svg
               >Research
             </button>
+            <button
+              id="researchTowersTabArtifact"
+              type="button"
+              class="vts-hub-subtab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="artifactSection"
+              data-hub-subtab="artifact"
+              data-i18n="tabArtifact"
+            >
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                /></svg
+              >Artifacts
+            </button>
           </div>
 
           <section
@@ -1215,6 +1240,7 @@
             class="vts-hub-subtab-panel active"
             data-hub-subtab-panel="towers"
             role="tabpanel"
+            aria-labelledby="researchTowersTabTowers"
           >
             <div class="specialization-loading tab-loading" aria-busy="true">
               <div class="spinner"></div>
@@ -1223,7 +1249,7 @@
             <div id="specializationToolRoot" class="specialization-tool-root"></div>
           </section>
 
-        <section id="researchSection" class="vts-hub-subtab-panel" data-hub-subtab-panel="research" role="tabpanel" hidden>
+        <section id="researchSection" class="vts-hub-subtab-panel" data-hub-subtab-panel="research" role="tabpanel" aria-labelledby="researchTowersTabResearch" hidden>
           <div class="research-header">
             <div>
               <h2 id="researchTitle" class="research-title" data-i18n="researchTitle">
@@ -1325,6 +1351,21 @@
             aria-live="polite"
           ></div>
           </section>
+
+          <section
+            id="artifactSection"
+            class="vts-hub-subtab-panel"
+            data-hub-subtab-panel="artifact"
+            role="tabpanel"
+            aria-labelledby="researchTowersTabArtifact"
+            hidden
+          >
+            <div class="artifact-loading tab-loading" aria-busy="true">
+              <div class="spinner"></div>
+              <span data-i18n="loadingEllipsis">Loading…</span>
+            </div>
+            <div id="artifactToolRoot" class="artifact-tool-root"></div>
+          </section>
         </section>
 
         <section id="materialsSection" class="tab-panel hidden animate-fade-in tab-panel-pad-lg">
@@ -1339,7 +1380,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260817_203956"
+          data-tab-src="tabs/eden-map.html?v=20260817_235235"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1358,7 +1399,7 @@
         <section
           id="allStarBohSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/all-star-boh.html?v=20260817_203956"
+          data-tab-src="tabs/all-star-boh.html?v=20260817_235235"
         >
           <div class="tab-loading" role="status" aria-live="polite">
             <div class="spinner"></div>
@@ -1656,6 +1697,7 @@
               data-i18n="tabTowersSpecialization"
               >Towers Specialization</a
             >
+            <a href="#artifact" data-footer-tab="artifact" data-i18n="tabArtifact">Artifacts</a>
             <a href="#materials" data-footer-tab="materials" data-i18n="tabMaterials"
               >DM Materials</a
             >
@@ -1672,7 +1714,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v15.0.4</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v15.0.5</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1716,12 +1758,12 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260817_203956"></script>
-    <script type="module" src="js/app.js?v=20260817_203956"></script>
-    <script type="module" src="js/command-palette.js?v=20260817_203956"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260817_203956"></script>
-    <script src="js/index-page-enhancements.js?v=20260817_203956"></script>
-    <script src="js/shell-v14.js?v=20260817_203956"></script>
+    <script src="js/loader-v14.js?v=20260817_235235"></script>
+    <script type="module" src="js/app.js?v=20260817_235235"></script>
+    <script type="module" src="js/command-palette.js?v=20260817_235235"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260817_235235"></script>
+    <script src="js/index-page-enhancements.js?v=20260817_235235"></script>
+    <script src="js/shell-v14.js?v=20260817_235235"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

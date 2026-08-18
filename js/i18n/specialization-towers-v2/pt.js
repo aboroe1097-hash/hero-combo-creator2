@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_PT = Object.freeze({
-  title: 'Torres de especialização v2',
+  title: 'Torres de especialização',
   subtitle: 'Recrie cada caminho de especialização, acompanhe medalhas e confira os bônus ativos.',
   betaBadge: 'Beta',
   back: 'Voltar',
@@ -157,8 +157,8 @@ export const SPECIALIZATION_TOWERS_V2_PT = Object.freeze({
   close: 'Fechar',
   importTitle: 'Importar progresso das torres',
   importInstructions:
-    'Escolha um arquivo de progresso das Torres de especialização v2 para substituir esta configuração.',
-  importInvalid: 'Este arquivo não contém um progresso válido das Torres de especialização v2.',
+    'Escolha um arquivo de progresso das Torres de especialização para substituir esta configuração.',
+  importInvalid: 'Este arquivo não contém um progresso válido das Torres de especialização.',
   importSuccess: 'Progresso das torres importado.',
   exportSuccess: 'Progresso das torres exportado.',
   resetSuccess: 'Todo o progresso das torres foi redefinido.',

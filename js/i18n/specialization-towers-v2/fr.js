@@ -1,5 +1,5 @@
 export const SPECIALIZATION_TOWERS_V2_FR = Object.freeze({
-  title: 'Tours de spécialisation v2',
+  title: 'Tours de spécialisation',
   subtitle:
     'Recréez chaque parcours de spécialisation, suivez les médailles et consultez ses bonus actifs.',
   betaBadge: 'Bêta',
@@ -160,9 +160,9 @@ export const SPECIALIZATION_TOWERS_V2_FR = Object.freeze({
   close: 'Fermer',
   importTitle: 'Importer la progression des tours',
   importInstructions:
-    'Choisissez un fichier de progression de Tours de spécialisation v2 pour remplacer cette configuration.',
+    'Choisissez un fichier de progression de Tours de spécialisation pour remplacer cette configuration.',
   importInvalid:
-    'Ce fichier ne contient pas de progression valide pour Tours de spécialisation v2.',
+    'Ce fichier ne contient pas de progression valide pour Tours de spécialisation.',
   importSuccess: 'Progression des tours importée.',
   exportSuccess: 'Progression des tours exportée.',
   resetSuccess: 'Toute la progression des tours a été réinitialisée.',

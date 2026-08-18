@@ -439,6 +439,7 @@ const es = {
   tabEdenX1: 'Clasificación Eden X1',
   tabEdenX1Badge: 'Público',
   tabResearch: 'Investigación',
+  tabArtifact: 'Artefactos',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

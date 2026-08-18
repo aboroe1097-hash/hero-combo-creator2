@@ -1,0 +1,371 @@
+import { queueAccountSync } from './account-sync.js';
+import {
+  ARTIFACT_DATABASE,
+  ARTIFACT_PROGRESS_STORAGE_KEY,
+  calculateArtifactMetrics,
+  getAllArtifactNodes,
+  getArtifactNodeById,
+  normalizeArtifactProgress,
+  parseArtifactProgress,
+} from './artifact-db.js';
+import { artifactText, resolveArtifactLocale } from './i18n/artifact.js';
+import { formatLocaleNumber } from './locale-format.js';
+import { currentLanguage } from './state.js';
+import { escapeHtml } from './utils.js';
+import '../css/artifact-v14.css';
+
+const artifact = ARTIFACT_DATABASE[0];
+const RESOURCE_ICONS = Object.freeze({
+  RGE: 'assets/artifact/redemption-grail-emblem.png',
+  AS: 'assets/artifact/artifact-soulstone.png',
+});
+
+// Positions mirror the in-game Redemption Grail tree shown in the source sheet.
+// Parents describe visual paths only; the source does not publish prerequisite rules.
+const NODE_LAYOUT = Object.freeze({
+  rg_1_amp_a: { x: 12, y: 94, parents: ['rg_1_1a'] },
+  rg_1_0: { x: 50, y: 91 },
+  rg_1_amp_b: { x: 88, y: 94, parents: ['rg_1_1b'] },
+  rg_1_1a: { x: 38, y: 86, parents: ['rg_1_0'] },
+  rg_1_1b: { x: 62, y: 86, parents: ['rg_1_0'] },
+  rg_1_2a: { x: 29, y: 77, parents: ['rg_1_1a'] },
+  rg_1_2b: { x: 71, y: 77, parents: ['rg_1_1b'] },
+  rg_1_3a: { x: 38, y: 67, parents: ['rg_1_2a'] },
+  rg_1_3b: { x: 62, y: 67, parents: ['rg_1_2b'] },
+  rg_2_0: { x: 50, y: 61, parents: ['rg_1_3a', 'rg_1_3b'] },
+  rg_2_1a: { x: 39, y: 54, parents: ['rg_2_0'] },
+  rg_2_1b: { x: 61, y: 54, parents: ['rg_2_0'] },
+  rg_2_amp_a1: { x: 44, y: 48, parents: ['rg_2_1a'] },
+  rg_2_amp_b1: { x: 56, y: 48, parents: ['rg_2_1b'] },
+  rg_2_2a: { x: 27, y: 48, parents: ['rg_2_1a'] },
+  rg_2_2b: { x: 73, y: 48, parents: ['rg_2_1b'] },
+  rg_2_amp_a2: { x: 33, y: 41, parents: ['rg_2_2a'] },
+  rg_2_amp_b2: { x: 67, y: 41, parents: ['rg_2_2b'] },
+  rg_2_3a: { x: 39, y: 35, parents: ['rg_2_amp_a2'] },
+  rg_2_3b: { x: 61, y: 35, parents: ['rg_2_amp_b2'] },
+  rg_2_4a: { x: 16, y: 30, parents: ['rg_2_3a'] },
+  rg_2_4b: { x: 84, y: 30, parents: ['rg_2_3b'] },
+  rg_2_5a: { x: 7, y: 23, parents: ['rg_2_4a'] },
+  rg_2_5b: { x: 93, y: 23, parents: ['rg_2_4b'] },
+  rg_3_0a: { x: 6, y: 12, parents: ['rg_2_5a'] },
+  rg_3_0b: { x: 94, y: 12, parents: ['rg_2_5b'] },
+  rg_3_1a: { x: 19, y: 18, parents: ['rg_3_0a'] },
+  rg_3_1b: { x: 81, y: 18, parents: ['rg_3_0b'] },
+  rg_3_amp_a1: { x: 22, y: 25, parents: ['rg_3_1a'] },
+  rg_3_amp_b1: { x: 78, y: 25, parents: ['rg_3_1b'] },
+  rg_3_2a: { x: 29, y: 12, parents: ['rg_3_1a'] },
+  rg_3_2b: { x: 71, y: 12, parents: ['rg_3_1b'] },
+  rg_3_3a: { x: 37, y: 18, parents: ['rg_3_2a'] },
+  rg_3_3b: { x: 63, y: 18, parents: ['rg_3_2b'] },
+  rg_3_amp_a2: { x: 42, y: 26, parents: ['rg_3_3a'] },
+  rg_3_amp_b2: { x: 58, y: 26, parents: ['rg_3_3b'] },
+  rg_3_4a: { x: 43, y: 11, parents: ['rg_3_amp_a2'] },
+  rg_3_4b: { x: 57, y: 11, parents: ['rg_3_amp_b2'] },
+  rg_3_5ab: { x: 50, y: 21, parents: ['rg_3_4a', 'rg_3_4b'] },
+  rg_4_0: { x: 50, y: 31, parents: ['rg_3_5ab'] },
+});
+
+let nodeLevels = {};
+let searchQuery = '';
+let selectedNodeId = 'rg_1_0';
+let initialized = false;
+let eventsBound = false;
+let languageBound = false;
+
+function locale() {
+  return resolveArtifactLocale(currentLanguage);
+}
+
+function t(key, values = {}) {
+  return artifactText(key, values, locale());
+}
+
+function fmt(value) {
+  return formatLocaleNumber(value, locale(), { maximumFractionDigits: 1 });
+}
+
+function getRoot() {
+  return document.getElementById('artifactToolRoot');
+}
+
+function loadProgress() {
+  try {
+    nodeLevels = parseArtifactProgress(localStorage.getItem(ARTIFACT_PROGRESS_STORAGE_KEY) || '');
+  } catch {
+    nodeLevels = {};
+  }
+}
+
+function saveProgress() {
+  nodeLevels = normalizeArtifactProgress(nodeLevels);
+  try {
+    localStorage.setItem(ARTIFACT_PROGRESS_STORAGE_KEY, JSON.stringify(nodeLevels));
+    queueAccountSync('artifact-progress');
+  } catch {
+    // The tracker remains usable for this session when storage is unavailable.
+  }
+}
+
+function setNodeLevel(nodeId, rawLevel, { render: shouldRender = true, save = true } = {}) {
+  const node = getArtifactNodeById(nodeId, artifact);
+  if (!node) return;
+  const level = Math.max(0, Math.min(node.maxLevel, Math.trunc(Number(rawLevel)) || 0));
+  nodeLevels = { ...nodeLevels, [nodeId]: level };
+  if (save) saveProgress();
+  if (shouldRender) render();
+}
+
+function setTierLevel(tierNumber) {
+  const tier = artifact.tiers.find((entry) => entry.tier === Number(tierNumber));
+  if (!tier) return;
+  nodeLevels = { ...nodeLevels };
+  tier.nodes.forEach((node) => {
+    nodeLevels[node.id] = node.maxLevel;
+  });
+  saveProgress();
+  render();
+}
+
+function setAllLevel(level) {
+  nodeLevels = {};
+  if (level === 'max') {
+    getAllArtifactNodes(artifact).forEach((node) => {
+      nodeLevels[node.id] = node.maxLevel;
+    });
+  }
+  saveProgress();
+  render();
+}
+
+function resourceIcon(resource, className = '') {
+  return `<img class="artifact-resource-icon ${className}" src="${RESOURCE_ICONS[resource]}" alt="" aria-hidden="true" />`;
+}
+
+function metricCard(kind, title, remaining, invested, total) {
+  return `<article class="artifact-card artifact-card-${kind.toLowerCase()}">
+    ${resourceIcon(kind)}
+    <div><header><h2>${escapeHtml(title)}</h2><span translate="no">${kind}</span></header>
+    <p class="artifact-card-total"><strong>${fmt(remaining)}</strong> ${escapeHtml(t('remaining'))}</p>
+    <p>${escapeHtml(t('invested'))}: ${fmt(invested)} / ${fmt(total)}</p></div>
+  </article>`;
+}
+
+function permanentAttributes() {
+  return getAllArtifactNodes(artifact)
+    .filter((node) => node.permanentAttribute)
+    .map((node) => {
+      const active = Number(nodeLevels[node.id]) >= node.maxLevel;
+      return `<li class="artifact-permanent-item${active ? ' is-active' : ''}">
+        <span aria-hidden="true">${active ? '★' : '◇'}</span>
+        <span><strong>${escapeHtml(node.name)}</strong><small>${escapeHtml(node.permanentAttribute)}</small></span>
+        <em>${escapeHtml(active ? t('active') : t('requiresLevel', { level: node.maxLevel }))}</em>
+      </li>`;
+    })
+    .join('');
+}
+
+function matchesSearch(node) {
+  const query = searchQuery.trim().toLocaleLowerCase(locale());
+  if (!query) return true;
+  return [node.name, node.code, node.buff, node.permanentAttribute]
+    .filter(Boolean)
+    .some((value) => String(value).toLocaleLowerCase(locale()).includes(query));
+}
+
+function connectorMarkup() {
+  return Object.entries(NODE_LAYOUT)
+    .flatMap(([, layout]) =>
+      (layout.parents || []).map((parentId) => {
+        const parent = NODE_LAYOUT[parentId];
+        if (!parent) return '';
+        return `<line x1="${parent.x}" y1="${parent.y}" x2="${layout.x}" y2="${layout.y}" />`;
+      })
+    )
+    .join('');
+}
+
+function treeNode(node) {
+  const layout = NODE_LAYOUT[node.id];
+  if (!layout) return '';
+  const current = Number(nodeLevels[node.id]) || 0;
+  const maxed = current >= node.maxLevel;
+  const selected = node.id === selectedNodeId;
+  const dimmed = !matchesSearch(node);
+  const displayCode = node.code.includes('amp') ? '−' : node.code.replace('.0', '');
+  const label = `${node.name}, ${t('level', { current, max: node.maxLevel })}`;
+  return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${dimmed ? ' is-dimmed' : ''}"
+    style="--node-x:${layout.x}%;--node-y:${layout.y}%" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
+      <span class="artifact-tree-code" translate="no">${escapeHtml(displayCode)}</span>
+      <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>
+    </button>`;
+}
+
+function selectedNodeMarkup() {
+  const node = getArtifactNodeById(selectedNodeId, artifact) || getAllArtifactNodes(artifact)[0];
+  const current = Math.max(0, Math.min(node.maxLevel, Number(nodeLevels[node.id]) || 0));
+  const maxed = current === node.maxLevel;
+  const remaining = node.costs.slice(current).reduce((sum, cost) => sum + cost, 0);
+  const next = node.costs[current] || 0;
+  const levelLabel = t('level', { current, max: node.maxLevel });
+  return `<article class="artifact-node-detail" data-artifact-node="${escapeHtml(node.id)}">
+    <header>
+      <div><span class="artifact-node-code" translate="no">${escapeHtml(node.code.includes('amp') ? '−' : node.code.replace('.0', ''))}</span><h2>${escapeHtml(node.name)}</h2></div>
+      <span class="artifact-detail-resource">${resourceIcon(node.resource)}<b translate="no">${node.resource}</b></span>
+    </header>
+    <p class="artifact-node-buff">${escapeHtml(node.buff)}</p>
+    ${node.permanentAttribute ? `<p class="artifact-permanent"><strong>${escapeHtml(t('permanent'))}:</strong> ${escapeHtml(node.permanentAttribute)}</p>` : ''}
+    <div class="artifact-level-line">
+      <strong data-artifact-level-label>${escapeHtml(levelLabel)}</strong>
+      <span>
+        <button type="button" data-artifact-action="decrease" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−</button>
+        <button type="button" data-artifact-action="increase" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('increaseLevel', { name: node.name }))}" ${maxed ? 'disabled' : ''}>+</button>
+        <button type="button" class="artifact-max-button" data-artifact-action="max-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed ? 'disabled' : ''}>MAX</button>
+      </span>
+    </div>
+    <label class="sr-only" for="artifact-level-${escapeHtml(node.id)}">${escapeHtml(levelLabel)}</label>
+    <input id="artifact-level-${escapeHtml(node.id)}" type="range" min="0" max="${node.maxLevel}" value="${current}" data-artifact-slider="${escapeHtml(node.id)}" aria-valuetext="${escapeHtml(levelLabel)}" />
+    <div class="artifact-cost-line">
+      <span>${resourceIcon(node.resource, 'artifact-cost-icon')}${escapeHtml(maxed ? t('maxReached') : t('nextLevel', { cost: fmt(next), resource: node.resource }))}</span>
+      <span>${resourceIcon(node.resource, 'artifact-cost-icon')}${escapeHtml(maxed ? '100%' : t('toMax', { cost: fmt(remaining), resource: node.resource }))}</span>
+    </div>
+  </article>`;
+}
+
+function render() {
+  const root = getRoot();
+  if (!root) return;
+  const previousTreeScroll = root.querySelector('.artifact-tree-scroll')?.scrollLeft || 0;
+  const metrics = calculateArtifactMetrics(artifact, nodeLevels);
+  const completion = metrics.completionPercent.toFixed(1);
+  const nodes = getAllArtifactNodes(artifact);
+
+  root.dir = locale() === 'ar' ? 'rtl' : 'ltr';
+  root.innerHTML = `<div class="artifact-workspace">
+    <header class="artifact-hero">
+      <div><p class="artifact-kicker">${escapeHtml(t('badge'))}</p><h1>${escapeHtml(artifact.title)}</h1><p>${escapeHtml(artifact.description)}</p></div>
+      <div class="artifact-primary-actions">
+        <button type="button" data-artifact-action="max-all">${escapeHtml(t('maxAll'))}</button>
+        <button type="button" class="artifact-danger" data-artifact-action="reset-all">${escapeHtml(t('resetAll'))}</button>
+      </div>
+    </header>
+
+    <section class="artifact-metrics" aria-label="${escapeHtml(t('completion'))}">
+      ${metricCard('RGE', t('emblems'), metrics.remainingRGE, metrics.investedRGE, metrics.totalRGE)}
+      ${metricCard('AS', t('soulstones'), metrics.remainingAS, metrics.investedAS, metrics.totalAS)}
+      <article class="artifact-card artifact-card-progress"><div>
+        <header><h2>${escapeHtml(t('completion'))}</h2><span>${metrics.maxedNodes}/${metrics.totalNodes} ${escapeHtml(t('nodes'))}</span></header>
+        <p class="artifact-card-total"><strong>${completion}%</strong></p>
+        <div class="artifact-progress" role="progressbar" aria-label="${escapeHtml(t('completion'))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${completion}"><span style="width:${completion}%"></span></div>
+        <p>${fmt(metrics.investedLevelPoints)} / ${fmt(metrics.totalLevelPoints)} ${escapeHtml(t('levels'))}</p>
+      </div></article>
+    </section>
+
+    <section class="artifact-search">
+      <label for="artifact-search">${escapeHtml(t('searchLabel'))}</label>
+      <input id="artifact-search" type="search" autocomplete="off" placeholder="${escapeHtml(t('searchPlaceholder'))}" value="${escapeHtml(searchQuery)}" />
+      <p>${escapeHtml(t('sourceNote'))}</p>
+    </section>
+
+    <div class="artifact-game-layout">
+      <section class="artifact-tree-shell" aria-label="${escapeHtml(artifact.title)}">
+        <div class="artifact-tree-scroll"><div class="artifact-tree">
+          <div class="artifact-tree-backdrop" aria-hidden="true"></div>
+          <svg class="artifact-tree-paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${connectorMarkup()}</svg>
+          ${nodes.map(treeNode).join('')}
+        </div></div>
+      </section>
+      <aside class="artifact-inspector">
+        ${selectedNodeMarkup()}
+        <div class="artifact-tier-actions">
+          ${artifact.tiers.map((tier) => `<button type="button" data-artifact-action="max-tier" data-tier="${tier.tier}">${escapeHtml(t('maxTier', { tier: tier.tier }))}</button>`).join('')}
+        </div>
+      </aside>
+    </div>
+
+    <details class="artifact-permanent-panel">
+      <summary>${escapeHtml(t('activeStats'))}</summary>
+      <p>${escapeHtml(t('permanentAttributes'))}</p>
+      <ul>${permanentAttributes()}</ul>
+    </details>
+    <div class="sr-only" aria-live="polite" data-artifact-status></div>
+  </div>`;
+  const treeScroll = root.querySelector('.artifact-tree-scroll');
+  if (treeScroll) treeScroll.scrollLeft = previousTreeScroll;
+}
+
+function bindEvents() {
+  const root = getRoot();
+  if (!root || eventsBound) return;
+  eventsBound = true;
+
+  root.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-artifact-action]');
+    if (!button) return;
+    const action = button.dataset.artifactAction;
+    const nodeId = button.dataset.nodeId;
+
+    if (action === 'select-node') {
+      selectedNodeId = nodeId;
+      render();
+      if (window.matchMedia('(max-width: 1000px)').matches) {
+        root.querySelector('.artifact-node-detail')?.scrollIntoView({ block: 'nearest' });
+      }
+    }
+    if (action === 'max-all') setAllLevel('max');
+    if (action === 'reset-all' && window.confirm(t('resetConfirm'))) setAllLevel(0);
+    if (action === 'max-tier') setTierLevel(button.dataset.tier);
+    if (action === 'decrease') setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) - 1);
+    if (action === 'increase') setNodeLevel(nodeId, (Number(nodeLevels[nodeId]) || 0) + 1);
+    if (action === 'max-node') {
+      const node = getArtifactNodeById(nodeId, artifact);
+      if (node) setNodeLevel(nodeId, node.maxLevel);
+    }
+  });
+
+  root.addEventListener('input', (event) => {
+    if (event.target.id === 'artifact-search') {
+      searchQuery = event.target.value;
+      const exact = getAllArtifactNodes(artifact).find(matchesSearch);
+      if (exact) selectedNodeId = exact.id;
+      render();
+      const input = root.querySelector('#artifact-search');
+      input?.focus({ preventScroll: true });
+      input?.setSelectionRange(searchQuery.length, searchQuery.length);
+      return;
+    }
+    if (event.target.matches('[data-artifact-slider]')) {
+      const nodeId = event.target.dataset.artifactSlider;
+      const node = getArtifactNodeById(nodeId, artifact);
+      setNodeLevel(nodeId, event.target.value, { render: false, save: false });
+      const label = event.target
+        .closest('.artifact-node-detail')
+        ?.querySelector('[data-artifact-level-label]');
+      const levelText = t('level', { current: event.target.value, max: node?.maxLevel || 0 });
+      if (label) label.textContent = levelText;
+      event.target.setAttribute('aria-valuetext', levelText);
+    }
+  });
+
+  root.addEventListener('change', (event) => {
+    if (event.target.matches('[data-artifact-slider]')) {
+      setNodeLevel(event.target.dataset.artifactSlider, event.target.value);
+    }
+  });
+}
+
+export async function initArtifactCalculator() {
+  document.querySelector('#artifactSection .artifact-loading')?.remove();
+  if (!initialized) {
+    loadProgress();
+    initialized = true;
+  }
+  bindEvents();
+  render();
+
+  if (!languageBound) {
+    languageBound = true;
+    window.addEventListener('vts:language-change', () => render());
+  }
+}
+
+export { setNodeLevel };

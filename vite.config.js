@@ -73,6 +73,7 @@ export default defineConfig({
           }
           // Large data files: split into dedicated chunks so feature chunks stay lean
           if (normalizedId.includes('/js/tech-db.js')) return 'tech-db';
+          if (normalizedId.includes('/js/artifact-db.js')) return 'artifact-db';
           // ~10k lines of tower data, statically imported by the specialization
           // tab, the standalone planner and nine battle-simulator modules. With
           // no entry here it is inlined into every one of those chunks.
@@ -83,6 +84,7 @@ export default defineConfig({
           if (normalizedPath.endsWith('/js/eden-map.js')) return 'eden-map';
           if (normalizedPath.endsWith('/js/ocr-dashboard.js')) return 'ocr-dashboard';
           if (normalizedPath.endsWith('/js/app-research.js')) return 'research';
+          if (normalizedPath.endsWith('/js/app-artifact.js')) return 'artifact';
           if (normalizedPath.endsWith('/js/app-hero-atlas.js')) return 'hero-atlas';
           if (normalizedPath.endsWith('/js/app-export.js') || normalizedId.includes('html2canvas'))
             return 'export';

@@ -5,6 +5,11 @@ import { parseSpecializationState, serializeSpecializationState } from './specia
 import { normalizeMaterialPlan } from './material-planner-model.js';
 import { BATTLE_SETUP_PRESET_STORAGE_KEY, parseBattleSetupPresetStore } from './battle-simulator-preset-store.js';
 import { BATTLE_PROFILE_OVERRIDE_STORAGE_KEY, parseBattleProfileOverride } from './battle-simulator-profile-store.js';
+import {
+  ARTIFACT_PROGRESS_STORAGE_KEY,
+  normalizeArtifactProgress,
+  parseArtifactProgress,
+} from './artifact-db.js';
 
 const read = (key, fallback = null) => { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } };
 const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
@@ -20,4 +25,5 @@ export function registerWaveOneAccountSyncAdapters() {
   registerAccountSyncAdapter({ featureId: 'material-planner', label: 'Dragon Master plan', storageKey: 'vts_dm_material_planner_v2', serialize: () => normalizeMaterialPlan(read('vts_dm_material_planner_v2', null)), parse: normalizeMaterialPlan, apply: (value) => write('vts_dm_material_planner_v2', value) });
   registerAccountSyncAdapter({ featureId: 'generator-selection', label: 'Owned heroes', storageKey: GENERATOR_SELECTION_STORAGE_KEY, serialize: () => object(read(GENERATOR_SELECTION_STORAGE_KEY, {})), parse: object, apply: (value) => write(GENERATOR_SELECTION_STORAGE_KEY, value) });
   registerAccountSyncAdapter({ featureId: 'generator-skins', label: 'Owned hero skins', storageKey: GENERATOR_SKIN_OWNERSHIP_KEY, serialize: () => object(read(GENERATOR_SKIN_OWNERSHIP_KEY, {})), parse: object, apply: (value) => write(GENERATOR_SKIN_OWNERSHIP_KEY, value) });
+  registerAccountSyncAdapter({ featureId: 'artifact-progress', label: 'Artifact progress', storageKey: ARTIFACT_PROGRESS_STORAGE_KEY, serialize: () => parseArtifactProgress(localStorage.getItem(ARTIFACT_PROGRESS_STORAGE_KEY) || ''), parse: normalizeArtifactProgress, apply: (value) => write(ARTIFACT_PROGRESS_STORAGE_KEY, normalizeArtifactProgress(value)) });
 }

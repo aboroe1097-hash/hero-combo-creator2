@@ -791,6 +791,7 @@ const it = {
   tabEdenX1Badge: 'Pubblico',
   tabEdenBounty: 'Taglia Reale Eden X2',
   tabResearch: 'Ricerche',
+  tabArtifact: 'Artefatti',
   tabOcrDashboard: 'Amministrazione VTS',
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',

@@ -236,7 +236,7 @@ test('named controls and repaired ARIA expose equivalent accessibility-tree cont
   });
 });
 
-test('reduced motion removes computed motion without disabling the More surface', async ({
+test('reduced motion removes computed motion while the mobile dock stays limited to three hubs', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -264,45 +264,14 @@ test('reduced motion removes computed motion without disabling the More surface'
     backdropAnimation: 'none',
   });
 
-  const moreButton = page.locator('#shellMoreButton');
-  const morePanel = page.locator('#shellMorePanel');
-  const moreBackdrop = page.locator('#shellMoreBackdrop');
-  await moreButton.focus();
-  await page.keyboard.press('Enter');
-  await expect(moreButton).toHaveAttribute('aria-expanded', 'true');
-  await expect(morePanel).toBeVisible();
-  await expect(moreBackdrop).toBeVisible();
-  await expect(moreBackdrop).not.toHaveCSS('pointer-events', 'none');
-  await expect(page.locator('#shellMoreClose')).toBeFocused();
-
-  const backdropPoint = await page.evaluate(() => {
-    const backdrop = document.getElementById('shellMoreBackdrop');
-    if (!backdrop) return null;
-    for (let y = 8; y < window.innerHeight; y += 24) {
-      for (let x = 8; x < window.innerWidth; x += 24) {
-        if (document.elementFromPoint(x, y) === backdrop) return { x, y };
-      }
-    }
-    return null;
-  });
-  expect(backdropPoint).not.toBeNull();
-  await page.mouse.click(backdropPoint.x, backdropPoint.y);
-  await expect(morePanel).toBeHidden();
-  await expect(moreBackdrop).toBeHidden();
-  await expect(moreButton).toHaveAttribute('aria-expanded', 'false');
-  await expect(moreButton).toBeFocused();
-
-  await moreButton.click();
-  await expect(morePanel).toBeVisible();
-  await page.locator('#shellMoreClose').click();
-  await expect(morePanel).toBeHidden();
-  await expect(moreButton).toBeFocused();
-
-  await page.keyboard.press('Enter');
-  await expect(morePanel).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(morePanel).toBeHidden();
-  await expect(moreButton).toBeFocused();
+  await expect(page.locator('#shellMoreButton')).toBeHidden();
+  await expect(page.locator('#shellMorePanel')).toBeHidden();
+  await expect(page.locator('#shellMoreBackdrop')).toBeHidden();
+  await expect
+    .poll(() =>
+      page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
+    )
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']);
 });
 
 test('explicit transition components retain pointer, keyboard, selection, and sticky behavior', async ({

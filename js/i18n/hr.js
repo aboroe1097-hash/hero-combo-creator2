@@ -30,6 +30,7 @@ const hr = Object.freeze({
   tabEdenX1: 'Eden X1 poredak',
   tabEdenX1Badge: 'Javno',
   tabResearch: 'Istraživanje',
+  tabArtifact: 'Artefakti',
   tabOcrDashboard: 'VTS administracija',
   tabArcade: 'Arkada',
   tabVtsScoreBadge: 'COMP #11',

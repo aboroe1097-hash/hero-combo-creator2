@@ -16879,7 +16879,7 @@ body.admin-standalone-page .command-actions {
 
 @media (min-width: 1181px) {
   body.admin-standalone-page .admin-command-header {
-    grid-template-columns: minmax(0, 1fr) minmax(330px, 370px) !important;
+    grid-template-columns: minmax(0, 1fr) minmax(410px, 450px) !important;
     gap: clamp(10px, 1.1vw, 16px) !important;
     align-items: stretch;
   }
@@ -16918,6 +16918,21 @@ body.admin-standalone-page .command-actions {
     gap: 8px !important;
     width: 100%;
     justify-content: stretch !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-account-slot {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-back-tools:first-of-type {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-back-tools:last-of-type {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   body.admin-standalone-page .admin-command-actions .global-game-clock,
@@ -19623,9 +19638,15 @@ html[dir='rtl'] .gen-buttons-row {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-width: 34rem;
+  max-width: 64rem;
   margin: 0 auto;
   width: 100%;
+}
+.spec-detail-workspace {
+  display: grid;
+  grid-template-columns: minmax(20rem, 1.25fr) minmax(18rem, 0.75fr);
+  align-items: center;
+  gap: 1.25rem;
 }
 .spec-detail-bar {
   display: flex;
@@ -19723,8 +19744,8 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-ring-node {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 2.6rem;
-  height: 2.6rem;
+  width: 2.9rem;
+  height: 2.9rem;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -19754,10 +19775,10 @@ html[dir='rtl'] .gen-buttons-row {
 }
 .spec-ring-node[data-selected='true'] {
   z-index: 2;
-  border-color: var(--spec-text);
+  border-color: var(--spec-gold);
   box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--spec-action) 42%, transparent),
-    0 0 16px color-mix(in srgb, var(--spec-action) 38%, transparent);
+    0 0 0 3px color-mix(in srgb, var(--spec-gold) 52%, transparent),
+    0 0 20px color-mix(in srgb, var(--spec-gold) 48%, transparent);
   transform: translate(-50%, -50%) scale(1.12);
 }
 /* Selection is carried by the halo, so it must not repaint the learned ring and
@@ -19787,6 +19808,8 @@ html[dir='rtl'] .gen-buttons-row {
     radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.12), transparent 38%),
     rgba(11, 17, 31, 0.82);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+  position: sticky;
+  top: 1rem;
 }
 .spec-node-inspector-icon {
   display: grid;
@@ -20488,6 +20511,45 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-contrib-stage--review {
   border-color: rgba(56, 189, 248, 0.28);
 }
+.spec-contrib-stage--source {
+  grid-column: 2 / -1;
+  align-content: center;
+  border-color: color-mix(in srgb, var(--spec-success) 48%, var(--spec-border));
+  background: color-mix(in srgb, var(--spec-success) 9%, var(--spec-panel));
+}
+.spec-contrib-source-cost {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+.spec-contrib-source-cost span,
+.spec-contrib-stage--source small {
+  color: var(--spec-text-dim);
+  font-size: 0.68rem;
+}
+.spec-contrib-source-cost strong {
+  color: var(--spec-gold-ink);
+  font-size: 0.82rem;
+}
+.spec-contrib-column--source summary span {
+  color: var(--spec-text-dim);
+  font-size: 0.68rem;
+}
+.spec-contrib-source-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(12rem, auto);
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid var(--spec-border-subtle);
+  color: var(--spec-text-supporting);
+  font-size: 0.72rem;
+}
+.spec-contrib-source-row strong {
+  color: var(--spec-gold-ink);
+  text-align: end;
+}
 .spec-contrib-stage legend {
   padding: 0 0.35rem;
   color: var(--spec-gold);
@@ -20872,6 +20934,12 @@ html[dir='rtl'] .gen-buttons-row {
 }
 
 @media (max-width: 640px) {
+  .spec-detail-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .spec-node-inspector {
+    position: static;
+  }
   .account-link {
     width: 44px;
     padding: 0;
