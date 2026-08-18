@@ -33,6 +33,7 @@ const WEEKS = Object.freeze([
       'edenPlaybookDay1Task2',
       'edenPlaybookDay1Task3',
       'edenPlaybookDay1Task4',
+      'edenPlaybookDay1Task5',
     ],
   },
   {

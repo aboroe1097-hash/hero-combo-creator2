@@ -56,12 +56,26 @@ test('playbook ships all optimized visuals and responsive theme contracts', () =
     'day-0-green-route.webp',
     'day-0-blue-fortresses.webp',
     'poison-legion-example.webp',
+    'demolition-specialization.webp',
+    'speed-tiling-main.webp',
+    'speed-tiling-optional.webp',
+    'green-honor.webp',
+    'honor-gain-tiling.webp',
+    'fortress-unlock.webp',
   ]) {
     assert.equal(
       existsSync(new URL(`../../assets/eden/thunder-playbook/${name}`, import.meta.url)),
       true
     );
   }
+  assert.match(html, /demolition-specialization\.webp/);
+  assert.match(html, /speed-tiling-main\.webp/);
+  assert.match(html, /speed-tiling-optional\.webp/);
+  assert.match(html, /green-honor\.webp/);
+  assert.match(html, /honor-gain-tiling\.webp/);
+  assert.match(html, /fortress-unlock\.webp/);
+  assert.match(html, /edenPlaybookAltSpeedOptional/);
+  assert.match(en, /Optional 14–20 Blue points/);
   assert.match(en, /Blue Down far enough to unlock and place all four fortresses/);
   assert.match(html, /Tile income and poison-damage targets/);
   assert.match(html, /3,701 · Day 1 target \+22/);

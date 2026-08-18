@@ -199,6 +199,13 @@
   border-radius: 11px;
   background: #080b11;
 }
+.thunder-role-figs {
+  display: grid;
+  gap: 8px;
+}
+.thunder-role-guides img.is-optional {
+  height: clamp(170px, 22vw, 250px);
+}
 .thunder-role-guides article b {
   color: #72c7ff;
 }
@@ -556,6 +563,9 @@
   }
   .thunder-role-guides img {
     height: min(118vw, 520px);
+  }
+  .thunder-role-guides img.is-optional {
+    height: min(60vw, 250px);
   }
   .thunder-explain {
     grid-template-columns: 1fr;

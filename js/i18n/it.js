@@ -2258,14 +2258,21 @@ const it = {
   edenPlaybookDay0Task3: 'Segui Blu Giù abbastanza a fondo da sbloccare e posizionare tutte e quattro le fortezze.',
   edenPlaybookDay0Task4: 'Attiva l\'abilità Honor giornaliera.',
   edenPlaybookDay1Label: 'Giorno 1',
-  edenPlaybookDay1Title: 'Costruisci, entra, poi forza il reddito',
+  edenPlaybookDay1Title: 'Sblocca le fortezze, setup Honor, poi la build di lealtà',
   edenPlaybookDay1Why:
-    'Le Frontline convertono i materiali immagazzinati in Honor; poi Blu Destra trasforma la lealtà nel primo grande salto di reddito.',
-  edenPlaybookDay1Watch: 'Non costruire così a lungo da fermare le code di lavorazione o ritardare le tessere Lv. 9.',
-  edenPlaybookDay1Task1: 'Avvia i bonus Honor e l\'Honor Card; apri i materiali da costruzione immagazzinati.',
-  edenPlaybookDay1Task2: 'Costruisci le fortezze a Lv. 1 e le Frontline verso 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Entra a Eden, resetta a 47 punti su Blu Destra, forza le tessere Lv. 8 e poi Lv. 9.',
-  edenPlaybookDay1Task4: 'Mantieni attive le code di lavorazione; se possibile, riempi una volta durante il sonno.',
+    'Le fortezze vanno piazzate prima dei reset; il Verde massimizza l\'Honor delle Frontline Workshop, poi il Blu accelera lealtà, lavorazione e posa di tessere.',
+  edenPlaybookDay1Watch:
+    'Costruisci entrambe le fortezze prima di ogni reset — e tieni attive le code di lavorazione mentre piazzi tessere.',
+  edenPlaybookDay1Task1:
+    'Sblocca e costruisci le Fortezze d\'Assalto e di Guardia prima di resettare la specializzazione.',
+  edenPlaybookDay1Task2:
+    'Resetta la specializzazione, metti tutti i punti su Verde (sinistra) e potenzia ogni Frontline Workshop al livello massimo.',
+  edenPlaybookDay1Task3:
+    'Resetta di nuovo nell\'albero Blu (sinistra e destra) per sbloccare workshop extra e nodi di lealtà.',
+  edenPlaybookDay1Task4:
+    'Piazza tessere Farm, Marble e Ale per i potenziamenti del Coalition Base Camp: campi più alti significano più lealtà e tessere di livello superiore.',
+  edenPlaybookDay1Task5:
+    'Resta nella build di lealtà per le prime settimane, poi passa al ruolo dell\'alleanza (Demolizione, Posa Rapida, Banner).',
   edenPlaybookDay2Label: 'Giorno 2',
   edenPlaybookDay2Title: 'Spingi il salto critico del Lv. 12',
   edenPlaybookDay2Why: 'Il reddito passa da 1.000 al Lv. 11 a 1.200 al Lv. 12—uno dei salti più grandi della tabella.',
@@ -2296,6 +2303,8 @@ const it = {
   edenPlaybookAltDemolition: 'Percorso di specializzazione demolizione Blu',
   edenPlaybookAltBanner: 'Percorso di specializzazione banner Rosso',
   edenPlaybookAltSpeed: 'Percorso di specializzazione posa rapida Verde',
+  edenPlaybookAltSpeedOptional:
+    '14–20 punti Blu facoltativi per la posa rapida: velocità di marcia di Field Cartography e Instant Recall con il 30% di sconto a 20 punti pieni',
   edenPlaybookAltHonor: 'Percorso di specializzazione Honor delle strutture Verde',
   edenPlaybookAltTiling: 'Percorso di specializzazione Honor della posa di tessere Verde',
   edenPlaybookAltFort: 'Percorso di specializzazione sblocco fortezze Blu Giù',
