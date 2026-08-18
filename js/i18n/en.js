@@ -2145,15 +2145,21 @@ const en = {
     'Follow Blue Down far enough to unlock and place all four fortresses.',
   edenPlaybookDay0Task4: 'Activate the daily honor skill.',
   edenPlaybookDay1Label: 'Day 1',
-  edenPlaybookDay1Title: 'Build, enter, then force income',
+  edenPlaybookDay1Title: 'Unlock fortresses, honor setup, then the loyalty build',
   edenPlaybookDay1Why:
-    'Frontlines convert stored materials into Honor; Blue Right then turns loyalty into the first major income jump.',
+    'Fortresses must be placed before resets; Green maxes Frontline Workshop honor, then Blue speeds loyalty, processing, and tiling.',
   edenPlaybookDay1Watch:
-    'Do not build so long that processing queues stop or Lv. 9 tiles are delayed.',
-  edenPlaybookDay1Task1: 'Start honor buffs and the Honor Card; open stored construction materials.',
-  edenPlaybookDay1Task2: 'Build fortresses to Lv. 1 and Frontlines toward 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Enter Eden, reset to 47 points on Blue Right, force Lv. 8 then Lv. 9 tiles.',
-  edenPlaybookDay1Task4: 'Keep processing queues running; refill once during sleep if practical.',
+    'Build both fortresses before any reset — and keep processing queues running while you tile.',
+  edenPlaybookDay1Task1:
+    'Unlock and build the Assault and Guardian Fortresses before resetting your specialization.',
+  edenPlaybookDay1Task2:
+    'Reset specialization, put all points into Green (left), and upgrade every Frontline Workshop to its highest level.',
+  edenPlaybookDay1Task3:
+    'Reset again into the Blue tree (left & right) to unlock extra workshops and loyalty nodes.',
+  edenPlaybookDay1Task4:
+    'Tile Farm, Marble, and Ale nodes for Coalition Base Camp upgrades — higher camps mean more loyalty and higher-level tiles.',
+  edenPlaybookDay1Task5:
+    'Stay in the loyalty build for the first weeks, then shift to your alliance role (Demolition, Speed Tiling, Banner).',
   edenPlaybookDay2Label: 'Day 2',
   edenPlaybookDay2Title: 'Push the critical Lv. 12 jump',
   edenPlaybookDay2Why:
