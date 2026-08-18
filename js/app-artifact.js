@@ -71,6 +71,7 @@ let selectedNodeId = 'rg_1_0';
 let initialized = false;
 let eventsBound = false;
 let languageBound = false;
+let centerSelectedNode = false;
 
 function locale() {
   return resolveArtifactLocale(currentLanguage);
@@ -193,7 +194,7 @@ function treeNode(node) {
   const dimmed = !matchesSearch(node);
   const displayCode = node.code.includes('amp') ? '−' : node.code.replace('.0', '');
   const label = `${node.name}, ${t('level', { current, max: node.maxLevel })}`;
-  return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${dimmed ? ' is-dimmed' : ''}"
+  return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${current > 0 ? ' has-progress' : ''}${dimmed ? ' is-dimmed' : ''}"
     style="--node-x:${layout.x}%;--node-y:${layout.y}%" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
       <span class="artifact-tree-code" translate="no">${escapeHtml(displayCode)}</span>
       <span class="artifact-tree-level" translate="no">${current}/${node.maxLevel}</span>
@@ -234,7 +235,8 @@ function selectedNodeMarkup() {
 function render() {
   const root = getRoot();
   if (!root) return;
-  const previousTreeScroll = root.querySelector('.artifact-tree-scroll')?.scrollLeft || 0;
+  const previousTree = root.querySelector('.artifact-tree-scroll');
+  const previousTreeScroll = previousTree ? previousTree.scrollLeft : null;
   const metrics = calculateArtifactMetrics(artifact, nodeLevels);
   const completion = metrics.completionPercent.toFixed(1);
   const nodes = getAllArtifactNodes(artifact);
@@ -290,7 +292,18 @@ function render() {
     <div class="sr-only" aria-live="polite" data-artifact-status></div>
   </div>`;
   const treeScroll = root.querySelector('.artifact-tree-scroll');
-  if (treeScroll) treeScroll.scrollLeft = previousTreeScroll;
+  if (treeScroll) {
+    const selectedNode = treeScroll.querySelector('.artifact-tree-node.is-selected');
+    if (previousTreeScroll === null || centerSelectedNode) {
+      treeScroll.scrollLeft = Math.max(
+        0,
+        (selectedNode?.offsetLeft || treeScroll.scrollWidth / 2) - treeScroll.clientWidth / 2
+      );
+    } else {
+      treeScroll.scrollLeft = previousTreeScroll;
+    }
+    centerSelectedNode = false;
+  }
 }
 
 function bindEvents() {
@@ -306,6 +319,7 @@ function bindEvents() {
 
     if (action === 'select-node') {
       selectedNodeId = nodeId;
+      centerSelectedNode = true;
       render();
       if (window.matchMedia('(max-width: 1000px)').matches) {
         root.querySelector('.artifact-node-detail')?.scrollIntoView({ block: 'nearest' });

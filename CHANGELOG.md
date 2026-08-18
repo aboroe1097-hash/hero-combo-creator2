@@ -1,5 +1,11 @@
 # Changelog
 
+## 15.0.6 - 2026-08-18
+
+- Replaced the Artifact board's synthetic gradient with the exact in-game Redemption Grail capture embedded in the source sheet, including its Grail silhouette, ruins, node rings, and branching frame.
+- Refined the mobile tracker into a centered, pannable game board with the board before the inspector, compact two-column resource totals, cleaner actions, and level badges shown only for the selected or upgraded nodes.
+- Preserved readable dark and light surfaces, 44px mobile node targets, keyboard focus, and the existing 40-node calculation and account-sync behavior.
+
 ## 15.0.5 - 2026-08-18
 
 - Added the new **Artifact Calculator** subtool under the Research & Towers Hub with full support for **Artifact One: Redemption Grail**.

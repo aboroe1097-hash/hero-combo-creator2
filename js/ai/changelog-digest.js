@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.5";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.6",
+    "date": "2026-08-18",
+    "highlights": [
+      "Replaced the Artifact board's synthetic gradient with the exact in-game Redemption Grail capture embedded in the source sheet, including its Grail silhouette, ruins, node rings, and branching frame.",
+      "Refined the mobile tracker into a centered, pannable game board with the board before the inspector, compact two-column resource totals, cleaner actions, and level badges shown only for the selected or upgraded nodes.",
+      "Preserved readable dark and light surfaces, 44px mobile node targets, keyboard focus, and the existing 40-node calculation and account-sync behavior."
+    ]
+  },
   {
     "version": "15.0.5",
     "date": "2026-08-18",
@@ -96,15 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Brought back the full Specialization tool inside the main site. The tab is the interactive planner again, not a summary card that sends you to another page.",
       "Moved the suggested routes and the easy medal fill onto that tab, so both surfaces now offer the same tools and share the route you pick.",
       "Fixed the Combo Generator hiding its best combos. A hero with a \"recommended\" skin no longer removes a combo from the normal list; only a combo that truly requires a skin is held back for skin mode. The top of the list now matches the ranking, starting with Alexander / Bleeding …"
-    ]
-  },
-  {
-    "version": "14.3.6",
-    "date": "2026-08-12",
-    "highlights": [
-      "The Specialization tab on the main site is now a thin summary card that links to the full standalone planner; the duplicate in-tab graph renderer is gone, and the community node-data submission section stays on the main site.",
-      "Added a local Towers dev/test loop: `npm run towers:dev`, `towers:test`, and `towers:check` run only the Specialization Towers unit slice and every Specialization browser spec, so a Towers change can be checked in about half a minute instead of a full smoke run.",
-      "Repaired the hero combos list after recent direct edits: three hero names that do not exist in the roster (Rozen, Jeane, Beast Queen) are corrected, and four combos that had been added twice are back to a single entry each."
     ]
   }
 ].map((release) =>

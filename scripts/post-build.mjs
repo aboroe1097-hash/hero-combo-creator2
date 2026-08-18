@@ -29,6 +29,7 @@ const sourceOnlyDeployPaths = new Set([
   'assets/eden-reference/sector-parchments',
   'assets/eden-reference/screenshots/WhatsApp Image 2026-06-10 at 18.59.30 (2).jpeg',
   'assets/eden-reference/screenshots/WhatsApp Image 2026-06-10 at 18.59.32.jpeg',
+  'assets/artifact/redemption-grail-board.webp',
   'images/strife/roc-strife-reference.png',
   'assets/admin-D1Gvfu0q.js',
   'images/heroes/catchup/ashen-verdict.png',
