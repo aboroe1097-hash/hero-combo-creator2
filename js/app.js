@@ -1802,6 +1802,16 @@ function updateTextContent() {
     if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
   });
 
+  document.querySelectorAll('[data-i18n-alt]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-alt');
+    if (t[key]) el.setAttribute('alt', t[key].replace('{version}', APP_VERSION));
+  });
+
+  document.querySelectorAll('[data-i18n-badge]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-badge');
+    if (t[key]) el.setAttribute('data-subtool-badge', t[key].replace('{version}', APP_VERSION));
+  });
+
   updateAllSeasonCatchupHints();
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
   window.dispatchEvent(

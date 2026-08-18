@@ -49,6 +49,14 @@ function localizeFragment(root) {
     const key = element.getAttribute('data-i18n-aria');
     if (t[key]) element.setAttribute('aria-label', t[key]);
   });
+  root.querySelectorAll('[data-i18n-alt]').forEach((element) => {
+    const key = element.getAttribute('data-i18n-alt');
+    if (t[key]) element.setAttribute('alt', t[key]);
+  });
+  root.querySelectorAll('[data-i18n-badge]').forEach((element) => {
+    const key = element.getAttribute('data-i18n-badge');
+    if (t[key]) element.setAttribute('data-subtool-badge', t[key]);
+  });
 }
 
 function refreshMapViewport() {
@@ -169,6 +177,7 @@ async function loadPlaybook(panel) {
     const response = await fetch(PLAYBOOK_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
+    localizeFragment(panel);
     const module = await import('./eden-playbook.js');
     module.initEdenPlaybook?.(panel);
     playbookLoaded = true;
@@ -248,6 +257,10 @@ export function bootEdenHub() {
       if (hash === 'edenmap' || hash === 'edenhub') activateSubTab(root, 'map');
     }, 0);
   });
+
+  // Language changes re-apply the main catalog to every loaded panel; the
+  // playbook re-renders its JS-built content through its own listener.
+  window.addEventListener('vts:language-change', () => localizeFragment(root));
 
   // Explicit sub-tab navigation from other tools (e.g. the command palette).
   window.addEventListener('vts:eden-hub-subtab', (event) => {

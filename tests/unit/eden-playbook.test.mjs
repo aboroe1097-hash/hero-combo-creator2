@@ -6,6 +6,7 @@ const hub = readFileSync(new URL('../../js/eden-hub.js', import.meta.url), 'utf8
 const app = readFileSync(new URL('../../js/eden-playbook.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../../tabs/eden-playbook.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../css/eden-playbook.css', import.meta.url), 'utf8');
+const en = readFileSync(new URL('../../js/i18n/en.js', import.meta.url), 'utf8');
 
 test('DrThunder playbook is a lazy Eden Hub subtab with targeted section links', () => {
   assert.match(hub, /'playbook'/);
@@ -14,6 +15,17 @@ test('DrThunder playbook is a lazy Eden Hub subtab with targeted section links',
   assert.match(app, /week-1/);
   assert.match(app, /subtab=playbook&section=/);
   assert.match(html, /Massive thanks to DrThunder/);
+  assert.match(html, /data-i18n="edenPlaybookCredit"/);
+});
+
+test('playbook content is fully localized through the main catalog', () => {
+  assert.match(app, /edenPlaybookDay0Task2/);
+  assert.match(app, /edenPlaybookWeek1ToolLabel/);
+  assert.match(en, /Green Left for Honor buildings/);
+  assert.match(en, /Balancing Income & Production/);
+  assert.match(en, /edenPlaybookPoisonIntro/);
+  assert.match(en, /edenPlaybookRoleDemolitionLi4/);
+  assert.match(app, /vts:language-change/);
 });
 
 test('playbook ships all optimized visuals and responsive theme contracts', () => {
@@ -34,8 +46,7 @@ test('playbook ships all optimized visuals and responsive theme contracts', () =
       true
     );
   }
-  assert.match(app, /Green Left for Honor buildings/);
-  assert.match(app, /Blue Down far enough to unlock and place all four fortresses/);
+  assert.match(en, /Blue Down far enough to unlock and place all four fortresses/);
   assert.match(html, /Tile income and poison-damage targets/);
   assert.match(html, /3,701 · Day 1 target \+22/);
   assert.doesNotMatch(html, /visual-01\.webp/);
@@ -45,7 +56,7 @@ test('playbook ships all optimized visuals and responsive theme contracts', () =
   assert.match(html, /20K \/ 10K \/ 10K/);
   assert.match(html, /Replace the middle hero with Rozen Blade/);
   assert.match(app, /#edenHub\?subtab=loyalty/);
-  assert.match(app, /Balancing Income & Production/);
+  assert.match(en, /Balancing Income & Production/);
   assert.match(html, /data-playbook-view="timeline"/);
   assert.match(html, /data-playbook-view="tips"/);
   assert.match(html, /💥 31 Blue/);

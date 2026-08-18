@@ -252,7 +252,7 @@ function connectorMarkup() {
     .join('');
 }
 
-function treeNode(node) {
+function treeNode(node, stepById) {
   const layout = node.layout || NODE_LAYOUT[node.id];
   if (!layout) return '';
   const current = Number(nodeLevels[node.id]) || 0;
@@ -262,7 +262,7 @@ function treeNode(node) {
   const dimmed = !matchesSearch(node);
   const progress = node.maxLevel > 0 ? current / node.maxLevel : 0;
   const displayCode = node.code.includes('amp') ? '−' : node.code.replace('.0', '');
-  const pathStep = heroPathPlan().stepById.get(node.id);
+  const pathStep = stepById.get(node.id);
   const label = `${node.name}, ${t('level', { current, max: node.maxLevel })}`;
   return `<button type="button" class="artifact-tree-node artifact-tree-node-${node.resource.toLowerCase()}${maxed ? ' is-maxed' : ''}${selected ? ' is-selected' : ''}${current > 0 ? ' has-progress' : ''}${dimmed ? ' is-dimmed' : ''}${locked ? ' is-locked' : ''}"
     style="--node-x:${layout.x}%;--node-y:${layout.y}%;--node-progress:${progress}turn" data-artifact-action="select-node" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${selected}">
@@ -328,6 +328,7 @@ function render() {
   const completion = metrics.completionPercent.toFixed(1);
   const nodes = getAllArtifactNodes(artifact);
   const path = heroPathPlan();
+  const nextPathNode = path.ordered.find((node) => (Number(nodeLevels[node.id]) || 0) < node.maxLevel);
 
   root.dir = locale() === 'ar' ? 'rtl' : 'ltr';
   root.innerHTML = `<div class="artifact-workspace">
@@ -355,10 +356,10 @@ function render() {
       <input id="artifact-search" type="search" autocomplete="off" placeholder="${escapeHtml(t('searchPlaceholder'))}" value="${escapeHtml(searchQuery)}" />
       <p>${escapeHtml(artifact.farmingNote)}</p>
     </section>
-    <section class="artifact-hero-path" aria-label="Hero-targeted Artifact path">
-      <div><p class="artifact-kicker">HERO-TARGETED PATH</p><h2>${path.heroes.length ? path.heroes.join(' · ') : 'Balanced Sword path'}</h2><p>${path.heroes.length ? 'Uses the heroes selected in Heroes & Combos and their actual skill mechanics.' : 'Select heroes in Heroes & Combos to personalize this prerequisite-valid order.'}</p></div>
-      <div class="artifact-path-next"><span>Next recommended node</span><button type="button" data-artifact-action="select-node" data-node-id="${escapeHtml(path.ordered.find((node) => (Number(nodeLevels[node.id]) || 0) < node.maxLevel)?.id || path.ordered[0]?.id)}">${escapeHtml(path.ordered.find((node) => (Number(nodeLevels[node.id]) || 0) < node.maxLevel)?.name || 'Path complete')}</button></div>
-      <button type="button" data-artifact-action="share-view">Share this path</button>
+    <section class="artifact-hero-path" aria-label="${escapeHtml(t('heroPathAria'))}">
+      <div><p class="artifact-kicker">${escapeHtml(t('heroPathKicker'))}</p><h2>${path.heroes.length ? path.heroes.join(' · ') : escapeHtml(t('heroPathBalanced'))}</h2><p>${escapeHtml(path.heroes.length ? t('heroPathDescSelected') : t('heroPathDescEmpty'))}</p></div>
+      <div class="artifact-path-next"><span>${escapeHtml(t('heroPathNext'))}</span><button type="button" data-artifact-action="select-node" data-node-id="${escapeHtml(nextPathNode?.id || path.ordered[0]?.id)}">${escapeHtml(nextPathNode?.name || t('heroPathComplete'))}</button></div>
+      <button type="button" data-artifact-action="share-view">${escapeHtml(t('sharePath'))}</button>
     </section>
 
     <div class="artifact-game-layout">
@@ -366,7 +367,7 @@ function render() {
         <div class="artifact-tree-scroll"><div class="artifact-tree" style="--artifact-board-image:url('${escapeHtml(artifact.boardImage)}')">
           <div class="artifact-tree-backdrop" aria-hidden="true"></div>
           <svg class="artifact-tree-paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${connectorMarkup()}</svg>
-          ${nodes.map(treeNode).join('')}
+          ${nodes.map((node) => treeNode(node, path.stepById)).join('')}
         </div></div>
       </section>
       <aside class="artifact-inspector">
