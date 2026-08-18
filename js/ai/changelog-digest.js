@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.7",
+    "date": "2026-08-18",
+    "highlights": [
+      "Corrected the X2 Artifact tool to make **Sword of Judgment** the current default instead of the not-yet-available Redemption Grail.",
+      "Added the complete 33-node Sword tree with exact level costs, prerequisites, stage layout, Sword Emblem and Artifact Soulstone totals, node icons, and in-game Sword artwork.",
+      "Kept Redemption Grail data available for a future release without presenting it as current X2 content."
+    ]
+  },
   {
     "version": "15.0.6",
     "date": "2026-08-18",
@@ -96,15 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "The Combo Generator now opens in skin mode. Skin icons, skin toggles and skin-aware combos are on by default; the toggle still turns them off.",
       "Hero cards in the generator now stay in seasonal order (S0 first, X2 last) instead of floating heroes that own a skin to the top, so a hero stays where you expect when you switch skin mode on or off.",
       "Replaced Beowulf's skin icon with a clean portrait crop, without the level and name overlay from the old capture."
-    ]
-  },
-  {
-    "version": "14.3.7",
-    "date": "2026-08-13",
-    "highlights": [
-      "Brought back the full Specialization tool inside the main site. The tab is the interactive planner again, not a summary card that sends you to another page.",
-      "Moved the suggested routes and the easy medal fill onto that tab, so both surfaces now offer the same tools and share the route you pick.",
-      "Fixed the Combo Generator hiding its best combos. A hero with a \"recommended\" skin no longer removes a combo from the normal list; only a combo that truly requires a skin is held back for skin mode. The top of the list now matches the ranking, starting with Alexander / Bleeding …"
     ]
   }
 ].map((release) =>

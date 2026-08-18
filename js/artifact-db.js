@@ -1,4 +1,6 @@
 // js/artifact-db.js
+import { SWORD_OF_JUDGMENT_RAW } from './artifact-sword-data.js';
+
 // Rise of Castles Artifact Database
 // Sourced from official community sheets: Artifact One - Redemption Grail
 
@@ -72,9 +74,79 @@ export const ARTIFACT_RESOURCES = Object.freeze({
   }),
 });
 
-export const ARTIFACT_PROGRESS_STORAGE_KEY = 'vts_artifact_progress_redemption-grail_v1';
+export const ARTIFACT_PROGRESS_STORAGE_KEY = 'vts_artifact_progress_sword-of-judgment_v1';
+
+function formatArtifactDescription(description, parameters = '') {
+  const values = String(parameters).split(';');
+  return String(description || '').replace(/\{(\d+)\}/g, (_, index) => values[Number(index)] ?? '?');
+}
+
+function buildSwordOfJudgment() {
+  const grouped = new Map();
+  for (const raw of SWORD_OF_JUDGMENT_RAW.nodes) {
+    const tier = Math.max(1, Math.floor(raw.pg / 1000));
+    const parameters = raw.paras?.[raw.paras.length - 1] || '';
+    const node = Object.freeze({
+      id: `sj_${raw.pg}`,
+      code: String(raw.pg),
+      name: raw.name,
+      resource: raw.matType === 'emblem' ? 'RGE' : 'AS',
+      maxLevel: raw.lmax,
+      costs: Object.freeze([...raw.costs]),
+      buff: formatArtifactDescription(raw.desc, parameters),
+      permanentAttribute: raw.maxLvlBonus || null,
+      branch: raw.x < 280 ? 'a' : raw.x > 360 ? 'b' : 'root',
+      tier,
+      category: raw.statCat === 'special' ? 'skill' : raw.statCat,
+      statType: raw.statCat,
+      layout: Object.freeze({
+        x: ((raw.x + 2) / 618) * 100,
+        y: ((1214 - raw.y) / 1137) * 100,
+        parents: Object.freeze((raw.parentPgs || []).map((pg) => `sj_${pg}`)),
+      }),
+      unlockRequirements: Object.freeze(
+        (raw.unlockReqs || []).map((requirement) =>
+          Object.freeze({ nodeId: `sj_${requirement.pg}`, minLevel: requirement.minLv })
+        )
+      ),
+      icon:
+        raw.matType === 'emblem'
+          ? 'assets/artifact/sword/Artifacts_icon_jian.png'
+          : 'assets/artifact/artifact-soulstone.png',
+      parameters: Object.freeze([...(raw.paras || [])]),
+      powers: Object.freeze([...(raw.powers || [])]),
+    });
+    if (!grouped.has(tier)) grouped.set(tier, []);
+    grouped.get(tier).push(node);
+  }
+
+  return Object.freeze({
+    id: 'sword-of-judgment',
+    number: 1,
+    name: 'Sword of Judgment',
+    title: 'Artifact One: Sword of Judgment',
+    subtitle: 'X2 Attack Artifact',
+    description:
+      'The currently available X2 Artifact. Build its odd-round Sacred Damage path, combat attributes, and awakening bonuses.',
+    farmingNote: 'Uses Sword Emblems and Artifact Soulstones. Node prerequisites follow the in-game tree.',
+    icon: 'sword',
+    boardImage: 'assets/artifact/sword/sword-of-judgment-board.webp',
+    resources: Object.freeze({
+      RGE: Object.freeze({ ...ARTIFACT_RESOURCES.RGE, name: 'Sword Emblem', shortName: 'SE' }),
+      AS: ARTIFACT_RESOURCES.AS,
+    }),
+    tiers: Object.freeze(
+      [...grouped.entries()].map(([tier, nodes]) =>
+        Object.freeze({ tier, name: `Stage ${tier}`, subtitle: '', description: '', nodes: Object.freeze(nodes) })
+      )
+    ),
+  });
+}
+
+const SWORD_OF_JUDGMENT = buildSwordOfJudgment();
 
 export const ARTIFACT_DATABASE = Object.freeze([
+  SWORD_OF_JUDGMENT,
   {
     id: 'redemption-grail',
     number: 1,

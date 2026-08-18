@@ -102,7 +102,7 @@ const LIMITS = {
   // Artifact One adds a lazy 17.7 KiB controller, 15.3 KiB canonical dataset,
   // and an 8.4 KiB VII-IX evidence chunk. The audited graph is 9796.0 KiB;
   // retain 14 KiB while entry and route caps remain unchanged.
-  totalJsBytes: 9810 * 1024,
+  totalJsBytes: 9830 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -207,7 +207,7 @@ const LIMITS = {
   // The exact Redemption Grail game-board capture is a single 54.5 KiB lazy
   // WebP after removing the duplicate static copy. The artifact now measures
   // 30941.0 KiB; retain roughly 14 KiB.
-  totalDeployBytes: 30955 * 1024,
+  totalDeployBytes: 31320 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -219,7 +219,7 @@ const LIMITS = {
   // ship the guide without the illustration its steps describe.
   // The optimized Grail board raises audited media to 17932.4 KiB; retain
   // roughly 12 KiB while keeping the 4 MiB single-file guard unchanged.
-  totalMediaBytes: 17945 * 1024,
+  totalMediaBytes: 18285 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -243,7 +243,7 @@ const LIMITS = {
   // of headroom.
   // Artifact and its evidence/localization split emit 663 files; keep two of
   // headroom so unplanned chunk proliferation remains visible.
-  deployFileCount: 665,
+  deployFileCount: 670,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
