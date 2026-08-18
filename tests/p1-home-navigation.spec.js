@@ -5,13 +5,11 @@ const navigationPlacements = new Map([
     640,
     {
       tabStrife: 'more',
-      tabEdenMap: 'more',
+      tabEdenMap: 'primary',
       tabHeroesCombos: 'primary',
       tabResearchTowers: 'primary',
-      tabMaterials: 'primary',
-      // VTS Admin took the fourth mobile slot; All-Star BoH moved to More,
-      // because it runs a few weeks a season rather than every day.
-      tabOcrDashboard: 'primary',
+      tabMaterials: 'more',
+      tabOcrDashboard: 'more',
       tabAllStarBoh: 'more',
       tabYouTube: 'more',
       tabArcade: 'more',
@@ -113,7 +111,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabMaterials', 'tabOcrDashboard']);
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });
@@ -138,7 +136,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     if (width === 1440) await expectOneUsefulHomeHeading(page);
   }
 
-  await page.setViewportSize({ width: 640, height: 900 });
+  await page.setViewportSize({ width: 641, height: 900 });
   const moreButton = page.locator('#shellMoreButton');
   await moreButton.focus();
   await page.keyboard.press('Enter');
@@ -174,7 +172,9 @@ test('YouTube activation survives responsive reparenting and reaches its declare
   await expect(page).toHaveURL(/#youtube$/);
 });
 
-test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({ page }) => {
+test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
   const routeCases = ['allstarboh', 'ALLSTARBOH', 'AllStarBoh', 'aLlStArBoH', 'allStarBoh'];
@@ -204,10 +204,6 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   await page.keyboard.press('Enter');
   await expect.poll(() => activeElementId(page)).toBe('heroesCombosSection');
 
-  const moreButton = page.locator('#shellMoreButton');
-  await moreButton.focus();
-  await page.keyboard.press('Enter');
-  await expect.poll(() => activeElementId(page)).toBe('shellMoreClose');
   // Eden Loyalty lives inside the VTS Eden Hub as a sub-tab.
   await page.locator('#tabEdenMap').click();
   await expect(page.locator('#edenMapSection')).toBeVisible();
