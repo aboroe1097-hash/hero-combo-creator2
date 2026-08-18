@@ -1,5 +1,10 @@
 # Changelog
 
+## 15.0.11 - 2026-08-18
+
+- Fixed a crash in the Artifact calculator that showed “Artifact Calculator failed to load” whenever heroes were selected in the generator (or synced from an account roster); the Sword path planning now reads the analyzed hero mechanics correctly.
+- Fixed the Artifact tree board image on the live site, which loaded from a doubled asset path.
+
 ## 15.0.10 - 2026-08-18
 
 - Fixed the Eden Playbook Week 1 “Balancing Income & Production” tool link so it reliably opens the Eden Loyalty subtab instead of staying on the playbook when a stale subtab intent was present.

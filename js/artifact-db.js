@@ -130,7 +130,7 @@ function buildSwordOfJudgment() {
       'The currently available X2 Artifact. Build its odd-round Sacred Damage path, combat attributes, and awakening bonuses.',
     farmingNote: 'Uses Sword Emblems and Artifact Soulstones. Node prerequisites follow the in-game tree.',
     icon: 'sword',
-    boardImage: 'assets/artifact/sword/sword-of-judgment-board.webp',
+    boardImage: '/assets/artifact/sword/sword-of-judgment-board.webp',
     resources: Object.freeze({
       RGE: Object.freeze({ ...ARTIFACT_RESOURCES.RGE, name: 'Sword Emblem', shortName: 'SE' }),
       AS: ARTIFACT_RESOURCES.AS,
