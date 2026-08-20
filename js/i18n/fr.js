@@ -3310,6 +3310,8 @@ const fr = {
   edenPlaybookAltTiling: 'Route de spécialisation Vert d’Honneur par la conquête de tuiles',
   edenPlaybookAltFort: 'Route de spécialisation Bleu Bas de déblocage de forteresses',
   shareViewCopied: 'Lien copié dans le presse-papiers',
+  edenPlaybookDay1Task5: 'Restez sur la voie de fidélité les premières semaines, puis passez à votre rôle d’alliance (Démolition, Conquête rapide, Bannière).',
+  edenPlaybookAltSpeedOptional: '14–20 points Bleu facultatifs pour la conquête rapide : vitesse de marche de la Cartographie de campagne et Rappel immédiat avec 30 % de réduction sur les 20 points complets',
 };
 
 export default fr;

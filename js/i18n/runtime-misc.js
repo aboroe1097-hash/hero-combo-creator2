@@ -17,6 +17,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: 'Restore {count} from {label}',
     managementVotesUnavailable: 'Management votes temporarily unavailable',
     adminLoadFailed: 'Failed to load the admin dashboard. Refresh and try again.',
+    adminLoadRetry: 'Retry',
   }),
   ar: Object.freeze({
     aiRetryAfter: 'أعد المحاولة بعد {time}.',
@@ -36,6 +37,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: 'استعادة {count} من {label}',
     managementVotesUnavailable: 'أصوات الإدارة غير متاحة مؤقتًا',
     adminLoadFailed: 'تعذر تحميل لوحة الإدارة. حدّث الصفحة وحاول مجددًا.',
+    adminLoadRetry: 'إعادة المحاولة',
   }),
   de: Object.freeze({
     aiRetryAfter: 'Erneut versuchen nach {time}.',
@@ -56,6 +58,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Management-Abstimmung vorübergehend nicht verfügbar',
     adminLoadFailed:
       'Admin-Dashboard konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
+    adminLoadRetry: 'Erneut versuchen',
   }),
   es: Object.freeze({
     aiRetryAfter: 'Vuelve a intentarlo después de {time}.',
@@ -76,6 +79,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Los votos de gestión no están disponibles temporalmente',
     adminLoadFailed:
       'No se pudo cargar el panel de administración. Actualiza la página e inténtalo de nuevo.',
+    adminLoadRetry: 'Reintentar',
   }),
   fr: Object.freeze({
     aiRetryAfter: 'Réessayez après {time}.',
@@ -96,6 +100,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Votes de la gestion temporairement indisponibles',
     adminLoadFailed:
       "Impossible de charger le tableau d'administration. Actualisez la page et réessayez.",
+    adminLoadRetry: 'Réessayer',
   }),
   id: Object.freeze({
     aiRetryAfter: 'Coba lagi setelah {time}.',
@@ -115,6 +120,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: 'Pulihkan {count} dari {label}',
     managementVotesUnavailable: 'Voting manajemen sementara tidak tersedia',
     adminLoadFailed: 'Dasbor admin gagal dimuat. Segarkan halaman lalu coba lagi.',
+    adminLoadRetry: 'Coba lagi',
   }),
   it: Object.freeze({
     aiRetryAfter: 'Riprova dopo {time}.',
@@ -134,6 +140,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: 'Ripristina {count} da {label}',
     managementVotesUnavailable: 'I voti della gestione non sono temporaneamente disponibili',
     adminLoadFailed: 'Dashboard admin non caricata. Aggiorna la pagina e riprova.',
+    adminLoadRetry: 'Riprova',
   }),
   kr: Object.freeze({
     aiRetryAfter: '{time} 후 다시 시도하세요.',
@@ -153,6 +160,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: '{label}에서 {count}개 복원',
     managementVotesUnavailable: '관리진 투표를 일시적으로 불러올 수 없습니다',
     adminLoadFailed: '관리자 대시보드를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.',
+    adminLoadRetry: '다시 시도',
   }),
   pt: Object.freeze({
     aiRetryAfter: 'Tente novamente após {time}.',
@@ -173,6 +181,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Votos da gestão temporariamente indisponíveis',
     adminLoadFailed:
       'Não foi possível carregar o painel administrativo. Atualize e tente novamente.',
+    adminLoadRetry: 'Tentar novamente',
   }),
   ru: Object.freeze({
     aiRetryAfter: 'Повторите попытку через {time}.',
@@ -193,6 +202,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Голоса руководства временно недоступны',
     adminLoadFailed:
       'Не удалось загрузить панель администратора. Обновите страницу и повторите попытку.',
+    adminLoadRetry: 'Повторить',
   }),
   tr: Object.freeze({
     aiRetryAfter: '{time} sonra tekrar dene.',
@@ -212,6 +222,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: '{label} kaynağından {count} kaydı geri yükle',
     managementVotesUnavailable: 'Yönetim oyları geçici olarak kullanılamıyor',
     adminLoadFailed: 'Yönetici paneli yüklenemedi. Sayfayı yenileyip tekrar dene.',
+    adminLoadRetry: 'Yeniden dene',
   }),
   zh: Object.freeze({
     aiRetryAfter: '请在 {time} 后重试。',
@@ -231,6 +242,7 @@ const COPY = Object.freeze({
     adminExGuildRestoreBackup: '从 {label} 恢复 {count} 条记录',
     managementVotesUnavailable: '管理层投票暂时不可用',
     adminLoadFailed: '管理员面板加载失败。请刷新页面后重试。',
+    adminLoadRetry: '重试',
   }),
 });
 

@@ -170,7 +170,7 @@ const requestAdminLanguage = createLatestLanguageLoader((lang) => {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260818_210813');
+  const res = await fetch('tabs/admin.html?v=20260820_140008');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -199,7 +199,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20260818_210813');
+  const mod = await import('./ocr-dashboard.js?v=20260820_140008');
   await mod.bootOcrDashboard();
 }
 
@@ -215,6 +215,18 @@ if (!window.VTS_MAINTENANCE_ACTIVE)
       const error = document.createElement('div');
       error.className = 'admin-load-error';
       error.textContent = message;
+      // A gstatic/Firebase outage must never leave the admin with a dead end: the message
+      // alone told them to refresh by hand. Give them an in-page retry.
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'tab-load-error-link';
+      retry.textContent = translations[lang]?.adminLoadRetry || translations.en.adminLoadRetry;
+      retry.addEventListener('click', () => {
+        retry.disabled = true;
+        window.location.reload();
+      });
+      error.appendChild(document.createElement('br'));
+      error.appendChild(retry);
       section.replaceChildren(error);
     }
   });

@@ -66,6 +66,8 @@
   align-items: center;
   gap: var(--space-2);
   padding: 8px 16px;
+  /* Matches the sibling Research & Towers hub pills and the repo tap-target floor. */
+  min-height: var(--ff-tap-min, 44px);
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -91,6 +93,15 @@
   border-color: rgba(168, 85, 247, 0.5);
   color: #f8fafc;
   box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
+/* The active pill was styled dark-first with a fixed near-white label. On the light
+   surface the 20% violet tint composites to roughly #e1e0fc, leaving #f8fafc at about
+   1.2:1 - the active Eden sub-tab was effectively invisible. */
+[data-theme='light'] .vts-eden-subtab-btn.active {
+  background: var(--ff-surface-selected);
+  border-color: var(--ff-border-hover);
+  color: var(--ff-text-primary, var(--ff-text));
 }
 
 .vts-eden-subtab-panel {
@@ -517,6 +528,12 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+/* Light theme kept the dark-theme slate label on a near-white control (about 1.5:1),
+   which made the "Show Hero Info Panels" switch label unreadable. */
+[data-theme='light'] .toggle-text {
+  color: var(--ff-text-dim);
 }
 
 @media (min-width: 640px) {
@@ -1471,7 +1488,7 @@
 .tab-load-error,
 .admin-load-error {
   padding: 2rem;
-  color: #f87171;
+  color: var(--ff-danger);
   font-size: 0.875rem;
   text-align: center;
 }

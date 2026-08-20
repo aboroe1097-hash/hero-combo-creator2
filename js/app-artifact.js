@@ -144,7 +144,13 @@ function setNodeLevel(nodeId, rawLevel, { render: shouldRender = true, save = tr
   if (!node) return;
   const level = Math.max(0, Math.min(node.maxLevel, Math.trunc(Number(rawLevel)) || 0));
   const current = Number(nodeLevels[nodeId]) || 0;
-  if (level > current && !requirementsMet(node)) return;
+  if (level > current && !requirementsMet(node)) {
+    // A native range input moves its own thumb before this handler runs, so returning
+    // early used to leave the control showing a level that was never applied. Re-render
+    // so it snaps back to the real model value.
+    if (shouldRender) render();
+    return;
+  }
   nodeLevels = { ...nodeLevels, [nodeId]: level };
   if (save) saveProgress();
   if (shouldRender) render();
@@ -301,7 +307,7 @@ function selectedNodeMarkup() {
     ${node.permanentAttribute ? `<p class="artifact-permanent"><strong>${escapeHtml(t('permanent'))}:</strong> ${escapeHtml(node.permanentAttribute)}</p>` : ''}
     <div class="artifact-level-line">
       <strong data-artifact-level-label>${escapeHtml(levelLabel)}</strong>
-      <label class="artifact-level-number"><span class="sr-only">${escapeHtml(levelLabel)}</span><input type="number" min="0" max="${node.maxLevel}" value="${current}" inputmode="numeric" data-artifact-level-input="${escapeHtml(node.id)}" /></label>
+      <label class="artifact-level-number"><span class="sr-only">${escapeHtml(levelLabel)}</span><input type="number" min="0" max="${node.maxLevel}" value="${current}" inputmode="numeric" data-artifact-level-input="${escapeHtml(node.id)}" ${locked ? 'disabled' : ''} /></label>
     </div>
     <div class="artifact-level-actions" aria-label="${escapeHtml(levelLabel)}">
       <button type="button" data-artifact-action="decrease" data-step="5" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('decreaseLevel', { name: node.name }))}" ${current === 0 ? 'disabled' : ''}>−5</button>
@@ -311,7 +317,7 @@ function selectedNodeMarkup() {
       <button type="button" class="artifact-max-button" data-artifact-action="max-node-path" data-node-id="${escapeHtml(node.id)}" aria-label="${escapeHtml(t('setMax', { name: node.name }))}" ${maxed ? 'disabled' : ''}>↟ MAX</button>
     </div>
     <label class="sr-only" for="artifact-level-${escapeHtml(node.id)}">${escapeHtml(levelLabel)}</label>
-    <input id="artifact-level-${escapeHtml(node.id)}" type="range" min="0" max="${node.maxLevel}" value="${current}" data-artifact-slider="${escapeHtml(node.id)}" aria-valuetext="${escapeHtml(levelLabel)}" />
+    <input id="artifact-level-${escapeHtml(node.id)}" type="range" min="0" max="${node.maxLevel}" value="${current}" data-artifact-slider="${escapeHtml(node.id)}" aria-valuetext="${escapeHtml(levelLabel)}" ${locked ? 'disabled' : ''} />
     <div class="artifact-cost-line">
       <span>${resourceIcon(node.resource, 'artifact-cost-icon')}${escapeHtml(maxed ? t('maxReached') : t('nextLevel', { cost: fmt(next), resource: node.resource }))}</span>
       <span>${resourceIcon(node.resource, 'artifact-cost-icon')}${escapeHtml(maxed ? '100%' : t('toMax', { cost: fmt(remaining), resource: node.resource }))}</span>

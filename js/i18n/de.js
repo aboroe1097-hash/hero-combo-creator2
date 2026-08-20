@@ -3180,6 +3180,8 @@ const de = {
   edenPlaybookAltTiling: 'Grüne Feldlegen-Ehren-Spezialisierungsroute',
   edenPlaybookAltFort: 'Blaue Festungs-Freischaltungs-Spezialisierungsroute',
   shareViewCopied: 'Link in die Zwischenablage kopiert',
+  edenPlaybookDay1Task5: 'Bleibe in den ersten Wochen im Loyalitäts-Build und wechsle danach zu deiner Allianz-Rolle (Zerstörung, Schnelles Feldlegen, Banner).',
+  edenPlaybookAltSpeedOptional: 'Optionale 14–20 Blau-Punkte für schnelles Feldlegen: Marschgeschwindigkeit der Feldkartografie und Sofort-Rückruf mit 30 % Rabatt bei vollen 20 Punkten',
 };
 
 export default de;

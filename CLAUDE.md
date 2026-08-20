@@ -31,6 +31,68 @@ Repo-specific gotchas for delegated work:
 
 Full protocol: `~/.claude/ORCHESTRATION.md` §0.
 
+### Parallel locale fan-out (the fast, cheap path)
+
+Filling the same set of keys across many locales is the highest-value delegation
+shape in this repo: 10 locales x 21 keys cost **$0.08 and ~4 minutes** wall clock,
+with zero Claude tokens spent on the translations themselves.
+
+1. **Get the real missing-key list from the checker, not a naive diff.** A plain
+   `en` vs locale comparison over-counts badly — it flagged 103 keys for `de` when
+   only 21 were genuinely missing, because German legitimately reuses "Status",
+   "Admin", "Team". Use the coverage data the checker itself exports:
+
+   ```js
+   import { availableLanguages, loadTranslationsForLanguage, translationCoverage }
+     from './js/translations.js';
+   await Promise.all(availableLanguages.map(loadTranslationsForLanguage));
+   translationCoverage.de.missingBeforeFallback; // the true list
+   ```
+
+   Usually the same keys are missing in every locale, so one prompt template covers
+   all of them.
+
+2. **Record a git baseline before delegating.** `git status --short js/i18n/` first —
+   if a target file is already dirty you cannot attribute the resulting diff, and the
+   worker will report "keys already exist" without editing anything.
+
+3. **One locale per call, all launched in parallel.** Disjoint files, so there is no
+   conflict and no need for worktree isolation:
+
+   ```bash
+   for code in ar id pt ru tr zh; do
+     bash ~/.claude/scripts/delegate.sh mid -q -C "$REPO" -t 420 \
+       -R "i18n fill $code" "$(cat prompt-$code.txt)" > out-$code.log 2>&1 &
+   done
+   wait
+   ```
+
+4. **Spell out the mechanical contract in the prompt**: which single file may be
+   touched, insert before the final `};`, keep `{placeholder}` tokens byte-identical
+   and in Latin script, keep dotted keys (`'ai.action.openLoyalty'`) quoted, two-space
+   indent, single quotes, trailing commas, escape `\'`.
+
+Acceptance check to run yourself afterwards — never trust the worker's summary:
+
+```bash
+node -e "import('./js/i18n/es.js').then(m=>console.log(Object.keys(m.default).length))"
+npm run i18n:check   # target locales should vanish from the fallback report
+```
+
+Then verify placeholder parity against `en.js` for the keys you added. Expect
+long values to wrap onto a continuation line — that is valid and matches file style,
+so a +23 diffstat for 21 keys is fine.
+
+**Do not run `prettier --write` on `js/i18n/*.js`.** The top-level locale files are
+outside the `format:check` allowlist (which covers only `js/i18n/admin-all-star-boh/*.js`
+and `js/i18n/all-star-boh/*.js`) and already fail a bare `prettier --check` at HEAD.
+Formatting them rewrites hundreds of untouched lines.
+
+Model note: `mid` is now `deepseek-v4-flash` -> `deepseek-v4-pro` only. Flash handles
+roughly 4 of 5 calls first try; pro silently catches the rest at no cost when flash
+succeeds. The three `opencode-go` fallbacks were removed after 133 calls with 0
+successes.
+
 ## Workflow reminder
 
 Use a separate branch from the latest `origin/gh-pages`, run the full gate,

@@ -3137,6 +3137,8 @@ Object.assign(id, {
   edenPlaybookAltTiling: 'Rute spesialisasi Kehormatan tiling Hijau',
   edenPlaybookAltFort: 'Rute spesialisasi buka benteng Biru Bawah',
   shareViewCopied: 'Tautan disalin ke papan klip',
+  edenPlaybookDay1Task5: 'Tetap di build loyalitas selama beberapa minggu pertama, lalu beralih ke peran aliansi Anda (Penghancuran, Tiling Cepat, Banner).',
+  edenPlaybookAltSpeedOptional: 'Opsional 14-20 poin Biru untuk tiling cepat: kecepatan march Field Cartography dan Instant Recall dengan diskon 30% pada 20 poin penuh',
 });
 
 export default id;

@@ -821,8 +821,11 @@
     min-width: 500px;
   }
 
+  /* 38px sat below the repo's own --ff-tap-min floor on the smallest phones, where the
+     artifact tree is densest. Nodes are absolutely positioned on fixed --node-x/--node-y
+     centres, so widening them does not reflow the tree. */
   .artifact-tree-node {
-    width: 38px;
+    width: var(--ff-tap-min, 44px);
   }
 
   .artifact-tree-node-rge {

@@ -3212,6 +3212,8 @@ Object.assign(tr, {
   edenPlaybookAltTiling: 'Yeşil kare alma Onur uzmanlık rotası',
   edenPlaybookAltFort: 'Mavi Aşağı kale açma uzmanlık rotası',
   shareViewCopied: 'Bağlantı panoya kopyalandı',
+  edenPlaybookDay1Task5: 'İlk haftalarda sadakat yapısında kal, sonra ittifak rolüne geç (Yıkım, Hızlı Kare Alma, Banner).',
+  edenPlaybookAltSpeedOptional: 'Hızlı kare alma için isteğe bağlı 14-20 Mavi puan: Saha Haritacılığı yürüyüş hızı ve tam 20 puanda %30 indirimli Anında Geri Çağırma',
 });
 
 export default tr;

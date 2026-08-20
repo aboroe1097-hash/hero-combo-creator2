@@ -2845,6 +2845,8 @@ const pt = {
   edenPlaybookAltTiling: 'Rota de especialização de Honor de tiles Verde',
   edenPlaybookAltFort: 'Rota de especialização de desbloqueio de fortalezas Azul Baixo',
   shareViewCopied: 'Link copiado para a área de transferência',
+  edenPlaybookDay1Task5: 'Fique no build de lealdade nas primeiras semanas, depois mude para sua função na aliança (Demolição, Tiles de Velocidade, Estandarte).',
+  edenPlaybookAltSpeedOptional: 'Opcional de 14-20 pontos Azuis para tiles de velocidade: Cartografia de Campo de velocidade de marcha e Recall Instantâneo com desconto de 30% nos 20 pontos completos',
 };
 
 export default pt;

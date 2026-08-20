@@ -2937,6 +2937,8 @@ Object.assign(zh, {
   edenPlaybookAltTiling: '绿色铺地荣耀专精路线',
   edenPlaybookAltFort: '向下蓝线解锁要塞专精路线',
   shareViewCopied: '链接已复制到剪贴板',
+  edenPlaybookDay1Task5: '前几周先保持忠诚度成长配置，再切换到你的联盟角色（攻城爆破、快速铺地、战旗）。',
+  edenPlaybookAltSpeedOptional: '用于快速铺地的可选 14-20 蓝点：野战制图行军速度和即时召回，满 20 点可享 30% 折扣',
 });
 
 export default zh;

@@ -3127,6 +3127,8 @@ const es = {
   edenPlaybookAltTiling: 'Ruta de especialización de Honor por colocación de casillas Verde',
   edenPlaybookAltFort: 'Ruta de especialización de desbloqueo de fortalezas Azul Abajo',
   shareViewCopied: 'Enlace copiado al portapapeles',
+  edenPlaybookDay1Task5: 'Quédate en la build de lealtad las primeras semanas y luego cambia a tu rol de alianza (Demolición, Colocación rápida de casillas, Banner).',
+  edenPlaybookAltSpeedOptional: '14-20 puntos Azules opcionales para colocación rápida: velocidad de marcha de Cartografía de campo e Invocación instantánea con un 30% de descuento al llegar a los 20 puntos.',
 };
 
 export default es;
