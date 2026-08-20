@@ -3264,15 +3264,18 @@ const fr = {
   edenPlaybookDay0Task3: 'Suivez Bleu Bas assez loin pour débloquer et placer les quatre forteresses.',
   edenPlaybookDay0Task4: 'Activez la compétence d’honneur quotidienne.',
   edenPlaybookDay1Label: 'Jour 1',
-  edenPlaybookDay1Title: 'Construisez, entrez, puis forcez le revenu',
+  edenPlaybookDay1Title: 'Débloquez les forteresses, préparez l\'Honneur, puis la voie de fidélité',
   edenPlaybookDay1Why:
-    'Les fronts convertissent les matériaux stockés en Honneur ; Bleu Droite transforme ensuite la fidélité en premier grand saut de revenu.',
+    'Les forteresses doivent être placées avant les réinitialisations ; Vert maximise l\'Honneur de l\'atelier de front, puis Bleu accélère la fidélité, le traitement et la conquête de tuiles.',
   edenPlaybookDay1Watch:
-    'Ne construisez pas trop longtemps au point d’arrêter les files de traitement ou de retarder les tuiles Lv. 9.',
-  edenPlaybookDay1Task1: 'Démarrez les bonus d’Honneur et la carte Honneur ; ouvrez les matériaux de construction stockés.',
-  edenPlaybookDay1Task2: 'Construisez les forteresses au Lv. 1 et les fronts vers 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Entrez dans Eden, réinitialisez à 47 points sur Bleu Droite, forcez les tuiles Lv. 8 puis Lv. 9.',
-  edenPlaybookDay1Task4: 'Maintenez les files de traitement actives ; rechargez une fois pendant le sommeil si possible.',
+    'Construisez les deux forteresses avant toute réinitialisation — et gardez les files de traitement actives pendant que vous conquérez des tuiles.',
+  edenPlaybookDay1Task1: 'Débloquez et construisez les forteresses d\'assaut et de garde avant de réinitialiser votre spécialisation.',
+  edenPlaybookDay1Task2:
+    'Réinitialisez la spécialisation, placez tous les points dans Vert (gauche) et améliorez chaque atelier de front à son niveau le plus élevé.',
+  edenPlaybookDay1Task3:
+    'Réinitialisez à nouveau dans l\'arbre Bleu (gauche et droite) pour débloquer des ateliers supplémentaires et des nœuds de fidélité.',
+  edenPlaybookDay1Task4:
+    'Conquérez des nœuds Farm, Marble et Ale pour les améliorations du Coalition Base Camp — des camps plus élevés signifient plus de fidélité et des tuiles de niveau supérieur.',
   edenPlaybookDay2Label: 'Jour 2',
   edenPlaybookDay2Title: 'Forcez le palier critique du Lv. 12',
   edenPlaybookDay2Why:

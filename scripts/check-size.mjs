@@ -222,7 +222,10 @@ const LIMITS = {
   // The 15.0.12 playbook Day-1 rework and six in-game specialization captures
   // (69 KiB of optimized WebP media) audit to 31968.3 KiB; retain roughly
   // 8 KiB of headroom without changing per-route caps.
-  totalDeployBytes: 31976 * 1024,
+  // The #154-#168 audit fixes add light-theme overrides, tap-target floors and
+  // localized load-failure copy (CSS and locale text only, no new media); the
+  // artifact audits to 31976.6 KiB. Retain roughly 7 KiB of headroom.
+  totalDeployBytes: 31984 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.

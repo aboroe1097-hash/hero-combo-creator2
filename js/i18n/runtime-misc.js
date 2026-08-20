@@ -18,6 +18,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Management votes temporarily unavailable',
     adminLoadFailed: 'Failed to load the admin dashboard. Refresh and try again.',
     adminLoadRetry: 'Retry',
+    edenHubLoadFailed: '{tab} failed to load. Refresh and try again.',
   }),
   ar: Object.freeze({
     aiRetryAfter: 'أعد المحاولة بعد {time}.',
@@ -38,6 +39,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'أصوات الإدارة غير متاحة مؤقتًا',
     adminLoadFailed: 'تعذر تحميل لوحة الإدارة. حدّث الصفحة وحاول مجددًا.',
     adminLoadRetry: 'إعادة المحاولة',
+    edenHubLoadFailed: 'تعذر تحميل {tab}. حدّث الصفحة وحاول مجددًا.',
   }),
   de: Object.freeze({
     aiRetryAfter: 'Erneut versuchen nach {time}.',
@@ -59,6 +61,7 @@ const COPY = Object.freeze({
     adminLoadFailed:
       'Admin-Dashboard konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
     adminLoadRetry: 'Erneut versuchen',
+    edenHubLoadFailed: '{tab} konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
   }),
   es: Object.freeze({
     aiRetryAfter: 'Vuelve a intentarlo después de {time}.',
@@ -80,6 +83,7 @@ const COPY = Object.freeze({
     adminLoadFailed:
       'No se pudo cargar el panel de administración. Actualiza la página e inténtalo de nuevo.',
     adminLoadRetry: 'Reintentar',
+    edenHubLoadFailed: 'No se pudo cargar {tab}. Actualiza la página e inténtalo de nuevo.',
   }),
   fr: Object.freeze({
     aiRetryAfter: 'Réessayez après {time}.',
@@ -101,6 +105,7 @@ const COPY = Object.freeze({
     adminLoadFailed:
       "Impossible de charger le tableau d'administration. Actualisez la page et réessayez.",
     adminLoadRetry: 'Réessayer',
+    edenHubLoadFailed: 'Échec du chargement de {tab}. Actualisez la page et réessayez.',
   }),
   id: Object.freeze({
     aiRetryAfter: 'Coba lagi setelah {time}.',
@@ -121,6 +126,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Voting manajemen sementara tidak tersedia',
     adminLoadFailed: 'Dasbor admin gagal dimuat. Segarkan halaman lalu coba lagi.',
     adminLoadRetry: 'Coba lagi',
+    edenHubLoadFailed: '{tab} gagal dimuat. Segarkan halaman lalu coba lagi.',
   }),
   it: Object.freeze({
     aiRetryAfter: 'Riprova dopo {time}.',
@@ -141,6 +147,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'I voti della gestione non sono temporaneamente disponibili',
     adminLoadFailed: 'Dashboard admin non caricata. Aggiorna la pagina e riprova.',
     adminLoadRetry: 'Riprova',
+    edenHubLoadFailed: 'Caricamento di {tab} non riuscito. Aggiorna la pagina e riprova.',
   }),
   kr: Object.freeze({
     aiRetryAfter: '{time} 후 다시 시도하세요.',
@@ -161,6 +168,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: '관리진 투표를 일시적으로 불러올 수 없습니다',
     adminLoadFailed: '관리자 대시보드를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.',
     adminLoadRetry: '다시 시도',
+    edenHubLoadFailed: '{tab}을(를) 불러오지 못했습니다. 새로고침 후 다시 시도하세요.',
   }),
   pt: Object.freeze({
     aiRetryAfter: 'Tente novamente após {time}.',
@@ -182,6 +190,7 @@ const COPY = Object.freeze({
     adminLoadFailed:
       'Não foi possível carregar o painel administrativo. Atualize e tente novamente.',
     adminLoadRetry: 'Tentar novamente',
+    edenHubLoadFailed: 'Falha ao carregar {tab}. Atualize a página e tente novamente.',
   }),
   ru: Object.freeze({
     aiRetryAfter: 'Повторите попытку через {time}.',
@@ -203,6 +212,7 @@ const COPY = Object.freeze({
     adminLoadFailed:
       'Не удалось загрузить панель администратора. Обновите страницу и повторите попытку.',
     adminLoadRetry: 'Повторить',
+    edenHubLoadFailed: 'Не удалось загрузить {tab}. Обновите страницу и попробуйте снова.',
   }),
   tr: Object.freeze({
     aiRetryAfter: '{time} sonra tekrar dene.',
@@ -223,6 +233,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: 'Yönetim oyları geçici olarak kullanılamıyor',
     adminLoadFailed: 'Yönetici paneli yüklenemedi. Sayfayı yenileyip tekrar dene.',
     adminLoadRetry: 'Yeniden dene',
+    edenHubLoadFailed: '{tab} yüklenemedi. Sayfayı yenileyip tekrar deneyin.',
   }),
   zh: Object.freeze({
     aiRetryAfter: '请在 {time} 后重试。',
@@ -243,6 +254,7 @@ const COPY = Object.freeze({
     managementVotesUnavailable: '管理层投票暂时不可用',
     adminLoadFailed: '管理员面板加载失败。请刷新页面后重试。',
     adminLoadRetry: '重试',
+    edenHubLoadFailed: '{tab} 加载失败。请刷新页面后重试。',
   }),
 });
 

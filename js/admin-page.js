@@ -167,10 +167,27 @@ const requestAdminLanguage = createLatestLanguageLoader((lang) => {
   updateTextContent(loadedLanguage);
 });
 
+const ADMIN_TEMPLATE_TIMEOUT_MS = 15000;
+
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260820_140008');
+  // An unbounded fetch left the "Loading admin dashboard..." card spinning forever when
+  // the network stalled without failing. Bound it so the caller's error path (which now
+  // offers a retry) actually runs.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ADMIN_TEMPLATE_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch('tabs/admin.html?v=20260820_230108', { signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Admin template timed out after ${ADMIN_TEMPLATE_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -199,7 +216,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20260820_140008');
+  const mod = await import('./ocr-dashboard.js?v=20260820_230108');
   await mod.bootOcrDashboard();
 }
 

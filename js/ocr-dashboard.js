@@ -6364,6 +6364,10 @@ export async function bootOcrDashboard() {
         }
       } else {
         setLoginError(dashT('adminLoginFirebaseUnavailable'));
+        // setLoginError writes into #dashLoginErr, which lives inside the hidden login
+        // card. Without swapping to it the admin watched "Initializing secure session..."
+        // for the full watchdog interval before the error became visible.
+        showLogin();
       }
     } catch (e) {
       console.error('Admin auth boot failed', e);
