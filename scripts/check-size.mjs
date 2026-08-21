@@ -106,7 +106,9 @@ const LIMITS = {
   // the combined graph audits to 9828 KiB locally, with CI injection headroom.
   // Full 13-locale DrThunder playbook translation adds ~125 KiB across the
   // twelve lazy language chunks; the audited graph is now 9953.6 KiB.
-  totalJsBytes: 9970 * 1024,
+  // Translating the Royal Bounty guide adds eleven lazy locale chunks
+  // (~107 KiB total, none on the initial path); audited at 10076.5 KiB.
+  totalJsBytes: 10084 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -225,7 +227,9 @@ const LIMITS = {
   // The #154-#168 audit fixes add light-theme overrides, tap-target floors and
   // localized load-failure copy (CSS and locale text only, no new media); the
   // artifact audits to 31976.6 KiB. Retain roughly 7 KiB of headroom.
-  totalDeployBytes: 31984 * 1024,
+  // Translating the Royal Bounty guide adds eleven lazy locale chunks; the
+  // artifact audits to 32093.1 KiB. Retain roughly 7 KiB of headroom.
+  totalDeployBytes: 32100 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -265,7 +269,9 @@ const LIMITS = {
   // of headroom.
   // Artifact and its evidence/localization split emit 663 files; keep two of
   // headroom so unplanned chunk proliferation remains visible.
-  deployFileCount: 690,
+  // The Royal Bounty guide's eleven locale chunks emit 701 files; keep three of
+  // headroom on the same principle.
+  deployFileCount: 704,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

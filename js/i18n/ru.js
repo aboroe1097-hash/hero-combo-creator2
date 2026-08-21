@@ -2084,7 +2084,7 @@ const ru = {
   dmEnhanceShortfall: 'Нехватка',
   dmEnhanceReached: 'Цель уже достигнута',
   dmEnhanceCredit: 'Спасибо Roha и Redbull за предоставленные данные для инструмента DM.',
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Королевская награда Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Защищённый сервис Google, необходимый для входа, недоступен из этой сети или региона. Попробуйте VPN или другую сеть, затем нажмите «Повторить». Ваш PIN не был отклонён.',
 };

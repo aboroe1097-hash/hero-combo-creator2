@@ -2463,10 +2463,10 @@ service cloud.firestore {
 
     match /vts_admin/alliance_view/rosters/{allianceId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow create: if isSuperAdmin()
         && validAllianceViewRoster(allianceId)
         && request.resource.data.revision == 1;
-      allow update: if isAdmin()
+      allow update: if isSuperAdmin()
         && validAllianceViewRoster(allianceId)
         && resource.data.allianceId == allianceId
         && request.resource.data.revision == resource.data.revision + 1;
@@ -2555,15 +2555,15 @@ service cloud.firestore {
 
     match /vts_admin/eden_x2_conduct_adjustments/records/{adjustmentId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow create: if isSuperAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
         && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdmin()
+      allow update: if isSuperAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
         && (keepsConductMetadata() || repairsHistoricalConductMetadata());
-      allow delete: if isAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     match /vts_admin/eden_x2_votes/records/{voteId} {
@@ -2588,7 +2588,7 @@ service cloud.firestore {
 
     match /vts_admin/eden_x2_vote_settings {
       allow read: if isAdmin();
-      allow create, update: if isAdmin() && validEdenX1VoteSettings();
+      allow create, update: if isSuperAdmin() && validEdenX1VoteSettings();
       allow delete: if false;
     }
 

@@ -544,13 +544,15 @@ test('Alliance View rosters are admin-only and revision protected', () => {
   assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);
   assert.match(rules, /request\.resource\.data\.updatedBy == request\.auth\.uid/);
   assert.match(allianceRosterMatch, /allow read: if isAdmin\(\);/);
+  // Writes are the superadmin-only Alliance View tab: the UI disables it for a plain
+  // admin, so the rules must enforce that rather than leaving a hidden control writable.
   assert.match(
     allianceRosterMatch,
-    /allow create: if isAdmin\(\)[\s\S]*request\.resource\.data\.revision == 1;/
+    /allow create: if isSuperAdmin\(\)[\s\S]*request\.resource\.data\.revision == 1;/
   );
   assert.match(
     allianceRosterMatch,
-    /allow update: if isAdmin\(\)[\s\S]*request\.resource\.data\.revision == resource\.data\.revision \+ 1;/
+    /allow update: if isSuperAdmin\(\)[\s\S]*request\.resource\.data\.revision == resource\.data\.revision \+ 1;/
   );
   assert.match(allianceRosterMatch, /allow delete: if false;/);
   assert.doesNotMatch(allianceRosterMatch, /signedIn\(\)/);

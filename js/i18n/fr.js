@@ -3127,7 +3127,7 @@ const fr = {
     strifeSourceGuide: 'Guide de référence',
     arcadeIntro: 'Vous pensez pouvoir battre les meilleurs scores de l’Arcade ? À vous de jouer.',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Prime Royale Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     "Le service Google sécurisé requis pour l'inscription est inaccessible depuis ce réseau ou cette région. Essayez avec un VPN ou un autre réseau, puis appuyez sur Réessayer. Votre PIN n'a pas été rejeté.",
   shareView: 'Partager cette vue exacte',

@@ -2675,7 +2675,7 @@ const pt = {
     dmEnhanceReached: 'Objetivo já alcançado',
     dmEnhanceCredit: 'Agradecemos a Roha e Redbull pelos dados usados na ferramenta Dragon Master.',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Recompensa Real Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'O serviço seguro do Google necessário para a inscrição não pode ser alcançado a partir desta rede ou região. Tente usar uma VPN ou outra rede e pressione Tentar novamente. Seu PIN não foi rejeitado.',
   shareView: 'Compartilhar esta exibição exata',

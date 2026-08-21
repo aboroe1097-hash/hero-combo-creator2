@@ -24,8 +24,9 @@ import {
   BOUNTY_SETUP_STEPS,
   BOUNTY_STATS,
 } from './bounty-guide-data.js';
+import { bountyText as bt, loadBountyGuideLocale } from './i18n/bounty-guide/index.js';
 import { allHeroesData } from './heroes-data.js';
-import { getHeroImageUrl } from './state.js';
+import { getHeroImageUrl, currentLanguage } from './state.js';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview' },
@@ -63,15 +64,15 @@ function renderStatCards() {
   return `
   <section class="bounty-section" id="bounty-overview" data-bounty-section="overview">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">At a glance</h2>
-      <p class="bounty-section-sub">The whole event in four numbers.</p>
+      <h2 class="bounty-section-title">${bt("At a glance")}</h2>
+      <p class="bounty-section-sub">${bt("The whole event in four numbers.")}</p>
     </header>
     <div class="bounty-stat-grid">
       ${BOUNTY_STATS.map(
         (stat, index) => `
       <article class="bounty-stat-card bounty-stat-card--${index + 1}">
         <strong class="bounty-stat-value">${escapeHtml(stat.value)}</strong>
-        <span class="bounty-stat-label">${escapeHtml(stat.label)}</span>
+        <span class="bounty-stat-label">${escapeHtml(bt(stat.label))}</span>
       </article>`
       ).join('')}
     </div>
@@ -84,16 +85,16 @@ function renderLoop() {
     <li class="bounty-loop-step${step.title === 'Reach Level 6' ? ' bounty-loop-step--payoff' : ''}">
       <span class="bounty-loop-index" aria-hidden="true">${index + 1}</span>
       <div class="bounty-loop-copy">
-        <strong>${escapeHtml(step.title)}</strong>
-        <span>${escapeHtml(step.detail)}</span>
+        <strong>${escapeHtml(bt(step.title))}</strong>
+        <span>${escapeHtml(bt(step.detail))}</span>
       </div>
     </li>`
   ).join('');
   return `
   <section class="bounty-section" id="bounty-loop" data-bounty-section="overview">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">The Bounty Loop</h2>
-      <p class="bounty-section-sub">One mental model for the whole season.</p>
+      <h2 class="bounty-section-title">${bt("The Bounty Loop")}</h2>
+      <p class="bounty-section-sub">${bt("One mental model for the whole season.")}</p>
     </header>
     <ol class="bounty-loop">${steps}</ol>
   </section>`;
@@ -103,43 +104,43 @@ function renderLobbies() {
   return `
   <section class="bounty-section" id="bounty-lobbies" data-bounty-section="lobbies">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">Mission Lobbies</h2>
-      <p class="bounty-section-sub">Every bounty hero runs a lobby on the map.</p>
+      <h2 class="bounty-section-title">${bt("Mission Lobbies")}</h2>
+      <p class="bounty-section-sub">${bt("Every bounty hero runs a lobby on the map.")}</p>
     </header>
     ${renderFigure(BOUNTY_FIGURES.lobbyMap, "bounty-figure--portrait")}
     <div class="bounty-lobby-layout">
       <article class="bounty-panel">
-        <h3 class="bounty-panel-title">What a lobby is</h3>
-        <p>Each bounty hero has a mission lobby where players complete <strong>hero-specific missions</strong>. Lobbies work like Eden strongholds: capture them, connect them to your territory, and hold them.</p>
+        <h3 class="bounty-panel-title">${bt("What a lobby is")}</h3>
+        <p>${bt("Each bounty hero has a mission lobby where players complete hero-specific missions. Lobbies work like Eden strongholds: capture them, connect them to your territory, and hold them.")}</p>
         <ul class="bounty-panel-list">
-          <li>Capture like an Eden stronghold</li>
-          <li>Connect the tile to your territory</li>
-          <li>Tile is turned off while contested</li>
-          <li><strong>+10% Commission Points</strong> for members while their faction occupies the lobby</li>
+          <li>${bt("Capture like an Eden stronghold")}</li>
+          <li>${bt("Connect the tile to your territory")}</li>
+          <li>${bt("Tile is turned off while contested")}</li>
+          <li>${bt("+10% Commission Points for members while their faction occupies the lobby")}</li>
         </ul>
       </article>
       <article class="bounty-panel bounty-panel--timeline">
-        <h3 class="bounty-panel-title">Lobby unlock timeline</h3>
+        <h3 class="bounty-panel-title">${bt("Lobby unlock timeline")}</h3>
         <ol class="bounty-timeline">
           <li class="bounty-timeline-step">
-            <span class="bounty-timeline-day">Day 1</span>
+            <span class="bounty-timeline-day">${bt("Day 1")}</span>
             <div class="bounty-timeline-copy">
-              <strong>Cao Cao</strong>
-              <span>First lobby opens.</span>
+              <strong>${bt("Cao Cao")}</strong>
+              <span>${bt("First lobby opens.")}</span>
             </div>
           </li>
           <li class="bounty-timeline-step">
-            <span class="bounty-timeline-day">Later</span>
+            <span class="bounty-timeline-day">${bt("Later")}</span>
             <div class="bounty-timeline-copy">
-              <strong>Remaining heroes</strong>
-              <span>Lobbies open staggered across the season.</span>
+              <strong>${bt("Remaining heroes")}</strong>
+              <span>${bt("Lobbies open staggered across the season.")}</span>
             </div>
           </li>
           <li class="bounty-timeline-step">
-            <span class="bounty-timeline-day">Always</span>
+            <span class="bounty-timeline-day">${bt("Always")}</span>
             <div class="bounty-timeline-copy">
-              <strong>In-game timer</strong>
-              <span>The timer under each hero portrait is the source of truth.</span>
+              <strong>${bt("In-game timer")}</strong>
+              <span>${bt("The timer under each hero portrait is the source of truth.")}</span>
             </div>
           </li>
         </ol>
@@ -152,40 +153,40 @@ function renderMissions() {
   return `
   <section class="bounty-section" id="bounty-missions" data-bounty-section="missions">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">Bounty Missions</h2>
-      <p class="bounty-section-sub">Accept, complete, get paid in Commission Points.</p>
+      <h2 class="bounty-section-title">${bt("Bounty Missions")}</h2>
+      <p class="bounty-section-sub">${bt("Accept, complete, get paid in Commission Points.")}</p>
     </header>
     ${renderFigure(BOUNTY_FIGURES.missionExamples)}
     <div class="bounty-mission-layout">
       <article class="bounty-panel">
-        <h3 class="bounty-panel-title">Every mission shows</h3>
+        <h3 class="bounty-panel-title">${bt("Every mission shows")}</h3>
         <ul class="bounty-panel-list">
-          <li>The mission objective</li>
-          <li>Commission Points it pays</li>
-          <li>A timer / expiry</li>
-          <li>An accept-quest interaction</li>
+          <li>${bt("The mission objective")}</li>
+          <li>${bt("Commission Points it pays")}</li>
+          <li>${bt("A timer / expiry")}</li>
+          <li>${bt("An accept-quest interaction")}</li>
         </ul>
       </article>
       <article class="bounty-panel">
-        <h3 class="bounty-panel-title">Mission examples</h3>
+        <h3 class="bounty-panel-title">${bt("Mission examples")}</h3>
         <ul class="bounty-chip-list">
           ${BOUNTY_MISSION_EXAMPLES.map(
-            (mission) => `<li class="bounty-chip">${escapeHtml(mission)}</li>`
+            (mission) => `<li class="bounty-chip">${escapeHtml(bt(mission))}</li>`
           ).join('')}
         </ul>
       </article>
       <article class="bounty-panel bounty-panel--daily">
-        <h3 class="bounty-panel-title">Daily limits</h3>
+        <h3 class="bounty-panel-title">${bt("Daily limits")}</h3>
         <div class="bounty-daily-rules">
           ${BOUNTY_DAILY_RULES.map(
             (rule) => `
           <div class="bounty-daily-rule">
             <strong>${escapeHtml(rule.value)}</strong>
-            <span>${escapeHtml(rule.label)}</span>
+            <span>${escapeHtml(bt(rule.label))}</span>
           </div>`
           ).join('')}
         </div>
-        <p class="bounty-panel-note">Perfect completion earns Commission Master rewards by mail.</p>
+        <p class="bounty-panel-note">${bt("Perfect completion earns Commission Master rewards by mail.")}</p>
         ${renderFigure(BOUNTY_FIGURES.rewards)}
       </article>
     </div>
@@ -198,31 +199,31 @@ function renderCommission() {
     return `
     <li class="bounty-level-node${payoff ? ' bounty-level-node--payoff' : ''}" title="${payoff ? 'Aiding Skill unlocked' : `Level ${entry.level}`}">
       <span class="bounty-level-dot" aria-hidden="true">${entry.level}</span>
-      ${payoff ? '<span class="bounty-level-burst" aria-hidden="true">Aiding Skill</span>' : ''}
+      ${payoff ? '<span class="bounty-level-burst" aria-hidden="true">${bt("Aiding Skill")}</span>' : ''}
     </li>`;
   }).join('');
   return `
   <section class="bounty-section" id="bounty-commission" data-bounty-section="commission">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">Commission Levels</h2>
-      <p class="bounty-section-sub">Points become levels; levels become attributes.</p>
+      <h2 class="bounty-section-title">${bt("Commission Levels")}</h2>
+      <p class="bounty-section-sub">${bt("Points become levels; levels become attributes.")}</p>
     </header>
     <ol class="bounty-level-track">${nodes}</ol>
     ${renderFigure(BOUNTY_FIGURES.lobbyPanel, "bounty-figure--portrait")}
     <div class="bounty-commission-layout">
       <article class="bounty-panel bounty-panel--attributes">
-        <h3 class="bounty-panel-title">Every Commission Level adds attributes</h3>
+        <h3 class="bounty-panel-title">${bt("Every Commission Level adds attributes")}</h3>
         <div class="bounty-attribute-row">
           ${BOUNTY_COMMISSION_ATTRIBUTES.map(
             (attribute, index) => `
-          <span class="bounty-attribute-chip bounty-attribute-chip--${index + 1}">${escapeHtml(attribute)}</span>`
+          <span class="bounty-attribute-chip bounty-attribute-chip--${index + 1}">${escapeHtml(bt(attribute))}</span>`
           ).join('')}
         </div>
-        <p class="bounty-panel-note">Examples from the guide: Processing Speed, Might, Resistance.</p>
+        <p class="bounty-panel-note">${bt("Examples from the guide: Processing Speed, Might, Resistance.")}</p>
       </article>
       <article class="bounty-panel bounty-panel--payoff">
-        <h3 class="bounty-panel-title">The payoff moment</h3>
-        <p><strong>Commission Level 6</strong> is the milestone of the whole event — it unlocks the hero's <strong>Aiding Skill</strong>, a copy of the hero's skill that your legions can use.</p>
+        <h3 class="bounty-panel-title">${bt("The payoff moment")}</h3>
+        <p>${bt("Commission Level 6 is the milestone of the whole event — it unlocks the hero's Aiding Skill, a copy of the hero's skill that your legions can use.")}</p>
       </article>
     </div>
   </section>`;
@@ -232,36 +233,36 @@ function renderAiding() {
   return `
   <section class="bounty-section" id="bounty-aiding" data-bounty-section="aiding">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">Aiding Skills</h2>
-      <p class="bounty-section-sub">The real reward of the season.</p>
+      <h2 class="bounty-section-title">${bt("Aiding Skills")}</h2>
+      <p class="bounty-section-sub">${bt("The real reward of the season.")}</p>
     </header>
     <div class="bounty-aiding-flow">
-      <span class="bounty-aiding-flow-item">Bounty Hero</span>
+      <span class="bounty-aiding-flow-item">${bt("Bounty Hero")}</span>
       <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
-      <span class="bounty-aiding-flow-item">Commission Level 6</span>
+      <span class="bounty-aiding-flow-item">${bt("Commission Level 6")}</span>
       <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
-      <span class="bounty-aiding-flow-item">Aiding Skill unlocked</span>
+      <span class="bounty-aiding-flow-item">${bt("Aiding Skill unlocked")}</span>
       <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
-      <span class="bounty-aiding-flow-item">Assign to Legion</span>
+      <span class="bounty-aiding-flow-item">${bt("Assign to Legion")}</span>
       <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
-      <span class="bounty-aiding-flow-item bounty-aiding-flow-item--done">Skill becomes usable</span>
+      <span class="bounty-aiding-flow-item bounty-aiding-flow-item--done">${bt("Skill becomes usable")}</span>
     </div>
     <article class="bounty-panel bounty-panel--rules">
-      <h3 class="bounty-panel-title">Important rules</h3>
+      <h3 class="bounty-panel-title">${bt("Important rules")}</h3>
       <ul class="bounty-panel-list bounty-panel-list--rules">
-        ${BOUNTY_AIDING_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}
+        ${BOUNTY_AIDING_RULES.map((rule) => `<li>${escapeHtml(bt(rule))}</li>`).join('')}
       </ul>
     </article>
     <div class="bounty-setup">
-      <h3 class="bounty-panel-title">How to equip an Aiding Skill</h3>
+      <h3 class="bounty-panel-title">${bt("How to equip an Aiding Skill")}</h3>
       <ol class="bounty-setup-steps">
         ${BOUNTY_SETUP_STEPS.map(
           (step) => `
         <li class="bounty-setup-step">
           <span class="bounty-setup-index" aria-hidden="true">${String(step.step).padStart(2, '0')}</span>
           <div class="bounty-setup-copy">
-            <strong>${escapeHtml(step.title)}</strong>
-            <span>${escapeHtml(step.detail)}</span>
+            <strong>${escapeHtml(bt(step.title))}</strong>
+            <span>${escapeHtml(bt(step.detail))}</span>
           </div>
         </li>`
         ).join('')}
@@ -303,14 +304,14 @@ function renderAidingSkillFigures() {
         <figure class="bounty-setup-figure">
           <img
             src="${escapeHtml(figure.src)}"
-            alt="${escapeHtml(figure.caption)}"
+            alt="${escapeHtml(bt(figure.caption))}"
             width="${figure.width}"
             height="${figure.height}"
             loading="lazy"
             decoding="async"
             onerror="this.closest('figure')?.remove()"
           />
-          <figcaption>${escapeHtml(figure.caption)}</figcaption>
+          <figcaption>${escapeHtml(bt(figure.caption))}</figcaption>
         </figure>`
         ).join('')}
       </div>`;
@@ -331,27 +332,27 @@ function renderHeroCard(hero) {
         <span class="bounty-hero-skill">${escapeHtml(hero.skillName)}</span>
         <span class="bounty-hero-meta">${escapeHtml(meta?.Type || '')} · ${escapeHtml(meta?.season || '')}</span>
       </span>
-      <span class="bounty-hero-unlock" title="Lobby opens">${escapeHtml(hero.unlockLabel || '—')}</span>
+      <span class="bounty-hero-unlock" title="${bt("Lobby opens")}">${escapeHtml(hero.unlockLabel || '—')}</span>
     </button>
     <div class="bounty-hero-detail" id="bounty-hero-detail-${hero.id}" hidden>
       <div class="bounty-skill-card">
-        <span class="bounty-skill-kicker">Aiding Skill</span>
+        <span class="bounty-skill-kicker">${bt("Aiding Skill")}</span>
         <strong class="bounty-skill-name">${escapeHtml(hero.skillName)}</strong>
         <dl class="bounty-skill-facts">
-          <div><dt>Type</dt><dd>${escapeHtml(hero.skillType)}</dd></div>
-          ${hero.range ? `<div><dt>Effective range</dt><dd>${escapeHtml(String(hero.range))}</dd></div>` : ''}
-          ${hero.worksOn ? `<div><dt>Works on</dt><dd>${escapeHtml(hero.worksOn)}</dd></div>` : ''}
-          <div><dt>Target</dt><dd>${escapeHtml(hero.target)}</dd></div>
+          <div><dt>${bt("Type")}</dt><dd>${escapeHtml(hero.skillType)}</dd></div>
+          ${hero.range ? `<div><dt>${bt("Effective range")}</dt><dd>${escapeHtml(String(hero.range))}</dd></div>` : ''}
+          ${hero.worksOn ? `<div><dt>${bt("Works on")}</dt><dd>${escapeHtml(hero.worksOn)}</dd></div>` : ''}
+          <div><dt>${bt("Target")}</dt><dd>${escapeHtml(hero.target)}</dd></div>
         </dl>
         <p class="bounty-skill-effect">${escapeHtml(hero.effect)}</p>
       </div>
       <dl class="bounty-hero-facts">
-        <div><dt>Bounty tier</dt><dd>${escapeHtml(hero.tier)}</dd></div>
-        <div><dt>Troop</dt><dd>${escapeHtml(meta?.Type || '—')}</dd></div>
-        <div><dt>Season</dt><dd>${escapeHtml(meta?.season || '—')}</dd></div>
-        <div><dt>Lobby opens</dt><dd>${escapeHtml(unlockLabel(hero))}</dd></div>
+        <div><dt>${bt("Bounty tier")}</dt><dd>${escapeHtml(hero.tier)}</dd></div>
+        <div><dt>${bt("Troop")}</dt><dd>${escapeHtml(meta?.Type || '—')}</dd></div>
+        <div><dt>${bt("Season")}</dt><dd>${escapeHtml(meta?.season || '—')}</dd></div>
+        <div><dt>${bt("Lobby opens")}</dt><dd>${escapeHtml(unlockLabel(hero))}</dd></div>
       </dl>
-      <p class="bounty-hero-detail-note">Unlocks at Commission Level 6, and needs the hero's own skill maxed appropriately. Timers are from the Sept 2024 capture — confirm them in game.</p>
+      <p class="bounty-hero-detail-note">${bt("Unlocks at Commission Level 6, and needs the hero's own skill maxed appropriately. Timers are from the Sept 2024 capture — confirm them in game.")}</p>
       <a class="bounty-hero-atlas-link" href="#heroes" data-bounty-atlas-link="${escapeHtml(hero.appName)}">View ${escapeHtml(hero.appName)} in the Hero Atlas →</a>
     </div>
   </article>`;
@@ -363,7 +364,7 @@ function renderFigure(figure, className = '') {
   return `
   <figure class="bounty-figure ${className}">
     <img src="${escapeHtml(figure.src)}" alt="${escapeHtml(figure.alt)}" width="${figure.width}" height="${figure.height}" loading="lazy" decoding="async" />
-    <figcaption>${escapeHtml(figure.caption)}</figcaption>
+    <figcaption>${escapeHtml(bt(figure.caption))}</figcaption>
   </figure>`;
 }
 
@@ -371,8 +372,8 @@ function renderHeroes() {
   return `
   <section class="bounty-section" id="bounty-heroes" data-bounty-section="heroes">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">Bounty Heroes</h2>
-      <p class="bounty-section-sub">The 9-hero roster of the Sept 5, 2024 update — tap a card for details.</p>
+      <h2 class="bounty-section-title">${bt("Bounty Heroes")}</h2>
+      <p class="bounty-section-sub">${bt("The 9-hero roster of the Sept 5, 2024 update — tap a card for details.")}</p>
     </header>
     <div class="bounty-hero-grid">
       ${BOUNTY_HEROES.map(renderHeroCard).join('')}
@@ -384,11 +385,11 @@ function renderRules() {
   return `
   <section class="bounty-section" id="bounty-rules" data-bounty-section="rules">
     <header class="bounty-section-head">
-      <h2 class="bounty-section-title">Quick Rules</h2>
-      <p class="bounty-section-sub">The four things to remember.</p>
+      <h2 class="bounty-section-title">${bt("Quick Rules")}</h2>
+      <p class="bounty-section-sub">${bt("The four things to remember.")}</p>
     </header>
     <ol class="bounty-quick-rules">
-      ${BOUNTY_QUICK_RULES.map((rule) => `<li class="bounty-quick-rule">${escapeHtml(rule)}</li>`).join('')}
+      ${BOUNTY_QUICK_RULES.map((rule) => `<li class="bounty-quick-rule">${escapeHtml(bt(rule))}</li>`).join('')}
     </ol>
   </section>`;
 }
@@ -396,10 +397,10 @@ function renderRules() {
 function renderCredits() {
   return `
   <footer class="bounty-credits">
-    <p><strong>Royal Bounty Eden X2 guide</strong> — compiled from the community PDFs <em>Royal_Bounty_Updated_4-Oct-2024.pdf</em> and <em>Updated_Bounty_Heroes.pdf</em>.</p>
+    <p>${bt("Royal Bounty Eden X2 guide — compiled from the community PDFs Royal_Bounty_Updated_4-Oct-2024.pdf and Updated_Bounty_Heroes.pdf.")}</p>
     <p>Credits: ${BOUNTY_GUIDE_CREDITS.map(escapeHtml).join(' / ')} · Roster as of ${escapeHtml(BOUNTY_GUIDE_ROSTER_DATE)} · Guide version ${escapeHtml(BOUNTY_GUIDE_VERSION)} · Published ${escapeHtml(BOUNTY_GUIDE_SOURCE_DATE)}.</p>
-    <p>Royal Bounty Alliance 2.0 reference image: <a href="https://www.riseofcastles.net/en/eden-bounty" target="_blank" rel="noopener noreferrer">Rise of Castles Eden Bounty guide</a>.</p>
-    <p class="bounty-credits-note">Lobby timers change every Eden season — always confirm the in-game timer under each hero portrait.</p>
+    <p>${bt("Royal Bounty Alliance 2.0 reference image:")} <a href="https://www.riseofcastles.net/en/eden-bounty" target="_blank" rel="noopener noreferrer">${bt("Rise of Castles Eden Bounty guide")}</a>.</p>
+    <p class="bounty-credits-note">${bt("Lobby timers change every Eden season — always confirm the in-game timer under each hero portrait.")}</p>
   </footer>`;
 }
 
@@ -407,21 +408,21 @@ function renderHero() {
   return `
   <section class="bounty-hero" id="bounty-top">
     <div class="bounty-hero-inner">
-      <span class="bounty-hero-kicker">VTS Eden Hub</span>
-      <h1 class="bounty-hero-title">Royal Bounty Eden X2</h1>
-      <p class="bounty-hero-tagline">Complete bounty missions. Raise Commission Levels. Unlock powerful Aiding Skills.</p>
-      <a class="bounty-hero-cta" href="#bounty-overview">Explore the Bounty System ↓</a>
+      <span class="bounty-hero-kicker">${bt("VTS Eden Hub")}</span>
+      <h1 class="bounty-hero-title">${bt("Royal Bounty Eden X2")}</h1>
+      <p class="bounty-hero-tagline">${bt("Complete bounty missions. Raise Commission Levels. Unlock powerful Aiding Skills.")}</p>
+      <a class="bounty-hero-cta" href="#bounty-overview">${bt("Explore the Bounty System ↓")}</a>
     </div>
   </section>`;
 }
 
 function renderNav() {
   return `
-  <nav class="bounty-nav" aria-label="Royal Bounty sections" data-bounty-nav>
+  <nav class="bounty-nav" aria-label="${bt("Royal Bounty sections")}" data-bounty-nav>
     <div class="bounty-nav-track">
       ${SECTIONS.map(
         (section) =>
-          `<a class="bounty-nav-link" href="#bounty-${section.id}" data-bounty-nav-link="${section.id}">${escapeHtml(section.label)}</a>`
+          `<a class="bounty-nav-link" href="#bounty-${section.id}" data-bounty-nav-link="${section.id}">${escapeHtml(bt(section.label))}</a>`
       ).join('')}
     </div>
   </nav>`;
@@ -478,6 +479,29 @@ function wireInteractions(root) {
 }
 
 export function renderBountyGuide(root) {
+  if (!root) return;
+  // The guide is the Eden Hub landing panel, so it renders before its pack can load.
+  // Draw immediately in English, then redraw once the locale arrives, and again on
+  // every language change - previously it was English in all 13 languages forever.
+  void loadBountyGuideLocale(currentLanguage).then(() => {
+    if (lastRoot === root) renderBountyGuideNow(root);
+  });
+  if (!languageBound) {
+    languageBound = true;
+    window.addEventListener('vts:language-change', () => {
+      void loadBountyGuideLocale(currentLanguage).then(() => {
+        if (lastRoot) renderBountyGuideNow(lastRoot);
+      });
+    });
+  }
+  lastRoot = root;
+  renderBountyGuideNow(root);
+}
+
+let lastRoot = null;
+let languageBound = false;
+
+function renderBountyGuideNow(root) {
   if (!root) return;
   root.innerHTML = `
     ${renderHero()}

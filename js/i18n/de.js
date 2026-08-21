@@ -3016,7 +3016,7 @@ const de = {
     edenX1VoteStatusSaving: 'Stimme wird gespeichert…',
     edenX1VoteTopStructureHint: 'Feindliche Bauwerke, die dieser Spieler getroffen hat',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Königliche Prämie Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Der sichere Google-Dienst, der für die Anmeldung benötigt wird, ist über dieses Netzwerk oder diese Region nicht erreichbar. Versuche ein VPN oder ein anderes Netzwerk und drücke dann auf „Erneut versuchen“. Deine PIN wurde nicht abgelehnt.',
   shareView: 'Teile genau diese Ansicht',

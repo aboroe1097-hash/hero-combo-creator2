@@ -2963,7 +2963,7 @@ const es = {
     edenGuideDoneTip1:
       'La guía v2.7 incluye el mapa de pergamino, el plan de equipos opcional y el salto por coordenadas. Usa Reiniciar progreso para repetirla.',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Recompensa Real Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'El servicio seguro de Google necesario para el registro no se puede alcanzar desde esta red o región. Prueba con una VPN o una red diferente y luego pulsa Reintentar. Tu PIN no ha sido rechazado.',
   shareView: 'Comparte esta vista exacta',

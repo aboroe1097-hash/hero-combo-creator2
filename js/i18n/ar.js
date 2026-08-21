@@ -2054,7 +2054,7 @@ const ar = {
   dmEnhanceShortfall: 'العجز',
   dmEnhanceReached: 'تم الوصول إلى الهدف بالفعل',
   dmEnhanceCredit: 'شكرًا لـ Roha وRedbull على المساهمة بالبيانات التي يستخدمها أداة DM.',
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'المكافأة الملكية Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'لا يمكن الوصول إلى خدمة Google الآمنة المطلوبة للتسجيل من هذه الشبكة أو المنطقة. جرّب VPN أو شبكة مختلفة، ثم اضغط إعادة المحاولة. لم يُرفض رمز PIN الخاص بك.',
 };

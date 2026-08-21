@@ -2919,7 +2919,7 @@ Object.assign(id, {
   dmEnhanceReached: 'Target sudah tercapai',
   dmEnhanceCredit:
     'Terima kasih kepada Roha dan Redbull atas kontribusi data yang dipakai alat DM.',
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Hadiah Kerajaan Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Layanan Google aman yang dibutuhkan untuk pendaftaran tidak dapat dijangkau dari jaringan atau wilayah ini. Coba VPN atau jaringan lain, lalu tekan Coba Lagi. PIN-mu belum ditolak.',
 });
