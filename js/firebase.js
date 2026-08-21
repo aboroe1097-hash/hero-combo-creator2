@@ -257,6 +257,8 @@ export function getCurrentUser() {
   return auth?.currentUser || null;
 }
 
+const ANON_AUTH_TIMEOUT_MS = 20000;
+
 export async function waitForAuthReady() {
   if (!auth) throw new Error('Firebase not initialized');
   await ensureAuthPersistence();
@@ -295,7 +297,19 @@ export async function ensureAnonymousAuth() {
     try {
       const restoredUser = await waitForAuthReady();
       if (restoredUser) return restoredUser;
-      const credential = await signInAnonymously(auth);
+      // waitForAuthReady() is bounded, but signInAnonymously() was not: if the
+      // identitytoolkit endpoint stalls rather than failing, callers that await this
+      // never settle and their loading state stays up forever. Bound it so the caller
+      // surfaces an error with a retry instead.
+      const credential = await Promise.race([
+        signInAnonymously(auth),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Anonymous sign-in timed out after ${ANON_AUTH_TIMEOUT_MS}ms`)),
+            ANON_AUTH_TIMEOUT_MS
+          )
+        ),
+      ]);
       return credential.user;
     } finally {
       authInFlight = null;

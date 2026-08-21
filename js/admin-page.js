@@ -167,10 +167,27 @@ const requestAdminLanguage = createLatestLanguageLoader((lang) => {
   updateTextContent(loadedLanguage);
 });
 
+const ADMIN_TEMPLATE_TIMEOUT_MS = 15000;
+
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260818_210813');
+  // An unbounded fetch left the "Loading admin dashboard..." card spinning forever when
+  // the network stalled without failing. Bound it so the caller's error path (which now
+  // offers a retry) actually runs.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ADMIN_TEMPLATE_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch('tabs/admin.html?v=20260821_054017', { signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Admin template timed out after ${ADMIN_TEMPLATE_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -199,7 +216,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20260818_210813');
+  const mod = await import('./ocr-dashboard.js?v=20260821_054017');
   await mod.bootOcrDashboard();
 }
 
@@ -215,6 +232,18 @@ if (!window.VTS_MAINTENANCE_ACTIVE)
       const error = document.createElement('div');
       error.className = 'admin-load-error';
       error.textContent = message;
+      // A gstatic/Firebase outage must never leave the admin with a dead end: the message
+      // alone told them to refresh by hand. Give them an in-page retry.
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'tab-load-error-link';
+      retry.textContent = translations[lang]?.adminLoadRetry || translations.en.adminLoadRetry;
+      retry.addEventListener('click', () => {
+        retry.disabled = true;
+        window.location.reload();
+      });
+      error.appendChild(document.createElement('br'));
+      error.appendChild(retry);
       section.replaceChildren(error);
     }
   });

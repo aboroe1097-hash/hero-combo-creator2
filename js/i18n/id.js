@@ -2919,7 +2919,7 @@ Object.assign(id, {
   dmEnhanceReached: 'Target sudah tercapai',
   dmEnhanceCredit:
     'Terima kasih kepada Roha dan Redbull atas kontribusi data yang dipakai alat DM.',
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Hadiah Kerajaan Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Layanan Google aman yang dibutuhkan untuk pendaftaran tidak dapat dijangkau dari jaringan atau wilayah ini. Coba VPN atau jaringan lain, lalu tekan Coba Lagi. PIN-mu belum ditolak.',
 });
@@ -3095,14 +3095,14 @@ Object.assign(id, {
   edenPlaybookDay0Task3: 'Ikuti Biru Bawah cukup jauh untuk membuka dan menempatkan keempat benteng.',
   edenPlaybookDay0Task4: 'Aktifkan skill kehormatan harian.',
   edenPlaybookDay1Label: 'Hari 1',
-  edenPlaybookDay1Title: 'Bangun, masuk, lalu paksa penghasilan',
+  edenPlaybookDay1Title: 'Buka benteng, susun Kehormatan, lalu build loyalitas',
   edenPlaybookDay1Why:
-    'Frontlines mengubah material tersimpan menjadi Kehormatan; Biru Kanan lalu mengubah loyalitas menjadi lonjakan penghasilan besar pertama.',
-  edenPlaybookDay1Watch: 'Jangan membangun terlalu lama sampai antrean pemrosesan berhenti atau tile Lv. 9 tertunda.',
-  edenPlaybookDay1Task1: 'Mulai buff kehormatan dan Honor Card; buka material konstruksi tersimpan.',
-  edenPlaybookDay1Task2: 'Bangun benteng ke Lv. 1 dan Frontlines menuju 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Masuk Eden, reset ke 47 poin di Biru Kanan, paksa tile Lv. 8 lalu Lv. 9.',
-  edenPlaybookDay1Task4: 'Jaga antrean pemrosesan tetap berjalan; isi ulang sekali saat tidur jika memungkinkan.',
+    'Benteng harus ditempatkan sebelum reset; Hijau memaksimalkan Kehormatan Frontline Workshop, lalu Biru mempercepat loyalitas, pemrosesan, dan tiling.',
+  edenPlaybookDay1Watch: 'Bangun kedua benteng sebelum reset apa pun — dan jaga antrean pemrosesan tetap berjalan sambil menile.',
+  edenPlaybookDay1Task1: 'Buka dan bangun Benteng Serbu dan Benteng Penjaga sebelum mereset spesialisasi Anda.',
+  edenPlaybookDay1Task2: 'Reset spesialisasi, masukkan semua poin ke Hijau (kiri), dan upgrade setiap Frontline Workshop ke level tertingginya.',
+  edenPlaybookDay1Task3: 'Reset lagi ke pohon Biru (kiri & kanan) untuk membuka workshop tambahan dan simpul loyalitas.',
+  edenPlaybookDay1Task4: 'Tile simpul Farm, Marble, dan Ale untuk upgrade Coalition Base Camp — kamp lebih tinggi berarti lebih banyak loyalitas dan tile level lebih tinggi.',
   edenPlaybookDay2Label: 'Hari 2',
   edenPlaybookDay2Title: 'Dorong lompatan kritis Lv. 12',
   edenPlaybookDay2Why:
@@ -3137,6 +3137,8 @@ Object.assign(id, {
   edenPlaybookAltTiling: 'Rute spesialisasi Kehormatan tiling Hijau',
   edenPlaybookAltFort: 'Rute spesialisasi buka benteng Biru Bawah',
   shareViewCopied: 'Tautan disalin ke papan klip',
+  edenPlaybookDay1Task5: 'Tetap di build loyalitas selama beberapa minggu pertama, lalu beralih ke peran aliansi Anda (Penghancuran, Tiling Cepat, Banner).',
+  edenPlaybookAltSpeedOptional: 'Opsional 14-20 poin Biru untuk tiling cepat: kecepatan march Field Cartography dan Instant Recall dengan diskon 30% pada 20 poin penuh',
 });
 
 export default id;

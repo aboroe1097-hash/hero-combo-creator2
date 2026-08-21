@@ -2054,7 +2054,7 @@ const ar = {
   dmEnhanceShortfall: 'العجز',
   dmEnhanceReached: 'تم الوصول إلى الهدف بالفعل',
   dmEnhanceCredit: 'شكرًا لـ Roha وRedbull على المساهمة بالبيانات التي يستخدمها أداة DM.',
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'المكافأة الملكية Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'لا يمكن الوصول إلى خدمة Google الآمنة المطلوبة للتسجيل من هذه الشبكة أو المنطقة. جرّب VPN أو شبكة مختلفة، ثم اضغط إعادة المحاولة. لم يُرفض رمز PIN الخاص بك.',
 };
@@ -3004,13 +3004,13 @@ Object.assign(ar, {
   edenPlaybookDay0Task3: 'اتبع المسار الأزرق السفلي حتى تفتح وتضع الحصون الأربعة كلها.',
   edenPlaybookDay0Task4: 'فعّل مهارة الشرف اليومية.',
   edenPlaybookDay1Label: 'اليوم 1',
-  edenPlaybookDay1Title: 'ابنِ ثم ادخل ثم افرض الدخل',
-  edenPlaybookDay1Why: 'تحوّل خطوط المواجهة المواد المخزنة إلى شرف؛ ثم يحوّل المسار الأزرق الأيمن الولاء إلى أول قفزة دخل كبرى.',
-  edenPlaybookDay1Watch: 'لا تُطل البناء حتى تتوقف طوابير المعالجة أو تتأخر بلاطات Lv. 9.',
-  edenPlaybookDay1Task1: 'ابدأ تعزيزات الشرف وبطاقة الشرف؛ وافتح مواد البناء المخزنة.',
-  edenPlaybookDay1Task2: 'ابنِ الحصون إلى Lv. 1 وخطوط المواجهة نحو 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'ادخل إيدن، أعد الضبط إلى 47 نقطة على المسار الأزرق الأيمن، وافرض بلاطات Lv. 8 ثم Lv. 9.',
-  edenPlaybookDay1Task4: 'أبقِ طوابير المعالجة تعمل؛ وأعد ملأها مرة أثناء النوم إذا أمكن.',
+  edenPlaybookDay1Title: 'افتح الحصون، جهّز الشرف، ثم بناء الولاء',
+  edenPlaybookDay1Why: 'يجب وضع الحصون قبل إعادة الضبط؛ يُعظم الأخضر شرف ورشة خط المواجهة، ثم يسرّع الأزرق الولاء والمعالجة ووضع البلاطات.',
+  edenPlaybookDay1Watch: 'ابنِ الحصنين قبل أي إعادة ضبط — وأبقِ طوابير المعالجة تعمل أثناء وضع البلاطات.',
+  edenPlaybookDay1Task1: 'افتح وابنِ حصني الهجوم والحراسة قبل إعادة ضبط تخصصك.',
+  edenPlaybookDay1Task2: 'أعد ضبط التخصص، ضع كل النقاط في الأخضر (يسار)، ورقِّ كل ورشة خط مواجهة إلى أعلى مستوى.',
+  edenPlaybookDay1Task3: 'أعد الضبط مرة أخرى في شجرة الأزرق (يسار ويمين) لفتح ورش إضافية وعقد ولاء.',
+  edenPlaybookDay1Task4: 'ضع بلاطات عقد Farm وMarble وAle لترقيات Coalition Base Camp — المعسكرات الأعلى تعني ولاء أكثر وبلاطات بمستوى أعلى.',
   edenPlaybookDay2Label: 'اليوم 2',
   edenPlaybookDay2Title: 'ادفع قفزة Lv. 12 الحاسمة',
   edenPlaybookDay2Why: 'يرتفع الدخل من 1,000 عند Lv. 11 إلى 1,200 عند Lv. 12 — وهي إحدى أكبر القفزات في الجدول.',
@@ -3042,6 +3042,8 @@ Object.assign(ar, {
   edenPlaybookAltTiling: 'مسار تخصص شرف البلاطات الأخضر',
   edenPlaybookAltFort: 'مسار تخصص فتح الحصون الأزرق السفلي',
   shareViewCopied: 'تم نسخ الرابط إلى الحافظة',
+  edenPlaybookDay1Task5: 'ابقَ في بناء الولاء خلال الأسابيع الأولى، ثم بدّل إلى دورك في التحالف (الهدم، بلاطات السرعة، الراية).',
+  edenPlaybookAltSpeedOptional: 'اختياري: 14–20 نقطة زرقاء لبلاطات السرعة: سرعة مسير رسم الخرائط الميداني والاستدعاء الفوري بخصم 30% عند اكتمال الـ 20 نقطة',
 });
 
 export default ar;

@@ -3016,7 +3016,7 @@ const de = {
     edenX1VoteStatusSaving: 'Stimme wird gespeichert…',
     edenX1VoteTopStructureHint: 'Feindliche Bauwerke, die dieser Spieler getroffen hat',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Königliche Prämie Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'Der sichere Google-Dienst, der für die Anmeldung benötigt wird, ist über dieses Netzwerk oder diese Region nicht erreichbar. Versuche ein VPN oder ein anderes Netzwerk und drücke dann auf „Erneut versuchen“. Deine PIN wurde nicht abgelehnt.',
   shareView: 'Teile genau diese Ansicht',
@@ -3142,13 +3142,13 @@ const de = {
   edenPlaybookDay0Task3: 'Folge Blau unten weit genug, um alle vier Festungen freizuschalten und zu platzieren.',
   edenPlaybookDay0Task4: 'Aktiviere die tägliche Ehren-Fähigkeit.',
   edenPlaybookDay1Label: 'Tag 1',
-  edenPlaybookDay1Title: 'Bauen, einsteigen, dann Einkommen erzwungen',
-  edenPlaybookDay1Why: 'Frontlinien wandeln gelagerte Materialien in Ehre um; Blau rechts macht danach aus Loyalität den ersten großen Einkommenssprung.',
-  edenPlaybookDay1Watch: 'Baue nicht so lange, dass Verarbeitungswarteschlangen stoppen oder Lv. 9-Felder sich verzögern.',
-  edenPlaybookDay1Task1: 'Starte Ehren-Buffs und die Ehrenkarte; öffne gelagerte Baumaterialien.',
-  edenPlaybookDay1Task2: 'Baue Festungen auf Lv. 1 und Frontlinien in Richtung 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Betritt Eden, setze auf 47 Punkte auf Blau rechts zurück, erzwinge Lv. 8- und dann Lv. 9-Felder.',
-  edenPlaybookDay1Task4: 'Halte die Verarbeitungswarteschlangen am Laufen; fülle bei Bedarf einmal im Schlaf nach.',
+  edenPlaybookDay1Title: 'Festungen freischalten, Ehren-Aufbau, dann der Loyalitäts-Build',
+  edenPlaybookDay1Why: 'Festungen müssen vor den Resets platziert werden; Grün maximiert die Ehre der Frontlinien-Werkstatt, dann beschleunigt Blau Loyalität, Verarbeitung und Feldlegen.',
+  edenPlaybookDay1Watch: 'Baue beide Festungen vor jedem Reset — und halte die Verarbeitungswarteschlangen am Laufen, während du Felder legst.',
+  edenPlaybookDay1Task1: 'Schalte die Sturm- und Wächterfestung frei und baue sie, bevor du deine Spezialisierung zurücksetzt.',
+  edenPlaybookDay1Task2: 'Setze die Spezialisierung zurück, stecke alle Punkte in Grün (links) und verbessere jede Frontlinien-Werkstatt auf ihre höchste Stufe.',
+  edenPlaybookDay1Task3: 'Setze erneut in den Blauen Baum (links und rechts) zurück, um zusätzliche Werkstätten und Loyalitätsknoten freizuschalten.',
+  edenPlaybookDay1Task4: 'Lege Bauernhof-, Marmor- und Ale-Knoten für die Verbesserungen des Koalitions-Basislagers — höhere Lager bedeuten mehr Loyalität und Felder höherer Stufe.',
   edenPlaybookDay2Label: 'Tag 2',
   edenPlaybookDay2Title: 'Den kritischen Lv. 12-Sprung erzwingen',
   edenPlaybookDay2Why: 'Das Einkommen steigt von 1,000 auf Lv. 11 auf 1,200 auf Lv. 12 – einer der größten Sprünge in der Tabelle.',
@@ -3180,6 +3180,8 @@ const de = {
   edenPlaybookAltTiling: 'Grüne Feldlegen-Ehren-Spezialisierungsroute',
   edenPlaybookAltFort: 'Blaue Festungs-Freischaltungs-Spezialisierungsroute',
   shareViewCopied: 'Link in die Zwischenablage kopiert',
+  edenPlaybookDay1Task5: 'Bleibe in den ersten Wochen im Loyalitäts-Build und wechsle danach zu deiner Allianz-Rolle (Zerstörung, Schnelles Feldlegen, Banner).',
+  edenPlaybookAltSpeedOptional: 'Optionale 14–20 Blau-Punkte für schnelles Feldlegen: Marschgeschwindigkeit der Feldkartografie und Sofort-Rückruf mit 30 % Rabatt bei vollen 20 Punkten',
 };
 
 export default de;

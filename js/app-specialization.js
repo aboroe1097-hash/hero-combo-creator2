@@ -53,6 +53,7 @@ import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
   getSpecializationTowersV2Direction,
+  loadSpecializationTowersV2Locale,
 } from './i18n/specialization-towers-v2/index.js';
 import {
   specializationDisplayText,
@@ -413,6 +414,16 @@ function renderUnmappedWorkbookEvidence(entries) {
 
 function locale() {
   return resolveSpecializationTowersV2Locale(currentLanguage);
+}
+
+// The hub renders through the same string pack as the standalone tool, but only the
+// standalone entry point ever loaded it. Without this the pack registry holds English
+// alone, every sp() lookup silently falls back, and the panel stays English while the
+// surrounding shell is translated. Re-render once the pack lands.
+function ensureTowersLocale() {
+  return loadSpecializationTowersV2Locale(locale()).catch((error) => {
+    console.warn('[app-specialization] locale pack failed to load; using English.', error);
+  });
 }
 
 function sp(key, vars = {}) {
@@ -1930,7 +1941,9 @@ export function initSpecializationTool() {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
     root.addEventListener('keydown', onKeyDown);
-    window.addEventListener('vts:language-change', () => render());
+    window.addEventListener('vts:language-change', () => {
+      void ensureTowersLocale().then(() => render());
+    });
     // Signing in or out changes whether the contribution fields accept input. Firebase
     // also fires this once on boot with the state we already render, so only re-render
     // when the identity actually changed - a needless rebuild discards UI state.
@@ -1949,4 +1962,5 @@ export function initSpecializationTool() {
   }
   render();
   root.closest('#specializationSection')?.querySelector('.specialization-loading')?.remove();
+  void ensureTowersLocale().then(() => render());
 }

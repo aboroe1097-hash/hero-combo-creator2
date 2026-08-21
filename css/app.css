@@ -7380,7 +7380,10 @@ body.admin-standalone-page .admin-footer .footer-divider {
 .eden-season-modal {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  /* The mobile tool dock is fixed at z-index 1080 (shell-v14.css), so at 120 this
+     "modal" was painted over by the dock and the dock stayed tappable - switching tabs
+     underneath an open dialog. Sit above it so the overlay is genuinely modal. */
+  z-index: 1090;
   display: flex;
   align-items: center;
   justify-content: center;

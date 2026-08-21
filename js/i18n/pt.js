@@ -2675,7 +2675,7 @@ const pt = {
     dmEnhanceReached: 'Objetivo já alcançado',
     dmEnhanceCredit: 'Agradecemos a Roha e Redbull pelos dados usados na ferramenta Dragon Master.',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Recompensa Real Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'O serviço seguro do Google necessário para a inscrição não pode ser alcançado a partir desta rede ou região. Tente usar uma VPN ou outra rede e pressione Tentar novamente. Seu PIN não foi rejeitado.',
   shareView: 'Compartilhar esta exibição exata',
@@ -2807,13 +2807,13 @@ const pt = {
   edenPlaybookDay0Task3: 'Siga Azul Baixo o suficiente para desbloquear e posicionar as quatro fortalezas.',
   edenPlaybookDay0Task4: 'Ative a habilidade de honor diária.',
   edenPlaybookDay1Label: 'Dia 1',
-  edenPlaybookDay1Title: 'Construa, entre e depois force a renda',
-  edenPlaybookDay1Why: 'As frentes de batalha convertem materiais estocados em Honor; Azul Direita então transforma lealdade no primeiro grande salto de renda.',
-  edenPlaybookDay1Watch: 'Não construa por tanto tempo que as filas de processamento parem ou os tiles de Lv. 9 atrasem.',
-  edenPlaybookDay1Task1: 'Ative os buffs de honor e o Honor Card; abra os materiais de construção estocados.',
-  edenPlaybookDay1Task2: 'Construa fortalezas até Lv. 1 e frentes de batalha em direção a 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Entre em Eden, faça reset para 47 pontos em Azul Direita e force tiles de Lv. 8 e depois Lv. 9.',
-  edenPlaybookDay1Task4: 'Mantenha as filas de processamento ativas; reabasteça uma vez durante o sono, se for possível.',
+  edenPlaybookDay1Title: 'Desbloqueie fortalezas, preparação de Honor e depois o build de lealdade',
+  edenPlaybookDay1Why: 'As fortalezas devem ser posicionadas antes dos resets; Verde maximiza o Honor da Frontline Workshop, depois Azul acelera lealdade, processamento e tiling.',
+  edenPlaybookDay1Watch: 'Construa as duas fortalezas antes de qualquer reset — e mantenha as filas de processamento ativas enquanto você coloca tiles.',
+  edenPlaybookDay1Task1: 'Desbloqueie e construa as Fortalezas de Assalto e de Guardiã antes de fazer o reset da sua especialização.',
+  edenPlaybookDay1Task2: 'Faça o reset da especialização, coloque todos os pontos em Verde (esquerda) e melhore cada Frontline Workshop ao nível mais alto.',
+  edenPlaybookDay1Task3: 'Faça reset novamente na árvore Azul (esquerda e direita) para desbloquear workshops extras e nós de lealdade.',
+  edenPlaybookDay1Task4: 'Coloque tiles nos nós de Farm, Marble e Ale para as melhorias do Coalition Base Camp — acampamentos mais altos significam mais lealdade e tiles de nível mais alto.',
   edenPlaybookDay2Label: 'Dia 2',
   edenPlaybookDay2Title: 'Force o salto crítico de Lv. 12',
   edenPlaybookDay2Why: 'A renda sobe de 1.000 no Lv. 11 para 1.200 no Lv. 12—um dos maiores saltos da tabela.',
@@ -2845,6 +2845,8 @@ const pt = {
   edenPlaybookAltTiling: 'Rota de especialização de Honor de tiles Verde',
   edenPlaybookAltFort: 'Rota de especialização de desbloqueio de fortalezas Azul Baixo',
   shareViewCopied: 'Link copiado para a área de transferência',
+  edenPlaybookDay1Task5: 'Fique no build de lealdade nas primeiras semanas, depois mude para sua função na aliança (Demolição, Tiles de Velocidade, Estandarte).',
+  edenPlaybookAltSpeedOptional: 'Opcional de 14-20 pontos Azuis para tiles de velocidade: Cartografia de Campo de velocidade de marcha e Recall Instantâneo com desconto de 30% nos 20 pontos completos',
 };
 
 export default pt;

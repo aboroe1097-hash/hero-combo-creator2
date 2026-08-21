@@ -339,3 +339,19 @@
     padding-bottom: 0;
   }
 }
+
+/* These badges colour their text with the raw --ff-cyan/--ff-gold palette tokens, which
+   the light theme deliberately leaves unchanged (see the note in _tokens.css). On the
+   near-white admin glass that lands around 1.6:1, so slot counts, duplicate warnings and
+   search-hit names were unreadable for light-theme admins. Use the theme-remapped
+   semantic tokens instead. */
+[data-theme='light'] .throne-badge-slots,
+[data-theme='light'] .throne-hit-week {
+  color: var(--ff-action);
+}
+
+[data-theme='light'] .throne-badge-warning,
+[data-theme='light'] .throne-buff-fallback-initials,
+[data-theme='light'] .throne-hit-member {
+  color: var(--ff-warning);
+}

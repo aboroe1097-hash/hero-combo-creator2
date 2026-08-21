@@ -3168,14 +3168,18 @@ Object.assign(tr, {
   edenPlaybookDay0Task3: 'Dört kalenin tümünü açıp yerleştirmek için Mavi Aşağı\'da yeterince ilerle.',
   edenPlaybookDay0Task4: 'Günlük onur becerisini etkinleştir.',
   edenPlaybookDay1Label: '1. Gün',
-  edenPlaybookDay1Title: 'İnşa et, gir ve geliri zorla',
+  edenPlaybookDay1Title: 'Kaleleri aç, Onur kurulumunu yap, sonra sadakat yapısına geç',
   edenPlaybookDay1Why:
-    'Cephe hatları depolanan malzemeleri Onur\'a çevirir; Mavi Sağ ise sadakati ilk büyük gelir sıçramasına dönüştürür.',
-  edenPlaybookDay1Watch: 'İşleme kuyrukları durup Lv. 9 kareleri gecikecek kadar uzun inşa etme.',
-  edenPlaybookDay1Task1: 'Onur güçlendirmelerini ve Onur Kartını başlat; depolanan inşaat malzemelerini aç.',
-  edenPlaybookDay1Task2: 'Kaleleri Lv. 1\'e ve Cephe Hatlarını 12 / 11 / 11 / 11\'e kadar inşa et.',
-  edenPlaybookDay1Task3: 'Eden\'e gir, Mavi Sağ\'da 47 puana sıfırla, önce Lv. 8 sonra Lv. 9 karelerini zorla.',
-  edenPlaybookDay1Task4: 'İşleme kuyruklarını çalışır tut; uygunsa uyku sırasında bir kez yeniden doldur.',
+    'Kaleler sıfırlamalardan önce yerleştirilmeli; Yeşil, Cephe Atölyesi Onur\'unu maksimuma çıkarır, sonra Mavi sadakati, işlemeyi ve kare almayı hızlandırır.',
+  edenPlaybookDay1Watch:
+    'Herhangi bir sıfırlamadan önce her iki kaleyi de inşa et — kare alırken işleme kuyruklarını çalışır tut.',
+  edenPlaybookDay1Task1: 'Uzmanlığını sıfırlamadan önce Saldırı ve Koruma Kalelerini aç ve inşa et.',
+  edenPlaybookDay1Task2:
+    'Uzmanlığı sıfırla, tüm puanları Yeşil\'e (sol) ver ve her Cephe Atölyesini en yüksek seviyesine yükselt.',
+  edenPlaybookDay1Task3:
+    'Ek atölyeleri ve sadakat düğümlerini açmak için Mavi ağacına (sol ve sağ) yeniden sıfırla.',
+  edenPlaybookDay1Task4:
+    'Koalisyon Ana Kampı yükseltmeleri için Çiftlik, Mermer ve Bira düğümlerini kare al — daha yüksek kamplar daha fazla sadakat ve daha yüksek seviyeli kareler demektir.',
   edenPlaybookDay2Label: '2. Gün',
   edenPlaybookDay2Title: 'Kritik Lv. 12 sıçramasını zorla',
   edenPlaybookDay2Why:
@@ -3212,6 +3216,8 @@ Object.assign(tr, {
   edenPlaybookAltTiling: 'Yeşil kare alma Onur uzmanlık rotası',
   edenPlaybookAltFort: 'Mavi Aşağı kale açma uzmanlık rotası',
   shareViewCopied: 'Bağlantı panoya kopyalandı',
+  edenPlaybookDay1Task5: 'İlk haftalarda sadakat yapısında kal, sonra ittifak rolüne geç (Yıkım, Hızlı Kare Alma, Banner).',
+  edenPlaybookAltSpeedOptional: 'Hızlı kare alma için isteğe bağlı 14-20 Mavi puan: Saha Haritacılığı yürüyüş hızı ve tam 20 puanda %30 indirimli Anında Geri Çağırma',
 });
 
 export default tr;

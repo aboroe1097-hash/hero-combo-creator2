@@ -2963,7 +2963,7 @@ const es = {
     edenGuideDoneTip1:
       'La guía v2.7 incluye el mapa de pergamino, el plan de equipos opcional y el salto por coordenadas. Usa Reiniciar progreso para repetirla.',
   },
-  tabEdenBounty: 'Royal Bounty Eden X2',
+  tabEdenBounty: 'Recompensa Real Eden X2',
   bohAccessErrorSecureServiceUnreachable:
     'El servicio seguro de Google necesario para el registro no se puede alcanzar desde esta red o región. Prueba con una VPN o una red diferente y luego pulsa Reintentar. Tu PIN no ha sido rechazado.',
   shareView: 'Comparte esta vista exacta',
@@ -3089,13 +3089,13 @@ const es = {
   edenPlaybookDay0Task3: 'Sigue Azul Abajo lo suficiente para desbloquear y colocar las cuatro fortalezas.',
   edenPlaybookDay0Task4: 'Activa la habilidad de honor diario.',
   edenPlaybookDay1Label: 'Día 1',
-  edenPlaybookDay1Title: 'Construye, entra y luego fuerza los ingresos',
-  edenPlaybookDay1Why: 'Los Frentes convierten los materiales almacenados en Honor; luego Azul Derecha convierte la lealtad en el primer gran salto de ingresos.',
-  edenPlaybookDay1Watch: 'No construyas tanto tiempo que las colas de procesamiento se detengan o se retrasen las casillas de Lv. 9.',
-  edenPlaybookDay1Task1: 'Inicia los buffs de honor y la Tarjeta de Honor; abre los materiales de construcción almacenados.',
-  edenPlaybookDay1Task2: 'Construye fortalezas hasta Lv. 1 y Frentes hacia 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Entra en Eden, reinicia a 47 puntos en Azul Derecha, fuerza casillas de Lv. 8 y luego de Lv. 9.',
-  edenPlaybookDay1Task4: 'Mantén las colas de procesamiento activas; rellena una vez durante el sueño si es práctico.',
+  edenPlaybookDay1Title: 'Desbloquea fortalezas, prepara el Honor y luego la build de lealtad',
+  edenPlaybookDay1Why: 'Las fortalezas deben colocarse antes de los reinicios; Verde maximiza el Honor de los Talleres de Frente y luego Azul acelera la lealtad, el procesamiento y la colocación de casillas.',
+  edenPlaybookDay1Watch: 'Construye ambas fortalezas antes de cualquier reinicio — y mantén las colas de procesamiento activas mientras colocas casillas.',
+  edenPlaybookDay1Task1: 'Desbloquea y construye las fortalezas de Asalto y Guardián antes de reiniciar tu especialización.',
+  edenPlaybookDay1Task2: 'Reinicia la especialización, pon todos los puntos en Verde (izquierda) y mejora todos los Talleres de Frente a su nivel máximo.',
+  edenPlaybookDay1Task3: 'Reinicia de nuevo en el árbol Azul (izquierda y derecha) para desbloquear talleres extra y nodos de lealtad.',
+  edenPlaybookDay1Task4: 'Coloca casillas en los nodos de Farm, Marble y Ale para las mejoras del Coalition Base Camp — los campamentos más altos significan más lealtad y casillas de nivel superior.',
   edenPlaybookDay2Label: 'Día 2',
   edenPlaybookDay2Title: 'Empuja el salto crítico de Lv. 12',
   edenPlaybookDay2Why: 'Los ingresos suben de 1,000 en Lv. 11 a 1,200 en Lv. 12, uno de los saltos más grandes de la tabla.',
@@ -3127,6 +3127,8 @@ const es = {
   edenPlaybookAltTiling: 'Ruta de especialización de Honor por colocación de casillas Verde',
   edenPlaybookAltFort: 'Ruta de especialización de desbloqueo de fortalezas Azul Abajo',
   shareViewCopied: 'Enlace copiado al portapapeles',
+  edenPlaybookDay1Task5: 'Quédate en la build de lealtad las primeras semanas y luego cambia a tu rol de alianza (Demolición, Colocación rápida de casillas, Banner).',
+  edenPlaybookAltSpeedOptional: '14-20 puntos Azules opcionales para colocación rápida: velocidad de marcha de Cartografía de campo e Invocación instantánea con un 30% de descuento al llegar a los 20 puntos.',
 };
 
 export default es;

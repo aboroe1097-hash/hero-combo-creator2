@@ -821,8 +821,11 @@
     min-width: 500px;
   }
 
+  /* 38px sat below the repo's own --ff-tap-min floor on the smallest phones, where the
+     artifact tree is densest. Nodes are absolutely positioned on fixed --node-x/--node-y
+     centres, so widening them does not reflow the tree. */
   .artifact-tree-node {
-    width: 38px;
+    width: var(--ff-tap-min, 44px);
   }
 
   .artifact-tree-node-rge {
@@ -844,4 +847,12 @@
   .artifact-workspace *::after {
     scroll-behavior: auto !important;
   }
+}
+
+/* The rest of the artifact sheet remaps its tokens for light theme, but this callout
+   kept three literals, leaving the prerequisite text at roughly 2:1 on the light panel. */
+[data-theme='light'] .artifact-prerequisite {
+  border-inline-start-color: #9a3412;
+  color: #9a3412;
+  background: rgb(154 52 18 / 8%);
 }
