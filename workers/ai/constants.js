@@ -12,7 +12,10 @@ export const LIMITS = Object.freeze({
   toolResultBytes: 8 * 1024,
   toolResultsBytes: 24 * 1024,
   providerStateBytes: 80 * 1024,
-  toolRounds: 2,
+  // Two rounds only ever allowed "gather, then answer". Three lets Velo gather, act on
+  // what it learned, then verify or fill a gap before answering - the shape most real
+  // strategy questions need. toolCalls still caps total work per turn.
+  toolRounds: 3,
   toolCalls: 8,
   upstreamInteractions: 3,
   firstProviderEventMs: 30_000,
@@ -25,7 +28,9 @@ export const LIMITS = Object.freeze({
   globalTurnsPerUtcDay: 500,
   globalInteractionsPerUtcDay: 1_500,
   requestReplayTtlMs: 24 * 60 * 60_000,
-  maxOutputTokens: 4_096,
+  // A reasoning model spends part of this budget on reasoning_content before it writes
+  // a visible token, so the old 4k ceiling could truncate the answer itself.
+  maxOutputTokens: 8_192,
 });
 
 export const ALLOWED_MODELS = Object.freeze(['gemini-3.1-flash-lite', 'gemini-3.5-flash']);

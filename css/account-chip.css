@@ -1,12 +1,15 @@
 ﻿.vts-account-chip-mount{position:fixed;z-index:2000;right:1rem;top:4.75rem}.vts-account-chip{display:flex;align-items:center;gap:.55rem;padding:.45rem .65rem;border:1px solid color-mix(in srgb,#73d8ff 38%,transparent);border-radius:999px;background:#0a1727e8;color:#eef8ff;box-shadow:0 10px 30px #0008;text-decoration:none;font:600 .76rem/1.2 system-ui,sans-serif}.vts-account-chip__avatar{display:grid;place-items:center;width:1.7rem;height:1.7rem;border-radius:50%;background:#22c7e5;color:#06121e}.vts-account-chip__copy{display:grid;gap:.1rem}.vts-account-chip__copy small{color:#a8c3d5;font-size:.66rem}.vts-account-chip__admin{padding:.14rem .34rem;border-radius:999px;background:#eabf4d;color:#1a1304;font-size:.62rem}.vts-account-chip__admin--super{background:linear-gradient(135deg,#c084fc,#7dd3fc);color:#12061f;font-weight:800;box-shadow:0 0 10px #c084fc59}@media(max-width:600px){.vts-account-chip-mount{right:.65rem;top:4.25rem}.vts-account-chip__copy{display:none}}
 
-/* The chip mount is position:fixed at top:4.75rem, so on desktop it paints straight over
-   the hub sub-tab row, which runs the full content width (the signed-in chip is wide
-   enough to cover the last tab). Reserve its footprint only where the chip is actually
-   mounted, so signed-out and narrow layouts keep the full width. */
+/* The chip mount is position:fixed at top:4.75rem while the page scrolls underneath it,
+   so anything that reaches the far right of that band gets painted over: the main tool
+   nav when the page is at the top, and the hub sub-tab rows once it has scrolled. The
+   signed-in chip is roughly 190px wide, so it swallows the last nav item ("More") and
+   the last sub-tab. Reserve its footprint on both, only where the chip is actually
+   mounted, so pages without it and narrow layouts keep the full width. */
 @media (min-width: 601px) {
   body:has(.vts-account-chip-mount .vts-account-chip) .vts-hub-subtabs,
   body:has(.vts-account-chip-mount .vts-account-chip) .vts-eden-subtab-bar {
     padding-right: var(--vts-account-chip-reserve, 13rem);
   }
 }
+

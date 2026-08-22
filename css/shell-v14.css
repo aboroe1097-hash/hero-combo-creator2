@@ -595,6 +595,12 @@ body.app-ready #app.app-shell {
   min-width: 0;
   min-height: 58px;
   padding: 5px !important;
+  /* The account chip is position:fixed at top:4.75rem with the page scrolling underneath
+     it, so at the top of the page it lands on the right end of this nav and covers the
+     last item ("More"). The signed-in chip is ~245px wide - far wider than the signed-out
+     pill - so the reserve has to clear that worst case. Declared here rather than in
+     account-chip.css so it beats the shorthand above it. */
+  padding-right: 5px !important;
   overflow: visible !important;
   border: 1px solid var(--shell-line) !important;
   border-radius: 18px !important;
@@ -605,6 +611,12 @@ body.app-ready #app.app-shell {
   backdrop-filter: blur(var(--ff-blur-raised)) saturate(130%);
   -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(130%);
   clip-path: none !important;
+}
+
+@media (min-width: 1024px) {
+  body:has(.vts-account-chip-mount .vts-account-chip) #app .tool-nav-inner {
+    padding-right: var(--vts-account-chip-reserve, 16rem) !important;
+  }
 }
 
 #app .tool-nav-inner::after {

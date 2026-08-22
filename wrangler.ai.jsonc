@@ -28,7 +28,11 @@
   "vars": {
     "AI_ENABLED": "true",
     "AI_PROVIDER": "deepseek",
-    "AI_MODEL": "deepseek-chat",
+    // Primary is the reasoning model: pickModel() sends anything with tools, follow-up
+    // context or a longer answer here, and only short standalone questions to FAST.
+    // Verified against the live API that deepseek-reasoner returns real tool_calls and
+    // reasoning_content, both of which workers/ai/deepseek.js already handles.
+    "AI_MODEL": "deepseek-reasoner",
     "AI_MODEL_FAST": "deepseek-chat",
     "ENVIRONMENT": "production",
     "FIREBASE_PROJECT_ID": "abocombo",
