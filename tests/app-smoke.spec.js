@@ -344,8 +344,13 @@ const visualSurfaces = [
     marker: '#techListContainer',
     target: '#techListContainer',
     setup: async (page) => {
+      // Both trees asserted below are S0, and the calculator opens on the
+      // current seasons (S4/X1/X2), so switch the filter to All first or the
+      // cards are simply not rendered.
+      await page.locator('#techSeasonAllBtn').click();
       const basicCombat = page.locator('.research-tech-card[data-tech-id="375d1626"]');
       const classLegion = page.locator('.research-tech-card[data-tech-id="cc2c9ee1"]');
+      await expect(basicCombat).toBeVisible({ timeout: 15000 });
       await expect(basicCombat.locator('.research-card-buff-preview--missing')).toContainText(
         'Buff values need data',
         { timeout: 15000 }

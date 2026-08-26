@@ -6159,6 +6159,232 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   background: #fff;
 }
 
+/* --- VtsScore admin leader board ------------------------------------------ */
+
+#ocrDashboardRoot .vts-admin-root {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+#ocrDashboardRoot .vts-admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+#ocrDashboardRoot .vts-admin-summary-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+#ocrDashboardRoot .vts-admin-summary-card strong {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+#ocrDashboardRoot .vts-admin-summary-card span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#ocrDashboardRoot .vts-admin-summary-card[data-tone='positive'] strong {
+  color: #86efac;
+}
+
+#ocrDashboardRoot .vts-admin-summary-card[data-tone='warning'] strong {
+  color: #fbbf24;
+}
+
+#ocrDashboardRoot .vts-admin-card {
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+#ocrDashboardRoot .vts-admin-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+#ocrDashboardRoot .vts-admin-card-heading h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+#ocrDashboardRoot .vts-admin-card-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+#ocrDashboardRoot .vts-admin-table-wrap {
+  overflow-x: auto;
+}
+
+#ocrDashboardRoot .vts-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+#ocrDashboardRoot .vts-admin-table th,
+#ocrDashboardRoot .vts-admin-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+#ocrDashboardRoot .vts-admin-table thead th {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#ocrDashboardRoot .vts-admin-table tbody th {
+  color: var(--text-primary);
+  font-weight: 900;
+  white-space: normal;
+}
+
+#ocrDashboardRoot .vts-admin-table td {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+#ocrDashboardRoot .vts-admin-table td[data-growth='positive'] {
+  color: #86efac;
+}
+
+#ocrDashboardRoot .vts-admin-table td[data-growth='negative'] {
+  color: #fca5a5;
+}
+
+#ocrDashboardRoot .vts-admin-table td[data-growth='missing'] {
+  color: var(--text-muted);
+}
+
+#ocrDashboardRoot .vts-admin-table tr[data-vts-score-status='missing'] {
+  opacity: 0.72;
+}
+
+#ocrDashboardRoot .vts-admin-breakdown {
+  margin-top: 0.35rem;
+}
+
+#ocrDashboardRoot .vts-admin-breakdown summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-height: 24px;
+}
+
+#ocrDashboardRoot .vts-admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+#ocrDashboardRoot .vts-admin-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+#ocrDashboardRoot .vts-admin-exempt-chip button {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fca5a5;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+#ocrDashboardRoot .vts-admin-muted {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+#ocrDashboardRoot .vts-admin-exempt-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#ocrDashboardRoot .vts-admin-exempt-form label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#ocrDashboardRoot .vts-admin-exempt-form .dash-input {
+  flex: 1 1 180px;
+  max-width: 260px;
+  margin-bottom: 0;
+}
+
+#ocrDashboardRoot .vts-admin-leaders-heading {
+  margin-top: 0.25rem;
+}
+
+[data-theme='light'] #ocrDashboardRoot .vts-admin-summary-card,
+[data-theme='light'] #ocrDashboardRoot .vts-admin-card {
+  background: #fff;
+}
+
+[data-theme='light'] #ocrDashboardRoot .vts-admin-summary-card[data-tone='positive'] strong,
+[data-theme='light'] #ocrDashboardRoot .vts-admin-table td[data-growth='positive'] {
+  color: #15803d;
+}
+
+[data-theme='light'] #ocrDashboardRoot .vts-admin-summary-card[data-tone='warning'] strong {
+  color: #b45309;
+}
+
+[data-theme='light'] #ocrDashboardRoot .vts-admin-table td[data-growth='negative'],
+[data-theme='light'] #ocrDashboardRoot .vts-admin-exempt-chip button {
+  color: #b91c1c;
+}
+
 #ocrDashboardRoot .dash-conduct-review-count {
   color: var(--text-muted);
   font-size: 0.72rem;

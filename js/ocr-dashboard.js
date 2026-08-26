@@ -122,6 +122,8 @@ import {
   updateR5Adjustment,
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
+import { createVtsScoreAdminView } from './vts-score-admin-view.js';
+import { loadVtsScoreSnapshot } from './vts-score-store.js';
 import {
   BOH_MATCH_TEAMS,
   bohMatchEntriesFromOcr,
@@ -354,6 +356,7 @@ state.r5EditingId = '';
 state.conductSuggestions = [];
 state.bohMatchEntries = [];
 state.bohMatchResults = [];
+state.vtsScoreSnapshot = null;
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -714,6 +717,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'contributions') renderContributions();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') renderBohMatchPanel();
+  if (name === 'vtsScore') renderVtsScorePanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
@@ -3113,6 +3117,7 @@ const SUPERADMIN_DASH_SUBTABS = new Set([
   'conduct',
   'allianceView',
   'throneBuffs',
+  'vtsScore',
   'userRoles',
 ]);
 
@@ -6160,6 +6165,75 @@ async function loadBohMatchResultsForAdmin() {
     showCloudSyncFailure(err, 'BoH match results load failed');
   }
   renderBohMatchResults();
+}
+
+// --- VtsScore admin leader board ---------------------------------------------
+// Its own tab now that the All-Star BoH command center that used to host it is
+// gone. Read-only: race scores are written by the authenticated vtsScore Cloud
+// Function, so the worst this surface can do is show stale numbers, which the
+// Refresh button fixes.
+
+let vtsScoreView = null;
+let vtsScoreLoading = false;
+
+function setVtsScoreStatus(message = '', type = 'info') {
+  const el = $id('dashVtsScoreStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function ensureVtsScoreView() {
+  if (vtsScoreView) return vtsScoreView;
+  vtsScoreView = createVtsScoreAdminView({
+    t: (key, vars, fallback) => {
+      const translated = dashT(key, vars || {});
+      return translated === key ? fallback || key : translated;
+    },
+    locale: () => getDashboardLang(),
+    setStatus: (message, type) => setVtsScoreStatus(message, type),
+  });
+  return vtsScoreView;
+}
+
+async function loadVtsScoreAdminSnapshot(options = {}) {
+  const root = $id('dashVtsScoreRoot');
+  if (!root || vtsScoreLoading) return;
+  if (state.vtsScoreSnapshot && !options.force) {
+    ensureVtsScoreView().render(root, state.vtsScoreSnapshot);
+    return;
+  }
+  vtsScoreLoading = true;
+  setVtsScoreStatus(dashT('adminVtsScoreLoading'), 'info');
+  try {
+    const snapshot = await loadVtsScoreSnapshot();
+    state.vtsScoreSnapshot = snapshot;
+    const seasonEl = $id('dashVtsScoreSeason');
+    if (seasonEl) {
+      seasonEl.textContent = dashT('adminConductSeasonLabel', { season: snapshot.season });
+    }
+    ensureVtsScoreView().render(root, snapshot);
+    setVtsScoreStatus('');
+  } catch (err) {
+    root.innerHTML = `<div class="dash-empty" role="alert">${esc(dashT('adminVtsScoreUnavailable'))}</div>`;
+    setVtsScoreStatus(showCloudSyncFailure(err, 'VtsScore load failed'), 'error');
+  } finally {
+    vtsScoreLoading = false;
+  }
+}
+
+function renderVtsScorePanel() {
+  bindVtsScoreControls();
+  void loadVtsScoreAdminSnapshot();
+}
+
+function bindVtsScoreControls() {
+  const button = $id('dashVtsScoreRefreshBtn');
+  if (!button || button.dataset.bound) return;
+  button.dataset.bound = '1';
+  button.addEventListener('click', () => {
+    void loadVtsScoreAdminSnapshot({ force: true });
+  });
 }
 
 function renderBohMatchPanel() {

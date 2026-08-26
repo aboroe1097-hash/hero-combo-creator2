@@ -1,5 +1,11 @@
 # Changelog
 
+## 15.0.13 - 2026-08-26
+
+- Added bulk row pasting to Bonus Team Effort so conduct adjustments can be entered as `player | points | reason` lines in one action.
+- Added admin-submitted team conduct suggestions with visible attribution and a super-admin approval or rejection workflow.
+- Restored VtsScore as a dedicated super-admin leaderboard tab and replaced the legacy All-Star command center with the focused BoH match-results workflow.
+
 ## 15.0.12 - 2026-08-18
 
 - Reworked the playbook Day 1 route around the loyalty build: unlock and build the Assault and Guardian Fortresses before resetting, run the all-Green Frontline Workshop honor setup, then reset into the Blue tree (left & right) for loyalty and processing; tile Farm, Marble, and Ale nodes for Coalition Base Camp upgrades, and stay in the loyalty build for the first weeks before switching to an alliance role.
