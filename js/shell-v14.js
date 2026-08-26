@@ -29,8 +29,6 @@
     'tabStrife',
     'tabLoyalty',
     'tabEdenX1',
-    'tabAllStarBoh',
-    'tabBohPlan',
     'tabYouTube',
     'tabOcrDashboard',
   ];
@@ -58,7 +56,6 @@
     // shareable #edenHub hash is handled by tabHashAliases below.
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
-    ['tabAllStarBoh', 'allStarBoh'],
     ['tabYouTube', 'youtube'],
   ]);
   // Legacy hashes that moved inside the VTS Eden Hub keep working: the shell

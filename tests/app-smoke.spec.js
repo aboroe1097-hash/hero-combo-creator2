@@ -411,7 +411,7 @@ async function openVisualApp(page, viewport) {
     await page.waitForFunction(() => {
       const nav = document.getElementById('tabNavScroll');
       return (
-        nav?.contains(document.getElementById('tabAllStarBoh')) &&
+        nav?.contains(document.getElementById('tabEdenMap')) &&
         !nav.contains(document.getElementById('tabArcade')) &&
         !nav.contains(document.getElementById('tabOcrDashboard'))
       );

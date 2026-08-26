@@ -44,6 +44,7 @@ import {
   showContributionPasteForm,
   showExGuildPasteForm,
   processContributionImages,
+  runBohMatchOcr,
   editContributionRecord,
   deleteContributionRecord,
   setContributionReward,
@@ -104,6 +105,7 @@ import {
   toEdenVoteDatetimeLocal,
 } from './eden-vote-deadline.js';
 import {
+  CONDUCT_BULK_MAX_ROWS,
   R5_ADJUSTMENT_CATEGORIES,
   R5_ADJUSTMENT_CATEGORY_KEYS,
   R5_ADJUSTMENTS_LOCAL_KEY,
@@ -115,10 +117,37 @@ import {
   loadR5Adjustments,
   loadLocalR5Adjustments,
   normalizeR5Adjustment,
+  parseConductBulkText,
   resolveR5PlayerIdentity,
   updateR5Adjustment,
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
+import {
+  BOH_MATCH_TEAMS,
+  bohMatchEntriesFromOcr,
+  bohMatchEntriesFromText,
+  deleteBohMatchResult,
+  deleteLocalBohMatchResult,
+  loadBohMatchResults,
+  loadLocalBohMatchResults,
+  normalizeBohMatchEntries,
+  saveBohMatchResult,
+  saveLocalBohMatchResult,
+  summarizeBohMatchResults,
+} from './boh-match-results.js';
+import {
+  conductSuggestionToAdjustment,
+  createConductSuggestion,
+  createLocalConductSuggestion,
+  deleteConductSuggestion,
+  deleteLocalConductSuggestion,
+  loadConductSuggestions,
+  loadLocalConductSuggestions,
+  normalizeConductSuggestionStatus,
+  reviewConductSuggestion,
+  reviewLocalConductSuggestion,
+  summarizeConductSuggestions,
+} from './ocr-conduct-suggestions.js';
 import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
@@ -176,11 +205,6 @@ let allianceViewVoteSettingsUnsubscribe = null;
 let allianceViewContributionFrame = 0;
 let localAllianceViewFirestoreContext = null;
 const allianceViewContributionSubscribers = new Set();
-let allStarBohModulePromise = null;
-let allStarBohMountPromise = null;
-let allStarBohController = null;
-let allStarBohAdminI18n = null;
-let allStarBohResearchI18n = null;
 let throneBuffsModulePromise = null;
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 // Throne Buffs is a standing program: its history key is deliberately global,
@@ -327,6 +351,9 @@ state.edenX1VoteSettings = null;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
 state.r5EditingId = '';
+state.conductSuggestions = [];
+state.bohMatchEntries = [];
+state.bohMatchResults = [];
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -686,11 +713,12 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
-  if (name === 'allStarBoh') void ensureAllStarBohMountedOrUpdated();
+  if (name === 'allStarBoh') renderBohMatchPanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
+  if (name === 'conductSuggest') renderConductSuggestPanel();
 }
 
 let userRolesModulePromise = null;
@@ -2037,6 +2065,9 @@ function renderConductAdjustments() {
       return bMs - aMs;
     });
 
+  conductBulkPanel.render();
+  ensureConductSuggestionsLoaded();
+  renderConductSuggestionReview();
   renderConductSummary(rows);
   if (!rows.length) {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
@@ -2138,6 +2169,602 @@ async function savePublicConductSnapshot() {
   });
 }
 
+// --- Conduct bulk paste ------------------------------------------------------
+// One textarea, one preview, one batched write. Rows are re-parsed from the
+// textarea on every keystroke so the preview can never drift from the text the
+// admin is looking at; the only extra state is the set of line numbers they
+// unticked. The same panel drives superadmin adjustments and admin suggestions,
+// which differ only in what a row is saved as.
+
+function conductRecordSignature(record) {
+  return [
+    record?.playerKey || '',
+    record?.category || '',
+    Number(record?.points || 0),
+    String(record?.note || '').trim(),
+  ].join('|');
+}
+
+function existingConductSignatures() {
+  const signatures = new Set();
+  (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : []).forEach((record) => {
+    if (record?.season !== state.r5Season) return;
+    signatures.add(conductRecordSignature(record));
+  });
+  return signatures;
+}
+
+function existingConductSuggestionSignatures() {
+  const signatures = new Set();
+  (Array.isArray(state.conductSuggestions) ? state.conductSuggestions : []).forEach((record) => {
+    if (record?.season !== state.r5Season || record?.status === 'rejected') return;
+    signatures.add(conductRecordSignature(record));
+  });
+  return signatures;
+}
+
+function createConductBulkPanel(config) {
+  const excluded = new Set();
+
+  function defaultCategory() {
+    const value = $id(config.categoryId)?.value || '';
+    return R5_ADJUSTMENT_CATEGORY_KEYS.includes(value) ? value : 'penalty_other';
+  }
+
+  function renderCategoryPicker() {
+    const select = $id(config.categoryId);
+    if (!select) return;
+    const previous = select.value;
+    const signature = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+      (key) => `${key}:${conductCategoryLabel(key)}`
+    ).join('|');
+    if (select.dataset.signature !== signature) {
+      select.dataset.signature = signature;
+      select.innerHTML = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+        (key) => `<option value="${esc(key)}">${esc(conductCategoryLabel(key))}</option>`
+      ).join('');
+    }
+    select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : 'penalty_other';
+  }
+
+  function readDraft() {
+    const parsed = parseConductBulkText($id(config.inputId)?.value || '', {
+      defaultCategory: defaultCategory(),
+    });
+    const existing = config.existingSignatures();
+    const rows = parsed.rows.map((row) => ({
+      ...row,
+      duplicate: existing.has(conductRecordSignature(row)),
+      included: !excluded.has(row.lineNumber),
+    }));
+    return { ...parsed, rows, selected: rows.filter((row) => row.included) };
+  }
+
+  function setAddButton(count) {
+    const addBtn = $id(config.addBtnId);
+    if (!addBtn) return;
+    addBtn.disabled = !count;
+    const label = addBtn.querySelector('span');
+    if (!label) return;
+    label.textContent = count
+      ? dashT(config.addCountLabelKey, { count })
+      : dashT(config.addLabelKey);
+  }
+
+  function render() {
+    const host = $id(config.previewId);
+    if (!host) return;
+    renderCategoryPicker();
+    const { rows, errors, truncated, selected } = readDraft();
+
+    if (!rows.length && !errors.length) {
+      host.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductBulkEmpty'))}</div>`;
+      setAddButton(0);
+      return;
+    }
+
+    const duplicates = rows.filter((row) => row.duplicate).length;
+    const notices = [
+      `<span>${esc(dashT('adminConductBulkCount', { count: selected.length, total: rows.length }))}</span>`,
+    ];
+    if (duplicates) {
+      notices.push(
+        `<span class="dash-conduct-bulk-warn">${esc(dashT('adminConductBulkDuplicates', { count: duplicates }))}</span>`
+      );
+    }
+    if (truncated) {
+      notices.push(
+        `<span class="dash-conduct-bulk-warn">${esc(dashT('adminConductBulkTruncated', { max: CONDUCT_BULK_MAX_ROWS }))}</span>`
+      );
+    }
+
+    const rowsHtml = rows
+      .map((row) => {
+        const pointsClass = row.points >= 0 ? 'dash-positive' : 'dash-negative';
+        return `<label class="dash-conduct-bulk-row${row.duplicate ? ' is-duplicate' : ''}">
+        <input type="checkbox" data-conduct-bulk-line="${row.lineNumber}"${row.included ? ' checked' : ''}>
+        <strong>${esc(row.playerName)}</strong>
+        <b class="${pointsClass}">${esc(formatSignedPoints(row.points))}</b>
+        <span>${esc(conductCategoryLabel(row.category))}</span>
+        <small>${esc(row.note || '')}</small>
+        ${row.duplicate ? `<em>${esc(dashT('adminConductBulkDuplicate'))}</em>` : ''}
+      </label>`;
+      })
+      .join('');
+
+    const errorsHtml = errors.length
+      ? `<div class="dash-conduct-bulk-errors">${errors
+          .map(
+            (error) =>
+              `<p><b>${esc(dashT('adminConductBulkLine', { line: error.lineNumber }))}</b> ${esc(error.message)}</p>`
+          )
+          .join('')}</div>`
+      : '';
+
+    host.innerHTML = `<div class="dash-conduct-bulk-notices">${notices.join('')}</div>
+    <div class="dash-conduct-bulk-rows">${rowsHtml}</div>
+    ${errorsHtml}`;
+
+    host.querySelectorAll('[data-conduct-bulk-line]').forEach((box) => {
+      box.addEventListener('change', () => {
+        const line = Number(box.dataset.conductBulkLine);
+        if (box.checked) excluded.delete(line);
+        else excluded.add(line);
+        render();
+      });
+    });
+
+    setAddButton(selected.length);
+  }
+
+  function clear() {
+    const input = $id(config.inputId);
+    if (input) input.value = '';
+    excluded.clear();
+    render();
+  }
+
+  async function submit() {
+    const addBtn = $id(config.addBtnId);
+    const { selected } = readDraft();
+    if (!selected.length) return;
+    if (!confirm(dashT(config.confirmKey, { count: selected.length }))) return;
+
+    if (addBtn) addBtn.disabled = true;
+    let saved = 0;
+    const failures = [];
+    try {
+      for (const row of selected) {
+        config.setStatus(
+          dashT('adminConductBulkSaving', { done: saved + 1, total: selected.length }),
+          'info'
+        );
+        try {
+          await config.saveRow(row);
+          saved += 1;
+        } catch (err) {
+          failures.push({ row, message: err?.message || String(err) });
+        }
+      }
+    } finally {
+      if (saved) await config.afterSave();
+      if (addBtn) addBtn.disabled = false;
+    }
+
+    if (!failures.length) {
+      clear();
+      config.setStatus(dashT(config.savedKey, { count: saved }), 'success');
+      return;
+    }
+    // Keep the pasted text so the admin can retry the rows that did not land.
+    render();
+    config.setStatus(
+      `${dashT('adminConductBulkPartial', { count: saved, failed: failures.length })} ${failures[0].message}`,
+      'error'
+    );
+  }
+
+  function bind() {
+    const input = $id(config.inputId);
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = '1';
+    renderCategoryPicker();
+    input.addEventListener('input', () => {
+      excluded.clear();
+      render();
+    });
+    $id(config.categoryId)?.addEventListener('change', render);
+    $id(config.clearBtnId)?.addEventListener('click', clear);
+    $id(config.addBtnId)?.addEventListener('click', () => {
+      submit().catch((err) => {
+        config.setStatus(showCloudSyncFailure(err, config.failureLabel), 'error');
+      });
+    });
+    render();
+  }
+
+  return { render, clear, bind };
+}
+
+const conductBulkPanel = createConductBulkPanel({
+  inputId: 'dashConductBulkInput',
+  categoryId: 'dashConductBulkCategory',
+  previewId: 'dashConductBulkPreview',
+  addBtnId: 'dashConductBulkAddBtn',
+  clearBtnId: 'dashConductBulkClearBtn',
+  addLabelKey: 'adminConductBulkAdd',
+  addCountLabelKey: 'adminConductBulkAddCount',
+  confirmKey: 'adminConductBulkConfirm',
+  savedKey: 'adminConductBulkSaved',
+  failureLabel: 'Bonus team effort points save failed',
+  setStatus: (message, type) => setConductStatus(message, type),
+  existingSignatures: () => existingConductSignatures(),
+  saveRow: async (row) => {
+    const record = {
+      season: state.r5Season,
+      playerKey: row.playerKey,
+      playerName: row.playerName,
+      category: row.category,
+      points: row.points,
+      note: row.note,
+    };
+    if (state.cloudSyncConfigured === false) createLocalR5Adjustment(record);
+    else await createR5Adjustment(record);
+  },
+  afterSave: async () => {
+    await loadConductAdjustmentsForSeason();
+    await savePublicConductSnapshot();
+    render();
+  },
+});
+
+// --- Admin conduct suggestions ----------------------------------------------
+// Any admin can propose points; only a superadmin turns a proposal into a real
+// adjustment. The suggestion carries its author, so the review queue always
+// answers "who asked for this".
+
+function setSuggestStatus(message = '', type = 'info') {
+  const el = $id('dashSuggestStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function currentAdminUid() {
+  return state.adminUser?.uid || '';
+}
+
+function currentAdminLabel() {
+  const user = state.adminUser;
+  return user?.displayName || user?.email || user?.uid || 'admin';
+}
+
+function renderSuggestPlayerOptions() {
+  const list = $id('dashSuggestPlayerOptions');
+  if (!list) return;
+  const options = collectConductPlayerOptions();
+  const signature = options.map((row) => row.playerName).join('|');
+  if (list.dataset.signature === signature) return;
+  list.dataset.signature = signature;
+  list.innerHTML = options
+    .map((row) => `<option value="${esc(row.playerName)}"></option>`)
+    .join('');
+}
+
+function renderSuggestCategoryPicker() {
+  const select = $id('dashSuggestCategory');
+  if (!select) return;
+  const previous = select.value;
+  const signature = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+    (key) => `${key}:${conductCategoryLabel(key)}`
+  ).join('|');
+  if (select.dataset.signature !== signature) {
+    select.dataset.signature = signature;
+    select.innerHTML = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+      (key) => `<option value="${esc(key)}">${esc(conductCategoryLabel(key))}</option>`
+    ).join('');
+  }
+  select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : 'banner_help';
+}
+
+function conductSuggestionStatusLabel(status) {
+  const key = String(status || 'pending');
+  return dashT(
+    key === 'approved'
+      ? 'adminSuggestStatusApproved'
+      : key === 'rejected'
+        ? 'adminSuggestStatusRejected'
+        : 'adminSuggestStatusPending'
+  );
+}
+
+function seasonConductSuggestions() {
+  return (Array.isArray(state.conductSuggestions) ? state.conductSuggestions : []).filter(
+    (record) => record?.season === state.r5Season
+  );
+}
+
+function renderSuggestionRow(record, options = {}) {
+  const pointsValue = Number(record.points || 0);
+  const status = normalizeConductSuggestionStatus(record.status);
+  const meta = [
+    conductCategoryLabel(record.category),
+    conductCreatedAtLabel(record),
+    options.showAuthor
+      ? dashT('adminSuggestBy', { admin: record.suggestedByName || record.suggestedBy })
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const actions = (options.actions || []).join('');
+  return `<article class="dash-conduct-row dash-suggestion-row" data-suggestion-status="${esc(status)}">
+    <div>
+      <strong>${esc(record.playerName)}</strong>
+      <span>${esc(meta)}</span>
+      ${record.note ? `<p>${esc(record.note)}</p>` : ''}
+      ${record.reviewNote ? `<p class="dash-suggestion-review-note">${esc(record.reviewNote)}</p>` : ''}
+    </div>
+    <div class="dash-conduct-row-actions">
+      <span class="dash-suggestion-badge" data-status="${esc(status)}">${esc(conductSuggestionStatusLabel(status))}</span>
+      <b class="${pointsValue >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedPoints(pointsValue)}</b>
+      ${actions}
+    </div>
+  </article>`;
+}
+
+function renderOwnConductSuggestions() {
+  const list = $id('dashSuggestList');
+  if (!list) return;
+  renderSuggestCategoryPicker();
+  renderSuggestPlayerOptions();
+  const seasonEl = $id('dashSuggestSeason');
+  if (seasonEl) seasonEl.textContent = dashT('adminConductSeasonLabel', { season: state.r5Season });
+  const points = $id('dashSuggestPoints');
+  if (points && !points.value) {
+    points.value = defaultR5PointsForCategory($id('dashSuggestCategory')?.value || 'banner_help');
+  }
+
+  const query = ($id('dashSuggestSearch')?.value || '').trim().toLowerCase();
+  const uid = currentAdminUid();
+  const rows = seasonConductSuggestions()
+    .filter((record) => !uid || record.suggestedBy === uid)
+    .filter((record) => !query || (record.playerName || '').toLowerCase().includes(query));
+
+  if (!rows.length) {
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminSuggestEmpty'))}</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((record) =>
+      renderSuggestionRow(record, {
+        actions:
+          record.status === 'pending'
+            ? [
+                `<button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-suggestion-withdraw="${esc(record.id)}">${esc(dashT('adminSuggestWithdraw'))}</button>`,
+              ]
+            : [],
+      })
+    )
+    .join('');
+
+  list.querySelectorAll('[data-suggestion-withdraw]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.suggestionWithdraw;
+      if (!id || !confirm(dashT('adminSuggestWithdrawConfirm'))) return;
+      try {
+        if (state.cloudSyncConfigured === false) deleteLocalConductSuggestion(id);
+        else await deleteConductSuggestion(id);
+        await loadConductSuggestionsForSeason();
+        setSuggestStatus(dashT('adminSuggestWithdrawn'), 'success');
+      } catch (err) {
+        setSuggestStatus(showCloudSyncFailure(err, 'Suggestion withdraw failed'), 'error');
+      }
+    });
+  });
+}
+
+function renderConductSuggestionReview() {
+  const list = $id('dashConductReviewList');
+  if (!list) return;
+  const rows = seasonConductSuggestions();
+  const summary = summarizeConductSuggestions(rows, state.r5Season);
+  const countEl = $id('dashConductReviewCount');
+  if (countEl) {
+    countEl.textContent = dashT('adminSuggestReviewCount', {
+      pending: summary.pending,
+      total: summary.total,
+    });
+  }
+
+  if (!rows.length) {
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminSuggestReviewEmpty'))}</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((record) =>
+      renderSuggestionRow(record, {
+        showAuthor: true,
+        actions:
+          record.status === 'pending'
+            ? [
+                `<button class="dash-btn dash-btn-xs dash-btn-primary" type="button" data-suggestion-approve="${esc(record.id)}">${esc(dashT('adminSuggestApprove'))}</button>`,
+                `<button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-suggestion-reject="${esc(record.id)}">${esc(dashT('adminSuggestReject'))}</button>`,
+              ]
+            : [],
+      })
+    )
+    .join('');
+
+  list.querySelectorAll('[data-suggestion-approve]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      void reviewConductSuggestionAction(btn.dataset.suggestionApprove, 'approved');
+    });
+  });
+  list.querySelectorAll('[data-suggestion-reject]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      void reviewConductSuggestionAction(btn.dataset.suggestionReject, 'rejected');
+    });
+  });
+}
+
+async function reviewConductSuggestionAction(id, status) {
+  const record = seasonConductSuggestions().find((entry) => entry.id === id);
+  if (!record) return;
+  const approving = status === 'approved';
+  if (
+    !confirm(
+      dashT(approving ? 'adminSuggestApproveConfirm' : 'adminSuggestRejectConfirm', {
+        player: record.playerName,
+        points: formatSignedPoints(Number(record.points || 0)),
+      })
+    )
+  ) {
+    return;
+  }
+  const reviewNote = approving ? '' : prompt(dashT('adminSuggestRejectReason'), '') || '';
+
+  try {
+    setConductStatus(dashT('adminConductSaving'), 'info');
+    let adjustmentId = '';
+    if (approving) {
+      // Mint the adjustment first: a suggestion marked approved without a
+      // matching adjustment would silently award nothing.
+      const payload = conductSuggestionToAdjustment(record);
+      const created =
+        state.cloudSyncConfigured === false
+          ? createLocalR5Adjustment(payload)
+          : await createR5Adjustment(payload);
+      adjustmentId = created?.id || '';
+    }
+    if (state.cloudSyncConfigured === false) {
+      reviewLocalConductSuggestion(id, { status, reviewNote, adjustmentId });
+    } else {
+      await reviewConductSuggestion(id, { status, reviewNote, adjustmentId });
+    }
+    await loadConductSuggestionsForSeason();
+    if (approving) {
+      await loadConductAdjustmentsForSeason();
+      await savePublicConductSnapshot();
+      render();
+    }
+    setConductStatus(
+      dashT(approving ? 'adminSuggestApproved' : 'adminSuggestRejected'),
+      approving ? 'success' : 'info'
+    );
+  } catch (err) {
+    setConductStatus(showCloudSyncFailure(err, 'Suggestion review failed'), 'error');
+  }
+}
+
+async function loadConductSuggestionsForSeason() {
+  state.r5Season = state.r5Season || getDashboardR5SeasonKey();
+  try {
+    state.conductSuggestions =
+      state.cloudSyncConfigured === false
+        ? loadLocalConductSuggestions(state.r5Season)
+        : await loadConductSuggestions(state.r5Season);
+  } catch (err) {
+    state.conductSuggestions = Array.isArray(state.conductSuggestions)
+      ? state.conductSuggestions
+      : [];
+    showCloudSyncFailure(err, 'Conduct suggestions load failed');
+  }
+  renderOwnConductSuggestions();
+  renderConductSuggestionReview();
+}
+
+function ensureConductSuggestionsLoaded() {
+  if (state._conductSuggestionsLoaded) return;
+  state._conductSuggestionsLoaded = true;
+  void loadConductSuggestionsForSeason();
+}
+
+function renderConductSuggestPanel() {
+  bindConductSuggestControls();
+  renderOwnConductSuggestions();
+  conductSuggestBulkPanel.render();
+  ensureConductSuggestionsLoaded();
+}
+
+async function saveConductSuggestionRow(row) {
+  const record = {
+    season: state.r5Season,
+    playerKey: row.playerKey,
+    playerName: row.playerName,
+    category: row.category,
+    points: row.points,
+    note: row.note,
+    suggestedBy: currentAdminUid() || 'local-admin',
+    suggestedByName: currentAdminLabel(),
+  };
+  if (state.cloudSyncConfigured === false) return createLocalConductSuggestion(record);
+  return createConductSuggestion(record);
+}
+
+const conductSuggestBulkPanel = createConductBulkPanel({
+  inputId: 'dashSuggestBulkInput',
+  categoryId: 'dashSuggestBulkCategory',
+  previewId: 'dashSuggestBulkPreview',
+  addBtnId: 'dashSuggestBulkAddBtn',
+  clearBtnId: 'dashSuggestBulkClearBtn',
+  addLabelKey: 'adminSuggestBulkAdd',
+  addCountLabelKey: 'adminSuggestBulkAddCount',
+  confirmKey: 'adminSuggestBulkConfirm',
+  savedKey: 'adminSuggestBulkSaved',
+  failureLabel: 'Suggestion save failed',
+  setStatus: (message, type) => setSuggestStatus(message, type),
+  existingSignatures: () => existingConductSuggestionSignatures(),
+  saveRow: (row) => saveConductSuggestionRow(row),
+  afterSave: async () => {
+    await loadConductSuggestionsForSeason();
+  },
+});
+
+function bindConductSuggestControls() {
+  const form = $id('dashSuggestForm');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  renderSuggestCategoryPicker();
+  renderSuggestPlayerOptions();
+  conductSuggestBulkPanel.bind();
+  $id('dashSuggestCategory')?.addEventListener('change', (event) => {
+    const points = $id('dashSuggestPoints');
+    if (points) points.value = defaultR5PointsForCategory(event.target.value);
+  });
+  $id('dashSuggestSearch')?.addEventListener('input', renderOwnConductSuggestions);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const playerInput = $id('dashSuggestPlayer');
+    const rawName = (playerInput?.value || '').trim();
+    playerInput?.setAttribute('aria-invalid', 'false');
+    if (!rawName) {
+      setSuggestStatus(dashT('adminConductNoPlayers'), 'warn');
+      playerInput?.setAttribute('aria-invalid', 'true');
+      playerInput?.focus();
+      return;
+    }
+    try {
+      const identity = resolveR5PlayerIdentity({ name: rawName });
+      setSuggestStatus(dashT('adminSuggestSaving'), 'info');
+      await saveConductSuggestionRow({
+        playerKey: identity.playerKey,
+        playerName: identity.playerName,
+        category: $id('dashSuggestCategory')?.value || 'banner_help',
+        points: $id('dashSuggestPoints')?.value,
+        note: $id('dashSuggestNote')?.value || '',
+      });
+      form.reset();
+      renderSuggestCategoryPicker();
+      const points = $id('dashSuggestPoints');
+      if (points) points.value = defaultR5PointsForCategory($id('dashSuggestCategory')?.value);
+      await loadConductSuggestionsForSeason();
+      setSuggestStatus(dashT('adminSuggestSaved'), 'success');
+    } catch (err) {
+      setSuggestStatus(showCloudSyncFailure(err, 'Suggestion save failed'), 'error');
+    }
+  });
+}
+
 function bindConductControls() {
   const form = $id('dashConductForm');
   if (!form || form.dataset.bound) return;
@@ -2147,6 +2774,7 @@ function bindConductControls() {
     const points = $id('dashConductPoints');
     if (points) points.value = defaultR5PointsForCategory(category.value);
   });
+  conductBulkPanel.bind();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
@@ -2474,12 +3102,16 @@ window.getVtsAdminFirestoreContext = async function () {
 // and conduct adjustments directly. They are now gated on the superadmin claim,
 // which the rules and the setUserRole callable enforce independently.
 // Eden Votes and Bonus Team Effort Points were PIN-hidden; the whole Alliance
-// Management side is superadmin-only, so its four tabs join them here.
+// Management side is superadmin-only, so its tabs join them here.
+//
+// BoH Match Results is deliberately not on this list: the people who upload a
+// team's end-of-match score list are the team leaders, who are admins, not
+// superadmins. firestore.rules gates the collection on the admin claim to
+// match.
 const SUPERADMIN_DASH_SUBTABS = new Set([
   'edenVotes',
   'conduct',
   'allianceView',
-  'allStarBoh',
   'throneBuffs',
   'userRoles',
 ]);
@@ -3554,22 +4186,6 @@ function dashT(key, vars = {}) {
   return text;
 }
 
-function allStarBohAdminT(key, vars = {}) {
-  if (typeof allStarBohAdminI18n?.adminAllStarBohText === 'function') {
-    return allStarBohAdminI18n.adminAllStarBohText(key, vars, getDashboardLang());
-  }
-  const domainTranslator = window.VTS_ALL_STAR_BOH_TRANSLATE || window.allStarBohText;
-  if (typeof domainTranslator === 'function') {
-    try {
-      const translated = domainTranslator(key, vars, getDashboardLang());
-      if (translated && translated !== key) return translated;
-    } catch (error) {
-      console.warn('ALL-STAR BOH ADMIN TRANSLATION ERROR:', error);
-    }
-  }
-  return dashT(key, vars);
-}
-
 function logDashboardEvent(key, type = 'info', params = {}, options = {}) {
   return log(dashT(key, params), type, options.file || null, {
     messageKey: key,
@@ -3866,8 +4482,6 @@ async function doSignOut() {
   // the session or reopen the dashboard when the user flips to null. Cleared on
   // the next sign-in (doLogin).
   state._signingOut = true;
-  allStarBohController?.destroy?.();
-  allStarBohController = null;
   allianceViewController?.destroy?.();
   allianceViewController = null;
   allianceViewSettingsLoaded = false;
@@ -5359,100 +5973,274 @@ async function ensureAllianceViewMountedOrUpdated() {
   return allianceViewMountPromise;
 }
 
-async function getAllStarBohAdminStoreOptions(storeModule) {
-  const context = await window.getVtsAdminFirestoreContext();
-  const uid = String(context?.user?.uid || '').trim();
-  const tokenResult = await context?.user?.getIdTokenResult?.();
-  const admin = tokenResult?.claims?.admin === true;
-  if (!uid || !admin) throw new Error(dashT('adminCloudAdminRequired'));
-  if (typeof storeModule?.getAllStarBohActiveConfig !== 'function') {
-    throw new Error(allStarBohAdminT('adminBohUnavailable'));
-  }
-  const config = await storeModule.getAllStarBohActiveConfig({
-    db: context.db,
-    firestore: context.firestore,
-  });
-  return {
-    db: context.db,
-    firestore: context.firestore,
-    seasonId: config.activeSeason,
-    uid,
-    admin,
-  };
+// --- BoH match results -------------------------------------------------------
+// Replaces the All-Star BoH command center. One team, one match: the leader
+// picks their team, uploads the Combat Progress captures, and says how the team
+// did. Rows stay in the draft until the leader saves, so a bad OCR pass costs
+// nothing but a re-upload.
+
+function formatBohScore(value) {
+  return Number(value || 0).toLocaleString();
 }
 
-async function ensureAllStarBohMountedOrUpdated() {
-  if (allStarBohController) {
-    await allStarBohController.refresh?.();
-    return allStarBohController;
+function setBohMatchStatus(message = '', type = 'info') {
+  const el = $id('dashBohMatchStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function bohMatchDraftEntries() {
+  return Array.isArray(state.bohMatchEntries) ? state.bohMatchEntries : [];
+}
+
+function setBohMatchDraftEntries(entries) {
+  state.bohMatchEntries = normalizeBohMatchEntries(entries);
+  renderBohMatchEntries();
+}
+
+function renderBohMatchTeamPicker() {
+  const select = $id('dashBohMatchTeam');
+  if (!select || select.dataset.ready === '1') return;
+  select.dataset.ready = '1';
+  select.innerHTML = BOH_MATCH_TEAMS.map(
+    (team) => `<option value="${esc(team.id)}">${esc(`${team.number}. ${team.label}`)}</option>`
+  ).join('');
+}
+
+function renderBohMatchEntries() {
+  const host = $id('dashBohMatchEntries');
+  if (!host) return;
+  const entries = bohMatchDraftEntries();
+  if (!entries.length) {
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchNoRows'))}</div>`;
+    return;
   }
-  if (allStarBohMountPromise) return allStarBohMountPromise;
-  allStarBohMountPromise = (async () => {
-    if (!allStarBohModulePromise) {
-      allStarBohModulePromise = Promise.all([
-        import('./admin-all-star-boh.js'),
-        import('./all-star-boh-store.js'),
-        import('./i18n/admin-all-star-boh/index.js'),
-        import('./heroes-data.js'),
-        import('./tech-db.js'),
-        import('./i18n/research/index.js'),
-        import('../css/admin-all-star-boh.css'),
-      ]).catch((error) => {
-        allStarBohModulePromise = null;
-        void recoverFromStaleAssetGraph(error);
-        throw error;
-      });
-    }
-    const [adminModule, storeModule, i18nModule, heroModule, researchModule, researchI18nModule] =
-      await allStarBohModulePromise;
-    allStarBohAdminI18n = i18nModule;
-    allStarBohResearchI18n = researchI18nModule;
-    await Promise.all([
-      i18nModule.loadAdminAllStarBohLocale(getDashboardLang()),
-      researchI18nModule.loadResearchLocale(getDashboardLang()),
-    ]);
-    allStarBohController = await adminModule.initializeAdminAllStarBoh($id('dashAllStarBohRoot'), {
-      t: allStarBohAdminT,
-      locale: getDashboardLang(),
-      heroMetadata: heroModule.allHeroesData || [],
-      researchMetadata: () =>
-        (researchModule.techDatabase || []).map((tree) => ({
-          id: tree.id,
-          label: researchI18nModule.researchTreeText(tree, 'name', getDashboardLang()),
-        })),
-      createStore: async () => {
-        const adminStore = storeModule.createAllStarBohAdminStore({
-          ...(await getAllStarBohAdminStoreOptions(storeModule)),
-          heroNames: (heroModule.allHeroesData || []).map((hero) => hero.name),
-          researchTreeIds: (researchModule.techDatabase || []).map((tree) => tree.id),
-        });
-        return adminModule.createAdminAllStarBohStoreAdapter(adminStore, {
-          paidUsableHeroNames: (heroModule.allHeroesData || [])
-            .filter((hero) => hero.State === 'Paid')
-            .map((hero) => hero.name),
-          validatePublication: adminModule.validateAdminAllStarBohPublicationBundle,
-          onError: (error, context) =>
-            console.error('ALL-STAR BOH ADMIN LIVE REFRESH ERROR:', context?.action, error),
-        });
+  const total = entries.reduce((sum, entry) => sum + entry.score, 0);
+  host.innerHTML = `<div class="dash-conduct-bulk-notices">
+      <span>${esc(dashT('adminBohMatchRowCount', { count: entries.length }))}</span>
+      <span>${esc(dashT('adminBohMatchTotal', { total: formatBohScore(total) }))}</span>
+    </div>
+    <div class="dash-boh-match-rows">${entries
+      .map(
+        (entry) => `<div class="dash-boh-match-row">
+        <span class="dash-boh-match-rank">${entry.rank}</span>
+        <strong>${esc(entry.playerName)}</strong>
+        <b>${esc(formatBohScore(entry.score))}</b>
+        <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-boh-row-remove="${esc(entry.playerKey)}">${esc(dashT('adminDelete'))}</button>
+      </div>`
+      )
+      .join('')}</div>`;
+
+  host.querySelectorAll('[data-boh-row-remove]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.bohRowRemove;
+      setBohMatchDraftEntries(bohMatchDraftEntries().filter((entry) => entry.playerKey !== key));
+    });
+  });
+}
+
+async function processBohMatchImages(files) {
+  if (state._bohMatchProcessing) return;
+  state._bohMatchProcessing = true;
+  const progress = $id('dashBohMatchProgress');
+  const progressText = $id('dashBohMatchProgressText');
+  progress?.classList.remove('hidden');
+  setBohMatchStatus('');
+  try {
+    const result = await runBohMatchOcr(files, {
+      onProgress: ({ current, total }) => {
+        if (progressText) {
+          progressText.textContent = dashT('adminBohMatchScanning', { current, total });
+        }
       },
     });
-    return allStarBohController;
-  })()
-    .catch((error) => {
-      console.error('ALL-STAR BOH ADMIN LOAD ERROR:', error);
-      const root = $id('dashAllStarBohRoot');
-      if (root) {
-        root.setAttribute('aria-busy', 'false');
-        root.innerHTML = `<div class="dash-empty" role="alert">${esc(
-          allStarBohAdminT('adminBohUnavailable')
-        )}</div>`;
-      }
-      return null;
-    })
-    .finally(() => {
-      allStarBohMountPromise = null;
+    if (result.error && !result.entries.length) {
+      setBohMatchStatus(result.error, 'error');
+      return;
+    }
+    // Merge with what is already in the draft: leaders upload one capture at a
+    // time as often as they upload the whole set at once.
+    setBohMatchDraftEntries([...bohMatchDraftEntries(), ...bohMatchEntriesFromOcr(result)]);
+    const count = bohMatchDraftEntries().length;
+    if (!count) setBohMatchStatus(dashT('adminBohMatchNoRowsFound'), 'warn');
+    else setBohMatchStatus(dashT('adminBohMatchScanned', { count }), 'success');
+  } catch (err) {
+    setBohMatchStatus(showCloudSyncFailure(err, 'BoH match OCR failed'), 'error');
+  } finally {
+    progress?.classList.add('hidden');
+    state._bohMatchProcessing = false;
+  }
+}
+
+function showBohMatchPasteForm() {
+  const text = prompt(dashT('adminBohMatchPastePrompt'), '');
+  if (text === null) return;
+  const parsed = bohMatchEntriesFromText(text);
+  if (!parsed.length) {
+    setBohMatchStatus(dashT('adminBohMatchNoRowsFound'), 'warn');
+    return;
+  }
+  setBohMatchDraftEntries([...bohMatchDraftEntries(), ...parsed]);
+  setBohMatchStatus(
+    dashT('adminBohMatchScanned', { count: bohMatchDraftEntries().length }),
+    'success'
+  );
+}
+
+function renderBohMatchResults() {
+  const list = $id('dashBohMatchList');
+  if (!list) return;
+  const rows = Array.isArray(state.bohMatchResults) ? state.bohMatchResults : [];
+  const summaryEl = $id('dashBohMatchSummary');
+  if (summaryEl) {
+    const summary = summarizeBohMatchResults(rows);
+    summaryEl.textContent = dashT('adminBohMatchSummary', {
+      matches: summary.matches,
+      teams: summary.teams,
     });
-  return allStarBohMountPromise;
+  }
+  if (!rows.length) {
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchEmpty'))}</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((record) => {
+      const meta = [
+        record.matchDate,
+        record.opponent ? dashT('adminBohMatchVs', { opponent: record.opponent }) : '',
+        dashT('adminBohMatchRowCount', { count: record.memberCount }),
+        record.createdByName ? dashT('adminBohMatchBy', { admin: record.createdByName }) : '',
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      const top = record.entries
+        .slice(0, 3)
+        .map((entry) => `${esc(entry.playerName)} ${esc(formatBohScore(entry.score))}`)
+        .join(' · ');
+      return `<article class="dash-conduct-row">
+        <div>
+          <strong>${esc(record.teamName)}</strong>
+          <span>${esc(meta)}</span>
+          ${top ? `<p>${top}</p>` : ''}
+          ${record.note ? `<p class="dash-boh-match-note-text">${esc(record.note)}</p>` : ''}
+        </div>
+        <div class="dash-conduct-row-actions">
+          <b>${esc(formatBohScore(record.totalScore))}</b>
+          <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-boh-match-delete="${esc(record.id)}">${esc(dashT('adminDelete'))}</button>
+        </div>
+      </article>`;
+    })
+    .join('');
+
+  list.querySelectorAll('[data-boh-match-delete]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.bohMatchDelete;
+      if (!id || !confirm(dashT('adminBohMatchDeleteConfirm'))) return;
+      try {
+        if (state.cloudSyncConfigured === false) deleteLocalBohMatchResult(id);
+        else await deleteBohMatchResult(id);
+        await loadBohMatchResultsForAdmin();
+        setBohMatchStatus(dashT('adminBohMatchDeleted'), 'success');
+      } catch (err) {
+        setBohMatchStatus(showCloudSyncFailure(err, 'BoH match result delete failed'), 'error');
+      }
+    });
+  });
+}
+
+async function loadBohMatchResultsForAdmin() {
+  try {
+    state.bohMatchResults =
+      state.cloudSyncConfigured === false
+        ? loadLocalBohMatchResults()
+        : await loadBohMatchResults();
+  } catch (err) {
+    state.bohMatchResults = Array.isArray(state.bohMatchResults) ? state.bohMatchResults : [];
+    showCloudSyncFailure(err, 'BoH match results load failed');
+  }
+  renderBohMatchResults();
+}
+
+function renderBohMatchPanel() {
+  bindBohMatchControls();
+  renderBohMatchTeamPicker();
+  renderBohMatchEntries();
+  renderBohMatchResults();
+  const dateInput = $id('dashBohMatchDate');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (!state._bohMatchResultsLoaded) {
+    state._bohMatchResultsLoaded = true;
+    void loadBohMatchResultsForAdmin();
+  }
+}
+
+function bindBohMatchControls() {
+  const form = $id('dashBohMatchForm');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  renderBohMatchTeamPicker();
+
+  const fileInput = $id('dashBohMatchFileInput');
+  const uploadBtn = $id('dashBohMatchUploadBtn');
+  const openPicker = () => {
+    if (!fileInput) return;
+    fileInput.value = '';
+    fileInput.click();
+  };
+  uploadBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    openPicker();
+  });
+  uploadBtn?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openPicker();
+  });
+  fileInput?.addEventListener('change', () => {
+    const files = Array.from(fileInput.files || []);
+    fileInput.value = '';
+    if (files.length) void processBohMatchImages(files);
+  });
+  $id('dashBohMatchPasteBtn')?.addEventListener('click', showBohMatchPasteForm);
+  $id('dashBohMatchClearBtn')?.addEventListener('click', () => {
+    setBohMatchDraftEntries([]);
+    setBohMatchStatus('');
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const entries = bohMatchDraftEntries();
+    if (!entries.length) {
+      setBohMatchStatus(dashT('adminBohMatchNoRows'), 'warn');
+      return;
+    }
+    const payload = {
+      teamId: $id('dashBohMatchTeam')?.value || '',
+      matchDate: $id('dashBohMatchDate')?.value || '',
+      opponent: $id('dashBohMatchOpponent')?.value || '',
+      note: $id('dashBohMatchNote')?.value || '',
+      entries,
+    };
+    const saveBtn = $id('dashBohMatchSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+      setBohMatchStatus(dashT('adminBohMatchSaving'), 'info');
+      if (state.cloudSyncConfigured === false) saveLocalBohMatchResult(payload);
+      else await saveBohMatchResult(payload);
+      form.reset();
+      renderBohMatchTeamPicker();
+      setBohMatchDraftEntries([]);
+      const dateInput = $id('dashBohMatchDate');
+      if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+      await loadBohMatchResultsForAdmin();
+      setBohMatchStatus(dashT('adminBohMatchSaved'), 'success');
+    } catch (err) {
+      setBohMatchStatus(showCloudSyncFailure(err, 'BoH match result save failed'), 'error');
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  });
 }
 
 function contributionRewardExportLabel(tier) {
@@ -6194,14 +6982,6 @@ function scheduleAdminLanguageRefresh() {
   renderCloudSyncStatus();
   renderAdminActivityTerminal();
   setAdminLogSyncStatus(adminLogSyncState);
-  if (allStarBohAdminI18n?.loadAdminAllStarBohLocale) {
-    void Promise.all([
-      allStarBohAdminI18n.loadAdminAllStarBohLocale(getDashboardLang()),
-      allStarBohResearchI18n?.loadResearchLocale?.(getDashboardLang()),
-    ]).then(() => allStarBohController?.refreshLanguage?.(allStarBohAdminT, getDashboardLang()));
-  } else {
-    allStarBohController?.refreshLanguage?.(allStarBohAdminT, getDashboardLang());
-  }
   allianceViewController?.refreshLanguage?.(dashT);
   requestAnimationFrame(() => {
     if (state._adminLanguageRefreshToken !== token) return;

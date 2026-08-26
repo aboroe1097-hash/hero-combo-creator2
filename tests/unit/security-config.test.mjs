@@ -854,7 +854,7 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.match(source, /isImmutableAssetUrl/);
   assert.doesNotMatch(source, /url\.pathname\.startsWith\('\/assets\/'\)\) return true/);
   assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN/);
-  assert.match(postBuild, /all-star-boh-\(\?!bootstrap-\)/);
+  assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN =[^;]*all-star-boh-/);
   assert.match(postBuild, /!isProtectedAllStarPrecacheUrl\(url\)/);
 });
 

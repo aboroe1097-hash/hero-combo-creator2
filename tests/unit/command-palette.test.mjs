@@ -12,7 +12,7 @@ function between(start, end) {
   return source.slice(startIndex, endIndex);
 }
 
-test('command palette exposes the fourteen deterministic tool destinations', () => {
+test('command palette exposes the thirteen deterministic tool destinations', () => {
   const destinations = between('const DESTS = [', '];');
   const keys = Array.from(destinations.matchAll(/\bkey:\s*'([^']+)'/g), (match) => match[1]);
 
@@ -30,7 +30,6 @@ test('command palette exposes the fourteen deterministic tool destinations', () 
     'tabEdenBounty',
     'tabYouTube',
     'tabOcrDashboard',
-    'tabAllStarBoh',
     'tabArcade',
     'tabBattleSimulator',
   ]);
@@ -40,10 +39,6 @@ test('command palette exposes the fourteen deterministic tool destinations', () 
     /key:\s*'tabSpecialization'[\s\S]*?aliasesKey:\s*'tabSpecializationTowersAliases'[\s\S]*?name:\s*'specialization'[\s\S]*?kind:\s*'tab'/
   );
   assert.match(destinations, /key:\s*'tabOcrDashboard'[\s\S]*?href:\s*'admin\.html'/);
-  assert.match(
-    destinations,
-    /key:\s*'tabAllStarBoh'[\s\S]*?name:\s*'allStarBoh'[\s\S]*?kind:\s*'tab'/
-  );
   assert.match(destinations, /key:\s*'tabArcade'[\s\S]*?name:\s*'arcade'[\s\S]*?kind:\s*'tab'/);
   assert.match(
     destinations,

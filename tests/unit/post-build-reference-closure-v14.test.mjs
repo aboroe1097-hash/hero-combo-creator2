@@ -118,19 +118,20 @@ test('post-build rejects missing files and directories without an explicit index
   assert.doesNotMatch(result.stderr, /empty\.html.*exists/i);
 });
 
-test('post-build keeps the All-Star gate offline-ready without precaching protected modules', (t) => {
+// The All-Star BoH member hub is gone; what remains of that domain is the
+// access client, stats OCR and season schedule that VtsScore loads behind its
+// own server-verified gate. None of it may be precached ahead of that gate.
+test('post-build never precaches the gated All-Star modules', (t) => {
   const fixtureRoot = createPostBuildFixture();
   t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
 
   writeFixtureFile(fixtureRoot, 'index.html', '<!doctype html><title>Fixture</title>');
   writeFixtureFile(fixtureRoot, 'sw.js', "const APP_SHELL = [\n  '/index.html'\n];\n");
   for (const asset of [
-    'all-star-boh-bootstrap-fixture.js',
     'all-star-boh-fixture.css',
-    'all-star-boh-fixture.js',
+    'all-star-boh-access-fixture.js',
+    'all-star-boh-ocr-fixture.js',
     'all-star-boh-model-fixture.js',
-    'all-star-boh-store-fixture.js',
-    'admin-all-star-boh-fixture.js',
     'unrelated-fixture.js',
   ]) {
     writeFixtureFile(fixtureRoot, `assets/${asset}`);
@@ -141,7 +142,6 @@ test('post-build keeps the All-Star gate offline-ready without precaching protec
   const serviceWorker = readFileSync(path.join(fixtureRoot, 'dist', 'sw.js'), 'utf8');
 
   for (const publicGateAsset of [
-    '/assets/all-star-boh-bootstrap-fixture.js',
     '/assets/all-star-boh-fixture.css',
     '/assets/unrelated-fixture.js',
   ]) {
@@ -151,10 +151,9 @@ test('post-build keeps the All-Star gate offline-ready without precaching protec
     );
   }
   for (const protectedAsset of [
-    '/assets/all-star-boh-fixture.js',
+    '/assets/all-star-boh-access-fixture.js',
+    '/assets/all-star-boh-ocr-fixture.js',
     '/assets/all-star-boh-model-fixture.js',
-    '/assets/all-star-boh-store-fixture.js',
-    '/assets/admin-all-star-boh-fixture.js',
   ]) {
     assert.equal(
       serviceWorker.includes(`'${protectedAsset}'`),

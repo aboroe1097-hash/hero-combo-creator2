@@ -223,7 +223,6 @@ export const youtubeSection = document.getElementById('youtubeSection');
 export const researchSection = document.getElementById('researchSection');
 export const materialsSection = document.getElementById('materialsSection');
 export const arcadeSection = document.getElementById('arcadeSection');
-export const allStarBohSection = document.getElementById('allStarBohSection');
 
 // Manual Builder, Combo Generator and the Hero Atlas now live inside the
 // Heroes & Combos Hub, so the hub owns the pill. Their sections keep their ids
@@ -240,7 +239,6 @@ export const tabMaterialsBtn = document.getElementById('tabMaterials');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
 export const tabArcadeBtn = document.getElementById('tabArcade');
-export const tabAllStarBohBtn = document.getElementById('tabAllStarBoh');
 export const heroesSection = document.getElementById('heroesSection');
 export const edenMapSection = document.getElementById('edenMapSection');
 export const strifeSection = document.getElementById('strifeSection');

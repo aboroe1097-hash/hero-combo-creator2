@@ -38,10 +38,10 @@ test('v14 shell assets load last without replacing established tool ids', () => 
   }
 });
 
-test('All-Star routing canonicalizes every hash casing before and after app boot', () => {
+test('deferred tab routing canonicalizes every hash casing before and after app boot', () => {
   assert.match(themePrepaint, /function resolveDeferredTabName\(/);
   assert.match(themePrepaint, /String\(rawTabName \|\| ''\)\.toLowerCase\(\)/);
-  assert.match(themePrepaint, /'allStarBoh'/);
+  assert.match(themePrepaint, /'strife'/);
   assert.match(themePrepaint, /setAttribute\('data-initial-tab-pending', canonicalTab\)/);
 
   assert.match(shellJs, /function resolveCanonicalHashTabName\(/);
@@ -52,21 +52,16 @@ test('All-Star routing canonicalizes every hash casing before and after app boot
   );
 });
 
-test('pending All-Star first paint exposes only its static route loader', () => {
-  assert.match(
-    index,
-    /html\[data-initial-tab-pending='allStarBoh'\] #allStarBohSection\s*\{[\s\S]*?display:\s*block !important/
-  );
-  assert.match(
-    index,
-    /html\[data-initial-tab-pending='allStarBoh'\] #allStarBohSection > \.tab-loading\s*\{[\s\S]*?display:\s*flex !important/
-  );
+// The All-Star BoH member hub was removed with its command center, so index.html
+// no longer carries a pending-first-paint rule for it. The shared rule that
+// hides the default tool while any deferred tab is pending must still hold.
+test('a pending deferred tab hides the default tool on first paint', () => {
   assert.match(
     appCss,
     /html\[data-initial-tab-pending\] #generatorSection\s*\{[\s\S]*?display:\s*none !important/
   );
+  assert.doesNotMatch(index, /allStarBohSection/);
   assert.doesNotMatch(appCss, /data-initial-tab-pending='allStarBoh'/);
-  assert.doesNotMatch(appCss, /data-initial-tab-pending='allStarBoh'[^\n]*boh-root/);
 });
 
 test('mobile exposes exactly three primary destinations and an accessible More sheet', () => {
@@ -91,7 +86,7 @@ test('mobile exposes exactly three primary destinations and an accessible More s
 });
 
 test('translated mobile labels preserve their icon-library artwork', () => {
-  for (const id of ['tabResearchTowers', 'tabAllStarBoh', 'tabYouTube']) {
+  for (const id of ['tabResearchTowers', 'tabYouTube']) {
     assert.match(index, new RegExp(`id="${id}"[\\s\\S]*?<svg[\\s\\S]*?<span`));
   }
   assert.doesNotMatch(index, /id="(?:tabResearchTowers|tabYouTube)"[^>]*data-i18n=/);

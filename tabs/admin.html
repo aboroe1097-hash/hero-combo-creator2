@@ -648,6 +648,21 @@
                 <path d="M12 3 5 6v5c0 4 3 8 7 10 4-2 7-6 7-10V6l-7-3z" /></svg
               ><span data-i18n="adminConductTab">Bonus Team Effort Points</span>
             </button>
+            <button class="dash-subtab-btn" data-subtab="conductSuggest">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 3v3" />
+                <path d="M9 18h6" />
+                <path d="M10 21h4" />
+                <path d="M12 6a5 5 0 0 1 3 9v3H9v-3a5 5 0 0 1 3-9z" /></svg
+              ><span data-i18n="adminSuggestTab">Suggest Points</span>
+            </button>
           </div>
         </section>
       </div>
@@ -695,7 +710,7 @@
               >
                 <path d="m12 3 2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7L12 3z" />
               </svg>
-              <span data-i18n="adminBohTab">All-Star BoH</span>
+              <span data-i18n="adminBohMatchTab">BoH Match Results</span>
             </button>
             <button class="dash-subtab-btn" data-subtab="throneBuffs"><span data-i18n="adminThroneTab">Throne Buffs</span></button>
             <!-- Superadmin only. Hidden by default and revealed from the claim,
@@ -1652,21 +1667,132 @@
       </div>
 
       <!-- Sub-tab: All-Star BoH (module is lazy-loaded when opened) -->
+      <!-- Sub-tab: BoH Match Results -->
       <div class="dash-subtab-panel hidden" id="dashSubtabAllStarBoh">
-        <section
-          id="dashAllStarBohRoot"
-          class="boh-admin-root"
-          aria-labelledby="dashAllStarBohTitle"
-          aria-busy="true"
-        >
-          <h2 id="dashAllStarBohTitle" class="sr-only" data-i18n="adminBohTitle">
-            All-Star BoH Command Center
-          </h2>
-          <div class="dash-card" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
-            <span data-i18n="adminBohLoading">Loading All-Star administration...</span>
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <div>
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="m12 3 2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7L12 3z" />
+                </svg>
+                <span data-i18n="adminBohMatchTitle">BoH Match Results</span>
+              </h2>
+              <p class="dash-card-subtitle" data-i18n="adminBohMatchSubtitle">
+                At the end of a match, pick your team, upload the Combat Progress score list, and
+                add a note on how the team performed.
+              </p>
+            </div>
           </div>
-        </section>
+
+          <form id="dashBohMatchForm" class="dash-boh-match-form">
+            <label>
+              <span data-i18n="adminBohMatchTeam">Team</span>
+              <select id="dashBohMatchTeam" name="bohMatchTeam" class="dash-input" required></select>
+            </label>
+            <label>
+              <span data-i18n="adminBohMatchDate">Match date</span>
+              <input id="dashBohMatchDate" name="bohMatchDate" class="dash-input" type="date" />
+            </label>
+            <label>
+              <span data-i18n="adminBohMatchOpponent">Opponent</span>
+              <input
+                id="dashBohMatchOpponent"
+                name="bohMatchOpponent"
+                class="dash-input"
+                type="text"
+                maxlength="120"
+                placeholder="(3ZT)Mischief"
+                data-i18n-ph="adminBohMatchOpponentPh"
+                autocomplete="off"
+              />
+            </label>
+            <label class="dash-boh-match-note">
+              <span data-i18n="adminBohMatchNote">Performance note</span>
+              <textarea
+                id="dashBohMatchNote"
+                name="bohMatchNote"
+                class="dash-input"
+                rows="3"
+                maxlength="1000"
+                placeholder="How did the team do this match?"
+                data-i18n-ph="adminBohMatchNotePh"
+              ></textarea>
+            </label>
+
+            <div class="dash-boh-match-capture">
+              <div class="dash-card-actions">
+                <label
+                  id="dashBohMatchUploadBtn"
+                  class="dash-btn dash-btn-primary dash-file-trigger"
+                  for="dashBohMatchFileInput"
+                  role="button"
+                  tabindex="0"
+                  ><span data-i18n="adminBohMatchUpload">Upload score screenshots</span></label
+                >
+                <button id="dashBohMatchPasteBtn" class="dash-btn" type="button">
+                  <span data-i18n="adminBohMatchPaste">Paste rows instead</span>
+                </button>
+                <button id="dashBohMatchClearBtn" class="dash-btn" type="button">
+                  <span data-i18n="adminBohMatchClear">Clear rows</span>
+                </button>
+              </div>
+              <input
+                id="dashBohMatchFileInput"
+                class="dash-native-file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+                multiple
+                aria-hidden="true"
+                tabindex="-1"
+              />
+              <p class="dash-card-subtitle" data-i18n="adminBohMatchUploadHint">
+                Upload every scrolled capture of your team's list — overlapping rows are merged
+                automatically.
+              </p>
+              <div id="dashBohMatchProgress" class="dash-progress hidden">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="dashBohMatchProgressText"></span>
+              </div>
+            </div>
+
+            <div id="dashBohMatchEntries" class="dash-boh-match-entries" aria-live="polite">
+              <div class="dash-empty" data-i18n="adminBohMatchNoRows">
+                No score rows yet. Upload the Combat Progress screenshots for your team.
+              </div>
+            </div>
+
+            <div class="dash-conduct-actions">
+              <button id="dashBohMatchSaveBtn" class="dash-btn dash-btn-primary" type="submit">
+                <span data-i18n="adminBohMatchSave">Save match result</span>
+              </button>
+            </div>
+          </form>
+
+          <div
+            id="dashBohMatchStatus"
+            class="dash-upload-status hidden"
+            role="status"
+            aria-live="polite"
+          ></div>
+
+          <div class="dash-conduct-list-head">
+            <h3 data-i18n="adminBohMatchRecent">Saved match results</h3>
+            <span id="dashBohMatchSummary" class="dash-conduct-review-count"></span>
+          </div>
+          <div id="dashBohMatchList" class="dash-conduct-list">
+            <div class="dash-empty" data-i18n="adminBohMatchEmpty">No match results saved yet.</div>
+          </div>
+        </div>
       </div>
 
       <!-- Sub-tab: Throne Buffs -->
@@ -2016,7 +2142,65 @@
             role="status"
             aria-live="polite"
           ></div>
+          <details class="dash-conduct-bulk" id="dashConductBulk">
+            <summary class="dash-conduct-bulk-summary">
+              <span data-i18n="adminConductBulkToggle">Paste rows</span>
+            </summary>
+            <p class="dash-conduct-bulk-hint" data-i18n="adminConductBulkHint">
+              One row per line: Name | Points | Note. Points and note are optional — rows without
+              them use the default category below.
+            </p>
+            <div class="dash-conduct-bulk-controls">
+              <label>
+                <span data-i18n="adminConductBulkCategory">Default category</span>
+                <select
+                  id="dashConductBulkCategory"
+                  name="bulkCategory"
+                  class="dash-input"
+                ></select>
+              </label>
+            </div>
+            <textarea
+              id="dashConductBulkInput"
+              name="bulkRows"
+              class="dash-input dash-conduct-bulk-input"
+              rows="6"
+              spellcheck="false"
+              placeholder="Player name | -1 | Late form submission"
+              data-i18n-ph="adminConductBulkPlaceholder"
+              aria-label="Paste rows"
+              data-i18n-aria="adminConductBulkToggle"
+              aria-describedby="dashConductBulkPreview"
+            ></textarea>
+            <div id="dashConductBulkPreview" class="dash-conduct-bulk-preview" aria-live="polite">
+              <div class="dash-empty" data-i18n="adminConductBulkEmpty">
+                Paste rows above to preview them before saving.
+              </div>
+            </div>
+            <div class="dash-conduct-actions">
+              <button
+                id="dashConductBulkAddBtn"
+                class="dash-btn dash-btn-primary"
+                type="button"
+                disabled
+              >
+                <span data-i18n="adminConductBulkAdd">Add pasted rows</span>
+              </button>
+              <button id="dashConductBulkClearBtn" class="dash-btn" type="button">
+                <span data-i18n="adminConductBulkClear">Clear</span>
+              </button>
+            </div>
+          </details>
           <div id="dashConductSummary"></div>
+          <div class="dash-conduct-list-head">
+            <h3 data-i18n="adminSuggestReviewTitle">Admin suggestions</h3>
+            <span id="dashConductReviewCount" class="dash-conduct-review-count"></span>
+          </div>
+          <div id="dashConductReviewList" class="dash-conduct-list">
+            <div class="dash-empty" data-i18n="adminSuggestReviewEmpty">
+              No admin suggestions waiting for review.
+            </div>
+          </div>
           <div class="dash-conduct-list-head">
             <h3 data-i18n="adminConductRecent">Recent adjustments</h3>
             <input
@@ -2034,6 +2218,161 @@
             <div class="dash-empty" data-i18n="adminConductEmpty">
               No bonus team effort point adjustments for this season yet.
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Suggest Bonus Team Effort Points (any admin) -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabConductSuggest">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <div>
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M12 3v3" />
+                  <path d="M9 18h6" />
+                  <path d="M10 21h4" />
+                  <path d="M12 6a5 5 0 0 1 3 9v3H9v-3a5 5 0 0 1 3-9z" /></svg
+                ><span data-i18n="adminSuggestTitle">Suggest Bonus Team Effort Points</span>
+              </h2>
+              <p class="dash-card-subtitle" data-i18n="adminSuggestSubtitle">
+                Propose bonus or penalty points. Nothing is scored until a superadmin approves your
+                suggestion, and your name is attached to it.
+              </p>
+            </div>
+            <div class="dash-conduct-season" id="dashSuggestSeason"></div>
+          </div>
+          <form id="dashSuggestForm" class="dash-conduct-form">
+            <label class="dash-conduct-player-field">
+              <span data-i18n="adminConductPlayer">Player</span>
+              <input
+                id="dashSuggestPlayer"
+                name="suggestPlayer"
+                class="dash-input"
+                type="text"
+                list="dashSuggestPlayerOptions"
+                placeholder="Type or pick a player name"
+                data-i18n-ph="adminSuggestPlayerPh"
+                autocomplete="off"
+                spellcheck="false"
+                aria-describedby="dashSuggestStatus"
+                required
+              />
+              <datalist id="dashSuggestPlayerOptions"></datalist>
+            </label>
+            <label>
+              <span data-i18n="adminConductCategory">Category</span>
+              <select id="dashSuggestCategory" name="suggestCategory" class="dash-input"></select>
+            </label>
+            <label>
+              <span data-i18n="adminConductPoints">Points</span>
+              <input
+                id="dashSuggestPoints"
+                name="suggestPoints"
+                class="dash-input"
+                type="number"
+                step="1"
+                inputmode="numeric"
+                aria-describedby="dashSuggestStatus"
+                required
+              />
+            </label>
+            <label class="dash-conduct-note">
+              <span data-i18n="adminConductNote">Note</span>
+              <input
+                id="dashSuggestNote"
+                name="suggestNote"
+                class="dash-input"
+                type="text"
+                maxlength="500"
+                placeholder="Optional reason"
+                data-i18n-ph="adminConductNotePh"
+                autocomplete="off"
+              />
+            </label>
+            <div class="dash-conduct-actions">
+              <button id="dashSuggestSaveBtn" class="dash-btn dash-btn-primary" type="submit">
+                <span data-i18n="adminSuggestSave">Send Suggestion</span>
+              </button>
+            </div>
+          </form>
+          <div
+            id="dashSuggestStatus"
+            class="dash-upload-status hidden"
+            role="status"
+            aria-live="polite"
+          ></div>
+          <details class="dash-conduct-bulk" id="dashSuggestBulk">
+            <summary class="dash-conduct-bulk-summary">
+              <span data-i18n="adminConductBulkToggle">Paste rows</span>
+            </summary>
+            <p class="dash-conduct-bulk-hint" data-i18n="adminConductBulkHint">
+              One row per line: Name | Points | Note. Points and note are optional — rows without
+              them use the default category below.
+            </p>
+            <div class="dash-conduct-bulk-controls">
+              <label>
+                <span data-i18n="adminConductBulkCategory">Default category</span>
+                <select
+                  id="dashSuggestBulkCategory"
+                  name="suggestBulkCategory"
+                  class="dash-input"
+                ></select>
+              </label>
+            </div>
+            <textarea
+              id="dashSuggestBulkInput"
+              name="suggestBulkRows"
+              class="dash-input dash-conduct-bulk-input"
+              rows="6"
+              spellcheck="false"
+              placeholder="Player name | -1 | Late form submission"
+              data-i18n-ph="adminConductBulkPlaceholder"
+              aria-label="Paste rows"
+              data-i18n-aria="adminConductBulkToggle"
+              aria-describedby="dashSuggestBulkPreview"
+            ></textarea>
+            <div id="dashSuggestBulkPreview" class="dash-conduct-bulk-preview" aria-live="polite">
+              <div class="dash-empty" data-i18n="adminConductBulkEmpty">
+                Paste rows above to preview them before saving.
+              </div>
+            </div>
+            <div class="dash-conduct-actions">
+              <button
+                id="dashSuggestBulkAddBtn"
+                class="dash-btn dash-btn-primary"
+                type="button"
+                disabled
+              >
+                <span data-i18n="adminSuggestBulkAdd">Send pasted suggestions</span>
+              </button>
+              <button id="dashSuggestBulkClearBtn" class="dash-btn" type="button">
+                <span data-i18n="adminConductBulkClear">Clear</span>
+              </button>
+            </div>
+          </details>
+          <div class="dash-conduct-list-head">
+            <h3 data-i18n="adminSuggestMine">Your suggestions</h3>
+            <input
+              id="dashSuggestSearch"
+              name="suggestSearch"
+              class="dash-input"
+              type="search"
+              placeholder="Search by player name…"
+              data-i18n-ph="adminConductSearchPh"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <div id="dashSuggestList" class="dash-conduct-list">
+            <div class="dash-empty" data-i18n="adminSuggestEmpty">No suggestions yet.</div>
           </div>
         </div>
       </div>

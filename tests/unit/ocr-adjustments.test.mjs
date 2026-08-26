@@ -22,6 +22,7 @@ const {
   aggregateR5Bonuses,
   applyR5AdjustmentsToPlayerTotals,
   buildAdjustedGiftRanking,
+  CONDUCT_BULK_MAX_ROWS,
   createLocalR5Adjustment,
   deleteR5Adjustment,
   deleteLocalR5Adjustment,
@@ -30,6 +31,7 @@ const {
   mergeSeededR5Adjustments,
   normalizeR5Adjustment,
   normalizeR5AdjustmentRecords,
+  parseConductBulkText,
   resolveR5PlayerIdentity,
   updateLocalR5Adjustment,
   updateR5Adjustment,
@@ -448,4 +450,68 @@ test('deleteR5Adjustment rejects deleting a concurrently changed record', async 
   } finally {
     delete window.getVtsAdminFirestoreContext;
   }
+});
+
+test('conduct bulk paste parses name/points/note rows and skips the header', () => {
+  const { rows, errors, truncated } = parseConductBulkText(
+    [
+      'Name | Points | Note',
+      '키미 kimmy | -1 | Late Eden X2 form submission',
+      'Loppu | -1 | Late Eden X2 form submission',
+      '',
+      'D o f f y\t-1\tLate Eden X2 form submission',
+      'Ligmaballs@ ; -1 ; Late Eden X2 form submission',
+    ].join('\n'),
+    { defaultCategory: 'penalty_other' }
+  );
+
+  assert.equal(errors.length, 0);
+  assert.equal(truncated, false);
+  assert.equal(rows.length, 4);
+  assert.deepEqual(
+    rows.map((row) => row.playerName),
+    ['키미 kimmy', 'Loppu', 'D o f f y', 'Ligmaballs@']
+  );
+  rows.forEach((row) => {
+    assert.equal(row.points, -1);
+    assert.equal(row.category, 'penalty_other');
+    assert.equal(row.note, 'Late Eden X2 form submission');
+  });
+});
+
+test('conduct bulk paste falls back to category defaults and reads optional columns', () => {
+  const { rows } = parseConductBulkText(
+    [
+      'Sarafina',
+      'Zombi | +2 | strong push',
+      'Kika-banner | 3 | roads all night | Connected road',
+      'Dizz. | not-a-number | free text note',
+    ].join('\n'),
+    { defaultCategory: 'banner_help' }
+  );
+
+  assert.equal(rows.length, 4);
+  assert.equal(rows[0].points, defaultR5PointsForCategory('banner_help'));
+  assert.equal(rows[0].note, '');
+  assert.equal(rows[1].points, 2);
+  assert.equal(rows[2].category, 'connected_road');
+  assert.equal(rows[2].points, 3);
+  assert.equal(rows[3].points, defaultR5PointsForCategory('banner_help'));
+  assert.equal(rows[3].note, 'not-a-number free text note');
+});
+
+test('conduct bulk paste reports unreadable rows and caps the batch size', () => {
+  const { rows, errors } = parseConductBulkText('   |  -1 | orphan note', {
+    defaultCategory: 'merit_other',
+  });
+  assert.equal(rows.length, 0);
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].lineNumber, 1);
+
+  const flood = Array.from({ length: CONDUCT_BULK_MAX_ROWS + 5 }, (_, i) => `Player${i} | 1`).join(
+    '\n'
+  );
+  const capped = parseConductBulkText(flood, { defaultCategory: 'merit_other' });
+  assert.equal(capped.rows.length, CONDUCT_BULK_MAX_ROWS);
+  assert.equal(capped.truncated, true);
 });
