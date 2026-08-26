@@ -2312,7 +2312,7 @@ test.describe('app smoke tabs', () => {
     await arthurGeneratorCard.locator('.hero-portrait-frame').click();
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
     await arthurSkinSwitchOff.scrollIntoViewIfNeeded();
-    await arthurSkinSwitchOff.click({ force: true });
+    await arthurSkinSwitchOff.evaluate((toggle) => toggle.click());
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
 
