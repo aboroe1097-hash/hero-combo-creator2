@@ -10,14 +10,12 @@ const navigationPlacements = new Map([
       tabResearchTowers: 'primary',
       tabMaterials: 'more',
       tabOcrDashboard: 'more',
-      tabAllStarBoh: 'more',
       tabYouTube: 'more',
       tabArcade: 'more',
     },
   ],
   // Eden Map is the third hub, so it is primary from the plain desktop rail up.
-  // VTS Admin holds the fifth desktop slot at every width; All-Star BoH is in
-  // More at every width.
+  // VTS Admin holds the fifth desktop slot at every width.
   [
     641,
     {
@@ -26,7 +24,6 @@ const navigationPlacements = new Map([
       tabYouTube: 'more',
       tabMaterials: 'primary',
       tabOcrDashboard: 'primary',
-      tabAllStarBoh: 'more',
     },
   ],
   [
@@ -37,7 +34,6 @@ const navigationPlacements = new Map([
       tabYouTube: 'more',
       tabMaterials: 'primary',
       tabOcrDashboard: 'primary',
-      tabAllStarBoh: 'more',
     },
   ],
   [
@@ -48,7 +44,6 @@ const navigationPlacements = new Map([
       tabYouTube: 'primary',
       tabMaterials: 'primary',
       tabOcrDashboard: 'primary',
-      tabAllStarBoh: 'more',
     },
   ],
   [
@@ -59,7 +54,6 @@ const navigationPlacements = new Map([
       tabYouTube: 'primary',
       tabMaterials: 'primary',
       tabOcrDashboard: 'primary',
-      tabAllStarBoh: 'more',
     },
   ],
 ]);
@@ -177,13 +171,13 @@ test('shared tab hashes resolve case-insensitively and restore canonical casing'
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
-  const routeCases = ['allstarboh', 'ALLSTARBOH', 'AllStarBoh', 'aLlStArBoH', 'allStarBoh'];
+  const routeCases = ['strife', 'STRIFE', 'Strife', 'sTrIfE'];
   for (const hash of routeCases) {
     await openHome(page, `/#${hash}`);
-    await expect(page.locator('#allStarBohSection')).toBeVisible();
-    await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'allStarBoh');
-    await expect(page.locator('#skipCurrentTool')).toHaveAttribute('href', '#allStarBohSection');
-    await expect(page).toHaveURL(/#allStarBoh$/);
+    await expect(page.locator('#strifeSection')).toBeVisible();
+    await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'strife');
+    await expect(page.locator('#skipCurrentTool')).toHaveAttribute('href', '#strifeSection');
+    await expect(page).toHaveURL(/#strife$/);
   }
 });
 

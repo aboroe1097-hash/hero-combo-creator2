@@ -292,6 +292,107 @@ export function buildAdjustedGiftRanking(playerRows = [], adjustments = [], seas
     .map((row, index) => ({ ...row, adjustedRank: index + 1 }));
 }
 
+// ---------------------------------------------------------------------------
+// Bulk paste
+//
+// R5s collect bonus team effort rows outside the tool (chat exports, forms) and
+// used to retype them one at a time. `parseConductBulkText` turns a pasted
+// block into normalized draft rows so the panel can preview them before any
+// write happens. It never touches storage; the dashboard decides what to save.
+// ---------------------------------------------------------------------------
+
+export const CONDUCT_BULK_MAX_ROWS = 200;
+
+const CONDUCT_BULK_DELIMITER = /\s*(?:\||\t|;)\s*/;
+const CONDUCT_BULK_INTEGER = /^[+\u2212-]?\d{1,4}$/;
+const CONDUCT_BULK_HEADER_NAMES = new Set(['name', 'player', 'player name', 'member']);
+
+function conductBulkPointsValue(token) {
+  const text = String(token || '').trim();
+  if (!CONDUCT_BULK_INTEGER.test(text)) return null;
+  const numeric = Number(text.replace(/\u2212/g, '-'));
+  return Number.isFinite(numeric) ? Math.trunc(numeric) : null;
+}
+
+function conductBulkCategoryToken(token) {
+  const text = String(token || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (!text) return '';
+  if (R5_ADJUSTMENT_CATEGORIES[text]) return text;
+  return (
+    R5_ADJUSTMENT_CATEGORY_KEYS.find(
+      (key) => R5_ADJUSTMENT_CATEGORIES[key].label.toLowerCase().replace(/[\s-]+/g, '_') === text
+    ) || ''
+  );
+}
+
+function isConductBulkHeaderLine(parts) {
+  return CONDUCT_BULK_HEADER_NAMES.has(
+    String(parts[0] || '')
+      .trim()
+      .toLowerCase()
+  );
+}
+
+export function parseConductBulkText(text, options = {}) {
+  const fallbackCategory = getR5AdjustmentCategory(options.defaultCategory || DEFAULT_CATEGORY).key;
+  const rows = [];
+  const errors = [];
+  let truncated = false;
+
+  String(text || '')
+    .split(/\r?\n/)
+    .forEach((rawLine, index) => {
+      const lineNumber = index + 1;
+      const line = rawLine.trim();
+      if (!line) return;
+      const parts = line.split(CONDUCT_BULK_DELIMITER).map((part) => part.trim());
+      if (isConductBulkHeaderLine(parts)) return;
+      if (rows.length >= CONDUCT_BULK_MAX_ROWS) {
+        truncated = true;
+        return;
+      }
+
+      const rest = parts.slice(1).filter((part) => part !== '');
+      // A trailing category token is optional, so peel it off before deciding
+      // which of the remaining fields holds the points value.
+      let category = '';
+      if (rest.length > 1) {
+        const tail = conductBulkCategoryToken(rest[rest.length - 1]);
+        if (tail) {
+          category = tail;
+          rest.pop();
+        }
+      }
+
+      const parsedPoints = rest.length ? conductBulkPointsValue(rest[0]) : null;
+      if (parsedPoints !== null) rest.shift();
+      const resolvedCategory = category || fallbackCategory;
+      const points =
+        parsedPoints === null ? defaultR5PointsForCategory(resolvedCategory) : parsedPoints;
+      const note = rest.join(' ').trim().slice(0, 500);
+
+      try {
+        const identity = resolveR5PlayerIdentity({ name: parts[0] });
+        rows.push({
+          lineNumber,
+          line,
+          playerKey: identity.playerKey,
+          playerName: identity.playerName,
+          points: normalizeR5Points(points),
+          category: resolvedCategory,
+          note,
+        });
+      } catch (err) {
+        errors.push({ lineNumber, line, message: err?.message || 'Could not read this row' });
+      }
+    });
+
+  return { rows, errors, truncated };
+}
+
 function canUseLocalStorage() {
   return typeof localStorage !== 'undefined' && localStorage;
 }
@@ -338,7 +439,7 @@ function localR5AdjustmentId() {
   return `local_r5_${random}`;
 }
 
-function isR5PersistenceUnavailable(err) {
+export function isR5PersistenceUnavailable(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
   return /firebase is not configured|firebase not initialized|firestore is not available/i.test(
     text
@@ -428,7 +529,7 @@ async function loadFirestoreApi() {
   return { firestore: await importFirestore(), firebaseApi };
 }
 
-async function ensureR5AdjustmentAdminContext() {
+export async function ensureR5AdjustmentAdminContext() {
   if (typeof window !== 'undefined' && typeof window.getVtsAdminFirestoreContext === 'function') {
     return window.getVtsAdminFirestoreContext();
   }

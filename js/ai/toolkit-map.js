@@ -126,16 +126,6 @@ const entries = [
     ],
   },
   {
-    id: 'allStarBoh',
-    name: 'All-Star BoH Hub',
-    kind: 'tab',
-    hash: 'allStarBoh',
-    summary:
-      'The members-only All-Star Battlefield of Honor hub: seasonal PIN unlock, signup with power and readiness details, Epic Showdown lane/time preferences, and published team plans.',
-    answers: ['Where do I sign up for All-Star BoH?', 'Where do I see my team plan?'],
-    keywords: ['all-star', 'allstar', 'boh', 'battlefield of honor', 'signup', 'pin', 'team'],
-  },
-  {
     id: 'arcade',
     name: 'Arcade',
     kind: 'page',

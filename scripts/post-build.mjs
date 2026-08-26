@@ -72,8 +72,6 @@ const copyFiles = [
   'js/loader-v14.js',
   'js/shell-v14.js',
   'js/standalone-language-v14.js',
-  'js/boh-mapper/mapper-core.js',
-  'css/boh-mapper.css',
 ];
 const copyDest = {
   'public/404.html': '404.html',
@@ -88,8 +86,6 @@ const copyDest = {
   'js/loader-v14.js': 'js/loader-v14.js',
   'js/shell-v14.js': 'js/shell-v14.js',
   'js/standalone-language-v14.js': 'js/standalone-language-v14.js',
-  'js/boh-mapper/mapper-core.js': 'js/boh-mapper/mapper-core.js',
-  'css/boh-mapper.css': 'css/boh-mapper.css',
 };
 
 function copyRecursive(src, dest) {
@@ -128,11 +124,11 @@ function distUrlExists(url) {
   return fs.existsSync(path.join(dist, rel));
 }
 
-// The public bootstrap and its gate stylesheet may load before a member has
-// unlocked the hub. The planner, persistence/OCR domain, and Admin controller
-// must only be fetched after their corresponding server-verified access gate.
-const PROTECTED_ALL_STAR_PRECACHE_PATTERN =
-  /^\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/]*\.js$/iu;
+// The All-Star BoH member hub and its admin command center are gone; what is
+// left of that domain is the access client, the stats OCR helpers and the
+// season schedule, which VtsScore loads behind its own server-verified gate.
+// Those must still never be precached ahead of that gate.
+const PROTECTED_ALL_STAR_PRECACHE_PATTERN = /^\/assets\/all-star-boh-[^/]*\.js$/iu;
 
 function isProtectedAllStarPrecacheUrl(url) {
   return PROTECTED_ALL_STAR_PRECACHE_PATTERN.test(String(url || '').split(/[?#]/u, 1)[0]);

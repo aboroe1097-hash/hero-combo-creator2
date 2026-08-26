@@ -44,8 +44,6 @@ export default defineConfig({
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
         'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
-        'boh-mapper-admin': resolve(__dirname, 'boh-mapper-admin.html'),
-        'boh-plan': resolve(__dirname, 'boh-plan.html'),
       },
       output: {
         onlyExplicitManualChunks: true,
@@ -68,8 +66,10 @@ export default defineConfig({
             normalizedId.includes('node_modules/@firebase')
           )
             return 'firebase';
+          // VtsScore loads the access client behind its own server-verified
+          // gate, so it stays a chunk of its own rather than being inlined.
           if (normalizedPath.endsWith('/js/all-star-boh-access.js')) {
-            return 'all-star-boh-bootstrap-access';
+            return 'all-star-boh-access';
           }
           // Large data files: split into dedicated chunks so feature chunks stay lean
           if (normalizedId.includes('/js/tech-db.js')) return 'tech-db';

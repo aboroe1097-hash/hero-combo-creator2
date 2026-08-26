@@ -293,12 +293,20 @@ const LIMITS = {
     // The season-scope strip and grouped Admin rail measure 663.9/759.7 KiB.
     // The compact inline account slot and corrected desktop action grid measure
     // 666.5 KiB; retain about 1.5 KiB without changing the mobile ceiling.
-    'admin.html': { desktop: 668 * 1024, mobile: 785 * 1024 },
+    // Conduct bulk entry, admin suggestions, BoH match results, and the restored
+    // standalone VtsScore leader board add route-local Admin UI. The clean CI
+    // build measures 677.7 KiB desktop after the VtsScore panel; retain about
+    // 2 KiB of headroom without changing the unaffected mobile ceiling.
+    'admin.html': { desktop: 680 * 1024, mobile: 785 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
-    'eden-x1.html': { desktop: 790 * 1024, mobile: 909 * 1024 },
+    // Eden imports the same dashboard stylesheet for weighted-contribution
+    // detail, so the Admin-only panel styles are present in its CSS graph even
+    // though the public route never renders those panels. CI measures roughly
+    // 800.2 KiB for X1 and 799.0 KiB for X2 after minification.
+    'eden-x1.html': { desktop: 803 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 789 * 1024, mobile: 909 * 1024 },
+    'eden-x2.html': { desktop: 802 * 1024, mobile: 909 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },
@@ -310,12 +318,6 @@ const LIMITS = {
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
     'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
-    // BoH mapper admin and plan pages load boh-mapper.css (89.9 KiB) plus
-    // shared tokens. Keep a focused per-route ceiling.
-    // Both mapper routes link the same 160.2 KiB initial stylesheet after
-    // minification; keep under 2 KiB of headroom so growth stays visible.
-    'boh-mapper-admin.html': { desktop: 162 * 1024, mobile: 162 * 1024 },
-    'boh-plan.html': { desktop: 162 * 1024, mobile: 162 * 1024 },
   },
 };
 

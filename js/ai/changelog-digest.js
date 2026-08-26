@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.12";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.13";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.13",
+    "date": "2026-08-26",
+    "highlights": [
+      "Added bulk row pasting to Bonus Team Effort so conduct adjustments can be entered as `player | points | reason` lines in one action.",
+      "Added admin-submitted team conduct suggestions with visible attribution and a super-admin approval or rejection workflow.",
+      "Restored VtsScore as a dedicated super-admin leaderboard tab and replaced the legacy All-Star command center with the focused BoH match-results workflow."
+    ]
+  },
   {
     "version": "15.0.12",
     "date": "2026-08-18",
@@ -84,16 +93,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-08-17",
     "highlights": [
       "Fixed the VTS Admin mobile dock covering half the screen. The grouped season rail kept its in-page grid layout inside the fixed bottom dock, stacking every group's buttons and pinning a 400px panel over the content; the dock is now a single scrollable row that keeps the group la…"
-    ]
-  },
-  {
-    "version": "15.0.3",
-    "date": "2026-08-17",
-    "highlights": [
-      "Renamed Royal Bounty Alliance to Royal Bounty Eden X2 across the Eden Hub: the guide's hero title and credits, the hub sub-tab, the command-palette entry and every locale now carry the season name.",
-      "Removed the admin username and password form. VTS Admin now runs entirely off your VTS account: the gate links into the normal sign-in flow, and access is decided by the admin claim on whichever account you are already signed in with. A shared admin login meant a single identity…",
-      "A signed-in account without admin access is now told so plainly and pointed at an R5 to request it, instead of being shown a sign-in it has already completed.",
-      "The admin claim is re-read with a forced token refresh at boot, so an account promoted moments ago gets in immediately instead of waiting for its old ID token to expire."
     ]
   }
 ].map((release) =>

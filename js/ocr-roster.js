@@ -35,6 +35,7 @@ import {
   ACTIVE_EDEN_WORKSPACE_ID,
   edenWorkspaceMutationError,
 } from './eden-workspaces.js';
+import { bohMatchEntriesFromText } from './boh-match-results.js';
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
 
@@ -3137,6 +3138,82 @@ function clearContributionUploadStatus() {
   el.textContent = '';
 }
 
+// Reads the Combat Progress score list off a team leader's screenshots.
+//
+// Leaders capture the same board two or three times as they scroll, so this
+// returns every row it sees and leaves de-duplication to
+// normalizeBohMatchEntries(), which keeps one row per player.
+async function runBohMatchOcr(files, options = {}) {
+  const valid = getSupportedOcrImageFiles(files);
+  if (!valid.length) {
+    const rejected = describeRejectedOcrImageFiles(files);
+    return {
+      entries: [],
+      scanned: 0,
+      error: rejected.length
+        ? adminT('adminContributionUnsupportedImageStatus', {
+            files: rejected.slice(0, 3).join(', '),
+          })
+        : adminT('adminContributionNoImageSelectedStatus'),
+    };
+  }
+
+  const rows = [];
+  let blockingError = '';
+  for (let i = 0; i < valid.length; i++) {
+    const file = valid[i];
+    options.onProgress?.({ current: i + 1, total: valid.length, file: file.name });
+    try {
+      const imageUrl = await readOcrImageDataUrl(file);
+      const promptTxt = `Extract the team score list from this Rise of Castles "Combat Progress" battleground screenshot.
+
+Return ONLY valid JSON in this shape:
+{"entries":[{"rank":1,"name":"GoodnesGraycious","score":16279}]}
+
+Rules:
+- Include every visible member row of the currently selected side's list, including partially scrolled rows.
+- Use the number at the far left of the row as "rank".
+- Use the number at the far right of the row as "score", digits only, no separators.
+- Put only the player name text in "name"; preserve symbols, spacing, decorative brackets, and non-Latin characters exactly.
+- Ignore the two alliance banners at the top, the total scores, per-minute rates, deployed member counts, teleports, territory coverage, the Blue/Red tabs, avatars, buttons, the phone status bar, and any decorative text.
+- If no member rows are visible, return {"entries":[]}.`;
+      const raw = await qwenVisionRequest([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        },
+      ]);
+      const text = raw?.choices?.[0]?.message?.content || '';
+      const cleaned = text
+        .replace(/```(?:json)?\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
+      let parsed = null;
+      try {
+        parsed = tryRepairJson(cleaned);
+      } catch {
+        parsed = null;
+      }
+      const entries = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.entries)
+          ? parsed.entries
+          : [];
+      if (entries.length) rows.push(...entries);
+      else rows.push(...bohMatchEntriesFromText(cleaned));
+    } catch (e) {
+      const errorMessage = describeOcrRequestError(e, adminT);
+      if (!blockingError) blockingError = errorMessage;
+      if (e?.localConfiguration) break;
+    }
+  }
+
+  return { entries: rows, scanned: valid.length, error: rows.length ? '' : blockingError };
+}
+
 async function processContributionImages(files, mode = 'normal') {
   if (state._contributionProcessing) {
     logRosterEvent('adminContributionOcrRunningLog', 'warn');
@@ -4275,6 +4352,7 @@ export {
   showExGuildPasteForm,
   showContributionConfirmModal,
   processContributionImages,
+  runBohMatchOcr,
   editContributionRecord,
   deleteContributionRecord,
   setContributionReward,

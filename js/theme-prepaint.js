@@ -364,7 +364,6 @@
       'strife',
       'loyalty',
       'youtube',
-      'allStarBoh',
     ];
 
     function resolveDeferredTabName(rawTabName) {
