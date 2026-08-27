@@ -1718,8 +1718,40 @@
               <select id="dashBohMatchTeam" name="bohMatchTeam" class="dash-input" required></select>
             </label>
             <label>
+              <span data-i18n="adminBohMatchFixture">Match</span>
+              <select id="dashBohMatchFixture" name="bohMatchFixture" class="dash-input"></select>
+            </label>
+            <label>
               <span data-i18n="adminBohMatchDate">Match date</span>
               <input id="dashBohMatchDate" name="bohMatchDate" class="dash-input" type="date" />
+            </label>
+            <label class="dash-boh-match-score-field">
+              <span data-i18n="adminBohMatchScore">Final score</span>
+              <span class="dash-boh-match-score-pair">
+                <input
+                  id="dashBohMatchTeamScore"
+                  name="bohMatchTeamScore"
+                  class="dash-input"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="90842"
+                  autocomplete="off"
+                  data-i18n-aria="adminBohMatchScoreUs"
+                  aria-label="Our score"
+                />
+                <b aria-hidden="true">:</b>
+                <input
+                  id="dashBohMatchOpponentScore"
+                  name="bohMatchOpponentScore"
+                  class="dash-input"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="12647"
+                  autocomplete="off"
+                  data-i18n-aria="adminBohMatchScoreThem"
+                  aria-label="Opponent score"
+                />
+              </span>
             </label>
             <label>
               <span data-i18n="adminBohMatchOpponent">Opponent</span>
@@ -1793,6 +1825,9 @@
               <button id="dashBohMatchSaveBtn" class="dash-btn dash-btn-primary" type="submit">
                 <span data-i18n="adminBohMatchSave">Save match result</span>
               </button>
+              <button id="dashBohMatchCancelEditBtn" class="dash-btn hidden" type="button">
+                <span data-i18n="adminBohMatchCancelEdit">Cancel edit</span>
+              </button>
             </div>
           </form>
 
@@ -1806,7 +1841,11 @@
           <div class="dash-conduct-list-head">
             <h3 data-i18n="adminBohMatchRecent">Saved match results</h3>
             <span id="dashBohMatchSummary" class="dash-conduct-review-count"></span>
+            <button id="dashBohMatchSummaryBtn" class="dash-btn dash-btn-xs" type="button">
+              <span data-i18n="adminBohMatchSummaryShow">Show summary</span>
+            </button>
           </div>
+          <div id="dashBohMatchSummaryPanel" class="dash-boh-match-summary hidden"></div>
           <div id="dashBohMatchList" class="dash-conduct-list">
             <div class="dash-empty" data-i18n="adminBohMatchEmpty">No match results saved yet.</div>
           </div>

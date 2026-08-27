@@ -125,7 +125,9 @@ import {
 import { createVtsScoreAdminView } from './vts-score-admin-view.js';
 import { loadVtsScoreSnapshot } from './vts-score-store.js';
 import {
+  BOH_MATCH_FIXTURES,
   BOH_MATCH_TEAMS,
+  getBohMatchFixture,
   bohMatchEntriesFromOcr,
   bohMatchEntriesFromText,
   deleteBohMatchResult,
@@ -6018,7 +6020,9 @@ function renderBohMatchEntries() {
   if (!host) return;
   const entries = bohMatchDraftEntries();
   if (!entries.length) {
-    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchNoRows'))}</div>`;
+    // Not an error state: a leader who missed the screenshots still files the
+    // match with a note and the final score.
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchNoRowsHint'))}</div>`;
     return;
   }
   const total = entries.reduce((sum, entry) => sum + entry.score, 0);
@@ -6028,15 +6032,46 @@ function renderBohMatchEntries() {
     </div>
     <div class="dash-boh-match-rows">${entries
       .map(
-        (entry) => `<div class="dash-boh-match-row">
+        (entry) => `<div class="dash-boh-match-row" data-boh-row="${esc(entry.playerKey)}">
         <span class="dash-boh-match-rank">${entry.rank}</span>
         <strong>${esc(entry.playerName)}</strong>
         <b>${esc(formatBohScore(entry.score))}</b>
+        <label class="dash-boh-match-rating">
+          <span>${esc(dashT('adminBohMatchRating'))}</span>
+          <input class="dash-input" type="number" min="0" max="10" step="0.5" inputmode="decimal"
+            placeholder="-" value="${entry.rating === null ? '' : esc(entry.rating)}"
+            data-boh-row-rating="${esc(entry.playerKey)}">
+        </label>
+        <input class="dash-input dash-boh-match-row-note" type="text" maxlength="300"
+          placeholder="${esc(dashT('adminBohMatchRowNotePh'))}" value="${esc(entry.note || '')}"
+          data-boh-row-note="${esc(entry.playerKey)}">
         <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-boh-row-remove="${esc(entry.playerKey)}">${esc(dashT('adminDelete'))}</button>
       </div>`
       )
       .join('')}</div>`;
 
+  // Notes and ratings write straight back into the draft rather than being read
+  // at submit time, so re-rendering after an upload never discards them.
+  const patchEntry = (key, patch) => {
+    state.bohMatchEntries = bohMatchDraftEntries().map((entry) =>
+      entry.playerKey === key ? { ...entry, ...patch } : entry
+    );
+  };
+  host.querySelectorAll('[data-boh-row-note]').forEach((input) => {
+    input.addEventListener('input', () =>
+      patchEntry(input.dataset.bohRowNote, {
+        note: input.value.slice(0, 300),
+      })
+    );
+  });
+  host.querySelectorAll('[data-boh-row-rating]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const raw = input.value.trim();
+      patchEntry(input.dataset.bohRowRating, {
+        rating: raw === '' ? null : Math.min(10, Math.max(0, Number(raw) || 0)),
+      });
+    });
+  });
   host.querySelectorAll('[data-boh-row-remove]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.bohRowRemove;
@@ -6093,6 +6128,180 @@ function showBohMatchPasteForm() {
   );
 }
 
+function renderBohMatchFixturePicker() {
+  const select = $id('dashBohMatchFixture');
+  if (!select || select.dataset.ready === '1') return;
+  select.dataset.ready = '1';
+  select.innerHTML = [
+    `<option value="">${esc(dashT('adminBohMatchFixtureNone'))}</option>`,
+    ...BOH_MATCH_FIXTURES.map(
+      (fixture) =>
+        `<option value="${esc(fixture.id)}">${esc(`${fixture.date} - ${fixture.label}`)}</option>`
+    ),
+  ].join('');
+}
+
+function bohMatchEditingId() {
+  return state._bohMatchEditingId || '';
+}
+
+function setBohMatchEditing(id) {
+  state._bohMatchEditingId = id || '';
+  const editing = Boolean(id);
+  $id('dashBohMatchCancelEditBtn')?.classList.toggle('hidden', !editing);
+  const label = $id('dashBohMatchSaveBtn')?.querySelector('span');
+  if (label) {
+    label.textContent = dashT(editing ? 'adminBohMatchUpdate' : 'adminBohMatchSave');
+  }
+}
+
+function readBohMatchForm() {
+  return {
+    id: bohMatchEditingId() || undefined,
+    teamId: $id('dashBohMatchTeam')?.value || '',
+    fixtureId: $id('dashBohMatchFixture')?.value || '',
+    matchDate: $id('dashBohMatchDate')?.value || '',
+    opponent: $id('dashBohMatchOpponent')?.value || '',
+    teamScore: $id('dashBohMatchTeamScore')?.value || '',
+    opponentScore: $id('dashBohMatchOpponentScore')?.value || '',
+    note: $id('dashBohMatchNote')?.value || '',
+    entries: bohMatchDraftEntries(),
+  };
+}
+
+function resetBohMatchForm() {
+  const form = $id('dashBohMatchForm');
+  if (form) form.reset();
+  renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
+  setBohMatchDraftEntries([]);
+  setBohMatchEditing('');
+  const dateInput = $id('dashBohMatchDate');
+  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+}
+
+// Loads a saved result back into the form. Everything is editable except who
+// filed it and when — the rules freeze those, and the save path re-reads them.
+function startBohMatchEdit(id) {
+  const record = (state.bohMatchResults || []).find((entry) => entry.id === id);
+  if (!record) return;
+  renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
+  setBohMatchEditing(id);
+  const set = (elementId, value) => {
+    const el = $id(elementId);
+    if (el) el.value = value ?? '';
+  };
+  set('dashBohMatchTeam', record.teamId);
+  set('dashBohMatchFixture', record.fixtureId);
+  set('dashBohMatchDate', record.matchDate);
+  set('dashBohMatchOpponent', record.opponent);
+  set('dashBohMatchTeamScore', record.teamScore || '');
+  set('dashBohMatchOpponentScore', record.opponentScore || '');
+  set('dashBohMatchNote', record.note);
+  setBohMatchDraftEntries(record.entries || []);
+  setBohMatchStatus(dashT('adminBohMatchEditing', { team: record.teamName }), 'info');
+  $id('dashBohMatchForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// One row per player across every saved match: who turned up, how often, what
+// they scored in total, and how their leaders rated them.
+function buildBohMatchMemberSummary(records) {
+  const byPlayer = new Map();
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    (record.entries || []).forEach((entry) => {
+      const current = byPlayer.get(entry.playerKey) || {
+        playerKey: entry.playerKey,
+        playerName: entry.playerName,
+        matches: 0,
+        total: 0,
+        best: 0,
+        ratings: [],
+      };
+      current.matches += 1;
+      current.total += Number(entry.score || 0);
+      current.best = Math.max(current.best, Number(entry.score || 0));
+      if (entry.rating !== null && entry.rating !== undefined) current.ratings.push(entry.rating);
+      byPlayer.set(entry.playerKey, current);
+    });
+  });
+  return [...byPlayer.values()]
+    .map((row) => ({
+      ...row,
+      average: row.matches ? Math.round(row.total / row.matches) : 0,
+      rating: row.ratings.length
+        ? Math.round(
+            (row.ratings.reduce((sum, value) => sum + value, 0) / row.ratings.length) * 10
+          ) / 10
+        : null,
+    }))
+    .sort((a, b) => b.total - a.total || a.playerName.localeCompare(b.playerName));
+}
+
+function renderBohMatchSummaryPanel() {
+  const host = $id('dashBohMatchSummaryPanel');
+  if (!host || host.classList.contains('hidden')) return;
+  const records = Array.isArray(state.bohMatchResults) ? state.bohMatchResults : [];
+  const totals = summarizeBohMatchResults(records);
+  const members = buildBohMatchMemberSummary(records);
+  const grandTotal = members.reduce((sum, row) => sum + row.total, 0);
+
+  if (!records.length) {
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchEmpty'))}</div>`;
+    return;
+  }
+
+  host.innerHTML = `<div class="vts-admin-summary-grid">
+      ${[
+        'adminBohMatchSummaryMatches',
+        'adminBohMatchSummaryTeams',
+        'adminBohMatchSummaryMembers',
+        'adminBohMatchSummaryTotal',
+      ]
+        .map((key, index) => {
+          const value = [totals.matches, totals.teams, members.length, formatBohScore(grandTotal)][
+            index
+          ];
+          return `<article class="vts-admin-summary-card"><strong>${esc(value)}</strong><span>${esc(dashT(key))}</span></article>`;
+        })
+        .join('')}
+    </div>
+    <div class="vts-admin-table-wrap">
+      <table class="vts-admin-table">
+        <thead><tr>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryPlayer'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryAppearances'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryTotalScore'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryAverage'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryBest'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchRating'))}</th>
+        </tr></thead>
+        <tbody>${members
+          .map(
+            (row) => `<tr>
+          <th scope="row">${esc(row.playerName)}</th>
+          <td>${row.matches}</td>
+          <td>${esc(formatBohScore(row.total))}</td>
+          <td>${esc(formatBohScore(row.average))}</td>
+          <td>${esc(formatBohScore(row.best))}</td>
+          <td>${row.rating === null ? '-' : esc(`${row.rating}/10`)}</td>
+        </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function toggleBohMatchSummary() {
+  const host = $id('dashBohMatchSummaryPanel');
+  if (!host) return;
+  const showing = !host.classList.toggle('hidden');
+  const label = $id('dashBohMatchSummaryBtn')?.querySelector('span');
+  if (label)
+    label.textContent = dashT(showing ? 'adminBohMatchSummaryHide' : 'adminBohMatchSummaryShow');
+  renderBohMatchSummaryPanel();
+}
+
 function renderBohMatchResults() {
   const list = $id('dashBohMatchList');
   if (!list) return;
@@ -6111,33 +6320,46 @@ function renderBohMatchResults() {
   }
   list.innerHTML = rows
     .map((record) => {
+      const fixture = getBohMatchFixture(record.fixtureId);
       const meta = [
+        fixture ? fixture.label : '',
         record.matchDate,
         record.opponent ? dashT('adminBohMatchVs', { opponent: record.opponent }) : '',
         dashT('adminBohMatchRowCount', { count: record.memberCount }),
         record.createdByName ? dashT('adminBohMatchBy', { admin: record.createdByName }) : '',
+        record.updatedByName ? dashT('adminBohMatchEditedBy', { admin: record.updatedByName }) : '',
       ]
         .filter(Boolean)
         .join(' · ');
+      // The scoreboard headline is the thing leadership reads first, so it goes
+      // beside the team name rather than inside the meta line.
+      const matchScore =
+        record.teamScore || record.opponentScore
+          ? `<span class="dash-boh-match-scoreline">${esc(formatBohScore(record.teamScore))} : ${esc(formatBohScore(record.opponentScore))}</span>`
+          : '';
       const top = record.entries
         .slice(0, 3)
         .map((entry) => `${esc(entry.playerName)} ${esc(formatBohScore(entry.score))}`)
         .join(' · ');
       return `<article class="dash-conduct-row">
         <div>
-          <strong>${esc(record.teamName)}</strong>
+          <strong>${esc(record.teamName)}${matchScore}</strong>
           <span>${esc(meta)}</span>
           ${top ? `<p>${top}</p>` : ''}
           ${record.note ? `<p class="dash-boh-match-note-text">${esc(record.note)}</p>` : ''}
         </div>
         <div class="dash-conduct-row-actions">
           <b>${esc(formatBohScore(record.totalScore))}</b>
+          <button class="dash-btn dash-btn-xs" type="button" data-boh-match-edit="${esc(record.id)}">${esc(dashT('adminEdit'))}</button>
           <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-boh-match-delete="${esc(record.id)}">${esc(dashT('adminDelete'))}</button>
         </div>
       </article>`;
     })
     .join('');
 
+  list.querySelectorAll('[data-boh-match-edit]').forEach((btn) => {
+    btn.addEventListener('click', () => startBohMatchEdit(btn.dataset.bohMatchEdit));
+  });
   list.querySelectorAll('[data-boh-match-delete]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.bohMatchDelete;
@@ -6152,6 +6374,8 @@ function renderBohMatchResults() {
       }
     });
   });
+
+  renderBohMatchSummaryPanel();
 }
 
 async function loadBohMatchResultsForAdmin() {
@@ -6239,6 +6463,7 @@ function bindVtsScoreControls() {
 function renderBohMatchPanel() {
   bindBohMatchControls();
   renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
   renderBohMatchEntries();
   renderBohMatchResults();
   const dateInput = $id('dashBohMatchDate');
@@ -6254,6 +6479,7 @@ function bindBohMatchControls() {
   if (!form || form.dataset.bound) return;
   form.dataset.bound = '1';
   renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
 
   const fileInput = $id('dashBohMatchFileInput');
   const uploadBtn = $id('dashBohMatchUploadBtn');
@@ -6282,33 +6508,43 @@ function bindBohMatchControls() {
     setBohMatchStatus('');
   });
 
+  $id('dashBohMatchCancelEditBtn')?.addEventListener('click', () => {
+    resetBohMatchForm();
+    setBohMatchStatus('');
+  });
+  $id('dashBohMatchSummaryBtn')?.addEventListener('click', toggleBohMatchSummary);
+  // Picking a fixture fills the date; typing a date afterwards still wins.
+  $id('dashBohMatchFixture')?.addEventListener('change', (event) => {
+    const fixture = getBohMatchFixture(event.target.value);
+    const dateInput = $id('dashBohMatchDate');
+    if (fixture && dateInput) dateInput.value = fixture.date;
+  });
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const entries = bohMatchDraftEntries();
-    if (!entries.length) {
-      setBohMatchStatus(dashT('adminBohMatchNoRows'), 'warn');
+    const payload = readBohMatchForm();
+    // A result with no rows is legitimate: leaders miss the screenshots and
+    // file the match with the final score and a note instead. Only a record
+    // with nothing in it at all is refused.
+    const hasSubstance =
+      payload.entries.length ||
+      payload.note.trim() ||
+      Number(payload.teamScore) ||
+      Number(payload.opponentScore);
+    if (!hasSubstance) {
+      setBohMatchStatus(dashT('adminBohMatchNothingToSave'), 'warn');
       return;
     }
-    const payload = {
-      teamId: $id('dashBohMatchTeam')?.value || '',
-      matchDate: $id('dashBohMatchDate')?.value || '',
-      opponent: $id('dashBohMatchOpponent')?.value || '',
-      note: $id('dashBohMatchNote')?.value || '',
-      entries,
-    };
+    const editing = Boolean(payload.id);
     const saveBtn = $id('dashBohMatchSaveBtn');
     if (saveBtn) saveBtn.disabled = true;
     try {
       setBohMatchStatus(dashT('adminBohMatchSaving'), 'info');
       if (state.cloudSyncConfigured === false) saveLocalBohMatchResult(payload);
       else await saveBohMatchResult(payload);
-      form.reset();
-      renderBohMatchTeamPicker();
-      setBohMatchDraftEntries([]);
-      const dateInput = $id('dashBohMatchDate');
-      if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+      resetBohMatchForm();
       await loadBohMatchResultsForAdmin();
-      setBohMatchStatus(dashT('adminBohMatchSaved'), 'success');
+      setBohMatchStatus(dashT(editing ? 'adminBohMatchUpdated' : 'adminBohMatchSaved'), 'success');
     } catch (err) {
       setBohMatchStatus(showCloudSyncFailure(err, 'BoH match result save failed'), 'error');
     } finally {

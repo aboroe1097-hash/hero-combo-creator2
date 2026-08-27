@@ -1051,3 +1051,37 @@ test('client error reports are bounded and not publicly readable', () => {
   assert.match(reporting, /authorId:\s*user\.uid/);
   assert.match(reporting, /remoteReportingDisabled = true/);
 });
+
+// A getFunctions()/getAuth() from one Firebase major cannot see the component
+// registry of an app created by another: it throws "Service <name> is not
+// available". js/firebase.js drifted to 12.7.0 while every importmap stayed on
+// 11.6.1, which broke every role grant in the Users & Roles tab.
+test('every Firebase SDK reference is pinned to one version', () => {
+  const sources = [
+    'index.html',
+    'admin.html',
+    'vtsscore.html',
+    'js/firebase.js',
+    'js/firebase-sdk.js',
+  ].filter((file) => existsSync(file));
+
+  const found = new Map();
+  for (const file of sources) {
+    for (const [, version] of readFileSync(file, 'utf8').matchAll(
+      /firebasejs\/(\d+\.\d+\.\d+)\//g
+    )) {
+      if (!found.has(version)) found.set(version, new Set());
+      found.get(version).add(file);
+    }
+  }
+
+  const versions = [...found.keys()];
+  assert.ok(versions.length > 0, 'expected at least one pinned Firebase SDK URL');
+  assert.equal(
+    versions.length,
+    1,
+    `mixed Firebase SDK versions: ${versions
+      .map((version) => `${version} in ${[...found.get(version)].join(', ')}`)
+      .join(' | ')}`
+  );
+});

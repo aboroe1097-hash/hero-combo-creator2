@@ -6108,6 +6108,70 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   border-radius: 12px;
 }
 
+#ocrDashboardRoot .dash-boh-match-score-pair {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#ocrDashboardRoot .dash-boh-match-score-pair .dash-input {
+  margin-bottom: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+#ocrDashboardRoot .dash-boh-match-score-pair b {
+  color: var(--text-muted);
+}
+
+#ocrDashboardRoot .dash-boh-match-scoreline {
+  margin-left: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+#ocrDashboardRoot .dash-boh-match-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+#ocrDashboardRoot .dash-boh-match-rating span {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#ocrDashboardRoot .dash-boh-match-rating .dash-input {
+  width: 68px;
+  margin-bottom: 0;
+  padding: 0.3rem 0.4rem;
+  text-align: center;
+}
+
+#ocrDashboardRoot .dash-boh-match-row-note {
+  margin-bottom: 0;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+#ocrDashboardRoot .dash-boh-match-summary {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+[data-theme='light'] #ocrDashboardRoot .dash-boh-match-summary {
+  background: #fff;
+}
+
 #ocrDashboardRoot .dash-boh-match-rows {
   display: grid;
   gap: 0.35rem;
@@ -6117,7 +6181,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 
 #ocrDashboardRoot .dash-boh-match-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) minmax(72px, auto) auto;
+  grid-template-columns: 32px minmax(0, 1.1fr) minmax(72px, auto) auto minmax(0, 1.2fr) auto;
   gap: 0.6rem;
   align-items: center;
   min-height: 44px;
@@ -6152,6 +6216,15 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 @media (max-width: 768px) {
   #ocrDashboardRoot .dash-boh-match-form {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  #ocrDashboardRoot .dash-boh-match-row {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+  }
+
+  #ocrDashboardRoot .dash-boh-match-rating,
+  #ocrDashboardRoot .dash-boh-match-row-note {
+    grid-column: 2 / -1;
   }
 }
 
