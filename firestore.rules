@@ -501,16 +501,19 @@ service cloud.firestore {
     // the client normalizes each row and the payload never feeds scoring.
     function validBohMatchResult() {
       return request.resource.data.keys().hasOnly([
-        'id', 'teamId', 'teamName', 'matchDate', 'opponent', 'note', 'entries',
-        'totalScore', 'memberCount', 'createdAt', 'createdBy', 'createdByName'
+        'id', 'teamId', 'teamName', 'fixtureId', 'matchDate', 'opponent', 'note',
+        'teamScore', 'opponentScore', 'entries',
+        'totalScore', 'memberCount', 'createdAt', 'createdBy', 'createdByName',
+        'updatedAt', 'updatedBy', 'updatedByName'
       ])
       && request.resource.data.id is string
       && request.resource.data.id.size() > 0
       && request.resource.data.id.size() <= 80
       && request.resource.data.teamId in [
-        'iron-wolves', 'storm-ravens', 'ember-lions',
-        'frost-bears', 'night-falcons', 'thunder-bulls'
+        'v1s-wolves', 'v2s-tigers', 'v3s-falcons', 'v4s-phoenix', 'v5s-bulls'
       ]
+      && request.resource.data.fixtureId is string
+      && request.resource.data.fixtureId.size() <= 60
       && request.resource.data.teamName is string
       && request.resource.data.teamName.size() > 0
       && request.resource.data.teamName.size() <= 60
@@ -520,6 +523,10 @@ service cloud.firestore {
       && request.resource.data.opponent.size() <= 120
       && request.resource.data.note is string
       && request.resource.data.note.size() <= 1000
+      && request.resource.data.teamScore is int
+      && request.resource.data.teamScore >= 0
+      && request.resource.data.opponentScore is int
+      && request.resource.data.opponentScore >= 0
       && request.resource.data.entries is list
       && request.resource.data.entries.size() <= 60
       && request.resource.data.totalScore is int
@@ -532,7 +539,11 @@ service cloud.firestore {
       && request.resource.data.createdBy.size() > 0
       && request.resource.data.createdBy.size() <= 128
       && request.resource.data.createdByName is string
-      && request.resource.data.createdByName.size() <= 160;
+      && request.resource.data.createdByName.size() <= 160
+      && request.resource.data.updatedBy is string
+      && request.resource.data.updatedBy.size() <= 128
+      && request.resource.data.updatedByName is string
+      && request.resource.data.updatedByName.size() <= 160;
     }
 
     function validEdenX1Vote() {

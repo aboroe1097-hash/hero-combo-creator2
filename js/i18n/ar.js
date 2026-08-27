@@ -3194,6 +3194,33 @@ Object.assign(ar, {
   adminBohStatUnitSpecialtyPower: 'قوة تخصص الوحدات',
   adminBohStatArtifactPower: 'قوة القطع الأثرية',
   adminBohStatRoyalTechPower: 'قوة التقنية الملكية',
+
+  adminBohMatchFixture: 'مباراة',
+  adminBohMatchFixtureNone: 'ليست واحدة من المباريات المجدولة',
+  adminBohMatchScore: 'النتيجة النهائية',
+  adminBohMatchScoreUs: 'نتيجتنا',
+  adminBohMatchScoreThem: 'نتيجة الخصم',
+  adminBohMatchRating: 'التقييم',
+  adminBohMatchRowNotePh: 'ملاحظة عن هذا اللاعب (اختياري)',
+  adminBohMatchNoRowsHint:
+    'لا توجد صفوف نتائج بعد. ارفع لقطات Combat Progress، أو املأ النتيجة النهائية وملاحظة فقط.',
+  adminBohMatchNothingToSave: 'أضف صفوف النتائج أو النتيجة النهائية أو ملاحظة قبل الحفظ.',
+  adminBohMatchUpdate: 'تحديث نتيجة المباراة',
+  adminBohMatchUpdated: 'تم تحديث نتيجة المباراة.',
+  adminBohMatchCancelEdit: 'إلغاء التعديل',
+  adminBohMatchEditing: 'جارٍ تعديل نتيجة {team}.',
+  adminBohMatchEditedBy: 'عدّله {admin}',
+  adminBohMatchSummaryShow: 'إظهار الملخص',
+  adminBohMatchSummaryHide: 'إخفاء الملخص',
+  adminBohMatchSummaryMatches: 'المباريات المسجلة',
+  adminBohMatchSummaryTeams: 'الفرق',
+  adminBohMatchSummaryMembers: 'الأعضاء المقيّمون',
+  adminBohMatchSummaryTotal: 'النتيجة المجمعة',
+  adminBohMatchSummaryPlayer: 'اللاعب',
+  adminBohMatchSummaryAppearances: 'المباريات',
+  adminBohMatchSummaryTotalScore: 'إجمالي النتيجة',
+  adminBohMatchSummaryAverage: 'المتوسط',
+  adminBohMatchSummaryBest: 'الأفضل',
 });
 
 export default ar;
