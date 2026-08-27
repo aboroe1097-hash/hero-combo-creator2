@@ -6152,6 +6152,22 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   text-align: center;
 }
 
+#ocrDashboardRoot .dash-boh-match-rating b {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+/* A row still missing its required rating is marked as soon as it renders, not
+   only after a save is refused. */
+#ocrDashboardRoot .dash-boh-match-rating[data-missing] .dash-input {
+  border-color: rgba(251, 191, 36, 0.75);
+}
+
+#ocrDashboardRoot .dash-boh-match-rating[data-missing] span {
+  color: #fbbf24;
+}
+
 #ocrDashboardRoot .dash-boh-match-row-note {
   margin-bottom: 0;
   padding: 0.3rem 0.5rem;

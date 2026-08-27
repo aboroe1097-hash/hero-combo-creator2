@@ -3095,7 +3095,7 @@ Object.assign(zh, {
   adminBohMatchScore: '最终比分',
   adminBohMatchScoreUs: '我方得分',
   adminBohMatchScoreThem: '对方得分',
-  adminBohMatchRating: '评分',
+  adminBohMatchRating: '评分 / 10',
   adminBohMatchRowNotePh: '该玩家备注（可选）',
   adminBohMatchNoRowsHint:
     '暂无积分行。请上传战斗进度截图，或直接填写最终比分和备注。',
@@ -3116,6 +3116,9 @@ Object.assign(zh, {
   adminBohMatchSummaryTotalScore: '总得分',
   adminBohMatchSummaryAverage: '平均分',
   adminBohMatchSummaryBest: '最佳',
+  adminBohMatchRatingRequired:
+    '提交此结果前，请先为每位玩家按 10 分制评分——还有 {count} 名玩家待评分，从 {players} 开始。',
+  adminBohMatchRatingHint: '为每位玩家按 10 分制评分。备注为可选。',
 });
 
 export default zh;

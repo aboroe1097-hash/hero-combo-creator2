@@ -154,6 +154,17 @@ export function normalizeBohMatchEntries(entries = []) {
     .map((entry, index) => ({ ...entry, rank: index + 1 }));
 }
 
+// Every player row must carry a rating out of ten before a leader can file the
+// result. Deliberately enforced here, at save time, and NOT in the normalizer:
+// results filed before ratings existed still have to load, and a normalizer
+// that rejected them would drop them silently out of the list. A match with no
+// player rows at all is unaffected — there is nobody to rate.
+export function unratedBohMatchEntries(entries = []) {
+  return (Array.isArray(entries) ? entries : []).filter(
+    (entry) => entry?.rating === null || entry?.rating === undefined
+  );
+}
+
 export function normalizeBohMatchResult(input, options = {}) {
   const team = getBohMatchTeam(input?.teamId ?? options.teamId);
   if (!team) throw new Error('Pick which team this result is for');

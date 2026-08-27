@@ -273,8 +273,11 @@ const en = {
   adminBohMatchScore: 'Final score',
   adminBohMatchScoreUs: 'Our score',
   adminBohMatchScoreThem: 'Opponent score',
-  adminBohMatchRating: 'Rating',
+  adminBohMatchRating: 'Rating / 10',
   adminBohMatchRowNotePh: 'Note on this player (optional)',
+  adminBohMatchRatingRequired:
+    'Rate every player out of 10 before filing this result - {count} still to go, starting with {players}.',
+  adminBohMatchRatingHint: 'Rate every player out of 10. Notes are optional.',
   adminBohMatchNoRowsHint:
     'No score rows yet. Upload the Combat Progress screenshots, or just fill in the final score and a note.',
   adminBohMatchNothingToSave: 'Add score rows, a final score, or a note before saving.',

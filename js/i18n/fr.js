@@ -3470,7 +3470,7 @@ const fr = {
   adminBohMatchScore: 'Score final',
   adminBohMatchScoreUs: 'Notre score',
   adminBohMatchScoreThem: 'Score de l\'adversaire',
-  adminBohMatchRating: 'Note',
+  adminBohMatchRating: 'Note / 10',
   adminBohMatchRowNotePh: 'Note sur ce joueur (facultatif)',
   adminBohMatchNoRowsHint:
     'Aucune ligne de score pour le moment. Importez les captures de Combat Progress, ou remplissez simplement le score final et une note.',
@@ -3493,6 +3493,9 @@ const fr = {
   adminBohMatchSummaryBest: 'Meilleur',
   adminCloudPermissionDenied:
     'Le serveur a refusé cette écriture. Soit ce compte n\'est pas administrateur, soit les règles de sécurité déployées sont plus anciennes que cette application — un R5 devra peut-être redéployer firestore.rules.',
+  adminBohMatchRatingRequired:
+    'Évaluez chaque joueur sur 10 avant d\'enregistrer ce résultat - {count} encore à noter, en commençant par {players}.',
+  adminBohMatchRatingHint: 'Évaluez chaque joueur sur 10. Les notes sont facultatives.',
 };
 
 export default fr;
