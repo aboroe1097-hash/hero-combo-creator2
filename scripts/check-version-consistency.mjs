@@ -92,6 +92,30 @@ for (const relativePath of [
   );
 }
 
+// Public pages that carry a version label but no footer in the shared shape.
+// These drifted to 14.2.20 / 14.3.5 / 14.0.20 while the app shipped 15.x,
+// because nothing checked them.
+captureVersion(
+  'profile.html',
+  /<meta name="vts-app-version" content="(\d+\.\d+\.\d+)"/,
+  'profile.html app version meta',
+  expectedVersion
+);
+
+captureVersion(
+  'vtsscore.html',
+  /<meta name="vts-app-version" content="(\d+\.\d+\.\d+)"/,
+  'vtsscore.html app version meta',
+  expectedVersion
+);
+
+captureVersion(
+  'maintenance.html',
+  /class="version">v(\d+\.\d+\.\d+)</,
+  'maintenance.html version label',
+  expectedVersion
+);
+
 captureVersion(
   'README.md',
   /^# Hero Combo Creator - VTS 1097 \(v(\d+\.\d+\.\d+)\)$/m,

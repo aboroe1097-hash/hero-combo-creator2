@@ -24,9 +24,14 @@ function renderChip(account, profile, sync, admin, superadmin) {
 
   const link = document.createElement('a');
   link.className = 'vts-account-chip';
-  // Pages that opt in via data-account-return-to send the visitor back to
-  // themselves after signing in through the profile flow.
-  const returnTo = document.body?.dataset?.accountReturnTo;
+  // Every page sends the visitor back to itself after signing in.
+  // data-account-return-to stays an explicit override; without it the current
+  // path is used, which is what the profile flow's same-origin sanitizer
+  // expects. Only profile.html itself opts out, so signing in there does not
+  // bounce back to the page the visitor is already on.
+  const currentPath = globalThis.location?.pathname || '';
+  const selfReturn = /profile\.html$/i.test(currentPath) ? '' : currentPath;
+  const returnTo = document.body?.dataset?.accountReturnTo || selfReturn;
   link.href = returnTo ? `profile.html?return=${encodeURIComponent(returnTo)}` : 'profile.html';
   link.setAttribute('aria-label', 'Open account and sync settings');
 
