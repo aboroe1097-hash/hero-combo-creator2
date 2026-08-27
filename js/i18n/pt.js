@@ -3003,7 +3003,7 @@ const pt = {
   adminBohMatchScore: 'Placar final',
   adminBohMatchScoreUs: 'Nosso placar',
   adminBohMatchScoreThem: 'Placar do oponente',
-  adminBohMatchRating: 'Avaliação',
+  adminBohMatchRating: 'Avaliação / 10',
   adminBohMatchRowNotePh: 'Nota sobre este jogador (opcional)',
   adminBohMatchNoRowsHint:
     'Ainda não há linhas de placar. Envie as capturas do Combat Progress, ou apenas preencha o placar final e uma nota.',
@@ -3024,6 +3024,11 @@ const pt = {
   adminBohMatchSummaryTotalScore: 'Pontuação total',
   adminBohMatchSummaryAverage: 'Média',
   adminBohMatchSummaryBest: 'Melhor',
+  adminCloudPermissionDenied:
+    'O servidor recusou esta gravação. Ou esta conta não é um administrador, ou as regras de segurança implantadas são mais antigas que este app - um R5 pode precisar reimplantar o firestore.rules.',
+  adminBohMatchRatingRequired:
+    'Avalie cada jogador de 0 a 10 antes de enviar este resultado - ainda faltam {count}, começando por {players}.',
+  adminBohMatchRatingHint: 'Avalie cada jogador de 0 a 10. As notas são opcionais.',
 };
 
 export default pt;

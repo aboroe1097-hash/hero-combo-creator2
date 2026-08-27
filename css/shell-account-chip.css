@@ -1,0 +1,23 @@
+/* Shell header mount for the shared account chip.
+   index, eden-x1, eden-x2 and arcade each carry their own account control in
+   the header control row, so the chip mounts into that slot instead of
+   floating. Mirrors css/admin-account-chip.css, which does the same for the
+   admin deck.
+
+   The chip's base CSS positions the mount fixed at top:4.25rem/right:.65rem on
+   phones. At 390px that put it straight over the theme toggle:
+   elementFromPoint() at the theme button's centre returned the chip, so tapping
+   the theme opened the profile page instead. Mounting in flow removes the
+   overlap by construction, and drops a control that duplicated the header link
+   sitting immediately beside it. */
+.shell-account-slot.vts-account-chip-mount {
+  position: static;
+  z-index: auto;
+  inset: auto;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.shell-account-slot .vts-account-chip {
+  min-height: 44px;
+}

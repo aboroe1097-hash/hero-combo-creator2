@@ -68,9 +68,19 @@ function safeAccountReturnPath() {
 }
 const accountReturnPath = safeAccountReturnPath();
 
+// Where to land when nothing sent the visitor here. Signing in used to leave
+// people sitting on the profile page with no way onward unless the referring
+// page had opted into ?return=, which only admin.html did.
+const ACCOUNT_DEFAULT_RETURN = '/index.html';
+
 function returnToReferringPage() {
-  if (!accountReturnPath) return false;
-  globalThis.location.replace(accountReturnPath);
+  // runAction() re-renders before calling this, so the onboarding form's
+  // visibility is the authoritative answer to "is this account finished?".
+  // Redirecting past a required onboarding step is what stranded new accounts
+  // with a half-built profile, and it also caught existing accounts that had
+  // never completed one.
+  if (!onboardingForm.hidden) return false;
+  globalThis.location.replace(accountReturnPath || ACCOUNT_DEFAULT_RETURN);
   return true;
 }
 

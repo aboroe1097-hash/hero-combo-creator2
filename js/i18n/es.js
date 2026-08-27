@@ -3284,7 +3284,7 @@ const es = {
   adminBohMatchScore: 'Marcador final',
   adminBohMatchScoreUs: 'Nuestro marcador',
   adminBohMatchScoreThem: 'Marcador del rival',
-  adminBohMatchRating: 'Puntuación',
+  adminBohMatchRating: 'Puntuación / 10',
   adminBohMatchRowNotePh: 'Nota sobre este jugador (opcional)',
   adminBohMatchNoRowsHint:
     'Aún no hay filas de puntuación. Sube las capturas de Combat Progress, o simplemente rellena el marcador final y una nota.',
@@ -3305,6 +3305,11 @@ const es = {
   adminBohMatchSummaryTotalScore: 'Puntuación total',
   adminBohMatchSummaryAverage: 'Promedio',
   adminBohMatchSummaryBest: 'Mejor',
+  adminCloudPermissionDenied:
+    'El servidor rechazó esta escritura. O bien esta cuenta no es administradora, o las security rules desplegadas son más antiguas que esta app; es posible que un R5 deba volver a desplegar firestore.rules.',
+  adminBohMatchRatingRequired:
+    'Califica a cada jugador de 0 a 10 antes de enviar este resultado - faltan {count}, empezando por {players}.',
+  adminBohMatchRatingHint: 'Califica a cada jugador de 0 a 10. Las notas son opcionales.',
 };
 
 export default es;

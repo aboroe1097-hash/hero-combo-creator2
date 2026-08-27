@@ -2462,7 +2462,7 @@ const it = {
   adminBohMatchScore: 'Punteggio finale',
   adminBohMatchScoreUs: 'Il nostro punteggio',
   adminBohMatchScoreThem: 'Punteggio avversario',
-  adminBohMatchRating: 'Valutazione',
+  adminBohMatchRating: 'Valutazione / 10',
   adminBohMatchRowNotePh: 'Nota su questo giocatore (facoltativa)',
   adminBohMatchNoRowsHint:
     'Ancora nessuna riga di punteggio. Carica gli screenshot di Combat Progress, oppure compila solo il punteggio finale e una nota.',
@@ -2483,6 +2483,11 @@ const it = {
   adminBohMatchSummaryTotalScore: 'Punteggio totale',
   adminBohMatchSummaryAverage: 'Media',
   adminBohMatchSummaryBest: 'Migliore',
+  adminCloudPermissionDenied:
+    'Il server ha rifiutato questa scrittura. O questo account non è un amministratore, oppure le regole di sicurezza distribuite sono più vecchie di questa app - un R5 potrebbe dover ridistribuire firestore.rules.',
+  adminBohMatchRatingRequired:
+    'Valuta ogni giocatore su 10 prima di inviare questo risultato - {count} ancora da valutare, a cominciare da {players}.',
+  adminBohMatchRatingHint: 'Valuta ogni giocatore su 10. Le note sono facoltative.',
 };
 
 export default it;

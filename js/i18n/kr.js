@@ -3066,7 +3066,7 @@ Object.assign(kr, {
   adminBohMatchScore: '최종 점수',
   adminBohMatchScoreUs: '우리 점수',
   adminBohMatchScoreThem: '상대 점수',
-  adminBohMatchRating: '평점',
+  adminBohMatchRating: '평점 / 10',
   adminBohMatchRowNotePh: '이 플레이어에 대한 메모 (선택 사항)',
   adminBohMatchNoRowsHint:
     '아직 점수 행이 없습니다. Combat Progress 스크린샷을 업로드하거나, 최종 점수와 메모만 입력해도 됩니다.',
@@ -3087,6 +3087,11 @@ Object.assign(kr, {
   adminBohMatchSummaryTotalScore: '총 점수',
   adminBohMatchSummaryAverage: '평균',
   adminBohMatchSummaryBest: '최고',
+  adminCloudPermissionDenied:
+    '서버가 이 저장을 거부했습니다. 이 계정이 관리자가 아니거나, 배포된 보안 규칙이 이 앱보다 오래되었기 때문입니다 - R5가 firestore.rules를 다시 배포해야 할 수 있습니다.',
+  adminBohMatchRatingRequired:
+    '이 결과를 제출하기 전에 모든 플레이어를 10점 만점으로 평가해 주세요 - {count}명 남음, {players}부터 시작합니다.',
+  adminBohMatchRatingHint: '모든 플레이어를 10점 만점으로 평가해 주세요. 메모는 선택 사항입니다.',
 });
 
 export default kr;

@@ -3091,7 +3091,7 @@ Object.assign(ru, {
   adminBohMatchScore: 'Финальный счёт',
   adminBohMatchScoreUs: 'Наш счёт',
   adminBohMatchScoreThem: 'Счёт соперника',
-  adminBohMatchRating: 'Оценка',
+  adminBohMatchRating: 'Рейтинг / 10',
   adminBohMatchRowNotePh: 'Заметка об этом игроке (необязательно)',
   adminBohMatchNoRowsHint:
     'Строк счёта пока нет. Загрузите скриншоты Combat Progress или просто укажите финальный счёт и заметку.',
@@ -3112,6 +3112,11 @@ Object.assign(ru, {
   adminBohMatchSummaryTotalScore: 'Итоговый счёт',
   adminBohMatchSummaryAverage: 'Средний',
   adminBohMatchSummaryBest: 'Лучший',
+  adminCloudPermissionDenied:
+    'Сервер отклонил эту запись. Либо этот аккаунт не является администратором, либо развёрнутые правила безопасности старше этого приложения — возможно, R5 нужно заново развернуть firestore.rules.',
+  adminBohMatchRatingRequired:
+    'Оцените каждого игрока по 10-балльной шкале перед отправкой этого результата - ещё {count}, начните с {players}.',
+  adminBohMatchRatingHint: 'Оцените каждого игрока по 10-балльной шкале. Заметки необязательны.',
 });
 
 export default ru;

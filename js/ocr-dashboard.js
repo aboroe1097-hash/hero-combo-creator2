@@ -138,6 +138,7 @@ import {
   saveBohMatchResult,
   saveLocalBohMatchResult,
   summarizeBohMatchResults,
+  unratedBohMatchEntries,
 } from './boh-match-results.js';
 import {
   conductSuggestionToAdjustment,
@@ -4136,7 +4137,16 @@ function setCloudSyncStatus(status, detail = '') {
 }
 function describeCloudSyncError(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
-  if (/permission-denied|permission|insufficient|admin/i.test(text)) {
+  // A permission-denied comes back from Firestore itself: the account is signed
+  // in and the write still got refused. Reporting that as "not signed in as
+  // admin" sent a superadmin hunting through accounts when the real cause was a
+  // firestore.rules release lagging behind the deployed app, so the two cases
+  // are now distinct. The local "no admin session" path below keeps the old
+  // wording because there it is literally true.
+  if (/permission-denied|insufficient permissions/i.test(text)) {
+    return dashT('adminCloudPermissionDenied');
+  }
+  if (/permission|admin/i.test(text)) {
     return dashT('adminCloudAdminRequired');
   }
   if (
@@ -6036,11 +6046,13 @@ function renderBohMatchEntries() {
         <span class="dash-boh-match-rank">${entry.rank}</span>
         <strong>${esc(entry.playerName)}</strong>
         <b>${esc(formatBohScore(entry.score))}</b>
-        <label class="dash-boh-match-rating">
+        <label class="dash-boh-match-rating"${entry.rating === null ? ' data-missing="1"' : ''}>
           <span>${esc(dashT('adminBohMatchRating'))}</span>
           <input class="dash-input" type="number" min="0" max="10" step="0.5" inputmode="decimal"
-            placeholder="-" value="${entry.rating === null ? '' : esc(entry.rating)}"
+            required aria-required="true"
+            placeholder="0-10" value="${entry.rating === null ? '' : esc(entry.rating)}"
             data-boh-row-rating="${esc(entry.playerKey)}">
+          <b aria-hidden="true">/10</b>
         </label>
         <input class="dash-input dash-boh-match-row-note" type="text" maxlength="300"
           placeholder="${esc(dashT('adminBohMatchRowNotePh'))}" value="${esc(entry.note || '')}"
@@ -6070,6 +6082,7 @@ function renderBohMatchEntries() {
       patchEntry(input.dataset.bohRowRating, {
         rating: raw === '' ? null : Math.min(10, Math.max(0, Number(raw) || 0)),
       });
+      input.closest('.dash-boh-match-rating')?.toggleAttribute('data-missing', raw === '');
     });
   });
   host.querySelectorAll('[data-boh-row-remove]').forEach((btn) => {
@@ -6533,6 +6546,25 @@ function bindBohMatchControls() {
       Number(payload.opponentScore);
     if (!hasSubstance) {
       setBohMatchStatus(dashT('adminBohMatchNothingToSave'), 'warn');
+      return;
+    }
+    // Rating every player is the point of filing the result, so it is required
+    // whenever there are rows to rate.
+    const unrated = unratedBohMatchEntries(payload.entries);
+    if (unrated.length) {
+      setBohMatchStatus(
+        dashT('adminBohMatchRatingRequired', {
+          count: unrated.length,
+          players: unrated
+            .slice(0, 3)
+            .map((entry) => entry.playerName)
+            .join(', '),
+        }),
+        'warn'
+      );
+      $id('dashBohMatchEntries')
+        ?.querySelector('.dash-boh-match-rating[data-missing] input')
+        ?.focus();
       return;
     }
     const editing = Boolean(payload.id);

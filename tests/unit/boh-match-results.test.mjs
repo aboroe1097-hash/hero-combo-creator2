@@ -30,6 +30,7 @@ const {
   saveLocalBohMatchResult,
   sortBohMatchResults,
   summarizeBohMatchResults,
+  unratedBohMatchEntries,
 } = await import('../../js/boh-match-results.js');
 
 test('the five real team names are the selectable set', () => {
@@ -284,4 +285,43 @@ test('a leader note and opponent survive the round trip through local storage', 
 
   deleteLocalBohMatchResult(saved.id);
   assert.equal(loadLocalBohMatchResults().length, 0);
+});
+
+test('a rating is required for every player row before a result can be filed', () => {
+  const entries = normalizeBohMatchEntries([
+    { name: 'Rated', score: 100, rating: 8 },
+    { name: 'Missing', score: 90 },
+    { name: 'Zero', score: 80, rating: 0 },
+  ]);
+
+  const unrated = unratedBohMatchEntries(entries);
+  assert.deepEqual(
+    unrated.map((entry) => entry.playerName),
+    ['Missing']
+  );
+  // A zero is a rating. Only an absent one blocks the save.
+  assert.equal(unratedBohMatchEntries(entries.filter((e) => e.playerName !== 'Missing')).length, 0);
+});
+
+test('a match with no player rows has nothing to rate', () => {
+  assert.deepEqual(unratedBohMatchEntries([]), []);
+  assert.deepEqual(unratedBohMatchEntries(undefined), []);
+});
+
+test('results filed before ratings existed still load rather than being dropped', () => {
+  // The requirement is enforced at save time, never in the normalizer: the two
+  // results already in production carry no ratings and must stay visible.
+  const stored = normalizeBohMatchResultRecords([
+    {
+      id: 'legacy',
+      teamId: 'night-falcons',
+      matchDate: '2026-08-27',
+      entries: [{ name: 'MIAOUU', score: 28106 }],
+    },
+  ]);
+
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0].teamName, 'V3S - Falcons');
+  assert.equal(stored[0].entries[0].rating, null);
+  assert.equal(unratedBohMatchEntries(stored[0].entries).length, 1);
 });

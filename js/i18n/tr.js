@@ -3374,7 +3374,7 @@ Object.assign(tr, {
   adminBohMatchScore: 'Final skoru',
   adminBohMatchScoreUs: 'Bizim skor',
   adminBohMatchScoreThem: 'Rakip skor',
-  adminBohMatchRating: 'Puan',
+  adminBohMatchRating: 'Puan / 10',
   adminBohMatchRowNotePh: 'Bu oyuncu hakkında not (isteğe bağlı)',
   adminBohMatchNoRowsHint:
     'Henüz puan satırı yok. Combat Progress ekran görüntülerini yükle veya sadece final skorunu ve bir notu doldur.',
@@ -3395,6 +3395,11 @@ Object.assign(tr, {
   adminBohMatchSummaryTotalScore: 'Toplam skor',
   adminBohMatchSummaryAverage: 'Ortalama',
   adminBohMatchSummaryBest: 'En iyi',
+  adminCloudPermissionDenied:
+    'Sunucu bu kaydı reddetti. Ya bu hesap yönetici değil ya da dağıtılan güvenlik kuralları bu uygulamadan daha eski - bir R5\'in firestore.rules dosyasını yeniden dağıtması gerekebilir.',
+  adminBohMatchRatingRequired:
+    'Bu sonucu kaydetmeden önce her oyuncuyu 10 üzerinden puanlayın - {count} oyuncu kaldı, {players} ile başlayın.',
+  adminBohMatchRatingHint: 'Her oyuncuyu 10 üzerinden puanlayın. Notlar isteğe bağlıdır.',
 });
 
 export default tr;

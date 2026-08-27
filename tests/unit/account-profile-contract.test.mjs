@@ -355,7 +355,13 @@ test('profile page separates provider auth from required private profile complet
   assert.match(pageSource, /setTimeout\(dismissStatus, kind === 'error' \? 5000 : 3500\)/);
   assert.match(pageSource, /event\.key === 'Escape'/);
   assert.match(profileHtml, /id="accountStatusDismiss"/);
-  assert.match(profileHtml, /meta name="vts-app-version" content="14\.2\.20"/);
+  // Assert against package.json rather than a literal: pinning 14.2.20 here is
+  // exactly why profile.html sat three minor versions behind the app.
+  const expectedVersion = JSON.parse(read('package.json')).version;
+  assert.ok(
+    profileHtml.includes(`meta name="vts-app-version" content="${expectedVersion}"`),
+    `profile.html should advertise ${expectedVersion}`
+  );
 });
 test('profile settings use real anchor sections and preserve every profile field contract', () => {
   const profileHtml = read('profile.html');

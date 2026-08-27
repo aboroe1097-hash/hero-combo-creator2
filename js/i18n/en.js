@@ -25,6 +25,8 @@ const en = {
   adminSignOutBtn: 'Sign Out',
   adminCloudSyncError: 'Cloud sync problem - click Refresh',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
+  adminCloudPermissionDenied:
+    'The server refused this write. Either this account is not an admin, or the deployed security rules are older than this app - an R5 may need to redeploy firestore.rules.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
   adminCloudStaleWriteSkipped:
     'Cloud has newer dashboard data from another device - this save was NOT uploaded. Refresh to load the latest data first.',
@@ -271,8 +273,11 @@ const en = {
   adminBohMatchScore: 'Final score',
   adminBohMatchScoreUs: 'Our score',
   adminBohMatchScoreThem: 'Opponent score',
-  adminBohMatchRating: 'Rating',
+  adminBohMatchRating: 'Rating / 10',
   adminBohMatchRowNotePh: 'Note on this player (optional)',
+  adminBohMatchRatingRequired:
+    'Rate every player out of 10 before filing this result - {count} still to go, starting with {players}.',
+  adminBohMatchRatingHint: 'Rate every player out of 10. Notes are optional.',
   adminBohMatchNoRowsHint:
     'No score rows yet. Upload the Combat Progress screenshots, or just fill in the final score and a note.',
   adminBohMatchNothingToSave: 'Add score rows, a final score, or a note before saving.',

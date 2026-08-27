@@ -3294,7 +3294,7 @@ Object.assign(id, {
   adminBohMatchScore: 'Skor akhir',
   adminBohMatchScoreUs: 'Skor kita',
   adminBohMatchScoreThem: 'Skor lawan',
-  adminBohMatchRating: 'Rating',
+  adminBohMatchRating: 'Rating / 10',
   adminBohMatchRowNotePh: 'Catatan untuk pemain ini (opsional)',
   adminBohMatchNoRowsHint:
     'Belum ada baris skor. Unggah screenshot Combat Progress, atau isi saja skor akhir dan catatan.',
@@ -3315,6 +3315,11 @@ Object.assign(id, {
   adminBohMatchSummaryTotalScore: 'Total skor',
   adminBohMatchSummaryAverage: 'Rata-rata',
   adminBohMatchSummaryBest: 'Terbaik',
+  adminCloudPermissionDenied:
+    'Server menolak penulisan ini. Entah akun ini bukan admin, atau aturan keamanan yang diterapkan lebih lama dari aplikasi ini - seorang R5 mungkin perlu menerapkan ulang firestore.rules.',
+  adminBohMatchRatingRequired:
+    'Nilai setiap pemain dari skala 10 sebelum mengajukan hasil ini - {count} lagi, mulai dari {players}.',
+  adminBohMatchRatingHint: 'Nilai setiap pemain dari skala 10. Catatan bersifat opsional.',
 });
 
 export default id;

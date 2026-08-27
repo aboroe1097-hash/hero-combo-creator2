@@ -3200,7 +3200,7 @@ Object.assign(ar, {
   adminBohMatchScore: 'النتيجة النهائية',
   adminBohMatchScoreUs: 'نتيجتنا',
   adminBohMatchScoreThem: 'نتيجة الخصم',
-  adminBohMatchRating: 'التقييم',
+  adminBohMatchRating: 'التقييم / 10',
   adminBohMatchRowNotePh: 'ملاحظة عن هذا اللاعب (اختياري)',
   adminBohMatchNoRowsHint:
     'لا توجد صفوف نتائج بعد. ارفع لقطات Combat Progress، أو املأ النتيجة النهائية وملاحظة فقط.',
@@ -3221,6 +3221,11 @@ Object.assign(ar, {
   adminBohMatchSummaryTotalScore: 'إجمالي النتيجة',
   adminBohMatchSummaryAverage: 'المتوسط',
   adminBohMatchSummaryBest: 'الأفضل',
+  adminCloudPermissionDenied:
+    'رفض الخادم هذه الكتابة. إما أن هذا الحساب ليس مسؤولاً، أو أن قواعد الأمان المنشورة أقدم من هذا التطبيق - قد يحتاج R5 إلى إعادة نشر firestore.rules.',
+  adminBohMatchRatingRequired:
+    'قيّم كل لاعب من 10 قبل تقديم هذه النتيجة - بقي {count} لاعب، بدءًا بـ {players}.',
+  adminBohMatchRatingHint: 'قيّم كل لاعب من 10. الملاحظات اختيارية.',
 });
 
 export default ar;

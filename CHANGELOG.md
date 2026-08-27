@@ -1,5 +1,15 @@
 # Changelog
 
+## 15.0.14 - 2026-08-28
+
+- Signing in now returns you to the tool you came from instead of leaving you on the account page, and new accounts finish onboarding before being redirected.
+- Fixed the mobile account chip covering the theme and language buttons; on phones a tap on the theme toggle opened the account page instead of switching theme.
+- Rating every player is now required when filing a BoH match result, and the scale is shown as "/ 10".
+- A refused save now says the server rejected the write and the security rules may be out of date, instead of claiming you are not signed in.
+- Fixed the language coverage report claiming 26 missing translations per locale that were in fact already translated.
+- Corrected stale version labels on the account, VtsScore and maintenance pages, and gave the 404 page a mobile layout.
+- Removed the retired Eden X1 links from the admin header and footer.
+
 ## 15.0.13 - 2026-08-26
 
 - Added bulk row pasting to Bonus Team Effort so conduct adjustments can be entered as `player | points | reason` lines in one action.
