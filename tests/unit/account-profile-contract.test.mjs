@@ -358,9 +358,9 @@ test('profile page separates provider auth from required private profile complet
   // Assert against package.json rather than a literal: pinning 14.2.20 here is
   // exactly why profile.html sat three minor versions behind the app.
   const expectedVersion = JSON.parse(read('package.json')).version;
-  assert.match(
-    profileHtml,
-    new RegExp(`meta name="vts-app-version" content="${expectedVersion.replace(/\./g, '\.')}"`)
+  assert.ok(
+    profileHtml.includes(`meta name="vts-app-version" content="${expectedVersion}"`),
+    `profile.html should advertise ${expectedVersion}`
   );
 });
 test('profile settings use real anchor sections and preserve every profile field contract', () => {
