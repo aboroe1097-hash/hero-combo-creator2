@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.14";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "15.0.14",
+    "date": "2026-08-28",
+    "highlights": [
+      "Signing in now returns you to the tool you came from instead of leaving you on the account page, and new accounts finish onboarding before being redirected.",
+      "Fixed the mobile account chip covering the theme and language buttons; on phones a tap on the theme toggle opened the account page instead of switching theme.",
+      "Rating every player is now required when filing a BoH match result, and the scale is shown as \"/ 10\".",
+      "A refused save now says the server rejected the write and the security rules may be out of date, instead of claiming you are not signed in.",
+      "Fixed the language coverage report claiming 26 missing translations per locale that were in fact already translated.",
+      "Corrected stale version labels on the account, VtsScore and maintenance pages, and gave the 404 page a mobile layout."
+    ]
+  },
   {
     "version": "15.0.13",
     "date": "2026-08-26",
@@ -86,13 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Recreated the Redemption Grail's in-game branching board as 40 interactive gold-framed nodes, with exact Emblem and Artifact Soulstone icons, per-node level controls, resource totals, search highlighting, tier shortcuts, permanent-attribute tracking, account sync, and responsive…",
       "Added separately sourced Unit Specialisation VII–IX medal evidence without introducing the unrelated Royal Tech Books feature or inventing values for blank spreadsheet cells.",
       "Localized the complete Artifact interface across all 13 supported languages and added keyboard, focus, touch, reduced-motion, RTL, and screen-reader support."
-    ]
-  },
-  {
-    "version": "15.0.4",
-    "date": "2026-08-17",
-    "highlights": [
-      "Fixed the VTS Admin mobile dock covering half the screen. The grouped season rail kept its in-page grid layout inside the fixed bottom dock, stacking every group's buttons and pinning a 400px panel over the content; the dock is now a single scrollable row that keeps the group la…"
     ]
   }
 ].map((release) =>
