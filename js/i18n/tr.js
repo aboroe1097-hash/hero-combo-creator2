@@ -3395,6 +3395,8 @@ Object.assign(tr, {
   adminBohMatchSummaryTotalScore: 'Toplam skor',
   adminBohMatchSummaryAverage: 'Ortalama',
   adminBohMatchSummaryBest: 'En iyi',
+  adminCloudPermissionDenied:
+    'Sunucu bu kaydı reddetti. Ya bu hesap yönetici değil ya da dağıtılan güvenlik kuralları bu uygulamadan daha eski - bir R5\'in firestore.rules dosyasını yeniden dağıtması gerekebilir.',
 });
 
 export default tr;

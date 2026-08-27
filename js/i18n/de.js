@@ -3358,6 +3358,8 @@ const de = {
   adminBohMatchSummaryTotalScore: 'Gesamtpunkte',
   adminBohMatchSummaryAverage: 'Durchschnitt',
   adminBohMatchSummaryBest: 'Bester',
+  adminCloudPermissionDenied:
+    'Der Server hat diesen Schreibvorgang verweigert. Entweder ist dieses Konto kein Admin oder die bereitgestellten security rules sind älter als diese App - ein R5 muss möglicherweise firestore.rules erneut bereitstellen.',
 };
 
 export default de;

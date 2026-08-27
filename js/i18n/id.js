@@ -3315,6 +3315,8 @@ Object.assign(id, {
   adminBohMatchSummaryTotalScore: 'Total skor',
   adminBohMatchSummaryAverage: 'Rata-rata',
   adminBohMatchSummaryBest: 'Terbaik',
+  adminCloudPermissionDenied:
+    'Server menolak penulisan ini. Entah akun ini bukan admin, atau aturan keamanan yang diterapkan lebih lama dari aplikasi ini - seorang R5 mungkin perlu menerapkan ulang firestore.rules.',
 });
 
 export default id;

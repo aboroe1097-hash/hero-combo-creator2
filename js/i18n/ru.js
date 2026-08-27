@@ -3112,6 +3112,8 @@ Object.assign(ru, {
   adminBohMatchSummaryTotalScore: 'Итоговый счёт',
   adminBohMatchSummaryAverage: 'Средний',
   adminBohMatchSummaryBest: 'Лучший',
+  adminCloudPermissionDenied:
+    'Сервер отклонил эту запись. Либо этот аккаунт не является администратором, либо развёрнутые правила безопасности старше этого приложения — возможно, R5 нужно заново развернуть firestore.rules.',
 });
 
 export default ru;

@@ -3491,6 +3491,8 @@ const fr = {
   adminBohMatchSummaryTotalScore: 'Score total',
   adminBohMatchSummaryAverage: 'Moyenne',
   adminBohMatchSummaryBest: 'Meilleur',
+  adminCloudPermissionDenied:
+    'Le serveur a refusé cette écriture. Soit ce compte n\'est pas administrateur, soit les règles de sécurité déployées sont plus anciennes que cette application — un R5 devra peut-être redéployer firestore.rules.',
 };
 
 export default fr;

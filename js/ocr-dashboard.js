@@ -4136,7 +4136,16 @@ function setCloudSyncStatus(status, detail = '') {
 }
 function describeCloudSyncError(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
-  if (/permission-denied|permission|insufficient|admin/i.test(text)) {
+  // A permission-denied comes back from Firestore itself: the account is signed
+  // in and the write still got refused. Reporting that as "not signed in as
+  // admin" sent a superadmin hunting through accounts when the real cause was a
+  // firestore.rules release lagging behind the deployed app, so the two cases
+  // are now distinct. The local "no admin session" path below keeps the old
+  // wording because there it is literally true.
+  if (/permission-denied|insufficient permissions/i.test(text)) {
+    return dashT('adminCloudPermissionDenied');
+  }
+  if (/permission|admin/i.test(text)) {
     return dashT('adminCloudAdminRequired');
   }
   if (

@@ -3024,6 +3024,8 @@ const pt = {
   adminBohMatchSummaryTotalScore: 'Pontuação total',
   adminBohMatchSummaryAverage: 'Média',
   adminBohMatchSummaryBest: 'Melhor',
+  adminCloudPermissionDenied:
+    'O servidor recusou esta gravação. Ou esta conta não é um administrador, ou as regras de segurança implantadas são mais antigas que este app - um R5 pode precisar reimplantar o firestore.rules.',
 };
 
 export default pt;

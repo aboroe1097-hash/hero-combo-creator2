@@ -2103,6 +2103,8 @@ const zh = {
   adminBohMatchSummary: '{matches} 场比赛，{teams} 支队伍',
   adminBohMatchDeleteConfirm: '删除此比赛结果？',
   adminBohMatchDeleted: '比赛结果已删除。',
+  adminCloudPermissionDenied:
+    '服务器拒绝了这次写入。可能是此账户不是管理员，或已部署的安全规则比此应用旧——R5 可能需要重新部署 firestore.rules。',
 };
 
 // Semantic overrides replace shared English defaults and legacy literal wording.

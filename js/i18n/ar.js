@@ -3221,6 +3221,8 @@ Object.assign(ar, {
   adminBohMatchSummaryTotalScore: 'إجمالي النتيجة',
   adminBohMatchSummaryAverage: 'المتوسط',
   adminBohMatchSummaryBest: 'الأفضل',
+  adminCloudPermissionDenied:
+    'رفض الخادم هذه الكتابة. إما أن هذا الحساب ليس مسؤولاً، أو أن قواعد الأمان المنشورة أقدم من هذا التطبيق - قد يحتاج R5 إلى إعادة نشر firestore.rules.',
 });
 
 export default ar;
