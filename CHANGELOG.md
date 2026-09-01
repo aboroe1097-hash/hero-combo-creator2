@@ -1,5 +1,11 @@
 # Changelog
 
+## 15.0.15 - 2026-09-01
+
+- Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.
+- Compacted the mobile header, kept the inline account control in the utility row, and preserved full-size controls down to 320px without the stray third row.
+- Updated the public VTS leadership badge roster: Loony is now R4, while Zubbs no longer receives the R4 badge; Zubbs aliases remain grouped for historical records.
+
 ## 15.0.14 - 2026-08-28
 
 - Signing in now returns you to the tool you came from instead of leaving you on the account page, and new accounts finish onboarding before being redirected.

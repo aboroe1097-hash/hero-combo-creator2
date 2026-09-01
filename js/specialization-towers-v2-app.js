@@ -44,7 +44,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '15.0.14';
+export const APP_VERSION = '15.0.15';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];

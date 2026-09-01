@@ -36,7 +36,7 @@ test('compact shell keeps readable brand, version, and controls in normal header
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
   assert.match(
     compactShell,
-    /#app \.command-header \{[\s\S]*?position: relative !important;[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(86px, 0\.95fr\) minmax\(0, 2\.35fr\) !important;[\s\S]*?grid-template-rows: auto auto !important;[\s\S]*?overflow: visible !important/
+    /#app \.command-header \{[\s\S]*?position: relative !important;[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(52px, 0\.55fr\) minmax\(0, 3fr\) !important;[\s\S]*?grid-template-rows: auto auto !important;[\s\S]*?overflow: visible !important/
   );
   assert.match(compactShell, /#app \.command-brand \{\s*display: contents !important;\s*\}/);
   assert.match(
@@ -45,11 +45,11 @@ test('compact shell keeps readable brand, version, and controls in normal header
   );
   assert.match(
     compactShell,
-    /#app \.command-logo \{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 2;[\s\S]*?grid-template-rows: 58px auto !important;[\s\S]*?justify-items: center !important;/
+    /#app \.command-logo \{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 2;[\s\S]*?grid-template-rows: 52px auto !important;[\s\S]*?justify-items: center !important;/
   );
   assert.match(
     compactShell,
-    /#app \.command-logo picture,[\s\S]*?#app \.command-logo \.main-logo \{[\s\S]*?width: 58px !important;[\s\S]*?height: 58px !important;/
+    /#app \.command-logo picture,[\s\S]*?#app \.command-logo \.main-logo \{[\s\S]*?width: 52px !important;[\s\S]*?height: 52px !important;/
   );
   assert.match(
     compactShell,
@@ -61,7 +61,7 @@ test('compact shell keeps readable brand, version, and controls in normal header
   );
   assert.match(
     compactShell,
-    /#app \.app-control-row \{[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 44px 44px 44px !important;[\s\S]*?grid-template-rows: 44px 44px !important;[\s\S]*?grid-auto-rows: 44px;/
+    /#app \.app-control-row \{[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(52px, 1fr\) repeat\(4, 44px\) !important;[\s\S]*?grid-template-rows: 44px 44px !important;[\s\S]*?grid-auto-rows: 44px;/
   );
   assert.match(
     compactShell,
@@ -71,7 +71,14 @@ test('compact shell keeps readable brand, version, and controls in normal header
     compactShell,
     /#app #commandPaletteTrigger \{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;/
   );
-  assert.match(compactShell, /#app \.account-link \{[\s\S]*?grid-column: 3;[\s\S]*?grid-row: 1;/);
+  assert.match(
+    compactShell,
+    /#app #shareCurrentViewBtn \{[\s\S]*?grid-column: 3;[\s\S]*?grid-row: 1;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.shell-account-slot \{[\s\S]*?grid-column: 4;[\s\S]*?grid-row: 1;/
+  );
   assert.match(
     compactShell,
     /#app \.account-link,[\s\S]*?#app #commandPaletteTrigger \{[\s\S]*?width: 44px !important;[\s\S]*?min-width: 44px !important;/
@@ -89,7 +96,7 @@ test('compact shell keeps readable brand, version, and controls in normal header
     appCss,
     /\.account-link-label \{[\s\S]*?position: absolute;[\s\S]*?width: 1px;[\s\S]*?height: 1px;[\s\S]*?overflow: hidden;[\s\S]*?clip: rect\(0 0 0 0\);/
   );
-  assert.match(compactShell, /#app #themeToggle \{[\s\S]*?grid-column: 4;[\s\S]*?grid-row: 1;/);
+  assert.match(compactShell, /#app #themeToggle \{[\s\S]*?grid-column: 5;[\s\S]*?grid-row: 1;/);
   assert.match(
     compactShell,
     /#app \.app-control-row \.lang-select-wrapper \{[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?grid-row: 2;/
@@ -119,7 +126,15 @@ test('compact shell keeps readable brand, version, and controls in normal header
     narrowShell,
     /#app \.lang-select-wrapper,[\s\S]*?#app \.lang-select-shell \{[\s\S]*?width: 100% !important;[\s\S]*?min-width: 0 !important;/
   );
-  assert.match(narrowShell, /#app #globalGameClock \{[\s\S]*?min-width: 0 !important;/);
+  assert.match(narrowShell, /#app #globalGameClock \{[\s\S]*?display: none !important;/);
+  assert.match(
+    narrowShell,
+    /#app \.app-control-row \{[\s\S]*?grid-template-columns: repeat\(4, 44px\) !important;/
+  );
+  assert.match(
+    compactShell,
+    /#app \.shell-account-slot\.vts-account-chip-mount,[\s\S]*?width: 44px;[\s\S]*?height: 44px;/
+  );
 });
 
 test('mobile resets legacy clipping and keeps the safe-area nav separate from the header', () => {

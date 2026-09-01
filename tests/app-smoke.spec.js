@@ -236,11 +236,12 @@ test.describe('Battle Simulator beta', () => {
 });
 
 const mobileHeaderViewports = [
+  { name: 'mobile-320', width: 320, height: 700 },
   { name: 'mobile', width: 375, height: 812 },
   { name: 'mobile-390', width: 390, height: 844 },
 ];
 
-test('mobile command header stays visible, contained, and separate from fixed navigation', async ({
+test('mobile command header stays compact and the fixed navigation exposes More', async ({
   page,
 }) => {
   for (const viewport of mobileHeaderViewports) {
@@ -275,14 +276,25 @@ test('mobile command header stays visible, contained, and separate from fixed na
         );
       };
       return {
+        headerHeight: headerRect.height,
         headerPosition: getComputedStyle(commandHeader).position,
         navPosition: getComputedStyle(bottomNav).position,
         clipPaths: [commandHeader, commandActions, version].map(
           (element) => getComputedStyle(element).clipPath
         ),
-        contained: ['.command-logo', '.main-logo', '.shell-brand-title', '.version-ribbon'].map(
-          contains
-        ),
+        contained: [
+          '.command-logo',
+          '.main-logo',
+          '.shell-brand-title',
+          '.version-ribbon',
+          '.command-actions',
+          '.shell-account-slot',
+        ].map(contains),
+        visibleDockActions: Array.from(
+          document.querySelectorAll('#tabNavScroll .tab-pill, #shellMoreButton')
+        )
+          .filter((element) => element.getClientRects().length > 0)
+          .map((element) => element.id),
         navOverlapsHeader: navRect.top < headerRect.bottom && navRect.bottom > headerRect.top,
         horizontalOverflow:
           document.documentElement.scrollWidth > window.innerWidth + 1 ||
@@ -290,14 +302,22 @@ test('mobile command header stays visible, contained, and separate from fixed na
       };
     });
 
-    expect(geometry).toEqual({
+    expect(geometry.headerHeight).toBeLessThanOrEqual(160);
+    expect(geometry).toMatchObject({
       headerPosition: 'relative',
       navPosition: 'fixed',
       clipPaths: ['none', 'none', 'none'],
-      contained: [true, true, true, true],
+      contained: [true, true, true, true, true, true],
+      visibleDockActions: ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap', 'shellMoreButton'],
       navOverlapsHeader: false,
       horizontalOverflow: false,
     });
+
+    await page.locator('#shellMoreButton').click();
+    await expect(page.locator('#shellMorePanel')).toBeVisible();
+    await expect(page.locator('#shellMoreBackdrop')).toBeVisible();
+    await page.locator('#shellMoreClose').click();
+    await expect(page.locator('#shellMorePanel')).toBeHidden();
   }
 });
 

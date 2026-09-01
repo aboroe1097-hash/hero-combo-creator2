@@ -1281,7 +1281,7 @@ body.shell-more-open #app .tool-nav-inner {
   #app .command-header {
     position: relative !important;
     display: grid !important;
-    grid-template-columns: minmax(86px, 0.95fr) minmax(0, 2.35fr) !important;
+    grid-template-columns: minmax(52px, 0.55fr) minmax(0, 3fr) !important;
     grid-template-rows: auto auto !important;
     align-items: stretch !important;
     gap: 7px 8px !important;
@@ -1307,13 +1307,13 @@ body.shell-more-open #app .tool-nav-inner {
     grid-column: 1;
     grid-row: 2;
     grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: 58px auto !important;
+    grid-template-rows: 52px auto !important;
     justify-items: center !important;
     align-items: start !important;
     align-self: stretch !important;
     gap: 4px !important;
     width: 100% !important;
-    max-width: 104px;
+    max-width: 58px;
     min-width: 0;
     margin: 0 auto !important;
   }
@@ -1322,9 +1322,9 @@ body.shell-more-open #app .tool-nav-inner {
   #app .command-logo .main-logo {
     grid-column: 1;
     grid-row: 1;
-    width: 58px !important;
-    height: 58px !important;
-    border-radius: 16px !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 15px !important;
   }
 
   #app .command-logo .command-logo-copy {
@@ -1388,7 +1388,7 @@ body.shell-more-open #app .tool-nav-inner {
 
   #app .app-control-row {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 44px 44px 44px !important;
+    grid-template-columns: minmax(52px, 1fr) repeat(4, 44px) !important;
     grid-template-rows: 44px 44px !important;
     grid-auto-rows: 44px;
     align-items: stretch !important;
@@ -1500,13 +1500,30 @@ body.shell-more-open #app .tool-nav-inner {
     grid-row: 1;
   }
 
-  #app .account-link {
+  #app #shareCurrentViewBtn {
     grid-column: 3;
     grid-row: 1;
   }
 
-  #app #themeToggle {
+  #app .shell-account-slot {
     grid-column: 4;
+    grid-row: 1;
+  }
+
+  #app .shell-account-slot.vts-account-chip-mount,
+  #app .shell-account-slot .vts-account-chip {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  #app .shell-account-slot .vts-account-chip {
+    justify-content: center;
+    padding: 0;
+  }
+
+  #app #themeToggle {
+    grid-column: 5;
     grid-row: 1;
   }
 
@@ -1540,7 +1557,7 @@ body.shell-more-open #app .tool-nav-inner {
 
   #app .tool-nav-inner {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 3fr) minmax(64px, 1fr) !important;
     gap: 2px !important;
     width: min(100%, 560px);
     min-height: calc(68px + var(--ff-safe-bottom));
@@ -1567,6 +1584,8 @@ body.shell-more-open #app .tool-nav-inner {
     width: 100% !important;
     padding: 0 !important;
     overflow: visible !important;
+    grid-column: 1;
+    grid-row: 1;
   }
 
   #app #tabNavScroll > .tab-item,
@@ -1628,7 +1647,9 @@ body.shell-more-open #app .tool-nav-inner {
   }
 
   #app .shell-more-button {
-    display: none !important;
+    display: inline-flex !important;
+    grid-column: 2;
+    grid-row: 1;
   }
 
   #app .shell-more-panel {
@@ -1771,9 +1792,27 @@ body.shell-more-open #app .tool-nav-inner {
 
 @media (max-width: 370px) {
   #app #globalGameClock {
-    min-width: 0 !important;
-    max-width: none;
-    font-size: 0.75rem !important;
+    display: none !important;
+  }
+
+  #app .app-control-row {
+    grid-template-columns: repeat(4, 44px) !important;
+  }
+
+  #app #commandPaletteTrigger {
+    grid-column: 1;
+  }
+
+  #app #shareCurrentViewBtn {
+    grid-column: 2;
+  }
+
+  #app .shell-account-slot {
+    grid-column: 3;
+  }
+
+  #app #themeToggle {
+    grid-column: 4;
   }
 
   #app .lang-select-wrapper,
