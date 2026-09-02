@@ -25,6 +25,15 @@ export const MISSING_EXTENDED_HEROES = Object.freeze([
   'Yukimura Sanada',
   "Heaven's Justice",
   'William the Conqueror',
+  'Healer',
+  'Hellfire',
+  'Belisarius',
+  'Pepin',
+  'El Cid',
+  'Arslan',
+  'Farah',
+  'Poison Master',
+  'Lilith',
 ]);
 
 const PLACEMENT_ALIASES = Object.freeze({

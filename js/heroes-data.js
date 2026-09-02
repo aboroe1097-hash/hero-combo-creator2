@@ -77,5 +77,16 @@ export const allHeroesData = [
   { name: "Rainforest Ranger", season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/rainforest-ranger.avif?v=20260620_11' },
   { name: "Fortuneteller", season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/fortuneteller.avif?v=20260620_11' },
   { name: "Ragnar", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
-  { name: "Cyrus", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' }
+  { name: "Cyrus", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' },
+  // X10 — intermediate bracket, no research, two heroes drawn from the X12 list.
+  { name: "Healer", season: 'X10', Type:'Footmen', State:'Free' },
+  { name: "Hellfire", season: 'X10', Type:'All', State:'Free' },
+  // X12 — full seasonal recruitment wave.
+  { name: "Belisarius", season: 'X12', Type:'Archers', State:'Free' },
+  { name: "Pepin", season: 'X12', Type:'Footmen', State:'Free' },
+  { name: "El Cid", season: 'X12', Type:'Cavalry', State:'Free' },
+  { name: "Arslan", season: 'X12', Type:'Footmen', State:'Free' },
+  { name: "Farah", season: 'X12', Type:'Cavalry', State:'Free' },
+  { name: "Poison Master", season: 'X12', Type:'Archers', State:'Free' },
+  { name: "Lilith", season: 'X12', Type:'Archers', State:'Free' }
 ];

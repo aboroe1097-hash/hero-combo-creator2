@@ -1074,9 +1074,12 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     statsValidator,
     /!\('researchProgressPct' in stats\)[\s\S]*validAllStarBohResearchProgress\(stats\.researchProgressPct\)/
   );
+  // The second size cap lives in validAllStarBohSubmissionData, not in the
+  // stats validator — grep the whole file so this cap can never drift alone.
+  assert.match(rules, /stats\.usableHeroNames\.size\(\) <= 87/);
 
   const canonicalHeroes = allHeroesData.map(({ name }) => name);
-  assert.equal(canonicalHeroes.length, 78);
+  assert.equal(canonicalHeroes.length, 87);
   assert.equal(new Set(canonicalHeroes).size, canonicalHeroes.length);
   const rulesHeroes = rulesSingleQuotedList(
     rules,
@@ -1090,7 +1093,7 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     'usable hero validator'
   );
   assert.match(heroValidator, /values is list/);
-  assert.match(heroValidator, /values\.size\(\) <= 78/);
+  assert.match(heroValidator, /values\.size\(\) <= 87/);
   assert.match(heroValidator, /values\.toSet\(\)\.size\(\) == values\.size\(\)/);
 
   const canonicalResearchIds = techDatabase.map(({ id }) => id);

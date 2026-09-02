@@ -70,21 +70,31 @@ test('POPULATED_HERO_SEASONS derives from the canonical order', () => {
   );
 });
 
-test('X10 and X12 carry no heroes yet (invert in Stage 2)', () => {
-  assert.ok(!POPULATED_HERO_SEASONS.includes('X10'), 'X10 must stay empty until its roster lands');
-  assert.ok(!POPULATED_HERO_SEASONS.includes('X12'), 'X12 must stay empty until its roster lands');
+test('X10 and X12 both carry heroes after the free-roster landing', () => {
+  assert.ok(POPULATED_HERO_SEASONS.includes('X10'), 'X10 carries the two X10 heroes');
+  assert.ok(POPULATED_HERO_SEASONS.includes('X12'), 'X12 carries the free X12 wave');
+  assert.equal(
+    allHeroesData.filter((hero) => hero.season === 'X10').length,
+    2,
+    'X10 roster: Healer + Hellfire'
+  );
+  assert.equal(
+    allHeroesData.filter((hero) => hero.season === 'X12').length,
+    7,
+    'X12 free roster: seven heroes'
+  );
 });
 
-test('the all-selected math covers exactly the populated seasons (invert in Stage 2)', () => {
-  assert.equal(POPULATED_HERO_SEASONS.length, 8);
+test('the all-selected math covers exactly the populated seasons', () => {
+  assert.equal(POPULATED_HERO_SEASONS.length, 10);
   const emptySeasons = HERO_ATLAS_ALL_SEASONS.filter(
     (season) => !POPULATED_HERO_SEASONS.includes(season)
   );
-  for (const season of emptySeasons) {
-    assert.equal(
-      allHeroesData.filter((hero) => hero.season === season).length,
-      0,
-      `${season} is excluded because no hero carries it`
+  assert.deepEqual(emptySeasons, [], 'every canonical season carries at least one hero');
+  for (const season of POPULATED_HERO_SEASONS) {
+    assert.ok(
+      allHeroesData.some((hero) => hero.season === season),
+      `${season} is populated by the roster`
     );
   }
 });
