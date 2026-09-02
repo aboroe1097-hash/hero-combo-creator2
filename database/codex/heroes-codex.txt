@@ -1,0 +1,71 @@
+# source: l96.app /heroes summary (2026-09-02 capture) | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: S0-X17 | verificationStatus: historical
+heroName|firstSeenSeason|lastSeenSeason|role|access|notes|p
+Heaven's Justice|S0||Ranged|||
+Yukimura Sanada|S0||Support|||
+William Wallace|S0||Ranged|||
+North's Rage|S0||Melee|||
+Queen Anne|S0||Ranged|||
+Kublai|S0||Melee|||
+The Heroine|S0||Support|||
+William the Conqueror|S0||Ranged|||
+Demon Spear|S0||Melee|||
+The Boneless|S0||Ranged|||
+Isabella I|S0||Support|||
+Genghis Khan|S1||Support|||
+Cao Cao|S1||Ranged|||
+Jiguang Qi|S1||Defense|||
+Constantine the Great|S1||Support|||
+Lionheart|S1||Ranged|||
+Black Prince|S1||Melee|||
+Charles the Great|S1||Support|||
+Al Fatih|S1||Ranged|||
+Edward the Confessor|S1||Support|||
+Jade|S2||Ranged|||
+Witch Hunter|S2||Ranged|||
+Immortal|S2||Ranged|||
+Peace Bringer|S2||Defense|||
+Inquisitor|S2||Ranged|||
+BeastQueen|S2||Support|||
+Bleeding Steed|S2||Support|||
+Cleopatra VII|S2||Support|||
+Jeanne d'Arc|S2||Support|||
+Alfred|S2||Melee|paid||
+Boudica|S2||Melee|||
+Octavius|S2||Defense|||
+Rozen Blade|S3||Support|||
+Sky Breaker|S3||Ranged|||
+War Lord|S3||Support|||
+Rokuboshuten|S3||Ranged|||
+Jane|S3||Ranged|||
+King Arthur|S3||Melee|||
+Ramses II|S3||Support|||
+Caesar|S3||Ranged|||
+Desert Storm|S4||Ranged|||
+Soaring Hawk|S4||Defense|||
+The Brave|S4||Support|||
+Jade Eagle|S4||Ranged|||
+Immortal Guardian|S4||Defense|||
+Divine Arrow|S4||Support|||
+Cicero|X1||Support|||
+ELK|X1||Ranged|||
+Che Liu|X1||Melee|||
+Sakura|X1||Support|||
+Hunk|X1||Defense|||
+Wind-Walker|X1||Defense|||
+Tarantula|X2||Ranged|||
+Dach Tengri|X2||Support|||
+The Avalanche|X2||Ranged|||
+Army Breaker|X2||Support|||
+Defender|X3||Defense|||
+Spectral Reaper|X3||Ranged|||
+Lawman|X3||Defense|||
+Valkyrie|X3||Ranged|||
+Skanda|X4||Support|||
+Liberator|X5||Defense|||
+Ashen Verdict|X5||Ranged|||
+Warhammer|X6||Support|||
+Warden|X6||Support|||
+Eidolon|X7||Defense|||
+Scarlet Reaver|X7||Ranged|||
+Rainforest Ranger|X8||Ranged|||
+Fortuneteller|X8||Support|||

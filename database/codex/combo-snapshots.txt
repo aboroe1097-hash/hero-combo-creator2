@@ -1,0 +1,2 @@
+# source: l96.app dated combo guides (Sep 2021 - Feb 2023, not yet located) | credit: FedeSack | captureDate: 2026-09-02 | gameVersionScope: S0-X17 | verificationStatus: historical
+snapshotId|heroes|date|sourceUrl|p

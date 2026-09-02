@@ -1,0 +1,2 @@
+# source: l96.app gift-level spend post (2023-05-31); spend table is an embedded image, numbers not extractable as text | credit: DonPablone (data: PHX of 1TO) | captureDate: 2026-09-02 | gameVersionScope: unknown | verificationStatus: unverified
+giftLevel|spendLow|spendHigh|assumptionNote|p

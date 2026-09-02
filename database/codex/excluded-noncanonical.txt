@@ -1,0 +1,23 @@
+# Queue of L96 hero names not canonical today. R2: rows for future-roster names land in the same commit sequence as Lane 2's roster commit. ambiguous-no-guess names stay out until the owner confirms them.
+l96Name|reason|canonicalHint
+Rough Rider|no-canonical-match|
+Son of Ragnar|ambiguous-no-guess|possibly Bjorn (X4) or Ragnar (X8)
+Hellfire|future-roster|Hellfire (X10)
+Lust Angel|no-canonical-match|
+Poison Master|future-roster|Poison Master (X12)
+Healer|future-roster|Healer (X10)
+Arslam|future-roster|Arslan (X12)
+Farrah|future-roster|Farah (X12)
+El Cid|future-roster|El Cid (X12)
+Pepin|future-roster|Pepin (X12)
+Belisarius|future-roster|Belisarius (X12)
+Darius I|no-canonical-match|
+John I|no-canonical-match|
+Ashoka|no-canonical-match|
+Eselfred|no-canonical-match|
+Sundiata|no-canonical-match|
+Clovis I|no-canonical-match|
+Gnaeus Pompey|no-canonical-match|
+Frederick I|no-canonical-match|
+Henry V|no-canonical-match|
+King Cnut|no-canonical-match|
