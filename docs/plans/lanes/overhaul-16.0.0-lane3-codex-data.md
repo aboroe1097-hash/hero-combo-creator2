@@ -1,8 +1,13 @@
 # Lane 3 — Codex Data Platform (commit-spine commits 7–9)
 
-Status: proposal. Mode: proposal-only — this file is the sole deliverable; no code is
-modified. Parent: Codex T0 orchestrator, 16.0.0 Overhaul, branch `codex/overhaul-16-0-0`
-(worktree `D:/Project/hcc2-overhaul16`).
+Status: proposal rev 2 (2026-09-02). Mode: proposal-only — this file is the sole
+deliverable; no code is modified. Parent: Codex T0 orchestrator, 16.0.0 Overhaul,
+branch `codex/overhaul-16-0-0` (worktree `D:/Project/hcc2-overhaul16`).
+
+Rev 2: T0 review of rev 1 ACCEPTED with 3 blocking revisions + 2 minor, all applied
+below (R1 prerequisite transform, R2 Lane-2 sequencing, R3 duel-matrix pending,
+R4 heroes-codex `access` field, R5 real capture dates). Open questions O1–O6 ratified
+as leaned.
 
 ---
 
@@ -58,7 +63,9 @@ database/codex/
   economy-honor-buildings.txt      # honor building costs
   economy-gift-levels.txt          # gift-level spend estimator (estimate-labelled)
   economy-war-medals.txt           # war medals / COP medals reference
-  duel-matrix.txt                  # recorded duels
+  duel-matrix.txt                  # recorded duels — PENDING (R3): hero names are logo
+                                   #   images in the source PDF; numbers only → zero rows,
+                                   #   methodology JSON still ships (see duel-evidence/)
   combo-snapshots.txt              # dated recommendation snapshots (never rankedCombos)
   name-aliases.txt                 # alias map incl. externalGameAliases
   duel-evidence/                   # methodology/evidence JSONs (mirror tests/fixtures/battle-reports shape)
@@ -88,7 +95,7 @@ Per-row overrides are allowed via a trailing `p` column holding a
       "defaultProvenance": {
         "source": "L96 Codex archive (work/l96-codex-sources)",
         "credit": "DonPablone",
-        "captureDate": "2026-08-31",
+        "captureDate": "2026-09-02",
         "gameVersionScope": "X12",
         "verificationStatus": "historical"
       }
@@ -117,17 +124,17 @@ sources are located) ship a header + zero rows and are hidden by the UI.
 
 | file | columns | notes |
 |---|---|---|
-| `heroes-codex.txt` | `heroName\|firstSeenSeason\|lastSeenSeason\|role\|tier\|notes\|p` | Join key `heroName`. `tier` carries the L96 Royal-tier contribution; Free/Paid stay local (`js/heroes-data.js`). |
+| `heroes-codex.txt` | `heroName\|firstSeenSeason\|lastSeenSeason\|role\|access\|notes\|p` | Join key `heroName`. **`access` is frozen (R4, Lane 4 contract)**: `standard\|paid\|royal` — an *access level*, not a power tier. L96's Standard/Paid/Royal maps onto this enum; the roster's own `State` (`'Free'\|'Paid'` in `js/heroes-data.js`) stays local and untouched. No other field name or enum value may be added without a contract update. |
 | `hero-versions.txt` | `heroVersionId\|heroName\|effectiveFrom\|effectiveTo\|previousVersionId\|changeSummary\|sourceNote\|p` | `changeSummary` = `;`-joined fragments; empty `effectiveTo` = current version. |
 | `class-cards.txt` | `cardId\|className\|benefitType\|benefitDesc\|sourceRef\|p` | Raider/Trader from `pdf_*_Raider.txt`/`Trader.txt`; Farmer/Builder rows `pending` (D3). |
 | `lofty-costs.txt` | `nodeName\|costType\|maxLevel\|values\|p` | `values` = comma-joined per-level numbers (mirrors `X8_LOFTY_LEGION_COSTS` shape). |
 | `lofty-specialty.txt` | `specialtyId\|name\|desc\|p` | From `txt_specialty.txt`. |
-| `research-costs.txt` | `treeName\|season\|medalType\|nodeName\|maxLevel\|costType\|values\|totalMedals\|gameNodeId\|prereqRelation\|p` | 36 trees from `roc_research_data.js`; per-tree `p` carries that tree's credit line (e.g. `Source: Raven G | 4000 WB/day`). |
+| `research-costs.txt` | `treeName\|season\|medalType\|nodeId\|nodeName\|maxLevel\|costType\|values\|totalMedals\|requirements\|requirementGroups\|p` | 36 trees from `roc_research_data.js`; per-tree `p` carries that tree's credit line (e.g. `Source: Raven G \| 4000 WB/day`). **No raw positions ship**: `requirements`/`requirementGroups` are node-id lists resolved at ingest (R1 — see §3.6). |
 | `building-costs.txt` | `building\|level\|wood\|stone\|iron\|food\|timeSec\|requirement\|p` | `pending` — L96 "Main Building Costs" not yet located. |
 | `economy-honor-buildings.txt` | `building\|level\|honorCost\|timeSec\|notes\|p` | From `txt_post_honor-building-costs.txt`. |
 | `economy-gift-levels.txt` | `giftLevel\|spendLow\|spendHigh\|assumptionNote\|p` | **Hard rule**: explicitly-labelled estimate with stated assumption range; never attached to named players or alliances; never a ranking. |
 | `economy-war-medals.txt` | `item\|source\|cost\|notes\|p` | From `txt_post_war-medals-cop-medals.txt`. |
-| `duel-matrix.txt` | `duelId\|attacker\|defender\|outcome\|conditions\|methodologyRef\|p` | `methodologyRef` → file in `duel-evidence/`. |
+| `duel-matrix.txt` | `duelId\|attacker\|defender\|outcome\|conditions\|methodologyRef\|p` | **`pending` (R3)** — the HeroDuels PDF renders hero names as logo images; only the numbers were extracted, so there is nothing to resolve to canonical names. Zero rows ship; `duel-evidence/methodology-heroduels.json` still ships. Goes `live` only after the names are transcribed (D3-class vision work). |
 | `combo-snapshots.txt` | `snapshotId\|heroes\|date\|sourceUrl\|p` | Ingested as `recommendationSnapshot` only — never into `rankedCombos`. `pending` until dated guides are located. |
 | `name-aliases.txt` | `canonicalName\|alias\|externalGame\|sourceRef\|p` | `externalGame` = game name for cross-game aliases; empty for same-game. |
 
@@ -238,15 +245,43 @@ see §5). Each emits one `database/codex/*.txt`:
 
 | script | input → output |
 |---|---|
-| `import-research-costs.mjs` | `work/roc-research-sources/roc_research_data.js` → `research-costs.txt` |
-| `import-x12-research.mjs` | `docs/sources/x10-x12/x12-research.json` (in-repo) → X12 rows appended to `research-costs.txt` |
+| `import-research-costs.mjs` | `work/roc-research-sources/roc_research_data.js` → `research-costs.txt` (prereq transform per §3.6) |
+| `import-x12-research.mjs` | `docs/sources/x10-x12/x12-research.json` (in-repo) → X12 rows appended to `research-costs.txt` (note: this in-repo slice carries `position` but **no** `relation` strings — those live only in the staged full dataset) |
 | `import-l96-posts.mjs` | `work/l96-codex-sources/pages/txt_post_*.txt` → `economy-*.txt` |
-| `import-l96-duels.mjs` | `pdf_HeroDuels_By_Mtness_177-IMS.txt` → `duel-matrix.txt` + `duel-evidence/methodology-heroduels.json` |
+| `import-l96-duels.mjs` | `pdf_HeroDuels_By_Mtness_177-IMS.txt` → **R3: emits `duel-evidence/methodology-heroduels.json` ONLY; `duel-matrix.txt` ships header-only `pending`** until hero names are transcribed from the PDF's logo images |
 | `import-l96-classes.mjs` | `pdf_*_Raider.txt`, `pdf_*_Trader.txt` → `class-cards.txt` |
-| `import-l96-heroes.mjs` | `txt_heroes_list.txt`, `txt_hero_alfred.txt` → `heroes-codex.txt`, `hero-versions.txt`, `name-aliases.txt` |
+| `import-l96-heroes.mjs` | `txt_heroes_list.txt`, `txt_hero_alfred.txt` → `heroes-codex.txt`, `hero-versions.txt`, `name-aliases.txt` — **R2: emits rows only for names already canonical in `js/heroes-data.js`; non-canonical names are listed in a machine-readable `excluded-noncanonical.txt` for the Lane-2 landing follow-up** |
 
 Each importer is a plain-text transformer: it must be re-runnable, idempotent, and
 parse-validate its own output (wrap + `node --check` / schema walk, per §0.7).
+
+### 3.6 Prerequisite transform (R1 — Lane 5 contract)
+
+Raw `relation` strings in `roc_research_data.js` are **positional**, e.g. `"2;2"`
+(single prerequisite) or `"4;2|4;6"` (alternates). They are resolved at **ingest** in
+`import-research-costs.mjs`; the payload never carries raw positions.
+
+1. **Node ids**: `nodeId = gameNodeId` when the source carries one; otherwise a
+   stable derived id `<treeSlug>-r<c>-c<r>` from the node's own `position` field.
+   `treeSlug` = slugified `treeName` (same slug helper convention as
+   `scripts/eden/build-eden-datasets.py` `zone_slug`).
+2. **Resolve**: split the raw string on `|` into alternatives; within each, split on
+   `;` into `row;col` positions; map each position to the node id whose `position`
+   matches, **within the same tree only**.
+3. **Emit** — exactly one of:
+   - `requirements` — `;`-joined `nodeId`s when the raw string had no `|`
+     alternates (AND semantics, mirrors Lane 5's `requirements: nodeId[]`);
+   - `requirementGroups` — `|`-separated groups of `;`-joined `nodeId`s when
+     alternates exist (each `|`-alternative = one group; **any group satisfied =
+     prerequisite met**, mirrors Lane 5's `requirementGroups: string[][]`).
+   Both columns are empty when the node has no relations. Lane 5's
+   `buildPrerequisiteGraph(family)` consumes these already-resolved lists verbatim
+   (its contract: "payload already resolved, never raw positions" — lane5 §3).
+4. **Unresolved positions** (bad `row;col`, cross-tree, or missing node): never
+   silently dropped — the affected node row is downgraded to `verificationStatus:
+   'unverified'`, an explanatory note is appended to its `p` override, and the
+   builder reports the count. Lane 5's orphan quarantine is the second net at graph
+   build time.
 
 ---
 
@@ -293,21 +328,30 @@ orchestrator copies what commit 7 needs onto the branch). Verified content today
 
 | dataset | source | credit | verification | notes |
 |---|---|---|---|---|
-| research-costs | `work/roc-research-sources/roc_research_data.js` (1.78 MB, 36 trees / 1036 nodes) | Raven G; Ash Roe (709); per-tree credit lines from `roc_research_summary.json` (`Lord of Pondtail`, `Valasky`, `Pablo, Hellcat, Crazy Queen`, `Ptr, Old.Faithful`, …) | per-tree: `current` where totals cross-check; `unverified` for trees with empty `buildData` (Lofty Realm, Faithful Guard, Lofty Command, training trees) | Cross-check vs L96: Zone Commemoration / Zone Conflict / Master Warfare / Master City Defense totals match exactly → `current`; Defense Legion diverged (L96 47,990 vs 54,120) → L96 value kept as a `historical` cross-check row, current dataset wins. |
+| research-costs | `work/roc-research-sources/roc_research_data.js` (1.78 MB, 36 trees / 1036 nodes) | Raven G; Ash Roe (709); per-tree credit lines from `roc_research_summary.json` (`Lord of Pondtail`, `Valasky`, `Pablo, Hellcat, Crazy Queen`, `Ptr, Old.Faithful`, …) | per-tree: `current` where totals cross-check; `unverified` for trees with empty `buildData` (Lofty Realm, Faithful Guard, Lofty Command, training trees) | Cross-check vs L96: Zone Commemoration / Zone Conflict / Master Warfare / Master City Defense totals match exactly → `current`; Defense Legion diverged (L96 47,990 vs 54,120) → L96 value kept as a `historical` cross-check row, current dataset wins. Raw `relation` strings resolved at ingest (§3.6). |
 | research-costs (X12) | in-repo `docs/sources/x10-x12/x12-research.json` | Raven G, Ash Roe (709); Game client (CP) + community (costs) | `current` | Totals must match `x12-research-nodes.md`: Defense 29 nodes / 4,998,500 WB / gameId 20005005; Charge 30 nodes / 4,763,500 WB / gameId 20005019. Strip the 36 Wix `image` URLs. |
-| heroes-codex / hero-versions / name-aliases | `work/l96-codex-sources/pages/txt_heroes_list.txt`, `txt_hero_alfred.txt` (sample profile = version-row template) | DonPablone | `historical` | Every listed hero resolves to a canonical name or is quarantined. |
+| heroes-codex / hero-versions / name-aliases | `work/l96-codex-sources/pages/txt_heroes_list.txt`, `txt_hero_alfred.txt` (sample profile = version-row template) | DonPablone | `historical` | **R2**: initial rows include only names canonical in `js/heroes-data.js` today (the 78). Non-canonical names (incl. Lilith, Hellfire, Belisarius and the other X10/X12 names) go to `excluded-noncanonical.txt`, not into datasets. |
 | class-cards | `pdf_L96.app_Sheets_-_Raider.txt`, `-_Trader.txt` | DonPablone | `historical` | Farmer/Builder owed (D3) → rows `pending`, do not invent. |
 | lofty-costs / lofty-specialty | `txt_lofty.txt`, `txt_specialty.txt` | DonPablone | `unverified` (L96 staging) | T9 full/min-path totals stay L96-sourced `unverified` seeds. |
 | economy-gift-levels | `txt_post_amount-of-money-spent-for-each-gift-level.txt` | DonPablone | `historical` | Estimate-labelled per hard rule. |
 | economy-honor-buildings | `txt_post_honor-building-costs.txt` | DonPablone | `historical` | |
 | economy-war-medals | `txt_post_war-medals-cop-medals.txt` | DonPablone | `historical` | |
-| duel-matrix | `pdf_HeroDuels_By_Mtness_177-IMS.txt` | Mtness s177 | `historical` | Methodology metadata → `duel-evidence/methodology-heroduels.json` (mirror `tests/fixtures/battle-reports/synthetic-01.json` provenance shape). |
+| duel-matrix | `pdf_HeroDuels_By_Mtness_177-IMS.txt` | Mtness s177 | — | **R3: `pending`, zero rows** — the PDF's hero names are logo images, only numbers were extracted, so nothing resolves to canonical names. `duel-evidence/methodology-heroduels.json` still ships (mirror `tests/fixtures/battle-reports/synthetic-01.json` provenance shape, credit Mtness s177). Goes `live` only after names are transcribed (D3-class vision work). |
 | combo-snapshots | dated combo guides — **not yet located** | FedeSack (expected) | — | Ship `pending`, zero rows. Never ingested into `rankedCombos`. |
 | building-costs | L96 "Main Building Costs" — **not yet located** | DonPablone | — | Ship `pending`, zero rows. |
 
 Unlocated/owed items (D3/D4) do **not** block the lane: the dataset ships as
 `pending` with header + provenance directive + zero rows, hidden by the UI, until the
 owner supplies sources. "Bad seed data is worse than no data" (§0.7.3).
+
+**R2 sequencing with Lane 2 (ratified):** commits 7–9 run **before** Lane 2's roster
+landing commit, so the build-time canonical set is the 78. The 11 X10/X12 roster rows
+(`heroes-codex`, `hero-versions`, `name-aliases`) are added in a small follow-up codex
+commit that lands **in the same commit sequence as, and only after, Lane 2's roster
+commit** — the orchestrator schedules it. No `futureRosterAllowlist` mechanism: the
+builder's hard-fail-on-unresolved-live-rows discipline is the guard, and
+`excluded-noncanonical.txt` is the queue. (Capture dates: both archives'
+`SOURCES.md` say 2026-09-02 — R5.)
 
 ---
 
@@ -357,10 +401,17 @@ owner supplies sources. "Bad seed data is worse than no data" (§0.7.3).
 **Produces (for other lanes):**
 - Lane 4 (hero UI): `js/codex-loader.js`, `js/codex-provenance.js`, `js/codex-payload.json`
   — hero-table presets (Free/Paid/Skins+Paid), drawer skills 2/5/8 → full 1–8,
-  version-history views, provenance badges, quarantine notice.
-- Lane 5 (planners & release): `research-costs`, `building-costs`, `economy-*`
-  datasets — Research Cost Planner and Castle Development Planner data sources;
-  `duel-matrix` for the Battle Sim evidence explorer.
+  version-history views, provenance badges, quarantine notice. **Frozen contract
+  (R4): `heroes-codex` records carry `access: 'standard'|'paid'|'royal'`** — an
+  access level, not a power tier; Lane 4's preset split and badges read this field
+  name and enum as-is. (Local `State: 'Free'|'Paid'` in `js/heroes-data.js` remains
+  the roster's own field; the two are intentionally separate.)
+- Lane 5 (planners & release): `research-costs` with **resolved node-id
+  `requirements`/`requirementGroups`** satisfying its `buildPrerequisiteGraph`
+  input contract ("already resolved, never raw positions" — lane5 §3, per R1);
+  `building-costs`, `economy-*` datasets — Research Cost Planner and Castle
+  Development Planner data sources; `duel-matrix` for the Battle Sim evidence
+  explorer (currently `pending`, R3).
 - Lane 2 (seasons/roster): two coordination points —
   1. **tech-db ownership split**: Lane 2 imports the two X12 trees into
      `js/tech-db.js` manually (its item 4). Lane 3's `import-x12-research.mjs`
@@ -400,7 +451,11 @@ at 1303 + additions):
    `js/codex-payload.json` with node `zlib.gunzipSync`; assert: every record carries
    provenance, **zero `http`/`wixstatic` strings anywhere**, all hero references
    resolve, `quarantine` empty for `live` datasets, `builtAt` RFC3339, X12 research
-   totals sum to 4,998,500 / 4,763,500 WB (cross-check vs `x12-research-nodes.md`).
+   totals sum to 4,998,500 / 4,763,500 WB (cross-check vs `x12-research-nodes.md`),
+   **prereq resolution (R1)**: every `requirements` member and every group in
+   `requirementGroups` is a valid `nodeId` within the same tree; no raw `row;col`
+   position survives anywhere in the payload; the two columns are mutually
+   exclusive per record.
 4. `tests/unit/codex-lazy-load-contract.test.mjs` — source-grep guard: `codex-payload`
    / `codex-loader` must not be referenced from any `*.html` entry or from eager
    entry modules (`js/app.js`, `js/app-generator.js`, `js/state.js`); allowed only in
@@ -409,6 +464,12 @@ at 1303 + additions):
 5. `tests/unit/codex-version-chain.test.mjs` — version rows chain via
    `previousVersionId`; exactly one version per hero with empty `effectiveTo`;
    `currentVersions` index matches.
+6. `tests/unit/codex-noncanonical-exclusion.test.mjs` — **R2 guard**: before Lane 2's
+   roster lands, no `heroes-codex`/`hero-versions`/`name-aliases` row references a
+   name outside the current `allHeroesData`; `excluded-noncanonical.txt` exists and
+   lists exactly the L96 names that failed canonicalization (expected to include the
+   11 X10/X12 names). After the roster lands and the follow-up codex commit, the
+   guard inverts: the excluded list is empty and the 11 rows are present.
 
 `npm run i18n:check` after the 12-file key fill. No changes to existing tests;
 `hero-season-scope` / `all-star-boh-security` / tower-path suites are Lane 2's and
@@ -434,15 +495,25 @@ must stay green.
 1. Cut work on `codex/overhaul-16-0-0` from latest `origin/gh-pages` (per AGENTS.md;
    orchestrator stages `work/` inputs onto the branch).
 2. **Commit 7**: create `database/codex/` with manifest + all `.txt` sources
-   (provenance directives, per §5 credits); `duel-evidence/` methodology JSONs;
-   `pending` datasets as header-only.
-3. **Commit 8**: `scripts/codex/build-codex-payload.mjs` + importers;
-   `js/codex-loader.js`; `js/codex-provenance.js`; wire `package.json` `codex:build`
-   into the `build` chain; add payload to `scripts/post-build.mjs` `copyFiles`/`copyDest`.
-4. **Commit 9**: the 5 test files (§8); i18n badge keys ×12 files (DeepSeek fill).
-5. Verify: `npm run codex:build` (clean, no quarantine rows, size guard passes) →
+   (provenance directives, per §5 credits; capture dates 2026-09-02 per the
+   archives' `SOURCES.md` — R5); `duel-evidence/methodology-heroduels.json`;
+   `pending` datasets as header-only (`duel-matrix` R3, `building-costs`,
+   `combo-snapshots`); **R2**: hero-referencing rows restricted to names canonical
+   in today's `js/heroes-data.js`, non-canonical names recorded in
+   `excluded-noncanonical.txt`.
+3. **Commit 8**: `scripts/codex/build-codex-payload.mjs` + importers (incl. the
+   §3.6 prereq transform in `import-research-costs.mjs`); `js/codex-loader.js`;
+   `js/codex-provenance.js`; wire `package.json` `codex:build` into the `build`
+   chain; add payload to `scripts/post-build.mjs` `copyFiles`/`copyDest`.
+4. **Commit 9**: the 6 test files (§8); i18n badge keys ×12 files (DeepSeek fill).
+5. **Follow-up codex commit (with Lane 2)**: when Lane 2's roster lands, add the
+   11 X10/X12 rows (`heroes-codex`, `hero-versions`, `name-aliases`) from
+   `excluded-noncanonical.txt`, flip the R2 test guard, re-run `codex:build`.
+   Scheduled by the orchestrator in the same commit sequence as the roster commit.
+6. Verify: `npm run codex:build` (clean, no quarantine rows, size guard passes) →
    `npm run test:unit` (1303 + new) → `npm run i18n:check` → `npm run build` +
    `npm run size:check` (670/704 files; zero route-CSS delta vs Lane 1's re-baseline;
    no eager payload reference).
-6. Report to orchestrator: payload byte budget used/headroom, quarantine count,
-   cross-check table (roc vs L96 vs X12 in-repo), open questions O1–O6.
+7. Report to orchestrator: payload byte budget used/headroom, quarantine count,
+   excluded-noncanonical count, cross-check table (roc vs L96 vs X12 in-repo),
+   open questions O1–O6.

@@ -440,8 +440,8 @@ Fix:
 ## 2. Interfaces with other lanes
 
 **Consumes**
-- Master plan §0.5/D1 (this lane overrides them — see §0.1 correction; the
-  orchestrator folds it into master rev 5).
+- Master plan §0.5/D1 — superseded by this lane's §0.1 correction; T0 folded it
+  into master rev 5 (2026-09-02).
 - `_tokens.css` light pairs (shared authority — read-only).
 - Lane 2 (Seasons & Roster): none at runtime; but lane 2's scaffolding commit
   touches `index.html` (hidden pills) and `js/app.js` — no overlap with this
@@ -456,8 +456,8 @@ Fix:
 - For lane 3 (Codex data): freed admin/eden route-CSS headroom. Its payloads must
   stay lazy with zero eager bytes — the W2 comment refresh documents the
   headroom they may consume.
-- For the orchestrator: measured post-retirement budget table (W2.2) as the input
-  to any future D1 re-baseline decision, plus the §0.5 correction evidence.
+- For the orchestrator: measured post-retirement budget table (W2 item 2) as the input
+  to any future budget decision, plus the §0.5 correction evidence.
 
 ---
 
@@ -466,6 +466,7 @@ Fix:
 | Test | File | Kind |
 |---|---|---|
 | New | `tests/unit/theme-token-authority.test.mjs` | Source-assertion: dark tokens scoped `:root:not([data-theme='light']) #ocrDashboardRoot`; light block `:root[data-theme='light'] #ocrDashboardRoot` exists with light `--ff-text`; light block index > dark block index (source order); `doesNotMatch` on the retired override patterns (`[data-theme='light'] #ocrDashboardRoot .dash-login-title`, `.dash-kpi-label` overrides, …); towers primary compound selector present |
+| New | guard-pin (≤5 lines, fold into `theme-token-authority.test.mjs`) | `assert.match(read('scripts/check-size.mjs'), /forbiddenInitialFeaturePattern\s*=[\s\S]*?eden-map\|hero-atlas/)` — pins the preload regression net (W2/R3) |
 | Update | `tests/unit/light-theme-compatibility.test.mjs:141-144` | Replace the pinned retired override with the light token block assertion (same commit as W1) |
 | New | `tests/unit/profile-auth-theme-contract.test.mjs` | No raw hex in account-profile auth-surface color/background declarations; light tab/selected/text-button rules exist; ≥44px auth button floors retained |
 | New | `tests/unit/responsive-boundary.test.mjs` | `doesNotMatch(/@media\s*\(\s*min-width:\s*768px\b/)` across `css/*.css`; mobile.css keeps `max-width: 768px` |
@@ -532,28 +533,32 @@ is lane 5's release-commit gate, not per-commit.
 - **O1 — Canonical light dims:** shared `_tokens` values (`--ff-text-dim:
   #4b5c73`) vs the legacy dashboard dims (`#52657b`/`#64748b`)? Lean: shared
   values; visual-diff approval.
-- **O2 — Preload guard hardening:** leave `forbiddenInitialFeaturePattern`
-  as-is (lean) or extend with `app-artifact|app-research`? No shipping impact
-  either way.
+- **O2 — Preload guard hardening:** resolved by R3 — no hardening; the existing
+  guard is the authority, pinned by the ≤5-line guard-pin test in W2. (Open
+  status only if the orchestrator later wants `app-artifact|app-research`
+  coverage — no shipping impact either way.)
 - **O3 — Maintenance page:** inline light block + theme-prepaint (lean) vs
   linking `_tokens.css`? Lean: inline; page stays single-document.
 - **O4 — B6 hit areas:** label-padding approach (CSS-only, lean) vs
   overlay-stretched inputs? Lean: label padding.
-- **O5 — D1 confirmation:** re-baseline none, budgets stay the binding
-  constraint (lean), or partially re-baseline to bank explicit headroom? This
-  lane proceeds with "none" unless the orchestrator overrides.
+- **O5 — D1 confirmation:** resolved by T0 — no re-baseline; budgets stay the
+  binding constraint. (Removed from the open list.)
 
 ---
 
 ## 6. Execution checklist
 
-1. [ ] Orchestrator folds §0.5/§0.2 corrections into master plan rev 5.
+1. [x] T0 folded §0.5/§0.2 corrections into master plan rev 5 (2026-09-02);
+   §0.5 rewritten as "keep the gate green", commit 3 retitled, D1 resolved.
 2. [ ] **Commit 2 (W1):** ocr-dashboard token split + light block; eden-x1
    triage; towers specificity fix; admin-login-gate verify;
-   light-theme-compatibility test update; theme-token-authority test; browser
-   probe. → `npm run build && npm run size:check` (record deltas).
+   light-theme-compatibility test update; theme-token-authority test (incl.
+   guard-pin); browser probe. → `npm run build && npm run size:check` (record
+   deltas). Invariant §0.3 applies: strictly net-negative CSS, before any CSS
+   addition anywhere in the release.
 3. [ ] **Commit 3 (W2):** re-measure eight routes; comment refresh in
-   check-size.mjs (no budget changes); preload guard verified passing.
+   check-size.mjs (no budget changes); preload guard verified passing (N/A
+   item, evidence recorded).
 4. [ ] **Commit 4 (W3):** account-profile tokenization + light auth rules +
    contract test. → size:check (profile ≤ 25.0).
 5. [ ] **Commit 5 (W4):** 7 blocks → 769px; responsive-boundary lint test; chip
@@ -562,5 +567,9 @@ is lane 5's release-commit gate, not per-commit.
    retry + all-open paths; maintenance theme + prepaint.
 7. [ ] Visual-diff acceptance: both themes × admin, eden-x1, eden-x2, towers,
    profile, battle-sim, maintenance; dark = pixel-identical to pre-change.
+   House rule: CI Linux baselines authoritative; local Windows baseline
+   failures are the known ~350px-taller artifact; never `--update-snapshots`
+   locally.
 8. [ ] Full gate (`npm run check`, firebase:preview) — owned by lane 5 at the
-   release commit, not per-commit.
+   release commit, not per-commit. Size:check re-run on every spine commit per
+   invariant §0.3.

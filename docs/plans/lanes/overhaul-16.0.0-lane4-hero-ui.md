@@ -1,9 +1,10 @@
 # 16.0.0 Lane 4 — Hero UI & Field Data Implementation Plan
 
-Status: proposal (lane 4 of 5), 2026-09-02. Covers commit-spine commit 10 and the first
-half of commit 11. Sources verified against this worktree (`codex/overhaul-16-0-0` @
-`cacbdfcf`, = gh-pages 15.0.15 + Phase 0 docs). Proposal only: no code is changed by
-this lane.
+Status: proposal **rev 2** (lane 4 of 5), 2026-09-02. Covers commit-spine commit 10
+and the first half of commit 11. Rev 1 accepted by T0 with three revisions (R1–R3,
+folded below) plus one ratified decision (Q1: 5th sub-tab). Rev 2 reflects the rev-5
+master-plan framing (gate GREEN at branch cut), the resolved Q2/Q6, and the
+heroes-info.js data-boundary rule. Proposal only: no code is changed by this lane.
 
 Companion reading: `docs/plans/overhaul-16.0.0.md` (Workstream A2/A6, §0.5 budget
 corrections, §0.7 no-vision protocol, rights rules 1–6) and
@@ -14,16 +15,21 @@ corrections, §0.7 no-vision protocol, rights rules 1–6) and
 ## 1. Scope & goal
 
 Deliver the user-facing half of Workstreams A2 and A6 without growing any eager
-route CSS/JS (the release gate is RED on gh-pages — §0.5 of the master plan — and
-the binding constraint is the per-route CSS budget, not file count):
+route CSS/JS. **Gate status (rev 5): the release gate is GREEN at branch cut** —
+the goal is now *keep the gate green*, with retire-before-add ordering everywhere.
+The tight spots after the token-authority and preload fixes are `eden-x2.html`
+desktop (0.0 kB of headroom), `admin.html` (0.6 kB), and `profile.html` (0.9 kB);
+`index.html` has headroom again. Lane 4 adds **zero eager bytes to any route**, so
+it cannot regress those numbers (§6.3). The binding constraint stays per-route CSS
+budgets, not file count:
 
 1. **One Atlas "Codex" mode** hosting the three hero tables (Free / Paid+Royal /
    Skins+Paid) as filter presets inside the existing Hero Atlas.
 2. **Detail drawer upgrade** — skills 2/5/8 → full 1–8, duel win% bars with era
    badges, provenance/verification chips.
-3. **i18n** — the complete new-key list in English plus notes for the 11
-   non-English Hero Atlas locale files (see §4.3 for the locale-count
-   discrepancy) and the 11 non-English battle-sim packs.
+3. **i18n** — the complete new-key list in English plus the per-surface locale
+   sets: 11 non-English Hero Atlas locale files, 12 core locale files (incl.
+   `hr`) for hub copy only, and the 11 non-English battle-sim packs (§4.4).
 4. **Battle Simulator "Field Data" panel** — duel evidence metadata, "resembles
    your account?" comparison, sim-vs-recorded deltas, strict-CSP-safe payload
    fetch, equipment delta folding.
@@ -78,10 +84,11 @@ the A3/A4 planners, A5/A7/A8/A9.
   Field Data panel must use **load-on-expanded + retry**, fixing that pattern.
 - Route CSS budgets (`scripts/check-size.mjs:275-321`): `battle-simulator.html`
   **59 KiB desktop AND mobile** (measured ~54.9–57.5 — near zero headroom);
-  `index.html` 530/625 KiB (currently blown; lane 1 fixes it). The
-  `forbiddenInitialFeaturePattern` already blacklists `hero-atlas` in
-  `dist/index.html` preloads (`check-size.mjs:346-348`) — that is the exact
-  Phase-0 regression the gate watches.
+  after rev-5 gate clearing the tight spots are eden-x2 desktop (0.0 kB),
+  admin (0.6), profile (0.9); `index.html` is no longer blown. The
+  `forbiddenInitialFeaturePattern` still blacklists `hero-atlas` in
+  `dist/index.html` preloads (`check-size.mjs:346-348`) — the Phase-0
+  regression class the gate watches; our code must keep living in lazy chunks.
 
 ---
 
@@ -143,7 +150,7 @@ the A3/A4 planners, A5/A7/A8/A9.
 | Preset | Columns (order) | Sort options | Row join |
 |---|---|---|---|
 | `free` | Portrait · Name · Season (+origin `releaseSeason`) · Troop · State chip · Rating (finalRating bar) · Appearances · Best rank · Skins count · Verification chip | `name` / `season` / `rating` | `allHeroesData` where `State==='Free'`; verification from lane-3 heroes-codex |
-| `paid` | Portrait · Name · Season · Troop · **Acquisition tier** (Free/Paid/**Royal**) · Rating · Appearances · Best rank · Skins count · Verification chip | `name` / `season` / `tier` | `State==='Paid'` + lane-3 Royal tier flag (fallback tier = `Paid`) |
+| `paid` | Portrait · Name · Season · Troop · **Access** (`standard`/`paid`/**`royal`** from the lane-3 `access` column) · Rating · Appearances · Best rank · Skins count · Verification chip | `name` / `season` / `access` | `State==='Paid'` + lane-3 `access: 'royal'` (fallback access = `paid`) |
 | `skins-paid` | Portrait · Name · Skin name · Skin type (SKIN_TYPES label+icon) · **Star-up cost** (Biography Seal + medal counts from the skin's tier `maximizeTotal`) · Hidden Power (yes/—) · **Skin-mode rank delta** (best rank gain vs `baseRankedCombos`) · Verification chip | `name` / `skin-type` / `rank-delta` | `getAllSkinHeroEntries()` joined to `allHeroesData`; heroes without skins listed once with `—` in skin columns |
 
 - **Rank delta algorithm:** for a hero, collect combos containing them. Base
@@ -156,9 +163,11 @@ the A3/A4 planners, A5/A7/A8/A9.
 - **Star-up cost:** `SKIN_TIERS.find(t => t.typeKey === skin.type)`; Mythic
   tier has no preserving step so it shows the lower total — that is correct and
   must not be "fixed".
-- **Royal tier:** lane-3 field name is an interface dependency (§3.1); UI
-  renders whatever `heroes-codex` exposes as `acquisitionTier` (see Open
-  questions Q2).
+- **Access column (R3, cross-lane freeze):** Royal comes from lane 3's new
+  `access` column on payload hero records — `standard | paid | royal` (added in
+  lane 3 rev 2). The UI reads `access` from the payload; it does **not**
+  invent a parallel tier field. `paid` preset = `State==='Paid'` heroes,
+  access label resolved from the payload with fallback `paid`.
 
 **Row markup & a11y:**
 - Reuse the `.hero-rank-row` button pattern (one row = one button opens the
@@ -185,6 +194,15 @@ renderCodexView()` (plus search focus/caret restore).
 ### 2.3 `js/app-hero-atlas.js` — detail drawer upgrade (commit 10)
 
 **Skills 1–8:**
+- **Data boundary (hard rule, T0-ratified):** skills 1–8 live **only** in the
+  lane-3 payload and are **never copied into `js/heroes-info.js`**.
+  `heroesExtendedData` stays exactly as it is (ids 2/5/8). Copying them in
+  would grow the i18n audit surface ~2.7× (`auditHeroAtlasPack` requires
+  translated `type|target|desc` for every skill in `heroesExtendedData`). The
+  audit stays anchored to heroes-info; payload skills are covered by a
+  separate EN-only contract test (§7.2) and may fall back to English with a
+  translation-missing chip — full 1–8 localization across 11 locales is a
+  follow-up, not 16.0.0.
 - Source merge helper `getHeroSkillsFull(name)`: lane-3 `heroes-codex`
   skill list (ids 1–8, each carrying its own provenance `verificationStatus`)
   **merged with** `heroesExtendedData[name].skills` (2/5/8, treated as
@@ -363,7 +381,7 @@ control (audit B6 precedent).
 |---|---|---|
 | Lane 3 — `js/codex-loader.js` | `loadCodexDataset(name)` / `getCodexPayload()` returning the decompressed datasets, cached, with a `ready` flag and a generation token; payload fetch is same-origin with build cache-bust | Atlas codex columns, drawer skills/duels, Field Data panel |
 | Lane 3 — `js/codex-provenance.js` | badge contract: `verificationStatus ∈ {current, historical, unverified}`, `source`, `author`, `captureDate`, `gameVersionScope` on every record; `codexStatusRank()` equivalent | verification chips everywhere |
-| Lane 3 — `heroes-codex` dataset | per-hero: `acquisitionTier` (Royal flag — field name TBD, Q2), `skills[]` ids 1–8 each with own provenance, `aliases[]` | codex tables + drawer skills |
+| Lane 3 — `heroes-codex` dataset | per-hero: `access` ∈ `standard\|paid\|royal` (rev 2, frozen), `skills[]` ids 1–8 each with own provenance (payload-only, never copied to `js/heroes-info.js`), `aliases[]` | codex tables + drawer skills |
 | Lane 3 — `duel-matrix` dataset | records with the §2.5 metadata fields, lineup hero names that resolve through the alias model to `allHeroesData` names | drawer duels section + Field Data panel |
 | Lane 3 — `combo-snapshots` (optional) | dated recommendation posts with provenance | drawer combos section (drop cleanly if deferred) |
 | Lane 3 — equipment delta extracts | structured `EQUIPMENT_FIELD_DELTAS` consumer contract (§2.6) | field-data folding |
@@ -375,11 +393,18 @@ control (audit B6 precedent).
 - Lane 5 (release gate): the new lazy chunks (`battle-simulator-field-data` +
   its CSS) and any hero-atlas chunk growth are the size-gate deltas to measure
   at the release commit; the CSV exporter change is user-visible (changelog).
+  **CHANGELOG item for lane 5 (Q1 ratification):** the Heroes & Combos hub
+  gains a `Codex` sub-tab in flagship-first order (`manual | generator | codex
+  | heroes | skins`) — the hub order change is user-visible. Legacy deep links
+  must stay stable: `?atlas=skins|heroes` keeps working (unchanged branch),
+  `#heroesCombos?subtab=…` values keep their meaning, and `?hero=` detail links
+  are untouched.
 - Lane 1 (theme): the list of required `--ff-*` tokens in §2.8 is the demand
   signal; if lane 1 lands first, lane 4 must compile against the final token
   names (single source of truth = `css/_tokens.css`).
-- Lane 3: the equipment delta consumer contract and the `acquisitionTier`
-  field-name decision (Q2) must be frozen before implementation.
+- Lane 3: the equipment delta consumer contract and the frozen `access`
+  column (`standard|paid|royal`, lane 3 rev 2) are the two cross-lane
+  freezes implementation depends on.
 
 ---
 
@@ -476,15 +501,18 @@ translators should transliterate, not localize, `X10`-style names):
 | `fieldData.unverifiedNote` | Unverified record — evidence only, excluded from simulations. |
 | `fieldData.provenance` | Source / credit |
 
-### 4.4 Locale-count note
+### 4.4 Locale sets per surface (Q6 resolved — no discrepancy, two file sets)
 
-The Hero Atlas loader registry (`js/i18n/hero-atlas/index.js:5-17`) has **11**
-non-English locales (ar de es fr id it kr pt ru tr zh); the battle-sim packs
-have the same 11. The work order says "12 non-English" and the master plan's
-corrections log says "13 locales is correct" — **flag for the orchestrator**
-before translation lanes are spun up: if a 12th non-English locale is in
-flight (e.g. a `ko` split from `kr` or a new language), the new keys must be
-filled there too; as of this checkout, 11 is the operative number for lane 4.
+| Surface | Non-English files | Lane 4 keys land here |
+|---|---|---|
+| Hero Atlas domain locales | **11** — `js/i18n/hero-atlas/locales/{ar,de,es,fr,id,it,kr,pt,ru,tr,zh}.js` (no `hr`) | §4.1 UI keys (`ui.js` `KEYS` + `ROWS` blocks) and §4.2 content strings |
+| Core app locales | **12** — `js/i18n/*.js` (the 11 above **+ `hr`**) | only the hub sub-tab label and any shared chrome copy (e.g. `heroesCombos` hub tab names, `?atlas=`-adjacent tooltips); lane 4's atlas-domain keys do **not** go here |
+| Battle Simulator packs | **11** — `js/battle-simulator-i18n-packs.js` (same 11, no `hr`) | §4.3 `fieldData.*` keys |
+
+Translation work orders must name the file set explicitly: atlas locale fills
+= 11 files, core hub-copy fill = 12 files (incl. `hr` — usually a stub or
+Latin-script copy, per the master plan's hr-stub convention), battle-sim pack
+fill = 11 packs.
 
 ---
 
@@ -538,7 +566,7 @@ filled there too; as of this checkout, 11 is the operative number for lane 4.
 | Field Data panel | `import '../css/battle-simulator-field-data.css'` from the new dynamic module | **0**; `battle-simulator.html` route stays ≤ 59 KiB desktop/mobile (it is ~57.5 now — do not touch `css/battle-simulator.css` at all) |
 | New tokens | lane 1's job; token file is already eager on every route — only variable *values*, no new rules from lane 4 | negligible (lane 1 owns this delta) |
 
-### 6.3 Gate checks that must stay green
+### 6.3 Gate checks — keep-green acceptance criteria
 
 - `forbiddenInitialFeaturePattern` (`scripts/check-size.mjs:346-348`) already
   contains `hero-atlas` — the codex additions must keep living inside that
@@ -546,16 +574,19 @@ filled there too; as of this checkout, 11 is the operative number for lane 4.
   The Field Data module must never be statically imported by
   `js/battle-simulator-app.js` (dynamic import only, inside the expand
   handler).
-- Route CSS budgets table (`check-size.mjs:275-321`) is the release gate lane
-  1 is clearing; lane 4's acceptance criterion: `npm run build && npm run
-  size:check` delta for `battle-simulator.html` = 0, for `index.html` = 0
-  beyond lane 1's baseline.
+- Route CSS budgets (`check-size.mjs:275-321`) are GREEN at branch cut with
+  retire-before-add ordering; lane 4's acceptance criterion: after `npm run
+  build && npm run size:check`, the deltas for `battle-simulator.html`,
+  `eden-x2.html`, `admin.html`, `profile.html`, and `index.html` are all **0**
+  (the tight spots — eden-x2 desktop 0.0 kB, admin 0.6, profile 0.9 — cannot
+  absorb a single eager byte from this lane).
 - Aggregate budgets (`totalJsBytes` 10084, `totalCssBytes` 1635,
-  `totalDeployBytes` 32100, `deployFileCount` 704 with ~35 free): lane 4 adds
-  exactly **2 emitted files** (field-data chunk JS + its CSS) plus the growth
-  of existing chunks. If the shared `js/codex-ui.js` causes duplication across
-  the hero-atlas and field-data chunks, inline it into each consumer instead
-  (see §2.7).
+  `totalDeployBytes` 32100, `deployFileCount` 704): lane 4 adds exactly **2
+  emitted files** (field-data chunk JS + its CSS) plus the growth of existing
+  chunks. Running file ledger (T0-ratified): **669 + 1 (lane 3 payload) + 2
+  (lane 4) = 672 / 704**. If the shared `js/codex-ui.js` causes duplication
+  across the hero-atlas and field-data chunks, inline it into each consumer
+  instead (see §2.7).
 - `deployFileCount` guard: do not introduce new emitted locale chunks — the
   codex UI keys ride the existing atlas locale files and battle-sim packs.
 
@@ -634,6 +665,10 @@ copy, loaded once), leave only tiny rendering helpers per surface.
 - **Battle-sim route budget is the tightest binding constraint** (59/59, ~57.5
   used). Rule for the whole lane: `css/battle-simulator.css` and
   `battle-simulator.html` are untouchable; everything field-data goes lazy.
+- **Keep-green discipline:** the gate is GREEN at branch cut (rev 5); the
+  tight spots eden-x2 (0.0 kB desktop), admin (0.6), profile (0.9) mean any
+  eager byte this lane adds fails the gate — the lazy-chunk design above adds
+  none, and the §6.3 acceptance deltas are all zero.
 - **Phase-0 regression class:** the eager `hero-atlas` preload is exactly what
   the gate's `forbiddenInitialFeaturePattern` catches. Acceptance: after build,
   `dist/index.html` contains no `<link>` to hero-atlas/field-data assets.
@@ -647,9 +682,9 @@ copy, loaded once), leave only tiny rendering helpers per surface.
 - **Skin-mode rank projection correctness:** the override block re-orders
   `rankedCombos` by position; any naive "compare same combo index" diff must
   instead re-index both lists. Test fixture coverage in §7.2 is the guard.
-- **Aggregate file budget:** +2 emitted files (~33 free on gh-pages); if lane 3
-  adds a payload JSON to `dist`, it counts toward `deployFileCount` — lanes
-  must not each burn the headroom; the release commit re-measures.
+- **Aggregate file budget:** the running ledger is 669 + 1 (lane 3 payload) +
+  2 (lane 4) = **672 / 704** emitted files; the release commit re-measures and
+  any further chunk proliferation must be called out lane by lane.
 - **Provenance discipline (hard rule):** nothing renders without
   source/author/captureDate/gameVersionScope/verificationStatus (master plan
   A1). Every new rendered dataset column above traces to a lane-3 record.
@@ -663,12 +698,10 @@ copy, loaded once), leave only tiny rendering helpers per surface.
 
 | # | Question | Lane 4 lean |
 |---|---|---|
-| Q1 | 5th hub sub-tab `codex` vs preset-only inside `heroes` mode | 5th sub-tab — the work order says "one Atlas Codex mode"; a sub-tab gives it a stable deep link and keeps heroes mode untouched |
-| Q2 | Royal tier field name in lane-3 `heroes-codex` (`acquisitionTier` vs `tier` vs L96 flag) | `acquisitionTier: 'free'\|'paid'\|'royal'`; freeze before implementation |
+| Q1 | ~~5th hub sub-tab `codex` vs preset-only inside `heroes` mode~~ | **Ratified (T0):** 5th sub-tab, flagship-first order (`manual \| generator \| codex \| heroes \| skins`); hub-order change is user-visible → CHANGELOG via lane 5; legacy `?atlas=`/hash deep links stay stable (§3.2) |
 | Q3 | Should `combo-snapshots` render in 16.0.0's drawer, or defer to a follow-up commit? | Defer if lane 3 defers; the section is designed drop-in |
 | Q4 | Duels section: anchor-hero records only, or also records where the hero is an opponent? | Anchor only in the drawer; opponent view is the battle-sim panel's job |
 | Q5 | Does the Field Data panel need the assumptions-acknowledge gate (`data-assumptions-acknowledged`) or is it independent evidence? | Independent — it is evidence, not engine output; no gate |
-| Q6 | Locale count: 11 vs 12 non-English (work order) vs "13 total" (master plan) | Verify before translation lanes spin up (§4.4) |
 | Q7 | Mobile boundary value (767 vs 769) | Defer to lane 1's normalization; lane 4 writes no fixed breakpoint |
 | Q8 | `js/codex-ui.js` shared vs inline (chunk duplication, §6.4) | Era table + status rank in lane 3's provenance module; tiny render helpers inline |
 
@@ -677,10 +710,13 @@ copy, loaded once), leave only tiny rendering helpers per surface.
 ## 10. Execution checklist (commit-spine order)
 
 1. **Gated:** lane 3 payload/provenance modules exist (`js/codex-loader.js`,
-   `js/codex-provenance.js`, `heroes-codex`, `duel-matrix`); lane 1 token
-   authority merged; Q2/Q6 answered.
-2. Add `codex` sub-tab to `js/heroes-combos-hub.js`; extend `setHeroAtlasMode`
-   + URL params in `js/app-hero-atlas.js`; update hub tests.
+   `js/codex-provenance.js`, `heroes-codex` with the frozen `access` column,
+   `duel-matrix`); lane 1 token authority merged; gate verified GREEN at
+   branch cut before first commit.
+2. Add `codex` sub-tab to `js/heroes-combos-hub.js` (flagship-first order);
+   extend `setHeroAtlasMode` + URL params in `js/app-hero-atlas.js`; keep
+   legacy `?atlas=skins|heroes` and `#heroesCombos?subtab=…` deep links stable
+   (regression test); update hub tests.
 3. Implement `renderCodexView` with local-data columns first (no payload),
    preset pills, search, pagination, empty states; source-pattern tests.
 4. Add payload-driven columns (Royal tier, verification chips, duel counts)
@@ -688,19 +724,25 @@ copy, loaded once), leave only tiny rendering helpers per surface.
 5. Export `codexRankProjection` + star-up cost helper; Skins+Paid columns;
    fixture tests.
 6. Drawer: skills 1–8 merge + chips; `data-skill-count` 1–8 CSS; duels section
-   + era badges + CI bars; update section-order test.
+   + era badges + CI bars; update section-order test. **Verify the data
+   boundary:** diff confirms `js/heroes-info.js` is untouched (skills 1–8
+   payload-only) and `auditHeroAtlasPack` still audits only the 2/5/8 set.
 7. i18n: en keys/rows + content strings first; run atlas i18n audit; delegate
-   11-locale fills (one order per locale file, keys inlined from §4.1/§4.2).
+   the fills per surface (§4.4): 11 atlas locale files, 12 core locale files
+   (incl. `hr` stub) for hub copy only, 11 battle-sim packs — one work order
+   per file, keys inlined from §4.1/§4.2/§4.3.
 8. `js/battle-simulator-field-data.js` + `css/battle-simulator-field-data.css`:
    panel markup, load-on-expanded + retry, record cards, resemblance meter,
    sim-vs-recorded; battle-sim i18n keys + packs.
 9. `js/battle-simulator-equipment-field-deltas.js` + `resolveEquipmentLoadout`
    hook; equipment tests.
-10. Full local verification: `npm run build` → `npm run size:check` (assert
-    §6.3 deltas) → `node --test tests/unit/hero-atlas-codex.test.mjs
+10. Full local verification: `npm run build` → `npm run size:check` (assert the
+    §6.3 keep-green deltas are 0 on every route) → `node --test
+    tests/unit/hero-atlas-codex.test.mjs
     tests/unit/battle-simulator-field-data.test.mjs` + updated atlas/skin/
     i18n/battle tests → `npm run lint`.
-11. Budget re-baseline only if measured chunk growth demands it (decision D1
-    applies to route budgets, not this lane's lazy chunks).
-12. Hand the commit to the spine (commit 10 + 11a); release metadata stays
-    with lane 5.
+11. No budget re-baseline expected (retire-before-add: this lane retires
+    nothing eager and adds nothing eager). If aggregate chunk growth demands
+    it, escalate to lane 5 before touching `check-size.mjs` limits.
+12. Hand the commit to the spine (commit 10 + 11a); release metadata and the
+    hub-order CHANGELOG entry stay with lane 5 (§3.2).
