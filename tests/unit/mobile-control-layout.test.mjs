@@ -33,7 +33,7 @@ test('Hero Atlas keeps an always-loaded stacked command deck for wide mobile vie
 test('compact shell keeps readable brand, version, and controls in normal header flow', () => {
   const compactShell = shellCss.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
   const ultraNarrowShell =
-    shellCss.match(/@media \(max-width: 340px\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
+    shellCss.match(/@media \(max-width: 340px\) \{[\s\S]*?\n\s{2}\}/)?.[0] ?? '';
   const narrowShell = shellCss.match(/@media \(max-width: 370px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
   assert.match(
