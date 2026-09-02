@@ -1610,6 +1610,8 @@ body.shell-more-open #app .tool-nav-inner {
     border-radius: 14px !important;
     font-size: clamp(0.62rem, 2.6vw, 0.7rem) !important;
     line-height: 1.03 !important;
+    overflow: hidden !important;
+    overflow-wrap: anywhere;
     white-space: normal !important;
   }
 

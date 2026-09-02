@@ -28,7 +28,7 @@
   "vars": {
     "AI_ENABLED": "true",
     "AI_PROVIDER": "deepseek",
-    "AI_MODEL": "deepseek-chat",
+    "AI_MODEL": "deepseek-reasoner",
     "AI_MODEL_FAST": "deepseek-chat",
     "ENVIRONMENT": "production",
     "FIREBASE_PROJECT_ID": "abocombo",

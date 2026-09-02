@@ -9,6 +9,7 @@ import {
   pickModel as pickDeepseekModel,
 } from '../../workers/ai/deepseek.js';
 import { validateToolArguments } from '../../workers/ai/tools.js';
+import { LIMITS } from '../../workers/ai/constants.js';
 import { buildManagementVotesSheetUrl } from '../../workers/ai/management-votes.js';
 import {
   FIREBASE_APPCHECK_JWKS_URL,
@@ -90,10 +91,21 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /inventory\.shortfallAfterStockpile/);
   assert.match(request.system_instruction, /server-gated by a verified Firebase admin claim/);
   assert.match(request.system_instruction, /CURRENT UI LANGUAGE supplied below is authoritative/);
+  assert.match(request.system_instruction, /REASONING DEPTH/);
+  assert.match(
+    request.system_instruction,
+    /Reason from mechanics and evidence rather than reputation/
+  );
   assert.match(
     request.system_instruction,
     /tool fields, canonical labels, or evidence are in\nEnglish/
   );
+});
+
+test('reasoning turns retain a verification round and enough shared output budget', () => {
+  assert.equal(LIMITS.toolRounds, 3);
+  assert.equal(LIMITS.maxOutputTokens, 8_192);
+  assert.equal(LIMITS.toolCalls, 8);
 });
 
 test('Velo disambiguates German Dragon Master set and piece requests', () => {

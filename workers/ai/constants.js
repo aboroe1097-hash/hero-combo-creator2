@@ -12,7 +12,9 @@ export const LIMITS = Object.freeze({
   toolResultBytes: 8 * 1024,
   toolResultsBytes: 24 * 1024,
   providerStateBytes: 80 * 1024,
-  toolRounds: 2,
+  // Three rounds allow Velo to gather evidence, act on it, then verify or fill a gap.
+  // toolCalls still caps the total work performed in one turn.
+  toolRounds: 3,
   toolCalls: 8,
   upstreamInteractions: 3,
   firstProviderEventMs: 30_000,
@@ -25,7 +27,8 @@ export const LIMITS = Object.freeze({
   globalTurnsPerUtcDay: 500,
   globalInteractionsPerUtcDay: 1_500,
   requestReplayTtlMs: 24 * 60 * 60_000,
-  maxOutputTokens: 4_096,
+  // Reasoning tokens share this provider budget with the visible answer.
+  maxOutputTokens: 8_192,
 });
 
 export const ALLOWED_MODELS = Object.freeze(['gemini-3.1-flash-lite', 'gemini-3.5-flash']);

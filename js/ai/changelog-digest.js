@@ -11,7 +11,9 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.",
       "Compacted the mobile header, kept the inline account control in the utility row, and preserved full-size controls down to 320px without the stray third row.",
-      "Updated the public VTS leadership badge roster: Loony is now R4, while Zubbs no longer receives the R4 badge; Zubbs aliases remain grouped for historical records."
+      "Updated the public VTS leadership badge roster: Loony is now R4, while Zubbs no longer receives the R4 badge; Zubbs aliases remain grouped for historical records.",
+      "Moved substantive Velo requests to DeepSeek Reasoner with a verification round and a larger shared reasoning/output budget; short standalone questions still use the fast chat model.",
+      "Updated the compatible frontend CSS toolchain to Autoprefixer 10.5.4 and cssnano 9 without taking Vite 8's route-chunking regression."
     ]
   },
   {
