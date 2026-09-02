@@ -3968,6 +3968,7 @@ function renderWeightedScorePopover(row, index, prefix = 'dashContributionWeight
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
       <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${formatContributionValue(row.contributionScore)}</b></span>
+      <span><span>${esc(adminT('adminThDemo'))}<small>${formatContributionValue(row.totalDemolition)} ÷ 20</small></span><b>${formatContributionValue(row.demolitionPoints)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${formatContributionValue(row.contributionExGuild || 0)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatContributionValue(row.dutyPoints || 0)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedContributionValue(row.conductPoints || 0)}</b></span>
@@ -3984,6 +3985,7 @@ function sortedContributionWeightedRows(rows) {
     currentRank: (row) => (row.currentRank ? Number(row.currentRank) : 999999),
     reward: (row) => getContributionRewardLabel(row.currentReward),
     contribution: (row) => parseContributionValue(row.contributionScore),
+    demolition: (row) => parseContributionValue(row.totalDemolition),
     exGuild: (row) => parseContributionValue(row.contributionExGuild),
     shieldWalls: (row) => Number(row.shieldWalls || 0),
     pathers: (row) => Number(row.pathers || 0),
@@ -4022,6 +4024,8 @@ function contributionWeightedSearchText(row) {
     getContributionRewardLabel(row.currentReward),
     getContributionRewardLabel(row.finalReward),
     contributionWeightedSearchNumber(row.contributionScore),
+    contributionWeightedSearchNumber(row.totalDemolition),
+    contributionWeightedSearchNumber(row.demolitionPoints),
     contributionWeightedSearchNumber(row.contributionExGuild),
     contributionWeightedSearchNumber(row.shieldWalls),
     contributionWeightedSearchNumber(row.pathers),
@@ -4092,6 +4096,7 @@ function renderWeightedContributionTable() {
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
   const rows = model.rows || [];
 
@@ -4122,7 +4127,7 @@ function renderWeightedContributionTable() {
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="demolition" tabindex="0">${esc(adminT('adminThDemo'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${
           visibleRows.length
             ? visibleRows
@@ -4132,6 +4137,7 @@ function renderWeightedContributionTable() {
           <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col">${esc(getContributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.totalDemolition)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionExGuild || 0)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
@@ -4144,7 +4150,7 @@ function renderWeightedContributionTable() {
         </tr>`
                 )
                 .join('')
-            : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
+            : `<tr><td colspan="14" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
         }</tbody>
       </table>
     </div>

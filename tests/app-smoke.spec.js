@@ -3093,8 +3093,16 @@ test.describe('app smoke tabs', () => {
     const kikaAlt = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
     const seededDash = {
       last_updated: '25/06/2026, 23:55',
-      total_attacks: 0,
-      attacks: [],
+      total_attacks: 1,
+      attacks: [
+        {
+          id: 'kika-demolition-1',
+          structure_name: 'Small Town',
+          structure_level: 'Lv2',
+          total_demolition: 1000000,
+          players: [{ name: kikaMain, value: 1000000 }],
+        },
+      ],
       players_summary: [],
       dutyRecords: [
         {
@@ -3185,9 +3193,10 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
-    expect(altRow?.[4]).toBe('5,000');
-    expect(altRow?.[6]).toBe('1');
+    expect(altRow?.[4]).toBe('1,000,000');
+    expect(altRow?.[5]).toBe('5,000');
     expect(altRow?.[7]).toBe('1');
+    expect(altRow?.[8]).toBe('1');
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
@@ -3223,6 +3232,8 @@ test.describe('app smoke tabs', () => {
     await mainScoreTrigger.hover();
     await expect(scorePopover).toBeVisible();
     await expect(scorePopover).toContainText('Contribution');
+    await expect(scorePopover).toContainText('1,000,000 ÷ 20');
+    await expect(scorePopover).toContainText('50,000');
     await expect(scorePopover).toContainText('Duty points');
     await expect(scorePopover).toContainText('20,000');
     await expect(scorePopover).toContainText('Total');

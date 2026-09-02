@@ -5830,6 +5830,7 @@ function buildWeightedContributionExportModel() {
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
 }
 
@@ -5853,6 +5854,7 @@ function buildAllianceViewContributionModel() {
     r5Adjustments: conductAdjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
@@ -6707,6 +6709,8 @@ function buildWeightedContributionCsvRows() {
     currentRank: row.currentRank ? `#${row.currentRank}` : '',
     currentReward: contributionRewardExportLabel(row.currentReward),
     contributionScore: row.contributionScore,
+    demolition: row.totalDemolition,
+    demolitionPoints: row.demolitionPoints,
     exGuildContribution: row.contributionExGuild || 0,
     shieldWalls: row.shieldWalls,
     pathers: row.pathers,
@@ -6939,6 +6943,8 @@ function exportWeightedContributionCsv() {
     ['Current rank', 'currentRank'],
     ['Current reward', 'currentReward'],
     ['Contribution score', 'contributionScore'],
+    ['Demolition', 'demolition'],
+    ['Demolition points (1/20)', 'demolitionPoints'],
     ['Ex-guild contribution', 'exGuildContribution'],
     ['#Shield Walls', 'shieldWalls'],
     ['#Pathers', 'pathers'],
