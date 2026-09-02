@@ -1079,6 +1079,8 @@ const it = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   seasonCatchupX1:
     'Recupero X1: in questa fascia gli stati più giovani ricevono tutti gli eroi X1 e alcuni dei primi eroi X2.',
   seasonCatchupX2: 'Recupero X2: questa fascia include i restanti eroi X2 e l’ondata X3.',

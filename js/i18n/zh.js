@@ -598,6 +598,8 @@ const zh = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: '忠诚度升级计算器',
   loyaltyDesc: '计算处理时间、毒气百分比和最佳升级路径。',
   campLevelsTitle: '联盟基地等级',

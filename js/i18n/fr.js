@@ -650,6 +650,8 @@ const fr = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: 'Calculateur de Fidélité',
   loyaltyDesc: "Calculez les temps de traitement et les chemins d'amélioration.",
   campLevelsTitle: 'Niveaux des Camps de Base',

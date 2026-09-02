@@ -155,7 +155,15 @@ export function getSourceCreditText() {
 export { seasonColors, TechseasonColors };
 export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
 
-export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
+export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8', 'X10', 'X12'];
+
+// Seasons that actually carry heroes today. Pills and the all-selected math use
+// this derived list so an empty season (X10/X12 before their roster lands) can
+// never break the "All" affordance. Canonical order comes from
+// HERO_ATLAS_ALL_SEASONS.
+export const POPULATED_HERO_SEASONS = HERO_ATLAS_ALL_SEASONS.filter((season) =>
+  allHeroesData.some((hero) => hero.season === season)
+);
 
 const SEASON_CATCHUP_HINT_KEYS = {
   X1: 'seasonCatchupX1',

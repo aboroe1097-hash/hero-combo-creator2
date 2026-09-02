@@ -4,6 +4,7 @@ import {
   db,
   seasonColors,
   HERO_ATLAS_ALL_SEASONS,
+  POPULATED_HERO_SEASONS,
   paidIconHtml,
   heroesSection,
   getTroopColorClass,
@@ -536,7 +537,7 @@ function exportHeroAtlasCsv() {
 function heroesFiltersActive(state = _heroesTabState) {
   const { seasons, troop, state: heroState, search } = state;
   const normalized = normalizeHeroAtlasSeasons(seasons);
-  const allSeasonsSelected = normalized.length === HERO_ATLAS_ALL_SEASONS.length;
+  const allSeasonsSelected = normalized.length === POPULATED_HERO_SEASONS.length;
   return !allSeasonsSelected || troop !== 'all' || heroState !== 'all' || !!(search || '').trim();
 }
 
@@ -1103,13 +1104,13 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
   const filtered = getFilteredHeroes();
   const filtersActive = heroesFiltersActive();
   const normalizedSeasons = normalizeHeroAtlasSeasons(selectedSeasons);
-  const allSeasonsSelected = normalizedSeasons.length === HERO_ATLAS_ALL_SEASONS.length;
+  const allSeasonsSelected = normalizedSeasons.length === POPULATED_HERO_SEASONS.length;
 
   const seasonTabsHtml = `
     <button type="button" class="hero-tab-season ${allSeasonsSelected ? 'active' : ''}" data-hero-season="all" aria-pressed="${allSeasonsSelected}" title="${escapeHtml(heroUi('selectAllSeasons'))}">
       ${escapeHtml(heroUi('all'))}
     </button>
-    ${HERO_ATLAS_ALL_SEASONS.map(
+    ${POPULATED_HERO_SEASONS.map(
       (s) => `
     <button type="button" class="hero-tab-season ${normalizedSeasons.includes(s) ? 'active' : ''}" data-hero-season="${s}" aria-pressed="${normalizedSeasons.includes(s)}"
       ${seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>

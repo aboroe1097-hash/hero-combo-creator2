@@ -622,6 +622,8 @@ const es = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: 'Calculadora de Lealtad',
   loyaltyDesc: 'Calcula tiempos de procesamiento y rutas de mejora.',
   campLevelsTitle: 'Niveles de Campamento',

@@ -613,6 +613,8 @@ const tr = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: 'Sadakat Yükseltme Hesaplayıcı',
   loyaltyDesc: 'İşleme sürelerini ve en iyi yükseltmeleri hesaplayın.',
   campLevelsTitle: 'Koalisyon Ana Kamp Seviyeleri',

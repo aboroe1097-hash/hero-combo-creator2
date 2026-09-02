@@ -537,6 +537,8 @@ const kr = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: '충성도 업그레이드 계산기',
   loyaltyDesc: '처리 시간, 독가스 비율 및 최적의 업그레이드 경로를 계산합니다.',
   campLevelsTitle: '연합 기지 캠프 레벨',

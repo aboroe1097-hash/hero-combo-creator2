@@ -955,6 +955,8 @@ const en = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   seasonCatchupX1:
     'X1 catch-up: younger states receive all X1 heroes plus some early X2 heroes in this bracket.',
   seasonCatchupX2: 'X2 catch-up: this bracket covers the remaining X2 heroes plus the X3 wave.',

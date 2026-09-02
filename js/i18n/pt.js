@@ -720,6 +720,8 @@ const pt = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: 'Calculadora de Lealdade',
   loyaltyDesc: 'Calcule tempos de processamento e caminhos de melhoria.',
   campLevelsTitle: 'Níveis dos Acampamentos Base',

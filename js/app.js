@@ -68,6 +68,7 @@ import {
   TechseasonColors,
   TECH_SEASON_ORDER,
   HERO_ATLAS_ALL_SEASONS,
+  POPULATED_HERO_SEASONS,
   DEFAULT_HERO_FILTER_SEASONS,
   DEFAULT_GENERATOR_FILTER_SEASONS,
   languageSelect,
@@ -570,7 +571,25 @@ function wireFilterControls(container, onChange) {
   });
 }
 
+// Season pills whose season has no heroes yet ship hidden in index.html; once a
+// season is populated its pill appears. Runs at boot while both filter strips
+// are in the static DOM — do not move it behind a tab-open hook (rAF never
+// fires in a hidden pane).
+function revealPopulatedSeasonPills() {
+  const populated = new Set(POPULATED_HERO_SEASONS);
+  for (const container of [
+    document.getElementById('seasonFilters') || seasonFiltersEl,
+    document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl,
+  ]) {
+    if (!container) continue;
+    container.querySelectorAll('label.filter-pill[data-season]').forEach((pill) => {
+      pill.classList.toggle('hidden', !populated.has(pill.dataset.season));
+    });
+  }
+}
+
 function wireFilterSets() {
+  revealPopulatedSeasonPills();
   const manualSeasonFilters = document.getElementById('seasonFilters') || seasonFiltersEl;
   const manualStateFilters = document.getElementById('stateFilters') || stateFiltersEl;
   const manualTroopFilters = document.getElementById('troopFilters') || troopFiltersEl;
