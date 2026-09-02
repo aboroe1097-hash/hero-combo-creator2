@@ -1,6 +1,7 @@
 # Lane 1 — Gate & Theme (commit-spine commits 2–6)
 
-Status: proposal (2026-09-02). Lane: T1 heavy. Mode: proposal-only — this file is the
+Status: proposal rev 2 (2026-09-02, post-T0 review — ACCEPTED with 4 revisions,
+all folded in below). Lane: T1 heavy. Mode: proposal-only — this file is the
 only deliverable; no code is modified. All file/line references verified against
 `codex/overhaul-16-0-0` (gh-pages `beafd73a` + Phase 0 docs) in the `hcc2-overhaul16`
 worktree.
@@ -10,11 +11,12 @@ worktree.
 ## 0. Scope & goal
 
 Own commits 2–6 of the master spine: **token authority** (audit 01+03), **release-gate
-clearing** (preload fix + re-baseline method), and the **theme batch** (audit 02/04/05/
-06–09). Everything here is light-theme, 768px-boundary, or opt-out-page remediation.
-Dark theme is clean today and must stay pixel-identical.
+hardening** (keep the gate green — preload item N/A-verified, re-measure + comment
+refresh), and the **theme batch** (audit 02/04/05/06–09). Everything here is
+light-theme, 768px-boundary, or opt-out-page remediation. Dark theme is clean today
+and must stay pixel-identical.
 
-### 0.1 Correction to master plan §0.5 (must be folded into master rev 5)
+### 0.1 Correction to master plan §0.5 (folded into master rev 5 by T0 on 2026-09-02)
 
 **The Phase 0 blocker does not reproduce at branch cut. The gate is GREEN.**
 
@@ -53,11 +55,13 @@ all-star-boh/HTML/CSS edits). **That checkout must never be used for gate
 measurements.** This lane's budget discipline: every measurement runs on
 `codex/overhaul-16-0-0` after a fresh `npm ci`.
 
-Consequence for commit 3 (below): there is no preload regression to fix and nothing
-to "clear". Commit 3 becomes **re-measure + keep budgets + refresh comments** (D1
-lean: re-baseline *none*). The token-authority work in commit 2 stays first-class
-because it is the only lever that creates route-CSS headroom for phases 10–12 —
-eden-x2 has **0.0 kB** desktop headroom today and any Eden-route work will blow it.
+Consequence for commit 3 (below): there is no preload regression to fix and
+nothing to "clear" — T0 has retitled spine commit 3 as **keep the gate green**
+and resolved D1 as **no re-baseline**. Commit 3 becomes **re-measure + keep
+budgets + refresh comments**. The token-authority work in commit 2 stays
+first-class because it is the only lever that creates route-CSS headroom for
+phases 10–12 — eden-x2 has **0.0 kB** desktop headroom today and any Eden-route
+work will blow it.
 
 ### 0.2 Other measured corrections to the master plan
 
@@ -66,14 +70,45 @@ eden-x2 has **0.0 kB** desktop headroom today and any Eden-route work will blow 
   (lines 248, 1038). `css/mobile.css` uses `max-width: 768px` (link media attr on
   every page + internal blocks). Six other app.css blocks already use the
   `min-width: 769px` convention — the 7 blocks are drift.
-- **Override census:** `css/ocr-dashboard.css` has **262** `[data-theme='light']`
-  rule blocks (272 `data-theme` occurrences incl. non-light), `css/eden-x1.css` has
-  **79** (85 occurrences) — 341 blocks total. Master plan's "~357 rules" matches
-  the occurrence counts; use 341 blocks as the retirement target.
+- **Override census — two distinct figures, labelled to reconcile with the master
+  plan's "~357":**
+  - **341 rule blocks** (retirement target) = 262 in `css/ocr-dashboard.css` +
+    79 in `css/eden-x1.css`. Counting method: `rg -c "^\[data-theme='light'\]"`
+    — lines where a light-theme rule's *first selector* starts at column 0,
+    i.e. one CSS rule block per match (multi-selector blocks counted once, at
+    their opening selector line).
+  - **357 `data-theme` occurrences** = 272 in ocr-dashboard + 85 in eden-x1.
+    Counting method: plain `rg -c "data-theme"` — includes occurrences inside
+    multi-selector blocks, non-light attributes, and comments. This is the
+    master plan's "~357 rules" figure.
+  - Use 341 blocks as the retirement target; the 357 occurrence count is the
+    ceiling if multi-selector blocks get split during triage.
 - **`tests/unit/light-theme-compatibility.test.mjs:141-144` pins the old override**
   `[data-theme='light'] #ocrDashboardRoot .dash-login-title { color: #10243b; }` —
   it **must be updated in the same commit** that retires the override or CI fails.
 - The plan's D1 table said "entry CSS 422.5/429.0"; current is 428.5/429.0. Both OK.
+
+### 0.3 Budget invariant (binding — governs every commit in this release)
+
+The canaries at branch cut: **eden-x2 desktop 0.0 kB**, **admin desktop 0.6 kB**,
+**profile 0.9 kB** headroom. These three make the following ordering mandatory
+for the whole 16.0.0 branch, not just lane 1:
+
+1. **Commit 2 (token authority) is strictly net-negative CSS** — it only retires
+   rules and adds <1 kB of token blocks. It must land **before any CSS addition
+   anywhere in the release** (lanes 3/4/5 add none until it has landed).
+2. **Retire → measure → add.** No commit may add eager route CSS until the
+   post-retirement route table (W2) is measured and recorded. Any feature CSS
+   that arrives later must fit inside the headroom the retirement created; the
+   eden-x2 desktop route is the tripwire — a feature commit that pushes it over
+   802.0 kB is rejected, not re-baselined.
+3. **Every commit in the spine re-runs `npm run build && npm run size:check`**
+   (fast-lane minimum: at least `size:check` after a build) and records the
+   route table delta in the commit message. Budget numbers never move in a
+   feature commit; only commit 3 touches check-size.mjs comments.
+4. Measurements are taken only on `codex/overhaul-16-0-0` after a fresh `npm ci`
+   (stale-worktree hazard, §0.1). CI's `deploy-verification` is the authoritative
+   pass/fail; local runs are for iteration only.
 
 ---
 
@@ -154,7 +189,7 @@ order decides** and the light block simply must come after (asserted by test).
 rgba(16,24,39,0.12)`, `--ff-text-mute: #8090a8`, …). The legacy overrides carry
 slightly divergent dims (`#52657b` login-sub, `#64748b` kpi-label, `#10243b`
 login-title) — collapsing onto the shared values changes a handful of pixels and
-must pass the visual-diff acceptance (W6.4). Where the admin design *deliberately*
+must pass the visual-diff acceptance (checklist item 7). Where the admin design *deliberately*
 differs from shared tokens (e.g. `#10243b` vs `#101827` is within tolerance; state
 cloud-status colors are per-state and stay component rules), triage per rule.
 
@@ -162,7 +197,7 @@ cloud-status colors are per-state and stay component rules), triage per rule.
 - (a) **Delete** rules whose properties are pure token flows (`color:
   var(--ff-text)`, `background: var(--ff-glass)`, `border-color:
   var(--ff-hairline)`, …) — the majority. Each deletion is verified by the
-  acceptance in W6.4.
+  acceptance in checklist item 7.
 - (b) **Keep with a one-line justification comment** rules that carry genuinely
   distinct per-state values: `.dash-cloud-status[data-state='live'|'local'|'error']`
   (#0369a1/#047857/#92400e/#b91c1c + their rgba fills), `.dash-ops-overview`
@@ -208,7 +243,7 @@ each the same way (expected: only the two above).
 
 `.dash-login-hint { color: var(--ff-text-dim) }` (line 7) currently reads 2.2:1 in
 light. After 1.1 the token flips to `#4b5c73` (≈7.5:1 on the light dashboard
-surface) by construction. Add this selector to the W6.4 contrast checklist; if any
+surface) by construction. Add this selector to the checklist item 7 contrast pass; if any
 admin-only hardcoded dark value remains, tokenize it here.
 
 #### 1.5 `tests/unit/light-theme-compatibility.test.mjs` — update the pinned override
@@ -218,21 +253,31 @@ assertion on the new light token block (e.g. `:root[data-theme='light']
 #ocrDashboardRoot` containing `--ff-text: #101827`). Any other assertion in the
 file that matches a retired rule must be updated in the same commit.
 
-### W2 — Release gate (spine commit 3)
+### W2 — Keep the gate green (spine commit 3)
 
-1. **Preload guard:** no fix needed — `forbiddenInitialFeaturePattern`
-   (`scripts/check-size.mjs:346-347`) passes at HEAD and keeps passing (it is the
-   regression test; nothing in this lane adds eager links). Optional hardening if
-   the orchestrator wants belt-and-braces: extend the pattern with the two other
-   lazy-feature chunk names (`app-artifact`, `app-research`) — lean: leave as-is;
-   the pattern already covers research/materials/export families.
+1. **Eager eden-map/hero-atlas preload: N/A — no regression exists at branch
+   cut.** Evidence: (a) a plain `vite build` at `beafd73a` emits 13 modulepreload
+   links, all from the entry's genuine static graph — none for lazy features;
+   (b) full `npm run build` + `size:check` passes locally; (c) PR #176
+   `deploy-verification` CI is green (build + size:check at branch cut). The
+   standing regression net is `forbiddenInitialFeaturePattern`
+   (`scripts/check-size.mjs:346-347`) — it stays the single authority; **no new
+   test is added** beyond the 5-line guard-pin below (anything more would
+   duplicate the guard's own logic).
+   - **Guard-pin test (≤5 lines),** folded into `theme-token-authority.test.mjs`:
+     ```js
+     assert.match(read('scripts/check-size.mjs'),
+       /forbiddenInitialFeaturePattern\s*=[\s\S]*?eden-map\|hero-atlas/);
+     ```
+     Pins the guard against accidental deletion/weakening; asserts nothing about
+     build output (the guard itself does that in CI).
 2. **Re-measure** the eight route budgets *after* W1 lands (commands in §4).
    Record the table in the commit message and in the `check-size.mjs` comment
    history (the house pattern — see the 14.x/15.x comment run at
    `scripts/check-size.mjs:12-321`).
-3. **D1 lean: re-baseline NONE.** Keep every ceiling exactly as-is. Rationale:
-   the gate is green, budgets are the binding constraint for phases 10–12, and
-   every ceiling is currently asserted by
+3. **D1 resolved (T0): re-baseline NONE.** Keep every ceiling exactly as-is.
+   Rationale: the gate is green, budgets are the binding constraint for phases
+   10–12, and every ceiling is currently asserted by
    `tests/unit/light-theme-compatibility.test.mjs:149-170` (`entryCssBytes: 429`,
    `deployFileCount: 704`, the profile/arcade/battle/towers route caps) — changing
    a budget forces test churn for zero shipping value. Token retirement converts
@@ -454,6 +499,11 @@ is lane 5's release-commit gate, not per-commit.
   towers, profile, battle-sim, maintenance (the RB-page screenshot practice from
   earlier releases). Any deliberate divergence stays as a commented keep-rule (triage
   bucket b).
+  **Baseline house rule (mandatory for the visual-diff step):** CI Linux
+  Playwright baselines are authoritative. Local Windows baseline failures are a
+  known rendering artifact (~350px-taller pages) — treat them as informational
+  and **never run `--update-snapshots` locally**; snapshots are regenerated only
+  via CI's authorized flow when a change is intended.
 - **Cascade risk (W1):** some light overrides exist because the base component
   rule hardcodes an rgba, not a token. Bulk-deleting breaks light theme silently.
   Mitigation: rule-by-rule triage (a/b/c buckets), each deletion gated by the
@@ -472,7 +522,7 @@ is lane 5's release-commit gate, not per-commit.
 - **i18n:** zero new visible strings in this lane — no locale file changes
   (constraint satisfied by construction). Reuse existing load-failure copy in B7.
 - **Admin-scoped integrity (eden-x1/x2):** the shared `#ocrDashboardRoot` token
-  block feeds all three admin-family routes; the W6.4 visual diff must cover both
+  block feeds all three admin-family routes; the checklist item 7 visual diff must cover both
   Eden routes explicitly.
 
 ---

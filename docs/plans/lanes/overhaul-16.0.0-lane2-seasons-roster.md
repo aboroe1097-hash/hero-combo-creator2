@@ -1,6 +1,9 @@
 # 16.0.0 Lane 2 — Seasons & Roster (commit-1 re-apply + X10/X12 landing chain)
 
-Status: proposal (rev 1, 2026-09-02). Author: Lane 2 (Seasons & Roster).
+Status: proposal (rev 2, 2026-09-02) — T0 review of rev 1 accepted; revisions R1-R4 applied
+(exact cap strings; file-vs-deploy staging rule; visible-pane reveal check; the two
+`state.js` list edits spelled out, TECH_SEASON_ORDER landing with the tech-db import).
+Author: Lane 2 (Seasons & Roster).
 Parent plan: `docs/plans/overhaul-16.0.0.md` (commit spine #1, §0.7 roster landing chain).
 Source package: `docs/sources/x10-x12/` (HERO-DATA.md, x12-research.json, x12-research-nodes.md).
 Mode: proposal-only — this file is the lane's only output; no code changes.
@@ -31,9 +34,9 @@ These were re-verified against the repo on 2026-09-02 and **differ from the writ
 
 | # | Doc claim | Verified reality | Consequence |
 |---|---|---|---|
-| V1 | HERO-DATA.md §1: "Already shipped in js/state.js: HERO_ATLAS_ALL_SEASONS ends X8,X10,X12 and TECH_SEASON_ORDER ends X8,X12" | `js/state.js:156-158`: both lists end `'...X1','X2','X8']`. No X10/X12 anywhere. No `POPULATED_HERO_SEASONS`, no `revealPopulatedSeasonPills`, no `season-scaffold.test.mjs` in the repo (rg over js/, tests/, index.html). | The entire scaffolding is to be re-applied. Master plan commit 1 is authoritative, not HERO-DATA §1. |
+| V1 | HERO-DATA.md §1: "Already shipped in js/state.js: HERO_ATLAS_ALL_SEASONS ends X8,X10,X12 and TECH_SEASON_ORDER ends X8,X12" | `js/state.js:156-158`: both lists end `'...X1','X2','X8']`. No X10/X12 anywhere. No `POPULATED_HERO_SEASONS`, no `revealPopulatedSeasonPills`, no `season-scaffold.test.mjs` in the repo (rg over js/, tests/, index.html). | The entire scaffolding is to be re-applied. Master plan commit 1 is authoritative, not HERO-DATA §1 — T0 has since added a correction banner to HERO-DATA.md marking both sandbox-only "already shipped" claims false. |
 | V2 | HERO-DATA.md §8: "No new i18n keys are required — seasonX10/seasonX12 already ship in all 12 locale files" | `seasonX10`/`seasonX12` appear **nowhere** in `js/i18n/*` (only in the two plan docs). Only `season0..season4, seasonX1, seasonX2, seasonX8` exist, in all 12 full packs. `hr.js` is a stub (no season keys at all). | The keys MUST be added (×12 full packs, skip hr per "stub by design"). Commit-1 spec wins. |
-| V3 | Plan §0.7: "local line 939; gh-pages 1053/2189" | This branch = gh-pages base: cap at `firestore.rules:1053` (inside `validAllStarBoHUsableHeroNames`) **and** a second cap at `firestore.rules:2189` (`stats.usableHeroNames ... <= 78` in the profile validator). Allowlist = exactly 78 names, ends `'Ragnar', 'Cyrus'`. | Both caps must grow; the 2189 one is easy to miss. |
+| V3 | Plan §0.7: "local line 939; gh-pages 1053/2189" | This branch = gh-pages base: exact strings `values.size() <= 78` at `firestore.rules:1053` (inside `validAllStarBoHUsableHeroNames`) **and** `stats.usableHeroNames.size() <= 78` at `firestore.rules:2189` (profile validator). Allowlist = exactly 78 names, ends `'Ragnar', 'Cyrus'`. | Both exact strings must grow — grep BOTH patterns, not "the caps"; the 2189 one is easy to miss. |
 | V4 | Plan corrections log: file count 669/704 | Not re-measured in this lane (Lane 1 owns the gate). | This lane adds one JS file edit to `state.js`/`constants.js` only — no new routes, no eager CSS. |
 | V5 | HERO-DATA §8: FUTURE_HEROES "currently 38 entries" | `tests/unit/hero-season-scope.test.mjs:21-60` has 38 entries; the 10 names to remove are all present; `Pepin` confirmed absent. | Removal list is exactly the 10 names from §8. |
 | V6 | Plan says "season-scaffold.test.mjs — invert the two X10/X12 emptiness tests" | No such file exists yet; the inversions are edits to the file D1 creates. | The two emptiness tests are born-empty and inverted when the roster lands. |
@@ -47,13 +50,16 @@ self-contained commit candidate in the spine; "A#" marks the test that gates it.
 
 ### Stage 1 — D1: season scaffolding (no roster data)
 
-**1.1 `js/state.js`**
-- `HERO_ATLAS_ALL_SEASONS` (line 158): append `'X10', 'X12'` →
+**1.1 `js/state.js`** — the two list edits, spelled out exactly (R4):
+- `HERO_ATLAS_ALL_SEASONS` (line 158): append **both** `'X10'` and `'X12'` →
   `['S0','S1','S2','S3','S4','X1','X2','X8','X10','X12']` (canonical order **includes
   empty seasons**).
-- `TECH_SEASON_ORDER` (line 156): append `'X12'` only →
+- `TECH_SEASON_ORDER` (line 156): append **`'X12'` only** →
   `['S0','S1','S2','S3','S4','X1','X2','X8','X12']`. **No X10** — X10 has no research tree
   (HERO-DATA §7); `app-research.js` renders tabs from this list (lines 608, 731).
+  **This edit lands in Stage 4, in the same commit as the tech-db import (§4.2)** — the
+  X12 research tab and its trees must appear together, never an empty tab. Do not apply
+  it in Stage 1.
 - Add the derived list next to the two above:
   ```js
   export const POPULATED_HERO_SEASONS = HERO_ATLAS_ALL_SEASONS.filter((season) =>
@@ -132,7 +138,9 @@ self-contained commit candidate in the spine; "A#" marks the test that gates it.
 **1.7 NEW `tests/unit/season-scaffold.test.mjs`** — six assertions:
 1. `HERO_ATLAS_ALL_SEASONS` ends `'X8','X10','X12'` and starts with the existing S0 prefix
    (canonical order intact, indexes 0-7 unchanged for existing seasons).
-2. `TECH_SEASON_ORDER` ends `'X12'` and contains **no** `'X10'`.
+2. `TECH_SEASON_ORDER` ends `'X12'` and contains **no** `'X10'` — **assertion introduced
+   in Stage 4** (same commit as the `TECH_SEASON_ORDER` edit + tech-db import, §4.2);
+   until then it is absent from the file so Stage 1 stays green.
 3. `seasonColors.X10 === '#f472b6'`, `seasonColors.X12 === '#a3e635'`, and the same two in
    `TechseasonColors`.
 4. `POPULATED_HERO_SEASONS` ⊆ `HERO_ATLAS_ALL_SEASONS`, order-preserving, and initially
@@ -148,10 +156,11 @@ self-contained commit candidate in the spine; "A#" marks the test that gates it.
 
 **Stage 1 acceptance:** `npm run test:unit`, `npm run i18n:check`, `npm run lint`, and a
 **10-second live-browser reveal check** (owed from the commit-1 spec): load index.html
-with the generator panel open, assert the X10/X12 pills are still hidden and all existing
-pills visible. Caveat encoded in the probe: never assert on rAF or
-`details[open]`-dependent reveal inside a hidden pane — unhide the pane first (this is the
-same artifact class as the audit false positives; per plan §B method notes).
+**in a visible browser pane** (rAF never fires in a hidden pane — this artifact class
+already produced two audit false positives), open the generator panel, assert the X10/X12
+pills are still hidden and all existing pills visible. Probe rule: never assert on rAF or
+`details[open]`-dependent reveal inside a hidden pane — unhide the pane first (plan §B
+method notes).
 
 ### Stage 2 — D2a: land the 9 free heroes (test-gated chain)
 
@@ -188,15 +197,19 @@ fails), then 2.3-2.4, then 2.5.
   `hasOnly([...])` list **in exactly the order they appear in `allHeroesData`** (after
   `'Cyrus'`): `'Healer', 'Hellfire', 'Belisarius', 'Pepin', 'El Cid', 'Arslan', 'Farah',
   'Poison Master', 'Lilith'`.
-- Line 1053: `values.size() <= 78` → `<= 87`.
-- Line 2189: `stats.usableHeroNames ... <= 78` → `<= 87`.
+- Exact cap strings (R1) — grep both patterns; they are the only two `<= 78` occurrences
+  in the file:
+  - `values.size() <= 78` (line 1053, inside `validAllStarBoHUsableHeroNames`) → `<= 87`
+  - `stats.usableHeroNames.size() <= 78` (line 2189, profile validator) → `<= 87`
 - The test parses the function block with a regex (all-star-boh-security.test.mjs:1081-1086)
   and `assert.deepEqual`s against `allHeroesData.map(({name}) => name)` — **order is a
   hard constraint** (V3).
-- **Do not deploy rules in this stage if the paid pair is still coming**: rules deploy is
-  a separate manual step (`firebase deploy --only firestore:rules`); a PR merge never ships
-  rules (AGENTS.md external-deploys policy). Deploy exactly once, at the final roster
-  state, to avoid churn on the expression budget (see §5). (A9)
+- **File state vs production deploy (R2):** the in-repo allowlist grows 78 → 87 in this
+  same commit as 2.1 — the deepEqual test must pass at **every branch commit**, and the
+  file must always match the shipped roster. The "deploy once at 89" rule (§5.4) concerns
+  only the production Firebase deploy (`firebase deploy --only firestore:rules`), never
+  the file's intermediate states; a PR merge ships no rules (AGENTS.md external-deploys
+  policy). (A9)
 
 **2.3 `tests/unit/all-star-boh-security.test.mjs` — canonical counts**
 - Line 1079: `assert.equal(canonicalHeroes.length, 78)` → `87`.
@@ -247,9 +260,11 @@ with the new colors; `?season=X10` URL param filters to the two X10 heroes.
 style, no imageUrl, no releaseSeason except `Achilles: 'SP'` which is legible and
 optional-safe).
 
-**3.3 `firestore.rules`** — allowlist + both caps 87 → 89 (`'Al-Hawra'`, `'Achilles'` in
-roster order). **This is the state to deploy rules at** (`firebase deploy --only
-firestore:rules`) — one deploy, after expression-budget measurement (§5.1).
+**3.3 `firestore.rules`** — allowlist + both exact cap strings 87 → 89:
+`values.size() <= 87` → `<= 89` (line 1053) and `stats.usableHeroNames.size() <= 87` →
+`<= 89` (line 2189), plus `'Al-Hawra'`, `'Achilles'` appended in roster order. **This is
+the state to deploy rules at** (`firebase deploy --only firestore:rules`) — one deploy,
+after expression-budget measurement (§5.1).
 
 **3.4 `tests/unit/all-star-boh-security.test.mjs`** — 87 → 89 in both assertions.
 
@@ -301,7 +316,11 @@ pattern (id `19ae0569`, `season:'X8'`, `unlockCondition:'Start of Eden X8'`, lin
   costs are community-sourced. This matches plan A1's "nothing renders without source"
   rule in spirit until the full provenance schema lands in Lane 3.
 - Both trees are WB (`costType: 'War Badge'`) — consistent with the research UI's
-  existing cost types; no UI change expected. (A11)
+  existing cost types; no UI change expected.
+- **`js/state.js` `TECH_SEASON_ORDER`** (line 156): append `'X12'` in this same commit
+  (R4) — the research UI's season tab (`app-research.js:608,731`) and the two trees land
+  together, so the X12 tab never renders empty. Add scaffold-test assertion 2 (§1.7) in
+  this commit as well. (A11)
 
 **4.3 Test gate.** `tests/unit/tech-db...` — check what tech-db tests exist (there is a
 29-tree count assertion in all-star-boh-security.test.mjs:1097 `canonicalResearchIds
@@ -313,8 +332,8 @@ pattern (id `19ae0569`, `season:'X8'`, `unlockCondition:'Start of Eden X8'`, lin
   instead add a `tech-db`-scoped test asserting the two X12 trees exist, season is `'X12'`,
   node counts 29/30, and WB totals 4,998,500 / 4,763,500 (cross-checked against
   x12-research-nodes.md). (A11)
-- `TECH_SEASON_ORDER` already gains `'X12'` in Stage 1.1, so the research UI picks up the
-  new season tab automatically once trees exist.
+- `TECH_SEASON_ORDER` gains `'X12'` in this same stage (§4.2), so the research UI's new
+  season tab and its trees appear together; no other UI change is required.
 
 **4.4 Out of scope, note for later:** the wider dataset carries X15/X18/X20/X22/X24 with
 the same shape — free once an importer exists (Lane 3 A1 pipeline). This lane hand-writes
@@ -350,9 +369,9 @@ the two X12 trees only; do not build the importer here.
 
 | Test file | Change | Stage |
 |---|---|---|
-| `tests/unit/season-scaffold.test.mjs` | NEW — 6 assertions (D1); 2 inverted in Stage 2 | 1, 2.5 |
+| `tests/unit/season-scaffold.test.mjs` | NEW — 6 assertions; 5 land in Stage 1, assertion 2 (TECH_SEASON_ORDER ends X12) lands in Stage 4 with the import; the two emptiness assertions inverted in Stage 2 | 1, 2.5, 4.2 |
 | `tests/unit/hero-season-scope.test.mjs` | Remove 8 FUTURE_HEROES (Stage 2), 2 more (Stage 3); X8 expectations untouched | 2.4, 3.5 |
-| `tests/unit/all-star-boh-security.test.mjs` | 78 → 87 → 89 in `canonicalHeroes.length` (1079) and `/values\.size\(\) <= N/` (1093); deepEqual self-verifies via order | 2.3, 3.4 |
+| `tests/unit/all-star-boh-security.test.mjs` | 78 → 87 → 89 in `canonicalHeroes.length` (1079) and `/values\.size\(\) <= N/` (1093); **add** a `/stats\.usableHeroNames\.size\(\) <= N/` regex for the line-2189 cap; deepEqual self-verifies via order and must pass at every branch commit | 2.3, 3.4 |
 | `tests/unit/all-star-boh-security.test.mjs` | 29-tree count — leave unchanged unless X12 ids enter the BoH allowlist (verify); add tech-db-scoped X12 assertions instead | 4.3 |
 | `tests/unit/specialization-hero-paths.test.mjs` | No edits required; Stage 3.1 must keep all 6 tests green (profile coverage, troop match, tag/column/research validity, Cleopatra-last ordering) | 3.1 |
 | NEW tech-db X12 test (name TBD, e.g. `tests/unit/tech-db-x12.test.mjs`) | Two X12 trees exist with season `'X12'`, 29/30 nodes, WB totals 4,998,500 / 4,763,500, no wixstatic URLs in the file | 4.3 |
@@ -379,18 +398,21 @@ signup — treat as P0.
 same names in the same sequence or the test fails loudly — which is the safety net, not a
 risk to users, but it means 2.1 and 2.2 are one atomic commit.
 
-**5.3 The two caps.** `<= 78` exists twice (1053, 2189). Missing line 2189 leaves the
-profile validator rejecting the new names silently in staging — the unit test only regexes
-the function block, not line 2189. Add an explicit regex assertion for the 2189 cap in
-season-scaffold or the security test to catch this permanently.
+**5.3 The two caps (R1).** The exact strings are `values.size() <= 78` (line 1053) and
+`stats.usableHeroNames.size() <= 78` (line 2189) — implementers grep BOTH patterns; there
+are no other `<= 78` occurrences in the file. Missing line 2189 leaves the profile
+validator rejecting the new names silently in staging — the unit test only regexes the
+function block, not line 2189. Add an explicit regex assertion for
+`stats\.usableHeroNames\.size\(\) <= N` in the security test (or scaffold test) so the
+second cap can never drift.
 
-**5.4 Staging split state.** Between Stage 2 and Stage 3 the app ships 87 heroes while the
-rules allowlist also says 87 — consistent. The 2 paid heroes remain in FUTURE_HEROES (guard
-intact). Do NOT merge Stage 2 to gh-pages with rules deployed at 89 ahead of the data (or
-vice versa): the deployed rules and the shipped app must agree. Sequence: deploy rules 89
-only when Stage 3 app code ships; until then, rules file may sit at 89 unreviewed but must
-not be deployed. Simplest safe policy: deploy rules once, immediately after the Stage 3
-PR merge.
+**5.4 Staging split state (R2).** The in-repo `firestore.rules` file grows 78 → 87 → 89
+in the same commits as the roster stages — every branch commit keeps the deepEqual test
+green and the file always matches the shipped roster. "Deploy once at 89" is a
+**production-deploy-only** rule: the Firebase deploy happens once, immediately after the
+Stage 3 PR merge; until then the intermediate file states exist only on the branch and
+are never deployed. Never deploy rules at a number that doesn't match the app currently
+on gh-pages (and vice versa). The 2 paid heroes remain in FUTURE_HEROES until Stage 3.
 
 **5.5 Empty-season UX regressions.** If the pills render from the canonical list anywhere
 else (there are three other consumers: generator strips, atlas pills, URL params), X10/X12
@@ -410,10 +432,9 @@ handler is wired to `images/logo.png` it is fine (records ship placeholder-only 
 HERO-DATA §5 option 2).
 
 **5.8 Tech-db consumers.** The research UI (`app-research.js`) renders
-`TECH_SEASON_ORDER`; adding `'X12'` in Stage 1.1 before trees exist shows an empty X12
-season tab in research. Acceptable (mirrors the ladder), but Stage 1 must not leave
-`activeTechSeasons` including X12. Confirm no other consumer keys off techDatabase count
-(29) — grep before Stage 4.
+`TECH_SEASON_ORDER`; the `'X12'` edit therefore lands in Stage 4 with the tech-db import
+(§4.2) so no empty X12 tab ever renders. Confirm no other consumer keys off the
+techDatabase count (29) — grep before Stage 4.
 
 ---
 
@@ -446,22 +467,28 @@ season tab in research. Acceptable (mirrors the ladder), but Stage 1 must not le
 
 ## 7. Execution checklist (this lane, in order)
 
-- [ ] Stage 1: state.js lists + POPULATED_HERO_SEASONS (1.1)
+- [ ] Stage 1: state.js `HERO_ATLAS_ALL_SEASONS` += X10, X12 + `POPULATED_HERO_SEASONS`
+      (1.1) — `TECH_SEASON_ORDER` untouched until Stage 4
 - [ ] Stage 1: constants.js both color maps (1.2)
 - [ ] Stage 1: app-hero-atlas.js populated pills + All math (1.3)
 - [ ] Stage 1: app.js revealPopulatedSeasonPills + wiring (1.4)
 - [ ] Stage 1: index.html hidden pills ×2 strips (1.5)
 - [ ] Stage 1: i18n seasonX10/seasonX12 ×12 packs, skip hr (1.6)
-- [ ] Stage 1: season-scaffold.test.mjs new (1.7)
-- [ ] Stage 1 gates: test:unit, i18n:check, lint, live-browser reveal check
+- [ ] Stage 1: season-scaffold.test.mjs new — 5 assertions (assertion 2 deferred to
+      Stage 4) (1.7)
+- [ ] Stage 1 gates: test:unit, i18n:check, lint, live-browser reveal check **in a
+      visible browser pane** (rAF never fires in a hidden pane — same artifact class as
+      the audit false positives)
 - [ ] Stage 2: heroes-data free-9 paste + firestore.rules 87 (atomic, 2.1+2.2)
-- [ ] Stage 2: security test 87s + FUTURE_HEROES −8 + scaffolding inversions (2.3-2.5)
+- [ ] Stage 2: security test 87s + FUTURE_HEROES −8 + scaffolding inversions (2.3-2.5) —
+      deepEqual rules test green at every commit
 - [ ] Stage 2 gates: test:unit, i18n:check, lint, live-browser pill/URL check
-- [ ] Stage 3: D5 tower profiles authored (owner, Q5) → paid-2 paste, rules 89, tests 89
-      (3.1-3.5)
+- [ ] Stage 3: D5 tower profiles authored (owner, Q5) → paid-2 paste, both cap strings
+      89, tests 89 incl. line-2189 regex (3.1-3.5)
 - [ ] Stage 3: expression-budget measurement at 89 → single rules deploy after PR merge
       (Q1)
 - [ ] Stage 3.6: heroes-info skills once placement/minCopies arrive (blocked-on-owner)
-- [ ] Stage 4: tech-db X12 trees + provenance comments + new tech-db X12 test (4.2-4.3)
+- [ ] Stage 4: tech-db X12 trees + provenance comments + `TECH_SEASON_ORDER` += 'X12'
+      + scaffold-test assertion 2 + new tech-db X12 test (4.2-4.3)
 - [ ] Whole-lane: `npm run check:fast` before PR; full `npm run check` at the release
       commit per the master plan (Lane 5 / spine commit 13).
