@@ -125,7 +125,7 @@ html {
 
 .account-kicker {
   margin: 0 0 0.65rem;
-  color: #c8a95d;
+  color: var(--ff-warning);
   font:
     700 0.72rem/1.2 'JetBrains Mono',
     monospace;
@@ -182,7 +182,7 @@ html {
   padding-inline: 0.85rem;
   border: 0;
   border-block-end: 2px solid transparent;
-  color: #91a6bd;
+  color: var(--ff-text-dim);
   background: transparent;
   font:
     700 0.9rem/1 'Sora',
@@ -191,8 +191,8 @@ html {
 }
 
 .account-tabs button[aria-selected='true'] {
-  border-color: #2fd5e9;
-  color: #fff;
+  border-color: var(--ff-action);
+  color: var(--ff-text);
 }
 
 .account-form,
@@ -317,10 +317,10 @@ html {
 .account-button {
   min-height: 48px;
   padding: 0.72rem 1rem;
-  border: 1px solid #39516c;
+  border: 1px solid var(--ff-border-strong);
   border-radius: 10px;
-  color: #edf7ff;
-  background: #10233a;
+  color: var(--ff-text);
+  background: var(--ff-control);
   font:
     700 0.88rem/1.2 'Sora',
     system-ui,
@@ -333,8 +333,8 @@ html {
 }
 
 .account-button:hover:not(:disabled) {
-  border-color: #5d7894;
-  background: #17304b;
+  border-color: var(--ff-border-hover);
+  background: var(--ff-control-hover);
   transform: translateY(-1px);
 }
 
@@ -372,14 +372,14 @@ html {
   min-height: 48px;
   padding-inline: 0;
   border: 0;
-  color: #6ee7f5;
+  color: var(--ff-action);
   background: transparent;
 }
 
 .account-note {
   margin: 0;
   padding-inline-start: 0.85rem;
-  border-inline-start: 3px solid #c8a95d;
+  border-inline-start: 3px solid var(--ff-warning);
   font-size: 0.82rem;
   line-height: 1.55;
 }
