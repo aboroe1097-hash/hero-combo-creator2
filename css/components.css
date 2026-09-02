@@ -203,8 +203,10 @@
 
 @media (max-width: 640px) {
   .vts-hub-subtab {
-    padding: 10px 8px;
+    padding: 10px 6px;
+    min-width: 0;
     font-size: 0.82rem;
+    white-space: normal;
   }
   .vts-hub-subtab svg {
     width: 1rem;

@@ -1116,6 +1116,7 @@ function renderWeightedScorePopover(row, index) {
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
       <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${weightedContributionNumber(row.contributionScore)}</b></span>
+      <span><span>${esc(adminT('adminThDemo'))}<small>${weightedContributionNumber(row.totalDemolition)} ÷ 20</small></span><b>${weightedContributionNumber(row.demolitionPoints)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${weightedContributionNumber(row.contributionExGuild || 0)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${weightedContributionNumber(row.dutyPoints || 0)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${weightedContributionSignedNumber(row.conductPoints || 0)}</b></span>
@@ -1228,6 +1229,7 @@ function sortedWeightedRows(rows) {
     currentRank: (r) => (r.currentRank ? Number(r.currentRank) : 999999),
     reward: (r) => contributionRewardLabel(r.currentReward),
     contribution: (r) => valueOf(r.contributionScore),
+    demolition: (r) => valueOf(r.totalDemolition),
     exGuild: (r) => valueOf(r.contributionExGuild),
     shieldWalls: (r) => r.shieldWalls,
     pathers: (r) => r.pathers,
@@ -1265,6 +1267,8 @@ function weightedRowSearchText(row) {
     contributionRewardLabel(row.currentReward),
     contributionRewardLabel(row.finalReward),
     weightedSearchNumber(row.contributionScore),
+    weightedSearchNumber(row.totalDemolition),
+    weightedSearchNumber(row.demolitionPoints),
     weightedSearchNumber(row.contributionExGuild),
     weightedSearchNumber(row.shieldWalls),
     weightedSearchNumber(row.pathers),
@@ -1321,6 +1325,7 @@ function renderWeightedContributionDashboard(options = {}) {
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
   const rows = model.rows || [];
 
@@ -1364,7 +1369,7 @@ function renderWeightedContributionDashboard(options = {}) {
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
       <table id="dashWeightedContributionTable" class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="exGuild">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="demolition">${esc(adminT('adminThDemo'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="exGuild">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${
           visibleRows.length
             ? visibleRows
@@ -1374,6 +1379,7 @@ function renderWeightedContributionDashboard(options = {}) {
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThContribution'))}" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminThDemo'))}" style="text-align:right">${valueOf(row.totalDemolition).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThExGuild'))}" style="text-align:right">${valueOf(row.contributionExGuild).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
@@ -1386,7 +1392,7 @@ function renderWeightedContributionDashboard(options = {}) {
         </tr>`
                 )
                 .join('')
-            : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
+            : `<tr><td colspan="14" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
         }</tbody>
       </table>
     </div>

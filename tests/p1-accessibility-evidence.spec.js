@@ -236,7 +236,7 @@ test('named controls and repaired ARIA expose equivalent accessibility-tree cont
   });
 });
 
-test('reduced motion removes computed motion while the mobile dock stays limited to three hubs', async ({
+test('reduced motion removes computed motion while the mobile dock keeps three hubs plus More', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -264,7 +264,7 @@ test('reduced motion removes computed motion while the mobile dock stays limited
     backdropAnimation: 'none',
   });
 
-  await expect(page.locator('#shellMoreButton')).toBeHidden();
+  await expect(page.locator('#shellMoreButton')).toBeVisible();
   await expect(page.locator('#shellMorePanel')).toBeHidden();
   await expect(page.locator('#shellMoreBackdrop')).toBeHidden();
   await expect
@@ -272,6 +272,10 @@ test('reduced motion removes computed motion while the mobile dock stays limited
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
     .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']);
+
+  await page.locator('#shellMoreButton').click();
+  await expect(page.locator('#shellMorePanel')).toBeVisible();
+  await expect(page.locator('#shellMoreBackdrop')).toBeVisible();
 });
 
 test('explicit transition components retain pointer, keyboard, selection, and sticky behavior', async ({

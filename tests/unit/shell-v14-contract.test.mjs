@@ -127,7 +127,14 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
     /@media \(max-width: 640px\)[\s\S]*?#app \.tool-nav-shell\s*\{[\s\S]*?position:\s*fixed !important/
   );
   assert.match(shellCss, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\) !important/);
-  assert.match(shellCss, /#app \.shell-more-button\s*\{\s*display:\s*none !important/);
+  assert.match(
+    shellCss,
+    /@media \(max-width: 640px\)[\s\S]*?#app \.tool-nav-inner\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 3fr\) minmax\(64px, 1fr\) !important/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 640px\)[\s\S]*?#app \.shell-more-button\s*\{[\s\S]*?display:\s*inline-flex !important/
+  );
 });
 
 test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', () => {

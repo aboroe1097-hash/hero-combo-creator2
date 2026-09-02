@@ -236,11 +236,12 @@ test.describe('Battle Simulator beta', () => {
 });
 
 const mobileHeaderViewports = [
+  { name: 'mobile-320', width: 320, height: 700 },
   { name: 'mobile', width: 375, height: 812 },
   { name: 'mobile-390', width: 390, height: 844 },
 ];
 
-test('mobile command header stays visible, contained, and separate from fixed navigation', async ({
+test('mobile command header stays compact and the fixed navigation exposes More', async ({
   page,
 }) => {
   for (const viewport of mobileHeaderViewports) {
@@ -275,14 +276,25 @@ test('mobile command header stays visible, contained, and separate from fixed na
         );
       };
       return {
+        headerHeight: headerRect.height,
         headerPosition: getComputedStyle(commandHeader).position,
         navPosition: getComputedStyle(bottomNav).position,
         clipPaths: [commandHeader, commandActions, version].map(
           (element) => getComputedStyle(element).clipPath
         ),
-        contained: ['.command-logo', '.main-logo', '.shell-brand-title', '.version-ribbon'].map(
-          contains
-        ),
+        contained: [
+          '.command-logo',
+          '.main-logo',
+          '.shell-brand-title',
+          '.version-ribbon',
+          '.command-actions',
+          '.shell-account-slot',
+        ].map(contains),
+        visibleDockActions: Array.from(
+          document.querySelectorAll('#tabNavScroll .tab-pill, #shellMoreButton')
+        )
+          .filter((element) => element.getClientRects().length > 0)
+          .map((element) => element.id),
         navOverlapsHeader: navRect.top < headerRect.bottom && navRect.bottom > headerRect.top,
         horizontalOverflow:
           document.documentElement.scrollWidth > window.innerWidth + 1 ||
@@ -290,14 +302,22 @@ test('mobile command header stays visible, contained, and separate from fixed na
       };
     });
 
-    expect(geometry).toEqual({
+    expect(geometry.headerHeight).toBeLessThanOrEqual(160);
+    expect(geometry).toMatchObject({
       headerPosition: 'relative',
       navPosition: 'fixed',
       clipPaths: ['none', 'none', 'none'],
-      contained: [true, true, true, true],
+      contained: [true, true, true, true, true, true],
+      visibleDockActions: ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap', 'shellMoreButton'],
       navOverlapsHeader: false,
       horizontalOverflow: false,
     });
+
+    await page.locator('#shellMoreButton').click();
+    await expect(page.locator('#shellMorePanel')).toBeVisible();
+    await expect(page.locator('#shellMoreBackdrop')).toBeVisible();
+    await page.locator('#shellMoreClose').click();
+    await expect(page.locator('#shellMorePanel')).toBeHidden();
   }
 });
 
@@ -3073,8 +3093,16 @@ test.describe('app smoke tabs', () => {
     const kikaAlt = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
     const seededDash = {
       last_updated: '25/06/2026, 23:55',
-      total_attacks: 0,
-      attacks: [],
+      total_attacks: 1,
+      attacks: [
+        {
+          id: 'kika-demolition-1',
+          structure_name: 'Small Town',
+          structure_level: 'Lv2',
+          total_demolition: 1000000,
+          players: [{ name: kikaMain, value: 1000000 }],
+        },
+      ],
       players_summary: [],
       dutyRecords: [
         {
@@ -3165,9 +3193,10 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
-    expect(altRow?.[4]).toBe('5,000');
-    expect(altRow?.[6]).toBe('1');
+    expect(altRow?.[4]).toBe('1,000,000');
+    expect(altRow?.[5]).toBe('5,000');
     expect(altRow?.[7]).toBe('1');
+    expect(altRow?.[8]).toBe('1');
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
@@ -3203,6 +3232,8 @@ test.describe('app smoke tabs', () => {
     await mainScoreTrigger.hover();
     await expect(scorePopover).toBeVisible();
     await expect(scorePopover).toContainText('Contribution');
+    await expect(scorePopover).toContainText('1,000,000 ÷ 20');
+    await expect(scorePopover).toContainText('50,000');
     await expect(scorePopover).toContainText('Duty points');
     await expect(scorePopover).toContainText('20,000');
     await expect(scorePopover).toContainText('Total');

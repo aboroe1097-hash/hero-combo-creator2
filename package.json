@@ -1,6 +1,6 @@
 {
   "name": "hero-combo-creator",
-  "version": "15.0.14",
+  "version": "15.0.15",
   "description": "Rise of Castles / Rise of Empires - Hero Combo Creator & Specialization Calculator",
   "private": true,
   "type": "module",
@@ -46,7 +46,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "acorn": "^8.17.0",
-    "autoprefixer": "^10.5.2",
+    "autoprefixer": "^10.5.4",
     "cssnano": "^8.0.2",
     "eslint": "^8.57.1",
     "firebase-admin": "^14.0.0",
