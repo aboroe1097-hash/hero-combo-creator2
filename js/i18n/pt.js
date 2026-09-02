@@ -441,6 +441,7 @@ const pt = {
   betaNote: 'v{version} - Ferramenta da Comunidade VTS s1097',
   tabManual: 'Construtor Manual',
   tabGenerator: 'Gerador de Combos',
+  tabCodex: 'Códice',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Heróis',
   tabHeroesCombos: 'Centro de heróis e combos',

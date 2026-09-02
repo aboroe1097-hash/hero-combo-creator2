@@ -424,6 +424,7 @@ const tr = {
   betaNote: 'v{version} - VTS s1097 Topluluk Aracı',
   tabManual: 'Manuel Mod',
   tabGenerator: 'Kombo Oluşturucu',
+  tabCodex: 'Kodeks',
   tabYouTube: 'YouTube',
   tabHeroes: 'Kahraman Atlası',
   tabHeroesCombos: 'Kahraman ve kombo merkezi',

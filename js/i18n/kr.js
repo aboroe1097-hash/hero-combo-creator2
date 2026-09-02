@@ -346,6 +346,7 @@ const kr = {
   betaNote: 'v{version} - VTS s1097 커뮤니티 도구',
   tabManual: '수동 빌더',
   tabGenerator: '조합 생성기',
+  tabCodex: '코덱스',
   tabYouTube: 'YouTube',
   tabHeroes: '영웅 도감',
   tabHeroesCombos: '영웅 & 조합 허브',

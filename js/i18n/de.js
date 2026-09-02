@@ -458,6 +458,7 @@ const de = {
   betaNote: 'v{version} - VTS s1097 Community-Tool',
   tabManual: 'Manueller Bau',
   tabGenerator: 'Kombi-Generator',
+  tabCodex: 'Codex',
   tabYouTube: 'YouTube',
   tabHeroes: 'Helden-Atlas',
   tabHeroesCombos: 'Helden- & Combo-Hub',

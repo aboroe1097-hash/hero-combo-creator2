@@ -423,6 +423,7 @@ const ar = {
   betaNote: 'v{version} - أداة مجتمع VTS s1097',
   tabManual: 'بناء يدوي',
   tabGenerator: 'مولد التشكيلات',
+  tabCodex: 'كودكس',
   tabYouTube: 'يوتيوب',
   tabHeroes: 'أطلس الأبطال',
   tabHeroesCombos: 'مركز الأبطال والتركيبات',

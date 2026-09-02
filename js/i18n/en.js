@@ -632,6 +632,7 @@ const en = {
   betaNote: 'v{version} - VTS s1097 Community Tool',
   tabManual: 'Manual Builder',
   tabGenerator: 'Combo Generator',
+  tabCodex: 'Codex',
   tabYouTube: 'YouTube',
   tabHeroes: 'Hero Atlas',
   tabHeroesCombos: 'Heroes & Combos Hub',

@@ -19,6 +19,7 @@ const hr = Object.freeze({
   edenX1HeatmapScrollHint: 'Pomiči tipkama ← i →.',
   tabManual: 'Ručni sastavljač',
   tabGenerator: 'Generator kombinacija',
+  tabCodex: 'Kodeks',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas heroja',
   tabHeroesCombos: 'Heroes & Combos Hub',

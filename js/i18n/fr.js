@@ -457,6 +457,7 @@ const fr = {
   betaNote: 'v{version} - Outil Communautaire VTS s1097',
   tabManual: 'Mode Manuel',
   tabGenerator: 'Générateur de Combos',
+  tabCodex: 'Codex',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas des Héros',
   tabHeroesCombos: 'Hub héros et combos',

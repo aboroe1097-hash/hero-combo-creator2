@@ -424,6 +424,7 @@ const id = {
   betaNote: 'v{version} - Alat Komunitas VTS s1097',
   tabManual: 'Mode Manual',
   tabGenerator: 'Generator Kombo',
+  tabCodex: 'Codex',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas Hero',
   tabHeroesCombos: 'Hub Hero & Kombo',

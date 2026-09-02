@@ -415,6 +415,7 @@ const zh = {
   betaNote: 'v{version} - VTS s1097 社区工具',
   tabManual: '手动模式',
   tabGenerator: '组合生成器',
+  tabCodex: '图鉴',
   tabYouTube: 'YouTube',
   tabHeroes: '英雄图鉴',
   tabHeroesCombos: '英雄与组合中心',

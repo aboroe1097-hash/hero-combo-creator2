@@ -426,6 +426,7 @@ const ru = {
   betaNote: 'v{version} - Инструмент сообщества VTS s1097',
   tabManual: 'Ручной Режим',
   tabGenerator: 'Генератор Комбо',
+  tabCodex: 'Кодекс',
   tabYouTube: 'YouTube',
   tabHeroes: 'Атлас героев',
   tabHeroesCombos: 'Хаб героев и комбо',
