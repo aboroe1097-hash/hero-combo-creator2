@@ -129,7 +129,7 @@ sources are located) ship a header + zero rows and are hidden by the UI.
 | `class-cards.txt` | `cardId\|className\|benefitType\|benefitDesc\|sourceRef\|p` | Raider/Trader from `pdf_*_Raider.txt`/`Trader.txt`; Farmer/Builder rows `pending` (D3). |
 | `lofty-costs.txt` | `nodeName\|costType\|maxLevel\|values\|p` | `values` = comma-joined per-level numbers (mirrors `X8_LOFTY_LEGION_COSTS` shape). |
 | `lofty-specialty.txt` | `specialtyId\|name\|desc\|p` | From `txt_specialty.txt`. |
-| `research-costs.txt` | `treeName\|season\|medalType\|nodeId\|nodeName\|maxLevel\|costType\|values\|totalMedals\|requirements\|requirementGroups\|p` | 36 trees from `roc_research_data.js`; per-tree `p` carries that tree's credit line (e.g. `Source: Raven G \| 4000 WB/day`). **No raw positions ship**: `requirements`/`requirementGroups` are node-id lists resolved at ingest (R1 — see §3.6). |
+| `research-costs.txt` | `treeName\|season\|medalType\|nodeId\|nodeName\|troop\|maxLevel\|values\|gems\|timeSec\|cmCosts\|wbCosts\|totalMedals\|requirements\|requirementGroups\|p` | 36 trees from `roc_research_data.js`; per-tree `p` carries that tree's credit line (e.g. `Source: Raven G \| 4000 WB/day`). `values`/`gems`/`timeSec`/`cmCosts`/`wbCosts` are comma-joined per-level arrays (`-` = unknown level; only gold in `values`, medal arrays per the source's `buildData.cm/.wb`). **No raw positions ship**: `requirements`/`requirementGroups` are node-id lists resolved at ingest (R1 — see §3.6). The payload node carries these as `costs.{resources,gems,timeSeconds,courageMedals,warBadges}` for Lane 5. |
 | `building-costs.txt` | `building\|level\|wood\|stone\|iron\|food\|timeSec\|requirement\|p` | `pending` — L96 "Main Building Costs" not yet located. |
 | `economy-honor-buildings.txt` | `building\|level\|honorCost\|timeSec\|notes\|p` | From `txt_post_honor-building-costs.txt`. |
 | `economy-gift-levels.txt` | `giftLevel\|spendLow\|spendHigh\|assumptionNote\|p` | **Hard rule**: explicitly-labelled estimate with stated assumption range; never attached to named players or alliances; never a ranking. |
@@ -265,23 +265,27 @@ Raw `relation` strings in `roc_research_data.js` are **positional**, e.g. `"2;2"
    stable derived id `<treeSlug>-r<c>-c<r>` from the node's own `position` field.
    `treeSlug` = slugified `treeName` (same slug helper convention as
    `scripts/eden/build-eden-datasets.py` `zone_slug`).
-2. **Resolve**: split the raw string on `|` into alternatives; within each, split on
-   `;` into `row;col` positions; map each position to the node id whose `position`
-   matches, **within the same tree only**.
+2. **Resolve**: split the raw string on `|` into alternatives; **each alternative
+   is itself one `row;col` position** (e.g. `"2;2"`, `"4;2|4;6"` — matches T0 R1's
+   description of the source format). Map each position to the node id whose
+   `position` matches, **within the same tree only**. The implementation follows
+   this interpretation; the dataset carries no multi-position AND relations.
 3. **Emit** — exactly one of:
-   - `requirements` — `;`-joined `nodeId`s when the raw string had no `|`
-     alternates (AND semantics, mirrors Lane 5's `requirements: nodeId[]`);
-   - `requirementGroups` — `|`-separated groups of `;`-joined `nodeId`s when
-     alternates exist (each `|`-alternative = one group; **any group satisfied =
-     prerequisite met**, mirrors Lane 5's `requirementGroups: string[][]`).
+   - `requirements` — the single resolved `nodeId` when the raw string had one
+     alternative (mirrors Lane 5's `requirements: nodeId[]`);
+   - `requirementGroups` — one group per `|`-alternative, each holding its one
+     resolved `nodeId` (any group satisfied = prerequisite met, mirrors Lane 5's
+     `requirementGroups: string[][]`).
    Both columns are empty when the node has no relations. Lane 5's
    `buildPrerequisiteGraph(family)` consumes these already-resolved lists verbatim
    (its contract: "payload already resolved, never raw positions" — lane5 §3).
 4. **Unresolved positions** (bad `row;col`, cross-tree, or missing node): never
    silently dropped — the affected node row is downgraded to `verificationStatus:
-   'unverified'`, an explanatory note is appended to its `p` override, and the
-   builder reports the count. Lane 5's orphan quarantine is the second net at graph
-   build time.
+   'unverified'` via its `p` override (`unresolvedPrereq=N`), and the importer
+   reports the count. Lane 5's orphan quarantine is the second net at graph
+   build time. (Implementation note: 5 of 888 relations reference positions the
+   source does not define — `8;4` twice in Cavalry Training, `0` three times in
+   Advanced Soldier Training / Imperial Guards — all downgraded, none dropped.)
 
 ---
 
