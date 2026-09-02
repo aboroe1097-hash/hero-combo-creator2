@@ -1,6 +1,6 @@
 # 16.0.0 "Overhaul" — Big Batch Release Plan
 
-Status: proposal rev 4 (2026-09-02). Reconciles: ZCode L96 research + Opus 5.0
+Status: proposal rev 5 (2026-09-02). Reconciles: ZCode L96 research + Opus 5.0
 interface audit + Codex additions + Opus 5.0 release plan + Opus no-vision data
 package, all claims re-verified against the repo and git refs where possible.
 Raw sources: `work/l96-codex-sources/`, `work/roc-research-sources/`, and
@@ -23,38 +23,32 @@ Raw sources: `work/l96-codex-sources/`, `work/roc-research-sources/`, and
 - Cost stated plainly: ~32 workstreams on one branch; the gate is a 10–15 min
   matrix re-run after every rebase. Managed by the revertable commit spine below.
 
-## 0.5 Phase 0 — release gate is RED on origin/gh-pages (blocker)
+## 0.5 Phase 0 — gate status (CORRECTED 2026-09-02; lane 1 finding, T0-verified)
 
-A clean `npm run build` + `npm run size:check` at gh-pages HEAD fails with **17
-violations**: every one of the eight routes is over its per-route CSS budget, plus
-one lazy-loading regression. The gate cannot pass today, so **16.0.0 cannot ship
-today**, independent of anything in this plan.
+**The earlier RED-gate finding does not reproduce at the branch cut.** PR #176's
+`deploy-verification` CI is green (build + `size:check` pass at gh-pages HEAD
+`beafd73a`), verified independently by T0. The RED table below came from the
+**stale vite8 worktree** (22 commits behind gh-pages + uncommitted vite8 edits);
+gh-pages PRs #169–#175 cleared the route-CSS violations and the preload issue
+after the audit snapshot was taken.
 
-| Route | Desktop | Budget | Mobile | Budget |
-|---|---|---|---|---|
-| index.html | 565.2 | 530.0 | 661.3 | 625.0 |
-| admin.html | 719.1 | 680.0 | 815.2 | 785.0 |
-| eden-x1.html | 840.3 | 803.0 | 936.4 | 909.0 |
-| eden-x2.html | 840.3 | 802.0 | 936.4 | 909.0 |
-| arcade.html | 503.4 | 463.0 | 599.5 | 585.0 |
-| profile.html | 37.1 | 25.0 | 37.1 | 25.0 |
-| specialization-towers | 92.1 | 80.0 | 92.1 | 80.0 |
-| battle-simulator | 69.9 | 59.0 | 69.9 | 59.0 |
+New invariant — **keep the gate green**: headroom is razor-thin (eden-x2 desktop
+0.0 kB, admin 0.6, profile 0.9), so spine commit 2 (token retirement) must be
+**strictly net-negative CSS and land before any CSS addition**; every commit
+re-runs `size:check`; the existing `forbiddenInitialFeaturePattern` guard in
+`scripts/check-size.mjs` remains the standing lazy-load regression net (no new
+work needed there). D1 is thereby resolved: **no re-baseline** — retirement must
+fit the existing budgets.
 
-(kB, post-minify.) Entry CSS 422.5/429.0 is OK. The 17th violation is a real bug:
-`dist/index.html` eagerly **preloads eden-map and hero-atlas JS+CSS** that must stay
-lazy — a first-paint regression caught by `forbiddenInitialFeaturePattern`.
+Historical record (describes the stale vite8 tree, NOT gh-pages): all eight routes
+were measured over budget (index 565.2/530, admin 719.1/680, eden-x1 840.3/803,
+eden-x2 840.3/802, arcade 503.4/463, profile 37.1/25, towers 92.1/80,
+battle-sim 69.9/59 kB desktop) plus an eager eden-map/hero-atlas preload.
 
-Strategy: token-authority commit FIRST (retiring ~357 override rules shrinks route
-CSS), fix the preload regression, re-measure, then re-baseline only the remainder
-with justification comments (decision D1).
-
-**File-count budget corrected:** gh-pages `deployFileCount` is **704** with the
-build emitting 669 — 35 files of headroom. The earlier "755/760, ship ≤3 files"
-constraint was wrong for gh-pages (760 is this branch's *local* uncommitted bump in
-`scripts/check-size.mjs`; reconcile on rebase). Keep the gzipped-payload approach
-for the correct reason: **route CSS and JS budgets are the binding constraint**, so
-Codex must not add eager CSS/JS to any route — file count has room.
+**File-count budget:** gh-pages `deployFileCount` is **704** with the build
+emitting 669 — 35 files of headroom. Keep the gzipped-payload approach for the
+right reason: **route CSS and JS budgets are the binding constraint**, not file
+count.
 
 ## Commit spine (13 commits, each independently revertable)
 
@@ -82,8 +76,9 @@ Codex must not add eager CSS/JS to any route — file count has room.
    :287`) in the same pass. New
    `tests/unit/theme-token-authority.test.mjs`: `--ff-text` must resolve to the
    light value inside `#ocrDashboardRoot` under `[data-theme='light']`.
-3. **Clear the release gate** — preload regression fix; re-measure the eight route
-   budgets after commit 2; re-baseline only the remainder (D1).
+3. **Keep the gate green** — commit 2 must be net-negative CSS (eden-x2 desktop
+   has 0.0 kB headroom); re-measure the eight route budgets after it; the
+   existing `forbiddenInitialFeaturePattern` guard is the lazy-load net.
 4–6. **Theme batch** — audit 02 (profile auth screen), 04 (768px boundary),
    05 (account chip + Eden announcement chips), 06–09 (battle-sim tap targets,
    lazy-CSS fragility, maintenance page theme).
@@ -124,6 +119,13 @@ DeepSeek per the house rule; judgement stays local.
   New workstream A8.
 - Phase 0 archive lives in this checkout's untracked files, not on any branch.
 - Opus "Commit 1 shipped" — not in this repo; treated as spec (above).
+- **§0.5 RED gate did not reproduce** (lane 1, T0-verified via PR #176 CI + local
+  build): stale vite8-worktree artifact; gh-pages #169–#175 already cleared it.
+  Gate green with near-zero headroom (eden-x2 desktop 0.0 kB, admin 0.6, profile
+  0.9) → retire-before-add ordering replaces gate-clearing; D1 resolved as
+  no-re-baseline. The 768px collision is 7 blocks in 2 files (app.css ×5,
+  components.css ×2), not 7 stylesheets; light overrides count 341 blocks /
+  357 grep occurrences (272 ocr + 85 eden).
 - **"Adding a roster is a data-only edit" was wrong** (Opus's own correction,
   re-verified here: `firestore.rules` allowlist + `<= 78` cap at local line 939,
   deepEqual-order-sensitive test, 1000-expression budget note at line 20) — real
