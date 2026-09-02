@@ -583,8 +583,9 @@ fill = 11 packs.
 - Aggregate budgets (`totalJsBytes` 10084, `totalCssBytes` 1635,
   `totalDeployBytes` 32100, `deployFileCount` 704): lane 4 adds exactly **2
   emitted files** (field-data chunk JS + its CSS) plus the growth of existing
-  chunks. Running file ledger (T0-ratified): **669 + 1 (lane 3 payload) + 2
-  (lane 4) = 672 / 704**. If the shared `js/codex-ui.js` causes duplication
+  chunks. Running file ledger (canonical, CI-measured — see master plan
+  reconciliation block): **658 + 1 (lane 3 payload) + 2
+  (lane 4) = 661 / 704**. If the shared `js/codex-ui.js` causes duplication
   across the hero-atlas and field-data chunks, inline it into each consumer
   instead (see §2.7).
 - `deployFileCount` guard: do not introduce new emitted locale chunks — the
@@ -682,8 +683,9 @@ copy, loaded once), leave only tiny rendering helpers per surface.
 - **Skin-mode rank projection correctness:** the override block re-orders
   `rankedCombos` by position; any naive "compare same combo index" diff must
   instead re-index both lists. Test fixture coverage in §7.2 is the guard.
-- **Aggregate file budget:** the running ledger is 669 + 1 (lane 3 payload) +
-  2 (lane 4) = **672 / 704** emitted files; the release commit re-measures and
+- **Aggregate file budget:** the running ledger is 658 (CI-canonical base) +
+  1 (lane 3 payload) + 2 (lane 4) = **661 / 704** emitted files; the release
+  commit re-measures and
   any further chunk proliferation must be called out lane by lane.
 - **Provenance discipline (hard rule):** nothing renders without
   source/author/captureDate/gameVersionScope/verificationStatus (master plan
