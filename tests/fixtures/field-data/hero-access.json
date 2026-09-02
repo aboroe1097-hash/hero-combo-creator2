@@ -16,8 +16,8 @@
       "access": "paid",
       "season": "S4",
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "VTS tooling",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
         "captureDate": "2026-09-02",
         "gameVersionScope": "X12",
         "verificationStatus": "current"
@@ -28,8 +28,8 @@
       "access": "royal",
       "season": "S3",
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "VTS tooling",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
         "captureDate": "2026-09-02",
         "gameVersionScope": "X12",
         "verificationStatus": "current"
@@ -40,8 +40,8 @@
       "access": "standard",
       "season": "S4",
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "VTS tooling",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
         "captureDate": "2026-08-01",
         "gameVersionScope": "X10",
         "verificationStatus": "historical"

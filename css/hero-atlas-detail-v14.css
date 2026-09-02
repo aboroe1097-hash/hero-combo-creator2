@@ -2322,3 +2322,395 @@
     transition: none;
   }
 }
+
+/* ─── 16.0.0 Codex mode + verification chips + duel evidence ─────────────────
+   Token-only styles (lane 1 authority): every color resolves through var(--ff-*);
+   no raw hex, no [data-theme='light'] override blocks for these selectors. */
+
+.codex-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-2);
+}
+
+.codex-table-head,
+.hero-codex-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1.4fr) minmax(5.5rem, 0.8fr) minmax(5rem, 0.7fr) minmax(3.5rem, 0.5fr) minmax(3.5rem, 0.5fr) minmax(3rem, 0.4fr) minmax(7rem, 0.9fr);
+  gap: var(--ff-space-2);
+  align-items: center;
+  padding: 0 var(--ff-card-padding);
+}
+
+.codex-table-head {
+  color: var(--ff-text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-block: var(--ff-space-2);
+  border-bottom: 1px solid var(--ff-border-subtle);
+}
+
+.hero-codex-row {
+  min-height: var(--ff-tap-min);
+  width: 100%;
+  text-align: start;
+  background: var(--ff-surface-subtle);
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-card);
+  color: var(--ff-text);
+  cursor: pointer;
+  padding-block: var(--ff-space-2);
+}
+
+.hero-codex-row:hover {
+  background: var(--ff-surface-hover);
+  border-color: var(--ff-border-hover);
+}
+
+.hero-codex-row:focus-visible {
+  outline: var(--ff-focus-ring);
+  outline-offset: 2px;
+}
+
+.hero-codex-row .rank-img {
+  grid-column: 1 / -1;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--ff-radius-control);
+  display: none;
+}
+
+.codex-col-name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-col-season {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ff-space-1);
+  flex-wrap: wrap;
+}
+
+.codex-season {
+  color: var(--sc, var(--ff-seasonal));
+  font-weight: 800;
+}
+
+.codex-origin {
+  color: var(--ff-text-tertiary);
+  font-size: 0.72rem;
+}
+
+.codex-access {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--ff-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.codex-access--royal {
+  color: var(--ff-gold);
+  border-color: var(--ff-gold);
+}
+
+.codex-access--standard {
+  color: var(--ff-mint);
+  border-color: var(--ff-mint);
+}
+
+.codex-skin-type {
+  color: var(--skin-accent, var(--ff-text));
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.codex-col-starcost {
+  color: var(--ff-text-dim);
+  font-size: 0.74rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-col-hiddenpower {
+  color: var(--ff-warning);
+  font-weight: 800;
+  text-align: center;
+}
+
+.codex-rank-delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--ff-r-pill);
+  background: var(--ff-surface-raised);
+  color: var(--ff-success);
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.codex-chip-placeholder {
+  color: var(--ff-text-muted);
+}
+
+/* Verification chips (shared provenance badge) */
+.codex-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--ff-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.codex-chip-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--ff-text-muted);
+}
+
+.codex-chip--current {
+  color: var(--ff-success);
+  border-color: var(--ff-success);
+}
+
+.codex-chip--current .codex-chip-dot {
+  background: var(--ff-success);
+}
+
+.codex-chip--historical {
+  color: var(--ff-warning);
+  border-color: var(--ff-warning);
+}
+
+.codex-chip--historical .codex-chip-dot {
+  background: var(--ff-warning);
+}
+
+.codex-chip--unverified {
+  color: var(--ff-text-muted);
+  border-color: var(--ff-border);
+}
+
+.codex-chip--unverified .codex-chip-dot {
+  background: var(--ff-text-muted);
+}
+
+.codex-chip--translation {
+  color: var(--ff-action);
+  border-color: var(--ff-action);
+  font-size: 0.62rem;
+}
+
+.detail-codex-chip {
+  display: inline-flex;
+}
+
+/* Skills grid 1..8: the legacy 3/4-count rules stay; every count renders via
+   the existing auto-placement grid with an explicit cap for wide sets. */
+.hero-atlas-detail-v14 .detail-skills[data-skill-count='5'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.hero-atlas-detail-v14 .detail-skills[data-skill-count='6'],
+.hero-atlas-detail-v14 .detail-skills[data-skill-count='7'],
+.hero-atlas-detail-v14 .detail-skills[data-skill-count='8'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Duel evidence */
+.duel-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-3);
+}
+
+.duel-record-card {
+  background: var(--ff-surface-subtle);
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-card);
+  padding: var(--ff-card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-2);
+}
+
+.duel-record-card--unverified {
+  opacity: 0.85;
+}
+
+.duel-record-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
+}
+
+.duel-record-count {
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+}
+
+.codex-era-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--era-color, var(--ff-border));
+  color: var(--era-color, var(--ff-text));
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.codex-era-badge--unknown {
+  color: var(--ff-text-muted);
+  border-color: var(--ff-border);
+}
+
+.duel-record-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--ff-space-2);
+  align-items: center;
+}
+
+.duel-record-bar-label {
+  color: var(--ff-text-dim);
+  font-size: 0.74rem;
+}
+
+.duel-record-bar-track {
+  height: 0.5rem;
+  border-radius: var(--ff-r-pill);
+  background: var(--ff-surface-raised);
+  overflow: hidden;
+}
+
+.duel-record-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--ff-r-pill);
+  background: var(--ff-action);
+}
+
+.duel-record-bar-value {
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--ff-text);
+}
+
+.duel-record-lineups {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
+}
+
+.duel-lineup-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--ff-tap-min);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--ff-border-subtle);
+  background: var(--ff-surface);
+  color: var(--ff-text);
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.duel-lineup-hero:hover {
+  border-color: var(--ff-border-hover);
+  background: var(--ff-surface-hover);
+}
+
+.duel-lineup-hero:focus-visible {
+  outline: var(--ff-focus-ring);
+  outline-offset: 2px;
+}
+
+.duel-lineup-hero img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.duel-record-criteria {
+  color: var(--ff-text-dim);
+  font-size: 0.74rem;
+  margin: 0;
+}
+
+.duel-record-credit {
+  color: var(--ff-text-tertiary);
+  font-size: 0.68rem;
+  margin: 0;
+}
+
+.duel-evidence-group {
+  border: 1px dashed var(--ff-border);
+  border-radius: var(--ff-radius-card);
+  padding: var(--ff-space-2) var(--ff-card-padding);
+}
+
+.duel-evidence-group summary {
+  cursor: pointer;
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+  min-height: var(--ff-tap-min);
+  display: flex;
+  align-items: center;
+}
+
+.duel-evidence-group[open] .duel-record-list {
+  margin-top: var(--ff-space-2);
+}
+
+/* Codex mode responsive collapse (normalized mobile boundary, lane 1) */
+@media (max-width: 767px) {
+  .codex-table-head {
+    display: none;
+  }
+  .hero-codex-row {
+    grid-template-columns: minmax(9rem, 1.3fr) minmax(5rem, 0.9fr) minmax(7rem, 0.9fr);
+  }
+  .codex-col-troop,
+  .codex-col-rating,
+  .codex-col-rank,
+  .codex-col-access,
+  .codex-col-hiddenpower {
+    display: none;
+  }
+  .codex-col-season,
+  .codex-col-skin,
+  .codex-col-starcost {
+    grid-column: auto;
+  }
+  .codex-col-verify {
+    justify-self: end;
+  }
+  .codex-col-rankdelta {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-codex-row,
+  .duel-lineup-hero {
+    transition: none;
+  }
+}

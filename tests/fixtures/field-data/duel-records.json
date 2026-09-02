@@ -6,7 +6,7 @@
     "rules": [
       "nodeId is an array of unlocked research node ids (strings); field name is nodeId, not nodeIds.",
       "requirementGroups is an array of arrays of nodeIds; each inner group is a prerequisite set that must be fully satisfied.",
-      "Every record carries a provenance envelope with exactly five fields: source, author, captureDate, gameVersionScope, verificationStatus.",
+      "Every record carries a provenance envelope with exactly five fields: source, credit, captureDate, gameVersionScope, verificationStatus (lane-3 frozen shape, js/codex-provenance.js).",
       "verificationStatus is one of: current | historical | unverified.",
       "Records with verificationStatus unverified are rendered as evidence-only in the UI and are excluded from simulations.",
       "No external URLs in fixtures; the panel is strict-CSP (connect-src 'self').",
@@ -46,8 +46,8 @@
       "inclusionCriteria": "Same-tier T10 cavalry rows, both sides level-matched, no event buffs.",
       "sourceGameVersion": "X12",
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "VTS tooling",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
         "captureDate": "2026-09-02",
         "gameVersionScope": "X12",
         "verificationStatus": "current"
@@ -77,8 +77,8 @@
       "inclusionCriteria": "Recorded on a previous patch; kept for historical comparison only.",
       "sourceGameVersion": "X8",
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "VTS tooling",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
         "captureDate": "2025-11-30",
         "gameVersionScope": "X8",
         "verificationStatus": "historical"
@@ -108,8 +108,8 @@
       "inclusionCriteria": "Unconfirmed crowd report; kept as evidence only until verified.",
       "sourceGameVersion": "X10",
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "unverified contributor",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "unverified contributor",
         "captureDate": "2026-08-15",
         "gameVersionScope": "X10",
         "verificationStatus": "unverified"

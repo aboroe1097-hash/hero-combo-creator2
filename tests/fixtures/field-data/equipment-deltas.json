@@ -1,7 +1,7 @@
 {
   "_contract": {
     "fixtureVersion": "16.0.0-lane4-prep-1",
-    "purpose": "Frozen consumer contract for equipment delta folding (lane 4 §2.6). Deltas overlay js/battle-simulator-equipment-catalog.js — they never edit it. Unverified deltas are excluded from resolveEquipmentLoadout but remain visible in the Field Data panel.",
+    "purpose": "Frozen consumer contract for equipment delta folding (lane 4 Â§2.6). Deltas overlay js/battle-simulator-equipment-catalog.js â€” they never edit it. Unverified deltas are excluded from resolveEquipmentLoadout but remain visible in the Field Data panel.",
     "frozenBy": "T0, 2026-09-02",
     "rules": [
       "Key by equipmentId and/or setId; a delta may cover one piece, one set, or a family.",
@@ -13,30 +13,30 @@
   },
   "records": [
     {
-      "equipmentId": "dragon-master.gold.armor",
+      "equipmentId": "dragon-master.armor",
       "setId": "dragon-master",
       "field": "resistance",
       "value": 1.5,
       "unit": "percent",
       "relatedDuelRecordIds": ["duel-synth-001"],
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "VTS tooling",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
         "captureDate": "2026-09-02",
         "gameVersionScope": "X12",
         "verificationStatus": "current"
       }
     },
     {
-      "equipmentId": "normal.ranger.gold.weapon",
+      "equipmentId": "normal.ranger.weapon",
       "setId": "normal.ranger",
       "field": "damage",
       "value": -0.8,
       "unit": "percent",
       "relatedDuelRecordIds": [],
       "provenance": {
-        "source": "synthetic fixture — do not cite",
-        "author": "unverified contributor",
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "unverified contributor",
         "captureDate": "2026-08-15",
         "gameVersionScope": "X10",
         "verificationStatus": "unverified"
