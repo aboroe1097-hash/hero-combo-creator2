@@ -16,8 +16,21 @@ test('Hero Atlas detail uses the scoped v14 hierarchy without changing section h
   assert.match(atlasSource, /import '\.\.\/css\/hero-atlas-detail-v14\.css';/);
   assert.match(atlasSource, /class="hero-detail-panel hero-atlas-detail-v14"/);
 
-  const sectionOrder = ['synergies', 'skins', 'skills', 'combos', 'counters'].map((section) =>
-    atlasSource.indexOf(`id="detail-section-${section}"`)
+  const panelSource = atlasSource.slice(
+    atlasSource.indexOf('function renderHeroDetailPanel('),
+    atlasSource.indexOf('function codexSortHeroes(')
+  );
+  const sectionOrder = [
+    'synergies',
+    'skins',
+    'skills',
+    'combos',
+    'duels',
+    'counters',
+  ].map((section) =>
+    section === 'duels'
+      ? panelSource.indexOf('${renderDuelSection(selected)}')
+      : panelSource.indexOf(`id="detail-section-${section}"`)
   );
   assert.ok(sectionOrder.every((position) => position >= 0));
   assert.deepEqual(
@@ -29,7 +42,7 @@ test('Hero Atlas detail uses the scoped v14 hierarchy without changing section h
   assert.match(detailCss, /\.hero-atlas-detail-v14 \.detail-skills/);
   assert.match(detailCss, /\.detail-skills\[data-skill-count='3'\][\s\S]*?repeat\(3,/);
   assert.match(detailCss, /\.detail-skills\[data-skill-count='4'\][\s\S]*?repeat\(2,/);
-  assert.match(atlasSource, /data-skill-count="\$\{ext\?\.skills\?\.length \|\| 0\}"/);
+  assert.match(atlasSource, /data-skill-count="\$\{mergedSkills\.length \|\| 0\}"/);
   assert.match(detailCss, /\.detail-skill-rail[\s\S]*?position: absolute/);
   assert.match(detailCss, /\.detail-skill-id[\s\S]*?display: none/);
   assert.match(detailCss, /\.hero-atlas-detail-v14 \.counter-matchup-list/);
