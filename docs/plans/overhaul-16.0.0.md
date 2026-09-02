@@ -126,6 +126,23 @@ DeepSeek per the house rule; judgement stays local.
   no-re-baseline. The 768px collision is 7 blocks in 2 files (app.css ×5,
   components.css ×2), not 7 stylesheets; light overrides count 341 blocks /
   357 grep occurrences (272 ocr + 85 eden).
+- **Lane reconciliation (2026-09-02, all five lane plans blessed at rev 2):**
+  cross-lane contracts verified consistent — prerequisite format
+  (`requirements: nodeId[]` / `requirementGroups: nodeId[][]`, positional
+  resolution owned by lane 3; X12 Charge ships 0/30 relations as a flagged gap,
+  never guessed), `access` enum `standard|paid|royal` frozen in lane 3 and
+  consumed by lane 4 (fallback `paid`). **i18n key ownership arbitrated:** lane 2
+  owns `seasonX10`/`seasonX12` (canonical en.js + 12 non-English core files; hr
+  stub skipped); lane 3 owns `codexSource/Credit/Captured/GameVersion/StatusCurrent/
+  StatusHistorical/StatusUnverified/QuarantinedNotice`; lane 4 owns
+  `codexMode/Preset/Search/Sort/Col/Empty/Export/Loading/Rank/Unavailable`, the
+  bare `codexStatus` chip label, and `fieldData.*`; lane 5 owns `planner.*` in
+  the research domain pack. Sets are disjoint — any new `codex*` or `planner*`
+  key requires a T0 ownership note first. **File-count ledger authority:**
+  669 + 1 (lane 3 payload) + 2 (lane 4) = 672/704, re-measured at the release
+  commit; lane-local counts are informational. Sequencing pins: lane 1 commit 2
+  before any CSS anywhere; lane 2 roster before lane 3's 11-name codex rows;
+  lane 3 payload before lane 4/5 loader wiring.
 - **"Adding a roster is a data-only edit" was wrong** (Opus's own correction,
   re-verified here: `firestore.rules` allowlist + `<= 78` cap at local line 939,
   deepEqual-order-sensitive test, 1000-expression budget note at line 20) — real
@@ -307,7 +324,9 @@ Zero mobile overflow.
   `<details>` toggle (`battle-simulator-app.js:3382`) → load-on-expanded + retry.
 - **B8 (P2)** maintenance page theme alignment.
 - Method notes: neutralize transitions, honor `details[open]`, beware rAF in
-  hidden panes — encode in every probe script.
+  hidden panes — encode in every probe script. **Visual diffs:** CI Linux
+  baselines are authoritative; local Windows baseline failures are a known
+  artifact (~350 px taller pages); never `--update-snapshots` locally.
 
 ## Rights & data ethics (hard rules)
 
