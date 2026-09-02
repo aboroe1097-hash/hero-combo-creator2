@@ -32,6 +32,8 @@ test('Hero Atlas keeps an always-loaded stacked command deck for wide mobile vie
 
 test('compact shell keeps readable brand, version, and controls in normal header flow', () => {
   const compactShell = shellCss.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
+  const ultraNarrowShell =
+    shellCss.match(/@media \(max-width: 340px\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
   const narrowShell = shellCss.match(/@media \(max-width: 370px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
   assert.match(
@@ -85,6 +87,10 @@ test('compact shell keeps readable brand, version, and controls in normal header
   );
   assert.match(
     compactShell,
+    /#app #shareCurrentViewBtn,\s*#app #commandPaletteTrigger \{[\s\S]*?width: 44px !important;[\s\S]*?min-width: 44px !important;/
+  );
+  assert.match(
+    compactShell,
     /#app \.account-link,[\s\S]*?#app #commandPaletteTrigger \{[\s\S]*?min-height: 44px !important;[\s\S]*?height: 44px !important;/
   );
   assert.match(appCss, /\.account-link \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 44px;/);
@@ -130,6 +136,10 @@ test('compact shell keeps readable brand, version, and controls in normal header
   assert.match(
     narrowShell,
     /#app \.app-control-row \{[\s\S]*?grid-template-columns: repeat\(4, 44px\) !important;/
+  );
+  assert.match(
+    ultraNarrowShell,
+    /#app \.command-header \{[\s\S]*?grid-template-columns: 44px minmax\(0, 1fr\) !important;[\s\S]*?column-gap: 4px !important;/
   );
   assert.match(
     compactShell,
