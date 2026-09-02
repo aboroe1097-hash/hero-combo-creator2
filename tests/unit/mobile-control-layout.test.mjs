@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const appCss = readFileSync('css/app.css', 'utf8');
+const componentsCss = readFileSync('css/components.css', 'utf8');
 const shellCss = readFileSync('css/shell-v14.css', 'utf8');
 const mobileCss = readFileSync('css/mobile.css', 'utf8');
 const edenCss = readFileSync('css/eden-x1.css', 'utf8');
@@ -32,8 +33,6 @@ test('Hero Atlas keeps an always-loaded stacked command deck for wide mobile vie
 
 test('compact shell keeps readable brand, version, and controls in normal header flow', () => {
   const compactShell = shellCss.match(/@media \(max-width: 640px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
-  const ultraNarrowShell =
-    shellCss.match(/@media \(max-width: 340px\) \{[\s\S]*?\n\s{2}\}/)?.[0] ?? '';
   const narrowShell = shellCss.match(/@media \(max-width: 370px\) \{[\s\S]*?\n\}/)?.[0] ?? '';
   assert.match(compactShell, /#app #globalGameClock::before \{\s*display: none/);
   assert.match(
@@ -138,12 +137,15 @@ test('compact shell keeps readable brand, version, and controls in normal header
     /#app \.app-control-row \{[\s\S]*?grid-template-columns: repeat\(4, 44px\) !important;/
   );
   assert.match(
-    ultraNarrowShell,
-    /#app \.command-header \{[\s\S]*?grid-template-columns: 44px minmax\(0, 1fr\) !important;[\s\S]*?column-gap: 4px !important;/
-  );
-  assert.match(
     compactShell,
     /#app \.shell-account-slot\.vts-account-chip-mount,[\s\S]*?width: 44px;[\s\S]*?height: 44px;/
+  );
+});
+
+test('mobile hub labels wrap inside their two-column grid', () => {
+  assert.match(
+    componentsCss,
+    /@media \(max-width: 640px\) \{[\s\S]*?\.vts-hub-subtab \{[\s\S]*?min-width: 0;[\s\S]*?white-space: normal;/
   );
 });
 

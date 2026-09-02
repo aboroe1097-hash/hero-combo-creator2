@@ -1540,29 +1540,6 @@ body.shell-more-open #app .tool-nav-inner {
     display: none !important;
   }
 
-  @media (max-width: 340px) {
-    #app .command-header {
-      grid-template-columns: 44px minmax(0, 1fr) !important;
-      column-gap: 4px !important;
-    }
-
-    #app .command-logo {
-      grid-template-rows: 44px auto !important;
-      max-width: 44px;
-    }
-
-    #app .command-logo picture,
-    #app .command-logo .main-logo {
-      width: 44px !important;
-      height: 44px !important;
-      border-radius: 13px !important;
-    }
-
-    #app .app-control-row {
-      gap: 2px !important;
-    }
-  }
-
   #app .tool-nav-shell {
     position: fixed !important;
     z-index: 1080 !important;
@@ -1636,7 +1613,6 @@ body.shell-more-open #app .tool-nav-inner {
     font-size: clamp(0.62rem, 2.6vw, 0.7rem) !important;
     line-height: 1.03 !important;
     overflow: hidden !important;
-    overflow-wrap: anywhere;
     white-space: normal !important;
   }
 
