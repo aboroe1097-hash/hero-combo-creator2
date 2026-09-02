@@ -284,15 +284,19 @@ html[data-theme='light'] {
   transform: translateY(1px);
 }
 
-.specialization-action--primary,
-[data-specialization-action='export'] {
+/* The page reset (`.specialization-towers-page button` at 0,1,1) sets
+   color: inherit, which would outrank these single-class primary rules
+   (0,1,0) in both themes. Compound them under the page scope so the
+   accent ink always wins. */
+.specialization-towers-page .specialization-action--primary,
+.specialization-towers-page [data-specialization-action='export'] {
   border-color: color-mix(in srgb, var(--ff-action) 58%, var(--ff-border));
   color: var(--ff-on-accent);
   background: var(--ff-action);
 }
 
-.specialization-action--primary:hover,
-[data-specialization-action='export']:hover {
+.specialization-towers-page .specialization-action--primary:hover,
+.specialization-towers-page [data-specialization-action='export']:hover {
   border-color: var(--ff-action-hover);
   color: var(--ff-on-accent);
   background: var(--ff-action-hover);
