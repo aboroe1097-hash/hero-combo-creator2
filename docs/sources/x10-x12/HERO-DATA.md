@@ -10,6 +10,16 @@ Companion files in this folder:
   sliced out of `work/roc-research-sources/roc_research_data.js`.
 - `x12-research-nodes.md` — the same trees as readable node tables.
 
+> **T0 CORRECTIONS (2026-09-02, verified in-repo by lane 2 + T0).** Two claims in
+> this transcription describe the Opus session's sandbox, not this repo, and are
+> **false here**: (1) §1's "Already shipped in `js/state.js`" — both
+> `TECH_SEASON_ORDER` and `HERO_ATLAS_ALL_SEASONS` currently end at `X8`
+> (`js/state.js:156-158`); nothing is shipped. (2) §8's "seasonX10 / seasonX12
+> already ship in all 12 locale files" — those keys exist in **zero** locale files
+> (anchor pattern: `seasonX8` at `js/i18n/en.js:957`). Where this file conflicts
+> with the commit-1 spec in `docs/plans/overhaul-16.0.0.md`, the master plan's
+> spec is authoritative. The data blocks (§2, §3, §4) are unaffected.
+
 ---
 
 ## 1. Bracket model (settled)
