@@ -14,7 +14,7 @@ import {
   getCounterLabels,
 } from './state.js';
 import { translations } from './translations.js';
-import { baseRankedCombos } from './combos-db.js';
+import { baseRankedCombos, filterCombosForSkinMode, rankedCombos } from './combos-db.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
@@ -41,6 +41,13 @@ import {
   HERO_SKILL_TERM_HELP as SKILL_TERM_TOOLTIPS,
   HERO_SKILL_TYPE_HELP as SKILL_TYPE_TOOLTIPS,
 } from './i18n/hero-atlas/help-content.js';
+import { loadCodexStore } from './codex-loader.js';
+import { provenanceFor } from './codex-provenance.js';
+import {
+  eraForGameVersion,
+  isRenderable,
+  worstCodexStatus,
+} from './codex-ui.js';
 import '../css/hero-atlas-detail-v14.css';
 
 import {
@@ -287,6 +294,115 @@ function getSynergies(heroName, state = _heroesTabState) {
   return sortedPartners.slice(0, 3);
 }
 
+// ─── CODEX MODE: data access + projections ───────────────────────────────────
+const CODEX_PRESETS = Object.freeze(['free', 'paid', 'skins-paid']);
+
+function normalizeCodexPreset(value) {
+  const preset = String(value || '').trim().toLowerCase();
+  return CODEX_PRESETS.includes(preset) ? preset : 'free';
+}
+
+// Fills the module-level codex snapshot once and re-renders the Atlas when the
+// payload resolves, so codex columns upgrade in place without blocking the
+// local-data first paint.
+async function hydrateCodexStore() {
+  if (_codexRefreshApplied) return;
+  if (_codexRequested) return;
+  _codexRequested = true;
+  try {
+    const store = await loadCodexStore();
+    _codexStoreSnapshot = store;
+  } catch {
+    _codexStoreSnapshot = null;
+  }
+  _codexRefreshApplied = true;
+  renderHeroesTab({ suppressLocaleRefresh: true });
+}
+
+function codexLoadStatus() {
+  if (_codexStoreSnapshot) return 'ready';
+  return _codexRequested ? 'loading' : 'unavailable';
+}
+
+function codexHeroRecords() {
+  return _codexStoreSnapshot ? _codexStoreSnapshot.datasets['heroes-codex'] || [] : [];
+}
+
+function codexDuelRecords() {
+  return _codexStoreSnapshot ? _codexStoreSnapshot.datasets['duel-matrix'] || [] : [];
+}
+
+function codexHeroRecord(heroName) {
+  return codexHeroRecords().find((record) => record?.heroName === heroName) || null;
+}
+
+// Lane-3 frozen access column: standard | paid | royal. Falls back to 'paid'
+// for any paid-state hero the payload does not know yet.
+function codexAccessFor(heroName) {
+  const record = codexHeroRecord(heroName);
+  const access = record?.access;
+  return access === 'standard' || access === 'royal' ? access : 'paid';
+}
+
+// Skills 1-8 live ONLY in the codex payload and are never copied into
+// js/heroes-info.js. This merge unions payload skills (ids 1-8, each with its
+// own provenance) with the community-verified heroesExtendedData skills.
+function mergeHeroSkills(heroName, ext) {
+  const payloadSkills = codexHeroRecord(heroName)?.skills || [];
+  const localSkills = ext?.skills || [];
+  const byId = new Map();
+  for (const skill of localSkills) {
+    byId.set(Number(skill.id), { ...skill, sourceSurface: 'atlas' });
+  }
+  for (const skill of payloadSkills) {
+    const id = Number(skill.id);
+    if (!Number.isInteger(id)) continue;
+    byId.set(id, { ...skill, sourceSurface: 'codex' });
+  }
+  return [...byId.values()].sort((a, b) => a.id - b.id);
+}
+
+// Read-only projection of the skin-mode rank override block in combos-db.
+// Lives in js/codex-rank-projection.js (pure + unit-tested).
+export { projectSkinModeRankDeltas } from './codex-rank-projection.js';
+
+// Star-up cost summary for a skin: the tier's maximizeTotal items rendered as
+// "18 × Epic Hero Medal · 9 × Legendary Hero Medal · …". Mythic has no
+// preserving step, so its shorter total is correct and must not be padded.
+function skinStarUpCostSummary(skin) {
+  const tier = getSkinTiers().find((entry) => entry.typeKey === skin?.type);
+  if (!tier?.maximizeTotal?.length) return null;
+  return tier.maximizeTotal
+    .map((item) => `${formatLocaleNumber(item.qty, currentLanguage)} × ${heroContentText(item.name)}`)
+    .join(' · ');
+}
+
+const CODEX_STATUS_SAFE = Object.freeze(['current', 'historical', 'unverified']);
+
+function renderVerificationChip(status, { ariaBase = '' } = {}) {
+  const safeStatus = CODEX_STATUS_SAFE.includes(status) ? status : 'unverified';
+  const label = heroUi(`verification${safeStatus.charAt(0).toUpperCase()}${safeStatus.slice(1)}`);
+  const aria = ariaBase
+    ? `aria-label="${escapeHtml(heroUi('verificationAria', { status: label }))}"`
+    : '';
+  return `<span class="codex-chip codex-chip--${safeStatus}" data-codex-status="${safeStatus}" ${aria}><span class="codex-chip-dot" aria-hidden="true"></span>${escapeHtml(label)}</span>`;
+}
+
+function heroCodexStatus(heroName) {
+  const record = codexHeroRecord(heroName);
+  if (!record) return null;
+  const envelope = provenanceFor(record);
+  return envelope ? envelope.verificationStatus : null;
+}
+
+function renderEraBadge(gameVersionScope) {
+  const era = eraForGameVersion(gameVersionScope);
+  if (!era) {
+    return `<span class="codex-era-badge codex-era-badge--unknown">${escapeHtml(heroUi('duelEraUnknown'))}</span>`;
+  }
+  return `<span class="codex-era-badge" style="--era-color:var(${era.colorToken})">${escapeHtml(heroUi(era.eraKey))}</span>`;
+}
+
 // ─── HEROES TAB: detail view + auto-ranking ───────────────────────────────────
 function computeHeroRankings() {
   const total = baseRankedCombos.length;
@@ -335,6 +451,8 @@ let _heroesTabState = {
   skinView: 'tiers',
   skinSearch: '',
   skinType: 'all',
+  codexPreset: 'free',
+  codexSort: 'name',
 };
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
@@ -343,6 +461,9 @@ let _heroesUrlParamsApplied = false;
 let _heroesDetailFocusRequested = false;
 let _heroesReturnFocusName = null;
 let _heroLocaleRefreshToken = 0;
+let _codexStoreSnapshot = null;
+let _codexRefreshApplied = false;
+let _codexRequested = false;
 
 async function refreshHeroAtlasLocale(locale = currentLanguage) {
   const normalized = normalizeHeroAtlasLocale(locale);
@@ -377,7 +498,12 @@ function applyHeroAtlasUrlParams() {
   // override the mode, otherwise a hub-selected mode could be clobbered by
   // the first render racing ahead of setHeroAtlasMode.
   if (params.has('atlas')) {
-    _heroesTabState.mode = params.get('atlas') === 'skins' ? 'skins' : 'heroes';
+    const atlasMode = params.get('atlas');
+    _heroesTabState.mode =
+      atlasMode === 'skins' ? 'skins' : atlasMode === 'codex' ? 'codex' : 'heroes';
+  }
+  if (params.has('codexPreset')) {
+    _heroesTabState.codexPreset = normalizeCodexPreset(params.get('codexPreset'));
   }
   const seasonParam = params.get('season') || params.get('seasons');
   if (seasonParam) {
@@ -403,12 +529,13 @@ function applyHeroAtlasUrlParams() {
 }
 
 /**
- * Show the Atlas in hero or skin mode. The Heroes & Combos Hub calls this when
- * its Heroes / Skins sub-tabs are selected; the Atlas no longer carries its own
- * toggle. Returns true when the mode actually changed.
+ * Show the Atlas in hero, skin, or codex mode. The Heroes & Combos Hub calls
+ * this when its Codex / Heroes / Skins sub-tabs are selected; the Atlas no
+ * longer carries its own toggle. Returns true when the mode actually changed.
  */
 export function setHeroAtlasMode(mode) {
-  const next = mode === 'skins' ? 'skins' : 'heroes';
+  const next =
+    mode === 'skins' ? 'skins' : mode === 'codex' ? 'codex' : 'heroes';
   if (_heroesTabState.mode === next) return false;
   _heroesTabState.mode = next;
   updateHeroAtlasUrlParams();
@@ -436,6 +563,14 @@ function updateHeroAtlasUrlParams() {
 
   if (_heroesTabState.selected) params.set('hero', _heroesTabState.selected);
   else params.delete('hero');
+
+  // Codex preset is written only inside codex mode and removed on exit,
+  // mirroring the ?state handling for hero mode.
+  if (_heroesTabState.mode === 'codex' && _heroesTabState.codexPreset !== 'free') {
+    params.set('codexPreset', _heroesTabState.codexPreset);
+  } else {
+    params.delete('codexPreset');
+  }
 
   const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
   window.history.replaceState(null, '', next);
@@ -487,8 +622,102 @@ function csvCell(value) {
   return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
 }
 
+function exportCodexCsv(stats) {
+  const { codexPreset } = _heroesTabState;
+  const skinModeDeltas = projectSkinModeRankDeltas(
+    baseRankedCombos,
+    filterCombosForSkinMode(rankedCombos, true, () => true),
+    allHeroesData.map((hero) => hero.name)
+  );
+  const seasonSet = new Set(normalizeHeroAtlasSeasons(_heroesTabState.seasons));
+  const query = (_heroesTabState.search || '').trim().toLowerCase();
+  let rows = [];
+  if (codexPreset === 'free') {
+    rows = allHeroesData.filter((hero) => hero.State === 'Free');
+  } else if (codexPreset === 'paid') {
+    rows = allHeroesData.filter((hero) => hero.State === 'Paid');
+  } else {
+    rows = allHeroesData.filter((hero) => getHeroSkins(hero.name).length > 0 || hero.State === 'Paid');
+  }
+  rows = rows.filter((hero) => seasonSet.has(hero.season));
+  if (query) rows = rows.filter((hero) => hero.name.toLowerCase().includes(query));
+  rows = codexSortHeroes(rows, stats, codexPreset, skinModeDeltas);
+
+  const header =
+    codexPreset === 'free'
+      ? [heroUi('name'), heroUi('season'), heroUi('troop'), heroUi('rating'), heroUi('bestRank'), heroUi('skins'), heroUi('codexColVerification')]
+      : codexPreset === 'paid'
+        ? [heroUi('name'), heroUi('season'), heroUi('troop'), heroUi('codexColAccess'), heroUi('rating'), heroUi('skins'), heroUi('codexColVerification')]
+        : [heroUi('name'), heroUi('codexColSkinType'), heroUi('codexColStarCost'), heroUi('limitedHeroMechanic'), heroUi('codexColRankDelta'), heroUi('codexColVerification')];
+
+  const lines = [header.map(csvCell).join(',')];
+  rows.forEach((hero) => {
+    const s = stats[hero.name] || {};
+    const status = heroCodexStatus(hero.name) || '';
+    if (codexPreset === 'free') {
+      lines.push(
+        [
+          hero.name,
+          hero.season,
+          getLocalizedTroop(hero.Type),
+          s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(1) : '',
+          s.topComboRank !== Infinity ? s.topComboRank : '',
+          getSkinCount(hero.name),
+          status,
+        ]
+          .map(csvCell)
+          .join(',')
+      );
+    } else if (codexPreset === 'paid') {
+      lines.push(
+        [
+          hero.name,
+          hero.season,
+          getLocalizedTroop(hero.Type),
+          codexAccessFor(hero.name),
+          s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(1) : '',
+          getSkinCount(hero.name),
+          status,
+        ]
+          .map(csvCell)
+          .join(',')
+      );
+    } else {
+      const skin = getSkinForHero(hero.name);
+      lines.push(
+        [
+          hero.name,
+          skin?.type || '',
+          skinStarUpCostSummary(skin) || '',
+          getHeroHiddenPower(hero.name) ? 'yes' : '',
+          skinModeDeltas.get(hero.name) || 0,
+          status,
+        ]
+          .map(csvCell)
+          .join(',')
+      );
+    }
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `hero-codex-${codexPreset}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  if (typeof window.showToast === 'function') {
+    window.showToast(heroUi('codexExportCsv', { preset: codexPreset }), 'success');
+  }
+}
+
 function exportHeroAtlasCsv() {
   const stats = computeHeroRankings();
+  if (_heroesTabState.mode === 'codex') {
+    exportCodexCsv(stats);
+    return;
+  }
   const rows = getSortedHeroes(getFilteredHeroes(), stats);
   const header = [
     heroUi('name'),
@@ -667,6 +896,16 @@ function wireHeroesTabEvents(container) {
       return;
     }
 
+    const codexPresetBtn = e.target.closest('[data-codex-preset]');
+    if (codexPresetBtn) {
+      _heroesTabState.codexPreset = normalizeCodexPreset(codexPresetBtn.dataset.codexPreset);
+      _heroesTabState.codexSort = 'name';
+      _heroesTabState.limit = 20;
+      updateHeroAtlasUrlParams();
+      renderHeroesTab();
+      return;
+    }
+
     const pickHero = e.target.closest('[data-hero-pick]');
     if (pickHero) {
       e.stopPropagation();
@@ -710,7 +949,11 @@ function wireHeroesTabEvents(container) {
 
   container.addEventListener('change', (e) => {
     if (e.target.id !== 'heroesSortSelect') return;
-    _heroesTabState.sort = e.target.value;
+    if (_heroesTabState.mode === 'codex') {
+      _heroesTabState.codexSort = e.target.value;
+    } else {
+      _heroesTabState.sort = e.target.value;
+    }
     _heroesTabState.limit = 20;
     updateHeroAtlasUrlParams();
     renderHeroesTab();
@@ -1053,169 +1296,115 @@ function renderSkinsView() {
       </div>`;
 }
 
-function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
-  const container = document.getElementById('heroesTabContent');
-  if (!container) return;
-  if (
-    !suppressLocaleRefresh &&
-    getActiveHeroAtlasLocale() !== normalizeHeroAtlasLocale(currentLanguage)
-  ) {
-    void refreshHeroAtlasLocale(currentLanguage);
-  }
-  applyHeroAtlasUrlParams();
+function lineupIncludesHero(record, heroName) {
+  const lineup = record?.lineup || {};
+  return (
+    (Array.isArray(lineup.attacker) && lineup.attacker.includes(heroName)) ||
+    (Array.isArray(lineup.defender) && lineup.defender.includes(heroName))
+  );
+}
 
-  wireHeroesTabEvents(container);
+function duelRecordsForHero(heroName) {
+  return codexDuelRecords().filter((record) => lineupIncludesHero(record, heroName));
+}
 
-  const searchHadFocus = document.activeElement?.id === 'heroesTabSearch';
-  const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
-  const gallerySearchHadFocus = document.activeElement?.id === 'skinsGallerySearch';
-  const gallerySearchCaret = document.getElementById('skinsGallerySearch')?.selectionStart ?? null;
-
-  const stats = computeHeroRankings();
-  const {
-    seasons: selectedSeasons,
-    troop,
-    state,
-    search,
-    selected,
-    view,
-    comboScope,
-    sort,
-  } = _heroesTabState;
-  const t = translations[currentLanguage] || translations.en;
-
-  const mode = _heroesTabState.mode || 'heroes';
-  if (mode === 'skins') {
-    container.innerHTML = renderSkinsView();
-    if (gallerySearchHadFocus) {
-      const galleryInput = document.getElementById('skinsGallerySearch');
-      if (galleryInput) {
-        galleryInput.focus();
-        if (gallerySearchCaret != null) {
-          galleryInput.setSelectionRange(gallerySearchCaret, gallerySearchCaret);
-        }
-      }
-    }
-    return;
-  }
-
-  const troops = ['all', 'Archers', 'Footmen', 'Cavalry'];
-  const states = ['all', 'Free', 'Paid'];
-  const filtered = getFilteredHeroes();
-  const filtersActive = heroesFiltersActive();
-  const normalizedSeasons = normalizeHeroAtlasSeasons(selectedSeasons);
-  const allSeasonsSelected = normalizedSeasons.length === POPULATED_HERO_SEASONS.length;
-
-  const seasonTabsHtml = `
-    <button type="button" class="hero-tab-season ${allSeasonsSelected ? 'active' : ''}" data-hero-season="all" aria-pressed="${allSeasonsSelected}" title="${escapeHtml(heroUi('selectAllSeasons'))}">
-      ${escapeHtml(heroUi('all'))}
-    </button>
-    ${POPULATED_HERO_SEASONS.map(
-      (s) => `
-    <button type="button" class="hero-tab-season ${normalizedSeasons.includes(s) ? 'active' : ''}" data-hero-season="${s}" aria-pressed="${normalizedSeasons.includes(s)}"
-      ${seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>
-      ${s}
-    </button>`
-    ).join('')}`;
-
-  const troopPillsHtml = troops
+function renderDuelRecordCard(record) {
+  const envelope = provenanceFor(record);
+  const status = envelope ? envelope.verificationStatus : 'unverified';
+  const battleCount = Number(record.battleCount) || 0;
+  const wins = Number(record.wins) || 0;
+  const winRate = battleCount > 0 ? (wins / battleCount) * 100 : 0;
+  const ci = record.confidenceInterval || {};
+  const ciLabel =
+    Number.isFinite(ci.lo) && Number.isFinite(ci.hi)
+      ? `aria-label="${escapeHtml(heroUi('duelCIAria', { lo: Math.round(ci.lo * 100), hi: Math.round(ci.hi * 100) }))}"`
+      : '';
+  const opponents = [
+    ...(Array.isArray(record.lineup?.attacker) ? record.lineup.attacker : []),
+    ...(Array.isArray(record.lineup?.defender) ? record.lineup.defender : []),
+  ].filter((name) => name !== undefined);
+  const opponentsHtml = opponents
     .map(
-      (tr) => `
-    <button type="button" class="heroes-filter-pill ${troop === tr ? 'active' : ''}" data-hero-troop="${tr}" aria-pressed="${troop === tr}">
-      ${tr === 'all' ? escapeHtml(heroUi('allTroops')) : getLocalizedTroop(tr)}
-    </button>`
+      (name) => `
+      <button type="button" class="duel-lineup-hero" data-hero-pick="${escapeHtml(name)}" title="${escapeHtml(heroUi('viewHero', { hero: name }))}">
+        <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" width="28" height="28" loading="lazy" decoding="async">
+        <span>${escapeHtml(name)}</span>
+      </button>`
     )
     .join('');
+  return `
+    <article class="duel-record-card duel-record-card--${status}" data-duel-status="${status}">
+      <div class="duel-record-head">
+        ${renderEraBadge(record.sourceGameVersion)}
+        <span class="duel-record-count">${escapeHtml(heroUi('duelRecordCount', { n: formatLocaleNumber(battleCount, currentLanguage) }))}</span>
+        ${renderVerificationChip(status)}
+      </div>
+      <div class="duel-record-bar" ${ciLabel} title="${escapeHtml(heroUi('duelWinRate'))}">
+        <span class="duel-record-bar-label">${escapeHtml(heroUi('duelWinRate'))}</span>
+        <span class="duel-record-bar-track"><span class="duel-record-bar-fill" style="width:${winRate.toFixed(1)}%"></span></span>
+        <span class="duel-record-bar-value">${winRate.toFixed(1)}%</span>
+      </div>
+      <div class="duel-record-lineups">${opponentsHtml}</div>
+      ${record.inclusionCriteria ? `<p class="duel-record-criteria">${escapeHtml(String(record.inclusionCriteria))}</p>` : ''}
+      ${envelope ? `<p class="duel-record-credit">${escapeHtml(envelope.source)} · ${escapeHtml(envelope.credit)} · ${escapeHtml(envelope.captureDate)}</p>` : ''}
+    </article>`;
+}
 
-  const statePillsHtml = states
-    .map(
-      (st) => `
-    <button type="button" class="heroes-filter-pill ${state === st ? 'active' : ''}" data-hero-state="${st}" aria-pressed="${state === st}">
-      ${escapeHtml(st === 'all' ? heroUi('all') : heroUi(st === 'Free' ? 'free' : 'paid'))}
-    </button>`
-    )
-    .join('');
+function renderDuelSection(heroName) {
+  const records = duelRecordsForHero(heroName);
+  if (!records.length) {
+    return `
+    <section id="detail-section-duels" class="detail-section-block detail-section-block--duels" aria-labelledby="detail-title-duels">
+      <h4 id="detail-title-duels" class="detail-section-title">${escapeHtml(heroUi('duelsTitle'))}</h4>
+      <p class="hero-detail-empty">${escapeHtml(heroUi('duelNoData'))}</p>
+    </section>`;
+  }
+  const verified = records.filter(
+    (record) => isRenderable(record) && provenanceFor(record).verificationStatus !== 'unverified'
+  );
+  const unverified = records.filter(
+    (record) => !isRenderable(record) || provenanceFor(record).verificationStatus === 'unverified'
+  );
+  const unverifiedHtml = unverified.length
+    ? `
+    <details class="duel-evidence-group">
+      <summary>${escapeHtml(heroUi('duelEvidenceOnly'))} (${unverified.length})</summary>
+      <div class="duel-record-list">${unverified.map(renderDuelRecordCard).join('')}</div>
+    </details>`
+    : '';
+  return `
+    <section id="detail-section-duels" class="detail-section-block detail-section-block--duels" aria-labelledby="detail-title-duels">
+      <h4 id="detail-title-duels" class="detail-section-title">${escapeHtml(heroUi('duelsTitle'))}</h4>
+      <div class="duel-record-list">${verified.map(renderDuelRecordCard).join('')}</div>
+      ${unverifiedHtml}
+    </section>`;
+}
 
-  if (view === 'ranking') {
-    const ranked = getSortedHeroes(filtered, stats, sort);
-
-    const visibleRanked = ranked.slice(0, _heroesTabState.limit);
-    const rowsHtml = visibleRanked.length
-      ? visibleRanked
-          .map((hero, i) => {
-            const s = stats[hero.name] || {};
-            const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
-            const tagColor = seasonColors[hero.season] || '#f97316';
-            const podiumClass =
-              i === 0
-                ? ' rank-medal--gold'
-                : i === 1
-                  ? ' rank-medal--silver'
-                  : i === 2
-                    ? ' rank-medal--bronze'
-                    : '';
-            const rankNumber = `${i + 1}`;
-            const rankClass = `rank-medal rank-medal--num${podiumClass}`;
-            return `
-        <button type="button" class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="${selected === hero.name}">
-          <span class="${rankClass}">${rankNumber}</span>
-          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
-          <span class="rank-info">
-            <span class="rank-name">
-              ${escapeHtml(hero.name)}
-              ${hero.State === 'Paid' ? paidIconHtml() : ''}
-            </span>
-            <span class="rank-meta">
-              <span style="color:${tagColor};font-weight:800;">${hero.season}</span>
-              ${hero.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="rank-apps">${escapeHtml(heroUi('original'))} ${escapeHtml(hero.releaseSeason)}</span>` : ''}
-              <span class="rank-troop ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
-              ${s.appearances ? `<span class="rank-apps">${escapeHtml(heroUi(s.appearances === 1 ? 'comboOne' : 'comboMany', { n: s.appearances }))}</span>` : `<span class="rank-apps rank-apps-zero">${escapeHtml(heroUi('notRanked'))}</span>`}
-            </span>
-            <span class="rank-bar-wrap">
-              <span class="rank-bar" style="width:${finalPct}%;background:${tagColor};"></span>
-            </span>
-          </span>
-          <span class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</span>
-        </button>`;
-          })
-          .join('')
-      : `<p class="hero-atlas-empty">${escapeHtml(heroUi('noHeroesMatch'))}</p>`;
-
-    const showMoreHtml =
-      ranked.length > _heroesTabState.limit
-        ? `
-      <div class="hero-tab-show-more-wrap">
-        <button type="button" class="hero-tab-show-more">
-          ${escapeHtml(heroUi('showMore'))} (${ranked.length - _heroesTabState.limit} ${escapeHtml(heroUi('remaining'))})
-        </button>
-      </div>`
-        : '';
-
-    let detailHtml = '';
-    if (selected) {
-      const hero = allHeroesData.find((h) => h.name === selected);
-      const ext = heroesExtendedData[selected];
-      const s = stats[selected] || {};
-      const tagColor = hero ? seasonColors[hero.season] || '#f97316' : '#f97316';
-      const synergies = getSynergies(selected, _heroesTabState);
-      const heroCombos = getHeroAtlasCombos(selected, _heroesTabState);
-      const comboScopeHint =
-        comboScope === 'season-capped'
-          ? (
-              t.heroesComboScopeHint ||
-              'Combos using heroes up to {season} within your season filters.'
-            ).replace('{season}', hero?.season || '')
-          : t.heroesComboScopeAllHint || 'All ranked combos from the full database.';
-      const heroCounterWins = getCombosCounteredByHero(selected);
-      const heroCounterLosses = getCountersAgainstHero(selected);
-      const hasHeroCounters = heroCounterWins.length > 0 || heroCounterLosses.length > 0;
-      const counterLimit = 6;
-      const renderCounterCount = (count) =>
-        heroUi(count === 1 ? 'pathOne' : 'pathMany', {
-          n: `${Math.min(count, counterLimit)}${count > counterLimit ? ` / ${count}` : ''}`,
-        });
-      const heroCountersHtml = hasHeroCounters
-        ? `
+function renderHeroDetailPanel(selected, stats, t) {
+  const hero = allHeroesData.find((h) => h.name === selected);
+  const ext = heroesExtendedData[selected];
+  const s = stats[selected] || {};
+  const tagColor = hero ? seasonColors[hero.season] || '#f97316' : '#f97316';
+  const synergies = getSynergies(selected, _heroesTabState);
+  const heroCombos = getHeroAtlasCombos(selected, _heroesTabState);
+  const comboScope = _heroesTabState.comboScope;
+  const comboScopeHint =
+    comboScope === 'season-capped'
+      ? (
+          t.heroesComboScopeHint ||
+          'Combos using heroes up to {season} within your season filters.'
+        ).replace('{season}', hero?.season || '')
+      : t.heroesComboScopeAllHint || 'All ranked combos from the full database.';
+  const heroCounterWins = getCombosCounteredByHero(selected);
+  const heroCounterLosses = getCountersAgainstHero(selected);
+  const hasHeroCounters = heroCounterWins.length > 0 || heroCounterLosses.length > 0;
+  const counterLimit = 6;
+  const renderCounterCount = (count) =>
+    heroUi(count === 1 ? 'pathOne' : 'pathMany', {
+      n: `${Math.min(count, counterLimit)}${count > counterLimit ? ` / ${count}` : ''}`,
+    });
+  const heroCountersHtml = hasHeroCounters
+    ? `
         <div class="hero-counter-section-grid">
           <section class="hero-counter-column" aria-labelledby="hero-counter-wins-title">
             <div class="hero-counter-column-head">
@@ -1256,11 +1445,11 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
             )}
           </section>
         </div>`
-        : '';
+    : '';
 
-      const combosHtml = heroCombos
-        .map(
-          (c) => `
+  const combosHtml = heroCombos
+    .map(
+      (c) => `
         <article class="detail-combo-row" aria-label="${escapeHtml(heroUi('comboRankAria', { rank: c.rank, score: parseFloat(c.score).toFixed(1) }))}">
           <div class="detail-combo-top">
             <span class="detail-combo-rank">#${c.rank}</span>
@@ -1282,21 +1471,28 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
           </div>
           ${renderCountersToggle(c.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
         </article>`
-        )
-        .join('');
+    )
+    .join('');
 
-      const skillsHtml = ext
-        ? ext.skills
-            .map((sk) => {
-              const canonicalTarget = String(sk.target || 'Target not captured');
-              const skillTarget =
-                heroSkillText(selected, sk, 'target') || heroUi('targetNotCaptured');
-              const skillType = heroSkillText(selected, sk, 'type');
-              const skillDescription = heroSkillText(selected, sk, 'desc');
-              const targetClass = canonicalTarget.toLowerCase().includes('enemy')
-                ? 'enemy'
-                : 'ally';
-              return `
+  const mergedSkills = mergeHeroSkills(selected, ext);
+  const skillsHtml = mergedSkills.length
+    ? mergedSkills
+        .map((sk) => {
+          const canonicalTarget = String(sk.target || 'Target not captured');
+          const skillTarget =
+            heroSkillText(selected, sk, 'target') || heroUi('targetNotCaptured');
+          const skillType = heroSkillText(selected, sk, 'type');
+          const skillDescription = heroSkillText(selected, sk, 'desc');
+          const targetClass = canonicalTarget.toLowerCase().includes('enemy') ? 'enemy' : 'ally';
+          const skillStatus =
+            sk.sourceSurface === 'codex'
+              ? provenanceFor(sk)?.verificationStatus || 'unverified'
+              : 'current';
+          const translationChip =
+            sk.sourceSurface === 'codex' && normalizeHeroAtlasLocale(currentLanguage) !== 'en'
+              ? `<span class="codex-chip codex-chip--translation" title="${escapeHtml(heroUi('skillTranslationMissing'))}">EN</span>`
+              : '';
+          return `
         <article class="detail-skill" aria-label="${escapeHtml(heroUi('skill'))} ${escapeHtml(String(sk.id))}">
           <div class="detail-skill-rail" aria-hidden="true">${escapeHtml(String(sk.id).padStart(2, '0'))}</div>
           <div class="detail-skill-body">
@@ -1304,37 +1500,39 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
               <span class="detail-skill-id">${escapeHtml(heroUi('skill'))} ${escapeHtml(String(sk.id))}</span>
               ${renderSkillType(sk.type, skillType)}
               ${sk.range && sk.range !== '-' ? `<span class="detail-skill-range">${escapeHtml(heroUi('range'))} ${escapeHtml(String(sk.range))}</span>` : ''}
+              ${renderVerificationChip(skillStatus, { ariaBase: heroUi('skillVerification', { status: skillStatus }) })}
+              ${translationChip}
             </div>
             <p class="detail-skill-target ${targetClass}">${escapeHtml(skillTarget)}</p>
             <p class="detail-skill-desc">${formatSkillText(sk.desc, skillDescription)}</p>
           </div>
         </article>`;
-            })
-            .join('')
-        : `<p class="hero-detail-empty">${escapeHtml(heroUi('skillDataUnavailable'))}</p>`;
+        })
+        .join('')
+    : `<p class="hero-detail-empty">${escapeHtml(heroUi('skillDataUnavailable'))}</p>`;
 
-      const heroSkinsList = getHeroSkins(selected);
-      const hiddenPower = getHeroHiddenPower(selected);
-      const hiddenPowerHtml = renderHiddenPowerCard(hiddenPower);
-      const skinsHtml =
-        heroSkinsList.length > 0
-          ? heroSkinsList
-              .map((skin) => {
-                const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
-                const ba = skin.bioAttributes || {};
-                const mba = skin.maxBioAttributes || {};
-                const skinAssetUrl = getExactSkinAssetUrl(skin);
-                const skinMeta = [
-                  skin.rarity && skin.rarity !== skin.type ? skin.rarity : null,
-                  skin.combatStyle,
-                  skin.troopType,
-                ].filter(Boolean);
-                const inheritingSkillRef = skin.inheritingSkill?.replacesSlot
-                  ? `${heroUi('skill')} ${skin.inheritingSkill.replacesSlot}`
-                  : heroUi('baseSkill');
-                const inheritingFrom = skin.inheritingSkill?.fromSkill || inheritingSkillRef;
-                const inheritingName = skin.inheritingSkill?.name || heroUi('inheritingSkill');
-                return `
+  const heroSkinsList = getHeroSkins(selected);
+  const hiddenPower = getHeroHiddenPower(selected);
+  const hiddenPowerHtml = renderHiddenPowerCard(hiddenPower);
+  const skinsHtml =
+    heroSkinsList.length > 0
+      ? heroSkinsList
+          .map((skin) => {
+            const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
+            const ba = skin.bioAttributes || {};
+            const mba = skin.maxBioAttributes || {};
+            const skinAssetUrl = getExactSkinAssetUrl(skin);
+            const skinMeta = [
+              skin.rarity && skin.rarity !== skin.type ? skin.rarity : null,
+              skin.combatStyle,
+              skin.troopType,
+            ].filter(Boolean);
+            const inheritingSkillRef = skin.inheritingSkill?.replacesSlot
+              ? `${heroUi('skill')} ${skin.inheritingSkill.replacesSlot}`
+              : heroUi('baseSkill');
+            const inheritingFrom = skin.inheritingSkill?.fromSkill || inheritingSkillRef;
+            const inheritingName = skin.inheritingSkill?.name || heroUi('inheritingSkill');
+            return `
         <article class="detail-skin-card" style="--skin-accent:${escapeHtml(typeInfo.color)}">
           <div class="detail-skin-showcase${skinAssetUrl ? '' : ' detail-skin-showcase--text-only'}">
             ${
@@ -1436,22 +1634,30 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
           </section>
           </div>
         </article>`;
-              })
-              .join('')
-          : '';
+          })
+          .join('')
+      : '';
 
-      const firstDetailSection =
-        synergies.length > 0 ? 'synergies' : heroSkinsList.length > 0 ? 'skins' : 'skills';
-      const detailNavHtml = `
+  const duelRecords = duelRecordsForHero(selected);
+  const firstDetailSection =
+    synergies.length > 0 ? 'synergies' : heroSkinsList.length > 0 ? 'skins' : 'skills';
+  const detailNavHtml = `
         <nav class="detail-nav" aria-label="${escapeHtml(heroUi('heroDetailSections'))}">
           ${synergies.length > 0 ? `<button type="button" class="detail-nav-btn active" data-detail-section="synergies" aria-current="location">${escapeHtml(heroUi('synergies'))}</button>` : ''}
           ${heroSkinsList.length > 0 ? `<button type="button" class="detail-nav-btn ${firstDetailSection === 'skins' ? 'active' : ''}" data-detail-section="skins"${firstDetailSection === 'skins' ? ' aria-current="location"' : ''}>${escapeHtml(t.heroesBioSkinsTitle || 'Bio Skins')}</button>` : ''}
           <button type="button" class="detail-nav-btn ${firstDetailSection === 'skills' ? 'active' : ''}" data-detail-section="skills"${firstDetailSection === 'skills' ? ' aria-current="location"' : ''}>${escapeHtml(t.heroesSkillsTitle || 'Skills')}</button>
           <button type="button" class="detail-nav-btn" data-detail-section="combos">${escapeHtml(t.heroesTopCombos || 'Top Combos')}</button>
+          <button type="button" class="detail-nav-btn" data-detail-section="duels">${escapeHtml(heroUi('duelsTitle'))}</button>
           ${hasHeroCounters ? `<button type="button" class="detail-nav-btn" data-detail-section="counters">${escapeHtml(heroUi('counters'))}</button>` : ''}
         </nav>`;
 
-      detailHtml = `
+  const heroRecord = codexHeroRecord(selected);
+  const headerStatus = worstCodexStatus([heroRecord, ...duelRecords].filter(Boolean));
+  const headerChip = heroRecord
+    ? `<span class="detail-codex-chip">${renderVerificationChip(headerStatus)}</span>`
+    : '';
+
+  return `
         <article class="hero-detail-panel hero-atlas-detail-v14" style="--hero-accent:${escapeHtml(tagColor)}" aria-labelledby="hero-detail-title">
           <button type="button" class="heroes-mobile-back" data-hero-close>${escapeHtml(heroUi('backToRanking'))}</button>
           <button type="button" class="detail-close" data-hero-close aria-label="${escapeHtml(heroUi('closeHeroDetail'))}">${escapeHtml(heroUi('close'))}</button>
@@ -1465,6 +1671,7 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
                 ${hero?.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="detail-season-tag detail-origin-season-tag">${escapeHtml(heroUi('original'))} ${escapeHtml(hero.releaseSeason)}</span>` : ''}
                 <span class="detail-troop-tag ${getTroopColorClass(hero?.Type)}">${getLocalizedTroop(hero?.Type || 'All')}</span>
                 <span class="detail-state-tag ${hero?.State === 'Paid' ? 'paid' : 'free'}">${escapeHtml(heroUi(hero?.State === 'Paid' ? 'paid' : 'free'))}</span>
+                ${headerChip}
               </div>
               <div class="detail-stats-row">
                 <div class="detail-stat"><div class="detail-stat-lbl">${escapeHtml(heroUi('rating'))}</div><div class="detail-stat-val" style="color:${tagColor}">${s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(1) : '—'}</div></div>
@@ -1509,7 +1716,7 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
 
             <section id="detail-section-skills" class="detail-section-block detail-section-block--skills" aria-labelledby="detail-title-skills">
               <h4 id="detail-title-skills" class="detail-section-title">${escapeHtml(t.heroesSkillsTitle || 'Skills')}</h4>
-              <div class="detail-skills" data-skill-count="${ext?.skills?.length || 0}">${skillsHtml}</div>
+              <div class="detail-skills" data-skill-count="${mergedSkills.length || 0}">${skillsHtml}</div>
             </section>
 
             <section id="detail-section-combos" class="detail-section-block detail-section-block--combos" aria-labelledby="detail-title-combos">
@@ -1528,6 +1735,8 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
               <div class="detail-combos">${combosHtml || `<p class="hero-detail-empty">${escapeHtml(t.heroesNoCombos || 'No ranked combos yet.')}</p>`}</div>
             </section>
 
+            ${renderDuelSection(selected)}
+
             ${
               hasHeroCounters
                 ? `
@@ -1539,7 +1748,401 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
             }
           </div>
         </article>`;
+}
+
+function codexSortHeroes(heroes, stats, preset, deltas) {
+  const sort = _heroesTabState.codexSort || 'name';
+  return [...heroes].sort((a, b) => {
+    const aStats = stats[a.name] || {};
+    const bStats = stats[b.name] || {};
+    if (sort === 'season') {
+      return (
+        (getSeasonIndex(a.season) - getSeasonIndex(b.season)) ||
+        a.name.localeCompare(b.name)
+      );
     }
+    if (sort === 'rating') {
+      return (bStats.finalRating || 0) - (aStats.finalRating || 0) || a.name.localeCompare(b.name);
+    }
+    if (sort === 'access') {
+      const rank = { standard: 0, paid: 1, royal: 2 };
+      const aAccess = codexAccessFor(a.name);
+      const bAccess = codexAccessFor(b.name);
+      return rank[aAccess] - rank[bAccess] || a.name.localeCompare(b.name);
+    }
+    if (sort === 'skin-type') {
+      const aSkin = getSkinForHero(a.name);
+      const bSkin = getSkinForHero(b.name);
+      return (
+        String(aSkin?.type || '').localeCompare(String(bSkin?.type || '')) ||
+        a.name.localeCompare(b.name)
+      );
+    }
+    if (sort === 'rank-delta') {
+      return (deltas.get(b.name) || 0) - (deltas.get(a.name) || 0) || a.name.localeCompare(b.name);
+    }
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function codexAccessLabel(heroName) {
+  const access = codexAccessFor(heroName);
+  const key = access === 'royal' ? 'accessRoyal' : access === 'standard' ? 'accessStandard' : 'accessPaid';
+  return `<span class="codex-access codex-access--${access}">${escapeHtml(heroUi(key))}</span>`;
+}
+
+function renderCodexRow(hero, stats, preset, skinModeDeltas) {
+  const s = stats[hero.name] || {};
+  const status = heroCodexStatus(hero.name);
+  const verification = status ? renderVerificationChip(status) : `<span class="codex-chip-placeholder" aria-hidden="true">—</span>`;
+  const seasonMeta = `
+    <span class="codex-season" style="--sc:${seasonColors[hero.season] || '#f97316'}">${hero.season}</span>
+    ${hero.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="codex-origin">${escapeHtml(heroUi('original'))} ${escapeHtml(hero.releaseSeason)}</span>` : ''}`;
+  if (preset === 'free') {
+    const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
+    return `
+    <button type="button" class="hero-rank-row hero-codex-row" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="false">
+      <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
+      <span class="codex-col-name">${escapeHtml(hero.name)}</span>
+      <span class="codex-col-season">${seasonMeta}</span>
+      <span class="codex-col-troop">${getLocalizedTroop(hero.Type)}</span>
+      <span class="codex-col-rating">${s.finalRating > 0 ? finalPct : '—'}</span>
+      <span class="codex-col-rank">${s.topComboRank !== Infinity ? '#' + s.topComboRank : '—'}</span>
+      <span class="codex-col-skins">${getSkinCount(hero.name)}</span>
+      <span class="codex-col-verify">${verification}</span>
+    </button>`;
+  }
+  if (preset === 'paid') {
+    return `
+    <button type="button" class="hero-rank-row hero-codex-row" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="false">
+      <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
+      <span class="codex-col-name">${escapeHtml(hero.name)}${paidIconHtml()}</span>
+      <span class="codex-col-season">${seasonMeta}</span>
+      <span class="codex-col-troop">${getLocalizedTroop(hero.Type)}</span>
+      <span class="codex-col-access">${codexAccessLabel(hero.name)}</span>
+      <span class="codex-col-rating">${s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(0) : '—'}</span>
+      <span class="codex-col-skins">${getSkinCount(hero.name)}</span>
+      <span class="codex-col-verify">${verification}</span>
+    </button>`;
+  }
+  const skin = getSkinForHero(hero.name);
+  const skinType = skin ? (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic) : null;
+  const starCost = skin ? skinStarUpCostSummary(skin) : null;
+  const hiddenPower = getHeroHiddenPower(hero.name);
+  const delta = skinModeDeltas.get(hero.name) || 0;
+  return `
+    <button type="button" class="hero-rank-row hero-codex-row" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="false">
+      <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
+      <span class="codex-col-name">${escapeHtml(hero.name)}</span>
+      <span class="codex-col-skin">${skin ? `<span class="codex-skin-type" style="--skin-accent:${escapeHtml(skinType?.color || '')}">${escapeHtml(skinType?.icon || '')} ${escapeHtml(heroContentText(skinType?.label || skin.type))}</span>` : '—'}</span>
+      <span class="codex-col-starcost" title="${starCost ? escapeHtml(starCost) : ''}">${starCost ? escapeHtml(starCost) : '—'}</span>
+      <span class="codex-col-hiddenpower">${hiddenPower ? '●' : '—'}</span>
+      <span class="codex-col-rankdelta">${delta > 0 ? `<span class="codex-rank-delta">+${delta}</span>` : '—'}</span>
+      <span class="codex-col-verify">${verification}</span>
+    </button>`;
+}
+
+function renderCodexView() {
+  const { codexPreset } = _heroesTabState;
+  const t = translations[currentLanguage] || translations.en;
+  const stats = computeHeroRankings();
+  const query = (_heroesTabState.search || '').trim().toLowerCase();
+  const normalizedSeasons = normalizeHeroAtlasSeasons(_heroesTabState.seasons);
+  const seasonSet = new Set(normalizedSeasons);
+  const skinModeDeltas = projectSkinModeRankDeltas(
+    baseRankedCombos,
+    filterCombosForSkinMode(rankedCombos, true, () => true),
+    allHeroesData.map((hero) => hero.name)
+  );
+
+  let heroes = [];
+  if (codexPreset === 'free') {
+    heroes = allHeroesData.filter((hero) => hero.State === 'Free');
+  } else if (codexPreset === 'paid') {
+    heroes = allHeroesData.filter((hero) => hero.State === 'Paid');
+  } else {
+    heroes = allHeroesData.filter((hero) => getHeroSkins(hero.name).length > 0 || hero.State === 'Paid');
+  }
+  heroes = heroes.filter((hero) => seasonSet.has(hero.season));
+  if (query) heroes = heroes.filter((hero) => hero.name.toLowerCase().includes(query));
+
+  const sorted = codexSortHeroes(heroes, stats, codexPreset, skinModeDeltas);
+  const visible = sorted.slice(0, _heroesTabState.limit);
+
+  const sortOptions =
+    codexPreset === 'free'
+      ? [
+          ['name', heroUi('name')],
+          ['season', heroUi('season')],
+          ['rating', heroUi('rating')],
+        ]
+      : codexPreset === 'paid'
+        ? [
+            ['name', heroUi('name')],
+            ['season', heroUi('season')],
+            ['access', heroUi('codexColAccess')],
+          ]
+        : [
+            ['name', heroUi('name')],
+            ['skin-type', heroUi('codexColSkinType')],
+            ['rank-delta', heroUi('codexColRankDelta')],
+          ];
+
+  const emptyKey =
+    codexPreset === 'free'
+      ? 'codexEmptyFree'
+      : codexPreset === 'paid'
+        ? 'codexEmptyPaid'
+        : 'codexEmptySkinsPaid';
+
+  const rowsHtml = visible.length
+    ? visible.map((hero) => renderCodexRow(hero, stats, codexPreset, skinModeDeltas)).join('')
+    : `<p class="hero-atlas-empty">${escapeHtml(heroUi(emptyKey))}</p>`;
+
+  const showMoreHtml =
+    sorted.length > _heroesTabState.limit
+      ? `
+      <div class="hero-tab-show-more-wrap">
+        <button type="button" class="hero-tab-show-more">
+          ${escapeHtml(heroUi('showMore'))} (${sorted.length - _heroesTabState.limit} ${escapeHtml(heroUi('remaining'))})
+        </button>
+      </div>`
+      : '';
+
+  const headHtml =
+    codexPreset === 'free'
+      ? `
+    <span class="codex-col-name">${escapeHtml(heroUi('name'))}</span>
+    <span class="codex-col-season">${escapeHtml(heroUi('season'))}</span>
+    <span class="codex-col-troop">${escapeHtml(heroUi('troop'))}</span>
+    <span class="codex-col-rating">${escapeHtml(heroUi('rating'))}</span>
+    <span class="codex-col-rank">${escapeHtml(heroUi('bestRank'))}</span>
+    <span class="codex-col-skins">${escapeHtml(heroUi('skins'))}</span>
+    <span class="codex-col-verify">${escapeHtml(heroUi('codexColVerification'))}</span>`
+      : codexPreset === 'paid'
+        ? `
+    <span class="codex-col-name">${escapeHtml(heroUi('name'))}</span>
+    <span class="codex-col-season">${escapeHtml(heroUi('season'))}</span>
+    <span class="codex-col-troop">${escapeHtml(heroUi('troop'))}</span>
+    <span class="codex-col-access">${escapeHtml(heroUi('codexColAccess'))}</span>
+    <span class="codex-col-rating">${escapeHtml(heroUi('rating'))}</span>
+    <span class="codex-col-skins">${escapeHtml(heroUi('skins'))}</span>
+    <span class="codex-col-verify">${escapeHtml(heroUi('codexColVerification'))}</span>`
+        : `
+    <span class="codex-col-name">${escapeHtml(heroUi('name'))}</span>
+    <span class="codex-col-skin">${escapeHtml(heroUi('codexColSkinType'))}</span>
+    <span class="codex-col-starcost">${escapeHtml(heroUi('codexColStarCost'))}</span>
+    <span class="codex-col-hiddenpower">${escapeHtml(heroUi('limitedHeroMechanic'))}</span>
+    <span class="codex-col-rankdelta">${escapeHtml(heroUi('codexColRankDelta'))}</span>
+    <span class="codex-col-verify">${escapeHtml(heroUi('codexColVerification'))}</span>`;
+
+  const loadStatus = codexLoadStatus();
+  void hydrateCodexStore();
+
+  return `
+    <div class="heroes-tab-inner heroes-tab-inner--codex" data-codex-state="${loadStatus}">
+      <div class="heroes-toolbar-sticky heroes-toolbar-sticky--codex">
+        <div class="heroes-toolbar">
+          <div class="hero-search-wrap heroes-search-field">
+            <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+            <input id="heroesTabSearch" name="heroesSearch" class="hero-search-input" type="search" placeholder="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" aria-label="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" value="${escapeHtml(_heroesTabState.search)}" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="heroes-toolbar-actions">
+            <span class="heroes-count-badge">${heroes.length}</span>
+            <label class="heroes-sort-control" title="${escapeHtml(heroUi('codexSort'))}">
+              <span>${escapeHtml(heroUi('sort'))}</span>
+              <select id="heroesSortSelect">
+                ${sortOptions
+                  .map(
+                    ([value, label]) =>
+                      `<option value="${value}"${_heroesTabState.codexSort === value ? ' selected' : ''}>${escapeHtml(label)}</option>`
+                  )
+                  .join('')}
+              </select>
+            </label>
+            <button type="button" class="heroes-export-btn" data-heroes-export>${escapeHtml(heroUi('exportCsv'))}</button>
+          </div>
+        </div>
+        <div class="heroes-filter-deck heroes-filter-deck--codex">
+          <div class="heroes-filter-pills heroes-filter-pills--codex" role="group" aria-label="${escapeHtml(heroUi('codexModeName'))}">
+            ${CODEX_PRESETS.map(
+              (preset) => `
+            <button type="button" class="heroes-filter-pill ${codexPreset === preset ? 'active' : ''}" data-codex-preset="${preset}" aria-pressed="${codexPreset === preset}">
+              ${escapeHtml(heroUi(preset === 'free' ? 'codexPresetFree' : preset === 'paid' ? 'codexPresetPaid' : 'codexPresetSkinsPaid'))}
+            </button>`
+            ).join('')}
+          </div>
+          <p class="heroes-season-hint">${escapeHtml(heroUi('codexModeHint'))}</p>
+          <div class="heroes-season-tabs" role="group" aria-label="${escapeHtml(heroUi('seasonFilterAria'))}">
+            ${normalizedSeasons
+              .map(
+                (s) => `
+            <button type="button" class="hero-tab-season ${seasonSet.has(s) ? 'active' : ''}" data-hero-season="${s}" aria-pressed="${seasonSet.has(s)}"
+              ${seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>${s}</button>`
+              )
+              .join('')}
+          </div>
+        </div>
+      </div>
+      <div class="codex-table" aria-label="${escapeHtml(heroUi('codexModeName'))}">
+        <div class="codex-table-head" aria-hidden="true">${headHtml}</div>
+        <div class="codex-table-body">${rowsHtml}</div>
+      </div>
+      ${showMoreHtml}
+    </div>`;
+}
+
+function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
+  const container = document.getElementById('heroesTabContent');
+  if (!container) return;
+  if (
+    !suppressLocaleRefresh &&
+    getActiveHeroAtlasLocale() !== normalizeHeroAtlasLocale(currentLanguage)
+  ) {
+    void refreshHeroAtlasLocale(currentLanguage);
+  }
+  applyHeroAtlasUrlParams();
+
+  wireHeroesTabEvents(container);
+
+  const searchHadFocus = document.activeElement?.id === 'heroesTabSearch';
+  const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
+  const gallerySearchHadFocus = document.activeElement?.id === 'skinsGallerySearch';
+  const gallerySearchCaret = document.getElementById('skinsGallerySearch')?.selectionStart ?? null;
+
+  const stats = computeHeroRankings();
+  const {
+    seasons: selectedSeasons,
+    troop,
+    state,
+    search,
+    selected,
+    view,
+    comboScope,
+    sort,
+  } = _heroesTabState;
+  const t = translations[currentLanguage] || translations.en;
+
+  const mode = _heroesTabState.mode || 'heroes';
+  if (mode === 'skins') {
+    container.innerHTML = renderSkinsView();
+    if (gallerySearchHadFocus) {
+      const galleryInput = document.getElementById('skinsGallerySearch');
+      if (galleryInput) {
+        galleryInput.focus();
+        if (gallerySearchCaret != null) {
+          galleryInput.setSelectionRange(gallerySearchCaret, gallerySearchCaret);
+        }
+      }
+    }
+    return;
+  }
+
+  if (mode === 'codex') {
+    container.innerHTML = renderCodexView();
+    if (searchHadFocus) {
+      const searchInput = document.getElementById('heroesTabSearch');
+      if (searchInput) {
+        searchInput.focus();
+        if (searchCaret != null) searchInput.setSelectionRange(searchCaret, searchCaret);
+      }
+    }
+    return;
+  }
+
+  const troops = ['all', 'Archers', 'Footmen', 'Cavalry'];
+  const states = ['all', 'Free', 'Paid'];
+  const filtered = getFilteredHeroes();
+  const filtersActive = heroesFiltersActive();
+  const normalizedSeasons = normalizeHeroAtlasSeasons(selectedSeasons);
+  const allSeasonsSelected = normalizedSeasons.length === POPULATED_HERO_SEASONS.length;
+
+  const seasonTabsHtml = `
+    <button type="button" class="hero-tab-season ${allSeasonsSelected ? 'active' : ''}" data-hero-season="all" aria-pressed="${allSeasonsSelected}" title="${escapeHtml(heroUi('selectAllSeasons'))}">
+      ${escapeHtml(heroUi('all'))}
+    </button>
+    ${POPULATED_HERO_SEASONS.map(
+      (s) => `
+    <button type="button" class="hero-tab-season ${normalizedSeasons.includes(s) ? 'active' : ''}" data-hero-season="${s}" aria-pressed="${normalizedSeasons.includes(s)}"
+      ${seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>
+      ${s}
+    </button>`
+    ).join('')}`;
+
+  const troopPillsHtml = troops
+    .map(
+      (tr) => `
+    <button type="button" class="heroes-filter-pill ${troop === tr ? 'active' : ''}" data-hero-troop="${tr}" aria-pressed="${troop === tr}">
+      ${tr === 'all' ? escapeHtml(heroUi('allTroops')) : getLocalizedTroop(tr)}
+    </button>`
+    )
+    .join('');
+
+  const statePillsHtml = states
+    .map(
+      (st) => `
+    <button type="button" class="heroes-filter-pill ${state === st ? 'active' : ''}" data-hero-state="${st}" aria-pressed="${state === st}">
+      ${escapeHtml(st === 'all' ? heroUi('all') : heroUi(st === 'Free' ? 'free' : 'paid'))}
+    </button>`
+    )
+    .join('');
+
+  if (view === 'ranking') {
+    const ranked = getSortedHeroes(filtered, stats, sort);
+
+    const visibleRanked = ranked.slice(0, _heroesTabState.limit);
+    const rowsHtml = visibleRanked.length
+      ? visibleRanked
+          .map((hero, i) => {
+            const s = stats[hero.name] || {};
+            const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
+            const tagColor = seasonColors[hero.season] || '#f97316';
+            const podiumClass =
+              i === 0
+                ? ' rank-medal--gold'
+                : i === 1
+                  ? ' rank-medal--silver'
+                  : i === 2
+                    ? ' rank-medal--bronze'
+                    : '';
+            const rankNumber = `${i + 1}`;
+            const rankClass = `rank-medal rank-medal--num${podiumClass}`;
+            return `
+        <button type="button" class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="${selected === hero.name}">
+          <span class="${rankClass}">${rankNumber}</span>
+          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
+          <span class="rank-info">
+            <span class="rank-name">
+              ${escapeHtml(hero.name)}
+              ${hero.State === 'Paid' ? paidIconHtml() : ''}
+            </span>
+            <span class="rank-meta">
+              <span style="color:${tagColor};font-weight:800;">${hero.season}</span>
+              ${hero.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="rank-apps">${escapeHtml(heroUi('original'))} ${escapeHtml(hero.releaseSeason)}</span>` : ''}
+              <span class="rank-troop ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
+              ${s.appearances ? `<span class="rank-apps">${escapeHtml(heroUi(s.appearances === 1 ? 'comboOne' : 'comboMany', { n: s.appearances }))}</span>` : `<span class="rank-apps rank-apps-zero">${escapeHtml(heroUi('notRanked'))}</span>`}
+            </span>
+            <span class="rank-bar-wrap">
+              <span class="rank-bar" style="width:${finalPct}%;background:${tagColor};"></span>
+            </span>
+          </span>
+          <span class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</span>
+        </button>`;
+          })
+          .join('')
+      : `<p class="hero-atlas-empty">${escapeHtml(heroUi('noHeroesMatch'))}</p>`;
+
+    const showMoreHtml =
+      ranked.length > _heroesTabState.limit
+        ? `
+      <div class="hero-tab-show-more-wrap">
+        <button type="button" class="hero-tab-show-more">
+          ${escapeHtml(heroUi('showMore'))} (${ranked.length - _heroesTabState.limit} ${escapeHtml(heroUi('remaining'))})
+        </button>
+      </div>`
+        : '';
+
+    const detailHtml = selected ? renderHeroDetailPanel(selected, stats, t) : '';
 
     const clearFiltersHtml = filtersActive
       ? `<button type="button" class="heroes-clear-filters" data-heroes-clear-filters>${t.heroesClearFilters || 'Clear filters'}</button>`

@@ -162,6 +162,69 @@ function loadBattleProfileTowersStyles() {
   return battleProfileTowersStylesPromise;
 }
 
+// Field Data panel (16.0.0 lane 4): load-on-expanded + retry. The panel module
+// and its stylesheet are a lazy chunk; nothing here grows the eager route.
+let battleFieldDataPromise = null;
+let battleFieldDataModule = null;
+
+function buildFieldDataAccountProfile() {
+  const heroSkillIds = {};
+  const equipmentSetIds = [];
+  for (const sideId of SIDE_IDS) {
+    const side = state.sides[sideId];
+    if (!side) continue;
+    for (const row of side.rows || []) {
+      if (row.heroName) {
+        heroSkillIds[row.heroName] = [...(row.skillIds || [])].map(String).sort();
+      }
+    }
+    const setId = side.equipmentLoadout?.setId;
+    if (setId && !equipmentSetIds.includes(setId)) equipmentSetIds.push(setId);
+  }
+  return {
+    researchNodeIds: null,
+    equipmentSetIds,
+    heroSkillIds,
+    skinNames: null,
+  };
+}
+
+function fieldDataDeps() {
+  return {
+    t,
+    formatNumber,
+    formatPercent: (value) => formatNumber(value, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    getAccountProfile: buildFieldDataAccountProfile,
+    runComparison: null,
+  };
+}
+
+function ensureFieldDataPanel() {
+  const container = document.getElementById('battleFieldData');
+  if (!container || !container.hidden) return;
+  if (battleFieldDataModule) {
+    void battleFieldDataModule.mountFieldDataPanel(container, fieldDataDeps());
+    return;
+  }
+  battleFieldDataPromise ??= import('./battle-simulator-field-data.js')
+    .then((mod) => {
+      battleFieldDataModule = mod;
+      return mod.mountFieldDataPanel(container, fieldDataDeps());
+    })
+    .catch((error) => {
+      console.error('[battle-simulator] field data panel failed to load', error);
+      battleFieldDataPromise = null;
+      container.innerHTML = `
+        <p class="battle-field-empty">${t('fieldData.loading')}</p>
+        <button type="button" class="battle-secondary-button" data-field-retry-boot>${t('fieldData.retry')}</button>`;
+      container.hidden = false;
+      container.querySelector('[data-field-retry-boot]')?.addEventListener('click', () => {
+        container.hidden = true;
+        ensureFieldDataPanel();
+      });
+    });
+}
+
 function cancelActiveBatch() {
   activeBatchController?.abort();
   activeBatchController = null;
@@ -1280,6 +1343,10 @@ function pageTemplate() {
           ${renderScenarioPanel()}
           ${renderSetupToolbar()}
           ${renderBattleProfilePanel()}
+          <details class="battle-field-data" data-field-data-panel>
+            <summary><span>${t('fieldData.summary')}</span></summary>
+            <div id="battleFieldData" class="battle-field-data-body" hidden></div>
+          </details>
           <div id="battleFormations" class="battle-formations">
             ${renderSide('A')}
             ${renderSide('B')}
@@ -3380,6 +3447,10 @@ function bindUI() {
     (event) => {
       if (event.target.matches?.('[data-profile-editor]')) {
         if (event.target.open) void loadBattleProfileTowersStyles();
+        return;
+      }
+      if (event.target.matches?.('[data-field-data-panel]')) {
+        if (event.target.open) ensureFieldDataPanel();
         return;
       }
       const details = event.target.closest?.('.battle-squad-card');

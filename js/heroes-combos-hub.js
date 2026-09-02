@@ -1,9 +1,10 @@
 // js/heroes-combos-hub.js
 // Heroes & Combos Hub sub-tab controller for the integrated hub tab.
 //
-// The hub hosts four sub-tabs inside #heroesCombosSection:
+// The hub hosts five sub-tabs inside #heroesCombosSection:
 //   - manual:    the Manual Builder
 //   - generator: the Combo Generator (default landing)
+//   - codex:     the Hero Atlas, Codex mode (16.0.0 flagship)
 //   - heroes:    the Hero Atlas, hero mode
 //   - skins:     the Hero Atlas, skin mode
 //
@@ -13,17 +14,28 @@
 // link, footer link and command-palette entry still resolves; app.js maps the
 // old tab names onto this hub through document.body.dataset.heroesCombosSubtab.
 
-export const HEROES_COMBOS_SUBTABS = Object.freeze(['manual', 'generator', 'heroes', 'skins']);
+export const HEROES_COMBOS_SUBTABS = Object.freeze([
+  'manual',
+  'generator',
+  'codex',
+  'heroes',
+  'skins',
+]);
 export const HEROES_COMBOS_DEFAULT_SUBTAB = 'generator';
 
 // Sub-tabs that share one panel, and the Atlas mode each one means.
 const PANEL_FOR_SUBTAB = Object.freeze({
   manual: 'manual',
   generator: 'generator',
+  codex: 'heroes',
   heroes: 'heroes',
   skins: 'heroes',
 });
-const ATLAS_MODE_FOR_SUBTAB = Object.freeze({ heroes: 'heroes', skins: 'skins' });
+const ATLAS_MODE_FOR_SUBTAB = Object.freeze({
+  codex: 'codex',
+  heroes: 'heroes',
+  skins: 'skins',
+});
 
 let booted = false;
 let activeSubtab = HEROES_COMBOS_DEFAULT_SUBTAB;
