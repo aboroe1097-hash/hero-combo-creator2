@@ -46,7 +46,9 @@ eden-x2 840.3/802, arcade 503.4/463, profile 37.1/25, towers 92.1/80,
 battle-sim 69.9/59 kB desktop) plus an eager eden-map/hero-atlas preload.
 
 **File-count budget:** gh-pages `deployFileCount` is **704** with the build
-emitting 669 — 35 files of headroom. Keep the gzipped-payload approach for the
+emitting **658** (CI-verified: deploy-verification run 33628005692, "complete
+Pages artifact: 30177.6 kB, 658 files"; lane 1's fresh local build agrees) — 46
+files of base headroom. Keep the gzipped-payload approach for the
 right reason: **route CSS and JS budgets are the binding constraint**, not file
 count.
 
@@ -108,7 +110,9 @@ DeepSeek per the house rule; judgement stays local.
 ## Corrections log (folded into this rev)
 
 - Version: gh-pages = **15.0.15** (worktree 15.0.13 = stale, 22 behind).
-- File count: gh-pages 669/704 (35 free) — not 755/760; branch-local 760 is drift.
+- File count: **658/704 at branch cut (CI-canonical)** — not 669 (second stale
+  Opus figure, corrected 2026-09-02 from run 33628005692) and not 755/760
+  (branch-local drift).
 - Roster file is `js/heroes-data.js` (78 heroes, `{name, season, Type, State,
   imageUrl}`) — and `State` is already `'Free' | 'Paid'`, so the Free/Paid table
   split has a **local origin today**; L96 only contributes the third Royal tier.
@@ -139,8 +143,10 @@ DeepSeek per the house rule; judgement stays local.
   bare `codexStatus` chip label, and `fieldData.*`; lane 5 owns `planner.*` in
   the research domain pack. Sets are disjoint — any new `codex*` or `planner*`
   key requires a T0 ownership note first. **File-count ledger authority:**
-  669 + 1 (lane 3 payload) + 2 (lane 4) = 672/704, re-measured at the release
-  commit; lane-local counts are informational. Sequencing pins: lane 1 commit 2
+  base **658** (CI deploy-verification, Linux — the only measurement that
+  counts; lane-local counts are informational and the earlier 669/672 figures
+  are superseded) + 1 (lane 3 payload) + 2 (lane 4) = **661/704**, re-measured
+  at the release commit. Sequencing pins: lane 1 commit 2
   before any CSS anywhere; lane 2 roster before lane 3's 11-name codex rows;
   lane 3 payload before lane 4/5 loader wiring.
 - **"Adding a roster is a data-only edit" was wrong** (Opus's own correction,
