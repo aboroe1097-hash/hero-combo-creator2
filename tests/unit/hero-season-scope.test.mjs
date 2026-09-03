@@ -19,8 +19,6 @@ const EXPECTED_X8_CATCHUP_HEROES = [
 ];
 
 const FUTURE_HEROES = [
-  'Achilles',
-  'Al-Hawra',
   'Alberich',
   'Darius',
   'Don Quixote',

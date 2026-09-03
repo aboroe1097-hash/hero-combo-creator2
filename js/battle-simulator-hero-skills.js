@@ -34,6 +34,8 @@ export const MISSING_EXTENDED_HEROES = Object.freeze([
   'Farah',
   'Poison Master',
   'Lilith',
+  'Al-Hawra',
+  'Achilles',
 ]);
 
 const PLACEMENT_ALIASES = Object.freeze({

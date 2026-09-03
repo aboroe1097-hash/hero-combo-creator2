@@ -15,14 +15,14 @@ import { allHeroesData } from '../../js/heroes-data.js';
 import { heroesExtendedData } from '../../js/heroes-info.js';
 
 test('catalog is a deterministic projection of all canonical heroes and descriptions', () => {
-  assert.equal(battleHeroSkillCatalog.length, 87);
-  assert.equal(new Set(battleHeroSkillCatalog.map((hero) => hero.id)).size, 87);
+  assert.equal(battleHeroSkillCatalog.length, 89);
+  assert.equal(new Set(battleHeroSkillCatalog.map((hero) => hero.id)).size, 89);
   assert.deepEqual(
     battleHeroSkillCatalog.map((hero) => hero.name),
     allHeroesData.map((hero) => hero.name)
   );
   assert.equal(battleHeroSkills.length, 208);
-  assert.equal(BATTLE_HERO_SKILL_COVERAGE.rosterHeroes, 87);
+  assert.equal(BATTLE_HERO_SKILL_COVERAGE.rosterHeroes, 89);
   assert.equal(BATTLE_HERO_SKILL_COVERAGE.extendedHeroes, 68);
   assert.equal(BATTLE_HERO_SKILL_COVERAGE.descriptions, 208);
   assert.equal(

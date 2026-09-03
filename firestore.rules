@@ -1050,7 +1050,7 @@ service cloud.firestore {
 
     function validAllStarBohUsableHeroNames(values) {
       return values is list
-        && values.size() <= 87
+        && values.size() <= 89
         && (
           values.size() == 0
           || (
@@ -1075,7 +1075,7 @@ service cloud.firestore {
               'Ashen Verdict', 'Warden', 'Warhammer', 'Eidolon', 'Scarlet Reaver',
               'Rainforest Ranger', 'Fortuneteller', 'Ragnar', 'Cyrus',
               'Healer', 'Hellfire', 'Belisarius', 'Pepin', 'El Cid', 'Arslan',
-              'Farah', 'Poison Master', 'Lilith'
+              'Farah', 'Poison Master', 'Lilith', 'Al-Hawra', 'Achilles'
             ])
           )
         );
@@ -2188,7 +2188,7 @@ service cloud.firestore {
       && (!('troopRoster' in stats)
         || (stats.troopRoster is list && stats.troopRoster.size() <= 60))
       && (!('usableHeroNames' in stats)
-        || (stats.usableHeroNames is list && stats.usableHeroNames.size() <= 87))
+        || (stats.usableHeroNames is list && stats.usableHeroNames.size() <= 89))
       && (!('researchProgressPct' in stats)
         || (stats.researchProgressPct is map && stats.researchProgressPct.size() <= 29))
       && (!('artifactPower' in stats)

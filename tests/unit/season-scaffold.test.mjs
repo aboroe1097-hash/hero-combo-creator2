@@ -85,7 +85,7 @@ test('X10 and X12 both carry heroes after the free-roster landing', () => {
   );
   assert.equal(
     allHeroesData.filter((hero) => hero.season === 'X12').length,
-    7,
+    9,
     'X12 free roster: seven heroes'
   );
 });

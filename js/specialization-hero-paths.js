@@ -297,6 +297,34 @@ export const PAID_HERO_TOWER_PROFILES = Object.freeze({
     keyMechanics: Object.freeze(['Control status', 'Vulnerable marks', 'Evasion', 'Healing']),
     note: 'Confuses enemies every 2 normal attacks and marks the confused ones Vulnerable for +15% escalating damage taken, while the weakest friendly squad dodges and then heals. She lifts any tower, so she never decides one on her own.',
   }),
+  'Al-Hawra': Object.freeze({
+    troop: 'archer',
+    siegeBias: -0.1,
+    demand: Object.freeze({
+      skillDamage: 2.8,
+      speed: 2.2,
+      might: 1.6,
+      resistance: 1.0,
+    }),
+    columns: Object.freeze({ 6: 2.8, 1: 2.2, 4: 2.0 }),
+    research: Object.freeze({ encounter1: 1.4, training3: 1.2, enhanced1: 1.0 }),
+    keyMechanics: Object.freeze(['Skill Damage', 'Re-cast', 'Combat Speed', 'Weaken']),
+    note: 'Every line of her kit is Skill Damage: Phantom gives all friendly Archer squads a 30% chance of +23% skill damage and a 23% chance to cast the same skill a second time, and from round 3 she hits three squads for 300%, adding another 400% against an enemy already under half troop power. Column VI Combo rewards the extra cast and Column I Rapid Shots feeds it. She grants +100 combat speed herself, so Column IV Focused Attack lands before the enemy answers.',
+  }),
+  Achilles: Object.freeze({
+    troop: 'footman',
+    siegeBias: 0.15,
+    demand: Object.freeze({
+      skillDamage: 2.6,
+      resistance: 2.2,
+      hp: 1.8,
+      healing: 1.4,
+    }),
+    columns: Object.freeze({ 6: 2.8, 7: 2.2, 3: 1.8 }),
+    research: Object.freeze({ defensive1: 1.4, training3: 1.2, neat1: 1.0 }),
+    keyMechanics: Object.freeze(['Demigod', 'Skill Damage', 'Damage reduction', 'Recovery']),
+    note: 'Demigod opens the battle at -60% damage taken, immune to control, and stacks +30% damage every round, so he compounds the longer he holds the line — which is what Column VI Accumulation and Column VII Impenetrable Formation buy. The stance lapses in rounds 5 and 6 and he takes +20% there, so Column III Cover the Weak Point covers that window. Sacred Realm makes every squad on both sides immune to Fatal Blow and Destructive Strike, so raising his own crit stats is wasted.',
+  }),
 });
 
 // ---------------------------------------------------------------------------

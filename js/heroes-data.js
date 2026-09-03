@@ -88,5 +88,7 @@ export const allHeroesData = [
   { name: "Arslan", season: 'X12', Type:'Footmen', State:'Free' },
   { name: "Farah", season: 'X12', Type:'Cavalry', State:'Free' },
   { name: "Poison Master", season: 'X12', Type:'Archers', State:'Free' },
-  { name: "Lilith", season: 'X12', Type:'Archers', State:'Free' }
+  { name: "Lilith", season: 'X12', Type:'Archers', State:'Free' },
+  { name: "Al-Hawra", season: 'X12', Type:'Archers', State:'Paid' },
+  { name: "Achilles", season: 'X12', Type:'Footmen', State:'Paid' }
 ];

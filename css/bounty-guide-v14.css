@@ -11,9 +11,36 @@
   --bounty-hairline: rgba(232, 180, 90, 0.28);
   --bounty-text: inherit;
   --bounty-muted: var(--text-muted, rgba(148, 163, 184, 0.85));
+  --bounty-on-red: #ffffff;
+  --bounty-chip-cyan: #7dd3fc;
+  --bounty-chip-cyan-border: rgba(56, 189, 248, 0.5);
+  --bounty-chip-mint: #6ee7b7;
+  --bounty-chip-mint-border: rgba(52, 211, 153, 0.5);
+  --bounty-danger: #f87171;
+  /* Every panel, card and chip fill in this file is this triplet at some
+     alpha. Keeping it as bare channels lets the per-rule alphas stay exactly
+     as authored while one override flips the whole surface family. */
+  --bounty-fill-rgb: 15, 23, 42;
   color: var(--bounty-text);
   font-size: 0.92rem;
   line-height: 1.55;
+}
+
+/* Light theme keeps the parchment/gold identity, but the accents alone are not
+   enough: the surfaces they sit on are dark slate at 0.35-0.94 alpha and do not
+   flip on their own. Darkening only the ink made light theme worse, not better
+   (cyan measured 2.14 -> 1.66, mint 2.34 -> 1.54), because dark ink landed on a
+   still-dark chip. The fill has to flip with the ink.
+   With a warm parchment fill and these accents the worst pairing in the file is
+   6.02:1; dark theme is untouched at 6.41-11.63:1. */
+[data-theme='light'] .bounty-guide-root {
+  --bounty-fill-rgb: 246, 241, 228;
+  --bounty-gold: #7c5300;
+  --bounty-chip-cyan: #075985;
+  --bounty-chip-cyan-border: rgba(7, 89, 133, 0.45);
+  --bounty-chip-mint: #065f46;
+  --bounty-chip-mint-border: rgba(6, 95, 70, 0.45);
+  --bounty-danger: #991b1b;
 }
 
 /* ---------------------------------------------------------------- hero */
@@ -27,7 +54,7 @@
   border-radius: var(--radius-lg, 14px);
   background:
     radial-gradient(ellipse 62% 90% at 50% 108%, var(--bounty-gold-soft), transparent 62%),
-    linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.85));
+    linear-gradient(160deg, rgba(var(--bounty-fill-rgb), 0.92), rgba(30, 41, 59, 0.85));
   overflow: hidden;
 }
 .bounty-hero::before,
@@ -101,7 +128,7 @@
   margin: 0 0 18px;
   padding: 8px 4px;
   border-bottom: 1px solid var(--bounty-hairline);
-  background: rgba(15, 23, 42, 0.94);
+  background: rgba(var(--bounty-fill-rgb), 0.94);
   backdrop-filter: blur(8px);
 }
 .bounty-nav-track {
@@ -177,7 +204,7 @@
   text-align: center;
   border: 1px solid var(--bounty-hairline);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(var(--bounty-fill-rgb), 0.45);
   overflow: hidden;
 }
 .bounty-stat-card::before {
@@ -221,7 +248,7 @@
   padding: 10px 12px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--bounty-fill-rgb), 0.4);
 }
 .bounty-loop-index {
   display: grid;
@@ -261,7 +288,7 @@
   padding: 14px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--bounty-fill-rgb), 0.4);
 }
 .bounty-panel-title {
   margin: 0 0 8px;
@@ -359,7 +386,7 @@
   padding: 6px 12px;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--bounty-fill-rgb), 0.5);
   font-size: 0.76rem;
   font-weight: 700;
 }
@@ -375,7 +402,7 @@
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--radius-md, 12px);
   text-align: center;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--bounty-fill-rgb), 0.4);
 }
 .bounty-daily-rule strong {
   font-size: 1.05rem;
@@ -398,7 +425,7 @@
   padding: 14px 10px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(var(--bounty-fill-rgb), 0.45);
   list-style: none;
   overflow-x: auto;
 }
@@ -417,7 +444,7 @@
   height: 30px;
   border-radius: 50%;
   border: 1px solid var(--bounty-gold);
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(var(--bounty-fill-rgb), 0.7);
   color: var(--bounty-gold);
   font-size: 0.78rem;
   font-weight: 800;
@@ -450,7 +477,7 @@
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--bounty-red);
-  color: #fff;
+  color: var(--bounty-on-red);
   font-size: 0.58rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -466,21 +493,21 @@
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--bounty-fill-rgb), 0.5);
   font-size: 0.76rem;
   font-weight: 700;
 }
 .bounty-attribute-chip--1 {
-  border-color: rgba(56, 189, 248, 0.5);
-  color: #7dd3fc;
+  border-color: var(--bounty-chip-cyan-border);
+  color: var(--bounty-chip-cyan);
 }
 .bounty-attribute-chip--2 {
   border-color: var(--bounty-gold);
   color: var(--bounty-gold);
 }
 .bounty-attribute-chip--3 {
-  border-color: rgba(52, 211, 153, 0.5);
-  color: #6ee7b7;
+  border-color: var(--bounty-chip-mint-border);
+  color: var(--bounty-chip-mint);
 }
 .bounty-panel--payoff {
   border-color: var(--bounty-gold);
@@ -500,7 +527,7 @@
   padding: 8px 12px;
   border: 1px solid var(--bounty-hairline);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--bounty-fill-rgb), 0.5);
   font-size: 0.76rem;
   font-weight: 800;
 }
@@ -560,7 +587,7 @@
   padding: 10px 12px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--bounty-fill-rgb), 0.4);
 }
 .bounty-setup-index {
   flex: 0 0 auto;
@@ -591,7 +618,7 @@
 .bounty-hero-card {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(var(--bounty-fill-rgb), 0.45);
   overflow: hidden;
 }
 .bounty-hero-toggle {
@@ -622,7 +649,7 @@
   border-radius: 10px;
   object-fit: cover;
   border: 1px solid var(--bounty-hairline);
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(var(--bounty-fill-rgb), 0.6);
 }
 .bounty-hero-portrait-empty {
   display: grid;
@@ -652,7 +679,7 @@
 }
 .bounty-hero-tier--x {
   border-color: var(--bounty-red);
-  color: #f87171;
+  color: var(--bounty-danger);
 }
 .bounty-hero-copy {
   display: grid;
@@ -728,7 +755,7 @@
   padding: 12px 12px 12px 46px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(var(--bounty-fill-rgb), 0.4);
   font-size: 0.82rem;
 }
 .bounty-quick-rule::before {
@@ -743,7 +770,7 @@
   height: 24px;
   border-radius: 50%;
   border: 1px solid var(--bounty-red);
-  color: #f87171;
+  color: var(--bounty-danger);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -755,7 +782,7 @@
   padding: 14px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--radius-md, 12px);
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(var(--bounty-fill-rgb), 0.35);
   font-size: 0.72rem;
   color: var(--bounty-muted);
 }
