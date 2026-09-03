@@ -3351,12 +3351,14 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
       updatedBy: state.adminUser?.uid || '',
       dashboardData: unpublish
         ? buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
-        : state.dashData || buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason),
+        : sanitizeDashboardDataForPersistence(
+            state.dashData || buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
+          ),
       voteSettings: unpublish ? {} : normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {}),
       publicVoteResults,
       rosterSnapshots,
     });
-    await setDoc(projectionRef, projection);
+    await setDoc(projectionRef, sanitizeForFirestore(projection));
     await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
       id: ACTIVE_EDEN_WORKSPACE_ID,
       lifecycle: unpublish ? 'draft' : 'active',
@@ -4138,16 +4140,17 @@ function setCloudSyncStatus(status, detail = '') {
 }
 function describeCloudSyncError(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
+  const authText = text.replace(/vts_admin/gi, '');
   // A permission-denied comes back from Firestore itself: the account is signed
   // in and the write still got refused. Reporting that as "not signed in as
   // admin" sent a superadmin hunting through accounts when the real cause was a
   // firestore.rules release lagging behind the deployed app, so the two cases
   // are now distinct. The local "no admin session" path below keeps the old
   // wording because there it is literally true.
-  if (/permission-denied|insufficient permissions/i.test(text)) {
+  if (/permission-denied|insufficient permissions/i.test(authText)) {
     return dashT('adminCloudPermissionDenied');
   }
-  if (/permission|admin/i.test(text)) {
+  if (/(?:^|[^\w])admin(?:[^\w]|$)/i.test(authText) || /permission/i.test(authText)) {
     return dashT('adminCloudAdminRequired');
   }
   if (
