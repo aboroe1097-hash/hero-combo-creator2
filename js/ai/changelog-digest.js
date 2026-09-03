@@ -9,12 +9,12 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.0.0",
     "date": "2026-09-03",
     "highlights": [
+      "Reconciled owner-confirmed VTS OCR aliases across leaderboards, contribution matching, and weighted scoring, using Moldo1313 and D O F F Y as display names while protecting distinct main, banner, and Kika accounts. Historical attack rows remain unchanged.",
       "**CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarg…",
       "**Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated nine free heroes into the canonical roster (expanding the roster from 78 to 87 heroes) with synchronized Firestore security rule allowlists and caps.",
       "**Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.",
       "**Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.",
-      "**Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters.",
-      "**X12 Research Trees**: Imported X12 *Melee Legion - Defense* (with 29/29 screenshot-backed layout positions) and *Charge* (with explicit absent-tree gap handling) into the tech database, advancing the research season ladder to X12."
+      "**Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters."
     ]
   },
   {

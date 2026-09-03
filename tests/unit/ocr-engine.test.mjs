@@ -483,7 +483,7 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('IDN?Dragon.Gold'), 'IDN Dragon.Gold');
   assert.equal(findBestMatch('WAEL...]'), '..WAEL..');
   assert.equal(findBestMatch('REDBULL..3'), 'REDBULL-#');
-  assert.equal(findBestMatch('D off f y.'), 'D offy.');
+  assert.equal(findBestMatch('D off f y.'), 'D O F F Y');
   assert.equal(findBestMatch('hater killer.'), 'Hunter killer.');
   assert.equal(findBestMatch('tyHraaxyp'), 'түнгзахурп');
   assert.equal(findBestMatch('乃乙口毛'), '乃ㄥ口毛');
@@ -507,7 +507,7 @@ test('known player aliases stay merged when canonical rows share one attack', ()
   ];
 
   assert.equal(resolvePlayerNameForAttack(attackPlayers[1], attackPlayers), 'q. Immortal');
-  assert.equal(resolvePlayerNameForAttack(attackPlayers[3], attackPlayers), 'DvD18');
+  assert.equal(resolvePlayerNameForAttack(attackPlayers[3], attackPlayers), 'DvD18 x2');
   assert.equal(resolvePlayerNameForAttack(attackPlayers[5], attackPlayers), 'Феечка))');
 });
 
@@ -519,14 +519,14 @@ test('cleanDutyRawName strips Viber noise and credits the banner account / @-own
   // Plain Viber @tag.
   assert.equal(cleanDutyRawName('@Maximus'), 'Maximus');
   // Credit the banner account / @-owner before the parenthetical; the note is metadata.
-  assert.equal(cleanDutyRawName('Angel Banner (zubbs)'), 'Angel'); // ANGEL account, zubbs operated
+  assert.equal(cleanDutyRawName('Angel Banner (zubbs)'), 'Angel Banner'); // distinct account, zubbs operated
   assert.equal(cleanDutyRawName('@redbull (osito)'), 'redbull'); // redbull tagged = owner
   assert.equal(cleanDutyRawName('redbull (RedBull banner)'), 'redbull');
-  assert.equal(cleanDutyRawName('Moldo (zubbs)'), 'Moldo');
-  // Banner-label suffix strips to the owner player.
-  assert.equal(cleanDutyRawName('BOiiE BANNER'), 'BOiiE');
-  assert.equal(cleanDutyRawName('Undead_Banner'), 'Undead');
-  assert.equal(cleanDutyRawName('Kika-banner'), 'Kika');
+  assert.equal(cleanDutyRawName('Moldo (zubbs)'), 'Moldo1313');
+  // Confirmed banner names preserve their account identity.
+  assert.equal(cleanDutyRawName('BOiiE BANNER'), 'BOiiE BANNER');
+  assert.equal(cleanDutyRawName('Undead_Banner'), 'Undead_Banner');
+  assert.equal(cleanDutyRawName('Kika-banner'), '꧁ Kika-banner ꧂');
   // Trailing OCR junk.
   assert.equal(cleanDutyRawName('A.S.KHAN","'), 'A.S.KHAN');
   // Multi-tag cell keeps the first real player tag.
@@ -605,7 +605,7 @@ test('getDutyCreditedNames credits both banner account and operator', () => {
 
 test('resolveDutyPlayerName routes cleaned duty names through the shared authority', () => {
   // Falls back to the same aliasMap / protected identities as structures.
-  assert.equal(resolveDutyPlayerName('Kika-banner'), '꧁ Kika ꧂'); // rolls up to operating player
+  assert.equal(resolveDutyPlayerName('Kika-banner'), '꧁ Kika-banner ꧂'); // account stays distinct from family rollup
   assert.equal(resolveDutyPlayerName('@Maximus'), 'Maximus');
   assert.equal(resolveDutyPlayerName('@Sheselkie'), '@Sheselkie');
   assert.equal(resolveDutyPlayerName('@sheselkie'), '@Sheselkie');
@@ -740,12 +740,12 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   state.rosterNames = ['Angel', 'Zubbs'];
   try {
     const op = expandDutyRawNames('Angel Banner (zubbs)');
-    assert.equal(op[0], 'Angel');
+    assert.equal(op[0], 'Angel Banner');
     assert.equal(op[1], 'Zubbs');
     assert.equal(op.length, 2);
 
     // Noise notes never mint phantom players.
-    assert.deepEqual(expandDutyRawNames('Angel (needs help)'), ['Angel']);
+    assert.deepEqual(expandDutyRawNames('Angel (needs help)'), ['ANGEL']);
     assert.deepEqual(expandDutyRawNames('Angel v2 (bubbles)'), ['Angel v2']);
   } finally {
     state.rosterNames = previousRosterNames;
@@ -754,8 +754,8 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   // Structure-only cell -> empty (no real player).
   assert.deepEqual(expandDutyRawNames('town lvl1'), []);
 
-  // Banner-label suffix (BOiiE resolves through aliasMap).
-  assert.deepEqual(expandDutyRawNames('BOiiE BANNER'), ['BiG BOiiE']);
+  // Explicit banner accounts do not become their owners' main accounts.
+  assert.deepEqual(expandDutyRawNames('BOiiE BANNER'), ['BOiiE BANNER']);
 
   // Empty input.
   assert.deepEqual(expandDutyRawNames(''), []);
@@ -769,5 +769,5 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
 
   // Operator is same as owner -> dedup within function.
   const dedup = expandDutyRawNames('Moldo (Moldo)');
-  assert.deepEqual(dedup, ['Moldo']);
+  assert.deepEqual(dedup, ['Moldo1313']);
 });

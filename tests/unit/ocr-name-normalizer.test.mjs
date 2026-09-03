@@ -91,7 +91,7 @@ test('canonical resolver merges special-list alias clusters', () => {
   assert.notEqual(key('Moldo{zubbs}'), compactPlayerIdentity('Zubbs'));
 
   for (const raw of ['Angel Banner', 'Angel v2', 'ANGEL']) {
-    assert.equal(resolveCanonicalPlayerName(raw), 'ANGEL');
+    assert.equal(resolveCanonicalPlayerName(raw), raw);
   }
 
   assert.notEqual(key('Sarafina~'), key('~Sarafino~'));
@@ -162,7 +162,7 @@ test('canonical player summary groups by resolved identity and keeps simple colu
   assert.deepEqual(byPlayer.Zubbs, [2, ['23:25', '23:55']]);
   assert.deepEqual(byPlayer[resolveCanonicalPlayerName('Kika')], [1, ['00:23']]);
   assert.deepEqual(byPlayer[resolveCanonicalPlayerName('Kika-banner')], [1, ['08:04']]);
-  assert.deepEqual(byPlayer.Moldo, [1, ['23:55']]);
+  assert.deepEqual(byPlayer.Moldo1313, [1, ['23:55']]);
 });
 
 test('canonical player summary can preserve special account identities', () => {
