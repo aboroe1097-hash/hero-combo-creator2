@@ -153,12 +153,17 @@ const preferredScrollBehavior = () =>
   globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
 function loadBattleProfileTowersStyles() {
-  battleProfileTowersStylesPromise ??= import('../css/battle-profile-towers-embedded.css').catch(
-    (error) => {
-      console.error('[battle-simulator] profile tower styles failed to load', error);
-      return null;
-    }
-  );
+  if (!battleProfileTowersStylesPromise) {
+    // A failed load must NOT be memoized: reset so the next open retries
+    // instead of rendering the editor permanently unstyled.
+    battleProfileTowersStylesPromise = import('../css/battle-profile-towers-embedded.css').catch(
+      (error) => {
+        console.error('[battle-simulator] profile tower styles failed to load', error);
+        battleProfileTowersStylesPromise = null;
+        return null;
+      }
+    );
+  }
   return battleProfileTowersStylesPromise;
 }
 
@@ -964,7 +969,10 @@ function replaceBattleProfilePanel() {
   current.outerHTML = renderBattleProfilePanel();
   openSides.forEach((sideId) => {
     const details = form.querySelector(`[data-profile-editor="${sideId}"]`);
-    if (details) details.open = true;
+    if (details) {
+      details.open = true;
+      void loadBattleProfileTowersStyles();
+    }
   });
   if (focus?.marker) {
     const selector = `[data-profile-draft="${focus.sideId}"] [${focus.marker}]${focus.name ? `[data-source-id="${focus.name}"], [data-research-id="${focus.name}"]` : ''}`;
