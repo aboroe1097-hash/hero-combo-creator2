@@ -22,6 +22,7 @@ import { escapeHtml, formatLocaleNumber } from './utils.js';
 import {
   hasSkin,
   getHeroSkins,
+  getSkinForHero,
   getSkinCount,
   getHeroHiddenPower,
   getSkinTiers,
@@ -43,6 +44,7 @@ import {
 } from './i18n/hero-atlas/help-content.js';
 import { loadCodexStore } from './codex-loader.js';
 import { provenanceFor } from './codex-provenance.js';
+import { projectSkinModeRankDeltas } from './codex-rank-projection.js';
 import {
   eraForGameVersion,
   isRenderable,
@@ -363,8 +365,10 @@ function mergeHeroSkills(heroName, ext) {
 }
 
 // Read-only projection of the skin-mode rank override block in combos-db.
-// Lives in js/codex-rank-projection.js (pure + unit-tested).
-export { projectSkinModeRankDeltas } from './codex-rank-projection.js';
+// Lives in js/codex-rank-projection.js (pure + unit-tested); re-exported here
+// so atlas consumers keep one entry point while the module keeps a local
+// binding (a bare re-export would not create one).
+export { projectSkinModeRankDeltas };
 
 // Star-up cost summary for a skin: the tier's maximizeTotal items rendered as
 // "18 × Epic Hero Medal · 9 × Legendary Hero Medal · …". Mythic has no
