@@ -978,6 +978,12 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   font-weight: 800;
 }
 
+/* Pastel chip inks need a darker mix on light surfaces to stay readable. */
+[data-theme='light'] .eden-x1-announcement-chip {
+  background: color-mix(in srgb, rgb(var(--eden-chip-rgb, 148, 163, 184)) 16%, #fff);
+  color: color-mix(in srgb, rgb(var(--eden-chip-rgb, 148, 163, 184)) 62%, #10243b);
+}
+
 .eden-x1-announcement-row--support {
   --eden-chip-rgb: 94, 234, 212;
 }
@@ -1006,7 +1012,11 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 
 .eden-x1-announcement-remaining-table td:first-child {
   width: 3rem;
-  color: #7dd3fc;
+  color: var(--ff-cyan);
+}
+
+[data-theme='light'] .eden-x1-announcement-remaining-table td:first-child {
+  color: var(--ff-action);
 }
 
 .eden-x1-announcement-export {

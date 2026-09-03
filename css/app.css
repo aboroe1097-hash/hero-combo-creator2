@@ -4552,7 +4552,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   padding: 3rem 1.5rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .footer-content {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -5031,7 +5031,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
     width: 6rem;
   }
 }
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .loyalty-feature-card {
     flex-direction: row;
   }
@@ -5383,7 +5383,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
 }
 
 /* â”€â”€ Responsive hero grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   #availableHeroes,
   #generatorHeroes {
     grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
@@ -5704,7 +5704,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   flex-direction: column;
   gap: 12px;
 }
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .heroes-tab-inner--detail-open .heroes-toolbar-sticky {
     position: relative;
     top: auto;
@@ -15190,7 +15190,7 @@ body.admin-standalone-page .command-kicker {
   }
 }
 
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+@media (min-width: 769px) and (prefers-reduced-motion: no-preference) {
   .door-wing-left {
     animation: boot-spring-in-left 0.7s var(--ease-spring) 0.1s both;
   }
