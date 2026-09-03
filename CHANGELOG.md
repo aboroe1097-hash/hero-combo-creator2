@@ -1,5 +1,16 @@
 # Changelog
 
+## 16.0.0 - 2026-09-03
+
+- **VTS Player Alias Reconciliation**: Folded decoration, whitespace and case variants of the same account into one identity across leaderboards, contribution matching and weighted scoring, adopting Moldo1313 and D O F F Y as display names. Sixteen owner-confirmed merges join spellings whose letters differ — FALLEN across eight homoglyph forms, Made3110 across nine prefixes, Dobby, пупОк, Shabir and the rest — recovering demolition points that had been stranded on unmatched spellings. Just as importantly, accounts previously folded into their owner are now separated: DvD18 / DvD18 x2, BOiiE / BOiiE BANNER, ANGEL / Angel Banner and the Kika main, alt and banner accounts each score independently. Matching stays exact after normalisation, with no fuzzy or confusable fallback, and new OCR spellings must be confirmed before they resolve. Historical attack rows are unchanged.
+- **CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarged touch targets. Tokenized the account/profile surface, the command palette, the AI drawer and the Royal Bounty guide so light theme resolves through the token chain rather than hand-written overrides.
+- **Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated the nine free plus two paid heroes into the canonical roster (expanding the roster from 78 to 89 heroes), with tower profiles for the paid pair and synchronized Firestore security rule allowlists and caps. X10 is an intermediate bracket carrying only Healer and Hellfire; the research ladder skips it entirely and runs X8 to X12.
+- **Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.
+- **Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.
+- **Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters.
+- **X12 Research Trees**: Imported X12 *Melee Legion - Defense* (with 29/29 screenshot-backed layout positions) and *Charge* (with explicit absent-tree gap handling) into the tech database, advancing the research season ladder to X12.
+- **Localization**: Attained 100% key parity across all 13 supported languages for core, atlas, battle simulator, and planner surfaces.
+
 ## 15.0.15 - 2026-09-01
 
 - Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.

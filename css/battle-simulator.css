@@ -1085,10 +1085,12 @@ summary:focus-visible {
 
 .battle-source-toggle {
   justify-content: flex-start;
-  min-height: 2rem;
+  align-items: center;
+  min-height: var(--ff-tap-min);
   color: var(--ff-text-supporting);
   font-size: 0.68rem;
   font-weight: 800;
+  touch-action: manipulation;
 }
 
 .battle-source-toggle input {
@@ -2704,11 +2706,13 @@ summary:focus-visible {
 .battle-skill-option {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: 0.65rem;
+  min-height: var(--ff-tap-min);
   padding: 0.65rem;
   border: 1px solid var(--ff-border-subtle);
   border-radius: 0.65rem;
+  touch-action: manipulation;
 }
 
 .battle-skill-option span {

@@ -185,7 +185,19 @@ export const researchContent = {
       primaryResource: 'Lencana Perang',
       pages: ['Legiun Mulia'],
     },
-  },
+      '9c5d4006': {
+      name: 'Legiun Jarak Dekat - Pertahanan',
+      unlockCondition: 'Mulai Eden X12',
+      primaryResource: 'Lencana Perang',
+      pages: ['Legiun Jarak Dekat - Pertahanan'],
+    },
+    'b57d6bf9': {
+      name: 'Legiun Jarak Dekat - Serangan',
+      unlockCondition: 'Mulai Eden X12',
+      primaryResource: 'Lencana Perang',
+      pages: ['Legiun Jarak Dekat - Serangan'],
+    },
+},
   nodes: {
     'd1956263:node_1': {
       name: 'Pertumbuhan Kilat',
@@ -4217,7 +4229,243 @@ export const researchContent = {
       buff: '+5% HP Pasukan Mulia',
       effects: [],
     },
-  },
+      '9c5d4006:node_1': {
+      name: 'Perisai Bertahan',
+      buff: '+10% Ketahanan Pertahanan Pengepungan Infanteri',
+    },
+    '9c5d4006:node_2': {
+      name: 'Zirah Bertahan',
+      buff: '+10% Ketahanan Pertahanan Pengepungan Pemanah',
+    },
+    '9c5d4006:node_3': {
+      name: 'Kavaleri Bertahan',
+      buff: '+10% Ketahanan Pertahanan Pengepungan Kavaleri',
+    },
+    '9c5d4006:node_4': {
+      name: 'Terobosan Infanteri',
+      buff: '+10% Kekuatan Pertahanan Pengepungan Infanteri',
+    },
+    '9c5d4006:node_5': {
+      name: 'Terobosan Pemanah',
+      buff: '+10% Kekuatan Pertahanan Pengepungan Pemanah',
+    },
+    '9c5d4006:node_6': {
+      name: 'Terobosan Kavaleri',
+      buff: '+10% Kekuatan Pertahanan Pengepungan Kavaleri',
+    },
+    '9c5d4006:node_7': {
+      name: 'Perlindungan Taktis Jarak Dekat',
+      buff: '+5% Ketahanan Taktis semua pasukan',
+    },
+    '9c5d4006:node_8': {
+      name: 'Ketekunan - Legiun Kelas',
+      buff: '+15% Ketahanan Legiun Kelas semua pasukan',
+    },
+    '9c5d4006:node_9': {
+      name: 'Ketekunan - Legiun I',
+      buff: '+15% Ketahanan Legiun I semua pasukan',
+    },
+    '9c5d4006:node_10': {
+      name: 'Ketekunan - Legiun II',
+      buff: '+15% Ketahanan Legiun II semua pasukan',
+    },
+    '9c5d4006:node_11': {
+      name: 'Ketekunan - Legiun III',
+      buff: '+15% Ketahanan Legiun III semua pasukan',
+    },
+    '9c5d4006:node_12': {
+      name: 'Ketekunan - Antrean Pertahanan',
+      buff: '+15% Ketahanan antrean pertahanan semua pasukan',
+    },
+    '9c5d4006:node_13': {
+      name: 'Pertahanan Kokoh',
+      buff: '+10% Ketahanan Pertahanan Pengepungan semua pasukan',
+    },
+    '9c5d4006:node_14': {
+      name: 'Pasukan Pertahanan',
+      buff: '15000 peningkatan batas march antrean pertahanan',
+    },
+    '9c5d4006:node_15': {
+      name: 'Serangan Taktis Jarak Dekat',
+      buff: '+5% Kekuatan Taktis semua pasukan',
+    },
+    '9c5d4006:node_16': {
+      name: 'Ketekunan - Legiun Kelas M',
+      buff: '+15% Kekuatan Legiun Kelas semua pasukan',
+    },
+    '9c5d4006:node_17': {
+      name: 'Ketekunan - Legiun I M',
+      buff: '+15% Kekuatan Legiun I semua pasukan',
+    },
+    '9c5d4006:node_18': {
+      name: 'Ketekunan - Legiun II M',
+      buff: '+15% Kekuatan Legiun II semua pasukan',
+    },
+    '9c5d4006:node_19': {
+      name: 'Ketekunan - Legiun III M',
+      buff: '+15% Kekuatan Legiun III semua pasukan',
+    },
+    '9c5d4006:node_20': {
+      name: 'Keberanian - Antrean Pertahanan',
+      buff: '+15% Kekuatan antrean pertahanan semua pasukan',
+    },
+    '9c5d4006:node_21': {
+      name: 'Inisiatif',
+      buff: '+10% Kekuatan Pertahanan Pengepungan semua pasukan',
+    },
+    '9c5d4006:node_22': {
+      name: 'Jarak Dekat - Perisai Infanteri',
+      buff: '+15% Ketahanan Infanteri',
+    },
+    '9c5d4006:node_23': {
+      name: 'Jarak Dekat - Kavaleri di Barisan Belakang',
+      buff: '+15% Ketahanan Kavaleri',
+    },
+    '9c5d4006:node_24': {
+      name: 'Jarak Dekat - Lindungan Pemanah',
+      buff: '+15% Ketahanan Pemanah',
+    },
+    '9c5d4006:node_25': {
+      name: 'Jarak Dekat - Serbuan Infanteri',
+      buff: '+15% Kekuatan Infanteri',
+    },
+    '9c5d4006:node_26': {
+      name: 'Jarak Dekat - Serangan Kavaleri',
+      buff: '+15% Kekuatan Kavaleri',
+    },
+    '9c5d4006:node_27': {
+      name: 'Jarak Dekat - Tembakan Pemanah',
+      buff: '+15% Kekuatan Pemanah',
+    },
+    '9c5d4006:node_28': {
+      name: 'Fisik Prima',
+      buff: '+10% HP Pertahanan Pengepungan semua pasukan',
+    },
+    '9c5d4006:node_29': {
+      name: 'Hidup Jarak Dekat Berlanjut',
+      buff: '-5% dalam pertempuran pertahanan pengepungan, kurangi efek mematikan',
+    },
+    'b57d6bf9:node_1': {
+      name: 'Serangan Pedang - Infanteri',
+      buff: '+10% Kekuatan Pengepungan Infanteri',
+    },
+    'b57d6bf9:node_2': {
+      name: 'Serangan Pedang - Kavaleri',
+      buff: '+10% Kekuatan Pengepungan Kavaleri',
+    },
+    'b57d6bf9:node_3': {
+      name: 'Serangan Pedang - Pemanah',
+      buff: '+10% Kekuatan Pengepungan Pemanah',
+    },
+    'b57d6bf9:node_4': {
+      name: 'Gerebekan Pedang - Infanteri',
+      buff: '+10% Ketahanan Pengepungan Infanteri',
+    },
+    'b57d6bf9:node_5': {
+      name: 'Gerebekan Pedang - Kavaleri',
+      buff: '+10% Ketahanan Pengepungan Kavaleri',
+    },
+    'b57d6bf9:node_6': {
+      name: 'Gerebekan Pedang - Pemanah',
+      buff: '+10% Ketahanan Pengepungan Pemanah',
+    },
+    'b57d6bf9:node_7': {
+      name: 'Pengawal Istana',
+      buff: '+5% Kekuatan Taktis semua pasukan',
+    },
+    'b57d6bf9:node_8': {
+      name: 'Tembok Besi - Legiun Kelas',
+      buff: '+10% Ketahanan semua pasukan di Legiun Kelas',
+    },
+    'b57d6bf9:node_9': {
+      name: 'Tembok Besi - Legiun 1',
+      buff: '+10% Ketahanan semua pasukan di Legiun 1',
+    },
+    'b57d6bf9:node_10': {
+      name: 'Tembok Besi - Legiun 2',
+      buff: '+10% Ketahanan semua pasukan di Legiun 2',
+    },
+    'b57d6bf9:node_11': {
+      name: 'Tembok Besi - Legiun 3',
+      buff: '+10% Ketahanan semua pasukan di Legiun 3',
+    },
+    'b57d6bf9:node_12': {
+      name: 'Taktik Seimbang',
+      buff: '+5% Kekuatan dan Ketahanan pasukan',
+    },
+    'b57d6bf9:node_13': {
+      name: 'Serbuan - Legiun Kelas',
+      buff: '+10% Kekuatan semua pasukan di Legiun Kelas',
+    },
+    'b57d6bf9:node_14': {
+      name: 'Serbuan - Legiun 1',
+      buff: '+10% Kekuatan semua pasukan di Legiun 1',
+    },
+    'b57d6bf9:node_15': {
+      name: 'Serbuan - Legiun 2',
+      buff: '+10% Kekuatan semua pasukan di Legiun 2',
+    },
+    'b57d6bf9:node_16': {
+      name: 'Serbuan - Legiun 3',
+      buff: '+10% Kekuatan semua pasukan di Legiun 3',
+    },
+    'b57d6bf9:node_17': {
+      name: 'Pelapis Barisan Depan',
+      buff: '+5% Ketahanan Taktis semua pasukan',
+    },
+    'b57d6bf9:node_18': {
+      name: 'Barisan Depan Zirah Berat',
+      buff: '+5% Ketahanan Pengepungan semua pasukan',
+    },
+    'b57d6bf9:node_19': {
+      name: 'Penguasaan Keterampilan Tempur - Infanteri',
+      buff: '+10% Kekuatan keterampilan Infanteri',
+    },
+    'b57d6bf9:node_20': {
+      name: 'Penguasaan Keterampilan Tempur - Kavaleri',
+      buff: '+10% Kekuatan keterampilan Kavaleri',
+    },
+    'b57d6bf9:node_21': {
+      name: 'Penguasaan Keterampilan Tempur - Pemanah',
+      buff: '+10% Kekuatan keterampilan Pemanah',
+    },
+    'b57d6bf9:node_22': {
+      name: 'Ketahanan Keterampilan Tempur - Infanteri',
+      buff: '+10% Ketahanan keterampilan Infanteri',
+    },
+    'b57d6bf9:node_23': {
+      name: 'Ketahanan Keterampilan Tempur - Kavaleri',
+      buff: '+10% Ketahanan keterampilan Kavaleri',
+    },
+    'b57d6bf9:node_24': {
+      name: 'Ketahanan Keterampilan Tempur - Pemanah',
+      buff: '+10% Ketahanan keterampilan Pemanah',
+    },
+    'b57d6bf9:node_25': {
+      name: 'Semangat Barisan Depan - Infanteri',
+      buff: '+5% peningkatan HP Infanteri',
+    },
+    'b57d6bf9:node_26': {
+      name: 'Semangat Barisan Depan - Kavaleri',
+      buff: '+5% peningkatan HP Kavaleri',
+    },
+    'b57d6bf9:node_27': {
+      name: 'Semangat Barisan Depan - Pemanah',
+      buff: '+5% peningkatan HP Pemanah',
+    },
+    'b57d6bf9:node_28': {
+      name: 'Maju Menyeluruh',
+      buff: '+5% Kekuatan Pengepungan semua prajurit',
+    },
+    'b57d6bf9:node_29': {
+      name: 'Penguasaan Formasi',
+      buff: '+5% HP penyerang pengepungan',
+    },
+    'b57d6bf9:node_30': {
+      name: 'Gempuran Baja',
+      buff: '+5% damage diberikan',
+    },
+},
 };
 
 export default researchContent;

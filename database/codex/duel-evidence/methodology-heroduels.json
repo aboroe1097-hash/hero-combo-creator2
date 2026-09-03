@@ -1,0 +1,18 @@
+{
+  "fixtureVersion": 1,
+  "documentType": "duel-evidence-methodology",
+  "createdAt": "2026-09-02T00:00:00.000Z",
+  "provenance": {
+    "source": "HeroDuels PDF by Mtness (state 177, IMS), supplied by the owner and extracted with pdfplumber on 2026-09-02",
+    "credit": "Mtness s177",
+    "captureDate": "2026-09-02",
+    "gameVersionScope": "unknown",
+    "verificationStatus": "unverified"
+  },
+  "methodology": {
+    "pages": 3,
+    "tableShape": "per-position win-rate table: attacking legion win % (n) for positions 1/2/3 and total win % (n); 96 result rows extracted",
+    "limitation": "hero names are logo images in the source PDF, not text. Until the names are transcribed (D3-class vision work), the numbers cannot be attached to hero pairs, so duel-matrix ships pending with zero rows.",
+    "extraction": "individual numbers re-extractable from the working archive work/l96-codex-sources/pdfs/pdf_HeroDuels_By_Mtness_177-IMS.txt"
+  }
+}

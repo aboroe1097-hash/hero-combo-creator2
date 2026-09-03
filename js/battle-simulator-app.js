@@ -101,7 +101,7 @@ import {
   writeBattleProfileOverride,
 } from './battle-simulator-profile-store.js';
 
-const APP_VERSION = '15.0.15';
+const APP_VERSION = '16.0.0';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [
@@ -153,13 +153,81 @@ const preferredScrollBehavior = () =>
   globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
 function loadBattleProfileTowersStyles() {
-  battleProfileTowersStylesPromise ??= import('../css/battle-profile-towers-embedded.css').catch(
-    (error) => {
-      console.error('[battle-simulator] profile tower styles failed to load', error);
-      return null;
-    }
-  );
+  if (!battleProfileTowersStylesPromise) {
+    // A failed load must NOT be memoized: reset so the next open retries
+    // instead of rendering the editor permanently unstyled.
+    battleProfileTowersStylesPromise = import('../css/battle-profile-towers-embedded.css').catch(
+      (error) => {
+        console.error('[battle-simulator] profile tower styles failed to load', error);
+        battleProfileTowersStylesPromise = null;
+        return null;
+      }
+    );
+  }
   return battleProfileTowersStylesPromise;
+}
+
+// Field Data panel (16.0.0 lane 4): load-on-expanded + retry. The panel module
+// and its stylesheet are a lazy chunk; nothing here grows the eager route.
+let battleFieldDataPromise = null;
+let battleFieldDataModule = null;
+
+function buildFieldDataAccountProfile() {
+  const heroSkillIds = {};
+  const equipmentSetIds = [];
+  for (const sideId of SIDE_IDS) {
+    const side = state.sides[sideId];
+    if (!side) continue;
+    for (const row of side.rows || []) {
+      if (row.heroName) {
+        heroSkillIds[row.heroName] = [...(row.skillIds || [])].map(String).sort();
+      }
+    }
+    const setId = side.equipmentLoadout?.setId;
+    if (setId && !equipmentSetIds.includes(setId)) equipmentSetIds.push(setId);
+  }
+  return {
+    researchNodeIds: null,
+    equipmentSetIds,
+    heroSkillIds,
+    skinNames: null,
+  };
+}
+
+function fieldDataDeps() {
+  return {
+    t,
+    formatNumber,
+    formatPercent: (value) => formatNumber(value, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    getAccountProfile: buildFieldDataAccountProfile,
+    runComparison: null,
+  };
+}
+
+function ensureFieldDataPanel() {
+  const container = document.getElementById('battleFieldData');
+  if (!container || !container.hidden) return;
+  if (battleFieldDataModule) {
+    void battleFieldDataModule.mountFieldDataPanel(container, fieldDataDeps());
+    return;
+  }
+  battleFieldDataPromise ??= import('./battle-simulator-field-data.js')
+    .then((mod) => {
+      battleFieldDataModule = mod;
+      return mod.mountFieldDataPanel(container, fieldDataDeps());
+    })
+    .catch((error) => {
+      console.error('[battle-simulator] field data panel failed to load', error);
+      battleFieldDataPromise = null;
+      container.innerHTML = `
+        <p class="battle-field-empty">${t('fieldData.loading')}</p>
+        <button type="button" class="battle-secondary-button" data-field-retry-boot>${t('fieldData.retry')}</button>`;
+      container.hidden = false;
+      container.querySelector('[data-field-retry-boot]')?.addEventListener('click', () => {
+        container.hidden = true;
+        ensureFieldDataPanel();
+      });
+    });
 }
 
 function cancelActiveBatch() {
@@ -901,7 +969,10 @@ function replaceBattleProfilePanel() {
   current.outerHTML = renderBattleProfilePanel();
   openSides.forEach((sideId) => {
     const details = form.querySelector(`[data-profile-editor="${sideId}"]`);
-    if (details) details.open = true;
+    if (details) {
+      details.open = true;
+      void loadBattleProfileTowersStyles();
+    }
   });
   if (focus?.marker) {
     const selector = `[data-profile-draft="${focus.sideId}"] [${focus.marker}]${focus.name ? `[data-source-id="${focus.name}"], [data-research-id="${focus.name}"]` : ''}`;
@@ -1280,6 +1351,10 @@ function pageTemplate() {
           ${renderScenarioPanel()}
           ${renderSetupToolbar()}
           ${renderBattleProfilePanel()}
+          <details class="battle-field-data" data-field-data-panel>
+            <summary><span>${t('fieldData.summary')}</span></summary>
+            <div id="battleFieldData" class="battle-field-data-body" hidden></div>
+          </details>
           <div id="battleFormations" class="battle-formations">
             ${renderSide('A')}
             ${renderSide('B')}
@@ -3380,6 +3455,10 @@ function bindUI() {
     (event) => {
       if (event.target.matches?.('[data-profile-editor]')) {
         if (event.target.open) void loadBattleProfileTowersStyles();
+        return;
+      }
+      if (event.target.matches?.('[data-field-data-panel]')) {
+        if (event.target.open) ensureFieldDataPanel();
         return;
       }
       const details = event.target.closest?.('.battle-squad-card');

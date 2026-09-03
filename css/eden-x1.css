@@ -14,6 +14,13 @@ html.admin-standalone-root {
    under .eden-x1-page so the main site and Admin are untouched.
    ============================================================= */
 .eden-x1-page {
+  font-family: var(--font-ui);
+}
+
+/* Dark-theme frost color authority. Mirrors the dashboard token split in
+   ocr-dashboard.css: dark under :root:not([data-theme='light']), light in
+   the counterpart below (equal specificity, source order decides). */
+:root:not([data-theme='light']) .eden-x1-page {
   --frost-void: #070b16;
   --frost-deep: #0a0f1e;
   --frost-glass: rgba(255, 255, 255, 0.06);
@@ -30,7 +37,22 @@ html.admin-standalone-root {
   --frost-mint: #34d399;
   --frost-grad-primary: linear-gradient(90deg, #7dd3fc, #fb923c);
   --frost-grad-celestial: linear-gradient(90deg, #7dd3fc, #a78bfa, #fb923c);
-  font-family: var(--font-ui);
+}
+
+:root[data-theme='light'] .eden-x1-page {
+  --frost-void: #f4f7fb;
+  --frost-deep: #eaf0f6;
+  --frost-glass: rgba(255, 255, 255, 0.82);
+  --frost-glass-raised: rgba(255, 255, 255, 0.96);
+  --frost-hairline: rgba(51, 65, 85, 0.18);
+  --frost-text: #0f172a;
+  --frost-text-dim: #475569;
+  --frost-text-mute: #64748b;
+  --text-primary: #0f172a;
+  --text-muted: #526277;
+  --muted: #526277;
+  --surface-soft: #eef3f8;
+  color: #0f172a;
 }
 
 .eden-x1-page body,
@@ -956,6 +978,12 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   font-weight: 800;
 }
 
+/* Pastel chip inks need a darker mix on light surfaces to stay readable. */
+[data-theme='light'] .eden-x1-announcement-chip {
+  background: color-mix(in srgb, rgb(var(--eden-chip-rgb, 148, 163, 184)) 16%, #fff);
+  color: color-mix(in srgb, rgb(var(--eden-chip-rgb, 148, 163, 184)) 62%, #10243b);
+}
+
 .eden-x1-announcement-row--support {
   --eden-chip-rgb: 94, 234, 212;
 }
@@ -984,7 +1012,11 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 
 .eden-x1-announcement-remaining-table td:first-child {
   width: 3rem;
-  color: #7dd3fc;
+  color: var(--ff-cyan);
+}
+
+[data-theme='light'] .eden-x1-announcement-remaining-table td:first-child {
+  color: var(--ff-action);
 }
 
 .eden-x1-announcement-export {
@@ -1723,7 +1755,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border: 1px solid rgba(94, 234, 212, 0.34);
   border-radius: 999px;
   background: rgba(20, 184, 166, 0.1);
-  color: #a7f3d0;
+  color: var(--ff-dash-ink-0f766e-2);
   font-size: 0.74rem;
   font-weight: 900;
   line-height: 1.25;
@@ -1879,7 +1911,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border: 1px solid rgba(94, 234, 212, 0.36);
   border-radius: 999px;
   background: rgba(20, 184, 166, 0.12);
-  color: #a7f3d0;
+  color: var(--ff-dash-ink-0f766e-2);
   font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0;
@@ -5428,16 +5460,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border-color: #dbe5ef;
   color: #0f172a;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
-}
-
-[data-theme='light'] .eden-x1-page .eden-x1-marquee-title,
-[data-theme='light'] .eden-x1-page .eden-x1-marquee-stat-value,
-[data-theme='light'] .eden-x1-page .eden-x1-podium-name,
-[data-theme='light'] .eden-x1-page .eden-x1-progression-label {
-  color: #0f172a;
-}
-
-[data-theme='light'] .eden-x1-page .eden-x1-marquee-kicker,
+}[data-theme='light'] .eden-x1-page .eden-x1-marquee-kicker,
 [data-theme='light'] .eden-x1-page .eden-x1-marquee-stat-label,
 [data-theme='light'] .eden-x1-page .eden-x1-podium-score,
 [data-theme='light'] .eden-x1-page .eden-x1-progression-now {
@@ -5534,21 +5557,8 @@ body.eden-x1-page.eden-x1-overlay-open {
 /* Light theme keeps three distinct elevations: page, primary panel, and
    inset/data surface. Reward colors remain accents rather than becoming the
    whole surface, so scanning hierarchy matches dark mode. */
-[data-theme='light'] .eden-x1-page {
-  --frost-void: #f4f7fb;
-  --frost-deep: #eaf0f6;
-  --frost-glass: rgba(255, 255, 255, 0.82);
-  --frost-glass-raised: rgba(255, 255, 255, 0.96);
-  --frost-hairline: rgba(51, 65, 85, 0.18);
-  --frost-text: #0f172a;
-  --frost-text-dim: #475569;
-  --frost-text-mute: #64748b;
-  --text-primary: #0f172a;
-  --text-muted: #526277;
-  --muted: #526277;
-  --surface-soft: #eef3f8;
-  color: #0f172a;
-}
+/* (Legacy per-theme token block retired: its values moved into the
+   consolidated :root[data-theme='light'] .eden-x1-page authority block.) */
 
 [data-theme='light']
   .eden-x1-page

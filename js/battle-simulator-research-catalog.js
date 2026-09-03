@@ -1590,6 +1590,8 @@ const SEQUENTIAL_TREE_SIZES = Object.freeze({
   '2c49bd2a': 45,
   fc190e81: 43,
   '19ae0569': 37,
+  '9c5d4006': 29,
+  b57d6bf9: 30,
 });
 
 function buildKnownProgressKeys() {

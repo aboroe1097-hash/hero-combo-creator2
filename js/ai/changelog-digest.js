@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "15.0.15";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.0";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.0",
+    "date": "2026-09-03",
+    "highlights": [
+      "Reconciled owner-confirmed VTS OCR aliases across leaderboards, contribution matching, and weighted scoring, using Moldo1313 and D O F F Y as display names while protecting distinct main, banner, and Kika accounts. Historical attack rows remain unchanged.",
+      "**CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarg…",
+      "**Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated nine free heroes into the canonical roster (expanding the roster from 78 to 87 heroes) with synchronized Firestore security rule allowlists and caps.",
+      "**Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.",
+      "**Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.",
+      "**Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters."
+    ]
+  },
   {
     "version": "15.0.15",
     "date": "2026-09-01",
@@ -90,15 +102,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Corrected the X2 Artifact tool to make **Sword of Judgment** the current default instead of the not-yet-available Redemption Grail.",
       "Added the complete 33-node Sword tree with exact level costs, prerequisites, stage layout, Sword Emblem and Artifact Soulstone totals, node icons, and in-game Sword artwork.",
       "Kept Redemption Grail data available for a future release without presenting it as current X2 content."
-    ]
-  },
-  {
-    "version": "15.0.6",
-    "date": "2026-08-18",
-    "highlights": [
-      "Replaced the Artifact board's synthetic gradient with the exact in-game Redemption Grail capture embedded in the source sheet, including its Grail silhouette, ruins, node rings, and branching frame.",
-      "Refined the mobile tracker into a centered, pannable game board with the board before the inspector, compact two-column resource totals, cleaner actions, and level badges shown only for the selected or upgraded nodes.",
-      "Preserved readable dark and light surfaces, 44px mobile node targets, keyboard focus, and the existing 40-node calculation and account-sync behavior."
     ]
   }
 ].map((release) =>

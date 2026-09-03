@@ -140,7 +140,11 @@ test('standalone lobby and footer have explicit light surfaces', () => {
   );
   assert.match(
     dashboard,
-    /\[data-theme='light'\] #ocrDashboardRoot \.dash-login-title\s*\{[\s\S]*?color: #10243b/
+    /:root\[data-theme='light'\] #ocrDashboardRoot\s*\{[\s\S]*?--ff-text: #0f172a;[\s\S]*?--ff-text-dim: #64748b;/
+  );
+  assert.match(
+    dashboard,
+    /:root:not\(\[data-theme='light'\]\) #ocrDashboardRoot\s*\{[\s\S]*?--ff-text: #eef4ff;/
   );
   assert.match(eden, /id="edenZoomOut"[^>]*data-i18n-aria="edenZoomOutTitle"/);
   assert.match(eden, /id="edenZoomIn"[^>]*data-i18n-aria="edenZoomInTitle"/);

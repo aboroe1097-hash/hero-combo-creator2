@@ -44,11 +44,11 @@ test('public modal and phone-sheet popovers use the blocking-layer contract', ()
 });
 
 test('Eden X1 light theme preserves primary and inset surface hierarchy', () => {
+  assert.match(edenCss, /:root\[data-theme='light'\] \.eden-x1-page \{/);
+  assert.match(edenCss, /--frost-void:\s*#f4f7fb/);
   const parityStart = edenCss.indexOf('v14 Eden X1 parity completion');
   assert.notEqual(parityStart, -1);
   const parity = edenCss.slice(parityStart);
-  assert.match(parity, /\[data-theme='light'\] \.eden-x1-page \{/);
-  assert.match(parity, /--frost-void:\s*#f4f7fb/);
   assert.match(parity, /linear-gradient\(160deg, #ffffff 0%, #f8fafc 100%\)/);
   assert.match(parity, /background:\s*#f7f9fc/);
   assert.match(parity, /\.dash-table thead th[\s\S]*background:\s*#eaf0f6/);

@@ -1,6 +1,6 @@
 import { compactPlayerIdentity, findBestMatch, resolvePlayerNameForAttack } from './ocr-shared.js';
 
-const LEADING_GUILD_TAG_RE = /^\s*(?:\((?:vts|s)\)|(?:vts|s)\))\s*/i;
+const LEADING_GUILD_TAG_RE = /^\s*(?:\((?:vts|vet|s)\)|(?:vts|vet|s)\))\s*/i;
 const DUAL_CREDIT_OWNER_RE = /^(.*?)\s*[{(]\s*([^{}()]+?)\s*[})]\s*$/;
 const KIKA_ALT_MARKER_RE = /[\u0f3a\u0f3b\u226a\u226b]/u;
 const KIKA_ALT_IDENTITY_KEY = 'kikaalt';
@@ -100,8 +100,6 @@ function resolveSupplementalSpecialListCluster(cleanedName, existingResolvedName
   }
   if (
     compactClean === 'angel' ||
-    compactClean === 'angelbanner' ||
-    compactClean === 'angelv2' ||
     compactResolved === 'angel'
   ) {
     return 'ANGEL';
@@ -170,7 +168,7 @@ export function resolveCanonicalPlayerName(player, options = {}) {
 export function resolveCanonicalPlayerIdentity(player, options = {}) {
   const displayName = stripGuildTagsFromPlayerName(readName(player));
   const resolvedName = resolveCanonicalPlayerName(player, options);
-  const playerKey = compactPlayerIdentity(resolvedName);
+  const playerKey = getSpecialAccountIdentityKey(resolvedName, compactPlayerIdentity(resolvedName));
   if (!displayName || !resolvedName || !playerKey) {
     throw new Error('Player name is required');
   }
@@ -253,7 +251,7 @@ export function canonicalizePlayerOptionNames(players = []) {
     const displayName = stripGuildTagsFromPlayerName(readName(player));
     if (!displayName) return;
     const playerName = resolveCanonicalPlayerName(displayName) || displayName;
-    const playerKey = compactPlayerIdentity(playerName);
+    const playerKey = getSpecialAccountIdentityKey(playerName, compactPlayerIdentity(playerName));
     if (!playerKey || seen.has(playerKey)) return;
     seen.add(playerKey);
     options.push(playerName);

@@ -459,7 +459,7 @@ async function verifyRetiredEntryGate(page, viewport) {
   await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
 }
 
-async function expectVisualSnapshot(page, selector, name) {
+async function expectVisualSnapshot(page, selector, name, { mask = [] } = {}) {
   const target = page.locator(selector);
   await target.scrollIntoViewIfNeeded();
   await page.addStyleTag({
@@ -494,6 +494,7 @@ async function expectVisualSnapshot(page, selector, name) {
     caret: 'hide',
     maxDiffPixelRatio: 0.01,
     timeout: 15000,
+    mask,
   });
 }
 
@@ -973,7 +974,13 @@ test.describe('visual regression', () => {
     test(`header renders directly without an entry gate at ${viewport.name}`, async ({ page }) => {
       await verifyRetiredEntryGate(page, viewport);
       await openVisualApp(page, viewport);
-      await expectVisualSnapshot(page, '.command-header', `header-nav-${viewport.name}.png`);
+      // The version ribbon interpolates APP_VERSION, so an unmasked header
+      // baseline goes stale on every single release — it sat at v15.0.13 while
+      // the app shipped 16.0.0. Mask the whole pill rather than just its text:
+      // the string width changes between versions, so the pill edge moves too.
+      await expectVisualSnapshot(page, '.command-header', `header-nav-${viewport.name}.png`, {
+        mask: [page.locator('#betaNote')],
+      });
     });
   }
 

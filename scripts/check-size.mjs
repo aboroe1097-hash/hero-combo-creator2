@@ -147,6 +147,10 @@ const LIMITS = {
   // The two-flow DrThunder guide and its responsive topic/table layouts audit
   // to 1629.9 KiB; retain roughly 5 KiB without changing entry CSS limits.
   totalCssBytes: 1635 * 1024,
+  // The 16.0.0 token-authority commit retires 39 per-rule light overrides and
+  // consolidates the dashboard/Eden token blocks; total CSS measures 1429.6
+  // KiB locally. Admin and Eden routes each shed roughly 0.3-0.5 kB while the
+  // route ceilings stay unchanged (D1: no re-baseline).
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these caps
   // prevent them (or similarly large duplicates) from returning unseen. The
@@ -297,12 +301,16 @@ const LIMITS = {
     // standalone VtsScore leader board add route-local Admin UI. The clean CI
     // build measures 677.7 KiB desktop after the VtsScore panel; retain about
     // 2 KiB of headroom without changing the unaffected mobile ceiling.
+    // 16.0.0 token authority: 679.1/775.2 KiB after retiring covered light
+    // overrides (was 679.4/775.5); ceilings unchanged per D1.
     'admin.html': { desktop: 680 * 1024, mobile: 785 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
     // Eden imports the same dashboard stylesheet for weighted-contribution
     // detail, so the Admin-only panel styles are present in its CSS graph even
     // though the public route never renders those panels. CI measures roughly
     // 800.2 KiB for X1 and 799.0 KiB for X2 after minification.
+    // 16.0.0 token authority: 801.5/897.6 KiB after the frost-token
+    // consolidation (was 802.0/898.1); ceilings unchanged per D1.
     'eden-x1.html': { desktop: 803 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.

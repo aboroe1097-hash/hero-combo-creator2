@@ -1,0 +1,2 @@
+# source: HeroDuels PDF by Mtness (state 177, IMS); hero names are logo images so the per-row win-rate numbers have no resolvable sides (R3) | credit: Mtness s177 | captureDate: 2026-09-02 | gameVersionScope: unknown | verificationStatus: unverified
+duelId|attacker|defender|outcome|conditions|methodologyRef|p

@@ -1,0 +1,28 @@
+# source: l96.app /heroes summary | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: S0-X17 | verificationStatus: historical
+canonicalName|alias|externalGame|sourceRef|p
+Heaven's Justice|Heaven’s Justice||l96.app /heroes|
+North's Rage|North’s Rage||l96.app /heroes|
+The Heroine|Heroine of Courage||l96.app /heroes|
+Demon Spear|DemonSpear||l96.app /heroes|
+Constantine the Great|Constantine the great||l96.app /heroes|
+Black Prince|The Black Prince||l96.app /heroes|
+Edward the Confessor|Edward the confessor||l96.app /heroes|
+Jade|Jade Rakshasa||l96.app /heroes|
+Immortal|The Immortal||l96.app /heroes|
+BeastQueen|Beast Queen||l96.app /heroes|
+Rokuboshuten|Roku Boshuten||l96.app /heroes|
+ELK|Elk||l96.app /heroes|
+Sakura|Sakura Blossom||l96.app /heroes|
+Wind-Walker|Wind Walker||l96.app /heroes|
+Tarantula|The Tarantula||l96.app /heroes|
+Defender|The Defender||l96.app /heroes|
+Lawman|The Lawmanv||l96.app /heroes|
+Valkyrie|The Valkyrie||l96.app /heroes|
+Liberator|The Liberator||l96.app /heroes|
+Ashen Verdict|The Ashen Verdict||l96.app /heroes|
+Warhammer|The Warhammer||l96.app /heroes|
+Warden|The Warden||l96.app /heroes|
+Eidolon|The Eidolon||l96.app /heroes|
+Scarlet Reaver|The Scarlet Reaver||l96.app /heroes|
+Arslan|Arslam||l96.app /heroes|
+Farah|Farrah||l96.app /heroes|

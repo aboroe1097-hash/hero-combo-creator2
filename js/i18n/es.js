@@ -429,6 +429,7 @@ const es = {
   betaNote: 'v{version} - Herramienta de la Comunidad VTS s1097',
   tabManual: 'Constructor Manual',
   tabGenerator: 'Generador de Combos',
+  tabCodex: 'Códice',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Héroes',
   tabHeroesCombos: 'Centro de héroes y combos',
@@ -622,6 +623,8 @@ const es = {
   seasonX1: 'X1',
   seasonX2: 'X2',
   seasonX8: 'X8',
+  seasonX10: 'X10',
+  seasonX12: 'X12',
   loyaltyTitle: 'Calculadora de Lealtad',
   loyaltyDesc: 'Calcula tiempos de procesamiento y rutas de mejora.',
   campLevelsTitle: 'Niveles de Campamento',
@@ -799,14 +802,14 @@ const es = {
   researchSelectNodePrompt: 'Selecciona un nodo para revisar costes y progreso.',
   researchSetMax: 'Fijar MÁX.',
   researchSetHalf: 'Mitad',
-  researchNodesComplete: "Nodos completos",
-  researchNodesStarted: "Nodos iniciados",
-  researchNextAvailable: "Siguiente disponible",
-  researchRowLocked: "Primero completa la fila anterior: cada nodo necesita al menos nivel 1.",
-  researchRowLockedClear: "Primero borra la fila siguiente.",
+  researchNodesComplete: 'Nodos completos',
+  researchNodesStarted: 'Nodos iniciados',
+  researchNextAvailable: 'Siguiente disponible',
+  researchRowLocked: 'Primero completa la fila anterior: cada nodo necesita al menos nivel 1.',
+  researchRowLockedClear: 'Primero borra la fila siguiente.',
   researchTreeTotal: 'Total del árbol',
   researchTreeSpent: 'Gastado',
-  researchTreeTotalHint: "Gastado y restante de este árbol",
+  researchTreeTotalHint: 'Gastado y restante de este árbol',
   researchTroopBranchArchers: 'Arqueros',
   researchTroopBranchCavalry: 'Caballería',
   researchTroopBranchesAria: 'Ramas de tropas',
@@ -1398,7 +1401,8 @@ const es = {
   edenX1ViewOnly: 'Solo lectura',
   edenX1NoFirebase: 'Firebase no está configurado. No se pueden cargar los datos.',
   edenX1NoData: 'No se encontraron datos de contribución.',
-  edenSeasonUnpublished: 'Esta temporada aún no se ha publicado. Los resultados aparecerán cuando un administrador los publique.',
+  edenSeasonUnpublished:
+    'Esta temporada aún no se ha publicado. Los resultados aparecerán cuando un administrador los publique.',
   edenX1NoRows: 'No hay filas de contribución ponderada para mostrar.',
   edenX1ShowAllRows: 'Mostrar los {count} jugadores',
   edenX1LoadMoreRows: 'Cargar {count} más ({remaining} restantes)',
@@ -2077,7 +2081,7 @@ const es = {
     researchSelectNodePrompt: 'Selecciona un nodo para ver sus costos y su progreso.',
     researchSetMax: 'Completar nodo',
     researchTreeTotal: 'Costo pendiente del árbol',
-    researchTreeTotalHint: "Gastado y restante de este árbol",
+    researchTreeTotalHint: 'Gastado y restante de este árbol',
     researchTroopBranchArchers: 'Arqueros',
     researchTroopBranchCavalry: 'Caballería',
     researchTroopBranchesAria: 'Ramas de tropas',
@@ -2994,7 +2998,8 @@ const es = {
   edenPlaybookRolesAria: 'Roles de especialización de Eden',
   edenPlaybookRoleDemolitionHead: '💥 31 Azul',
   edenPlaybookRoleDemolitionTitle: 'Demolición',
-  edenPlaybookRoleDemolitionDesc: 'Maximiza el daño a objetivos contra puertas, ciudades y fortalezas.',
+  edenPlaybookRoleDemolitionDesc:
+    'Maximiza el daño a objetivos contra puertas, ciudades y fortalezas.',
   edenPlaybookRoleDemolitionLi1: 'Retorno instantáneo: 800 gemas, sin enfriamiento',
   edenPlaybookRoleDemolitionLi2: 'Valor de demolición: +63',
   edenPlaybookRoleDemolitionLi3: '+50 de demolición opcional durante 10 min · enfriamiento de 8h',
@@ -3008,7 +3013,8 @@ const es = {
   edenPlaybookRoleBannerLi4: 'Enfriamiento de 24 horas—resérvalo para los grandes asaltos',
   edenPlaybookRoleSpeedHead: '⚡ 17 Verde',
   edenPlaybookRoleSpeedTitle: 'Conquista rápida de casillas',
-  edenPlaybookRoleSpeedDesc: 'Corre hacia las casillas y objetivos clave con marchas territoriales más rápidas.',
+  edenPlaybookRoleSpeedDesc:
+    'Corre hacia las casillas y objetivos clave con marchas territoriales más rápidas.',
   edenPlaybookRoleSpeedLi1: 'Cartografía de campo: hasta +45% de velocidad de marcha',
   edenPlaybookRoleSpeedLi2: '14–20 Azul opcional',
   edenPlaybookRoleSpeedLi3: 'Retorno instantáneo: 800 gemas, sin enfriamiento',
@@ -3022,16 +3028,19 @@ const es = {
   edenPlaybookRoleHonorLi4: 'Recompensa de Honor: una vez al día',
   edenPlaybookRoleTilingHead: '🌿 40 Verde',
   edenPlaybookRoleTilingTitle: 'Honor por conquista de casillas',
-  edenPlaybookRoleTilingDesc: 'Gana Honor constante conquistando casillas en lugar de mejorar estructuras.',
+  edenPlaybookRoleTilingDesc:
+    'Gana Honor constante conquistando casillas en lugar de mejorar estructuras.',
   edenPlaybookRoleTilingLi1: 'Buena con pocos puntos de especialización',
   edenPlaybookRoleTilingLi2: 'Buena antes de los roles de combate o demolición',
   edenPlaybookRoleTilingLi3: 'Crecimiento de Honor simple y constante',
   edenPlaybookRoleFortHead: '🏰 24 Azul',
   edenPlaybookRoleFortTitle: 'Desbloqueo de fortaleza',
-  edenPlaybookRoleFortDesc: 'Desbloquea fortalezas de Asalto y Guardián extra para más mejoras diarias.',
+  edenPlaybookRoleFortDesc:
+    'Desbloquea fortalezas de Asalto y Guardián extra para más mejoras diarias.',
   edenPlaybookRoleFortLi1: 'Útil para cazadores de bajas y buscadores de mérito',
   edenPlaybookRoleFortLi2: 'Construye todas las fortalezas antes de reiniciar',
-  edenPlaybookRoleFortLi3: 'Los que no gastan pueden saltarse las extra y usar el reinicio gratis inicial',
+  edenPlaybookRoleFortLi3:
+    'Los que no gastan pueden saltarse las extra y usar el reinicio gratis inicial',
   edenPlaybookJumpKicker: 'OBJETIVOS DE LEALTAD',
   edenPlaybookJumpTitle: 'Los tres saltos de ingresos',
   edenPlaybookJumpDesc:
@@ -3051,75 +3060,112 @@ const es = {
   edenPlaybookTablePoison97: 'Objetivo de veneno al 97%',
   edenPlaybookTablePoison50: 'Objetivo de veneno al 50%',
   edenPlaybookPoisonKicker: '☠️ DAÑO POR VENENO Y ESTRATEGIA DE HÉROES',
-  edenPlaybookPoisonTitle: 'Las pérdidas tempranas fuertes aún pueden desbloquear un crecimiento más rápido',
-  edenPlaybookPoisonIntro: 'A menudo puedes capturar casillas con un 97% de daño por veneno. Matará a muchas tropas, pero ese intercambio puede valer la pena al principio. Por debajo del 50%, capturar casillas es mucho más fácil.',
+  edenPlaybookPoisonTitle:
+    'Las pérdidas tempranas fuertes aún pueden desbloquear un crecimiento más rápido',
+  edenPlaybookPoisonIntro:
+    'A menudo puedes capturar casillas con un 97% de daño por veneno. Matará a muchas tropas, pero ese intercambio puede valer la pena al principio. Por debajo del 50%, capturar casillas es mucho más fácil.',
   edenPlaybookPoisonHeroesTitle: 'Mejores héroes para casillas con veneno',
   edenPlaybookPoisonHero1: 'Immortal',
   edenPlaybookPoisonHero1Hint: 'Un monstruo en las primeras temporadas de Eden',
   edenPlaybookPoisonHero2: 'Rozen Blade',
   edenPlaybookPoisonHero2Hint: 'Recomendado; no aparece en el ejemplo',
   edenPlaybookPoisonHero3: 'Beast Queen',
-  edenPlaybookPoisonHero3Hint: 'Una opción de primer nivel para casillas con veneno en muchas temporadas',
-  edenPlaybookPoisonWarning: '⚠️ No llenes tus legiones. Tropas más pequeñas reducen el coste de curación y mantienen a tus héroes activos para más ataques.',
-  edenPlaybookPoisonImgAlt: 'Legión en casilla con veneno dentro del juego mostrando a Immortal y dos héroes de apoyo con escuadrones de tropas más pequeños',
-  edenPlaybookPoisonFigCaption: 'Ejemplo de formación en el juego. Reemplaza al héroe del centro por Rozen Blade cuando esté disponible.',
+  edenPlaybookPoisonHero3Hint:
+    'Una opción de primer nivel para casillas con veneno en muchas temporadas',
+  edenPlaybookPoisonWarning:
+    '⚠️ No llenes tus legiones. Tropas más pequeñas reducen el coste de curación y mantienen a tus héroes activos para más ataques.',
+  edenPlaybookPoisonImgAlt:
+    'Legión en casilla con veneno dentro del juego mostrando a Immortal y dos héroes de apoyo con escuadrones de tropas más pequeños',
+  edenPlaybookPoisonFigCaption:
+    'Ejemplo de formación en el juego. Reemplaza al héroe del centro por Rozen Blade cuando esté disponible.',
   edenPlaybookTroopSetupTitle: '💡 Ejemplos de configuración de tropas',
   edenPlaybookRatioStrong: 'Cuenta fuerte',
   edenPlaybookRatioWeaker: 'Cuenta más débil · puede necesitar 2–3 ataques',
   edenPlaybookRatioRisky: 'Configuración de alto riesgo',
-  edenPlaybookRatioTip: 'Mantén el escuadrón del primer héroe aproximadamente el doble que el de los demás para obtener los mejores resultados.',
+  edenPlaybookRatioTip:
+    'Mantén el escuadrón del primer héroe aproximadamente el doble que el de los demás para obtener los mejores resultados.',
   edenPlaybookFooter: 'Estrategia canónica y capturas de pantalla:',
   edenPlaybookFooterSource: 'Thunder Loyalty Playbook, nov. 2025.',
-  edenPlaybookFooterNote: 'Adapta los tiempos a tu temporada, las instrucciones de la alianza, los puntos de especialización, las tropas y los reinicios disponibles.',
+  edenPlaybookFooterNote:
+    'Adapta los tiempos a tu temporada, las instrucciones de la alianza, los puntos de especialización, las tropas y los reinicios disponibles.',
   edenPlaybookFocusKicker: 'TU FOCO ACTUAL',
   edenPlaybookWhyTitle: 'Por qué importa esta fase',
   edenPlaybookWatchTitle: 'Cuidado',
-  edenPlaybookVisualCaption: 'Visual {index} de la {week}: referencia original de ruta en el juego de DrThunder.',
+  edenPlaybookVisualCaption:
+    'Visual {index} de la {week}: referencia original de ruta en el juego de DrThunder.',
   edenPlaybookVisualAlt: 'Referencia de especialización Eden de DrThunder {index}',
   edenPlaybookDay0GreenAlt: 'Colocación de puntos de especialización Verde Izquierda del Día 0',
-  edenPlaybookDay0GreenCaption: 'Día 0 Verde Izquierda: ruta de construcción de Honor y Honor diario.',
-  edenPlaybookDay0BlueAlt: 'Colocación de puntos de especialización Azul Abajo del Día 0 para todas las fortalezas',
-  edenPlaybookDay0BlueCaption: 'Día 0 Azul Abajo: desbloquea y coloca las cuatro fortalezas antes del reinicio.',
+  edenPlaybookDay0GreenCaption:
+    'Día 0 Verde Izquierda: ruta de construcción de Honor y Honor diario.',
+  edenPlaybookDay0BlueAlt:
+    'Colocación de puntos de especialización Azul Abajo del Día 0 para todas las fortalezas',
+  edenPlaybookDay0BlueCaption:
+    'Día 0 Azul Abajo: desbloquea y coloca las cuatro fortalezas antes del reinicio.',
   edenPlaybookDay0Label: 'Día 0',
   edenPlaybookDay0Title: 'Prepárate antes del reinicio',
-  edenPlaybookDay0Why: 'Verde Izquierda convierte los puntos sobrantes en Honor temprano, mientras que Azul Abajo desbloquea la línea de fortalezas antes de la carrera inicial.',
-  edenPlaybookDay0Watch: 'Completa ambas rutas y coloca todas las fortalezas antes de cambiar la configuración.',
-  edenPlaybookDay0Task1: 'Usa el reinicio Básico de 7 días para abrir el acceso a las fortalezas pronto.',
-  edenPlaybookDay0Task2: 'Sigue Verde Izquierda para los edificios de Honor y la habilidad de Honor diario.',
-  edenPlaybookDay0Task3: 'Sigue Azul Abajo lo suficiente para desbloquear y colocar las cuatro fortalezas.',
+  edenPlaybookDay0Why:
+    'Verde Izquierda convierte los puntos sobrantes en Honor temprano, mientras que Azul Abajo desbloquea la línea de fortalezas antes de la carrera inicial.',
+  edenPlaybookDay0Watch:
+    'Completa ambas rutas y coloca todas las fortalezas antes de cambiar la configuración.',
+  edenPlaybookDay0Task1:
+    'Usa el reinicio Básico de 7 días para abrir el acceso a las fortalezas pronto.',
+  edenPlaybookDay0Task2:
+    'Sigue Verde Izquierda para los edificios de Honor y la habilidad de Honor diario.',
+  edenPlaybookDay0Task3:
+    'Sigue Azul Abajo lo suficiente para desbloquear y colocar las cuatro fortalezas.',
   edenPlaybookDay0Task4: 'Activa la habilidad de honor diario.',
   edenPlaybookDay1Label: 'Día 1',
   edenPlaybookDay1Title: 'Desbloquea fortalezas, prepara el Honor y luego la build de lealtad',
-  edenPlaybookDay1Why: 'Las fortalezas deben colocarse antes de los reinicios; Verde maximiza el Honor de los Talleres de Frente y luego Azul acelera la lealtad, el procesamiento y la colocación de casillas.',
-  edenPlaybookDay1Watch: 'Construye ambas fortalezas antes de cualquier reinicio — y mantén las colas de procesamiento activas mientras colocas casillas.',
-  edenPlaybookDay1Task1: 'Desbloquea y construye las fortalezas de Asalto y Guardián antes de reiniciar tu especialización.',
-  edenPlaybookDay1Task2: 'Reinicia la especialización, pon todos los puntos en Verde (izquierda) y mejora todos los Talleres de Frente a su nivel máximo.',
-  edenPlaybookDay1Task3: 'Reinicia de nuevo en el árbol Azul (izquierda y derecha) para desbloquear talleres extra y nodos de lealtad.',
-  edenPlaybookDay1Task4: 'Coloca casillas en los nodos de Farm, Marble y Ale para las mejoras del Coalition Base Camp — los campamentos más altos significan más lealtad y casillas de nivel superior.',
+  edenPlaybookDay1Why:
+    'Las fortalezas deben colocarse antes de los reinicios; Verde maximiza el Honor de los Talleres de Frente y luego Azul acelera la lealtad, el procesamiento y la colocación de casillas.',
+  edenPlaybookDay1Watch:
+    'Construye ambas fortalezas antes de cualquier reinicio — y mantén las colas de procesamiento activas mientras colocas casillas.',
+  edenPlaybookDay1Task1:
+    'Desbloquea y construye las fortalezas de Asalto y Guardián antes de reiniciar tu especialización.',
+  edenPlaybookDay1Task2:
+    'Reinicia la especialización, pon todos los puntos en Verde (izquierda) y mejora todos los Talleres de Frente a su nivel máximo.',
+  edenPlaybookDay1Task3:
+    'Reinicia de nuevo en el árbol Azul (izquierda y derecha) para desbloquear talleres extra y nodos de lealtad.',
+  edenPlaybookDay1Task4:
+    'Coloca casillas en los nodos de Farm, Marble y Ale para las mejoras del Coalition Base Camp — los campamentos más altos significan más lealtad y casillas de nivel superior.',
   edenPlaybookDay2Label: 'Día 2',
   edenPlaybookDay2Title: 'Empuja el salto crítico de Lv. 12',
-  edenPlaybookDay2Why: 'Los ingresos suben de 1,000 en Lv. 11 a 1,200 en Lv. 12, uno de los saltos más grandes de la tabla.',
-  edenPlaybookDay2Watch: 'Las pérdidas tempranas por veneno pueden funcionar, pero conserva suficientes tropas para los objetivos de la alianza.',
-  edenPlaybookDay2Task1: 'Participa en la demolición de estructuras sin frenar el crecimiento de la lealtad.',
+  edenPlaybookDay2Why:
+    'Los ingresos suben de 1,000 en Lv. 11 a 1,200 en Lv. 12, uno de los saltos más grandes de la tabla.',
+  edenPlaybookDay2Watch:
+    'Las pérdidas tempranas por veneno pueden funcionar, pero conserva suficientes tropas para los objetivos de la alianza.',
+  edenPlaybookDay2Task1:
+    'Participa en la demolición de estructuras sin frenar el crecimiento de la lealtad.',
   edenPlaybookDay2Task2: 'Si Lv. 12 está cerca, priorízalo sobre edificios extra.',
-  edenPlaybookDay2Task3: 'Lv. 12 es el salto temprano clave: 1,200 de ingresos y vacíos centrales útiles.',
+  edenPlaybookDay2Task3:
+    'Lv. 12 es el salto temprano clave: 1,200 de ingresos y vacíos centrales útiles.',
   edenPlaybookWeek1Label: 'Semana 1',
   edenPlaybookWeek1Title: 'Equilibra ingresos y procesamiento',
-  edenPlaybookWeek1Why: 'Ingresos sin procesamiento crean un acumulamiento; procesamiento sin casillas altas deja las colas sin abastecer.',
-  edenPlaybookWeek1Watch: 'Revisa los reinicios disponibles y los tiempos de la alianza antes de cambiar de Azul Derecha a Azul Izquierda.',
+  edenPlaybookWeek1Why:
+    'Ingresos sin procesamiento crean un acumulamiento; procesamiento sin casillas altas deja las colas sin abastecer.',
+  edenPlaybookWeek1Watch:
+    'Revisa los reinicios disponibles y los tiempos de la alianza antes de cambiar de Azul Derecha a Azul Izquierda.',
   edenPlaybookWeek1ToolLabel: '🔄 Equilibrando Ingresos y Producción',
-  edenPlaybookWeek1ToolDesc: 'Abre nuestra herramienta de Lealtad Eden para comparar lealtad, ingresos y procesamiento.',
-  edenPlaybookWeek1Task1: 'Azul Derecha ayuda a alcanzar casillas más altas; cada nodo de lealtad cuesta unos 300.',
-  edenPlaybookWeek1Task2: 'Cuando los materiales se acumulen, reinicia a Azul Izquierda para velocidad de procesamiento.',
+  edenPlaybookWeek1ToolDesc:
+    'Abre nuestra herramienta de Lealtad Eden para comparar lealtad, ingresos y procesamiento.',
+  edenPlaybookWeek1Task1:
+    'Azul Derecha ayuda a alcanzar casillas más altas; cada nodo de lealtad cuesta unos 300.',
+  edenPlaybookWeek1Task2:
+    'Cuando los materiales se acumulen, reinicia a Azul Izquierda para velocidad de procesamiento.',
   edenPlaybookWeek1Task3: 'Apunta a Farm, Marble y Ale para las mejoras del Coalition Base Camp.',
   edenPlaybookRoleLabel: 'Configuración de rol',
   edenPlaybookRoleTitle: 'Cambia cuando la lealtad sea cómoda',
-  edenPlaybookRoleWhy: 'Una vez que la lealtad es estable, los puntos de especialización pueden servir a la alianza en lugar de solo al crecimiento personal.',
-  edenPlaybookRoleWatch: 'Coordina los tiempos de reutilización de Banner y demolición: no los uses por tu cuenta.',
-  edenPlaybookRoleTask1: 'Demolición: 31 puntos Azules; habilidades activas de demolición opcionales.',
-  edenPlaybookRoleTask2: 'Banner: 47 puntos Rojos para energía de la alianza y buffs de demolición.',
+  edenPlaybookRoleWhy:
+    'Una vez que la lealtad es estable, los puntos de especialización pueden servir a la alianza en lugar de solo al crecimiento personal.',
+  edenPlaybookRoleWatch:
+    'Coordina los tiempos de reutilización de Banner y demolición: no los uses por tu cuenta.',
+  edenPlaybookRoleTask1:
+    'Demolición: 31 puntos Azules; habilidades activas de demolición opcionales.',
+  edenPlaybookRoleTask2:
+    'Banner: 47 puntos Rojos para energía de la alianza y buffs de demolición.',
   edenPlaybookRoleTask3: 'Colocación rápida de casillas: 17 Verdes más 14–20 Azules opcionales.',
-  edenPlaybookRoleTask4: 'Edificios de Honor o colocación de casillas: 40 Verdes; sigue los tiempos de la alianza.',
+  edenPlaybookRoleTask4:
+    'Edificios de Honor o colocación de casillas: 40 Verdes; sigue los tiempos de la alianza.',
   edenPlaybookAltDemolition: 'Ruta de especialización de demolición Azul',
   edenPlaybookAltBanner: 'Ruta de especialización de banner Roja',
   edenPlaybookAltSpeed: 'Ruta de especialización de colocación rápida Verde',
@@ -3127,8 +3173,10 @@ const es = {
   edenPlaybookAltTiling: 'Ruta de especialización de Honor por colocación de casillas Verde',
   edenPlaybookAltFort: 'Ruta de especialización de desbloqueo de fortalezas Azul Abajo',
   shareViewCopied: 'Enlace copiado al portapapeles',
-  edenPlaybookDay1Task5: 'Quédate en la build de lealtad las primeras semanas y luego cambia a tu rol de alianza (Demolición, Colocación rápida de casillas, Banner).',
-  edenPlaybookAltSpeedOptional: '14-20 puntos Azules opcionales para colocación rápida: velocidad de marcha de Cartografía de campo e Invocación instantánea con un 30% de descuento al llegar a los 20 puntos.',
+  edenPlaybookDay1Task5:
+    'Quédate en la build de lealtad las primeras semanas y luego cambia a tu rol de alianza (Demolición, Colocación rápida de casillas, Banner).',
+  edenPlaybookAltSpeedOptional:
+    '14-20 puntos Azules opcionales para colocación rápida: velocidad de marcha de Cartografía de campo e Invocación instantánea con un 30% de descuento al llegar a los 20 puntos.',
   adminConductBulkToggle: 'Pegar filas',
   adminConductBulkHint:
     'Una fila por línea: Nombre | Puntos | Nota. Los puntos y la nota son opcionales: las filas sin ellos usan la categoría por defecto de abajo.',
@@ -3192,11 +3240,13 @@ const es = {
   adminBohMatchUploadHint:
     'Sube cada captura desplazada de la lista de tu equipo: las filas superpuestas se fusionan automáticamente.',
   adminBohMatchPaste: 'Pegar filas en su lugar',
-  adminBohMatchPastePrompt: 'Pega las filas de puntuación, una por línea (rango, nombre, puntuación):',
+  adminBohMatchPastePrompt:
+    'Pega las filas de puntuación, una por línea (rango, nombre, puntuación):',
   adminBohMatchClear: 'Limpiar filas',
   adminBohMatchScanning: 'Leyendo la captura {current} de {total}...',
   adminBohMatchScanned: 'Se leyeron {count} filas de puntuación.',
-  adminBohMatchNoRows: 'Aún no hay filas de puntuación. Sube las capturas de Combat Progress de tu equipo.',
+  adminBohMatchNoRows:
+    'Aún no hay filas de puntuación. Sube las capturas de Combat Progress de tu equipo.',
   adminBohMatchNoRowsFound: 'No se pudieron leer filas de puntuación de eso.',
   adminBohMatchRowCount: '{count} miembros',
   adminBohMatchTotal: 'Total {total}',
@@ -3288,7 +3338,8 @@ const es = {
   adminBohMatchRowNotePh: 'Nota sobre este jugador (opcional)',
   adminBohMatchNoRowsHint:
     'Aún no hay filas de puntuación. Sube las capturas de Combat Progress, o simplemente rellena el marcador final y una nota.',
-  adminBohMatchNothingToSave: 'Añade filas de puntuación, un marcador final o una nota antes de guardar.',
+  adminBohMatchNothingToSave:
+    'Añade filas de puntuación, un marcador final o una nota antes de guardar.',
   adminBohMatchUpdate: 'Actualizar resultado del partido',
   adminBohMatchUpdated: 'Resultado del partido actualizado.',
   adminBohMatchCancelEdit: 'Cancelar edición',
@@ -3310,6 +3361,86 @@ const es = {
   adminBohMatchRatingRequired:
     'Califica a cada jugador de 0 a 10 antes de enviar este resultado - faltan {count}, empezando por {players}.',
   adminBohMatchRatingHint: 'Califica a cada jugador de 0 a 10. Las notas son opcionales.',
+  plannersHubTitle: 'Planificadores de progresión',
+  plannersHubDesc:
+    'Calcula la ruta de investigación, gestiona presets de especialización, planifica mejoras del castillo y proyecta la stamina.',
+  plannersTabResearch: 'Planificador de investigación',
+  plannersTabPresets: 'Presets',
+  plannersTabCastle: 'Castillo',
+  plannersTabStamina: 'Stamina',
+  plannersFamily: 'Familia de investigación',
+  plannersTargetNode: 'Nodo objetivo',
+  plannersTargetLevel: 'Nivel objetivo',
+  plannersMode: 'Modo de plan',
+  plannersModeMin: 'Ruta de desbloqueo mínimo',
+  plannersModeFull: 'Ruta completa',
+  plannersCompute: 'Calcular',
+  plannersExportCsv: 'Exportar CSV',
+  plannersExportJson: 'Exportar JSON',
+  plannersShare: 'Compartir enlace',
+  plannersPrint: 'Imprimir / PDF',
+  plannersCopied: 'Copiado al portapapeles',
+  plannersPathTitle: 'Ruta del plan',
+  plannersTotalsTitle: 'Costos restantes',
+  plannersVerified: 'Verificado',
+  plannersUnverified: 'Sin verificar',
+  plannersMilestones: 'Hitos',
+  plannersNextBest: 'Siguiente investigación recomendada',
+  plannersCostResources: 'Recursos',
+  plannersCostWisdom: 'Medallas de Sabiduría',
+  plannersCostCourage: 'Medallas de Valor',
+  plannersCostWarBadges: 'Insignias de Guerra',
+  plannersCostGems: 'Gemas',
+  plannersCostTime: 'Tiempo (s)',
+  presetEngineTitle: 'Motor de presets de especialización',
+  presetEngineDesc:
+    'Guarda, compara, importa y comparte builds de especialización. Aplicar un preset actualiza el estado guardado de las Torres.',
+  presetEngineTree: 'Árbol de especialización',
+  presetEngineTroop: 'Tropa',
+  presetEngineSaveName: 'Nombre del preset',
+  presetEngineSave: 'Guardar actual como preset',
+  presetEnginePresets: 'Presets guardados',
+  presetEngineApply: 'Aplicar',
+  presetEngineDelete: 'Eliminar',
+  presetEngineExport: 'Exportar',
+  presetEngineShare: 'Compartir',
+  presetEngineNoPresets:
+    'Aún no hay presets guardados. Aplica una build en la pestaña Torres y guárdala aquí.',
+  presetEngineImportLabel: 'Importar una carga de preset',
+  presetEngineImportGo: 'Importar',
+  presetEngineImported: 'Preset importado',
+  presetEngineSaved: 'Preset guardado',
+  presetEngineApplied: 'Preset aplicado — recarga la pestaña Torres para verlo.',
+  presetEngineInvalid: 'No se pudo aplicar ese preset.',
+  castlePlannerTitle: 'Planificador de desarrollo del castillo',
+  castlePlannerDesc:
+    'Descubre qué bloquea el siguiente nivel del castillo y calcula la ruta de mejora.',
+  castlePlannerDataPending:
+    'Aún no hay datos verificados de costos de construcción en la app, así que el planificador no puede ejecutarse. Los costos nunca se inventan; este panel se activará automáticamente cuando haya datos verificados.',
+  castlePlannerTarget: 'Nivel de castillo objetivo',
+  castlePlannerLevels: 'Niveles actuales de edificios (uno por línea)',
+  castlePlannerArchitect: 'Descuento de arquitecto %',
+  castlePlannerBuilder: 'Descuento de constructor %',
+  castlePlannerResearchRed: 'Descuento de investigación %',
+  castlePlannerBlockers: 'Bloqueos',
+  castlePlannerUpgrades: 'Ruta de mejora',
+  castlePlannerAssumptions: 'Supuestos',
+  castlePlannerNoPlan: 'No hay un plan disponible para ese nivel de castillo.',
+  staminaTitle: 'Calculadora de stamina',
+  staminaDesc:
+    'Proyecta la stamina según una lista de operaciones y comparte la tarjeta de operación.',
+  staminaCapacity: 'Capacidad',
+  staminaCurrent: 'Stamina actual',
+  staminaRegen: 'Regeneración por hora',
+  staminaOpsLabel: 'Operaciones (una por línea)',
+  staminaTimeToFull: 'Tiempo hasta lleno',
+  staminaTimeline: 'Proyección',
+  staminaPerOp: 'Operaciones',
+  staminaOpCard: 'Tarjeta de operación de alianza',
+  staminaPng: 'PNG de tarjeta',
+  staminaHour: 'Hora',
+  staminaStamina: 'Stamina',
+  staminaAffordable: 'Asequible',
 };
 
 export default es;

@@ -245,7 +245,7 @@
   gap: var(--space-6);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .admin-footer .footer-content,
   .site-footer .footer-content {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1035,7 +1035,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .hero-tooltip-shell {
     width: 480px;
   }

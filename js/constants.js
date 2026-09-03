@@ -13,10 +13,12 @@ export const HERO_DRAG_MIME = 'application/x-vts-hero-name';
 // Season color maps — intentionally different shades for different contexts
 export const seasonColors = {
   S0: '#9ca3af', S1: '#3b82f6', S2: '#a855f7', S3: '#f97316',
-  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee'
+  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee',
+  X10: '#f472b6', X12: '#a3e635'
 };
 
 export const TechseasonColors = {
   S0: '#94a3b8', S1: '#60a5fa', S2: '#c084fc', S3: '#fb923c',
-  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee'
+  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee',
+  X10: '#f472b6', X12: '#a3e635'
 };

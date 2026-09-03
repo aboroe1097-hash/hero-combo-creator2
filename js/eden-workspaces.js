@@ -254,6 +254,20 @@ function pickAllowlisted(source, fields) {
   return out;
 }
 
+export function stripUndefined(value) {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefined(item)).filter((item) => item !== undefined);
+  }
+  const out = {};
+  Object.entries(value).forEach(([key, val]) => {
+    const cleaned = stripUndefined(val);
+    if (cleaned !== undefined) out[key] = cleaned;
+  });
+  return out;
+}
+
 export function buildEdenPublicProjection(options = {}) {
   const {
     workspace = 'eden-x2',
@@ -272,7 +286,7 @@ export function buildEdenPublicProjection(options = {}) {
   }
   const dashboardSource = dashboardData || buildEmptyEdenWorkspaceDashboard(ws.defaultSeason);
   const season = String(dashboardSource.r5Season || ws.defaultSeason);
-  return {
+  return stripUndefined({
     schemaVersion: 1,
     workspace: ws.id,
     season,
@@ -283,8 +297,9 @@ export function buildEdenPublicProjection(options = {}) {
     dashboard: pickAllowlisted(dashboardSource, EDEN_PROJECTION_DASHBOARD_FIELDS),
     rosterSnapshots: Array.isArray(rosterSnapshots) ? rosterSnapshots : [],
     voteSettings: pickAllowlisted(voteSettings || {}, EDEN_PROJECTION_VOTE_SETTINGS_FIELDS),
-    publicVoteResults: publicVoteResults && typeof publicVoteResults === 'object' ? publicVoteResults : {},
-  };
+    publicVoteResults:
+      publicVoteResults && typeof publicVoteResults === 'object' ? publicVoteResults : {},
+  });
 }
 
 export function isPublishedEdenProjection(value) {

@@ -24,7 +24,7 @@ export const PUBLIC_VTS_PLAYER_PROFILES = Object.freeze([
   profile('Juli', 'R4', ['Juli Rae']),
   profile('Lisaveta', 'R4', ['Lisavetka']),
   profile('MasterVj', 'R4', ['MasterVj 1097']),
-  profile('Moldo', 'R4'),
+  profile('Moldo1313', 'R4', ['Moldo']),
   profile('Peter', 'R4'),
   profile('Redbull', 'R4', ['Redbulls']),
   profile('Roha', 'R4'),

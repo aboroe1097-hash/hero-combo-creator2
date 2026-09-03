@@ -1,0 +1,4 @@
+# source: l96.app War Medals (COP Medals) post (2023-10-30) | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: COP round 27 | verificationStatus: historical
+item|source|cost|notes|p
+cop-medal-distribution|COP season award rules||Legendary league: each state's top 100 players receive medals; 1st place awards 5 different medals to its top 100, same for 2nd and 3rd; states finishing 4th-8th award 2 different medals each. Gold league: only the top 2 states per bracket receive medals, for their top 10 players only.|
+cop-round-27-context|COP round 27||Round 27 as of 2023-10-30; previous legendary league champions: s95, s67, s66.|

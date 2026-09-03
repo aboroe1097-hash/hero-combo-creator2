@@ -85,7 +85,7 @@ html {
 .account-meta,
 .account-counter,
 .account-verification-summary {
-  color: #9eb0c6;
+  color: var(--ff-text-dim);
 }
 
 .account-brand small {
@@ -102,7 +102,7 @@ html {
   display: inline-flex;
   align-items: center;
   min-height: 48px;
-  color: #6ee7f5;
+  color: var(--ff-action);
   font-size: 0.82rem;
   font-weight: 700;
   text-underline-offset: 0.25rem;
@@ -125,7 +125,7 @@ html {
 
 .account-kicker {
   margin: 0 0 0.65rem;
-  color: #c8a95d;
+  color: var(--ff-warning);
   font:
     700 0.72rem/1.2 'JetBrains Mono',
     monospace;
@@ -182,7 +182,7 @@ html {
   padding-inline: 0.85rem;
   border: 0;
   border-block-end: 2px solid transparent;
-  color: #91a6bd;
+  color: var(--ff-text-dim);
   background: transparent;
   font:
     700 0.9rem/1 'Sora',
@@ -191,8 +191,8 @@ html {
 }
 
 .account-tabs button[aria-selected='true'] {
-  border-color: #2fd5e9;
-  color: #fff;
+  border-color: var(--ff-action);
+  color: var(--ff-text);
 }
 
 .account-form,
@@ -317,10 +317,10 @@ html {
 .account-button {
   min-height: 48px;
   padding: 0.72rem 1rem;
-  border: 1px solid #39516c;
+  border: 1px solid var(--ff-border-strong);
   border-radius: 10px;
-  color: #edf7ff;
-  background: #10233a;
+  color: var(--ff-text);
+  background: var(--ff-control);
   font:
     700 0.88rem/1.2 'Sora',
     system-ui,
@@ -333,8 +333,8 @@ html {
 }
 
 .account-button:hover:not(:disabled) {
-  border-color: #5d7894;
-  background: #17304b;
+  border-color: var(--ff-border-hover);
+  background: var(--ff-control-hover);
   transform: translateY(-1px);
 }
 
@@ -372,14 +372,14 @@ html {
   min-height: 48px;
   padding-inline: 0;
   border: 0;
-  color: #6ee7f5;
+  color: var(--ff-action);
   background: transparent;
 }
 
 .account-note {
   margin: 0;
   padding-inline-start: 0.85rem;
-  border-inline-start: 3px solid #c8a95d;
+  border-inline-start: 3px solid var(--ff-warning);
   font-size: 0.82rem;
   line-height: 1.55;
 }
@@ -416,7 +416,7 @@ html {
   min-height: 48px;
   padding-inline: 0.9rem;
   border-inline-start: 2px solid transparent;
-  color: #8fa4bb;
+  color: var(--ff-text-dim);
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
@@ -453,7 +453,7 @@ html {
 }
 
 .account-verification-summary strong {
-  color: #e9f9ff;
+  color: var(--ff-text);
 }
 
 .account-counter {
@@ -471,7 +471,7 @@ html {
 .account-details summary {
   min-height: 52px;
   padding-block: 1rem;
-  color: #dfeaf5;
+  color: var(--ff-text);
   font-weight: 700;
   cursor: pointer;
 }
@@ -529,7 +529,7 @@ html {
 .account-language {
   min-width: 0;
   gap: 0.7rem;
-  color: #c6d4e3;
+  color: var(--ff-text-supporting);
   font-size: 0.82rem;
   font-weight: 700;
 }
@@ -572,21 +572,21 @@ html {
 
 .account-save-state {
   margin: 0 auto 0 0;
-  color: #91a6bd;
+  color: var(--ff-text-dim);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .account-save-state[data-state='unsaved'] {
-  color: #d8ba70;
+  color: var(--ff-warning);
 }
 
 .account-save-state[data-state='saving'] {
-  color: #6ee7f5;
+  color: var(--ff-action);
 }
 
 .account-save-state[data-state='saved'] {
-  color: #86efac;
+  color: var(--ff-success);
 }
 
 .account-save-bar .account-button {
@@ -609,7 +609,7 @@ html {
   margin: 0 auto;
   padding: 0.65rem 0.7rem 0.65rem 0.9rem;
   border-radius: 8px;
-  background: #0b1728;
+  background: var(--ff-panel-strong);
   font-size: 0.84rem;
   line-height: 1.45;
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.3);
@@ -623,18 +623,18 @@ html {
   border: 0;
   border-radius: 7px;
   color: currentColor;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ff-glass-raised);
   font-size: 1.2rem;
   cursor: pointer;
 }
 
 .account-status[data-kind='error'] {
-  color: #fecdd3;
+  color: var(--ff-danger);
   border: 1px solid rgba(251, 113, 133, 0.35);
 }
 
 .account-status[data-kind='success'] {
-  color: #bbf7d0;
+  color: var(--ff-success);
   border: 1px solid rgba(74, 222, 128, 0.3);
 }
 
@@ -770,21 +770,21 @@ html {
 
   .account-save-state {
     margin: 0 auto 0 0;
-    color: #91a6bd;
+    color: var(--ff-text-dim);
     font-size: 0.78rem;
     font-weight: 700;
   }
 
   .account-save-state[data-state='unsaved'] {
-    color: #d8ba70;
+    color: var(--ff-warning);
   }
 
   .account-save-state[data-state='saving'] {
-    color: #6ee7f5;
+    color: var(--ff-action);
   }
 
   .account-save-state[data-state='saved'] {
-    color: #86efac;
+    color: var(--ff-success);
   }
 
   .account-save-bar .account-button {

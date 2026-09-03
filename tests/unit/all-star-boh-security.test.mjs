@@ -1074,9 +1074,12 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     statsValidator,
     /!\('researchProgressPct' in stats\)[\s\S]*validAllStarBohResearchProgress\(stats\.researchProgressPct\)/
   );
+  // The second size cap lives in validAllStarBohSubmissionData, not in the
+  // stats validator — grep the whole file so this cap can never drift alone.
+  assert.match(rules, /stats\.usableHeroNames\.size\(\) <= 89/);
 
   const canonicalHeroes = allHeroesData.map(({ name }) => name);
-  assert.equal(canonicalHeroes.length, 78);
+  assert.equal(canonicalHeroes.length, 89);
   assert.equal(new Set(canonicalHeroes).size, canonicalHeroes.length);
   const rulesHeroes = rulesSingleQuotedList(
     rules,
@@ -1090,10 +1093,16 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     'usable hero validator'
   );
   assert.match(heroValidator, /values is list/);
-  assert.match(heroValidator, /values\.size\(\) <= 78/);
+  assert.match(heroValidator, /values\.size\(\) <= 89/);
   assert.match(heroValidator, /values\.toSet\(\)\.size\(\) == values\.size\(\)/);
 
-  const canonicalResearchIds = techDatabase.map(({ id }) => id);
+  // BoH research-progress tracking is scoped to the BoH-tracked trees: the X12
+  // trees added by the tech-db import are excluded from this canonical list on
+  // purpose, so the firestore.rules research allowlist stays frozen to what the
+  // BoH signup path actually validates.
+  const canonicalResearchIds = techDatabase
+    .filter((tree) => tree.season !== 'X12')
+    .map(({ id }) => id);
   assert.equal(canonicalResearchIds.length, 29);
   assert.equal(new Set(canonicalResearchIds).size, canonicalResearchIds.length);
   const rulesResearchIds = rulesSingleQuotedList(

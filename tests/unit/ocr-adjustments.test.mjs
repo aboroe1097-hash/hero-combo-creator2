@@ -67,7 +67,7 @@ test('R5 adjustments normalize defaults, notes, and signed integer points', () =
   });
 
   assert.equal(adjustment.season, 'eden-x1-2026');
-  assert.equal(adjustment.playerName, 'ANGEL');
+  assert.equal(adjustment.playerName, 'Angel Banner');
   assert.equal(adjustment.points, defaultR5PointsForCategory('banner_help'));
   assert.equal(adjustment.note, 'connected the road');
   assert.throws(() => normalizeR5Adjustment({ season: 'x1', player: 'Kika', points: 1.5 }));
@@ -470,7 +470,7 @@ test('conduct bulk paste parses name/points/note rows and skips the header', () 
   assert.equal(rows.length, 4);
   assert.deepEqual(
     rows.map((row) => row.playerName),
-    ['키미 kimmy', 'Loppu', 'D o f f y', 'Ligmaballs@']
+    ['키미 kimmy', 'Loppu', 'D O F F Y', 'Ligmaballs@']
   );
   rows.forEach((row) => {
     assert.equal(row.points, -1);
