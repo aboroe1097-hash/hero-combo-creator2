@@ -192,9 +192,7 @@ test('weighted scoring joins confirmed variants and preserves distinct accounts 
 });
 
 test('duty account identity remains separate from explicit operator credit', () => {
-  // The M@$T€€~BANNER spellings sit in PENDING_GROUPS, so they intentionally do
-  // not fold here. Restore an assertion for them once the owner confirms the
-  // group and its full name.
+  assert.deepEqual(expandDutyRawNames('M@S$€₹~BANNER'), ['M@$T€€~BANNER']);
   assert.deepEqual(expandDutyRawNames('BOiiE BANNER'), ['BOiiE BANNER']);
   assert.deepEqual(expandDutyRawNames('@BOiiE BANNER'), ['BOiiE BANNER']);
   assert.deepEqual(expandDutyRawNames('Angel Banner (Moldo)'), ['Angel Banner', 'Moldo1313']);
@@ -221,10 +219,11 @@ test('clipped fragments and unapproved lookalikes never become confirmed aliases
 });
 
 test('pending alias candidates stay inert until the owner confirms them', () => {
-  // These are recorded so the question is not lost, but a name in this list must
-  // never resolve. Activating one silently would merge two real accounts and
-  // move their demolition points into one weighted score.
-  assert.ok(PENDING_GROUPS.length > 0, 'pending list is present');
+  // The list is empty today — the 2026-09-03 batch was confirmed in full — but
+  // the guard stays, because OCR keeps producing new spellings and the next one
+  // lands here first. A name in this list must never resolve: activating one
+  // silently would merge two real accounts and move their demolition points
+  // into one weighted score.
   for (const group of PENDING_GROUPS) {
     const question = group[group.length - 1];
     assert.equal(typeof question, 'string');

@@ -1,21 +1,21 @@
 // Exact-match account aliases for VTS admin name reconciliation.
 //
-// Two lists, and the distinction is the whole point of this file.
-//
-// CONFIRMED_GROUPS is active. It holds only two kinds of entry:
-//   - variants that differ by decoration, whitespace or case alone, where the
-//     letters are identical and no identity judgement is involved;
+// CONFIRMED_GROUPS is active and holds three kinds of entry:
+//   - variants that differ by decoration, whitespace or case alone;
+//   - owner-confirmed merges, where the letters differ and only the alliance
+//     owner could say the spellings are one game account. These were confirmed
+//     on 2026-09-03;
 //   - separations: groups that exist to keep accounts APART, so that
 //     decoration-stripping elsewhere cannot fold an alt or a banner account
 //     into its owner.
 //
-// PENDING_GROUPS is inert. It holds candidate merges where the letters differ,
-// so deciding they are one account is a judgement only the alliance owner can
-// make. They are recorded here rather than in a side document so the question
-// travels with the code, but nothing resolves through them.
+// PENDING_GROUPS is the holding area for candidates the owner has not ruled on.
+// It is empty today, and the mechanism stays because OCR keeps producing new
+// spellings: a new candidate goes here, not into CONFIRMED_GROUPS, until it is
+// confirmed. Nothing resolves through it, and two tests enforce that.
 //
-// Why the split matters: these names feed weighted contribution scoring. Fold
-// two real accounts together and their demolition points collapse into one
+// Why the distinction exists: these names feed weighted contribution scoring.
+// Fold two real accounts together and their demolition points collapse into one
 // player's score; leave one account split and its points vanish from the
 // leaderboard. Both are silent, and both change standings people care about.
 //
@@ -48,6 +48,36 @@ export const CONFIRMED_GROUPS = [
   ['DEAD END', 'ØDEAD ENDØ'],
   ['ANGEL', 'ΛNGEL', 'ΛNGƎL', 'ANGƎL'],
 
+  // --- owner-confirmed merges (2026-09-03) ---------------------------------
+  // Letters differ across these spellings, so they are identity calls rather
+  // than decoration stripping. Confirmed by the alliance owner.
+  ['Dobby', 'Дobby', 'Đobby'],
+  ['FALLEN', 'FAllEN', 'FAILΞN', 'FAIΛN', 'FAIŁËN', 'FAIⅡΞN', 'FAIΛEN', 'FAIℓΞN', 'FAIŁN'],
+  [
+    'Made3110',
+    'Ind.)Made3110',
+    '↣ I n d ø |Made3110',
+    'i N d ø /Made3110',
+    'i N d o/Made3110',
+    '∞ x N d ∞|Made3110',
+    '♀iNd♂/Made3110',
+    'iNd°/Made3110',
+    '«I N d»/Made3110',
+  ],
+  ['乃ㄥ口毛', '乃亖口毛', '乃ム口毛', '乃ㄥ毛', '乃口毛', '乃⊂口毛', '乃毛'],
+  ['пупОк', 'πηnOk', 'ηηOk', 'пynOk', 'πυπΟκ'],
+  ['Kika2.0', '~Kika2.0~', '°Kika2.0°', 'Kika2.0²'],
+  ['Shabir', '□Shabir□', '□○Shabir□', '□oShabiro□'],
+  ['Moshieee', 'Moshiieee', 'Moshieeee'],
+  ['Dr Thund€r', 'Dr Thundër'],
+  ['MasterVj', '∾~MasterVjpe∾'],
+  ['!!! Юляша !!!', '!!! Юлляша !!!'],
+  ['Орша 2025', 'Opwa 2025', 'Opsha 2025', 'Opua 2025'],
+  ['$OL€MAST€R', '$OL€MASTER'],
+  ['Ar Ran ★_YG+62', 'Ar Ran Dil☆+62', 'Ar Ran Dil⭐+62'],
+  ['Hunter killer.', 'һаттер killer.'],
+  ['M@$T€€~BANNER', 'M@S$€₹~BANNER', 'M@$€₹~BANNER'],
+
   // --- separations: accounts that must never be folded together ------------
   // Common ownership is not aliasing. Each of these is its own game account,
   // and several were being merged into their owner before this file existed.
@@ -74,66 +104,10 @@ export const CONFIRMED_GROUPS = [
 
 // Candidate merges awaiting owner confirmation. Nothing resolves through this.
 // Shape: [suggestedCanonical, ...variants, question].
-export const PENDING_GROUPS = Object.freeze([
-  ['Dobby', 'Дobby', 'Đobby', 'One account across Latin D, Cyrillic Д and Đ?'],
-  [
-    'FALLEN',
-    'FAllEN',
-    'FAILΞN',
-    'FAIΛN',
-    'FAIŁËN',
-    'FAIⅡΞN',
-    'FAIΛEN',
-    'FAIℓΞN',
-    'FAIŁN',
-    'Eight homoglyph spellings — one account? Two of them scored an identical 21,586 in the same Aug 30 06:19 city attack, so that screenshot needs checking before either row counts.',
-  ],
-  [
-    'Made3110',
-    'Ind.)Made3110',
-    '↣ I n d ø |Made3110',
-    'i N d ø /Made3110',
-    'i N d o/Made3110',
-    '∞ x N d ∞|Made3110',
-    '♀iNd♂/Made3110',
-    'iNd°/Made3110',
-    '«I N d»/Made3110',
-    'Shared Made3110 suffix but the prefixes differ entirely — one account or several?',
-  ],
-  [
-    '乃ㄥ口毛',
-    '乃亖口毛',
-    '乃ム口毛',
-    '乃ㄥ毛',
-    '乃口毛',
-    '乃⊂口毛',
-    '乃毛',
-    'OCR errors for one account? The two-character fragments are the risky ones.',
-  ],
-  ['пупОк', 'πηnOk', 'ηηOk', 'пynOk', 'πυπΟκ', 'Greek/Cyrillic mixes — all one account?'],
-  ['Kika2.0', '~Kika2.0~', '°Kika2.0°', 'Kika2.0²', 'Is Kika2.0² this account or a separate alt?'],
-  [
-    'Shabir',
-    '□Shabir□',
-    '□○Shabir□',
-    '□oShabiro□',
-    'Which spelling is canonical? □oShabiro□ came from a bad extraction.',
-  ],
-  ['Moshieee', 'Moshiieee', 'Moshieeee', 'OCR letter-count variants, or different accounts?'],
-  ['Dr Thund€r', 'Dr Thundër', 'Same account?'],
-  ['MasterVj', '∾~MasterVjpe∾', 'Same account?'],
-  ['!!! Юляша !!!', '!!! Юлляша !!!', 'Doubled-letter OCR error?'],
-  ['Орша 2025', 'Opwa 2025', 'Opsha 2025', 'Opua 2025', 'All one account?'],
-  ['$OL€MAST€R', '$OL€MASTER', 'Same account?'],
-  [
-    'Ar Ran ★_YG+62',
-    'Ar Ran Dil☆+62',
-    'Ar Ran Dil⭐+62',
-    'A renamed account — which name is canonical?',
-  ],
-  ['Hunter killer.', 'һаттер killer.', 'OCR error for this player?'],
-  ['M@$T€€~BANNER', 'M@S$€₹~BANNER', 'M@$€₹~BANNER', 'Same banner account? Full name still needed.'],
-]);
+// Empty because the 2026-09-03 batch was confirmed in full. New OCR spellings
+// belong here first — promoting one into CONFIRMED_GROUPS is an identity
+// decision, not a formatting one.
+export const PENDING_GROUPS = Object.freeze([]);
 
 function aliasKey(name) {
   return String(name || '')
