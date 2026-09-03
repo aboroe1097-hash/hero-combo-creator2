@@ -43,13 +43,10 @@ import {
   HERO_SKILL_TYPE_HELP as SKILL_TYPE_TOOLTIPS,
 } from './i18n/hero-atlas/help-content.js';
 import { loadCodexStore } from './codex-loader.js';
+import { csvFooterLines, getExportBranding } from './export-branding.js';
 import { provenanceFor } from './codex-provenance.js';
 import { projectSkinModeRankDeltas } from './codex-rank-projection.js';
-import {
-  eraForGameVersion,
-  isRenderable,
-  worstCodexStatus,
-} from './codex-ui.js';
+import { eraForGameVersion, isRenderable, worstCodexStatus } from './codex-ui.js';
 import '../css/hero-atlas-detail-v14.css';
 
 import {
@@ -300,7 +297,9 @@ function getSynergies(heroName, state = _heroesTabState) {
 const CODEX_PRESETS = Object.freeze(['free', 'paid', 'skins-paid']);
 
 function normalizeCodexPreset(value) {
-  const preset = String(value || '').trim().toLowerCase();
+  const preset = String(value || '')
+    .trim()
+    .toLowerCase();
   return CODEX_PRESETS.includes(preset) ? preset : 'free';
 }
 
@@ -377,7 +376,9 @@ function skinStarUpCostSummary(skin) {
   const tier = getSkinTiers().find((entry) => entry.typeKey === skin?.type);
   if (!tier?.maximizeTotal?.length) return null;
   return tier.maximizeTotal
-    .map((item) => `${formatLocaleNumber(item.qty, currentLanguage)} × ${heroContentText(item.name)}`)
+    .map(
+      (item) => `${formatLocaleNumber(item.qty, currentLanguage)} × ${heroContentText(item.name)}`
+    )
     .join(' · ');
 }
 
@@ -538,8 +539,7 @@ function applyHeroAtlasUrlParams() {
  * longer carries its own toggle. Returns true when the mode actually changed.
  */
 export function setHeroAtlasMode(mode) {
-  const next =
-    mode === 'skins' ? 'skins' : mode === 'codex' ? 'codex' : 'heroes';
+  const next = mode === 'skins' ? 'skins' : mode === 'codex' ? 'codex' : 'heroes';
   if (_heroesTabState.mode === next) return false;
   _heroesTabState.mode = next;
   updateHeroAtlasUrlParams();
@@ -641,7 +641,9 @@ function exportCodexCsv(stats) {
   } else if (codexPreset === 'paid') {
     rows = allHeroesData.filter((hero) => hero.State === 'Paid');
   } else {
-    rows = allHeroesData.filter((hero) => getHeroSkins(hero.name).length > 0 || hero.State === 'Paid');
+    rows = allHeroesData.filter(
+      (hero) => getHeroSkins(hero.name).length > 0 || hero.State === 'Paid'
+    );
   }
   rows = rows.filter((hero) => seasonSet.has(hero.season));
   if (query) rows = rows.filter((hero) => hero.name.toLowerCase().includes(query));
@@ -649,10 +651,33 @@ function exportCodexCsv(stats) {
 
   const header =
     codexPreset === 'free'
-      ? [heroUi('name'), heroUi('season'), heroUi('troop'), heroUi('rating'), heroUi('bestRank'), heroUi('skins'), heroUi('codexColVerification')]
+      ? [
+          heroUi('name'),
+          heroUi('season'),
+          heroUi('troop'),
+          heroUi('rating'),
+          heroUi('bestRank'),
+          heroUi('skins'),
+          heroUi('codexColVerification'),
+        ]
       : codexPreset === 'paid'
-        ? [heroUi('name'), heroUi('season'), heroUi('troop'), heroUi('codexColAccess'), heroUi('rating'), heroUi('skins'), heroUi('codexColVerification')]
-        : [heroUi('name'), heroUi('codexColSkinType'), heroUi('codexColStarCost'), heroUi('limitedHeroMechanic'), heroUi('codexColRankDelta'), heroUi('codexColVerification')];
+        ? [
+            heroUi('name'),
+            heroUi('season'),
+            heroUi('troop'),
+            heroUi('codexColAccess'),
+            heroUi('rating'),
+            heroUi('skins'),
+            heroUi('codexColVerification'),
+          ]
+        : [
+            heroUi('name'),
+            heroUi('codexColSkinType'),
+            heroUi('codexColStarCost'),
+            heroUi('limitedHeroMechanic'),
+            heroUi('codexColRankDelta'),
+            heroUi('codexColVerification'),
+          ];
 
   const lines = [header.map(csvCell).join(',')];
   rows.forEach((hero) => {
@@ -702,7 +727,12 @@ function exportCodexCsv(stats) {
       );
     }
   });
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const brandedCodex = `${lines.join('\n')}\n${csvFooterLines(
+    getExportBranding({ verificationStatus: 'current' })
+  )
+    .map((line) => `# ${line}`)
+    .join('\n')}\n`;
+  const blob = new Blob([brandedCodex], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -753,7 +783,10 @@ function exportHeroAtlasCsv() {
         .join(',')
     );
   });
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const brandedAtlas = `${lines.join('\n')}\n${csvFooterLines(getExportBranding())
+    .map((line) => `# ${line}`)
+    .join('\n')}\n`;
+  const blob = new Blob([brandedAtlas], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1395,8 +1428,7 @@ function renderHeroDetailPanel(selected, stats, t) {
   const comboScopeHint =
     comboScope === 'season-capped'
       ? (
-          t.heroesComboScopeHint ||
-          'Combos using heroes up to {season} within your season filters.'
+          t.heroesComboScopeHint || 'Combos using heroes up to {season} within your season filters.'
         ).replace('{season}', hero?.season || '')
       : t.heroesComboScopeAllHint || 'All ranked combos from the full database.';
   const heroCounterWins = getCombosCounteredByHero(selected);
@@ -1483,8 +1515,7 @@ function renderHeroDetailPanel(selected, stats, t) {
     ? mergedSkills
         .map((sk) => {
           const canonicalTarget = String(sk.target || 'Target not captured');
-          const skillTarget =
-            heroSkillText(selected, sk, 'target') || heroUi('targetNotCaptured');
+          const skillTarget = heroSkillText(selected, sk, 'target') || heroUi('targetNotCaptured');
           const skillType = heroSkillText(selected, sk, 'type');
           const skillDescription = heroSkillText(selected, sk, 'desc');
           const targetClass = canonicalTarget.toLowerCase().includes('enemy') ? 'enemy' : 'ally';
@@ -1760,10 +1791,7 @@ function codexSortHeroes(heroes, stats, preset, deltas) {
     const aStats = stats[a.name] || {};
     const bStats = stats[b.name] || {};
     if (sort === 'season') {
-      return (
-        (getSeasonIndex(a.season) - getSeasonIndex(b.season)) ||
-        a.name.localeCompare(b.name)
-      );
+      return getSeasonIndex(a.season) - getSeasonIndex(b.season) || a.name.localeCompare(b.name);
     }
     if (sort === 'rating') {
       return (bStats.finalRating || 0) - (aStats.finalRating || 0) || a.name.localeCompare(b.name);
@@ -1791,14 +1819,17 @@ function codexSortHeroes(heroes, stats, preset, deltas) {
 
 function codexAccessLabel(heroName) {
   const access = codexAccessFor(heroName);
-  const key = access === 'royal' ? 'accessRoyal' : access === 'standard' ? 'accessStandard' : 'accessPaid';
+  const key =
+    access === 'royal' ? 'accessRoyal' : access === 'standard' ? 'accessStandard' : 'accessPaid';
   return `<span class="codex-access codex-access--${access}">${escapeHtml(heroUi(key))}</span>`;
 }
 
 function renderCodexRow(hero, stats, preset, skinModeDeltas) {
   const s = stats[hero.name] || {};
   const status = heroCodexStatus(hero.name);
-  const verification = status ? renderVerificationChip(status) : `<span class="codex-chip-placeholder" aria-hidden="true">—</span>`;
+  const verification = status
+    ? renderVerificationChip(status)
+    : `<span class="codex-chip-placeholder" aria-hidden="true">—</span>`;
   const seasonMeta = `
     <span class="codex-season" style="--sc:${seasonColors[hero.season] || '#f97316'}">${hero.season}</span>
     ${hero.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="codex-origin">${escapeHtml(heroUi('original'))} ${escapeHtml(hero.releaseSeason)}</span>` : ''}`;
@@ -1830,7 +1861,7 @@ function renderCodexRow(hero, stats, preset, skinModeDeltas) {
     </button>`;
   }
   const skin = getSkinForHero(hero.name);
-  const skinType = skin ? (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic) : null;
+  const skinType = skin ? SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic : null;
   const starCost = skin ? skinStarUpCostSummary(skin) : null;
   const hiddenPower = getHeroHiddenPower(hero.name);
   const delta = skinModeDeltas.get(hero.name) || 0;
@@ -1865,7 +1896,9 @@ function renderCodexView() {
   } else if (codexPreset === 'paid') {
     heroes = allHeroesData.filter((hero) => hero.State === 'Paid');
   } else {
-    heroes = allHeroesData.filter((hero) => getHeroSkins(hero.name).length > 0 || hero.State === 'Paid');
+    heroes = allHeroesData.filter(
+      (hero) => getHeroSkins(hero.name).length > 0 || hero.State === 'Paid'
+    );
   }
   heroes = heroes.filter((hero) => seasonSet.has(hero.season));
   if (query) heroes = heroes.filter((hero) => hero.name.toLowerCase().includes(query));
