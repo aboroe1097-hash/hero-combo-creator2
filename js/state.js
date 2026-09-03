@@ -1,13 +1,13 @@
 // js/state.js - Shared state hub. No imports from app.js/builder.js/generator.js.
 import { translations } from './translations.js';
-import { allHeroesData } from './heroes-data.js';
+import { allHeroesData, HERO_PORTRAIT_FALLBACK } from './heroes-data.js';
 import { skinHeroesData } from './skin-heroes-data.js';
 import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '16.0.0';
+export const APP_VERSION = '16.0.1';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -31,10 +31,24 @@ function detectInitialLanguage() {
 
 export let currentLanguage = detectInitialLanguage();
 export let heroInfoEnabled = true;
+// Canonical research season order. Declared here rather than beside the other
+// season lists further down because the default selection below is derived from
+// it — see RESEARCH_DEFAULT_SEASON_COUNT.
+const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8', 'X12'];
+
 // Research opens on the seasons people are actually still teching: the newest
 // three. Everything earlier is one click away and the choice is remembered, so
 // a returning visitor keeps whatever they picked.
-export let activeTechSeasons = new Set(['S4', 'X1', 'X2']);
+//
+// Derived from TECH_SEASON_ORDER rather than written out. The literal list used
+// to be ['S4','X1','X2'], which was the newest three when it was written and
+// silently stopped being true as X8 and then X12 shipped — both landed hidden
+// behind a filter nobody had a reason to touch, so X12 research looked missing.
+// Taking the tail means adding a season to the order list is now the only step.
+const RESEARCH_DEFAULT_SEASON_COUNT = 3;
+export let activeTechSeasons = new Set(
+  TECH_SEASON_ORDER.slice(-RESEARCH_DEFAULT_SEASON_COUNT)
+);
 export let techSearchQuery = '';
 
 export const DEFAULT_HERO_FILTER_SEASONS = ['S0', 'S1'];
@@ -153,7 +167,7 @@ export function getSourceCreditText() {
 
 // --- COLORS (defined in constants.js, re-exported for convenience) ---
 export { seasonColors, TechseasonColors };
-export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8', 'X12'];
+export { TECH_SEASON_ORDER };
 
 export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8', 'X10', 'X12'];
 
@@ -294,7 +308,7 @@ export function getLocalizedTroop(type) {
 
 export function getHeroImageUrl(name) {
   const h = allHeroesData.find((x) => x.name === name);
-  return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
+  return h?.imageUrl || HERO_PORTRAIT_FALLBACK;
 }
 
 export function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
