@@ -746,6 +746,16 @@ async function initResearchCalculator() {
   }
 
   renderTechList();
+
+  try {
+    const plannersHost = document.createElement('section');
+    plannersHost.id = 'plannersSection';
+    researchSection.appendChild(plannersHost);
+    import('./planners-entry.js')
+      .then((module) => module.initLane5Planners?.(plannersHost))
+      .catch(() => {});
+  } catch {
+  }
 }
 
 async function refreshResearchLocale(locale = currentLanguage) {

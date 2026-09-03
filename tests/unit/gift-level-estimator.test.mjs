@@ -65,8 +65,14 @@ test('hard rule: estimates never reference players, alliances, members, or ranki
 
 test('invalid inputs throw with actionable messages', () => {
   assert.throws(() => buildGiftLevelEstimate(null), /must be an object/);
-  assert.throws(() => buildGiftLevelEstimate({ targetLevel: 1, perLevelCosts: [] }), /per-level cost/);
-  assert.throws(() => buildGiftLevelEstimate({ targetLevel: 1, perLevelCosts: [-1] }), /per-level cost/);
+  assert.throws(
+    () => buildGiftLevelEstimate({ targetLevel: 1, perLevelCosts: [] }),
+    /per-level cost/
+  );
+  assert.throws(
+    () => buildGiftLevelEstimate({ targetLevel: 1, perLevelCosts: [-1] }),
+    /per-level cost/
+  );
 });
 
 test('validator accepts compliant estimates', () => {

@@ -43,7 +43,7 @@ test('static field catalog covers the approved standard-troop stat families', ()
   assert.deepEqual(BATTLE_RESEARCH_CATALOG_STATS, {
     modeledEffects: 316,
     modeledNodes: 316,
-    knownNodes: 806,
+    knownNodes: 865,
     resistance: 110,
     might: 101,
     combatSpeed: 3,

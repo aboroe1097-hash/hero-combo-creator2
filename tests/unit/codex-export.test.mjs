@@ -69,9 +69,7 @@ test('csv exports carry branding footers with credits', () => {
   assert.ok(text.includes('hero,season'));
   assert.ok(text.includes('Cyrus'));
   assert.ok(text.startsWith('\uFEFFhero,season'));
-  const footerLines = text
-    .split('\n')
-    .filter((line) => line.startsWith('#'));
+  const footerLines = text.split('\n').filter((line) => line.startsWith('#'));
   assert.ok(footerLines.length >= 3);
   const joined = footerLines.join('\n');
   assert.ok(joined.includes('DonPablone'));
@@ -133,5 +131,8 @@ test('share codec refuses oversized payloads', () => {
 test('filename helpers slugify and date-stamp', () => {
   assert.equal(slugifyExportName('Research Planner!'), 'research-planner');
   assert.equal(slugifyExportName(''), 'export');
-  assert.match(datedExportFilename('Research Planner', 'csv'), /^vts-research-planner-\d{4}-\d{2}-\d{2}\.csv$/);
+  assert.match(
+    datedExportFilename('Research Planner', 'csv'),
+    /^vts-research-planner-\d{4}-\d{2}-\d{2}\.csv$/
+  );
 });

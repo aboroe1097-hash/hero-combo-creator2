@@ -222,7 +222,20 @@ export const researchContent = Object.freeze({
         "Legione eccelsa"
       ]
     }
-  },
+  ,
+    '9c5d4006': {
+      name: 'Legione mischia - Difesa',
+      unlockCondition: 'Dall’inizio di Eden X12',
+      primaryResource: 'Distintivi di guerra',
+      pages: ['Legione mischia - Difesa'],
+    },
+    'b57d6bf9': {
+      name: 'Legione mischia - Carica',
+      unlockCondition: 'Dall’inizio di Eden X12',
+      primaryResource: 'Distintivi di guerra',
+      pages: ['Legione mischia - Carica'],
+    },
+},
   "nodes": {
     "d1956263:node_1": {
       "name": "Crescita rapida",
@@ -5532,7 +5545,244 @@ export const researchContent = Object.freeze({
         "PS eccelso"
       ]
     }
-  }
+  ,
+    '9c5d4006:node_1': {
+      name: 'Scudo difensivo',
+      buff: '+10% difesa d’assedio della fanteria',
+    },
+    '9c5d4006:node_2': {
+      name: 'Armatura difensiva',
+      buff: '+10% difesa d’assedio degli arcieri',
+    },
+    '9c5d4006:node_3': {
+      name: 'Cavalleria difensiva',
+      buff: '+10% difesa d’assedio della cavalleria',
+    },
+    '9c5d4006:node_4': {
+      name: 'Irruzione della fanteria',
+      buff: '+10% difesa d’assedio attacco della fanteria',
+    },
+    '9c5d4006:node_5': {
+      name: 'Irruzione degli arcieri',
+      buff: '+10% difesa d’assedio attacco degli arcieri',
+    },
+    '9c5d4006:node_6': {
+      name: 'Irruzione della cavalleria',
+      buff: '+10% difesa d’assedio attacco della cavalleria',
+    },
+    '9c5d4006:node_7': {
+      name: 'Protezione tattica mischia',
+      buff: '+5% tattico difesa All unità',
+    },
+    '9c5d4006:node_8': {
+      name: 'Perseveranza - Legione di classe',
+      buff: '+15% difesa Legione di classe All unità',
+    },
+    '9c5d4006:node_9': {
+      name: 'Perseveranza - Legione I',
+      buff: '+15% difesa Legione I All unità',
+    },
+    '9c5d4006:node_10': {
+      name: 'Perseveranza - Legione II',
+      buff: '+15% difesa Legione II All unità',
+    },
+    '9c5d4006:node_11': {
+      name: 'Perseveranza - Legione III',
+      buff: '+15% difesa Legione III All unità',
+    },
+    '9c5d4006:node_12': {
+      name: 'Perseveranza - difesa coda',
+      buff: '+15% difesa difesa coda All unità',
+    },
+    '9c5d4006:node_13': {
+      name: 'Difesa solida',
+      buff: '+10% difesa d’assedio All unità',
+    },
+    '9c5d4006:node_14': {
+      name: 'Forza di difesa',
+      buff: '15000 aumentato massimo March difesa coda',
+    },
+    '9c5d4006:node_15': {
+      name: 'Colpo tattico mischia',
+      buff: '+5% tattico attacco All unità',
+    },
+    '9c5d4006:node_16': {
+      name: 'Perseveranza - Legione di classe M',
+      buff: '+15% attacco Legione di classe All unità',
+    },
+    '9c5d4006:node_17': {
+      name: 'Perseveranza - Legione I M',
+      buff: '+15% attacco Legione I All unità',
+    },
+    '9c5d4006:node_18': {
+      name: 'Perseveranza - Legione II M',
+      buff: '+15% attacco Legione II All unità',
+    },
+    '9c5d4006:node_19': {
+      name: 'Perseveranza - Legione III M',
+      buff: '+15% attacco Legione III All unità',
+    },
+    '9c5d4006:node_20': {
+      name: 'Coraggio - difesa coda',
+      buff: '+15% attacco difesa coda All unità',
+    },
+    '9c5d4006:node_21': {
+      name: 'Iniziativa',
+      buff: '+10% difesa d’assedio attacco All unità',
+    },
+    '9c5d4006:node_22': {
+      name: 'Mischia - Scudo della fanteria',
+      buff: '+15% difesa della fanteria',
+    },
+    '9c5d4006:node_23': {
+      name: 'Mischia - Cavalleria in retroguardia',
+      buff: '+15% difesa della cavalleria',
+    },
+    '9c5d4006:node_24': {
+      name: 'Mischia - Copertura degli arcieri',
+      buff: '+15% difesa degli arcieri',
+    },
+    '9c5d4006:node_25': {
+      name: 'Mischia - Incursione della fanteria',
+      buff: '+15% attacco della fanteria',
+    },
+    '9c5d4006:node_26': {
+      name: 'Mischia - Assalto della cavalleria',
+      buff: '+15% attacco della cavalleria',
+    },
+    '9c5d4006:node_27': {
+      name: 'Mischia - Tiro degli arcieri',
+      buff: '+15% attacco degli arcieri',
+    },
+    '9c5d4006:node_28': {
+      name: 'Buon fisico',
+      buff: '+10% difesa d’assedio PS All unità',
+    },
+    '9c5d4006:node_29': {
+      name: 'La mischia continua',
+      buff: '-5% in battaglie difesa d’assedio, riduci effetto letale',
+    },
+    'b57d6bf9:node_1': {
+      name: 'Assalto di lama - fanteria',
+      buff: '+10% assedio attacco della fanteria',
+    },
+    'b57d6bf9:node_2': {
+      name: 'Assalto di lama - cavalleria',
+      buff: '+10% assedio attacco della cavalleria',
+    },
+    'b57d6bf9:node_3': {
+      name: 'Assalto di lama - arcieri',
+      buff: '+10% assedio attacco degli arcieri',
+    },
+    'b57d6bf9:node_4': {
+      name: 'Incursione di lama - fanteria',
+      buff: '+10% assedio difesa della fanteria',
+    },
+    'b57d6bf9:node_5': {
+      name: 'Incursione di lama - cavalleria',
+      buff: '+10% assedio difesa della cavalleria',
+    },
+    'b57d6bf9:node_6': {
+      name: 'Incursione di lama - arcieri',
+      buff: '+10% assedio difesa degli arcieri',
+    },
+    'b57d6bf9:node_7': {
+      name: 'Guardia di corte',
+      buff: '+5% tattico attacco All unità',
+    },
+    'b57d6bf9:node_8': {
+      name: 'Muro di ferro - Legione di classe',
+      buff: '+10% difesa All unità in Legione di classe',
+    },
+    'b57d6bf9:node_9': {
+      name: 'Muro di ferro - Legione 1',
+      buff: '+10% difesa All unità in Legione 1',
+    },
+    'b57d6bf9:node_10': {
+      name: 'Muro di ferro - Legione 2',
+      buff: '+10% difesa All unità in Legione 2',
+    },
+    'b57d6bf9:node_11': {
+      name: 'Muro di ferro - Legione 3',
+      buff: '+10% difesa All unità in Legione 3',
+    },
+    'b57d6bf9:node_12': {
+      name: 'Tattiche equilibrate',
+      buff: '+5% attacco e difesa delle truppe',
+    },
+    'b57d6bf9:node_13': {
+      name: 'Assalto - Legione di classe',
+      buff: '+10% attacco All unità in Legione di classe',
+    },
+    'b57d6bf9:node_14': {
+      name: 'Assalto - Legione 1',
+      buff: '+10% attacco All unità in Legione 1',
+    },
+    'b57d6bf9:node_15': {
+      name: 'Assalto - Legione 2',
+      buff: '+10% attacco All unità in Legione 2',
+    },
+    'b57d6bf9:node_16': {
+      name: 'Assalto - Legione 3',
+      buff: '+10% attacco All unità in Legione 3',
+    },
+    'b57d6bf9:node_17': {
+      name: 'Corazzatura d’avanguardia',
+      buff: '+5% tattico difesa All unità',
+    },
+    'b57d6bf9:node_18': {
+      name: 'Avanguardia corazzata pesante',
+      buff: '+5% assedio difesa All unità',
+    },
+    'b57d6bf9:node_19': {
+      name: 'Maestria abilità battaglia - fanteria',
+      buff: '+10% abilità attacco della fanteria',
+    },
+    'b57d6bf9:node_20': {
+      name: 'Maestria abilità battaglia - cavalleria',
+      buff: '+10% abilità attacco della cavalleria',
+    },
+    'b57d6bf9:node_21': {
+      name: 'Maestria abilità battaglia - arcieri',
+      buff: '+10% abilità attacco degli arcieri',
+    },
+    'b57d6bf9:node_22': {
+      name: 'Resistenza abilità battaglia - fanteria',
+      buff: '+10% abilità difesa della fanteria',
+    },
+    'b57d6bf9:node_23': {
+      name: 'Resistenza abilità battaglia - cavalleria',
+      buff: '+10% abilità difesa della cavalleria',
+    },
+    'b57d6bf9:node_24': {
+      name: 'Resistenza abilità battaglia - arcieri',
+      buff: '+10% abilità difesa degli arcieri',
+    },
+    'b57d6bf9:node_25': {
+      name: 'Spirito d’avanguardia - fanteria',
+      buff: '+5% aumento PS fanteria',
+    },
+    'b57d6bf9:node_26': {
+      name: 'Spirito d’avanguardia - cavalleria',
+      buff: '+5% aumento PS cavalleria',
+    },
+    'b57d6bf9:node_27': {
+      name: 'Spirito d’avanguardia - arcieri',
+      buff: '+5% aumento PS arcieri',
+    },
+    'b57d6bf9:node_28': {
+      name: 'Avanzata totale',
+      buff: '+5% assedio attacco di tutti i soldati',
+    },
+    'b57d6bf9:node_29': {
+      name: 'Maestria della formazione',
+      buff: '+5% PS attaccante d’assedio',
+    },
+    'b57d6bf9:node_30': {
+      name: 'Assalto corazzato',
+      buff: '+5% danni inflitti',
+    },
+}
 });
 
 export default researchContent;

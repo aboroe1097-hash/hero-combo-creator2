@@ -6,10 +6,7 @@ import {
   loadPlannerState,
   savePlannerState,
 } from '../../js/research-planner-store.js';
-import {
-  parsePlannerSnapshot,
-  serializePlannerSnapshot,
-} from '../../js/research-planner-model.js';
+import { parsePlannerSnapshot, serializePlannerSnapshot } from '../../js/research-planner-model.js';
 
 function memoryStorage() {
   const values = new Map();
@@ -84,7 +81,10 @@ test('store refuses oversized payloads', () => {
   const storage = memoryStorage();
   storage.setItem(PLANNER_STORAGE_KEY, JSON.stringify({ plans: 'x'.repeat(1_000_001) }));
   assert.deepEqual(loadPlannerState(storage), createEmptyPlannerState());
-  const oversized = { ...validState, plans: [{ ...validState.plans[0], currentLevels: { x: 'y'.repeat(1_000_000) } }] };
+  const oversized = {
+    ...validState,
+    plans: [{ ...validState.plans[0], currentLevels: { x: 'y'.repeat(1_000_000) } }],
+  };
   assert.equal(savePlannerState(oversized, storage), false);
 });
 

@@ -20,9 +20,7 @@ const treeDef = {
     { id: 'aoe', name: 'AoE', cost: 20, maxPoints: 3, requirements: ['root'] },
     { id: 'siege', name: 'Siege', cost: 15, maxPoints: 4, requirements: ['aoe'] },
   ],
-  presets: [
-    { id: 'starter', name: 'Starter', allocation: { root: 3, aoe: 2, siege: 0 } },
-  ],
+  presets: [{ id: 'starter', name: 'Starter', allocation: { root: 3, aoe: 2, siege: 0 } }],
   checkpoints: [{ id: 'first-aoe', name: 'First AoE', require: { aoe: 1 } }],
 };
 
@@ -114,7 +112,11 @@ test('preset payload round-trips and rejects tampering', () => {
 
 test('compareAllocations diffs per node and evaluates checkpoints', () => {
   const tree = validateTreeDefinition(treeDef);
-  const diff = compareAllocations(tree, { root: 1, aoe: 0, siege: 0 }, { root: 2, aoe: 1, siege: 0 });
+  const diff = compareAllocations(
+    tree,
+    { root: 1, aoe: 0, siege: 0 },
+    { root: 2, aoe: 1, siege: 0 }
+  );
   const root = diff.perNode.find((entry) => entry.nodeId === 'root');
   assert.equal(root.delta, 1);
   const checkpoint = diff.checkpoints.find((entry) => entry.id === 'first-aoe');

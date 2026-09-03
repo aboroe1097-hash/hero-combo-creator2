@@ -58,6 +58,11 @@ test('season pill colors carry X10 and X12 in both color maps', () => {
   assert.equal(TechseasonColors.X12, '#a3e635');
 });
 
+test('TECH_SEASON_ORDER ends at X12 with no X10 research season', () => {
+  assert.deepEqual(TECH_SEASON_ORDER.slice(-1), ['X12']);
+  assert.ok(!TECH_SEASON_ORDER.includes('X10'), 'X10 has no research tree');
+});
+
 test('POPULATED_HERO_SEASONS derives from the canonical order', () => {
   assert.ok(
     POPULATED_HERO_SEASONS.every((season, index) => {
@@ -107,6 +112,4 @@ test('seasonX10 and seasonX12 ship in all twelve full locale packs', () => {
   // hr.js is the stub pack by design: the shared loader fills specialist game
   // terminology from canonical English, so the two keys must NOT be there.
   assert.ok(!('hr' in FULL_LOCALE_PACKS), 'the hr stub is not part of the full-pack coverage');
-  // The season ladder still tops out at X8 until the tech-db X12 import lands.
-  assert.deepEqual(TECH_SEASON_ORDER.slice(-1), ['X8']);
 });

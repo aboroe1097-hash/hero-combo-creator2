@@ -1096,7 +1096,13 @@ test('Firestore private signup tactical catalogs match canonical source data', (
   assert.match(heroValidator, /values\.size\(\) <= 87/);
   assert.match(heroValidator, /values\.toSet\(\)\.size\(\) == values\.size\(\)/);
 
-  const canonicalResearchIds = techDatabase.map(({ id }) => id);
+  // BoH research-progress tracking is scoped to the BoH-tracked trees: the X12
+  // trees added by the tech-db import are excluded from this canonical list on
+  // purpose, so the firestore.rules research allowlist stays frozen to what the
+  // BoH signup path actually validates.
+  const canonicalResearchIds = techDatabase
+    .filter((tree) => tree.season !== 'X12')
+    .map(({ id }) => id);
   assert.equal(canonicalResearchIds.length, 29);
   assert.equal(new Set(canonicalResearchIds).size, canonicalResearchIds.length);
   const rulesResearchIds = rulesSingleQuotedList(

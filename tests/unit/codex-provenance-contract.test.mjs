@@ -29,7 +29,13 @@ test('provenanceFor returns the 5-field object for a complete record', () => {
 });
 
 test('provenanceFor returns null when any of the 5 fields is missing or empty', () => {
-  for (const field of ['source', 'credit', 'captureDate', 'gameVersionScope', 'verificationStatus']) {
+  for (const field of [
+    'source',
+    'credit',
+    'captureDate',
+    'gameVersionScope',
+    'verificationStatus',
+  ]) {
     const record = {
       provenance: {
         source: 's',

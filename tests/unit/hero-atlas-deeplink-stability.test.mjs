@@ -8,7 +8,10 @@ const hubSource = readFileSync('js/heroes-combos-hub.js', 'utf8');
 const appSource = readFileSync('js/app.js', 'utf8');
 
 test('legacy ?atlas=skins and ?atlas=heroes keep resolving; codex is a third arm', () => {
-  assert.match(atlasSource, /atlasMode === 'skins' \? 'skins' : atlasMode === 'codex' \? 'codex' : 'heroes'/);
+  assert.match(
+    atlasSource,
+    /atlasMode === 'skins' \? 'skins' : atlasMode === 'codex' \? 'codex' : 'heroes'/
+  );
   assert.match(atlasSource, /params\.get\('atlas'\)/);
 });
 
@@ -29,13 +32,22 @@ test('share-intent hashes (#combo= / #roster=) still guard the sub-tab hash writ
 });
 
 test('canonical sub-tab deep links include codex without breaking the existing four', () => {
-  assert.match(hubSource, /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[\s*'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*\]\)/);
-  assert.match(appSource, /HEROES_HUB_ALIASES = new Map\(\[\s*\['manual', 'manual'\],\s*\['generator', 'generator'\],\s*\['heroes', 'heroes'\],\s*\['skins', 'skins'\],\s*\]\)/);
+  assert.match(
+    hubSource,
+    /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[\s*'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*\]\)/
+  );
+  assert.match(
+    appSource,
+    /HEROES_HUB_ALIASES = new Map\(\[\s*\['manual', 'manual'\],\s*\['generator', 'generator'\],\s*\['heroes', 'heroes'\],\s*\['skins', 'skins'\],\s*\]\)/
+  );
 });
 
 test('URL writes keep the hub sub-tab canonical and codexPreset scoped to codex mode', () => {
   assert.match(atlasSource, /params\.delete\('atlas'\)/);
-  assert.match(atlasSource, /_heroesTabState\.mode === 'codex' && _heroesTabState\.codexPreset !== 'free'/);
+  assert.match(
+    atlasSource,
+    /_heroesTabState\.mode === 'codex' && _heroesTabState\.codexPreset !== 'free'/
+  );
   assert.match(atlasSource, /params\.delete\('codexPreset'\)/);
 });
 

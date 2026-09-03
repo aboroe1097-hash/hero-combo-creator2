@@ -8,9 +8,17 @@ import {
   towersAllocationToSelection,
   towersSelectionToAllocation,
 } from '../../js/specialization-towers-v2-preset-adapter.js';
-import { buildEdenTreeDefinition, edenAllocationToNodeIds, edenNodeIdsToAllocation } from '../../js/eden-preset-adapter.js';
+import {
+  buildEdenTreeDefinition,
+  edenAllocationToNodeIds,
+  edenNodeIdsToAllocation,
+} from '../../js/eden-preset-adapter.js';
 import { createClassCardPresetTree } from '../../js/class-card-preset-adapter.js';
-import { createEmptySpecializationState, getResearchSelection, getResearchUpgradeTotal } from '../../js/specialization-towers-v2-model.js';
+import {
+  createEmptySpecializationState,
+  getResearchSelection,
+  getResearchUpgradeTotal,
+} from '../../js/specialization-towers-v2-model.js';
 import { getSpecializationResearch } from '../../js/specialization-towers-v2-data.js';
 
 test('towers tree definition mirrors the research record', () => {
@@ -87,5 +95,8 @@ test('class-card adapter builds validated trees from codex-shaped cards', () => 
 test('class-card adapter rejects malformed input', () => {
   assert.throws(() => createClassCardPresetTree({ cards: [] }), /requires a treeId/);
   assert.throws(() => createClassCardPresetTree({ treeId: 'x', cards: [] }), /at least one card/);
-  assert.throws(() => createClassCardPresetTree({ treeId: 'x', cards: [null] }), /must be an object/);
+  assert.throws(
+    () => createClassCardPresetTree({ treeId: 'x', cards: [null] }),
+    /must be an object/
+  );
 });

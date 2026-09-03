@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { createGunzip } from 'node:zlib';
 import {
   buildPrerequisiteGraph,
   collectRequiredNodes,
@@ -9,6 +10,8 @@ import {
   computeMinUnlockPath,
   computePlanCosts,
   computeRemainingCosts,
+  familyFromCodexNodes,
+  listCodexResearchTrees,
   listMilestones,
   normalizeNodeAccess,
   normalizeTechTree,
@@ -19,7 +22,9 @@ import {
 } from '../../js/research-planner-model.js';
 import { techDatabase } from '../../js/tech-db.js';
 
-const x12Path = fileURLToPath(new URL('../../docs/sources/x10-x12/x12-research.json', import.meta.url));
+const x12Path = fileURLToPath(
+  new URL('../../docs/sources/x10-x12/x12-research.json', import.meta.url)
+);
 const x12Trees = JSON.parse(readFileSync(x12Path, 'utf8'));
 
 test('X12 Defense tree matches the published 4,998,500 war-badge total', () => {
@@ -87,21 +92,21 @@ test('tech-db trees normalize with current status and expected cost mapping', ()
 });
 
 test('X8 war-badge trees map wisdomCosts to war badges via costType', () => {
-  const tech = techDatabase.find(
-    (candidate) =>
-      candidate.nodes.some(
-        (node) =>
-          node.costType === 'War Badge' && Array.isArray(node.wisdomCosts) && node.wisdomCosts.length
-      )
+  const tech = techDatabase.find((candidate) =>
+    candidate.nodes.some(
+      (node) =>
+        node.costType === 'War Badge' && Array.isArray(node.wisdomCosts) && node.wisdomCosts.length
+    )
   );
   assert.ok(tech, 'expected at least one war-badge tree in tech-db');
   const family = normalizeTechTree(tech);
-  const badgeNodes = family.nodes.filter((node) =>
-    node.costs.warBadges.some((value) => value > 0)
-  );
+  const badgeNodes = family.nodes.filter((node) => node.costs.warBadges.some((value) => value > 0));
   assert.ok(badgeNodes.length > 0);
   for (const node of badgeNodes) {
-    assert.equal(node.costs.resources.reduce((sum, value) => sum + value, 0), 0);
+    assert.equal(
+      node.costs.resources.reduce((sum, value) => sum + value, 0),
+      0
+    );
   }
 });
 
@@ -287,4 +292,117 @@ test('plan costs ignore out-of-range levels', () => {
   const node = family.nodes[0];
   const totals = computePlanCosts(family, { [node.id]: node.maxLevel + 10 });
   assert.ok(Number.isFinite(totals.resources));
+});
+
+const codexStoreFixture = {
+  datasets: {
+    'research-costs': [
+      {
+        treeName: 'T1',
+        season: 'S0',
+        medalType: null,
+        nodeId: 'n1',
+        name: 'Alpha',
+        troop: ['ALL'],
+        maxLevel: 2,
+        totalMedals: 0,
+        costs: { resources: [100, 200], gems: [1, 2], timeSeconds: [60, 120] },
+        verificationStatus: 'current',
+        sourceCredit: 'fixture',
+        requirements: ['n2'],
+        requirementGroups: [['n2']],
+        provenance: { source: 'fixture', verificationStatus: 'current' },
+      },
+      {
+        treeName: 'T1',
+        season: 'S0',
+        medalType: 'WB',
+        nodeId: 'n2',
+        name: 'Beta',
+        troop: ['Footmen'],
+        maxLevel: 1,
+        totalMedals: 50,
+        costs: { warBadges: [50] },
+        verificationStatus: 'current',
+        sourceCredit: 'fixture',
+        requirements: [],
+        requirementGroups: [],
+        provenance: { source: 'fixture', verificationStatus: 'current' },
+      },
+      {
+        treeName: 'T2',
+        season: 'X12',
+        medalType: 'WB',
+        nodeId: 'x1',
+        name: 'Gamma',
+        troop: ['ALL'],
+        maxLevel: 1,
+        totalMedals: 10,
+        costs: { warBadges: [10] },
+        verificationStatus: 'historical',
+        sourceCredit: 'fixture',
+        requirements: [],
+        requirementGroups: [],
+        provenance: { source: 'fixture', verificationStatus: 'historical' },
+      },
+    ],
+  },
+};
+
+test('codex payload trees list and resolve into planner families', () => {
+  const trees = listCodexResearchTrees(codexStoreFixture);
+  assert.equal(trees.length, 2);
+  const t1 = trees.find((tree) => tree.familyId === 'T1');
+  assert.equal(t1.season, 'S0');
+  const family = familyFromCodexNodes(codexStoreFixture, 'T1');
+  assert.equal(family.nodes.length, 2);
+  assert.equal(family.requirementStatus, 'resolved');
+  const alpha = family.nodes.find((node) => node.id === 'n1');
+  assert.deepEqual(alpha.costs.resources, [100, 200]);
+  assert.deepEqual(alpha.costs.gems, [1, 2]);
+  assert.deepEqual(alpha.costs.timeSeconds, [60, 120]);
+  assert.deepEqual(alpha.requirementGroups, [['n2']]);
+  const beta = family.nodes.find((node) => node.id === 'n2');
+  assert.deepEqual(beta.costs.warBadges, [50]);
+  const plan = computeMinUnlockPath(family, 'n1', 2);
+  assert.deepEqual(plan.nodeLevels, { n1: 2, n2: 1 });
+  const remaining = computeRemainingCosts(family, {}, plan);
+  assert.equal(remaining.verified, true);
+  assert.equal(remaining.totals.resources, 300);
+  assert.equal(remaining.totals.warBadges, 50);
+});
+
+test('codex payload preserves provenance and access on planner nodes', () => {
+  const family = familyFromCodexNodes(codexStoreFixture, 'T2');
+  assert.equal(family.requirementStatus, 'none');
+  assert.equal(family.nodes[0].verificationStatus, 'historical');
+  assert.equal(family.nodes[0].sourceCredit, 'fixture');
+  assert.equal(listCodexResearchTrees(null).length, 0);
+  assert.equal(listCodexResearchTrees({}).length, 0);
+  assert.equal(familyFromCodexNodes(codexStoreFixture, 'nope'), null);
+});
+
+test('live codex payload carries the X12 trees with resolvable requirements', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { gunzipSync } = await import('node:zlib');
+  let store = null;
+  try {
+    const raw = await readFile(new URL('../../js/codex-payload.json', import.meta.url));
+    const payload = JSON.parse(raw.toString('utf8'));
+    const decoded =
+      payload.encoding === 'gzip-base64'
+        ? JSON.parse(gunzipSync(Buffer.from(payload.payload, 'base64')).toString('utf8'))
+        : payload;
+    store = decoded;
+  } catch {
+    return;
+  }
+  const trees = listCodexResearchTrees(store);
+  assert.ok(trees.length >= 30, `expected 30+ trees, got ${trees.length}`);
+  const defense = familyFromCodexNodes(store, 'Melee Legion - Defense');
+  assert.ok(defense);
+  assert.equal(defense.nodes.length, 29);
+  assert.equal(defense.requirementStatus, 'resolved');
+  const graph = buildPrerequisiteGraph(defense);
+  assert.equal(graph.orphans.length, 0);
 });

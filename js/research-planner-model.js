@@ -6,18 +6,24 @@ export const PLANNER_SCHEMA_VERSION = 1;
 const VERIFIED_STATUSES = Object.freeze(['current', 'historical', 'unverified']);
 const NODE_ACCESS_LEVELS = Object.freeze(['standard', 'paid', 'royal']);
 
+export const PLANNER_COST_RESOURCES = Object.freeze([
+  'resources',
+  'wisdom',
+  'courage',
+  'warBadges',
+  'gems',
+  'timeSeconds',
+]);
+
 export function normalizeNodeAccess(value) {
   const access = String(value || 'standard');
   return NODE_ACCESS_LEVELS.includes(access) ? access : 'standard';
 }
 
 function emptyCosts(maxLevel) {
-  return {
-    resources: Array(maxLevel).fill(0),
-    wisdom: Array(maxLevel).fill(0),
-    courage: Array(maxLevel).fill(0),
-    warBadges: Array(maxLevel).fill(0),
-  };
+  const costs = {};
+  for (const resource of PLANNER_COST_RESOURCES) costs[resource] = Array(maxLevel).fill(0);
+  return costs;
 }
 
 function padCosts(values, maxLevel) {
@@ -180,6 +186,71 @@ export function parseCodexResearchTree(raw) {
   });
 }
 
+export function codexResearchNodeList(codexStore) {
+  const nodes = codexStore?.datasets?.['research-costs'];
+  return Array.isArray(nodes) ? nodes : [];
+}
+
+export function listCodexResearchTrees(codexStore) {
+  const trees = new Map();
+  for (const node of codexResearchNodeList(codexStore)) {
+    const treeName = String(node?.treeName || '');
+    if (!treeName || trees.has(treeName)) continue;
+    trees.set(treeName, String(node?.season || ''));
+  }
+  return [...trees.entries()].map(([name, season]) =>
+    Object.freeze({ familyId: name, name, season })
+  );
+}
+
+export function familyFromCodexNodes(codexStore, treeName) {
+  const nodes = codexResearchNodeList(codexStore).filter(
+    (node) => String(node?.treeName || '') === String(treeName)
+  );
+  if (!nodes.length) return null;
+  const mapped = nodes.map((node, index) => {
+    const maxLevel = Number(node?.maxLevel) > 0 ? Number(node.maxLevel) : 1;
+    const costs = emptyCosts(maxLevel);
+    const fill = (key) =>
+      padCosts(Array.isArray(node?.costs?.[key]) ? node.costs[key] : [], maxLevel);
+    costs.resources = fill('resources');
+    costs.warBadges = fill('warBadges');
+    costs.courage = fill('courageMedals');
+    costs.gems = fill('gems');
+    costs.timeSeconds = fill('timeSeconds');
+    const groups = (Array.isArray(node?.requirementGroups) ? node.requirementGroups : [])
+      .filter((group) => Array.isArray(group) && group.length)
+      .map((group) => Object.freeze(group.map(String)));
+    return Object.freeze({
+      id: String(node?.nodeId || `${treeName}:node_${index + 1}`),
+      name: String(node?.name || `Node ${index + 1}`),
+      troop: normalizeTextField(node?.troop) || 'ALL',
+      buff: '',
+      maxLevel,
+      costs,
+      requirements: Object.freeze([]),
+      requirementGroups: Object.freeze(groups),
+      verificationStatus: normalizeVerificationStatus(
+        node?.verificationStatus || node?.provenance?.verificationStatus
+      ),
+      access: normalizeNodeAccess(node?.access),
+      gameNodeId: node?.nodeId ? String(node.nodeId) : '',
+      sourceTotal: Number(node?.totalMedals) || 0,
+      sourceCredit: String(node?.sourceCredit || node?.provenance?.credit || ''),
+    });
+  });
+  return Object.freeze({
+    familyId: String(treeName),
+    name: String(treeName),
+    season: String(nodes[0]?.season || ''),
+    source: 'codex',
+    sourceNote: String(nodes[0]?.provenance?.source || ''),
+    statedTotal: Object.freeze({ warBadges: 0 }),
+    nodes: Object.freeze(mapped),
+    requirementStatus: mapped.some((node) => node.requirementGroups.length) ? 'resolved' : 'none',
+  });
+}
+
 export function verifyTreeStatedTotal(family, resource = 'warBadges') {
   return family.statedTotal?.[resource] ?? 0;
 }
@@ -297,11 +368,12 @@ export function computeFullPath(family) {
 }
 
 export function computePlanCosts(family, nodeLevels) {
-  const totals = { resources: 0, wisdom: 0, courage: 0, warBadges: 0 };
+  const totals = {};
+  for (const resource of PLANNER_COST_RESOURCES) totals[resource] = 0;
   for (const node of family.nodes) {
     const level = Math.min(Math.max(Number(nodeLevels[node.id]) || 0, 0), node.maxLevel);
     if (!level) continue;
-    for (const resource of Object.keys(totals)) {
+    for (const resource of PLANNER_COST_RESOURCES) {
       const costs = node.costs[resource] || [];
       for (let i = 0; i < level; i++) totals[resource] += costs[i] || 0;
     }
@@ -310,14 +382,15 @@ export function computePlanCosts(family, nodeLevels) {
 }
 
 export function computeRemainingCosts(family, currentLevels, plan) {
-  const totals = { resources: 0, wisdom: 0, courage: 0, warBadges: 0 };
+  const totals = {};
+  for (const resource of PLANNER_COST_RESOURCES) totals[resource] = 0;
   let verified = true;
   for (const node of family.nodes) {
     const target = Math.min(Math.max(Number(plan.nodeLevels[node.id]) || 0, 0), node.maxLevel);
     const current = Math.min(Math.max(Number(currentLevels?.[node.id]) || 0, 0), node.maxLevel);
     if (target <= current) continue;
     if (node.verificationStatus !== 'current') verified = false;
-    for (const resource of Object.keys(totals)) {
+    for (const resource of PLANNER_COST_RESOURCES) {
       const costs = node.costs[resource] || [];
       for (let i = current; i < target; i++) totals[resource] += costs[i] || 0;
     }
@@ -346,7 +419,7 @@ export function suggestNextBest(family, currentLevels, metric = 'cheapest-next')
     let score = 0;
     if (metric === 'war-badges-next') score = node.costs.warBadges[current] || 0;
     else if (metric === 'closest-to-max') score = node.maxLevel - current;
-    else score = ['resources', 'wisdom', 'courage', 'warBadges'].reduce(
+    else score = PLANNER_COST_RESOURCES.reduce(
       (sum, resource) => sum + (node.costs[resource][current] || 0),
       0
     );

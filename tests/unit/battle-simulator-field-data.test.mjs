@@ -30,10 +30,7 @@ const historicalRecord = duelRecords.find((record) => record.recordId === 'duel-
 const unverifiedRecord = duelRecords.find((record) => record.recordId === 'duel-synth-003');
 
 test('Field Data panel is a lazy module behind load-on-expanded + retry', () => {
-  assert.match(
-    appSource,
-    /import\('\.\/battle-simulator-field-data\.js'\)/
-  );
+  assert.match(appSource, /import\('\.\/battle-simulator-field-data\.js'\)/);
   assert.doesNotMatch(appSource, /from '\.\/battle-simulator-field-data\.js'/);
   assert.match(appSource, /data-field-data-panel/);
   assert.match(appSource, /id="battleFieldData"/);
@@ -42,7 +39,10 @@ test('Field Data panel is a lazy module behind load-on-expanded + retry', () => 
 });
 
 test('Field Data section lives inside the form without growing eager route CSS', () => {
-  assert.match(appSource, /\$\{renderBattleProfilePanel\(\)\}\s*<details class="battle-field-data"/);
+  assert.match(
+    appSource,
+    /\$\{renderBattleProfilePanel\(\)\}\s*<details class="battle-field-data"/
+  );
   assert.doesNotMatch(htmlSource, /battle-simulator-field-data\.css/);
   assert.match(moduleSource, /import\('\.\.\/css\/battle-simulator-field-data\.css'\)/);
 });
@@ -75,7 +75,12 @@ test('Resemblance scoring compares research, equipment, skills and skins', () =>
 
 test('Resemblance scoring marks not-captured and mismatched account fields', () => {
   const partial = scoreAccountResemblance(
-    { researchNodeIds: null, equipmentSetIds: ['dragon-master'], heroSkillIds: {}, skinNames: null },
+    {
+      researchNodeIds: null,
+      equipmentSetIds: ['dragon-master'],
+      heroSkillIds: {},
+      skinNames: null,
+    },
     verifiedRecord
   );
   assert.equal(partial.matched, 0);
@@ -85,7 +90,12 @@ test('Resemblance scoring marks not-captured and mismatched account fields', () 
 
 test('Resemblance scoring skips absent record dimensions', () => {
   const result = scoreAccountResemblance(
-    { researchNodeIds: ['node_2', 'node_6'], equipmentSetIds: [], heroSkillIds: {}, skinNames: null },
+    {
+      researchNodeIds: ['node_2', 'node_6'],
+      equipmentSetIds: [],
+      heroSkillIds: {},
+      skinNames: null,
+    },
     historicalRecord
   );
   // historicalRecord has researchProfile + heroSkillUnlockProfile only.
@@ -98,7 +108,7 @@ test('Resemblance scoring skips absent record dimensions', () => {
 });
 
 test('Sim-vs-recorded classification respects the confidence interval', () => {
-  const recorded = 71 / 120 * 100;
+  const recorded = (71 / 120) * 100;
   const ciLo = 0.51 * 100;
   const ciHi = 0.67 * 100;
   assert.equal(classifySimVsRecorded(recorded, recorded, ciLo, ciHi).label, 'agrees');
@@ -124,11 +134,14 @@ test('Equipment deltas: verified only, excluded unverified from simulations', ()
 });
 
 test('Equipment deltas reject unknown stat fields and non-finite values', () => {
-  const contributions = applyFieldDeltasToContributions([], [
-    { ...equipmentDeltas[0], field: 'bogus' },
-    { ...equipmentDeltas[0], value: Number.NaN },
-    equipmentDeltas[0],
-  ]);
+  const contributions = applyFieldDeltasToContributions(
+    [],
+    [
+      { ...equipmentDeltas[0], field: 'bogus' },
+      { ...equipmentDeltas[0], value: Number.NaN },
+      equipmentDeltas[0],
+    ]
+  );
   assert.equal(contributions.length, 1);
   assert.equal(contributions[0].statKey, 'resistance');
 });
@@ -146,8 +159,10 @@ test('Field data contract fixtures carry the frozen lane-3 shapes', () => {
       'requirementGroups must be an array of nodeId arrays'
     );
     assert.equal(typeof record.provenance.credit, 'string');
-    assert.ok(['current', 'historical', 'unverified'].includes(record.provenance.verificationStatus));
+    assert.ok(
+      ['current', 'historical', 'unverified'].includes(record.provenance.verificationStatus)
+    );
   }
   assert.equal(unverifiedRecord.provenance.verificationStatus, 'unverified');
-  assert.ok(deltasSource.includes('verificationStatus === \'current\''));
+  assert.ok(deltasSource.includes("verificationStatus === 'current'"));
 });

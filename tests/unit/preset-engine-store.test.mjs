@@ -10,10 +10,7 @@ import {
   serializePresetStore,
   upsertPreset,
 } from '../../js/preset-engine-store.js';
-import {
-  decodePresetShare,
-  encodePresetShare,
-} from '../../js/preset-engine-share.js';
+import { decodePresetShare, encodePresetShare } from '../../js/preset-engine-share.js';
 
 function memoryStorage() {
   const values = new Map();

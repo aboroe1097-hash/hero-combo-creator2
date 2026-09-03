@@ -12,9 +12,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const payloadPath = resolve(repoRoot, 'js', 'codex-payload.json');
 const envelope = JSON.parse(readFileSync(payloadPath, 'utf8'));
 assert.equal(envelope.encoding, 'gzip-base64');
-const payload = JSON.parse(
-  gunzipSync(Buffer.from(envelope.payload, 'base64')).toString('utf8')
-);
+const payload = JSON.parse(gunzipSync(Buffer.from(envelope.payload, 'base64')).toString('utf8'));
 
 const canonicalNames = new Set(allHeroesData.map((hero) => hero.name));
 

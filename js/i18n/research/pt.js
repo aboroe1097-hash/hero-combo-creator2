@@ -183,6 +183,18 @@ const trees = Object.freeze({
     primaryResource: 'Insígnias de Guerra',
     pages: ['Legião Suprema'],
   },
+  '9c5d4006': {
+    name: 'Legião Corpo a Corpo - Defesa',
+    unlockCondition: 'Início do Eden X12',
+    primaryResource: 'Insígnias de Guerra',
+    pages: ['Legião Corpo a Corpo - Defesa'],
+  },
+  'b57d6bf9': {
+    name: 'Legião Corpo a Corpo - Carga',
+    unlockCondition: 'Início do Eden X12',
+    primaryResource: 'Insígnias de Guerra',
+    pages: ['Legião Corpo a Corpo - Carga'],
+  },
 });
 
 const nodes = Object.freeze({
@@ -3439,6 +3451,242 @@ const nodes = Object.freeze({
   '19ae0569:node_37': {
     name: 'Bênção da Vida',
     buff: '+5% de HP para Tropas Supremas',
+  },
+  '9c5d4006:node_1': {
+    name: 'Escudo de Defesa',
+    buff: '+10% de Resistência na defesa de cerco da Infantaria',
+  },
+  '9c5d4006:node_2': {
+    name: 'Armadura de Defesa',
+    buff: '+10% de Resistência na defesa de cerco dos Arqueiros',
+  },
+  '9c5d4006:node_3': {
+    name: 'Cavalaria de Defesa',
+    buff: '+10% de Resistência na defesa de cerco da Cavalaria',
+  },
+  '9c5d4006:node_4': {
+    name: 'Rompimento da Infantaria',
+    buff: '+10% de Poder na defesa de cerco da Infantaria',
+  },
+  '9c5d4006:node_5': {
+    name: 'Rompimento dos Arqueiros',
+    buff: '+10% de Poder na defesa de cerco dos Arqueiros',
+  },
+  '9c5d4006:node_6': {
+    name: 'Rompimento da Cavalaria',
+    buff: '+10% de Poder na defesa de cerco da Cavalaria',
+  },
+  '9c5d4006:node_7': {
+    name: 'Proteção Tática Corpo a Corpo',
+    buff: '+5% de Resistência tática de todas as unidades',
+  },
+  '9c5d4006:node_8': {
+    name: 'Perseverança - Legião de Classe',
+    buff: '+15% de Resistência da Legião de Classe de todas as unidades',
+  },
+  '9c5d4006:node_9': {
+    name: 'Perseverança - Legião I',
+    buff: '+15% de Resistência da Legião I de todas as unidades',
+  },
+  '9c5d4006:node_10': {
+    name: 'Perseverança - Legião II',
+    buff: '+15% de Resistência da Legião II de todas as unidades',
+  },
+  '9c5d4006:node_11': {
+    name: 'Perseverança - Legião III',
+    buff: '+15% de Resistência da Legião III de todas as unidades',
+  },
+  '9c5d4006:node_12': {
+    name: 'Perseverança - Fila de Defesa',
+    buff: '+15% de Resistência da fila de defesa de todas as unidades',
+  },
+  '9c5d4006:node_13': {
+    name: 'Defesa Sólida',
+    buff: '+10% de Resistência na defesa de cerco de todas as unidades',
+  },
+  '9c5d4006:node_14': {
+    name: 'Força de Defesa',
+    buff: 'Capacidade máxima da fila de defesa aumentada em 15000',
+  },
+  '9c5d4006:node_15': {
+    name: 'Golpe Tático Corpo a Corpo',
+    buff: '+5% de Poder tático de todas as unidades',
+  },
+  '9c5d4006:node_16': {
+    name: 'Perseverança - Legião de Classe M',
+    buff: '+15% de Poder da Legião de Classe de todas as unidades',
+  },
+  '9c5d4006:node_17': {
+    name: 'Perseverança - Legião I M',
+    buff: '+15% de Poder da Legião I de todas as unidades',
+  },
+  '9c5d4006:node_18': {
+    name: 'Perseverança - Legião II M',
+    buff: '+15% de Poder da Legião II M de todas as unidades',
+  },
+  '9c5d4006:node_19': {
+    name: 'Perseverança - Legião III M',
+    buff: '+15% de Poder da Legião III de todas as unidades',
+  },
+  '9c5d4006:node_20': {
+    name: 'Coragem - Fila de Defesa',
+    buff: '+15% de Poder da fila de defesa de todas as unidades',
+  },
+  '9c5d4006:node_21': {
+    name: 'Iniciativa',
+    buff: '+10% de Poder na defesa de cerco de todas as unidades',
+  },
+  '9c5d4006:node_22': {
+    name: 'Corpo a Corpo - Escudo da Infantaria',
+    buff: '+15% de Resistência da Infantaria',
+  },
+  '9c5d4006:node_23': {
+    name: 'Corpo a Corpo - Cavalaria na Retaguarda',
+    buff: '+15% de Resistência da Cavalaria',
+  },
+  '9c5d4006:node_24': {
+    name: 'Corpo a Corpo - Cobertura dos Arqueiros',
+    buff: '+15% de Resistência dos Arqueiros',
+  },
+  '9c5d4006:node_25': {
+    name: 'Corpo a Corpo - Incursão da Infantaria',
+    buff: '+15% de Poder da Infantaria',
+  },
+  '9c5d4006:node_26': {
+    name: 'Corpo a Corpo - Assalto da Cavalaria',
+    buff: '+15% de Poder da Cavalaria',
+  },
+  '9c5d4006:node_27': {
+    name: 'Corpo a Corpo - Tiro dos Arqueiros',
+    buff: '+15% de Poder dos Arqueiros',
+  },
+  '9c5d4006:node_28': {
+    name: 'Bom Físico',
+    buff: '+10% de HP na defesa de cerco de todas as unidades',
+  },
+  '9c5d4006:node_29': {
+    name: 'A Vida Corpo a Corpo Continua',
+    buff: '-5% em batalhas de defesa de cerco, reduz o efeito letal',
+  },
+  'b57d6bf9:node_1': {
+    name: 'Assalto de Lâmina - Infantaria',
+    buff: '+10% de Poder de cerco da Infantaria',
+  },
+  'b57d6bf9:node_2': {
+    name: 'Assalto de Lâmina - Cavalaria',
+    buff: '+10% de Poder de cerco da Cavalaria',
+  },
+  'b57d6bf9:node_3': {
+    name: 'Assalto de Lâmina - Arqueiros',
+    buff: '+10% de Poder de cerco dos Arqueiros',
+  },
+  'b57d6bf9:node_4': {
+    name: 'Incursão de Lâmina - Infantaria',
+    buff: '+10% de Resistência de cerco da Infantaria',
+  },
+  'b57d6bf9:node_5': {
+    name: 'Incursão de Lâmina - Cavalaria',
+    buff: '+10% de Resistência de cerco da Cavalaria',
+  },
+  'b57d6bf9:node_6': {
+    name: 'Incursão de Lâmina - Arqueiros',
+    buff: '+10% de Resistência de cerco dos Arqueiros',
+  },
+  'b57d6bf9:node_7': {
+    name: 'Guarda da Corte',
+    buff: '+5% de Poder tático de todas as unidades',
+  },
+  'b57d6bf9:node_8': {
+    name: 'Muralha de Ferro - Legião de Classe',
+    buff: '+10% de Resistência de todas as unidades na Legião de Classe',
+  },
+  'b57d6bf9:node_9': {
+    name: 'Muralha de Ferro - Legião 1',
+    buff: '+10% de Resistência de todas as unidades na Legião 1',
+  },
+  'b57d6bf9:node_10': {
+    name: 'Muralha de Ferro - Legião 2',
+    buff: '+10% de Resistência de todas as unidades na Legião 2',
+  },
+  'b57d6bf9:node_11': {
+    name: 'Muralha de Ferro - Legião 3',
+    buff: '+10% de Resistência de todas as unidades na Legião 3',
+  },
+  'b57d6bf9:node_12': {
+    name: 'Táticas Equilibradas',
+    buff: '+5% de Poder e Resistência das tropas',
+  },
+  'b57d6bf9:node_13': {
+    name: 'Assalto - Legião de Classe',
+    buff: '+10% de Poder de todas as unidades na Legião de Classe',
+  },
+  'b57d6bf9:node_14': {
+    name: 'Assalto - Legião 1',
+    buff: '+10% de Poder de todas as unidades na Legião 1',
+  },
+  'b57d6bf9:node_15': {
+    name: 'Assalto - Legião 2',
+    buff: '+10% de Poder de todas as unidades na Legião 2',
+  },
+  'b57d6bf9:node_16': {
+    name: 'Assalto - Legião 3',
+    buff: '+10% de Poder de todas as unidades na Legião 3',
+  },
+  'b57d6bf9:node_17': {
+    name: 'Blindagem de Vanguarda',
+    buff: '+5% de Resistência tática de todas as unidades',
+  },
+  'b57d6bf9:node_18': {
+    name: 'Vanguarda de Armadura Pesada',
+    buff: '+5% de Resistência de cerco de todas as unidades',
+  },
+  'b57d6bf9:node_19': {
+    name: 'Maestria de Habilidade de Batalha - Infantaria',
+    buff: '+10% de Poder de habilidade da Infantaria',
+  },
+  'b57d6bf9:node_20': {
+    name: 'Maestria de Habilidade de Batalha - Cavalaria',
+    buff: '+10% de Poder de habilidade da Cavalaria',
+  },
+  'b57d6bf9:node_21': {
+    name: 'Maestria de Habilidade de Batalha - Arqueiros',
+    buff: '+10% de Poder de habilidade dos Arqueiros',
+  },
+  'b57d6bf9:node_22': {
+    name: 'Resistência de Habilidade de Batalha - Infantaria',
+    buff: '+10% de Resistência de habilidade da Infantaria',
+  },
+  'b57d6bf9:node_23': {
+    name: 'Resistência de Habilidade de Batalha - Cavalaria',
+    buff: '+10% de Resistência de habilidade da Cavalaria',
+  },
+  'b57d6bf9:node_24': {
+    name: 'Resistência de Habilidade de Batalha - Arqueiros',
+    buff: '+10% de Resistência de habilidade dos Arqueiros',
+  },
+  'b57d6bf9:node_25': {
+    name: 'Espírito de Vanguarda - Infantaria',
+    buff: '+5% de aumento de HP da Infantaria',
+  },
+  'b57d6bf9:node_26': {
+    name: 'Espírito de Vanguarda - Cavalaria',
+    buff: '+5% de aumento de HP da Cavalaria',
+  },
+  'b57d6bf9:node_27': {
+    name: 'Espírito de Vanguarda - Arqueiros',
+    buff: '+5% de aumento de HP dos Arqueiros',
+  },
+  'b57d6bf9:node_28': {
+    name: 'Avanço Total',
+    buff: '+5% de Poder de cerco de todos os soldados',
+  },
+  'b57d6bf9:node_29': {
+    name: 'Maestria de Formação',
+    buff: '+5% de HP do atacante de cerco',
+  },
+  'b57d6bf9:node_30': {
+    name: 'Investida Blindada',
+    buff: '+5% de Dano causado',
   },
 });
 

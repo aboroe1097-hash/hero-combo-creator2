@@ -13,9 +13,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const payloadPath = resolve(repoRoot, 'js', 'codex-payload.json');
 const envelope = JSON.parse(readFileSync(payloadPath, 'utf8'));
 const gzipBytes = Math.floor((envelope.payload.length * 3) / 4);
-const payload = JSON.parse(
-  gunzipSync(Buffer.from(envelope.payload, 'base64')).toString('utf8')
-);
+const payload = JSON.parse(gunzipSync(Buffer.from(envelope.payload, 'base64')).toString('utf8'));
 const rawBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
 
 const canonicalNames = new Set(allHeroesData.map((hero) => hero.name));
@@ -31,10 +29,7 @@ test('every record in every dataset carries a complete provenance object', () =>
     for (const record of records) {
       assert.ok(record.provenance, `${datasetId}: missing provenance`);
       for (const field of fields) {
-        assert.ok(
-          record.provenance[field],
-          `${datasetId}: provenance.${field} empty`
-        );
+        assert.ok(record.provenance[field], `${datasetId}: provenance.${field} empty`);
       }
       assert.ok(
         VERIFICATION_STATUSES.includes(record.provenance.verificationStatus),
@@ -53,7 +48,10 @@ test('quarantine is empty for the landed datasets', () => {
 });
 
 test('builtAt is RFC3339', () => {
-  assert.ok(!Number.isNaN(Date.parse(payload.builtAt)), `builtAt not parseable: ${payload.builtAt}`);
+  assert.ok(
+    !Number.isNaN(Date.parse(payload.builtAt)),
+    `builtAt not parseable: ${payload.builtAt}`
+  );
 });
 
 test('X12 research tree totals match the in-repo source package', () => {
@@ -81,7 +79,10 @@ test('prerequisite lists are resolved node ids within the same tree - never raw 
         assert.ok(ids.has(nodeId), `${record.nodeId} requirement '${nodeId}' not in tree`);
         assert.ok(!/^\d+;\d+$/.test(nodeId), `raw position leaked: ${nodeId}`);
       }
-      assert.ok(!record.requirementGroups, `${record.nodeId} carries both requirements and requirementGroups`);
+      assert.ok(
+        !record.requirementGroups,
+        `${record.nodeId} carries both requirements and requirementGroups`
+      );
     }
     if (record.requirementGroups) {
       assert.ok(Array.isArray(record.requirementGroups));
@@ -108,7 +109,10 @@ test('every research node id is unique within its tree', () => {
 test('hero references in live hero datasets are canonical', () => {
   for (const record of payload.datasets['heroes-codex']) {
     assert.ok(canonicalNames.has(record.heroName), `heroes-codex: ${record.heroName}`);
-    assert.ok(['', 'standard', 'paid', 'royal'].includes(record.access), `access enum: ${record.heroName}`);
+    assert.ok(
+      ['', 'standard', 'paid', 'royal'].includes(record.access),
+      `access enum: ${record.heroName}`
+    );
   }
   for (const record of payload.datasets['hero-versions']) {
     assert.ok(canonicalNames.has(record.heroName), `hero-versions: ${record.heroName}`);

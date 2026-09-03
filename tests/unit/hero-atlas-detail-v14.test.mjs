@@ -20,17 +20,11 @@ test('Hero Atlas detail uses the scoped v14 hierarchy without changing section h
     atlasSource.indexOf('function renderHeroDetailPanel('),
     atlasSource.indexOf('function codexSortHeroes(')
   );
-  const sectionOrder = [
-    'synergies',
-    'skins',
-    'skills',
-    'combos',
-    'duels',
-    'counters',
-  ].map((section) =>
-    section === 'duels'
-      ? panelSource.indexOf('${renderDuelSection(selected)}')
-      : panelSource.indexOf(`id="detail-section-${section}"`)
+  const sectionOrder = ['synergies', 'skins', 'skills', 'combos', 'duels', 'counters'].map(
+    (section) =>
+      section === 'duels'
+        ? panelSource.indexOf('${renderDuelSection(selected)}')
+        : panelSource.indexOf(`id="detail-section-${section}"`)
   );
   assert.ok(sectionOrder.every((position) => position >= 0));
   assert.deepEqual(

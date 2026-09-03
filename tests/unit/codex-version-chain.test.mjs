@@ -7,12 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const envelope = JSON.parse(
-  readFileSync(resolve(repoRoot, 'js', 'codex-payload.json'), 'utf8')
-);
-const payload = JSON.parse(
-  gunzipSync(Buffer.from(envelope.payload, 'base64')).toString('utf8')
-);
+const envelope = JSON.parse(readFileSync(resolve(repoRoot, 'js', 'codex-payload.json'), 'utf8'));
+const payload = JSON.parse(gunzipSync(Buffer.from(envelope.payload, 'base64')).toString('utf8'));
 
 const versions = payload.datasets['hero-versions'] || [];
 

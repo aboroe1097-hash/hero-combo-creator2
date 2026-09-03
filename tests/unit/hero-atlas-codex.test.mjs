@@ -24,10 +24,7 @@ test('Codex mode renders one Atlas mode with three filter presets', () => {
   assert.match(atlasSource, /mode === 'codex'/);
   assert.match(atlasSource, /function renderCodexView\(\)/);
   for (const preset of CODEX_PRESETS) {
-    assert.match(
-      atlasSource,
-      new RegExp(`data-codex-preset="\\$\\{preset\\}"`)
-    );
+    assert.match(atlasSource, new RegExp(`data-codex-preset="\\$\\{preset\\}"`));
     assert.match(atlasSource, new RegExp(`heroUi\\(preset === 'free' \\? 'codexPresetFree'`));
   }
   assert.match(atlasSource, /normalizeCodexPreset/);
@@ -36,7 +33,10 @@ test('Codex mode renders one Atlas mode with three filter presets', () => {
 });
 
 test('Hub sub-tab registry is flagship-first and keeps legacy subtabs intact', () => {
-  assert.match(hubSource, /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[[\s\S]*?'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*\]\)/);
+  assert.match(
+    hubSource,
+    /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[[\s\S]*?'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*\]\)/
+  );
   assert.match(hubSource, /PANEL_FOR_SUBTAB = Object\.freeze\(\{[\s\S]*?codex: 'heroes',/);
   assert.match(hubSource, /ATLAS_MODE_FOR_SUBTAB = Object\.freeze\(\{[\s\S]*?codex: 'codex',/);
 });
@@ -112,8 +112,24 @@ test('Era mapping resolves single seasons and ranges to the upper bound', () => 
 });
 
 test('worstCodexStatus aggregates records through the 5-field envelope', () => {
-  const current = { provenance: { source: 's', credit: 'c', captureDate: '2026-01-01', gameVersionScope: 'X12', verificationStatus: 'current' } };
-  const historical = { provenance: { source: 's', credit: 'c', captureDate: '2026-01-01', gameVersionScope: 'X10', verificationStatus: 'historical' } };
+  const current = {
+    provenance: {
+      source: 's',
+      credit: 'c',
+      captureDate: '2026-01-01',
+      gameVersionScope: 'X12',
+      verificationStatus: 'current',
+    },
+  };
+  const historical = {
+    provenance: {
+      source: 's',
+      credit: 'c',
+      captureDate: '2026-01-01',
+      gameVersionScope: 'X10',
+      verificationStatus: 'historical',
+    },
+  };
   const broken = { provenance: { source: 's' } };
   assert.equal(worstCodexStatus([historical, current]), 'current');
   assert.equal(worstCodexStatus([historical, broken]), 'historical');

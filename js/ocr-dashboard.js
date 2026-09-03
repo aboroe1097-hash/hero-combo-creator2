@@ -160,6 +160,7 @@ import {
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
+import { csvFooterLines, getExportBranding } from './export-branding.js';
 import {
   compactPlayerIdentity,
   resolveCanonicalPlayerIdentity,
@@ -7198,7 +7199,10 @@ function exportAttackCsv() {
     });
   });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const branded = `${csv}${csvFooterLines(getExportBranding())
+    .map((line) => `#${line}\n`)
+    .join('')}`;
+  a.href = URL.createObjectURL(new Blob([branded], { type: 'text/csv' }));
   a.download = 'vts_attack_details.csv';
   a.click();
 }
@@ -7224,7 +7228,10 @@ function refreshDashboardPlayerSummary() {
 }
 
 function downloadCsv(csv, filename) {
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const branded = `${csv}${csvFooterLines(getExportBranding())
+    .map((line) => `#${line}\n`)
+    .join('')}`;
+  const blob = new Blob([`\uFEFF${branded}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
