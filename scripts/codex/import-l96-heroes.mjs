@@ -59,6 +59,8 @@ const ALIAS_MAP = {
   'The Scarlet Reaver': 'Scarlet Reaver',
   'Heaven\u2019s Justice': "Heaven's Justice",
   'North\u2019s Rage': "North's Rage",
+  Arslam: 'Arslan',
+  Farrah: 'Farah',
 };
 
 // Future roster (Lane 2 pending): canonical hint for the exclusion queue.

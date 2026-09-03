@@ -7,12 +7,11 @@ import { fileURLToPath } from 'node:url';
 
 import { allHeroesData } from '../../js/heroes-data.js';
 
-// R2 guard. Before Lane 2's roster landing commit, no hero-referencing codex
-// row may reference a name outside the current js/heroes-data.js roster, and
-// the excluded-noncanonical queue must carry the L96 names of the 11 X10/X12
-// heroes present in the L96 archive. After the roster lands and the follow-up
-// codex commit adds the rows, this test is inverted: the future-roster entries
-// leave the queue and appear as rows.
+// R2 guard (inverted form, post Lane-2 roster landing). The L96 X10/X12 names
+// left the exclusion queue and landed as rows in the same commit sequence as
+// Lane 2's roster commit. This test now asserts the landed state: no
+// future-roster entries remain queued, and the eight L96-sourced X10/X12 names
+// are present as rows (canonical names) plus their two spelling aliases.
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const codexDir = resolve(repoRoot, 'database', 'codex');
@@ -51,24 +50,29 @@ test('no heroes-codex / hero-versions / name-aliases row references a non-canoni
   }
 });
 
-test('the exclusion queue carries every L96 X10/X12 name with a future-roster reason', () => {
-  const expectedFutureRoster = {
-    Hellfire: 'Hellfire (X10)',
-    Healer: 'Healer (X10)',
-    'Poison Master': 'Poison Master (X12)',
-    Arslam: 'Arslan (X12)',
-    Farrah: 'Farah (X12)',
-    'El Cid': 'El Cid (X12)',
-    Pepin: 'Pepin (X12)',
-    Belisarius: 'Belisarius (X12)',
-  };
+test('the exclusion queue carries no future-roster entries (they landed as rows)', () => {
   const excluded = parseRows('excluded-noncanonical.txt');
-  const byName = new Map(excluded.map((row) => [row.l96Name, row]));
-  for (const [l96Name, hint] of Object.entries(expectedFutureRoster)) {
-    assert.ok(byName.has(l96Name), `exclusion queue missing ${l96Name}`);
-    assert.equal(byName.get(l96Name).reason, 'future-roster');
-    assert.equal(byName.get(l96Name).canonicalHint, hint);
+  const futureRoster = excluded.filter((row) => row.reason === 'future-roster');
+  assert.deepEqual(futureRoster, []);
+});
+
+test('the eight L96-sourced X10/X12 names are present as codex rows and aliases', () => {
+  const heroes = new Set(parseRows('heroes-codex.txt').map((row) => row.heroName));
+  for (const name of [
+    'Healer',
+    'Hellfire',
+    'Poison Master',
+    'Arslan',
+    'Farah',
+    'El Cid',
+    'Pepin',
+    'Belisarius',
+  ]) {
+    assert.ok(heroes.has(name), `heroes-codex missing landed ${name}`);
   }
+  const aliases = parseRows('name-aliases.txt').map((row) => `${row.canonicalName}|${row.alias}`);
+  assert.ok(aliases.includes('Arslan|Arslam'), 'name-aliases missing Arslam -> Arslan');
+  assert.ok(aliases.includes('Farah|Farrah'), 'name-aliases missing Farrah -> Farah');
 });
 
 test('the exclusion queue has no duplicate names', () => {

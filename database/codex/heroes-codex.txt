@@ -69,3 +69,11 @@ Eidolon|X7||Defense|||
 Scarlet Reaver|X7||Ranged|||
 Rainforest Ranger|X8||Ranged|||
 Fortuneteller|X8||Support|||
+Hellfire|X9||Support|||
+Poison Master|X10||Support|||
+Healer|X10||Support|||
+Arslan|X11||Defense|||
+Farah|X11||Support|||
+El Cid|X12||Melee|||
+Pepin|X12||Support|||
+Belisarius|X12||Ranged|||

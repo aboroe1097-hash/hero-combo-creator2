@@ -24,3 +24,5 @@ Warhammer|The Warhammer||l96.app /heroes|
 Warden|The Warden||l96.app /heroes|
 Eidolon|The Eidolon||l96.app /heroes|
 Scarlet Reaver|The Scarlet Reaver||l96.app /heroes|
+Arslan|Arslam||l96.app /heroes|
+Farah|Farrah||l96.app /heroes|
