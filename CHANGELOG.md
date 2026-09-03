@@ -1,5 +1,15 @@
 # Changelog
 
+## 16.0.0 - 2026-09-03
+
+- **CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarged touch targets.
+- **Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated nine free heroes into the canonical roster (expanding the roster from 78 to 87 heroes) with synchronized Firestore security rule allowlists and caps.
+- **Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.
+- **Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.
+- **Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters.
+- **X12 Research Trees**: Imported X12 *Melee Legion - Defense* (with 29/29 screenshot-backed layout positions) and *Charge* (with explicit absent-tree gap handling) into the tech database, advancing the research season ladder to X12.
+- **Localization**: Attained 100% key parity across all 13 supported languages for core, atlas, battle simulator, and planner surfaces.
+
 ## 15.0.15 - 2026-09-01
 
 - Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.
