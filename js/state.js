@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '16.0.2';
+export const APP_VERSION = '16.0.3';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -179,10 +179,15 @@ export const POPULATED_HERO_SEASONS = HERO_ATLAS_ALL_SEASONS.filter((season) =>
   allHeroesData.some((hero) => hero.season === season)
 );
 
+// X10 is not a catch-up bracket — it is an optional intermediate season some
+// Rise of Castles states get and Eden never does — so its copy leads with a
+// different title. Everything before the first colon becomes the card heading.
 const SEASON_CATCHUP_HINT_KEYS = {
   X1: 'seasonCatchupX1',
   X2: 'seasonCatchupX2',
   X8: 'seasonCatchupX8',
+  X10: 'seasonCatchupX10',
+  X12: 'seasonCatchupX12',
 };
 
 export function getSeasonCatchupHint(seasons = []) {

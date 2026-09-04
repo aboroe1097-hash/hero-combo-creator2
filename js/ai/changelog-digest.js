@@ -1,12 +1,12 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
   {
-    "version": "16.0.2",
+    "version": "16.0.3",
     "date": "2026-09-04",
     "highlights": [
       "Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the pane…"

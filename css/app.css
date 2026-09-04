@@ -1189,14 +1189,15 @@ html.maintenance-mode .maintenance-preload {
   background: linear-gradient(145deg, rgb(255 239 226 / 78%), rgb(255 251 247 / 88%)) !important;
 }
 
-[data-theme='light'] #manualSection .filter-pill:not(:has(input:checked)) {
+[data-theme='light'] #manualSection .filter-pill:not(:has(input:checked)):not(.active) {
   border-color: #bdcedb !important;
   background: rgb(255 255 255 / 88%) !important;
   color: #334155 !important;
   box-shadow: 0 2px 6px rgb(42 74 99 / 8%) !important;
 }
 
-[data-theme='light'] #manualSection .filter-pill:has(input:checked) {
+[data-theme='light'] #manualSection .filter-pill:has(input:checked),
+[data-theme='light'] #manualSection .season-select-all.active {
   box-shadow: 0 4px 10px rgb(22 74 103 / 18%) !important;
 }
 
@@ -1442,6 +1443,22 @@ html[data-initial-tab-pending] #generatorSection {
 }
 .filter-pill:has(input:checked) {
   color: #fff;
+}
+/* Select-all is a button, so it has no checkbox and cannot use the
+   :has(input:checked) state the season pills share — app.js toggles `active`
+   instead, which the shared chip styling already paints. All this adds is a
+   gap and uppercase weight so it reads as an action, not an eleventh season. */
+.season-select-all {
+  margin-inline-start: 0.45rem;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.season-select-all:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand-light) 78%, white);
+  outline-offset: 3px;
 }
 .s0-pill:has(input:checked) {
   background: #374151;
@@ -14264,6 +14281,20 @@ body.admin-standalone-page .command-kicker {
   color: #06121d !important;
 }
 
+/* Select-all has no checkbox, so it cannot ride :has(input:checked). Its own
+   selector must also outrank the three-class base chip rule above, which is
+   why the strip is named here rather than adding .season-select-all.active to
+   that list — at (0,2,0) it lost the background to the (0,3,0) base. */
+.season-filter-strip .season-select-all.active {
+  border-color: rgba(255, 255, 255, 0.36) !important;
+  background: linear-gradient(135deg, #22d3ee, #5eead4 58%, #fbbf24) !important;
+  color: #06121d !important;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.22) !important;
+}
+.season-filter-strip .season-select-all.active span {
+  color: #06121d !important;
+}
+
 .research-card-max {
   border-radius: 0 !important;
   clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
@@ -14298,7 +14329,8 @@ body.admin-standalone-page .command-kicker {
 [data-theme='light'] .hero-tab-season.active,
 [data-theme='light'] .tech-season-btn.active,
 [data-theme='light'] .research-quick-btn.active,
-[data-theme='light'] .loyalty-preset-btn.active {
+[data-theme='light'] .loyalty-preset-btn.active,
+[data-theme='light'] .season-select-all.active {
   background: linear-gradient(135deg, #06b6d4, #34d399 56%, #f59e0b) !important;
   color: #052e2b !important;
 }
@@ -18470,7 +18502,8 @@ html[dir='rtl'] .gen-buttons-row {
   color: var(--text-secondary) !important;
 }
 
-[data-theme='light'] .filter-pill:has(input:checked) {
+[data-theme='light'] .filter-pill:has(input:checked),
+[data-theme='light'] .season-select-all.active {
   color: var(--text-on-accent) !important;
   background: linear-gradient(135deg, var(--brand-light), var(--brand), var(--accent)) !important;
 }
@@ -19047,7 +19080,10 @@ html[dir='rtl'] .gen-buttons-row {
     color: #1d5365 !important;
   }
 
-  [data-theme='light'] #generatorSection .generator-filter-panel .filter-pill:has(input:checked) {
+  /* Select-all carries `active` instead of a checked input, so every checked-state
+     selector has to name it explicitly or the light theme leaves it looking off. */
+  [data-theme='light'] #generatorSection .generator-filter-panel .filter-pill:has(input:checked),
+  [data-theme='light'] #generatorSection .generator-filter-panel .season-select-all.active {
     border-color: #62aebe !important;
     background: linear-gradient(135deg, #dff4f6, #f7fbfc 58%, #fff1e9) !important;
     color: #123f50 !important;

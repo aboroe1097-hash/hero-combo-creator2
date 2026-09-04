@@ -1,5 +1,10 @@
 # Changelog
 
+## 16.0.3 - 2026-09-04
+
+- Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 heroes, and the default ladder still jumps X8 straight to X12.
+- Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty.
+
 ## 16.0.2 - 2026-09-04
 
 - Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the panel. The stat tiles share the row instead of hugging its left edge, and the plan's decision strip uses four equal columns instead of three narrow ones and a 971px-wide last cell.
