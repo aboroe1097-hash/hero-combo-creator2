@@ -1250,6 +1250,8 @@ export const techDatabase = [
         name: "Melee Legion - Defense",
         default_pos: { row: 10, col: 1 },
         treePages: ["Melee Legion - Defense"],
+        publishedTotal: 4998500,
+        verificationStatus: "unverified",
         layoutMode: "game",
         season: "X12",
         unlockCondition: "Start of Eden X12",
@@ -1294,7 +1296,10 @@ export const techDatabase = [
         name: "Melee Legion - Charge",
         default_pos: { row: 11, col: 1 },
         treePages: ["Melee Legion - Charge"],
-        layoutMode: "game",
+        // Costs are known, but the source has no trustworthy topology.
+        // Render an editable list without invented connectors or prerequisites.
+        layoutMode: "list",
+        verificationStatus: "unverified",
         season: "X12",
         unlockCondition: "Start of Eden X12",
         primaryResource: "War Badges",

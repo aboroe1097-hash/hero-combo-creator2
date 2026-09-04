@@ -682,7 +682,7 @@
              deep link, footer link and command-palette entry still resolves. -->
         <section id="heroesCombosSection" class="tab-panel animate-fade-in">
           <div
-            class="vts-hub-subtabs vts-hub-subtabs--4"
+            class="vts-hub-subtabs vts-hub-subtabs--3"
             role="tablist"
             aria-label="Heroes &amp; Combos Hub"
           >
@@ -712,30 +712,10 @@
               class="vts-hub-subtab"
               role="tab"
               aria-selected="false"
-              data-hub-subtab="codex"
-              data-i18n="tabCodex"
-            >
-              Hero Tables
-            </button>
-            <button
-              type="button"
-              class="vts-hub-subtab"
-              role="tab"
-              aria-selected="false"
               data-hub-subtab="heroes"
               data-i18n="tabHeroesOnly"
             >
               Heroes
-            </button>
-            <button
-              type="button"
-              class="vts-hub-subtab"
-              role="tab"
-              aria-selected="false"
-              data-hub-subtab="skins"
-              data-i18n="tabSkinsOnly"
-            >
-              Skins
             </button>
           </div>
 
@@ -1209,6 +1189,46 @@
                   Rankings from the combo database. Search, filter, then tap a hero for skills,
                   synergies &amp; top combos.
                 </p>
+              </div>
+              <!-- Atlas view switch. Heroes, Skins and Hero Tables were three
+                   sibling sub-tabs that all opened this same panel, which read
+                   as three separate tools; they are one control again. Reuses
+                   the Atlas filter-pill classes so this costs no new CSS. -->
+              <div
+                class="heroes-filter-pills heroes-filter-pills--atlas-mode"
+                role="tablist"
+                aria-labelledby="heroAtlasTitle"
+              >
+                <button
+                  type="button"
+                  class="heroes-filter-pill active"
+                  role="tab"
+                  aria-selected="true"
+                  data-atlas-mode="heroes"
+                  data-i18n="tabHeroesOnly"
+                >
+                  Heroes
+                </button>
+                <button
+                  type="button"
+                  class="heroes-filter-pill"
+                  role="tab"
+                  aria-selected="false"
+                  data-atlas-mode="skins"
+                  data-i18n="tabSkinsOnly"
+                >
+                  Skins
+                </button>
+                <button
+                  type="button"
+                  class="heroes-filter-pill"
+                  role="tab"
+                  aria-selected="false"
+                  data-atlas-mode="codex"
+                  data-i18n="tabCodex"
+                >
+                  Hero Tables
+                </button>
               </div>
             </header>
             <div id="heroesTabContent"></div>

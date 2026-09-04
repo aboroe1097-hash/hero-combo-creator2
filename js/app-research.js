@@ -754,8 +754,7 @@ async function initResearchCalculator() {
     import('./planners-entry.js')
       .then((module) => module.initLane5Planners?.(plannersHost))
       .catch(() => {});
-  } catch {
-  }
+  } catch {}
 }
 
 async function refreshResearchLocale(locale = currentLanguage) {
@@ -1108,6 +1107,7 @@ function applyAutoGridToGroup(groupNodes) {
 }
 
 function usesGameTreeLayout(tech) {
+  if (tech.layoutMode === 'list') return true;
   if (tech.layoutMode === 'branch') return false;
   if (tech.layoutMode === 'game') return true;
   const hasTroopBranches = tech.nodes.some(
@@ -1166,12 +1166,14 @@ function isRowStarted(tech, row) {
 }
 
 function isNodeLocked(tech, node) {
+  if (tech.layoutMode === 'list') return false;
   const previousRow = getAdjacentRow(tech, Number(node.row) || 0, -1);
   if (previousRow === undefined) return false;
   return !isRowStarted(tech, previousRow);
 }
 
 function hasStartedDependents(tech, node) {
+  if (tech.layoutMode === 'list') return false;
   const nextRow = getAdjacentRow(tech, Number(node.row) || 0, 1);
   if (nextRow === undefined) return false;
   return (getTechRowMap(tech).get(nextRow) || []).some(
@@ -1765,6 +1767,31 @@ function wireGameTechNodeContainers(rootEl, tech) {
 
 function renderGameCalculator(tech, container) {
   const layout = resolveResearchGameLayout(tech);
+  const isList = tech.layoutMode === 'list';
+  const calculatedTotal = tech.nodes.reduce(
+    (sum, node) => sum + (node.wisdomCosts || []).reduce((total, value) => total + value, 0),
+    0
+  );
+  const costWarning =
+    tech.publishedTotal && tech.publishedTotal !== calculatedTotal
+      ? appT('researchCostDiscrepancy', {
+          calculated: calculatedTotal.toLocaleString(resolveIntlLocale(currentLanguage)),
+          published: tech.publishedTotal.toLocaleString(resolveIntlLocale(currentLanguage)),
+        })
+      : '';
+  // Reuse the editable node cards, not the source's repeated placeholder slots.
+  // Each group is presentation only; no dependency edges or row locks apply.
+  const nodeList = isList
+    ? Array.from({ length: Math.ceil(tech.nodes.length / 3) }, (_, index) =>
+        buildGameTreeTierHtml(
+          tech,
+          { nodes: tech.nodes.slice(index * 3, index * 3 + 3).map((node) => node.id) },
+          index,
+          null,
+          []
+        )
+      ).join('')
+    : '';
   const sectionNav =
     layout.sections.length > 1
       ? `<nav class="research-game-section-nav" aria-label="${escapeHtml(appT('researchContinuousNavigationAria'))}">${layout.sections
@@ -1797,14 +1824,15 @@ function renderGameCalculator(tech, container) {
       <div class="research-calc-scrollport custom-scrollbar">
         <div class="research-game-shell" data-tree-theme="${escapeHtml(layout.theme || 'amber')}">
           <div class="research-game-titlebar"><span class="research-game-title">${escapeHtml(appT('researchContinuousNavigationAria'))}</span></div>
+          ${costWarning ? `<p class="research-calc-sub" role="note">${escapeHtml(costWarning)}</p>` : ''}
           ${sectionNav}
           <div class="research-game-workspace">
-            <div class="research-game-tree-viewport">${renderGameTreeLayoutHtml(tech, layout)}</div>
+            <div class="research-game-tree-viewport"${isList ? ' data-research-list="true"' : ''}>${isList ? nodeList : renderGameTreeLayoutHtml(tech, layout)}</div>
             <aside class="research-node-inspector" aria-label="${escapeHtml(appT('researchInspectorAria'))}" data-has-selection="false">
               <p class="research-node-inspector-prompt">${escapeHtml(appT('researchSelectNodePrompt'))}</p>
             </aside>
           </div>
-          <p class="research-game-footer">${appT('researchGameHint')}</p>
+          <p class="research-game-footer">${appT(isList ? 'researchMissingLayout' : 'researchGameHint')}</p>
         </div>
       </div>
       <div class="research-calc-total">

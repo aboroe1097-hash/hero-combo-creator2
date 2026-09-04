@@ -316,6 +316,7 @@ async function hydrateCodexStore() {
   } catch {
     _codexStoreSnapshot = null;
   }
+  _codexRequested = false;
   _codexRefreshApplied = true;
   renderHeroesTab({ suppressLocaleRefresh: true });
 }
@@ -460,6 +461,7 @@ let _heroesTabState = {
   codexSort: 'name',
 };
 let _heroesTabEventsWired = false;
+let _heroAtlasModeSwitchWired = false;
 let _heroesSearchTimer = null;
 let _skinsSearchTimer = null;
 let _heroesUrlParamsApplied = false;
@@ -542,6 +544,7 @@ export function setHeroAtlasMode(mode) {
   const next = mode === 'skins' ? 'skins' : mode === 'codex' ? 'codex' : 'heroes';
   if (_heroesTabState.mode === next) return false;
   _heroesTabState.mode = next;
+  if (next === 'codex' && !_codexStoreSnapshot) _codexRefreshApplied = false;
   updateHeroAtlasUrlParams();
   renderHeroesTab();
   return true;
@@ -860,6 +863,35 @@ function openHeroDetailFromAnyMode(heroName) {
     .catch(() => setHeroAtlasMode('heroes'));
 }
 
+// The Atlas view switch lives in the panel header, outside #heroesTabContent,
+// so it needs wiring of its own rather than riding the content listener.
+function wireHeroAtlasModeSwitch() {
+  if (_heroAtlasModeSwitchWired) return;
+  const bar = document.querySelector('[data-atlas-mode]')?.closest('[role="tablist"]');
+  if (!bar) return;
+  _heroAtlasModeSwitchWired = true;
+  bar.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-atlas-mode]');
+    if (!button) return;
+    if (!setHeroAtlasMode(button.dataset.atlasMode)) return;
+    // Keep the hub hash in step so a shared URL reopens on the same view. The
+    // hub still answers to the old codex/skins sub-tab names for exactly this.
+    import('./heroes-combos-hub.js')
+      .then((mod) => mod?.openHeroesCombosSubtab?.(button.dataset.atlasMode, { notify: false }))
+      .catch(() => {
+        /* Hash sync is progressive enhancement. */
+      });
+  });
+}
+
+function syncHeroAtlasModeSwitch(mode) {
+  document.querySelectorAll('[data-atlas-mode]').forEach((button) => {
+    const active = button.dataset.atlasMode === mode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+}
+
 function wireHeroesTabEvents(container) {
   if (_heroesTabEventsWired || !container) return;
   _heroesTabEventsWired = true;
@@ -938,6 +970,7 @@ function wireHeroesTabEvents(container) {
       _heroesTabState.codexPreset = normalizeCodexPreset(codexPresetBtn.dataset.codexPreset);
       _heroesTabState.codexSort = 'name';
       _heroesTabState.limit = 20;
+      _heroesTabState.selected = null;
       updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
@@ -1682,7 +1715,7 @@ function renderHeroDetailPanel(selected, stats, t) {
           ${heroSkinsList.length > 0 ? `<button type="button" class="detail-nav-btn ${firstDetailSection === 'skins' ? 'active' : ''}" data-detail-section="skins"${firstDetailSection === 'skins' ? ' aria-current="location"' : ''}>${escapeHtml(t.heroesBioSkinsTitle || 'Bio Skins')}</button>` : ''}
           <button type="button" class="detail-nav-btn ${firstDetailSection === 'skills' ? 'active' : ''}" data-detail-section="skills"${firstDetailSection === 'skills' ? ' aria-current="location"' : ''}>${escapeHtml(t.heroesSkillsTitle || 'Skills')}</button>
           <button type="button" class="detail-nav-btn" data-detail-section="combos">${escapeHtml(t.heroesTopCombos || 'Top Combos')}</button>
-          <button type="button" class="detail-nav-btn" data-detail-section="duels">${escapeHtml(heroUi('duelsTitle'))}</button>
+          ${duelRecords.length ? `<button type="button" class="detail-nav-btn" data-detail-section="duels">${escapeHtml(heroUi('duelsTitle'))}</button>` : ''}
           ${hasHeroCounters ? `<button type="button" class="detail-nav-btn" data-detail-section="counters">${escapeHtml(heroUi('counters'))}</button>` : ''}
         </nav>`;
 
@@ -1770,7 +1803,7 @@ function renderHeroDetailPanel(selected, stats, t) {
               <div class="detail-combos">${combosHtml || `<p class="hero-detail-empty">${escapeHtml(t.heroesNoCombos || 'No ranked combos yet.')}</p>`}</div>
             </section>
 
-            ${renderDuelSection(selected)}
+            ${duelRecords.length ? renderDuelSection(selected) : ''}
 
             ${
               hasHeroCounters
@@ -1837,26 +1870,24 @@ function renderCodexRow(hero, stats, preset, skinModeDeltas) {
     const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
     return `
     <button type="button" class="hero-rank-row hero-codex-row" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="false">
-      <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
-      <span class="codex-col-name">${escapeHtml(hero.name)}</span>
-      <span class="codex-col-season">${seasonMeta}</span>
-      <span class="codex-col-troop">${getLocalizedTroop(hero.Type)}</span>
-      <span class="codex-col-rating">${s.finalRating > 0 ? finalPct : '—'}</span>
-      <span class="codex-col-rank">${s.topComboRank !== Infinity ? '#' + s.topComboRank : '—'}</span>
-      <span class="codex-col-skins">${getSkinCount(hero.name)}</span>
+      <span class="codex-col-name"><img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png"><span class="codex-name-text">${escapeHtml(hero.name)}</span></span>
+      <span class="codex-col-season" data-label="${escapeHtml(heroUi('season'))}">${seasonMeta}</span>
+      <span class="codex-col-troop" data-label="${escapeHtml(heroUi('troop'))}">${getLocalizedTroop(hero.Type)}</span>
+      <span class="codex-col-rating" data-label="${escapeHtml(heroUi('rating'))}">${s.finalRating > 0 ? finalPct : '—'}</span>
+      <span class="codex-col-rank" data-label="${escapeHtml(heroUi('bestRank'))}">${s.topComboRank !== Infinity ? '#' + s.topComboRank : '—'}</span>
+      <span class="codex-col-skins" data-label="${escapeHtml(heroUi('skins'))}">${getSkinCount(hero.name)}</span>
       <span class="codex-col-verify">${verification}</span>
     </button>`;
   }
   if (preset === 'paid') {
     return `
     <button type="button" class="hero-rank-row hero-codex-row" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="false">
-      <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
-      <span class="codex-col-name">${escapeHtml(hero.name)}${paidIconHtml()}</span>
-      <span class="codex-col-season">${seasonMeta}</span>
-      <span class="codex-col-troop">${getLocalizedTroop(hero.Type)}</span>
-      <span class="codex-col-access">${codexAccessLabel(hero.name)}</span>
-      <span class="codex-col-rating">${s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(0) : '—'}</span>
-      <span class="codex-col-skins">${getSkinCount(hero.name)}</span>
+      <span class="codex-col-name"><img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png"><span class="codex-name-text">${escapeHtml(hero.name)}${paidIconHtml()}</span></span>
+      <span class="codex-col-season" data-label="${escapeHtml(heroUi('season'))}">${seasonMeta}</span>
+      <span class="codex-col-troop" data-label="${escapeHtml(heroUi('troop'))}">${getLocalizedTroop(hero.Type)}</span>
+      <span class="codex-col-access" data-label="${escapeHtml(heroUi('codexColAccess'))}">${codexAccessLabel(hero.name)}</span>
+      <span class="codex-col-rating" data-label="${escapeHtml(heroUi('rating'))}">${s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(0) : '—'}</span>
+      <span class="codex-col-skins" data-label="${escapeHtml(heroUi('skins'))}">${getSkinCount(hero.name)}</span>
       <span class="codex-col-verify">${verification}</span>
     </button>`;
   }
@@ -1867,18 +1898,17 @@ function renderCodexRow(hero, stats, preset, skinModeDeltas) {
   const delta = skinModeDeltas.get(hero.name) || 0;
   return `
     <button type="button" class="hero-rank-row hero-codex-row" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="false">
-      <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
-      <span class="codex-col-name">${escapeHtml(hero.name)}</span>
-      <span class="codex-col-skin">${skin ? `<span class="codex-skin-type" style="--skin-accent:${escapeHtml(skinType?.color || '')}">${escapeHtml(skinType?.icon || '')} ${escapeHtml(heroContentText(skinType?.label || skin.type))}</span>` : '—'}</span>
-      <span class="codex-col-starcost" title="${starCost ? escapeHtml(starCost) : ''}">${starCost ? escapeHtml(starCost) : '—'}</span>
-      <span class="codex-col-hiddenpower">${hiddenPower ? '●' : '—'}</span>
-      <span class="codex-col-rankdelta">${delta > 0 ? `<span class="codex-rank-delta">+${delta}</span>` : '—'}</span>
+      <span class="codex-col-name"><img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png"><span class="codex-name-text">${escapeHtml(hero.name)}</span></span>
+      <span class="codex-col-skin" data-label="${escapeHtml(heroUi('codexColSkinType'))}">${skin ? `<span class="codex-skin-type" style="--skin-accent:${escapeHtml(skinType?.color || '')}">${escapeHtml(skinType?.icon || '')} ${escapeHtml(heroContentText(skinType?.label || skin.type))}</span>` : '—'}</span>
+      <span class="codex-col-starcost" data-label="${escapeHtml(heroUi('codexColStarCost'))}" title="${starCost ? escapeHtml(starCost) : ''}">${starCost ? escapeHtml(starCost) : '—'}</span>
+      <span class="codex-col-hiddenpower" data-label="${escapeHtml(heroUi('limitedHeroMechanic'))}">${hiddenPower ? '●' : '—'}</span>
+      <span class="codex-col-rankdelta" data-label="${escapeHtml(heroUi('codexColRankDelta'))}">${delta > 0 ? `<span class="codex-rank-delta">+${delta}</span>` : '—'}</span>
       <span class="codex-col-verify">${verification}</span>
     </button>`;
 }
 
 function renderCodexView() {
-  const { codexPreset } = _heroesTabState;
+  const { codexPreset, selected } = _heroesTabState;
   const t = translations[currentLanguage] || translations.en;
   const stats = computeHeroRankings();
   const query = (_heroesTabState.search || '').trim().toLowerCase();
@@ -1977,7 +2007,7 @@ function renderCodexView() {
   void hydrateCodexStore();
 
   return `
-    <div class="heroes-tab-inner heroes-tab-inner--codex" data-codex-state="${loadStatus}">
+    <div class="heroes-tab-inner heroes-tab-inner--codex${selected ? ' heroes-tab-inner--detail-open' : ''}" data-codex-state="${loadStatus}">
       <div class="heroes-toolbar-sticky heroes-toolbar-sticky--codex">
         <div class="heroes-toolbar">
           <div class="hero-search-wrap heroes-search-field">
@@ -2009,23 +2039,28 @@ function renderCodexView() {
             </button>`
             ).join('')}
           </div>
-          <p class="heroes-season-hint">${escapeHtml(heroUi('codexModeHint'))}</p>
           <div class="heroes-season-tabs" role="group" aria-label="${escapeHtml(heroUi('seasonFilterAria'))}">
-            ${normalizedSeasons
-              .map(
-                (s) => `
+            <button type="button" class="hero-tab-season ${seasonSet.size === POPULATED_HERO_SEASONS.length ? 'active' : ''}" data-hero-season="all" aria-pressed="${seasonSet.size === POPULATED_HERO_SEASONS.length}">${escapeHtml(heroUi('all'))}</button>
+            ${POPULATED_HERO_SEASONS.map(
+              (s) => `
             <button type="button" class="hero-tab-season ${seasonSet.has(s) ? 'active' : ''}" data-hero-season="${s}" aria-pressed="${seasonSet.has(s)}"
               ${seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>${s}</button>`
-              )
-              .join('')}
+            ).join('')}
           </div>
         </div>
       </div>
+      ${loadStatus !== 'ready' ? `<p class="heroes-season-hint" role="status">${escapeHtml(heroUi(loadStatus === 'loading' ? 'codexLoading' : 'codexUnavailable'))}</p>` : ''}
+      ${
+        selected
+          ? renderHeroDetailPanel(selected, stats, t)
+          : `
       <div class="codex-table" aria-label="${escapeHtml(heroUi('codexModeName'))}">
         <div class="codex-table-head" aria-hidden="true">${headHtml}</div>
         <div class="codex-table-body">${rowsHtml}</div>
       </div>
       ${showMoreHtml}
+      `
+      }
     </div>`;
 }
 
@@ -2041,6 +2076,7 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
   applyHeroAtlasUrlParams();
 
   wireHeroesTabEvents(container);
+  wireHeroAtlasModeSwitch();
 
   const searchHadFocus = document.activeElement?.id === 'heroesTabSearch';
   const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
@@ -2061,6 +2097,22 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
   const t = translations[currentLanguage] || translations.en;
 
   const mode = _heroesTabState.mode || 'heroes';
+  syncHeroAtlasModeSwitch(mode);
+  const atlasTitle = document.getElementById('heroAtlasTitle');
+  const atlasDescription = document.querySelector('#heroesSection .hero-atlas-desc');
+  if (atlasTitle) {
+    atlasTitle.dataset.i18n = mode === 'codex' ? 'tabCodex' : 'tabHeroes';
+    atlasTitle.textContent = t[atlasTitle.dataset.i18n] || translations.en[atlasTitle.dataset.i18n];
+  }
+  if (atlasDescription) {
+    if (mode === 'codex') {
+      delete atlasDescription.dataset.i18n;
+      atlasDescription.textContent = heroUi('codexModeHint');
+    } else {
+      atlasDescription.dataset.i18n = 'heroesTabDesc';
+      atlasDescription.textContent = t.heroesTabDesc || translations.en.heroesTabDesc;
+    }
+  }
   if (mode === 'skins') {
     container.innerHTML = renderSkinsView();
     if (gallerySearchHadFocus) {
@@ -2084,6 +2136,21 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
         if (searchCaret != null) searchInput.setSelectionRange(searchCaret, searchCaret);
       }
     }
+    requestAnimationFrame(() => {
+      if (_heroesDetailFocusRequested && selected) {
+        const detail = container.querySelector('#hero-detail-title');
+        detail?.focus({ preventScroll: true });
+        detail?.scrollIntoView({ block: 'nearest', behavior: preferredScrollBehavior() });
+        _heroesDetailFocusRequested = false;
+      } else if (_heroesReturnFocusName && !selected) {
+        const row = [...container.querySelectorAll('[data-hero-name]')].find(
+          (item) => item.dataset.heroName === _heroesReturnFocusName
+        );
+        row?.focus({ preventScroll: true });
+        row?.scrollIntoView({ block: 'nearest', behavior: preferredScrollBehavior() });
+        _heroesReturnFocusName = null;
+      }
+    });
     return;
   }
 

@@ -1,4 +1,6 @@
 // js/heroes-data.js
+export const HERO_PORTRAIT_FALLBACK = 'images/heroes/portrait-unavailable.svg';
+
 export const allHeroesData = [
   { name: "Jeanne d'Arc", season: 'S0', Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png' },
   { name: "Isabella I", season: 'S0', Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png' },
@@ -92,3 +94,9 @@ export const allHeroesData = [
   { name: "Al-Hawra", season: 'X12', Type:'Archers', State:'Paid' },
   { name: "Achilles", season: 'X12', Type:'Footmen', State:'Paid' }
 ];
+
+// Direct roster consumers and shared helpers must have the same safe local image.
+// This is explicitly a placeholder, not artwork attributed to an unverified hero.
+allHeroesData.forEach((hero) => {
+  if (!hero.imageUrl) hero.imageUrl = HERO_PORTRAIT_FALLBACK;
+});

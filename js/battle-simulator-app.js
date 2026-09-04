@@ -101,7 +101,7 @@ import {
   writeBattleProfileOverride,
 } from './battle-simulator-profile-store.js';
 
-const APP_VERSION = '16.0.0';
+const APP_VERSION = '16.0.1';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [
@@ -167,7 +167,7 @@ function loadBattleProfileTowersStyles() {
   return battleProfileTowersStylesPromise;
 }
 
-// Field Data panel (16.0.0 lane 4): load-on-expanded + retry. The panel module
+// Field Data panel (16.0.1 lane 4): load-on-expanded + retry. The panel module
 // and its stylesheet are a lazy chunk; nothing here grows the eager route.
 let battleFieldDataPromise = null;
 let battleFieldDataModule = null;

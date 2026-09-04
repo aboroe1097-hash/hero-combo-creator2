@@ -1,5 +1,12 @@
 # Changelog
 
+## 16.0.1 - 2026-09-04
+
+- Restored the X12 research season selector. All 30 Charge nodes are editable in a list without invented topology or unlock rules; Defense retains all 29 nodes and now discloses the source's conflicting cost totals.
+- Fixed the research planner re-normalizing already normalized families and silently replacing their costs with zero. X12 estimates retain their unverified status while source gaps remain.
+- Renamed Codex to Hero Tables across supported languages. Restored hero-detail opening and keyboard return focus, kept deselected season filters reachable, explained combo-derived ratings, and hid empty duel sections.
+- Added a shared local portrait-unavailable image for the X10/X12 heroes whose artwork has not yet been supplied, preventing broken images across roster consumers without misidentifying their portraits.
+
 ## 16.0.0 - 2026-09-03
 
 - **VTS Player Alias Reconciliation**: Folded decoration, whitespace and case variants of the same account into one identity across leaderboards, contribution matching and weighted scoring, adopting Moldo1313 and D O F F Y as display names. Sixteen owner-confirmed merges join spellings whose letters differ — FALLEN across eight homoglyph forms, Made3110 across nine prefixes, Dobby, пупОк, Shabir and the rest — recovering demolition points that had been stranded on unmatched spellings. Just as importantly, accounts previously folded into their owner are now separated: DvD18 / DvD18 x2, BOiiE / BOiiE BANNER, ANGEL / Angel Banner and the Kika main, alt and banner accounts each score independently. Matching stays exact after normalisation, with no fuzzy or confusable fallback, and new OCR spellings must be confirmed before they resolve. Historical attack rows are unchanged.

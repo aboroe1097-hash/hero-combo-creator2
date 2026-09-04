@@ -31,6 +31,20 @@ const PANEL_FOR_SUBTAB = Object.freeze({
   heroes: 'heroes',
   skins: 'heroes',
 });
+
+// Which sub-tab BUTTON stands for each sub-tab. Codex and Skins no longer have
+// buttons of their own: three adjacent tabs that all opened the same Atlas panel
+// read as three separate tools, so they are modes inside the Heroes tab again.
+// The names stay live here because existing deep links, footer links and
+// command-palette entries use them — they now light the Heroes button and carry
+// their Atlas mode with them.
+const TAB_FOR_SUBTAB = Object.freeze({
+  manual: 'manual',
+  generator: 'generator',
+  codex: 'heroes',
+  heroes: 'heroes',
+  skins: 'heroes',
+});
 const ATLAS_MODE_FOR_SUBTAB = Object.freeze({
   codex: 'codex',
   heroes: 'heroes',
@@ -56,8 +70,9 @@ export function atlasModeForSubtab(name) {
 
 function applySubtab(root, name) {
   const panel = PANEL_FOR_SUBTAB[name];
+  const tab = TAB_FOR_SUBTAB[name] || name;
   root.querySelectorAll('[data-hub-subtab]').forEach((button) => {
-    const active = button.dataset.hubSubtab === name;
+    const active = button.dataset.hubSubtab === tab;
     button.classList.toggle('active', active);
     button.setAttribute('aria-selected', String(active));
     button.tabIndex = active ? 0 : -1;
