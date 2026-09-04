@@ -1797,8 +1797,11 @@ test.describe('app smoke tabs', () => {
     await page.addInitScript(() => localStorage.setItem('vts_hero_lang', 'en'));
     await openDirectTabHash(page, 'skins', '#heroesSection', '#heroesSection .skin-atlas');
 
-    const heroesSubtab = page.locator('[data-hub-subtab="heroes"]');
-    const skinsSubtab = page.locator('[data-hub-subtab="skins"]');
+    // Heroes and Skins are Atlas views inside one sub-tab now, so the switch
+    // lives on the Atlas header. The #...subtab=skins deep link above still
+    // resolves — the hub keeps answering to the old sub-tab names.
+    const heroesSubtab = page.locator('[data-atlas-mode="heroes"]');
+    const skinsSubtab = page.locator('[data-atlas-mode="skins"]');
     const cards = page.locator('.skin-tier-card');
 
     await expect(skinsSubtab).toHaveAttribute('aria-selected', 'true');
