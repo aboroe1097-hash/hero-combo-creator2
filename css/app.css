@@ -1456,10 +1456,6 @@ html[data-initial-tab-pending] #generatorSection {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.season-select-all:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--brand-light) 78%, white);
-  outline-offset: 3px;
-}
 .s0-pill:has(input:checked) {
   background: #374151;
   border-color: #9ca3af;
@@ -19270,18 +19266,20 @@ html[dir='rtl'] .gen-buttons-row {
   border-radius: 12px;
   background: linear-gradient(135deg, var(--spec-panel), var(--spec-panel-strong));
 }
+/* The plan and the controls are also used outside the summary, where their own
+   bottom margins are correct; inside the grid the gap owns the spacing. */
+.spec-summary > .spec-tool-controls,
+.spec-summary > .spec-hero-plan {
+  margin: 0;
+}
 .spec-summary-head {
   grid-area: head;
 }
-/* These two are also used outside the summary, where their own margins are
-   correct; inside the grid the gap owns the spacing. */
 .spec-summary > .spec-tool-controls {
   grid-area: controls;
-  margin: 0;
 }
 .spec-summary > .spec-hero-plan {
   grid-area: plan;
-  margin: 0;
 }
 .spec-summary > .spec-stat-row {
   grid-area: stats;
