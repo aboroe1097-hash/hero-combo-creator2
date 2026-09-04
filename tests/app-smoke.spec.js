@@ -1450,6 +1450,52 @@ test.describe('app smoke tabs', () => {
     await expect(page).toHaveURL(new RegExp(`#combo=${encoded}$`));
   });
 
+  // The summary panel shipped twice with a large empty region: as a wrapping
+  // flex row its four children laid out [title][button][hero plan] on one line
+  // and [stats] on the next, so the ~478px-tall plan left ~460px of blank
+  // background beside the 46px title. It is bands now — each child as wide as
+  // the panel — and this asserts the property that failed, not the mechanism:
+  // no child may sit in a row that is far taller than the child itself.
+  test('Specialization summary stacks into full-width bands with no dead column', async ({
+    page,
+  }) => {
+    test.slow();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openDirectTabHash(
+      page,
+      'specialization',
+      '#specializationSection',
+      '#specializationToolRoot .spec-tool'
+    );
+    const layout = await page.locator('.spec-summary').evaluate((panel) => {
+      const style = getComputedStyle(panel);
+      const inner =
+        panel.getBoundingClientRect().width -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      const box = (selector) => panel.querySelector(selector).getBoundingClientRect();
+      return {
+        inner: Math.round(inner),
+        planWidth: Math.round(box(':scope > .spec-hero-plan').width),
+        statsWidth: Math.round(box(':scope > .spec-stat-row').width),
+        headTop: Math.round(box(':scope > .spec-summary-head').top),
+        controlsTop: Math.round(box(':scope > .spec-tool-controls').top),
+        planTop: Math.round(box(':scope > .spec-hero-plan').top),
+        statsTop: Math.round(box(':scope > .spec-stat-row').top),
+      };
+    });
+    // The two tall bands span the panel rather than sharing a row with the title.
+    expect(layout.planWidth).toBeGreaterThan(layout.inner * 0.95);
+    expect(layout.statsWidth).toBeGreaterThan(layout.inner * 0.95);
+    // Title and the one small control share the top row; the bands are below it.
+    expect(Math.abs(layout.headTop - layout.controlsTop)).toBeLessThan(24);
+    expect(layout.statsTop).toBeGreaterThan(layout.headTop);
+    expect(layout.planTop).toBeGreaterThan(layout.statsTop);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true
+    );
+  });
+
   test('integrated Specialization persists node, complete, and reset actions', async ({ page }) => {
     test.slow();
     await openDirectTabHash(

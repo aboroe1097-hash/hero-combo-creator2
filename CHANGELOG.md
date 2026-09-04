@@ -1,5 +1,9 @@
 # Changelog
 
+## 16.0.2 - 2026-09-04
+
+- Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the panel. The stat tiles share the row instead of hugging its left edge, and the plan's decision strip uses four equal columns instead of three narrow ones and a 971px-wide last cell.
+
 ## 16.0.1 - 2026-09-04
 
 - Restored the X12 research season selector. All 30 Charge nodes are editable in a list without invented topology or unlock rules; Defense retains all 29 nodes and now discloses the source's conflicting cost totals.
