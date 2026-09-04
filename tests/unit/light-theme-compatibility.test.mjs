@@ -157,7 +157,9 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
   assert.match(sizeCheck, /totalJsBytes: 10084 \* 1024/);
-  assert.match(sizeCheck, /entryCssBytes: 429 \* 1024/);
+  // 430 since 16.0.3: the Specialization summary grid, the season select-all
+  // control, and the X10/X12 bracket cards measure 429.5 KiB in app.css.
+  assert.match(sizeCheck, /entryCssBytes: 430 \* 1024/);
   assert.match(sizeCheck, /totalCssBytes: 1635 \* 1024/);
   assert.match(sizeCheck, /totalDeployBytes: 32100 \* 1024/);
   assert.match(sizeCheck, /deployFileCount: 704/);
