@@ -8,6 +8,43 @@ const deployDir = path.join(rootDir, 'dist');
 const distDir = path.join(deployDir, 'assets');
 const indexPath = path.join(rootDir, 'index.html');
 const builtIndexPath = path.join(deployDir, 'index.html');
+const lockfilePath = path.join(rootDir, 'package-lock.json');
+
+// Every number below is produced by the bundler and the CSS minifier, so a
+// working tree whose node_modules has drifted off package-lock.json measures a
+// build that will never ship. Vite 8 (rolldown) in particular merges shared
+// modules into the manual feature chunks, which makes index.html statically
+// import eden-map and hero-atlas and inflates every route CSS total by tens of
+// kB against budgets calibrated on the pinned Vite 6. Fail with the fix rather
+// than let a stale install be read as a size regression.
+const TOOLCHAIN_PACKAGES = ['vite', 'postcss', 'cssnano'];
+
+function readJsonIfPresent(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function collectToolchainVersions() {
+  const lockfile = readJsonIfPresent(lockfilePath);
+  const lockPackages = lockfile?.packages || {};
+  return TOOLCHAIN_PACKAGES.map((name) => {
+    const installed = readJsonIfPresent(path.join(rootDir, 'node_modules', name, 'package.json'));
+    return {
+      name,
+      expected: lockPackages[`node_modules/${name}`]?.version || null,
+      installed: installed?.version || null,
+    };
+  });
+}
+
+const toolchainVersions = collectToolchainVersions();
+const toolchainMismatches = toolchainVersions.filter(
+  ({ expected, installed }) => expected && installed && expected !== installed
+);
 
 const LIMITS = {
   // v14 adds the command shell, accessible More navigation, richer metadata,
@@ -517,6 +554,12 @@ const failures = checks.filter(([, actual, limit]) => actual > limit);
 
 console.log('Size check:');
 console.log(
+  `- toolchain: ${toolchainVersions
+    .filter(({ installed }) => installed)
+    .map(({ name, installed }) => `${name} ${installed}`)
+    .join(', ')}`
+);
+console.log(
   `- index.html: ${formatBytes(indexBytes)} raw, ${formatBytes(indexGzipBytes)} gzip, ${indexLines} lines (informational)`
 );
 console.log(
@@ -541,8 +584,14 @@ for (const [htmlFile, metrics] of routeCssMetrics) {
   );
 }
 
-if (missingBuildOutputs.length || failures.length) {
+if (toolchainMismatches.length || missingBuildOutputs.length || failures.length) {
   console.error('Size check failed:');
+  for (const { name, expected, installed } of toolchainMismatches) {
+    console.error(
+      `- installed ${name} ${installed} does not match package-lock.json's ${expected}; ` +
+        'these budgets are calibrated on the locked toolchain, so run `npm ci` and rebuild'
+    );
+  }
   for (const output of missingBuildOutputs) {
     console.error(`- missing required build output: ${output}`);
   }
