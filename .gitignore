@@ -1,52 +1,83 @@
+# Dependencies, generated builds, and local caches (including nested packages).
 node_modules/
-/.firebase/
 dist/
-docs/media/
-!docs/media/
-!docs/media/**
-.DS_Store
-*.log
+.vite/
+.cache/
+.eslintcache
+*.tgz
+
+# Local environment and deployment state. Keep the documented env template.
 .env*
 !.env.example
-.env.local
-.vscode/
-.idea/
-*.tgz
+/.firebaserc
+/.firebase/
+.wrangler/
+
+# Test output; committed fixtures and *-snapshots/ are source, not output.
 test-results/
 playwright-report/
 blob-report/
 coverage/
 .nyc_output/
 *.lcov
+
+# Python helpers and local virtual environments.
 __pycache__/
 *.py[cod]
-work/roc-combo-import/
-/.codex-remote-attachments
-/previews
-/outputs/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Logs, editor state, and operating-system metadata.
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# Local agent state, attachments, and nested checkouts.
+# Shared project instructions (AGENTS.md/CLAUDE.md) remain trackable.
 /.codex/
+/.codex-remote-attachments/
+/.codex-video-work/
 /.worktrees/
+/.omo/
+/.agents/
+.claude/
+/skills-lock.json
+/~/
+
+# Local research/rendering scratch. Promote durable evidence to docs/sources/
+# or docs/media/; neither documentation nor application assets are ignored.
+/work/
+/media-player/
+/previews/
+/outputs/
+/.tmp-*/
+/scripts/eden-scan/
+/scratch_*
 /_test_*.mjs
 /output_test.txt
 /snippet.txt
-/~/
-/work/eden-scan
-/scripts/eden-scan
-/.omo
-/.agents
-.claude/
-skills-lock.json
-AGENT-LANE-*.md
-INTEGRATION-REVIEW.md
-CODEX_PLAN_NEXT.md
-DASHBOARD-CASCADE-AUDIT.md
-_atmo-preview.html
-tmp-eden-marker-candidates.png
+/_atmo-preview.html
+/tmp-eden-marker-candidates.png
 /eden-map-current.png
+
+# Root-only ad hoc QA captures and extracted Royal Bounty document pages.
+# Do not use a blanket image/PDF/archive rule: assets and evidence are source.
+/shot-*.png
+/rb_page_[0-9][0-9].png
+/rb_page_[0-9][0-9]_small.png
+
+# Local coordination notes; durable plans belong in docs/plans/.
+/AGENT-LANE-*.md
+/INTEGRATION-REVIEW.md
+/CODEX_PLAN_NEXT.md
+/DASHBOARD-CASCADE-AUDIT.md
 /AUDIT-REPORT.md
 /SESSION-HANDOFF*.md
-/scratch_*
-work/
-media-player/
-.tmp-*/
-.firebaserc
