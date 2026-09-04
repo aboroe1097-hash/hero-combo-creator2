@@ -12,11 +12,13 @@ const lockfilePath = path.join(rootDir, 'package-lock.json');
 
 // Every number below is produced by the bundler and the CSS minifier, so a
 // working tree whose node_modules has drifted off package-lock.json measures a
-// build that will never ship. Vite 8 (rolldown) in particular merges shared
-// modules into the manual feature chunks, which makes index.html statically
-// import eden-map and hero-atlas and inflates every route CSS total by tens of
-// kB against budgets calibrated on the pinned Vite 6. Fail with the fix rather
-// than let a stale install be read as a size regression.
+// build that will never ship. The failure mode is loud and misleading: running
+// this tree's rollup-era vite.config.js under an installed Vite 8 left shared
+// modules inside the eden-map chunk, so index.html statically imported it and
+// every one of the sixteen route CSS budgets blew at once — indistinguishable
+// from a real regression until you check `vite -v` against the lockfile. Fail
+// with the fix instead. This compares versions rather than pinning any of them,
+// so it stays correct across a deliberate bundler upgrade.
 const TOOLCHAIN_PACKAGES = ['vite', 'postcss', 'cssnano'];
 
 function readJsonIfPresent(filePath) {
