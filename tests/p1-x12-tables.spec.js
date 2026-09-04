@@ -18,7 +18,13 @@ for (const width of [390, 1280]) {
     await open(page, 'research');
     const season = page.locator('.tech-season-btn[data-season="X12"]');
     await expect(season).toBeVisible();
-    await season.click();
+    // X12 is one of the newest three seasons, so it now arrives already
+    // selected. Clicking unconditionally would deselect it and hide the very
+    // trees this test is about.
+    if (!(await season.evaluate((el) => el.classList.contains('active')))) {
+      await season.click();
+    }
+    await expect(season).toHaveClass(/active/);
     for (const [id, count] of [
       ['9c5d4006', 29],
       ['b57d6bf9', 30],
@@ -51,7 +57,9 @@ for (const width of [390, 1280]) {
   test(`Hero Tables filters, details and local portraits work at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await open(page, 'heroes');
-    const tab = page.locator('[data-hub-subtab="codex"]');
+    // Hero Tables is an Atlas view, not a sub-tab of its own — three sibling
+    // sub-tabs that all opened this panel read as three separate tools.
+    const tab = page.locator('[data-atlas-mode="codex"]');
     await expect(tab).toHaveText('Hero Tables');
     await tab.click();
     await expect(page.locator('#heroAtlasTitle')).toHaveText('Hero Tables');
