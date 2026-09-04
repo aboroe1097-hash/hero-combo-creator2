@@ -18,10 +18,11 @@ export const rankedCombos = [
   // --- SKIN MODE RANK OVERRIDES ---
   // skin code slots: 3 = must own skin, 2 = recommended skin, 1 = optional skin.
   // Missing skin metadata behaves like 111, so the combo keeps its normal rank with or without skins.
+  { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '333', note: 'Top skin-mode lane. Rozen Blade, Ramses II and Beowulf skins all required.' },
+  { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '323', note: 'Rozen Blade and Beowulf skins are required; Ramses II is recommended.' },
   { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'], skin: '122' },
   { heroes: ['Alexander', 'Cleopatra VII', 'Theodora'], skin: '122' },
   { heroes: ['King Arthur', 'Theodora', 'Alexander'] , skin: '121'},
-  { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '323', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
   { heroes: ['Beowulf', 'Ramses II', 'Theodora'], skin: '333', note: 'Highest observed S0-X1 sustain combo: Theodora skin required; Ramses II recommended; Beowulf optional.' },
   { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], skin: '113', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
   
@@ -39,7 +40,6 @@ export const rankedCombos = [
   { heroes: ['Hunk', 'Bleeding Steed', 'Alexander'], skin: '222' },
   { heroes: ['Hunk', 'Cleopatra VII', 'Alexander'], skin: '222' },
   { heroes: ['Alexander', 'Bleeding Steed', 'Theodora'] },
-  { heroes: ['Rozen Blade', 'Ramses II', 'Beowulf'], skin: '333', note: 'With all three skins this outranks the no-skin Immortal Guardian / Ramses II / Beowulf lane below.' },
   { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'] },
   { heroes: ['Hunk', 'Ramses II', 'Beowulf'] },
   { heroes: ['Bleeding Steed', 'Ramses II', 'Beowulf'] },
