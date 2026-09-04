@@ -178,7 +178,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260904_092804').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260904_152129').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -200,7 +200,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260904_092804').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260904_152129').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -211,7 +211,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260904_092804').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260904_152129').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -524,6 +524,48 @@ function updateSeasonCatchupHint(container) {
   el.classList.toggle('hidden', !items.length);
 }
 
+// The select-all control is a button, not a checkbox, so getCheckedValues and
+// the change-delegated filter wiring never see it as a season.
+function seasonPillInputs(container) {
+  return Array.from(container.querySelectorAll('label.filter-pill:not(.hidden) input[type="checkbox"]'));
+}
+
+function syncSeasonSelectAll(container) {
+  const button = container?.querySelector('[data-season-select-all]');
+  if (!button) return;
+  const inputs = seasonPillInputs(container);
+  const all = inputs.length > 0 && inputs.every((input) => input.checked);
+  // `active` is the class the shared chip styling keys off for every other
+  // button-shaped pill (.heroes-filter-pill, .tech-season-btn, …); aria-pressed
+  // carries the same state for assistive tech.
+  button.setAttribute('aria-pressed', String(all));
+  button.classList.toggle('active', all);
+}
+
+// Pressed selects every visible season; pressing again returns to the strip's
+// own defaults rather than clearing it, because an empty season filter is not a
+// valid state — readSeasonFilterSelection would silently restore the defaults
+// anyway, and doing it here keeps the pills honest about what is selected.
+function wireSeasonSelectAll(container, onChange) {
+  const button = container?.querySelector('[data-season-select-all]');
+  if (!button || button.dataset.selectAllWired === '1') return;
+  button.dataset.selectAllWired = '1';
+  button.addEventListener('click', () => {
+    const inputs = seasonPillInputs(container);
+    const selectAll = button.getAttribute('aria-pressed') !== 'true';
+    if (selectAll) {
+      inputs.forEach((input) => {
+        input.checked = true;
+      });
+    } else {
+      syncCheckboxValues(container, getSeasonFilterDefaults(container));
+    }
+    syncSeasonSelectAll(container);
+    onChange();
+  });
+  syncSeasonSelectAll(container);
+}
+
 function updateAllSeasonCatchupHints() {
   updateSeasonCatchupHint(document.getElementById('seasonFilters') || seasonFiltersEl);
   updateSeasonCatchupHint(document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl);
@@ -600,11 +642,14 @@ function wireFilterSets() {
   const generatorTroopFilters =
     document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
 
-  wireFilterControls(manualSeasonFilters, () => {
+  const onManualSeasonChange = () => {
     setSelectedSeasons(readSeasonFilterSelection(manualSeasonFilters));
     updateSeasonCatchupHint(manualSeasonFilters);
+    syncSeasonSelectAll(manualSeasonFilters);
     if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
-  });
+  };
+  wireFilterControls(manualSeasonFilters, onManualSeasonChange);
+  wireSeasonSelectAll(manualSeasonFilters, onManualSeasonChange);
 
   wireFilterControls(manualStateFilters, () => {
     setSelectedStates(readStateFilterSelection(manualStateFilters));
@@ -616,10 +661,13 @@ function wireFilterSets() {
     if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
   });
 
-  wireFilterControls(generatorSeasonFilters, () => {
+  const onGeneratorSeasonChange = () => {
     updateSeasonCatchupHint(generatorSeasonFilters);
+    syncSeasonSelectAll(generatorSeasonFilters);
     renderGeneratorHeroes(syncGeneratorControlState());
-  });
+  };
+  wireFilterControls(generatorSeasonFilters, onGeneratorSeasonChange);
+  wireSeasonSelectAll(generatorSeasonFilters, onGeneratorSeasonChange);
 
   wireFilterControls(generatorStateFilters, () => {
     renderGeneratorHeroes(syncGeneratorControlState());
@@ -823,6 +871,7 @@ function resetGeneratorFilters() {
   const searchInput = document.getElementById('generatorHeroSearch');
 
   syncCheckboxValues(seasonContainer, DEFAULT_GENERATOR_FILTER_SEASONS);
+  syncSeasonSelectAll(seasonContainer);
   syncCheckboxValues(stateContainer, DEFAULT_STATE_FILTER_VALUES);
   syncCheckboxValues(troopContainer, DEFAULT_TROOP_FILTER_VALUES);
   if (searchInput) searchInput.value = '';
@@ -1065,9 +1114,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.
-        import('./eden-hub.js?v=20260904_092804')
+        import('./eden-hub.js?v=20260904_152129')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260904_092804'))
+          .then(() => import('./eden-map.js?v=20260904_152129'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1097,7 +1146,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260904_092804')
+      import('./app-hero-atlas.js?v=20260904_152129')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1139,7 +1188,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'artifact' && !_artifactReady) {
       if (_artifactBooting) return;
       _artifactBooting = true;
-      import('./app-artifact.js?v=20260904_092804')
+      import('./app-artifact.js?v=20260904_152129')
         .then(async (mod) => {
           await mod.initArtifactCalculator();
           _artifactReady = true;
@@ -1195,7 +1244,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260904_092804')
+      import('./app-strife.js?v=20260904_152129')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1248,7 +1297,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260904_092804')
+      import('./youtube-v14.js?v=20260904_152129')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1413,7 +1462,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260904_092804')
+      import('./app-hero-atlas.js?v=20260904_152129')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */

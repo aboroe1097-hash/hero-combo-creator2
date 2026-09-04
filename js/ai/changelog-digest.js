@@ -1,10 +1,25 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.1";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.3",
+    "date": "2026-09-04",
+    "highlights": [
+      "Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 h…",
+      "Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty."
+    ]
+  },
+  {
+    "version": "16.0.2",
+    "date": "2026-09-04",
+    "highlights": [
+      "Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the pane…"
+    ]
+  },
   {
     "version": "16.0.1",
     "date": "2026-09-04",
@@ -83,26 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Fixed the Eden Playbook Week 1 “Balancing Income & Production” tool link so it reliably opens the Eden Loyalty subtab instead of staying on the playbook when a stale subtab intent was present.",
       "Reassigned the DrThunder in-game route screenshots across the playbook timeline: Day 1, Day 2, and Week 1 now share the two route references, and the Role entry no longer repeats them (full routes remain in Eden Tips & Guides).",
       "Improved the Loyalty Targets layout with centered copy, tighter centered income-jump cards, a gradient card accent, and balanced spacing."
-    ]
-  },
-  {
-    "version": "15.0.9",
-    "date": "2026-08-18",
-    "highlights": [
-      "Reworked Artifact node leveling with direct numeric entry, −5/−1/+1/+5 controls, and a one-click prerequisite-aware MAX action that funds only the required path before maxing the selected node.",
-      "Improved the Artifact inspector layout for faster desktop and mobile use while preserving keyboard access, RTL, and dark/light themes.",
-      "Added a hero-targeted Sword path driven by the heroes selected in Heroes & Combos, their analyzed skill mechanics, a prerequisite-valid node order, board step markers, and exact-node share links.",
-      "Added the interactive DrThunder Eden Loyalty Playbook with separate day/week and topic-guide flows, six specialization-role references, a responsive HTML income table, detailed poison strategy, 13 contextual in-game visuals, responsive themes, deep links, and prominent original-…",
-      "Added a global “Share this exact view” control and canonical subtab/section URL state so tool, Artifact-node, and Eden Playbook links can be passed directly to other players.",
-      "Clarified navigation status with Hub badges on primary destinations plus Beta/New badges on Towers, Artifacts, Eden Playbook, and Royal Bounty Eden X2 subtools."
-    ]
-  },
-  {
-    "version": "15.0.8",
-    "date": "2026-08-18",
-    "highlights": [
-      "Added the official Royal Bounty Alliance 2.0 Aiding Skills overview to the Eden X2 bounty guide, with responsive sizing, accessible context, and source credit to riseofcastles.net.",
-      "Optimized the reference image for fast mobile loading while preserving the original in-game text and visual detail."
     ]
   }
 ].map((release) =>

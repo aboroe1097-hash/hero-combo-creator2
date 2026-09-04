@@ -1089,6 +1089,12 @@ const it = {
   seasonCatchupX2: 'Recupero X2: questa fascia include i restanti eroi X2 e l’ondata X3.',
   seasonCatchupX8:
     'Recupero X8: questa fascia riunisce gli eroi originali X4, X5, X6, X7, X8 e SP in un’unica stagione giocabile.',
+  seasonCatchupX10:
+    'Fascia opzionale X10: alcuni stati di Rise of Castles giocano questa stagione intermedia e altri la saltano; in Eden non esiste. Aggiunge due eroi gratuiti, nessun eroe a pagamento e nessuna nuova ricerca.',
+  seasonCatchupX12:
+    'Recupero X12: questa fascia riunisce gli eroi da X9 a X12 in un’unica stagione. La progressione predefinita passa direttamente da X8 a X12 senza X10.',
+  seasonSelectAll: 'Tutti',
+  seasonSelectAllHint: 'Seleziona tutte le stagioni',
   loyaltyTitle: 'Calcolatore potenziamento lealtà',
   loyaltyDesc:
     'Calcola tempi di lavorazione, percentuali di veleno e percorsi di potenziamento ottimali.',

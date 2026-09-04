@@ -34,7 +34,9 @@ const LIMITS = {
   // The 14.3.9 Heroes & Combos and Research & Towers hubs, the two-path tower
   // planner, and the account chip shipped on every page re-audit to 427.5 KiB;
   // retain roughly 1.5 KiB of headroom.
-  entryCssBytes: 429 * 1024,
+  // The 16.0.3 Specialization summary bands, season select-all control, and
+  // X10/X12 bracket cards measure 429.5 KiB (was 428.5); retain roughly 0.5 KiB.
+  entryCssBytes: 430 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
@@ -307,7 +309,10 @@ const LIMITS = {
     // 2 KiB of headroom without changing the unaffected mobile ceiling.
     // 16.0.0 token authority: 679.1/775.2 KiB after retiring covered light
     // overrides (was 679.4/775.5); ceilings unchanged per D1.
-    'admin.html': { desktop: 680 * 1024, mobile: 785 * 1024 },
+    // 16.0.3 shares app.css, so the Specialization summary and season filter
+    // rules land here too: 680.1/776.2 KiB (was 679.1/775.2); lift the desktop
+    // ceiling by 1 KiB and leave the unaffected mobile ceiling fixed.
+    'admin.html': { desktop: 681 * 1024, mobile: 785 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
     // Eden imports the same dashboard stylesheet for weighted-contribution
     // detail, so the Admin-only panel styles are present in its CSS graph even
@@ -315,10 +320,12 @@ const LIMITS = {
     // 800.2 KiB for X1 and 799.0 KiB for X2 after minification.
     // 16.0.0 token authority: 801.5/897.6 KiB after the frost-token
     // consolidation (was 802.0/898.1); ceilings unchanged per D1.
-    'eden-x1.html': { desktop: 803 * 1024, mobile: 909 * 1024 },
+    // 16.0.3: 802.9/899.0 KiB after the shared summary and season filter rules
+    // (was 801.9/898.0); both Eden routes keep roughly 1 KiB of headroom.
+    'eden-x1.html': { desktop: 804 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 802 * 1024, mobile: 909 * 1024 },
+    'eden-x2.html': { desktop: 804 * 1024, mobile: 909 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },
