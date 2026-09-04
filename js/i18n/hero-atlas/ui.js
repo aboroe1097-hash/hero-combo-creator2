@@ -250,8 +250,8 @@ const ROWS = {
     'Filter skins by type',
     'Full details',
     'Game item icon slot',
-    'Codex',
-    'Verified hero data with source tracking.',
+    'Hero Tables',
+    'Compare free heroes, paid heroes and skins. Select a row for skills and details; export the filtered table as CSV. Ratings reflect available ranked combos, not hero strength. A dash means no data.',
     'Free',
     'Paid + Royal',
     'Skins + Paid',
@@ -292,7 +292,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   ar: [
     'المهارة',
@@ -398,8 +397,8 @@ const ROWS = {
     'فلترة الأزياء حسب النوع',
     'تفاصيل كاملة',
     'خانة أيقونة عنصر اللعبة',
-    'المخطوطات',
-    'بيانات الأبطال الموثقة مع تتبع المصدر.',
+    'جداول الأبطال',
+    'قارن الأبطال المجانيين والمدفوعين والمظاهر. اختر صفاً للمهارات والتفاصيل وصدّر الجدول المصفّى بصيغة CSV. التقييمات تعكس التشكيلات المصنّفة المتاحة، لا قوة البطل. الشرطة تعني عدم توفر بيانات.',
     'مجاني',
     'مدفوع + ملكي',
     'الأزياء + المدفوع',
@@ -440,7 +439,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   de: [
     'SKILL',
@@ -546,8 +544,8 @@ const ROWS = {
     'Skins nach Typ filtern',
     'Vollständige Details',
     'Platz für Spielgegenstands-Symbol',
-    'Kodex',
-    'Verifizierte Heldendaten mit Quellenverfolgung.',
+    'Heldentabellen',
+    'Vergleiche kostenlose Helden, Kaufhelden und Skins. Zeile für Fähigkeiten und Details wählen; gefilterte Tabelle als CSV exportieren. Bewertungen beruhen auf verfügbaren Ranglisten-Kombos, nicht auf Heldenstärke. Ein Strich bedeutet fehlende Daten.',
     'Kostenlos',
     'Bezahlt + Royal',
     'Skins + Bezahlt',
@@ -588,7 +586,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   es: [
     'HABILIDAD',
@@ -694,8 +691,8 @@ const ROWS = {
     'Filtrar aspectos por tipo',
     'Detalles completos',
     'Espacio para icono de objeto del juego',
-    'Códice',
-    'Datos de héroes verificados con seguimiento de fuentes.',
+    'Tablas de héroes',
+    'Compara héroes gratuitos, de pago y aspectos. Selecciona una fila para ver habilidades y detalles; exporta la tabla filtrada a CSV. Las valoraciones reflejan los combos clasificados disponibles, no la fuerza del héroe. Un guion indica datos ausentes.',
     'Gratis',
     'De pago + Royal',
     'Aspectos + De pago',
@@ -736,7 +733,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   fr: [
     'COMPÉTENCE',
@@ -842,8 +838,8 @@ const ROWS = {
     'Filtrer les skins par type',
     'Détails complets',
     'Emplacement d’icône d’objet du jeu',
-    'Codex',
-    'Données de héros vérifiées avec traçabilité des sources.',
+    'Tableaux des héros',
+    'Comparez les héros gratuits, payants et les apparences. Sélectionnez une ligne pour les compétences et détails ; exportez le tableau filtré en CSV. Les notes reflètent les combos classés disponibles, pas la puissance du héros. Un tiret indique une donnée absente.',
     'Gratuit',
     'Payant + Royal',
     'Skins + Payant',
@@ -884,7 +880,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   id: [
     'SKILL',
@@ -990,8 +985,8 @@ const ROWS = {
     'Filter skin berdasarkan jenis',
     'Detail lengkap',
     'Slot ikon item game',
-    'Codex',
-    'Data pahlawan terverifikasi dengan pelacakan sumber.',
+    'Tabel Hero',
+    'Bandingkan hero gratis, berbayar, dan skin. Pilih baris untuk skill dan detail; ekspor tabel terfilter sebagai CSV. Nilai mencerminkan kombo berperingkat yang tersedia, bukan kekuatan hero. Tanda pisah berarti belum ada data.',
     'Gratis',
     'Berbayar + Royal',
     'Skin + Berbayar',
@@ -1032,7 +1027,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   it: [
     'ABILITÀ',
@@ -1138,8 +1132,8 @@ const ROWS = {
     'Filtra skin per tipo',
     'Dettagli completi',
     'Spazio per l’icona dell’oggetto di gioco',
-    'Codex',
-    'Dati degli eroi verificati con tracciabilità delle fonti.',
+    'Tabelle eroi',
+    'Confronta eroi gratuiti, a pagamento e skin. Seleziona una riga per abilità e dettagli; esporta la tabella filtrata in CSV. I punteggi riflettono le combo classificate disponibili, non la forza degli eroi. Un trattino indica dati mancanti.',
     'Gratis',
     'A pagamento + Royal',
     'Skin + A pagamento',
@@ -1180,7 +1174,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   kr: [
     '스킬',
@@ -1286,8 +1279,8 @@ const ROWS = {
     '유형별 스킨 필터',
     '전체 정보',
     '게임 아이템 아이콘 자리',
-    '코덱스',
-    '출처 추적이 포함된 검증된 영웅 데이터.',
+    '영웅 표',
+    '무료 영웅, 유료 영웅과 스킨을 비교하세요. 행을 선택하면 스킬과 상세 정보를 볼 수 있으며 필터링한 표를 CSV로 내보낼 수 있습니다. 평점은 영웅의 강함이 아닌 등록된 조합 순위를 반영합니다. 대시는 데이터가 없음을 뜻합니다.',
     '무료',
     '유료 + 로열',
     '스킨 + 유료',
@@ -1328,7 +1321,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   pt: [
     'HABILIDADE',
@@ -1434,8 +1426,8 @@ const ROWS = {
     'Filtrar skins por tipo',
     'Detalhes completos',
     'Espaço para ícone de item do jogo',
-    'Codex',
-    'Dados de heróis verificados com rastreamento de fontes.',
+    'Tabelas de heróis',
+    'Compare heróis gratuitos, pagos e skins. Selecione uma linha para habilidades e detalhes; exporte a tabela filtrada em CSV. As avaliações refletem os combos classificados disponíveis, não a força do herói. Um traço indica dados ausentes.',
     'Grátis',
     'Pago + Royal',
     'Visuais + Pago',
@@ -1476,7 +1468,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   ru: [
     'НАВЫК',
@@ -1582,8 +1573,8 @@ const ROWS = {
     'Фильтр обликов по типу',
     'Полные данные',
     'Слот для игрового значка предмета',
-    'Кодекс',
-    'Проверенные данные о героях с отслеживанием источников.',
+    'Таблицы героев',
+    'Сравнивайте бесплатных и платных героев и облики. Выберите строку для навыков и подробностей; экспортируйте отфильтрованную таблицу в CSV. Оценки отражают доступные рейтинговые комбинации, а не силу героя. Прочерк означает отсутствие данных.',
     'Бесплатный',
     'Платный + Royal',
     'Скины + Платный',
@@ -1624,7 +1615,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   tr: [
     'BECERİ',
@@ -1730,8 +1720,8 @@ const ROWS = {
     'Kostümleri türe göre filtrele',
     'Tam ayrıntılar',
     'Oyun eşyası simge yuvası',
-    'Kodeks',
-    'Kaynak takibi ile doğrulanmış kahraman verileri.',
+    'Kahraman Tabloları',
+    'Ücretsiz ve ücretli kahramanları ve görünümleri karşılaştırın. Beceriler ve ayrıntılar için bir satır seçin; filtrelenen tabloyu CSV olarak dışa aktarın. Puanlar kahraman gücünü değil, mevcut sıralı kombinasyonları yansıtır. Tire, veri olmadığını gösterir.',
     'Ücretsiz',
     'Ücretli + Royal',
     'Kostümler + Ücretli',
@@ -1772,7 +1762,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
   zh: [
     '技能',
@@ -1878,8 +1867,8 @@ const ROWS = {
     '按类型筛选皮肤',
     '完整详情',
     '游戏物品图标位',
-    '图鉴',
-    '带来源追踪的已验证英雄数据。',
+    '英雄表格',
+    '比较免费英雄、付费英雄和皮肤。选择一行查看技能与详情，并将筛选后的表格导出为 CSV。评分反映现有阵容排名，并非英雄强度。横线表示暂无数据。',
     '免费',
     '付费 + 皇家',
     '皮肤 + 付费',
@@ -1920,7 +1909,6 @@ const ROWS = {
     'X10',
     'X12',
     'X15+',
-
   ],
 };
 

@@ -3,7 +3,7 @@ import { appT, escapeHtml } from './utils.js';
 import { currentLanguage } from './state.js';
 import { formatLocaleDate, formatLocaleNumber } from './locale-format.js';
 import { loadCodexStore } from './codex-loader.js';
-import { listPlannerFamilies, getPlannerFamily, normalizeTechTree } from './research-planner-model.js';
+import { listPlannerFamilies, getPlannerFamily } from './research-planner-model.js';
 import {
   familyFromCodexNodes,
   listCodexResearchTrees,
@@ -122,8 +122,7 @@ function buildFamilyOptions(codexFamilies) {
 
 function resolveFamily(selection, codexStore) {
   if (selection.startsWith('tech:')) {
-    const tech = getPlannerFamily(selection.slice(5));
-    return tech ? normalizeTechTree(tech) : null;
+    return getPlannerFamily(selection.slice(5));
   }
   if (selection.startsWith('codex:') && codexStore) {
     return familyFromCodexNodes(codexStore, selection.slice(6));

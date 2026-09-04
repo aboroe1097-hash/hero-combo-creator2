@@ -29,7 +29,15 @@ test('Codex mode renders one Atlas mode with three filter presets', () => {
   }
   assert.match(atlasSource, /normalizeCodexPreset/);
   assert.match(atlasSource, /data-codex-state="\$\{loadStatus\}"/);
-  assert.match(indexSource, /data-hub-subtab="codex"[\s\S]*?data-i18n="tabCodex"/);
+  // Codex is reachable from the Atlas view switch, not a sub-tab of its own.
+  // Three sibling sub-tabs that all opened this same panel read as three
+  // separate tools, so Heroes / Skins / Hero Tables are one control again.
+  assert.match(indexSource, /data-atlas-mode="codex"[\s\S]*?data-i18n="tabCodex"/);
+  assert.doesNotMatch(
+    indexSource,
+    /data-hub-subtab="codex"/,
+    'Codex must not regain a sub-tab button beside Heroes'
+  );
 });
 
 test('Hub sub-tab registry is flagship-first and keeps legacy subtabs intact', () => {

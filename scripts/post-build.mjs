@@ -45,6 +45,17 @@ const sourceOnlyDeployPaths = new Set([
   'images/heroes/catchup/skanda.png',
   'images/heroes/catchup/warden.png',
   'images/heroes/catchup/warhammer.png',
+  'images/heroes/x12/achilles.png',
+  'images/heroes/x12/al-hawra.png',
+  'images/heroes/x12/arslan.png',
+  'images/heroes/x12/belisarius.png',
+  'images/heroes/x12/el-cid.png',
+  'images/heroes/x12/farah.png',
+  'images/heroes/x12/healer.png',
+  'images/heroes/x12/hellfire.png',
+  'images/heroes/x12/lilith.png',
+  'images/heroes/x12/pepin.png',
+  'images/heroes/x12/poison-master.png',
   'images/logo.webp',
 ]);
 

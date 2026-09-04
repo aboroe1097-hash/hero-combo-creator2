@@ -72,7 +72,9 @@ export function normalizeTechTree(tech) {
       costs,
       requirements: Object.freeze([]),
       requirementGroups: Object.freeze([]),
-      verificationStatus: normalizeVerificationStatus(node.verificationStatus),
+      verificationStatus: normalizeVerificationStatus(
+        node.verificationStatus || tech.verificationStatus
+      ),
       access: normalizeNodeAccess(node.access),
     });
   });

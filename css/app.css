@@ -19217,7 +19217,11 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-summary {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  /* Top-aligned, not centred. The hero plan in this row is ~478px tall while
+     the title beside it is ~46px, so centring dropped the title 240px down the
+     panel and left a large void above and below it — the tool read as though
+     its heading had taken over the left half of the screen. */
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.15rem;

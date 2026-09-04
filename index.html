@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260903_112915"></script>
-    <script src="js/theme-prepaint.js?v=20260903_112915"></script>
+    <script src="js/maintenance-config.js?v=20260904_092804"></script>
+    <script src="js/theme-prepaint.js?v=20260904_092804"></script>
     <style>
     </style>
     <script type="application/ld+json">
@@ -106,17 +106,17 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260903_112915" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/app.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/components.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260903_112915" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260903_112915" />
-    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260903_112915" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260904_092804" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/app.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/components.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260904_092804" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260904_092804" />
+    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260904_092804" />
     <script type="importmap">
       {
         "imports": {
@@ -128,7 +128,7 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260903_112915"></script>
+    <script src="js/admin-auth-config.js?v=20260904_092804"></script>
   </head>
   <body>
     <a
@@ -682,7 +682,7 @@
              deep link, footer link and command-palette entry still resolves. -->
         <section id="heroesCombosSection" class="tab-panel animate-fade-in">
           <div
-            class="vts-hub-subtabs vts-hub-subtabs--4"
+            class="vts-hub-subtabs vts-hub-subtabs--3"
             role="tablist"
             aria-label="Heroes &amp; Combos Hub"
           >
@@ -712,30 +712,10 @@
               class="vts-hub-subtab"
               role="tab"
               aria-selected="false"
-              data-hub-subtab="codex"
-              data-i18n="tabCodex"
-            >
-              Codex
-            </button>
-            <button
-              type="button"
-              class="vts-hub-subtab"
-              role="tab"
-              aria-selected="false"
               data-hub-subtab="heroes"
               data-i18n="tabHeroesOnly"
             >
               Heroes
-            </button>
-            <button
-              type="button"
-              class="vts-hub-subtab"
-              role="tab"
-              aria-selected="false"
-              data-hub-subtab="skins"
-              data-i18n="tabSkinsOnly"
-            >
-              Skins
             </button>
           </div>
 
@@ -1210,6 +1190,46 @@
                   synergies &amp; top combos.
                 </p>
               </div>
+              <!-- Atlas view switch. Heroes, Skins and Hero Tables were three
+                   sibling sub-tabs that all opened this same panel, which read
+                   as three separate tools; they are one control again. Reuses
+                   the Atlas filter-pill classes so this costs no new CSS. -->
+              <div
+                class="heroes-filter-pills heroes-filter-pills--atlas-mode"
+                role="tablist"
+                aria-labelledby="heroAtlasTitle"
+              >
+                <button
+                  type="button"
+                  class="heroes-filter-pill active"
+                  role="tab"
+                  aria-selected="true"
+                  data-atlas-mode="heroes"
+                  data-i18n="tabHeroesOnly"
+                >
+                  Heroes
+                </button>
+                <button
+                  type="button"
+                  class="heroes-filter-pill"
+                  role="tab"
+                  aria-selected="false"
+                  data-atlas-mode="skins"
+                  data-i18n="tabSkinsOnly"
+                >
+                  Skins
+                </button>
+                <button
+                  type="button"
+                  class="heroes-filter-pill"
+                  role="tab"
+                  aria-selected="false"
+                  data-atlas-mode="codex"
+                  data-i18n="tabCodex"
+                >
+                  Hero Tables
+                </button>
+              </div>
             </header>
             <div id="heroesTabContent"></div>
           </section>
@@ -1353,26 +1373,27 @@
                   data-i18n-aria="researchSeasonFilterAria"
                 >
                   <div class="research-season-bar">
-                    <button type="button" class="tech-season-btn active" data-season="S0">
+                    <button type="button" class="tech-season-btn" data-season="S0">
                       S0
                     </button>
-                    <button type="button" class="tech-season-btn active" data-season="S1">
+                    <button type="button" class="tech-season-btn" data-season="S1">
                       S1
                     </button>
-                    <button type="button" class="tech-season-btn active" data-season="S2">
+                    <button type="button" class="tech-season-btn" data-season="S2">
                       S2
                     </button>
-                    <button type="button" class="tech-season-btn active" data-season="S3">
+                    <button type="button" class="tech-season-btn" data-season="S3">
                       S3
                     </button>
-                    <button type="button" class="tech-season-btn active" data-season="S4">
+                    <button type="button" class="tech-season-btn" data-season="S4">
                       S4
                     </button>
-                    <button type="button" class="tech-season-btn active" data-season="X1">
+                    <button type="button" class="tech-season-btn" data-season="X1">
                       X1
                     </button>
-                    <button type="button" class="tech-season-btn" data-season="X2">X2</button>
-                    <button type="button" class="tech-season-btn" data-season="X8">X8</button>
+                    <button type="button" class="tech-season-btn active" data-season="X2">X2</button>
+                    <button type="button" class="tech-season-btn active" data-season="X8">X8</button>
+                    <button type="button" class="tech-season-btn active" data-season="X12">X12</button>
                   </div>
                 </div>
               </div>
@@ -1470,7 +1491,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260903_112915"
+          data-tab-src="tabs/eden-map.html?v=20260904_092804"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1790,7 +1811,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v16.0.0</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v16.0.1</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1834,12 +1855,12 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260903_112915"></script>
-    <script type="module" src="js/app.js?v=20260903_112915"></script>
-    <script type="module" src="js/command-palette.js?v=20260903_112915"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260903_112915"></script>
-    <script src="js/index-page-enhancements.js?v=20260903_112915"></script>
-    <script src="js/shell-v14.js?v=20260903_112915"></script>
+    <script src="js/loader-v14.js?v=20260904_092804"></script>
+    <script type="module" src="js/app.js?v=20260904_092804"></script>
+    <script type="module" src="js/command-palette.js?v=20260904_092804"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260904_092804"></script>
+    <script src="js/index-page-enhancements.js?v=20260904_092804"></script>
+    <script src="js/shell-v14.js?v=20260904_092804"></script>
     <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

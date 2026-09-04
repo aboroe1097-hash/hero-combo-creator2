@@ -76,13 +76,14 @@ test('codex trees carry verificationStatus unverified by default and access norm
   assert.equal(normalizeNodeAccess('bogus'), 'standard');
 });
 
-test('tech-db trees normalize with current status and expected cost mapping', () => {
+test('tech-db trees preserve declared verification status and expected cost mapping', () => {
   const families = techDatabase.map(normalizeTechTree).filter(Boolean);
   assert.ok(families.length >= 29);
   for (const family of families) {
     assert.equal(family.source, 'tech-db');
     for (const node of family.nodes) {
-      assert.equal(node.verificationStatus, 'current');
+      const source = techDatabase.find((tree) => tree.id === family.familyId);
+      assert.equal(node.verificationStatus, source.verificationStatus || 'current');
       assert.ok(node.costs.resources.length === node.maxLevel);
       assert.ok(node.costs.wisdom.length === node.maxLevel);
       assert.ok(node.costs.courage.length === node.maxLevel);

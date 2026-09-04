@@ -2336,7 +2336,10 @@
 .codex-table-head,
 .hero-codex-row {
   display: grid;
-  grid-template-columns: minmax(9rem, 1.4fr) minmax(5.5rem, 0.8fr) minmax(5rem, 0.7fr) minmax(3.5rem, 0.5fr) minmax(3.5rem, 0.5fr) minmax(3rem, 0.4fr) minmax(7rem, 0.9fr);
+  grid-template-columns: minmax(9rem, 1.4fr) minmax(5.5rem, 0.8fr) minmax(5rem, 0.7fr) minmax(
+      3.5rem,
+      0.5fr
+    ) minmax(3.5rem, 0.5fr) minmax(3rem, 0.4fr) minmax(7rem, 0.9fr);
   gap: var(--ff-space-2);
   align-items: center;
   padding: 0 var(--ff-card-padding);
@@ -2375,11 +2378,22 @@
 }
 
 .hero-codex-row .rank-img {
-  grid-column: 1 / -1;
   width: 2.25rem;
   height: 2.25rem;
+  flex: 0 0 2.25rem;
   border-radius: var(--ff-radius-control);
-  display: none;
+  display: block;
+}
+
+.hero-codex-row .codex-col-name {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+}
+
+.codex-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .codex-col-name {
@@ -2686,14 +2700,22 @@
     display: none;
   }
   .hero-codex-row {
-    grid-template-columns: minmax(9rem, 1.3fr) minmax(5rem, 0.9fr) minmax(7rem, 0.9fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .codex-col-troop,
-  .codex-col-rating,
-  .codex-col-rank,
-  .codex-col-access,
-  .codex-col-hiddenpower {
-    display: none;
+  .hero-codex-row .codex-col-name {
+    grid-column: 1 / -1;
+  }
+  .hero-codex-row > [data-label] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hero-codex-row > [data-label]::before {
+    content: attr(data-label);
+    color: var(--ff-text-tertiary);
+    font-size: 0.72rem;
   }
   .codex-col-season,
   .codex-col-skin,

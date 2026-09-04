@@ -1,17 +1,27 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
   {
+    "version": "16.0.1",
+    "date": "2026-09-04",
+    "highlights": [
+      "Restored the X12 research season selector. All 30 Charge nodes are editable in a list without invented topology or unlock rules; Defense retains all 29 nodes and now discloses the source's conflicting cost totals.",
+      "Fixed the research planner re-normalizing already normalized families and silently replacing their costs with zero. X12 estimates retain their unverified status while source gaps remain.",
+      "Renamed Codex to Hero Tables across supported languages. Restored hero-detail opening and keyboard return focus, kept deselected season filters reachable, explained combo-derived ratings, and hid empty duel sections.",
+      "Added a shared local portrait-unavailable image for the X10/X12 heroes whose artwork has not yet been supplied, preventing broken images across roster consumers without misidentifying their portraits."
+    ]
+  },
+  {
     "version": "16.0.0",
     "date": "2026-09-03",
     "highlights": [
-      "Reconciled owner-confirmed VTS OCR aliases across leaderboards, contribution matching, and weighted scoring, using Moldo1313 and D O F F Y as display names while protecting distinct main, banner, and Kika accounts. Historical attack rows remain unchanged.",
+      "**VTS Player Alias Reconciliation**: Folded decoration, whitespace and case variants of the same account into one identity across leaderboards, contribution matching and weighted scoring, adopting Moldo1313 and D O F F Y as display names. Sixteen owner-confirmed merges join spel…",
       "**CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarg…",
-      "**Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated nine free heroes into the canonical roster (expanding the roster from 78 to 87 heroes) with synchronized Firestore security rule allowlists and caps.",
+      "**Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated the nine free plus two paid heroes into the canonical roster (expanding the roster from 78 to 89 heroes), with tower profiles for the paid pair and synchronized Firestore security rule allowlist…",
       "**Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.",
       "**Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.",
       "**Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters."
@@ -93,15 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Added the official Royal Bounty Alliance 2.0 Aiding Skills overview to the Eden X2 bounty guide, with responsive sizing, accessible context, and source credit to riseofcastles.net.",
       "Optimized the reference image for fast mobile loading while preserving the original in-game text and visual detail."
-    ]
-  },
-  {
-    "version": "15.0.7",
-    "date": "2026-08-18",
-    "highlights": [
-      "Corrected the X2 Artifact tool to make **Sword of Judgment** the current default instead of the not-yet-available Redemption Grail.",
-      "Added the complete 33-node Sword tree with exact level costs, prerequisites, stage layout, Sword Emblem and Artifact Soulstone totals, node icons, and in-game Sword artwork.",
-      "Kept Redemption Grail data available for a future release without presenting it as current X2 content."
     ]
   }
 ].map((release) =>
