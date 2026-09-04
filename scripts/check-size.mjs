@@ -249,7 +249,11 @@ const LIMITS = {
   // 18692.3 KiB of deployed media after removing redundant screenshots.
   // The six in-game specialization captures (69 KiB) audit to 18763.8 KiB;
   // retain roughly 6 KiB of headroom.
-  totalMediaBytes: 18770 * 1024,
+  // The eleven X10/X12 hero portraits add 124 KiB of AVIF and audit to
+  // 18828.2 KiB. Their 1.3 MiB of PNG sources stay source-only, so only the
+  // served format counts here. Raised rather than ship the newest roster on
+  // placeholder art; retain roughly 22 KiB.
+  totalMediaBytes: 18850 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581

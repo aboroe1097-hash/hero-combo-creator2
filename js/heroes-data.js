@@ -81,18 +81,18 @@ export const allHeroesData = [
   { name: "Ragnar", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
   { name: "Cyrus", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' },
   // X10 — intermediate bracket, no research, two heroes drawn from the X12 list.
-  { name: "Healer", season: 'X10', Type:'Footmen', State:'Free' },
-  { name: "Hellfire", season: 'X10', Type:'All', State:'Free' },
+  { name: "Healer", season: 'X10', Type:'Footmen', State:'Free', imageUrl: 'images/heroes/x12/healer.avif?v=20260903_01' },
+  { name: "Hellfire", season: 'X10', Type:'All', State:'Free', imageUrl: 'images/heroes/x12/hellfire.avif?v=20260903_01' },
   // X12 — full seasonal recruitment wave.
-  { name: "Belisarius", season: 'X12', Type:'Archers', State:'Free' },
-  { name: "Pepin", season: 'X12', Type:'Footmen', State:'Free' },
-  { name: "El Cid", season: 'X12', Type:'Cavalry', State:'Free' },
-  { name: "Arslan", season: 'X12', Type:'Footmen', State:'Free' },
-  { name: "Farah", season: 'X12', Type:'Cavalry', State:'Free' },
-  { name: "Poison Master", season: 'X12', Type:'Archers', State:'Free' },
-  { name: "Lilith", season: 'X12', Type:'Archers', State:'Free' },
-  { name: "Al-Hawra", season: 'X12', Type:'Archers', State:'Paid' },
-  { name: "Achilles", season: 'X12', Type:'Footmen', State:'Paid' }
+  { name: "Belisarius", season: 'X12', Type:'Archers', State:'Free', imageUrl: 'images/heroes/x12/belisarius.avif?v=20260903_01' },
+  { name: "Pepin", season: 'X12', Type:'Footmen', State:'Free', imageUrl: 'images/heroes/x12/pepin.avif?v=20260903_01' },
+  { name: "El Cid", season: 'X12', Type:'Cavalry', State:'Free', imageUrl: 'images/heroes/x12/el-cid.avif?v=20260903_01' },
+  { name: "Arslan", season: 'X12', Type:'Footmen', State:'Free', imageUrl: 'images/heroes/x12/arslan.avif?v=20260903_01' },
+  { name: "Farah", season: 'X12', Type:'Cavalry', State:'Free', imageUrl: 'images/heroes/x12/farah.avif?v=20260903_01' },
+  { name: "Poison Master", season: 'X12', Type:'Archers', State:'Free', imageUrl: 'images/heroes/x12/poison-master.avif?v=20260903_01' },
+  { name: "Lilith", season: 'X12', Type:'Archers', State:'Free', imageUrl: 'images/heroes/x12/lilith.avif?v=20260903_01' },
+  { name: "Al-Hawra", season: 'X12', Type:'Archers', State:'Paid', imageUrl: 'images/heroes/x12/al-hawra.avif?v=20260903_01' },
+  { name: "Achilles", season: 'X12', Type:'Footmen', State:'Paid', imageUrl: 'images/heroes/x12/achilles.avif?v=20260903_01' }
 ];
 
 // Direct roster consumers and shared helpers must have the same safe local image.
