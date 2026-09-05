@@ -835,6 +835,12 @@ const zh = {
   seasonCatchupX2: 'X2 catch-up: this bracket covers the remaining X2 heroes plus the X3 wave.',
   seasonCatchupX8:
     'X8 catch-up: this bracket rolls original X4, X5, X6, X7, X8, and SP heroes into one playable season.',
+  seasonCatchupX10:
+    'X10 optional bracket: some Rise of Castles states run this intermediate season and some skip it; Eden never has it. It adds two free heroes, no paid heroes, and no new research.',
+  seasonCatchupX12:
+    'X12 catch-up: this bracket rolls the X9 through X12 heroes into one season. The default ladder jumps straight from X8 to X12 without X10.',
+  seasonSelectAll: '全部',
+  seasonSelectAllHint: '选择所有赛季',
   loyaltySummaryTitle: 'Live summary',
   loyaltySummaryCurrent: 'Current loyalty',
   loyaltyPresetsLabel: 'Presets',

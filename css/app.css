@@ -1189,14 +1189,15 @@ html.maintenance-mode .maintenance-preload {
   background: linear-gradient(145deg, rgb(255 239 226 / 78%), rgb(255 251 247 / 88%)) !important;
 }
 
-[data-theme='light'] #manualSection .filter-pill:not(:has(input:checked)) {
+[data-theme='light'] #manualSection .filter-pill:not(:has(input:checked)):not(.active) {
   border-color: #bdcedb !important;
   background: rgb(255 255 255 / 88%) !important;
   color: #334155 !important;
   box-shadow: 0 2px 6px rgb(42 74 99 / 8%) !important;
 }
 
-[data-theme='light'] #manualSection .filter-pill:has(input:checked) {
+[data-theme='light'] #manualSection .filter-pill:has(input:checked),
+[data-theme='light'] #manualSection .season-select-all.active {
   box-shadow: 0 4px 10px rgb(22 74 103 / 18%) !important;
 }
 
@@ -1442,6 +1443,18 @@ html[data-initial-tab-pending] #generatorSection {
 }
 .filter-pill:has(input:checked) {
   color: #fff;
+}
+/* Select-all is a button, so it has no checkbox and cannot use the
+   :has(input:checked) state the season pills share — app.js toggles `active`
+   instead, which the shared chip styling already paints. All this adds is a
+   gap and uppercase weight so it reads as an action, not an eleventh season. */
+.season-select-all {
+  margin-inline-start: 0.45rem;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .s0-pill:has(input:checked) {
   background: #374151;
@@ -14264,6 +14277,20 @@ body.admin-standalone-page .command-kicker {
   color: #06121d !important;
 }
 
+/* Select-all has no checkbox, so it cannot ride :has(input:checked). Its own
+   selector must also outrank the three-class base chip rule above, which is
+   why the strip is named here rather than adding .season-select-all.active to
+   that list — at (0,2,0) it lost the background to the (0,3,0) base. */
+.season-filter-strip .season-select-all.active {
+  border-color: rgba(255, 255, 255, 0.36) !important;
+  background: linear-gradient(135deg, #22d3ee, #5eead4 58%, #fbbf24) !important;
+  color: #06121d !important;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.22) !important;
+}
+.season-filter-strip .season-select-all.active span {
+  color: #06121d !important;
+}
+
 .research-card-max {
   border-radius: 0 !important;
   clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
@@ -14298,7 +14325,8 @@ body.admin-standalone-page .command-kicker {
 [data-theme='light'] .hero-tab-season.active,
 [data-theme='light'] .tech-season-btn.active,
 [data-theme='light'] .research-quick-btn.active,
-[data-theme='light'] .loyalty-preset-btn.active {
+[data-theme='light'] .loyalty-preset-btn.active,
+[data-theme='light'] .season-select-all.active {
   background: linear-gradient(135deg, #06b6d4, #34d399 56%, #f59e0b) !important;
   color: #052e2b !important;
 }
@@ -18470,7 +18498,8 @@ html[dir='rtl'] .gen-buttons-row {
   color: var(--text-secondary) !important;
 }
 
-[data-theme='light'] .filter-pill:has(input:checked) {
+[data-theme='light'] .filter-pill:has(input:checked),
+[data-theme='light'] .season-select-all.active {
   color: var(--text-on-accent) !important;
   background: linear-gradient(135deg, var(--brand-light), var(--brand), var(--accent)) !important;
 }
@@ -19047,7 +19076,10 @@ html[dir='rtl'] .gen-buttons-row {
     color: #1d5365 !important;
   }
 
-  [data-theme='light'] #generatorSection .generator-filter-panel .filter-pill:has(input:checked) {
+  /* Select-all carries `active` instead of a checked input, so every checked-state
+     selector has to name it explicitly or the light theme leaves it looking off. */
+  [data-theme='light'] #generatorSection .generator-filter-panel .filter-pill:has(input:checked),
+  [data-theme='light'] #generatorSection .generator-filter-panel .season-select-all.active {
     border-color: #62aebe !important;
     background: linear-gradient(135deg, #dff4f6, #f7fbfc 58%, #fff1e9) !important;
     color: #123f50 !important;
@@ -19214,20 +19246,43 @@ html[dir='rtl'] .gen-buttons-row {
   gap: 1rem;
   min-width: 0;
 }
+/* Stacked, not a wrapping row. As a flex row the four children laid out as
+   [title][button][hero plan] on one line and [stats] on the next, and because
+   the hero plan is ~478px tall while the title beside it is ~46px, the left
+   half of the panel was 460px of empty background. Top-aligning the row fixed
+   where the title sat but not the void beside it. Full-width bands remove it:
+   title, then the stat bar, then the plan — each as wide as the panel. */
 .spec-summary {
-  display: flex;
-  flex-wrap: wrap;
-  /* Top-aligned, not centred. The hero plan in this row is ~478px tall while
-     the title beside it is ~46px, so centring dropped the title 240px down the
-     panel and left a large void above and below it — the tool read as though
-     its heading had taken over the left half of the screen. */
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head controls'
+    'stats stats'
+    'plan plan';
+  align-items: start;
+  gap: 0.85rem 1rem;
   padding: 1rem 1.15rem;
   border: 1px solid var(--spec-border);
   border-radius: 12px;
   background: linear-gradient(135deg, var(--spec-panel), var(--spec-panel-strong));
+}
+/* The plan and the controls are also used outside the summary, where their own
+   bottom margins are correct; inside the grid the gap owns the spacing. */
+.spec-summary > .spec-tool-controls,
+.spec-summary > .spec-hero-plan {
+  margin: 0;
+}
+.spec-summary-head {
+  grid-area: head;
+}
+.spec-summary > .spec-tool-controls {
+  grid-area: controls;
+}
+.spec-summary > .spec-hero-plan {
+  grid-area: plan;
+}
+.spec-summary > .spec-stat-row {
+  grid-area: stats;
 }
 .spec-title {
   margin: 0;
@@ -19240,9 +19295,11 @@ html[dir='rtl'] .gen-buttons-row {
   font-size: 0.82rem;
   color: var(--spec-text-dim);
 }
+/* A bar, not a left-hugging cluster: four min-width tiles in a full-panel row
+   left ~750px of empty background to their right. auto-fit shares the width. */
 .spec-stat-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 0.6rem;
 }
 .spec-stat {
@@ -19253,7 +19310,7 @@ html[dir='rtl'] .gen-buttons-row {
   border-radius: 9px;
   background: var(--spec-panel-soft);
   border: 1px solid var(--spec-border-subtle);
-  min-width: 6.5rem;
+  min-width: 0;
 }
 .spec-stat-label {
   font-size: 0.6rem;
@@ -21598,10 +21655,13 @@ html[dir='rtl'] .gen-buttons-row {
   color: var(--spec-text-dim);
 }
 /* Desktop: the decision card is one horizontal summary line with separators,
-   so the whole planner answer reads without scrolling. */
+   so the whole planner answer reads without scrolling. Four equal columns, not
+   three content-width ones plus a stretching last: at 1440px the last cell was
+   971px wide and its text ended after 160 of them, leaving the strip looking
+   two-thirds empty. Equal columns also line the strip up with the stat bar. */
 @media (min-width: 1024px) {
   .spec-path-decision-grid {
-    grid-template-columns: repeat(3, minmax(0, auto)) minmax(14rem, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.55rem 1.4rem;
   }
   .spec-path-decision-cell + .spec-path-decision-cell {
