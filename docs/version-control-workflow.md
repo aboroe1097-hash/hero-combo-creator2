@@ -1,119 +1,52 @@
-# Version Control Workflow
+# Version control and release workflow
 
-This doc captures the shared branch, commit, review, and deploy procedure used across all
-development for this project — whether the author is a human maintainer or an AI agent. It is
-written so it can be picked up cold.
+[Documentation index](README.md) · [Contributing](../CONTRIBUTING.md) · [Authoritative policy](../AGENTS.md)
 
-> **Why this matters:** The live site is served from `gh-pages` (deployed via GitHub Pages).
-> Repository owners must configure branch protection in GitHub; repository files cannot enforce
-> those settings on their own. Every change follows the same branch-PR-review-merge cycle to keep
-> the production branch stable and auditable.
+## Production model
 
----
+gh-pages is the production **source** branch. The deploy workflow verifies and uploads dist/. Never commit or push directly to gh-pages; the PR and required status checks remain the route to production.
 
-## 1. Required workflow (every change)
+## From change to pull request
 
-Every change must follow these steps in order:
+1. Fetch origin; inspect status and ongoing work. Create a separate branch from latest origin/gh-pages, using codex/ for Codex work.
+2. Install with npm ci. Define scope, affected consumers, and a testable outcome.
+3. Make the focused change. For concurrent work, use a worktree with explicit ownership.
+4. For user-visible changes, update package/lockfile versions, app constants, public version surfaces, README release heading, and CHANGELOG.md. Run npm run version:check. Documentation/internal cleanup does not automatically require a version bump.
+5. Select the local gate using [Contributing](../CONTRIBUTING.md#choose-the-right-checks). Small reversible changes can use focused evidence; high-risk changes require npm run check. Run build/size checks when affected.
+6. Use [Firebase preview](firebase-preview-workflow.md) only when its high-risk or explicit Hosting-validation scope applies. It uses the real backend and is not a private sandbox.
+7. Review the diff and generated output. Stage intended files, commit, push the branch, and open a PR targeting gh-pages.
+8. Let the owner merge normally after required checks/review. If explicitly asked to fast-merge, attempt the protected merge and use auto-merge if supported and checks are pending.
 
-1. **Fetch the latest `origin/gh-pages`** and branch off it.
+Do not bypass branch protection, rewrite a collaborator's work, or turn a small failure into an unrelated broad change. Resolve conflicts against the latest production branch and rerun checks affected by the resolution.
 
-2. **Use a descriptive branch prefix:** `codex/` for Codex-authored branches, or a descriptive name
-   for human work (e.g. `fix/share-link-validation`). Keep branch names focused — one concern per
-   branch.
+## Version cadence
 
-3. **Install dependencies:** `npm ci` (uses the lockfile; never `npm install` without a lockfile
-   update).
+Patch releases run through .20 before the next minor: for example, 16.0.19 → 16.0.20 → 16.1.0. A deliberate major release follows the major-release policy and full gate. The version checker is the executable authority for every public version location; this document does not duplicate its list line by line.
 
-4. **Make focused changes.** Edit only the files relevant to the change; avoid unrelated cleanup
-   unless it is part of the same atomic concern.
+Build scripts regenerate cache/version stamps and data payloads. Inspect that diff and include intentional changes; never fabricate timestamps by hand.
 
-5. **Update release metadata** for user-visible changes before final checks:
-   - `package.json` version, lockfile root/package versions, app constants, public HTML footers,
-     README release heading, `CHANGELOG.md`.
-   - Run `npm run version:check` to verify every public version surface and the 20-patch cadence.
-   - Let `npm run build` refresh service-worker and cache metadata; include intentional generated
-     changes instead of hand-editing build stamps.
-   - Documentation-only or policy-only PRs do not need a version bump unless the owner asks for one.
+## GitHub checks and protection
 
-6. **Run the full local gate:** `npm run check` — version consistency, lint, format, unit tests,
-   data checks, production build, size budgets, and Playwright smoke tests. Use `npm run check:fast`
-   during development, but the full `check` is required before a PR.
+CI and production both call npm run verify:deploy. CI supplies deterministic non-secret test configuration; production supplies repository environment values. The required check is deploy-verification.
 
-7. **Use Firebase preview for high-risk releases only:** run `npm run firebase:preview` for a major
-   version upgrade, broad overhaul, or change that explicitly needs Firebase Hosting validation.
-   It reruns the complete local gate, deploys only `dist/` to an expiring Firebase Hosting channel,
-   and runs the production smoke suite against the returned URL. When this optional gate is used,
-   fix and redeploy until green, then record the URL and expiry in the PR. The preview uses the real
-   `abocombo` backend; automated smoke initializes anonymous Auth and Analytics without intentional
-   Firestore writes. Keep additional QA read-only unless production writes are explicitly in scope.
-   Normal additive releases proceed from a green `npm run check` directly to commit, push, and PR.
+An owner must configure and periodically verify branch protection on gh-pages: require pull requests, enable Require review from Code Owners, and require deploy-verification to pass. A checked-in workflow or CODEOWNERS file does not prove branch protection is enabled; inspect repository settings when auditing enforcement.
 
-8. **Stage intended files only** — never secrets, generated artifacts, or unrelated cruft.
-   Commit with a concise message matching the repo style (no `-n`/skip-hooks, no force-push).
+## Separate deployments
 
-9. **Push** the branch to origin.
-
-10. **Open a pull request** into `gh-pages` from the branch. Use `.github/PULL_REQUEST_TEMPLATE.md`.
-   Wait for the required `deploy-verification` status check and owner review.
-
-11. **Let the owner merge.** Only bypass this flow for an emergency direct deploy when the owner
-    explicitly asks for one.
-
----
-
-## 2. Version cadence
-
-The active release train uses 20 patch releases per minor version:
-
-- Current pattern: `14.0.0`, `14.0.1`, ... `14.0.20`, then `14.1.0`.
-- Next train continues the same way: `14.1.1`, ... `14.1.20`, then `14.2.0`.
-
-`npm run version:check` enforces this cadence. Every public version surface must be kept in sync.
-
----
-
-## 3. Required branch protection (owner-configured repository settings)
-
-An owner must configure and periodically verify these rules for `gh-pages` in GitHub repository
-settings:
-
-- **Require a pull request** before merging.
-- **Require approving reviews** before merge.
-- **Require review from Code Owners** so the owner in `.github/CODEOWNERS` must approve changes.
-- **Require status checks** — the `deploy-verification` check must pass before merge.
-- **Do not allow bypassing** the above settings.
-
-When enabled, these protection rules are enforced server-side. The CI and deploy workflows
-(`.github/workflows/ci.yml`, `.github/workflows/deploy.yml`) act as a safety net, not a substitute
-for branch protection.
-
----
-
-## 4. External deploys
-
-GitHub Pages deploys the static app only. Deploy these separately when their files or contracts
-change:
-
-- **Firebase Hosting preview:** when high-risk release validation is required,
-  `npm run firebase:preview` uses `firebase.preview.json` and a version-derived temporary channel.
-  It is an optional prerelease test and never replaces the `gh-pages` PR.
-- **Cloudflare Worker:** `workers/qwen-cors-proxy.js` or `wrangler.jsonc`.
-- **Firebase rules/config:** `firestore.rules`, Firebase indexes, Firebase Functions, or
-  Firebase/App Check configuration.
-
----
-
-## 5. File map
-
-| Concern | Location |
+| Changed contract | Deployment boundary |
 |---|---|
-| Workflow instructions (this doc) | `docs/version-control-workflow.md` |
-| PR template | `.github/PULL_REQUEST_TEMPLATE.md` |
-| CI pipeline | `.github/workflows/ci.yml` |
-| Deploy pipeline | `.github/workflows/deploy.yml` |
-| Version consistency check | `scripts/check-version-consistency.mjs` |
-| Size budget enforcement | `scripts/check-size.mjs` |
-| Deploy verification contract | `scripts/verify-deploy.mjs` |
-| Firebase preview config | `firebase.preview.json` |
-| Firebase preview deploy and remote QA | `scripts/deploy-firebase-preview.mjs` |
-| Production smoke tests | `tests/production-smoke.spec.js` |
+| Frontend/static assets | gh-pages PR → verified Pages artifact |
+| Worker code or wrangler configuration | Separate Cloudflare deployment |
+| Functions code | Separate Firebase Functions deployment |
+| Firestore rules/indexes | Separate Firebase deployment |
+| Auth/App Check/provider settings | Explicit service configuration and verification |
+
+Coordinate additive server changes before exposing dependent client behavior. Do not deploy backend services for documentation-only changes. Record what shipped, what remains separate, and how it was verified.
+
+## Useful references
+
+- [CI](../.github/workflows/ci.yml) and [Pages deployment](../.github/workflows/deploy.yml)
+- [Version checker](../scripts/check-version-consistency.mjs)
+- [Size checker](../scripts/check-size.mjs)
+- [Deploy verification](../scripts/verify-deploy.mjs)
+- [PR template](../.github/PULL_REQUEST_TEMPLATE.md)

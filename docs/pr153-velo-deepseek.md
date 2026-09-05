@@ -1,5 +1,12 @@
 # Velo — moving the assistant to DeepSeek
 
+> **Historical record — Velo provider migration plan.** Reviewed for documentation routing on 2026-09-05.
+> The provider adapter exists in the Worker code. Recheck current configuration and tests before modifying provider selection; old model names and cost observations are not a current service guarantee.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [workers/ai/deepseek.js](../workers/ai/deepseek.js) · [tests/unit/ai-worker-backend.test.mjs](../tests/unit/ai-worker-backend.test.mjs) · [Documentation index](README.md).
+
+
 Ships with PR #153. Worker change only: `workers/` deploys separately from Pages
 and Firestore, so this does not block the rest of #153.
 

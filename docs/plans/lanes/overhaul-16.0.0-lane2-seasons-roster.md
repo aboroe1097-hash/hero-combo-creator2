@@ -1,5 +1,12 @@
 # 16.0.0 Lane 2 — Seasons & Roster (commit-1 re-apply + X10/X12 landing chain)
 
+> **Historical record — v16 roster/research lane.** Reviewed for documentation routing on 2026-09-05.
+> X10/X12 catalog support landed. Recheck current roster and research selectors, especially the later X12 fixes, before applying any paste block or allowlist change.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/heroes-data.js](../../../js/heroes-data.js) · [tests/unit/research-season-defaults.test.mjs](../../../tests/unit/research-season-defaults.test.mjs) · [Documentation index](../../README.md).
+
+
 Status: proposal (rev 2, 2026-09-02) — T0 review of rev 1 accepted; revisions R1-R4 applied
 (exact cap strings; file-vs-deploy staging rule; visible-pane reveal check; the two
 `state.js` list edits spelled out, TECH_SEASON_ORDER landing with the tech-db import).

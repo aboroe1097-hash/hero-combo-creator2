@@ -1,5 +1,12 @@
 # 16.0.0 "Overhaul" — Big Batch Release Plan
 
+> **Historical record — v16.0.0 release plan.** Reviewed for documentation routing on 2026-09-05.
+> v16.0.0 and follow-up fixes shipped. The original lane assignments, branch positions, source paths, and gate measurements are dated evidence. Reconcile any unfinished feature against current code; do not rerun the whole work order.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [CHANGELOG.md](../../CHANGELOG.md) · [docs/architecture.md](../architecture.md) · [Documentation index](../README.md).
+
+
 Status: proposal rev 5 (2026-09-02). Reconciles: ZCode L96 research + Opus 5.0
 interface audit + Codex additions + Opus 5.0 release plan + Opus no-vision data
 package, all claims re-verified against the repo and git refs where possible.

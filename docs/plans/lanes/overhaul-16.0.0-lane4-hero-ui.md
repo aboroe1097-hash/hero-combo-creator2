@@ -1,5 +1,12 @@
 # 16.0.0 Lane 4 — Hero UI & Field Data Implementation Plan
 
+> **Historical record — v16 Hero Tables/Field Data lane.** Reviewed for documentation routing on 2026-09-05.
+> The public Codex label became Hero Tables in v16.0.1. Follow current UI and data boundaries; this proposal also includes plans that may not have a wired runtime consumer.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/app-hero-atlas.js](../../../js/app-hero-atlas.js) · [CHANGELOG.md](../../../CHANGELOG.md) · [Documentation index](../../README.md).
+
+
 Status: proposal **rev 2** (lane 4 of 5), 2026-09-02. Covers commit-spine commit 10
 and the first half of commit 11. Rev 1 accepted by T0 with three revisions (R1–R3,
 folded below) plus one ratified decision (Q1: 5th sub-tab). Rev 2 reflects the rev-5

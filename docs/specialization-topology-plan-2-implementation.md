@@ -1,5 +1,12 @@
 # Specialization Topology — Plan 2: Implementation (DeepSeek)
 
+> **Historical record — Specialization implementation work order.** Reviewed for documentation routing on 2026-09-05.
+> This is a phased design record, not an instruction to replace the present planner. Revalidate affected models, persistence, and route-loading constraints before taking a remaining item.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [tests/unit/specialization-towers-v2-model.test.mjs](../tests/unit/specialization-towers-v2-model.test.mjs) · [docs/version-control-workflow.md](version-control-workflow.md) · [Documentation index](README.md).
+
+
 **Audience:** DeepSeek implementer receiving OpenCode visual-analysis payloads
 **Depends on:** `docs/specialization-topology-plan-1-analysis.md`  
 **Date:** 2026-08-12  

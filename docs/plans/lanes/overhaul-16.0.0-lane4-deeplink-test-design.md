@@ -1,5 +1,12 @@
 # 16.0.0 Lane 4 — Legacy `?atlas=` / Hash Deep-Link Stability Test Design
 
+> **Historical record — v16 legacy-link test design.** Reviewed for documentation routing on 2026-09-05.
+> This document specifies test intent. Current hash/query behavior must be checked in the shell and browser suite, including subtab activation and focus restoration.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/shell-v14.js](../../../js/shell-v14.js) · [tests/app-smoke.spec.js](../../../tests/app-smoke.spec.js) · [Documentation index](../../README.md).
+
+
 Status: design (2026-09-02). Test implementation waits for T0's implementation
 start; this document freezes the contract the test will enforce. Nothing in
 `js/app-hero-atlas.js`, `js/heroes-combos-hub.js`, `js/shell-v14.js`, or

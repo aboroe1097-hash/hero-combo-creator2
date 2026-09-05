@@ -1,5 +1,12 @@
 # 16.0.0 Lane 4 — En-Canonical i18n Key List (FINAL for translation lanes)
 
+> **Historical record — v16 translation handoff.** Reviewed for documentation routing on 2026-09-05.
+> The key list is a historical handoff, not authority to overwrite present translations. Derive keys and supported locales from the current domain loaders and preserve placeholders.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/translations.js](../../../js/translations.js) · [tests/unit/hero-atlas-i18n.test.mjs](../../../tests/unit/hero-atlas-i18n.test.mjs) · [Documentation index](../../README.md).
+
+
 Status: EN-CANONICAL FINAL (2026-09-02, lane 4 rev 2). This is the single source
 of truth translation work orders consume. **No `js/` file may be edited until T0
 calls implementation start** — this document is the frozen reference.

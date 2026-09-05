@@ -1,5 +1,12 @@
 # Eden X1 desktop ballot design QA
 
+> **Historical record — Eden/BoH design comparison record.** Reviewed for documentation routing on 2026-09-05.
+> Screenshots and local preview paths below are evidence of the original review. The BoH mapper is retired; current UI acceptance should use active browser tests rather than these old captures.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [tests/app-smoke.spec.js](tests/app-smoke.spec.js) · [docs/repository-maintenance.md](docs/repository-maintenance.md) · [Documentation index](docs/README.md).
+
+
 - Source visual truth: `D:/Extra_C/Temp/codex-clipboard-40c2b128-a069-4e77-918a-00bed940079d.png`
 - Implementation screenshot: `D:/Extra_C/Codex/.codex/visualizations/2026/07/13/019f5b2e-0e64-7d93-b0d5-f39b4d2ecfef/eden-x1-team-vote-desktop-v14.0.1.png`
 - Side-by-side evidence: `D:/Extra_C/Codex/.codex/visualizations/2026/07/13/019f5b2e-0e64-7d93-b0d5-f39b4d2ecfef/eden-x1-team-vote-comparison-v14.0.1.png`

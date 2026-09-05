@@ -1,5 +1,12 @@
 # 16.0.0 Overhaul — Lane 5: Planners, Exports & Release
 
+> **Historical record — v16 planners/export lane.** Reviewed for documentation routing on 2026-09-05.
+> Research and progression work shipped, but tests alone do not prove every proposed adapter or estimator is connected to a UI. The footprint audit identified several isolated modules for explicit keep/integrate/retire review.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/research-planner-model.js](../../../js/research-planner-model.js) · [docs/repository-maintenance.md](../../repository-maintenance.md) · [Documentation index](../../README.md).
+
+
 Status: proposal (rev 2, 2026-09-02). Lane: T1 heavy. Mode: proposal-only —
 this document is the deliverable; no code is modified in this lane step.
 Owns commit-spine commits 10–12 (second half) and 13, per

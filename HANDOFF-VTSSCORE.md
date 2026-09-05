@@ -1,5 +1,12 @@
 # Handoff — VtsScore Competition #11 + BoH mapper wiring
 
+> **Historical record — 2026-08-02 VtsScore/mapper handoff.** Reviewed for documentation routing on 2026-09-05.
+> The BoH mapper pages and shared mapper core described below have been retired. VtsScore and retained grant/OCR services remain; preserve the historical data-change record without replaying it.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/vts-score-store.js](js/vts-score-store.js) · [functions/README.md](functions/README.md) · [Documentation index](docs/README.md).
+
+
 **Period:** 2026-07-28 → 2026-08-02 · **Branch:** all work merged to `gh-pages`
 (head `fa2279b6`) · **Firebase project:** `abocombo` · **Season:** `season-2026`
 

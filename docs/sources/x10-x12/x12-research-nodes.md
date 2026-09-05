@@ -1,5 +1,10 @@
 # X12 research node tables
 
+> **Source totals, not verified complete runtime costs.** These tables retain the supplied values and credits. v16.0.1 exposes conflicting Defense totals and treats incomplete X12 data as unverified; Charge has no verified visual topology. Do not infer missing per-level costs or edges from the totals below.
+
+[Package guide](README.md) · [Release corrections](../../../CHANGELOG.md)
+
+
 ## Melee Legion - Defense  (season X12, medal WB, 29 nodes, total 4,998,500 WB)
 gameId: 20005005 | totalCp: 17677576
 note: A=ALL Troops; AR=Archer, F=Footmen, C=Cavalry • Source: Raven G, Ash Roe (709)

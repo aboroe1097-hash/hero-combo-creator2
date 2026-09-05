@@ -1,5 +1,12 @@
 # 16.0.0 Overhaul — review handoff (5.6 SOL + Opus 5.0)
 
+> **Historical record — v16 overhaul review brief.** Reviewed for documentation routing on 2026-09-05.
+> The release is now represented in CHANGELOG.md. Use this brief to understand review intent, not to assume all open items remain defects.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [CHANGELOG.md](../../CHANGELOG.md) · [docs/plans/overhaul-16.0.0.md](overhaul-16.0.0.md) · [Documentation index](../README.md).
+
+
 Cut 2026-09-02 by the T0 orchestrator (ZCode session, PR #176). The planning
 phase is complete: master plan rev 5 + five lane plans, all T0-blessed at rev 2.
 Implementation has started (lane 5) — this review can run in parallel; findings

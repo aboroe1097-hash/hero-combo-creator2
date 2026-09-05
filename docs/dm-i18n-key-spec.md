@@ -149,7 +149,11 @@ export function appT(key, vars = {}) {
 
 ---
 
-## Add to all 11 locales
+## Locale registry and authoring scope
+
+The table below is the original flat compatibility list, not the current runtime pack registry.
+The core app exposes 13 locales, including the intentionally partial hr pack. Use the dedicated
+DM pack registry and its checker for required coverage; Italian is no longer absent from the app.
 
 | # | File | Path |
 |---|---|---|
@@ -184,3 +188,9 @@ npm run i18n:check
 placeholders, all 12 authored material-name IDs, and all 27 authored set/equipment/Dragon Master
 item display IDs. Canonical English remains available for search and safe runtime fallback, but a
 non-English pack cannot pass by inheriting those visible names.
+
+## Change checklist
+
+Add runtime messages to the dedicated DM domain, preserve placeholders and stable display IDs, and check visible copy in light/dark and RTL layouts. Do not mass-format unrelated flat locale catalogs.
+
+[Data interpretation](dm-enhancement-source-data.md) · [Documentation index](README.md)

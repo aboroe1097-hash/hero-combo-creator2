@@ -1,5 +1,12 @@
 # PR #153 — delegation plan
 
+> **Historical record — PR #153 work orders.** Reviewed for documentation routing on 2026-09-05.
+> Role, contribution, and match-result work has evolved since this plan. Use current controller boundaries; the banners planner model remains a separately tested module rather than proof of a completed user workflow.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/boh-match-results.js](../js/boh-match-results.js) · [docs/architecture.md](architecture.md) · [Documentation index](README.md).
+
+
 Follow-up to 15.0.0 (#152, merged `aafeb882`). Base every branch on the latest
 `origin/gh-pages`.
 

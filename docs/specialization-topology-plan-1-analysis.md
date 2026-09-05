@@ -1,5 +1,12 @@
 # Specialization Topology — Plan 1: Analysis
 
+> **Historical record — Specialization topology analysis.** Reviewed for documentation routing on 2026-09-05.
+> Retain the distinction between verified nodes and inferred edges. Use current model/data files to establish what landed; screenshots of a completed tree do not establish prerequisite direction.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/specialization-towers-v2-model.js](../js/specialization-towers-v2-model.js) · [docs/specialization/archer/assets/README.md](specialization/archer/assets/README.md) · [Documentation index](README.md).
+
+
 **Audience:** Vision analysis by OpenCode + implementation by DeepSeek
 **Status:** Analysis complete — first cavalry batch limited to four researches
 **Date:** 2026-08-12  

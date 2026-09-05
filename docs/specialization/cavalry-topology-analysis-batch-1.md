@@ -244,3 +244,9 @@ Implement this document as an evidence overlay or equivalent structured fixture.
 WhatsApp images to make independent topology decisions. Do not populate `prerequisiteNodeIds` from
 the lines in completed graphs. If a source filename cannot be located in the repository, preserve the
 external source reference and leave the asset-copy step for the owner.
+
+## How to reuse this batch
+
+This is screenshot-derived analysis, not an automatically complete unlock graph. Keep unknown directions and missing prerequisites explicit. Check proposed changes against [js/specialization-towers-cavalry-data.js](../../js/specialization-towers-cavalry-data.js) and its tests, then verify the actual planner before changing user-facing paths. The evidence below remains dated to its original batch.
+
+[Documentation index](../README.md)

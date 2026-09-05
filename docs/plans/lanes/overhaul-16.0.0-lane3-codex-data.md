@@ -1,5 +1,12 @@
 # Lane 3 — Codex Data Platform (commit-spine commits 7–9)
 
+> **Historical record — v16 data-platform lane.** Reviewed for documentation routing on 2026-09-05.
+> The source manifest, encoded payload builder, and runtime loader now exist. Preserve provenance and unknown values; use the implemented schema rather than treating proposed field shapes as current contracts.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [database/codex/codex-datasets.manifest.json](../../../database/codex/codex-datasets.manifest.json) · [scripts/codex/build-codex-payload.mjs](../../../scripts/codex/build-codex-payload.mjs) · [Documentation index](../../README.md).
+
+
 Status: proposal rev 2 (2026-09-02). Mode: proposal-only — this file is the sole
 deliverable; no code is modified. Parent: Codex T0 orchestrator, 16.0.0 Overhaul,
 branch `codex/overhaul-16-0-0` (worktree `D:/Project/hcc2-overhaul16`).

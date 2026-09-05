@@ -1,5 +1,12 @@
 # Comprehensive Audit Report — roc-vts.com (Hero Combo Creator - VTS 1097)
 
+> **Historical record — Earlier security and repository assessment.** Reviewed for documentation routing on 2026-09-05.
+> Counts, roles, and vulnerability assessments describe the audited revision. They are not a current security certification or an executable remediation backlog. Recheck current handlers/rules before acting.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [SECURITY.md](../SECURITY.md) · [docs/architecture.md](architecture.md) · [Documentation index](README.md).
+
+
 **Repository:** `github.com/aboroe1097-hash/hero-combo-creator2`
 **Version:** v13.1.0
 **Generated:** 2026-07-09

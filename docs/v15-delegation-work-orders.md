@@ -1,5 +1,12 @@
 # v15.0.0 — delegation work orders
 
+> **Historical record — v15 implementation work orders.** Reviewed for documentation routing on 2026-09-05.
+> Preserve these as implementation history. Check current Throne, Skins, and locale consumers before using a work-order snippet; one old task cannot authorize unrelated changes today.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [js/throne-buffs-data.js](../js/throne-buffs-data.js) · [js/skins-db.js](../js/skins-db.js) · [Documentation index](README.md).
+
+
 Paste-ready work orders for external models. Each one is scoped to **one file
 per call**, inlines the **exact list** to act on, and ends with an **acceptance
 command** the delegator runs before accepting the result.

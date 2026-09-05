@@ -1,5 +1,12 @@
 # Handoff — PR #150, remaining CI failures
 
+> **Historical record — PR #150 incident handoff.** Reviewed for documentation routing on 2026-09-05.
+> The failure list and line numbers record that investigation, not the present CI baseline. Reproduce any suspected failure on a fresh branch before reopening it.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [tests/app-smoke.spec.js](tests/app-smoke.spec.js) · [docs/version-control-workflow.md](docs/version-control-workflow.md) · [Documentation index](docs/README.md).
+
+
 **PR:** https://github.com/aboroe1097-hash/hero-combo-creator2/pull/150
 **Branch:** `AboC/tower-pathing-tool-84e827` → base `gh-pages`
 **Worktree:** `D:\Project\hero-combo-creator2\.claude\worktrees\firestore-submission-403-5ef58b`

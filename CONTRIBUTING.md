@@ -1,99 +1,53 @@
 # Contributing
 
-Thanks for helping keep Hero Combo Creator accurate for the community. Small, well-sourced updates are the easiest to review and ship.
+Contributions should solve a clear player or maintainer problem and be independently reviewable. Start with the [README](README.md), [documentation index](docs/README.md), and authoritative [agent/release policy](AGENTS.md).
 
-## What To Send
+## Before editing
 
-- Hero stats, skills, season tags, troop type, placement notes, and copy requirements.
-- Combo ranking corrections, counter matchups, and short reason notes.
-- Skin data, including rarity, bio attributes, inheriting skill changes, preserving skill, and Hidden Power bonuses.
-- Eden screenshots or coordinate corrections for structures, sector labels, terrain, and route-planning issues.
-- OCR examples where the parser misreads structure names, durability, players, alliances, or attack values.
-- Translation fixes for existing UI text.
+1. Fetch origin and inspect your checkout status. Preserve uncommitted work.
+2. Start a descriptive branch from latest origin/gh-pages; use codex/ for Codex-authored branches.
+3. Use a separate worktree when another task owns the checkout.
+4. Install the lockfile with npm ci. Record the affected features and an observable done-condition.
 
-## Data Evidence
+Keep the patch focused. Do not change bundle budgets to disguise stale dependencies, remove data because its name says backup, or sweep unrelated assets into a cleanup.
 
-When possible, include:
+## Data and evidence
 
-- Screenshot or screen recording from the current game build.
-- Exact hero, structure, season, state, and event context.
-- Before/after value if correcting existing data.
-- The app tab where you found the issue.
-- Whether the data is confirmed in-game or inferred from another community source.
+For hero, combo, skin, research, Artifact, or Eden changes, record the source, author/credit, capture date, season/game scope, and verification status. Separate raw evidence from derived values. Preserve unknowns and conflicts instead of inventing costs, prerequisites, or topology.
 
-Avoid sending private alliance plans, personal API keys, or player information that should not be public.
+- Eden screenshots should show enough map context to identify the season, sector, structure, and relevant coordinates.
+- OCR examples must be sanitized. Keep the original reading and proposed correction distinguishable; do not merge similar player names without identity evidence.
+- Multi-account players may have distinct main, alt, and banner accounts. See [name grouping](docs/name-grouping-workflow.md).
+- Hero additions can affect roster allowlists, paid-hero paths, consumers, and tests. They are not automatically data-only changes.
+- Keep durable evidence in docs/sources/ or the established data-evidence directory. Put temporary extraction output under ignored scratch directories.
 
-## Eden Screenshot Guidelines
+## Choose the right checks
 
-- Capture the full visible map area at the highest practical resolution.
-- Do not crop out sector names, coordinates, or structure labels when they are relevant.
-- Prefer clean screenshots without chat overlays, notification banners, or editing marks.
-- Name files with season and sector when possible, for example `eden-x12-n3-strongholds.png`.
-- If reporting a coordinate issue, include the expected structure name and approximate map location.
+| Change                                                                                     | Local evidence before PR                                                                      |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Small reversible fix or add-on                                                             | Relevant unit/browser cases; npm run check:fast when practical                                |
+| CSS, bundled assets, or build inputs                                                       | Relevant build and npm run size:check in addition to focused checks                           |
+| User-visible release metadata                                                              | npm run version:check                                                                         |
+| Major upgrade, broad application overhaul, auth/security, rules/schema, major dependencies | npm run check                                                                                 |
+| Explicit Firebase Hosting validation or high-risk release needing it                       | npm run firebase:preview; record its limitations                                              |
+| Documentation-only or internal cleanup                                                     | Link/path/command validation and checks for affected consumers; no automatic app-version bump |
 
-## OCR Example Guidelines
+The full check includes build, size, rules, translations, and browser gates. CI and production invoke npm run verify:deploy with different configuration values. A focused local pass does not substitute for required CI or branch protection.
 
-- Include the original screenshot and the incorrect parsed output.
-- Mention the expected structure name, durability, alliance, player name, and attack value.
-- Note whether the image came from mobile, emulator, or a compressed chat upload.
+For browser tests, install Chromium first. Keep screenshot names aligned with the test-generated names; never regenerate a baseline merely to hide a functional regression. Some Windows baselines are explicitly excluded from Linux CI.
 
-## Shipping Flow
+## Pull requests
 
-Every change follows the same path, regardless of whether it was authored by a person or an agent:
+Use the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Explain the trigger/problem, resulting behavior, affected surfaces, and test evidence. Include before/after measurements for cleanup or performance work, screenshots for layout changes, and sources for data changes. State skipped checks and genuine limitations.
 
-1. Fetch the latest `origin/gh-pages` and create a separate branch. Codex-authored branches use the `codex/` prefix by default.
-2. Make a focused change and use `npm run check:fast` for quick feedback while working.
-3. For a user-visible release, update every version surface and `CHANGELOG.md`, then run `npm run version:check`.
-4. Run `npm run check` before committing or pushing a user-visible release.
-5. For a major version upgrade, broad overhaul, or change that explicitly needs Firebase Hosting
-   validation, also run `npm run firebase:preview`, fix every preview failure, and record the green
-   URL in the PR evidence.
-6. Open a pull request targeting `gh-pages`; never push the change directly to the production branch.
-7. Wait for the required `deploy-verification` check and owner review. The owner merges only after both pass.
+Stage only intended files. Review generated metadata after builds and retain intentional output changes. Do not publish secrets, private roster data, raw account records, or local credentials.
 
-The repository owner should protect `gh-pages` by requiring pull requests, owner approval, and the `deploy-verification` status check.
+Open against gh-pages and leave the normal merge to the owner. Explicit fast-merge requests still use the PR and required checks; there is no direct-production-push exception. If CI fails, address the failure with a focused correction rather than weakening the gate.
 
-## Local Checks
+## Release notes
 
-Before opening a pull request:
+User-visible changes update CHANGELOG.md and every version surface checked by npm run version:check. The cadence permits patch .0 through .20 before advancing the minor. Documentation and internal cleanup can retain the current version. Build scripts own cache stamps; do not hand-edit them.
 
-```bash
-npm ci
-npm run check
-```
+## Reporting issues
 
-`npm run check` is the authoritative local gate. It covers version consistency, lint and format checks, unit/data/i18n validation, a production build, file-size budgets, and browser smoke tests. `npm run check:fast` is intentionally narrower and must not be the only pre-PR check.
-
-CI and the GitHub Pages build both use `npm run verify:deploy`. That wrapper first validates required build configuration and injects the admin-auth hashes, then runs the same full check suite. Pull-request CI uses deterministic values marked as non-secrets; production deploys use protected repository environment values. Never copy production secrets into a branch, workflow, test, log, or pull-request description.
-
-When required, the optional Firebase preview channel is Hosting-only and does not replace the
-GitHub Pages production flow. It uses the real `abocombo` backend; automated smoke initializes
-anonymous Auth and Analytics but performs no intentional Firestore writes. Keep additional preview
-QA read-only unless a production write has been explicitly reviewed. See
-`docs/firebase-preview-workflow.md` for the command, target, expiry, and Auth/App Check boundaries.
-
-If the built CSS total grows intentionally, either trim CSS in the same change or update `scripts/check-size.mjs` with the measured build output and a short reason. Do this before pushing so GitHub Actions does not become the first size-budget signal.
-
-## Pull Requests
-
-- Keep changes focused and explain the player/community impact.
-- Link related issues when one exists.
-- Include screenshots for visual changes.
-- Include source evidence for hero, combo, skin, OCR, research, or Eden data changes.
-- Call out any skipped checks and why.
-- Confirm the `deploy-verification` check passes before merge.
-- Do not commit secrets, private API keys, admin credentials, or private alliance data.
-
-## `gh-pages` Pull Request Rule
-
-The live site is deployed from the `gh-pages` production source branch through a verified `dist/` artifact. Do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, keep the change focused, run the full check suite, and open a pull request back into `gh-pages` for owner review and merge.
-
-Use direct `gh-pages` commits only when the owner explicitly asks for an emergency direct deploy.
-
-## Release Notes
-
-Every user-visible change should update `CHANGELOG.md`. Keep the version in sync across `package.json`, the lockfile, the app constants, public HTML footers, the README release heading, and the latest changelog heading. Run `npm run version:check` before the full suite. The normal build refreshes cache and service-worker timestamps; do not hand-edit those stamps.
-
-Use SemVer-style judgment: major for broad redesigns or data model changes, minor for new features or datasets, and patch for fixes, copy, cache, or low-risk polish.
-
-Patch releases run through `.20` before the next minor. For the current train: `14.0.0` through `14.0.20`, then `14.1.0`; `14.1.1` through `14.1.20`, then `14.2.0`.
+Use the [bug template](.github/ISSUE_TEMPLATE/bug_report.md) for reproducible failures and the [feature template](.github/ISSUE_TEMPLATE/feature_request.md) for proposals. Security reports follow [SECURITY.md](SECURITY.md). A feature request should describe one useful outcome, its audience, and how success can be checked.
