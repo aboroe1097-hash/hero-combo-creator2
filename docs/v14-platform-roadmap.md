@@ -1,5 +1,12 @@
 # V14 Platform Roadmap
 
+> **Historical record — v14 platform roadmap.** Reviewed for documentation routing on 2026-09-05.
+> Proposed TypeScript/runtime changes are options, not a declaration that a migration happened. The present app remains native JavaScript modules built with Vite.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [docs/architecture.md](architecture.md) · [package.json](../package.json) · [Documentation index](README.md).
+
+
 This document is the shared technical direction for people and coding agents working on the VTS 1097 toolkit after the v14 visual overhaul.
 
 ## Decision Summary

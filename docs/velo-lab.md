@@ -45,3 +45,11 @@ HTTPS endpoints are rejected.
   writes.
 - `tools/velo-lab/` is absent from Vite's production inputs and the post-build copy lists, so the
   Lab is not included in `dist/`.
+
+## Troubleshooting and promoting an experiment
+
+If no models appear, confirm the loopback Ollama server is available and a model is installed. A model suggestion in this guide is an example, not a production dependency. If the port is busy, set VELO_LAB_PORT before restarting.
+
+Export useful evaluations before clearing browser storage. Review a successful experiment as a normal code/data PR; the Lab does not publish its prompt overlays or examples automatically. Run the existing Velo Lab and AI contract tests, and keep private operational messages out of the curated public dataset.
+
+[Knowledge intake](velo-knowledge-ingestion.md) · [Documentation index](README.md)

@@ -1,130 +1,27 @@
-# CLAUDE.md — rules for AI agents working on this repo
+# CLAUDE.md — repository working notes
 
-`AGENTS.md` is the single authoritative workflow and versioning policy for every
-human and coding agent in this repository. Read and follow it before making a
-change. This file contains only Claude-oriented reminders that supplement it;
-if the two files ever disagree, `AGENTS.md` wins.
+[AGENTS.md](AGENTS.md) is the authoritative workflow and version policy. These notes supplement it; historical plans or tool-specific instructions do not override the current user request or production safeguards.
 
-## Delegating work in this repo
+## Establish context
 
-DeepSeek is the owner's only worker and has effectively unlimited tokens. Hand it
-bulk mechanical work without asking first — i18n key fills, repetitive renames,
-test scaffolding, docs. Keep design, architecture and judgement calls yourself.
+Read the [documentation index](docs/README.md), inspect the branch/status, and start from latest origin/gh-pages in an isolated branch/worktree. Preserve work owned by other sessions. Use Node 20 for the frontend, the lockfile via npm ci, and the separate Node 22 package for Functions.
 
-```bash
-bash ~/.claude/scripts/delegate.sh mid -R "why" -C "<abs repo dir>" "<prompt>"
-```
+## Delegation
 
-Three rules, learned the hard way here: **one file per call** (a work order spanning
-many files returns with nothing done), **inline the exact list** the worker must act
-on rather than making it search, and **quick-check the diff yourself** before
-reporting — `delegate.sh summary` showing ok with no diff means it never edited.
+Use the owner's configured workers only when available and appropriate. Give each worker an explicit worktree, bounded file ownership, exact acceptance checks, and instructions to preserve others' edits. Verify the diff and test output yourself; a worker summary is not evidence that files changed. Local delegate scripts, model names, costs, and fallback chains are environment-specific and are not guaranteed by this repository.
 
-Repo-specific gotchas for delegated work:
+## Localization
 
-- Always pass `-C` with the absolute worktree path. Without it a worker will edit
-  the main checkout at `D:\Project\hero-combo-creator2` instead.
-- `js/i18n/*.js` must keep every `{placeholder}` token identical to `en.js`;
-  `js/i18n/specialization-towers-v2/*.js` is under a strict 12-locale key-parity
-  test. Tell workers explicitly which of the two they may touch.
-- `js/i18n/hr.js` is an intentionally partial stub — never "fix" its missing keys.
+The core registry has 13 locales; hr is intentionally partial. Feature domains define their own required pack set. Derive missing keys from the actual checker, preserve every interpolation token, and avoid rewriting unrelated flat catalogs with a blanket formatter.
 
-Full protocol: `~/.claude/ORCHESTRATION.md` §0.
+## Verification and generated output
 
-### Parallel locale fan-out (the fast, cheap path)
+Follow AGENTS.md's fast-fix versus high-risk checks. Use npm run version:check for version locations. npm run build regenerates stamps/payloads and post-build updates the deployment service-worker manifest. Inspect generated diffs and include intentional changes; do not hand-edit cache timestamps. Check size budgets on the locked toolchain.
 
-Filling the same set of keys across many locales is the highest-value delegation
-shape in this repo: 10 locales x 21 keys cost **$0.08 and ~4 minutes** wall clock,
-with zero Claude tokens spent on the translations themselves.
+## Data and documentation
 
-1. **Get the real missing-key list from the checker, not a naive diff.** A plain
-   `en` vs locale comparison over-counts badly — it flagged 103 keys for `de` when
-   only 21 were genuinely missing, because German legitimately reuses "Status",
-   "Admin", "Team". Use the coverage data the checker itself exports:
+Preserve raw source values, credits, and ambiguity notes. Mark archived plans as historical rather than treating their checkboxes as current tasks. Never rewrite a sent message, grant approval through a documentation edit, or promote private operational material into public Velo knowledge.
 
-   ```js
-   import { availableLanguages, loadTranslationsForLanguage, translationCoverage }
-     from './js/translations.js';
-   await Promise.all(availableLanguages.map(loadTranslationsForLanguage));
-   translationCoverage.de.missingBeforeFallback; // the true list
-   ```
+## Delivery
 
-   Usually the same keys are missing in every locale, so one prompt template covers
-   all of them.
-
-2. **Record a git baseline before delegating.** `git status --short js/i18n/` first —
-   if a target file is already dirty you cannot attribute the resulting diff, and the
-   worker will report "keys already exist" without editing anything.
-
-3. **One locale per call, all launched in parallel.** Disjoint files, so there is no
-   conflict and no need for worktree isolation:
-
-   ```bash
-   for code in ar id pt ru tr zh; do
-     bash ~/.claude/scripts/delegate.sh mid -q -C "$REPO" -t 420 \
-       -R "i18n fill $code" "$(cat prompt-$code.txt)" > out-$code.log 2>&1 &
-   done
-   wait
-   ```
-
-4. **Spell out the mechanical contract in the prompt**: which single file may be
-   touched, insert before the final `};`, keep `{placeholder}` tokens byte-identical
-   and in Latin script, keep dotted keys (`'ai.action.openLoyalty'`) quoted, two-space
-   indent, single quotes, trailing commas, escape `\'`.
-
-Acceptance check to run yourself afterwards — never trust the worker's summary:
-
-```bash
-node -e "import('./js/i18n/es.js').then(m=>console.log(Object.keys(m.default).length))"
-npm run i18n:check   # target locales should vanish from the fallback report
-```
-
-Then verify placeholder parity against `en.js` for the keys you added. Expect
-long values to wrap onto a continuation line — that is valid and matches file style,
-so a +23 diffstat for 21 keys is fine.
-
-**Do not run `prettier --write` on `js/i18n/*.js`.** The top-level locale files are
-outside the `format:check` allowlist (which covers only `js/i18n/admin-all-star-boh/*.js`
-and `js/i18n/all-star-boh/*.js`) and already fail a bare `prettier --check` at HEAD.
-Formatting them rewrites hundreds of untouched lines.
-
-Model note: `mid` is now `deepseek-v4-flash` -> `deepseek-v4-pro` only. Flash handles
-roughly 4 of 5 calls first try; pro silently catches the rest at no cost when flash
-succeeds. The three `opencode-go` fallbacks were removed after 133 calls with 0
-successes.
-
-## Workflow reminder
-
-Use a separate branch from the latest `origin/gh-pages`, run the full gate,
-open a pull request into `gh-pages`, and leave the merge to the owner. Run
-`npm run version:check` instead of maintaining a second list of version files here.
-
-## Build stamps and generated files
-
-- `node scripts/update-build-metadata.mjs` regenerates the `?v=` cache-bust
-  stamps in the HTML/JS and rewrites `public/sw.js` (which is a generated
-  file — never edit it by hand; change the template in
-  `scripts/update-build-metadata.mjs` instead). Run it when JS/CSS changed
-  and commit the result.
-- `scripts/post-build.mjs` rebuilds the service worker precache manifest from
-  `dist/` during `npm run build`; the deploy workflow runs the full build, so
-  stamps committed here just need to be internally consistent.
-
-## Testing expectations
-
-- `npm run check` = lint + prettier + unit tests + i18n + build + size +
-  Playwright smoke. CI runs this; a PR should pass it locally first.
-- User-visible strings need keys in all 11 `js/i18n/*.js` files
-  (`npm run i18n:check` enforces this).
-- For loading/network changes, verify the mobile failure modes: the Firebase
-  CDN (gstatic) being unreachable must never leave a page on an endless
-  spinner — every loading state needs a timeout and a visible error/retry.
-
-## Never include
-
-- Passwords, private API keys, or private alliance data — in code, commits,
-  or PR descriptions.
-- AI attribution footers or session links in PR titles/descriptions
-  ("Generated with…", session URLs). The owner prefers clean PR bodies.
-
-See `AGENTS.md` for the complete branch, release, review, and external-deploy policy.
+Open a PR into gh-pages and leave normal merging to the owner. Explicit fast-merge uses the same protected PR path. Never publish credentials, private member records, debug tokens, or unrelated scratch output.

@@ -210,3 +210,9 @@ Allowed statuses are `intake_needed`, `draft`, `approved`, `sent`, `cancelled`, 
 - Translate the intent and tone, not spelling mistakes or English sentence order.
 - Record the language and reviewer in the message log.
 - If no fluent reviewer is available, mark the translation as a draft rather than approved.
+
+## Maintaining this guide
+
+Record new owner preferences with their scope rather than silently rewriting earlier approved messages. Keep drafts, approvals, and actual sends separate in the ledger. Before reusing a template, reconfirm its audience, season, deadline, and facts; old operational dates are not current instructions.
+
+[Message ledger](r5-message-log.md) · [Knowledge intake boundaries](velo-knowledge-ingestion.md) · [Documentation index](README.md)

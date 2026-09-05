@@ -144,3 +144,9 @@ Tracked product gap:
 - a direct material-only Alliance Center cost lookup without production and processing inputs would
   require a deliberate calculator/tool-contract enhancement; it must use the canonical calculator
   table rather than chat-derived values.
+
+## Validation for future batches
+
+Keep the dated intake history above intact. For each new batch, list accepted public facts, exclusions, ambiguous source gaps, and season context. Check the resulting entries in js/ai/vts-guide-knowledge.js against the bounded retrieval tools and run the AI unit contracts. A newly available image does not retroactively validate an earlier guess; append the evidence correction.
+
+[Local evaluation lab](velo-lab.md) · [Documentation index](README.md)

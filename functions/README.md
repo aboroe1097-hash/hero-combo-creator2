@@ -1,14 +1,27 @@
 # ROC VTS Firebase Functions
 
-`unlockAllStarBoh` is the server-side membership gate for the seasonal All-Star BoH hub. It verifies Firebase Auth and App Check, applies per-user and per-IP-digest lockouts, and writes an expiring server-owned member grant. No raw PIN, IP address, or player screenshot is written by this function.
+## Runtime and exported services
+
+This package uses Node 22 and its own package-lock.json. The frontend uses Node 20; install dependencies in the package you are changing.
+
+| Export | Protocol | Responsibility |
+|---|---|---|
+| unlockAllStarBoh | HTTP | Validate Auth/App Check, throttle attempts, issue expiring member grants |
+| vtsScore | HTTP | Handle gated score operations with server-side validation |
+| setUserRole | Callable | Require caller superadmin claim and apply audited admin/superadmin changes |
+
+The grant and publication notes below retain backend compatibility details; they do not describe a currently available BoH signup UI. [Operations](../docs/operations.md) · [Security](../SECURITY.md) · [Documentation index](../docs/README.md)
+
+
+`unlockAllStarBoh` is the retained server-side membership-grant endpoint. The old BoH member UI is retired; VtsScore and related protected services still consume the access contract. It verifies Firebase Auth and App Check, applies per-user and per-IP-digest lockouts, and writes an expiring server-owned member grant. No raw PIN, IP address, or player screenshot is written by this function.
 
 ## Required secrets
 
 Set both secrets in the `abocombo` Firebase project. Never place either value in a repository file or client build.
 
 ```powershell
-firebase functions:secrets:set BOH_MEMBER_PIN
-firebase functions:secrets:set BOH_THROTTLE_PEPPER
+firebase functions:secrets:set BOH_MEMBER_PIN --project abocombo
+firebase functions:secrets:set BOH_THROTTLE_PEPPER --project abocombo
 ```
 
 `BOH_THROTTLE_PEPPER` should be an independent random value of at least 32 characters. It is used only to HMAC throttle keys; do not reuse the member PIN.
@@ -57,7 +70,7 @@ Configure Firestore TTL policies for the `expiresAt` field on both the `boh_alls
 
 ```powershell
 npm --prefix functions test
-firebase deploy --only functions:unlockAllStarBoh
+firebase deploy --only functions:unlockAllStarBoh --project abocombo
 ```
 
 Deploy the additive Firestore rules before the Function and before exposing the client tab. After a successful unlock, the browser reads its own grant document through the Firestore REST API with its Firebase ID token and App Check token, validates the fixed schema, and requires the returned season and expiry to match the Function response. Reload uses the same own-document read; no browser credential marker is stored.
@@ -65,3 +78,7 @@ Deploy the additive Firestore rules before the Function and before exposing the 
 Firebase Auth supports only whole-object custom-claim replacement, not an atomic patch/CAS. The member unlock path therefore never calls `getUser` or `setCustomUserClaims`: it cannot restore a revoked admin claim or clobber any unrelated concurrent claim writer. The existing `admin` custom claim remains independent and continues to authorize Admin VTS operations.
 
 Members may read the allowlisted publication overview and the configured set of roster-only `publishedTeams/{teamId}` documents needed for the team announcement. Team documents reject `plan`, timeline, instruction, and unknown fields. Full plans exist only in `publishedPlayers/{uid}`, which remains owner-get-only and non-listable. Raw reviews remain admin-only; sanitized feedback is separately owner-get-only at `boh_allstar/{season}/feedback/{uid}`.
+
+## Focused tests and release evidence
+
+The package test script covers the legacy grant contract; it is not the whole Functions suite. From the repository root also run the user-roles and VtsScore unit tests for those handlers. A Functions change must identify which exports need deployment, the project, dependent rules, and the observed result. Do not deploy unchanged exports for a documentation update.

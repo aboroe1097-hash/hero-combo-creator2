@@ -1,479 +1,149 @@
 # Hero Combo Creator - VTS 1097 (v16.0.3)
 
-A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, troop battle simulation, Eden map planning, Dragon Master material planning, tech and Artifact tracking, loyalty math, OCR attack analysis, and roster management. This release tracks the current X2 Artifact One: Sword of Judgment with its exact interactive game tree, while retaining Redemption Grail data for a future release.
+A community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Build hero combinations, inspect skills and research, plan progression and Eden activity, and manage alliance records through dedicated member and administrator tools.
 
-## Features
+**[Open the toolkit](https://roc-vts.com)** · **[Documentation](docs/README.md)** · **[Contributing](CONTRIBUTING.md)** · **[Release history](CHANGELOG.md)** · **[Report a security issue](SECURITY.md)**
 
-The main navigation groups related tools into the **Heroes & Combos**, **Research & Towers**, and **VTS Eden** hubs, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
+## Start with your task
 
-`vtsscore.html` is a focused, PIN-gated Competition #11 final-score intake route. It reuses the
-All-Star signup roster and OCR service without exposing private signup stats or storing screenshots.
+| I want to…                        | Open                             | What to expect                                                                  |
+| --------------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| Find combinations from my heroes  | Heroes & Combos → Generator      | Filter seasons, select heroes, generate ranked combinations, and share results  |
+| Assemble a particular lineup      | Heroes & Combos → Manual Builder | Choose three heroes and inspect the combination's rating and counters           |
+| Compare heroes, skills, and skins | Hero Atlas / Hero Tables         | Season filters, hero details, table views, and source-qualified information     |
+| Plan specialization and research  | Research & Towers                | Towers progress, hero paths, tech levels, and research cost planning            |
+| Plan Dragon Master equipment      | DM Materials                     | Crafting routes, material balances, enhancement milestones, and plan sharing    |
+| Prepare for Eden                  | VTS Eden                         | Royal Bounty, map planning, loyalty, playbook guidance, and previous seasons    |
+| Explore battle outcomes           | Battle Simulator                 | Deterministic beta simulations with explicit stats, equipment, and evidence     |
+| Play community mini-games         | Arcade                           | Separate game lobby; game code opens on demand                                  |
+| Submit an event score             | VtsScore                         | Gated event intake; access and submission eligibility are server-checked        |
+| Manage alliance activity          | VTS Admin                        | Account-based access to OCR, roster, contribution, match-result, and role tools |
 
-| Tool | Source files | Purpose | Dependencies | Perf notes |
-| --- | --- | --- | --- | --- |
-| **Heroes & Combos Hub** | `js/heroes-combos-hub.js`, `js/app-builder.js`, `js/app-generator.js`, `js/app-hero-atlas.js`, `js/combos-db.js`, `js/skins-db.js` | Default Combo Generator plus Manual Builder, Hero Atlas, and Skins sub-tabs; legacy deep links remain supported | Firestore for saved combos; static hero, combo, counter, and skin data | Optional Atlas module loads only when its sub-tab opens |
-| **Research & Towers Hub** | `js/research-towers-hub.js`, `js/app-research.js`, `js/app-specialization.js`, `js/specialization-towers-v2-*.js` | Default Towers planner with exactly Siege/Rally and Field paths, paid-hero presets, ownership controls, and 1/32 progress; Tech Research is a dedicated sub-tab | Static planner and research data; browser-local progress | Tools boot only when their hub sub-tab opens |
-| **DM Materials** | `js/material-calculator.js`, `js/material-planner-model.js`, `assets/dm/` | Six-piece Dragon Master Command Center: compare routes, track materials, build troop gear, save/export/share plans | Verified crafting constants and extracted in-game item art | Dynamically imported; mobile-first route/slot flow |
-| **VTS Eden Hub** | `tabs/eden-map.html`, `js/eden-hub.js`, `js/eden-map-*.js`, `js/bounty-guide.js`, `js/loyalty-calculator.js` | Default Royal Bounty visual guide, plus Eden Map, Loyalty, and Previous Seasons sub-tabs | Static Eden datasets and guide data | Lazy-loaded template and modules |
-| **Strife over Dragon** | `js/app-strife.js`, `js/strife-db.js`, `js/combos-db.js` | Monster matchup recommendations intentionally capped to S0-S4 and X1-X2 | Static data | Dynamically imported; X3+ is outside this tool's contract |
-| **YouTube** | `js/youtube-v14.js`, `css/youtube-v14.css` | Featured VTS video plus selectable playlists with direct fallbacks | YouTube IFrame | No iframe until a member presses Load/Watch |
-| **Arcade** | `arcade.html`, `js/arcade.js`, `css/arcade.css`, `games/boot/` | Standalone member lobby for VTS mini-games | Shared static game shell and art | Separate page; game code loads only after opening a game |
-| **All-Star BoH** | `tabs/all-star-boh.html`, `js/all-star-boh-*.js`, `functions/`, `workers/qwen-cors-proxy.js` | VTS-only signup, reviewed OCR, balanced teams, admin review, Legion plans, and Epic preferences | Firebase Auth/App Check/Firestore/Functions and secured Qwen OCR Worker | PIN gate and feature modules load only when the internal tab opens |
-| **Battle Simulator** | `battle-simulator.html`, `js/battle-simulator-*.js`, `css/battle-simulator.css` | PIN-gated deterministic troop-combat beta with stat sources, equipment, batches, logs, and exports | Static presets and browser-local progress | Standalone page; protected app loads after PIN |
-| **VTS Admin** | `admin.html`, `tabs/admin.html`, `js/admin-page.js`, `js/ocr-dashboard.js`, `js/admin-*.js` | OCR analysis, roster/contribution tools, Alliance View, All-Star command center, and Eden administration | Cloudflare Worker, Firebase Auth/Firestore, reCAPTCHA Enterprise App Check | Seasonal standalone page; `noindex,nofollow` |
+On small screens, use **More** for secondary tools. The command palette provides another navigation path with Ctrl/Cmd+K. Account-dependent operations require the appropriate signed-in identity and permissions; opening a page alone does not grant access.
 
-**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` as the completed-season Eden X1 archive, centered on the Final Top 20, player lookup, guild contribution, and analysis/history. Expired voting and distribution presentation is hidden in the current public UI. The active-season vote/reward format remains in source behind the season-state switch for the next season, including admin selection of Extended or Base Total Contribution for the Top 10 -> R4 / Management -> Team Players chain, public formula comparison, optional voting deadlines, countdowns, and expired-submission blocking. It is also `noindex,nofollow`.
+## Current scope and data limits
 
-**Cross-cutting sub-systems:** `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `command-palette.js` (offline Ctrl/Cmd+K tool navigation), `app-undo.js`, `app-shortcuts.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
+- X10 and X12 are represented in the hero catalog. The supported research ladder is separate from hero availability; X10 is not a research season.
+- Season **Select all** fills the visible strip and restores that strip's defaults on the next press.
+- The current Artifact interface covers **Sword of Judgment**. Retained Redemption Grail source data is not a promise that its former interface is available.
+- X12 Charge has editable data without an invented tree topology. Unverified or conflicting research evidence remains qualified in the interface.
+- Strife recommendations intentionally cover S0–S4 and X1–X2. A hero's presence in the Atlas does not imply coverage in every recommendation tool.
+- Battle Simulator results are model output, not guaranteed in-game outcomes. Check stat sources and the evidence behind a comparison.
+- The former All-Star BoH signup hub, team mapper, and command center are retired. Some server access, OCR, schedule, and legacy-data contracts remain in use by VtsScore; do not remove that backend merely because the old UI is gone.
 
-**Performance posture:** Vite build with hashed production assets, manual chunks for large feature/data modules, dynamic `import()` per heavy tab and language pack, preloaded boot wing images and Google Fonts, Google Fonts print-to-all media swap, user-triggered YouTube iframe creation, staged Eden/Admin rendering, lazy exact DM item art, mobile CSS loaded only at `max-width: 768px`, lazy/async footer imagery, `requestIdleCallback` for non-critical work, `--tap-min: 44px` touch sizing, and `env(safe-area-inset-*)` support for notches.
+For changes to hero or research facts, include the source, capture date, season scope, and verification status. Unknown costs, unlock rules, or skill values must not be guessed. See the [source package](docs/sources/x10-x12/README.md) and [data contribution guidance](CONTRIBUTING.md#data-and-evidence).
 
-## Operational Communications
+## Local setup
 
-R5 Viber posts, in-game mail, and alliance/guild announcements use a separate operational record
-from Velo's public strategy knowledge:
+Use the repository's **Node 20** baseline from [.nvmrc](.nvmrc) and **Python 3.11**, matching CI. Firebase Functions have a separate **Node 22** runtime and dependency tree; see [Functions](functions/README.md).
 
-- [`docs/r5-communications-guide.md`](docs/r5-communications-guide.md) defines MalakAbo's working
-  R5 voice profile, required facts, send criteria, channel formats, approval flow, and translation
-  rules.
-- [`docs/r5-message-log.md`](docs/r5-message-log.md) is the append-only ledger for requested,
-  drafted, approved, sent, corrected, or cancelled message versions.
+From an existing clone:
 
-Time-sensitive orders, private leadership details, player matters, and raw operational chat must not
-be copied into Velo's reusable guide dataset.
-
-## Screenshots And Demos
-
-Current screenshot captures live in `docs/media/` and should be refreshed when a major UI flow changes. These previews are captured in dark mode from the local app with demo data where needed.
-
-Capture All-Star BoH demos from `http://127.0.0.1:5174` so the registered Firebase App Check local flow is exercised. The maintained capture set should show the PIN-unlocked Team Formation, Battle Map & Plans, and Event Schedule member pages plus the six-team Admin command center. Use sanitized demo data only; never capture member PINs, App Check debug tokens, private signup/OCR records, or unpublished personal instructions.
-
-<table>
-  <tr>
-    <td colspan="2">
-      <strong>Combo Generator and Hero Atlas</strong><br>
-      <img src="docs/media/toolkit-core-tools.webp" alt="Combo Generator filters and hero selection beside the Hero Atlas ranking and detail panel">
-    </td>
-  </tr>
-  <tr>
-    <td colspan="2">
-      <strong>Specialization Towers · Responsive desktop and mobile views</strong><br>
-      <img src="docs/media/specialization-towers-responsive.webp" alt="Specialization Towers desktop planner with eight columns beside its responsive mobile progress and tower views">
-    </td>
-  </tr>
-</table>
-
-Short GIFs are welcome for workflows that static screenshots cannot show well, especially OCR upload parsing and Eden route planning. Keep media optimized before committing so the GitHub Pages branch stays light.
-
-## Specialization Towers Data
-
-The Specialization tool uses the public ROCAcademy planner corpus from
-[`tools.riseofcastles.net`](https://tools.riseofcastles.net/specialization-tower-planner/). The
-canonical dataset currently covers:
-
-- 32 research badges across eight columns, reused by Cavalry, Archers, and Footmen.
-- 718 attribute nodes with canonical English names and buff text.
-- 384 exact 25/50/75/100% milestone records and 17 passive skill nodes.
-- 24 troop-specific Legion Skills with their full public descriptions.
-- 33 public research and Legion Skill emblems, optimized to WebP and embedded locally so the tool
-  makes no runtime request to the source site.
-
-Source provenance is recorded in `SPECIALIZATION_SOURCE_METADATA`, including the public planner
-JavaScript SHA-256. Per-emblem source URLs, PNG hashes, dimensions, optimized hashes, and byte sizes
-live in `tests/fixtures/specialization-planner-assets.json`. The embedded browser assets are in
-`js/specialization-towers-v2-assets.js`.
-
-Known prerequisite edges are enforced. When the public corpus confirms every node and buff but not
-the dependency path—as with Enhanced Tactics IV—the planner exposes the complete catalog without
-inventing edges. The source planner supplies whole-research medal totals, not per-node costs;
-unknown node-level medal costs remain unknown instead of being estimated from those totals.
-
-Progress is stored under `vts_specialization_towers_v2`. The standalone
-`specialization-towers.html` route supports JSON import/export and contribution CSV debugging; the
-main site loads its integrated renderer only when the Specialization tab opens.
-
-## Specialization Towers Local Loop
-
-Iterate on the standalone planner without the full monorepo gate:
-
-```bash
-npm run towers:dev    # http://127.0.0.1:5173/specialization-towers.html
-npm run towers:test   # unit + focused Playwright
-npm run towers:check  # local Towers gate
-# integrate only when shipping:
-npm run check:fast    # or npm run check if high-risk
-```
-
-`towers:test:unit` runs only the Specialization Towers unit slice; `towers:test:ui` runs
-`p1-specialization-towers-v2.spec.js` against a Vite dev server. Run the full `npm run check` only
-when integrating a release PR, per AGENTS.md.
-
-## Quick Start
-
-```bash
+```powershell
+git fetch origin
+git switch -c codex/my-change origin/gh-pages
 npm ci
-npm run dev      # Vite dev server (hot-reload)
-npm run build    # Production build -> dist/
-npm run preview  # Preview production build
+npm run dev
 ```
 
-## Release Checks
+If that checkout contains unfinished work, create an isolated worktree instead of switching or resetting it:
 
-Run the full local gate before shipping:
-
-```bash
-npm run check
+```powershell
+git fetch origin
+git worktree add -b codex/my-change ../hero-combo-my-change origin/gh-pages
+cd ../hero-combo-my-change
+npm ci
+npm run dev
 ```
 
-That runs version consistency, lint, Prettier checks, unit tests, i18n validation, a production build, complete-artifact size budgets, and Playwright smoke tests. Every release must pass the full local gate before shipping.
+Vite prints the local URL. Use its server rather than opening index.html through file://. npm ci installs the exact lockfile versions; an existing node_modules directory from another branch can produce misleading chunk graphs and size failures.
 
-For normal additive releases, a green `npm run check` is enough before committing, pushing, and
-opening the PR. Use the optional Firebase Hosting preview only for a major version upgrade, broad
-overhaul, or change that explicitly needs Firebase-hosted validation:
+### Firebase and protected local flows
 
-```bash
-npm run firebase:preview
+Public/static development can start without production credentials. Cloud-dependent operations need valid configuration; copied placeholder values do not enable them.
+
+```powershell
+Copy-Item .env.example .env.local
+# Edit .env.local with the appropriate public web configuration.
+npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
-The optional preview reruns `npm run check`, deploys Hosting-only to a versioned seven-day preview
-channel, and runs the production smoke suite against the returned URL. The preview uses the real
-`abocombo` backend, and automated smoke initializes anonymous Auth and Analytics without
-intentional Firestore writes. Keep additional QA read-only unless production writes are
-deliberately in scope. Production still ships only through the reviewed `gh-pages` pull request. See
-[`docs/firebase-preview-workflow.md`](docs/firebase-preview-workflow.md) for details.
-
-Version cadence: patch releases run through `.20` before the next minor. For the v14 train, ship `14.0.0`, `14.0.1`, ... `14.0.20`; the next release after that is `14.1.0`.
-
-## Tech Stack
-
-| Layer        | Choice                                                                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Language** | Vanilla JavaScript (ES6 modules), no framework                                                                                              |
-| **Bundler**  | Vite 6 (dev server + build)                                                                                                                 |
-| **CSS**      | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), and semantic `components.css` |
-| **Backend**  | Firebase Firestore loaded through pinned browser modules (saved combos, public data, roster sync)                                           |
-| **Auth**     | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes               |
-| **OCR**      | Qwen VL API via Cloudflare Worker proxy                                                                                                     |
-| **Maps**     | HTML Canvas (Eden Map)                                                                                                                      |
-| **Export**   | html2canvas (image), CSV, JSON                                                                                                              |
-| **Hosting**  | GitHub Pages (Actions uploads the verified `dist/` artifact from `gh-pages`)                                                                |
-
-## File Structure
-
-```
-index.html              Main SPA shell (v14 navigation and primary tool surfaces)
-admin.html              Standalone VTS Admin shell
-eden-x1.html            Separate Eden X1 public contribution/rewards view
-battle-simulator.html   PIN-gated Battle Simulator Beta
-specialization-towers.html  Standalone Specialization Towers planner
-vite.config.js          Vite build config (manual chunking)
-scripts/post-build.mjs  Post-build: copy static assets to dist/ and generate the precache manifest
-public/
-  sw.js                 Service worker
-  404.html              404 fallback page
-workers/
-  qwen-cors-proxy.js    Cloudflare Worker: Qwen API proxy
-tabs/
-  admin.html            VTS Admin template (fetched by admin.html)
-  eden-map.html         Eden Map tab template (lazy-loaded)
-  loyalty.html          Eden Loyalty tab template (lazy-loaded)
-database/
-  eden-datasets.manifest.json  Eden dataset catalog
-  Eden_*.txt                   Source map datasets
-  eden-wonders-screenshots/    Extracted sector data
-scripts/eden/
-  build-eden-datasets.py       Generate encoded Eden dataset payload
-  build-eden-from-screenshots.py  Rebuild X1 dataset from screenshots
-  build-eden-x12.py            Rebuild X12 reference dataset
-  (and more Python tools for Eden data)
-
-css/
-  _tokens.css           Shared design tokens, spacing scale, reduced-motion base
-  app.css               All styles (~6100 lines)
-  atmosphere.css        Utility-first design system (press, lift, tilt, skeleton, morph, burst, aura)
-  components.css        Reusable component styles (cards, tabs, pills, modals)
-  shell-v14.css         Compact aurora/glass shell, desktop rail, mobile 4+More navigation
-  materials.css         Dragon Master Command Center
-  research-v14.css      Research catalog and dependency-tree presentation
-  youtube-v14.css       Deferred featured-video and playlist rail
-  secondary-tools-v14.css Scoped Strife, Loyalty, and Eden Map responsive polish
-  eden-x1.css           Eden X1 public view styles
-  mobile.css            Mobile responsive overrides
-  ocr-dashboard.css     Admin dashboard styles
-
-js/
-  app.js                Core: tabs, theme, event wiring, error boundaries
-  app-builder.js        Manual combo builder: drag-drop, slots, save
-  app-generator.js      Combo generator: best & random modes
-  app-hero-atlas.js     Hero Atlas tab: search, skills, synergies, skins
-  app-research.js       Tech Research Calculator tab
-  app-specialization.js Integrated Specialization Towers tab renderer
-  specialization-towers-v2-assets.js  Optimized embedded public planner emblems
-  specialization-towers-v2-data.js    Canonical researches, nodes, buffs, milestones, and Legion Skills
-  specialization-towers-v2-model.js   Progress, prerequisites, medal totals, and unlock calculations
-  material-calculator.js Dragon Master Command Center renderer
-  material-planner-model.js Dragon Master routes, recipes, plan validation/share model
-  shell-v14.js          Responsive app-shell navigation and More sheet
-  youtube-v14.js        On-demand YouTube playlist/player controller
-  app-strife.js         Strife over Dragon recommendations
-  app-export.js         Export functions (html2canvas, CSV, text)
-  app-error-reporting.js  Client error queue and Firestore flush
-  app-hero-tooltip.js   Hero tooltip hover logic
-  app-loading.js        Boot splash (3D door animation), loading progress
-  app-shortcuts.js      Keyboard shortcuts
-  app-undo.js           Undo toast stack
-  bug-widget.js         User-facing bug report widget
-
-  state.js              Shared state: combo rank info, filters, troop colors
-  utils.js              escapeHtml, helpers
-  seo.js                JSON-LD schema, meta optimization
-
-  skins-db.js           Skin database schema + hero skin entries
-  combos-db.js          Ranked combo database (180 entries)
-  strife-db.js          Strife over Dragon recommendation data
-  combo-counters.js     Counter matchups + render
-  combo-counter-lookup.js  Search: which heroes counter which
-  combo-share.js        URL share for combos
-  roster-share.js       URL share for rosters
-
-  heroes-data.js        Hero base data (68 heroes: name, season, troop, state)
-  heroes-info.js        Hero skills, placement, copies
-  hero-bonuses.js       Manual rating adjustments
+Port 5174 is the project's documented local origin for protected-flow testing. Firebase Auth authorized domains, App Check registration, and the Worker origin allowlist are separate controls. Restart Vite after changing environment values. Never put service-account credentials, provider API secrets, private PINs, or App Check debug tokens in a tracked file.
 
-  firebase.js           Firebase init, anonymous auth, getDb
-  player-profile.js     Cloud profile save/load
-  player-registry.js    Canonical roster/player identity helpers
-  player-tags.js        Special player tag rendering
-  pwa-register.js       Service worker registration + install prompt
-  game-time.js          Game clock display, sync titles
-  translations.js       Default English i18n loader + dynamic language imports
-  user-data-portability.js  Local data export helpers
-  i18n/                 Per-language modules loaded on demand
+The supported variable names and placeholders live in [.env.example](.env.example). See [operations and troubleshooting](docs/operations.md) for boundaries and failure diagnosis.
 
-  tech-db.js            Tech tree database
-  research-node-icons.js    SVG icons for tech nodes
-  research-advanced.js  Advanced research view
-  research-buffs.js     Research buff summaries and missing-value checks
-  loyalty-calculator.js Eden loyalty calculator
+## Development commands
 
-  admin-page.js         Standalone admin shell bootstrap
-  contribution-weighting.js  Eden contribution scoring helpers
-  consistency-score.js  Eden X1 consistency scoring helpers
-  eden-x1.js            Eden X1 public dashboard and voting logic
-  eden-vote-deadline.js Shared voting-deadline normalization and countdown model
-  ocr-dashboard.js      VTS Admin: main dashboard logic
-  ocr-roster.js         Roster: checklist, login, alliances, snapshots
-  ocr-render.js         Dashboard UI rendering
-  ocr-engine.js         OCR parsing logic (structure names, durability)
-  ocr-name-normalizer.js OCR/player name cleanup
-  ocr-shared.js         Shared constants, state, helpers for OCR module
-  ocr-time-filter.js    Game-time filtering helpers
-  ocr-adjustments.js    R5 Bonus Team Effort Points panel: merit/penalty points, Firestore sync
-  admin-log-store.js    Local bounded Admin Activity ring/outbox/deduplication
-  admin-log-sync.js     Admin-only cross-device Firestore Activity stream
+| Command               | Purpose                                                                        |
+| --------------------- | ------------------------------------------------------------------------------ |
+| npm run dev           | Start the development server                                                   |
+| npm run version:check | Validate release surfaces and version cadence                                  |
+| npm run test:unit     | Run the complete Node unit suite                                               |
+| npm run check:fast    | Version, lint, formatting, unit tests, and translation checks                  |
+| npm run build         | Validate/build data, refresh generated metadata, bundle, and post-process dist |
+| npm run size:check    | Check a fresh build's asset budgets and installed toolchain versions           |
+| npm run smoke         | Development-server browser smoke coverage                                      |
+| npm run smoke:prod    | Built-artifact browser smoke coverage                                          |
+| npm run check         | Full local gate, including rules check, build, size, and browser checks        |
+| npm run verify:deploy | CI/deploy wrapper with required build configuration and auth injection         |
+| npm run towers:test   | Focused Towers model and browser tests                                         |
+| npm run velo:lab      | Start the isolated local Velo/Ollama workshop                                  |
 
-  eden-map.js           Eden Map: render, plans, routing
-  eden-map-data.js      Static data, sector definitions
-  eden-map-assets.js    Image preloading, icon management
-  eden-map-terrain.js   Terrain layer, pathfinding
-  eden-map-ui.js        UI controls, toolbars
-  eden-map-features.js  Structure features, filters
-  eden-map-guide.js     Help overlay
-  eden-map-season.js    Season picker
-  eden-map-teams.js     Team management
-  eden-map-sidebar.js   Sidebar panel helpers
-  eden-map-toolbar.js   Toolbar rendering/actions
-  eden-map-scout.js     Scout report overlay
-  eden-map-construction.js  Construction timeline
-  eden-map-config.js    Constants
-  eden-datasets.payload.json  Encoded Eden structure dataset payload
-  eden-datasets-loader.js   Runtime decoder
-  eden-live-map.js      Live map overlay
-  eden-tooltips.js      Eden hover tooltips (i18n)
-```
+Install Chromium once for browser checks with npx playwright install chromium. On Linux, CI uses npx playwright install --with-deps chromium. Some screenshot baselines are Windows-specific and explicitly skipped in CI; a passing CI run does not claim those snapshots were compared.
 
-## Key Architecture Decisions
+For a quick Towers loop, use npm run towers:dev, npm run towers:test:unit, and npm run towers:test:ui. For another tool, select its existing unit/browser tests. The [contribution guide](CONTRIBUTING.md#choose-the-right-checks) explains when focused checks are sufficient and when the full gate is required.
 
-### Deployment Model
+## Project map
 
-The `gh-pages` branch is the production source branch, but Pages does not serve its files directly. GitHub Actions runs the full deploy verification, uploads `dist/` as the Pages artifact, and deploys only that verified artifact.
+| Location                  | Responsibility                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| Root HTML pages and tabs/ | Application entry points and fetched templates                                 |
+| js/                       | Feature controllers, state, domain models, catalogs, storage, and translations |
+| css/                      | Shared theme tokens, components, responsive styles, and feature styles         |
+| assets/ and images/       | Runtime media plus explicitly retained source originals                        |
+| database/                 | Canonical source tables, manifests, and evidence used by data builders         |
+| scripts/                  | Build, validation, release, data import, and administrative helpers            |
+| tests/                    | Unit contracts, browser scenarios, fixtures, and active visual baselines       |
+| workers/                  | OCR/AI proxy and associated server components                                  |
+| functions/                | Separately deployed Firebase Functions and their package lock                  |
+| docs/                     | Current guides, source evidence, and clearly marked historical plans           |
+| dist/                     | Generated deployment artifact; not tracked source                              |
 
-### CSS Architecture
+See [architecture](docs/architecture.md) for feature ownership, data paths, and cache behavior. The documentation index lists every maintained guide and retained historical Markdown document.
 
-The app no longer ships the frozen Tailwind compatibility shim. Remaining UI styling lives in semantic stylesheets (`app.css`, `components.css`, `mobile.css`, and `atmosphere.css`), and `cssnano` minifies production CSS after the Vite build.
+## Architecture in practice
 
-### Tab Lazy-Loading
+The frontend is a Vite-built collection of native JavaScript modules and HTML entry pages. Large tools and locale packs use dynamic imports. Firebase SDK modules are imported from the installed firebase package through js/firebase-sdk.js and bundled into same-origin hashed assets; they are not loaded through the old gstatic module scheme.
 
-Eden Map and Loyalty tab templates are fetched on first tab click via `loadTabTemplate()`. Manual Builder, Arcade, Research, Hero Atlas, Strife over Dragon, Eden Map code, OCR dashboard code, image export, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules. VTS Admin and Eden X1 are standalone pages with their own Vite inputs.
+The build copies selected static directories and files through scripts/post-build.mjs. Its sourceOnlyDeployPaths list keeps selected original images in Git without shipping them. Do not assume every file under assets/ is deployed, or that an image without a literal filename reference is unused: several features construct paths from IDs, levels, or coordinates.
 
-### Release Mode
+The service worker builds its cache manifest from the finished artifact. Offline precaching can fetch optional public JS/CSS after registration even though their UI is lazy-loaded. Changing this behavior needs offline and previous-version recovery tests.
 
-`js/maintenance-config.js` remains the explicit release/maintenance toggle and is included in the service-worker precache. While `VTS_MAINTENANCE_MODE` is enabled, every public entry page redirects to the lightweight maintenance page unless the local/session bypass is present.
+## Release and deployment
 
-### Admin Auth
+**gh-pages is production source. All changes go through a pull request.** GitHub Actions validates and deploys dist/, not the raw checkout. [AGENTS.md](AGENTS.md) is the authoritative workflow policy; the [release guide](docs/version-control-workflow.md) explains the sequence.
 
-The public toolkit still uses Firebase anonymous auth for saved combos and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.
+- Small reversible changes use focused tests and check:fast when practical, plus relevant build/version/size checks.
+- Major upgrades, broad application overhauls, security/auth changes, Firebase rules/schema changes, and major dependency upgrades require npm run check.
+- Firebase Hosting preview is an optional high-risk gate, not a requirement for every UI fix. Its public preview uses the real backend; see the [preview guide](docs/firebase-preview-workflow.md).
+- Workers, Firebase Functions, rules, and indexes deploy separately when their code or contracts change. Merging a frontend PR does not deploy them.
+- User-visible changes update release metadata and CHANGELOG.md. Documentation and internal cleanup do not need an app-version bump unless requested. Patch releases run through .20 before the next minor.
+- Leave normal merging to the owner. An explicit fast-merge request can use protected auto-merge; never push directly to production.
 
-Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require the signed-in Firebase user to have an `admin: true` custom claim. The shared `1097` Email/Password account can still be the team login, but that account's UID must carry the admin claim before Firestore writes will pass. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Bonus Team Effort records.
+## Screenshots
 
-The dashboard saves OCR results to localStorage first, then uploads to Firestore when cloud sync is available. Failed cloud writes must stay visible in the admin status/log instead of looking like a successful sync. On load, locally cached attacks are merged with cloud attacks by attack id and written back to Firestore when the signed-in admin session can write.
+These illustrations show the toolkit's main workflows; they are documentation media, not a promise of pixel-perfect parity with every release.
 
-To grant the shared admin account the custom claim, use the account email or copy that user's UID from Firebase Authentication and run:
+![Combo Generator and Hero Atlas](docs/media/toolkit-core-tools.webp)
 
-```bash
-$env:FIREBASE_ADMIN_EMAIL="1097@abocombo.web.app"
-# or: $env:FIREBASE_ADMIN_UID="the-auth-uid"
-$env:FIREBASE_SERVICE_ACCOUNT_PATH="C:\path\to\service-account.json"
-npm run firebase:admin-claim
-```
+![Specialization Towers desktop and mobile examples](docs/media/specialization-towers-responsive.webp)
 
-After setting the claim, reload the site so Firebase refreshes the auth token. If cloud writes still fail, check the visible sync banner and the Analysis Terminal for the exact Firestore/App Check/auth error.
+Use sanitized demo data for screenshots. Keep curated documentation images in docs/media/ and regression baselines beside their tests. Root-level scratch captures, rendered PDF pages, local videos, caches, and worktrees belong outside tracked source. See [repository maintenance](docs/repository-maintenance.md).
 
-### Firebase
+## Community contributions and support
 
-Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned `gstatic` module version (`11.6.1`) so GitHub Pages can serve raw ES modules without bare package specifiers. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
+Bug reports should identify the page, release, language, theme, viewport, reproduction steps, and expected result. Data corrections need source evidence; suggestions should describe the player task and a concrete success condition. [CONTRIBUTING.md](CONTRIBUTING.md) includes both workflows.
 
-GitHub Pages deployment publishes the static app only; it does not deploy `firestore.rules`. After changing public vote validation or any Firestore write contract, deploy the rules to Firebase before expecting live writes to pass:
+Report credential, access-control, and private-data issues through [SECURITY.md](SECURITY.md), not a public issue. Operational alliance messages follow the [R5 communications guide](docs/r5-communications-guide.md) and [append-only message ledger](docs/r5-message-log.md). Keep private orders and player records out of reusable Velo knowledge.
 
-For local Firebase and App Check testing, run Vite on `http://127.0.0.1:5174`; port 5174 is the project's registered local preview origin. Use `npm run dev -- --host 127.0.0.1 --port 5174` and do not substitute Vite's default or another local port for protected flows.
-
-```bash
-npx firebase-tools deploy --only firestore:rules --project abocombo
-```
-
-For Eden X1 Team Players voting, `vts_admin/eden_x1_votes/records` now accepts one to four unique teammate votes per selected voter/member. If live voting shows `Missing or insufficient permissions`, first confirm the latest `firestore.rules` are deployed.
-
-The synchronized Admin Activity stream writes an absolute `expiresAt` timestamp 30 days ahead. Firestore rules validate that timestamp, but deletion starts only after the collection-group TTL policy is enabled separately:
-
-```bash
-gcloud firestore fields ttls update expiresAt --collection-group=admin_log_events --enable-ttl --project=abocombo
-```
-
-This TTL applies only to `vts_admin/log_store/admin_log_events`; it does not expire dashboard, roster, vote, or user-plan data.
-
-### OCR Worker and App Check
-
-The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.
-
-Worker configuration uses `DASHSCOPE_API_KEY` as the primary Cloudflare secret. Optional fallback configuration is handled entirely in Cloudflare: set `DASHSCOPE_FALLBACK_API_KEY` if the spare quota is on a second Alibaba key, and set `DASHSCOPE_FALLBACK_MODELS` to a comma-separated list of up to five extra compatible model names. Non-secret Worker variables include `DASHSCOPE_BASE_URL` (default: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), `DASHSCOPE_MODEL` (default: `qwen-vl-plus`), `DASHSCOPE_FALLBACK_BASE_URL`, `DASHSCOPE_FALLBACK_MODELS`, `ALLOWED_ORIGINS`, `FIREBASE_APP_CHECK_PROJECT_NUMBER`, and optional `FIREBASE_APP_CHECK_APP_ID`. `FIREBASE_APP_CHECK_APP_ID` is the Firebase Web App ID (`1:...:web:...`), not the reCAPTCHA site key.
-
-The All-Star OCR route uses the `BOH_OCR_RATE_LIMITER` Durable Object declared in `wrangler.jsonc`. One coordinator atomically reserves the hashed Firebase-UID bucket and global bucket, so simultaneous requests cannot both pass a max-one limit and a global rejection does not consume the member allowance. Production mode is `durable` and fails closed with HTTP 503 if the binding is missing or unavailable; isolate-local counters are available only when a unit/local harness explicitly sets `BOH_OCR_RATE_LIMIT_MODE=memory-test`. The legacy generic OCR route can still use an optional `RATE_LIMIT_KV` binding, but that older KV read/write counter is not the All-Star authorization or quota boundary.
-
-All-Star OCR also reads `boh_allstar_member_grants/{uid}` through the Firestore REST API with the caller's already-verified Firebase ID token. The deployed Firestore rule must allow only the member's own GET and must require schema version 1, matching UID, a future `expiresAt`, and `seasonId == boh_allstar_config/current.activeSeason`. The Worker validates the returned Firestore schema again and fails closed on denied, missing, malformed, or unavailable grant reads; it no longer trusts reusable custom claims.
-
-Member-owned planning data stays season-scoped under `boh_allstar/{season}`. Private All-Star signup documents may include canonical fieldable-hero names, sparse `0–100` research-tree percentages, exactly two preferred fighting-time IDs, an optional favorite role, and up to six non-binding teammate names. These fields are leadership planning signals and do not add strength-score points. Epic Showdown choices are revisioned independently in `epicPreferences/{uid}`, so changing lane or time availability never invalidates a reviewed BoH signup. Members with a current grant can read and update only their own preference document; Firebase admins can list the season for planning summaries.
-
-The Worker entry preserves the existing `AI_USER_QUOTA` and `AI_GLOBAL_QUOTA` bindings plus their `ai-quota-v1` migration before appending `v1-boh-ocr-rate-limiter`. The first deployment containing the BoH tag provisions its SQLite-backed Durable Object namespace. Cloudflare Durable Objects therefore need to be available on the target account, and neither migration tag may be renamed, reordered, or removed after deployment. Deploy the additive Firestore grant rules and grant-writing Function before deploying this Worker; no extra Worker secret is needed for the grant read because it runs under the caller's Firebase ID token. `npm run worker:check` validates the bindings and bundle without deploying anything.
-
-Cloudflare Worker deploy checklist:
-
-```bash
-npx wrangler login
-npm run worker:check
-npm run worker:deploy
-```
-
-Before deploy, set the Qwen key as a Cloudflare secret:
-
-```bash
-npx wrangler secret put DASHSCOPE_API_KEY
-```
-
-The checked-in `wrangler.jsonc` is the source of truth for non-secret Worker permissions. It must include `https://roc-vts.com`, `http://localhost:5173`, `http://127.0.0.1:5173`, and any LAN/Vite ports used for phone testing in `ALLOWED_ORIGINS`. Do not deploy with `--keep-vars` when fixing origin drift, because that preserves stale dashboard variables.
-
-For local OCR testing, `.env` may use `VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`. The first browser run prints an `App Check debug token`; add that UUID in Firebase Console > App Check > your web app > Manage debug tokens, then replace `true` with the registered UUID and restart Vite. Otherwise Firebase returns HTTP 403 before the OCR Worker receives the request.
-
-If `/status` is ready but uploads fail with `Workers endpoint access denied`, check Cloudflare Worker variables first: `DASHSCOPE_BASE_URL` must be `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, and `DASHSCOPE_API_KEY` / `DASHSCOPE_FALLBACK_API_KEY` must belong to Alibaba Cloud accounts with DashScope/Qwen VL access. `/status` reports `fallbackModelConfigured` for same-key model fallback, `fallbackKeyConfigured` for a second spare key, plus `primaryModel`, `modelCount`, and `fallbackModelCount` without exposing secret values.
-
-### Error Boundaries
-
-Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.
-
-### State Management
-
-Shared state variables (`allHeroesData`, `heroesExtendedData`, `rankedCombos`, etc.) are exported from their respective modules. The `state.js` module provides computed helpers (`getComboRankInfo`, troop color maps, filter logic).
-
-### OCR Module Pattern
-
-The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-render.js`, `ocr-engine.js` with a shared `ocr-shared.js` for constants, state, and utilities (`$id`, `esc`, `log`).
-
-## Data Flow
-
-```
-1. Combo Builder
-   Select 3 heroes -> updateManualComboScore() -> getComboRankInfo() -> show rank + score + counters
-
-2. Combo Generator
-   Select 12+ heroes -> generateBestCombos() -> iterate rankedCombos -> top 5 (no overlap)
-
-3. OCR Roster
-   Upload screenshot -> Qwen API -> takeRosterSnapshot() -> localStorage + Firestore -> renderRoster()
-
-4. OCR Attack Data
-   Upload structure screenshots -> Qwen API -> save to dashData -> leaderboard + chart + insights
-
-5. Eden Map
-   Select season -> render map -> place/remove structures -> plan routes -> share plan
-```
-
-## localStorage Keys
-
-| Key                            | Purpose                                                                        |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| `vts_ocr_dashboard`            | Attack data JSON                                                               |
-| `vts_ocr_auth`                 | Admin password hash                                                            |
-| `vts_ocr_roster`               | Legacy flat roster text                                                        |
-| `vts_roster_snapshots`         | Roster snapshot array                                                          |
-| `vts_roster_alliances`         | Alliance name list                                                             |
-| `vts_roster_user`              | Logged-in roster user                                                          |
-| `vts_ocr_banners`              | Banner records array                                                           |
-| `qwen_api_key`                 | Legacy browser-stored Qwen key; cleared because OCR now uses the Worker secret |
-| `vts_generator_owned_skins_v1` | Per-hero skin/base ownership toggles in the combo generator                    |
-
-## Firebase
-
-- **Auth:** Anonymous via `ensureAnonymousAuth()`
-- **Firestore paths:**
-  - `vts_admin/dashboard_data` -- OCR attack data
-  - `vts_admin/roster_data` -- roster snapshots
-  - `vts_admin/conduct_adjustments/records` -- R5 Bonus Team Effort Points (admin write only)
-  - `vts_saved_combos` -- community shared combos
-- **Real-time listeners** via `onSnapshot()` for roster and saved combos
-- **Offline-first:** All saves go to localStorage first, then Firestore
-
-## Deploy
-
-The site auto-deploys at **https://roc-vts.com/** when a pull request is merged into `gh-pages` (custom domain configured in repo Settings > Pages).
-
-Because `gh-pages` is production, do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, open a pull request into `gh-pages`, wait for checks/review, and let the owner merge. See [AGENTS.md](AGENTS.md) for the required agent workflow.
-
-### Quick Updates Mode
-
-For owner-led batches of rapid fixes, follow [Quick Updates Mode](docs/quick-updates-mode.md): accumulate edits without running checks during the queue, and run release metadata plus the full verification/PR workflow only after the owner sends the exact confirmation `last queue`.
-
-## Contributing
-
-Community data updates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the preferred formats for hero stats, combo corrections, skin data, OCR examples, and Eden screenshots.
-
-### Combo Dataset Attribution
-
-The optional combo audit tool (`npm run combos:audit`) uses public combo candidate data from [tools.riseofcastles.net/combos-data](https://tools.riseofcastles.net/combos-data/). Credit to the Rise of Castles Tools team/community for publishing and maintaining those datasets. Imported records are treated as review candidates and are not automatically merged into the curated ranking database.
-
-For release bookkeeping, keep [CHANGELOG.md](CHANGELOG.md) updated with every user-visible change.
-
-## Eden Map Data
-
-Dataset JSON is stored in `js/eden-datasets.payload.json`. After updating screenshots or map assets:
-
-```bash
-python scripts/eden/build-eden-from-screenshots.py   # X1 from in-game screenshots
-python scripts/eden/build-eden-x12.py                # X12 reference baseline
-```
-
-Both run `build-eden-datasets.py` to regenerate the payload. Then `npm run build` to rebuild.
-
-## Environment
-
-- Node.js 18+ (for Vite build)
-- Python 3.10+ (for Eden dataset scripts)
-- A Qwen/DashScope API key stored as the Cloudflare Worker secret `DASHSCOPE_API_KEY`
+For licensing, see [LICENSE](LICENSE). Source-specific credits and verification limits remain attached to the relevant data/evidence documents.

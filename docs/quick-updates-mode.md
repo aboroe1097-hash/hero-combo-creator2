@@ -1,5 +1,10 @@
 # Quick Updates Mode
 
+> **Opt-in owner workflow.** This mode applies only when the owner explicitly opens a queue and asks to defer publication until the final item. It is not the default release gate and does not override AGENTS.md. Outside that mode, use focused verification and normal PR delivery. A later explicit request to publish the accumulated work ends the queue even if it does not use the exact phrase below.
+
+[Normal release workflow](version-control-workflow.md) · [Documentation index](README.md)
+
+
 Quick Updates Mode is the owner-led workflow for batching a long queue of small fixes against the current production release.
 
 ## During the queue
@@ -14,7 +19,7 @@ Quick Updates Mode is the owner-led workflow for batching a long queue of small 
 The exact owner message `last queue` ends the edit queue and authorizes the release workflow:
 
 1. Review the complete diff and update the release version, changelog, and generated metadata when required.
-2. Run focused verification where useful, followed by the required full `npm run check` gate.
+2. Run focused verification where useful, then the scope-appropriate gate from AGENTS.md; broad/high-risk application changes require `npm run check`.
 3. Stage only intended files, commit, push the integration branch, and open the next pull request into `gh-pages`.
 4. Wait for required GitHub checks and owner review. Do not merge automatically.
 

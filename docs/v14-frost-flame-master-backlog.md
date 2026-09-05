@@ -1,5 +1,12 @@
 # V14 Frost & Flame Master Backlog
 
+> **Historical record — v14 visual backlog.** Reviewed for documentation routing on 2026-09-05.
+> The release-era assignments and open checkboxes are historical. Current shared themes, layout tests, and source ownership take precedence over old lane instructions.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [css/app.css](../css/app.css) · [tests/p1-accessibility-runtime.spec.js](../tests/p1-accessibility-runtime.spec.js) · [Documentation index](README.md).
+
+
 Status: planning and parallel implementation handoff
 Production branch: `gh-pages` (owner-merge only)
 Working branch for every contributor: `codex/platform-hardening`

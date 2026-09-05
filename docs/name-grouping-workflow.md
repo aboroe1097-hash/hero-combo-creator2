@@ -1,5 +1,14 @@
 # Player Name Grouping & Dedup Workflow
 
+## Current authority and review boundary
+
+The current findBestMatch() first checks confirmed aliases and the player registry, then protected identities, legacy aliases, and roster matching. Its OCR fallback still includes similarity logic; do not apply that heuristic as a blanket policy to contribution/leaderboard account identity. Confirm new cross-spelling merges and preserve distinct main/alt/banner accounts.
+
+The workflow examples below record earlier matching behavior. In particular, stripping every BANNER suffix is not a valid current rule: BOiiE BANNER, ANGEL Banner, and known alternate accounts must remain separate. Compare with current player-registry.js and contribution identity tests before editing aliases.
+
+[Contribution identity tests](../tests/unit/contribution-identity.test.mjs) · [Documentation index](README.md)
+
+
 This doc captures the repeatable process for keeping player names consistent across the VTS Admin
 datasets (Structures/Attacks, Banners, Pathers, Contributions). Run the dedup pass every few days,
 or whenever OCR introduces odd readings. It is written so it can be picked up cold — by the
@@ -150,8 +159,8 @@ the duty debug CSV as `Cleaned ≠ Grouped` and should be added to the **same sh
 6. **Multi-tag cells** (ambiguous — send to review, don't auto-pick):
    `@UNDEAD + @BiG BOiiE`, `gate @redull @+ Ezeta TV`.
 
-7. **Banner suffix** → owner player: `BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`,
-   `Undead_Banner` → `Undead` (then matched via the shared authority).
+7. **Banner suffix** — preserve it until the confirmed identity mapping resolves the account.
+   Historical suffix-stripping examples are superseded; a banner account is not automatically its owner main.
 
 After pre-clean, the residual leans on the shared `aliasMap` + roster fuzzy match, which handles
 OCR letter errors (`@UNDEA`→UNDEAD via alias; `Dvd`→DvD18 needs an alias if the roster fuzzy match

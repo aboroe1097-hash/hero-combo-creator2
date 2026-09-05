@@ -1,5 +1,10 @@
 # X10 / X12 hero + research data — transcribed for execution without vision
 
+> **Dated transcription, not a fresh import instruction.** X10/X12 data and subsequent fixes are now in production. The correction notes below describe the pre-release checkout on 2026-09-02. Preserve the raw tables and credits; compare any proposed change with current heroes-data.js, tech-db.js, and Firestore contracts first.
+
+[Package guide](README.md) · [Current release history](../../../CHANGELOG.md)
+
+
 Everything below was read off the owner's in-game screenshots on 2026-09-02 and
 transcribed by hand. **A model without vision can execute the whole plan from this
 file alone.** Nothing here needs an image to be re-read.

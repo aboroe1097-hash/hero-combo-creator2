@@ -1,5 +1,12 @@
 # Roles and access — replacing the admin PIN with accounts
 
+> **Historical record — Account-role migration plan.** Reviewed for documentation routing on 2026-09-05.
+> Account-based roles are implemented. The current server handler and rules govern authorization, not the proposed code snippets below. No historical grant or deploy command is an instruction to change live accounts.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [functions/src/user-roles.js](../functions/src/user-roles.js) · [SECURITY.md](../SECURITY.md) · [Documentation index](README.md).
+
+
 Ships with PR #153. Written as design first because this is authorization: a
 mistake either locks the owner out of production or opens a gate that is
 currently closed.

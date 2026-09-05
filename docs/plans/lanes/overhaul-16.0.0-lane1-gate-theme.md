@@ -1,5 +1,12 @@
 # Lane 1 — Gate & Theme (commit-spine commits 2–6)
 
+> **Historical record — v16 theme/build lane.** Reviewed for documentation routing on 2026-09-05.
+> Theme token work has shipped. Re-measure the current locked build before changing CSS ceilings; old local toolchain drift is not evidence of a present regression.
+> Original content below is retained as dated evidence, not current release instructions.
+
+**Current starting points:** [scripts/check-size.mjs](../../../scripts/check-size.mjs) · [css/app.css](../../../css/app.css) · [Documentation index](../../README.md).
+
+
 Status: proposal rev 2 (2026-09-02, post-T0 review — ACCEPTED with 4 revisions,
 all folded in below). Lane: T1 heavy. Mode: proposal-only — this file is the
 only deliverable; no code is modified. All file/line references verified against
