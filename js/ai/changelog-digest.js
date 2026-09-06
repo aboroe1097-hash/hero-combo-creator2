@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.3";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.4";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.4",
+    "date": "2026-09-07",
+    "highlights": [
+      "Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced \"Something went wrong. Try again.\" on the sign-in form. Members read th…",
+      "Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still n…"
+    ]
+  },
   {
     "version": "16.0.3",
     "date": "2026-09-04",
@@ -89,15 +97,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed a crash in the Artifact calculator that showed “Artifact Calculator failed to load” whenever heroes were selected in the generator (or synced from an account roster); the Sword path planning now reads the analyzed hero mechanics correctly.",
       "Fixed the Artifact tree board image on the live site, which loaded from a doubled asset path."
-    ]
-  },
-  {
-    "version": "15.0.10",
-    "date": "2026-08-18",
-    "highlights": [
-      "Fixed the Eden Playbook Week 1 “Balancing Income & Production” tool link so it reliably opens the Eden Loyalty subtab instead of staying on the playbook when a stale subtab intent was present.",
-      "Reassigned the DrThunder in-game route screenshots across the playbook timeline: Day 1, Day 2, and Week 1 now share the two route references, and the Role entry no longer repeats them (full routes remain in Eden Tips & Guides).",
-      "Improved the Loyalty Targets layout with centered copy, tighter centered income-jump cards, a gradient card accent, and balanced spacing."
     ]
   }
 ].map((release) =>

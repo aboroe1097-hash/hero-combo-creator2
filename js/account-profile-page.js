@@ -372,11 +372,28 @@ async function runAction(action, successKey, options = {}) {
       announce(accountTr('status.googleSwitchCanceled'));
       return false;
     }
-    if (refresh) await render();
-    onSuccess?.(result);
+    // Everything below this line runs AFTER the action already succeeded, so it
+    // must not be reported as the action failing. Sign-in used to share one
+    // try/catch with the profile re-render: a Firestore hiccup while loading the
+    // freshly signed-in account surfaced as "Something went wrong. Try again."
+    // on the sign-in form, which reads as a rejected password. People reset
+    // passwords that were never wrong while already being signed in.
+    if (refresh) {
+      try {
+        await render();
+      } catch (error) {
+        console.error('[account] profile refresh failed after a successful action', error);
+      }
+    }
+    try {
+      onSuccess?.(result);
+    } catch (error) {
+      console.error('[account] post-action navigation failed', error);
+    }
     announce(accountTr(result?.signedInExisting ? 'status.signedIn' : successKey), 'success');
     return true;
   } catch (error) {
+    console.error('[account] action failed', error);
     announce(accountErrorMessage(error, accountTr), 'error');
     return false;
   } finally {

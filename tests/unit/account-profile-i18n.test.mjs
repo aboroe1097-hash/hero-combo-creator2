@@ -211,10 +211,30 @@ test('account errors map deterministically and never expose raw Firebase message
     accountErrorMessage({ code: 'auth/invalid-email', message: 'SECRET' }, 'zh'),
     '请输入有效的电子邮箱地址。'
   );
+  // An unrecognised code keeps the translated generic sentence and appends the
+  // code itself. A bare "something went wrong" made every distinct failure look
+  // identical in a user's screenshot, which is how a post-sign-in Firestore
+  // error got mistaken for a rejected password. The code is an identifier, not
+  // prose, so it stays untranslated — and the raw Firebase message must still
+  // never appear.
   assert.equal(
     accountErrorMessage({ code: 'unknown', message: 'SECRET' }, 'es'),
-    'Algo salió mal. Inténtalo de nuevo.'
+    'Algo salió mal. Inténtalo de nuevo. (unknown)'
   );
+  // No code at all falls back to the error's name, and to the bare sentence
+  // when there is nothing useful to add.
+  assert.equal(
+    accountErrorMessage({ name: 'TypeError', message: 'SECRET' }, 'es'),
+    'Algo salió mal. Inténtalo de nuevo. (TypeError)'
+  );
+  assert.equal(accountErrorMessage({}, 'es'), 'Algo salió mal. Inténtalo de nuevo.');
+  for (const error of [
+    { code: 'unknown', message: 'SECRET' },
+    { name: 'TypeError', message: 'SECRET' },
+    { code: 'permission-denied', message: 'SECRET' },
+  ]) {
+    assert.doesNotMatch(accountErrorMessage(error, 'es'), /SECRET/);
+  }
   const supportedCodes = [
     'auth/email-already-in-use',
     'auth/credential-already-in-use',
