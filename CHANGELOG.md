@@ -3,6 +3,11 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.4 - 2026-09-07
+
+- Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced "Something went wrong. Try again." on the sign-in form. Members read that as a rejected password and reset credentials that were never wrong. The refresh and the post-sign-in navigation now fail independently and only log.
+- Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still never shown.
+
 ## 16.0.3 - 2026-09-04
 
 - Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 heroes, and the default ladder still jumps X8 straight to X12.

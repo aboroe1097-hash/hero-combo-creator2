@@ -1298,10 +1298,21 @@ const ACCOUNT_ERROR_KEYS = Object.freeze({
   'account/google-credential-unavailable': 'error.googleCredentialUnavailable',
 });
 
+// An unrecognised error used to collapse into a bare "Something went wrong",
+// which told a stuck user nothing and told whoever they reported it to even
+// less — every cause looked identical in a screenshot. Recognised codes still
+// get their translated sentence; anything else keeps the generic sentence and
+// appends the raw code, which is an identifier rather than prose and so needs
+// no translation.
 export function accountErrorMessage(error, translatorOrLocale = 'en') {
   const accountTr =
     typeof translatorOrLocale === 'function'
       ? translatorOrLocale
       : createAccountTranslator(translatorOrLocale);
-  return accountTr(ACCOUNT_ERROR_KEYS[String(error?.code || '')] || 'error.generic');
+  const code = String(error?.code || '').trim();
+  const known = ACCOUNT_ERROR_KEYS[code];
+  if (known) return accountTr(known);
+  const detail = code || String(error?.name || '').trim();
+  const generic = accountTr('error.generic');
+  return detail ? `${generic} (${detail})` : generic;
 }

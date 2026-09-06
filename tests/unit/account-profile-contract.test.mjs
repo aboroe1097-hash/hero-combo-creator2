@@ -465,3 +465,25 @@ test('account profile CSS includes responsive, safe-area, focus, and RTL safegua
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /html\[dir='rtl'\]/);
 });
+
+test('a failure after a successful action is never reported as the action failing', () => {
+  // Sign-in and the profile re-render used to share one try/catch, so a
+  // Firestore hiccup while loading the freshly signed-in account announced
+  // "Something went wrong. Try again." on the sign-in form. Users read that as
+  // a rejected password and went off resetting credentials that were fine,
+  // while already being signed in. The refresh and the post-action navigation
+  // now own their own catch blocks and only log.
+  const pageSource = read('js/account-profile-page.js');
+  const runAction = pageSource.match(/async function runAction\([\s\S]*?\n\}/)?.[0];
+  assert.ok(runAction, 'runAction still exists');
+
+  // The refresh is guarded rather than awaited bare inside the shared try.
+  assert.doesNotMatch(runAction, /^\s*if \(refresh\) await render\(\);\s*$/m);
+  assert.match(runAction, /if \(refresh\) \{\s*try \{\s*await render\(\);\s*\} catch/);
+  assert.match(runAction, /try \{\s*onSuccess\?\.\(result\);\s*\} catch/);
+
+  // Exactly one path may announce an error, and it is the one wrapping the
+  // action itself — not the refresh, and not the navigation.
+  assert.equal([...runAction.matchAll(/announce\(accountErrorMessage\(/g)].length, 1);
+  assert.equal([...runAction.matchAll(/, 'error'\)/g)].length, 1);
+});
