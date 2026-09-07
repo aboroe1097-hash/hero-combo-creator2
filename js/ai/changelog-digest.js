@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.7",
+    "date": "2026-09-07",
+    "highlights": [
+      "Allowed VTS Admin to reach the setUserRole Cloud Function. With the SDK-instance fix in place the callable finally resolved, and the browser then refused the connection: admin.html's Content-Security-Policy never listed cloudfunctions.net, though index.html has always listed the…"
+    ]
+  },
   {
     "version": "16.0.6",
     "date": "2026-09-07",
@@ -86,15 +93,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "A refused save now says the server rejected the write and the security rules may be out of date, instead of claiming you are not signed in.",
       "Fixed the language coverage report claiming 26 missing translations per locale that were in fact already translated.",
       "Corrected stale version labels on the account, VtsScore and maintenance pages, and gave the 404 page a mobile layout."
-    ]
-  },
-  {
-    "version": "15.0.13",
-    "date": "2026-08-26",
-    "highlights": [
-      "Added bulk row pasting to Bonus Team Effort so conduct adjustments can be entered as `player | points | reason` lines in one action.",
-      "Added admin-submitted team conduct suggestions with visible attribution and a super-admin approval or rejection workflow.",
-      "Restored VtsScore as a dedicated super-admin leaderboard tab and replaced the legacy All-Star command center with the focused BoH match-results workflow."
     ]
   }
 ].map((release) =>
