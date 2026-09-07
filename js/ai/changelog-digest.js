@@ -10,7 +10,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-07",
     "highlights": [
       "The VTS Eden Hub season tabs now name their season — \"Current Season · Eden X2\" and \"Previous Seasons · Eden X1\" — in all twelve Eden locales. The names come from the workspace registry, so opening a new season is one flag in that registry rather than an edit in every locale pac…",
-      "The season being played is now the hub's landing tab, with the Royal Bounty guide as the fallback when no season is published. The hub waits for the publication check before choosing, so it no longer opens one panel and swaps it out a moment later, and that wait is bounded so an…"
+      "The season being played is now the hub's landing tab, with the Royal Bounty guide as the fallback when no season is published. The guide opens first and the hub upgrades to the season once the publication check clears, abandoning that upgrade if you have already picked a tab you…"
     ]
   },
   {
