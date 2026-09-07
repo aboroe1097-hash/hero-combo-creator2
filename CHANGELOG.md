@@ -3,6 +3,11 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.9 - 2026-09-07
+
+- Admin suggestions now open on the pending queue, ten at a time, with filters for pending, approved, rejected or all, and a control to show the full filtered list. A season of decided suggestions no longer buries the few still waiting on a decision.
+- Added Approve all, which approves exactly the suggestions on screen. It asks once, naming the count, reloads once instead of per row, and reports how many succeeded if any fail part-way rather than claiming a clean run.
+
 ## 16.0.8 - 2026-09-07
 
 - The VTS Eden Hub season tabs now name their season — "Current Season · Eden X2" and "Previous Seasons · Eden X1" — in all twelve Eden locales. The names come from the workspace registry, so opening a new season is one flag in that registry rather than an edit in every locale pack.

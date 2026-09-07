@@ -125,6 +125,47 @@ export function sortConductSuggestions(records = []) {
   });
 }
 
+// Review defaults: pending only, ten at a time. A reviewer's job is the queue,
+// not the archive, and an unbounded list of a whole season's suggestions buries
+// the handful that still need a decision.
+export const CONDUCT_SUGGESTION_REVIEW_FILTERS = Object.freeze([
+  'pending',
+  'approved',
+  'rejected',
+  'all',
+]);
+export const CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE = 10;
+
+export function normalizeConductSuggestionReviewFilter(value) {
+  const key = String(value || '').toLowerCase();
+  return CONDUCT_SUGGESTION_REVIEW_FILTERS.includes(key) ? key : 'pending';
+}
+
+// Returns the rows to draw plus what the controls need to describe themselves:
+// how many matched, how many are hidden behind the cap, and which of them a
+// bulk approve would actually touch. Kept here, away from the DOM, because the
+// approve-all count is the number a confirmation prompt shows a human before
+// they change a season's scores.
+export function selectConductSuggestionsForReview(records = [], options = {}) {
+  const filter = normalizeConductSuggestionReviewFilter(options.filter);
+  const showAll = options.showAll === true;
+  const limit = Number.isFinite(options.limit)
+    ? Math.max(1, options.limit)
+    : CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE;
+  const sorted = sortConductSuggestions(records);
+  const matched = filter === 'all' ? sorted : sorted.filter((row) => row?.status === filter);
+  const rows = showAll ? matched : matched.slice(0, limit);
+  return {
+    filter,
+    rows,
+    matched: matched.length,
+    hidden: Math.max(0, matched.length - rows.length),
+    // Only what is on screen and still pending can be approved in bulk: a
+    // reviewer must not approve rows the cap is hiding from them.
+    approvableIds: rows.filter((row) => row?.status === 'pending').map((row) => row.id),
+  };
+}
+
 export function summarizeConductSuggestions(records = [], season) {
   const seasonKey = String(season || '').trim();
   const summary = { total: 0, pending: 0, approved: 0, rejected: 0, authors: 0 };
