@@ -351,7 +351,10 @@ const LIMITS = {
     // 16.0.3 shares app.css, so the Specialization summary and season filter
     // rules land here too: 680.1/776.2 KiB (was 679.1/775.2); lift the desktop
     // ceiling by 1 KiB and leave the unaffected mobile ceiling fixed.
-    'admin.html': { desktop: 681 * 1024, mobile: 785 * 1024 },
+    // 16.0.11 duty scoring weights: the superadmin editor is a dashboard panel,
+    // so its styles land on Admin. 681.1/776.2 KiB after trimming token
+    // fallbacks out of it; lift desktop by 1 KiB, mobile ceiling untouched.
+    'admin.html': { desktop: 682 * 1024, mobile: 785 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
     // Eden imports the same dashboard stylesheet for weighted-contribution
     // detail, so the Admin-only panel styles are present in its CSS graph even

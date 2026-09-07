@@ -3291,7 +3291,11 @@ test.describe('app smoke tabs', () => {
     await expect(scorePopover).toContainText('1,000,000 ÷ 20');
     await expect(scorePopover).toContainText('50,000');
     await expect(scorePopover).toContainText('Duty points');
-    await expect(scorePopover).toContainText('20,000');
+    // 15,000, not the old flat 20,000: both duties here were performed by alt
+    // accounts, which are worth 0.5 for a banner and 1 for pathing against 1
+    // and 3 on a main. The breakdown no longer claims 'N x 10,000' either,
+    // because that arithmetic stopped being true once weights existed.
+    await expect(scorePopover).toContainText('15,000');
     await expect(scorePopover).toContainText('Total');
 
     const rewardTrigger = panel
@@ -4533,10 +4537,13 @@ test.describe('app smoke tabs', () => {
       'Hotel',
       'November',
       'India',
+      // Oscar sits above Juliet since duty points became weighted: Oscar's duty
+      // was performed on a main account and outscores the alt-performed duty
+      // below. The ordering is the retroactive restatement working, not drift.
+      'Oscar',
       'Juliet',
       'Mike',
       'Kilo',
-      'Oscar',
     ]);
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
     expect(contributionNames).not.toContain('Alpha');

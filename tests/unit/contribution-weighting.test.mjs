@@ -927,3 +927,44 @@ test('duty points weight each activity by the account class that performed it', 
     shieldWalls: { main: 1, alt: 1 },
   });
 });
+
+test('duty weights are stored per workspace and edited only by a superadmin', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { edenWorkspaceFirestorePath } = await import('../../js/eden-workspaces.js');
+
+  // Per workspace, so retuning the season being played cannot restate a
+  // finished season's scores.
+  assert.equal(
+    edenWorkspaceFirestorePath('eden-x2', 'dutyPointWeights'),
+    'vts_admin/eden_x2_duty_point_weights'
+  );
+  assert.equal(
+    edenWorkspaceFirestorePath('eden-x1', 'dutyPointWeights'),
+    'vts_admin/eden_x1_duty_point_weights'
+  );
+
+  const markup = readFileSync('tabs/admin.html', 'utf8');
+  const panel = markup.match(/<section class="dash-duty-weights"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(panel, 'the weights panel exists');
+  // Gated the same way every other superadmin surface is, and hidden until the
+  // claim check clears rather than after it.
+  assert.match(panel, /data-requires-superadmin/);
+  assert.match(panel, /\shidden\b/);
+  // One input per activity per account class, or a weight silently cannot be set.
+  for (const activity of ['banners', 'pathers', 'shieldWalls']) {
+    for (const cls of ['main', 'alt']) {
+      assert.match(
+        panel,
+        new RegExp(`data-duty-weight="${activity}" data-duty-class="${cls}"`),
+        `${activity}/${cls}`
+      );
+    }
+  }
+
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  // Both scoring call sites must receive the weights: an export that scored
+  // differently from the dashboard it came from would be worse than no export.
+  assert.equal([...dashboard.matchAll(/dutyPointWeights: state\.dutyPointWeights/g)].length, 2);
+  // Saving is refused on an archived workspace, like every other write.
+  assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
+});

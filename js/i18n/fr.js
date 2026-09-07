@@ -1470,7 +1470,7 @@ const fr = {
   edenX1BreakdownConductPoints: "Points bonus d'effort d'equipe",
   edenX1BreakdownTotal: 'Total',
   edenX1DutyFormula:
-    '{banners} bannières + {pathers} chemins + {shieldWalls} murs de boucliers = {count} x 10 000',
+    '{banners} bannières + {pathers} chemins + {shieldWalls} murs de boucliers',
   edenX1ConductFormula: "{conduct} effort d'equipe x 10 000",
   edenX1ConductPrivateNotice:
     "Ces points bonus d'effort d'equipe sont attribues par R5 MalakAbo. Les details ne sont pas visibles publiquement; contactez-nous pour faire appel.",
@@ -3406,6 +3406,17 @@ const fr = {
   adminSuggestApproveAllDone: '{count} suggestions approuvées.',
   adminSuggestApproveAllPartial: '{done} sur {count} approuvées ; {failed} en échec.',
   adminSuggestReviewNoneForFilter: 'Aucune suggestion ne correspond a ce filtre.',
+  adminDutyWeightsTitle: 'Pondération des points de service',
+  adminDutyWeightsNote: 'Points que vaut un service, selon activité et selon que le compte principal ou secondaire a agi. Enregistrer recalcule la saison immédiatement, entrées passées comprises.',
+  adminDutyWeightsMain: 'Principal',
+  adminDutyWeightsAlt: 'Secondaire',
+  adminDutyWeightsBanners: 'Bannières',
+  adminDutyWeightsPathers: 'Traçage',
+  adminDutyWeightsShieldWalls: 'Murs de boucliers',
+  adminDutyWeightsSave: 'Enregistrer',
+  adminDutyWeightsReset: 'Rétablir les valeurs par défaut',
+  adminDutyWeightsResetConfirm: 'Rétablir toutes les pondérations ? La saison est recalculée immédiatement.',
+  adminDutyWeightsSaved: 'Pondérations enregistrées. Scores recalculés.',
   adminSuggestApprove: 'Approuver',
   adminSuggestReject: 'Rejeter',
   adminSuggestApproveConfirm:

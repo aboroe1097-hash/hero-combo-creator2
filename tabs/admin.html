@@ -2296,6 +2296,51 @@
               </button>
             </div>
           </details>
+          <section class="dash-duty-weights" data-requires-superadmin hidden>
+            <h3 data-i18n="adminDutyWeightsTitle">Duty scoring weights</h3>
+            <p class="dash-duty-weights-note" data-i18n="adminDutyWeightsNote">
+              Points one duty is worth, by activity and by whether a main or an alt did it.
+              Saving recalculates this season immediately, including past entries.
+            </p>
+            <div class="dash-duty-weight-row">
+              <span class="dash-duty-weight-name" data-i18n="adminDutyWeightsBanners">banners</span>
+              <label class="dash-duty-weight-field">
+                <span data-i18n="adminDutyWeightsMain">Main</span>
+                <input type="number" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="main" />
+              </label>
+              <label class="dash-duty-weight-field">
+                <span data-i18n="adminDutyWeightsAlt">Alt / secondary</span>
+                <input type="number" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="alt" />
+              </label>
+            </div>
+            <div class="dash-duty-weight-row">
+              <span class="dash-duty-weight-name" data-i18n="adminDutyWeightsPathers">pathers</span>
+              <label class="dash-duty-weight-field">
+                <span data-i18n="adminDutyWeightsMain">Main</span>
+                <input type="number" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="main" />
+              </label>
+              <label class="dash-duty-weight-field">
+                <span data-i18n="adminDutyWeightsAlt">Alt / secondary</span>
+                <input type="number" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="alt" />
+              </label>
+            </div>
+            <div class="dash-duty-weight-row">
+              <span class="dash-duty-weight-name" data-i18n="adminDutyWeightsShieldWalls">shieldWalls</span>
+              <label class="dash-duty-weight-field">
+                <span data-i18n="adminDutyWeightsMain">Main</span>
+                <input type="number" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="main" />
+              </label>
+              <label class="dash-duty-weight-field">
+                <span data-i18n="adminDutyWeightsAlt">Alt / secondary</span>
+                <input type="number" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="alt" />
+              </label>
+            </div>
+            <div class="dash-duty-weights-actions">
+              <button id="dashDutyWeightsSaveBtn" class="dash-btn dash-btn-primary" type="button" data-i18n="adminDutyWeightsSave">Save weights</button>
+              <button id="dashDutyWeightsResetBtn" class="dash-btn" type="button" data-i18n="adminDutyWeightsReset">Reset to defaults</button>
+              <span id="dashDutyWeightsStatus" class="dash-duty-weights-status" aria-live="polite"></span>
+            </div>
+          </section>
           <div id="dashConductSummary"></div>
           <div class="dash-conduct-list-head">
             <h3 data-i18n="adminSuggestReviewTitle">Admin suggestions</h3>

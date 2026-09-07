@@ -58,6 +58,9 @@ const EDEN_WORKSPACE_FIRESTORE_PATHS = Object.freeze({
     votes: 'vts_admin/eden_x1_votes/records',
     voteHistory: 'vts_admin/eden_x1_vote_history/records',
     voteSettings: 'vts_admin/eden_x1_vote_settings',
+    // Per workspace so a weight change in the season being played never
+    // restates a finished season's scores.
+    dutyPointWeights: 'vts_admin/eden_x1_duty_point_weights',
     publicVoteResults: 'vts_admin/eden_x1_public_vote_results',
     publicProjection: null,
   }),
@@ -69,6 +72,9 @@ const EDEN_WORKSPACE_FIRESTORE_PATHS = Object.freeze({
     votes: 'vts_admin/eden_x2_votes/records',
     voteHistory: 'vts_admin/eden_x2_vote_history/records',
     voteSettings: 'vts_admin/eden_x2_vote_settings',
+    // Per workspace so a weight change in the season being played never
+    // restates a finished season's scores.
+    dutyPointWeights: 'vts_admin/eden_x2_duty_point_weights',
     publicVoteResults: 'vts_admin/eden_x2_public_vote_results',
     publicProjection: 'vts_admin/eden_x2_public_projection',
   }),

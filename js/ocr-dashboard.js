@@ -158,7 +158,11 @@ import {
 } from './ocr-conduct-suggestions.js';
 import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
+  DEFAULT_DUTY_POINT_WEIGHTS,
+  DUTY_ACCOUNT_CLASSES,
+  DUTY_ACTIVITIES,
   buildWeightedContributionRows,
+  normalizeDutyPointWeights,
   getWeightedContributionRecordLabel,
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
@@ -357,6 +361,10 @@ state.alliancePublicConductSnapshotLoaded = false;
 state.edenX1Votes = [];
 state.edenX1VoteHistory = [];
 state.edenX1VoteSettings = null;
+// Weights the scoring uses for duty. Null until loaded; the scorer falls back
+// to its own defaults, so a failed load scores rather than scoring nothing.
+state.dutyPointWeights = null;
+let dutyPointWeightsVersion = 0;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
 state.r5EditingId = '';
@@ -418,6 +426,15 @@ const EDEN_X1_VOTE_SETTINGS_DOC_PATH = edenWorkspaceFirestorePath(
   ACTIVE_EDEN_WORKSPACE_ID,
   'voteSettings'
 );
+const DUTY_POINT_WEIGHTS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'dutyPointWeights'
+);
+const DUTY_POINT_WEIGHTS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_duty_point_weights',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+
 const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = edenWorkspaceFirestorePath(
   ACTIVE_EDEN_WORKSPACE_ID,
   'publicVoteResults'
@@ -1547,6 +1564,117 @@ async function loadEdenX1VoteSettings() {
     console.error('EDEN X1 VOTE SETTINGS LOAD ERROR:', err);
     return false;
   }
+}
+
+function readLocalDutyPointWeights() {
+  try {
+    return normalizeDutyPointWeights(
+      JSON.parse(localStorage.getItem(DUTY_POINT_WEIGHTS_LOCAL_KEY) || 'null')
+    );
+  } catch {
+    return normalizeDutyPointWeights(null);
+  }
+}
+
+function writeLocalDutyPointWeights(weights) {
+  try {
+    localStorage.setItem(DUTY_POINT_WEIGHTS_LOCAL_KEY, JSON.stringify(weights));
+  } catch {
+    /* private mode and full quotas are not worth failing a save over */
+  }
+}
+
+// Reads the weight table for this workspace. Anything missing falls back to
+// the defaults per cell, so a partially written document still scores.
+async function loadDutyPointWeights() {
+  state.dutyPointWeights = readLocalDutyPointWeights();
+  renderDutyPointWeights();
+  if (state.adminIsAdmin !== true) return false;
+  const loadVersion = dutyPointWeightsVersion;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH));
+    if (snap.exists() && loadVersion === dutyPointWeightsVersion) {
+      state.dutyPointWeights = normalizeDutyPointWeights(snap.data()?.weights);
+      writeLocalDutyPointWeights(state.dutyPointWeights);
+      renderDutyPointWeights();
+      render();
+    }
+    return true;
+  } catch (err) {
+    console.error('DUTY POINT WEIGHTS LOAD ERROR:', err);
+    return false;
+  }
+}
+
+// Saving restates every score for this season the moment it lands, because
+// duty points are derived at render time rather than stored. That is the
+// intent — a weight is a rule, not a per-row value — but it is why the editor
+// says so out loud before saving.
+async function saveDutyPointWeights(nextWeights) {
+  if (blockEdenArchiveWrite('save duty point weights')) return false;
+  dutyPointWeightsVersion += 1;
+  const weights = normalizeDutyPointWeights(nextWeights);
+  state.dutyPointWeights = weights;
+  writeLocalDutyPointWeights(weights);
+  renderDutyPointWeights();
+  render();
+  if (state.adminIsAdmin !== true) return false;
+  const status = $id('dashDutyWeightsStatus');
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+    await setDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH), {
+      weights,
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    if (status) status.textContent = dashT('adminDutyWeightsSaved');
+    return true;
+  } catch (err) {
+    console.error('DUTY POINT WEIGHTS SAVE ERROR:', err);
+    if (status) status.textContent = showCloudSyncFailure(err, 'Duty weight save failed');
+    return false;
+  }
+}
+
+function renderDutyPointWeights() {
+  const weights = normalizeDutyPointWeights(state.dutyPointWeights);
+  for (const activity of DUTY_ACTIVITIES) {
+    for (const cls of DUTY_ACCOUNT_CLASSES) {
+      const input = document.querySelector(
+        `[data-duty-weight="${activity}"][data-duty-class="${cls}"]`
+      );
+      if (input && document.activeElement !== input) input.value = String(weights[activity][cls]);
+    }
+  }
+}
+
+function collectDutyPointWeightsFromInputs() {
+  const next = {};
+  for (const activity of DUTY_ACTIVITIES) {
+    next[activity] = {};
+    for (const cls of DUTY_ACCOUNT_CLASSES) {
+      const input = document.querySelector(
+        `[data-duty-weight="${activity}"][data-duty-class="${cls}"]`
+      );
+      next[activity][cls] = input ? Number(input.value) : undefined;
+    }
+  }
+  return next;
+}
+
+function wireDutyPointWeights() {
+  $id('dashDutyWeightsSaveBtn')?.addEventListener('click', () => {
+    void saveDutyPointWeights(collectDutyPointWeightsFromInputs());
+  });
+  $id('dashDutyWeightsResetBtn')?.addEventListener('click', () => {
+    if (!confirm(dashT('adminDutyWeightsResetConfirm'))) return;
+    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS);
+  });
 }
 
 async function saveEdenX1VoteSettings(nextSettings) {
@@ -2915,6 +3043,8 @@ function bindConductControls() {
   });
   conductBulkPanel.bind();
   wireConductReviewControls();
+  wireDutyPointWeights();
+  void loadDutyPointWeights();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
@@ -5967,6 +6097,7 @@ function buildWeightedContributionExportModel() {
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
     demolitionRecords: state.dashData?.attacks,
+    dutyPointWeights: state.dutyPointWeights,
   });
 }
 
@@ -5991,6 +6122,7 @@ function buildAllianceViewContributionModel() {
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
     demolitionRecords: state.dashData?.attacks,
+    dutyPointWeights: state.dutyPointWeights,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
