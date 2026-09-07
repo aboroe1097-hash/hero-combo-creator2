@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.7";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.8";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.8",
+    "date": "2026-09-07",
+    "highlights": [
+      "The VTS Eden Hub season tabs now name their season — \"Current Season · Eden X2\" and \"Previous Seasons · Eden X1\" — in all twelve Eden locales. The names come from the workspace registry, so opening a new season is one flag in that registry rather than an edit in every locale pac…",
+      "The season being played is now the hub's landing tab, with the Royal Bounty guide as the fallback when no season is published. The hub waits for the publication check before choosing, so it no longer opens one panel and swaps it out a moment later, and that wait is bounded so an…"
+    ]
+  },
   {
     "version": "16.0.7",
     "date": "2026-09-07",
@@ -81,18 +89,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Added each player's structure demolition to Weighted Total Contribution at a temporary 1:20 rate, so 1,000,000 demolition contributes 50,000 weighted points for every admin role.",
       "Moved substantive Velo requests to DeepSeek Reasoner with a verification round and a larger shared reasoning/output budget; short standalone questions still use the fast chat model.",
       "Updated the compatible frontend CSS toolchain to Autoprefixer 10.5.4 while retaining the Node 20-compatible cssnano 8 and Vite 6 build path."
-    ]
-  },
-  {
-    "version": "15.0.14",
-    "date": "2026-08-28",
-    "highlights": [
-      "Signing in now returns you to the tool you came from instead of leaving you on the account page, and new accounts finish onboarding before being redirected.",
-      "Fixed the mobile account chip covering the theme and language buttons; on phones a tap on the theme toggle opened the account page instead of switching theme.",
-      "Rating every player is now required when filing a BoH match result, and the scale is shown as \"/ 10\".",
-      "A refused save now says the server rejected the write and the security rules may be out of date, instead of claiming you are not signed in.",
-      "Fixed the language coverage report claiming 26 missing translations per locale that were in fact already translated.",
-      "Corrected stale version labels on the account, VtsScore and maintenance pages, and gave the 404 page a mobile layout."
     ]
   }
 ].map((release) =>

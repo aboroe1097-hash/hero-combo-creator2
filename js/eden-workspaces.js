@@ -86,6 +86,18 @@ export function getEdenWorkspace(workspaceId) {
   return EDEN_WORKSPACE_DEFAULTS[id];
 }
 
+// The hub labels its season sub-tabs from the registry rather than repeating
+// "X1"/"X2" in copy: when a new season opens, flipping `active` here renames
+// the tabs in every locale instead of leaving thirteen packs to chase.
+export function getCurrentEdenSeasonLabel() {
+  return listEdenWorkspaces().find((ws) => ws.active)?.seasonLabel || '';
+}
+
+export function getPreviousEdenSeasonLabel() {
+  const past = listEdenWorkspaces().filter((ws) => !ws.active);
+  return past[past.length - 1]?.seasonLabel || '';
+}
+
 export function listEdenWorkspaces() {
   return EDEN_WORKSPACE_IDS.map((id) => EDEN_WORKSPACE_DEFAULTS[id]);
 }

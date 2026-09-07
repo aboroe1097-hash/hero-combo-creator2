@@ -16,11 +16,15 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260907_185213';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260907_185213';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260907_185213';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260907_194439';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260907_194439';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260907_194439';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
+// How long the hub waits for the season publication check before landing on
+// Royal Bounty instead. Long enough for a normal round trip, short enough that
+// a dead backend is not a blank hub.
+const SEASON_LANDING_TIMEOUT_MS = 2500;
 const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'playbook', 'season', 'previous'];
 
 let booted = false;
@@ -29,6 +33,9 @@ let loyaltyLoading = false;
 let bountyLoaded = false;
 let bountyLoading = false;
 let playbookLoaded = false;
+// Set once a visitor picks a sub-tab, so the deferred season landing never
+// overrides a choice they already made.
+let userPickedSubtab = false;
 
 function catalogFor(language) {
   // Prefer the entry page's canonical catalog: a stale-stamped import chain
@@ -82,7 +89,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260907_185213')
+    import('./eden-map.js?v=20260907_194439')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -112,7 +119,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260907_185213');
+    const module = await import('./loyalty-spa.js?v=20260907_194439');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -149,24 +156,27 @@ function loadSeason(panel) {
 // is never reachable from the hub.
 async function revealPublishedSeason(root) {
   const button = root.querySelector('[data-eden-subtab="season"]');
-  if (!button || !button.hidden) return;
+  if (!button) return false;
+  if (!button.hidden) return true;
   try {
     const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
       import('./firebase-eden.js'),
       import('./firebase-sdk.js'),
     ]);
     const { configured, app } = initFirebase();
-    if (!configured || !app) return;
+    if (!configured || !app) return false;
     await ensureAnonymousAuth();
     const { getFirestore, doc, getDoc } = await importFirestoreLite();
     const snap = await getDoc(
       doc(getFirestore(app), edenWorkspaceFirestorePath('eden-x2', 'publicProjection'))
     );
-    if (!snap.exists() || !isPublishedEdenProjection(snap.data())) return;
+    if (!snap.exists() || !isPublishedEdenProjection(snap.data())) return false;
     button.hidden = false;
+    return true;
   } catch (error) {
     console.warn('[eden-hub] Current season availability unknown', error);
   }
+  return false;
 }
 
 async function loadBounty(panel) {
@@ -176,7 +186,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260907_185213');
+    const module = await import('./bounty-guide.js?v=20260907_194439');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -256,14 +266,36 @@ export function bootEdenHub() {
     if (panel) loadPanelFor(name, panel);
   }
 
-  // Royal Bounty is the Eden Hub landing page; the map remains one click away
-  // and legacy sub-tab intents still take precedence.
-  openIntent(readSubtabIntent() || 'bounty');
-  void revealPublishedSeason(root);
+  // The season being played is the Eden Hub landing page, with Royal Bounty as
+  // the fallback when no season is published. An explicit sub-tab intent still
+  // wins outright.
+  //
+  // The season button is hidden until its publication check clears, so with no
+  // intent we open Royal Bounty immediately and upgrade to the season once that
+  // answer arrives. The wait is bounded, and — this is the part that matters —
+  // the upgrade is abandoned the moment anyone picks a sub-tab themselves.
+  // Deferring the first paint instead left the hub able to yank a panel away
+  // from someone who had already clicked, which is a worse bug than a brief
+  // flash of the wrong tab.
+  const intent = readSubtabIntent();
+  if (intent) {
+    openIntent(intent);
+    void revealPublishedSeason(root);
+    return;
+  }
+  openIntent('bounty');
+  void Promise.race([
+    revealPublishedSeason(root),
+    new Promise((resolve) => setTimeout(() => resolve(false), SEASON_LANDING_TIMEOUT_MS)),
+  ]).then((available) => {
+    if (!available || userPickedSubtab) return;
+    openIntent('season');
+  });
 
   root.addEventListener('click', (event) => {
     const button = event.target.closest('[data-eden-subtab]');
     if (!button) return;
+    userPickedSubtab = true;
     const name = button.dataset.edenSubtab;
     window.history.replaceState(window.history.state, '', `#edenHub?subtab=${name}`);
     activateSubTab(root, name);

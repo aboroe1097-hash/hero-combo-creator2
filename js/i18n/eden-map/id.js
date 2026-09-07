@@ -97,7 +97,7 @@ export default {
     subTabMap: 'Peta Eden',
     subTabLoyalty: 'Loyalitas Eden',
     subTabBounty: 'Hadiah Kerajaan Eden X2',
-    subTabSeason: 'Musim saat ini',
-    subTabPrevious: 'Musim sebelumnya',
+    subTabSeason: 'Musim saat ini · {currentSeason}',
+    subTabPrevious: 'Musim sebelumnya · {previousSeason}',
   },
 };
