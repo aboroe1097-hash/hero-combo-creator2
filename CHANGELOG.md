@@ -3,6 +3,10 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.10 - 2026-09-07
+
+- Added the X2 Lobby structure to structure uploads, expected at 700,000. Lobbies are named for a hero, so "Lobby of Beowulf" and any other hero all resolve to Lobby, and like Stronghold they carry no level.
+- Corrected the expected durability of a level 4 gate from 2.5M to 1.5M. The wrong figure flagged correct uploads as mismatched on every Lv4 gate.
 ## 16.0.9 - 2026-09-07
 
 - Admin suggestions now open on the pending queue, ten at a time, with filters for pending, approved, rejected or all, and a control to show the full filtered list. A season of decided suggestions no longer buries the few still waiting on a decision.
