@@ -7,6 +7,7 @@ import {
   importFirebaseApp,
   importFirebaseAppCheck,
   importFirebaseAuth,
+  importFirebaseFunctions,
   importFirestore,
 } from './firebase-sdk.js';
 import {
@@ -392,14 +393,15 @@ export function currentAuthUid() {
  * trusted as authority.
  */
 export async function callSetUserRole({ targetUid, role, granted }) {
-  // Pinned to the same SDK major as the importmap that created `app`. A
-  // getFunctions() from a different major looks for its own 'functions'
-  // component in this app's container, never finds it, and throws
-  // "Service functions is not available" - which is what the Users & Roles
-  // tab reported for every role grant.
-  const { getFunctions, httpsCallable } = await import(
-    'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js'
-  );
+  // Must come from the same SDK instance that created `app`, which is the
+  // bundled package. This used to load firebase-functions from the gstatic CDN,
+  // pinned to the SDK major of the importmap that built `app` back then. `app`
+  // is built from the bundled SDK now, and a CDN module is a separate instance
+  // of @firebase/app however the versions line up: it registers its 'functions'
+  // component into its own container, getFunctions(app) looks in the bundled
+  // container, finds nothing, and throws "Service functions is not available"
+  // - which is what Users & Roles reported for every role grant.
+  const { getFunctions, httpsCallable } = await importFirebaseFunctions();
   if (!app) throw new Error('Firebase not initialized');
   const callable = httpsCallable(getFunctions(app, 'us-central1'), 'setUserRole');
   const result = await callable({ targetUid, role, granted });
