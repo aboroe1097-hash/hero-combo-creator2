@@ -109,7 +109,7 @@ test('PR CI runs the deploy-equivalent gate without production secrets', () => {
   assert.match(ci, /VITE_FIREBASE_API_KEY: dummy/);
   assert.match(ci, /VTS_EDEN_VOTES_PIN: ci-only-not-a-secret/);
   assert.match(ci, /VTS_ADMIN_OVERRIDE_CODE: ci-only-not-a-secret/);
-  assert.match(ci, /actions\/setup-python@v6/);
+  assert.match(ci, /actions\/setup-python@v7/);
   assert.match(ci, /npx playwright install --with-deps chromium/);
   assert.match(ci, /npm run verify:deploy/);
   assert.doesNotMatch(ci, /\$\{\{\s*secrets\./);
