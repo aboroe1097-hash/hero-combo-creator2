@@ -20,8 +20,8 @@ test('Strife uses stable compound IDs for every canonical skill', () => {
   const keys = STRIFE_MONSTERS.flatMap((monster) =>
     monster.skills.map((skill) => strifeSkillKey(monster, skill))
   );
-  assert.equal(keys.length, 35);
-  assert.equal(new Set(keys).size, 35);
+  assert.equal(keys.length, 39);
+  assert.equal(new Set(keys).size, 39);
   assert.ok(keys.includes('gambosate:power-of-the-legion'));
   assert.ok(keys.includes('fordogreen:power-of-the-legion'));
   assert.ok(keys.includes('titanus:power-of-the-legion'));

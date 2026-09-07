@@ -196,9 +196,6 @@ export async function issueAllStarBohGrant(options) {
   const grantRef = db.doc(grantPath);
   return db.runTransaction(async (transaction) => {
     const config = normalizeAllStarBohUnlockConfig(snapshotData(await transaction.get(configRef)));
-    if (!config.open) {
-      throw new AllStarBohUnlockError(409, 'signups_closed', 'All-Star BoH access is closed.');
-    }
     const expiresAtMs = nowMs + config.grantDurationMinutes * 60 * 1000;
     if (!Number.isSafeInteger(expiresAtMs) || expiresAtMs <= nowMs) {
       throw new AllStarBohUnlockError(503, 'service_unavailable', 'Unlock is unavailable.');

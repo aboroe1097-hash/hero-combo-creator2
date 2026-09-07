@@ -13,7 +13,7 @@ export const heroesExtendedData = {
     },
     "Wind-Walker": {
         placement: "Front Row / Middle Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "Whenever the squad takes basic attacks, the First-Aid status will be entered, recover troops each turn (20% recovery rate), Lasts 2 turns, the first-aid status can stack 8 times." },
@@ -23,7 +23,7 @@ export const heroesExtendedData = {
     },
     "Hunk": {
         placement: "Front Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "When the squad takes damage, 25% chance to evade (immune this damage), 50% chance each turn to increase squad damage by 50%." },
@@ -33,7 +33,7 @@ export const heroesExtendedData = {
     },
     "Sakura": {
         placement: "Middle Row / Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 4, target: "2 Random Ally", desc: "First 2 turns, 2 random enemy will move first, on the second turn, deal 687% damage to 2 random to 2 random enemy squads." },
@@ -43,7 +43,7 @@ export const heroesExtendedData = {
     },
     "ELK": {
         placement: "Middle Row / Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 2, target: "1 Random Ally", desc: "First 3 turns, the front row Archer squad has 70% chance to enter counterattack state, which deals 250% return damage to the source when basic attacked." },
@@ -82,7 +82,7 @@ export const heroesExtendedData = {
 
     "Cicero": {
         placement: "Front Row / Middle Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Additional Attack", range: 3, target: "2 Random Enemy", desc: "After basic attacks, 30% chance to deal 310% damage to 2 random enemy squads within range, making them take 20% additional damage for 2 turns." },
@@ -486,7 +486,7 @@ export const heroesExtendedData = {
     },
     "Valkyrie": {
         placement: "Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "100% chance to make self-squad unable to launch normal attacks, 30% increased damage, for 2 turns and deal 218% damage to 1 random enemy squad within range." },
@@ -496,7 +496,7 @@ export const heroesExtendedData = {
     },
     "Lawman": {
         placement: "Front Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 2, target: "1 Random Enemy", desc: "When self squad is taking damage, 50% chance to deal 63% damage to 2 random squads within the range of 2." },
@@ -506,7 +506,7 @@ export const heroesExtendedData = {
     },
     "Spectral Reaper": {
         placement: "Mid / Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Additional Attack", range: 5, target: "1 Random Enemy", desc: "35% chance to attack again after basic attacks to the same target dealing 742% damage, making them unable to recover troops for 1 turns." },
@@ -516,7 +516,7 @@ export const heroesExtendedData = {
     },
     "Defender": {
         placement: "Front Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Additional Attack", range: 1, target: "1 Random Ally", desc: "After basic attacks, 80% chance to make the damage the hero's squad take -20% for 2 rounds. The status can be stacked." },
@@ -526,7 +526,7 @@ export const heroesExtendedData = {
     },
     "Army Breaker": {
         placement: "Mid Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "2 Random Ally", desc: "55% chance to recover some troops for 2 random friendly squads within range (84% recovery rate) and remove debuffs (Cannot remove pre-battle debuffs)." },
@@ -536,7 +536,7 @@ export const heroesExtendedData = {
     },
     "The Avalanche": {
         placement: "Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "60% chance to deal 226% damage to multiple enemy targets." },
@@ -546,7 +546,7 @@ export const heroesExtendedData = {
     },
     "Dach Tengri": {
         placement: "Mid / Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "100% chance to make 1 random enemy squad within range to take 6% additional damage, 6% reduced damage dealt, -38 reduced combat speed, and make 2 random friendly squads take -6% lesser damage, Deal -6% additional damage, 38 increased combat speed for 1 turns." },
@@ -556,7 +556,7 @@ export const heroesExtendedData = {
     },
     "Tarantula": {
         placement: "Mid / Back Row",
-        minCopies: 14,
+        minCopies: 22,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "30% chance to deal 641% damage to 2 random enemy squads within range, while the damage dealt by the Hero's squad and the back row squad is increased by 40% for the next 2 attacks. If the Hero's squad is the back row squad, then they gain a double damage buff effect. Lasts 2 rounds." },

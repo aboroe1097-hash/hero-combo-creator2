@@ -1,0 +1,527 @@
+// js/bounty-guide.js
+// Royal Bounty Eden X2 — interactive guide renderer for the VTS Eden Hub.
+//
+// Data-driven like the Strife guide: every section is built from
+// bounty-guide-data.js so a roster or rule change is a data edit, not a
+// redesign. No game art is fabricated — hero portraits come from the app
+// roster via state helpers, and diagrams are CSS/SVG.
+
+import '../css/bounty-guide-v14.css';
+import {
+  BOUNTY_AIDING_RULES,
+  BOUNTY_COMMISSION_ATTRIBUTES,
+  BOUNTY_COMMISSION_LEVELS,
+  BOUNTY_DAILY_RULES,
+  BOUNTY_FIGURES,
+  BOUNTY_GUIDE_CREDITS,
+  BOUNTY_GUIDE_ROSTER_DATE,
+  BOUNTY_GUIDE_SOURCE_DATE,
+  BOUNTY_GUIDE_VERSION,
+  BOUNTY_HEROES,
+  BOUNTY_LOOP,
+  BOUNTY_MISSION_EXAMPLES,
+  BOUNTY_QUICK_RULES,
+  BOUNTY_SETUP_STEPS,
+  BOUNTY_STATS,
+} from './bounty-guide-data.js';
+import { bountyText as bt, loadBountyGuideLocale } from './i18n/bounty-guide/index.js';
+import { allHeroesData } from './heroes-data.js';
+import { getHeroImageUrl, currentLanguage } from './state.js';
+
+const SECTIONS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'lobbies', label: 'Lobbies' },
+  { id: 'missions', label: 'Missions' },
+  { id: 'commission', label: 'Commission' },
+  { id: 'aiding', label: 'Aiding Skills' },
+  { id: 'heroes', label: 'Heroes' },
+  { id: 'rules', label: 'Rules' },
+];
+
+let mounted = false;
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function heroMeta(appName) {
+  return allHeroesData.find((hero) => hero.name === appName) || null;
+}
+
+function unlockLabel(hero) {
+  if (hero.unlock === 'day1') return 'Opens day 1';
+  // The roster capture shows a countdown per hero, e.g. "5d". It is relative to
+  // the season start, so it is a guide, not a date.
+  return hero.unlockLabel ? `Opens ~${hero.unlockLabel} in` : 'Unlocks later in the season';
+}
+
+function renderStatCards() {
+  return `
+  <section class="bounty-section" id="bounty-overview" data-bounty-section="overview">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("At a glance")}</h2>
+      <p class="bounty-section-sub">${bt("The whole event in four numbers.")}</p>
+    </header>
+    <div class="bounty-stat-grid">
+      ${BOUNTY_STATS.map(
+        (stat, index) => `
+      <article class="bounty-stat-card bounty-stat-card--${index + 1}">
+        <strong class="bounty-stat-value">${escapeHtml(stat.value)}</strong>
+        <span class="bounty-stat-label">${escapeHtml(bt(stat.label))}</span>
+      </article>`
+      ).join('')}
+    </div>
+  </section>`;
+}
+
+function renderLoop() {
+  const steps = BOUNTY_LOOP.map(
+    (step, index) => `
+    <li class="bounty-loop-step${step.title === 'Reach Level 6' ? ' bounty-loop-step--payoff' : ''}">
+      <span class="bounty-loop-index" aria-hidden="true">${index + 1}</span>
+      <div class="bounty-loop-copy">
+        <strong>${escapeHtml(bt(step.title))}</strong>
+        <span>${escapeHtml(bt(step.detail))}</span>
+      </div>
+    </li>`
+  ).join('');
+  return `
+  <section class="bounty-section" id="bounty-loop" data-bounty-section="overview">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("The Bounty Loop")}</h2>
+      <p class="bounty-section-sub">${bt("One mental model for the whole season.")}</p>
+    </header>
+    <ol class="bounty-loop">${steps}</ol>
+  </section>`;
+}
+
+function renderLobbies() {
+  return `
+  <section class="bounty-section" id="bounty-lobbies" data-bounty-section="lobbies">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("Mission Lobbies")}</h2>
+      <p class="bounty-section-sub">${bt("Every bounty hero runs a lobby on the map.")}</p>
+    </header>
+    ${renderFigure(BOUNTY_FIGURES.lobbyMap, "bounty-figure--portrait")}
+    <div class="bounty-lobby-layout">
+      <article class="bounty-panel">
+        <h3 class="bounty-panel-title">${bt("What a lobby is")}</h3>
+        <p>${bt("Each bounty hero has a mission lobby where players complete hero-specific missions. Lobbies work like Eden strongholds: capture them, connect them to your territory, and hold them.")}</p>
+        <ul class="bounty-panel-list">
+          <li>${bt("Capture like an Eden stronghold")}</li>
+          <li>${bt("Connect the tile to your territory")}</li>
+          <li>${bt("Tile is turned off while contested")}</li>
+          <li>${bt("+10% Commission Points for members while their faction occupies the lobby")}</li>
+        </ul>
+      </article>
+      <article class="bounty-panel bounty-panel--timeline">
+        <h3 class="bounty-panel-title">${bt("Lobby unlock timeline")}</h3>
+        <ol class="bounty-timeline">
+          <li class="bounty-timeline-step">
+            <span class="bounty-timeline-day">${bt("Day 1")}</span>
+            <div class="bounty-timeline-copy">
+              <strong>${bt("Cao Cao")}</strong>
+              <span>${bt("First lobby opens.")}</span>
+            </div>
+          </li>
+          <li class="bounty-timeline-step">
+            <span class="bounty-timeline-day">${bt("Later")}</span>
+            <div class="bounty-timeline-copy">
+              <strong>${bt("Remaining heroes")}</strong>
+              <span>${bt("Lobbies open staggered across the season.")}</span>
+            </div>
+          </li>
+          <li class="bounty-timeline-step">
+            <span class="bounty-timeline-day">${bt("Always")}</span>
+            <div class="bounty-timeline-copy">
+              <strong>${bt("In-game timer")}</strong>
+              <span>${bt("The timer under each hero portrait is the source of truth.")}</span>
+            </div>
+          </li>
+        </ol>
+      </article>
+    </div>
+  </section>`;
+}
+
+function renderMissions() {
+  return `
+  <section class="bounty-section" id="bounty-missions" data-bounty-section="missions">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("Bounty Missions")}</h2>
+      <p class="bounty-section-sub">${bt("Accept, complete, get paid in Commission Points.")}</p>
+    </header>
+    ${renderFigure(BOUNTY_FIGURES.missionExamples)}
+    <div class="bounty-mission-layout">
+      <article class="bounty-panel">
+        <h3 class="bounty-panel-title">${bt("Every mission shows")}</h3>
+        <ul class="bounty-panel-list">
+          <li>${bt("The mission objective")}</li>
+          <li>${bt("Commission Points it pays")}</li>
+          <li>${bt("A timer / expiry")}</li>
+          <li>${bt("An accept-quest interaction")}</li>
+        </ul>
+      </article>
+      <article class="bounty-panel">
+        <h3 class="bounty-panel-title">${bt("Mission examples")}</h3>
+        <ul class="bounty-chip-list">
+          ${BOUNTY_MISSION_EXAMPLES.map(
+            (mission) => `<li class="bounty-chip">${escapeHtml(bt(mission))}</li>`
+          ).join('')}
+        </ul>
+      </article>
+      <article class="bounty-panel bounty-panel--daily">
+        <h3 class="bounty-panel-title">${bt("Daily limits")}</h3>
+        <div class="bounty-daily-rules">
+          ${BOUNTY_DAILY_RULES.map(
+            (rule) => `
+          <div class="bounty-daily-rule">
+            <strong>${escapeHtml(rule.value)}</strong>
+            <span>${escapeHtml(bt(rule.label))}</span>
+          </div>`
+          ).join('')}
+        </div>
+        <p class="bounty-panel-note">${bt("Perfect completion earns Commission Master rewards by mail.")}</p>
+        ${renderFigure(BOUNTY_FIGURES.rewards)}
+      </article>
+    </div>
+  </section>`;
+}
+
+function renderCommission() {
+  const nodes = BOUNTY_COMMISSION_LEVELS.map((entry) => {
+    const payoff = entry.level === 6;
+    return `
+    <li class="bounty-level-node${payoff ? ' bounty-level-node--payoff' : ''}" title="${payoff ? 'Aiding Skill unlocked' : `Level ${entry.level}`}">
+      <span class="bounty-level-dot" aria-hidden="true">${entry.level}</span>
+      ${payoff ? '<span class="bounty-level-burst" aria-hidden="true">${bt("Aiding Skill")}</span>' : ''}
+    </li>`;
+  }).join('');
+  return `
+  <section class="bounty-section" id="bounty-commission" data-bounty-section="commission">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("Commission Levels")}</h2>
+      <p class="bounty-section-sub">${bt("Points become levels; levels become attributes.")}</p>
+    </header>
+    <ol class="bounty-level-track">${nodes}</ol>
+    ${renderFigure(BOUNTY_FIGURES.lobbyPanel, "bounty-figure--portrait")}
+    <div class="bounty-commission-layout">
+      <article class="bounty-panel bounty-panel--attributes">
+        <h3 class="bounty-panel-title">${bt("Every Commission Level adds attributes")}</h3>
+        <div class="bounty-attribute-row">
+          ${BOUNTY_COMMISSION_ATTRIBUTES.map(
+            (attribute, index) => `
+          <span class="bounty-attribute-chip bounty-attribute-chip--${index + 1}">${escapeHtml(bt(attribute))}</span>`
+          ).join('')}
+        </div>
+        <p class="bounty-panel-note">${bt("Examples from the guide: Processing Speed, Might, Resistance.")}</p>
+      </article>
+      <article class="bounty-panel bounty-panel--payoff">
+        <h3 class="bounty-panel-title">${bt("The payoff moment")}</h3>
+        <p>${bt("Commission Level 6 is the milestone of the whole event — it unlocks the hero's Aiding Skill, a copy of the hero's skill that your legions can use.")}</p>
+      </article>
+    </div>
+  </section>`;
+}
+
+function renderAiding() {
+  return `
+  <section class="bounty-section" id="bounty-aiding" data-bounty-section="aiding">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("Aiding Skills")}</h2>
+      <p class="bounty-section-sub">${bt("The real reward of the season.")}</p>
+    </header>
+    <div class="bounty-aiding-flow">
+      <span class="bounty-aiding-flow-item">${bt("Bounty Hero")}</span>
+      <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
+      <span class="bounty-aiding-flow-item">${bt("Commission Level 6")}</span>
+      <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
+      <span class="bounty-aiding-flow-item">${bt("Aiding Skill unlocked")}</span>
+      <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
+      <span class="bounty-aiding-flow-item">${bt("Assign to Legion")}</span>
+      <span class="bounty-aiding-flow-arrow" aria-hidden="true">→</span>
+      <span class="bounty-aiding-flow-item bounty-aiding-flow-item--done">${bt("Skill becomes usable")}</span>
+    </div>
+    <article class="bounty-panel bounty-panel--rules">
+      <h3 class="bounty-panel-title">${bt("Important rules")}</h3>
+      <ul class="bounty-panel-list bounty-panel-list--rules">
+        ${BOUNTY_AIDING_RULES.map((rule) => `<li>${escapeHtml(bt(rule))}</li>`).join('')}
+      </ul>
+    </article>
+    <div class="bounty-setup">
+      <h3 class="bounty-panel-title">${bt("How to equip an Aiding Skill")}</h3>
+      <ol class="bounty-setup-steps">
+        ${BOUNTY_SETUP_STEPS.map(
+          (step) => `
+        <li class="bounty-setup-step">
+          <span class="bounty-setup-index" aria-hidden="true">${String(step.step).padStart(2, '0')}</span>
+          <div class="bounty-setup-copy">
+            <strong>${escapeHtml(bt(step.title))}</strong>
+            <span>${escapeHtml(bt(step.detail))}</span>
+          </div>
+        </li>`
+        ).join('')}
+      </ol>
+      ${renderAidingSkillFigures()}
+    </div>
+  </section>`;
+}
+
+// The written steps describe an interface most people only recognise once they
+// have seen it: the Aiding Skill lives in its own slot to the left of a
+// legion's heroes, which is easy to miss in the game's own UI. Two in-game
+// captures do more than four sentences.
+//
+// A missing file removes its whole figure rather than leaving a broken image
+// icon in the guide, so the artwork can land after the copy ships.
+const BOUNTY_AIDING_FIGURES = [
+  {
+    src: 'assets/bounty/royal-bounty-aiding-skills.webp',
+    width: 540,
+    height: 593,
+    caption:
+      'Royal Bounty Alliance 2.0 overview: the 9 Aiding Skills, their hero requirements, targets, and effects. Source: riseofcastles.net.',
+  },
+  {
+    src: 'images/bounty/aiding-skill-slot.jpg',
+    width: 377,
+    height: 321,
+    caption:
+      'Each legion carries its Aiding Skill in the leftmost slot, before its three heroes. The timer on the second legion is that skill cooling down.',
+  },
+];
+
+function renderAidingSkillFigures() {
+  return `
+      <div class="bounty-setup-figures">
+        ${BOUNTY_AIDING_FIGURES.map(
+          (figure) => `
+        <figure class="bounty-setup-figure">
+          <img
+            src="${escapeHtml(figure.src)}"
+            alt="${escapeHtml(bt(figure.caption))}"
+            width="${figure.width}"
+            height="${figure.height}"
+            loading="lazy"
+            decoding="async"
+            onerror="this.closest('figure')?.remove()"
+          />
+          <figcaption>${escapeHtml(bt(figure.caption))}</figcaption>
+        </figure>`
+        ).join('')}
+      </div>`;
+}
+
+function renderHeroCard(hero) {
+  const meta = heroMeta(hero.appName);
+  const portrait = meta ? getHeroImageUrl(meta.name) : '';
+  return `
+  <article class="bounty-hero-card" data-bounty-hero="${hero.id}">
+    <button type="button" class="bounty-hero-toggle" aria-expanded="false" aria-controls="bounty-hero-detail-${hero.id}">
+      <span class="bounty-hero-portrait">
+        ${portrait ? `<img src="${escapeHtml(portrait)}" alt="" width="72" height="72" loading="lazy" decoding="async" />` : '<span class="bounty-hero-portrait-empty" aria-hidden="true">◆</span>'}
+        <span class="bounty-hero-tier bounty-hero-tier--${escapeHtml(hero.tier.toLowerCase())}">${escapeHtml(hero.tier)}</span>
+      </span>
+      <span class="bounty-hero-copy">
+        <strong class="bounty-hero-name">${escapeHtml(hero.appName)}</strong>
+        <span class="bounty-hero-skill">${escapeHtml(hero.skillName)}</span>
+        <span class="bounty-hero-meta">${escapeHtml(meta?.Type || '')} · ${escapeHtml(meta?.season || '')}</span>
+      </span>
+      <span class="bounty-hero-unlock" title="${bt("Lobby opens")}">${escapeHtml(hero.unlockLabel || '—')}</span>
+    </button>
+    <div class="bounty-hero-detail" id="bounty-hero-detail-${hero.id}" hidden>
+      <div class="bounty-skill-card">
+        <span class="bounty-skill-kicker">${bt("Aiding Skill")}</span>
+        <strong class="bounty-skill-name">${escapeHtml(hero.skillName)}</strong>
+        <dl class="bounty-skill-facts">
+          <div><dt>${bt("Type")}</dt><dd>${escapeHtml(hero.skillType)}</dd></div>
+          ${hero.range ? `<div><dt>${bt("Effective range")}</dt><dd>${escapeHtml(String(hero.range))}</dd></div>` : ''}
+          ${hero.worksOn ? `<div><dt>${bt("Works on")}</dt><dd>${escapeHtml(hero.worksOn)}</dd></div>` : ''}
+          <div><dt>${bt("Target")}</dt><dd>${escapeHtml(hero.target)}</dd></div>
+        </dl>
+        <p class="bounty-skill-effect">${escapeHtml(hero.effect)}</p>
+      </div>
+      <dl class="bounty-hero-facts">
+        <div><dt>${bt("Bounty tier")}</dt><dd>${escapeHtml(hero.tier)}</dd></div>
+        <div><dt>${bt("Troop")}</dt><dd>${escapeHtml(meta?.Type || '—')}</dd></div>
+        <div><dt>${bt("Season")}</dt><dd>${escapeHtml(meta?.season || '—')}</dd></div>
+        <div><dt>${bt("Lobby opens")}</dt><dd>${escapeHtml(unlockLabel(hero))}</dd></div>
+      </dl>
+      <p class="bounty-hero-detail-note">${bt("Unlocks at Commission Level 6, and needs the hero's own skill maxed appropriately. Timers are from the Sept 2024 capture — confirm them in game.")}</p>
+      <a class="bounty-hero-atlas-link" href="#heroes" data-bounty-atlas-link="${escapeHtml(hero.appName)}">View ${escapeHtml(hero.appName)} in the Hero Atlas →</a>
+    </div>
+  </article>`;
+}
+
+// A cropped in-game capture with a caption that says what it is showing.
+function renderFigure(figure, className = '') {
+  if (!figure) return '';
+  return `
+  <figure class="bounty-figure ${className}">
+    <img src="${escapeHtml(figure.src)}" alt="${escapeHtml(figure.alt)}" width="${figure.width}" height="${figure.height}" loading="lazy" decoding="async" />
+    <figcaption>${escapeHtml(bt(figure.caption))}</figcaption>
+  </figure>`;
+}
+
+function renderHeroes() {
+  return `
+  <section class="bounty-section" id="bounty-heroes" data-bounty-section="heroes">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("Bounty Heroes")}</h2>
+      <p class="bounty-section-sub">${bt("The 9-hero roster of the Sept 5, 2024 update — tap a card for details.")}</p>
+    </header>
+    <div class="bounty-hero-grid">
+      ${BOUNTY_HEROES.map(renderHeroCard).join('')}
+    </div>
+  </section>`;
+}
+
+function renderRules() {
+  return `
+  <section class="bounty-section" id="bounty-rules" data-bounty-section="rules">
+    <header class="bounty-section-head">
+      <h2 class="bounty-section-title">${bt("Quick Rules")}</h2>
+      <p class="bounty-section-sub">${bt("The four things to remember.")}</p>
+    </header>
+    <ol class="bounty-quick-rules">
+      ${BOUNTY_QUICK_RULES.map((rule) => `<li class="bounty-quick-rule">${escapeHtml(bt(rule))}</li>`).join('')}
+    </ol>
+  </section>`;
+}
+
+function renderCredits() {
+  return `
+  <footer class="bounty-credits">
+    <p>${bt("Royal Bounty Eden X2 guide — compiled from the community PDFs Royal_Bounty_Updated_4-Oct-2024.pdf and Updated_Bounty_Heroes.pdf.")}</p>
+    <p>Credits: ${BOUNTY_GUIDE_CREDITS.map(escapeHtml).join(' / ')} · Roster as of ${escapeHtml(BOUNTY_GUIDE_ROSTER_DATE)} · Guide version ${escapeHtml(BOUNTY_GUIDE_VERSION)} · Published ${escapeHtml(BOUNTY_GUIDE_SOURCE_DATE)}.</p>
+    <p>${bt("Royal Bounty Alliance 2.0 reference image:")} <a href="https://www.riseofcastles.net/en/eden-bounty" target="_blank" rel="noopener noreferrer">${bt("Rise of Castles Eden Bounty guide")}</a>.</p>
+    <p class="bounty-credits-note">${bt("Lobby timers change every Eden season — always confirm the in-game timer under each hero portrait.")}</p>
+  </footer>`;
+}
+
+function renderHero() {
+  return `
+  <section class="bounty-hero" id="bounty-top">
+    <div class="bounty-hero-inner">
+      <span class="bounty-hero-kicker">${bt("VTS Eden Hub")}</span>
+      <h1 class="bounty-hero-title">${bt("Royal Bounty Eden X2")}</h1>
+      <p class="bounty-hero-tagline">${bt("Complete bounty missions. Raise Commission Levels. Unlock powerful Aiding Skills.")}</p>
+      <a class="bounty-hero-cta" href="#bounty-overview">${bt("Explore the Bounty System ↓")}</a>
+    </div>
+  </section>`;
+}
+
+function renderNav() {
+  return `
+  <nav class="bounty-nav" aria-label="${bt("Royal Bounty sections")}" data-bounty-nav>
+    <div class="bounty-nav-track">
+      ${SECTIONS.map(
+        (section) =>
+          `<a class="bounty-nav-link" href="#bounty-${section.id}" data-bounty-nav-link="${section.id}">${escapeHtml(bt(section.label))}</a>`
+      ).join('')}
+    </div>
+  </nav>`;
+}
+
+function wireInteractions(root) {
+  root.querySelectorAll('[data-bounty-hero]').forEach((card) => {
+    const toggle = card.querySelector('.bounty-hero-toggle');
+    const detail = card.querySelector('.bounty-hero-detail');
+    toggle?.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      detail.hidden = expanded;
+    });
+  });
+
+  root.querySelectorAll('[data-bounty-atlas-link]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (typeof window.vtsSwitchTab === 'function') {
+        window.vtsSwitchTab('heroes', false, { scrollToSection: true });
+      } else {
+        window.location.hash = '#heroes';
+      }
+    });
+  });
+
+  // Sticky nav scrollspy: highlight the section in view.
+  const links = [...root.querySelectorAll('[data-bounty-nav-link]')];
+  if (!links.length) return;
+  const sections = links
+    .map((link) => link.dataset.bountyNavLink)
+    .map((id) => root.querySelector(`[data-bounty-section="${id}"]`))
+    .filter(Boolean);
+  if (!sections.length) return;
+
+  const onScroll = () => {
+    let current = sections[0]?.dataset.bountySection || '';
+    for (const section of sections) {
+      const rect = section.getBoundingClientRect();
+      const nav = root.querySelector('[data-bounty-nav]');
+      const offset = nav ? nav.getBoundingClientRect().height + 24 : 120;
+      if (rect.top <= offset) current = section.dataset.bountySection;
+    }
+    links.forEach((link) => {
+      const active = link.dataset.bountyNavLink === current;
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
+export function renderBountyGuide(root) {
+  if (!root) return;
+  // The guide is the Eden Hub landing panel, so it renders before its pack can load.
+  // Draw immediately in English, then redraw once the locale arrives, and again on
+  // every language change - previously it was English in all 13 languages forever.
+  void loadBountyGuideLocale(currentLanguage).then(() => {
+    if (lastRoot === root) renderBountyGuideNow(root);
+  });
+  if (!languageBound) {
+    languageBound = true;
+    window.addEventListener('vts:language-change', () => {
+      void loadBountyGuideLocale(currentLanguage).then(() => {
+        if (lastRoot) renderBountyGuideNow(lastRoot);
+      });
+    });
+  }
+  lastRoot = root;
+  renderBountyGuideNow(root);
+}
+
+let lastRoot = null;
+let languageBound = false;
+
+function renderBountyGuideNow(root) {
+  if (!root) return;
+  root.innerHTML = `
+    ${renderHero()}
+    ${renderNav()}
+    <main class="bounty-main">
+      ${renderStatCards()}
+      ${renderLoop()}
+      ${renderLobbies()}
+      ${renderMissions()}
+      ${renderCommission()}
+      ${renderAiding()}
+      ${renderHeroes()}
+      ${renderRules()}
+    </main>
+    ${renderCredits()}
+  `;
+  wireInteractions(root);
+  mounted = true;
+}
+
+export function isBountyGuideMounted() {
+  return mounted;
+}

@@ -1,6 +1,7 @@
 import { translations } from './translations.js';
 import { currentLanguage, getHeroImageUrl } from './state.js';
 import { buildComboExportCopy } from './i18n/output-copy.js';
+import { drawCanvasFooter, getExportBranding } from './export-branding.js';
 
 async function loadImageCrossOrigin(url) {
   return new Promise((resolve) => {
@@ -48,7 +49,7 @@ async function renderCombosToCanvas(combosData, title) {
   const HDR_H    = 72;
   const CARD_H   = 160;
   const CARD_GAP = 12;
-  const FOOT_H   = 42;
+  const FOOT_H   = 62;
   const n        = combosData.length;
   const H        = HDR_H + PAD + n * (CARD_H + CARD_GAP) - CARD_GAP + PAD + FOOT_H;
 
@@ -208,9 +209,10 @@ async function renderCombosToCanvas(combosData, title) {
   ctx.font = '500 11px Inter, system-ui, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.7)';
   ctx.textAlign = 'center';
-  ctx.fillText(exportCopy.generatedByLine, W / 2, footY);
-  ctx.fillText(exportCopy.dateLabel, W / 2, footY + 18);
+  ctx.fillText(exportCopy.generatedByLine, W / 2, footY + 24);
+  ctx.fillText(exportCopy.dateLabel, W / 2, footY + 42);
   ctx.textAlign = 'left';
+  drawCanvasFooter(ctx, getExportBranding(), { x: PAD, y: footY + 4, width: W - PAD * 2 });
 
   return canvas;
 }

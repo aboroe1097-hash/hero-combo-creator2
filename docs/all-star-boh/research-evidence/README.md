@@ -21,3 +21,9 @@ Raider Legion, Art of War - Command, and Solid Tactics.
 
 The Dragon Blood Blessing capture still displays its former X8 badge. It is intentionally mapped
 to X2 because the game moved that tree to X2. Lofty Legion is mapped to X8.
+
+## Current use and preservation
+
+The sprite consumer described above belongs to the retired BoH interface. These screenshots and their hashes remain source evidence; retaining them does not re-enable that UI. Before reusing a crop, identify the current consumer and keep the season-remapping rationale with it. Verify hashes before modifying or moving originals.
+
+[Source archive policy](../../repository-maintenance.md) · [Documentation index](../../README.md)

@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import { ADMIN_RUNTIME_EN } from '../../js/i18n/admin-runtime-copy.js';
 
-const LOCALES = ['ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const LOCALES = ['ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
 
 function placeholders(value) {
   return [...String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
@@ -50,6 +50,7 @@ test('reviewed gamer/admin terminology is used in every locale', async () => {
     es: ['Temporada', 'Batalla de héroes'],
     fr: ['Saison', 'Mêlée des héros'],
     id: ['Musim', 'Adu Hero'],
+    it: ['Stagione', 'Rissa degli eroi'],
     kr: ['시즌', '영웅 난투'],
     pt: ['Temporada', 'Batalha de heróis'],
     ru: ['Сезон', 'Битва героев'],

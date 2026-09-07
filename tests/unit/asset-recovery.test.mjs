@@ -126,7 +126,7 @@ function createHarness(options = {}) {
   };
 }
 
-test('prepaint PWA copy packs cover every stable message ID in all 12 locales', () => {
+test('prepaint PWA copy packs cover every stable message ID in all 13 locales', () => {
   const harness = createHarness();
   const runtime = harness.window.VTS_PWA_I18N;
   const audit = runtime.audit();
@@ -136,7 +136,7 @@ test('prepaint PWA copy packs cover every stable message ID in all 12 locales', 
   assert.deepEqual([...audit.unexpected], []);
   assert.deepEqual(
     [...runtime.locales],
-    ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']
+    ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it']
   );
   assert.equal(runtime.ids.length, 12);
   for (const locale of runtime.locales.filter((value) => value !== 'en')) {
@@ -164,22 +164,22 @@ test('language prepaint migrates Korean locale aliases and applies Arabic RTL be
   assert.equal(arabic.documentAttributes.get('dir'), 'rtl');
 });
 
-test('English-only Battle Simulator beta ignores stored locale and keeps recovery copy English', () => {
+test('Battle Simulator prepaint honors stored locale and keeps recovery copy localized', () => {
   const localValues = new Map([['vts_hero_lang', 'ar']]);
   const battle = createHarness({ localValues, rootClass: 'battle-simulator-root' });
 
-  assert.equal(battle.window.VTS_INITIAL_LANGUAGE, 'en');
+  assert.equal(battle.window.VTS_INITIAL_LANGUAGE, 'ar');
   assert.equal(battle.localValues.get('vts_hero_lang'), 'ar');
-  assert.equal(battle.documentAttributes.get('lang'), 'en');
-  assert.equal(battle.documentAttributes.get('dir'), 'ltr');
+  assert.equal(battle.documentAttributes.get('lang'), 'ar');
+  assert.equal(battle.documentAttributes.get('dir'), 'rtl');
 
   battle.window.VTS_ASSET_RECOVERY.markBootComplete();
   battle.dispatchAssetError();
   const prompt = battle.appended[0];
-  assert.equal(prompt.children[1].textContent, 'Refresh');
+  assert.equal(prompt.children[1].textContent, battle.window.VTS_PWA_I18N.text('refresh', 'ar'));
 
-  battle.windowListeners.get('vts:language-change')?.({ detail: { lang: 'ar' } });
-  assert.equal(prompt.children[1].textContent, 'Refresh');
+  battle.windowListeners.get('vts:language-change')?.({ detail: { lang: 'it' } });
+  assert.equal(prompt.children[1].textContent, battle.window.VTS_PWA_I18N.text('refresh', 'it'));
 });
 
 test('install and update UI consume stable PWA copy IDs and refresh on language changes', () => {

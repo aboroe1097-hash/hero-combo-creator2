@@ -1,5 +1,5 @@
-/* Public leadership labels already rendered by the VTS app. This deliberately
- * excludes private rosters, authenticated management data, and Eden ballots. */
+/* Public leadership labels and stable player aliases already rendered by the VTS app.
+ * This deliberately excludes private rosters, authenticated management data, and Eden ballots. */
 
 function profile(name, rank, aliases = []) {
   return Object.freeze({
@@ -17,13 +17,14 @@ export const PUBLIC_VTS_PLAYER_PROFILES = Object.freeze([
   profile('Big Boiie', 'R4'),
   profile('Bil', 'R4'),
   profile('BoneSmoker', 'R4', ['BoneSmoker 1097']),
-  profile('Zubbs', 'R4', ['Lady Zubbs', 'Dr Zubbs']),
+  profile('Zubbs', null, ['Lady Zubbs', 'Dr Zubbs']),
+  profile('Loony', 'R4'),
   profile('Dr Thunder', 'R4', ['Dr Thunder 293', 'Dr Thunder VTS R4']),
   profile('Jasper', 'R4'),
   profile('Juli', 'R4', ['Juli Rae']),
   profile('Lisaveta', 'R4', ['Lisavetka']),
   profile('MasterVj', 'R4', ['MasterVj 1097']),
-  profile('Moldo', 'R4'),
+  profile('Moldo1313', 'R4', ['Moldo']),
   profile('Peter', 'R4'),
   profile('Redbull', 'R4', ['Redbulls']),
   profile('Roha', 'R4'),

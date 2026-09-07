@@ -27,7 +27,9 @@
   ],
   "vars": {
     "AI_ENABLED": "true",
-    "AI_MODEL": "gemini-3.1-flash-lite",
+    "AI_PROVIDER": "deepseek",
+    "AI_MODEL": "deepseek-reasoner",
+    "AI_MODEL_FAST": "deepseek-chat",
     "ENVIRONMENT": "production",
     "FIREBASE_PROJECT_ID": "abocombo",
     "FIREBASE_PROJECT_NUMBER": "103195597389",

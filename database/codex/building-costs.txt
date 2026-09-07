@@ -1,0 +1,2 @@
+# source: l96.app Main Building Costs post (not yet located) | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: unknown | verificationStatus: unverified
+building|level|wood|stone|iron|food|timeSec|requirement|p

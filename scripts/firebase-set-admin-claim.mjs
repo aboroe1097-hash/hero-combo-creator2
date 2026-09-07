@@ -21,13 +21,19 @@ function readServiceAccount() {
 }
 
 async function main() {
-  const arg = process.argv[2] || '';
+  const args = process.argv.slice(2);
+  // Break-glass path for the superadmin level. The setUserRole callable cannot
+  // mint the FIRST superadmin — it requires a superadmin caller — and it
+  // refuses self-demotion by design. So this script stays both the bootstrap
+  // and the only way back in if the controller is ever broken.
+  const superadmin = args.includes('--superadmin');
+  const arg = args.find((value) => !value.startsWith('--')) || '';
   const uid = envValue('FIREBASE_ADMIN_UID') || (arg && !arg.includes('@') ? arg : '');
   const email = envValue('FIREBASE_ADMIN_EMAIL') || (arg && arg.includes('@') ? arg : '');
 
   if (!uid && !email) {
     throw new Error(
-      'Usage: node scripts/firebase-set-admin-claim.mjs <uid-or-email>\n' +
+      'Usage: node scripts/firebase-set-admin-claim.mjs <uid-or-email> [--superadmin]\n' +
         'Or set FIREBASE_ADMIN_UID or FIREBASE_ADMIN_EMAIL environment variables.'
     );
   }
@@ -40,9 +46,17 @@ async function main() {
   const auth = getAuth();
   const user = uid ? await auth.getUser(uid) : await auth.getUserByEmail(email);
   const currentClaims = user.customClaims || {};
-  await auth.setCustomUserClaims(user.uid, { ...currentClaims, admin: true });
+  // superadmin implies admin, matching nextClaimsFor() in the callable.
+  const claims = superadmin
+    ? { ...currentClaims, admin: true, superadmin: true }
+    : { ...currentClaims, admin: true };
+  await auth.setCustomUserClaims(user.uid, claims);
 
-  console.log(`Firebase admin claim enabled for UID ${user.uid}.`);
+  console.log(
+    superadmin
+      ? `Firebase admin + superadmin claims enabled for UID ${user.uid}.`
+      : `Firebase admin claim enabled for UID ${user.uid}.`
+  );
   console.log('Reload the deployed admin page so Firebase refreshes the ID token.');
 }
 

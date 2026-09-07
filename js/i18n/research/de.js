@@ -183,6 +183,18 @@ const trees = Object.freeze({
     primaryResource: 'Kriegsabzeichen',
     pages: ['Erhabene Legion'],
   },
+  '9c5d4006': {
+    name: 'Nahkampflegion – Verteidigung',
+    unlockCondition: 'Start von Eden X12',
+    primaryResource: 'Kriegsabzeichen',
+    pages: ['Nahkampflegion – Verteidigung'],
+  },
+  'b57d6bf9': {
+    name: 'Nahkampflegion – Angriff',
+    unlockCondition: 'Start von Eden X12',
+    primaryResource: 'Kriegsabzeichen',
+    pages: ['Nahkampflegion – Angriff'],
+  },
 });
 
 const nodes = Object.freeze({
@@ -3409,6 +3421,242 @@ const nodes = Object.freeze({
   '19ae0569:node_37': {
     name: 'Segen des Lebens',
     buff: '+5% HP erhabener Truppen',
+  },
+  '9c5d4006:node_1': {
+    name: 'Verteidigungsschild',
+    buff: '+10% Widerstand bei Belagerungsverteidigung der Infanterie',
+  },
+  '9c5d4006:node_2': {
+    name: 'Verteidigungsrüstung',
+    buff: '+10% Widerstand bei Belagerungsverteidigung der Bogenschützen',
+  },
+  '9c5d4006:node_3': {
+    name: 'Verteidigungskavallerie',
+    buff: '+10% Widerstand bei Belagerungsverteidigung der Kavallerie',
+  },
+  '9c5d4006:node_4': {
+    name: 'Infanteriedurchbruch',
+    buff: '+10% Kampfkraft bei Belagerungsverteidigung der Infanterie',
+  },
+  '9c5d4006:node_5': {
+    name: 'Bogenschützendurchbruch',
+    buff: '+10% Kampfkraft bei Belagerungsverteidigung der Bogenschützen',
+  },
+  '9c5d4006:node_6': {
+    name: 'Kavalleriedurchbruch',
+    buff: '+10% Kampfkraft bei Belagerungsverteidigung der Kavallerie',
+  },
+  '9c5d4006:node_7': {
+    name: 'Taktischer Nahkampfschutz',
+    buff: '+5% Taktikwiderstand aller Truppen',
+  },
+  '9c5d4006:node_8': {
+    name: 'Beharrlichkeit – Klassenlegion',
+    buff: '+15% Widerstand der Klassenlegion aller Truppen',
+  },
+  '9c5d4006:node_9': {
+    name: 'Beharrlichkeit – Legion I',
+    buff: '+15% Widerstand der Legion I aller Truppen',
+  },
+  '9c5d4006:node_10': {
+    name: 'Beharrlichkeit – Legion II',
+    buff: '+15% Widerstand der Legion II aller Truppen',
+  },
+  '9c5d4006:node_11': {
+    name: 'Beharrlichkeit – Legion III',
+    buff: '+15% Widerstand der Legion III aller Truppen',
+  },
+  '9c5d4006:node_12': {
+    name: 'Beharrlichkeit – Verteidigungsformation',
+    buff: '+15% Widerstand der Verteidigungsformation aller Truppen',
+  },
+  '9c5d4006:node_13': {
+    name: 'Solide Verteidigung',
+    buff: '+10% Widerstand bei Belagerungsverteidigung aller Truppen',
+  },
+  '9c5d4006:node_14': {
+    name: 'Verteidigungstruppe',
+    buff: '15000 Marschlimit der Verteidigungsformation',
+  },
+  '9c5d4006:node_15': {
+    name: 'Taktischer Nahkampfangriff',
+    buff: '+5% Taktikkraft aller Truppen',
+  },
+  '9c5d4006:node_16': {
+    name: 'Beharrlichkeit – Klassenlegion M',
+    buff: '+15% Kampfkraft der Klassenlegion aller Truppen',
+  },
+  '9c5d4006:node_17': {
+    name: 'Beharrlichkeit – Legion I M',
+    buff: '+15% Kampfkraft der Legion I aller Truppen',
+  },
+  '9c5d4006:node_18': {
+    name: 'Beharrlichkeit – Legion II M',
+    buff: '+15% Kampfkraft der Legion II aller Truppen',
+  },
+  '9c5d4006:node_19': {
+    name: 'Beharrlichkeit – Legion III M',
+    buff: '+15% Kampfkraft der Legion III aller Truppen',
+  },
+  '9c5d4006:node_20': {
+    name: 'Mut – Verteidigungsformation',
+    buff: '+15% Kampfkraft der Verteidigungsformation aller Truppen',
+  },
+  '9c5d4006:node_21': {
+    name: 'Initiative',
+    buff: '+10% Kampfkraft bei Belagerungsverteidigung aller Truppen',
+  },
+  '9c5d4006:node_22': {
+    name: 'Nahkampf – Infanterieschild',
+    buff: '+15% Widerstand der Infanterie',
+  },
+  '9c5d4006:node_23': {
+    name: 'Nahkampf – Kavallerie in der Nachhut',
+    buff: '+15% Widerstand der Kavallerie',
+  },
+  '9c5d4006:node_24': {
+    name: 'Nahkampf – Bogenschützendeckung',
+    buff: '+15% Widerstand der Bogenschützen',
+  },
+  '9c5d4006:node_25': {
+    name: 'Nahkampf – Infanterieüberfall',
+    buff: '+15% Kampfkraft der Infanterie',
+  },
+  '9c5d4006:node_26': {
+    name: 'Nahkampf – Kavallerieangriff',
+    buff: '+15% Kampfkraft der Kavallerie',
+  },
+  '9c5d4006:node_27': {
+    name: 'Nahkampf – Bogenschützenbeschuss',
+    buff: '+15% Kampfkraft der Bogenschützen',
+  },
+  '9c5d4006:node_28': {
+    name: 'Gute Physis',
+    buff: 'HP bei Belagerungsverteidigung aller Truppen +10%',
+  },
+  '9c5d4006:node_29': {
+    name: 'Nahkampf geht weiter',
+    buff: '-5% in Belagerungsverteidigungskämpfen, tödlicher Effekt reduziert',
+  },
+  'b57d6bf9:node_1': {
+    name: 'Klingenangriff – Infanterie',
+    buff: '+10% Belagerungskraft der Infanterie',
+  },
+  'b57d6bf9:node_2': {
+    name: 'Klingenangriff – Kavallerie',
+    buff: '+10% Belagerungskraft der Kavallerie',
+  },
+  'b57d6bf9:node_3': {
+    name: 'Klingenangriff – Bogenschützen',
+    buff: '+10% Belagerungskraft der Bogenschützen',
+  },
+  'b57d6bf9:node_4': {
+    name: 'Klingenüberfall – Infanterie',
+    buff: '+10% Belagerungswiderstand der Infanterie',
+  },
+  'b57d6bf9:node_5': {
+    name: 'Klingenüberfall – Kavallerie',
+    buff: '+10% Belagerungswiderstand der Kavallerie',
+  },
+  'b57d6bf9:node_6': {
+    name: 'Klingenüberfall – Bogenschützen',
+    buff: '+10% Belagerungswiderstand der Bogenschützen',
+  },
+  'b57d6bf9:node_7': {
+    name: 'Hofgarde',
+    buff: '+5% Taktikkraft aller Truppen',
+  },
+  'b57d6bf9:node_8': {
+    name: 'Eisenwall – Klassenlegion',
+    buff: '+10% Widerstand aller Truppen in der Klassenlegion',
+  },
+  'b57d6bf9:node_9': {
+    name: 'Eisenwall – Legion 1',
+    buff: '+10% Widerstand aller Truppen in Legion 1',
+  },
+  'b57d6bf9:node_10': {
+    name: 'Eisenwall – Legion 2',
+    buff: '+10% Widerstand aller Truppen in Legion 2',
+  },
+  'b57d6bf9:node_11': {
+    name: 'Eisenwall – Legion 3',
+    buff: '+10% Widerstand aller Truppen in Legion 3',
+  },
+  'b57d6bf9:node_12': {
+    name: 'Ausgewogene Taktik',
+    buff: '+5% Kampfkraft und Widerstand der Truppen',
+  },
+  'b57d6bf9:node_13': {
+    name: 'Ansturm – Klassenlegion',
+    buff: '+10% Kampfkraft aller Truppen in der Klassenlegion',
+  },
+  'b57d6bf9:node_14': {
+    name: 'Ansturm – Legion 1',
+    buff: '+10% Kampfkraft aller Truppen in Legion 1',
+  },
+  'b57d6bf9:node_15': {
+    name: 'Ansturm – Legion 2',
+    buff: '+10% Kampfkraft aller Truppen in Legion 2',
+  },
+  'b57d6bf9:node_16': {
+    name: 'Ansturm – Legion 3',
+    buff: '+10% Kampfkraft aller Truppen in Legion 3',
+  },
+  'b57d6bf9:node_17': {
+    name: 'Vorhutpanzerung',
+    buff: '+5% Taktikwiderstand aller Truppen',
+  },
+  'b57d6bf9:node_18': {
+    name: 'Schwere Vorhutrüstung',
+    buff: '+5% Belagerungswiderstand aller Truppen',
+  },
+  'b57d6bf9:node_19': {
+    name: 'Kampffertigkeits-Meisterschaft – Infanterie',
+    buff: '+10% Fähigkeits-Kampfkraft der Infanterie',
+  },
+  'b57d6bf9:node_20': {
+    name: 'Kampffertigkeits-Meisterschaft – Kavallerie',
+    buff: '+10% Fähigkeits-Kampfkraft der Kavallerie',
+  },
+  'b57d6bf9:node_21': {
+    name: 'Kampffertigkeits-Meisterschaft – Bogenschützen',
+    buff: '+10% Fähigkeits-Kampfkraft der Bogenschützen',
+  },
+  'b57d6bf9:node_22': {
+    name: 'Kampffertigkeits-Widerstand – Infanterie',
+    buff: '+10% Fähigkeits-Widerstand der Infanterie',
+  },
+  'b57d6bf9:node_23': {
+    name: 'Kampffertigkeits-Widerstand – Kavallerie',
+    buff: '+10% Fähigkeits-Widerstand der Kavallerie',
+  },
+  'b57d6bf9:node_24': {
+    name: 'Kampffertigkeits-Widerstand – Bogenschützen',
+    buff: '+10% Fähigkeits-Widerstand der Bogenschützen',
+  },
+  'b57d6bf9:node_25': {
+    name: 'Vorhutgeist – Infanterie',
+    buff: '+5% Infanterie-HP',
+  },
+  'b57d6bf9:node_26': {
+    name: 'Vorhutgeist – Kavallerie',
+    buff: '+5% Kavallerie-HP',
+  },
+  'b57d6bf9:node_27': {
+    name: 'Vorhutgeist – Bogenschützen',
+    buff: '+5% Bogenschützen-HP',
+  },
+  'b57d6bf9:node_28': {
+    name: 'Totaler Vorstoß',
+    buff: '+5% Belagerungskraft aller Soldaten',
+  },
+  'b57d6bf9:node_29': {
+    name: 'Formationsmeisterschaft',
+    buff: '+5% HP der Belagerungsangreifer',
+  },
+  'b57d6bf9:node_30': {
+    name: 'Gepanzerter Ansturm',
+    buff: '+5% Verursachter Schaden',
   },
 });
 

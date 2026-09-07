@@ -3,6 +3,7 @@ import {
   normalizePlayerRegistry,
   resolvePlayerRegistryAlias,
 } from './player-registry.js';
+import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 
 function cleanText(value) {
   return String(value || '')
@@ -12,7 +13,8 @@ function cleanText(value) {
 }
 
 export function normalizeContributionMemberName(value) {
-  return cleanText(value).replace(/,+$/u, '').trim();
+  const name = String(value || '').replace(/,+$/u, '').trim();
+  return resolveConfirmedPlayerAlias(name) || cleanText(name);
 }
 
 function contributionNumber(value) {
@@ -99,7 +101,7 @@ export function getContributionSnapshotIdentity(entry, registryInput, options = 
 export function getContributionCanonicalName(nameInput, registryInput) {
   const registry = normalizePlayerRegistry(registryInput);
   const name = cleanText(nameInput);
-  return resolvePlayerRegistryAlias(name, registry) || name;
+  return resolveConfirmedPlayerAlias(nameInput) || resolvePlayerRegistryAlias(name, registry) || name;
 }
 
 export function addContributionAliasMatch(registryInput, oldNameInput, newNameInput) {

@@ -104,6 +104,12 @@ import {
 } from './i18n/eden-map/index.js';
 
 let _edenLiveMapApi = null;
+let refreshEdenMapPlannerViewport = () => false;
+
+/** Re-measure the canvas after the Eden Hub reveals the Map sub-tab. */
+export function refreshEdenMapViewport() {
+  return refreshEdenMapPlannerViewport();
+}
 let edenMapLanguageGeneration = 0;
 let refreshEdenMapLanguage = async () => {
   const requestId = ++edenMapLanguageGeneration;
@@ -2825,6 +2831,37 @@ export function initEdenMapPlanner() {
     draw();
     return true;
   };
+
+  // Royal Bounty is the hub landing page, which means the map initializes
+  // while its panel is hidden. The first visible measurement must also fit
+  // the camera: the hidden 1px canvas otherwise leaves terrain off-screen.
+  let fittedForVisibleViewport = false;
+  refreshEdenMapPlannerViewport = () => {
+    if (root.closest('[hidden]') || canvas.closest('[hidden]')) return false;
+    resize();
+    if (!fittedForVisibleViewport) {
+      fittedForVisibleViewport = true;
+      fitView(false);
+    } else {
+      scheduleDraw({ sidebar: true });
+    }
+    return true;
+  };
+
+  // The hub's one-shot refresh call can arrive before this planner has booted,
+  // in which case it hits the no-op stub and the canvas keeps its hidden-state
+  // 1px size for good. Observing the canvas's own box removes the timing
+  // question entirely: whenever it actually gains a real size — the sub-tab
+  // being revealed, a rotation, a window resize — re-measure once and fit.
+  if (typeof ResizeObserver === 'function' && canvas.parentElement) {
+    const observer = new ResizeObserver((entries) => {
+      const box = entries[0]?.contentRect;
+      if (!box || box.width < 2 || box.height < 2) return;
+      if (canvas.width > 2 && canvas.height > 2 && fittedForVisibleViewport) return;
+      refreshEdenMapPlannerViewport();
+    });
+    observer.observe(canvas.parentElement);
+  }
 
   window.addEventListener('resize', debouncedResize);
   window.addEventListener(

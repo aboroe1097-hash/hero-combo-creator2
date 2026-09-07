@@ -30,8 +30,27 @@ import {
   expandDutyRawNames,
   getDutyCreditedNames,
 } from './ocr-shared.js';
+import {
+  ACTIVE_EDEN_WORKSPACE,
+  ACTIVE_EDEN_WORKSPACE_ID,
+  edenWorkspaceMutationError,
+} from './eden-workspaces.js';
+import { bohMatchEntriesFromText } from './boh-match-results.js';
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
+
+// Season record mirrors refuse writes while the archived workspace is the
+// active one, so the X1 archive's local mirrors stay exactly as loaded.
+function blockArchiveMirrorWrite(action) {
+  const err = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID);
+  if (!err) return false;
+  console.warn(err.message, action);
+  log(`${err.message} Blocked: ${action}.`, 'warn');
+  if (typeof window.showToast === 'function') {
+    window.showToast(`${ACTIVE_EDEN_WORKSPACE.label} is read-only.`, 'warn', 6000);
+  }
+  return true;
+}
 import { translations } from './translations.js';
 import { resolveRuntimeLocale } from './locale-format.js';
 import {
@@ -366,6 +385,7 @@ function loadRoster() {
 }
 
 function saveRoster(text) {
+  if (blockArchiveMirrorWrite('save roster')) return;
   const previous = localStorage.getItem(ROSTER_KEY) || '';
   localStorage.setItem(ROSTER_KEY, text);
   loadRoster();
@@ -432,6 +452,7 @@ function syncRosterSnapshotsToFirestore(snapshots, baseUpdated) {
 }
 
 function saveRosterSnapshots() {
+  if (blockArchiveMirrorWrite('save roster snapshots')) return;
   state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
   const snapshots = state.rosterSnapshots.slice();
   const baseUpdated = state._rosterCloudBaseUpdated ?? null;
@@ -1036,6 +1057,7 @@ function loadBannerRecords() {
 }
 
 function saveBannerRecords(options = {}) {
+  if (blockArchiveMirrorWrite('save banner records')) return Promise.resolve(false);
   try {
     localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords));
   } catch (e) {}
@@ -1299,6 +1321,7 @@ function loadDutyRecords() {
 }
 
 function saveDutyRecords(options = {}) {
+  if (blockArchiveMirrorWrite('save duty records')) return Promise.resolve(false);
   try {
     localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords));
   } catch (e) {}
@@ -2235,6 +2258,7 @@ function loadContributionRecords() {
 }
 
 function saveContributionRecords(options = {}) {
+  if (blockArchiveMirrorWrite('save contribution records')) return Promise.resolve(false);
   try {
     localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || []));
   } catch (e) {}
@@ -2252,6 +2276,7 @@ export function loadExGuildContributions() {
 }
 
 function saveExGuildContributions(options = {}) {
+  if (blockArchiveMirrorWrite('save ex-guild contributions')) return Promise.resolve(false);
   try {
     localStorage.setItem(
       EX_GUILD_CONTRIBUTION_KEY,
@@ -3113,6 +3138,82 @@ function clearContributionUploadStatus() {
   el.textContent = '';
 }
 
+// Reads the Combat Progress score list off a team leader's screenshots.
+//
+// Leaders capture the same board two or three times as they scroll, so this
+// returns every row it sees and leaves de-duplication to
+// normalizeBohMatchEntries(), which keeps one row per player.
+async function runBohMatchOcr(files, options = {}) {
+  const valid = getSupportedOcrImageFiles(files);
+  if (!valid.length) {
+    const rejected = describeRejectedOcrImageFiles(files);
+    return {
+      entries: [],
+      scanned: 0,
+      error: rejected.length
+        ? adminT('adminContributionUnsupportedImageStatus', {
+            files: rejected.slice(0, 3).join(', '),
+          })
+        : adminT('adminContributionNoImageSelectedStatus'),
+    };
+  }
+
+  const rows = [];
+  let blockingError = '';
+  for (let i = 0; i < valid.length; i++) {
+    const file = valid[i];
+    options.onProgress?.({ current: i + 1, total: valid.length, file: file.name });
+    try {
+      const imageUrl = await readOcrImageDataUrl(file);
+      const promptTxt = `Extract the team score list from this Rise of Castles "Combat Progress" battleground screenshot.
+
+Return ONLY valid JSON in this shape:
+{"entries":[{"rank":1,"name":"GoodnesGraycious","score":16279}]}
+
+Rules:
+- Include every visible member row of the currently selected side's list, including partially scrolled rows.
+- Use the number at the far left of the row as "rank".
+- Use the number at the far right of the row as "score", digits only, no separators.
+- Put only the player name text in "name"; preserve symbols, spacing, decorative brackets, and non-Latin characters exactly.
+- Ignore the two alliance banners at the top, the total scores, per-minute rates, deployed member counts, teleports, territory coverage, the Blue/Red tabs, avatars, buttons, the phone status bar, and any decorative text.
+- If no member rows are visible, return {"entries":[]}.`;
+      const raw = await qwenVisionRequest([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        },
+      ]);
+      const text = raw?.choices?.[0]?.message?.content || '';
+      const cleaned = text
+        .replace(/```(?:json)?\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
+      let parsed = null;
+      try {
+        parsed = tryRepairJson(cleaned);
+      } catch {
+        parsed = null;
+      }
+      const entries = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.entries)
+          ? parsed.entries
+          : [];
+      if (entries.length) rows.push(...entries);
+      else rows.push(...bohMatchEntriesFromText(cleaned));
+    } catch (e) {
+      const errorMessage = describeOcrRequestError(e, adminT);
+      if (!blockingError) blockingError = errorMessage;
+      if (e?.localConfiguration) break;
+    }
+  }
+
+  return { entries: rows, scanned: valid.length, error: rows.length ? '' : blockingError };
+}
+
 async function processContributionImages(files, mode = 'normal') {
   if (state._contributionProcessing) {
     logRosterEvent('adminContributionOcrRunningLog', 'warn');
@@ -3867,6 +3968,7 @@ function renderWeightedScorePopover(row, index, prefix = 'dashContributionWeight
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
       <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${formatContributionValue(row.contributionScore)}</b></span>
+      <span><span>${esc(adminT('adminThDemo'))}<small>${formatContributionValue(row.totalDemolition)} ÷ 20</small></span><b>${formatContributionValue(row.demolitionPoints)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${formatContributionValue(row.contributionExGuild || 0)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatContributionValue(row.dutyPoints || 0)}</b></span>
       <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedContributionValue(row.conductPoints || 0)}</b></span>
@@ -3883,6 +3985,7 @@ function sortedContributionWeightedRows(rows) {
     currentRank: (row) => (row.currentRank ? Number(row.currentRank) : 999999),
     reward: (row) => getContributionRewardLabel(row.currentReward),
     contribution: (row) => parseContributionValue(row.contributionScore),
+    demolition: (row) => parseContributionValue(row.totalDemolition),
     exGuild: (row) => parseContributionValue(row.contributionExGuild),
     shieldWalls: (row) => Number(row.shieldWalls || 0),
     pathers: (row) => Number(row.pathers || 0),
@@ -3921,6 +4024,8 @@ function contributionWeightedSearchText(row) {
     getContributionRewardLabel(row.currentReward),
     getContributionRewardLabel(row.finalReward),
     contributionWeightedSearchNumber(row.contributionScore),
+    contributionWeightedSearchNumber(row.totalDemolition),
+    contributionWeightedSearchNumber(row.demolitionPoints),
     contributionWeightedSearchNumber(row.contributionExGuild),
     contributionWeightedSearchNumber(row.shieldWalls),
     contributionWeightedSearchNumber(row.pathers),
@@ -3991,6 +4096,7 @@ function renderWeightedContributionTable() {
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
   const rows = model.rows || [];
 
@@ -4021,7 +4127,7 @@ function renderWeightedContributionTable() {
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="demolition" tabindex="0">${esc(adminT('adminThDemo'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${
           visibleRows.length
             ? visibleRows
@@ -4031,6 +4137,7 @@ function renderWeightedContributionTable() {
           <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col">${esc(getContributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.totalDemolition)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionExGuild || 0)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
@@ -4043,7 +4150,7 @@ function renderWeightedContributionTable() {
         </tr>`
                 )
                 .join('')
-            : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
+            : `<tr><td colspan="14" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
         }</tbody>
       </table>
     </div>
@@ -4251,6 +4358,7 @@ export {
   showExGuildPasteForm,
   showContributionConfirmModal,
   processContributionImages,
+  runBohMatchOcr,
   editContributionRecord,
   deleteContributionRecord,
   setContributionReward,

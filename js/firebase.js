@@ -7,6 +7,7 @@ import {
   importFirebaseApp,
   importFirebaseAppCheck,
   importFirebaseAuth,
+  importFirebaseFunctions,
   importFirestore,
 } from './firebase-sdk.js';
 import {
@@ -257,6 +258,8 @@ export function getCurrentUser() {
   return auth?.currentUser || null;
 }
 
+const ANON_AUTH_TIMEOUT_MS = 20000;
+
 export async function waitForAuthReady() {
   if (!auth) throw new Error('Firebase not initialized');
   await ensureAuthPersistence();
@@ -295,7 +298,19 @@ export async function ensureAnonymousAuth() {
     try {
       const restoredUser = await waitForAuthReady();
       if (restoredUser) return restoredUser;
-      const credential = await signInAnonymously(auth);
+      // waitForAuthReady() is bounded, but signInAnonymously() was not: if the
+      // identitytoolkit endpoint stalls rather than failing, callers that await this
+      // never settle and their loading state stays up forever. Bound it so the caller
+      // surfaces an error with a retry instead.
+      const credential = await Promise.race([
+        signInAnonymously(auth),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Anonymous sign-in timed out after ${ANON_AUTH_TIMEOUT_MS}ms`)),
+            ANON_AUTH_TIMEOUT_MS
+          )
+        ),
+      ]);
       return credential.user;
     } finally {
       authInFlight = null;
@@ -342,6 +357,60 @@ export async function isAdminAuthUser(userOverride = null, options = {}) {
   const user = userOverride || auth?.currentUser || null;
   if (!user || user.isAnonymous) return false;
   return getFirebaseAdminClaim(Boolean(options.forceRefresh), user);
+}
+
+// The second privilege level. UI hiding is never authorization — Firestore
+// rules and the setUserRole callable enforce this independently — but the
+// dashboard still needs to know whether to render the superadmin surfaces.
+//
+// A claim reaches a signed-in browser only when its ID token refreshes, which
+// can lag up to an hour behind the change. Pass forceRefresh straight after a
+// grant, or wherever a refusal would otherwise look like a bug.
+export async function getFirebaseSuperAdminClaim(forceRefresh = false, userOverride = null) {
+  if (!auth) throw new Error('Firebase not initialized');
+  const user = userOverride || auth.currentUser;
+  if (!user || user.isAnonymous) return false;
+  const token = await getIdTokenResult(user, forceRefresh);
+  return token?.claims?.superadmin === true;
+}
+
+export async function isSuperAdminAuthUser(userOverride = null, options = {}) {
+  const user = userOverride || auth?.currentUser || null;
+  if (!user || user.isAnonymous) return false;
+  return getFirebaseSuperAdminClaim(Boolean(options.forceRefresh), user);
+}
+
+export function currentAuthUid() {
+  return auth?.currentUser?.uid || '';
+}
+
+/**
+ * Bridge to the setUserRole callable. Kept here rather than in the controller
+ * so that module stays free of Firebase and testable, and so the callable's
+ * error codes are translated once.
+ *
+ * The caller's own claim is re-verified server-side; nothing sent from here is
+ * trusted as authority.
+ */
+export async function callSetUserRole({ targetUid, role, granted }) {
+  // Must come from the same SDK instance that created `app`, which is the
+  // bundled package. This used to load firebase-functions from the gstatic CDN,
+  // pinned to the SDK major of the importmap that built `app` back then. `app`
+  // is built from the bundled SDK now, and a CDN module is a separate instance
+  // of @firebase/app however the versions line up: it registers its 'functions'
+  // component into its own container, getFunctions(app) looks in the bundled
+  // container, finds nothing, and throws "Service functions is not available"
+  // - which is what Users & Roles reported for every role grant.
+  const { getFunctions, httpsCallable } = await importFirebaseFunctions();
+  if (!app) throw new Error('Firebase not initialized');
+  const callable = httpsCallable(getFunctions(app, 'us-central1'), 'setUserRole');
+  const result = await callable({ targetUid, role, granted });
+  // Force a token refresh for the operator's own row so the UI and the claim
+  // agree immediately rather than after the token's own hour-long lifetime.
+  if (targetUid === currentAuthUid()) {
+    await getIdTokenResult(auth.currentUser, true).catch(() => undefined);
+  }
+  return result?.data;
 }
 
 // Legacy loose admin check: true if the user signed in with an email/password

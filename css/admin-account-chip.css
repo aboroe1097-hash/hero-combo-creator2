@@ -1,0 +1,50 @@
+/* Admin header mount for the shared account chip.
+   The chip's own base CSS (css/account-chip.css) positions it fixed for
+   standalone pages; on the admin deck it lives inline in the header control
+   row, so the fixed positioning is replaced by header flow and the chip's
+   hard-coded dark palette is re-mapped onto the admin's semantic tokens so it
+   holds contrast in both themes. */
+#adminAccountChip.vts-account-chip-mount {
+  position: static;
+  z-index: auto;
+  display: inline-flex;
+  min-width: 0;
+}
+
+body.admin-standalone-page #adminAccountChip .vts-account-chip {
+  border-color: color-mix(in srgb, var(--ff-cyan) 38%, transparent);
+  background: var(--ff-glass);
+  color: var(--ff-text);
+  box-shadow: none;
+  min-height: 44px;
+}
+
+body.admin-standalone-page #adminAccountChip .vts-account-chip__copy small {
+  color: var(--ff-text-dim);
+}
+
+[data-theme='light'] body.admin-standalone-page #adminAccountChip .vts-account-chip {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+[data-theme='light'] body.admin-standalone-page #adminAccountChip .vts-account-chip__copy small {
+  color: #475569;
+}
+
+@media (max-width: 768px) {
+  #adminAccountChip.vts-account-chip-mount {
+    position: static;
+  }
+  /* The base sheet hides the chip copy below 600px; the header slot is wide
+     enough to keep the identity visible until the tighter mobile layout. */
+  #adminAccountChip .vts-account-chip__copy {
+    display: grid;
+  }
+}
+
+@media (max-width: 600px) {
+  #adminAccountChip .vts-account-chip__copy {
+    display: none;
+  }
+}

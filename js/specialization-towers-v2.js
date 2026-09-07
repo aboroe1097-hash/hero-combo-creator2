@@ -18,6 +18,15 @@ function showBootError() {
 }
 
 async function start() {
+  // Without this guard a missing mount threw a TypeError into the catch below, where
+  // showBootError() bails on its own `if (!mount) return` - a silent no-op that left
+  // whatever spinner was on screen running forever.
+  if (!mount) {
+    console.error(
+      '[specialization-towers-v2] #specializationTowersMount is missing; the standalone bootstrap cannot start.'
+    );
+    return;
+  }
   try {
     const { mountSpecializationTowers } = await import('./specialization-towers-v2-app.js');
     mountSpecializationTowers(mount);

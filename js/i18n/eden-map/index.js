@@ -154,6 +154,11 @@ const EN = Object.freeze({
     guideSteps: 'Steps in section',
     allSectors: 'Full Map',
     genericSector: '{code} Sector',
+    subTabMap: 'Eden Map',
+    subTabLoyalty: 'Eden Loyalty',
+    subTabBounty: 'Royal Bounty Eden X2',
+    subTabSeason: 'Current Season',
+    subTabPrevious: 'Previous Seasons',
   },
 });
 
@@ -163,6 +168,7 @@ const loaders = Object.freeze({
   es: () => import('./es.js'),
   fr: () => import('./fr.js'),
   id: () => import('./id.js'),
+  it: () => import('./it.js'),
   kr: () => import('./kr.js'),
   pt: () => import('./pt.js'),
   ru: () => import('./ru.js'),

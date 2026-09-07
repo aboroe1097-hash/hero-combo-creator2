@@ -248,6 +248,59 @@ function markFinalOverride(source) {
   return Object.freeze({ ...source, exclusionReason: 'final-total-override' });
 }
 
+const UNIT_SOURCE_PROXY_KEYS = Object.freeze({
+  attack: 'might',
+  defense: 'resistance',
+  hp: 'hp',
+});
+
+function partitionUnitSources(rawSources, context) {
+  if (rawSources === undefined) {
+    return {
+      supplied: false,
+      included: Object.freeze([]),
+      excluded: Object.freeze([]),
+      totals: Object.freeze(Object.fromEntries(UNIT_STAT_KEYS.map((key) => [key, 0]))),
+    };
+  }
+  if (!Array.isArray(rawSources)) throw new TypeError('Unit sources must be an array.');
+  const proxied = rawSources.map((source, index) => {
+    if (!source || typeof source !== 'object' || Array.isArray(source)) {
+      throw new TypeError(`Unit source ${index + 1} must be an object.`);
+    }
+    if (!UNIT_STAT_KEYS.includes(source.statKey)) {
+      throw new RangeError(`Unsupported unit stat "${String(source.statKey)}".`);
+    }
+    if (source.unit !== 'percent') {
+      throw new RangeError(`${source.statKey} unit sources must use unit "percent".`);
+    }
+    return { ...source, statKey: UNIT_SOURCE_PROXY_KEYS[source.statKey] };
+  });
+  const partitioned = partitionStatSources(proxied, context);
+  const restore = (source) => {
+    const statKey =
+      Object.entries(UNIT_SOURCE_PROXY_KEYS).find(([, proxy]) => proxy === source.statKey)?.[0] ??
+      source.statKey;
+    return Object.freeze({ ...source, statKey });
+  };
+  const included = Object.freeze(partitioned.included.map(restore));
+  const excluded = Object.freeze(partitioned.excluded.map(restore));
+  const totals = Object.fromEntries(UNIT_STAT_KEYS.map((key) => [key, 0]));
+  for (const source of included) {
+    const next = totals[source.statKey] + source.amount;
+    if (!Number.isFinite(next)) {
+      throw new RangeError(`Unit source total for ${source.statKey} is too large.`);
+    }
+    totals[source.statKey] = next;
+  }
+  return {
+    supplied: true,
+    included,
+    excluded,
+    totals: Object.freeze(totals),
+  };
+}
+
 export function calculateTroopStats({
   type,
   tier,
@@ -255,6 +308,7 @@ export function calculateTroopStats({
   unitValues,
   values,
   sources = [],
+  unitSources,
   context = {},
 } = {}) {
   if (![STAT_INPUT_MODES.ADD_BONUSES, STAT_INPUT_MODES.FINAL_TOTALS].includes(mode)) {
@@ -264,12 +318,22 @@ export function calculateTroopStats({
   }
   const profile = getTroopProfile(type, tier);
   const enteredUnit = normalizeUnitOverrides(unitValues);
-  const resolvedUnit = { ...profile.unitStats, ...enteredUnit };
-  const enteredBattle = normalizeBattleValues(values, mode);
+  const preSourceUnit = { ...profile.unitStats, ...enteredUnit };
   const sourceContext = {
     ...context,
     troopType: context.troopType ?? context.type ?? profile.type,
   };
+  const unitSourcePartition = partitionUnitSources(unitSources, sourceContext);
+  const resolvedUnit = Object.fromEntries(
+    UNIT_STAT_KEYS.map((key) => {
+      const adjusted = preSourceUnit[key] * (1 + unitSourcePartition.totals[key] / 100);
+      return [
+        key,
+        roundStat(validateStatValue(adjusted, UNIT_STAT_METADATA[key].label, MAX_UNIT_STAT_VALUE)),
+      ];
+    })
+  );
+  const enteredBattle = normalizeBattleValues(values, mode);
   const automatic = partitionStatSources(sources, sourceContext);
   let includedSources;
   let excludedSources;
@@ -310,14 +374,22 @@ export function calculateTroopStats({
     hp: applyPercent(resolvedUnit.hp, totals.hp, 'HP'),
   };
 
+  const unit = {
+    preset: { ...profile.unitStats },
+    entered: { ...enteredUnit },
+    resolved: { ...resolvedUnit },
+  };
+  if (unitSourcePartition.supplied) {
+    unit.preSource = { ...preSourceUnit };
+    unit.sourceTotals = { ...unitSourcePartition.totals };
+    unit.includedSources = [...unitSourcePartition.included];
+    unit.excludedSources = [...unitSourcePartition.excluded];
+  }
+
   return {
     profile,
     mode,
-    unit: {
-      preset: { ...profile.unitStats },
-      entered: { ...enteredUnit },
-      resolved: { ...resolvedUnit },
-    },
+    unit,
     battle: {
       baseline: { ...BATTLE_STAT_BASELINES },
       entered: { ...enteredBattle },

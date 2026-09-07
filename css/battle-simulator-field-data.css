@@ -1,0 +1,238 @@
+/* Battle Simulator Field Data panel (16.0.0 lane 4). Loaded lazily with
+   js/battle-simulator-field-data.js — zero eager bytes on the route.
+   Token-only: every color resolves through var(--ff-*); no raw hex. */
+
+.battle-field-data-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-4);
+}
+
+.battle-field-copy {
+  margin: 0;
+  color: var(--ff-text-dim);
+  font-size: 0.85rem;
+}
+
+.battle-field-loading,
+.battle-field-empty {
+  color: var(--ff-text-muted);
+  font-size: 0.85rem;
+}
+
+.battle-field-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-4);
+}
+
+.battle-field-record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-3);
+  background: var(--ff-surface-subtle);
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--ff-radius-card);
+  padding: var(--ff-card-padding);
+}
+
+.battle-field-record--unverified {
+  opacity: 0.85;
+}
+
+.battle-field-record-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
+}
+
+.battle-field-record-count {
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+}
+
+.codex-era-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--era-color, var(--ff-border));
+  color: var(--era-color, var(--ff-text));
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.codex-era-badge--unknown {
+  color: var(--ff-text-muted);
+  border-color: var(--ff-border);
+}
+
+.codex-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--ff-r-pill);
+  border: 1px solid var(--ff-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.codex-chip-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--ff-text-muted);
+}
+
+.codex-chip--current {
+  color: var(--ff-success);
+  border-color: var(--ff-success);
+}
+
+.codex-chip--current .codex-chip-dot {
+  background: var(--ff-success);
+}
+
+.codex-chip--historical {
+  color: var(--ff-warning);
+  border-color: var(--ff-warning);
+}
+
+.codex-chip--historical .codex-chip-dot {
+  background: var(--ff-warning);
+}
+
+.codex-chip--unverified {
+  color: var(--ff-text-muted);
+  border-color: var(--ff-border);
+}
+
+.battle-field-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--ff-space-2);
+  align-items: center;
+}
+
+.battle-field-bar-label {
+  color: var(--ff-text-dim);
+  font-size: 0.74rem;
+}
+
+.battle-field-bar-track {
+  height: 0.5rem;
+  border-radius: var(--ff-r-pill);
+  background: var(--ff-surface-raised);
+  overflow: hidden;
+}
+
+.battle-field-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--ff-r-pill);
+  background: var(--ff-action);
+}
+
+.battle-field-bar-value {
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--ff-text);
+}
+
+.battle-field-meta summary {
+  cursor: pointer;
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+  min-height: var(--ff-tap-min);
+  display: flex;
+  align-items: center;
+}
+
+.battle-field-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-1);
+  margin-top: var(--ff-space-2);
+}
+
+.battle-field-meta-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) 2fr;
+  gap: var(--ff-space-2);
+  font-size: 0.74rem;
+  color: var(--ff-text-dim);
+}
+
+.battle-field-meta-row span:first-child {
+  color: var(--ff-text-tertiary);
+}
+
+.battle-field-resembles {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
+}
+
+.battle-field-resembles-label {
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+}
+
+.battle-field-resembles-score {
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--ff-text);
+}
+
+.battle-field-dimensions {
+  display: inline-flex;
+  gap: var(--ff-space-1);
+  flex-wrap: wrap;
+}
+
+.battle-field-dimension {
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--ff-r-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid var(--ff-border);
+  color: var(--ff-text-dim);
+}
+
+.battle-field-dimension.is-match {
+  color: var(--ff-success);
+  border-color: var(--ff-success);
+}
+
+.battle-field-dimension.is-miss {
+  color: var(--ff-warning);
+  border-color: var(--ff-warning);
+}
+
+.battle-field-unverified {
+  margin: 0;
+  color: var(--ff-warning);
+  font-size: 0.74rem;
+}
+
+.battle-field-compare {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
+}
+
+.battle-field-compare-result {
+  color: var(--ff-text-dim);
+  font-size: 0.78rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-field-bar-fill {
+    transition: none;
+  }
+}

@@ -9,7 +9,7 @@ async function openApp(page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
-  await expect(page.locator('#tabGenerator')).toBeVisible();
+  await expect(page.locator('#tabHeroesCombos')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
   await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
   await page.evaluate(() => window.stop());
@@ -62,6 +62,7 @@ test.describe('visual regression', () => {
     await page.locator('#tabEdenMap').click();
     await expect(page.locator('#edenMapSection')).toBeVisible();
     await expect(page.locator('#edenMapRoot')).toBeVisible({ timeout: 15000 });
+    await page.locator('[data-eden-subtab="map"]').click();
     await expectCanvasPainted(page, '#edenMapCanvas');
     await page.locator('#edenMapCanvas').scrollIntoViewIfNeeded();
     await page.evaluate(() => window.stop());

@@ -1,13 +1,13 @@
 // js/state.js - Shared state hub. No imports from app.js/builder.js/generator.js.
 import { translations } from './translations.js';
-import { allHeroesData } from './heroes-data.js';
+import { allHeroesData, HERO_PORTRAIT_FALLBACK } from './heroes-data.js';
 import { skinHeroesData } from './skin-heroes-data.js';
 import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '14.2.0';
+export const APP_VERSION = '16.0.5';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -18,7 +18,7 @@ function detectInitialLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
     const primary = String(globalThis.navigator?.language || '')
       .toLowerCase()
       .split('-')[0];
@@ -31,10 +31,30 @@ function detectInitialLanguage() {
 
 export let currentLanguage = detectInitialLanguage();
 export let heroInfoEnabled = true;
-export let activeTechSeasons = new Set(['S0', 'S1', 'S2', 'S3', 'S4', 'X1']);
+// Canonical research season order. Declared here rather than beside the other
+// season lists further down because the default selection below is derived from
+// it — see RESEARCH_DEFAULT_SEASON_COUNT.
+const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8', 'X12'];
+
+// Research opens on the seasons people are actually still teching: the newest
+// three. Everything earlier is one click away and the choice is remembered, so
+// a returning visitor keeps whatever they picked.
+//
+// Derived from TECH_SEASON_ORDER rather than written out. The literal list used
+// to be ['S4','X1','X2'], which was the newest three when it was written and
+// silently stopped being true as X8 and then X12 shipped — both landed hidden
+// behind a filter nobody had a reason to touch, so X12 research looked missing.
+// Taking the tail means adding a season to the order list is now the only step.
+const RESEARCH_DEFAULT_SEASON_COUNT = 3;
+export let activeTechSeasons = new Set(
+  TECH_SEASON_ORDER.slice(-RESEARCH_DEFAULT_SEASON_COUNT)
+);
 export let techSearchQuery = '';
 
 export const DEFAULT_HERO_FILTER_SEASONS = ['S0', 'S1'];
+// The generator opens with every season a live player can actually own. X8 is left off
+// because those heroes are out of scope for the combo database.
+export const DEFAULT_GENERATOR_FILTER_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 
 export let selectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];
 export let selectedStates = ['Free', 'Paid'];
@@ -45,12 +65,12 @@ export function setCurrentCombo(v) {
   currentCombo = v;
 }
 
-export let generatorSelectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];
+export let generatorSelectedSeasons = [...DEFAULT_GENERATOR_FILTER_SEASONS];
 export let generatorSelectedStates = ['Free', 'Paid'];
 export let generatorSelectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 export const generatorSelectedHeroes = runtimeState.generatorSelectedHeroes || new Set();
 runtimeState.generatorSelectedHeroes = generatorSelectedHeroes;
-export let generatorSkinsOnly = false;
+export let generatorSkinsOnly = true;
 export let manualSkinsOnly = false;
 
 export let userId = 'anonymous';
@@ -147,14 +167,27 @@ export function getSourceCreditText() {
 
 // --- COLORS (defined in constants.js, re-exported for convenience) ---
 export { seasonColors, TechseasonColors };
-export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
+export { TECH_SEASON_ORDER };
 
-export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
+export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8', 'X10', 'X12'];
 
+// Seasons that actually carry heroes today. Pills and the all-selected math use
+// this derived list so an empty season (X10/X12 before their roster lands) can
+// never break the "All" affordance. Canonical order comes from
+// HERO_ATLAS_ALL_SEASONS.
+export const POPULATED_HERO_SEASONS = HERO_ATLAS_ALL_SEASONS.filter((season) =>
+  allHeroesData.some((hero) => hero.season === season)
+);
+
+// X10 is not a catch-up bracket — it is an optional intermediate season some
+// Rise of Castles states get and Eden never does — so its copy leads with a
+// different title. Everything before the first colon becomes the card heading.
 const SEASON_CATCHUP_HINT_KEYS = {
   X1: 'seasonCatchupX1',
   X2: 'seasonCatchupX2',
   X8: 'seasonCatchupX8',
+  X10: 'seasonCatchupX10',
+  X12: 'seasonCatchupX12',
 };
 
 export function getSeasonCatchupHint(seasons = []) {
@@ -217,20 +250,22 @@ export const youtubeSection = document.getElementById('youtubeSection');
 export const researchSection = document.getElementById('researchSection');
 export const materialsSection = document.getElementById('materialsSection');
 export const arcadeSection = document.getElementById('arcadeSection');
-export const allStarBohSection = document.getElementById('allStarBohSection');
 
-export const tabManualBtn = document.getElementById('tabManual');
-export const tabGeneratorBtn = document.getElementById('tabGenerator');
+// Manual Builder, Combo Generator and the Hero Atlas now live inside the
+// Heroes & Combos Hub, so the hub owns the pill. Their sections keep their ids
+// as the hub's sub-panels.
+export const tabHeroesCombosBtn = document.getElementById('tabHeroesCombos');
+export const heroesCombosSection = document.getElementById('heroesCombosSection');
 export const tabLoyaltyBtn = document.getElementById('tabLoyalty');
 export const tabYouTubeBtn = document.getElementById('tabYouTube');
-export const tabResearchBtn = document.getElementById('tabResearch');
+// Research and Specialization now live inside the Research & Towers Hub, so the
+// hub owns the pill. Their sections keep their ids as the hub's sub-panels.
+export const tabResearchTowersBtn = document.getElementById('tabResearchTowers');
+export const researchTowersSection = document.getElementById('researchTowersSection');
 export const tabMaterialsBtn = document.getElementById('tabMaterials');
-export const tabHeroesBtn = document.getElementById('tabHeroes');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
-export const tabSpecializationBtn = document.getElementById('tabSpecialization');
 export const tabArcadeBtn = document.getElementById('tabArcade');
-export const tabAllStarBohBtn = document.getElementById('tabAllStarBoh');
 export const heroesSection = document.getElementById('heroesSection');
 export const edenMapSection = document.getElementById('edenMapSection');
 export const strifeSection = document.getElementById('strifeSection');
@@ -278,7 +313,7 @@ export function getLocalizedTroop(type) {
 
 export function getHeroImageUrl(name) {
   const h = allHeroesData.find((x) => x.name === name);
-  return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
+  return h?.imageUrl || HERO_PORTRAIT_FALLBACK;
 }
 
 export function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {

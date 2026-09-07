@@ -67,8 +67,8 @@ Repository protection for `gh-pages` should require a pull request, owner approv
 
 The active release train uses 20 patch releases per minor version.
 
-- Current pattern: `14.0.0`, `14.0.1`, ... `14.0.20`, then `14.1.0`.
-- Next train continues the same way: `14.1.1`, ... `14.1.20`, then `14.2.0`.
+- Current pattern: `16.0.0`, `16.0.1`, ... `16.0.20`, then `16.1.0`.
+- Next train continues the same way: `16.1.1`, ... `16.1.20`, then `16.2.0`.
 - For release PRs, update `package.json`, the lockfile root/package versions, app constants, public HTML footers, the README release heading, and `CHANGELOG.md`.
 - Run `npm run version:check` to verify every public version surface and the 20-patch cadence.
 - Let `npm run build` refresh service-worker and cache metadata; include intentional generated changes instead of hand-editing build stamps.
@@ -80,3 +80,11 @@ GitHub Pages deploys the static app only. Deploy Cloudflare Workers or Firebase 
 
 - Cloudflare Worker: `workers/qwen-cors-proxy.js` or `wrangler.jsonc`.
 - Firebase rules/config: `firestore.rules`, Firebase indexes, Firebase Functions, or Firebase/App Check configuration.
+
+## Documentation and cleanup context
+
+Use [docs/README.md](docs/README.md) to distinguish current guides from historical plans. Dated work orders do not override this policy or authorize replaying old data edits. Preserve source provenance, approval ledgers, and unresolved evidence.
+
+For cleanup, enumerate exact paths and verify runtime/build/test consumers, including dynamic filenames and snapshot names. Report tracked-tree and deployment savings separately from local caches and Git history. Do not force-remove dirty worktrees.
+
+Keep setup, security, and release guidance aligned with executable scripts. The frontend baseline is Node 20; Functions use their own Node 22 package. Documentation/internal-only changes do not require an app-version bump unless requested.

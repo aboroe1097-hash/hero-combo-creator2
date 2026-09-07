@@ -8,7 +8,6 @@ const INLINE_EVENT_HANDLER_ATTRIBUTE = /\son[a-z][a-z0-9:_-]*\s*=/i;
 
 test('public admin auth config only keeps destructive action override hashes', () => {
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
-  assert.match(source, /adminPin:\s*''/);
   const hasBuildTimeInjection = process.env.VTS_ADMIN_AUTH_INJECTED === '1';
 
   // clearHash / deleteHashes are empty in the committed source, but the deploy
@@ -32,49 +31,42 @@ test('public admin auth config only keeps destructive action override hashes', (
     assert.equal(deleteHashes.length, 0);
   }
 
-  const edenVotesPinHash = source.match(/edenVotesPinHash:\s*'([^']*)'/)?.[1];
-  assert.notEqual(edenVotesPinHash, undefined);
-  if (hasBuildTimeInjection) {
-    assert.match(edenVotesPinHash, /^(?:|[a-f0-9]{64})$/);
-  } else {
-    assert.equal(edenVotesPinHash, '');
-  }
+  // The sensitive-admin PIN is gone; its tabs are gated on the superadmin
+  // custom claim, which firestore.rules enforces server-side.
+  assert.doesNotMatch(source, /edenVotesPinHash|adminPin/);
   assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
   assert.doesNotMatch(source, /232323/);
   assert.doesNotMatch(source, /5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5/);
 });
 
-test('sensitive PIN gate has no committed fallback secret', () => {
-  const source = readFileSync('js/admin-pin-gate.js', 'utf8');
-  assert.match(source, /window\.VTS_ADMIN_AUTH\?\.edenVotesPinHash/);
-  assert.match(source, /window\.VTS_ADMIN_AUTH\?\.adminPin \|\| ''/);
-  assert.match(source, /if \(!hasConfiguredPinGate\(\)\) return false;/);
-  assert.doesNotMatch(source, /if \(!hasConfiguredPinGate\(\)\) return Promise\.resolve\(true\);/);
-  assert.match(source, /Owner PIN not configured/);
-  assert.match(source, /subtle\.digest\('SHA-256'/);
-  assert.doesNotMatch(source, /232323/);
+test('the sensitive admin PIN is gone, replaced by the superadmin claim', () => {
+  // The PIN protected nothing on the server: firestore.rules had no concept of
+  // it, so any admin could read and write eden vote settings and conduct
+  // adjustments directly. Those tabs are gated on the superadmin claim now,
+  // which the rules enforce independently of any UI.
+  assert.ok(!existsSync('js/admin-pin-gate.js'), 'admin-pin-gate.js should be deleted');
+
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  assert.doesNotMatch(dashboard, /requireSensitiveAdminPin|sensitiveAdminUnlocked/);
+  assert.match(dashboard, /SUPERADMIN_DASH_SUBTABS/);
+
+  const rules = readFileSync('firestore.rules', 'utf8');
+  assert.match(rules, /function isSuperAdmin\(\)/);
+  assert.match(rules, /request\.auth\.token\.superadmin == true/);
 });
 
-test('Battle Simulator remains private-indexed and fail-closed before PIN unlock', () => {
+test('Battle Simulator stays private-indexed with no PIN gate', () => {
   const page = readFileSync('battle-simulator.html', 'utf8');
   const bootstrap = readFileSync('js/battle-simulator.js', 'utf8');
-  const simulatorI18n = readFileSync('js/battle-simulator-i18n.js', 'utf8');
-  const gateCall = bootstrap.indexOf('await requireSensitiveAdminPin');
-  const appImport = bootstrap.indexOf("await import('./battle-simulator-app.js')");
 
   assert.match(page, /<meta name="robots" content="noindex, nofollow" \/>/);
   assert.match(page, /<body class="battle-simulator-page is-locked">/);
   assert.match(page, /<div id="battleSimulatorMount" hidden><\/div>/);
-  assert.ok(gateCall >= 0, 'Battle Simulator should request the shared sensitive PIN');
-  assert.ok(appImport > gateCall, 'simulator code must load only after the PIN gate resolves');
-  assert.match(bootstrap, /if \(!unlocked\) \{\s*location\.assign\('index\.html'\);/);
+  // A calculator over public game data with no privileged reads needs no gate
+  // now that the shared PIN is gone.
+  assert.doesNotMatch(bootstrap, /requireSensitiveAdminPin/);
   assert.match(bootstrap, /await loadBattleSimulatorLocale\(locale\)/);
-  assert.match(bootstrap, /title: translator\.t\('gate\.title'\)/);
-  assert.match(bootstrap, /prompt: translator\.t\('gate\.prompt'\)/);
-  assert.match(bootstrap, /unconfiguredTitle: translator\.t\('gate\.title'\)/);
-  assert.match(simulatorI18n, /'gate\.title': 'Beta Testers Only'/);
-  assert.match(simulatorI18n, /Only Beta Testers can access the Battle Simulator/);
 });
 
 test('admin boot does not preload gated Eden vote records', () => {
@@ -86,14 +78,10 @@ test('admin boot does not preload gated Eden vote records', () => {
   assert.doesNotMatch(bootBlock, /loadEdenX1VoteAdminData/);
 });
 
-test('deploy can inject sensitive admin PIN hash without committing raw PIN', () => {
-  const workflow = readFileSync('.github/workflows/deploy.yml', 'utf8');
+test('deploy injects the destructive-action override hash without committing it', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
   const script = readFileSync('scripts/inject-admin-auth-config.mjs', 'utf8');
   const verifyScript = readFileSync('scripts/verify-deploy.mjs', 'utf8');
-  assert.match(workflow, /VTS_EDEN_VOTES_PIN:/);
-  assert.match(workflow, /VTS_EDEN_VOTES_PIN_HASH:/);
-  assert.match(workflow, /npm run verify:deploy/);
   assert.equal(
     packageJson.scripts['admin-auth:inject'],
     'node scripts/inject-admin-auth-config.mjs'
@@ -103,7 +91,9 @@ test('deploy can inject sensitive admin PIN hash without committing raw PIN', ()
   assert.match(verifyScript, /delete sanitizedEnvironment\[key\]/);
   assert.match(verifyScript, /writeFileSync\(adminConfigPath, originalAdminConfig\)/);
   assert.match(script, /createHash\('sha256'\)/);
-  assert.match(script, /edenVotesPinHash:\s*'\$\{nextHash\}'/);
+  assert.match(script, /clearHash:\s*'\$\{overrideHash\}'/);
+  // The PIN hash is no longer injected at all.
+  assert.doesNotMatch(script, /edenVotesPinHash|VTS_EDEN_VOTES_PIN/);
   assert.doesNotMatch(script, /232323/);
 });
 
@@ -257,13 +247,17 @@ test('build metadata refreshes cache-busted modules while Material shares the ma
   assert.match(script, /updateCspHashes\(\)/);
   assert.match(script, /'specialization-towers\.html'/);
   assert.match(script, /'\/specialization-towers\.html'/);
-  assert.match(script, /app-research\|eden-map\|app-strife\|app-export\|arcade-spa/);
+  assert.match(
+    script,
+    /app-research\|app-artifact\|eden-map\|eden-hub\|app-strife\|app-export\|arcade-spa/
+  );
   assert.doesNotMatch(script, /material-calculator/);
   assert.doesNotMatch(app, /20260708_101500/);
   assert.doesNotMatch(app, /app-whats-new\.js/);
   assert.match(app, /app-export\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /arcade-spa\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /app-research\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /eden-hub\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /import\('\.\/material-calculator\.js'\)/);
   assert.doesNotMatch(app, /material-calculator\.js\?v=/);
   assert.match(
@@ -286,7 +280,12 @@ test('theme manifests include dark and light install colors', () => {
 test('admin dashboard uses Firebase auth instead of local password markers', () => {
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
   const firebase = readFileSync('js/firebase.js', 'utf8');
-  assert.match(source, /signInWithUsername/);
+  // The dashboard has no sign-in of its own at all: admin access follows the
+  // site account, so the only thing it does is read the claim off whoever is
+  // already signed in. A username/password path here would recreate the shared
+  // credential that made every admin action unattributable.
+  assert.doesNotMatch(source, /signInWithUsername/);
+  assert.doesNotMatch(source, /dashLoginUser|dashLoginPass|dashLoginForm/);
   assert.match(source, /isAdminAuthUser/);
   assert.match(source, /adminIsAdmin/);
   assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
@@ -545,13 +544,15 @@ test('Alliance View rosters are admin-only and revision protected', () => {
   assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);
   assert.match(rules, /request\.resource\.data\.updatedBy == request\.auth\.uid/);
   assert.match(allianceRosterMatch, /allow read: if isAdmin\(\);/);
+  // Writes are the superadmin-only Alliance View tab: the UI disables it for a plain
+  // admin, so the rules must enforce that rather than leaving a hidden control writable.
   assert.match(
     allianceRosterMatch,
-    /allow create: if isAdmin\(\)[\s\S]*request\.resource\.data\.revision == 1;/
+    /allow create: if isSuperAdmin\(\)[\s\S]*request\.resource\.data\.revision == 1;/
   );
   assert.match(
     allianceRosterMatch,
-    /allow update: if isAdmin\(\)[\s\S]*request\.resource\.data\.revision == resource\.data\.revision \+ 1;/
+    /allow update: if isSuperAdmin\(\)[\s\S]*request\.resource\.data\.revision == resource\.data\.revision \+ 1;/
   );
   assert.match(allianceRosterMatch, /allow delete: if false;/);
   assert.doesNotMatch(allianceRosterMatch, /signedIn\(\)/);
@@ -612,7 +613,7 @@ test('Eden X1 requires authoritative vote settings while tolerating optional sid
   assert.match(eden, /const EDEN_X1_OPTIONAL_READ_TIMEOUT_MS = 3500;/);
   assert.match(eden, /async function loadEdenOptionalData/);
   assert.match(eden, /'roster data'/);
-  assert.match(eden, /getDoc\(doc\(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH\)\)/);
+  assert.match(eden, /getDoc\(doc\(db, EDEN_ACTIVE_VOTE_SETTINGS_PATH\)\)/);
   assert.match(eden, /requireAuthoritativeEdenVoteSettings/);
   assert.doesNotMatch(eden, /loadEdenOptionalData\([^)]*vote settings/);
   assert.match(eden, /'public vote results'/);
@@ -638,7 +639,12 @@ test('admin gate uses the Firebase admin claim and sign-out cannot auto re-login
   // Auth-state changes must validate a candidate before replacing the stored
   // admin session; anonymous/public auth events can arrive while the admin UI
   // is still open and should not poison later conduct writes.
-  assert.match(dashboard, /const candidateIsAdmin = await isAdminAuthUser\(user\)/);
+  // forceRefresh, so an account promoted seconds ago is not turned away until
+  // its hour-old ID token happens to roll over.
+  assert.match(
+    dashboard,
+    /const candidateIsAdmin = await isAdminAuthUser\(user, \{ forceRefresh: true \}\)/
+  );
   assert.doesNotMatch(
     dashboard,
     /state\.adminUser = user;\s*state\.adminIsAdmin = await isAdminAuthUser\(user\);/
@@ -785,11 +791,12 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
-  // v14 adds the standalone Arcade, Battle Simulator, and Specialization Towers
-  // entries, the global command palette, and the two small Velo layers needed by
-  // Eden's first-paint loader. Keep a measured one-entry margin without allowing
-  // the shell to grow unbounded.
-  assert.ok(urls.length <= 55, `expected bounded app shell, found ${urls.length} URLs`);
+  // v14 adds the standalone Arcade, Battle Simulator, Specialization Towers, and
+  // Profile entries, the global command palette, and the two small Velo layers
+  // needed by Eden's first-paint loader. 15.0.0 adds the Eden X2 season route
+  // and its stylesheet. Keep a measured margin without letting the shell grow
+  // unbounded.
+  assert.ok(urls.length <= 63, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));
@@ -847,7 +854,7 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.match(source, /isImmutableAssetUrl/);
   assert.doesNotMatch(source, /url\.pathname\.startsWith\('\/assets\/'\)\) return true/);
   assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN/);
-  assert.match(postBuild, /all-star-boh-\(\?!bootstrap-\)/);
+  assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN =[^;]*all-star-boh-/);
   assert.match(postBuild, /!isProtectedAllStarPrecacheUrl\(url\)/);
 });
 
@@ -1043,4 +1050,38 @@ test('client error reports are bounded and not publicly readable', () => {
   assert.match(rules, /request\.resource\.data\.authorId == request\.auth\.uid/);
   assert.match(reporting, /authorId:\s*user\.uid/);
   assert.match(reporting, /remoteReportingDisabled = true/);
+});
+
+// A getFunctions()/getAuth() from one Firebase major cannot see the component
+// registry of an app created by another: it throws "Service <name> is not
+// available". js/firebase.js drifted to 12.7.0 while every importmap stayed on
+// 11.6.1, which broke every role grant in the Users & Roles tab.
+test('every Firebase SDK reference is pinned to one version', () => {
+  const sources = [
+    'index.html',
+    'admin.html',
+    'vtsscore.html',
+    'js/firebase.js',
+    'js/firebase-sdk.js',
+  ].filter((file) => existsSync(file));
+
+  const found = new Map();
+  for (const file of sources) {
+    for (const [, version] of readFileSync(file, 'utf8').matchAll(
+      /firebasejs\/(\d+\.\d+\.\d+)\//g
+    )) {
+      if (!found.has(version)) found.set(version, new Set());
+      found.get(version).add(file);
+    }
+  }
+
+  const versions = [...found.keys()];
+  assert.ok(versions.length > 0, 'expected at least one pinned Firebase SDK URL');
+  assert.equal(
+    versions.length,
+    1,
+    `mixed Firebase SDK versions: ${versions
+      .map((version) => `${version} in ${[...found.get(version)].join(', ')}`)
+      .join(' | ')}`
+  );
 });

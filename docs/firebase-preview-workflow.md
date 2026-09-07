@@ -2,7 +2,7 @@
 
 Firebase Hosting preview channels are an optional online prerelease gate reserved for major version
 upgrades, broad overhauls, or changes that explicitly need Firebase Hosting validation. Normal
-additive releases proceed from a green `npm run check` directly to commit, push, and pull request.
+small releases follow the focused-check lane in AGENTS.md; a full local check is reserved for high-risk scope.
 The production site still deploys only from the protected `gh-pages` branch after a pull request,
 `deploy-verification`, owner review, and owner merge.
 
@@ -27,7 +27,7 @@ The command performs these steps in order:
 If any local or online check fails, fix the issue and rerun the same command. When this optional
 gate is used, do not commit or push the release branch until the Firebase preview is green.
 
-For Arcade persistence changes, verify the real anonymous-auth write/read contract against the
+When production test writes are explicitly in scope for Arcade persistence changes, verify the real anonymous-auth write/read contract against the
 returned preview URL, then remove the temporary score row with the authenticated Firebase CLI:
 
 ```bash
@@ -85,3 +85,9 @@ npm run firebase:preview -- release-candidate
 When the optional preview gate is used, record the preview URL, expiry, tested viewport(s), and any
 deliberately untested backend flows in the pull request. After the preview passes, stage only
 intended files, push the release branch, and open the pull request into `gh-pages`.
+
+## Troubleshooting and scope checks
+
+Confirm the CLI project and required login before starting. A missing authorized domain, App Check failure, Worker-origin refusal, and rejected Firestore write are different failures. The static Hosting smoke result covers only its exercised paths. Record deliberately untested backend operations and never infer a successful server deployment from a preview URL.
+
+[Operations](operations.md) · [Release workflow](version-control-workflow.md) · [Documentation index](README.md)

@@ -67,3 +67,9 @@ The screenshot is valid mapping and cost evidence, but its icons are small and p
 - Confirmation that +25 is in v14 scope.
 - Any per-level (+1, +2, and so on) values if the tool must calculate non-milestone targets rather than milestone-only targets.
 - Screenshot/source confirmation for final regression evidence.
+
+## Using this evidence in a new change
+
+The dated owner confirmation above governs the interpretation of the supplied totals; it does not prove an uncaptured intermediate cost. Keep cumulative and incremental values distinct. Reconcile against [js/material-planner-model.js](../js/material-planner-model.js) and run its unit tests before changing displayed totals. Preserve all original arithmetic and confirmation notes when adding newer evidence.
+
+[Translation contract](dm-i18n-key-spec.md) · [Documentation index](README.md)

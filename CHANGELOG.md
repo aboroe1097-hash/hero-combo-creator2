@@ -1,5 +1,390 @@
 # Changelog
 
+This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
+
+
+## 16.0.5 - 2026-09-07
+
+- Fixed every role grant in Users & Roles failing with "Service functions is not available". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it registered its functions component into its own container, so the lookup against the bundled app found nothing. It now loads through the same firebase-sdk.js door as every other Firebase surface, and a test pins that no module may fetch a Firebase SDK over the network.
+
+## 16.0.4 - 2026-09-07
+
+- Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced "Something went wrong. Try again." on the sign-in form. Members read that as a rejected password and reset credentials that were never wrong. The refresh and the post-sign-in navigation now fail independently and only log.
+- Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still never shown.
+
+## 16.0.3 - 2026-09-04
+
+- Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 heroes, and the default ladder still jumps X8 straight to X12.
+- Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty.
+
+## 16.0.2 - 2026-09-04
+
+- Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the panel. The stat tiles share the row instead of hugging its left edge, and the plan's decision strip uses four equal columns instead of three narrow ones and a 971px-wide last cell.
+
+## 16.0.1 - 2026-09-04
+
+- Restored the X12 research season selector. All 30 Charge nodes are editable in a list without invented topology or unlock rules; Defense retains all 29 nodes and now discloses the source's conflicting cost totals.
+- Fixed the research planner re-normalizing already normalized families and silently replacing their costs with zero. X12 estimates retain their unverified status while source gaps remain.
+- Renamed Codex to Hero Tables across supported languages. Restored hero-detail opening and keyboard return focus, kept deselected season filters reachable, explained combo-derived ratings, and hid empty duel sections.
+- Added a shared local portrait-unavailable image for the X10/X12 heroes whose artwork has not yet been supplied, preventing broken images across roster consumers without misidentifying their portraits.
+
+## 16.0.0 - 2026-09-03
+
+- **VTS Player Alias Reconciliation**: Folded decoration, whitespace and case variants of the same account into one identity across leaderboards, contribution matching and weighted scoring, adopting Moldo1313 and D O F F Y as display names. Sixteen owner-confirmed merges join spellings whose letters differ — FALLEN across eight homoglyph forms, Made3110 across nine prefixes, Dobby, пупОк, Shabir and the rest — recovering demolition points that had been stranded on unmatched spellings. Just as importantly, accounts previously folded into their owner are now separated: DvD18 / DvD18 x2, BOiiE / BOiiE BANNER, ANGEL / Angel Banner and the Kika main, alt and banner accounts each score independently. Matching stays exact after normalisation, with no fuzzy or confusable fallback, and new OCR spellings must be confirmed before they resolve. Historical attack rows are unchanged.
+- **CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarged touch targets. Tokenized the account/profile surface, the command palette, the AI drawer and the Royal Bounty guide so light theme resolves through the token chain rather than hand-written overrides.
+- **Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated the nine free plus two paid heroes into the canonical roster (expanding the roster from 78 to 89 heroes), with tower profiles for the paid pair and synchronized Firestore security rule allowlists and caps. X10 is an intermediate bracket carrying only Healer and Hellfire; the research ladder skips it entirely and runs X8 to X12.
+- **Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.
+- **Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.
+- **Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters.
+- **X12 Research Trees**: Imported X12 *Melee Legion - Defense* (with 29/29 screenshot-backed layout positions) and *Charge* (with explicit absent-tree gap handling) into the tech database, advancing the research season ladder to X12.
+- **Localization**: Attained 100% key parity across all 13 supported languages for core, atlas, battle simulator, and planner surfaces.
+
+## 15.0.15 - 2026-09-01
+
+- Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.
+- Compacted the mobile header, kept the inline account control in the utility row, and preserved full-size controls down to 320px without the stray third row.
+- Updated the public VTS leadership badge roster: Loony is now R4, while Zubbs no longer receives the R4 badge; Zubbs aliases remain grouped for historical records.
+- Added each player's structure demolition to Weighted Total Contribution at a temporary 1:20 rate, so 1,000,000 demolition contributes 50,000 weighted points for every admin role.
+- Moved substantive Velo requests to DeepSeek Reasoner with a verification round and a larger shared reasoning/output budget; short standalone questions still use the fast chat model.
+- Updated the compatible frontend CSS toolchain to Autoprefixer 10.5.4 while retaining the Node 20-compatible cssnano 8 and Vite 6 build path.
+
+## 15.0.14 - 2026-08-28
+
+- Signing in now returns you to the tool you came from instead of leaving you on the account page, and new accounts finish onboarding before being redirected.
+- Fixed the mobile account chip covering the theme and language buttons; on phones a tap on the theme toggle opened the account page instead of switching theme.
+- Rating every player is now required when filing a BoH match result, and the scale is shown as "/ 10".
+- A refused save now says the server rejected the write and the security rules may be out of date, instead of claiming you are not signed in.
+- Fixed the language coverage report claiming 26 missing translations per locale that were in fact already translated.
+- Corrected stale version labels on the account, VtsScore and maintenance pages, and gave the 404 page a mobile layout.
+- Removed the retired Eden X1 links from the admin header and footer.
+
+## 15.0.13 - 2026-08-26
+
+- Added bulk row pasting to Bonus Team Effort so conduct adjustments can be entered as `player | points | reason` lines in one action.
+- Added admin-submitted team conduct suggestions with visible attribution and a super-admin approval or rejection workflow.
+- Restored VtsScore as a dedicated super-admin leaderboard tab and replaced the legacy All-Star command center with the focused BoH match-results workflow.
+
+## 15.0.12 - 2026-08-18
+
+- Reworked the playbook Day 1 route around the loyalty build: unlock and build the Assault and Guardian Fortresses before resetting, run the all-Green Frontline Workshop honor setup, then reset into the Blue tree (left & right) for loyalty and processing; tile Farm, Marble, and Ale nodes for Coalition Base Camp upgrades, and stay in the loyalty build for the first weeks before switching to an alliance role.
+- Replaced the Eden Tips & Guides screenshots with the actual in-game specialization captures: Demolition, Speed Tiling (main plus the optional 14–20 Blue reference), Structure Honor (40 Green), Tiling Honor, and Fortress Unlock.
+
+## 15.0.11 - 2026-08-18
+
+- Fixed a crash in the Artifact calculator that showed “Artifact Calculator failed to load” whenever heroes were selected in the generator (or synced from an account roster); the Sword path planning now reads the analyzed hero mechanics correctly.
+- Fixed the Artifact tree board image on the live site, which loaded from a doubled asset path.
+
+## 15.0.10 - 2026-08-18
+
+- Fixed the Eden Playbook Week 1 “Balancing Income & Production” tool link so it reliably opens the Eden Loyalty subtab instead of staying on the playbook when a stale subtab intent was present.
+- Reassigned the DrThunder in-game route screenshots across the playbook timeline: Day 1, Day 2, and Week 1 now share the two route references, and the Role entry no longer repeats them (full routes remain in Eden Tips & Guides).
+- Improved the Loyalty Targets layout with centered copy, tighter centered income-jump cards, a gradient card accent, and balanced spacing.
+
+## 15.0.9 - 2026-08-18
+
+- Reworked Artifact node leveling with direct numeric entry, −5/−1/+1/+5 controls, and a one-click prerequisite-aware MAX action that funds only the required path before maxing the selected node.
+- Improved the Artifact inspector layout for faster desktop and mobile use while preserving keyboard access, RTL, and dark/light themes.
+- Added a hero-targeted Sword path driven by the heroes selected in Heroes & Combos, their analyzed skill mechanics, a prerequisite-valid node order, board step markers, and exact-node share links.
+- Added the interactive DrThunder Eden Loyalty Playbook with separate day/week and topic-guide flows, six specialization-role references, a responsive HTML income table, detailed poison strategy, 13 contextual in-game visuals, responsive themes, deep links, and prominent original-author credit.
+- Added a global “Share this exact view” control and canonical subtab/section URL state so tool, Artifact-node, and Eden Playbook links can be passed directly to other players.
+- Clarified navigation status with Hub badges on primary destinations plus Beta/New badges on Towers, Artifacts, Eden Playbook, and Royal Bounty Eden X2 subtools.
+
+## 15.0.8 - 2026-08-18
+
+- Added the official Royal Bounty Alliance 2.0 Aiding Skills overview to the Eden X2 bounty guide, with responsive sizing, accessible context, and source credit to riseofcastles.net.
+- Optimized the reference image for fast mobile loading while preserving the original in-game text and visual detail.
+
+## 15.0.7 - 2026-08-18
+
+- Corrected the X2 Artifact tool to make **Sword of Judgment** the current default instead of the not-yet-available Redemption Grail.
+- Added the complete 33-node Sword tree with exact level costs, prerequisites, stage layout, Sword Emblem and Artifact Soulstone totals, node icons, and in-game Sword artwork.
+- Kept Redemption Grail data available for a future release without presenting it as current X2 content.
+
+## 15.0.6 - 2026-08-18
+
+- Replaced the Artifact board's synthetic gradient with the exact in-game Redemption Grail capture embedded in the source sheet, including its Grail silhouette, ruins, node rings, and branching frame.
+- Refined the mobile tracker into a centered, pannable game board with the board before the inspector, compact two-column resource totals, cleaner actions, and level badges shown only for the selected or upgraded nodes.
+- Preserved readable dark and light surfaces, 44px mobile node targets, keyboard focus, and the existing 40-node calculation and account-sync behavior.
+
+## 15.0.5 - 2026-08-18
+
+- Added the new **Artifact Calculator** subtool under the Research & Towers Hub with full support for **Artifact One: Redemption Grail**.
+- Transcribed all 40 nodes across 4 tiers directly from the community research database: Skill 1 (Sacred Light, 10 levels RGE), Skill 2 (Sacred Flame, 20 levels RGE), Branch 2a/2b Apex (Holy Grail & Enhanced Grail, 25 levels RGE each), and Skill 4 (Divine Radiance, 50 levels RGE), plus 35 Artifact Soulstone (AS) upgrade nodes with accurate costs (11,707 total RGE, 107,280 total AS).
+- Recreated the Redemption Grail's in-game branching board as 40 interactive gold-framed nodes, with exact Emblem and Artifact Soulstone icons, per-node level controls, resource totals, search highlighting, tier shortcuts, permanent-attribute tracking, account sync, and responsive light/dark layouts. ETA estimates are intentionally excluded.
+- Added separately sourced Unit Specialisation VII–IX medal evidence without introducing the unrelated Royal Tech Books feature or inventing values for blank spreadsheet cells.
+- Localized the complete Artifact interface across all 13 supported languages and added keyboard, focus, touch, reduced-motion, RTL, and screen-reader support.
+
+## 15.0.4 - 2026-08-17
+
+- Fixed the VTS Admin mobile dock covering half the screen. The grouped season rail kept its in-page grid layout inside the fixed bottom dock, stacking every group's buttons and pinning a 400px panel over the content; the dock is now a single scrollable row that keeps the group labels and clears the reserved bottom padding on both the season and Alliance sides.
+
+## 15.0.3 - 2026-08-17
+
+- Renamed Royal Bounty Alliance to Royal Bounty Eden X2 across the Eden Hub: the guide's hero title and credits, the hub sub-tab, the command-palette entry and every locale now carry the season name.
+- Removed the admin username and password form. VTS Admin now runs entirely off your VTS account: the gate links into the normal sign-in flow, and access is decided by the admin claim on whichever account you are already signed in with. A shared admin login meant a single identity for everyone who knew it, so no admin action could be attributed to a person.
+- A signed-in account without admin access is now told so plainly and pointed at an R5 to request it, instead of being shown a sign-in it has already completed.
+- The admin claim is re-read with a forced token refresh at boot, so an account promoted moments ago gets in immediately instead of waiting for its old ID token to expire.
+
+## 15.0.2 - 2026-08-17
+
+- Fixed the reversed typing in Users & Roles: the member search no longer rebuilds its own input on every keystroke, so the caret stays put and characters land where you typed them, and it now shows a live "showing X of Y" count.
+- Superadmins can now list every member profile in Users & Roles. The Firestore rules previously limited `users/{uid}` reads to the account owner, which silently emptied the roster; superadmin read access is now granted alongside self-read.
+- The account chip now says "Superadmin" with its own violet badge when you hold the higher claim, instead of showing both roles the same gold "Admin".
+- Locked the whole Alliance management side of VTS Admin — Alliance View, All-Star BoH, Throne Buffs and Users & Roles — behind the superadmin claim. A plain admin no longer sees a nav row whose tabs would all refuse them.
+- Gave the Throne Buffs tab its stylesheet: one compact header row for the week picker, slot badges and actions, a bordered assignment table with the title icons and effects, pill badges for slot counts and duplicate warnings, styled history search results, and a rotation fairness table. It ships as a lazy CSS chunk with the tab instead of padding the dashboard bundle.
+- Rebuilt the desktop admin navigation layout: each tab group is now a single compact row of mono label plus content-sized pills instead of three narrow columns of stretched buttons, which had wrapped every group into a tall stack and pushed the page content far below the header.
+- Styled the Users & Roles roster: search toolbar with live count, tone-coloured save status, compact member rows with stacked name and account id, and touch-friendly toggle rows on phones.
+
+## 15.0.1 - 2026-08-16
+
+- Split VTS Admin into two sides. Alliance management now holds Alliance View, All-Star BoH and the new Throne Buffs tab, and sits deliberately outside the Eden season scope, so a season rollover never moves or clears it.
+- Added the Throne Buffs assignment tab: pick any week, assign the nine throne titles to members with optional reasons, watch the rotation fairness table flag who is overdue, search past weeks, and export the week as a PNG card.
+- Added the Banners Planner groundwork: a 19-banner alliance catalog transcribed from the retired planning sheet, plus the pure planning model that normalizes weekly event blocks and tracks banner usage, pilot workload and banners that silently dropped out of a week.
+- Added Vialfiend to the Strife monster lab with its four skills verbatim from the game: Death's Aura, Intimidate, Demon Wraith and Power of the Legion.
+- Removed the Velo runner sprite that travelled along the loading bar; the loader keeps its identity art and the progress bar still animates.
+- Embedded the Eden X2 season page and Previous Seasons into the Eden Hub without their standalone chrome, and fixed the white-on-white workspace select and the cramped admin command strip on mid-width screens.
+
+## 15.0.0 - 2026-08-15
+
+- Added the Eden X2 season workspace. Eden X1 becomes a read-only archive that stays exactly as it was, while X2 starts empty in its own isolated space, so a new season never overwrites the last one.
+- Added a public Eden X2 page that only ever shows what an admin has explicitly published. Before publication it says the season is not published yet instead of showing an empty scoreboard, and it appears in the Eden Hub only once it is live.
+- Reorganised VTS Admin around what actually changes each season. The Eden workspace switch now governs only the season surfaces; All-Star BoH sits in a separate Standing programs area that a season rollover never touches.
+- Added an Eden workspace command strip with the season selector, its draft or published state, and safe publish, unpublish and snapshot actions. The archived X1 season stays viewable and exportable but refuses every change.
+- Added the Throne Buffs weekly assignment groundwork: the nine throne titles with their real effects, weekly assignments with optional reasoning, and rotation fairness that tracks who has held which buff and how long ago.
+- Shipped the nine Throne title icons in `images/throne/`, cropped from the in-game Province panel. A slot whose icon file is absent still falls back to its two-letter initials, and the Emperor's effect list stays empty until its in-game tab is captured.
+- Rebuilt the Towers planner around a path decision card that names the mode, tower, chosen preset and next upgrade at a glance, and moved the long hero mechanics into a collapsed Hero synergies panel.
+- Rebuilt the Skins sub-tab with a skin gallery and tier guide, including search, type filters, real skin art, and a jump from any gallery card straight to that hero.
+- Reworked Eden Loyalty and DM Materials on phones and tablets: single-column loyalty inputs, readable type, larger tap targets, and an equipment grid that no longer squeezes six columns onto a small screen.
+- Removed the VtsScore pill from the navigation rail and promoted DM Materials in its place; the VtsScore page itself is unchanged and every existing link still works.
+- Signed-in members now see their account on the admin deck, with a sign-in that returns them to the page they came from.
+
+## 14.3.9 - 2026-08-14
+
+- Combined Manual Builder, Combo Generator, Hero Atlas, and skins into the new Heroes & Combos Hub. The generator is its default view; Heroes and Skins are separate hub sub-tabs, while existing deep links keep working.
+- Combined Tech Research and Towers Specialization into the new Research & Towers Hub, opening on the Towers planner by default and preserving both legacy routes.
+- Reworked the Towers planner around exactly two paths ? Siege / Rally and Field (Non-Siege) ? with paid-hero presets, owned-hero controls, clear 1/32 path numbering, and full troop coverage.
+- Made Royal Bounty the VTS Eden Hub landing page, with its visual 9-hero guide, mission/commission loop, Aiding Skill rules, and a one-click return to the Eden map.
+- Completed the public app locale contract across every shipped language and updated Velo?s tower, hero-path, and Royal Bounty guidance.
+
+## 14.3.8 - 2026-08-13
+
+- The Combo Generator now opens in skin mode. Skin icons, skin toggles and skin-aware combos are on by default; the toggle still turns them off.
+- Hero cards in the generator now stay in seasonal order (S0 first, X2 last) instead of floating heroes that own a skin to the top, so a hero stays where you expect when you switch skin mode on or off.
+- Replaced Beowulf's skin icon with a clean portrait crop, without the level and name overlay from the old capture.
+
+## 14.3.7 - 2026-08-13
+
+- Brought back the full Specialization tool inside the main site. The tab is the interactive planner again, not a summary card that sends you to another page.
+- Moved the suggested routes and the easy medal fill onto that tab, so both surfaces now offer the same tools and share the route you pick.
+- Fixed the Combo Generator hiding its best combos. A hero with a "recommended" skin no longer removes a combo from the normal list; only a combo that truly requires a skin is held back for skin mode. The top of the list now matches the ranking, starting with Alexander / Bleeding Steed / Theodora.
+
+## 14.3.6 - 2026-08-12
+
+- The Specialization tab on the main site is now a thin summary card that links to the full standalone planner; the duplicate in-tab graph renderer is gone, and the community node-data submission section stays on the main site.
+- Added a local Towers dev/test loop: `npm run towers:dev`, `towers:test`, and `towers:check` run only the Specialization Towers unit slice and every Specialization browser spec, so a Towers change can be checked in about half a minute instead of a full smoke run.
+- Repaired the hero combos list after recent direct edits: three hero names that do not exist in the roster (Rozen, Jeane, Beast Queen) are corrected, and four combos that had been added twice are back to a single entry each.
+
+## 14.3.5 - 2026-08-11
+
+- Added Spenders and F2P suggested routes to Specialization Towers. Picking one numbers every research in order and marks the next one to take, and the choice is remembered.
+- Added an easy medal fill toggle to Specialization Towers, with 25/50/75/100% quick fills so medals can be recorded without stepping through nodes first.
+- Node data contributions now require a signed-in account and are credited to it, which also removes the per-node contributor field so a whole column is just one number per row.
+- Added the exact in-game node topologies for Encounter Battle IV, Cavalry Training VII and Neat Formation III, including the three battle-row loops that make up Neat Formation III.
+- Corrected Army Breaker to season X1 and Defender to the Archers troop type.
+- Raised the minimum copies for free X1 and X2 heroes to 22; paid heroes stay at 14 and the maximum is unchanged at 34.
+- The Combo Generator now opens with every season from S0 to X2 selected instead of just S0 and S1.
+- Ranked the all-skins Rozen Blade / Ramses II / Beowulf lane above the no-skin Immortal Guardian / Ramses II / Beowulf lane.
+- Tightened the research calculator tree spacing and replaced the empty inspector panel with a live summary of tree progress, completed nodes and the next available node.
+
+## 14.3.4 - 2026-08-10
+
+- Added a spent total to the research calculator, so each tech tree now reports how many War Badges and Courage Medals you have already invested next to how many are still remaining.
+- Kept the tree footer naming its real currencies once a tree is fully maxed, instead of collapsing to a generic resource row when nothing is left to buy.
+- Made partially levelled nodes look the same in every tech tree. Trees using the card layout only ever showed "maxed or not", so a half-finished node was indistinguishable from an untouched one; they now use the same idle, in-progress, and complete states as the rest of the trees.
+
+## 14.3.3 - 2026-08-10
+
+- Rebuilt the hero combos database as one plain ranked list. Every entry is now just the three heroes plus an optional skin code and an optional note, replacing the imported tier-and-score format that came from the external combo datasets.
+- Limited the combos database to heroes from seasons up to X2 and removed the 82 imported formations that depended on X8 heroes, leaving 203 ranked combos.
+- Fixed the two promoted top-rank combos being listed twice, which rendered duplicate "Use this counter" buttons in the counter panels.
+- Added database guards so a combo can only use known hero names, can never reintroduce an X8 hero, can only carry the heroes/skin/note fields, and can never be listed twice with the same heroes and skin code.
+
+## 14.3.2 - 2026-08-03
+
+- Upgraded Velo to the smarter gemini-3.5-flash model while keeping the lighter model for short chat turns, so simple questions stay fast and big questions get better answers.
+- Added Velo retry support that automatically falls back to the alternate model when the first request is rate-limited or the service is unavailable.
+- Gave Velo three new capabilities: live Arcade leaderboards for all five games, All-Star BoH public mechanics and scoring, and the public VtsScore power-field contract.
+- Expanded Velo's output limit and tool budget so answers can include compact markdown tables that stay readable on phones.
+- Added a copy-answer button to completed Velo replies, plus table-aware rendering for tool-generated data.
+- Enabled Velo's active-tab context so follow-up questions know which tool page you are looking at.
+- Expanded the hero combos database with 32 curated A/B/S-tier formations from the public Rise of Castles community dataset: 7 new no-skin base combos (led by Alexander / Bleeding Steed / Theodora) enter the shared generator, and 25 skin-mode formations (e.g. the all-skins Alexander / Bleeding Steed / Theodora and Boudica / Jade Eagle / Ramses II lanes) join the skin-mode pool.
+- This release requires the Worker deploy (`workers/ai`) to ship together with the browser bundle.
+
+## 14.3.1 - 2026-07-29
+
+- Replaced the generic VtsScore failure banner with specific messages for every secure-service outcome: rate limits (with the wait time), oversized screenshots, service outages, unsupported image types, locked accounts, closed signups, and rejected requests.
+- Appended the machine-readable error code to VtsScore failure banners so member screenshots identify the exact failure for support.
+- Restored the stable captured sign-in reference for the All-Star secure client on the VtsScore and BoH pages.
+
+## 14.3.0 - 2026-07-28
+
+- Corrected VtsScore to OCR, review, submit, and compare the complete nine-field power breakdown instead of a single Total or Dragon Power value.
+- Added editable per-field OCR review with confidence context for Total, Troop, Building, Technology, Hero, Dragon, Unit Specialty, Artifact, and Royal Tech power.
+- Added migration-safe VtsScore storage: new uploads use the full versioned contract while earlier one-field uploads remain visible as incomplete and require re-upload.
+- Expanded the All-Star admin comparison to show sign-up, final, and growth values for every power category.
+
+## 14.2.20 - 2026-07-27
+
+- Corrected VtsScore OCR and review to submit Total Power rather than Dragon Power while preserving the deployed secured endpoint contract.
+- Replaced the browser datalist with ranked closest-name search across every eligible All-Star signup, including keyboard selection.
+- Added six complete VtsScore languages, Arabic RTL, and accessible light/dark theme controls with improved form and button contrast.
+- Updated the All-Star admin growth table to compare sign-up and final Total Power while retaining the original Dragon-based reward tiers.
+- Raised aggregate JavaScript and Pages artifact budgets by 20 kB for the complete VtsScore locale packs.
+
+## 14.2.19 - 2026-07-27
+
+- Added the focused VtsScore page for Competition #11 final Dragon Power re-uploads, with a searchable All-Star signup selector and one-image OCR review.
+- Added a secured Auth, App Check, and member-grant verified score endpoint that stores confirmed numbers and bounded OCR audit metadata without retaining screenshots.
+- Added an All-Star admin VtsScore stage comparing sign-up and final Dragon Power, growth, percentage, original reward tier, and missing uploads.
+
+## 14.2.18 - 2026-07-27
+
+- Added a guided All-Star admin team builder with semantic action colors.
+- Added safe player display-name and total-power corrections, plus reasoned base-score overrides derived from occupied team seats.
+- Added atomic import for one to six role-plan files or a complete six-team bundle, plus admin export of every team plan.
+- Polished member event progress with a connected timeline, selected-milestone state, accessibility improvements, and reduced-motion behavior.
+- Rebuilt account creation as provider-first authentication followed by a focused private-profile confirmation step, with direct Google sign-in, a referral dropdown, and dismissible timed notices.
+- Improved Specialization Towers light-theme MAX, UNMAX, zero-progress, and disabled-state contrast with consistent semantic colors.
+- This release does not change the Firestore rules or schema; production rules deployment remains separate for the existing UID/playerId 403 fix.
+
+## 14.2.17 - 2026-07-27
+
+- Improved the All-Star BoH Mapper workspace action hierarchy with distinct colors for importing, validating, opening team plans, saving team edits, and publishing.
+- Added strict per-team Stage-1 role-plan JSON preview and draft import, with exact player matching and 120 canonical personal instructions.
+- Added one explicit publication-scope control for team lists, plan updates, or an atomic combined release.
+- Added a draft-only announcement composer and clearer schedule controls for adding, duplicating, reordering, clearing, hiding, and validating public milestones and team times.
+- Redesigned the member announcement and event schedule with editable release copy, team accents, a connected animated timeline, accurate next-event countdowns, and reduced-motion support.
+
+## 14.2.16 - 2026-07-26
+
+- Fixed the All-Star published-player Firestore contract so UID and playerId identity fields remain consistent.
+- Replaced the Admin All-Star five-stage Team Builder/Plans wizard with a mapper-first workflow.
+- Added explicit manual reconciliation from unmatched mapper names to fresh verified signups.
+- Added five-phase personal plans with connected 5x5 tower routes, player-specific crystal and Battle Merit assignments, and paired minute-3-or-later substitutions that preserve the ten-player field limit.
+- Added private per-team resource, skill, building-buff, and substitution editing without exposing draft-only identities or tactics in player publications.
+- Added independent editable Battle Simulator profile drafts for Side A and Side B, including a visual Specialization Towers board, selective source application, and aligned header controls.
+
+## 14.2.15 - 2026-07-26
+
+- Made the approved All-Star BoH mapper exact view the source of truth for ranked team order, role distribution, command roles, and explicit main or backup deployment.
+- Added member My Orders, Team Plan, and Map Briefing views with shared four-phase teleport, crystal, roster, duty, and real-map context.
+- Reframed the admin team workspace around mapper preview, draft save, review, validation, and announcement while retaining legacy balancing tools as advanced compatibility controls.
+- Added a Battle Simulator saved-profile checklist that validates Research, Equipment, and Specialization Towers before explicitly importing those automatic sources into either side.
+- Redesigned Account & Profile into responsive Profile, Privacy, and Account settings sections with a clearer create/sign-in flow.
+- Added safer dirty/save handling, required-field reveal, localized save and error states, counters, and RTL/mobile safe-area behavior.
+- Registered the standalone profile route with the service worker and generated precache inputs.
+
+## 14.2.14 - 2026-07-26
+
+- Fixed the mobile header so the Account control has its own touch-safe slot without displacing the clock, search, theme, or language controls.
+
+## 14.2.13 - 2026-07-26
+
+- Made Battle Simulator hero skills and assignments explicitly canonical and added the verified Cavalry Movement in Unison specialization passive.
+- Renamed the team-planning surface to All-Star BoH Hub and added Admin exact-view mapper reconciliation into editable drafts with explicit publication.
+- Simplified accounts to one in-game name, restored private state/referral/comments onboarding, localized the full flow across all 13 locales, and recovered Google signup when a guest selects an existing Google account.
+- Made Dragon Master completion advance to the next unfinished targeted piece.
+
+## 14.2.12 - 2026-07-26
+
+- Added Velo Beta 0.3 saved-data consent and optional Firebase-backed user profiles.
+- Expanded All-Star BoH with a six-team, 12-player roster and schedule, supporting rules, and X8 name-matched formations.
+- Completed Italian and Korean localization across the shipped experience.
+- Made Battle Simulator scenarios apply Research and Specialization through a deterministic runtime, with upgraded setup/export schemas and diagnostics.
+- Expanded Battle Simulator coverage to 78 heroes and 208 skills using conservative modeled effects, plus provisional observed equipment effects; partial or unverified battle clauses fail closed, and Dragon Master catalog stats are never invented.
+
+## 14.2.11 - 2026-07-25
+
+- Restored All-Star BoH member PIN access after registration closes and made the Stage-1 battle mapper the default post-login page, with separate Team Formation and Event Schedule pages.
+- Updated All-Star publication to use the six currently approved teams and their occupied seats instead of blocking on unused 72-seat placeholders; captain metadata is optional but validated when present.
+- Split the All-Star season switch so closed registration blocks member signup and Epic preference writes without hiding published teams, personal plans, or schedules.
+
+## 14.2.10 - 2026-07-25
+
+- Added an interactive real Stage-1 map to the All-Star BoH plan view, replacing the schematic placeholder.
+- Added personal plan behavior for each player, including standby and gather-crystals instruction options.
+- Added a member-facing event schedule with a live countdown to the next milestone or team game time.
+- Added an admin event-schedule editor for publishing event milestones and per-team game times.
+- Added a default Stage-1 plan template so new seasons start from a complete, editable plan.
+- Improved mobile layout and accessibility across the All-Star BoH member and admin views.
+
+## 14.2.9 - 2026-07-22
+
+- Closed the public All-Star BoH registration view with a clear “Teams are full” status and notice that team matching is underway and assignments will be announced soon.
+- Made the All-Star admin balance configuration collapsible and added a non-persisting “Select highest X” shortcut sized to the currently configured team field.
+- Reflowed the six-team admin board into a spacious 3-by-2 desktop grid, two columns on narrower screens, and one column on mobile.
+
+## 14.2.8 - 2026-07-22
+
+- Rebuilt mobile site headers and control grouping so centered branding/version, time/search/theme/language controls, fixed bottom navigation, and Generator action areas no longer overlap or float over content.
+- Reduced and repositioned hero-card information controls in Combo Generator and Manual Builder, keeping card content readable and touch targets intentional.
+- Harmonized Specialization Towers with the shared site palette and added compact icon-only Cavalry/Archers/Footmen controls on mobile.
+- Converted the completed Eden X1 public page into an archive centered on the Final Top 20, player lookup, guild contribution, and analysis while keeping active-season voting/reward machinery reusable behind the season-state switch.
+- Fixed Structure Detail modal rows so long multilingual names, rank tags, large scores, and hit badges remain compact and fully visible on mobile.
+
+## 14.2.7 - 2026-07-22
+
+- Fixed the All-Star BoH Team Builder eligible-player pool so checkbox changes immediately update the selected-player count and save-button count before saving, with a compact searchable/filterable manager that starts collapsed when the saved count is already valid.
+- Improved All-Star Team Builder outputs with exact team-count columns, leader plus co-leader metadata, ranked role assignment, batch commitment-score helpers, and shareable CSV/PNG team exports for roles or scores/power.
+
+## 14.2.6 - 2026-07-21
+
+- Added persisted Epic Showdown planning controls for excluding secondary accounts, forcing lane assignments, and keeping named or language-based groups together.
+- Evaluated every keep-together group as one shared lane, surfaced unresolved or conflicting groups, and showed active-versus-excluded totals in the admin workspace.
+- Added a formula-safe active Epic planning CSV with player locale, preferences, lane overrides, effective lanes, and group IDs.
+
+## 14.2.5 - 2026-07-21
+
+- Collapsed Epic Showdown preference summary by default (H1).
+- Collapsed player preference details and usable-heroes disclosure by default (H1).
+- Persisted Epic Showdown collapse state in sessionStorage (H1).
+- Moved review status/actions leftward in the signup table (H2).
+- Added sticky leading identity columns with LTR/RTL support (H2).
+- Added `data-label` attributes to all `<td>` for card-mode responsive layout (H2).
+
+## 14.2.4 - 2026-07-21
+
+- Added audited All-Star admin corrections across player-entered profile, stats, roster, hero, research, availability, role, and commitment data while preserving the original submission.
+- Added reasoned 1-10,000 leadership commitment scores as an additive score component, stored-score diagnostics, and a balanced team-building mode that evaluates scoring points and Total Castle Power independently.
+- Expanded All-Star score and review tooling with richer score provenance, sortable audit data, roster-aware CSV export, clearer selection controls, and sequential batch confirmation and deletion.
+- Let existing All-Star signups save manual corrections when replacement screenshot OCR fails, with actionable Russian retry and fallback guidance; first-time OCR verification remains required.
+- Improved Specialization Towers on mobile and RTL layouts with scroll position cues, focus and modal-scroll preservation, touch accessibility, and explicit provenance that public totals are whole-research totals while per-node medal costs remain unknown.
+
+## 14.2.3 - 2026-07-20
+
+- Added five configurable All-Star scoring components for Unit Specialty Power, RoC level, paid usable heroes, Lofty troops per million, and Enhanced T10 troops per million, all defaulting to zero.
+- Derived paid usable hero counts from the canonical hero catalog and preserved all five component weights through scoring-version and admin-draft store round trips.
+- Kept legacy scoring totals unchanged until an admin explicitly creates and enables a new scoring version with nonzero weights.
+- Made Team Builder support configurable 2–6 12-player teams, an explicit eligible pool, and exact-team forces, with preview/apply balancing by active score or Total Castle Power and both totals visible.
+- Made reviewed player names and stats editable and applied those corrections throughout scoring, team building, publication, and export.
+- Added compound review filters, stable sorting, and formula-safe CSV export limited to the current visible row order.
+- Added sequential batch confirmation for selected visible rows with clear partial-success reporting.
+
+## 14.2.2 - 2026-07-20
+
+- Added actionable VPN, different-network, and Retry guidance when regional or network restrictions prevent access to required Google signup security services, without presenting the failure as an incorrect PIN; semantic validation, authentication, and admin-session errors remain distinct.
+- Kept the first paint fail-closed with a visible loader and access gate before CSS and security boot, added an accessible localized PIN visibility control, and accepted hash casing variants.
+- Made screenshot OCR a generation-safe single-flight flow with deterministic processing, ready, and error states plus retry support.
+- Prevented clipping of the header, logo, and version badge at 375 px and 390 px mobile widths while keeping the safe-area bottom navigation separate.
+
+## 14.2.1 - 2026-07-20
+
+- Fixed All-Star BoH signup validation so RoC specialization levels from 0 through the in-game maximum of 160 can be submitted instead of forcing affected members to leave the field blank.
+- Kept the browser, data normalization, and Firestore rules on the same RoC level range so accepted values appear correctly in the admin review panel.
+- Prevented non-1097 applicants from exhausting Firestore's rules-expression budget when their required contact number, current state, and join reason are submitted; the client and store continue to require all three values.
+- Added a visible screenshot-OCR progress bar, strengthened Unit Specialty Power extraction guidance, and kept duplicate OCR requests disabled while one read is running.
+- Sorted research groups chronologically and pinned the verified S1 and X1 trees in regression coverage so those season sections remain visible in the cumulative X1 view.
+
 ## 14.2.0 - 2026-07-20
 
 - Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.

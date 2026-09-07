@@ -1,42 +1,27 @@
-# CLAUDE.md — rules for AI agents working on this repo
+# CLAUDE.md — repository working notes
 
-`AGENTS.md` is the single authoritative workflow and versioning policy for every
-human and coding agent in this repository. Read and follow it before making a
-change. This file contains only Claude-oriented reminders that supplement it;
-if the two files ever disagree, `AGENTS.md` wins.
+[AGENTS.md](AGENTS.md) is the authoritative workflow and version policy. These notes supplement it; historical plans or tool-specific instructions do not override the current user request or production safeguards.
 
-## Workflow reminder
+## Establish context
 
-Use a separate branch from the latest `origin/gh-pages`, run the full gate,
-open a pull request into `gh-pages`, and leave the merge to the owner. Run
-`npm run version:check` instead of maintaining a second list of version files here.
+Read the [documentation index](docs/README.md), inspect the branch/status, and start from latest origin/gh-pages in an isolated branch/worktree. Preserve work owned by other sessions. Use Node 20 for the frontend, the lockfile via npm ci, and the separate Node 22 package for Functions.
 
-## Build stamps and generated files
+## Delegation
 
-- `node scripts/update-build-metadata.mjs` regenerates the `?v=` cache-bust
-  stamps in the HTML/JS and rewrites `public/sw.js` (which is a generated
-  file — never edit it by hand; change the template in
-  `scripts/update-build-metadata.mjs` instead). Run it when JS/CSS changed
-  and commit the result.
-- `scripts/post-build.mjs` rebuilds the service worker precache manifest from
-  `dist/` during `npm run build`; the deploy workflow runs the full build, so
-  stamps committed here just need to be internally consistent.
+Use the owner's configured workers only when available and appropriate. Give each worker an explicit worktree, bounded file ownership, exact acceptance checks, and instructions to preserve others' edits. Verify the diff and test output yourself; a worker summary is not evidence that files changed. Local delegate scripts, model names, costs, and fallback chains are environment-specific and are not guaranteed by this repository.
 
-## Testing expectations
+## Localization
 
-- `npm run check` = lint + prettier + unit tests + i18n + build + size +
-  Playwright smoke. CI runs this; a PR should pass it locally first.
-- User-visible strings need keys in all 11 `js/i18n/*.js` files
-  (`npm run i18n:check` enforces this).
-- For loading/network changes, verify the mobile failure modes: the Firebase
-  CDN (gstatic) being unreachable must never leave a page on an endless
-  spinner — every loading state needs a timeout and a visible error/retry.
+The core registry has 13 locales; hr is intentionally partial. Feature domains define their own required pack set. Derive missing keys from the actual checker, preserve every interpolation token, and avoid rewriting unrelated flat catalogs with a blanket formatter.
 
-## Never include
+## Verification and generated output
 
-- Passwords, private API keys, or private alliance data — in code, commits,
-  or PR descriptions.
-- AI attribution footers or session links in PR titles/descriptions
-  ("Generated with…", session URLs). The owner prefers clean PR bodies.
+Follow AGENTS.md's fast-fix versus high-risk checks. Use npm run version:check for version locations. npm run build regenerates stamps/payloads and post-build updates the deployment service-worker manifest. Inspect generated diffs and include intentional changes; do not hand-edit cache timestamps. Check size budgets on the locked toolchain.
 
-See `AGENTS.md` for the complete branch, release, review, and external-deploy policy.
+## Data and documentation
+
+Preserve raw source values, credits, and ambiguity notes. Mark archived plans as historical rather than treating their checkboxes as current tasks. Never rewrite a sent message, grant approval through a documentation edit, or promote private operational material into public Velo knowledge.
+
+## Delivery
+
+Open a PR into gh-pages and leave normal merging to the owner. Explicit fast-merge uses the same protected PR path. Never publish credentials, private member records, debug tokens, or unrelated scratch output.

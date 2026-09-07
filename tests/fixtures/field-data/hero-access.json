@@ -1,0 +1,51 @@
+{
+  "_contract": {
+    "fixtureVersion": "16.0.0-lane4-prep-1",
+    "purpose": "Frozen consumer contract for the Atlas Codex 'Paid' preset (lane 4, rev 2). The access field is the lane-3 frozen column: standard | paid | royal. Never invent a parallel tier field.",
+    "frozenBy": "T0, 2026-09-02",
+    "rules": [
+      "access is one of: standard | paid | royal.",
+      "Join key against js/heroes-data.js allHeroesData is the hero name (string equality).",
+      "A hero missing from this fixture set falls back to access = paid when State is 'Paid'.",
+      "Every record carries the provenance 5-field envelope (source, author, captureDate, gameVersionScope, verificationStatus)."
+    ]
+  },
+  "records": [
+    {
+      "heroName": "King Arthur",
+      "access": "paid",
+      "season": "S4",
+      "provenance": {
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "X12",
+        "verificationStatus": "current"
+      }
+    },
+    {
+      "heroName": "Cleopatra VII",
+      "access": "royal",
+      "season": "S3",
+      "provenance": {
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "X12",
+        "verificationStatus": "current"
+      }
+    },
+    {
+      "heroName": "Theodora",
+      "access": "standard",
+      "season": "S4",
+      "provenance": {
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
+        "captureDate": "2026-08-01",
+        "gameVersionScope": "X10",
+        "verificationStatus": "historical"
+      }
+    }
+  ]
+}

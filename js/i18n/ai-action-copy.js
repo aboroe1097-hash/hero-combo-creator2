@@ -23,6 +23,10 @@ const copy = Object.freeze({
     'ai.action.openLoyalty': 'Buka Kalkulator Loyalitas',
     'ai.action.openGenerator': 'Buka Generator Combo',
   }),
+  it: Object.freeze({
+    'ai.action.openLoyalty': 'Apri il calcolatore di lealtà',
+    'ai.action.openGenerator': 'Apri il generatore di combo',
+  }),
   kr: Object.freeze({
     'ai.action.openLoyalty': '충성도 계산기 열기',
     'ai.action.openGenerator': '콤보 생성기 열기',

@@ -1,0 +1,2 @@
+# source: l96.app Lofty Warrior research post (2023-02-17); per-level cost sheet is a linked PDF pending rights decision D4 | credit: DonPablone (data: Cris Minime, Raven) | captureDate: 2026-09-02 | gameVersionScope: S4 | verificationStatus: unverified
+nodeName|costType|maxLevel|values|p

@@ -77,7 +77,13 @@ captureVersion(
   expectedVersion
 );
 
-for (const relativePath of ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html']) {
+for (const relativePath of [
+  'index.html',
+  'admin.html',
+  'eden-x1.html',
+  'eden-x2.html',
+  'arcade.html',
+]) {
   captureVersion(
     relativePath,
     /VTS 1097[\s\S]{0,100}?&middot;[\s\S]{0,100}?v(\d+\.\d+\.\d+)/,
@@ -85,6 +91,30 @@ for (const relativePath of ['index.html', 'admin.html', 'eden-x1.html', 'arcade.
     expectedVersion
   );
 }
+
+// Public pages that carry a version label but no footer in the shared shape.
+// These drifted to 14.2.20 / 14.3.5 / 14.0.20 while the app shipped 15.x,
+// because nothing checked them.
+captureVersion(
+  'profile.html',
+  /<meta name="vts-app-version" content="(\d+\.\d+\.\d+)"/,
+  'profile.html app version meta',
+  expectedVersion
+);
+
+captureVersion(
+  'vtsscore.html',
+  /<meta name="vts-app-version" content="(\d+\.\d+\.\d+)"/,
+  'vtsscore.html app version meta',
+  expectedVersion
+);
+
+captureVersion(
+  'maintenance.html',
+  /class="version">v(\d+\.\d+\.\d+)</,
+  'maintenance.html version label',
+  expectedVersion
+);
 
 captureVersion(
   'README.md',

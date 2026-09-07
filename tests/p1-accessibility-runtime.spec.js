@@ -4,6 +4,18 @@ async function openTool(page, { hash, marker, section }) {
   let uncaughtPageError = null;
   const pageErrors = [];
   page.on('pageerror', (error) => {
+    // Pull-request verification builds with a deterministic, non-secret Firebase
+    // placeholder, and the account chip now reaches Auth on every page. Ignore
+    // only that exact placeholder rejection, matching the filter
+    // tests/production-smoke.spec.js already applies; every other page error
+    // still fails the test.
+    if (
+      /^Firebase: Error \(auth\/api-key-not-valid\.-please-pass-a-valid-api-key\.\)\.?$/iu.test(
+        error.message
+      )
+    ) {
+      return;
+    }
     uncaughtPageError ||= error;
     pageErrors.push(error.message);
   });

@@ -31,6 +31,7 @@ import {
   createDefaultEnhancementState,
   getEnhancementCumulative,
   normalizeMaterialPlan,
+  toggleSelectedMaterialPieceCompletion,
 } from '../../js/material-planner-model.js';
 
 test('DM quality identity covers all six in-game tiers in order', () => {
@@ -454,6 +455,88 @@ test('focused set selection keeps independent six-slot completion', () => {
   assert.equal(focusMaterialSet(plan, 6).focusedSet, 1);
 });
 
+test('completing a selected piece advances within the focused set in canonical order', () => {
+  const plan = createDefaultMaterialPlan();
+  const next = toggleSelectedMaterialPieceCompletion(plan);
+
+  assert.equal(next.focusedSet, 1);
+  assert.equal(next.sets[0].completed.armor, true);
+  assert.equal(next.selectedSlot, 'dagger');
+});
+
+test('completion advance skips completed and untargeted slots', () => {
+  const plan = createDefaultMaterialPlan();
+  plan.selectedSlot = 'dagger';
+  plan.targets.ring = false;
+  plan.sets[0].completed.sword = true;
+
+  const next = toggleSelectedMaterialPieceCompletion(plan);
+
+  assert.equal(next.sets[0].completed.dagger, true);
+  assert.equal(next.selectedSlot, 'helmet');
+});
+
+test('completion advance continues into the first unfinished targeted piece of a later active set', () => {
+  const plan = createDefaultMaterialPlan();
+  plan.targetSets = 3;
+  plan.selectedSlot = 'boots';
+  for (const slot of DM_SLOT_IDS) plan.sets[1].completed[slot] = true;
+  plan.sets[2].completed.armor = true;
+
+  const next = toggleSelectedMaterialPieceCompletion(plan);
+
+  assert.equal(next.sets[0].completed.boots, true);
+  assert.equal(next.focusedSet, 3);
+  assert.equal(next.selectedSlot, 'dagger');
+  assert.strictEqual(next.completed, next.sets[2].completed);
+});
+
+test('completing the final forward piece keeps the current selection and set', () => {
+  const plan = createDefaultMaterialPlan();
+  plan.targetSets = 2;
+  plan.focusedSet = 2;
+  plan.selectedSlot = 'boots';
+
+  const next = toggleSelectedMaterialPieceCompletion(plan);
+
+  assert.equal(next.sets[1].completed.boots, true);
+  assert.equal(next.focusedSet, 2);
+  assert.equal(next.selectedSlot, 'boots');
+});
+
+test('reopening a complete piece keeps it selected without advancing', () => {
+  const plan = createDefaultMaterialPlan();
+  plan.selectedSlot = 'ring';
+  plan.sets[0].completed.ring = true;
+
+  const next = toggleSelectedMaterialPieceCompletion(plan);
+
+  assert.equal(next.sets[0].completed.ring, false);
+  assert.equal(next.focusedSet, 1);
+  assert.equal(next.selectedSlot, 'ring');
+});
+
+test('completion advance normalizes its input without mutating the source plan', () => {
+  const raw = {
+    version: 4,
+    targetSets: 99,
+    focusedSet: 99,
+    selectedSlot: 'dagger',
+    targets: { armor: true, dagger: true, ring: true },
+    sets: [{ id: 1, completed: { armor: true, dagger: false, ring: false } }],
+  };
+  const snapshot = structuredClone(raw);
+
+  const next = toggleSelectedMaterialPieceCompletion(raw);
+
+  assert.deepEqual(raw, snapshot);
+  assert.notStrictEqual(next, raw);
+  assert.equal(next.targetSets, 5);
+  assert.equal(next.focusedSet, 1);
+  assert.equal(next.sets[0].completed.dagger, true);
+  assert.equal(next.selectedSlot, 'ring');
+});
+
 test('campaign result exposes focused flow plus aggregate 30-piece and five-set progress', () => {
   let plan = createDefaultMaterialPlan();
   for (const slot of DM_SLOT_IDS) plan.sets[0].completed[slot] = true;
@@ -474,6 +557,43 @@ test('campaign result exposes focused flow plus aggregate 30-piece and five-set 
   assert.equal(result.focusedSetProgress, 2 / 6);
   assert.deepEqual(result.nextPiece, { setId: 2, slot: 'ring' });
   assert.equal(result.needed.superDragonite, DM_ROUTES.purple.perPiece.superDragonite * 22);
+});
+
+test('owned inventory counts exact remaining target-slot pieces without campaign double counting', () => {
+  let plan = createDefaultMaterialPlan();
+  for (const slot of DM_SLOT_IDS) plan.ownedPieces[slot] = 2;
+
+  let inventory = calculateMaterialPlan(plan).inventorySummary;
+  assert.deepEqual(inventory.ownedBySlot, Object.fromEntries(DM_SLOT_IDS.map((slot) => [slot, 2])));
+  assert.equal(inventory.completeFullSetCount, 2);
+  assert.equal(inventory.remainingFullSetCount, 3);
+  assert.equal(inventory.remainingPieceCountToTarget, 18);
+  assert.equal(inventory.resourceNeedToTarget.superDragonite, 1_152_000);
+
+  plan = applyMaterialPreset(plan, 'attack');
+  plan.ownedPieces = {
+    armor: 5,
+    dagger: 2,
+    ring: 4,
+    sword: 3,
+    helmet: 0,
+    boots: 0,
+  };
+  inventory = calculateMaterialPlan(plan).inventorySummary;
+  assert.deepEqual(inventory.ownedBySlot, {
+    armor: 5,
+    dagger: 2,
+    ring: 4,
+    sword: 3,
+  });
+  assert.deepEqual(inventory.remainingBySlot, {
+    armor: 0,
+    dagger: 3,
+    ring: 1,
+    sword: 2,
+  });
+  assert.equal(inventory.completeFullSetCount, 2);
+  assert.equal(inventory.remainingPieceCountToTarget, 6);
 });
 
 test('presets apply to every set while preserving the five-set campaign history', () => {

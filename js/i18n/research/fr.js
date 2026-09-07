@@ -185,6 +185,18 @@ const trees = Object.freeze({
     primaryResource: 'Insignes de guerre',
     pages: ['Légion d’élite'],
   },
+  '9c5d4006': {
+    name: 'Légion de mêlée – Défense',
+    unlockCondition: 'Début d’Eden X12',
+    primaryResource: 'Insignes de guerre',
+    pages: ['Légion de mêlée – Défense'],
+  },
+  'b57d6bf9': {
+    name: 'Légion de mêlée – Charge',
+    unlockCondition: 'Début d’Eden X12',
+    primaryResource: 'Insignes de guerre',
+    pages: ['Légion de mêlée – Charge'],
+  },
 });
 
 const nodes = Object.freeze({
@@ -3441,6 +3453,242 @@ const nodes = Object.freeze({
   '19ae0569:node_37': {
     name: 'Bénédiction de vie',
     buff: '+5 % de PV pour les troupes d’élite',
+  },
+  '9c5d4006:node_1': {
+    name: 'Bouclier défensif',
+    buff: '+10 % de résistance en défense de siège des fantassins',
+  },
+  '9c5d4006:node_2': {
+    name: 'Armure défensive',
+    buff: '+10 % de résistance en défense de siège des archers',
+  },
+  '9c5d4006:node_3': {
+    name: 'Cavalerie défensive',
+    buff: '+10 % de résistance en défense de siège de la cavalerie',
+  },
+  '9c5d4006:node_4': {
+    name: 'Percée des fantassins',
+    buff: '+10 % de puissance en défense de siège des fantassins',
+  },
+  '9c5d4006:node_5': {
+    name: 'Percée des archers',
+    buff: '+10 % de puissance en défense de siège des archers',
+  },
+  '9c5d4006:node_6': {
+    name: 'Percée de la cavalerie',
+    buff: '+10 % de puissance en défense de siège de la cavalerie',
+  },
+  '9c5d4006:node_7': {
+    name: 'Protection tactique de mêlée',
+    buff: '+5 % de résistance tactique de toutes les unités',
+  },
+  '9c5d4006:node_8': {
+    name: 'Persévérance – Légion de classe',
+    buff: '+15 % de résistance de la Légion de classe de toutes les unités',
+  },
+  '9c5d4006:node_9': {
+    name: 'Persévérance – légion I',
+    buff: '+15 % de résistance de la légion I de toutes les unités',
+  },
+  '9c5d4006:node_10': {
+    name: 'Persévérance – légion II',
+    buff: '+15 % de résistance de la légion II de toutes les unités',
+  },
+  '9c5d4006:node_11': {
+    name: 'Persévérance – légion III',
+    buff: '+15 % de résistance de la légion III de toutes les unités',
+  },
+  '9c5d4006:node_12': {
+    name: 'Persévérance – file de défense',
+    buff: '+15 % de résistance de la file de défense de toutes les unités',
+  },
+  '9c5d4006:node_13': {
+    name: 'Défense solide',
+    buff: '+10 % de résistance en défense de siège de toutes les unités',
+  },
+  '9c5d4006:node_14': {
+    name: 'Force de défense',
+    buff: 'Capacité maximale de la file de défense augmentée de 15000',
+  },
+  '9c5d4006:node_15': {
+    name: 'Frappe tactique de mêlée',
+    buff: '+5 % de puissance tactique de toutes les unités',
+  },
+  '9c5d4006:node_16': {
+    name: 'Persévérance – Légion de classe M',
+    buff: '+15 % de puissance de la Légion de classe de toutes les unités',
+  },
+  '9c5d4006:node_17': {
+    name: 'Persévérance – légion I M',
+    buff: '+15 % de puissance de la légion I de toutes les unités',
+  },
+  '9c5d4006:node_18': {
+    name: 'Persévérance – légion II M',
+    buff: '+15 % de puissance de la légion II de toutes les unités',
+  },
+  '9c5d4006:node_19': {
+    name: 'Persévérance – légion III M',
+    buff: '+15 % de puissance de la légion III de toutes les unités',
+  },
+  '9c5d4006:node_20': {
+    name: 'Courage – file de défense',
+    buff: '+15 % de puissance de la file de défense de toutes les unités',
+  },
+  '9c5d4006:node_21': {
+    name: 'Initiative',
+    buff: '+10 % de puissance en défense de siège de toutes les unités',
+  },
+  '9c5d4006:node_22': {
+    name: 'Mêlée – Bouclier des fantassins',
+    buff: '+15 % de résistance des fantassins',
+  },
+  '9c5d4006:node_23': {
+    name: 'Mêlée – Cavalerie en arrière-garde',
+    buff: '+15 % de résistance de la cavalerie',
+  },
+  '9c5d4006:node_24': {
+    name: 'Mêlée – Couverture des archers',
+    buff: '+15 % de résistance des archers',
+  },
+  '9c5d4006:node_25': {
+    name: 'Mêlée – Raid des fantassins',
+    buff: '+15 % de puissance des fantassins',
+  },
+  '9c5d4006:node_26': {
+    name: 'Mêlée – Assaut de la cavalerie',
+    buff: '+15 % de puissance de la cavalerie',
+  },
+  '9c5d4006:node_27': {
+    name: 'Mêlée – Tir des archers',
+    buff: '+15 % de puissance des archers',
+  },
+  '9c5d4006:node_28': {
+    name: 'Bonne condition physique',
+    buff: '+10 % de PV en défense de siège de toutes les unités',
+  },
+  '9c5d4006:node_29': {
+    name: 'La vie de mêlée continue',
+    buff: '-5 % dans les batailles de défense de siège, réduit l’effet létal',
+  },
+  'b57d6bf9:node_1': {
+    name: 'Assaut de lame – fantassins',
+    buff: '+10 % de puissance de siège des fantassins',
+  },
+  'b57d6bf9:node_2': {
+    name: 'Assaut de lame – cavalerie',
+    buff: '+10 % de puissance de siège de la cavalerie',
+  },
+  'b57d6bf9:node_3': {
+    name: 'Assaut de lame – archers',
+    buff: '+10 % de puissance de siège des archers',
+  },
+  'b57d6bf9:node_4': {
+    name: 'Raid de lame – fantassins',
+    buff: '+10 % de résistance de siège des fantassins',
+  },
+  'b57d6bf9:node_5': {
+    name: 'Raid de lame – cavalerie',
+    buff: '+10 % de résistance de siège de la cavalerie',
+  },
+  'b57d6bf9:node_6': {
+    name: 'Raid de lame – archers',
+    buff: '+10 % de résistance de siège des archers',
+  },
+  'b57d6bf9:node_7': {
+    name: 'Garde de la cour',
+    buff: '+5 % de puissance tactique de toutes les unités',
+  },
+  'b57d6bf9:node_8': {
+    name: 'Mur de fer – Légion de classe',
+    buff: '+10 % de résistance de toutes les unités dans la Légion de classe',
+  },
+  'b57d6bf9:node_9': {
+    name: 'Mur de fer – légion 1',
+    buff: '+10 % de résistance de toutes les unités dans la légion 1',
+  },
+  'b57d6bf9:node_10': {
+    name: 'Mur de fer – légion 2',
+    buff: '+10 % de résistance de toutes les unités dans la légion 2',
+  },
+  'b57d6bf9:node_11': {
+    name: 'Mur de fer – légion 3',
+    buff: '+10 % de résistance de toutes les unités dans la légion 3',
+  },
+  'b57d6bf9:node_12': {
+    name: 'Tactiques équilibrées',
+    buff: '+5 % de puissance et de résistance des troupes',
+  },
+  'b57d6bf9:node_13': {
+    name: 'Assaut – Légion de classe',
+    buff: '+10 % de puissance de toutes les unités dans la Légion de classe',
+  },
+  'b57d6bf9:node_14': {
+    name: 'Assaut – légion 1',
+    buff: '+10 % de puissance de toutes les unités dans la légion 1',
+  },
+  'b57d6bf9:node_15': {
+    name: 'Assaut – légion 2',
+    buff: '+10 % de puissance de toutes les unités dans la légion 2',
+  },
+  'b57d6bf9:node_16': {
+    name: 'Assaut – légion 3',
+    buff: '+10 % de puissance de toutes les unités dans la légion 3',
+  },
+  'b57d6bf9:node_17': {
+    name: 'Blindage d’avant-garde',
+    buff: '+5 % de résistance tactique de toutes les unités',
+  },
+  'b57d6bf9:node_18': {
+    name: 'Avant-garde en armure lourde',
+    buff: '+5 % de résistance de siège de toutes les unités',
+  },
+  'b57d6bf9:node_19': {
+    name: 'Maîtrise de compétence de combat – fantassins',
+    buff: '+10 % de puissance de compétence des fantassins',
+  },
+  'b57d6bf9:node_20': {
+    name: 'Maîtrise de compétence de combat – cavalerie',
+    buff: '+10 % de puissance de compétence de la cavalerie',
+  },
+  'b57d6bf9:node_21': {
+    name: 'Maîtrise de compétence de combat – archers',
+    buff: '+10 % de puissance de compétence des archers',
+  },
+  'b57d6bf9:node_22': {
+    name: 'Résistance de compétence de combat – fantassins',
+    buff: '+10 % de résistance de compétence des fantassins',
+  },
+  'b57d6bf9:node_23': {
+    name: 'Résistance de compétence de combat – cavalerie',
+    buff: '+10 % de résistance de compétence de la cavalerie',
+  },
+  'b57d6bf9:node_24': {
+    name: 'Résistance de compétence de combat – archers',
+    buff: '+10 % de résistance de compétence des archers',
+  },
+  'b57d6bf9:node_25': {
+    name: 'Esprit d’avant-garde – fantassins',
+    buff: '+5 % d’augmentation des PV des fantassins',
+  },
+  'b57d6bf9:node_26': {
+    name: 'Esprit d’avant-garde – cavalerie',
+    buff: '+5 % d’augmentation des PV de la cavalerie',
+  },
+  'b57d6bf9:node_27': {
+    name: 'Esprit d’avant-garde – archers',
+    buff: '+5 % d’augmentation des PV des archers',
+  },
+  'b57d6bf9:node_28': {
+    name: 'Avancée totale',
+    buff: '+5 % de puissance de siège de tous les soldats',
+  },
+  'b57d6bf9:node_29': {
+    name: 'Maîtrise de la formation',
+    buff: '+5 % de PV de l’attaquant de siège',
+  },
+  'b57d6bf9:node_30': {
+    name: 'Charge blindée',
+    buff: '+5 % de dégâts infligés',
   },
 });
 

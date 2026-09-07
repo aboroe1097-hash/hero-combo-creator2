@@ -14,6 +14,15 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
+    // Second privilege level, granted by the setUserRole callable. A claim
+    // rather than a roles document on purpose: a document would force a get()
+    // into every admin evaluation, and this file has already hit the
+    // 1000-expressions-per-request limit once. Reading the token costs no
+    // document read. superadmin always implies admin.
+    function isSuperAdmin() {
+      return signedIn() && request.auth.token.superadmin == true;
+    }
+
     // Admin writes (dashboard/roster/conduct, eden_x1 vote moderation) require
     // the `admin` custom claim (set on the admin UID via
     // `node scripts/firebase-set-admin-claim.mjs <uid-or-email>`), NOT a mere
@@ -54,12 +63,182 @@ service cloud.firestore {
           || isAdmin());
     }
 
+    function validRosterProfile(data) {
+      return data is map
+      && data.keys().hasOnly(['roster'])
+      && data.roster is list
+      && data.roster.size() <= 120;
+    }
+
+    function validAccountProfile(data) {
+      return data is map
+      && data.keys().hasOnly([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio',
+        'state', 'referralSource', 'comments',
+        'isPublic', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasAll([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio',
+        'isPublic', 'createdAt', 'updatedAt'
+      ])
+      && data.displayName is string
+      && data.displayName.size() <= 50
+      && data.gameName is string
+      && data.gameName.size() <= 50
+      && data.alliance is string
+      && data.alliance.size() <= 50
+      && data.countryCode is string
+      && data.countryCode.matches('^([A-Z]{2})?$')
+      && data.bio is string
+      && data.bio.size() <= 280
+      && (!('state' in data)
+        || (data.state is string
+          && data.state.size() <= 160))
+      && (!('referralSource' in data)
+        || (data.referralSource is string
+          && data.referralSource.size() <= 160))
+      && (!('comments' in data)
+        || (data.comments is string
+          && data.comments.size() <= 1000))
+      && data.isPublic is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function validCanonicalAccountName(data) {
+      return data.displayName is string
+      && data.displayName.size() >= 1
+      && data.displayName.size() <= 50
+      && data.gameName is string
+      && data.gameName == data.displayName;
+    }
+
+    function validRequiredAccountState(data) {
+      return 'state' in data
+      && data.state is string
+      && data.state.size() >= 1
+      && data.state.size() <= 160;
+    }
+
+    function validRequiredAccountReferral(data) {
+      return 'referralSource' in data
+      && data.referralSource is string
+      && data.referralSource.size() >= 1
+      && data.referralSource.size() <= 160;
+    }
+
+    function validNewAccountProfile(data) {
+      return validAccountProfile(data)
+      && validCanonicalAccountName(data)
+      && validRequiredAccountState(data)
+      && validRequiredAccountReferral(data);
+    }
+
+    function validAccountNameTransition(before, after) {
+      return validCanonicalAccountName(after)
+      || (
+        !validCanonicalAccountName(before)
+        && after.displayName == before.displayName
+        && after.gameName == before.gameName
+      );
+    }
+
+    function validAccountStateTransition(before, after) {
+      return validRequiredAccountState(after)
+      || (
+        !validRequiredAccountState(before)
+        && (
+          (!('state' in before) && !('state' in after))
+          || (
+            'state' in before
+            && 'state' in after
+            && after.state == before.state
+          )
+        )
+      );
+    }
+
+    function validAccountReferralTransition(before, after) {
+      return validRequiredAccountReferral(after)
+      || (
+        !validRequiredAccountReferral(before)
+        && (
+          (!('referralSource' in before) && !('referralSource' in after))
+          || (
+            'referralSource' in before
+            && 'referralSource' in after
+            && after.referralSource == before.referralSource
+          )
+        )
+      );
+    }
+
+    function validAccountProfileUpdate(before, after) {
+      return validAccountProfile(after)
+      && validAccountNameTransition(before, after)
+      && validAccountStateTransition(before, after)
+      && validAccountReferralTransition(before, after);
+    }
+
     function validUserProfile() {
-      return request.resource.data.keys().hasOnly(['playerProfile'])
-      && request.resource.data.playerProfile is map
-      && request.resource.data.playerProfile.keys().hasOnly(['roster'])
-      && request.resource.data.playerProfile.roster is list
-      && request.resource.data.playerProfile.roster.size() <= 120;
+      return request.resource.data.keys().hasOnly(['playerProfile', 'accountProfile'])
+      && request.resource.data.keys().size() >= 1
+      && (
+        !('playerProfile' in request.resource.data)
+        || validRosterProfile(request.resource.data.playerProfile)
+      )
+      && (
+        !('accountProfile' in request.resource.data)
+        || validAccountProfile(request.resource.data.accountProfile)
+      );
+    }
+
+    function validUserProfileCreate() {
+      return validUserProfile()
+      && (
+        !('accountProfile' in request.resource.data)
+        || validNewAccountProfile(request.resource.data.accountProfile)
+      );
+    }
+
+    function validUserProfileUpdate() {
+      return validUserProfile()
+      && (
+        !('accountProfile' in request.resource.data)
+        || (
+          !('accountProfile' in resource.data)
+          && validNewAccountProfile(request.resource.data.accountProfile)
+        )
+        || (
+          'accountProfile' in resource.data
+          && validAccountProfileUpdate(
+            resource.data.accountProfile,
+            request.resource.data.accountProfile
+          )
+        )
+      );
+    }
+
+    function validPublicProfile(uid) {
+      return request.resource.data.keys().hasOnly([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio', 'updatedAt'
+      ])
+      && request.resource.data.keys().hasAll([
+        'displayName', 'gameName', 'alliance', 'countryCode', 'bio', 'updatedAt'
+      ])
+      && request.resource.data.displayName is string
+      && request.resource.data.displayName.size() >= 1
+      && request.resource.data.displayName.size() <= 50
+      && request.resource.data.gameName is string
+      && request.resource.data.gameName.size() <= 50
+      && request.resource.data.alliance is string
+      && request.resource.data.alliance.size() <= 50
+      && request.resource.data.countryCode is string
+      && request.resource.data.countryCode.matches('^([A-Z]{2})?$')
+      && request.resource.data.bio is string
+      && request.resource.data.bio.size() <= 280
+      && request.resource.data.updatedAt is timestamp
+      && request.auth.uid == uid;
     }
 
     function validBestCombo() {
@@ -251,6 +430,120 @@ service cloud.firestore {
       && request.resource.data.createdBy is string
       && request.resource.data.createdBy.size() > 0
       && request.resource.data.createdBy.size() <= 128;
+    }
+
+    // Admin-suggested bonus team effort points awaiting superadmin review.
+    // Same payload as a conduct adjustment plus authorship and review state.
+    // Suggestions are never scored: only the adjustment an approval mints is.
+    function validConductSuggestion() {
+      return request.resource.data.keys().hasOnly([
+        'id', 'season', 'playerKey', 'playerName', 'points', 'category', 'note',
+        'status', 'suggestedBy', 'suggestedByName', 'createdAt',
+        'reviewedBy', 'reviewedAtMs', 'reviewNote', 'adjustmentId'
+      ])
+      && request.resource.data.id is string
+      && request.resource.data.id.size() > 0
+      && request.resource.data.id.size() <= 80
+      && request.resource.data.season is string
+      && request.resource.data.season.size() > 0
+      && request.resource.data.season.size() <= 40
+      && request.resource.data.playerKey is string
+      && request.resource.data.playerKey.size() > 0
+      && request.resource.data.playerKey.size() <= 120
+      && request.resource.data.playerName is string
+      && request.resource.data.playerName.size() > 0
+      && request.resource.data.playerName.size() <= 120
+      && request.resource.data.points is int
+      && request.resource.data.points >= -1000
+      && request.resource.data.points <= 1000
+      && request.resource.data.category in [
+        'banner_help', 'connected_road', 'extra_effort', 'merit_other',
+        'path_block', 'toxicity', 'ignored_coordination', 'penalty_other',
+        'forfeit_premium', 'grant_premium'
+      ]
+      && request.resource.data.note is string
+      && request.resource.data.note.size() <= 500
+      && request.resource.data.status in ['pending', 'approved', 'rejected']
+      && request.resource.data.suggestedBy is string
+      && request.resource.data.suggestedBy.size() > 0
+      && request.resource.data.suggestedBy.size() <= 128
+      && request.resource.data.suggestedByName is string
+      && request.resource.data.suggestedByName.size() <= 160
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.reviewedBy is string
+      && request.resource.data.reviewedBy.size() <= 128
+      && request.resource.data.reviewedAtMs is int
+      && request.resource.data.reviewedAtMs >= 0
+      && request.resource.data.reviewNote is string
+      && request.resource.data.reviewNote.size() <= 500
+      && request.resource.data.adjustmentId is string
+      && request.resource.data.adjustmentId.size() <= 80;
+    }
+
+    // An approval or rejection may change only the review fields: the suggested
+    // player, points, category and author are frozen once submitted, so a
+    // reviewer cannot quietly rewrite what they are approving.
+    function keepsConductSuggestionBody() {
+      return request.resource.data.id == resource.data.id
+        && request.resource.data.season == resource.data.season
+        && request.resource.data.playerKey == resource.data.playerKey
+        && request.resource.data.playerName == resource.data.playerName
+        && request.resource.data.points == resource.data.points
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.note == resource.data.note
+        && request.resource.data.suggestedBy == resource.data.suggestedBy
+        && request.resource.data.suggestedByName == resource.data.suggestedByName
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    // End-of-match BoH team results. The team leader who uploads is an admin,
+    // so entries are validated as a bounded list rather than element by element:
+    // the client normalizes each row and the payload never feeds scoring.
+    function validBohMatchResult() {
+      return request.resource.data.keys().hasOnly([
+        'id', 'teamId', 'teamName', 'fixtureId', 'matchDate', 'opponent', 'note',
+        'teamScore', 'opponentScore', 'entries',
+        'totalScore', 'memberCount', 'createdAt', 'createdBy', 'createdByName',
+        'updatedAt', 'updatedBy', 'updatedByName'
+      ])
+      && request.resource.data.id is string
+      && request.resource.data.id.size() > 0
+      && request.resource.data.id.size() <= 80
+      && request.resource.data.teamId in [
+        'v1s-wolves', 'v2s-tigers', 'v3s-falcons', 'v4s-phoenix', 'v5s-bulls'
+      ]
+      && request.resource.data.fixtureId is string
+      && request.resource.data.fixtureId.size() <= 60
+      && request.resource.data.teamName is string
+      && request.resource.data.teamName.size() > 0
+      && request.resource.data.teamName.size() <= 60
+      && request.resource.data.matchDate is string
+      && request.resource.data.matchDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && request.resource.data.opponent is string
+      && request.resource.data.opponent.size() <= 120
+      && request.resource.data.note is string
+      && request.resource.data.note.size() <= 1000
+      && request.resource.data.teamScore is int
+      && request.resource.data.teamScore >= 0
+      && request.resource.data.opponentScore is int
+      && request.resource.data.opponentScore >= 0
+      && request.resource.data.entries is list
+      && request.resource.data.entries.size() <= 60
+      && request.resource.data.totalScore is int
+      && request.resource.data.totalScore >= 0
+      && request.resource.data.memberCount is int
+      && request.resource.data.memberCount >= 0
+      && request.resource.data.memberCount <= 60
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.createdBy is string
+      && request.resource.data.createdBy.size() > 0
+      && request.resource.data.createdBy.size() <= 128
+      && request.resource.data.createdByName is string
+      && request.resource.data.createdByName.size() <= 160
+      && request.resource.data.updatedBy is string
+      && request.resource.data.updatedBy.size() <= 128
+      && request.resource.data.updatedByName is string
+      && request.resource.data.updatedByName.size() <= 160;
     }
 
     function validEdenX1Vote() {
@@ -468,6 +761,49 @@ service cloud.firestore {
       && request.resource.data.updatedBy == request.auth.uid;
     }
 
+    // Eden X2 published projection: the ONLY Eden X2 document a non-admin can
+    // read. It carries just the allowlisted public season fields; the working
+    // eden_x2_* records stay admin-only.
+    function validEdenX2PublicProjection() {
+      return request.resource.data.keys().hasOnly([
+        'schemaVersion', 'workspace', 'season', 'published', 'revision', 'publishedAtMs',
+        'updatedBy', 'dashboard', 'rosterSnapshots', 'voteSettings', 'publicVoteResults'
+      ])
+      && request.resource.data.schemaVersion == 1
+      && request.resource.data.workspace == 'eden-x2'
+      && request.resource.data.season is string
+      && request.resource.data.season.size() > 0
+      && request.resource.data.season.size() <= 40
+      && request.resource.data.published is bool
+      && request.resource.data.revision is int
+      && request.resource.data.revision >= 1
+      && request.resource.data.publishedAtMs is number
+      && request.resource.data.updatedBy is string
+      && request.resource.data.dashboard is map
+      && request.resource.data.rosterSnapshots is list
+      && request.resource.data.rosterSnapshots.size() <= 50
+      && request.resource.data.voteSettings is map
+      && request.resource.data.publicVoteResults is map;
+    }
+
+    function validEdenWorkspaceRecord(workspaceId) {
+      return request.resource.data.keys().hasOnly([
+        'id', 'lifecycle', 'active', 'createdAtMs', 'archivedAtMs', 'publication', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.id == workspaceId
+      && (workspaceId == 'eden-x1' || workspaceId == 'eden-x2')
+      && (
+        request.resource.data.lifecycle == 'archived'
+        || request.resource.data.lifecycle == 'draft'
+        || request.resource.data.lifecycle == 'active'
+      )
+      && request.resource.data.active is bool
+      && request.resource.data.createdAtMs is number
+      && (!('archivedAtMs' in request.resource.data) || request.resource.data.archivedAtMs is number)
+      && (!('publication' in request.resource.data) || request.resource.data.publication is map)
+      && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy is string);
+    }
+
     function hasStableConductMetadata() {
       return ('createdAt' in resource.data)
         && resource.data.createdAt is timestamp
@@ -524,6 +860,13 @@ service cloud.firestore {
         );
     }
 
+    function isAllStarBohRegistrationOpen(season) {
+      let configPath = /databases/$(database)/documents/boh_allstar_config/current;
+      return exists(configPath)
+        && get(configPath).data.activeSeason == season
+        && get(configPath).data.open == true;
+    }
+
     function validAllStarBohConfig() {
       return request.resource.data.keys().hasOnly([
         'activeSeason', 'open', 'grantDurationMinutes'
@@ -537,6 +880,18 @@ service cloud.firestore {
       && request.resource.data.grantDurationMinutes is int
       && request.resource.data.grantDurationMinutes >= 5
       && request.resource.data.grantDurationMinutes <= 10080;
+    }
+
+    function validBohMapperPublish(season) {
+      return request.resource.data.keys().hasOnly(['schemaVersion', 'publishedAt', 'publishedBy', 'seasonId', 'state'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'publishedAt', 'publishedBy', 'seasonId', 'state'])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.schemaVersion >= 1
+        && request.resource.data.publishedAt == request.time
+        && request.resource.data.publishedBy == request.auth.uid
+        && request.resource.data.seasonId == season
+        && request.resource.data.state is string
+        && request.resource.data.state.size() <= 900000;
     }
 
     function canReadOwnActiveAllStarBohGrant(uid) {
@@ -688,9 +1043,14 @@ service cloud.firestore {
       return value == null || value is bool;
     }
 
+    function validAllStarBohIsoTimestampText(value) {
+      return value is string
+        && value.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$');
+    }
+
     function validAllStarBohUsableHeroNames(values) {
       return values is list
-        && values.size() <= 78
+        && values.size() <= 89
         && (
           values.size() == 0
           || (
@@ -713,7 +1073,9 @@ service cloud.firestore {
               'Tarantula', 'Lancelot', 'Alexander', 'Lawman', 'Defender',
               'Spectral Reaper', 'Valkyrie', 'Bjorn', 'Skanda', 'Liberator',
               'Ashen Verdict', 'Warden', 'Warhammer', 'Eidolon', 'Scarlet Reaver',
-              'Rainforest Ranger', 'Fortuneteller', 'Ragnar', 'Cyrus'
+              'Rainforest Ranger', 'Fortuneteller', 'Ragnar', 'Cyrus',
+              'Healer', 'Hellfire', 'Belisarius', 'Pepin', 'El Cid', 'Arslan',
+              'Farah', 'Poison Master', 'Lilith', 'Al-Hawra', 'Achilles'
             ])
           )
         );
@@ -847,7 +1209,7 @@ service cloud.firestore {
         && (!('troopRoster' in stats) || validAllStarBohStringList(stats.troopRoster, 60, 48))
         && validAllStarBohStringList(stats.readySpeedHeroes, 24, 80)
         && validAllStarBohNullableInt(stats.level50HeroCount, 0, 500)
-        && validAllStarBohNullableInt(stats.rocLevel, 0, 100)
+        && validAllStarBohNullableInt(stats.rocLevel, 0, 160)
         && (!('unitSpecialtyPower' in stats) || validAllStarBohNullableInt(stats.unitSpecialtyPower, 0, 1000000000000000))
         && (!('artifactPower' in stats) || validAllStarBohNullableInt(stats.artifactPower, 0, 1000000000000000))
         && (!('royalTechPower' in stats) || validAllStarBohNullableInt(stats.royalTechPower, 0, 1000000000000000))
@@ -1132,10 +1494,11 @@ service cloud.firestore {
         && data.revision is int
         && data.revision > 0
         && data.announcementPublished == true
-        && data.teamCount == 6
+        && data.teamCount >= 2
+        && data.teamCount <= 6
         && data.rosterSize == 12
         && data.teamIds is list
-        && data.teamIds.size() == 6
+        && data.teamIds.size() == data.teamCount
         && data.teamIds.toSet().size() == data.teamIds.size()
         && (
           (
@@ -1143,7 +1506,7 @@ service cloud.firestore {
             && data.status in ['plan', 'live']
             && data.activePlanRevision == data.revision
             && data.phases is list
-            && data.phases.size() == 4
+            && data.phases.size() == 5
             && data.legions is list
             && data.legions.size() == 2
           )
@@ -1195,19 +1558,19 @@ service cloud.firestore {
         || (
           values[index] is map
           && values[index].keys().hasOnly([
-            'id', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
+            'id', 'rosterKey', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
             'roleLabel', 'side', 'lane'
           ])
           && values[index].keys().hasAll([
-            'id', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
+            'id', 'rosterKey', 'seatNumber', 'playerId', 'displayName', 'roleGroupId',
             'roleLabel', 'side', 'lane'
           ])
           && validAllStarBohText(values[index].id, 128)
+          && validAllStarBohIdentifier(values[index].rosterKey, false)
           && values[index].seatNumber is int
           && values[index].seatNumber >= 1
           && values[index].seatNumber <= 12
-          && validAllStarBohText(values[index].playerId, 128)
-          && values[index].playerId.size() > 0
+          && validAllStarBohIdentifier(values[index].playerId, true)
           && validAllStarBohText(values[index].displayName, 160)
           && values[index].displayName.size() > 0
           && validAllStarBohText(values[index].roleGroupId, 128)
@@ -1220,7 +1583,8 @@ service cloud.firestore {
 
     function validAllStarBohPublishedSeats(values) {
       return values is list
-        && values.size() == 12
+        && values.size() > 0
+        && values.size() <= 12
         && validAllStarBohPublishedSeatItem(values, 0)
         && validAllStarBohPublishedSeatItem(values, 1)
         && validAllStarBohPublishedSeatItem(values, 2)
@@ -1237,7 +1601,7 @@ service cloud.firestore {
 
     function validAllStarBohPublishedTeamData(data, season, teamId) {
       return data.keys().hasOnly([
-        'name', 'number', 'color', 'captainId', 'seats',
+        'name', 'number', 'color', 'captainId', 'coLeaderIds', 'seats',
         'seasonId', 'teamId', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
@@ -1253,6 +1617,15 @@ service cloud.firestore {
       && data.number <= 6
       && validAllStarBohText(data.color, 40)
       && validAllStarBohText(data.captainId, 128)
+      && (!('coLeaderIds' in data)
+        || (
+          data.coLeaderIds is list
+          && data.coLeaderIds.size() <= 2
+          && data.coLeaderIds.toSet().size() == data.coLeaderIds.size()
+          && validAllStarBohShortIdentifierList(data.coLeaderIds)
+          && (data.coLeaderIds.size() < 1 || validAllStarBohIdentifier(data.coLeaderIds[0], false))
+          && (data.coLeaderIds.size() < 2 || validAllStarBohIdentifier(data.coLeaderIds[1], false))
+        ))
       && validAllStarBohPublishedSeats(data.seats)
       && data.seasonId == season
       && data.teamId == teamId
@@ -1337,7 +1710,7 @@ service cloud.firestore {
         && instruction.keys().hasOnly([
           'summary', 'action', 'target', 'startObjectiveId', 'objectiveId',
           'targetLabel', 'loadout', 'teleport', 'note', 'priority',
-          'viaObjectiveIds', 'pathObjectiveIds'
+          'viaObjectiveIds', 'pathObjectiveIds', 'standby', 'gatherCrystals'
         ])
         && instruction.keys().hasAll([
           'summary', 'action', 'target', 'startObjectiveId', 'objectiveId',
@@ -1358,8 +1731,134 @@ service cloud.firestore {
         )
         && validAllStarBohText(instruction.note, 2000)
         && validAllStarBohNullableInt(instruction.priority, 0, 100)
+        && (!('standby' in instruction) || instruction.standby is bool)
+        && (!('gatherCrystals' in instruction) || instruction.gatherCrystals is bool)
         && validAllStarBohShortIdentifierList(instruction.viaObjectiveIds)
         && validAllStarBohShortIdentifierList(instruction.pathObjectiveIds);
+    }
+
+    function validAllStarBohScheduleMilestoneItem(values, index, eventStartsAt, eventEndsAt) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly(['id', 'label', 'startsAt'])
+          && values[index].keys().hasAll(['id', 'label', 'startsAt'])
+          && validAllStarBohIdentifier(values[index].id, false)
+          && validAllStarBohText(values[index].label, 160)
+          && values[index].label.size() > 0
+          && validAllStarBohIsoTimestampText(values[index].startsAt)
+          && values[index].startsAt >= eventStartsAt
+          && values[index].startsAt <= eventEndsAt
+        );
+    }
+
+    function validAllStarBohScheduleMilestones(values, eventStartsAt, eventEndsAt) {
+      return values is list
+        && values.size() <= 8
+        && values.toSet().size() == values.size()
+        && (values.size() < 2 || values[0].id != values[1].id)
+        && (values.size() < 3 || (values[0].id != values[2].id && values[1].id != values[2].id))
+        && (values.size() < 4 || (values[0].id != values[3].id && values[1].id != values[3].id && values[2].id != values[3].id))
+        && (values.size() < 5 || (values[0].id != values[4].id && values[1].id != values[4].id && values[2].id != values[4].id && values[3].id != values[4].id))
+        && (values.size() < 6 || (values[0].id != values[5].id && values[1].id != values[5].id && values[2].id != values[5].id && values[3].id != values[5].id && values[4].id != values[5].id))
+        && (values.size() < 7 || (values[0].id != values[6].id && values[1].id != values[6].id && values[2].id != values[6].id && values[3].id != values[6].id && values[4].id != values[6].id && values[5].id != values[6].id))
+        && (values.size() < 8 || (values[0].id != values[7].id && values[1].id != values[7].id && values[2].id != values[7].id && values[3].id != values[7].id && values[4].id != values[7].id && values[5].id != values[7].id && values[6].id != values[7].id))
+        && validAllStarBohScheduleMilestoneItem(values, 0, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 1, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 2, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 3, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 4, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 5, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 6, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleMilestoneItem(values, 7, eventStartsAt, eventEndsAt);
+    }
+
+    function validAllStarBohScheduleTeamTimeItem(values, index, eventStartsAt, eventEndsAt) {
+      return values.size() <= index
+        || (
+          values[index] is map
+          && values[index].keys().hasOnly(['teamId', 'startsAt'])
+          && values[index].keys().hasAll(['teamId', 'startsAt'])
+          && validAllStarBohIdentifier(values[index].teamId, false)
+          && validAllStarBohIsoTimestampText(values[index].startsAt)
+          && values[index].startsAt >= eventStartsAt
+          && values[index].startsAt <= eventEndsAt
+        );
+    }
+
+    function validAllStarBohScheduleTeamTimes(values, eventStartsAt, eventEndsAt) {
+      return values is list
+        && values.size() <= 6
+        && values.toSet().size() == values.size()
+        && (values.size() < 2 || values[0].teamId != values[1].teamId)
+        && (values.size() < 3 || (values[0].teamId != values[2].teamId && values[1].teamId != values[2].teamId))
+        && (values.size() < 4 || (values[0].teamId != values[3].teamId && values[1].teamId != values[3].teamId && values[2].teamId != values[3].teamId))
+        && (values.size() < 5 || (values[0].teamId != values[4].teamId && values[1].teamId != values[4].teamId && values[2].teamId != values[4].teamId && values[3].teamId != values[4].teamId))
+        && (values.size() < 6 || (values[0].teamId != values[5].teamId && values[1].teamId != values[5].teamId && values[2].teamId != values[5].teamId && values[3].teamId != values[5].teamId && values[4].teamId != values[5].teamId))
+        && validAllStarBohScheduleTeamTimeItem(values, 0, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 1, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 2, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 3, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 4, eventStartsAt, eventEndsAt)
+        && validAllStarBohScheduleTeamTimeItem(values, 5, eventStartsAt, eventEndsAt);
+    }
+
+    function validAllStarBohScheduleData(data, season) {
+      return data.keys().hasOnly([
+        'schemaVersion', 'seasonId', 'status', 'eventStartsAt', 'eventEndsAt',
+        'milestones', 'teamGameTimes', 'revision', 'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.keys().hasAll([
+        'schemaVersion', 'seasonId', 'status', 'eventStartsAt', 'eventEndsAt',
+        'milestones', 'teamGameTimes', 'revision', 'createdAt', 'updatedAt', 'updatedBy'
+      ])
+      && data.schemaVersion == 1
+      && data.seasonId == season
+      && data.status in ['hidden', 'published']
+      && data.revision is int
+      && data.revision > 0
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp
+      && data.updatedBy is string
+      && data.updatedBy.size() > 0
+      && data.updatedBy.size() <= 128
+      && (
+        (
+          data.status == 'hidden'
+          && data.eventStartsAt == ''
+          && data.eventEndsAt == ''
+          && data.milestones is list
+          && data.milestones.size() == 0
+          && data.teamGameTimes is list
+          && data.teamGameTimes.size() == 0
+        )
+        || (
+          data.status == 'published'
+          && validAllStarBohIsoTimestampText(data.eventStartsAt)
+          && validAllStarBohIsoTimestampText(data.eventEndsAt)
+          && data.eventStartsAt < data.eventEndsAt
+          && validAllStarBohScheduleMilestones(data.milestones, data.eventStartsAt, data.eventEndsAt)
+          && validAllStarBohScheduleTeamTimes(data.teamGameTimes, data.eventStartsAt, data.eventEndsAt)
+        )
+      );
+    }
+
+    function validAllStarBohScheduleCreate(season) {
+      return validAllStarBohScheduleData(request.resource.data, season)
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function validAllStarBohScheduleUpdate(season) {
+      return validAllStarBohScheduleData(request.resource.data, season)
+        && request.resource.data.seasonId == resource.data.seasonId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
     }
 
     function validAllStarBohPublishedTimelineItem(values, index, uid, teamId, baseSeatNumber) {
@@ -1409,7 +1908,7 @@ service cloud.firestore {
 
     function validAllStarBohPublishedTimeline(values, uid, teamId, baseSeatNumber) {
       return values is list
-        && values.size() == 8
+        && values.size() == 10
         && validAllStarBohPublishedTimelineItem(values, 0, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 1, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 2, uid, teamId, baseSeatNumber)
@@ -1417,7 +1916,9 @@ service cloud.firestore {
         && validAllStarBohPublishedTimelineItem(values, 4, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 5, uid, teamId, baseSeatNumber)
         && validAllStarBohPublishedTimelineItem(values, 6, uid, teamId, baseSeatNumber)
-        && validAllStarBohPublishedTimelineItem(values, 7, uid, teamId, baseSeatNumber);
+        && validAllStarBohPublishedTimelineItem(values, 7, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 8, uid, teamId, baseSeatNumber)
+        && validAllStarBohPublishedTimelineItem(values, 9, uid, teamId, baseSeatNumber);
     }
 
     function validAllStarBohPublishedRoleItem(values, index) {
@@ -1477,7 +1978,7 @@ service cloud.firestore {
         && validAllStarBohText(plan.label, 160)
         && validAllStarBohPublishedRoles(plan.roleGroups)
         && validAllStarBohPublishedPhases(plan.phases)
-        && plan.phases.size() == 4
+        && plan.phases.size() == 5
         && validAllStarBohPublishedLegions(plan.legions)
         && plan.legions.size() == 2
         && validAllStarBohPublishedObjectives(plan.objectives)
@@ -1508,7 +2009,7 @@ service cloud.firestore {
         'seasonId', 'uid', 'schemaVersion', 'revision',
         'createdAt', 'updatedAt', 'updatedBy'
       ])
-      && data.playerId == uid
+      && validAllStarBohIdentifier(data.playerId, false)
       && data.uid == uid
       && data.seasonId == season
       && data.schemaVersion == 1
@@ -1536,7 +2037,7 @@ service cloud.firestore {
           && validAllStarBohPublishedPlan(data.plan)
           && validAllStarBohPublishedTimeline(
             data.timeline,
-            uid,
+            data.playerId,
             data.teamId,
             data.seatNumber
           )
@@ -1681,13 +2182,13 @@ service cloud.firestore {
       && stats.level50HeroCount <= 500
       && stats.rocLevel is int
       && stats.rocLevel >= 0
-      && stats.rocLevel <= 100
+      && stats.rocLevel <= 160
       && (!('t10TroopTypes' in stats)
         || (stats.t10TroopTypes is list && stats.t10TroopTypes.size() <= 3))
       && (!('troopRoster' in stats)
         || (stats.troopRoster is list && stats.troopRoster.size() <= 60))
       && (!('usableHeroNames' in stats)
-        || (stats.usableHeroNames is list && stats.usableHeroNames.size() <= 78))
+        || (stats.usableHeroNames is list && stats.usableHeroNames.size() <= 89))
       && (!('researchProgressPct' in stats)
         || (stats.researchProgressPct is map && stats.researchProgressPct.size() <= 29))
       && (!('artifactPower' in stats)
@@ -1724,14 +2225,6 @@ service cloud.firestore {
       && commitment.currentState.size() <= 160
       && commitment.joinReason is string
       && commitment.joinReason.size() <= 1000
-      && (
-        commitment.vts1097Member == true
-        || (
-          commitment.contactNumber.size() > 0
-          && commitment.currentState.size() > 0
-          && commitment.joinReason.size() > 0
-        )
-      )
       && commitment.notes is string
       && commitment.notes.size() <= 2000
       && ocr is map
@@ -1850,10 +2343,49 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+
+    function validFeatureSyncId(featureId) {
+      return featureId in [
+        'research', 'specialization-towers', 'specialization-contributions',
+        'battle-sim-setups', 'battle-sim-profile-override', 'material-planner',
+        'generator-selection', 'generator-skins'
+      ];
+    }
+
+    function validFeatureSync() {
+      return request.resource.data.keys().hasOnly([
+        'schemaVersion', 'payload', 'savedAt', 'savedAtMs', 'deviceId'
+      ])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.schemaVersion >= 1
+        && request.resource.data.schemaVersion <= 3
+        && request.resource.data.savedAt is timestamp
+        && request.resource.data.savedAtMs is int
+        && request.resource.data.savedAtMs >= 0
+        && request.resource.data.deviceId is string
+        && request.resource.data.deviceId.size() >= 12
+        && request.resource.data.deviceId.size() <= 40
+        && request.resource.data.payload is map
+        && request.resource.data.payload.keys().hasOnly(['json'])
+        && request.resource.data.payload.json is string
+        && request.resource.data.payload.json.size() <= 720000;
+    }
+
     match /users/{uid} {
-      allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid) && validUserProfile();
+      // Self-read, plus superadmin read so the Users & Roles controller can
+      // list candidates. Without this the controller shows an empty roster and
+      // no roles can be granted. Read only: a profile is member-writable, so
+      // nothing here is ever treated as authority — the custom claim is.
+      allow read: if isOwner(uid) || isSuperAdmin();
+      allow create: if isOwner(uid) && validUserProfileCreate();
+      allow update: if isOwner(uid) && validUserProfileUpdate();
       allow delete: if false;
+
+      match /featureSync/{featureId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validFeatureSyncId(featureId) && validFeatureSync();
+        allow delete: if false;
+      }
 
       match /bestCombos/{comboId} {
         allow read: if isOwner(uid);
@@ -1861,6 +2393,12 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isOwner(uid);
       }
+    }
+
+    match /public_profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && validPublicProfile(uid);
+      allow delete: if isOwner(uid);
     }
 
     match /errors/{errorId} {
@@ -1894,14 +2432,23 @@ service cloud.firestore {
     match /boh_allstar/{season} {
       allow read, write: if isAdmin();
 
+      match /mapper/current {
+        allow get: if hasActiveAllStarBohGrant(season);
+        allow list: if false;
+        allow create, update: if isAdmin() && validBohMapperPublish(season);
+        allow delete: if isAdmin();
+      }
+
       match /submissions/{uid} {
         allow get: if isAdmin() || (isOwner(uid) && hasActiveAllStarBohGrant(season));
         allow list: if isAdmin();
         allow create: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohSubmissionCreate(season, uid);
         allow update: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohSubmissionUpdate(season, uid);
         allow delete: if isAdmin();
       }
@@ -1925,11 +2472,20 @@ service cloud.firestore {
         allow list: if isAdmin();
         allow create: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohEpicPreferencesCreate(season, uid);
         allow update: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
+          && isAllStarBohRegistrationOpen(season)
           && validAllStarBohEpicPreferencesUpdate(season, uid);
         allow delete: if false;
+      }
+
+      match /raceScores/{submissionUid} {
+        // Members use the authenticated vtsScore Function. Keeping this
+        // collection admin-only prevents clients from listing names, forging
+        // another player's final value, or bypassing the OCR audit contract.
+        allow read, write: if isAdmin();
       }
 
       match /drafts/{draftId} {
@@ -1938,6 +2494,14 @@ service cloud.firestore {
 
       match /draftTeams/{teamId} {
         allow read, write: if isAdmin();
+      }
+
+      match /schedules/current {
+        allow get: if isAdmin() || hasActiveAllStarBohGrant(season);
+        allow list: if false;
+        allow create: if isAdmin() && validAllStarBohScheduleCreate(season);
+        allow update: if isAdmin() && validAllStarBohScheduleUpdate(season);
+        allow delete: if false;
       }
 
       match /published/current {
@@ -2015,10 +2579,10 @@ service cloud.firestore {
 
     match /vts_admin/alliance_view/rosters/{allianceId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow create: if isSuperAdmin()
         && validAllianceViewRoster(allianceId)
         && request.resource.data.revision == 1;
-      allow update: if isAdmin()
+      allow update: if isSuperAdmin()
         && validAllianceViewRoster(allianceId)
         && resource.data.allianceId == allianceId
         && request.resource.data.revision == resource.data.revision + 1;
@@ -2029,6 +2593,40 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isAdmin() && validAdminLogEvent(logId);
       allow update, delete: if false;
+    }
+
+    match /vts_admin/boh_match_results/records/{resultId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validBohMatchResult()
+        && request.resource.data.id == resultId
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        && validBohMatchResult()
+        && request.resource.data.id == resultId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+
+    match /vts_admin/conduct_suggestions/records/{suggestionId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validConductSuggestion()
+        && request.resource.data.id == suggestionId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.suggestedBy == request.auth.uid
+        && request.resource.data.reviewedBy == ''
+        && request.resource.data.adjustmentId == '';
+      allow update: if isSuperAdmin()
+        && validConductSuggestion()
+        && keepsConductSuggestionBody()
+        && request.resource.data.status != 'pending'
+        && request.resource.data.reviewedBy == request.auth.uid;
+      allow delete: if isSuperAdmin()
+        || (isAdmin()
+          && resource.data.suggestedBy == request.auth.uid
+          && resource.data.status == 'pending');
     }
 
     match /vts_admin/conduct_adjustments/records/{adjustmentId} {
@@ -2074,6 +2672,133 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
       allow delete: if false;
+    }
+
+    // --- Eden X2 workspace (current season) ---
+    // Working eden_x2_* records are admin-only; the public Eden X2 page reads
+    // only the allowlisted published projection. Member votes keep the exact
+    // X1 contract (any signed-in visitor may vote; only their own doc edits).
+
+    match /vts_admin/eden_x2_dashboard_data {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validDashboardData()
+        && request.resource.data.syncRevision == 1;
+      allow update: if isAdmin()
+        && validDashboardData()
+        && (
+          (!('syncRevision' in resource.data)
+            && request.resource.data.syncRevision == 1)
+          || ('syncRevision' in resource.data
+            && request.resource.data.syncRevision == resource.data.syncRevision + 1)
+        )
+        && (!('updatedAtMs' in resource.data)
+          || request.resource.data.updatedAtMs >= resource.data.updatedAtMs);
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_roster_data {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && validRosterData();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_conduct_suggestions/records/{suggestionId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validConductSuggestion()
+        && request.resource.data.id == suggestionId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.suggestedBy == request.auth.uid
+        && request.resource.data.reviewedBy == ''
+        && request.resource.data.adjustmentId == '';
+      allow update: if isSuperAdmin()
+        && validConductSuggestion()
+        && keepsConductSuggestionBody()
+        && request.resource.data.status != 'pending'
+        && request.resource.data.reviewedBy == request.auth.uid;
+      allow delete: if isSuperAdmin()
+        || (isAdmin()
+          && resource.data.suggestedBy == request.auth.uid
+          && resource.data.status == 'pending');
+    }
+
+    match /vts_admin/eden_x2_conduct_adjustments/records/{adjustmentId} {
+      allow read: if isAdmin();
+      allow create: if isSuperAdmin()
+        && validConductAdjustment()
+        && request.resource.data.id == adjustmentId
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isSuperAdmin()
+        && validConductAdjustment()
+        && request.resource.data.id == adjustmentId
+        && (keepsConductMetadata() || repairsHistoricalConductMetadata());
+      allow delete: if isSuperAdmin();
+    }
+
+    match /vts_admin/eden_x2_votes/records/{voteId} {
+      allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
+      allow list, delete: if isAdmin();
+      allow create: if signedIn()
+        && validEdenX1Vote()
+        && validEdenX1VotePath(voteId);
+      allow update: if signedIn()
+        && validEdenX1Vote()
+        && validEdenX1VotePath(voteId)
+        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid);
+    }
+
+    match /vts_admin/eden_x2_vote_history/records/{historyId} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && validEdenX1VoteHistory()
+        && validEdenX1VoteHistoryPath(historyId);
+      allow update, delete: if false;
+    }
+
+    match /vts_admin/eden_x2_vote_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validEdenX1VoteSettings();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_public_vote_results {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_public_projection {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenX2PublicProjection();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_workspaces/records/{workspaceId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenWorkspaceRecord(workspaceId);
+      allow delete: if false;
+    }
+
+    // Append-only trail of every admin/superadmin grant and revoke. Written by
+    // the setUserRole callable, which runs with Admin SDK privileges and so
+    // bypasses these rules; the create rule exists to keep the shape honest if
+    // anything else ever writes here. Never updatable or deletable: an audit
+    // record that can be edited is not an audit record.
+    match /vts_admin/role_audit/records/{recordId} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly([
+          'targetUid', 'role', 'granted', 'changedBy', 'changedAtMs'
+        ])
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid.size() > 0
+        && request.resource.data.targetUid.size() <= 128
+        && (request.resource.data.role == 'admin' || request.resource.data.role == 'superadmin')
+        && request.resource.data.granted is bool
+        && request.resource.data.changedBy == request.auth.uid
+        && request.resource.data.changedAtMs is number;
+      allow update, delete: if false;
     }
 
     match /arcade_scores/{scoreId} {

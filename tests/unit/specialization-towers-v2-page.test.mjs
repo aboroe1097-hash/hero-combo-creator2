@@ -267,6 +267,40 @@ test('planning controls cover history, portable state, reset, and contribution d
   assert.match(featureSource, /(?:sourceId|source\s*:)/u);
 });
 
+test('mobile CSS keeps toolbar, tabs, summary, dialogs, and graph reachable', () => {
+  const mobile800 = cssSource.slice(cssSource.search(/@media\s*\(max-width:\s*800px\)/u));
+  const mobile640 = cssSource.slice(cssSource.search(/@media\s*\(max-width:\s*640px\)/u));
+  assert.match(mobile800, /\.specialization-toolbar[\s\S]*overflow-x:\s*auto/u);
+  assert.match(mobile800, /\.specialization-toolbar-group[\s\S]*flex:\s*0\s+0\s+auto/u);
+  assert.match(mobile800, /scrollbar-width:\s*thin/u);
+  assert.match(mobile640, /\.specialization-tower-tabs[\s\S]*overflow-x:\s*auto/u);
+  assert.match(mobile640, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/u);
+  assert.match(
+    cssSource,
+    /@media\s*\(max-width:\s*900px\)[\s\S]*dialog\[data-specialization-inspector\][\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/u
+  );
+  assert.match(cssSource, /\.specialization-milestone-value[\s\S]*overflow-wrap:\s*anywhere/u);
+  assert.match(cssSource, /100dvh/u);
+  assert.match(cssSource, /scroll-padding-block:[^;]*--ff-safe/u);
+  assert.match(cssSource, /\.specialization-title-block\s*\{[^}]*min-width:\s*0/u);
+  assert.match(cssSource, /\.specialization-header__meta\s*\{[^}]*flex-wrap:\s*wrap/u);
+  assert.match(
+    cssSource,
+    /\[dir=['"]rtl['"]\]\s+\.specialization-toolbar[\s\S]*mask-image:\s*linear-gradient\(270deg/u
+  );
+});
+
+test('mobile app preserves active tower, column status, and medal editor context across refreshes', () => {
+  assert.match(appSource, /ACTIVE_TOWER_KEY/u);
+  assert.match(appSource, /tabScrollLeft/u);
+  assert.match(appSource, /revealActiveTowerTab/u);
+  assert.match(appSource, /mobileInspectorScrollTop/u);
+  assert.match(appSource, /findMatchingControl\(mobileInspector, focusDescriptor\)/u);
+  assert.match(appSource, /restoreControl/u);
+  assert.match(appSource, /progress\.completedNodes\s*===\s*0/u);
+  assert.match(appSource, /selectNodeBeforeMedals/u);
+});
+
 test('the specialization module family stays independent from Battle Simulator', () => {
   assert.ok(featureFiles.length >= 2, 'expected bootstrap and app modules in the feature family');
   for (const { path, source } of featureFiles) {

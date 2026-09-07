@@ -32,6 +32,11 @@ import {
   saveSpecializationState,
 } from './specialization-towers-v2-store.js';
 import {
+  SPECIALIZATION_ROUTE_IDS,
+  getNextRouteResearch,
+  getRouteStep,
+} from './specialization-routes.js';
+import {
   bindSpecializationTowersV2LanguageChange,
   getSpecializationTowersV2Direction,
   loadSpecializationTowersV2Locale,
@@ -39,7 +44,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '14.2.0';
+export const APP_VERSION = '16.0.5';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];
@@ -73,6 +78,7 @@ const LANGUAGE_OPTIONS = Object.freeze([
   ['es', 'Español'],
   ['fr', 'Français'],
   ['id', 'Indonesia'],
+  ['it', 'Italiano'],
   ['kr', '한국어'],
   ['pt', 'Português'],
   ['ru', 'Русский'],
@@ -82,12 +88,14 @@ const LANGUAGE_OPTIONS = Object.freeze([
 const THEME_KEY = 'vts_theme';
 const LANGUAGE_KEY = 'vts_hero_lang';
 const ACTIVE_TOWER_KEY = 'vts_specialization_towers_v2_active_tower';
+const ROUTE_KEY = 'vts_specialization_towers_v2_route';
+const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
 const MOBILE_INSPECTOR_QUERY = '(max-width: 900px)';
 const MAX_HISTORY = 60;
 const TROOP_ICONS = Object.freeze({ cavalry: '♞', archer: '⌁', footman: '⬟' });
 let root = null;
 let state = null;
-let activeTroop = 'cavalry';
+let activeTroop = 'archer';
 let selectedItem = { kind: 'research', researchId: 'training1', columnId: 1 };
 let locale = 'en';
 let undoStack = [];
@@ -96,6 +104,13 @@ let inspectorOpener = null;
 let nodePathRestoreMode = 'desktop';
 let inspectorCollapsed = false;
 let toastTimer = 0;
+let graphScrollFrame = 0;
+let graphScrollTarget = null;
+let currentGraphColumn = 1;
+// '' means no suggested route is being followed.
+let activeRoute = '';
+// Easy medal fill lifts the "pick a node first" gate so medals can be typed straight in.
+let easyMedalMode = false;
 let unbindLanguageChange = () => {};
 
 function escapeHtml(value) {
@@ -266,6 +281,14 @@ function renderHeader() {
             <button type="button" data-specialization-action="reset">${iconSvg('reset')}<span>${escapeHtml(t('resetAll'))}</span></button>
             <button type="button" data-specialization-action="breakdown">${iconSvg('breakdown')}<span>${escapeHtml(t('breakdown'))}</span></button>
           </div>
+          <button type="button" class="specialization-easy-medals-toggle" data-specialization-action="easy-medals" aria-pressed="${easyMedalMode}">${escapeHtml(t('easyMedalsLabel'))}</button>
+          <label class="specialization-route-control">
+            <span class="specialization-route-control-label">${escapeHtml(t('routeLabel'))}</span>
+            <select class="specialization-route-select" data-specialization-route-select aria-label="${escapeAttribute(t('routeLabel'))}">
+              <option value="" ${activeRoute === '' ? 'selected' : ''}>${escapeHtml(t('routeNone'))}</option>
+              ${SPECIALIZATION_ROUTE_IDS.map((routeId) => `<option value="${routeId}" ${activeRoute === routeId ? 'selected' : ''}>${escapeHtml(t(routeId === 'spender' ? 'routeSpender' : 'routeF2p'))}</option>`).join('')}
+            </select>
+          </label>
           <button type="button" data-specialization-theme-toggle aria-label="${escapeAttribute(t('themeLabel'))}" aria-pressed="${light}">${iconSvg('theme')}<span class="specialization-sr-only">${escapeHtml(t('themeLabel'))}</span></button>
           <label class="specialization-language-control">
             <span class="specialization-sr-only">${escapeHtml(t('languageLabel'))}</span>
@@ -337,16 +360,46 @@ function renderTowerTabs(summary) {
     </div>`;
 }
 
+function columnPositionText(columnId) {
+  return `${t('currentTowerProgress')} \u00b7 ${t('progressOf', {
+    completed: formatNumber(columnId),
+    total: formatNumber(SPECIALIZATION_COLUMN_COUNT),
+  })}`;
+}
+
+function renderColumnPositionPill(columnId = currentGraphColumn) {
+  const current = Math.max(1, Math.min(SPECIALIZATION_COLUMN_COUNT, Number(columnId) || 1));
+  return `<div class="specialization-column-position" data-specialization-column-position role="status" aria-live="polite" aria-atomic="true" data-current-column="${current}">
+    <span data-specialization-column-position-label>${escapeHtml(columnPositionText(current))}</span>
+    <span class="specialization-column-position-dots" aria-hidden="true">${COLUMN_IDS.map((columnId) => `<span class="specialization-column-position-dot" data-specialization-column-dot="${columnId}" data-current="${columnId === current}"></span>`).join('')}</span>
+  </div>`;
+}
+
+// A research counts as done for routing purposes once every node in it is complete.
+function isResearchCompleteForRoute(researchId) {
+  const progress = getResearchProgress(state, activeTroop, researchId);
+  return progress.completedNodes >= progress.totalNodes;
+}
+
+function getRouteNextResearchId() {
+  if (!activeRoute) return null;
+  return getNextRouteResearch(activeRoute, isResearchCompleteForRoute, activeTroop);
+}
+
 function renderResearchButton(researchId, columnId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   const progress = getResearchProgress(state, activeTroop, researchId);
   const percent = roundedPercent(progress.percent);
+  const routeStep = activeRoute ? getRouteStep(activeRoute, researchId, activeTroop) : 0;
+  const isRouteNext = activeRoute && getRouteNextResearchId() === researchId;
   const selected = selectedItem.kind === 'research' && selectedItem.researchId === researchId;
   const stateName = statusForProgress(progress);
   const displayName = researchDisplayName(research, activeTroop);
   const image = getSpecializationResearchImage(researchId, activeTroop);
   return `
-    <article class="specialization-research" data-specialization-research="${researchId}">
+    <article class="specialization-research" data-specialization-research="${researchId}" data-route-step="${routeStep || ''}" data-route-next="${isRouteNext ? 'true' : 'false'}">
+      ${routeStep ? `<span class="specialization-route-step" aria-hidden="true">${routeStep}</span>` : ''}
+      ${isRouteNext ? `<span class="specialization-route-next">${escapeHtml(t('routeNextUp'))}</span>` : ''}
       <button type="button" class="specialization-research-node" data-specialization-open-research="${researchId}" data-column-id="${columnId}" data-state="${stateName}" aria-pressed="${selected}" aria-label="${escapeAttribute(t('nodeStatusAria', { name: displayName, status: statusLabel(progress), current: progress.completedNodes, maximum: progress.totalNodes }))}">
         ${renderCircularProgress('specialization-node-progress-ring', percent)}
         <span class="specialization-node-icon" aria-hidden="true">${plannerSprite(image, 'specialization-research-image')}</span>
@@ -395,6 +448,7 @@ function renderGraph() {
           ${COLUMN_IDS.map((columnId) => renderColumn(columnId)).join('')}
         </div>
       </div>
+      ${renderColumnPositionPill()}
       <footer class="specialization-graph-footer">
         <div class="specialization-legend">
           <span>${escapeHtml(t('nodeStatus'))}:</span>
@@ -506,9 +560,19 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
   const percent = roundedPercent(progress.percent);
   const image = getSpecializationResearchImage(research.id, activeTroop);
   const recordedMedalsId = `${titleId}-recorded-medals`;
+  const recordedMedalsHelpId = `${titleId}-recorded-medals-help`;
+  const exactMedalDataId = `${titleId}-exact-medal-data`;
   const progressGroupId = `${titleId}-progress-label`;
   const pathNoticeId = `${titleId}-path-notice`;
   const requiresExactNodeSelection = nodeAccess.mode === 'partial-evidence';
+  // Easy mode trades the evidence-first gate for speed: medals can be entered before any
+  // node is picked. A completed research still reports its full cost and stays read-only.
+  const needsNodeBeforeMedals = progress.completedNodes === 0 && !easyMedalMode;
+  const medalInputDisabled = progress.isComplete || needsNodeBeforeMedals;
+  const medalDescriptionIds = [
+    ...(needsNodeBeforeMedals ? [recordedMedalsHelpId] : []),
+    exactMedalDataId,
+  ].join(' ');
   return `
     <div class="specialization-inspector-inner">
       <div class="specialization-inspector-header">
@@ -533,12 +597,21 @@ function renderResearchInspector(titleId = 'specialization-inspector-title') {
       ${renderMilestones(research, progress)}
       <section class="specialization-medal-field">
         <label for="${recordedMedalsId}">${escapeHtml(t('medalsRecorded'))}</label>
-        <input id="${recordedMedalsId}" data-specialization-recorded-medals data-research-id="${research.id}" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeAttribute(t('medalsUnknown'))}" ${progress.isComplete ? 'disabled' : ''} />
+        <input id="${recordedMedalsId}" data-specialization-recorded-medals data-research-id="${research.id}" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeAttribute(t('medalsUnknown'))}" aria-describedby="${medalDescriptionIds}" ${medalInputDisabled ? 'disabled' : ''} />
+        ${needsNodeBeforeMedals ? `<p class="specialization-inline-notice" id="${recordedMedalsHelpId}">${escapeHtml(t('selectNodeBeforeMedals'))}</p>` : ''}
+        ${
+          easyMedalMode && !progress.isComplete
+            ? `<div class="specialization-medal-quickfill" role="group" aria-label="${escapeAttribute(t('easyMedalsLabel'))}">
+                ${[25, 50, 75, 100].map((share) => `<button type="button" data-specialization-medal-fill="${share}" data-research-id="${research.id}">${share}%</button>`).join('')}
+                <button type="button" data-specialization-medal-fill="0" data-research-id="${research.id}">${escapeHtml(t('easyMedalsClear'))}</button>
+              </div>`
+            : ''
+        }
         <div class="specialization-cost-table">
           <div class="specialization-cost-row"><span>${escapeHtml(t('medalsRequired'))}</span><strong>${formatNumber(research.cost)}</strong></div>
           <div class="specialization-cost-row"><span>${escapeHtml(t('medalsRemaining'))}</span><strong>${remaining === null ? escapeHtml(t('medalsUnknown')) : formatNumber(remaining)}</strong></div>
         </div>
-        <p>${escapeHtml(t('exactMedalDataOnly'))}</p>
+        <p id="${exactMedalDataId}">${escapeHtml(t('exactMedalDataOnly'))}</p>
       </section>
       <div class="specialization-actions">
         <button type="button" class="specialization-action specialization-action--primary" data-specialization-complete-learning="${research.id}"${requiresExactNodeSelection ? ` aria-describedby="${pathNoticeId}" disabled` : ''}>${escapeHtml(t('completeLearning'))}</button>
@@ -608,13 +681,14 @@ function renderDialogs() {
 }
 
 function renderApp() {
+  cancelGraphScrollUpdate();
   const summary = getSpecializationSummary(state);
   root.innerHTML = `
     <div class="specialization-app">
       ${renderHeader()}
       <main class="specialization-main" id="specializationWorkspace">
         <section class="specialization-intro">
-          <div class="specialization-title-block"><h1>${escapeHtml(t('title'))} <span class="specialization-scope-chip">${escapeHtml(t('betaBadge'))}</span></h1><p>${escapeHtml(t('subtitle'))}</p><div class="specialization-header__meta"><span>${escapeHtml(t('sourceRevision'))}: ${escapeHtml(SPECIALIZATION_DATA_REVISION)}</span><span>·</span><span>${escapeHtml(t('canonicalEnglishBadge'))}</span></div></div>
+          <div class="specialization-title-block"><h1>${escapeHtml(t('title'))} <span class="specialization-scope-chip">${escapeHtml(t('betaBadge'))}</span></h1><p>${escapeHtml(t('subtitle'))}</p><div class="specialization-header__meta"><span>${escapeHtml(t('sourceRevision'))}: ${escapeHtml(SPECIALIZATION_DATA_REVISION)}</span><span class="specialization-meta-separator" aria-hidden="true">·</span><span>${escapeHtml(t('canonicalEnglishBadge'))}</span></div></div>
           ${renderSummary(summary)}
         </section>
         ${renderTowerTabs(summary)}
@@ -632,12 +706,78 @@ function renderApp() {
     </div>`;
 }
 
+function revealActiveTowerTab(tabList) {
+  const activeTab = tabList?.querySelector('[data-specialization-tower][aria-selected="true"]');
+  if (!activeTab) return;
+  const pageX = globalThis.scrollX;
+  const pageY = globalThis.scrollY;
+  activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+  globalThis.scrollTo({ left: pageX, top: pageY, behavior: 'auto' });
+}
+
+function leadingVisibleColumnId(graph) {
+  const columns = [...(graph?.querySelectorAll('[data-specialization-column]') || [])];
+  if (!columns.length) return 1;
+  const graphRect = graph.getBoundingClientRect();
+  const lastColumn = columns.at(-1);
+  const lastRect = lastColumn.getBoundingClientRect();
+  if (lastRect.left >= graphRect.left && lastRect.right <= graphRect.right + 1) {
+    return Number(lastColumn.dataset.specializationColumn);
+  }
+  let nearest = columns[0];
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const column of columns) {
+    const rect = column.getBoundingClientRect();
+    if (rect.right <= graphRect.left || rect.left >= graphRect.right) continue;
+    const distance = Math.abs(rect.left - graphRect.left);
+    if (distance < nearestDistance) {
+      nearest = column;
+      nearestDistance = distance;
+    }
+  }
+  return Number(nearest.dataset.specializationColumn) || 1;
+}
+
+function updateColumnPosition(graph) {
+  const position = root?.querySelector('[data-specialization-column-position]');
+  if (!graph || !position) return;
+  const columnId = leadingVisibleColumnId(graph);
+  if (currentGraphColumn === columnId) return;
+  currentGraphColumn = columnId;
+  position.dataset.currentColumn = String(columnId);
+  const label = position.querySelector('[data-specialization-column-position-label]');
+  if (label) label.textContent = columnPositionText(columnId);
+  for (const dot of position.querySelectorAll('[data-specialization-column-dot]')) {
+    const isCurrent = Number(dot.dataset.specializationColumnDot) === columnId;
+    dot.dataset.current = String(isCurrent);
+  }
+}
+
+function cancelGraphScrollUpdate() {
+  if (graphScrollFrame) globalThis.cancelAnimationFrame(graphScrollFrame);
+  graphScrollFrame = 0;
+  graphScrollTarget = null;
+}
+
+function restoreRenderedScroll({ graphScrollLeft = 0, tabScrollLeft = 0 } = {}) {
+  const graph = root.querySelector('[data-specialization-tower-graph]');
+  const tabList = root.querySelector('[data-specialization-tower-tabs]');
+  if (graph) graph.scrollLeft = graphScrollLeft;
+  if (tabList) {
+    tabList.scrollLeft = tabScrollLeft;
+    revealActiveTowerTab(tabList);
+  }
+  updateColumnPosition(graph);
+}
+
 function refresh({ preserveScroll = true } = {}) {
   const graph = root.querySelector('[data-specialization-tower-graph]');
-  const scrollLeft = preserveScroll ? graph?.scrollLeft || 0 : 0;
+  const tabList = root.querySelector('[data-specialization-tower-tabs]');
+  const graphScrollLeft = preserveScroll ? graph?.scrollLeft || 0 : 0;
+  const tabScrollLeft = tabList?.scrollLeft || 0;
+  if (!preserveScroll) currentGraphColumn = 1;
   renderApp();
-  const nextGraph = root.querySelector('[data-specialization-tower-graph]');
-  if (nextGraph) nextGraph.scrollLeft = scrollLeft;
+  restoreRenderedScroll({ graphScrollLeft, tabScrollLeft });
 }
 
 function updateInspectorOnly() {
@@ -679,10 +819,15 @@ function findMatchingControl(container, descriptor) {
   );
 }
 
-function remember(nextState, message = '', { reopenNodePath = false } = {}) {
+function remember(nextState, message = '', { reopenNodePath = false, restoreControl = null } = {}) {
   const currentMobileInspector = root.querySelector('[data-specialization-inspector]');
   const mobileInspectorWasOpen = Boolean(currentMobileInspector?.open);
-  const focusDescriptor = describeSpecializationControl(document.activeElement);
+  const mobileInspectorScrollTop = currentMobileInspector?.querySelector(
+    '[data-specialization-modal-inspector-content]'
+  )?.scrollTop;
+  const focusedControl =
+    restoreControl instanceof HTMLElement ? restoreControl : document.activeElement;
+  const focusDescriptor = describeSpecializationControl(focusedControl);
   const focusWasInDesktopInspector = Boolean(
     document.activeElement?.closest?.('[data-specialization-inspector-panel]')
   );
@@ -704,6 +849,12 @@ function remember(nextState, message = '', { reopenNodePath = false } = {}) {
           `[data-specialization-open-column-skill="${Number(selectedItem.columnId)}"]`
         );
       if (mobileInspector && !mobileInspector.open) mobileInspector.showModal();
+      const modalContent = mobileInspector?.querySelector(
+        '[data-specialization-modal-inspector-content]'
+      );
+      if (typeof mobileInspectorScrollTop === 'number' && modalContent) {
+        modalContent.scrollTop = mobileInspectorScrollTop;
+      }
       restoreTarget = mobileInspector?.querySelector('[data-specialization-open-node-path]');
     }
     openDialog('[data-specialization-node-path-dialog]', restoreTarget);
@@ -715,10 +866,19 @@ function remember(nextState, message = '', { reopenNodePath = false } = {}) {
         `[data-specialization-open-column-skill="${Number(selectedItem.columnId)}"]`
       );
     if (mobileInspector && !mobileInspector.open) mobileInspector.showModal();
+    const modalContent = mobileInspector?.querySelector(
+      '[data-specialization-modal-inspector-content]'
+    );
+    if (typeof mobileInspectorScrollTop === 'number' && modalContent) {
+      modalContent.scrollTop = mobileInspectorScrollTop;
+    }
     const focusTarget =
       findMatchingControl(mobileInspector, focusDescriptor) ||
       mobileInspector?.querySelector('[data-specialization-close-inspector]');
-    focusTarget?.focus();
+    focusTarget?.focus({ preventScroll: true });
+    if (typeof mobileInspectorScrollTop === 'number' && modalContent) {
+      modalContent.scrollTop = mobileInspectorScrollTop;
+    }
   } else if (focusWasInDesktopInspector) {
     findMatchingControl(
       root.querySelector('[data-specialization-inspector-panel]'),
@@ -792,11 +952,17 @@ function selectSkill(columnId, opener) {
   }
 }
 
+// Returns the next state without committing it, so callers can chain another edit
+// (easy medal fill sets node count and medals in one history entry).
+function setResearchCompletionState(baseState, troopId, researchId, targetCount) {
+  const ids = selectableNodeIds(SPECIALIZATION_RESEARCH[researchId]);
+  const count = Math.max(0, Math.min(ids.length, Number(targetCount) || 0));
+  return setResearchNodes(baseState, troopId, researchId, ids.slice(0, count));
+}
+
 function setResearchCompletion(researchId, targetCount) {
   const research = SPECIALIZATION_RESEARCH[researchId];
-  const ids = selectableNodeIds(research);
-  const count = Math.max(0, Math.min(ids.length, Number(targetCount) || 0));
-  const next = setResearchNodes(state, activeTroop, researchId, ids.slice(0, count));
+  const next = setResearchCompletionState(state, activeTroop, researchId, targetCount);
   const progress = getResearchProgress(next, activeTroop, researchId);
   remember(
     next,
@@ -985,6 +1151,13 @@ function closeDialog(dialog) {
 }
 
 function handleToolbarAction(action, trigger) {
+  if (action === 'easy-medals') {
+    easyMedalMode = !easyMedalMode;
+    safeStorageSet(EASY_MEDALS_KEY, easyMedalMode ? '1' : '');
+    refresh({ preserveScroll: true });
+    toast(easyMedalMode ? t('easyMedalsOn') : t('easyMedalsOff'));
+    return;
+  }
   if (action === 'undo') {
     if (!undoStack.length) return toast(t('undoUnavailable'));
     redoStack.push(state);
@@ -1015,6 +1188,7 @@ function handleClick(event) {
   const tower = target.dataset.specializationTower;
   if (tower) {
     activeTroop = tower;
+    currentGraphColumn = 1;
     safeStorageSet(ACTIVE_TOWER_KEY, tower);
     selectedItem = {
       kind: 'research',
@@ -1023,6 +1197,31 @@ function handleClick(event) {
     };
     refresh({ preserveScroll: false });
     root.querySelector(`[data-specialization-tower="${tower}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  if (target.dataset.specializationMedalFill) {
+    // The model drops medalsSpent unless nodes are selected, so a quick fill sets both:
+    // "I am roughly N% through this" means N% of the nodes and N% of the medals.
+    const researchId = target.dataset.researchId;
+    const share = Number(target.dataset.specializationMedalFill);
+    const research = SPECIALIZATION_RESEARCH[researchId];
+    const total = selectableNodeIds(research).length;
+    const nodeCount = share === 0 ? 0 : Math.ceil((share / 100) * total);
+    let nextState = setResearchCompletionState(state, activeTroop, researchId, nodeCount);
+    const cost = Number(research?.cost) || 0;
+    const medals = share === 0 ? null : Math.round((cost * share) / 100);
+    try {
+      nextState = setResearchMedalsSpent(nextState, activeTroop, researchId, medals);
+    } catch {
+      // A rejected medal value still leaves the node selection applied.
+    }
+    remember(
+      nextState,
+      t('learningUpdated', {
+        name: researchDisplayName(research, activeTroop),
+        level: share,
+      })
+    );
     return;
   }
   if (target.dataset.specializationOpenResearch) {
@@ -1120,6 +1319,12 @@ function handleClick(event) {
 
 function handleChange(event) {
   const target = event.target;
+  if (target.matches('[data-specialization-route-select]')) {
+    activeRoute = SPECIALIZATION_ROUTE_IDS.includes(target.value) ? target.value : '';
+    safeStorageSet(ROUTE_KEY, activeRoute);
+    refresh({ preserveScroll: true });
+    return;
+  }
   if (target.matches('[data-specialization-language-select]')) {
     const nextLocale = resolveSpecializationTowersV2Locale(target.value);
     safeStorageSet(LANGUAGE_KEY, nextLocale);
@@ -1137,7 +1342,8 @@ function handleChange(event) {
         t('learningUpdated', {
           name: researchDisplayName(SPECIALIZATION_RESEARCH[researchId], activeTroop),
           level: roundedPercent(getResearchProgress(state, activeTroop, researchId).percent),
-        })
+        }),
+        { restoreControl: target }
       );
     } catch {
       updateInspectorOnly();
@@ -1161,15 +1367,6 @@ async function handleImport(event) {
 }
 
 function handleKeydown(event) {
-  if (event.key === 'Escape') {
-    const openDialogElement = [...root.querySelectorAll('dialog[open]')].at(-1);
-    if (!openDialogElement) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (openDialogElement?.hasAttribute('data-specialization-inspector')) closeInspectorDialog();
-    else if (openDialogElement) closeDialog(openDialogElement);
-    return;
-  }
   const tab = event.target.closest('[data-specialization-tower]');
   if (!tab) return;
   const tabs = [...root.querySelectorAll('[data-specialization-tower]')];
@@ -1186,17 +1383,36 @@ function handleKeydown(event) {
   root.querySelector(`[data-specialization-tower="${nextTroop}"]`)?.focus({ preventScroll: true });
 }
 
+function handleScroll(event) {
+  const graph = event.target;
+  if (!(graph instanceof HTMLElement) || !graph.matches('[data-specialization-tower-graph]'))
+    return;
+  graphScrollTarget = graph;
+  if (graphScrollFrame) return;
+  graphScrollFrame = globalThis.requestAnimationFrame(() => {
+    const latestGraph = graphScrollTarget;
+    graphScrollFrame = 0;
+    graphScrollTarget = null;
+    if (latestGraph === root?.querySelector('[data-specialization-tower-graph]')) {
+      updateColumnPosition(latestGraph);
+    }
+  });
+}
+
+function handleDialogCancel(event) {
+  if (!(event.target instanceof HTMLDialogElement)) return;
+  event.preventDefault();
+  if (event.target.hasAttribute('data-specialization-inspector')) closeInspectorDialog();
+  else closeDialog(event.target);
+}
+
 function bindEvents() {
   root.addEventListener('click', handleClick);
   root.addEventListener('change', handleChange);
   root.addEventListener('change', (event) => void handleImport(event));
   root.addEventListener('keydown', handleKeydown);
-  root.addEventListener('cancel', (event) => {
-    if (!(event.target instanceof HTMLDialogElement)) return;
-    event.preventDefault();
-    if (event.target.hasAttribute('data-specialization-inspector')) closeInspectorDialog();
-    else closeDialog(event.target);
-  });
+  root.addEventListener('scroll', handleScroll, true);
+  root.addEventListener('cancel', handleDialogCancel, true);
 }
 
 async function initialize() {
@@ -1208,12 +1424,13 @@ async function initialize() {
   applyLocaleToDocument(locale);
   applyTheme();
   renderApp();
+  restoreRenderedScroll();
   bindEvents();
   unbindLanguageChange = bindSpecializationTowersV2LanguageChange(({ locale: nextLocale }) => {
     const focusDescriptor = describeSpecializationControl(document.activeElement);
     locale = nextLocale;
     applyLocaleToDocument(nextLocale);
-    renderApp();
+    refresh();
     findMatchingControl(root, focusDescriptor)?.focus({ preventScroll: true });
   }, globalThis);
 }
@@ -1224,8 +1441,12 @@ export function mountSpecializationTowers(mount) {
   }
   root = mount;
   state = loadSpecializationState();
-  const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'cavalry');
-  activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'cavalry';
+  const storedTower = safeStorageGet(ACTIVE_TOWER_KEY, 'archer');
+  activeTroop = UI_TROOPS.includes(storedTower) ? storedTower : 'archer';
+  const storedRoute = safeStorageGet(ROUTE_KEY, '');
+  activeRoute = SPECIALIZATION_ROUTE_IDS.includes(storedRoute) ? storedRoute : '';
+  easyMedalMode = safeStorageGet(EASY_MEDALS_KEY, '') === '1';
+  currentGraphColumn = 1;
   selectedItem = {
     kind: 'research',
     researchId: SPECIALIZATION_COLUMNS[1].researches[0],
@@ -1237,6 +1458,8 @@ export function mountSpecializationTowers(mount) {
   });
   return () => {
     unbindLanguageChange();
+    cancelGraphScrollUpdate();
+    root?.removeEventListener('cancel', handleDialogCancel, true);
     root?.replaceChildren();
     root = null;
   };

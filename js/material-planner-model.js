@@ -268,6 +268,37 @@ export function focusMaterialSet(plan, setId) {
   return syncFocusedCompletion(next);
 }
 
+export function toggleSelectedMaterialPieceCompletion(plan) {
+  const next = normalizeMaterialPlan(plan);
+  const selectedSlot = next.selectedSlot;
+  const wasComplete = next.completed[selectedSlot];
+  next.completed[selectedSlot] = !wasComplete;
+
+  if (wasComplete) return next;
+
+  const selectedIndex = DM_SLOT_IDS.indexOf(selectedSlot);
+  const nextSlot = DM_SLOT_IDS.slice(selectedIndex + 1).find(
+    (slot) => next.targets[slot] && !next.completed[slot]
+  );
+  if (nextSlot) {
+    next.selectedSlot = nextSlot;
+    return next;
+  }
+
+  for (let setId = next.focusedSet + 1; setId <= next.targetSets; setId += 1) {
+    const set = next.sets[setId - 1];
+    const firstUnfinishedSlot = DM_SLOT_IDS.find(
+      (slot) => next.targets[slot] && !set.completed[slot]
+    );
+    if (!firstUnfinishedSlot) continue;
+    next.focusedSet = setId;
+    next.selectedSlot = firstUnfinishedSlot;
+    return syncFocusedCompletion(next);
+  }
+
+  return next;
+}
+
 export function applyMaterialPreset(plan, presetId) {
   const preset = DM_PRESETS[presetId];
   if (!preset) return normalizeMaterialPlan(plan);
@@ -363,6 +394,36 @@ export function calculateMaterialPlan(inputPlan) {
     ? { setId: nextSetSummary.setId, slot: nextSetSummary.remainingSlots[0] }
     : null;
 
+  const ownedBySlot = Object.fromEntries(
+    targetSlots.map((slot) => [slot, Math.min(plan.targetSets, plan.ownedPieces[slot])])
+  );
+  const completeFullSetCount = targetSlots.length
+    ? Math.min(...targetSlots.map((slot) => ownedBySlot[slot]))
+    : 0;
+  const remainingFullSetCount = Math.max(0, plan.targetSets - completeFullSetCount);
+  const remainingBySlot = Object.fromEntries(
+    targetSlots.map((slot) => [slot, Math.max(0, plan.targetSets - ownedBySlot[slot])])
+  );
+  const remainingPieceCountToTarget = Object.values(remainingBySlot).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  const resourceNeedToTarget = multiplyResources(route.perPiece, remainingPieceCountToTarget);
+  const shortfallAfterStockpile = Object.fromEntries(
+    RESOURCE_KEYS.map((key) => [
+      key,
+      Math.max(0, resourceNeedToTarget[key] - plan.ownedResources[key]),
+    ])
+  );
+  const inventorySummary = {
+    ownedBySlot,
+    completeFullSetCount,
+    remainingFullSetCount,
+    remainingBySlot,
+    remainingPieceCountToTarget,
+    resourceNeedToTarget,
+    shortfallAfterStockpile,
+  };
   return {
     plan,
     route,
@@ -397,6 +458,7 @@ export function calculateMaterialPlan(inputPlan) {
     focusedSetProgress,
     nextSlot,
     nextPiece,
+    inventorySummary,
     allComplete: totalTargetPieces > 0 && totalRemainingPieces === 0,
   };
 }

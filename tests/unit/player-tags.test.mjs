@@ -27,6 +27,7 @@ test('special player tags identify R5 and R4 management names', () => {
     'BiG BOiiE',
     'Bil',
     'BoneSmoker 1097',
+    'Loony',
     'Dr Thunder (VTS R4)',
     'Jasper',
     'Juli',
@@ -40,7 +41,6 @@ test('special player tags identify R5 and R4 management names', () => {
     'Tazz',
     'Uzumaki',
     'Victoria ~Kika~',
-    'Lady Zubbs',
     'Dr Thunder',
     'Kika',
     'ANGEL',
@@ -52,6 +52,9 @@ test('special player tags identify R5 and R4 management names', () => {
   ]) {
     assert.equal(getSpecialPlayerTag(player)?.label, 'R4');
   }
+
+  assert.equal(getSpecialPlayerTag('Zubbs'), null);
+  assert.equal(getSpecialPlayerTag('Lady Zubbs'), null);
 });
 
 test('special player tags use canonical player keys for known variants', () => {
@@ -60,7 +63,7 @@ test('special player tags use canonical player keys for known variants', () => {
     getSpecialPlayerTag({ playerName: 'Angel Banner', playerKey: 'angel' })?.label,
     'R4'
   );
-  assert.equal(getSpecialPlayerTag({ playerName: 'Zubbs', playerKey: 'zubbs' })?.label, 'R4');
+  assert.equal(getSpecialPlayerTag({ playerName: 'Loony', playerKey: 'loony' })?.label, 'R4');
   assert.equal(
     getSpecialPlayerTag({ playerName: 'Vicked Russian', playerKey: 'wickedrussian' })?.label,
     'R4'

@@ -17,6 +17,7 @@ const htmlFiles = [
   'admin.html',
   'arcade.html',
   'eden-x1.html',
+  'eden-x2.html',
   ...fs
     .readdirSync(path.join(rootDir, 'tabs'))
     .filter((name) => name.endsWith('.html'))
@@ -244,6 +245,7 @@ const I18N_ATTRS = [
   'data-i18n-aria',
   'data-i18n-label',
   'data-i18n-alt',
+  'data-i18n-badge',
 ];
 
 const referencedKeys = new Map();
@@ -290,6 +292,9 @@ for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
   // Specialization Towers owns a strict, independently audited lazy locale pack.
   // Its keys must not be mistaken for the main application catalog.
   if (relPath.startsWith('js/specialization-towers-v2-')) continue;
+  // Artifact follows the same domain-pack contract; artifact-i18n-ui.test.mjs
+  // enforces all thirteen locales and placeholder parity independently.
+  if (relPath === 'js/app-artifact.js') continue;
   if (STANDALONE_RUNTIME_I18N_MODULE_RE.test(relPath)) continue;
   const source = fs.readFileSync(absolutePath, 'utf8');
   let match;
@@ -366,6 +371,7 @@ const RESEARCH_MAX_ALL_EXPECTATIONS = Object.freeze({
   es: 'Completar todo',
   fr: 'Tout terminer',
   id: 'Maksimalkan semua',
+  it: 'Completa tutto',
   kr: '전체 만렙',
   pt: 'Completar tudo',
   ru: 'Прокачать всё',

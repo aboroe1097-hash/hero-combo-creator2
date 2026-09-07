@@ -140,7 +140,11 @@ test('standalone lobby and footer have explicit light surfaces', () => {
   );
   assert.match(
     dashboard,
-    /\[data-theme='light'\] #ocrDashboardRoot \.dash-login-title\s*\{[\s\S]*?color: #10243b/
+    /:root\[data-theme='light'\] #ocrDashboardRoot\s*\{[\s\S]*?--ff-text: #0f172a;[\s\S]*?--ff-text-dim: #64748b;/
+  );
+  assert.match(
+    dashboard,
+    /:root:not\(\[data-theme='light'\]\) #ocrDashboardRoot\s*\{[\s\S]*?--ff-text: #eef4ff;/
   );
   assert.match(eden, /id="edenZoomOut"[^>]*data-i18n-aria="edenZoomOutTitle"/);
   assert.match(eden, /id="edenZoomIn"[^>]*data-i18n-aria="edenZoomInTitle"/);
@@ -151,14 +155,19 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
 
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
-  assert.match(sizeCheck, /1310\.6 KiB/);
-  assert.match(sizeCheck, /totalJsBytes: 8176 \* 1024/);
-  assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1312 \* 1024/);
-  assert.match(sizeCheck, /'arcade\.html': \{ desktop: 432 \* 1024, mobile: 525 \* 1024 \}/);
+  assert.match(sizeCheck, /1312\.1 KiB/);
+  assert.match(sizeCheck, /totalJsBytes: 10084 \* 1024/);
+  // 430 since 16.0.3: the Specialization summary grid, the season select-all
+  // control, and the X10/X12 bracket cards measure 429.5 KiB in app.css.
+  assert.match(sizeCheck, /entryCssBytes: 430 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1635 \* 1024/);
+  assert.match(sizeCheck, /totalDeployBytes: 32100 \* 1024/);
+  assert.match(sizeCheck, /deployFileCount: 704/);
+  assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
+  assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
     sizeCheck,
-    /'battle-simulator\.html': \{ desktop: 52 \* 1024, mobile: 52 \* 1024 \}/
+    /'battle-simulator\.html': \{ desktop: 59 \* 1024, mobile: 59 \* 1024 \}/
   );
   assert.match(
     sizeCheck,

@@ -185,6 +185,23 @@ const COPY = Object.freeze({
     publicDashboardLabel: 'Eden X1 공개 활약 대시보드',
     themeToggleLabel: '라이트 또는 다크 테마로 전환',
   }),
+  it: Object.freeze({
+    documentTitle: 'Ricompense e contributi Eden X1 | Hero Combo Creator',
+    metaDescription:
+      'Consulta ricompense Eden X1, classifiche contributo, voto dei giocatori di squadra e prestazioni VTS 1097.',
+    headerLabel: 'Dashboard ricompense e contributi Eden X1',
+    mainLabel: 'Ricompense stagione Eden X1',
+    seasonPanelLabel: 'Ricompense e classifiche stagione Eden X1',
+    seasonSummaryLabel: 'Riepilogo stagione Eden X1',
+    topContributorsLabel: 'Primi tre contributori',
+    seasonProgressionLabel: 'Progressione stagione Eden X1',
+    sectionNavigationLabel: 'Navigazione sezioni Eden X1',
+    rewardFlowLabel: 'Piano distribuzione ricompense Top 20',
+    teamVotingLabel: 'Voto giocatori di squadra',
+    voteGuidanceLabel: 'Guida voto Eden X1',
+    publicDashboardLabel: 'Dashboard pubblica prestazioni Eden X1',
+    themeToggleLabel: 'Cambia tema chiaro o scuro',
+  }),
 });
 
 function normalizeLocale(locale) {

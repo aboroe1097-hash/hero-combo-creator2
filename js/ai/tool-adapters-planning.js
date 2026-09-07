@@ -49,6 +49,19 @@ export async function getMaterialPlanSummaryAdapter(rawArguments, context = {}) 
   const summary = calculateMaterialPlan(plan);
   return result(
     {
+      campaign: {
+        basis:
+          'Saved set-grid completion; incompleteSetCount is not a count of whole sets still needed.',
+        incompleteSetCount: summary.remainingSetCount,
+        remainingPieceCount: summary.totalRemainingPieces,
+        resourceNeed: summary.needed,
+        resourceShortfall: summary.shortfall,
+      },
+      inventory: {
+        basis:
+          'Saved owned-piece counts by slot, clamped independently to the target set count.',
+        ...summary.inventorySummary,
+      },
       route: plan.route,
       preset: plan.preset,
       focusedSet: plan.focusedSet,

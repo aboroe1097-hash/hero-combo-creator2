@@ -20,7 +20,7 @@ import {
 } from '../../js/i18n/hero-atlas/index.js';
 import { HERO_ATLAS_REQUIRED_STRINGS } from '../../js/i18n/hero-atlas/content-contract.js';
 
-const locales = ['ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const locales = ['ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
 const canonicalHeroesSnapshot = structuredClone(heroesExtendedData);
 const canonicalSkinsSnapshot = structuredClone(heroSkins);
 const canonicalHiddenPowersSnapshot = structuredClone(heroHiddenPowers);
@@ -29,7 +29,7 @@ const canonicalSkillCount = Object.values(heroesExtendedData).reduce(
   0
 );
 
-test('Hero Atlas UI catalog is complete for all eleven locales', () => {
+test('Hero Atlas UI catalog is complete for all twelve locales', () => {
   const audit = auditHeroAtlasUi();
   assert.equal(audit.complete, true, audit.errors.join('\n'));
   assert.equal(heroUi('bestSynergies', {}, 'ar'), 'أفضل التوليفات');

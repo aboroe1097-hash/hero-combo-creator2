@@ -93,5 +93,10 @@ export default {
     guideSteps: '章节步骤',
     allSectors: '完整地图',
     genericSector: '{code} 区域',
+    subTabMap: '伊甸地图',
+    subTabLoyalty: '伊甸忠诚',
+    subTabBounty: '皇家赏金 Eden X2',
+    subTabSeason: '当前赛季',
+    subTabPrevious: '往期赛季',
   },
 };

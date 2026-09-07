@@ -94,5 +94,10 @@ export default {
     guideSteps: 'Шаги раздела',
     allSectors: 'Вся карта',
     genericSector: 'Сектор {code}',
+    subTabMap: 'Карта Эдема',
+    subTabLoyalty: 'Верность Эдема',
+    subTabBounty: 'Королевская награда Eden X2',
+    subTabSeason: 'Текущий сезон',
+    subTabPrevious: 'Прошлые сезоны',
   },
 };

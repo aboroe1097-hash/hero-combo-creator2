@@ -1,4 +1,6 @@
 // js/heroes-data.js
+export const HERO_PORTRAIT_FALLBACK = 'images/heroes/portrait-unavailable.svg';
+
 export const allHeroesData = [
   { name: "Jeanne d'Arc", season: 'S0', Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png' },
   { name: "Isabella I", season: 'S0', Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png' },
@@ -57,13 +59,13 @@ export const allHeroesData = [
   { name: "ELK", season: 'X1', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
   { name: "Cicero", season: 'X1', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
   { name: "The Avalanche", season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/vvZqffxw/Avalanche.png' },
-  { name: "Army Breaker", season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
+  { name: "Army Breaker", season: 'X1', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
   { name: "Dach Tengri", season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
   { name: "Tarantula", season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/DD2SMtwW/image-2026-06-09-131719049.png' },
   { name: "Lancelot", season: 'X2', Type:'Cavalry', State:'Paid', imageUrl: 'https://i.ibb.co/rKLkTLgN/image-2026-06-09-132226928.png' },
   { name: "Alexander", season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/2LhYhkd/image-2026-06-09-132117177.png' },
   { name: "Lawman", season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/Y7rCgh5L/image-2026-06-09-132925633.png' },
-  { name: "Defender", season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/bj79KD5X/image-2026-06-09-132942387.png' },
+  { name: "Defender", season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/bj79KD5X/image-2026-06-09-132942387.png' },
   { name: "Spectral Reaper", season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
   { name: "Valkyrie", season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' },
   { name: "Bjorn", season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/bjorn.avif?v=20260620_11' },
@@ -77,5 +79,24 @@ export const allHeroesData = [
   { name: "Rainforest Ranger", season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/rainforest-ranger.avif?v=20260620_11' },
   { name: "Fortuneteller", season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/fortuneteller.avif?v=20260620_11' },
   { name: "Ragnar", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
-  { name: "Cyrus", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' }
+  { name: "Cyrus", season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' },
+  // X10 — intermediate bracket, no research, two heroes drawn from the X12 list.
+  { name: "Healer", season: 'X10', Type:'Footmen', State:'Free', imageUrl: 'images/heroes/x12/healer.avif?v=20260903_01' },
+  { name: "Hellfire", season: 'X10', Type:'All', State:'Free', imageUrl: 'images/heroes/x12/hellfire.avif?v=20260903_01' },
+  // X12 — full seasonal recruitment wave.
+  { name: "Belisarius", season: 'X12', Type:'Archers', State:'Free', imageUrl: 'images/heroes/x12/belisarius.avif?v=20260903_01' },
+  { name: "Pepin", season: 'X12', Type:'Footmen', State:'Free', imageUrl: 'images/heroes/x12/pepin.avif?v=20260903_01' },
+  { name: "El Cid", season: 'X12', Type:'Cavalry', State:'Free', imageUrl: 'images/heroes/x12/el-cid.avif?v=20260903_01' },
+  { name: "Arslan", season: 'X12', Type:'Footmen', State:'Free', imageUrl: 'images/heroes/x12/arslan.avif?v=20260903_01' },
+  { name: "Farah", season: 'X12', Type:'Cavalry', State:'Free', imageUrl: 'images/heroes/x12/farah.avif?v=20260903_01' },
+  { name: "Poison Master", season: 'X12', Type:'Archers', State:'Free', imageUrl: 'images/heroes/x12/poison-master.avif?v=20260903_01' },
+  { name: "Lilith", season: 'X12', Type:'Archers', State:'Free', imageUrl: 'images/heroes/x12/lilith.avif?v=20260903_01' },
+  { name: "Al-Hawra", season: 'X12', Type:'Archers', State:'Paid', imageUrl: 'images/heroes/x12/al-hawra.avif?v=20260903_01' },
+  { name: "Achilles", season: 'X12', Type:'Footmen', State:'Paid', imageUrl: 'images/heroes/x12/achilles.avif?v=20260903_01' }
 ];
+
+// Direct roster consumers and shared helpers must have the same safe local image.
+// This is explicitly a placeholder, not artwork attributed to an unverified hero.
+allHeroesData.forEach((hero) => {
+  if (!hero.imageUrl) hero.imageUrl = HERO_PORTRAIT_FALLBACK;
+});

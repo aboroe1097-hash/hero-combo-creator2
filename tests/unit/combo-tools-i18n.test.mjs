@@ -12,7 +12,7 @@ import {
 } from '../../js/i18n/combo-tools/index.js';
 import { getCountersForCombo, validateCounterDatabase } from '../../js/counter-db.js';
 
-const LOCALES = ['ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const LOCALES = ['ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
 
 test('combo-tool packs cover every stable display ID with matching placeholders', () => {
   assert.equal(COMBO_TOOL_MESSAGE_IDS.length, 76);

@@ -94,5 +94,10 @@ export default {
     guideSteps: 'Langkah di bagian',
     allSectors: 'Peta penuh',
     genericSector: 'Sektor {code}',
+    subTabMap: 'Peta Eden',
+    subTabLoyalty: 'Loyalitas Eden',
+    subTabBounty: 'Hadiah Kerajaan Eden X2',
+    subTabSeason: 'Musim saat ini',
+    subTabPrevious: 'Musim sebelumnya',
   },
 };

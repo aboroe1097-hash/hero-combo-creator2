@@ -2,8 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { filterAllowedToolGroupsForAuth, handleRequest } from '../../workers/ai-handler.js';
-import { ProviderStreamAssembler, buildGeminiRequest } from '../../workers/ai/gemini.js';
+import { ProviderStreamAssembler, buildGeminiRequest, pickModel } from '../../workers/ai/gemini.js';
+import {
+  ProviderStreamAssembler as DeepseekStreamAssembler,
+  buildDeepseekRequest,
+  pickModel as pickDeepseekModel,
+} from '../../workers/ai/deepseek.js';
 import { validateToolArguments } from '../../workers/ai/tools.js';
+import { LIMITS } from '../../workers/ai/constants.js';
 import { buildManagementVotesSheetUrl } from '../../workers/ai/management-votes.js';
 import {
   FIREBASE_APPCHECK_JWKS_URL,
@@ -45,13 +51,18 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /do not confuse\nAbo with the current user/);
   assert.match(request.system_instruction, /helmet is visibly separate from your scales/);
   assert.match(request.system_instruction, /Never claim that you do not\nwear a helmet/);
-  assert.match(
-    request.system_instruction,
-    /Never\npromise to stop mentioning or wearing the helmet/
-  );
-  assert.match(request.system_instruction, /first help request of a conversation/);
-  assert.match(request.system_instruction, /never reuse a helmet beat already used/);
-  assert.match(request.system_instruction, /skip the beat entirely on follow-ups/);
+  assert.match(request.system_instruction, /Velo b0\.4/);
+  assert.match(request.system_instruction, /CHARACTER LORE \(REACTIVE ONLY\)/);
+  assert.match(request.system_instruction, /Mention\nthe helmet only when the user brings it up/);
+  assert.doesNotMatch(request.system_instruction, /HELMET HELP RITUAL/);
+  assert.doesNotMatch(request.system_instruction, /first help request of a conversation/);
+  assert.match(request.system_instruction, /Lead with the answer/);
+  assert.match(request.system_instruction, /Do not append a routine menu/);
+  assert.match(request.system_instruction, /compact markdown table with short cell text/);
+  assert.match(request.system_instruction, /get_arcade_leaderboard/);
+  assert.match(request.system_instruction, /get_all_star_boh_mechanics/);
+  assert.match(request.system_instruction, /get_vts_score_mechanics/);
+  assert.match(request.system_instruction, /inventory\.remainingPieceCountToTarget/);
   assert.match(request.system_instruction, /Use get_toolkit_map/);
   assert.match(request.system_instruction, /Use get_whats_new/);
   assert.match(request.system_instruction, /Use get_specialization_context/);
@@ -76,12 +87,25 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /Use calculate_eden_upgrade_materials/);
   assert.match(request.system_instruction, /call calculate_dm_materials/);
   assert.match(request.system_instruction, /never claim that\nyou cannot calculate them/);
+  assert.match(request.system_instruction, /campaign\.incompleteSetCount/);
+  assert.match(request.system_instruction, /inventory\.shortfallAfterStockpile/);
   assert.match(request.system_instruction, /server-gated by a verified Firebase admin claim/);
   assert.match(request.system_instruction, /CURRENT UI LANGUAGE supplied below is authoritative/);
+  assert.match(request.system_instruction, /REASONING DEPTH/);
+  assert.match(
+    request.system_instruction,
+    /Reason from mechanics and evidence rather than reputation/
+  );
   assert.match(
     request.system_instruction,
     /tool fields, canonical labels, or evidence are in\nEnglish/
   );
+});
+
+test('reasoning turns retain a verification round and enough shared output budget', () => {
+  assert.equal(LIMITS.toolRounds, 3);
+  assert.equal(LIMITS.maxOutputTokens, 8_192);
+  assert.equal(LIMITS.toolCalls, 8);
 });
 
 test('Velo disambiguates German Dragon Master set and piece requests', () => {
@@ -198,6 +222,80 @@ test('Gemini tool contract supports Mary formations and public VTS player lookup
       limit: 10,
     }),
     true
+  );
+});
+
+test('Velo b0.4 exposes the new public tools and validates their contracts', () => {
+  const request = buildGeminiRequest({
+    model: 'gemini-3.5-flash',
+    providerInput: [{ type: 'user_input', content: [{ type: 'text', text: 'Arcade?' }] }],
+    allowedToolGroups: ['static'],
+    locale: 'en',
+  });
+  const names = request.tools.map((tool) => tool.name);
+  assert.ok(names.includes('get_arcade_leaderboard'));
+  assert.ok(names.includes('get_all_star_boh_mechanics'));
+  assert.ok(names.includes('get_vts_score_mechanics'));
+
+  const arcade = request.tools.find((tool) => tool.name === 'get_arcade_leaderboard');
+  assert.deepEqual(arcade.parameters.properties.kind.enum, ['overall', 'per_game']);
+  assert.deepEqual(arcade.parameters.required, ['kind']);
+
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', topN: 10 }),
+    true
+  );
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', {
+      kind: 'per_game',
+      gameId: 'merge_rush',
+      topN: 25,
+    }),
+    true
+  );
+  assert.equal(validateToolArguments('get_arcade_leaderboard', { kind: 'per_game' }), false);
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', gameId: 'merge_rush' }),
+    false
+  );
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', topN: 0 }),
+    false
+  );
+  assert.equal(
+    validateToolArguments('get_arcade_leaderboard', { kind: 'overall', gameId: 'unknown_game' }),
+    false
+  );
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', { kind: 'overview' }), true);
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', { kind: 'scoring' }), true);
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', { kind: 'roster' }), false);
+  assert.equal(validateToolArguments('get_all_star_boh_mechanics', {}), false);
+  assert.equal(validateToolArguments('get_vts_score_mechanics', {}), true);
+  assert.equal(validateToolArguments('get_vts_score_mechanics', { player: 'Abo' }), false);
+});
+
+test('model routing picks the fast model for simple turns and the primary otherwise', () => {
+  const env = { AI_MODEL: 'gemini-3.5-flash', AI_MODEL_FAST: 'gemini-3.1-flash-lite' };
+  const simple = [{ type: 'user_input', content: [{ type: 'text', text: 'Who is Abo?' }] }];
+  assert.equal(pickModel(env, simple), 'gemini-3.1-flash-lite');
+  const longPrompt = [
+    {
+      type: 'user_input',
+      content: [{ type: 'text', text: 'x'.repeat(300) }],
+    },
+  ];
+  assert.equal(pickModel(env, longPrompt), 'gemini-3.5-flash');
+  const withHistory = [
+    { type: 'user_input', content: [{ type: 'text', text: 'Hi' }] },
+    { type: 'model_output', content: [{ type: 'text', text: 'Hello!' }] },
+    { type: 'user_input', content: [{ type: 'text', text: 'Who is Abo?' }] },
+  ];
+  assert.equal(pickModel(env, withHistory), 'gemini-3.5-flash');
+  assert.equal(pickModel(env, simple, 'generator'), 'gemini-3.5-flash');
+  assert.equal(pickModel({ AI_MODEL: 'gemini-3.5-flash' }, simple), 'gemini-3.5-flash');
+  assert.equal(
+    pickModel({ AI_MODEL: 'gemini-3.5-flash', AI_MODEL_FAST: 'nope' }, simple),
+    'gemini-3.5-flash'
   );
 });
 
@@ -610,6 +708,515 @@ test('authenticated initial turn enforces Firebase tokens and streams normalized
     assert.match(toolStream, /event: state/u);
     assert.match(toolStream, /"signature":"live-signed-function-call"/u);
     assert.match(toolStream, /event: done\ndata: \{"status":"requires_action"\}/u);
+  } finally {
+    globalThis.fetch = originalFetch;
+    clearFirebaseJwksCacheForTests();
+  }
+});
+
+test('DeepSeek request translation maps roles, tools, and reasoner temperature correctly', () => {
+  const request = buildDeepseekRequest({
+    model: 'deepseek-chat',
+    providerInput: [
+      { type: 'user_input', content: [{ type: 'text', text: 'Hello' }] },
+      { type: 'model_output', content: [{ type: 'text', text: 'Hi' }] },
+      {
+        type: 'function_call',
+        id: 'call_1',
+        name: 'get_hero_details',
+        arguments: { names: ['Theodora'] },
+      },
+      {
+        type: 'function_result',
+        call_id: 'call_1',
+        name: 'get_hero_details',
+        is_error: false,
+        result: [{ type: 'text', text: '{"ok":true,"data":{}}' }],
+      },
+    ],
+    allowedToolGroups: ['static'],
+    locale: 'en',
+    activeTab: 'generator',
+  });
+
+  assert.equal(request.model, 'deepseek-chat');
+  assert.equal(request.stream, true);
+  assert.equal(request.temperature, 0.25);
+  assert.equal(request.messages[0].role, 'system');
+  assert.match(request.messages[0].content, /You are Velo/);
+  assert.match(request.messages[0].content, /ACTIVE APP TAB\ngenerator/);
+  assert.deepEqual(request.messages[1], { role: 'user', content: 'Hello' });
+  assert.deepEqual(request.messages[2], { role: 'assistant', content: 'Hi' });
+  assert.deepEqual(request.messages[3], {
+    role: 'assistant',
+    content: null,
+    tool_calls: [
+      {
+        id: 'call_1',
+        type: 'function',
+        function: { name: 'get_hero_details', arguments: '{"names":["Theodora"]}' },
+      },
+    ],
+  });
+  assert.deepEqual(request.messages[4], {
+    role: 'tool',
+    tool_call_id: 'call_1',
+    content: '{"ok":true,"data":{}}',
+  });
+
+  assert.ok(request.tools.length > 0);
+  assert.equal(request.tools[0].type, 'function');
+  assert.ok(typeof request.tools[0].function.name === 'string');
+
+  const reasonerRequest = buildDeepseekRequest({
+    model: 'deepseek-reasoner',
+    providerInput: [{ type: 'user_input', content: [{ type: 'text', text: 'Think' }] }],
+    allowedToolGroups: ['static'],
+    locale: 'en',
+  });
+  assert.equal(reasonerRequest.model, 'deepseek-reasoner');
+  assert.equal('temperature' in reasonerRequest, false);
+});
+
+test('DeepSeek model routing picks fast model for simple turns', () => {
+  const env = { AI_MODEL: 'deepseek-chat', AI_MODEL_FAST: 'deepseek-chat' };
+  const simple = [{ type: 'user_input', content: [{ type: 'text', text: 'Who is Abo?' }] }];
+  assert.equal(pickDeepseekModel(env, simple), 'deepseek-chat');
+  assert.throws(
+    () => pickDeepseekModel({ AI_MODEL: 'invalid-model' }, simple),
+    /The AI model is not configured/
+  );
+});
+
+test('DeepSeek stream assembler accumulates fragmented tool call arguments across SSE deltas', () => {
+  const assembler = new DeepseekStreamAssembler({ allowedToolGroups: ['static'] });
+
+  const delta1 = assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          role: 'assistant',
+          content: 'Checking',
+        },
+      },
+    ],
+  });
+  assert.deepEqual(delta1, { text: 'Checking' });
+
+  const delta2 = assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          content: ' leaderboard...',
+        },
+      },
+    ],
+  });
+  assert.deepEqual(delta2, { text: ' leaderboard...' });
+
+  // First tool call fragment with ID and partial arguments
+  assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          tool_calls: [
+            {
+              index: 0,
+              id: 'call_arcade_123',
+              type: 'function',
+              function: {
+                name: 'get_arcade_leaderboard',
+                arguments: '{"ki',
+              },
+            },
+          ],
+        },
+      },
+    ],
+  });
+
+  // Second fragment for tool call 0
+  assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          tool_calls: [
+            {
+              index: 0,
+              function: {
+                arguments: 'nd":"over',
+              },
+            },
+          ],
+        },
+      },
+    ],
+  });
+
+  // Third fragment for tool call 0
+  assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          tool_calls: [
+            {
+              index: 0,
+              function: {
+                arguments: 'all","topN":5}',
+              },
+            },
+          ],
+        },
+        finish_reason: 'tool_calls',
+      },
+    ],
+  });
+
+  assembler.finalize();
+
+  assert.equal(assembler.completed, true);
+  assert.equal(assembler.status, 'requires_action');
+  assert.equal(assembler.steps[0].type, 'model_output');
+  assert.equal(assembler.steps[0].content[0].text, 'Checking leaderboard...');
+  assert.equal(assembler.steps[1].type, 'function_call');
+  assert.equal(assembler.steps[1].id, 'call_arcade_123');
+  assert.equal(assembler.steps[1].name, 'get_arcade_leaderboard');
+  assert.deepEqual(assembler.steps[1].arguments, { kind: 'overall', topN: 5 });
+  assert.deepEqual(assembler.calls[0], {
+    callId: 'call_arcade_123',
+    name: 'get_arcade_leaderboard',
+    arguments: { kind: 'overall', topN: 5 },
+  });
+});
+
+test('DeepSeek stream assembler handles reasoning content and error blocks', () => {
+  const assembler = new DeepseekStreamAssembler({ allowedToolGroups: ['static'] });
+  assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          reasoning_content: 'Let me think about this step by step.',
+        },
+      },
+    ],
+  });
+  assembler.accept({
+    choices: [
+      {
+        index: 0,
+        delta: {
+          content: 'Here is the answer.',
+        },
+        finish_reason: 'stop',
+      },
+    ],
+    usage: {
+      prompt_tokens: 15,
+      completion_tokens: 25,
+      total_tokens: 40,
+    },
+  });
+  assembler.finalize();
+  assert.equal(assembler.status, 'completed');
+  assert.equal(assembler.steps[0].type, 'thought');
+  assert.equal(assembler.steps[0].summary[0].text, 'Let me think about this step by step.');
+  assert.equal(assembler.steps[1].type, 'model_output');
+  assert.equal(assembler.steps[1].content[0].text, 'Here is the answer.');
+  assert.equal(assembler.usage.totalTokens, 40);
+
+  const errorAssembler = new DeepseekStreamAssembler({ allowedToolGroups: ['static'] });
+  assert.throws(
+    () => errorAssembler.accept({ error: { code: 'safety_check', message: 'Blocked content' } }),
+    /blocked this request/
+  );
+});
+
+test('handler switches provider between gemini and deepseek on env.AI_PROVIDER', async () => {
+  clearFirebaseJwksCacheForTests();
+  const signer = await createSigner();
+  const now = Math.floor(Date.now() / 1000);
+  const authToken = await signer.token({
+    iss: `https://securetoken.google.com/${PROJECT_ID}`,
+    aud: PROJECT_ID,
+    sub: 'test-user',
+    iat: now - 1,
+    exp: now + 300,
+    auth_time: now - 1,
+    firebase: { sign_in_provider: 'anonymous' },
+  });
+  const appCheckToken = await signer.token({
+    iss: `https://firebaseappcheck.googleapis.com/${PROJECT_NUMBER}`,
+    aud: [`projects/${PROJECT_NUMBER}`],
+    sub: APP_ID,
+    iat: now - 1,
+    exp: now + 300,
+  });
+
+  const deepseekEnv = {
+    ...enabledEnv(),
+    AI_PROVIDER: 'deepseek',
+    AI_MODEL: 'deepseek-chat',
+    DEEPSEEK_API_KEY: 'test-only-deepseek-key',
+    GEMINI_API_KEY: undefined,
+  };
+
+  const invalidProviderEnv = {
+    ...enabledEnv(),
+    AI_PROVIDER: 'unknown-provider',
+  };
+
+  const invalidResponse = await handleRequest(
+    new Request('https://worker.test/v1/assistant/turn', {
+      method: 'POST',
+      headers: {
+        Origin: ALLOWED_ORIGIN,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+        'X-Firebase-AppCheck': appCheckToken,
+      },
+      body: JSON.stringify({
+        version: 1,
+        requestId: 'f2de24a4-2347-4acf-8b8f-324a343f3b12',
+        history: [],
+        input: { kind: 'message', text: 'Hello', locale: 'en' },
+        allowedToolGroups: ['static'],
+      }),
+    }),
+    invalidProviderEnv
+  );
+  assert.equal(invalidResponse.status, 503);
+
+  const originalFetch = globalThis.fetch;
+  let sawDeepseekAuthHeader = false;
+  let targetUrl = '';
+  globalThis.fetch = async (url, init = {}) => {
+    if (url === FIREBASE_AUTH_JWKS_URL || url === FIREBASE_APPCHECK_JWKS_URL) {
+      return Response.json(
+        { keys: [signer.jwk] },
+        { headers: { 'Cache-Control': 'public, max-age=3600' } }
+      );
+    }
+    targetUrl = String(url);
+    if (init.headers?.Authorization === 'Bearer test-only-deepseek-key') {
+      sawDeepseekAuthHeader = true;
+    }
+    const events = [
+      { choices: [{ index: 0, delta: { role: 'assistant', content: 'DeepSeek response.' } }] },
+      { choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { total_tokens: 6 } },
+    ];
+    const body =
+      events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('') + 'data: [DONE]\n\n';
+    return new Response(body, { headers: { 'Content-Type': 'text/event-stream' } });
+  };
+
+  try {
+    const response = await handleRequest(
+      new Request('https://worker.test/v1/assistant/turn', {
+        method: 'POST',
+        headers: {
+          Origin: ALLOWED_ORIGIN,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+          'X-Firebase-AppCheck': appCheckToken,
+        },
+        body: JSON.stringify({
+          version: 1,
+          requestId: 'f2de24a4-2347-4acf-8b8f-324a343f3b12',
+          history: [],
+          input: { kind: 'message', text: 'Hello DeepSeek', locale: 'en' },
+          allowedToolGroups: ['static'],
+        }),
+      }),
+      deepseekEnv
+    );
+    assert.equal(response.status, 200);
+    assert.equal(targetUrl, 'https://api.deepseek.com/chat/completions');
+    assert.equal(sawDeepseekAuthHeader, true);
+    const stream = await response.text();
+    assert.match(stream, /event: text_delta\ndata: \{"text":"DeepSeek response\."\}/u);
+    assert.match(stream, /event: done\ndata: \{"status":"completed"/u);
+  } finally {
+    globalThis.fetch = originalFetch;
+    clearFirebaseJwksCacheForTests();
+  }
+});
+
+test('DeepSeek tool turn and continuation round trip correctly', async () => {
+  clearFirebaseJwksCacheForTests();
+  const signer = await createSigner();
+  const now = Math.floor(Date.now() / 1000);
+  const authToken = await signer.token({
+    iss: `https://securetoken.google.com/${PROJECT_ID}`,
+    aud: PROJECT_ID,
+    sub: 'test-user-2',
+    iat: now - 1,
+    exp: now + 300,
+    auth_time: now - 1,
+    firebase: { sign_in_provider: 'anonymous' },
+  });
+  const appCheckToken = await signer.token({
+    iss: `https://firebaseappcheck.googleapis.com/${PROJECT_NUMBER}`,
+    aud: [`projects/${PROJECT_NUMBER}`],
+    sub: APP_ID,
+    iat: now - 1,
+    exp: now + 300,
+  });
+
+  const deepseekEnv = {
+    ...enabledEnv(),
+    AI_PROVIDER: 'deepseek',
+    AI_MODEL: 'deepseek-chat',
+    DEEPSEEK_API_KEY: 'test-only-deepseek-key',
+    GEMINI_API_KEY: undefined,
+  };
+
+  const originalFetch = globalThis.fetch;
+  let round1UpstreamBody = null;
+  globalThis.fetch = async (url, init = {}) => {
+    if (url === FIREBASE_AUTH_JWKS_URL || url === FIREBASE_APPCHECK_JWKS_URL) {
+      return Response.json(
+        { keys: [signer.jwk] },
+        { headers: { 'Cache-Control': 'public, max-age=3600' } }
+      );
+    }
+    const body = JSON.parse(init.body || '{}');
+    if (body.messages.some((m) => m.role === 'tool')) {
+      round1UpstreamBody = body;
+      const events = [
+        {
+          choices: [{ index: 0, delta: { role: 'assistant', content: 'Here are the mechanics.' } }],
+        },
+        { choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { total_tokens: 12 } },
+      ];
+      const sse = events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n';
+      return new Response(sse, { headers: { 'Content-Type': 'text/event-stream' } });
+    }
+
+    // Round 0 returns tool calls
+    const events = [
+      {
+        choices: [
+          {
+            index: 0,
+            delta: {
+              role: 'assistant',
+              tool_calls: [
+                {
+                  index: 0,
+                  id: 'call_boh_1',
+                  type: 'function',
+                  function: { name: 'get_all_star_boh_mechanics', arguments: '{"kind":"over' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      {
+        choices: [
+          {
+            index: 0,
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  function: { arguments: 'view"}' },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      },
+    ];
+    const sse = events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n';
+    return new Response(sse, { headers: { 'Content-Type': 'text/event-stream' } });
+  };
+
+  try {
+    const round0Response = await handleRequest(
+      new Request('https://worker.test/v1/assistant/turn', {
+        method: 'POST',
+        headers: {
+          Origin: ALLOWED_ORIGIN,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+          'X-Firebase-AppCheck': appCheckToken,
+        },
+        body: JSON.stringify({
+          version: 1,
+          requestId: 'e1111111-2222-4333-8444-555555555555',
+          history: [],
+          input: { kind: 'message', text: 'BoH overview', locale: 'en' },
+          allowedToolGroups: ['static'],
+        }),
+      }),
+      deepseekEnv
+    );
+    assert.equal(round0Response.status, 200);
+    const round0Text = await round0Response.text();
+    assert.match(round0Text, /event: tool_calls/u);
+    assert.match(round0Text, /"name":"get_all_star_boh_mechanics"/u);
+    assert.match(round0Text, /event: state/u);
+
+    // Extract providerState and continuationToken from the stream
+    const stateMatch = round0Text.match(/event: state\ndata: (\{.*\})/u);
+    assert.ok(stateMatch);
+    const statePayload = JSON.parse(stateMatch[1]);
+    const { providerState, continuationToken } = statePayload;
+
+    // Send Continuation Turn (Round 1)
+    const round1Response = await handleRequest(
+      new Request('https://worker.test/v1/assistant/turn', {
+        method: 'POST',
+        headers: {
+          Origin: ALLOWED_ORIGIN,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+          'X-Firebase-AppCheck': appCheckToken,
+        },
+        body: JSON.stringify({
+          version: 1,
+          requestId: 'e1111111-2222-4333-8444-555555555555',
+          round: 1,
+          providerState,
+          continuationToken,
+          input: {
+            kind: 'tool_results',
+            results: [
+              {
+                callId: 'call_boh_1',
+                name: 'get_all_star_boh_mechanics',
+                ok: true,
+                data: { overview: 'BoH rules' },
+              },
+            ],
+          },
+        }),
+      }),
+      deepseekEnv
+    );
+
+    assert.equal(round1Response.status, 200);
+    const round1Text = await round1Response.text();
+    assert.match(round1Text, /event: text_delta\ndata: \{"text":"Here are the mechanics\."\}/u);
+    assert.match(round1Text, /event: done\ndata: \{"status":"completed"/u);
+
+    // Verify upstream request body on Round 1
+    assert.ok(round1UpstreamBody);
+    const toolMsg = round1UpstreamBody.messages.find((m) => m.role === 'tool');
+    assert.ok(toolMsg);
+    assert.equal(toolMsg.tool_call_id, 'call_boh_1');
+    assert.deepEqual(JSON.parse(toolMsg.content), {
+      ok: true,
+      data: { overview: 'BoH rules' },
+    });
   } finally {
     globalThis.fetch = originalFetch;
     clearFirebaseJwksCacheForTests();

@@ -103,11 +103,11 @@
       runner: cloneVisual('#tabSpecialization svg', 'images/logo-40.webp'),
     }),
     loyalty: presentation({
-      identity: cloneVisual('#tabLoyalty svg', 'images/saved_units.png'),
+      identity: cloneVisual('#tabEdenMap svg', 'images/saved_units.png'),
       milestones: [
-        cloneVisual('#tabLoyalty svg'),
+        cloneVisual('#tabEdenMap svg'),
         imageVisual('images/saved_units.png', 'contain'),
-        cloneVisual('#tabLoyalty svg'),
+        cloneVisual('#tabEdenMap svg'),
       ],
       runner: imageVisual('images/saved_units.png', 'contain'),
     }),
@@ -147,7 +147,7 @@
     edenmap: 'eden-map',
     edenx1: 'eden-x1',
     heroes: 'hero-atlas',
-    loyalty: 'loyalty',
+    loyalty: 'eden-map',
     materials: 'dm',
     material: 'dm',
     ocr: 'admin',
@@ -165,7 +165,6 @@
       context: 'specialization',
       selector: '#specializationSection, #specializationToolRoot',
     }),
-    Object.freeze({ context: 'loyalty', selector: '#loyaltySection, #loyaltyCalculatorRoot' }),
     Object.freeze({ context: 'research', selector: '#researchSection' }),
     Object.freeze({ context: 'hero-atlas', selector: '#heroesSection, #heroesTabContent' }),
     Object.freeze({ context: 'generator', selector: '#generatorSection' }),
@@ -322,12 +321,6 @@
 
     figure.append(body, helmet);
     return figure;
-  }
-
-  function makeVeloRunner() {
-    const runner = makeVeloFigure();
-    runner.classList.add('vts-loader__runner', 'vts-loader__runner--velo', 'vts-loader__visual');
-    return runner;
   }
 
   function describe(root) {
@@ -529,9 +522,6 @@
     copyAttribute(descriptor.fillSource, fill, 'id');
     rail.appendChild(fill);
     trail.appendChild(rail);
-
-    const runner = makeVeloRunner();
-    if (runner) trail.appendChild(runner);
     trailWrap.appendChild(trail);
 
     const percent = global.document.createElement('span');

@@ -1,4 +1,5 @@
 import { cssToken, debounce, escapeHtml } from './utils.js';
+import { queueAccountSync } from './account-sync.js';
 // js/app-generator.js
 import { translations } from './translations.js';
 import {
@@ -49,12 +50,6 @@ import { formatLocaleNumber } from './locale-format.js';
 
 export { lastGeneratedCombos };
 
-const SKIN_TYPE_PRIORITY = {
-  Everlasting: 0,
-  Legendary: 1,
-  Mythic: 2,
-};
-
 let generatorSkinOwnership = null;
 let generatorSelectionRestored = false;
 let lastGeneratorRunMeta = null;
@@ -74,6 +69,11 @@ function skinTypeCopy(type) {
 
 function getSeasonIndex(season) {
   return HERO_ATLAS_ALL_SEASONS.indexOf(String(season || '').toUpperCase());
+}
+
+function getSeasonSortIndex(season) {
+  const index = getSeasonIndex(season);
+  return index < 0 ? Number.MAX_SAFE_INTEGER : index;
 }
 
 function getMaxSelectedSeasonIndex(seasons = []) {
@@ -120,6 +120,7 @@ export function persistGeneratorSelection() {
         heroes: Array.from(generatorSelectedHeroes),
       })
     );
+    queueAccountSync('generator-selection');
   } catch {
     // Local storage can fail in private browsing or quota exhaustion.
   }
@@ -194,6 +195,7 @@ function setGeneratorSkinOwned(heroName, owned) {
         heroes: ownership,
       })
     );
+    queueAccountSync('generator-skins');
   } catch {
     // Ignore storage failures; the current render still reflects the click.
   }
@@ -271,24 +273,17 @@ export function renderGeneratorHeroes(options = {}) {
     .toLowerCase();
 
   const pool = getGeneratorHeroPool(activeSkinsOnly);
-  let filtered = pool
+  // Skin mode is the default view, so the grid keeps one stable seasonal order
+  // instead of floating skinned heroes to the top.
+  const filtered = pool
     .filter((h) => heroMatchesFilters(h, activeSeasons, activeStates, activeTypes))
-    .filter((h) => !searchQuery || h.name.toLowerCase().includes(searchQuery));
-
-  if (activeSkinsOnly) {
-    filtered = filtered.sort((a, b) => {
-      const aHas = Boolean(a.hasSkin && isSkinSeasonAvailable(a, activeSeasons));
-      const bHas = Boolean(b.hasSkin && isSkinSeasonAvailable(b, activeSeasons));
-      if (aHas && !bHas) return -1;
-      if (!aHas && bHas) return 1;
-      if (aHas && bHas) {
-        const aPriority = SKIN_TYPE_PRIORITY[a.skinType] ?? 99;
-        const bPriority = SKIN_TYPE_PRIORITY[b.skinType] ?? 99;
-        if (aPriority !== bPriority) return aPriority - bPriority;
-      }
+    .filter((h) => !searchQuery || h.name.toLowerCase().includes(searchQuery))
+    .sort((a, b) => {
+      const aSeason = getSeasonSortIndex(a.season);
+      const bSeason = getSeasonSortIndex(b.season);
+      if (aSeason !== bSeason) return aSeason - bSeason;
       return a.name.localeCompare(b.name);
     });
-  }
 
   filtered.forEach((hero) => {
     const skinSeasonAvailable = isSkinSeasonAvailable(hero, activeSeasons);
@@ -459,6 +454,7 @@ export function renderGeneratorHeroes(options = {}) {
 
     const skinToggleEl = card.querySelector('.generator-skin-toggle');
     if (skinToggleEl) {
+      let pointerToggleHandled = false;
       const toggleSkin = (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -476,11 +472,21 @@ export function renderGeneratorHeroes(options = {}) {
           eventName,
           (e) => {
             e.stopPropagation();
+            if (eventName === 'pointerup') {
+              pointerToggleHandled = true;
+              toggleSkin(e);
+            }
           },
           { passive: false }
         );
       });
-      skinToggleEl.addEventListener('click', toggleSkin);
+      skinToggleEl.addEventListener('click', (e) => {
+        if (pointerToggleHandled) {
+          pointerToggleHandled = false;
+          return;
+        }
+        toggleSkin(e);
+      });
       skinToggleEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') toggleSkin(e);
       });

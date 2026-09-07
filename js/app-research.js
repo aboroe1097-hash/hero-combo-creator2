@@ -1,4 +1,5 @@
 import { escapeHtml } from './utils.js';
+import { queueAccountSync } from './account-sync.js';
 import {
   ENABLE_RESEARCH_FEATURE,
   activeTechSeasons,
@@ -146,6 +147,7 @@ function setStoredNodeLevels(updates) {
   try {
     localStorage.setItem(RESEARCH_PROGRESS_KEY, JSON.stringify(progress));
     legacyKeys.forEach((key) => localStorage.removeItem(key));
+    queueAccountSync('research');
   } catch {}
 }
 
@@ -744,6 +746,15 @@ async function initResearchCalculator() {
   }
 
   renderTechList();
+
+  try {
+    const plannersHost = document.createElement('section');
+    plannersHost.id = 'plannersSection';
+    researchSection.appendChild(plannersHost);
+    import('./planners-entry.js')
+      .then((module) => module.initLane5Planners?.(plannersHost))
+      .catch(() => {});
+  } catch {}
 }
 
 async function refreshResearchLocale(locale = currentLanguage) {
@@ -1096,6 +1107,7 @@ function applyAutoGridToGroup(groupNodes) {
 }
 
 function usesGameTreeLayout(tech) {
+  if (tech.layoutMode === 'list') return true;
   if (tech.layoutMode === 'branch') return false;
   if (tech.layoutMode === 'game') return true;
   const hasTroopBranches = tech.nodes.some(
@@ -1122,6 +1134,69 @@ function getGameNodeState(node, level) {
   if (level >= node.maxLevel) return 'complete';
   if (level > 0) return 'progress';
   return 'idle';
+}
+
+// The game unlocks a research row only once every node in the row above has at least one
+// level, so the calculator enforces the same order in both directions: a locked row cannot
+// be raised, and a row something above depends on cannot be cleared back to zero. Bulk
+// Reset All / Complete All bypass this with { force: true }.
+function getTechRowMap(tech) {
+  if (tech._rowMap) return tech._rowMap;
+  const rows = new Map();
+  tech.nodes.forEach((node) => {
+    const row = Number(node.row) || 0;
+    if (!rows.has(row)) rows.set(row, []);
+    rows.get(row).push(node);
+  });
+  Object.defineProperty(tech, '_rowMap', { value: rows, enumerable: false, writable: true });
+  return rows;
+}
+
+function getAdjacentRow(tech, row, direction) {
+  const rows = [...getTechRowMap(tech).keys()].sort((a, b) => a - b);
+  return direction < 0
+    ? rows.filter((value) => value < row).pop()
+    : rows.find((value) => value > row);
+}
+
+function isRowStarted(tech, row) {
+  const nodes = getTechRowMap(tech).get(row) || [];
+  if (!nodes.length) return true;
+  return nodes.every((node) => getStoredNodeLevel(tech.id, node.id) > 0);
+}
+
+function isNodeLocked(tech, node) {
+  if (tech.layoutMode === 'list') return false;
+  const previousRow = getAdjacentRow(tech, Number(node.row) || 0, -1);
+  if (previousRow === undefined) return false;
+  return !isRowStarted(tech, previousRow);
+}
+
+function hasStartedDependents(tech, node) {
+  if (tech.layoutMode === 'list') return false;
+  const nextRow = getAdjacentRow(tech, Number(node.row) || 0, 1);
+  if (nextRow === undefined) return false;
+  return (getTechRowMap(tech).get(nextRow) || []).some(
+    (candidate) => getStoredNodeLevel(tech.id, candidate.id) > 0
+  );
+}
+
+// Locking depends on sibling rows, so it is re-evaluated across the whole tree after any
+// level change rather than per node.
+function syncGameLockStates(rootEl, tech) {
+  if (!rootEl) return;
+  rootEl.querySelectorAll('.game-tech-node-wrap').forEach((wrap) => {
+    const node = tech.nodes.find((candidate) => candidate.id === wrap.dataset.nodeId);
+    if (!node) return;
+    const locked = isNodeLocked(tech, node);
+    wrap.dataset.nodeLocked = locked ? 'true' : 'false';
+    const tap = wrap.querySelector('.game-tech-tap');
+    if (tap) {
+      tap.setAttribute('aria-disabled', locked ? 'true' : 'false');
+      if (locked) tap.setAttribute('title', appT('researchRowLocked'));
+      else tap.removeAttribute('title');
+    }
+  });
 }
 
 function getGameNodeArtState() {
@@ -1526,8 +1601,34 @@ function renderGameNodeInspector(rootEl, tech, node) {
   const inspector = rootEl.querySelector('.research-node-inspector');
   if (!inspector) return;
   if (!node) {
+    // With nothing selected this panel used to be an empty box beside a tall tree.
+    // Show where the tree actually stands instead.
     inspector.dataset.hasSelection = 'false';
-    inspector.innerHTML = `<p class="research-node-inspector-prompt">${escapeHtml(appT('researchSelectNodePrompt'))}</p>`;
+    const totals = tech.nodes.reduce(
+      (acc, candidate) => {
+        const level = getStoredNodeLevel(tech.id, candidate.id);
+        acc.levels += level;
+        acc.maxLevels += candidate.maxLevel;
+        if (level >= candidate.maxLevel) acc.done += 1;
+        else if (level > 0) acc.started += 1;
+        return acc;
+      },
+      { levels: 0, maxLevels: 0, done: 0, started: 0 }
+    );
+    const percent = totals.maxLevels ? Math.round((totals.levels / totals.maxLevels) * 100) : 0;
+    const nextNode = tech.nodes.find(
+      (candidate) =>
+        getStoredNodeLevel(tech.id, candidate.id) < candidate.maxLevel &&
+        !isNodeLocked(tech, candidate)
+    );
+    inspector.innerHTML = `
+      <p class="research-node-inspector-prompt">${escapeHtml(appT('researchSelectNodePrompt'))}</p>
+      <dl class="research-node-inspector-overview">
+        <div><dt>${escapeHtml(appT('researchProgress', { pct: percent }))}</dt><dd>${percent}%</dd></div>
+        <div><dt>${escapeHtml(appT('researchNodesComplete'))}</dt><dd>${totals.done} / ${tech.nodes.length}</dd></div>
+        ${totals.started ? `<div><dt>${escapeHtml(appT('researchNodesStarted'))}</dt><dd>${totals.started}</dd></div>` : ''}
+        ${nextNode ? `<div><dt>${escapeHtml(appT('researchNextAvailable'))}</dt><dd>${escapeHtml(getResearchNodeName(tech, nextNode))}</dd></div>` : ''}
+      </dl>`;
     return;
   }
 
@@ -1554,6 +1655,9 @@ function renderGameNodeInspector(rootEl, tech, node) {
     '--inspector-pct',
     `${node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0}%`
   );
+  const locked = isNodeLocked(tech, node);
+  const blockClear = level > 0 && hasStartedDependents(tech, node);
+  inspector.dataset.nodeLocked = locked ? 'true' : 'false';
   inspector.dataset.artProvenance = artResolution.provenance;
   inspector.dataset.artRequestedKey = artResolution.requestedKey;
   inspector.dataset.artSourceKey = artResolution.sourceKey;
@@ -1569,11 +1673,14 @@ function renderGameNodeInspector(rootEl, tech, node) {
       </div>
       <div class="research-node-inspector-level"><strong>${level}</strong><span>/ ${node.maxLevel}</span></div>
       <div class="research-node-inspector-controls" role="group" aria-label="${escapeHtml(appT('researchNodeLevelControlsAria', { node: nodeName }))}">
-        <button type="button" data-inspector-action="decrease" aria-label="${escapeHtml(appT('researchDecreaseLevelAria', { node: nodeName }))}"${level <= 0 ? ' disabled' : ''}>−</button>
-        <button type="button" data-inspector-action="clear"${level <= 0 ? ' disabled' : ''}>${escapeHtml(appT('researchClearLevel'))}</button>
-        <button type="button" data-inspector-action="max">${escapeHtml(appT('researchSetMax'))}</button>
-        <button type="button" data-inspector-action="increase" aria-label="${escapeHtml(appT('researchIncreaseLevelAria', { node: nodeName }))}"${level >= node.maxLevel ? ' disabled' : ''}>+</button>
+        <button type="button" data-inspector-action="decrease" aria-label="${escapeHtml(appT('researchDecreaseLevelAria', { node: nodeName }))}"${level <= 0 || blockClear ? ' disabled' : ''}>−</button>
+        <button type="button" data-inspector-action="clear"${level <= 0 || blockClear ? ' disabled' : ''}>${escapeHtml(appT('researchClearLevel'))}</button>
+        <button type="button" data-inspector-action="half"${locked ? ' disabled' : ''}>${escapeHtml(appT('researchSetHalf'))}</button>
+        <button type="button" data-inspector-action="max"${locked ? ' disabled' : ''}>${escapeHtml(appT('researchSetMax'))}</button>
+        <button type="button" data-inspector-action="increase" aria-label="${escapeHtml(appT('researchIncreaseLevelAria', { node: nodeName }))}"${level >= node.maxLevel || locked ? ' disabled' : ''}>+</button>
       </div>
+      ${locked ? `<p class="research-node-inspector-lock">${escapeHtml(appT('researchRowLocked'))}</p>` : ''}
+      ${blockClear ? `<p class="research-node-inspector-lock">${escapeHtml(appT('researchRowLockedClear'))}</p>` : ''}
       <div class="research-node-inspector-detail">
         <div><span>${escapeHtml(appT('researchRemaining'))}</span><div class="research-node-inspector-cost">${remainingHtml}</div></div>
         <div class="research-node-inspector-buff">${buffHtml}</div>
@@ -1593,6 +1700,8 @@ function renderGameNodeInspector(rootEl, tech, node) {
       if (action === 'decrease') updater?.updateLevel(current - 1);
       if (action === 'increase') updater?.updateLevel(current + 1);
       if (action === 'clear') updater?.updateLevel(0);
+      // Half rounds down, so a 10-level node lands on 5 and a 15-level node on 7.
+      if (action === 'half') updater?.updateLevel(Math.floor(node.maxLevel / 2));
       if (action === 'max') updater?.updateLevel(node.maxLevel);
     });
   });
@@ -1614,10 +1723,14 @@ function wireGameTechNodeContainers(rootEl, tech) {
     wrap.style.setProperty('--node-col', wrap.dataset.nodeCol || node.col || 2);
     syncGameNodeVisual(tech, node, current, wrap);
 
-    const updateLevel = (val, { pulse = true, recalculate = true } = {}) => {
+    const updateLevel = (val, { pulse = true, recalculate = true, force = false } = {}) => {
       let v = typeof val === 'string' && val === 'max' ? max : parseInt(val, 10);
       if (isNaN(v) || v < 0) v = 0;
       if (v > max) v = max;
+      if (!force) {
+        if (v > current && isNodeLocked(tech, node)) return;
+        if (v === 0 && current > 0 && hasStartedDependents(tech, node)) return;
+      }
       const changed = v !== current;
       current = v;
       input.value = v;
@@ -1626,6 +1739,7 @@ function wireGameTechNodeContainers(rootEl, tech) {
       if (changed && pulse) pulseGameNodeWrap(wrap);
       if (recalculate) {
         calculateTechTotals(tech);
+        syncGameLockStates(rootEl, tech);
         if (rootEl.dataset.selectedNodeId === node.id) renderGameNodeInspector(rootEl, tech, node);
       }
     };
@@ -1653,6 +1767,31 @@ function wireGameTechNodeContainers(rootEl, tech) {
 
 function renderGameCalculator(tech, container) {
   const layout = resolveResearchGameLayout(tech);
+  const isList = tech.layoutMode === 'list';
+  const calculatedTotal = tech.nodes.reduce(
+    (sum, node) => sum + (node.wisdomCosts || []).reduce((total, value) => total + value, 0),
+    0
+  );
+  const costWarning =
+    tech.publishedTotal && tech.publishedTotal !== calculatedTotal
+      ? appT('researchCostDiscrepancy', {
+          calculated: calculatedTotal.toLocaleString(resolveIntlLocale(currentLanguage)),
+          published: tech.publishedTotal.toLocaleString(resolveIntlLocale(currentLanguage)),
+        })
+      : '';
+  // Reuse the editable node cards, not the source's repeated placeholder slots.
+  // Each group is presentation only; no dependency edges or row locks apply.
+  const nodeList = isList
+    ? Array.from({ length: Math.ceil(tech.nodes.length / 3) }, (_, index) =>
+        buildGameTreeTierHtml(
+          tech,
+          { nodes: tech.nodes.slice(index * 3, index * 3 + 3).map((node) => node.id) },
+          index,
+          null,
+          []
+        )
+      ).join('')
+    : '';
   const sectionNav =
     layout.sections.length > 1
       ? `<nav class="research-game-section-nav" aria-label="${escapeHtml(appT('researchContinuousNavigationAria'))}">${layout.sections
@@ -1685,14 +1824,15 @@ function renderGameCalculator(tech, container) {
       <div class="research-calc-scrollport custom-scrollbar">
         <div class="research-game-shell" data-tree-theme="${escapeHtml(layout.theme || 'amber')}">
           <div class="research-game-titlebar"><span class="research-game-title">${escapeHtml(appT('researchContinuousNavigationAria'))}</span></div>
+          ${costWarning ? `<p class="research-calc-sub" role="note">${escapeHtml(costWarning)}</p>` : ''}
           ${sectionNav}
           <div class="research-game-workspace">
-            <div class="research-game-tree-viewport">${renderGameTreeLayoutHtml(tech, layout)}</div>
+            <div class="research-game-tree-viewport"${isList ? ' data-research-list="true"' : ''}>${isList ? nodeList : renderGameTreeLayoutHtml(tech, layout)}</div>
             <aside class="research-node-inspector" aria-label="${escapeHtml(appT('researchInspectorAria'))}" data-has-selection="false">
               <p class="research-node-inspector-prompt">${escapeHtml(appT('researchSelectNodePrompt'))}</p>
             </aside>
           </div>
-          <p class="research-game-footer">${appT('researchGameHint')}</p>
+          <p class="research-game-footer">${appT(isList ? 'researchMissingLayout' : 'researchGameHint')}</p>
         </div>
       </div>
       <div class="research-calc-total">
@@ -1700,7 +1840,16 @@ function renderGameCalculator(tech, container) {
           <span class="research-tree-total-label">${escapeHtml(appT('researchTreeTotal'))}</span>
           <span class="research-tree-total-hint">${escapeHtml(appT('researchTreeTotalHint'))}</span>
         </div>
-        <div id="totalTechCost" class="research-total-costs"></div>
+        <div class="research-total-groups">
+          <div class="research-total-group research-total-group--spent">
+            <span class="research-total-group-label">${escapeHtml(appT('researchTreeSpent'))}</span>
+            <div id="spentTechCost" class="research-total-costs"></div>
+          </div>
+          <div class="research-total-group research-total-group--remaining">
+            <span class="research-total-group-label">${escapeHtml(appT('researchRemaining'))}</span>
+            <div id="totalTechCost" class="research-total-costs"></div>
+          </div>
+        </div>
       </div>`;
 
   container.setAttribute('role', 'dialog');
@@ -1715,6 +1864,7 @@ function renderGameCalculator(tech, container) {
   document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
 
   const updateFns = wireGameTechNodeContainers(container, tech);
+  syncGameLockStates(container, tech);
 
   container.querySelectorAll('[data-research-section-target]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -1732,16 +1882,20 @@ function renderGameCalculator(tech, container) {
   });
 
   document.getElementById('resetAllTechBtn')?.addEventListener('click', () => {
-    updateFns.forEach((updater) => updater.updateLevel(0, { pulse: false, recalculate: false }));
+    updateFns.forEach((updater) =>
+      updater.updateLevel(0, { pulse: false, recalculate: false, force: true })
+    );
     calculateTechTotals(tech);
+    syncGameLockStates(container, tech);
     const selected = tech.nodes.find((node) => node.id === container.dataset.selectedNodeId);
     if (selected) renderGameNodeInspector(container, tech, selected);
   });
   document.getElementById('maxAllTechBtn')?.addEventListener('click', () => {
     updateFns.forEach((updater) =>
-      updater.updateLevel(updater.max, { pulse: false, recalculate: false })
+      updater.updateLevel(updater.max, { pulse: false, recalculate: false, force: true })
     );
     calculateTechTotals(tech);
+    syncGameLockStates(container, tech);
     const selected = tech.nodes.find((node) => node.id === container.dataset.selectedNodeId);
     if (selected) renderGameNodeInspector(container, tech, selected);
   });
@@ -1846,7 +2000,7 @@ function renderCalculator(tech) {
 
     return `
             <div class="research-tree-node-cell"${colAttr}>
-                <div class="tech-node-container research-node-card${maxedContainerClass}" data-node-id="${node.id}">
+                <div class="tech-node-container research-node-card${maxedContainerClass}" data-node-id="${node.id}" data-node-state="${getGameNodeState(node, savedLevel)}">
                     <div class="research-node-head">
                         <div class="research-node-copy">
                             <span class="research-node-title">${safeName}</span>
@@ -2016,7 +2170,16 @@ function renderCalculator(tech) {
                 <span class="research-tree-total-label">${escapeHtml(appT('researchTreeTotal'))}</span>
                 <span class="research-tree-total-hint">${escapeHtml(appT('researchTreeTotalHint'))}</span>
             </div>
-            <div id="totalTechCost" class="research-total-costs"></div>
+            <div class="research-total-groups">
+                <div class="research-total-group research-total-group--spent">
+                    <span class="research-total-group-label">${escapeHtml(appT('researchTreeSpent'))}</span>
+                    <div id="spentTechCost" class="research-total-costs"></div>
+                </div>
+                <div class="research-total-group research-total-group--remaining">
+                    <span class="research-total-group-label">${escapeHtml(appT('researchRemaining'))}</span>
+                    <div id="totalTechCost" class="research-total-costs"></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -2073,6 +2236,9 @@ function renderCalculator(tech) {
       input.value = v;
       setStoredNodeLevel(tech.id, nodeId, v);
 
+      // Keep the card's three-state styling in step with the game-tree view.
+      cont.dataset.nodeState = v >= max ? 'complete' : v > 0 ? 'progress' : 'idle';
+
       // Dynamic Gray-out & Button Swap
       if (v === max) {
         cont.classList.add('research-node-card--maxed');
@@ -2118,10 +2284,49 @@ function renderCalculator(tech) {
   calculateTechTotals(tech);
 }
 
+// Split one node's cost across the currencies it uses, over the level range [from, to).
+// Remaining uses [currentLevel, maxLevel); spent uses [0, currentLevel).
+function sumNodeCostRange(node, from, to) {
+  let wisdom = 0;
+  let courage = 0;
+  let other = 0;
+
+  for (let i = from; i < to; i++) {
+    const genericCost = (node.costs && node.costs[i]) || 0;
+    const wbCost =
+      (node.warBadgeCosts && node.warBadgeCosts[i]) ||
+      (node.wisdomCosts && node.wisdomCosts[i]) ||
+      (node.wb_costs && node.wb_costs[i]) ||
+      0;
+    const cmCost =
+      (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
+
+    if (node.costType === 'Dual') {
+      wisdom += wbCost > 0 ? wbCost : genericCost;
+      courage += cmCost;
+    } else if (node.costType === 'Courage') {
+      courage += genericCost > 0 ? genericCost : cmCost;
+    } else if (
+      node.costType === 'Wisdom' ||
+      node.costType === 'War Badge' ||
+      node.costType === 'War Badges'
+    ) {
+      wisdom += genericCost > 0 ? genericCost : wbCost;
+    } else {
+      other += genericCost;
+    }
+  }
+
+  return { wisdom, courage, other };
+}
+
 function calculateTechTotals(tech) {
   let grandTotalCourage = 0;
   let grandTotalWisdom = 0;
   let grandTotalOther = 0;
+  let grandSpentCourage = 0;
+  let grandSpentWisdom = 0;
+  let grandSpentOther = 0;
 
   const iconCM = `<img src="images/CM.png" class="research-cost-icon" alt="CM">`;
   const iconWB = `<img src="images/WB.png" class="research-cost-icon" alt="WB">`;
@@ -2136,35 +2341,11 @@ function calculateTechTotals(tech) {
       ? parseInt(input.value, 10) || 0
       : getStoredNodeLevel(tech.id, node.id);
 
-    let nodeWisdom = 0;
-    let nodeCourage = 0;
-    let nodeOther = 0;
-
-    for (let i = currentLevel; i < node.maxLevel; i++) {
-      let genericCost = (node.costs && node.costs[i]) || 0;
-      let wbCost =
-        (node.warBadgeCosts && node.warBadgeCosts[i]) ||
-        (node.wisdomCosts && node.wisdomCosts[i]) ||
-        (node.wb_costs && node.wb_costs[i]) ||
-        0;
-      let cmCost =
-        (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
-
-      if (node.costType === 'Dual') {
-        nodeWisdom += wbCost > 0 ? wbCost : genericCost;
-        nodeCourage += cmCost;
-      } else if (node.costType === 'Courage') {
-        nodeCourage += genericCost > 0 ? genericCost : cmCost;
-      } else if (
-        node.costType === 'Wisdom' ||
-        node.costType === 'War Badge' ||
-        node.costType === 'War Badges'
-      ) {
-        nodeWisdom += genericCost > 0 ? genericCost : wbCost;
-      } else {
-        nodeOther += genericCost;
-      }
-    }
+    const remaining = sumNodeCostRange(node, currentLevel, node.maxLevel);
+    const spent = sumNodeCostRange(node, 0, currentLevel);
+    const nodeWisdom = remaining.wisdom;
+    const nodeCourage = remaining.courage;
+    const nodeOther = remaining.other;
 
     if (display) {
       const isGamePill = display.classList.contains('game-tech-cost-pill');
@@ -2207,48 +2388,61 @@ function calculateTechTotals(tech) {
     grandTotalWisdom += nodeWisdom;
     grandTotalCourage += nodeCourage;
     grandTotalOther += nodeOther;
+    grandSpentWisdom += spent.wisdom;
+    grandSpentCourage += spent.courage;
+    grandSpentOther += spent.other;
   });
 
-  const totalContainer = document.getElementById('totalTechCost');
-  let hasBoth = grandTotalCourage > 0 && grandTotalWisdom > 0;
-  let isDualString = tech.primaryResource.includes('Dual');
-
-  if (isDualString || hasBoth) {
-    totalContainer.innerHTML = `
-            <span class="research-cost-summary research-cost-summary--wb">
-                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalWisdom)}</span>
-            </span>
-            <span class="research-cost-summary research-cost-summary--cm">
-                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalCourage)}</span>
-            </span>
-        `;
-  } else if (
+  // Which currencies this tree uses is a property of the tree, not of how far the player
+  // has progressed, so remaining and spent must show the same set of currencies. Deciding
+  // it from the remaining totals alone would hide War Badges once a tree is fully maxed.
+  const usesWisdom =
     grandTotalWisdom > 0 ||
+    grandSpentWisdom > 0 ||
     tech.primaryResource.includes('Wisdom') ||
-    tech.primaryResource.includes('War Badge')
-  ) {
-    totalContainer.innerHTML = `
+    tech.primaryResource.includes('War Badge');
+  const usesCourage =
+    grandTotalCourage > 0 || grandSpentCourage > 0 || tech.primaryResource.includes('Courage');
+  const isDual = tech.primaryResource.includes('Dual') || (usesWisdom && usesCourage);
+
+  const renderCostSummary = (wisdom, courage, other) => {
+    const wbHtml = `
             <span class="research-cost-summary research-cost-summary--wb">
                 <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalWisdom)}</span>
-            </span>
-        `;
-  } else if (grandTotalCourage > 0 || tech.primaryResource.includes('Courage')) {
-    totalContainer.innerHTML = `
+                <span>${formatResearchNumber(wisdom)}</span>
+            </span>`;
+    const cmHtml = `
             <span class="research-cost-summary research-cost-summary--cm">
                 <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalCourage)}</span>
-            </span>
-        `;
-  } else {
-    totalContainer.innerHTML = `
+                <span>${formatResearchNumber(courage)}</span>
+            </span>`;
+
+    if (isDual) return `${wbHtml}${cmHtml}`;
+    if (usesWisdom) return wbHtml;
+    if (usesCourage) return cmHtml;
+    return `
             <span class="research-cost-summary research-cost-summary--res">
                 <span class="research-cost-summary-label"><span class="research-cost-summary-label-full">${escapeHtml(appT('researchResources'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchResourcesShort'))}</span></span>
-                <span>${formatResearchNumber(grandTotalOther)}</span>
-            </span>
-        `;
+                <span>${formatResearchNumber(other)}</span>
+            </span>`;
+  };
+
+  const totalContainer = document.getElementById('totalTechCost');
+  if (totalContainer) {
+    totalContainer.innerHTML = renderCostSummary(
+      grandTotalWisdom,
+      grandTotalCourage,
+      grandTotalOther
+    );
+  }
+
+  const spentContainer = document.getElementById('spentTechCost');
+  if (spentContainer) {
+    spentContainer.innerHTML = renderCostSummary(
+      grandSpentWisdom,
+      grandSpentCourage,
+      grandSpentOther
+    );
   }
 
   updateGlobalSummary();

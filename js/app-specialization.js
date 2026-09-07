@@ -3,8 +3,9 @@
 // column banners of badges -> tap a badge -> a node ring you learn along.
 // Reuses the verified data/model/store/i18n foundation; no game data defined here.
 
-import { currentLanguage } from './state.js';
+import { currentLanguage, generatorSelectedHeroes } from './state.js';
 import { escapeHtml } from './utils.js';
+import { getCurrentUser, onUserChanged } from './firebase.js';
 import {
   SPECIALIZATION_COLUMNS,
   SPECIALIZATION_RESEARCH,
@@ -18,6 +19,7 @@ import {
   getResearchNodeAccess,
   toggleResearchNode,
   setResearchNodes,
+  maxResearchNode,
   setResearchMedalsSpent,
   resetResearch,
 } from './specialization-towers-v2-model.js';
@@ -27,9 +29,31 @@ import {
 } from './specialization-towers-v2-store.js';
 import { buildContributionTemplateRows } from './specialization-towers-v2-template.js';
 import {
+  SPECIALIZATION_MEDAL_EVIDENCE_SOURCE,
+  SPECIALIZATION_TROOP_MEDAL_EVIDENCE,
+} from './specialization-towers-medal-evidence.js';
+import {
+  HERO_PLAN_DEFAULT_MODE,
+  HERO_PLAN_MODES,
+  buildHeroPlans,
+  getHeroPlanLength,
+  getHeroPlanRanking,
+  getHeroPlanStep,
+  getNextHeroPlanResearch,
+} from './specialization-hero-plans.js';
+import {
+  F2P_PATH_ID,
+  getHeroImage,
+  getPathPreset,
+  getPathPresets,
+  paidHeroesForTroop,
+  rankPathPresets,
+} from './specialization-hero-paths.js';
+import {
   specializationTowersV2Text,
   resolveSpecializationTowersV2Locale,
   getSpecializationTowersV2Direction,
+  loadSpecializationTowersV2Locale,
 } from './i18n/specialization-towers-v2/index.js';
 import {
   specializationDisplayText,
@@ -39,35 +63,231 @@ import {
 } from './i18n/specialization-towers-v2/display.js';
 
 const UI_TROOPS = ['cavalry', 'archer', 'footman'];
-const TROOP_ICON = { cavalry: '🐴', archer: '🏹', footman: '🛡️' };
-// Placeholder badge glyphs by research family until the real in-game art is supplied.
+// Line-art glyphs drawn to match the in-game icon families, so a node here reads
+// as the same kind of node it is on the phone. All inherit `currentColor`, which
+// each surface tints (Might warm, Resistance blue, HP green, and so on).
+function svgIcon(name, body) {
+  return `<svg class="spec-glyph spec-glyph--${name}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">${body}</svg>`;
+}
+
+const ICON = {
+  // Crossed swords — Might and Tactical Might.
+  might: svgIcon(
+    'might',
+    '<path d="M18.5 3.5h-2L7 14.5"/><path d="M5.5 3.5h2L17 14.5"/><path d="m7 14.5-2 2 2.5 2.5 2-2"/><path d="m17 14.5 2 2-2.5 2.5-2-2"/><path d="M4 20.5 6 18.5M20 20.5 18 18.5"/>'
+  ),
+  // Shield — Resistance.
+  resistance: svgIcon('resistance', '<path d="M12 3 5 6v6c0 4 3 7.2 7 9 4-1.8 7-5 7-9V6z"/>'),
+  // Heart — HP and Revival.
+  hp: svgIcon(
+    'hp',
+    '<path d="M12 20s-7-4.4-7-9.4A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.6c0 5-7 9.4-7 9.4z"/>'
+  ),
+  // Starburst on a shield — the "Intel" family (Tactical Resistance).
+  intel: svgIcon(
+    'intel',
+    '<path d="M12 3 5 6v6c0 4 3 7.2 7 9 4-1.8 7-5 7-9V6z"/><path d="M12 7.5v7M8.5 11h7M9.6 8.6l4.8 4.8M14.4 8.6l-4.8 4.8"/>'
+  ),
+  // Helmet — the rally-join family.
+  rally: svgIcon(
+    'rally',
+    '<path d="M5 12a7 7 0 0 1 14 0v4.5a2.5 2.5 0 0 1-2.5 2.5H14v-3.5h-4V19H7.5A2.5 2.5 0 0 1 5 16.5z"/><path d="M12 5.5V12"/><path d="M8.5 12h7"/>'
+  ),
+  // Hourglass — the passive skill each research ends on.
+  passive: svgIcon(
+    'passive',
+    '<path d="M7 3h10M7 21h10"/><path d="M7 3v3.5L12 12 7 17.5V21"/><path d="M17 3v3.5L12 12l5 5.5V21"/>'
+  ),
+  // Chevrons — march and combat speed.
+  speed: svgIcon('speed', '<path d="m5 7 6 5-6 5"/><path d="m13 7 6 5-6 5"/>'),
+  // Banner — research badge fallback where no in-game art is mapped yet.
+  badge: svgIcon('badge', '<path d="M6 3h12v18l-6-4-6 4z"/>'),
+  // Battering ram against a gate — the siege/rally path.
+  siege: svgIcon(
+    'siege',
+    '<path d="M4 20h16"/><path d="M7 20V9a5 5 0 0 1 10 0v11"/><path d="M3 13h5"/><path d="M2 11.5v3"/>'
+  ),
+  // Crossed banners on open ground — the non-siege field path.
+  field: svgIcon(
+    'field',
+    '<path d="M6 21V4l7 2.5L6 9"/><path d="M18 21V4l-5 1.8"/><path d="M3 21h18"/>'
+  ),
+  cavalry: svgIcon(
+    'cavalry',
+    '<path d="M6 20c0-5 2.5-8 6-8.5L14 6l-2-1 1-2 4 1.5L19 8l-2 1-1.5 3.5C17.5 14 19 16.5 19 20"/><path d="M6 20h13"/>'
+  ),
+  archer: svgIcon(
+    'archer',
+    '<path d="M5 19 19 5"/><path d="M14 5h5v5"/><path d="M5 19a12 12 0 0 1 12-12"/>'
+  ),
+  footman: svgIcon(
+    'footman',
+    '<path d="M12 3 5 6v6c0 4 3 7.2 7 9 4-1.8 7-5 7-9V6z"/><path d="M12 8v8"/>'
+  ),
+};
+
+const TROOP_ICON = { cavalry: ICON.cavalry, archer: ICON.archer, footman: ICON.footman };
+
+// Research badge glyphs by family, used only until real in-game art is mapped.
 const BADGE_ICON = [
-  { test: /^Training/i, icon: '🐴' },
-  { test: /^Encounter/i, icon: '⚔️' },
-  { test: /^Siege/i, icon: '🏹' },
-  { test: /^Call of Glory/i, icon: '🚩' },
-  { test: /^Defensive/i, icon: '🏰' },
-  { test: /^Neat/i, icon: '⚔️' },
-  { test: /^Enhanced/i, icon: '📜' },
-];
-// Placeholder node glyphs by attribute effect.
-const NODE_ICON = [
-  { test: /Might/i, icon: '⚔️' },
-  { test: /Resistance|Defense/i, icon: '🛡️' },
-  { test: /HP|Revival/i, icon: '❤️' },
-  { test: /Speed/i, icon: '⏳' },
+  { test: /^Training/i, icon: ICON.cavalry },
+  { test: /^Encounter/i, icon: ICON.might },
+  { test: /^Siege/i, icon: ICON.archer },
+  { test: /^Call of Glory/i, icon: ICON.badge },
+  { test: /^Defensive/i, icon: ICON.resistance },
+  { test: /^Neat/i, icon: ICON.might },
+  { test: /^Enhanced/i, icon: ICON.intel },
 ];
 
 const CONTRIBUTION_STORAGE_KEY = 'vts_specialization_contributions';
+const EASY_MEDALS_KEY = 'vts_specialization_towers_v2_easy_medals';
+const HERO_PLAN_MODE_KEY = 'vts_specialization_hero_plan_mode';
+const HERO_PATH_PRESET_KEY = 'vts_specialization_hero_path_presets';
+const HERO_PATH_OVERRIDE_KEY = 'vts_specialization_hero_path_overrides';
 
 let root = null;
 let state = null;
-let activeTroop = 'cavalry';
+// Archers are the tower most players plan first, so the tab lands there.
+let activeTroop = 'archer';
 let view = 'overview'; // 'overview' | 'detail'
 let selectedResearchId = null;
 let selectedNodeId = null;
 let selectedLegionColumnId = null;
 let wired = false;
+let easyMedalMode = false;
+// Path-planner state. Every troop plans on one of two paths — siege/rally or
+// non-siege field — and picks a hero preset inside it.
+let heroPlanMode = HERO_PLAN_DEFAULT_MODE;
+let pathPresets = {}; // { troop: presetId } — user overrides; unset means best fit
+// Heroes the planner adds to or removes from the Heroes-tab roster, so a path
+// can be adjusted here without leaving the tab. { heroName: true | false }
+let heroOverrides = {};
+let heroPlans = null; // buildHeroPlans() result for the current signature
+let heroPlanSignature = '';
+
+function safeGet(key, fallback = '') {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function isResearchCompleteForRoute(researchId) {
+  const progress = getResearchProgress(state, activeTroop, researchId);
+  return progress.completedNodes >= progress.totalNodes;
+}
+
+// ---------------------------------------------------------------------------
+// Path planner state
+// ---------------------------------------------------------------------------
+
+/** Heroes picked on the Heroes tab, before this panel's add/remove overrides. */
+function baseRoster() {
+  return [...(generatorSelectedHeroes || [])];
+}
+
+/**
+ * The roster the plan is actually built from: the Heroes tab selection with the
+ * panel's own toggles applied. Sorted so the signature is stable.
+ */
+function currentRoster() {
+  const names = new Set(baseRoster());
+  for (const [name, owned] of Object.entries(heroOverrides)) {
+    if (owned) names.add(name);
+    else names.delete(name);
+  }
+  return [...names].sort((a, b) => a.localeCompare(b));
+}
+
+function isHeroOwned(heroName) {
+  if (Object.prototype.hasOwnProperty.call(heroOverrides, heroName)) {
+    return Boolean(heroOverrides[heroName]);
+  }
+  return baseRoster().includes(heroName);
+}
+
+// The plan is a pure function of these three, so it is cheaper to recompute on
+// change than to cache a plan in storage and reason about when it went stale.
+function planSignature(roster) {
+  return JSON.stringify([heroPlanMode, roster, pathPresets]);
+}
+
+function ensureHeroPlans() {
+  const roster = currentRoster();
+  const signature = planSignature(roster);
+  if (heroPlans && signature === heroPlanSignature) return heroPlans;
+  heroPlans = buildHeroPlans({ heroes: roster, mode: heroPlanMode, presets: pathPresets });
+  heroPlanSignature = signature;
+  return heroPlans;
+}
+
+function heroPlanForTroop(troopId) {
+  return ensureHeroPlans()?.plans?.[troopId] || null;
+}
+
+function heroPlanNextResearchId() {
+  const plan = heroPlanForTroop(activeTroop);
+  if (!plan) return null;
+  return getNextHeroPlanResearch(plan, isResearchCompleteForRoute);
+}
+
+/** The preset actually in force for a troop, user-chosen or best fit. */
+function activePresetId(troopId) {
+  return heroPlanForTroop(troopId)?.presetId || F2P_PATH_ID;
+}
+
+function savePathState() {
+  safeSet(HERO_PLAN_MODE_KEY, heroPlanMode);
+  try {
+    localStorage.setItem(HERO_PATH_PRESET_KEY, JSON.stringify(pathPresets));
+    localStorage.setItem(HERO_PATH_OVERRIDE_KEY, JSON.stringify(heroOverrides));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function loadPathState() {
+  const storedMode = safeGet(HERO_PLAN_MODE_KEY, HERO_PLAN_DEFAULT_MODE);
+  heroPlanMode = HERO_PLAN_MODES.includes(storedMode) ? storedMode : HERO_PLAN_DEFAULT_MODE;
+  try {
+    const presets = JSON.parse(localStorage.getItem(HERO_PATH_PRESET_KEY) || '{}');
+    if (presets && typeof presets === 'object') {
+      for (const [troop, presetId] of Object.entries(presets)) {
+        if (!UI_TROOPS.includes(troop)) continue;
+        if (presetId === F2P_PATH_ID || getPathPreset(presetId)?.troop === troop) {
+          pathPresets[troop] = presetId;
+        }
+      }
+    }
+  } catch {
+    /* corrupted preset storage */
+  }
+  try {
+    const overrides = JSON.parse(localStorage.getItem(HERO_PATH_OVERRIDE_KEY) || '{}');
+    if (overrides && typeof overrides === 'object') {
+      for (const [name, owned] of Object.entries(overrides)) {
+        if (typeof name === 'string' && name) heroOverrides[name] = Boolean(owned);
+      }
+    }
+  } catch {
+    /* corrupted override storage */
+  }
+}
+
+function invalidatePlans() {
+  heroPlanSignature = '';
+  savePathState();
+  render();
+}
 
 function contributionNodeKey(researchId, nodeId) {
   return `${researchId}:${nodeId}`;
@@ -104,14 +324,106 @@ function saveContributions(data) {
   }
 }
 
-function contributionCount(data) {
-  return Object.values(data.nodes).filter(
-    (node) => node?.medalCost != null || node?.reviewedMedalCost != null
+function normalizedEvidenceName(value) {
+  return String(value || '')
+    .toLocaleLowerCase('en')
+    .replace(/[^a-z0-9]+/gu, ' ')
+    .trim();
+}
+
+function buildWorkbookEvidenceIndex(rows) {
+  const byNodeKey = new Map();
+  const unmapped = [];
+  for (const section of SPECIALIZATION_TROOP_MEDAL_EVIDENCE) {
+    if (!section.researchId) {
+      section.rows.forEach((row) => unmapped.push({ section, row }));
+      continue;
+    }
+    const candidates = rows.filter((row) => row[3] === section.researchId);
+    const used = new Set();
+    for (const evidenceRow of section.rows) {
+      const wanted = normalizedEvidenceName(evidenceRow.name);
+      const match = candidates.find(
+        (row) => !used.has(row[6]) && normalizedEvidenceName(row[7]) === wanted
+      );
+      if (!match) {
+        unmapped.push({ section, row: evidenceRow });
+        continue;
+      }
+      used.add(match[6]);
+      byNodeKey.set(contributionNodeKey(section.researchId, match[6]), {
+        section,
+        row: evidenceRow,
+      });
+    }
+  }
+  return { byNodeKey, unmapped };
+}
+
+function displayedContributionCount(data, evidenceIndex) {
+  const evidenceCount = SPECIALIZATION_TROOP_MEDAL_EVIDENCE.reduce(
+    (total, section) => total + section.rows.length,
+    0
+  );
+  const localOnlyCount = Object.entries(data.nodes).filter(
+    ([key, node]) =>
+      !evidenceIndex.byNodeKey.has(key) &&
+      (node?.medalCost != null || node?.reviewedMedalCost != null)
   ).length;
+  return evidenceCount + localOnlyCount;
+}
+
+function updateDisplayedContributionCount(data) {
+  const countEl = root?.querySelector('.spec-contrib-count');
+  if (!countEl) return;
+  const evidenceIndex = buildWorkbookEvidenceIndex(buildContributionTemplateRows().rows);
+  countEl.textContent = sp('communityNodesWithData', {
+    count: displayedContributionCount(data, evidenceIndex),
+  });
+}
+
+function renderUnmappedWorkbookEvidence(entries) {
+  if (!entries.length) return '';
+  const grouped = new Map();
+  for (const entry of entries) {
+    const key = `${entry.section.tower}:${entry.section.sourceSection}`;
+    if (!grouped.has(key)) grouped.set(key, { section: entry.section, rows: [] });
+    grouped.get(key).rows.push(entry.row);
+  }
+  return [...grouped.values()]
+    .map(({ section, rows }) => {
+      const sheet = SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[section.tower];
+      const sourceUrl = `${SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sourceUrl}?gid=${sheet.gid}#gid=${sheet.gid}`;
+      return `<details class="spec-contrib-column spec-contrib-column--source">
+        <summary><strong>${escapeHtml(section.title)}</strong><span>${rows.length} · ${escapeHtml(section.complete ? sp('confidenceVerified') : sp('confidenceUnknown'))}</span></summary>
+        <section class="spec-contrib-research">
+          ${rows
+            .map(
+              (row) => `<div class="spec-contrib-source-row">
+                <span><small>#${escapeHtml(row.sourceRow)}</small><strong>${escapeHtml(row.name)}</strong></span>
+                <strong>${row.costs.map(fmt).join(' + ')}</strong>
+              </div>`
+            )
+            .join('')}
+          <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sheet.title)}</a>
+        </section>
+      </details>`;
+    })
+    .join('');
 }
 
 function locale() {
   return resolveSpecializationTowersV2Locale(currentLanguage);
+}
+
+// The hub renders through the same string pack as the standalone tool, but only the
+// standalone entry point ever loaded it. Without this the pack registry holds English
+// alone, every sp() lookup silently falls back, and the panel stays English while the
+// surrounding shell is translated. Re-render once the pack lands.
+function ensureTowersLocale() {
+  return loadSpecializationTowersV2Locale(locale()).catch((error) => {
+    console.warn('[app-specialization] locale pack failed to load; using English.', error);
+  });
 }
 
 function sp(key, vars = {}) {
@@ -141,8 +453,39 @@ function plannerSprite(asset, className = '') {
   return `<svg class="${className} specialization-planner-sprite" viewBox="${viewBox}" focusable="false"><image href="${escapeHtml(asset.src)}" width="960" height="933"></image></svg>`;
 }
 
-function nodeIcon(effect) {
-  return NODE_ICON.find((entry) => entry.test.test(effect || ''))?.icon || '◆';
+// Node glyph + colour family, chosen the way the game chooses its node art: the
+// passive skill is an hourglass, rally-join buffs are helmets, "Intel" buffs
+// (Tactical Resistance) are the starburst shield, and the rest fall back to the
+// plain attribute the buff moves.
+function nodeIconKind(node, passive = false) {
+  if (passive) return 'passive';
+  if (node?.context === 'rallyJoin') return 'rally';
+  const effect = node?.effect || '';
+  if (/Tactical Resistance/i.test(effect)) return 'intel';
+  if (/Tactical Might|Might/i.test(effect)) return 'might';
+  if (/Resistance|Defense/i.test(effect)) return 'resistance';
+  if (/HP|Revival/i.test(effect)) return 'hp';
+  if (/Speed|Marching/i.test(effect)) return 'speed';
+  return 'badge';
+}
+
+function nodeIcon(node, passive = false) {
+  return ICON[nodeIconKind(node, passive)];
+}
+
+// In game a node shows one pip per upgrade it takes. The base-attribute nodes
+// (Frenzy Fighter, Tough Armor, Energetic) are the two-upgrade ones; everything
+// else is a single upgrade.
+function nodeUpgradeCount(node) {
+  return node?.context === 'baseAttributes' ? 2 : 1;
+}
+
+function upgradePips(count, level = 0) {
+  if (count < 2) return '';
+  const pips = Array.from({ length: count }, (unused, index) =>
+    index < level ? '<i data-filled="true"></i>' : '<i></i>'
+  ).join('');
+  return `<span class="spec-node-pips" aria-hidden="true">${pips}</span>`;
 }
 
 function troopLabel(troop) {
@@ -201,6 +544,10 @@ function renderSummary(summary) {
         <h2 class="spec-title">${escapeHtml(sp('title'))}</h2>
         <p class="spec-subtitle">${escapeHtml(sp('subtitle'))}</p>
       </div>
+      <div class="spec-tool-controls">
+        <button type="button" class="spec-easy-medals" data-spec-easy-medals aria-pressed="${easyMedalMode}">${escapeHtml(sp('easyMedalsLabel'))}</button>
+      </div>
+      ${renderPathPlanner()}
       <div class="spec-stat-row">
         ${stat(sp('currentTowerProgress'), `${pct(troop.percent)}%`)}
         ${stat(sp('fundedResearches'), `${fmt(troop.completedResearchCount)} / ${fmt(troop.totalResearchCount)}`)}
@@ -210,11 +557,229 @@ function renderSummary(summary) {
     </div>`;
 }
 
+const MODE_ICON = { siege: ICON.siege, nonSiege: ICON.field };
+
+function modeLabel(mode) {
+  return sp(mode === 'siege' ? 'planModeSiege' : 'planModeField');
+}
+
+function pathLabel(presetId) {
+  const preset = getPathPreset(presetId);
+  return preset ? sp(preset.labelKey) : sp('planPathF2p');
+}
+
+function heroAvatar(heroName, className = 'spec-plan-hero-avatar') {
+  const image = getHeroImage(heroName);
+  if (!image) {
+    return `<span class="${className} ${className}--blank" aria-hidden="true">${escapeHtml(heroName.slice(0, 1))}</span>`;
+  }
+  return `<img class="${className}" src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" width="32" height="32" />`;
+}
+
+// The two default paths, as a segmented control rather than a dropdown: there
+// are exactly two and the choice reorders everything below it, so it should be
+// visible at a glance instead of collapsed into a select. Roving tabindex: the
+// checked radio is the tab stop, the rest are reached with the arrow keys.
+function renderPathModes() {
+  return `
+    <div class="spec-path-modes" role="radiogroup" aria-label="${escapeHtml(sp('planPathBasis'))}">
+      ${HERO_PLAN_MODES.map((mode) => {
+        const active = mode === heroPlanMode;
+        return `<button type="button" class="spec-path-mode" role="radio" aria-checked="${active}" tabindex="${active ? 0 : -1}" data-spec-plan-mode="${mode}">
+          <span class="spec-path-mode-icon" aria-hidden="true">${MODE_ICON[mode]}</span>
+          <span class="spec-path-mode-name">${escapeHtml(modeLabel(mode))}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+}
+
+// One card per suggested path for this tower, plus the free-to-play order.
+// Each card shows the paid heroes it is built around, so picking a path and
+// understanding why it exists are the same gesture.
+function renderPathPresets() {
+  const roster = currentRoster();
+  const ranked = rankPathPresets(activeTroop, roster);
+  const active = activePresetId(activeTroop);
+  const cards = ranked.map(({ preset, owned, total }) => {
+    const isActive = preset.id === active;
+    return `<button type="button" class="spec-path-card${isActive ? ' is-active' : ''}" data-spec-path-preset="${preset.id}" aria-pressed="${isActive}">
+      <span class="spec-path-card-heroes" aria-hidden="true">${preset.heroes.map((name) => heroAvatar(name, 'spec-path-card-hero')).join('')}</span>
+      <span class="spec-path-card-copy">
+        <strong>${escapeHtml(sp(preset.labelKey))}</strong>
+        <small>${escapeHtml(sp('planPresetMatch', { owned: owned.length, total }))}</small>
+      </span>
+      <span class="spec-path-card-state">${escapeHtml(isActive ? sp('planPresetActive') : sp('planPresetUse'))}</span>
+    </button>`;
+  });
+  const f2pActive = active === F2P_PATH_ID;
+  cards.push(`<button type="button" class="spec-path-card${f2pActive ? ' is-active' : ''}" data-spec-path-preset="${F2P_PATH_ID}" aria-pressed="${f2pActive}">
+      <span class="spec-path-card-heroes" aria-hidden="true">${ICON.badge}</span>
+      <span class="spec-path-card-copy"><strong>${escapeHtml(sp('planPathF2p'))}</strong></span>
+      <span class="spec-path-card-state">${escapeHtml(f2pActive ? sp('planPresetActive') : sp('planPresetUse'))}</span>
+    </button>`);
+  return `
+    <section class="spec-path-presets" aria-label="${escapeHtml(sp('planPresetLabel'))}">
+      <h4 class="spec-path-section-title">${escapeHtml(sp('planPresetLabel'))}</h4>
+      <div class="spec-path-cards">${cards.join('')}</div>
+    </section>`;
+}
+
+// Every paid hero that can move this tower, as an on/off chip. Toggling one
+// rebuilds the path immediately, which is the whole point: "what changes if I
+// pull this hero?" is answered without leaving the tab.
+function renderPathHeroes() {
+  const heroes = paidHeroesForTroop(activeTroop);
+  if (!heroes.length) {
+    return `<p class="spec-path-empty">${escapeHtml(sp('planNoPaidHeroes'))}</p>`;
+  }
+  const chips = heroes
+    .map((name) => {
+      const owned = isHeroOwned(name);
+      return `<button type="button" class="spec-path-hero${owned ? ' is-owned' : ''}" data-spec-path-hero="${escapeHtml(name)}" aria-pressed="${owned}">
+        ${heroAvatar(name)}
+        <span class="spec-path-hero-name">${escapeHtml(name)}</span>
+      </button>`;
+    })
+    .join('');
+  return `
+    <section class="spec-path-heroes" aria-label="${escapeHtml(sp('planOwnedHeroes'))}">
+      <h4 class="spec-path-section-title">${escapeHtml(sp('planOwnedHeroes'))}</h4>
+      <div class="spec-path-hero-chips">${chips}</div>
+      <p class="spec-path-hint">${escapeHtml(sp('planOwnedHeroesHint'))}</p>
+    </section>`;
+}
+
+// A plan reason is canonical English data ("Ramses II · Fatal Blow → Column 2 ·
+// Sniper Archer"); the decision card wants the scannable half — who, and which
+// mechanic — so the tag keeps everything before the arrow and drops the
+// research/column coordinates it points at.
+function reasonTag(reason) {
+  const source = String(reason || '');
+  const head = (source.includes('→') ? source.split('→')[0] : source.split('—')[0]).trim();
+  return head
+    .replace(/^Column\s+\d+\s*·\s*/i, '')
+    .replace(/\s*·\s*$/, '')
+    .trim();
+}
+
+function rationaleTags(reasons) {
+  const tags = [];
+  for (const reason of reasons || []) {
+    const tag = reasonTag(reason);
+    if (tag && !tags.includes(tag) && tags.length < 4) tags.push(tag);
+  }
+  return tags;
+}
+
+// The one-glance summary of the planner's current answer: which of the two
+// paths, which tower it is planning, which preset won, and what to fund next.
+// Everything below it (modes, presets, hero chips) explains or changes this
+// card, so it re-renders on the same invalidatePlans() path as the rest.
+function renderPathDecision(plan, nextId, nextReasons) {
+  const presetId = activePresetId(activeTroop);
+  const preset = getPathPreset(presetId);
+  const presetOwned = preset
+    ? preset.heroes.filter((name) => isHeroOwned(name)).length
+    : 0;
+  const nextResearch = nextId ? SPECIALIZATION_RESEARCH[nextId] : null;
+  const nextStep = nextId && plan ? getHeroPlanStep(plan, nextId) : 0;
+  const totalSteps = getHeroPlanLength(plan);
+  const tags = rationaleTags(nextReasons);
+  const cell = (labelKey, valueHtml) => `
+      <div class="spec-path-decision-cell">
+        <span class="spec-path-decision-label">${escapeHtml(sp(labelKey))}</span>
+        <span class="spec-path-decision-value">${valueHtml}</span>
+      </div>`;
+  const presetValue = escapeHtml(pathLabel(presetId)) + (preset
+    ? ` <small>${escapeHtml(sp('planPresetMatch', { owned: presetOwned, total: preset.heroes.length }))}</small>`
+    : '');
+  const nextValue = nextResearch
+    ? `${escapeHtml(researchName(nextResearch))} <small>${escapeHtml(sp('planDecisionNextStep', { step: nextStep, total: totalSteps }))}</small>`
+    : escapeHtml(sp('planDecisionAllFunded'));
+  return `
+      <section class="spec-path-decision" data-spec-path-decision aria-label="${escapeHtml(sp('planDecisionLabel'))}">
+        <div class="spec-path-decision-grid">
+          ${cell('planModeLabel', escapeHtml(modeLabel(heroPlanMode)))}
+          ${cell('planDecisionTower', escapeHtml(troopLabel(activeTroop)))}
+          ${cell('planPathBasis', presetValue)}
+          ${cell('planDecisionNext', nextValue)}
+        </div>
+        ${
+          tags.length
+            ? `<div class="spec-why-tags" aria-label="${escapeHtml(sp('planWhyNext'))}">
+                <span class="spec-why-tags-label">${escapeHtml(sp('planWhyNext'))}</span>
+                ${tags.map((tag) => `<span class="spec-why-tag">${escapeHtml(tag)}</span>`).join('')}
+              </div>`
+            : ''
+        }
+      </section>`;
+}
+
+// Full per-hero mechanics, behind a disclosure. The long notes are reference
+// material next to a decision card that must stay scannable, so they default to
+// collapsed and are keyboard reachable by construction (native details).
+function renderHeroSynergies(plan) {
+  const notes = plan?.heroNotes || [];
+  if (!notes.length) return '';
+  return `
+      <details class="spec-synergy" data-spec-synergies>
+        <summary>
+          <strong class="spec-synergy-title">${escapeHtml(sp('planSynergiesLabel'))}</strong>
+          <span class="spec-synergy-count">${fmt(notes.length)}</span>
+        </summary>
+        <ul class="spec-path-note-list">
+          ${notes
+            .map(
+              (entry) => `<li>${heroAvatar(entry.hero, 'spec-path-note-avatar')}<span>
+                <strong>${escapeHtml(entry.hero)}</strong>
+                ${(entry.mechanics || []).length ? `<span class="spec-synergy-mechanics" aria-label="${escapeHtml(sp('planSynergiesKey'))}">${entry.mechanics.map((mechanic) => `<span class="spec-synergy-mechanic">${escapeHtml(mechanic)}</span>`).join('')}</span>` : ''}
+                <span class="spec-synergy-note">${escapeHtml(entry.note)}</span>
+              </span></li>`
+            )
+            .join('')}
+        </ul>
+        ${locale() === 'en' ? '' : `<small class="spec-path-canonical">${escapeHtml(sp('canonicalEnglishBadge'))}</small>`}
+      </details>`;
+}
+
+function renderPathPlanner() {
+  const plan = heroPlanForTroop(activeTroop);
+  const ranking = getHeroPlanRanking(ensureHeroPlans().plans);
+  const chips = ranking
+    .map(
+      (entry, index) =>
+        `<button type="button" class="spec-plan-troop-chip${entry.troop === activeTroop ? ' active' : ''}" data-spec-plan-troop="${entry.troop}" title="${escapeHtml(sp('planPriority'))} #${index + 1}">
+          <span class="spec-plan-troop-icon" aria-hidden="true">${TROOP_ICON[entry.troop]}</span>
+          <span class="spec-plan-troop-name">${escapeHtml(troopLabel(entry.troop))}</span>
+          <span class="spec-plan-troop-rank" aria-hidden="true">${'★'.repeat(Math.max(1, ranking.length - index))}</span>
+        </button>`
+    )
+    .join('');
+
+  const nextId = plan ? heroPlanNextResearchId() : null;
+  const nextReasons = plan && nextId ? plan.reasons[nextId] || [] : [];
+
+  return `
+    <div class="spec-hero-plan" data-spec-hero-plan>
+      <div class="spec-hero-plan-head">
+        <strong class="spec-hero-plan-title">${escapeHtml(sp('planLabel'))}</strong>
+        <button type="button" class="spec-hero-plan-jump" data-spec-plan-go-heroes>${escapeHtml(sp('planGoToHeroes'))}</button>
+      </div>
+      ${renderPathDecision(plan, nextId, nextReasons)}
+      ${renderPathModes()}
+      <div class="spec-plan-troop-chips" aria-label="${escapeHtml(sp('planPriority'))}">${chips}</div>
+      ${renderPathPresets()}
+      ${renderPathHeroes()}
+      ${renderHeroSynergies(plan)}
+    </div>`;
+}
+
 function renderTroopTabs(summary) {
   return `<div class="spec-troop-tabs" role="tablist">${UI_TROOPS.map((troop) => {
     const p = pct(summary.troops[troop].percent);
     const active = troop === activeTroop;
-    return `<button type="button" class="spec-troop-tab${active ? ' active' : ''}" role="tab" aria-selected="${active}" data-spec-troop="${troop}"><span class="spec-troop-icon" aria-hidden="true">${TROOP_ICON[troop]}</span><span class="spec-troop-name">${escapeHtml(troopLabel(troop))}</span><span class="spec-troop-pct">${p}%</span></button>`;
+    const label = `${troopLabel(troop)} ${p}%`;
+    return `<button type="button" class="spec-troop-tab${active ? ' active' : ''}" role="tab" aria-selected="${active}" aria-label="${escapeHtml(label)}" data-spec-troop="${troop}"><span class="spec-troop-icon" aria-hidden="true">${TROOP_ICON[troop]}</span><span class="spec-troop-name">${escapeHtml(troopLabel(troop))}</span><span class="spec-troop-pct">${p}%</span></button>`;
   }).join('')}</div>`;
 }
 
@@ -223,9 +788,30 @@ function renderBadge(researchId) {
   const progress = getResearchProgress(state, activeTroop, researchId);
   const status = statusOf(progress);
   const image = getSpecializationResearchImage(researchId, activeTroop);
+  const plan = heroPlanForTroop(activeTroop);
+  const routeStep = plan ? getHeroPlanStep(plan, researchId) : 0;
+  const totalSteps = getHeroPlanLength(plan);
+  const isNext = Boolean(plan) && heroPlanNextResearchId() === researchId;
+  const planReasons = plan?.reasons?.[researchId] || [];
+  const planTip = planReasons.length
+    ? `${escapeHtml(sp('planWhyNext'))}: ${planReasons.join(' · ')}`
+    : '';
+  // Three states rather than one number: what is finished, what to fund next,
+  // and what is still ahead. The step chip carries its position in the whole
+  // path (12/32) so a badge is legible without counting the columns.
+  const stepState = progress.isComplete ? 'done' : isNext ? 'next' : 'todo';
+  const stepAria = sp('planStepAria', { step: routeStep, total: totalSteps });
+  // The reasons exist as text for assistive tech too: a title tooltip is the
+  // pointer-only half, the visually-hidden span is the keyboard/AT half.
+  const reasonId = `spec-plan-reason-${researchId}`;
   return `
-    <div class="spec-badge-wrap">
-      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}" aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
+    <div class="spec-badge-wrap" data-route-step="${routeStep || ''}" data-step-state="${stepState}" data-route-next="${isNext ? 'true' : 'false'}"${planTip ? ` data-plan-reason="true" title="${planTip}"` : ''}>
+      ${planTip ? `<span class="spec-sr-only" id="${reasonId}">${planTip}</span>` : ''}
+      <span class="spec-badge-meta">
+        ${routeStep ? `<span class="spec-route-step" role="img" aria-label="${escapeHtml(stepAria)}">${progress.isComplete ? '✓' : routeStep}<small>/${totalSteps}</small></span>` : ''}
+        ${isNext ? `<span class="spec-route-next">${escapeHtml(sp('routeNextUp'))}</span>` : ''}
+      </span>
+      <button type="button" class="spec-badge" data-status="${status}" data-spec-research="${researchId}"${planTip ? ` aria-describedby="${reasonId}"` : ''} aria-label="${escapeHtml(researchName(research))} ${pct(progress.percent)}%">
         <span class="spec-badge-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
         <span class="spec-badge-name">${escapeHtml(researchName(research))}</span>
         <span class="spec-badge-pct">${pct(progress.percent)}%</span>
@@ -280,17 +866,38 @@ function renderLegionSkillInspector() {
     </section>`;
 }
 
+// Submitted numbers are attributed to a signed-in account rather than a typed name, so
+// the per-node contributor field disappears and one node is a single number to type.
+//
+function getContributorIdentity() {
+  const user = getCurrentUser?.();
+  if (!user || user.isAnonymous) return null;
+  return {
+    uid: user.uid,
+    label: user.displayName || user.email || user.uid,
+  };
+}
+
 function renderCommunity() {
   const data = loadContributions();
   const { rows } = buildContributionTemplateRows();
-  const columns = Object.values(SPECIALIZATION_COLUMNS).sort((a, b) => Number(a.id) - Number(b.id));
+  const evidence = buildWorkbookEvidenceIndex(rows);
+  const columns = Object.entries(SPECIALIZATION_COLUMNS)
+    .map(([id, column]) => ({ ...column, id: Number(id) }))
+    .sort((a, b) => a.id - b.id);
+  const identity = getContributorIdentity();
   return `
-    <section class="spec-community">
+    <section class="spec-community" data-contrib-signed-in="${identity ? 'true' : 'false'}">
       <div class="spec-community-copy">
         <h4>${escapeHtml(sp('communityDataTitle'))}</h4>
         <p>${escapeHtml(sp('communityDataDescription'))}</p>
       </div>
-      <span class="spec-contrib-count">${escapeHtml(sp('communityNodesWithData', { count: contributionCount(data) }))}</span>
+      ${
+        identity
+          ? `<p class="spec-contrib-identity">${escapeHtml(sp('communitySignedInAs', { name: identity.label }))}</p>`
+          : `<p class="spec-contrib-signin"><span>${escapeHtml(sp('communitySignInRequired'))}</span><a class="spec-contrib-signin-link" href="profile.html">${escapeHtml(sp('communitySignInCta'))}</a></p>`
+      }
+      <span class="spec-contrib-count">${escapeHtml(sp('communityNodesWithData', { count: displayedContributionCount(data, evidence) }))}</span>
       <div class="spec-contrib-nodes">
         ${columns
           .map((col) => {
@@ -314,30 +921,37 @@ function renderCommunity() {
                     const nodeEffect = row[8];
                     const nodeKey = contributionNodeKey(research.id, nodeId);
                     const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
+                    const workbookEvidence = evidence.byNodeKey.get(nodeKey);
                     return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
                     <div class="spec-contrib-node-identity">
-                      <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon(nodeEffect)}</span>
+                      <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon({ effect: nodeEffect })}</span>
                       <span><small>#${fmt(nodePosition)}</small><strong>${escapeHtml(nodeName(nodeLabel))}</strong>${nodeEffect ? `<em>${escapeHtml(effectText(nodeEffect))}</em>` : ''}</span>
                     </div>
-                    <fieldset class="spec-contrib-stage">
+                    ${
+                      workbookEvidence
+                        ? `<fieldset class="spec-contrib-stage spec-contrib-stage--source">
+                      <legend>${escapeHtml(sp('verificationVerified'))}</legend>
+                      <div class="spec-contrib-source-cost"><span>${escapeHtml(sp('communityMedalCost'))}</span><strong>${workbookEvidence.row.costs.map(fmt).join(' + ')}</strong></div>
+                      <small>${escapeHtml(workbookEvidence.section.title)} · #${escapeHtml(workbookEvidence.row.sourceRow)}</small>
+                    </fieldset>`
+                        : `<fieldset class="spec-contrib-stage">
                       <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
-                      <label><span>${escapeHtml(sp('communityContributorName'))}</span>
-                        <input type="text" data-spec-node-contributor="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.contributor || data.contributorName || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityContributorPlaceholder'))}" />
-                      </label>
                       <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
-                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeKey)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                        <input type="number" min="0" step="1" data-spec-node-medal="${escapeHtml(nodeKey)}" value="${saved.medalCost != null ? saved.medalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" ${identity ? '' : 'disabled'} />
                       </label>
+                      ${saved.contributor ? `<p class="spec-contrib-credit">${escapeHtml(sp('communitySubmittedBy', { name: saved.contributor }))}</p>` : ''}
                     </fieldset>
                     <span class="spec-contrib-flow" aria-hidden="true">→</span>
                     <fieldset class="spec-contrib-stage spec-contrib-stage--review">
                       <legend>${escapeHtml(sp('verificationVerified'))}</legend>
                       <label><span>${escapeHtml(sp('communityReviewer'))}</span>
-                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" />
+                        <input type="text" data-spec-node-reviewer="${escapeHtml(nodeKey)}" value="${escapeHtml(saved.reviewer || '')}" maxlength="40" placeholder="${escapeHtml(sp('communityReviewerPlaceholder'))}" ${identity ? '' : 'disabled'} />
                       </label>
                       <label><span>${escapeHtml(sp('communityMedalCost'))}</span>
-                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeKey)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" />
+                        <input type="number" min="0" step="1" data-spec-node-reviewed-medal="${escapeHtml(nodeKey)}" value="${saved.reviewedMedalCost != null ? saved.reviewedMedalCost : ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" ${identity ? '' : 'disabled'} />
                       </label>
-                    </fieldset>
+                    </fieldset>`
+                    }
                   </div>`;
                   })
                   .join('')}
@@ -347,6 +961,7 @@ function renderCommunity() {
           </details>`;
           })
           .join('')}
+        ${renderUnmappedWorkbookEvidence(evidence.unmapped)}
       </div>
     </section>`;
 }
@@ -414,14 +1029,21 @@ function resolveNode(research, entry) {
   return { id: entry.nodeId, name: '', effect: '' };
 }
 
-function nodeButton(research, entry, x, y) {
+function nodeButton(research, entry, x, y, order = 0) {
   const node = resolveNode(research, entry);
   const disabled = entry.state === 'hidden';
   const selected = entry.nodeId === selectedNodeId;
   const localizedName = nodeName(node.name);
   const localizedEffect = effectText(node.effect);
-  const tip = `${escapeHtml(localizedName)}${localizedEffect ? ' — ' + escapeHtml(localizedEffect) : ''}`;
-  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-selected="${selected}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}${selected ? 'aria-current="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector"><span aria-hidden="true">${nodeIcon(node.effect)}</span></button>`;
+  const step = order ? `${order}. ` : '';
+  const tip = `${step}${escapeHtml(localizedName)}${localizedEffect ? ' — ' + escapeHtml(localizedEffect) : ''}`;
+  const passive = research.passiveSkillNodeId === entry.nodeId;
+  const kind = nodeIconKind(node, passive);
+  // The order chip turns the graph into a plan you can read: it is the learning
+  // order the research is stored in, so "learn through here" is unambiguous.
+  const chip = order ? `<span class="spec-ring-num" aria-hidden="true">${order}</span>` : '';
+  const upgrades = nodeUpgradeCount(node);
+  return `<button type="button" class="spec-ring-node" data-state="${entry.state}" data-kind="${kind}" data-passive="${passive}" data-upgrades="${upgrades}" data-selected="${selected}" data-order="${order}" data-spec-node="${entry.nodeId}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" ${disabled ? 'disabled aria-disabled="true" ' : ''}${selected ? 'aria-current="true" ' : ''}title="${tip}" aria-label="${tip}" aria-controls="spec-node-inspector"><span class="spec-ring-node-glyph" aria-hidden="true">${ICON[kind]}</span>${upgradePips(upgrades, entry.level ?? 0)}${chip}</button>`;
 }
 
 // Enhanced Tactics is a small dependency tree in-game; everything else is a
@@ -435,7 +1057,253 @@ function isTreeLayout(research) {
   );
 }
 
+// Graph geometry transcribed from in-game screenshots (2026-08-12 capture, all
+// graphs at 100%). `points[i]` is where dataset entry `i` sits, as a percentage
+// of the graph box; `aspect` is that box's width/height so the layout keeps its
+// in-game proportions instead of being squashed into a square. `edges` are node
+// index pairs and `centerEdges` are nodes wired inward to the research emblem,
+// which sits at `center`. Node order was verified against the screenshots by
+// matching each slot's icon and the names revealed on selection.
+// Researches without an entry here fall back to the generic even ellipse.
+const RING_SHAPES = {
+  // Single loop: entry 1 hangs off the emblem, the chain runs down the left,
+  // around the bottom and up the right, ending at the passive skill on top.
+  training1: {
+    aspect: 0.757,
+    center: { x: 49.9, y: 50.3 },
+    points: [
+      { x: 19.6, y: 32.3 },
+      { x: 10.1, y: 50.3 },
+      { x: 13.7, y: 68.3 },
+      { x: 25.9, y: 82.5 },
+      { x: 49.9, y: 94.2 },
+      { x: 74.6, y: 82.5 },
+      { x: 86.3, y: 68.3 },
+      { x: 90.2, y: 50.3 },
+      { x: 86.3, y: 32.3 },
+      { x: 73.9, y: 18.0 },
+      { x: 49.9, y: 5.8 },
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [8, 9],
+      [9, 10],
+    ],
+    centerEdges: [0],
+  },
+  // Outer loop closed through the top hub, plus two inner nodes that drop from
+  // the hub into the emblem.
+  encounter1: {
+    aspect: 0.785,
+    center: { x: 49.9, y: 48.6 },
+    points: [
+      { x: 66.0, y: 30.6 },
+      { x: 33.6, y: 30.6 },
+      { x: 49.9, y: 6.0 },
+      { x: 77.8, y: 8.3 },
+      { x: 90.1, y: 25.7 },
+      { x: 95.5, y: 48.6 },
+      { x: 83.9, y: 66.2 },
+      { x: 70.2, y: 81.0 },
+      { x: 30.1, y: 81.0 },
+      { x: 16.4, y: 66.2 },
+      { x: 6.4, y: 48.6 },
+      { x: 10.1, y: 25.7 },
+      { x: 22.7, y: 8.3 },
+      { x: 49.9, y: 94.0 },
+    ],
+    edges: [
+      [2, 0],
+      [2, 1],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 13],
+      [13, 8],
+      [8, 9],
+      [9, 10],
+      [10, 11],
+      [11, 12],
+      [12, 2],
+    ],
+    centerEdges: [0, 1],
+  },
+  // Four branches off the emblem: two Resistance arms sweeping down, two Might
+  // arms sweeping up and meeting at the passive skill.
+  callofglory1: {
+    aspect: 0.72,
+    center: { x: 49.9, y: 52.7 },
+    points: [
+      { x: 67.4, y: 63.8 },
+      { x: 90.1, y: 66.3 },
+      { x: 73.9, y: 78.7 },
+      { x: 73.9, y: 94.5 },
+      { x: 32.5, y: 63.8 },
+      { x: 10.1, y: 66.3 },
+      { x: 26.3, y: 78.7 },
+      { x: 26.3, y: 94.5 },
+      { x: 67.4, y: 41.8 },
+      { x: 83.9, y: 31.8 },
+      { x: 90.1, y: 16.6 },
+      { x: 71.3, y: 5.5 },
+      { x: 32.5, y: 41.8 },
+      { x: 15.1, y: 31.8 },
+      { x: 10.1, y: 16.6 },
+      { x: 28.7, y: 5.5 },
+      { x: 49.9, y: 19.1 },
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [8, 9],
+      [9, 10],
+      [10, 11],
+      [11, 16],
+      [12, 13],
+      [13, 14],
+      [14, 15],
+      [15, 16],
+    ],
+    centerEdges: [0, 4, 8, 12],
+  },
+  // Two mirrored wings off the scroll emblem — siege defense down the left,
+  // siege attack down the right — laced together by a middle band through the
+  // rally helmets, with the passive hourglass on the spine above the HP node.
+  enhanced1: {
+    aspect: 0.672,
+    center: { x: 50.1, y: 24.1 },
+    points: [
+      { x: 36.1, y: 9.5 },
+      { x: 12.3, y: 4.7 },
+      { x: 13.7, y: 20.9 },
+      { x: 20.0, y: 35.9 },
+      { x: 6.4, y: 47.8 },
+      { x: 7.6, y: 64.3 },
+      { x: 20.2, y: 79.1 },
+      { x: 6.4, y: 91.1 },
+      { x: 27.5, y: 95.3 },
+      { x: 27.5, y: 57.0 },
+      { x: 63.7, y: 9.5 },
+      { x: 87.7, y: 4.7 },
+      { x: 86.6, y: 20.9 },
+      { x: 80.4, y: 35.9 },
+      { x: 93.8, y: 47.8 },
+      { x: 92.5, y: 64.3 },
+      { x: 72.7, y: 57.0 },
+      { x: 80.0, y: 79.1 },
+      { x: 93.8, y: 91.1 },
+      { x: 72.7, y: 95.3 },
+      { x: 50.1, y: 91.1 },
+      { x: 50.1, y: 58.6 },
+      { x: 50.1, y: 42.5 },
+      { x: 50.1, y: 75.0 },
+    ],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [4, 9],
+      [9, 21],
+      [10, 11],
+      [11, 12],
+      [12, 13],
+      [13, 14],
+      [14, 15],
+      [15, 17],
+      [17, 18],
+      [18, 19],
+      [14, 16],
+      [16, 21],
+      [22, 21],
+      [21, 23],
+      [23, 20],
+      [20, 8],
+      [20, 19],
+    ],
+    centerEdges: [0, 10],
+  },
+};
+
+// A research keeps one graph across all three towers; the game just presents it
+// at a different orientation per troop. Cavalry is the reference capture, so the
+// other two are expressed as a flip of it. Researches with no entry for a troop
+// render the reference orientation until that troop is captured.
+const SHAPE_ORIENTATION = {
+  training1: { cavalry: 'identity', archer: 'rotate180', footman: 'mirrorX' },
+  callofglory1: { cavalry: 'identity', archer: 'rotate180', footman: 'identity' },
+};
+
+const ORIENT = {
+  identity: (p) => p,
+  mirrorX: (p) => ({ x: 100 - p.x, y: p.y }),
+  mirrorY: (p) => ({ x: p.x, y: 100 - p.y }),
+  rotate180: (p) => ({ x: 100 - p.x, y: 100 - p.y }),
+};
+
+function orientShape(researchId, shape) {
+  const name = SHAPE_ORIENTATION[researchId]?.[activeTroop] || 'identity';
+  const move = ORIENT[name] || ORIENT.identity;
+  if (move === ORIENT.identity) return shape;
+  return { ...shape, points: shape.points.map(move), center: move(shape.center) };
+}
+
+function getRingShape(research, access) {
+  const shape = RING_SHAPES[research.id];
+  if (!shape || shape.points.length !== access.entries.length) return null;
+  return orientShape(research.id, shape);
+}
+
+function renderShapedRing(research, access, shape) {
+  const nodes = access.entries
+    .map((entry, i) => nodeButton(research, entry, shape.points[i].x, shape.points[i].y, i + 1))
+    .join('');
+  const lines = shape.edges
+    .map(([a, b]) => {
+      const from = shape.points[a];
+      const to = shape.points[b];
+      return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" />`;
+    })
+    .concat(
+      (shape.centerEdges || []).map((i) => {
+        const from = shape.points[i];
+        return `<line x1="${from.x}" y1="${from.y}" x2="${shape.center.x}" y2="${shape.center.y}" />`;
+      })
+    )
+    .join('');
+  const progress = getResearchProgress(state, activeTroop, research.id);
+  const image = getSpecializationResearchImage(research.id, activeTroop);
+  return `
+    <div class="spec-ring spec-ring--shaped" role="group" aria-label="${escapeHtml(researchName(research))}" style="aspect-ratio:${shape.aspect}">
+      <svg class="spec-ring-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
+      <div class="spec-ring-center" style="left:${shape.center.x}%;top:${shape.center.y}%">
+        <span class="spec-ring-emblem" aria-hidden="true">${image ? plannerSprite(image) : badgeIcon(research.name)}</span>
+        <span class="spec-ring-pct">${pct(progress.percent)}%</span>
+      </div>
+      ${nodes}
+    </div>`;
+}
+
 function renderRing(research, access) {
+  const shape = getRingShape(research, access);
+  if (shape) return renderShapedRing(research, access, shape);
   const entries = access.entries;
   const n = entries.length || 1;
   const nodes = entries
@@ -544,6 +1412,10 @@ function renderTree(research, access) {
 }
 
 function renderNodeGraph(research, access) {
+  // A transcribed shape always wins: it is the real in-game graph, so it beats
+  // both the generic ellipse and the inferred tree fallback.
+  const shape = getRingShape(research, access);
+  if (shape) return renderShapedRing(research, access, shape);
   return isTreeLayout(research) ? renderTree(research, access) : renderRing(research, access);
 }
 
@@ -554,16 +1426,22 @@ function renderSelectedNode(research, access) {
   const nodeKey = contributionNodeKey(research.id, entry.nodeId);
   const contributionData = loadContributions();
   const saved = contributionData.nodes[nodeKey] || contributionData.nodes[entry.nodeId] || {};
-  const knownMedals = saved.reviewedMedalCost ?? saved.medalCost ?? null;
+  const workbookEvidence = buildWorkbookEvidenceIndex(buildContributionTemplateRows().rows).byNodeKey.get(nodeKey);
+  const workbookMedals = workbookEvidence
+    ? workbookEvidence.row.costs.reduce((total, cost) => total + Number(cost || 0), 0)
+    : null;
+  const knownMedals = saved.reviewedMedalCost ?? saved.medalCost ?? workbookMedals;
   const learned = entry.state === 'learned';
   const canToggle = learned || entry.selectable;
+  const maxLevel = entry.maxLevel ?? nodeUpgradeCount(node);
+  const level = entry.level ?? (learned ? maxLevel : 0);
   const position = access.entries.findIndex((candidate) => candidate.nodeId === entry.nodeId) + 1;
   return `
     <section id="spec-node-inspector" class="spec-node-inspector" data-state="${entry.state}" aria-live="polite">
-      <div class="spec-node-inspector-icon" aria-hidden="true">${nodeIcon(node.effect)}</div>
+      <div class="spec-node-inspector-icon" data-kind="${nodeIconKind(node, research.passiveSkillNodeId === entry.nodeId)}" aria-hidden="true">${nodeIcon(node, research.passiveSkillNodeId === entry.nodeId)}</div>
       <div class="spec-node-inspector-copy">
         <span class="spec-node-inspector-kicker">${escapeHtml(sp('selectedLearning'))} · ${escapeHtml(sd('nodePosition', { current: position, total: access.entries.length }))}</span>
-        <h4>${escapeHtml(nodeName(node.name))}</h4>
+        <h4>${escapeHtml(nodeName(node.name))}${maxLevel > 1 ? ` <span class="spec-node-upgrade-tag">${level}/${maxLevel}</span>${upgradePips(maxLevel, level)}` : ''}</h4>
         <div class="spec-node-inspector-buff"><span>${escapeHtml(sp('nodeBuffLabel'))}</span><strong>${escapeHtml(effectText(node.effect) || sp('nodeBuffUnknown'))}</strong></div>
       </div>
       <fieldset class="spec-node-inspector-state">
@@ -571,6 +1449,7 @@ function renderSelectedNode(research, access) {
         <div class="spec-node-state-options">
           <button type="button" data-spec-set-selected-node="unlearned" aria-pressed="${!learned}">${escapeHtml(sp('nodeNotLearned'))}</button>
           <button type="button" data-spec-set-selected-node="learned" aria-pressed="${learned}" ${canToggle ? '' : 'disabled aria-disabled="true"'}>${escapeHtml(sp('nodeLearned'))}</button>
+          ${maxLevel > 1 ? `<button type="button" class="spec-node-max" data-spec-max-node aria-label="${escapeHtml(`${sp('quickMax')}: ${nodeName(node.name)}`)}" ${learned ? 'disabled aria-disabled="true"' : ''}>${escapeHtml(sp('quickMax'))}</button>` : ''}
         </div>
       </fieldset>
       <div class="spec-node-medal-status${knownMedals === null ? ' is-unknown' : ''}">
@@ -613,15 +1492,25 @@ function renderDetail() {
         <button type="button" class="spec-back" data-spec-back aria-label="${escapeHtml(sp('back'))}">‹</button>
         <div class="spec-detail-title">
           <h3>${escapeHtml(researchName(research))}</h3>
-          <span>${escapeHtml(columnLabel(column.id))} · ${escapeHtml(seasonLabel(column.unlockSeason))} · ${escapeHtml(sp('nodeLevel', { current: progress.completedNodes, maximum: progress.totalNodes }))}</span>
+          <span>${escapeHtml(columnLabel(research.column))} · ${escapeHtml(seasonLabel(column.unlockSeason))} · ${escapeHtml(sp('nodeLevel', { current: progress.completedNodes, maximum: progress.totalNodes }))}</span>
         </div>
       </header>
       <div class="spec-node-guide"><strong>${escapeHtml(sd('chooseNodeTitle'))}</strong><span>${escapeHtml(sd('chooseNodeHint'))}</span></div>
-      ${renderNodeGraph(research, access)}
-      ${renderSelectedNode(research, access)}
+      <div class="spec-detail-workspace">
+        ${renderNodeGraph(research, access)}
+        ${renderSelectedNode(research, access)}
+      </div>
       <section class="spec-detail-section spec-medal-field">
         <label for="spec-medals-input">${escapeHtml(sp('medalsRecorded'))}</label>
         <input id="spec-medals-input" type="number" min="0" max="${research.cost}" step="1" value="${recorded ?? ''}" placeholder="${escapeHtml(sp('medalsUnknown'))}" data-spec-medals ${progress.isComplete ? 'disabled' : ''} />
+        ${
+          easyMedalMode && !progress.isComplete
+            ? `<div class="spec-medal-quickfill" role="group" aria-label="${escapeHtml(sp('easyMedalsLabel'))}">
+                ${[25, 50, 75, 100].map((share) => `<button type="button" data-spec-medal-fill="${share}" data-spec-research-id="${research.id}">${share}%</button>`).join('')}
+                <button type="button" data-spec-medal-fill="0" data-spec-research-id="${research.id}">${escapeHtml(sp('easyMedalsClear'))}</button>
+              </div>`
+            : ''
+        }
         <div class="spec-cost-table">
           <div class="spec-cost-row"><span>${escapeHtml(sp('medalsRequired'))}</span><strong>${fmt(research.cost)}</strong></div>
           <div class="spec-cost-row"><span>${escapeHtml(sp('medalsRemaining'))}</span><strong>${remaining === null ? escapeHtml(sp('medalsUnknown')) : fmt(remaining)}</strong></div>
@@ -639,6 +1528,15 @@ function renderDetail() {
 
 function render() {
   if (!root) return;
+  // render() replaces the whole subtree, which would otherwise collapse any
+  // contribution column the reader had expanded. Carry the open ones across —
+  // and the hero-synergies disclosure with them.
+  const openColumns = new Set(
+    Array.from(root.querySelectorAll('.spec-contrib-column[open]'), (element) =>
+      element.querySelector('summary')?.textContent?.trim()
+    ).filter(Boolean)
+  );
+  const synergiesOpen = Boolean(root.querySelector('.spec-synergy[open]'));
   const summary = getSpecializationSummary(state);
   root.dir = getSpecializationTowersV2Direction(locale());
   root.innerHTML = `
@@ -646,6 +1544,15 @@ function render() {
       ${renderSummary(summary)}
       ${view === 'detail' && selectedResearchId ? renderDetail() : renderOverview(summary)}
     </div>`;
+  if (openColumns.size) {
+    root.querySelectorAll('.spec-contrib-column').forEach((element) => {
+      const label = element.querySelector('summary')?.textContent?.trim();
+      if (label && openColumns.has(label)) element.open = true;
+    });
+  }
+  if (synergiesOpen) {
+    root.querySelector('.spec-synergy')?.setAttribute('open', '');
+  }
 }
 
 /* ---------- Events ---------- */
@@ -679,10 +1586,102 @@ function focusContributionNode(researchId, nodeId) {
   row.querySelector('[data-spec-node-medal]')?.focus({ preventScroll: true });
 }
 
+function refreshNodeSelection() {
+  if (!root || !selectedResearchId) return;
+  root.querySelectorAll('[data-spec-node]').forEach((button) => {
+    const isSelected = Number(button.dataset.specNode) === selectedNodeId;
+    button.dataset.selected = String(isSelected);
+    if (isSelected) button.setAttribute('aria-current', 'true');
+    else button.removeAttribute('aria-current');
+  });
+  const research = SPECIALIZATION_RESEARCH[selectedResearchId];
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const inspector = root.querySelector('#spec-node-inspector');
+  if (inspector && research) inspector.outerHTML = renderSelectedNode(research, access);
+  root.querySelector(`[data-spec-node="${selectedNodeId}"]`)?.focus({ preventScroll: true });
+}
+
+function onKeyDown(event) {
+  // Radiogroup pattern for the two paths: arrows/Home/End move (and, as with
+  // radio groups, select) instead of Tab, so Tab keeps flowing past the group.
+  const modeButton = event.target.closest?.('[data-spec-plan-mode]');
+  if (modeButton) {
+    const index = HERO_PLAN_MODES.indexOf(modeButton.dataset.specPlanMode);
+    let target = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      target = HERO_PLAN_MODES[(index + 1) % HERO_PLAN_MODES.length];
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      target = HERO_PLAN_MODES[(index - 1 + HERO_PLAN_MODES.length) % HERO_PLAN_MODES.length];
+    } else if (event.key === 'Home') {
+      target = HERO_PLAN_MODES[0];
+    } else if (event.key === 'End') {
+      target = HERO_PLAN_MODES[HERO_PLAN_MODES.length - 1];
+    }
+    if (target !== null) {
+      event.preventDefault();
+      if (target !== heroPlanMode) {
+        heroPlanMode = target;
+        invalidatePlans();
+      }
+      root?.querySelector(`[data-spec-plan-mode="${target}"]`)?.focus({ preventScroll: true });
+    }
+    return;
+  }
+  if (!event.target.closest?.('[data-spec-node]')) return;
+  const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+  const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+  if (!back && !forward) return;
+  if (moveSelectionAlongPath(forward ? 1 : -1)) event.preventDefault();
+}
+
+// Toggling from the graph keeps the node selected, so a second click undoes the
+// first without the pointer ever leaving the node.
+function toggleSelectedNode(nodeId) {
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const entry = access.entries.find((candidate) => candidate.nodeId === nodeId);
+  if (!entry || (entry.state !== 'learned' && !entry.selectable)) return;
+  state = toggleResearchNode(state, activeTroop, selectedResearchId, nodeId);
+  persist();
+  render();
+  root?.querySelector(`[data-spec-node="${nodeId}"]`)?.focus({ preventScroll: true });
+}
+
+// "I am here on the path": everything up to and including this node is learned,
+// everything after it is not. One gesture instead of clicking a dozen nodes.
+function setProgressThroughNode(nodeId) {
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const index = access.entries.findIndex((entry) => entry.nodeId === nodeId);
+  if (index < 0) return;
+  const ids = access.entries.slice(0, index + 1).map((entry) => entry.nodeId);
+  state = setResearchNodes(state, activeTroop, selectedResearchId, ids);
+  selectedNodeId = nodeId;
+  persist();
+  render();
+  root?.querySelector(`[data-spec-node="${nodeId}"]`)?.focus({ preventScroll: true });
+}
+
+// Arrow keys walk the learning order rather than the DOM, so the graph is usable
+// without a pointer whatever shape it is drawn in.
+function moveSelectionAlongPath(step) {
+  if (!selectedResearchId) return false;
+  const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
+  const entries = access.entries.filter((entry) => entry.state !== 'hidden');
+  if (!entries.length) return false;
+  const current = entries.findIndex((entry) => entry.nodeId === selectedNodeId);
+  const next = current < 0 ? 0 : (current + step + entries.length) % entries.length;
+  selectedNodeId = entries[next].nodeId;
+  refreshNodeSelection();
+  return true;
+}
+
 function completeResearch(researchId) {
   const research = SPECIALIZATION_RESEARCH[researchId];
   if (!research) return;
-  const allNodes = research.nodes.map((node) => node.id);
+  // Every upgrade, not every node: a base-attribute node is listed twice.
+  const allNodes = [];
+  research.nodes.forEach((node) => {
+    for (let index = 0; index < nodeUpgradeCount(node); index += 1) allNodes.push(node.id);
+  });
   if (research.passiveSkillNodeId !== null && research.passiveSkillNodeId !== undefined) {
     allNodes.push(research.passiveSkillNodeId);
   }
@@ -691,6 +1690,77 @@ function completeResearch(researchId) {
 }
 
 function onClick(event) {
+  if (event.target.closest('[data-spec-easy-medals]')) {
+    easyMedalMode = !easyMedalMode;
+    safeSet(EASY_MEDALS_KEY, easyMedalMode ? '1' : '');
+    render();
+    return;
+  }
+  const modeButton = event.target.closest('[data-spec-plan-mode]');
+  if (modeButton) {
+    const mode = modeButton.dataset.specPlanMode;
+    if (HERO_PLAN_MODES.includes(mode) && mode !== heroPlanMode) {
+      heroPlanMode = mode;
+      invalidatePlans();
+    }
+    return;
+  }
+  const presetButton = event.target.closest('[data-spec-path-preset]');
+  if (presetButton) {
+    const presetId = presetButton.dataset.specPathPreset;
+    if (presetId === F2P_PATH_ID || getPathPreset(presetId)?.troop === activeTroop) {
+      pathPresets = { ...pathPresets, [activeTroop]: presetId };
+      invalidatePlans();
+    }
+    return;
+  }
+  const heroButton = event.target.closest('[data-spec-path-hero]');
+  if (heroButton) {
+    const heroName = heroButton.dataset.specPathHero;
+    const nextOwned = !isHeroOwned(heroName);
+    // An override that agrees with the Heroes tab is noise, so drop it and let
+    // the tab keep owning the answer.
+    if (baseRoster().includes(heroName) === nextOwned) delete heroOverrides[heroName];
+    else heroOverrides = { ...heroOverrides, [heroName]: nextOwned };
+    invalidatePlans();
+    return;
+  }
+  if (event.target.closest('[data-spec-plan-go-heroes]')) {
+    if (typeof window.vtsSwitchTab === 'function') {
+      window.vtsSwitchTab('heroes', false, { scrollToSection: true });
+    }
+    return;
+  }
+  const planTroop = event.target.closest('[data-spec-plan-troop]');
+  if (planTroop) {
+    const troop = planTroop.dataset.specPlanTroop;
+    if (UI_TROOPS.includes(troop)) {
+      activeTroop = troop;
+      selectedLegionColumnId = null;
+      render();
+    }
+    return;
+  }
+  const medalFill = event.target.closest('[data-spec-medal-fill]');
+  if (medalFill) {
+    // The model drops medalsSpent unless nodes are selected, so a quick fill sets the
+    // node count and the medals together: "I am roughly N% through this".
+    const researchId = medalFill.dataset.specResearchId;
+    const research = SPECIALIZATION_RESEARCH[researchId];
+    const share = Number(medalFill.dataset.specMedalFill);
+    const ids = research.nodes.map((node) => node.id);
+    const count = share === 0 ? 0 : Math.ceil((share / 100) * ids.length);
+    state = setResearchNodes(state, activeTroop, researchId, ids.slice(0, count));
+    const medals = share === 0 ? null : Math.round((Number(research.cost) || 0) * (share / 100));
+    try {
+      state = setResearchMedalsSpent(state, activeTroop, researchId, medals);
+    } catch {
+      // A rejected medal value still leaves the node selection applied.
+    }
+    persist();
+    render();
+    return;
+  }
   const troopBtn = event.target.closest('[data-spec-troop]');
   if (troopBtn) {
     activeTroop = troopBtn.dataset.specTroop;
@@ -740,9 +1810,31 @@ function onClick(event) {
   }
   const nodeBtn = event.target.closest('[data-spec-node]');
   if (nodeBtn && !nodeBtn.disabled && selectedResearchId) {
-    selectedNodeId = Number(nodeBtn.dataset.specNode);
+    const nodeId = Number(nodeBtn.dataset.specNode);
+    // Three gestures on one control, cheapest to most powerful:
+    //   shift/ctrl-click  -> set the whole path's progress to this node
+    //   click the node you already have selected -> step its upgrades
+    //   click any other node -> select it
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      setProgressThroughNode(nodeId);
+      return;
+    }
+    if (nodeId === selectedNodeId) {
+      toggleSelectedNode(nodeId);
+      return;
+    }
+    selectedNodeId = nodeId;
+    // Selecting must not rebuild the tab. A full render replaces every node
+    // button and resizes the inspector underneath, which moves the graph out
+    // from under the pointer — that is what made a second click land on
+    // nothing. Patch the selection in place instead.
+    refreshNodeSelection();
+    return;
+  }
+  if (event.target.closest('[data-spec-max-node]') && selectedResearchId) {
+    state = maxResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
+    persist();
     render();
-    root?.querySelector(`[data-spec-node="${selectedNodeId}"]`)?.focus({ preventScroll: true });
     return;
   }
   const nodeState = event.target.closest('[data-spec-set-selected-node]');
@@ -750,6 +1842,16 @@ function onClick(event) {
     const access = getResearchNodeAccess(state, activeTroop, selectedResearchId);
     const learned =
       access.entries.find((entry) => entry.nodeId === selectedNodeId)?.state === 'learned';
+    // "Learned" on a two-upgrade node means fully upgraded, so buy the rest.
+    if (!learned && nodeState.dataset.specSetSelectedNode === 'learned') {
+      state = maxResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
+      persist();
+      render();
+      root
+        ?.querySelector('[data-spec-set-selected-node="learned"]')
+        ?.focus({ preventScroll: true });
+      return;
+    }
     const wantsLearned = nodeState.dataset.specSetSelectedNode === 'learned';
     if (learned !== wantsLearned) {
       state = toggleResearchNode(state, activeTroop, selectedResearchId, selectedNodeId);
@@ -787,28 +1889,24 @@ function onChange(event) {
     render();
     return;
   }
-  const contributorInput = event.target.closest('[data-spec-node-contributor]');
-  if (contributorInput) {
-    const nodeId = contributorInput.dataset.specNodeContributor;
-    const data = loadContributions();
-    contributionRecord(data, nodeId).contributor = contributorInput.value.trim();
-    saveContributions(data);
-    return;
-  }
   const medalInput = event.target.closest('[data-spec-node-medal]');
   if (medalInput) {
+    const identity = getContributorIdentity();
+    // Where accounts exist, only a signed-in one may submit. The input is also disabled
+    // in that state, so this is the belt to that braces.
+    if (!identity) {
+      medalInput.value = '';
+      return;
+    }
     const nodeId = medalInput.dataset.specNodeMedal;
     const raw = medalInput.value.trim();
     const data = loadContributions();
-    contributionRecord(data, nodeId).medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    const record = contributionRecord(data, nodeId);
+    record.medalCost = raw === '' ? null : Math.max(0, Number(raw) || 0);
+    record.contributor = record.medalCost === null ? '' : identity.label;
+    record.contributorUid = record.medalCost === null ? '' : identity.uid;
     saveContributions(data);
-    const countEl = root?.querySelector('.spec-contrib-count');
-    if (countEl) {
-      const allData = loadContributions();
-      countEl.textContent = sp('communityNodesWithData', {
-        count: contributionCount(allData),
-      });
-    }
+    updateDisplayedContributionCount(loadContributions());
     return;
   }
   const reviewerInput = event.target.closest('[data-spec-node-reviewer]');
@@ -827,10 +1925,7 @@ function onChange(event) {
     contributionRecord(data, nodeId).reviewedMedalCost =
       raw === '' ? null : Math.max(0, Number(raw) || 0);
     saveContributions(data);
-    const countEl = root?.querySelector('.spec-contrib-count');
-    if (countEl) {
-      countEl.textContent = sp('communityNodesWithData', { count: contributionCount(data) });
-    }
+    updateDisplayedContributionCount(data);
   }
 }
 
@@ -839,13 +1934,33 @@ export function initSpecializationTool() {
   if (!root) return;
   state = loadSpecializationState();
   view = 'overview';
+  easyMedalMode = safeGet(EASY_MEDALS_KEY, '') === '1';
+  loadPathState();
   selectedResearchId = SPECIALIZATION_COLUMNS[1].researches[0];
   if (!wired) {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
-    window.addEventListener('vts:language-change', () => render());
+    root.addEventListener('keydown', onKeyDown);
+    window.addEventListener('vts:language-change', () => {
+      void ensureTowersLocale().then(() => render());
+    });
+    // Signing in or out changes whether the contribution fields accept input. Firebase
+    // also fires this once on boot with the state we already render, so only re-render
+    // when the identity actually changed - a needless rebuild discards UI state.
+    try {
+      let lastIdentityKey = getContributorIdentity()?.uid || '';
+      onUserChanged?.(() => {
+        const nextKey = getContributorIdentity()?.uid || '';
+        if (nextKey === lastIdentityKey) return;
+        lastIdentityKey = nextKey;
+        render();
+      });
+    } catch {
+      // Firebase may be unconfigured; the panel then stays in its signed-out state.
+    }
     wired = true;
   }
   render();
   root.closest('#specializationSection')?.querySelector('.specialization-loading')?.remove();
+  void ensureTowersLocale().then(() => render());
 }

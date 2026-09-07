@@ -44,6 +44,7 @@ import {
   showContributionPasteForm,
   showExGuildPasteForm,
   processContributionImages,
+  runBohMatchOcr,
   editContributionRecord,
   deleteContributionRecord,
   setContributionReward,
@@ -70,6 +71,32 @@ import {
   displayGameTime,
 } from './ocr-engine.js';
 import { translations } from './translations.js';
+import {
+  ACTIVE_EDEN_WORKSPACE,
+  ACTIVE_EDEN_WORKSPACE_ID,
+  EDEN_WORKSPACE_COLLECTION_PATH,
+  buildEdenPublicProjection,
+  buildEmptyEdenWorkspaceDashboard,
+  edenWorkspaceFirestorePath,
+  edenWorkspaceMutationError,
+  edenWorkspaceStorageKey,
+  isEdenWorkspaceMutable,
+  getEdenWorkspace,
+  parseEdenWorkspaceRecord,
+  setActiveAdminWorkspaceId,
+} from './eden-workspaces.js';
+const ACTIVE_EDEN_WORKSPACE_DEFAULT_SEASON = ACTIVE_EDEN_WORKSPACE.defaultSeason;
+
+// The archived Eden X1 workspace refuses every mutation: writes log a warning,
+// surface a sync failure, and the caller aborts. Reads and exports stay open.
+function blockEdenArchiveWrite(action = 'write') {
+  const err = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID);
+  if (!err) return false;
+  console.warn(err.message, action);
+  log(`${err.message} Blocked: ${action}.`, 'warn');
+  showCloudSyncFailure(err, `${ACTIVE_EDEN_WORKSPACE.label} is read-only`);
+  return true;
+}
 import { formatLocaleDate, formatLocaleNumber, resolveRuntimeLocale } from './locale-format.js';
 import {
   fromEdenVoteDatetimeLocal,
@@ -78,6 +105,7 @@ import {
   toEdenVoteDatetimeLocal,
 } from './eden-vote-deadline.js';
 import {
+  CONDUCT_BULK_MAX_ROWS,
   R5_ADJUSTMENT_CATEGORIES,
   R5_ADJUSTMENT_CATEGORY_KEYS,
   R5_ADJUSTMENTS_LOCAL_KEY,
@@ -89,10 +117,42 @@ import {
   loadR5Adjustments,
   loadLocalR5Adjustments,
   normalizeR5Adjustment,
+  parseConductBulkText,
   resolveR5PlayerIdentity,
   updateR5Adjustment,
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
+import { createVtsScoreAdminView } from './vts-score-admin-view.js';
+import { loadVtsScoreSnapshot } from './vts-score-store.js';
+import {
+  BOH_MATCH_FIXTURES,
+  BOH_MATCH_TEAMS,
+  getBohMatchFixture,
+  bohMatchEntriesFromOcr,
+  bohMatchEntriesFromText,
+  deleteBohMatchResult,
+  deleteLocalBohMatchResult,
+  loadBohMatchResults,
+  loadLocalBohMatchResults,
+  normalizeBohMatchEntries,
+  saveBohMatchResult,
+  saveLocalBohMatchResult,
+  summarizeBohMatchResults,
+  unratedBohMatchEntries,
+} from './boh-match-results.js';
+import {
+  conductSuggestionToAdjustment,
+  createConductSuggestion,
+  createLocalConductSuggestion,
+  deleteConductSuggestion,
+  deleteLocalConductSuggestion,
+  loadConductSuggestions,
+  loadLocalConductSuggestions,
+  normalizeConductSuggestionStatus,
+  reviewConductSuggestion,
+  reviewLocalConductSuggestion,
+  summarizeConductSuggestions,
+} from './ocr-conduct-suggestions.js';
 import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
@@ -100,6 +160,7 @@ import {
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
+import { csvFooterLines, getExportBranding } from './export-branding.js';
 import {
   compactPlayerIdentity,
   resolveCanonicalPlayerIdentity,
@@ -111,7 +172,9 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
-import { requireSensitiveAdminPin, sensitiveAdminUnlocked } from './admin-pin-gate.js';
+// Cached superadmin claim, refreshed by refreshSuperAdminSurfaces(). UI gating
+// only — the rules and the callable are the real boundary.
+let dashSuperAdmin = null;
 import {
   applyDashboardAttackMutation,
   dashboardAttackFingerprint,
@@ -148,12 +211,12 @@ let allianceViewVoteSettingsUnsubscribe = null;
 let allianceViewContributionFrame = 0;
 let localAllianceViewFirestoreContext = null;
 const allianceViewContributionSubscribers = new Set();
-let allStarBohModulePromise = null;
-let allStarBohMountPromise = null;
-let allStarBohController = null;
-let allStarBohAdminI18n = null;
-let allStarBohResearchI18n = null;
+let throneBuffsModulePromise = null;
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
+// Throne Buffs is a standing program: its history key is deliberately global,
+// never scoped to the Eden season workspace, so a season rollover cannot
+// move or clear the assignment history.
+const THRONE_BUFFS_HISTORY_LOCAL_KEY = 'vtsThroneBuffsHistory';
 
 function isDynamicImportLoadFailure(err) {
   const message = String(err?.message || err?.reason?.message || err || '');
@@ -294,6 +357,10 @@ state.edenX1VoteSettings = null;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
 state.r5EditingId = '';
+state.conductSuggestions = [];
+state.bohMatchEntries = [];
+state.bohMatchResults = [];
+state.vtsScoreSnapshot = null;
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -305,7 +372,10 @@ state.adminUser = null;
 state.adminIsAdmin = false;
 
 const DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS = 1200;
-const DASHBOARD_CLOUD_RETRY_QUEUE_KEY = 'vts_dashboard_cloud_retry_queue';
+const DASHBOARD_CLOUD_RETRY_QUEUE_KEY = edenWorkspaceStorageKey(
+  'vts_dashboard_cloud_retry_queue',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
 const DASHBOARD_CLOUD_RETRY_LIMIT = 6;
 const ADMIN_LOCAL_TEST_KEY = 'vts_admin_local_test_auth';
 const DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = (() => {
@@ -333,11 +403,30 @@ const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
   return Number.isFinite(override) && override > 0 ? override : 20000;
 })();
 const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
-const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
-const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
-const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
-const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
-const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = 'vts_eden_x1_vote_admin_settings';
+// Vote records are season records: they follow the active Eden workspace.
+// eden-x1 keeps the historical eden_x1_* paths (read-only archive), eden-x2
+// writes to dedicated eden_x2_* collections.
+const EDEN_X1_VOTES_COLLECTION_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'votes');
+const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'voteHistory'
+);
+const EDEN_X1_VOTE_SETTINGS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'voteSettings'
+);
+const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'publicVoteResults'
+);
+const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_eden_x1_vote_admin_settings',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+const R5_ADJUSTMENT_SEASON_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_r5_adjustment_season',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
@@ -631,9 +720,177 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
-  if (name === 'allStarBoh') void ensureAllStarBohMountedOrUpdated();
+  if (name === 'allStarBoh') renderBohMatchPanel();
+  if (name === 'vtsScore') renderVtsScorePanel();
+  if (name === 'throneBuffs') void ensureThroneBuffsMounted();
+  if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
+  if (name === 'conductSuggest') renderConductSuggestPanel();
+}
+
+let userRolesModulePromise = null;
+
+/**
+ * Reveals the Users & Roles tab only for a superadmin. This is presentation:
+ * the setUserRole callable re-checks the caller's claim server-side and
+ * firestore.rules gate the audit trail independently, so hiding the button is
+ * a courtesy, never the boundary.
+ */
+async function refreshSuperAdminSurfaces() {
+  let superadmin = false;
+  try {
+    // The local test bypass already stands in for the admin claim on
+    // localhost; it stands in for superadmin too, so the specs exercise the
+    // same code path a real superadmin takes. isLocalAdminTestBypass() is
+    // hostname-locked, so this cannot apply in production.
+    if (isLocalAdminTestBypass()) return applySuperAdminSurfaces(true);
+    const { isSuperAdminAuthUser } = await import('./firebase.js');
+    superadmin = await isSuperAdminAuthUser();
+  } catch {
+    // Treat an unreadable claim as "not a superadmin": failing closed keeps a
+    // transient auth error from exposing the surface.
+    superadmin = false;
+  }
+  return applySuperAdminSurfaces(superadmin);
+}
+
+function applySuperAdminSurfaces(superadmin) {
+  dashSuperAdmin = superadmin;
+  document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
+    element.hidden = !superadmin;
+  });
+  // Every superadmin-only tab reflects the claim, and the whole Alliance
+  // Management nav hides when the claim is absent so a plain admin is not
+  // shown a row of buttons that all refuse them.
+  SUPERADMIN_DASH_SUBTABS.forEach((name) => {
+    document.querySelectorAll(`[data-subtab="${name}"]`).forEach((btn) => {
+      btn.disabled = !superadmin;
+      btn.title = superadmin ? '' : dashT('adminRolesSuperadminRequired');
+    });
+  });
+  document.querySelectorAll('[data-subtab-scope="global"]').forEach((nav) => {
+    nav.hidden = !superadmin;
+  });
+  return superadmin;
+}
+
+/**
+ * Candidate accounts come from users/{uid} profiles, which only exist once
+ * someone has signed in. Roles themselves are never read from there — a
+ * profile document is member-writable, so treating it as authority would be an
+ * escalation path. The claim is the only source of truth.
+ */
+async function loadRoleCandidates() {
+  const { collection, getDocs } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs
+    .map((entry) => ({
+      uid: entry.id,
+      displayName: String(entry.data()?.displayName || '').slice(0, 80),
+      admin: entry.data()?.admin === true,
+      superadmin: entry.data()?.superadmin === true,
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName) || a.uid.localeCompare(b.uid));
+}
+
+async function ensureUserRolesMounted() {
+  if (!(await refreshSuperAdminSurfaces())) return;
+  if (!userRolesModulePromise) {
+    userRolesModulePromise = Promise.all([
+      import('./admin-roles-controller.js'),
+      import('../css/admin-roles.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        userRolesModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+  }
+  try {
+    const module = await userRolesModulePromise;
+    const mount = $id('dashUserRolesRoot');
+    if (!mount) return;
+    const { callSetUserRole, currentAuthUid } = await import('./firebase.js');
+    module.renderRolesController(mount, {
+      currentUid: currentAuthUid(),
+      listMembers: loadRoleCandidates,
+      setUserRole: callSetUserRole,
+      t: dashT,
+    });
+  } catch (error) {
+    console.error('USER ROLES LOAD ERROR:', error);
+    const mount = $id('dashUserRolesRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminRolesLoadFailed')
+      )}</div>`;
+    }
+  }
+}
+
+function loadThroneBuffsHistory() {
+  try {
+    const raw = localStorage.getItem(THRONE_BUFFS_HISTORY_LOCAL_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('THRONE BUFFS HISTORY LOAD ERROR:', error);
+    return [];
+  }
+}
+
+function saveThroneBuffsHistory(record) {
+  const history = loadThroneBuffsHistory();
+  const index = history.findIndex((item) => item?.weekKey === record.weekKey);
+  if (index >= 0) history[index] = record;
+  else history.push(record);
+  try {
+    localStorage.setItem(THRONE_BUFFS_HISTORY_LOCAL_KEY, JSON.stringify(history));
+  } catch (error) {
+    console.warn('THRONE BUFFS HISTORY SAVE ERROR:', error);
+  }
+}
+
+async function ensureThroneBuffsMounted() {
+  if (!throneBuffsModulePromise) {
+    throneBuffsModulePromise = Promise.all([
+      import('./admin-throne-buffs.js'),
+      import('../css/admin-throne-buffs.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        throneBuffsModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+  }
+  try {
+    const module = await throneBuffsModulePromise;
+    const mount = $id('dashThroneRoot');
+    if (!mount) return;
+    // The Throne Buffs UI reads its strings through the dashboard's own
+    // translator, so publish it once for the module's embedded t() helper.
+    window.dashT = dashT;
+    module.renderThroneBuffs(mount, {
+      history: loadThroneBuffsHistory(),
+      rosterMembers: Array.isArray(state.rosterNames)
+        ? state.rosterNames.map((name) => ({ name }))
+        : [],
+      onSave: saveThroneBuffsHistory,
+    });
+  } catch (error) {
+    console.error('THRONE BUFFS LOAD ERROR:', error);
+    const mount = $id('dashThroneRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminThroneEmptyHistory')
+      )}</div>`;
+    }
+  }
 }
 
 const CONDUCT_CATEGORY_I18N_KEYS = {
@@ -653,10 +910,10 @@ const CONDUCT_MANUAL_PLAYER_VALUE = '__manual_conduct_player__';
 
 function getDashboardR5SeasonKey() {
   try {
-    const saved = localStorage.getItem('vts_r5_adjustment_season');
+    const saved = localStorage.getItem(R5_ADJUSTMENT_SEASON_LOCAL_KEY);
     if (saved) return saved;
   } catch (e) {}
-  return `season-${new Date().getUTCFullYear()}`;
+  return ACTIVE_EDEN_WORKSPACE_DEFAULT_SEASON || `season-${new Date().getUTCFullYear()}`;
 }
 
 state.r5Season = state.r5Season || getDashboardR5SeasonKey();
@@ -1042,6 +1299,7 @@ function buildEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
 }
 
 async function publishEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
+  if (blockEdenArchiveWrite('publish public vote results')) return false;
   if (hasEdenX1VoteSeasonMismatch(settings)) return false;
   if (state.adminIsAdmin !== true) return false;
   const db = await ensureCloudSyncReady();
@@ -1289,6 +1547,7 @@ async function loadEdenX1VoteSettings() {
 }
 
 async function saveEdenX1VoteSettings(nextSettings) {
+  if (blockEdenArchiveWrite('save vote settings')) return false;
   edenX1VoteSettingsVersion += 1;
   const settings = normalizeEdenX1VoteSettings(nextSettings);
   state.edenX1VoteSettings = settings;
@@ -1329,6 +1588,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
 }
 
 async function activateCurrentEdenX1VoteSeason() {
+  if (blockEdenArchiveWrite('activate vote season')) return false;
   const previousSettings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
   );
@@ -1813,6 +2073,9 @@ function renderConductAdjustments() {
       return bMs - aMs;
     });
 
+  conductBulkPanel.render();
+  ensureConductSuggestionsLoaded();
+  renderConductSuggestionReview();
   renderConductSummary(rows);
   if (!rows.length) {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
@@ -1905,11 +2168,608 @@ async function loadConductAdjustmentsForSeason() {
 }
 
 async function savePublicConductSnapshot() {
+  if (blockEdenArchiveWrite('save conduct snapshot')) return false;
   const canCloudSave = state.cloudSyncConfigured !== false && state.adminIsAdmin === true;
   return saveDashboardAuxiliaryRecords({
     cloud: canCloudSave,
     immediate: true,
     awaitCloud: canCloudSave,
+  });
+}
+
+// --- Conduct bulk paste ------------------------------------------------------
+// One textarea, one preview, one batched write. Rows are re-parsed from the
+// textarea on every keystroke so the preview can never drift from the text the
+// admin is looking at; the only extra state is the set of line numbers they
+// unticked. The same panel drives superadmin adjustments and admin suggestions,
+// which differ only in what a row is saved as.
+
+function conductRecordSignature(record) {
+  return [
+    record?.playerKey || '',
+    record?.category || '',
+    Number(record?.points || 0),
+    String(record?.note || '').trim(),
+  ].join('|');
+}
+
+function existingConductSignatures() {
+  const signatures = new Set();
+  (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : []).forEach((record) => {
+    if (record?.season !== state.r5Season) return;
+    signatures.add(conductRecordSignature(record));
+  });
+  return signatures;
+}
+
+function existingConductSuggestionSignatures() {
+  const signatures = new Set();
+  (Array.isArray(state.conductSuggestions) ? state.conductSuggestions : []).forEach((record) => {
+    if (record?.season !== state.r5Season || record?.status === 'rejected') return;
+    signatures.add(conductRecordSignature(record));
+  });
+  return signatures;
+}
+
+function createConductBulkPanel(config) {
+  const excluded = new Set();
+
+  function defaultCategory() {
+    const value = $id(config.categoryId)?.value || '';
+    return R5_ADJUSTMENT_CATEGORY_KEYS.includes(value) ? value : 'penalty_other';
+  }
+
+  function renderCategoryPicker() {
+    const select = $id(config.categoryId);
+    if (!select) return;
+    const previous = select.value;
+    const signature = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+      (key) => `${key}:${conductCategoryLabel(key)}`
+    ).join('|');
+    if (select.dataset.signature !== signature) {
+      select.dataset.signature = signature;
+      select.innerHTML = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+        (key) => `<option value="${esc(key)}">${esc(conductCategoryLabel(key))}</option>`
+      ).join('');
+    }
+    select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : 'penalty_other';
+  }
+
+  function readDraft() {
+    const parsed = parseConductBulkText($id(config.inputId)?.value || '', {
+      defaultCategory: defaultCategory(),
+    });
+    const existing = config.existingSignatures();
+    const rows = parsed.rows.map((row) => ({
+      ...row,
+      duplicate: existing.has(conductRecordSignature(row)),
+      included: !excluded.has(row.lineNumber),
+    }));
+    return { ...parsed, rows, selected: rows.filter((row) => row.included) };
+  }
+
+  function setAddButton(count) {
+    const addBtn = $id(config.addBtnId);
+    if (!addBtn) return;
+    addBtn.disabled = !count;
+    const label = addBtn.querySelector('span');
+    if (!label) return;
+    label.textContent = count
+      ? dashT(config.addCountLabelKey, { count })
+      : dashT(config.addLabelKey);
+  }
+
+  function render() {
+    const host = $id(config.previewId);
+    if (!host) return;
+    renderCategoryPicker();
+    const { rows, errors, truncated, selected } = readDraft();
+
+    if (!rows.length && !errors.length) {
+      host.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductBulkEmpty'))}</div>`;
+      setAddButton(0);
+      return;
+    }
+
+    const duplicates = rows.filter((row) => row.duplicate).length;
+    const notices = [
+      `<span>${esc(dashT('adminConductBulkCount', { count: selected.length, total: rows.length }))}</span>`,
+    ];
+    if (duplicates) {
+      notices.push(
+        `<span class="dash-conduct-bulk-warn">${esc(dashT('adminConductBulkDuplicates', { count: duplicates }))}</span>`
+      );
+    }
+    if (truncated) {
+      notices.push(
+        `<span class="dash-conduct-bulk-warn">${esc(dashT('adminConductBulkTruncated', { max: CONDUCT_BULK_MAX_ROWS }))}</span>`
+      );
+    }
+
+    const rowsHtml = rows
+      .map((row) => {
+        const pointsClass = row.points >= 0 ? 'dash-positive' : 'dash-negative';
+        return `<label class="dash-conduct-bulk-row${row.duplicate ? ' is-duplicate' : ''}">
+        <input type="checkbox" data-conduct-bulk-line="${row.lineNumber}"${row.included ? ' checked' : ''}>
+        <strong>${esc(row.playerName)}</strong>
+        <b class="${pointsClass}">${esc(formatSignedPoints(row.points))}</b>
+        <span>${esc(conductCategoryLabel(row.category))}</span>
+        <small>${esc(row.note || '')}</small>
+        ${row.duplicate ? `<em>${esc(dashT('adminConductBulkDuplicate'))}</em>` : ''}
+      </label>`;
+      })
+      .join('');
+
+    const errorsHtml = errors.length
+      ? `<div class="dash-conduct-bulk-errors">${errors
+          .map(
+            (error) =>
+              `<p><b>${esc(dashT('adminConductBulkLine', { line: error.lineNumber }))}</b> ${esc(error.message)}</p>`
+          )
+          .join('')}</div>`
+      : '';
+
+    host.innerHTML = `<div class="dash-conduct-bulk-notices">${notices.join('')}</div>
+    <div class="dash-conduct-bulk-rows">${rowsHtml}</div>
+    ${errorsHtml}`;
+
+    host.querySelectorAll('[data-conduct-bulk-line]').forEach((box) => {
+      box.addEventListener('change', () => {
+        const line = Number(box.dataset.conductBulkLine);
+        if (box.checked) excluded.delete(line);
+        else excluded.add(line);
+        render();
+      });
+    });
+
+    setAddButton(selected.length);
+  }
+
+  function clear() {
+    const input = $id(config.inputId);
+    if (input) input.value = '';
+    excluded.clear();
+    render();
+  }
+
+  async function submit() {
+    const addBtn = $id(config.addBtnId);
+    const { selected } = readDraft();
+    if (!selected.length) return;
+    if (!confirm(dashT(config.confirmKey, { count: selected.length }))) return;
+
+    if (addBtn) addBtn.disabled = true;
+    let saved = 0;
+    const failures = [];
+    try {
+      for (const row of selected) {
+        config.setStatus(
+          dashT('adminConductBulkSaving', { done: saved + 1, total: selected.length }),
+          'info'
+        );
+        try {
+          await config.saveRow(row);
+          saved += 1;
+        } catch (err) {
+          failures.push({ row, message: err?.message || String(err) });
+        }
+      }
+    } finally {
+      if (saved) await config.afterSave();
+      if (addBtn) addBtn.disabled = false;
+    }
+
+    if (!failures.length) {
+      clear();
+      config.setStatus(dashT(config.savedKey, { count: saved }), 'success');
+      return;
+    }
+    // Keep the pasted text so the admin can retry the rows that did not land.
+    render();
+    config.setStatus(
+      `${dashT('adminConductBulkPartial', { count: saved, failed: failures.length })} ${failures[0].message}`,
+      'error'
+    );
+  }
+
+  function bind() {
+    const input = $id(config.inputId);
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = '1';
+    renderCategoryPicker();
+    input.addEventListener('input', () => {
+      excluded.clear();
+      render();
+    });
+    $id(config.categoryId)?.addEventListener('change', render);
+    $id(config.clearBtnId)?.addEventListener('click', clear);
+    $id(config.addBtnId)?.addEventListener('click', () => {
+      submit().catch((err) => {
+        config.setStatus(showCloudSyncFailure(err, config.failureLabel), 'error');
+      });
+    });
+    render();
+  }
+
+  return { render, clear, bind };
+}
+
+const conductBulkPanel = createConductBulkPanel({
+  inputId: 'dashConductBulkInput',
+  categoryId: 'dashConductBulkCategory',
+  previewId: 'dashConductBulkPreview',
+  addBtnId: 'dashConductBulkAddBtn',
+  clearBtnId: 'dashConductBulkClearBtn',
+  addLabelKey: 'adminConductBulkAdd',
+  addCountLabelKey: 'adminConductBulkAddCount',
+  confirmKey: 'adminConductBulkConfirm',
+  savedKey: 'adminConductBulkSaved',
+  failureLabel: 'Bonus team effort points save failed',
+  setStatus: (message, type) => setConductStatus(message, type),
+  existingSignatures: () => existingConductSignatures(),
+  saveRow: async (row) => {
+    const record = {
+      season: state.r5Season,
+      playerKey: row.playerKey,
+      playerName: row.playerName,
+      category: row.category,
+      points: row.points,
+      note: row.note,
+    };
+    if (state.cloudSyncConfigured === false) createLocalR5Adjustment(record);
+    else await createR5Adjustment(record);
+  },
+  afterSave: async () => {
+    await loadConductAdjustmentsForSeason();
+    await savePublicConductSnapshot();
+    render();
+  },
+});
+
+// --- Admin conduct suggestions ----------------------------------------------
+// Any admin can propose points; only a superadmin turns a proposal into a real
+// adjustment. The suggestion carries its author, so the review queue always
+// answers "who asked for this".
+
+function setSuggestStatus(message = '', type = 'info') {
+  const el = $id('dashSuggestStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function currentAdminUid() {
+  return state.adminUser?.uid || '';
+}
+
+function currentAdminLabel() {
+  const user = state.adminUser;
+  return user?.displayName || user?.email || user?.uid || 'admin';
+}
+
+function renderSuggestPlayerOptions() {
+  const list = $id('dashSuggestPlayerOptions');
+  if (!list) return;
+  const options = collectConductPlayerOptions();
+  const signature = options.map((row) => row.playerName).join('|');
+  if (list.dataset.signature === signature) return;
+  list.dataset.signature = signature;
+  list.innerHTML = options
+    .map((row) => `<option value="${esc(row.playerName)}"></option>`)
+    .join('');
+}
+
+function renderSuggestCategoryPicker() {
+  const select = $id('dashSuggestCategory');
+  if (!select) return;
+  const previous = select.value;
+  const signature = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+    (key) => `${key}:${conductCategoryLabel(key)}`
+  ).join('|');
+  if (select.dataset.signature !== signature) {
+    select.dataset.signature = signature;
+    select.innerHTML = R5_ADJUSTMENT_CATEGORY_KEYS.map(
+      (key) => `<option value="${esc(key)}">${esc(conductCategoryLabel(key))}</option>`
+    ).join('');
+  }
+  select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : 'banner_help';
+}
+
+function conductSuggestionStatusLabel(status) {
+  const key = String(status || 'pending');
+  return dashT(
+    key === 'approved'
+      ? 'adminSuggestStatusApproved'
+      : key === 'rejected'
+        ? 'adminSuggestStatusRejected'
+        : 'adminSuggestStatusPending'
+  );
+}
+
+function seasonConductSuggestions() {
+  return (Array.isArray(state.conductSuggestions) ? state.conductSuggestions : []).filter(
+    (record) => record?.season === state.r5Season
+  );
+}
+
+function renderSuggestionRow(record, options = {}) {
+  const pointsValue = Number(record.points || 0);
+  const status = normalizeConductSuggestionStatus(record.status);
+  const meta = [
+    conductCategoryLabel(record.category),
+    conductCreatedAtLabel(record),
+    options.showAuthor
+      ? dashT('adminSuggestBy', { admin: record.suggestedByName || record.suggestedBy })
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const actions = (options.actions || []).join('');
+  return `<article class="dash-conduct-row dash-suggestion-row" data-suggestion-status="${esc(status)}">
+    <div>
+      <strong>${esc(record.playerName)}</strong>
+      <span>${esc(meta)}</span>
+      ${record.note ? `<p>${esc(record.note)}</p>` : ''}
+      ${record.reviewNote ? `<p class="dash-suggestion-review-note">${esc(record.reviewNote)}</p>` : ''}
+    </div>
+    <div class="dash-conduct-row-actions">
+      <span class="dash-suggestion-badge" data-status="${esc(status)}">${esc(conductSuggestionStatusLabel(status))}</span>
+      <b class="${pointsValue >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedPoints(pointsValue)}</b>
+      ${actions}
+    </div>
+  </article>`;
+}
+
+function renderOwnConductSuggestions() {
+  const list = $id('dashSuggestList');
+  if (!list) return;
+  renderSuggestCategoryPicker();
+  renderSuggestPlayerOptions();
+  const seasonEl = $id('dashSuggestSeason');
+  if (seasonEl) seasonEl.textContent = dashT('adminConductSeasonLabel', { season: state.r5Season });
+  const points = $id('dashSuggestPoints');
+  if (points && !points.value) {
+    points.value = defaultR5PointsForCategory($id('dashSuggestCategory')?.value || 'banner_help');
+  }
+
+  const query = ($id('dashSuggestSearch')?.value || '').trim().toLowerCase();
+  const uid = currentAdminUid();
+  const rows = seasonConductSuggestions()
+    .filter((record) => !uid || record.suggestedBy === uid)
+    .filter((record) => !query || (record.playerName || '').toLowerCase().includes(query));
+
+  if (!rows.length) {
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminSuggestEmpty'))}</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((record) =>
+      renderSuggestionRow(record, {
+        actions:
+          record.status === 'pending'
+            ? [
+                `<button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-suggestion-withdraw="${esc(record.id)}">${esc(dashT('adminSuggestWithdraw'))}</button>`,
+              ]
+            : [],
+      })
+    )
+    .join('');
+
+  list.querySelectorAll('[data-suggestion-withdraw]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.suggestionWithdraw;
+      if (!id || !confirm(dashT('adminSuggestWithdrawConfirm'))) return;
+      try {
+        if (state.cloudSyncConfigured === false) deleteLocalConductSuggestion(id);
+        else await deleteConductSuggestion(id);
+        await loadConductSuggestionsForSeason();
+        setSuggestStatus(dashT('adminSuggestWithdrawn'), 'success');
+      } catch (err) {
+        setSuggestStatus(showCloudSyncFailure(err, 'Suggestion withdraw failed'), 'error');
+      }
+    });
+  });
+}
+
+function renderConductSuggestionReview() {
+  const list = $id('dashConductReviewList');
+  if (!list) return;
+  const rows = seasonConductSuggestions();
+  const summary = summarizeConductSuggestions(rows, state.r5Season);
+  const countEl = $id('dashConductReviewCount');
+  if (countEl) {
+    countEl.textContent = dashT('adminSuggestReviewCount', {
+      pending: summary.pending,
+      total: summary.total,
+    });
+  }
+
+  if (!rows.length) {
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminSuggestReviewEmpty'))}</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((record) =>
+      renderSuggestionRow(record, {
+        showAuthor: true,
+        actions:
+          record.status === 'pending'
+            ? [
+                `<button class="dash-btn dash-btn-xs dash-btn-primary" type="button" data-suggestion-approve="${esc(record.id)}">${esc(dashT('adminSuggestApprove'))}</button>`,
+                `<button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-suggestion-reject="${esc(record.id)}">${esc(dashT('adminSuggestReject'))}</button>`,
+              ]
+            : [],
+      })
+    )
+    .join('');
+
+  list.querySelectorAll('[data-suggestion-approve]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      void reviewConductSuggestionAction(btn.dataset.suggestionApprove, 'approved');
+    });
+  });
+  list.querySelectorAll('[data-suggestion-reject]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      void reviewConductSuggestionAction(btn.dataset.suggestionReject, 'rejected');
+    });
+  });
+}
+
+async function reviewConductSuggestionAction(id, status) {
+  const record = seasonConductSuggestions().find((entry) => entry.id === id);
+  if (!record) return;
+  const approving = status === 'approved';
+  if (
+    !confirm(
+      dashT(approving ? 'adminSuggestApproveConfirm' : 'adminSuggestRejectConfirm', {
+        player: record.playerName,
+        points: formatSignedPoints(Number(record.points || 0)),
+      })
+    )
+  ) {
+    return;
+  }
+  const reviewNote = approving ? '' : prompt(dashT('adminSuggestRejectReason'), '') || '';
+
+  try {
+    setConductStatus(dashT('adminConductSaving'), 'info');
+    let adjustmentId = '';
+    if (approving) {
+      // Mint the adjustment first: a suggestion marked approved without a
+      // matching adjustment would silently award nothing.
+      const payload = conductSuggestionToAdjustment(record);
+      const created =
+        state.cloudSyncConfigured === false
+          ? createLocalR5Adjustment(payload)
+          : await createR5Adjustment(payload);
+      adjustmentId = created?.id || '';
+    }
+    if (state.cloudSyncConfigured === false) {
+      reviewLocalConductSuggestion(id, { status, reviewNote, adjustmentId });
+    } else {
+      await reviewConductSuggestion(id, { status, reviewNote, adjustmentId });
+    }
+    await loadConductSuggestionsForSeason();
+    if (approving) {
+      await loadConductAdjustmentsForSeason();
+      await savePublicConductSnapshot();
+      render();
+    }
+    setConductStatus(
+      dashT(approving ? 'adminSuggestApproved' : 'adminSuggestRejected'),
+      approving ? 'success' : 'info'
+    );
+  } catch (err) {
+    setConductStatus(showCloudSyncFailure(err, 'Suggestion review failed'), 'error');
+  }
+}
+
+async function loadConductSuggestionsForSeason() {
+  state.r5Season = state.r5Season || getDashboardR5SeasonKey();
+  try {
+    state.conductSuggestions =
+      state.cloudSyncConfigured === false
+        ? loadLocalConductSuggestions(state.r5Season)
+        : await loadConductSuggestions(state.r5Season);
+  } catch (err) {
+    state.conductSuggestions = Array.isArray(state.conductSuggestions)
+      ? state.conductSuggestions
+      : [];
+    showCloudSyncFailure(err, 'Conduct suggestions load failed');
+  }
+  renderOwnConductSuggestions();
+  renderConductSuggestionReview();
+}
+
+function ensureConductSuggestionsLoaded() {
+  if (state._conductSuggestionsLoaded) return;
+  state._conductSuggestionsLoaded = true;
+  void loadConductSuggestionsForSeason();
+}
+
+function renderConductSuggestPanel() {
+  bindConductSuggestControls();
+  renderOwnConductSuggestions();
+  conductSuggestBulkPanel.render();
+  ensureConductSuggestionsLoaded();
+}
+
+async function saveConductSuggestionRow(row) {
+  const record = {
+    season: state.r5Season,
+    playerKey: row.playerKey,
+    playerName: row.playerName,
+    category: row.category,
+    points: row.points,
+    note: row.note,
+    suggestedBy: currentAdminUid() || 'local-admin',
+    suggestedByName: currentAdminLabel(),
+  };
+  if (state.cloudSyncConfigured === false) return createLocalConductSuggestion(record);
+  return createConductSuggestion(record);
+}
+
+const conductSuggestBulkPanel = createConductBulkPanel({
+  inputId: 'dashSuggestBulkInput',
+  categoryId: 'dashSuggestBulkCategory',
+  previewId: 'dashSuggestBulkPreview',
+  addBtnId: 'dashSuggestBulkAddBtn',
+  clearBtnId: 'dashSuggestBulkClearBtn',
+  addLabelKey: 'adminSuggestBulkAdd',
+  addCountLabelKey: 'adminSuggestBulkAddCount',
+  confirmKey: 'adminSuggestBulkConfirm',
+  savedKey: 'adminSuggestBulkSaved',
+  failureLabel: 'Suggestion save failed',
+  setStatus: (message, type) => setSuggestStatus(message, type),
+  existingSignatures: () => existingConductSuggestionSignatures(),
+  saveRow: (row) => saveConductSuggestionRow(row),
+  afterSave: async () => {
+    await loadConductSuggestionsForSeason();
+  },
+});
+
+function bindConductSuggestControls() {
+  const form = $id('dashSuggestForm');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  renderSuggestCategoryPicker();
+  renderSuggestPlayerOptions();
+  conductSuggestBulkPanel.bind();
+  $id('dashSuggestCategory')?.addEventListener('change', (event) => {
+    const points = $id('dashSuggestPoints');
+    if (points) points.value = defaultR5PointsForCategory(event.target.value);
+  });
+  $id('dashSuggestSearch')?.addEventListener('input', renderOwnConductSuggestions);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const playerInput = $id('dashSuggestPlayer');
+    const rawName = (playerInput?.value || '').trim();
+    playerInput?.setAttribute('aria-invalid', 'false');
+    if (!rawName) {
+      setSuggestStatus(dashT('adminConductNoPlayers'), 'warn');
+      playerInput?.setAttribute('aria-invalid', 'true');
+      playerInput?.focus();
+      return;
+    }
+    try {
+      const identity = resolveR5PlayerIdentity({ name: rawName });
+      setSuggestStatus(dashT('adminSuggestSaving'), 'info');
+      await saveConductSuggestionRow({
+        playerKey: identity.playerKey,
+        playerName: identity.playerName,
+        category: $id('dashSuggestCategory')?.value || 'banner_help',
+        points: $id('dashSuggestPoints')?.value,
+        note: $id('dashSuggestNote')?.value || '',
+      });
+      form.reset();
+      renderSuggestCategoryPicker();
+      const points = $id('dashSuggestPoints');
+      if (points) points.value = defaultR5PointsForCategory($id('dashSuggestCategory')?.value);
+      await loadConductSuggestionsForSeason();
+      setSuggestStatus(dashT('adminSuggestSaved'), 'success');
+    } catch (err) {
+      setSuggestStatus(showCloudSyncFailure(err, 'Suggestion save failed'), 'error');
+    }
   });
 }
 
@@ -1922,6 +2782,7 @@ function bindConductControls() {
     const points = $id('dashConductPoints');
     if (points) points.value = defaultR5PointsForCategory(category.value);
   });
+  conductBulkPanel.bind();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
@@ -2222,7 +3083,7 @@ function getLocalAllianceViewFirestoreContext() {
   };
   const user = {
     uid: 'local-alliance-view-admin',
-    getIdTokenResult: async () => ({ claims: { admin: true } }),
+    getIdTokenResult: async () => ({ claims: { admin: true, superadmin: true } }),
   };
   localAllianceViewFirestoreContext = { db: { kind: 'local-alliance-view' }, user, firestore };
   return localAllianceViewFirestoreContext;
@@ -2244,28 +3105,40 @@ window.getVtsAdminFirestoreContext = async function () {
 // --- Roster ---
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-const PIN_GATED_DASH_SUBTABS = new Set(['edenVotes', 'conduct']);
-
-function dashSubtabPinOptions(name) {
-  if (name === 'conduct') {
-    return {
-      kicker: dashT('adminConductTab'),
-      title: dashT('adminEdenVotesPinTitle'),
-      prompt: dashT('adminConductPinPrompt'),
-    };
-  }
-  return {
-    kicker: dashT('adminEdenVotesTab'),
-    title: dashT('adminEdenVotesPinTitle'),
-    prompt: dashT('adminEdenVotesPinPrompt'),
-  };
-}
+// These two were behind a shared PIN, which protected nothing: firestore.rules
+// had no concept of it, so any admin could read and write eden vote settings
+// and conduct adjustments directly. They are now gated on the superadmin claim,
+// which the rules and the setUserRole callable enforce independently.
+// Eden Votes and Bonus Team Effort Points were PIN-hidden; the whole Alliance
+// Management side is superadmin-only, so its tabs join them here.
+//
+// BoH Match Results is deliberately not on this list: the people who upload a
+// team's end-of-match score list are the team leaders, who are admins, not
+// superadmins. firestore.rules gates the collection on the admin claim to
+// match.
+const SUPERADMIN_DASH_SUBTABS = new Set([
+  'edenVotes',
+  'conduct',
+  'allianceView',
+  'throneBuffs',
+  'vtsScore',
+  'userRoles',
+]);
 
 function switchDashSubtab(name) {
-  if (PIN_GATED_DASH_SUBTABS.has(name) && !sensitiveAdminUnlocked()) {
-    requireSensitiveAdminPin(dashSubtabPinOptions(name)).then((ok) => {
-      if (ok) switchDashSubtab(name);
-    });
+  if (SUPERADMIN_DASH_SUBTABS.has(name) && dashSuperAdmin !== true) {
+    // The claim resolves asynchronously. Refusing while it is merely unknown
+    // would lock a real superadmin out of their own tab whenever they clicked
+    // faster than the token check, so resolve first and decide once.
+    if (dashSuperAdmin === null) {
+      void refreshSuperAdminSurfaces().then((allowed) => {
+        if (allowed) switchDashSubtab(name);
+        else window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
+      });
+      return;
+    }
+    // Known not to be a superadmin: say why rather than doing nothing.
+    window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
     return;
   }
   document
@@ -2284,6 +3157,13 @@ function switchDashSubtab(name) {
     btn.setAttribute('aria-selected', 'true');
     btn.tabIndex = 0;
   }
+  // On mobile the grouped rail becomes a fixed bottom dock. Only the nav of
+  // the active scope can dock; the other nav stays in the page flow so its
+  // tabs remain reachable on a phone.
+  const activeNav = btn?.closest('.dash-subtab-nav') || null;
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((nav) => {
+    nav.classList.toggle('dash-subtab-nav-docked', nav === activeNav);
+  });
   if (name !== 'analytics') state._analyticsAnimated = false;
   // Let the newly selected panel paint before any data-heavy table/chart work.
   // Previously every hidden admin panel rendered synchronously inside the click.
@@ -2299,10 +3179,23 @@ window.seedDashboardForSmokeTest = function (dashData, rosterSnapshots = []) {
 };
 
 function bindSubtabNavigation() {
-  const nav = document.querySelector('#ocrDashboardRoot .dash-subtab-nav');
+  // Each labelled group is its own tablist, so arrow-key roving focus stays
+  // inside one area instead of walking the whole former 11-tab rail.
+  document
+    .querySelectorAll('#ocrDashboardRoot .dash-subtab-group-tabs')
+    .forEach((group) => group.setAttribute('role', 'tablist'));
+  const nav = document.querySelector(
+    '#ocrDashboardRoot .dash-subtab-nav:not(.dash-subtab-nav-grouped)'
+  );
   if (nav) nav.setAttribute('role', 'tablist');
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach((panel) => {
     panel.setAttribute('role', 'tabpanel');
+  });
+  const initiallyActiveNav = document
+    .querySelector('#ocrDashboardRoot .dash-subtab-btn.dash-subtab-active')
+    ?.closest('.dash-subtab-nav');
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((navEl) => {
+    navEl.classList.toggle('dash-subtab-nav-docked', navEl === initiallyActiveNav);
   });
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach((btn) => {
     btn.setAttribute('role', 'tab');
@@ -2317,7 +3210,8 @@ function bindSubtabNavigation() {
     btn.onkeydown = (event) => {
       if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key))
         return;
-      const tabs = Array.from(document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn'));
+      const scope = btn.closest('[role="tablist"]') || document;
+      const tabs = Array.from(scope.querySelectorAll('.dash-subtab-btn'));
       const current = tabs.indexOf(btn);
       if (current < 0) return;
       event.preventDefault();
@@ -2334,6 +3228,312 @@ function bindSubtabNavigation() {
       tabs[nextIndex]?.click();
     };
   });
+}
+
+// --- Eden workspace command strip ---
+// The strip shows the selected workspace's lifecycle and publication state and
+// hosts the safe season actions. Switching workspaces persists the choice and
+// reloads, which disposes every Firestore listener and re-resolves all
+// workspace-scoped paths and cache keys in one step.
+let edenWorkspaceCloudRecord = null;
+
+function currentEdenWorkspaceView() {
+  return parseEdenWorkspaceRecord(edenWorkspaceCloudRecord) || ACTIVE_EDEN_WORKSPACE;
+}
+
+function edenWorkspaceLifecycleI18nKey(lifecycle) {
+  if (lifecycle === 'archived') return 'adminWorkspaceLifecycleArchived';
+  if (lifecycle === 'active') return 'adminWorkspaceLifecycleActive';
+  return 'adminWorkspaceLifecycleDraft';
+}
+
+function refreshEdenWorkspaceStrip() {
+  const select = $id('dashWorkspaceSelect');
+  if (select) select.value = ACTIVE_EDEN_WORKSPACE_ID;
+  const ws = currentEdenWorkspaceView();
+  const lifecycleBadge = $id('dashWorkspaceLifecycle');
+  if (lifecycleBadge) {
+    lifecycleBadge.dataset.lifecycle = ws.lifecycle;
+    lifecycleBadge.textContent = ws.legacy
+      ? `${dashT('adminWorkspaceLifecycleArchived')} · ${dashT('adminWorkspaceReadonlyBadge')}`
+      : dashT(edenWorkspaceLifecycleI18nKey(ws.lifecycle));
+  }
+  const publication = $id('dashWorkspacePublication');
+  const publishBtn = $id('dashWorkspacePublishBtn');
+  const unpublishBtn = $id('dashWorkspaceUnpublishBtn');
+  if (publication) {
+    if (ws.legacy) {
+      publication.hidden = true;
+    } else {
+      publication.hidden = false;
+      publication.dataset.published = ws.publication ? 'true' : 'false';
+      publication.textContent = ws.publication
+        ? dashT('adminWorkspacePublishState', { n: ws.publication.revision })
+        : dashT('adminWorkspaceUnpublishedState');
+    }
+  }
+  if (publishBtn) {
+    publishBtn.hidden = ws.legacy;
+    publishBtn.setAttribute(
+      'aria-label',
+      ws.publication
+        ? dashT('adminWorkspaceRepublishBtn', { workspace: ws.label })
+        : dashT('adminWorkspacePublishBtn')
+    );
+  }
+  if (unpublishBtn) unpublishBtn.hidden = ws.legacy || !ws.publication;
+}
+
+async function loadEdenWorkspaceCloudRecord() {
+  if (ACTIVE_EDEN_WORKSPACE.legacy) {
+    edenWorkspaceCloudRecord = null;
+    refreshEdenWorkspaceStrip();
+    return;
+  }
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID));
+    edenWorkspaceCloudRecord = snap.exists() ? snap.data() : null;
+  } catch (err) {
+    console.warn('Eden workspace record unavailable:', err?.message || err);
+  }
+  refreshEdenWorkspaceStrip();
+}
+
+async function readEdenWorkspaceRosterSnapshots(db) {
+  try {
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(
+      doc(db, edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'))
+    );
+    const data = snap.exists() ? snap.data() : null;
+    return Array.isArray(data?.snapshots) ? data.snapshots : [];
+  } catch {
+    return [];
+  }
+}
+
+async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
+  if (ACTIVE_EDEN_WORKSPACE.legacy) return false;
+  if (state.adminIsAdmin !== true) {
+    showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Publish blocked');
+    return false;
+  }
+  const ws = currentEdenWorkspaceView();
+  const confirmKey = unpublish ? 'adminWorkspaceUnpublishConfirm' : 'adminWorkspacePublishConfirm';
+  if (!window.confirm(dashT(confirmKey, { workspace: ws.label }))) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const { doc, getDoc, setDoc, serverTimestamp } = await loadFirestoreApi();
+    const projectionRef = doc(
+      db,
+      edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicProjection')
+    );
+    const previousSnap = await getDoc(projectionRef);
+    const previous = previousSnap.exists() ? previousSnap.data() : null;
+    const previousRevision = Number(previous?.revision) || 0;
+    let rosterSnapshots = [];
+    let publicVoteResults = {};
+    if (!unpublish) {
+      rosterSnapshots = await readEdenWorkspaceRosterSnapshots(db);
+      const settings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {});
+      if (settings.showPublicResults && typeof buildEdenX1PublicVoteResults === 'function') {
+        publicVoteResults = buildEdenX1PublicVoteResults(settings);
+      }
+    }
+    const projection = buildEdenPublicProjection({
+      workspace: ACTIVE_EDEN_WORKSPACE_ID,
+      revision: unpublish ? Math.max(1, previousRevision) : previousRevision + 1,
+      published: !unpublish,
+      updatedBy: state.adminUser?.uid || '',
+      dashboardData: unpublish
+        ? buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
+        : sanitizeDashboardDataForPersistence(
+            state.dashData || buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
+          ),
+      voteSettings: unpublish ? {} : normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {}),
+      publicVoteResults,
+      rosterSnapshots,
+    });
+    await setDoc(projectionRef, sanitizeForFirestore(projection));
+    await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
+      id: ACTIVE_EDEN_WORKSPACE_ID,
+      lifecycle: unpublish ? 'draft' : 'active',
+      active: !unpublish,
+      createdAtMs: ws.createdAtMs || Date.now(),
+      publication: unpublish
+        ? null
+        : {
+            revision: projection.revision,
+            publishedAtMs: projection.publishedAtMs,
+            updatedBy: projection.updatedBy,
+          },
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    edenWorkspaceCloudRecord = null;
+    await loadEdenWorkspaceCloudRecord();
+    logDashboardEvent(
+      unpublish ? 'adminLogWorkspaceUnpublished' : 'adminLogWorkspacePublished',
+      'success',
+      { workspace: ws.label, revision: String(projection.revision) },
+      { source: 'workspace' }
+    );
+    if (typeof window.showToast === 'function') {
+      window.showToast(
+        unpublish
+          ? dashT('adminWorkspaceUnpublishedToast')
+          : dashT('adminWorkspacePublishedToast', { n: projection.revision }),
+        'success',
+        6000
+      );
+    }
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Workspace publish failed');
+    if (typeof window.showToast === 'function') {
+      window.showToast(
+        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
+        'error',
+        9000
+      );
+    }
+    return false;
+  }
+}
+
+async function exportActiveEdenWorkspaceSnapshot() {
+  const ws = currentEdenWorkspaceView();
+  try {
+    const db = await ensureCloudSyncReady();
+    const { doc, getDoc, collection, getDocs } = await loadFirestoreApi();
+    const paths = edenWorkspaceFirestorePathsForExport();
+    const readDoc = async (path) => {
+      if (!path) return null;
+      const snap = await getDoc(doc(db, path));
+      return snap.exists() ? snap.data() : null;
+    };
+    const readCollection = async (path) => {
+      if (!path) return [];
+      const snap = await getDocs(collection(db, path));
+      return snap.docs.map((entry) => ({ id: entry.id, data: entry.data() }));
+    };
+    const snapshot = {
+      schema: 'vts-eden-workspace-snapshot-v1',
+      workspace: ws.id,
+      label: ws.label,
+      exportedAt: new Date().toISOString(),
+      docs: {
+        dashboardData: await readDoc(paths.dashboardData),
+        rosterData: await readDoc(paths.rosterData),
+        voteSettings: await readDoc(paths.voteSettings),
+        publicVoteResults: await readDoc(paths.publicVoteResults),
+        publicProjection: await readDoc(paths.publicProjection),
+        votes: await readCollection(paths.votes),
+        voteHistory: await readCollection(paths.voteHistory),
+        conductAdjustments: await readCollection(paths.conductAdjustments),
+      },
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `vts-${ws.id}-snapshot-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    if (typeof window.showToast === 'function') {
+      window.showToast(dashT('adminWorkspaceSnapshotToast'), 'success', 5000);
+    }
+    logDashboardEvent(
+      'adminLogWorkspaceSnapshot',
+      'success',
+      { workspace: ws.label },
+      { source: 'workspace' }
+    );
+  } catch (err) {
+    console.error('Workspace snapshot export failed:', err);
+    showCloudSyncFailure(err, 'Workspace snapshot failed');
+    if (typeof window.showToast === 'function') {
+      window.showToast(
+        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
+        'error',
+        9000
+      );
+    }
+  }
+}
+
+function edenWorkspaceFirestorePathsForExport() {
+  return {
+    dashboardData: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'dashboardData'),
+    rosterData: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'),
+    voteSettings: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteSettings'),
+    publicVoteResults: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicVoteResults'),
+    publicProjection: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicProjection'),
+    votes: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'votes'),
+    voteHistory: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteHistory'),
+    conductAdjustments: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'conductAdjustments'),
+  };
+}
+
+function bindEdenWorkspaceStrip() {
+  const select = $id('dashWorkspaceSelect');
+  if (select && !select.dataset.bound) {
+    select.dataset.bound = '1';
+    select.value = ACTIVE_EDEN_WORKSPACE_ID;
+    select.onchange = () => {
+      const next = select.value;
+      if (!next || next === ACTIVE_EDEN_WORKSPACE_ID) return;
+      if (
+        !window.confirm(
+          dashT('adminWorkspaceSwitchConfirm', { workspace: getEdenWorkspaceLabel(next) })
+        )
+      ) {
+        select.value = ACTIVE_EDEN_WORKSPACE_ID;
+        return;
+      }
+      setActiveAdminWorkspaceId(next);
+      if (typeof window.showToast === 'function') {
+        window.showToast(
+          dashT('adminWorkspaceSwitchToast', { workspace: getEdenWorkspaceLabel(next) }),
+          'info',
+          4000
+        );
+      }
+      setTimeout(() => window.location.reload(), 350);
+    };
+  }
+  const publishBtn = $id('dashWorkspacePublishBtn');
+  if (publishBtn && !publishBtn.dataset.bound) {
+    publishBtn.dataset.bound = '1';
+    publishBtn.onclick = () => {
+      void publishActiveEdenWorkspace();
+    };
+  }
+  const unpublishBtn = $id('dashWorkspaceUnpublishBtn');
+  if (unpublishBtn && !unpublishBtn.dataset.bound) {
+    unpublishBtn.dataset.bound = '1';
+    unpublishBtn.onclick = () => {
+      void publishActiveEdenWorkspace({ unpublish: true });
+    };
+  }
+  const snapshotBtn = $id('dashWorkspaceSnapshotBtn');
+  if (snapshotBtn && !snapshotBtn.dataset.bound) {
+    snapshotBtn.dataset.bound = '1';
+    snapshotBtn.onclick = () => {
+      void exportActiveEdenWorkspaceSnapshot();
+    };
+  }
+  refreshEdenWorkspaceStrip();
+}
+
+function getEdenWorkspaceLabel(workspaceId) {
+  return getEdenWorkspace(workspaceId).label;
 }
 
 function hydrateDashboardStateFromLocalStorage() {
@@ -2542,6 +3742,7 @@ export function saveRosterSnapshotsToFirestore(
   snapshotInput = state.rosterSnapshots,
   baseUpdated = state._rosterCloudBaseUpdated ?? null
 ) {
+  if (blockEdenArchiveWrite('save roster snapshots')) return Promise.resolve(false);
   const sourceSnapshots = cloneRosterSnapshots(Array.isArray(snapshotInput) ? snapshotInput : []);
   const snapshots = trimRosterSnapshots(sourceSnapshots);
   state._rosterCloudSaveInFlight = true;
@@ -2772,30 +3973,11 @@ function isAuthed() {
   return state.adminIsAdmin === true || isLocalAdminTestBypass();
 }
 
-function getAdminLoginUsername() {
-  return String($id('dashLoginUser')?.value || '').trim();
-}
-
-function getAdminLoginPassword() {
-  return String($id('dashLoginPass')?.value || '');
-}
-
 function setLoginError(message = '') {
   const err = $id('dashLoginErr');
   if (!err) return;
   err.textContent = message;
   err.classList.toggle('hidden', !message);
-  ['dashLoginUser', 'dashLoginPass'].forEach((id) => {
-    $id(id)?.setAttribute('aria-invalid', message ? 'true' : 'false');
-  });
-}
-
-function setLoginBusy(busy) {
-  const loginBtn = $id('dashLoginBtn');
-  if (!loginBtn) return;
-  loginBtn.disabled = busy;
-  loginBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
-  loginBtn.textContent = busy ? dashT('adminConnectingAuth') : dashT('adminLoginBtn');
 }
 
 function describeAdminAuthError(err) {
@@ -2958,7 +4140,17 @@ function setCloudSyncStatus(status, detail = '') {
 }
 function describeCloudSyncError(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
-  if (/permission-denied|permission|insufficient|admin/i.test(text)) {
+  const authText = text.replace(/vts_admin/gi, '');
+  // A permission-denied comes back from Firestore itself: the account is signed
+  // in and the write still got refused. Reporting that as "not signed in as
+  // admin" sent a superadmin hunting through accounts when the real cause was a
+  // firestore.rules release lagging behind the deployed app, so the two cases
+  // are now distinct. The local "no admin session" path below keeps the old
+  // wording because there it is literally true.
+  if (/permission-denied|insufficient permissions/i.test(authText)) {
+    return dashT('adminCloudPermissionDenied');
+  }
+  if (/(?:^|[^\w])admin(?:[^\w]|$)/i.test(authText) || /permission/i.test(authText)) {
     return dashT('adminCloudAdminRequired');
   }
   if (
@@ -3013,22 +4205,6 @@ function dashT(key, vars = {}) {
     text = text.replaceAll(`{${name}}`, String(value));
   });
   return text;
-}
-
-function allStarBohAdminT(key, vars = {}) {
-  if (typeof allStarBohAdminI18n?.adminAllStarBohText === 'function') {
-    return allStarBohAdminI18n.adminAllStarBohText(key, vars, getDashboardLang());
-  }
-  const domainTranslator = window.VTS_ALL_STAR_BOH_TRANSLATE || window.allStarBohText;
-  if (typeof domainTranslator === 'function') {
-    try {
-      const translated = domainTranslator(key, vars, getDashboardLang());
-      if (translated && translated !== key) return translated;
-    } catch (error) {
-      console.warn('ALL-STAR BOH ADMIN TRANSLATION ERROR:', error);
-    }
-  }
-  return dashT(key, vars);
 }
 
 function logDashboardEvent(key, type = 'info', params = {}, options = {}) {
@@ -3294,30 +4470,25 @@ function showApp() {
   $id('dashApp')?.classList.remove('hidden');
   restoreAdminControls();
 }
-function showLogin() {
+/**
+ * The access card. There is no admin password any more: either the signed-in
+ * account carries the admin claim or it does not, so this only ever explains
+ * which of those is true and what to do next.
+ */
+function showLogin({ signedIn = false } = {}) {
   stopAdminLogCloudSync();
   hideConnecting();
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
   $id('dashApp')?.classList.add('hidden');
-  const loginBtn = $id('dashLoginBtn');
-  const userInput = $id('dashLoginUser');
-  const passInput = $id('dashLoginPass');
-  if (loginBtn) {
-    loginBtn.disabled = false;
-    loginBtn.style.display = '';
-    loginBtn.textContent = dashT('adminLoginBtn');
+  const hint = document.querySelector('.dash-login-hint');
+  const signInBtn = $id('dashAccountSignInBtn');
+  // A signed-in account that lacks the claim cannot fix that itself, so point
+  // it at the person who can rather than offering a sign-in it already did.
+  if (hint) {
+    hint.textContent = signedIn ? dashT('adminAccessNoPrivilege') : dashT('adminAccessAccountHint');
   }
-  if (userInput) {
-    userInput.disabled = false;
-    userInput.style.display = '';
-    if (!userInput.value) userInput.value = '1097';
-  }
-  if (passInput) {
-    passInput.disabled = false;
-    passInput.style.display = '';
-    passInput.placeholder = dashT('adminLoginPass');
-  }
+  if (signInBtn) signInBtn.hidden = signedIn;
 }
 
 function mountStructureUploadPanel() {
@@ -3327,59 +4498,11 @@ function mountStructureUploadPanel() {
   if (uploadZone && uploadZone.parentElement !== mount) mount.appendChild(uploadZone);
 }
 
-async function doLogin() {
-  const usernameInput = $id('dashLoginUser');
-  const passwordInput = $id('dashLoginPass');
-  const username = getAdminLoginUsername();
-  const password = getAdminLoginPassword();
-  setLoginError('');
-  if (!username) {
-    usernameInput?.focus();
-    usernameInput?.reportValidity?.();
-    return;
-  }
-  if (!password) {
-    passwordInput?.focus();
-    passwordInput?.reportValidity?.();
-    return;
-  }
-  setLoginBusy(true);
-  state._signingOut = false;
-  showConnecting(dashT('adminConnectingAuth'));
-  setConnectingProgress(10, dashT('adminConnectingAuth'));
-  try {
-    const { signInWithUsername, isAdminAuthUser } = await loadFirebaseApi();
-    setConnectingProgress(18, dashT('adminConnectingAuth'));
-    const credential = await signInWithUsername(username, password);
-    setConnectingProgress(32, dashT('adminConnectingAuth'));
-    state.adminUser = credential.user;
-    state.adminIsAdmin = await isAdminAuthUser(credential.user, { forceRefresh: true });
-    setConnectingProgress(42, dashT('adminConnectingData'));
-    if (!state.adminIsAdmin) {
-      const { signOutUser } = await loadFirebaseApi();
-      await signOutUser();
-      throw new Error(dashT('adminCloudAdminRequired'));
-    }
-    await openAdminDashboardAfterAuth({ preferCloudFirst: true });
-  } catch (e) {
-    console.error('Dashboard sign-in failed', e);
-    if (await recoverFromStaleAssetGraph(e)) return;
-    state.adminUser = null;
-    state.adminIsAdmin = false;
-    setLoginError(describeAdminAuthError(e));
-    showLogin();
-  } finally {
-    setLoginBusy(false);
-  }
-}
-
 async function doSignOut() {
   // Mark an explicit sign-out so the auth-state listener doesn't try to restore
   // the session or reopen the dashboard when the user flips to null. Cleared on
   // the next sign-in (doLogin).
   state._signingOut = true;
-  allStarBohController?.destroy?.();
-  allStarBohController = null;
   allianceViewController?.destroy?.();
   allianceViewController = null;
   allianceViewSettingsLoaded = false;
@@ -3466,6 +4589,7 @@ async function openAdminDashboardAfterAuth(options = {}) {
       showApp();
       scheduleDashboardRender();
     }
+    void loadEdenWorkspaceCloudRecord();
     void startAdminLogCloudSync();
   } finally {
     state._adminDashboardOpening = false;
@@ -3792,6 +4916,7 @@ function handleDashboardCloudConflict(localData, err) {
 }
 
 async function writeDashboardSnapshotToCloud(db, firestore, payload, baseRevision) {
+  if (blockEdenArchiveWrite('dashboard cloud write')) return null;
   const { doc, runTransaction } = firestore;
   const expectedBaseRevision =
     Number.isInteger(baseRevision) && baseRevision >= 0 ? baseRevision : null;
@@ -3934,6 +5059,7 @@ async function writeDashboardOcrUploadToCloud(db, firestore, incomingAttacks) {
 }
 
 export async function saveDashboardOcrUpload(localData, incomingAttacks = []) {
+  if (blockEdenArchiveWrite('save OCR upload')) return false;
   state.dashData = normalizeDashboardDataForCache(localData);
   const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
   state.dashData = normalizeDashboardDataForCache(persistedData);
@@ -3972,6 +5098,9 @@ export async function saveDashboardOcrUpload(localData, incomingAttacks = []) {
 }
 
 async function saveDashboardAttackMutation(mutation) {
+  if (blockEdenArchiveWrite('edit attack record')) {
+    return { ok: false, error: edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID) };
+  }
   if (state.cloudSyncConfigured === false) {
     const localResult = buildDashboardAttackMutationSnapshot(state.dashData, mutation);
     if (!localResult.applied) {
@@ -4267,6 +5396,7 @@ function scheduleDashboardCloudSave(persistedData, options = {}) {
 }
 
 export async function saveData(data, options = {}) {
+  if (blockEdenArchiveWrite('save dashboard data')) return false;
   state.dashData = normalizeDashboardDataForCache(data);
   if (state.dashData && typeof state.dashData === 'object') {
     delete state.dashData.logs;
@@ -4522,6 +5652,7 @@ async function loadData(options = {}) {
 }
 
 async function clearData() {
+  if (blockEdenArchiveWrite('clear workspace data')) return;
   state.dashData = null;
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -4573,7 +5704,7 @@ const ADMIN_EXPORT_STORAGE_KEYS = [
   ALLIANCE_KEY,
   LOG_KEY,
   R5_ADJUSTMENTS_LOCAL_KEY,
-  'vts_r5_adjustment_season',
+  R5_ADJUSTMENT_SEASON_LOCAL_KEY,
 ];
 
 const ADMIN_EXPORT_COLUMNS = [
@@ -4703,6 +5834,7 @@ function buildWeightedContributionExportModel() {
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
 }
 
@@ -4726,6 +5858,7 @@ function buildAllianceViewContributionModel() {
     r5Adjustments: conductAdjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
@@ -4863,97 +5996,599 @@ async function ensureAllianceViewMountedOrUpdated() {
   return allianceViewMountPromise;
 }
 
-async function getAllStarBohAdminStoreOptions(storeModule) {
-  const context = await window.getVtsAdminFirestoreContext();
-  const uid = String(context?.user?.uid || '').trim();
-  const tokenResult = await context?.user?.getIdTokenResult?.();
-  const admin = tokenResult?.claims?.admin === true;
-  if (!uid || !admin) throw new Error(dashT('adminCloudAdminRequired'));
-  if (typeof storeModule?.getAllStarBohActiveConfig !== 'function') {
-    throw new Error(allStarBohAdminT('adminBohUnavailable'));
+// --- BoH match results -------------------------------------------------------
+// Replaces the All-Star BoH command center. One team, one match: the leader
+// picks their team, uploads the Combat Progress captures, and says how the team
+// did. Rows stay in the draft until the leader saves, so a bad OCR pass costs
+// nothing but a re-upload.
+
+function formatBohScore(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function setBohMatchStatus(message = '', type = 'info') {
+  const el = $id('dashBohMatchStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function bohMatchDraftEntries() {
+  return Array.isArray(state.bohMatchEntries) ? state.bohMatchEntries : [];
+}
+
+function setBohMatchDraftEntries(entries) {
+  state.bohMatchEntries = normalizeBohMatchEntries(entries);
+  renderBohMatchEntries();
+}
+
+function renderBohMatchTeamPicker() {
+  const select = $id('dashBohMatchTeam');
+  if (!select || select.dataset.ready === '1') return;
+  select.dataset.ready = '1';
+  select.innerHTML = BOH_MATCH_TEAMS.map(
+    (team) => `<option value="${esc(team.id)}">${esc(`${team.number}. ${team.label}`)}</option>`
+  ).join('');
+}
+
+function renderBohMatchEntries() {
+  const host = $id('dashBohMatchEntries');
+  if (!host) return;
+  const entries = bohMatchDraftEntries();
+  if (!entries.length) {
+    // Not an error state: a leader who missed the screenshots still files the
+    // match with a note and the final score.
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchNoRowsHint'))}</div>`;
+    return;
   }
-  const config = await storeModule.getAllStarBohActiveConfig({
-    db: context.db,
-    firestore: context.firestore,
+  const total = entries.reduce((sum, entry) => sum + entry.score, 0);
+  host.innerHTML = `<div class="dash-conduct-bulk-notices">
+      <span>${esc(dashT('adminBohMatchRowCount', { count: entries.length }))}</span>
+      <span>${esc(dashT('adminBohMatchTotal', { total: formatBohScore(total) }))}</span>
+    </div>
+    <div class="dash-boh-match-rows">${entries
+      .map(
+        (entry) => `<div class="dash-boh-match-row" data-boh-row="${esc(entry.playerKey)}">
+        <span class="dash-boh-match-rank">${entry.rank}</span>
+        <strong>${esc(entry.playerName)}</strong>
+        <b>${esc(formatBohScore(entry.score))}</b>
+        <label class="dash-boh-match-rating"${entry.rating === null ? ' data-missing="1"' : ''}>
+          <span>${esc(dashT('adminBohMatchRating'))}</span>
+          <input class="dash-input" type="number" min="0" max="10" step="0.5" inputmode="decimal"
+            required aria-required="true"
+            placeholder="0-10" value="${entry.rating === null ? '' : esc(entry.rating)}"
+            data-boh-row-rating="${esc(entry.playerKey)}">
+          <b aria-hidden="true">/10</b>
+        </label>
+        <input class="dash-input dash-boh-match-row-note" type="text" maxlength="300"
+          placeholder="${esc(dashT('adminBohMatchRowNotePh'))}" value="${esc(entry.note || '')}"
+          data-boh-row-note="${esc(entry.playerKey)}">
+        <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-boh-row-remove="${esc(entry.playerKey)}">${esc(dashT('adminDelete'))}</button>
+      </div>`
+      )
+      .join('')}</div>`;
+
+  // Notes and ratings write straight back into the draft rather than being read
+  // at submit time, so re-rendering after an upload never discards them.
+  const patchEntry = (key, patch) => {
+    state.bohMatchEntries = bohMatchDraftEntries().map((entry) =>
+      entry.playerKey === key ? { ...entry, ...patch } : entry
+    );
+  };
+  host.querySelectorAll('[data-boh-row-note]').forEach((input) => {
+    input.addEventListener('input', () =>
+      patchEntry(input.dataset.bohRowNote, {
+        note: input.value.slice(0, 300),
+      })
+    );
   });
+  host.querySelectorAll('[data-boh-row-rating]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const raw = input.value.trim();
+      patchEntry(input.dataset.bohRowRating, {
+        rating: raw === '' ? null : Math.min(10, Math.max(0, Number(raw) || 0)),
+      });
+      input.closest('.dash-boh-match-rating')?.toggleAttribute('data-missing', raw === '');
+    });
+  });
+  host.querySelectorAll('[data-boh-row-remove]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.bohRowRemove;
+      setBohMatchDraftEntries(bohMatchDraftEntries().filter((entry) => entry.playerKey !== key));
+    });
+  });
+}
+
+async function processBohMatchImages(files) {
+  if (state._bohMatchProcessing) return;
+  state._bohMatchProcessing = true;
+  const progress = $id('dashBohMatchProgress');
+  const progressText = $id('dashBohMatchProgressText');
+  progress?.classList.remove('hidden');
+  setBohMatchStatus('');
+  try {
+    const result = await runBohMatchOcr(files, {
+      onProgress: ({ current, total }) => {
+        if (progressText) {
+          progressText.textContent = dashT('adminBohMatchScanning', { current, total });
+        }
+      },
+    });
+    if (result.error && !result.entries.length) {
+      setBohMatchStatus(result.error, 'error');
+      return;
+    }
+    // Merge with what is already in the draft: leaders upload one capture at a
+    // time as often as they upload the whole set at once.
+    setBohMatchDraftEntries([...bohMatchDraftEntries(), ...bohMatchEntriesFromOcr(result)]);
+    const count = bohMatchDraftEntries().length;
+    if (!count) setBohMatchStatus(dashT('adminBohMatchNoRowsFound'), 'warn');
+    else setBohMatchStatus(dashT('adminBohMatchScanned', { count }), 'success');
+  } catch (err) {
+    setBohMatchStatus(showCloudSyncFailure(err, 'BoH match OCR failed'), 'error');
+  } finally {
+    progress?.classList.add('hidden');
+    state._bohMatchProcessing = false;
+  }
+}
+
+function showBohMatchPasteForm() {
+  const text = prompt(dashT('adminBohMatchPastePrompt'), '');
+  if (text === null) return;
+  const parsed = bohMatchEntriesFromText(text);
+  if (!parsed.length) {
+    setBohMatchStatus(dashT('adminBohMatchNoRowsFound'), 'warn');
+    return;
+  }
+  setBohMatchDraftEntries([...bohMatchDraftEntries(), ...parsed]);
+  setBohMatchStatus(
+    dashT('adminBohMatchScanned', { count: bohMatchDraftEntries().length }),
+    'success'
+  );
+}
+
+function renderBohMatchFixturePicker() {
+  const select = $id('dashBohMatchFixture');
+  if (!select || select.dataset.ready === '1') return;
+  select.dataset.ready = '1';
+  select.innerHTML = [
+    `<option value="">${esc(dashT('adminBohMatchFixtureNone'))}</option>`,
+    ...BOH_MATCH_FIXTURES.map(
+      (fixture) =>
+        `<option value="${esc(fixture.id)}">${esc(`${fixture.date} - ${fixture.label}`)}</option>`
+    ),
+  ].join('');
+}
+
+function bohMatchEditingId() {
+  return state._bohMatchEditingId || '';
+}
+
+function setBohMatchEditing(id) {
+  state._bohMatchEditingId = id || '';
+  const editing = Boolean(id);
+  $id('dashBohMatchCancelEditBtn')?.classList.toggle('hidden', !editing);
+  const label = $id('dashBohMatchSaveBtn')?.querySelector('span');
+  if (label) {
+    label.textContent = dashT(editing ? 'adminBohMatchUpdate' : 'adminBohMatchSave');
+  }
+}
+
+function readBohMatchForm() {
   return {
-    db: context.db,
-    firestore: context.firestore,
-    seasonId: config.activeSeason,
-    uid,
-    admin,
+    id: bohMatchEditingId() || undefined,
+    teamId: $id('dashBohMatchTeam')?.value || '',
+    fixtureId: $id('dashBohMatchFixture')?.value || '',
+    matchDate: $id('dashBohMatchDate')?.value || '',
+    opponent: $id('dashBohMatchOpponent')?.value || '',
+    teamScore: $id('dashBohMatchTeamScore')?.value || '',
+    opponentScore: $id('dashBohMatchOpponentScore')?.value || '',
+    note: $id('dashBohMatchNote')?.value || '',
+    entries: bohMatchDraftEntries(),
   };
 }
 
-async function ensureAllStarBohMountedOrUpdated() {
-  if (allStarBohController) {
-    await allStarBohController.refresh?.();
-    return allStarBohController;
+function resetBohMatchForm() {
+  const form = $id('dashBohMatchForm');
+  if (form) form.reset();
+  renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
+  setBohMatchDraftEntries([]);
+  setBohMatchEditing('');
+  const dateInput = $id('dashBohMatchDate');
+  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+}
+
+// Loads a saved result back into the form. Everything is editable except who
+// filed it and when — the rules freeze those, and the save path re-reads them.
+function startBohMatchEdit(id) {
+  const record = (state.bohMatchResults || []).find((entry) => entry.id === id);
+  if (!record) return;
+  renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
+  setBohMatchEditing(id);
+  const set = (elementId, value) => {
+    const el = $id(elementId);
+    if (el) el.value = value ?? '';
+  };
+  set('dashBohMatchTeam', record.teamId);
+  set('dashBohMatchFixture', record.fixtureId);
+  set('dashBohMatchDate', record.matchDate);
+  set('dashBohMatchOpponent', record.opponent);
+  set('dashBohMatchTeamScore', record.teamScore || '');
+  set('dashBohMatchOpponentScore', record.opponentScore || '');
+  set('dashBohMatchNote', record.note);
+  setBohMatchDraftEntries(record.entries || []);
+  setBohMatchStatus(dashT('adminBohMatchEditing', { team: record.teamName }), 'info');
+  $id('dashBohMatchForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// One row per player across every saved match: who turned up, how often, what
+// they scored in total, and how their leaders rated them.
+function buildBohMatchMemberSummary(records) {
+  const byPlayer = new Map();
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    (record.entries || []).forEach((entry) => {
+      const current = byPlayer.get(entry.playerKey) || {
+        playerKey: entry.playerKey,
+        playerName: entry.playerName,
+        matches: 0,
+        total: 0,
+        best: 0,
+        ratings: [],
+      };
+      current.matches += 1;
+      current.total += Number(entry.score || 0);
+      current.best = Math.max(current.best, Number(entry.score || 0));
+      if (entry.rating !== null && entry.rating !== undefined) current.ratings.push(entry.rating);
+      byPlayer.set(entry.playerKey, current);
+    });
+  });
+  return [...byPlayer.values()]
+    .map((row) => ({
+      ...row,
+      average: row.matches ? Math.round(row.total / row.matches) : 0,
+      rating: row.ratings.length
+        ? Math.round(
+            (row.ratings.reduce((sum, value) => sum + value, 0) / row.ratings.length) * 10
+          ) / 10
+        : null,
+    }))
+    .sort((a, b) => b.total - a.total || a.playerName.localeCompare(b.playerName));
+}
+
+function renderBohMatchSummaryPanel() {
+  const host = $id('dashBohMatchSummaryPanel');
+  if (!host || host.classList.contains('hidden')) return;
+  const records = Array.isArray(state.bohMatchResults) ? state.bohMatchResults : [];
+  const totals = summarizeBohMatchResults(records);
+  const members = buildBohMatchMemberSummary(records);
+  const grandTotal = members.reduce((sum, row) => sum + row.total, 0);
+
+  if (!records.length) {
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchEmpty'))}</div>`;
+    return;
   }
-  if (allStarBohMountPromise) return allStarBohMountPromise;
-  allStarBohMountPromise = (async () => {
-    if (!allStarBohModulePromise) {
-      allStarBohModulePromise = Promise.all([
-        import('./admin-all-star-boh.js'),
-        import('./all-star-boh-store.js'),
-        import('./i18n/admin-all-star-boh/index.js'),
-        import('./heroes-data.js'),
-        import('./tech-db.js'),
-        import('./i18n/research/index.js'),
-        import('../css/admin-all-star-boh.css'),
-      ]).catch((error) => {
-        allStarBohModulePromise = null;
-        void recoverFromStaleAssetGraph(error);
-        throw error;
-      });
-    }
-    const [adminModule, storeModule, i18nModule, heroModule, researchModule, researchI18nModule] =
-      await allStarBohModulePromise;
-    allStarBohAdminI18n = i18nModule;
-    allStarBohResearchI18n = researchI18nModule;
-    await Promise.all([
-      i18nModule.loadAdminAllStarBohLocale(getDashboardLang()),
-      researchI18nModule.loadResearchLocale(getDashboardLang()),
-    ]);
-    allStarBohController = await adminModule.initializeAdminAllStarBoh($id('dashAllStarBohRoot'), {
-      t: allStarBohAdminT,
-      locale: getDashboardLang(),
-      heroMetadata: heroModule.allHeroesData || [],
-      researchMetadata: () =>
-        (researchModule.techDatabase || []).map((tree) => ({
-          id: tree.id,
-          label: researchI18nModule.researchTreeText(tree, 'name', getDashboardLang()),
-        })),
-      createStore: async () => {
-        const adminStore = storeModule.createAllStarBohAdminStore({
-          ...(await getAllStarBohAdminStoreOptions(storeModule)),
-          heroNames: (heroModule.allHeroesData || []).map((hero) => hero.name),
-          researchTreeIds: (researchModule.techDatabase || []).map((tree) => tree.id),
-        });
-        return adminModule.createAdminAllStarBohStoreAdapter(adminStore, {
-          validatePublication: adminModule.validateAdminAllStarBohPublicationBundle,
-          onError: (error, context) =>
-            console.error('ALL-STAR BOH ADMIN LIVE REFRESH ERROR:', context?.action, error),
-        });
-      },
+
+  host.innerHTML = `<div class="vts-admin-summary-grid">
+      ${[
+        'adminBohMatchSummaryMatches',
+        'adminBohMatchSummaryTeams',
+        'adminBohMatchSummaryMembers',
+        'adminBohMatchSummaryTotal',
+      ]
+        .map((key, index) => {
+          const value = [totals.matches, totals.teams, members.length, formatBohScore(grandTotal)][
+            index
+          ];
+          return `<article class="vts-admin-summary-card"><strong>${esc(value)}</strong><span>${esc(dashT(key))}</span></article>`;
+        })
+        .join('')}
+    </div>
+    <div class="vts-admin-table-wrap">
+      <table class="vts-admin-table">
+        <thead><tr>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryPlayer'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryAppearances'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryTotalScore'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryAverage'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchSummaryBest'))}</th>
+          <th scope="col">${esc(dashT('adminBohMatchRating'))}</th>
+        </tr></thead>
+        <tbody>${members
+          .map(
+            (row) => `<tr>
+          <th scope="row">${esc(row.playerName)}</th>
+          <td>${row.matches}</td>
+          <td>${esc(formatBohScore(row.total))}</td>
+          <td>${esc(formatBohScore(row.average))}</td>
+          <td>${esc(formatBohScore(row.best))}</td>
+          <td>${row.rating === null ? '-' : esc(`${row.rating}/10`)}</td>
+        </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function toggleBohMatchSummary() {
+  const host = $id('dashBohMatchSummaryPanel');
+  if (!host) return;
+  const showing = !host.classList.toggle('hidden');
+  const label = $id('dashBohMatchSummaryBtn')?.querySelector('span');
+  if (label)
+    label.textContent = dashT(showing ? 'adminBohMatchSummaryHide' : 'adminBohMatchSummaryShow');
+  renderBohMatchSummaryPanel();
+}
+
+function renderBohMatchResults() {
+  const list = $id('dashBohMatchList');
+  if (!list) return;
+  const rows = Array.isArray(state.bohMatchResults) ? state.bohMatchResults : [];
+  const summaryEl = $id('dashBohMatchSummary');
+  if (summaryEl) {
+    const summary = summarizeBohMatchResults(rows);
+    summaryEl.textContent = dashT('adminBohMatchSummary', {
+      matches: summary.matches,
+      teams: summary.teams,
     });
-    return allStarBohController;
-  })()
-    .catch((error) => {
-      console.error('ALL-STAR BOH ADMIN LOAD ERROR:', error);
-      const root = $id('dashAllStarBohRoot');
-      if (root) {
-        root.setAttribute('aria-busy', 'false');
-        root.innerHTML = `<div class="dash-empty" role="alert">${esc(
-          allStarBohAdminT('adminBohUnavailable')
-        )}</div>`;
-      }
-      return null;
+  }
+  if (!rows.length) {
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminBohMatchEmpty'))}</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((record) => {
+      const fixture = getBohMatchFixture(record.fixtureId);
+      const meta = [
+        fixture ? fixture.label : '',
+        record.matchDate,
+        record.opponent ? dashT('adminBohMatchVs', { opponent: record.opponent }) : '',
+        dashT('adminBohMatchRowCount', { count: record.memberCount }),
+        record.createdByName ? dashT('adminBohMatchBy', { admin: record.createdByName }) : '',
+        record.updatedByName ? dashT('adminBohMatchEditedBy', { admin: record.updatedByName }) : '',
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      // The scoreboard headline is the thing leadership reads first, so it goes
+      // beside the team name rather than inside the meta line.
+      const matchScore =
+        record.teamScore || record.opponentScore
+          ? `<span class="dash-boh-match-scoreline">${esc(formatBohScore(record.teamScore))} : ${esc(formatBohScore(record.opponentScore))}</span>`
+          : '';
+      const top = record.entries
+        .slice(0, 3)
+        .map((entry) => `${esc(entry.playerName)} ${esc(formatBohScore(entry.score))}`)
+        .join(' · ');
+      return `<article class="dash-conduct-row">
+        <div>
+          <strong>${esc(record.teamName)}${matchScore}</strong>
+          <span>${esc(meta)}</span>
+          ${top ? `<p>${top}</p>` : ''}
+          ${record.note ? `<p class="dash-boh-match-note-text">${esc(record.note)}</p>` : ''}
+        </div>
+        <div class="dash-conduct-row-actions">
+          <b>${esc(formatBohScore(record.totalScore))}</b>
+          <button class="dash-btn dash-btn-xs" type="button" data-boh-match-edit="${esc(record.id)}">${esc(dashT('adminEdit'))}</button>
+          <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-boh-match-delete="${esc(record.id)}">${esc(dashT('adminDelete'))}</button>
+        </div>
+      </article>`;
     })
-    .finally(() => {
-      allStarBohMountPromise = null;
+    .join('');
+
+  list.querySelectorAll('[data-boh-match-edit]').forEach((btn) => {
+    btn.addEventListener('click', () => startBohMatchEdit(btn.dataset.bohMatchEdit));
+  });
+  list.querySelectorAll('[data-boh-match-delete]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.bohMatchDelete;
+      if (!id || !confirm(dashT('adminBohMatchDeleteConfirm'))) return;
+      try {
+        if (state.cloudSyncConfigured === false) deleteLocalBohMatchResult(id);
+        else await deleteBohMatchResult(id);
+        await loadBohMatchResultsForAdmin();
+        setBohMatchStatus(dashT('adminBohMatchDeleted'), 'success');
+      } catch (err) {
+        setBohMatchStatus(showCloudSyncFailure(err, 'BoH match result delete failed'), 'error');
+      }
     });
-  return allStarBohMountPromise;
+  });
+
+  renderBohMatchSummaryPanel();
+}
+
+async function loadBohMatchResultsForAdmin() {
+  try {
+    state.bohMatchResults =
+      state.cloudSyncConfigured === false
+        ? loadLocalBohMatchResults()
+        : await loadBohMatchResults();
+  } catch (err) {
+    state.bohMatchResults = Array.isArray(state.bohMatchResults) ? state.bohMatchResults : [];
+    showCloudSyncFailure(err, 'BoH match results load failed');
+  }
+  renderBohMatchResults();
+}
+
+// --- VtsScore admin leader board ---------------------------------------------
+// Its own tab now that the All-Star BoH command center that used to host it is
+// gone. Read-only: race scores are written by the authenticated vtsScore Cloud
+// Function, so the worst this surface can do is show stale numbers, which the
+// Refresh button fixes.
+
+let vtsScoreView = null;
+let vtsScoreLoading = false;
+
+function setVtsScoreStatus(message = '', type = 'info') {
+  const el = $id('dashVtsScoreStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function ensureVtsScoreView() {
+  if (vtsScoreView) return vtsScoreView;
+  vtsScoreView = createVtsScoreAdminView({
+    t: (key, vars, fallback) => {
+      const translated = dashT(key, vars || {});
+      return translated === key ? fallback || key : translated;
+    },
+    locale: () => getDashboardLang(),
+    setStatus: (message, type) => setVtsScoreStatus(message, type),
+  });
+  return vtsScoreView;
+}
+
+async function loadVtsScoreAdminSnapshot(options = {}) {
+  const root = $id('dashVtsScoreRoot');
+  if (!root || vtsScoreLoading) return;
+  if (state.vtsScoreSnapshot && !options.force) {
+    ensureVtsScoreView().render(root, state.vtsScoreSnapshot);
+    return;
+  }
+  vtsScoreLoading = true;
+  setVtsScoreStatus(dashT('adminVtsScoreLoading'), 'info');
+  try {
+    const snapshot = await loadVtsScoreSnapshot();
+    state.vtsScoreSnapshot = snapshot;
+    const seasonEl = $id('dashVtsScoreSeason');
+    if (seasonEl) {
+      seasonEl.textContent = dashT('adminConductSeasonLabel', { season: snapshot.season });
+    }
+    ensureVtsScoreView().render(root, snapshot);
+    setVtsScoreStatus('');
+  } catch (err) {
+    root.innerHTML = `<div class="dash-empty" role="alert">${esc(dashT('adminVtsScoreUnavailable'))}</div>`;
+    setVtsScoreStatus(showCloudSyncFailure(err, 'VtsScore load failed'), 'error');
+  } finally {
+    vtsScoreLoading = false;
+  }
+}
+
+function renderVtsScorePanel() {
+  bindVtsScoreControls();
+  void loadVtsScoreAdminSnapshot();
+}
+
+function bindVtsScoreControls() {
+  const button = $id('dashVtsScoreRefreshBtn');
+  if (!button || button.dataset.bound) return;
+  button.dataset.bound = '1';
+  button.addEventListener('click', () => {
+    void loadVtsScoreAdminSnapshot({ force: true });
+  });
+}
+
+function renderBohMatchPanel() {
+  bindBohMatchControls();
+  renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
+  renderBohMatchEntries();
+  renderBohMatchResults();
+  const dateInput = $id('dashBohMatchDate');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (!state._bohMatchResultsLoaded) {
+    state._bohMatchResultsLoaded = true;
+    void loadBohMatchResultsForAdmin();
+  }
+}
+
+function bindBohMatchControls() {
+  const form = $id('dashBohMatchForm');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  renderBohMatchTeamPicker();
+  renderBohMatchFixturePicker();
+
+  const fileInput = $id('dashBohMatchFileInput');
+  const uploadBtn = $id('dashBohMatchUploadBtn');
+  const openPicker = () => {
+    if (!fileInput) return;
+    fileInput.value = '';
+    fileInput.click();
+  };
+  uploadBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    openPicker();
+  });
+  uploadBtn?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openPicker();
+  });
+  fileInput?.addEventListener('change', () => {
+    const files = Array.from(fileInput.files || []);
+    fileInput.value = '';
+    if (files.length) void processBohMatchImages(files);
+  });
+  $id('dashBohMatchPasteBtn')?.addEventListener('click', showBohMatchPasteForm);
+  $id('dashBohMatchClearBtn')?.addEventListener('click', () => {
+    setBohMatchDraftEntries([]);
+    setBohMatchStatus('');
+  });
+
+  $id('dashBohMatchCancelEditBtn')?.addEventListener('click', () => {
+    resetBohMatchForm();
+    setBohMatchStatus('');
+  });
+  $id('dashBohMatchSummaryBtn')?.addEventListener('click', toggleBohMatchSummary);
+  // Picking a fixture fills the date; typing a date afterwards still wins.
+  $id('dashBohMatchFixture')?.addEventListener('change', (event) => {
+    const fixture = getBohMatchFixture(event.target.value);
+    const dateInput = $id('dashBohMatchDate');
+    if (fixture && dateInput) dateInput.value = fixture.date;
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const payload = readBohMatchForm();
+    // A result with no rows is legitimate: leaders miss the screenshots and
+    // file the match with the final score and a note instead. Only a record
+    // with nothing in it at all is refused.
+    const hasSubstance =
+      payload.entries.length ||
+      payload.note.trim() ||
+      Number(payload.teamScore) ||
+      Number(payload.opponentScore);
+    if (!hasSubstance) {
+      setBohMatchStatus(dashT('adminBohMatchNothingToSave'), 'warn');
+      return;
+    }
+    // Rating every player is the point of filing the result, so it is required
+    // whenever there are rows to rate.
+    const unrated = unratedBohMatchEntries(payload.entries);
+    if (unrated.length) {
+      setBohMatchStatus(
+        dashT('adminBohMatchRatingRequired', {
+          count: unrated.length,
+          players: unrated
+            .slice(0, 3)
+            .map((entry) => entry.playerName)
+            .join(', '),
+        }),
+        'warn'
+      );
+      $id('dashBohMatchEntries')
+        ?.querySelector('.dash-boh-match-rating[data-missing] input')
+        ?.focus();
+      return;
+    }
+    const editing = Boolean(payload.id);
+    const saveBtn = $id('dashBohMatchSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+      setBohMatchStatus(dashT('adminBohMatchSaving'), 'info');
+      if (state.cloudSyncConfigured === false) saveLocalBohMatchResult(payload);
+      else await saveBohMatchResult(payload);
+      resetBohMatchForm();
+      await loadBohMatchResultsForAdmin();
+      setBohMatchStatus(dashT(editing ? 'adminBohMatchUpdated' : 'adminBohMatchSaved'), 'success');
+    } catch (err) {
+      setBohMatchStatus(showCloudSyncFailure(err, 'BoH match result save failed'), 'error');
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  });
 }
 
 function contributionRewardExportLabel(tier) {
@@ -5078,6 +6713,8 @@ function buildWeightedContributionCsvRows() {
     currentRank: row.currentRank ? `#${row.currentRank}` : '',
     currentReward: contributionRewardExportLabel(row.currentReward),
     contributionScore: row.contributionScore,
+    demolition: row.totalDemolition,
+    demolitionPoints: row.demolitionPoints,
     exGuildContribution: row.contributionExGuild || 0,
     shieldWalls: row.shieldWalls,
     pathers: row.pathers,
@@ -5310,6 +6947,8 @@ function exportWeightedContributionCsv() {
     ['Current rank', 'currentRank'],
     ['Current reward', 'currentReward'],
     ['Contribution score', 'contributionScore'],
+    ['Demolition', 'demolition'],
+    ['Demolition points (1/20)', 'demolitionPoints'],
     ['Ex-guild contribution', 'exGuildContribution'],
     ['#Shield Walls', 'shieldWalls'],
     ['#Pathers', 'pathers'],
@@ -5563,7 +7202,10 @@ function exportAttackCsv() {
     });
   });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const branded = `${csv}${csvFooterLines(getExportBranding())
+    .map((line) => `#${line}\n`)
+    .join('')}`;
+  a.href = URL.createObjectURL(new Blob([branded], { type: 'text/csv' }));
   a.download = 'vts_attack_details.csv';
   a.click();
 }
@@ -5589,7 +7231,10 @@ function refreshDashboardPlayerSummary() {
 }
 
 function downloadCsv(csv, filename) {
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const branded = `${csv}${csvFooterLines(getExportBranding())
+    .map((line) => `#${line}\n`)
+    .join('')}`;
+  const blob = new Blob([`\uFEFF${branded}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -5695,14 +7340,6 @@ function scheduleAdminLanguageRefresh() {
   renderCloudSyncStatus();
   renderAdminActivityTerminal();
   setAdminLogSyncStatus(adminLogSyncState);
-  if (allStarBohAdminI18n?.loadAdminAllStarBohLocale) {
-    void Promise.all([
-      allStarBohAdminI18n.loadAdminAllStarBohLocale(getDashboardLang()),
-      allStarBohResearchI18n?.loadResearchLocale?.(getDashboardLang()),
-    ]).then(() => allStarBohController?.refreshLanguage?.(allStarBohAdminT, getDashboardLang()));
-  } else {
-    allStarBohController?.refreshLanguage?.(allStarBohAdminT, getDashboardLang());
-  }
   allianceViewController?.refreshLanguage?.(dashT);
   requestAnimationFrame(() => {
     if (state._adminLanguageRefreshToken !== token) return;
@@ -5719,19 +7356,12 @@ export async function bootOcrDashboard() {
     state._adminLanguageRefreshBound = true;
     window.addEventListener('vts:admin-language-change', scheduleAdminLanguageRefresh);
   }
-  const loginForm = $id('dashLoginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      doLogin();
-    });
-  } else {
-    $id('dashLoginBtn').onclick = doLogin;
-  }
+  // No admin password form to bind any more: access follows the site account,
+  // and the auth listener opens the dashboard as soon as it sees a signed-in
+  // account carrying the admin claim.
   $id('dashSignOutBtn')?.addEventListener('click', doSignOut);
-  const loginUser = $id('dashLoginUser');
-  if (loginUser && !loginUser.value) loginUser.value = '1097';
   bindSubtabNavigation();
+  bindEdenWorkspaceStrip();
   bindConductControls();
   bindExGuildControls();
   loadRosterSnapshots();
@@ -5835,7 +7465,7 @@ export async function bootOcrDashboard() {
             }
             try {
               const wasAdmin = state.adminIsAdmin === true;
-              const candidateIsAdmin = await isAdminAuthUser(user);
+              const candidateIsAdmin = await isAdminAuthUser(user, { forceRefresh: true });
               if (!candidateIsAdmin) {
                 const restoredUser = wasAdmin ? await waitForAdminAuthUser(1500) : null;
                 if (restoredUser) {
@@ -5844,8 +7474,7 @@ export async function bootOcrDashboard() {
                   await openAdminDashboardAfterAuth({ preferCloudFirst: true });
                   return;
                 }
-                setLoginError(dashT('adminCloudAdminRequired'));
-                showLogin();
+                showLogin({ signedIn: true });
                 return;
               }
               state.adminUser = user;
@@ -5862,16 +7491,28 @@ export async function bootOcrDashboard() {
         }
         const restoredUser = await waitForAdminAuthUser(1500);
         const currentUser = restoredUser || getCurrentUser();
-        if (currentUser && (await isAdminAuthUser(currentUser))) {
+        if (currentUser && (await isAdminAuthUser(currentUser, { forceRefresh: true }))) {
           state.adminUser = currentUser;
           state.adminIsAdmin = true;
           await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+        } else {
+          // Signed in without the claim, or signed out entirely — showLogin
+          // picks which of the two the gate should explain.
+          showLogin({ signedIn: Boolean(currentUser) });
         }
       } else {
         setLoginError(dashT('adminLoginFirebaseUnavailable'));
+        // setLoginError writes into #dashLoginErr, which lives inside the hidden login
+        // card. Without swapping to it the admin watched "Initializing secure session..."
+        // for the full watchdog interval before the error became visible.
+        showLogin();
       }
     } catch (e) {
       console.error('Admin auth boot failed', e);
+      // A stale asset graph looks like an auth failure here: the auth module
+      // itself failed to import. Recovery reloads once and returns, so do not
+      // paint a misleading credential error over it.
+      if (await recoverFromStaleAssetGraph(e)) return;
       setLoginError(describeAdminAuthError(e));
       showLogin();
     }

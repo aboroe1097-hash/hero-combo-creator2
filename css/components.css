@@ -49,6 +49,185 @@
   line-height: 1.45;
 }
 
+/* =============================================================
+   VTS Eden Hub Sub-Tab Bar & Season Format Infographics
+   ============================================================= */
+.vts-eden-subtab-bar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--space-2);
+  overflow-x: auto;
+}
+
+.vts-eden-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 16px;
+  /* Matches the sibling Research & Towers hub pills and the repo tap-target floor. */
+  min-height: var(--ff-tap-min, 44px);
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.vts-eden-subtab-btn:hover {
+  background: rgba(30, 41, 59, 0.8);
+  color: #fff;
+}
+
+.vts-eden-subtab-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #f8fafc;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
+/* The active pill was styled dark-first with a fixed near-white label. On the light
+   surface the 20% violet tint composites to roughly #e1e0fc, leaving #f8fafc at about
+   1.2:1 - the active Eden sub-tab was effectively invisible. */
+[data-theme='light'] .vts-eden-subtab-btn.active {
+  background: var(--ff-surface-selected);
+  border-color: var(--ff-border-hover);
+  color: var(--ff-text-primary, var(--ff-text));
+}
+
+.vts-eden-subtab-panel {
+  display: none;
+}
+
+.vts-eden-subtab-panel.active {
+  display: block;
+}
+
+/* =============================================================
+   Research & Towers Hub Sub-Tab Bar
+   -------------------------------------------------------------
+   Same shape as the Eden hub bar, but built on the --ff-* tokens so it
+   follows the light/dark theme instead of assuming a dark surface, and it
+   collapses to two equal full-width targets on phones.
+   ============================================================= */
+.vts-hub-subtabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--ff-border-subtle);
+}
+
+.vts-hub-subtab {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--radius-md);
+  background: var(--ff-surface-soft);
+  color: var(--ff-text-dim);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.vts-hub-subtab svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+}
+[data-subtool-badge]::after {
+  content: attr(data-subtool-badge);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #245f86;
+  color: #dff5ff;
+  padding: 2px 6px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.vts-hub-subtab:hover {
+  border-color: var(--ff-border-hover);
+  color: var(--ff-text);
+}
+
+.vts-hub-subtab:focus-visible {
+  outline: 2px solid var(--ff-accent, var(--ff-border-hover));
+  outline-offset: 2px;
+}
+
+.vts-hub-subtab.active {
+  border-color: var(--ff-border-hover);
+  background: var(--ff-surface-selected);
+  color: var(--ff-text);
+}
+
+.vts-hub-subtabs--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.vts-hub-subtabs--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vts-hub-subtab-panel {
+  display: none;
+}
+
+.vts-hub-subtab-panel.active {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .vts-hub-subtab {
+    padding: 10px 6px;
+    min-width: 0;
+    font-size: 0.82rem;
+    white-space: normal;
+  }
+  .vts-hub-subtab svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  /* Four labels do not fit one phone row legibly, so they wrap to 2x2 rather
+     than shrinking below a readable size. */
+  .vts-hub-subtabs--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vts-eden-hub-frame {
+  display: block;
+  width: 100%;
+  min-height: 78vh;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: rgba(15, 23, 42, 0.5);
+}
+
 /* Footer utility migration: migrated 1:1 from Tailwind utilities, scoped to
    explicit footer variants so the shared .footer-content base remains stable.
    Replaces:
@@ -66,7 +245,7 @@
   gap: var(--space-6);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .admin-footer .footer-content,
   .site-footer .footer-content {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -351,6 +530,12 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+/* Light theme kept the dark-theme slate label on a near-white control (about 1.5:1),
+   which made the "Show Hero Info Panels" switch label unreadable. */
+[data-theme='light'] .toggle-text {
+  color: var(--ff-text-dim);
 }
 
 @media (min-width: 640px) {
@@ -850,7 +1035,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .hero-tooltip-shell {
     width: 480px;
   }
@@ -1305,7 +1490,7 @@
 .tab-load-error,
 .admin-load-error {
   padding: 2rem;
-  color: #f87171;
+  color: var(--ff-danger);
   font-size: 0.875rem;
   text-align: center;
 }
@@ -2243,4 +2428,21 @@ html[dir='rtl'] .rank-score {
   [data-theme='light'] [data-core-tool] .generator-card.generator-card-selected {
     animation: none !important;
   }
+}
+
+/* Light-theme contrast repairs. These components were styled dark-first and the light
+   theme silently inherited their colors, landing well under WCAG AA on white surfaces:
+   the combo score read about 2.1:1, its label about 2.6:1, the not-ranked notice about
+   1.7:1, and the troop tags between 1.7:1 and 2.6:1. */
+[data-theme='light'] .gen-score-value {
+  color: #075985;
+}
+
+[data-theme='light'] .gen-score-meta,
+[data-theme='light'] .combo-not-ranked-text {
+  color: var(--ff-text-dim);
+}
+
+[data-theme='light'] .hero-card-type {
+  color: var(--ff-text-dim);
 }

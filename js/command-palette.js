@@ -40,6 +40,13 @@ const DESTS = [
     kw: 'tech research academy tree buffs nodes',
   },
   {
+    key: 'tabArtifact',
+    name: 'artifact',
+    kind: 'tab',
+    fallback: 'Artifacts (Redemption Grail)',
+    kw: 'artifact artifacts redemption grail rge as soulstones sacred light flame holy enhanced radiance stats',
+  },
+  {
     key: 'tabSpecialization',
     aliasesKey: 'tabSpecializationTowersAliases',
     name: 'specialization',
@@ -58,8 +65,8 @@ const DESTS = [
     key: 'tabEdenMap',
     name: 'edenMap',
     kind: 'tab',
-    fallback: 'Eden Map',
-    kw: 'eden map tiles scout route terrain teams',
+    fallback: 'VTS Eden Hub',
+    kw: 'eden map tiles scout route terrain teams loyalty poison previous seasons rankings x1',
   },
   {
     key: 'tabStrife',
@@ -70,10 +77,17 @@ const DESTS = [
   },
   {
     key: 'tabLoyalty',
-    name: 'loyalty',
+    name: 'edenMap',
     kind: 'tab',
     fallback: 'Eden Loyalty',
-    kw: 'loyalty poison camp deficit mitigation eden',
+    kw: 'loyalty poison camp deficit mitigation eden hub calculator',
+  },
+  {
+    key: 'tabEdenBounty',
+    name: 'edenMap',
+    kind: 'tab',
+    fallback: 'Royal Bounty Eden X2',
+    kw: 'royal bounty alliance aiding skill commission level lobby missions heroes guide',
   },
   {
     key: 'tabYouTube',
@@ -89,13 +103,6 @@ const DESTS = [
     kind: 'link',
     fallback: 'VTS Admin',
     kw: 'admin ocr roster gifts leaderboard contribution vote conduct dashboard',
-  },
-  {
-    key: 'tabAllStarBoh',
-    name: 'allStarBoh',
-    kind: 'tab',
-    fallback: 'All-Star BoH',
-    kw: 'all star boh signup teams assignment roles plan legion tournament wings',
   },
   {
     key: 'tabArcade',
@@ -269,6 +276,15 @@ function onInputKeydown(e) {
 function go(dest) {
   close();
   if (dest.kind === 'tab') {
+    if (dest.key === 'tabLoyalty' || dest.key === 'tabEdenBounty') {
+      const subtab = dest.key === 'tabLoyalty' ? 'loyalty' : 'bounty';
+      try {
+        document.body.dataset.edenHubSubtab = subtab;
+      } catch {
+        /* dataset unavailable */
+      }
+      window.dispatchEvent(new CustomEvent('vts:eden-hub-subtab', { detail: subtab }));
+    }
     if (typeof window.vtsSwitchTab === 'function') {
       window.vtsSwitchTab(dest.name, false, { scrollToSection: true });
     } else {

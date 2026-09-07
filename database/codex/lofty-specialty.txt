@@ -1,0 +1,5 @@
+# source: l96.app Lofty Warrior research post (2023-02-17) | credit: DonPablone (data: Cris Minime, Raven) | captureDate: 2026-09-02 | gameVersionScope: S4 | verificationStatus: unverified
+specialtyId|name|desc|p
+lofty-research-totals|Lofty Warrior research totals|798 research levels across 63 researches; total cost 1,545,795 war badges; each set costs 1000-4000 WB; level 277 maxes all attributes.|
+lofty-points-table|Specialty points earning table|Points 0-20: 15 researches/point (300 total); 21-41: 16 (320); 41-60: 17 (340); 61-80: 18 (360); 81-100: 19 (380); 101-120: 20 (400); 121-140: 21 (420); 141-160: 22 (440); 161-180: 23 (460); 181-200: 24 (480); cumulative 3900.|note=source table has overlapping range boundaries (21-41 then 41-60); transcribed verbatim, do not re-interpret
+lofty-reset-table|Reset time reduction table|Points to days/hours/percent: 5->11.22/144/3; 30->34.5/720/3; 42->52.5/720/15; 47->58.41/804/17; 52->64.17/888/19; 70->69.8/972/21; 90->75.28/1056/23; 125->80.63/1140/25; formula (180 days - hours reduction) x (1 - percentage reduction).|note=internal math not independently verified

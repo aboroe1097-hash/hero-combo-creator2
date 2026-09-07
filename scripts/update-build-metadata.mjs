@@ -7,9 +7,11 @@ const buildVersion = process.env.BUILD_VERSION || makeBuildVersion();
 const cacheVersion = `vts-${buildVersion.replace(/_/g, '-')}`;
 const entryHtmlFiles = [
   'index.html',
+  'profile.html',
   'maintenance.html',
   'admin.html',
   'eden-x1.html',
+  'eden-x2.html',
   'arcade.html',
   'battle-simulator.html',
   'specialization-towers.html',
@@ -17,6 +19,7 @@ const entryHtmlFiles = [
 const baseAppShellFiles = [
   '/',
   '/index.html',
+  '/profile.html',
   '/maintenance.html',
   '/404.html',
   '/site.webmanifest',
@@ -29,6 +32,7 @@ const baseAppShellFiles = [
   '/images/logo-120.webp',
   '/css/eden-x1.css',
   '/eden-x1.html',
+  '/eden-x2.html',
   '/arcade.html',
   '/battle-simulator.html',
   '/specialization-towers.html',
@@ -82,10 +86,23 @@ function updateCacheBusters() {
     const appJs = fs
       .readFileSync(appJsPath, 'utf8')
       .replace(
-        /((?:app-hero-atlas|app-research|eden-map|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
+        /((?:app-hero-atlas|app-research|app-artifact|eden-map|eden-hub|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
         `$1?v=${buildVersion}`
       );
     fs.writeFileSync(appJsPath, appJs);
+  }
+
+  // eden-hub.js hosts the Eden tab's lazy sub-features. Every stamp inside it
+  // must match the build so its modules (translations, state, eden-map) resolve
+  // to the same browser module instances the rest of the app uses. A stale
+  // stamp here splits the module graph and quietly breaks locale lookups and
+  // the map viewport refresh.
+  const edenHubPath = path.join(root, 'js', 'eden-hub.js');
+  if (fs.existsSync(edenHubPath)) {
+    const edenHub = fs
+      .readFileSync(edenHubPath, 'utf8')
+      .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`);
+    fs.writeFileSync(edenHubPath, edenHub);
   }
 }
 

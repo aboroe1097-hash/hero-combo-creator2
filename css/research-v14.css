@@ -1157,9 +1157,9 @@ body.research-calculator-open {
 
 :is(#researchSection, .research-v14-workspace) .game-tech-node-wrap {
   position: relative;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  padding: 11px 8px 10px;
+  padding: 9px 8px 8px;
   border: 1px solid var(--rv-border);
   border-radius: 16px;
   background:
@@ -1280,7 +1280,9 @@ body.research-calculator-open {
 }
 
 :is(#researchSection, .research-v14-workspace) .game-tree-connector {
-  height: 30px;
+  /* Tightened from 30px: the tree is tall and the extra run of empty rail pushed
+     later rows off-screen without adding any information. */
+  height: 21px;
   max-width: 726px;
   margin-left: 34px;
 }
@@ -1350,7 +1352,82 @@ body.research-calculator-open {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
-:is(#researchSection, .research-v14-workspace) .research-node-card--maxed {
+/* A locked node is one the game would not let you research yet, because the row above it
+   is not fully started. It reads as inert rather than merely untouched. */
+:is(#researchSection, .research-v14-workspace) .game-tech-node-wrap[data-node-locked='true'] {
+  opacity: 0.42;
+  filter: saturate(0.25);
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .game-tech-node-wrap[data-node-locked='true']
+  .game-tech-tap {
+  cursor: not-allowed;
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .game-tech-node-wrap[data-node-locked='true']:hover {
+  transform: none;
+}
+
+/* Idle-state summary so the panel is never an empty column beside a long tree. */
+:is(#researchSection, .research-v14-workspace) .research-node-inspector-overview {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-inspector-overview > div {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--rv-border);
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-inspector-overview > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-inspector-overview dt {
+  color: var(--rv-muted);
+  font-size: 0.66rem;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-inspector-overview dd {
+  margin: 0;
+  color: var(--rv-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-inspector-lock {
+  margin: 8px 0 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(251, 146, 60, 0.28);
+  border-radius: 8px;
+  background: rgba(251, 146, 60, 0.08);
+  color: var(--rv-flame);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+/* The card list shares the game tree's three-state language:
+   idle = untouched, progress = partially levelled (cyan), complete = maxed (flame). */
+:is(#researchSection, .research-v14-workspace)
+  .research-node-card[data-node-state='progress']:not(.research-node-card--maxed) {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(125, 211, 252, 0.32);
+  background: linear-gradient(150deg, rgba(125, 211, 252, 0.075), rgba(13, 22, 38, 0.92));
+}
+
+:is(#researchSection, .research-v14-workspace) .research-node-card--maxed,
+:is(#researchSection, .research-v14-workspace)
+  .research-node-card[data-node-state='complete'] {
   opacity: 1;
   filter: none;
   border-color: rgba(251, 146, 60, 0.32);
@@ -1430,6 +1507,55 @@ body.research-calculator-open {
   background: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none;
+}
+
+/* Spent and remaining sit side by side so the tree footer answers both
+   "what did this cost me" and "what is left". */
+:is(#researchSection, .research-v14-workspace) .research-total-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-total-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-total-group-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .research-total-group--spent
+  .research-total-group-label {
+  color: rgba(125, 211, 252, 0.92);
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .research-total-group--remaining
+  .research-total-group-label {
+  color: var(--rv-flame);
+}
+
+/* Spent is reference information, so it reads one step quieter than remaining. */
+:is(#researchSection, .research-v14-workspace) .research-total-group--spent .research-total-costs {
+  opacity: 0.86;
+}
+
+@media (max-width: 480px) {
+  :is(#researchSection, .research-v14-workspace) .research-total-groups {
+    gap: 4px 12px;
+  }
 }
 
 :is(#researchSection, .research-v14-workspace) .research-tree-total-label {

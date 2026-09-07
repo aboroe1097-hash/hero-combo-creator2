@@ -8,6 +8,7 @@ const loaders = {
   es: () => import('./locales/es.js'),
   fr: () => import('./locales/fr.js'),
   id: () => import('./locales/id.js'),
+  it: () => import('./locales/it.js'),
   kr: () => import('./locales/kr.js'),
   pt: () => import('./locales/pt.js'),
   ru: () => import('./locales/ru.js'),

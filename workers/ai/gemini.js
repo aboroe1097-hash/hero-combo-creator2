@@ -27,6 +27,30 @@ function configuredModel(env) {
   return model;
 }
 
+function optionalFastModel(env) {
+  const model = String(env.AI_MODEL_FAST || '').trim();
+  return MODEL_SET.has(model) ? model : null;
+}
+
+const FAST_PATH_MAX_CHARACTERS = 280;
+const FAST_PATH_MAX_HISTORY_STEPS = 1;
+
+// Simple, standalone questions get the fast model; anything that needs tool
+// reasoning, follow-up context, or a longer answer gets the primary model.
+export function pickModel(env, providerInput = [], activeTab = null) {
+  const primary = configuredModel(env);
+  const fast = optionalFastModel(env);
+  if (!fast || fast === primary) return primary;
+  const steps = Array.isArray(providerInput) ? providerInput : [];
+  const initialMessages = steps.filter((step) => step?.type === 'user_input');
+  const isFastPath =
+    !activeTab &&
+    initialMessages.length === 1 &&
+    steps.length <= FAST_PATH_MAX_HISTORY_STEPS &&
+    String(initialMessages[0]?.content?.[0]?.text || '').length <= FAST_PATH_MAX_CHARACTERS;
+  return isFastPath ? fast : primary;
+}
+
 function toolsForGroups(groups) {
   const set = new Set(groups);
   return TOOL_DECLARATIONS.filter(
@@ -129,7 +153,6 @@ export async function fetchGeminiInteraction({ env, body, clientSignal, fetchImp
       'Content-Type': 'application/json',
       'x-goog-api-key': env.GEMINI_API_KEY.trim(),
     },
-    body: JSON.stringify(body),
     signal: controller.signal,
   };
 
@@ -137,7 +160,10 @@ export async function fetchGeminiInteraction({ env, body, clientSignal, fetchImp
     let response;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        response = await fetchImpl(GEMINI_INTERACTIONS_URL, requestInit);
+        response = await fetchImpl(GEMINI_INTERACTIONS_URL, {
+          ...requestInit,
+          body: JSON.stringify(body),
+        });
       } catch (error) {
         if (controller.signal.aborted) {
           const timeout = controller.signal.reason === 'round-timeout';
@@ -151,7 +177,20 @@ export async function fetchGeminiInteraction({ env, body, clientSignal, fetchImp
       }
       const retryableBeforeInteraction = response.status === 429 || response.status === 503;
       if (attempt === 0 && retryableBeforeInteraction) {
+        const fallbackModel = String(body.fallbackModel || '').trim();
         await response.body?.cancel().catch(() => undefined);
+        if (fallbackModel && fallbackModel !== body.model) {
+          const fromModel = body.model;
+          body = { ...body, model: fallbackModel };
+          console.log(
+            JSON.stringify({
+              type: 'ai_model_fallback',
+              status: response.status,
+              from: fromModel,
+              to: fallbackModel,
+            })
+          );
+        }
         await wait(retryDelayMs(response), controller.signal);
         continue;
       }
@@ -187,6 +226,7 @@ export async function fetchGeminiInteraction({ env, body, clientSignal, fetchImp
     return {
       response,
       signal: controller.signal,
+      usedModel: body.model,
       cleanup() {
         clearTimeout(roundTimeout);
         clientSignal?.removeEventListener('abort', onClientAbort);
@@ -504,6 +544,7 @@ export function createNormalizedInteractionStream({
   const model = configuredModel(env);
   const assembler = new ProviderStreamAssembler({ allowedToolGroups, priorFingerprints });
   const started = Date.now();
+  const effectiveModel = upstream.model || model;
 
   return new ReadableStream({
     async start(controller) {
@@ -511,7 +552,7 @@ export function createNormalizedInteractionStream({
       try {
         writeSafe(controller, 'start', {
           requestId,
-          model,
+          model: effectiveModel,
           round,
           quota,
         });
@@ -649,7 +690,7 @@ export function createNormalizedInteractionStream({
           JSON.stringify({
             type: 'ai_turn',
             requestId,
-            model,
+            model: effectiveModel,
             round,
             status: finalStatus,
             latencyMs: Date.now() - started,
@@ -678,7 +719,13 @@ export async function prepareGeminiUpstream({
   activeTab = null,
   requestSignal,
 }) {
-  const model = configuredModel(env);
+  const model = pickModel(env, providerInput, activeTab);
+  const fallbackModel = optionalFastModel(env) === model ? configuredModel(env) : null;
   const body = buildGeminiRequest({ model, providerInput, allowedToolGroups, locale, activeTab });
-  return fetchGeminiInteraction({ env, body, clientSignal: requestSignal });
+  const upstream = await fetchGeminiInteraction({
+    env,
+    body: { ...body, fallbackModel },
+    clientSignal: requestSignal,
+  });
+  return { ...upstream, model: upstream.usedModel || model };
 }

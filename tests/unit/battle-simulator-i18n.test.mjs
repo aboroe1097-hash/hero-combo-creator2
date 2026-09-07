@@ -25,7 +25,7 @@ function placeholders(value) {
   return Array.from(String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g), (match) => match[1]).sort();
 }
 
-test('Battle Simulator publishes the requested 11 stable locale IDs and native labels', () => {
+test('Battle Simulator publishes the requested 12 stable locale IDs and native labels', () => {
   assert.deepEqual(BATTLE_SIMULATOR_LOCALES, [
     'en',
     'ar',
@@ -33,6 +33,7 @@ test('Battle Simulator publishes the requested 11 stable locale IDs and native l
     'es',
     'fr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',
@@ -44,6 +45,11 @@ test('Battle Simulator publishes the requested 11 stable locale IDs and native l
     BATTLE_SIMULATOR_LOCALES
   );
   assert.equal(normalizeBattleSimulatorLocale('ko-KR'), 'kr');
+  assert.equal(normalizeBattleSimulatorLocale('it-IT'), 'it');
+  assert.deepEqual(
+    BATTLE_SIMULATOR_LANGUAGE_OPTIONS.find(({ id }) => id === 'it'),
+    { id: 'it', label: 'Italiano', short: 'IT' }
+  );
   assert.equal(normalizeBattleSimulatorLocale('pt-BR'), 'pt');
   assert.equal(normalizeBattleSimulatorLocale('unsupported'), 'en');
 });
@@ -78,6 +84,32 @@ test('every non-English pack fully translates visible copy and preserves placeho
   }
 });
 
+test('per-side draft copy uses named shared-English keys with exact locale parity', () => {
+  const keys = [
+    'profile.sourceHint',
+    'profile.researchRestore',
+    'profile.researchZero',
+    'profile.towerMax',
+    'profile.towerUnmax',
+    'profile.applySummary',
+    'profile.diffSummary',
+    'profile.preserveSummary',
+    'toast.profileDraftIncomplete',
+    'toast.profileApplied',
+  ];
+  for (const key of keys) {
+    assert.equal(typeof BATTLE_SIMULATOR_ENGLISH[key], 'string', key);
+    for (const locale of BATTLE_SIMULATOR_LOCALES.filter((entry) => entry !== 'en')) {
+      assert.equal(
+        BATTLE_SIMULATOR_LOCALE_PACKS[locale][key],
+        BATTLE_SIMULATOR_ENGLISH[key],
+        `${locale}:${key}`
+      );
+    }
+  }
+  assert.doesNotMatch(appSource, />Edit Side [AB]</);
+  assert.doesNotMatch(appSource, />Apply to Side [AB]</);
+});
 test('locale loading, pluralization, and number formatting stay scoped to the selected language', async () => {
   await loadBattleSimulatorLocale('de');
   const german = createBattleSimulatorTranslator('de');
@@ -105,6 +137,12 @@ test('document language and direction update live while canonical setup IDs rema
   applyBattleSimulatorDocumentLocale(fakeDocument, 'kr');
   assert.equal(fakeDocument.documentElement.lang, 'ko');
   assert.equal(fakeDocument.documentElement.dir, 'ltr');
+
+  await loadBattleSimulatorLocale('it');
+  applyBattleSimulatorDocumentLocale(fakeDocument, 'it');
+  assert.equal(fakeDocument.documentElement.lang, 'it');
+  assert.equal(fakeDocument.documentElement.dir, 'ltr');
+  assert.equal(fakeDocument.title, 'Simulatore di battaglia Beta | VTS 1097');
 
   assert.doesNotMatch(packSource, /['"]pvp-field['"]\s*:/);
   assert.match(appSource, /battleMode:\s*'pvp-field'/);

@@ -11,6 +11,7 @@ import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
+  demolition: 0.05,
   pathers: 0.15,
   banners: 0.15,
   shieldWalls: 0.15,
@@ -407,6 +408,41 @@ function buildExGuildBreakdownMap(exGuildContributions = []) {
   return map;
 }
 
+function demolitionValue(entry) {
+  return Math.max(
+    0,
+    numberValue(
+      entry?.total_demolition ??
+        entry?.totalDemolition ??
+        entry?.demolition ??
+        entry?.demo ??
+        entry?.value ??
+        entry?.val
+    )
+  );
+}
+
+function buildDemolitionMap(demolitionRecords = []) {
+  const map = new Map();
+  (Array.isArray(demolitionRecords) ? demolitionRecords : []).forEach((record) => {
+    const entries = Array.isArray(record?.players) ? record.players : [record];
+    entries.forEach((entry) => {
+      const identity = resolveWeightedPlayerIdentity(
+        entry?.display_player_name ||
+          entry?.player_name ||
+          entry?.playerName ||
+          entry?.name ||
+          entry
+      );
+      if (!identity) return;
+      const value = demolitionValue(entry);
+      if (!value) return;
+      map.set(identity.playerKey, (map.get(identity.playerKey) || 0) + value);
+    });
+  });
+  return map;
+}
+
 function normalizeWeights(weights) {
   return {
     ...WEIGHTED_CONTRIBUTION_WEIGHTS,
@@ -433,6 +469,7 @@ export function buildWeightedContributionRows(options = {}) {
   );
   const exGuildMap = buildExGuildMap(options.exGuildContributions);
   const exGuildBreakdownMap = buildExGuildBreakdownMap(options.exGuildContributions);
+  const demolitionMap = buildDemolitionMap(options.demolitionRecords);
   const includeSupportOnly = options.includeSupportOnly === true;
 
   const baseRows = entries
@@ -500,6 +537,11 @@ export function buildWeightedContributionRows(options = {}) {
     const fam = playerFamilyKey(accountKey);
     familyConduct.set(fam, (familyConduct.get(fam) || 0) + points);
   });
+  const familyDemolition = new Map();
+  demolitionMap.forEach((value, accountKey) => {
+    const fam = playerFamilyKey(accountKey);
+    familyDemolition.set(fam, (familyDemolition.get(fam) || 0) + value);
+  });
 
   const primaryIndexByFamily = new Map();
   contributionAndSupportRows.forEach((row, index) => {
@@ -536,6 +578,7 @@ export function buildWeightedContributionRows(options = {}) {
       shieldWalls: duties.shieldWalls,
       pathers: duties.pathers,
       banners: duties.banners,
+      totalDemolition: isPrimaryAccount ? familyDemolition.get(fam) || 0 : 0,
       conductBonus: isPrimaryAccount ? familyConduct.get(fam) || 0 : 0,
       isPrimaryAccount,
     };
@@ -552,13 +595,15 @@ export function buildWeightedContributionRows(options = {}) {
       row.pathers * BASE_POINT_VALUE +
       row.shieldWalls * BASE_POINT_VALUE;
     const conductPoints = row.conductBonus * BASE_POINT_VALUE;
-    const weightedScore = contributionRewardScore + dutyPoints + conductPoints;
+    const demolitionPoints = row.totalDemolition * Math.max(0, numberValue(weights.demolition));
+    const weightedScore = contributionRewardScore + demolitionPoints + dutyPoints + conductPoints;
 
     return {
       ...row,
       contributionRewardScore,
       dutyPoints,
       conductPoints,
+      demolitionPoints,
       weightedScore,
     };
   });
@@ -613,12 +658,20 @@ export function buildWeightedContributionRows(options = {}) {
     max: rankedRows.length
       ? {
           contribution: Math.max(...rankedRows.map((r) => r.contributionScore)),
+          demolition: Math.max(...rankedRows.map((r) => r.totalDemolition)),
           pathers: Math.max(...rankedRows.map((r) => r.pathers)),
           banners: Math.max(...rankedRows.map((r) => r.banners)),
           shieldWalls: Math.max(...rankedRows.map((r) => r.shieldWalls)),
           conductAbs: Math.max(...rankedRows.map((r) => Math.abs(r.conductBonus))),
         }
-      : { contribution: 0, pathers: 0, banners: 0, shieldWalls: 0, conductAbs: 0 },
+      : {
+          contribution: 0,
+          demolition: 0,
+          pathers: 0,
+          banners: 0,
+          shieldWalls: 0,
+          conductAbs: 0,
+        },
     rows: rankedRows,
   };
 }

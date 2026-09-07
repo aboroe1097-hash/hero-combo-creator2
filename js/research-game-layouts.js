@@ -540,4 +540,33 @@ export const RESEARCH_GAME_LAYOUTS = Object.freeze({
       },
     ],
   },
+
+  '9c5d4006': {
+    theme: 'crimson',
+    sections: [
+      {
+        id: 'melee-defense-main',
+        labelKey: 'researchSectionSiegeDefense',
+        rows: [
+          { nodes: ['node_1', 'node_2', 'node_3'], columns: [1, 2, 3] },
+          { nodes: ['node_4', 'node_5', 'node_6'], columns: [1, 2, 3] },
+          { nodes: ['node_7'], columns: [2] },
+          { nodes: ['node_8', 'node_9'], columns: [1, 3] },
+          { nodes: ['node_10', 'node_11'], columns: [1, 3] },
+          { nodes: ['node_12'], columns: [2] },
+          { nodes: ['node_13'], columns: [2] },
+          { nodes: ['node_14'], columns: [2] },
+          { nodes: ['node_15'], columns: [2] },
+          { nodes: ['node_16', 'node_17'], columns: [1, 3] },
+          { nodes: ['node_18', 'node_19'], columns: [1, 3] },
+          { nodes: ['node_20'], columns: [2] },
+          { nodes: ['node_21'], columns: [2] },
+          { nodes: ['node_22', 'node_23', 'node_24'], columns: [1, 2, 3] },
+          { nodes: ['node_25', 'node_26', 'node_27'], columns: [1, 2, 3] },
+          { nodes: ['node_28'], columns: [2] },
+          { nodes: ['node_29'], columns: [2] },
+        ],
+      },
+    ],
+  },
 });

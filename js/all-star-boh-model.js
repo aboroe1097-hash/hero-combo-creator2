@@ -10,6 +10,9 @@ export const BOH_EPIC_SHOWDOWN_SCHEMA_VERSION = 1;
 export const BOH_TEAM_COUNT = 6;
 export const BOH_TEAM_SIZE = 12;
 export const BOH_FIELD_SIZE = BOH_TEAM_COUNT * BOH_TEAM_SIZE;
+const BOH_MIN_TEAM_COUNT = 2;
+const BOH_BALANCE_METRICS = new Set(['score', 'totalPower', 'balanced']);
+const BOH_MAX_TOTAL_CASTLE_POWER = 10 ** 12;
 export const BOH_MAX_PREFERRED_TEAMMATES = 6;
 export const BOH_MAX_USABLE_HERO_NAMES = 78;
 export const BOH_FIGHTING_TIME_IDS = Object.freeze(['+12', '+14', '+16']);
@@ -55,6 +58,7 @@ const SCORE_POWER_FIELDS = Object.freeze([
   'technologyPower',
   'heroCombatPower',
   'dragonPower',
+  'unitSpecialtyPower',
 ]);
 
 const SCORE_BONUS_FIELDS = Object.freeze([
@@ -62,6 +66,10 @@ const SCORE_BONUS_FIELDS = Object.freeze([
   'readySpeedHero',
   'level50Hero',
   'bohUsefulRating',
+  'rocLevel',
+  'paidUsableHero',
+  'loftyTroopMillion',
+  'enhancedT10TroopMillion',
 ]);
 
 function deepFreeze(value) {
@@ -87,12 +95,17 @@ export const BOH_2025_SCORING_PROFILE = deepFreeze({
     technologyPower: 0.7,
     heroCombatPower: 0.8,
     dragonPower: 1,
+    unitSpecialtyPower: 0,
   },
   bonusWeights: {
     t9TroopType: 3000,
     readySpeedHero: 2500,
     level50Hero: 750,
     bohUsefulRating: 1000,
+    rocLevel: 0,
+    paidUsableHero: 0,
+    loftyTroopMillion: 0,
+    enhancedT10TroopMillion: 0,
   },
 });
 
@@ -108,11 +121,18 @@ export const BOH_DEFAULT_PHASES = deepFreeze([
   { id: 'phase-5-10', label: '5–10 Minutes', startMinute: 5, endMinute: 10, order: 2 },
   { id: 'phase-10-15', label: '10–15 Minutes', startMinute: 10, endMinute: 15, order: 3 },
   { id: 'phase-15-30', label: '15–30 Minutes', startMinute: 15, endMinute: 30, order: 4 },
+  { id: 'phase-30-60', label: '30–60 Minutes', startMinute: 30, endMinute: 60, order: 5 },
 ]);
 
 export const BOH_DEFAULT_LEGIONS = deepFreeze([
   { id: 'legion-1', label: 'Legion 1', order: 1 },
   { id: 'legion-2', label: 'Legion 2', order: 2 },
+]);
+export const BOH_PLAYER_RESOURCE_SKILLS = deepFreeze([
+  { id: 'battlefield-teleport', meritCost: 1000, effect: { personalTeleports: 1 } },
+  { id: 'emergency-treatment', meritCost: 1000, effect: {} },
+  { id: 'rapid-freeze', meritCost: 3000, effect: {} },
+  { id: 'meteor-fall', meritCost: 6000, effect: {} },
 ]);
 
 function modelError(code, details = {}) {
@@ -766,6 +786,39 @@ function adminUsefulnessRating(options = {}) {
   return rating;
 }
 
+function trustedPaidUsableHeroCount(usableHeroNames, options = {}) {
+  const paidHeroKeys = new Set(
+    normalizeStringList(options.paidUsableHeroNames).map(normalizeBohNameKey)
+  );
+  if (!paidHeroKeys.size) return 0;
+  const usableHeroKeys = new Set(normalizeStringList(usableHeroNames).map(normalizeBohNameKey));
+  return [...usableHeroKeys].filter((heroKey) => paidHeroKeys.has(heroKey)).length;
+}
+
+function scoreTroopMillions(troopRoster) {
+  const aggregateCounts = { lofty: null, 'enhanced-t10': null };
+  const legacyCounts = { lofty: 0, 'enhanced-t10': 0 };
+  for (const entry of troopRoster) {
+    const aggregate = /^estimate\|(lofty|enhanced-t10)\|(\d{1,10})$/u.exec(entry);
+    if (aggregate) {
+      aggregateCounts[aggregate[1]] = Number(aggregate[2]);
+      continue;
+    }
+    const legacy =
+      /^(?:footmen|cavalry|archers)\|(SSS|SS|S|X)\|(normal|enhanced)\|(\d{1,10})$/u.exec(entry);
+    if (!legacy) continue;
+    const [, tier, mode, rawCount] = legacy;
+    const count = Number(rawCount);
+    if (['S', 'SS', 'SSS'].includes(tier)) legacyCounts.lofty += count;
+    else if (tier === 'X' && mode === 'enhanced') legacyCounts['enhanced-t10'] += count;
+  }
+  return {
+    loftyTroopMillion: (aggregateCounts.lofty ?? legacyCounts.lofty) / 1_000_000,
+    enhancedT10TroopMillion:
+      (aggregateCounts['enhanced-t10'] ?? legacyCounts['enhanced-t10']) / 1_000_000,
+  };
+}
+
 export function scoreBohSignup(input, profileInput = BOH_2025_SCORING_PROFILE, options = {}) {
   const signup = normalizeBohSignup(input, options);
   const profile = createBohScoringProfile(profileInput);
@@ -789,6 +842,9 @@ export function scoreBohSignup(input, profileInput = BOH_2025_SCORING_PROFILE, o
     // This value is intentionally accepted only through the admin scorer call.
     // Player submissions never own or normalize a usefulness adjustment.
     bohUsefulRating: adminUsefulnessRating(options),
+    rocLevel: signup.stats.rocLevel,
+    paidUsableHero: trustedPaidUsableHeroCount(signup.stats.usableHeroNames, options),
+    ...scoreTroopMillions(signup.stats.troopRoster),
   };
   SCORE_BONUS_FIELDS.forEach((field) => {
     const sourceValue = bonusInputs[field];
@@ -879,20 +935,48 @@ function coverageInputForPlayer(options, playerId) {
   return undefined;
 }
 
-function normalizeBohDraftPlayer(input, options = {}) {
-  const signupSource = input.signup
+function draftTotalCastlePowerInput(input, nestedSignup) {
+  const outerStats = input.stats && typeof input.stats === 'object' ? input.stats : {};
+  const nestedStats =
+    nestedSignup?.stats && typeof nestedSignup.stats === 'object' ? nestedSignup.stats : {};
+  return firstDefined(
+    input.totalCastlePower,
+    input.totalPower,
+    outerStats.totalCastlePower,
+    outerStats.totalPower,
+    nestedStats.totalCastlePower,
+    nestedStats.totalPower,
+    nestedSignup?.totalCastlePower,
+    nestedSignup?.totalPower
+  );
+}
+
+function normalizeBohDraftPlayer(input = {}, options = {}) {
+  const nestedSignup =
+    input.signup && typeof input.signup === 'object' && !Array.isArray(input.signup)
+      ? input.signup
+      : null;
+  const signupSource = nestedSignup
     ? {
-        ...input.signup,
-        playerId: firstDefined(input.playerId, input.id, input.signup.playerId, input.signup.id),
+        ...nestedSignup,
+        playerId: firstDefined(input.playerId, input.id, nestedSignup.playerId, nestedSignup.id),
         gameName: firstDefined(
           input.gameName,
           input.name,
-          input.signup.gameName,
-          input.signup.name
+          nestedSignup.gameName,
+          nestedSignup.name
         ),
       }
     : input;
-  const signup = normalizeBohSignup(signupSource, options);
+  const normalizedSignup = normalizeBohSignup(signupSource, options);
+  const totalCastlePower = Math.min(
+    BOH_MAX_TOTAL_CASTLE_POWER,
+    nonNegativeNumber(draftTotalCastlePowerInput(input, nestedSignup))
+  );
+  const signup = {
+    ...normalizedSignup,
+    stats: { ...normalizedSignup.stats, totalCastlePower },
+  };
   const externalCoverage = coverageInputForPlayer(options, signup.playerId);
   const coverage = Array.isArray(externalCoverage)
     ? { eligibleRoleIds: externalCoverage }
@@ -934,10 +1018,55 @@ function normalizeBohDraftPlayer(input, options = {}) {
     gameName: signup.gameName,
     signup,
     score,
+    totalCastlePower,
     scoreBreakdown,
     eligibleRoleIds,
     rolePreferences,
   };
+}
+
+function normalizeBohTeamCount(value = BOH_TEAM_COUNT) {
+  const teamCount = typeof value === 'string' ? Number(normalizeNumericText(value)) : value;
+  if (
+    !Number.isInteger(teamCount) ||
+    teamCount < BOH_MIN_TEAM_COUNT ||
+    teamCount > BOH_TEAM_COUNT
+  ) {
+    throw modelError('boh_team_count_invalid', {
+      min: BOH_MIN_TEAM_COUNT,
+      max: BOH_TEAM_COUNT,
+      actual: value,
+    });
+  }
+  return teamCount;
+}
+
+function normalizeBohBalanceMetric(value = 'score') {
+  const balanceMetric = asText(value);
+  if (!BOH_BALANCE_METRICS.has(balanceMetric)) {
+    throw modelError('boh_balance_metric_invalid', { balanceMetric: value });
+  }
+  return balanceMetric;
+}
+
+function normalizedTeamNumber(value) {
+  const teamNumber = typeof value === 'string' ? Number(normalizeNumericText(value)) : value;
+  return Number.isInteger(teamNumber) && teamNumber >= 1 && teamNumber <= BOH_TEAM_COUNT
+    ? teamNumber
+    : null;
+}
+
+function normalizeTeamDefinitionNumber(value, index) {
+  if (value === undefined || value === null || value === '') return index + 1;
+  const teamNumber = normalizedTeamNumber(value);
+  if (teamNumber === null) {
+    throw modelError('boh_team_number_invalid', {
+      min: 1,
+      max: BOH_TEAM_COUNT,
+      actual: value,
+    });
+  }
+  return teamNumber;
 }
 
 function normalizeTeamDefinitions(input, teamCount) {
@@ -953,20 +1082,29 @@ function normalizeTeamDefinitions(input, teamCount) {
     throw modelError('boh_team_count_invalid', { expected: teamCount, actual: source.length });
   }
   const seen = new Set();
+  const seenNumbers = new Set();
   return source.map((entry, index) => {
     const candidate = typeof entry === 'string' ? { id: entry, label: entry } : entry || {};
     const id = normalizeBohId(candidate.id || candidate.teamId, `team-${index + 1}`);
     if (seen.has(id)) throw modelError('boh_team_id_duplicate', { teamId: id });
     seen.add(id);
+    const number = normalizeTeamDefinitionNumber(
+      firstDefined(candidate.number, candidate.teamNumber),
+      index
+    );
+    if (seenNumbers.has(number)) {
+      throw modelError('boh_team_number_duplicate', { teamNumber: number });
+    }
+    seenNumbers.add(number);
     return {
       id,
       label: normalizeBohName(candidate.label || candidate.name || `Team ${index + 1}`),
-      number: nonNegativeInteger(candidate.number) || index + 1,
+      number,
     };
   });
 }
 
-function lockEntries(input) {
+function lockEntries(input, invalidCode = 'boh_locked_assignments_invalid') {
   if (!input) return [];
   if (input instanceof Map) {
     return [...input.entries()].map(([playerId, value]) => ({ playerId, value }));
@@ -977,7 +1115,49 @@ function lockEntries(input) {
   if (typeof input === 'object') {
     return Object.entries(input).map(([playerId, value]) => ({ playerId, value }));
   }
-  throw modelError('boh_locked_assignments_invalid');
+  throw modelError(invalidCode);
+}
+
+function resolveAssignmentTeam(value, teamById, teamByNumber, codePrefix, playerId) {
+  const candidate = value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  const hasTeamId = candidate?.teamId !== undefined && candidate?.teamId !== null;
+  const hasTeamNumber = candidate?.teamNumber !== undefined && candidate?.teamNumber !== null;
+  const unknown = (rawTeam) => {
+    throw modelError(`${codePrefix}_team_unknown`, { playerId, teamId: rawTeam });
+  };
+
+  if (hasTeamId || hasTeamNumber) {
+    let resolved = null;
+    if (hasTeamId) {
+      resolved = teamById.get(normalizeBohId(candidate.teamId));
+      if (!resolved) unknown(candidate.teamId);
+    }
+    if (hasTeamNumber) {
+      const teamNumber = normalizedTeamNumber(candidate.teamNumber);
+      const numbered = teamNumber === null ? null : teamByNumber.get(teamNumber);
+      if (!numbered) unknown(candidate.teamNumber);
+      if (resolved && resolved.id !== numbered.id) {
+        throw modelError(`${codePrefix}_team_ambiguous`, {
+          playerId,
+          teamId: candidate.teamId,
+          teamNumber,
+        });
+      }
+      resolved = numbered;
+    }
+    return resolved;
+  }
+
+  const rawTeam = candidate ? candidate.team : value;
+  const byId = teamById.get(normalizeBohId(rawTeam)) || null;
+  const teamNumber = normalizedTeamNumber(rawTeam);
+  const byNumber = teamNumber === null ? null : teamByNumber.get(teamNumber) || null;
+  if (byId && byNumber && byId.id !== byNumber.id) {
+    throw modelError(`${codePrefix}_team_ambiguous`, { playerId, teamId: rawTeam, teamNumber });
+  }
+  const resolved = byId || byNumber;
+  if (!resolved) unknown(rawTeam);
+  return resolved;
 }
 
 function normalizeLockedAssignments(input, teams, seatTemplate) {
@@ -991,10 +1171,7 @@ function normalizeLockedAssignments(input, teams, seatTemplate) {
     const playerId = normalizeBohId(rawPlayerId || candidate.playerId || candidate.id);
     if (!playerId) throw modelError('boh_locked_player_required');
     if (locks.has(playerId)) throw modelError('boh_locked_player_duplicate', { playerId });
-    const rawTeam = firstDefined(candidate.teamId, candidate.team, candidate.teamNumber);
-    let team = teamById.get(normalizeBohId(rawTeam));
-    if (!team && Number.isFinite(Number(rawTeam))) team = teamByNumber.get(Number(rawTeam));
-    if (!team) throw modelError('boh_locked_team_unknown', { playerId, teamId: rawTeam });
+    const team = resolveAssignmentTeam(value, teamById, teamByNumber, 'boh_locked', playerId);
     const seatNumber = candidate.seatNumber
       ? nonNegativeInteger(candidate.seatNumber)
       : candidate.seat
@@ -1029,6 +1206,26 @@ function normalizeLockedAssignments(input, teams, seatTemplate) {
   return locks;
 }
 
+function normalizeForcedTeamAssignments(input, teams) {
+  const teamById = new Map(teams.map((team) => [team.id, team]));
+  const teamByNumber = new Map(teams.map((team) => [team.number, team]));
+  const assignments = new Map();
+  lockEntries(input, 'boh_forced_assignments_invalid').forEach(
+    ({ playerId: rawPlayerId, value }) => {
+      const candidate =
+        typeof value === 'string' || typeof value === 'number' ? { teamId: value } : value || {};
+      const playerId = normalizeBohId(rawPlayerId || candidate.playerId || candidate.id);
+      if (!playerId) throw modelError('boh_forced_player_required');
+      if (assignments.has(playerId)) {
+        throw modelError('boh_forced_player_duplicate', { playerId });
+      }
+      const team = resolveAssignmentTeam(value, teamById, teamByNumber, 'boh_forced', playerId);
+      assignments.set(playerId, { playerId, teamId: team.id });
+    }
+  );
+  return assignments;
+}
+
 function rolePreferenceRank(player, roleGroupId) {
   const index = player.rolePreferences.indexOf(roleGroupId);
   return index < 0 ? player.rolePreferences.length + 1 : index;
@@ -1045,10 +1242,10 @@ function createDraftSlots(teams, seatTemplate) {
   );
 }
 
-function slotAllowedForPlayer(player, slot, lock, knownRoleIds) {
-  if (lock?.teamId && lock.teamId !== slot.teamId) return false;
-  if (lock?.seatNumber && lock.seatNumber !== slot.seatNumber) return false;
-  if (lock?.roleGroupId && lock.roleGroupId !== slot.roleGroupId) return false;
+function slotAllowedForPlayer(player, slot, constraint, knownRoleIds) {
+  if (constraint?.teamId && constraint.teamId !== slot.teamId) return false;
+  if (constraint?.seatNumber && constraint.seatNumber !== slot.seatNumber) return false;
+  if (constraint?.roleGroupId && constraint.roleGroupId !== slot.roleGroupId) return false;
   if (player.eligibleRoleIds.length) {
     const knownEligibility = player.eligibleRoleIds.filter((roleId) => knownRoleIds.has(roleId));
     if (!knownEligibility.includes(slot.roleGroupId)) return false;
@@ -1056,21 +1253,124 @@ function slotAllowedForPlayer(player, slot, lock, knownRoleIds) {
   return true;
 }
 
-function teamScoreTotals(slots, slotToPlayer, playersById, teamCount) {
+function balanceValueForPlayer(player, balanceMetric) {
+  return balanceMetric === 'totalPower' ? player.totalCastlePower : player.score;
+}
+
+function teamBalanceTotals(slots, slotToPlayer, playersById, teamCount, balanceMetric) {
   const totals = Array.from({ length: teamCount }, () => 0);
   slots.forEach((slot, index) => {
     const playerId = slotToPlayer[index];
-    if (playerId) totals[slot.teamIndex] += playersById.get(playerId)?.score || 0;
+    const player = playersById.get(playerId);
+    if (playerId && player) {
+      totals[slot.teamIndex] += balanceValueForPlayer(player, balanceMetric);
+    }
   });
   return totals;
 }
 
-function optimizeDraftSwaps({ slots, slotToPlayer, playerToSlot, allowedSlots, playersById }) {
-  const totalScore = [...playersById.values()].reduce((sum, player) => sum + player.score, 0);
-  const mean = totalScore / BOH_TEAM_COUNT;
+function balancedAxisTotals(slots, slotToPlayer, playersById, teamCount, valueForPlayer) {
+  const totals = Array.from({ length: teamCount }, () => 0);
+  slots.forEach((slot, index) => {
+    const playerId = slotToPlayer[index];
+    const player = playersById.get(playerId);
+    if (playerId && player) totals[slot.teamIndex] += valueForPlayer(player);
+  });
+  return totals;
+}
+
+function balancedSwapPenalty(axes, teamIndexes) {
+  return axes.reduce((total, axis) => {
+    if (!(axis.mean > 0)) return total;
+    return (
+      total +
+      teamIndexes.reduce((axisTotal, teamIndex) => {
+        const normalizedDeviation = (axis.totals[teamIndex] - axis.mean) / axis.mean;
+        return axisTotal + normalizedDeviation ** 2;
+      }, 0)
+    );
+  }, 0);
+}
+
+function balancedAssignmentPenalty(slots, slotToPlayer, playersById, teamCount) {
+  const teamIndexes = Array.from({ length: teamCount }, (_, index) => index);
+  return balancedSwapPenalty(
+    [
+      {
+        totals: balancedAxisTotals(
+          slots,
+          slotToPlayer,
+          playersById,
+          teamCount,
+          (player) => player.score
+        ),
+        mean: [...playersById.values()].reduce((sum, player) => sum + player.score, 0) / teamCount,
+      },
+      {
+        totals: balancedAxisTotals(
+          slots,
+          slotToPlayer,
+          playersById,
+          teamCount,
+          (player) => player.totalCastlePower
+        ),
+        mean:
+          [...playersById.values()].reduce((sum, player) => sum + player.totalCastlePower, 0) /
+          teamCount,
+      },
+    ],
+    teamIndexes
+  );
+}
+
+function draftAssignmentKey(slotToPlayer) {
+  return JSON.stringify(slotToPlayer.map((playerId) => String(playerId ?? '')));
+}
+
+function optimizeDraftSwaps({
+  slots,
+  slotToPlayer,
+  playerToSlot,
+  allowedSlots,
+  playersById,
+  teamCount,
+  balanceMetric,
+}) {
+  const balanceTotal = [...playersById.values()].reduce(
+    (sum, player) => sum + balanceValueForPlayer(player, balanceMetric),
+    0
+  );
+  const mean = balanceTotal / teamCount;
+  const balancedAxes =
+    balanceMetric === 'balanced'
+      ? [
+          {
+            mean:
+              [...playersById.values()].reduce((sum, player) => sum + player.score, 0) / teamCount,
+            valueForPlayer: (player) => player.score,
+          },
+          {
+            mean:
+              [...playersById.values()].reduce((sum, player) => sum + player.totalCastlePower, 0) /
+              teamCount,
+            valueForPlayer: (player) => player.totalCastlePower,
+          },
+        ]
+      : null;
   const maxPasses = 2000;
   for (let pass = 0; pass < maxPasses; pass += 1) {
-    const totals = teamScoreTotals(slots, slotToPlayer, playersById, BOH_TEAM_COUNT);
+    const totals = teamBalanceTotals(slots, slotToPlayer, playersById, teamCount, balanceMetric);
+    if (balancedAxes) {
+      balancedAxes.forEach((axis) => {
+        axis.totals = balancedAxisTotals(
+          slots,
+          slotToPlayer,
+          playersById,
+          teamCount,
+          axis.valueForPlayer
+        );
+      });
+    }
     let best = null;
     for (let leftIndex = 0; leftIndex < slots.length; leftIndex += 1) {
       const leftSlot = slots[leftIndex];
@@ -1086,11 +1386,33 @@ function optimizeDraftSwaps({ slots, slotToPlayer, playerToSlot, allowedSlots, p
         if (!allowedSlots.get(leftPlayerId)?.has(rightIndex)) continue;
         if (!allowedSlots.get(rightPlayerId)?.has(leftIndex)) continue;
 
-        const oldPenalty =
-          (totals[leftSlot.teamIndex] - mean) ** 2 + (totals[rightSlot.teamIndex] - mean) ** 2;
-        const leftNext = totals[leftSlot.teamIndex] - leftPlayer.score + rightPlayer.score;
-        const rightNext = totals[rightSlot.teamIndex] - rightPlayer.score + leftPlayer.score;
-        const newPenalty = (leftNext - mean) ** 2 + (rightNext - mean) ** 2;
+        let oldPenalty;
+        let newPenalty;
+        if (balancedAxes) {
+          const teamIndexes = [leftSlot.teamIndex, rightSlot.teamIndex];
+          oldPenalty = balancedSwapPenalty(balancedAxes, teamIndexes);
+          newPenalty = balancedAxes.reduce((penalty, axis) => {
+            if (!(axis.mean > 0)) return penalty;
+            const leftValue = axis.valueForPlayer(leftPlayer);
+            const rightValue = axis.valueForPlayer(rightPlayer);
+            const leftNext = axis.totals[leftSlot.teamIndex] - leftValue + rightValue;
+            const rightNext = axis.totals[rightSlot.teamIndex] - rightValue + leftValue;
+            return (
+              penalty +
+              ((leftNext - axis.mean) / axis.mean) ** 2 +
+              ((rightNext - axis.mean) / axis.mean) ** 2
+            );
+          }, 0);
+        } else {
+          const leftValue = balanceValueForPlayer(leftPlayer, balanceMetric);
+          const rightValue = balanceValueForPlayer(rightPlayer, balanceMetric);
+
+          oldPenalty =
+            (totals[leftSlot.teamIndex] - mean) ** 2 + (totals[rightSlot.teamIndex] - mean) ** 2;
+          const leftNext = totals[leftSlot.teamIndex] - leftValue + rightValue;
+          const rightNext = totals[rightSlot.teamIndex] - rightValue + leftValue;
+          newPenalty = (leftNext - mean) ** 2 + (rightNext - mean) ** 2;
+        }
         const improvement = oldPenalty - newPenalty;
         if (!(improvement > 1e-9)) continue;
 
@@ -1129,75 +1451,15 @@ function optimizeDraftSwaps({ slots, slotToPlayer, playerToSlot, allowedSlots, p
   }
 }
 
-/**
- * Deterministically allocates exactly 72 unique players into six 12-seat teams.
- * `eligibleRoleIds` are hard constraints; `rolePreferences` are soft ordering.
- * Locked assignments may pin a player to a team, role, or exact seat.
- */
-export function balanceBohTeams(playersInput = [], options = {}) {
-  const teamCount = BOH_TEAM_COUNT;
-  const rosterSize = BOH_TEAM_SIZE;
-  if (!Array.isArray(playersInput) || playersInput.length !== BOH_FIELD_SIZE) {
-    throw modelError('boh_field_size_invalid', {
-      expected: BOH_FIELD_SIZE,
-      actual: Array.isArray(playersInput) ? playersInput.length : 0,
-    });
-  }
-  const roleGroups = normalizeBohRoleGroups(options.roleGroups, { rosterSize });
-  const seatTemplate = createBohSeatTemplate(roleGroups, { rosterSize });
-  const teams = normalizeTeamDefinitions(options.teams, teamCount);
-  const players = playersInput.map((player) => normalizeBohDraftPlayer(player, options));
-  const playersById = new Map();
-  players.forEach((player) => {
-    if (!player.playerId) throw modelError('boh_player_identity_required');
-    if (playersById.has(player.playerId)) {
-      throw modelError('boh_player_id_duplicate', { playerId: player.playerId });
-    }
-    playersById.set(player.playerId, player);
-  });
-  const locks = normalizeLockedAssignments(options.lockedAssignments, teams, seatTemplate);
-  locks.forEach((lock, playerId) => {
-    if (!playersById.has(playerId)) {
-      throw modelError('boh_locked_player_unknown', { playerId });
-    }
-  });
-
-  const knownRoleIds = new Set(roleGroups.map((group) => group.id));
-  players.forEach((player) => {
-    const unknown = player.eligibleRoleIds.filter((roleId) => !knownRoleIds.has(roleId));
-    if (unknown.length) {
-      throw modelError('boh_player_role_unknown', { playerId: player.playerId, roleIds: unknown });
-    }
-  });
-
-  const slots = createDraftSlots(teams, seatTemplate);
-  const allowedSlots = new Map();
-  players.forEach((player) => {
-    const lock = locks.get(player.playerId);
-    const allowed = slots
-      .map((slot, index) => ({ slot, index }))
-      .filter(({ slot }) => slotAllowedForPlayer(player, slot, lock, knownRoleIds))
-      .sort((left, right) => {
-        const roleOrder =
-          rolePreferenceRank(player, left.slot.roleGroupId) -
-          rolePreferenceRank(player, right.slot.roleGroupId);
-        return roleOrder || left.index - right.index;
-      })
-      .map(({ index }) => index);
-    if (!allowed.length) {
-      throw modelError('boh_player_has_no_available_seat', { playerId: player.playerId });
-    }
-    allowedSlots.set(player.playerId, new Set(allowed));
-    player._orderedSlots = allowed;
-  });
-
+function createDraftAssignment({ slots, players, playersById, balanceMetric }) {
   const orderedPlayers = players.slice().sort((left, right) => {
     const constrained = left._orderedSlots.length - right._orderedSlots.length;
     if (constrained) return constrained;
     const preferenceCount = left.rolePreferences.length - right.rolePreferences.length;
     if (preferenceCount) return preferenceCount;
-    const scoreOrder = right.score - left.score;
-    return scoreOrder || compareText(left.playerId, right.playerId);
+    const balanceOrder =
+      balanceValueForPlayer(right, balanceMetric) - balanceValueForPlayer(left, balanceMetric);
+    return balanceOrder || compareText(left.playerId, right.playerId);
   });
   const slotToPlayer = Array.from({ length: slots.length }, () => null);
   const playerToSlot = new Map();
@@ -1231,8 +1493,170 @@ export function balanceBohTeams(playersInput = [], options = {}) {
   if (unmatched.length || playerToSlot.size !== players.length) {
     throw modelError('boh_role_coverage_unavailable', { unmatchedPlayerIds: unmatched });
   }
+  return { slotToPlayer, playerToSlot };
+}
 
-  optimizeDraftSwaps({ slots, slotToPlayer, playerToSlot, allowedSlots, playersById });
+function createOptimizedDraftAssignment({
+  slots,
+  players,
+  playersById,
+  allowedSlots,
+  teamCount,
+  seedMetric,
+  balanceMetric,
+}) {
+  const assignment = createDraftAssignment({
+    slots,
+    players,
+    playersById,
+    balanceMetric: seedMetric,
+  });
+  if (seedMetric !== balanceMetric) {
+    optimizeDraftSwaps({
+      slots,
+      ...assignment,
+      allowedSlots,
+      playersById,
+      teamCount,
+      balanceMetric: seedMetric,
+    });
+  }
+  optimizeDraftSwaps({
+    slots,
+    ...assignment,
+    allowedSlots,
+    playersById,
+    teamCount,
+    balanceMetric,
+  });
+  return assignment;
+}
+
+function createBalancedDraftAssignment({ slots, players, playersById, allowedSlots, teamCount }) {
+  const candidates = ['score', 'totalPower', 'balanced'].map((seedMetric) => {
+    const assignment = createOptimizedDraftAssignment({
+      slots,
+      players,
+      playersById,
+      allowedSlots,
+      teamCount,
+      seedMetric,
+      balanceMetric: 'balanced',
+    });
+    return {
+      ...assignment,
+      penalty: balancedAssignmentPenalty(slots, assignment.slotToPlayer, playersById, teamCount),
+      key: draftAssignmentKey(assignment.slotToPlayer),
+    };
+  });
+  candidates.sort((left, right) => {
+    if (left.penalty !== right.penalty) return left.penalty < right.penalty ? -1 : 1;
+    return compareText(left.key, right.key);
+  });
+  return candidates[0];
+}
+
+/**
+ * Deterministically allocates the exact field into two to six 12-seat teams.
+ * `eligibleRoleIds` are hard constraints; `rolePreferences` are soft ordering.
+ * Locked assignments may pin a player to a team, role, or exact seat; forced
+ * assignments constrain only a team and do not lock the resulting seat.
+ */
+export function balanceBohTeams(playersInput = [], options = {}) {
+  const teamCount = normalizeBohTeamCount(options.teamCount);
+  const rosterSize = BOH_TEAM_SIZE;
+  const fieldSize = teamCount * rosterSize;
+  const balanceMetric = normalizeBohBalanceMetric(options.balanceMetric);
+  if (!Array.isArray(playersInput) || playersInput.length !== fieldSize) {
+    throw modelError('boh_field_size_invalid', {
+      expected: fieldSize,
+      actual: Array.isArray(playersInput) ? playersInput.length : 0,
+    });
+  }
+  const roleGroups = normalizeBohRoleGroups(options.roleGroups, { rosterSize });
+  const seatTemplate = createBohSeatTemplate(roleGroups, { rosterSize });
+  const teams = normalizeTeamDefinitions(options.teams, teamCount);
+  const players = playersInput.map((player) => normalizeBohDraftPlayer(player, options));
+  const playersById = new Map();
+  players.forEach((player) => {
+    if (!player.playerId) throw modelError('boh_player_identity_required');
+    if (playersById.has(player.playerId)) {
+      throw modelError('boh_player_id_duplicate', { playerId: player.playerId });
+    }
+    playersById.set(player.playerId, player);
+  });
+  const locks = normalizeLockedAssignments(options.lockedAssignments, teams, seatTemplate);
+  const forcedTeamAssignments = normalizeForcedTeamAssignments(
+    options.forcedTeamAssignments,
+    teams
+  );
+  locks.forEach((lock, playerId) => {
+    if (!playersById.has(playerId)) {
+      throw modelError('boh_locked_player_unknown', { playerId });
+    }
+  });
+  forcedTeamAssignments.forEach((assignment, playerId) => {
+    if (!playersById.has(playerId)) {
+      throw modelError('boh_forced_player_unknown', { playerId });
+    }
+    const lock = locks.get(playerId);
+    if (lock && lock.teamId !== assignment.teamId) {
+      throw modelError('boh_forced_locked_team_conflict', {
+        playerId,
+        lockedTeamId: lock.teamId,
+        forcedTeamId: assignment.teamId,
+      });
+    }
+  });
+
+  const knownRoleIds = new Set(roleGroups.map((group) => group.id));
+  players.forEach((player) => {
+    const unknown = player.eligibleRoleIds.filter((roleId) => !knownRoleIds.has(roleId));
+    if (unknown.length) {
+      throw modelError('boh_player_role_unknown', { playerId: player.playerId, roleIds: unknown });
+    }
+  });
+
+  const slots = createDraftSlots(teams, seatTemplate);
+  const allowedSlots = new Map();
+  players.forEach((player) => {
+    const constraint = locks.get(player.playerId) || forcedTeamAssignments.get(player.playerId);
+    const allowed = slots
+      .map((slot, index) => ({ slot, index }))
+      .filter(({ slot }) => slotAllowedForPlayer(player, slot, constraint, knownRoleIds))
+      .sort((left, right) => {
+        const roleOrder =
+          rolePreferenceRank(player, left.slot.roleGroupId) -
+          rolePreferenceRank(player, right.slot.roleGroupId);
+        return roleOrder || left.index - right.index;
+      })
+      .map(({ index }) => index);
+    if (!allowed.length) {
+      throw modelError('boh_player_has_no_available_seat', { playerId: player.playerId });
+    }
+    allowedSlots.set(player.playerId, new Set(allowed));
+    player._orderedSlots = allowed;
+  });
+
+  const assignment =
+    balanceMetric === 'balanced'
+      ? createBalancedDraftAssignment({
+          slots,
+          players,
+          playersById,
+          allowedSlots,
+          teamCount,
+        })
+      : createOptimizedDraftAssignment({
+          slots,
+          players,
+          playersById,
+          allowedSlots,
+          teamCount,
+          seedMetric: balanceMetric,
+          balanceMetric,
+        });
+  const { slotToPlayer } = assignment;
 
   const resultTeams = teams.map((team, teamIndex) => {
     const assignments = slots
@@ -1244,6 +1668,7 @@ export function balanceBohTeams(playersInput = [], options = {}) {
           playerId,
           gameName: player.gameName,
           score: player.score,
+          totalCastlePower: player.totalCastlePower,
           scoreBreakdown: player.scoreBreakdown,
           signup: player.signup,
           seatNumber: slot.seatNumber,
@@ -1259,19 +1684,28 @@ export function balanceBohTeams(playersInput = [], options = {}) {
       assignments.reduce((total, assignment) => total + assignment.score, 0),
       3
     );
+    const totalCastlePower = roundScore(
+      assignments.reduce((total, assignment) => total + assignment.totalCastlePower, 0),
+      3
+    );
     return {
       ...team,
       players: assignments,
       totalScore,
+      totalCastlePower,
+      balanceTotal: balanceMetric === 'totalPower' ? totalCastlePower : totalScore,
       averageScore: roundScore(totalScore / rosterSize, 3),
     };
   });
-  const totals = resultTeams.map((team) => team.totalScore);
+  const scoreTotals = resultTeams.map((team) => team.totalScore);
+  const powerTotals = resultTeams.map((team) => team.totalCastlePower);
+  const balanceTotals = resultTeams.map((team) => team.balanceTotal);
   const meanTeamScore = roundScore(
-    totals.reduce((total, score) => total + score, 0) / teamCount,
+    scoreTotals.reduce((total, score) => total + score, 0) / teamCount,
     3
   );
   const validation = validateBohTeamAssignments(resultTeams, {
+    teamCount,
     roleGroups,
     expectedPlayerIds: players.map((player) => player.playerId),
   });
@@ -1281,13 +1715,16 @@ export function balanceBohTeams(playersInput = [], options = {}) {
   return {
     teamCount,
     rosterSize,
-    fieldSize: BOH_FIELD_SIZE,
+    fieldSize,
+    balanceMetric,
     roleGroups,
     teams: resultTeams,
     meanTeamScore,
-    minTeamScore: Math.min(...totals),
-    maxTeamScore: Math.max(...totals),
-    scoreSpread: roundScore(Math.max(...totals) - Math.min(...totals), 3),
+    minTeamScore: Math.min(...scoreTotals),
+    maxTeamScore: Math.max(...scoreTotals),
+    scoreSpread: roundScore(Math.max(...scoreTotals) - Math.min(...scoreTotals), 3),
+    powerSpread: roundScore(Math.max(...powerTotals) - Math.min(...powerTotals), 3),
+    balanceSpread: roundScore(Math.max(...balanceTotals) - Math.min(...balanceTotals), 3),
     validation,
   };
 }
@@ -1295,6 +1732,19 @@ export function balanceBohTeams(playersInput = [], options = {}) {
 /** Return structured errors instead of accepting an incomplete or duplicate field. */
 export function validateBohTeamAssignments(teamsInput = [], options = {}) {
   const errors = [];
+  let teamCount;
+  try {
+    teamCount = normalizeBohTeamCount(options.teamCount);
+  } catch (error) {
+    return {
+      valid: false,
+      errors: [{ code: error.code || 'boh_team_count_invalid' }],
+      teamCount: Array.isArray(teamsInput) ? teamsInput.length : 0,
+      playerCount: 0,
+    };
+  }
+  const allowPartialTeams = options.allowPartialTeams === true;
+  const fieldSize = teamCount * BOH_TEAM_SIZE;
   let roleGroups;
   try {
     roleGroups = normalizeBohRoleGroups(options.roleGroups, { rosterSize: BOH_TEAM_SIZE });
@@ -1311,23 +1761,39 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
     seatTemplate.map((seat) => [seat.seatNumber, seat.roleGroupId])
   );
   const teams = Array.isArray(teamsInput) ? teamsInput : [];
-  if (teams.length !== BOH_TEAM_COUNT) {
-    errors.push({ code: 'boh_team_count_invalid', expected: BOH_TEAM_COUNT, actual: teams.length });
+  if (teams.length !== teamCount) {
+    errors.push({ code: 'boh_team_count_invalid', expected: teamCount, actual: teams.length });
   }
   const seenTeams = new Set();
+  const seenTeamNumbers = new Set();
   const seenPlayers = new Map();
   let playerCount = 0;
   teams.forEach((team, teamIndex) => {
     const teamId = normalizeBohId(team?.id || team?.teamId, `team-${teamIndex + 1}`);
     if (seenTeams.has(teamId)) errors.push({ code: 'boh_team_id_duplicate', teamId });
     seenTeams.add(teamId);
+    try {
+      const teamNumber = normalizeTeamDefinitionNumber(
+        firstDefined(team?.number, team?.teamNumber),
+        teamIndex
+      );
+      if (seenTeamNumbers.has(teamNumber)) {
+        errors.push({ code: 'boh_team_number_duplicate', teamId, teamNumber });
+      }
+      seenTeamNumbers.add(teamNumber);
+    } catch (error) {
+      errors.push({ code: error.code || 'boh_team_number_invalid', teamId });
+    }
     const players = Array.isArray(team?.players)
       ? team.players
       : Array.isArray(team?.members)
         ? team.members
         : [];
     playerCount += players.length;
-    if (players.length !== BOH_TEAM_SIZE) {
+    if (
+      players.length > BOH_TEAM_SIZE ||
+      (!allowPartialTeams && players.length !== BOH_TEAM_SIZE)
+    ) {
       errors.push({
         code: 'boh_team_size_invalid',
         teamId,
@@ -1376,7 +1842,7 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
       }
     });
     roleGroups.forEach((group) => {
-      if (roleCounts.get(group.id) !== group.capacity) {
+      if (!allowPartialTeams && roleCounts.get(group.id) !== group.capacity) {
         errors.push({
           code: 'boh_role_coverage_invalid',
           teamId,
@@ -1387,8 +1853,8 @@ export function validateBohTeamAssignments(teamsInput = [], options = {}) {
       }
     });
   });
-  if (playerCount !== BOH_FIELD_SIZE) {
-    errors.push({ code: 'boh_field_size_invalid', expected: BOH_FIELD_SIZE, actual: playerCount });
+  if (!allowPartialTeams && playerCount !== fieldSize) {
+    errors.push({ code: 'boh_field_size_invalid', expected: fieldSize, actual: playerCount });
   }
   if (options.expectedPlayerIds) {
     const expected = new Set(options.expectedPlayerIds.map((value) => normalizeBohId(value)));
@@ -1610,6 +2076,168 @@ function normalizeRotations(source, context) {
   });
 }
 
+function planBoundedInteger(value, field, minimum, maximum, options = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (options.optional) return null;
+    throw modelError('boh_plan_integer_invalid', { field, minimum, maximum });
+  }
+  const parsed = typeof value === 'number' ? value : Number(normalizeNumericText(String(value)));
+  if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw modelError('boh_plan_integer_invalid', { field, minimum, maximum });
+  }
+  return parsed;
+}
+
+function planBoundedOrder(value, index, field) {
+  const parsed = value === undefined || value === null || value === '' ? index + 1 : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100_000) {
+    throw modelError('boh_plan_order_invalid', { field });
+  }
+  return parsed;
+}
+
+function normalizePlanSubstitutions(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_substitutions_invalid');
+  if (source.length > 500) {
+    throw modelError('boh_substitution_count_invalid', { maximum: 500 });
+  }
+  const ids = new Set();
+  const incomingPlayerIds = new Set();
+  const outgoingPlayerIds = new Set();
+  return source.map((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw modelError('boh_substitution_invalid', { index });
+    }
+    const id = normalizeBohId(entry.id, `substitution-${index + 1}`);
+    const teamId = normalizeBohId(entry.teamId);
+    const backupPlayerId = normalizeBohId(entry.backupPlayerId);
+    const replacesPlayerId = normalizeBohId(entry.replacesPlayerId);
+    if (!teamId || !backupPlayerId || !replacesPlayerId) {
+      throw modelError('boh_substitution_identity_required', { substitutionId: id });
+    }
+    if (backupPlayerId === replacesPlayerId) {
+      throw modelError('boh_substitution_players_must_differ', { substitutionId: id });
+    }
+    if (ids.has(id)) throw modelError('boh_substitution_id_duplicate', { substitutionId: id });
+    if (incomingPlayerIds.has(backupPlayerId)) {
+      throw modelError('boh_substitution_incoming_duplicate', { playerId: backupPlayerId });
+    }
+    if (outgoingPlayerIds.has(replacesPlayerId)) {
+      throw modelError('boh_substitution_outgoing_duplicate', { playerId: replacesPlayerId });
+    }
+    ids.add(id);
+    incomingPlayerIds.add(backupPlayerId);
+    outgoingPlayerIds.add(replacesPlayerId);
+    return {
+      id,
+      teamId,
+      backupPlayerId,
+      replacesPlayerId,
+      entryMinute: planBoundedInteger(entry.entryMinute, 'entryMinute', 3, 60),
+      order: planBoundedOrder(entry.order, index, 'substitutionOrder'),
+      note: boundedPlainText(entry.note, 2000, 'substitutionNote', { multiline: true }),
+    };
+  });
+}
+
+function normalizePlanPlayerResources(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_player_resources_invalid');
+  if (source.length > BOH_FIELD_SIZE) {
+    throw modelError('boh_player_resource_count_invalid', { maximum: BOH_FIELD_SIZE });
+  }
+  const skillById = new Map(BOH_PLAYER_RESOURCE_SKILLS.map((skill) => [skill.id, skill]));
+  const playerIds = new Set();
+  return source.map((entry, resourceIndex) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw modelError('boh_player_resource_invalid', { index: resourceIndex });
+    }
+    const playerId = normalizeBohId(entry.playerId);
+    if (!playerId) throw modelError('boh_player_resource_player_required');
+    if (playerIds.has(playerId)) {
+      throw modelError('boh_player_resource_player_duplicate', { playerId });
+    }
+    playerIds.add(playerId);
+    const reservations = entry.skillReservations ?? [];
+    if (!Array.isArray(reservations)) {
+      throw modelError('boh_skill_reservations_invalid', { playerId });
+    }
+    const skillIds = new Set();
+    const skillReservations = reservations.map((reservation, index) => {
+      if (!reservation || typeof reservation !== 'object' || Array.isArray(reservation)) {
+        throw modelError('boh_skill_reservation_invalid', { playerId, index });
+      }
+      const id = normalizeBohId(reservation.id);
+      const skill = skillById.get(id);
+      if (!skill) throw modelError('boh_skill_reservation_unsupported', { playerId, skillId: id });
+      if (skillIds.has(id)) {
+        throw modelError('boh_skill_reservation_duplicate', { playerId, skillId: id });
+      }
+      skillIds.add(id);
+      return {
+        id,
+        meritCost: skill.meritCost,
+        order: planBoundedOrder(reservation.order, index, 'skillReservationOrder'),
+        effect: normalizeJsonValue(skill.effect),
+      };
+    });
+    return {
+      playerId,
+      meritBudget: planBoundedInteger(entry.meritBudget, 'meritBudget', 0, 10 ** 12, {
+        optional: true,
+      }),
+      queueCapacity: planBoundedInteger(entry.queueCapacity, 'queueCapacity', 1, 4, {
+        optional: true,
+      }),
+      skillReservations,
+    };
+  });
+}
+
+function normalizePlanBuildingAnnotations(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_building_annotations_invalid');
+  if (source.length > 100) {
+    throw modelError('boh_building_annotation_count_invalid', { maximum: 100 });
+  }
+  const ids = new Set();
+  return source.map((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw modelError('boh_building_annotation_invalid', { index });
+    }
+    const id = normalizeBohId(entry.id, `building-annotation-${index + 1}`);
+    const buildingId = normalizeBohId(entry.buildingId);
+    if (!buildingId) {
+      throw modelError('boh_building_annotation_building_required', { annotationId: id });
+    }
+    if (ids.has(id)) {
+      throw modelError('boh_building_annotation_id_duplicate', { annotationId: id });
+    }
+    ids.add(id);
+    return {
+      id,
+      buildingId,
+      note: boundedPlainText(entry.note, 2000, 'buildingAnnotationNote', { multiline: true }),
+      order: planBoundedOrder(entry.order, index, 'buildingAnnotationOrder'),
+    };
+  });
+}
+function normalizePlanNotes(source) {
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw modelError('boh_plan_notes_invalid');
+  if (source.length > 100) throw modelError('boh_plan_note_count_invalid', { maximum: 100 });
+  const seen = new Set();
+  return source
+    .map((note) => boundedPlainText(note, 2000, 'planNote', { multiline: true }))
+    .filter((note) => {
+      const key = note.toLocaleLowerCase('en');
+      if (!note || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 /** Normalize and validate the admin-editable phase/Legion plan document. */
 export function normalizeBohPlan(input = {}) {
   const roleGroups = normalizeBohRoleGroups(input.roleGroups);
@@ -1644,6 +2272,10 @@ export function normalizeBohPlan(input = {}) {
     seatOverrides: normalizePlanRules(input.seatOverrides, 'seat-override', context),
     playerOverrides: normalizePlanRules(input.playerOverrides, 'player-override', context),
     rotations: normalizeRotations(input.rotations, context),
+    substitutions: normalizePlanSubstitutions(input.substitutions),
+    playerResources: normalizePlanPlayerResources(input.playerResources),
+    buildingAnnotations: normalizePlanBuildingAnnotations(input.buildingAnnotations),
+    notes: normalizePlanNotes(input.notes),
   };
 }
 

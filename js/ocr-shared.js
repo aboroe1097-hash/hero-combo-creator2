@@ -1,6 +1,12 @@
 // Shared constants, state, and helpers for OCR dashboard modules
 import { isLocalDevHost } from './utils.js';
 import { resolvePlayerRegistryAlias } from './player-registry.js';
+import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
+import {
+  edenWorkspaceFirestorePath,
+  edenWorkspaceStorageKey,
+  getActiveAdminWorkspaceId,
+} from './eden-workspaces.js';
 import {
   ADMIN_LOG_STORAGE_KEY,
   formatAdminLogMessage,
@@ -11,15 +17,31 @@ import {
 } from './admin-log-store.js';
 
 // --- Storage Keys ---
-export const STORAGE_KEY = 'vts_ocr_dashboard';
-export const ROSTER_KEY = 'vts_ocr_roster';
-export const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
-export const BANNER_KEY = 'vts_ocr_banners';
-export const DUTY_LIST_KEY = 'vts_ocr_duty_lists';
-export const CONTRIBUTION_KEY = 'vts_ocr_contribution_lists';
-export const EX_GUILD_CONTRIBUTION_KEY = 'vts_ocr_ex_guild_contributions';
-export const FS_PATH = 'vts_admin/dashboard_data';
-export const FS_ROSTER_PATH = 'vts_admin/roster_data';
+// Season records are workspace-scoped: the active workspace is resolved once
+// at module load (a workspace switch reloads the admin page), and every
+// season-scoped localStorage key and Firestore path resolves through it. The
+// eden-x1 workspace keeps the historical keys and paths so the archive's
+// mirrors stay untouched; eden-x2 gets its own namespaced keys and paths.
+const ACTIVE_EDEN_WORKSPACE_ID = getActiveAdminWorkspaceId();
+
+export const STORAGE_KEY = edenWorkspaceStorageKey('vts_ocr_dashboard', ACTIVE_EDEN_WORKSPACE_ID);
+export const ROSTER_KEY = edenWorkspaceStorageKey('vts_ocr_roster', ACTIVE_EDEN_WORKSPACE_ID);
+export const ROSTER_SNAPSHOTS_KEY = edenWorkspaceStorageKey(
+  'vts_roster_snapshots',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+export const BANNER_KEY = edenWorkspaceStorageKey('vts_ocr_banners', ACTIVE_EDEN_WORKSPACE_ID);
+export const DUTY_LIST_KEY = edenWorkspaceStorageKey('vts_ocr_duty_lists', ACTIVE_EDEN_WORKSPACE_ID);
+export const CONTRIBUTION_KEY = edenWorkspaceStorageKey(
+  'vts_ocr_contribution_lists',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+export const EX_GUILD_CONTRIBUTION_KEY = edenWorkspaceStorageKey(
+  'vts_ocr_ex_guild_contributions',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+export const FS_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'dashboardData');
+export const FS_ROSTER_PATH = edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData');
 export const LOG_KEY = ADMIN_LOG_STORAGE_KEY;
 export const MAX_ROSTER_SNAPSHOTS = 50;
 
@@ -994,6 +1016,8 @@ export function findBestMatch(name, minConfidence = 100) {
         .trim();
     }
     name = name.replace(/^Н/, 'H');
+    const confirmedAlias = resolveConfirmedPlayerAlias(name);
+    if (confirmedAlias) return confirmedAlias;
     const registryAlias = resolvePlayerRegistryAlias(name);
     if (registryAlias) return registryAlias;
     const protectedIdentity = getProtectedPlayerIdentity(name);
@@ -1116,7 +1140,6 @@ export function findBestMatch(name, minConfidence = 100) {
       '-L7-': '- L7 -',
       '~Pink~': '~ Pink ~',
       '~Pink ~': '~ Pink ~',
-      'DvD18 x2': 'DvD18',
       '..WAE.L..': '..WAEL..',
       '..WAEI..': '..WAEL..',
       Neutriino10: 'Neutrino10',
@@ -1132,8 +1155,6 @@ export function findBestMatch(name, minConfidence = 100) {
       '★Mariska★': 'Mariska',
       '☆Mariska☆': 'Mariska',
       '*Mariska*': 'Mariska',
-      'Opua 2025': 'Opwa 2025',
-      'Орша 2025': 'Opwa 2025',
       'Sarafino~': '~Sarafino~',
       Sarafino: '~Sarafino~',
       '*Molly*': 'Molly',
@@ -1289,10 +1310,9 @@ export function findBestMatch(name, minConfidence = 100) {
       MasterVjs: 'MasterVj',
       // Duty (Banner/Pather) cleaned-name stragglers the roster fuzzy match can't bridge:
       Dvd: 'DvD18',
-      BOiiE: 'BiG BOiiE',
       BigBOIE: 'BiG BOiiE',
       Uz: '!!Uzumaki!!',
-      Moldo1313: 'Moldo',
+      Moldo: 'Moldo1313',
       'Uzumaki 1097 R4': '!!Uzumaki!!',
       // This is the player's in-game name, not just a Viber tag, so keep the @.
       Sheselkie: '@Sheselkie',
@@ -1431,7 +1451,7 @@ export function findBestMatch(name, minConfidence = 100) {
       likaZenaBanner: 'MalikaZenaBanner',
       'Ar Ran Dil': 'Ar Ran ★_YG+62',
     };
-    if (aliasMap[name]) return aliasMap[name];
+    if (aliasMap[name]) return resolveConfirmedPlayerAlias(aliasMap[name]) || aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';
   }
   if (!state.rosterNames.length) return name;
@@ -1509,6 +1529,9 @@ export function cleanDutyRawName(raw) {
     .replace(/\([^)]*\)/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  // A confirmed banner is an account, not a generic duty-label suffix.
+  const confirmedAccount = resolveConfirmedPlayerAlias(s);
+  if (confirmedAccount) return confirmedAccount;
   if (s.includes('@')) {
     // keep the first @-segment that isn't a pure target word (handles multi-tag cells)
     const segs = s
@@ -1522,6 +1545,8 @@ export function cleanDutyRawName(raw) {
     .replace(/[\s+]+$/g, '')
     .replace(/^[\s+]+/g, '')
     .trim(); // '+' reinforcement markers
+  const taggedAccount = resolveConfirmedPlayerAlias(s);
+  if (taggedAccount) return taggedAccount;
   s = s.replace(DUTY_BANNER_SUFFIX, '').trim(); // banner-label suffix -> owner player
   s = s.replace(/^[\s_·.-]+|[\s_·.-]+$/g, '').trim();
   return s;
@@ -1541,6 +1566,7 @@ export function resolveDutyPlayerName(raw) {
 export function resolvesToKnownDutyPlayer(value) {
   const cleaned = cleanDutyRawName(value);
   if (!cleaned) return false;
+  if (resolveConfirmedPlayerAlias(cleaned)) return true;
   const resolved = findBestMatch(cleaned);
   if (!resolved) return false;
   if (resolved !== cleaned) return true; // some alias/registry/fuzzy mapping fired
@@ -1600,7 +1626,9 @@ export function expandDutyRawNames(raw) {
     .replace(/\s+/g, ' ')
     .trim();
   let tokens;
-  if (body.includes('@')) {
+  if (resolveConfirmedPlayerAlias(body)) {
+    tokens = [body]; // An @ inside a confirmed account name is not a Viber tag.
+  } else if (body.includes('@')) {
     // Each @-segment is a separate player; drop pure target words (the structure).
     tokens = body
       .split('@')

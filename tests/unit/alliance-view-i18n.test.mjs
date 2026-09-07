@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import { ADMIN_RUNTIME_EN } from '../../js/i18n/admin-runtime-copy.js';
 
-const LOCALES = ['ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const LOCALES = ['ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
 const KEY_PATTERN = /adminAllianceView[A-Za-z0-9]+/g;
 
 const LANGUAGE_NEUTRAL_KEYS = new Set([
@@ -15,6 +15,7 @@ const LANGUAGE_NEUTRAL_KEYS = new Set([
   'adminAllianceViewBonusTeal',
   'adminAllianceViewBonusGreen',
   'adminAllianceViewBonusZero',
+  'adminAllianceViewColumnAccount',
   'adminAllianceViewColumnAlliance',
   'adminAllianceViewColumnBase',
   'adminAllianceViewColumnBonus',
@@ -25,6 +26,7 @@ const LANGUAGE_NEUTRAL_KEYS = new Set([
   'adminAllianceViewFilterAlliance',
   'adminAllianceViewFilterServer',
   'adminAllianceViewMatchStatus',
+  'adminAllianceViewMetricBanners',
   'adminAllianceViewMetricBase',
   'adminAllianceViewMetricPathers',
   'adminAllianceViewTop100',
@@ -76,7 +78,7 @@ test('Alliance View runtime copy exactly covers every literal UI and template re
   );
 });
 
-test('all ten Alliance View locale packs preserve keys, placeholders, and nonblank copy', async () => {
+test('all eleven Alliance View locale packs preserve keys, placeholders, and nonblank copy', async () => {
   const englishKeys = Object.keys(ADMIN_RUNTIME_EN)
     .filter((key) => key.startsWith('adminAllianceView'))
     .sort();

@@ -192,6 +192,36 @@ test('weighted contribution final rank uses weighted total points', () => {
   assert.equal(alpha.finalRank, 3);
 });
 
+test('weighted contribution credits demolition at one point per twenty demolition', () => {
+  const model = buildWeightedContributionRows({
+    contributionRecords: [
+      {
+        id: 'demolition-weight',
+        date: '2026-09-02',
+        entries: [
+          { rank: 1, name: 'Alpha', contribution: 100000 },
+          { rank: 2, name: 'ANGEL', contribution: 100000 },
+        ],
+      },
+    ],
+    demolitionRecords: [
+      { players: [{ name: 'Alpha', value: 1000000 }] },
+      { players: [{ name: 'ANGEL 1097', value: 600000 }] },
+      { players: [{ name: 'λNGΞL 1097', value: 400000 }] },
+    ],
+  });
+
+  const alpha = model.rows.find((row) => row.playerName === 'Alpha');
+  const angel = model.rows.find((row) => row.playerName === 'ANGEL');
+
+  assert.equal(alpha.totalDemolition, 1000000);
+  assert.equal(alpha.demolitionPoints, 50000);
+  assert.equal(alpha.weightedScore, 150000);
+  assert.equal(angel.totalDemolition, 1000000);
+  assert.equal(angel.demolitionPoints, 50000);
+  assert.equal(angel.weightedScore, 150000);
+});
+
 test('public R5 conduct mirror keeps scores and premium flags without private notes', () => {
   const season = 'eden-x1-2026';
   const publicRows = sanitizePublicR5Adjustments(

@@ -9,7 +9,7 @@ import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '14.2.0';
+export const APP_VERSION = '16.0.5';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
@@ -112,7 +112,7 @@ function getLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
     const primary = String(navigator.language || '')
       .toLowerCase()
       .split('-')[0];
@@ -167,10 +167,27 @@ const requestAdminLanguage = createLatestLanguageLoader((lang) => {
   updateTextContent(loadedLanguage);
 });
 
+const ADMIN_TEMPLATE_TIMEOUT_MS = 15000;
+
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260720_025158');
+  // An unbounded fetch left the "Loading admin dashboard..." card spinning forever when
+  // the network stalled without failing. Bound it so the caller's error path (which now
+  // offers a retry) actually runs.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ADMIN_TEMPLATE_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch('tabs/admin.html?v=20260907_135059', { signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Admin template timed out after ${ADMIN_TEMPLATE_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -199,7 +216,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20260720_025158');
+  const mod = await import('./ocr-dashboard.js?v=20260907_135059');
   await mod.bootOcrDashboard();
 }
 
@@ -215,6 +232,18 @@ if (!window.VTS_MAINTENANCE_ACTIVE)
       const error = document.createElement('div');
       error.className = 'admin-load-error';
       error.textContent = message;
+      // A gstatic/Firebase outage must never leave the admin with a dead end: the message
+      // alone told them to refresh by hand. Give them an in-page retry.
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'tab-load-error-link';
+      retry.textContent = translations[lang]?.adminLoadRetry || translations.en.adminLoadRetry;
+      retry.addEventListener('click', () => {
+        retry.disabled = true;
+        window.location.reload();
+      });
+      error.appendChild(document.createElement('br'));
+      error.appendChild(retry);
       section.replaceChildren(error);
     }
   });

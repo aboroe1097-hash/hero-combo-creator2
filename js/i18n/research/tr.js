@@ -184,7 +184,19 @@ export const researchContent = {
       primaryResource: 'Savaş Rozetleri',
       pages: ['Yüce Lejyon'],
     },
-  },
+      '9c5d4006': {
+      name: 'Yakın Dövüş Lejyonu - Savunma',
+      unlockCondition: 'Eden X12 başlangıcında',
+      primaryResource: 'Savaş Rozetleri',
+      pages: ['Yakın Dövüş Lejyonu - Savunma'],
+    },
+    'b57d6bf9': {
+      name: 'Yakın Dövüş Lejyonu - Hücum',
+      unlockCondition: 'Eden X12 başlangıcında',
+      primaryResource: 'Savaş Rozetleri',
+      pages: ['Yakın Dövüş Lejyonu - Hücum'],
+    },
+},
   nodes: {
     'd1956263:node_1': {
       name: 'Hızlı Büyüme',
@@ -4216,7 +4228,243 @@ export const researchContent = {
       buff: "Yüce Birliklerin HP'si +5%",
       effects: [],
     },
-  },
+      '9c5d4006:node_1': {
+      name: 'Savunma Kalkanı',
+      buff: 'Piyade Kuşatma Savunma Direnci +10%',
+    },
+    '9c5d4006:node_2': {
+      name: 'Savunma Zırhı',
+      buff: 'Okçu Kuşatma Savunma Direnci +10%',
+    },
+    '9c5d4006:node_3': {
+      name: 'Savunma Süvarisi',
+      buff: 'Süvari Kuşatma Savunma Direnci +10%',
+    },
+    '9c5d4006:node_4': {
+      name: 'Piyade Yarması',
+      buff: 'Piyade Kuşatma Savunma Gücü +10%',
+    },
+    '9c5d4006:node_5': {
+      name: 'Okçu Yarması',
+      buff: 'Okçu Kuşatma Savunma Gücü +10%',
+    },
+    '9c5d4006:node_6': {
+      name: 'Süvari Yarması',
+      buff: 'Süvari Kuşatma Savunma Gücü +10%',
+    },
+    '9c5d4006:node_7': {
+      name: 'Yakın Dövüş Taktik Koruması',
+      buff: 'Tüm Birliklerin Taktik Direnci +5%',
+    },
+    '9c5d4006:node_8': {
+      name: 'Azim - Sınıf Lejyonu',
+      buff: 'Tüm Birliklerin Sınıf Lejyonu Direnci +15%',
+    },
+    '9c5d4006:node_9': {
+      name: 'Azim - Lejyon I',
+      buff: 'Tüm Birliklerin Lejyon I Direnci +15%',
+    },
+    '9c5d4006:node_10': {
+      name: 'Azim - Lejyon II',
+      buff: 'Tüm Birliklerin Lejyon II Direnci +15%',
+    },
+    '9c5d4006:node_11': {
+      name: 'Azim - Lejyon III',
+      buff: 'Tüm Birliklerin Lejyon III Direnci +15%',
+    },
+    '9c5d4006:node_12': {
+      name: 'Azim - Savunma Kuyruğu',
+      buff: 'Tüm Birliklerin Savunma Kuyruğu Direnci +15%',
+    },
+    '9c5d4006:node_13': {
+      name: 'Sağlam Savunma',
+      buff: 'Tüm Birliklerin Kuşatma Savunma Direnci +10%',
+    },
+    '9c5d4006:node_14': {
+      name: 'Savunma Gücü',
+      buff: 'Savunma Kuyruğu azami Yürüyüş kapasitesi 15000 artar',
+    },
+    '9c5d4006:node_15': {
+      name: 'Yakın Dövüş Taktik Vuruşu',
+      buff: 'Tüm Birliklerin Taktik Gücü +5%',
+    },
+    '9c5d4006:node_16': {
+      name: 'Azim - Sınıf Lejyonu M',
+      buff: 'Tüm Birliklerin Sınıf Lejyonu Gücü +15%',
+    },
+    '9c5d4006:node_17': {
+      name: 'Azim - Lejyon I M',
+      buff: 'Tüm Birliklerin Lejyon I Gücü +15%',
+    },
+    '9c5d4006:node_18': {
+      name: 'Azim - Lejyon II M',
+      buff: 'Tüm Birliklerin Lejyon II Gücü +15%',
+    },
+    '9c5d4006:node_19': {
+      name: 'Azim - Lejyon III M',
+      buff: 'Tüm Birliklerin Lejyon III Gücü +15%',
+    },
+    '9c5d4006:node_20': {
+      name: 'Cesaret - Savunma Kuyruğu',
+      buff: 'Tüm Birliklerin Savunma Kuyruğu Gücü +15%',
+    },
+    '9c5d4006:node_21': {
+      name: 'İnisiyatif',
+      buff: 'Tüm Birliklerin Kuşatma Savunma Gücü +10%',
+    },
+    '9c5d4006:node_22': {
+      name: 'Yakın Dövüş - Piyade Kalkanı',
+      buff: 'Piyade Direnci +15%',
+    },
+    '9c5d4006:node_23': {
+      name: 'Yakın Dövüş - Artçı Süvari',
+      buff: 'Süvari Direnci +15%',
+    },
+    '9c5d4006:node_24': {
+      name: 'Yakın Dövüş - Okçu Örtüsü',
+      buff: 'Okçu Direnci +15%',
+    },
+    '9c5d4006:node_25': {
+      name: 'Yakın Dövüş - Piyade Baskını',
+      buff: 'Piyade Gücü +15%',
+    },
+    '9c5d4006:node_26': {
+      name: 'Yakın Dövüş - Süvari Saldırısı',
+      buff: 'Süvari Gücü +15%',
+    },
+    '9c5d4006:node_27': {
+      name: 'Yakın Dövüş - Okçu Atışı',
+      buff: 'Okçu Gücü +15%',
+    },
+    '9c5d4006:node_28': {
+      name: 'Sağlam Vücut',
+      buff: 'Tüm Birliklerin Kuşatma Savunma HP değeri +10%',
+    },
+    '9c5d4006:node_29': {
+      name: 'Yakın Dövüş Devam Ediyor',
+      buff: 'Kuşatma savunma savaşlarında -5%, ölümcül etki azalır',
+    },
+    'b57d6bf9:node_1': {
+      name: 'Bıçak Saldırısı - Piyade',
+      buff: 'Piyade Kuşatma Gücü +10%',
+    },
+    'b57d6bf9:node_2': {
+      name: 'Bıçak Saldırısı - Süvari',
+      buff: 'Süvari Kuşatma Gücü +10%',
+    },
+    'b57d6bf9:node_3': {
+      name: 'Bıçak Saldırısı - Okçu',
+      buff: 'Okçu Kuşatma Gücü +10%',
+    },
+    'b57d6bf9:node_4': {
+      name: 'Bıçak Baskını - Piyade',
+      buff: 'Piyade Kuşatma Direnci +10%',
+    },
+    'b57d6bf9:node_5': {
+      name: 'Bıçak Baskını - Süvari',
+      buff: 'Süvari Kuşatma Direnci +10%',
+    },
+    'b57d6bf9:node_6': {
+      name: 'Bıçak Baskını - Okçu',
+      buff: 'Okçu Kuşatma Direnci +10%',
+    },
+    'b57d6bf9:node_7': {
+      name: 'Saray Muhafızı',
+      buff: 'Tüm Birliklerin Taktik Gücü +5%',
+    },
+    'b57d6bf9:node_8': {
+      name: 'Demir Duvar - Sınıf Lejyonu',
+      buff: 'Sınıf Lejyonundaki Tüm Birliklerin Direnci +10%',
+    },
+    'b57d6bf9:node_9': {
+      name: 'Demir Duvar - Lejyon 1',
+      buff: 'Lejyon 1 içindeki Tüm Birliklerin Direnci +10%',
+    },
+    'b57d6bf9:node_10': {
+      name: 'Demir Duvar - Lejyon 2',
+      buff: 'Lejyon 2 içindeki Tüm Birliklerin Direnci +10%',
+    },
+    'b57d6bf9:node_11': {
+      name: 'Demir Duvar - Lejyon 3',
+      buff: 'Lejyon 3 içindeki Tüm Birliklerin Direnci +10%',
+    },
+    'b57d6bf9:node_12': {
+      name: 'Dengeli Taktikler',
+      buff: 'Birliklerin Gücü ve Direnci +5%',
+    },
+    'b57d6bf9:node_13': {
+      name: 'Taarruz - Sınıf Lejyonu',
+      buff: 'Sınıf Lejyonundaki Tüm Birliklerin Gücü +10%',
+    },
+    'b57d6bf9:node_14': {
+      name: 'Taarruz - Lejyon 1',
+      buff: 'Lejyon 1 içindeki Tüm Birliklerin Gücü +10%',
+    },
+    'b57d6bf9:node_15': {
+      name: 'Taarruz - Lejyon 2',
+      buff: 'Lejyon 2 içindeki Tüm Birliklerin Gücü +10%',
+    },
+    'b57d6bf9:node_16': {
+      name: 'Taarruz - Lejyon 3',
+      buff: 'Lejyon 3 içindeki Tüm Birliklerin Gücü +10%',
+    },
+    'b57d6bf9:node_17': {
+      name: 'Öncü Zırhı',
+      buff: 'Tüm Birliklerin Taktik Direnci +5%',
+    },
+    'b57d6bf9:node_18': {
+      name: 'Ağır Zırhlı Öncü',
+      buff: 'Tüm Birliklerin Kuşatma Direnci +5%',
+    },
+    'b57d6bf9:node_19': {
+      name: 'Savaş Becerisi Ustalığı - Piyade',
+      buff: 'Piyade Beceri Gücü +10%',
+    },
+    'b57d6bf9:node_20': {
+      name: 'Savaş Becerisi Ustalığı - Süvari',
+      buff: 'Süvari Beceri Gücü +10%',
+    },
+    'b57d6bf9:node_21': {
+      name: 'Savaş Becerisi Ustalığı - Okçu',
+      buff: 'Okçu Beceri Gücü +10%',
+    },
+    'b57d6bf9:node_22': {
+      name: 'Savaş Becerisi Direnci - Piyade',
+      buff: 'Piyade Beceri Direnci +10%',
+    },
+    'b57d6bf9:node_23': {
+      name: 'Savaş Becerisi Direnci - Süvari',
+      buff: 'Süvari Beceri Direnci +10%',
+    },
+    'b57d6bf9:node_24': {
+      name: 'Savaş Becerisi Direnci - Okçu',
+      buff: 'Okçu Beceri Direnci +10%',
+    },
+    'b57d6bf9:node_25': {
+      name: 'Öncü Ruhu - Piyade',
+      buff: 'Piyade HP artışı +5%',
+    },
+    'b57d6bf9:node_26': {
+      name: 'Öncü Ruhu - Süvari',
+      buff: 'Süvari HP artışı +5%',
+    },
+    'b57d6bf9:node_27': {
+      name: 'Öncü Ruhu - Okçu',
+      buff: 'Okçu HP artışı +5%',
+    },
+    'b57d6bf9:node_28': {
+      name: 'Toptan Taarruz',
+      buff: 'Tüm Askerlerin Kuşatma Gücü +5%',
+    },
+    'b57d6bf9:node_29': {
+      name: 'Formasyon Ustalığı',
+      buff: 'Kuşatma Saldırganı HP +5%',
+    },
+    'b57d6bf9:node_30': {
+      name: 'Zırhlı Hamle',
+      buff: 'Verilen Hasar +5%',
+    },
+},
 };
 
 export default researchContent;

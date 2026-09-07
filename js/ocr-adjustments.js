@@ -1,8 +1,24 @@
 import { compactPlayerIdentity, resolveCanonicalPlayerIdentity } from './ocr-name-normalizer.js';
 import { conductAdjustmentFingerprint } from './admin-sync-guard.js';
+import {
+  edenWorkspaceFirestorePath,
+  edenWorkspaceMutationError,
+  edenWorkspaceStorageKey,
+  getActiveAdminWorkspaceId,
+} from './eden-workspaces.js';
 
-export const R5_ADJUSTMENTS_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
-export const R5_ADJUSTMENTS_LOCAL_KEY = 'vts_r5_conduct_adjustments';
+// Conduct adjustments are season records, so they follow the active Eden
+// workspace: eden-x1 keeps the historical collection and mirror key, eden-x2
+// writes to its own collection so the archive stays untouched.
+const ACTIVE_ADJUSTMENTS_WORKSPACE_ID = getActiveAdminWorkspaceId();
+export const R5_ADJUSTMENTS_COLLECTION_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_ADJUSTMENTS_WORKSPACE_ID,
+  'conductAdjustments'
+);
+export const R5_ADJUSTMENTS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_r5_conduct_adjustments',
+  ACTIVE_ADJUSTMENTS_WORKSPACE_ID
+);
 
 export const R5_ADJUSTMENT_CATEGORIES = Object.freeze({
   banner_help: Object.freeze({
@@ -276,6 +292,107 @@ export function buildAdjustedGiftRanking(playerRows = [], adjustments = [], seas
     .map((row, index) => ({ ...row, adjustedRank: index + 1 }));
 }
 
+// ---------------------------------------------------------------------------
+// Bulk paste
+//
+// R5s collect bonus team effort rows outside the tool (chat exports, forms) and
+// used to retype them one at a time. `parseConductBulkText` turns a pasted
+// block into normalized draft rows so the panel can preview them before any
+// write happens. It never touches storage; the dashboard decides what to save.
+// ---------------------------------------------------------------------------
+
+export const CONDUCT_BULK_MAX_ROWS = 200;
+
+const CONDUCT_BULK_DELIMITER = /\s*(?:\||\t|;)\s*/;
+const CONDUCT_BULK_INTEGER = /^[+\u2212-]?\d{1,4}$/;
+const CONDUCT_BULK_HEADER_NAMES = new Set(['name', 'player', 'player name', 'member']);
+
+function conductBulkPointsValue(token) {
+  const text = String(token || '').trim();
+  if (!CONDUCT_BULK_INTEGER.test(text)) return null;
+  const numeric = Number(text.replace(/\u2212/g, '-'));
+  return Number.isFinite(numeric) ? Math.trunc(numeric) : null;
+}
+
+function conductBulkCategoryToken(token) {
+  const text = String(token || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (!text) return '';
+  if (R5_ADJUSTMENT_CATEGORIES[text]) return text;
+  return (
+    R5_ADJUSTMENT_CATEGORY_KEYS.find(
+      (key) => R5_ADJUSTMENT_CATEGORIES[key].label.toLowerCase().replace(/[\s-]+/g, '_') === text
+    ) || ''
+  );
+}
+
+function isConductBulkHeaderLine(parts) {
+  return CONDUCT_BULK_HEADER_NAMES.has(
+    String(parts[0] || '')
+      .trim()
+      .toLowerCase()
+  );
+}
+
+export function parseConductBulkText(text, options = {}) {
+  const fallbackCategory = getR5AdjustmentCategory(options.defaultCategory || DEFAULT_CATEGORY).key;
+  const rows = [];
+  const errors = [];
+  let truncated = false;
+
+  String(text || '')
+    .split(/\r?\n/)
+    .forEach((rawLine, index) => {
+      const lineNumber = index + 1;
+      const line = rawLine.trim();
+      if (!line) return;
+      const parts = line.split(CONDUCT_BULK_DELIMITER).map((part) => part.trim());
+      if (isConductBulkHeaderLine(parts)) return;
+      if (rows.length >= CONDUCT_BULK_MAX_ROWS) {
+        truncated = true;
+        return;
+      }
+
+      const rest = parts.slice(1).filter((part) => part !== '');
+      // A trailing category token is optional, so peel it off before deciding
+      // which of the remaining fields holds the points value.
+      let category = '';
+      if (rest.length > 1) {
+        const tail = conductBulkCategoryToken(rest[rest.length - 1]);
+        if (tail) {
+          category = tail;
+          rest.pop();
+        }
+      }
+
+      const parsedPoints = rest.length ? conductBulkPointsValue(rest[0]) : null;
+      if (parsedPoints !== null) rest.shift();
+      const resolvedCategory = category || fallbackCategory;
+      const points =
+        parsedPoints === null ? defaultR5PointsForCategory(resolvedCategory) : parsedPoints;
+      const note = rest.join(' ').trim().slice(0, 500);
+
+      try {
+        const identity = resolveR5PlayerIdentity({ name: parts[0] });
+        rows.push({
+          lineNumber,
+          line,
+          playerKey: identity.playerKey,
+          playerName: identity.playerName,
+          points: normalizeR5Points(points),
+          category: resolvedCategory,
+          note,
+        });
+      } catch (err) {
+        errors.push({ lineNumber, line, message: err?.message || 'Could not read this row' });
+      }
+    });
+
+  return { rows, errors, truncated };
+}
+
 function canUseLocalStorage() {
   return typeof localStorage !== 'undefined' && localStorage;
 }
@@ -291,6 +408,8 @@ function readLocalR5AdjustmentRecords() {
 }
 
 function writeLocalR5AdjustmentRecords(records) {
+  const archiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (archiveError) throw archiveError;
   if (!canUseLocalStorage()) return;
   localStorage.setItem(
     R5_ADJUSTMENTS_LOCAL_KEY,
@@ -320,7 +439,7 @@ function localR5AdjustmentId() {
   return `local_r5_${random}`;
 }
 
-function isR5PersistenceUnavailable(err) {
+export function isR5PersistenceUnavailable(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
   return /firebase is not configured|firebase not initialized|firestore is not available/i.test(
     text
@@ -410,7 +529,7 @@ async function loadFirestoreApi() {
   return { firestore: await importFirestore(), firebaseApi };
 }
 
-async function ensureR5AdjustmentAdminContext() {
+export async function ensureR5AdjustmentAdminContext() {
   if (typeof window !== 'undefined' && typeof window.getVtsAdminFirestoreContext === 'function') {
     return window.getVtsAdminFirestoreContext();
   }
@@ -451,6 +570,8 @@ export async function loadR5Adjustments(season) {
 }
 
 export async function createR5Adjustment(input) {
+  const createArchiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (createArchiveError) throw createArchiveError;
   try {
     const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
     const { collection, doc, serverTimestamp, setDoc } = firestore;
@@ -471,6 +592,8 @@ export async function createR5Adjustment(input) {
 }
 
 export async function updateR5Adjustment(adjustmentId, patch, options = {}) {
+  const updateArchiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (updateArchiveError) throw updateArchiveError;
   try {
     const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
     const { doc, getDoc, runTransaction, serverTimestamp, setDoc } = firestore;
@@ -562,6 +685,8 @@ export async function updateR5Adjustment(adjustmentId, patch, options = {}) {
 }
 
 export async function deleteR5Adjustment(adjustmentId, options = {}) {
+  const deleteArchiveError = edenWorkspaceMutationError(ACTIVE_ADJUSTMENTS_WORKSPACE_ID);
+  if (deleteArchiveError) throw deleteArchiveError;
   try {
     const { db, firestore } = await ensureR5AdjustmentAdminContext();
     const { deleteDoc, doc, runTransaction } = firestore;

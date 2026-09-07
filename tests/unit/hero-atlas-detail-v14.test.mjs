@@ -16,8 +16,15 @@ test('Hero Atlas detail uses the scoped v14 hierarchy without changing section h
   assert.match(atlasSource, /import '\.\.\/css\/hero-atlas-detail-v14\.css';/);
   assert.match(atlasSource, /class="hero-detail-panel hero-atlas-detail-v14"/);
 
-  const sectionOrder = ['synergies', 'skins', 'skills', 'combos', 'counters'].map((section) =>
-    atlasSource.indexOf(`id="detail-section-${section}"`)
+  const panelSource = atlasSource.slice(
+    atlasSource.indexOf('function renderHeroDetailPanel('),
+    atlasSource.indexOf('function codexSortHeroes(')
+  );
+  const sectionOrder = ['synergies', 'skins', 'skills', 'combos', 'duels', 'counters'].map(
+    (section) =>
+      section === 'duels'
+        ? panelSource.indexOf('renderDuelSection(selected)')
+        : panelSource.indexOf(`id="detail-section-${section}"`)
   );
   assert.ok(sectionOrder.every((position) => position >= 0));
   assert.deepEqual(
@@ -29,7 +36,7 @@ test('Hero Atlas detail uses the scoped v14 hierarchy without changing section h
   assert.match(detailCss, /\.hero-atlas-detail-v14 \.detail-skills/);
   assert.match(detailCss, /\.detail-skills\[data-skill-count='3'\][\s\S]*?repeat\(3,/);
   assert.match(detailCss, /\.detail-skills\[data-skill-count='4'\][\s\S]*?repeat\(2,/);
-  assert.match(atlasSource, /data-skill-count="\$\{ext\?\.skills\?\.length \|\| 0\}"/);
+  assert.match(atlasSource, /data-skill-count="\$\{mergedSkills\.length \|\| 0\}"/);
   assert.match(detailCss, /\.detail-skill-rail[\s\S]*?position: absolute/);
   assert.match(detailCss, /\.detail-skill-id[\s\S]*?display: none/);
   assert.match(detailCss, /\.hero-atlas-detail-v14 \.counter-matchup-list/);
@@ -69,6 +76,34 @@ test('Skin Atlas styles remain lazy, responsive, keyboard-visible, and RTL-safe'
   assert.match(detailCss, /padding-inline-start: 0\.9rem/);
   assert.match(detailCss, /inset-inline-start: 0/);
   assert.match(detailCss, /\[data-theme='light'\] \.skin-tier-rank,[\s\S]*?color: #1e293b/);
+});
+
+test('Skins view reserves item icon slots and styles the gallery for both themes', () => {
+  assert.match(detailCss, /\.skin-item-icon \{[\s\S]*?28px/);
+  assert.match(detailCss, /\.skin-item-icon--empty \{[\s\S]*?border-style: dashed/);
+  assert.match(detailCss, /\.skin-item-icon-img \{[\s\S]*?object-fit: cover/);
+  assert.match(detailCss, /\.skin-gallery-card \{/);
+  assert.match(detailCss, /\.skin-gallery-card:focus-visible \{[\s\S]*?outline: 3px/);
+  assert.match(detailCss, /\.skin-star-track::before \{[\s\S]*?inset-inline-start: 0\.34rem/);
+  assert.match(detailCss, /\.skin-tier-hero-chip--link:focus-visible \{[\s\S]*?outline: 3px/);
+  assert.match(
+    detailCss,
+    /\[data-theme='light'\] \.skin-gallery-card \{[\s\S]*?linear-gradient\(180deg, rgba\(255, 255, 255, 0\.98\)/
+  );
+  assert.match(detailCss, /\[data-theme='light'\] \.skin-item-icon \{/);
+  assert.match(
+    detailCss,
+    /@media \(max-width: 768px\) \{[\s\S]*?\.skin-gallery-grid \{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/
+  );
+  assert.match(
+    detailCss,
+    /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.skin-gallery-card/
+  );
+  assert.match(atlasSource, /data-skins-view="gallery"/);
+  assert.match(atlasSource, /data-skins-view="tiers"/);
+  assert.match(atlasSource, /id="skinsGallerySearch"/);
+  assert.match(atlasSource, /heroUi\('skinGalleryCount'/);
+  assert.match(atlasSource, /getSkinItemIconUrl\(item\)/);
 });
 
 test('skill copy preserves apostrophe entities and excludes provisional Cyrus notes', () => {

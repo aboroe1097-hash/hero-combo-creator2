@@ -3,9 +3,17 @@ import {
   normalizeBattleCoefficients,
 } from './battle-simulator-coefficients.js';
 import { BATTLE_STAT_CONTRACT } from './battle-simulator-data.js';
+import {
+  BATTLE_HERO_SKILL_ASSUMPTIONS,
+  BATTLE_HERO_SKILL_COVERAGE,
+  getBattleHeroSkill,
+} from './battle-simulator-hero-skills.js';
 import { buildSetupSnapshot, parseSetupSnapshot } from './battle-simulator-setup.js';
 
-export const BATTLE_EXPORT_SCHEMA_VERSION = 3;
+export const BATTLE_EXPORT_SCHEMA_VERSION = 4;
+
+const PREVIOUS_BATTLE_EXPORT_SCHEMA_VERSION = 3;
+const MAX_BATTLE_EXPORT_JSON_LENGTH = 5_000_000;
 
 const EVENT_CSV_COLUMNS = [
   'run_index',
@@ -21,6 +29,19 @@ const EVENT_CSV_COLUMNS = [
   'strike_multiplier',
   'casualty_rate',
   'status',
+];
+
+const EFFECT_EVENT_CSV_COLUMNS = [
+  ...EVENT_CSV_COLUMNS,
+  'event_kind',
+  'effect_phase',
+  'effect_source',
+  'effect_actor',
+  'effect_target',
+  'effect_type',
+  'effect_value',
+  'effect_status',
+  'effect_diagnostic',
 ];
 
 const SUMMARY_CSV_COLUMNS = [
@@ -51,6 +72,8 @@ const SUMMARY_CSV_COLUMNS = [
   'source_provenance_json',
   'equipment_provenance_json',
 ];
+
+const EFFECT_SUMMARY_CSV_COLUMNS = [...SUMMARY_CSV_COLUMNS, 'effect_provenance_json'];
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -431,7 +454,7 @@ function buildPerRowMetrics(setup, result, config) {
           casualties = Math.max(0, initial - surviving);
         }
 
-        return {
+        const row = {
           id:
             resultRow?.id ??
             setupRow?.id ??
@@ -442,10 +465,244 @@ function buildPerRowMetrics(setup, result, config) {
           survivingTroops: surviving ?? null,
           casualties: casualties ?? null,
         };
+        const heroName = firstDefined([
+          resultRow?.heroName,
+          setupRow?.heroName,
+          configRow?.heroName,
+        ]);
+        const skillIds = firstDefined([
+          resultRow?.skillIds,
+          resultRow?.heroSkillIds,
+          setupRow?.skillIds,
+          configRow?.skillIds,
+          configRow?.heroSkillIds,
+        ]);
+        if (heroName) row.heroName = String(heroName);
+        if (Array.isArray(skillIds) && skillIds.length > 0) {
+          row.skillIds = sanitizeForExport(skillIds.map(String));
+        }
+        return row;
       });
       return [side, rows];
     })
   );
+}
+
+function sideValue(root, side) {
+  return root?.sides?.[side] ?? root?.[side === 'A' ? 'sideA' : 'sideB'] ?? root?.[side];
+}
+
+function nonEmpty(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (!isObject(value)) return Boolean(value);
+  return Object.values(value).some(nonEmpty);
+}
+
+function collectEffectEvents(result, runMode) {
+  const runs = extractRuns(result, runMode);
+  if (runs.length > 0) {
+    return runs.flatMap((run, index) =>
+      (Array.isArray(run?.effectEvents) ? run.effectEvents : []).map((event) => ({
+        runIndex: finiteNumber(run?.runNumber) ?? index + 1,
+        runSeed: firstDefined([run?.seed, run?.runSeed]),
+        event,
+      }))
+    );
+  }
+  const events = result?.effectEvents ?? result?.batch?.effectEvents;
+  return Array.isArray(events)
+    ? events.map((event) => ({
+        runIndex: finiteNumber(event?.runIndex) ?? 1,
+        runSeed: firstDefined([event?.runSeed, event?.seed, result?.seed]),
+        event,
+      }))
+    : [];
+}
+
+function buildSkillProvenance(setup, config) {
+  const output = {};
+  for (const side of ['A', 'B']) {
+    const setupRows = rowsForSide(setup, side);
+    const configRows = rowsForSide(config, side);
+    const rows = setupRows
+      .map((setupRow, index) => {
+        const configRow = configRows[index];
+        const heroName = firstDefined([setupRow?.heroName, configRow?.heroName]);
+        const skillIds = firstDefined([
+          setupRow?.skillIds,
+          configRow?.skillIds,
+          configRow?.heroSkillIds,
+        ]);
+        if (!heroName && (!Array.isArray(skillIds) || skillIds.length === 0)) return null;
+        const skills = (Array.isArray(skillIds) ? skillIds : []).map((skillId) => {
+          const skill = heroName ? getBattleHeroSkill(heroName, skillId) : null;
+          return skill
+            ? {
+                skillId: String(skillId),
+                classification: skill.classification,
+                confidence: skill.confidence,
+                description: skill.description,
+                diagnostics: skill.diagnostics,
+              }
+            : {
+                skillId: String(skillId),
+                classification: 'unknown',
+                diagnostics: [{ code: 'unknown-skill' }],
+              };
+        });
+        return {
+          rowId: setupRow?.id ?? configRow?.id ?? `row-${index + 1}`,
+          heroName: heroName ? String(heroName) : null,
+          skillIds: (Array.isArray(skillIds) ? skillIds : []).map(String),
+          skills,
+        };
+      })
+      .filter(Boolean);
+    if (rows.length > 0) output[side] = rows;
+  }
+  return output;
+}
+
+function equipmentOverrideProvenance(setup, config) {
+  const output = {};
+  for (const side of ['A', 'B']) {
+    const document =
+      sideValue(setup, side)?.equipmentEffectOverrides ??
+      sideValue(config, side)?.equipmentEffectOverrides;
+    if (!isObject(document)) continue;
+    const overrides = Array.isArray(document.overrides) ? document.overrides : [];
+    const diagnostics = Array.isArray(document.diagnostics) ? document.diagnostics : [];
+    if (overrides.length === 0 && diagnostics.length === 0) continue;
+    output[side] = {
+      document,
+      summary: {
+        overrideCount: overrides.length,
+        diagnosticCount: diagnostics.length,
+      },
+      diagnostics,
+    };
+  }
+  return output;
+}
+
+function collectSkillDiagnostics(skillClassifications) {
+  return Object.entries(skillClassifications).flatMap(([side, rows]) =>
+    rows.flatMap((row) =>
+      row.skills.flatMap((skill) =>
+        (skill.diagnostics ?? []).map((diagnostic) => ({
+          side,
+          rowId: row.rowId,
+          heroName: row.heroName,
+          skillId: skill.skillId,
+          ...diagnostic,
+        }))
+      )
+    )
+  );
+}
+
+function buildEffectProvenance(context, setup, selectedResult) {
+  const skillClassifications = buildSkillProvenance(setup, context.config);
+  const skillDiagnostics = collectSkillDiagnostics(skillClassifications);
+  const specialization = {};
+  const unitSources = {};
+  for (const side of ['A', 'B']) {
+    const setupSide = sideValue(setup, side);
+    const configSide = sideValue(context.config, side);
+    const capture = setupSide?.specializationCapture ?? configSide?.specializationCapture;
+    const result = capture?.result;
+    const revision = firstDefined([
+      result?.revision,
+      capture?.revision,
+      capture?.snapshot?.revision,
+    ]);
+    const summary = firstDefined([result?.summary, capture?.summary]);
+    const diagnostics = firstDefined([result?.diagnostics, capture?.diagnostics]);
+    const capturedUnitSources = firstDefined([
+      Array.isArray(result?.unitSources) && result.unitSources.length > 0
+        ? result.unitSources
+        : undefined,
+      configSide?.unitSources,
+    ]);
+    if (
+      capture &&
+      (revision !== undefined ||
+        nonEmpty(summary) ||
+        nonEmpty(diagnostics) ||
+        nonEmpty(capturedUnitSources))
+    ) {
+      specialization[side] = {
+        revision: revision ?? null,
+        summary: summary ?? {},
+        diagnostics: diagnostics ?? [],
+      };
+    }
+    if (Array.isArray(capturedUnitSources) && capturedUnitSources.length > 0) {
+      unitSources[side] = capturedUnitSources;
+    }
+  }
+
+  const equipmentOverrides = equipmentOverrideProvenance(setup, context.config);
+  const effectEvents = collectEffectEvents(context.result, context.runMode);
+  const effectDiagnostics = firstDefined([
+    selectedResult?.effectDiagnostics,
+    context.result?.effectDiagnostics,
+  ]);
+  const effectRuntimeVersion = firstDefined([
+    selectedResult?.effectRuntimeVersion,
+    context.result?.effectRuntimeVersion,
+  ]);
+  const activeEffectModelVersion = effectRuntimeVersion ? context.modelVersion : undefined;
+  const hasEffects =
+    nonEmpty(skillClassifications) ||
+    nonEmpty(specialization) ||
+    nonEmpty(unitSources) ||
+    nonEmpty(equipmentOverrides) ||
+    nonEmpty(effectEvents) ||
+    nonEmpty(effectDiagnostics) ||
+    effectRuntimeVersion !== undefined;
+  if (!hasEffects) return null;
+
+  return sanitizeForExport({
+    scenarioContext: setup.scenarioContext ?? context.config?.scenarioContext ?? null,
+    skillClassifications,
+    skillDiagnostics,
+    specialization,
+    unitSources,
+    equipmentOverrides,
+    effectRuntimeVersion: effectRuntimeVersion ?? null,
+    activeEffectModelVersion: activeEffectModelVersion ?? null,
+    effectDiagnostics: effectDiagnostics ?? [],
+    effectEvents: effectEvents.map(({ runIndex, runSeed, event }) => ({
+      runIndex,
+      runSeed: runSeed ?? null,
+      ...event,
+    })),
+    modeling: {
+      assumptions: {
+        battle: context.model.assumptions,
+        setup: setup.assumptions ?? null,
+        heroSkills: BATTLE_HERO_SKILL_ASSUMPTIONS,
+        effects:
+          firstDefined([
+            selectedResult?.modelingAssumptions,
+            selectedResult?.effectAssumptions,
+            context.result?.modelingAssumptions,
+            context.result?.effectAssumptions,
+          ]) ?? null,
+      },
+      coverage: {
+        heroSkills: BATTLE_HERO_SKILL_COVERAGE,
+        effects:
+          firstDefined([
+            selectedResult?.modelingCoverage,
+            selectedResult?.effectCoverage,
+            context.result?.modelingCoverage,
+            context.result?.effectCoverage,
+          ]) ?? null,
+      },
+    },
+  });
 }
 
 function collectSeeds(context, selectedResult) {
@@ -497,7 +754,7 @@ function createRichContext(input = {}) {
   );
   const sourceProvenance = buildSourceProvenance(setup);
   const equipmentProvenance = buildEquipmentProvenance(setup);
-  return {
+  const richContext = {
     ...context,
     model: {
       ...context.model,
@@ -514,6 +771,8 @@ function createRichContext(input = {}) {
     seeds: collectSeeds(context, selectedResult),
     perRow: buildPerRowMetrics(setup, selectedResult, context.config),
   };
+  richContext.effectProvenance = buildEffectProvenance(richContext, setup, selectedResult);
+  return richContext;
 }
 
 function totalFromRows(rows, field) {
@@ -782,7 +1041,36 @@ export function buildBattleJsonExport(input = {}) {
     perRow: context.perRow,
     results: sanitizeForExport(context.result),
   };
+  if (context.effectProvenance) document.effectProvenance = context.effectProvenance;
   return JSON.stringify(sanitizeDocument(document), null, 2);
+}
+
+export function parseBattleJsonExport(jsonText) {
+  if (typeof jsonText !== 'string') {
+    throw new TypeError('Battle export JSON must be provided as text.');
+  }
+  if (jsonText.length > MAX_BATTLE_EXPORT_JSON_LENGTH) {
+    throw new RangeError('Battle export JSON exceeds the maximum supported size.');
+  }
+  let document;
+  try {
+    document = JSON.parse(jsonText);
+  } catch (error) {
+    throw new TypeError(`Battle export JSON is invalid: ${error.message}`);
+  }
+  if (!isObject(document)) throw new TypeError('Battle export JSON must contain an object.');
+  if (
+    ![PREVIOUS_BATTLE_EXPORT_SCHEMA_VERSION, BATTLE_EXPORT_SCHEMA_VERSION].includes(
+      document.schemaVersion
+    )
+  ) {
+    throw new RangeError(
+      `Unsupported battle export schema version "${String(document.schemaVersion)}".`
+    );
+  }
+  const migrated = sanitizeForExport(document);
+  migrated.schemaVersion = BATTLE_EXPORT_SCHEMA_VERSION;
+  return migrated;
 }
 
 export function buildBattleSummaryCsv(input = {}) {
@@ -818,12 +1106,14 @@ export function buildBattleSummaryCsv(input = {}) {
     stableJson(context.sourceProvenance),
     stableJson(context.equipmentProvenance),
   ];
-  return `${csvLine(SUMMARY_CSV_COLUMNS)}\n${csvLine(row)}`;
+  const columns = context.effectProvenance ? EFFECT_SUMMARY_CSV_COLUMNS : SUMMARY_CSV_COLUMNS;
+  if (context.effectProvenance) row.push(stableJson(context.effectProvenance));
+  return `${csvLine(columns)}\n${csvLine(row)}`;
 }
 
 export function buildBattleEventLogCsv(input = {}) {
   const context = createContext(input);
-  const rows = eventEntries(context.result, context.runMode).map(
+  const actionRows = eventEntries(context.result, context.runMode).map(
     ({ event = {}, runIndex, runSeed, round, actionGroup, combatSpeed }) => [
       runIndex,
       event.runSeed ?? event.seed ?? runSeed ?? '',
@@ -861,7 +1151,52 @@ export function buildBattleEventLogCsv(input = {}) {
           : 'resolved'),
     ]
   );
-  return [csvLine(EVENT_CSV_COLUMNS), ...rows.map(csvLine)].join('\n');
+  const effectEntries = collectEffectEvents(context.result, context.runMode);
+  if (effectEntries.length === 0) {
+    return [csvLine(EVENT_CSV_COLUMNS), ...actionRows.map(csvLine)].join('\n');
+  }
+  const padAction = (row) => [
+    ...row,
+    'action',
+    ...Array(EFFECT_EVENT_CSV_COLUMNS.length - row.length - 1).fill(''),
+  ];
+  const effectRows = effectEntries.map(({ event = {}, runIndex, runSeed }) => [
+    runIndex,
+    event.runSeed ?? event.seed ?? runSeed ?? '',
+    event.battleRound ?? event.round ?? '',
+    event.group ?? event.actionGroup ?? '',
+    '',
+    displayEntity(event.source),
+    displayEntity(event.target),
+    event.before ?? '',
+    event.type === 'damage' || event.type === 'dot-tick' ? (event.amount ?? '') : '',
+    event.after ?? '',
+    '',
+    '',
+    event.skipped ? 'skipped' : 'resolved',
+    'effect',
+    event.phase ?? '',
+    event.effectId ?? event.id ?? '',
+    displayEntity(event.source),
+    displayEntity(event.target),
+    event.type ?? '',
+    stableJson(
+      Object.fromEntries(
+        ['amount', 'before', 'after', 'removed', 'stacks', 'stat']
+          .filter((key) => event[key] !== undefined)
+          .map((key) => [key, event[key]])
+      )
+    ),
+    event.status ?? '',
+    isObject(event.diagnostic) || Array.isArray(event.diagnostic)
+      ? stableJson(event.diagnostic)
+      : (event.diagnostic ?? event.skipped ?? ''),
+  ]);
+  return [
+    csvLine(EFFECT_EVENT_CSV_COLUMNS),
+    ...actionRows.map((row) => csvLine(padAction(row))),
+    ...effectRows.map(csvLine),
+  ].join('\n');
 }
 
 function percent(value) {
@@ -884,7 +1219,7 @@ export function buildBattleDebugSnapshot(input = {}) {
       : String(context.model.assumptions || 'None recorded');
   const seed = context.seed === null ? 'none' : stableJson(context.seed);
   const variance = context.variance === null ? 'none' : stableJson(context.variance);
-  return [
+  const lines = [
     'Battle Simulator debug snapshot',
     `Generated: ${context.generatedAt}`,
     `Schema / model: ${BATTLE_EXPORT_SCHEMA_VERSION} / ${context.modelVersion}`,
@@ -900,7 +1235,11 @@ export function buildBattleDebugSnapshot(input = {}) {
     `Per-row results: ${stableJson(context.perRow)}`,
     `Setup: ${stableJson(context.setup)}`,
     `Config: ${stableJson(context.config)}`,
-  ].join('\n');
+  ];
+  if (context.effectProvenance) {
+    lines.push(`Effect provenance: ${stableJson(context.effectProvenance)}`);
+  }
+  return lines.join('\n');
 }
 
 export function buildBattleCalibrationFixture(input = {}) {

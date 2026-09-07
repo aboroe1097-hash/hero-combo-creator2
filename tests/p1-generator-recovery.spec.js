@@ -25,7 +25,7 @@ async function enableAllGeneratorSeasons(page) {
     });
     seasonInputs[0]?.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await expect(inputs).toHaveCount(8);
+  await expect(inputs).toHaveCount(10);
   expect(
     await inputs.evaluateAll((seasonInputs) => seasonInputs.every((input) => input.checked))
   ).toBe(true);

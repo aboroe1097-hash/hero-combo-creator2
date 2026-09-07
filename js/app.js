@@ -68,7 +68,9 @@ import {
   TechseasonColors,
   TECH_SEASON_ORDER,
   HERO_ATLAS_ALL_SEASONS,
+  POPULATED_HERO_SEASONS,
   DEFAULT_HERO_FILTER_SEASONS,
+  DEFAULT_GENERATOR_FILTER_SEASONS,
   languageSelect,
   availableHeroesEl,
   saveComboBtn,
@@ -84,24 +86,20 @@ import {
   messageBoxCancelBtn,
   manualSection,
   generatorSection,
-  loyaltySection,
   youtubeSection,
   researchSection,
   materialsSection,
   arcadeSection,
-  allStarBohSection,
-  tabManualBtn,
-  tabGeneratorBtn,
+  tabHeroesCombosBtn,
+  heroesCombosSection,
   tabLoyaltyBtn,
   tabYouTubeBtn,
-  tabResearchBtn,
+  tabResearchTowersBtn,
+  researchTowersSection,
   tabMaterialsBtn,
-  tabHeroesBtn,
   tabEdenMapBtn,
   tabStrifeBtn,
-  tabSpecializationBtn,
   tabArcadeBtn,
-  tabAllStarBohBtn,
   heroesSection,
   edenMapSection,
   strifeSection,
@@ -173,7 +171,6 @@ let researchModulePromise = null;
 let materialModulePromise = null;
 let exportModulePromise = null;
 let arcadeModulePromise = null;
-let loyaltyModulePromise = null;
 
 function reportDynamicImportFailure(error) {
   window.VTS_ASSET_RECOVERY?.reportFailure?.(error, '');
@@ -181,7 +178,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260720_025158').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260907_135059').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -201,20 +198,9 @@ function loadMaterialModule() {
   return materialModulePromise;
 }
 
-function loadLoyaltyModule() {
-  if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260720_025158').catch((error) => {
-      loyaltyModulePromise = null;
-      reportDynamicImportFailure(error);
-      throw error;
-    });
-  }
-  return loyaltyModulePromise;
-}
-
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260720_025158').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260907_135059').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -225,7 +211,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260720_025158').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260907_135059').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -315,6 +301,23 @@ function initTheme() {
 installShowToast();
 initTheme();
 
+document.getElementById('shareCurrentViewBtn')?.addEventListener('click', async () => {
+  const url = window.location.href;
+  const copy = (translations[currentLanguage] || translations.en || {});
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: document.title, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      if (typeof window.showToast === 'function') {
+        window.showToast(copy.shareViewCopied || 'Link copied to clipboard');
+      }
+    }
+  } catch (error) {
+    if (error?.name !== 'AbortError') console.warn('[share-view] Unable to share link', error);
+  }
+});
+
 function addCounterHeroesToGenerator(heroNames) {
   heroNames.filter(Boolean).forEach((name) => generatorSelectedHeroes.add(name));
   renderGeneratorHeroes(syncGeneratorControlState());
@@ -356,19 +359,32 @@ document.addEventListener('click', (e) => {
   btn.classList.toggle('counter-toggle-btn--open', willOpen);
 });
 
+// Old top-level tab names that now open the Research & Towers Hub, mapped to
+// the sub-tab each one lands on.
+const HUB_TAB_ALIASES = new Map([
+  ['research', 'research'],
+  ['specialization', 'towers'],
+  ['artifact', 'artifact'],
+  ['artifacts', 'artifact'],
+]);
+
+// The same arrangement for the Heroes & Combos Hub.
+const HEROES_HUB_ALIASES = new Map([
+  ['manual', 'manual'],
+  ['generator', 'generator'],
+  ['heroes', 'heroes'],
+  ['skins', 'skins'],
+]);
+
 const TAB_BTN_IDS = {
-  manual: 'tabManual',
-  generator: 'tabGenerator',
-  heroes: 'tabHeroes',
-  research: 'tabResearch',
+  heroesCombos: 'tabHeroesCombos',
+  researchTowers: 'tabResearchTowers',
   materials: 'tabMaterials',
   edenMap: 'tabEdenMap',
   strife: 'tabStrife',
-  specialization: 'tabSpecialization',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
   arcade: 'tabArcade',
-  allStarBoh: 'tabAllStarBoh',
 };
 
 function getHomeNavigationScrollBehavior(preferredBehavior = 'smooth') {
@@ -466,11 +482,18 @@ function syncCheckboxValues(container, values) {
   });
 }
 
+function getSeasonFilterDefaults(container) {
+  return container?.id === 'generatorSeasonFilters'
+    ? DEFAULT_GENERATOR_FILTER_SEASONS
+    : DEFAULT_HERO_FILTER_SEASONS;
+}
+
 function readSeasonFilterSelection(container) {
   const checked = getCheckedValues(container);
   if (checked.length > 0) return checked;
-  syncCheckboxValues(container, DEFAULT_HERO_FILTER_SEASONS);
-  return [...DEFAULT_HERO_FILTER_SEASONS];
+  const defaults = getSeasonFilterDefaults(container);
+  syncCheckboxValues(container, defaults);
+  return [...defaults];
 }
 
 function updateSeasonCatchupHint(container) {
@@ -499,6 +522,48 @@ function updateSeasonCatchupHint(container) {
     )
     .join('');
   el.classList.toggle('hidden', !items.length);
+}
+
+// The select-all control is a button, not a checkbox, so getCheckedValues and
+// the change-delegated filter wiring never see it as a season.
+function seasonPillInputs(container) {
+  return Array.from(container.querySelectorAll('label.filter-pill:not(.hidden) input[type="checkbox"]'));
+}
+
+function syncSeasonSelectAll(container) {
+  const button = container?.querySelector('[data-season-select-all]');
+  if (!button) return;
+  const inputs = seasonPillInputs(container);
+  const all = inputs.length > 0 && inputs.every((input) => input.checked);
+  // `active` is the class the shared chip styling keys off for every other
+  // button-shaped pill (.heroes-filter-pill, .tech-season-btn, …); aria-pressed
+  // carries the same state for assistive tech.
+  button.setAttribute('aria-pressed', String(all));
+  button.classList.toggle('active', all);
+}
+
+// Pressed selects every visible season; pressing again returns to the strip's
+// own defaults rather than clearing it, because an empty season filter is not a
+// valid state — readSeasonFilterSelection would silently restore the defaults
+// anyway, and doing it here keeps the pills honest about what is selected.
+function wireSeasonSelectAll(container, onChange) {
+  const button = container?.querySelector('[data-season-select-all]');
+  if (!button || button.dataset.selectAllWired === '1') return;
+  button.dataset.selectAllWired = '1';
+  button.addEventListener('click', () => {
+    const inputs = seasonPillInputs(container);
+    const selectAll = button.getAttribute('aria-pressed') !== 'true';
+    if (selectAll) {
+      inputs.forEach((input) => {
+        input.checked = true;
+      });
+    } else {
+      syncCheckboxValues(container, getSeasonFilterDefaults(container));
+    }
+    syncSeasonSelectAll(container);
+    onChange();
+  });
+  syncSeasonSelectAll(container);
 }
 
 function updateAllSeasonCatchupHints() {
@@ -548,7 +613,25 @@ function wireFilterControls(container, onChange) {
   });
 }
 
+// Season pills whose season has no heroes yet ship hidden in index.html; once a
+// season is populated its pill appears. Runs at boot while both filter strips
+// are in the static DOM — do not move it behind a tab-open hook (rAF never
+// fires in a hidden pane).
+function revealPopulatedSeasonPills() {
+  const populated = new Set(POPULATED_HERO_SEASONS);
+  for (const container of [
+    document.getElementById('seasonFilters') || seasonFiltersEl,
+    document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl,
+  ]) {
+    if (!container) continue;
+    container.querySelectorAll('label.filter-pill[data-season]').forEach((pill) => {
+      pill.classList.toggle('hidden', !populated.has(pill.dataset.season));
+    });
+  }
+}
+
 function wireFilterSets() {
+  revealPopulatedSeasonPills();
   const manualSeasonFilters = document.getElementById('seasonFilters') || seasonFiltersEl;
   const manualStateFilters = document.getElementById('stateFilters') || stateFiltersEl;
   const manualTroopFilters = document.getElementById('troopFilters') || troopFiltersEl;
@@ -559,11 +642,14 @@ function wireFilterSets() {
   const generatorTroopFilters =
     document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
 
-  wireFilterControls(manualSeasonFilters, () => {
+  const onManualSeasonChange = () => {
     setSelectedSeasons(readSeasonFilterSelection(manualSeasonFilters));
     updateSeasonCatchupHint(manualSeasonFilters);
+    syncSeasonSelectAll(manualSeasonFilters);
     if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
-  });
+  };
+  wireFilterControls(manualSeasonFilters, onManualSeasonChange);
+  wireSeasonSelectAll(manualSeasonFilters, onManualSeasonChange);
 
   wireFilterControls(manualStateFilters, () => {
     setSelectedStates(readStateFilterSelection(manualStateFilters));
@@ -575,10 +661,13 @@ function wireFilterSets() {
     if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
   });
 
-  wireFilterControls(generatorSeasonFilters, () => {
+  const onGeneratorSeasonChange = () => {
     updateSeasonCatchupHint(generatorSeasonFilters);
+    syncSeasonSelectAll(generatorSeasonFilters);
     renderGeneratorHeroes(syncGeneratorControlState());
-  });
+  };
+  wireFilterControls(generatorSeasonFilters, onGeneratorSeasonChange);
+  wireSeasonSelectAll(generatorSeasonFilters, onGeneratorSeasonChange);
 
   wireFilterControls(generatorStateFilters, () => {
     renderGeneratorHeroes(syncGeneratorControlState());
@@ -781,7 +870,8 @@ function resetGeneratorFilters() {
   const troopContainer = document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
   const searchInput = document.getElementById('generatorHeroSearch');
 
-  syncCheckboxValues(seasonContainer, DEFAULT_HERO_FILTER_SEASONS);
+  syncCheckboxValues(seasonContainer, DEFAULT_GENERATOR_FILTER_SEASONS);
+  syncSeasonSelectAll(seasonContainer);
   syncCheckboxValues(stateContainer, DEFAULT_STATE_FILTER_VALUES);
   syncCheckboxValues(troopContainer, DEFAULT_TROOP_FILTER_VALUES);
   if (searchInput) searchInput.value = '';
@@ -822,29 +912,52 @@ const requestAppLanguage = createLatestLanguageLoader((lang) => {
   if (typeof window.vtsRenderStrifeTool === 'function') window.vtsRenderStrifeTool();
 });
 
+// The tab is still called edenMap internally — that identifier is keyed off by
+// a dozen modules — but the shareable URL is #edenHub, because the tab has been
+// a hub of four tools since 14.3.9 and the old name undersells it.
+const CANONICAL_TAB_HASHES = Object.freeze({ edenMap: 'edenHub' });
+
+// Every hash the tab has ever answered to, kept permanently. #edenMap is
+// already live in toolkit-map.js, in Velo's knowledge base and in links members
+// have shared; a rename that drops it breaks those silently.
+const TAB_HASH_ALIASES = Object.freeze({ edenhub: 'edenMap', edenmap: 'edenMap' });
+
+function canonicalTabHash(tabName) {
+  return CANONICAL_TAB_HASHES[tabName] || tabName;
+}
+
 function resolveTabName(rawTabName, validTabNames) {
   const normalized = String(rawTabName || '').toLowerCase();
   if (!normalized) return '';
-  return Array.from(validTabNames || []).find((name) => name.toLowerCase() === normalized) || '';
+  const names = Array.from(validTabNames || []);
+  const aliased = TAB_HASH_ALIASES[normalized];
+  if (aliased && names.includes(aliased)) return aliased;
+  return names.find((name) => name.toLowerCase() === normalized) || '';
 }
 
 function wireUIActions({ preserveInitialHash = false } = {}) {
   // === TAB BUTTON HANDLERS ===
   const tabs = [
-    { btn: tabManualBtn, name: 'manual' },
-    { btn: tabGeneratorBtn, name: 'generator' },
-    { btn: tabHeroesBtn, name: 'heroes' },
-    { btn: tabResearchBtn, name: 'research' },
+    { btn: tabHeroesCombosBtn, name: 'heroesCombos' },
+    { btn: tabResearchTowersBtn, name: 'researchTowers' },
     { btn: tabMaterialsBtn, name: 'materials' },
     { btn: tabEdenMapBtn, name: 'edenMap' },
     { btn: tabStrifeBtn, name: 'strife' },
-    { btn: tabSpecializationBtn, name: 'specialization' },
     { btn: tabLoyaltyBtn, name: 'loyalty' },
+    // No pill of its own; it exists so the #bounty deep link resolves.
+    { btn: null, name: 'bounty' },
     { btn: tabYouTubeBtn, name: 'youtube' },
     { btn: tabArcadeBtn, name: 'arcade' },
-    { btn: tabAllStarBohBtn, name: 'allStarBoh' },
   ];
-  const validTabNames = new Set(tabs.map((tab) => tab.name));
+  // 'research' and 'specialization' are no longer tabs of their own, but they
+  // stay valid names: deep links, footer links, the command palette and the
+  // keyboard shortcuts all still use them, and each resolves to the hub with a
+  // sub-tab already selected.
+  const validTabNames = new Set([
+    ...tabs.map((tab) => tab.name),
+    ...HUB_TAB_ALIASES.keys(),
+    ...HEROES_HUB_ALIASES.keys(),
+  ]);
 
   tabs.forEach((tab) => {
     if (tab.btn) {
@@ -886,6 +999,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _heroesTabBooting = false;
   let _researchReady = false;
   let _researchBooting = false;
+  let _artifactReady = false;
+  let _artifactBooting = false;
   let _materialsReady = false;
   let _materialsBooting = false;
   let _strifeReady = false;
@@ -896,22 +1011,15 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _youtubeBooting = false;
   let _arcadeReady = false;
   let _arcadeBooting = false;
-  let _allStarBohReady = false;
-  let _allStarBohBooting = false;
 
   const tabPanels = [
-    manualSection,
-    generatorSection,
-    heroesSection,
-    researchSection,
+    heroesCombosSection,
+    researchTowersSection,
     materialsSection,
     edenMapSection,
     strifeSection,
-    specializationSection,
-    loyaltySection,
     youtubeSection,
     arcadeSection,
-    allStarBohSection,
   ];
 
   const _tabTemplatesLoaded = {};
@@ -938,11 +1046,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
 
   async function loadTabTemplate(tabName) {
     const section = document.getElementById(`${tabName}Section`);
-    if (!section || _tabTemplatesLoaded[tabName]) return;
+    if (!section || _tabTemplatesLoaded[tabName]) return true;
     const src = section.dataset.tabSrc;
     if (!src) {
       _tabTemplatesLoaded[tabName] = true;
-      return;
+      return true;
     }
     try {
       const res = await fetch(src);
@@ -951,9 +1059,11 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       section.innerHTML = html;
       _tabTemplatesLoaded[tabName] = true;
       updateTextContent();
+      return true;
     } catch (err) {
       console.warn(`[Tab] Failed to load template for ${tabName}:`, err);
       renderTabLoadError(section, tabName);
+      return false;
     }
   }
 
@@ -965,9 +1075,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   }
 
   function recoverFromStaleAssetGraph(reason) {
-    return (
-      window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false
-    );
+    return window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '', { autoReload: true }) || false;
   }
 
   function onTabActivated(tabName) {
@@ -979,7 +1087,36 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260720_025158')
+        root?.addEventListener(
+          'click',
+          (event) => {
+            // Only the pre-boot window needs this catcher; once the hub is
+            // booted its own handler activates the clicked subtab, and any
+            // intent stashed here would poison the next hashchange read.
+            if (root.dataset.edenHubBooted === '1') return;
+            const button = event.target.closest('[data-eden-subtab]');
+            const subtab = button?.dataset?.edenSubtab;
+            if (!subtab) return;
+            // The template is interactive before the lazy controller arrives.
+            // Keep that first click meaningful instead of dropping it.
+            root.querySelectorAll('[data-eden-subtab]').forEach((item) => {
+              const active = item.dataset.edenSubtab === subtab;
+              item.classList.toggle('active', active);
+              item.setAttribute('aria-selected', String(active));
+            });
+            root.querySelectorAll('[data-eden-subtab-panel]').forEach((panel) => {
+              panel.hidden = panel.dataset.edenSubtabPanel !== subtab;
+            });
+            document.body.dataset.edenHubSubtab = subtab;
+          },
+          { capture: true, once: true }
+        );
+        // The Eden Hub owns the visible sub-tabs, so bind its controls as
+        // soon as the template exists. Waiting for the map engine left a
+        // short window where a real click on Map was silently dropped.
+        import('./eden-hub.js?v=20260907_135059')
+          .then((hub) => hub.bootEdenHub())
+          .then(() => import('./eden-map.js?v=20260907_135059'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1009,7 +1146,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260720_025158')
+      import('./app-hero-atlas.js?v=20260907_135059')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1042,6 +1179,32 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
             const t = translations[currentLanguage] || translations.en;
             window.showToast(
               t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.',
+              'error',
+              4000
+            );
+          }
+        });
+    }
+    if (tabName === 'artifact' && !_artifactReady) {
+      if (_artifactBooting) return;
+      _artifactBooting = true;
+      import('./app-artifact.js?v=20260907_135059')
+        .then(async (mod) => {
+          await mod.initArtifactCalculator();
+          _artifactReady = true;
+        })
+        .catch((err) => {
+          _artifactBooting = false;
+          console.error('Artifact calculator failed to load', err);
+          if (isDynamicImportLoadFailure(err)) {
+            recoverFromStaleAssetGraph(err);
+            return;
+          }
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(
+              t.moduleLoadFailed?.replace('{name}', 'Artifact') ||
+                'Artifact Calculator failed to load.',
               'error',
               4000
             );
@@ -1081,7 +1244,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260720_025158')
+      import('./app-strife.js?v=20260907_135059')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1098,6 +1261,17 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
             );
           }
         });
+    }
+    // Opening the hub tab boots only the sub-tab you land on. The two hub tools
+    // still boot through their own names below, which is how the sub-tab
+    // handler reaches them.
+    if (tabName === 'heroesCombos') {
+      bootHeroesCombosHubOnce();
+      return;
+    }
+    if (tabName === 'researchTowers') {
+      bootResearchTowersHubOnce();
+      return;
     }
     if (tabName === 'specialization' && !_specializationReady) {
       if (_specializationBooting) return;
@@ -1123,7 +1297,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260720_025158')
+      import('./youtube-v14.js?v=20260907_135059')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1159,33 +1333,15 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
           _arcadeBooting = false;
         });
     }
-    if (tabName === 'allStarBoh' && !_allStarBohReady && !_allStarBohBooting) {
-      _allStarBohBooting = true;
-      loadTabTemplate('allStarBoh')
-        .then(() => import('./all-star-boh-bootstrap.js'))
-        .then((module) => module.bootAllStarBohTab())
-        .then(() => {
-          _allStarBohReady = true;
-        })
-        .catch((error) => {
-          console.error('All-Star BoH member hub failed to load', error);
-          if (isDynamicImportLoadFailure(error)) {
-            recoverFromStaleAssetGraph(error);
-            return;
-          }
-          renderTabLoadError(allStarBohSection, 'allStarBoh');
-        })
-        .finally(() => {
-          _allStarBohBooting = false;
-        });
-    }
-    if (tabName === 'loyalty') {
-      Promise.all([loadTabTemplate('loyalty'), loadLoyaltyModule()])
-        .then(([, module]) => module.initLoyaltyCalculator())
-        .catch((error) => {
-          console.error('Loyalty calculator failed to load', error);
-          renderTabLoadError(loyaltySection, 'loyalty');
-        });
+    // Legacy: Eden Loyalty and Royal Bounty now live inside the VTS Eden Hub.
+    // The shell has already stashed the sub-tab intent on document.body; these
+    // names just need to resolve to the hub tab, which owns loading the
+    // fragment. Without 'bounty' here a #bounty deep link fell through to the
+    // default tab entirely.
+    if (tabName === 'loyalty' || tabName === 'bounty') {
+      if (typeof switchTab === 'function') {
+        switchTab('edenMap', true, { preserveHash: false });
+      }
     }
   }
 
@@ -1199,8 +1355,188 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     window.scrollTo({ top, behavior: getHomeNavigationScrollBehavior() });
   }
 
-  function switchTab(tabName, force = false, options = {}) {
-    if (!force && tabName === _lastTab) return;
+  // --- Research & Towers Hub -------------------------------------------------
+  let _hubModule = null;
+  let _hubReady = false;
+  let _hubBooting = false;
+
+  // A sub-tab reveal boots that sub-tab's tool through its original tab name,
+  // so both keep the lazy-import, toast and retry behaviour they always had.
+  function onHubSubtabShown(subtab) {
+    document.body.classList.toggle('tab-specialization-active', subtab === 'towers');
+    if (subtab === 'artifact') onTabActivated('artifact');
+    else if (subtab === 'research') onTabActivated('research');
+    else onTabActivated('specialization');
+  }
+
+  function applyResearchTowersIntent() {
+    let intent = '';
+    try {
+      intent = document.body?.dataset?.researchTowersSubtab || '';
+      if (intent) delete document.body.dataset.researchTowersSubtab;
+    } catch {
+      /* dataset unavailable */
+    }
+    if (intent) _hubModule?.openResearchTowersSubtab(intent);
+  }
+
+  function researchTowersHashIntent() {
+    const hash = String(window.location.hash || '')
+      .replace(/^#/, '')
+      .split('?')[0]
+      .toLowerCase();
+    return HUB_TAB_ALIASES.get(hash) || '';
+  }
+
+  function bootResearchTowersHubOnce() {
+    if (_hubReady) {
+      applyResearchTowersIntent();
+      return;
+    }
+    if (_hubBooting) return;
+    _hubBooting = true;
+    import('./research-towers-hub.js')
+      .then((mod) => {
+        _hubModule = mod;
+        window.addEventListener('vts:research-towers-subtab', (event) => {
+          onHubSubtabShown(event?.detail?.subtab || 'towers');
+        });
+        // bootResearchTowersHub() consumes any deep-link intent itself and
+        // announces the sub-tab it settled on, which boots that tool.
+        mod.bootResearchTowersHub();
+        _hubReady = true;
+        // A hashchange can arrive while this dynamic import is resolving.
+        // Consume an intent written during that narrow window after the hub
+        // is marked ready, not only during the hub's initial boot.
+        applyResearchTowersIntent();
+        // shell-v14 and app.js both preserve old hashes. When they initialize
+        // in different orders, make the hash authoritative so an earlier hub
+        // intent cannot leave the requested child panel hidden.
+        const reconcileHashIntent = () => {
+          const hashIntent = researchTowersHashIntent();
+          if (hashIntent) mod.openResearchTowersSubtab(hashIntent);
+        };
+        reconcileHashIntent();
+        // shell-v14 completes its initial active-state synchronization on the
+        // next task. Reconcile once more so its delayed legacy-route intent
+        // cannot overwrite a just-booted child panel.
+        setTimeout(reconcileHashIntent, 0);
+      })
+      .catch((err) => {
+        _hubBooting = false;
+        console.error('Research & Towers Hub failed to load', err);
+        if (isDynamicImportLoadFailure(err)) {
+          recoverFromStaleAssetGraph(err);
+          return;
+        }
+        // The hub chrome is only a switcher: if it will not load, fall back to
+        // the towers planner rather than leaving the tab empty.
+        onTabActivated('specialization');
+      });
+  }
+
+  // --- Heroes & Combos Hub ---------------------------------------------------
+  let _heroesHubModule = null;
+  let _heroesHubReady = false;
+  let _heroesHubBooting = false;
+
+  function heroesCombosSubtab() {
+    return _heroesHubModule?.getActiveHeroesCombosSubtab?.() || 'generator';
+  }
+
+  // The global filter row and the combo footer belong to the Manual Builder and
+  // the Combo Generator, not to the hub as a whole.
+  function syncComboChrome(subtab) {
+    const isCombo = subtab === 'manual' || subtab === 'generator';
+    if (globalToggleRow) globalToggleRow.classList.toggle('hidden', !isCombo);
+    if (comboFooterBar) comboFooterBar.classList.toggle('hidden', subtab !== 'manual');
+    document.body.classList.toggle('tab-manual-active', subtab === 'manual');
+    document.body.classList.toggle('tab-combo-active', isCombo);
+  }
+
+  function onHeroesHubSubtabShown(subtab, atlasMode) {
+    syncComboChrome(subtab);
+    if (subtab === 'manual') onTabActivated('manual');
+    else if (subtab === 'generator') onTabActivated('generator');
+    else {
+      onTabActivated('heroes');
+      // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
+      // applying the mode again after it renders is harmless.
+      import('./app-hero-atlas.js?v=20260907_135059')
+        .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
+        .catch(() => {
+          /* the Atlas boot path reports its own failure */
+        });
+    }
+  }
+
+  function applyHeroesCombosIntent() {
+    let intent = '';
+    try {
+      intent = document.body?.dataset?.heroesCombosSubtab || '';
+      if (intent) delete document.body.dataset.heroesCombosSubtab;
+    } catch {
+      /* dataset unavailable */
+    }
+    if (intent) _heroesHubModule?.openHeroesCombosSubtab(intent);
+  }
+
+  function bootHeroesCombosHubOnce() {
+    if (_heroesHubReady) {
+      applyHeroesCombosIntent();
+      return;
+    }
+    if (_heroesHubBooting) return;
+    _heroesHubBooting = true;
+    import('./heroes-combos-hub.js')
+      .then((mod) => {
+        _heroesHubModule = mod;
+        window.addEventListener('vts:heroes-combos-subtab', (event) => {
+          onHeroesHubSubtabShown(
+            event?.detail?.subtab || 'generator',
+            event?.detail?.atlasMode || ''
+          );
+        });
+        mod.bootHeroesCombosHub();
+        _heroesHubReady = true;
+      })
+      .catch((err) => {
+        _heroesHubBooting = false;
+        console.error('Heroes & Combos Hub failed to load', err);
+        if (isDynamicImportLoadFailure(err)) {
+          recoverFromStaleAssetGraph(err);
+          return;
+        }
+        // The hub chrome is only a switcher; fall back to the Generator rather
+        // than leaving the tab empty.
+        syncComboChrome('generator');
+        onTabActivated('generator');
+      });
+  }
+
+  function switchTab(requestedTab, force = false, options = {}) {
+    // A hub alias ('research' / 'specialization') resolves to the hub tab, and
+    // the sub-tab it asked for is handed to the hub controller. Re-selecting an
+    // alias for the tab already open must still move the sub-tab, so the
+    // early-out below is skipped whenever a sub-tab was requested.
+    const towersSubtab = HUB_TAB_ALIASES.get(requestedTab) || '';
+    const heroesSubtab = HEROES_HUB_ALIASES.get(requestedTab) || '';
+    const hubSubtab = towersSubtab || heroesSubtab;
+    const tabName = towersSubtab ? 'researchTowers' : heroesSubtab ? 'heroesCombos' : requestedTab;
+    if (!force && !hubSubtab && tabName === _lastTab) return;
+    if (hubSubtab) {
+      try {
+        if (towersSubtab) document.body.dataset.researchTowersSubtab = towersSubtab;
+        else document.body.dataset.heroesCombosSubtab = heroesSubtab;
+      } catch {
+        /* dataset unavailable */
+      }
+    }
+    if (!force && hubSubtab && tabName === _lastTab) {
+      if (towersSubtab) applyResearchTowersIntent();
+      else applyHeroesCombosIntent();
+      return;
+    }
 
     const targetSection = document.getElementById(`${tabName}Section`);
 
@@ -1227,27 +1563,13 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     document.documentElement.removeAttribute('data-initial-tab-pending');
 
-    if (tabName === 'manual' || tabName === 'generator') {
-      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
-    } else if (globalToggleRow) {
-      globalToggleRow.classList.add('hidden');
-    }
-
-    if (tabName === 'manual' && comboFooterBar) {
-      comboFooterBar.classList.remove('hidden');
-    }
+    // The combo chrome belongs to two sub-tabs of the Heroes & Combos Hub, so
+    // it is driven by the sub-tab rather than the tab. syncComboChrome() runs
+    // again whenever the hub switches sub-tab.
+    syncComboChrome(tabName === 'heroesCombos' ? heroesCombosSubtab() : '');
 
     document.body.dataset.activeTab = tabName;
-    document.body.classList.toggle('tab-manual-active', tabName === 'manual');
-    document.body.classList.toggle(
-      'tab-combo-active',
-      tabName === 'manual' || tabName === 'generator'
-    );
     document.body.classList.toggle('tab-strife-active', tabName === 'strife');
-    document.body.classList.toggle(
-      'tab-specialization-active',
-      tabName === 'specialization'
-    );
 
     onTabActivated(tabName);
     _lastTab = tabName;
@@ -1255,8 +1577,24 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       requestAnimationFrame(() => scrollToTabStart(targetSection));
     }
     try {
-      if (!options.preserveHash && window.location.hash !== '#' + tabName) {
-        history.replaceState({ tab: tabName }, '', '#' + tabName);
+      // Keep the hash the caller asked for. Arriving on #specialization must
+      // stay shareable as #specialization even though the hub owns the tab.
+      const currentHash = window.location.hash.replace(/^#/, '');
+      const currentBase = currentHash.split('?')[0];
+      const canonical = canonicalTabHash(tabName);
+      const hash =
+        !hubSubtab &&
+        currentHash.includes('?') &&
+        currentBase.toLowerCase() === canonical.toLowerCase()
+          ? currentHash
+          : hubSubtab
+            ? requestedTab
+            : canonical;
+      if (!options.preserveHash && window.location.hash !== '#' + hash) {
+        // User-initiated tool changes must be Back/Forward navigable. Initial
+        // hash normalization and hashchange handling pass preserveHash instead.
+        const historyMethod = options.replaceHash ? 'replaceState' : 'pushState';
+        history[historyMethod]({ tab: hash }, '', '#' + hash);
       }
     } catch {}
   }
@@ -1390,11 +1728,15 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       );
     };
   }
-  const hashTab = resolveTabName(window.location.hash?.replace('#', '').split('?')[0], validTabNames);
+  const hashTab = resolveTabName(
+    window.location.hash?.replace('#', '').split('?')[0],
+    validTabNames
+  );
   const startTab = hashTab || 'generator';
   switchTab(startTab, true, {
     scrollToSection: startTab !== 'generator',
     preserveHash: preserveInitialHash,
+    replaceHash: !preserveInitialHash,
   });
 }
 
@@ -1501,6 +1843,16 @@ function updateTextContent() {
   document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
     const key = el.getAttribute('data-i18n-aria');
     if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
+  });
+
+  document.querySelectorAll('[data-i18n-alt]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-alt');
+    if (t[key]) el.setAttribute('alt', t[key].replace('{version}', APP_VERSION));
+  });
+
+  document.querySelectorAll('[data-i18n-badge]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-badge');
+    if (t[key]) el.setAttribute('data-subtool-badge', t[key].replace('{version}', APP_VERSION));
   });
 
   updateAllSeasonCatchupHints();
@@ -1675,21 +2027,31 @@ async function startApp() {
       }
     });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
-    window.addEventListener('hashchange', () => {
-      const tab = resolveTabName(
-        window.location.hash?.replace('#', '').split('?')[0],
-        window.vtsTabNames
-      );
+    const restoreHashRoute = () => {
+      const rawHash = window.location.hash?.replace('#', '').split('?')[0] || '';
+      const tab = resolveTabName(rawHash, window.vtsTabNames);
       const targetSection = tab ? document.getElementById(`${tab}Section`) : null;
-      const needsCanonicalHash = tab && window.location.hash !== `#${tab}`;
+      const needsCanonicalHash =
+        tab && rawHash !== tab && rawHash.toLowerCase() === tab.toLowerCase();
       if (
         tab &&
         window.vtsTabNames?.has?.(tab) &&
-        (targetSection?.classList.contains('hidden') || needsCanonicalHash)
+        (targetSection?.hidden ||
+          targetSection?.classList.contains('hidden') ||
+          targetSection?.closest('[hidden]') ||
+          targetSection?.closest('.tab-panel')?.classList.contains('hidden') ||
+          needsCanonicalHash)
       ) {
-        window.vtsSwitchTab?.(tab, true);
+        window.vtsSwitchTab?.(tab, true, { preserveHash: !needsCanonicalHash, replaceHash: true });
       }
-    });
+    };
+    window.addEventListener('hashchange', restoreHashRoute);
+    window.addEventListener('popstate', restoreHashRoute);
+    // shell-v14 can preserve a legacy hash while its own initial sync is still
+    // settling. Replaying the route after all app handlers are registered
+    // gives a hub child the same deterministic result as Back/Forward.
+    restoreHashRoute();
+    setTimeout(restoreHashRoute, 0);
   } finally {
     await notifyAppReady();
     window.VTS_ASSET_RECOVERY?.markBootComplete?.();

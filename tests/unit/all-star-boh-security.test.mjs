@@ -492,15 +492,16 @@ test('five invalid PINs lock both UID and IP digests and a correct PIN cannot by
   assert.doesNotMatch(serializedAttempts, /wrong-pin|firebase-user-1|203\.0\.113\.25/);
 });
 
-test('closed seasons and missing server secrets fail closed', async () => {
+test('closed registration preserves member grants while missing server secrets fail closed', async () => {
   const closedDb = createFirestoreFake({
     activeSeason: 'season-2026',
     open: false,
     grantDurationMinutes: 720,
   });
   const closed = await invoke(createHandlerFixture({ db: closedDb }));
-  assert.equal(closed.statusCode, 409);
-  assert.deepEqual(closed.body, { error: 'signups_closed' });
+  assert.equal(closed.statusCode, 200);
+  assert.equal(closed.body.season, 'season-2026');
+  assert.ok(closedDb.read(getAllStarBohGrantPath('firebase-user-1')));
 
   const missingSecret = await invoke(createHandlerFixture({ memberPin: '' }));
   assert.equal(missingSecret.statusCode, 503);
@@ -798,11 +799,31 @@ test('Firestore private and published paths enforce admin/member boundaries with
     'published player validator'
   );
   assert.match(playerValidator, /data\.keys\(\)\.hasOnly/);
-  assert.match(playerValidator, /data\.playerId == uid/);
+  assert.match(playerValidator, /validAllStarBohIdentifier\(data\.playerId, false\)/);
+  assert.doesNotMatch(playerValidator, /data\.playerId == uid/);
   assert.match(playerValidator, /data\.uid == uid/);
   assert.match(playerValidator, /data\.seasonId == season/);
   assert.match(playerValidator, /validAllStarBohPublishedPlan/);
-  assert.match(playerValidator, /validAllStarBohPublishedTimeline/);
+  assert.match(
+    playerValidator,
+    /validAllStarBohPublishedTimeline\(\s*data\.timeline,\s*data\.playerId,/
+  );
+  const timelineValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedTimeline\(values, uid, teamId, baseSeatNumber\) \{[\s\S]*?\n {4}\}/,
+    'published player timeline validator'
+  );
+  assert.match(timelineValidator, /values\.size\(\) == 10/);
+  assert.match(
+    timelineValidator,
+    /validAllStarBohPublishedTimelineItem\(values, 9, uid, teamId, baseSeatNumber\)/
+  );
+  const publishedPlanValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedPlan\(plan\) \{[\s\S]*?\n {4}\}/,
+    'published player plan validator'
+  );
+  assert.match(publishedPlanValidator, /plan\.phases\.size\(\) == 5/);
   const playerCreateValidator = rulesMatch(
     rules,
     /function validAllStarBohPublishedPlayerCreate\(season, uid\) \{[\s\S]*?\n {4}\}/,
@@ -846,9 +867,13 @@ test('Firestore private and published paths enforce admin/member boundaries with
     'active publication read gate'
   );
   assert.match(publicationReadGate, /data\.announcementPublished == true/);
-  assert.match(publicationReadGate, /data\.teamCount == 6/);
+  assert.match(publicationReadGate, /data\.teamCount >= 2/);
+  assert.match(publicationReadGate, /data\.teamCount <= 6/);
   assert.match(publicationReadGate, /data\.rosterSize == 12/);
-  assert.match(publicationReadGate, /data\.teamIds\.size\(\) == 6/);
+  assert.match(publicationReadGate, /data\.teamIds\.size\(\) == data\.teamCount/);
+  assert.match(publicationReadGate, /data\.phases\.size\(\) == 5/);
+  assert.doesNotMatch(publicationReadGate, /data\.teamCount == 6/);
+  assert.doesNotMatch(publicationReadGate, /data\.teamIds\.size\(\) == 6/);
   assert.match(
     publicationReadGate,
     /data\.teamIds\.toSet\(\)\.size\(\) == data\.teamIds\.size\(\)/
@@ -1049,9 +1074,12 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     statsValidator,
     /!\('researchProgressPct' in stats\)[\s\S]*validAllStarBohResearchProgress\(stats\.researchProgressPct\)/
   );
+  // The second size cap lives in validAllStarBohSubmissionData, not in the
+  // stats validator — grep the whole file so this cap can never drift alone.
+  assert.match(rules, /stats\.usableHeroNames\.size\(\) <= 89/);
 
   const canonicalHeroes = allHeroesData.map(({ name }) => name);
-  assert.equal(canonicalHeroes.length, 78);
+  assert.equal(canonicalHeroes.length, 89);
   assert.equal(new Set(canonicalHeroes).size, canonicalHeroes.length);
   const rulesHeroes = rulesSingleQuotedList(
     rules,
@@ -1065,10 +1093,16 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     'usable hero validator'
   );
   assert.match(heroValidator, /values is list/);
-  assert.match(heroValidator, /values\.size\(\) <= 78/);
+  assert.match(heroValidator, /values\.size\(\) <= 89/);
   assert.match(heroValidator, /values\.toSet\(\)\.size\(\) == values\.size\(\)/);
 
-  const canonicalResearchIds = techDatabase.map(({ id }) => id);
+  // BoH research-progress tracking is scoped to the BoH-tracked trees: the X12
+  // trees added by the tech-db import are excluded from this canonical list on
+  // purpose, so the firestore.rules research allowlist stays frozen to what the
+  // BoH signup path actually validates.
+  const canonicalResearchIds = techDatabase
+    .filter((tree) => tree.season !== 'X12')
+    .map(({ id }) => id);
   assert.equal(canonicalResearchIds.length, 29);
   assert.equal(new Set(canonicalResearchIds).size, canonicalResearchIds.length);
   const rulesResearchIds = rulesSingleQuotedList(
@@ -1250,4 +1284,112 @@ test('Firestore keeps Epic Showdown preferences independent and owner-scoped', (
     'submission schema remains separate from Epic preferences'
   );
   assert.doesNotMatch(signupValidator, /lanePreferences|timePreferences|epicPreferences/);
+});
+
+test('Firestore rules cover All-Star schedule, standby, and co-leader publication contracts', () => {
+  const rules = readRepositoryFile('firestore.rules');
+  const scheduleBlock = rulesMatch(
+    rules,
+    /match \/schedules\/current \{[\s\S]*?\n {6}\}/,
+    'event schedule current document'
+  );
+  assert.match(scheduleBlock, /allow get: if isAdmin\(\) \|\| hasActiveAllStarBohGrant\(season\)/);
+  assert.match(scheduleBlock, /allow list: if false/);
+  assert.match(scheduleBlock, /validAllStarBohScheduleCreate\(season\)/);
+  assert.match(scheduleBlock, /validAllStarBohScheduleUpdate\(season\)/);
+  assert.match(scheduleBlock, /allow delete: if false/);
+
+  const scheduleValidator = rulesMatch(
+    rules,
+    /function validAllStarBohScheduleData\(data, season\) \{[\s\S]*?\n {4}\}/,
+    'event schedule validator'
+  );
+  for (const key of [
+    'schemaVersion',
+    'seasonId',
+    'status',
+    'eventStartsAt',
+    'eventEndsAt',
+    'milestones',
+    'teamGameTimes',
+    'revision',
+    'createdAt',
+    'updatedAt',
+    'updatedBy',
+  ]) {
+    assert.match(scheduleValidator, new RegExp(`'${key}'`));
+  }
+  assert.match(scheduleValidator, /data\.status in \['hidden', 'published'\]/);
+  assert.match(scheduleValidator, /data\.eventStartsAt < data\.eventEndsAt/);
+  assert.match(scheduleValidator, /data\.milestones\.size\(\) == 0/);
+  assert.match(scheduleValidator, /data\.teamGameTimes\.size\(\) == 0/);
+  assert.match(scheduleValidator, /validAllStarBohScheduleMilestones/);
+  assert.match(scheduleValidator, /validAllStarBohScheduleTeamTimes/);
+  assert.doesNotMatch(scheduleBlock, /published\/current/);
+
+  const createValidator = rulesMatch(
+    rules,
+    /function validAllStarBohScheduleCreate\(season\) \{[\s\S]*?\n {4}\}/,
+    'event schedule create validator'
+  );
+  assert.match(createValidator, /revision == 1/);
+  assert.match(createValidator, /createdAt == request\.time/);
+  assert.match(createValidator, /updatedAt == request\.time/);
+  const updateValidator = rulesMatch(
+    rules,
+    /function validAllStarBohScheduleUpdate\(season\) \{[\s\S]*?\n {4}\}/,
+    'event schedule update validator'
+  );
+  assert.match(updateValidator, /revision == resource\.data\.revision \+ 1/);
+  assert.match(updateValidator, /createdAt == resource\.data\.createdAt/);
+
+  const instructionValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedInstruction\(instruction\) \{[\s\S]*?\n {4}\}/,
+    'published instruction validator'
+  );
+  const instructionHasOnly = rulesMatch(
+    instructionValidator,
+    /keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/,
+    'published instruction hasOnly'
+  );
+  const instructionHasAll = rulesMatch(
+    instructionValidator,
+    /keys\(\)\.hasAll\(\[[\s\S]*?\]\)/,
+    'published instruction hasAll'
+  );
+  assert.match(instructionHasOnly, /'standby'/);
+  assert.match(instructionHasOnly, /'gatherCrystals'/);
+  assert.doesNotMatch(instructionHasAll, /'standby'/);
+  assert.doesNotMatch(instructionHasAll, /'gatherCrystals'/);
+  assert.match(
+    instructionValidator,
+    /!\('standby' in instruction\) \|\| instruction\.standby is bool/
+  );
+  assert.match(
+    instructionValidator,
+    /!\('gatherCrystals' in instruction\) \|\| instruction\.gatherCrystals is bool/
+  );
+
+  const teamValidator = rulesMatch(
+    rules,
+    /function validAllStarBohPublishedTeamData\(data, season, teamId\) \{[\s\S]*?\n {4}\}/,
+    'published team validator'
+  );
+  assert.match(teamValidator, /'coLeaderIds'/);
+  const teamHasAll = rulesMatch(
+    teamValidator,
+    /keys\(\)\.hasAll\(\[[\s\S]*?\]\)/,
+    'published team hasAll'
+  );
+  assert.doesNotMatch(teamHasAll, /'coLeaderIds'/);
+  assert.match(teamValidator, /!\('coLeaderIds' in data\)/);
+  assert.match(teamValidator, /data\.coLeaderIds\.size\(\) <= 2/);
+  assert.match(
+    teamValidator,
+    /data\.coLeaderIds\.toSet\(\)\.size\(\) == data\.coLeaderIds\.size\(\)/
+  );
+  assert.match(teamValidator, /validAllStarBohShortIdentifierList\(data\.coLeaderIds\)/);
+  assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[0\], false\)/);
+  assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[1\], false\)/);
 });

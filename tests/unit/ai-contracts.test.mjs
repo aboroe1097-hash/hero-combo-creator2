@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   AI_CONTRACT_VERSION,
+  AI_SUPPORTED_LOCALES,
   AI_LIMITS,
   AI_SSE_EVENT_TYPES,
   AI_TOOL_GROUPS,
@@ -22,6 +23,7 @@ import {
   readSelectedHeroState,
 } from '../../js/ai/saved-state.js';
 import { hasRawSavedState } from '../../js/ai/consent.js';
+import { SUPPORTED_LOCALES as WORKER_SUPPORTED_LOCALES } from '../../workers/ai/constants.js';
 import { toVisibleWireHistory } from '../../js/ai/session-history.js';
 
 class MemoryStorage {
@@ -95,6 +97,20 @@ test('shared contract freezes the normalized event, history, and capability surf
   assert.equal(AI_LIMITS.maxHistoryPairs, 8);
   assert.equal(AI_LIMITS.requestTimeoutMs, 180_000);
   assert.equal(AI_LIMITS.maxToolResultBytes, 8 * 1024);
+  assert.deepEqual(AI_SUPPORTED_LOCALES, [
+    'en',
+    'es',
+    'pt',
+    'de',
+    'fr',
+    'tr',
+    'ru',
+    'id',
+    'zh',
+    'ar',
+    'kr',
+    'it',
+  ]);
   assert.deepEqual(normalizeAllowedToolGroups(['static', 'static', 'personal:raw_storage']), [
     'static',
   ]);
@@ -217,4 +233,10 @@ test('explicit skin ownership is tri-state and never inferred from catalog avail
   assert.equal(getExplicitSkinOwnership(state, 'King Arthur'), 'not_owned');
   assert.equal(getExplicitSkinOwnership(state, 'Cleopatra VII'), 'unknown');
   assert.equal(getExplicitSkinOwnership(state, 'Bad'), 'unknown');
+});
+
+test('browser and Worker AI locale contracts stay aligned for Italian and Korean', () => {
+  assert.deepEqual([...AI_SUPPORTED_LOCALES].sort(), [...WORKER_SUPPORTED_LOCALES].sort());
+  assert.ok(AI_SUPPORTED_LOCALES.includes('it'));
+  assert.ok(AI_SUPPORTED_LOCALES.includes('kr'));
 });

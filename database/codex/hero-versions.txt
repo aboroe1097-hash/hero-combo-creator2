@@ -1,0 +1,3 @@
+# source: l96.app /heroes/alfred profile (last update 2023-09-17) | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: S2 | verificationStatus: historical
+heroVersionId|heroName|effectiveFrom|effectiveTo|previousVersionId|changeSummary|sourceNote|p
+hv-alfred-1|Alfred|S2||||L96 profile snapshot (last update 2023-09-17): access paid; development exclusive; placement front; skill priority 6-8-7|l96.app /heroes/alfred|

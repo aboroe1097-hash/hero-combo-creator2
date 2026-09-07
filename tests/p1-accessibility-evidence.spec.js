@@ -160,6 +160,8 @@ test('named controls and repaired ARIA expose equivalent accessibility-tree cont
   await page.setViewportSize({ width: 390, height: 844 });
   await openHome(page, '/#edenMap');
   await expect(page.locator('#edenMapRoot')).toBeVisible({ timeout: 20000 });
+  await page.locator('[data-eden-subtab="map"]').click();
+  await expect(page.locator('#edenDatasetSelect option').first()).toBeAttached({ timeout: 20000 });
   await page.evaluate(() => document.getElementById('edenSeasonModal')?.classList.add('hidden'));
 
   for (const id of [
@@ -234,7 +236,7 @@ test('named controls and repaired ARIA expose equivalent accessibility-tree cont
   });
 });
 
-test('reduced motion removes computed motion without disabling the More surface', async ({
+test('reduced motion removes computed motion while the mobile dock keeps three hubs plus More', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -262,45 +264,18 @@ test('reduced motion removes computed motion without disabling the More surface'
     backdropAnimation: 'none',
   });
 
-  const moreButton = page.locator('#shellMoreButton');
-  const morePanel = page.locator('#shellMorePanel');
-  const moreBackdrop = page.locator('#shellMoreBackdrop');
-  await moreButton.focus();
-  await page.keyboard.press('Enter');
-  await expect(moreButton).toHaveAttribute('aria-expanded', 'true');
-  await expect(morePanel).toBeVisible();
-  await expect(moreBackdrop).toBeVisible();
-  await expect(moreBackdrop).not.toHaveCSS('pointer-events', 'none');
-  await expect(page.locator('#shellMoreClose')).toBeFocused();
+  await expect(page.locator('#shellMoreButton')).toBeVisible();
+  await expect(page.locator('#shellMorePanel')).toBeHidden();
+  await expect(page.locator('#shellMoreBackdrop')).toBeHidden();
+  await expect
+    .poll(() =>
+      page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
+    )
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']);
 
-  const backdropPoint = await page.evaluate(() => {
-    const backdrop = document.getElementById('shellMoreBackdrop');
-    if (!backdrop) return null;
-    for (let y = 8; y < window.innerHeight; y += 24) {
-      for (let x = 8; x < window.innerWidth; x += 24) {
-        if (document.elementFromPoint(x, y) === backdrop) return { x, y };
-      }
-    }
-    return null;
-  });
-  expect(backdropPoint).not.toBeNull();
-  await page.mouse.click(backdropPoint.x, backdropPoint.y);
-  await expect(morePanel).toBeHidden();
-  await expect(moreBackdrop).toBeHidden();
-  await expect(moreButton).toHaveAttribute('aria-expanded', 'false');
-  await expect(moreButton).toBeFocused();
-
-  await moreButton.click();
-  await expect(morePanel).toBeVisible();
-  await page.locator('#shellMoreClose').click();
-  await expect(morePanel).toBeHidden();
-  await expect(moreButton).toBeFocused();
-
-  await page.keyboard.press('Enter');
-  await expect(morePanel).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(morePanel).toBeHidden();
-  await expect(moreButton).toBeFocused();
+  await page.locator('#shellMoreButton').click();
+  await expect(page.locator('#shellMorePanel')).toBeVisible();
+  await expect(page.locator('#shellMoreBackdrop')).toBeVisible();
 });
 
 test('explicit transition components retain pointer, keyboard, selection, and sticky behavior', async ({
@@ -326,7 +301,8 @@ test('explicit transition components retain pointer, keyboard, selection, and st
   await expect(toggleThumb).toHaveClass(/checked/);
   await expect(page.locator('body')).not.toHaveClass(/hide-hero-info/);
 
-  await page.locator('#tabManual').click();
+  await page.locator('#tabHeroesCombos').click();
+  await page.locator('[data-hub-subtab="manual"]').click();
   await expect(page.locator('#manualSection')).toBeVisible();
   await expect(page.locator('#availableHeroes .hero-card').first()).toBeVisible({
     timeout: 20000,

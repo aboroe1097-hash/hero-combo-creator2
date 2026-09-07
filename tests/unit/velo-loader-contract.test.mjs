@@ -19,7 +19,7 @@ test('Velo walks visible shared loading rails without mounting hidden-tab artwor
   assert.match(loaderSource, /\.tab-panel\.hidden, \.tab-panel\[hidden\]/);
   assert.match(loaderSource, /assets\/velo\/velo-body\.webp/);
   assert.match(loaderSource, /assets\/velo\/velo-helmet\.webp/);
-  assert.match(loaderSource, /const runner = makeVeloRunner\(\)/);
+  assert.doesNotMatch(loaderSource, /makeVeloRunner/);
   assert.match(loaderSource, /admin: presentation\(\{[\s\S]*identity: veloVisual\(\)/);
   assert.match(loaderSource, /'eden-x1': presentation\(\{[\s\S]*minimumVisibleMs: 900/);
   const adminPresentation = loaderSource.match(/admin: presentation\(\{[\s\S]*?\}\),/u)?.[0] || '';
@@ -30,15 +30,7 @@ test('Velo walks visible shared loading rails without mounting hidden-tab artwor
   assert.match(loaderCss, /\.vts-loader__identity\.vts-loader__visual--velo/);
   assert.doesNotMatch(loaderSource, /velo-paw/);
   assert.match(loaderCss, /\.vts-loader__trail-fill,[\s\S]*display: block/);
-  assert.match(
-    loaderCss,
-    /inset-inline-start: clamp\(1rem, calc\(var\(--vts-loader-progress\) \* 1%\), calc\(100% - 1rem\)\)/
-  );
-  assert.match(motionCss, /@keyframes vts-loader-velo-patrol/);
-  assert.match(motionCss, /@keyframes vts-loader-velo-step/);
-  assert.match(motionCss, /@keyframes vts-loader-velo-helmet/);
-  assert.match(motionCss, /@keyframes vts-loader-velo-arrive/);
-  assert.match(motionCss, /@keyframes vts-loader-velo-helmet-arrive/);
+  assert.doesNotMatch(loaderCss, /\.vts-loader__runner/);
   assert.match(
     loaderCss,
     /prefers-reduced-motion: reduce[\s\S]*\.vts-loader__velo-body,[\s\S]*\.vts-loader__velo-helmet/

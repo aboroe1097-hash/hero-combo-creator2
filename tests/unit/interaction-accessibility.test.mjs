@@ -31,22 +31,19 @@ test('admin sign-in and high-value forms expose field and status semantics', () 
   const template = readSource('tabs/admin.html');
   const dashboard = readSource('js/ocr-dashboard.js');
 
-  assert.match(template, /<form id="dashLoginForm">/);
-  assert.match(template, /for="dashLoginUser"[^>]*data-i18n="adminLoginUser"/);
+  // No admin password form exists: access follows the site account, so the gate
+  // is a link into the normal sign-in flow plus an explanation of why a
+  // signed-in account without the claim still cannot get in.
+  assert.doesNotMatch(template, /dashLoginForm|dashLoginUser|dashLoginPass/);
+  assert.match(template, /class="dash-login-hint" data-i18n="adminAccessAccountHint"/);
   assert.match(
     template,
-    /id="dashLoginUser"[\s\S]*?name="username"[\s\S]*?autocomplete="username"[\s\S]*?required/
-  );
-  assert.match(template, /for="dashLoginPass"[^>]*data-i18n="adminLoginPass"/);
-  assert.match(
-    template,
-    /id="dashLoginPass"[\s\S]*?name="password"[\s\S]*?autocomplete="current-password"[\s\S]*?required/
+    /id="dashAccountSignInBtn"[\s\S]*?href="profile\.html\?return=\/admin\.html"/
   );
   assert.match(template, /id="dashLoginErr"[^>]*role="alert"[^>]*aria-live="assertive"/);
   assert.match(template, /id="dashConductStatus"[^>]*role="status"[^>]*aria-live="polite"/);
   assert.match(template, /id="dashContributionStatus"[^>]*role="status"[^>]*aria-live="polite"/);
-  assert.match(dashboard, /usernameInput\?\.reportValidity\?\.\(\)/);
-  assert.match(dashboard, /passwordInput\?\.reportValidity\?\.\(\)/);
+  assert.match(dashboard, /dashT\('adminAccessNoPrivilege'\)/);
   assert.match(dashboard, /manualPlayerInput\?\.setAttribute\('aria-invalid', 'true'\)/);
 });
 

@@ -94,5 +94,10 @@ export default {
     guideSteps: 'Etapas da seção',
     allSectors: 'Mapa completo',
     genericSector: 'Setor {code}',
+    subTabMap: 'Mapa Eden',
+    subTabLoyalty: 'Lealdade Eden',
+    subTabBounty: 'Recompensa Real Eden X2',
+    subTabSeason: 'Temporada atual',
+    subTabPrevious: 'Temporadas anteriores',
   },
 };

@@ -5,19 +5,57 @@ const navigationPlacements = new Map([
     640,
     {
       tabStrife: 'more',
-      tabLoyalty: 'more',
-      tabResearch: 'primary',
-      tabYouTube: 'primary',
-      tabAllStarBoh: 'primary',
-      tabEdenX1: 'primary',
-      tabGenerator: 'more',
+      tabEdenMap: 'primary',
+      tabHeroesCombos: 'primary',
+      tabResearchTowers: 'primary',
+      tabMaterials: 'more',
+      tabOcrDashboard: 'more',
+      tabYouTube: 'more',
       tabArcade: 'more',
     },
   ],
-  [641, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
-  [1439, { tabStrife: 'more', tabLoyalty: 'more', tabYouTube: 'more' }],
-  [1440, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary' }],
-  [1760, { tabStrife: 'primary', tabLoyalty: 'primary', tabYouTube: 'primary' }],
+  // Eden Map is the third hub, so it is primary from the plain desktop rail up.
+  // VTS Admin holds the fifth desktop slot at every width.
+  [
+    641,
+    {
+      tabStrife: 'more',
+      tabEdenMap: 'primary',
+      tabYouTube: 'more',
+      tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+    },
+  ],
+  [
+    1439,
+    {
+      tabStrife: 'more',
+      tabEdenMap: 'primary',
+      tabYouTube: 'more',
+      tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+    },
+  ],
+  [
+    1440,
+    {
+      tabStrife: 'primary',
+      tabEdenMap: 'primary',
+      tabYouTube: 'primary',
+      tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+    },
+  ],
+  [
+    1760,
+    {
+      tabStrife: 'primary',
+      tabEdenMap: 'primary',
+      tabYouTube: 'primary',
+      tabMaterials: 'primary',
+      tabOcrDashboard: 'primary',
+    },
+  ],
 ]);
 
 async function openHome(page, path = '/#generator') {
@@ -67,7 +105,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     .poll(() =>
       page.locator('#tabNavScroll .tab-pill').evaluateAll((tabs) => tabs.map((tab) => tab.id))
     )
-    .toEqual(['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1']);
+    .toEqual(['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap']);
 
   for (const [width, expectedPlacements] of navigationPlacements) {
     await page.setViewportSize({ width, height: 900 });
@@ -92,7 +130,7 @@ test('Home navigation keeps its responsive placement and More keyboard focus con
     if (width === 1440) await expectOneUsefulHomeHeading(page);
   }
 
-  await page.setViewportSize({ width: 640, height: 900 });
+  await page.setViewportSize({ width: 641, height: 900 });
   const moreButton = page.locator('#shellMoreButton');
   await moreButton.focus();
   await page.keyboard.press('Enter');
@@ -112,7 +150,7 @@ test('YouTube activation survives responsive reparenting and reaches its declare
   await openHome(page);
 
   const youtubeTab = page.locator('#tabYouTube');
-  await expect.poll(() => navigationPlacement(page, 'tabYouTube')).toBe('primary');
+  await expect.poll(() => navigationPlacement(page, 'tabYouTube')).toBe('more');
   await expect(youtubeTab).toHaveAttribute('aria-controls', 'youtubeSection');
 
   await page.setViewportSize({ width: 641, height: 900 });
@@ -128,14 +166,18 @@ test('YouTube activation survives responsive reparenting and reaches its declare
   await expect(page).toHaveURL(/#youtube$/);
 });
 
-test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({ page }) => {
+test('shared tab hashes resolve case-insensitively and restore canonical casing', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
-  for (const hash of ['allstarboh', 'AllStarBoh', 'allStarBoh']) {
+  const routeCases = ['strife', 'STRIFE', 'Strife', 'sTrIfE'];
+  for (const hash of routeCases) {
     await openHome(page, `/#${hash}`);
-    await expect(page.locator('#allStarBohSection')).toBeVisible();
-    await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'allStarBoh');
-    await expect(page).toHaveURL(/#allStarBoh$/);
+    await expect(page.locator('#strifeSection')).toBeVisible();
+    await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'strife');
+    await expect(page.locator('#skipCurrentTool')).toHaveAttribute('href', '#strifeSection');
+    await expect(page).toHaveURL(/#strife$/);
   }
 });
 
@@ -152,36 +194,67 @@ test('skip link follows active, lazy, hash, and Back navigation while preserving
   const skipLink = page.locator('#skipCurrentTool');
   await expect.poll(() => activeElementId(page)).toBe('skipCurrentTool');
   await expect(skipLink).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#generatorSection');
+  await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
   await page.keyboard.press('Enter');
-  await expect.poll(() => activeElementId(page)).toBe('generatorSection');
+  await expect.poll(() => activeElementId(page)).toBe('heroesCombosSection');
 
-  const moreButton = page.locator('#shellMoreButton');
-  await moreButton.focus();
-  await page.keyboard.press('Enter');
-  await expect.poll(() => activeElementId(page)).toBe('shellMoreClose');
-  await page.locator('#tabLoyalty').click();
-  await expect(page.locator('#loyaltySection')).toBeVisible();
-  await expect(page.locator('#loyaltySection .loyalty-root')).toBeVisible({ timeout: 20000 });
-  await expect(skipLink).toHaveAttribute('href', '#loyaltySection');
+  // Eden Loyalty lives inside the VTS Eden Hub as a sub-tab.
+  await page.locator('#tabEdenMap').click();
+  await expect(page.locator('#edenMapSection')).toBeVisible();
+  await page.locator('[data-eden-subtab="loyalty"]').click();
+  await expect(page.locator('[data-eden-subtab-panel="loyalty"] .loyalty-root')).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(skipLink).toHaveAttribute('href', '#edenMapSection');
 
   await skipLink.focus();
   await page.keyboard.press('Enter');
-  await expect.poll(() => activeElementId(page)).toBe('loyaltySection');
+  await expect.poll(() => activeElementId(page)).toBe('edenMapSection');
 
   await page.goBack();
-  await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#generatorSection');
+  await expect(page.locator('#heroesCombosSection')).toBeVisible();
+  await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
 
   await page.evaluate(() => {
     window.location.hash = '#research';
   });
+  // #research still deep-links to Research, now as a hub sub-tab, so the skip
+  // link targets the hub panel that contains it.
   await expect(page.locator('#researchSection')).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#researchSection');
+  await expect(skipLink).toHaveAttribute('href', '#researchTowersSection');
 
   await page.goBack();
-  await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(skipLink).toHaveAttribute('href', '#generatorSection');
+  await expect(page.locator('#heroesCombosSection')).toBeVisible();
+  await expect(skipLink).toHaveAttribute('href', '#heroesCombosSection');
+});
+
+test('playbook Week 1 loyalty tool link switches the hub to the loyalty subtab', async ({
+  page,
+}) => {
+  await openHome(page);
+
+  await page.locator('#tabEdenMap').click();
+  await expect(page.locator('#edenMapSection')).toBeVisible();
+  await page.locator('[data-eden-subtab="playbook"]').click();
+  await expect(page.locator('[data-playbook-flow="timeline"]')).toBeVisible({ timeout: 20000 });
+  await page.locator('[data-week="week-1"]').click();
+  const toolLink = page.locator('.thunder-tool-link');
+  await expect(toolLink).toBeVisible();
+  await expect(toolLink).toHaveAttribute('href', '#edenHub?subtab=loyalty');
+
+  // A real click through the hub UI used to leave a stale subtab intent on
+  // the body dataset, so the hash change below silently re-opened the
+  // playbook instead of the loyalty panel.
+  await toolLink.click();
+  await expect(page).toHaveURL(/#edenHub\?subtab=loyalty$/);
+  await expect(page.locator('[data-eden-subtab="loyalty"]')).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+  await expect(page.locator('[data-eden-subtab-panel="loyalty"] .loyalty-root')).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(page.locator('[data-eden-subtab-panel="playbook"]')).toBeHidden();
 });
 
 test('rendered Home tab scroll paths use auto under reduced motion', async ({ page }) => {
@@ -191,7 +264,7 @@ test('rendered Home tab scroll paths use auto under reduced motion', async ({ pa
 
   await page.evaluate(() => {
     const scrollContainer = document.getElementById('tabNavScroll');
-    const researchTab = document.getElementById('tabResearch');
+    const researchTab = document.getElementById('tabResearchTowers');
     if (!scrollContainer || !researchTab) throw new Error('Home navigation did not initialize');
 
     window.__p1HomeScrollCalls = { page: [], tabs: [] };
@@ -221,6 +294,7 @@ test('rendered Home tab scroll paths use auto under reduced motion', async ({ pa
     });
     researchTab.click();
   });
+  await page.locator('[data-hub-subtab="research"]').click();
 
   await expect(page.locator('#researchSection')).toBeVisible();
   await expect

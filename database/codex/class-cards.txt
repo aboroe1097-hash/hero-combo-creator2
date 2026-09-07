@@ -1,0 +1,4 @@
+# source: l96.app class cheatsheets (Raider/Trader PDFs, captured 2026-09-02) | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: S0-X17 | verificationStatus: historical
+cardId|className|benefitType|benefitDesc|sourceRef|p
+class-raider|Raider|reset-thresholds|Reset thresholds: 14, 29, 42, 51, 65, 80, 89, 102, 119, 121, 138; Questing Adventurer grants 2500-5000 exp; Show of Power grants 15-30% exp.|l96.app Raider leveling cheatsheet PDF|note=full curated skill grid not mirrored (facts-not-compilations rule); reset thresholds are facts
+class-trader|Trader|reset-thresholds|Reset thresholds: 17, 25, 32, 43, 52, 56, 67, 76, 89, 100, 103, 111; Questing Adventurer grants 2500-5000 exp; Ariscan Craftsmanship income +5000/h gold.|l96.app Trader leveling cheatsheet PDF|note=full curated skill grid not mirrored (facts-not-compilations rule); reset thresholds are facts

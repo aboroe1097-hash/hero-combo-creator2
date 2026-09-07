@@ -62,9 +62,7 @@ export function getWhatsNewAdapter(rawArguments) {
   const args = requirePlainArguments(rawArguments);
   rejectUnknownArguments(args, ['limit']);
   const limit =
-    args.limit === undefined
-      ? 5
-      : boundedInteger(args.limit, 'limit', { minimum: 1, maximum: 10 });
+    args.limit === undefined ? 5 : boundedInteger(args.limit, 'limit', { minimum: 1, maximum: 10 });
   const releases = VELO_CHANGELOG_DIGEST.slice(0, limit).map((release) => ({
     version: release.version,
     date: release.date,
@@ -106,6 +104,8 @@ function specializationResearchDetail(research, legionSkills) {
       name: node.name,
       effect: node.effect || null,
       context: node.context || null,
+      // Base-attribute nodes take two upgrades in game; the rest take one.
+      upgradeCount: node.context === 'baseAttributes' ? 2 : 1,
     })),
     skillMilestones: Object.fromEntries(
       Object.entries(milestones).map(([troop, list]) => [
@@ -122,12 +122,12 @@ function specializationResearchDetail(research, legionSkills) {
 
 export async function getSpecializationContextAdapter(rawArguments) {
   const args = requirePlainArguments(rawArguments);
-  rejectUnknownArguments(args, ['kind', 'columnId', 'researchName']);
+  rejectUnknownArguments(args, ['kind', 'columnId', 'researchName', 'troop', 'routeId']);
   const kind = boundedString(args.kind, 'kind', { maximum: 20 });
-  if (!['overview', 'column', 'research'].includes(kind)) {
+  if (!['overview', 'column', 'research', 'route'].includes(kind)) {
     throw new AiToolInputError(
       'malformed_arguments',
-      'kind must be overview, column, or research.'
+      'kind must be overview, column, research, or route.'
     );
   }
   const data = await import('../specialization-towers-v2-data.js');
@@ -138,6 +138,58 @@ export async function getSpecializationContextAdapter(rawArguments) {
     'Medal costs come from the verified community dataset; unknown values stay unknown and are never estimated.',
     'A Legion Skill unlocks free when all four researches in its column reach 100%.',
   ];
+
+  if (kind === 'route') {
+    const routes = await import('../specialization-routes.js');
+    const troop = normalizeLookupToken(
+      boundedString(args.troop ?? 'archer', 'troop', { maximum: 20 })
+    );
+    if (!routes.SPECIALIZATION_ROUTE_TROOPS.includes(troop)) {
+      throw new AiToolInputError(
+        'malformed_arguments',
+        `troop must be one of ${routes.SPECIALIZATION_ROUTE_TROOPS.join(', ')}.`
+      );
+    }
+    const routeId = boundedString(args.routeId ?? 'spender', 'routeId', { maximum: 20 });
+    if (!routes.SPECIALIZATION_ROUTE_IDS.includes(routeId)) {
+      throw new AiToolInputError(
+        'malformed_arguments',
+        `routeId must be one of ${routes.SPECIALIZATION_ROUTE_IDS.join(', ')}.`
+      );
+    }
+    const curatedLength = routes.getCuratedLength(routeId, troop);
+    return {
+      data: {
+        troop,
+        routeId,
+        routeMeaning:
+          routeId === 'spender'
+            ? 'Plan for players who own the paid rally heroes Ramses II and Boudica.'
+            : 'Plan for players without Ramses II or Boudica.',
+        curatedStepCount: curatedLength,
+        steps: routes.getRouteOrder(routeId, troop).map((researchId, index) => ({
+          step: index + 1,
+          researchId,
+          researchName: researches[researchId]?.name || researchId,
+          medalCost: Number.isFinite(researches[researchId]?.cost)
+            ? researches[researchId].cost
+            : null,
+          source: index < curatedLength ? 'community_plan' : 'cost_heuristic',
+          reason: routes.getRouteRationale(researchId, troop) || null,
+        })),
+      },
+      meta: {
+        sourceId: 'specialization-routes',
+        completeness: 'partial',
+        filters: { kind, troop, routeId },
+        warnings: [
+          ...warnings,
+          `Steps 1-${curatedLength} come from the captured community plan (columns I-IV); later steps are ordered by a cost heuristic, not by a community recommendation.`,
+          'Archers have two distinct community plans; cavalry and footmen currently have one plan used for both route options.',
+        ],
+      },
+    };
+  }
 
   if (kind === 'overview') {
     return {
@@ -168,8 +220,7 @@ export async function getSpecializationContextAdapter(rawArguments) {
     );
     const match = Object.values(researches).find(
       (research) =>
-        normalizeLookupToken(research.name) === query ||
-        normalizeLookupToken(research.id) === query
+        normalizeLookupToken(research.name) === query || normalizeLookupToken(research.id) === query
     );
     if (!match) {
       return {

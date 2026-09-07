@@ -21,14 +21,15 @@ test('command palette exposes the thirteen deterministic tool destinations', () 
     'tabGenerator',
     'tabHeroes',
     'tabResearch',
+    'tabArtifact',
     'tabSpecialization',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
     'tabLoyalty',
+    'tabEdenBounty',
     'tabYouTube',
     'tabOcrDashboard',
-    'tabAllStarBoh',
     'tabArcade',
     'tabBattleSimulator',
   ]);
@@ -38,10 +39,6 @@ test('command palette exposes the thirteen deterministic tool destinations', () 
     /key:\s*'tabSpecialization'[\s\S]*?aliasesKey:\s*'tabSpecializationTowersAliases'[\s\S]*?name:\s*'specialization'[\s\S]*?kind:\s*'tab'/
   );
   assert.match(destinations, /key:\s*'tabOcrDashboard'[\s\S]*?href:\s*'admin\.html'/);
-  assert.match(
-    destinations,
-    /key:\s*'tabAllStarBoh'[\s\S]*?name:\s*'allStarBoh'[\s\S]*?kind:\s*'tab'/
-  );
   assert.match(destinations, /key:\s*'tabArcade'[\s\S]*?name:\s*'arcade'[\s\S]*?kind:\s*'tab'/);
   assert.match(
     destinations,

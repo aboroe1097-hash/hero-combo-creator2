@@ -12,8 +12,10 @@ export const LIMITS = Object.freeze({
   toolResultBytes: 8 * 1024,
   toolResultsBytes: 24 * 1024,
   providerStateBytes: 80 * 1024,
-  toolRounds: 2,
-  toolCalls: 6,
+  // Three rounds allow Velo to gather evidence, act on it, then verify or fill a gap.
+  // toolCalls still caps the total work performed in one turn.
+  toolRounds: 3,
+  toolCalls: 8,
   upstreamInteractions: 3,
   firstProviderEventMs: 30_000,
   idleProviderEventMs: 30_000,
@@ -25,10 +27,12 @@ export const LIMITS = Object.freeze({
   globalTurnsPerUtcDay: 500,
   globalInteractionsPerUtcDay: 1_500,
   requestReplayTtlMs: 24 * 60 * 60_000,
-  maxOutputTokens: 1_536,
+  // Reasoning tokens share this provider budget with the visible answer.
+  maxOutputTokens: 8_192,
 });
 
 export const ALLOWED_MODELS = Object.freeze(['gemini-3.1-flash-lite', 'gemini-3.5-flash']);
+export const ALLOWED_DEEPSEEK_MODELS = Object.freeze(['deepseek-chat', 'deepseek-reasoner']);
 
 export const SUPPORTED_LOCALES = Object.freeze([
   'ar',
@@ -37,6 +41,7 @@ export const SUPPORTED_LOCALES = Object.freeze([
   'es',
   'fr',
   'id',
+  'it',
   'kr',
   'pt',
   'ru',
@@ -56,6 +61,7 @@ export const TOOL_GROUPS = Object.freeze([
 export const GEMINI_INTERACTIONS_URL =
   'https://generativelanguage.googleapis.com/v1beta/interactions';
 export const GEMINI_API_REVISION = '2026-05-20';
+export const DEEPSEEK_CHAT_URL = 'https://api.deepseek.com/chat/completions';
 
 export const SAFE_ERROR_CODES = Object.freeze({
   disabled: 'ai_disabled',

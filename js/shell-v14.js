@@ -22,50 +22,71 @@
   const sourceIds = [
     'tabArcade',
     'tabBattleSimulator',
-    'tabManual',
-    'tabGenerator',
-    'tabHeroes',
-    'tabResearch',
+    'tabHeroesCombos',
+    'tabResearchTowers',
     'tabMaterials',
     'tabEdenMap',
     'tabStrife',
-    'tabSpecialization',
     'tabLoyalty',
     'tabEdenX1',
-    'tabAllStarBoh',
     'tabYouTube',
     'tabOcrDashboard',
   ];
-  const desktopPrimaryIds = [
-    'tabArcade',
-    'tabManual',
-    'tabGenerator',
-    'tabHeroes',
-    'tabResearch',
-    'tabMaterials',
-  ];
-  const wideDesktopPrimaryIds = [
-    ...desktopPrimaryIds,
-    'tabStrife',
-    'tabSpecialization',
-    'tabLoyalty',
-    'tabYouTube',
-  ];
-  const mobilePrimaryIds = ['tabResearch', 'tabYouTube', 'tabAllStarBoh', 'tabEdenX1'];
+  // Rail order. These arrays are the source of truth for both *which* tools are
+  // primary and the order they sit in — layoutNavigation() appends in this
+  // sequence. The three hubs lead, because each one now stands for several tools
+  // that used to have their own pill; standalone tools follow.
+  const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
+  // VTS Admin sits fifth, straight after the hubs and Materials: it is opened
+  // far more often than the standalone tools yet was reachable only through
+  // More. All-Star BoH moves the other way, into More, because it runs for a
+  // few weeks a season rather than every day.
+  const desktopPrimaryIds = [...hubIds, 'tabMaterials', 'tabOcrDashboard'];
+  const wideDesktopPrimaryIds = [...desktopPrimaryIds, 'tabStrife', 'tabYouTube'];
+  // Phones get three stable destinations with enough room for readable labels.
+  // Each is a hub, so secondary tools remain organized inside those destinations.
+  const mobilePrimaryIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
-    ['tabManual', 'manual'],
-    ['tabGenerator', 'generator'],
-    ['tabHeroes', 'heroes'],
-    ['tabResearch', 'research'],
+    ['tabHeroesCombos', 'heroesCombos'],
+    ['tabResearchTowers', 'researchTowers'],
     ['tabMaterials', 'materials'],
+    // These values double as the section-id prefix in syncSkipDestination
+    // (`#${tabName}Section`), so they must stay the internal tab names. The
+    // shareable #edenHub hash is handled by tabHashAliases below.
     ['tabEdenMap', 'edenMap'],
     ['tabStrife', 'strife'],
-    ['tabSpecialization', 'specialization'],
-    ['tabLoyalty', 'loyalty'],
-    ['tabAllStarBoh', 'allStarBoh'],
     ['tabYouTube', 'youtube'],
   ]);
+  // Legacy hashes that moved inside the VTS Eden Hub keep working: the shell
+  // opens the hub tab and hands the sub-tab intent to the hub controller.
+  const legacyEdenHubHashes = new Map([
+    ['loyalty', 'loyalty'],
+    ['bounty', 'bounty'],
+    ['royalbounty', 'bounty'],
+    ['edenx1', 'previous'],
+  ]);
+  // The same arrangement for the Research & Towers Hub: #research and
+  // #specialization were top-level tabs and stay valid deep links.
+  const legacyResearchTowersHashes = new Map([
+    ['research', 'research'],
+    ['specialization', 'towers'],
+    ['towers', 'towers'],
+    ['artifact', 'artifact'],
+    ['artifacts', 'artifact'],
+  ]);
+  // Manual Builder, Combo Generator and the Hero Atlas moved into the Heroes &
+  // Combos Hub; all four hashes stay valid deep links.
+  const legacyHeroesCombosHashes = new Map([
+    ['manual', 'manual'],
+    ['generator', 'generator'],
+    ['heroes', 'heroes'],
+    ['skins', 'skins'],
+  ]);
+  // #edenHub is the canonical share link for the Eden tab; #edenMap is the name
+  // it shipped under and stays valid permanently, because it is already live in
+  // the toolkit map, Velo's knowledge base and links members have shared.
+  const tabHashAliases = new Map([['edenhub', 'edenMap']]);
   const moreHistoryKey = 'vtsShellMoreOpen';
 
   const supportedShellLanguages = new Set([
@@ -75,6 +96,7 @@
     'es',
     'fr',
     'id',
+    'it',
     'kr',
     'pt',
     'ru',
@@ -117,6 +139,7 @@
     es: 'ES',
     fr: 'FR',
     id: 'ID',
+    it: 'IT',
     kr: 'KO',
     pt: 'PT',
     ru: 'RU',
@@ -143,10 +166,49 @@
     return document.getElementById(id);
   }
 
+  function resolveCanonicalHashTabName(rawHash = window.location.hash) {
+    const normalizedHash = String(rawHash || '')
+      .replace(/^#/, '')
+      .split('?')[0]
+      .toLowerCase();
+    if (!normalizedHash) return '';
+    if (legacyEdenHubHashes.has(normalizedHash)) {
+      try {
+        document.body.dataset.edenHubSubtab = legacyEdenHubHashes.get(normalizedHash);
+      } catch {
+        /* dataset unavailable */
+      }
+      return 'edenMap';
+    }
+    if (legacyResearchTowersHashes.has(normalizedHash)) {
+      try {
+        document.body.dataset.researchTowersSubtab =
+          legacyResearchTowersHashes.get(normalizedHash);
+      } catch {
+        /* dataset unavailable */
+      }
+      return 'researchTowers';
+    }
+    if (legacyHeroesCombosHashes.has(normalizedHash)) {
+      try {
+        document.body.dataset.heroesCombosSubtab = legacyHeroesCombosHashes.get(normalizedHash);
+      } catch {
+        /* dataset unavailable */
+      }
+      return 'heroesCombos';
+    }
+    if (tabHashAliases.has(normalizedHash)) return tabHashAliases.get(normalizedHash);
+    return (
+      Array.from(internalHashes.values()).find(
+        (tabName) => tabName.toLowerCase() === normalizedHash
+      ) || ''
+    );
+  }
+
   function activeTabName() {
     const validTabNames = new Set(internalHashes.values());
-    const hashTabName = window.location.hash.replace(/^#/, '').split('?')[0];
-    if (validTabNames.has(hashTabName)) return hashTabName;
+    const hashTabName = resolveCanonicalHashTabName();
+    if (hashTabName) return hashTabName;
 
     const bodyTabName = document.body.dataset.activeTab || '';
     if (validTabNames.has(bodyTabName)) return bodyTabName;
@@ -154,7 +216,7 @@
     const activeSource = sourceIds
       .map(sourceFor)
       .find((source) => source?.classList.contains('tab-pill-active'));
-    return internalHashes.get(activeSource?.id) || 'generator';
+    return internalHashes.get(activeSource?.id) || 'heroesCombos';
   }
 
   function syncSkipDestination() {
@@ -613,7 +675,7 @@
 
   function closeMoreForNavigation(source) {
     const tabName = internalHashes.get(source.id);
-    const activeHash = window.location.hash.replace(/^#/, '').split('?')[0];
+    const activeHash = resolveCanonicalHashTabName();
 
     setOpen(false, { restoreFocus: false });
     focusTabDestination(tabName);

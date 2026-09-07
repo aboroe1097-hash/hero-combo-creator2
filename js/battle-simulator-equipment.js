@@ -17,6 +17,10 @@ import {
   getBattleStatUnit,
   normalizeStatSource,
 } from './battle-simulator-stat-sources.js';
+import {
+  applyFieldDeltasToContributions,
+  filterApplicableFieldDeltas,
+} from './battle-simulator-equipment-field-deltas.js';
 
 export const EQUIPMENT_LOADOUT_SCHEMA_VERSION = 1;
 
@@ -950,11 +954,15 @@ export function filterEquipmentContributions(contributions, context) {
 
 export function resolveEquipmentLoadout(
   rawLoadout,
-  { catalog = EQUIPMENT_CATALOG, allowedSpecialRuleIds = ALLOWED_EQUIPMENT_SPECIAL_RULE_IDS } = {}
+  {
+    catalog = EQUIPMENT_CATALOG,
+    allowedSpecialRuleIds = ALLOWED_EQUIPMENT_SPECIAL_RULE_IDS,
+    fieldDeltas = [],
+  } = {}
 ) {
   const validatedCatalog = normalizedCatalog(catalog);
   const loadout = normalizeEquipmentLoadout(rawLoadout, { catalog: validatedCatalog });
-  const contributions = [];
+  let contributions = [];
   const activeSkills = [];
   const missingData = [];
 
@@ -1211,6 +1219,17 @@ export function resolveEquipmentLoadout(
 
   contributions.sort(deterministicSort);
   activeSkills.sort(deterministicSort);
+
+  // Field-data deltas overlay the canonical catalog (16.0.0 lane 4). Only
+  // provenance-verified deltas reach this point; unverified deltas are
+  // excluded by filterApplicableFieldDeltas and stay visible in the Field
+  // Data panel only.
+  if (Array.isArray(fieldDeltas) && fieldDeltas.length) {
+    const applicable = filterApplicableFieldDeltas(loadout, fieldDeltas);
+    contributions = applyFieldDeltasToContributions(contributions, applicable);
+    contributions.sort(deterministicSort);
+  }
+
   missingData.sort(
     (left, right) =>
       left.code.localeCompare(right.code) || left.message.localeCompare(right.message)

@@ -1,5 +1,6 @@
 // Data-driven player identity registry.
 // The admin UI can later edit this structure; the resolver can use it now.
+import { protectedVtsAccountKey, resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 
 export const PLAYER_REGISTRY_KEY = 'vts_player_registry';
 
@@ -8,11 +9,12 @@ function asText(value) {
 }
 
 export function compactRegistryName(name) {
-  return asText(name)
+  const key = asText(name)
     .normalize('NFKD')
     .replace(/\p{M}/gu, '')
     .replace(/[^\p{L}\p{N}]+/gu, '')
     .toLowerCase();
+  return protectedVtsAccountKey(name, key);
 }
 
 function normalizeAliasList(values) {
@@ -116,6 +118,15 @@ export function buildPlayerRegistryIndex(registryInput) {
         familyExact.set(alias, familyKey);
         familyExact.set(alias.toLowerCase(), familyKey);
         if (key && !familyCompact.has(key)) familyCompact.set(key, familyKey);
+        // Keep saved family rules reachable after a confirmed display rename,
+        // without rewriting the registry or merging account identities.
+        const confirmed = resolveConfirmedPlayerAlias(alias);
+        if (confirmed) {
+          familyExact.set(confirmed, familyKey);
+          familyExact.set(confirmed.toLowerCase(), familyKey);
+          const confirmedKey = compactRegistryName(confirmed);
+          if (!familyCompact.has(confirmedKey)) familyCompact.set(confirmedKey, familyKey);
+        }
       }
     });
   });
@@ -126,13 +137,16 @@ export function buildPlayerRegistryIndex(registryInput) {
 export function resolvePlayerRegistryAlias(name, registryInput = readStoredPlayerRegistry()) {
   const text = asText(name);
   if (!text) return '';
+  const confirmed = resolveConfirmedPlayerAlias(text);
+  if (confirmed) return confirmed;
   const index = buildPlayerRegistryIndex(registryInput);
-  return (
+  const resolved = (
     index.exact.get(text) ||
     index.exact.get(text.toLowerCase()) ||
     index.compact.get(compactRegistryName(text)) ||
     ''
   );
+  return resolveConfirmedPlayerAlias(resolved) || resolved;
 }
 
 export function resolvePlayerRegistryFamilyKey(name, registryInput = readStoredPlayerRegistry()) {

@@ -19,37 +19,27 @@ const EXPECTED_X8_CATCHUP_HEROES = [
 ];
 
 const FUTURE_HEROES = [
-  'Achilles',
-  'Al-Hawra',
   'Alberich',
-  'Arslan',
-  'Belisarius',
   'Darius',
   'Don Quixote',
-  'El Cid',
   'Eselfred',
-  'Farah',
   'Frederick I',
   'Galahad',
   'Geraint',
   'Gustav',
   'Harald',
   'Hasdrubal',
-  'Healer',
   'Hector',
-  'Hellfire',
   'Henry V',
   'Henry II',
   'Julian',
   'La Hire',
   'Lagertha',
-  'Lilith',
   'Nevsky',
   'Nicolas Flamel',
   'Oliver',
   'Penthesilea',
   'Percival',
-  'Poison Master',
   'Robin Hood',
   'Roland',
   'Sundiata',
@@ -66,6 +56,13 @@ test('hero roster exposes only the intentional X8 catch-up wave', () => {
       .map(({ name, releaseSeason }) => [name, releaseSeason]),
     EXPECTED_X8_CATCHUP_HEROES
   );
+});
+
+test('Cyrus keeps its SP release metadata and appears once in the hero data', () => {
+  const cyrusEntries = allHeroesData.filter(({ name }) => name === 'Cyrus');
+
+  assert.equal(cyrusEntries.length, 1);
+  assert.equal(cyrusEntries[0]?.releaseSeason, 'SP');
 });
 
 test('future hero batch stays out of the active roster until its seasons are supported', () => {

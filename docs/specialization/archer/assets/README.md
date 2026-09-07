@@ -12,3 +12,12 @@ background-removed, or generated.
 Crop coordinates and evidence relationships live in
 `js/specialization-towers-v2-archer-data.js`. A visible connection in a completed graph
 is arrangement evidence only; it is not treated as proof of prerequisite direction.
+
+## Verification workflow
+
+1. Match a crop to its original screenshot and recorded coordinates.
+2. Keep research identity, troop type, and season context attached.
+3. Distinguish a visible connection from a proven unlock rule.
+4. Run the existing archer-data and topology tests before changing model interpretation.
+
+[Archer evidence tests](../../../../tests/unit/specialization-towers-v2-archer-data.test.mjs) · [Documentation index](../../../README.md)

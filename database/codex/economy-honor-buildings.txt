@@ -1,0 +1,2 @@
+# source: l96.app Honor Building Costs post (2021-10-19); cost sheet is an embedded image, numbers not extractable as text | credit: DonPablone | captureDate: 2026-09-02 | gameVersionScope: ROC/Eden | verificationStatus: unverified
+building|level|honorCost|timeSec|notes|p

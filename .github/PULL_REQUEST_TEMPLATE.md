@@ -1,35 +1,33 @@
-## Summary
+## Problem and result
 
-## Type of change
+Describe the user/maintainer problem and resulting behavior.
 
-- [ ] Data update
-- [ ] Bug fix
-- [ ] Feature
-- [ ] UI/layout
-- [ ] Translation
-- [ ] Security/rules
-- [ ] Build/tooling
+## Scope
 
-## Checks
+- Affected pages/modules:
+- Change type: feature / fix / data / UI / translation / security / tooling / docs / cleanup
+- Separate backend deployment needed, if any:
 
-- [ ] PR targets `gh-pages` from a separate branch, not a direct `gh-pages` commit
-- [ ] `npm run check`
-- [ ] User-visible release: `npm run firebase:preview` passed, or this PR is docs-only/internal
-- [ ] Required CI check `deploy-verification` passes
+## Verification
 
-## Versioning
+- [ ] Separate branch targeting gh-pages
+- [ ] Scope-appropriate local checks from AGENTS.md (list commands and results below)
+- [ ] Full npm run check for high-risk scope, or explain why focused checks cover this change
+- [ ] Build/size checks when bundled CSS/assets/build inputs change
+- [ ] Firebase preview only when its high-risk/explicit Hosting-validation scope applies
+- [ ] Required deploy-verification status checked before merge
 
-- [ ] `npm run version:check`
-- [ ] Version surfaces and `CHANGELOG.md` are updated, or this PR is docs-only/internal
-- [ ] Release version follows the `.0` through `.20`, then next minor cadence
+Commands/results and limitations:
+
+## Release metadata
+
+- [ ] Version surfaces and CHANGELOG.md updated for user-visible changes, or explain docs/internal scope
+- [ ] npm run version:check passed
 
 ## Evidence
 
-Add screenshots, source data, OCR examples, or before/after notes when relevant.
+Add relevant screenshots, source provenance, before/after bytes, and tested viewports. For a Firebase preview, include URL, expiry, and backend coverage limits. For cleanup, identify removed consumers and separate repository/deployment savings from local disk or history.
 
-For a user-visible release, include the Firebase preview URL, expiry, tested viewports, and any
-backend flows intentionally left untested.
+## Data handling
 
-## Notes
-
-No passwords, private API keys, or private alliance data are included in this PR.
+- [ ] No credentials, private API keys, debug tokens, or private alliance data in this PR

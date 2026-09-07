@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Portrait unavailable</title>
+  <rect width="128" height="128" rx="16" fill="#172333"/>
+  <circle cx="64" cy="44" r="20" fill="#94a3b8"/>
+  <path d="M24 111v-8a40 40 0 0 1 80 0v8" fill="#94a3b8"/>
+  <circle cx="101" cy="27" r="16" fill="#172333" stroke="#67d6eb" stroke-width="2"/>
+  <path d="M97 23a4 4 0 1 1 6 3.5c-2 1-2 2-2 3.5" fill="none" stroke="#67d6eb" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="101" cy="35" r="1.5" fill="#67d6eb"/>
+</svg>

@@ -1,0 +1,267 @@
+#plannersSection {
+  margin-top: 24px;
+}
+
+.pln-card {
+  border: 1px solid #26334a;
+  border-radius: 12px;
+  padding: 16px;
+  background: #0d1626;
+}
+
+.pln-card + .pln-card {
+  margin-top: 16px;
+}
+
+.pln-lead {
+  color: #9db0c8;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.pln-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0 0;
+}
+
+.pln-tab {
+  border: 1px solid #26334a;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9db0c8;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pln-tab.active {
+  color: #0b1220;
+  background: #60a5fa;
+  border-color: #60a5fa;
+}
+
+.pln-panel[hidden] {
+  display: none;
+}
+
+.pln-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pln-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #9db0c8;
+}
+
+.pln-field input,
+.pln-field select,
+.pln-field textarea {
+  border: 1px solid #26334a;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: #e6edf7;
+  background: #0a1322;
+  font-family: inherit;
+}
+
+.pln-results {
+  margin-top: 14px;
+}
+
+.pln-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.pln-table th,
+.pln-table td {
+  border-bottom: 1px solid #1c2a42;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.pln-table th {
+  color: #8ea3c0;
+  font-weight: 700;
+}
+
+.pln-badge-ok,
+.pln-badge-warn {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pln-badge-ok {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.16);
+}
+
+.pln-badge-warn {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.pln-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.pln-btn {
+  border: 1px solid #2f4060;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #dbe7f7;
+  background: #152238;
+  cursor: pointer;
+}
+
+.pln-btn.pln-btn-primary {
+  color: #0b1220;
+  background: #60a5fa;
+  border-color: #60a5fa;
+}
+
+.pln-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pln-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.pln-chip {
+  border: 1px dashed #3b82f6;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #93c5fd;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pln-note {
+  border: 1px solid #7c6a2d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.08);
+  margin-top: 12px;
+}
+
+.pln-pre {
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: #c9d6ea;
+  background: #0a1322;
+  border: 1px solid #1c2a42;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.pln-subtitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #dbe7f7;
+  margin: 14px 0 2px;
+}
+
+[data-theme='light'] #plannersSection .pln-card {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+[data-theme='light'] #plannersSection .pln-lead,
+[data-theme='light'] #plannersSection .pln-field,
+[data-theme='light'] #plannersSection .pln-table th {
+  color: #475569;
+}
+
+[data-theme='light'] #plannersSection .pln-field input,
+[data-theme='light'] #plannersSection .pln-field select,
+[data-theme='light'] #plannersSection .pln-field textarea {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme='light'] #plannersSection .pln-tab {
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+[data-theme='light'] #plannersSection .pln-table th,
+[data-theme='light'] #plannersSection .pln-table td {
+  border-bottom-color: #e2e8f0;
+}
+
+[data-theme='light'] #plannersSection .pln-btn {
+  color: #0f172a;
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+[data-theme='light'] #plannersSection .pln-pre {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+
+[data-theme='light'] #plannersSection .pln-subtitle {
+  color: #0f172a;
+}
+
+[data-theme='light'] #plannersSection .pln-note {
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: #d97706;
+}
+
+@media print {
+  .tab-panel {
+    display: none !important;
+  }
+
+  .tab-panel:has(#plannersSection) {
+    display: block !important;
+  }
+
+  #plannersSection .pln-tabs,
+  #plannersSection .pln-no-print {
+    display: none !important;
+  }
+
+  #plannersSection .pln-panel[hidden] {
+    display: none !important;
+  }
+
+  #plannersSection .pln-card {
+    border-color: #94a3b8;
+    background: #ffffff;
+  }
+}

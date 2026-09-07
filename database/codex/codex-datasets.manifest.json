@@ -1,0 +1,165 @@
+{
+  "budget": {
+    "rawBytes": 819200,
+    "gzipBytes": 81920,
+    "note": "rev 2 audit: decoded inner JSON measures 744,306 raw / 36,818 gzip bytes (research-costs dominates). Raw budget raised to 800 KiB to keep ~75 KiB headroom for future dataset rows (combo-snapshots, duel-matrix, building-costs); gzip budget unchanged from the ratified 80 KiB."
+  },
+  "datasets": [
+    {
+      "id": "heroes-codex",
+      "file": "heroes-codex.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "l96.app /heroes summary (captured 2026-09-02)",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S0-X17",
+        "verificationStatus": "historical"
+      }
+    },
+    {
+      "id": "hero-versions",
+      "file": "hero-versions.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "l96.app hero profiles (captured 2026-09-02)",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S0-X17",
+        "verificationStatus": "historical"
+      }
+    },
+    {
+      "id": "name-aliases",
+      "file": "name-aliases.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "l96.app /heroes summary (captured 2026-09-02)",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S0-X17",
+        "verificationStatus": "historical"
+      }
+    },
+    {
+      "id": "class-cards",
+      "file": "class-cards.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "l96.app class cheatsheets (Raider/Trader PDFs, captured 2026-09-02)",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S0-X17",
+        "verificationStatus": "historical"
+      }
+    },
+    {
+      "id": "lofty-costs",
+      "file": "lofty-costs.txt",
+      "status": "pending",
+      "defaultProvenance": {
+        "source": "l96.app Lofty Warrior research post (2023-02-17); per-level cost sheet is a linked PDF pending rights decision D4",
+        "credit": "DonPablone (data: Cris Minime, Raven)",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S4",
+        "verificationStatus": "unverified"
+      }
+    },
+    {
+      "id": "lofty-specialty",
+      "file": "lofty-specialty.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "l96.app Lofty Warrior research post (2023-02-17)",
+        "credit": "DonPablone (data: Cris Minime, Raven)",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S4",
+        "verificationStatus": "unverified"
+      }
+    },
+    {
+      "id": "research-costs",
+      "file": "research-costs.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "tools.riseofcastles.net/tech-research research_data.js (retrieved 2026-09-02)",
+        "credit": "Raven G; Ash Roe (709); riseofcastles.net community",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S0-X24",
+        "verificationStatus": "current"
+      }
+    },
+    {
+      "id": "building-costs",
+      "file": "building-costs.txt",
+      "status": "pending",
+      "defaultProvenance": {
+        "source": "l96.app Main Building Costs post (not yet located)",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "unknown",
+        "verificationStatus": "unverified"
+      }
+    },
+    {
+      "id": "economy-honor-buildings",
+      "file": "economy-honor-buildings.txt",
+      "status": "pending",
+      "defaultProvenance": {
+        "source": "l96.app Honor Building Costs post (2021-10-19); cost sheet is an embedded image, numbers not extractable as text",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "ROC/Eden",
+        "verificationStatus": "unverified"
+      }
+    },
+    {
+      "id": "economy-gift-levels",
+      "file": "economy-gift-levels.txt",
+      "status": "pending",
+      "defaultProvenance": {
+        "source": "l96.app gift-level spend post (2023-05-31); spend table is an embedded image, numbers not extractable as text",
+        "credit": "DonPablone (data: PHX of 1TO)",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "unknown",
+        "verificationStatus": "unverified"
+      }
+    },
+    {
+      "id": "economy-war-medals",
+      "file": "economy-war-medals.txt",
+      "status": "live",
+      "defaultProvenance": {
+        "source": "l96.app War Medals (COP Medals) post (2023-10-30)",
+        "credit": "DonPablone",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "COP round 27",
+        "verificationStatus": "historical"
+      }
+    },
+    {
+      "id": "duel-matrix",
+      "file": "duel-matrix.txt",
+      "status": "pending",
+      "defaultProvenance": {
+        "source": "HeroDuels PDF by Mtness (state 177, IMS); hero names are logo images so the per-row win-rate numbers have no resolvable sides (R3)",
+        "credit": "Mtness s177",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "unknown",
+        "verificationStatus": "unverified"
+      }
+    },
+    {
+      "id": "combo-snapshots",
+      "file": "combo-snapshots.txt",
+      "status": "pending",
+      "defaultProvenance": {
+        "source": "l96.app dated combo guides (Sep 2021 - Feb 2023, not yet located)",
+        "credit": "FedeSack",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "S0-X17",
+        "verificationStatus": "historical"
+      }
+    }
+  ]
+}

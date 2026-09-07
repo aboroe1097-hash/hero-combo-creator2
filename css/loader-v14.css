@@ -158,7 +158,7 @@
 }
 
 /* Dashboard legacy rules use an ID selector and otherwise collapse the shared loader
-   trail to a clipped 5px bar. Keep the full Velo runner visible on Admin and Eden X1. */
+   trail to a clipped 5px bar. */
 #ocrDashboardRoot .vts-loader .vts-loader__trail.dash-connecting-bar {
   position: relative;
   display: block;
@@ -216,34 +216,6 @@
   animation: vts-loader-indeterminate 1.45s ease-in-out infinite alternate;
 }
 
-.vts-loader__runner {
-  display: block;
-  position: absolute;
-  top: 50%;
-  inset-inline-start: clamp(1rem, calc(var(--vts-loader-progress) * 1%), calc(100% - 1rem));
-  z-index: 3;
-  width: 3.35rem;
-  aspect-ratio: 1;
-  filter: drop-shadow(0 0.35rem 0.55rem rgba(4, 12, 28, 0.32));
-  transform: translate(-50%, -50%);
-  transition: inset-inline-start 320ms var(--ease-out, ease-out);
-}
-
-.vts-loader--compact .vts-loader__runner {
-  width: 2.7rem;
-}
-
-[dir='rtl'] .vts-loader__runner {
-  transform: translate(50%, -50%);
-}
-
-.vts-loader__runner img {
-  position: absolute;
-  display: block;
-  max-width: none;
-  pointer-events: none;
-}
-
 .vts-loader__identity.vts-loader__visual--velo img {
   position: absolute;
   display: block;
@@ -263,11 +235,6 @@
   height: auto;
   inset-block-start: -22%;
   inset-inline-start: 11%;
-}
-
-.vts-loader.is-complete .vts-loader__runner {
-  animation: none;
-  inset-inline-start: calc(100% - 1rem);
 }
 
 .vts-loader__percent,
@@ -356,7 +323,6 @@
 @media (prefers-reduced-motion: reduce) {
   .vts-loader__crest,
   .vts-loader__identity,
-  .vts-loader__runner,
   .vts-loader__velo-body,
   .vts-loader__velo-helmet,
   .vts-loader__trail-fill,
@@ -372,14 +338,5 @@
   .vts-loader__crest {
     opacity: 1;
     transform: none;
-  }
-
-  .vts-loader__runner {
-    opacity: 0.88;
-    transform: translate(-50%, -50%);
-  }
-
-  [dir='rtl'] .vts-loader__runner {
-    transform: translate(50%, -50%);
   }
 }

@@ -1,97 +1,101 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "14.2.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.5";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
   {
-    "version": "14.2.0",
-    "date": "2026-07-20",
+    "version": "16.0.5",
+    "date": "2026-09-07",
     "highlights": [
-      "Completed the shared-admin signup protection by wiring the private-window instruction into the real access gate instead of leaving the error copy undefined.",
-      "Localized the leadership-session warning across all twelve supported site languages and added rendered browser coverage for the exact message."
+      "Fixed every role grant in Users & Roles failing with \"Service functions is not available\". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it regis…"
     ]
   },
   {
-    "version": "14.1.20",
-    "date": "2026-07-20",
+    "version": "16.0.4",
+    "date": "2026-09-07",
     "highlights": [
-      "Blocked the member All-Star signup from inheriting an existing leadership/admin Firebase login, preventing shared admin browsers from opening or overwriting one member submission.",
-      "Added a fail-closed message directing leadership users to open the signup in a private window, where the site creates a separate anonymous member identity."
+      "Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced \"Something went wrong. Try again.\" on the sign-in form. Members read th…",
+      "Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still n…"
     ]
   },
   {
-    "version": "14.1.19",
-    "date": "2026-07-20",
+    "version": "16.0.3",
+    "date": "2026-09-04",
     "highlights": [
-      "Restored backward-compatible All-Star signup reads for historical `+8` and `+20` fighting-time selections so one older record cannot prevent the admin dashboard or a player's saved form from loading.",
-      "Kept all new and updated submissions restricted to exactly two current fighting times from `+12`, `+14`, and `+16`.",
-      "Prioritized Research, YouTube, All-Star BoH, and Eden X1 Rankings in the mobile bottom navigation, restored a compact mobile version badge, and fully hid the off-screen skip-link outline until keyboard focus.",
-      "Made shared tab links case-insensitive so common variants such as `#allstarboh` and `#AllStarBoh` open and normalize to the canonical `#allStarBoh` route."
+      "Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 h…",
+      "Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty."
     ]
   },
   {
-    "version": "14.1.18",
-    "date": "2026-07-20",
+    "version": "16.0.2",
+    "date": "2026-09-04",
     "highlights": [
-      "Replaced unreliable multi-image troop OCR with four optional million-based estimates for Lofty (S), enhanced T10, regular T10, and T9 troops; entering `7` records an estimated `7,000,000` troops while preserving legacy reviewed troop rows.",
-      "Limited All-Star fighting-time choices to `+12`, `+14`, and `+16`, with exactly two choices still required; Epic Showdown time choices are unchanged.",
-      "Completed localized All-Star participation, VTS membership, contact, state, reason, and troop-estimate copy across all twelve supported languages instead of falling back to English.",
-      "Verified protected admin signup deletion removes only the selected signup, review, and feedback while preserving independent Epic Showdown preferences."
+      "Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the pane…"
     ]
   },
   {
-    "version": "14.1.17",
-    "date": "2026-07-19",
+    "version": "16.0.1",
+    "date": "2026-09-04",
     "highlights": [
-      "Audited all 200 Eden contribution entries, 180 duty records, 40 conduct records, management votes, and teammate votes against canonical player families while preserving the published Top 20 order.",
-      "Deduplicated reward families across Support, Contribution, Management, Team Players, and the 90 Power House positions so secondary accounts cannot receive a second season reward.",
-      "Mapped verified public aliases and duty-only workers without letting zero-contribution support accounts enter Contribution or Power House rankings, and retained all 142 banners, 30 pathers, 8 shield walls, and 44 net conduct points."
+      "Restored the X12 research season selector. All 30 Charge nodes are editable in a list without invented topology or unlock rules; Defense retains all 29 nodes and now discloses the source's conflicting cost totals.",
+      "Fixed the research planner re-normalizing already normalized families and silently replacing their costs with zero. X12 estimates retain their unverified status while source gaps remain.",
+      "Renamed Codex to Hero Tables across supported languages. Restored hero-detail opening and keyboard return focus, kept deselected season filters reachable, explained combo-derived ratings, and hid empty duel sections.",
+      "Added a shared local portrait-unavailable image for the X10/X12 heroes whose artwork has not yet been supplied, preventing broken images across roster consumers without misidentifying their portraits."
     ]
   },
   {
-    "version": "14.1.16",
-    "date": "2026-07-19",
+    "version": "16.0.0",
+    "date": "2026-09-03",
     "highlights": [
-      "Added explicit Guild Master and Core reward tiers to the Final Top 20 while preserving each winner's support, contribution, management-vote, or team-vote selection reason.",
-      "Added a deduplicated 90-player Power House ranking for positions 21–110 and one-click PNG downloads for both reward tables."
+      "**VTS Player Alias Reconciliation**: Folded decoration, whitespace and case variants of the same account into one identity across leaderboards, contribution matching and weighted scoring, adopting Moldo1313 and D O F F Y as display names. Sixteen owner-confirmed merges join spel…",
+      "**CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarg…",
+      "**Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated the nine free plus two paid heroes into the canonical roster (expanding the roster from 78 to 89 heroes), with tower profiles for the paid pair and synchronized Firestore security rule allowlist…",
+      "**Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.",
+      "**Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.",
+      "**Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters."
     ]
   },
   {
-    "version": "14.1.15",
-    "date": "2026-07-19",
+    "version": "15.0.15",
+    "date": "2026-09-01",
     "highlights": [
-      "Added a Final Top 20 announcement view to the Eden X1 reward flow that combines the four support, contribution, management, and team reward lanes into one shareable recipient table with category chips and placeholder rows until each lane is decided.",
-      "Aligned the eden-x1 smoke expectation for the language selector with the Croatian option position shipped in 14.1.13."
+      "Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.",
+      "Compacted the mobile header, kept the inline account control in the utility row, and preserved full-size controls down to 320px without the stray third row.",
+      "Updated the public VTS leadership badge roster: Loony is now R4, while Zubbs no longer receives the R4 badge; Zubbs aliases remain grouped for historical records.",
+      "Added each player's structure demolition to Weighted Total Contribution at a temporary 1:20 rate, so 1,000,000 demolition contributes 50,000 weighted points for every admin role.",
+      "Moved substantive Velo requests to DeepSeek Reasoner with a verification round and a larger shared reasoning/output budget; short standalone questions still use the fast chat model.",
+      "Updated the compatible frontend CSS toolchain to Autoprefixer 10.5.4 while retaining the Node 20-compatible cssnano 8 and Vite 6 build path."
     ]
   },
   {
-    "version": "14.1.14",
-    "date": "2026-07-19",
+    "version": "15.0.14",
+    "date": "2026-08-28",
     "highlights": [
-      "Fixed the Croatian language smoke-test contract that blocked #84 deploy verification after the twelfth locale was added.",
-      "Expanded All-Star admin corrections to Unit Specialty, Artifact, and Royal Tech power and reject suspicious OCR `1` placeholders in unreadable extended-power rows.",
-      "Displayed reviewed troop OCR rows in the admin signup panel and widened the combined T10 portraits so they remain distinct on desktop and mobile.",
-      "Added a confirmed admin-only signup deletion action for removing test entries while preserving separate Epic Showdown preferences."
+      "Signing in now returns you to the tool you came from instead of leaving you on the account page, and new accounts finish onboarding before being redirected.",
+      "Fixed the mobile account chip covering the theme and language buttons; on phones a tap on the theme toggle opened the account page instead of switching theme.",
+      "Rating every player is now required when filing a BoH match result, and the scale is shown as \"/ 10\".",
+      "A refused save now says the server rejected the write and the security rules may be out of date, instead of claiming you are not signed in.",
+      "Fixed the language coverage report claiming 26 missing translations per locale that were in fact already translated.",
+      "Corrected stale version labels on the account, VtsScore and maintenance pages, and gave the 404 page a mobile layout."
     ]
   },
   {
-    "version": "14.1.13",
-    "date": "2026-07-19",
+    "version": "15.0.13",
+    "date": "2026-08-26",
     "highlights": [
-      "Filled editable power fields directly from account-stat OCR and removed the separate extracted-value confirmation checkbox while retaining third-party processing consent.",
-      "Removed the visible timezone question while preserving the stored submission schema for existing records.",
-      "Replaced the crowded mobile footer with compact centered account links and removed duplicate tool navigation already available in the mobile dock.",
-      "Added Croatian (`hr`) as the twelfth project language with translated core navigation, PWA, and player-facing All-Star signup copy plus explicit canonical-English fallback for specialist catalogs still awaiting reviewed Croatian terminology.",
-      "Restored the visible required marker for Unit Specialty Power and replaced raw Firestore permission errors with a translated PIN-expiry recovery message for signup and Epic Showdown saves."
+      "Added bulk row pasting to Bonus Team Effort so conduct adjustments can be entered as `player | points | reason` lines in one action.",
+      "Added admin-submitted team conduct suggestions with visible attribution and a super-admin approval or rejection workflow.",
+      "Restored VtsScore as a dedicated super-admin leaderboard tab and replaced the legacy All-Star command center with the focused BoH match-results workflow."
     ]
   },
   {
-    "version": "14.1.12",
-    "date": "2026-07-19",
+    "version": "15.0.12",
+    "date": "2026-08-18",
     "highlights": [
-      "Reduced All-Star submission security-rule evaluation by caching the active member grant and validating submission submaps through short aliases, preventing valid large signups from exceeding Firestore's 1,000-expression limit."
+      "Reworked the playbook Day 1 route around the loyalty build: unlock and build the Assault and Guardian Fortresses before resetting, run the all-Green Frontline Workshop honor setup, then reset into the Blue tree (left & right) for loyalty and processing; tile Farm, Marble, and Al…",
+      "Replaced the Eden Tips & Guides screenshots with the actual in-game specialization captures: Demolition, Speed Tiling (main plus the optional 14–20 Blue reference), Structure Honor (40 Green), Tiling Honor, and Fortress Unlock."
     ]
   }
 ].map((release) =>

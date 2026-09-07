@@ -395,3 +395,9 @@ Copy this block for each new version. Use an ID such as
 - Alliance announcement: [CHARACTER COUNT] / 200 characters
 - Fact, privacy, and translation review: [NOTES]
 ```
+
+## Ledger maintenance and retrieval
+
+Use message ID, date, channel, language, and status to find a record. A documentation edit is never approval to send a draft or change its status. Preserve original sent text and append corrections as new versions with explicit references. Do not copy private message content into a public bug report or reusable Velo knowledge.
+
+[Communications rules](r5-communications-guide.md) · [Knowledge intake](velo-knowledge-ingestion.md) · [Documentation index](README.md)

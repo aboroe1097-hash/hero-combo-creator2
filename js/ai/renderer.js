@@ -67,6 +67,42 @@ function renderTextBlock(block) {
   return `<p>${lines.map(renderInline).join('<br>')}</p>`;
 }
 
+const TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/u;
+
+function tableCells(line) {
+  const trimmed = String(line || '').trim();
+  const inner = trimmed.replace(/^\|/, '').replace(/\|$/, '').trim();
+  return inner.split('|').map((cell) => cell.trim());
+}
+
+function renderTableBlock(block) {
+  const lines = block.split('\n').map((line) => line.trim());
+  const separatorIndex = lines.findIndex((line) => TABLE_SEPARATOR.test(line));
+  const headerLine = lines[0];
+  const bodyLines =
+    separatorIndex >= 0 ? lines.slice(separatorIndex + 1) : lines.slice(1);
+  const header = tableCells(headerLine).map((cell) => renderInline(cell));
+  const rows = bodyLines
+    .filter((line) => /^\|/.test(line))
+    .map((line) => tableCells(line).map((cell) => renderInline(cell)));
+  return `<div class="ai-table-wrap" dir="auto"><table><thead><tr>${header
+    .map((cell) => `<th>${cell}</th>`)
+    .join('')}</tr></thead><tbody>${rows
+    .map(
+      (row) =>
+        `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`
+    )
+    .join('')}</tbody></table></div>`;
+}
+
+function renderBlock(block) {
+  const lines = String(block || '').split('\n');
+  const looksLikeTable =
+    lines.length > 1 && /^\s*\|/.test(lines[0]) && lines.slice(1).some((line) => /^\s*\|/.test(line));
+  if (looksLikeTable) return renderTableBlock(block);
+  return renderTextBlock(block);
+}
+
 export function renderSafeMarkdown(markdown, options = {}) {
   const copyLabel = escapeAiHtml(options.copyLabel || 'Copy');
   const copiedLabel = escapeAiHtml(options.copiedLabel || 'Copied');
@@ -81,7 +117,7 @@ export function renderSafeMarkdown(markdown, options = {}) {
       .split(/\n{2,}/)
       .map((block) => block.trim())
       .filter(Boolean)
-      .forEach((block) => blocks.push(renderTextBlock(block)));
+      .forEach((block) => blocks.push(renderBlock(block)));
     const language = match[1] || 'text';
     blocks.push(
       `<div class="ai-code-block" dir="ltr"><div class="ai-code-toolbar"><span>${escapeAiHtml(language)}</span><button type="button" class="ai-copy-code" data-copy-label="${copyLabel}" data-copied-label="${copiedLabel}">${copyLabel}</button></div><pre tabindex="0" dir="ltr" translate="no"><code>${escapeAiHtml(match[2].replace(/\n$/, ''))}</code></pre></div>`
@@ -93,7 +129,7 @@ export function renderSafeMarkdown(markdown, options = {}) {
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean)
-    .forEach((block) => blocks.push(renderTextBlock(block)));
+    .forEach((block) => blocks.push(renderBlock(block)));
   return blocks.join('');
 }
 

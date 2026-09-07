@@ -11,16 +11,10 @@ function sha256Hex(value) {
   return createHash('sha256').update(String(value)).digest('hex');
 }
 
-const configuredHash = String(process.env.VTS_EDEN_VOTES_PIN_HASH || '')
-  .trim()
-  .toLowerCase();
-const configuredPin = String(process.env.VTS_EDEN_VOTES_PIN || '');
-const nextHash = configuredHash || (configuredPin ? sha256Hex(configuredPin) : '');
-
-if (nextHash && !SHA_256_HEX_RE.test(nextHash)) {
-  console.error('VTS_EDEN_VOTES_PIN_HASH must be a 64-character SHA-256 hex digest.');
-  process.exit(1);
-}
+// The sensitive-admin PIN is gone. The tabs it hid — Eden Workspace and Bonus
+// Team Effort Points — are gated on the superadmin custom claim, which
+// firestore.rules enforces server-side rather than in the browser. Only the
+// destructive-action override hashes are injected now.
 
 // Destructive-action override (Clear All + per-record delete). Accept either a
 // raw code (hashed here) or a pre-computed SHA-256 hash. Never commit either.
@@ -36,17 +30,12 @@ if (overrideHash && !SHA_256_HEX_RE.test(overrideHash)) {
 }
 
 const source = readFileSync(configPath, 'utf8');
-if (!/edenVotesPinHash:\s*'[^']*'/.test(source)) {
-  console.error('Missing edenVotesPinHash field in js/admin-auth-config.js.');
-  process.exit(1);
-}
 if (!/clearHash:\s*'[^']*'/.test(source) || !/deleteHashes:\s*\[[^\]]*\]/.test(source)) {
   console.error('Missing clearHash/deleteHashes fields in js/admin-auth-config.js.');
   process.exit(1);
 }
 
 const updated = source
-  .replace(/edenVotesPinHash:\s*'[^']*'/, `edenVotesPinHash: '${nextHash}'`)
   .replace(/clearHash:\s*'[^']*'/, `clearHash: '${overrideHash}'`)
   .replace(
     /deleteHashes:\s*\[[^\]]*\]/,
@@ -55,12 +44,7 @@ const updated = source
 writeFileSync(configPath, updated);
 
 console.log(
-  [
-    nextHash
-      ? 'Injected Eden votes and Bonus Team Effort PIN hash.'
-      : 'No Eden votes PIN configured; sensitive admin PIN gate remains disabled.',
-    overrideHash
-      ? 'Injected destructive-action override hash (Clear All + delete).'
-      : 'No admin override configured; Clear All / delete overrides stay disabled.',
-  ].join('\n')
+  overrideHash
+    ? 'Injected destructive-action override hash (Clear All + delete).'
+    : 'No admin override configured; Clear All / delete overrides stay disabled.'
 );

@@ -14,6 +14,7 @@ const loaders = {
   fr: () => import('./i18n/fr.js'),
   hr: () => import('./i18n/hr.js'),
   id: () => import('./i18n/id.js'),
+  it: () => import('./i18n/it.js'),
   kr: () => import('./i18n/kr.js'),
   pt: () => import('./i18n/pt.js'),
   ru: () => import('./i18n/ru.js'),
@@ -69,15 +70,20 @@ export async function loadTranslationsForLanguage(lang = 'en') {
     inFlight[lang] = loader()
       .then((mod) => {
         const catalog = mod.default || mod[lang] || {};
-        const missingBeforeFallback = Object.keys(translations.en).filter(
-          (key) => !Object.hasOwn(catalog, key)
-        );
-        translations[lang] = Object.freeze({
-          ...translations.en,
+        // The coverage snapshot has to be taken across every pack that ships
+        // translations, not just the main catalog. Measuring `catalog` alone
+        // reported the ai-action and runtime-misc strings as missing in all
+        // nine locales even though they are fully translated there, which made
+        // the fallback report cry wolf about 26 keys per locale.
+        const translated = {
           ...catalog,
           ...getAiActionCopy(lang),
           ...getRuntimeMiscCopy(lang),
-        });
+        };
+        const missingBeforeFallback = Object.keys(translations.en).filter(
+          (key) => !Object.hasOwn(translated, key)
+        );
+        translations[lang] = Object.freeze({ ...translations.en, ...translated });
         translationCoverage[lang] = Object.freeze({
           missingBeforeFallback: Object.freeze(missingBeforeFallback),
           total: Object.keys(translations.en).length,

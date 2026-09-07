@@ -144,6 +144,39 @@ function getResearchNodeDefinitions(research) {
 }
 
 /**
+ * How many upgrades a node takes in game. The base-attribute nodes (Frenzy
+ * Fighter, Tough Armor, Energetic) take two; everything else takes one. Progress
+ * is counted in upgrades rather than node icons, so a research with a
+ * base-attribute node is not complete until both of its upgrades are bought.
+ */
+export function getNodeUpgradeCount(node) {
+  return node?.context === 'baseAttributes' ? 2 : 1;
+}
+
+function getUpgradeCounts(research) {
+  const counts = new Map();
+  getResearchNodeDefinitions(research).forEach((node) => {
+    counts.set(node.id, getNodeUpgradeCount(node));
+  });
+  return counts;
+}
+
+export function getResearchUpgradeTotal(research) {
+  let total = 0;
+  getUpgradeCounts(research).forEach((count) => {
+    total += count;
+  });
+  return total;
+}
+
+/** Levels held per node id. A selection lists a node once per bought upgrade. */
+function countSelectedLevels(selectedNodeIds) {
+  const levels = new Map();
+  selectedNodeIds.forEach((nodeId) => levels.set(nodeId, (levels.get(nodeId) || 0) + 1));
+  return levels;
+}
+
+/**
  * Derives presentation-only node access from canonical evidence. Missing prerequisite
  * metadata is never treated as an inferred edge. A research explicitly marked as
  * partial evidence hides those unverified nodes until their reveal rule is confirmed;
@@ -157,10 +190,19 @@ export function deriveResearchNodeAccess(research, selectedNodeIds = []) {
     throw new TypeError('Research node access selectedNodeIds must be an array.');
   }
 
-  const selected = new Set(selectedNodeIds);
+  const levels = countSelectedLevels(selectedNodeIds);
+  const upgradeCounts = getUpgradeCounts(research);
+  // A node counts as a satisfied prerequisite once it is fully upgraded.
+  const selected = new Set(
+    [...levels.entries()]
+      .filter(([nodeId, level]) => level >= (upgradeCounts.get(nodeId) || 1))
+      .map(([nodeId]) => nodeId)
+  );
   const partialEvidence = research.progressiveReveal?.status === 'partial-evidence';
   const entries = getResearchNodeDefinitions(research).map((node) => {
-    const learned = selected.has(node.id);
+    const maxLevel = upgradeCounts.get(node.id) || 1;
+    const level = Math.min(levels.get(node.id) || 0, maxLevel);
+    const learned = level >= maxLevel;
     const hasExplicitPrerequisites = Array.isArray(node.prerequisiteNodeIds);
     const prerequisitesSatisfied =
       hasExplicitPrerequisites &&
@@ -195,6 +237,8 @@ export function deriveResearchNodeAccess(research, selectedNodeIds = []) {
       visible,
       selectable,
       selected: learned,
+      level,
+      maxLevel,
       prerequisitesVerified: hasExplicitPrerequisites,
       prerequisiteNodeIds: hasExplicitPrerequisites ? node.prerequisiteNodeIds.slice() : null,
       pathBranch: typeof node.pathBranch === 'string' ? node.pathBranch : null,
@@ -245,7 +289,15 @@ export function removeResearchNodeAndDependents(research, selectedNodeIds, nodeI
     }
   }
 
-  return getSelectableNodeIds(research).filter((candidateId) => selected.has(candidateId));
+  // Survivors keep every upgrade level they held; only dropped nodes lose theirs.
+  const levels = countSelectedLevels(selectedNodeIds);
+  const kept = [];
+  getSelectableNodeIds(research).forEach((candidateId) => {
+    if (!selected.has(candidateId)) return;
+    const held = levels.get(candidateId) || 1;
+    for (let index = 0; index < held; index += 1) kept.push(candidateId);
+  });
+  return kept;
 }
 
 function normalizeSelectedNodeIds(value, research, label) {
@@ -257,7 +309,8 @@ function normalizeSelectedNodeIds(value, research, label) {
 
   const selectableIds = getSelectableNodeIds(research);
   const selectableSet = new Set(selectableIds);
-  const selectedSet = new Set();
+  const upgradeCounts = getUpgradeCounts(research);
+  const levels = new Map();
   for (const nodeId of value) {
     if (!Number.isSafeInteger(nodeId) || nodeId < 0) {
       throw new TypeError(`${label} node IDs must be non-negative safe integers.`);
@@ -265,9 +318,16 @@ function normalizeSelectedNodeIds(value, research, label) {
     if (!selectableSet.has(nodeId)) {
       throw new RangeError(`${label} contains unknown node ID ${nodeId}.`);
     }
-    selectedSet.add(nodeId);
+    levels.set(nodeId, (levels.get(nodeId) || 0) + 1);
   }
-  return selectableIds.filter((nodeId) => selectedSet.has(nodeId));
+  // A node appears once per bought upgrade, clamped to what it can hold, and
+  // always in node order so the stored shape stays canonical.
+  const normalized = [];
+  selectableIds.forEach((nodeId) => {
+    const held = Math.min(levels.get(nodeId) || 0, upgradeCounts.get(nodeId) || 1);
+    for (let index = 0; index < held; index += 1) normalized.push(nodeId);
+  });
+  return normalized;
 }
 
 function normalizeMedalsSpent(value, research, label) {
@@ -373,8 +433,9 @@ function buildResearchProgress(normalized, troopId, researchId) {
   const regularSelectedNodes = selection.selectedNodeIds.filter(
     (nodeId) => nodeId !== passiveSkillNodeId
   ).length;
+  // Counted in upgrades, not node icons: a base-attribute node is two of these.
   const completedNodes = selection.selectedNodeIds.length;
-  const totalNodes = research.nodes.length + (passiveSkillNodeId === null ? 0 : 1);
+  const totalNodes = getResearchUpgradeTotal(research);
   const ratio = totalNodes ? completedNodes / totalNodes : 0;
   const percent = ratio * 100;
   const isComplete = totalNodes > 0 && completedNodes === totalNodes;
@@ -647,26 +708,48 @@ export function toggleResearchNode(state, troopId, researchId, nodeId) {
   if (!Number.isSafeInteger(nodeId) || !selectableIds.includes(nodeId)) {
     throw new RangeError(`${troopId} ${researchId} contains unknown node ID ${String(nodeId)}.`);
   }
-  const selected = new Set(current.selectedNodeIds);
-  if (selected.has(nodeId)) {
+  const access = deriveResearchNodeAccess(research, current.selectedNodeIds).entries.find(
+    (entry) => entry.nodeId === nodeId
+  );
+  // Toggling walks a node's upgrades: each call buys the next one, and calling
+  // it on a fully upgraded node clears the node (and anything depending on it).
+  if (access && access.level >= access.maxLevel) {
     return setResearchNodes(
       normalized,
       troopId,
       researchId,
       removeResearchNodeAndDependents(research, current.selectedNodeIds, nodeId)
     );
-  } else {
-    const access = deriveResearchNodeAccess(research, current.selectedNodeIds).entries.find(
-      (entry) => entry.nodeId === nodeId
-    );
-    if (!access?.selectable) {
-      throw new RangeError(
-        `${troopId} ${researchId} node ID ${String(nodeId)} is not currently available.`
-      );
-    }
-    selected.add(nodeId);
   }
-  return setResearchNodes(normalized, troopId, researchId, [...selected]);
+  if (!access?.selectable) {
+    throw new RangeError(
+      `${troopId} ${researchId} node ID ${String(nodeId)} is not currently available.`
+    );
+  }
+  return setResearchNodes(normalized, troopId, researchId, [...current.selectedNodeIds, nodeId]);
+}
+
+/** Buys every remaining upgrade on a node in one step. */
+export function maxResearchNode(state, troopId, researchId, nodeId) {
+  requireTroopId(troopId);
+  const research = requireResearch(researchId);
+  const normalized = buildSpecializationSnapshot(state);
+  const current = normalized.troops[troopId].researches[researchId];
+  const access = deriveResearchNodeAccess(research, current.selectedNodeIds).entries.find(
+    (entry) => entry.nodeId === nodeId
+  );
+  if (!access) {
+    throw new RangeError(`${troopId} ${researchId} contains unknown node ID ${String(nodeId)}.`);
+  }
+  if (access.level >= access.maxLevel) return normalized;
+  if (!access.selectable) {
+    throw new RangeError(
+      `${troopId} ${researchId} node ID ${String(nodeId)} is not currently available.`
+    );
+  }
+  const missing = access.maxLevel - access.level;
+  const next = [...current.selectedNodeIds, ...Array.from({ length: missing }, () => nodeId)];
+  return setResearchNodes(normalized, troopId, researchId, next);
 }
 
 export function setResearchMedalsSpent(state, troopId, researchId, valueOrNull) {

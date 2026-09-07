@@ -2,12 +2,64 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <meta name="robots" content="noindex" />
+    <meta id="themeColorMeta" name="theme-color" content="#070b16" />
     <script src="/js/maintenance-config.js"></script>
     <title>Not found</title>
   </head>
   <body>
+    <style>
+      :root {
+        color-scheme: dark light;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-content: center;
+        gap: 1rem;
+        padding: 2rem max(1.25rem, env(safe-area-inset-left)) 2rem
+          max(1.25rem, env(safe-area-inset-right));
+        background: #070b16;
+        color: #edf6ff;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-align: center;
+      }
+      a {
+        color: #67e8f9;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        justify-content: center;
+      }
+      nav a {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      @media (prefers-color-scheme: light) {
+        body {
+          background: #f8fafc;
+          color: #0f172a;
+        }
+        a {
+          color: #0369a1;
+        }
+      }
+    </style>
     <p data-vts-standalone-copy="message">Page not found.</p>
+    <nav aria-label="Site">
+      <a href="/">Home</a>
+      <a href="/eden-x2.html">Eden</a>
+      <a href="/arcade.html">Arcade</a>
+      <a href="/profile.html">Account</a>
+    </nav>
     <script src="/js/i18n/standalone-copy.js" data-vts-standalone-page="notFound"></script>
   </body>
 </html>

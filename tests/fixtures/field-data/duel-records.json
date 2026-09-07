@@ -1,0 +1,119 @@
+{
+  "_contract": {
+    "fixtureVersion": "16.0.0-lane4-prep-1",
+    "purpose": "Frozen consumer contract for the Battle Simulator Field Data panel (lane 4, rev 2). Shapes match the lane-3 frozen record shapes: researchProfile.nodeId (string[]), researchProfile.requirementGroups (string[][]), and the provenance 5-field envelope on every record.",
+    "frozenBy": "T0, 2026-09-02",
+    "rules": [
+      "nodeId is an array of unlocked research node ids (strings); field name is nodeId, not nodeIds.",
+      "requirementGroups is an array of arrays of nodeIds; each inner group is a prerequisite set that must be fully satisfied.",
+      "Every record carries a provenance envelope with exactly five fields: source, credit, captureDate, gameVersionScope, verificationStatus (lane-3 frozen shape, js/codex-provenance.js).",
+      "verificationStatus is one of: current | historical | unverified.",
+      "Records with verificationStatus unverified are rendered as evidence-only in the UI and are excluded from simulations.",
+      "No external URLs in fixtures; the panel is strict-CSP (connect-src 'self').",
+      "Consumers must tolerate absent optional profile fields (equipmentProfile, heroSkillUnlockProfile, castleSkinProfile, legionSkinProfile) and render them as named exclusions."
+    ]
+  },
+  "records": [
+    {
+      "recordId": "duel-synth-001",
+      "anchorHero": "King Arthur",
+      "lineup": {
+        "attacker": ["King Arthur", "Cleopatra VII", "Theodora"],
+        "defender": ["Alexander", "Bleeding Steed", "Theodora"]
+      },
+      "battleCount": 120,
+      "wins": 71,
+      "losses": 49,
+      "confidenceInterval": { "lo": 0.51, "hi": 0.67 },
+      "researchProfile": {
+        "treeId": "x12-melee-defense",
+        "nodeId": ["node_1", "node_4", "node_9", "node_15"],
+        "requirementGroups": [["node_1"], ["node_4", "node_5"], ["node_9"], ["node_15"]]
+      },
+      "equipmentProfile": {
+        "sets": [
+          { "setId": "everlasting", "pieces": ["armor", "weapon", "amulet"] }
+        ]
+      },
+      "heroSkillUnlockProfile": {
+        "King Arthur": [2, 5, 8],
+        "Cleopatra VII": [5, 8],
+        "Theodora": [8]
+      },
+      "castleSkinProfile": { "name": "Everlasting", "star": 3 },
+      "legionSkinProfile": null,
+      "attackerSpeedPriority": "attacker",
+      "inclusionCriteria": "Same-tier T10 cavalry rows, both sides level-matched, no event buffs.",
+      "sourceGameVersion": "X12",
+      "provenance": {
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
+        "captureDate": "2026-09-02",
+        "gameVersionScope": "X12",
+        "verificationStatus": "current"
+      }
+    },
+    {
+      "recordId": "duel-synth-002",
+      "anchorHero": "Rozen Blade",
+      "lineup": {
+        "attacker": ["Rozen Blade", "Ramses II", "Beowulf"],
+        "defender": ["Immortal Guardian", "Ramses II", "Beowulf"]
+      },
+      "battleCount": 40,
+      "wins": 13,
+      "losses": 27,
+      "confidenceInterval": { "lo": 0.19, "hi": 0.49 },
+      "researchProfile": {
+        "treeId": "x12-melee-charge",
+        "nodeId": ["node_2", "node_6"],
+        "requirementGroups": [["node_2", "node_3"], ["node_6"]]
+      },
+      "equipmentProfile": null,
+      "heroSkillUnlockProfile": { "Rozen Blade": [5, 8] },
+      "castleSkinProfile": null,
+      "legionSkinProfile": null,
+      "attackerSpeedPriority": "defender",
+      "inclusionCriteria": "Recorded on a previous patch; kept for historical comparison only.",
+      "sourceGameVersion": "X8",
+      "provenance": {
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "VTS tooling",
+        "captureDate": "2025-11-30",
+        "gameVersionScope": "X8",
+        "verificationStatus": "historical"
+      }
+    },
+    {
+      "recordId": "duel-synth-003",
+      "anchorHero": "Theodora",
+      "lineup": {
+        "attacker": ["Theodora", "Boudica", "Jade Eagle"],
+        "defender": ["Boudica", "Sakura", "Jade Eagle"]
+      },
+      "battleCount": 8,
+      "wins": 5,
+      "losses": 3,
+      "confidenceInterval": { "lo": 0.29, "hi": 0.92 },
+      "researchProfile": {
+        "treeId": "x12-melee-defense",
+        "nodeId": [],
+        "requirementGroups": []
+      },
+      "equipmentProfile": null,
+      "heroSkillUnlockProfile": { "Theodora": [8] },
+      "castleSkinProfile": null,
+      "legionSkinProfile": null,
+      "attackerSpeedPriority": "attacker",
+      "inclusionCriteria": "Unconfirmed crowd report; kept as evidence only until verified.",
+      "sourceGameVersion": "X10",
+      "provenance": {
+        "source": "synthetic fixture â€” do not cite",
+        "credit": "unverified contributor",
+        "captureDate": "2026-08-15",
+        "gameVersionScope": "X10",
+        "verificationStatus": "unverified"
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ const SUPPORTED_LOCALES = Object.freeze([
   'es',
   'fr',
   'id',
+  'it',
   'kr',
   'pt',
   'ru',
@@ -258,20 +259,26 @@ const DM_ENHANCE_CATALOG_KEYS = Object.freeze({
   resourceExoticCrystal: 'dmEnhanceResExoticCrystal',
   resourceDragonCrystal: 'dmEnhanceResDragonCrystal',
 });
-export const DM_ENGLISH_CATALOG = Object.freeze({
-  ...Object.fromEntries(
-    DM_PLANNER_FIELDS.map((field) => [
-      `dmPlanner${dmCatalogSuffix(field)}`,
-      CANONICAL_PACK.planner[field],
-    ])
-  ),
-  ...Object.fromEntries(
-    DM_ENHANCE_FIELDS.map((field) => [
-      DM_ENHANCE_CATALOG_KEYS[field] || `dmEnhance${dmCatalogSuffix(field)}`,
-      CANONICAL_PACK.enhance[field],
-    ])
-  ),
-});
+export function createDmMaterialsCatalog(pack = CANONICAL_PACK) {
+  const planner = pack?.planner || CANONICAL_PACK.planner;
+  const enhance = pack?.enhance || CANONICAL_PACK.enhance;
+  return Object.freeze({
+    ...Object.fromEntries(
+      DM_PLANNER_FIELDS.map((field) => [
+        `dmPlanner${dmCatalogSuffix(field)}`,
+        planner[field] || CANONICAL_PACK.planner[field],
+      ])
+    ),
+    ...Object.fromEntries(
+      DM_ENHANCE_FIELDS.map((field) => [
+        DM_ENHANCE_CATALOG_KEYS[field] || `dmEnhance${dmCatalogSuffix(field)}`,
+        enhance[field] || CANONICAL_PACK.enhance[field],
+      ])
+    ),
+  });
+}
+
+export const DM_ENGLISH_CATALOG = createDmMaterialsCatalog();
 
 const packs = new Map([['en', CANONICAL_PACK]]);
 const inFlight = new Map();

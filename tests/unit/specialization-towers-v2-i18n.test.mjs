@@ -19,7 +19,8 @@ import {
   specializationTowersV2Text,
 } from '../../js/i18n/specialization-towers-v2/index.js';
 
-const EXPECTED_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const EXPECTED_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
+const INTENTIONAL_EN_ONLY_KEYS = Object.freeze(['selectNodeBeforeMedals']);
 
 function placeholders(value) {
   return [...String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
@@ -27,28 +28,40 @@ function placeholders(value) {
 
 await Promise.all(EXPECTED_LOCALES.map((locale) => loadSpecializationTowersV2Locale(locale)));
 
-test('Specialization Towers v2 exposes one strict UI key contract across all 11 locales', () => {
+test('Specialization Towers v2 exposes one strict UI key contract across all 12 locales', () => {
   assert.deepEqual(SPECIALIZATION_TOWERS_V2_LOCALES, EXPECTED_LOCALES);
   assert.ok(SPECIALIZATION_TOWERS_V2_KEYS.length >= 120, 'the complete feature UI is covered');
 
   const englishKeys = Object.keys(SPECIALIZATION_TOWERS_V2_EN).sort();
   for (const locale of EXPECTED_LOCALES) {
     const pack = getSpecializationTowersV2Pack(locale);
-    assert.deepEqual(Object.keys(pack).sort(), englishKeys, `${locale} key parity`);
-    assert.deepEqual(auditSpecializationTowersV2Pack(pack), {
-      complete: true,
-      missing: [],
+    const localeKeys = Object.keys(pack).sort();
+    const expectedKeys = ['en', 'it', 'kr'].includes(locale)
+      ? englishKeys
+      : englishKeys.filter((key) => !INTENTIONAL_EN_ONLY_KEYS.includes(key));
+    assert.deepEqual(localeKeys, expectedKeys, `${locale} key parity`);
+    const audit = auditSpecializationTowersV2Pack(pack);
+    assert.deepEqual(audit, {
+      complete: ['en', 'it', 'kr'].includes(locale),
+      missing: ['en', 'it', 'kr'].includes(locale) ? [] : INTENTIONAL_EN_ONLY_KEYS,
       extra: [],
-      blank: [],
+      blank: ['en', 'it', 'kr'].includes(locale) ? [] : INTENTIONAL_EN_ONLY_KEYS,
       placeholderMismatches: [],
     });
 
-    for (const key of englishKeys) {
+    for (const key of expectedKeys) {
       assert.ok(String(pack[key]).trim(), `${locale}.${key} must not be blank`);
       assert.deepEqual(
         placeholders(pack[key]),
         placeholders(SPECIALIZATION_TOWERS_V2_EN[key]),
         `${locale}.${key} interpolation contract`
+      );
+    }
+    if (!['en', 'it', 'kr'].includes(locale)) {
+      assert.equal(
+        specializationTowersV2Text('selectNodeBeforeMedals', {}, locale),
+        SPECIALIZATION_TOWERS_V2_EN.selectNodeBeforeMedals,
+        `${locale}.selectNodeBeforeMedals should intentionally fall back to English`
       );
     }
   }
@@ -158,6 +171,11 @@ test('Arabic is RTL-native while canonical game-data boundaries remain explicit'
     assert.match(ar[key], /\p{Script=Arabic}/u, `ar.${key} should use Arabic script`);
   }
   assert.match(ar.canonicalEnglishNotice, /\p{Script=Arabic}/u);
+  assert.match(ar.currentTowerProgress, /\p{Script=Arabic}/u);
+  assert.match(
+    specializationTowersV2Text('progressOf', { completed: 1, total: 8 }, 'ar'),
+    /\p{Script=Arabic}/u
+  );
   assert.match(SPECIALIZATION_TOWERS_V2_EN.canonicalEnglishNotice, /canonical English/i);
   assert.match(SPECIALIZATION_TOWERS_V2_EN.exactMedalDataOnly, /confirmed medal costs/i);
   assert.match(SPECIALIZATION_TOWERS_V2_EN.legionSkillNote, /all four researches/i);

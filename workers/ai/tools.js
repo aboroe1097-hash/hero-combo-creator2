@@ -130,7 +130,7 @@ export const TOOL_DECLARATIONS = Object.freeze([
     type: 'function',
     name: 'get_material_plan_summary',
     description:
-      'Read the explicitly allowed saved Dragon Master material plan and calculate exact per-piece/per-set costs, the next piece, and current shortfall.',
+      'Read the explicitly allowed saved Dragon Master plan. Returns separate campaign set-grid progress and owned-piece inventory math: an incomplete campaign set is only a row with missing pieces, not a whole set still owed; use inventory remaining pieces, exact resource need, and stockpile shortfall for saved-inventory calculations.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
@@ -318,13 +318,15 @@ export const TOOL_DECLARATIONS = Object.freeze([
     type: 'function',
     name: 'get_specialization_context',
     description:
-      'Read canonical Specialization Towers data. kind=overview lists all eight columns with researches, medal costs, seasons, and Legion Skills; kind=column with columnId details one column; kind=research with researchName details one research including nodes and milestones. Unknown medal values stay unknown and must never be estimated.',
+      'Read canonical Specialization Towers data. kind=overview lists all eight columns; kind=column details one column; kind=research details one research including nodes, per-node upgradeCount (base-attribute nodes take 2 upgrades) and milestones; kind=route returns the recommended funding order for a troop (troop=archer|cavalry|footman, routeId=spender for owners of Ramses II/Boudica or f2p otherwise). Unknown medal values stay unknown and must never be estimated.',
     parameters: {
       type: 'object',
       properties: {
-        kind: { type: 'string', enum: ['overview', 'column', 'research'] },
+        kind: { type: 'string', enum: ['overview', 'column', 'research', 'route'] },
         columnId: { type: 'integer', minimum: 1, maximum: 8 },
         researchName: { type: 'string', minLength: 1, maxLength: 80 },
+        troop: { type: 'string', enum: ['archer', 'cavalry', 'footman'] },
+        routeId: { type: 'string', enum: ['spender', 'f2p'] },
       },
       required: ['kind'],
       additionalProperties: false,
@@ -335,6 +337,46 @@ export const TOOL_DECLARATIONS = Object.freeze([
     name: 'get_skin_tier_details',
     description:
       'Read the three hero-skin tiers (Mythic, Legendary, Everlasting) with Star 1 activation, star-up costs, maximize totals, and acquisition paths including Premium-shop perfect-crystal exchange.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    type: 'function',
+    name: 'get_arcade_leaderboard',
+    description:
+      'Read the public Arcade leaderboard: kind=overall ranks players by summed personal-best scores across all five mini-games, kind=per_game returns one mini-game ranking. Leaderboard rows are public aggregate data; never claim they show private rosters.',
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['overall', 'per_game'] },
+        gameId: {
+          type: 'string',
+          enum: ['merge_rush', 'sort_hoard', 'crystal_relay', 'set_assembly', 'hero_rumble'],
+        },
+        topN: { type: 'integer', minimum: 1, maximum: 50 },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_all_star_boh_mechanics',
+    description:
+      'Read the public All-Star BoH mechanics: kind=overview returns team size and count, fighting time slots (+12/+14/+16), entry methods, default role groups, battle phases, legions, and the signup window state; kind=scoring returns the 2025 scoring formula weights. Use for "how does BoH work", "what are the BoH phases", or "how is BoH scored". Never request signup contents, rosters, or access status.',
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['overview', 'scoring'] },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_vts_score_mechanics',
+    description:
+      'Read the public VtsScore scoring mechanics: the power fields used for final score upload, how a score is computed and reviewed, and the tier bands. Use for "how does VtsScore work", "which power fields matter", or "what do the score tiers mean". It never returns any player\'s scores or signup data.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
   },
 ]);
@@ -614,8 +656,8 @@ export function validateToolArguments(name, args) {
   }
   if (name === 'get_specialization_context') {
     if (
-      !hasOnlyKeys(args, ['kind', 'columnId', 'researchName']) ||
-      !['overview', 'column', 'research'].includes(args.kind)
+      !hasOnlyKeys(args, ['kind', 'columnId', 'researchName', 'troop', 'routeId']) ||
+      !['overview', 'column', 'research', 'route'].includes(args.kind)
     ) {
       return false;
     }
@@ -629,8 +671,47 @@ export function validateToolArguments(name, args) {
         args.researchName.length <= 80
       );
     }
-    return args.columnId === undefined && args.researchName === undefined;
+    if (args.kind === 'route') {
+      return (
+        (args.troop === undefined || ['archer', 'cavalry', 'footman'].includes(args.troop)) &&
+        (args.routeId === undefined || ['spender', 'f2p'].includes(args.routeId)) &&
+        args.columnId === undefined &&
+        args.researchName === undefined
+      );
+    }
+    return (
+      args.columnId === undefined &&
+      args.researchName === undefined &&
+      args.troop === undefined &&
+      args.routeId === undefined
+    );
   }
   if (name === 'get_skin_tier_details') return hasOnlyKeys(args, []);
+  if (name === 'get_arcade_leaderboard') {
+    if (
+      !hasOnlyKeys(args, ['kind', 'gameId', 'topN']) ||
+      !['overall', 'per_game'].includes(args.kind)
+    ) {
+      return false;
+    }
+    if (args.kind === 'per_game') {
+      if (
+        !['merge_rush', 'sort_hoard', 'crystal_relay', 'set_assembly', 'hero_rumble'].includes(
+          args.gameId
+        )
+      ) {
+        return false;
+      }
+    } else if (args.gameId !== undefined) {
+      return false;
+    }
+    return (
+      args.topN === undefined || (Number.isInteger(args.topN) && args.topN >= 1 && args.topN <= 50)
+    );
+  }
+  if (name === 'get_all_star_boh_mechanics') {
+    return hasOnlyKeys(args, ['kind']) && ['overview', 'scoring'].includes(args.kind);
+  }
+  if (name === 'get_vts_score_mechanics') return hasOnlyKeys(args, []);
   return false;
 }

@@ -29,6 +29,7 @@ const sourceOnlyDeployPaths = new Set([
   'assets/eden-reference/sector-parchments',
   'assets/eden-reference/screenshots/WhatsApp Image 2026-06-10 at 18.59.30 (2).jpeg',
   'assets/eden-reference/screenshots/WhatsApp Image 2026-06-10 at 18.59.32.jpeg',
+  'assets/artifact/redemption-grail-board.webp',
   'images/strife/roc-strife-reference.png',
   'assets/admin-D1Gvfu0q.js',
   'images/heroes/catchup/ashen-verdict.png',
@@ -44,6 +45,17 @@ const sourceOnlyDeployPaths = new Set([
   'images/heroes/catchup/skanda.png',
   'images/heroes/catchup/warden.png',
   'images/heroes/catchup/warhammer.png',
+  'images/heroes/x12/achilles.png',
+  'images/heroes/x12/al-hawra.png',
+  'images/heroes/x12/arslan.png',
+  'images/heroes/x12/belisarius.png',
+  'images/heroes/x12/el-cid.png',
+  'images/heroes/x12/farah.png',
+  'images/heroes/x12/healer.png',
+  'images/heroes/x12/hellfire.png',
+  'images/heroes/x12/lilith.png',
+  'images/heroes/x12/pepin.png',
+  'images/heroes/x12/poison-master.png',
   'images/logo.webp',
 ]);
 
@@ -63,6 +75,7 @@ const copyFiles = [
   'public/ai-launcher-critical.css',
   'public/sw.js',
   'js/eden-datasets.payload.json',
+  'js/codex-payload.json',
   'js/theme-prepaint.js',
   'js/admin-auth-config.js',
   'js/maintenance-config.js',
@@ -77,6 +90,7 @@ const copyDest = {
   'public/ai-launcher-critical.css': 'ai-launcher-critical.css',
   'public/sw.js': 'sw.js',
   'js/eden-datasets.payload.json': 'js/eden-datasets.payload.json',
+  'js/codex-payload.json': 'js/codex-payload.json',
   'js/theme-prepaint.js': 'js/theme-prepaint.js',
   'js/admin-auth-config.js': 'js/admin-auth-config.js',
   'js/maintenance-config.js': 'js/maintenance-config.js',
@@ -123,11 +137,11 @@ function distUrlExists(url) {
   return fs.existsSync(path.join(dist, rel));
 }
 
-// The public bootstrap and its gate stylesheet may load before a member has
-// unlocked the hub. The planner, persistence/OCR domain, and Admin controller
-// must only be fetched after their corresponding server-verified access gate.
-const PROTECTED_ALL_STAR_PRECACHE_PATTERN =
-  /^\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/]*\.js$/iu;
+// The All-Star BoH member hub and its admin command center are gone; what is
+// left of that domain is the access client, the stats OCR helpers and the
+// season schedule, which VtsScore loads behind its own server-verified gate.
+// Those must still never be precached ahead of that gate.
+const PROTECTED_ALL_STAR_PRECACHE_PATTERN = /^\/assets\/all-star-boh-[^/]*\.js$/iu;
 
 function isProtectedAllStarPrecacheUrl(url) {
   return PROTECTED_ALL_STAR_PRECACHE_PATTERN.test(String(url || '').split(/[?#]/u, 1)[0]);

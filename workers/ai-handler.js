@@ -14,11 +14,8 @@ import {
 import { utf8ByteLength } from './ai/crypto.js';
 import { AiRequestError, asSafeError } from './ai/errors.js';
 import { authenticateFirebaseRequest } from './ai/firebase-jwt.js';
-import {
-  buildContinuationProviderInput,
-  createNormalizedInteractionStream,
-  prepareGeminiUpstream,
-} from './ai/gemini.js';
+import * as geminiProvider from './ai/gemini.js';
+import * as deepseekProvider from './ai/deepseek.js';
 import {
   quotaHeaders,
   quotaMetadata,
@@ -37,10 +34,28 @@ const JSON_HEADERS = Object.freeze({
   'X-Content-Type-Options': 'nosniff',
 });
 
+function getProvider(env) {
+  const provider = String(env.AI_PROVIDER || 'gemini')
+    .trim()
+    .toLowerCase();
+  if (provider === 'gemini') return geminiProvider;
+  if (provider === 'deepseek') return deepseekProvider;
+  return null;
+}
+
 function missingConfiguration(env) {
   const missing = [];
   if (env.AI_ENABLED !== 'true') missing.push('AI_ENABLED');
-  if (!String(env.GEMINI_API_KEY || '').trim()) missing.push('GEMINI_API_KEY');
+  const providerName = String(env.AI_PROVIDER || 'gemini')
+    .trim()
+    .toLowerCase();
+  if (providerName === 'gemini') {
+    if (!String(env.GEMINI_API_KEY || '').trim()) missing.push('GEMINI_API_KEY');
+  } else if (providerName === 'deepseek') {
+    if (!String(env.DEEPSEEK_API_KEY || '').trim()) missing.push('DEEPSEEK_API_KEY');
+  } else {
+    missing.push('AI_PROVIDER');
+  }
   if (String(env.AI_CONTINUATION_SECRET || '').length < 32) missing.push('AI_CONTINUATION_SECRET');
   if (!String(env.AI_MODEL || '').trim()) missing.push('AI_MODEL');
   if (!String(env.FIREBASE_PROJECT_ID || '').trim()) missing.push('FIREBASE_PROJECT_ID');
@@ -149,9 +164,20 @@ async function prepareContinuationTurn(env, auth, payload) {
     requestId: payload.requestId,
     round: payload.round,
   });
+  const provider = getProvider(env);
+  if (!provider) {
+    throw new AiRequestError(
+      503,
+      SAFE_ERROR_CODES.disabled,
+      'The AI assistant is currently disabled.'
+    );
+  }
   return {
     quota,
-    providerInput: buildContinuationProviderInput(payload.providerState, payload.input.results),
+    providerInput: provider.buildContinuationProviderInput(
+      payload.providerState,
+      payload.input.results
+    ),
     allowedToolGroups: claims.groups,
     locale: claims.locale,
     uidHash,
@@ -180,6 +206,15 @@ async function handleTurn(request, env, origin) {
     );
   }
 
+  const provider = getProvider(env);
+  if (!provider) {
+    throw new AiRequestError(
+      503,
+      SAFE_ERROR_CODES.disabled,
+      'The AI assistant is currently disabled.'
+    );
+  }
+
   const auth = await authenticateFirebaseRequest(request, env);
   const rawPayload = await readBoundedJson(request);
   const requestBytes = utf8ByteLength(JSON.stringify(rawPayload));
@@ -191,7 +226,8 @@ async function handleTurn(request, env, origin) {
 
   let upstream;
   try {
-    upstream = await prepareGeminiUpstream({
+    const prepareUpstream = provider.prepareDeepseekUpstream || provider.prepareGeminiUpstream;
+    upstream = await prepareUpstream({
       env,
       providerInput: prepared.providerInput,
       allowedToolGroups: prepared.allowedToolGroups,
@@ -212,7 +248,7 @@ async function handleTurn(request, env, origin) {
     throw error;
   }
 
-  const stream = createNormalizedInteractionStream({
+  const stream = provider.createNormalizedInteractionStream({
     upstream,
     env,
     requestId: payload.requestId,

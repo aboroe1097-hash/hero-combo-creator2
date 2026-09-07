@@ -56,12 +56,14 @@ function publicWeightedRow(row) {
     currentRank: integer(row.currentRank) || null,
     currentReward: row.currentReward || 'standard',
     contribution: Number(row.contributionScore) || 0,
+    demolition: Number(row.totalDemolition) || 0,
     exGuildContribution: Number(row.contributionExGuild) || 0,
     shieldWalls: integer(row.shieldWalls),
     pathers: integer(row.pathers),
     banners: integer(row.banners),
     conductBonus: Number(row.conductBonus) || 0,
     contributionPoints: Number(row.contributionRewardScore) || 0,
+    demolitionPoints: Number(row.demolitionPoints) || 0,
     dutyPoints: Number(row.dutyPoints) || 0,
     conductPoints: Number(row.conductPoints) || 0,
     weightedScore: Number(row.weightedScore) || 0,
@@ -147,6 +149,7 @@ async function readPublicData() {
       : [],
     r5Adjustments: conduct,
     season,
+    demolitionRecords: Array.isArray(dashboard.attacks) ? dashboard.attacks : [],
   });
   const settings = settingsSnap?.exists?.() ? settingsSnap.data() || {} : {};
   const publicVoteResults = normalizePublicVoteResults(

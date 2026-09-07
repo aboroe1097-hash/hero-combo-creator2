@@ -39,13 +39,29 @@ function observeTargetFailures(page) {
     }
   });
   page.on('console', (message) => {
+    if (message.type() !== 'error') return;
+    const text = message.text();
+    // Chrome's generic resource error carries no URL, so it cannot be attributed to an
+    // origin. It fired for third-party 404s (auth, reCAPTCHA) and failed runs that were
+    // otherwise clean. Same-origin resource failures are already caught precisely, with
+    // the full URL, by the origin-filtered response handler above.
+    if (/^Failed to load resource/iu.test(text)) return;
+    // A real reCAPTCHA Enterprise key embeds Google in a third-party iframe. Chrome
+    // reports Google's own report-only frame-ancestors policy as a console error even
+    // though the iframe loads and no same-origin Pages resource is blocked.
     if (
-      message.type() === 'error' &&
-      /content security policy|failed to load module|dynamically imported module|\b404\b/iu.test(
-        message.text()
+      /Framing 'https:\/\/www\.google\.com\/' violates the following report-only Content Security Policy directive: "frame-ancestors 'self'"/iu.test(
+        text
       )
     ) {
-      failures.push(`${page.url()}: ${message.text()}`);
+      return;
+    }
+    if (
+      /content security policy|failed to load module|dynamically imported module|\b404\b/iu.test(
+        text
+      )
+    ) {
+      failures.push(`${page.url()}: ${text}`);
     }
   });
   page.on('pageerror', (error) => {
@@ -164,11 +180,10 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   expect(localIndex).toContain(`v${packageVersion}`);
   expect(localIndex).toContain('<span data-i18n="loadingEllipsis">Loading…</span>');
   expect(localIndex).not.toContain('Loadingâ€¦');
-  expect(localServiceWorker).not.toMatch(
-    /\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/'"]*\.js/iu
-  );
-  expect(localServiceWorker).toMatch(/\/assets\/all-star-boh-bootstrap-[^/'"]*\.js/iu);
-  expect(localServiceWorker).toMatch(/\/assets\/all-star-boh-[^/'"]*\.css/iu);
+  // The All-Star BoH member hub is gone; the remaining all-star-boh-* chunks are
+  // the access client and stats OCR that VtsScore loads behind its own
+  // server-verified gate, so none of them may be precached.
+  expect(localServiceWorker).not.toMatch(/\/assets\/all-star-boh-[^/'"]*\.js/iu);
   if (isRemotePreview) {
     const rootResponse = await request.get('/', { headers: { 'Cache-Control': 'no-cache' } });
     expect(rootResponse.ok()).toBe(true);
@@ -185,14 +200,20 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   await page.locator('.cmdk-input').press('Escape');
   await expect(page.locator('.cmdk-overlay')).toBeHidden();
 
+  // A hub pill only opens its default sub-tab, so reaching the Hero Atlas and
+  // Research chunks now takes a second click. Without `subtab` here the
+  // hero-atlas and research chunks are never requested and the chunk assertion
+  // below fails — which is what this loop exists to prove.
   const lazySurfaces = [
-    ['#tabHeroes', '#heroesSection .heroes-layout'],
-    ['#tabResearch', '#techListContainer .research-tech-card'],
-    ['#tabMaterials', '#materialCalculatorRoot .dm-plan-panel'],
-    ['#tabStrife', '#strifeToolRoot .strife-monster-card'],
-    ['#tabEdenMap', '#edenMapRoot'],
+    { tab: '#tabHeroesCombos', marker: '#generatorHeroes' },
+    { tab: '#tabHeroesCombos', subtab: 'heroes', marker: '#heroesTabContent .heroes-tab-inner' },
+    { tab: '#tabResearchTowers', marker: '#specializationToolRoot .spec-tool' },
+    { tab: '#tabResearchTowers', subtab: 'research', marker: '#techListContainer' },
+    { tab: '#tabMaterials', marker: '#materialCalculatorRoot .dm-plan-panel' },
+    { tab: '#tabStrife', marker: '#strifeToolRoot .strife-monster-card' },
+    { tab: '#tabEdenMap', marker: '#edenMapRoot' },
   ];
-  for (const [tab, marker] of lazySurfaces) {
+  for (const { tab, subtab, marker } of lazySurfaces) {
     const tool = page.locator(tab);
     let openedMore = false;
     if (!(await tool.isVisible())) {
@@ -203,40 +224,9 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
     }
     await tool.click();
     if (openedMore) await expect(page.locator('#shellMorePanel')).toBeHidden();
+    if (subtab) await page.locator(`[data-hub-subtab="${subtab}"]`).click();
     await expect(page.locator(marker).first()).toBeVisible({ timeout: 30000 });
   }
-
-  const allStarTab = page.locator('#tabAllStarBoh');
-  await expect(page.locator('#allStarBohSection .tab-loading')).toHaveText('Loading…');
-  let openedAllStarMore = false;
-  if (!(await allStarTab.isVisible())) {
-    await page.locator('#shellMoreButton').click();
-    await expect(page.locator('#shellMorePanel')).toBeVisible();
-    await expect(allStarTab).toBeVisible();
-    openedAllStarMore = true;
-  }
-  await expect(allStarTab).toHaveAccessibleName('Open the All-Star BoH member hub');
-  await allStarTab.click();
-  if (openedAllStarMore) await expect(page.locator('#shellMorePanel')).toBeHidden();
-  await expect(page.locator('#allStarBohSection .boh-access-gate')).toBeVisible({ timeout: 30000 });
-  await expect(page.locator('#allStarBohSection [data-role="boh-root"]')).toBeHidden();
-  const lockedAllStarResources = await page.evaluate(() =>
-    performance
-      .getEntriesByType('resource')
-      .map((entry) => new URL(entry.name, window.location.href).pathname)
-  );
-  expect(
-    lockedAllStarResources.some((path) =>
-      /\/assets\/all-star-boh-bootstrap-[^/]+\.js$/u.test(path)
-    ),
-    'All-Star public access bootstrap should load'
-  ).toBe(true);
-  expect(
-    lockedAllStarResources.some((path) =>
-      /\/assets\/(?:admin-all-star-boh-|all-star-boh-(?!bootstrap-))[^/]*\.js$/u.test(path)
-    ),
-    'protected All-Star domain chunks must not load before server-verified access'
-  ).toBe(false);
 
   const productionState = await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.ready;
@@ -267,30 +257,31 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   }
 
   await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#dashLoginForm')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#dashAccountSignInBtn')).toBeVisible({ timeout: 30000 });
 
   await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('body')).toHaveClass(/\bis-locked\b/u);
-  await expect(page.getByRole('dialog', { name: 'Beta Testers Only' })).toBeVisible();
-  await expect(page.locator('#battleSimulatorMount')).toBeHidden();
-  await expect(page.locator('.battle-app-shell')).toHaveCount(0);
-  const lockedBattleResources = await page.evaluate(() =>
+  // The shared admin PIN is gone — it guarded nothing server-side, and this
+  // route is a calculator over public game data — so the simulator mounts
+  // directly instead of behind a gate.
+  await expect(page.getByRole('dialog', { name: 'Beta Testers Only' })).toHaveCount(0);
+  await expect(page.locator('#battleSimulatorMount')).toBeVisible({ timeout: 30000 });
+  const battleResources = await page.evaluate(() =>
     performance
       .getEntriesByType('resource')
       .map((entry) => new URL(entry.name, window.location.href).pathname)
   );
   expect(
-    lockedBattleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.js$/u.test(path)),
+    battleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.js$/u.test(path)),
     'Battle Simulator bootstrap asset should load'
   ).toBe(true);
   expect(
-    lockedBattleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.css$/u.test(path)),
+    battleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.css$/u.test(path)),
     'Battle Simulator stylesheet should load'
   ).toBe(true);
   expect(
-    lockedBattleResources.some((path) => /\/assets\/battle-simulator-app-[^/]+\.js$/u.test(path)),
-    'protected simulator app chunk must not load before PIN unlock'
-  ).toBe(false);
+    battleResources.some((path) => /\/assets\/battle-simulator-app-[^/]+\.js$/u.test(path)),
+    'simulator app chunk should load now that the route has no gate'
+  ).toBe(true);
 
   await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.admin-shell-title')).toContainText('Eden X1');
