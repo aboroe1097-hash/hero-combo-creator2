@@ -78,9 +78,22 @@ test('every Firebase SDK surface loads from the bundled package, never a CDN', (
     /const \{ getFunctions, httpsCallable \} = await importFirebaseFunctions\(\);/
   );
 
-  // No module may reach for a Firebase SDK over the network. firebase-sdk.js is
+  // Nothing may reach for a Firebase SDK over the network. firebase-sdk.js is
   // the single door, and Vite turns each import behind it into a same-origin,
-  // content-hashed chunk the service worker already covers.
+  // content-hashed chunk the service worker already covers. That includes the
+  // HTML: index/admin/vtsscore each carried an importmap pinning firebase/* to
+  // gstatic 11.6.1. It resolved nothing, because every page here is a Vite
+  // input and bare specifiers are rewritten at build time — but it was a
+  // standing invitation to load a second copy of the SDK, which is exactly the
+  // failure it was sitting next to.
+  const htmlFiles = readdirSync('.').filter((name) => name.endsWith('.html'));
+  for (const file of htmlFiles) {
+    assert.doesNotMatch(
+      readFileSync(file, 'utf8'),
+      /type="importmap"/,
+      `${file} ships an importmap`
+    );
+  }
   for (const file of readdirSync('js').filter((name) => name.endsWith('.js'))) {
     assert.doesNotMatch(
       readFileSync(`js/${file}`, 'utf8'),

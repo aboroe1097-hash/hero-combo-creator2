@@ -3,6 +3,10 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.6 - 2026-09-07
+
+- Removed the dead Firebase importmap from the Home, VTS Admin and VtsScore pages. It pinned firebase/* to gstatic 11.6.1 and resolved nothing — every page here is a Vite input, so bare specifiers are rewritten at build time — but it stood ready to load a second copy of the SDK beside the bundled one, which is the mismatch that had just broken every role grant. A test now refuses both an importmap in any page and a Firebase SDK fetched over the network from anywhere under js/.
+
 ## 16.0.5 - 2026-09-07
 
 - Fixed every role grant in Users & Roles failing with "Service functions is not available". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it registered its functions component into its own container, so the lookup against the bundled app found nothing. It now loads through the same firebase-sdk.js door as every other Firebase surface, and a test pins that no module may fetch a Firebase SDK over the network.
