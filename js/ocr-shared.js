@@ -538,7 +538,7 @@ function canonicalizeStructureName(name, level) {
   // A lobby is named for the hero it belongs to - "Lobby of Beowulf" - and the
   // hero varies, so match the prefix rather than enumerating them. Checked
   // against the cleaned name so a trailing level does not defeat it.
-  if (/^lobby/.test(lower) || /^lobbyof/.test(compact)) canonical = 'Lobby';
+  if (/^lobby\b/.test(lower) || /^lobbyof/.test(compact)) canonical = 'Lobby';
 
   if (canonical === 'Gates' && level === 'Lv1' && !isCheckpointName(name)) canonical = 'Bridge';
 

@@ -781,6 +781,12 @@ test('X2 lobbies validate at 700k regardless of the hero they are named for', ()
     ['Lobby of Beowulf', ''],
     ['lobby of Ramses II', 'Lv2'],
     ['LOBBY OF CLEOPATRA VII', 'Lv1'],
+    // Covers the word-boundary branch specifically. Without a case like this
+    // the branch is dead code that still passes: the plain name is caught by
+    // the exact-match table and "Lobby of X" by the compact prefix, so a broken
+    // boundary regex went unnoticed until eslint rejected the character in it.
+    ['Lobby Beowulf', ''],
+    ['Lobby North', 'Lv2'],
   ]) {
     const result = validateTotalDemolition(name, level, 700000);
     assert.ok(result, `${name} should be a known structure`);
@@ -790,6 +796,8 @@ test('X2 lobbies validate at 700k regardless of the hero they are named for', ()
   }
   // A total well away from 700k must still be reported as a mismatch.
   assert.equal(validateTotalDemolition('Lobby of Beowulf', '', 2000000).match, false);
+  // The boundary must not swallow unrelated words that merely start with the letters.
+  assert.equal(normalizeStructureName('Lobbyist'), 'Lobbyist');
 });
 
 test('a level 4 gate expects 1.5M', () => {
