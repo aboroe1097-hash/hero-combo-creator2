@@ -3,6 +3,11 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.8 - 2026-09-07
+
+- The VTS Eden Hub season tabs now name their season — "Current Season · Eden X2" and "Previous Seasons · Eden X1" — in all twelve Eden locales. The names come from the workspace registry, so opening a new season is one flag in that registry rather than an edit in every locale pack.
+- The season being played is now the hub's landing tab, with the Royal Bounty guide as the fallback when no season is published. The guide opens first and the hub upgrades to the season once the publication check clears, abandoning that upgrade if you have already picked a tab yourself, and the wait is bounded so an unreachable backend simply stays on the guide.
+
 ## 16.0.7 - 2026-09-07
 
 - Allowed VTS Admin to reach the setUserRole Cloud Function. With the SDK-instance fix in place the callable finally resolved, and the browser then refused the connection: admin.html's Content-Security-Policy never listed cloudfunctions.net, though index.html has always listed the same origin for the All-Star and VtsScore endpoints. Role grants work end to end now, and a test requires any page that calls a Cloud Function to allow its origin.

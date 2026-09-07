@@ -97,7 +97,7 @@ export default {
     subTabMap: 'Eden Haritası',
     subTabLoyalty: 'Eden Sadakati',
     subTabBounty: 'Kraliyet Ödülü Eden X2',
-    subTabSeason: 'Mevcut sezon',
-    subTabPrevious: 'Önceki sezonlar',
+    subTabSeason: 'Mevcut sezon · {currentSeason}',
+    subTabPrevious: 'Önceki sezonlar · {previousSeason}',
   },
 };

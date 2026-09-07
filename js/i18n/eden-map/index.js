@@ -1,4 +1,5 @@
 import { resolveRuntimeLocale } from '../../locale-format.js';
+import { getCurrentEdenSeasonLabel, getPreviousEdenSeasonLabel } from '../../eden-workspaces.js';
 
 const STRUCTURE_SHAPES = Object.freeze({
   CP1: ['gate', 1],
@@ -157,8 +158,8 @@ const EN = Object.freeze({
     subTabMap: 'Eden Map',
     subTabLoyalty: 'Eden Loyalty',
     subTabBounty: 'Royal Bounty Eden X2',
-    subTabSeason: 'Current Season',
-    subTabPrevious: 'Previous Seasons',
+    subTabSeason: 'Current Season · {currentSeason}',
+    subTabPrevious: 'Previous Seasons · {previousSeason}',
   },
 });
 
@@ -293,8 +294,14 @@ export function applyEdenMapDomTranslations(root = document, locale) {
     root.dataset.edenLoadingLabel = edenMapText('loadingMap', {}, locale);
   }
   if (!root?.querySelectorAll) return;
+  // The season sub-tabs name their season, and the names come from the
+  // workspace registry, so a new season renames the tabs without touching copy.
+  const seasonVars = {
+    currentSeason: getCurrentEdenSeasonLabel(),
+    previousSeason: getPreviousEdenSeasonLabel(),
+  };
   root.querySelectorAll('[data-eden-i18n]').forEach((element) => {
-    element.textContent = edenMapText(element.dataset.edenI18n, {}, locale);
+    element.textContent = edenMapText(element.dataset.edenI18n, seasonVars, locale);
   });
   root.querySelectorAll('[data-eden-i18n-title]').forEach((element) => {
     element.title = edenMapText(element.dataset.edenI18nTitle, {}, locale);

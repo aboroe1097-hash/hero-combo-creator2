@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -187,4 +188,53 @@ test('Eden Map shell and runtime use domain localization hooks for accessibility
   assert.match(gameTime, /gameClockDayLabel/);
   assert.match(appCss, /content: attr\(data-eden-loading-label\)/);
   assert.match(toolCss, /content: attr\(data-eden-loading-label\)/);
+});
+
+test('season sub-tabs name their season from the workspace registry', async () => {
+  // The tabs used to read "Current Season" / "Previous Seasons", which says
+  // nothing about which season is which. The names come from the registry
+  // rather than from copy, so opening a new season is one `active` flip here
+  // instead of an edit in thirteen locale packs.
+  const { getCurrentEdenSeasonLabel, getPreviousEdenSeasonLabel } =
+    await import('../../js/eden-workspaces.js');
+  assert.equal(getCurrentEdenSeasonLabel(), 'Eden X2');
+  assert.equal(getPreviousEdenSeasonLabel(), 'Eden X1');
+
+  const vars = {
+    currentSeason: getCurrentEdenSeasonLabel(),
+    previousSeason: getPreviousEdenSeasonLabel(),
+  };
+  assert.equal(edenMapText('subTabSeason', vars, 'en'), 'Current Season · Eden X2');
+  assert.equal(edenMapText('subTabPrevious', vars, 'en'), 'Previous Seasons · Eden X1');
+
+  // Every locale must carry the placeholder, or that locale silently drops the
+  // season name while the others show it.
+  const localeDir = new URL('../../js/i18n/eden-map/', import.meta.url);
+  for (const file of readdirSync(localeDir).filter((name) => name.endsWith('.js'))) {
+    const source = readFileSync(new URL(file, localeDir), 'utf8');
+    if (!source.includes('subTabSeason:')) continue;
+    assert.match(source, /subTabSeason: '[^']*\{currentSeason\}'/, file);
+    assert.match(source, /subTabPrevious: '[^']*\{previousSeason\}'/, file);
+  }
+
+  // The applier has to pass those vars, or the placeholder ships to users raw.
+  const applier = readFileSync(new URL('../../js/i18n/eden-map/index.js', import.meta.url), 'utf8');
+  assert.match(applier, /edenMapText\(element\.dataset\.edenI18n, seasonVars, locale\)/);
+});
+
+test('the Eden hub lands on the season being played', () => {
+  // Royal Bounty used to be the landing tab. The season is now the landing tab
+  // when one is published, and the wait for that answer is bounded so an
+  // unreachable Firestore leaves the hub on Royal Bounty rather than blank.
+  const hub = readFileSync(new URL('../../js/eden-hub.js', import.meta.url), 'utf8');
+  assert.match(hub, /openIntent\('bounty'\);/);
+  assert.match(hub, /if \(!available \|\| userPickedSubtab\) return;/);
+  assert.match(hub, /openIntent\('season'\);/);
+  // The upgrade must yield to a visitor's own choice. Waiting for the check
+  // before the first paint let the hub pull a panel away from someone who had
+  // already clicked, which the browser tests caught as an element stranded in a
+  // hidden subtree with no accessible name.
+  assert.match(hub, /userPickedSubtab = true;/);
+  assert.match(hub, /const SEASON_LANDING_TIMEOUT_MS = \d+;/);
+  assert.doesNotMatch(hub, /openIntent\(readSubtabIntent\(\) \|\| 'bounty'\)/);
 });

@@ -97,7 +97,7 @@ export default {
     subTabMap: 'Mapa Eden',
     subTabLoyalty: 'Lealdade Eden',
     subTabBounty: 'Recompensa Real Eden X2',
-    subTabSeason: 'Temporada atual',
-    subTabPrevious: 'Temporadas anteriores',
+    subTabSeason: 'Temporada atual · {currentSeason}',
+    subTabPrevious: 'Temporadas anteriores · {previousSeason}',
   },
 };

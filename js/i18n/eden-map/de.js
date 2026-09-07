@@ -97,7 +97,7 @@ export default {
     subTabMap: 'Eden-Karte',
     subTabLoyalty: 'Eden-Loyalität',
     subTabBounty: 'Königliche Prämie Eden X2',
-    subTabSeason: 'Aktuelle Saison',
-    subTabPrevious: 'Frühere Saisons',
+    subTabSeason: 'Aktuelle Saison · {currentSeason}',
+    subTabPrevious: 'Frühere Saisons · {previousSeason}',
   },
 };

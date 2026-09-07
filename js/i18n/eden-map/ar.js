@@ -97,7 +97,7 @@ export default {
     subTabMap: 'خريطة إيدن',
     subTabLoyalty: 'ولاء إيدن',
     subTabBounty: 'المكافأة الملكية Eden X2',
-    subTabSeason: 'الموسم الحالي',
-    subTabPrevious: 'المواسم السابقة',
+    subTabSeason: 'الموسم الحالي · {currentSeason}',
+    subTabPrevious: 'المواسم السابقة · {previousSeason}',
   },
 };
