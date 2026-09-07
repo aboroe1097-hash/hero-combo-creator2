@@ -18,6 +18,79 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   conduct: 0.05,
 });
 
+// Points a single duty is worth, by activity and by which account did it.
+// Every duty used to be worth a flat 10,000 regardless of either, so a banner
+// dropped from a throwaway alt scored exactly what a main did.
+//
+// These are relative points; DUTY_POINT_UNIT converts them to the score scale,
+// so a weight of 1 reproduces the old flat value exactly and the numbers here
+// read the way an operator says them out loud: pathing on a main is worth 3.
+export const DUTY_POINT_UNIT = 10000;
+export const DUTY_ACTIVITIES = Object.freeze(['banners', 'pathers', 'shieldWalls']);
+export const DUTY_ACCOUNT_CLASSES = Object.freeze(['main', 'alt']);
+export const MAX_DUTY_POINT_WEIGHT = 100;
+
+export const DEFAULT_DUTY_POINT_WEIGHTS = Object.freeze({
+  banners: Object.freeze({ main: 1, alt: 0.5 }),
+  pathers: Object.freeze({ main: 3, alt: 1 }),
+  // Shield walls keep the old flat value until someone decides otherwise;
+  // changing a weight nobody asked about would restate scores silently.
+  shieldWalls: Object.freeze({ main: 1, alt: 1 }),
+});
+
+// Weights arrive from an admin-edited document, so treat every field as
+// hostile: non-numeric, negative, absurd, or missing entries all fall back to
+// the default for that one cell rather than discarding the whole table.
+export function normalizeDutyPointWeights(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const out = {};
+  for (const activity of DUTY_ACTIVITIES) {
+    const fallback = DEFAULT_DUTY_POINT_WEIGHTS[activity];
+    const given = source[activity] && typeof source[activity] === 'object' ? source[activity] : {};
+    out[activity] = {};
+    for (const cls of DUTY_ACCOUNT_CLASSES) {
+      const value = Number(given[cls]);
+      out[activity][cls] =
+        Number.isFinite(value) && value >= 0 && value <= MAX_DUTY_POINT_WEIGHT
+          ? value
+          : fallback[cls];
+    }
+  }
+  return out;
+}
+
+// An account is the family main when it is the family's configured primary,
+// or when it is the whole family. Everything else a person also plays — the
+// secondary castles, the banner accounts — is an alt. Duty still lands on the
+// person's row either way; only what it is worth changes.
+export function classifyDutyAccount(accountKey) {
+  const familyKey = playerFamilyKey(accountKey);
+  const primary = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey] || familyKey;
+  const key = compactPlayerIdentity(accountKey) || String(accountKey || '');
+  return key === primary ? 'main' : 'alt';
+}
+
+export function emptyDutyClassCounts() {
+  return {
+    banners: { main: 0, alt: 0 },
+    pathers: { main: 0, alt: 0 },
+    shieldWalls: { main: 0, alt: 0 },
+  };
+}
+
+// Points for one family's duty, given the weight table in force.
+export function dutyPointsFor(classCounts, weights) {
+  const table = normalizeDutyPointWeights(weights);
+  let total = 0;
+  for (const activity of DUTY_ACTIVITIES) {
+    const counts = classCounts?.[activity] || {};
+    for (const cls of DUTY_ACCOUNT_CLASSES) {
+      total += Number(counts[cls] || 0) * table[activity][cls];
+    }
+  }
+  return total * DUTY_POINT_UNIT;
+}
+
 export const EDEN_X1_CONTRIBUTION_RANKING_MODES = Object.freeze({
   EXTENDED: 'extended',
   DEFAULT: 'default',
@@ -459,6 +532,9 @@ export function buildWeightedContributionRows(options = {}) {
   const dutyCounts = buildWeightedDutyCounts(options.dutyRecords);
   const conductMap = buildConductMap(options.r5Adjustments, options.season || options.r5Season);
   const weights = normalizeWeights(options.weights);
+  // Absent config scores exactly as the defaults do, so a caller that has not
+  // been taught about duty weights yet keeps working.
+  const dutyWeights = normalizeDutyPointWeights(options.dutyPointWeights);
   const forfeitFamilies = buildForfeitFamilySet(
     options.r5Adjustments,
     options.season || options.r5Season
@@ -524,6 +600,11 @@ export function buildWeightedContributionRows(options = {}) {
   // once — to the configured main account for known families, otherwise the row
   // with the highest contribution (then best current rank).
   const familyDuty = new Map();
+  // Split alongside the existing totals rather than replacing them: the totals
+  // are what the tables display (a player did four banners), while the split is
+  // only what they are worth. Losing the totals would turn a scoring change into
+  // a reporting change.
+  const familyDutyByClass = new Map();
   dutyCounts.forEach((counts, accountKey) => {
     const fam = playerFamilyKey(accountKey);
     const agg = familyDuty.get(fam) || emptyDutyCounts();
@@ -531,6 +612,13 @@ export function buildWeightedContributionRows(options = {}) {
     agg.pathers += counts.pathers;
     agg.banners += counts.banners;
     familyDuty.set(fam, agg);
+
+    const cls = classifyDutyAccount(accountKey);
+    const split = familyDutyByClass.get(fam) || emptyDutyClassCounts();
+    split.shieldWalls[cls] += counts.shieldWalls;
+    split.pathers[cls] += counts.pathers;
+    split.banners[cls] += counts.banners;
+    familyDutyByClass.set(fam, split);
   });
   const familyConduct = new Map();
   conductMap.forEach((points, accountKey) => {
@@ -573,11 +661,15 @@ export function buildWeightedContributionRows(options = {}) {
     const fam = row.familyKey || playerFamilyKey(row.playerKey);
     const isPrimaryAccount = primaryIndexByFamily.get(fam) === index;
     const duties = isPrimaryAccount ? familyDuty.get(fam) || emptyDutyCounts() : emptyDutyCounts();
+    const dutiesByClass = isPrimaryAccount
+      ? familyDutyByClass.get(fam) || emptyDutyClassCounts()
+      : emptyDutyClassCounts();
     return {
       ...row,
       shieldWalls: duties.shieldWalls,
       pathers: duties.pathers,
       banners: duties.banners,
+      dutiesByClass,
       totalDemolition: isPrimaryAccount ? familyDemolition.get(fam) || 0 : 0,
       conductBonus: isPrimaryAccount ? familyConduct.get(fam) || 0 : 0,
       isPrimaryAccount,
@@ -590,10 +682,9 @@ export function buildWeightedContributionRows(options = {}) {
   const scoredRows = rows.map((row) => {
     const exGuildPoints = row.contributionExGuild || 0;
     const contributionRewardScore = row.contributionScore + exGuildPoints;
-    const dutyPoints =
-      row.banners * BASE_POINT_VALUE +
-      row.pathers * BASE_POINT_VALUE +
-      row.shieldWalls * BASE_POINT_VALUE;
+    // Weighted per activity and per account class. With every weight at 1 this
+    // is arithmetically identical to the flat BASE_POINT_VALUE it replaced.
+    const dutyPoints = dutyPointsFor(row.dutiesByClass, dutyWeights);
     const conductPoints = row.conductBonus * BASE_POINT_VALUE;
     const demolitionPoints = row.totalDemolition * Math.max(0, numberValue(weights.demolition));
     const weightedScore = contributionRewardScore + demolitionPoints + dutyPoints + conductPoints;
