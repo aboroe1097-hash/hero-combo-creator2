@@ -148,7 +148,10 @@ import {
   deleteLocalConductSuggestion,
   loadConductSuggestions,
   loadLocalConductSuggestions,
+  CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE,
+  normalizeConductSuggestionReviewFilter,
   normalizeConductSuggestionStatus,
+  selectConductSuggestionsForReview,
   reviewConductSuggestion,
   reviewLocalConductSuggestion,
   summarizeConductSuggestions,
@@ -2571,11 +2574,18 @@ function renderOwnConductSuggestions() {
   });
 }
 
+// Review controls. Pending-only and capped by default: the reviewer's job is
+// the queue, and a whole season of decided suggestions buries the few that
+// still need an answer. Module-level rather than on `state` because nothing
+// outside this panel reads them and `state` is a synced contract.
+let conductReviewFilter = 'pending';
+let conductReviewShowAll = false;
+
 function renderConductSuggestionReview() {
   const list = $id('dashConductReviewList');
   if (!list) return;
-  const rows = seasonConductSuggestions();
-  const summary = summarizeConductSuggestions(rows, state.r5Season);
+  const allRows = seasonConductSuggestions();
+  const summary = summarizeConductSuggestions(allRows, state.r5Season);
   const countEl = $id('dashConductReviewCount');
   if (countEl) {
     countEl.textContent = dashT('adminSuggestReviewCount', {
@@ -2584,11 +2594,23 @@ function renderConductSuggestionReview() {
     });
   }
 
-  if (!rows.length) {
+  const view = selectConductSuggestionsForReview(allRows, {
+    filter: conductReviewFilter,
+    showAll: conductReviewShowAll,
+  });
+  syncConductReviewControls(view);
+
+  if (!allRows.length) {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminSuggestReviewEmpty'))}</div>`;
     return;
   }
-  list.innerHTML = rows
+  if (!view.rows.length) {
+    // The season has suggestions, just none under this filter — say which of
+    // the two empty states this is rather than implying the queue is clear.
+    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminSuggestReviewNoneForFilter'))}</div>`;
+    return;
+  }
+  list.innerHTML = view.rows
     .map((record) =>
       renderSuggestionRow(record, {
         showAuthor: true,
@@ -2613,6 +2635,115 @@ function renderConductSuggestionReview() {
       void reviewConductSuggestionAction(btn.dataset.suggestionReject, 'rejected');
     });
   });
+}
+
+// Keeps the filter pills, the cap toggle and approve-all describing the list
+// that is actually on screen. Approve-all names its count because it is the
+// number of adjustments a click is about to create.
+function syncConductReviewControls(view) {
+  document.querySelectorAll('[data-suggestion-filter]').forEach((button) => {
+    const active = button.dataset.suggestionFilter === view.filter;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+
+  const showAllBtn = $id('dashConductShowAllBtn');
+  if (showAllBtn) {
+    const expandable = view.hidden > 0 || conductReviewShowAll;
+    showAllBtn.hidden = !expandable;
+    showAllBtn.textContent = conductReviewShowAll
+      ? dashT('adminSuggestShowFewer', { count: CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE })
+      : dashT('adminSuggestShowAll', { count: view.matched });
+  }
+
+  const approveAllBtn = $id('dashConductApproveAllBtn');
+  if (approveAllBtn) {
+    approveAllBtn.hidden = view.approvableIds.length === 0;
+    approveAllBtn.textContent = dashT('adminSuggestApproveAll', {
+      count: view.approvableIds.length,
+    });
+  }
+}
+
+function wireConductReviewControls() {
+  document.querySelectorAll('[data-suggestion-filter]').forEach((button) => {
+    button.addEventListener('click', () => {
+      conductReviewFilter = normalizeConductSuggestionReviewFilter(button.dataset.suggestionFilter);
+      // Switching filters starts at the top of the new list rather than
+      // carrying over an expansion the reviewer asked for on a different one.
+      conductReviewShowAll = false;
+      renderConductSuggestionReview();
+    });
+  });
+  $id('dashConductShowAllBtn')?.addEventListener('click', () => {
+    conductReviewShowAll = !conductReviewShowAll;
+    renderConductSuggestionReview();
+  });
+  $id('dashConductApproveAllBtn')?.addEventListener('click', () => {
+    void approveAllVisibleConductSuggestions();
+  });
+}
+
+// Bulk approve of exactly what is on screen. Every row still mints its own
+// adjustment, so this is a loop rather than one write, but it asks once and
+// reloads once instead of per row. A failure part-way through leaves the
+// approvals that already landed in place and says how many did not, because
+// silently reporting success for a partial run is worse than the partial run.
+async function approveAllVisibleConductSuggestions() {
+  const view = selectConductSuggestionsForReview(seasonConductSuggestions(), {
+    filter: conductReviewFilter,
+    showAll: conductReviewShowAll,
+  });
+  const ids = view.approvableIds;
+  if (!ids.length) return;
+  if (!confirm(dashT('adminSuggestApproveAllConfirm', { count: ids.length }))) return;
+
+  let done = 0;
+  const failures = [];
+  setConductStatus(dashT('adminConductSaving'), 'info');
+  for (const id of ids) {
+    const record = seasonConductSuggestions().find((entry) => entry.id === id);
+    if (!record) continue;
+    try {
+      const payload = conductSuggestionToAdjustment(record);
+      const created =
+        state.cloudSyncConfigured === false
+          ? createLocalR5Adjustment(payload)
+          : await createR5Adjustment(payload);
+      const adjustmentId = created?.id || '';
+      if (state.cloudSyncConfigured === false) {
+        reviewLocalConductSuggestion(id, { status: 'approved', reviewNote: '', adjustmentId });
+      } else {
+        await reviewConductSuggestion(id, { status: 'approved', reviewNote: '', adjustmentId });
+      }
+      done += 1;
+    } catch (err) {
+      failures.push(err);
+    }
+  }
+
+  try {
+    await loadConductSuggestionsForSeason();
+    await loadConductAdjustmentsForSeason();
+    await savePublicConductSnapshot();
+    render();
+  } catch (err) {
+    setConductStatus(showCloudSyncFailure(err, 'Suggestion review failed'), 'error');
+    return;
+  }
+
+  if (failures.length) {
+    setConductStatus(
+      dashT('adminSuggestApproveAllPartial', {
+        done,
+        count: ids.length,
+        failed: failures.length,
+      }),
+      'error'
+    );
+    return;
+  }
+  setConductStatus(dashT('adminSuggestApproveAllDone', { count: done }), 'success');
 }
 
 async function reviewConductSuggestionAction(id, status) {
@@ -2783,6 +2914,7 @@ function bindConductControls() {
     if (points) points.value = defaultR5PointsForCategory(category.value);
   });
   conductBulkPanel.bind();
+  wireConductReviewControls();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');

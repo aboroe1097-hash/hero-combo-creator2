@@ -154,3 +154,53 @@ test('local suggestions persist, review in place, and stay scoped to their seaso
   assert.equal(loadLocalConductSuggestions(SEASON).length, 0);
   assert.equal(loadLocalConductSuggestions('season-2026').length, 1);
 });
+
+test('review selection defaults to the pending queue, ten at a time', async () => {
+  const {
+    selectConductSuggestionsForReview,
+    normalizeConductSuggestionReviewFilter,
+    CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE,
+  } = await import('../../js/ocr-conduct-suggestions.js');
+
+  const records = [];
+  for (let i = 0; i < 14; i += 1) {
+    records.push({ id: `p${i}`, status: 'pending', player: `P${i}`, createdAtMs: 1000 + i });
+  }
+  records.push({ id: 'a1', status: 'approved', player: 'A', createdAtMs: 500 });
+  records.push({ id: 'r1', status: 'rejected', player: 'R', createdAtMs: 400 });
+
+  // Default: pending only, capped, with the remainder reported rather than lost.
+  const def = selectConductSuggestionsForReview(records);
+  assert.equal(def.filter, 'pending');
+  assert.equal(def.rows.length, CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE);
+  assert.equal(def.matched, 14);
+  assert.equal(def.hidden, 4);
+  assert.ok(def.rows.every((row) => row.status === 'pending'));
+
+  // A bulk approve may only touch rows the reviewer can actually see.
+  assert.equal(def.approvableIds.length, CONDUCT_SUGGESTION_REVIEW_PAGE_SIZE);
+  assert.deepEqual(
+    def.approvableIds,
+    def.rows.map((row) => row.id)
+  );
+
+  const all = selectConductSuggestionsForReview(records, { filter: 'all', showAll: true });
+  assert.equal(all.matched, 16);
+  assert.equal(all.hidden, 0);
+  // Already-decided rows are never approvable, even when they are on screen.
+  assert.ok(!all.approvableIds.includes('a1'));
+  assert.ok(!all.approvableIds.includes('r1'));
+
+  const approved = selectConductSuggestionsForReview(records, { filter: 'approved' });
+  assert.deepEqual(
+    approved.rows.map((row) => row.id),
+    ['a1']
+  );
+  assert.equal(approved.approvableIds.length, 0);
+
+  // An unknown or absent filter falls back to the queue rather than to everything.
+  assert.equal(normalizeConductSuggestionReviewFilter('nonsense'), 'pending');
+  assert.equal(normalizeConductSuggestionReviewFilter(''), 'pending');
+  assert.equal(selectConductSuggestionsForReview(records, { filter: 'nope' }).filter, 'pending');
+  assert.equal(selectConductSuggestionsForReview([]).rows.length, 0);
+});

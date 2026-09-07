@@ -2301,6 +2301,19 @@
             <h3 data-i18n="adminSuggestReviewTitle">Admin suggestions</h3>
             <span id="dashConductReviewCount" class="dash-conduct-review-count"></span>
           </div>
+          <div class="dash-conduct-review-controls">
+            <div class="dash-conduct-review-filters" role="group" aria-labelledby="dashConductReviewFilterLabel">
+              <span id="dashConductReviewFilterLabel" class="dash-conduct-review-filter-label" data-i18n="adminSuggestFilterLabel">Show</span>
+              <button class="dash-btn dash-btn-xs is-active" type="button" data-suggestion-filter="pending" aria-pressed="true" data-i18n="adminSuggestFilterPending">Pending</button>
+              <button class="dash-btn dash-btn-xs" type="button" data-suggestion-filter="approved" aria-pressed="false" data-i18n="adminSuggestFilterApproved">Approved</button>
+              <button class="dash-btn dash-btn-xs" type="button" data-suggestion-filter="rejected" aria-pressed="false" data-i18n="adminSuggestFilterRejected">Rejected</button>
+              <button class="dash-btn dash-btn-xs" type="button" data-suggestion-filter="all" aria-pressed="false" data-i18n="adminSuggestFilterAll">All</button>
+            </div>
+            <div class="dash-conduct-review-actions">
+              <button id="dashConductShowAllBtn" class="dash-btn dash-btn-xs" type="button" hidden></button>
+              <button id="dashConductApproveAllBtn" class="dash-btn dash-btn-xs dash-btn-primary" type="button" hidden></button>
+            </div>
+          </div>
           <div id="dashConductReviewList" class="dash-conduct-list">
             <div class="dash-empty" data-i18n="adminSuggestReviewEmpty">
               No admin suggestions waiting for review.

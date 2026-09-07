@@ -9,6 +9,22 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.0.10",
     "date": "2026-09-07",
     "highlights": [
+      "Added the X2 Lobby structure to structure uploads, expected at 700,000. Lobbies are named for a hero, so \"Lobby of Beowulf\" and any other hero all resolve to Lobby, and like Stronghold they carry no level.",
+      "Corrected the expected durability of a level 4 gate from 2.5M to 1.5M. The wrong figure flagged correct uploads as mismatched on every Lv4 gate."
+    ]
+  },
+  {
+    "version": "16.0.9",
+    "date": "2026-09-07",
+    "highlights": [
+      "Admin suggestions now open on the pending queue, ten at a time, with filters for pending, approved, rejected or all, and a control to show the full filtered list. A season of decided suggestions no longer buries the few still waiting on a decision.",
+      "Added Approve all, which approves exactly the suggestions on screen. It asks once, naming the count, reloads once instead of per row, and reports how many succeeded if any fail part-way rather than claiming a clean run."
+    ]
+  },
+  {
+    "version": "16.0.8",
+    "date": "2026-09-07",
+    "highlights": [
       "The VTS Eden Hub season tabs now name their season — \"Current Season · Eden X2\" and \"Previous Seasons · Eden X1\" — in all twelve Eden locales. The names come from the workspace registry, so opening a new season is one flag in that registry rather than an edit in every locale pac…",
       "The season being played is now the hub's landing tab, with the Royal Bounty guide as the fallback when no season is published. The guide opens first and the hub upgrades to the season once the publication check clears, abandoning that upgrade if you have already picked a tab you…"
     ]
@@ -65,30 +81,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Fixed the research planner re-normalizing already normalized families and silently replacing their costs with zero. X12 estimates retain their unverified status while source gaps remain.",
       "Renamed Codex to Hero Tables across supported languages. Restored hero-detail opening and keyboard return focus, kept deselected season filters reachable, explained combo-derived ratings, and hid empty duel sections.",
       "Added a shared local portrait-unavailable image for the X10/X12 heroes whose artwork has not yet been supplied, preventing broken images across roster consumers without misidentifying their portraits."
-    ]
-  },
-  {
-    "version": "16.0.0",
-    "date": "2026-09-03",
-    "highlights": [
-      "**VTS Player Alias Reconciliation**: Folded decoration, whitespace and case variants of the same account into one identity across leaderboards, contribution matching and weighted scoring, adopting Moldo1313 and D O F F Y as display names. Sixteen owner-confirmed merges join spel…",
-      "**CSS Token Authority & Theme Refactor**: Established centralized theme token authority across dashboard and Eden surfaces, retiring ~357 redundant override rules while maintaining strict net-negative route CSS budgets. Normalized colliding 768px responsive boundaries and enlarg…",
-      "**Seasons & Roster Expansion**: Landed X10 and X12 season scaffolding and integrated the nine free plus two paid heroes into the canonical roster (expanding the roster from 78 to 89 heroes), with tower profiles for the paid pair and synchronized Firestore security rule allowlist…",
-      "**Codex Data Platform**: Introduced a scalable dataset pipeline with pipe-delimited source tables, gzipped on-demand payload streaming, strict provenance verification, and hero alias quarantine protection.",
-      "**Hero Atlas Codex & Field Data**: Added unified multi-table Codex browsing (Free, Paid, Skins+Paid), full 1–8 skill drawer inspection, and the Battle Simulator Field Data evidence panel with match resemblance metrics.",
-      "**Progression Planners & Preset Engine**: Shipped the unified Research Cost & Progression Planner, Castle Development Planner, Stamina Projection Calculator with shareable alliance operation cards, and a shared Specialty Preset Engine with cross-tool adapters."
-    ]
-  },
-  {
-    "version": "15.0.15",
-    "date": "2026-09-01",
-    "highlights": [
-      "Restored the missing More action to the fixed mobile navigation so Arcade, Battle Simulator, DM Materials, Strife, YouTube, and VTS Admin remain reachable from phones.",
-      "Compacted the mobile header, kept the inline account control in the utility row, and preserved full-size controls down to 320px without the stray third row.",
-      "Updated the public VTS leadership badge roster: Loony is now R4, while Zubbs no longer receives the R4 badge; Zubbs aliases remain grouped for historical records.",
-      "Added each player's structure demolition to Weighted Total Contribution at a temporary 1:20 rate, so 1,000,000 demolition contributes 50,000 weighted points for every admin role.",
-      "Moved substantive Velo requests to DeepSeek Reasoner with a verification round and a larger shared reasoning/output budget; short standalone questions still use the fast chat model.",
-      "Updated the compatible frontend CSS toolchain to Autoprefixer 10.5.4 while retaining the Node 20-compatible cssnano 8 and Vite 6 build path."
     ]
   }
 ].map((release) =>
