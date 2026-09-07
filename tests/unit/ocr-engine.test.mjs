@@ -771,3 +771,34 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   const dedup = expandDutyRawNames('Moldo (Moldo)');
   assert.deepEqual(dedup, ['Moldo1313']);
 });
+
+test('X2 lobbies validate at 700k regardless of the hero they are named for', () => {
+  // Lobbies are named for a hero — "Lobby of Beowulf" — and the hero varies, so
+  // the prefix is matched rather than the whole name enumerated. They carry no
+  // level, like Stronghold, so whatever level the OCR reads is ignored.
+  for (const [name, level] of [
+    ['Lobby', ''],
+    ['Lobby of Beowulf', ''],
+    ['lobby of Ramses II', 'Lv2'],
+    ['LOBBY OF CLEOPATRA VII', 'Lv1'],
+  ]) {
+    const result = validateTotalDemolition(name, level, 700000);
+    assert.ok(result, `${name} should be a known structure`);
+    assert.equal(result.expected, 700000, name);
+    assert.equal(result.match, true, name);
+    assert.equal(normalizeStructureName(name), 'Lobby', name);
+  }
+  // A total well away from 700k must still be reported as a mismatch.
+  assert.equal(validateTotalDemolition('Lobby of Beowulf', '', 2000000).match, false);
+});
+
+test('a level 4 gate expects 1.5M', () => {
+  // This table carried 2.5M for Lv4, which flagged correct uploads as
+  // mismatched. The neighbouring levels are unchanged and pinned here so a
+  // future correction cannot quietly shift the whole column.
+  assert.equal(validateTotalDemolition('Gate', 'Lv4', 1500000).expected, 1500000);
+  assert.equal(validateTotalDemolition('Gates', 'Lv4', 1500000).match, true);
+  assert.equal(validateTotalDemolition('Gates', 'Lv4', 2500000).match, false);
+  assert.equal(validateTotalDemolition('Gates', 'Lv3', 1200000).expected, 1200000);
+  assert.equal(validateTotalDemolition('Gates', 'Lv5', 2000000).expected, 2000000);
+});

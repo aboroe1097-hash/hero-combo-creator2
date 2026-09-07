@@ -9,7 +9,7 @@ import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 import { setCurrentLanguage } from './state.js';
 
-export const APP_VERSION = '16.0.8';
+export const APP_VERSION = '16.0.10';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };

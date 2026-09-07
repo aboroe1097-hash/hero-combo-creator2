@@ -31,7 +31,10 @@ export const ROSTER_SNAPSHOTS_KEY = edenWorkspaceStorageKey(
   ACTIVE_EDEN_WORKSPACE_ID
 );
 export const BANNER_KEY = edenWorkspaceStorageKey('vts_ocr_banners', ACTIVE_EDEN_WORKSPACE_ID);
-export const DUTY_LIST_KEY = edenWorkspaceStorageKey('vts_ocr_duty_lists', ACTIVE_EDEN_WORKSPACE_ID);
+export const DUTY_LIST_KEY = edenWorkspaceStorageKey(
+  'vts_ocr_duty_lists',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
 export const CONTRIBUTION_KEY = edenWorkspaceStorageKey(
   'vts_ocr_contribution_lists',
   ACTIVE_EDEN_WORKSPACE_ID
@@ -432,7 +435,9 @@ export function getOcrRetryDelayMs(err, attempt) {
 
 // --- Durability ---
 export const DURABILITY_TABLE = {
-  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 2500000, 5: 2000000, 7: 2500000 },
+  // Lv4 gates are 1.5M, not the 2.5M this table carried; a wrong expectation
+  // here flags a correct total as a mismatch on every Lv4 gate upload.
+  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000, 7: 2500000 },
   bridge: { 1: 200000 },
   city: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   cities: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
@@ -441,9 +446,12 @@ export const DURABILITY_TABLE = {
   temple: { 1: 1000000 },
   stronghold: { 1: 1000000 },
   'large town': { 4: 3750000 },
+  // X2 lobbies carry no level; they are named for a hero ("Lobby of <hero>"),
+  // so the level slot is nominal and isNameOnlyStructure reads this first entry.
+  lobby: { 1: 700000 },
 };
 
-const NAME_ONLY_STRUCTURES = new Set(['stronghold']);
+const NAME_ONLY_STRUCTURES = new Set(['stronghold', 'lobby']);
 
 const STRUCTURE_NAME_CORRECTIONS = {
   bridge: 'Bridge',
@@ -463,6 +471,9 @@ const STRUCTURE_NAME_CORRECTIONS = {
   gate5: 'Gates',
   gates: 'Gates',
   'large town': 'Large Town',
+  lobby: 'Lobby',
+  lobbies: 'Lobby',
+  l0bby: 'Lobby',
   'small town': 'City',
   strongho1d: 'Stronghold',
   stronghold: 'Stronghold',
@@ -523,6 +534,11 @@ function canonicalizeStructureName(name, level) {
     if (level === 'Lv4') canonical = 'Large Town';
     else if (level === 'Lv1') canonical = 'Small Town';
   }
+
+  // A lobby is named for the hero it belongs to - "Lobby of Beowulf" - and the
+  // hero varies, so match the prefix rather than enumerating them. Checked
+  // against the cleaned name so a trailing level does not defeat it.
+  if (/^lobby/.test(lower) || /^lobbyof/.test(compact)) canonical = 'Lobby';
 
   if (canonical === 'Gates' && level === 'Lv1' && !isCheckpointName(name)) canonical = 'Bridge';
 
