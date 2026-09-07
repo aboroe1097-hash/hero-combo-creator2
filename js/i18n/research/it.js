@@ -4062,16 +4062,16 @@ export const researchContent = Object.freeze({
     },
     "77db4a78:node_10": {
       "name": "Mana pozione",
-      "buff": "10% PS della cavalleria",
+      "buff": "10% PS degli arcieri",
       "effects": [
-        "PS della cavalleria"
+        "PS degli arcieri"
       ]
     },
     "77db4a78:node_11": {
       "name": "Pesante incursore",
-      "buff": "10% PS degli arcieri",
+      "buff": "10% PS della cavalleria",
       "effects": [
-        "PS degli arcieri"
+        "PS della cavalleria"
       ]
     },
     "77db4a78:node_12": {
@@ -4182,7 +4182,7 @@ export const researchContent = Object.freeze({
     },
     "77db4a78:node_26_F": {
       "name": "Potenza colpo III",
-      "buff": "42% attacco della fanteria",
+      "buff": "40% attacco della fanteria",
       "effects": [
         "attacco della fanteria"
       ]
@@ -4294,7 +4294,7 @@ export const researchContent = Object.freeze({
     },
     "77db4a78:node_26_C": {
       "name": "Feroce Charge III",
-      "buff": "42% attacco della cavalleria",
+      "buff": "40% attacco della cavalleria",
       "effects": [
         "attacco della cavalleria"
       ]
@@ -4406,7 +4406,7 @@ export const researchContent = Object.freeze({
     },
     "77db4a78:node_26_A": {
       "name": "Potenziato freccia III",
-      "buff": "42% attacco degli arcieri",
+      "buff": "40% attacco degli arcieri",
       "effects": [
         "attacco degli arcieri"
       ]

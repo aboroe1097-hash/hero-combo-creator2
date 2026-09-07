@@ -3169,13 +3169,13 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_10': {
       name: 'Poción de maná',
-      buff: '10% de PS de caballería',
-      effects: ['PS de caballería'],
+      buff: '10% de PS de arqueros',
+      effects: ['PS de arqueros'],
     },
     '77db4a78:node_11': {
       name: 'Saqueador pesado',
-      buff: '10% de PS de arqueros',
-      effects: ['PS de arqueros'],
+      buff: '10% de PS de caballería',
+      effects: ['PS de caballería'],
     },
     '77db4a78:node_12': {
       name: 'Armadura de metal completa',
@@ -3259,7 +3259,7 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_26_F': {
       name: 'Golpe poderoso III',
-      buff: '42% de poder de infantería',
+      buff: '40% de poder de infantería',
       effects: ['poder de infantería'],
     },
     '77db4a78:node_27_F': {
@@ -3339,7 +3339,7 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_26_C': {
       name: 'Carga feroz III',
-      buff: '42% de poder de caballería',
+      buff: '40% de poder de caballería',
       effects: ['poder de caballería'],
     },
     '77db4a78:node_27_C': {
@@ -3419,7 +3419,7 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_26_A': {
       name: 'Flecha mejorada III',
-      buff: '42% de poder de arqueros',
+      buff: '40% de poder de arqueros',
       effects: ['poder de arqueros'],
     },
     '77db4a78:node_27_A': {

@@ -2602,11 +2602,11 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_10': {
     name: 'Poção de Mana',
-    buff: '10% de HP da Cavalaria',
+    buff: '10% de HP dos Arqueiros',
   },
   '77db4a78:node_11': {
     name: 'Invasor Pesado',
-    buff: '10% de HP dos Arqueiros',
+    buff: '10% de HP da Cavalaria',
   },
   '77db4a78:node_12': {
     name: 'Armadura Totalmente Metálica',
@@ -2674,7 +2674,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_F': {
     name: 'Golpe Poderoso III',
-    buff: '42% de Poder da Infantaria',
+    buff: '40% de Poder da Infantaria',
   },
   '77db4a78:node_27_F': {
     name: 'Armadura Magistral III',
@@ -2738,7 +2738,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_C': {
     name: 'Carga Feroz III',
-    buff: '42% de Poder da Cavalaria',
+    buff: '40% de Poder da Cavalaria',
   },
   '77db4a78:node_27_C': {
     name: 'Barda Aprimorada III',
@@ -2802,7 +2802,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_A': {
     name: 'Flecha Aprimorada III',
-    buff: '42% de Poder dos Arqueiros',
+    buff: '40% de Poder dos Arqueiros',
   },
   '77db4a78:node_27_A': {
     name: 'Braçadeira Aprimorada III',

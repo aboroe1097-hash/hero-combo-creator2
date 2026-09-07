@@ -3167,13 +3167,13 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_10': {
       name: 'جرعة المانا',
-      buff: '10% نقاط صحة الفرسان',
-      effects: ['نقاط صحة الفرسان'],
+      buff: '10% نقاط صحة الرماة',
+      effects: ['نقاط صحة الرماة'],
     },
     '77db4a78:node_11': {
       name: 'مغير ثقيل',
-      buff: '10% نقاط صحة الرماة',
-      effects: ['نقاط صحة الرماة'],
+      buff: '10% نقاط صحة الفرسان',
+      effects: ['نقاط صحة الفرسان'],
     },
     '77db4a78:node_12': {
       name: 'درع معدني كامل',
@@ -3257,7 +3257,7 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_26_F': {
       name: 'ضربة القوة III',
-      buff: '42% قوة المشاة',
+      buff: '40% قوة المشاة',
       effects: ['قوة المشاة'],
     },
     '77db4a78:node_27_F': {
@@ -3337,7 +3337,7 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_26_C': {
       name: 'اندفاع شرس III',
-      buff: '42% قوة الفرسان',
+      buff: '40% قوة الفرسان',
       effects: ['قوة الفرسان'],
     },
     '77db4a78:node_27_C': {
@@ -3417,7 +3417,7 @@ export const researchContent = Object.freeze({
     },
     '77db4a78:node_26_A': {
       name: 'سهم محسّن III',
-      buff: '42% قوة الرماة',
+      buff: '40% قوة الرماة',
       effects: ['قوة الرماة'],
     },
     '77db4a78:node_27_A': {

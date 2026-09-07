@@ -2572,11 +2572,11 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_10': {
     name: 'Зелье маны',
-    buff: '10% HP кавалерии',
+    buff: '10% HP лучников',
   },
   '77db4a78:node_11': {
     name: 'Тяжёлый рейдер',
-    buff: '10% HP лучников',
+    buff: '10% HP кавалерии',
   },
   '77db4a78:node_12': {
     name: 'Цельнометаллическая броня',
@@ -2644,7 +2644,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_F': {
     name: 'Мощный удар III',
-    buff: '42% мощь пехоты',
+    buff: '40% мощь пехоты',
   },
   '77db4a78:node_27_F': {
     name: 'Броня мастера III',
@@ -2708,7 +2708,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_C': {
     name: 'Яростный натиск III',
-    buff: '42% мощь кавалерии',
+    buff: '40% мощь кавалерии',
   },
   '77db4a78:node_27_C': {
     name: 'Усиленная конская броня III',
@@ -2772,7 +2772,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_A': {
     name: 'Усиленная стрела III',
-    buff: '42% мощь лучников',
+    buff: '40% мощь лучников',
   },
   '77db4a78:node_27_A': {
     name: 'Усиленный наруч III',

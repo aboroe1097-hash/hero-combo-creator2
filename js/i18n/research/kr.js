@@ -3158,12 +3158,12 @@ export const researchContent = {
     },
     '77db4a78:node_10': {
       name: '마나 물약',
-      buff: '기병 HP 10%',
+      buff: '궁병 HP 10%',
       effects: [],
     },
     '77db4a78:node_11': {
       name: '중장 습격자',
-      buff: '궁병 HP 10%',
+      buff: '기병 HP 10%',
       effects: [],
     },
     '77db4a78:node_12': {
@@ -3248,7 +3248,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_F': {
       name: '강력한 일격 III',
-      buff: '보병 공격력 42%',
+      buff: '보병 공격력 40%',
       effects: [],
     },
     '77db4a78:node_27_F': {
@@ -3328,7 +3328,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_C': {
       name: '흉포한 돌격 III',
-      buff: '기병 공격력 42%',
+      buff: '기병 공격력 40%',
       effects: [],
     },
     '77db4a78:node_27_C': {
@@ -3408,7 +3408,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_A': {
       name: '강화 화살 III',
-      buff: '궁병 공격력 42%',
+      buff: '궁병 공격력 40%',
       effects: [],
     },
     '77db4a78:node_27_A': {

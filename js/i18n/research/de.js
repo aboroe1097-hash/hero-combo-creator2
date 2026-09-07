@@ -2572,11 +2572,11 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_10': {
     name: 'Manatrank',
-    buff: '10% Kavallerie-HP',
+    buff: '10% Bogenschützen-HP',
   },
   '77db4a78:node_11': {
     name: 'Schwerer Plünderer',
-    buff: '10% Bogenschützen-HP',
+    buff: '10% Kavallerie-HP',
   },
   '77db4a78:node_12': {
     name: 'Vollmetallrüstung',
@@ -2644,7 +2644,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_F': {
     name: 'Kraftschlag III',
-    buff: '42% Infanterie-Kampfkraft',
+    buff: '40% Infanterie-Kampfkraft',
   },
   '77db4a78:node_27_F': {
     name: 'Meisterrüstung III',
@@ -2708,7 +2708,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_C': {
     name: 'Wild Ansturm III',
-    buff: '42% Kavallerie-Kampfkraft',
+    buff: '40% Kavallerie-Kampfkraft',
   },
   '77db4a78:node_27_C': {
     name: 'Verstärkter Rossharnisch III',
@@ -2772,7 +2772,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_A': {
     name: 'Verstärkter Pfeil III',
-    buff: '42% Bogenschützen-Kampfkraft',
+    buff: '40% Bogenschützen-Kampfkraft',
   },
   '77db4a78:node_27_A': {
     name: 'Verstärkter Armschutz III',

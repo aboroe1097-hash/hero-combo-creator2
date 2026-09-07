@@ -39,7 +39,7 @@ test('research runtime stays inside the extraction-safe Battle Simulator module 
 });
 
 test('static field catalog covers the approved standard-troop stat families', () => {
-  assert.equal(BATTLE_RESEARCH_CATALOG_VERSION, 'research-pvp-field-20260717.1');
+  assert.equal(BATTLE_RESEARCH_CATALOG_VERSION, 'research-pvp-field-20260908.1');
   assert.deepEqual(BATTLE_RESEARCH_CATALOG_STATS, {
     modeledEffects: 316,
     modeledNodes: 316,
