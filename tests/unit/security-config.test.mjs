@@ -228,6 +228,18 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
       expectedHashes.sort(),
       `${page} CSP hashes should match its exact inline script contents`
     );
+    // Pages that call a Cloud Function must say so in connect-src, or the
+    // browser blocks the request before it is sent. Users & Roles failed every
+    // grant this way: the callable finally resolved after the SDK-instance fix,
+    // then CSP refused the connection to cloudfunctions.net, which admin.html
+    // had never listed even though index.html already did.
+    if (page === 'admin.html' || page === 'index.html') {
+      assert.match(
+        connectSrc,
+        /https:\/\/us-central1-abocombo\.cloudfunctions\.net/,
+        `${page} calls a Cloud Function and must allow its origin`
+      );
+    }
     if (page === 'eden-x1.html') assert.match(scriptSrc, /https:\/\/docs\.google\.com/);
   }
 
