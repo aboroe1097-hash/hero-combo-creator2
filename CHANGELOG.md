@@ -3,6 +3,10 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.5 - 2026-09-07
+
+- Fixed every role grant in Users & Roles failing with "Service functions is not available". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it registered its functions component into its own container, so the lookup against the bundled app found nothing. It now loads through the same firebase-sdk.js door as every other Firebase surface, and a test pins that no module may fetch a Firebase SDK over the network.
+
 ## 16.0.4 - 2026-09-07
 
 - Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced "Something went wrong. Try again." on the sign-in form. Members read that as a rejected password and reset credentials that were never wrong. The refresh and the post-sign-in navigation now fail independently and only log.

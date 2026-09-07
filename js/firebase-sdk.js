@@ -27,3 +27,7 @@ export function importFirebaseAnalytics() {
 export function importFirebaseAppCheck() {
   return import('firebase/app-check');
 }
+
+export function importFirebaseFunctions() {
+  return import('firebase/functions');
+}

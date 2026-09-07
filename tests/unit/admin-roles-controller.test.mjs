@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 
 import { filterMembers, projectRoles, shortenUid } from '../../js/admin-roles-controller.js';
@@ -56,4 +57,35 @@ test('projection never mutates the member it was given', () => {
 test('a member with no role flags projects cleanly', () => {
   assert.deepEqual(projectRoles({}, 'admin', true), { admin: true, superadmin: false });
   assert.deepEqual(projectRoles(undefined, 'admin', false), { admin: false, superadmin: false });
+});
+
+test('every Firebase SDK surface loads from the bundled package, never a CDN', () => {
+  // "Service functions is not available" on every role grant came from
+  // callSetUserRole importing firebase-functions from the gstatic CDN while
+  // `app` was built by the bundled SDK. A CDN module is a separate instance of
+  // @firebase/app: it registers its components into its own container, so
+  // getFunctions(app) looks in the bundled container and finds nothing. Version
+  // pinning cannot fix that — only loading from the same instance can.
+  const sdk = readFileSync('js/firebase-sdk.js', 'utf8');
+  assert.match(
+    sdk,
+    /export function importFirebaseFunctions\(\) \{\s*return import\('firebase\/functions'\);/
+  );
+
+  const firebase = readFileSync('js/firebase.js', 'utf8');
+  assert.match(
+    firebase,
+    /const \{ getFunctions, httpsCallable \} = await importFirebaseFunctions\(\);/
+  );
+
+  // No module may reach for a Firebase SDK over the network. firebase-sdk.js is
+  // the single door, and Vite turns each import behind it into a same-origin,
+  // content-hashed chunk the service worker already covers.
+  for (const file of readdirSync('js').filter((name) => name.endsWith('.js'))) {
+    assert.doesNotMatch(
+      readFileSync(`js/${file}`, 'utf8'),
+      /gstatic\.com\/firebasejs/,
+      `${file} loads a Firebase SDK from the CDN`
+    );
+  }
 });

@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.4";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.5";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.5",
+    "date": "2026-09-07",
+    "highlights": [
+      "Fixed every role grant in Users & Roles failing with \"Service functions is not available\". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it regis…"
+    ]
+  },
   {
     "version": "16.0.4",
     "date": "2026-09-07",
@@ -89,14 +96,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Reworked the playbook Day 1 route around the loyalty build: unlock and build the Assault and Guardian Fortresses before resetting, run the all-Green Frontline Workshop honor setup, then reset into the Blue tree (left & right) for loyalty and processing; tile Farm, Marble, and Al…",
       "Replaced the Eden Tips & Guides screenshots with the actual in-game specialization captures: Demolition, Speed Tiling (main plus the optional 14–20 Blue reference), Structure Honor (40 Green), Tiling Honor, and Fortress Unlock."
-    ]
-  },
-  {
-    "version": "15.0.11",
-    "date": "2026-08-18",
-    "highlights": [
-      "Fixed a crash in the Artifact calculator that showed “Artifact Calculator failed to load” whenever heroes were selected in the generator (or synced from an account roster); the Sword path planning now reads the analyzed hero mechanics correctly.",
-      "Fixed the Artifact tree board image on the live site, which loaded from a doubled asset path."
     ]
   }
 ].map((release) =>
