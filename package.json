@@ -45,7 +45,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.0",
+    "@playwright/test": "^1.62.1",
     "acorn": "^8.17.0",
     "autoprefixer": "^10.5.4",
     "cssnano": "^8.0.2",
