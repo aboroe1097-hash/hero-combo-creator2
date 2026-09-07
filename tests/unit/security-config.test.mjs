@@ -1056,32 +1056,35 @@ test('client error reports are bounded and not publicly readable', () => {
 // registry of an app created by another: it throws "Service <name> is not
 // available". js/firebase.js drifted to 12.7.0 while every importmap stayed on
 // 11.6.1, which broke every role grant in the Users & Roles tab.
-test('every Firebase SDK reference is pinned to one version', () => {
+test('no Firebase SDK is ever loaded from a CDN', () => {
+  // This used to assert that every gstatic Firebase URL agreed on one version,
+  // because mixed versions were the known hazard. One version was never enough:
+  // a CDN module is a separate instance of @firebase/app whatever its version,
+  // so it registers its components into its own container and a lookup against
+  // the bundled app finds nothing. That is what broke every role grant with
+  // "Service functions is not available" while both sides read 11.6.1.
+  //
+  // The rule is now absolute: the SDK comes from the bundled package, through
+  // js/firebase-sdk.js, and never over the network.
   const sources = [
     'index.html',
     'admin.html',
     'vtsscore.html',
+    'profile.html',
+    'arcade.html',
+    'eden-x1.html',
+    'eden-x2.html',
     'js/firebase.js',
     'js/firebase-sdk.js',
   ].filter((file) => existsSync(file));
 
-  const found = new Map();
   for (const file of sources) {
-    for (const [, version] of readFileSync(file, 'utf8').matchAll(
-      /firebasejs\/(\d+\.\d+\.\d+)\//g
-    )) {
-      if (!found.has(version)) found.set(version, new Set());
-      found.get(version).add(file);
-    }
+    const text = readFileSync(file, 'utf8');
+    assert.doesNotMatch(
+      text,
+      /firebasejs\/\d+\.\d+\.\d+\//,
+      `${file} loads a Firebase SDK from a CDN`
+    );
+    assert.doesNotMatch(text, /type="importmap"/, `${file} ships an importmap`);
   }
-
-  const versions = [...found.keys()];
-  assert.ok(versions.length > 0, 'expected at least one pinned Firebase SDK URL');
-  assert.equal(
-    versions.length,
-    1,
-    `mixed Firebase SDK versions: ${versions
-      .map((version) => `${version} in ${[...found.get(version)].join(', ')}`)
-      .join(' | ')}`
-  );
 });
