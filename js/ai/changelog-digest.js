@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.10";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.11";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.11",
+    "date": "2026-09-08",
+    "highlights": [
+      "Duty points are now weighted by activity and by which account performed the duty, replacing a flat value that made a banner from a throwaway alt worth exactly what a main was worth. Defaults are banners 1 for a main and 0.5 for an alt, pathing 3 and 1; shield walls stay at 1 for…",
+      "Added a superadmin editor for those weights, stored per Eden workspace so retuning the season being played cannot restate a finished season. Saving recalculates the season immediately, past entries included, because duty points are derived at render time rather than stored."
+    ]
+  },
   {
     "version": "16.0.10",
     "date": "2026-09-07",
@@ -71,16 +79,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-04",
     "highlights": [
       "Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the pane…"
-    ]
-  },
-  {
-    "version": "16.0.1",
-    "date": "2026-09-04",
-    "highlights": [
-      "Restored the X12 research season selector. All 30 Charge nodes are editable in a list without invented topology or unlock rules; Defense retains all 29 nodes and now discloses the source's conflicting cost totals.",
-      "Fixed the research planner re-normalizing already normalized families and silently replacing their costs with zero. X12 estimates retain their unverified status while source gaps remain.",
-      "Renamed Codex to Hero Tables across supported languages. Restored hero-detail opening and keyboard return focus, kept deselected season filters reachable, explained combo-derived ratings, and hid empty duel sections.",
-      "Added a shared local portrait-unavailable image for the X10/X12 heroes whose artwork has not yet been supplied, preventing broken images across roster consumers without misidentifying their portraits."
     ]
   }
 ].map((release) =>

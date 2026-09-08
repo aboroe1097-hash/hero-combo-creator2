@@ -129,7 +129,17 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
     assert.equal(sarafina.conductBonus, 2);
     assert.equal(sarafina.finalRank, 1);
     assert.equal(sarafina.finalReward, 'core');
-    assert.equal(Number(sarafina.weightedScore.toFixed(1)), 250000);
+    // 270,000 rather than the old flat 250,000, because duty is now weighted by
+    // which account performed it. This family holds two accounts: ~Sarafino~ is
+    // the primary, Sarafina~ is not.
+    //   contribution                       200,000
+    //   pathing on the main   1 x 3 pts  =  30,000
+    //   pathing on the alt    1 x 1 pt   =  10,000
+    //   shield wall on main   1 x 1 pt   =  10,000
+    //   conduct               2          =  20,000
+    // Under the old flat 10,000-per-duty rule the three duties were worth 30,000
+    // between them; they are worth 50,000 now.
+    assert.equal(Number(sarafina.weightedScore.toFixed(1)), 270000);
 
     assert.equal(undeadBanner.banners, 1);
     assert.equal(undeadBanner.conductBonus, -1);
@@ -856,4 +866,105 @@ test('shared-identity accounts credit duty + conduct to the highest-contribution
     assert.equal(secondary.pathers, 0);
     assert.equal(secondary.conductBonus, 0);
   });
+});
+
+test('duty points weight each activity by the account class that performed it', async () => {
+  const {
+    DEFAULT_DUTY_POINT_WEIGHTS,
+    DUTY_POINT_UNIT,
+    classifyDutyAccount,
+    dutyPointsFor,
+    normalizeDutyPointWeights,
+  } = await import('../../js/contribution-weighting.js');
+
+  // The shipped defaults are the ones the operator asked for out loud.
+  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.banners, { main: 1, alt: 0.5 });
+  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.pathers, { main: 3, alt: 1 });
+
+  // A family's primary account is the main; every other account a person plays
+  // — secondary castles, banner accounts — is an alt.
+  assert.equal(classifyDutyAccount('BiG BOiiE'), 'main');
+  assert.equal(classifyDutyAccount('BOiiE BANNER'), 'alt');
+
+  assert.equal(dutyPointsFor({ banners: { main: 2, alt: 0 } }), 2 * DUTY_POINT_UNIT);
+  assert.equal(dutyPointsFor({ banners: { main: 0, alt: 2 } }), 1 * DUTY_POINT_UNIT);
+  assert.equal(dutyPointsFor({ pathers: { main: 1, alt: 0 } }), 3 * DUTY_POINT_UNIT);
+
+  // Every weight at 1 reproduces the flat 10,000-per-duty rule this replaced,
+  // so the change is opt-in through configuration rather than forced.
+  const flat = {
+    banners: { main: 1, alt: 1 },
+    pathers: { main: 1, alt: 1 },
+    shieldWalls: { main: 1, alt: 1 },
+  };
+  assert.equal(
+    dutyPointsFor(
+      {
+        banners: { main: 1, alt: 1 },
+        pathers: { main: 1, alt: 1 },
+        shieldWalls: { main: 1, alt: 1 },
+      },
+      flat
+    ),
+    6 * DUTY_POINT_UNIT
+  );
+
+  // Admin-edited values are hostile input: each bad cell falls back on its own
+  // rather than discarding the whole table.
+  const cleaned = normalizeDutyPointWeights({
+    banners: { main: 'nonsense', alt: -5 },
+    pathers: { main: 2 },
+    shieldWalls: { main: 1e9, alt: 4 },
+  });
+  assert.deepEqual(cleaned.banners, { main: 1, alt: 0.5 });
+  assert.equal(cleaned.pathers.main, 2);
+  assert.equal(cleaned.pathers.alt, 1);
+  assert.equal(cleaned.shieldWalls.main, 1);
+  assert.equal(cleaned.shieldWalls.alt, 4);
+  assert.deepEqual(normalizeDutyPointWeights(null), {
+    banners: { main: 1, alt: 0.5 },
+    pathers: { main: 3, alt: 1 },
+    shieldWalls: { main: 1, alt: 1 },
+  });
+});
+
+test('duty weights are stored per workspace and edited only by a superadmin', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { edenWorkspaceFirestorePath } = await import('../../js/eden-workspaces.js');
+
+  // Per workspace, so retuning the season being played cannot restate a
+  // finished season's scores.
+  assert.equal(
+    edenWorkspaceFirestorePath('eden-x2', 'dutyPointWeights'),
+    'vts_admin/eden_x2_duty_point_weights'
+  );
+  assert.equal(
+    edenWorkspaceFirestorePath('eden-x1', 'dutyPointWeights'),
+    'vts_admin/eden_x1_duty_point_weights'
+  );
+
+  const markup = readFileSync('tabs/admin.html', 'utf8');
+  const panel = markup.match(/<section class="dash-duty-weights"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(panel, 'the weights panel exists');
+  // Gated the same way every other superadmin surface is, and hidden until the
+  // claim check clears rather than after it.
+  assert.match(panel, /data-requires-superadmin/);
+  assert.match(panel, /\shidden\b/);
+  // One input per activity per account class, or a weight silently cannot be set.
+  for (const activity of ['banners', 'pathers', 'shieldWalls']) {
+    for (const cls of ['main', 'alt']) {
+      assert.match(
+        panel,
+        new RegExp(`data-duty-weight="${activity}" data-duty-class="${cls}"`),
+        `${activity}/${cls}`
+      );
+    }
+  }
+
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  // Both scoring call sites must receive the weights: an export that scored
+  // differently from the dashboard it came from would be worse than no export.
+  assert.equal([...dashboard.matchAll(/dutyPointWeights: state\.dutyPointWeights/g)].length, 2);
+  // Saving is refused on an archived workspace, like every other write.
+  assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
 });

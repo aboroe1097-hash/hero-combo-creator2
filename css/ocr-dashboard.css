@@ -11082,3 +11082,60 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     animation-duration: 1.8s;
   }
 }
+
+/* Duty scoring weights: a superadmin-only grid of points per activity, split by
+   whether a main or an alt performed the duty. Laid out as rows rather than a
+   table so it stays readable on the phone widths the deck is used at. */
+#ocrDashboardRoot .dash-duty-weights {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ff-border);
+  border-radius: 12px;
+  background: var(--ff-surface-soft);
+}
+#ocrDashboardRoot .dash-duty-weights h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+#ocrDashboardRoot .dash-duty-weights-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ff-text-dim);
+}
+#ocrDashboardRoot .dash-duty-weight-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+#ocrDashboardRoot .dash-duty-weight-name {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+#ocrDashboardRoot .dash-duty-weight-field {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--ff-text-dim);
+}
+#ocrDashboardRoot .dash-duty-weight-field input {
+  /* 16px keeps iOS from zooming the deck when a weight is tapped. */
+  font: 500 16px system-ui, sans-serif;
+  min-height: 44px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+#ocrDashboardRoot .dash-duty-weights-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+@media (max-width: 480px) {
+  #ocrDashboardRoot .dash-duty-weight-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

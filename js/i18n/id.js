@@ -1427,7 +1427,7 @@ const id = {
   edenX1BreakdownConductPoints: 'Poin bonus usaha tim',
   edenX1BreakdownTotal: 'Total',
   edenX1DutyFormula:
-    '{banners} banner + {pathers} jalur + {shieldWalls} shield wall = {count} x 10.000',
+    '{banners} banner + {pathers} jalur + {shieldWalls} shield wall',
   edenX1ConductFormula: '{conduct} usaha tim x 10.000',
   edenX1ConductPrivateNotice:
     'Poin bonus usaha tim ini ditetapkan oleh R5 MalakAbo. Detail tidak dapat dilihat publik; hubungi kami untuk banding.',
@@ -3233,6 +3233,17 @@ Object.assign(id, {
   adminSuggestApproveAllDone: '{count} saran disetujui.',
   adminSuggestApproveAllPartial: '{done} dari {count} disetujui; {failed} gagal.',
   adminSuggestReviewNoneForFilter: 'Tidak ada saran yang cocok dengan filter ini.',
+  adminDutyWeightsTitle: 'Bobot poin tugas',
+  adminDutyWeightsNote: 'Nilai satu tugas, menurut aktivitas dan menurut apakah akun utama atau akun kedua yang melakukannya. Menyimpan langsung menghitung ulang musim ini, termasuk entri lama.',
+  adminDutyWeightsMain: 'Utama',
+  adminDutyWeightsAlt: 'Akun kedua',
+  adminDutyWeightsBanners: 'Panji',
+  adminDutyWeightsPathers: 'Pembuatan jalur',
+  adminDutyWeightsShieldWalls: 'Dinding perisai',
+  adminDutyWeightsSave: 'Simpan bobot',
+  adminDutyWeightsReset: 'Kembalikan ke bawaan',
+  adminDutyWeightsResetConfirm: 'Kembalikan semua bobot ke bawaan? Musim langsung dihitung ulang.',
+  adminDutyWeightsSaved: 'Bobot disimpan. Skor dihitung ulang.',
   adminSuggestApprove: 'Setujui',
   adminSuggestReject: 'Tolak',
   adminSuggestApproveConfirm:

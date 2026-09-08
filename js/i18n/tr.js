@@ -1426,7 +1426,7 @@ const tr = {
   edenX1BreakdownConductPoints: 'Bonus takim emegi puanlari',
   edenX1BreakdownTotal: 'Toplam',
   edenX1DutyFormula:
-    '{banners} bayrak + {pathers} yol + {shieldWalls} kalkan duvarı = {count} x 10.000',
+    '{banners} bayrak + {pathers} yol + {shieldWalls} kalkan duvarı',
   edenX1ConductFormula: '{conduct} takim emegi x 10.000',
   edenX1ConductPrivateNotice:
     'Bu bonus takim emegi puanlari R5 MalakAbo tarafindan atanir. Ayrintilar herkese acik goruntulenemez; itiraz icin ulasin.',
@@ -3361,6 +3361,17 @@ Object.assign(tr, {
   adminSuggestApproveAllDone: '{count} öneri onaylandı.',
   adminSuggestApproveAllPartial: '{count} öneriden {done} onaylandı; {failed} başarısız.',
   adminSuggestReviewNoneForFilter: 'Bu filtreye uyan öneri yok.',
+  adminDutyWeightsTitle: 'Görev puan ağırlıkları',
+  adminDutyWeightsNote: 'Bir görevin değeri: etkinliğe ve görevi ana mı yoksa ikincil hesabın mı yaptığına göre. Kaydetmek sezonu geçmiş kayıtlar dahil hemen yeniden hesaplar.',
+  adminDutyWeightsMain: 'Ana',
+  adminDutyWeightsAlt: 'İkincil',
+  adminDutyWeightsBanners: 'Sancaklar',
+  adminDutyWeightsPathers: 'Yol açma',
+  adminDutyWeightsShieldWalls: 'Kalkan duvarları',
+  adminDutyWeightsSave: 'Ağırlıkları kaydet',
+  adminDutyWeightsReset: 'Varsayılanlara sıfırla',
+  adminDutyWeightsResetConfirm: 'Tüm ağırlıklar sıfırlansın mı? Sezon hemen yeniden hesaplanır.',
+  adminDutyWeightsSaved: 'Ağırlıklar kaydedildi. Puanlar yeniden hesaplandı.',
   adminSuggestApprove: 'Onayla',
   adminSuggestReject: 'Reddet',
   adminSuggestApproveConfirm:

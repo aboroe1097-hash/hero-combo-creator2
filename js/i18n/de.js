@@ -1470,7 +1470,7 @@ const de = {
   edenX1BreakdownConductPoints: 'Bonuspunkte fuer Teamleistung',
   edenX1BreakdownTotal: 'Gesamt',
   edenX1DutyFormula:
-    '{banners} Banner + {pathers} Pfade + {shieldWalls} Schildwälle = {count} x 10.000',
+    '{banners} Banner + {pathers} Pfade + {shieldWalls} Schildwälle',
   edenX1ConductFormula: '{conduct} Teamleistung x 10.000',
   edenX1ConductPrivateNotice:
     'Diese Bonuspunkte fuer Teamleistung werden von R5 MalakAbo vergeben. Details sind nicht oeffentlich sichtbar; melde dich fuer Einspruch.',
@@ -3284,6 +3284,17 @@ const de = {
   adminSuggestApproveAllDone: '{count} Vorschlaege genehmigt.',
   adminSuggestApproveAllPartial: '{done} von {count} genehmigt; {failed} fehlgeschlagen.',
   adminSuggestReviewNoneForFilter: 'Keine Vorschlaege passen zu diesem Filter.',
+  adminDutyWeightsTitle: 'Punktgewichte für Dienste',
+  adminDutyWeightsNote: 'Punkte, die ein Dienst wert ist, nach Tätigkeit und danach, ob ein Haupt- oder Zweitkonto ihn geleistet hat. Speichern berechnet diese Saison sofort neu, auch vergangene Einträge.',
+  adminDutyWeightsMain: 'Haupt',
+  adminDutyWeightsAlt: 'Zweit / Nebenkonto',
+  adminDutyWeightsBanners: 'Banner',
+  adminDutyWeightsPathers: 'Wegebau',
+  adminDutyWeightsShieldWalls: 'Schildwälle',
+  adminDutyWeightsSave: 'Gewichte speichern',
+  adminDutyWeightsReset: 'Auf Standard zurücksetzen',
+  adminDutyWeightsResetConfirm: 'Alle Gewichte auf den Standard zurücksetzen? Die Saison wird sofort neu berechnet.',
+  adminDutyWeightsSaved: 'Gewichte gespeichert. Punkte neu berechnet.',
   adminSuggestApprove: 'Genehmigen',
   adminSuggestReject: 'Ablehnen',
   adminSuggestApproveConfirm:
