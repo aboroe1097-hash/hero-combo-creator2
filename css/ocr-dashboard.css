@@ -11139,3 +11139,60 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* `hidden` must mean hidden. Every button, pill and chip in this deck sets its
+   own display, and an id-scoped class selector outranks the user-agent
+   [hidden] rule — so `el.hidden = true` silently did nothing and the suggestion
+   controls rendered "Show all 0" and "Approve all 0" with nothing to act on. */
+#ocrDashboardRoot [hidden] {
+  display: none !important;
+}
+
+/* Suggestion review controls. These shipped as markup with no styles at all, so
+   the pills sat on top of the "Show" label and the second row overlapped the
+   first. */
+#ocrDashboardRoot .dash-conduct-review-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0.75rem;
+}
+#ocrDashboardRoot .dash-conduct-review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-conduct-review-filter-label {
+  margin-right: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ff-text-dim);
+}
+#ocrDashboardRoot .dash-conduct-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  /* Pushed to the far end on a wide deck, wrapping under the filters on a
+     phone rather than squeezing them. */
+  margin-left: auto;
+}
+#ocrDashboardRoot .dash-conduct-review-filters .dash-btn.is-active {
+  border-color: var(--ff-accent, #38bdf8);
+  color: var(--ff-text);
+}
+@media (max-width: 560px) {
+  #ocrDashboardRoot .dash-conduct-review-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  #ocrDashboardRoot .dash-conduct-review-actions .dash-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
