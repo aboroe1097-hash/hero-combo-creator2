@@ -3,6 +3,11 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.12 - 2026-09-08
+
+- Fixed every duty weight save failing with "Missing or insufficient permissions". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than trusted, because a number in it multiplies real scores.
+- Fixed pathing points missing from Alliance View totals. That table recomputed duty points from the raw counts at a flat value, discarding the weighting it had already been handed, so pathing on a main scored 10,000 instead of 30,000. It now uses the computed points, keeps the flat fallback for rows that predate the weighted model, and still adds bonus team effort at the flat rate.
+
 ## 16.0.11 - 2026-09-08
 
 - Duty points are now weighted by activity and by which account performed the duty, replacing a flat value that made a banner from a throwaway alt worth exactly what a main was worth. Defaults are banners 1 for a main and 0.5 for an alt, pathing 3 and 1; shield walls stay at 1 for both until someone decides otherwise.

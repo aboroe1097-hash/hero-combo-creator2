@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.11";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.12";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.12",
+    "date": "2026-09-08",
+    "highlights": [
+      "Fixed every duty weight save failing with \"Missing or insufficient permissions\". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than tru…",
+      "Fixed pathing points missing from Alliance View totals. That table recomputed duty points from the raw counts at a flat value, discarding the weighting it had already been handed, so pathing on a main scored 10,000 instead of 30,000. It now uses the computed points, keeps the fl…"
+    ]
+  },
   {
     "version": "16.0.11",
     "date": "2026-09-08",
@@ -72,13 +80,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 h…",
       "Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty."
-    ]
-  },
-  {
-    "version": "16.0.2",
-    "date": "2026-09-04",
-    "highlights": [
-      "Rebuilt the Towers Specialization summary as full-width bands. The panel laid its title, button, hero plan and stat tiles out as one wrapping row, so the 478px-tall plan left roughly 460px of empty background beside the 46px title; title, stat bar and plan now each span the pane…"
     ]
   }
 ].map((release) =>

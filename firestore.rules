@@ -2662,9 +2662,38 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Duty scoring weights: points a single duty is worth, per activity and per
+    // account class. A number here multiplies real scores, so the shape is
+    // pinned rather than trusted — three known activities, two known classes,
+    // finite non-negative numbers within the range the editor itself allows.
+    function validDutyPointWeightEntry(entry) {
+      return entry is map
+        && entry.keys().hasOnly(['main', 'alt'])
+        && entry.keys().hasAll(['main', 'alt'])
+        && entry.main is number && entry.main >= 0 && entry.main <= 100
+        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100;
+    }
+
+    function validDutyPointWeights() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['weights', 'updatedAt', 'updatedBy'])
+        && d.weights is map
+        && d.weights.keys().hasOnly(['banners', 'pathers', 'shieldWalls'])
+        && d.weights.keys().hasAll(['banners', 'pathers', 'shieldWalls'])
+        && validDutyPointWeightEntry(d.weights.banners)
+        && validDutyPointWeightEntry(d.weights.pathers)
+        && validDutyPointWeightEntry(d.weights.shieldWalls)
+        && (!('updatedBy' in d) || d.updatedBy is string);
+    }
     match /vts_admin/eden_x1_vote_settings {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1VoteSettings();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x1_duty_point_weights {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validDutyPointWeights();
       allow delete: if false;
     }
 
@@ -2759,6 +2788,12 @@ service cloud.firestore {
     match /vts_admin/eden_x2_vote_settings {
       allow read: if isAdmin();
       allow create, update: if isSuperAdmin() && validEdenX1VoteSettings();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_duty_point_weights {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validDutyPointWeights();
       allow delete: if false;
     }
 
