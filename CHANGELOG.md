@@ -3,6 +3,10 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.13 - 2026-09-09
+
+- Eden X2 no longer shows Eden X1's management winners as its own. The R4/Management names come from a single Google Sheet that covers all of Eden rather than from a season's own documents, and that loader was the one results path not gated on the season's Show public results setting. X2 was displaying X1's winners while holding zero votes of its own. The sheet is now read only once a season publishes its results, so a season stays blank until its vote is actually opened and counted.
+
 ## 16.0.12 - 2026-09-08
 
 - Fixed every duty weight save failing with "Missing or insufficient permissions". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than trusted, because a number in it multiplies real scores.

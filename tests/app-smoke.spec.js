@@ -4053,7 +4053,12 @@ test.describe('app smoke tabs', () => {
       });
     });
     await page.evaluate((dash) => {
-      window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'extended' });
+      // showPublicResults gates the management-vote loader, so a season that
+      // publishes its results has to say so before the panel can populate.
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'extended',
+        showPublicResults: true,
+      });
       window.setEdenX1DataForTest(dash);
     }, seededDash);
     await expect(preLoadTeamCard).toBeEnabled();
@@ -4713,7 +4718,10 @@ test.describe('app smoke tabs', () => {
     );
     await page.keyboard.press('Escape');
     await page.evaluate(() => {
-      window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'default' });
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'default',
+        showPublicResults: true,
+      });
     });
     await expect(panel.locator('tbody tr').nth(2)).toContainText('Oscar');
     const defaultManagementNames = await panel
@@ -4722,7 +4730,10 @@ test.describe('app smoke tabs', () => {
     expect(defaultManagementNames).toContain('Oscar');
     expect(defaultManagementNames).not.toContain('Lima');
     await page.evaluate(() => {
-      window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'extended' });
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'extended',
+        showPublicResults: true,
+      });
     });
     await expect(panel.locator('tbody tr').nth(2)).toContainText('Lima');
 
@@ -4774,6 +4785,37 @@ test.describe('app smoke tabs', () => {
       });
     }, seededDash);
     await expect(panel.locator('tbody tr')).toContainText(['꧁༺ Kika ༻꧂', 'Yankee', 'Lima']);
+
+    // The management winners come from one Eden-wide sheet, not from this
+    // season's own documents. A season that has not published its results must
+    // not borrow the previous season's winners, so the loader is never called.
+    const gatedManagementLoad = await page.evaluate(async () => {
+      let called = false;
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () => {
+        called = true;
+        return Promise.resolve({
+          table: {
+            cols: [{ label: 'Name' }, { label: 'Votes' }],
+            rows: [{ c: [{ v: 'Zulu' }, { v: 9 }] }],
+          },
+        });
+      };
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'extended',
+        showPublicResults: false,
+      });
+      await window.loadEdenX1ManagementVotesForTest({ force: true });
+      return called;
+    });
+    expect(gatedManagementLoad).toBe(false);
+    await expect(panel).not.toContainText('Zulu');
+    await expect(panel).not.toContainText('temporarily unavailable');
+    await page.evaluate(() => {
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'extended',
+        showPublicResults: true,
+      });
+    });
 
     await page.evaluate(async () => {
       window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>

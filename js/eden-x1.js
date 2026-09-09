@@ -60,7 +60,7 @@ import {
   isPublishedEdenProjection,
 } from './eden-workspaces.js';
 
-export const APP_VERSION = '16.0.12';
+export const APP_VERSION = '16.0.13';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -692,6 +692,23 @@ function applyPendingEdenManagementVotePayload() {
 
 function loadEdenManagementVoteResults(options = {}) {
   const force = options.force === true;
+  // The management winners come from a Google Sheet rather than this season's
+  // Firestore documents, and that sheet is not season-scoped: there is one of
+  // them for all of Eden. So a season that has not run its own vote yet was
+  // showing the previous season's winners as though they were its own — Eden X2
+  // displayed X1's R4 names while holding zero votes of its own.
+  //
+  // showPublicResults is the switch that already governs the Firestore results
+  // path. Honouring it here too means one setting controls both, and a season
+  // stays blank until its vote is actually opened and published.
+  //
+  // 'hidden' rather than 'error': every consumer treats a status other than
+  // 'loaded' as no winners, and only 'error' renders a failure notice. Nothing
+  // has failed here — the results simply are not this season's to show.
+  if (edenVoteSettings.showPublicResults !== true) {
+    applyEdenManagementVoteResults({ winners: [], rankings: [] }, 'hidden');
+    return Promise.resolve(currentManagementVoteResults);
+  }
   if (!force && managementVoteLoadPromise) return managementVoteLoadPromise;
   if (
     !force &&
@@ -6990,7 +7007,6 @@ function showEdenBootError(err) {
 
 async function loadEdenX1Dashboard() {
   const generation = ++edenBootGeneration;
-  void loadEdenManagementVoteResults();
   const panel = $('dashWeightedContributionPanel');
   const errorEl = $('edenX1Error');
   if (errorEl) {
@@ -7139,6 +7155,10 @@ async function loadEdenX1Dashboard() {
 
     if (cachedData) {
       applyEdenVoteSettings(cachedData.edenX1VoteSettings);
+      // The sheet fetch is gated on showPublicResults, so it can only start
+      // once settings exist. Firing it here keeps the cache preview as fast as
+      // the old unconditional kick-off was.
+      void loadEdenManagementVoteResults();
       $('ocrDashboardSection')?.classList.add('eden-x1-panel--cache-preview');
       await yieldToBrowser();
       await applyDashboardData(cachedData, null, {
@@ -7191,6 +7211,10 @@ async function loadEdenX1Dashboard() {
     const { previousContributionMode, nextContributionMode } = applyEdenVoteSettings(
       result.verifiedVoteSettings
     );
+    // Authoritative settings, so this is the call that matters: a memoised
+    // in-flight load is reused, and a load the cached settings had gated off is
+    // started now that the real answer is known.
+    void loadEdenManagementVoteResults();
 
     if (!result.sidecarReadIncomplete) writeEdenPublicDashboardCache(result.data);
     if (
