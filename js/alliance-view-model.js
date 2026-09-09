@@ -1105,8 +1105,23 @@ export function getAllianceContributionMetrics(edenRow, activeMode = 'extended')
   ]);
   const duties = banners + pathers + shieldWalls;
   const base = contribution + exGuild;
-  const extended =
-    contribution + exGuild + DUTY_POINT_VALUE * (banners + pathers + shieldWalls + bonusTeamEffort);
+  // Prefer the duty points the scorer already worked out. They are weighted per
+  // activity and per account class, so recomputing them from the counts here
+  // silently reverts every weight to a flat value and makes this table disagree
+  // with the deck it was built from — pathing on a main is worth three, and
+  // multiplying the count by one hid exactly that.
+  //
+  // The flat fallback stays for rows that predate the weighted model or arrive
+  // from a projection that never carried the field.
+  const hasDutyPoints =
+    edenRow &&
+    typeof edenRow === 'object' &&
+    edenRow.dutyPoints !== undefined &&
+    edenRow.dutyPoints !== null;
+  const dutyPoints = hasDutyPoints
+    ? asFiniteNumber(edenRow.dutyPoints, DUTY_POINT_VALUE * duties)
+    : DUTY_POINT_VALUE * duties;
+  const extended = contribution + exGuild + dutyPoints + DUTY_POINT_VALUE * bonusTeamEffort;
   const normalizedActiveMode =
     activeMode === 'base' || activeMode === 'default' ? 'base' : 'extended';
   return {
@@ -1116,7 +1131,7 @@ export function getAllianceContributionMetrics(edenRow, activeMode = 'extended')
     pathers,
     shieldWalls,
     duties,
-    dutyPoints: DUTY_POINT_VALUE * duties,
+    dutyPoints,
     bonusTeamEffort,
     bonusPoints: DUTY_POINT_VALUE * bonusTeamEffort,
     base,
