@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.12";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.13";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.13",
+    "date": "2026-09-09",
+    "highlights": [
+      "Eden X2 no longer shows Eden X1's management winners as its own. The R4/Management names come from a single Google Sheet that covers all of Eden rather than from a season's own documents, and that loader was the one results path not gated on the season's Show public results sett…"
+    ]
+  },
   {
     "version": "16.0.12",
     "date": "2026-09-08",
@@ -72,14 +79,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced \"Something went wrong. Try again.\" on the sign-in form. Members read th…",
       "Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still n…"
-    ]
-  },
-  {
-    "version": "16.0.3",
-    "date": "2026-09-04",
-    "highlights": [
-      "Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 h…",
-      "Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty."
     ]
   }
 ].map((release) =>
