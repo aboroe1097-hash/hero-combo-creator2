@@ -4817,6 +4817,57 @@ test.describe('app smoke tabs', () => {
       });
     });
 
+    // Cached settings are read before the authoritative ones, so a season whose
+    // results were switched off since the cache was written can have the sheet
+    // fetch already in flight when the gate closes. That response has to land on
+    // the floor: blanking the panel is worthless if the previous season's
+    // winners paint themselves back in a moment later.
+    await page.evaluate(async () => {
+      let releaseLoader = () => {};
+      const loaderResult = new Promise((resolve) => {
+        releaseLoader = () =>
+          resolve({
+            table: {
+              cols: [{ label: 'Name' }, { label: 'Votes' }],
+              rows: [{ c: [{ v: 'Zulu' }, { v: 9 }] }],
+            },
+          });
+      });
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () => loaderResult;
+      const inFlight = window.loadEdenX1ManagementVotesForTest({ force: true });
+      // Both dashboard settings paths apply the settings and then kick the
+      // loader, which is what closes the gate on an already-running fetch. The
+      // test hook only does the first half, so pair them by hand here.
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'extended',
+        showPublicResults: false,
+      });
+      await window.loadEdenX1ManagementVotesForTest();
+      releaseLoader();
+      await inFlight;
+    });
+    await expect(panel).not.toContainText('Zulu');
+    await expect(panel).not.toContainText('temporarily unavailable');
+
+    // ...and closing the gate must not wedge the loader shut on the way past.
+    // The retired in-flight promise has to be released, or the next permitted
+    // load returns it instead of fetching.
+    await page.evaluate(async () => {
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
+        Promise.resolve({
+          table: {
+            cols: [{ label: 'Name' }, { label: 'Votes' }],
+            rows: [{ c: [{ v: 'Yankee' }, { v: 7 }] }],
+          },
+        });
+      window.setEdenX1VoteSettingsForTest({
+        contributionRankingMode: 'extended',
+        showPublicResults: true,
+      });
+      await window.loadEdenX1ManagementVotesForTest();
+    });
+    await expect(panel).toContainText('Yankee');
+
     await page.evaluate(async () => {
       window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
         Promise.reject(new Error('simulated management vote outage'));

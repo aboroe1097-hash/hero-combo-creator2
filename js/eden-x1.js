@@ -706,6 +706,17 @@ function loadEdenManagementVoteResults(options = {}) {
   // 'loaded' as no winners, and only 'error' renders a failure notice. Nothing
   // has failed here — the results simply are not this season's to show.
   if (edenVoteSettings.showPublicResults !== true) {
+    // A load may already be in flight: the cached settings are read before the
+    // authoritative ones, so a season whose results were switched off since the
+    // cache was written starts the sheet fetch and only then learns it may not
+    // show it. Retiring the token makes that response land on the floor instead
+    // of painting the previous season's winners a moment after this blanks them.
+    // Clearing the promise matters just as much — the .finally below only
+    // releases it while the token still matches, so leaving it set would make
+    // the next permitted call return this settled promise and never load.
+    managementVoteLoadToken += 1;
+    managementVoteLoadPromise = null;
+    pendingManagementVotePayload = null;
     applyEdenManagementVoteResults({ winners: [], rankings: [] }, 'hidden');
     return Promise.resolve(currentManagementVoteResults);
   }
