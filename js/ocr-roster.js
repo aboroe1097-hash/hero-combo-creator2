@@ -55,6 +55,7 @@ import { translations } from './translations.js';
 import { resolveRuntimeLocale } from './locale-format.js';
 import {
   canonicalizePlayerOptionNames,
+  collectDutySuggestionPlayerNames,
   getSpecialAccountIdentityKey,
   resolveCanonicalPlayerIdentity,
   stripGuildTagsFromPlayerName,
@@ -1328,30 +1329,8 @@ function saveDutyRecords(options = {}) {
   return syncDashboardAuxiliaryRecords(options);
 }
 
-function getRosterMemberName(member) {
-  if (!member) return '';
-  if (typeof member === 'string') return member.trim();
-  return String(member.name || '').trim();
-}
-
 function getRosterDatabaseNames() {
-  const names = [];
-  const latest = state.rosterSnapshots.length
-    ? state.rosterSnapshots[state.rosterSnapshots.length - 1]
-    : null;
-  if (latest && Array.isArray(latest.members)) {
-    latest.members.forEach((member) => {
-      const name = getRosterMemberName(member);
-      if (name) names.push(name);
-    });
-  }
-  if (Array.isArray(state.rosterNames)) {
-    state.rosterNames.forEach((name) => {
-      const text = String(name || '').trim();
-      if (text) names.push(text);
-    });
-  }
-  return canonicalizePlayerOptionNames(names);
+  return collectDutySuggestionPlayerNames(state);
 }
 
 function normalizeDutyName(name) {
@@ -1361,7 +1340,7 @@ function normalizeDutyName(name) {
 function getDutySuggestions(rawName) {
   const roster = getRosterDatabaseNames();
   const raw = String(rawName || '').trim();
-  if (!raw || !roster.length) return [];
+  if (!raw) return [];
   const canonical = findBestMatch(raw, 55);
   const rows = roster.map((name) => {
     const compactScore = getSimilarityAlphaNum(raw, name);
@@ -1369,8 +1348,13 @@ function getDutySuggestions(rawName) {
     const canonicalBoost = canonical === name ? 0.15 : 0;
     return { name, score: Math.min(1, Math.max(compactScore, textScore) + canonicalBoost) };
   });
-  if (canonical && !rows.some((row) => row.name === canonical))
-    rows.push({ name: canonical, score: 0.75 });
+  if (
+    canonical &&
+    (roster.length || canonical !== raw) &&
+    !rows.some((row) => row.name === canonical)
+  ) {
+    rows.push({ name: canonical, score: roster.length ? 0.75 : 1 });
+  }
   return rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, 8);
 }
 
@@ -4346,6 +4330,7 @@ export {
   hashCode,
   loadDutyRecords,
   saveDutyRecords,
+  getDutySuggestions,
   showDutyPasteForm,
   showDutyConfirmModal,
   processDutyImages,
