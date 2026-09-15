@@ -7,9 +7,14 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
   {
     "version": "16.0.13",
-    "date": "2026-09-09",
+    "date": "2026-09-15",
     "highlights": [
-      "Eden X2 no longer shows Eden X1's management winners as its own. The R4/Management names come from a single Google Sheet that covers all of Eden rather than from a season's own documents, and that loader was the one results path not gated on the season's Show public results sett…"
+      "Added the Class Development Hub: the four L96 class roadmaps (Raider, Farmer, Trader, Craftsman) with a next-reset navigator and each sheet's red reset priorities, all re-read from the source sheets. Farmer's late priorities had been shifted one checkpoint, and Craftsman's carri…",
+      "Added the Eden Operations Lab to the Eden Hub: specialty route planning, Honor needed for levels 1–143, Honor Boost against Special Training, building material costs with discounts, Coalition Camp tiling and objective staffing, with CSV, PNG and plan exports, in all twelve Eden …",
+      "Added DM equipment guidance: offensive and defensive six-piece priorities and the set-bonus do's and don'ts.",
+      "Corrected the Lofty Warrior research data: the final Might tier is 40%, three level-2 costs are 840, and the Archer and Cavalry research names are back on the right troops.",
+      "Eden X2 demolition and duty credit no longer score for nobody. OCR spellings that split one player across contribution and demolition rows now join their account, which returned about 3.5M demolition to weighted scores; one row read twice from overlapping screenshots is counted …",
+      "Banner and Pather uploads in Eden X2 suggest names again, and an operator note in a duty cell earns credit when it names a player the season already knows. Both asked a roster that X2 never had; they now use the names the season already holds."
     ]
   },
   {
