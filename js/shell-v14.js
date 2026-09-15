@@ -25,6 +25,8 @@
     'tabHeroesCombos',
     'tabResearchTowers',
     'tabMaterials',
+    // Profession-reset roadmaps and comparison tools.
+    'tabClassDevelopment',
     'tabEdenMap',
     'tabStrife',
     'tabLoyalty',
@@ -34,10 +36,15 @@
   ];
   // Rail order. These arrays are the source of truth for both *which* tools are
   // primary and the order they sit in — layoutNavigation() appends in this
-  // sequence. The three hubs lead, because each one now stands for several tools
-  // that used to have their own pill; standalone tools follow.
-  const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'];
-  // VTS Admin sits fifth, straight after the hubs and Materials: it is opened
+  // sequence. The four hubs lead because each one stands for a group of related
+  // decisions; standalone tools follow.
+  const hubIds = [
+    'tabHeroesCombos',
+    'tabResearchTowers',
+    'tabClassDevelopment',
+    'tabEdenMap',
+  ];
+  // VTS Admin sits sixth, straight after the hubs and Materials: it is opened
   // far more often than the standalone tools yet was reachable only through
   // More. All-Star BoH moves the other way, into More, because it runs for a
   // few weeks a season rather than every day.
@@ -51,6 +58,7 @@
     ['tabHeroesCombos', 'heroesCombos'],
     ['tabResearchTowers', 'researchTowers'],
     ['tabMaterials', 'materials'],
+    ['tabClassDevelopment', 'classDevelopment'],
     // These values double as the section-id prefix in syncSkipDestination
     // (`#${tabName}Section`), so they must stay the internal tab names. The
     // shareable #edenHub hash is handled by tabHashAliases below.

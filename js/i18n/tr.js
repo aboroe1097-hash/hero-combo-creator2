@@ -1780,6 +1780,7 @@ const tr = {
   languageLabel: 'Dil',
   loadingEllipsis: 'Yükleniyor…',
   tabMaterials: 'DM Malzemeleri',
+  tabClassDevelopment: 'Sınıf Geliştirme',
   youtubeChoosePlaylist: 'Bir çalma listesi seç',
   youtubeFeatured: 'Öne çıkan çalma listesi',
   youtubeGuidesTitle: 'Oyun Etkinlikleri & Kılavuzlar',

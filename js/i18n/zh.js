@@ -1734,6 +1734,7 @@ const zh = {
   languageLabel: '语言',
   loadingEllipsis: '加载中…',
   tabMaterials: 'DM 材料',
+  tabClassDevelopment: '职业发展中心',
   youtubeChoosePlaylist: '选择一个播放列表',
   youtubeFeatured: '精选播放列表',
   youtubeGuidesTitle: '游戏活动与指南',

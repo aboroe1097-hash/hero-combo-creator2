@@ -95,6 +95,7 @@ export default {
     genericSector: '{code} 区域',
     subTabMap: '伊甸地图',
     subTabLoyalty: '伊甸忠诚',
+    subTabOperations: '作战实验室',
     subTabBounty: '皇家赏金 Eden X2',
     subTabSeason: '当前赛季 · {currentSeason}',
     subTabPrevious: '往期赛季 · {previousSeason}',

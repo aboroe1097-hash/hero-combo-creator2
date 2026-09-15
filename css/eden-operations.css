@@ -1,0 +1,778 @@
+.eden-operations-root {
+  --ops-bg: #07111f;
+  --ops-panel: rgba(10, 24, 41, 0.9);
+  --ops-panel-2: rgba(15, 33, 54, 0.88);
+  --ops-line: rgba(148, 197, 228, 0.18);
+  --ops-text: #eaf6ff;
+  --ops-muted: #9db3c8;
+  --ops-accent: #38bdf8;
+  --ops-green: #4ade80;
+  --ops-red: #fb7185;
+  color: var(--ops-text);
+  color-scheme: dark;
+  min-height: 32rem;
+  padding: clamp(0.7rem, 2vw, 1.4rem);
+  background:
+    radial-gradient(circle at 82% 0%, rgba(14, 165, 233, 0.16), transparent 34rem),
+    radial-gradient(circle at 8% 45%, rgba(34, 197, 94, 0.1), transparent 28rem), var(--ops-bg);
+}
+
+[data-theme='light'] .eden-operations-root {
+  --ops-bg: #edf6fb;
+  --ops-panel: rgba(255, 255, 255, 0.93);
+  --ops-panel-2: rgba(239, 248, 253, 0.96);
+  --ops-line: rgba(15, 63, 91, 0.18);
+  --ops-text: #10293a;
+  --ops-muted: #557084;
+  --ops-accent: #0369a1;
+  --ops-green: #15803d;
+  --ops-red: #be123c;
+  color-scheme: light;
+}
+
+.eden-ops-shell {
+  width: min(100%, 92rem);
+  margin-inline: auto;
+}
+
+.eden-ops-hero,
+.eden-ops-workspace,
+.eden-ops-sources {
+  border: 1px solid var(--ops-line);
+  background: var(--ops-panel);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.17);
+}
+
+.eden-ops-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: clamp(1.1rem, 3vw, 2.2rem);
+  border-radius: 1.35rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.eden-ops-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -4rem -7rem auto;
+  width: 18rem;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--ops-accent) 28%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2.5rem color-mix(in srgb, var(--ops-accent) 5%, transparent),
+    0 0 0 5rem color-mix(in srgb, var(--ops-accent) 3%, transparent);
+  pointer-events: none;
+}
+
+.eden-ops-hero > div {
+  position: relative;
+  z-index: 1;
+}
+
+.eden-ops-kicker {
+  margin: 0 0 0.35rem;
+  color: var(--ops-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+}
+
+.eden-ops-hero h2,
+.eden-ops-workspace h3,
+.eden-ops-workspace h4 {
+  color: var(--ops-text);
+  margin: 0;
+}
+
+.eden-ops-hero h2 {
+  font-size: clamp(1.55rem, 4vw, 2.85rem);
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+
+.eden-ops-hero p:not(.eden-ops-kicker) {
+  max-width: 52rem;
+  margin: 0.7rem 0;
+  color: var(--ops-muted);
+  line-height: 1.6;
+}
+
+.eden-ops-hero > div > span {
+  color: var(--ops-muted);
+  font-size: 0.76rem;
+}
+
+.eden-ops-plan-actions,
+.eden-ops-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.eden-ops-plan-actions {
+  flex: 0 0 min(19rem, 36%);
+  justify-content: flex-end;
+}
+
+.eden-ops-plan-actions button,
+.eden-ops-export-actions button {
+  min-height: 2.65rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  color: var(--ops-text);
+  background: var(--ops-panel-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.eden-ops-plan-actions button:hover,
+.eden-ops-export-actions button:hover,
+.eden-ops-plan-actions button:focus-visible,
+.eden-ops-export-actions button:focus-visible {
+  border-color: var(--ops-accent);
+  outline: 2px solid color-mix(in srgb, var(--ops-accent) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.eden-ops-tool-nav {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  padding: 0.45rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--ops-panel) 82%, transparent);
+  position: sticky;
+  top: 0.5rem;
+  z-index: 5;
+  backdrop-filter: blur(18px);
+}
+
+.eden-ops-tool-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.55rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.72rem;
+  color: var(--ops-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.eden-ops-tool-nav button:hover,
+.eden-ops-tool-nav button:focus-visible {
+  color: var(--ops-text);
+  border-color: var(--ops-line);
+  outline: none;
+}
+
+.eden-ops-tool-nav button.active {
+  color: #03131d;
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.22);
+}
+
+.eden-ops-workspace {
+  padding: clamp(0.9rem, 2vw, 1.5rem);
+  border-radius: 1.15rem;
+}
+
+.eden-ops-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-end: 1rem;
+}
+
+.eden-ops-section-head h3 {
+  font-size: clamp(1.25rem, 2.6vw, 1.8rem);
+}
+
+.eden-ops-note,
+.eden-ops-warning {
+  margin: 0.75rem 0;
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  color: var(--ops-muted);
+  background: color-mix(in srgb, var(--ops-accent) 7%, transparent);
+  border-inline-start: 3px solid var(--ops-accent);
+  line-height: 1.5;
+  font-size: 0.86rem;
+}
+
+.eden-ops-warning {
+  color: color-mix(in srgb, var(--ops-red) 85%, var(--ops-text));
+  background: color-mix(in srgb, var(--ops-red) 8%, transparent);
+  border-inline-start-color: var(--ops-red);
+}
+
+.eden-ops-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.65rem;
+  margin-block: 0.9rem;
+}
+
+.eden-ops-controls--compact {
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 20rem));
+}
+
+.eden-ops-controls--stack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.eden-ops-field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--ops-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.eden-ops-field input,
+.eden-ops-field select,
+.eden-ops-route input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.65rem;
+  color: var(--ops-text);
+  background: var(--ops-panel-2);
+  font: inherit;
+}
+
+.eden-ops-field input:focus,
+.eden-ops-field select:focus,
+.eden-ops-route input:focus {
+  border-color: var(--ops-accent);
+  outline: 2px solid color-mix(in srgb, var(--ops-accent) 20%, transparent);
+}
+
+.eden-ops-field--check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 4.1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.75rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-field--check input {
+  width: 1.3rem;
+  min-height: 1.3rem;
+  accent-color: var(--ops-accent);
+}
+
+.eden-ops-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-block: 1rem;
+}
+
+.eden-ops-metric {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.8rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-metric span {
+  color: var(--ops-muted);
+  font-size: 0.72rem;
+}
+
+.eden-ops-metric strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(1.05rem, 2.5vw, 1.55rem);
+}
+
+.eden-ops-metric.accent strong {
+  color: var(--ops-accent);
+}
+
+.eden-ops-metric.good strong {
+  color: var(--ops-green);
+}
+
+.eden-ops-metric.danger strong {
+  color: var(--ops-red);
+}
+
+.eden-ops-preset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.9rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-preset p {
+  margin: 0.25rem 0 0;
+  color: var(--ops-muted);
+  line-height: 1.45;
+}
+
+.eden-ops-milestones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.eden-ops-milestones span {
+  padding: 0.35rem 0.55rem;
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--ops-accent) 12%, transparent);
+  color: var(--ops-text);
+  white-space: nowrap;
+  font-size: 0.72rem;
+}
+
+.eden-ops-tree-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.eden-ops-tree {
+  --tree-color: #38bdf8;
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tree-color) 8%, var(--ops-panel-2)), var(--ops-panel-2));
+}
+
+.eden-ops-tree--green {
+  --tree-color: #4ade80;
+}
+
+.eden-ops-tree--red {
+  --tree-color: #fb7185;
+}
+
+.eden-ops-tree > header {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  margin-block-end: 0.75rem;
+}
+
+.eden-ops-tree > header h4 {
+  font-size: 1rem;
+}
+
+.eden-ops-tree > header p {
+  margin: 0.15rem 0 0;
+  color: var(--ops-muted);
+  font-size: 0.72rem;
+}
+
+.eden-ops-tree-orb {
+  flex: 0 0 1.8rem;
+  width: 1.8rem;
+  aspect-ratio: 1;
+  border: 2px solid color-mix(in srgb, var(--tree-color) 70%, white);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--tree-color) 0 26%, transparent 30%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--tree-color) 35%, transparent);
+}
+
+.eden-ops-route-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.eden-ops-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.25rem;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--ops-bg) 45%, transparent);
+}
+
+.eden-ops-route.is-focus {
+  border-color: color-mix(in srgb, var(--tree-color) 58%, var(--ops-line));
+}
+
+.eden-ops-route-copy {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.eden-ops-route-copy span,
+.eden-ops-route-copy small,
+.eden-ops-route-next {
+  color: var(--ops-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.eden-ops-route label {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--ops-muted);
+  font-size: 0.65rem;
+}
+
+.eden-ops-route-track {
+  grid-column: 1 / -1;
+  height: 0.28rem;
+  overflow: hidden;
+  border-radius: 2rem;
+  background: var(--ops-line);
+}
+
+.eden-ops-route-track i {
+  display: block;
+  width: var(--progress);
+  height: 100%;
+  background: var(--tree-color);
+}
+
+.eden-ops-route-next {
+  grid-column: 1 / -1;
+}
+
+.eden-ops-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-block: 1rem;
+}
+
+.eden-ops-mode {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.9rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-mode span,
+.eden-ops-mode small {
+  color: var(--ops-muted);
+}
+
+.eden-ops-mode strong {
+  color: var(--ops-accent);
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.eden-ops-mode--oldBoost strong {
+  color: var(--ops-red);
+}
+
+.eden-ops-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.8rem;
+}
+
+.eden-ops-table-wrap--tall {
+  max-height: 31rem;
+}
+
+.eden-ops-table-wrap table {
+  width: 100%;
+  min-width: 43rem;
+  border-collapse: collapse;
+  color: var(--ops-text);
+  font-size: 0.78rem;
+}
+
+.eden-ops-table-wrap :is(th, td) {
+  padding: 0.62rem 0.7rem;
+  border-block-end: 1px solid var(--ops-line);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.eden-ops-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: var(--ops-muted);
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-table-wrap tbody tr:hover {
+  background: color-mix(in srgb, var(--ops-accent) 6%, transparent);
+}
+
+.eden-ops-table-wrap tr.is-unknown {
+  color: var(--ops-muted);
+  background: color-mix(in srgb, var(--ops-red) 5%, transparent);
+}
+
+.eden-ops-honor-chart {
+  display: flex;
+  align-items: end;
+  gap: clamp(0.25rem, 1vw, 0.75rem);
+  height: 9rem;
+  padding: 0.75rem;
+  margin-block: 0.8rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.8rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-honor-chart div {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: end;
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+}
+
+.eden-ops-honor-chart i {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 0.35rem 0.35rem 0 0;
+  background: linear-gradient(#38bdf8, #2563eb);
+}
+
+.eden-ops-honor-chart span {
+  margin-block-start: 0.25rem;
+  color: var(--ops-muted);
+  text-align: center;
+  font-size: clamp(0.52rem, 1.2vw, 0.68rem);
+}
+
+.eden-ops-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.eden-ops-card {
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.85rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-card > p {
+  color: var(--ops-muted);
+}
+
+.eden-ops-order {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 21rem;
+  overflow: auto;
+  margin: 0.8rem 0;
+  padding-inline-start: 1.7rem;
+}
+
+.eden-ops-order li {
+  padding: 0.55rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.6rem;
+}
+
+.eden-ops-order li strong,
+.eden-ops-order li span {
+  display: block;
+}
+
+.eden-ops-order li span {
+  margin-block-start: 0.18rem;
+  color: var(--ops-muted);
+  font-size: 0.74rem;
+}
+
+.eden-ops-objective {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.eden-ops-objective div {
+  padding: 0.65rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.65rem;
+}
+
+.eden-ops-objective dt {
+  color: var(--ops-muted);
+  font-size: 0.7rem;
+}
+
+.eden-ops-objective dd {
+  margin: 0.2rem 0 0;
+  font-weight: 800;
+}
+
+.eden-ops-sources {
+  margin-block-start: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.9rem;
+  color: var(--ops-muted);
+}
+
+.eden-ops-sources summary {
+  min-height: 2.4rem;
+  padding-block: 0.55rem;
+  color: var(--ops-text);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.eden-ops-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.55rem;
+  margin-block: 0.7rem;
+}
+
+.eden-ops-source-grid a {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.65rem;
+  color: var(--ops-text);
+  text-decoration: none;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-source-grid a:hover,
+.eden-ops-source-grid a:focus-visible {
+  border-color: var(--ops-accent);
+  outline: none;
+}
+
+.eden-ops-source-grid span,
+.eden-ops-sources li,
+.eden-ops-sources small {
+  color: var(--ops-muted);
+  font-size: 0.74rem;
+}
+
+@media (max-width: 900px) {
+  .eden-ops-tree-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eden-ops-hero {
+    display: grid;
+  }
+
+  .eden-ops-plan-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .eden-operations-root {
+    padding: 0.55rem;
+  }
+
+  .eden-ops-hero,
+  .eden-ops-workspace {
+    border-radius: 0.85rem;
+  }
+
+  .eden-ops-tool-nav {
+    grid-template-columns: repeat(5, minmax(3.4rem, 1fr));
+    overflow-x: auto;
+  }
+
+  .eden-ops-tool-nav button {
+    flex-direction: column;
+    gap: 0.15rem;
+    min-height: 3.7rem;
+    font-size: 0.63rem;
+  }
+
+  .eden-ops-section-head,
+  .eden-ops-preset {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .eden-ops-export-actions,
+  .eden-ops-plan-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eden-ops-plan-actions button,
+  .eden-ops-export-actions button {
+    width: 100%;
+  }
+
+  .eden-ops-metrics,
+  .eden-ops-mode-grid,
+  .eden-ops-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eden-ops-controls,
+  .eden-ops-controls--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eden-ops-route {
+    grid-template-columns: minmax(0, 1fr) 4.8rem;
+  }
+
+  .eden-ops-honor-chart {
+    gap: 0.18rem;
+  }
+
+  .eden-ops-objective {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eden-operations-root *,
+  .eden-operations-root *::before,
+  .eden-operations-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

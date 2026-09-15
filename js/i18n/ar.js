@@ -1762,6 +1762,7 @@ const ar = {
   languageLabel: 'اللغة',
   loadingEllipsis: 'جارٍ التحميل…',
   tabMaterials: 'مواد DM',
+  tabClassDevelopment: 'مركز تطوير الفئات',
   youtubeChoosePlaylist: 'اختر قائمة تشغيل',
   youtubeFeatured: 'قائمة التشغيل المميزة',
   youtubeGuidesTitle: 'فعاليات اللعبة والأدلة',

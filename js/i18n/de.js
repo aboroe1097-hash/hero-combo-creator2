@@ -1835,6 +1835,7 @@ const de = {
   languageLabel: 'Sprache',
   loadingEllipsis: 'Ladevorgang…',
   tabMaterials: 'DM-Materialien',
+  tabClassDevelopment: 'Klassenentwicklung',
   youtubeChoosePlaylist: 'Wähle eine Playlist',
   youtubeFeatured: 'Empfohlene Playlist',
   youtubeGuidesTitle: 'Spielereignisse & Anleitungen',

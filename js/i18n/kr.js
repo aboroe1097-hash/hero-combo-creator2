@@ -1768,6 +1768,7 @@ const kr = {
   languageLabel: '언어',
   loadingEllipsis: '로딩 중…',
   tabMaterials: 'DM 재료',
+  tabClassDevelopment: '클래스 성장 허브',
   youtubeChoosePlaylist: '재생목록 선택',
   youtubeFeatured: '추천 재생목록',
   youtubeGuidesTitle: '게임 이벤트 & 가이드',

@@ -53,6 +53,7 @@ const hr = Object.freeze({
   bohAccessShowPin: 'Prikaži PIN',
   bohAccessHidePin: 'Sakrij PIN',
   tabMaterials: 'DM materijali',
+  tabClassDevelopment: 'Razvoj klase',
   tabAi: 'Razgovaraj s Velom',
   tabStrife: 'Strife over Dragon',
   tabSpecialization: 'Specijalizacija',

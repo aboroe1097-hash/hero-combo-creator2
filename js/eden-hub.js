@@ -1,10 +1,11 @@
 // js/eden-hub.js
 // VTS Eden Hub sub-tab controller for the integrated Eden Map tab.
 //
-// The hub hosts five sub-tabs inside #edenMapRoot:
+// The hub hosts its map, planning, guide, and season sub-tabs inside #edenMapRoot:
 //   - bounty:   the Royal Bounty guide (default)
 //   - map:      the existing Eden map planner
 //   - loyalty:  the Eden Loyalty calculator, fetched from tabs/loyalty.html
+//   - operations: specialty, Honor, building, tiling, and siege planners
 //   - season:   the current Eden season (eden-x2.html), revealed only after an
 //               admin publishes that workspace's projection
 //   - previous: previous-season rankings (eden-x1.html) in a lazy iframe
@@ -16,16 +17,24 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260909_155951';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260909_155951';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260909_155951';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260915_180633';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260915_180633';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260915_180633';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 // How long the hub waits for the season publication check before landing on
 // Royal Bounty instead. Long enough for a normal round trip, short enough that
 // a dead backend is not a blank hub.
 const SEASON_LANDING_TIMEOUT_MS = 2500;
-const EDEN_HUB_SUBTABS = ['map', 'loyalty', 'bounty', 'playbook', 'season', 'previous'];
+const EDEN_HUB_SUBTABS = [
+  'map',
+  'loyalty',
+  'operations',
+  'bounty',
+  'playbook',
+  'season',
+  'previous',
+];
 
 let booted = false;
 let loyaltyLoaded = false;
@@ -33,6 +42,8 @@ let loyaltyLoading = false;
 let bountyLoaded = false;
 let bountyLoading = false;
 let playbookLoaded = false;
+let operationsLoaded = false;
+let operationsLoading = false;
 // Set once a visitor picks a sub-tab, so the deferred season landing never
 // overrides a choice they already made.
 let userPickedSubtab = false;
@@ -89,7 +100,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260909_155951')
+    import('./eden-map.js?v=20260915_180633')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -119,7 +130,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260909_155951');
+    const module = await import('./loyalty-spa.js?v=20260915_180633');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -186,7 +197,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260909_155951');
+    const module = await import('./bounty-guide.js?v=20260915_180633');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -211,6 +222,28 @@ async function loadPlaybook(panel) {
   } catch (error) {
     console.warn('[eden-hub] Eden playbook failed to load', error);
     panel.innerHTML = loadFailedMarkup(catalogFor(currentLanguage).tabEdenPlaybook || 'Eden Playbook');
+  }
+}
+
+async function loadOperations(panel) {
+  if (operationsLoaded || operationsLoading) return;
+  operationsLoading = true;
+  try {
+    if (!document.getElementById('edenOperationsStyles')) {
+      const stylesheet = document.createElement('link');
+      stylesheet.id = 'edenOperationsStyles';
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = 'css/eden-operations.css';
+      document.head.appendChild(stylesheet);
+    }
+    const module = await import('./eden-operations.js');
+    module.initEdenOperations?.(panel.querySelector('#edenOperationsRoot'));
+    operationsLoaded = true;
+  } catch (error) {
+    console.warn('[eden-hub] Eden Operations failed to load', error);
+    panel.innerHTML = loadFailedMarkup('Eden Operations');
+  } finally {
+    operationsLoading = false;
   }
 }
 
@@ -250,6 +283,7 @@ export function bootEdenHub() {
 
   function loadPanelFor(name, panel) {
     if (name === 'loyalty') loadLoyalty(root, panel);
+    if (name === 'operations') loadOperations(panel);
     if (name === 'bounty') loadBounty(panel);
     if (name === 'playbook') loadPlaybook(panel);
     if (name === 'previous') loadPrevious(panel);
@@ -321,7 +355,9 @@ export function bootEdenHub() {
 
   // Language changes re-apply the main catalog to every loaded panel; the
   // playbook re-renders its JS-built content through its own listener.
-  window.addEventListener('vts:language-change', () => localizeFragment(root));
+  window.addEventListener('vts:language-change', () => {
+    localizeFragment(root);
+  });
 
   // Explicit sub-tab navigation from other tools (e.g. the command palette).
   window.addEventListener('vts:eden-hub-subtab', (event) => {

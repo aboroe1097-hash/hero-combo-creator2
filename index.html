@@ -48,8 +48,8 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260909_155951"></script>
-    <script src="js/theme-prepaint.js?v=20260909_155951"></script>
+    <script src="js/maintenance-config.js?v=20260915_180633"></script>
+    <script src="js/theme-prepaint.js?v=20260915_180633"></script>
     <style>
     </style>
     <script type="application/ld+json">
@@ -106,18 +106,18 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260909_155951" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/app.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/components.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260909_155951" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260909_155951" />
-    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260909_155951" />
-    <script src="js/admin-auth-config.js?v=20260909_155951"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260915_180633" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/app.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/components.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260915_180633" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260915_180633" />
+    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260915_180633" />
+    <script src="js/admin-auth-config.js?v=20260915_180633"></script>
   </head>
   <body>
     <a
@@ -436,6 +436,12 @@
                       d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
                     /></svg
                   ><span data-i18n="tabResearchTowers">Research &amp; Towers Hub</span></button
+                ><span class="tab-badge tab-badge-hub" data-i18n="tabBadgeHub">HUB</span>
+              </div>
+              <div class="tab-item tab-badge-wrap" data-shell-hub data-shell-desktop-primary>
+                <button id="tabClassDevelopment" class="tab-pill tab-pill-inactive">
+                  <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 20v-6m5 6V9m5 11V4M4 20h16"/></svg>
+                  <span data-i18n="tabClassDevelopment">Class Development Hub</span></button
                 ><span class="tab-badge tab-badge-hub" data-i18n="tabBadgeHub">HUB</span>
               </div>
               <div class="tab-item tab-badge-wrap" data-shell-desktop-primary>
@@ -1502,9 +1508,22 @@
         </section>
 
         <section
+          id="classDevelopmentSection"
+          class="tab-panel hidden animate-fade-in tab-panel-pad-lg"
+          aria-labelledby="tabClassDevelopment"
+        >
+          <div id="classDevelopmentRoot" class="class-development-host">
+            <div class="tab-loading" aria-busy="true">
+              <div class="spinner"></div>
+              <span data-i18n="loadingEllipsis">Loading…</span>
+            </div>
+          </div>
+        </section>
+
+        <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260909_155951"
+          data-tab-src="tabs/eden-map.html?v=20260915_180633"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1868,12 +1887,12 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260909_155951"></script>
-    <script type="module" src="js/app.js?v=20260909_155951"></script>
-    <script type="module" src="js/command-palette.js?v=20260909_155951"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260909_155951"></script>
-    <script src="js/index-page-enhancements.js?v=20260909_155951"></script>
-    <script src="js/shell-v14.js?v=20260909_155951"></script>
+    <script src="js/loader-v14.js?v=20260915_180633"></script>
+    <script type="module" src="js/app.js?v=20260915_180633"></script>
+    <script type="module" src="js/command-palette.js?v=20260915_180633"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260915_180633"></script>
+    <script src="js/index-page-enhancements.js?v=20260915_180633"></script>
+    <script src="js/shell-v14.js?v=20260915_180633"></script>
     <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

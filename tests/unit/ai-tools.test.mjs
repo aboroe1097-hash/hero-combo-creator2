@@ -54,6 +54,14 @@ test('toolkit map lists every tab with a working deep link and routes queries', 
   assert.equal(spec.ok, true);
   assert.equal(spec.data.tools[0].id, 'specialization');
   assert.equal(spec.data.tools[0].hash, 'specialization');
+
+  const classes = await executeAiToolCall(
+    { name: 'get_toolkit_map', arguments: { query: 'next profession class reset' } },
+    staticContext
+  );
+  assert.equal(classes.ok, true);
+  assert.equal(classes.data.tools[0].id, 'classDevelopment');
+  assert.equal(classes.data.tools[0].hash, 'classDevelopment');
 });
 
 test('whats-new digest matches the released changelog and package version', async () => {

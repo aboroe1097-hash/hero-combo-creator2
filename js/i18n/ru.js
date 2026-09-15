@@ -1783,6 +1783,7 @@ const ru = {
   languageLabel: 'Язык',
   loadingEllipsis: 'Загрузка…',
   tabMaterials: 'Материалы DM',
+  tabClassDevelopment: 'Развитие класса',
   youtubeChoosePlaylist: 'Выберите плейлист',
   youtubeFeatured: 'Рекомендуемый плейлист',
   youtubeGuidesTitle: 'События игры и руководства',

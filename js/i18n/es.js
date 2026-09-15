@@ -1801,6 +1801,7 @@ const es = {
   languageLabel: 'Idioma',
   loadingEllipsis: 'Cargando…',
   tabMaterials: 'Materiales DM',
+  tabClassDevelopment: 'Desarrollo de clases',
   youtubeChoosePlaylist: 'Elige una lista de reproducción',
   youtubeFeatured: 'Lista destacada',
   youtubeGuidesTitle: 'Eventos del juego y guías',

@@ -96,6 +96,7 @@ export default {
     genericSector: '{code} sektörü',
     subTabMap: 'Eden Haritası',
     subTabLoyalty: 'Eden Sadakati',
+    subTabOperations: 'Operasyon Laboratuvarı',
     subTabBounty: 'Kraliyet Ödülü Eden X2',
     subTabSeason: 'Mevcut sezon · {currentSeason}',
     subTabPrevious: 'Önceki sezonlar · {previousSeason}',

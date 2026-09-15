@@ -1783,6 +1783,7 @@ const id = {
   languageLabel: 'Bahasa',
   loadingEllipsis: 'Memuat…',
   tabMaterials: 'Material DM',
+  tabClassDevelopment: 'Pengembangan Kelas',
   youtubeChoosePlaylist: 'Pilih daftar putar',
   youtubeFeatured: 'Daftar putar unggulan',
   youtubeGuidesTitle: 'Acara Game & Panduan',

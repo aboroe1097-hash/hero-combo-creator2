@@ -157,6 +157,7 @@ const EN = Object.freeze({
     genericSector: '{code} Sector',
     subTabMap: 'Eden Map',
     subTabLoyalty: 'Eden Loyalty',
+    subTabOperations: 'Operations Lab',
     subTabBounty: 'Royal Bounty Eden X2',
     subTabSeason: 'Current Season · {currentSeason}',
     subTabPrevious: 'Previous Seasons · {previousSeason}',

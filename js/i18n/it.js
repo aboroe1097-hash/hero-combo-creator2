@@ -1929,6 +1929,7 @@ const it = {
   edenX1VoteExpired: 'La scadenza della votazione è trascorsa.',
   loadingEllipsis: 'Caricamento…',
   tabMaterials: 'Materiali DM',
+  tabClassDevelopment: 'Sviluppo classe',
   youtubeChoosePlaylist: 'Scegli una playlist',
   youtubeFeatured: 'Playlist in primo piano',
   youtubeGuidesTitle: 'Eventi e guide del gioco',
