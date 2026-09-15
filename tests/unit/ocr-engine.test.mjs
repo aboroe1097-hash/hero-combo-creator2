@@ -506,7 +506,8 @@ test('known player aliases stay merged when canonical rows share one attack', ()
     { name: 'Феюшка))', value: 2000, rank: 6 },
   ];
 
-  assert.equal(resolvePlayerNameForAttack(attackPlayers[1], attackPlayers), 'q. Immortal');
+  // q. Immortal was renamed blaze banner 2 (owner-confirmed 2026-09-15).
+  assert.equal(resolvePlayerNameForAttack(attackPlayers[1], attackPlayers), 'blaze banner 2');
   assert.equal(resolvePlayerNameForAttack(attackPlayers[3], attackPlayers), 'DvD18 x2');
   assert.equal(resolvePlayerNameForAttack(attackPlayers[5], attackPlayers), 'Феечка))');
 });
@@ -832,7 +833,9 @@ test('a duty cell naming two players credits both, without splitting real names'
     assert.deepEqual(getDutyCreditedNames('Kika & loony', 'Kika'), ['Kika', 'loony']);
     assert.deepEqual(expandDutyRawNames('Kika & loony').length, 2);
     // Unknown partners never mint a player.
-    assert.deepEqual(getDutyCreditedNames('Boii & red', 'BiG BOiiE'), ['BiG BOiiE']);
+    assert.deepEqual(getDutyCreditedNames('Boii & bubbles', 'BiG BOiiE'), ['BiG BOiiE']);
+    // "Red" in duty lists is REDBULLS (owner-confirmed), so this partner is credited.
+    assert.deepEqual(getDutyCreditedNames('Boii & red', 'BiG BOiiE'), ['BiG BOiiE', 'REDBULLS']);
     // "+" and "&" inside a name are not separators.
     assert.deepEqual(expandDutyRawNames('Bonny&Clyde').length, 1);
     assert.deepEqual(expandDutyRawNames('Ar Ran Dil +62'), ['Ar Ran ★_YG+62']);

@@ -2,6 +2,7 @@
 import { isLocalDevHost } from './utils.js';
 import { resolvePlayerRegistryAlias } from './player-registry.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
+import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
   edenWorkspaceFirestorePath,
   edenWorkspaceStorageKey,
@@ -1637,6 +1638,10 @@ export function resolvesToKnownDutyPlayer(value) {
   if (resolved !== cleaned) return true; // some alias/registry/fuzzy mapping fired
   const compact = compactPlayerIdentity(resolved);
   if (!compact) return false;
+  // A curated public profile is a known person even when this season has no row
+  // under that exact name: "(Zubbs)" operates for the Zubbs family, whose X2
+  // account is Lady Zubbs. Family pooling then lands the credit on that account.
+  if (getPublicVtsPlayerProfile(resolved)) return true;
   return collectCurrentSeasonPlayerNames(state).some((name) => compactPlayerIdentity(name) === compact);
 }
 

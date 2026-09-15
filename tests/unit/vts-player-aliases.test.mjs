@@ -306,3 +306,32 @@ test('Eden X2 audit spellings resolve to the account they were splitting from', 
   assert.equal(resolveConfirmedPlayerAlias('liskylli banner'), 'Liskylli banner');
   assert.equal(resolveConfirmedPlayerAlias('qImmortal.Banner'), 'qImmortal.Banner');
 });
+
+test('owner answers for the Eden X2 duty names hold (2026-09-15)', () => {
+  for (const [spelling, account] of [
+    ['Immortal', 'blaze banner 2'],
+    ['q. Immortal', 'blaze banner 2'],
+    ['Red', 'REDBULLS'],
+    ['DVD181', 'DvD18'],
+    ['DVD', 'DvD18'],
+    ['AK', 'AK Чапай'],
+    ['Loony 1', '** Loony **'],
+    ['Bone', 'BoneSmoker'],
+    ['Kiji', 'MalakaKiji'],
+  ]) {
+    assert.equal(resolveConfirmedPlayerAlias(spelling), account, spelling);
+  }
+  // Banner accounts score for their owner; both Blaze banners for Blaze.
+  const familyOf = (name) =>
+    getWeightedPlayerFamilyKey(resolveCanonicalPlayerIdentity(name).playerKey);
+  assert.equal(familyOf('M@$T€€~BANNER'), familyOf('MasterVj'));
+  assert.equal(familyOf('MalikaZenaBanner'), familyOf('MalikaZena'));
+  assert.equal(familyOf('Blaze banner 1'), 'blaze');
+  assert.equal(familyOf('blaze banner 2'), 'blaze');
+  // Two different players, confirmed by the owner: never merged.
+  assert.notEqual(familyOf('MALAK ANDURIL'), familyOf('MalakAbo'));
+  // Lady Zubbs stays her own account inside the Zubbs family, and "(Zubbs)"
+  // operator notes now earn credit.
+  assert.equal(resolveConfirmedPlayerAlias('Zubbs'), '');
+  assert.equal(familyOf('Lady Zubbs'), familyOf('Zubbs'));
+});

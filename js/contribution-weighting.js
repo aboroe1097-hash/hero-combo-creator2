@@ -291,6 +291,11 @@ function playerFamilyKey(accountKey) {
   if (/^sarafin[ao]$/.test(key)) return 'sarafino';
   if (/^maximus+(?:banner)?$/.test(key)) return 'maximus';
   if (key === 'qimmortal' || key === 'qimmortalis') return 'qimmortal';
+  // Owner-confirmed 2026-09-15: these banner accounts score for the player they
+  // belong to. Both Blaze banners pool into the original Blaze account.
+  if (key === 'mtbanner') return 'mastervj';
+  if (key === 'malikazenabanner') return 'malikazena';
+  if (/^blaze(?:banner[12])?$/.test(key)) return 'blaze';
   return key;
 }
 

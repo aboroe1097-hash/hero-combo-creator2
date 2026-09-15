@@ -25,7 +25,7 @@
 
 export const CONFIRMED_GROUPS = [
   // --- decoration / whitespace / case variants -----------------------------
-  ['** Loony **', '**Loony**', '**Loony **'],
+  ['** Loony **', '**Loony**', '**Loony **', 'Loony 1'],
   ['• IU •', '· IU ·', '•IU•', '. IU .', 'IU'],
   ['=EstimatoR=', '==EstimatoR==', '=-EstimatoR=-', '==-EstimatoR=-', '-=EstimatoR=-'],
   ['Anne', '↑Anne ↑', 'ˆ Anne ˆ', '^ Anne ^', '^Anne^', '^Anne ^', '∧nne∧', '∧Anne∧', '†Anne†'],
@@ -50,7 +50,7 @@ export const CONFIRMED_GROUPS = [
   ['Jjamaica pete', 'jJamaica pete'],
   ['terrible ivan', 'terribile ivan'],
   ['CoBoP', 'СоБоР', 'СоBoР', 'Co6oP', 'SoBor'],
-  ['REDBULLS', 'REDBULL§', 'REDBULL$', 'Rebull'],
+  ['REDBULLS', 'REDBULL§', 'REDBULL$', 'Rebull', 'Red'],
   ['IKIGAI', 'ɪᴋɪɢᴀɪ'],
   ['DEAD END', 'ØDEAD ENDØ', 'O DEAD ENDOO'],
   ['ANGEL', 'ΛNGEL', 'ΛNGƎL', 'ANGƎL', 'ANGΞL'],
@@ -156,6 +156,7 @@ export const CONFIRMED_GROUPS = [
   [
     'AK Чапай',
     'АК Чапай',
+    'AK',
     'AK Чанаǐ',
     'AK Чанаý',
     'AK Чанай',
@@ -180,6 +181,11 @@ export const CONFIRMED_GROUPS = [
   ['La Scimmia', 'Scimmia'],
   ['Neutrino10', 'Neutrino'],
 
+  // --- owner-confirmed duty names (2026-09-15) -----------------------------
+  // Short names typed into X2 duty lists, each confirmed by the alliance owner.
+  ['BoneSmoker', 'Bone'],
+  ['MalakaKiji', 'Kiji'],
+
   // --- separations: accounts that must never be folded together ------------
   // Common ownership is not aliasing. Each of these is its own game account,
   // and several were being merged into their owner before this file existed.
@@ -187,7 +193,8 @@ export const CONFIRMED_GROUPS = [
   ['꧁༺ Kika ༻꧂', '꧁༺Kika༻꧂', '༺ Kika ༻', '༺Kika༻', '≪Kika≫'],
   ['꧁ Kika-banner ꧂', 'Kika-banner', '꧁Kika-banner꧂'],
   ['꧁Kika-banner2꧂', 'Kika-banner2', '꧁ Kika-banner2 ꧂'],
-  ['DvD18'],
+  // DVD181 and DVD are duty-list spellings of the main account, not the x2 alt.
+  ['DvD18', 'DVD181', 'DVD'],
   ['DvD18 x2'],
   ['BOiiE'],
   ['BOiiE BANNER'],
@@ -199,12 +206,15 @@ export const CONFIRMED_GROUPS = [
   ['RedBull#3'],
   ['~Sarafino~', 'Sarafino', 'Sarafino~'],
   ['~Sarafina~', 'Sarafina', 'Sarafina~'],
-  ['q. Immortal', 'q. Immortalis'],
+  // q. Immortal was renamed blaze banner 2 (owner-confirmed 2026-09-15). The data
+  // agrees: the old name leaves the X2 lists exactly as the new one arrives, and
+  // the two never share a contribution list or an attack. "Immortal" in banner
+  // duty lists is the same account.
+  ['blaze banner 2', 'q. Immortal', 'q. Immortalis', 'Immortal'],
   ['qImmortal.Banner', 'qmmortal.Banner'],
   ['Liskylli banner'],
   ['AK Чапай-baner'],
   ['Blaze banner 1'],
-  ['blaze banner 2'],
   ['Undead_Banner'],
 ];
 
@@ -213,30 +223,18 @@ export const CONFIRMED_GROUPS = [
 // New OCR spellings belong here first — promoting one into CONFIRMED_GROUPS is an
 // identity decision, not a formatting one.
 //
-// Eden X2 audit (2026-09-15): each of these currently earns its credit for nobody,
-// and each has more than one plausible owner, so guessing would move real points
-// into the wrong player's score.
+// Eden X2 audit (2026-09-15): each of these currently earns its credit for nobody.
+// MALAK ANDURIL and MalakAbo were confirmed as two different players, which is
+// already how they resolve, so they need no entry.
 export const PENDING_GROUPS = Object.freeze([
-  ['Immortal', 'Banner duty name (3 banners): q. Immortal, or qImmortal.Banner?'],
-  [
-    'Red',
-    'Banner duty name (3 banners, and "Boii & red"): REDBULLS, RedBull#2, RedBull#3, or someone else?',
-  ],
-  ['DVD181', 'DVD', 'Banner and pather duty names ("Kika + DVD181"): DvD18, or DvD18 x2?'],
-  ['AK', 'Pather and shield wall duty name: AK Чапай, as "@Ivan (АК Чапай)" suggests?'],
-  ['Loony 1', 'Pather duty name: ** Loony **, Little Loony, or Loony Banner?'],
-  ['Bone', 'Pather duty name: BoneSmoker, or BONEfastBANNER?'],
-  ['Blaze', 'Pather and shield wall duty name: Blaze banner 1, or blaze banner 2?'],
-  ['Kiji', 'Pather duty name: MalakaKiji?'],
-  ['Zubbs', 'Operator in "(Zubbs)" duty notes: is this the account Lady Zubbs?'],
   [
     '𝒮𝒽𝒶𝓇𝒶 Kika 𝒮',
     '𝔖𝔖 Kika 𝔖𝔖',
     'Demolition names (78k): which Kika account, or a separate player?',
   ],
   [
-    'MALAK ANDURIL',
-    'The X1 registry maps this to MalakAdo, but it appears beside MalakAbo in the same X2 contribution lists, so they are two accounts. Which is which?',
+    'Take Ur Shin',
+    'Reported as now Anne, but Take Ur Shin and Anne share the 2026-08-26 and 2026-09-03 contribution lists and ten attacks, so they were two accounts at once. Is Take Ur Shin an Anne alt whose points pool into her family, or did a different account become Anne?',
   ],
 ]);
 
