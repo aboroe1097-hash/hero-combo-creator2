@@ -1,4 +1,9 @@
-import { compactPlayerIdentity, findBestMatch, resolvePlayerNameForAttack } from './ocr-shared.js';
+import {
+  collectCurrentSeasonPlayerNames,
+  compactPlayerIdentity,
+  findBestMatch,
+  resolvePlayerNameForAttack,
+} from './ocr-shared.js';
 
 const LEADING_GUILD_TAG_RE = /^\s*(?:\((?:vts|vet|s)\)|(?:vts|vet|s)\))\s*/i;
 const DUAL_CREDIT_OWNER_RE = /^(.*?)\s*[{(]\s*([^{}()]+?)\s*[})]\s*$/;
@@ -258,45 +263,7 @@ export function canonicalizePlayerOptionNames(players = []) {
 }
 
 export function collectDutySuggestionPlayerNames(source = {}) {
-  const players = [];
-  const add = (value) => {
-    const name = readName(value);
-    if (String(name || '').trim()) players.push(name);
-  };
-
-  const snapshots = Array.isArray(source.rosterSnapshots) ? source.rosterSnapshots : [];
-  const latestRoster = snapshots.length ? snapshots[snapshots.length - 1] : null;
-  (Array.isArray(latestRoster?.members) ? latestRoster.members : []).forEach(add);
-  (Array.isArray(source.rosterNames) ? source.rosterNames : []).forEach(add);
-
-  const dashboardData =
-    source.dashData && typeof source.dashData === 'object' ? source.dashData : {};
-  (Array.isArray(dashboardData.players_summary) ? dashboardData.players_summary : []).forEach(add);
-
-  (Array.isArray(source.contributionRecords) ? source.contributionRecords : []).forEach(
-    (record) => {
-      (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) =>
-        add(entry?.matchedName || entry?.confirmed || entry?.name)
-      );
-    }
-  );
-
-  (Array.isArray(source.dutyRecords) ? source.dutyRecords : []).forEach((record) => {
-    (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) => {
-      // A reviewed Banner/Pather name is useful evidence for the next upload in
-      // this workspace. Raw unmatched OCR text is not: promoting it here would
-      // make a typo look like an approved player identity.
-      if (String(entry?.confirmed || '').trim()) add(entry.confirmed);
-    });
-  });
-
-  (Array.isArray(source.bannerRecords) ? source.bannerRecords : []).forEach((record) => {
-    Object.values(record?.teams || {}).forEach((members) => {
-      (Array.isArray(members) ? members : []).forEach(add);
-    });
-  });
-
-  return canonicalizePlayerOptionNames(players);
+  return canonicalizePlayerOptionNames(collectCurrentSeasonPlayerNames(source));
 }
 
 export { compactPlayerIdentity };

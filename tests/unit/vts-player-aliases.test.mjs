@@ -153,7 +153,7 @@ test('weighted scoring joins confirmed variants and preserves distinct accounts 
           { name: '↑Anne ↑', value: 2000 },
           { name: '•IU•', value: 4000 },
           { name: '==EstimatoR==', value: 6000 },
-          { name: '-=EstimatoR=-', value: 6000 },
+          { name: '-=EstimatoR=-', value: 4000 },
           { name: '__=THOR=__', value: 8000 },
           ...separateAccounts.map((name, index) => ({ name, value: (index + 1) * 20 })),
         ],
@@ -166,7 +166,7 @@ test('weighted scoring joins confirmed variants and preserves distinct accounts 
   for (const [name, points] of [
     ['Anne', 100],
     ['• IU •', 200],
-    ['=EstimatoR=', 600],
+    ['=EstimatoR=', 500],
     ['=THOR=', 400],
   ]) {
     assert.equal(byName.get(name)?.demolitionPoints, points, name);
@@ -188,7 +188,46 @@ test('weighted scoring joins confirmed variants and preserves distinct accounts 
     );
   }
   // Both EstimatoR source rows remain included; aliasing never deletes attack rows.
-  assert.equal(byName.get('=EstimatoR=').totalDemolition, 12000);
+  assert.equal(byName.get('=EstimatoR=').totalDemolition, 10000);
+});
+
+test('one row OCR-read twice from overlapping screenshots counts once', () => {
+  // Real X2 uploads: ΛNGƎL #24 = 33,113 and ΛNGEL #25 = 33,113 in one attack. One
+  // account holds one row, so the same identity with the same value on the very
+  // next row is a duplicate. The rule is deliberately that narrow.
+  const totalFor = (players, name = 'ANGEL') =>
+    buildWeightedContributionRows({
+      contributionRecords: [
+        { date: '2026-09-15', entries: [{ name, rank: 1, contribution: 1000 }] },
+      ],
+      demolitionRecords: [{ players }],
+    }).rows[0].totalDemolition;
+
+  assert.equal(
+    totalFor([
+      { name: 'ΛNGƎL', value: 33113 },
+      { name: 'ΛNGEL', value: 33113 },
+    ]),
+    33113,
+    'adjacent duplicate counts once'
+  );
+  assert.equal(
+    totalFor([
+      { name: 'ΛNGƎL', value: 33113 },
+      { name: 'Anne', value: 500 },
+      { name: 'ΛNGEL', value: 33113 },
+    ]),
+    66226,
+    'a repeat that is not on the next row is kept'
+  );
+  assert.equal(
+    totalFor([
+      { name: 'ΛNGƎL', value: 33113 },
+      { name: 'ΛNGEL', value: 2801 },
+    ]),
+    35914,
+    'a repeat with a different value is kept'
+  );
 });
 
 test('duty account identity remains separate from explicit operator credit', () => {
@@ -244,4 +283,26 @@ test('no name is both confirmed and pending', () => {
     confirmed.has(name.toLowerCase())
   );
   assert.deepEqual(clashes, [], 'a pending candidate leaked into the confirmed list');
+});
+
+test('Eden X2 audit spellings resolve to the account they were splitting from', () => {
+  // Each split was dropping real demolition from weighted scores in X2.
+  for (const [spelling, account] of [
+    ['FAll£N', 'FALLEN'],
+    ['Ar Ran Dil +62', 'Ar Ran ★_YG+62'],
+    ['乃ㄥ凵乇', '乃ㄥ口毛'],
+    ['EightBall', 'EightBall _V/_'],
+    ['EviltwinlI', 'EviltwinII'],
+    ['Co6oP', 'CoBoP'],
+    ['NATAwHA', 'NATASHA'],
+    ['Кутузовφ', 'Кутузовф'],
+    ['Master Banner', 'M@$T€€~BANNER'],
+    ['Rebull', 'REDBULLS'],
+    ['Scimmia', 'La Scimmia'],
+  ]) {
+    assert.equal(resolveConfirmedPlayerAlias(spelling), account, spelling);
+  }
+  // Banner accounts that duty-cell cleaning must not strip to a missing owner.
+  assert.equal(resolveConfirmedPlayerAlias('liskylli banner'), 'Liskylli banner');
+  assert.equal(resolveConfirmedPlayerAlias('qImmortal.Banner'), 'qImmortal.Banner');
 });

@@ -810,3 +810,33 @@ test('a level 4 gate expects 1.5M', () => {
   assert.equal(validateTotalDemolition('Gates', 'Lv3', 1200000).expected, 1200000);
   assert.equal(validateTotalDemolition('Gates', 'Lv5', 2000000).expected, 2000000);
 });
+
+test('a duty cell naming two players credits both, without splitting real names', () => {
+  // X2 has no roster, so "is this a known player?" must use what the season
+  // already holds: here, the demolition summary.
+  const previous = {
+    rosterNames: state.rosterNames,
+    rosterSnapshots: state.rosterSnapshots,
+    dashData: state.dashData,
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+  };
+  try {
+    state.rosterNames = [];
+    state.rosterSnapshots = [];
+    state.contributionRecords = [];
+    state.dutyRecords = [];
+    state.dashData = { players_summary: [{ name: '** Loony **' }, { name: 'DvD18' }] };
+
+    // The reviewer confirms the first player; the one after the separator used to earn nothing.
+    assert.deepEqual(getDutyCreditedNames('Kika & loony', 'Kika'), ['Kika', 'loony']);
+    assert.deepEqual(expandDutyRawNames('Kika & loony').length, 2);
+    // Unknown partners never mint a player.
+    assert.deepEqual(getDutyCreditedNames('Boii & red', 'BiG BOiiE'), ['BiG BOiiE']);
+    // "+" and "&" inside a name are not separators.
+    assert.deepEqual(expandDutyRawNames('Bonny&Clyde').length, 1);
+    assert.deepEqual(expandDutyRawNames('Ar Ran Dil +62'), ['Ar Ran ★_YG+62']);
+  } finally {
+    Object.assign(state, previous);
+  }
+});
