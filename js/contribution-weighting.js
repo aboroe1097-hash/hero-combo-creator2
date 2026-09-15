@@ -296,6 +296,9 @@ function playerFamilyKey(accountKey) {
   if (key === 'mtbanner') return 'mastervj';
   if (key === 'malikazenabanner') return 'malikazena';
   if (/^blaze(?:banner[12])?$/.test(key)) return 'blaze';
+  // Victoria is a Kika account (owner-confirmed). It shares attacks with a plain
+  // "Kika" row, so it is a second account in the family, not another spelling.
+  if (key === 'victoria') return 'kika';
   return key;
 }
 
