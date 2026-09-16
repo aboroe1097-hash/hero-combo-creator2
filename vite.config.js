@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
-const root = import.meta.dirname;
-const aiLauncherCriticalCss = resolve(root, 'public/ai-launcher-critical.css');
+// Vite 8 no longer injects __dirname into an ESM config; entry-contract tests
+// match on resolve(__dirname, ...), so keep the name.
+const __dirname = import.meta.dirname;
+const aiLauncherCriticalCss = resolve(__dirname, 'public/ai-launcher-critical.css');
 
 // Which named chunk a module belongs to, or null to let the bundler place it.
 // Unchanged from the Rollup manualChunks function this replaced.
@@ -80,17 +82,17 @@ export default defineConfig({
     target: 'es2022',
     rolldownOptions: {
       input: {
-        index: resolve(root, 'index.html'),
-        profile: resolve(root, 'profile.html'),
-        maintenance: resolve(root, 'maintenance.html'),
-        admin: resolve(root, 'admin.html'),
-        vtsscore: resolve(root, 'vtsscore.html'),
-        'vtsscore/index': resolve(root, 'vtsscore/index.html'),
-        'eden-x1': resolve(root, 'eden-x1.html'),
-        'eden-x2': resolve(root, 'eden-x2.html'),
-        arcade: resolve(root, 'arcade.html'),
-        'battle-simulator': resolve(root, 'battle-simulator.html'),
-        'specialization-towers': resolve(root, 'specialization-towers.html'),
+        index: resolve(__dirname, 'index.html'),
+        profile: resolve(__dirname, 'profile.html'),
+        maintenance: resolve(__dirname, 'maintenance.html'),
+        admin: resolve(__dirname, 'admin.html'),
+        vtsscore: resolve(__dirname, 'vtsscore.html'),
+        'vtsscore/index': resolve(__dirname, 'vtsscore/index.html'),
+        'eden-x1': resolve(__dirname, 'eden-x1.html'),
+        'eden-x2': resolve(__dirname, 'eden-x2.html'),
+        arcade: resolve(__dirname, 'arcade.html'),
+        'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
+        'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
       },
       output: {
         codeSplitting: {
