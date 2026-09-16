@@ -11,7 +11,8 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed the mobile bottom dock slicing its own labels. \"Heroes & Combos Hub\" wrapped to three lines inside a pill that hides overflow, so the last line rendered as cut-off letter tops; labels now clamp to two lines with an ellipsis and fit.",
       "Fixed hero card badges overflowing their card at 375px, where 111px of chips had 82px to sit in and the season chip, skin chip and PAID pill collided over the portrait. The chips shrink below 480px and the paid pill keeps its gem without the word.",
-      "Styled the admin suggestion filter row, which shipped in 16.0.9 with no CSS at all, so the filter pills sat on top of the \"Show\" label. Show all and Approve all also stayed on screen with nothing to act on, because a dashboard rule outranked the browser's own [hidden] handling; …"
+      "Styled the admin suggestion filter row, which shipped in 16.0.9 with no CSS at all, so the filter pills sat on top of the \"Show\" label. Show all and Approve all also stayed on screen with nothing to act on, because a dashboard rule outranked the browser's own [hidden] handling; …",
+      "That guard also restores two hidden states the same specificity bug had been defeating: the superadmin-only dashboard navigation no longer renders for admins who are not superadmins, and Publish and Unpublish no longer appear on an archived workspace that cannot accept either."
     ]
   },
   {
