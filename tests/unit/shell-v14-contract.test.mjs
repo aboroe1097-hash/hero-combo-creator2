@@ -29,6 +29,7 @@ test('v14 shell assets load last without replacing established tool ids', () => 
     'tabHeroesCombos',
     'tabResearchTowers',
     'tabMaterials',
+    'tabClassDevelopment',
     'tabEdenMap',
     'tabStrife',
     'tabYouTube',
@@ -115,6 +116,7 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
   assert.deepEqual(desktopPrimaryIds, [
     'tabHeroesCombos',
     'tabResearchTowers',
+    'tabClassDevelopment',
     'tabMaterials',
     'tabEdenMap',
     'tabOcrDashboard',
@@ -140,9 +142,12 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
 test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', () => {
   assert.match(shellJs, /matchMedia\('\(max-width: 640px\)'\)/);
   assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
-  // The three hubs lead the rail: layoutNavigation() appends in array order.
-  assert.match(shellJs, /const hubIds = \['tabHeroesCombos', 'tabResearchTowers', 'tabEdenMap'\];/);
-  // VTS Admin holds the fifth desktop slot; All-Star BoH lives in More.
+  // The four hubs lead the rail: layoutNavigation() appends in array order.
+  assert.match(
+    shellJs,
+    /const hubIds = \[\s*'tabHeroesCombos',\s*'tabResearchTowers',\s*'tabClassDevelopment',\s*'tabEdenMap',?\s*\];/
+  );
+  // VTS Admin remains on the desktop rail; All-Star BoH lives in More.
   assert.match(
     shellJs,
     /const desktopPrimaryIds = \[\.\.\.hubIds, 'tabMaterials', 'tabOcrDashboard'\];/
@@ -151,7 +156,8 @@ test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', 
     shellJs,
     /const wideDesktopPrimaryIds = \[\s*\.\.\.desktopPrimaryIds,\s*'tabStrife',\s*'tabYouTube',?\s*\];/
   );
-  // Phones expose exactly the three hub destinations, with no truncated fourth
+  // Phones expose exactly three stable hub destinations; Class Development
+  // remains available in More without squeezing a fourth label into the rail.
   // leaf tool competing for label width.
   assert.match(
     shellJs,

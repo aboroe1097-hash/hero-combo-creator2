@@ -12,7 +12,7 @@ function between(start, end) {
   return source.slice(startIndex, endIndex);
 }
 
-test('command palette exposes the thirteen deterministic tool destinations', () => {
+test('command palette exposes deterministic tool destinations', () => {
   const destinations = between('const DESTS = [', '];');
   const keys = Array.from(destinations.matchAll(/\bkey:\s*'([^']+)'/g), (match) => match[1]);
 
@@ -24,6 +24,7 @@ test('command palette exposes the thirteen deterministic tool destinations', () 
     'tabArtifact',
     'tabSpecialization',
     'tabMaterials',
+    'tabClassDevelopment',
     'tabEdenMap',
     'tabStrife',
     'tabLoyalty',

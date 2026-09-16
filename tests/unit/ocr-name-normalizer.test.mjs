@@ -16,6 +16,7 @@ globalThis.document = {
 
 const {
   canonicalizePlayerOptionNames,
+  collectDutySuggestionPlayerNames,
   compactPlayerIdentity,
   expandDualCreditPlayerNames,
   resolveCanonicalPlayerIdentity,
@@ -24,6 +25,8 @@ const {
   summarizeCanonicalPlayerRecords,
 } = await import('../../js/ocr-name-normalizer.js');
 const { getWeightedPlayerFamilyKey } = await import('../../js/contribution-weighting.js');
+const { state } = await import('../../js/ocr-shared.js');
+const { getDutySuggestions } = await import('../../js/ocr-roster.js');
 
 function key(name) {
   return resolveCanonicalPlayerIdentity(name).playerKey;
@@ -135,6 +138,72 @@ test('canonical roster option names collapse known OCR duplicate spellings', () 
     'WICKED RUSSIAN',
     'WICKED banner',
   ]);
+});
+
+test('duty suggestions reuse reviewed names from the current season workspace', () => {
+  const options = collectDutySuggestionPlayerNames({
+    rosterSnapshots: [],
+    rosterNames: [],
+    dashData: {
+      players_summary: [{ name: 'Little Loony' }, { name: 'Kika' }],
+    },
+    contributionRecords: [
+      {
+        entries: [{ name: 'Sarafina' }, { name: 'Raw Name', matchedName: 'Zubbs' }],
+      },
+    ],
+    dutyRecords: [
+      {
+        type: 'banner',
+        entries: [
+          { name: 'ΛNGEL', confirmed: 'ANGEL' },
+          { name: 'Unreviewed OCR typo', confirmed: '' },
+        ],
+      },
+    ],
+    bannerRecords: [{ teams: { Alpha: ['Moldo', 'Jambo'] } }],
+  });
+
+  assert.deepEqual(options, [
+    'Little Loony',
+    '꧁ Kika ꧂',
+    '~Sarafina~',
+    'Zubbs',
+    'ANGEL',
+    'Moldo1313',
+    'JamboJango',
+  ]);
+  assert.equal(options.includes('Unreviewed OCR typo'), false);
+});
+
+test('duty matching suggests current-season players without a roster snapshot', () => {
+  const previous = {
+    rosterSnapshots: state.rosterSnapshots,
+    rosterNames: state.rosterNames,
+    dashData: state.dashData,
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+    bannerRecords: state.bannerRecords,
+  };
+
+  try {
+    state.rosterSnapshots = [];
+    state.rosterNames = [];
+    state.dashData = { players_summary: [{ name: 'Little Loony' }] };
+    state.contributionRecords = [];
+    state.dutyRecords = [{ type: 'banner', entries: [{ name: 'ΛNGEL', confirmed: 'ANGEL' }] }];
+    state.bannerRecords = [];
+
+    assert.equal(getDutySuggestions('Little Lony')[0]?.name, 'Little Loony');
+    assert.equal(getDutySuggestions('Angel')[0]?.name, 'ANGEL');
+
+    state.dashData = null;
+    state.dutyRecords = [];
+    assert.deepEqual(getDutySuggestions('Moldo'), [{ name: 'Moldo1313', score: 1 }]);
+    assert.deepEqual(getDutySuggestions('Unknown new player'), []);
+  } finally {
+    Object.assign(state, previous);
+  }
 });
 
 test('dual-credit owner notation expands without collapsing operator into owner', () => {

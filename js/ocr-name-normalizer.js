@@ -1,4 +1,9 @@
-import { compactPlayerIdentity, findBestMatch, resolvePlayerNameForAttack } from './ocr-shared.js';
+import {
+  collectCurrentSeasonPlayerNames,
+  compactPlayerIdentity,
+  findBestMatch,
+  resolvePlayerNameForAttack,
+} from './ocr-shared.js';
 
 const LEADING_GUILD_TAG_RE = /^\s*(?:\((?:vts|vet|s)\)|(?:vts|vet|s)\))\s*/i;
 const DUAL_CREDIT_OWNER_RE = /^(.*?)\s*[{(]\s*([^{}()]+?)\s*[})]\s*$/;
@@ -98,10 +103,7 @@ function resolveSupplementalSpecialListCluster(cleanedName, existingResolvedName
   ) {
     return 'Zubbs';
   }
-  if (
-    compactClean === 'angel' ||
-    compactResolved === 'angel'
-  ) {
+  if (compactClean === 'angel' || compactResolved === 'angel') {
     return 'ANGEL';
   }
   if (/sarafina/.test(compactClean) || /sarafina/.test(compactResolved)) {
@@ -258,6 +260,10 @@ export function canonicalizePlayerOptionNames(players = []) {
   });
 
   return options;
+}
+
+export function collectDutySuggestionPlayerNames(source = {}) {
+  return canonicalizePlayerOptionNames(collectCurrentSeasonPlayerNames(source));
 }
 
 export { compactPlayerIdentity };

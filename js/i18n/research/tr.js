@@ -3165,12 +3165,12 @@ export const researchContent = {
     },
     '77db4a78:node_10': {
       name: 'Mana İksiri',
-      buff: "Süvari HP'si 10%",
+      buff: "Okçu HP'si 10%",
       effects: [],
     },
     '77db4a78:node_11': {
       name: 'Ağır Akıncı',
-      buff: "Okçu HP'si 10%",
+      buff: "Süvari HP'si 10%",
       effects: [],
     },
     '77db4a78:node_12': {
@@ -3255,7 +3255,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_F': {
       name: 'Güç Darbesi III',
-      buff: 'Piyade Gücü 42%',
+      buff: 'Piyade Gücü 40%',
       effects: [],
     },
     '77db4a78:node_27_F': {
@@ -3335,7 +3335,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_C': {
       name: 'Vahşi hücum III',
-      buff: 'Süvari Gücü 42%',
+      buff: 'Süvari Gücü 40%',
       effects: [],
     },
     '77db4a78:node_27_C': {
@@ -3415,7 +3415,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_A': {
       name: 'Güçlendirilmiş ok III',
-      buff: 'Okçu Gücü 42%',
+      buff: 'Okçu Gücü 40%',
       effects: [],
     },
     '77db4a78:node_27_A': {

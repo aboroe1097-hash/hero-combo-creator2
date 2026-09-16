@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '16.0.12';
+export const APP_VERSION = '16.0.13';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -249,6 +249,7 @@ export const loyaltySection = document.getElementById('loyaltySection');
 export const youtubeSection = document.getElementById('youtubeSection');
 export const researchSection = document.getElementById('researchSection');
 export const materialsSection = document.getElementById('materialsSection');
+export const classDevelopmentSection = document.getElementById('classDevelopmentSection');
 export const arcadeSection = document.getElementById('arcadeSection');
 
 // Manual Builder, Combo Generator and the Hero Atlas now live inside the
@@ -263,6 +264,7 @@ export const tabYouTubeBtn = document.getElementById('tabYouTube');
 export const tabResearchTowersBtn = document.getElementById('tabResearchTowers');
 export const researchTowersSection = document.getElementById('researchTowersSection');
 export const tabMaterialsBtn = document.getElementById('tabMaterials');
+export const tabClassDevelopmentBtn = document.getElementById('tabClassDevelopment');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
 export const tabArcadeBtn = document.getElementById('tabArcade');

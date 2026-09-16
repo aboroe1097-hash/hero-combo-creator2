@@ -27,6 +27,7 @@ import {
   DM_ENHANCE_RESOURCE_KEYS,
   DM_ENHANCE_LEVELS,
   DM_ENHANCE_MILESTONES,
+  DM_EQUIPMENT_PRIORITY,
   computeEnhancementNeed,
   createDefaultEnhancementState,
   getEnhancementCumulative,
@@ -42,6 +43,29 @@ test('DM quality identity covers all six in-game tiers in order', () => {
   );
   assert.equal(getDmTierIdentity('PURPLE'), DM_TIER_IDENTITIES.purple);
   assert.equal(getDmTierIdentity('unknown'), DM_TIER_IDENTITIES.white);
+});
+
+test('DM equipment guidance preserves the verified offensive and defensive craft priorities', () => {
+  assert.deepEqual(DM_EQUIPMENT_PRIORITY.offensive, [
+    'dagger',
+    'armor',
+    'ring',
+    'helmet',
+    'boots',
+    'sword',
+  ]);
+  assert.deepEqual(DM_EQUIPMENT_PRIORITY.defensive, [
+    'ring',
+    'helmet',
+    'dagger',
+    'armor',
+    'boots',
+    'sword',
+  ]);
+  assert.match(materialUiSource, /renderBuildGuidance\(t\)/);
+  assert.match(materialUiSource, /t\.dontSixPiece/);
+  assert.match(materialUiSource, /t\.dontThreeThree/);
+  assert.match(materialCss, /\.dm-equipment-guidance/);
 });
 
 test('DM UI uses exact tier equipment art including all six Orange cards', () => {

@@ -2604,11 +2604,11 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_10': {
     name: 'Potion de mana',
-    buff: '10 % de PV de la cavalerie',
+    buff: '10 % de PV des archers',
   },
   '77db4a78:node_11': {
     name: 'Pillard lourd',
-    buff: '10 % de PV des archers',
+    buff: '10 % de PV de la cavalerie',
   },
   '77db4a78:node_12': {
     name: 'Armure intégrale en métal',
@@ -2676,7 +2676,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_F': {
     name: 'Frappe puissante III',
-    buff: '42 % de puissance des fantassins',
+    buff: '40 % de puissance des fantassins',
   },
   '77db4a78:node_27_F': {
     name: 'Armure de maître III',
@@ -2740,7 +2740,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_C': {
     name: 'Charge féroce III',
-    buff: '42 % de puissance de la cavalerie',
+    buff: '40 % de puissance de la cavalerie',
   },
   '77db4a78:node_27_C': {
     name: 'Barde renforcée III',
@@ -2804,7 +2804,7 @@ const nodes = Object.freeze({
   },
   '77db4a78:node_26_A': {
     name: 'Flèche renforcée III',
-    buff: '42 % de puissance des archers',
+    buff: '40 % de puissance des archers',
   },
   '77db4a78:node_27_A': {
     name: 'Brassard renforcé III',

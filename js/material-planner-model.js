@@ -43,6 +43,11 @@ export const DM_PRESETS = Object.freeze({
   defense: Object.freeze(['ring', 'boots', 'helmet', 'sword']),
 });
 
+export const DM_EQUIPMENT_PRIORITY = Object.freeze({
+  offensive: Object.freeze(['dagger', 'armor', 'ring', 'helmet', 'boots', 'sword']),
+  defensive: Object.freeze(['ring', 'helmet', 'dagger', 'armor', 'boots', 'sword']),
+});
+
 export const DM_SLOT_RECIPES = Object.freeze({
   armor: Object.freeze({ archers: 1, footmen: 2, cavalry: 1 }),
   dagger: Object.freeze({ archers: 2, footmen: 1, cavalry: 1 }),

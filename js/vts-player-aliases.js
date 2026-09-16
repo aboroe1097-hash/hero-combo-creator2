@@ -25,15 +25,22 @@
 
 export const CONFIRMED_GROUPS = [
   // --- decoration / whitespace / case variants -----------------------------
-  ['** Loony **', '**Loony**', '**Loony **'],
+  ['** Loony **', '**Loony**', '**Loony **', 'Loony 1'],
   ['• IU •', '· IU ·', '•IU•', '. IU .', 'IU'],
   ['=EstimatoR=', '==EstimatoR==', '=-EstimatoR=-', '==-EstimatoR=-', '-=EstimatoR=-'],
-  ['Anne', '↑Anne ↑', 'ˆ Anne ˆ', '^ Anne ^', '^Anne^', '^Anne ^'],
+  ['Anne', '↑Anne ↑', 'ˆ Anne ˆ', '^ Anne ^', '^Anne^', '^Anne ^', '∧nne∧', '∧Anne∧', '†Anne†'],
   ['!!WAEL!!', '!!WAEL !!', '!! WAEL !!'],
   ['=THOR=', '__=THOR=__', '___=THOR=___'],
   ['BiG BOiiE', 'BIG BOiiE'],
   ['Victoria', '~Victoria~'],
-  ['IDN Dragon.Gold', "IDN'Dragon.Gold", 'IDNÓDragon.Gold'],
+  [
+    'IDN Dragon.Gold',
+    "IDN'Dragon.Gold",
+    'IDNÓDragon.Gold',
+    'IDN/Dragon.Gold',
+    'IDN°/Dragon.Gold',
+    '⋎I D N Ø|Dragon.Gold',
+  ],
   ['Nosferatu', '~Nosferatu~', '✨Nosferatu✨'],
 
   // --- aliases the previous rules already carried --------------------------
@@ -42,17 +49,35 @@ export const CONFIRMED_GROUPS = [
   ['Molly', '*Molly*'],
   ['Jjamaica pete', 'jJamaica pete'],
   ['terrible ivan', 'terribile ivan'],
-  ['CoBoP', 'СоБоР'],
-  ['REDBULLS', 'REDBULL§'],
+  ['CoBoP', 'СоБоР', 'СоBoР', 'Co6oP', 'SoBor'],
+  ['REDBULLS', 'REDBULL§', 'REDBULL$', 'Rebull', 'Red'],
   ['IKIGAI', 'ɪᴋɪɢᴀɪ'],
-  ['DEAD END', 'ØDEAD ENDØ'],
-  ['ANGEL', 'ΛNGEL', 'ΛNGƎL', 'ANGƎL'],
+  ['DEAD END', 'ØDEAD ENDØ', 'O DEAD ENDOO'],
+  ['ANGEL', 'ΛNGEL', 'ΛNGƎL', 'ANGƎL', 'ANGΞL'],
 
   // --- owner-confirmed merges (2026-09-03) ---------------------------------
   // Letters differ across these spellings, so they are identity calls rather
   // than decoration stripping. Confirmed by the alliance owner.
   ['Dobby', 'Дobby', 'Đobby'],
-  ['FALLEN', 'FAllEN', 'FAILΞN', 'FAIΛN', 'FAIŁËN', 'FAIⅡΞN', 'FAIΛEN', 'FAIℓΞN', 'FAIŁN'],
+  [
+    'FALLEN',
+    'FAllEN',
+    'FAILΞN',
+    'FAIΛN',
+    'FAIŁËN',
+    'FAIⅡΞN',
+    'FAIΛEN',
+    'FAIℓΞN',
+    'FAIŁN',
+    'FAIIΛN',
+    'FAIIΞN',
+    'FAILÆN',
+    'FAIÎN',
+    'FAIΞN',
+    'FAIⅡEN',
+    'FALLΞN',
+    'FAll£N',
+  ],
   [
     'Made3110',
     'Ind.)Made3110',
@@ -63,20 +88,103 @@ export const CONFIRMED_GROUPS = [
     '♀iNd♂/Made3110',
     'iNd°/Made3110',
     '«I N d»/Made3110',
+    "I N d '/Made3110",
+    'x N d ∅Made3110',
+    '~i N d o~/Made3110',
+    '⇝i N d ø/|Made3110',
+    '⋎ I N d ◡/Made3110',
+    '⋎I N d Ø|Made3110',
+    '⋎N d¢/Made3110',
+    '♀️i N d ♡|Made3110',
+    '♡ i n d ♡/Made3110',
   ],
-  ['乃ㄥ口毛', '乃亖口毛', '乃ム口毛', '乃ㄥ毛', '乃口毛', '乃⊂口毛', '乃毛'],
-  ['пупОк', 'πηnOk', 'ηηOk', 'пynOk', 'πυπΟκ'],
+  [
+    '乃ㄥ口毛',
+    '乃亖口毛',
+    '乃ム口毛',
+    '乃ㄥ毛',
+    '乃口毛',
+    '乃⊂口毛',
+    '乃毛',
+    '乃∠U毛',
+    '乃ㄥロ毛',
+    '乃ㄥ凵乇',
+    '乃乚口毛',
+    '乃厶口毛',
+    '乃艸口毛',
+  ],
+  ['пупОк', 'πηnOk', 'ηηOk', 'пynOk', 'πυπΟκ', 'ηηnOk', 'ηπnOk', 'пynОк'],
   ['Kika2.0', '~Kika2.0~', '°Kika2.0°', 'Kika2.0²'],
   ['Shabir', '□Shabir□', '□○Shabir□', '□oShabiro□'],
   ['Moshieee', 'Moshiieee', 'Moshieeee'],
   ['Dr Thund€r', 'Dr Thundër'],
-  ['MasterVj', '∾~MasterVjpe∾'],
+  ['MasterVj', '∾~MasterVjpe∾', 'MasterVjv', 'MasterVje', 'MasterV', '✨MasterVj✨', '~MasterVj~'],
   ['!!! Юляша !!!', '!!! Юлляша !!!'],
-  ['Орша 2025', 'Opwa 2025', 'Opsha 2025', 'Opua 2025'],
+  ['Орша 2025', 'Opwa 2025', 'Opsha 2025', 'Opua 2025', 'Opwâ 2025'],
   ['$OL€MAST€R', '$OL€MASTER'],
-  ['Ar Ran ★_YG+62', 'Ar Ran Dil☆+62', 'Ar Ran Dil⭐+62'],
+  [
+    'Ar Ran ★_YG+62',
+    'Ar Ran Dil☆+62',
+    'Ar Ran Dil⭐+62',
+    'Ar Ran Dil +62',
+    'Ar Ran Dil+62',
+    'Ar Ran Dil★+62',
+  ],
   ['Hunter killer.', 'һаттер killer.'],
-  ['M@$T€€~BANNER', 'M@S$€₹~BANNER', 'M@$€₹~BANNER'],
+  [
+    'M@$T€€~BANNER',
+    'M@S$€₹~BANNER',
+    'M@$€₹~BANNER',
+    'M@ST€€7~BANNER',
+    'M@$$€~BANNER',
+    'M@ST€₹~BANNER',
+    'Master Banner',
+    'MasterBanner',
+  ],
+
+  // --- Eden X2 audit (2026-09-15) ------------------------------------------
+  // Read from the X2 admin debug bundle. Each group passed a co-occurrence
+  // check: no two spellings ever appear in the same contribution list, and where
+  // two appear in one attack they sit on adjacent ranks with identical values —
+  // one row OCR'd twice, not two players. Splits here were dropping real
+  // demolition from weighted scores (a contribution row under one spelling never
+  // met the demolition rows under the others).
+  ['NATASHA', 'NATAcHA', 'NATAvsHA', 'NATAwHA', 'NATAωHA'],
+  ['EightBall _V/_', 'EightBall', 'EightBall _\\/_', 'EightBall _/_', 'EightBall _W/_'],
+  ['EviltwinII', 'EviltwinlI'],
+  ['Кутузовф', 'Кутузовφ'],
+  [
+    'AK Чапай',
+    'АК Чапай',
+    'AK',
+    'AK Чанаǐ',
+    'AK Чанаý',
+    'AK Чанай',
+    'AK Чапаń',
+    'AK Чапа́й',
+    'AK Чапаи',
+    'АК Чанай',
+  ],
+  ['ZEROk*', 'ZEROOk*'],
+  [
+    '키미 kimmy',
+    'кимi kimmy',
+    'кими kimmy',
+    'كيمي kimmy',
+    'كي미 kimmy',
+    'キミ kimmy',
+    '키키 kimmy',
+  ],
+  ['BONEfastBANNER', 'iBONEfastBANNER'],
+  // Duty lists are typed by hand, so a shortened name is still one account when
+  // it is the only account it could be.
+  ['La Scimmia', 'Scimmia'],
+  ['Neutrino10', 'Neutrino'],
+
+  // --- owner-confirmed duty names (2026-09-15) -----------------------------
+  // Short names typed into X2 duty lists, each confirmed by the alliance owner.
+  ['BoneSmoker', 'Bone'],
+  ['MalakaKiji', 'Kiji'],
 
   // --- separations: accounts that must never be folded together ------------
   // Common ownership is not aliasing. Each of these is its own game account,
@@ -85,7 +193,8 @@ export const CONFIRMED_GROUPS = [
   ['꧁༺ Kika ༻꧂', '꧁༺Kika༻꧂', '༺ Kika ༻', '༺Kika༻', '≪Kika≫'],
   ['꧁ Kika-banner ꧂', 'Kika-banner', '꧁Kika-banner꧂'],
   ['꧁Kika-banner2꧂', 'Kika-banner2', '꧁ Kika-banner2 ꧂'],
-  ['DvD18'],
+  // DVD181 and DVD are duty-list spellings of the main account, not the x2 alt.
+  ['DvD18', 'DVD181', 'DVD'],
   ['DvD18 x2'],
   ['BOiiE'],
   ['BOiiE BANNER'],
@@ -97,17 +206,37 @@ export const CONFIRMED_GROUPS = [
   ['RedBull#3'],
   ['~Sarafino~', 'Sarafino', 'Sarafino~'],
   ['~Sarafina~', 'Sarafina', 'Sarafina~'],
-  ['q. Immortal', 'q. Immortalis'],
-  ['qmmortal.Banner'],
+  // q. Immortal was renamed blaze banner 2 (owner-confirmed 2026-09-15). The data
+  // agrees: the old name leaves the X2 lists exactly as the new one arrives, and
+  // the two never share a contribution list or an attack. "Immortal" in banner
+  // duty lists is the same account.
+  ['blaze banner 2', 'q. Immortal', 'q. Immortalis', 'Immortal'],
+  ['qImmortal.Banner', 'qmmortal.Banner'],
+  ['Liskylli banner'],
+  ['AK Чапай-baner'],
+  ['Blaze banner 1'],
   ['Undead_Banner'],
 ];
 
 // Candidate merges awaiting owner confirmation. Nothing resolves through this.
-// Shape: [suggestedCanonical, ...variants, question].
-// Empty because the 2026-09-03 batch was confirmed in full. New OCR spellings
-// belong here first — promoting one into CONFIRMED_GROUPS is an identity
-// decision, not a formatting one.
-export const PENDING_GROUPS = Object.freeze([]);
+// Shape: [...unresolvedSpellings, question]; the question names the candidates.
+// New OCR spellings belong here first — promoting one into CONFIRMED_GROUPS is an
+// identity decision, not a formatting one.
+//
+// Eden X2 audit (2026-09-15): each of these currently earns its credit for nobody.
+// MALAK ANDURIL and MalakAbo were confirmed as two different players, which is
+// already how they resolve, so they need no entry.
+export const PENDING_GROUPS = Object.freeze([
+  [
+    '𝒮𝒽𝒶𝓇𝒶 Kika 𝒮',
+    '𝔖𝔖 Kika 𝔖𝔖',
+    'Demolition names (78k): which Kika account, or a separate player?',
+  ],
+  [
+    'Take Ur Shin',
+    'Reported as now Anne, but Take Ur Shin and Anne share the 2026-08-26 and 2026-09-03 contribution lists and ten attacks, so they were two accounts at once. Is Take Ur Shin an Anne alt whose points pool into her family, or did a different account become Anne?',
+  ],
+]);
 
 function aliasKey(name) {
   return String(name || '')

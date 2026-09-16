@@ -302,11 +302,17 @@ function buildPlayerSummary(attacks) {
   const globalSum = {};
   (attacks || []).forEach((a) => {
     const seen = new Set();
+    // Same rule as the weighted scorer: the same identity with the same value on the
+    // very next row is one row OCR'd twice from overlapping screenshots, not a second hit.
+    let previous = null;
     const players = attackPlayers(a);
     players.forEach((p) => {
       const n = canonicalAggregationName(p, players);
       const displayName = n;
       const val = valueOf(p.value ?? p.val);
+      const duplicateOfPrevious = val > 0 && previous?.name === n && previous?.val === val;
+      previous = { name: n, val };
+      if (duplicateOfPrevious) return;
       if (!globalSum[n]) {
         globalSum[n] = {
           name: n,

@@ -2099,6 +2099,7 @@ const en = {
   languageLabel: 'Language',
   loadingEllipsis: 'Loading…',
   tabMaterials: 'DM Materials',
+  tabClassDevelopment: 'Class Development Hub',
   youtubeChoosePlaylist: 'Choose a playlist',
   youtubeFeatured: 'Featured playlist',
   youtubeGuidesTitle: 'Game Events & Guides',

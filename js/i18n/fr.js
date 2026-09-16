@@ -1833,6 +1833,7 @@ const fr = {
   languageLabel: 'Langue',
   loadingEllipsis: 'Chargement…',
   tabMaterials: 'Matériaux DM',
+  tabClassDevelopment: 'Développement de classe',
   youtubeChoosePlaylist: 'Choisissez une playlist',
   youtubeFeatured: 'Playlist à la une',
   youtubeGuidesTitle: 'Événements du jeu & guides',

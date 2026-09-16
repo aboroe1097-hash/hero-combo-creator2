@@ -3,6 +3,16 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.13 - 2026-09-15
+
+- Added the Class Development Hub: the four L96 class roadmaps (Raider, Farmer, Trader, Craftsman) with a next-reset navigator and each sheet's red reset priorities, all re-read from the source sheets. Farmer's late priorities had been shifted one checkpoint, and Craftsman's carried no reset levels at all.
+- Added the Eden Operations Lab to the Eden Hub: specialty route planning, Honor needed for levels 1–143, Honor Boost against Special Training, building material costs with discounts, Coalition Camp tiling and objective staffing, with CSV, PNG and plan exports, in all twelve Eden languages. Fortress costs are transcribed from the sheet rather than derived from Workshop costs, and discounts round up as the sheet does.
+- Added DM equipment guidance: offensive and defensive six-piece priorities and the set-bonus do's and don'ts.
+- Corrected the Lofty Warrior research data: the final Might tier is 40%, three level-2 costs are 840, and the Archer and Cavalry research names are back on the right troops.
+- Eden X2 demolition and duty credit no longer score for nobody. OCR spellings that split one player across contribution and demolition rows now join their account, which returned about 3.5M demolition to weighted scores; one row read twice from overlapping screenshots is counted once; and a duty cell naming two players ("Kika + DVD181", "Kika & loony") credits both. Owner-confirmed X2 duty names and banner owners now score for the right player (Immortal is blaze banner 2, both Blaze banners pool into Blaze, the MasterVj and MalikaZena banner accounts pool into their owners, and "(Zubbs)" notes credit Lady Zubbs), which leaves no X2 duty credit unassigned.
+- Banner and Pather uploads in Eden X2 suggest names again, and an operator note in a duty cell earns credit when it names a player the season already knows. Both asked a roster that X2 never had; they now use the names the season already holds.
+- Eden X2 no longer shows Eden X1's management winners as its own. The R4/Management names come from a single Google Sheet that covers all of Eden rather than from a season's own documents, and that loader was the one results path not gated on the season's Show public results setting. X2 was displaying X1's winners while holding zero votes of its own. The sheet is now read only once a season publishes its results, so a season stays blank until its vote is actually opened and counted.
+
 ## 16.0.12 - 2026-09-08
 
 - Fixed every duty weight save failing with "Missing or insufficient permissions". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than trusted, because a number in it multiplies real scores.

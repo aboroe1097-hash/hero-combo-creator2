@@ -3,7 +3,7 @@
 // and route users to the right tab instead of guessing. Keep entries factual
 // and short; hashes must match js/shell-v14.js internalHashes and page hrefs
 // must be real deployed routes.
-export const TOOLKIT_MAP_VERSION = '2026.08.14.1';
+export const TOOLKIT_MAP_VERSION = '2026.09.11.1';
 
 const entries = [
   {
@@ -60,6 +60,29 @@ const entries = [
       'Exact Dragon Master gear costs by blue/purple/gold route, plus separate saved campaign progress and per-slot inventory needs with stockpile shortfalls.',
     answers: ['What does a full DM set cost?', 'How much is missing from my DM plan?'],
     keywords: ['dragon master', 'dm', 'materials', 'gear', 'set', 'diamonds', 'gems'],
+  },
+  {
+    id: 'classDevelopment',
+    name: 'Class Development Hub',
+    kind: 'tab',
+    hash: 'classDevelopment',
+    summary:
+      'Compare Raider, Farmer, Trader, and Craftsman profession paths; enter a current class level to find the next reset checkpoint and review source-backed priority paths.',
+    answers: [
+      'When should I reset my class points next?',
+      'Which profession class path fits my goal?',
+    ],
+    keywords: [
+      'class development',
+      'profession',
+      'reset',
+      'raider',
+      'farmer',
+      'trader',
+      'craftsman',
+      'architect',
+      'builder',
+    ],
   },
   {
     id: 'strife',

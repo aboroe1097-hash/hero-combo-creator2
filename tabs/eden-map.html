@@ -23,6 +23,18 @@
     </button>
     <button
       type="button"
+      class="vts-eden-subtab-btn"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="operations"
+      data-eden-i18n="subTabOperations"
+      data-subtool-badge="NEW"
+      data-i18n-badge="badgeNew"
+    >
+      Operations Lab
+    </button>
+    <button
+      type="button"
       class="vts-eden-subtab-btn active"
       role="tab"
       aria-selected="true"
@@ -1289,6 +1301,14 @@
     <div class="tab-loading">
       <div class="spinner"></div>
       <span>Loading…</span>
+    </div>
+  </div>
+  <div class="vts-eden-subtab-panel" data-eden-subtab-panel="operations" role="tabpanel">
+    <div id="edenOperationsRoot" class="eden-operations-root">
+      <div class="tab-loading">
+        <div class="spinner"></div>
+        <span>Loading Eden Operations…</span>
+      </div>
     </div>
   </div>
   <div class="vts-eden-subtab-panel active" data-eden-subtab-panel="bounty" role="tabpanel">

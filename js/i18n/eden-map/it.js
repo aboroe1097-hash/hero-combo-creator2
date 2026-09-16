@@ -96,6 +96,7 @@ export default {
     genericSector: 'Settore {code}',
     subTabMap: 'Mappa Eden',
     subTabLoyalty: 'Lealtà Eden',
+    subTabOperations: 'Laboratorio operazioni',
     subTabBounty: 'Taglia Reale Eden X2',
     subTabSeason: 'Stagione attuale · {currentSeason}',
     subTabPrevious: 'Stagioni precedenti · {previousSeason}',

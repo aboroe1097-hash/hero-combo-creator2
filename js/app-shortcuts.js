@@ -36,6 +36,7 @@ function focusVisibleSearch() {
     '#heroesSection:not(.hidden) #heroesTabSearch',
     '#researchSection:not(.hidden) #techSearchInput',
     '#materialsSection:not(.hidden) input[type="number"]',
+    '#classDevelopmentSection:not(.hidden) #cdCurrentLevel',
     '#edenMapSection:not(.hidden) #edenStructSearch',
   ];
   const input = selectors.map((s) => document.querySelector(s)).find(Boolean);

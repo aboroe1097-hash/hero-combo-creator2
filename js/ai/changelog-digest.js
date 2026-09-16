@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.12";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.13";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.13",
+    "date": "2026-09-15",
+    "highlights": [
+      "Added the Class Development Hub: the four L96 class roadmaps (Raider, Farmer, Trader, Craftsman) with a next-reset navigator and each sheet's red reset priorities, all re-read from the source sheets. Farmer's late priorities had been shifted one checkpoint, and Craftsman's carri…",
+      "Added the Eden Operations Lab to the Eden Hub: specialty route planning, Honor needed for levels 1–143, Honor Boost against Special Training, building material costs with discounts, Coalition Camp tiling and objective staffing, with CSV, PNG and plan exports, in all twelve Eden …",
+      "Added DM equipment guidance: offensive and defensive six-piece priorities and the set-bonus do's and don'ts.",
+      "Corrected the Lofty Warrior research data: the final Might tier is 40%, three level-2 costs are 840, and the Archer and Cavalry research names are back on the right troops.",
+      "Eden X2 demolition and duty credit no longer score for nobody. OCR spellings that split one player across contribution and demolition rows now join their account, which returned about 3.5M demolition to weighted scores; one row read twice from overlapping screenshots is counted …",
+      "Banner and Pather uploads in Eden X2 suggest names again, and an operator note in a duty cell earns credit when it names a player the season already knows. Both asked a roster that X2 never had; they now use the names the season already holds."
+    ]
+  },
   {
     "version": "16.0.12",
     "date": "2026-09-08",
@@ -72,14 +84,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced \"Something went wrong. Try again.\" on the sign-in form. Members read th…",
       "Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still n…"
-    ]
-  },
-  {
-    "version": "16.0.3",
-    "date": "2026-09-04",
-    "highlights": [
-      "Documented the X10 and X12 season brackets in the Manual Builder and Combo Generator filters. X10 is an optional intermediate season some Rise of Castles states run and Eden never has, carrying two free heroes, no paid heroes and no new research; X12 gathers the X9 through X12 h…",
-      "Added a Select all control to both season filter strips. It fills every season in one press and returns the strip to its own defaults on the next, so the filter is never left empty."
     ]
   }
 ].map((release) =>

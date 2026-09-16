@@ -114,6 +114,20 @@ const CANONICAL_PACK = {
     inventoryHint:
       'Enter how many completed gold pieces you currently own. Velo can use this for account reviews.',
     inventoryOwned: 'Owned {piece}',
+    guidanceEyebrow: 'Equipment field guide',
+    guidanceTitle: 'Useful DM equipment tips',
+    guidanceIntro:
+      'Pick the priority that matches the legion role, and protect active set bonuses while replacing pieces.',
+    offensiveOrder: 'Offensive order',
+    offensiveHint: 'Prioritize high damage output.',
+    defensiveOrder: 'Defensive order',
+    defensiveHint: 'Prioritize healing and damage mitigation.',
+    doLabel: 'Do',
+    doBreakpoint: 'Craft toward the next set-bonus breakpoint, then equip the pieces together.',
+    dontLabel: "Don't",
+    dontSixPiece: 'Do not break a 6-piece set bonus just to equip one Dragon Master piece.',
+    dontThreeThree:
+      'Do not use a 3 Dragon Master + 3 normal split if it breaks your 4-piece set bonus.',
   },
   enhance: {
     title: 'Enhance Equipment',

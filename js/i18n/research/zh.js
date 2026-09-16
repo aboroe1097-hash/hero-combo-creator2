@@ -3158,12 +3158,12 @@ export const researchContent = {
     },
     '77db4a78:node_10': {
       name: '法力药剂',
-      buff: '骑兵HP 10%',
+      buff: '弓兵HP 10%',
       effects: [],
     },
     '77db4a78:node_11': {
       name: '重装掠袭者',
-      buff: '弓兵HP 10%',
+      buff: '骑兵HP 10%',
       effects: [],
     },
     '77db4a78:node_12': {
@@ -3248,7 +3248,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_F': {
       name: '强力打击 III',
-      buff: '步兵攻击 42%',
+      buff: '步兵攻击 40%',
       effects: [],
     },
     '77db4a78:node_27_F': {
@@ -3328,7 +3328,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_C': {
       name: '凶猛冲锋III',
-      buff: '骑兵攻击 42%',
+      buff: '骑兵攻击 40%',
       effects: [],
     },
     '77db4a78:node_27_C': {
@@ -3408,7 +3408,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_A': {
       name: '强化箭矢III',
-      buff: '弓兵攻击 42%',
+      buff: '弓兵攻击 40%',
       effects: [],
     },
     '77db4a78:node_27_A': {

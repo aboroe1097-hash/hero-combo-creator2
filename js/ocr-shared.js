@@ -2,6 +2,7 @@
 import { isLocalDevHost } from './utils.js';
 import { resolvePlayerRegistryAlias } from './player-registry.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
+import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
   edenWorkspaceFirestorePath,
   edenWorkspaceStorageKey,
@@ -1579,6 +1580,55 @@ export function resolveDutyPlayerName(raw) {
 // or a roster match. findBestMatch returns its input unchanged when nothing
 // matches, so an unresolved note ("needs help", "after +3", "bubbles") is chat
 // noise, not a player, and must not mint a phantom summary row.
+// Every player name this workspace already knows, raw and uncanonicalized: the
+// latest roster, the demolition summary, contribution matches, reviewed duty
+// names and manual banner assignments. X2 began with no roster at all, so anything
+// that asked the roster alone "is this a player?" answered no for everyone.
+export function collectCurrentSeasonPlayerNames(source = {}) {
+  const players = [];
+  const add = (value) => {
+    const name =
+      typeof value === 'string'
+        ? value
+        : value?.playerName || value?.display_player_name || value?.displayName || value?.name || '';
+    if (String(name || '').trim()) players.push(name);
+  };
+
+  const snapshots = Array.isArray(source.rosterSnapshots) ? source.rosterSnapshots : [];
+  const latestRoster = snapshots.length ? snapshots[snapshots.length - 1] : null;
+  (Array.isArray(latestRoster?.members) ? latestRoster.members : []).forEach(add);
+  (Array.isArray(source.rosterNames) ? source.rosterNames : []).forEach(add);
+
+  const dashboardData =
+    source.dashData && typeof source.dashData === 'object' ? source.dashData : {};
+  (Array.isArray(dashboardData.players_summary) ? dashboardData.players_summary : []).forEach(add);
+
+  (Array.isArray(source.contributionRecords) ? source.contributionRecords : []).forEach(
+    (record) => {
+      (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) =>
+        add(entry?.matchedName || entry?.confirmed || entry?.name)
+      );
+    }
+  );
+
+  (Array.isArray(source.dutyRecords) ? source.dutyRecords : []).forEach((record) => {
+    (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) => {
+      // A reviewed Banner/Pather name is useful evidence for the next upload in
+      // this workspace. Raw unmatched OCR text is not: promoting it here would
+      // make a typo look like an approved player identity.
+      if (String(entry?.confirmed || '').trim()) add(entry.confirmed);
+    });
+  });
+
+  (Array.isArray(source.bannerRecords) ? source.bannerRecords : []).forEach((record) => {
+    Object.values(record?.teams || {}).forEach((members) => {
+      (Array.isArray(members) ? members : []).forEach(add);
+    });
+  });
+
+  return players;
+}
+
 export function resolvesToKnownDutyPlayer(value) {
   const cleaned = cleanDutyRawName(value);
   if (!cleaned) return false;
@@ -1588,7 +1638,11 @@ export function resolvesToKnownDutyPlayer(value) {
   if (resolved !== cleaned) return true; // some alias/registry/fuzzy mapping fired
   const compact = compactPlayerIdentity(resolved);
   if (!compact) return false;
-  return (state.rosterNames || []).some((rn) => compactPlayerIdentity(rn) === compact);
+  // A curated public profile is a known person even when this season has no row
+  // under that exact name: "(Zubbs)" operates for the Zubbs family, whose X2
+  // account is Lady Zubbs. Family pooling then lands the credit on that account.
+  if (getPublicVtsPlayerProfile(resolved)) return true;
+  return collectCurrentSeasonPlayerNames(state).some((name) => compactPlayerIdentity(name) === compact);
 }
 
 function isRedBullDutyOwner(value) {
@@ -1611,9 +1665,40 @@ function isRedBullDutyOwner(value) {
 // against the owner's canonical form. The owner always comes first in the returned list.
 // The note must resolve to a KNOWN player to earn credit — unresolved parenthetical
 // text ("needs help", "bubbles") is a chat note, not an operator.
+// A duty cell can name several players who shared one target: "Kika + DVD181",
+// "Kika & loony". The separator needs whitespace on both sides, because "+" and
+// "&" also occur inside real names ("Ar Ran Dil +62", "Bonny&Clyde"), and a cell
+// that is itself a confirmed account name is never split.
+const DUTY_PLAYER_SEPARATOR = /\s+[+&]\s+/;
+function splitDutyCellPlayers(text) {
+  const value = String(text || '').trim();
+  if (!value || resolveConfirmedPlayerAlias(value) || !DUTY_PLAYER_SEPARATOR.test(value)) {
+    return value ? [value] : [];
+  }
+  return value
+    .split(DUTY_PLAYER_SEPARATOR)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export function getDutyCreditedNames(raw, ownerCredited) {
   const owner = String(ownerCredited || '').trim();
   const names = owner ? [owner] : [];
+  // The reviewer confirms one name per cell, which is the first player listed.
+  // Everyone after the separator used to earn nothing; they are credited here,
+  // but only when they resolve to a known player, so a stray word cannot mint one.
+  const ownerCanonForParts = owner ? resolveDutyPlayerName(owner) : '';
+  const cellBody = String(raw || '')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  splitDutyCellPlayers(cellBody)
+    .slice(1)
+    .forEach((part) => {
+      if (!resolvesToKnownDutyPlayer(part)) return;
+      const partner = resolveDutyPlayerName(part);
+      if (partner && partner !== ownerCanonForParts && !names.includes(partner)) names.push(partner);
+    });
   const note = getDutyOperatorNote(raw);
   if (isRedBullDutyOwner(owner) || isRedBullDutyOwner(raw)) return names;
   if (!looksLikeDutyOperator(note)) return names;
@@ -1654,6 +1739,7 @@ export function expandDutyRawNames(raw) {
   } else {
     tokens = [body];
   }
+  tokens = tokens.flatMap((token) => splitDutyCellPlayers(token));
   const out = [];
   const push = (rawToken) => {
     const cleaned = cleanDutyRawName(rawToken);

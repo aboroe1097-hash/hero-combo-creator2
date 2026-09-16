@@ -96,6 +96,7 @@ export default {
     genericSector: 'Сектор {code}',
     subTabMap: 'Карта Эдема',
     subTabLoyalty: 'Верность Эдема',
+    subTabOperations: 'Лаборатория операций',
     subTabBounty: 'Королевская награда Eden X2',
     subTabSeason: 'Текущий сезон · {currentSeason}',
     subTabPrevious: 'Прошлые сезоны · {previousSeason}',

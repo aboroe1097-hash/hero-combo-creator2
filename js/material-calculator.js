@@ -12,6 +12,7 @@ import {
 } from './i18n/dm-materials/index.js';
 import {
   DM_DEFAULT_PLAN_NAME,
+  DM_EQUIPMENT_PRIORITY,
   DM_MATERIAL_STOCKPILES,
   DM_NORMAL_GEAR_DRAGONITE_PER_ITEM,
   DM_ROUTES,
@@ -350,6 +351,54 @@ function renderRouteChooser(result, t) {
       </div>
       <div class="dm-route-list">
         ${DM_ROUTE_ORDER.map((routeId) => renderRouteCard(routeId, result, t)).join('')}
+      </div>
+    </section>`;
+}
+
+function renderEquipmentPriority(order) {
+  return order
+    .map(
+      (slot, index) => `
+        <li>
+          <span aria-hidden="true">${index + 1}</span>
+          <strong>${escapeHtml(dmItemName(slot))}</strong>
+        </li>`
+    )
+    .join('');
+}
+
+function renderBuildGuidance(t) {
+  return `
+    <section class="dm-panel dm-equipment-guidance" aria-labelledby="dmEquipmentGuidanceHeading">
+      <header>
+        <span class="dm-eyebrow">${escapeHtml(t.guidanceEyebrow)}</span>
+        <h3 id="dmEquipmentGuidanceHeading">${escapeHtml(t.guidanceTitle)}</h3>
+        <p>${escapeHtml(t.guidanceIntro)}</p>
+      </header>
+      <div class="dm-equipment-orders">
+        <article class="dm-equipment-order dm-equipment-order--offensive">
+          <h4>${escapeHtml(t.offensiveOrder)}</h4>
+          <p>${escapeHtml(t.offensiveHint)}</p>
+          <ol>${renderEquipmentPriority(DM_EQUIPMENT_PRIORITY.offensive)}</ol>
+        </article>
+        <article class="dm-equipment-order dm-equipment-order--defensive">
+          <h4>${escapeHtml(t.defensiveOrder)}</h4>
+          <p>${escapeHtml(t.defensiveHint)}</p>
+          <ol>${renderEquipmentPriority(DM_EQUIPMENT_PRIORITY.defensive)}</ol>
+        </article>
+      </div>
+      <div class="dm-equipment-rules">
+        <article class="dm-equipment-rule dm-equipment-rule--do">
+          <strong>${escapeHtml(t.doLabel)}</strong>
+          <p>${escapeHtml(t.doBreakpoint)}</p>
+        </article>
+        <article class="dm-equipment-rule dm-equipment-rule--dont">
+          <strong>${escapeHtml(t.dontLabel)}</strong>
+          <ul>
+            <li>${escapeHtml(t.dontSixPiece)}</li>
+            <li>${escapeHtml(t.dontThreeThree)}</li>
+          </ul>
+        </article>
       </div>
     </section>`;
 }
@@ -933,7 +982,8 @@ function render() {
       </nav>
       ${
         activeDmTool === 'build'
-          ? `${renderRouteChooser(result, t)}
+          ? `${renderBuildGuidance(t)}
+      ${renderRouteChooser(result, t)}
       <div class="dm-command-layout">
         ${renderPlanPanel(result, t)}
         <main class="dm-workbench">

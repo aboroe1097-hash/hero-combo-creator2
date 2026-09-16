@@ -62,6 +62,13 @@ const DESTS = [
     kw: 'dm dragon master gear materials craft equipment gold purple blue',
   },
   {
+    key: 'tabClassDevelopment',
+    name: 'classDevelopment',
+    kind: 'tab',
+    fallback: 'Class Development Hub',
+    kw: 'class development profession reset raider farmer trader craftsman architect builder cards',
+  },
+  {
     key: 'tabEdenMap',
     name: 'edenMap',
     kind: 'tab',

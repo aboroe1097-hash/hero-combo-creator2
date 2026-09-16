@@ -1781,6 +1781,7 @@ const pt = {
   languageLabel: 'Idioma',
   loadingEllipsis: 'Carregando…',
   tabMaterials: 'Materiais DM',
+  tabClassDevelopment: 'Desenvolvimento de classe',
   youtubeChoosePlaylist: 'Escolha uma playlist',
   youtubeFeatured: 'Playlist em destaque',
   youtubeGuidesTitle: 'Eventos do Jogo & Guias',

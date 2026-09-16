@@ -3166,12 +3166,12 @@ export const researchContent = {
     },
     '77db4a78:node_10': {
       name: 'Ramuan Mana',
-      buff: '10% HP Kavaleri',
+      buff: '10% HP Pemanah',
       effects: [],
     },
     '77db4a78:node_11': {
       name: 'Penyerbu Berat',
-      buff: '10% HP Pemanah',
+      buff: '10% HP Kavaleri',
       effects: [],
     },
     '77db4a78:node_12': {
@@ -3256,7 +3256,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_F': {
       name: 'Serangan Kuat III',
-      buff: '42% Kekuatan Infanteri',
+      buff: '40% Kekuatan Infanteri',
       effects: [],
     },
     '77db4a78:node_27_F': {
@@ -3336,7 +3336,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_C': {
       name: 'Serbuan ganas III',
-      buff: '42% Kekuatan Kavaleri',
+      buff: '40% Kekuatan Kavaleri',
       effects: [],
     },
     '77db4a78:node_27_C': {
@@ -3416,7 +3416,7 @@ export const researchContent = {
     },
     '77db4a78:node_26_A': {
       name: 'Peningkatan panah III',
-      buff: '42% Kekuatan Pemanah',
+      buff: '40% Kekuatan Pemanah',
       effects: [],
     },
     '77db4a78:node_27_A': {

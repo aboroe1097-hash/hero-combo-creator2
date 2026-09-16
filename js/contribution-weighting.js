@@ -291,6 +291,14 @@ function playerFamilyKey(accountKey) {
   if (/^sarafin[ao]$/.test(key)) return 'sarafino';
   if (/^maximus+(?:banner)?$/.test(key)) return 'maximus';
   if (key === 'qimmortal' || key === 'qimmortalis') return 'qimmortal';
+  // Owner-confirmed 2026-09-15: these banner accounts score for the player they
+  // belong to. Both Blaze banners pool into the original Blaze account.
+  if (key === 'mtbanner') return 'mastervj';
+  if (key === 'malikazenabanner') return 'malikazena';
+  if (/^blaze(?:banner[12])?$/.test(key)) return 'blaze';
+  // Victoria is a Kika account (owner-confirmed). It shares attacks with a plain
+  // "Kika" row, so it is a second account in the family, not another spelling.
+  if (key === 'victoria') return 'kika';
   return key;
 }
 
@@ -499,6 +507,14 @@ function buildDemolitionMap(demolitionRecords = []) {
   const map = new Map();
   (Array.isArray(demolitionRecords) ? demolitionRecords : []).forEach((record) => {
     const entries = Array.isArray(record?.players) ? record.players : [record];
+    // One account holds one row in an attack. Overlapping screenshots can OCR the
+    // same row twice, on neighbouring ranks and under two spellings that resolve to
+    // one player; counting both doubled that player's demolition while the upload
+    // still passed its 5% durability tolerance. Only that exact signature is
+    // dropped: the same identity with the same value on the very next row. Anything
+    // else stays, including a repeated name with a different value ("Kika" main and
+    // alt) and a repeat that is not adjacent.
+    let previous = null;
     entries.forEach((entry) => {
       const identity = resolveWeightedPlayerIdentity(
         entry?.display_player_name ||
@@ -510,6 +526,10 @@ function buildDemolitionMap(demolitionRecords = []) {
       if (!identity) return;
       const value = demolitionValue(entry);
       if (!value) return;
+      const duplicateOfPrevious =
+        previous?.playerKey === identity.playerKey && previous?.value === value;
+      previous = { playerKey: identity.playerKey, value };
+      if (duplicateOfPrevious) return;
       map.set(identity.playerKey, (map.get(identity.playerKey) || 0) + value);
     });
   });
