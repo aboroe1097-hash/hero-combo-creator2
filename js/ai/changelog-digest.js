@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.14";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.15";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.15",
+    "date": "2026-09-17",
+    "highlights": [
+      "The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashb…"
+    ]
+  },
   {
     "version": "16.0.14",
     "date": "2026-09-16",
@@ -81,13 +88,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-07",
     "highlights": [
       "Removed the dead Firebase importmap from the Home, VTS Admin and VtsScore pages. It pinned firebase/* to gstatic 11.6.1 and resolved nothing — every page here is a Vite input, so bare specifiers are rewritten at build time — but it stood ready to load a second copy of the SDK be…"
-    ]
-  },
-  {
-    "version": "16.0.5",
-    "date": "2026-09-07",
-    "highlights": [
-      "Fixed every role grant in Users & Roles failing with \"Service functions is not available\". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it regis…"
     ]
   }
 ].map((release) =>

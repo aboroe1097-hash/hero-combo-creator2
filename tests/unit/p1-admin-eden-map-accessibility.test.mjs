@@ -9,10 +9,10 @@ import {
 } from '../../js/translations.js';
 import { P1_COPY_KEYS } from '../../js/i18n/p1-copy.js';
 
-const dashboardCss = fs.readFileSync(
-  new URL('../../css/ocr-dashboard.css', import.meta.url),
-  'utf8'
-);
+// The dashboard's styles are split: shared rules, then admin-only rules.
+const dashboardCss = ['../../css/ocr-dashboard.css', '../../css/ocr-dashboard-admin.css']
+  .map((file) => fs.readFileSync(new URL(file, import.meta.url), 'utf8'))
+  .join('');
 const sharedTokensCss = fs.readFileSync(new URL('../../css/_tokens.css', import.meta.url), 'utf8');
 const edenMap = fs.readFileSync(new URL('../../tabs/eden-map.html', import.meta.url), 'utf8');
 

@@ -5,7 +5,7 @@ import test from 'node:test';
 const read = (path) => readFileSync(path, 'utf8');
 
 test('the dashboard token block is split into theme-scoped authorities', () => {
-  const css = read('css/ocr-dashboard.css');
+  const css = read('css/ocr-dashboard.css') + read('css/ocr-dashboard-admin.css');
 
   const dark = css.match(/:root:not\(\[data-theme='light'\]\) #ocrDashboardRoot\s*\{/);
   const light = css.match(/:root\[data-theme='light'\] #ocrDashboardRoot\s*\{/);
@@ -32,7 +32,7 @@ test('the dashboard token block is split into theme-scoped authorities', () => {
 });
 
 test('retired per-rule light overrides are gone from the dashboard stylesheet', () => {
-  const css = read('css/ocr-dashboard.css');
+  const css = read('css/ocr-dashboard.css') + read('css/ocr-dashboard-admin.css');
 
   assert.doesNotMatch(css, /\[data-theme='light'\] #ocrDashboardRoot \.dash-kpi-label\s*\{/);
   assert.doesNotMatch(css, /\[data-theme='light'\] #ocrDashboardRoot \.dash-ops-kicker\s*,/);
@@ -44,7 +44,7 @@ test('retired per-rule light overrides are gone from the dashboard stylesheet', 
 });
 
 test('promoted dashboard ink/surface pairs carry both theme halves', () => {
-  const css = read('css/ocr-dashboard.css');
+  const css = read('css/ocr-dashboard.css') + read('css/ocr-dashboard-admin.css');
 
   assert.match(css, /--ff-dash-ink-0e7490-1: #67e8f9;/);
   assert.match(css, /--ff-dash-ink-0e7490-1: #0e7490;/);
