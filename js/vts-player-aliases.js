@@ -223,20 +223,10 @@ export const CONFIRMED_GROUPS = [
 // New OCR spellings belong here first — promoting one into CONFIRMED_GROUPS is an
 // identity decision, not a formatting one.
 //
-// Eden X2 audit (2026-09-15): each of these currently earns its credit for nobody.
-// MALAK ANDURIL and MalakAbo were confirmed as two different players, which is
-// already how they resolve, so they need no entry.
-export const PENDING_GROUPS = Object.freeze([
-  [
-    '𝒮𝒽𝒶𝓇𝒶 Kika 𝒮',
-    '𝔖𝔖 Kika 𝔖𝔖',
-    'Demolition names (78k): which Kika account, or a separate player?',
-  ],
-  [
-    'Take Ur Shin',
-    'Reported as now Anne, but Take Ur Shin and Anne share the 2026-08-26 and 2026-09-03 contribution lists and ten attacks, so they were two accounts at once. Is Take Ur Shin an Anne alt whose points pool into her family, or did a different account become Anne?',
-  ],
-]);
+// Empty: the last Eden X2 questions (the decorated Kika spellings and Take Ur
+// Shin) were answered on 2026-09-17 as family links, which live in
+// contribution-weighting.js rather than here.
+export const PENDING_GROUPS = Object.freeze([]);
 
 function aliasKey(name) {
   return String(name || '')

@@ -331,6 +331,12 @@ test('owner answers for the Eden X2 duty names hold (2026-09-15)', () => {
   // Victoria is a Kika account: pooled into the family, never renamed.
   assert.equal(familyOf('~Victoria~'), 'kika');
   assert.equal(resolveConfirmedPlayerAlias('~Victoria~'), 'Victoria');
+  // Kika's two decorated main-account spellings, and Take Ur Shin (now named
+  // Anne), pool into their owners without being renamed.
+  assert.equal(familyOf('𝒮𝒽𝒶𝓇𝒶 Kika 𝒮'), 'kika');
+  assert.equal(familyOf('𝔖𝔖 Kika 𝔖𝔖'), 'kika');
+  assert.equal(familyOf('Take Ur Shin'), familyOf('Anne'));
+  assert.notEqual(familyOf('Mini Anne'), familyOf('Anne'));
   // Two different players, confirmed by the owner: never merged.
   assert.notEqual(familyOf('MALAK ANDURIL'), familyOf('MalakAbo'));
   // Lady Zubbs stays her own account inside the Zubbs family, and "(Zubbs)"
