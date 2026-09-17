@@ -582,3 +582,17 @@ test('Qwen request does not call OCR worker without a Firebase App Check token',
     globalThis.fetch = originalFetch;
   }
 });
+
+test('an out-of-balance DashScope account falls back to the second key', async () => {
+  const { shouldTryNextDashscopeAttempt } = await import('../../workers/qwen-cors-proxy.js');
+  const arrearage = JSON.stringify({
+    error: {
+      code: 'Arrearage',
+      message: 'Access denied, please make sure your account is in good standing.',
+    },
+  });
+  assert.equal(shouldTryNextDashscopeAttempt(400, arrearage), true);
+  assert.equal(shouldTryNextDashscopeAttempt(400, 'Quota exceeded'), true);
+  // A malformed request is the caller's fault; retrying on another key cannot help.
+  assert.equal(shouldTryNextDashscopeAttempt(400, 'messages[0].content is invalid'), false);
+});
