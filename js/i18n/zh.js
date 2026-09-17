@@ -253,6 +253,8 @@ const zh = {
   adminDutyManualPaste: '手动粘贴',
   adminDutyMatchUnmatchedOption: '-- 未匹配 --',
   adminDutyManualCorrectionPh: '手动修正',
+  adminDutyAddNameRow: '+ 添加名字',
+  adminDutyAddNameRowTitle: '为同一目标再添加一个名字，例如在该目标使用了两面旗帜时',
   adminDutyUsageTimeTitle: '使用时间',
   adminDutyTarget: '目标',
   adminDutyTargetTitle: '目标或建筑',

@@ -288,6 +288,9 @@ const de = {
   adminDutyManualPaste: 'Manual paste',
   adminDutyMatchUnmatchedOption: '-- Unmatched --',
   adminDutyManualCorrectionPh: 'Manual correction',
+  adminDutyAddNameRow: '+ Name hinzufügen',
+  adminDutyAddNameRowTitle:
+    'Einen weiteren Namen für dasselbe Ziel hinzufügen, z. B. wenn dort zwei Banner genutzt wurden',
   adminDutyUsageTimeTitle: 'Usage time',
   adminDutyTarget: 'Target',
   adminDutyTargetTitle: 'Target or structure',

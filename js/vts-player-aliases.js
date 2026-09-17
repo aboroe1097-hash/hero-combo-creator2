@@ -178,7 +178,8 @@ export const CONFIRMED_GROUPS = [
   ['BONEfastBANNER', 'iBONEfastBANNER'],
   // Duty lists are typed by hand, so a shortened name is still one account when
   // it is the only account it could be.
-  ['La Scimmia', 'Scimmia'],
+  // She selkie is her Viber name (owner-confirmed 2026-09-17).
+  ['La Scimmia', 'Scimmia', 'She selkie', 'Sheselkie', '@She selkie', '@Sheselkie'],
   ['Neutrino10', 'Neutrino'],
 
   // --- owner-confirmed duty names (2026-09-15) -----------------------------

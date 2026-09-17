@@ -10,6 +10,9 @@ This is the release history, newest first. Entries describe their release-time b
 - Styled the admin suggestion filter row, which shipped in 16.0.9 with no CSS at all, so the filter pills sat on top of the "Show" label. Show all and Approve all also stayed on screen with nothing to act on, because a dashboard rule outranked the browser's own [hidden] handling; a dashboard-wide guard stops that recurring.
 - That guard also restores two hidden states the same specificity bug had been defeating: the superadmin-only dashboard navigation no longer renders for admins who are not superadmins, and Publish and Unpublish no longer appear on an archived workspace that cannot accept either.
 - Eden X2 scoring: Kika's two decorated main-account spellings now pool into her family, and Take Ur Shin, the account now named Anne, pools into Anne's family together with its conduct penalty. That leaves no answered name scoring for nobody.
+- Banner, Pather and Shield Wall review rows have an "Add name" control for a target that used two banners. It adds a second row for the same target, time and group; when the uploaded cell already holds two names ("Anne, Roha") the row splits between them. Comma-separated cells also credit each named player when scored.
+- "She selkie", La Scimmia's Viber name, now resolves to La Scimmia in duty lists.
+- Image uploads now fall back to the second Qwen (DashScope) key when the first account is out of balance, instead of failing while a funded key sat unused. The OCR worker is redeployed with the fix.
 
 ## 16.0.13 - 2026-09-15
 

@@ -607,6 +607,9 @@ const it = {
   adminDutyManualPaste: 'Incolla manualmente',
   adminDutyMatchUnmatchedOption: '-- Senza corrispondenza --',
   adminDutyManualCorrectionPh: 'Correzione manuale',
+  adminDutyAddNameRow: '+ Aggiungi nome',
+  adminDutyAddNameRowTitle:
+    'Aggiungi un altro nome per lo stesso obiettivo, ad esempio se vi sono stati usati due stendardi',
   adminDutyUsageTimeTitle: 'Ora di utilizzo',
   adminDutyTargetTitle: 'Bersaglio o struttura',
   adminDutyGroup: 'Gruppo',

@@ -5183,6 +5183,7 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 #ocrDashboardRoot .dash-duty-raw-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
@@ -5200,7 +5201,8 @@ body[style*='overflow: hidden'] .tab-panel {
   overflow-wrap: anywhere;
   white-space: normal;
 }
-#ocrDashboardRoot .dash-duty-remove-row {
+#ocrDashboardRoot .dash-duty-remove-row,
+#ocrDashboardRoot .dash-duty-add-name {
   flex: 0 0 auto;
   min-height: 28px;
   padding: 0.22rem 0.48rem;
@@ -5220,6 +5222,16 @@ body[style*='overflow: hidden'] .tab-panel {
   background: rgba(239, 68, 68, 0.24);
   border-color: rgba(248, 113, 113, 0.9);
   color: #fecaca;
+}
+/* "Add name" shares Delete's footprint in a neutral accent, so it never reads
+   as a destructive action. */
+#ocrDashboardRoot .dash-duty-add-name {
+  border-color: rgba(125, 211, 252, 0.5);
+  background: rgba(14, 116, 144, 0.16);
+  color: #bae6fd;
+}
+#ocrDashboardRoot .dash-duty-add-name:hover {
+  filter: brightness(1.25);
 }
 #ocrDashboardRoot .dash-duty-match-select,
 #ocrDashboardRoot .dash-duty-manual-input,

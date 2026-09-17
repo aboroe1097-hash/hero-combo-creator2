@@ -257,6 +257,9 @@ const pt = {
   adminDutyManualPaste: 'Manual paste',
   adminDutyMatchUnmatchedOption: '-- Unmatched --',
   adminDutyManualCorrectionPh: 'Manual correction',
+  adminDutyAddNameRow: '+ Adicionar nome',
+  adminDutyAddNameRowTitle:
+    'Adicione outro nome para o mesmo alvo, por exemplo quando dois estandartes foram usados nele',
   adminDutyUsageTimeTitle: 'Usage time',
   adminDutyTarget: 'Target',
   adminDutyTargetTitle: 'Target or structure',
