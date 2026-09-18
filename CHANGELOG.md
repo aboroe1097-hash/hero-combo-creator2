@@ -3,6 +3,10 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.15 - 2026-09-17
+
+- The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashboard-admin.css, which only VTS Admin loads, in its own chunk directly after the shared rules so the admin cascade is unchanged. A computed-style comparison of more than 23,000 elements on Admin and both Eden pages, at desktop and mobile widths, found no differences beyond animation timing.
+
 ## 16.0.14 - 2026-09-16
 
 - Fixed the mobile bottom dock slicing its own labels. "Heroes & Combos Hub" wrapped to three lines inside a pill that hides overflow, so the last line rendered as cut-off letter tops; labels now clamp to two lines with an ellipsis and fit.
