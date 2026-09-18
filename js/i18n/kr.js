@@ -180,6 +180,8 @@ const kr = {
   adminDutyManualPaste: '수동 붙여넣기',
   adminDutyMatchUnmatchedOption: '-- 미매칭 --',
   adminDutyManualCorrectionPh: '수동 수정',
+  adminDutyAddNameRow: '+ 이름 추가',
+  adminDutyAddNameRowTitle: '같은 목표에 다른 이름을 추가합니다. 예: 깃발 두 개를 사용한 경우',
   adminDutyUsageTimeTitle: '사용 시간',
   adminDutyTarget: '대상',
   adminDutyTargetTitle: '대상 또는 구조물',

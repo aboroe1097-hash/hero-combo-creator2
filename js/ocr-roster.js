@@ -29,6 +29,7 @@ import {
   readOcrImageDataUrl,
   expandDutyRawNames,
   getDutyCreditedNames,
+  splitDutyCellPlayers,
 } from './ocr-shared.js';
 import {
   ACTIVE_EDEN_WORKSPACE,
@@ -1598,7 +1599,7 @@ function renderDutyMatchRows(entries) {
         )
         .join('');
       return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
-      <div class="dash-duty-raw"><div class="dash-duty-raw-meta"><span>${esc(adminT('adminDutyUploaded'))} #${index + 1}</span><button class="dash-duty-remove-row" type="button" data-duty-remove-row>${esc(adminT('adminDelete'))}</button></div><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
+      <div class="dash-duty-raw"><div class="dash-duty-raw-meta"><span class="dash-duty-row-number">${esc(adminT('adminDutyUploaded'))} #${index + 1}</span><button class="dash-duty-remove-row" type="button" data-duty-remove-row>${esc(adminT('adminDelete'))}</button><button class="dash-duty-add-name" type="button" data-duty-add-name title="${esc(adminT('adminDutyAddNameRowTitle'))}">${esc(adminT('adminDutyAddNameRow'))}</button></div><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyRosterMatch'))}</span><select class="dash-duty-match-select" name="dutyMatch[]">${options}</select></label>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyManualCorrectionPh'))}</span><input class="dash-duty-manual-input" name="dutyManualName[]" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${entry.confirmed && !suggestions.some((row) => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}" autocomplete="off"></label>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTime'))}</span><input class="dash-duty-time-input" name="dutyTime[]" type="text" inputmode="numeric" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}" autocomplete="off"></label>
@@ -1608,6 +1609,43 @@ function renderDutyMatchRows(entries) {
     </div>`;
     })
     .join('');
+}
+
+// Two banners on one target used to leave a single row with one match, so the
+// second player could only be credited by editing the saved record. "Add name"
+// inserts a sibling row for the same target. When the uploaded cell already holds
+// several names ("Anne, Roha"), the row keeps the first and the new row takes the
+// rest; otherwise the new row starts empty for a manual name.
+function addDutyNameRow(row) {
+  const field = (selector) => row.querySelector(selector)?.value.trim() || '';
+  const shared = {
+    original: row.dataset.raw || '',
+    usageTime: field('.dash-duty-time-input'),
+    target: field('.dash-duty-target-input'),
+    group: field('.dash-duty-group-input'),
+    pad: field('.dash-duty-pad-input'),
+    order: row.dataset.order || '',
+    checked: row.dataset.checked === '1',
+    allowedColors: row.dataset.allowedColors || '',
+  };
+  const parts = splitDutyCellPlayers(row.dataset.name || '');
+  const template = document.createElement('template');
+  if (parts.length > 1) {
+    // Re-render the current row with only its first name so its suggestions,
+    // status and saved name all describe one player.
+    template.innerHTML = renderDutyMatchRows([{ ...shared, name: parts[0] }]).trim();
+    const first = template.content.firstElementChild;
+    row.replaceWith(first);
+    template.innerHTML = renderDutyMatchRows([{ ...shared, name: parts.slice(1).join(', ') }]).trim();
+    const second = template.content.firstElementChild;
+    first.after(second);
+    second.querySelector('.dash-duty-match-select')?.focus();
+    return;
+  }
+  template.innerHTML = renderDutyMatchRows([{ ...shared, name: '' }]).trim();
+  const added = template.content.firstElementChild;
+  row.after(added);
+  added.querySelector('.dash-duty-manual-input')?.focus();
 }
 
 function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = null) {
@@ -1651,19 +1689,39 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     const saveBtn = $id('dashDutySaveBtn');
     if (saveBtn) saveBtn.disabled = count === 0;
   };
+  const renumberDutyRows = () => {
+    body.querySelectorAll('.dash-duty-match-row .dash-duty-row-number').forEach((label, index) => {
+      label.textContent = `${adminT('adminDutyUploaded')} #${index + 1}`;
+    });
+  };
   body.querySelector('.dash-duty-match-list')?.addEventListener('click', (event) => {
-    if (!event.target.closest('[data-duty-remove-row]')) return;
-    event.target.closest('.dash-duty-match-row')?.remove();
+    if (event.target.closest('[data-duty-remove-row]')) {
+      event.target.closest('.dash-duty-match-row')?.remove();
+      renumberDutyRows();
+      updateDutyDraftCount();
+      return;
+    }
+    const addButton = event.target.closest('[data-duty-add-name]');
+    if (!addButton) return;
+    const row = addButton.closest('.dash-duty-match-row');
+    if (row) addDutyNameRow(row);
+    renumberDutyRows();
     updateDutyDraftCount();
   });
   updateDutyDraftCount();
   $id('dashDutySaveBtn').onclick = async () => {
-    const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map((row) => {
-      const original = row.dataset.raw || '';
-      const rawName = row.dataset.name || original;
+    const rows = Array.from(body.querySelectorAll('.dash-duty-match-row'));
+    const entries = rows.flatMap((row) => {
       const manual = row.querySelector('.dash-duty-manual-input')?.value.trim() || '';
       const selected = row.querySelector('.dash-duty-match-select')?.value || '';
       const confirmed = manual || selected;
+      // A row added with "Add name" has no uploaded text of its own; its name is
+      // what the reviewer typed. Left empty, it is simply not saved, because the
+      // loader discards nameless entries anyway.
+      const addedRow = !row.dataset.name;
+      if (addedRow && !confirmed) return [];
+      const original = row.dataset.raw || '';
+      const rawName = addedRow ? confirmed : row.dataset.name || original;
       const usageTime = normalizeDutyUsageTime(
         row.querySelector('.dash-duty-time-input')?.value || ''
       );
@@ -1673,20 +1731,22 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       const order = row.dataset.order || '';
       const checked = row.dataset.checked === '1';
       const allowedColors = row.dataset.allowedColors || '';
-      return {
-        name: rawName,
-        original,
-        confirmed,
-        usageTime,
-        target,
-        group,
-        order,
-        pad,
-        checked,
-        allowedColors,
-        status: getDutyMatchStatus(rawName, confirmed),
-        note: '',
-      };
+      return [
+        {
+          name: rawName,
+          original,
+          confirmed,
+          usageTime,
+          target,
+          group,
+          order,
+          pad,
+          checked,
+          allowedColors,
+          status: getDutyMatchStatus(rawName, confirmed),
+          note: '',
+        },
+      ];
     });
     if (!entries.length) {
       logRosterEvent('adminDutyNoNamesLog', 'warn', { label }, { localOnly: true });

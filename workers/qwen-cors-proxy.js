@@ -30,7 +30,7 @@ import { authenticateFirebaseRequest } from './ai/firebase-jwt.js';
 //   RATE_LIMIT_MAX_REQUESTS=30
 //   MAX_BODY_BYTES=5242880
 
-const WORKER_BUILD_ID = '2026-07-17.3';
+const WORKER_BUILD_ID = '2026-09-17.1';
 const DEFAULT_DASHSCOPE_BASE_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
 const DEFAULT_DASHSCOPE_MODEL = 'qwen-vl-plus';
 const APP_CHECK_JWKS_URL = 'https://firebaseappcheck.googleapis.com/v1beta/jwks';
@@ -1748,13 +1748,20 @@ function validatePayload(payload, env) {
   return errors;
 }
 
-function shouldTryNextDashscopeAttempt(status, responseBody) {
+export function shouldTryNextDashscopeAttempt(status, responseBody) {
   const text = String(responseBody || '');
   if (status === 408 || status === 409 || status === 425 || status === 429 || status >= 500)
     return true;
   if (status === 401 || status === 403) return true;
+  // DashScope reports an unpaid or empty account as HTTP 400 with code
+  // "Arrearage" ("Access denied, please make sure your account is in good
+  // standing"). That is exactly when the second key should be tried, but none of
+  // the words below matched it, so a primary account out of balance failed the
+  // upload outright while a funded fallback key sat unused.
   if (status === 400)
-    return /quota|rate|limit|capacity|temporar|unavailable|model|not found|not exist/i.test(text);
+    return /quota|rate|limit|capacity|temporar|unavailable|model|not found|not exist|arrearage|good standing|overdue|balance|insufficient/i.test(
+      text
+    );
   return false;
 }
 

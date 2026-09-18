@@ -258,6 +258,9 @@ const ru = {
   adminDutyManualPaste: 'Вставить вручную',
   adminDutyMatchUnmatchedOption: '-- Не сопоставлено --',
   adminDutyManualCorrectionPh: 'Ручная корректировка',
+  adminDutyAddNameRow: '+ Добавить имя',
+  adminDutyAddNameRowTitle:
+    'Добавить ещё одно имя для той же цели, например если на ней использовали два знамени',
   adminDutyUsageTimeTitle: 'Время использования',
   adminDutyTarget: 'Цель',
   adminDutyTargetTitle: 'Цель или строение',

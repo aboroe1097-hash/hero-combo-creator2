@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const renderSource = readFileSync('js/ocr-render.js', 'utf8');
-const dashboardCss = readFileSync('css/ocr-dashboard.css', 'utf8');
+// The dashboard's styles are split: shared rules, then admin-only rules.
+const dashboardCss = ['css/ocr-dashboard.css', 'css/ocr-dashboard-admin.css']
+  .map((file) => readFileSync(file, 'utf8'))
+  .join('');
 const mobileCss = readFileSync('css/mobile.css', 'utf8');
 
 test('Admin weighted and attack lists use a 10-row start with 25-row increments', () => {

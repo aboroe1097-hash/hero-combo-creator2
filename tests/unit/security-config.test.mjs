@@ -806,9 +806,10 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   // v14 adds the standalone Arcade, Battle Simulator, Specialization Towers, and
   // Profile entries, the global command palette, and the two small Velo layers
   // needed by Eden's first-paint loader. 15.0.0 adds the Eden X2 season route
-  // and its stylesheet. Keep a measured margin without letting the shell grow
-  // unbounded.
-  assert.ok(urls.length <= 63, `expected bounded app shell, found ${urls.length} URLs`);
+  // and its stylesheet. 16.0.15 adds the admin-only dashboard stylesheet that
+  // VTS Admin links after ocr-dashboard.css. Keep a measured margin without
+  // letting the shell grow unbounded.
+  assert.ok(urls.length <= 64, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));

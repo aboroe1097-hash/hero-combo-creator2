@@ -1332,8 +1332,8 @@ export function findBestMatch(name, minConfidence = 100) {
       Moldo: 'Moldo1313',
       'Uzumaki 1097 R4': '!!Uzumaki!!',
       // This is the player's in-game name, not just a Viber tag, so keep the @.
-      Sheselkie: '@Sheselkie',
-      sheselkie: '@Sheselkie',
+      Sheselkie: 'La Scimmia',
+      sheselkie: 'La Scimmia',
       // Duty owner tags for RedBull route to the manager/main account. Decorated
       // account names above still preserve the explicit main/secondary split.
       RedBull: 'REDBULLS',
@@ -1666,11 +1666,13 @@ function isRedBullDutyOwner(value) {
 // The note must resolve to a KNOWN player to earn credit — unresolved parenthetical
 // text ("needs help", "bubbles") is a chat note, not an operator.
 // A duty cell can name several players who shared one target: "Kika + DVD181",
-// "Kika & loony". The separator needs whitespace on both sides, because "+" and
-// "&" also occur inside real names ("Ar Ran Dil +62", "Bonny&Clyde"), and a cell
-// that is itself a confirmed account name is never split.
-const DUTY_PLAYER_SEPARATOR = /\s+[+&]\s+/;
-function splitDutyCellPlayers(text) {
+// "Kika & loony", "Anne, Roha". "+" and "&" need whitespace on both sides because
+// they also occur inside real names ("Ar Ran Dil +62", "Bonny&Clyde"); a comma
+// needs a space after it. A cell that is itself a confirmed account name is
+// never split. The duty review modal uses this too, so a row split there and a
+// cell credited here agree on where one player ends and the next begins.
+const DUTY_PLAYER_SEPARATOR = /\s+[+&]\s+|\s*,\s+/;
+export function splitDutyCellPlayers(text) {
   const value = String(text || '').trim();
   if (!value || resolveConfirmedPlayerAlias(value) || !DUTY_PLAYER_SEPARATOR.test(value)) {
     return value ? [value] : [];

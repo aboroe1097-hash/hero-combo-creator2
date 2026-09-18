@@ -45,6 +45,12 @@ function chunkNameFor(id) {
   if (normalizedId.includes('/js/heroes-info.js')) return 'heroes-info';
   if (normalizedPath.endsWith('/js/eden-map.js')) return 'eden-map';
   if (normalizedPath.endsWith('/js/ocr-dashboard.js')) return 'ocr-dashboard';
+  // Admin-only dashboard rules. As part of admin.html's own bundle they
+  // would load before the shared ocr-dashboard stylesheet they were split
+  // from and lose every tie to it; a chunk of their own loads after it.
+  if (normalizedPath.endsWith('/css/ocr-dashboard-admin.css')) {
+    return 'ocr-dashboard-admin-styles';
+  }
   if (normalizedPath.endsWith('/js/app-research.js')) return 'research';
   if (normalizedPath.endsWith('/js/app-artifact.js')) return 'artifact';
   if (normalizedPath.endsWith('/js/app-hero-atlas.js')) return 'hero-atlas';
