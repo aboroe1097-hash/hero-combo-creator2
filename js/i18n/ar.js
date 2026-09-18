@@ -256,6 +256,8 @@ const ar = {
   adminDutyManualPaste: 'لصق يدوي',
   adminDutyMatchUnmatchedOption: '-- غير مطابق --',
   adminDutyManualCorrectionPh: 'تصحيح يدوي',
+  adminDutyAddNameRow: '+ إضافة اسم',
+  adminDutyAddNameRowTitle: 'أضف اسماً آخر لنفس الهدف، مثلاً عند استخدام رايتين عليه',
   adminDutyUsageTimeTitle: 'وقت الاستخدام',
   adminDutyTarget: 'الهدف',
   adminDutyTargetTitle: 'الهدف أو الهيكل',

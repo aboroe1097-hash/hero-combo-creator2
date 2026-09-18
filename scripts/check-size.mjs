@@ -354,7 +354,11 @@ const LIMITS = {
     // 16.0.11 duty scoring weights: the superadmin editor is a dashboard panel,
     // so its styles land on Admin. 681.1/776.2 KiB after trimming token
     // fallbacks out of it; lift desktop by 1 KiB, mobile ceiling untouched.
-    'admin.html': { desktop: 682 * 1024, mobile: 785 * 1024 },
+    // 16.0.14 mobile pass: the admin suggestion filter row shipped in 16.0.9
+    // with no styles at all, so this adds the rules it always needed plus the
+    // dashboard-wide [hidden] guard. 682.0/785.0 KiB, exactly on both ceilings;
+    // lift each by 1 KiB rather than shipping with none.
+    'admin.html': { desktop: 683 * 1024, mobile: 786 * 1024 },
     // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
     // Eden imports the same dashboard stylesheet for weighted-contribution
     // detail, so the Admin-only panel styles are present in its CSS graph even
@@ -364,10 +368,18 @@ const LIMITS = {
     // consolidation (was 802.0/898.1); ceilings unchanged per D1.
     // 16.0.3: 802.9/899.0 KiB after the shared summary and season filter rules
     // (was 801.9/898.0); both Eden routes keep roughly 1 KiB of headroom.
-    'eden-x1.html': { desktop: 804 * 1024, mobile: 909 * 1024 },
+    // 16.0.14 mobile pass: the admin suggestion controls and the dashboard-wide
+    // [hidden] guard live in ocr-dashboard.css, which Eden imports for
+    // weighted-contribution detail, so they land here even though the public
+    // route never renders those panels. 804.8/900.0 KiB; lift desktop by 1 KiB
+    // and leave the mobile ceiling, which keeps 9 KiB of headroom, untouched.
+    // The duty review "Add name" control lands here the same way: 805.0 KiB,
+    // exactly on the ceiling. Lift desktop to 806 KiB. The lasting fix is to move
+    // admin-only rules out of the stylesheet Eden shares, not to keep lifting.
+    'eden-x1.html': { desktop: 806 * 1024, mobile: 909 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 804 * 1024, mobile: 909 * 1024 },
+    'eden-x2.html': { desktop: 806 * 1024, mobile: 909 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

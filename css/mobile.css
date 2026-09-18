@@ -5414,3 +5414,47 @@ body.keyboard-open .a2hs-banner {
     font-size: 0.75rem !important;
   }
 }
+
+/* ---- 16.0.13 mobile pass ---- */
+
+/* Bottom-dock labels were being sliced mid-glyph. "Heroes & Combos Hub" wraps to
+   three lines (37px) inside a 62px pill that clips its overflow, so the last
+   line showed as a row of cut-off letter tops. Clamp to two lines and ellipsize:
+   losing "Hub" to an ellipsis reads as deliberate, half a letter does not. */
+@media (max-width: 768px) {
+  #app .tool-nav-shell .tab-pill > span:not([class]) {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Hero card badge row overflowed its own card: 111px of badges in 82px of space
+   between the 7px insets, so the season chip, skin chip and PAID pill collided
+   over the portrait. Shrink the chips on narrow screens rather than letting them
+   spill — the card is 96px wide and cannot hold three full-size badges. */
+@media (max-width: 480px) {
+  .hero-card-badges {
+    gap: 3px;
+    min-height: 22px;
+  }
+  .hero-card-badges .hero-tag,
+  .hero-card-badges .paid-badge,
+  .hero-card-badges .generator-skin-badge,
+  .hero-card-badges .generator-skin-toggle {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 0.56rem;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hero-card-badges .paid-badge-text {
+    /* The gem already says "paid"; the word is what pushes the row over. */
+    display: none;
+  }
+}

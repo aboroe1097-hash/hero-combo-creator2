@@ -261,6 +261,9 @@ const es = {
   adminDutyManualPaste: 'Pegado manual',
   adminDutyMatchUnmatchedOption: '-- Sin coincidencia --',
   adminDutyManualCorrectionPh: 'Correccion manual',
+  adminDutyAddNameRow: '+ Añadir nombre',
+  adminDutyAddNameRowTitle:
+    'Añade otro nombre para este mismo objetivo, por ejemplo si se usaron dos estandartes en él',
   adminDutyUsageTimeTitle: 'Hora de uso',
   adminDutyTarget: 'Objetivo',
   adminDutyTargetTitle: 'Objetivo o estructura',
