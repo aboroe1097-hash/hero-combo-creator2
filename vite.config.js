@@ -43,7 +43,6 @@ function chunkNameFor(id) {
     return 'specialization-towers-data';
   }
   if (normalizedId.includes('/js/heroes-info.js')) return 'heroes-info';
-  if (normalizedPath.endsWith('/js/eden-map.js')) return 'eden-map';
   if (normalizedPath.endsWith('/js/ocr-dashboard.js')) return 'ocr-dashboard';
   // Admin-only dashboard rules. As part of admin.html's own bundle they
   // would load before the shared ocr-dashboard stylesheet they were split
@@ -55,11 +54,12 @@ function chunkNameFor(id) {
   // needs it. Named after its folder it would read as the lazy Materials
   // feature, which the size check forbids index.html from preloading.
   if (normalizedPath.endsWith('/js/i18n/dm-materials/index.js')) return 'i18n-dm-catalog';
-  if (normalizedPath.endsWith('/js/app-research.js')) return 'research';
-  if (normalizedPath.endsWith('/js/app-artifact.js')) return 'artifact';
-  if (normalizedPath.endsWith('/js/app-hero-atlas.js')) return 'hero-atlas';
-  if (normalizedPath.endsWith('/js/app-export.js') || normalizedId.includes('html2canvas'))
-    return 'export';
+  // app-research, app-artifact, app-hero-atlas and app-export are dynamic
+  // imports, so they already get chunks of their own. Naming them in a group
+  // as Rollup's manualChunks did makes Rolldown leave a separate entry chunk
+  // holding their private dependencies, and the two import each other: the
+  // Hero Atlas then evaluated before its help-text tables existed.
+  if (normalizedId.includes('html2canvas')) return 'export';
   return null;
 }
 

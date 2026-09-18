@@ -321,13 +321,13 @@ const LIMITS = {
   // The Royal Bounty guide's eleven locale chunks emit 701 files; keep three of
   // headroom on the same principle.
   // Vite 8 (Rolldown) splits shared modules into more, smaller chunks and
-  // emits 731 files. Measured cold-cache on a throttled phone profile (390px,
+  // emits 726 files. Measured cold-cache on a throttled phone profile (390px,
   // 150 ms latency, 1.6 Mbps, 4x CPU, HTTP/1.1 preview, median of 5) against
-  // the Vite 6 build of the same commit, first paint and load both held or
-  // improved: index FCP 3444 -> 2980 ms, load 4490 -> 4344 ms; admin FCP
-  // 3104 -> 3088 ms, load 5140 -> 5057 ms; Eden X1 FCP 3292 -> 2740 ms, load
-  // 6024 -> 5763 ms. Keep three of headroom.
-  deployFileCount: 734,
+  // the Vite 6 build of the same code, first paint improved everywhere and
+  // load held: index FCP 3144 -> 2912 ms, load 4220 -> 4145 ms; admin FCP
+  // 3016 -> 2920 ms, load 4864 -> 4820 ms; Eden X1 FCP 2984 -> 2540 ms, load
+  // 5469 -> 5551 ms. Keep three of headroom.
+  deployFileCount: 729,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
