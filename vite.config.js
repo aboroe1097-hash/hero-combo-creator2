@@ -8,7 +8,7 @@ const __dirname = import.meta.dirname;
 const aiLauncherCriticalCss = resolve(__dirname, 'public/ai-launcher-critical.css');
 
 // Which named chunk a module belongs to, or null to let the bundler place it.
-// Unchanged from the Rollup manualChunks function this replaced.
+// Ported from the Rollup manualChunks function this replaced.
 function chunkNameFor(id) {
   const normalizedId = id.replace(/\\/g, '/');
   const normalizedPath = normalizedId.split(/[?#]/u, 1)[0];
@@ -51,6 +51,10 @@ function chunkNameFor(id) {
   if (normalizedPath.endsWith('/css/ocr-dashboard-admin.css')) {
     return 'ocr-dashboard-admin-styles';
   }
+  // The English DM catalog is imported statically by en.js, so every page
+  // needs it. Named after its folder it would read as the lazy Materials
+  // feature, which the size check forbids index.html from preloading.
+  if (normalizedPath.endsWith('/js/i18n/dm-materials/index.js')) return 'i18n-dm-catalog';
   if (normalizedPath.endsWith('/js/app-research.js')) return 'research';
   if (normalizedPath.endsWith('/js/app-artifact.js')) return 'artifact';
   if (normalizedPath.endsWith('/js/app-hero-atlas.js')) return 'hero-atlas';

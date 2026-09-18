@@ -98,7 +98,7 @@ c8ea4f92 Release 12.4.1
 
 | Tool | Config File | Status |
 |------|-------------|--------|
-| ESLint | `.eslintrc.json` | Configured for ES module JS |
+| ESLint | `eslint.config.js` | Flat config for ES module JS (ESLint 10) |
 | Prettier | `.prettierrc.json` | Configured |
 | Playwright | `playwright.config.js` | Smoke tests configured |
 | Vite | `vite.config.js` | Build tool |
