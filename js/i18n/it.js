@@ -590,6 +590,8 @@ const it = {
     'Apri un gioco in una nuova scheda. I giochi di avvio sono prototipi locali che usano icone dei materiali DM, illustrazioni delle ali degli stivali e icone delle skin degli eroi. Monitoraggio combo e tastiera unificata in tutte le modalità.',
   adminShieldWallAddNames: 'Aggiungi nomi',
   adminShieldWallEmpty: 'Ancora nessun record Shield Wall.',
+  adminShieldWallDropZone: 'Trascina qui lo screenshot della lista Shield Wall o fai clic su Carica immagine',
+  adminShieldWallScanning: 'Scansione della lista Shield Wall...',
   adminDutySummaryTitle: 'Riepilogo incarichi',
   adminDutySummaryEmpty:
     'Le presenze agli incarichi verranno riepilogate qui dopo il salvataggio dei record.',

@@ -2687,9 +2687,45 @@
                 <path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3z" /></svg
               ><span data-i18n="adminShieldWallTitle">Shield Wall</span>
             </h2>
-            <button id="dashShieldWallPasteBtn" class="dash-btn dash-btn-primary">
-              <span data-i18n="adminShieldWallAddNames">Add Names</span>
-            </button>
+            <div class="dash-card-actions">
+              <button id="dashShieldWallPasteBtn" class="dash-btn">
+                <span data-i18n="adminShieldWallAddNames">Add Names</span>
+              </button>
+              <button id="dashShieldWallUploadBtn" class="dash-btn dash-btn-primary">
+                <span data-i18n="adminContributionUploadImage">Upload Image</span>
+              </button>
+            </div>
+          </div>
+          <div
+            id="dashShieldWallDropZone"
+            class="dash-roster-dropzone"
+            role="button"
+            tabindex="0"
+            data-i18n-aria="adminShieldWallDropZone"
+            aria-label="Drop a shield wall list screenshot here, or click Upload Image"
+          >
+            <span data-i18n="adminShieldWallDropZone"
+              >Drop a shield wall list screenshot here, or click Upload Image</span
+            >
+            <input
+              id="dashShieldWallFileInput"
+              name="shieldWallScreenshots"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+              multiple
+              hidden
+            />
+          </div>
+          <div
+            id="dashShieldWallProgress"
+            class="dash-roster-progress hidden"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="spinner"></span
+            ><span id="dashShieldWallProgressText" data-i18n="adminShieldWallScanning"
+              >Scanning shield wall list...</span
+            >
           </div>
           <div id="dashShieldWallListSummary"></div>
           <div id="dashShieldWallBody">

@@ -457,6 +457,8 @@ const en = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'Add Names',
   adminShieldWallEmpty: 'No shield wall records yet.',
+  adminShieldWallDropZone: 'Drop a shield wall list screenshot here, or click Upload Image',
+  adminShieldWallScanning: 'Scanning shield wall list...',
   adminDutySummaryTitle: 'Duty Summary',
   adminDutySummaryEmpty: 'Duty appearances will summarize here after records are saved.',
   adminDutySummaryPlayer: 'Player',

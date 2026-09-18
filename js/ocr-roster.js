@@ -1299,6 +1299,8 @@ const DUTY_TYPES = {
     labelKey: 'adminShieldWallTitle',
     singularKey: 'adminDutyShieldWallSingular',
     bodyId: 'dashShieldWallBody',
+    progressId: 'dashShieldWallProgress',
+    progressTextId: 'dashShieldWallProgressText',
   },
 };
 
@@ -1491,6 +1493,9 @@ function parseDutyEntryFromLine(line, context = {}) {
   };
 }
 
+const DUTY_SHIFT_HEADING =
+  /^((?:morning|afternoon|evening|night|day)(?:\s+shift)?|shift\s*\d+)\s*:?\s*$/i;
+
 function parseDutyEntriesFromText(text) {
   const entries = [];
   const context = { group: '', groupCount: '' };
@@ -1500,6 +1505,16 @@ function parseDutyEntriesFromText(text) {
       const groupMatch = String(line || '')
         .trim()
         .match(/^([^:[\]]+):(?:\s*\[([^\]]+)\])?\s*$/);
+      // Shield wall lists head each shift with a bare "Morning" or "Evening",
+      // often without the colon other headings carry.
+      const shiftHeading = String(line || '')
+        .trim()
+        .match(DUTY_SHIFT_HEADING);
+      if (shiftHeading) {
+        context.group = shiftHeading[1].trim();
+        context.groupCount = '';
+        return;
+      }
       if (groupMatch && !/^\d+[.)-]/.test(String(line || '').trim())) {
         context.group = groupMatch[1].trim();
         context.groupCount = String(groupMatch[2] || '').trim();
@@ -1856,10 +1871,11 @@ Rules:
 - When a row starts with a time like +23.25, +23:55, +2, +2.35, +3, +4, or +8, convert it to HH:MM as the "time" field.
 - Put the structure or assignment between the time and name in "target", for example "Gate l5", "Gate l2", or "bridge".
 - For speed tile plans, preserve section headings like Pink, Yellow, Light Green, Dark Green, or Other as "group"; preserve list order numbers as "order"; preserve [Pad: 1253:645] as "pad"; preserve color brackets as "allowedColors"; set "checked" true when a green check mark is visible.
+- For shield wall lists, preserve shift headings like Morning or Evening as "group" for the names under them.
 - If the row has no target, use an empty string.
 - Ignore headers, roles, scores, alliance names, and decorative text.
 - Preserve symbols and spacing in names when visible.
-- Remove duplicates.
+- Remove exact duplicate rows only. The same name under a different heading, shift, time, or target is a separate row.
 - If no player names are visible, return {"entries":[]}.`;
       const raw = await qwenVisionRequest([
         {
@@ -4391,6 +4407,7 @@ export {
   loadDutyRecords,
   saveDutyRecords,
   getDutySuggestions,
+  parseDutyEntriesFromText,
   showDutyPasteForm,
   showDutyConfirmModal,
   processDutyImages,

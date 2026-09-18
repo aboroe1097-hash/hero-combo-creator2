@@ -2660,6 +2660,8 @@ Object.assign(id, {
   adminShieldWallTitle: 'Dinding Perisai',
   adminShieldWallAddNames: 'Tambahkan nama',
   adminShieldWallEmpty: 'Belum ada catatan Dinding Perisai.',
+  adminShieldWallDropZone: 'Letakkan screenshot daftar Dinding Perisai di sini atau klik Unggah Gambar',
+  adminShieldWallScanning: 'Memindai daftar Dinding Perisai…',
   adminDutyUnsupportedImageLog:
     'Tidak ada gambar {label} yang didukung. Gunakan PNG, JPG, atau WebP. Ditolak: {files}',
   adminDutyNoImageSelectedLog: 'Belum ada gambar {label} yang dipilih.',

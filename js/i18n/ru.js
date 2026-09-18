@@ -241,6 +241,8 @@ const ru = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'Добавить имена',
   adminShieldWallEmpty: 'Записей стены щитов пока нет.',
+  adminShieldWallDropZone: 'Перетащите сюда скриншот списка стены щитов или нажмите «Загрузить изображение»',
+  adminShieldWallScanning: 'Сканирование списка стены щитов...',
   adminDutySummaryTitle: 'Сводка дежурств',
   adminDutySummaryEmpty: 'Появления в дежурствах будут показаны здесь после сохранения записей.',
   adminDutySummaryPlayer: 'Игрок',

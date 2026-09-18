@@ -236,6 +236,8 @@ const zh = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: '添加名称',
   adminShieldWallEmpty: '还没有盾墙记录。',
+  adminShieldWallDropZone: '将盾墙名单截图拖到这里，或点击上传图片',
+  adminShieldWallScanning: '正在扫描盾墙名单...',
   adminDutySummaryTitle: '值勤摘要',
   adminDutySummaryEmpty: '保存记录后，这里会汇总值勤出席情况。',
   adminDutySummaryPlayer: 'Player',
