@@ -122,7 +122,7 @@ test('feature-owned light themes use readable action colors', () => {
 
 test('standalone lobby and footer have explicit light surfaces', () => {
   const arcade = read('css/arcade.css');
-  const dashboard = read('css/ocr-dashboard.css');
+  const dashboard = read('css/ocr-dashboard.css') + read('css/ocr-dashboard-admin.css');
   const footer = read('css/standalone-footer-v14.css');
   const eden = read('tabs/eden-map.html');
 

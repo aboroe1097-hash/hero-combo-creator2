@@ -1,10 +1,29 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.15";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.15",
+    "date": "2026-09-17",
+    "highlights": [
+      "The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashb…"
+    ]
+  },
+  {
+    "version": "16.0.14",
+    "date": "2026-09-16",
+    "highlights": [
+      "Fixed the mobile bottom dock slicing its own labels. \"Heroes & Combos Hub\" wrapped to three lines inside a pill that hides overflow, so the last line rendered as cut-off letter tops; labels now clamp to two lines with an ellipsis and fit.",
+      "Fixed hero card badges overflowing their card at 375px, where 111px of chips had 82px to sit in and the season chip, skin chip and PAID pill collided over the portrait. The chips shrink below 480px and the paid pill keeps its gem without the word.",
+      "Styled the admin suggestion filter row, which shipped in 16.0.9 with no CSS at all, so the filter pills sat on top of the \"Show\" label. Show all and Approve all also stayed on screen with nothing to act on, because a dashboard rule outranked the browser's own [hidden] handling; …",
+      "That guard also restores two hidden states the same specificity bug had been defeating: the superadmin-only dashboard navigation no longer renders for admins who are not superadmins, and Publish and Unpublish no longer appear on an archived workspace that cannot accept either.",
+      "Eden X2 scoring: Kika's two decorated main-account spellings now pool into her family, and Take Ur Shin, the account now named Anne, pools into Anne's family together with its conduct penalty. That leaves no answered name scoring for nobody.",
+      "Banner, Pather and Shield Wall review rows have an \"Add name\" control for a target that used two banners. It adds a second row for the same target, time and group; when the uploaded cell already holds two names (\"Anne, Roha\") the row splits between them. Comma-separated cells al…"
+    ]
+  },
   {
     "version": "16.0.13",
     "date": "2026-09-15",
@@ -69,21 +88,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-07",
     "highlights": [
       "Removed the dead Firebase importmap from the Home, VTS Admin and VtsScore pages. It pinned firebase/* to gstatic 11.6.1 and resolved nothing — every page here is a Vite input, so bare specifiers are rewritten at build time — but it stood ready to load a second copy of the SDK be…"
-    ]
-  },
-  {
-    "version": "16.0.5",
-    "date": "2026-09-07",
-    "highlights": [
-      "Fixed every role grant in Users & Roles failing with \"Service functions is not available\". The setUserRole bridge loaded firebase-functions from the gstatic CDN while the app itself is built from the bundled SDK, and a CDN module is a separate instance of @firebase/app: it regis…"
-    ]
-  },
-  {
-    "version": "16.0.4",
-    "date": "2026-09-07",
-    "highlights": [
-      "Fixed sign-in reporting a failure after it had already succeeded. The profile re-render shared one try/catch with the sign-in call, so a Firestore hiccup while loading the freshly signed-in account announced \"Something went wrong. Try again.\" on the sign-in form. Members read th…",
-      "Unrecognised sign-in errors now name themselves. Every distinct failure used to render as the same bare sentence, so a screenshot could not distinguish a network drop from a permission error. The translated sentence now carries the error code; the raw Firebase message is still n…"
     ]
   }
 ].map((release) =>

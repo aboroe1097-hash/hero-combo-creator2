@@ -299,6 +299,12 @@ function playerFamilyKey(accountKey) {
   // Victoria is a Kika account (owner-confirmed). It shares attacks with a plain
   // "Kika" row, so it is a second account in the family, not another spelling.
   if (key === 'victoria') return 'kika';
+  // Owner-confirmed 2026-09-17. Kika owns both decorated spellings (her two
+  // main accounts), and Take Ur Shin is the account now named Anne, alongside
+  // the older Anne account. All are family links, not renames: each shares
+  // attacks or lists with another account in the same family.
+  if (key === 'sharakikas' || key === 'sskikass') return 'kika';
+  if (key === 'takeurshin') return 'anne';
   return key;
 }
 

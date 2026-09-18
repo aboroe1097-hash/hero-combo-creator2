@@ -287,6 +287,9 @@ const fr = {
   adminDutyManualPaste: 'Manual paste',
   adminDutyMatchUnmatchedOption: '-- Unmatched --',
   adminDutyManualCorrectionPh: 'Manual correction',
+  adminDutyAddNameRow: '+ Ajouter un nom',
+  adminDutyAddNameRowTitle:
+    'Ajouter un autre nom pour cette même cible, par exemple si deux bannières y ont été utilisées',
   adminDutyUsageTimeTitle: 'Usage time',
   adminDutyTarget: 'Target',
   adminDutyTargetTitle: 'Target or structure',

@@ -256,6 +256,9 @@ const id = {
   adminDutyManualPaste: 'Manual paste',
   adminDutyMatchUnmatchedOption: '-- Unmatched --',
   adminDutyManualCorrectionPh: 'Manual correction',
+  adminDutyAddNameRow: '+ Tambah nama',
+  adminDutyAddNameRowTitle:
+    'Tambahkan nama lain untuk target yang sama, misalnya jika dua panji dipakai di sana',
   adminDutyUsageTimeTitle: 'Usage time',
   adminDutyTarget: 'Target',
   adminDutyTargetTitle: 'Target or structure',

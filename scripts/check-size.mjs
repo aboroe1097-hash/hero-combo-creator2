@@ -354,20 +354,26 @@ const LIMITS = {
     // 16.0.11 duty scoring weights: the superadmin editor is a dashboard panel,
     // so its styles land on Admin. 681.1/776.2 KiB after trimming token
     // fallbacks out of it; lift desktop by 1 KiB, mobile ceiling untouched.
-    'admin.html': { desktop: 682 * 1024, mobile: 785 * 1024 },
-    // The 15.0.4 mobile dock row layout adds ~0.4 KiB to the Eden route.
-    // Eden imports the same dashboard stylesheet for weighted-contribution
-    // detail, so the Admin-only panel styles are present in its CSS graph even
-    // though the public route never renders those panels. CI measures roughly
-    // 800.2 KiB for X1 and 799.0 KiB for X2 after minification.
-    // 16.0.0 token authority: 801.5/897.6 KiB after the frost-token
-    // consolidation (was 802.0/898.1); ceilings unchanged per D1.
-    // 16.0.3: 802.9/899.0 KiB after the shared summary and season filter rules
-    // (was 801.9/898.0); both Eden routes keep roughly 1 KiB of headroom.
-    'eden-x1.html': { desktop: 804 * 1024, mobile: 909 * 1024 },
+    // 16.0.14 mobile pass: the admin suggestion filter row shipped in 16.0.9
+    // with no styles at all, so this adds the rules it always needed plus the
+    // dashboard-wide [hidden] guard. 682.0/785.0 KiB, exactly on both ceilings;
+    // lift each by 1 KiB rather than shipping with none.
+    // 16.0.15 admin/Eden stylesheet split: admin-only dashboard rules now load
+    // from their own chunk, and every rule that keeps an @media wrapper needs
+    // that wrapper repeated there. 682.8/779.5 KiB; lift desktop by 1 KiB so
+    // Admin keeps some headroom, mobile ceiling untouched.
+    'admin.html': { desktop: 684 * 1024, mobile: 786 * 1024 },
+    // Eden used to carry every admin dashboard style, because it imports
+    // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
+    // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
+    // 1,144 rules no Eden page can match into css/ocr-dashboard-admin.css, which
+    // only Admin loads: 663.0/759.7 KiB (was 805.0/901.7). Ceilings keep
+    // roughly 1 KiB of headroom. Admin-only dashboard rules belong in the admin
+    // file; adding them to ocr-dashboard.css is what this budget now catches.
+    'eden-x1.html': { desktop: 664 * 1024, mobile: 761 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 804 * 1024, mobile: 909 * 1024 },
+    'eden-x2.html': { desktop: 664 * 1024, mobile: 761 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

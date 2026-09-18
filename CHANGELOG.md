@@ -3,6 +3,21 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.15 - 2026-09-17
+
+- The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashboard-admin.css, which only VTS Admin loads, in its own chunk directly after the shared rules so the admin cascade is unchanged. A computed-style comparison of more than 23,000 elements on Admin and both Eden pages, at desktop and mobile widths, found no differences beyond animation timing.
+
+## 16.0.14 - 2026-09-16
+
+- Fixed the mobile bottom dock slicing its own labels. "Heroes & Combos Hub" wrapped to three lines inside a pill that hides overflow, so the last line rendered as cut-off letter tops; labels now clamp to two lines with an ellipsis and fit.
+- Fixed hero card badges overflowing their card at 375px, where 111px of chips had 82px to sit in and the season chip, skin chip and PAID pill collided over the portrait. The chips shrink below 480px and the paid pill keeps its gem without the word.
+- Styled the admin suggestion filter row, which shipped in 16.0.9 with no CSS at all, so the filter pills sat on top of the "Show" label. Show all and Approve all also stayed on screen with nothing to act on, because a dashboard rule outranked the browser's own [hidden] handling; a dashboard-wide guard stops that recurring.
+- That guard also restores two hidden states the same specificity bug had been defeating: the superadmin-only dashboard navigation no longer renders for admins who are not superadmins, and Publish and Unpublish no longer appear on an archived workspace that cannot accept either.
+- Eden X2 scoring: Kika's two decorated main-account spellings now pool into her family, and Take Ur Shin, the account now named Anne, pools into Anne's family together with its conduct penalty. That leaves no answered name scoring for nobody.
+- Banner, Pather and Shield Wall review rows have an "Add name" control for a target that used two banners. It adds a second row for the same target, time and group; when the uploaded cell already holds two names ("Anne, Roha") the row splits between them. Comma-separated cells also credit each named player when scored.
+- "She selkie", La Scimmia's Viber name, now resolves to La Scimmia in duty lists.
+- Image uploads now fall back to the second Qwen (DashScope) key when the first account is out of balance, instead of failing while a funded key sat unused. The OCR worker is redeployed with the fix.
+
 ## 16.0.13 - 2026-09-15
 
 - Added the Class Development Hub: the four L96 class roadmaps (Raider, Farmer, Trader, Craftsman) with a next-reset navigator and each sheet's red reset priorities, all re-read from the source sheets. Farmer's late priorities had been shifted one checkpoint, and Craftsman's carried no reset levels at all.

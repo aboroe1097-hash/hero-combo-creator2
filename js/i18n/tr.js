@@ -256,6 +256,9 @@ const tr = {
   adminDutyManualPaste: 'Manual paste',
   adminDutyMatchUnmatchedOption: '-- Unmatched --',
   adminDutyManualCorrectionPh: 'Manual correction',
+  adminDutyAddNameRow: '+ İsim ekle',
+  adminDutyAddNameRowTitle:
+    'Aynı hedef için başka bir isim ekleyin, örneğin orada iki sancak kullanıldıysa',
   adminDutyUsageTimeTitle: 'Usage time',
   adminDutyTarget: 'Target',
   adminDutyTargetTitle: 'Target or structure',

@@ -608,8 +608,9 @@ test('resolveDutyPlayerName routes cleaned duty names through the shared authori
   // Falls back to the same aliasMap / protected identities as structures.
   assert.equal(resolveDutyPlayerName('Kika-banner'), '꧁ Kika-banner ꧂'); // account stays distinct from family rollup
   assert.equal(resolveDutyPlayerName('@Maximus'), 'Maximus');
-  assert.equal(resolveDutyPlayerName('@Sheselkie'), '@Sheselkie');
-  assert.equal(resolveDutyPlayerName('@sheselkie'), '@Sheselkie');
+  // She selkie is La Scimmia's Viber name.
+  assert.equal(resolveDutyPlayerName('@Sheselkie'), 'La Scimmia');
+  assert.equal(resolveDutyPlayerName('@She selkie'), 'La Scimmia');
   assert.equal(resolveDutyPlayerName('capital @UNDEAD +'), 'UNDEAD');
   // Empty / junk-only input degrades to the trimmed raw, never throws.
   assert.equal(resolveDutyPlayerName('   '), '');
@@ -720,7 +721,7 @@ test('duplicate Kika-family rows on the same target split into separate account 
 test('expandDutyRawNames splits multi-player cells and strips structure words', () => {
   // Single @-tagged player: Viber tag stripped.
   assert.deepEqual(expandDutyRawNames('@ANGEL'), ['ANGEL']);
-  assert.deepEqual(expandDutyRawNames('gate @Sheselkie'), ['@Sheselkie']);
+  assert.deepEqual(expandDutyRawNames('gate @Sheselkie'), ['La Scimmia']);
 
   // Multi-player: "gate @redull @+ Ezeta TV" -> RedBull main + Ezeta TV.
   const multi = expandDutyRawNames('gate @redull @+ Ezeta TV');
@@ -842,4 +843,16 @@ test('a duty cell naming two players credits both, without splitting real names'
   } finally {
     Object.assign(state, previous);
   }
+});
+
+test('comma-separated duty cells split into players, and the review modal splits the same way', async () => {
+  const { splitDutyCellPlayers } = await import('../../js/ocr-shared.js');
+  assert.deepEqual(splitDutyCellPlayers('Anne, Roha'), ['Anne', 'Roha']);
+  assert.deepEqual(splitDutyCellPlayers('BigBoiiE, Pib'), ['BigBoiiE', 'Pib']);
+  assert.deepEqual(splitDutyCellPlayers('Kika + DVD181'), ['Kika', 'DVD181']);
+  // Names that merely contain a separator character stay whole.
+  assert.deepEqual(splitDutyCellPlayers('Bonny&Clyde'), ['Bonny&Clyde']);
+  assert.deepEqual(splitDutyCellPlayers('Ar Ran Dil +62'), ['Ar Ran Dil +62']);
+  assert.deepEqual(splitDutyCellPlayers('Kika'), ['Kika']);
+  assert.deepEqual(splitDutyCellPlayers(''), []);
 });
