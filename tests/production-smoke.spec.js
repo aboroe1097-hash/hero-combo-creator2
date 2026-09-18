@@ -241,9 +241,10 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   });
   expect(productionState.activeServiceWorker).toMatch(/\/sw\.js$/u);
   expect(productionState.cacheNames.some((name) => name.startsWith('vts-'))).toBe(true);
+  // Rolldown names a dynamic import's chunk after its file.
   for (const chunkName of [
-    'hero-atlas',
-    'research',
+    'app-hero-atlas',
+    'app-research',
     'material-calculator',
     'app-strife',
     'eden-map',
