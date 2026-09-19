@@ -163,6 +163,8 @@ const kr = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: '이름 추가',
   adminShieldWallEmpty: '아직 방패벽 기록이 없습니다.',
+  adminShieldWallDropZone: '방패벽 명단 스크린샷을 여기에 놓거나 이미지 업로드 클릭',
+  adminShieldWallScanning: '방패벽 명단 스캔 중...',
   adminDutySummaryTitle: '임무 요약',
   adminDutySummaryEmpty: '기록을 저장하면 임무 참여 현황이 여기에 요약됩니다.',
   adminDutySummaryPlayer: 'Player',

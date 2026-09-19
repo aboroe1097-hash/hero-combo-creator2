@@ -239,6 +239,8 @@ const ar = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'إضافة أسماء',
   adminShieldWallEmpty: 'لا توجد سجلات لجدار الدرع بعد.',
+  adminShieldWallDropZone: 'أفلت لقطة شاشة قائمة جدار الدرع هنا، أو انقر على رفع صورة',
+  adminShieldWallScanning: 'جارٍ فحص قائمة جدار الدرع...',
   adminDutySummaryTitle: 'ملخص المهام',
   adminDutySummaryEmpty: 'سيظهر ملخص الحضور في المهام هنا بعد حفظ السجلات.',
   adminDutySummaryPlayer: 'Player',

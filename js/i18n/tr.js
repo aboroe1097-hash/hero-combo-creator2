@@ -2302,6 +2302,8 @@ Object.assign(tr, {
     'Oynamak için oyunu yeni sekmede aç. Boot oyunları; DM malzeme simgeleri, boot kanat görselleri ve kahraman kostümü simgelerini kullanan yerel prototiplerdir. Tüm modlarda kombo takibi ve ortak klavye kontrolleri bulunur.',
   adminShieldWallAddNames: 'Ad Ekle',
   adminShieldWallEmpty: 'Henüz kalkan duvarı kaydı yok.',
+  adminShieldWallDropZone: 'Kalkan duvarı listesi ekran görüntüsünü buraya bırakın veya Görsel Yükle’ye tıklayın',
+  adminShieldWallScanning: 'Kalkan duvarı listesi taranıyor...',
   adminDutySummaryTitle: 'Görev Özeti',
   adminDutySummaryEmpty: 'Kayıtlar kaydedildikten sonra görev katılımları burada özetlenir.',
   adminDutySummaryPlayer: 'Oyuncu',

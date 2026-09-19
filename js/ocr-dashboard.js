@@ -8057,7 +8057,13 @@ export async function bootOcrDashboard() {
     'dashPatherListDropZone',
     'dashPatherListFileInput'
   );
-  bindDutyUpload('shield_wall', 'dashShieldWallPasteBtn', null, null, null);
+  bindDutyUpload(
+    'shield_wall',
+    'dashShieldWallPasteBtn',
+    'dashShieldWallUploadBtn',
+    'dashShieldWallDropZone',
+    'dashShieldWallFileInput'
+  );
   const contributionPasteBtn = $id('dashContributionPasteBtn');
   const contributionUploadBtn = $id('dashContributionUploadBtn');
   const contributionExportBtn = $id('dashContributionExportBtn');

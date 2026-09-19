@@ -3,6 +3,11 @@
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 
+## 16.0.16 - 2026-09-18
+
+- Shield Wall lists can now be uploaded as screenshots, the same way Banner and Pather lists are: an Upload Image button, a drop zone and a scanning indicator, in all twelve admin languages. Before this, Shield Wall only took typed or pasted names.
+- Shift headings in a Shield Wall list ("Morning", "Evening:", "Night", "Shift 2") now become the row's group instead of being read as a player called "Morning". A player on both shifts keeps a row, and a Shield Wall credit, for each one. The image reader was also told to keep those repeats instead of removing them as duplicates.
+
 ## 16.0.15 - 2026-09-17
 
 - The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashboard-admin.css, which only VTS Admin loads, in its own chunk directly after the shared rules so the admin cascade is unchanged. A computed-style comparison of more than 23,000 elements on Admin and both Eden pages, at desktop and mobile widths, found no differences beyond animation timing.
