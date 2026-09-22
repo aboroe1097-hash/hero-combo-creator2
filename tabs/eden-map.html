@@ -1,5 +1,17 @@
 <div id="edenMapRoot" class="eden-map-root" data-eden-loading-label="Loading Eden Map…">
   <nav class="vts-eden-subtab-bar" role="tablist" aria-label="VTS Eden Hub sections">
+    <!-- The current season appears only once an admin publishes its projection; eden-hub.js unhides this after that check succeeds. It leads the bar because it is what members come for during a season. -->
+    <button
+      type="button"
+      class="vts-eden-subtab-btn vts-eden-subtab-btn--season"
+      role="tab"
+      aria-selected="false"
+      data-eden-subtab="season"
+      data-eden-i18n="subTabSeason"
+      hidden
+    >
+      Current Season · Eden X2
+    </button>
     <button
       type="button"
       class="vts-eden-subtab-btn"
@@ -53,18 +65,6 @@
       data-subtool-badge="NEW" data-i18n-badge="badgeNew"
     >
       Eden Playbook
-    </button>
-    <!-- The current season appears only once an admin publishes its projection; eden-hub.js unhides this after that check succeeds. -->
-    <button
-      type="button"
-      class="vts-eden-subtab-btn"
-      role="tab"
-      aria-selected="false"
-      data-eden-subtab="season"
-      data-eden-i18n="subTabSeason"
-      hidden
-    >
-      Current Season · Eden X2
     </button>
     <button
       type="button"

@@ -222,10 +222,24 @@
 .vts-eden-hub-frame {
   display: block;
   width: 100%;
-  min-height: 78vh;
+  /* A season is a full page in its own right: give it the whole screen below
+     the hub bar instead of a short box, so it reads and scrolls like the
+     standalone page. The hub scrolls the frame to the top when it opens. */
+  height: calc(100vh - 6.5rem);
+  height: calc(100dvh - 6.5rem);
+  min-height: 420px;
   border: 0;
   border-radius: var(--radius-lg);
   background: rgba(15, 23, 42, 0.5);
+}
+
+@media (max-width: 768px) {
+  .vts-eden-hub-frame {
+    /* Leave room for the site's bottom dock on phones. */
+    height: calc(100vh - 5.75rem - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - 5.75rem - env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-md);
+  }
 }
 
 /* Footer utility migration: migrated 1:1 from Tailwind utilities, scoped to

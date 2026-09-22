@@ -5,7 +5,7 @@ import {
   resolveCanonicalPlayerIdentity,
   stripExGuildGuildTag,
 } from './ocr-name-normalizer.js';
-import { resolvePlayerRegistryFamilyKey } from './player-registry.js';
+import { currentPlayerRegistry, resolvePlayerRegistryFamilyKey } from './player-registry.js';
 import { collapseContributionOcrDuplicates } from './contribution-identity.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 
@@ -64,6 +64,7 @@ export function normalizeDutyPointWeights(raw) {
 // secondary castles, the banner accounts — is an alt. Duty still lands on the
 // person's row either way; only what it is worth changes.
 export function classifyDutyAccount(accountKey) {
+  if (resolveAccountLink(accountKey)) return 'alt';
   const familyKey = playerFamilyKey(accountKey);
   const primary = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey] || familyKey;
   const key = compactPlayerIdentity(accountKey) || String(accountKey || '');
@@ -275,11 +276,43 @@ const PRIMARY_FAMILY_ACCOUNT_KEYS = Object.freeze({
   undead: 'undead',
 });
 
+// Admin account links (banner / alt account -> the player who runs it), keyed
+// the way scoring keys accounts. Rebuilt only when the registry changes.
+const accountLinkIndexCache = new WeakMap();
+
+function accountLinkIndex() {
+  const registry = currentPlayerRegistry();
+  const cached = accountLinkIndexCache.get(registry);
+  if (cached) return cached;
+  const index = new Map();
+  (registry?.accountLinks || []).forEach((link) => {
+    const key = compactPlayerIdentity(link.account);
+    if (key) index.set(key, link);
+  });
+  accountLinkIndexCache.set(registry, index);
+  return index;
+}
+
+export function resolveAccountLink(accountKey) {
+  const key = compactPlayerIdentity(accountKey) || String(accountKey || '');
+  if (!key) return null;
+  return accountLinkIndex().get(key) || null;
+}
+
 // Group a player's multiple accounts (main / secondary / banner) into one family
 // so their duty + conduct can be consolidated onto a single main account.
 // Single-account players are their own family.
-function playerFamilyKey(accountKey) {
+function playerFamilyKey(accountKey, followLinks = true) {
   const sourceKey = String(accountKey || '');
+  // A linked account belongs to its owner's family. One hop only: the owner is
+  // resolved without links, so two links can never chase each other.
+  if (followLinks) {
+    const link = resolveAccountLink(sourceKey);
+    if (link) {
+      const ownerKey = compactPlayerIdentity(link.owner) || link.owner;
+      return playerFamilyKey(ownerKey, false);
+    }
+  }
   const registryFamily = resolvePlayerRegistryFamilyKey(sourceKey);
   if (registryFamily) return registryFamily;
   const publicProfile = getPublicVtsPlayerProfile(sourceKey);
@@ -391,6 +424,17 @@ function isBetterContributionRank(rank, currentBest) {
   return aValid && !bValid;
 }
 
+// Per-row account type chosen on upload. Rows saved before the switch existed
+// carry none and keep the account-based classification.
+export const DUTY_ENTRY_ACCOUNT_TYPES = Object.freeze(['main', 'banner']);
+
+export function dutyEntryAccountClass(entry) {
+  const type = String(entry?.accountType || '').toLowerCase();
+  if (type === 'banner') return 'alt';
+  if (type === 'main') return 'main';
+  return '';
+}
+
 export function buildWeightedDutyCounts(dutyRecords = []) {
   const counts = new Map();
 
@@ -420,8 +464,14 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
           playerKey: identity.playerKey,
           playerName: identity.playerName,
           ...emptyDutyCounts(),
+          forcedClass: emptyDutyClassCounts(),
         };
         row[bucket] += 1;
+        // The uploader said which account did this duty. "banner" scores the
+        // player's alt weight even when the list only named the player;
+        // "main" scores full weight even for a linked banner account.
+        const forced = dutyEntryAccountClass(entry);
+        if (forced) row.forcedClass[bucket][forced] += 1;
         counts.set(identity.playerKey, row);
       });
     });
@@ -648,9 +698,13 @@ export function buildWeightedContributionRows(options = {}) {
 
     const cls = classifyDutyAccount(accountKey);
     const split = familyDutyByClass.get(fam) || emptyDutyClassCounts();
-    split.shieldWalls[cls] += counts.shieldWalls;
-    split.pathers[cls] += counts.pathers;
-    split.banners[cls] += counts.banners;
+    for (const activity of DUTY_ACTIVITIES) {
+      const forced = counts.forcedClass?.[activity] || { main: 0, alt: 0 };
+      const forcedTotal = forced.main + forced.alt;
+      split[activity][cls] += Math.max(0, counts[activity] - forcedTotal);
+      split[activity].main += forced.main;
+      split[activity].alt += forced.alt;
+    }
     familyDutyByClass.set(fam, split);
   });
   const familyConduct = new Map();

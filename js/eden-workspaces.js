@@ -297,6 +297,7 @@ export function buildEdenPublicProjection(options = {}) {
     publicVoteResults = null,
     rosterSnapshots = null,
     publishedAtMs = Date.now(),
+    scoring = null,
   } = options;
   const ws = getEdenWorkspace(workspace);
   if (ws.legacy) {
@@ -317,7 +318,23 @@ export function buildEdenPublicProjection(options = {}) {
     voteSettings: pickAllowlisted(voteSettings || {}, EDEN_PROJECTION_VOTE_SETTINGS_FIELDS),
     publicVoteResults:
       publicVoteResults && typeof publicVoteResults === 'object' ? publicVoteResults : {},
+    // The admin's scoring rules travel with the season so the public page ranks
+    // players the same way. Absent on older publishes; readers then keep their
+    // previous behaviour.
+    scoring: normalizeEdenProjectionScoring(scoring),
   });
+}
+
+export function normalizeEdenProjectionScoring(scoring) {
+  if (!scoring || typeof scoring !== 'object') return undefined;
+  const out = {};
+  if (scoring.dutyPointWeights && typeof scoring.dutyPointWeights === 'object') {
+    out.dutyPointWeights = scoring.dutyPointWeights;
+  }
+  if (typeof scoring.includeDemolitionPoints === 'boolean') {
+    out.includeDemolitionPoints = scoring.includeDemolitionPoints;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 export function isPublishedEdenProjection(value) {

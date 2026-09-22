@@ -98,6 +98,10 @@ export default defineConfig({
         admin: resolve(__dirname, 'admin.html'),
         vtsscore: resolve(__dirname, 'vtsscore.html'),
         'vtsscore/index': resolve(__dirname, 'vtsscore/index.html'),
+        // Short share links: roc-vts.com/vote opens the Eden X2 ballot directly,
+        // roc-vts.com/eden opens the current season view.
+        'vote/index': resolve(__dirname, 'vote/index.html'),
+        'eden/index': resolve(__dirname, 'eden/index.html'),
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
         'eden-x2': resolve(__dirname, 'eden-x2.html'),
         arcade: resolve(__dirname, 'arcade.html'),

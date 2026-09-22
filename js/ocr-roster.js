@@ -65,11 +65,15 @@ import {
 } from './ocr-name-normalizer.js';
 import {
   buildWeightedContributionRows,
+  classifyDutyAccount,
   getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
   isImageSourceContributionNote,
+  resolveAccountLink,
 } from './contribution-weighting.js';
 import {
+  ACCOUNT_LINK_TYPES,
+  normalizeAccountLinks,
   normalizePlayerRegistry,
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
@@ -1539,18 +1543,53 @@ function parseDutyEntriesFromOcrText(text) {
   );
 }
 
+// Pasting a list needs a real multi-line box. The browser's prompt() is a
+// single-line text field, which silently strips line breaks from pasted text,
+// so a 179-row list arrived as one run-on line. The count under the box shows
+// how many rows will be read before anything is committed.
+function showPasteRowsModal({ title, hint, parse, onContinue }) {
+  const modal = $id('dashModal');
+  const body = $id('dashModalBody');
+  if (!modal || !body) return;
+  $id('dashModalTitle').textContent = title;
+  $id('dashModalSub').textContent = hint;
+  body.innerHTML = `<label class="dash-paste-rows-field">
+    <span class="sr-only">${esc(title)}</span>
+    <textarea id="dashPasteRowsInput" class="dash-input dash-paste-rows-input" rows="12" spellcheck="false" autocomplete="off"></textarea>
+  </label>
+  <p id="dashPasteRowsCount" class="dash-form-hint" role="status" aria-live="polite">${esc(adminT('adminPasteRowsCount', { count: 0 }))}</p>
+  <div class="dash-duty-modal-actions">
+    <button id="dashPasteRowsContinue" class="dash-btn dash-btn-primary" type="button" disabled>${esc(adminT('adminPasteRowsContinue'))}</button>
+    <button id="dashPasteRowsCancel" class="dash-btn" type="button">${esc(adminT('adminCancel'))}</button>
+  </div>`;
+  const input = $id('dashPasteRowsInput');
+  const count = $id('dashPasteRowsCount');
+  const next = $id('dashPasteRowsContinue');
+  let parsed = [];
+  input.addEventListener('input', () => {
+    parsed = parse(input.value);
+    count.textContent = adminT('adminPasteRowsCount', { count: parsed.length });
+    next.disabled = parsed.length === 0;
+  });
+  next.onclick = () => {
+    if (parsed.length) onContinue(parsed);
+  };
+  $id('dashPasteRowsCancel').onclick = closeModal;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => input.focus(), 0);
+}
+
 function showDutyPasteForm(type) {
   const meta = DUTY_TYPES[type];
   if (!meta) return;
   const label = dutyLabel(type);
-  const text = prompt(adminT('adminDutyPastePrompt', { label }), '');
-  if (text === null) return;
-  const entries = parseDutyEntriesFromText(text);
-  if (!entries.length) {
-    logRosterEvent('adminDutyNoNamesLog', 'warn', { label }, { localOnly: true });
-    return;
-  }
-  showDutyConfirmModal(type, entries, adminT('adminDutyManualPaste'));
+  showPasteRowsModal({
+    title: adminT('adminDutyPasteTitle', { label }),
+    hint: adminT('adminDutyPastePrompt', { label }),
+    parse: parseDutyEntriesFromText,
+    onContinue: (entries) => showDutyConfirmModal(type, entries, adminT('adminDutyManualPaste')),
+  });
 }
 
 function normalizeDutyEntries(input) {
@@ -1577,6 +1616,7 @@ function normalizeDutyEntries(input) {
             ? (item.allowedColors || item.allowed_colors).join(', ')
             : String(item.allowedColors || item.allowed_colors || '').trim(),
           status: item.status || '',
+          accountType: normalizeDutyAccountType(item.accountType),
         };
       }
       const name = String(item || '').trim();
@@ -1598,6 +1638,55 @@ function normalizeDutyEntries(input) {
     .filter((entry) => entry.name);
 }
 
+// --- Main / Banner per row -------------------------------------------------
+// Lists often name the player responsible when the duty was really done by
+// their banner account ("Angel" meaning Angel Banner). Each uploaded row says
+// which account did it; the pre-filled guess matches how the row would score
+// with no choice, except that an unlinked name containing "banner" is guessed
+// as a banner account.
+const DUTY_BANNER_NAME_RE = /bann?er/i;
+let dutyAccountSwitchSeq = 0;
+
+function normalizeDutyAccountType(value) {
+  const type = String(value || '').toLowerCase();
+  return type === 'banner' || type === 'main' ? type : '';
+}
+
+// Both the matched player and the text as uploaded count: "Roha banner" is a
+// banner row even after it is matched to ~Roha~.
+export function guessDutyAccountType(...names) {
+  const texts = names.map((name) => String(name || '').trim()).filter(Boolean);
+  if (!texts.length) return 'main';
+  for (const text of texts) {
+    if (resolveAccountLink(text) || DUTY_BANNER_NAME_RE.test(text)) return 'banner';
+    const key = compactPlayerIdentity(text);
+    if (key && classifyDutyAccount(key) === 'alt') return 'banner';
+  }
+  return 'main';
+}
+
+function dutyStatusLabel(status) {
+  const key = {
+    exact: 'adminDutyStatusExact',
+    likely: 'adminDutyStatusLikely',
+    weak: 'adminDutyStatusWeak',
+    manual: 'adminDutyStatusManual',
+    unmatched: 'adminDutyStatusUnmatched',
+  }[status];
+  return key ? adminT(key) : status;
+}
+
+function dutyStatusNeedsReview(status) {
+  return status === 'weak' || status === 'unmatched';
+}
+
+function renderDutyAccountSwitch(type) {
+  const name = `dutyAccount${(dutyAccountSwitchSeq += 1)}`;
+  const option = (value, labelKey) =>
+    `<label class="dash-duty-account-option"><input type="radio" name="${name}" value="${value}" data-duty-account${type === value ? ' checked' : ''}><span>${esc(adminT(labelKey))}</span></label>`;
+  return `<div class="dash-match-field dash-duty-account-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><div class="dash-duty-account-switch" role="radiogroup" aria-label="${esc(adminT('adminDutyAccountType'))}">${option('main', 'adminDutyAccountMain')}${option('banner', 'adminDutyAccountBanner')}</div></div>`;
+}
+
 function renderDutyMatchRows(entries) {
   return entries
     .map((entry, index) => {
@@ -1605,6 +1694,8 @@ function renderDutyMatchRows(entries) {
       const suggestions = getDutySuggestions(rawName);
       const best = entry.confirmed || suggestions[0]?.name || '';
       const status = getDutyMatchStatus(rawName, best);
+      const accountType =
+        normalizeDutyAccountType(entry.accountType) || guessDutyAccountType(best, rawName);
       const options = [`<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`]
         .concat(
           suggestions.map(
@@ -1613,14 +1704,28 @@ function renderDutyMatchRows(entries) {
           )
         )
         .join('');
-      return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
-      <div class="dash-duty-raw"><div class="dash-duty-raw-meta"><span class="dash-duty-row-number">${esc(adminT('adminDutyUploaded'))} #${index + 1}</span><button class="dash-duty-remove-row" type="button" data-duty-remove-row>${esc(adminT('adminDelete'))}</button><button class="dash-duty-add-name" type="button" data-duty-add-name title="${esc(adminT('adminDutyAddNameRowTitle'))}">${esc(adminT('adminDutyAddNameRow'))}</button></div><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyRosterMatch'))}</span><select class="dash-duty-match-select" name="dutyMatch[]">${options}</select></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyManualCorrectionPh'))}</span><input class="dash-duty-manual-input" name="dutyManualName[]" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${entry.confirmed && !suggestions.some((row) => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}" autocomplete="off"></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTime'))}</span><input class="dash-duty-time-input" name="dutyTime[]" type="text" inputmode="numeric" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}" autocomplete="off"></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTarget'))}</span><input class="dash-duty-target-input" name="dutyTarget[]" type="text" placeholder="${esc(adminT('adminDutyTarget'))}" value="${esc(entry.target || '')}" title="${esc(adminT('adminDutyTargetTitle'))}" autocomplete="off"></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyGroup'))}</span><input class="dash-duty-group-input" name="dutyGroup[]" type="text" placeholder="${esc(adminT('adminDutyGroup'))}" value="${esc(entry.group || '')}" title="${esc(adminT('adminDutyGroupTitle'))}" autocomplete="off"></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyPad'))}</span><input class="dash-duty-pad-input" name="dutyPad[]" type="text" placeholder="${esc(adminT('adminDutyPad'))}" value="${esc(entry.pad || '')}" title="${esc(adminT('adminDutyPadTitle'))}" autocomplete="off"></label>
+      const manualValue =
+        entry.confirmed && !suggestions.some((row) => row.name === entry.confirmed)
+          ? entry.confirmed
+          : '';
+      return `<div class="dash-duty-match-row" data-status="${esc(status)}" data-account-set="${entry.accountType ? '1' : ''}" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
+      <div class="dash-duty-row-head">
+        <span class="dash-duty-row-number">${esc(adminT('adminDutyUploaded'))} #${index + 1}</span>
+        <strong class="dash-duty-raw-name">${esc(rawName) || '&nbsp;'}</strong>
+        <span class="dash-duty-status-pill" data-status="${esc(status)}">${esc(dutyStatusLabel(status))}</span>
+        <span class="dash-duty-row-tools"><button class="dash-duty-add-name" type="button" data-duty-add-name title="${esc(adminT('adminDutyAddNameRowTitle'))}">${esc(adminT('adminDutyAddNameRow'))}</button><button class="dash-duty-remove-row" type="button" data-duty-remove-row>${esc(adminT('adminDelete'))}</button></span>
+      </div>
+      <div class="dash-duty-row-main">
+        <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyRosterMatch'))}</span><select class="dash-duty-match-select" name="dutyMatch[]">${options}</select></label>
+        <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyManualCorrectionPh'))}</span><input class="dash-duty-manual-input" name="dutyManualName[]" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${esc(manualValue)}" autocomplete="off"></label>
+        ${renderDutyAccountSwitch(accountType)}
+      </div>
+      <div class="dash-duty-row-details">
+        <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTime'))}</span><input class="dash-duty-time-input" name="dutyTime[]" type="text" inputmode="numeric" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}" autocomplete="off"></label>
+        <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTarget'))}</span><input class="dash-duty-target-input" name="dutyTarget[]" type="text" placeholder="${esc(adminT('adminDutyTarget'))}" value="${esc(entry.target || '')}" title="${esc(adminT('adminDutyTargetTitle'))}" autocomplete="off"></label>
+        <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyGroup'))}</span><input class="dash-duty-group-input" name="dutyGroup[]" type="text" placeholder="${esc(adminT('adminDutyGroup'))}" value="${esc(entry.group || '')}" title="${esc(adminT('adminDutyGroupTitle'))}" autocomplete="off"></label>
+        <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyPad'))}</span><input class="dash-duty-pad-input" name="dutyPad[]" type="text" placeholder="${esc(adminT('adminDutyPad'))}" value="${esc(entry.pad || '')}" title="${esc(adminT('adminDutyPadTitle'))}" autocomplete="off"></label>
+      </div>
     </div>`;
     })
     .join('');
@@ -1644,11 +1749,19 @@ function addDutyNameRow(row) {
     allowedColors: row.dataset.allowedColors || '',
   };
   const parts = splitDutyCellPlayers(row.dataset.name || '');
+  // Each name split out of a shared cell gets its own guess; an explicit
+  // choice on the row being split stays with its first name.
+  const chosenAccount =
+    row.dataset.accountSet === '1'
+      ? row.querySelector('[data-duty-account]:checked')?.value || ''
+      : '';
   const template = document.createElement('template');
   if (parts.length > 1) {
     // Re-render the current row with only its first name so its suggestions,
     // status and saved name all describe one player.
-    template.innerHTML = renderDutyMatchRows([{ ...shared, name: parts[0] }]).trim();
+    template.innerHTML = renderDutyMatchRows([
+      { ...shared, name: parts[0], accountType: chosenAccount },
+    ]).trim();
     const first = template.content.firstElementChild;
     row.replaceWith(first);
     template.innerHTML = renderDutyMatchRows([
@@ -1695,17 +1808,62 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <label>${esc(adminT('adminDutyGameTimeLabel'))}</label>
     <input type="text" id="dashDutyGameTime" name="dutyGameTime" value="${esc(existingRecord?.gameTime || '')}" placeholder="${esc(adminT('adminDutyGameTimePh'))}" inputmode="numeric" autocomplete="off" style="flex:1">
   </div>
+  <div class="dash-duty-review-bar" data-duty-review-bar aria-live="polite"></div>
   <div class="dash-duty-match-list">${renderDutyMatchRows(cleanEntries)}</div>
-  <div style="display:flex;gap:0.5rem;margin-top:1rem">
-    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT(existingRecord ? 'adminDutyUpdateRecord' : 'adminDutySaveRecord', { singular }))}</button>
-    <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
+  <div class="dash-duty-modal-actions">
+    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary">${esc(adminT(existingRecord ? 'adminDutyUpdateRecord' : 'adminDutySaveRecord', { singular }))}</button>
+    <button id="dashDutyCancelBtn" class="dash-btn">${esc(adminT('adminCancel'))}</button>
   </div>`;
+  const updateDutyReviewBar = () => {
+    const rows = Array.from(body.querySelectorAll('.dash-duty-match-row'));
+    const review = rows.filter((row) => dutyStatusNeedsReview(row.dataset.status)).length;
+    const banner = rows.filter(
+      (row) => row.querySelector('[data-duty-account]:checked')?.value === 'banner'
+    ).length;
+    const bar = body.querySelector('[data-duty-review-bar]');
+    if (!bar) return;
+    bar.innerHTML = `<span class="dash-duty-review-chip">${esc(adminT('adminDutyReviewRows', { count: rows.length }))}</span><span class="dash-duty-review-chip" data-tone="ok">${esc(adminT('adminDutyReviewMatched', { count: rows.length - review }))}</span>${review ? `<span class="dash-duty-review-chip" data-tone="warn">${esc(adminT('adminDutyReviewNeeded', { count: review }))}</span>` : ''}<span class="dash-duty-review-chip" data-tone="banner">${esc(adminT('adminDutyReviewBanner', { count: banner }))}</span>`;
+  };
   const updateDutyDraftCount = () => {
     const count = body.querySelectorAll('.dash-duty-match-row').length;
     $id('dashModalSub').textContent = adminT('adminDutyConfirmSub', { count });
     const saveBtn = $id('dashDutySaveBtn');
     if (saveBtn) saveBtn.disabled = count === 0;
+    updateDutyReviewBar();
   };
+  // Choosing a different player re-guesses Main/Banner and the status, until
+  // the reviewer sets the switch themselves.
+  const refreshDutyRow = (row) => {
+    const manual = row.querySelector('.dash-duty-manual-input')?.value.trim() || '';
+    const selected = row.querySelector('.dash-duty-match-select')?.value || '';
+    const confirmed = manual || selected;
+    const rawName = row.dataset.name || confirmed;
+    const status = getDutyMatchStatus(rawName, confirmed);
+    row.dataset.status = status;
+    const pill = row.querySelector('.dash-duty-status-pill');
+    if (pill) {
+      pill.dataset.status = status;
+      pill.textContent = dutyStatusLabel(status);
+    }
+    if (row.dataset.accountSet !== '1') {
+      const guess = guessDutyAccountType(confirmed, rawName);
+      const radio = row.querySelector(`[data-duty-account][value="${guess}"]`);
+      if (radio) radio.checked = true;
+    }
+    updateDutyReviewBar();
+  };
+  body.querySelector('.dash-duty-match-list')?.addEventListener('change', (event) => {
+    const row = event.target.closest('.dash-duty-match-row');
+    if (!row) return;
+    if (event.target.matches('[data-duty-account]')) {
+      row.dataset.accountSet = '1';
+      updateDutyReviewBar();
+      return;
+    }
+    if (event.target.matches('.dash-duty-match-select, .dash-duty-manual-input')) {
+      refreshDutyRow(row);
+    }
+  });
   const renumberDutyRows = () => {
     body.querySelectorAll('.dash-duty-match-row .dash-duty-row-number').forEach((label, index) => {
       label.textContent = `${adminT('adminDutyUploaded')} #${index + 1}`;
@@ -1748,6 +1906,9 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       const order = row.dataset.order || '';
       const checked = row.dataset.checked === '1';
       const allowedColors = row.dataset.allowedColors || '';
+      const accountType =
+        normalizeDutyAccountType(row.querySelector('[data-duty-account]:checked')?.value) ||
+        guessDutyAccountType(confirmed, rawName);
       return [
         {
           name: rawName,
@@ -1760,6 +1921,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
           pad,
           checked,
           allowedColors,
+          accountType,
           status: getDutyMatchStatus(rawName, confirmed),
           note: '',
         },
@@ -2212,6 +2374,16 @@ function renderDutyPlayerSummary(type, hostId, contributionLookup = buildDutyCon
   </div>`;
   hydrateDashboardTableLabels(host);
 }
+// Saved rows show which account the duty counts for. A row saved before the
+// switch existed shows the guess, marked as not yet confirmed.
+function renderDutyAccountChip(entry) {
+  const saved = normalizeDutyAccountType(entry?.accountType);
+  const type = saved || guessDutyAccountType(entry?.confirmed, entry?.original || entry?.name);
+  const label = adminT(type === 'banner' ? 'adminDutyAccountBanner' : 'adminDutyAccountMain');
+  const title = saved ? '' : ` title="${esc(adminT('adminDutyAccountGuessed'))}"`;
+  return `<span class="dash-duty-account-chip" data-account="${type}" data-saved="${saved ? '1' : '0'}"${title}>${esc(label)}${saved ? '' : ' ?'}</span>`;
+}
+
 function renderDutyType(type) {
   const meta = DUTY_TYPES[type];
   const body = meta ? $id(meta.bodyId) : null;
@@ -2251,7 +2423,7 @@ function renderDutyType(type) {
       </div>
       <div class="dash-banner-body">
         <table class="dash-banner-table dash-duty-detail-table">
-          <thead><tr><th>${esc(adminT('adminDutyGroup'))}</th><th>${esc(adminT('adminDutyOrder'))}</th><th>${esc(adminT('adminDutyTime'))}</th><th>${esc(adminT('adminDutyTarget'))}</th><th>${esc(adminT('adminDutyPad'))}</th><th>${esc(adminT('adminDutyUploaded'))}</th><th>${esc(adminT('adminDutyRosterMatch'))}</th><th>${esc(adminT('adminDutyStatus'))}</th></tr></thead>
+          <thead><tr><th>${esc(adminT('adminDutyGroup'))}</th><th>${esc(adminT('adminDutyOrder'))}</th><th>${esc(adminT('adminDutyTime'))}</th><th>${esc(adminT('adminDutyTarget'))}</th><th>${esc(adminT('adminDutyPad'))}</th><th>${esc(adminT('adminDutyUploaded'))}</th><th>${esc(adminT('adminDutyRosterMatch'))}</th><th>${esc(adminT('adminDutyAccountType'))}</th><th>${esc(adminT('adminDutyStatus'))}</th></tr></thead>
           <tbody>${entries
             .map(
               (entry) => `<tr>
@@ -2262,7 +2434,8 @@ function renderDutyType(type) {
             <td><span class="dash-duty-cell-value">${entry.pad ? esc(entry.pad) : entry.allowedColors ? esc(entry.allowedColors) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
             <td><span class="dash-duty-cell-value">${esc(entry.original || entry.name || '')}</span></td>
             <td><span class="dash-duty-cell-value">${entry.confirmed ? esc(entry.confirmed) : `<span style="color:var(--text-dim)">${esc(adminT('adminDutyUnmatched'))}</span>`}</span></td>
-            <td><span class="dash-duty-cell-value">${esc(entry.status || 'unmatched')}</span></td>
+            <td>${renderDutyAccountChip(entry)}</td>
+            <td><span class="dash-duty-status-pill" data-status="${esc(entry.status || 'unmatched')}">${esc(dutyStatusLabel(entry.status || 'unmatched'))}</span></td>
           </tr>`
             )
             .join('')}</tbody>
@@ -2309,7 +2482,198 @@ function renderDutySummary() {
     : `<div class="dash-empty">${esc(adminT('adminDutySummaryEmpty'))}</div>`;
 }
 
+// --- Account links ----------------------------------------------------------
+// One place to say "this banner / alt account is run by that player". Scoring
+// then credits the account's duty to its owner at the secondary weight, on
+// the admin and on the published Eden page alike. Suggestions cover the
+// "... banner" accounts nobody has linked yet, with a best-guess owner.
+function accountLinkCandidateNames() {
+  const names = new Set();
+  getRosterDatabaseNames().forEach((name) => name && names.add(String(name)));
+  (state.dutyRecords || []).forEach((record) =>
+    (record.entries || []).forEach((entry) => {
+      if (entry.confirmed) names.add(String(entry.confirmed));
+    })
+  );
+  (state.contributionRecords || []).forEach((record) =>
+    (record.entries || []).forEach((entry) => entry?.name && names.add(String(entry.name)))
+  );
+  return [...names].filter(Boolean).sort((a, b) => a.localeCompare(b));
+}
+
+function guessAccountLinkOwner(accountName, candidates) {
+  const stripped = String(accountName || '')
+    .replace(/[\s._\-~]*bann?er[\s._\-~]*\d*/gi, ' ')
+    .replace(/#\d+$/, '')
+    .trim();
+  if (!stripped) return '';
+  let best = '';
+  let bestScore = 0;
+  candidates.forEach((candidate) => {
+    if (DUTY_BANNER_NAME_RE.test(candidate) || candidate === accountName) return;
+    const score = Math.max(
+      getSimilarityAlphaNum(stripped, candidate),
+      getSimilarity(stripped.toLowerCase(), candidate.toLowerCase())
+    );
+    if (score > bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  });
+  return bestScore >= 0.7 ? best : '';
+}
+
+function currentAccountLinks() {
+  return normalizeAccountLinks(
+    normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()).accountLinks
+  );
+}
+
+async function saveAccountLinks(nextLinks, statusHost) {
+  const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
+  const before = registry.accountLinks.length;
+  registry.accountLinks = normalizeAccountLinks(nextLinks);
+  const synced = await savePlayerRegistry(registry, { immediate: true, awaitCloud: true });
+  renderDutyRecords();
+  refreshDashboardOverview();
+  document.querySelectorAll('[data-account-links-status]').forEach((status) => {
+    status.textContent = adminT(
+      synced === false ? 'adminAccountLinksLocal' : 'adminAccountLinksSaved',
+      {
+        count: registry.accountLinks.length,
+      }
+    );
+  });
+  logRosterEvent(
+    'adminAccountLinksSavedLog',
+    'success',
+    {
+      before,
+      count: registry.accountLinks.length,
+    },
+    { localOnly: true }
+  );
+  if (statusHost) statusHost.querySelector('[data-account-links-status]')?.focus?.();
+  return synced;
+}
+
+function renderAccountLinksCard() {
+  const links = currentAccountLinks();
+  const candidates = accountLinkCandidateNames();
+  const linkedKeys = new Set(links.map((link) => compactPlayerIdentity(link.account)));
+  const suggestions = candidates
+    .filter(
+      (name) => DUTY_BANNER_NAME_RE.test(name) && !linkedKeys.has(compactPlayerIdentity(name))
+    )
+    .map((name) => ({ account: name, owner: guessAccountLinkOwner(name, candidates) }))
+    .slice(0, 16);
+  const listId = `dashAccountLinkNames${(dutyAccountSwitchSeq += 1)}`;
+  const typeLabel = (type) =>
+    adminT(type === 'alt' ? 'adminAccountLinksAlt' : 'adminDutyAccountBanner');
+  return `<details class="dash-account-links">
+    <summary><span class="dash-account-links-title">${esc(adminT('adminAccountLinksTitle'))}</span><span class="dash-duty-review-chip" data-tone="banner">${esc(adminT('adminAccountLinksCount', { count: links.length }))}</span>${suggestions.length ? `<span class="dash-duty-review-chip" data-tone="warn">${esc(adminT('adminAccountLinksSuggestedCount', { count: suggestions.length }))}</span>` : ''}</summary>
+    <p class="dash-form-hint">${esc(adminT('adminAccountLinksHint'))}</p>
+    <form class="dash-account-links-form" data-account-links-form>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksAccount'))}</span><input type="text" list="${listId}" data-account-link-account autocomplete="off" required placeholder="${esc(adminT('adminAccountLinksAccountPh'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksOwner'))}</span><input type="text" list="${listId}" data-account-link-owner autocomplete="off" required placeholder="${esc(adminT('adminAccountLinksOwnerPh'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><select data-account-link-type><option value="banner">${esc(adminT('adminDutyAccountBanner'))}</option><option value="alt">${esc(adminT('adminAccountLinksAlt'))}</option></select></label>
+      <button type="submit" class="dash-btn dash-btn-primary">${esc(adminT('adminAccountLinksAdd'))}</button>
+      <datalist id="${listId}">${candidates.map((name) => `<option value="${esc(name)}"></option>`).join('')}</datalist>
+    </form>
+    ${
+      suggestions.length
+        ? `<div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksSuggested'))}</h4><ul class="dash-account-links-list">${suggestions
+            .map(
+              (item) => `<li>
+          <span class="dash-account-link-names"><strong>${esc(item.account)}</strong><span aria-hidden="true">→</span><span>${item.owner ? esc(item.owner) : `<em>${esc(adminT('adminAccountLinksNoOwner'))}</em>`}</span></span>
+          ${item.owner ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksLink'))}</button>` : ''}
+          <button type="button" class="dash-btn dash-btn-xs" data-account-link-prefill data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksPick'))}</button>
+        </li>`
+            )
+            .join('')}</ul></div>`
+        : ''
+    }
+    <div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksActive'))}</h4>${
+      links.length
+        ? `<ul class="dash-account-links-list">${links
+            .map(
+              (link) => `<li>
+          <span class="dash-account-link-names"><strong>${esc(link.account)}</strong><span aria-hidden="true">→</span><span>${esc(link.owner)}</span><span class="dash-duty-account-chip" data-account="banner" data-saved="1">${esc(typeLabel(link.type))}</span></span>
+          <button type="button" class="dash-btn dash-btn-xs" data-account-link-remove data-account="${esc(link.account)}" aria-label="${esc(adminT('adminAccountLinksRemoveFor', { account: link.account }))}">${esc(adminT('adminAccountLinksRemove'))}</button>
+        </li>`
+            )
+            .join('')}</ul>`
+        : `<p class="dash-form-hint">${esc(adminT('adminAccountLinksNone'))}</p>`
+    }</div>
+    <p class="dash-form-hint" data-account-links-status role="status" aria-live="polite" tabindex="-1"></p>
+  </details>`;
+}
+
+function bindAccountLinksHost(host) {
+  if (host.dataset.accountLinksBound === '1') return;
+  host.dataset.accountLinksBound = '1';
+  host.addEventListener('submit', (event) => {
+    const form = event.target.closest('[data-account-links-form]');
+    if (!form) return;
+    event.preventDefault();
+    const account = form.querySelector('[data-account-link-account]')?.value.trim() || '';
+    const owner = form.querySelector('[data-account-link-owner]')?.value.trim() || '';
+    const type = form.querySelector('[data-account-link-type]')?.value || 'banner';
+    if (!account || !owner) return;
+    const others = currentAccountLinks().filter(
+      (link) => compactPlayerIdentity(link.account) !== compactPlayerIdentity(account)
+    );
+    void saveAccountLinks([...others, { account, owner, type }], host);
+  });
+  host.addEventListener('click', (event) => {
+    const accept = event.target.closest('[data-account-link-accept]');
+    if (accept) {
+      void saveAccountLinks(
+        [
+          ...currentAccountLinks(),
+          { account: accept.dataset.account, owner: accept.dataset.owner, type: 'banner' },
+        ],
+        host
+      );
+      return;
+    }
+    const prefill = event.target.closest('[data-account-link-prefill]');
+    if (prefill) {
+      const form = host.querySelector('[data-account-links-form]');
+      const accountInput = form?.querySelector('[data-account-link-account]');
+      const ownerInput = form?.querySelector('[data-account-link-owner]');
+      if (accountInput) accountInput.value = prefill.dataset.account || '';
+      if (ownerInput) {
+        ownerInput.value = prefill.dataset.owner || '';
+        ownerInput.focus();
+      }
+      return;
+    }
+    const remove = event.target.closest('[data-account-link-remove]');
+    if (remove) {
+      const key = compactPlayerIdentity(remove.dataset.account);
+      void saveAccountLinks(
+        currentAccountLinks().filter((link) => compactPlayerIdentity(link.account) !== key),
+        host
+      );
+    }
+  });
+}
+
+function renderAccountLinks() {
+  document.querySelectorAll('[data-account-links-host]').forEach((host) => {
+    const wasOpen = host.querySelector('details')?.open;
+    host.innerHTML = renderAccountLinksCard();
+    if (wasOpen !== undefined) {
+      const details = host.querySelector('details');
+      if (details) details.open = wasOpen;
+    }
+    bindAccountLinksHost(host);
+  });
+}
+
 function renderDutyRecords() {
+  renderAccountLinks();
   const contributionLookup = buildDutyContributionLookup();
   renderDutyPlayerSummary('banner', 'dashBannerListSummary', contributionLookup);
   renderDutyPlayerSummary('pather', 'dashPatherListSummary', contributionLookup);
@@ -2927,7 +3291,12 @@ function parseContributionEntriesFromText(text) {
         rank = Number(rankMatch[1]);
         row = rankMatch[2].trim();
       }
-      const numericMatches = Array.from(row.matchAll(/\b\d{1,3}(?:,\d{3})+\b|\b\d{4,}\b/g));
+      // The contribution is the last number that stands on its own. Digits
+      // glued to a name ("HarDen*2012", "Moldo1313") are part of the name, and
+      // small totals (361) are real values, not noise to skip.
+      const numericMatches = Array.from(
+        row.matchAll(/(?<![\p{L}\p{N}*#@$&^_])(\d{1,3}(?:,\d{3})+|\d+)(?![\p{L}\p{N}])/gu)
+      );
       if (!numericMatches.length) return;
       const valueMatch = numericMatches[numericMatches.length - 1];
       const contribution = parseContributionValue(valueMatch[0]);
@@ -3175,25 +3544,23 @@ function showContributionConfirmModal(
 }
 
 function showContributionPasteForm() {
-  const text = prompt(adminT('adminContributionPastePrompt'), '');
-  if (text === null) return;
-  const entries = parseContributionEntriesFromText(text);
-  if (!entries.length) {
-    logRosterEvent('adminContributionNoRowsLog', 'warn');
-    return;
-  }
-  showContributionConfirmModal(entries, adminT('adminContributionManualPaste'));
+  showPasteRowsModal({
+    title: adminT('adminContributionPasteTitle'),
+    hint: adminT('adminContributionPastePrompt'),
+    parse: parseContributionEntriesFromText,
+    onContinue: (entries) =>
+      showContributionConfirmModal(entries, adminT('adminContributionManualPaste')),
+  });
 }
 
 function showExGuildPasteForm() {
-  const text = prompt(adminT('adminExGuildPastePrompt'), '');
-  if (text === null) return;
-  const entries = parseContributionEntriesFromText(text);
-  if (!entries.length) {
-    logRosterEvent('adminContributionNoRowsLog', 'warn');
-    return;
-  }
-  showContributionConfirmModal(entries, adminT('adminExGuildManualPaste'), null, 'exguild');
+  showPasteRowsModal({
+    title: adminT('adminExGuildPasteTitle'),
+    hint: adminT('adminExGuildPastePrompt'),
+    parse: parseContributionEntriesFromText,
+    onContinue: (entries) =>
+      showContributionConfirmModal(entries, adminT('adminExGuildManualPaste'), null, 'exguild'),
+  });
 }
 
 function setContributionUploadStatus(message, type = 'error') {

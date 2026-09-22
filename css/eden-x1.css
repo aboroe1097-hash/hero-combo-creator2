@@ -5460,7 +5460,8 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border-color: #dbe5ef;
   color: #0f172a;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
-}[data-theme='light'] .eden-x1-page .eden-x1-marquee-kicker,
+}
+[data-theme='light'] .eden-x1-page .eden-x1-marquee-kicker,
 [data-theme='light'] .eden-x1-page .eden-x1-marquee-stat-label,
 [data-theme='light'] .eden-x1-page .eden-x1-podium-score,
 [data-theme='light'] .eden-x1-page .eden-x1-progression-now {
@@ -6226,4 +6227,349 @@ html.is-embedded .app-shell {
   max-width: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* =============================================================
+   16.0.18 — Easier voting and a lighter mobile season view.
+   ============================================================= */
+
+/* "Vote now" sits beside the voting status in the season summary. */
+.eden-x1-page .eden-x1-marquee-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eden-x1-page .eden-x1-marquee-vote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid rgba(250, 204, 21, 0.75);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #67e8f9 0%, #34d399 50%, #facc15 100%);
+  color: #06111f;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(34, 211, 238, 0.25);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.eden-x1-page .eden-x1-marquee-vote:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(34, 211, 238, 0.32);
+}
+
+.eden-x1-page .eden-x1-marquee-vote:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eden-x1-page .eden-x1-marquee-vote {
+    transition: none;
+  }
+  .eden-x1-page .eden-x1-marquee-vote:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .eden-x1-page .eden-x1-marquee-actions {
+    width: 100%;
+  }
+
+  .eden-x1-page .eden-x1-marquee-vote {
+    flex: 1 1 100%;
+    min-height: 48px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* One swipeable row instead of a two-row grid: half the height, and the
+     page content stays visible above it. */
+  body.eden-x1-page:not([data-eden-season-state='archive']) .eden-x1-quicknav {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    /* Centred content that overflows cannot be scrolled back to its start. */
+    justify-content: flex-start !important;
+    gap: 0.35rem !important;
+    overflow-x: auto !important;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.eden-x1-page:not([data-eden-season-state='archive']) .eden-x1-quicknav::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.eden-x1-page:not([data-eden-season-state='archive']) .eden-x1-quicknav-chip {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    padding: 0.34rem 0.85rem !important;
+    white-space: nowrap !important;
+    scroll-snap-align: start;
+  }
+
+  body.eden-x1-page:not([data-eden-season-state='archive'])
+    .eden-x1-quicknav-chip[data-quicknav='vote'] {
+    order: -1;
+    border-color: rgba(250, 204, 21, 0.75) !important;
+    background: linear-gradient(135deg, #67e8f9 0%, #34d399 50%, #facc15 100%) !important;
+    color: #06111f !important;
+    font-weight: 800 !important;
+  }
+
+  body.eden-x1-page {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Reward cards: title and count only, two per row. The explanation is one
+     tap away in the table each card opens. */
+  .eden-x1-page #ocrDashboardRoot .eden-x1-reward-flow,
+  .eden-x1-page .eden-x1-reward-flow {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-flow-card,
+  .eden-x1-page .eden-x1-flow-card {
+    min-height: 0 !important;
+    padding: 0.7rem 0.75rem !important;
+    gap: 0.35rem !important;
+  }
+
+  .eden-x1-page .eden-x1-flow-card .eden-x1-flow-copy,
+  .eden-x1-page .eden-x1-flow-card .eden-x1-flow-action {
+    display: none !important;
+  }
+
+  .eden-x1-page .eden-x1-flow-card--announcement {
+    grid-column: 1 / -1;
+  }
+
+  .eden-x1-page .eden-x1-reward-flow::before,
+  .eden-x1-page .eden-x1-reward-flow::after,
+  .eden-x1-page .eden-x1-flow-card::after {
+    display: none !important;
+  }
+}
+
+/* Inside the Eden Hub the frame is a full-screen pane, so the page keeps its
+   own fixed chrome (section chips, dialogs); only Velo is left to the hub,
+   which already shows one. */
+html.is-embedded #aiDrawerLauncherShell,
+html.is-embedded .ai-drawer-launcher-shell {
+  display: none !important;
+}
+
+/* =============================================================
+   Team Players Vote, simplified: two numbered steps, the confirmed state
+   shown in the field itself, and one compact status strip.
+   ============================================================= */
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+  grid-column: 1 / -1;
+  margin: 0.35rem 0 -0.2rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #67e8f9, #34d399);
+  color: #06111f;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-step .eden-x1-vote-help-link {
+  margin: 0 0 0 auto;
+  font-size: 0.72rem;
+}
+
+/* Status strip: rule, deadline and the Friday reminder on one wrapped line. */
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-eligibility {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  grid-column: 1 / -1;
+  padding: 0.55rem 0.75rem !important;
+  font-size: 0.8rem !important;
+  line-height: 1.35;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-eligibility > * {
+  margin: 0 !important;
+}
+
+/* The marquee "Vote now" button and the numbered steps replace this one. */
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-start {
+  display: none !important;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-confirm-chip::before,
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-confirm-chip::after {
+  display: none !important;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-name-stack {
+  grid-column: 1 / -1;
+}
+
+/* Field: label, then the input with the confirmation layered on it, then the
+   suggestion list. */
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-field {
+  display: grid;
+  grid-template-areas:
+    'label'
+    'input'
+    'suggest';
+  gap: 0.3rem;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-field > span {
+  grid-area: label;
+  font-size: 0.7rem;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-field > input {
+  grid-area: input;
+  min-height: 46px;
+  padding-inline: 0.85rem 2.6rem;
+  font-size: 16px;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-field > input.is-picked {
+  padding-inline-start: 2.3rem;
+  border-color: rgba(52, 211, 153, 0.75);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.8rem center;
+  background-size: 1rem;
+  font-weight: 700;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-field > .eden-x1-vote-suggestions {
+  grid-area: suggest;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-field > .eden-x1-vote-confirm {
+  grid-area: input;
+  align-self: center;
+  justify-self: end;
+  margin-inline-end: 0.5rem;
+  pointer-events: none;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-confirm .eden-x1-vote-confirm-chip {
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-confirm-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-confirm-clear {
+  width: 1.9rem;
+  height: 1.9rem;
+  margin: 0;
+  font-size: 1.05rem;
+  pointer-events: auto;
+}
+
+/* Suggestions: one tidy list, best match highlighted. */
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestions {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(103, 232, 249, 0.25);
+  border-radius: 10px;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestion {
+  min-height: 42px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(103, 232, 249, 0.12);
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestion:first-child {
+  background: rgba(20, 184, 166, 0.14);
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestion:hover,
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestion:focus-visible {
+  background: rgba(20, 184, 166, 0.22);
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-self-pick {
+  justify-self: start;
+  min-height: 34px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.74rem;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-actions {
+  grid-column: 1 / -1;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-actions .dash-btn-primary {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+[data-theme='light'] .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-step {
+  color: #0f172a;
+}
+
+[data-theme='light'] .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-suggestion:first-child {
+  background: rgba(13, 148, 136, 0.1);
+}
+
+/* Two picks per row only when the ballot itself is wide enough, whether it
+   is the desktop side rail or the full-width phone layout. */
+.eden-x1-page #edenX1TeamVotePanel {
+  container-type: inline-size;
+}
+
+.eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-form {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+@container (min-width: 380px) {
+  .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }

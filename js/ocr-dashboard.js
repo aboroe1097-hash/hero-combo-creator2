@@ -187,7 +187,10 @@ import {
   dashboardAttackFingerprint,
   mergeDashboardOcrAttacks,
 } from './dashboard-attack-mutations.js';
-import { resolveEdenVoteCandidate } from './eden-vote-candidates.js';
+import {
+  normalizeEdenVoteRedirects,
+  resolveEdenVoteCandidateWithRedirects,
+} from './eden-vote-candidates.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
   classifyRemoteSnapshot,
@@ -1066,7 +1069,20 @@ function normalizeEdenX1VoteSettings(settings = {}) {
       settings.contributionRankingMode
     ),
     closesAt: normalizeEdenVoteClosesAt(settings.closesAt),
+    // Stored only while there is something to store: settings are written as a
+    // whole document, so leaving the field out is also how the last redirect
+    // is removed.
+    ...withEdenVoteRedirects(settings.candidateRedirects),
   };
+}
+
+function withEdenVoteRedirects(value) {
+  const redirects = normalizeEdenVoteRedirects(value);
+  return Object.keys(redirects).length ? { candidateRedirects: redirects } : {};
+}
+
+function activeEdenVoteRedirects(settings = state.edenX1VoteSettings) {
+  return normalizeEdenVoteRedirects(settings?.candidateRedirects);
 }
 
 function hasEdenX1VoteSeasonMismatch(settings = {}) {
@@ -1252,7 +1268,7 @@ function renderEdenX1VoteAdmin() {
   renderEdenX1VoteHistory();
 }
 
-function collectEdenX1VoteTotals(votes, season) {
+function collectEdenX1VoteTotals(votes, season, redirects = activeEdenVoteRedirects()) {
   const dedupedVotes = dedupeEdenX1Votes(votes).filter(
     (vote) =>
       vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
@@ -1265,7 +1281,7 @@ function collectEdenX1VoteTotals(votes, season) {
   dedupedVotes.forEach((vote) => {
     const countedFamilyKeys = new Set();
     vote.candidates.forEach((candidate) => {
-      const resolved = resolveEdenVoteCandidate(candidate);
+      const resolved = resolveEdenVoteCandidateWithRedirects(candidate, redirects);
       const familyKey =
         resolved.familyKey || resolved.playerKey || compactPlayerIdentity(resolved.rawName);
       if (!familyKey || countedFamilyKeys.has(familyKey)) return;
@@ -1286,7 +1302,8 @@ function collectEdenX1VoteTotals(votes, season) {
       row.count += 1;
       row.voters.set(vote.voterKey || vote.voterName, vote.voterName);
       row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
-      const rawName = resolved.rawName || candidate.candidateKey || 'Unknown';
+      const variantName = resolved.rawName || candidate.candidateKey || 'Unknown';
+      const rawName = resolved.redirectedFrom ? `${variantName} →` : variantName;
       row.variants.set(rawName, (row.variants.get(rawName) || 0) + 1);
     });
   });
@@ -1306,7 +1323,11 @@ function buildEdenX1PublicVoteResults(
 ) {
   const normalizedSettings = normalizeEdenX1VoteSettings(settings || {});
   const season = normalizedSettings.season || currentEdenVoteSeason();
-  const { totalRows } = collectEdenX1VoteTotals(votes || [], season);
+  const { totalRows } = collectEdenX1VoteTotals(
+    votes || [],
+    season,
+    normalizedSettings.candidateRedirects || {}
+  );
   return {
     season,
     published: normalizedSettings.showPublicResults === true,
@@ -1337,6 +1358,101 @@ async function publishEdenX1PublicVoteResults(settings = state.edenX1VoteSetting
   return true;
 }
 
+// Superadmin-only: count one account's votes for another player. The source
+// list is built without redirects so an already-moved account can still be
+// found; the saved list shows what is active and removes it in one click.
+function renderEdenVoteRedirectPanel(votes, season, totalRows) {
+  if (dashSuperAdmin !== true || edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID)) return '';
+  const redirects = activeEdenVoteRedirects();
+  const sources = collectEdenX1VoteTotals(votes, season, {}).totalRows.filter(
+    (row) => !redirects[row.familyKey]
+  );
+  const targetNames = new Set();
+  totalRows.forEach((row) => targetNames.add(row.candidateName));
+  (state.rosterNames || []).forEach((name) => name && targetNames.add(String(name)));
+  const entries = Object.entries(redirects);
+  const list = entries.length
+    ? `<ul class="dash-eden-vote-redirect-list">${entries
+        .map(
+          ([key, entry]) => `<li>
+            <span class="dash-duty-cell-value"><strong>${esc(entry.from)}</strong> <span aria-hidden="true">→</span><span class="sr-only">${esc(dashT('adminEdenVotesRedirectArrow'))}</span> <strong>${esc(entry.to)}</strong></span>
+            <button type="button" class="dash-btn dash-btn-xs" data-eden-vote-redirect-remove="${esc(key)}" aria-label="${esc(dashT('adminEdenVotesRedirectRemoveFor', { from: entry.from, to: entry.to }))}">${esc(dashT('adminEdenVotesRedirectRemove'))}</button>
+          </li>`
+        )
+        .join('')}</ul>`
+    : `<p class="dash-card-subtitle">${esc(dashT('adminEdenVotesRedirectNone'))}</p>`;
+  return `<section class="dash-duty-summary-table-wrap dash-eden-vote-redirects" aria-labelledby="dashEdenVoteRedirectTitle">
+    <h3 id="dashEdenVoteRedirectTitle" class="dash-modal-section-label">${esc(dashT('adminEdenVotesRedirectTitle'))}</h3>
+    <p class="dash-card-subtitle">${esc(dashT('adminEdenVotesRedirectHint'))}</p>
+    <form class="dash-eden-vote-redirect-form" data-eden-vote-redirect-form>
+      <label><span>${esc(dashT('adminEdenVotesRedirectFrom'))}</span>
+        <select class="dash-input" data-eden-vote-redirect-from required>
+          <option value="">${esc(dashT('adminEdenVotesRedirectPick'))}</option>
+          ${sources
+            .map(
+              (row) =>
+                `<option value="${esc(row.familyKey)}">${esc(row.candidateName)} (${row.count})</option>`
+            )
+            .join('')}
+        </select>
+      </label>
+      <label><span>${esc(dashT('adminEdenVotesRedirectTo'))}</span>
+        <input class="dash-input" type="text" list="dashEdenVoteRedirectTargets" data-eden-vote-redirect-to autocomplete="off" required />
+        <datalist id="dashEdenVoteRedirectTargets">${[...targetNames]
+          .sort((a, b) => a.localeCompare(b))
+          .map((name) => `<option value="${esc(name)}"></option>`)
+          .join('')}</datalist>
+      </label>
+      <button type="submit" class="dash-btn dash-btn-primary">${esc(dashT('adminEdenVotesRedirectSave'))}</button>
+    </form>
+    ${list}
+    <p class="dash-eden-vote-redirect-status" data-eden-vote-redirect-status role="status" aria-live="polite"></p>
+  </section>`;
+}
+
+async function saveEdenVoteRedirects(nextRedirects) {
+  if (dashSuperAdmin !== true) return false;
+  const current = normalizeEdenX1VoteSettings(
+    state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
+  );
+  const saved = await saveEdenX1VoteSettings({ ...current, candidateRedirects: nextRedirects });
+  renderEdenX1VoteResults();
+  const status = document.querySelector('[data-eden-vote-redirect-status]');
+  if (status) {
+    status.textContent = dashT(
+      saved ? 'adminEdenVotesRedirectSaved' : 'adminEdenVotesRedirectFailed'
+    );
+  }
+  return saved;
+}
+
+function bindEdenVoteRedirectControls(host) {
+  if (!host || host.dataset.voteRedirectBound) return;
+  host.dataset.voteRedirectBound = '1';
+  host.addEventListener('submit', (event) => {
+    const form = event.target.closest('[data-eden-vote-redirect-form]');
+    if (!form) return;
+    event.preventDefault();
+    const fromKey = form.querySelector('[data-eden-vote-redirect-from]')?.value || '';
+    const fromLabel =
+      form.querySelector('[data-eden-vote-redirect-from] option:checked')?.textContent || fromKey;
+    const to = String(form.querySelector('[data-eden-vote-redirect-to]')?.value || '').trim();
+    if (!fromKey || !to) return;
+    const next = {
+      ...activeEdenVoteRedirects(),
+      [fromKey]: { from: fromLabel.replace(/\s*\(\d+\)$/, ''), to },
+    };
+    void saveEdenVoteRedirects(next);
+  });
+  host.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-eden-vote-redirect-remove]');
+    if (!button) return;
+    const next = { ...activeEdenVoteRedirects() };
+    delete next[button.dataset.edenVoteRedirectRemove];
+    void saveEdenVoteRedirects(next);
+  });
+}
+
 function renderEdenX1VoteResults() {
   const host = $id('dashEdenVoteResults');
   if (!host) return;
@@ -1353,6 +1469,7 @@ function renderEdenX1VoteResults() {
       (a, b) =>
         edenVoteUpdatedAtMs(b) - edenVoteUpdatedAtMs(a) || a.voterName.localeCompare(b.voterName)
     );
+  const redirectPanel = renderEdenVoteRedirectPanel(votes, season, totalRows);
 
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis dash-vote-summary-kpis">
@@ -1390,6 +1507,7 @@ function renderEdenX1VoteResults() {
           .join('')}</tbody>
       </table>
     </div>
+    ${redirectPanel}
     <div class="dash-duty-summary-table-wrap">
       <h3 class="dash-modal-section-label">${esc(dashT('adminVoteBallots'))}</h3>
       <table class="dash-duty-summary-table">
@@ -1416,6 +1534,7 @@ function renderEdenX1VoteResults() {
 // audit fields; stored candidate names and keys remain unchanged in Firestore.
 function exportEdenX1VotesCsv() {
   const season = currentEdenVoteSeason();
+  const redirects = activeEdenVoteRedirects();
   const votes = dedupeEdenX1Votes(Array.isArray(state.edenX1Votes) ? state.edenX1Votes : []).filter(
     (vote) =>
       vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
@@ -1454,7 +1573,7 @@ function exportEdenX1VotesCsv() {
     )
     .forEach((vote) => {
       vote.candidates.forEach((candidate, index) => {
-        const resolved = resolveEdenVoteCandidate(candidate);
+        const resolved = resolveEdenVoteCandidateWithRedirects(candidate, redirects);
         rows.push(
           [
             vote.season,
@@ -1866,6 +1985,7 @@ function bindEdenX1VoteAdminControls() {
     const button = event.target.closest('[data-eden-vote-delete]');
     if (button) void deleteEdenX1Ballot(button.dataset.edenVoteDelete);
   });
+  bindEdenVoteRedirectControls($id('dashEdenVoteResults'));
   $id('dashEdenVoteActivateSeasonBtn')?.addEventListener('click', () =>
     activateCurrentEdenX1VoteSeason()
   );
@@ -3719,6 +3839,12 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
       voteSettings: unpublish ? {} : normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {}),
       publicVoteResults,
       rosterSnapshots,
+      scoring: unpublish
+        ? null
+        : {
+            dutyPointWeights: normalizeDutyPointWeights(state.dutyPointWeights),
+            includeDemolitionPoints: state.includeDemolitionPoints !== false,
+          },
     });
     await setDoc(projectionRef, sanitizeForFirestore(projection));
     await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
@@ -7699,9 +7825,20 @@ function importData(file) {
 
 // --- Render ---
 
+// Vote copy is written once for "Eden X1"; the panel belongs to whichever
+// workspace is active, so its season name follows that workspace.
+function applyEdenSeasonCopy(root = document) {
+  const label = ACTIVE_EDEN_WORKSPACE?.label || '';
+  if (!label) return;
+  root.querySelectorAll?.('[data-eden-season-copy]').forEach((element) => {
+    element.textContent = String(element.textContent || '').replace(/Eden[ -]?X\d+/g, label);
+  });
+}
+
 function scheduleAdminLanguageRefresh() {
   const token = (state._adminLanguageRefreshToken || 0) + 1;
   state._adminLanguageRefreshToken = token;
+  applyEdenSeasonCopy();
   refreshRosterSnapshotLabel();
   renderCloudSyncStatus();
   renderAdminActivityTerminal();
@@ -7726,6 +7863,7 @@ export async function bootOcrDashboard() {
   // and the auth listener opens the dashboard as soon as it sees a signed-in
   // account carrying the admin claim.
   $id('dashSignOutBtn')?.addEventListener('click', doSignOut);
+  applyEdenSeasonCopy();
   bindSubtabNavigation();
   bindEdenWorkspaceStrip();
   bindConductControls();

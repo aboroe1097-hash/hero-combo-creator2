@@ -83,3 +83,55 @@ test('buildEdenPublicProjection strips undefined from nested attacks and summari
     false
   );
 });
+
+test('the published season carries the admin scoring rules, and old publishes carry none', async () => {
+  const { readFileSync } = await import('node:fs');
+  const weights = {
+    banners: { main: 1, alt: 0.5 },
+    pathers: { main: 3, alt: 1 },
+    shieldWalls: { main: 1, alt: 1 },
+  };
+  const withScoring = buildEdenPublicProjection({
+    scoring: { dutyPointWeights: weights, includeDemolitionPoints: false },
+  });
+  assert.deepEqual(withScoring.scoring, {
+    dutyPointWeights: weights,
+    includeDemolitionPoints: false,
+  });
+  // No scoring passed (unpublish, older callers): the field is simply absent,
+  // which the public page reads as "keep the previous behaviour".
+  assert.equal('scoring' in buildEdenPublicProjection({}), false);
+
+  const rules = readFileSync('firestore.rules', 'utf8');
+  assert.match(
+    rules,
+    /'updatedBy', 'dashboard', 'rosterSnapshots', 'voteSettings', 'publicVoteResults',\s*'scoring'/
+  );
+  assert.match(
+    rules,
+    /!\('scoring' in request\.resource\.data\) \|\| request\.resource\.data\.scoring is map/
+  );
+
+  const publicPage = readFileSync('js/eden-x1.js', 'utf8');
+  assert.match(publicPage, /dutyPointWeights: publishedScoring\?\.dutyPointWeights/);
+  assert.match(publicPage, /publishedScoring\?\.includeDemolitionPoints === true/);
+});
+
+test('account links stay one level deep and never link a name to itself', async () => {
+  const { normalizeAccountLinks, normalizePlayerRegistry } =
+    await import('../../js/player-registry.js');
+  const links = normalizeAccountLinks([
+    { account: 'Angel Banner', owner: 'ANGEL', type: 'banner' },
+    { account: 'ANGEL', owner: 'Someone', type: 'banner' },
+    { account: 'Loony Banner', owner: 'Angel Banner' },
+    { account: 'Self', owner: 'self' },
+    { account: 'RedBull#2', owner: 'REDBULL§', type: 'weird' },
+    { account: '', owner: 'x' },
+  ]);
+  assert.deepEqual(links, [
+    { account: 'Angel Banner', owner: 'ANGEL', type: 'banner' },
+    { account: 'RedBull#2', owner: 'REDBULL§', type: 'banner' },
+  ]);
+  // Links round-trip through the registry that is saved with dashboard data.
+  assert.deepEqual(normalizePlayerRegistry({ accountLinks: links }).accountLinks, links);
+});
