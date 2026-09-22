@@ -216,10 +216,20 @@ export function getEdenX1ShellCopy(locale) {
   return COPY[normalizeLocale(locale)] || COPY.en;
 }
 
-export function localizeEdenX1Shell(documentRef, locale) {
+// The same page shell serves both seasons. The copy is written for Eden X1;
+// the Eden X2 page asks for its own season name so its tab title and landmark
+// labels stop saying X1.
+function forSeason(copy, season) {
+  if (season !== 'X2') return copy;
+  return Object.fromEntries(
+    Object.entries(copy).map(([key, value]) => [key, String(value).replaceAll('X1', 'X2')])
+  );
+}
+
+export function localizeEdenX1Shell(documentRef, locale, options = {}) {
   if (!documentRef) return normalizeLocale(locale);
   const normalized = normalizeLocale(locale);
-  const copy = getEdenX1ShellCopy(normalized);
+  const copy = forSeason(getEdenX1ShellCopy(normalized), options.season);
   documentRef.title = copy.documentTitle;
 
   const description = documentRef.querySelector?.('meta[name="description"]');

@@ -9,7 +9,11 @@ globalThis.document = {
   querySelectorAll: () => [],
 };
 
-const { resolveEdenVoteCandidate } = await import('../../js/eden-vote-candidates.js');
+const {
+  resolveEdenVoteCandidate,
+  normalizeEdenVoteRedirects,
+  resolveEdenVoteCandidateWithRedirects,
+} = await import('../../js/eden-vote-candidates.js');
 const { getPublicVtsPlayerProfile } = await import('../../js/vts-public-players.js');
 
 test('Eden vote aliases merge into the same player family', () => {
@@ -96,4 +100,48 @@ test('public profile matching keeps non-Latin names and avoids partial Kika matc
   assert.equal(mixedName.canonicalName, '\u0410\u041b\u0415\u041a\u0421 & Kika');
   assert.equal(mixedName.playerKey, 'a\u043bekckika');
   assert.notEqual(mixedName.familyKey, 'kika');
+});
+
+test('admin vote redirects move a banner account onto its player, one hop only', () => {
+  const banner = resolveEdenVoteCandidate({ candidateName: 'iBONEfastBANNER' });
+  const bone = resolveEdenVoteCandidate({ candidateName: 'BoneSmoker' });
+  assert.notEqual(banner.familyKey, bone.familyKey);
+
+  const redirects = normalizeEdenVoteRedirects({
+    [banner.familyKey]: { from: 'BONEfastBANNER', to: 'BoneSmoker' },
+    [bone.familyKey]: { from: 'BoneSmoker', to: 'BoneSmoker' },
+    '': { to: 'Loony' },
+    orphan: { from: 'orphan' },
+  });
+  assert.deepEqual(Object.keys(redirects), [banner.familyKey]);
+
+  const moved = resolveEdenVoteCandidateWithRedirects(
+    { candidateName: 'BONEfastBANNER' },
+    redirects
+  );
+  assert.equal(moved.familyKey, bone.familyKey);
+  assert.equal(moved.rawName, 'BONEfastBANNER');
+  assert.ok(moved.redirectedFrom);
+
+  const untouched = resolveEdenVoteCandidateWithRedirects(
+    { candidateName: 'Neutrino10' },
+    redirects
+  );
+  assert.equal(untouched.redirectedFrom, undefined);
+  assert.equal(
+    untouched.familyKey,
+    resolveEdenVoteCandidate({ candidateName: 'Neutrino10' }).familyKey
+  );
+
+  // Chained entries never loop: A -> B and B -> A each move exactly one hop.
+  const loony = resolveEdenVoteCandidate({ candidateName: 'Loony Banner' });
+  const looped = normalizeEdenVoteRedirects({
+    [loony.familyKey]: { from: 'Loony Banner', to: 'Loony' },
+    [resolveEdenVoteCandidate({ candidateName: 'Loony' }).familyKey]: {
+      from: 'Loony',
+      to: 'Loony Banner',
+    },
+  });
+  const once = resolveEdenVoteCandidateWithRedirects({ candidateName: 'Loony Banner' }, looped);
+  assert.equal(once.familyKey, resolveEdenVoteCandidate({ candidateName: 'Loony' }).familyKey);
 });

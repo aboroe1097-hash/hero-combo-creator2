@@ -1003,3 +1003,73 @@ test('duty weights are stored per workspace and edited only by a superadmin', as
   // Saving is refused on an archived workspace, like every other write.
   assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
 });
+
+test('upload rows and account links decide whether a duty scores as main or banner', async () => {
+  const { buildWeightedContributionRows, classifyDutyAccount, getWeightedPlayerFamilyKey } =
+    await import('../../js/contribution-weighting.js');
+  const { setActivePlayerRegistry } = await import('../../js/player-registry.js');
+
+  const contributionRecords = [
+    {
+      id: 'c1',
+      date: '2026-09-20',
+      entries: [
+        { rank: 1, name: 'ANGEL', contribution: 300000 },
+        { rank: 2, name: 'Loony', contribution: 250000 },
+      ],
+    },
+  ];
+  const dutyRecord = (entries) => [{ id: 'd1', type: 'banner', date: '2026-09-20', entries }];
+  const classesFor = (entries, name) => {
+    const model = buildWeightedContributionRows({
+      contributionRecords,
+      dutyRecords: dutyRecord(entries),
+    });
+    const row = (model.rows || model).find((item) => item.playerName === name);
+    return row?.dutiesByClass?.banners;
+  };
+
+  try {
+    setActivePlayerRegistry(null);
+    // Old rows carry no account type and keep the account-based class.
+    assert.deepEqual(classesFor([{ name: 'ANGEL', confirmed: 'ANGEL' }], 'ANGEL'), {
+      main: 1,
+      alt: 0,
+    });
+    // The list named the player, but the uploader said it was their banner.
+    assert.deepEqual(
+      classesFor([{ name: 'ANGEL', confirmed: 'ANGEL', accountType: 'banner' }], 'ANGEL'),
+      { main: 0, alt: 1 }
+    );
+    // "Main" wins over an account that would otherwise count as an alt.
+    assert.deepEqual(
+      classesFor(
+        [{ name: 'Angel Banner', confirmed: 'Angel Banner', accountType: 'main' }],
+        'ANGEL'
+      ),
+      { main: 1, alt: 0 }
+    );
+
+    // Unlinked, a banner account is its own player at full weight.
+    assert.notEqual(getWeightedPlayerFamilyKey('loonybanner'), getWeightedPlayerFamilyKey('loony'));
+    assert.equal(classifyDutyAccount('loonybanner'), 'main');
+
+    // Linked, it belongs to the owner and counts as a secondary account.
+    setActivePlayerRegistry({
+      players: [],
+      accountLinks: [
+        { account: 'Loony Banner', owner: 'Loony', type: 'banner' },
+        // A link back the other way is ignored rather than looping.
+        { account: 'Loony', owner: 'Loony Banner', type: 'banner' },
+      ],
+    });
+    assert.equal(getWeightedPlayerFamilyKey('loonybanner'), getWeightedPlayerFamilyKey('loony'));
+    assert.equal(classifyDutyAccount('loonybanner'), 'alt');
+    assert.deepEqual(classesFor([{ name: 'Loony Banner', confirmed: 'Loony Banner' }], 'Loony'), {
+      main: 0,
+      alt: 1,
+    });
+  } finally {
+    setActivePlayerRegistry(null);
+  }
+});

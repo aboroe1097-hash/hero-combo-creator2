@@ -31,6 +31,7 @@ import {
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 import { localizeEdenX1Shell } from './i18n/eden-x1-shell.js';
+import { setActivePlayerRegistry } from './player-registry.js';
 import { runtimeMiscT } from './i18n/runtime-misc.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
@@ -60,7 +61,7 @@ import {
   isPublishedEdenProjection,
 } from './eden-workspaces.js';
 
-export const APP_VERSION = '16.0.17';
+export const APP_VERSION = '16.0.18';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -546,7 +547,10 @@ function scoreEdenMemberOption(value, option) {
   if (playerName === raw) return 120;
   if (nameLower === rawLower) return 118;
   if (playerKey === compact) return 116;
-  if (nameLower.startsWith(rawLower)) return 104;
+  // Decorated names ("꧁༺ Kika ༻꧂", "(Vet)~Roha~") are matched on the name
+  // itself, so typing "Kik" finds Kika as readily as "Kika2.0".
+  const cleanLower = nameLower.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  if (nameLower.startsWith(rawLower) || cleanLower.startsWith(rawLower)) return 104;
   if (playerKey.startsWith(compact)) return 102;
   if (nameLower.includes(rawLower)) return 94;
   if (playerKey.includes(compact)) return 92;
@@ -568,6 +572,9 @@ function getEdenMemberMatches(value, limit = 5) {
     .sort(
       (a, b) =>
         b.score - a.score ||
+        // Equal matches: the name closest to what was typed first, so "lo"
+        // offers LOONY before Lonely-wolf.
+        String(a.playerKey || '').length - String(b.playerKey || '').length ||
         a.playerName.localeCompare(b.playerName, currentLang || 'en', { sensitivity: 'base' })
     );
   return scored.slice(0, limit);
@@ -812,13 +819,17 @@ function updateEdenVoteInputConfirmation(host, inputId, option = null) {
   const resolved = option || findEdenMemberOption(host?.querySelector(`#${inputId}`)?.value);
   if (!resolved) {
     chip.innerHTML = '';
+    host?.querySelector(`#${inputId}`)?.classList.remove('is-picked');
     if (inputId === 'edenX1VoterName') updateEdenVoteSelfPickButton(host, null);
     return;
   }
   const clearButton = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(inputId)
-    ? `<button class="eden-x1-vote-confirm-clear" type="button" data-eden-vote-clear="${esc(inputId)}" aria-label="${esc(t('edenX1VoteClearPicked', { player: resolved.playerName }))}">x</button>`
+    ? `<button class="eden-x1-vote-confirm-clear" type="button" data-eden-vote-clear="${esc(inputId)}" aria-label="${esc(t('edenX1VoteClearPicked', { player: resolved.playerName }))}">×</button>`
     : '';
-  chip.innerHTML = `<span class="eden-x1-vote-confirm-chip">${esc(t('edenX1VoteSelfConfirmed', { player: resolved.playerName }))}${clearButton}</span>`;
+  // The field itself shows the confirmed state (check mark, green edge); the
+  // wording stays for screen readers, and the clear button sits in the field.
+  chip.innerHTML = `<span class="eden-x1-vote-confirm-chip"><span class="eden-x1-vote-confirm-text">${esc(t('edenX1VoteSelfConfirmed', { player: resolved.playerName }))}</span>${clearButton}</span>`;
+  host?.querySelector(`#${inputId}`)?.classList.add('is-picked');
   if (inputId === 'edenX1VoterName') updateEdenVoteSelfPickButton(host, resolved);
 }
 
@@ -2726,7 +2737,6 @@ function renderEdenTeamVotePanel() {
       <div>
         <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
-        <a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
       <div class="eden-x1-vote-hdr-meta">
         <span id="edenX1VoteCount" class="eden-x1-vote-count" data-full="false" data-over="false" aria-live="polite">${esc(tf('edenX1VoteSelectionCount', { n: '0', count: '0' }))}</span>
@@ -2738,9 +2748,10 @@ function renderEdenTeamVotePanel() {
         <span>${esc(tf('edenX1VoteRule'))}</span>
         <span class="eden-x1-vote-eligibility-deadline" aria-hidden="true"></span>
         <span class="eden-x1-vote-friday" data-eden-vote-friday>${esc(t('edenX1VoteDeadlineFriday'))}</span>
-        <button class="eden-x1-vote-start" type="button" data-eden-vote-start>${esc(t('edenX1VoteCta'))}</button>
+        <button class="eden-x1-vote-start" type="button" data-eden-vote-start hidden>${esc(t('edenX1VoteCta'))}</button>
       </div>
       ${renderEdenVoteMemberOptions()}
+      <p class="eden-x1-vote-step"><span class="eden-x1-vote-step-num" aria-hidden="true">1</span>${esc(t('edenX1VoteStepYou'))}</p>
       <div class="eden-x1-vote-name-stack">
         <label class="eden-x1-vote-field" for="edenX1VoterName">
           <span>${esc(t('edenX1VoteYourName'))}</span>
@@ -2750,6 +2761,7 @@ function renderEdenTeamVotePanel() {
         </label>
         <button id="edenX1VoteSelfPickBtn" class="eden-x1-vote-self-pick" type="button" data-eden-vote-self-pick hidden disabled>${esc(t('edenX1VoteSelfPick'))}</button>
       </div>
+      <p class="eden-x1-vote-step"><span class="eden-x1-vote-step-num" aria-hidden="true">2</span>${esc(t('edenX1VoteStepPicks'))}<a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a></p>
       <label class="eden-x1-vote-field" for="edenX1CandidateName">
         <span>${esc(t('edenX1VoteYourVote'))}</span>
         <input id="edenX1CandidateName" class="dash-input" type="text" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" aria-describedby="edenX1CandidateNameConfirm" />
@@ -2963,6 +2975,7 @@ function setEdenPanelLoading(loading) {
   if (!isLoading) {
     section?.classList.remove('eden-x1-panel--cache-preview');
     schedulePublicHeatmapOverflowSync();
+    openLinkedEdenVote();
   }
   document.body?.classList.toggle('eden-x1-loading', isLoading);
   const bootLoader = $('edenX1NavLoader');
@@ -3094,6 +3107,47 @@ function activateEdenRewardView(view) {
   return true;
 }
 
+// One path to the ballot for every entry point: the quick-nav chip, the
+// marquee "Vote now" button, and the short share link roc-vts.com/vote
+// (eden-x2.html#vote). A link opens the ballot without focusing the name
+// field, so a phone does not throw its keyboard over the form on arrival.
+function openEdenVoteSection(options = {}) {
+  if (EDEN_X1_IS_ARCHIVE) return false;
+  const reveal = () => {
+    queueEdenQuickNavScroll(
+      '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel',
+      options.focus === false ? {} : { focusSelector: '#edenX1VoterName' }
+    );
+  };
+  if (options.transition === false) reveal();
+  else runEdenNavigationTransition(reveal);
+  return true;
+}
+
+function edenVoteLinkRequested() {
+  try {
+    const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+    return hash === 'vote' || new URLSearchParams(window.location.search).get('vote') === '1';
+  } catch {
+    return false;
+  }
+}
+
+let edenVoteLinkHandled = false;
+
+function openLinkedEdenVote() {
+  if (edenVoteLinkHandled || EDEN_X1_IS_ARCHIVE || !edenVoteLinkRequested()) return;
+  if (!$('edenX1TeamVotePanel')) return;
+  edenVoteLinkHandled = true;
+  openEdenVoteSection({ transition: false, focus: false });
+}
+
+window.addEventListener('hashchange', () => {
+  if (window.location.hash.replace(/^#/, '').toLowerCase() !== 'vote') return;
+  edenVoteLinkHandled = false;
+  openLinkedEdenVote();
+});
+
 function bindEdenQuickNav() {
   const nav = document.querySelector('.eden-x1-quicknav');
   if (!nav || nav.dataset.quickNavBound) return;
@@ -3115,13 +3169,7 @@ function bindEdenQuickNav() {
       return;
     }
     if (target === 'vote') {
-      runEdenNavigationTransition(() => {
-        activateEdenRewardView('team');
-        queueEdenQuickNavScroll(
-          '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel',
-          { focusSelector: '#edenX1VoterName' }
-        );
-      });
+      openEdenVoteSection();
       return;
     }
     if (target === 'my-stats') {
@@ -5981,7 +6029,7 @@ function updateTextContent(lang) {
     if (dict[key]) el.setAttribute('aria-label', t(key));
   });
 
-  localizeEdenX1Shell(document, lang);
+  localizeEdenX1Shell(document, lang, { season: EDEN_IS_X2 ? 'X2' : 'X1' });
   syncGameClockTitles();
   scheduleLocalizedRerender();
   window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
@@ -6502,6 +6550,9 @@ const EDEN_FROST_TEXT = {
   edenX1VoteRule: 'Pick 1 to 4 unique teammates',
   edenX1VoteDeadlineFriday: 'Only until Friday 23:59 game time.',
   edenX1VoteCta: 'Click here to vote',
+  edenX1VoteNow: 'Vote now',
+  edenX1VoteStepYou: 'Who are you?',
+  edenX1VoteStepPicks: 'Pick up to 4 teammates',
   edenX1VoteSelectionCount: '{count}/4 selected',
   edenX1MarqueeKicker: 'EDEN X1 SEASON',
   edenX1MarqueeMembers: 'Members',
@@ -6550,6 +6601,24 @@ function pad2(value) {
   return String(value).padStart(2, '0');
 }
 
+// While voting is open the ballot moves up to follow the season summary, so a
+// phone reaches it without scrolling past the reward tables. It moves in the
+// document rather than with CSS order, so keyboard and screen-reader order
+// match what is on screen. Desktop places sections by grid area, so this only
+// changes what a single-column layout shows first.
+function placeEdenVoteRail(votingOpen) {
+  const rail = $('edenX1VoteRail');
+  const rewardPanel = $('edenX1RewardFlowPanel');
+  const weightedPanel = $('dashWeightedContributionPanel');
+  if (!rail || !rewardPanel || !weightedPanel) return;
+  if (rail.contains(document.activeElement)) return;
+  if (votingOpen) {
+    if (rail.nextElementSibling !== rewardPanel) rewardPanel.before(rail);
+  } else if (weightedPanel.nextElementSibling !== rail) {
+    weightedPanel.after(rail);
+  }
+}
+
 function renderEdenMarquee(data = {}) {
   const host = $('edenX1Marquee');
   if (!host) return;
@@ -6570,6 +6639,11 @@ function renderEdenMarquee(data = {}) {
     .slice()
     .sort((a, b) => valueOf(b.weightedScore) - valueOf(a.weightedScore))[0];
   const status = edenMarqueeStatusState();
+  // Lets the mobile layout lift the ballot above the reward tables only while
+  // it can actually be used.
+  if (document.body)
+    document.body.dataset.edenVoteState = EDEN_X1_IS_ARCHIVE ? 'archive' : status.state;
+  placeEdenVoteRail(!EDEN_X1_IS_ARCHIVE && status.state !== 'closed');
 
   const stats = [
     { label: tf('edenX1MarqueeMembers'), value: String(totalMembers), tone: 'cyan' },
@@ -6585,6 +6659,12 @@ function renderEdenMarquee(data = {}) {
   const statusHtml = EDEN_X1_IS_ARCHIVE
     ? ''
     : `<div class="eden-x1-marquee-status" data-state="${esc(status.state)}" aria-label="${esc(tf('edenX1VoteStatus'))}">${esc(status.label)}${countdownHtml}</div>`;
+  // While the ballot is open, the season summary carries the way in, so nobody
+  // has to hunt for the form below the reward tables.
+  const voteNowHtml =
+    !EDEN_X1_IS_ARCHIVE && status.state !== 'closed'
+      ? `<button type="button" class="eden-x1-marquee-vote" data-eden-vote-now>${esc(tf('edenX1VoteNow'))}</button>`
+      : '';
 
   const topPerformerHtml = topRow?.playerName
     ? `<div class="eden-x1-marquee-top">
@@ -6595,12 +6675,21 @@ function renderEdenMarquee(data = {}) {
     : '';
 
   host.hidden = false;
+  if (!host.dataset.voteNowBound) {
+    host.dataset.voteNowBound = '1';
+    host.addEventListener('click', (event) => {
+      if (event.target.closest('[data-eden-vote-now]')) openEdenVoteSection();
+    });
+  }
   host.innerHTML = `<div class="eden-x1-marquee-head">
       <div>
         <span class="eden-x1-marquee-kicker">${esc(tf('edenX1MarqueeKicker'))}</span>
         <h2 class="eden-x1-marquee-title">${esc(seasonLabel)}</h2>
       </div>
-      ${statusHtml}
+      <div class="eden-x1-marquee-actions">
+        ${statusHtml}
+        ${voteNowHtml}
+      </div>
     </div>
     <div class="eden-x1-marquee-stats">
       ${stats
@@ -7078,6 +7167,10 @@ async function loadEdenX1Dashboard() {
           const data = {
             ...(projection.dashboard || {}),
             edenX1VoteSettings: verifiedVoteSettings,
+            publishedScoring:
+              projection.scoring && typeof projection.scoring === 'object'
+                ? projection.scoring
+                : null,
           };
           if (Array.isArray(projection.rosterSnapshots)) {
             data.rosterSnapshots = projection.rosterSnapshots;
@@ -7310,6 +7403,10 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   setRewardFlowReady(false);
   resetWeightedTablePagination(weightedTablePagination);
   resetWeightedTablePagination(publicWeightedTablePagination);
+  // Score with the account links published alongside this data (banner or
+  // alt account -> the player who runs it), exactly as the admin does. Only
+  // the links are taken, so nothing else about public name handling changes.
+  setActivePlayerRegistry({ players: [], accountLinks: data.playerRegistry?.accountLinks || [] });
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
     : [];
@@ -7323,6 +7420,10 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     : [];
   currentForfeitedRewardIdentities = getForfeitedRewardPriorityIdentities(r5Adjustments, season);
 
+  // Scoring rules published with the season. A season published before they
+  // were carried keeps the page's previous behaviour: default duty weights and
+  // no demolition points.
+  const publishedScoring = data.publishedScoring || null;
   const model = buildWeightedContributionRows({
     contributionRecords,
     dutyRecords,
@@ -7330,6 +7431,12 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     exGuildContributions,
     season,
     includeSupportOnly: true,
+    dutyPointWeights: publishedScoring?.dutyPointWeights,
+    demolitionRecords:
+      publishedScoring?.includeDemolitionPoints === true && Array.isArray(data.attacks)
+        ? data.attacks
+        : undefined,
+    includeDemolitionPoints: publishedScoring?.includeDemolitionPoints === true,
   });
   currentSeason = String(season || defaultEdenSeason()).trim();
   currentMemberOptions = collectEdenMemberOptions(data, model.rows || []);
@@ -7349,7 +7456,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   const dateStr = data.date || data.updatedAt || '';
   currentRows = model.rows;
   currentRecordLabel = dateStr
-    ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
+    ? `${EDEN_IS_X2 ? 'Eden X2' : 'Eden X1'} - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
   applyPendingEdenManagementVotePayload();

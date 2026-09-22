@@ -3,7 +3,6 @@ import fs from 'node:fs/promises';
 import { encodeCombos } from '../js/combo-share.js';
 import { encodeRoster } from '../js/roster-share.js';
 
-
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabHeroesCombos')).toHaveCount(1);
@@ -1801,13 +1800,22 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
 
     await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     await expect(page.locator('#generatorSection')).toBeVisible();
 
     await page.locator('[data-hub-subtab="manual"]').click();
     await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-hub-subtab="manual"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute('aria-selected', 'false');
+    await expect(page.locator('[data-hub-subtab="manual"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute(
+      'aria-selected',
+      'false'
+    );
     await expect(page.locator('#manualSection')).toBeVisible();
     await expect(page.locator('#generatorSection')).toBeHidden();
 
@@ -1823,19 +1831,30 @@ test.describe('app smoke tabs', () => {
     await page.locator('[data-footer-tab="manual"]').click();
     await expect(page.locator('#manualSection')).toBeVisible();
     await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-hub-subtab="manual"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-hub-subtab="manual"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     await expect(page).toHaveURL(/#manual$/);
 
     await page.locator('[data-footer-tab="generator"]').click();
     await expect(page.locator('#generatorSection')).toBeVisible();
     await expect(page.locator('#tabHeroesCombos')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-hub-subtab="generator"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     await expect(page).toHaveURL(/#generator$/);
   });
 
   test('hero atlas and research tabs render', async ({ page }) => {
     await openApp(page);
-    await expectTab(page, '[data-hub-subtab="heroes"]', '#heroesSection', '#heroesSection .heroes-layout');
+    await expectTab(
+      page,
+      '[data-hub-subtab="heroes"]',
+      '#heroesSection',
+      '#heroesSection .heroes-layout'
+    );
     await expectTab(page, '[data-hub-subtab="research"]', '#researchSection', '#techListContainer');
   });
 
@@ -1872,13 +1891,21 @@ test.describe('app smoke tabs', () => {
     await page.locator('#languageSelect').selectOption('ar');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page.locator('#skinAtlasHeading')).toHaveText('\u0623\u0637\u0644\u0633 \u0627\u0644\u0623\u0632\u064a\u0627\u0621');
-    await expect(cards.first().locator('.skin-tier-rank')).toHaveText('\u0623\u0633\u0627\u0633\u064a');
+    await expect(page.locator('#skinAtlasHeading')).toHaveText(
+      '\u0623\u0637\u0644\u0633 \u0627\u0644\u0623\u0632\u064a\u0627\u0621'
+    );
+    await expect(cards.first().locator('.skin-tier-rank')).toHaveText(
+      '\u0623\u0633\u0627\u0633\u064a'
+    );
     await expect(cards.first().locator('.skin-tier-summary')).toContainText(
       '\u0641\u0626\u0629 \u0627\u0644\u0645\u0638\u0627\u0647\u0631 \u0644\u0644\u0645\u0628\u062a\u062f\u0626\u064a\u0646'
     );
     await expect(
-      cards.first().locator('.skin-req-name').filter({ hasText: '\u062e\u062a\u0645 \u0627\u0644\u0633\u064a\u0631\u0629' }).first()
+      cards
+        .first()
+        .locator('.skin-req-name')
+        .filter({ hasText: '\u062e\u062a\u0645 \u0627\u0644\u0633\u064a\u0631\u0629' })
+        .first()
     ).toHaveText('\u062e\u062a\u0645 \u0627\u0644\u0633\u064a\u0631\u0629');
 
     const layout = await page.locator('#heroesSection').evaluate((section) => {
@@ -1910,7 +1937,9 @@ test.describe('app smoke tabs', () => {
       'src',
       /assets\/skins\/king-arthur-arthur-pendragon-icon\.webp/
     );
-    await expect(arthurCard.locator('.skin-gallery-status')).toHaveClass(/skin-gallery-status--complete/);
+    await expect(arthurCard.locator('.skin-gallery-status')).toHaveClass(
+      /skin-gallery-status--complete/
+    );
 
     await page.fill('#skinsGallerySearch', 'Arthur');
     await expect(galleryCards).toHaveCount(1);
@@ -2121,10 +2150,13 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
     await expectTab(page, '#tabEdenMap', '#edenMapSection', '#edenMapRoot');
     // Royal Bounty is the Eden Hub landing page.
-    await expect(page.locator('[data-eden-subtab="bounty"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')).toContainText(
-      'Royal Bounty Eden X2'
+    await expect(page.locator('[data-eden-subtab="bounty"]')).toHaveAttribute(
+      'aria-selected',
+      'true'
     );
+    await expect(
+      page.locator('[data-eden-subtab-panel="bounty"] .bounty-hero-title')
+    ).toContainText('Royal Bounty Eden X2');
     // The existing map planner remains available as a sub-tab. The hub wires its
     // click listener when bootEdenHub() runs, which can land after this click on
     // a slow runner — a single click then silently does nothing and the map
@@ -2393,7 +2425,12 @@ test.describe('app smoke tabs', () => {
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
 
     await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
-    await expectTab(page, '[data-hub-subtab="heroes"]', '#heroesSection', '#heroesSection .hero-detail-panel');
+    await expectTab(
+      page,
+      '[data-hub-subtab="heroes"]',
+      '#heroesSection',
+      '#heroesSection .hero-detail-panel'
+    );
     await page.locator('[data-detail-section="skins"]').click();
     await expect(page.locator('#detail-section-skins')).toContainText(
       'Upgrades SKILL 2: Wheel of Fortune -> Eternity'
@@ -2476,7 +2513,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#genSelectedCount')).toContainText('3 selected');
 
     await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
-    await expectTab(page, '[data-hub-subtab="heroes"]', '#heroesSection', '#heroesSection .hero-detail-panel');
+    await expectTab(
+      page,
+      '[data-hub-subtab="heroes"]',
+      '#heroesSection',
+      '#heroesSection .hero-detail-panel'
+    );
     await expect(page.locator('[data-detail-section="counters"]')).toBeVisible();
     await page.locator('[data-detail-section="counters"]').click();
     await expect(page.locator('#detail-section-counters')).toContainText(
@@ -3515,12 +3557,23 @@ test.describe('app smoke tabs', () => {
     await page.setViewportSize({ width: 980, height: 900 });
     const mobileSourceLayout = await page.evaluate(() => {
       const section = document.querySelector('#ocrDashboardSection');
-      const ids = [
-        'dashWeightedContributionPanel',
-        'edenX1VoteRail',
-        'edenX1PublicOverview',
-        'edenX1PublicDashboard',
-      ];
+      // While voting is open the ballot is moved (in the DOM, not with CSS
+      // order) ahead of the reward tables; otherwise it follows them. Either
+      // way the source order must match what is on screen.
+      const votingOpen = ['open', 'urgent'].includes(document.body.dataset.edenVoteState);
+      const ids = votingOpen
+        ? [
+            'edenX1VoteRail',
+            'dashWeightedContributionPanel',
+            'edenX1PublicOverview',
+            'edenX1PublicDashboard',
+          ]
+        : [
+            'dashWeightedContributionPanel',
+            'edenX1VoteRail',
+            'edenX1PublicOverview',
+            'edenX1PublicDashboard',
+          ];
       const elements = ids.map((id) => document.getElementById(id));
       if (!section || elements.some((element) => !element)) return null;
       return {

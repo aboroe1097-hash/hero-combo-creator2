@@ -2,6 +2,22 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.0.18 - 2026-09-22
+
+- Voting has short links: roc-vts.com/vote opens the Eden X2 ballot directly, and roc-vts.com/eden opens the season. Inside the site, #vote and #season do the same through the Eden Hub.
+- The Eden X2 season summary has a Vote now button while voting is open. On phones the ballot now sits right after the summary instead of below the reward tables, the section chips are one swipeable row, and the reward cards are compact.
+- The Eden Hub opens the current season as a full-screen pane, lists Current Season first, keeps the open tab in view on phones, and shows one Velo button instead of two. A shared season link now opens the season instead of Royal Bounty.
+- Superadmins can count one candidate's team votes for another player, such as a banner account's votes for the player who runs it. Totals, the CSV export, and public results all follow the redirect.
+- The vote admin panel and the Eden X2 page title name the active season instead of always saying Eden X1.
+- The duty scoring weights panel is a compact table with a points example, and the demolition setting is a clear on/off switch.
+- Every uploaded banner, pathing and shield wall row has a Main / Banner switch, pre-filled from the account and the uploaded name ("Roha banner" is a banner even after it is matched to ~Roha~). A row marked Banner scores the player's Alt / secondary weight. Rows saved earlier keep scoring as before until they are edited.
+- Account links, on each duty tab: link a banner or alt account to the player who runs it, or accept one of the suggested "banner" accounts with its guessed owner. Linked accounts score for their owner at the Alt / secondary weight, in the admin and on the public Eden page.
+- The duty list edit window is card based with no sideways scrolling: status colors, a summary of matched, to-check and banner rows, and a save bar that stays in reach. Saved lists show a Main / Banner column.
+- Paste Rows opens a multi-line paste box with a live row count. The old single-line prompt dropped line breaks, which ran pasted rows together.
+- Pasted contribution rows keep small totals (646, 361) and ignore digits that belong to a name ("HarDen*2012"); previously such rows were dropped or misread.
+- The public Eden page now uses the duty weights and the demolition setting the admin publishes with the season. Seasons published before this keep the page's previous behaviour.
+- Team Players Vote is simpler: one status strip, two numbered steps, a check and a clear button inside each confirmed name, and member search that ranks decorated and shorter names correctly ("Kik" finds Kika, "lo" finds LOONY first).
+
 ## 16.0.17 - 2026-09-22
 
 - Pather and banner cells now count one duty per player family, so Lady Zubbs and her Zubbs account no longer turn seven duties into ten. The admin list summary follows the same rule.

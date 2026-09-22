@@ -38,12 +38,7 @@
   // primary and the order they sit in — layoutNavigation() appends in this
   // sequence. The four hubs lead because each one stands for a group of related
   // decisions; standalone tools follow.
-  const hubIds = [
-    'tabHeroesCombos',
-    'tabResearchTowers',
-    'tabClassDevelopment',
-    'tabEdenMap',
-  ];
+  const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabClassDevelopment', 'tabEdenMap'];
   // VTS Admin sits sixth, straight after the hubs and Materials: it is opened
   // far more often than the standalone tools yet was reachable only through
   // More. All-Star BoH moves the other way, into More, because it runs for a
@@ -73,6 +68,11 @@
     ['bounty', 'bounty'],
     ['royalbounty', 'bounty'],
     ['edenx1', 'previous'],
+    // Short links into the season: roc-vts.com/#season and roc-vts.com/#vote
+    // (the ballot itself).
+    ['season', 'season'],
+    ['edenx2', 'season'],
+    ['vote', 'vote'],
   ]);
   // The same arrangement for the Research & Towers Hub: #research and
   // #specialization were top-level tabs and stay valid deep links.
@@ -190,8 +190,7 @@
     }
     if (legacyResearchTowersHashes.has(normalizedHash)) {
       try {
-        document.body.dataset.researchTowersSubtab =
-          legacyResearchTowersHashes.get(normalizedHash);
+        document.body.dataset.researchTowersSubtab = legacyResearchTowersHashes.get(normalizedHash);
       } catch {
         /* dataset unavailable */
       }
