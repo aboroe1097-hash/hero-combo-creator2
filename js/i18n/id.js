@@ -3241,6 +3241,8 @@ Object.assign(id, {
   adminSuggestReviewNoneForFilter: 'Tidak ada saran yang cocok dengan filter ini.',
   adminDutyWeightsTitle: 'Bobot poin tugas',
   adminDutyWeightsNote: 'Nilai satu tugas, menurut aktivitas dan menurut apakah akun utama atau akun kedua yang melakukannya. Menyimpan langsung menghitung ulang musim ini, termasuk entri lama.',
+  adminDutyWeightsIncludeDemolition: 'Tambahkan poin penghancuran ke total kontribusi',
+  adminDutyWeightsIncludeDemolitionHint: 'Matikan agar penghancuran tetap terlihat tanpa ditambahkan ke total dasbor.',
   adminDutyWeightsMain: 'Utama',
   adminDutyWeightsAlt: 'Akun kedua',
   adminDutyWeightsBanners: 'Panji',

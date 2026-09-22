@@ -2101,6 +2101,7 @@
             <div id="dashEdenVoteResults">
               <div class="dash-empty" data-i18n="adminEdenVotesEmpty">No votes yet.</div>
             </div>
+            <p id="dashEdenVoteDeleteStatus" role="status" aria-live="polite"></p>
           </section>
           <section class="dash-contribution-compare-card dash-eden-votes-history-panel">
             <div class="dash-contribution-compare-head">
@@ -2335,6 +2336,13 @@
                 <input type="number" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="alt" />
               </label>
             </div>
+            <label class="dash-duty-weight-row dash-duty-demolition-toggle">
+              <input id="dashIncludeDemolitionPointsToggle" type="checkbox" checked />
+              <span>
+                <strong data-i18n="adminDutyWeightsIncludeDemolition">Add demolition points to total contribution</strong>
+                <small data-i18n="adminDutyWeightsIncludeDemolitionHint">Turn off to keep demolition visible without adding it to the dashboard total.</small>
+              </span>
+            </label>
             <div class="dash-duty-weights-actions">
               <button id="dashDutyWeightsSaveBtn" class="dash-btn dash-btn-primary" type="button" data-i18n="adminDutyWeightsSave">Save weights</button>
               <button id="dashDutyWeightsResetBtn" class="dash-btn" type="button" data-i18n="adminDutyWeightsReset">Reset to defaults</button>

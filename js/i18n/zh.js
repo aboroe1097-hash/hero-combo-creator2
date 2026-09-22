@@ -2094,6 +2094,8 @@ const zh = {
   adminSuggestReviewNoneForFilter: '没有符合此筛选的建议。',
   adminDutyWeightsTitle: '任务计分权重',
   adminDutyWeightsNote: '一次任务的分值，按活动类型以及由主号还是小号完成来区分。保存后立即重算本赛季，包括此前的记录。',
+  adminDutyWeightsIncludeDemolition: '将拆除积分计入总贡献',
+  adminDutyWeightsIncludeDemolitionHint: '关闭后仍显示拆除数据，但不计入仪表板总分。',
   adminDutyWeightsMain: '主号',
   adminDutyWeightsAlt: '小号',
   adminDutyWeightsBanners: '旗帜',

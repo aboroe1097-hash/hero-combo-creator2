@@ -1651,7 +1651,9 @@ function addDutyNameRow(row) {
     template.innerHTML = renderDutyMatchRows([{ ...shared, name: parts[0] }]).trim();
     const first = template.content.firstElementChild;
     row.replaceWith(first);
-    template.innerHTML = renderDutyMatchRows([{ ...shared, name: parts.slice(1).join(', ') }]).trim();
+    template.innerHTML = renderDutyMatchRows([
+      { ...shared, name: parts.slice(1).join(', ') },
+    ]).trim();
     const second = template.content.firstElementChild;
     first.after(second);
     second.querySelector('.dash-duty-match-select')?.focus();
@@ -2050,6 +2052,18 @@ function resolveDutySummaryIdentity(name) {
   }
 }
 
+function getDutyEntryCreditedIdentities(entry) {
+  const seenFamilies = new Set();
+  return getDutyEntryCreditedNames(entry)
+    .map(resolveDutySummaryIdentity)
+    .filter((identity) => {
+      const familyKey = identity?.playerKey && getWeightedPlayerFamilyKey(identity.playerKey);
+      if (!familyKey || seenFamilies.has(familyKey)) return false;
+      seenFamilies.add(familyKey);
+      return true;
+    });
+}
+
 function collectDutyPlayerSummary(records) {
   const rows = [];
   records.forEach((record) => {
@@ -2057,11 +2071,10 @@ function collectDutyPlayerSummary(records) {
     entries.forEach((entry) => {
       // Confirmed rows still go through the duty resolver so owner/operator
       // dual credit and special account identity stay consistent.
-      const credited = getDutyEntryCreditedNames(entry);
-      credited.forEach((name) => {
+      getDutyEntryCreditedIdentities(entry).forEach((identity) => {
         rows.push({
           ...entry,
-          name,
+          name: identity.playerName,
           time: entry.usageTime || record.gameTime,
           status: getDutyEntrySummaryStatus(entry),
         });
@@ -2084,6 +2097,9 @@ function buildDutyContributionLookup() {
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
+    demolitionRecords: state.dashData?.attacks,
+    dutyPointWeights: state.dutyPointWeights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
   });
   const byPlayerKey = new Map();
   const byFamilyKey = new Map();
@@ -2264,10 +2280,7 @@ function renderDutySummary() {
   const counts = new Map();
   (state.dutyRecords || []).forEach((record) => {
     (record.entries || []).forEach((entry) => {
-      const credited = getDutyEntryCreditedNames(entry);
-      credited.forEach((name) => {
-        const identity = resolveDutySummaryIdentity(name);
-        if (!identity) return;
+      getDutyEntryCreditedIdentities(entry).forEach((identity) => {
         if (!counts.has(identity.playerKey))
           counts.set(identity.playerKey, {
             name: identity.playerName,
@@ -4157,6 +4170,8 @@ function renderWeightedContributionTable() {
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
     demolitionRecords: state.dashData?.attacks,
+    dutyPointWeights: state.dutyPointWeights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
   });
   const rows = model.rows || [];
 

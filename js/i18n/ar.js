@@ -3135,6 +3135,8 @@ Object.assign(ar, {
   adminSuggestReviewNoneForFilter: 'لا توجد اقتراحات تطابق هذا المرشح.',
   adminDutyWeightsTitle: 'أوزان نقاط المهام',
   adminDutyWeightsNote: 'قيمة المهمة الواحدة بحسب النشاط وبحسب ما إذا نفذها الحساب الرئيسي أو حساب ثانوي. الحفظ يعيد حساب الموسم فورا بما في ذلك السجلات السابقة.',
+  adminDutyWeightsIncludeDemolition: 'إضافة نقاط الهدم إلى إجمالي المساهمة',
+  adminDutyWeightsIncludeDemolitionHint: 'أوقفه لإبقاء الهدم ظاهرا دون إضافته إلى إجمالي لوحة المعلومات.',
   adminDutyWeightsMain: 'رئيسي',
   adminDutyWeightsAlt: 'ثانوي',
   adminDutyWeightsBanners: 'الرايات',

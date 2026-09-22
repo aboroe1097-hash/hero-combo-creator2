@@ -1332,6 +1332,8 @@ function renderWeightedContributionDashboard(options = {}) {
     season: state.r5Season,
     exGuildContributions: state.exGuildContributions,
     demolitionRecords: state.dashData?.attacks,
+    dutyPointWeights: state.dutyPointWeights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
   });
   const rows = model.rows || [];
 

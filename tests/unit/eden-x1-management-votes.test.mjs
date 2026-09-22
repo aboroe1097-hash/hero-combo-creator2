@@ -183,9 +183,15 @@ function resolveDrThunderFamily(rawName) {
 test('management vote URL uses a Google Visualization JSONP callback', () => {
   const url = buildManagementVotesUrl({ callbackName: '__edenVotes' });
 
-  assert.match(url, /docs\.google\.com\/spreadsheets\/d\/14gUmeDy/);
-  assert.match(url, /sheet=Vote\+Results/);
+  assert.match(
+    url,
+    /docs\.google\.com\/spreadsheets\/d\/1pSKkAHi0hG_Ye7W5MtZWOMb6goVhIdwasldTsfVnrdM/
+  );
+  assert.match(url, /sheet=VoteResults/);
   assert.match(url, /tqx=responseHandler%3A__edenVotes/);
+  const archiveUrl = buildManagementVotesUrl({ workspace: 'eden-x1' });
+  assert.match(archiveUrl, /14gUmeDyTT-Bb9Yvqhz21HcyVKxrkK_hxvkTwpVLKwcM/);
+  assert.match(archiveUrl, /sheet=Vote\+Results/);
   assert.throws(() => buildManagementVotesUrl({ callbackName: 'bad-name()' }));
 });
 
@@ -233,11 +239,60 @@ test('management vote variants map Victoria Kika aliases to the ornate Kika acco
     'GoodnesGraycious',
     'Goodness',
   ]);
-  assert.deepEqual(managementVoteCandidateVariants('Victoria ~Kika~').slice(0, 2), [
-    '\ua9c1\u0f3a Kika \u0f3b\ua9c2',
-    'Victoria ~Kika~',
+  const kikaVariants = managementVoteCandidateVariants('Victoria ~Kika~');
+  assert.equal(kikaVariants[0], '꧁༺ Kika ༻꧂');
+  assert.ok(kikaVariants.includes('Victoria ~Kika~'));
+  assert.ok(managementVoteCandidateVariants('Dr Thunder 293').includes('Dr Thunder'));
+  assert.equal(managementVoteCandidateVariants('Kiji')[0], 'MalakaKiji');
+  assert.equal(managementVoteCandidateVariants('Loonly')[0], 'Loony');
+  assert.equal(managementVoteCandidateVariants('ΛNGΞL 1097')[0], 'ANGEL');
+});
+
+test('current VoteResults spellings pool by player family', () => {
+  const rows = [
+    ['Kiji', 6],
+    ['Victoria ~Kika~', 5],
+    ['Redbull', 4],
+    ['Bil', 3],
+    ['Dr Thunder', 3],
+    ['Loonly', 3],
+    ['Loony', 3],
+    ['~Sarafino~', 3],
+    ['BoneSmoker', 2],
+    ['ΛNGEL 1097', 2],
+    ['FALLEN', 1],
+    ['Peter', 1],
+    ['Zubbs', 1],
+    ['ΛNGΞL 1097', 1],
+  ].map(([rawName, votes], rowIndex) => ({ rowIndex, rawName, votes }));
+  const known = new Map([
+    ['malakakiji', ['MalakaKiji', 'malakakiji']],
+    ['loony', ['Loony', 'loony']],
+    ['angel', ['ANGEL', 'angel']],
+    ['redbulls', ['REDBULLS', 'redbull']],
+    ['kika', ['꧁༺ Kika ༻꧂', 'kika']],
   ]);
-  assert.deepEqual(managementVoteCandidateVariants('Dr Thunder 293').slice(-1), ['Dr Thunder']);
+  const results = summarizeManagementVotePayload(rows, {
+    resolveCandidate(rawName) {
+      for (const variant of managementVoteCandidateVariants(rawName)) {
+        const match = known.get(compactTestKey(variant));
+        if (match)
+          return {
+            playerName: match[0],
+            playerKey: compactTestKey(match[0]),
+            familyKey: match[1],
+            matched: true,
+          };
+      }
+      return { playerName: rawName, playerKey: compactTestKey(rawName), matched: false };
+    },
+  });
+  const byName = new Map(results.rankings.map((row) => [row.playerName, row.votes]));
+  assert.equal(byName.get('MalakaKiji'), 6);
+  assert.equal(byName.get('Loony'), 6);
+  assert.equal(byName.get('ANGEL'), 3);
+  assert.equal(byName.get('REDBULLS'), 4);
+  assert.equal(byName.get('꧁༺ Kika ༻꧂'), 5);
 });
 
 test('management votes aggregate top two players from the form and resolve to klist names', () => {
@@ -471,5 +526,5 @@ test('management vote proxy provides the public table without waiting for JSONP'
   });
 
   assert.equal(result, payload);
-  assert.equal(new URL(requestedUrl).searchParams.get('sheet'), 'Vote Results');
+  assert.equal(new URL(requestedUrl).searchParams.get('sheet'), 'VoteResults');
 });

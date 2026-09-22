@@ -3292,6 +3292,8 @@ const de = {
   adminSuggestReviewNoneForFilter: 'Keine Vorschlaege passen zu diesem Filter.',
   adminDutyWeightsTitle: 'Punktgewichte für Dienste',
   adminDutyWeightsNote: 'Punkte, die ein Dienst wert ist, nach Tätigkeit und danach, ob ein Haupt- oder Zweitkonto ihn geleistet hat. Speichern berechnet diese Saison sofort neu, auch vergangene Einträge.',
+  adminDutyWeightsIncludeDemolition: 'Abrisspunkte zur Gesamtleistung addieren',
+  adminDutyWeightsIncludeDemolitionHint: 'Ausschalten, um Abriss sichtbar zu lassen, ohne ihn zur Dashboard-Gesamtsumme zu addieren.',
   adminDutyWeightsMain: 'Haupt',
   adminDutyWeightsAlt: 'Zweit / Nebenkonto',
   adminDutyWeightsBanners: 'Banner',

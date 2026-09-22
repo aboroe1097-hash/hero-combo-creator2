@@ -706,11 +706,15 @@ service cloud.firestore {
       && validEdenX1VoteStringList(request.resource.data.previousCandidateKeys, 0)
       && validEdenX1VoteStringList(request.resource.data.previousCandidateNames, 0)
       && request.resource.data.previousCandidateNames.size() == request.resource.data.previousCandidateKeys.size()
-      && validEdenX1VoteStringList(request.resource.data.candidateKeys, 1)
-      && validEdenX1VoteStringList(request.resource.data.candidateNames, 1)
+      && validEdenX1VoteStringList(request.resource.data.candidateKeys, request.resource.data.action == 'deleted' ? 0 : 1)
+      && validEdenX1VoteStringList(request.resource.data.candidateNames, request.resource.data.action == 'deleted' ? 0 : 1)
       && request.resource.data.candidateNames.size() == request.resource.data.candidateKeys.size()
       && request.resource.data.voterAuthUid == request.auth.uid
-      && request.resource.data.action in ['created', 'updated']
+      && request.resource.data.action in ['created', 'updated', 'deleted']
+      && (request.resource.data.action != 'deleted'
+        || (isSuperAdmin()
+          && request.resource.data.previousCandidateNames.size() > 0
+          && request.resource.data.candidateNames.size() == 0))
       && request.resource.data.createdAt == request.time;
     }
 
@@ -2676,13 +2680,14 @@ service cloud.firestore {
 
     function validDutyPointWeights() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['weights', 'updatedAt', 'updatedBy'])
+      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'updatedAt', 'updatedBy'])
         && d.weights is map
         && d.weights.keys().hasOnly(['banners', 'pathers', 'shieldWalls'])
         && d.weights.keys().hasAll(['banners', 'pathers', 'shieldWalls'])
         && validDutyPointWeightEntry(d.weights.banners)
         && validDutyPointWeightEntry(d.weights.pathers)
         && validDutyPointWeightEntry(d.weights.shieldWalls)
+        && (!('includeDemolitionPoints' in d) || d.includeDemolitionPoints is bool)
         && (!('updatedBy' in d) || d.updatedBy is string);
     }
     match /vts_admin/eden_x1_vote_settings {
@@ -2767,7 +2772,8 @@ service cloud.firestore {
 
     match /vts_admin/eden_x2_votes/records/{voteId} {
       allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
-      allow list, delete: if isAdmin();
+      allow list: if isAdmin();
+      allow delete: if isSuperAdmin();
       allow create: if signedIn()
         && validEdenX1Vote()
         && validEdenX1VotePath(voteId);

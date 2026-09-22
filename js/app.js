@@ -180,7 +180,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260918_202304').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260922_184033').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -202,7 +202,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260918_202304').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260922_184033').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -213,7 +213,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260918_202304').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260922_184033').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -1121,9 +1121,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.
-        import('./eden-hub.js?v=20260918_202304')
+        import('./eden-hub.js?v=20260922_184033')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260918_202304'))
+          .then(() => import('./eden-map.js?v=20260922_184033'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1153,7 +1153,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260918_202304')
+      import('./app-hero-atlas.js?v=20260922_184033')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1195,7 +1195,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'artifact' && !_artifactReady) {
       if (_artifactBooting) return;
       _artifactBooting = true;
-      import('./app-artifact.js?v=20260918_202304')
+      import('./app-artifact.js?v=20260922_184033')
         .then(async (mod) => {
           await mod.initArtifactCalculator();
           _artifactReady = true;
@@ -1270,7 +1270,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260918_202304')
+      import('./app-strife.js?v=20260922_184033')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1323,7 +1323,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260918_202304')
+      import('./youtube-v14.js?v=20260922_184033')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1488,7 +1488,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260918_202304')
+      import('./app-hero-atlas.js?v=20260922_184033')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */

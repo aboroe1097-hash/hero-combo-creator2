@@ -364,6 +364,7 @@ state.edenX1VoteSettings = null;
 // Weights the scoring uses for duty. Null until loaded; the scorer falls back
 // to its own defaults, so a failed load scores rather than scoring nothing.
 state.dutyPointWeights = null;
+state.includeDemolitionPoints = true;
 let dutyPointWeightsVersion = 0;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
@@ -1299,10 +1300,13 @@ function collectEdenX1VoteTotals(votes, season) {
   };
 }
 
-function buildEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
+function buildEdenX1PublicVoteResults(
+  settings = state.edenX1VoteSettings,
+  votes = state.edenX1Votes
+) {
   const normalizedSettings = normalizeEdenX1VoteSettings(settings || {});
   const season = normalizedSettings.season || currentEdenVoteSeason();
-  const { totalRows } = collectEdenX1VoteTotals(state.edenX1Votes || [], season);
+  const { totalRows } = collectEdenX1VoteTotals(votes || [], season);
   return {
     season,
     published: normalizedSettings.showPublicResults === true,
@@ -1389,13 +1393,14 @@ function renderEdenX1VoteResults() {
     <div class="dash-duty-summary-table-wrap">
       <h3 class="dash-modal-section-label">${esc(dashT('adminVoteBallots'))}</h3>
       <table class="dash-duty-summary-table">
-        <thead><tr><th>${esc(dashT('adminVoteVoter'))}</th><th>${esc(dashT('adminVoteSelection'))}</th><th>${esc(dashT('adminVoteUpdated'))}</th></tr></thead>
+        <thead><tr><th>${esc(dashT('adminVoteVoter'))}</th><th>${esc(dashT('adminVoteSelection'))}</th><th>${esc(dashT('adminVoteUpdated'))}</th>${dashSuperAdmin === true ? `<th>${esc(dashT('adminEdenVotesBallotAction'))}</th>` : ''}</tr></thead>
         <tbody>${ballotRows
           .map(
             (vote) => `<tr>
               <td><strong class="dash-duty-cell-value">${esc(vote.voterName)}</strong></td>
               <td><span class="dash-duty-cell-value">${esc(vote.candidateNames.join(', '))}</span></td>
               <td><span class="dash-duty-cell-value dash-duty-times">${esc(edenVoteUpdatedAtLabel(vote))}</span></td>
+              ${dashSuperAdmin === true ? `<td><button type="button" class="dash-btn dash-btn-xs dash-btn-danger" data-eden-vote-delete="${esc(vote.id)}" aria-label="${esc(dashT('adminEdenVotesDeleteBallotFor', { name: vote.voterName }))}">${esc(dashT('adminDelete'))}</button></td>` : ''}
             </tr>`
           )
           .join('')}</tbody>
@@ -1499,7 +1504,7 @@ async function loadEdenX1Votes() {
     snapshot.forEach((docSnap) =>
       votes.push(normalizeEdenX1VoteRecord({ id: docSnap.id, ...docSnap.data() }))
     );
-    state.edenX1Votes = dedupeEdenX1Votes(votes);
+    state.edenX1Votes = votes;
     renderEdenX1VoteAdmin();
     return true;
   } catch (err) {
@@ -1542,6 +1547,80 @@ async function loadEdenX1VoteHistory() {
   }
 }
 
+async function deleteEdenX1Ballot(voteId) {
+  if (blockEdenArchiveWrite('delete vote')) return false;
+  if (dashSuperAdmin !== true) return false;
+  const season = currentEdenVoteSeason();
+  const selected = dedupeEdenX1Votes(state.edenX1Votes || []).find(
+    (vote) =>
+      vote.id === voteId && vote.season === season && vote.category === EDEN_X1_TEAM_VOTE_CATEGORY
+  );
+  if (
+    !selected ||
+    !window.confirm(dashT('adminEdenVotesDeleteConfirm', { name: selected.voterName }))
+  ) {
+    return false;
+  }
+  const status = $id('dashEdenVoteDeleteStatus');
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const { collection, doc, getDocs, query, serverTimestamp, where, writeBatch } =
+      await loadFirestoreApi();
+    const snapshot = await getDocs(
+      query(collection(db, EDEN_X1_VOTES_COLLECTION_PATH), where('season', '==', season))
+    );
+    const allVotes = [];
+    snapshot.forEach((docSnap) =>
+      allVotes.push(normalizeEdenX1VoteRecord({ id: docSnap.id, ...docSnap.data() }))
+    );
+    const matching = allVotes.filter(
+      (vote) => vote.category === EDEN_X1_TEAM_VOTE_CATEGORY && vote.voterKey === selected.voterKey
+    );
+    if (!matching.some((vote) => vote.id === selected.id)) {
+      throw new Error(dashT('adminEdenVotesDeleteStale'));
+    }
+    const remaining = allVotes.filter((vote) => !matching.includes(vote));
+    const batch = writeBatch(db);
+    matching.forEach((vote) => batch.delete(doc(db, EDEN_X1_VOTES_COLLECTION_PATH, vote.id)));
+    const historyRef = doc(collection(db, EDEN_X1_VOTE_HISTORY_COLLECTION_PATH));
+    const historyEntry = {
+      id: historyRef.id,
+      voteId: edenX1VoteCanonicalId(selected),
+      season,
+      category: EDEN_X1_TEAM_VOTE_CATEGORY,
+      voterKey: selected.voterKey,
+      voterName: selected.voterName,
+      previousCandidateKeys: selected.candidateKeys,
+      previousCandidateNames: selected.candidateNames,
+      candidateKeys: [],
+      candidateNames: [],
+      voterAuthUid: state.adminUser?.uid || '',
+      action: 'deleted',
+      createdAt: serverTimestamp(),
+    };
+    batch.set(historyRef, historyEntry);
+    batch.set(doc(db, EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH), {
+      ...buildEdenX1PublicVoteResults(state.edenX1VoteSettings, remaining),
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    await batch.commit();
+    state.edenX1Votes = remaining;
+    state.edenX1VoteHistory = [
+      { ...historyEntry, createdAt: new Date().toISOString() },
+      ...(state.edenX1VoteHistory || []),
+    ];
+    renderEdenX1VoteAdmin();
+    if (status) status.textContent = dashT('adminEdenVotesDeleted', { name: selected.voterName });
+    return true;
+  } catch (err) {
+    if (status) status.textContent = dashT('adminEdenVotesDeleteFailed');
+    showCloudSyncFailure(err, 'Eden X2 vote delete failed');
+    return false;
+  }
+}
+
 async function loadEdenX1VoteSettings() {
   state.edenX1VoteSettings = readLocalEdenX1VoteSettings();
   renderEdenX1VoteSettings();
@@ -1568,17 +1647,20 @@ async function loadEdenX1VoteSettings() {
 
 function readLocalDutyPointWeights() {
   try {
-    return normalizeDutyPointWeights(
-      JSON.parse(localStorage.getItem(DUTY_POINT_WEIGHTS_LOCAL_KEY) || 'null')
-    );
+    const stored = JSON.parse(localStorage.getItem(DUTY_POINT_WEIGHTS_LOCAL_KEY) || 'null');
+    const source = stored && typeof stored === 'object' ? stored : {};
+    return {
+      weights: normalizeDutyPointWeights(source.weights || source),
+      includeDemolitionPoints: source.includeDemolitionPoints !== false,
+    };
   } catch {
-    return normalizeDutyPointWeights(null);
+    return { weights: normalizeDutyPointWeights(null), includeDemolitionPoints: true };
   }
 }
 
-function writeLocalDutyPointWeights(weights) {
+function writeLocalDutyPointWeights(settings) {
   try {
-    localStorage.setItem(DUTY_POINT_WEIGHTS_LOCAL_KEY, JSON.stringify(weights));
+    localStorage.setItem(DUTY_POINT_WEIGHTS_LOCAL_KEY, JSON.stringify(settings));
   } catch {
     /* private mode and full quotas are not worth failing a save over */
   }
@@ -1587,7 +1669,9 @@ function writeLocalDutyPointWeights(weights) {
 // Reads the weight table for this workspace. Anything missing falls back to
 // the defaults per cell, so a partially written document still scores.
 async function loadDutyPointWeights() {
-  state.dutyPointWeights = readLocalDutyPointWeights();
+  const localSettings = readLocalDutyPointWeights();
+  state.dutyPointWeights = localSettings.weights;
+  state.includeDemolitionPoints = localSettings.includeDemolitionPoints;
   renderDutyPointWeights();
   if (state.adminIsAdmin !== true) return false;
   const loadVersion = dutyPointWeightsVersion;
@@ -1597,8 +1681,13 @@ async function loadDutyPointWeights() {
     const { doc, getDoc } = await loadFirestoreApi();
     const snap = await getDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH));
     if (snap.exists() && loadVersion === dutyPointWeightsVersion) {
-      state.dutyPointWeights = normalizeDutyPointWeights(snap.data()?.weights);
-      writeLocalDutyPointWeights(state.dutyPointWeights);
+      const data = snap.data() || {};
+      state.dutyPointWeights = normalizeDutyPointWeights(data.weights);
+      state.includeDemolitionPoints = data.includeDemolitionPoints !== false;
+      writeLocalDutyPointWeights({
+        weights: state.dutyPointWeights,
+        includeDemolitionPoints: state.includeDemolitionPoints,
+      });
       renderDutyPointWeights();
       render();
     }
@@ -1613,12 +1702,13 @@ async function loadDutyPointWeights() {
 // duty points are derived at render time rather than stored. That is the
 // intent — a weight is a rule, not a per-row value — but it is why the editor
 // says so out loud before saving.
-async function saveDutyPointWeights(nextWeights) {
+async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true) {
   if (blockEdenArchiveWrite('save duty point weights')) return false;
   dutyPointWeightsVersion += 1;
   const weights = normalizeDutyPointWeights(nextWeights);
   state.dutyPointWeights = weights;
-  writeLocalDutyPointWeights(weights);
+  state.includeDemolitionPoints = includeDemolitionPoints !== false;
+  writeLocalDutyPointWeights({ weights, includeDemolitionPoints: state.includeDemolitionPoints });
   renderDutyPointWeights();
   render();
   if (state.adminIsAdmin !== true) return false;
@@ -1629,6 +1719,7 @@ async function saveDutyPointWeights(nextWeights) {
     const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
     await setDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH), {
       weights,
+      includeDemolitionPoints: state.includeDemolitionPoints,
       updatedAt: serverTimestamp(),
       updatedBy: state.adminUser?.uid || '',
     });
@@ -1651,6 +1742,8 @@ function renderDutyPointWeights() {
       if (input && document.activeElement !== input) input.value = String(weights[activity][cls]);
     }
   }
+  const demolitionToggle = $id('dashIncludeDemolitionPointsToggle');
+  if (demolitionToggle) demolitionToggle.checked = state.includeDemolitionPoints !== false;
 }
 
 function collectDutyPointWeightsFromInputs() {
@@ -1669,11 +1762,14 @@ function collectDutyPointWeightsFromInputs() {
 
 function wireDutyPointWeights() {
   $id('dashDutyWeightsSaveBtn')?.addEventListener('click', () => {
-    void saveDutyPointWeights(collectDutyPointWeightsFromInputs());
+    void saveDutyPointWeights(
+      collectDutyPointWeightsFromInputs(),
+      $id('dashIncludeDemolitionPointsToggle')?.checked !== false
+    );
   });
   $id('dashDutyWeightsResetBtn')?.addEventListener('click', () => {
     if (!confirm(dashT('adminDutyWeightsResetConfirm'))) return;
-    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS);
+    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true);
   });
 }
 
@@ -1766,6 +1862,10 @@ function bindEdenX1VoteAdminControls() {
   bindEdenX1VoteAdminControls.bound = true;
   $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => refreshEdenX1VoteAdminData());
   $id('dashEdenVoteExportBtn')?.addEventListener('click', () => exportEdenX1VotesCsv());
+  $id('dashEdenVoteResults')?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-eden-vote-delete]');
+    if (button) void deleteEdenX1Ballot(button.dataset.edenVoteDelete);
+  });
   $id('dashEdenVoteActivateSeasonBtn')?.addEventListener('click', () =>
     activateCurrentEdenX1VoteSeason()
   );
@@ -6098,6 +6198,7 @@ function buildWeightedContributionExportModel() {
     exGuildContributions: state.exGuildContributions,
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
   });
 }
 
@@ -6123,6 +6224,7 @@ function buildAllianceViewContributionModel() {
     exGuildContributions: state.exGuildContributions,
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()

@@ -230,6 +230,16 @@ test('weighted contribution credits demolition at one point per twenty demolitio
   assert.equal(angel.totalDemolition, 1000000);
   assert.equal(angel.demolitionPoints, 50000);
   assert.equal(angel.weightedScore, 150000);
+
+  const disabled = buildWeightedContributionRows({
+    contributionRecords: model.record ? [model.record] : [],
+    demolitionRecords: [{ players: [{ name: 'Alpha', value: 1000000 }] }],
+    includeDemolitionPoints: false,
+  });
+  const disabledAlpha = disabled.rows.find((row) => row.playerName === 'Alpha');
+  assert.equal(disabledAlpha.totalDemolition, 1000000);
+  assert.equal(disabledAlpha.demolitionPoints, 0);
+  assert.equal(disabledAlpha.weightedScore, 100000);
 });
 
 test('public R5 conduct mirror keeps scores and premium flags without private notes', () => {
@@ -338,6 +348,22 @@ test('weighted duty counts credit both banner account and operator when present'
 
     assert.equal(counts.get(compactPlayerIdentity('ANGEL')).banners, 1);
     assert.equal(counts.get(compactPlayerIdentity('Zubbs')).banners, 1);
+  });
+});
+
+test('one duty cell credits a player family once when owner and operator are aliases', () => {
+  withRosterNames(() => {
+    const counts = buildWeightedDutyCounts([
+      {
+        type: 'pather',
+        entries: [{ name: 'Angel Banner (zubbs)', confirmed: 'Lady Zubbs' }],
+      },
+    ]);
+    const zubbsFamilyCount = [...counts.entries()]
+      .filter(([key]) => getWeightedPlayerFamilyKey(key) === 'zubbs')
+      .reduce((sum, [, row]) => sum + row.pathers, 0);
+
+    assert.equal(zubbsFamilyCount, 1);
   });
 });
 
@@ -960,11 +986,20 @@ test('duty weights are stored per workspace and edited only by a superadmin', as
       );
     }
   }
+  assert.match(panel, /id="dashIncludeDemolitionPointsToggle"/);
 
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   // Both scoring call sites must receive the weights: an export that scored
   // differently from the dashboard it came from would be worse than no export.
   assert.equal([...dashboard.matchAll(/dutyPointWeights: state\.dutyPointWeights/g)].length, 2);
+  assert.equal(
+    [
+      ...dashboard.matchAll(
+        /dutyPointWeights: state\.dutyPointWeights,\s*includeDemolitionPoints: state\.includeDemolitionPoints/g
+      ),
+    ].length,
+    2
+  );
   // Saving is refused on an archived workspace, like every other write.
   assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
 });
