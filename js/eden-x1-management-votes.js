@@ -1,5 +1,16 @@
-const DEFAULT_SHEET_ID = '14gUmeDyTT-Bb9Yvqhz21HcyVKxrkK_hxvkTwpVLKwcM';
-const DEFAULT_RESULTS_SHEET_NAME = 'Vote Results';
+import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
+import { getPublicVtsPlayerProfile } from './vts-public-players.js';
+
+const MANAGEMENT_VOTE_SOURCES = Object.freeze({
+  'eden-x1': {
+    sheetId: '14gUmeDyTT-Bb9Yvqhz21HcyVKxrkK_hxvkTwpVLKwcM',
+    resultsSheetName: 'Vote Results',
+  },
+  'eden-x2': {
+    sheetId: '1pSKkAHi0hG_Ye7W5MtZWOMb6goVhIdwasldTsfVnrdM',
+    resultsSheetName: 'VoteResults',
+  },
+});
 const DEFAULT_RAW_SHEET_NAME = 'Form Responses 1';
 const DEFAULT_PICK_COLUMN_LABEL = 'Pick 4 Names';
 const DEFAULT_NAME_COLUMN_LABEL = 'Name';
@@ -104,8 +115,9 @@ function uniqueValues(values) {
 }
 
 export function buildManagementVotesUrl(options = {}) {
-  const sheetId = String(options.sheetId || DEFAULT_SHEET_ID).trim();
-  const sheetName = String(options.sheetName || DEFAULT_RESULTS_SHEET_NAME).trim();
+  const source = MANAGEMENT_VOTE_SOURCES[options.workspace] || MANAGEMENT_VOTE_SOURCES['eden-x2'];
+  const sheetId = String(options.sheetId || source.sheetId).trim();
+  const sheetName = String(options.sheetName || source.resultsSheetName).trim();
   const callbackName = String(options.callbackName || '').trim();
   if (!sheetId) throw new Error('Missing Google Sheet id');
   if (callbackName && !JSONP_CALLBACK_RE.test(callbackName)) {
@@ -154,6 +166,8 @@ export function managementVoteCandidateVariants(value) {
     .trim();
   const compactRaw = compactVoteKey(raw);
   const compactNormalized = compactVoteKey(normalized);
+  const confirmedAlias = resolveConfirmedPlayerAlias(normalized || raw);
+  const publicProfile = getPublicVtsPlayerProfile(normalized || raw);
   const preferred = [
     ...(compactRaw.includes('victoria') && compactRaw.endsWith('kika')
       ? [KIKA_ALT_DISPLAY_NAME]
@@ -161,6 +175,13 @@ export function managementVoteCandidateVariants(value) {
     ...(compactRaw === 'goodness' || compactNormalized === 'goodness'
       ? [GOODNESS_CANONICAL_NAME]
       : []),
+    // The current Google Form contains this single-letter typo. Keep the
+    // correction local to management voting rather than merging identities in
+    // contribution and demolition data without owner evidence.
+    ...(compactRaw === 'loonly' || compactNormalized === 'loonly' ? ['Loony'] : []),
+    ...(compactRaw === 'redbull' || compactNormalized === 'redbull' ? ['REDBULLS'] : []),
+    confirmedAlias,
+    publicProfile?.name,
   ];
   return uniqueValues([...preferred, raw, normalized, undecorated]);
 }
@@ -524,7 +545,12 @@ export async function loadManagementVotesViaProxy(options = {}) {
   }
 
   const url = new URL(proxyUrl);
-  url.searchParams.set('sheet', String(options.sheetName || DEFAULT_RESULTS_SHEET_NAME).trim());
+  const workspace = options.workspace === 'eden-x1' ? 'eden-x1' : 'eden-x2';
+  url.searchParams.set('workspace', workspace);
+  url.searchParams.set(
+    'sheet',
+    String(options.sheetName || MANAGEMENT_VOTE_SOURCES[workspace].resultsSheetName).trim()
+  );
   const setTimer = options.setTimeoutFn || globalThis.setTimeout.bind(globalThis);
   const clearTimer = options.clearTimeoutFn || globalThis.clearTimeout.bind(globalThis);
   const controller = new AbortController();
@@ -577,9 +603,10 @@ async function loadManagementVoteSheet(options) {
 }
 
 export async function loadManagementVotesPayloadWithFallback(options = {}) {
+  const source = MANAGEMENT_VOTE_SOURCES[options.workspace] || MANAGEMENT_VOTE_SOURCES['eden-x2'];
   const payload = await loadManagementVoteSheet({
     ...options,
-    sheetName: options.sheetName || DEFAULT_RESULTS_SHEET_NAME,
+    sheetName: options.sheetName || source.resultsSheetName,
   });
   if (readManagementVoteResultRows(payload, options).length) return payload;
   return loadManagementVoteSheet({

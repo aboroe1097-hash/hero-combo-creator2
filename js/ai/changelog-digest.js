@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.16";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.17";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.17",
+    "date": "2026-09-22",
+    "highlights": [
+      "Pather and banner cells now count one duty per player family, so Lady Zubbs and her Zubbs account no longer turn seven duties into ten. The admin list summary follows the same rule.",
+      "Eden X2 management rankings now read the current Google Sheet's `VoteResults` tab. Kiji, Loonly, Redbull, stylized ANGEL, and Victoria/Kika names resolve to their player families.",
+      "Superadmins can choose whether demolition points contribute to dashboard totals while keeping demolition activity visible.",
+      "Superadmins can delete an individual Eden X2 voting ballot from the admin results table. The ballot is removed from totals and a deletion is recorded in the immutable edit history."
+    ]
+  },
   {
     "version": "16.0.16",
     "date": "2026-09-18",
@@ -82,13 +92,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "The VTS Eden Hub season tabs now name their season — \"Current Season · Eden X2\" and \"Previous Seasons · Eden X1\" — in all twelve Eden locales. The names come from the workspace registry, so opening a new season is one flag in that registry rather than an edit in every locale pac…",
       "The season being played is now the hub's landing tab, with the Royal Bounty guide as the fallback when no season is published. The guide opens first and the hub upgrades to the season once the publication check clears, abandoning that upgrade if you have already picked a tab you…"
-    ]
-  },
-  {
-    "version": "16.0.7",
-    "date": "2026-09-07",
-    "highlights": [
-      "Allowed VTS Admin to reach the setUserRole Cloud Function. With the SDK-instance fix in place the callable finally resolved, and the browser then refused the connection: admin.html's Content-Security-Policy never listed cloudfunctions.net, though index.html has always listed the…"
     ]
   }
 ].map((release) =>

@@ -80,4 +80,5 @@ test('the duty weight document is writable by a superadmin and shape-checked', a
   assert.match(rules, /function validDutyPointWeights\(\)/);
   assert.match(rules, /hasOnly\(\['banners', 'pathers', 'shieldWalls'\]\)/);
   assert.match(rules, /entry\.main >= 0 && entry\.main <= 100/);
+  assert.match(rules, /includeDemolitionPoints' in d\) \|\| d\.includeDemolitionPoints is bool/);
 });

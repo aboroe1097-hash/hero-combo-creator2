@@ -60,7 +60,7 @@ import {
   isPublishedEdenProjection,
 } from './eden-workspaces.js';
 
-export const APP_VERSION = '16.0.16';
+export const APP_VERSION = '16.0.17';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -734,7 +734,7 @@ function loadEdenManagementVoteResults(options = {}) {
       ? globalThis.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER
       : loadManagementVotesPayloadWithFallback;
   managementVoteLoadPromise = Promise.resolve()
-    .then(() => payloadLoader({ timeoutMs: 20_000 }))
+    .then(() => payloadLoader({ timeoutMs: 20_000, workspace: EDEN_WORKSPACE_ID }))
     .then((payload) => {
       if (token !== managementVoteLoadToken) return currentManagementVoteResults;
       pendingManagementVotePayload = payload;

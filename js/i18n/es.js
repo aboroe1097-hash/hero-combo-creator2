@@ -3247,6 +3247,8 @@ const es = {
   adminSuggestReviewNoneForFilter: 'Ninguna sugerencia coincide con este filtro.',
   adminDutyWeightsTitle: 'Pesos de puntuación de tareas',
   adminDutyWeightsNote: 'Puntos que vale una tarea, según la actividad y según si la hizo una cuenta principal o secundaria. Guardar recalcula la temporada al instante, incluidas las entradas anteriores.',
+  adminDutyWeightsIncludeDemolition: 'Añadir puntos de demolición a la contribución total',
+  adminDutyWeightsIncludeDemolitionHint: 'Desactívalo para mantener visible la demolición sin sumarla al total del panel.',
   adminDutyWeightsMain: 'Principal',
   adminDutyWeightsAlt: 'Secundaria',
   adminDutyWeightsBanners: 'Estandartes',

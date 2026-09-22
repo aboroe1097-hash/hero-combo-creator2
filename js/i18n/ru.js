@@ -3048,6 +3048,8 @@ Object.assign(ru, {
   adminSuggestReviewNoneForFilter: 'Нет предложений по этому фильтру.',
   adminDutyWeightsTitle: 'Веса начисления за дежурства',
   adminDutyWeightsNote: 'Сколько стоит одно дежурство: по виду и по тому, выполнил ли его основной или дополнительный аккаунт. Сохранение сразу пересчитывает сезон, включая прошлые записи.',
+  adminDutyWeightsIncludeDemolition: 'Добавлять очки разрушения в общий вклад',
+  adminDutyWeightsIncludeDemolitionHint: 'Отключите, чтобы разрушение оставалось видимым, но не входило в итог панели.',
   adminDutyWeightsMain: 'Основной',
   adminDutyWeightsAlt: 'Дополнительный',
   adminDutyWeightsBanners: 'Знамёна',

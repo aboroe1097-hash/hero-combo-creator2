@@ -462,7 +462,7 @@ test('public management votes proxy is origin-bound and sheet allow-listed', asy
   };
   try {
     const response = await handleRequest(
-      new Request('https://worker.test/v1/public/management-votes?sheet=Vote%20Results', {
+      new Request('https://worker.test/v1/public/management-votes?sheet=VoteResults', {
         headers: { Origin: ALLOWED_ORIGIN },
       }),
       enabledEnv()
@@ -471,12 +471,19 @@ test('public management votes proxy is origin-bound and sheet allow-listed', asy
 
     assert.equal(response.status, 200);
     assert.equal(body.table.rows[0].c[0].v, 'Victoria ~Kika~');
-    assert.equal(new URL(upstreamUrl).searchParams.get('sheet'), 'Vote Results');
+    assert.match(upstreamUrl, /1pSKkAHi0hG_Ye7W5MtZWOMb6goVhIdwasldTsfVnrdM/);
+    assert.equal(new URL(upstreamUrl).searchParams.get('sheet'), 'VoteResults');
     assert.equal(response.headers.get('Access-Control-Allow-Origin'), ALLOWED_ORIGIN);
     assert.throws(() => buildManagementVotesSheetUrl('Private Sheet'), /Unsupported/);
+    assert.match(
+      buildManagementVotesSheetUrl('Vote Results', 'eden-x1'),
+      /14gUmeDyTT-Bb9Yvqhz21HcyVKxrkK_hxvkTwpVLKwcM/
+    );
+    assert.throws(() => buildManagementVotesSheetUrl('Vote Results', 'eden-x2'), /Unsupported/);
+    assert.throws(() => buildManagementVotesSheetUrl('VoteResults', 'unknown'), /Unsupported/);
 
     const previewResponse = await handleRequest(
-      new Request('https://worker.test/v1/public/management-votes?sheet=Vote%20Results', {
+      new Request('https://worker.test/v1/public/management-votes?sheet=VoteResults', {
         headers: { Origin: 'https://abocombo--v14-0-5-preview.web.app' },
       }),
       enabledEnv()

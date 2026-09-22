@@ -3369,6 +3369,8 @@ Object.assign(tr, {
   adminSuggestReviewNoneForFilter: 'Bu filtreye uyan öneri yok.',
   adminDutyWeightsTitle: 'Görev puan ağırlıkları',
   adminDutyWeightsNote: 'Bir görevin değeri: etkinliğe ve görevi ana mı yoksa ikincil hesabın mı yaptığına göre. Kaydetmek sezonu geçmiş kayıtlar dahil hemen yeniden hesaplar.',
+  adminDutyWeightsIncludeDemolition: 'Yıkım puanlarını toplam katkıya ekle',
+  adminDutyWeightsIncludeDemolitionHint: 'Yıkımı görünür tutup pano toplamına eklememek için kapatın.',
   adminDutyWeightsMain: 'Ana',
   adminDutyWeightsAlt: 'İkincil',
   adminDutyWeightsBanners: 'Sancaklar',

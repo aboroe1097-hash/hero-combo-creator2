@@ -404,11 +404,18 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
         ? getDutyCreditedNames(raw, entry.confirmed)
         : expandDutyRawNames(raw);
       const seen = new Set();
+      const seenFamilies = new Set();
 
       creditedNames.forEach((name) => {
         const identity = resolveWeightedPlayerIdentity(name);
         if (!identity || seen.has(identity.playerKey)) return;
+        const familyKey = playerFamilyKey(identity.playerKey);
+        // One source cell represents one completed duty. Owner/operator aliases
+        // from the same person (for example Lady Zubbs + Zubbs) must not turn it
+        // into two duties when their accounts are pooled later.
+        if (familyKey && seenFamilies.has(familyKey)) return;
         seen.add(identity.playerKey);
+        if (familyKey) seenFamilies.add(familyKey);
         const row = counts.get(identity.playerKey) || {
           playerKey: identity.playerKey,
           playerName: identity.playerName,
@@ -712,7 +719,10 @@ export function buildWeightedContributionRows(options = {}) {
     // is arithmetically identical to the flat BASE_POINT_VALUE it replaced.
     const dutyPoints = dutyPointsFor(row.dutiesByClass, dutyWeights);
     const conductPoints = row.conductBonus * BASE_POINT_VALUE;
-    const demolitionPoints = row.totalDemolition * Math.max(0, numberValue(weights.demolition));
+    const demolitionPoints =
+      options.includeDemolitionPoints === false
+        ? 0
+        : row.totalDemolition * Math.max(0, numberValue(weights.demolition));
     const weightedScore = contributionRewardScore + demolitionPoints + dutyPoints + conductPoints;
 
     return {

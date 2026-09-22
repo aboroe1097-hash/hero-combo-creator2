@@ -797,6 +797,25 @@ test('Eden X1 votes are member-keyed with admin list and owner get', () => {
   assert.match(dashboard, /setEdenX1VotesForTest/);
 });
 
+test('Eden X2 ballot deletion requires a superadmin and leaves immutable history', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const template = readFileSync('tabs/admin.html', 'utf8');
+  assert.match(
+    rules,
+    /match \/vts_admin\/eden_x2_votes\/records\/\{voteId\} \{[\s\S]*?allow delete: if isSuperAdmin\(\);/
+  );
+  assert.match(rules, /request\.resource\.data\.action in \['created', 'updated', 'deleted'\]/);
+  assert.match(rules, /request\.resource\.data\.action != 'deleted'[\s\S]*isSuperAdmin\(\)/);
+  assert.match(
+    rules,
+    /match \/vts_admin\/eden_x2_vote_history\/records\/\{historyId\} \{[\s\S]*?allow update, delete: if false;/
+  );
+  assert.match(dashboard, /batch\.delete\(doc\(db, EDEN_X1_VOTES_COLLECTION_PATH, vote\.id\)\)/);
+  assert.match(dashboard, /batch\.set\(historyRef, historyEntry\)/);
+  assert.match(template, /id="dashEdenVoteDeleteStatus" role="status"/);
+});
+
 test('service worker precaches a complete, version-stamped app shell', () => {
   const source = readFileSync('public/sw.js', 'utf8');
   const postBuild = readFileSync('scripts/post-build.mjs', 'utf8');

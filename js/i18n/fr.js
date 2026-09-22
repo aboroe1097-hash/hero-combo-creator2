@@ -3414,6 +3414,8 @@ const fr = {
   adminSuggestReviewNoneForFilter: 'Aucune suggestion ne correspond a ce filtre.',
   adminDutyWeightsTitle: 'Pondération des points de service',
   adminDutyWeightsNote: 'Points que vaut un service, selon activité et selon que le compte principal ou secondaire a agi. Enregistrer recalcule la saison immédiatement, entrées passées comprises.',
+  adminDutyWeightsIncludeDemolition: 'Ajouter les points de démolition à la contribution totale',
+  adminDutyWeightsIncludeDemolitionHint: 'Désactivez pour garder la démolition visible sans l’ajouter au total du tableau de bord.',
   adminDutyWeightsMain: 'Principal',
   adminDutyWeightsAlt: 'Secondaire',
   adminDutyWeightsBanners: 'Bannières',
