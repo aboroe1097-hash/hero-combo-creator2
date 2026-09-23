@@ -2686,14 +2686,21 @@ service cloud.firestore {
 
     // Duty scoring weights: points a single duty is worth, per activity and per
     // account class. A number here multiplies real scores, so the shape is
-    // pinned rather than trusted — three known activities, two known classes,
-    // finite non-negative numbers within the range the editor itself allows.
+    // pinned rather than trusted — three known activities, known classes, finite
+    // non-negative numbers within the range the editor itself allows.
+    //
+    // `main` and `alt` stay REQUIRED and `secondary` stays optional, the same
+    // way the vote-settings split kept its old keys: a document written before
+    // secondary existed still validates, so an un-upgraded client cannot lock
+    // itself out of its own scoring document.
     function validDutyPointWeightEntry(entry) {
       return entry is map
-        && entry.keys().hasOnly(['main', 'alt'])
+        && entry.keys().hasOnly(['main', 'alt', 'secondary'])
         && entry.keys().hasAll(['main', 'alt'])
         && entry.main is number && entry.main >= 0 && entry.main <= 100
-        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100;
+        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100
+        && (!('secondary' in entry)
+          || (entry.secondary is number && entry.secondary >= 0 && entry.secondary <= 100));
     }
 
     function validDutyPointWeights() {

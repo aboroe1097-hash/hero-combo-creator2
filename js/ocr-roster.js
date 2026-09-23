@@ -82,6 +82,7 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
+import { normalizeTaughtPlayerAliases } from './vts-player-aliases.js';
 import {
   addContributionAliasMatch,
   collapseContributionOcrDuplicates,
@@ -1667,7 +1668,10 @@ export function guessDutyAccountType(...names) {
   for (const text of texts) {
     if (resolveAccountLink(text) || DUTY_BANNER_NAME_RE.test(text)) return 'banner';
     const key = compactPlayerIdentity(text);
-    if (key && classifyDutyAccount(key) === 'alt') return 'banner';
+    // The switch offers Main or Banner only, so every non-main class — an alt
+    // and now a linked secondary account too — guesses Banner, which is what the
+    // row would score as until the operator says otherwise.
+    if (key && classifyDutyAccount(key) !== 'main') return 'banner';
   }
   return 'main';
 }
@@ -2576,6 +2580,69 @@ async function saveAccountLinks(nextLinks, statusHost) {
   return synced;
 }
 
+// --- Taught aliases ---------------------------------------------------------
+// "sometimes we have abbreviation for some players — we call Lady Zubbs just
+// zubs". The owner teaches those abbreviations here; they are stored in the
+// player registry beside the account links, and the single alias authority
+// (vts-player-aliases.js, behind findBestMatch) consults them before its own
+// lists, so a taught spelling always wins.
+function currentPlayerAliases() {
+  return normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()).playerAliases;
+}
+
+async function savePlayerAliases(nextAliases, statusHost) {
+  const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
+  const before = registry.playerAliases.length;
+  registry.playerAliases = normalizeTaughtPlayerAliases(nextAliases);
+  const synced = await savePlayerRegistry(registry, { immediate: true, awaitCloud: true });
+  renderDutyRecords();
+  refreshDashboardOverview();
+  document.querySelectorAll('[data-player-aliases-status]').forEach((status) => {
+    status.textContent = adminT(
+      synced === false ? 'adminAliasesLocal' : 'adminAliasesSaved',
+      { count: registry.playerAliases.length }
+    );
+  });
+  logRosterEvent(
+    'adminAliasesSavedLog',
+    'success',
+    { before, count: registry.playerAliases.length },
+    { localOnly: true }
+  );
+  if (statusHost) statusHost.querySelector('[data-player-aliases-status]')?.focus?.();
+  return synced;
+}
+
+function renderPlayerAliasesSection() {
+  const aliases = currentPlayerAliases();
+  const candidates = accountLinkCandidateNames();
+  const listId = `dashPlayerAliasNames${(dutyAccountSwitchSeq += 1)}`;
+  return `<div class="dash-account-links-group dash-player-aliases" data-player-aliases>
+    <h4>${esc(adminT('adminAliasesTitle'))}</h4>
+    <p class="dash-form-hint">${esc(adminT('adminAliasesHint'))}</p>
+    <form class="dash-account-links-form" data-player-aliases-form>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAliasesAlias'))}</span><input type="text" data-player-alias-input autocomplete="off" required placeholder="${esc(adminT('adminAliasesAliasPh'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAliasesCanonical'))}</span><input type="text" list="${listId}" data-player-alias-canonical autocomplete="off" required placeholder="${esc(adminT('adminAliasesCanonicalPh'))}"></label>
+      <button type="submit" class="dash-btn dash-btn-primary">${esc(adminT('adminAliasesAdd'))}</button>
+      <datalist id="${listId}">${candidates.map((name) => `<option value="${esc(name)}"></option>`).join('')}</datalist>
+    </form>
+    <h4>${esc(adminT('adminAliasesActive'))}</h4>
+    ${
+      aliases.length
+        ? `<ul class="dash-account-links-list">${aliases
+            .map(
+              (entry) => `<li>
+          <span class="dash-account-link-names"><strong>${esc(entry.alias)}</strong><span aria-hidden="true">→</span><span>${esc(entry.canonical)}</span></span>
+          <button type="button" class="dash-btn dash-btn-xs" data-player-alias-remove data-alias="${esc(entry.alias)}" aria-label="${esc(adminT('adminAliasesRemoveFor', { alias: entry.alias }))}">${esc(adminT('adminAliasesRemove'))}</button>
+        </li>`
+            )
+            .join('')}</ul>`
+        : `<p class="dash-form-hint">${esc(adminT('adminAliasesNone'))}</p>`
+    }
+    <p class="dash-form-hint" data-player-aliases-status role="status" aria-live="polite" tabindex="-1"></p>
+  </div>`;
+}
+
 function renderAccountLinksCard(options = {}) {
   const links = currentAccountLinks();
   const candidates = accountLinkCandidateNames();
@@ -2593,15 +2660,22 @@ function renderAccountLinksCard(options = {}) {
   pendingAccountLinkSuggestions = allSuggestions.filter((item) => item.owner);
   const hiddenSuggestionCount = allSuggestions.length - suggestions.length;
   const listId = `dashAccountLinkNames${(dutyAccountSwitchSeq += 1)}`;
+  // One label per link type, so the third type cannot silently fall back to
+  // reading as a banner in the list.
+  const ACCOUNT_LINK_TYPE_LABELS = {
+    banner: 'adminDutyAccountBanner',
+    alt: 'adminAccountLinksAlt',
+    secondary: 'adminAccountLinksSecondary',
+  };
   const typeLabel = (type) =>
-    adminT(type === 'alt' ? 'adminAccountLinksAlt' : 'adminDutyAccountBanner');
+    adminT(ACCOUNT_LINK_TYPE_LABELS[type] || ACCOUNT_LINK_TYPE_LABELS.banner);
   return `<details class="dash-account-links"${options.open ? ' open' : ''}>
     <summary><span class="dash-account-links-title">${esc(adminT('adminAccountLinksTitle'))}</span><span class="dash-duty-review-chip" data-tone="banner">${esc(adminT('adminAccountLinksCount', { count: links.length }))}</span>${suggestions.length ? `<span class="dash-duty-review-chip" data-tone="warn">${esc(adminT('adminAccountLinksSuggestedCount', { count: suggestions.length }))}</span>` : ''}</summary>
     <p class="dash-form-hint">${esc(adminT('adminAccountLinksHint'))}</p>
     <form class="dash-account-links-form" data-account-links-form>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksAccount'))}</span><input type="text" list="${listId}" data-account-link-account autocomplete="off" required placeholder="${esc(adminT('adminAccountLinksAccountPh'))}"></label>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksOwner'))}</span><input type="text" list="${listId}" data-account-link-owner autocomplete="off" required placeholder="${esc(adminT('adminAccountLinksOwnerPh'))}"></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><select data-account-link-type><option value="banner">${esc(adminT('adminDutyAccountBanner'))}</option><option value="alt">${esc(adminT('adminAccountLinksAlt'))}</option></select></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><select data-account-link-type><option value="banner">${esc(adminT('adminDutyAccountBanner'))}</option><option value="alt">${esc(adminT('adminAccountLinksAlt'))}</option><option value="secondary">${esc(adminT('adminAccountLinksSecondary'))}</option></select></label>
       <button type="submit" class="dash-btn dash-btn-primary">${esc(adminT('adminAccountLinksAdd'))}</button>
       <datalist id="${listId}">${candidates.map((name) => `<option value="${esc(name)}"></option>`).join('')}</datalist>
     </form>
@@ -2635,6 +2709,7 @@ function renderAccountLinksCard(options = {}) {
             .join('')}</ul>`
         : `<p class="dash-form-hint">${esc(adminT('adminAccountLinksNone'))}</p>`
     }</div>
+    ${options.showAliases ? renderPlayerAliasesSection() : ''}
     <p class="dash-form-hint" data-account-links-status role="status" aria-live="polite" tabindex="-1"></p>
   </details>`;
 }
@@ -2643,6 +2718,25 @@ function bindAccountLinksHost(host) {
   if (host.dataset.accountLinksBound === '1') return;
   host.dataset.accountLinksBound = '1';
   host.addEventListener('submit', (event) => {
+    const aliasForm = event.target.closest('[data-player-aliases-form]');
+    if (aliasForm) {
+      event.preventDefault();
+      const alias = aliasForm.querySelector('[data-player-alias-input]')?.value.trim() || '';
+      const canonical =
+        aliasForm.querySelector('[data-player-alias-canonical]')?.value.trim() || '';
+      if (!alias || !canonical) return;
+      // Teaching a spelling again replaces what it means, the way relinking an
+      // account replaces its owner, instead of stacking a second entry.
+      const aliasKeyText = compactPlayerIdentity(alias) || alias.toLowerCase();
+      const others = currentPlayerAliases().filter(
+        (entry) => (compactPlayerIdentity(entry.alias) || entry.alias.toLowerCase()) !== aliasKeyText
+      );
+      void savePlayerAliases(
+        [...others, { alias, canonical, createdAt: new Date().toISOString() }],
+        host
+      );
+      return;
+    }
     const form = event.target.closest('[data-account-links-form]');
     if (!form) return;
     event.preventDefault();
@@ -2701,6 +2795,17 @@ function bindAccountLinksHost(host) {
         currentAccountLinks().filter((link) => compactPlayerIdentity(link.account) !== key),
         host
       );
+      return;
+    }
+    const removeAlias = event.target.closest('[data-player-alias-remove]');
+    if (removeAlias) {
+      const key = compactPlayerIdentity(removeAlias.dataset.alias);
+      void savePlayerAliases(
+        currentPlayerAliases().filter(
+          (entry) => compactPlayerIdentity(entry.alias) !== key
+        ),
+        host
+      );
     }
   });
 }
@@ -2714,7 +2819,10 @@ export function renderAccountLinks() {
     // A host on a tab that exists only for linking starts open; the cards
     // embedded in the duty tabs keep the operator's own open/closed choice.
     const startOpen = host.hasAttribute('data-account-links-open');
-    host.innerHTML = renderAccountLinksCard({ open: wasOpen ?? startOpen });
+    // Teaching aliases is a naming decision, not a linking one, so that section
+    // stays on the Accounts tab rather than following the card onto the duty
+    // tabs as well.
+    host.innerHTML = renderAccountLinksCard({ open: wasOpen ?? startOpen, showAliases: startOpen });
     if (wasOpen !== undefined) {
       const details = host.querySelector('details');
       if (details) details.open = wasOpen;

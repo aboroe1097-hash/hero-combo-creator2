@@ -324,7 +324,8 @@ const fr = {
   adminAccountLinksAccountPh: 'ex. Angel Banner',
   adminAccountLinksOwner: 'Géré par',
   adminAccountLinksOwnerPh: 'ex. ANGEL',
-  adminAccountLinksAlt: 'Secondaire',
+  adminAccountLinksAlt: 'Secondaire / bannière',
+  adminAccountLinksSecondary: 'Secondaire',
   adminAccountLinksAdd: 'Lier le compte',
   adminAccountLinksSuggested: 'Comptes bannière suggérés',
   adminAccountsTab: 'Comptes',
@@ -342,6 +343,22 @@ const fr = {
   adminAccountLinksLocal:
     'Enregistré sur cet appareil uniquement ; échec de la synchronisation. {count} comptes liés.',
   adminAccountLinksSavedLog: 'Liens de comptes enregistrés : {count} liés (avant {before}).',
+  adminAliasesTitle: 'Alias de joueurs',
+  adminAliasesHint:
+    "Enseignez le nom court qu'une liste utilise pour un joueur, comme zubs pour Lady Zubbs. Un alias enseigné est vérifié avant toutes les listes intégrées : il gagne donc toujours.",
+  adminAliasesAlias: 'Nom court',
+  adminAliasesAliasPh: 'ex. zubs',
+  adminAliasesCanonical: 'Compté comme',
+  adminAliasesCanonicalPh: 'ex. Lady Zubbs',
+  adminAliasesAdd: 'Enseigner un alias',
+  adminAliasesActive: 'Alias enseignés',
+  adminAliasesNone: "Aucun alias enseigné pour l'instant.",
+  adminAliasesRemove: 'Retirer',
+  adminAliasesRemoveFor: "Retirer l'alias de {alias}",
+  adminAliasesSaved: 'Enregistré. {count} alias enseignés.',
+  adminAliasesLocal:
+    'Enregistré sur cet appareil uniquement ; échec de la synchronisation. {count} alias enseignés.',
+  adminAliasesSavedLog: 'Alias de joueurs enregistrés : {count} enseignés (avant {before}).',
   adminDutyAddNameRowTitle:
     'Ajouter un autre nom pour cette même cible, par exemple si deux bannières y ont été utilisées',
   adminDutyUsageTimeTitle: 'Usage time',
@@ -1529,6 +1546,9 @@ const fr = {
   scoreBreakdownTimesWeight: '{count} × {weight}',
   scoreBreakdownNoDuty: 'Aucune tâche enregistrée',
   scoreBreakdownSecondary: 'Secondaire / bannière',
+  scoreBreakdownSecondaryCount: '{count} secondaire',
+  scoreBreakdownSecondarySummary:
+    'Tâches du compte secondaire : {secondary} ({secondaryPoints} pts)',
   scoreBreakdownDutyFormula: '{count} × poids {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
   scoreBreakdownClassSummary:
@@ -3491,7 +3511,8 @@ const fr = {
   adminDutyWeightsUnit:
     '1 point = 10 000 de score. Exemple : un tracé sur un compte principal à 3 ajoute 30 000.',
   adminDutyWeightsMain: 'Principal',
-  adminDutyWeightsAlt: 'Secondaire',
+  adminDutyWeightsAlt: 'Secondaire / bannière',
+  adminDutyWeightsSecondary: 'Compte secondaire',
   adminDutyWeightsBanners: 'Bannières',
   adminDutyWeightsPathers: 'Traçage',
   adminDutyWeightsShieldWalls: 'Murs de boucliers',

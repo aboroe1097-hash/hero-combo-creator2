@@ -340,7 +340,11 @@ test('owner answers for the Eden X2 duty names hold (2026-09-15)', () => {
   // Two different players, confirmed by the owner: never merged.
   assert.notEqual(familyOf('MALAK ANDURIL'), familyOf('MalakAbo'));
   // Lady Zubbs stays her own account inside the Zubbs family, and "(Zubbs)"
-  // operator notes now earn credit.
-  assert.equal(resolveConfirmedPlayerAlias('Zubbs'), '');
+  // operator notes now earn credit. Teaching the abbreviation is what changed
+  // here: the owner answered "Zubbs means Lady Zubbs", so both spellings of the
+  // short name now resolve to her outright — the taught entry is consulted
+  // before every built-in list, which is the point of teaching it.
+  assert.equal(resolveConfirmedPlayerAlias('zubs'), 'Lady Zubbs');
+  assert.equal(resolveConfirmedPlayerAlias('Zubbs'), 'Lady Zubbs');
   assert.equal(familyOf('Lady Zubbs'), familyOf('Zubbs'));
 });

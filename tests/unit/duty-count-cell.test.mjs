@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { renderDutyCountCell } = await import('../../js/score-breakdown.js');
+const { renderDutyCountCell, dutyClassTotals, renderScoreBreakdown } =
+  await import('../../js/score-breakdown.js');
 
 // Stand-in translator: the assertions only care that the right keys are asked
 // for, not that any particular locale has them.
@@ -85,4 +86,59 @@ test('a main-only row still opens, without an alt line', () => {
   assert.match(html, /4 × 1 = 40,000/);
   assert.doesNotMatch(html, /data-account="banner"/);
   assert.doesNotMatch(html, /duty-count-alt/);
+});
+
+test('a secondary-linked account is its own line, chip and summary', () => {
+  // The third account class has to be readable everywhere a split is shown, not
+  // only where the weights are edited.
+  const row = {
+    banners: 3,
+    dutiesByClass: { banners: { main: 1, alt: 1, secondary: 1 } },
+    dutyBreakdown: {
+      unit: 10000,
+      activities: [
+        {
+          activity: 'banners',
+          main: { count: 1, weight: 1, points: 10000 },
+          alt: { count: 1, weight: 0.5, points: 5000 },
+          secondary: { count: 1, weight: 0.5, points: 5000 },
+        },
+      ],
+    },
+  };
+
+  const cell = renderDutyCountCell(row, 'banners', t, { number });
+  assert.match(cell, /3<small class="duty-count-alt"> scoreBreakdownAltCount/);
+  assert.match(cell, /scoreBreakdownSecondaryCount/);
+  // Three counted lines with their own weights and points, and the third one is
+  // not quietly folded into the alt line.
+  assert.match(cell, /1 × 1 = 10,000/);
+  assert.equal([...cell.matchAll(/1 × 0\.5 = 5,000/g)].length, 2);
+  assert.match(cell, /adminDutyWeightsSecondary/);
+  assert.match(cell, /data-account="main"/);
+  assert.equal([...cell.matchAll(/data-account="banner"/g)].length, 2);
+
+  // The overview sentence and the itemised breakdown both carry the class.
+  const summary = renderScoreBreakdown(row, {
+    t,
+    number,
+    signed: (value) => String(value),
+    totalText: '20000',
+  });
+  assert.match(summary, /scoreBreakdownClassSummary/);
+  assert.match(summary, /scoreBreakdownSecondarySummary/);
+  // The tag on the secondary duty line names the third class, and the alt line
+  // keeps the label it has always carried.
+  assert.match(summary, /data-account="banner">adminDutyWeightsSecondary/);
+  assert.match(summary, /data-account="banner">scoreBreakdownSecondary/);
+
+  // Totals keep the three classes apart for the caller.
+  assert.deepEqual(dutyClassTotals(row), {
+    main: 1,
+    alt: 1,
+    secondary: 1,
+    mainPoints: 10000,
+    altPoints: 5000,
+    secondaryPoints: 5000,
+  });
 });
