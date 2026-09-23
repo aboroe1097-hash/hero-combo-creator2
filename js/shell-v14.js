@@ -1,3 +1,5 @@
+import { initHubMotion } from './fx/hub-motion.js';
+
 (function initV14Shell() {
   'use strict';
 
@@ -846,5 +848,6 @@
         /* English fallback remains usable if the optional domain copy fails. */
       });
   }
+  initHubMotion();
   document.documentElement.dataset.shellNavReady = '1';
 })();

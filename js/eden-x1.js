@@ -17,6 +17,7 @@ import {
 } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { currentLanguage, setCurrentLanguage } from './state.js';
+import { celebrate } from './fx/success-feedback.js';
 import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
@@ -2495,6 +2496,7 @@ async function submitEdenTeamVoteForm(form) {
       edenVoteSavedStatusText(localVote) || `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
       'success'
     );
+    celebrate(submit);
   } catch (err) {
     console.error('Eden X1 vote save failed:', err);
     setEdenVoteStatus(

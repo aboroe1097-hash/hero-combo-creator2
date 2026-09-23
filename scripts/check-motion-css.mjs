@@ -161,9 +161,39 @@ export function newInfinitePaintAnimations(violations = collectInfinitePaintAnim
   );
 }
 
+export function censusByFile(files = collectStylesheetFiles()) {
+  const rows = [];
+  for (const file of files) {
+    const relative = path.relative(rootDir, file).replace(/\\/g, '/');
+    const css = fs.readFileSync(file, 'utf8');
+    let keyframes = 0;
+    let infinite = 0;
+    postcss.parse(css).walkAtRules(/^keyframes$/i, () => {
+      keyframes += 1;
+    });
+    postcss.parse(css).walkRules((rule) => {
+      let ruleInfinite = false;
+      rule.walkDecls(/^animation(?:-name|-iteration-count)?$/iu, (decl) => {
+        if (/\binfinite\b/iu.test(decl.value)) ruleInfinite = true;
+      });
+      if (ruleInfinite) infinite += 1;
+    });
+    rows.push({ file: relative, keyframes, infinite });
+  }
+  return rows;
+}
+
 function main() {
   const violations = collectInfinitePaintAnimations();
   const fresh = newInfinitePaintAnimations(violations);
+
+  if (process.argv.includes('--census')) {
+    console.log('file\tkeyframes\tinfinite rules');
+    for (const row of censusByFile()) {
+      console.log(`${row.file}\t${row.keyframes}\t${row.infinite}`);
+    }
+    return;
+  }
 
   if (process.argv.includes('--print-baseline')) {
     for (const violation of violations) {

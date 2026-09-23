@@ -320,7 +320,27 @@
   }
 }
 
+/* One bounded settle after real completion (plan §4.1). applyProgress() sets
+   is-complete when progress reaches 100; loading, error, retry, and success
+   text never depend on this animation finishing. */
+.vts-loader.is-complete .vts-loader__stage {
+  animation: vts-loader-complete 320ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@keyframes vts-loader-complete {
+  0% {
+    transform: scale(0.99);
+  }
+  55% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .vts-loader.is-complete .vts-loader__stage,
   .vts-loader__crest,
   .vts-loader__identity,
   .vts-loader__velo-body,

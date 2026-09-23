@@ -583,6 +583,19 @@ function updateHeroAtlasUrlParams() {
   window.history.replaceState(null, '', next);
 }
 
+// Deep link for one timeline season: keeps every other filter parameter and
+// drops a selected hero that the new season filter may not contain.
+function seasonTimelineHref(season) {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('season', season);
+    url.searchParams.delete('hero');
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return `#heroesCombos?season=${encodeURIComponent(season)}`;
+  }
+}
+
 function normalizeHeroAtlasSeasons(seasons) {
   const picked = HERO_ATLAS_ALL_SEASONS.filter((s) => (seasons || []).includes(s));
   return picked.length ? picked : [...HERO_ATLAS_ALL_SEASONS];
@@ -897,6 +910,24 @@ function wireHeroesTabEvents(container) {
   _heroesTabEventsWired = true;
 
   container.addEventListener('click', (e) => {
+    const timelineLink = e.target.closest('[data-season-timeline]');
+    if (timelineLink) {
+      // Timeline items select exactly one season (a shareable deep link) and
+      // restore focus to the same item after the list re-renders.
+      e.preventDefault();
+      const key = timelineLink.dataset.seasonTimeline;
+      _heroesTabState.seasons = HERO_ATLAS_ALL_SEASONS.includes(key)
+        ? [key]
+        : [...HERO_ATLAS_ALL_SEASONS];
+      syncHeroSelectionWithFilters();
+      updateHeroAtlasUrlParams();
+      renderHeroesTab();
+      requestAnimationFrame(() => {
+        container.querySelector(`[data-season-timeline="${key}"]`)?.focus({ preventScroll: true });
+      });
+      return;
+    }
+
     const seasonBtn = e.target.closest('[data-hero-season]');
     if (seasonBtn) {
       toggleHeroAtlasSeason(seasonBtn.dataset.heroSeason);
@@ -2173,6 +2204,37 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
     </button>`
     ).join('')}`;
 
+  // Season timeline (16.5.0 plan §4.6): canonical hero-release seasons with
+  // the same counts getFilteredHeroes() uses, a small ribbon scaled to the
+  // largest season, and count text so narrow or zero ribbons stay readable.
+  const seasonTimelineHtml = (() => {
+    const counts = POPULATED_HERO_SEASONS.map(
+      (s) => allHeroesData.filter((h) => h.season === s).length
+    );
+    const maxCount = Math.max(1, ...counts);
+    const items = POPULATED_HERO_SEASONS.map((s, index) => {
+      const count = counts[index];
+      const active = normalizedSeasons.includes(s);
+      const scale = Math.max(0.08, count / maxCount).toFixed(3);
+      const color = seasonColors[s] || '#f97316';
+      const countLabel =
+        count === 1 ? t.heroCountOne || '{n} hero' : t.heroCountMany || '{n} heroes';
+      const countText = countLabel.replace('{n}', String(count));
+      return `
+      <li class="season-timeline-item">
+        <a class="season-timeline-link${active ? ' is-active' : ''}" data-season-timeline="${escapeHtml(s)}" href="${escapeHtml(seasonTimelineHref(s))}"${active ? ' aria-current="true"' : ''}>
+          <span class="season-timeline-ribbon" style="--ribbon-scale:${scale};--season-color:${color}" aria-hidden="true"><svg viewBox="0 0 100 8" preserveAspectRatio="none" focusable="false"><rect x="0" y="0" width="100" height="8" rx="4"></rect></svg></span>
+          <span class="season-timeline-code">${escapeHtml(s)}</span>
+          <span class="season-timeline-count">${escapeHtml(countText)}</span>
+        </a>
+      </li>`;
+    }).join('');
+    return `
+    <nav class="heroes-season-timeline" aria-label="${escapeHtml(heroUi('seasonTimeline'))}">
+      <ol class="heroes-season-timeline-list">${items}</ol>
+    </nav>`;
+  })();
+
   const troopPillsHtml = troops
     .map(
       (tr) => `
@@ -2284,6 +2346,7 @@ function renderHeroesTab({ suppressLocaleRefresh = false } = {}) {
             <div class="heroes-season-tabs" role="group" aria-label="${escapeHtml(heroUi('seasonFilterAria'))}">${seasonTabsHtml}</div>
           </div>
         </div>
+        ${seasonTimelineHtml}
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
           <div class="heroes-ranking-list">
             ${rowsHtml}

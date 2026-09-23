@@ -185,6 +185,63 @@
   color: var(--ff-text);
 }
 
+/* 16.5.0 hub entry + spotlight (plan §4.1). js/fx/hub-motion.js runs the entry
+   once per page load on at most 12 visible cards and removes the class, so
+   later hub refreshes never replay it. The spotlight follows the single
+   delegated pointer owner and only a background gradient changes, never
+   layout. */
+@keyframes fx-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fx-card-enter {
+  animation: fx-card-enter 240ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1))
+    var(--fx-delay, 0ms) both;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .vts-hub-subtab {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vts-hub-subtab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      140px circle at calc(var(--mx, 50) * 1%) calc(var(--my, 50) * 1%),
+      color-mix(in srgb, var(--brand, #7dd3fc) 20%, transparent),
+      transparent 68%
+    );
+    transition: opacity 160ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .vts-hub-subtab:hover::before,
+  .vts-hub-subtab:focus-visible::before {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-card-enter {
+    animation: none;
+  }
+
+  .vts-hub-subtab::before {
+    transition: none;
+  }
+}
+
 .vts-hub-subtabs--4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }

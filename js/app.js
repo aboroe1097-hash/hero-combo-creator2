@@ -27,6 +27,8 @@ import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 import { formatLocaleNumber } from './locale-format.js';
+import { swapPanel } from './fx/view-swap.js';
+import { celebrate } from './fx/success-feedback.js';
 
 import {
   renderGeneratorHeroes,
@@ -180,7 +182,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260923_053609').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260923_061948').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -202,7 +204,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260923_053609').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260923_061948').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -213,7 +215,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260923_053609').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260923_061948').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -315,6 +317,7 @@ document.getElementById('shareCurrentViewBtn')?.addEventListener('click', async 
         window.showToast(copy.shareViewCopied || 'Link copied to clipboard');
       }
     }
+    celebrate(document.getElementById('shareCurrentViewBtn'));
   } catch (error) {
     if (error?.name !== 'AbortError') console.warn('[share-view] Unable to share link', error);
   }
@@ -1132,9 +1135,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.
-        import('./eden-hub.js?v=20260923_053609')
+        import('./eden-hub.js?v=20260923_061948')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260923_053609'))
+          .then(() => import('./eden-map.js?v=20260923_061948'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1164,7 +1167,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260923_053609')
+      import('./app-hero-atlas.js?v=20260923_061948')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1206,7 +1209,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'artifact' && !_artifactReady) {
       if (_artifactBooting) return;
       _artifactBooting = true;
-      import('./app-artifact.js?v=20260923_053609')
+      import('./app-artifact.js?v=20260923_061948')
         .then(async (mod) => {
           await mod.initArtifactCalculator();
           _artifactReady = true;
@@ -1281,7 +1284,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260923_053609')
+      import('./app-strife.js?v=20260923_061948')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1334,7 +1337,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260923_053609')
+      import('./youtube-v14.js?v=20260923_061948')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1499,7 +1502,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260923_053609')
+      import('./app-hero-atlas.js?v=20260923_061948')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */
@@ -1577,63 +1580,68 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
 
     const targetSection = document.getElementById(`${tabName}Section`);
 
-    tabPanels.forEach((sec) => {
-      if (sec) sec.classList.add('hidden');
-    });
-    if (comboFooterBar) comboFooterBar.classList.add('hidden');
+    const applySwap = () => {
+      tabPanels.forEach((sec) => {
+        if (sec) sec.classList.add('hidden');
+      });
+      if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
-    document.querySelectorAll('.tab-pill').forEach((btn) => {
-      btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
-    });
-    const activeBtn = document.getElementById(
-      TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`
-    );
-    if (activeBtn) {
-      activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-      requestAnimationFrame(() => keepActiveTabInView(activeBtn));
-    }
-    syncTabA11yState(tabName);
-
-    if (targetSection) {
-      targetSection.classList.remove('hidden');
-      window.VTSLoaderV14?.enhance?.(targetSection);
-    }
-    document.documentElement.removeAttribute('data-initial-tab-pending');
-
-    // The combo chrome belongs to two sub-tabs of the Heroes & Combos Hub, so
-    // it is driven by the sub-tab rather than the tab. syncComboChrome() runs
-    // again whenever the hub switches sub-tab.
-    syncComboChrome(tabName === 'heroesCombos' ? heroesCombosSubtab() : '');
-
-    document.body.dataset.activeTab = tabName;
-    document.body.classList.toggle('tab-strife-active', tabName === 'strife');
-
-    onTabActivated(tabName);
-    _lastTab = tabName;
-    if (options.scrollToSection) {
-      requestAnimationFrame(() => scrollToTabStart(targetSection));
-    }
-    try {
-      // Keep the hash the caller asked for. Arriving on #specialization must
-      // stay shareable as #specialization even though the hub owns the tab.
-      const currentHash = window.location.hash.replace(/^#/, '');
-      const currentBase = currentHash.split('?')[0];
-      const canonical = canonicalTabHash(tabName);
-      const hash =
-        !hubSubtab &&
-        currentHash.includes('?') &&
-        currentBase.toLowerCase() === canonical.toLowerCase()
-          ? currentHash
-          : hubSubtab
-            ? requestedTab
-            : canonical;
-      if (!options.preserveHash && window.location.hash !== '#' + hash) {
-        // User-initiated tool changes must be Back/Forward navigable. Initial
-        // hash normalization and hashchange handling pass preserveHash instead.
-        const historyMethod = options.replaceHash ? 'replaceState' : 'pushState';
-        history[historyMethod]({ tab: hash }, '', '#' + hash);
+      document.querySelectorAll('.tab-pill').forEach((btn) => {
+        btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
+      });
+      const activeBtn = document.getElementById(
+        TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`
+      );
+      if (activeBtn) {
+        activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+        requestAnimationFrame(() => keepActiveTabInView(activeBtn));
       }
-    } catch {}
+      syncTabA11yState(tabName);
+
+      if (targetSection) {
+        targetSection.classList.remove('hidden');
+        window.VTSLoaderV14?.enhance?.(targetSection);
+      }
+      document.documentElement.removeAttribute('data-initial-tab-pending');
+
+      // The combo chrome belongs to two sub-tabs of the Heroes & Combos Hub, so
+      // it is driven by the sub-tab rather than the tab. syncComboChrome() runs
+      // again whenever the hub switches sub-tab.
+      syncComboChrome(tabName === 'heroesCombos' ? heroesCombosSubtab() : '');
+
+      document.body.dataset.activeTab = tabName;
+      document.body.classList.toggle('tab-strife-active', tabName === 'strife');
+
+      onTabActivated(tabName);
+      _lastTab = tabName;
+      if (options.scrollToSection) {
+        requestAnimationFrame(() => scrollToTabStart(targetSection));
+      }
+      try {
+        // Keep the hash the caller asked for. Arriving on #specialization must
+        // stay shareable as #specialization even though the hub owns the tab.
+        const currentHash = window.location.hash.replace(/^#/, '');
+        const currentBase = currentHash.split('?')[0];
+        const canonical = canonicalTabHash(tabName);
+        const hash =
+          !hubSubtab &&
+          currentHash.includes('?') &&
+          currentBase.toLowerCase() === canonical.toLowerCase()
+            ? currentHash
+            : hubSubtab
+              ? requestedTab
+              : canonical;
+        if (!options.preserveHash && window.location.hash !== '#' + hash) {
+          // User-initiated tool changes must be Back/Forward navigable. Initial
+          // hash normalization and hashchange handling pass preserveHash instead.
+          const historyMethod = options.replaceHash ? 'replaceState' : 'pushState';
+          history[historyMethod]({ tab: hash }, '', '#' + hash);
+        }
+      } catch {}
+    };
+    // SwapPanel only decorates this one state update; unsupported browsers, a
+    // transition already in flight, and reduced motion all update directly.
+    swapPanel(targetSection, applySwap);
   }
   window.vtsSwitchTab = switchTab;
   window.vtsTabNames = validTabNames;

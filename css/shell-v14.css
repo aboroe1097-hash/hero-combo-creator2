@@ -1883,10 +1883,46 @@ body.shell-more-open #app .tool-nav-inner {
   }
 }
 
+/* =============================================================
+   16.5.0 panel swap (plan §4.1)
+   -------------------------------------------------------------
+   js/fx/view-swap.js names only the entering panel; the root capture is
+   animation-free, so a tab change never animates the whole page.
+   ============================================================= */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(vts-panel) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(vts-panel) {
+  animation: fx-panel-in 180ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@keyframes fx-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* This must remain the final shell block: later !important animation and
    transition shorthands otherwise override the shared token safeguard. */
 @media (prefers-reduced-motion: reduce) {
   #app #appTitle {
+    animation: none !important;
+  }
+
+  ::view-transition-new(vts-panel) {
     animation: none !important;
   }
 
