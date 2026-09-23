@@ -2,11 +2,7 @@ import { renderDutyCountCell, renderScoreBreakdown } from './score-breakdown.js'
 // The shared pager: a season's lists run to hundreds of rows, so every long
 // table here starts at ten rows with a Load more / Show all control rather
 // than making the operator scroll past everything to reach the next section.
-import {
-  bindAdminTablePager,
-  renderAdminTablePager,
-  resolveAdminTablePage,
-} from './ocr-render.js';
+import { bindAdminTablePager, renderAdminTablePager, resolveAdminTablePage } from './ocr-render.js';
 import {
   STORAGE_KEY,
   ROSTER_KEY,
@@ -1654,6 +1650,9 @@ function normalizeDutyEntries(input) {
 // as a banner account.
 const DUTY_BANNER_NAME_RE = /bann?er/i;
 let dutyAccountSwitchSeq = 0;
+// Every resolvable account-link suggestion behind the shortened list, so the
+// "link all" action can take the whole set rather than only what is on screen.
+let pendingAccountLinkSuggestions = [];
 
 function normalizeDutyAccountType(value) {
   const type = String(value || '').toLowerCase();
@@ -2577,20 +2576,26 @@ async function saveAccountLinks(nextLinks, statusHost) {
   return synced;
 }
 
-function renderAccountLinksCard() {
+function renderAccountLinksCard(options = {}) {
   const links = currentAccountLinks();
   const candidates = accountLinkCandidateNames();
   const linkedKeys = new Set(links.map((link) => compactPlayerIdentity(link.account)));
-  const suggestions = candidates
+  const allSuggestions = candidates
     .filter(
       (name) => DUTY_BANNER_NAME_RE.test(name) && !linkedKeys.has(compactPlayerIdentity(name))
     )
-    .map((name) => ({ account: name, owner: guessAccountLinkOwner(name, candidates) }))
-    .slice(0, 16);
+    .map((name) => ({ account: name, owner: guessAccountLinkOwner(name, candidates) }));
+  // The list used to stop at 16 with no way to accept the rest; keep the render
+  // short but hold every resolvable suggestion so "Link all" can take them in
+  // one action.
+  const ACCOUNT_LINK_SUGGESTION_LIMIT = 16;
+  const suggestions = allSuggestions.slice(0, ACCOUNT_LINK_SUGGESTION_LIMIT);
+  pendingAccountLinkSuggestions = allSuggestions.filter((item) => item.owner);
+  const hiddenSuggestionCount = allSuggestions.length - suggestions.length;
   const listId = `dashAccountLinkNames${(dutyAccountSwitchSeq += 1)}`;
   const typeLabel = (type) =>
     adminT(type === 'alt' ? 'adminAccountLinksAlt' : 'adminDutyAccountBanner');
-  return `<details class="dash-account-links">
+  return `<details class="dash-account-links"${options.open ? ' open' : ''}>
     <summary><span class="dash-account-links-title">${esc(adminT('adminAccountLinksTitle'))}</span><span class="dash-duty-review-chip" data-tone="banner">${esc(adminT('adminAccountLinksCount', { count: links.length }))}</span>${suggestions.length ? `<span class="dash-duty-review-chip" data-tone="warn">${esc(adminT('adminAccountLinksSuggestedCount', { count: suggestions.length }))}</span>` : ''}</summary>
     <p class="dash-form-hint">${esc(adminT('adminAccountLinksHint'))}</p>
     <form class="dash-account-links-form" data-account-links-form>
@@ -2602,15 +2607,20 @@ function renderAccountLinksCard() {
     </form>
     ${
       suggestions.length
-        ? `<div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksSuggested'))}</h4><ul class="dash-account-links-list">${suggestions
-            .map(
-              (item) => `<li>
+        ? `<div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksSuggested'))}</h4>
+        <div class="dash-account-links-bulk">
+          ${hiddenSuggestionCount > 0 ? `<span class="dash-form-hint">${esc(adminT('adminAccountLinksShowingSome', { shown: suggestions.length, total: allSuggestions.length }))}</span>` : ''}
+          ${pendingAccountLinkSuggestions.length > 1 ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept-all data-count="${pendingAccountLinkSuggestions.length}">${esc(adminT('adminAccountLinksLinkAll', { count: pendingAccountLinkSuggestions.length }))}</button>` : ''}
+        </div>
+        <ul class="dash-account-links-list">${suggestions
+          .map(
+            (item) => `<li>
           <span class="dash-account-link-names"><strong>${esc(item.account)}</strong><span aria-hidden="true">→</span><span>${item.owner ? esc(item.owner) : `<em>${esc(adminT('adminAccountLinksNoOwner'))}</em>`}</span></span>
           ${item.owner ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksLink'))}</button>` : ''}
           <button type="button" class="dash-btn dash-btn-xs" data-account-link-prefill data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksPick'))}</button>
         </li>`
-            )
-            .join('')}</ul></div>`
+          )
+          .join('')}</ul></div>`
         : ''
     }
     <div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksActive'))}</h4>${
@@ -2657,6 +2667,21 @@ function bindAccountLinksHost(host) {
       );
       return;
     }
+    const acceptAll = event.target.closest('[data-account-link-accept-all]');
+    if (acceptAll) {
+      // Every resolvable suggestion in one action. Suggestions already linked or
+      // removed since the render are filtered out, and an existing link wins over
+      // a suggestion so a hand-made choice is never overwritten by a guess.
+      const existing = currentAccountLinks();
+      const existingKeys = new Set(existing.map((link) => compactPlayerIdentity(link.account)));
+      const additions = pendingAccountLinkSuggestions
+        .filter((item) => item.owner && !existingKeys.has(compactPlayerIdentity(item.account)))
+        .map((item) => ({ account: item.account, owner: item.owner, type: 'banner' }));
+      if (!additions.length) return;
+      if (!confirm(adminT('adminAccountLinksLinkAllConfirm', { count: additions.length }))) return;
+      void saveAccountLinks([...existing, ...additions], host);
+      return;
+    }
     const prefill = event.target.closest('[data-account-link-prefill]');
     if (prefill) {
       const form = host.querySelector('[data-account-links-form]');
@@ -2680,10 +2705,16 @@ function bindAccountLinksHost(host) {
   });
 }
 
-function renderAccountLinks() {
+// Exported so the dedicated Accounts subtab can mount the card on its own: the
+// card used to live only inside the three duty tabs, which made it hard to reach
+// from anywhere else in the dashboard.
+export function renderAccountLinks() {
   document.querySelectorAll('[data-account-links-host]').forEach((host) => {
     const wasOpen = host.querySelector('details')?.open;
-    host.innerHTML = renderAccountLinksCard();
+    // A host on a tab that exists only for linking starts open; the cards
+    // embedded in the duty tabs keep the operator's own open/closed choice.
+    const startOpen = host.hasAttribute('data-account-links-open');
+    host.innerHTML = renderAccountLinksCard({ open: wasOpen ?? startOpen });
     if (wasOpen !== undefined) {
       const details = host.querySelector('details');
       if (details) details.open = wasOpen;

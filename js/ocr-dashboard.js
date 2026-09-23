@@ -51,6 +51,7 @@ import {
   setContributionPrimary,
   exportContributionRecords,
   renderContributions,
+  renderAccountLinks,
   deleteExGuildEntry,
   clearExGuildData,
   setExGuildMatch,
@@ -771,6 +772,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
+  if (name === 'accounts') renderAccountLinks();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') renderBohMatchPanel();
   if (name === 'vtsScore') renderVtsScorePanel();

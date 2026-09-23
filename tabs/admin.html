@@ -731,6 +731,7 @@
               ><span data-i18n="adminVtsScoreTab">VtsScore</span>
             </button>
             <button class="dash-subtab-btn" data-subtab="throneBuffs"><span data-i18n="adminThroneTab">Throne Buffs</span></button>
+            <button class="dash-subtab-btn" data-subtab="accounts"><span data-i18n="adminAccountsTab">Accounts</span></button>
             <!-- Superadmin only. Hidden by default and revealed from the claim,
                  so an admin without the level never sees it; the callable and
                  firestore.rules enforce the boundary independently. -->
@@ -1902,6 +1903,11 @@
         </div>
       </div>
       <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
+      <!-- Account links live on their own tab so linking is reachable from
+           everywhere, not only from inside the three duty tabs. -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabAccounts">
+        <section id="dashAccountsRoot" data-account-links-host data-account-links-open></section>
+      </div>
       <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
 
       <!-- Sub-tab: Eden votes for the active workspace season -->
