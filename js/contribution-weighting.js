@@ -116,9 +116,18 @@ export function normalizeDutyPointWeights(raw) {
 // it and said it is a secondary account, which is its own class and its own
 // weight. Duty still lands on the person's row either way; only what it is
 // worth changes.
+// The guild's known secondary accounts, predefined so they score as the
+// secondary class without anyone linking them first. An explicit account link
+// still wins. Score-neutral by default: the secondary weight follows alt.
+export const SEEDED_SECONDARY_ACCOUNT_KEYS = Object.freeze(
+  new Set(['victoria', 'sharakikas', 'sskikass', 'takeurshin'])
+);
+
 export function classifyDutyAccount(accountKey) {
   const link = resolveAccountLink(accountKey);
   if (link) return accountLinkClass(link.type);
+  const seededKey = compactPlayerIdentity(accountKey) || String(accountKey || '');
+  if (SEEDED_SECONDARY_ACCOUNT_KEYS.has(seededKey)) return 'secondary';
   const familyKey = playerFamilyKey(accountKey);
   const primary = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey] || familyKey;
   const key = compactPlayerIdentity(accountKey) || String(accountKey || '');

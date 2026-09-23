@@ -2887,7 +2887,8 @@ service cloud.firestore {
           || (d.contributionWeight is number && d.contributionWeight >= 0 && d.contributionWeight <= 10))
         && (!('formPointWeight' in d)
           || (d.formPointWeight is number && d.formPointWeight >= 0 && d.formPointWeight <= 10))
-        && (!('updatedBy' in d) || d.updatedBy is string);
+        && d.updatedAt == request.time
+        && d.updatedBy == request.auth.uid;
     }
     match /vts_admin/eden_x1_vote_settings {
       allow read: if signedIn();
