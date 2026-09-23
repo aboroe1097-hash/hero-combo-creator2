@@ -1413,6 +1413,7 @@ const kr = {
     '시즌 진행 중에는 사전 추적이 제공됩니다. 최종 보상은 기여도, 배너, 경로, 실드 월, 자격 기록을 모두 확인한 뒤 시즌 종료 시 확정됩니다.',
   edenX1RewardFlowEyebrow: '보상 흐름',
   edenX1RewardFlowTitle: '상위 20개 보상 예정 분배',
+  edenX1RewardFlowTitleCount: '상위 {count}개 보상 예정 분배',
   edenX1RewardFlowSubtitle:
     '공개 목록은 작업 공식을 보여 주며, 리더십은 모든 임무 기록 검토 후 최종 시즌 보상을 확정합니다.',
   edenX1QuickVote: '투표',
@@ -1439,6 +1440,7 @@ const kr = {
   edenX1RewardTeamVoteTag: '최고의 팀 플레이어는 여기서 투표',
   edenX1RewardCardAction: '표 보기',
   edenX1RewardAnnouncementTitle: '최종 톱 20',
+  edenX1RewardAnnouncementTitleCount: '최종 톱 {count}',
   edenX1RewardAnnouncementCopy: '네 가지 보상 카테고리를 합친 수상자 명단입니다.',
   edenX1RewardAnnouncementThWhy: '선정 이유',
   edenX1RewardWhySupport: '자격을 갖춘 최고 가중 지원 점수',
@@ -1446,6 +1448,7 @@ const kr = {
   edenX1RewardWhyManagement: '관리진 투표 상위 3인 수상자',
   edenX1RewardWhyTeam: '팀워크와 신뢰성에 대한 길드 투표',
   edenX1RewardAnnouncementCongrats: '톱 20 여러분, 축하합니다!',
+  edenX1RewardAnnouncementCongratsCount: '톱 {count} 여러분, 축하합니다!',
   edenX1RewardViewAria: '{title} 보상 슬롯 표시',
   edenX1RewardContributionMeta:
     '지원 작업 이후 현재 기여도 + 이전 길드 기여만 기준으로 한 상위 10명입니다.',

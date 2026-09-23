@@ -67,6 +67,65 @@ export function rewardQuota(settings, category) {
 }
 
 /**
+ * Whether the season hands the guild-master reward to a named R5, outside the
+ * support-work quota. The owner's rule: the R5 always holds it, even with no
+ * support work of their own, and Support Work still rewards its full quota of
+ * other players. With `support_top1`, or with no R5 named, the top support
+ * scorer holds it inside the quota instead.
+ */
+export function guildMasterIsReserved(settings) {
+  const normalized = normalizeRewardSettings(settings);
+  return normalized.guildMasterSource === 'r5' && Boolean(normalized.r5PlayerKey);
+}
+
+/** Rows the Support Work table shows: its quota, plus the R5 row when reserved. */
+export function supportSlotCount(settings) {
+  return rewardQuota(settings, 'support') + (guildMasterIsReserved(settings) ? 1 : 0);
+}
+
+/** Size of the final announcement: every category's slots together. */
+export function announcementSlotCount(settings) {
+  const normalized = normalizeRewardSettings(settings);
+  return (
+    supportSlotCount(normalized) +
+    normalized.quotas.contribution +
+    normalized.quotas.management +
+    normalized.quotas.team
+  );
+}
+
+/**
+ * Support Work reward rows, in display order.
+ *
+ * @param {object} settings  reward settings (normalized here)
+ * @param {Array} supportRows  support candidates, best first
+ * @param {object} options
+ * @param {(row) => string} options.familyKeyOf  identity used to find the R5
+ * @param {string} options.r5FamilyKey  the R5's identity under the same function
+ * @param {object} [options.r5Row]  the R5's scored row, when the R5 has one
+ * @returns {Array<{ row: object|null, reward: 'guild_master'|'core' }>}
+ *   With a reserved R5 the first entry is the R5 (row null if they have no
+ *   scored row), followed by `quota` support rows that exclude the R5.
+ */
+export function allocateSupportRewards(settings, supportRows, options = {}) {
+  const normalized = normalizeRewardSettings(settings);
+  const quota = normalized.quotas.support;
+  const rows = Array.isArray(supportRows) ? supportRows : [];
+  if (!guildMasterIsReserved(normalized)) {
+    return rows
+      .slice(0, quota)
+      .map((row, index) => ({ row, reward: index === 0 ? 'guild_master' : 'core' }));
+  }
+  const familyKeyOf = typeof options.familyKeyOf === 'function' ? options.familyKeyOf : () => '';
+  const r5FamilyKey = String(options.r5FamilyKey || '');
+  const others = rows
+    .filter((row) => !r5FamilyKey || familyKeyOf(row) !== r5FamilyKey)
+    .slice(0, quota)
+    .map((row) => ({ row, reward: 'core' }));
+  return [{ row: options.r5Row || null, reward: 'guild_master' }, ...others];
+}
+
+/**
  * Which support-work slot gets the guild-master reward.
  *
  * Returns `{ source, slotIndex }` where `slotIndex` is the zero-based support

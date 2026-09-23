@@ -22,7 +22,9 @@ import { celebrate } from './fx/success-feedback.js';
 import {
   normalizeRewardSettings,
   rewardQuota,
-  resolveGuildMasterSlot,
+  allocateSupportRewards,
+  announcementSlotCount,
+  supportSlotCount,
 } from './eden-reward-settings.js';
 import {
   formatDatasetStructureLabel,
@@ -406,8 +408,20 @@ function esc(str) {
   return el.innerHTML;
 }
 
+// Copy that names the announcement size ("Final Top 20") has a {count} twin;
+// the size follows the season's reward settings, so it is read at call time.
+const REWARD_COUNT_COPY_KEYS = Object.freeze({
+  edenX1RewardFlowTitle: 'edenX1RewardFlowTitleCount',
+  edenX1RewardAnnouncementTitle: 'edenX1RewardAnnouncementTitleCount',
+  edenX1RewardAnnouncementCongrats: 'edenX1RewardAnnouncementCongratsCount',
+});
+
 function t(key, vars = {}) {
   const dict = translations[currentLang] || translations.en || {};
+  const countKey = REWARD_COUNT_COPY_KEYS[key];
+  if (countKey && (dict[countKey] || translations.en?.[countKey])) {
+    return t(countKey, { count: announcementSlotCount(currentRewardSettings), ...vars });
+  }
   let value = dict[key] || translations.en?.[key] || key;
   Object.entries({ version: APP_VERSION, ...vars }).forEach(([name, replacement]) => {
     value = value.replaceAll(`{${name}}`, String(replacement));
@@ -2970,10 +2984,12 @@ function updateRewardFlowControls() {
   });
 }
 
-// Announcement keeps its own Top-20 size; the four reward categories come from
-// the season's published reward settings.
+// Every card counts from the season's published reward settings, the
+// announcement included: it lists all categories, so its size is their sum.
 function rewardQuotaCountForView(view) {
-  return ['support', 'contribution', 'management', 'team'].includes(view)
+  if (view === 'support') return supportSlotCount(currentRewardSettings);
+  if (view === 'announcement') return announcementSlotCount(currentRewardSettings);
+  return ['contribution', 'management', 'team'].includes(view)
     ? rewardQuota(currentRewardSettings, view)
     : null;
 }
@@ -3414,9 +3430,7 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
 }
 
 function getSupportRewardRows() {
-  const quota = rewardQuota(currentRewardSettings, 'support');
-  if (!quota) return [];
-  const rows = dedupeWeightedRowsByFamily(
+  const candidates = dedupeWeightedRowsByFamily(
     currentRows
       .filter((row) => rowBonusTotal(row) > 0)
       .slice()
@@ -3427,19 +3441,36 @@ function getSupportRewardRows() {
           valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
           String(a.playerName || '').localeCompare(String(b.playerName || ''))
       )
-  ).slice(0, quota);
-  // By default the guild-master reward follows the R5. When the configured R5 is
-  // not in the support list the slot falls back to the top scorer, because a
-  // season must never end with nobody holding it.
-  const { slotIndex } = resolveGuildMasterSlot(
-    currentRewardSettings,
-    '',
-    rows.map((row) => row.playerKey)
   );
-  return rows.map((row, index) => ({
-    ...row,
+  // The R5 holds the guild-master reward outside the support quota, found by
+  // family so an alias or banner account of theirs still counts as them.
+  const r5Name = String(currentRewardSettings.r5PlayerKey || '').trim();
+  const r5Key = compactPlayerIdentity(r5Name);
+  const r5FamilyKey = r5Key ? rewardPriorityFamilyKey(r5Key, r5Name) : '';
+  const familyKeyOf = (row) => rewardPriorityFamilyKey(row.playerKey, row.playerName);
+  const r5Row = r5FamilyKey
+    ? currentRows.find(
+        (row) => row.isPrimaryAccount !== false && familyKeyOf(row) === r5FamilyKey
+      ) || currentRows.find((row) => familyKeyOf(row) === r5FamilyKey)
+    : null;
+  return allocateSupportRewards(currentRewardSettings, candidates, {
+    familyKeyOf,
+    r5FamilyKey,
+    r5Row,
+  }).map(({ row, reward }, index) => ({
+    // An R5 with no scored row this season still holds the reward by name.
+    ...(row || {
+      playerName: r5Name,
+      playerKey: r5Key,
+      sourceName: r5Name,
+      weightedScore: 0,
+      contributionScore: 0,
+      banners: 0,
+      pathers: 0,
+      shieldWalls: 0,
+    }),
     edenX1RewardSlot: index + 1,
-    edenX1SupportReward: index === slotIndex ? 'guild_master' : 'core',
+    edenX1SupportReward: reward,
   }));
 }
 
@@ -6500,7 +6531,7 @@ function getAnnouncementRows() {
       });
     }
   };
-  push('support', rewardQuota(currentRewardSettings, 'support'), getSupportRewardRows());
+  push('support', supportSlotCount(currentRewardSettings), getSupportRewardRows());
   push(
     'contribution',
     rewardQuota(currentRewardSettings, 'contribution'),
@@ -7389,6 +7420,12 @@ async function loadEdenX1Dashboard() {
             publishedScoring:
               projection.scoring && typeof projection.scoring === 'object'
                 ? projection.scoring
+                : null,
+            // The season's reward distribution. The cached copy is written from
+            // this same object, so a cached load keeps the published quotas too.
+            rewardSettings:
+              projection.rewardSettings && typeof projection.rewardSettings === 'object'
+                ? projection.rewardSettings
                 : null,
           };
           if (Array.isArray(projection.rosterSnapshots)) {

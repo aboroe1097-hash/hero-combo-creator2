@@ -1411,6 +1411,7 @@ const tr = {
     'Sezon sürerken erken takip açıktır. Nihai ödüller; katkı, sancak, rota, kalkan duvarı ve uygunluk kayıtları kontrol edildikten sonra sezon sonunda onaylanır.',
   edenX1RewardFlowEyebrow: 'Ödül akışı',
   edenX1RewardFlowTitle: 'Planlanan en iyi 20 ödül dağılımı',
+  edenX1RewardFlowTitleCount: 'Planlanan en iyi {count} ödül dağılımı',
   edenX1RewardFlowSubtitle:
     'Herkese açık liste çalışma formülünü gösterir; liderlik tüm görev kayıtları incelendikten sonra final sezon ödüllerini onaylar.',
   edenX1QuickVote: 'Oy ver',
@@ -1438,6 +1439,7 @@ const tr = {
   edenX1RewardTeamVoteTag: 'En iyi takım oyuncuları için burada oy ver',
   edenX1RewardCardAction: 'Tabloyu görüntüle',
   edenX1RewardAnnouncementTitle: 'Nihai İlk 20',
+  edenX1RewardAnnouncementTitleCount: 'Nihai İlk {count}',
   edenX1RewardAnnouncementCopy: 'Dört ödül kategorisinin birleşik alıcı listesi.',
   edenX1RewardAnnouncementThWhy: 'Seçilme nedeni',
   edenX1RewardWhySupport: 'Uygun en yüksek ağırlıklı destek puanı',
@@ -1445,6 +1447,7 @@ const tr = {
   edenX1RewardWhyManagement: 'Yönetim oylamasında ilk 3 kazananı',
   edenX1RewardWhyTeam: 'Takım çalışması ve güvenilirlik için lonca oyu',
   edenX1RewardAnnouncementCongrats: 'Tebrikler, İlk 20!',
+  edenX1RewardAnnouncementCongratsCount: 'Tebrikler, İlk {count}!',
   edenX1RewardViewAria: '{title} ödül slotlarını göster',
   edenX1RewardContributionMeta:
     'Destekten sonra yalnızca mevcut katkı + eski lonca katkısına göre ilk 10.',

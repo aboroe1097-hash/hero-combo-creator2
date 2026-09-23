@@ -1416,6 +1416,7 @@ const ru = {
     'Предварительное отслеживание работает во время сезона. Итоговые награды подтверждаются в конце сезона после проверки записей о вкладе, знамёнах, маршрутах, стене щитов и праве на участие.',
   edenX1RewardFlowEyebrow: 'Схема наград',
   edenX1RewardFlowTitle: 'План распределения Top 20 наград',
+  edenX1RewardFlowTitleCount: 'План распределения Top {count} наград',
   edenX1RewardFlowSubtitle:
     'Публичный список показывает рабочую формулу; руководство подтверждает финальные сезонные награды после проверки всех записей.',
   edenX1QuickVote: 'Голосовать',
@@ -1443,6 +1444,7 @@ const ru = {
   edenX1RewardTeamVoteTag: 'Голосуйте здесь за лучших командных игроков',
   edenX1RewardCardAction: 'Открыть таблицу',
   edenX1RewardAnnouncementTitle: 'Финальный Топ-20',
+  edenX1RewardAnnouncementTitleCount: 'Финальный Топ-{count}',
   edenX1RewardAnnouncementCopy:
     'Объединённый список получателей по всем четырём категориям наград.',
   edenX1RewardAnnouncementThWhy: 'Причина выбора',
@@ -1451,6 +1453,7 @@ const ru = {
   edenX1RewardWhyManagement: 'Победитель топ-3 голосования руководства',
   edenX1RewardWhyTeam: 'Голос гильдии за командную работу и надёжность',
   edenX1RewardAnnouncementCongrats: 'Поздравляем, Топ-20!',
+  edenX1RewardAnnouncementCongratsCount: 'Поздравляем, Топ-{count}!',
   edenX1RewardViewAria: 'Показать места наград для {title}',
   edenX1RewardContributionMeta: 'Первые 10 только по текущему вкладу + экс-гильдии, после помощи.',
   edenX1RewardSupportMeta:

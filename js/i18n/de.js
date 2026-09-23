@@ -1455,6 +1455,7 @@ const de = {
     'Die frühe Verfolgung läuft während der Saison. Die endgültigen Belohnungen werden zum Saisonende bestätigt, sobald alle Beitrags-, Banner-, Pfad-, Schildwall- und Berechtigungsnachweise geprüft sind.',
   edenX1RewardFlowEyebrow: 'Belohnungsablauf',
   edenX1RewardFlowTitle: 'Geplante Verteilung der besten 20 Belohnungen',
+  edenX1RewardFlowTitleCount: 'Geplante Verteilung der besten {count} Belohnungen',
   edenX1RewardFlowSubtitle:
     'Die öffentliche Liste zeigt die Arbeitsformel; die Führung bestätigt die finalen Saisonbelohnungen nach Prüfung aller Dienstdaten.',
   edenX1QuickVote: 'Abstimmen',
@@ -1484,6 +1485,7 @@ const de = {
   edenX1RewardTeamVoteTag: 'Hier für beste Teamspieler abstimmen',
   edenX1RewardCardAction: 'Tabelle anzeigen',
   edenX1RewardAnnouncementTitle: 'Finale Top 20',
+  edenX1RewardAnnouncementTitleCount: 'Finale Top {count}',
   edenX1RewardAnnouncementCopy: 'Die kombinierte Empfängerliste aller vier Belohnungskategorien.',
   edenX1RewardAnnouncementThWhy: 'Auswahlgrund',
   edenX1RewardWhySupport: 'Beste berechtigte gewichtete Unterstützungswertung',
@@ -1491,6 +1493,7 @@ const de = {
   edenX1RewardWhyManagement: 'Top-3-Sieger der Management-Abstimmung',
   edenX1RewardWhyTeam: 'Gildenwahl für Teamarbeit und Zuverlässigkeit',
   edenX1RewardAnnouncementCongrats: 'Glückwunsch, Top 20!',
+  edenX1RewardAnnouncementCongratsCount: 'Glückwunsch, Top {count}!',
   edenX1RewardViewAria: 'Belohnungsplätze für {title} anzeigen',
   edenX1RewardContributionMeta: 'Top 10 nur nach aktuellem Beitrag + Ex-Gilde, nach Support Work.',
   edenX1RewardSupportMeta:

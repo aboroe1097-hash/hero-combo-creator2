@@ -1423,6 +1423,7 @@ const es = {
     'El seguimiento anticipado está activo durante la temporada. Las recompensas finales se confirman al final de la temporada, una vez comprobados los registros de contribución, estandartes, rutas, muro de escudos y elegibilidad.',
   edenX1RewardFlowEyebrow: 'Flujo de recompensas',
   edenX1RewardFlowTitle: 'Distribución prevista de las 20 mejores recompensas',
+  edenX1RewardFlowTitleCount: 'Distribución prevista de las {count} mejores recompensas',
   edenX1RewardFlowSubtitle:
     'La lista pública muestra la fórmula de trabajo; el liderazgo confirma las recompensas finales de temporada después de revisar todos los registros de tareas.',
   edenX1QuickVote: 'Votar',
@@ -1452,6 +1453,7 @@ const es = {
   edenX1RewardTeamVoteTag: 'Vota aquí por los mejores jugadores de equipo',
   edenX1RewardCardAction: 'Ver tabla',
   edenX1RewardAnnouncementTitle: 'Top 20 final',
+  edenX1RewardAnnouncementTitleCount: 'Top {count} final',
   edenX1RewardAnnouncementCopy:
     'La lista combinada de destinatarios de las cuatro categorías de recompensa.',
   edenX1RewardAnnouncementThWhy: 'Por qué fue elegido',
@@ -1460,6 +1462,7 @@ const es = {
   edenX1RewardWhyManagement: 'Ganador del top 3 en la votación de gestión',
   edenX1RewardWhyTeam: 'Voto del gremio por trabajo en equipo y fiabilidad',
   edenX1RewardAnnouncementCongrats: '¡Felicidades, Top 20!',
+  edenX1RewardAnnouncementCongratsCount: '¡Felicidades, Top {count}!',
   edenX1RewardViewAria: 'Mostrar plazas de recompensa de {title}',
   edenX1RewardContributionMeta:
     'Top 10 solo por contribución actual + ex-gremio, después de apoyo.',

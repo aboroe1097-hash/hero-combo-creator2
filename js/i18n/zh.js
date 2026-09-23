@@ -1386,6 +1386,7 @@ const zh = {
     '赛季进行期间可提前查看进度。最终奖励将在赛季结束、核对全部贡献、旗帜、路线、盾墙与资格记录后确认。',
   edenX1RewardFlowEyebrow: '奖励流程',
   edenX1RewardFlowTitle: '计划的前20名奖励分配',
+  edenX1RewardFlowTitleCount: '计划的前{count}名奖励分配',
   edenX1RewardFlowSubtitle: '公开列表显示当前公式；领导层会在审核所有任务记录后确认赛季最终奖励。',
   edenX1QuickVote: '投票',
   edenX1QuickMyStats: '我的数据',
@@ -1411,6 +1412,7 @@ const zh = {
   edenX1RewardTeamVoteTag: '在这里为最佳团队玩家投票',
   edenX1RewardCardAction: '查看表格',
   edenX1RewardAnnouncementTitle: '最终前20名',
+  edenX1RewardAnnouncementTitleCount: '最终前{count}名',
   edenX1RewardAnnouncementCopy: '四个奖励类别的合并获奖名单。',
   edenX1RewardAnnouncementThWhy: '入选原因',
   edenX1RewardWhySupport: '符合条件的最高加权支援分数',
@@ -1418,6 +1420,7 @@ const zh = {
   edenX1RewardWhyManagement: '管理层投票前3名获胜者',
   edenX1RewardWhyTeam: '公会投票表彰团队合作与可靠性',
   edenX1RewardAnnouncementCongrats: '恭喜前20名！',
+  edenX1RewardAnnouncementCongratsCount: '恭喜前{count}名！',
   edenX1RewardViewAria: '显示 {title} 奖励名额',
   edenX1RewardContributionMeta: '支援工作之后，仅按当前贡献 + 前公会贡献排名前10。',
   edenX1RewardSupportMeta:

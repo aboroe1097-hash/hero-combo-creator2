@@ -1452,6 +1452,7 @@ const fr = {
     "Le suivi anticipé est actif pendant la saison. Les récompenses finales sont confirmées à la fin de la saison, une fois vérifiés les relevés de contribution, de bannières, de trajets, de mur de boucliers et d'éligibilité.",
   edenX1RewardFlowEyebrow: 'Flux des récompenses',
   edenX1RewardFlowTitle: 'Répartition prévue des 20 meilleures récompenses',
+  edenX1RewardFlowTitleCount: 'Répartition prévue des {count} meilleures récompenses',
   edenX1RewardFlowSubtitle:
     'La liste publique montre la formule de travail; la direction confirme les récompenses finales de saison après examen de tous les relevés de tâches.',
   edenX1QuickVote: 'Vote',
@@ -1482,6 +1483,7 @@ const fr = {
   edenX1RewardTeamVoteTag: 'Votez ici pour les meilleurs joueurs d’équipe',
   edenX1RewardCardAction: 'Voir le tableau',
   edenX1RewardAnnouncementTitle: 'Top 20 final',
+  edenX1RewardAnnouncementTitleCount: 'Top {count} final',
   edenX1RewardAnnouncementCopy:
     'La liste combinée des bénéficiaires des quatre catégories de récompense.',
   edenX1RewardAnnouncementThWhy: 'Raison de la sélection',
@@ -1490,6 +1492,7 @@ const fr = {
   edenX1RewardWhyManagement: 'Vainqueur du top 3 au vote de la direction',
   edenX1RewardWhyTeam: 'Vote de la guilde pour l’esprit d’équipe et la fiabilité',
   edenX1RewardAnnouncementCongrats: 'Félicitations au Top 20 !',
+  edenX1RewardAnnouncementCongratsCount: 'Félicitations au Top {count} !',
   edenX1RewardViewAria: 'Afficher les places de récompense pour {title}',
   edenX1RewardContributionMeta:
     'Top 10 uniquement par contribution actuelle + ex-guilde, après soutien.',

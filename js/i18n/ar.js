@@ -1407,6 +1407,7 @@ const ar = {
     'التتبع المبكر متاح أثناء الموسم. تُعتمد المكافآت النهائية عند انتهاء الموسم بعد التحقق من سجلات المساهمة والرايات والمسارات وجدار الدروع والأهلية.',
   edenX1RewardFlowEyebrow: 'مسار المكافآت',
   edenX1RewardFlowTitle: 'توزيع مخطط لأفضل 20 مكافأة',
+  edenX1RewardFlowTitleCount: 'توزيع مخطط لأفضل {count} مكافأة',
   edenX1RewardFlowSubtitle:
     'تعرض القائمة العامة الصيغة الحالية؛ تؤكد القيادة مكافآت الموسم النهائية بعد مراجعة كل سجلات المهام.',
   edenX1QuickVote: 'تصويت',
@@ -1433,6 +1434,7 @@ const ar = {
   edenX1RewardTeamVoteTag: 'صوّت هنا لأفضل لاعبي الفريق',
   edenX1RewardCardAction: 'عرض الجدول',
   edenX1RewardAnnouncementTitle: 'أفضل 20 النهائية',
+  edenX1RewardAnnouncementTitleCount: 'أفضل {count} النهائية',
   edenX1RewardAnnouncementCopy: 'القائمة الموحدة للفائزين عبر فئات المكافآت الأربع.',
   edenX1RewardAnnouncementThWhy: 'سبب الاختيار',
   edenX1RewardWhySupport: 'أعلى نتيجة دعم مرجحة مؤهلة',
@@ -1440,6 +1442,7 @@ const ar = {
   edenX1RewardWhyManagement: 'الفائز ضمن أفضل 3 في تصويت الإدارة',
   edenX1RewardWhyTeam: 'تصويت النقابة للعمل الجماعي والموثوقية',
   edenX1RewardAnnouncementCongrats: 'تهانينا لأفضل 20!',
+  edenX1RewardAnnouncementCongratsCount: 'تهانينا لأفضل {count}!',
   edenX1RewardViewAria: 'عرض خانات مكافآت {title}',
   edenX1RewardContributionMeta:
     'أفضل 10 حسب المساهمة الحالية + مساهمة النقابة السابقة فقط، بعد أعمال الدعم.',

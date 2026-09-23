@@ -9,7 +9,11 @@ import {
   REWARD_QUOTA_KEYS,
   normalizeRewardSettings,
   resolveGuildMasterSlot,
+  allocateSupportRewards,
+  announcementSlotCount,
+  guildMasterIsReserved,
   rewardQuota,
+  supportSlotCount,
 } from '../../js/eden-reward-settings.js';
 
 test('reward settings default to the distribution the owner asked for', () => {
@@ -149,13 +153,12 @@ test('the reward distribution is a superadmin document published with the season
   // The public page reads them and stops hard-coding the slot counts.
   const page = readFileSync('js/eden-x1.js', 'utf8');
   assert.match(page, /currentRewardSettings = normalizeRewardSettings\(data\.rewardSettings\)/);
-  assert.match(page, /const quota = rewardQuota\(currentRewardSettings, 'support'\)/);
+  assert.match(page, /allocateSupportRewards\(currentRewardSettings,/);
   assert.match(
     page,
     /const contributionQuota = rewardQuota\(currentRewardSettings, 'contribution'\)/
   );
   assert.doesNotMatch(page, /\.slice\(0, 4\)\n\s*\.map\(\(row, index\) => \(\{/);
-  assert.match(page, /resolveGuildMasterSlot\(/);
   assert.match(page, /rewardQuotaCountForView/);
 
   // Every locale the gate checks carries the panel copy.
@@ -164,4 +167,65 @@ test('the reward distribution is a superadmin document published with the season
     assert.match(pack, /adminRewardSettingsTitle:/, `${locale} has the reward panel title`);
     assert.match(pack, /adminRewardSettingsGuildMasterR5:/, `${locale} has the R5 option`);
   }
+});
+
+test('the R5 holds guild master outside the support quota, which still fills in full', () => {
+  const rows = ['alpha', 'malakabo', 'beta', 'gamma', 'delta', 'epsilon'].map((playerKey) => ({
+    playerKey,
+  }));
+  const options = { familyKeyOf: (row) => row.playerKey, r5FamilyKey: 'malakabo' };
+
+  // Default: R5 first as guild master, then four OTHER support players.
+  const byDefault = allocateSupportRewards(null, rows, { ...options, r5Row: rows[1] });
+  assert.deepEqual(
+    byDefault.map(({ row, reward }) => [row?.playerKey, reward]),
+    [
+      ['malakabo', 'guild_master'],
+      ['alpha', 'core'],
+      ['beta', 'core'],
+      ['gamma', 'core'],
+      ['delta', 'core'],
+    ]
+  );
+  assert.equal(guildMasterIsReserved(null), true);
+  assert.equal(supportSlotCount(null), 5);
+  assert.equal(announcementSlotCount(null), 21);
+
+  // An R5 with no support work (no scored row) still holds it by name.
+  const noSupport = allocateSupportRewards(
+    null,
+    rows.filter((row) => row.playerKey !== 'malakabo'),
+    {
+      ...options,
+      r5Row: null,
+    }
+  );
+  assert.equal(noSupport[0].row, null);
+  assert.equal(noSupport[0].reward, 'guild_master');
+  assert.equal(noSupport.length, 5);
+
+  // Quotas re-flow: a smaller support quota keeps the R5 and trims the rest.
+  const two = allocateSupportRewards({ quotas: { support: 2 } }, rows, options);
+  assert.deepEqual(
+    two.map(({ row }) => row?.playerKey ?? null),
+    [null, 'alpha', 'beta']
+  );
+  assert.equal(announcementSlotCount({ quotas: { support: 2, contribution: 5 } }), 3 + 5 + 3 + 3);
+
+  // support_top1: the top scorer holds it inside the quota, nothing reserved.
+  const top1 = allocateSupportRewards({ guildMasterSource: 'support_top1' }, rows, options);
+  assert.deepEqual(
+    top1.map(({ row, reward }) => [row.playerKey, reward]),
+    [
+      ['alpha', 'guild_master'],
+      ['malakabo', 'core'],
+      ['beta', 'core'],
+      ['gamma', 'core'],
+    ]
+  );
+  assert.equal(supportSlotCount({ guildMasterSource: 'support_top1' }), 4);
+  assert.equal(announcementSlotCount({ guildMasterSource: 'support_top1' }), 20);
+
+  // No R5 named: nothing is reserved either.
+  assert.equal(guildMasterIsReserved({ r5PlayerKey: '' }), false);
 });

@@ -1408,6 +1408,7 @@ const id = {
     'Pelacakan awal aktif selama musim berlangsung. Hadiah akhir dikonfirmasi pada akhir musim setelah catatan kontribusi, panji, jalur, dinding perisai, dan kelayakan diperiksa.',
   edenX1RewardFlowEyebrow: 'Alur hadiah',
   edenX1RewardFlowTitle: 'Rencana distribusi 20 hadiah teratas',
+  edenX1RewardFlowTitleCount: 'Rencana distribusi {count} hadiah teratas',
   edenX1RewardFlowSubtitle:
     'Daftar publik menampilkan formula kerja; pimpinan mengonfirmasi hadiah akhir musim setelah semua catatan tugas ditinjau.',
   edenX1QuickVote: 'Vote',
@@ -1436,6 +1437,7 @@ const id = {
   edenX1RewardTeamVoteTag: 'Vote di sini untuk pemain tim terbaik',
   edenX1RewardCardAction: 'Lihat tabel',
   edenX1RewardAnnouncementTitle: 'Top 20 Final',
+  edenX1RewardAnnouncementTitleCount: 'Top {count} Final',
   edenX1RewardAnnouncementCopy: 'Daftar penerima gabungan dari keempat kategori hadiah.',
   edenX1RewardAnnouncementThWhy: 'Alasan terpilih',
   edenX1RewardWhySupport: 'Skor dukungan berbobot tertinggi yang memenuhi syarat',
@@ -1443,6 +1445,7 @@ const id = {
   edenX1RewardWhyManagement: 'Pemenang top 3 pemungutan suara manajemen',
   edenX1RewardWhyTeam: 'Suara guild untuk kerja sama tim dan keandalan',
   edenX1RewardAnnouncementCongrats: 'Selamat, Top 20!',
+  edenX1RewardAnnouncementCongratsCount: 'Selamat, Top {count}!',
   edenX1RewardViewAria: 'Tampilkan slot hadiah {title}',
   edenX1RewardContributionMeta:
     '10 teratas hanya dari kontribusi saat ini + ex-guild, setelah dukungan.',

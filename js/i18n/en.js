@@ -1789,6 +1789,7 @@ const en = {
     'Early tracking is live while the season runs. Final rewards are confirmed at season end, once contribution, banner, pathing, shield wall, and eligibility records have all been checked.',
   edenX1RewardFlowEyebrow: 'Reward flow',
   edenX1RewardFlowTitle: 'Planned Top 20 reward distribution',
+  edenX1RewardFlowTitleCount: 'Planned Top {count} reward distribution',
   edenX1RewardFlowSubtitle:
     'The public list shows the working formula; leadership confirms the final season rewards after all duty records are reviewed.',
   edenX1QuickVote: 'Vote',
@@ -1815,6 +1816,7 @@ const en = {
   edenX1RewardTeamVoteTag: 'Vote here for Best TeamPlayers',
   edenX1RewardCardAction: 'View table',
   edenX1RewardAnnouncementTitle: 'Final Top 20',
+  edenX1RewardAnnouncementTitleCount: 'Final Top {count}',
   edenX1RewardAnnouncementCopy: 'The combined recipient list across all four reward categories.',
   edenX1RewardAnnouncementThWhy: 'Why selected',
   edenX1RewardWhySupport: 'Top eligible weighted support score',
@@ -1822,6 +1824,7 @@ const en = {
   edenX1RewardWhyManagement: 'Top 3 eligible management-vote winner',
   edenX1RewardWhyTeam: 'Guild vote for teamwork and reliability',
   edenX1RewardAnnouncementCongrats: 'Congratulations, Top 20!',
+  edenX1RewardAnnouncementCongratsCount: 'Congratulations, Top {count}!',
   edenX1RewardViewAria: 'Show {title} reward slots',
   edenX1RewardContributionMeta: 'Top 10 by weighted total contribution, after Support Work.',
   edenX1RewardSupportMeta:

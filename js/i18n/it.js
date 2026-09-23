@@ -72,6 +72,7 @@ const it = {
     'Il tracciamento anticipato è attivo durante la stagione. I premi finali vengono confermati a fine stagione, una volta verificati i registri di contributo, stendardi, percorsi, muro di scudi e idoneità.',
   edenX1RewardFlowEyebrow: 'Flusso ricompense',
   edenX1RewardFlowTitle: 'Distribuzione prevista delle ricompense Top 20',
+  edenX1RewardFlowTitleCount: 'Distribuzione prevista delle ricompense Top {count}',
   edenX1RewardFlowSubtitle:
     'La lista pubblica mostra la formula di lavoro; la leadership conferma le ricompense finali dopo la revisione di tutti gli incarichi.',
   edenX1RewardLeaderboardTitle: 'Contributo totale',
@@ -1814,6 +1815,7 @@ const it = {
   edenX1MyStatsNoMatch: 'Non è stato ancora trovato alcun giocatore corrispondente.',
   edenX1RewardTeamVoteTag: 'Vota qui per i migliori giocatori di squadra',
   edenX1RewardAnnouncementTitle: 'Top 20 finale',
+  edenX1RewardAnnouncementTitleCount: 'Top {count} finale',
   edenX1RewardAnnouncementCopy:
     'L’elenco complessivo dei destinatari nelle quattro categorie di ricompense.',
   edenX1RewardAnnouncementThWhy: 'Motivo della selezione',
@@ -1822,6 +1824,7 @@ const it = {
   edenX1RewardWhyManagement: 'Tra i primi 3 idonei nel voto della gestione',
   edenX1RewardWhyTeam: 'Voto della gilda per collaborazione e affidabilità',
   edenX1RewardAnnouncementCongrats: 'Congratulazioni alla Top 20!',
+  edenX1RewardAnnouncementCongratsCount: 'Congratulazioni alla Top {count}!',
   edenX1RewardViewAria: 'Mostra gli slot della ricompensa {title}',
   edenX1RewardAssignedReasonTitle: 'Dettagli dello stato',
   edenX1RewardVoted: 'Votato',
