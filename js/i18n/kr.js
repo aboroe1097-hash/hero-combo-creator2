@@ -2999,13 +2999,13 @@ Object.assign(kr, {
   seoFeatureLoyalty: 'Eden 충성도 계산기 - 업그레이드 경로 및 독 %',
   seoFeatureResearch: '기술 연구 계산기 — 배지, 메달, 게임 레이아웃 트리',
   seoFooterDesc:
-    'RoC VTS Toolkit는 VTS State 1097의 Rise of Castles: Ice & Fire 플레이어를 위해 팬이 제작한 무료 툴킷입니다. 설치할 필요가 없으며 데스크톱과 모바일의 브라우저에서 작동합니다.',
+    'RoC VTS Toolkit은 VTS State 1097의 Rise of Castles: Ice & Fire 플레이어를 위해 팬이 제작한 무료 툴킷입니다. 설치할 필요가 없으며 데스크톱과 모바일의 브라우저에서 작동합니다.',
   seoFooterTitle: '포함된 도구',
   seoIntro:
     'Rise of Castles: Ice & Fire의 무료 커뮤니티 도구 — 영웅 콤보 구축, Eden 지도 계획, 충성도 업그레이드 계산, 기술 연구 추적, Hero Atlas 탐색 등이 가능합니다. VTS State 1097용으로 제작되었습니다.',
   seoKeywords:
     'Rise of Castles, Ice and Fire, 영웅 콤보, Eden 지도, VTS 1097, 콤보 생성기, 충성도 계산기, 기술 연구, Hero Atlas, ROC 콤보',
-  seoTitle: '영웅 콤보 생성기 — Rise of Castles 얼음 및 불 도구 | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Rise of Castles 얼음 및 불 도구 | VTS 1097',
   tabEdenMapBadge: '곧',
   researchPerLevel: '레벨당 {value}',
   researchVariesPerLevel: '레벨별 수치 다름',

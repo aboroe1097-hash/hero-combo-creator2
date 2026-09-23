@@ -6,8 +6,15 @@
  * pointer burst reads getBoundingClientRect() once and writes `--mx`/`--my`
  * (percent, 0..100) on at most one active card. Switching cards clears the
  * previous card first, and settle()/dispose() release every reference so no
- * detached element is retained. No framework, no imports, no console output;
- * only CSS custom properties are written, so it is CSP-safe.
+ * detached element is retained. The pool of listeners is bounded: exactly one
+ * card at a time carries the unmount hooks, because `pointerleave` does not
+ * bubble and a listener on `root` would never fire for it.
+ *
+ * `shouldDecorate` (default: always) is the decoration gate. When it returns
+ * false — reduced motion, Save-Data, a hidden tab, a coarse/touch pointer — the
+ * module clears whatever it wrote and stops scheduling work, so no rect is read
+ * and no custom property is touched. No framework, no imports, no console
+ * output; only CSS custom properties are written, so it is CSP-safe.
  */
 
 const DEFAULT_VAR_NAMES = ['--mx', '--my'];
@@ -35,6 +42,8 @@ export function createPointerVars(options = {}) {
       ? options.activeVarNames.slice()
       : DEFAULT_VAR_NAMES;
   const [xVarName, yVarName] = activeVarNames;
+  const shouldDecorate =
+    typeof options.shouldDecorate === 'function' ? options.shouldDecorate : () => true;
 
   const view = resolveView(root);
   const scheduleFrame =
@@ -54,11 +63,32 @@ export function createPointerVars(options = {}) {
         };
 
   let activeElement = null;
+  let boundElement = null;
   let pending = null;
   let settlePending = false;
   let frameId = 0;
   let framePending = false;
   let disposed = false;
+
+  // `pointerleave` never reaches a document-level listener, so the card that
+  // currently owns the vars carries the hooks. Only one card is bound at a time
+  // and release() always unbinds, so nothing detached is retained.
+  function bindLeave(element) {
+    if (element === boundElement) return;
+    unbindLeave();
+    if (!element || typeof element.addEventListener !== 'function') return;
+    boundElement = element;
+    element.addEventListener('pointerleave', handlePointerEnd);
+    element.addEventListener('pointercancel', handlePointerEnd);
+  }
+
+  function unbindLeave() {
+    const element = boundElement;
+    boundElement = null;
+    if (!element || typeof element.removeEventListener !== 'function') return;
+    element.removeEventListener('pointerleave', handlePointerEnd);
+    element.removeEventListener('pointercancel', handlePointerEnd);
+  }
 
   function clearActive() {
     const element = activeElement;
@@ -76,35 +106,44 @@ export function createPointerVars(options = {}) {
     frameId = 0;
   }
 
+  function release() {
+    pending = null;
+    settlePending = false;
+    cancelScheduledFrame();
+    clearActive();
+    unbindLeave();
+  }
+
   function runFrame() {
     frameId = 0;
     framePending = false;
     if (disposed) return;
-    if (settlePending || !pending) {
-      settlePending = false;
-      clearActive();
-      return;
-    }
 
-    const { element, clientX, clientY } = pending;
+    const next = settlePending || !pending ? null : pending;
     pending = null;
-    if (typeof element.getBoundingClientRect !== 'function') {
+    settlePending = false;
+
+    // Every early exit settles: the element is unusable, or decoration is no
+    // longer allowed and whatever was already written has to go.
+    if (!next || typeof next.element.getBoundingClientRect !== 'function' || !shouldDecorate()) {
       clearActive();
+      unbindLeave();
       return;
     }
 
+    const { element, clientX, clientY } = next;
     const rect = element.getBoundingClientRect();
     if (!rect || rect.width <= 0 || rect.height <= 0) {
       clearActive();
+      unbindLeave();
       return;
     }
 
     const mx = clampPercent(((clientX - rect.left) / rect.width) * 100);
     const my = clampPercent(((clientY - rect.top) / rect.height) * 100);
-    if (element !== activeElement) {
-      clearActive();
-      activeElement = element;
-    }
+    if (element !== activeElement) clearActive();
+    activeElement = element;
+    bindLeave(element);
 
     const style = element.style;
     if (!style || typeof style.setProperty !== 'function') return;
@@ -130,6 +169,10 @@ export function createPointerVars(options = {}) {
 
   function handlePointerMove(event) {
     if (disposed || !selector) return;
+    if (!shouldDecorate()) {
+      scheduleSettle();
+      return;
+    }
     const target = event?.target;
     const element = typeof target?.closest === 'function' ? target.closest(selector) : null;
     if (!element) {
@@ -138,23 +181,20 @@ export function createPointerVars(options = {}) {
     }
     pending = { element, clientX: event.clientX, clientY: event.clientY };
     settlePending = false;
+    // Bind before the frame: a pointer that sweeps straight over a card still
+    // has to clear it on the way out, even if no frame ran while it was inside.
+    bindLeave(element);
     armFrame();
   }
 
   function handlePointerEnd() {
     if (disposed || !selector) return;
-    pending = null;
-    settlePending = false;
-    cancelScheduledFrame();
-    clearActive();
+    release();
   }
 
   function settle() {
     if (!selector) return;
-    pending = null;
-    settlePending = false;
-    cancelScheduledFrame();
-    clearActive();
+    release();
   }
 
   function dispose() {
@@ -162,16 +202,12 @@ export function createPointerVars(options = {}) {
     disposed = true;
     if (typeof root?.removeEventListener === 'function') {
       root.removeEventListener('pointermove', handlePointerMove);
-      root.removeEventListener('pointerleave', handlePointerEnd);
-      root.removeEventListener('pointercancel', handlePointerEnd);
     }
-    settle();
+    release();
   }
 
   if (selector && typeof root?.addEventListener === 'function') {
     root.addEventListener('pointermove', handlePointerMove, { passive: true });
-    root.addEventListener('pointerleave', handlePointerEnd);
-    root.addEventListener('pointercancel', handlePointerEnd);
   }
 
   return {

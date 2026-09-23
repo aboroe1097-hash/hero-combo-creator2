@@ -3137,7 +3137,7 @@ Object.assign(id, {
   tabAi: 'Ngobrol dengan Velo',
   'ai.suggestion.counter': 'Counter Arthur / Cleopatra VII / Theodora.',
   'ai.kicker': 'Asisten VTS',
-  seoTitle: 'Pembuat Combo Hero — Alat Rise of Castles: Ice & Fire | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Alat Rise of Castles: Ice & Fire | VTS 1097',
   seoDescription:
     'Alat gratis Rise of Castles: Ice & Fire untuk State VTS 1097: pembuat dan generator combo hero, Atlas Hero, perencana peta Eden, kalkulator loyalitas, pelacak riset, dan counter combo.',
   seoKeywords:

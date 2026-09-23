@@ -16,6 +16,9 @@ This is the release history, newest first. Entries describe their release-time b
 - Towers IX and X are recorded from the same workbook with their node rows and totals, ready for a future column, and the source links plus the "With gratitude" panel credit the workbook's maintainers.
 - The workbook, its checksum, and a review-friendly snapshot are kept in the repository under `database/`, so the data can be re-derived without touching Google Sheets.
 - The site is now **RoC VTS Toolkit**, because it has outgrown the hero combo tool it was named after. Page titles, the installable app name (short name RoC VTS), the search and social metadata, the structured data, the map footer, the export watermark, and the browser tab in every language say the same name; the 11 localized titles that translated the old name now carry the brand unchanged.
+- The buildings planner moved into the Planners ▸ Castle panel instead of owning a tab of its own, so the Castle planner and the Castle 26–30 upgrade costs sit together. Its search filters the list as you type, and the tool follows the light theme.
+- Community Downloads is reachable from the command palette (Ctrl/Cmd+K) and from Velo, not only by its URL.
+- Community prices are shown per troop. Each troop's specialization tab is read on its own, so an archer node lists the archer medal cost instead of the footman one, and a node the workbook already covers offers a "Report a wrong cost" link instead of a submission box. The "nodes with data" count counts distinct nodes rather than every transcribed row.
 
 ## 16.0.19 - 2026-09-23
 

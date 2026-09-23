@@ -3094,7 +3094,7 @@ Object.assign(zh, {
     '《城堡崛起：冰与火》的免费社区工具 — 构建英雄组合、规划伊甸地图、计算忠诚度升级、跟踪技术研究以及浏览英雄地图集。专为 VTS 状态 1097 制造。',
   seoKeywords:
     '城堡崛起、冰与火、英雄组合、伊甸地图、VTS 1097、组合创建器、忠诚度计算器、技术研究、英雄地图集、ROC 组合',
-  seoTitle: '英雄连击创造者——城堡崛起冰与火工具| VTS 1097',
+  seoTitle: 'RoC VTS Toolkit ——城堡崛起冰与火工具| VTS 1097',
   tabEdenMapBadge: '很快',
   researchPerLevel: '每级 {value}',
   researchVariesPerLevel: '每级数值不同',

@@ -497,7 +497,7 @@ const pt = {
   introFeaturedTools: 'Ferramentas em destaque',
   introFootnote:
     'Criado pela comunidade · Otimizado para dispositivos móveis · Não requer instalação',
-  seoTitle: 'Criador de Combos — Rise of Castles Ice & Fire | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Rise of Castles Ice & Fire | VTS 1097',
   seoDescription:
     'Ferramentas gratuitas para Rise of Castles: Ice & Fire — combos, Atlas de Heróis, mapa Eden, calculadora de lealdade e pesquisa tecnológica para o Estado VTS 1097.',
   seoKeywords:

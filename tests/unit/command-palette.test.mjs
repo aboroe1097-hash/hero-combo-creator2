@@ -33,8 +33,10 @@ test('command palette exposes deterministic tool destinations', () => {
     'tabOcrDashboard',
     'tabArcade',
     'tabBattleSimulator',
+    'tabDownloads',
   ]);
   assert.match(destinations, /name:\s*'manual'[\s\S]*?kind:\s*'tab'/);
+  assert.match(destinations, /key:\s*'tabDownloads'[\s\S]*?href:\s*'downloads\.html'/);
   assert.match(
     destinations,
     /key:\s*'tabSpecialization'[\s\S]*?aliasesKey:\s*'tabSpecializationTowersAliases'[\s\S]*?name:\s*'specialization'[\s\S]*?kind:\s*'tab'/

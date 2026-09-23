@@ -2949,7 +2949,7 @@ Object.assign(ru, {
 Object.assign(ru, {
   tabAi: 'Поговорить с Velo',
   'ai.kicker': 'Ассистент VTS',
-  seoTitle: 'Создатель комбинаций героев — инструменты Rise of Castles: Ice & Fire | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — инструменты Rise of Castles: Ice & Fire | VTS 1097',
   seoDescription:
     'Бесплатные инструменты Rise of Castles: Ice & Fire для государства VTS 1097: создание комбинаций героев, Атлас героев, карта Eden, калькулятор лояльности, исследования и контры.',
   seoKeywords:

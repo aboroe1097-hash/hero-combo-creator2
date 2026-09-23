@@ -2494,7 +2494,7 @@ Object.assign(ar, {
     'هذه هي لقطة المساهمات الأساسية المستخدمة في حسابات لوحة المعلومات',
   adminContributionSetPrimaryTitle: 'تعيين كلقطة المساهمات الأساسية',
 
-  seoTitle: 'منشئ تشكيلات الأبطال — أدوات Rise of Castles: Ice & Fire | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — أدوات Rise of Castles: Ice & Fire | VTS 1097',
   seoDescription:
     'أدوات مجانية للعبة Rise of Castles: Ice & Fire مخصّصة لولاية VTS 1097 — منشئ ومولّد تشكيلات الأبطال، ودليل الأبطال، ومخطط خريطة Eden، وحاسبة الولاء، ومتتبّع أبحاث التقنية، وأدوات مواجهة التشكيلات.',
   seoKeywords:

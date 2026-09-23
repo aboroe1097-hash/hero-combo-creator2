@@ -14,11 +14,6 @@ const RESOURCE_META = [
   ['marble', 'Marble', 'stone'],
   ['iron', 'Iron', 'iron'],
 ];
-const BUILDINGS_WIKI_URL = 'https://rise-of-empires-ice-and-fire.fandom.com/wiki/Buildings';
-const FANDOM_BUILDING_ICONS = {
-  farm: 'https://static.wikia.nocookie.net/rise-of-empires-ice-and-fire/images/b/b3/Farm_Icon.jpg/revision/latest?cb=20211114160707',
-};
-
 const numberFormat = new Intl.NumberFormat('en-US');
 const formatNumber = (value) => numberFormat.format(value);
 const escapeHtml = (value) =>
@@ -140,16 +135,14 @@ function renderBuildingRow(building, currentLevel) {
   </div>`
     )
     .join('');
-  const icon = FANDOM_BUILDING_ICONS[building.id]
-    ? `<img class="building-wiki-icon" src="${FANDOM_BUILDING_ICONS[building.id]}" alt="" loading="lazy" decoding="async"><span class="building-row-icon__fallback" aria-hidden="true">${escapeHtml(building.name.slice(0, 1).toUpperCase())}</span>`
-    : genericBuildingIcon(building.name);
   return `<details class="building-row-card" data-building-name="${escapeHtml(building.name.toLowerCase())}">
-    <summary><span class="building-row-icon" aria-hidden="true">${icon}</span><span class="building-row-name"><strong>${escapeHtml(building.name)}</strong><small>Source row ${building.sourceNo}</small></span><span class="building-row-total${missing ? ' is-incomplete' : ''}"><small>${missing ? 'Partial total' : 'Selected levels'}</small><strong>${costSummary}</strong></span><span class="building-row-chevron" aria-hidden="true">⌄</span></summary>
+    <summary><span class="building-row-icon" aria-hidden="true">${genericBuildingIcon(building.name)}</span><span class="building-row-name"><strong>${escapeHtml(building.name)}</strong><small>Source row ${building.sourceNo}</small></span><span class="building-row-total${missing ? ' is-incomplete' : ''}"><small>${missing ? 'Partial total' : 'Selected levels'}</small><strong>${costSummary}</strong></span><span class="building-row-chevron" aria-hidden="true">⌄</span></summary>
     <div class="building-row-details"><div class="building-level-list">${levelLines || '<p class="building-empty-state">No levels remain in this plan.</p>'}</div><p class="building-bonus"><span>Bonus at level 30</span><strong>${escapeHtml(building.bonus || 'Not listed')}</strong></p></div>
   </details>`;
 }
 
 function renderAllBuildings(currentLevel, search = '') {
+  const sourceRowCount = BUILDING_UPGRADE_DATA.sourceRowCount;
   const selectedLevels = [26, 27, 28, 29, 30].filter((level) => level > currentLevel);
   const allCosts = BUILDING_UPGRADE_DATA.buildings.flatMap((building) =>
     building.levels.filter((item) => selectedLevels.includes(item.level))
@@ -159,30 +152,27 @@ function renderAllBuildings(currentLevel, search = '') {
     0
   );
   const missingCells = allCosts.filter((item) => item.cost == null).length;
-  const shownBuildings = BUILDING_UPGRADE_DATA.buildings.filter((building) =>
-    building.name.toLowerCase().includes(search.trim().toLowerCase())
-  );
   const summary = missingCells
     ? `${formatNumber(knownTotal)} known · ${missingCells} cost cells missing`
     : `${formatNumber(knownTotal)} Orichalcum`;
 
   return `<section class="building-planner-view" aria-labelledby="allBuildingsTitle">
     <div class="building-hero-card building-hero-card--list">
-      <div class="building-hero-card__art building-hero-card__art--monogram"><span>43</span><small>buildings</small></div>
+      <div class="building-hero-card__art building-hero-card__art--monogram"><span>${sourceRowCount}</span><small>buildings</small></div>
       <div class="building-hero-card__copy"><span class="building-eyebrow">Community upgrade sheet</span><h2 id="allBuildingsTitle">All building upgrades</h2><p>Compare Orichalcum costs, prerequisites and level 30 bonuses across the buildings listed in the source sheet.</p></div>
       <div class="building-hero-card__control">${currentLevelControl('allBuildingsCurrentLevel', 'Your current level', currentLevel)}</div>
     </div>
-    <div class="building-budget-banner"><div><span class="building-eyebrow">Known source costs${selectedLevels.length ? ` · levels ${selectedLevels[0]}–30` : ''}</span><strong>${summary}</strong></div><span>${BUILDING_UPGRADE_DATA.sourceRowCount} buildings</span></div>
+    <div class="building-budget-banner"><div><span class="building-eyebrow">Known source costs${selectedLevels.length ? ` · levels ${selectedLevels[0]}–30` : ''}</span><strong>${summary}</strong></div><span>${sourceRowCount} buildings</span></div>
     ${missingCells ? `<p class="building-data-warning" role="status"><strong>Some costs are missing in the source.</strong> Missing cells remain unknown and are not counted as zero; displayed totals are partial.</p>` : ''}
-    <div class="building-list-toolbar"><label class="building-search-control"><span class="building-search-icon" aria-hidden="true">⌕</span><input id="buildingSearch" type="search" value="${escapeHtml(search)}" placeholder="Search buildings" aria-label="Search buildings"></label><span>${shownBuildings.length} of ${BUILDING_UPGRADE_DATA.sourceRowCount}</span></div>
-    <div class="building-row-list">${shownBuildings.map((building) => renderBuildingRow(building, currentLevel)).join('') || '<p class="building-empty-state">No buildings match this search.</p>'}</div>
+    <div class="building-list-toolbar"><label class="building-search-control"><span class="building-search-icon" aria-hidden="true">⌕</span><input id="buildingSearch" type="search" value="${escapeHtml(search)}" placeholder="Search buildings" aria-label="Search buildings"></label><span data-building-count>${sourceRowCount} of ${sourceRowCount}</span></div>
+    <div class="building-row-list">${BUILDING_UPGRADE_DATA.buildings.map((building) => renderBuildingRow(building, currentLevel)).join('')}<p class="building-empty-state" data-building-empty hidden>No buildings match this search.</p></div>
     <p class="building-data-warning"><strong>The sheet’s displayed total is ${formatNumber(BUILDING_UPGRADE_DATA.totalOrichalcum)}.</strong> The listed building totals add to ${formatNumber(BUILDING_UPGRADE_DATA.buildings.reduce((sum, building) => sum + (building.totalOrichalcum || 0), 0))}; the sheet formula omits Market and Institute.</p>
-    <details class="building-source-note building-source-note--sheet"><summary>About the source data and icons</summary><p>${escapeHtml(BUILDING_UPGRADE_DATA.sourceCaveat)}</p><p>Data: <a href="${escapeHtml(BUILDING_UPGRADE_DATA.sourceUrl)}" target="_blank" rel="noreferrer">Google Sheet</a> · observed ${escapeHtml(BUILDING_UPGRADE_DATA.observedAt)} · credited to Raven G.</p><p>Farm icon: <a href="${BUILDINGS_WIKI_URL}" target="_blank" rel="noreferrer">Rise of Empires Buildings Wiki</a>. Other building marks are generic symbols because the page has no matching icon set for all listed buildings.</p></details>
+    <details class="building-source-note building-source-note--sheet"><summary>About the source data</summary><p>${escapeHtml(BUILDING_UPGRADE_DATA.sourceCaveat)}</p><p>Data: <a href="${escapeHtml(BUILDING_UPGRADE_DATA.sourceUrl)}" target="_blank" rel="noreferrer">Google Sheet</a> · observed ${escapeHtml(BUILDING_UPGRADE_DATA.observedAt)} · credited to Raven G.</p><p>Every building mark here is a generic symbol drawn for this tool; no external icon set is loaded.</p></details>
   </section>`;
 }
 
-export function initBuildingUpgrades() {
-  const root = document.getElementById('buildingUpgradesRoot');
+export function initBuildingUpgrades(host) {
+  const root = host || document.getElementById('buildingUpgradesRoot');
   if (!root) return false;
 
   let activeMode = 'castle';
@@ -190,13 +180,32 @@ export function initBuildingUpgrades() {
   let allBuildingsLevel = 25;
   let search = '';
 
+  // The search box filters the rendered rows in place. Rebuilding the list on every
+  // keystroke destroyed the input that was being typed into, so the caret had to be
+  // restored by hand after each render.
+  const applyBuildingFilter = () => {
+    const query = search.trim().toLowerCase();
+    let shown = 0;
+    root.querySelectorAll('.building-row-card').forEach((row) => {
+      const matches = !query || String(row.dataset.buildingName || '').includes(query);
+      row.hidden = !matches;
+      if (matches) shown += 1;
+    });
+    const count = root.querySelector('[data-building-count]');
+    if (count) {
+      count.textContent = `${shown} of ${BUILDING_UPGRADE_DATA.sourceRowCount}`;
+    }
+    const empty = root.querySelector('[data-building-empty]');
+    if (empty) empty.hidden = shown > 0;
+  };
+
   const render = () => {
     const content =
       activeMode === 'castle'
         ? renderCastle(castleLevel)
         : renderAllBuildings(allBuildingsLevel, search);
     root.innerHTML = `<div class="building-upgrades-tool">
-      <header class="building-tool-header"><div><span class="building-eyebrow">Rise of Castles · Upgrade planner</span><h1>Buildings</h1><p>Plan Castle 26–30 and calculate Orichalcum across all listed buildings.</p></div><div class="building-tool-mark" aria-hidden="true">${buildingIcon()}</div></header>
+      <header class="building-tool-header"><div><span class="building-eyebrow">Rise of Castles · Upgrade planner</span><h2>Buildings</h2><p>Plan Castle 26–30 and calculate Orichalcum across all listed buildings.</p></div><div class="building-tool-mark" aria-hidden="true">${buildingIcon()}</div></header>
       <div class="building-mode-switch" role="group" aria-label="Building upgrade planner">
         <button type="button" aria-pressed="${activeMode === 'castle'}" class="${activeMode === 'castle' ? 'is-active' : ''}" data-building-mode="castle">Castle 26–30</button>
         <button type="button" aria-pressed="${activeMode === 'all'}" class="${activeMode === 'all' ? 'is-active' : ''}" data-building-mode="all">All buildings</button>
@@ -209,12 +218,6 @@ export function initBuildingUpgrades() {
         render();
       });
     });
-    root.querySelectorAll('.building-wiki-icon').forEach((image) => {
-      image.addEventListener('load', () => image.parentElement?.classList.add('has-wiki-icon'), {
-        once: true,
-      });
-      image.addEventListener('error', () => image.classList.add('is-unavailable'), { once: true });
-    });
     root.querySelector('#castleCurrentLevel')?.addEventListener('change', (event) => {
       castleLevel = Number(event.target.value);
       render();
@@ -225,12 +228,9 @@ export function initBuildingUpgrades() {
     });
     root.querySelector('#buildingSearch')?.addEventListener('input', (event) => {
       search = event.target.value;
-      const selectionStart = event.target.selectionStart;
-      render();
-      const input = root.querySelector('#buildingSearch');
-      input?.focus({ preventScroll: true });
-      input?.setSelectionRange(selectionStart, selectionStart);
+      applyBuildingFilter();
     });
+    if (activeMode === 'all') applyBuildingFilter();
   };
 
   render();

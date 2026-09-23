@@ -84,6 +84,7 @@ export const SPECIALIZATION_TOWERS_V2_KR = Object.freeze({
   communityContributorPlaceholder: '게임 내 이름을 입력하세요',
   communityNodesWithData: '데이터가 있는 노드 {count}개',
   communityMedalCost: '메달',
+  reportWrongCost: '잘못된 비용 신고',
   communityReviewer: '검토자',
   communityReviewerPlaceholder: '이 값을 확인한 사람은 누구인가요?',
   nodeBuffLabel: '버프',

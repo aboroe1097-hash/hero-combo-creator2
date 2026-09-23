@@ -28,10 +28,13 @@ import {
   saveSpecializationState,
 } from './specialization-towers-v2-store.js';
 import { buildContributionTemplateRows } from './specialization-towers-v2-template.js';
+import { SPECIALIZATION_MEDAL_EVIDENCE_SOURCE } from './specialization-towers-medal-evidence.js';
 import {
-  SPECIALIZATION_MEDAL_EVIDENCE_SOURCE,
-  SPECIALIZATION_TROOP_MEDAL_EVIDENCE,
-} from './specialization-towers-medal-evidence.js';
+  buildWorkbookEvidenceIndex,
+  contributionNodeKey,
+  displayedContributionCount,
+  evidenceNodeKey,
+} from './specialization-towers-medal-index.js';
 import {
   HERO_PLAN_DEFAULT_MODE,
   HERO_PLAN_MODES,
@@ -289,10 +292,6 @@ function invalidatePlans() {
   render();
 }
 
-function contributionNodeKey(researchId, nodeId) {
-  return `${researchId}:${nodeId}`;
-}
-
 function contributionRecord(data, nodeKey) {
   if (data.nodes[nodeKey]) return data.nodes[nodeKey];
   const legacyNodeId = nodeKey.split(':').at(-1);
@@ -322,62 +321,6 @@ function saveContributions(data) {
   } catch {
     /* storage full or unavailable */
   }
-}
-
-function normalizedEvidenceName(value) {
-  return String(value || '')
-    .toLocaleLowerCase('en')
-    .replace(/[^a-z0-9]+/gu, ' ')
-    .trim();
-}
-
-function buildWorkbookEvidenceIndex(rows) {
-  const byNodeKey = new Map();
-  const unmapped = [];
-  for (const section of SPECIALIZATION_TROOP_MEDAL_EVIDENCE) {
-    if (!section.researchId) {
-      section.rows.forEach((row) => unmapped.push({ section, row }));
-      continue;
-    }
-    const candidates = rows.filter((row) => row[3] === section.researchId);
-    const used = new Set();
-    for (const evidenceRow of section.rows) {
-      const wanted = normalizedEvidenceName(evidenceRow.name);
-      // The workbook sometimes names a node differently per troop (Energetic, Tough
-      // Armor, …). Those rows carry the canonical node id, so match on it first and
-      // fall back to the name for rows the corpus cannot place.
-      const byId =
-        evidenceRow.nodeId == null
-          ? undefined
-          : candidates.find((row) => !used.has(row[6]) && row[6] === evidenceRow.nodeId);
-      const match =
-        byId ??
-        candidates.find((row) => !used.has(row[6]) && normalizedEvidenceName(row[7]) === wanted);
-      if (!match) {
-        unmapped.push({ section, row: evidenceRow });
-        continue;
-      }
-      used.add(match[6]);
-      byNodeKey.set(contributionNodeKey(section.researchId, match[6]), {
-        section,
-        row: evidenceRow,
-      });
-    }
-  }
-  return { byNodeKey, unmapped };
-}
-
-function displayedContributionCount(data, evidenceIndex) {
-  const evidenceCount = SPECIALIZATION_TROOP_MEDAL_EVIDENCE.reduce(
-    (total, section) => total + section.rows.length,
-    0
-  );
-  const localOnlyCount = Object.entries(data.nodes).filter(
-    ([key, node]) =>
-      !evidenceIndex.byNodeKey.has(key) &&
-      (node?.medalCost != null || node?.reviewedMedalCost != null)
-  ).length;
-  return evidenceCount + localOnlyCount;
 }
 
 function updateDisplayedContributionCount(data) {
@@ -928,7 +871,9 @@ function renderCommunity() {
                     const nodeEffect = row[8];
                     const nodeKey = contributionNodeKey(research.id, nodeId);
                     const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
-                    const workbookEvidence = evidence.byNodeKey.get(nodeKey);
+                    const workbookEvidence = evidence.byNodeKey.get(
+                      evidenceNodeKey(activeTroop, research.id, nodeId)
+                    );
                     return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
                     <div class="spec-contrib-node-identity">
                       <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon({ effect: nodeEffect })}</span>
@@ -940,6 +885,7 @@ function renderCommunity() {
                       <legend>${escapeHtml(sp('verificationVerified'))}</legend>
                       <div class="spec-contrib-source-cost"><span>${escapeHtml(sp('communityMedalCost'))}</span><strong>${workbookEvidence.row.costs.map(fmt).join(' + ')}</strong></div>
                       <small>${escapeHtml(workbookEvidence.section.title)} · #${escapeHtml(workbookEvidence.row.sourceRow)}</small>
+                      <a class="spec-contrib-report" href="${escapeHtml(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sp('reportWrongCost'))}</a>
                     </fieldset>`
                         : `<fieldset class="spec-contrib-stage">
                       <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
@@ -1443,7 +1389,9 @@ function renderSelectedNode(research, access) {
   const nodeKey = contributionNodeKey(research.id, entry.nodeId);
   const contributionData = loadContributions();
   const saved = contributionData.nodes[nodeKey] || contributionData.nodes[entry.nodeId] || {};
-  const workbookEvidence = buildWorkbookEvidenceIndex(buildContributionTemplateRows().rows).byNodeKey.get(nodeKey);
+  const workbookEvidence = buildWorkbookEvidenceIndex(
+    buildContributionTemplateRows().rows
+  ).byNodeKey.get(evidenceNodeKey(activeTroop, research.id, entry.nodeId));
   const workbookMedals = workbookEvidence
     ? workbookEvidence.row.costs.reduce((total, cost) => total + Number(cost || 0), 0)
     : null;

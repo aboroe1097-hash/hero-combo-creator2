@@ -59,6 +59,7 @@ function createFakeScheduler() {
 function createFakeCard({ left = 0, top = 0, width = 200, height = 100, match = true } = {}) {
   const writes = [];
   const removals = [];
+  const listeners = new Map();
   let rectReads = 0;
 
   const element = {
@@ -77,12 +78,35 @@ function createFakeCard({ left = 0, top = 0, width = 200, height = 100, match = 
       rectReads += 1;
       return { left, top, width, height, right: left + width, bottom: top + height };
     },
+    addEventListener(type, listener) {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type).add(listener);
+    },
+    removeEventListener(type, listener) {
+      listeners.get(type)?.delete(listener);
+    },
+    emit(type, event = {}) {
+      for (const listener of [...(listeners.get(type) ?? [])]) listener(event);
+    },
+    listenerCount(type) {
+      return listeners.get(type)?.size ?? 0;
+    },
+    get totalListeners() {
+      let total = 0;
+      for (const group of listeners.values()) total += group.size;
+      return total;
+    },
   };
 
   return {
     element,
     writes,
     removals,
+    listenerCount: (type) => element.listenerCount(type),
+    get totalListeners() {
+      return element.totalListeners;
+    },
+    emit: (type, event) => element.emit(type, event),
     get rectReads() {
       return rectReads;
     },
@@ -150,36 +174,121 @@ test('moving to a second card clears the first and activates only the second', (
   pointer.dispose();
 });
 
-test('pointerleave clears the active card and resets activeElement', () => {
+test('the active card clears on its own pointerleave, not on a document listener', () => {
   const { root, scheduler, pointer } = createHarness();
   const card = createFakeCard();
 
   root.emit('pointermove', { target: card.element, clientX: 20, clientY: 20 });
   scheduler.flush();
   assert.equal(pointer.activeElement, card.element);
+  assert.equal(card.listenerCount('pointerleave'), 1);
+  assert.equal(root.listenerCount('pointerleave'), 0, 'pointerleave never reaches document');
 
-  root.emit('pointerleave', {});
+  card.emit('pointerleave');
 
   assert.deepEqual(card.removals, ['--mx', '--my']);
   assert.equal(pointer.activeElement, null);
   assert.equal(scheduler.pending, 0);
+  assert.equal(card.totalListeners, 0, 'the hook leaves with the card');
 
-  root.emit('pointerleave', {});
+  card.emit('pointerleave');
   assert.deepEqual(card.removals, ['--mx', '--my']);
 
   pointer.dispose();
 });
 
-test('pointercancel clears the active card as well', () => {
+test('pointercancel on the active card clears it as well', () => {
   const { root, scheduler, pointer } = createHarness();
   const card = createFakeCard();
 
   root.emit('pointermove', { target: card.element, clientX: 20, clientY: 20 });
   scheduler.flush();
-  root.emit('pointercancel', {});
+  card.emit('pointercancel');
 
   assert.deepEqual(card.removals, ['--mx', '--my']);
   assert.equal(pointer.activeElement, null);
+  assert.equal(card.totalListeners, 0);
+
+  pointer.dispose();
+});
+
+test('a card left before its frame runs is cleared without ever being written', () => {
+  const { root, scheduler, pointer } = createHarness();
+  const card = createFakeCard();
+
+  root.emit('pointermove', { target: card.element, clientX: 20, clientY: 20 });
+  card.emit('pointerleave');
+
+  assert.equal(scheduler.pending, 0, 'the queued frame is cancelled');
+  scheduler.flush();
+
+  assert.deepEqual(card.writes, []);
+  assert.equal(pointer.activeElement, null);
+  assert.equal(card.totalListeners, 0);
+
+  pointer.dispose();
+});
+
+test('only the card that owns the vars carries the leave hooks', () => {
+  const { root, scheduler, pointer } = createHarness();
+  const first = createFakeCard({ left: 0, top: 0, width: 100, height: 100 });
+  const second = createFakeCard({ left: 100, top: 0, width: 100, height: 100 });
+  const third = createFakeCard({ left: 200, top: 0, width: 100, height: 100 });
+
+  root.emit('pointermove', { target: first.element, clientX: 25, clientY: 25 });
+  root.emit('pointermove', { target: second.element, clientX: 125, clientY: 25 });
+  root.emit('pointermove', { target: third.element, clientX: 225, clientY: 25 });
+  scheduler.flush();
+
+  assert.equal(first.totalListeners, 0);
+  assert.equal(second.totalListeners, 0);
+  assert.equal(third.totalListeners, 2, 'pointerleave + pointercancel on the active card');
+
+  pointer.settle();
+  assert.equal(third.totalListeners, 0);
+
+  pointer.dispose();
+});
+
+test('a decoration gate that says no reads no rect and writes no property', () => {
+  const root = createFakeRoot();
+  const scheduler = createFakeScheduler();
+  const card = createFakeCard();
+  let allowed = false;
+  const pointer = createPointerVars({
+    root,
+    selector: '.card',
+    schedule: scheduler.schedule,
+    cancel: scheduler.cancel,
+    shouldDecorate: () => allowed,
+  });
+
+  root.emit('pointermove', { target: card.element, clientX: 20, clientY: 20 });
+  assert.equal(scheduler.pending, 0, 'a gated move schedules no frame');
+  scheduler.flush();
+  assert.deepEqual(card.writes, []);
+  assert.equal(card.rectReads, 0);
+  assert.equal(pointer.activeElement, null);
+
+  allowed = true;
+  root.emit('pointermove', { target: card.element, clientX: 20, clientY: 20 });
+  scheduler.flush();
+  assert.deepEqual(card.writes, [
+    ['--mx', '10.00'],
+    ['--my', '20.00'],
+  ]);
+  assert.equal(pointer.activeElement, card.element);
+
+  // The policy can flip mid-hover (reduced motion turned on, Save-Data appears,
+  // a touch pointer reported): the next move settles instead of writing.
+  allowed = false;
+  root.emit('pointermove', { target: card.element, clientX: 40, clientY: 40 });
+  scheduler.flush();
+
+  assert.deepEqual(card.removals, ['--mx', '--my']);
+  assert.equal(card.writes.length, 2, 'nothing is written once decoration is off');
+  assert.equal(pointer.activeElement, null);
+  assert.equal(card.totalListeners, 0);
 
   pointer.dispose();
 });
@@ -272,18 +381,20 @@ test('dispose removes every listener, cancels frames, and blocks later schedulin
 
   assert.equal(scheduler.pending, 1);
   assert.equal(root.listenerCount('pointermove'), 1);
-  assert.equal(root.listenerCount('pointerleave'), 1);
-  assert.equal(root.listenerCount('pointercancel'), 1);
-  assert.equal(root.totalListeners, 3);
+  assert.equal(root.totalListeners, 1, 'the document owns pointermove only');
+  assert.equal(card.listenerCount('pointerleave'), 1);
+  assert.equal(card.listenerCount('pointercancel'), 1);
 
   pointer.dispose();
 
   assert.equal(root.totalListeners, 0);
+  assert.equal(card.totalListeners, 0);
   assert.equal(scheduler.pending, 0);
   assert.equal(pointer.activeElement, null);
 
   pointer.dispose();
   assert.equal(root.totalListeners, 0);
+  assert.equal(card.totalListeners, 0);
 
   lateHandler({ target: card.element, clientX: 50, clientY: 50 });
   scheduler.flush();

@@ -3,7 +3,7 @@
 // and route users to the right tab instead of guessing. Keep entries factual
 // and short; hashes must match js/shell-v14.js internalHashes and page hrefs
 // must be real deployed routes.
-export const TOOLKIT_MAP_VERSION = '2026.09.11.1';
+export const TOOLKIT_MAP_VERSION = '2026.09.23.1';
 
 const entries = [
   {
@@ -177,6 +177,19 @@ const entries = [
       'Simulates legion stats with per-stat source breakdowns across research and equipment loadouts (set, grade, enhancement).',
     answers: ['How strong is my legion with this research and equipment?'],
     keywords: ['battle', 'simulator', 'sim', 'stats', 'equipment', 'loadout'],
+  },
+  {
+    id: 'downloads',
+    name: 'Community Downloads',
+    kind: 'page',
+    href: 'downloads.html',
+    summary:
+      'Every data breakdown the site holds as a downloadable PDF — research costs, Unit Specialisation medals, Eden tables, Dragon Master costs, and the hero roster by season.',
+    answers: [
+      'Where can I download the cost tables?',
+      'Can I get the research or medal lists as a PDF?',
+    ],
+    keywords: ['downloads', 'download', 'pdf', 'export', 'print', 'research costs', 'medals', 'eden tables', 'dragon master', 'roster'],
   },
   {
     id: 'velo',
