@@ -1,4 +1,6 @@
-import data from '../database/building-upgrades-26-30.json' with { type: 'json' };
+// Vite bundles JSON imports natively; the import-attribute form (`with { type: 'json' }`)
+// is not parsed by this repo's ESLint (ecmaVersion 2022).
+import data from '../database/building-upgrades-26-30.json';
 
 // Source facts are exposed as named constants so the building planner can use
 // the community table and Castle direct costs independently.
