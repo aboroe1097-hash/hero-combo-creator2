@@ -109,9 +109,11 @@ test('the Complaints subtab is superadmin-gated in the nav and the panel', () =>
 
 test('the dashboard routes the subtab through the superadmin gate and a lazy chunk', () => {
   assert.match(dashboard, /if \(name === 'complaints'\) void ensureComplaintsMounted\(\);/);
+  // In the superadmin set. Not asserted as the last entry: the release adds
+  // other superadmin tabs beside it, and the order inside the set has no effect.
   assert.match(
     dashboard,
-    /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[\s\S]*?'complaints',\n\]\);/
+    /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[\s\S]*?'complaints',[\s\S]*?\]\);/
   );
   assert.match(
     dashboard,

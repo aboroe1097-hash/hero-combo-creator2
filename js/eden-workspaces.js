@@ -137,17 +137,26 @@ export function isEdenWorkspaceArchived(workspace) {
   return workspace?.lifecycle === 'archived';
 }
 
+// The workspace a write guard should judge: the caller's resolved view when it
+// read one, otherwise the shipped default. Archiving only exists in the stored
+// record, so passing the view is what makes an ended season actually read-only.
+function resolveEdenWorkspaceView(workspaceId, resolved) {
+  const id = normalizeEdenWorkspaceId(workspaceId);
+  if (resolved && normalizeEdenWorkspaceId(resolved.id) === id) return resolved;
+  return getEdenWorkspace(workspaceId);
+}
+
 // Returns an Error when the given workspace refuses mutations (any season an
 // admin has archived), or null when writes are allowed. Callers log/announce
 // the error and abort the save; the archived records stay untouched.
-export function edenWorkspaceMutationError(workspaceId) {
-  const ws = getEdenWorkspace(workspaceId);
+export function edenWorkspaceMutationError(workspaceId, resolved = null) {
+  const ws = resolveEdenWorkspaceView(workspaceId, resolved);
   if (!isEdenWorkspaceArchived(ws)) return null;
   return new Error(`${ws.label} is an archived season: its records are read-only.`);
 }
 
-export function isEdenWorkspaceMutable(workspaceId) {
-  return !isEdenWorkspaceArchived(getEdenWorkspace(workspaceId));
+export function isEdenWorkspaceMutable(workspaceId, resolved = null) {
+  return !isEdenWorkspaceArchived(resolveEdenWorkspaceView(workspaceId, resolved));
 }
 
 export function normalizeEdenWorkspacePublication(value) {
