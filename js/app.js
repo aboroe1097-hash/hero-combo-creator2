@@ -1668,7 +1668,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     };
     // SwapPanel only decorates this one state update; unsupported browsers, a
     // transition already in flight, and reduced motion all update directly.
-    swapPanel(targetSection, applySwap);
+    swapPanel(targetSection, applySwap, { transition: options.transition });
   }
   window.vtsSwitchTab = switchTab;
   window.vtsTabNames = validTabNames;
@@ -1809,6 +1809,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     scrollToSection: startTab !== 'generator',
     preserveHash: preserveInitialHash,
     replaceHash: !preserveInitialHash,
+    // The pre-paint shell already hid the default panel, so this swap is the
+    // first paint rather than a navigation. Animating it would flash.
+    transition: false,
   });
 }
 
