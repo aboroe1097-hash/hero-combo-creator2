@@ -2132,6 +2132,38 @@ const en = {
   edenX1ProgressionStart: 'Start',
   edenX1ProgressionNow: 'Now',
   edenX1ProgressionVoteDeadline: 'Vote deadline',
+  // Issue / Complaint filing (js/eden-complaints.js, eden-x2.html). Only a
+  // superadmin ever reads a filing, so none of this copy promises publicity.
+  edenX1ComplaintTitle: 'Issue or Complaint',
+  edenX1ComplaintIntro:
+    'Only the alliance superadmins can read this. Say what happened in your own words — it never appears on this page.',
+  edenX1ComplaintOpen: 'Raise an issue or complaint',
+  edenX1ComplaintCategory: 'What is it about?',
+  edenX1ComplaintCategoryBug: 'A bug or a broken feature',
+  edenX1ComplaintCategoryConduct: "A member's conduct",
+  edenX1ComplaintCategoryFairPlay: 'Cheating or unfair play',
+  edenX1ComplaintCategoryAlliance: 'An alliance decision or duty issue',
+  edenX1ComplaintCategoryOther: 'Something else',
+  edenX1ComplaintDescription: 'Tell us what happened',
+  edenX1ComplaintDescriptionPh: 'What happened, when, and who was involved.',
+  edenX1ComplaintImages: 'Screenshots (optional, up to 3)',
+  edenX1ComplaintImagesHint: 'Big screenshots are shrunk before they are sent.',
+  edenX1ComplaintRemoveImage: 'Remove this screenshot',
+  edenX1ComplaintAnonymous: 'Send it anonymously',
+  edenX1ComplaintName: 'Your in-game name',
+  edenX1ComplaintNamePh: 'Only the superadmins will see it.',
+  edenX1ComplaintIdentityHint:
+    'Your name is stored with the complaint so leadership can reply to you.',
+  edenX1ComplaintSubmit: 'Send to the superadmins',
+  edenX1ComplaintCancel: 'Close',
+  edenX1ComplaintSending: 'Sending your complaint…',
+  edenX1ComplaintSent: 'Received. A superadmin will look at it.',
+  edenX1ComplaintErrDescription: 'Please describe what happened in at least 10 characters.',
+  edenX1ComplaintErrName: 'Add your in-game name, or send the complaint anonymously.',
+  edenX1ComplaintErrImages: 'That image could not be used. Attach up to 3 screenshots.',
+  edenX1ComplaintErrUnavailable:
+    'Sending is not available right now. Please try again later or contact an R5 directly.',
+  edenX1ComplaintErrFailed: 'Your complaint was not sent. Please try again.',
   manualBuilderSelectHeroAria: 'Select {hero} for a combo slot',
   manualBuilderHeroInfoAria: 'View details for {hero}',
   manualBuilderHeroSelectedAnnouncement:

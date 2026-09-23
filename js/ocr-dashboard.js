@@ -789,6 +789,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'vtsScore') renderVtsScorePanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
+  if (name === 'complaints') void ensureComplaintsMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
   if (name === 'conductSuggest') renderConductSuggestPanel();
@@ -891,6 +892,120 @@ async function ensureUserRolesMounted() {
     if (mount) {
       mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
         dashT('adminRolesLoadFailed')
+      )}</div>`;
+    }
+  }
+}
+
+let complaintsModulePromise = null;
+
+const COMPLAINTS_COLLECTION = 'complaints';
+const COMPLAINTS_RECORDS = 'records';
+// The inbox is bounded on purpose: a superadmin reviewing month-old filings
+// does not need an unbounded read, and the reviewed filter runs in the panel.
+const COMPLAINTS_PAGE_LIMIT = 100;
+
+/**
+ * Reads the newest filings. Both the read and the review write are gated on the
+ * superadmin claim by firestore.rules, so a non-superadmin reaching this code
+ * would still be refused by the server.
+ */
+async function loadComplaintRecords() {
+  const { collection, getDocs, limit, orderBy, query } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  if (!db) return [];
+  const snap = await getDocs(
+    query(
+      collection(db, COMPLAINTS_COLLECTION, COMPLAINTS_RECORDS),
+      orderBy('createdAt', 'desc'),
+      limit(COMPLAINTS_PAGE_LIMIT)
+    )
+  );
+  return snap.docs.map((entry) => {
+    const data = entry.data() || {};
+    const createdAtMs = data.createdAt?.toMillis?.();
+    return {
+      id: entry.id,
+      category: String(data.category || 'other').slice(0, 40),
+      description: String(data.description || '').slice(0, 4000),
+      images: Array.isArray(data.images)
+        ? data.images.filter((value) => typeof value === 'string').slice(0, 3)
+        : [],
+      anonymous: data.anonymous === true,
+      // An anonymous filing carries no name by rule; the empty string is the
+      // honest value here rather than a placeholder that could be mistaken
+      // for a real author.
+      submittedByName:
+        typeof data.submittedByName === 'string' ? data.submittedByName.slice(0, 80) : '',
+      reviewed: data.reviewed === true,
+      createdAtMs: typeof createdAtMs === 'number' ? createdAtMs : 0,
+    };
+  });
+}
+
+async function reviewComplaintRecord(id, reviewed) {
+  const { doc, updateDoc, serverTimestamp } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error('complaint review unavailable');
+  const { currentAuthUid } = await import('./firebase.js');
+  // The rules pin reviewedBy to the caller and allow only these three fields,
+  // so this is the complete shape the write may carry.
+  await updateDoc(doc(db, COMPLAINTS_COLLECTION, COMPLAINTS_RECORDS, String(id)), {
+    reviewed: reviewed === true,
+    reviewedAt: serverTimestamp(),
+    reviewedBy: currentAuthUid(),
+  });
+}
+
+/**
+ * Screenshots live in Cloud Storage under a path only a superadmin may read,
+ * so the download URL is resolved on demand and never stored on the document.
+ */
+async function resolveComplaintImageUrl(storagePath) {
+  const path = String(storagePath || '');
+  if (!path) return '';
+  const { importFirebaseStorage } = await import('./firebase-sdk.js');
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error('complaint image unavailable');
+  const { getStorage, ref, getDownloadURL } = await importFirebaseStorage();
+  return getDownloadURL(ref(getStorage(db.app), path));
+}
+
+async function ensureComplaintsMounted() {
+  if (!(await refreshSuperAdminSurfaces())) return;
+  if (!complaintsModulePromise) {
+    complaintsModulePromise = Promise.all([
+      import('./admin-complaints.js'),
+      import('../css/admin-complaints.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        complaintsModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+  }
+  try {
+    const module = await complaintsModulePromise;
+    const mount = $id('dashComplaintsRoot');
+    if (!mount) return;
+    module.renderComplaintsController(mount, {
+      listComplaints: loadComplaintRecords,
+      reviewComplaint: reviewComplaintRecord,
+      resolveImageUrl: resolveComplaintImageUrl,
+      formatDate: (ms) =>
+        formatLocaleDate(new Date(ms), getDashboardLang(), {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        }),
+      t: dashT,
+    });
+  } catch (error) {
+    console.error('COMPLAINTS LOAD ERROR:', error);
+    const mount = $id('dashComplaintsRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminComplaintsLoadFailed')
       )}</div>`;
     }
   }
@@ -3842,6 +3957,10 @@ const SUPERADMIN_DASH_SUBTABS = new Set([
   'throneBuffs',
   'vtsScore',
   'userRoles',
+  // Complaints are member-filed and may name another member or an officer, so
+  // the whole inbox is superadmin-only — including the list read, which
+  // firestore.rules restricts to isSuperAdmin() independently of this gate.
+  'complaints',
 ]);
 
 function switchDashSubtab(name) {
