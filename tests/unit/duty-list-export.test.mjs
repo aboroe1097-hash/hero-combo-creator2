@@ -173,3 +173,69 @@ test('upload titles and groups are optional, trimmed and length-capped', () => {
   );
   assert.deepEqual(collectDutyRecordGroups(records), ['Race week']);
 });
+
+test('the export carries the season scoring: points per duty for main and banner, and per player', () => {
+  // Banners at main 1 / alt 0.5 with the support weight doubled: a main banner
+  // is worth 20,000 and a banner-account banner 10,000.
+  const model = buildDutyExportModel(records, {
+    category: 'banner',
+    scoring: { main: 1, banner: 0.5, unit: 10000, support: 2 },
+  });
+  assert.deepEqual(
+    {
+      main: model.scoring.mainPoints,
+      banner: model.scoring.bannerPoints,
+      support: model.scoring.support,
+    },
+    { main: 20000, banner: 10000, support: 2 }
+  );
+  for (const row of model.rows) {
+    assert.equal(row.points, row.main * 20000 + row.banner * 10000, row.name);
+  }
+  assert.equal(
+    model.summary.points,
+    model.rows.reduce((sum, row) => sum + row.points, 0),
+    'the per-player points add up to the list total'
+  );
+
+  // Without weights the export stays a plain count sheet, never a guessed score.
+  const plain = buildDutyExportModel(records, { category: 'banner' });
+  assert.equal(plain.scoring, null);
+  assert.equal(plain.rows[0].points, null);
+  assert.equal(
+    buildDutyExportModel(records, { category: 'banner', scoring: { main: 'x', banner: 1 } })
+      .scoring,
+    null
+  );
+});
+
+test('with scoring, players rank by the points their duties are worth, ties sharing a rank', () => {
+  const heavy = [
+    {
+      id: 'p1',
+      type: 'pather',
+      date: '2026-09-01',
+      entries: [
+        entry('Mainer'),
+        entry('Mainer'),
+        entry('Bannerer', 'banner'),
+        entry('Bannerer', 'banner'),
+        entry('Bannerer', 'banner'),
+        entry('Twin'),
+        entry('Twin'),
+      ],
+    },
+  ];
+  const model = buildDutyExportModel(heavy, {
+    category: 'pather',
+    scoring: { main: 3, banner: 1 },
+  });
+  assert.deepEqual(
+    model.rows.map((row) => [row.name, row.rank, row.points]),
+    [
+      ['Mainer', 1, 60000],
+      ['Twin', 1, 60000],
+      ['Bannerer', 3, 30000],
+    ]
+  );
+});

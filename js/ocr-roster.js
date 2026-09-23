@@ -87,9 +87,12 @@ import {
   summarizeCanonicalPlayerRecords,
 } from './ocr-name-normalizer.js';
 import {
+  DUTY_POINT_UNIT,
   getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
   isImageSourceContributionNote,
+  normalizeDutyPointWeights,
+  normalizeFormPointWeight,
   resolveAccountLink,
 } from './contribution-weighting.js';
 import {
@@ -2599,6 +2602,26 @@ function startUploadRename(kind, id, trigger) {
 // The shareable PNG lives in its own chunk, fetched on the first click.
 let dutyExportModulePromise = null;
 
+// The season's weights for one duty list, in the shape the export draws: what a
+// duty on a main and on a banner (alt) account is worth, after the support weight.
+const DUTY_EXPORT_ACTIVITY = Object.freeze({
+  banner: 'banners',
+  pather: 'pathers',
+  shield_wall: 'shieldWalls',
+});
+
+export function dutyExportScoring(type, weights, supportWeight) {
+  const activity = DUTY_EXPORT_ACTIVITY[type];
+  if (!activity) return null;
+  const table = normalizeDutyPointWeights(weights)[activity];
+  return {
+    main: table.main,
+    banner: table.alt,
+    unit: DUTY_POINT_UNIT,
+    support: normalizeFormPointWeight(supportWeight),
+  };
+}
+
 export async function openDutyListExport(type) {
   if (!DUTY_TYPES[type]) return;
   const records = dutyRecordsForType(type);
@@ -2617,6 +2640,7 @@ export async function openDutyListExport(type) {
       direction: document.documentElement.dir || 'ltr',
       categoryLabel: dutyLabel(type),
       initialGroup: dutyGroupFilters[type] || '',
+      scoring: dutyExportScoring(type, state.dutyPointWeights, state.formPointWeight),
       container: $id('ocrDashboardRoot') || document.body,
       resolveNames: (entry) =>
         getDutyEntryCreditedIdentities(entry).map((identity) => identity.playerName),

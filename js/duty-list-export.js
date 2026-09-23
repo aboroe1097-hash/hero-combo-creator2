@@ -54,6 +54,11 @@ const DEFAULT_COPY = Object.freeze({
   adminDutyExportUploadsHeading: 'Uploads included',
   adminDutyExportColPlayer: 'Player',
   adminDutyExportColCount: 'Count',
+  adminDutyExportColPoints: 'Points',
+  adminDutyExportScoringHeading: 'How this season scores it',
+  adminDutyExportPerDuty: '{points} points per duty',
+  adminDutyExportWeight: 'weight ×{weight}',
+  adminDutyExportSupportNote: 'Support weight ×{weight} included',
   adminDutyExportPage: 'Page {page}/{pages}',
   adminDutyExportFooter: 'Check your name and count — reply in the group if anything is missing',
   adminDutyExportMore: '+{count} more',
@@ -98,8 +103,11 @@ function compareRecords(left, right) {
   );
 }
 
+// With the season's scoring known, the list ranks by the points a player's
+// duties are worth (a main duty can outweigh several banner ones), then count.
 function compareRows(left, right) {
   return (
+    (right.points ?? 0) - (left.points ?? 0) ||
     right.count - left.count ||
     left.name.localeCompare(right.name, undefined, { sensitivity: 'base', numeric: true }) ||
     left.name.localeCompare(right.name)
@@ -119,6 +127,31 @@ function compareRows(left, right) {
  * @param {Function} [options.resolveNames]  (entry, record) => credited names.
  * @param {Function} [options.accountTypeOf]  (entry, name, record) => 'main' | 'banner'.
  */
+// The season's weights for this category, as the score uses them: a duty on a
+// main is worth `main × unit × support`, on a banner (alt) `alt × unit × support`.
+// Absent or unreadable weights leave the export without a scoring strip.
+export function normalizeExportScoring(value) {
+  if (!value || typeof value !== 'object') return null;
+  const read = (raw, fallback) => {
+    const number = Number(raw);
+    return Number.isFinite(number) && number >= 0 ? number : fallback;
+  };
+  const mainWeight = read(value.main, NaN);
+  const bannerWeight = read(value.banner, NaN);
+  if (!Number.isFinite(mainWeight) || !Number.isFinite(bannerWeight)) return null;
+  const unit = read(value.unit, 10000);
+  const support = read(value.support, 1);
+  const round = (number) => Math.round(number * 1000) / 1000;
+  return {
+    mainWeight,
+    bannerWeight,
+    support,
+    unit,
+    mainPoints: round(mainWeight * unit * support),
+    bannerPoints: round(bannerWeight * unit * support),
+  };
+}
+
 export function buildDutyExportModel(records = [], options = {}) {
   const category = String(options.category || '');
   const meta = categoryMeta(category);
@@ -130,6 +163,7 @@ export function buildDutyExportModel(records = [], options = {}) {
   const accountTypeOf =
     typeof options.accountTypeOf === 'function' ? options.accountTypeOf : defaultAccountType;
   const categoryLabel = asText(options.categoryLabel) || meta?.label || category;
+  const scoring = normalizeExportScoring(options.scoring);
 
   const selected = (Array.isArray(records) ? records : [])
     .filter((record) => record && types.includes(record.type) && dutyRecordInGroup(record, group))
@@ -177,12 +211,18 @@ export function buildDutyExportModel(records = [], options = {}) {
     });
   });
 
+  const pointsOf = (row) =>
+    scoring ? row.main * scoring.mainPoints + row.banner * scoring.bannerPoints : null;
+  players.forEach((row) => {
+    row.points = pointsOf(row);
+  });
   const sorted = Array.from(players.values()).sort(compareRows);
   let previousCount = null;
   let previousRank = 0;
   const rows = sorted.map((row, index) => {
-    const rank = row.count === previousCount ? previousRank : index + 1;
-    previousCount = row.count;
+    const tieKey = `${row.points ?? ''}|${row.count}`;
+    const rank = tieKey === previousCount ? previousRank : index + 1;
+    previousCount = tieKey;
     previousRank = rank;
     return {
       rank,
@@ -190,6 +230,7 @@ export function buildDutyExportModel(records = [], options = {}) {
       count: row.count,
       main: row.main,
       banner: row.banner,
+      points: row.points,
       uploads: uploads
         .filter((upload) => row.uploadCounts.has(upload.id))
         .map((upload) => ({
@@ -220,7 +261,9 @@ export function buildDutyExportModel(records = [], options = {}) {
     dateTo,
     dateRange,
     uploads,
+    scoring,
     summary: {
+      points: scoring ? main * scoring.mainPoints + banner * scoring.bannerPoints : null,
       totalDuties: main + banner,
       uniquePlayers: rows.length,
       main,
@@ -369,6 +412,7 @@ function createPainter(ctx, { width, rtl, locale }) {
 const PAD = 48;
 const ROW_HEIGHT = 74;
 const TABLE_HEAD = 52;
+const SCORING_HEIGHT = 174;
 
 function layoutUploadChips(paint, uploads, maxWidth, tr, number) {
   const chipHeight = 42;
@@ -420,7 +464,8 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
     : null;
   const footerLines = paint0.wrap(tr('adminDutyExportFooter'), 26, 750, inner - 64);
   const headerHeight = first ? 214 : 176;
-  const summaryHeight = first ? 150 + 56 : 0;
+  const scoringHeight = first && model.scoring ? SCORING_HEIGHT : 0;
+  const summaryHeight = first ? 150 + 56 + scoringHeight : 0;
   const uploadsHeight = first && chipLayout.placed.length ? 60 + chipLayout.height + 40 : 0;
   const tableHeight = TABLE_HEAD + Math.max(1, pageRows.length) * ROW_HEIGHT + 16;
   const footerHeight = 40 + footerLines.length * 36 + 40 + 96;
@@ -528,6 +573,68 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
     );
     y += 56;
 
+    if (model.scoring) {
+      y += 24;
+      // How the season scores this category: one card per account class with
+      // its weight and what one duty is worth, so members can check their points.
+      const scoring = model.scoring;
+      paint.text(tr('adminDutyExportScoringHeading'), PAD, y + 24, {
+        size: 22,
+        weight: 800,
+        color: palette.text,
+        maxWidth: inner * 0.6,
+      });
+      if (scoring.support !== 1) {
+        paint.text(
+          tr('adminDutyExportSupportNote', { weight: number(scoring.support) }),
+          width - PAD,
+          y + 24,
+          { size: 18, weight: 650, color: palette.muted, align: 'end', maxWidth: inner * 0.38 }
+        );
+      }
+      const cardY = y + 40;
+      const cardGap = 16;
+      const cardWidth = (inner - cardGap) / 2;
+      [
+        [tr('adminDutyAccountMain'), scoring.mainWeight, scoring.mainPoints, accent],
+        [tr('adminDutyAccountBanner'), scoring.bannerWeight, scoring.bannerPoints, palette.text],
+      ].forEach(([label, weight, points, tone], index) => {
+        const x = PAD + index * (cardWidth + cardGap);
+        paint.rect(x, cardY, cardWidth, 88, 18, palette.surface, palette.line);
+        paint.text(label, x + 22, cardY + 36, {
+          size: 22,
+          weight: 800,
+          color: tone,
+          maxWidth: cardWidth * 0.45,
+        });
+        paint.text(
+          tr('adminDutyExportWeight', { weight: number(weight) }),
+          x + cardWidth - 22,
+          cardY + 36,
+          {
+            size: 20,
+            weight: 700,
+            color: palette.muted,
+            align: 'end',
+            maxWidth: cardWidth * 0.5,
+          }
+        );
+        paint.fitText(
+          tr('adminDutyExportPerDuty', { points: number(points) }),
+          x + 22,
+          cardY + 72,
+          cardWidth - 44,
+          {
+            size: 24,
+            minSize: 16,
+            weight: 750,
+            color: palette.text,
+          }
+        );
+      });
+      y += SCORING_HEIGHT;
+    }
+
     if (chipLayout.placed.length) {
       y += 20;
       paint.text(tr('adminDutyExportUploadsHeading'), PAD, y + 26, {
@@ -559,13 +666,23 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
   }
 
   // Table
-  const cols = {
-    rank: { x: PAD + 20, w: 56 },
-    name: { x: PAD + 92 },
-    count: { x: width - PAD - 20 },
-    banner: { x: width - PAD - 150 },
-    main: { x: width - PAD - 262 },
-  };
+  const withPoints = Boolean(model.scoring);
+  const cols = withPoints
+    ? {
+        rank: { x: PAD + 20, w: 56 },
+        name: { x: PAD + 92 },
+        points: { x: width - PAD - 20 },
+        count: { x: width - PAD - 170 },
+        banner: { x: width - PAD - 262 },
+        main: { x: width - PAD - 362 },
+      }
+    : {
+        rank: { x: PAD + 20, w: 56 },
+        name: { x: PAD + 92 },
+        count: { x: width - PAD - 20 },
+        banner: { x: width - PAD - 150 },
+        main: { x: width - PAD - 262 },
+      };
   const nameWidth = cols.main.x - 70 - cols.name.x;
   paint.rect(PAD, y, inner, tableHeight - 16, 22, palette.surface, palette.line);
   paint.text('#', cols.rank.x + cols.rank.w / 2, y + 34, {
@@ -584,13 +701,14 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
     ['main', tr('adminDutyAccountMain')],
     ['banner', tr('adminDutyAccountBanner')],
     ['count', tr('adminDutyExportColCount')],
+    ...(withPoints ? [['points', tr('adminDutyExportColPoints')]] : []),
   ].forEach(([key, label]) => {
     paint.text(label, cols[key].x, y + 34, {
       size: 19,
       weight: 800,
-      color: key === 'count' ? accent : palette.muted,
+      color: key === 'count' || key === 'points' ? accent : palette.muted,
       align: 'end',
-      maxWidth: 108,
+      maxWidth: key === 'points' ? 130 : 90,
     });
   });
   ctx.fillStyle = palette.line;
@@ -662,6 +780,15 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
       color: accent,
       align: 'end',
     });
+    if (withPoints) {
+      paint.text(number(row.points), cols.points.x, rowY + 46, {
+        size: 24,
+        weight: 800,
+        color: palette.text,
+        align: 'end',
+        maxWidth: 140,
+      });
+    }
     if (index < pageRows.length - 1) {
       ctx.fillStyle = withAlpha(palette.line, 0.6);
       ctx.fillRect(PAD + 16, rowY + ROW_HEIGHT - 1, inner - 32, 1);
