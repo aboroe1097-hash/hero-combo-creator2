@@ -428,6 +428,14 @@ const LIMITS = {
     // Community Downloads is a static list page: shared tokens plus the download
     // grid stylesheet, and no game data is loaded. Keep the same focused shape.
     'downloads.html': { desktop: 40 * 1024, mobile: 40 * 1024 },
+    // Measured from the 16.5.0 production build: 26,810 bytes desktop and
+    // 125,788 bytes mobile, including the responsive mobile stylesheet.
+    'eden-siege.html': { desktop: 27 * 1024, mobile: 124 * 1024 },
+  },
+  // Measured from the same build, including the route entry and both initial
+  // three.js / siege chunks and the two standalone scripts: 698,236 bytes.
+  routeJsBytes: {
+    'eden-siege.html': { desktop: 684 * 1024, mobile: 684 * 1024 },
   },
 };
 
@@ -549,6 +557,27 @@ function resolveBuiltRouteCssAssets(htmlFile, viewportWidth) {
   return [...assets];
 }
 
+function resolveBuiltRouteJsAssets(htmlFile) {
+  const htmlPath = path.join(deployDir, htmlFile);
+  if (!fs.existsSync(htmlPath)) return [];
+  const html = fs.readFileSync(htmlPath, 'utf8').replace(/<noscript\b[\s\S]*?<\/noscript>/giu, '');
+  const assets = new Set();
+  for (const match of html.matchAll(/<(?:script|link)\b[^>]*>/giu)) {
+    const tag = match[0];
+    const attributes = readTagAttributes(tag);
+    const isScript = /^<script\b/iu.test(tag);
+    const relValues = (attributes.get('rel') || '')
+      .split(/\s+/u)
+      .map((value) => value.toLowerCase());
+    if (!isScript && !relValues.includes('modulepreload')) continue;
+    const source = (attributes.get(isScript ? 'src' : 'href') || '').split(/[?#]/u, 1)[0];
+    if (!/\.js$/iu.test(source) || /^(?:https?:|data:|#)/iu.test(source)) continue;
+    const absolutePath = path.join(deployDir, source.replace(/^\/+/, ''));
+    if (fs.existsSync(absolutePath)) assets.add(absolutePath);
+  }
+  return [...assets];
+}
+
 const entryJs = resolveBuiltIndexAssets({
   tagName: 'script',
   attribute: 'src',
@@ -587,6 +616,19 @@ for (const htmlFile of Object.keys(LIMITS.routeCssBytes)) {
   });
 }
 
+const routeJsMetrics = new Map();
+for (const htmlFile of Object.keys(LIMITS.routeJsBytes || {})) {
+  const htmlPath = path.join(deployDir, htmlFile);
+  if (!fs.existsSync(htmlPath)) {
+    missingBuildOutputs.push(`dist/${htmlFile}`);
+    continue;
+  }
+  const files = resolveBuiltRouteJsAssets(htmlFile);
+  if (!files.length) missingBuildOutputs.push(`initial JavaScript linked by dist/${htmlFile}`);
+  const bytes = files.reduce((sum, file) => sum + fs.statSync(file).size, 0);
+  routeJsMetrics.set(htmlFile, { desktop: bytes, mobile: bytes });
+}
+
 const checks = [
   ['source index.html bytes', indexBytes, LIMITS.indexBytes],
   ['source index.html gzip bytes', indexGzipBytes, LIMITS.indexGzipBytes],
@@ -609,6 +651,13 @@ for (const [htmlFile, limits] of Object.entries(LIMITS.routeCssBytes)) {
   if (!metrics) continue;
   checks.push([`${htmlFile} desktop initial CSS`, metrics.desktop, limits.desktop]);
   checks.push([`${htmlFile} mobile initial CSS`, metrics.mobile, limits.mobile]);
+}
+
+for (const [htmlFile, limits] of Object.entries(LIMITS.routeJsBytes || {})) {
+  const metrics = routeJsMetrics.get(htmlFile);
+  if (!metrics) continue;
+  checks.push([`${htmlFile} desktop initial JS`, metrics.desktop, limits.desktop]);
+  checks.push([`${htmlFile} mobile initial JS`, metrics.mobile, limits.mobile]);
 }
 
 const failures = checks.filter(([, actual, limit]) => actual > limit);
@@ -642,6 +691,11 @@ console.log(
 for (const [htmlFile, metrics] of routeCssMetrics) {
   console.log(
     `- ${htmlFile} initial CSS: ${formatBytes(metrics.desktop)} desktop, ${formatBytes(metrics.mobile)} mobile`
+  );
+}
+for (const [htmlFile, metrics] of routeJsMetrics) {
+  console.log(
+    `- ${htmlFile} initial JS: ${formatBytes(metrics.desktop)} desktop, ${formatBytes(metrics.mobile)} mobile`
   );
 }
 

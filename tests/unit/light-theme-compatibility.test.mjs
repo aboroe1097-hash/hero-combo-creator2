@@ -162,7 +162,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
   assert.match(sizeCheck, /entryCssBytes: 427 \* 1024/);
   assert.match(sizeCheck, /totalCssBytes: 1635 \* 1024/);
-  assert.match(sizeCheck, /totalDeployBytes: 32100 \* 1024/);
+  assert.match(sizeCheck, /totalDeployBytes: 33384 \* 1024/);
   // 736 since the 2027 signup revival: sharing js/all-star-boh-model.js between
   // the member route, the admin dashboard and the AI public-data adapter emits
   // two chunks no single route owned before (measured 733 files, three spare).

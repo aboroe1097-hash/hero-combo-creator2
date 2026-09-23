@@ -28,6 +28,8 @@ function chunkNameFor(id) {
     normalizedId.includes('node_modules/@firebase')
   )
     return 'firebase';
+  if (normalizedPath.includes('/js/eden-siege/')) return 'eden-siege-engine';
+  if (normalizedPath.includes('/node_modules/three/')) return 'eden-siege-three';
   // VtsScore loads the access client behind its own server-verified
   // gate, so it stays a chunk of its own rather than being inlined.
   if (normalizedPath.endsWith('/js/all-star-boh-access.js')) {
