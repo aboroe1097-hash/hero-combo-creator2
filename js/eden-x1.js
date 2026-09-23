@@ -18,6 +18,7 @@ import {
 } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { currentLanguage, setCurrentLanguage } from './state.js';
+import { celebrate } from './fx/success-feedback.js';
 import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
@@ -68,7 +69,7 @@ import {
   isPublishedEdenProjection,
 } from './eden-workspaces.js';
 
-export const APP_VERSION = '16.0.19';
+export const APP_VERSION = '16.5.0';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -2492,6 +2493,7 @@ async function submitEdenTeamVoteForm(form) {
       edenVoteSavedStatusText(localVote) || `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
       'success'
     );
+    celebrate(submit);
   } catch (err) {
     console.error('Eden X1 vote save failed:', err);
     setEdenVoteStatus(

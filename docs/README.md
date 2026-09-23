@@ -33,6 +33,8 @@ Current guides describe the repository baseline reviewed on 2026-09-05. Historic
 | Security Policy | [SECURITY.md](../SECURITY.md) |
 | Architecture and data ownership | [docs/architecture.md](architecture.md) |
 | DM Planner & Enhancement — i18n Key Spec | [docs/dm-i18n-key-spec.md](dm-i18n-key-spec.md) |
+| Motion & visual-craft integration plan (16.5.0) | [docs/plans/gallery-motion-integration-plan.md](plans/gallery-motion-integration-plan.md) |
+| 16.5.0 Phase 0 baseline report | [docs/plans/16.5.0-phase0-baseline.md](plans/16.5.0-phase0-baseline.md) |
 | Firebase Preview Workflow | [docs/firebase-preview-workflow.md](firebase-preview-workflow.md) |
 | Player Name Grouping & Dedup Workflow | [docs/name-grouping-workflow.md](name-grouping-workflow.md) |
 | Operations and troubleshooting | [docs/operations.md](operations.md) |
