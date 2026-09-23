@@ -1531,13 +1531,13 @@ test.describe('app smoke tabs', () => {
     await reset.click();
     await expect(page.locator('[data-spec-reset]')).toContainText('(0/12)');
 
-    await page.locator('[data-spec-help-node]').click();
-    await expect(page.locator('.spec-tool')).toHaveAttribute('data-view', 'overview');
-    await expect(page.locator('[data-contribution-key="training1:2"]')).toBeVisible();
-    // Submitting node data needs an account, so signed out the field is present but inert.
-    await expect(
-      page.locator('[data-contribution-key="training1:2"] [data-spec-node-medal]')
-    ).toBeDisabled();
+    // The workbook already carries this node's cost, so the inspector states it and
+    // the "help fill" prompt is gone. The contribution row for the same node, and
+    // the report link that replaces the prompt, are covered by the contribution test.
+    await expect(page.locator('#spec-node-inspector [data-spec-help-node]')).toHaveCount(0);
+    await expect(page.locator('#spec-node-inspector .spec-node-medal-status')).toContainText(
+      'Medals'
+    );
   });
 
   test('Specialization unlocks, previews, and reverses a Legion Skill', async ({ page }) => {
@@ -1581,7 +1581,12 @@ test.describe('app smoke tabs', () => {
     await page.locator('.spec-contrib-column').first().locator('summary').click();
     const node = page.locator('.spec-contrib-node').first();
     await expect(node.locator('.spec-contrib-node-identity')).toBeVisible();
-    await expect(node.locator('.spec-contrib-stage')).toHaveCount(2);
+
+    // Every node in this column already has a verified workbook cost, so the row
+    // states the cost it was transcribed from instead of asking for a submission.
+    await expect(node.locator('.spec-contrib-stage--source')).toHaveCount(1);
+    await expect(node.locator('[data-spec-node-medal]')).toHaveCount(0);
+    await expect(node.locator('.spec-contrib-report')).toHaveAttribute('href', /.+/);
 
     // Submitting a value is now credited to a signed-in account, so the per-node
     // contributor field is gone and every input is inert until you sign in.
@@ -1590,24 +1595,25 @@ test.describe('app smoke tabs', () => {
       'false'
     );
     await expect(page.locator('.spec-contrib-signin')).toBeVisible();
-    await expect(node.locator('[data-spec-node-contributor]')).toHaveCount(0);
+    await expect(page.locator('[data-spec-node-contributor]')).toHaveCount(0);
+
+    // The archer workbook has not placed this node yet, so it keeps the submitted
+    // and reviewed stages travelling together as one inert row.
+    const unverified = page.locator('[data-contribution-key="enhanced3:33"]');
+    await expect(unverified.locator('.spec-contrib-stage')).toHaveCount(2);
+    await expect(unverified.locator('.spec-contrib-stage--review')).toHaveCount(1);
     for (const selector of [
       '[data-spec-node-medal]',
       '[data-spec-node-reviewer]',
       '[data-spec-node-reviewed-medal]',
     ]) {
-      await expect(node.locator(selector)).toBeDisabled();
+      await expect(unverified.locator(selector)).toBeDisabled();
     }
 
-    // The submitted and reviewed stages still travel together as one row.
-    await expect(node.locator('.spec-contrib-stage--review')).toHaveCount(1);
-    await expect(
-      page.locator('.spec-contrib-research').nth(1).locator('[data-spec-node-medal]').first()
-    ).toHaveValue('');
-
+    // Two credits: the community and the workbook the verified costs come from.
     const acknowledgments = page.locator('.spec-ack');
     await expect(acknowledgments).toBeVisible();
-    await expect(acknowledgments.locator('.spec-ack-plate')).toHaveCount(1);
+    await expect(acknowledgments.locator('.spec-ack-plate')).toHaveCount(2);
     await expect(acknowledgments).toContainText('VTS 1097 Community');
   });
 
@@ -1626,7 +1632,12 @@ test.describe('app smoke tabs', () => {
     await node.click();
     await expect(page.locator('#spec-node-inspector')).toBeVisible();
     await expect(page.locator('.spec-node-inspector-buff')).toContainText('HP +1%');
-    await expect(page.locator('[data-spec-help-node]')).toBeVisible();
+    // The workbook has this node's cost, so the inspector states it rather than
+    // offering the submission prompt.
+    await expect(page.locator('[data-spec-help-node]')).toHaveCount(0);
+    await expect(page.locator('#spec-node-inspector .spec-node-medal-status')).toContainText(
+      'Medals'
+    );
 
     const nodeBox = await node.boundingBox();
     expect(nodeBox?.width).toBeGreaterThanOrEqual(44);
