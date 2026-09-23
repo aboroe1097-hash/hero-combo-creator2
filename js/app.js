@@ -29,6 +29,7 @@ import { comboToolsText } from './i18n/combo-tools/index.js';
 import { formatLocaleNumber } from './locale-format.js';
 import { swapPanel } from './fx/view-swap.js';
 import { celebrate } from './fx/success-feedback.js';
+import { initHubMotion } from './fx/hub-motion.js';
 
 import {
   renderGeneratorHeroes,
@@ -2186,6 +2187,9 @@ if (window.VTS_MAINTENANCE_ACTIVE) {
   document.body?.classList.remove('app-booting');
 } else if (typeof startApp === 'function') {
   initAppLoading();
+  // The shell is a classic script and cannot import the motion modules itself,
+  // so the bundled entry owns the one-shot hub entry stagger and spotlight.
+  initHubMotion();
   setupInstallPrompt();
   window.showAboModal = showAboModal;
 
