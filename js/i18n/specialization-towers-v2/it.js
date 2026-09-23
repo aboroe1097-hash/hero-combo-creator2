@@ -95,6 +95,7 @@ export const SPECIALIZATION_TOWERS_V2_IT = Object.freeze({
   communityContributorPlaceholder: 'Inserisci il tuo nome di gioco',
   communityNodesWithData: '{count} nodi con dati',
   communityMedalCost: 'Medaglie',
+  reportWrongCost: 'Segnala un costo errato',
   communityReviewer: 'Revisore',
   communityReviewerPlaceholder: 'Chi ha verificato questo valore?',
   nodeBuffLabel: 'Bonus',

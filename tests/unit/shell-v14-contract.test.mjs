@@ -8,6 +8,7 @@ const appCss = readFileSync('css/app.css', 'utf8');
 const shellJs = readFileSync('js/shell-v14.js', 'utf8');
 const themePrepaint = readFileSync('js/theme-prepaint.js', 'utf8');
 const specializationJs = readFileSync('js/app-specialization.js', 'utf8');
+const medalIndexJs = readFileSync('js/specialization-towers-medal-index.js', 'utf8');
 const standaloneCopy = readFileSync('js/i18n/standalone-copy.js', 'utf8');
 const aiAssistantTemplate = readFileSync('tabs/ai-assistant.html', 'utf8');
 const veloPrompt = readFileSync('workers/ai/prompt.js', 'utf8');
@@ -251,7 +252,14 @@ test('Towers Specialization lives inside the Research & Towers Hub', () => {
   );
   assert.match(specializationJs, /data-spec-set-selected-node/);
   assert.match(specializationJs, /data-spec-help-node/);
-  assert.match(specializationJs, /function contributionNodeKey\(/);
+  // The canonical contribution key still drives storage and the deep link, but the
+  // evidence index now lives in its own module so its troop key can be unit-tested.
+  assert.match(
+    specializationJs,
+    /import \{[\s\S]*?\bcontributionNodeKey,[\s\S]*?\} from '\.\/specialization-towers-medal-index\.js'/
+  );
+  assert.match(medalIndexJs, /export function contributionNodeKey\(researchId, nodeId\)/);
+  assert.match(medalIndexJs, /export function evidenceNodeKey\(troop, researchId, nodeId\)/);
   assert.match(specializationJs, /getSpecializationResearchImage/);
   assert.match(specializationJs, /getSpecializationLegionSkillImage/);
   assert.match(appCss, /\.spec-badge-emblem \.specialization-planner-sprite/);
