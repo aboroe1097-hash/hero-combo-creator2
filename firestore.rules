@@ -2429,6 +2429,81 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Complaints and issues filed by guild members from the Eden page. Members
+    // (anonymous Auth included) may only CREATE; every read is reserved to a
+    // superadmin, because the whole point of the form is that a member can
+    // report leadership or another member without the guild seeing it. Delete
+    // is refused for everyone so an uncomfortable record cannot be quietly
+    // removed, and update is a superadmin-only review stamp pinned by
+    // validComplaintReview() so a reviewer cannot rewrite what was filed.
+    //
+    // ANONYMITY IS STRUCTURAL, NOT COSMETIC. When `anonymous` is true the
+    // document may not carry `submittedBy` or `submittedByName` at all — the
+    // validator rejects the write outright rather than storing the identity
+    // and hiding it in the UI. That is what makes the promise keepable: there
+    // is no field for a later reader, export, or relabeling mistake to
+    // recover, and no "publish as anonymous" path that silently keeps the
+    // author attached. Named complaints pin `submittedBy` to the caller's uid
+    // so a member cannot file under someone else's account.
+    function validComplaintImage(path) {
+      // Images live in Cloud Storage under complaints/{uid}/…, written by the
+      // same session. The path is the only reference stored, so it is bounded
+      // and pinned to the caller: a member can never point a filing at an
+      // object another account owns.
+      return path is string
+        && path.size() <= 320
+        && path.matches('^complaints/[A-Za-z0-9_-]{8,128}/[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$')
+        && path.split('/')[1] == request.auth.uid;
+    }
+
+    function validComplaint() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+          'category', 'description', 'images', 'anonymous',
+          'submittedBy', 'submittedByName', 'createdAt', 'reviewed'
+        ])
+        && d.keys().hasAll(['category', 'description', 'images', 'anonymous', 'createdAt', 'reviewed'])
+        && d.category in ['bug', 'conduct', 'fair-play', 'alliance', 'other']
+        && d.description is string
+        && d.description.size() >= 10
+        && d.description.size() <= 4000
+        && d.images is list
+        && d.images.size() <= 3
+        // Bounded by index rather than by a loop: rules have none, and the cap
+        // of three keeps the expression count flat.
+        && (!(d.images.size() > 0) || validComplaintImage(d.images[0]))
+        && (!(d.images.size() > 1) || validComplaintImage(d.images[1]))
+        && (!(d.images.size() > 2) || validComplaintImage(d.images[2]))
+        && d.anonymous is bool
+        && (!d.anonymous || !('submittedBy' in d))
+        && (!d.anonymous || !('submittedByName' in d))
+        && (d.anonymous || d.submittedBy == request.auth.uid)
+        && (d.anonymous
+          || (d.submittedByName is string
+            && d.submittedByName.size() > 0
+            && d.submittedByName.size() <= 80))
+        && d.createdAt == request.time
+        && d.reviewed == false;
+    }
+
+    function validComplaintReview() {
+      // The only permitted update: stamp the review. The diff allowlist is the
+      // whole guard — a reviewer cannot touch the category, the description,
+      // the image list, or the author fields of what a member filed.
+      let d = request.resource.data;
+      return d.diff(resource.data).affectedKeys().hasOnly(['reviewed', 'reviewedAt', 'reviewedBy'])
+        && d.reviewed is bool
+        && d.reviewedBy == request.auth.uid
+        && d.reviewedAt == request.time;
+    }
+
+    match /complaints/records/{complaintId} {
+      allow read: if isSuperAdmin();
+      allow create: if signedIn() && validComplaint();
+      allow update: if isSuperAdmin() && validComplaintReview();
+      allow delete: if false;
+    }
+
     match /eden_map/shared_intel {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validSharedIntel();
