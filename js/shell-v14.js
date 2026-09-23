@@ -489,7 +489,7 @@
     if (teamLine) teamLine.textContent = copy.teamLine;
     const mainLogo = commandHeader?.querySelector('.main-logo');
     const appTitle = document.getElementById('appTitle')?.textContent?.trim();
-    if (mainLogo) mainLogo.alt = `${appTitle || 'Hero Combo Creator'} - VTS 1097`;
+    if (mainLogo) mainLogo.alt = `${appTitle || 'RoC VTS Toolkit'} - VTS 1097`;
     if (appTitle) document.title = `${appTitle} - VTS 1097`;
 
     document.querySelectorAll('.tab-badge-new:not([data-i18n])').forEach((badge) => {

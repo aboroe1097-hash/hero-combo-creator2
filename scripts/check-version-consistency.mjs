@@ -170,7 +170,7 @@ function main() {
 
   captureVersion(
     'README.md',
-    /^# Hero Combo Creator - VTS 1097 \(v(\d+\.\d+\.\d+)\)$/m,
+    /^# RoC VTS Toolkit - VTS 1097 \(v(\d+\.\d+\.\d+)\)$/m,
     'README.md heading',
     expectedVersion
   );

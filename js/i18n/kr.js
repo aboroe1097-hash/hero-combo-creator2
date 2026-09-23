@@ -381,7 +381,7 @@ const kr = {
   adminContributionRowsCount: '{count}행',
   adminContributionPremiumCount: '프리미엄 {count}',
   adminContributionAutoSuffix: '(자동)',
-  appTitle: '영웅 조합 생성기',
+  appTitle: 'RoC VTS Toolkit',
   introTagline: 'VTS 1097 지휘 도구로 다음 수를 계획하세요.',
   introEnterToolkit: '도구 모음 열기',
   introFeaturedTools: '주요 도구',
@@ -787,7 +787,7 @@ const kr = {
   adminAnalyticsConsistency: '일관성 및 이동',
   adminAnalyticsAlliance: '명단 공백',
   adminAnalyticsStreaks: '출석 연속 기록',
-  seoTitle: 'Hero Combo Creator — Rise of Castles Ice & Fire Tools | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Rise of Castles Ice & Fire Tools | VTS 1097',
   seoDescription:
     'Free Rise of Castles: Ice & Fire tools for VTS State 1097 — hero combo builder & generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters.',
   seoKeywords:
@@ -796,7 +796,7 @@ const kr = {
     'Free community tools for Rise of Castles: Ice & Fire — build hero combos, plan Eden maps, calculate loyalty upgrades, track tech research, and browse the Hero Atlas. Made for VTS State 1097.',
   seoFooterTitle: 'Tools included',
   seoFooterDesc:
-    'Hero Combo Creator is a free fan-made toolkit for Rise of Castles: Ice & Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.',
+    'RoC VTS Toolkit is a free fan-made toolkit for Rise of Castles: Ice & Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.',
   seoFeatureCombos: 'Combo Builder & Generator with ranked suggestions',
   seoFeatureHeroes: 'Hero Atlas — skills, synergies, and top combos',
   seoFeatureEden: 'Eden Map Planner — Season 5 structures, paths, team plan',
@@ -2878,7 +2878,7 @@ Object.assign(kr, {
   seoFeatureLoyalty: 'Eden 충성도 계산기 - 업그레이드 경로 및 독 %',
   seoFeatureResearch: '기술 연구 계산기 — 배지, 메달, 게임 레이아웃 트리',
   seoFooterDesc:
-    'Hero Combo Creator는 VTS State 1097의 Rise of Castles: Ice & Fire 플레이어를 위해 팬이 제작한 무료 툴킷입니다. 설치할 필요가 없으며 데스크톱과 모바일의 브라우저에서 작동합니다.',
+    'RoC VTS Toolkit는 VTS State 1097의 Rise of Castles: Ice & Fire 플레이어를 위해 팬이 제작한 무료 툴킷입니다. 설치할 필요가 없으며 데스크톱과 모바일의 브라우저에서 작동합니다.',
   seoFooterTitle: '포함된 도구',
   seoIntro:
     'Rise of Castles: Ice & Fire의 무료 커뮤니티 도구 — 영웅 콤보 구축, Eden 지도 계획, 충성도 업그레이드 계산, 기술 연구 추적, Hero Atlas 탐색 등이 가능합니다. VTS State 1097용으로 제작되었습니다.',

@@ -14,6 +14,7 @@ This is the release history, newest first. Entries describe their release-time b
 - Where the workbook disagreed with the shipped numbers, the workbook wins and the column totals drop to their real values: Column II 31,294 → 26,794, Column III 62,588 → 52,191, Column IV 125,176 → 69,782, Column V 250,352 → 71,854, Column VI 500,704 → 92,662. Column I was already correct and is unchanged, and Columns VII–VIII move by a few percent to the exact values (160,696 → 164,461 and 223,382 → 230,248). Every column total still adds up to its four researches.
 - Towers IX and X are recorded from the same workbook with their node rows and totals, ready for a future column, and the source links plus the "With gratitude" panel credit the workbook's maintainers.
 - The workbook, its checksum, and a review-friendly snapshot are kept in the repository under `database/`, so the data can be re-derived without touching Google Sheets.
+- The site is now **RoC VTS Toolkit**, because it has outgrown the hero combo tool it was named after. Page titles, the installable app name (short name RoC VTS), the search and social metadata, the structured data, the map footer, the export watermark, and the browser tab in every language say the same name; the 11 localized titles that translated the old name now carry the brand unchanged.
 
 ## 16.0.19 - 2026-09-23
 

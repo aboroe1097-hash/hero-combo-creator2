@@ -811,7 +811,7 @@ const it = {
   adminContributionRowsCount: '{count} righe',
   adminContributionPremiumCount: 'Premium {count}',
   adminContributionAutoSuffix: '(automatico)',
-  appTitle: 'Creatore di combo eroi',
+  appTitle: 'RoC VTS Toolkit',
   introTagline: 'Pianifica la prossima mossa con il kit di comando VTS 1097.',
   introEnterToolkit: 'Apri il kit',
   introFeaturedTools: 'Strumenti in evidenza',

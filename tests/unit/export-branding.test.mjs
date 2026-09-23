@@ -32,8 +32,8 @@ function fakeCtx({ charWidth = 4 } = {}) {
 
 test('branding composes display name from seo.js constants', () => {
   const brand = getExportBranding({ revision: 'x12-2026-09-02', verificationStatus: 'current' });
-  assert.equal(brand.siteName, 'Hero Combo Creator');
-  assert.ok(brand.displayName.startsWith('Hero Combo Creator'));
+  assert.equal(brand.siteName, 'RoC VTS Toolkit');
+  assert.ok(brand.displayName.startsWith('RoC VTS Toolkit'));
   assert.ok(brand.displayName.includes('VTS 1097'));
   assert.equal(brand.datasetRevision, 'x12-2026-09-02');
   assert.equal(brand.verificationStatus, 'current');
