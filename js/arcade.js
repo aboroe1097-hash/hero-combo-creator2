@@ -7,7 +7,8 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { resolveIntlLocale } from './locale-format.js';
 import { initArcadeHub } from './arcade-hub.js';
 import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
-import { setCurrentLanguage } from './state.js';
+import { currentLanguage, setCurrentLanguage } from './state.js';
+import { mountSiegeFeature } from './siege-promo.js';
 
 export const APP_VERSION = '16.5.0';
 const THEME_STORAGE_KEY = 'vts_theme';
@@ -160,6 +161,11 @@ async function initArcade() {
   document
     .getElementById('arcadeFooterYear')
     ?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
+  // The featured Eden Siege banner is mounted before the language pass so its
+  // data-i18n nodes are translated with the rest of the lobby.
+  mountSiegeFeature(document.getElementById('arcadeLobby'), {
+    getCopy: () => translations[currentLanguage] || translations.en,
+  });
   await setLanguage(savedLanguage);
   initArcadeHub();
   initArcadeLobbyUI();

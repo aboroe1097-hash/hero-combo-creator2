@@ -2076,6 +2076,19 @@ async function startApp() {
       }
     });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
+    safeInit('siegeCallout', () => {
+      // The one-time Eden Siege callout loads after the hub is idle, as its
+      // own small chunk, so it never competes with the first paint.
+      const show = () =>
+        import('./siege-promo.js')
+          .then(({ mountSiegeCallout }) =>
+            mountSiegeCallout({ getCopy: () => translations[currentLanguage] || translations.en })
+          )
+          .catch(() => {});
+      const later = () => setTimeout(show, 2500);
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(later, { timeout: 4000 });
+      else later();
+    });
     const restoreHashRoute = () => {
       const rawHash = window.location.hash?.replace('#', '').split('?')[0] || '';
       const tab = resolveTabName(rawHash, window.vtsTabNames);

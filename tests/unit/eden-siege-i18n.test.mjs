@@ -42,3 +42,18 @@ test('Spanish, Russian, Arabic and Chinese use localized game titles', () => {
     assert.notEqual(getCopy(locale).game.title, getCopy('en').game.title);
   }
 });
+
+test('the flagship copy (modes, training, streaks, results) is localized, not just inherited', () => {
+  const english = getCopy('en');
+  for (const section of ['modes', 'tutorial', 'modifiers']) {
+    assert.ok(english[section], `English defines ${section}`);
+  }
+  assert.equal(english.streaks.length, 5);
+  for (const locale of ['es', 'ru', 'ar', 'zh']) {
+    const copy = getCopy(locale);
+    assert.notEqual(copy.tutorial.title, english.tutorial.title, `${locale} tutorial`);
+    assert.notEqual(copy.modes.daily, english.modes.daily, `${locale} daily siege`);
+    assert.notEqual(copy.streaks[0], english.streaks[0], `${locale} announcer`);
+    assert.notEqual(copy.hud.dash, english.hud.dash, `${locale} dash`);
+  }
+});
