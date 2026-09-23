@@ -55,6 +55,7 @@ import {
   deleteExGuildEntry,
   clearExGuildData,
   setExGuildMatch,
+  openDutyListExport,
 } from './ocr-roster.js';
 
 import {
@@ -9876,6 +9877,13 @@ export async function bootOcrDashboard() {
   if (dashExpAllData) dashExpAllData.onclick = exportAdminAllDataCsv;
   $id('dashExpPdf').onclick = () => window.print();
   $id('dashExpPng').onclick = exportToPng;
+  // Duty list PNGs: the Export menu entries and each duty list's Share PNG.
+  document.querySelectorAll('[data-duty-export-png]').forEach((button) => {
+    button.onclick = () => {
+      $id('dashExportMenu')?.classList.remove('active');
+      openDutyListExport(button.dataset.dutyExportPng);
+    };
+  });
   $id('dashExpJson').onclick = exportData;
   const dashExpDebugJson = $id('dashExpDebugJson');
   if (dashExpDebugJson) dashExpDebugJson.onclick = exportAdminDebugJson;

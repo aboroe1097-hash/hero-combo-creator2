@@ -58,7 +58,18 @@ function blockArchiveMirrorWrite(action) {
   return true;
 }
 import { translations } from './translations.js';
-import { resolveRuntimeLocale } from './locale-format.js';
+import { resolveIntlLocale, resolveRuntimeLocale } from './locale-format.js';
+import {
+  DUTY_RECORD_GROUP_MAX,
+  DUTY_RECORD_TITLE_MAX,
+  collectDutyRecordGroups,
+  dutyRecordDisplayTitle,
+  dutyRecordGroup,
+  dutyRecordInGroup,
+  formatDutyRecordDay,
+  normalizeDutyRecordGroup,
+  normalizeDutyRecordTitle,
+} from './duty-record-title.js';
 import {
   canonicalizePlayerOptionNames,
   collectDutySuggestionPlayerNames,
@@ -303,6 +314,12 @@ function bindAdminControls(root) {
         break;
       case 'delete-duty':
         deleteDutyRecord(trigger.dataset.recordId || '');
+        break;
+      case 'rename-duty':
+        startUploadRename('duty', trigger.dataset.recordId || '', trigger);
+        break;
+      case 'rename-contribution':
+        startUploadRename('contribution', trigger.dataset.recordId || '', trigger);
         break;
       case 'remove-contribution-row':
         trigger.closest('.dash-contribution-match-row')?.remove();
@@ -1820,6 +1837,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <label>${esc(adminT('adminDutyGameTimeLabel'))}</label>
     <input type="text" id="dashDutyGameTime" name="dutyGameTime" value="${esc(existingRecord?.gameTime || '')}" placeholder="${esc(adminT('adminDutyGameTimePh'))}" inputmode="numeric" autocomplete="off" style="flex:1">
   </div>
+  ${renderDutyUploadLabelRows(existingRecord)}
   <div class="dash-duty-review-bar" data-duty-review-bar aria-live="polite"></div>
   <div class="dash-duty-match-list">${renderDutyMatchRows(cleanEntries)}</div>
   <div class="dash-duty-modal-actions">
@@ -1954,6 +1972,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       date: $id('dashDutyDate')?.value || new Date().toISOString().slice(0, 10),
       gameTime: normalizeDutyGameTime($id('dashDutyGameTime')?.value || ''),
       note: $id('dashDutyNote')?.value.trim() || '',
+      ...readDutyUploadLabels(),
       entries,
       createdAt: existingRecord?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -2391,21 +2410,209 @@ function renderDutyAccountChip(entry) {
   return `<span class="dash-duty-account-chip" data-account="${type}" data-saved="${saved ? '1' : '0'}"${title}>${esc(label)}${saved ? '' : ' ?'}</span>`;
 }
 
+// --- Upload titles and groups ---------------------------------------------
+// A duty upload can carry an optional title ("Raceday 1") and an optional
+// group ("Race week"); a contribution snapshot can carry a title. Without a
+// title an upload is named by its day. Both are set in the upload modal or
+// later from the card's Rename button; an empty title falls back to the day.
+const dutyGroupFilters = {};
+
+function uploadLocale() {
+  return resolveIntlLocale(resolveRuntimeLocale());
+}
+
+function renderUploadHeading(record, { showGroup = true } = {}) {
+  const title = normalizeDutyRecordTitle(record?.title);
+  const day = formatDutyRecordDay(record?.date, uploadLocale());
+  const group = showGroup ? dutyRecordGroup(record) : '';
+  const heading = `<strong class="dash-upload-title" title="${esc(record?.date || '')}">${esc(title || day)}</strong>`;
+  const dayChip = title && day ? `<span class="dash-banner-event">${esc(day)}</span>` : '';
+  const groupChip = group
+    ? `<span class="dash-upload-group-chip" title="${esc(adminT('adminDutyRenameGroupLabel'))}">${esc(group)}</span>`
+    : '';
+  return `${heading}${dayChip}${groupChip}`;
+}
+
+function renderGroupDatalist(listId) {
+  const groups = collectDutyRecordGroups(state.dutyRecords);
+  return `<datalist id="${listId}">${groups.map((group) => `<option value="${esc(group)}"></option>`).join('')}</datalist>`;
+}
+
+function renderDutyUploadLabelRows(record) {
+  const listId = `dashDutyUploadGroups${(dutyAccountSwitchSeq += 1)}`;
+  return `<div class="dash-banner-form-row">
+    <label for="dashDutyTitle">${esc(adminT('adminDutyRenameTitleLabel'))}</label>
+    <input type="text" id="dashDutyTitle" name="dutyTitle" maxlength="${DUTY_RECORD_TITLE_MAX}" value="${esc(normalizeDutyRecordTitle(record?.title))}" placeholder="${esc(adminT('adminDutyRenameTitlePh'))}" autocomplete="off" style="flex:1">
+  </div>
+  <div class="dash-banner-form-row">
+    <label for="dashDutyUploadGroup">${esc(adminT('adminDutyRenameGroupLabel'))}</label>
+    <input type="text" id="dashDutyUploadGroup" name="dutyUploadGroup" maxlength="${DUTY_RECORD_GROUP_MAX}" list="${listId}" value="${esc(dutyRecordGroup(record))}" placeholder="${esc(adminT('adminDutyRenameGroupPh'))}" autocomplete="off" style="flex:1">
+    ${renderGroupDatalist(listId)}
+  </div>`;
+}
+
+function readDutyUploadLabels() {
+  const title = normalizeDutyRecordTitle($id('dashDutyTitle')?.value);
+  const group = normalizeDutyRecordGroup($id('dashDutyUploadGroup')?.value);
+  return { ...(title ? { title } : {}), ...(group ? { group } : {}) };
+}
+
+function resolveDutyGroupFilter(type, records) {
+  const current = normalizeDutyRecordGroup(dutyGroupFilters[type]).toLocaleLowerCase();
+  const match = current
+    ? collectDutyRecordGroups(records).find((group) => group.toLocaleLowerCase() === current)
+    : '';
+  if (!match) dutyGroupFilters[type] = '';
+  return match || '';
+}
+
+function renderDutyGroupFilter(type, records, active) {
+  const groups = collectDutyRecordGroups(records);
+  if (!groups.length) return '';
+  const count = (group) => records.filter((record) => dutyRecordInGroup(record, group)).length;
+  const options = [
+    `<option value="">${esc(adminT('adminDutyGroupFilterAll'))} (${records.length})</option>`,
+    ...groups.map(
+      (group) =>
+        `<option value="${esc(group)}"${group === active ? ' selected' : ''}>${esc(group)} (${count(group)})</option>`
+    ),
+  ].join('');
+  return `<div class="dash-duty-group-filter"><label><span>${esc(adminT('adminDutyGroupFilterLabel'))}</span><select name="dutyGroupFilter" data-duty-group-filter="${esc(type)}">${options}</select></label></div>`;
+}
+
+function bindDutyGroupFilter(host, type) {
+  host.querySelector('[data-duty-group-filter]')?.addEventListener('change', (event) => {
+    dutyGroupFilters[type] = event.target.value;
+    renderDutyType(type);
+  });
+}
+
+function findUploadRecord(kind, id) {
+  const list = kind === 'contribution' ? state.contributionRecords : state.dutyRecords;
+  return (Array.isArray(list) ? list : []).find((record) => record.id === id) || null;
+}
+
+function startUploadRename(kind, id, trigger) {
+  const record = findUploadRecord(kind, id);
+  const card = trigger?.closest('.dash-banner-card');
+  if (!record || !card) return;
+  const open = card.querySelector('[data-upload-rename-form]');
+  if (open) {
+    open.querySelector('input')?.focus();
+    return;
+  }
+  const withGroup = kind === 'duty';
+  const day = formatDutyRecordDay(record.date, uploadLocale()) || record.date || '';
+  const listId = `dashUploadRenameGroups${(dutyAccountSwitchSeq += 1)}`;
+  const form = document.createElement('form');
+  form.className = 'dash-upload-rename-form';
+  form.dataset.uploadRenameForm = kind;
+  form.innerHTML = `<label class="dash-upload-rename-field"><span>${esc(adminT('adminDutyRenameTitleLabel'))}</span><input type="text" name="uploadTitle" maxlength="${DUTY_RECORD_TITLE_MAX}" value="${esc(normalizeDutyRecordTitle(record.title))}" placeholder="${esc(adminT('adminDutyRenameTitlePh'))}" autocomplete="off"></label>
+    ${
+      withGroup
+        ? `<label class="dash-upload-rename-field"><span>${esc(adminT('adminDutyRenameGroupLabel'))}</span><input type="text" name="uploadGroup" maxlength="${DUTY_RECORD_GROUP_MAX}" list="${listId}" value="${esc(dutyRecordGroup(record))}" placeholder="${esc(adminT('adminDutyRenameGroupPh'))}" autocomplete="off">${renderGroupDatalist(listId)}</label>`
+        : ''
+    }
+    <small class="dash-upload-rename-hint">${esc(adminT('adminDutyRenameHint', { date: day }))}</small>
+    <span class="dash-upload-rename-actions"><button type="submit" class="dash-btn dash-btn-primary dash-btn-xs">${esc(adminT('adminDutyRenameSave'))}</button><button type="button" class="dash-btn dash-btn-xs" data-upload-rename-cancel>${esc(adminT('adminDutyRenameCancel'))}</button></span>`;
+  card.querySelector('.dash-banner-head')?.after(form);
+  const titleInput = form.elements.uploadTitle;
+  titleInput?.focus();
+  titleInput?.select();
+  form.querySelector('[data-upload-rename-cancel]')?.addEventListener('click', () => form.remove());
+  form.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    form.remove();
+  });
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const target = findUploadRecord(kind, id);
+    if (!target) {
+      form.remove();
+      return;
+    }
+    if (blockArchiveMirrorWrite('rename upload')) return;
+    const title = normalizeDutyRecordTitle(form.elements.uploadTitle?.value);
+    if (title) target.title = title;
+    else delete target.title;
+    if (withGroup) {
+      const group = normalizeDutyRecordGroup(form.elements.uploadGroup?.value);
+      if (group) target.group = group;
+      else delete target.group;
+    }
+    const saveButton = form.querySelector('button[type="submit"]');
+    const saveLabel = saveButton?.textContent || '';
+    if (saveButton) saveButton.disabled = true;
+    const synced =
+      kind === 'contribution'
+        ? await saveContributionRecords({ immediate: true, awaitCloud: true })
+        : await saveDutyRecords({ immediate: true, awaitCloud: true });
+    if (keepFormOpenAfterSyncConflict(saveButton, saveLabel)) return;
+    if (kind === 'contribution') renderContributions();
+    else renderDutyRecords();
+    logRosterEvent('adminDutyRenamedLog', 'success', { title: title || day }, { localOnly: true });
+    notifySpecialListCloudResult(
+      synced,
+      kind === 'contribution' ? adminT('adminContributionsTab') : dutyLabel(target.type)
+    );
+  });
+}
+
+// The shareable PNG lives in its own chunk, fetched on the first click.
+let dutyExportModulePromise = null;
+
+export async function openDutyListExport(type) {
+  if (!DUTY_TYPES[type]) return;
+  const records = dutyRecordsForType(type);
+  if (!records.length) {
+    alert(adminT('adminDutyExportEmpty', { label: dutyLabel(type) }));
+    return;
+  }
+  try {
+    dutyExportModulePromise ||= import('./duty-list-export.js');
+    const { openDutyExportDialog } = await dutyExportModulePromise;
+    openDutyExportDialog({
+      category: type,
+      records,
+      t: adminT,
+      locale: uploadLocale(),
+      direction: document.documentElement.dir || 'ltr',
+      categoryLabel: dutyLabel(type),
+      initialGroup: dutyGroupFilters[type] || '',
+      container: $id('ocrDashboardRoot') || document.body,
+      resolveNames: (entry) =>
+        getDutyEntryCreditedIdentities(entry).map((identity) => identity.playerName),
+      accountTypeOf: (entry) =>
+        normalizeDutyAccountType(entry?.accountType) ||
+        guessDutyAccountType(entry?.confirmed, entry?.original || entry?.name),
+    });
+  } catch (error) {
+    dutyExportModulePromise = null;
+    console.error('[duty-export]', error);
+    alert(adminT('adminDutyExportFailed'));
+  }
+}
+
 function renderDutyType(type) {
   const meta = DUTY_TYPES[type];
   const body = meta ? $id(meta.bodyId) : null;
   if (!meta || !body) return;
   bindAdminControls(body);
   const recordTypes = meta.recordTypes || [type];
-  const records = (state.dutyRecords || [])
+  const typeRecords = (state.dutyRecords || [])
     .filter((record) => recordTypes.includes(record.type))
     .slice()
     .reverse();
-  if (!records.length) {
+  if (!typeRecords.length) {
     body.innerHTML = `<div class="dash-empty">${esc(adminT('adminDutyEmptyRecords', { label: dutyLabel(type) }))}</div>`;
     return;
   }
-  body.innerHTML = records
+  const groupFilter = resolveDutyGroupFilter(type, typeRecords);
+  const records = typeRecords.filter((record) => dutyRecordInGroup(record, groupFilter));
+  body.innerHTML =
+    renderDutyGroupFilter(type, typeRecords, groupFilter) +
+    records
     .map((record) => {
       const entries = Array.isArray(record.entries) ? record.entries : [];
       const confirmed = entries.filter((entry) => entry.confirmed).length;
@@ -2426,13 +2633,14 @@ function renderDutyType(type) {
       return `<div class="dash-banner-card">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
-          <span>${esc(record.date || '')}</span>
+          ${renderUploadHeading(record)}
           <span class="dash-banner-event">${esc(dutySingular(record.type) || dutySingular(type))}</span>
           ${record.gameTime ? `<span class="dash-banner-event">${esc(record.gameTime)}</span>` : ''}
           ${displayNote ? `<span class="dash-banner-event" title="${esc(rawNote)}">${esc(displayNote)}</span>` : ''}
           <span class="dash-banner-count">${esc(adminT('adminDutyMatchedCount', { confirmed, total: entries.length }))}${weak ? `, ${esc(adminT('adminDutyReviewCount', { count: weak }))}` : ''}</span>
         </div>
         <div style="display:flex;gap:6px">
+          <button type="button" class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" data-admin-action="rename-duty" data-record-id="${esc(record.id)}">${esc(adminT('adminDutyRename'))}</button>
           <button type="button" class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" data-admin-action="edit-duty" data-record-id="${esc(record.id)}">${esc(adminT('adminEdit'))}</button>
           <button type="button" class="dash-banner-del-btn" data-admin-action="delete-duty" data-record-id="${esc(record.id)}" title="${esc(adminT('adminDelete'))}">x</button>
         </div>
@@ -2472,6 +2680,7 @@ function renderDutyType(type) {
     );
     bindAdminTablePager(body, owner, page, () => renderDutyType(type));
   });
+  bindDutyGroupFilter(body, type);
   hydrateDashboardTableLabels(body);
 }
 
@@ -3664,6 +3873,9 @@ function showContributionConfirmModal(
         `contribution_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       date: $id('dashContributionDate')?.value || new Date().toISOString().slice(0, 10),
       note: $id('dashContributionNote')?.value.trim() || '',
+      ...(normalizeDutyRecordTitle(existingRecord?.title)
+        ? { title: normalizeDutyRecordTitle(existingRecord.title) }
+        : {}),
       premiumCutoff: Math.max(1, Number($id('dashContributionPremiumCutoff')?.value || 20)),
       entries: normalized,
       isPrimary: existingRecord ? existingRecord.isPrimary === true : true,
@@ -4805,13 +5017,14 @@ function renderContributions() {
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span style="cursor:pointer" role="button" tabindex="0" data-admin-action="set-contribution-primary" data-record-id="${esc(record.id)}" title="${esc(adminT(isPrimary ? 'adminContributionPrimaryTitle' : 'adminContributionSetPrimaryTitle'))}">${isPrimary ? '★' : '☆'}</span>
-          <span>${esc(record.date || '')}</span>
+          ${renderUploadHeading(record, { showGroup: false })}
           ${displayNote ? `<span class="dash-banner-event" title="${esc(rawNote)}">${esc(displayNote)}</span>` : ''}
           <span class="dash-banner-count">${esc(adminT('adminContributionRowsCount', { count: entries.length }))}</span>
           <span class="dash-banner-count">${esc(adminT('adminContributionTotalCount', { total: formatContributionValue(total) }))}</span>
           <span class="dash-contribution-premium-pill">${esc(adminT('adminContributionPremiumCount', { count: premiumCount }))}</span>
         </div>
         <div class="dash-contribution-card-actions">
+          <button type="button" class="dash-btn dash-btn-xs" data-admin-action="rename-contribution" data-record-id="${esc(record.id)}">${esc(adminT('adminDutyRename'))}</button>
           <button type="button" class="dash-btn dash-btn-xs" data-admin-action="export-contribution" data-record-id="${esc(record.id)}">${esc(adminT('adminBtnExport'))}</button>
           <button type="button" class="dash-btn dash-btn-xs" data-admin-action="edit-contribution" data-record-id="${esc(record.id)}">${esc(adminT('adminEdit'))}</button>
           <button type="button" class="dash-banner-del-btn" data-admin-action="delete-contribution" data-record-id="${esc(record.id)}" title="${esc(adminT('adminDelete'))}" aria-label="${esc(adminT('adminDelete'))}">x</button>
