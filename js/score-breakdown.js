@@ -273,9 +273,13 @@ function loadPlayerSeasonStyles() {
   });
 }
 
-if (typeof window !== 'undefined') {
-  const whenIdle = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 2000));
-  whenIdle(loadPlayerSeasonStyles, { timeout: 5000 });
+// Only in a real browser: tests stub `window` without timers or idle callbacks.
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(loadPlayerSeasonStyles, { timeout: 5000 });
+  } else if (typeof window.setTimeout === 'function') {
+    window.setTimeout(loadPlayerSeasonStyles, 2000);
+  }
 }
 
 // One delegated listener serves every player view (admin and public).
