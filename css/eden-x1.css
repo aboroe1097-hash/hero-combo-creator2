@@ -6597,3 +6597,40 @@ html.is-embedded .ai-drawer-launcher-shell {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+/* Active-season signup invitation. eden-x1.html is the archived season, so the
+   card only ever renders on the X2 page — but both routes share this sheet, and
+   a handful of rules is cheaper than a route split for one card. */
+#ocrDashboardRoot .eden-x1-signup-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+}
+#ocrDashboardRoot .eden-x1-signup-prompt__kicker {
+  display: block;
+  color: var(--frost-cyan);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+#ocrDashboardRoot .eden-x1-signup-prompt h2 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1.05rem;
+}
+#ocrDashboardRoot .eden-x1-signup-prompt p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .eden-x1-signup-prompt__linked {
+  margin-top: 0.35rem;
+  color: var(--frost-cyan);
+  font-weight: 700;
+}
+#ocrDashboardRoot .eden-x1-signup-prompt__cta {
+  flex: 0 0 auto;
+}

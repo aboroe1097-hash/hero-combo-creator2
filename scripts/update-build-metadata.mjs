@@ -15,6 +15,11 @@ const entryHtmlFiles = [
   'arcade.html',
   'battle-simulator.html',
   'specialization-towers.html',
+  // VtsScore is a Vite entry (see vite.config.js) and now hosts the member
+  // season registration as well as the score upload. It was missing from this
+  // list, which is why its asset stamps had drifted to 14.3.5 while the app
+  // shipped 16.x, and why its CSP had no inline-script hashes.
+  'vtsscore.html',
 ];
 const baseAppShellFiles = [
   '/',
@@ -36,6 +41,9 @@ const baseAppShellFiles = [
   '/arcade.html',
   '/battle-simulator.html',
   '/specialization-towers.html',
+  // Every entry page is in the shell so a navigation to it resolves offline;
+  // VtsScore joins them now that it carries the member registration.
+  '/vtsscore.html',
 ];
 
 function makeBuildVersion() {

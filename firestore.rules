@@ -890,18 +890,26 @@ service cloud.firestore {
     }
 
     function validAllStarBohConfig() {
+      // `scoringProfileId` is the season's scoring version, chosen by a
+      // superadmin in the 2027 Signups tab and validated against the registry
+      // in js/all-star-boh-model.js. It lives here rather than on each signup
+      // because the submission shape is pinned key for key below and this file
+      // has no expression budget to spare; one version per season is also what
+      // the comparison actually means.
       return request.resource.data.keys().hasOnly([
-        'activeSeason', 'open', 'grantDurationMinutes'
+        'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
       ])
       && request.resource.data.keys().hasAll([
-        'activeSeason', 'open', 'grantDurationMinutes'
+        'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
       ])
       && request.resource.data.activeSeason is string
       && request.resource.data.activeSeason.matches('^[A-Za-z0-9_-]{1,80}$')
       && request.resource.data.open is bool
       && request.resource.data.grantDurationMinutes is int
       && request.resource.data.grantDurationMinutes >= 5
-      && request.resource.data.grantDurationMinutes <= 10080;
+      && request.resource.data.grantDurationMinutes <= 10080
+      && request.resource.data.scoringProfileId is string
+      && request.resource.data.scoringProfileId.matches('^[A-Za-z0-9._-]{1,80}$');
     }
 
     function validBohMapperPublish(season) {

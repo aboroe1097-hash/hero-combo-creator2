@@ -663,6 +663,22 @@
                 <path d="M12 6a5 5 0 0 1 3 9v3H9v-3a5 5 0 0 1 3-9z" /></svg
               ><span data-i18n="adminSuggestTab">Suggest Points</span>
             </button>
+            <button class="dash-subtab-btn" data-subtab="bohSignups">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M16 3h4v18h-4" />
+                <path d="M4 7h8" />
+                <path d="M4 12h8" />
+                <path d="M4 17h8" /></svg
+              ><span data-i18n="adminBohSignupsTab">2027 Signups</span>
+            </button>
           </div>
         </section>
       </div>
@@ -1900,6 +1916,216 @@
           <section id="dashVtsScoreRoot" class="vts-admin-root">
             <div class="dash-empty" data-i18n="adminVtsScoreLoading">Loading VtsScore data…</div>
           </section>
+        </div>
+      </div>
+      <!-- Sub-tab: Eden 2027 signups. The season/scoring-version picker is the
+           only writer of boh_allstar_config/current; the manual add/edit form
+           posts to the bohSignupAdmin Cloud Function so the owner-only signup
+           rule stays exactly as it was. -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabBohSignups">
+        <div id="dashBohSignupsRoot" class="dash-boh-signups-root">
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <h2 class="dash-card-title">
+                  <span data-i18n="adminBohSignupsTitle">Season signup registrations</span>
+                </h2>
+                <p class="dash-card-subtitle" data-i18n="adminBohSignupsSubtitle">
+                  Choose the season members sign up into, and file or correct a signup for a member
+                  who sent their numbers to leadership directly.
+                </p>
+              </div>
+              <div class="dash-card-actions">
+                <button id="dashBohSignupsRefreshBtn" class="dash-btn" type="button">
+                  <span data-i18n="adminVtsScoreRefresh">Refresh</span>
+                </button>
+              </div>
+            </div>
+            <p id="dashBohSignupsSeason" class="dash-card-subtitle"></p>
+            <form id="dashBohSignupsSeasonForm" class="dash-boh-signups-season" data-requires-superadmin hidden>
+              <label class="dash-boh-signups-field">
+                <span data-i18n="adminBohSignupSeasonLabel">Active season</span>
+                <input
+                  id="dashBohSignupSeasonInput"
+                  class="dash-input"
+                  type="text"
+                  maxlength="80"
+                  autocomplete="off"
+                  required
+                />
+              </label>
+              <label class="dash-boh-signups-field">
+                <span data-i18n="adminBohSignupProfileLabel">Scoring version</span>
+                <select id="dashBohSignupProfileSelect" class="dash-input"></select>
+              </label>
+              <label class="dash-boh-signups-field dash-boh-signups-check">
+                <input id="dashBohSignupOpenInput" type="checkbox" />
+                <span data-i18n="adminBohSignupOpenLabel">Registration open</span>
+              </label>
+              <label class="dash-boh-signups-field">
+                <span data-i18n="adminBohSignupGrantLabel">Member PIN session (minutes)</span>
+                <input
+                  id="dashBohSignupGrantInput"
+                  class="dash-input"
+                  type="number"
+                  min="5"
+                  max="10080"
+                  step="5"
+                  required
+                />
+              </label>
+              <div class="dash-card-actions">
+                <button id="dashBohSignupSeasonSave" class="dash-btn dash-btn-primary" type="submit">
+                  <span data-i18n="adminBohSignupSeasonSave">Save season settings</span>
+                </button>
+              </div>
+              <p class="dash-card-subtitle" data-i18n="adminBohSignupSeasonHelp">
+                Members unlock with the VTS member PIN and sign up into this season. The scoring
+                version labels the formula their numbers are compared with.
+              </p>
+            </form>
+            <div
+              id="dashBohSignupsStatus"
+              class="dash-upload-status hidden"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <h2 class="dash-card-title">
+                  <span data-i18n="adminBohSignupManualTitle">Add or edit a signup</span>
+                </h2>
+                <p class="dash-card-subtitle" data-i18n="adminBohSignupManualHelp">
+                  Saved through the bohSignupAdmin Cloud Function, so the owner-only signup rule
+                  stays in place. Pick a row below to edit an existing signup.
+                </p>
+              </div>
+            </div>
+            <form id="dashBohSignupForm" class="dash-boh-signup-form">
+              <input id="dashBohSignupTarget" type="hidden" value="" />
+              <label class="dash-boh-signup-wide">
+                <span data-i18n="adminBohSignupGameName">Game name</span>
+                <input
+                  id="dashBohSignupName"
+                  class="dash-input"
+                  type="text"
+                  maxlength="160"
+                  autocomplete="off"
+                  data-boh-field="gameName"
+                  required
+                />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatTotalPower">Total power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.totalCastlePower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatTroopPower">Troop power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.troopPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatBuildingPower">Building power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.buildingPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatTechnologyPower">Technology power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.technologyPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatHeroPower">Hero combat power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.heroCombatPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatDragonPower">Dragon power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.dragonPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatUnitSpecialtyPower">Unit specialty power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.unitSpecialtyPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupT9TroopTypes">T9 troop types</span>
+                <input class="dash-input" type="text" maxlength="120" autocomplete="off" data-boh-field="stats.t9TroopTypes" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupReadySpeedHeroes">Ready speed heroes</span>
+                <input class="dash-input" type="text" maxlength="240" autocomplete="off" data-boh-field="stats.readySpeedHeroes" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupLevel50Heroes">Level 50 heroes</span>
+                <input class="dash-input" type="number" min="0" max="500" step="1" data-boh-field="stats.level50HeroCount" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupRocLevel">ROC level</span>
+                <input class="dash-input" type="number" min="0" max="160" step="1" data-boh-field="stats.rocLevel" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupFightingFirst">First fighting time</span>
+                <select class="dash-input" data-boh-field="commitment.fightingTimeIds">
+                  <option value="+12">+12</option>
+                  <option value="+14" selected>+14</option>
+                  <option value="+16">+16</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupFightingSecond">Second fighting time</span>
+                <select class="dash-input" data-boh-field="commitment.fightingTimeIds">
+                  <option value="+12" selected>+12</option>
+                  <option value="+14">+14</option>
+                  <option value="+16">+16</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupPreferredRole">Preferred role</span>
+                <select class="dash-input" data-boh-field="commitment.preferredRole">
+                  <option value="" data-i18n="adminBohSignupRoleNone">No preference</option>
+                  <option value="offensive" data-i18n="adminBohSignupRoleOffensive">Offensive team</option>
+                  <option value="rune" data-i18n="adminBohSignupRoleRune">Rune team</option>
+                  <option value="top" data-i18n="adminBohSignupRoleTop">Top side</option>
+                  <option value="bottom" data-i18n="adminBohSignupRoleBottom">Bottom side</option>
+                  <option value="backup" data-i18n="adminBohSignupRoleBackup">Backup</option>
+                  <option value="flexible" data-i18n="adminBohSignupRoleFlexible">Flexible</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupMember">Signed up for VTS 1097</span>
+                <select class="dash-input" data-boh-boolean="true" data-boh-field="commitment.vts1097Member">
+                  <option value="true" data-i18n="adminBohSignupYes">Yes</option>
+                  <option value="false" data-i18n="adminBohSignupNo">No</option>
+                </select>
+              </label>
+              <label class="dash-boh-signup-wide">
+                <span data-i18n="adminBohSignupNotes">Notes for the plan</span>
+                <textarea class="dash-input" rows="2" maxlength="2000" data-boh-field="commitment.notes"></textarea>
+              </label>
+              <div class="dash-card-actions">
+                <button id="dashBohSignupSubmit" class="dash-btn dash-btn-primary" type="submit">
+                  <span id="dashBohSignupSubmitLabel" data-i18n="adminBohSignupSave">Save signup</span>
+                </button>
+                <button id="dashBohSignupCancelEdit" class="dash-btn" type="button" hidden>
+                  <span data-i18n="adminBohSignupCancel">Cancel edit</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <h2 class="dash-card-title">
+                  <span data-i18n="adminBohSignupListTitle">Signups in this season</span>
+                </h2>
+              </div>
+            </div>
+            <div id="dashBohSignupsList">
+              <div class="dash-empty" data-i18n="adminBohSignupListEmpty">
+                No signups yet in this season.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>

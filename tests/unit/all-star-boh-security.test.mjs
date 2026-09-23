@@ -670,6 +670,19 @@ test('Firestore private and published paths enforce admin/member boundaries with
   assert.match(configValidator, /activeSeason\.matches\('\^\[A-Za-z0-9_-\]\{1,80\}\$'\)/);
   assert.match(configValidator, /grantDurationMinutes >= 5/);
   assert.match(configValidator, /grantDurationMinutes <= 10080/);
+  // The 2027 signup revival adds the season's scoring version to this document.
+  // It is listed on both the hasOnly and the hasAll list, so an admin cannot
+  // drop it and a later writer cannot smuggle an extra key in beside it.
+  assert.match(
+    configValidator,
+    /keys\(\)\.hasOnly\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'\s*\]\)/
+  );
+  assert.match(
+    configValidator,
+    /keys\(\)\.hasAll\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'\s*\]\)/
+  );
+  assert.match(configValidator, /scoringProfileId is string/);
+  assert.match(configValidator, /scoringProfileId\.matches\('\^\[A-Za-z0-9\._-\]\{1,80\}\$'\)/);
 
   const grants = rulesMatch(
     rules,
