@@ -4459,6 +4459,9 @@ function edenWorkspaceFirestorePathsForExport() {
 // write in here consults blockEdenArchiveWrite first.
 
 let edenSeasonRegistryView = null;
+// Why the last registry load failed, so the panel can say so and offer a retry
+// instead of showing "Loading" forever.
+let edenSeasonRegistryError = '';
 let edenRecallDraft = null;
 // Which season the rename input is editing. Empty means "the running season".
 let edenSeasonRenameTargetId = '';
@@ -5045,6 +5048,16 @@ function renderEdenSeasonLifecyclePanel() {
   if (!root) return;
   const view = edenSeasonRegistryView;
   if (!view) {
+    if (edenSeasonRegistryError) {
+      root.innerHTML = `<div class="dash-empty">${esc(
+        dashT('adminSeasonRegistryFailed', { error: edenSeasonRegistryError })
+      )} <button class="dash-btn" type="button" id="dashSeasonRetryBtn">${esc(
+        dashT('bohAccessRetry')
+      )}</button></div>`;
+      const retry = $id('dashSeasonRetryBtn');
+      if (retry) retry.onclick = () => void refreshEdenSeasonLifecyclePanel();
+      return;
+    }
     root.innerHTML = `<div class="dash-empty">${esc(dashT('adminSeasonLifecycleLoading'))}</div>`;
     return;
   }
@@ -5246,7 +5259,9 @@ async function refreshEdenSeasonLifecyclePanel() {
   if (dashSuperAdmin !== true) return;
   try {
     edenSeasonRegistryView = await loadEdenSeasonRegistry();
+    edenSeasonRegistryError = '';
   } catch (err) {
+    edenSeasonRegistryError = String(err?.message || err || 'unknown');
     console.warn('Season registry unavailable:', err?.message || err);
     window.showToast?.(
       dashT('adminSeasonRegistryFailed', { error: err?.message || err }),

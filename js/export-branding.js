@@ -119,7 +119,8 @@ export function drawCanvasFooter(ctx, branding, options = {}) {
     composed = `${baseLine2} · Sources: ${brand.sourceCredits[0]} · ${brand.siteUrl}`;
     line2 = truncateCanvasText(ctx, composed, maxWidth);
   }
-  ctx.fillText(line2.text, textX, y + 14);
+  // Larger footer fonts pass their own gap so the two lines never overlap.
+  ctx.fillText(line2.text, textX, y + (options.lineGap || 14));
   ctx.restore();
   return line1.fits && line2.fits;
 }

@@ -3347,7 +3347,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin-right: auto;
+  margin-inline-end: auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -3370,14 +3370,14 @@
   border-color: rgba(250, 204, 21, 0.6);
 }
 #ocrDashboardRoot .admin-bulk-count {
-  margin-right: auto;
+  margin-inline-end: auto;
   font-size: 0.75rem;
   font-weight: 800;
 }
 #ocrDashboardRoot .admin-bulk-check {
   display: inline-flex;
   align-items: center;
-  margin-right: 6px;
+  margin-inline-end: 6px;
   vertical-align: middle;
 }
 #ocrDashboardRoot .admin-bulk-check input {
@@ -7421,7 +7421,8 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     sans-serif;
   width: 100%;
   min-height: 44px;
-  padding: 0.35rem 0.6rem;
+  margin: 0;
+  padding: 0.35rem 0.4rem;
   border-radius: 8px;
   text-align: center;
 }
@@ -7461,6 +7462,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     600 16px system-ui,
     sans-serif;
   min-height: 44px;
+  margin: 0;
 }
 #ocrDashboardRoot .dash-reward-r5-field.is-disabled {
   opacity: 0.55;
@@ -7764,5 +7766,96 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
   #ocrDashboardRoot .dash-boh-signups-season,
   #ocrDashboardRoot .dash-boh-signup-form {
     grid-template-columns: 1fr;
+  }
+}
+
+/* 16.5.0 QA pass: phone widths, light theme and RTL on the new admin surfaces. */
+/* Two-column tables (multipliers, reward slots) never share the duty grid's
+   four tracks, and long localized names wrap instead of being overdrawn. */
+#ocrDashboardRoot .dash-duty-weight-row:not(:has(> :nth-child(3))) {
+  grid-template-columns: minmax(0, 1fr) minmax(4.5rem, 7rem);
+}
+#ocrDashboardRoot .dash-duty-weight-name,
+#ocrDashboardRoot .dash-duty-weight-head > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+/* The bulk bar only pins while something is selected, and stays one scrollable
+   line on phones instead of covering a third of the screen. */
+#ocrDashboardRoot .admin-bulk-bar[data-active='0'] {
+  position: static;
+}
+#ocrDashboardRoot .admin-bulk-check input {
+  width: 22px;
+  height: 22px;
+}
+#ocrDashboardRoot .dash-duty-all-account .dash-match-label {
+  display: inline;
+}
+#ocrDashboardRoot .dash-account-link-suggest-owner,
+#ocrDashboardRoot [data-account-link-suggest-type] {
+  min-height: 40px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+[dir='rtl'] #ocrDashboardRoot .dash-account-link-names > span[aria-hidden='true'] {
+  transform: scaleX(-1);
+}
+#ocrDashboardRoot .dash-dropdown-content button {
+  background: transparent;
+  border: 0;
+  min-height: 40px;
+}
+[data-theme='light'] #ocrDashboardRoot .dash-duty-add-name {
+  border-color: #67e8f9;
+  background: #ecfeff;
+  color: #0e7490;
+}
+[data-theme='light'] #ocrDashboardRoot .dash-duty-remove-row {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+[data-theme='light'] #ocrDashboardRoot .dash-btn.dash-btn-danger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+@media (max-width: 560px) {
+  #ocrDashboardRoot .dash-reward-guildmaster-field,
+  #ocrDashboardRoot .dash-reward-r5-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+  #ocrDashboardRoot .dash-reward-guildmaster-field > span,
+  #ocrDashboardRoot .dash-reward-r5-field > span {
+    flex: none;
+  }
+  #ocrDashboardRoot .admin-bulk-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  #ocrDashboardRoot .admin-bulk-bar > * {
+    flex: 0 0 auto;
+  }
+  #ocrDashboardRoot .dash-duty-remove-row,
+  #ocrDashboardRoot .dash-duty-add-name {
+    min-height: 40px;
+  }
+}
+@media (max-width: 480px) {
+  #ocrDashboardRoot .dash-duty-weight-row {
+    grid-template-columns: minmax(5.5rem, 1fr) repeat(3, minmax(3rem, 3.75rem));
+    gap: 0.35rem;
+  }
+  #ocrDashboardRoot .dash-duty-weight-head {
+    font-size: 0.6rem;
+    letter-spacing: 0.02em;
   }
 }

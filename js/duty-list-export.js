@@ -412,7 +412,8 @@ function createPainter(ctx, { width, rtl, locale }) {
 const PAD = 48;
 const ROW_HEIGHT = 74;
 const TABLE_HEAD = 52;
-const SCORING_HEIGHT = 174;
+// Heading (24) + label row (40) + 88px cards + 12px breathing room.
+const SCORING_HEIGHT = 140;
 
 function layoutUploadChips(paint, uploads, maxWidth, tr, number) {
   const chipHeight = 42;
@@ -464,7 +465,7 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
     : null;
   const footerLines = paint0.wrap(tr('adminDutyExportFooter'), 26, 750, inner - 64);
   const headerHeight = first ? 214 : 176;
-  const scoringHeight = first && model.scoring ? SCORING_HEIGHT : 0;
+  const scoringHeight = first && model.scoring ? 24 + SCORING_HEIGHT : 0;
   const summaryHeight = first ? 150 + 56 + scoringHeight : 0;
   const uploadsHeight = first && chipLayout.placed.length ? 60 + chipLayout.height + 40 : 0;
   const tableHeight = TABLE_HEAD + Math.max(1, pageRows.length) * ROW_HEIGHT + 16;
@@ -821,6 +822,7 @@ function drawPage(canvas, model, pageRows, pageIndex, pageCount, settings) {
     mutedColor: palette.muted,
     fontLine1: `700 18px ${FONT}`,
     fontLine2: `500 15px ${FONT}`,
+    lineGap: 24,
   });
   ctx.restore();
   return canvas;
@@ -941,13 +943,13 @@ export async function exportDutyListPng(records, options = {}) {
 
 const DIALOG_STYLE_ID = 'dutyListExportStyles';
 const DIALOG_CSS = `
-.duty-export-dialog{border:1px solid var(--border,#2a3b55);border-radius:16px;padding:0;max-width:min(560px,calc(100vw - 32px));width:100%;background:var(--bg-card,#101c2e);color:var(--text,#f3f7fc);box-shadow:0 24px 64px rgba(0,0,0,.45)}
+.duty-export-dialog{border:1px solid var(--border,#2a3b55);border-radius:16px;padding:0;max-width:min(560px,calc(100vw - 32px));width:100%;background:var(--surface,#101c2e);color:var(--text-primary,#f3f7fc);box-shadow:0 24px 64px rgba(0,0,0,.45)}
 .duty-export-dialog::backdrop{background:rgba(5,10,18,.6)}
 .duty-export-dialog form{display:flex;flex-direction:column;gap:14px;padding:20px}
 .duty-export-dialog h2{margin:0;font-size:1.1rem}
-.duty-export-dialog label{display:flex;flex-direction:column;gap:6px;font-size:.8rem;color:var(--text-dim,#9db0c8)}
-.duty-export-dialog select{min-height:40px;border-radius:10px;padding:0 10px;font:inherit;font-size:.95rem;color:inherit;background:var(--bg-input,rgba(255,255,255,.06));border:1px solid var(--border,#2a3b55)}
-.duty-export-dialog [data-duty-export-summary]{margin:0;font-size:.85rem;color:var(--text-dim,#9db0c8);min-height:1.2em}
+.duty-export-dialog label{display:flex;flex-direction:column;gap:6px;font-size:.8rem;color:var(--text-muted,#9db0c8)}
+.duty-export-dialog select{min-height:40px;border-radius:10px;padding:0 10px;font:inherit;font-size:.95rem;color:inherit;background:var(--surface-2,rgba(255,255,255,.06));border:1px solid var(--border,#2a3b55)}
+.duty-export-dialog [data-duty-export-summary]{margin:0;font-size:.85rem;color:var(--text-muted,#9db0c8);min-height:1.2em}
 .duty-export-dialog .duty-export-preview{display:flex;justify-content:center;background:rgba(0,0,0,.18);border-radius:12px;padding:8px;max-height:46vh;overflow:auto}
 .duty-export-dialog .duty-export-preview img{max-width:100%;height:auto;border-radius:8px}
 .duty-export-dialog .duty-export-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}

@@ -2883,7 +2883,9 @@ body[style*='overflow: hidden'] .tab-panel {
 
 @media (max-width: 768px) {
   body.admin-standalone-page {
-    overflow-x: hidden;
+    /* clip, not hidden: hidden would turn the visible y-axis back into a
+       scroll container and break position: sticky again. */
+    overflow-x: clip;
   }
 
   #adminPageRoot.admin-page-main,

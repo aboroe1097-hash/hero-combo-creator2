@@ -2240,11 +2240,14 @@ html[data-initial-tab-pending] #generatorSection {
   padding: 10px 22px;
   border-radius: var(--radius-pill);
   font-size: 0.82rem;
+  max-width: calc(100vw - 32px);
+  text-align: center;
   font-weight: 600;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
   animation: toast-in 0.28s ease both;
-  white-space: nowrap;
+  /* Long messages wrap inside the viewport instead of running off a phone. */
+  overflow-wrap: anywhere;
   pointer-events: auto;
   will-change: transform, opacity;
 }

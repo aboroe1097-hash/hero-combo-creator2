@@ -414,7 +414,9 @@ const LIMITS = {
     // (rename form, group chips and filter) add admin-only rules to
     // css/ocr-dashboard-admin.css: 687.0 KiB desktop. Lift desktop by 3 KiB;
     // mobile keeps its existing ceiling.
-    'admin.html': { desktop: 688 * 1024, mobile: 786 * 1024 },
+    // The 16.5.0 QA pass adds phone layouts for the scoring and reward tables,
+    // light-theme states and RTL-safe margins: 688.9 KiB. Lift desktop to 690.
+    'admin.html': { desktop: 690 * 1024, mobile: 786 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the

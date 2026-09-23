@@ -2211,12 +2211,14 @@ function summarizeDutyValues(values, limit = 3) {
 }
 
 const DUTY_SUMMARY_STATUS_KEYS = ['exact', 'manual', 'likely', 'weak', 'unmatched'];
+// The same translated labels the match review uses, so the summary's Status
+// column reads in the admin's language instead of always in English.
 const DUTY_SUMMARY_STATUS_LABELS = Object.freeze({
-  exact: 'Exact',
-  manual: 'Manual',
-  likely: 'Likely',
-  weak: 'Weak',
-  unmatched: 'Unmatched',
+  exact: 'adminDutyStatusExact',
+  manual: 'adminDutyStatusManual',
+  likely: 'adminDutyStatusLikely',
+  weak: 'adminDutyStatusWeak',
+  unmatched: 'adminDutyStatusUnmatched',
 });
 
 function normalizeDutySummaryStatus(value) {
@@ -2263,7 +2265,7 @@ function dutySummaryReviewCount(row) {
 
 function formatDutyStatusBreakdown(counts = {}) {
   const parts = DUTY_SUMMARY_STATUS_KEYS.filter((key) => counts[key]).map(
-    (key) => `${DUTY_SUMMARY_STATUS_LABELS[key]} ${counts[key]}`
+    (key) => `${adminT(DUTY_SUMMARY_STATUS_LABELS[key])} ${counts[key]}`
   );
   if (!parts.length) return '<span style="color:var(--text-dim)">--</span>';
   return parts.map(esc).join(' / ');

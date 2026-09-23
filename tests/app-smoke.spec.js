@@ -3143,7 +3143,8 @@ test.describe('app smoke tabs', () => {
       );
     expect(patherSummaryRows.filter((cells) => cells[0].includes('Kika'))).toHaveLength(2);
     const angelSummaryRow = patherSummaryRows.find((cells) => cells[0]?.includes('ANGEL'));
-    expect(angelSummaryRow?.[3]).toContain('Exact');
+    // The status column is translated like the rest of the Russian summary.
+    expect(angelSummaryRow?.[3]).toContain('Точно');
     expect(angelSummaryRow?.[4]).toContain('10:30');
     await expect(page.locator('#dashPatherListBody .dash-duty-detail-table')).toBeVisible();
 
