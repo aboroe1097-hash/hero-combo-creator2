@@ -3064,10 +3064,13 @@ service cloud.firestore {
     match /vts_admin/eden_workspaces/records/{workspaceId} {
       allow read: if signedIn();
       // Publishing and unpublishing move a workspace between active and draft.
-      // Archiving it is what ends a season, and that is a superadmin act.
+      // Archiving it is what ends a season, and that is a superadmin act; so is
+      // touching an ended season's record at all, un-archiving included.
       allow create, update: if isAdmin()
         && validEdenWorkspaceRecord(workspaceId)
-        && (request.resource.data.lifecycle != 'archived' || isSuperAdmin());
+        && ((request.resource.data.lifecycle != 'archived'
+          && (resource == null || resource.data.lifecycle != 'archived'))
+          || isSuperAdmin());
       allow delete: if false;
     }
 

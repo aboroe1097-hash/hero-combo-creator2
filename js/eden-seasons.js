@@ -253,6 +253,61 @@ export function endEdenSeason(registry, seasonId, { nowMs = Date.now() } = {}) {
 }
 
 /**
+ * Registers the season a workspace is already running. The registry starts
+ * empty while the live workspace (eden-x2) already holds a season's records, so
+ * without this there is nothing to end and no free workspace to start on. This
+ * writes the registry only: the workspace and its records stay as they are.
+ */
+export function adoptEdenSeason(registry, options = {}) {
+  const { nowMs = Date.now(), workspace = null, label = '' } = options;
+  if (activeEdenSeason(registry)) {
+    return { ok: false, reason: SEASON_START_REASONS.ACTIVE_SEASON_EXISTS };
+  }
+  const workspaceId = normalizeEdenSeasonWorkspaceId(workspace?.id);
+  if (!workspaceId) return { ok: false, reason: SEASON_START_REASONS.UNKNOWN_WORKSPACE };
+  if (workspace?.legacy) return { ok: false, reason: SEASON_START_REASONS.WORKSPACE_RETIRED };
+  if (workspace?.lifecycle === 'archived') {
+    return { ok: false, reason: SEASON_START_REASONS.WORKSPACE_ARCHIVED };
+  }
+  const id = normalizeEdenSeasonId(workspace?.holdsSeasonId);
+  if (!id) return { ok: false, reason: SEASON_START_REASONS.NO_FREE_WORKSPACE };
+  if (findEdenSeason(registry, id)) {
+    return { ok: false, reason: SEASON_START_REASONS.DUPLICATE_SEASON };
+  }
+  const startedAtMs = Math.max(
+    1,
+    normalizeTimestampMs(workspace?.createdAtMs) || normalizeTimestampMs(nowMs) || Date.now()
+  );
+  const next = cloneRegistry(registry);
+  const season = {
+    id,
+    label: normalizeEdenSeasonLabel(label, defaultEdenSeasonLabel(id)),
+    state: 'active',
+    workspaceId,
+    startedAtMs,
+    endedAtMs: 0,
+  };
+  next.seasons.push(season);
+  next.seasons.sort(compareSeasonEntries);
+  next.updatedAtMs = Math.max(1, normalizeTimestampMs(nowMs) || Date.now());
+  return { ok: true, registry: next, season: { ...season } };
+}
+
+/** The workspace an adopt would register, when the registry has no running season. */
+export function adoptableEdenWorkspace({ registry, workspaces = [] } = {}) {
+  if (activeEdenSeason(registry)) return null;
+  return (
+    workspaces.find(
+      (workspace) =>
+        !workspace?.legacy &&
+        workspace?.lifecycle !== 'archived' &&
+        normalizeEdenSeasonId(workspace?.holdsSeasonId) &&
+        !findEdenSeason(registry, normalizeEdenSeasonId(workspace.holdsSeasonId))
+    ) || null
+  );
+}
+
+/**
  * Describes which workspaces can host a season that has not started yet.
  *
  * `workspaces` are resolved workspace views (`id`, `label`, `lifecycle`,
@@ -541,11 +596,19 @@ export function buildEdenSnapshotRecallPlan(options = {}) {
     let create = 0;
     let update = 0;
     let unchanged = 0;
+    // The ids that actually differ: a recall writes these and nothing else, so
+    // an unchanged document is never rewritten (and never re-stamped).
+    const changedIds = [];
     for (const entry of incoming) {
       const id = String(entry.id);
-      if (!current.has(id)) create += 1;
-      else if (sameDocument(entry.data ?? {}, current.get(id))) unchanged += 1;
-      else update += 1;
+      if (!current.has(id)) {
+        create += 1;
+        changedIds.push(id);
+      } else if (sameDocument(entry.data ?? {}, current.get(id))) unchanged += 1;
+      else {
+        update += 1;
+        changedIds.push(id);
+      }
     }
     const row = {
       key,
@@ -556,6 +619,7 @@ export function buildEdenSnapshotRecallPlan(options = {}) {
       unchanged,
       skipped: unreachable ? create + update : 0,
       readOnly: unreachable,
+      changedIds,
     };
     rows.push(row);
     if (unreachable) {
@@ -611,7 +675,9 @@ export function planEdenSnapshotRecallWrites(plan, snapshot) {
     }
     if (row.readOnly) continue;
     const incoming = Array.isArray(docs[row.key]) ? docs[row.key] : [];
+    const changed = Array.isArray(row.changedIds) ? new Set(row.changedIds) : null;
     for (const entry of incoming) {
+      if (changed && !changed.has(String(entry.id))) continue;
       writes.push({
         key: row.key,
         kind: 'collection',

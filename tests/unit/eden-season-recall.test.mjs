@@ -173,6 +173,27 @@ test('the write list only creates and overwrites, never deletes, and skips vote 
     false
   );
   assert.deepEqual(planEdenSnapshotRecallWrites({ ok: false }, snapshot), []);
+
+  // A collection entry that already matches the live one is not written again;
+  // only the new or changed ones are.
+  const unchangedVote = { id: VOTE.id, data: { ...VOTE } };
+  const base = buildSnapshot();
+  const withVotes = {
+    ...base,
+    docs: {
+      ...base.docs,
+      votes: [unchangedVote, { id: 'vote-2', data: { ...VOTE, id: 'vote-2', voterKey: 'bo' } }],
+    },
+  };
+  const partial = buildEdenSnapshotRecallPlan({
+    snapshot: withVotes,
+    live: { docs: { dashboardData: DASHBOARD }, collections: { votes: [unchangedVote] } },
+    workspaceId: 'eden-x2',
+  });
+  const voteWrites = planEdenSnapshotRecallWrites(partial, withVotes)
+    .filter((write) => write.key === 'votes')
+    .map((write) => write.id);
+  assert.deepEqual(voteWrites, ['vote-2']);
 });
 
 test('a restored dashboard document respects the revision and monotonic-updated contracts', () => {

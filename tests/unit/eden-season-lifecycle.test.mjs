@@ -6,6 +6,8 @@ import {
   MAX_SEASON_COUNT,
   SEASON_REGISTRY_PATH,
   activeEdenSeason,
+  adoptEdenSeason,
+  adoptableEdenWorkspace,
   defaultEdenSeasonLabel,
   endEdenSeason,
   findEdenSeason,
@@ -356,11 +358,11 @@ test('the dashboard guards every season write with the archive guard', () => {
   // so the archive write asks the guard about that workspace.
   assert.match(
     dashboard,
-    /async function archiveEdenWorkspace\(workspaceId\)[\s\S]*?edenWorkspaceMutationError\(workspaceId, existing\)/
+    /async function endEdenSeasonAtomically\(workspaceId, registry\)[\s\S]*?edenWorkspaceMutationError\(workspaceId, existing\)/
   );
   assert.match(
     dashboard,
-    /async function endCurrentEdenSeason\(\)[\s\S]*?await archiveEdenWorkspace\(season\.workspaceId\)/
+    /async function endCurrentEdenSeason\(\)[\s\S]*?await endEdenSeasonAtomically\(season\.workspaceId, result\.registry\)/
   );
   // The recall writes this workspace's records, so it goes through the guard
   // and refuses before it plans anything.
@@ -369,4 +371,46 @@ test('the dashboard guards every season write with the archive guard', () => {
     /async function applyEdenSnapshotRecall\(\) \{\s*if \(blockEdenArchiveWrite\('recall snapshot'\)\) return false;/
   );
   assert.match(dashboard, /writable: !guardErr,/);
+});
+
+test('an empty registry adopts the season the live workspace already runs', () => {
+  const empty = normalizeSeasonRegistry(null);
+  const live = {
+    id: 'eden-x2',
+    label: 'Eden X2',
+    lifecycle: 'active',
+    holdsSeasonId: 'season-2027',
+  };
+  // Without adopt there is nothing to end, and the only workspace is in use.
+  assert.equal(activeEdenSeason(empty), null);
+  assert.equal(
+    seasonWorkspaceCandidates({ registry: empty, workspaces: [live] }).candidates.length,
+    0
+  );
+
+  assert.equal(adoptableEdenWorkspace({ registry: empty, workspaces: [live] }), live);
+  const adopted = adoptEdenSeason(empty, { workspace: live, nowMs: 1_900_000_000_000 });
+  assert.equal(adopted.ok, true);
+  assert.equal(adopted.season.id, 'season-2027');
+  assert.equal(adopted.season.label, 'Eden 2027');
+  assert.equal(adopted.season.state, 'active');
+  assert.equal(adopted.season.workspaceId, 'eden-x2');
+  assert.equal(activeEdenSeason(adopted.registry)?.id, 'season-2027');
+  // The adopted season can now be ended; nothing is adoptable twice.
+  assert.equal(endEdenSeason(adopted.registry, 'season-2027').ok, true);
+  assert.equal(adoptableEdenWorkspace({ registry: adopted.registry, workspaces: [live] }), null);
+  assert.equal(
+    adoptEdenSeason(adopted.registry, { workspace: live }).reason,
+    'active-season-exists'
+  );
+
+  // An archived, retired or empty workspace is never adopted.
+  for (const workspace of [
+    { ...live, lifecycle: 'archived' },
+    { ...live, legacy: true },
+    { ...live, holdsSeasonId: '' },
+  ]) {
+    assert.equal(adoptEdenSeason(empty, { workspace }).ok, false);
+    assert.equal(adoptableEdenWorkspace({ registry: empty, workspaces: [workspace] }), null);
+  }
 });

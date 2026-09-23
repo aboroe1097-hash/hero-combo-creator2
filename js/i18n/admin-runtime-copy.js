@@ -484,6 +484,10 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminSeasonWindow: '{started} → {ended}',
   adminSeasonWorkspaceNone: 'no workspace',
   adminSeasonEndBtn: 'End current season',
+  adminSeasonAdoptBtn: 'Register {season} on {workspace}',
+  adminSeasonAdoptConfirm: 'Register {season} as the running season on {workspace}? Only the season list changes; the workspace and its records stay as they are.',
+  adminSeasonAdoptDone: '{season} is registered as the running season on {workspace}.',
+  adminSeasonBackupSwitch: 'Open {workspace} in the workspace switcher first: a snapshot of its records is downloaded before the season can change.',
   adminSeasonEndConfirm:
     'End {season}? {workspace} is archived and becomes read-only. Nothing is deleted and the season stays browsable and exportable.',
   adminSeasonEndDone: 'Ended {season}. Its workspace is archived and read-only.',

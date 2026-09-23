@@ -215,12 +215,22 @@ test('ending a season archives the workspace through the existing lifecycle path
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   assert.match(
     dashboard,
-    /async function archiveEdenWorkspace\(workspaceId\)[\s\S]*?doc\(db, EDEN_WORKSPACE_COLLECTION_PATH, workspaceId\)/
+    /async function endEdenSeasonAtomically\(workspaceId, registry\)[\s\S]*?doc\(db, EDEN_WORKSPACE_COLLECTION_PATH, workspaceId\)/
   );
   assert.match(dashboard, /lifecycle: 'archived',\s*active: false,/);
+  // One batch: the archive and the registry's "ended" mark land together.
   assert.match(
     dashboard,
-    /async function endCurrentEdenSeason\(\)[\s\S]*?await archiveEdenWorkspace\(season\.workspaceId\)/
+    /async function endEdenSeasonAtomically[\s\S]*?const batch = writeBatch\(db\);[\s\S]*?batch\.set\(doc\(db, SEASON_REGISTRY_PATH\)[\s\S]*?await batch\.commit\(\);/
+  );
+  // A snapshot is downloaded before the season ends, and before a recall.
+  assert.match(
+    dashboard,
+    /async function endCurrentEdenSeason\(\)[\s\S]*?if \(!\(await exportActiveEdenWorkspaceSnapshot\(\)\)\) return false;[\s\S]*?await endEdenSeasonAtomically\(season\.workspaceId, result\.registry\)/
+  );
+  assert.match(
+    dashboard,
+    /async function applyEdenSnapshotRecall\(\)[\s\S]*?if \(!\(await exportActiveEdenWorkspaceSnapshot\(\)\)\) return false;/
   );
   // Nothing in the season panel deletes a document; the recall writes only.
   const seasonSection = dashboard.slice(
@@ -257,7 +267,7 @@ test('firestore.rules pins the season registry and the superadmin archive gate',
   // superadmin write while publish/unpublish stays an admin write.
   assert.match(
     rules,
-    /match \/vts_admin\/eden_workspaces\/records\/\{workspaceId\} \{[\s\S]*?allow create, update: if isAdmin\(\)\s*&& validEdenWorkspaceRecord\(workspaceId\)\s*&& \(request\.resource\.data\.lifecycle != 'archived' \|\| isSuperAdmin\(\)\);/
+    /match \/vts_admin\/eden_workspaces\/records\/\{workspaceId\} \{[\s\S]*?allow create, update: if isAdmin\(\)\s*&& validEdenWorkspaceRecord\(workspaceId\)\s*&& \(\(request\.resource\.data\.lifecycle != 'archived'\s*&& \(resource == null \|\| resource\.data\.lifecycle != 'archived'\)\)\s*\|\| isSuperAdmin\(\)\);/
   );
   // Rules cannot iterate a list, so the validator checks one position per
   // season under a size guard; that count has to match the client's cap.
