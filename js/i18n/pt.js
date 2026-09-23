@@ -461,7 +461,7 @@ const pt = {
   adminContributionRowsCount: '{count} linhas',
   adminContributionPremiumCount: 'Premium {count}',
   adminContributionAutoSuffix: '(auto)',
-  appTitle: 'Criador de Combos',
+  appTitle: 'RoC VTS Toolkit',
   introTagline: 'Planeje o próximo movimento com o kit de comando VTS 1097.',
   introEnterToolkit: 'Entrar no kit de ferramentas',
   introFeaturedTools: 'Ferramentas em destaque',

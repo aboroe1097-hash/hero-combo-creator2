@@ -380,7 +380,7 @@ export function bindToolbar(state, ctx) {
         ? getEdenSectorDisplayLabel(ctx.getSectorKey(), sec?.label)
         : edenT('edenMapTitle'),
       subtitle: isolated ? `${edenT('edenIsolateActive')} · ${planName}` : planName,
-      footer: 'VTS 1097 · Hero Combo Creator',
+      footer: 'VTS 1097 · RoC VTS Toolkit',
     });
     if (typeof window.showToast === 'function') {
       window.showToast(edenT('edenExportPngDone'), 'success', 2800);

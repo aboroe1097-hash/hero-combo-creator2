@@ -462,7 +462,7 @@ const ru = {
   adminContributionRowsCount: 'Строк: {count}',
   adminContributionPremiumCount: 'Премиум {count}',
   adminContributionAutoSuffix: '(авто)',
-  appTitle: 'Создатель Комбо',
+  appTitle: 'RoC VTS Toolkit',
   introTagline: 'Спланируйте следующий ход с командным набором инструментов VTS 1097.',
   introEnterToolkit: 'Открыть набор инструментов',
   introFeaturedTools: 'Основные инструменты',
@@ -784,7 +784,7 @@ const ru = {
   adminAnalyticsConsistency: 'Стабильность и движение',
   adminAnalyticsAlliance: 'Пробелы состава',
   adminAnalyticsStreaks: 'Серии посещаемости',
-  seoTitle: 'Hero Combo Creator — Rise of Castles Ice & Fire Tools | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Rise of Castles Ice & Fire Tools | VTS 1097',
   seoDescription:
     'Free Rise of Castles: Ice & Fire tools for VTS State 1097 — hero combo builder & generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters.',
   seoKeywords:
@@ -793,7 +793,7 @@ const ru = {
     'Free community tools for Rise of Castles: Ice & Fire — build hero combos, plan Eden maps, calculate loyalty upgrades, track tech research, and browse the Hero Atlas. Made for VTS State 1097.',
   seoFooterTitle: 'Tools included',
   seoFooterDesc:
-    'Hero Combo Creator is a free fan-made toolkit for Rise of Castles: Ice & Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.',
+    'RoC VTS Toolkit is a free fan-made toolkit for Rise of Castles: Ice & Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.',
   seoFeatureCombos: 'Combo Builder & Generator with ranked suggestions',
   seoFeatureHeroes: 'Hero Atlas — skills, synergies, and top combos',
   seoFeatureEden: 'Eden Map Planner — Season 5 structures, paths, team plan',

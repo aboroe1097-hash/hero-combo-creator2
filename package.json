@@ -1,7 +1,7 @@
 {
   "name": "hero-combo-creator",
   "version": "16.5.0",
-  "description": "Rise of Castles / Rise of Empires - Hero Combo Creator & Specialization Calculator",
+  "description": "Rise of Castles / Rise of Empires - RoC VTS Toolkit & Specialization Calculator",
   "private": true,
   "type": "module",
   "scripts": {

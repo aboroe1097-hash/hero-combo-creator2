@@ -29,7 +29,7 @@ Current guides describe the repository baseline reviewed on 2026-09-05. Historic
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |
 | CLAUDE.md — repository working notes | [CLAUDE.md](../CLAUDE.md) |
 | Contributing | [CONTRIBUTING.md](../CONTRIBUTING.md) |
-| Hero Combo Creator - VTS 1097 (v16.0.3) | [README.md](../README.md) |
+| RoC VTS Toolkit - VTS 1097 (v16.0.3) | [README.md](../README.md) |
 | Security Policy | [SECURITY.md](../SECURITY.md) |
 | Architecture and data ownership | [docs/architecture.md](architecture.md) |
 | DM Planner & Enhancement — i18n Key Spec | [docs/dm-i18n-key-spec.md](dm-i18n-key-spec.md) |
@@ -73,7 +73,7 @@ Current guides describe the repository baseline reviewed on 2026-09-05. Historic
 | Handoff — VtsScore Competition #11 + BoH mapper wiring | [HANDOFF-VTSSCORE.md](../HANDOFF-VTSSCORE.md) |
 | Handoff — PR #150, remaining CI failures | [HANDOFF.md](../HANDOFF.md) |
 | Eden X1 desktop ballot design QA | [design-qa.md](../design-qa.md) |
-| Comprehensive Audit Report — roc-vts.com (Hero Combo Creator - VTS 1097) | [docs/audit-report-roc-vts.md](audit-report-roc-vts.md) |
+| Comprehensive Audit Report — roc-vts.com (RoC VTS Toolkit - VTS 1097) | [docs/audit-report-roc-vts.md](audit-report-roc-vts.md) |
 | 16.0.0 Overhaul — review handoff (5.6 SOL + Opus 5.0) | [docs/plans/REVIEW-HANDOFF.md](plans/REVIEW-HANDOFF.md) |
 | Lane 1 — Gate & Theme (commit-spine commits 2–6) | [docs/plans/lanes/overhaul-16.0.0-lane1-gate-theme.md](plans/lanes/overhaul-16.0.0-lane1-gate-theme.md) |
 | 16.0.0 Lane 2 — Seasons & Roster (commit-1 re-apply + X10/X12 landing chain) | [docs/plans/lanes/overhaul-16.0.0-lane2-seasons-roster.md](plans/lanes/overhaul-16.0.0-lane2-seasons-roster.md) |

@@ -450,7 +450,7 @@ const zh = {
   adminContributionRowsCount: '{count} 行',
   adminContributionPremiumCount: '高级 {count}',
   adminContributionAutoSuffix: '(自动)',
-  appTitle: '英雄组合创建器',
+  appTitle: 'RoC VTS Toolkit',
   introTagline: '使用 VTS 1097 指挥工具规划下一步行动。',
   introEnterToolkit: '进入工具箱',
   introFeaturedTools: '精选工具',
@@ -772,7 +772,7 @@ const zh = {
   adminAnalyticsConsistency: '稳定性与变动',
   adminAnalyticsAlliance: '名单缺口',
   adminAnalyticsStreaks: '出勤连续性',
-  seoTitle: 'Hero Combo Creator — Rise of Castles Ice & Fire Tools | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Rise of Castles Ice & Fire Tools | VTS 1097',
   seoDescription:
     'Free Rise of Castles: Ice & Fire tools for VTS State 1097 — hero combo builder & generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters.',
   seoKeywords:
@@ -781,7 +781,7 @@ const zh = {
     'Free community tools for Rise of Castles: Ice & Fire — build hero combos, plan Eden maps, calculate loyalty upgrades, track tech research, and browse the Hero Atlas. Made for VTS State 1097.',
   seoFooterTitle: 'Tools included',
   seoFooterDesc:
-    'Hero Combo Creator is a free fan-made toolkit for Rise of Castles: Ice & Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.',
+    'RoC VTS Toolkit is a free fan-made toolkit for Rise of Castles: Ice & Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.',
   seoFeatureCombos: 'Combo Builder & Generator with ranked suggestions',
   seoFeatureHeroes: 'Hero Atlas — skills, synergies, and top combos',
   seoFeatureEden: 'Eden Map Planner — Season 5 structures, paths, team plan',
@@ -2947,7 +2947,7 @@ Object.assign(zh, {
   seoFeatureLoyalty: '伊甸忠诚度计算器 — 升级路径和毒药%',
   seoFeatureResearch: '技术研究计算器 — 徽章、奖牌、游戏布局树',
   seoFooterDesc:
-    'Hero Combo Creator 是一款免费的粉丝制作工具包，适用于 VTS State 1097 中的《城堡崛起：冰与火》玩家。无需安装 - 可在桌面和移动设备上的浏览器中使用。',
+    'RoC VTS Toolkit 是一款免费的粉丝制作工具包，适用于 VTS State 1097 中的《城堡崛起：冰与火》玩家。无需安装 - 可在桌面和移动设备上的浏览器中使用。',
   seoFooterTitle: '包含工具',
   seoIntro:
     '《城堡崛起：冰与火》的免费社区工具 — 构建英雄组合、规划伊甸地图、计算忠诚度升级、跟踪技术研究以及浏览英雄地图集。专为 VTS 状态 1097 制造。',

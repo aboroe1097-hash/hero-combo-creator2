@@ -10,6 +10,7 @@ This is the release history, newest first. Entries describe their release-time b
 - Heroes: the Atlas gained a season timeline. It lists the canonical hero-release seasons with hero counts that reconcile with the season filter, links each season to its shareable deep link, is a vertical list on phones, and stays readable at 320px, in both themes, and under reduced motion.
 - Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount.
 - Docs: the 16.5.0 motion plan and its Phase 0 baseline report live in docs/plans.
+- The site is now **RoC VTS Toolkit**, because it has outgrown the hero combo tool it was named after. Page titles, the installable app name (short name RoC VTS), the search and social metadata, the structured data, the map footer, the export watermark, and the browser tab in every language say the same name; the 11 localized titles that translated the old name now carry the brand unchanged.
 
 ## 16.0.19 - 2026-09-23
 

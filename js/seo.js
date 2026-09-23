@@ -3,7 +3,7 @@ import { translations } from './translations.js';
 import { resolveRuntimeLocale } from './locale-format.js';
 
 export const SITE_URL = 'https://roc-vts.com';
-export const SITE_NAME = 'Hero Combo Creator';
+export const SITE_NAME = 'RoC VTS Toolkit';
 export const SITE_LOGO = `${SITE_URL}/images/logo.png`;
 
 function seoStrings(lang) {
