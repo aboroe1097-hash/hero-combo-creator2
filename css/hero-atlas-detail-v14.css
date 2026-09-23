@@ -2732,7 +2732,23 @@
 
 /* 16.5.0 detail sheen (plan §4.2). The delegated pointer owner writes
    --mx/--my on the open detail panel; the header tilt is capped at ±3deg and
-   ±3px, and the rarity/type text stays exactly as rendered. */
+   ±3px, and the rarity/type text stays exactly as rendered.
+
+   Both vars are registered so the spotlight writes are typed and, crucially,
+   non-inheriting: without a registration each write invalidates the whole
+   subtree that would inherit the value, and the panel is a large subtree. */
+@property --mx {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 50;
+}
+
+@property --my {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 50;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .hero-detail-panel.hero-atlas-detail-v14 {
     position: relative;
@@ -2756,11 +2772,17 @@
     opacity: 1;
   }
 
-  .hero-atlas-detail-v14 .detail-header {
+  /* The tilt only exists while the panel is hovered. Applying perspective() at
+     rest would keep a 3D rendering context (and its layer) alive on every
+     detail view, including the ones nobody points at. */
+  .hero-detail-panel.hero-atlas-detail-v14:hover .detail-header {
     transform: perspective(900px)
       rotateY(calc((var(--mx, 50) - 50) * 0.06deg))
       rotateX(calc((50 - var(--my, 50)) * 0.06deg))
       translate(calc((var(--mx, 50) - 50) * 0.06px), calc((var(--my, 50) - 50) * 0.06px));
+  }
+
+  .hero-atlas-detail-v14 .detail-header {
     transition: transform 220ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
   }
 }
