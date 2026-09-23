@@ -174,6 +174,12 @@ import {
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
+import {
+  DEFAULT_REWARD_SETTINGS,
+  GUILD_MASTER_SOURCES,
+  REWARD_QUOTA_KEYS,
+  normalizeRewardSettings,
+} from './eden-reward-settings.js';
 import { csvFooterLines, getExportBranding } from './export-branding.js';
 import {
   compactPlayerIdentity,
@@ -379,6 +385,9 @@ state.includeDemolitionPoints = true;
 // exactly as it was before they existed.
 state.contributionWeight = DEFAULT_CONTRIBUTION_WEIGHT;
 state.formPointWeight = DEFAULT_FORM_POINT_WEIGHT;
+// Reward distribution rules for this season, in the same superadmin-only
+// family. Defaults until loaded, so the tables always have a distribution.
+state.rewardSettings = normalizeRewardSettings(null);
 let dutyPointWeightsVersion = 0;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
@@ -447,6 +456,14 @@ const DUTY_POINT_WEIGHTS_DOC_PATH = edenWorkspaceFirestorePath(
 );
 const DUTY_POINT_WEIGHTS_LOCAL_KEY = edenWorkspaceStorageKey(
   'vts_duty_point_weights',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+const REWARD_SETTINGS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'rewardSettings'
+);
+const REWARD_SETTINGS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_reward_settings',
   ACTIVE_EDEN_WORKSPACE_ID
 );
 
@@ -1928,6 +1945,123 @@ function collectDutyPointWeightsFromInputs() {
   return next;
 }
 
+// Reward distribution rules for the season: how many players each category
+// rewards and who holds the guild-master reward. Kept beside the duty weights
+// because both are season rules that restate the published rewards, and both
+// are superadmin-only.
+function readLocalRewardSettings() {
+  try {
+    return normalizeRewardSettings(
+      JSON.parse(localStorage.getItem(REWARD_SETTINGS_LOCAL_KEY) || 'null')
+    );
+  } catch {
+    return normalizeRewardSettings(null);
+  }
+}
+
+function writeLocalRewardSettings(settings) {
+  try {
+    localStorage.setItem(REWARD_SETTINGS_LOCAL_KEY, JSON.stringify(settings));
+  } catch {
+    /* private mode and full quotas are not worth failing a save over */
+  }
+}
+
+async function loadRewardSettings() {
+  state.rewardSettings = readLocalRewardSettings();
+  renderRewardSettings();
+  if (state.adminIsAdmin !== true) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, REWARD_SETTINGS_DOC_PATH));
+    if (snap.exists()) {
+      state.rewardSettings = normalizeRewardSettings(snap.data() || {});
+      writeLocalRewardSettings(state.rewardSettings);
+      renderRewardSettings();
+      render();
+    }
+    return true;
+  } catch (err) {
+    console.error('REWARD SETTINGS LOAD ERROR:', err);
+    return false;
+  }
+}
+
+async function saveRewardSettings(nextSettings) {
+  if (blockEdenArchiveWrite('save reward settings')) return false;
+  const settings = normalizeRewardSettings(nextSettings);
+  state.rewardSettings = settings;
+  writeLocalRewardSettings(settings);
+  renderRewardSettings();
+  render();
+  if (state.adminIsAdmin !== true) return false;
+  const status = $id('dashRewardSettingsStatus');
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+    await setDoc(doc(db, REWARD_SETTINGS_DOC_PATH), {
+      ...settings,
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    if (status) status.textContent = dashT('adminRewardSettingsSaved');
+    return true;
+  } catch (err) {
+    console.error('REWARD SETTINGS SAVE ERROR:', err);
+    if (status) status.textContent = showCloudSyncFailure(err, 'Reward settings save failed');
+    return false;
+  }
+}
+
+function renderRewardSettings() {
+  const settings = normalizeRewardSettings(state.rewardSettings);
+  for (const key of REWARD_QUOTA_KEYS) {
+    const input = document.querySelector(`[data-reward-quota="${key}"]`);
+    if (input && document.activeElement !== input) input.value = String(settings.quotas[key]);
+  }
+  const source = $id('dashRewardGuildMasterSource');
+  if (source && document.activeElement !== source) source.value = settings.guildMasterSource;
+  const r5 = $id('dashRewardR5Player');
+  if (r5 && document.activeElement !== r5) r5.value = settings.r5PlayerKey;
+}
+
+function collectRewardSettingsFromInputs() {
+  const quotas = {};
+  for (const key of REWARD_QUOTA_KEYS) {
+    quotas[key] = document.querySelector(`[data-reward-quota="${key}"]`)?.value;
+  }
+  return {
+    quotas,
+    guildMasterSource: $id('dashRewardGuildMasterSource')?.value,
+    r5PlayerKey: $id('dashRewardR5Player')?.value,
+  };
+}
+
+function wireRewardSettings() {
+  $id('dashRewardSettingsSaveBtn')?.addEventListener('click', () => {
+    void saveRewardSettings(collectRewardSettingsFromInputs());
+  });
+  $id('dashRewardSettingsResetBtn')?.addEventListener('click', () => {
+    if (!confirm(dashT('adminRewardSettingsResetConfirm'))) return;
+    void saveRewardSettings(DEFAULT_REWARD_SETTINGS);
+  });
+  // The guild-master choice only matters when it follows the R5, so the name
+  // field follows that switch instead of sitting there looking authoritative.
+  const source = $id('dashRewardGuildMasterSource');
+  const r5 = $id('dashRewardR5Player');
+  const syncR5Disabled = () => {
+    if (!r5) return;
+    const usesR5 = (source?.value || DEFAULT_REWARD_SETTINGS.guildMasterSource) === 'r5';
+    r5.disabled = !usesR5;
+    r5.closest('.dash-reward-r5-field')?.classList.toggle('is-disabled', !usesR5);
+  };
+  source?.addEventListener('change', syncR5Disabled);
+  syncR5Disabled();
+}
+
 function wireDutyPointWeights() {
   $id('dashDutyWeightsSaveBtn')?.addEventListener('click', () => {
     void saveDutyPointWeights(
@@ -3333,6 +3467,8 @@ function bindConductControls() {
   wireConductReviewControls();
   wireDutyPointWeights();
   void loadDutyPointWeights();
+  wireRewardSettings();
+  void loadRewardSettings();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
@@ -3915,6 +4051,9 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
             contributionWeight: normalizeContributionWeight(state.contributionWeight),
             formPointWeight: normalizeFormPointWeight(state.formPointWeight),
           },
+      // The reward distribution travels with the season so the public page shows
+      // the slots and the guild-master holder the admin configured.
+      rewardSettings: unpublish ? null : normalizeRewardSettings(state.rewardSettings),
     });
     await setDoc(projectionRef, sanitizeForFirestore(projection));
     await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {

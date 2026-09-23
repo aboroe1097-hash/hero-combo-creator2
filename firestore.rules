@@ -2721,6 +2721,30 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Reward distribution rules: how many players each category rewards and who
+    // holds the guild-master reward. Superadmin-only, per workspace, and pinned
+    // so a typo cannot silently widen a quota.
+    function validRewardSettings() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['quotas', 'guildMasterSource', 'r5PlayerKey', 'updatedAt', 'updatedBy'])
+        && d.quotas is map
+        && d.quotas.keys().hasOnly(['support', 'contribution', 'management', 'team'])
+        && d.quotas.keys().hasAll(['support', 'contribution', 'management', 'team'])
+        && d.quotas.support is int && d.quotas.support >= 0 && d.quotas.support <= 50
+        && d.quotas.contribution is int && d.quotas.contribution >= 0 && d.quotas.contribution <= 50
+        && d.quotas.management is int && d.quotas.management >= 0 && d.quotas.management <= 50
+        && d.quotas.team is int && d.quotas.team >= 0 && d.quotas.team <= 50
+        && d.guildMasterSource in ['r5', 'support_top1']
+        && (!('r5PlayerKey' in d) || (d.r5PlayerKey is string && d.r5PlayerKey.size() <= 80))
+        && (!('updatedBy' in d) || d.updatedBy is string);
+    }
+
+    match /vts_admin/eden_x1_reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validRewardSettings();
+      allow delete: if false;
+    }
+
     match /vts_admin/eden_x1_public_vote_results {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
@@ -2819,6 +2843,12 @@ service cloud.firestore {
     match /vts_admin/eden_x2_duty_point_weights {
       allow read: if isAdmin();
       allow create, update: if isSuperAdmin() && validDutyPointWeights();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validRewardSettings();
       allow delete: if false;
     }
 

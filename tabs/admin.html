@@ -2376,6 +2376,65 @@
               <span id="dashDutyWeightsStatus" class="dash-duty-weights-status" aria-live="polite"></span>
             </div>
           </section>
+          <section class="dash-duty-weights" data-requires-superadmin hidden>
+            <h3 id="dashRewardSettingsTitle" data-i18n="adminRewardSettingsTitle">Reward distribution</h3>
+            <p class="dash-duty-weights-note" data-i18n="adminRewardSettingsNote">
+              How many players each category rewards this season. Changing it renumbers the reward slots; the published page shows the new distribution after the next publish.
+            </p>
+            <div class="dash-duty-weight-table" role="table" aria-labelledby="dashRewardSettingsTitle">
+              <div class="dash-duty-weight-row dash-duty-weight-head" role="row">
+                <span role="columnheader" data-i18n="adminRewardSettingsCategory">Category</span>
+                <span role="columnheader" data-i18n="adminRewardSettingsSlots">Slots</span>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardSupportTitle">Support Work</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardSupportTitle">Support Work</span>
+                  <input type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="support" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardLeaderboardTitle">Contribution</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardLeaderboardTitle">Contribution</span>
+                  <input type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="contribution" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardManagementTitle">Management</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardManagementTitle">Management</span>
+                  <input type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="management" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardTeamTitle">Team Players</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardTeamTitle">Team Players</span>
+                  <input type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="team" />
+                </label>
+              </div>
+            </div>
+            <label class="dash-reward-guildmaster-field" for="dashRewardGuildMasterSource">
+              <span data-i18n="adminRewardSettingsGuildMaster">Guild-master reward goes to</span>
+              <select id="dashRewardGuildMasterSource" name="rewardGuildMasterSource">
+                <option value="r5" data-i18n="adminRewardSettingsGuildMasterR5">The R5</option>
+                <option value="support_top1" data-i18n="adminRewardSettingsGuildMasterTop1">The top support scorer</option>
+              </select>
+            </label>
+            <label class="dash-reward-r5-field" for="dashRewardR5Player">
+              <span data-i18n="adminRewardSettingsR5Label">R5 player</span>
+              <input id="dashRewardR5Player" name="rewardR5Player" class="dash-input" type="text" maxlength="80" placeholder="e.g. MalakAbo" autocomplete="off" spellcheck="false" />
+            </label>
+            <p class="dash-duty-weights-unit" data-i18n="adminRewardSettingsHint">
+              When the named R5 is not in the support list, the guild-master reward stays on the top support scorer rather than going unheld.
+            </p>
+            <div class="dash-duty-weights-actions">
+              <button id="dashRewardSettingsSaveBtn" class="dash-btn dash-btn-primary" type="button" data-i18n="adminRewardSettingsSave">Save distribution</button>
+              <button id="dashRewardSettingsResetBtn" class="dash-btn" type="button" data-i18n="adminDutyWeightsReset">Reset to defaults</button>
+              <span id="dashRewardSettingsStatus" class="dash-duty-weights-status" aria-live="polite"></span>
+            </div>
+          </section>
           <div id="dashConductSummary"></div>
           <div class="dash-conduct-list-head">
             <h3 data-i18n="adminSuggestReviewTitle">Admin suggestions</h3>

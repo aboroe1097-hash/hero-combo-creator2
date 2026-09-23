@@ -20,6 +20,11 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { currentLanguage, setCurrentLanguage } from './state.js';
 import { celebrate } from './fx/success-feedback.js';
 import {
+  normalizeRewardSettings,
+  rewardQuota,
+  resolveGuildMasterSlot,
+} from './eden-reward-settings.js';
+import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
   markAttackPlayersStable,
@@ -170,6 +175,10 @@ let weightedTableProgressiveSerial = 0;
 let weightedPopoverScopeSerial = 0;
 const deferredWeightedPopoverFactories = new Map();
 let rewardFlowReady = false;
+// Reward distribution rules published with the season. Defaults until the
+// projection loads, so the page shows the shipped distribution rather than
+// nothing while it boots.
+let currentRewardSettings = normalizeRewardSettings(null);
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
 let weightedPopoverOpenedAt = 0;
@@ -2894,7 +2903,20 @@ function updateRewardFlowControls() {
     button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
     button.setAttribute('aria-pressed', active ? 'true' : 'false');
     button.setAttribute('aria-label', t('edenX1RewardViewAria', { title: t(titleKey) }));
+    // The slot count on the card is the season's configured quota, not the
+    // number that happened to be baked into the markup when it was written.
+    const count = rewardQuotaCountForView(view);
+    const countEl = button.querySelector('.eden-x1-flow-count');
+    if (countEl && count !== null) countEl.textContent = String(count);
   });
+}
+
+// Announcement keeps its own Top-20 size; the four reward categories come from
+// the season's published reward settings.
+function rewardQuotaCountForView(view) {
+  return ['support', 'contribution', 'management', 'team'].includes(view)
+    ? rewardQuota(currentRewardSettings, view)
+    : null;
 }
 
 function setRewardFlowReady(ready) {
@@ -3302,10 +3324,11 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
   );
   const rows = [];
   let rewardSlot = 0;
+  const contributionQuota = rewardQuota(currentRewardSettings, 'contribution');
   for (const row of sorted) {
     const isForfeited = row.rewardReason === 'forfeit_premium';
     if (isForfeited) {
-      if (rewardSlot < 10) {
+      if (rewardSlot < contributionQuota) {
         rows.push({
           ...row,
           edenX1ContributionRankingMode: rankingMode,
@@ -3317,7 +3340,7 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
       }
       continue;
     }
-    if (rewardSlot >= 10) break;
+    if (rewardSlot >= contributionQuota) break;
     rewardSlot += 1;
     rows.push({
       ...row,
@@ -3332,7 +3355,9 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
 }
 
 function getSupportRewardRows() {
-  return dedupeWeightedRowsByFamily(
+  const quota = rewardQuota(currentRewardSettings, 'support');
+  if (!quota) return [];
+  const rows = dedupeWeightedRowsByFamily(
     currentRows
       .filter((row) => rowBonusTotal(row) > 0)
       .slice()
@@ -3343,13 +3368,20 @@ function getSupportRewardRows() {
           valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
           String(a.playerName || '').localeCompare(String(b.playerName || ''))
       )
-  )
-    .slice(0, 4)
-    .map((row, index) => ({
-      ...row,
-      edenX1RewardSlot: index + 1,
-      edenX1SupportReward: index === 0 ? 'guild_master' : 'core',
-    }));
+  ).slice(0, quota);
+  // By default the guild-master reward follows the R5. When the configured R5 is
+  // not in the support list the slot falls back to the top scorer, because a
+  // season must never end with nobody holding it.
+  const { slotIndex } = resolveGuildMasterSlot(
+    currentRewardSettings,
+    '',
+    rows.map((row) => row.playerKey)
+  );
+  return rows.map((row, index) => ({
+    ...row,
+    edenX1RewardSlot: index + 1,
+    edenX1SupportReward: index === slotIndex ? 'guild_master' : 'core',
+  }));
 }
 
 function contributionRewardContextForRow(row, numberValue) {
@@ -4323,7 +4355,7 @@ function rewardSlotRows(view) {
   if (view === 'management') {
     const winners = getEligibleManagementVoteWinners();
     const unavailable = currentManagementVoteResults.status === 'error';
-    return Array.from({ length: 3 }, (_, index) => ({
+    return Array.from({ length: rewardQuota(currentRewardSettings, 'management') }, (_, index) => ({
       slot: index + 1,
       ...(winners[index]
         ? {
@@ -4353,7 +4385,7 @@ function rewardSlotRows(view) {
   if (view === 'team') {
     const winners = getEligibleTeamVoteWinners();
     const managementUnavailable = currentManagementVoteResults.status === 'error';
-    return Array.from({ length: 3 }, (_, index) => ({
+    return Array.from({ length: rewardQuota(currentRewardSettings, 'team') }, (_, index) => ({
       slot: index + 1,
       ...(winners[index]
         ? {
@@ -6310,20 +6342,28 @@ function getAnnouncementRows() {
       rows.push({
         rank: rows.length + 1,
         category,
+        // Support rows already know which of their slots holds the guild-master
+        // reward, so the announcement prints that instead of assuming it is the
+        // first row on the page.
+        categoryReward: category === 'support' ? entry?.edenX1SupportReward || '' : '',
         playerName: entry?.playerName || '',
         playerKey: entry?.playerKey || '',
         placeholder: !entry,
       });
     }
   };
-  push('support', 4, getSupportRewardRows());
+  push('support', rewardQuota(currentRewardSettings, 'support'), getSupportRewardRows());
   push(
     'contribution',
-    10,
+    rewardQuota(currentRewardSettings, 'contribution'),
     getContributionRewardRows().filter((row) => Number(row.edenX1RewardSlot) > 0)
   );
-  push('management', 3, getEligibleManagementVoteWinners());
-  push('team', 3, getEligibleTeamVoteWinners());
+  push(
+    'management',
+    rewardQuota(currentRewardSettings, 'management'),
+    getEligibleManagementVoteWinners()
+  );
+  push('team', rewardQuota(currentRewardSettings, 'team'), getEligibleTeamVoteWinners());
   return rows;
 }
 
@@ -6391,7 +6431,7 @@ function renderAnnouncementTable() {
                 <td data-label="${esc(t('edenX1ThNumber'))}">${row.rank}</td>
                  <td data-label="${esc(t('adminContributionMember'))}">${name}</td>
                  <td data-label="${esc(t('edenX1RewardSlotGroup'))}"><span class="eden-x1-announcement-chip eden-x1-announcement-chip--${row.category}">${esc(t(meta.labelKey))}</span></td>
-                 <td data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.rank === 1 ? 'guild_master' : 'core'))}</td>
+                 <td data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.categoryReward || 'core'))}</td>
                  <td data-label="${esc(t('edenX1RewardAnnouncementThWhy'))}">${esc(t(meta.whyKey))}</td>
               </tr>`;
             })
@@ -7451,6 +7491,9 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   // were carried keeps the page's previous behaviour: default duty weights and
   // no demolition points.
   const publishedScoring = data.publishedScoring || null;
+  // Reward distribution published with the season: which categories reward how
+  // many players, and whether the guild-master reward follows the R5.
+  currentRewardSettings = normalizeRewardSettings(data.rewardSettings);
   const model = buildWeightedContributionRows({
     contributionRecords,
     dutyRecords,
