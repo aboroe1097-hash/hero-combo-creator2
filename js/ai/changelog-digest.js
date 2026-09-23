@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.1",
+    "date": "2026-09-23",
+    "highlights": [
+      "Season administration: the reward distribution is a per-season setting now instead of a fixed rule. A superadmin chooses how many players each category rewards — four for support work, ten for total contribution, three management, three team players by default — and whether the …",
+      "Scoring: two whole-score multipliers joined the duty-weight grid. In-game contribution (the leaderboard plus ex-guild points) and the form's own bonus points can each be scaled per season, both defaulting to 1 so no season restates itself until an operator moves them. The score …",
+      "Accounts: account links gained their own tab, a real third \"secondary\" class with its own duty-weight column, a \"link all suggestions\" action that never overwrites a hand-made link, and teachable abbreviations (zubs becomes Lady Zubbs, kiji becomes MalakaKiji) that resolve ahead…",
+      "Duty counts in the weighted tables are a disclosure now: opening the number spells out how many duties each account class did and what that share was worth, and the sentence that used to live in a hover-only tooltip became its accessible name.",
+      "Long admin tables — contributions, ex-guild, duty cards, the conduct list — start at ten rows with Load more and Show all, so a season's lists stop being an endless scroll.",
+      "Eden X2: members can sign up for the season from the page; once signed up, My Stats opens on their own in-game row when the guild data has them, and the vote name field fills in. The 2027 registration form is back, built on the versioned BoH scoring profile, with a superadmin se…"
+    ]
+  },
   {
     "version": "16.5.0",
     "date": "2026-09-23",
@@ -95,14 +107,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed every duty weight save failing with \"Missing or insufficient permissions\". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than tru…",
       "Fixed pathing points missing from Alliance View totals. That table recomputed duty points from the raw counts at a flat value, discarding the weighting it had already been handed, so pathing on a main scored 10,000 instead of 30,000. It now uses the computed points, keeps the fl…"
-    ]
-  },
-  {
-    "version": "16.0.11",
-    "date": "2026-09-08",
-    "highlights": [
-      "Duty points are now weighted by activity and by which account performed the duty, replacing a flat value that made a banner from a throwaway alt worth exactly what a main was worth. Defaults are banners 1 for a main and 0.5 for an alt, pathing 3 and 1; shield walls stay at 1 for…",
-      "Added a superadmin editor for those weights, stored per Eden workspace so retuning the season being played cannot restate a finished season. Saving recalculates the season immediately, past entries included, because duty points are derived at render time rather than stored."
     ]
   }
 ].map((release) =>

@@ -816,8 +816,8 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'vtsScore') renderVtsScorePanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
-  if (name === 'complaints') void ensureComplaintsMounted();
   if (name === 'seasonLifecycle') void refreshEdenSeasonLifecyclePanel();
+  if (name === 'complaints') void ensureComplaintsMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
   if (name === 'conductSuggest') renderConductSuggestPanel();

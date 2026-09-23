@@ -2,6 +2,19 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.1 - 2026-09-23
+
+- Season administration: the reward distribution is a per-season setting now instead of a fixed rule. A superadmin chooses how many players each category rewards — four for support work, ten for total contribution, three management, three team players by default — and whether the guild-master reward follows the R5 or the top support scorer. When the named R5 did no support work this season, the reward stays on the top support scorer rather than going unheld.
+- Scoring: two whole-score multipliers joined the duty-weight grid. In-game contribution (the leaderboard plus ex-guild points) and the form's own bonus points can each be scaled per season, both defaulting to 1 so no season restates itself until an operator moves them. The score breakdown shows the multiplier it applied.
+- Accounts: account links gained their own tab, a real third "secondary" class with its own duty-weight column, a "link all suggestions" action that never overwrites a hand-made link, and teachable abbreviations (zubs becomes Lady Zubbs, kiji becomes MalakaKiji) that resolve ahead of the built-in alias groups.
+- Duty counts in the weighted tables are a disclosure now: opening the number spells out how many duties each account class did and what that share was worth, and the sentence that used to live in a hover-only tooltip became its accessible name.
+- Long admin tables — contributions, ex-guild, duty cards, the conduct list — start at ten rows with Load more and Show all, so a season's lists stop being an endless scroll.
+- Eden X2: members can sign up for the season from the page; once signed up, My Stats opens on their own in-game row when the guild data has them, and the vote name field fills in. The 2027 registration form is back, built on the versioned BoH scoring profile, with a superadmin season and version picker and manual signup entry through a Cloud Function.
+- An "Issue or Complaint" form lets members file a bug, conduct, fair-play, alliance or other issue with up to three screenshots, anonymously or named — anonymous means the document carries no identity fields at all — and only superadmins can read the inbox.
+- Voting: the single "show results publicly" switch split into one for the members' ballot and one for the R4/R5 ballot, because the management sheet is not season-scoped and one switch meant a season with no R4/R5 vote of its own published the previous season's winners beside its own members' results.
+- Seasons: a registry records each season with its label, state and workspace, so a superadmin can end the running season (its workspace becomes read-only and stays browsable and exportable), rename a label, browse an ended season, and recall a snapshot behind a dry run. Starting the next season needs a free workspace, which today's two-workspace setup does not have — the control says so instead of failing silently.
+- The release needed three documented budget moves as the features landed: the deploy file count, one route's initial CSS, and the service-worker shell bound, each recorded with its measured numbers beside the constant.
+
 ## 16.5.0 - 2026-09-23
 
 - Motion and visual-craft release. Hubs gained a one-shot card entry and a pointer spotlight, tab changes cross-fade the incoming panel where the browser supports View Transitions, and the loader settles once when loading really completes.
