@@ -96,6 +96,7 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     '/arcade.html',
     '/battle-simulator.html',
     '/specialization-towers.html',
+    '/downloads.html',
     '/games/boot/b-merge-rush.html',
   ]) {
     await page.goto(entryPath, { waitUntil: 'domcontentloaded' });

@@ -20,6 +20,7 @@ const entryHtmlFiles = [
   // list, which is why its asset stamps had drifted to 14.3.5 while the app
   // shipped 16.x, and why its CSP had no inline-script hashes.
   'vtsscore.html',
+  'downloads.html',
 ];
 const baseAppShellFiles = [
   '/',

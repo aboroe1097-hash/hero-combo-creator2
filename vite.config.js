@@ -107,6 +107,7 @@ export default defineConfig({
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
         'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
+        downloads: resolve(__dirname, 'downloads.html'),
       },
       output: {
         codeSplitting: {

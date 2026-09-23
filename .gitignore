@@ -81,3 +81,6 @@ Desktop.ini
 /DASHBOARD-CASCADE-AUDIT.md
 /AUDIT-REPORT.md
 /SESSION-HANDOFF*.md
+
+# Generated HTML previews from scripts/pdf/verify-datasets.mjs
+scripts/pdf/.preview/

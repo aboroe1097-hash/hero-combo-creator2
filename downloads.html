@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" class="downloads-page-root">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Community Downloads | VTS 1097</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'"
+    />
+    <meta
+      name="description"
+      content="Download every Rise of Castles data breakdown as a PDF — research costs, Unit Specialisation medals, Eden tables, Dragon Master costs, and the hero roster by season."
+    />
+    <meta name="vts-app-version" content="16.0.19" />
+    <meta id="themeColorMeta" name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://roc-vts.com/downloads.html" />
+    <link rel="icon" type="image/png" href="images/logo.png" />
+    <link rel="apple-touch-icon" href="images/logo.png" />
+    <link id="manifestLink" rel="manifest" href="site.webmanifest" />
+    <script src="js/maintenance-config.js?v=20260923_115621"></script>
+    <script src="js/theme-prepaint.js?v=20260923_115621"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260923_115621" />
+    <link rel="stylesheet" href="css/downloads.css?v=20260923_115621" />
+  </head>
+  <body class="downloads-page">
+    <a class="downloads-skip-link" href="#downloadsGroups">Skip to download list</a>
+    <main class="downloads-shell">
+      <header class="downloads-header">
+        <p class="downloads-brandline">Hero Combo Creator — VTS 1097</p>
+        <h1>Community downloads</h1>
+        <p>
+          Every breakdown this site holds, as a PDF you can keep and share. One click per document,
+          no sign-up. Each file is generated from the same game data the site uses, and each one
+          names its source and data revision on the last page.
+        </p>
+      </header>
+
+      <div id="downloadsStats" class="downloads-stats" hidden></div>
+
+      <p class="downloads-note">
+        <strong>Community data.</strong> These figures come from community workbooks and in-game
+        captures, and they can change when the game is updated. Check anything expensive against the
+        live game before you commit resources. Where a value is not published, the document says so
+        rather than guessing.
+      </p>
+
+      <p id="downloadsStatus" class="downloads-status">Loading the download list…</p>
+      <div id="downloadsGroups"></div>
+
+      <footer class="downloads-footer">
+        <p>
+          Looking for the interactive versions? The
+          <a href="index.html#research">research planner</a>,
+          <a href="specialization-towers.html">Specialization Towers</a>, and
+          <a href="index.html#edenMap">Eden map planner</a> all run in the browser.
+        </p>
+        <p>
+          Sources are credited in each document. Questions or corrections? Ask in the community
+          Discord.
+        </p>
+      </footer>
+    </main>
+    <noscript>
+      <main class="downloads-shell">
+        <h2>Community downloads requires JavaScript</h2>
+        <p>
+          Enable JavaScript to see the download list, or open a document directly from the downloads
+          folder.
+        </p>
+        <a href="index.html">Back to the site</a>
+      </main>
+    </noscript>
+    <script type="module" src="js/downloads.js?v=20260923_115621"></script>
+  </body>
+</html>
