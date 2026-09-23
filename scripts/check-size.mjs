@@ -75,7 +75,12 @@ const LIMITS = {
   // retain roughly 1.5 KiB of headroom.
   // The 16.0.3 Specialization summary bands, season select-all control, and
   // X10/X12 bracket cards measure 429.5 KiB (was 428.5); retain roughly 0.5 KiB.
-  entryCssBytes: 430 * 1024,
+  // 16.5.0 Phase 0 reclaim (2026-09-23): removing the unconsumed .u-* utilities
+  // from css/atmosphere.css and four dead compatibility tokens from
+  // css/_tokens.css measured 431,155 -> 428,135 bytes on the locked toolchain.
+  // The ceiling drops by the verified reclaim (430 -> 427 KiB) so the reclaim
+  // cannot be silently re-spent; the absolute reserve stays roughly 9 KiB.
+  entryCssBytes: 427 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
