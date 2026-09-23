@@ -2693,7 +2693,7 @@ service cloud.firestore {
 
     function validDutyPointWeights() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'updatedAt', 'updatedBy'])
+      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'contributionWeight', 'formPointWeight', 'updatedAt', 'updatedBy'])
         && d.weights is map
         && d.weights.keys().hasOnly(['banners', 'pathers', 'shieldWalls'])
         && d.weights.keys().hasAll(['banners', 'pathers', 'shieldWalls'])
@@ -2701,6 +2701,12 @@ service cloud.firestore {
         && validDutyPointWeightEntry(d.weights.pathers)
         && validDutyPointWeightEntry(d.weights.shieldWalls)
         && (!('includeDemolitionPoints' in d) || d.includeDemolitionPoints is bool)
+        // Whole-score multipliers. 10 is the same ceiling the panel's inputs
+        // carry, and the client falls back to 1 for anything hostile.
+        && (!('contributionWeight' in d)
+          || (d.contributionWeight is number && d.contributionWeight >= 0 && d.contributionWeight <= 10))
+        && (!('formPointWeight' in d)
+          || (d.formPointWeight is number && d.formPointWeight >= 0 && d.formPointWeight <= 10))
         && (!('updatedBy' in d) || d.updatedBy is string);
     }
     match /vts_admin/eden_x1_vote_settings {
