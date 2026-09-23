@@ -20723,13 +20723,6 @@ html[dir='rtl'] .gen-buttons-row {
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
-.spec-contrib-report:hover {
-  color: var(--spec-text);
-}
-.spec-contrib-report:focus-visible {
-  outline: 2px solid var(--spec-success);
-  outline-offset: 2px;
-}
 .spec-contrib-column--source summary span {
   color: var(--spec-text-dim);
   font-size: 0.68rem;
