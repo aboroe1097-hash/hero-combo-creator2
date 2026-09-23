@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://vts-ai-strategy-assistant.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://firebasestorage.googleapis.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://vts-ai-strategy-assistant.aboroe1097.workers.dev https://firebasestorage.googleapis.com https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'"
     />
     <meta
       name="vts-ai-endpoint"
@@ -21,8 +21,8 @@
     <link rel="icon" type="image/png" href="images/logo.png" />
     <link rel="apple-touch-icon" href="images/logo.png" />
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
-    <script src="js/maintenance-config.js?v=20260923_065430"></script>
-    <script src="js/theme-prepaint.js?v=20260923_065430"></script>
+    <script src="js/maintenance-config.js?v=20260923_130309"></script>
+    <script src="js/theme-prepaint.js?v=20260923_130309"></script>
     <!-- Critical CSS: enough to paint the loading state immediately. Full
        stylesheets are preloaded here and applied at the end of <body> so they
        never block first paint. -->
@@ -685,6 +685,7 @@
       .eden-x1-page .eden-x1-panel--loading .eden-x1-notice,
       .eden-x1-page .eden-x1-panel--loading .eden-x1-quicknav,
       .eden-x1-page .eden-x1-panel--loading .eden-x1-reward-panel,
+      .eden-x1-page .eden-x1-panel--loading .eden-x1-complaint,
       .eden-x1-page .eden-x1-panel--loading .eden-x1-error {
         display: none !important;
       }
@@ -771,33 +772,33 @@
       as="style"
       href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap"
     />
-    <link rel="preload" as="style" href="css/_tokens.css?v=20260923_065430" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/app.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/ocr-dashboard.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/components.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/atmosphere.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/eden-x1.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/standalone-footer-v14.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/loader-v14.css?v=20260923_065430" />
-    <link rel="preload" as="style" href="css/standalone-language-v14.css?v=20260923_065430" />
+    <link rel="preload" as="style" href="css/_tokens.css?v=20260923_130309" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/app.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/ocr-dashboard.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/components.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/atmosphere.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/eden-x1.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/standalone-footer-v14.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/loader-v14.css?v=20260923_130309" />
+    <link rel="preload" as="style" href="css/standalone-language-v14.css?v=20260923_130309" />
     <noscript>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap"
       />
-      <link rel="stylesheet" href="css/_tokens.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/app.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/components.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/atmosphere.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/mobile.css?v=20260923_065430" media="(max-width: 768px)" />
-      <link rel="stylesheet" href="css/eden-x1.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/loader-v14.css?v=20260923_065430" />
-      <link rel="stylesheet" href="css/standalone-language-v14.css?v=20260923_065430" />
+      <link rel="stylesheet" href="css/_tokens.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/app.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/components.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/atmosphere.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/mobile.css?v=20260923_130309" media="(max-width: 768px)" />
+      <link rel="stylesheet" href="css/eden-x1.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/loader-v14.css?v=20260923_130309" />
+      <link rel="stylesheet" href="css/standalone-language-v14.css?v=20260923_130309" />
     </noscript>
   </head>
   <body
@@ -1303,6 +1304,134 @@
               data-eden-x1-shell-aria="publicDashboardLabel"
             ></section>
             <div id="edenX1Error" class="dash-empty eden-x1-error hidden"></div>
+
+            <!-- Issue / Complaint filing. Hidden until js/eden-complaints.js has
+                 wired it, so a module that fails to load leaves no dead button.
+                 Deliberately NOT tagged eden-x1-season-only: a report about an
+                 alliance decision outlives the season it happened in. -->
+            <section
+              id="edenX1Complaints"
+              class="eden-x1-complaint"
+              aria-labelledby="edenX1ComplaintTitle"
+              data-eden-x1-shell-aria="complaintsLabel"
+              hidden
+            >
+              <div class="eden-x1-complaint-hdr">
+                <h2 id="edenX1ComplaintTitle" data-i18n="edenX1ComplaintTitle">
+                  Issue or Complaint
+                </h2>
+                <p data-i18n="edenX1ComplaintIntro">
+                  Only the alliance superadmins can read this. Say what happened in your own words —
+                  it never appears on this page.
+                </p>
+              </div>
+              <button
+                id="edenX1ComplaintOpen"
+                class="dash-btn eden-x1-complaint-open"
+                type="button"
+                aria-expanded="false"
+                aria-controls="edenX1ComplaintForm"
+              >
+                <span data-i18n="edenX1ComplaintOpen">Raise an issue or complaint</span>
+              </button>
+              <form id="edenX1ComplaintForm" class="eden-x1-complaint-form" hidden novalidate>
+                <label class="eden-x1-complaint-field" for="edenX1ComplaintCategory">
+                  <span data-i18n="edenX1ComplaintCategory">What is it about?</span>
+                  <select id="edenX1ComplaintCategory" class="dash-input" required>
+                    <option value="bug" data-i18n="edenX1ComplaintCategoryBug">
+                      A bug or a broken feature
+                    </option>
+                    <option value="conduct" data-i18n="edenX1ComplaintCategoryConduct">
+                      A member's conduct
+                    </option>
+                    <option value="fair-play" data-i18n="edenX1ComplaintCategoryFairPlay">
+                      Cheating or unfair play
+                    </option>
+                    <option value="alliance" data-i18n="edenX1ComplaintCategoryAlliance">
+                      An alliance decision or duty issue
+                    </option>
+                    <option value="other" data-i18n="edenX1ComplaintCategoryOther">
+                      Something else
+                    </option>
+                  </select>
+                </label>
+                <label class="eden-x1-complaint-field" for="edenX1ComplaintDescription">
+                  <span data-i18n="edenX1ComplaintDescription">Tell us what happened</span>
+                  <textarea
+                    id="edenX1ComplaintDescription"
+                    class="dash-input"
+                    rows="6"
+                    maxlength="4000"
+                    required
+                    placeholder="What happened, when, and who was involved."
+                    data-i18n-ph="edenX1ComplaintDescriptionPh"
+                  ></textarea>
+                </label>
+                <label class="eden-x1-complaint-field" for="edenX1ComplaintImages">
+                  <span data-i18n="edenX1ComplaintImages">Screenshots (optional, up to 3)</span>
+                  <input
+                    id="edenX1ComplaintImages"
+                    class="eden-x1-complaint-file"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                  />
+                  <small data-i18n="edenX1ComplaintImagesHint">
+                    Big screenshots are shrunk before they are sent.
+                  </small>
+                </label>
+                <div
+                  id="edenX1ComplaintImageList"
+                  class="eden-x1-complaint-images"
+                  hidden
+                ></div>
+                <label class="eden-x1-complaint-toggle" for="edenX1ComplaintAnonymous">
+                  <input id="edenX1ComplaintAnonymous" type="checkbox" checked />
+                  <span data-i18n="edenX1ComplaintAnonymous">Send it anonymously</span>
+                </label>
+                <div id="edenX1ComplaintIdentity" class="eden-x1-complaint-identity" hidden>
+                  <label class="eden-x1-complaint-field" for="edenX1ComplaintName">
+                    <span data-i18n="edenX1ComplaintName">Your in-game name</span>
+                    <input
+                      id="edenX1ComplaintName"
+                      class="dash-input"
+                      type="text"
+                      maxlength="80"
+                      autocomplete="off"
+                      placeholder="Only the superadmins will see it."
+                      data-i18n-ph="edenX1ComplaintNamePh"
+                    />
+                  </label>
+                  <small data-i18n="edenX1ComplaintIdentityHint">
+                    Your name is stored with the complaint so leadership can reply to you.
+                  </small>
+                </div>
+                <div class="eden-x1-complaint-actions">
+                  <button
+                    id="edenX1ComplaintSubmit"
+                    class="dash-btn dash-btn-primary"
+                    type="submit"
+                    data-i18n="edenX1ComplaintSubmit"
+                  >
+                    Send to the superadmins
+                  </button>
+                  <button
+                    id="edenX1ComplaintCancel"
+                    class="dash-btn"
+                    type="button"
+                    data-i18n="edenX1ComplaintCancel"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div
+                  id="edenX1ComplaintStatus"
+                  class="eden-x1-complaint-status"
+                  role="status"
+                  aria-live="polite"
+                ></div>
+              </form>
+            </section>
           </section>
         </main>
 
@@ -1369,20 +1498,21 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap"
     />
-    <link rel="stylesheet" href="css/_tokens.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/app.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/components.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260923_065430" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/eden-x1.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260923_065430" />
-    <link rel="stylesheet" href="css/standalone-language-v14.css?v=20260923_065430" />
-    <script src="js/loader-v14.js?v=20260923_065430"></script>
-    <script src="js/standalone-language-v14.js?v=20260923_065430"></script>
-    <script type="module" src="js/eden-x1.js?v=20260923_065430"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260923_065430"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/app.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/components.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260923_130309" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/eden-x1.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260923_130309" />
+    <link rel="stylesheet" href="css/standalone-language-v14.css?v=20260923_130309" />
+    <script src="js/loader-v14.js?v=20260923_130309"></script>
+    <script src="js/standalone-language-v14.js?v=20260923_130309"></script>
+    <script type="module" src="js/eden-x1.js?v=20260923_130309"></script>
+    <script type="module" src="js/eden-complaints.js?v=20260923_130309"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260923_130309"></script>
     <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>
