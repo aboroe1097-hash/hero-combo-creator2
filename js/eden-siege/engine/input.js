@@ -81,7 +81,8 @@ export function createInput({ onPause, onRestart } = {}) {
   window.addEventListener('blur', onBlur);
 
   function readGamepad() {
-    if (!navigator.getGamepads) return null;
+    // Node 20 has no global navigator (the unit tests run there); a browser always does.
+    if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
     const pads = navigator.getGamepads();
     for (const pad of pads) {
       if (!pad || !pad.connected) continue;
