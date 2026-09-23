@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.18";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.0.19";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.0.19",
+    "date": "2026-09-23",
+    "highlights": [
+      "Every player in the weighted tables opens a season view, in VTS Admin (Dashboard and Contributions) and on the public Eden page, including players with no structure hits. It shows the final rank, weighted score and reward, a bar of what the score is made of, the itemised score, …",
+      "The score breakdown (the weighted score popover and the season view) lists each duty type separately for main and alt / banner accounts, with the count, weight and points behind it (for example \"4 × weight 3 × 10,000 = 120,000\"), shows how the demolition points were counted or t…",
+      "Banner, pathing and shield wall cells in the weighted tables show how many of the duties came from alt or banner accounts (for example \"11 · 3 alt\").",
+      "The public \"Top names to review\" lists have separate Most Banners Placed and Most Paths & Speed Tiles lists instead of one combined list. On wide screens the six lists sit in two rows of three; on phones they are one swipeable row.",
+      "The Eden season page does less work while loading: on a mid-range phone profile, main-thread blocking fell from about 5.8 s to 2.4 s and the weighted table appears about 2 s sooner. Name matching no longer rebuilds its 300-entry alias table or re-checks a whole attack's player l…"
+    ]
+  },
   {
     "version": "16.0.18",
     "date": "2026-09-22",
@@ -88,14 +99,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Added the X2 Lobby structure to structure uploads, expected at 700,000. Lobbies are named for a hero, so \"Lobby of Beowulf\" and any other hero all resolve to Lobby, and like Stronghold they carry no level.",
       "Corrected the expected durability of a level 4 gate from 2.5M to 1.5M. The wrong figure flagged correct uploads as mismatched on every Lv4 gate."
-    ]
-  },
-  {
-    "version": "16.0.9",
-    "date": "2026-09-07",
-    "highlights": [
-      "Admin suggestions now open on the pending queue, ten at a time, with filters for pending, approved, rejected or all, and a control to show the full filtered list. A season of decided suggestions no longer buries the few still waiting on a decision.",
-      "Added Approve all, which approves exactly the suggestions on screen. It asks once, naming the count, reloads once instead of per row, and reports how many succeeded if any fail part-way rather than claiming a clean run."
     ]
   }
 ].map((release) =>

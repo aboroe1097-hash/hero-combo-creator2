@@ -229,13 +229,22 @@ export const CONFIRMED_GROUPS = [
 // contribution-weighting.js rather than here.
 export const PENDING_GROUPS = Object.freeze([]);
 
+// Pure and hot (every name lookup), so memoised; capped against free-text input.
+const aliasKeyCache = new Map();
+
 function aliasKey(name) {
-  return String(name || '')
+  const input = String(name || '');
+  const cached = aliasKeyCache.get(input);
+  if (cached !== undefined) return cached;
+  const result = input
     .normalize('NFC')
     .replace(/^(?:\s*(?:\((?:vts|vet|s)\)|(?:vts|vet|s)\)))+\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+  if (aliasKeyCache.size >= 5000) aliasKeyCache.clear();
+  aliasKeyCache.set(input, result);
+  return result;
 }
 
 const confirmedAliases = new Map(

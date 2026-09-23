@@ -3293,8 +3293,9 @@ test.describe('app smoke tabs', () => {
     ).toHaveText('Core Rewards');
     expect(altRow?.[4]).toBe('1,000,000');
     expect(altRow?.[5]).toBe('5,000');
-    expect(altRow?.[7]).toBe('1');
-    expect(altRow?.[8]).toBe('1');
+    // The alt account's duties are called out as alt duties.
+    expect(altRow?.[7]).toBe('1 1 alt');
+    expect(altRow?.[8]).toBe('1 1 alt');
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
@@ -4198,12 +4199,10 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.eden-x1-vote-guidance--dashboard')).toHaveCount(1);
     await expect(topNamesOverview).toBeVisible();
     await expect(topNamesOverview).toContainText('Top names to review');
-    await expect(topNamesOverview).toContainText('Most Banners & Paths');
-    await expect(topNamesOverview).toContainText(
-      'Combined banners, march paths, and speed tiles laid'
-    );
-    await expect(topNamesOverview).not.toContainText('Most Banners Placed');
-    await expect(topNamesOverview).not.toContainText('Most Paths & Speed Tiles');
+    // Banners and paths are separate lists.
+    await expect(topNamesOverview).toContainText('Most Banners Placed');
+    await expect(topNamesOverview).toContainText('Most Paths & Speed Tiles');
+    await expect(topNamesOverview).not.toContainText('Most Banners & Paths');
     await expect(topNamesOverview).not.toContainText('Most Shield Walls Built');
     await expect(topNamesOverview).toContainText('Most Structures Hit');
     await expect(topNamesOverview).toContainText('Best on Buildings');
@@ -5209,7 +5208,7 @@ test.describe('app smoke tabs', () => {
     await voteRail.locator('[data-eden-vote-help-link]').click();
     await expect(topNamesOverview).toBeFocused();
     const helperCards = topNamesOverview.locator('.eden-x1-vote-helper-card');
-    await expect(helperCards).toHaveCount(5);
+    await expect(helperCards).toHaveCount(6);
     const helperInitialMetrics = await helperCards.evaluateAll((cards) =>
       cards.map((card) => {
         const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
