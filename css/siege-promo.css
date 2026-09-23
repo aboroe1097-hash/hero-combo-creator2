@@ -215,7 +215,14 @@
   background: rgba(148, 163, 184, 0.2);
 }
 
-@media (max-width: 560px) {
+/* Phones and small tablets: the hub's tool bar is docked to the bottom edge,
+   so the callout sits above it instead of underneath. */
+@media (max-width: 640px) {
+  .siege-callout {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px);
+  }
+
   .siege-callout-body {
     display: none;
   }

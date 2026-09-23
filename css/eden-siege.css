@@ -1140,28 +1140,6 @@
     bottom: 300px;
     padding: 10px 12px;
   }
-
-  /* Phones: the wing buttons sit under the thumb controls, and the build
-     picker floats above them, so nothing covers the stick or attack pad. */
-  .siege-dock {
-    bottom: 8px;
-  }
-
-  .siege-build {
-    position: absolute;
-    left: 50%;
-    bottom: 240px;
-    transform: translateX(-50%);
-  }
-
-  .siege-build button {
-    min-width: 84px;
-    min-height: 48px;
-  }
-
-  .siege-toast {
-    top: 164px;
-  }
 }
 
 [hidden] {
@@ -1252,5 +1230,30 @@
   .siege-status-sigil {
     width: 52px;
     height: 52px;
+  }
+}
+
+/* Phones: the wing buttons sit under the thumb controls and the build picker
+   floats above them, so nothing covers the stick or the attack pad. Kept last
+   so it wins over the tablet layout above. */
+@media (max-width: 560px) {
+  .siege-dock {
+    bottom: 8px;
+  }
+
+  .siege-build {
+    position: absolute;
+    left: 50%;
+    bottom: 240px;
+    transform: translateX(-50%);
+  }
+
+  .siege-build button {
+    min-width: 84px;
+    min-height: 48px;
+  }
+
+  .siege-toast {
+    top: 164px;
   }
 }
