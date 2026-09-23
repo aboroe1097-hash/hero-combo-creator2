@@ -1,6 +1,11 @@
 // Data-driven player identity registry.
 // The admin UI can later edit this structure; the resolver can use it now.
-import { protectedVtsAccountKey, resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
+import {
+  normalizeTaughtPlayerAliases,
+  protectedVtsAccountKey,
+  resolveConfirmedPlayerAlias,
+  setTaughtPlayerAliases,
+} from './vts-player-aliases.js';
 
 export const PLAYER_REGISTRY_KEY = 'vts_player_registry';
 
@@ -61,11 +66,25 @@ function normalizeContributionMatches(values) {
   return Array.from(byNewName.values());
 }
 
-// Account links: a banner or alt account and the player who runs it. The
-// account keeps its own identity and contribution row; the link only tells
-// duty scoring whose duty it is and that it was done on a secondary account.
-export const ACCOUNT_LINK_TYPES = Object.freeze(['banner', 'alt']);
+// Account links: a banner, alt or secondary account and the player who runs it.
+// The account keeps its own identity and contribution row; the link only tells
+// duty scoring whose duty it is and that it was done on a non-main account.
+// `secondary` is the third class: a real second account the player plays, as
+// opposed to a banner account that only carries a banner. It scores at its own
+// weight, which defaults to the alt weight so the split restates nothing.
+export const ACCOUNT_LINK_TYPES = Object.freeze(['banner', 'alt', 'secondary']);
+// Which scoring class a link type scores at. An unknown type is normalized to
+// `banner` before it gets here, and `banner` is the alt class.
+export const ACCOUNT_LINK_TYPE_CLASSES = Object.freeze({
+  banner: 'alt',
+  alt: 'alt',
+  secondary: 'secondary',
+});
 export const MAX_ACCOUNT_LINKS = 300;
+
+export function accountLinkClass(type) {
+  return ACCOUNT_LINK_TYPE_CLASSES[asText(type)] || ACCOUNT_LINK_TYPE_CLASSES.banner;
+}
 
 export function normalizeAccountLinks(values) {
   const byAccount = new Map();
@@ -133,7 +152,29 @@ export function normalizePlayerRegistry(input) {
     players,
     contributionMatches: normalizeContributionMatches(source?.contributionMatches),
     accountLinks: normalizeAccountLinks(source?.accountLinks),
+    // Aliases the admin taught from the Accounts tab. They live inside this
+    // registry — the same map that already carries accountLinks — so they save
+    // and publish with it and need no rules change of their own.
+    playerAliases: normalizeTaughtPlayerAliases(source?.playerAliases),
   };
+}
+
+// vts-player-aliases.js owns alias resolution; this module owns the registry the
+// taught aliases live in. Publishing them there whenever a registry becomes the
+// one in force keeps that authority single: findBestMatch, the contribution
+// identity and the vote candidates all ask the same function, in the same order.
+//
+// Keyed on the taught list's own content rather than on the registry object,
+// because normalizing a registry builds a fresh object every time; only a real
+// change may republish, or every name lookup would rebuild the alias map.
+let publishedTaughtSignature = null;
+
+function publishTaughtAliases(registry) {
+  const aliases = Array.isArray(registry?.playerAliases) ? registry.playerAliases : [];
+  const signature = aliases.map((entry) => `${entry.alias}\u0000${entry.canonical}`).join('\u0001');
+  if (signature === publishedTaughtSignature) return;
+  publishedTaughtSignature = signature;
+  setTaughtPlayerAliases(aliases);
 }
 
 // Name resolution asks for the index once per name, so rebuilding it every
@@ -188,6 +229,8 @@ function buildPlayerRegistryIndexUncached(registryInput) {
 export function resolvePlayerRegistryAlias(name, registryInput = currentPlayerRegistry()) {
   const text = asText(name);
   if (!text) return '';
+  // A taught alias resolves here first, even over a built-in group, because
+  // resolveConfirmedPlayerAlias consults the taught list before its own.
   const confirmed = resolveConfirmedPlayerAlias(text);
   if (confirmed) return confirmed;
   const index = buildPlayerRegistryIndex(registryInput);
@@ -218,6 +261,7 @@ let activeRegistryOverride = null;
 
 export function setActivePlayerRegistry(registry) {
   activeRegistryOverride = registry ? normalizePlayerRegistry(registry) : null;
+  publishTaughtAliases(activeRegistryOverride || currentPlayerRegistry());
   return activeRegistryOverride;
 }
 
@@ -234,6 +278,7 @@ export function currentPlayerRegistry(storage = globalThis.localStorage) {
   if (storedRegistryCache.raw !== raw || !storedRegistryCache.registry) {
     storedRegistryCache = { raw, registry: normalizePlayerRegistry(raw) };
   }
+  publishTaughtAliases(storedRegistryCache.registry);
   return storedRegistryCache.registry;
 }
 
@@ -251,5 +296,12 @@ export function writeStoredPlayerRegistry(registry, storage = globalThis.localSt
   if (storage?.setItem) {
     storage.setItem(PLAYER_REGISTRY_KEY, JSON.stringify(normalized));
   }
+  publishTaughtAliases(normalized);
   return normalized;
 }
+
+// Reading the registry once at module load closes the cold-start window: without
+// it, the first name lookup of a page could resolve before any registry existed
+// and would miss the taught entries, letting a confirmed group win by default.
+// The read itself is a cached localStorage lookup.
+currentPlayerRegistry();

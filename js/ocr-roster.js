@@ -1,4 +1,8 @@
 import { renderDutyCountCell, renderScoreBreakdown } from './score-breakdown.js';
+// The shared pager: a season's lists run to hundreds of rows, so every long
+// table here starts at ten rows with a Load more / Show all control rather
+// than making the operator scroll past everything to reach the next section.
+import { bindAdminTablePager, renderAdminTablePager, resolveAdminTablePage } from './ocr-render.js';
 import {
   STORAGE_KEY,
   ROSTER_KEY,
@@ -78,6 +82,7 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
+import { normalizeTaughtPlayerAliases } from './vts-player-aliases.js';
 import {
   addContributionAliasMatch,
   collapseContributionOcrDuplicates,
@@ -1646,6 +1651,9 @@ function normalizeDutyEntries(input) {
 // as a banner account.
 const DUTY_BANNER_NAME_RE = /bann?er/i;
 let dutyAccountSwitchSeq = 0;
+// Every resolvable account-link suggestion behind the shortened list, so the
+// "link all" action can take the whole set rather than only what is on screen.
+let pendingAccountLinkSuggestions = [];
 
 function normalizeDutyAccountType(value) {
   const type = String(value || '').toLowerCase();
@@ -1660,7 +1668,10 @@ export function guessDutyAccountType(...names) {
   for (const text of texts) {
     if (resolveAccountLink(text) || DUTY_BANNER_NAME_RE.test(text)) return 'banner';
     const key = compactPlayerIdentity(text);
-    if (key && classifyDutyAccount(key) === 'alt') return 'banner';
+    // The switch offers Main or Banner only, so every non-main class — an alt
+    // and now a linked secondary account too — guesses Banner, which is what the
+    // row would score as until the operator says otherwise.
+    if (key && classifyDutyAccount(key) !== 'main') return 'banner';
   }
   return 'main';
 }
@@ -2398,6 +2409,15 @@ function renderDutyType(type) {
       ).length;
       const rawNote = String(record.note || '').trim();
       const displayNote = getContributionDisplayNote(rawNote, entries.length);
+      // One upload can carry hundreds of duty rows; each card pages its own
+      // entries so a banner list can be skimmed without scrolling a page per day.
+      const dutyPageOwner = `duty-${type}-${record.id}`;
+      const dutyPage = resolveAdminTablePage(
+        dutyPageOwner,
+        `${record.id}|${entries.length}|${record.updatedAt || record.date || ''}`,
+        entries
+      );
+      const entryRows = dutyPage.rows;
       return `<div class="dash-banner-card">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
@@ -2413,9 +2433,9 @@ function renderDutyType(type) {
         </div>
       </div>
       <div class="dash-banner-body">
-        <table class="dash-banner-table dash-duty-detail-table">
+        <table id="dashDutyTable-${esc(record.id)}" class="dash-banner-table dash-duty-detail-table">
           <thead><tr><th>${esc(adminT('adminDutyGroup'))}</th><th>${esc(adminT('adminDutyOrder'))}</th><th>${esc(adminT('adminDutyTime'))}</th><th>${esc(adminT('adminDutyTarget'))}</th><th>${esc(adminT('adminDutyPad'))}</th><th>${esc(adminT('adminDutyUploaded'))}</th><th>${esc(adminT('adminDutyRosterMatch'))}</th><th>${esc(adminT('adminDutyAccountType'))}</th><th>${esc(adminT('adminDutyStatus'))}</th></tr></thead>
-          <tbody>${entries
+          <tbody>${entryRows
             .map(
               (entry) => `<tr>
             <td><span class="dash-duty-cell-value">${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
@@ -2431,10 +2451,22 @@ function renderDutyType(type) {
             )
             .join('')}</tbody>
         </table>
+        ${renderAdminTablePager(dutyPageOwner, dutyPage, `dashDutyTable-${esc(record.id)}`, { showAll: true })}
       </div>
     </div>`;
     })
     .join('');
+  records.forEach((record) => {
+    const recordEntries = Array.isArray(record.entries) ? record.entries : [];
+    if (recordEntries.length <= 0) return;
+    const owner = `duty-${type}-${record.id}`;
+    const page = resolveAdminTablePage(
+      owner,
+      `${record.id}|${recordEntries.length}|${record.updatedAt || record.date || ''}`,
+      recordEntries
+    );
+    bindAdminTablePager(body, owner, page, () => renderDutyType(type));
+  });
   hydrateDashboardTableLabels(body);
 }
 
@@ -2548,40 +2580,121 @@ async function saveAccountLinks(nextLinks, statusHost) {
   return synced;
 }
 
-function renderAccountLinksCard() {
+// --- Taught aliases ---------------------------------------------------------
+// "sometimes we have abbreviation for some players — we call Lady Zubbs just
+// zubs". The owner teaches those abbreviations here; they are stored in the
+// player registry beside the account links, and the single alias authority
+// (vts-player-aliases.js, behind findBestMatch) consults them before its own
+// lists, so a taught spelling always wins.
+function currentPlayerAliases() {
+  return normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()).playerAliases;
+}
+
+async function savePlayerAliases(nextAliases, statusHost) {
+  const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
+  const before = registry.playerAliases.length;
+  registry.playerAliases = normalizeTaughtPlayerAliases(nextAliases);
+  const synced = await savePlayerRegistry(registry, { immediate: true, awaitCloud: true });
+  renderDutyRecords();
+  refreshDashboardOverview();
+  document.querySelectorAll('[data-player-aliases-status]').forEach((status) => {
+    status.textContent = adminT(
+      synced === false ? 'adminAliasesLocal' : 'adminAliasesSaved',
+      { count: registry.playerAliases.length }
+    );
+  });
+  logRosterEvent(
+    'adminAliasesSavedLog',
+    'success',
+    { before, count: registry.playerAliases.length },
+    { localOnly: true }
+  );
+  if (statusHost) statusHost.querySelector('[data-player-aliases-status]')?.focus?.();
+  return synced;
+}
+
+function renderPlayerAliasesSection() {
+  const aliases = currentPlayerAliases();
+  const candidates = accountLinkCandidateNames();
+  const listId = `dashPlayerAliasNames${(dutyAccountSwitchSeq += 1)}`;
+  return `<div class="dash-account-links-group dash-player-aliases" data-player-aliases>
+    <h4>${esc(adminT('adminAliasesTitle'))}</h4>
+    <p class="dash-form-hint">${esc(adminT('adminAliasesHint'))}</p>
+    <form class="dash-account-links-form" data-player-aliases-form>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAliasesAlias'))}</span><input type="text" data-player-alias-input autocomplete="off" required placeholder="${esc(adminT('adminAliasesAliasPh'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAliasesCanonical'))}</span><input type="text" list="${listId}" data-player-alias-canonical autocomplete="off" required placeholder="${esc(adminT('adminAliasesCanonicalPh'))}"></label>
+      <button type="submit" class="dash-btn dash-btn-primary">${esc(adminT('adminAliasesAdd'))}</button>
+      <datalist id="${listId}">${candidates.map((name) => `<option value="${esc(name)}"></option>`).join('')}</datalist>
+    </form>
+    <h4>${esc(adminT('adminAliasesActive'))}</h4>
+    ${
+      aliases.length
+        ? `<ul class="dash-account-links-list">${aliases
+            .map(
+              (entry) => `<li>
+          <span class="dash-account-link-names"><strong>${esc(entry.alias)}</strong><span aria-hidden="true">→</span><span>${esc(entry.canonical)}</span></span>
+          <button type="button" class="dash-btn dash-btn-xs" data-player-alias-remove data-alias="${esc(entry.alias)}" aria-label="${esc(adminT('adminAliasesRemoveFor', { alias: entry.alias }))}">${esc(adminT('adminAliasesRemove'))}</button>
+        </li>`
+            )
+            .join('')}</ul>`
+        : `<p class="dash-form-hint">${esc(adminT('adminAliasesNone'))}</p>`
+    }
+    <p class="dash-form-hint" data-player-aliases-status role="status" aria-live="polite" tabindex="-1"></p>
+  </div>`;
+}
+
+function renderAccountLinksCard(options = {}) {
   const links = currentAccountLinks();
   const candidates = accountLinkCandidateNames();
   const linkedKeys = new Set(links.map((link) => compactPlayerIdentity(link.account)));
-  const suggestions = candidates
+  const allSuggestions = candidates
     .filter(
       (name) => DUTY_BANNER_NAME_RE.test(name) && !linkedKeys.has(compactPlayerIdentity(name))
     )
-    .map((name) => ({ account: name, owner: guessAccountLinkOwner(name, candidates) }))
-    .slice(0, 16);
+    .map((name) => ({ account: name, owner: guessAccountLinkOwner(name, candidates) }));
+  // The list used to stop at 16 with no way to accept the rest; keep the render
+  // short but hold every resolvable suggestion so "Link all" can take them in
+  // one action.
+  const ACCOUNT_LINK_SUGGESTION_LIMIT = 16;
+  const suggestions = allSuggestions.slice(0, ACCOUNT_LINK_SUGGESTION_LIMIT);
+  pendingAccountLinkSuggestions = allSuggestions.filter((item) => item.owner);
+  const hiddenSuggestionCount = allSuggestions.length - suggestions.length;
   const listId = `dashAccountLinkNames${(dutyAccountSwitchSeq += 1)}`;
+  // One label per link type, so the third type cannot silently fall back to
+  // reading as a banner in the list.
+  const ACCOUNT_LINK_TYPE_LABELS = {
+    banner: 'adminDutyAccountBanner',
+    alt: 'adminAccountLinksAlt',
+    secondary: 'adminAccountLinksSecondary',
+  };
   const typeLabel = (type) =>
-    adminT(type === 'alt' ? 'adminAccountLinksAlt' : 'adminDutyAccountBanner');
-  return `<details class="dash-account-links">
+    adminT(ACCOUNT_LINK_TYPE_LABELS[type] || ACCOUNT_LINK_TYPE_LABELS.banner);
+  return `<details class="dash-account-links"${options.open ? ' open' : ''}>
     <summary><span class="dash-account-links-title">${esc(adminT('adminAccountLinksTitle'))}</span><span class="dash-duty-review-chip" data-tone="banner">${esc(adminT('adminAccountLinksCount', { count: links.length }))}</span>${suggestions.length ? `<span class="dash-duty-review-chip" data-tone="warn">${esc(adminT('adminAccountLinksSuggestedCount', { count: suggestions.length }))}</span>` : ''}</summary>
     <p class="dash-form-hint">${esc(adminT('adminAccountLinksHint'))}</p>
     <form class="dash-account-links-form" data-account-links-form>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksAccount'))}</span><input type="text" list="${listId}" data-account-link-account autocomplete="off" required placeholder="${esc(adminT('adminAccountLinksAccountPh'))}"></label>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksOwner'))}</span><input type="text" list="${listId}" data-account-link-owner autocomplete="off" required placeholder="${esc(adminT('adminAccountLinksOwnerPh'))}"></label>
-      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><select data-account-link-type><option value="banner">${esc(adminT('adminDutyAccountBanner'))}</option><option value="alt">${esc(adminT('adminAccountLinksAlt'))}</option></select></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><select data-account-link-type><option value="banner">${esc(adminT('adminDutyAccountBanner'))}</option><option value="alt">${esc(adminT('adminAccountLinksAlt'))}</option><option value="secondary">${esc(adminT('adminAccountLinksSecondary'))}</option></select></label>
       <button type="submit" class="dash-btn dash-btn-primary">${esc(adminT('adminAccountLinksAdd'))}</button>
       <datalist id="${listId}">${candidates.map((name) => `<option value="${esc(name)}"></option>`).join('')}</datalist>
     </form>
     ${
       suggestions.length
-        ? `<div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksSuggested'))}</h4><ul class="dash-account-links-list">${suggestions
-            .map(
-              (item) => `<li>
+        ? `<div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksSuggested'))}</h4>
+        <div class="dash-account-links-bulk">
+          ${hiddenSuggestionCount > 0 ? `<span class="dash-form-hint">${esc(adminT('adminAccountLinksShowingSome', { shown: suggestions.length, total: allSuggestions.length }))}</span>` : ''}
+          ${pendingAccountLinkSuggestions.length > 1 ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept-all data-count="${pendingAccountLinkSuggestions.length}">${esc(adminT('adminAccountLinksLinkAll', { count: pendingAccountLinkSuggestions.length }))}</button>` : ''}
+        </div>
+        <ul class="dash-account-links-list">${suggestions
+          .map(
+            (item) => `<li>
           <span class="dash-account-link-names"><strong>${esc(item.account)}</strong><span aria-hidden="true">→</span><span>${item.owner ? esc(item.owner) : `<em>${esc(adminT('adminAccountLinksNoOwner'))}</em>`}</span></span>
           ${item.owner ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksLink'))}</button>` : ''}
           <button type="button" class="dash-btn dash-btn-xs" data-account-link-prefill data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksPick'))}</button>
         </li>`
-            )
-            .join('')}</ul></div>`
+          )
+          .join('')}</ul></div>`
         : ''
     }
     <div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksActive'))}</h4>${
@@ -2596,6 +2709,7 @@ function renderAccountLinksCard() {
             .join('')}</ul>`
         : `<p class="dash-form-hint">${esc(adminT('adminAccountLinksNone'))}</p>`
     }</div>
+    ${options.showAliases ? renderPlayerAliasesSection() : ''}
     <p class="dash-form-hint" data-account-links-status role="status" aria-live="polite" tabindex="-1"></p>
   </details>`;
 }
@@ -2604,6 +2718,25 @@ function bindAccountLinksHost(host) {
   if (host.dataset.accountLinksBound === '1') return;
   host.dataset.accountLinksBound = '1';
   host.addEventListener('submit', (event) => {
+    const aliasForm = event.target.closest('[data-player-aliases-form]');
+    if (aliasForm) {
+      event.preventDefault();
+      const alias = aliasForm.querySelector('[data-player-alias-input]')?.value.trim() || '';
+      const canonical =
+        aliasForm.querySelector('[data-player-alias-canonical]')?.value.trim() || '';
+      if (!alias || !canonical) return;
+      // Teaching a spelling again replaces what it means, the way relinking an
+      // account replaces its owner, instead of stacking a second entry.
+      const aliasKeyText = compactPlayerIdentity(alias) || alias.toLowerCase();
+      const others = currentPlayerAliases().filter(
+        (entry) => (compactPlayerIdentity(entry.alias) || entry.alias.toLowerCase()) !== aliasKeyText
+      );
+      void savePlayerAliases(
+        [...others, { alias, canonical, createdAt: new Date().toISOString() }],
+        host
+      );
+      return;
+    }
     const form = event.target.closest('[data-account-links-form]');
     if (!form) return;
     event.preventDefault();
@@ -2628,6 +2761,21 @@ function bindAccountLinksHost(host) {
       );
       return;
     }
+    const acceptAll = event.target.closest('[data-account-link-accept-all]');
+    if (acceptAll) {
+      // Every resolvable suggestion in one action. Suggestions already linked or
+      // removed since the render are filtered out, and an existing link wins over
+      // a suggestion so a hand-made choice is never overwritten by a guess.
+      const existing = currentAccountLinks();
+      const existingKeys = new Set(existing.map((link) => compactPlayerIdentity(link.account)));
+      const additions = pendingAccountLinkSuggestions
+        .filter((item) => item.owner && !existingKeys.has(compactPlayerIdentity(item.account)))
+        .map((item) => ({ account: item.account, owner: item.owner, type: 'banner' }));
+      if (!additions.length) return;
+      if (!confirm(adminT('adminAccountLinksLinkAllConfirm', { count: additions.length }))) return;
+      void saveAccountLinks([...existing, ...additions], host);
+      return;
+    }
     const prefill = event.target.closest('[data-account-link-prefill]');
     if (prefill) {
       const form = host.querySelector('[data-account-links-form]');
@@ -2647,14 +2795,34 @@ function bindAccountLinksHost(host) {
         currentAccountLinks().filter((link) => compactPlayerIdentity(link.account) !== key),
         host
       );
+      return;
+    }
+    const removeAlias = event.target.closest('[data-player-alias-remove]');
+    if (removeAlias) {
+      const key = compactPlayerIdentity(removeAlias.dataset.alias);
+      void savePlayerAliases(
+        currentPlayerAliases().filter(
+          (entry) => compactPlayerIdentity(entry.alias) !== key
+        ),
+        host
+      );
     }
   });
 }
 
-function renderAccountLinks() {
+// Exported so the dedicated Accounts subtab can mount the card on its own: the
+// card used to live only inside the three duty tabs, which made it hard to reach
+// from anywhere else in the dashboard.
+export function renderAccountLinks() {
   document.querySelectorAll('[data-account-links-host]').forEach((host) => {
     const wasOpen = host.querySelector('details')?.open;
-    host.innerHTML = renderAccountLinksCard();
+    // A host on a tab that exists only for linking starts open; the cards
+    // embedded in the duty tabs keep the operator's own open/closed choice.
+    const startOpen = host.hasAttribute('data-account-links-open');
+    // Teaching aliases is a naming decision, not a linking one, so that section
+    // stays on the Accounts tab rather than following the card onto the duty
+    // tabs as well.
+    host.innerHTML = renderAccountLinksCard({ open: wasOpen ?? startOpen, showAliases: startOpen });
     if (wasOpen !== undefined) {
       const details = host.querySelector('details');
       if (details) details.open = wasOpen;
@@ -4528,7 +4696,12 @@ function renderWeightedContributionTable(options = {}) {
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
   const compactView = isWeightedContributionCompactView();
-  const visibleRows = sortedContributionWeightedRows(filterContributionWeightedRows(rows));
+  const contributionWeightedPage = resolveAdminTablePage(
+    'contribution-weighted',
+    `${recordLabel || ''}|${state._contributionWeightedSearchQ || ''}|${rows.length}`,
+    sortedContributionWeightedRows(filterContributionWeightedRows(rows))
+  );
+  const visibleRows = contributionWeightedPage.rows;
   host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-contribution-compare-head">
       <div>
@@ -4547,7 +4720,7 @@ function renderWeightedContributionTable(options = {}) {
       </div>
     </div>
     <div class="dash-contribution-compare-table-wrap">
-      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
+      <table id="dashContributionWeightedTable" class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
         <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="demolition" tabindex="0">${esc(adminT('adminThDemo'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${
           visibleRows.length
@@ -4560,9 +4733,9 @@ function renderWeightedContributionTable(options = {}) {
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.totalDemolition)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionExGuild || 0)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT, { number: formatContributionValue })}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT, { number: formatContributionValue })}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT, { number: formatContributionValue })}</td>
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatConductContributionBonus(row.conductBonus)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${weightedContributionBonusTotal(row).toLocaleString()}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
@@ -4575,8 +4748,12 @@ function renderWeightedContributionTable(options = {}) {
         }</tbody>
       </table>
     </div>
+    ${renderAdminTablePager('contribution-weighted', contributionWeightedPage, 'dashContributionWeightedTable', { showAll: true })}
   </div>`;
   bindWeightedContributionViewToggle(host);
+  bindAdminTablePager(host, 'contribution-weighted', contributionWeightedPage, () =>
+    renderWeightedContributionTable({ reuseModel: true })
+  );
   const search = $id('dashContributionWeightedSearch');
   if (search) {
     search.oninput = (event) => {
@@ -4688,7 +4865,12 @@ function renderExGuildTable() {
     $id('dashExGuildRestoreBtn')?.addEventListener('click', restoreExGuildBackup);
     return;
   }
-  const rowsHtml = entries
+  const exGuildPage = resolveAdminTablePage(
+    'ex-guild',
+    `${entries.length}|${state._exGuildSearchQ || ''}`,
+    entries
+  );
+  const rowsHtml = exGuildPage.rows
     .map((entry) => {
       const { cleanName, manualMatch, matchedName } = resolveExGuildMatch(entry, {
         primaryKeys,
@@ -4723,10 +4905,12 @@ function renderExGuildTable() {
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
+  ${renderAdminTablePager('ex-guild', exGuildPage, 'dashExGuildBody', { showAll: true })}
   <div style="margin-top:0.5rem">
     <button type="button" class="dash-btn" data-admin-action="clear-exguild" style="font-size:0.75rem">${esc(adminT('adminExGuildClearAll'))}</button>
   </div>`;
   bindExGuildMatchSearch(host);
+  bindAdminTablePager(host, 'ex-guild', exGuildPage, () => renderExGuildTable());
   $id('dashExGuildDebuffExportInlineBtn')?.addEventListener('click', exportExGuildDebuffList);
   hydrateDashboardTableLabels(host);
 }

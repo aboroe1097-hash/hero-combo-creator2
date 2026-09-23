@@ -45,6 +45,23 @@ Supporting helpers in the same file:
   splits same-name players that appear in one attack with different demolition values (used by the
   Kika multi-account logic).
 
+### Taught aliases come first (2026-09)
+
+The alliance owner can teach an abbreviation instead of waiting for a code change: **VTS Admin →
+Accounts → Player aliases** takes a short name and the player it means ("we call Lady Zubbs just
+zubs"). Entries are stored in the player registry the dashboard already saves and publishes
+(`registry.playerAliases`, beside `accountLinks`, so no Firestore rules change is involved), and
+`resolveConfirmedPlayerAlias` in [`js/vts-player-aliases.js`](../js/vts-player-aliases.js) —
+the one alias authority every consumer calls, `findBestMatch` included — consults them **before**
+`CONFIRMED_GROUPS` and before any roster or fuzzy match.
+
+A taught entry therefore **wins over a name already in the built-in list**. That is the point of
+teaching one: an entry that lost to a list compiled months earlier could not correct anything.
+Several aliases may point at one player (spellings map to a name; the list is not a second identity
+hierarchy). The shipped seeds are `zubs`/`Zubbs → Lady Zubbs` and `kiji → MalakaKiji`
+(`SEEDED_PLAYER_ALIASES`); teaching more appends to that same single list. **Do not build a second
+merge list beside it** — the taught list is part of the same authority, not a parallel one.
+
 ---
 
 ## 2. Weekly dedup pass (Structures/Attacks)
@@ -192,7 +209,9 @@ These are real distinct accounts/identities. They are protected by the
 | Concern | Location |
 |---|---|
 | Name resolution authority | `findBestMatch`, `aliasMap`, `getProtectedPlayerIdentity` — [`js/ocr-shared.js`](../js/ocr-shared.js) |
+| Confirmed + taught aliases | `CONFIRMED_GROUPS`, `SEEDED_PLAYER_ALIASES`, `resolveConfirmedPlayerAlias` — [`js/vts-player-aliases.js`](../js/vts-player-aliases.js) |
+| Where taught aliases are stored | `registry.playerAliases` — [`js/player-registry.js`](../js/player-registry.js); edited on the Accounts subtab in [`js/ocr-roster.js`](../js/ocr-roster.js) |
 | Normalization / fuzzy | `compactPlayerIdentity`, `editDistance`, `getSimilarity*` — [`js/ocr-shared.js`](../js/ocr-shared.js) |
 | Structures debug export | `exportDebugCsv` — [`js/ocr-dashboard.js`](../js/ocr-dashboard.js) |
 | Duty (banner/pather) records + suggestions | `DUTY_TYPES`, `getDutySuggestions`, `getDutyMatchStatus` — [`js/ocr-roster.js`](../js/ocr-roster.js) |
-| Tests / guard rails | `tests/unit/ocr-engine.test.mjs` |
+| Tests / guard rails | `tests/unit/ocr-engine.test.mjs`, `tests/unit/teachable-player-aliases.test.mjs`, `tests/unit/account-links-tab.test.mjs` |

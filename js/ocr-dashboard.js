@@ -51,6 +51,7 @@ import {
   setContributionPrimary,
   exportContributionRecords,
   renderContributions,
+  renderAccountLinks,
   deleteExGuildEntry,
   clearExGuildData,
   setExGuildMatch,
@@ -62,6 +63,9 @@ import {
   closeModal,
   buildPlayerSummary,
   animateAnalyticsCards,
+  bindAdminTablePager,
+  renderAdminTablePager,
+  resolveAdminTablePage,
 } from './ocr-render.js';
 import {
   processFiles,
@@ -159,14 +163,24 @@ import {
 import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   DEFAULT_DUTY_POINT_WEIGHTS,
+  DEFAULT_CONTRIBUTION_WEIGHT,
+  DEFAULT_FORM_POINT_WEIGHT,
   DUTY_ACCOUNT_CLASSES,
   DUTY_ACTIVITIES,
   buildWeightedContributionRows,
   normalizeDutyPointWeights,
+  normalizeContributionWeight,
+  normalizeFormPointWeight,
   getWeightedContributionRecordLabel,
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
+import {
+  DEFAULT_REWARD_SETTINGS,
+  GUILD_MASTER_SOURCES,
+  REWARD_QUOTA_KEYS,
+  normalizeRewardSettings,
+} from './eden-reward-settings.js';
 import { csvFooterLines, getExportBranding } from './export-branding.js';
 import {
   compactPlayerIdentity,
@@ -368,6 +382,13 @@ state.edenX1VoteSettings = null;
 // to its own defaults, so a failed load scores rather than scoring nothing.
 state.dutyPointWeights = null;
 state.includeDemolitionPoints = true;
+// Whole-score multipliers, tuned in the same panel. 1 leaves the arithmetic
+// exactly as it was before they existed.
+state.contributionWeight = DEFAULT_CONTRIBUTION_WEIGHT;
+state.formPointWeight = DEFAULT_FORM_POINT_WEIGHT;
+// Reward distribution rules for this season, in the same superadmin-only
+// family. Defaults until loaded, so the tables always have a distribution.
+state.rewardSettings = normalizeRewardSettings(null);
 let dutyPointWeightsVersion = 0;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
@@ -436,6 +457,14 @@ const DUTY_POINT_WEIGHTS_DOC_PATH = edenWorkspaceFirestorePath(
 );
 const DUTY_POINT_WEIGHTS_LOCAL_KEY = edenWorkspaceStorageKey(
   'vts_duty_point_weights',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+const REWARD_SETTINGS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'rewardSettings'
+);
+const REWARD_SETTINGS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_reward_settings',
   ACTIVE_EDEN_WORKSPACE_ID
 );
 
@@ -743,6 +772,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
+  if (name === 'accounts') renderAccountLinks();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') renderBohMatchPanel();
   if (name === 'vtsScore') renderVtsScorePanel();
@@ -1049,6 +1079,8 @@ function defaultEdenX1VoteSettings() {
     season: currentEdenVoteSeason(),
     votingOpen: true,
     allowEditing: true,
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     contributionRankingMode: EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
@@ -1058,12 +1090,22 @@ function defaultEdenX1VoteSettings() {
 
 function normalizeEdenX1VoteSettings(settings = {}) {
   const defaults = defaultEdenX1VoteSettings();
+  // One switch published both result sets until 16.5.1. It stays the fallback
+  // for the two that replaced it, so a stored document keeps meaning what it
+  // meant, and it is still written as the conservative aggregate for any reader
+  // that only knows the old field.
+  const legacyPublished = settings.showPublicResults === true;
+  const readToggle = (key) => (key in settings ? settings[key] === true : legacyPublished);
+  const showMemberResults = readToggle('showMemberResults');
+  const showManagementResults = readToggle('showManagementResults');
   return {
     ...defaults,
     season: String(settings.season || defaults.season),
     votingOpen: settings.votingOpen !== false,
     allowEditing: settings.allowEditing !== false,
-    showPublicResults: settings.showPublicResults === true,
+    showMemberResults,
+    showManagementResults,
+    showPublicResults: showMemberResults && showManagementResults,
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
       settings.contributionRankingMode
@@ -1157,7 +1199,8 @@ function renderEdenX1VoteSettings() {
   };
   setChecked('dashEdenVoteOpenToggle', settings.votingOpen);
   setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
-  setChecked('dashEdenVotePublicResultsToggle', settings.showPublicResults);
+  setChecked('dashEdenVotePublicResultsToggle', settings.showMemberResults);
+  setChecked('dashEdenVoteManagementResultsToggle', settings.showManagementResults);
   setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
   setChecked(
     'dashEdenContributionModeExtended',
@@ -1330,8 +1373,8 @@ function buildEdenX1PublicVoteResults(
   );
   return {
     season,
-    published: normalizedSettings.showPublicResults === true,
-    rankings: normalizedSettings.showPublicResults
+    published: normalizedSettings.showMemberResults === true,
+    rankings: normalizedSettings.showMemberResults
       ? totalRows.slice(0, 100).map((row) => ({
           playerName: row.candidateName,
           playerKey: row.playerKey,
@@ -1771,9 +1814,16 @@ function readLocalDutyPointWeights() {
     return {
       weights: normalizeDutyPointWeights(source.weights || source),
       includeDemolitionPoints: source.includeDemolitionPoints !== false,
+      contributionWeight: normalizeContributionWeight(source.contributionWeight),
+      formPointWeight: normalizeFormPointWeight(source.formPointWeight),
     };
   } catch {
-    return { weights: normalizeDutyPointWeights(null), includeDemolitionPoints: true };
+    return {
+      weights: normalizeDutyPointWeights(null),
+      includeDemolitionPoints: true,
+      contributionWeight: DEFAULT_CONTRIBUTION_WEIGHT,
+      formPointWeight: DEFAULT_FORM_POINT_WEIGHT,
+    };
   }
 }
 
@@ -1791,6 +1841,8 @@ async function loadDutyPointWeights() {
   const localSettings = readLocalDutyPointWeights();
   state.dutyPointWeights = localSettings.weights;
   state.includeDemolitionPoints = localSettings.includeDemolitionPoints;
+  state.contributionWeight = localSettings.contributionWeight;
+  state.formPointWeight = localSettings.formPointWeight;
   renderDutyPointWeights();
   if (state.adminIsAdmin !== true) return false;
   const loadVersion = dutyPointWeightsVersion;
@@ -1803,9 +1855,13 @@ async function loadDutyPointWeights() {
       const data = snap.data() || {};
       state.dutyPointWeights = normalizeDutyPointWeights(data.weights);
       state.includeDemolitionPoints = data.includeDemolitionPoints !== false;
+      state.contributionWeight = normalizeContributionWeight(data.contributionWeight);
+      state.formPointWeight = normalizeFormPointWeight(data.formPointWeight);
       writeLocalDutyPointWeights({
         weights: state.dutyPointWeights,
         includeDemolitionPoints: state.includeDemolitionPoints,
+        contributionWeight: state.contributionWeight,
+        formPointWeight: state.formPointWeight,
       });
       renderDutyPointWeights();
       render();
@@ -1820,14 +1876,22 @@ async function loadDutyPointWeights() {
 // Saving restates every score for this season the moment it lands, because
 // duty points are derived at render time rather than stored. That is the
 // intent — a weight is a rule, not a per-row value — but it is why the editor
-// says so out loud before saving.
-async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true) {
+// says so out loud before saving. The two whole-score multipliers ride in the
+// same document for the same reason.
+async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true, multipliers = {}) {
   if (blockEdenArchiveWrite('save duty point weights')) return false;
   dutyPointWeightsVersion += 1;
   const weights = normalizeDutyPointWeights(nextWeights);
   state.dutyPointWeights = weights;
   state.includeDemolitionPoints = includeDemolitionPoints !== false;
-  writeLocalDutyPointWeights({ weights, includeDemolitionPoints: state.includeDemolitionPoints });
+  state.contributionWeight = normalizeContributionWeight(multipliers.contributionWeight);
+  state.formPointWeight = normalizeFormPointWeight(multipliers.formPointWeight);
+  writeLocalDutyPointWeights({
+    weights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
+  });
   renderDutyPointWeights();
   render();
   if (state.adminIsAdmin !== true) return false;
@@ -1839,6 +1903,8 @@ async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true)
     await setDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH), {
       weights,
       includeDemolitionPoints: state.includeDemolitionPoints,
+      contributionWeight: state.contributionWeight,
+      formPointWeight: state.formPointWeight,
       updatedAt: serverTimestamp(),
       updatedBy: state.adminUser?.uid || '',
     });
@@ -1863,6 +1929,21 @@ function renderDutyPointWeights() {
   }
   const demolitionToggle = $id('dashIncludeDemolitionPointsToggle');
   if (demolitionToggle) demolitionToggle.checked = state.includeDemolitionPoints !== false;
+  const contributionInput = $id('dashContributionWeightInput');
+  if (contributionInput && document.activeElement !== contributionInput) {
+    contributionInput.value = String(normalizeContributionWeight(state.contributionWeight));
+  }
+  const formPointsInput = $id('dashFormPointWeightInput');
+  if (formPointsInput && document.activeElement !== formPointsInput) {
+    formPointsInput.value = String(normalizeFormPointWeight(state.formPointWeight));
+  }
+}
+
+function collectScoringMultipliersFromInputs() {
+  return {
+    contributionWeight: $id('dashContributionWeightInput')?.value,
+    formPointWeight: $id('dashFormPointWeightInput')?.value,
+  };
 }
 
 function collectDutyPointWeightsFromInputs() {
@@ -1879,16 +1960,137 @@ function collectDutyPointWeightsFromInputs() {
   return next;
 }
 
+// Reward distribution rules for the season: how many players each category
+// rewards and who holds the guild-master reward. Kept beside the duty weights
+// because both are season rules that restate the published rewards, and both
+// are superadmin-only.
+function readLocalRewardSettings() {
+  try {
+    return normalizeRewardSettings(
+      JSON.parse(localStorage.getItem(REWARD_SETTINGS_LOCAL_KEY) || 'null')
+    );
+  } catch {
+    return normalizeRewardSettings(null);
+  }
+}
+
+function writeLocalRewardSettings(settings) {
+  try {
+    localStorage.setItem(REWARD_SETTINGS_LOCAL_KEY, JSON.stringify(settings));
+  } catch {
+    /* private mode and full quotas are not worth failing a save over */
+  }
+}
+
+async function loadRewardSettings() {
+  state.rewardSettings = readLocalRewardSettings();
+  renderRewardSettings();
+  if (state.adminIsAdmin !== true) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, REWARD_SETTINGS_DOC_PATH));
+    if (snap.exists()) {
+      state.rewardSettings = normalizeRewardSettings(snap.data() || {});
+      writeLocalRewardSettings(state.rewardSettings);
+      renderRewardSettings();
+      render();
+    }
+    return true;
+  } catch (err) {
+    console.error('REWARD SETTINGS LOAD ERROR:', err);
+    return false;
+  }
+}
+
+async function saveRewardSettings(nextSettings) {
+  if (blockEdenArchiveWrite('save reward settings')) return false;
+  const settings = normalizeRewardSettings(nextSettings);
+  state.rewardSettings = settings;
+  writeLocalRewardSettings(settings);
+  renderRewardSettings();
+  render();
+  if (state.adminIsAdmin !== true) return false;
+  const status = $id('dashRewardSettingsStatus');
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+    await setDoc(doc(db, REWARD_SETTINGS_DOC_PATH), {
+      ...settings,
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    if (status) status.textContent = dashT('adminRewardSettingsSaved');
+    return true;
+  } catch (err) {
+    console.error('REWARD SETTINGS SAVE ERROR:', err);
+    if (status) status.textContent = showCloudSyncFailure(err, 'Reward settings save failed');
+    return false;
+  }
+}
+
+function renderRewardSettings() {
+  const settings = normalizeRewardSettings(state.rewardSettings);
+  for (const key of REWARD_QUOTA_KEYS) {
+    const input = document.querySelector(`[data-reward-quota="${key}"]`);
+    if (input && document.activeElement !== input) input.value = String(settings.quotas[key]);
+  }
+  const source = $id('dashRewardGuildMasterSource');
+  if (source && document.activeElement !== source) source.value = settings.guildMasterSource;
+  const r5 = $id('dashRewardR5Player');
+  if (r5 && document.activeElement !== r5) r5.value = settings.r5PlayerKey;
+}
+
+function collectRewardSettingsFromInputs() {
+  const quotas = {};
+  for (const key of REWARD_QUOTA_KEYS) {
+    quotas[key] = document.querySelector(`[data-reward-quota="${key}"]`)?.value;
+  }
+  return {
+    quotas,
+    guildMasterSource: $id('dashRewardGuildMasterSource')?.value,
+    r5PlayerKey: $id('dashRewardR5Player')?.value,
+  };
+}
+
+function wireRewardSettings() {
+  $id('dashRewardSettingsSaveBtn')?.addEventListener('click', () => {
+    void saveRewardSettings(collectRewardSettingsFromInputs());
+  });
+  $id('dashRewardSettingsResetBtn')?.addEventListener('click', () => {
+    if (!confirm(dashT('adminRewardSettingsResetConfirm'))) return;
+    void saveRewardSettings(DEFAULT_REWARD_SETTINGS);
+  });
+  // The guild-master choice only matters when it follows the R5, so the name
+  // field follows that switch instead of sitting there looking authoritative.
+  const source = $id('dashRewardGuildMasterSource');
+  const r5 = $id('dashRewardR5Player');
+  const syncR5Disabled = () => {
+    if (!r5) return;
+    const usesR5 = (source?.value || DEFAULT_REWARD_SETTINGS.guildMasterSource) === 'r5';
+    r5.disabled = !usesR5;
+    r5.closest('.dash-reward-r5-field')?.classList.toggle('is-disabled', !usesR5);
+  };
+  source?.addEventListener('change', syncR5Disabled);
+  syncR5Disabled();
+}
+
 function wireDutyPointWeights() {
   $id('dashDutyWeightsSaveBtn')?.addEventListener('click', () => {
     void saveDutyPointWeights(
       collectDutyPointWeightsFromInputs(),
-      $id('dashIncludeDemolitionPointsToggle')?.checked !== false
+      $id('dashIncludeDemolitionPointsToggle')?.checked !== false,
+      collectScoringMultipliersFromInputs()
     );
   });
   $id('dashDutyWeightsResetBtn')?.addEventListener('click', () => {
     if (!confirm(dashT('adminDutyWeightsResetConfirm'))) return;
-    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true);
+    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true, {
+      contributionWeight: DEFAULT_CONTRIBUTION_WEIGHT,
+      formPointWeight: DEFAULT_FORM_POINT_WEIGHT,
+    });
   });
 }
 
@@ -1912,7 +2114,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
         updatedAt: serverTimestamp(),
         updatedBy: state.adminUser?.uid || '',
       });
-      if (latestSettings.showPublicResults) await loadEdenX1Votes();
+      if (latestSettings.showMemberResults) await loadEdenX1Votes();
       await publishEdenX1PublicVoteResults(latestSettings);
       const status = $id('dashEdenVoteSettingsStatus');
       if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
@@ -1947,6 +2149,10 @@ async function activateCurrentEdenX1VoteSeason() {
     season: currentEdenVoteSeason(),
     votingOpen: false,
     allowEditing: false,
+    // A new season starts unpublished on every switch, both the split pair and
+    // the legacy aggregate they feed.
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     closesAt: '',
@@ -1971,7 +2177,7 @@ async function loadEdenX1VoteAdminData() {
 
 async function refreshEdenX1VoteAdminData() {
   await loadEdenX1VoteAdminData();
-  if (state.edenX1VoteSettings?.showPublicResults === true) {
+  if (state.edenX1VoteSettings?.showMemberResults === true) {
     await publishEdenX1PublicVoteResults(state.edenX1VoteSettings);
   }
 }
@@ -1992,7 +2198,10 @@ function bindEdenX1VoteAdminControls() {
   [
     ['dashEdenVoteOpenToggle', 'votingOpen'],
     ['dashEdenVoteEditingToggle', 'allowEditing'],
-    ['dashEdenVotePublicResultsToggle', 'showPublicResults'],
+    // Two switches now: the members' ballot and the management sheet publish
+    // independently, because the sheet is not season-scoped.
+    ['dashEdenVotePublicResultsToggle', 'showMemberResults'],
+    ['dashEdenVoteManagementResultsToggle', 'showManagementResults'],
     ['dashEdenVoteShowNamesToggle', 'showVoterNames'],
   ].forEach(([id, key]) => {
     $id(id)?.addEventListener('change', (event) => {
@@ -2432,10 +2641,18 @@ function renderConductAdjustments() {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
     return;
   }
-  list.innerHTML = rows
-    .map((record) => {
-      const pointsValue = Number(record.points || 0);
-      return `<article class="dash-conduct-row">
+  // A season accumulates hundreds of adjustments; the list pages like the
+  // other long admin tables instead of pushing everything below it off-screen.
+  const conductPage = resolveAdminTablePage(
+    'conduct',
+    `${state.r5Season || ''}|${searchQuery}|${rows.length}`,
+    rows
+  );
+  list.innerHTML =
+    conductPage.rows
+      .map((record) => {
+        const pointsValue = Number(record.points || 0);
+        return `<article class="dash-conduct-row">
         <div>
           <strong>${esc(record.playerName)}</strong>
           <span>${esc(conductCategoryLabel(record.category))} Â· ${esc(conductCreatedAtLabel(record))}</span>
@@ -2447,8 +2664,15 @@ function renderConductAdjustments() {
           <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-conduct-delete="${esc(record.id)}">${esc(dashT('adminDelete'))}</button>
         </div>
       </article>`;
-    })
-    .join('');
+      })
+      .join('') +
+    renderAdminTablePager('conduct', conductPage, 'dashConductList', { showAll: true });
+
+  bindAdminTablePager(list, 'conduct', conductPage, () => {
+    renderConductAdjustments();
+    const nextSearch = $id('dashConductSearch');
+    if (nextSearch) nextSearch.focus();
+  });
 
   list.querySelectorAll('[data-conduct-edit]').forEach((btn) => {
     btn.addEventListener('click', () => startConductEdit(btn.dataset.conductEdit));
@@ -3265,6 +3489,8 @@ function bindConductControls() {
   wireConductReviewControls();
   wireDutyPointWeights();
   void loadDutyPointWeights();
+  wireRewardSettings();
+  void loadRewardSettings();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
@@ -3822,7 +4048,7 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
     if (!unpublish) {
       rosterSnapshots = await readEdenWorkspaceRosterSnapshots(db);
       const settings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {});
-      if (settings.showPublicResults && typeof buildEdenX1PublicVoteResults === 'function') {
+      if (settings.showMemberResults && typeof buildEdenX1PublicVoteResults === 'function') {
         publicVoteResults = buildEdenX1PublicVoteResults(settings);
       }
     }
@@ -3844,7 +4070,12 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
         : {
             dutyPointWeights: normalizeDutyPointWeights(state.dutyPointWeights),
             includeDemolitionPoints: state.includeDemolitionPoints !== false,
+            contributionWeight: normalizeContributionWeight(state.contributionWeight),
+            formPointWeight: normalizeFormPointWeight(state.formPointWeight),
           },
+      // The reward distribution travels with the season so the public page shows
+      // the slots and the guild-master holder the admin configured.
+      rewardSettings: unpublish ? null : normalizeRewardSettings(state.rewardSettings),
     });
     await setDoc(projectionRef, sanitizeForFirestore(projection));
     await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
@@ -6325,6 +6556,8 @@ function buildWeightedContributionExportModel() {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
 }
 
@@ -6351,6 +6584,8 @@ function buildAllianceViewContributionModel() {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()

@@ -1,6 +1,6 @@
 # 16.5.0 — Motion and visual-craft release plan
 
-Status: **planning complete; implementation not started**  
+Status: **P0/P1 implemented and CI-green in 16.5.0 (PR #215); scope corrected in the 16.5.1 review**  
 Target: **16.5.0**, requested by the owner. This document does not bump the application version.  
 Revised: 2026-09-23 · Production reference at planning: origin/gh-pages **fd177c38**, application **16.0.18**; release integration refreshed it to **81dba72a**, application **16.0.19**, and the approved transition is now 16.0.19 → 16.5.0  
 Source: [100 HTML Files gallery](https://miaai-lab.github.io/Claude-Opus-5.5-100-HTML-Files/)
@@ -58,7 +58,7 @@ report as evidence.
 
 | Row | Status | Reason |
 |---|---|---|
-| P0 baseline/reclaim/policy/lifecycle/checks | **Included** | Measured reclaim, `js/fx/motion-policy.js` + `frame-loop.js`, and the parsed infinite-paint check all landed with tests |
+| P0 baseline/reclaim/policy/lifecycle/checks | **Included** | Measured reclaim, `js/fx/motion-policy.js` + `js/fx/pointer-vars.js`, and the parsed infinite-paint check landed with tests; the proposed `js/fx/frame-loop.js` scheduler was dropped in the 16.5.1 review because every included effect is CSS or WAAPI |
 | P1 hub spotlight/entry | **Included** | One delegated pointer owner plus a one-shot cap-12 entry; reduced motion and Save-Data settle it |
 | P1 panel transitions | **Included** | `js/fx/view-swap.js` wraps the single `switchTab` update; unsupported/busy/reduced-motion navigates directly |
 | P1 loader completion | **Included** | One bounded `is-complete` settle; text never waits on it |
@@ -72,10 +72,21 @@ report as evidence.
 | P2 season timeline (§4.6) | **Included** | Canonical `season` data and counts reconcile with the Atlas filter, deep links and 12-locale label included; owner asked for it |
 | P2 Admin/OCR/VtsScore charts (§4.7) | **Deferred** | Read owner, history completeness, and timestamp semantics are unverified; a current total cannot become a series |
 | P2 Arcade SFX (§4.8) | **Deferred** | No existing sound setting or storage contract, the games live in five `games/boot` iframes with strict artifact-contract tests, a toggle label needs a 13-locale fill, and no audio acceptance evidence was produced |
+| P2 Arcade feedback (§4.8) | **Deferred** | The non-audio half of §4.8 — finite particle shatter, text pop, and opt-in stage shake — was not allocated bytes and produced no acceptance evidence; the earlier record folded it into the SFX row |
 | P2 share art (§4.9) | **Deferred** | Seeded generative backgrounds are decorative-only and were not allocated bytes this pass |
-| P2 contrast tooling (§4.11) | **Partially included** | The parsed infinite-paint motion check shipped; the token-contrast script waits for explicit semantic foreground/background pairs |
+| P0 contrast tooling (§4.11) | **Partially included** | §0.1 classes token contrast checking as P0 tooling for new/touched token pairs; the parsed infinite-paint motion check shipped, the token-contrast script waits for explicit semantic foreground/background pairs |
 | P3 Materials scale-by-N (§4.5) | **Deferred** | Separate functional/data contract, per the plan |
 | P3 Battle Simulator worker pool (§4.10) | **Deferred** | Retained the existing single worker, per the plan |
+
+Scope review (16.5.1, 2026-09-23): every row above was re-checked against the shipped code.
+Two label corrections — the contrast-tooling row is P0 tooling per §0.1, and the non-audio half
+of §4.8 now carries its own row. `js/fx/frame-loop.js` was removed as unreachable scaffolding,
+and `tests/unit/classic-script-copy-contract.test.mjs` now guards the copy-list contract that
+16.5.0 broke in `js/shell-v14.js`. The `deployFileCount` ceiling moved 733 → 734 for the new
+shared feedback chunk — a documented lift, not the plan's default (see
+`docs/plans/16.5.0-phase0-baseline.md`). Every row still marked *Deferred* remains absent from
+the code. The §2.2 browser trace baseline is still unrecorded, and the new motion behaviour has
+no browser-level test in a CI path.
 
 ## 1. Gallery inventory and evidence quality
 

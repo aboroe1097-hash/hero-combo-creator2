@@ -7282,7 +7282,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
 }
 #ocrDashboardRoot .dash-duty-weight-row {
   display: grid;
-  grid-template-columns: minmax(6.5rem, 1fr) repeat(2, minmax(5.5rem, 8rem));
+  grid-template-columns: minmax(6.5rem, 1fr) repeat(3, minmax(4.5rem, 6.5rem));
   align-items: center;
   gap: 0.5rem;
 }
@@ -7316,6 +7316,41 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
   margin: 0.55rem 0 0;
   font-size: 0.74rem;
   color: var(--ff-text-dim);
+}
+#ocrDashboardRoot .dash-duty-weights-subtitle {
+  margin: 1.1rem 0 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ff-text-dim);
+}
+/* Reward distribution: the guild-master choice and the R5 it can point at. */
+#ocrDashboardRoot .dash-reward-guildmaster-field,
+#ocrDashboardRoot .dash-reward-r5-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 34rem;
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+}
+#ocrDashboardRoot .dash-reward-guildmaster-field > span,
+#ocrDashboardRoot .dash-reward-r5-field > span {
+  flex: 0 0 12rem;
+  color: var(--ff-text-dim);
+}
+#ocrDashboardRoot .dash-reward-guildmaster-field select,
+#ocrDashboardRoot .dash-reward-r5-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 16px keeps iOS from zooming the deck when the field is tapped. */
+  font:
+    600 16px system-ui,
+    sans-serif;
+  min-height: 44px;
+}
+#ocrDashboardRoot .dash-reward-r5-field.is-disabled {
+  opacity: 0.55;
 }
 /* Demolition switch: one tappable row, switch first, text beside it. */
 #ocrDashboardRoot .dash-duty-demolition-toggle {
@@ -7398,7 +7433,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
 }
 @media (max-width: 480px) {
   #ocrDashboardRoot .dash-duty-weight-row {
-    grid-template-columns: minmax(0, 1fr) repeat(2, minmax(4.25rem, 5.5rem));
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(3.5rem, 4.75rem));
   }
 }
 

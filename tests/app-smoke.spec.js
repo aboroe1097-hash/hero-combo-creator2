@@ -3293,9 +3293,22 @@ test.describe('app smoke tabs', () => {
     ).toHaveText('Core Rewards');
     expect(altRow?.[4]).toBe('1,000,000');
     expect(altRow?.[5]).toBe('5,000');
-    // The alt account's duties are called out as alt duties.
-    expect(altRow?.[7]).toBe('1 1 alt');
-    expect(altRow?.[8]).toBe('1 1 alt');
+    // The alt account's duties are called out as alt duties. The count is a
+    // disclosure now: the summary still reads the way it always did, and the
+    // panel behind it carries the main / alt arithmetic. The detail columns are
+    // hidden in compact view, so assert the markup rather than clicking it here;
+    // tests/unit/duty-count-cell.test.mjs owns the disclosure's own behaviour.
+    const altAccountRow = panel.locator('tbody tr', { hasText: '78,617' });
+    for (const column of [7, 8]) {
+      await expect(altAccountRow.locator('td').nth(column).locator('summary')).toHaveText(
+        /^1\s+1 alt$/
+      );
+    }
+    const dutyDisclosure = altAccountRow.locator('td').nth(7).locator('details');
+    await expect(dutyDisclosure).not.toHaveAttribute('open', '');
+    await expect(dutyDisclosure.locator('.duty-count-line[data-account="banner"]')).toContainText(
+      /1 × 1 = 10,000/
+    );
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');

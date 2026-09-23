@@ -721,6 +721,7 @@ service cloud.firestore {
     function validEdenX1VoteSettings() {
       return request.resource.data.keys().hasOnly([
         'season', 'votingOpen', 'allowEditing', 'showPublicResults',
+        'showMemberResults', 'showManagementResults',
         'showVoterNames', 'contributionRankingMode', 'closesAt', 'candidateRedirects',
         'updatedAt', 'updatedBy'
       ])
@@ -730,6 +731,10 @@ service cloud.firestore {
       && request.resource.data.votingOpen is bool
       && request.resource.data.allowEditing is bool
       && request.resource.data.showPublicResults is bool
+      // The single switch split in two; both are optional so a document written
+      // before the split still validates.
+      && (!('showMemberResults' in request.resource.data) || request.resource.data.showMemberResults is bool)
+      && (!('showManagementResults' in request.resource.data) || request.resource.data.showManagementResults is bool)
       && request.resource.data.showVoterNames is bool
       && (
         !('contributionRankingMode' in request.resource.data)
@@ -2681,19 +2686,26 @@ service cloud.firestore {
 
     // Duty scoring weights: points a single duty is worth, per activity and per
     // account class. A number here multiplies real scores, so the shape is
-    // pinned rather than trusted — three known activities, two known classes,
-    // finite non-negative numbers within the range the editor itself allows.
+    // pinned rather than trusted — three known activities, known classes, finite
+    // non-negative numbers within the range the editor itself allows.
+    //
+    // `main` and `alt` stay REQUIRED and `secondary` stays optional, the same
+    // way the vote-settings split kept its old keys: a document written before
+    // secondary existed still validates, so an un-upgraded client cannot lock
+    // itself out of its own scoring document.
     function validDutyPointWeightEntry(entry) {
       return entry is map
-        && entry.keys().hasOnly(['main', 'alt'])
+        && entry.keys().hasOnly(['main', 'alt', 'secondary'])
         && entry.keys().hasAll(['main', 'alt'])
         && entry.main is number && entry.main >= 0 && entry.main <= 100
-        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100;
+        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100
+        && (!('secondary' in entry)
+          || (entry.secondary is number && entry.secondary >= 0 && entry.secondary <= 100));
     }
 
     function validDutyPointWeights() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'updatedAt', 'updatedBy'])
+      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'contributionWeight', 'formPointWeight', 'updatedAt', 'updatedBy'])
         && d.weights is map
         && d.weights.keys().hasOnly(['banners', 'pathers', 'shieldWalls'])
         && d.weights.keys().hasAll(['banners', 'pathers', 'shieldWalls'])
@@ -2701,6 +2713,12 @@ service cloud.firestore {
         && validDutyPointWeightEntry(d.weights.pathers)
         && validDutyPointWeightEntry(d.weights.shieldWalls)
         && (!('includeDemolitionPoints' in d) || d.includeDemolitionPoints is bool)
+        // Whole-score multipliers. 10 is the same ceiling the panel's inputs
+        // carry, and the client falls back to 1 for anything hostile.
+        && (!('contributionWeight' in d)
+          || (d.contributionWeight is number && d.contributionWeight >= 0 && d.contributionWeight <= 10))
+        && (!('formPointWeight' in d)
+          || (d.formPointWeight is number && d.formPointWeight >= 0 && d.formPointWeight <= 10))
         && (!('updatedBy' in d) || d.updatedBy is string);
     }
     match /vts_admin/eden_x1_vote_settings {
@@ -2712,6 +2730,30 @@ service cloud.firestore {
     match /vts_admin/eden_x1_duty_point_weights {
       allow read: if isAdmin();
       allow create, update: if isSuperAdmin() && validDutyPointWeights();
+      allow delete: if false;
+    }
+
+    // Reward distribution rules: how many players each category rewards and who
+    // holds the guild-master reward. Superadmin-only, per workspace, and pinned
+    // so a typo cannot silently widen a quota.
+    function validRewardSettings() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['quotas', 'guildMasterSource', 'r5PlayerKey', 'updatedAt', 'updatedBy'])
+        && d.quotas is map
+        && d.quotas.keys().hasOnly(['support', 'contribution', 'management', 'team'])
+        && d.quotas.keys().hasAll(['support', 'contribution', 'management', 'team'])
+        && d.quotas.support is int && d.quotas.support >= 0 && d.quotas.support <= 50
+        && d.quotas.contribution is int && d.quotas.contribution >= 0 && d.quotas.contribution <= 50
+        && d.quotas.management is int && d.quotas.management >= 0 && d.quotas.management <= 50
+        && d.quotas.team is int && d.quotas.team >= 0 && d.quotas.team <= 50
+        && d.guildMasterSource in ['r5', 'support_top1']
+        && (!('r5PlayerKey' in d) || (d.r5PlayerKey is string && d.r5PlayerKey.size() <= 80))
+        && (!('updatedBy' in d) || d.updatedBy is string);
+    }
+
+    match /vts_admin/eden_x1_reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validRewardSettings();
       allow delete: if false;
     }
 
@@ -2813,6 +2855,12 @@ service cloud.firestore {
     match /vts_admin/eden_x2_duty_point_weights {
       allow read: if isAdmin();
       allow create, update: if isSuperAdmin() && validDutyPointWeights();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validRewardSettings();
       allow delete: if false;
     }
 

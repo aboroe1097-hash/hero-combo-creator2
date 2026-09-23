@@ -140,6 +140,12 @@ const es = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'Mostrar resultados del voto de miembros',
+  adminEdenVotesMemberResultsHint:
+    'Haz visibles las posiciones de los miembros en la votación de jugadores de equipo en la página pública de Eden cuando estén listas.',
+  adminEdenVotesManagementResults: 'Mostrar resultados del voto de R4/R5',
+  adminEdenVotesManagementResultsHint:
+    'Publica los ganadores de la votación de la gestión. Tiene su propio interruptor porque esa votación no está ligada a una temporada: una temporada sin su propia votación R4/R5 mostraría los ganadores de la anterior.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -243,7 +249,8 @@ const es = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'Agregar nombres',
   adminShieldWallEmpty: 'Aun no hay registros de muro de escudos.',
-  adminShieldWallDropZone: 'Suelta aquí la captura de la lista del muro de escudos o haz clic en Subir imagen',
+  adminShieldWallDropZone:
+    'Suelta aquí la captura de la lista del muro de escudos o haz clic en Subir imagen',
   adminShieldWallScanning: 'Escaneando lista del muro de escudos...',
   adminDutySummaryTitle: 'Resumen de tareas',
   adminDutySummaryEmpty:
@@ -285,14 +292,20 @@ const es = {
   adminAccountLinksTitle: 'Vínculos de cuentas',
   adminAccountLinksCount: '{count} vinculadas',
   adminAccountLinksSuggestedCount: '{count} sugeridas',
-  adminAccountLinksHint: 'Vincula una cuenta de estandarte o secundaria al jugador que la maneja. Sus tareas cuentan entonces para ese jugador con el peso de secundaria, aquí y en la página de Eden.',
+  adminAccountLinksHint:
+    'Vincula una cuenta de estandarte o secundaria al jugador que la maneja. Sus tareas cuentan entonces para ese jugador con el peso de secundaria, aquí y en la página de Eden.',
   adminAccountLinksAccount: 'Cuenta de estandarte o secundaria',
   adminAccountLinksAccountPh: 'p. ej. Angel Banner',
   adminAccountLinksOwner: 'La maneja',
   adminAccountLinksOwnerPh: 'p. ej. ANGEL',
-  adminAccountLinksAlt: 'Secundaria',
+  adminAccountLinksAlt: 'Secundaria / estandarte',
+  adminAccountLinksSecondary: 'Secundaria',
   adminAccountLinksAdd: 'Vincular cuenta',
   adminAccountLinksSuggested: 'Cuentas de estandarte sugeridas',
+  adminAccountsTab: 'Cuentas',
+  adminAccountLinksLinkAll: 'Vincular todas ({count})',
+  adminAccountLinksLinkAllConfirm: '¿Vincular las {count} cuentas sugeridas?',
+  adminAccountLinksShowingSome: 'Mostrando {shown} de {total} sugerencias',
   adminAccountLinksNoOwner: 'sin propietario',
   adminAccountLinksLink: 'Vincular',
   adminAccountLinksPick: 'Editar',
@@ -301,8 +314,25 @@ const es = {
   adminAccountLinksRemoveFor: 'Quitar vínculo de {account}',
   adminAccountLinksNone: 'Aún no hay cuentas vinculadas.',
   adminAccountLinksSaved: 'Guardado. {count} cuentas vinculadas.',
-  adminAccountLinksLocal: 'Guardado solo en este dispositivo; falló la sincronización. {count} cuentas vinculadas.',
+  adminAccountLinksLocal:
+    'Guardado solo en este dispositivo; falló la sincronización. {count} cuentas vinculadas.',
   adminAccountLinksSavedLog: 'Vínculos guardados: {count} vinculadas (antes {before}).',
+  adminAliasesTitle: 'Alias de jugadores',
+  adminAliasesHint:
+    'Enseña el nombre corto que usa una lista para un jugador, como zubs para Lady Zubbs. Un alias enseñado se comprueba antes que todas las listas integradas, así que siempre gana.',
+  adminAliasesAlias: 'Nombre corto',
+  adminAliasesAliasPh: 'p. ej. zubs',
+  adminAliasesCanonical: 'Cuenta como',
+  adminAliasesCanonicalPh: 'p. ej. Lady Zubbs',
+  adminAliasesAdd: 'Enseñar alias',
+  adminAliasesActive: 'Alias enseñados',
+  adminAliasesNone: 'Aún no hay alias enseñados.',
+  adminAliasesRemove: 'Quitar',
+  adminAliasesRemoveFor: 'Quitar el alias de {alias}',
+  adminAliasesSaved: 'Guardado. {count} alias enseñados.',
+  adminAliasesLocal:
+    'Guardado solo en este dispositivo; falló la sincronización. {count} alias enseñados.',
+  adminAliasesSavedLog: 'Alias de jugadores guardados: {count} enseñados (antes {before}).',
   adminDutyAddNameRowTitle:
     'Añade otro nombre para este mismo objetivo, por ejemplo si se usaron dos estandartes en él',
   adminDutyUsageTimeTitle: 'Hora de uso',
@@ -473,9 +503,11 @@ const es = {
   betaNote: 'v{version} - Herramienta de la Comunidad VTS s1097',
   tabManual: 'Constructor Manual',
   tabGenerator: 'Generador de Combos',
-  tabCodex: "Tablas de héroes",
-  researchMissingLayout: "Lista de nodos: el diseño y los requisitos no están verificados. Puedes editar niveles sin restricciones de desbloqueo supuestas.",
-  researchCostDiscrepancy: "Discrepancia en la fuente: los niveles suman {calculated} insignias de guerra; el total publicado es {published}. Las estimaciones usan los costes por nivel hasta su verificación.",
+  tabCodex: 'Tablas de héroes',
+  researchMissingLayout:
+    'Lista de nodos: el diseño y los requisitos no están verificados. Puedes editar niveles sin restricciones de desbloqueo supuestas.',
+  researchCostDiscrepancy:
+    'Discrepancia en la fuente: los niveles suman {calculated} insignias de guerra; el total publicado es {published}. Las estimaciones usan los costes por nivel hasta su verificación.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Héroes',
   tabHeroesCombos: 'Centro de héroes y combos',
@@ -1484,9 +1516,13 @@ const es = {
   scoreBreakdownTimesWeight: '{count} × {weight}',
   scoreBreakdownNoDuty: 'Sin tareas registradas',
   scoreBreakdownSecondary: 'Secundaria / estandarte',
+  scoreBreakdownSecondaryCount: '{count} secundaria',
+  scoreBreakdownSecondarySummary:
+    'Tareas de cuenta secundaria: {secondary} ({secondaryPoints} pts)',
   scoreBreakdownDutyFormula: '{count} × peso {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Tareas de cuenta principal: {main} ({mainPoints} pts) · Secundaria/estandarte: {alt} ({altPoints} pts)',
+  scoreBreakdownClassSummary:
+    'Tareas de cuenta principal: {main} ({mainPoints} pts) · Secundaria/estandarte: {alt} ({altPoints} pts)',
   scoreBreakdownAltCount: '{count} alt',
   scoreBreakdownCountSplit: 'Cuenta principal: {main} · Alt / estandarte: {alt}',
   playerSeasonTitle: 'Resumen de temporada',
@@ -1497,8 +1533,7 @@ const es = {
   edenX1BreakdownDuty: 'Puntos de tareas',
   edenX1BreakdownConductPoints: 'Puntos extra de esfuerzo de equipo',
   edenX1BreakdownTotal: 'Total',
-  edenX1DutyFormula:
-    '{banners} banderas + {pathers} caminos + {shieldWalls} muros de escudo',
+  edenX1DutyFormula: '{banners} banderas + {pathers} caminos + {shieldWalls} muros de escudo',
   edenX1ConductFormula: '{conduct} esfuerzo de equipo x 10.000',
   edenX1ConductPrivateNotice:
     'Estos puntos extra de esfuerzo de equipo los asigna R5 MalakAbo. Los detalles no se muestran publicamente; contacta para apelar.',
@@ -3294,25 +3329,52 @@ const es = {
   adminSuggestShowAll: 'Mostrar las {count}',
   adminSuggestShowFewer: 'Mostrar las primeras {count}',
   adminSuggestApproveAll: 'Aprobar las {count}',
-  adminSuggestApproveAllConfirm: '¿Aprobar {count} sugerencias? Cada una crea su ajuste ahora y no se puede deshacer en bloque.',
+  adminSuggestApproveAllConfirm:
+    '¿Aprobar {count} sugerencias? Cada una crea su ajuste ahora y no se puede deshacer en bloque.',
   adminSuggestApproveAllDone: '{count} sugerencias aprobadas.',
   adminSuggestApproveAllPartial: 'Aprobadas {done} de {count}; {failed} fallaron.',
   adminSuggestReviewNoneForFilter: 'Ninguna sugerencia coincide con este filtro.',
   adminDutyWeightsTitle: 'Pesos de puntuación de tareas',
-  adminDutyWeightsNote: 'Puntos que vale una tarea, según la actividad y según si la hizo una cuenta principal o secundaria. Guardar recalcula la temporada al instante, incluidas las entradas anteriores.',
+  adminDutyWeightsNote:
+    'Puntos que vale una tarea, según la actividad y según si la hizo una cuenta principal o secundaria. Guardar recalcula la temporada al instante, incluidas las entradas anteriores.',
   adminDutyWeightsIncludeDemolition: 'Añadir puntos de demolición a la contribución total',
-  adminDutyWeightsIncludeDemolitionHint: 'Desactívalo para mantener visible la demolición sin sumarla al total del panel.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Desactívalo para mantener visible la demolición sin sumarla al total del panel.',
   adminDutyWeightsActivity: 'Tarea',
-  adminDutyWeightsUnit: '1 punto = 10.000 de puntuación. Ejemplo: rutas en una cuenta principal a 3 suman 30.000.',
+  adminDutyWeightsUnit:
+    '1 punto = 10.000 de puntuación. Ejemplo: rutas en una cuenta principal a 3 suman 30.000.',
   adminDutyWeightsMain: 'Principal',
-  adminDutyWeightsAlt: 'Secundaria',
+  adminDutyWeightsAlt: 'Secundaria / estandarte',
+  adminDutyWeightsSecondary: 'Cuenta secundaria',
   adminDutyWeightsBanners: 'Estandartes',
   adminDutyWeightsPathers: 'Caminos',
   adminDutyWeightsShieldWalls: 'Muros de escudos',
   adminDutyWeightsSave: 'Guardar pesos',
   adminDutyWeightsReset: 'Restablecer valores por defecto',
-  adminDutyWeightsResetConfirm: '¿Restablecer todos los pesos? La temporada se recalcula al instante.',
+  adminDutyWeightsResetConfirm:
+    '¿Restablecer todos los pesos? La temporada se recalcula al instante.',
   adminDutyWeightsSaved: 'Pesos guardados. Puntuaciones recalculadas.',
+  adminScoringMultipliersTitle: 'Multiplicadores de puntuación',
+  adminScoringContributionLabel: 'Peso de la contribución en el juego',
+  adminScoringFormPointsLabel: 'Peso de los puntos del formulario',
+  adminScoringMultipliersHint:
+    'La contribución en el juego es la del ranking más los puntos fuera del gremio. 0,5 la reduce a la mitad para que el apoyo pese relativamente más; el peso de los puntos del formulario escala la unidad 1 punto = 10.000. 1 deja ambos términos como están hoy.',
+  adminRewardSettingsTitle: 'Distribución de recompensas',
+  adminRewardSettingsNote:
+    'Cuántos jugadores recompensa cada categoría esta temporada. Cambiarlo renumera las plazas de recompensa; la página publicada muestra la nueva distribución tras la siguiente publicación.',
+  adminRewardSettingsCategory: 'Categoría',
+  adminRewardSettingsSlots: 'Plazas',
+  adminRewardSettingsGuildMaster: 'La recompensa de maestro de gremio va a',
+  adminRewardSettingsGuildMasterR5: 'El R5',
+  adminRewardSettingsGuildMasterTop1: 'El mejor en apoyo',
+  adminRewardSettingsR5Label: 'Jugador R5',
+  adminRewardSettingsHint:
+    'Si el R5 indicado no está en la lista de apoyo, la recompensa de maestro de gremio se queda en el mejor en apoyo en lugar de quedar sin titular.',
+  adminRewardSettingsSave: 'Guardar distribución',
+  adminRewardSettingsSaved:
+    'Distribución guardada. Publica la temporada para actualizar la página pública.',
+  adminRewardSettingsResetConfirm:
+    '¿Restablecer la distribución de recompensas a sus valores por defecto? Esto renumera las plazas de recompensa.',
   adminSuggestApprove: 'Aprobar',
   adminSuggestReject: 'Rechazar',
   adminSuggestApproveConfirm: '¿Aprobar {points} para {player}? Esto crea el ajuste ahora.',

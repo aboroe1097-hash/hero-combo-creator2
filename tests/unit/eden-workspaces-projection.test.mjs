@@ -87,9 +87,9 @@ test('buildEdenPublicProjection strips undefined from nested attacks and summari
 test('the published season carries the admin scoring rules, and old publishes carry none', async () => {
   const { readFileSync } = await import('node:fs');
   const weights = {
-    banners: { main: 1, alt: 0.5 },
-    pathers: { main: 3, alt: 1 },
-    shieldWalls: { main: 1, alt: 1 },
+    banners: { main: 1, alt: 0.5, secondary: 0.5 },
+    pathers: { main: 3, alt: 1, secondary: 1 },
+    shieldWalls: { main: 1, alt: 1, secondary: 1 },
   };
   const withScoring = buildEdenPublicProjection({
     scoring: { dutyPointWeights: weights, includeDemolitionPoints: false },
@@ -98,6 +98,9 @@ test('the published season carries the admin scoring rules, and old publishes ca
     dutyPointWeights: weights,
     includeDemolitionPoints: false,
   });
+  // The third account class travels with the grid: the public page has to score
+  // a linked secondary account at the weight the publishing admin set for it.
+  assert.deepEqual(withScoring.scoring.dutyPointWeights.pathers.secondary, 1);
   // No scoring passed (unpublish, older callers): the field is simply absent,
   // which the public page reads as "keep the previous behaviour".
   assert.equal('scoring' in buildEdenPublicProjection({}), false);
@@ -111,6 +114,11 @@ test('the published season carries the admin scoring rules, and old publishes ca
     rules,
     /!\('scoring' in request\.resource\.data\) \|\| request\.resource\.data\.scoring is map/
   );
+  // main and alt stay required so a document written before the third class
+  // existed still validates; secondary is accepted when present.
+  assert.match(rules, /entry\.keys\(\)\.hasOnly\(\['main', 'alt', 'secondary'\]\)/);
+  assert.match(rules, /entry\.keys\(\)\.hasAll\(\['main', 'alt'\]\)/);
+  assert.match(rules, /!\('secondary' in entry\)/);
 
   const publicPage = readFileSync('js/eden-x1.js', 'utf8');
   assert.match(publicPage, /dutyPointWeights: publishedScoring\?\.dutyPointWeights/);
@@ -126,11 +134,15 @@ test('account links stay one level deep and never link a name to itself', async 
     { account: 'Loony Banner', owner: 'Angel Banner' },
     { account: 'Self', owner: 'self' },
     { account: 'RedBull#2', owner: 'REDBULL§', type: 'weird' },
+    { account: 'Angel v2', owner: 'ANGEL', type: 'secondary' },
     { account: '', owner: 'x' },
   ]);
   assert.deepEqual(links, [
     { account: 'Angel Banner', owner: 'ANGEL', type: 'banner' },
+    // An unknown type is still coerced to the first class rather than dropped.
     { account: 'RedBull#2', owner: 'REDBULL§', type: 'banner' },
+    // A third account class: a real second account, not a banner.
+    { account: 'Angel v2', owner: 'ANGEL', type: 'secondary' },
   ]);
   // Links round-trip through the registry that is saved with dashboard data.
   assert.deepEqual(normalizePlayerRegistry({ accountLinks: links }).accountLinks, links);
