@@ -466,6 +466,15 @@
                   ><span id="tabMaterialsLabel">DM Materials</span></button
                 ><span class="tab-badge tab-badge-beta">BETA</span>
               </div>
+              <div class="tab-item" data-shell-wide-primary>
+                <button id="tabBuildings" class="tab-pill tab-pill-inactive">
+                  <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M5 9l7-6 7 6v11H5V9Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20v-5h6v5M9 11h.01M15 11h.01" />
+                  </svg>
+                  <span data-i18n="tabBuildings">Buildings</span>
+                </button>
+              </div>
               <div
                 class="tab-item tab-badge-wrap"
                 data-shell-hub
@@ -1503,6 +1512,15 @@
             <div class="tab-loading">
               <div class="spinner"></div>
               Loading DM Materials...
+            </div>
+          </div>
+        </section>
+
+        <section id="buildingsSection" class="tab-panel hidden animate-fade-in tab-panel-pad-lg">
+          <div id="buildingUpgradesRoot" class="building-upgrades-host">
+            <div class="tab-loading" aria-busy="true">
+              <div class="spinner"></div>
+              <span data-i18n="loadingEllipsis">Loading…</span>
             </div>
           </div>
         </section>
