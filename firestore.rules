@@ -826,6 +826,58 @@ service cloud.firestore {
       && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy is string);
     }
 
+    // Season registry: the timeline of Eden seasons (key, label, state,
+    // timestamps, workspace). One global document, superadmin-only, because it
+    // has to stay writable after the workspace it describes is archived, and
+    // labels for archived seasons cannot live inside those frozen records.
+    function validEdenSeasonEntry(entry) {
+      return entry is map
+        && entry.keys().hasOnly([
+          'id', 'label', 'state', 'workspaceId', 'startedAtMs', 'endedAtMs'
+        ])
+        && entry.id is string
+        && entry.id.matches('^[a-z0-9][a-z0-9_-]{2,39}$')
+        && entry.label is string
+        && entry.label.size() > 0
+        && entry.label.size() <= 60
+        && (entry.state == 'ended' || entry.state == 'active' || entry.state == 'draft')
+        && entry.workspaceId is string
+        && (
+          entry.workspaceId == ''
+          || entry.workspaceId == 'eden-x1'
+          || entry.workspaceId == 'eden-x2'
+        )
+        && entry.startedAtMs is number
+        && entry.startedAtMs >= 0
+        && entry.endedAtMs is number
+        && entry.endedAtMs >= 0;
+    }
+
+    // Rules have no list iteration, so every entry position is checked under a
+    // size guard instead. Eight positions is MAX_SEASON_COUNT on both sides.
+    function validEdenSeasonEntryAt(seasons, index) {
+      return seasons.size() < index + 1 || validEdenSeasonEntry(seasons[index]);
+    }
+
+    function validEdenSeasonRegistry() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['schemaVersion', 'seasons', 'updatedAt', 'updatedBy'])
+        && d.schemaVersion == 1
+        && d.seasons is list
+        && d.seasons.size() >= 1
+        && d.seasons.size() <= 8
+        && validEdenSeasonEntryAt(d.seasons, 0)
+        && validEdenSeasonEntryAt(d.seasons, 1)
+        && validEdenSeasonEntryAt(d.seasons, 2)
+        && validEdenSeasonEntryAt(d.seasons, 3)
+        && validEdenSeasonEntryAt(d.seasons, 4)
+        && validEdenSeasonEntryAt(d.seasons, 5)
+        && validEdenSeasonEntryAt(d.seasons, 6)
+        && validEdenSeasonEntryAt(d.seasons, 7)
+        && d.updatedAt == request.time
+        && d.updatedBy == request.auth.uid;
+    }
+
     function hasStableConductMetadata() {
       return ('createdAt' in resource.data)
         && resource.data.createdAt is timestamp
@@ -2871,7 +2923,17 @@ service cloud.firestore {
 
     match /vts_admin/eden_workspaces/records/{workspaceId} {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validEdenWorkspaceRecord(workspaceId);
+      // Publishing and unpublishing move a workspace between active and draft.
+      // Archiving it is what ends a season, and that is a superadmin act.
+      allow create, update: if isAdmin()
+        && validEdenWorkspaceRecord(workspaceId)
+        && (request.resource.data.lifecycle != 'archived' || isSuperAdmin());
+      allow delete: if false;
+    }
+
+    match /vts_admin/season_registry {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validEdenSeasonRegistry();
       allow delete: if false;
     }
 
