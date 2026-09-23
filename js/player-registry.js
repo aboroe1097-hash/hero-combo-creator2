@@ -107,6 +107,25 @@ export function normalizeAccountLinks(values) {
   return Array.from(byAccount.values());
 }
 
+// Duty rows default to Banner; this "un-banner" list names the accounts whose
+// uploaded duty rows should be guessed as Main instead. It lives inside the same
+// registry map as accountLinks, so it saves and publishes with it.
+export const MAX_MAIN_ACCOUNTS = 300;
+
+export function normalizeMainAccounts(values) {
+  const names = [];
+  const seen = new Set();
+  (Array.isArray(values) ? values : []).forEach((value) => {
+    if (names.length >= MAX_MAIN_ACCOUNTS) return;
+    const name = asText(typeof value === 'string' ? value : value?.name).slice(0, 80);
+    const key = compactRegistryName(name);
+    if (!name || !key || seen.has(key)) return;
+    seen.add(key);
+    names.push(name);
+  });
+  return names;
+}
+
 export function normalizePlayerRegistry(input) {
   let source = input;
   if (typeof input === 'string') {
@@ -156,7 +175,28 @@ export function normalizePlayerRegistry(input) {
     // registry — the same map that already carries accountLinks — so they save
     // and publish with it and need no rules change of their own.
     playerAliases: normalizeTaughtPlayerAliases(source?.playerAliases),
+    mainAccounts: normalizeMainAccounts(source?.mainAccounts),
   };
+}
+
+const mainAccountKeyCache = new WeakMap();
+
+function mainAccountKeys(registry) {
+  if (!registry || typeof registry !== 'object') return new Set();
+  let keys = mainAccountKeyCache.get(registry);
+  if (!keys) {
+    keys = new Set(
+      normalizeMainAccounts(registry.mainAccounts).map((name) => compactRegistryName(name))
+    );
+    mainAccountKeyCache.set(registry, keys);
+  }
+  return keys;
+}
+
+// True when the admin listed this account as "always main" on the Accounts tab.
+export function isMainAccount(name, registry = currentPlayerRegistry()) {
+  const key = compactRegistryName(name);
+  return Boolean(key) && mainAccountKeys(registry).has(key);
 }
 
 // vts-player-aliases.js owns alias resolution; this module owns the registry the

@@ -3282,6 +3282,50 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+/* Batch edit: per-card checkbox and the sticky bar above each admin list. */
+#ocrDashboardRoot .admin-bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+#ocrDashboardRoot .admin-bulk-bar[data-active='1'] {
+  border-color: rgba(250, 204, 21, 0.6);
+}
+#ocrDashboardRoot .admin-bulk-count {
+  margin-right: auto;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .admin-bulk-check {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+#ocrDashboardRoot .admin-bulk-check input {
+  width: 18px;
+  height: 18px;
+}
+#ocrDashboardRoot .dash-duty-all-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+#ocrDashboardRoot .dash-account-link-suggest-owner {
+  min-width: 8rem;
+  max-width: 14rem;
+}
 #ocrDashboardRoot .dash-account-link-names em {
   color: var(--text-muted);
 }
