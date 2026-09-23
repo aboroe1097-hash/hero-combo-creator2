@@ -163,7 +163,10 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /entryCssBytes: 427 \* 1024/);
   assert.match(sizeCheck, /totalCssBytes: 1635 \* 1024/);
   assert.match(sizeCheck, /totalDeployBytes: 32100 \* 1024/);
-  assert.match(sizeCheck, /deployFileCount: 734/);
+  // 736 since the 2027 signup revival: sharing js/all-star-boh-model.js between
+  // the member route, the admin dashboard and the AI public-data adapter emits
+  // two chunks no single route owned before (measured 733 files, three spare).
+  assert.match(sizeCheck, /deployFileCount: 736/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
@@ -174,4 +177,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
     sizeCheck,
     /'specialization-towers\.html': \{ desktop: 80 \* 1024, mobile: 80 \* 1024 \}/
   );
+  // The member registration route now has a measured line of its own: it hosts
+  // the signup form, so its stylesheet can no longer grow unmeasured.
+  assert.match(sizeCheck, /'vtsscore\.html': \{ desktop: 22 \* 1024, mobile: 22 \* 1024 \}/);
 });

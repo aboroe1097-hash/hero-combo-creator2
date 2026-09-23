@@ -826,9 +826,16 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   // Profile entries, the global command palette, and the two small Velo layers
   // needed by Eden's first-paint loader. 15.0.0 adds the Eden X2 season route
   // and its stylesheet. 16.0.15 adds the admin-only dashboard stylesheet that
-  // VTS Admin links after ocr-dashboard.css. Keep a measured margin without
-  // letting the shell grow unbounded.
-  assert.ok(urls.length <= 64, `expected bounded app shell, found ${urls.length} URLs`);
+  // VTS Admin links after ocr-dashboard.css. The 2027 signup revival puts
+  // vtsscore.html into entryHtmlFiles so its stamps and CSP hashes are
+  // maintained like every other entry page, which brings that route's shell
+  // assets with it (/css/_tokens.css, /css/account-chip.css, /css/vts-score.css,
+  // /js/account-chip-bootstrap.js, /js/vts-score.js): 67 entries, and the page
+  // itself joins the other entry pages in the shell. Keep a measured margin
+  // without letting the shell grow unbounded.
+  assert.ok(urls.length <= 68, `expected bounded app shell, found ${urls.length} URLs`);
+  assert.ok(urls.includes('/vtsscore.html'));
+  assert.ok(urls.some((url) => url.startsWith('/js/vts-score.js?v=')));
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));

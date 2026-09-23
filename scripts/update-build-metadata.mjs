@@ -41,6 +41,9 @@ const baseAppShellFiles = [
   '/arcade.html',
   '/battle-simulator.html',
   '/specialization-towers.html',
+  // Every entry page is in the shell so a navigation to it resolves offline;
+  // VtsScore joins them now that it carries the member registration.
+  '/vtsscore.html',
 ];
 
 function makeBuildVersion() {
