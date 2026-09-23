@@ -1,6 +1,8 @@
 # Dependencies, generated builds, and local caches (including nested packages).
 node_modules/
 dist/
+# Local scratch and generated previews (reference sheets write here).
+tmp/
 .vite/
 .cache/
 .eslintcache
