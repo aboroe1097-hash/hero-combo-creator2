@@ -129,6 +129,14 @@ import {
 import { createVtsScoreAdminView } from './vts-score-admin-view.js';
 import { loadVtsScoreSnapshot } from './vts-score-store.js';
 import {
+  BOH_SIGNUP_ADMIN_ENDPOINT,
+  BOH_SIGNUP_CONFIG_PATH,
+  BOH_SIGNUP_SEASON_PATTERN,
+  createBohSignupAdminView,
+  readBohSignupAdminError,
+  saveBohSignupSeasonConfig,
+} from './boh-signup-admin.js';
+import {
   BOH_MATCH_FIXTURES,
   BOH_MATCH_TEAMS,
   getBohMatchFixture,
@@ -397,6 +405,8 @@ state.conductSuggestions = [];
 state.bohMatchEntries = [];
 state.bohMatchResults = [];
 state.vtsScoreSnapshot = null;
+// Eden 2027 signups: the config document plus the season's submission rows.
+state.bohSignupsSnapshot = null;
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -775,6 +785,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'accounts') renderAccountLinks();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') renderBohMatchPanel();
+  if (name === 'bohSignups') renderBohSignupsPanel();
   if (name === 'vtsScore') renderVtsScorePanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
@@ -7323,6 +7334,208 @@ function bindVtsScoreControls() {
   button.addEventListener('click', () => {
     void loadVtsScoreAdminSnapshot({ force: true });
   });
+}
+
+// --- Eden 2027 signup registrations ------------------------------------------
+// Two writers on purpose. The season document (`boh_allstar_config/current`) is
+// an ordinary admin Firestore write pinned by validAllStarBohConfig(); a signup
+// is filed by the bohSignupAdmin Cloud Function, because the submissions
+// collection stays owner-written and tests/unit/all-star-boh-security.test.mjs
+// pins that rule. The season/version picker is revealed to superadmins only;
+// the manual form is open to any admin, which is who files entries by hand.
+
+let bohSignupsView = null;
+let bohSignupsLoading = false;
+
+function setBohSignupsStatus(message = '', type = 'info') {
+  const el = $id('dashBohSignupsStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function ensureBohSignupsView() {
+  if (bohSignupsView) return bohSignupsView;
+  bohSignupsView = createBohSignupAdminView({
+    t: (key, vars, fallback) => {
+      const translated = dashT(key, vars || {});
+      return translated === key ? fallback || key : translated;
+    },
+  });
+  return bohSignupsView;
+}
+
+function bohSignupsSeason(value) {
+  const season = String(value || '').trim();
+  return BOH_SIGNUP_SEASON_PATTERN.test(season) ? season : '';
+}
+
+async function loadBohSignupsSnapshot() {
+  const { firestore, db } = await window.getVtsAdminFirestoreContext();
+  const configSnap = await firestore.getDoc(firestore.doc(db, BOH_SIGNUP_CONFIG_PATH));
+  const config = configSnap?.exists?.() ? configSnap.data() : {};
+  const season = bohSignupsSeason(config.activeSeason);
+  let signups = [];
+  if (season) {
+    const docs = await firestore.getDocs(
+      firestore.collection(db, `boh_allstar/${season}/submissions`)
+    );
+    signups = docs.docs
+      .map((entry) => ({ submissionUid: entry.id, ...entry.data() }))
+      .sort((left, right) =>
+        String(left.gameName || '').localeCompare(
+          String(right.gameName || ''),
+          getDashboardLang(),
+          {
+            sensitivity: 'base',
+          }
+        )
+      );
+  }
+  return { season, config, signups };
+}
+
+async function loadBohSignupsAdmin(options = {}) {
+  const root = $id('dashBohSignupsRoot');
+  if (!root || bohSignupsLoading) return;
+  if (state.bohSignupsSnapshot && !options.force) {
+    ensureBohSignupsView().render(root, state.bohSignupsSnapshot);
+    return;
+  }
+  bohSignupsLoading = true;
+  setBohSignupsStatus(dashT('adminBohSignupsLoading'), 'info');
+  try {
+    const snapshot = await loadBohSignupsSnapshot();
+    state.bohSignupsSnapshot = snapshot;
+    ensureBohSignupsView().render(root, snapshot);
+    setBohSignupsStatus('');
+  } catch (err) {
+    root.innerHTML = `<div class="dash-empty" role="alert">${esc(
+      dashT('adminBohSignupsUnavailable')
+    )}</div>`;
+    setBohSignupsStatus(showCloudSyncFailure(err, 'Signups load failed'), 'error');
+  } finally {
+    bohSignupsLoading = false;
+  }
+}
+
+function renderBohSignupsPanel() {
+  bindBohSignupsControls();
+  void loadBohSignupsAdmin();
+}
+
+async function submitBohSignupAdminRequest(payload) {
+  const user = state.adminUser;
+  if (!user?.getIdToken)
+    throw Object.assign(new Error('admin_required'), { code: 'admin_required' });
+  const { getFirebaseAppCheckToken } = await loadFirebaseApi();
+  const [idToken, appCheckToken] = await Promise.all([
+    user.getIdToken(),
+    getFirebaseAppCheckToken(),
+  ]);
+  const response = await fetch(BOH_SIGNUP_ADMIN_ENDPOINT, {
+    method: 'POST',
+    mode: 'cors',
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${idToken}`,
+      'X-Firebase-AppCheck': appCheckToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw Object.assign(new Error(body?.error || 'signup_failed'), {
+      code: body?.error || 'service_unavailable',
+      status: response.status,
+    });
+  }
+  return body;
+}
+
+function bindBohSignupsControls() {
+  const root = $id('dashBohSignupsRoot');
+  if (!root) return;
+  const refresh = $id('dashBohSignupsRefreshBtn');
+  if (refresh && !refresh.dataset.bound) {
+    refresh.dataset.bound = '1';
+    refresh.addEventListener('click', () => void loadBohSignupsAdmin({ force: true }));
+  }
+
+  const seasonForm = $id('dashBohSignupsSeasonForm');
+  if (seasonForm && !seasonForm.dataset.bound) {
+    seasonForm.dataset.bound = '1';
+    seasonForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const view = ensureBohSignupsView();
+      try {
+        const config = view.readSeasonConfig(root);
+        const saved = await saveBohSignupSeasonConfig(
+          config,
+          await window.getVtsAdminFirestoreContext()
+        );
+        state.bohSignupsSnapshot = { ...(state.bohSignupsSnapshot || {}), ...saved };
+        setBohSignupsStatus(dashT('adminBohSignupSeasonSaved'), 'success');
+        await loadBohSignupsAdmin({ force: true });
+      } catch (err) {
+        setBohSignupsStatus(
+          err?.code === 'invalid_season_setting'
+            ? dashT('adminBohSignupErrorInvalid')
+            : showCloudSyncFailure(err, 'Season settings save failed'),
+          'error'
+        );
+      }
+    });
+  }
+
+  const signupForm = $id('dashBohSignupForm');
+  if (signupForm && !signupForm.dataset.bound) {
+    signupForm.dataset.bound = '1';
+    signupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const view = ensureBohSignupsView();
+      const payload = view.collectRequest(root);
+      if (!payload.seasonId) {
+        setBohSignupsStatus(dashT('adminBohSignupErrorSeason'), 'error');
+        return;
+      }
+      setBohSignupsStatus(dashT('adminBohSignupSaving'), 'info');
+      try {
+        await submitBohSignupAdminRequest(payload);
+        view.fillForm(root, null);
+        setBohSignupsStatus(dashT('adminBohSignupSaved'), 'success');
+        await loadBohSignupsAdmin({ force: true });
+      } catch (err) {
+        setBohSignupsStatus(readBohSignupAdminError(err, { t: dashT }), 'error');
+      }
+    });
+  }
+
+  const cancelEdit = $id('dashBohSignupCancelEdit');
+  if (cancelEdit && !cancelEdit.dataset.bound) {
+    cancelEdit.dataset.bound = '1';
+    cancelEdit.addEventListener('click', () => ensureBohSignupsView().fillForm(root, null));
+  }
+
+  // The rows are re-rendered on every load, so the edit action is delegated.
+  const list = $id('dashBohSignupsList');
+  if (list && !list.dataset.bound) {
+    list.dataset.bound = '1';
+    list.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-boh-signup-edit]');
+      if (!button) return;
+      const uid = button.dataset.bohSignupEdit;
+      const signup = (state.bohSignupsSnapshot?.signups || []).find(
+        (entry) => entry.submissionUid === uid
+      );
+      if (!signup) return;
+      ensureBohSignupsView().fillForm(root, signup);
+      setBohSignupsStatus(dashT('adminBohSignupManualTitle'), 'info');
+      $id('dashBohSignupName')?.focus();
+    });
+  }
 }
 
 function renderBohMatchPanel() {

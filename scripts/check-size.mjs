@@ -337,7 +337,18 @@ const LIMITS = {
   // 16.5.0 confirmed-success feedback adds one shared chunk
   // (success-feedback-*.js, 5.2 KiB) used by the index, combo save, and Eden
   // vote paths. The merged build emits 731 files; keep three of headroom.
-  deployFileCount: 734,
+  // The 2027 signup revival shares js/all-star-boh-model.js between the member
+  // route (vtsscore), the admin dashboard and the AI public-data adapter, which
+  // emits two chunks no single route owned before: all-star-boh-model-*.js and
+  // boh-signup-document-*.js. Measured at 733 files, so the cap moves by two to
+  // keep the same three files of headroom.
+  // The complaint form lands five more on top of that: its own entry chunk for
+  // the Eden X2 route, the lazily loaded superadmin inbox controller plus its
+  // stylesheet, a translations shim that entry creates, and one @firebase/storage
+  // entry shim for the image uploads. Measured at 738 files, so the cap keeps the
+  // same three files of headroom. A documented lift with the per-file reason
+  // above, not the plan's no-increase default.
+  deployFileCount: 741,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -379,7 +390,11 @@ const LIMITS = {
     // from their own chunk, and every rule that keeps an @media wrapper needs
     // that wrapper repeated there. 682.8/779.5 KiB; lift desktop by 1 KiB so
     // Admin keeps some headroom, mobile ceiling untouched.
-    'admin.html': { desktop: 684 * 1024, mobile: 786 * 1024 },
+    // The 2027 Signups tab adds one compact grid for the season picker and the
+    // manual-entry form in css/ocr-dashboard-admin.css: 684.7/781.4 KiB. Lift
+    // desktop by 1 KiB (mobile keeps its existing ceiling); admin-only panel
+    // styles still belong in the admin file, not in shared ocr-dashboard.css.
+    'admin.html': { desktop: 685 * 1024, mobile: 786 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
@@ -402,6 +417,12 @@ const LIMITS = {
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
     'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
+    // VtsScore now hosts the member season registration as well as the score
+    // upload, so it gets a budget line of its own: tokens, account chip and
+    // css/vts-score.css measure 21.5 KiB on both viewports. The registration
+    // form's rules live in that same stylesheet rather than a new one, which is
+    // what keeps this route from adding a deploy file. Retain about 1 KiB.
+    'vtsscore.html': { desktop: 22 * 1024, mobile: 22 * 1024 },
   },
 };
 

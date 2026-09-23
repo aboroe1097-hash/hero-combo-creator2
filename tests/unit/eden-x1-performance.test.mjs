@@ -71,7 +71,13 @@ test('Eden desktop dashboard spans both columns after the voting guidance row', 
   assert.match(edenCss, /'overview rail'[\s\S]*'public\s+public'/);
   assert.match(edenCss, /#edenX1PublicOverview\s*{\s*grid-area: overview;/);
   assert.match(edenCss, /#edenX1PublicDashboard\s*{\s*grid-area: public;/);
-  assert.match(eden, /overviewHost\.innerHTML = renderEdenTopNamesOverview\(\)/);
+  // The overview host renders the season signup invitation ahead of the voting
+  // guidance in the same pass; both are required for the row to be complete.
+  assert.match(eden, /renderEdenSignupPrompt\(\)/);
+  assert.match(
+    eden,
+    /overviewHost\.innerHTML = `\$\{renderEdenSignupPrompt\(\)\}\$\{renderEdenTopNamesOverview\(\)\}`/
+  );
 });
 
 test('Eden voting uses only the native form submit activation path', () => {

@@ -7612,3 +7612,44 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     monospace;
   resize: vertical;
 }
+
+/* Eden 2027 signups: the season/scoring-version picker and the manual entry
+   form. Admin-only, so it belongs in this file rather than ocr-dashboard.css,
+   which both Eden pages also load. */
+#ocrDashboardRoot .dash-boh-signups-season,
+#ocrDashboardRoot .dash-boh-signup-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+#ocrDashboardRoot .dash-boh-signups-field,
+#ocrDashboardRoot .dash-boh-signup-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-boh-signups-check {
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: start;
+}
+#ocrDashboardRoot .dash-boh-signups-check input {
+  width: 18px;
+  height: 18px;
+}
+#ocrDashboardRoot .dash-boh-signup-wide,
+#ocrDashboardRoot .dash-boh-signup-form .dash-card-actions,
+#ocrDashboardRoot .dash-boh-signup-form .dash-card-subtitle {
+  grid-column: 1 / -1;
+}
+#ocrDashboardRoot .dash-boh-signup-form textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+@media (max-width: 768px) {
+  #ocrDashboardRoot .dash-boh-signups-season,
+  #ocrDashboardRoot .dash-boh-signup-form {
+    grid-template-columns: 1fr;
+  }
+}

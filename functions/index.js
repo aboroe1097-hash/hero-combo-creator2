@@ -5,6 +5,7 @@ import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
+import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
 import { createSetUserRoleHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
 
@@ -61,6 +62,30 @@ const setUserRoleHandler = createSetUserRoleHandler({
   auth: getAuth(firebaseApp),
   db: firestore,
 });
+
+// Leadership's manual add/edit path for season signups. firestore.rules keeps
+// the submissions collection owner-written (a test pins that admins never get
+// create/update there), so this endpoint is the only administrative writer. It
+// re-checks the admin custom claim itself — see src/boh-signup-admin.js.
+const bohSignupAdminHandler = createBohSignupAdminHandler({
+  auth: getAuth(firebaseApp),
+  appCheck: getAppCheck(firebaseApp),
+  db: firestore,
+  serverTimestamp: () => FieldValue.serverTimestamp(),
+});
+
+export const bohSignupAdmin = onRequest(
+  {
+    region: 'us-central1',
+    invoker: 'public',
+    memory: '256MiB',
+    timeoutSeconds: 30,
+    maxInstances: 10,
+    concurrency: 20,
+    cors: false,
+  },
+  bohSignupAdminHandler
+);
 
 // onCall rather than onRequest: the callable protocol verifies the caller's ID
 // token and hands the decoded claims to the handler, which is exactly the

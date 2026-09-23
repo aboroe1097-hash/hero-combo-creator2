@@ -73,6 +73,14 @@ import {
   getEdenWorkspace,
   isPublishedEdenProjection,
 } from './eden-workspaces.js';
+import {
+  EDEN_ACCOUNT_LINK_STATUS,
+  EDEN_ACCOUNT_PROFILE_COLLECTION,
+  EDEN_SIGNUP_PATH,
+  isEdenAccountPlayerResolved,
+  readEdenAccountGameName,
+  resolveEdenAccountPlayer,
+} from './eden-account-link.js';
 
 export const APP_VERSION = '16.5.0';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
@@ -196,6 +204,12 @@ let publicHeatmapResizeFrame = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let currentPublicStatsSearch = '';
+// Account link state. `edenAccountProfileRequest` is the one profile read the
+// page makes for a signed-in visitor; `edenAccountPlayer` is the roster row it
+// resolved to (or why it could not). Both stay null for guests, which is the
+// normal case on the public pages.
+let edenAccountProfileRequest = null;
+let edenAccountPlayer = null;
 // The public weighted table can hold the whole roster (200+ rows). Cap the
 // initial view and debounce search; progressive rendering handles the rest.
 const publicWeightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showAll: false };
@@ -1568,6 +1582,43 @@ function renderEdenTopNamesOverview(options = {}) {
   });
 }
 
+/**
+ * The season signup invitation, rendered above the voting guidance on the
+ * active-season page only: eden-x1.html is the archived season, and advertising
+ * a registration whose season has ended would be wrong. The form itself lives
+ * on the VtsScore route, where the member PIN, the member grant and the OCR
+ * worker already are — one surface instead of a second one to lock down.
+ */
+function renderEdenSignupPrompt() {
+  if (EDEN_X1_IS_ARCHIVE) return '';
+  const linked = isEdenAccountPlayerResolved(edenAccountPlayer) ? edenAccountPlayer.playerName : '';
+  return `<section id="edenX1SignupPrompt" class="dash-card eden-x1-signup-prompt">
+    <div class="eden-x1-signup-prompt__copy">
+      <span class="eden-x1-signup-prompt__kicker">${esc(t('edenX1SignupPromptKicker'))}</span>
+      <h2>${esc(t('edenX1SignupPromptTitle'))}</h2>
+      <p>${esc(t('edenX1SignupPromptCopy'))}</p>
+      ${
+        linked
+          ? `<p class="eden-x1-signup-prompt__linked">${esc(
+              t('edenX1SignupPromptLinked', { player: linked })
+            )}</p>`
+          : ''
+      }
+    </div>
+    <a class="eden-x1-signup-prompt__cta" href="${EDEN_SIGNUP_PATH}">${esc(
+      t('edenX1SignupPromptCta')
+    )}</a>
+  </section>`;
+}
+
+/** Re-renders the prompt in place once the account link resolves. */
+function refreshEdenSignupPrompt() {
+  const host = $('edenX1PublicOverview');
+  const current = host?.querySelector('#edenX1SignupPrompt');
+  if (!host || !current || EDEN_X1_IS_ARCHIVE) return;
+  current.outerHTML = renderEdenSignupPrompt();
+}
+
 function renderEdenVoteMemberOptions() {
   return `<datalist id="edenX1VoteMemberOptions">${currentMemberOptions
     .map((row) => `<option value="${esc(row.playerName)}"></option>`)
@@ -2771,7 +2822,7 @@ function renderEdenTeamVotePanel() {
       <div class="eden-x1-vote-name-stack">
         <label class="eden-x1-vote-field" for="edenX1VoterName">
           <span>${esc(t('edenX1VoteYourName'))}</span>
-          <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
+          <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || edenAccountPlayerName())}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
           <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1VoterName"></div>
           <div id="edenX1VoterNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1VoterName" aria-live="polite"></div>
         </label>
@@ -3772,6 +3823,95 @@ function rerenderPublicMyStatsCard(host, options = {}) {
   const cursor = options.selectionStart ?? nextInput.value.length;
   nextInput.focus();
   nextInput.setSelectionRange(cursor, cursor);
+}
+
+/* =============================================================
+   Account link — the signed-in visitor and their guild row.
+
+   Before this, My Stats and the ballot both asked the member to type - and
+   re-type - a name the site already knows: profile.html stores
+   `accountProfile.gameName`, and the page's own matcher (`findEdenMemberOption`
+   behind `resolvePublicStatsOption`) can turn that name into a roster row and
+   its weighted-score card.
+
+   Order of resolution, all of it off the render path:
+     1. one `users/{uid}.accountProfile` read, started with the live load;
+     2. that game name through `resolveEdenAccountPlayer`, the page's matcher
+        and nothing else, so a decorated or ambiguous name behaves exactly as
+        a typed search would;
+     3. `found` prefills, anything else leaves today's search-by-hand flow.
+   Guests, a denied read, and an unreadable profile all end at step 3, so the
+   page can never be blocked or broken by this.
+   ============================================================= */
+
+function requestEdenAccountGameName(db, firestore, user) {
+  if (edenAccountProfileRequest) return edenAccountProfileRequest;
+  edenAccountProfileRequest = (async () => {
+    // Strictly `isAnonymous === false`: the Firebase user object always carries
+    // the boolean, so an object without it (a test double, an odd restore path)
+    // is treated as a guest rather than as a linked account.
+    if (!user || user.isAnonymous !== false || !user.uid) return '';
+    try {
+      const snapshot = await firestore.getDoc(
+        firestore.doc(db, EDEN_ACCOUNT_PROFILE_COLLECTION, user.uid)
+      );
+      const profile = snapshot?.exists?.() ? snapshot.data()?.accountProfile : null;
+      return readEdenAccountGameName(profile);
+    } catch {
+      return '';
+    }
+  })();
+  return edenAccountProfileRequest;
+}
+
+async function applyEdenAccountLink() {
+  const gameName = await (edenAccountProfileRequest || Promise.resolve(''));
+  if (!gameName) return null;
+  const player = resolveEdenAccountPlayer({
+    gameName,
+    resolveOption: (value) => findEdenMemberOption(value),
+    resolveMatches: (value, limit) => getPublicStatsMatches(value, limit),
+  });
+  edenAccountPlayer = player;
+  if (!isEdenAccountPlayerResolved(player)) {
+    console.info(
+      `[eden] "${gameName}" did not resolve to one guild row (${player.status}); keeping search-by-hand.`
+    );
+    return player;
+  }
+  applyEdenAccountPlayerToMyStats(player);
+  prefillEdenVoterName(player);
+  refreshEdenSignupPrompt();
+  return player;
+}
+
+function edenAccountPlayerName() {
+  return isEdenAccountPlayerResolved(edenAccountPlayer) ? edenAccountPlayer.playerName : '';
+}
+
+/** Opens My Stats on the member's own row, unless they already searched. */
+function applyEdenAccountPlayerToMyStats(player) {
+  if (!player?.playerName || currentPublicStatsSearch.trim()) return false;
+  const host = $('edenX1PublicDashboard');
+  const card = host?.querySelector('#edenX1MyStatsCard');
+  if (!card) return false;
+  currentPublicStatsSearch = player.playerName;
+  rerenderPublicMyStatsCard(host);
+  return true;
+}
+
+/** Fills the ballot's "who are you" field, unless the visitor already typed. */
+function prefillEdenVoterName(player = edenAccountPlayer) {
+  const rail = $('edenX1VoteRail');
+  const input = rail?.querySelector('#edenX1VoterName');
+  if (!input || input.value.trim()) return false;
+  const option = isEdenAccountPlayerResolved(player)
+    ? findEdenMemberOption(player.playerName)
+    : null;
+  if (!option) return false;
+  input.value = option.playerName;
+  updateEdenVoteInputConfirmation(rail, 'edenX1VoterName', option);
+  return true;
 }
 
 function setPublicWeightedSort(col, host) {
@@ -5937,7 +6077,7 @@ async function renderPublicDashboard(data = publicDashboardData) {
     overviewHost.innerHTML = '';
   } else {
     overviewHost.classList.remove('hidden');
-    overviewHost.innerHTML = renderEdenTopNamesOverview();
+    overviewHost.innerHTML = `${renderEdenSignupPrompt()}${renderEdenTopNamesOverview()}`;
   }
   host.classList.remove('hidden');
   host.innerHTML = `<div class="eden-x1-public-root">
@@ -7219,6 +7359,11 @@ async function loadEdenX1Dashboard() {
         setEdenLoadingProgress(generation, 58);
         const { getFirestore, doc, getDoc } = firestore;
         const db = getFirestore(app);
+        // Started here, applied once the roster is loaded (see
+        // applyEdenAccountLink): a guest resolves to '' without a read, and a
+        // signed-in member's profile read overlaps the dashboard load instead
+        // of adding a round trip after it.
+        requestEdenAccountGameName(db, firestore, voteUser);
 
         // The X2 season page never touches a working admin document: the whole
         // public view is one allowlisted projection, written by an explicit
@@ -7546,6 +7691,10 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   renderEdenPodium();
   renderEdenProgression(data);
   renderEdenVoteRail();
+  // The roster the matcher needs exists from here on, so this is the first
+  // point where an account can resolve to a guild row. Deliberately not
+  // awaited: the prefills land when the profile read lands.
+  void applyEdenAccountLink();
   // Stage 1: the weighted table users came for. Reveal it, then yield so the
   // browser can paint before the heavy public dashboard renders.
   renderCurrentTable();
