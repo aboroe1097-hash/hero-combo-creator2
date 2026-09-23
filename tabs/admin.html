@@ -735,6 +735,11 @@
                  so an admin without the level never sees it; the callable and
                  firestore.rules enforce the boundary independently. -->
             <button class="dash-subtab-btn" data-subtab="userRoles" data-requires-superadmin hidden><span data-i18n="adminRolesTab">Users &amp; Roles</span></button>
+            <!-- Superadmin only, same gate and same reasoning as Users & Roles.
+                 The submissions themselves are unreadable to anyone else:
+                 firestore.rules restricts complaints/records to isSuperAdmin(),
+                 so this button is presentation, not the boundary. -->
+            <button class="dash-subtab-btn" data-subtab="complaints" data-requires-superadmin hidden><span data-i18n="adminComplaintsTab">Complaints</span></button>
           </div>
         </section>
       </div>
@@ -1903,6 +1908,7 @@
       </div>
       <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
       <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabComplaints"><section id="dashComplaintsRoot"></section></div>
 
       <!-- Sub-tab: Eden votes for the active workspace season -->
       <div class="dash-subtab-panel hidden" id="dashSubtabEdenVotes">
