@@ -81,7 +81,7 @@ export function createInput({ onPause, onRestart } = {}) {
   window.addEventListener('blur', onBlur);
 
   function readGamepad() {
-    if (!navigator.getGamepads) return null;
+    if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
     const pads = navigator.getGamepads();
     for (const pad of pads) {
       if (!pad || !pad.connected) continue;

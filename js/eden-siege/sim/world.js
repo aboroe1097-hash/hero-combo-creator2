@@ -21,6 +21,17 @@ import {
   TIER_SCALE,
   BUILD_PHASE_MS,
   SCORE,
+  TOWER_MAX_LEVEL,
+  TOWER_TIER,
+  CRIT,
+  DASH,
+  ULT,
+  MODIFIERS,
+  MODIFIER_ORDER,
+  modifierChance,
+  BOSS,
+  TUTORIAL,
+  waveAt,
 } from '../data/balance.js';
 import { ASSETS, FACTIONS, heroByName } from '../data/theme.js';
 import { mapById } from '../data/maps.js';
@@ -28,7 +39,7 @@ import { createRng, hashSeed } from '../rng.js';
 
 const READY_MS = 9000;
 const TOWER_ORDER = ['frost', 'ember'];
-const MAX_TOWER_LEVEL = 3;
+const MAX_TOWER_LEVEL = TOWER_MAX_LEVEL;
 
 function emptyInput() {
   return {
@@ -38,12 +49,22 @@ function emptyInput() {
     attackHeld: false,
     swap: null,
     nova: false,
+    dash: false,
+    ult: false,
     buildSocket: null,
     buildKind: 'frost',
     upgradeSocket: null,
     start: false,
     restart: false,
+    continueEndless: false,
+    skipTutorial: false,
   };
+}
+
+function emptyTutorial(enabled) {
+  const steps = {};
+  for (const step of TUTORIAL.steps) steps[step] = false;
+  return { enabled: Boolean(enabled), active: false, done: !enabled, skipped: false, elapsedMs: 0, steps };
 }
 
 function defaultMods() {
@@ -68,6 +89,22 @@ function applyHeroMods(mods, hero) {
   return mods;
 }
 
+function emptyStats() {
+  return {
+    kills: 0,
+    killsThisWave: 0,
+    wavesCleared: 0,
+    damageTaken: 0,
+    towersBuilt: 0,
+    upgrades: 0,
+    maxChain: 0,
+    crits: 0,
+    dodges: 0,
+    bossKills: 0,
+    shotsFired: 0,
+  };
+}
+
 export function createWorld(options = {}) {
   const map = mapById(options.mapId || 'keep');
   const hero = heroByName(options.heroName);
@@ -75,6 +112,9 @@ export function createWorld(options = {}) {
   const rng = createRng(seed);
   const mods = applyHeroMods(defaultMods(), hero);
   const difficulty = options.difficulty === 'hard' ? 1.25 : 1;
+  const mode = ['campaign', 'endless', 'daily'].includes(options.mode) ? options.mode : 'campaign';
+  const startsEndless = mode !== 'campaign';
+  const tutorialEnabled = Boolean(options.tutorial) && mode === 'campaign';
 
   const state = {
     mapId: map.id,
@@ -85,6 +125,9 @@ export function createWorld(options = {}) {
     timeMs: 0,
     phase: 'ready',
     phaseMs: READY_MS,
+    mode,
+    endless: startsEndless,
+    campaignCleared: false,
     wave: 0,
     wavesTotal: WAVES.length,
     waveElement: WAVES[0].element,
@@ -94,6 +137,8 @@ export function createWorld(options = {}) {
     gold: GOLD.start,
     core: { x: map.core.x, z: map.core.z, radius: map.core.radius, hp: CORE.maxHp, maxHp: CORE.maxHp, burnMs: 0, flashMs: 0 },
     nova: { charge: 0, ready: false },
+    ult: { charge: 0, ready: false, activeMs: 0 },
+    tutorial: emptyTutorial(tutorialEnabled),
     player: {
       x: map.spawn.x,
       z: map.spawn.z,
@@ -110,6 +155,10 @@ export function createWorld(options = {}) {
       slowMs: 0,
       hitFlashMs: 0,
       facing: Math.PI,
+      dashMs: 0,
+      dashCdMs: 0,
+      iframeMs: 0,
+      dodged: false,
     },
     units: [],
     towers: [],
@@ -117,7 +166,7 @@ export function createWorld(options = {}) {
     projectiles: [],
     pickups: [],
     fx: [],
-    stats: { kills: 0, killsThisWave: 0, wavesCleared: 0, damageTaken: 0, towersBuilt: 0 },
+    stats: emptyStats(),
   };
 
   const input = emptyInput();
@@ -126,6 +175,10 @@ export function createWorld(options = {}) {
   let nextId = 1;
   let nextSpawnAtMs = 0;
   let cadence = 0;
+
+  let currentWave = WAVES[0];
+  // A finished (or skipped) tutorial stays finished across restarts.
+  let tutorialCompleted = false;
 
   // ── helpers ───────────────────────────────────────────────────────────────
   function emit(type, payload) {
@@ -173,31 +226,63 @@ export function createWorld(options = {}) {
     };
   }
 
+  function bossCycle() {
+    return Math.max(0, Math.floor(state.wave / BOSS.every) - 1);
+  }
+
+  function tutorialStep(step) {
+    const tutorial = state.tutorial;
+    if (!tutorial.active || tutorial.steps[step]) return;
+    tutorial.steps[step] = true;
+    emit('tutorialStep', { step });
+  }
+
+  function rollModifier(isBoss) {
+    if (isBoss || state.tutorial.active) return null;
+    const chance = state.endless && state.wave > WAVES.length ? 0.5 : modifierChance(state.wave);
+    if (chance <= 0 || rng.next() >= chance) return null;
+    return MODIFIER_ORDER[rng.int(0, MODIFIER_ORDER.length - 1)];
+  }
+
   function spawnUnit(kind, tier, gateIndex) {
     const gate = map.gates[gateIndex % map.gates.length];
+    const kindDef = ENEMY_KINDS[kind];
     const scale = unitScale(kind, tier);
-    const boss = state.waveIsBoss ? 1.3 : 1;
+    const isBoss = kind === BOSS.kind;
+    let hpMult = currentWave.hpMult || 1;
+    if (isBoss) hpMult *= 1 + bossCycle() * BOSS.hpPerCycle;
+    else if (state.waveIsBoss) hpMult *= BOSS.escortHpMult;
     // A "mixed" wave rolls each unit's faction; every other wave is single.
     const element =
       state.waveElement === 'mixed' ? (rng.next() < 0.5 ? 'fire' : 'ice') : state.waveElement;
+    const modifier = rollModifier(isBoss);
+    const modifierDef = modifier ? MODIFIERS[modifier] : null;
+    const hp = scale.hp * hpMult * (modifierDef?.hpMult || 1);
+    const shield = modifier === 'shielded' ? hp * MODIFIERS.shielded.shieldRatio : 0;
+    const damage = scale.damage * (state.tutorial.active ? TUTORIAL.damageMult : 1);
     state.units.push({
       id: nextId++,
       kind,
+      art: kindDef.art || kind,
       tier,
       element,
+      modifier,
+      boss: isBoss,
       x: gate.x + rng.float(-1.4, 1.4),
       z: gate.z + rng.float(-1.1, 1.1),
       vx: 0,
       vz: 0,
-      hp: scale.hp * boss,
-      maxHp: scale.hp * boss,
-      damage: scale.damage,
-      speed: scale.speed,
-      score: scale.score * (state.waveIsBoss ? 1.5 : 1),
-      radius: ENEMY_KINDS[kind].radius,
-      ranged: ENEMY_KINDS[kind].ranged,
-      range: ENEMY_KINDS[kind].range,
-      aggroRadius: ENEMY_KINDS[kind].aggroRadius,
+      hp,
+      maxHp: hp,
+      shield,
+      maxShield: shield,
+      damage,
+      speed: scale.speed * (modifierDef?.speedMult || 1),
+      score: scale.score * (state.waveIsBoss ? 1.5 : 1) * (modifier ? 1.3 : 1),
+      radius: kindDef.radius,
+      ranged: kindDef.ranged,
+      range: kindDef.range,
+      aggroRadius: kindDef.aggroRadius,
       attackCdMs: rng.int(0, 600),
       slowMs: 0,
       slowFactor: 1,
@@ -205,19 +290,13 @@ export function createWorld(options = {}) {
       burnDps: 0,
       facing: 0,
       hitFlashMs: 0,
+      slamCdMs: isBoss ? BOSS.slamFirstMs : 0,
+      telegraph: null,
     });
-    emit('spawn', { kind, tier, element, x: gate.x, z: gate.z });
+    emit('spawn', { kind, tier, element, modifier, boss: isBoss, x: gate.x, z: gate.z });
   }
 
-  function startWave() {
-    state.wave += 1;
-    const wave = WAVES[state.wave - 1];
-    state.waveElement = wave.element;
-    state.phase = 'wave';
-    state.phaseMs = 0;
-    state.waveIsBoss = Boolean(wave.boss);
-    state.stats.killsThisWave = 0;
-    spawnQueue = [];
+  function queueGroups(wave) {
     let cursor = 0;
     for (const group of wave.groups) {
       for (let index = 0; index < group.count; index += 1) {
@@ -230,9 +309,50 @@ export function createWorld(options = {}) {
         cursor += wave.intervalMs * rng.float(0.82, 1.18);
       }
     }
+    return cursor;
+  }
+
+  function startWave() {
+    const tutorial = state.tutorial;
+    let wave;
+    if (tutorial.enabled && !tutorial.done) {
+      // The training wave: wave 0, a purse for the first tower and a charged
+      // nova so every step of the checklist is reachable.
+      tutorial.active = true;
+      tutorial.elapsedMs = 0;
+      wave = TUTORIAL.wave;
+      state.gold += TUTORIAL.purse;
+      state.nova.charge = NOVA.maxCharge;
+      state.nova.ready = true;
+    } else {
+      state.wave += 1;
+      wave = waveAt(state.wave);
+    }
+    currentWave = wave;
+    state.waveElement = wave.element;
+    state.phase = 'wave';
+    state.phaseMs = 0;
+    state.waveIsBoss = Boolean(wave.boss) && !tutorial.active;
+    state.stats.killsThisWave = 0;
+    spawnQueue = [];
+    const length = queueGroups(wave);
+    if (state.waveIsBoss) {
+      spawnQueue.push({
+        kind: BOSS.kind,
+        tier: Math.min(4, 1 + bossCycle()),
+        gate: rng.int(0, map.gates.length - 1),
+        atMs: length * 0.3,
+      });
+    }
     spawnQueue.sort((a, b) => a.atMs - b.atMs);
     nextSpawnAtMs = 0;
-    emit('wave', { wave: state.wave, boss: state.waveIsBoss, element: wave.element });
+    emit('wave', {
+      wave: state.wave,
+      boss: state.waveIsBoss,
+      element: wave.element,
+      tutorial: tutorial.active,
+      endless: state.wave > WAVES.length,
+    });
     if (state.waveIsBoss) emit('boss');
   }
 
@@ -240,8 +360,30 @@ export function createWorld(options = {}) {
     const index = Math.min(state.wave, BUILD_PHASE_MS.length - 1);
     state.phase = 'build';
     state.phaseMs = BUILD_PHASE_MS[index];
-    state.gold += WAVES[state.wave - 1] ? WAVES[state.wave - 1].reward : 0;
+    state.gold += currentWave ? currentWave.reward : 0;
     emit('buildPhase', { wave: state.wave + 1 });
+  }
+
+  function finishTutorial(skipped) {
+    const tutorial = state.tutorial;
+    if (!tutorial.active) return;
+    tutorial.active = false;
+    tutorial.done = true;
+    tutorial.skipped = skipped;
+    tutorialCompleted = true;
+    if (skipped) {
+      state.units.length = 0;
+      spawnQueue = [];
+      for (let index = state.projectiles.length - 1; index >= 0; index -= 1) {
+        if (state.projectiles[index].owner === 'enemy') state.projectiles.splice(index, 1);
+      }
+    }
+    state.phase = 'build';
+    state.phaseMs = BUILD_PHASE_MS[0];
+    state.gold += TUTORIAL.wave.reward;
+    currentWave = WAVES[0];
+    emit('tutorialDone', { skipped });
+    emit('buildPhase', { wave: 1 });
   }
 
   function endRun(phase) {
@@ -256,6 +398,13 @@ export function createWorld(options = {}) {
     emit(phase === 'victory' ? 'victory' : 'defeat', { score: state.score });
   }
 
+  function continueEndless() {
+    if (state.phase !== 'victory') return;
+    state.endless = true;
+    startBuildPhase();
+    emit('endless', { wave: state.wave });
+  }
+
   function damageCore(amount, element) {
     if (state.core.hp <= 0) return;
     state.core.hp = Math.max(0, state.core.hp - amount);
@@ -265,9 +414,20 @@ export function createWorld(options = {}) {
     if (state.core.hp <= 0) endRun('defeat');
   }
 
+  // Returns whether the blow connected. A dash's i-frames let bolts pass
+  // through the hero, which is the whole point of dashing through a volley.
   function damagePlayer(amount) {
     const player = state.player;
-    if (!player.alive || player.hitFlashMs > 0) return;
+    if (!player.alive) return false;
+    if (player.iframeMs > 0) {
+      if (!player.dodged) {
+        player.dodged = true;
+        state.stats.dodges += 1;
+        emit('dodge', { x: player.x, z: player.z });
+      }
+      return false;
+    }
+    if (player.hitFlashMs > 0) return true;
     player.hp = Math.max(0, player.hp - amount);
     player.hitFlashMs = PLAYER.hitInvulnMs;
     state.stats.damageTaken += amount;
@@ -275,10 +435,18 @@ export function createWorld(options = {}) {
     if (player.hp <= 0) {
       player.alive = false;
       player.respawnMs = PLAYER.respawnMs;
+      player.dashMs = 0;
       state.combo.count = 0;
       state.combo.mult = 1;
       emit('playerDown', { x: player.x, z: player.z });
     }
+    return true;
+  }
+
+  function addUltCharge(amount) {
+    const ult = state.ult;
+    ult.charge = Math.min(ULT.maxCharge, ult.charge + amount);
+    ult.ready = ult.charge >= ULT.maxCharge;
   }
 
   function addScoreForKill(unit) {
@@ -288,6 +456,7 @@ export function createWorld(options = {}) {
     combo.lastElement = unit.element;
     combo.timerMs = COMBO.decayMs;
     combo.mult = Math.min(COMBO.max, 1 + combo.count * COMBO.perKill);
+    state.stats.maxChain = Math.max(state.stats.maxChain, combo.count);
     const gained = Math.round(unit.score * combo.mult);
     state.score += gained;
     state.stats.kills += 1;
@@ -297,12 +466,13 @@ export function createWorld(options = {}) {
       state.nova.charge + NOVA.chargePerKill * mods.novaCharge
     );
     state.nova.ready = state.nova.charge >= NOVA.maxCharge;
+    addUltCharge(unit.boss ? ULT.maxCharge / 2 : ULT.perKill);
     return { gained, alternating };
   }
 
   function dropPickup(unit) {
     const faction = FACTIONS[unit.element] || FACTIONS.ice;
-    const value = Math.round((GOLD.byTier[unit.tier] || 3) * mods.gold);
+    const value = Math.round((GOLD.byTier[unit.tier] || 3) * mods.gold * (unit.boss ? 10 : 1));
     state.pickups.push({
       id: nextId++,
       x: unit.x,
@@ -316,7 +486,7 @@ export function createWorld(options = {}) {
     });
   }
 
-  function killUnit(index, element) {
+  function killUnit(index, element, meta = {}) {
     const unit = state.units[index];
     const { gained, alternating } = addScoreForKill(unit);
     dropPickup(unit);
@@ -326,11 +496,25 @@ export function createWorld(options = {}) {
       x: unit.x,
       z: unit.z,
       element: unit.element,
-      ttlMs: 420,
-      maxTtlMs: 420,
-      scale: 1 + unit.radius,
+      ttlMs: unit.boss ? 900 : 420,
+      maxTtlMs: unit.boss ? 900 : 420,
+      scale: (1 + unit.radius) * (unit.boss ? 2 : 1),
     });
-    emit('kill', { kind: unit.kind, tier: unit.tier, element, gained, alternating, x: unit.x, z: unit.z });
+    if (unit.boss) state.stats.bossKills += 1;
+    emit('kill', {
+      kind: unit.kind,
+      tier: unit.tier,
+      element,
+      gained,
+      alternating,
+      x: unit.x,
+      z: unit.z,
+      crit: Boolean(meta.crit),
+      source: meta.source || 'player',
+      boss: unit.boss,
+      modifier: unit.modifier,
+    });
+    if (unit.boss) emit('bossDown', { x: unit.x, z: unit.z });
     state.units.splice(index, 1);
   }
 
@@ -345,24 +529,52 @@ export function createWorld(options = {}) {
     unit.burnMs = Math.max(unit.burnMs, ms);
   }
 
+  // Direct damage goes through a unit's shield and armour; burn ticks do not
+  // (see updateUnits), which is why Fire is the answer to armour.
   function damageUnit(unit, amount, element, options = {}) {
-    unit.hp -= amount;
+    let damage = amount;
+    let shieldHit = false;
+    if (unit.shield > 0) {
+      const factor = element === 'ice' || options.dual ? MODIFIERS.shielded.iceShieldMult : 1;
+      const absorbed = Math.min(unit.shield, damage * factor);
+      unit.shield -= absorbed;
+      damage -= absorbed / factor;
+      shieldHit = true;
+      if (unit.shield <= 0.001) {
+        unit.shield = 0;
+        emit('shieldBreak', { x: unit.x, z: unit.z, id: unit.id });
+      }
+    }
+    if (unit.modifier === 'armored') damage *= MODIFIERS.armored.directDamageMult;
+    unit.hp -= damage;
     unit.hitFlashMs = 140;
-    if (element === 'ice') applySlow(unit, PLAYER.ice.slowMs * mods.iceSlow, PLAYER.ice.slowFactor);
-    if (element === 'fire' && options.burn !== false) {
+    if (element === 'ice' || options.dual) {
+      applySlow(unit, PLAYER.ice.slowMs * mods.iceSlow, PLAYER.ice.slowFactor);
+    }
+    if ((element === 'fire' || options.dual) && options.burn !== false) {
       applyBurn(unit, PLAYER.fire.burnDps * mods.burnDps, PLAYER.fire.burnMs);
     }
-    emit('hit', { x: unit.x, z: unit.z, element, amount });
+    emit('hit', {
+      x: unit.x,
+      z: unit.z,
+      element,
+      amount: damage,
+      crit: Boolean(options.crit),
+      source: options.source || 'player',
+      shield: shieldHit,
+      armored: unit.modifier === 'armored',
+      boss: unit.boss,
+    });
   }
 
-  function splashDamage(x, z, radius, damage, element) {
+  function splashDamage(x, z, radius, damage, element, options = {}) {
     for (let index = state.units.length - 1; index >= 0; index -= 1) {
       const unit = state.units[index];
       const dx = unit.x - x;
       const dz = unit.z - z;
       if (dx * dx + dz * dz > radius * radius) continue;
-      damageUnit(unit, damage, element);
-      if (unit.hp <= 0) killUnit(index, element);
+      damageUnit(unit, damage, element, options);
+      if (unit.hp <= 0) killUnit(index, element, options);
     }
   }
 
@@ -370,7 +582,13 @@ export function createWorld(options = {}) {
     const player = state.player;
     const element = player.element;
     const def = element === 'fire' ? PLAYER.fire : PLAYER.ice;
-    const damage = def.damage * (element === 'fire' ? mods.fireDamage : mods.iceDamage);
+    const ultOn = state.ult.activeMs > 0;
+    const crit = rng.next() < CRIT.chance;
+    const damage =
+      def.damage *
+      (element === 'fire' ? mods.fireDamage : mods.iceDamage) *
+      (crit ? CRIT.mult : 1) *
+      (ultOn ? ULT.damageMult : 1);
     const rangeSq = (PLAYER.attackRange * mods.range) ** 2;
 
     let target = null;
@@ -392,7 +610,7 @@ export function createWorld(options = {}) {
       dirX /= length;
       dirZ /= length;
     }
-    player.attackCdMs = PLAYER.attackCdMs * mods.attackCd;
+    player.attackCdMs = PLAYER.attackCdMs * mods.attackCd * (ultOn ? ULT.attackCdMult : 1);
     state.projectiles.push({
       id: nextId++,
       owner: 'player',
@@ -404,9 +622,14 @@ export function createWorld(options = {}) {
       damage,
       radius: PLAYER.boltRadius,
       ttlMs: 1200,
-      splash: 0,
+      splash: ultOn ? ULT.splash : 0,
+      crit,
+      dual: ultOn,
     });
-    emit('attack', { element, x: player.x, z: player.z });
+    state.stats.shotsFired += 1;
+    if (crit) state.stats.crits += 1;
+    tutorialStep('attack');
+    emit('attack', { element, x: player.x, z: player.z, crit, ult: ultOn });
   }
 
   function fireEnemyProjectile(unit) {
@@ -429,7 +652,7 @@ export function createWorld(options = {}) {
   }
 
   function fireTowerShot(tower, target) {
-    const def = TOWERS[tower.kind];
+    const stats = towerStats(tower.kind, tower.level);
     const dx = target.x - tower.x;
     const dz = target.z - tower.z;
     const length = Math.hypot(dx, dz) || 1;
@@ -440,14 +663,14 @@ export function createWorld(options = {}) {
       element: tower.kind === 'frost' ? 'ice' : 'fire',
       x: tower.x + (dx / length) * 0.6,
       z: tower.z + (dz / length) * 0.6,
-      vx: (dx / length) * def.projectileSpeed,
-      vz: (dz / length) * def.projectileSpeed,
-      damage: def.damage * (1 + (tower.level - 1) * 0.55),
+      vx: (dx / length) * stats.projectileSpeed,
+      vz: (dz / length) * stats.projectileSpeed,
+      damage: stats.damage,
       radius: 0.5,
       ttlMs: 1600,
-      splash: def.splash ? def.splash * (1 + (tower.level - 1) * 0.12) : 0,
+      splash: stats.splash,
     });
-    emit('towerShot', { x: tower.x, z: tower.z, kind: tower.kind });
+    emit('towerShot', { x: tower.x, z: tower.z, kind: tower.kind, level: tower.level });
   }
 
   function buildTower(socketIndex, kind) {
@@ -475,7 +698,8 @@ export function createWorld(options = {}) {
     });
     state.stats.towersBuilt += 1;
     state.fx.push({ id: nextId++, kind: 'build', x: socket.x, z: socket.z, element: kind === 'frost' ? 'ice' : 'fire', ttlMs: 620, maxTtlMs: 620, scale: 1.6 });
-    emit('built', { kind, socket: socketIndex });
+    tutorialStep('build');
+    emit('built', { kind, socket: socketIndex, x: socket.x, z: socket.z });
   }
 
   function upgradeTower(socketIndex) {
@@ -488,10 +712,11 @@ export function createWorld(options = {}) {
     }
     state.gold -= cost;
     tower.level += 1;
-    tower.hp = TOWERS[tower.kind].maxHp * (1 + (tower.level - 1) * 0.35);
+    tower.hp = towerStats(tower.kind, tower.level).maxHp;
     tower.maxHp = tower.hp;
-    state.fx.push({ id: nextId++, kind: 'build', x: tower.x, z: tower.z, element: tower.kind === 'frost' ? 'ice' : 'fire', ttlMs: 620, maxTtlMs: 620, scale: 1.3 });
-    emit('upgraded', { kind: tower.kind, level: tower.level, socket: socketIndex });
+    state.stats.upgrades += 1;
+    state.fx.push({ id: nextId++, kind: 'build', x: tower.x, z: tower.z, element: tower.kind === 'frost' ? 'ice' : 'fire', ttlMs: 620, maxTtlMs: 620, scale: 1.3 + tower.level * 0.12 });
+    emit('upgraded', { kind: tower.kind, level: tower.level, socket: socketIndex, x: tower.x, z: tower.z });
   }
 
   function damageTower(tower, amount) {
@@ -516,7 +741,7 @@ export function createWorld(options = {}) {
   }
 
   function fireNova() {
-    if (!state.nova.ready) return;
+    if (!state.nova.ready || !state.player.alive) return;
     const player = state.player;
     const radiusSq = NOVA.radius * NOVA.radius;
     for (let index = state.units.length - 1; index >= 0; index -= 1) {
@@ -525,23 +750,71 @@ export function createWorld(options = {}) {
       const dz = unit.z - player.z;
       const d = dx * dx + dz * dz;
       if (d > radiusSq) continue;
-      damageUnit(unit, NOVA.damage, player.element, { burn: false });
+      damageUnit(unit, NOVA.damage, player.element, { burn: false, source: 'nova' });
       applySlow(unit, NOVA.slowMs, 0.4);
       const length = Math.hypot(dx, dz) || 1;
-      unit.x += (dx / length) * NOVA.knockback * 0.35;
-      unit.z += (dz / length) * NOVA.knockback * 0.35;
-      if (unit.hp <= 0) killUnit(index, player.element);
+      const push = unit.boss ? 0.1 : 0.35;
+      unit.x += (dx / length) * NOVA.knockback * push;
+      unit.z += (dz / length) * NOVA.knockback * push;
+      if (unit.hp <= 0) killUnit(index, player.element, { source: 'nova' });
     }
     state.nova.charge = 0;
     state.nova.ready = false;
     state.fx.push({ id: nextId++, kind: 'nova', x: player.x, z: player.z, element: player.element, ttlMs: 900, maxTtlMs: 900, scale: NOVA.radius });
+    tutorialStep('nova');
     emit('nova', { x: player.x, z: player.z, element: player.element });
+  }
+
+  function activateUlt() {
+    const ult = state.ult;
+    const player = state.player;
+    if (!ult.ready || ult.activeMs > 0 || !player.alive) return;
+    ult.activeMs = ULT.durationMs;
+    ult.charge = 0;
+    ult.ready = false;
+    // The opening roar: a short dual-element shockwave around Velo.
+    splashDamage(player.x, player.z, 6, 30, player.element, { dual: true, source: 'ult' });
+    state.fx.push({ id: nextId++, kind: 'nova', x: player.x, z: player.z, element: player.element === 'fire' ? 'ice' : 'fire', ttlMs: 700, maxTtlMs: 700, scale: 6 });
+    emit('ult', { x: player.x, z: player.z, element: player.element });
+  }
+
+  function startDash() {
+    const player = state.player;
+    const length = Math.hypot(input.moveX, input.moveZ);
+    let dirX = player.aimX;
+    let dirZ = player.aimZ;
+    if (length > 0.05) {
+      dirX = input.moveX / length;
+      dirZ = input.moveZ / length;
+    }
+    player.vx = dirX * DASH.speed;
+    player.vz = dirZ * DASH.speed;
+    player.aimX = dirX;
+    player.aimZ = dirZ;
+    player.facing = Math.atan2(dirX, dirZ);
+    player.dashMs = DASH.durationMs;
+    player.iframeMs = DASH.iframeMs;
+    player.dodged = false;
+    player.dashCdMs = DASH.cooldownMs;
+    emit('dash', { x: player.x, z: player.z, dirX, dirZ });
   }
 
   function updatePlayer(dtMs) {
     const player = state.player;
     if (player.hitFlashMs > 0) player.hitFlashMs -= dtMs;
     if (player.attackCdMs > 0) player.attackCdMs -= dtMs;
+    if (player.dashCdMs > 0) player.dashCdMs -= dtMs;
+    if (player.iframeMs > 0) {
+      player.iframeMs -= dtMs;
+      if (player.iframeMs <= 0) player.dodged = false;
+    }
+    if (state.ult.activeMs > 0) {
+      state.ult.activeMs -= dtMs;
+      if (state.ult.activeMs <= 0) {
+        state.ult.activeMs = 0;
+        emit('ultEnd', {});
+      }
+    }
 
     if (!player.alive) {
       player.respawnMs -= dtMs;
@@ -563,27 +836,123 @@ export function createWorld(options = {}) {
     const inputX = input.moveX;
     const inputZ = input.moveZ;
     const length = Math.hypot(inputX, inputZ);
-    if (length > 0.05) {
-      player.vx += (inputX / length) * PLAYER.accel * (dtMs / 1000);
-      player.vz += (inputZ / length) * PLAYER.accel * (dtMs / 1000);
-      player.aimX = inputX / length;
-      player.aimZ = inputZ / length;
-      player.facing = Math.atan2(player.aimX, player.aimZ);
-    }
-    const friction = Math.max(0, 1 - PLAYER.friction * (dtMs / 1000));
-    player.vx *= friction;
-    player.vz *= friction;
-    const speed = Math.hypot(player.vx, player.vz);
-    if (speed > maxSpeed) {
-      player.vx = (player.vx / speed) * maxSpeed;
-      player.vz = (player.vz / speed) * maxSpeed;
-    }
-    player.x += player.vx * (dtMs / 1000);
-    player.z += player.vz * (dtMs / 1000);
-    resolveObstacles(player, PLAYER.radius);
+    if (length > 0.3) tutorialStep('move');
 
-    if (input.swap === 'ice' || input.swap === 'fire') player.element = input.swap;
+    if (input.dash && player.dashCdMs <= 0) startDash();
+
+    if (player.dashMs > 0) {
+      // A dash ignores acceleration, friction and the speed cap for its
+      // duration, then hands back a normal-speed body.
+      player.dashMs -= dtMs;
+      player.x += player.vx * (dtMs / 1000);
+      player.z += player.vz * (dtMs / 1000);
+      resolveObstacles(player, PLAYER.radius);
+      if (player.dashMs <= 0) {
+        player.dashMs = 0;
+        const speed = Math.hypot(player.vx, player.vz) || 1;
+        player.vx = (player.vx / speed) * maxSpeed;
+        player.vz = (player.vz / speed) * maxSpeed;
+      }
+    } else {
+      if (length > 0.05) {
+        player.vx += (inputX / length) * PLAYER.accel * (dtMs / 1000);
+        player.vz += (inputZ / length) * PLAYER.accel * (dtMs / 1000);
+        player.aimX = inputX / length;
+        player.aimZ = inputZ / length;
+        player.facing = Math.atan2(player.aimX, player.aimZ);
+      }
+      const friction = Math.max(0, 1 - PLAYER.friction * (dtMs / 1000));
+      player.vx *= friction;
+      player.vz *= friction;
+      const speed = Math.hypot(player.vx, player.vz);
+      if (speed > maxSpeed) {
+        player.vx = (player.vx / speed) * maxSpeed;
+        player.vz = (player.vz / speed) * maxSpeed;
+      }
+      player.x += player.vx * (dtMs / 1000);
+      player.z += player.vz * (dtMs / 1000);
+      resolveObstacles(player, PLAYER.radius);
+    }
+
+    if ((input.swap === 'ice' || input.swap === 'fire') && input.swap !== player.element) {
+      player.element = input.swap;
+      tutorialStep('swap');
+      emit('swap', { element: player.element });
+    }
     if (input.attack && player.attackCdMs <= 0) firePlayerBolt();
+  }
+
+  // The warlord's slam: pick a target, paint the ground for telegraphMs, then
+  // hit everything still standing in the circle. The telegraph is the tell;
+  // the dash's i-frames are the answer.
+  function slamTarget(unit) {
+    const player = state.player;
+    const reachSq = BOSS.slamReach * BOSS.slamReach;
+    if (player.alive && distanceSq(unit, player) <= reachSq) return player;
+    let best = null;
+    let bestDistance = reachSq;
+    for (const tower of state.towers) {
+      const d = distanceSq(unit, tower);
+      if (d <= bestDistance) {
+        best = tower;
+        bestDistance = d;
+      }
+    }
+    if (best) return best;
+    // The stronghold is only slammed from close up; a slam lobbed at it from
+    // across the arena would be a tax the player cannot answer.
+    const coreReach = state.core.radius + unit.radius + 3;
+    if (distanceSq(unit, state.core) <= coreReach * coreReach) return state.core;
+    return null;
+  }
+
+  function resolveSlam(unit) {
+    const slam = unit.telegraph;
+    const scale = unit.damage / ENEMY_KINDS[BOSS.kind].damage;
+    const damage = BOSS.slamDamage * scale;
+    const player = state.player;
+    let hitPlayer = false;
+    if (player.alive) {
+      const reach = slam.radius + PLAYER.radius;
+      if (distanceSq(player, slam) <= reach * reach) hitPlayer = damagePlayer(damage);
+    }
+    for (const tower of state.towers.slice()) {
+      const reach = slam.radius + 0.8;
+      if (distanceSq(tower, slam) <= reach * reach) damageTower(tower, damage);
+    }
+    const coreReach = slam.radius + state.core.radius;
+    if (distanceSq(state.core, slam) <= coreReach * coreReach) damageCore(damage * 0.4, unit.element);
+    state.fx.push({ id: nextId++, kind: 'slam', x: slam.x, z: slam.z, element: 'fire', ttlMs: 520, maxTtlMs: 520, scale: slam.radius });
+    emit('slam', { x: slam.x, z: slam.z, radius: slam.radius, hitPlayer });
+  }
+
+  function updateBoss(unit, dtMs) {
+    if (unit.telegraph) {
+      unit.telegraph.ms -= dtMs;
+      if (unit.telegraph.ms <= 0) {
+        resolveSlam(unit);
+        unit.telegraph = null;
+        unit.slamCdMs = BOSS.slamEveryMs;
+      }
+      return true;
+    }
+    unit.slamCdMs -= dtMs;
+    if (unit.slamCdMs > 0) return false;
+    const target = slamTarget(unit);
+    if (!target) {
+      unit.slamCdMs = 400;
+      return false;
+    }
+    unit.telegraph = {
+      x: target.x,
+      z: target.z,
+      radius: BOSS.slamRadius,
+      ms: BOSS.telegraphMs,
+      maxMs: BOSS.telegraphMs,
+    };
+    unit.facing = Math.atan2(target.x - unit.x, target.z - unit.z);
+    emit('telegraph', { x: target.x, z: target.z, radius: BOSS.slamRadius, ms: BOSS.telegraphMs });
+    return true;
   }
 
   function updateUnits(dtMs) {
@@ -591,12 +960,13 @@ export function createWorld(options = {}) {
     const seconds = dtMs / 1000;
     for (let index = state.units.length - 1; index >= 0; index -= 1) {
       const unit = state.units[index];
+      if (!unit) continue;
       if (unit.hitFlashMs > 0) unit.hitFlashMs -= dtMs;
       if (unit.burnMs > 0) {
         unit.burnMs -= dtMs;
         unit.hp -= unit.burnDps * seconds;
         if (unit.hp <= 0) {
-          killUnit(index, 'fire');
+          killUnit(index, 'fire', { source: 'burn' });
           continue;
         }
       }
@@ -605,6 +975,9 @@ export function createWorld(options = {}) {
       } else {
         unit.slowFactor = 1;
       }
+
+      // A telegraphing warlord plants its feet until the slam lands.
+      if (unit.boss && updateBoss(unit, dtMs)) continue;
 
       // Choose the nearest thing worth hitting: the player if they are close
       // enough to be a threat, a tower in the way, otherwise the stronghold.
@@ -662,7 +1035,10 @@ export function createWorld(options = {}) {
             unit.z += oz * inv * push;
           }
         }
-        resolveObstacles(unit, unit.radius);
+        // The warlord is too big to slide round the ramparts; it wades over
+        // them instead of wedging itself on a corner for the rest of the wave.
+        if (unit.boss) clampToArena(unit, unit.radius);
+        else resolveObstacles(unit, unit.radius);
       }
     }
   }
@@ -671,8 +1047,8 @@ export function createWorld(options = {}) {
     for (const tower of state.towers) {
       if (tower.cooldownMs > 0) tower.cooldownMs -= dtMs;
       if (tower.cooldownMs > 0) continue;
-      const def = TOWERS[tower.kind];
-      const rangeSq = (def.range * (1 + (tower.level - 1) * 0.06)) ** 2;
+      const stats = towerStats(tower.kind, tower.level);
+      const rangeSq = stats.range ** 2;
       let target = null;
       let best = rangeSq;
       for (const unit of state.units) {
@@ -684,7 +1060,7 @@ export function createWorld(options = {}) {
       }
       if (target) {
         fireTowerShot(tower, target);
-        tower.cooldownMs = def.cdMs * (1 - (tower.level - 1) * 0.08);
+        tower.cooldownMs = stats.cdMs;
       }
     }
   }
@@ -693,6 +1069,7 @@ export function createWorld(options = {}) {
     const player = state.player;
     for (let index = state.projectiles.length - 1; index >= 0; index -= 1) {
       const bolt = state.projectiles[index];
+      if (!bolt) continue;
       bolt.ttlMs -= dtMs;
       bolt.x += bolt.vx * (dtMs / 1000);
       bolt.z += bolt.vz * (dtMs / 1000);
@@ -703,9 +1080,10 @@ export function createWorld(options = {}) {
           const dx = bolt.x - player.x;
           const dz = bolt.z - player.z;
           if (dx * dx + dz * dz <= (PLAYER.radius + bolt.radius) ** 2) {
-            damagePlayer(bolt.damage);
-            if (bolt.element === 'ice') player.slowMs = 1600;
-            consumed = true;
+            if (damagePlayer(bolt.damage)) {
+              if (bolt.element === 'ice') player.slowMs = 1600;
+              consumed = true;
+            }
           }
         }
         if (!consumed) {
@@ -728,6 +1106,7 @@ export function createWorld(options = {}) {
           }
         }
       } else if (!consumed) {
+        const options = { crit: bolt.crit, dual: bolt.dual, source: bolt.owner };
         for (let unitIndex = state.units.length - 1; unitIndex >= 0; unitIndex -= 1) {
           const unit = state.units[unitIndex];
           const dx = bolt.x - unit.x;
@@ -735,10 +1114,10 @@ export function createWorld(options = {}) {
           const reach = unit.radius + bolt.radius;
           if (dx * dx + dz * dz > reach * reach) continue;
           if (bolt.splash > 0) {
-            splashDamage(bolt.x, bolt.z, bolt.splash, bolt.damage, bolt.element);
+            splashDamage(bolt.x, bolt.z, bolt.splash, bolt.damage, bolt.element, options);
           } else {
-            damageUnit(unit, bolt.damage, bolt.element);
-            if (unit.hp <= 0) killUnit(unitIndex, bolt.element);
+            damageUnit(unit, bolt.damage, bolt.element, options);
+            if (unit.hp <= 0) killUnit(unitIndex, bolt.element, options);
           }
           consumed = true;
           break;
@@ -758,7 +1137,10 @@ export function createWorld(options = {}) {
         }
       }
 
-      if (consumed) state.projectiles.splice(index, 1);
+      if (consumed) {
+        const at = state.projectiles.indexOf(bolt);
+        if (at >= 0) state.projectiles.splice(at, 1);
+      }
     }
   }
 
@@ -782,7 +1164,7 @@ export function createWorld(options = {}) {
         }
         if (d < PLAYER.radius + 0.75) {
           state.gold += pickup.value;
-          emit('pickup', { value: pickup.value, color: pickup.color, type: pickup.type, total: state.gold });
+          emit('pickup', { value: pickup.value, color: pickup.color, type: pickup.type, total: state.gold, x: pickup.x, z: pickup.z });
           state.pickups.splice(index, 1);
           continue;
         }
@@ -798,6 +1180,30 @@ export function createWorld(options = {}) {
     }
   }
 
+  function updateTutorialWave(dtMs) {
+    const tutorial = state.tutorial;
+    tutorial.elapsedMs += dtMs;
+    if (spawnQueue.length || state.units.length) return;
+    const complete = TUTORIAL.steps.every((step) => tutorial.steps[step]);
+    if (complete || tutorial.elapsedMs >= TUTORIAL.maxMs) {
+      finishTutorial(false);
+      return;
+    }
+    // Still training: send another ranger and top up whatever the next
+    // unfinished step needs, so the checklist can always be finished.
+    spawnQueue.push({
+      kind: 'ranger',
+      tier: 1,
+      gate: rng.int(0, map.gates.length - 1),
+      atMs: state.phaseMs + 900,
+    });
+    if (!tutorial.steps.nova && !state.nova.ready) {
+      state.nova.charge = NOVA.maxCharge;
+      state.nova.ready = true;
+    }
+    if (!tutorial.steps.build && state.gold < TOWERS.frost.cost) state.gold = TOWERS.frost.cost;
+  }
+
   function updatePhase(dtMs) {
     if (state.phase === 'ready') {
       state.phaseMs -= dtMs;
@@ -806,7 +1212,7 @@ export function createWorld(options = {}) {
     }
     if (state.phase === 'build') {
       state.phaseMs -= dtMs;
-      if (state.phaseMs <= 0) startWave();
+      if (input.start || state.phaseMs <= 0) startWave();
       return;
     }
     if (state.phase !== 'wave') return;
@@ -816,12 +1222,21 @@ export function createWorld(options = {}) {
       const entry = spawnQueue.shift();
       spawnUnit(entry.kind, entry.tier, entry.gate);
     }
+    if (state.tutorial.active) {
+      updateTutorialWave(dtMs);
+      return;
+    }
     if (!spawnQueue.length && !state.units.length) {
       state.stats.wavesCleared = state.wave;
-      state.score += WAVES[state.wave - 1].reward + SCORE.waveClear * state.wave;
-      emit('waveCleared', { wave: state.wave });
-      if (state.wave >= state.wavesTotal) endRun('victory');
-      else startBuildPhase();
+      state.score += currentWave.reward + SCORE.waveClear * state.wave;
+      addUltCharge(ULT.perWave);
+      emit('waveCleared', { wave: state.wave, boss: state.waveIsBoss });
+      if (!state.endless && state.wave >= state.wavesTotal) {
+        state.campaignCleared = true;
+        endRun('victory');
+      } else {
+        startBuildPhase();
+      }
     }
   }
 
@@ -852,6 +1267,8 @@ export function createWorld(options = {}) {
     state.timeMs = 0;
     state.phase = 'ready';
     state.phaseMs = READY_MS;
+    state.endless = startsEndless;
+    state.campaignCleared = false;
     state.wave = 0;
     state.waveElement = WAVES[0].element;
     state.waveIsBoss = false;
@@ -863,32 +1280,52 @@ export function createWorld(options = {}) {
     state.gold = GOLD.start;
     state.core.hp = state.core.maxHp;
     state.core.burnMs = 0;
+    state.core.flashMs = 0;
     state.nova.charge = 0;
     state.nova.ready = false;
-    state.player.x = map.spawn.x;
-    state.player.z = map.spawn.z;
-    state.player.vx = 0;
-    state.player.vz = 0;
-    state.player.hp = state.player.maxHp;
-    state.player.alive = true;
-    state.player.respawnMs = 0;
-    state.player.slowMs = 0;
-    state.player.element = hero.element;
+    Object.assign(state.ult, { charge: 0, ready: false, activeMs: 0 });
+    Object.assign(state.tutorial, emptyTutorial(tutorialEnabled && !tutorialCompleted));
+    Object.assign(state.player, {
+      x: map.spawn.x,
+      z: map.spawn.z,
+      vx: 0,
+      vz: 0,
+      hp: state.player.maxHp,
+      alive: true,
+      respawnMs: 0,
+      slowMs: 0,
+      hitFlashMs: 0,
+      attackCdMs: 0,
+      element: hero.element,
+      dashMs: 0,
+      dashCdMs: 0,
+      iframeMs: 0,
+      dodged: false,
+    });
     state.units.length = 0;
     state.towers.length = 0;
     state.projectiles.length = 0;
     state.pickups.length = 0;
     state.fx.length = 0;
     for (const socket of state.sockets) socket.occupant = null;
-    state.stats.kills = 0;
-    state.stats.killsThisWave = 0;
-    state.stats.wavesCleared = 0;
-    state.stats.damageTaken = 0;
-    state.stats.towersBuilt = 0;
+    Object.assign(state.stats, emptyStats());
     spawnQueue = [];
+    currentWave = WAVES[0];
     events.length = 0;
     // Latched input from the finished run must not leak into the new one.
     Object.assign(input, emptyInput());
+  }
+
+  function clearOneShots() {
+    input.buildSocket = null;
+    input.upgradeSocket = null;
+    input.nova = false;
+    input.dash = false;
+    input.ult = false;
+    input.start = false;
+    input.swap = null;
+    input.continueEndless = false;
+    input.skipTutorial = false;
   }
 
   function step() {
@@ -899,13 +1336,15 @@ export function createWorld(options = {}) {
       input.restart = false;
       return;
     }
+    if (state.phase === 'victory' && input.continueEndless) {
+      continueEndless();
+      clearOneShots();
+      return;
+    }
     const frozen = state.phase === 'victory' || state.phase === 'defeat';
     if (frozen) {
       // Keep draining one-shot requests so the UI stays responsive.
-      input.buildSocket = null;
-      input.upgradeSocket = null;
-      input.nova = false;
-      input.start = false;
+      clearOneShots();
       return;
     }
 
@@ -915,9 +1354,11 @@ export function createWorld(options = {}) {
     state.timeMs = state.tick * STEP_MS;
     cadence += 1;
 
+    if (input.skipTutorial) finishTutorial(true);
     if (input.buildSocket !== null) buildTower(input.buildSocket, input.buildKind || 'frost');
     if (input.upgradeSocket !== null) upgradeTower(input.upgradeSocket);
     if (input.nova) fireNova();
+    if (input.ult) activateUlt();
 
     updatePhase(STEP_MS);
     updateCore(STEP_MS);
@@ -930,10 +1371,7 @@ export function createWorld(options = {}) {
     updateCombo(STEP_MS);
 
     input.attack = input.attackHeld;
-    input.buildSocket = null;
-    input.upgradeSocket = null;
-    input.nova = false;
-    input.start = false;
+    clearOneShots();
   }
 
   function snapshotHash() {
@@ -952,15 +1390,19 @@ export function createWorld(options = {}) {
       state.towers.length,
       state.pickups.length,
       Math.round(state.combo.mult * 100),
+      Math.round(state.ult.charge * 100),
+      state.endless ? 1 : 0,
       rng.state(),
     ];
     for (const unit of state.units) {
       parts.push(
         unit.kind,
         unit.tier,
+        unit.modifier || '-',
         Math.round(unit.x * 1000),
         Math.round(unit.z * 1000),
-        Math.round(unit.hp * 100)
+        Math.round(unit.hp * 100),
+        Math.round(unit.shield * 100)
       );
     }
     let hash = 0x811c9dc5;
@@ -991,6 +1433,8 @@ export function createWorld(options = {}) {
       }
       if (command.swap) input.swap = command.swap;
       if (command.nova) input.nova = true;
+      if (command.dash) input.dash = true;
+      if (command.ult) input.ult = true;
       if (command.buildSocket !== undefined && command.buildSocket !== null) {
         input.buildSocket = command.buildSocket;
         input.buildKind = command.buildKind || 'frost';
@@ -1000,6 +1444,8 @@ export function createWorld(options = {}) {
       }
       if (command.start) input.start = true;
       if (command.restart) input.restart = true;
+      if (command.continueEndless) input.continueEndless = true;
+      if (command.skipTutorial) input.skipTutorial = true;
     },
     drainEvents() {
       if (!events.length) return events;
@@ -1008,5 +1454,20 @@ export function createWorld(options = {}) {
       return drained;
     },
     towerKinds: TOWER_ORDER,
+  };
+}
+
+/** Per-level tower numbers, shared by the simulation and the HUD. */
+export function towerStats(kind, level) {
+  const def = TOWERS[kind] || TOWERS.frost;
+  const step = Math.max(0, Math.min(TOWER_MAX_LEVEL, level) - 1);
+  return {
+    damage: def.damage * (1 + step * TOWER_TIER.damage),
+    cdMs: def.cdMs * (1 - step * TOWER_TIER.cooldown),
+    range: def.range * (1 + step * TOWER_TIER.range),
+    splash: def.splash ? def.splash * (1 + step * TOWER_TIER.splash) : 0,
+    maxHp: def.maxHp * (1 + step * TOWER_TIER.hp),
+    projectileSpeed: def.projectileSpeed,
+    upgradeCost: step + 1 < TOWER_MAX_LEVEL ? def.upgradeCosts[step] : null,
   };
 }
