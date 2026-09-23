@@ -83,6 +83,10 @@ test('admin explicitly activates a stale vote season with safe defaults', async 
     season: CURRENT_SEASON,
     votingOpen: false,
     allowEditing: false,
+    // The single publish switch split in two; a new season starts unpublished on
+    // every one of them, and the legacy aggregate is still written.
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     contributionRankingMode: 'default',
