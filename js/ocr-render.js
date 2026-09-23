@@ -1,4 +1,9 @@
 import {
+  renderDutyCountCell,
+  renderPlayerSeasonSummary,
+  renderScoreBreakdown,
+} from './score-breakdown.js';
+import {
   state,
   $id,
   esc,
@@ -20,6 +25,7 @@ import {
 } from './ocr-name-normalizer.js';
 import {
   buildWeightedContributionRows,
+  collectFamilyDutyEntries,
   getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
   normalizeWeightedR5Adjustments,
@@ -1107,26 +1113,16 @@ function bindWeightedContributionViewToggle(host) {
 
 function renderWeightedScorePopover(row, index) {
   const tooltipId = `dashWeightedScoreTip-${index}`;
-  const dutyCount = row.banners + row.pathers + row.shieldWalls;
-  const dutyNote = adminT('edenX1DutyFormula', {
-    banners: row.banners,
-    pathers: row.pathers,
-    shieldWalls: row.shieldWalls,
-    count: dutyCount,
-  });
-  const conductNote = adminT('edenX1ConductFormula', {
-    conduct: weightedContributionSignedNumber(row.conductBonus),
-  });
   return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(adminT('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${row.weightedScore.toFixed(1)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
-      <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${weightedContributionNumber(row.contributionScore)}</b></span>
-      <span><span>${esc(adminT('adminThDemo'))}<small>${weightedContributionNumber(row.totalDemolition)} ÷ 20</small></span><b>${weightedContributionNumber(row.demolitionPoints)}</b></span>
-      <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${weightedContributionNumber(row.contributionExGuild || 0)}</b></span>
-      <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${weightedContributionNumber(row.dutyPoints || 0)}</b></span>
-      <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${weightedContributionSignedNumber(row.conductPoints || 0)}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>${esc(adminT('edenX1BreakdownTotal'))}</span><b>${row.weightedScore.toFixed(1)}</b></span>
+      ${renderScoreBreakdown(row, {
+        t: adminT,
+        number: weightedContributionNumber,
+        signed: weightedContributionSignedNumber,
+        totalText: row.weightedScore.toFixed(1),
+      })}
     </span>
   </button>`;
 }
@@ -1304,7 +1300,7 @@ function setWeightedSort(col) {
     const ascFirst = col === 'player' || col === 'reward' || col === 'finalReward';
     state._weightedSort = { col, dir: ascFirst ? 'asc' : 'desc' };
   }
-  renderWeightedContributionDashboard();
+  renderWeightedContributionDashboard({ reuseModel: true });
 }
 
 function updateWeightedSortGlyphs(host) {
@@ -1321,10 +1317,31 @@ function updateWeightedSortGlyphs(host) {
   });
 }
 
-function renderWeightedContributionDashboard(options = {}) {
-  const host = $id('dashWeightedContributionPanel');
-  if (!host) return;
+// Scoring every player is the expensive part of the weighted table. Sorting,
+// searching and paging re-render it without changing any data, so those pass
+// { reuse: true } to skip rescoring. Everything else rescores: records and
+// entries are edited in place, so matching inputs do not prove nothing changed.
+let adminWeightedModelCache = null;
 
+export function getAdminWeightedModel(options = {}) {
+  const inputs = [
+    state.contributionRecords,
+    state.dutyRecords,
+    state.r5Adjustments,
+    state.r5Season,
+    state.exGuildContributions,
+    state.dashData?.attacks,
+    state.dutyPointWeights,
+    state.includeDemolitionPoints,
+    state.playerRegistry,
+  ];
+  if (
+    options.reuse &&
+    adminWeightedModelCache &&
+    adminWeightedModelCache.inputs.every((value, index) => value === inputs[index])
+  ) {
+    return adminWeightedModelCache.model;
+  }
   const model = buildWeightedContributionRows({
     contributionRecords: state.contributionRecords,
     dutyRecords: state.dutyRecords,
@@ -1335,6 +1352,41 @@ function renderWeightedContributionDashboard(options = {}) {
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
   });
+  adminWeightedModelCache = { inputs, model };
+  return model;
+}
+
+// The weighted row for a player name, following account links so an alt or
+// banner account opens its owner's season.
+function findAdminWeightedRow(name) {
+  const rows = getAdminWeightedModel().rows || [];
+  if (!rows.length || !name) return null;
+  const key = compactPlayerIdentity(stripGuildTagsFromPlayerName(name));
+  const canonicalKey = compactPlayerIdentity(resolveCanonicalPlayerName(name) || '');
+  const direct = rows.find((row) => row.playerKey === key || row.playerKey === canonicalKey);
+  if (direct?.isPrimaryAccount) return direct;
+  const familyKey = direct?.familyKey || getWeightedPlayerFamilyKey(canonicalKey || key);
+  return rows.find((row) => row.familyKey === familyKey && row.isPrimaryAccount) || direct || null;
+}
+
+function renderAdminPlayerSeason(name) {
+  const row = findAdminWeightedRow(name);
+  if (!row) return '';
+  return renderPlayerSeasonSummary({
+    row,
+    duties: collectFamilyDutyEntries(state.dutyRecords, row.familyKey),
+    t: adminT,
+    number: weightedContributionNumber,
+    signed: weightedContributionSignedNumber,
+    rewardLabel: contributionRewardLabel(row.finalReward),
+  });
+}
+
+function renderWeightedContributionDashboard(options = {}) {
+  const host = $id('dashWeightedContributionPanel');
+  if (!host) return;
+
+  const model = getAdminWeightedModel({ reuse: options.reuseModel === true });
   const rows = model.rows || [];
 
   if (!rows.length) {
@@ -1383,15 +1435,15 @@ function renderWeightedContributionDashboard(options = {}) {
             ? visibleRows
                 .map(
                   (row, index) => `<tr>
-          <td data-label="${esc(adminT('adminContributionMember'))}"><strong>${renderTaggedPlayerName(row)}</strong></td>
+          <td data-label="${esc(adminT('adminContributionMember'))}"><button type="button" class="dash-weighted-player-link" data-weighted-player="${esc(encodeURIComponent(row.playerName))}"><strong>${renderTaggedPlayerName(row)}</strong></button></td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThContribution'))}" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminThDemo'))}" style="text-align:right">${valueOf(row.totalDemolition).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThExGuild'))}" style="text-align:right">${valueOf(row.contributionExGuild).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT)}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT)}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT)}</td>
           <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(adminT('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThTotal'))}" style="text-align:right">${weightedContributionBonusTotal(row).toLocaleString()}</td>
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
@@ -1407,12 +1459,14 @@ function renderWeightedContributionDashboard(options = {}) {
     ${renderAdminTablePager('weighted', weightedPage, 'dashWeightedContributionTable', { showAll: true })}
   </div>`;
   bindWeightedContributionViewToggle(host);
-  bindAdminTablePager(host, 'weighted', weightedPage, () => renderWeightedContributionDashboard());
+  bindAdminTablePager(host, 'weighted', weightedPage, () =>
+    renderWeightedContributionDashboard({ reuseModel: true })
+  );
   const search = $id('dashWeightedSearch');
   if (search) {
     search.oninput = (event) => {
       state._weightedSearchQ = event.target.value || '';
-      renderWeightedContributionDashboard({ focusSearch: true });
+      renderWeightedContributionDashboard({ focusSearch: true, reuseModel: true });
     };
     if (options.focusSearch) {
       search.focus();
@@ -1422,6 +1476,13 @@ function renderWeightedContributionDashboard(options = {}) {
   host.querySelectorAll('th[data-weighted-sort]').forEach((th) => {
     th.addEventListener('click', () => setWeightedSort(th.dataset.weightedSort));
   });
+  if (!host.dataset.weightedPlayerBound) {
+    host.dataset.weightedPlayerBound = '1';
+    host.addEventListener('click', (event) => {
+      const link = event.target.closest('[data-weighted-player]');
+      if (link) window.showPlayer?.(link.dataset.weightedPlayer);
+    });
+  }
   updateWeightedSortGlyphs(host);
   hydrateDashboardTableLabels(host);
 }
@@ -2039,6 +2100,7 @@ function showModal(type, data) {
             total: (data.total_demolition || 0).toLocaleString(),
           });
     if (type === 'attack') {
+      m.querySelector('.dash-modal-content')?.classList.remove('dash-modal-content--wide');
       const avg = Math.round(data.total_demolition / data.players_count);
       const tiers = { '1M+': 0, '500K+': 0, '100K+': 0, '<100K': 0 };
       data.players.forEach((p) => {
@@ -2088,6 +2150,18 @@ function showModal(type, data) {
       });
       body.innerHTML = h + '</tbody></table>';
     } else {
+      const seasonHtml = renderAdminPlayerSeason(data.name);
+      // The season view needs room for its two columns.
+      m.querySelector('.dash-modal-content')?.classList.toggle(
+        'dash-modal-content--wide',
+        Boolean(seasonHtml)
+      );
+      if (data._not_in_summary && seasonHtml) {
+        $id('dashModalSub').textContent = '';
+        body.innerHTML = seasonHtml;
+        m.classList.add('active');
+        return;
+      }
       if (data._not_in_summary) {
         body.innerHTML = `<div class="dash-player-empty-state">
           <div class="dash-player-empty-icon">?</div>
@@ -2150,6 +2224,7 @@ function showModal(type, data) {
 
       body.innerHTML =
         pb +
+        seasonHtml +
         `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>${esc(adminT('adminKpiDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>${esc(adminT('edenX1VoteStructureHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${data.attacks?.length || 0}</div></div><div class="dash-modal-stat"><div>${esc(adminT('adminModalAverageHit'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${data.attacks?.length ? Math.round((data.total_demolition || 0) / data.attacks.length).toLocaleString() : '0'}</div></div></div>` +
         chartHtml +
         '<table class="dash-table dash-table--stack"><thead><tr><th>' +

@@ -8699,10 +8699,10 @@ window.editPlayer = async function (attId, encName) {
 };
 
 window.showPlayer = function (pNameEncoded) {
-  if (!state.dashData) return;
+  // Without demolition data the view still shows the player's season score.
   const pName = decodeURIComponent(pNameEncoded);
   const masterName = findBestMatch(pName);
-  const playerSummary = buildPlayerSummary(state.dashData.attacks || []);
+  const playerSummary = buildPlayerSummary(state.dashData?.attacks || []);
 
   // Exact match first (using master name)
   let p = playerSummary.find((x) => x.name === masterName);

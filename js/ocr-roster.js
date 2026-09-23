@@ -1,3 +1,4 @@
+import { renderDutyCountCell, renderScoreBreakdown } from './score-breakdown.js';
 import {
   STORAGE_KEY,
   ROSTER_KEY,
@@ -37,7 +38,7 @@ import {
   edenWorkspaceMutationError,
 } from './eden-workspaces.js';
 import { bohMatchEntriesFromText } from './boh-match-results.js';
-import { closeModal } from './ocr-render.js';
+import { closeModal, getAdminWeightedModel } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
 
 // Season record mirrors refuse writes while the archived workspace is the
@@ -64,7 +65,6 @@ import {
   summarizeCanonicalPlayerRecords,
 } from './ocr-name-normalizer.js';
 import {
-  buildWeightedContributionRows,
   classifyDutyAccount,
   getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
@@ -2253,16 +2253,7 @@ function collectDutyPlayerSummary(records) {
 }
 
 function buildDutyContributionLookup() {
-  const model = buildWeightedContributionRows({
-    contributionRecords: state.contributionRecords,
-    dutyRecords: state.dutyRecords,
-    r5Adjustments: state.r5Adjustments,
-    season: state.r5Season,
-    exGuildContributions: state.exGuildContributions,
-    demolitionRecords: state.dashData?.attacks,
-    dutyPointWeights: state.dutyPointWeights,
-    includeDemolitionPoints: state.includeDemolitionPoints,
-  });
+  const model = getAdminWeightedModel();
   const byPlayerKey = new Map();
   const byFamilyKey = new Map();
   (model.rows || []).forEach((row) => {
@@ -4393,26 +4384,16 @@ function bindWeightedContributionViewToggle(host) {
 
 function renderWeightedScorePopover(row, index, prefix = 'dashContributionWeightedScoreTip') {
   const tooltipId = `${prefix}-${index}`;
-  const dutyCount = row.banners + row.pathers + row.shieldWalls;
-  const dutyNote = adminT('edenX1DutyFormula', {
-    banners: row.banners,
-    pathers: row.pathers,
-    shieldWalls: row.shieldWalls,
-    count: dutyCount,
-  });
-  const conductNote = adminT('edenX1ConductFormula', {
-    conduct: formatConductContributionBonus(row.conductBonus),
-  });
   return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(adminT('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${row.weightedScore.toFixed(1)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
-      <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${formatContributionValue(row.contributionScore)}</b></span>
-      <span><span>${esc(adminT('adminThDemo'))}<small>${formatContributionValue(row.totalDemolition)} ÷ 20</small></span><b>${formatContributionValue(row.demolitionPoints)}</b></span>
-      <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${formatContributionValue(row.contributionExGuild || 0)}</b></span>
-      <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatContributionValue(row.dutyPoints || 0)}</b></span>
-      <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedContributionValue(row.conductPoints || 0)}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>${esc(adminT('edenX1BreakdownTotal'))}</span><b>${row.weightedScore.toFixed(1)}</b></span>
+      ${renderScoreBreakdown(row, {
+        t: adminT,
+        number: formatContributionValue,
+        signed: formatSignedContributionValue,
+        totalText: row.weightedScore.toFixed(1),
+      })}
     </span>
   </button>`;
 }
@@ -4495,7 +4476,7 @@ function setContributionWeightedSort(col) {
     const ascFirst = ['player', 'currentRank', 'reward', 'finalRank', 'finalReward'].includes(col);
     state._contributionWeightedSort = { col, dir: ascFirst ? 'asc' : 'desc' };
   }
-  renderWeightedContributionTable();
+  renderWeightedContributionTable({ reuseModel: true });
 }
 
 function updateContributionWeightedSortGlyphs(host) {
@@ -4523,23 +4504,21 @@ function bindContributionWeightedSort(host) {
       setContributionWeightedSort(th.dataset.contributionWeightedSort);
     });
   });
+  if (!host.dataset.weightedPlayerBound) {
+    host.dataset.weightedPlayerBound = '1';
+    host.addEventListener('click', (event) => {
+      const link = event.target.closest('[data-weighted-player]');
+      if (link) window.showPlayer?.(link.dataset.weightedPlayer);
+    });
+  }
   updateContributionWeightedSortGlyphs(host);
 }
 
-function renderWeightedContributionTable() {
+function renderWeightedContributionTable(options = {}) {
   const host = $id('dashContributionWeightedPanel');
   if (!host) return;
 
-  const model = buildWeightedContributionRows({
-    contributionRecords: state.contributionRecords,
-    dutyRecords: state.dutyRecords,
-    r5Adjustments: state.r5Adjustments,
-    season: state.r5Season,
-    exGuildContributions: state.exGuildContributions,
-    demolitionRecords: state.dashData?.attacks,
-    dutyPointWeights: state.dutyPointWeights,
-    includeDemolitionPoints: state.includeDemolitionPoints,
-  });
+  const model = getAdminWeightedModel({ reuse: options.reuseModel === true });
   const rows = model.rows || [];
 
   if (!rows.length) {
@@ -4575,15 +4554,15 @@ function renderWeightedContributionTable() {
             ? visibleRows
                 .map(
                   (row, index) => `<tr>
-          <td><strong>${esc(row.playerName)}</strong></td>
+          <td><button type="button" class="dash-weighted-player-link" data-weighted-player="${esc(encodeURIComponent(row.playerName))}"><strong>${esc(row.playerName)}</strong></button></td>
           <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col">${esc(getContributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.totalDemolition)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionExGuild || 0)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT)}</td>
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatConductContributionBonus(row.conductBonus)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${weightedContributionBonusTotal(row).toLocaleString()}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
@@ -4602,7 +4581,7 @@ function renderWeightedContributionTable() {
   if (search) {
     search.oninput = (event) => {
       state._contributionWeightedSearchQ = event.target.value || '';
-      renderWeightedContributionTable();
+      renderWeightedContributionTable({ reuseModel: true });
       const nextSearch = $id('dashContributionWeightedSearch');
       if (nextSearch) {
         nextSearch.focus();
