@@ -343,9 +343,16 @@ function buildWorkbookEvidenceIndex(rows) {
     const used = new Set();
     for (const evidenceRow of section.rows) {
       const wanted = normalizedEvidenceName(evidenceRow.name);
-      const match = candidates.find(
-        (row) => !used.has(row[6]) && normalizedEvidenceName(row[7]) === wanted
-      );
+      // The workbook sometimes names a node differently per troop (Energetic, Tough
+      // Armor, …). Those rows carry the canonical node id, so match on it first and
+      // fall back to the name for rows the corpus cannot place.
+      const byId =
+        evidenceRow.nodeId == null
+          ? undefined
+          : candidates.find((row) => !used.has(row[6]) && row[6] === evidenceRow.nodeId);
+      const match =
+        byId ??
+        candidates.find((row) => !used.has(row[6]) && normalizedEvidenceName(row[7]) === wanted);
       if (!match) {
         unmapped.push({ section, row: evidenceRow });
         continue;
@@ -386,16 +393,16 @@ function renderUnmappedWorkbookEvidence(entries) {
   if (!entries.length) return '';
   const grouped = new Map();
   for (const entry of entries) {
-    const key = `${entry.section.tower}:${entry.section.sourceSection}`;
+    const key = `${entry.section.troop}:${entry.section.tower}`;
     if (!grouped.has(key)) grouped.set(key, { section: entry.section, rows: [] });
     grouped.get(key).rows.push(entry.row);
   }
+  const source = SPECIALIZATION_MEDAL_EVIDENCE_SOURCE;
   return [...grouped.values()]
     .map(({ section, rows }) => {
-      const sheet = SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[section.tower];
-      const sourceUrl = `${SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sourceUrl}?gid=${sheet.gid}#gid=${sheet.gid}`;
+      const tab = source.tabs?.[section.troop]?.[section.tower];
       return `<details class="spec-contrib-column spec-contrib-column--source">
-        <summary><strong>${escapeHtml(section.title)}</strong><span>${rows.length} · ${escapeHtml(section.complete ? sp('confidenceVerified') : sp('confidenceUnknown'))}</span></summary>
+        <summary><strong>${escapeHtml(tab?.tab || section.title)}</strong><span>${rows.length} · ${escapeHtml(section.complete ? sp('confidenceVerified') : sp('confidenceUnknown'))}</span></summary>
         <section class="spec-contrib-research">
           ${rows
             .map(
@@ -405,7 +412,7 @@ function renderUnmappedWorkbookEvidence(entries) {
               </div>`
             )
             .join('')}
-          <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sheet.title)}</a>
+          <a href="${escapeHtml(source.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(`${source.title} · ${source.maintainers}`)}</a>
         </section>
       </details>`;
     })
@@ -967,7 +974,13 @@ function renderCommunity() {
 }
 
 function renderAcknowledgments() {
-  const plates = ['VTS 1097 Community'];
+  const plates = [
+    { name: 'VTS 1097 Community' },
+    {
+      name: SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.maintainers,
+      url: SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.maintainersUrl,
+    },
+  ];
   return `
     <section class="spec-ack" aria-labelledby="spec-ack-title">
       <div class="spec-ack-rule" aria-hidden="true"><span class="spec-ack-seal">🏅</span></div>
@@ -979,11 +992,15 @@ function renderAcknowledgments() {
         ${plates
           .map(
             (
-              name,
+              plate,
               index
             ) => `<li class="spec-ack-plate${index === 0 ? ' spec-ack-plate--lead' : ''}" style="--i:${index}">
               <span class="spec-ack-plate-crest" aria-hidden="true">${index === 0 ? '🛡️' : '◆'}</span>
-              <span class="spec-ack-plate-name">${escapeHtml(name)}</span>
+              <span class="spec-ack-plate-name">${
+                plate.url
+                  ? `<a href="${escapeHtml(plate.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(plate.name)}</a>`
+                  : escapeHtml(plate.name)
+              }</span>
             </li>`
           )
           .join('')}

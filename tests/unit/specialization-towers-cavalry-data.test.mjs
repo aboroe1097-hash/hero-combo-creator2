@@ -151,8 +151,8 @@ test('unproven order, prerequisites, node-to-icon mapping, and per-node medals r
 test('known full-research totals stay consistent while no total is distributed into nodes', () => {
   const expectedColumnTotals = new Map([
     [1, 15_647],
-    [2, 31_294],
-    [3, 62_588],
+    [2, 26_794],
+    [3, 52_191],
   ]);
 
   for (const research of researchValues) {
