@@ -11,6 +11,14 @@ This is the release history, newest first. Entries describe their release-time b
 - Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount.
 - Docs: the 16.5.0 motion plan and its Phase 0 baseline report live in docs/plans.
 
+## 16.0.19 - 2026-09-23
+
+- Every player in the weighted tables opens a season view, in VTS Admin (Dashboard and Contributions) and on the public Eden page, including players with no structure hits. It shows the final rank, weighted score and reward, a bar of what the score is made of, the itemised score, and every banner, pathing and shield wall duty the player was credited with, newest first, filterable by type, each marked Main or Banner account. Alt and banner accounts open their owner's season.
+- The score breakdown (the weighted score popover and the season view) lists each duty type separately for main and alt / banner accounts, with the count, weight and points behind it (for example "4 × weight 3 × 10,000 = 120,000"), shows how the demolition points were counted or that they are switched off, and lists the bonus team effort categories that make up the bonus. A summary line counts main and alt / banner duties and their points.
+- Banner, pathing and shield wall cells in the weighted tables show how many of the duties came from alt or banner accounts (for example "11 · 3 alt").
+- The public "Top names to review" lists have separate Most Banners Placed and Most Paths & Speed Tiles lists instead of one combined list. On wide screens the six lists sit in two rows of three; on phones they are one swipeable row.
+- The Eden season page does less work while loading: on a mid-range phone profile, main-thread blocking fell from about 5.8 s to 2.4 s and the weighted table appears about 2 s sooner. Name matching no longer rebuilds its 300-entry alias table or re-checks a whole attack's player list for every player, and repeated name normalisation is cached. VTS Admin reuses the scored table while you sort, search or page it.
+
 ## 16.0.18 - 2026-09-22
 
 - Voting has short links: roc-vts.com/vote opens the Eden X2 ballot directly, and roc-vts.com/eden opens the season. Inside the site, #vote and #season do the same through the Eden Hub.

@@ -10,16 +10,16 @@ import {
   versionMismatch,
 } from '../../scripts/check-version-consistency.mjs';
 
-test('the approved 16.0.18 -> 16.5.0 transition is the only cadence exception', () => {
-  assert.deepEqual(APPROVED_RELEASE_TRANSITIONS, { '16.5.0': '16.0.18' });
-  assert.equal(expectedPreviousVersion('16.5.0'), '16.0.18');
-  assert.equal(cadenceFailure('16.5.0', '16.0.18'), null);
+test('the approved 16.0.19 -> 16.5.0 transition is the only cadence exception', () => {
+  assert.deepEqual(APPROVED_RELEASE_TRANSITIONS, { '16.5.0': '16.0.19' });
+  assert.equal(expectedPreviousVersion('16.5.0'), '16.0.19');
+  assert.equal(cadenceFailure('16.5.0', '16.0.19'), null);
 });
 
 test('a wrong predecessor or an arbitrary skip still fails', () => {
-  assert.match(cadenceFailure('16.5.0', '16.0.17'), /must follow 16\.0\.18/);
-  assert.match(cadenceFailure('16.5.0', '16.4.20'), /must follow 16\.0\.18/);
-  assert.match(cadenceFailure('16.5.0', '15.0.20'), /must follow 16\.0\.18/);
+  assert.match(cadenceFailure('16.5.0', '16.0.18'), /must follow 16\.0\.19/);
+  assert.match(cadenceFailure('16.5.0', '16.4.20'), /must follow 16\.0\.19/);
+  assert.match(cadenceFailure('16.5.0', '15.0.20'), /must follow 16\.0\.19/);
 });
 
 test('normal cadence resumes right after the approved transition', () => {

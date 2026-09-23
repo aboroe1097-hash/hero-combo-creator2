@@ -2,7 +2,7 @@
 
 Status: **planning complete; implementation not started**  
 Target: **16.5.0**, requested by the owner. This document does not bump the application version.  
-Revised: 2026-09-23 · Production reference: origin/gh-pages **fd177c38**, application **16.0.18**  
+Revised: 2026-09-23 · Production reference at planning: origin/gh-pages **fd177c38**, application **16.0.18**; release integration refreshed it to **81dba72a**, application **16.0.19**, and the approved transition is now 16.0.19 → 16.5.0  
 Source: [100 HTML Files gallery](https://miaai-lab.github.io/Claude-Opus-5.5-100-HTML-Files/)
 
 ## 0. Release intent and scope

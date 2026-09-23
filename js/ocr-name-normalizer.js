@@ -1,7 +1,10 @@
 import {
   collectCurrentSeasonPlayerNames,
   compactPlayerIdentity,
+  attackListStillVerified,
+  currentSignaturePass,
   findBestMatch,
+  markAttackPlayersStable,
   resolvePlayerNameForAttack,
 } from './ocr-shared.js';
 
@@ -27,6 +30,10 @@ function cloneWithDisplayName(player, displayName) {
 
 const cleanedAttackPlayerCache = new WeakMap();
 
+function attackEntryFingerprint(entry, index) {
+  return `${readName(entry)}\u001f${entry?.value ?? entry?.val ?? ''}\u001f${entry?.rank ?? index + 1}`;
+}
+
 function attackPlayerListSignature(players) {
   return players
     .map((entry, index) => {
@@ -42,36 +49,73 @@ function cleanedAttackPlayerContext(attackPlayers) {
   if (!Array.isArray(attackPlayers) || !attackPlayers.length) {
     return { players: [], byOriginal: new Map() };
   }
-  const signature = attackPlayerListSignature(attackPlayers);
   const cached = cleanedAttackPlayerCache.get(attackPlayers);
-  if (cached?.signature === signature) return cached;
+  const pass = currentSignaturePass();
+  if (attackListStillVerified(cached, attackPlayers)) return cached;
+  const signature = attackPlayerListSignature(attackPlayers);
+  if (cached?.signature === signature) {
+    cached.pass = pass;
+    return cached;
+  }
 
   const byOriginal = new Map();
-  const players = attackPlayers.map((entry) => {
-    const cleaned = cloneWithCleanName(entry);
-    byOriginal.set(entry, cleaned);
-    return cleaned;
-  });
-  const context = { signature, players, byOriginal };
+  // Internal copy: nothing outside this cache edits it, so lookups keyed on it
+  // never need re-verifying.
+  const players = markAttackPlayersStable(
+    attackPlayers.map((entry) => {
+      const cleaned = cloneWithCleanName(entry);
+      byOriginal.set(entry, cleaned);
+      return cleaned;
+    })
+  );
+  let fingerprints = null;
+  const context = {
+    signature,
+    pass,
+    players,
+    byOriginal,
+    byFingerprint() {
+      if (!fingerprints) {
+        fingerprints = new Map();
+        attackPlayers.forEach((entry, index) => {
+          const key = attackEntryFingerprint(entry, index);
+          if (!fingerprints.has(key)) fingerprints.set(key, index);
+        });
+      }
+      return fingerprints;
+    },
+  };
   cleanedAttackPlayerCache.set(attackPlayers, context);
   return context;
 }
 
 function resolveWithExistingAliases(player, attackPlayers = []) {
   const attackContext = cleanedAttackPlayerContext(attackPlayers);
-  const fallbackIndex = Array.isArray(attackPlayers)
-    ? attackPlayers.findIndex(
-        (entry, index) =>
-          entry === player ||
-          (readName(entry) === readName(player) &&
-            (entry?.value ?? entry?.val ?? '') === (player?.value ?? player?.val ?? '') &&
-            (entry?.rank ?? index + 1) === (player?.rank ?? index + 1))
-      )
-    : -1;
+  // Usually the player is one of the list's own entries; otherwise match a
+  // ranked copy through the fingerprint index, and scan only as a last resort.
+  const findFallback = () => {
+    if (
+      attackContext.byFingerprint &&
+      player &&
+      typeof player === 'object' &&
+      player.rank != null
+    ) {
+      const indexed = attackContext.byFingerprint().get(attackEntryFingerprint(player, 0));
+      if (indexed !== undefined) return attackContext.players[indexed];
+    }
+    const fallbackIndex = Array.isArray(attackPlayers)
+      ? attackPlayers.findIndex(
+          (entry, index) =>
+            entry === player ||
+            (readName(entry) === readName(player) &&
+              (entry?.value ?? entry?.val ?? '') === (player?.value ?? player?.val ?? '') &&
+              (entry?.rank ?? index + 1) === (player?.rank ?? index + 1))
+        )
+      : -1;
+    return attackContext.players[fallbackIndex];
+  };
   const cleanPlayer =
-    attackContext.byOriginal.get(player) ||
-    attackContext.players[fallbackIndex] ||
-    cloneWithCleanName(player);
+    attackContext.byOriginal.get(player) || findFallback() || cloneWithCleanName(player);
   return (
     resolvePlayerNameForAttack(cleanPlayer, attackContext.players) ||
     findBestMatch(cleanPlayer.name) ||

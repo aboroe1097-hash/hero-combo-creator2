@@ -4217,3 +4217,104 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot [hidden] {
   display: none !important;
 }
+
+/* Itemised weighted score (js/score-breakdown.js): shared by the admin and
+   public score popovers and the player detail views. */
+#ocrDashboardRoot .dash-weighted-score-popover {
+  width: min(340px, calc(100vw - 2rem));
+}
+#ocrDashboardRoot .dash-weighted-score-popover > .score-breakdown,
+#ocrDashboardRoot .score-breakdown {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+#ocrDashboardRoot .score-breakdown-line,
+#ocrDashboardRoot .score-breakdown-sub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: start;
+}
+#ocrDashboardRoot .score-breakdown-line {
+  padding: 0.34rem 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+#ocrDashboardRoot .score-breakdown-line:first-child {
+  border-top: 0;
+}
+#ocrDashboardRoot .score-breakdown-line > span {
+  min-width: 0;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .score-breakdown-sub {
+  padding: 0.14rem 0 0.14rem 0.75rem;
+  border-left: 2px solid rgba(103, 232, 249, 0.22);
+  margin-left: 0.2rem;
+  font-size: 0.92em;
+}
+#ocrDashboardRoot .score-breakdown-sub > span {
+  min-width: 0;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .score-breakdown-sub em {
+  color: var(--text-dim);
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .score-breakdown b {
+  color: var(--text-primary);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .score-breakdown small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+#ocrDashboardRoot .score-breakdown-note {
+  padding: 0.2rem 0 0.1rem;
+}
+#ocrDashboardRoot .score-breakdown-total {
+  margin-top: 0.3rem;
+  border-top-color: rgba(103, 232, 249, 0.32);
+}
+#ocrDashboardRoot .score-breakdown-total b {
+  color: var(--brand-light);
+}
+
+#ocrDashboardRoot .dash-weighted-player-link {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(103, 232, 249, 0.42);
+  text-underline-offset: 3px;
+}
+#ocrDashboardRoot .duty-count {
+  display: inline-grid;
+  justify-items: end;
+  line-height: 1.15;
+  cursor: help;
+}
+#ocrDashboardRoot .duty-count-alt {
+  color: #fbbf24;
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+[data-theme='light'] #ocrDashboardRoot .duty-count-alt {
+  color: #b45309;
+}
+#ocrDashboardRoot .dash-modal-content.dash-modal-content--wide {
+  max-width: min(960px, calc(100vw - 2rem));
+}

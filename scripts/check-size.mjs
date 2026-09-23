@@ -332,11 +332,12 @@ const LIMITS = {
   // load held: index FCP 3144 -> 2912 ms, load 4220 -> 4145 ms; admin FCP
   // 3016 -> 2920 ms, load 4864 -> 4820 ms; Eden X1 FCP 2984 -> 2540 ms, load
   // 5469 -> 5551 ms. Keep three of headroom.
+  // 16.0.19 adds css/player-season.css as its own on-demand chunk (so the Eden
+  // pages' initial CSS stays within its budget); the build emits 730 files.
   // 16.5.0 confirmed-success feedback adds one shared chunk
   // (success-feedback-*.js, 5.2 KiB) used by the index, combo save, and Eden
-  // vote paths; it replaces no existing file, so the cap rises by exactly that
-  // one measured file (729 -> 730). No other new chunk is allocated here.
-  deployFileCount: 730,
+  // vote paths. The merged build emits 731 files; keep three of headroom.
+  deployFileCount: 734,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

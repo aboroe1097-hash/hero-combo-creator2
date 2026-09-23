@@ -2725,6 +2725,13 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   gap: 0.7rem;
 }
 
+/* Six lists: three across on wide screens keeps two even rows. */
+@media (min-width: 1025px) {
+  #ocrDashboardRoot .eden-x1-vote-helper-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 #ocrDashboardRoot .eden-x1-vote-helper-card {
   display: grid;
   align-content: start;
@@ -3321,8 +3328,25 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
     min-width: 0 !important;
   }
 
+  /* Phones swipe between the lists instead of scrolling past six stacked
+     cards; the next card peeks in so the swipe is discoverable. */
   #ocrDashboardRoot .eden-x1-vote-helper-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    /* Viewport-based: a percentage would resolve against the content-sized
+       container and collapse every card. */
+    grid-auto-columns: min(80vw, 340px);
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    padding-bottom: 0.35rem;
+  }
+
+  #ocrDashboardRoot .eden-x1-vote-helper-grid > .eden-x1-vote-helper-card {
+    scroll-snap-align: start;
   }
 
   .eden-x1-flow-action {

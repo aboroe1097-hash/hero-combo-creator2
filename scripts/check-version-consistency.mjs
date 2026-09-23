@@ -8,14 +8,15 @@ export const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)$/;
 /**
  * Owner-approved release-transition exceptions (16.5.0 plan §7.2).
  *
- * The 16.5.0 motion release was requested directly from the 16.0.18 train: no
- * 16.1-16.4 releases exist, and fabricating them is forbidden. This map allows
- * exactly the recorded predecessor -> target pair; normal cadence resumes for
- * every release after it. Add an entry only with an owner decision, and remove
- * the old one once its predecessor is part of normal cadence again.
+ * The 16.5.0 motion release skips the 16.1-16.4 trains: production was 16.0.19
+ * when the release branch integrated origin/gh-pages, and fabricating skipped
+ * releases is forbidden. This map allows exactly the recorded predecessor ->
+ * target pair; normal cadence resumes for every release after it. Add an entry
+ * only with an owner decision, and remove the old one once its predecessor is
+ * part of normal cadence again.
  */
 export const APPROVED_RELEASE_TRANSITIONS = Object.freeze({
-  '16.5.0': '16.0.18',
+  '16.5.0': '16.0.19',
 });
 
 export function patchExceedsReleaseTrain(version) {

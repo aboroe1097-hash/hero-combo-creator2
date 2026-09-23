@@ -2,6 +2,7 @@ import {
   DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF,
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
+  collectFamilyDutyEntries,
   compareEdenX1ContributionRankingRows,
   dedupeWeightedRowsByFamily,
   getEdenX1ContributionRankingScore,
@@ -21,6 +22,7 @@ import { celebrate } from './fx/success-feedback.js';
 import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
+  markAttackPlayersStable,
   normalizeStructureTarget,
 } from './ocr-shared.js';
 import { parseGameTimeDateMs } from './ocr-time-filter.js';
@@ -33,6 +35,11 @@ import {
 import { renderSpecialPlayerTag } from './player-tags.js';
 import { localizeEdenX1Shell } from './i18n/eden-x1-shell.js';
 import { setActivePlayerRegistry } from './player-registry.js';
+import {
+  renderDutyCountCell,
+  renderPlayerSeasonSummary,
+  renderScoreBreakdown,
+} from './score-breakdown.js';
 import { runtimeMiscT } from './i18n/runtime-misc.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
@@ -170,6 +177,8 @@ const WEIGHTED_POPOVER_SCROLL_GRACE_MS = 650;
 let publicDashboardData = null;
 let publicAttackRows = [];
 let publicPlayerRows = [];
+// Duty records behind the current season, for the player season view.
+let currentDutyRecords = [];
 let publicStructureRows = [];
 let publicDashboardRenderToken = 0;
 let deferredPublicDashboardRenderToken = 0;
@@ -1235,24 +1244,14 @@ function getEdenPublicPlayerForKey(playerKey, playerName = '') {
   return null;
 }
 
-function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
+// One top list per duty, so a player who only lays paths is not buried under
+// banner placers (and the other way round).
+function rankedEdenDutyRows(field, limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   return currentRows
-    .map((row) => {
-      const banners = valueOf(row.banners);
-      const pathers = valueOf(row.pathers);
-      return {
-        ...row,
-        banners,
-        pathers,
-        supportTotal: banners + pathers,
-      };
-    })
-    .filter((row) => row.supportTotal > 0)
+    .filter((row) => valueOf(row[field]) > 0)
     .sort(
       (a, b) =>
-        valueOf(b.supportTotal) - valueOf(a.supportTotal) ||
-        valueOf(b.banners) - valueOf(a.banners) ||
-        valueOf(b.pathers) - valueOf(a.pathers) ||
+        valueOf(b[field]) - valueOf(a[field]) ||
         valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
@@ -1260,10 +1259,7 @@ function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
     .map((row) => ({
       key: row.playerKey || compactPlayerIdentity(row.playerName),
       name: row.playerName,
-      value: t('edenX1VoteBannerPathValue', {
-        banners: formatScore(row.banners),
-        pathers: formatScore(row.pathers),
-      }),
+      value: formatScore(valueOf(row[field])),
     }));
 }
 
@@ -1530,7 +1526,8 @@ function renderEdenVoteGuidance(options = {}) {
   const guidanceId = options.id || 'edenX1VoteGuidance';
   const extraClass = options.className ? ` ${options.className}` : '';
   const groups = [
-    [t('edenX1VoteTopBannerPath'), t('edenX1VoteTopBannerPathHint'), rankedEdenBannerPathRows()],
+    [t('edenX1VoteTopBanner'), t('edenX1VoteTopBannerHint'), rankedEdenDutyRows('banners')],
+    [t('edenX1VoteTopPath'), t('edenX1VoteTopPathHint'), rankedEdenDutyRows('pathers')],
     [t('edenX1VoteTopStructure'), t('edenX1VoteTopStructureHint'), rankedEdenStructureHelpRows()],
     [t('edenX1VoteTopBuildingMvp'), t('edenX1VoteTopBuildingMvpHint'), rankedEdenBuildingMvpRows()],
     [t('edenX1VoteTopR5Bonus'), t('edenX1VoteTopR5BonusHint'), rankedEdenR5BonusRows()],
@@ -4470,28 +4467,18 @@ function renderWeightedScorePopover(row, index, options = {}) {
   const popover = deferredWeightedPopoverParts(options.deferredScope, tooltipId, () => {
     const rankingMode = normalizeEdenX1ContributionRankingMode(row.edenX1ContributionRankingMode);
     const defaultMode = rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT;
-    const dutyCount = row.banners + row.pathers + row.shieldWalls;
-    const conductBonus = conductBonusValue(row);
-    const conductPoints = Number.isFinite(Number(row.conductPoints))
-      ? Number(row.conductPoints)
-      : conductBonus * 10000;
-    const dutyNote = t('edenX1DutyFormula', {
-      banners: row.banners,
-      pathers: row.pathers,
-      shieldWalls: row.shieldWalls,
-      count: dutyCount,
-    });
     const excludedNote = defaultMode ? ` ${t('edenX1ContributionModeExcluded')}` : '';
-    const conductNote = `${t('edenX1ConductPrivateNotice')}${excludedNote}`;
     return `<span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
         <strong>${esc(
           t(defaultMode ? 'edenX1ContributionModeDefaultScore' : 'edenX1WeightedBreakdownTitle')
         )}</strong>
-        <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${formatScore(row.contributionScore)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${formatScore(row.contributionExGuild || 0)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(`${dutyNote}${excludedNote}`)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
-        <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
+        ${renderScoreBreakdown(row, {
+          t,
+          number: formatScore,
+          signed: formatSignedNumber,
+          totalText: formatWeightedScore(row.weightedScore),
+          conductNote: `${t('edenX1ConductPrivateNotice')}${excludedNote}`,
+        })}
       </span>`;
   });
   return `<button class="dash-weighted-score-trigger eden-x1-popover-trigger" type="button" ${popover.attributes} aria-expanded="false" aria-label="${esc(t('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
@@ -4678,8 +4665,10 @@ function rewardThemeClass(reward) {
   return `eden-x1-reward-theme-${themes[reward] || 'default'}`;
 }
 
+// Published attack data is read-only on this page, so name lookups can trust
+// each list without re-checking its contents on every call.
 function publicAttackPlayers(attack) {
-  return Array.isArray(attack?.players) ? attack.players : [];
+  return Array.isArray(attack?.players) ? markAttackPlayersStable(attack.players) : [];
 }
 
 function publicGameTimeLabel(value) {
@@ -4721,6 +4710,7 @@ function publicStructureKey(attack) {
 }
 
 function publicPlayerName(player, attackPlayers = []) {
+  markAttackPlayersStable(attackPlayers);
   try {
     return resolveCanonicalPlayerName(player, { attackPlayers }) || t('edenX1UnknownPlayer');
   } catch {
@@ -4969,7 +4959,8 @@ function publicWeightedRowSearchText(row, rewardContext = {}) {
 
 function renderPublicWeightedContributionRow(row, index, options = {}) {
   const playerKey = row.playerKey || publicPlayerKey(row.playerName);
-  const canOpenPlayer = options.clickablePlayerKeys?.has(playerKey);
+  // Every scored player opens their season view, not only the ones with hits.
+  const canOpenPlayer = Boolean(playerKey);
   const total = rowBonusTotal(row);
   const tooltipIndex = `public-${index}`;
   const rewardContext = options.rewardContextForRow(row);
@@ -4989,9 +4980,9 @@ function renderPublicWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t)}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex, popoverOptions)}</td>
@@ -5018,11 +5009,9 @@ function renderPublicWeightedContributionTable() {
     : allRows;
   const page = resolveWeightedTablePage(filteredRows.length, publicWeightedTablePagination);
   const rows = filteredRows.slice(0, page.visible);
-  const clickablePlayerKeys = new Set(publicPlayerRows.map((player) => player.key));
   const progressivePlan = rows.length
     ? setProgressiveWeightedTablePlan('public', rows, (row, index, deferredScope) =>
         renderPublicWeightedContributionRow(row, index, {
-          clickablePlayerKeys,
           rewardContextForRow,
           deferredScope,
         })
@@ -5035,14 +5024,11 @@ function renderPublicWeightedContributionTable() {
     publicWeightedTablePagination,
     'edenX1PublicWeightedTable'
   );
-  const clickableCount = allRows.filter((row) =>
-    publicPlayerRows.some((player) => player.key === row.playerKey)
-  ).length;
   const metaParts = [
     t(EDEN_X1_IS_ARCHIVE ? 'edenX1WeightedPublicMeta' : 'edenX1PublicDemoMeta'),
     allRows.length ? t('edenX1PlayersCount', { count: allRows.length }) : '',
     t('edenX1WeightedIncludesMeta'),
-    clickableCount ? t('edenX1ClickMatchedRowsMeta') : '',
+    allRows.length ? t('edenX1ClickMatchedRowsMeta') : '',
   ].filter(Boolean);
   const searchControl = allRows.length
     ? `<div class="eden-x1-public-table-toolbar">
@@ -5549,8 +5535,40 @@ async function renderPublicAdvancedAnalyticsSections(host, token) {
     bindWeightedPopovers(host);
     await yieldToBrowser();
   }
-  syncPublicHeatmapOverflowState(host);
+  // Measured next frame, so the check does not force a layout mid-render.
+  schedulePublicHeatmapOverflowSync();
   return true;
+}
+
+// The weighted row for a player key, following account links so an alt or
+// banner account opens its owner's season.
+function findPublicWeightedRow(key) {
+  if (!key) return null;
+  const direct = currentRows.find((row) => row.playerKey === key);
+  if (direct) return direct;
+  const familyKey = getWeightedPlayerFamilyKey(key);
+  return (
+    currentRows.find((row) => row.familyKey === familyKey && row.isPrimaryAccount) ||
+    currentRows.find((row) => row.familyKey === familyKey) ||
+    null
+  );
+}
+
+function renderPublicPlayerSeason(row) {
+  const rewardContext = createPlannedRewardContextMap().get(plannedRewardContextKey(row)) || {};
+  const rewardLabel =
+    rewardContext.finalRewardLabel ||
+    contributionRewardLabel(rewardContext.finalReward || row.finalReward);
+  return renderPlayerSeasonSummary({
+    row,
+    duties: collectFamilyDutyEntries(currentDutyRecords, row.familyKey),
+    t,
+    number: formatScore,
+    signed: formatSignedNumber,
+    totalText: formatWeightedScore(row.weightedScore),
+    rewardLabel,
+    conductNote: t('edenX1ConductPrivateNotice'),
+  });
 }
 
 function renderPublicPlayerDetail(player) {
@@ -5685,11 +5703,17 @@ function showPublicDetail(type, key) {
   const normalizedKey = String(key || '');
   if (type === 'player') {
     const player = publicPlayerRows.find((row) => row.key === normalizedKey);
-    if (!player) return;
+    const weightedRow = findPublicWeightedRow(normalizedKey);
+    if (!player && !weightedRow) return;
+    const body = [
+      weightedRow ? renderPublicPlayerSeason(weightedRow) : '',
+      player?.attacks?.length ? renderPublicPlayerDetail(player) : '',
+    ].join('');
     openPublicModal(
-      t('edenX1PlayerDetailTitle', { player: player.name }),
-      t('edenX1PlayerDetailHint'),
-      renderPublicPlayerDetail(player)
+      t('edenX1PlayerDetailTitle', { player: weightedRow?.playerName || player.name }),
+      // The hint is about switching to a structure, so only when there are hits.
+      player?.attacks?.length ? t('edenX1PlayerDetailHint') : '',
+      body
     );
   } else if (type === 'structure') {
     const structure = publicStructureRows.find((row) => row.key === normalizedKey);
@@ -6077,9 +6101,9 @@ function renderWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t)}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(options.weightedScoreLabel || t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>
@@ -7413,6 +7437,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     ? data.contributionRecords
     : [];
   const dutyRecords = Array.isArray(data.dutyRecords) ? data.dutyRecords : [];
+  currentDutyRecords = dutyRecords;
   const exGuildContributions = Array.isArray(data.exGuildContributions)
     ? data.exGuildContributions
     : [];

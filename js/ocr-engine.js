@@ -20,6 +20,7 @@ import {
   getSupportedOcrImageFiles,
   describeRejectedOcrImageFiles,
   readOcrImageDataUrl,
+  withSignaturePass,
 } from './ocr-shared.js';
 import { translations } from './translations.js';
 import { resolveRuntimeLocale } from './locale-format.js';
@@ -587,7 +588,8 @@ function parseOcrResults(results) {
 
   const sorted = Object.values(merged).sort((a, b) => b.game_time.localeCompare(a.game_time));
   const sum = {};
-  sorted.forEach((a) => {
+  // Nothing edits the lists during this loop, so each is verified once.
+  withSignaturePass(() => sorted.forEach((a) => {
     const seen = new Set();
     const players = a.players || [];
     players.forEach((p) => {
@@ -624,7 +626,7 @@ function parseOcrResults(results) {
         rank: p.rank,
       });
     });
-  });
+  }));
 
   return {
     last_updated: fmtDate(new Date()),

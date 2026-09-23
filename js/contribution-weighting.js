@@ -79,6 +79,32 @@ export function emptyDutyClassCounts() {
   };
 }
 
+// The same calculation as dutyPointsFor, itemised: for each activity, how
+// many duties a main and a secondary account did, the weight each counted at,
+// and the points that came out. Tables and detail views show this so a total
+// can be checked by hand.
+export function dutyPointsBreakdown(classCounts, weights) {
+  const table = normalizeDutyPointWeights(weights);
+  const activities = DUTY_ACTIVITIES.map((activity) => {
+    const counts = classCounts?.[activity] || {};
+    const byClass = {};
+    let points = 0;
+    for (const cls of DUTY_ACCOUNT_CLASSES) {
+      const count = Number(counts[cls] || 0);
+      const weight = table[activity][cls];
+      const classPoints = count * weight * DUTY_POINT_UNIT;
+      byClass[cls] = { count, weight, points: classPoints };
+      points += classPoints;
+    }
+    return { activity, ...byClass, points };
+  });
+  return {
+    unit: DUTY_POINT_UNIT,
+    activities,
+    total: activities.reduce((sum, item) => sum + item.points, 0),
+  };
+}
+
 // Points for one family's duty, given the weight table in force.
 export function dutyPointsFor(classCounts, weights) {
   const table = normalizeDutyPointWeights(weights);
@@ -435,6 +461,45 @@ export function dutyEntryAccountClass(entry) {
   return '';
 }
 
+// Every duty credited to one player family, newest first, with the account
+// class it scored at. The same crediting rules as buildWeightedDutyCounts, so
+// the list always matches the counts in the score.
+export function collectFamilyDutyEntries(dutyRecords = [], familyKey = '') {
+  const target = String(familyKey || '');
+  if (!target) return [];
+  const out = [];
+  (Array.isArray(dutyRecords) ? dutyRecords : []).forEach((record) => {
+    const bucket = dutyBucket(record?.type);
+    if (!bucket) return;
+    (Array.isArray(record.entries) ? record.entries : []).forEach((entry) => {
+      const raw = entry?.name || entry?.original || '';
+      const creditedNames = entry?.confirmed
+        ? getDutyCreditedNames(raw, entry.confirmed)
+        : expandDutyRawNames(raw);
+      const seenFamilies = new Set();
+      creditedNames.forEach((name) => {
+        const identity = resolveWeightedPlayerIdentity(name);
+        if (!identity) return;
+        const fam = playerFamilyKey(identity.playerKey);
+        if (fam !== target || seenFamilies.has(fam)) return;
+        seenFamilies.add(fam);
+        out.push({
+          activity: bucket,
+          date: String(record.date || ''),
+          gameTime: String(record.gameTime || ''),
+          usageTime: String(entry.usageTime || ''),
+          target: String(entry.target || ''),
+          accountName: identity.playerName,
+          accountClass: dutyEntryAccountClass(entry) || classifyDutyAccount(identity.playerKey),
+        });
+      });
+    });
+  });
+  return out.sort(
+    (a, b) => b.date.localeCompare(a.date) || String(b.usageTime).localeCompare(String(a.usageTime))
+  );
+}
+
 export function buildWeightedDutyCounts(dutyRecords = []) {
   const counts = new Map();
 
@@ -707,6 +772,24 @@ export function buildWeightedContributionRows(options = {}) {
     }
     familyDutyByClass.set(fam, split);
   });
+  // Bonus team effort per family, grouped by category, so a total can be
+  // shown as what it is made of. Categories only: notes stay admin-side.
+  const familyConductItems = new Map();
+  normalizeWeightedR5Adjustments(options.r5Adjustments, options.season || options.r5Season).forEach(
+    (adjustment) => {
+      if (!adjustment.points) return;
+      const fam = adjustment.playerFamilyKey || playerFamilyKey(adjustment.playerKey);
+      const items = familyConductItems.get(fam) || new Map();
+      const category = String(
+        adjustment.category || (adjustment.points < 0 ? 'penalty_other' : 'merit_other')
+      );
+      const item = items.get(category) || { category, count: 0, points: 0 };
+      item.count += 1;
+      item.points += adjustment.points;
+      items.set(category, item);
+      familyConductItems.set(fam, items);
+    }
+  );
   const familyConduct = new Map();
   conductMap.forEach((points, accountKey) => {
     const fam = playerFamilyKey(accountKey);
@@ -759,6 +842,7 @@ export function buildWeightedContributionRows(options = {}) {
       dutiesByClass,
       totalDemolition: isPrimaryAccount ? familyDemolition.get(fam) || 0 : 0,
       conductBonus: isPrimaryAccount ? familyConduct.get(fam) || 0 : 0,
+      conductItems: isPrimaryAccount ? [...(familyConductItems.get(fam)?.values() || [])] : [],
       isPrimaryAccount,
     };
   });
@@ -771,19 +855,23 @@ export function buildWeightedContributionRows(options = {}) {
     const contributionRewardScore = row.contributionScore + exGuildPoints;
     // Weighted per activity and per account class. With every weight at 1 this
     // is arithmetically identical to the flat BASE_POINT_VALUE it replaced.
-    const dutyPoints = dutyPointsFor(row.dutiesByClass, dutyWeights);
+    const dutyBreakdown = dutyPointsBreakdown(row.dutiesByClass, dutyWeights);
+    const dutyPoints = dutyBreakdown.total;
     const conductPoints = row.conductBonus * BASE_POINT_VALUE;
-    const demolitionPoints =
-      options.includeDemolitionPoints === false
-        ? 0
-        : row.totalDemolition * Math.max(0, numberValue(weights.demolition));
+    const demolitionCounted = options.includeDemolitionPoints !== false;
+    const demolitionWeight = Math.max(0, numberValue(weights.demolition));
+    const demolitionPoints = demolitionCounted ? row.totalDemolition * demolitionWeight : 0;
     const weightedScore = contributionRewardScore + demolitionPoints + dutyPoints + conductPoints;
 
     return {
       ...row,
       contributionRewardScore,
+      dutyBreakdown,
       dutyPoints,
       conductPoints,
+      conductUnit: BASE_POINT_VALUE,
+      demolitionCounted,
+      demolitionWeight,
       demolitionPoints,
       weightedScore,
     };
