@@ -4980,9 +4980,9 @@ function renderPublicWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t, { number: formatScore })}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex, popoverOptions)}</td>
@@ -6101,9 +6101,9 @@ function renderWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t, { number: formatScore })}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(options.weightedScoreLabel || t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>

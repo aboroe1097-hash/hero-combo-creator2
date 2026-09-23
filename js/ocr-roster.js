@@ -4560,9 +4560,9 @@ function renderWeightedContributionTable(options = {}) {
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.totalDemolition)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionExGuild || 0)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT)}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT, { number: formatContributionValue })}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT, { number: formatContributionValue })}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT, { number: formatContributionValue })}</td>
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatConductContributionBonus(row.conductBonus)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${weightedContributionBonusTotal(row).toLocaleString()}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>

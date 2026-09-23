@@ -419,15 +419,39 @@ export function renderPlayerSeasonSummary(options) {
 }
 
 /**
- * A duty count for a table cell, with the alt / banner share called out so
- * the split behind the points is visible without opening the breakdown.
+ * A duty count for a table cell. The number is the disclosure control: opening
+ * it spells out how many duties each account class did and what that share was
+ * worth, instead of hiding the split in a tooltip a phone never shows.
  */
-export function renderDutyCountCell(row, activity, t) {
+export function renderDutyCountCell(row, activity, t, options = {}) {
   const count = Number(row?.[activity]) || 0;
   const split = row?.dutiesByClass?.[activity] || { main: count, alt: 0 };
-  if (!split.alt) return String(count);
-  const title = t('scoreBreakdownCountSplit', { main: split.main, alt: split.alt });
-  return `<span class="duty-count" title="${escapeHtml(title)}">${count}<small class="duty-count-alt"> ${escapeHtml(
-    t('scoreBreakdownAltCount', { count: split.alt })
-  )}</small></span>`;
+  const breakdown = row?.dutyBreakdown?.activities?.find((entry) => entry.activity === activity);
+  const format = typeof options.number === 'function' ? options.number : (value) => String(value);
+  const title = escapeHtml(t('scoreBreakdownCountSplit', { main: split.main, alt: split.alt }));
+  const altHint = split.alt
+    ? `<small class="duty-count-alt"> ${escapeHtml(t('scoreBreakdownAltCount', { count: split.alt }))}</small>`
+    : '';
+  const summary = `${count}${altHint}`;
+  // Rows uploaded before the per-class breakdown carry a count without a split
+  // to explain; leave those numbers alone rather than inventing weights.
+  if (!breakdown) {
+    return split.alt
+      ? `<span class="duty-count" title="${title}">${summary}</span>`
+      : String(count);
+  }
+  const line = (cls, labelKey) => {
+    const part = breakdown[cls];
+    const classCount = Number(part?.count) || 0;
+    if (!classCount) return '';
+    const weight = Number.isFinite(Number(part?.weight)) ? Number(part.weight) : 1;
+    const points = Number(part?.points) || 0;
+    return `<span class="duty-count-line" data-account="${cls === 'alt' ? 'banner' : 'main'}"><span>${escapeHtml(
+      t(labelKey)
+    )}</span><b>${classCount} × ${weightText(weight)} = ${escapeHtml(format(points))}</b></span>`;
+  };
+  return `<details class="duty-count-details"><summary class="duty-count" title="${title}" aria-label="${title}">${summary}</summary><span class="duty-count-panel">${line(
+    'main',
+    'adminDutyWeightsMain'
+  )}${line('alt', 'scoreBreakdownSecondary')}</span></details>`;
 }

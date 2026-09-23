@@ -1445,9 +1445,9 @@ function renderWeightedContributionDashboard(options = {}) {
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThContribution'))}" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminThDemo'))}" style="text-align:right">${valueOf(row.totalDemolition).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThExGuild'))}" style="text-align:right">${valueOf(row.contributionExGuild).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT)}</td>
-          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT)}</td>
-          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT)}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', adminT, { number: (value) => valueOf(value).toLocaleString() })}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', adminT, { number: (value) => valueOf(value).toLocaleString() })}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', adminT, { number: (value) => valueOf(value).toLocaleString() })}</td>
           <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(adminT('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThTotal'))}" style="text-align:right">${weightedContributionBonusTotal(row).toLocaleString()}</td>
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
