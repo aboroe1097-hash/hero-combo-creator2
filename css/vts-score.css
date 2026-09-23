@@ -483,6 +483,80 @@ input:disabled {
   color: var(--vts-accent-text);
 }
 
+/* Season registration: the revived All-Star BoH form. It reuses the card, step,
+   and power-field vocabulary of the score upload so the two halves of the page
+   read as one flow; only text/select/textarea controls needed rules of their
+   own, because the gate and the player search style password/search/number/file. */
+.vts-score-signup h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.vts-score-signup-season {
+  padding: 3px 9px;
+  border: 1px solid rgb(34 211 238 / 35%);
+  border-radius: 999px;
+  color: var(--vts-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vts-score-signup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vts-score-signup label,
+.vts-score-signup-block {
+  display: block;
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
+.vts-score-signup label > span,
+.vts-score-signup-block > span {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.vts-score-signup-block {
+  margin-top: 14px;
+}
+
+.vts-score-signup input[type='text'],
+.vts-score-signup input[type='number'],
+.vts-score-signup select,
+.vts-score-signup textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--vts-border-strong);
+  border-radius: 12px;
+  background: var(--vts-surface-solid);
+  color: var(--vts-text);
+  font: inherit;
+}
+
+.vts-score-signup textarea {
+  min-height: 104px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.vts-score-signup input:focus-visible,
+.vts-score-signup select:focus-visible,
+.vts-score-signup textarea:focus-visible {
+  border-color: var(--vts-accent);
+  outline: 2px solid rgb(34 211 238 / 45%);
+  outline-offset: 1px;
+}
+
 .vts-score-success {
   padding: 22px 4px 8px;
   text-align: center;
@@ -633,6 +707,10 @@ footer a {
   }
 
   .vts-score-power-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .vts-score-signup-grid {
     grid-template-columns: 1fr;
   }
 
