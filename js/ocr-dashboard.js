@@ -928,7 +928,6 @@ async function ensureUserRolesMounted() {
 let complaintsModulePromise = null;
 
 const COMPLAINTS_COLLECTION = 'complaints';
-const COMPLAINTS_RECORDS = 'records';
 // The inbox is bounded on purpose: a superadmin reviewing month-old filings
 // does not need an unbounded read, and the reviewed filter runs in the panel.
 const COMPLAINTS_PAGE_LIMIT = 100;
@@ -944,7 +943,7 @@ async function loadComplaintRecords() {
   if (!db) return [];
   const snap = await getDocs(
     query(
-      collection(db, COMPLAINTS_COLLECTION, COMPLAINTS_RECORDS),
+      collection(db, COMPLAINTS_COLLECTION),
       orderBy('createdAt', 'desc'),
       limit(COMPLAINTS_PAGE_LIMIT)
     )
@@ -978,7 +977,7 @@ async function reviewComplaintRecord(id, reviewed) {
   const { currentAuthUid } = await import('./firebase.js');
   // The rules pin reviewedBy to the caller and allow only these three fields,
   // so this is the complete shape the write may carry.
-  await updateDoc(doc(db, COMPLAINTS_COLLECTION, COMPLAINTS_RECORDS, String(id)), {
+  await updateDoc(doc(db, COMPLAINTS_COLLECTION, String(id)), {
     reviewed: reviewed === true,
     reviewedAt: serverTimestamp(),
     reviewedBy: currentAuthUid(),
@@ -986,8 +985,10 @@ async function reviewComplaintRecord(id, reviewed) {
 }
 
 /**
- * Screenshots live in Cloud Storage under a path only a superadmin may read,
- * so the download URL is resolved on demand and never stored on the document.
+ * Screenshots live in Cloud Storage under a path only a superadmin may read.
+ * They are fetched as blobs with the superadmin's own credentials and shown
+ * through local object URLs: a download URL would carry a token that opens the
+ * image for anyone it is pasted to, bypassing the superadmin-only rule.
  */
 async function resolveComplaintImageUrl(storagePath) {
   const path = String(storagePath || '');
@@ -995,8 +996,36 @@ async function resolveComplaintImageUrl(storagePath) {
   const { importFirebaseStorage } = await import('./firebase-sdk.js');
   const db = await ensureCloudSyncReady();
   if (!db) throw new Error('complaint image unavailable');
-  const { getStorage, ref, getDownloadURL } = await importFirebaseStorage();
-  return getDownloadURL(ref(getStorage(db.app), path));
+  const { getStorage, ref, getBlob } = await importFirebaseStorage();
+  const blob = await getBlob(ref(getStorage(db.app), path));
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Superadmin purge: spam and personal data must be removable. The screenshots
+ * go first, so a failure leaves the record (and its paths) for a retry rather
+ * than orphaned images nobody can find.
+ */
+async function deleteComplaintRecord(id, imagePaths = []) {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error('complaint delete unavailable');
+  const paths = (Array.isArray(imagePaths) ? imagePaths : []).filter(
+    (path) => typeof path === 'string' && path.startsWith('complaints/')
+  );
+  if (paths.length) {
+    const { importFirebaseStorage } = await import('./firebase-sdk.js');
+    const { getStorage, ref, deleteObject } = await importFirebaseStorage();
+    const storage = getStorage(db.app);
+    for (const path of paths) {
+      try {
+        await deleteObject(ref(storage, path));
+      } catch (error) {
+        if (error?.code !== 'storage/object-not-found') throw error;
+      }
+    }
+  }
+  const { doc, deleteDoc } = await loadFirestoreApi();
+  await deleteDoc(doc(db, COMPLAINTS_COLLECTION, String(id)));
 }
 
 async function ensureComplaintsMounted() {
@@ -1020,6 +1049,7 @@ async function ensureComplaintsMounted() {
     module.renderComplaintsController(mount, {
       listComplaints: loadComplaintRecords,
       reviewComplaint: reviewComplaintRecord,
+      deleteComplaint: deleteComplaintRecord,
       resolveImageUrl: resolveComplaintImageUrl,
       formatDate: (ms) =>
         formatLocaleDate(new Date(ms), getDashboardLang(), {

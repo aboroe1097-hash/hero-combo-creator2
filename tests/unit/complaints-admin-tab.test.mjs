@@ -128,10 +128,10 @@ test('the dashboard routes the subtab through the superadmin gate and a lazy chu
 test('the dashboard reads the inbox newest first and writes only the review stamp', () => {
   assert.match(
     dashboard,
-    /query\(\n\s+collection\(db, COMPLAINTS_COLLECTION, COMPLAINTS_RECORDS\),\n\s+orderBy\('createdAt', 'desc'\),\n\s+limit\(COMPLAINTS_PAGE_LIMIT\)\n\s+\)/
+    /query\(\n\s+collection\(db, COMPLAINTS_COLLECTION\),\n\s+orderBy\('createdAt', 'desc'\),\n\s+limit\(COMPLAINTS_PAGE_LIMIT\)\n\s+\)/
   );
   assert.match(dashboard, /const COMPLAINTS_COLLECTION = 'complaints';/);
-  assert.match(dashboard, /const COMPLAINTS_RECORDS = 'records';/);
+  assert.doesNotMatch(dashboard, /COMPLAINTS_RECORDS/);
   const review = dashboard.match(/async function reviewComplaintRecord[\s\S]*?\n\}/)?.[0] || '';
   assert.ok(review, 'the review writer exists');
   // Exactly the three fields validComplaintReview() allows, nothing else.
@@ -139,9 +139,16 @@ test('the dashboard reads the inbox newest first and writes only the review stam
   assert.match(review, /reviewedAt: serverTimestamp\(\),/);
   assert.match(review, /reviewedBy: currentAuthUid\(\),/);
   assert.doesNotMatch(review, /description|category|images|submittedBy/);
-  // Thumbnails are resolved on demand; no URL is ever part of the document.
+  // Thumbnails are fetched as blobs with the superadmin's own credentials and
+  // shown through local object URLs; a tokened download URL would open the
+  // image for anyone it is pasted to.
   assert.match(dashboard, /async function resolveComplaintImageUrl\(storagePath\)/);
-  assert.match(dashboard, /getDownloadURL\(ref\(getStorage\(db\.app\), path\)\)/);
+  assert.match(dashboard, /getBlob\(ref\(getStorage\(db\.app\), path\)\)/);
+  assert.match(dashboard, /URL\.createObjectURL\(blob\)/);
+  assert.doesNotMatch(dashboard, /getDownloadURL/);
+  // Superadmin purge deletes the screenshots before the record.
+  const purge = dashboard.match(/async function deleteComplaintRecord[\s\S]*?\n\}/)?.[0] || '';
+  assert.ok(purge.indexOf('deleteObject') < purge.indexOf('deleteDoc'));
 });
 
 test('the list is newest first, hides reviewed filings by default, and counts the open ones', () => {
@@ -231,7 +238,7 @@ test('a failed read reports itself instead of leaving a blank panel', async () =
 
 test('every admin complaint string ships in English and all eleven admin packs', async () => {
   const keys = Object.keys(ADMIN_RUNTIME_EN).filter((key) => key.startsWith('adminComplaints'));
-  assert.equal(keys.length, 15);
+  assert.equal(keys.length, 19);
   const placeholders = (value) =>
     [...String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
   for (const locale of ADMIN_LOCALES) {

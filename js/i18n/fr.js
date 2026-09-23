@@ -1820,6 +1820,7 @@ const fr = {
   edenX1ComplaintOpen: 'Signaler un problème ou une plainte',
   edenX1ComplaintCategory: 'De quoi s’agit-il ?',
   edenX1ComplaintCategoryBug: 'Un bug ou une fonctionnalité en panne',
+  edenX1ComplaintCategoryMissing: 'Il manque quelque chose ou une demande de fonction',
   edenX1ComplaintCategoryConduct: 'Le comportement d’un membre',
   edenX1ComplaintCategoryFairPlay: 'Triche ou jeu déloyal',
   edenX1ComplaintCategoryAlliance: 'Une décision de l’alliance ou un souci de service',

@@ -22,15 +22,17 @@ service firebase.storage {
     }
 
     // Path contract, shared with the Firestore validator (validComplaintImage):
-    // complaints/{authUid}/{bounded-file-name}.{jpg|jpeg|png|webp}
+    // complaints/{complaintId}/{bounded-file-name}.{jpg|jpeg|png|webp}
     //
-    // The uid segment is how ownership is enforced without a document lookup.
-    // It is the *anonymous* Auth uid on the Eden page, so it identifies the
-    // session that uploaded the picture, not the member.
-    match /complaints/{uid}/{fileName} {
+    // The first segment is the filing's own random Firestore id, never the
+    // uploader's uid, so a screenshot cannot de-anonymise an anonymous filing.
+    // Objects are create-only (no overwrite), and the Firestore rule pins every
+    // stored path to its document's id.
+    match /complaints/{complaintId}/{fileName} {
       allow read: if isSuperAdmin();
       allow create: if signedIn()
-        && request.auth.uid == uid
+        && complaintId.matches('^[A-Za-z0-9]{20}$')
+        && resource == null
         // 2 MiB is well above what the client sends (it re-encodes to at most
         // 1280px JPEG) and far below anything that would make the inbox
         // expensive to open.
@@ -38,7 +40,9 @@ service firebase.storage {
         && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
         && fileName.size() <= 160
         && fileName.matches('^[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$');
-      allow update, delete: if false;
+      allow update: if false;
+      // Superadmin purge, mirroring the Firestore delete.
+      allow delete: if isSuperAdmin();
     }
 
     match /{allPaths=**} {

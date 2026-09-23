@@ -631,4 +631,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminComplaintsMarkReviewed: 'Mark reviewed',
   adminComplaintsReviewed: 'Reviewed',
   adminComplaintsReviewFailed: 'The review stamp was not saved. Try again.',
+  adminComplaintsDelete: 'Delete',
+  adminComplaintsDeleteConfirm: 'Delete this filing and its screenshots for good? This cannot be undone.',
+  adminComplaintsDeleted: 'Filing deleted.',
+  adminComplaintsDeleteFailed: 'The filing was not deleted. Try again.',
 });

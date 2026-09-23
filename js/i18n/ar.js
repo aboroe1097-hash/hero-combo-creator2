@@ -1752,6 +1752,7 @@ const ar = {
   edenX1ComplaintOpen: 'إرسال مشكلة أو شكوى',
   edenX1ComplaintCategory: 'ما الموضوع؟',
   edenX1ComplaintCategoryBug: 'خطأ برمجي أو ميزة معطلة',
+  edenX1ComplaintCategoryMissing: 'شيء ناقص أو طلب ميزة',
   edenX1ComplaintCategoryConduct: 'سلوك أحد الأعضاء',
   edenX1ComplaintCategoryFairPlay: 'غش أو لعب غير عادل',
   edenX1ComplaintCategoryAlliance: 'قرار تحالف أو مشكلة في المهام',

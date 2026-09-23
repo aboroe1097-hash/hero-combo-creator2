@@ -1789,6 +1789,7 @@ const es = {
   edenX1ComplaintOpen: 'Enviar una incidencia o queja',
   edenX1ComplaintCategory: '¿De qué se trata?',
   edenX1ComplaintCategoryBug: 'Un error o una función que no va',
+  edenX1ComplaintCategoryMissing: 'Falta algo o una petición de función',
   edenX1ComplaintCategoryConduct: 'La conducta de un miembro',
   edenX1ComplaintCategoryFairPlay: 'Trampas o juego desleal',
   edenX1ComplaintCategoryAlliance: 'Una decisión de la alianza o un turno',

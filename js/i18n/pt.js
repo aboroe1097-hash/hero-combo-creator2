@@ -1767,6 +1767,7 @@ const pt = {
   edenX1ComplaintOpen: 'Enviar um problema ou reclamação',
   edenX1ComplaintCategory: 'Sobre o que é?',
   edenX1ComplaintCategoryBug: 'Um erro ou uma funcionalidade avariada',
+  edenX1ComplaintCategoryMissing: 'Falta algo ou um pedido de funcionalidade',
   edenX1ComplaintCategoryConduct: 'A conduta de um membro',
   edenX1ComplaintCategoryFairPlay: 'Trapaça ou jogo desleal',
   edenX1ComplaintCategoryAlliance: 'Uma decisão da aliança ou uma questão de turnos',

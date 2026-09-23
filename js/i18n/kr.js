@@ -1758,6 +1758,7 @@ const kr = {
   edenX1ComplaintOpen: '문제 또는 불만 제보',
   edenX1ComplaintCategory: '어떤 내용인가요?',
   edenX1ComplaintCategoryBug: '버그 또는 고장 난 기능',
+  edenX1ComplaintCategoryMissing: '빠진 기능 또는 기능 요청',
   edenX1ComplaintCategoryConduct: '길드원의 행동',
   edenX1ComplaintCategoryFairPlay: '치팅 또는 불공정 플레이',
   edenX1ComplaintCategoryAlliance: '연합 결정 또는 근무 문제',

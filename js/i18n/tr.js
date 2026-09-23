@@ -1768,6 +1768,7 @@ const tr = {
   edenX1ComplaintOpen: 'Sorun veya şikâyet bildir',
   edenX1ComplaintCategory: 'Konu ne?',
   edenX1ComplaintCategoryBug: 'Bir hata veya bozuk bir özellik',
+  edenX1ComplaintCategoryMissing: 'Eksik bir şey veya özellik isteği',
   edenX1ComplaintCategoryConduct: 'Bir üyenin davranışı',
   edenX1ComplaintCategoryFairPlay: 'Hile veya adil olmayan oyun',
   edenX1ComplaintCategoryAlliance: 'Bir ittifak kararı veya görev sorunu',

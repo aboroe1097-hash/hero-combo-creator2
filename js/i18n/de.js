@@ -1821,6 +1821,7 @@ const de = {
   edenX1ComplaintOpen: 'Problem oder Beschwerde melden',
   edenX1ComplaintCategory: 'Worum geht es?',
   edenX1ComplaintCategoryBug: 'Ein Fehler oder eine kaputte Funktion',
+  edenX1ComplaintCategoryMissing: 'Etwas fehlt oder ein Funktionswunsch',
   edenX1ComplaintCategoryConduct: 'Das Verhalten eines Mitglieds',
   edenX1ComplaintCategoryFairPlay: 'Betrug oder unfaires Spiel',
   edenX1ComplaintCategoryAlliance: 'Eine Entscheidung der Allianz oder ein Dienstproblem',

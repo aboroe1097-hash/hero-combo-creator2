@@ -15,6 +15,7 @@
 
 export const COMPLAINT_CATEGORIES = Object.freeze([
   'bug',
+  'missing',
   'conduct',
   'fair-play',
   'alliance',
@@ -24,6 +25,7 @@ export const COMPLAINT_CATEGORIES = Object.freeze([
 // Mirrors the option values in eden-x2.html, one short label per category.
 export const COMPLAINT_CATEGORY_LABELS = Object.freeze({
   bug: 'edenX1ComplaintCategoryBug',
+  missing: 'edenX1ComplaintCategoryMissing',
   conduct: 'edenX1ComplaintCategoryConduct',
   'fair-play': 'edenX1ComplaintCategoryFairPlay',
   alliance: 'edenX1ComplaintCategoryAlliance',
@@ -120,6 +122,9 @@ function complaintRowHtml(item, { t, formatDate }) {
       }" aria-pressed="${reviewed ? 'true' : 'false'}">${escapeHtml(
         reviewed ? t('adminComplaintsReviewed') : t('adminComplaintsMarkReviewed')
       )}</button>
+      <button class="dash-btn dash-btn-xs dash-btn-danger-soft" type="button" data-complaint-delete="${escapeHtml(
+        item?.id || ''
+      )}">${escapeHtml(t('adminComplaintsDelete'))}</button>
     </footer>
   </article>`;
 }
@@ -133,6 +138,23 @@ export function renderComplaintsController(mount, deps = {}) {
   const reviewComplaint =
     typeof deps.reviewComplaint === 'function' ? deps.reviewComplaint : async () => {};
   const resolveImageUrl = typeof deps.resolveImageUrl === 'function' ? deps.resolveImageUrl : null;
+  const deleteComplaint = typeof deps.deleteComplaint === 'function' ? deps.deleteComplaint : null;
+  const confirmDelete =
+    typeof deps.confirm === 'function'
+      ? deps.confirm
+      : (message) => (typeof window !== 'undefined' ? window.confirm(message) : false);
+  // Object URLs for the private screenshots; released on every re-render.
+  let objectUrls = [];
+  const releaseObjectUrls = () => {
+    objectUrls.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // Already released.
+      }
+    });
+    objectUrls = [];
+  };
 
   const state = { items: [], loading: false, error: '', showReviewed: false };
 
@@ -169,8 +191,9 @@ export function renderComplaintsController(mount, deps = {}) {
       const path = image.getAttribute('data-complaint-image');
       try {
         const url = await resolveImageUrl(path);
-        if (url) image.src = url;
-        else throw new Error('no url');
+        if (!url) throw new Error('no url');
+        if (url.startsWith('blob:')) objectUrls.push(url);
+        image.src = url;
       } catch {
         const fallback = document.createElement('span');
         fallback.className = 'dash-complaint-thumb-failed';
@@ -182,6 +205,7 @@ export function renderComplaintsController(mount, deps = {}) {
 
   function renderList() {
     if (!listEl) return;
+    releaseObjectUrls();
     if (state.loading && !state.items.length) {
       listEl.innerHTML = `<div class="dash-empty">${escapeHtml(t('adminComplaintsLoading'))}</div>`;
       return;
@@ -261,7 +285,28 @@ export function renderComplaintsController(mount, deps = {}) {
     renderList();
   });
 
+  async function remove(id) {
+    if (!id || !deleteComplaint) return;
+    if (!confirmDelete(t('adminComplaintsDeleteConfirm'))) return;
+    const item = state.items.find((entry) => entry?.id === id);
+    try {
+      await deleteComplaint(id, item?.images || []);
+      state.items = state.items.filter((entry) => entry?.id !== id);
+      setStatus('adminComplaintsDeleted', 'info');
+    } catch (error) {
+      console.error('COMPLAINT DELETE ERROR:', error);
+      setStatus('adminComplaintsDeleteFailed', 'error');
+      return;
+    }
+    renderList();
+  }
+
   listEl?.addEventListener('click', (event) => {
+    const deleteButton = event.target?.closest?.('[data-complaint-delete]');
+    if (deleteButton) {
+      void remove(deleteButton.getAttribute('data-complaint-delete'));
+      return;
+    }
     const button = event.target?.closest?.('[data-complaint-review]');
     if (!button) return;
     const id = button.getAttribute('data-complaint-review');

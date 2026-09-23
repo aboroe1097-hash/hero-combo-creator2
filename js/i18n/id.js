@@ -1766,6 +1766,7 @@ const id = {
   edenX1ComplaintOpen: 'Kirim masalah atau keluhan',
   edenX1ComplaintCategory: 'Tentang apa?',
   edenX1ComplaintCategoryBug: 'Bug atau fitur yang rusak',
+  edenX1ComplaintCategoryMissing: 'Ada yang kurang atau permintaan fitur',
   edenX1ComplaintCategoryConduct: 'Perilaku seorang anggota',
   edenX1ComplaintCategoryFairPlay: 'Curang atau permainan tidak adil',
   edenX1ComplaintCategoryAlliance: 'Keputusan aliansi atau masalah tugas',

@@ -247,6 +247,7 @@ const it = {
   edenX1ComplaintOpen: 'Invia un problema o un reclamo',
   edenX1ComplaintCategory: 'Di cosa si tratta?',
   edenX1ComplaintCategoryBug: 'Un bug o una funzione rotta',
+  edenX1ComplaintCategoryMissing: 'Manca qualcosa o una richiesta di funzione',
   edenX1ComplaintCategoryConduct: 'Il comportamento di un membro',
   edenX1ComplaintCategoryFairPlay: 'Trucchi o gioco sleale',
   edenX1ComplaintCategoryAlliance: 'Una decisione dell’alleanza o un problema di turni',

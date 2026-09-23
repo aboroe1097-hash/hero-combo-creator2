@@ -2143,6 +2143,7 @@ const en = {
   edenX1ComplaintOpen: 'Raise an issue or complaint',
   edenX1ComplaintCategory: 'What is it about?',
   edenX1ComplaintCategoryBug: 'A bug or a broken feature',
+  edenX1ComplaintCategoryMissing: 'Something missing or a feature request',
   edenX1ComplaintCategoryConduct: "A member's conduct",
   edenX1ComplaintCategoryFairPlay: 'Cheating or unfair play',
   edenX1ComplaintCategoryAlliance: 'An alliance decision or duty issue',

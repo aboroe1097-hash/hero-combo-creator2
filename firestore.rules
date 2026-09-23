@@ -2508,25 +2508,25 @@ service cloud.firestore {
     // recover, and no "publish as anonymous" path that silently keeps the
     // author attached. Named complaints pin `submittedBy` to the caller's uid
     // so a member cannot file under someone else's account.
-    function validComplaintImage(path) {
-      // Images live in Cloud Storage under complaints/{uid}/…, written by the
-      // same session. The path is the only reference stored, so it is bounded
-      // and pinned to the caller: a member can never point a filing at an
-      // object another account owns.
+    function validComplaintImage(path, complaintId) {
+      // Images live in Cloud Storage under complaints/{complaintId}/…: the
+      // filing's own random id, never the uploader's uid, so screenshots do not
+      // de-anonymise an anonymous filing. Every stored path is pinned to this
+      // document's id, so a filing cannot point at another filing's images.
       return path is string
         && path.size() <= 320
-        && path.matches('^complaints/[A-Za-z0-9_-]{8,128}/[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$')
-        && path.split('/')[1] == request.auth.uid;
+        && path.matches('^complaints/[A-Za-z0-9]{20}/[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$')
+        && path.split('/')[1] == complaintId;
     }
 
-    function validComplaint() {
+    function validComplaint(complaintId) {
       let d = request.resource.data;
       return d.keys().hasOnly([
           'category', 'description', 'images', 'anonymous',
           'submittedBy', 'submittedByName', 'createdAt', 'reviewed'
         ])
         && d.keys().hasAll(['category', 'description', 'images', 'anonymous', 'createdAt', 'reviewed'])
-        && d.category in ['bug', 'conduct', 'fair-play', 'alliance', 'other']
+        && d.category in ['bug', 'missing', 'conduct', 'fair-play', 'alliance', 'other']
         && d.description is string
         && d.description.size() >= 10
         && d.description.size() <= 4000
@@ -2534,9 +2534,9 @@ service cloud.firestore {
         && d.images.size() <= 3
         // Bounded by index rather than by a loop: rules have none, and the cap
         // of three keeps the expression count flat.
-        && (!(d.images.size() > 0) || validComplaintImage(d.images[0]))
-        && (!(d.images.size() > 1) || validComplaintImage(d.images[1]))
-        && (!(d.images.size() > 2) || validComplaintImage(d.images[2]))
+        && (!(d.images.size() > 0) || validComplaintImage(d.images[0], complaintId))
+        && (!(d.images.size() > 1) || validComplaintImage(d.images[1], complaintId))
+        && (!(d.images.size() > 2) || validComplaintImage(d.images[2], complaintId))
         && d.anonymous is bool
         && (!d.anonymous || !('submittedBy' in d))
         && (!d.anonymous || !('submittedByName' in d))
@@ -2546,7 +2546,12 @@ service cloud.firestore {
             && d.submittedByName.size() > 0
             && d.submittedByName.size() <= 80))
         && d.createdAt == request.time
-        && d.reviewed == false;
+        && d.reviewed == false
+        // Rate limit: the same batch must stamp the session's throttle
+        // document, whose own rule refuses a stamp within ten minutes of the
+        // previous one. Anonymous Auth makes signedIn() no gate on its own.
+        && getAfter(/databases/$(database)/documents/complaint_throttle/$(request.auth.uid)).data.lastAt
+          == request.time;
     }
 
     function validComplaintReview() {
@@ -2560,10 +2565,29 @@ service cloud.firestore {
         && d.reviewedAt == request.time;
     }
 
-    match /complaints/records/{complaintId} {
+    match /complaints/{complaintId} {
       allow read: if isSuperAdmin();
-      allow create: if signedIn() && validComplaint();
+      allow create: if signedIn()
+        && complaintId.matches('^[A-Za-z0-9]{20}$')
+        && validComplaint(complaintId);
       allow update: if isSuperAdmin() && validComplaintReview();
+      // Spam and personal data must be removable; only a superadmin can.
+      allow delete: if isSuperAdmin();
+    }
+
+    // One stamp per signed-in session, readable by nobody. It carries only the
+    // time of the session's last filing, and exists to rate-limit filings.
+    match /complaint_throttle/{uid} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lastAt'])
+        && request.resource.data.lastAt == request.time;
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lastAt'])
+        && request.resource.data.lastAt == request.time
+        && resource.data.lastAt < request.time - duration.value(10, 'm');
       allow delete: if false;
     }
 

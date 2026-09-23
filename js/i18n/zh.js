@@ -1722,6 +1722,7 @@ const zh = {
   edenX1ComplaintOpen: '提交问题或投诉',
   edenX1ComplaintCategory: '是关于什么的？',
   edenX1ComplaintCategoryBug: '程序错误或功能异常',
+  edenX1ComplaintCategoryMissing: '缺少的内容或功能建议',
   edenX1ComplaintCategoryConduct: '成员的行为',
   edenX1ComplaintCategoryFairPlay: '作弊或不公平游戏',
   edenX1ComplaintCategoryAlliance: '联盟决定或任务问题',

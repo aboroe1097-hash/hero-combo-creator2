@@ -106,18 +106,16 @@ test('the category list on the page is the enum the rules validate', () => {
 });
 
 test('a generated upload path satisfies both the client rules and the storage rules', () => {
-  const uid = 'kR3nQ1xT9pLmZ4vB7wYc2HsD5fGa'; // 28 characters, as Firebase issues them
-  const { owner, name } = complaintImageFileName(uid, 2, 1_750_000_000_000, 'abc123def456');
-  assert.equal(owner, uid);
+  const complaintId = 'kR3nQ1xT9pLmZ4vB7wYc'; // 20 characters, a Firestore auto id
+  const { owner, name } = complaintImageFileName(complaintId, 2, 1_750_000_000_000, 'abc123def456');
+  assert.equal(owner, complaintId);
   assert.ok(isComplaintImageName(name), `${name} is a storable name`);
   const path = buildComplaintImagePath(owner, name);
   // Copied from the two rules files: the pattern is the contract, not a copy of
   // the client's own idea of it.
-  assert.match(
-    path,
-    /^complaints\/[A-Za-z0-9_-]{8,128}\/[A-Za-z0-9_-]{1,150}\.(jpg|jpeg|png|webp)$/
-  );
-  assert.ok(path.startsWith(`complaints/${uid}/`), 'the uid segment identifies the uploader');
+  assert.match(path, /^complaints\/[A-Za-z0-9]{20}\/[A-Za-z0-9_-]{1,150}\.(jpg|jpeg|png|webp)$/);
+  // The first segment is the filing's own id, so no uid ever reaches Storage.
+  assert.ok(path.startsWith(`complaints/${complaintId}/`), 'screenshots live under the filing');
   assert.ok(!isComplaintImageName(`${name}.exe`));
   assert.ok(!isComplaintImageName(`../../${name}`));
   // A device filename with spaces or unicode never survives into the path.
@@ -214,7 +212,7 @@ test('the Eden page CSP allows Firebase Storage for uploads and thumbnails', () 
 
 test('every complaint string ships in English, all eleven packs, and twelve shell locales', async () => {
   const keys = Object.keys(en).filter((key) => key.startsWith('edenX1Complaint'));
-  assert.equal(keys.length, 27, 'the complaint surface is fully covered');
+  assert.equal(keys.length, 28, 'the complaint surface is fully covered');
   for (const key of keys) {
     assert.ok(String(en[key]).trim(), `en.${key} is not empty`);
   }

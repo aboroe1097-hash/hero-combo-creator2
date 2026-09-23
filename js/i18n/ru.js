@@ -1772,6 +1772,7 @@ const ru = {
   edenX1ComplaintOpen: 'Отправить проблему или жалобу',
   edenX1ComplaintCategory: 'О чём речь?',
   edenX1ComplaintCategoryBug: 'Ошибка или сломанная функция',
+  edenX1ComplaintCategoryMissing: 'Чего-то не хватает или пожелание функции',
   edenX1ComplaintCategoryConduct: 'Поведение участника',
   edenX1ComplaintCategoryFairPlay: 'Читерство или нечестная игра',
   edenX1ComplaintCategoryAlliance: 'Решение альянса или вопрос по дежурствам',

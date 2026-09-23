@@ -1,7 +1,7 @@
 // "Issue or Complaint" filing for the public Eden page.
 //
 // The form is the member-facing front door for a collection only superadmins
-// can read (firestore.rules: complaints/records/{id}). Two properties shape the
+// can read (firestore.rules: complaints/{id}). Two properties shape the
 // rest of this module:
 //
 // 1. Anonymity is structural. When the anonymous box is checked the document
@@ -9,19 +9,24 @@
 //    obfuscated one. buildComplaintDocument() simply never adds them, and the
 //    rules reject the write if they appear, so the promise cannot be broken by
 //    a later UI change.
-// 2. Images go to Cloud Storage first and only their paths are stored on the
-//    complaint. Storage rules pin each path to the uploader's uid, so a member
-//    can never point a filing at an object another account owns.
+// 2. Images go to Cloud Storage first, under the filing's own random id
+//    (complaints/{complaintId}/…), and only their paths are stored on the
+//    complaint. The path never carries the uploader's uid, so an anonymous
+//    filing with screenshots stays anonymous; the rules pin every stored path
+//    to the document's own id, so a filing cannot point at another's images.
+// 3. A per-session throttle document is written in the same batch; the rules
+//    refuse a second filing from one session within ten minutes.
 //
 // eden-x2.html loads this as its own module. The page is already signed in
 // anonymously through js/firebase-eden.js, so no new auth work is needed, and
 // the write reuses Firestore Lite — the same lightweight SDK the dashboard uses.
 
 export const EDEN_COMPLAINT_COLLECTION = 'complaints';
-export const EDEN_COMPLAINT_RECORDS = 'records';
+export const EDEN_COMPLAINT_THROTTLE_COLLECTION = 'complaint_throttle';
 export const EDEN_COMPLAINT_STORAGE_ROOT = 'complaints';
 export const EDEN_COMPLAINT_CATEGORIES = Object.freeze([
   'bug',
+  'missing',
   'conduct',
   'fair-play',
   'alliance',
@@ -56,10 +61,10 @@ function text(value) {
 // Client-side counterpart of firestore.rules' validComplaintImage(): every
 // segment is bounded and stripped, so a name derived from the device's original
 // filename can never reach the server in a shape the rules would reject.
-export function complaintImageFileName(uid, index, now = Date.now(), entropy = '') {
-  const owner = String(uid || '')
-    .replace(/[^A-Za-z0-9_-]/g, '')
-    .slice(0, 128);
+export function complaintImageFileName(complaintId, index, now = Date.now(), entropy = '') {
+  const owner = String(complaintId || '')
+    .replace(/[^A-Za-z0-9]/g, '')
+    .slice(0, 40);
   const stamp = Math.max(0, Math.floor(Number(now) || 0)).toString(36);
   const noise = String(entropy || '')
     .replace(/[^A-Za-z0-9]/g, '')
@@ -69,15 +74,15 @@ export function complaintImageFileName(uid, index, now = Date.now(), entropy = '
   return { owner, name: `${base}.jpg` };
 }
 
-export function buildComplaintImagePath(uid, fileName) {
-  return `${EDEN_COMPLAINT_STORAGE_ROOT}/${String(uid || '')}/${String(fileName || '')}`;
+export function buildComplaintImagePath(complaintId, fileName) {
+  return `${EDEN_COMPLAINT_STORAGE_ROOT}/${String(complaintId || '')}/${String(fileName || '')}`;
 }
 
 export function isComplaintImageName(fileName) {
   return IMAGE_NAME_PATTERN.test(String(fileName || ''));
 }
 
-// The document written to complaints/records. Identity fields are added ONLY on
+// The document written to complaints/{id}. Identity fields are added ONLY on
 // the named path; no call of this function can produce an anonymous document
 // that still carries `submittedBy`.
 export function buildComplaintDocument({
@@ -287,13 +292,13 @@ async function addPickedFiles(files, refreshStatus) {
   return true;
 }
 
-async function uploadComplaintImages(app, uid) {
+async function uploadComplaintImages(app, complaintId) {
   const { importFirebaseStorage } = await import('./firebase-sdk.js');
   const { getStorage, ref, uploadBytes } = await importFirebaseStorage();
   const storage = getStorage(app);
   const paths = [];
   for (const [index, entry] of pickedImages.entries()) {
-    const { owner, name } = complaintImageFileName(uid, index);
+    const { owner, name } = complaintImageFileName(complaintId, index);
     const path = buildComplaintImagePath(owner, name);
     if (!isComplaintImageName(name)) throw new Error('invalid image name');
     await uploadBytes(ref(storage, path), entry.blob, { contentType: 'image/jpeg' });
@@ -310,7 +315,13 @@ async function submitComplaint({ category, description, anonymous, name }) {
   const { configured, app } = initFirebase();
   if (!configured || !app) throw new Error('firebase-unconfigured');
   const user = await ensureAnonymousAuth();
-  const images = pickedImages.length ? await uploadComplaintImages(app, user.uid) : [];
+  const { getFirestore, collection, doc, writeBatch, serverTimestamp } =
+    await importFirestoreLite();
+  const db = getFirestore(app);
+  // The document id is minted first so the screenshots can live under it
+  // rather than under the uploader's uid.
+  const complaintRef = doc(collection(db, EDEN_COMPLAINT_COLLECTION));
+  const images = pickedImages.length ? await uploadComplaintImages(app, complaintRef.id) : [];
   const document = buildComplaintDocument({
     category,
     description,
@@ -319,12 +330,14 @@ async function submitComplaint({ category, description, anonymous, name }) {
     name,
     uid: user.uid,
   });
-  const { getFirestore, collection, addDoc, serverTimestamp } = await importFirestoreLite();
-  const db = getFirestore(app);
-  await addDoc(collection(db, EDEN_COMPLAINT_COLLECTION, EDEN_COMPLAINT_RECORDS), {
-    ...document,
-    createdAt: serverTimestamp(),
+  const batch = writeBatch(db);
+  batch.set(complaintRef, { ...document, createdAt: serverTimestamp() });
+  // Rate limit: the rules accept a filing only alongside this stamp, and only
+  // when the session's previous stamp is at least ten minutes old.
+  batch.set(doc(db, EDEN_COMPLAINT_THROTTLE_COLLECTION, user.uid), {
+    lastAt: serverTimestamp(),
   });
+  await batch.commit();
   return document;
 }
 
