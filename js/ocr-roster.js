@@ -1622,6 +1622,7 @@ function normalizeDutyEntries(input) {
             : String(item.allowedColors || item.allowed_colors || '').trim(),
           status: item.status || '',
           accountType: normalizeDutyAccountType(item.accountType),
+          accountTypeSource: item.accountTypeSource === 'operator' ? 'operator' : '',
         };
       }
       const name = String(item || '').trim();
@@ -1719,7 +1720,7 @@ function renderDutyMatchRows(entries) {
         entry.confirmed && !suggestions.some((row) => row.name === entry.confirmed)
           ? entry.confirmed
           : '';
-      return `<div class="dash-duty-match-row" data-status="${esc(status)}" data-account-set="${entry.accountType ? '1' : ''}" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
+      return `<div class="dash-duty-match-row" data-status="${esc(status)}" data-account-set="${entry.accountType ? '1' : ''}" data-account-source="${entry.accountTypeSource === 'operator' ? 'operator' : ''}" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
       <div class="dash-duty-row-head">
         <span class="dash-duty-row-number">${esc(adminT('adminDutyUploaded'))} #${index + 1}</span>
         <strong class="dash-duty-raw-name">${esc(rawName) || '&nbsp;'}</strong>
@@ -1868,6 +1869,8 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     if (!row) return;
     if (event.target.matches('[data-duty-account]')) {
       row.dataset.accountSet = '1';
+      // Only a hand-picked type overrides the account's link when scoring.
+      row.dataset.accountSource = 'operator';
       updateDutyReviewBar();
       return;
     }
@@ -1920,6 +1923,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       const accountType =
         normalizeDutyAccountType(row.querySelector('[data-duty-account]:checked')?.value) ||
         guessDutyAccountType(confirmed, rawName);
+      const accountTypeSource = row.dataset.accountSource === 'operator' ? 'operator' : 'guess';
       return [
         {
           name: rawName,
@@ -1933,6 +1937,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
           checked,
           allowedColors,
           accountType,
+          accountTypeSource,
           status: getDutyMatchStatus(rawName, confirmed),
           note: '',
         },

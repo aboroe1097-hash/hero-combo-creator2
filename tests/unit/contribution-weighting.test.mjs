@@ -978,7 +978,13 @@ test('duty points weight each activity by the account class that performed it', 
   assert.equal(cleaned.pathers.secondary, 1);
   assert.equal(cleaned.shieldWalls.main, 1);
   assert.equal(cleaned.shieldWalls.alt, 4);
-  assert.equal(cleaned.shieldWalls.secondary, 1);
+  // No secondary cell: it follows this season's own alt weight, so a season
+  // saved before the class existed restates nothing.
+  assert.equal(cleaned.shieldWalls.secondary, 4);
+  assert.equal(
+    normalizeDutyPointWeights({ banners: { main: 1, alt: 0.8 } }).banners.secondary,
+    0.8
+  );
   // A document written before the third class existed carries no secondary cell
   // and still normalizes to the default for it.
   assert.deepEqual(normalizeDutyPointWeights(null), {
@@ -1131,9 +1137,40 @@ test('upload rows and account links decide whether a duty scores as main, alt or
       ),
       { main: 1, alt: 0, secondary: 0 }
     );
+    // The upload's automatic guess is "banner" for every non-main account. On
+    // an account linked as secondary that guess yields to the link…
     assert.deepEqual(
       classesFor(
         [{ name: 'Loony Banner', confirmed: 'Loony Banner', accountType: 'banner' }],
+        'Loony'
+      ),
+      { main: 0, alt: 0, secondary: 1 }
+    );
+    assert.deepEqual(
+      classesFor(
+        [
+          {
+            name: 'Loony Banner',
+            confirmed: 'Loony Banner',
+            accountType: 'banner',
+            accountTypeSource: 'guess',
+          },
+        ],
+        'Loony'
+      ),
+      { main: 0, alt: 0, secondary: 1 }
+    );
+    // …while an operator who picked Banner by hand is obeyed.
+    assert.deepEqual(
+      classesFor(
+        [
+          {
+            name: 'Loony Banner',
+            confirmed: 'Loony Banner',
+            accountType: 'banner',
+            accountTypeSource: 'operator',
+          },
+        ],
         'Loony'
       ),
       { main: 0, alt: 1, secondary: 0 }

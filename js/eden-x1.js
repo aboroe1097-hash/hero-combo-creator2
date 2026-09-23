@@ -7662,7 +7662,13 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   // Score with the account links published alongside this data (banner or
   // alt account -> the player who runs it), exactly as the admin does. Only
   // the links are taken, so nothing else about public name handling changes.
-  setActivePlayerRegistry({ players: [], accountLinks: data.playerRegistry?.accountLinks || [] });
+  // Taught aliases ("zubs" -> Lady Zubbs) travel with the links, so the
+  // public page resolves names exactly as the admin who published it does.
+  setActivePlayerRegistry({
+    players: [],
+    accountLinks: data.playerRegistry?.accountLinks || [],
+    playerAliases: data.playerRegistry?.playerAliases || [],
+  });
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
     : [];

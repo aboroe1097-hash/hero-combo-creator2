@@ -91,10 +91,20 @@ export function normalizeDutyPointWeights(raw) {
     out[activity] = {};
     for (const cls of DUTY_ACCOUNT_CLASSES) {
       const value = Number(given[cls]);
+      // A season saved before the secondary class existed has no secondary
+      // weight. It scores exactly like that season's own alt weight (not the
+      // shipped default), so adding the class restates no existing score.
+      const classFallback =
+        cls === 'secondary' && out[activity].alt !== undefined ? out[activity].alt : fallback[cls];
       out[activity][cls] =
-        Number.isFinite(value) && value >= 0 && value <= MAX_DUTY_POINT_WEIGHT
+        given[cls] !== undefined &&
+        given[cls] !== null &&
+        given[cls] !== '' &&
+        Number.isFinite(value) &&
+        value >= 0 &&
+        value <= MAX_DUTY_POINT_WEIGHT
           ? value
-          : fallback[cls];
+          : classFallback;
     }
   }
   return out;
@@ -498,8 +508,19 @@ function isBetterContributionRank(rank, currentBest) {
 // carry none and keep the account-based classification.
 export const DUTY_ENTRY_ACCOUNT_TYPES = Object.freeze(['main', 'banner']);
 
-export function dutyEntryAccountClass(entry) {
+// The class a saved duty row scores at. An operator's explicit Main/Banner
+// choice always wins. A type the upload only guessed ("banner" for anything
+// that is not a main) yields to the account's link: an account the admin
+// linked as a secondary scores as a secondary, not as the alt the guess said.
+export function dutyEntryAccountClass(entry, accountKey = '') {
   const type = String(entry?.accountType || '').toLowerCase();
+  const operatorChose = entry?.accountTypeSource === 'operator';
+  // The guess only ever says "banner" for a linked account, so a saved "main"
+  // on one is the operator's own choice and stands.
+  if (!operatorChose && accountKey && type !== 'main') {
+    const link = resolveAccountLink(accountKey);
+    if (link && accountLinkClass(link.type) === 'secondary') return 'secondary';
+  }
   if (type === 'banner') return 'alt';
   if (type === 'main') return 'main';
   return '';
@@ -534,7 +555,9 @@ export function collectFamilyDutyEntries(dutyRecords = [], familyKey = '') {
           usageTime: String(entry.usageTime || ''),
           target: String(entry.target || ''),
           accountName: identity.playerName,
-          accountClass: dutyEntryAccountClass(entry) || classifyDutyAccount(identity.playerKey),
+          accountClass:
+            dutyEntryAccountClass(entry, identity.playerKey) ||
+            classifyDutyAccount(identity.playerKey),
         });
       });
     });
@@ -579,7 +602,7 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
         // The uploader said which account did this duty. "banner" scores the
         // player's alt weight even when the list only named the player;
         // "main" scores full weight even for a linked banner account.
-        const forced = dutyEntryAccountClass(entry);
+        const forced = dutyEntryAccountClass(entry, identity.playerKey);
         if (forced) row.forcedClass[bucket][forced] += 1;
         counts.set(identity.playerKey, row);
       });
