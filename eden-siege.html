@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en" class="siege-standalone-root">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Eden Siege — Ice &amp; Fire Arena | Hero Combo Creator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'none'; manifest-src 'self'"
+    />
+    <meta
+      name="description"
+      content="Eden Siege — a live Ice &amp; Fire arena for VTS 1097 Rise of Castles players. Hold the stronghold against Eden war waves with hero skills and specialisation towers."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta id="themeColorMeta" name="theme-color" content="#0b1523" />
+    <link rel="icon" type="image/png" href="images/logo.png" />
+    <link rel="apple-touch-icon" href="images/logo.png" />
+    <link id="manifestLink" rel="manifest" href="site.webmanifest" />
+    <script src="js/maintenance-config.js"></script>
+    <script src="js/theme-prepaint.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="css/_tokens.css" />
+    <link rel="stylesheet" href="css/standalone-footer-v14.css" />
+    <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/eden-siege.css" />
+  </head>
+  <body class="siege-page">
+    <div class="siege-shell">
+      <header class="siege-header">
+        <a class="siege-brand" href="index.html">
+          <picture>
+            <source srcset="images/logo-120.webp" type="image/webp" />
+            <img src="images/logo.png" alt="" width="56" height="56" />
+          </picture>
+          <span>
+            <strong id="siegeBrandTitle">Eden Siege</strong>
+            <small id="siegeBrandKicker">Ice &amp; Fire Arena · VTS 1097</small>
+          </span>
+        </a>
+        <div class="siege-header-actions">
+          <a class="siege-link" href="arcade.html" id="siegeArcadeLink">Arcade</a>
+          <button id="themeToggle" class="siege-icon-btn" type="button" aria-label="Toggle theme">
+            <span class="theme-icon-dark">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+              </svg>
+            </span>
+            <span class="theme-icon-light hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <main class="siege-main">
+        <section class="siege-stage" id="siegeStage">
+          <canvas id="siegeCanvas" class="siege-canvas" aria-label="Eden Siege arena"></canvas>
+          <div id="siegeHud" class="siege-hud"></div>
+          <div class="siege-status" id="siegeStatus" role="status" aria-live="polite">
+            <div class="siege-status-card">
+              <span class="siege-status-sigil" aria-hidden="true"></span>
+              <h1 data-status="title">Raising the stronghold</h1>
+              <p data-status="body">Loading the siege engine…</p>
+              <button type="button" class="siege-btn siege-btn--primary" data-status="action" hidden>
+                Try again
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="roc-footer standalone-footer-v14">
+        <div class="standalone-footer-main">
+          <a class="standalone-footer-brand" href="index.html">
+            <picture>
+              <source srcset="images/logo-40.webp" type="image/webp" />
+              <img src="images/logo.png" alt="" loading="lazy" decoding="async" width="40" height="40" />
+            </picture>
+            <span><strong>VTS 1097</strong><small>Ice &amp; Fire Arena</small></span>
+          </a>
+          <nav class="standalone-footer-links" aria-label="Command Tools">
+            <a href="index.html#generator">Combo Generator</a>
+            <a href="arcade.html">Arcade</a>
+            <a href="battle-simulator.html">Battle Simulator</a>
+          </nav>
+          <div class="standalone-footer-actions">
+            <a href="mailto:aboroe1097@gmail.com">Contact Devs</a>
+            <a href="https://roc-vts.com/">roc-vts.com</a>
+          </div>
+        </div>
+        <div class="standalone-footer-legal">
+          <p class="disclaimer">
+            Not affiliated with Camel Games or Rise of Castles. Game assets belong to their
+            respective owners. This is a free fan-made community tool.
+          </p>
+          <p>
+            &copy; <span id="siegeFooterYear">2026</span> VTS 1097
+            <span aria-hidden="true">&middot;</span> v16.0.19
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <div id="toastContainer"></div>
+    <script type="module" src="js/eden-siege/main.js"></script>
+  </body>
+</html>
