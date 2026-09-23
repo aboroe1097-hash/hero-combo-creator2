@@ -878,7 +878,7 @@ const it = {
   introFeaturedTools: 'Strumenti in evidenza',
   introFootnote:
     'Creato dalla community · Ottimizzato per dispositivi mobili · Nessuna installazione',
-  seoTitle: 'Creatore di combo eroi — Strumenti per Rise of Castles: Ice & Fire | VTS 1097',
+  seoTitle: 'RoC VTS Toolkit — Strumenti per Rise of Castles: Ice & Fire | VTS 1097',
   seoDescription:
     'Strumenti gratuiti per Rise of Castles: Ice & Fire dedicati allo Stato VTS 1097: creatore e generatore di combo eroi, Atlante eroi, pianificatore della mappa Eden, calcolatore lealtà, monitoraggio delle ricerche tecnologiche e counter delle combo.',
   seoKeywords:
