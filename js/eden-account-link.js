@@ -12,7 +12,7 @@
 //
 // Three outcomes matter to the callers:
 //   found      → prefill My Stats and the ballot's name field with this player;
-//   ambiguous  → several roster rows fit; keep today's search-by-hand behaviour;
+//   ambiguous  → only suggestions fit, not a match; keep search-by-hand;
 //   unknown    → the name is not in the guild roster; same fallback.
 // Nothing here may block a render: the caller resolves in the background, and a
 // missing or unreadable profile simply leaves the page exactly as it was.
@@ -104,12 +104,10 @@ export function resolveEdenAccountPlayer(input = {}) {
     unique.push(candidate);
   }
   return Object.freeze({
-    status:
-      unique.length > 1
-        ? EDEN_ACCOUNT_LINK_STATUS.ambiguous
-        : unique.length === 1
-          ? EDEN_ACCOUNT_LINK_STATUS.found
-          : EDEN_ACCOUNT_LINK_STATUS.unknown,
+    // Only the page's own matcher (with its score and margin) may name the
+    // member. A lone fuzzy suggestion is a guess, and prefilling someone else's
+    // name on a ballot is worse than asking, so it stays a suggestion.
+    status: unique.length ? EDEN_ACCOUNT_LINK_STATUS.ambiguous : EDEN_ACCOUNT_LINK_STATUS.unknown,
     gameName,
     playerKey: unique[0]?.playerKey || '',
     playerName: unique[0]?.playerName || '',

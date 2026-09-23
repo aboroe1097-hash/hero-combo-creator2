@@ -605,6 +605,12 @@ async function updateManualSignup(dependencies, uid, input) {
     if (!existing) {
       throw adminError(404, 'not_found', 'That signup was not found.');
     }
+    // The admin form only knows a subset of the member form's fields and writes
+    // the rest empty, so editing a member's own signup here would wipe their
+    // troop roster, heroes and research. Only hand-filed signups are editable.
+    if (existing.entryMethod !== 'manual') {
+      throw adminError(409, 'member_owned', 'Only manually added signups can be edited here.');
+    }
     const revision =
       Number.isInteger(existing.revision) && existing.revision > 0 ? existing.revision + 1 : 1;
     saved = buildBohAdminSubmissionDocument({

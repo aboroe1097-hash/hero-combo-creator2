@@ -54,13 +54,15 @@ test('an account resolves to a guild row, or falls back to search-by-hand', () =
   const unlinked = resolveEdenAccountPlayer({ gameName: '   ', resolveOption, resolveMatches });
   assert.equal(unlinked.status, EDEN_ACCOUNT_LINK_STATUS.unlinked);
 
-  // A single suggestion is enough to resolve; a matcher that throws is a "no".
+  // A lone fuzzy suggestion is not a match: only the matcher names the member,
+  // so nobody's ballot is prefilled with a guess. A matcher that throws is a "no".
   const single = resolveEdenAccountPlayer({
     gameName: 'MalakAbo',
     resolveOption: () => null,
     resolveMatches: () => [options[0]],
   });
-  assert.equal(single.status, EDEN_ACCOUNT_LINK_STATUS.found);
+  assert.equal(single.status, EDEN_ACCOUNT_LINK_STATUS.ambiguous);
+  assert.equal(isEdenAccountPlayerResolved(single), false);
   assert.equal(
     resolveEdenAccountPlayer({
       gameName: 'MalakAbo',

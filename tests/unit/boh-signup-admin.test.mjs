@@ -427,7 +427,7 @@ test('update bumps the revision and keeps the stored createdAt', async () => {
   const createdAt = { seconds: 1_600_000_000 };
   const path = `boh_allstar/${SEASON}/submissions/${accountId}`;
   const { handler, state } = handlerWith({
-    docs: { [path]: { uid: accountId, revision: 4, createdAt } },
+    docs: { [path]: { uid: accountId, revision: 4, createdAt, entryMethod: 'manual' } },
   });
   const body = {
     ...buildBohSignupAdminRequest({
@@ -455,6 +455,28 @@ test('update bumps the revision and keeps the stored createdAt', async () => {
   await handler(fakeRequest({ body: missing }), missingResponse);
   assert.equal(missingResponse.statusCode, 404);
   assert.equal(missingResponse.payload.error, 'not_found');
+});
+
+test('update refuses a member-filed signup instead of wiping its fields', async () => {
+  const accountId = createBohManualPlayerId('MalakAbo');
+  const path = `boh_allstar/${SEASON}/submissions/${accountId}`;
+  const { handler, state } = handlerWith({
+    docs: { [path]: { uid: accountId, revision: 2, entryMethod: 'ocr', stats: { heroes: 9 } } },
+  });
+  const body = {
+    ...buildBohSignupAdminRequest({
+      values: FORM_VALUES,
+      seasonId: SEASON,
+      scoringProfileId: PROFILE,
+      submissionUid: accountId,
+    }),
+    action: 'update',
+  };
+  const response = fakeResponse();
+  await handler(fakeRequest({ body }), response);
+  assert.equal(response.statusCode, 409);
+  assert.equal(response.payload.error, 'member_owned');
+  assert.equal(state.writes.length, 0, 'nothing is written over the member’s signup');
 });
 
 test('manual ids are stable and match the model’s player ids', () => {
@@ -599,7 +621,7 @@ test('the signup list renders an edit action per row', () => {
     (key, _vars, fallback) => fallback || key
   );
   assert.match(html, /data-boh-signup-edit="uid-1"/);
-  assert.match(html, /data-boh-signup-edit="uid-2"/);
+  assert.doesNotMatch(html, /data-boh-signup-edit="uid-2"/, 'member signups are read-only here');
   assert.match(html, /Bil\./);
   assert.match(html, /MalakAbo/);
   assert.match(html, /<td>2<\/td>/);

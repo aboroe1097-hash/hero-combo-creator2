@@ -121,6 +121,8 @@ export const BOH_SIGNUP_ADMIN_ERROR_KEYS = Object.freeze({
   request_too_large: 'adminBohSignupErrorInvalid',
   already_exists: 'adminBohSignupErrorExists',
   not_found: 'adminBohSignupErrorMissing',
+  // The list only offers Edit on hand-filed rows, so this is a stale list.
+  member_owned: 'adminBohSignupErrorInvalid',
   season_not_active: 'adminBohSignupErrorSeason',
   season_not_configured: 'adminBohSignupErrorSeason',
   version_mismatch: 'adminBohSignupErrorSeason',
@@ -168,9 +170,15 @@ export function renderBohSignupRows(signups, t) {
             ? esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))
             : esc(t('adminBohSignupMemberChip', {}, 'Member form'))
         }</td>
-        <td><button class="dash-btn" type="button" data-boh-signup-edit="${esc(
-          signup.submissionUid
-        )}">${esc(t('adminBohSignupEdit', {}, 'Edit'))}</button></td>
+        <td>${
+          // A member's own signup carries fields the admin form cannot show, so
+          // only rows leadership added by hand can be edited from here.
+          manual
+            ? `<button class="dash-btn" type="button" data-boh-signup-edit="${esc(
+                signup.submissionUid
+              )}">${esc(t('adminBohSignupEdit', {}, 'Edit'))}</button>`
+            : '—'
+        }</td>
       </tr>`;
     })
     .join('');

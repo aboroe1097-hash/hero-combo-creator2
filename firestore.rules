@@ -2600,7 +2600,13 @@ service cloud.firestore {
     match /boh_allstar_config/current {
       allow get: if isAdmin();
       allow list: if false;
-      allow create, update: if isAdmin() && validAllStarBohConfig();
+      // Admins open and close registration; only a superadmin picks the season
+      // and the scoring version every signup is validated against.
+      allow create: if isSuperAdmin() && validAllStarBohConfig();
+      allow update: if isAdmin() && validAllStarBohConfig()
+        && (isSuperAdmin()
+          || !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['activeSeason', 'scoringProfileId']));
       allow delete: if false;
     }
 

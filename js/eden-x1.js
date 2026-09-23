@@ -211,7 +211,11 @@ let currentPublicStatsSearch = '';
 // resolved to (or why it could not). Both stay null for guests, which is the
 // normal case on the public pages.
 let edenAccountProfileRequest = null;
+let edenAccountProfileUid = '';
 let edenAccountPlayer = null;
+// My Stats opens on the member's row once; after that their own search (or a
+// cleared search) is left alone across re-renders.
+let edenAccountMyStatsApplied = false;
 // The public weighted table can hold the whole roster (200+ rows). Cap the
 // initial view and debounce search; progressive rendering handles the rest.
 const publicWeightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showAll: false };
@@ -3876,7 +3880,15 @@ function rerenderPublicMyStatsCard(host, options = {}) {
    ============================================================= */
 
 function requestEdenAccountGameName(db, firestore, user) {
-  if (edenAccountProfileRequest) return edenAccountProfileRequest;
+  // Keyed to the signed-in account: a sign-out or a switch to another account
+  // must not keep resolving to the previous member's row.
+  const uid = user && user.isAnonymous === false ? String(user.uid || '') : '';
+  if (edenAccountProfileRequest && uid === edenAccountProfileUid) return edenAccountProfileRequest;
+  if (uid !== edenAccountProfileUid) {
+    edenAccountPlayer = null;
+    edenAccountMyStatsApplied = false;
+  }
+  edenAccountProfileUid = uid;
   edenAccountProfileRequest = (async () => {
     // Strictly `isAnonymous === false`: the Firebase user object always carries
     // the boolean, so an object without it (a test double, an odd restore path)
@@ -3922,10 +3934,14 @@ function edenAccountPlayerName() {
 
 /** Opens My Stats on the member's own row, unless they already searched. */
 function applyEdenAccountPlayerToMyStats(player) {
+  if (edenAccountMyStatsApplied) return false;
   if (!player?.playerName || currentPublicStatsSearch.trim()) return false;
   const host = $('edenX1PublicDashboard');
   const card = host?.querySelector('#edenX1MyStatsCard');
+  // The profile read can land before the public dashboard has rendered My
+  // Stats; renderPublicDashboard applies it again once the card exists.
   if (!card) return false;
+  edenAccountMyStatsApplied = true;
   currentPublicStatsSearch = player.playerName;
   rerenderPublicMyStatsCard(host);
   return true;
@@ -6213,6 +6229,9 @@ async function renderPublicDashboard(data = publicDashboardData) {
       renderPublicStructures(publicStructureRows);
   }
   bindWeightedPopovers(host);
+  if (isEdenAccountPlayerResolved(edenAccountPlayer)) {
+    applyEdenAccountPlayerToMyStats(edenAccountPlayer);
+  }
 }
 
 function scheduleLocalizedRerender() {

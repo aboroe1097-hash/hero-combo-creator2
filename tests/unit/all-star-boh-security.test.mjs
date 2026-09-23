@@ -657,7 +657,14 @@ test('Firestore private and published paths enforce admin/member boundaries with
   );
   assert.match(config, /allow get: if isAdmin\(\)/);
   assert.match(config, /allow list: if false/);
-  assert.match(config, /allow create, update: if isAdmin\(\) && validAllStarBohConfig\(\)/);
+  assert.match(config, /allow create: if isSuperAdmin\(\) && validAllStarBohConfig\(\)/);
+  assert.match(config, /allow update: if isAdmin\(\) && validAllStarBohConfig\(\)/);
+  // An admin toggles registration; the season and scoring version are the
+  // superadmin's.
+  assert.match(
+    config,
+    /isSuperAdmin\(\)\s*\|\|\s*!request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasAny\(\['activeSeason', 'scoringProfileId'\]\)/
+  );
   assert.match(config, /allow delete: if false/);
   assert.doesNotMatch(config, /signedIn\(\)|hasActiveAllStarBohGrant/);
   const configValidator = rulesMatch(
