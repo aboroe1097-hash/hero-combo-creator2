@@ -1,52 +1,72 @@
-# Motion & visual-craft integration plan — "100 HTML Files" gallery → roc-vts.com
+# 16.5.0 — Motion and visual-craft release plan
 
-Status: **proposal, not started** · Drafted 2026-09-23 against gh-pages `fd177c38` (16.0.18)
-Source studied: <https://miaai-lab.github.io/Claude-Opus-5.5-100-HTML-Files/> (100 self-contained pages + per-page technique notes)
+Status: **planning complete; implementation not started**  
+Target: **16.5.0**, requested by the owner. This document does not bump the application version.  
+Revised: 2026-09-23 · Production reference: origin/gh-pages **fd177c38**, application **16.0.18**  
+Source: [100 HTML Files gallery](https://miaai-lab.github.io/Claude-Opus-5.5-100-HTML-Files/)
 
----
+## 0. Release intent and scope
 
-## 0. Ground rules (read first)
+Make the tools feel more responsive and easier to understand: calmer hubs, clear navigation and completion
+feedback, richer hero presentation, and readable map/data states. Preserve fast interaction, keyboard access,
+existing calculations, URLs, saved plans, and backend permissions.
 
-1. **No code is copied from the gallery.** The repository ships no LICENSE file (checked `LICENSE`,
-   `LICENSE.md` → 404; README has no licence grant), so the default is *all rights reserved*. Every item
-   below is a **clean-room re-implementation of a technique** (the techniques themselves — spring tilt, pooled
-   WAAPI particles, phosphor persistence, arc-length train motion — are general knowledge). Do not paste
-   source; do not ship their SVG art, copy, or prompts. If the owner wants literal reuse, ask the author
-   for a licence first.
-2. **Performance is a hard gate, not a goal.** Our budgets have almost no headroom today (see §2.3). Every
-   phase has to *pay for itself* in bytes and in main-thread time, which is why Phase 0 removes weight before
-   anything is added.
-3. **Everything is opt-in, route-isolated, and reduced-motion safe.** Nothing new lands in the shared entry
-   CSS/JS unless it replaces something bigger.
+The gallery is a technique catalogue, not a component library. The 100-page inventory below remains useful
+research; its ADOPT label is **not a commitment to ship every idea**. The release scope and gates below
+supersede the original draft's all-at-once rollout.
 
----
+### 0.1 What belongs in 16.5.0
 
-## 1. What the gallery actually contains (assessment of all 100)
-
-I fetched all 100 pages and scanned each source for rendering tech and APIs, then read the technique notes
-for the 20 strongest candidates. Aggregate profile:
-
-| Signal | Pages | Notes |
+| Priority | Deliverable | Release decision |
 |---|---|---|
-| `prefers-reduced-motion` handled | **100 / 100** | Consistent discipline, and the one habit we must match everywhere |
-| Canvas 2D | 86 | Almost always DPR-aware (capped at 2×) with offscreen sprite caches |
-| `requestAnimationFrame` loop | 93 | Most pause on `visibilitychange` (74 pages) |
-| Inline SVG | 90 | Procedural SVG built at runtime (gradients in `userSpaceOnUse`) |
-| Web Audio synthesis | 40 | Zero audio assets; everything synthesized |
-| `backdrop-filter` | 29 | Glass panels |
-| CSS 3D (`perspective`) | 24 | Cards, corridors, page turns |
-| WAAPI `element.animate()` | 11 | Pooled particle bursts |
-| `@property` | 2 | Animated integers/angles (050, 031) |
-| WebGL | 2 | 010 liquid mercury, 099 Droste — **both rejected** |
-| Workers | 1 | 042 fractal worker pool (Blob-URL worker: **blocked by our CSP**, see §6) |
-| Scroll-driven animations / View Transitions / container queries | **0** | The gallery never uses the modern CSS primitives; we should, because they are cheaper than its JS equivalents |
+| **P0 — required** | Measured baseline, audited weight reclaim, motion policy, lifecycle cleanup, accessibility, size and motion checks | Must pass before enabling effects |
+| **P1 — release core** | Hub entry/spotlight, panel transitions, loader completion, combo deal, detail-card sheen, keyboard/filter audit, confirmed-success feedback, bounded total transitions | The coherent 16.5.0 experience; simplify individual effects to pass gates |
+| **P2 — conditional** | Eden route playback, tower connectors, season timeline, existing-data charts, share art, Arcade feedback | Include only with verified data, isolated bytes, and completed acceptance evidence |
+| **P3 — separate follow-up** | Per-marker scouting history, new historical data collection, Materials scale-by-N, simulator worker pool | Different data/calculation/concurrency contracts; preserve proposals without making them release blockers |
 
-Sizes: 28–110 KB each (median about 55 KB), all inline. So **no page can be embedded as-is**. Any one of them
-would eat our entire remaining JS budget.
+Token contrast checking is P0 tooling for new/touched token pairs. Expanding coverage to all existing pairs
+is incremental; unrelated legacy failures must be listed, not silently waived or added to this release.
+
+At scope freeze, record every P2 feature as **included**, **static fallback**, or **deferred**, with a reason.
+Do not describe a gated feature as shipped in the release notes. The default when a gate fails is the existing
+functional UI, with the optional effect omitted.
+
+### 0.2 Boundaries and visual language
+
+- Keep Frost & Flame tokens, typography, themes, and component shapes. Avoid adding an unrelated visual theme.
+- One primary motion per interaction. Entry, hover, progress, and celebration must not compete on one element.
+- Reuse existing duration/easing tokens. Initial design ranges: feedback 120–180 ms, panel swaps 160–220 ms,
+  card reveals 240–360 ms; a whole stagger finishes within 600 ms. These are proposed limits, not measurements.
+- Decorative motion is finite and dispensable. Text, totals, focus, and success/error state update immediately.
+- Use independently written implementations; do not copy gallery source, art, text, prompts, or assets.
+  The original author reported no licence grant; that finding was not re-audited here. Recheck source
+  permissions only if literal reuse is later proposed. This plan requires none.
+- No new runtime animation library, external origin, tracking, backend write, or persistent data schema.
+  This plan does not authorize changes to Firebase rules, scoring, account matching, voting, or OCR logic.
+- No full-site animation-loop migration. No broad typography or CSS cleanup beyond verified consumers.
+
+### 0.3 Definition of done
+
+16.5.0 is ready when all P0/P1 rows have recorded acceptance evidence, included P2 rows pass their gates,
+static fallbacks remain functional, release/version checks accept the real release history, the full
+integration checks pass, and the owner can review one coherent release PR into gh-pages.
+
+## 1. Gallery inventory and evidence quality
+
+The original 2026-09-23 draft reported scanning all 100 sources and reading technique notes for 20 candidates.
+Its aggregate findings were: 100 reduced-motion mentions, 86 Canvas 2D pages, 93 rAF users, 74 visibility
+handlers, 90 inline-SVG users, 40 Web Audio users, 29 backdrop filters, 24 CSS-3D pages, 11 WAAPI users,
+2 @property users, 2 WebGL pages, and 1 worker example. It reported no scroll timelines, View Transitions,
+or container queries, and source sizes of 28–110 KB (median roughly 55 KB).
+
+**Evidence status:** these are inherited research notes, not fresh measurements or proof that the behaviours
+are correct. The gallery was unavailable through the web reader during this revision. Preserve the inventory,
+but verify a selected technique against the actual browser and product before implementation. Source file
+size is not the same as deployed minified or compressed size.
 
 ### 1.1 Verdict for every page
 
-Legend: **ADOPT** means build a feature from this technique · **PATTERN** means borrow one engineering
+Legend: **ADOPT** means a feature candidate from this technique · **PATTERN** means borrow one engineering
 pattern · **ARCADE** means only inside the isolated Arcade games · **SKIP** means no fit, or too costly for
 the value.
 
@@ -156,282 +176,480 @@ the value.
 **Totals:** 13 ADOPT (one build-time only) · 24 PATTERN · 5 ARCADE · 58 SKIP. More than half are art pieces with no product fit.
 Adopting them would be decoration that costs budget.
 
----
 
-## 2. Where our frontend stands (measured, not assumed)
+## 2. Ground truth, baseline, and byte accounting
 
-### 2.1 Stack
-- Vite 8 multi-page build (10 root HTML entries + `tabs/`, `eden/`, `vote/`, `vtsscore/`), vanilla ES modules,
-  no framework. 40 CSS files (1.9 MB source), 221 JS modules. Firebase via dynamic import.
-- Motion tokens already exist in `css/_tokens.css:192-208` (`--ease-out`, `--ease-spring`, `--t-fast/med/slow`,
-  `--dur-tap/hover/expand`) and a **global reduced-motion kill switch** at `css/_tokens.css:346`.
-- Theme: dark default, `data-theme="light"` set pre-paint by `js/theme-prepaint.js`.
-- CSP (`index.html:9`): `worker-src 'self'`, `script-src` hash-pinned, `style-src 'unsafe-inline'` allowed.
+### 2.1 Verified repository facts
 
-### 2.2 Live production observations (roc-vts.com home, 2026-09-23)
-- **84 running animations on the first screen**: 66 × `card-pop`, 23 × `skin-portrait-breathe`, 6 × `pulse-soft`
-  (infinite), `shell-aurora-drift` (infinite), `iceFireShift` (infinite), plus **8 infinite Velo launcher
-  animations that tick while hidden** (`velo-body-story`, `velo-helmet-eye-glint`, `velo-rage-burst`…).
-- `iceFireShift` (`css/app.css:10750`, 4 s infinite) animates **`background-position`**, which repaints on the
-  main thread every frame for as long as the page is open.
-- `velo-helmet-eye-glint` (`public/ai-launcher-critical.css:198`) animates `background`, `box-shadow` and
-  `filter`, all of which are paint properties.
-- 12 render-blocking resources in `<head>`, including Google Fonts loading **Sora 300–800 (6 weights) +
-  JetBrains Mono 400–700 (4)**. Only 6 of those 10 faces are used on the home screen.
-- `css/atmosphere.css` (258 lines, opt-in `.u-*` utility layer) is linked on 5 pages, but **none of its 15
-  utility classes are used anywhere** in `js/`, `tabs/` or any HTML. It is dead weight on every page and
-  already does half of what this plan wants (lift, tilt, burst, skeleton, counter). Also note that the
-  whole layer counts toward the entry CSS budget.
-- CLS is effectively 0 (0.00015). Keep it that way: every effect below is transform/opacity or out-of-flow.
-- I did **not** trust paint timings from this session: the browser pane was hidden, which defers paint. Get a
-  real LCP/INP baseline with Lighthouse/Playwright in Phase 0.
+- Vite multi-page application using vanilla ES modules and route-specific controllers/styles.
+- Existing motion tokens and reduced-motion rules live in css/_tokens.css and css/shell-v14.css.
+  Existing tests/unit/motion-css-contract.test.mjs passes its two checks at the reference revision.
+- Size limits below are present in scripts/check-size.mjs. Their historical audit comments are not a fresh build.
+- js/eden-map.js uses a coalesced, **on-demand** scheduleDraw callback; it is not a permanent render loop.
+- js/eden-map-scout.js writes one shared-document updatedAt. It does not establish per-marker observation ages.
+- js/battle-simulator-app.js already creates js/battle-simulator-worker.js as a bundled module worker.
+- Hero Atlas has English plus 11 lazy locale packs. Other surfaces have their own registries; do not assume
+  one universal locale count.
+- css/atmosphere.css contains global focus-visible and tab-pill-active styles as well as opt-in utilities.
+  A lack of literal class matches alone is insufficient evidence for deleting the whole sheet.
 
-### 2.3 Budget headroom (from `scripts/check-size.mjs`)
+### 2.2 Claims requiring a fresh baseline
 
-| Budget | Limit | Last audit | Headroom |
+The previous draft reported 84 running animations, but its listed counts included 66 card-pop and 23
+skin-portrait-breathe instances alone. Those totals cannot describe one consistent snapshot. Treat the
+animation census, font-use claims, unused-utility claims, and hidden-launcher findings as audit leads.
+
+Reproduce on a **visible** browser using a production build. Record commit, Node/browser versions, lockfile,
+viewport, DPR, CPU/network settings, fixture, cache state, and route. Capture normal and reduced motion,
+dark and light, desktop 1440×900 and mobile 390×844, plus 320px overflow checks. Use fixtures for private
+admin/score states and never submit live votes, scores, or duty edits for QA.
+
+Baseline routes: Home/hubs, Atlas detail and filtering, combo generation, Eden map and playbook,
+Research/Towers, Admin/OCR, VtsScore; add Arcade/export only when included.
+
+Collect at least five cold-load samples and five repetitions of each selected interaction. Report median
+and worst sample, with raw traces. Lighthouse TBT is a lab metric; do not report it as INP. Scripted
+interaction latency is also lab evidence, not field p75 INP. If field data exists, report it separately.
+[INP measurement reference](https://web.dev/articles/inp).
+
+### 2.3 Budget ledger
+
+| Existing metric | Current cap | Historical audit in original draft | Fresh baseline |
+|---|---:|---:|---|
+| entryCssBytes | 430 KiB | 429.5 KiB | Phase 0 records |
+| totalJsBytes | 10084 KiB | 10076.5 KiB | Phase 0 records |
+| totalCssBytes | 1635 KiB | approximately 1630 KiB | Phase 0 records |
+| admin.html CSS, desktop/mobile | 684 / 786 KiB | 682.8 / 779.5 KiB | Phase 0 records |
+| eden-x1.html CSS, desktop/mobile | 664 / 761 KiB | 663.0 / 759.7 KiB | Phase 0 records |
+
+Use **minified uncompressed deployed bytes** for these caps, as enforced by the script. Report gzip transfer
+bytes separately. Dynamic imports improve initial-route cost but still count toward aggregate deployed JS.
+Reclaiming CSS does not create JS headroom.
+
+The original estimates mixed gzip, source, and built sizes, and its feature additions exceeded the reported
+7.5 KiB JS headroom. Discard those totals as commitments. Before each implementation slice, record:
+
+| Slice | Built JS delta | Built CSS delta | Initial route delta | Gzip delta | Cumulative headroom | Decision |
+|---|---:|---:|---:|---:|---:|---|
+| Baseline/reclaim/core/each included feature | measured | measured | measured | informational | measured per cap | pass, simplify, defer |
+
+Requirements:
+1. All existing aggregate and touched-route caps pass; no automatic budget increase.
+2. Proposed **core** target: policy + scheduler + pointer/spring helpers together ≤3 KiB gzip.
+   This is a separate transfer target, not an exemption from raw-byte caps.
+3. Give each optional renderer its own measured allocation after reclaim. Do not classify all js/fx files
+   under a contradictory 4 KiB cap while also adding charts, particles, and canvas helpers there.
+4. Identify modules through the build graph/manifest and transitive entry imports; do not rely on generated
+   filenames or the absence of a modulepreload string alone.
+5. Lower caps only after allocating the included release scope and retaining a documented small reserve.
+   Every reclaim needs before/after evidence; no premature promise of 4–8 KiB savings.
+
+## 3. Minimal motion architecture
+
+### 3.1 Ownership and loading
+
+Use route CSS for simple transitions. Introduce js/fx helpers only when an included feature needs them;
+start with policy and lifecycle, then extract genuinely shared behaviour. No empty framework scaffolding.
+
+| Proposed module | Responsibility | Consumers / load point |
+|---|---|---|
+| js/fx/motion-policy.js | Live reduced-motion, visibility, capability and optional-data-saving signals | Enhanced routes only |
+| js/fx/frame-loop.js | Shared scheduling for new effects that truly need rAF; explicit disposal | Springs and active route playback |
+| js/fx/pointer-vars.js + spring.js | One delegated pointer owner; batched reads/writes; settle to idle | Hub or detail interaction |
+| js/fx/particles.js | Lazy, bounded WAAPI pool | Confirmed-success handler |
+| js/fx/view-swap.js | Optional panel transition around the existing state update | Shell navigation |
+| Feature-local renderer | Canvas/SVG/chart logic and route-specific cleanup | Owning controller only |
+
+Load when the feature mounts or is intentionally used. Optional idle prefetch must be cancellable and
+have a timer fallback where requestIdleCallback is absent. **Idle does not prove that LCP has happened**;
+verify the request waterfall. A first-use success must still work if the helper has not loaded or import fails.
+[Idle callback reference](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback).
+
+CSS and WAAPI do not need a JS frame scheduler. Existing game loops and on-demand map draws retain ownership.
+For new rAF effects, permit only one scheduled callback per shared scheduler and stop it with zero active
+subscribers. An effect invalidates the map through scheduleDraw; it does not draw competing frames.
+
+### 3.2 Required lifecycle contract
+
+Every mounted effect has an idempotent dispose operation, tied to its route/component lifetime.
+It cancels frames/timers/WAAPI, disconnects observers, releases listeners/caches, and prevents stale async
+imports from mounting on detached elements.
+
+- On document hidden, route hidden, offscreen, or reduced-motion change: settle or cancel decoration promptly.
+  IntersectionObserver alone does not describe an inactive SPA panel; use explicit route activation too.
+- On resume: reset the time origin and bound dt; never replay hidden-tab elapsed time through a spring.
+- On pointer leave/cancel, focus loss, or resize: clear or recompute targets without retaining old geometry.
+- A throwing subscriber must not stop other effects. Unsubscription during a callback is safe.
+- No settled-effect frame callbacks, no detached-element references, and no multiplying handlers after
+  20 route enter/leave cycles.
+- Save-Data/deviceMemory are optional hints, not reliable power detectors. Missing APIs use conservative
+  defaults; core information remains available. Do not add a persistent preference unless an existing
+  setting can own it.
+
+### 3.3 Rendering rules and fallbacks
+
+Prefer transform and opacity for animation. **Filter, gradients, background-position, blend layers,
+stroke-dashoffset, custom-property counters, and canvas can repaint.** Small, finite paint effects require
+trace evidence; will-change does not make them compositor-only.
+[Rendering-cost reference](https://web.dev/articles/animations-guide).
+
+| Capability | Enhancement | Fallback / constraint |
+|---|---|---|
+| @starting-style | Initial entry transitions | Already-visible content; it is not a viewport observer |
+| Scroll timelines | Decorative guide progress or bounded reveal | Fully visible content and existing navigation |
+| View Transitions | Same-document panel swap | Existing immediate swap; no routing rewrite |
+| WAAPI | Finite deals and bursts | Final state immediately |
+| @property | Optional visual counter twin | Canonical localized number |
+| Fine pointer + hover | Tilt/spotlight on one active card | Static card and visible keyboard focus |
+| Canvas/SVG effects | Route-local data display | Equivalent text/table/list |
+
+Use feature detection, not UA sniffing. For entry, distinguish newly inserted DOM from viewport entry:
+below-fold reveals require an observer or supported scroll timeline.
+[Starting-style reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@starting-style).
+
+## 4. Feature specifications
+
+Each feature retains its gallery reference, but implementation follows the product contract below.
+
+### 4.1 Shell, hubs, and loading — P1
+
+**Outcome:** navigation feels immediate and only relevant content moves.
+
+- Hub spotlight/rim (068): update one hovered card, cap tilt at 3 degrees, and avoid full-card moving gradients
+  if traces show paint cost. Keyboard focus uses a static, high-contrast ring.
+- Entry (068): at most 12 initially visible cards, capped stagger; repeated filter/tab refreshes do not replay
+  the whole screen. Preserve layout space and coordinate independent translate/transform ownership.
+- Loader completion (050): one bounded check animation after real completion. Keep loading, error, retry,
+  and success text independent of animation events; never delay content to finish the check.
+- Panel transitions: wrap the existing shell update once. Preserve URL/hash, back/forward, scroll restoration,
+  focus, aria-selected, and deep links. Preload necessary data before the visual transition.
+- Suppress the root-wide snapshot animation and assign unique names only to the intended panel.
+  Handle rapid navigation, skipped transitions, and rejected transition promises without repeating state
+  updates or dropping the latest navigation. Reduced motion uses the direct update.
+  [View Transition behaviour](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API/Using).
+
+**Acceptance:** 20 rapid panel switches leave the correct URL/panel/focus, loader failure remains actionable,
+no clipped hub labels at 320px or zoom, and an unavailable enhancement never blocks navigation.
+
+### 4.2 Heroes, combos, and skins — P1
+
+- Combo deal (053): animate only the visible top five results after the final DOM order exists.
+  Prefer simple transform/opacity over FLIP unless actual position changes justify measurements.
+  Read all geometry before writes. Regenerating mid-animation cancels the old reveal; results and controls
+  remain available immediately.
+- Detail sheen (032): one detail card at a time, spring settles, maximum tilt 3 degrees and translation 6px.
+  Show rarity text/badge regardless of sheen. Map strength only to existing canonical rarity values;
+  do not introduce invented Legendary/Epic data. Start with static gradients; sparkle texture is conditional.
+- Header parallax (018): P2 embellishment only after the core sheen passes. Never apply competing transforms
+  to the same layer.
+- Atlas navigation (028): retain existing filter semantics, result count, sorting, selection, and deep links.
+  Do **not** turn hidden non-matches into merely dimmed, focusable results.
+  Add arrow navigation only where the existing component is a true composite grid. Otherwise retain native
+  links/buttons. A grid needs roving focus, Home/End, resize/filter recovery, RTL-aware movement, and clear
+  handling of controls inside a card. [ARIA grid pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/).
+
+**Acceptance:** keyboard-only filtering/open/close returns focus correctly, regeneration never exposes stale
+results, touch keeps all actions available, and the detail remains readable in both themes/forced colors.
+
+### 4.3 Confirmed-success feedback and totals — P1
+
+Use a lazy pool of at most 24 particles per document. One burst lasts at most 600 ms; allow at most one burst
+per second, dropping overlaps. The layer is aria-hidden, pointer-events:none, contained, and disposed.
+No nodes are created in reduced-motion mode; use an immediate static check and existing status text.
+
+Wire only after the existing action confirms success:
+- save acknowledged;
+- copy confirmed or share resolved successfully (share cancellation does not celebrate);
+- vote/score acknowledged by the existing persistence path;
+- personal best actually changed;
+- tower completion committed to the existing local state.
+
+Map the real handlers before editing; the old draft's reference to vote/ is a route, not necessarily the
+write owner. Do not add writes, retries, or success deduplication to the backend. Prevent duplicate bursts
+from rerenders or subscription echoes; failed and pending actions retain their own feedback.
+
+Totals update canonical text immediately, with Intl.NumberFormat and existing rounding. Optional animated
+twins are aria-hidden, reserve width, respect decimals/negative values/RTL, and never announce every frame.
+A CSS integer counter is not a replacement for localized currency, percentages, or decimal totals.
+
+**Acceptance:** one confirmed action produces one bounded burst; failure/cancellation produces none;
+missing WAAPI/import failure still shows success; reduced motion produces no new effect animation.
+
+### 4.4 Eden map and playbook — P2, data-gated
+
+**Route playback (036):** draw from existing selected route coordinates. The 45°/90° transit style is schematic;
+it must not distort map positions, path legality, distances, obstacles, or imply a calculated march ETA.
+Use arc length for visual playback speed only. Provide Play/Pause/Replay; reduced motion shows route and
+numbered stops. Map geometry stays geographic under RTL; only controls and prose mirror.
+
+Retain on-demand rendering. While playback is active, request invalidation through scheduleDraw; cancel
+when paused, hidden, or complete. Batch same-style markers (083) only where painter order, alpha, and overlap
+remain correct. Hex ripple (069) is optional, bounded to 300 ms, and shares the same invalidation path.
+
+**Scouting glow (089):** the existing shared-document timestamp cannot truthfully encode per-marker age.
+16.5.0 may show a document-level "Last synced" label from available data. Per-marker freshness waits for
+verified observation timestamps and a separately scoped data contract. Never synthesize live intel.
+
+If phosphor rendering is later included, fading must revisit all previously lit dirty regions until they
+expire; painting only regions with incoming updates leaves stale trails. Text/icon age, expiry, unknown,
+future timestamp, offline, and stale states must work without glow.
+
+**Acceptance:** idle map remains idle, pan/zoom/hit-testing coordinates are unchanged, playback pauses cleanly,
+and dense-map draw/interaction timings do not regress.
+
+### 4.5 Research, towers, and Materials — P2 / P3
+
+- Connector draw (056/073): one finite reveal on first view; selection remains apparent as a static path.
+  Stroke animation is a bounded paint effect, not compositor-only. No perpetual path pulse.
+- Grid navigation follows §4.2 and preserves existing focus/selection/calculation behaviour.
+- Materials scale-by-N (040) is P3: define integer quantities, rounding, overflow, source costs, persistence,
+  and export consistency in a separate functional plan. It is not an animation task.
+
+**Acceptance for connectors:** upgrade order and totals are unchanged, focus is visible, offscreen paths do
+not animate, and selected branches are legible in reduced motion and both themes.
+
+### 4.6 Season timeline — P2, content-gated
+
+Use canonical hero-release seasons and hero counts, not an assumed X1–X12 range or Eden event dates.
+Define whether skins/variants count; derive values from existing data. Keep hero release seasons distinct
+from Eden campaign seasons. Each item links to the current filter/deep-link route.
+
+Prefer a semantic list with small SVG ribbons. Hero counts also appear as text; do not make narrow
+zero/small-count ribbons inaccessible. Horizontal desktop and vertical mobile layouts preserve DOM order,
+keyboard navigation, and touch scrolling. No mandatory scroll snapping or JS needed just to read it.
+
+**Acceptance:** displayed counts reconcile with the Atlas under the same rules; unknown data is labelled;
+all season links work at 320px, 200% zoom, keyboard, and RTL.
+
+### 4.7 Admin, OCR, and VtsScore — P2, data-gated
+
+Before building charts/heatmaps, record the existing read owner, timestamp field, time zone, units,
+aggregation rule, pagination/completeness, and whether history really exists. A current total cannot become
+a fabricated historical series. No new Firestore collection, polling, or write is included here.
+
+- Trend charts (060/076): first prefer existing semantic markup/SVG for small datasets. Canvas needs a
+  demonstrated benefit, DPR cap 2, bounded sample count/cache memory, and disposal on resize/unmount.
+  Include the same filtered data in an accessible table plus keyboard/touch-selectable values.
+- Heatmap (046): distinguish no record from zero; label dates/time zone and provide a text legend.
+  A ring buffer is for display, not the source of truth.
+- Panel chrome (076): static and subordinate to status text; never signal "live" without actual updates.
+- Countdown dials (024/031): compute remaining time from a canonical deadline minus Date.now().
+  Intl.DateTimeFormat formats a date; it does not supply time. Use a visibility-aware timer, at most once
+  per second when visible, never a 60 Hz loop. Stop at expiry and reconcile after resume.
+  Announce milestones only, not each second; missing deadlines get a neutral state.
+
+**Acceptance:** charts reconcile with the displayed totals/table, empty/error/stale states are explicit,
+there are no additional backend writes, and chart modules load only on their owning surfaces.
+
+### 4.8 Arcade — P2
+
+Keep existing game simulation timing and controls. Add finite particle shatter/text pop only after the
+motion policy is integrated. Stage shake is opt-in to normal motion, max 80 ms, and disabled in reduced
+motion; ensure no flashing sequence. Hit-stop cannot alter scoring or elapsed-time rules.
+
+Optional Web Audio SFX (007/026/038) stays muted by default. Create/resume AudioContext only after an explicit
+sound action; persist the existing setting if available, cap concurrent voices, handle blocked audio, and
+suspend/dispose on route exit. Labyrinth light and falling-sand sparkle stay game-local candidates.
+
+**Acceptance:** sound-off creates no audio playback, reduced motion removes shake, deterministic game checks
+still pass, and pause/background/resume cannot award duplicate scores.
+
+### 4.9 Share images — P2
+
+Seed background art (003) from a stable combo/roster identifier or normalized content plus a renderer version.
+Same inputs produce the same composition; pixel identity across different font/browser engines is not
+promised. Preserve export dimensions, text contrast, existing assets/credits, and plain fallback.
+
+Verify same-origin/CORS-safe image use, font readiness, download success, and recovery from tainted canvas
+or a failed image. Run only on export; do not preload renderers for every visitor.
+
+**Acceptance:** exported text is readable in both themes, repeat exports preserve composition, and failed
+decoration does not prevent the existing export.
+
+### 4.10 Battle Simulator — P3 follow-up
+
+Retain the current single module worker for 16.5.0. A pool is a separate concurrency change, justified only
+by a reproducible throughput win after startup, data duplication, and memory costs.
+
+A later proposal must define deterministic run seeds independent of worker count, request IDs, cancellation,
+late-message rejection, ordered aggregation, progress throttling, and worker error recovery. Clamp workers
+to at least one and at most four, with a safe fallback when hardwareConcurrency is absent. Preserve
+single-worker/main-thread fallback and CSP; do not use Blob workers. Histogram preview must identify partial
+sample count and preserve the same final result. No centre-out processing that biases the statistical sample.
+
+### 4.11 Contrast and motion tooling — P0
+
+Add scripts/check-token-contrast.mjs only after defining explicit semantic foreground/background pairs.
+Resolve token aliases, themes, alpha compositing, and actual backing surfaces. WCAG contrast uses
+**relative luminance**, not OKLab distance. OKLCH may suggest a new color, but validate the resulting
+rendered pair. Body text needs 4.5:1; large text 3:1; relevant UI boundaries/focus indicators require their
+own non-text assessment. Token checks do not prove full-page accessibility.
+[WCAG contrast reference](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
+
+Extend existing motion-css-contract coverage and use a parsed stylesheet check for changed/new infinite
+paint animations. A regex cannot establish visibility, compositing, or effective cascade. Baseline existing
+exceptions explicitly; fail new violations. Do not require unrelated CSS remediation.
+
+A global shadow multiplier (048) is deferred unless a touched component needs it; introducing it everywhere
+would expand visual regression scope without helping the core release.
+
+## 5. Implementation map and dependency order
+
+These are **future implementation files**, not files changed by this plan revision. Reconfirm owners and
+nested instructions from the latest production baseline before coding.
+
+| Area | Existing ownership to inspect | Proposed additions / evidence |
+|---|---|---|
+| Baseline and reclaim | css/atmosphere.css, css/app.css, css/_tokens.css, public/ai-launcher-critical.css, js/ai-launcher.js, HTML font links | Versioned baseline report; exact selector/import/asset consumer audit |
+| Motion foundation | Existing reduced-motion CSS and motion-css-contract test | js/fx helpers only as needed; tests/unit/fx-*.test.mjs |
+| Shell and loader | js/shell-v14.js, css/shell-v14.css, js/loader-v14.js and owning loader styles | Shell URL/focus/transition tests |
+| Heroes and feedback | js/app-hero-atlas.js, js/combo-share.js, combo renderer and actual persistence handlers | Existing Atlas/deep-link/i18n tests plus effect lifecycle tests |
+| Eden | js/eden-map.js, js/eden-map-scout.js, js/eden-playbook.js and route CSS | Optional route renderer; dense-map fixture |
+| Data surfaces | js/ocr-dashboard.js, js/vts-score.js, js/vts-score-model.js, js/vts-score-store.js | Optional chart module; table reconciliation fixture |
+| Other conditional work | Tower controller, js/app-export.js, js/throne-buffs-export.js, games/boot consumers | Touch only included features and their existing tests |
+| Build and quality | scripts/check-size.mjs, package.json, test configs | Transitive import accounting; contrast/motion checks |
+| Release | package.json, package-lock.json, js/constants.js, public version surfaces, README.md, CHANGELOG.md, scripts/check-version-consistency.mjs, AGENTS.md | Verified 16.5.0 transition; build-generated metadata |
+
+The exact combo, loader-style, tower, locale, and public-version paths must be recorded during each slice's
+preflight; this table does not license broad edits by filename pattern.
+
+| Stage | Work | Depends on | Exit evidence |
 |---|---|---|---|
-| `entryCssBytes` (shared stylesheet) | 430 KiB | 429.5 KiB | **~0.5 KiB** |
-| `totalJsBytes` | 10084 KiB | 10076.5 KiB | **~7.5 KiB** |
-| `totalCssBytes` | 1635 KiB | ~1630 KiB | ~5 KiB |
-| `admin.html` route CSS | 684 / 786 KiB | 682.8 / 779.5 | ~1 KiB desktop |
-| `eden-x1.html` route CSS | 664 / 761 KiB | 663.0 / 759.7 | ~1 KiB |
+| 0 | Fresh baseline, data/capability inventory, consumer audit, byte ledger | Latest production | Reproducible report; realistic P1 allocations |
+| 1 | Small verified reclaim, core policy/lifecycle, initial quality checks | 0 | Focused tests; measured savings; no removed live styles |
+| 2 | One vertical slice: hub interaction through policy/loading/cleanup | 1 | Both themes, touch, reduced motion, rapid remount, size delta |
+| 3 | Remaining P1 shell, hero, and confirmed-success work | 2 | Per-feature acceptance plus locale and deep-link checks |
+| 4 | Included P2 work, one isolated surface at a time | 3 and each data gate | Reconciled data, bounded cost, fallback evidence |
+| 5 | Scope freeze, integration checks, release metadata, owner review | All included work | Full gate and rollback instructions |
+| 6 | Merge/deploy verification | Owner merge and protected CI | Production smoke, asset/CSP checks, recorded deployed revision |
 
-**Implication:** as the budget stands, we can add *nothing* to the shared stylesheet, and at most ~7 KiB of
-JS across the whole graph. So the plan is structured as: **reclaim → foundation → features**, and every
-feature PR states its byte delta against those numbers.
+If delegation is used during implementation, assign disjoint file ownership. One integrator owns shared
+runtime, shell tokens, build scripts, and release metadata. The old claim that all later phases are
+independent was inaccurate: maps share lifecycle policy, features share feedback helpers, and release
+metadata/build budgets are shared integration points.
 
----
+## 6. Verification and acceptance matrix
 
-## 3. Architecture of the integration
+| Area | Automated evidence | Human/trace evidence |
+|---|---|---|
+| Lifecycle | Policy changes, hidden route, zero subscribers, bounded dt, subscriber failure, disposal/remount | 20 route cycles; stable listeners/cache/particle counts |
+| Behaviour | Navigation/hash/history, focus recovery, success/error/cancel paths, preserved result totals | Keyboard and touch task completion |
+| Reduced motion | Zero **new decorative** running effects; zero particle nodes; immediate final values | Preference switched while an effect is active |
+| Compatibility | Capability APIs removed/stubbed; import failure; offline fallback | Chromium, Firefox, WebKit; one real touch device before release |
+| Visuals | Existing app-visual and css-computed-baseline where affected | Dark/light, RTL Arabic, long translation, forced colors, 200% zoom, 320px |
+| Data | Charts/timeline match fixtures; no added writes; timestamp unknown/expired cases | Labels communicate scope, units, freshness |
+| Performance | Aggregate/route size checks; transitive load graph; settled scheduler counter | Production traces for hub/Atlas/map/Admin |
+| Security | Existing CSP and functional tests stay green | No new origins or worker violations |
 
-### 3.1 Three tiers of cost
+Do not assert zero WAAPI animations across unrelated legacy features. Scope tests to newly owned effects.
+document.getAnimations() alone cannot prove compositor execution or absence of canvas/rAF work.
+Use stable reduced-motion fixtures for layout snapshots and separate normal-motion behaviour tests;
+do not blindly regenerate all reference screenshots.
 
-| Tier | What | Loaded | Budget line |
-|---|---|---|---|
-| **T0 — CSS primitives** | Tokens, `@property`, `animation-timeline`, View Transitions, `:hover` spotlights | In the stylesheet of the route that uses it, never shared unless it replaces bytes | route CSS |
-| **T1 — `js/fx/` micro-runtime** | One scheduler + helpers, ≤ 3 KiB min+gz | Dynamic `import()` on first idle after LCP (`requestIdleCallback`), never on the critical path | new `fxJsBytes` cap |
-| **T2 — feature renderers** | Canvas charts, route layer, particle pool, foil card | Dynamic `import()` from the feature controller that needs it | per-route |
+**Proposed performance gates, calibrated against Phase 0 noise before implementation:**
+- No new continuously repainting decorative animation when the touched surface is settled.
+- New scheduler performs zero work once its subscribers settle; hidden/offscreen effects stop.
+- CLS ≤0.1 per load and no unexplained increase greater than 0.01 in comparable lab samples.
+- No median load or selected-interaction regression beyond the larger of 5% or 50 ms; investigate the worst
+  sample and all new >50 ms tasks attributable to effects. Do not average away repeatable regressions.
+- On a fixed dense-map fixture, draw/interaction timings stay within baseline tolerance; target p95 active
+  effect work ≤4 ms per frame on the recorded test device. Lower density or remove the effect if it fails.
+- No new render-blocking requests or effect-induced delay to visible content. Document route-local requests.
 
-### 3.2 `js/fx/` — the single motion runtime (new)
+Use the repo's actual commands:
+- Focused slices: relevant node --test files and Playwright specs, npm run check:fast when practical,
+  plus npm run build and npm run size:check for bundle changes.
+- Example existing baseline: node --test tests/unit/motion-css-contract.test.mjs.
+- Add new browser tests to a command/CI path that actually runs them. Existing smoke selects app-smoke and
+  p1-* specs; production config selects production-smoke.spec.js. A new filename alone is not CI coverage.
+- Final broad 16.5.0 integration: **npm run check**, then protected **deploy-verification** through the
+  repository's existing npm run verify:deploy workflow.
+- npm run firebase:preview is optional for this broad release when Hosting validation is useful. It is
+  public and uses the real backend; QA stays read-only. It does not replace GitHub Pages deployment checks.
 
-One small module family. Every animated thing in the site goes through it, so there is exactly one place
-that enforces the performance rules:
+Every included feature records commit, command result, screenshots/trace location, size delta, and fallback
+result in the PR. **None of these future release checks is claimed to have passed by this document.**
 
-```
-js/fx/
-  motion-policy.js   // reducedMotion(), saveData(), lowPower(); live MediaQueryList listeners
-  frame-loop.js      // ONE shared rAF; subscribers get (dt, now); auto-stops when zero subscribers,
-                     // pauses on visibilitychange, per-subscriber IntersectionObserver gating
-  pointer-vars.js    // rAF-throttled pointer → CSS custom props (--mx, --my, --tilt-x, --tilt-y)
-  spring.js          // critically-damped spring integrator (stiffness/damping), settles → unsubscribes
-  canvas-surface.js  // DPR-aware canvas (cap 2×), ResizeObserver, offscreen sprite cache helper
-  particles.js       // pooled WAAPI particle layer (fixed pool, e.g. 24 nodes, reused)
-  view-swap.js       // document.startViewTransition wrapper with a no-op fallback
-```
+## 7. Release workflow, version jump, and rollback
 
-Rules the runtime enforces (each has a unit test in `tests/unit/fx-*.test.mjs`):
-1. **One rAF for the whole page.** 93 of the gallery pages run their own loop. We do not.
-2. **Stop when idle:** a spring that has settled unsubscribes, and when no subscribers are left there is no rAF.
-3. **Offscreen = stopped:** subscribers register an element; an IntersectionObserver pauses them outside the
-   viewport. `document.hidden` pauses everything.
-4. **Reduced motion:** `motion-policy` returns the final state immediately; particles are skipped; springs jump
-   to target. This works alongside the CSS kill switch; it does not replace it.
-5. **Save-Data / low-end:** `navigator.connection?.saveData` or `deviceMemory <= 2` drops T2 decorative effects
-   (foil sparkle, phosphor trail) but keeps functional motion (route markers, chart crosshair).
-6. **Only compositor properties animate continuously** (`transform`, `opacity`, `filter` on small elements).
-   A lint rule (see §7) forbids infinite keyframes on paint properties.
-7. **Pointer effects only for `(hover: hover) and (pointer: fine)`.** Touch devices get tap feedback only.
+### 7.1 One coherent 16.5.0 release
 
-### 3.3 Modern CSS instead of the gallery's JS
-Where the gallery uses JS, we use the cheaper platform primitive with a static fallback:
+Start implementation from freshly fetched origin/gh-pages on a codex/ branch. Keep reviewable commits and
+isolated subtask worktrees as useful, then integrate into one release PR targeting gh-pages. This supersedes
+the original "one production PR per phase" proposal, which would expose partial work as multiple releases.
 
-| Gallery technique (JS) | Our implementation |
+If production fixes are needed while preparing 16.5.0, ship them through separate focused PRs and refresh
+the release branch from the new production tip. Preserve other agents' changes and re-run affected evidence.
+Do not commit/push directly to gh-pages. The owner merges unless explicitly requesting fast-merge.
+
+### 7.2 Explicit version-cadence handling
+
+The checked reference is 16.0.18. scripts/check-version-consistency.mjs currently expects **16.4.20**
+immediately before **16.5.0**. Setting package.json alone will fail.
+
+At release preparation:
+1. Fetch the actual latest production history. If 16.4.20 is then the predecessor, use normal cadence.
+2. Otherwise implement a **single explicit release-transition exception** for the real predecessor → 16.5.0,
+   documenting the owner's requested release target in AGENTS.md and the checker.
+3. Add focused tests proving the exact transition passes while arbitrary skips, patch >20, mismatched
+   public surfaces, and a wrong predecessor still fail. Keep 16.5.1 and subsequent normal cadence enforced.
+4. Never fabricate 16.1–16.4 changelog entries or disable version verification to force a green result.
+
+At scope freeze, update package and lockfile root/package versions, app constants, all public HTML/version
+surfaces covered by the checker, README heading, and truthful CHANGELOG entry. Build updates service-worker
+and cache metadata; review and include intended generated changes. This planning edit changes none of them.
+
+### 7.3 Failure isolation and rollback
+
+Each optional feature has one route-level enable/mount boundary with a static default if loading fails.
+Avoid a new remote-configuration backend. Core actions never depend on effect completion.
+
+If a feature fails acceptance, remove/disable its mount and imports before release and verify the fallback.
+After deployment, use a focused corrective or revert PR through the protected branch; no force-push.
+Re-run the affected behaviour and deploy checks, preserve real release history, and verify cache/asset
+refresh in a fresh browser and a previously installed service-worker session.
+
+No Cloudflare Worker or Firebase deploy is required unless their files/contracts actually change.
+Any later data-contract extension gets a separate backend plan and its required checks.
+
+## 8. Risks, decisions, and handoff checklist
+
+| Risk | Decision / response |
 |---|---|
-| Scroll progress via `getBoundingClientRect` per frame (014, 022, 063) | `animation-timeline: view()` / `scroll()` inside `@supports`; no JS. Fallback: content simply visible |
-| Staggered entry via IO + class toggles (068, 008) | `@starting-style` + `transition-behavior` for entry; IO only for below-the-fold batches |
-| Tab/route cross-fades in JS | View Transitions API (`view-swap.js`) for tab switches in `shell-v14.js`; fallback = current instant swap |
-| Integer tween in JS | `@property --n { syntax: '<integer>' }` counter (already prototyped in `atmosphere.css:213`) |
-| Pointer tilt on each element listener | One delegated `pointermove` → CSS vars on the hovered card only |
+| Nearly exhausted aggregate budgets | Measure first; reclaim same resource type; simplify or defer additions |
+| Overbuilding a motion framework | One vertical slice first; extract only reused helpers |
+| New animation harms idle map/launcher cost | Preserve demand-driven rendering; verify hidden/settled traces |
+| Missing history or per-marker ages | Gate charts/recency; no fabricated data or hidden schema expansion |
+| Decorative effects block usability | Immediate semantic state, static fallbacks, reduced-motion cancellation |
+| 16.5.0 conflicts with cadence | Exact tested transition exception when required |
+| Gallery research cannot be reproduced | Keep provenance labels; implement independently from product requirements |
 
----
+Defaults resolved by this plan: independent implementations; season timeline conditional; Arcade sound
+conditional and muted; budget caps tightened only after measuring the complete included release.
+No author outreach, sound enablement, or backend extension is assumed.
 
-## 4. Feature integrations (by product surface)
+### 8.1 Owner decisions (2026-09-23)
 
-Every item lists: **what**, **where**, **technique source**, **cost**, **guardrails**.
+- **Licence:** no outreach to the gallery author. All work stays clean-room; no gallery source, art,
+  text, prompts, or assets are reused. Revisit only if literal reuse is later proposed.
+- **Season timeline (§4.6):** wanted as a feature. Treat as included for 16.5.0, still subject to its
+  content/data gate; if canonical hero-release season data cannot be reconciled with the Atlas, record
+  the row as static fallback or deferred rather than fabricating seasons.
+- **Arcade SFX (§4.8):** acceptable to ship sound. Keep muted by default, create/resume the
+  AudioContext only after an explicit sound action, and keep the existing setting as owner.
+- **Budget:** lowering the `entryCssBytes` ceiling after Phase 0 reclaims bytes is approved. Lower it
+  only by the measured, verified reclaim, with before/after evidence and a documented reserve; do not
+  tighten below the included release scope.
 
-### 4.1 Hub & shell polish (Home, Heroes & Combos hub, Research & Towers hub)
-- **Cursor spotlight + rim light on hub cards** *(068)*. `::before` radial glow at `var(--mx) var(--my)` and
-  `::after` 1px rim via `mask-composite: exclude`. `pointer-vars.js` writes vars **only on the hovered card**.
-  Replaces the unused `.u-lift`/`.u-tilt`. Cost: ~0.6 KiB CSS (hub route CSS), ~0.4 KiB JS.
-- **Entry stagger with the independent `translate` property** *(068)*, so entry never fights hover `transform`.
-  Replace the 66 simultaneous `card-pop` animations with an `@starting-style` transition staggered by
-  `--i` (index var), and **cap the stagger at the first 12 visible cards**; the rest appear instantly.
-  Result: fewer concurrent animations, not more.
-- **Loader "ink check" success state and orbit trail** *(050)* in `loader-v14`: stroke-dashoffset draw on
-  completion, then fade. Pure SVG+CSS, ~0.5 KiB, loader CSS only.
-- **Tab switches via View Transitions** in `shell-v14.js` (`view-swap.js`), limited to the tab panel with
-  `view-transition-name: tab-panel`, 180 ms. Fallback: today's behaviour.
+Before coding:
+- [ ] Record latest production SHA, clean worktree/branch, instructions, and baseline environment.
+- [ ] Complete route/asset consumer map and P1 byte allocations.
+- [ ] Verify real action handlers, locale registries, timestamp/history sources, and capability fallbacks.
+- [ ] Assign exact file ownership and register new tests in the execution path.
 
-### 4.2 Heroes: Combo Generator, Hero Atlas, Skins
-- **Top-5 result reveal as a card deal** *(053)*. Cards start stacked, FLIP to their grid slots with 40 ms
-  stagger via WAAPI, and then settle. Runs once per generation and never loops. Screen readers get the
-  results immediately (the animation is purely visual; the DOM order is final from the start).
-- **Holographic rarity foil on hero/skin detail cards** *(032)*. Spring-driven tilt (`spring.js`) → CSS vars
-  `--px --py --hyp` → two foil layers (`mix-blend-mode: color-dodge` rainbow bands, and an etch pattern).
-  Strength by rarity (Legendary > Epic > none), so the effect *carries information* instead of decorating.
-  Guardrails: the effect runs only while the card is hovered/focused, and the spring unsubscribes on settle.
-  Sparkle sheet is a pre-rendered 256² canvas pattern cached once. Off for touch, Save-Data and reduced
-  motion (those get a static sheen gradient). Cost: ~1.8 KiB JS + ~1 KiB CSS, lazily imported by
-  `app-hero-atlas.js`.
-- **Hero Atlas grid as a periodic table** *(028)*. Roving-tabindex arrow-key navigation, category filter
-  chips that dim non-matches (opacity only, no re-layout), and a focus glow. This is mostly an
-  **accessibility win**, and `p1-accessibility-*` specs can assert it.
-- **Pointer parallax on hero detail header** *(018)*. 3 layers, translate only, ±6 px max.
-
-### 4.3 Celebration & feedback (cross-cutting)
-- **Pooled particle burst** *(046)* in `js/fx/particles.js`: a fixed pool of 24 absolutely positioned nodes in
-  one `position: fixed` layer, animated with WAAPI (transform/opacity only), recycled on `finish`. Uses
-  theme accent colours via tokens.
-  Triggers (one per meaningful success, never on routine clicks):
-  - combo saved / shared (`combo-share.js`)
-  - Eden X1/X2 vote cast (`eden-x1.js`, `vote/`)
-  - VtsScore final score submitted (`vts-score.js`) and top-3 rank reached (replaces unused `.u-top3/.u-burst`)
-  - Arcade new personal best
-  - Specialization tower maxed
-  Cost: ~1.2 KiB JS, loaded on first trigger. Reduced motion → a subtle check-mark pulse instead.
-- **`@property` animated counters** *(050)* for score/total changes (VtsScore totals, Research totals,
-  Materials totals). CSS-only with `counter()`; fallback = instant number. Numbers stay in the DOM for a11y
-  (the counter is decoration on a `aria-hidden` twin).
-
-### 4.4 Eden (map, playbook, operations)
-- **Transit-style march routes** *(036)*. Routes are drawn as 45°/90° polylines with rounded corners. Markers
-  move by **arc-length parameterisation** along the same sampled polyline, with eased dwell at objectives.
-  They render in the existing `eden-map.js` canvas draw pass (`eden-map.js:1676` rAF), so no second loop is
-  added; it moves onto `frame-loop.js`. The playbook uses the same geometry to animate each phase.
-- **Phosphor "last seen" overlay** *(089)*. An offscreen layer fades exponentially (`destination-out`) and
-  is painted **only in dirty regions** where updates arrived, which gives a radar-style afterglow showing how
-  fresh each intel point is. Functional, not decorative: brightness = recency.
-- **Batched marker drawing** *(083)*: one `fill()` per colour bucket instead of per marker, a pure draw-cost
-  reduction for dense maps.
-- **Hex hover ripple** *(069)* on territory hover, drawn in the same pass with a 300 ms decay.
-- Cost: T2 chunk `eden-map-fx.js` (~3 KiB), Eden route only.
-
-### 4.5 Research, Specialization Towers, Materials
-- **Self-drawing connectors** *(056, 073)*. On first view, tower-tree SVG connectors draw with
-  `stroke-dashoffset` driven by `animation-timeline: view()`, and the selected upgrade path "pulses" a signal
-  along the traces (dash offset, compositor-friendly with `will-change` only while active).
-- **Periodic-table grid navigation** reused from §4.2 for research node grids.
-- **Materials "scale by N"** *(040)*: servings-scaler interaction with friendly fractions for multi-hero plans.
-  This is logic, not motion, and cheap.
-
-### 4.6 Season timeline (new, small feature)
-*(020 + 063)* A horizontal X1 → X12 timeline where each season is a ribbon whose width encodes hero count. The
-same geometry reflows to vertical on phones (020's along/cross coordinate trick). The background gradient
-keys to the season, and scroll progress comes from `animation-timeline: scroll()`. SVG only, no canvas.
-Candidate home: the Heroes & Combos hub, lazily loaded. Cost ~4 KiB JS + 1.5 KiB CSS on its own chunk.
-
-### 4.7 Admin, OCR dashboard, VtsScore (data-heavy surfaces)
-- **Canvas trend charts** *(060, 076)*. DPR-capped canvas, pixel-snapped bars, eased y-range, and a crosshair
-  plus tooltip card for contribution history, duty points over time and VtsScore progression. A ring buffer
-  gives smooth live updates. Replaces nothing (there are no charts today); lazy `js/fx/strip-chart.js` in the
-  admin route only. **Accessibility: every chart has a data table twin** (`<details>`).
-- **Contribution heatmap** *(046)*, a 12-week grid for member activity. CSS grid of cells coloured through tokens.
-- **Corner-bracket panel chrome** *(076)* for "live" panels (VtsScore leaderboard, OCR queue): one pseudo-element
-  with 8 gradient strokes, so no extra DOM.
-- **Event countdown dials** *(024, 031)*: an SVG ring via `@property --angle`, time from `Intl.DateTimeFormat`,
-  updated once per second by the shared loop (not per frame).
-
-### 4.8 Arcade (`games/boot/*`, `arcade.html`), the place for "juice"
-The Arcade is already isolated (standalone HTML + `shared.js`) with its own budget line, so it is **the one
-place where heavier effects are welcome**:
-- **Synthesised SFX** *(007, 026, 038)*. A tiny Web Audio voice bank (square/triangle blips, noise hits,
-  pitch-rising combo blips). **Zero audio asset bytes**, muted by default, and the toggle persists.
-- **Game feel** *(038)*: particle shatter from the pooled layer, 80 ms screen shake (transform on the stage),
-  hit-stop frames, combo text pop.
-- **Mode-specific** borrowings: falling-sand sparkle *(055)* for merge-rush, labyrinth torch light *(033)*
-  for hero-rumble. Each is scoped to its game file.
-
-### 4.9 Share cards (export)
-*(003)* Seeded generative background for combo/roster share images (`app-export.js`, `throne-buffs-export.js`
-already use canvas). The seed comes from the combo ID, so the same combo always gets the same art.
-Canvas-only, runs only on export and has no runtime cost otherwise.
-
-### 4.10 Battle Simulator
-*(042)* Progressive batch results: **Vite-bundled module worker** (`new Worker(new URL('./x.js', import.meta.url),
-{ type: 'module' })`, which satisfies `worker-src 'self'`; the gallery's Blob-URL approach would violate our
-CSP). Results stream centre-out into the histogram, and a coarse preview comes first. The simulator already
-creates a Worker (`battle-simulator-app.js`), so this extends it to a pool sized
-`min(4, hardwareConcurrency - 1)`.
-
-### 4.11 Design-system tooling (build time, zero runtime bytes)
-*(071)* A `scripts/check-token-contrast.mjs` step that parses `_tokens.css` light and dark values, converts them
-through OKLab, and fails CI when text/surface pairs drop under WCAG AA (4.5:1 body, 3:1 large/UI). It can
-also *suggest* the nearest passing OKLCH lightness. Also *(048)*: introduce one `--shadow-soft` multiplier token
-so every shadow tier scales from one knob, which makes the dark and light themes easier to tune.
-
----
-
-## 5. Phased delivery (each phase is one PR into gh-pages, owner merges)
-
-| Phase | Content | Net bytes (target) | Exit criteria |
-|---|---|---|---|
-| **0 — Reclaim & baseline** | Lighthouse/Playwright baseline (LCP, INP, TBT, long tasks, running-animation count) on Home, Atlas, Eden, Admin, VtsScore. Delete unused `.u-*` rules from `atmosphere.css` (keep the global focus-visible + `tab-pill-active` rules it also carries). Rewrite `iceFireShift` to animate `transform` on an oversized pseudo-element. Pause Velo launcher loops while hidden (`animation-play-state` via a class set by `ai-launcher.js`). Trim Google Fonts to used weights. | **−4 to −8 KiB CSS**, fewer font bytes | Budgets re-audited *down*; zero visual diffs in `app-visual` except intended; paint-per-frame on idle home = 0 |
-| **1 — `js/fx/` runtime** | §3.2 modules + unit tests + `fxJsBytes` size-check line + lint rule | +3 KiB JS (lazy) | Unit tests; runtime not on critical path (size-check asserts `index.html` does not preload it) |
-| **2 — Shell & hubs** | §4.1 spotlight, capped stagger, View Transition tabs, loader check | ≤ 0 on entry CSS (paid by Phase 0) | Running-animation count on home ≤ baseline; no CLS regression |
-| **3 — Heroes** | §4.2 deal reveal, foil, grid nav, parallax | ~3 KiB lazy JS, ~1.5 KiB route CSS | a11y specs for grid nav; INP ≤ baseline on Atlas |
-| **4 — Feedback** | §4.3 particles + counters wired to 5 triggers | ~1.5 KiB lazy | reduced-motion spec shows no particles |
-| **5 — Eden** | §4.4 routes, phosphor, batched draw | ~3 KiB on Eden chunk; draw-time *down* | Frame time on a dense map ≤ baseline (Performance trace) |
-| **6 — Data surfaces** | §4.7 charts, heatmap, chrome, dials | ~5 KiB admin-only | Charts have table twins; Admin route CSS within ceiling |
-| **7 — Arcade juice + share art + sim pool** | §4.8, §4.9, §4.10 | Arcade/sim chunks only | Arcade mute default; worker pool obeys CSP |
-| **8 — Season timeline + token contrast CI** | §4.6, §4.11 | ~5 KiB lazy; 0 runtime for CI script | Contrast check green on both themes |
-
-Phases 3–8 are independent after Phase 1 and can run in parallel lanes on disjoint files (one worker per file,
-as with past lanes).
-
----
-
-## 6. Performance guardrails (enforced, not advisory)
-
-1. **Size:** add `fxJsBytes` (≤ 4 KiB for `js/fx/*`) and require every PR in this plan to state its delta against
-   `entryCssBytes`, `totalJsBytes`, `totalCssBytes` and the touched route. No ceiling lift without a matching
-   reclaim in the same PR, which follows the existing `check-size.mjs` comment convention.
-2. **Critical path:** nothing from `js/fx/` is statically imported by an entry. Size check asserts no
-   `modulepreload` of `fx-*` chunks from `index.html`.
-3. **Main thread:** the only continuous animations allowed are transform/opacity. A stylelint-style check
-   (small script over `css/**`) flags `infinite` keyframes that touch `background*`, `box-shadow`, `width`,
-   `height`, `top/left`, or `filter` on large elements.
-4. **Idle is idle:** a Playwright spec loads Home, waits 3 s, and asserts `document.getAnimations()` of
-   infinite, visible, non-compositor animations is 0, and that no rAF callbacks fire with no subscribers
-   (instrumented through `frame-loop.js` debug counter).
-5. **Reduced motion:** a Playwright spec with `reducedMotion: 'reduce'` visits each touched route and asserts
-   zero running WAAPI animations and no particle layer nodes. The existing `app-visual` and
-   `css-computed-baseline` specs should run with reduced motion so the new motion never flakes snapshots.
-6. **CSP:** workers via Vite `new URL()` only (no Blob URLs); no new external origins; no inline scripts
-   (the `script-src` is hash-pinned).
-7. **Canvas:** DPR capped at 2, `ResizeObserver` not `resize`, offscreen sprite caches built once, and one
-   `fill()` per colour bucket.
-8. **Localisation/RTL:** all new labels go through the existing i18n registries (13 locales; hr partial).
-   Directional motion (deal, timeline, route markers) mirrors under `dir="rtl"` via logical properties or a
-   `--dir` multiplier.
-
----
-
-## 7. Explicitly rejected (and why)
-
-- **WebGL anything** (010, 099): new pipeline, GPU/battery cost, and no product need.
-- **Full-screen canvas backgrounds** (001, 002, 041, 061): continuous paint on every page for pure decoration.
-  Our CSS aurora is already compositor-only.
-- **Fluid/cellular/particle sims** (005, 013, 034, 037, 055 outside Arcade, 086, 100): CPU-heavy, no fit.
-- **Ambient soundscapes** (092) outside Arcade: autoplay audio on a tools site is hostile.
-- **CSS 3D corridors / page-turn books** (039, 098) on product surfaces: heavy DOM, poor on mid phones.
-- **Embedding any gallery page** as an iframe or port: 28–110 KB each, and licence status is unclear.
-
----
-
-## 8. Open questions for the owner
-
-1. Licence: do we want to contact the gallery author for explicit reuse rights, or stay strictly clean-room
-   (this plan's default)?
-2. Is a new **Season timeline** (§4.6) wanted as a feature, or should that budget go elsewhere?
-3. Arcade SFX: acceptable to ship sound at all (muted by default)?
-4. OK to lower the `entryCssBytes` ceiling after Phase 0 reclaims bytes, locking in the gain?
+Before owner review:
+- [ ] P0/P1 acceptance complete; every P2 row explicitly included/static/deferred.
+- [ ] Before/after byte ledger, traces, accessibility results, and screenshots attached.
+- [ ] Full integration check passes; release-transition tests and version surfaces agree.
+- [ ] No fabricated data, unexplained budget lifts, copied gallery assets, or unrelated backend changes.
+- [ ] CHANGELOG lists only delivered behaviour; rollback and deploy-verification steps are concrete.
