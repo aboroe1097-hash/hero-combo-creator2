@@ -44,6 +44,8 @@
     "check:full": "npm run check",
     "check": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check && npm run rules:check && npm run build && npm run size:check && npm run smoke:prod && npm run smoke",
     "pdf:build": "node scripts/pdf/build.mjs",
+    "sheets:build": "node scripts/sheets/build.mjs",
+    "sheets:watch": "node scripts/sheets/watch.mjs",
     "preview": "vite preview",
     "siege:dev": "vite --open /eden-siege.html",
     "siege:test": "playwright test --config=playwright.siege.config.js --reporter=line"
