@@ -38,6 +38,39 @@ export const DEFAULT_DUTY_POINT_WEIGHTS = Object.freeze({
   shieldWalls: Object.freeze({ main: 1, alt: 1 }),
 });
 
+// Whole-score multipliers, tuned per season the same way the duty grid is.
+// 1 means "leave it as it is": both defaults reproduce the arithmetic that
+// predates them exactly, so wiring them in cannot restate a season's scores
+// until an operator moves one on purpose. An operator can halve in-game
+// contribution so support work weighs relatively more, or double what the
+// form's own points are worth.
+export const DEFAULT_CONTRIBUTION_WEIGHT = 1;
+export const DEFAULT_FORM_POINT_WEIGHT = 1;
+export const MAX_SCORING_MULTIPLIER = 10;
+
+function readMultiplier(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+// These arrive from an admin-edited document, so a hostile value falls back to
+// the neutral default rather than zeroing a whole scoring term. `null`, a blank
+// string and a non-number are all "absent", not "zero".
+export function normalizeContributionWeight(value) {
+  const number = readMultiplier(value);
+  return number !== null && number >= 0 && number <= MAX_SCORING_MULTIPLIER
+    ? number
+    : DEFAULT_CONTRIBUTION_WEIGHT;
+}
+
+export function normalizeFormPointWeight(value) {
+  const number = readMultiplier(value);
+  return number !== null && number >= 0 && number <= MAX_SCORING_MULTIPLIER
+    ? number
+    : DEFAULT_FORM_POINT_WEIGHT;
+}
+
 // Weights arrive from an admin-edited document, so treat every field as
 // hostile: non-numeric, negative, absurd, or missing entries all fall back to
 // the default for that one cell rather than discarding the whole table.
@@ -849,27 +882,40 @@ export function buildWeightedContributionRows(options = {}) {
 
   const premiumCutoff = getContributionPremiumCutoff(record);
   const BASE_POINT_VALUE = 10000;
+  const contributionWeight = normalizeContributionWeight(options.contributionWeight);
+  const formPointWeight = normalizeFormPointWeight(options.formPointWeight);
+  // The form's points keep their 10,000-per-point unit unless an operator scales
+  // the form's whole share; the breakdown shows the effective unit.
+  const conductUnit = BASE_POINT_VALUE * formPointWeight;
 
   const scoredRows = rows.map((row) => {
     const exGuildPoints = row.contributionExGuild || 0;
     const contributionRewardScore = row.contributionScore + exGuildPoints;
+    // In-game contribution is the whole term — leaderboard contribution plus
+    // what was earned outside the guild — so "half weight for in-game" scales
+    // both and means what an operator expects it to mean.
+    const contributionWeightedPoints = contributionRewardScore * contributionWeight;
     // Weighted per activity and per account class. With every weight at 1 this
     // is arithmetically identical to the flat BASE_POINT_VALUE it replaced.
     const dutyBreakdown = dutyPointsBreakdown(row.dutiesByClass, dutyWeights);
     const dutyPoints = dutyBreakdown.total;
-    const conductPoints = row.conductBonus * BASE_POINT_VALUE;
+    const conductPoints = row.conductBonus * conductUnit;
     const demolitionCounted = options.includeDemolitionPoints !== false;
     const demolitionWeight = Math.max(0, numberValue(weights.demolition));
     const demolitionPoints = demolitionCounted ? row.totalDemolition * demolitionWeight : 0;
-    const weightedScore = contributionRewardScore + demolitionPoints + dutyPoints + conductPoints;
+    const weightedScore =
+      contributionWeightedPoints + demolitionPoints + dutyPoints + conductPoints;
 
     return {
       ...row,
       contributionRewardScore,
+      contributionWeight,
+      contributionWeightedPoints,
+      formPointWeight,
       dutyBreakdown,
       dutyPoints,
       conductPoints,
-      conductUnit: BASE_POINT_VALUE,
+      conductUnit,
       demolitionCounted,
       demolitionWeight,
       demolitionPoints,

@@ -3307,6 +3307,10 @@ Object.assign(id, {
   adminDutyWeightsReset: 'Kembalikan ke bawaan',
   adminDutyWeightsResetConfirm: 'Kembalikan semua bobot ke bawaan? Musim langsung dihitung ulang.',
   adminDutyWeightsSaved: 'Bobot disimpan. Skor dihitung ulang.',
+  adminScoringMultipliersTitle: 'Pengganda skor',
+  adminScoringContributionLabel: 'Bobot kontribusi dalam game',
+  adminScoringFormPointsLabel: 'Bobot poin formulir',
+  adminScoringMultipliersHint: 'Kontribusi dalam game adalah kontribusi papan peringkat ditambah poin luar guild. 0,5 memangkasnya separuh agar kerja dukungan lebih berbobot; bobot poin formulir menskalakan satuan 1 poin = 10.000. 1 membiarkan keduanya seperti sekarang.',
   adminSuggestApprove: 'Setujui',
   adminSuggestReject: 'Tolak',
   adminSuggestApproveConfirm:

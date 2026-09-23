@@ -1333,6 +1333,8 @@ export function getAdminWeightedModel(options = {}) {
     state.dashData?.attacks,
     state.dutyPointWeights,
     state.includeDemolitionPoints,
+    state.contributionWeight,
+    state.formPointWeight,
     state.playerRegistry,
   ];
   if (
@@ -1351,6 +1353,8 @@ export function getAdminWeightedModel(options = {}) {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
   adminWeightedModelCache = { inputs, model };
   return model;

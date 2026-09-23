@@ -3358,6 +3358,10 @@ const de = {
   adminDutyWeightsReset: 'Auf Standard zurücksetzen',
   adminDutyWeightsResetConfirm: 'Alle Gewichte auf den Standard zurücksetzen? Die Saison wird sofort neu berechnet.',
   adminDutyWeightsSaved: 'Gewichte gespeichert. Punkte neu berechnet.',
+  adminScoringMultipliersTitle: 'Punktmultiplikatoren',
+  adminScoringContributionLabel: 'Gewicht der In-Game-Beiträge',
+  adminScoringFormPointsLabel: 'Gewicht der Formularpunkte',
+  adminScoringMultipliersHint: 'In-Game-Beiträge sind die Beitragsliste plus Punkte außerhalb der Gilde. 0,5 halbiert sie, damit Support-Arbeit relativ mehr zählt; das Formularpunkte-Gewicht skaliert die Einheit 1 Punkt = 10.000. 1 lässt beide Werte genau wie heute.',
   adminSuggestApprove: 'Genehmigen',
   adminSuggestReject: 'Ablehnen',
   adminSuggestApproveConfirm:

@@ -2344,6 +2344,24 @@
               </div>
             </div>
             <p class="dash-duty-weights-unit" data-i18n="adminDutyWeightsUnit">1 point = 10,000 score. Example: pathing on a main at 3 adds 30,000.</p>
+            <h4 id="dashScoringMultipliersTitle" class="dash-duty-weights-subtitle" data-i18n="adminScoringMultipliersTitle">Score multipliers</h4>
+            <div class="dash-duty-weight-table" role="table" aria-labelledby="dashScoringMultipliersTitle">
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminScoringContributionLabel">In-game contribution weight</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminScoringContributionLabel">In-game contribution weight</span>
+                  <input id="dashContributionWeightInput" type="number" inputmode="decimal" min="0" max="10" step="0.1" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminScoringFormPointsLabel">Form points weight</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminScoringFormPointsLabel">Form points weight</span>
+                  <input id="dashFormPointWeightInput" type="number" inputmode="decimal" min="0" max="10" step="0.1" />
+                </label>
+              </div>
+            </div>
+            <p class="dash-duty-weights-unit" data-i18n="adminScoringMultipliersHint">In-game contribution is the leaderboard contribution plus ex-guild points. 0.5 halves it so support work weighs relatively more; the form-points weight scales the 1 point = 10,000 bonus unit. 1 leaves both terms exactly as they are today.</p>
             <label class="dash-duty-demolition-toggle" for="dashIncludeDemolitionPointsToggle">
               <input id="dashIncludeDemolitionPointsToggle" class="dash-switch-input" type="checkbox" role="switch" checked />
               <span class="dash-switch-track" aria-hidden="true"><span class="dash-switch-thumb"></span></span>

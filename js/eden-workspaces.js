@@ -334,6 +334,12 @@ export function normalizeEdenProjectionScoring(scoring) {
   if (typeof scoring.includeDemolitionPoints === 'boolean') {
     out.includeDemolitionPoints = scoring.includeDemolitionPoints;
   }
+  // Whole-score multipliers travel with the season like the duty grid does, so
+  // the public page ranks players the way the admin that published it did.
+  for (const key of ['contributionWeight', 'formPointWeight']) {
+    const value = Number(scoring[key]);
+    if (Number.isFinite(value) && value >= 0 && value <= 10) out[key] = value;
+  }
   return Object.keys(out).length ? out : undefined;
 }
 

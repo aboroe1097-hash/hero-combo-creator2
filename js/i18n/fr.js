@@ -3480,6 +3480,10 @@ const fr = {
   adminDutyWeightsReset: 'Rétablir les valeurs par défaut',
   adminDutyWeightsResetConfirm: 'Rétablir toutes les pondérations ? La saison est recalculée immédiatement.',
   adminDutyWeightsSaved: 'Pondérations enregistrées. Scores recalculés.',
+  adminScoringMultipliersTitle: 'Multiplicateurs de points',
+  adminScoringContributionLabel: 'Poids de la contribution en jeu',
+  adminScoringFormPointsLabel: 'Poids des points du formulaire',
+  adminScoringMultipliersHint: 'La contribution en jeu comprend le classement plus les points hors guilde. 0,5 la divise par deux pour que le support pèse davantage ; le poids des points du formulaire ajuste l’unité 1 point = 10 000. 1 laisse les deux termes inchangés.',
   adminSuggestApprove: 'Approuver',
   adminSuggestReject: 'Rejeter',
   adminSuggestApproveConfirm:

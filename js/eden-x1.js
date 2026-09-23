@@ -7459,6 +7459,8 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     season,
     includeSupportOnly: true,
     dutyPointWeights: publishedScoring?.dutyPointWeights,
+    contributionWeight: publishedScoring?.contributionWeight,
+    formPointWeight: publishedScoring?.formPointWeight,
     demolitionRecords:
       publishedScoring?.includeDemolitionPoints === true && Array.isArray(data.attacks)
         ? data.attacks

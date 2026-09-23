@@ -7317,6 +7317,13 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
   font-size: 0.74rem;
   color: var(--ff-text-dim);
 }
+#ocrDashboardRoot .dash-duty-weights-subtitle {
+  margin: 1.1rem 0 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ff-text-dim);
+}
 /* Demolition switch: one tappable row, switch first, text beside it. */
 #ocrDashboardRoot .dash-duty-demolition-toggle {
   position: relative;

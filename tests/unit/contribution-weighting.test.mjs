@@ -1073,3 +1073,139 @@ test('upload rows and account links decide whether a duty scores as main or bann
     setActivePlayerRegistry(null);
   }
 });
+
+test('whole-score multipliers scale in-game contribution and form points', async () => {
+  const {
+    DEFAULT_CONTRIBUTION_WEIGHT,
+    DEFAULT_FORM_POINT_WEIGHT,
+    MAX_SCORING_MULTIPLIER,
+    normalizeContributionWeight,
+    normalizeFormPointWeight,
+  } = await import('../../js/contribution-weighting.js');
+
+  const season = 'season-2027';
+  const build = (options = {}) =>
+    buildWeightedContributionRows({
+      season,
+      contributionRecords: [
+        {
+          id: 'multiplier-fixture',
+          date: '2026-09-23',
+          premiumCutoff: 1,
+          entries: [{ rank: 1, name: 'Multiplier Alpha', contribution: 100000 }],
+        },
+      ],
+      dutyRecords: [
+        { type: 'pather', entries: [{ name: 'Multiplier Alpha', confirmed: 'Multiplier Alpha' }] },
+      ],
+      r5Adjustments: [{ season, player: 'Multiplier Alpha', points: 2, category: 'extra_effort' }],
+      ...options,
+    });
+  const alpha = (model) => model.rows.find((row) => row.playerName === 'Multiplier Alpha');
+
+  // Absent configuration is neutral. Both multipliers default to 1, so a season
+  // that never opens the panel scores exactly as it did before they existed:
+  // contribution 100,000 + one pathing duty on a main (3 × 10,000) + 2 form
+  // points (2 × 10,000).
+  assert.equal(DEFAULT_CONTRIBUTION_WEIGHT, 1);
+  assert.equal(DEFAULT_FORM_POINT_WEIGHT, 1);
+  const baseline = alpha(build());
+  assert.equal(baseline.contributionWeight, 1);
+  assert.equal(baseline.formPointWeight, 1);
+  assert.equal(baseline.contributionWeightedPoints, 100000);
+  assert.equal(baseline.conductUnit, 10000);
+  assert.equal(baseline.weightedScore, 150000);
+
+  // Halving in-game contribution makes the same duties worth relatively more,
+  // which is the whole point of the knob.
+  const halved = alpha(build({ contributionWeight: 0.5 }));
+  assert.equal(halved.contributionWeight, 0.5);
+  assert.equal(halved.contributionWeightedPoints, 50000);
+  assert.equal(halved.weightedScore, 100000 / 2 + 30000 + 20000);
+
+  // Doubling the form-points weight scales the bonus unit with it, and the
+  // breakdown unit follows so the popover still adds up.
+  const doubled = alpha(build({ formPointWeight: 2 }));
+  assert.equal(doubled.formPointWeight, 2);
+  assert.equal(doubled.conductUnit, 20000);
+  assert.equal(doubled.conductPoints, 40000);
+  assert.equal(doubled.weightedScore, 100000 + 30000 + 40000);
+
+  // Hostile input falls back to neutral rather than to zero, and an explicit
+  // zero stays meaningful.
+  for (const bad of [null, undefined, '', 'nonsense', -1, MAX_SCORING_MULTIPLIER + 1]) {
+    assert.equal(normalizeContributionWeight(bad), 1);
+    assert.equal(normalizeFormPointWeight(bad), 1);
+  }
+  assert.equal(normalizeContributionWeight(0), 0);
+  assert.equal(normalizeFormPointWeight(MAX_SCORING_MULTIPLIER), MAX_SCORING_MULTIPLIER);
+
+  // The breakdown carries the multiplier so its lines still reconcile with the
+  // displayed weighted total.
+  const { buildScoreBreakdownLines } = await import('../../js/score-breakdown.js');
+  const lines = buildScoreBreakdownLines(halved);
+  assert.equal(lines.find((line) => line.kind === 'contribution')?.weight, 0.5);
+  assert.equal(lines.find((line) => line.kind === 'exGuild')?.weight, 0.5);
+  assert.equal(buildScoreBreakdownLines(baseline)[0].weight, 1);
+});
+
+test('the multipliers are edited by a superadmin, rescore, and publish with the season', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { normalizeEdenProjectionScoring } = await import('../../js/eden-workspaces.js');
+
+  const markup = readFileSync('tabs/admin.html', 'utf8');
+  const panel = markup.match(/<section class="dash-duty-weights"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(panel, 'the scoring panel exists');
+  for (const id of ['dashContributionWeightInput', 'dashFormPointWeightInput']) {
+    assert.match(panel, new RegExp(`id="${id}"`), `${id} is in the superadmin panel`);
+  }
+  // Same superadmin gate as the duty grid, and hidden until the claim check.
+  assert.match(panel, /data-requires-superadmin/);
+
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  // Both scoring call sites, the published projection, and the two local
+  // mirrors (load + save) carry the multipliers. The scoring sites matter most:
+  // an export or a public page that scored differently would be worse than
+  // none, so this count is pinned rather than left to drift.
+  assert.equal(
+    [...dashboard.matchAll(/contributionWeight: state\.contributionWeight/g)].length,
+    5,
+    'two scoring call sites, the published projection, and two local mirrors'
+  );
+  assert.match(
+    dashboard,
+    /contributionWeight: normalizeContributionWeight\(state\.contributionWeight\)/
+  );
+  assert.match(dashboard, /collectScoringMultipliersFromInputs/);
+  assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
+
+  const renderer = readFileSync('js/ocr-render.js', 'utf8');
+  // The cached model must watch the multipliers or the tables keep stale scores.
+  assert.match(renderer, /state\.contributionWeight,\s*\n\s*state\.formPointWeight,/);
+
+  const rules = readFileSync('firestore.rules', 'utf8');
+  assert.match(rules, /validDutyPointWeights/);
+  assert.match(rules, /'contributionWeight', 'formPointWeight'/);
+  assert.match(rules, /d\.contributionWeight >= 0 && d\.contributionWeight <= 10/);
+
+  // Published scoring keeps sane numbers and drops hostile ones.
+  assert.deepEqual(
+    normalizeEdenProjectionScoring({ contributionWeight: 0.5, formPointWeight: 2 }),
+    {
+      contributionWeight: 0.5,
+      formPointWeight: 2,
+    }
+  );
+  assert.deepEqual(
+    normalizeEdenProjectionScoring({ contributionWeight: 11, formPointWeight: -3 }),
+    undefined
+  );
+  assert.deepEqual(normalizeEdenProjectionScoring('nonsense'), undefined);
+
+  // Every locale the i18n gate checks carries the panel copy.
+  for (const locale of ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh']) {
+    const pack = readFileSync(`js/i18n/${locale}.js`, 'utf8');
+    assert.match(pack, /adminScoringMultipliersTitle:/, `${locale} has the multipliers title`);
+    assert.match(pack, /adminScoringMultipliersHint:/, `${locale} has the multipliers hint`);
+  }
+});

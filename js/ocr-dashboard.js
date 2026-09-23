@@ -159,10 +159,14 @@ import {
 import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   DEFAULT_DUTY_POINT_WEIGHTS,
+  DEFAULT_CONTRIBUTION_WEIGHT,
+  DEFAULT_FORM_POINT_WEIGHT,
   DUTY_ACCOUNT_CLASSES,
   DUTY_ACTIVITIES,
   buildWeightedContributionRows,
   normalizeDutyPointWeights,
+  normalizeContributionWeight,
+  normalizeFormPointWeight,
   getWeightedContributionRecordLabel,
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
@@ -368,6 +372,10 @@ state.edenX1VoteSettings = null;
 // to its own defaults, so a failed load scores rather than scoring nothing.
 state.dutyPointWeights = null;
 state.includeDemolitionPoints = true;
+// Whole-score multipliers, tuned in the same panel. 1 leaves the arithmetic
+// exactly as it was before they existed.
+state.contributionWeight = DEFAULT_CONTRIBUTION_WEIGHT;
+state.formPointWeight = DEFAULT_FORM_POINT_WEIGHT;
 let dutyPointWeightsVersion = 0;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
@@ -1771,9 +1779,16 @@ function readLocalDutyPointWeights() {
     return {
       weights: normalizeDutyPointWeights(source.weights || source),
       includeDemolitionPoints: source.includeDemolitionPoints !== false,
+      contributionWeight: normalizeContributionWeight(source.contributionWeight),
+      formPointWeight: normalizeFormPointWeight(source.formPointWeight),
     };
   } catch {
-    return { weights: normalizeDutyPointWeights(null), includeDemolitionPoints: true };
+    return {
+      weights: normalizeDutyPointWeights(null),
+      includeDemolitionPoints: true,
+      contributionWeight: DEFAULT_CONTRIBUTION_WEIGHT,
+      formPointWeight: DEFAULT_FORM_POINT_WEIGHT,
+    };
   }
 }
 
@@ -1791,6 +1806,8 @@ async function loadDutyPointWeights() {
   const localSettings = readLocalDutyPointWeights();
   state.dutyPointWeights = localSettings.weights;
   state.includeDemolitionPoints = localSettings.includeDemolitionPoints;
+  state.contributionWeight = localSettings.contributionWeight;
+  state.formPointWeight = localSettings.formPointWeight;
   renderDutyPointWeights();
   if (state.adminIsAdmin !== true) return false;
   const loadVersion = dutyPointWeightsVersion;
@@ -1803,9 +1820,13 @@ async function loadDutyPointWeights() {
       const data = snap.data() || {};
       state.dutyPointWeights = normalizeDutyPointWeights(data.weights);
       state.includeDemolitionPoints = data.includeDemolitionPoints !== false;
+      state.contributionWeight = normalizeContributionWeight(data.contributionWeight);
+      state.formPointWeight = normalizeFormPointWeight(data.formPointWeight);
       writeLocalDutyPointWeights({
         weights: state.dutyPointWeights,
         includeDemolitionPoints: state.includeDemolitionPoints,
+        contributionWeight: state.contributionWeight,
+        formPointWeight: state.formPointWeight,
       });
       renderDutyPointWeights();
       render();
@@ -1820,14 +1841,22 @@ async function loadDutyPointWeights() {
 // Saving restates every score for this season the moment it lands, because
 // duty points are derived at render time rather than stored. That is the
 // intent — a weight is a rule, not a per-row value — but it is why the editor
-// says so out loud before saving.
-async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true) {
+// says so out loud before saving. The two whole-score multipliers ride in the
+// same document for the same reason.
+async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true, multipliers = {}) {
   if (blockEdenArchiveWrite('save duty point weights')) return false;
   dutyPointWeightsVersion += 1;
   const weights = normalizeDutyPointWeights(nextWeights);
   state.dutyPointWeights = weights;
   state.includeDemolitionPoints = includeDemolitionPoints !== false;
-  writeLocalDutyPointWeights({ weights, includeDemolitionPoints: state.includeDemolitionPoints });
+  state.contributionWeight = normalizeContributionWeight(multipliers.contributionWeight);
+  state.formPointWeight = normalizeFormPointWeight(multipliers.formPointWeight);
+  writeLocalDutyPointWeights({
+    weights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
+  });
   renderDutyPointWeights();
   render();
   if (state.adminIsAdmin !== true) return false;
@@ -1839,6 +1868,8 @@ async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true)
     await setDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH), {
       weights,
       includeDemolitionPoints: state.includeDemolitionPoints,
+      contributionWeight: state.contributionWeight,
+      formPointWeight: state.formPointWeight,
       updatedAt: serverTimestamp(),
       updatedBy: state.adminUser?.uid || '',
     });
@@ -1863,6 +1894,21 @@ function renderDutyPointWeights() {
   }
   const demolitionToggle = $id('dashIncludeDemolitionPointsToggle');
   if (demolitionToggle) demolitionToggle.checked = state.includeDemolitionPoints !== false;
+  const contributionInput = $id('dashContributionWeightInput');
+  if (contributionInput && document.activeElement !== contributionInput) {
+    contributionInput.value = String(normalizeContributionWeight(state.contributionWeight));
+  }
+  const formPointsInput = $id('dashFormPointWeightInput');
+  if (formPointsInput && document.activeElement !== formPointsInput) {
+    formPointsInput.value = String(normalizeFormPointWeight(state.formPointWeight));
+  }
+}
+
+function collectScoringMultipliersFromInputs() {
+  return {
+    contributionWeight: $id('dashContributionWeightInput')?.value,
+    formPointWeight: $id('dashFormPointWeightInput')?.value,
+  };
 }
 
 function collectDutyPointWeightsFromInputs() {
@@ -1883,12 +1929,16 @@ function wireDutyPointWeights() {
   $id('dashDutyWeightsSaveBtn')?.addEventListener('click', () => {
     void saveDutyPointWeights(
       collectDutyPointWeightsFromInputs(),
-      $id('dashIncludeDemolitionPointsToggle')?.checked !== false
+      $id('dashIncludeDemolitionPointsToggle')?.checked !== false,
+      collectScoringMultipliersFromInputs()
     );
   });
   $id('dashDutyWeightsResetBtn')?.addEventListener('click', () => {
     if (!confirm(dashT('adminDutyWeightsResetConfirm'))) return;
-    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true);
+    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true, {
+      contributionWeight: DEFAULT_CONTRIBUTION_WEIGHT,
+      formPointWeight: DEFAULT_FORM_POINT_WEIGHT,
+    });
   });
 }
 
@@ -3844,6 +3894,8 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
         : {
             dutyPointWeights: normalizeDutyPointWeights(state.dutyPointWeights),
             includeDemolitionPoints: state.includeDemolitionPoints !== false,
+            contributionWeight: normalizeContributionWeight(state.contributionWeight),
+            formPointWeight: normalizeFormPointWeight(state.formPointWeight),
           },
     });
     await setDoc(projectionRef, sanitizeForFirestore(projection));
@@ -6325,6 +6377,8 @@ function buildWeightedContributionExportModel() {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
 }
 
@@ -6351,6 +6405,8 @@ function buildAllianceViewContributionModel() {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()

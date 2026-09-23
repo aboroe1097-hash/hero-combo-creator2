@@ -3435,6 +3435,10 @@ Object.assign(tr, {
   adminDutyWeightsReset: 'Varsayılanlara sıfırla',
   adminDutyWeightsResetConfirm: 'Tüm ağırlıklar sıfırlansın mı? Sezon hemen yeniden hesaplanır.',
   adminDutyWeightsSaved: 'Ağırlıklar kaydedildi. Puanlar yeniden hesaplandı.',
+  adminScoringMultipliersTitle: 'Puan çarpanları',
+  adminScoringContributionLabel: 'Oyun içi katkı ağırlığı',
+  adminScoringFormPointsLabel: 'Form puanı ağırlığı',
+  adminScoringMultipliersHint: 'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. 0,5 bunu yarıya indirir, böylece destek işi göreceli olarak daha ağır basar; form puanı ağırlığı 1 puan = 10.000 birimini ölçekler. 1 her iki terimi bugünkü gibi bırakır.',
   adminSuggestApprove: 'Onayla',
   adminSuggestReject: 'Reddet',
   adminSuggestApproveConfirm:

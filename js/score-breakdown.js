@@ -56,8 +56,13 @@ export function conductCategoryKey(category) {
 // Structured lines; renderers decide the markup.
 export function buildScoreBreakdownLines(row = {}) {
   const lines = [];
-  lines.push({ kind: 'contribution', points: Number(row.contributionScore) || 0 });
-  lines.push({ kind: 'exGuild', points: Number(row.contributionExGuild) || 0 });
+  // The in-game term carries the season's contribution multiplier, so the lines
+  // still add up to the displayed total when an operator has tuned it.
+  const contributionWeight = Number(row.contributionWeight);
+  const weight =
+    Number.isFinite(contributionWeight) && contributionWeight >= 0 ? contributionWeight : 1;
+  lines.push({ kind: 'contribution', points: Number(row.contributionScore) || 0, weight });
+  lines.push({ kind: 'exGuild', points: Number(row.contributionExGuild) || 0, weight });
   if (row.demolitionCounted === false) {
     // Nothing to explain when demolition is off and the player has none.
     if (Number(row.totalDemolition) > 0)
@@ -137,10 +142,36 @@ export function renderScoreBreakdown(row, options) {
   const parts = [];
   buildScoreBreakdownLines(row).forEach((item) => {
     if (item.kind === 'contribution') {
-      parts.push(line(escapeHtml(t('edenX1BreakdownContribution')), number(item.points)));
+      parts.push(
+        line(
+          escapeHtml(t('edenX1BreakdownContribution')),
+          number(item.points),
+          item.weight === 1
+            ? ''
+            : escapeHtml(
+                t('scoreBreakdownTimesWeight', {
+                  count: number(item.points),
+                  weight: weightText(item.weight),
+                })
+              )
+        )
+      );
     } else if (item.kind === 'exGuild') {
       if (item.points)
-        parts.push(line(escapeHtml(t('edenX1BreakdownExGuild')), number(item.points)));
+        parts.push(
+          line(
+            escapeHtml(t('edenX1BreakdownExGuild')),
+            number(item.points),
+            item.weight === 1
+              ? ''
+              : escapeHtml(
+                  t('scoreBreakdownTimesWeight', {
+                    count: number(item.points),
+                    weight: weightText(item.weight),
+                  })
+                )
+          )
+        );
     } else if (item.kind === 'demolition') {
       if (options.hideDemolition) return;
       parts.push(
@@ -243,11 +274,18 @@ const DUTY_ACTIVITY_ORDER = ['banners', 'pathers', 'shieldWalls'];
 
 // Where the score came from, as shares of the positive parts, for the bar.
 function scoreComposition(row) {
+  const contributionScore = Number(row.contributionScore) || 0;
+  const exGuild = Number(row.contributionExGuild) || 0;
+  const contributionWeight = Number(row.contributionWeight);
+  const weightedContribution =
+    Number.isFinite(contributionWeight) && contributionWeight >= 0
+      ? (contributionScore + exGuild) * contributionWeight
+      : contributionScore + exGuild;
   const parts = [
     {
       key: 'contribution',
       label: 'edenX1BreakdownContribution',
-      points: (Number(row.contributionScore) || 0) + (Number(row.contributionExGuild) || 0),
+      points: weightedContribution,
     },
     { key: 'duty', label: 'edenX1BreakdownDuty', points: Number(row.dutyPoints) || 0 },
     { key: 'demolition', label: 'adminThDemo', points: Number(row.demolitionPoints) || 0 },
