@@ -161,7 +161,10 @@ const LIMITS = {
   // workbook costs, and the admin batch-edit and duty-PNG modules (the PNG
   // renderer is a click-time dynamic import). Measured 11094.9 KiB locally;
   // retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11115 * 1024,
+  // Translating the last 30 English-fallback strings into nine lazy locale
+  // chunks (Dragon Master guide, vote delete/redirect) brought CI to
+  // 11116.6 KiB; retain ~25 KiB again rather than ship with none.
+  totalJsBytes: 11140 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
