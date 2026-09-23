@@ -826,9 +826,10 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   // Profile entries, the global command palette, and the two small Velo layers
   // needed by Eden's first-paint loader. 15.0.0 adds the Eden X2 season route
   // and its stylesheet. 16.0.15 adds the admin-only dashboard stylesheet that
-  // VTS Admin links after ocr-dashboard.css. Keep a measured margin without
-  // letting the shell grow unbounded.
-  assert.ok(urls.length <= 64, `expected bounded app shell, found ${urls.length} URLs`);
+  // VTS Admin links after ocr-dashboard.css. Community Downloads adds its
+  // stylesheet and module. Keep a measured margin without letting the shell
+  // grow unbounded.
+  assert.ok(urls.length <= 66, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));
@@ -842,6 +843,8 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.ok(urls.some((url) => url.startsWith('/js/specialization-towers-v2.js?v=')));
   assert.ok(urls.some((url) => url.startsWith('/css/command-palette.css?v=')));
   assert.ok(urls.some((url) => url.startsWith('/js/command-palette.js?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/css/downloads.css?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/js/downloads.js?v=')));
   assert.ok(urls.includes('/images/logo.png'));
   assert.ok(urls.includes('/images/logo-120.webp'));
   assert.ok(urls.includes('/images/logo-40.webp'));

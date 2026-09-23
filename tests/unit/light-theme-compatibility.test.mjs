@@ -161,8 +161,8 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // control, and the X10/X12 bracket cards measure 429.5 KiB in app.css.
   assert.match(sizeCheck, /entryCssBytes: 430 \* 1024/);
   assert.match(sizeCheck, /totalCssBytes: 1635 \* 1024/);
-  assert.match(sizeCheck, /totalDeployBytes: 32100 \* 1024/);
-  assert.match(sizeCheck, /deployFileCount: 733/);
+  assert.match(sizeCheck, /totalDeployBytes: 33384 \* 1024/);
+  assert.match(sizeCheck, /deployFileCount: 751/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
