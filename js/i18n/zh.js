@@ -2224,9 +2224,9 @@ const zh = {
   adminDutyWeightsSaved: '权重已保存，分数已重算。',
   adminScoringMultipliersTitle: '分数乘数',
   adminScoringContributionLabel: '游戏内贡献权重',
-  adminScoringFormPointsLabel: '表单积分权重',
+  adminScoringFormPointsLabel: '支援工作权重',
   adminScoringMultipliersHint:
-    '游戏内贡献等于排行榜贡献加上公会外积分。0.5 将其减半，让支援工作相对更有分量；表单积分权重可调整“1 分 = 10,000”的单位。1 表示两项维持现状。',
+    '游戏内贡献等于排行榜贡献加上公会外积分。支援权重调整全部支援工作——盾墙、开路、旗帜以及表单奖励积分——因此 2 表示翻倍。贡献设为 0.5 则减半。1 表示两项维持现状。',
   adminRewardSettingsTitle: '奖励分配',
   adminRewardSettingsNote:
     '本赛季每个类别奖励多少人。修改后会重新编号奖励名额；已发布的页面将在下次发布后显示新分配。',

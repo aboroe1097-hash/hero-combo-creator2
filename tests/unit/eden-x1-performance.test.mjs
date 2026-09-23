@@ -162,7 +162,7 @@ test('Eden vote winner details stay aggregate, shared, and publication-gated', (
   );
   assert.match(
     eden,
-    /function getEligibleTeamVoteWinners\(\)\s*{\s*if \(currentManagementVoteResults\.status !== 'loaded'\) return \[\];[\s\S]*?return selectEligibleVoteWinners\(results\.rankings, reserved\);/
+    /function getEligibleTeamVoteWinners\(\)\s*{[\s\S]*?if \(managementStatus !== 'loaded' && managementStatus !== 'hidden'\) return \[\];[\s\S]*?return selectEligibleVoteWinners\(results\.rankings, reserved\);/
   );
   assert.match(
     eden,

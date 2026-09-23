@@ -3566,9 +3566,9 @@ Object.assign(tr, {
   adminDutyWeightsSaved: 'Ağırlıklar kaydedildi. Puanlar yeniden hesaplandı.',
   adminScoringMultipliersTitle: 'Puan çarpanları',
   adminScoringContributionLabel: 'Oyun içi katkı ağırlığı',
-  adminScoringFormPointsLabel: 'Form puanı ağırlığı',
+  adminScoringFormPointsLabel: 'Destek işi ağırlığı',
   adminScoringMultipliersHint:
-    'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. 0,5 bunu yarıya indirir, böylece destek işi göreceli olarak daha ağır basar; form puanı ağırlığı 1 puan = 10.000 birimini ölçekler. 1 her iki terimi bugünkü gibi bırakır.',
+    'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. Destek ağırlığı tüm destek işini — kalkan duvarları, yol açma, sancaklar ve formun bonus puanları — ölçekler, yani 2 onu ikiye katlar. Katkıda 0,5 onu yarıya indirir. 1 her iki terimi bugünkü gibi bırakır.',
   adminRewardSettingsTitle: 'Ödül dağılımı',
   adminRewardSettingsNote:
     'Bu sezon her kategorinin kaç oyuncuyu ödüllendireceği. Değiştirmek ödül slotlarını yeniden numaralandırır; yayınlanan sayfa yeni dağılımı bir sonraki yayından sonra gösterir.',

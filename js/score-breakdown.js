@@ -79,6 +79,17 @@ export function conductCategoryKey(category) {
   return CONDUCT_CATEGORY_KEYS[String(category || '')] || '';
 }
 
+// The value a line adds to the total: raw points times the season's multiplier,
+// so the lines of a breakdown always sum to the score beside them.
+export function weightedLinePoints(item = {}) {
+  const points = Number(item.points) || 0;
+  // Only the in-game lines carry raw points beside their multiplier; every
+  // other line's points are already what it adds.
+  if (item.kind !== 'contribution' && item.kind !== 'exGuild') return points;
+  const weight = Number(item.weight);
+  return Number.isFinite(weight) ? points * weight : points;
+}
+
 // Structured lines; renderers decide the markup.
 export function buildScoreBreakdownLines(row = {}) {
   const lines = [];
@@ -171,7 +182,7 @@ export function renderScoreBreakdown(row, options) {
       parts.push(
         line(
           escapeHtml(t('edenX1BreakdownContribution')),
-          number(item.points),
+          number(weightedLinePoints(item)),
           item.weight === 1
             ? ''
             : escapeHtml(
@@ -187,7 +198,7 @@ export function renderScoreBreakdown(row, options) {
         parts.push(
           line(
             escapeHtml(t('edenX1BreakdownExGuild')),
-            number(item.points),
+            number(weightedLinePoints(item)),
             item.weight === 1
               ? ''
               : escapeHtml(

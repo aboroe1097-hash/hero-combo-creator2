@@ -2557,9 +2557,9 @@ const it = {
   adminDutyWeightsSaved: 'Pesi salvati. Punteggi ricalcolati.',
   adminScoringMultipliersTitle: 'Moltiplicatori di punteggio',
   adminScoringContributionLabel: 'Peso del contributo in gioco',
-  adminScoringFormPointsLabel: 'Peso dei punti del modulo',
+  adminScoringFormPointsLabel: 'Peso del lavoro di supporto',
   adminScoringMultipliersHint:
-    'Il contributo in gioco è quello della classifica più i punti fuori gilda. 0,5 lo dimezza così il supporto pesa relativamente di più; il peso dei punti del modulo scala l’unità 1 punto = 10.000. 1 lascia entrambi i termini come sono oggi.',
+    'Il contributo in gioco è quello della classifica più i punti fuori gilda. Il peso del supporto scala tutto il lavoro di supporto — muri di scudi, percorsi, stendardi e punti bonus del modulo —, quindi 2 lo raddoppia. 0,5 sul contributo lo dimezza. 1 lascia entrambi i termini come sono oggi.',
   adminRewardSettingsTitle: 'Distribuzione dei premi',
   adminRewardSettingsNote:
     'Quanti giocatori premia ogni categoria questa stagione. Modificarlo rinumera gli slot dei premi; la pagina pubblicata mostrerà la nuova distribuzione dopo la prossima pubblicazione.',

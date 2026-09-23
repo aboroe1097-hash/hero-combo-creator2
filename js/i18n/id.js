@@ -3437,9 +3437,9 @@ Object.assign(id, {
   adminDutyWeightsSaved: 'Bobot disimpan. Skor dihitung ulang.',
   adminScoringMultipliersTitle: 'Pengganda skor',
   adminScoringContributionLabel: 'Bobot kontribusi dalam game',
-  adminScoringFormPointsLabel: 'Bobot poin formulir',
+  adminScoringFormPointsLabel: 'Bobot kerja dukungan',
   adminScoringMultipliersHint:
-    'Kontribusi dalam game adalah kontribusi papan peringkat ditambah poin luar guild. 0,5 memangkasnya separuh agar kerja dukungan lebih berbobot; bobot poin formulir menskalakan satuan 1 poin = 10.000. 1 membiarkan keduanya seperti sekarang.',
+    'Kontribusi dalam game adalah kontribusi papan peringkat ditambah poin luar guild. Bobot dukungan menskalakan semua kerja dukungan — dinding perisai, jalur, panji, dan poin bonus formulir — jadi 2 menggandakannya. 0,5 pada kontribusi memangkasnya separuh. 1 membiarkan keduanya seperti sekarang.',
   adminRewardSettingsTitle: 'Distribusi hadiah',
   adminRewardSettingsNote:
     'Berapa banyak pemain yang diganjar tiap kategori musim ini. Mengubahnya menomori ulang slot hadiah; halaman publik menampilkan distribusi baru setelah publikasi berikutnya.',

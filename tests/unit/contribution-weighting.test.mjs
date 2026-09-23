@@ -1276,13 +1276,16 @@ test('whole-score multipliers scale in-game contribution and form points', async
   assert.equal(halved.contributionWeightedPoints, 50000);
   assert.equal(halved.weightedScore, 100000 / 2 + 30000 + 20000);
 
-  // Doubling the form-points weight scales the bonus unit with it, and the
-  // breakdown unit follows so the popover still adds up.
+  // The support weight ("support ×2") scales all support work: the duty unit and
+  // the form's bonus unit together, and the breakdown units follow so the
+  // popover still adds up.
   const doubled = alpha(build({ formPointWeight: 2 }));
   assert.equal(doubled.formPointWeight, 2);
   assert.equal(doubled.conductUnit, 20000);
   assert.equal(doubled.conductPoints, 40000);
-  assert.equal(doubled.weightedScore, 100000 + 30000 + 40000);
+  assert.equal(doubled.dutyBreakdown.unit, 20000);
+  assert.equal(doubled.dutyPoints, 60000);
+  assert.equal(doubled.weightedScore, 100000 + 60000 + 40000);
 
   // Hostile input falls back to neutral rather than to zero, and an explicit
   // zero stays meaningful.
@@ -1300,6 +1303,24 @@ test('whole-score multipliers scale in-game contribution and form points', async
   assert.equal(lines.find((line) => line.kind === 'contribution')?.weight, 0.5);
   assert.equal(lines.find((line) => line.kind === 'exGuild')?.weight, 0.5);
   assert.equal(buildScoreBreakdownLines(baseline)[0].weight, 1);
+
+  // Every line's contribution to the total, summed, is the displayed total —
+  // with both multipliers moved at once.
+  const { weightedLinePoints } = await import('../../js/score-breakdown.js');
+  const tuned = alpha(
+    build({
+      contributionWeight: 0.5,
+      formPointWeight: 2,
+      demolitionRecords: [{ players: [{ name: 'Multiplier Alpha', total_demolition: 7000 }] }],
+    })
+  );
+  const sum = buildScoreBreakdownLines(tuned).reduce(
+    (total, line) => total + weightedLinePoints(line),
+    0
+  );
+  assert.equal(sum, tuned.weightedScore);
+  assert.ok(tuned.demolitionPoints > 0, 'the fixture carries a demolition line');
+  assert.equal(tuned.weightedScore, 50000 + 60000 + 40000 + tuned.demolitionPoints);
 });
 
 test('the multipliers are edited by a superadmin, rescore, and publish with the season', async () => {

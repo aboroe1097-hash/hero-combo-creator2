@@ -4517,7 +4517,13 @@ function getEligibleManagementVoteWinners() {
 }
 
 function getEligibleTeamVoteWinners() {
-  if (currentManagementVoteResults.status !== 'loaded') return [];
+  // The members' and the R4/R5 switches are independent. With the R4/R5
+  // results switched off ('hidden') there are no management winners to reserve,
+  // so the members' winners stand on their own; only a load still in flight
+  // (or a failed one) holds them back, because a management winner may yet
+  // take one of their places.
+  const managementStatus = currentManagementVoteResults.status;
+  if (managementStatus !== 'loaded' && managementStatus !== 'hidden') return [];
   const results = normalizePublicEdenVoteResults(publicDashboardData?.publicEdenX1VoteResults);
   if (!results.published || results.season !== edenVoteSeason()) return [];
 

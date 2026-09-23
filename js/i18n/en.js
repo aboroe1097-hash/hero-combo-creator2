@@ -289,9 +289,9 @@ const en = {
   adminDutyWeightsSaved: 'Weights saved. Scores recalculated.',
   adminScoringMultipliersTitle: 'Score multipliers',
   adminScoringContributionLabel: 'In-game contribution weight',
-  adminScoringFormPointsLabel: 'Form points weight',
+  adminScoringFormPointsLabel: 'Support work weight',
   adminScoringMultipliersHint:
-    'In-game contribution is the leaderboard contribution plus ex-guild points. 0.5 halves it so support work weighs relatively more; the form-points weight scales the 1 point = 10,000 bonus unit. 1 leaves both terms exactly as they are today.',
+    'In-game contribution is the leaderboard contribution plus ex-guild points. The support weight scales all support work — shield walls, pathing, banners and the form\'s bonus points — so 2 doubles it. 0.5 on contribution halves it. 1 leaves both terms exactly as they are today.',
   adminRewardSettingsTitle: 'Reward distribution',
   adminRewardSettingsNote:
     'How many players each category rewards this season. Changing it renumbers the reward slots; the published page shows the new distribution after the next publish.',

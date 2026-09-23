@@ -3554,9 +3554,9 @@ const fr = {
   adminDutyWeightsSaved: 'Pondérations enregistrées. Scores recalculés.',
   adminScoringMultipliersTitle: 'Multiplicateurs de points',
   adminScoringContributionLabel: 'Poids de la contribution en jeu',
-  adminScoringFormPointsLabel: 'Poids des points du formulaire',
+  adminScoringFormPointsLabel: 'Poids du travail de soutien',
   adminScoringMultipliersHint:
-    'La contribution en jeu comprend le classement plus les points hors guilde. 0,5 la divise par deux pour que le support pèse davantage ; le poids des points du formulaire ajuste l’unité 1 point = 10 000. 1 laisse les deux termes inchangés.',
+    'La contribution en jeu comprend le classement plus les points hors guilde. Le poids du soutien ajuste tout le travail de soutien — murs de boucliers, tracés, bannières et points bonus du formulaire —, donc 2 le double. 0,5 sur la contribution la divise par deux. 1 laisse les deux termes inchangés.',
   adminRewardSettingsTitle: 'Répartition des récompenses',
   adminRewardSettingsNote:
     'Combien de joueurs chaque catégorie récompense cette saison. La modifier renumérote les places de récompense ; la page publiée affichera la nouvelle répartition après la prochaine publication.',

@@ -3431,9 +3431,9 @@ const de = {
   adminDutyWeightsSaved: 'Gewichte gespeichert. Punkte neu berechnet.',
   adminScoringMultipliersTitle: 'Punktmultiplikatoren',
   adminScoringContributionLabel: 'Gewicht der In-Game-Beiträge',
-  adminScoringFormPointsLabel: 'Gewicht der Formularpunkte',
+  adminScoringFormPointsLabel: 'Gewicht der Support-Arbeit',
   adminScoringMultipliersHint:
-    'In-Game-Beiträge sind die Beitragsliste plus Punkte außerhalb der Gilde. 0,5 halbiert sie, damit Support-Arbeit relativ mehr zählt; das Formularpunkte-Gewicht skaliert die Einheit 1 Punkt = 10.000. 1 lässt beide Werte genau wie heute.',
+    'In-Game-Beiträge sind die Beitragsliste plus Punkte außerhalb der Gilde. Das Support-Gewicht skaliert die gesamte Support-Arbeit — Schildwälle, Pfade, Banner und die Bonuspunkte des Formulars —, 2 verdoppelt sie also. 0,5 beim Beitrag halbiert ihn. 1 lässt beide Werte genau wie heute.',
   adminRewardSettingsTitle: 'Belohnungsverteilung',
   adminRewardSettingsNote:
     'Wie viele Spieler jede Kategorie in dieser Saison belohnt. Eine Änderung nummeriert die Belohnungsplätze neu; die veröffentlichte Seite zeigt die neue Verteilung nach der nächsten Veröffentlichung.',

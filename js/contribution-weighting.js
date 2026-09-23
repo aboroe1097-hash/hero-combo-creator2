@@ -137,8 +137,15 @@ export function emptyDutyClassCounts() {
 // many duties a main and a secondary account did, the weight each counted at,
 // and the points that came out. Tables and detail views show this so a total
 // can be checked by hand.
-export function dutyPointsBreakdown(classCounts, weights) {
+export function dutyPointsBreakdown(classCounts, weights, supportWeight = 1) {
   const table = normalizeDutyPointWeights(weights);
+  // The season's support multiplier scales the point unit, so every line of the
+  // breakdown still multiplies out to its share of the total.
+  const scale =
+    Number.isFinite(Number(supportWeight)) && Number(supportWeight) >= 0
+      ? Number(supportWeight)
+      : 1;
+  const unit = DUTY_POINT_UNIT * scale;
   const activities = DUTY_ACTIVITIES.map((activity) => {
     const counts = classCounts?.[activity] || {};
     const byClass = {};
@@ -146,14 +153,14 @@ export function dutyPointsBreakdown(classCounts, weights) {
     for (const cls of DUTY_ACCOUNT_CLASSES) {
       const count = Number(counts[cls] || 0);
       const weight = table[activity][cls];
-      const classPoints = count * weight * DUTY_POINT_UNIT;
+      const classPoints = count * weight * unit;
       byClass[cls] = { count, weight, points: classPoints };
       points += classPoints;
     }
     return { activity, ...byClass, points };
   });
   return {
-    unit: DUTY_POINT_UNIT,
+    unit,
     activities,
     total: activities.reduce((sum, item) => sum + item.points, 0),
   };
@@ -925,8 +932,9 @@ export function buildWeightedContributionRows(options = {}) {
   const BASE_POINT_VALUE = 10000;
   const contributionWeight = normalizeContributionWeight(options.contributionWeight);
   const formPointWeight = normalizeFormPointWeight(options.formPointWeight);
-  // The form's points keep their 10,000-per-point unit unless an operator scales
-  // the form's whole share; the breakdown shows the effective unit.
+  // The support multiplier scales all support work — duties and the form's
+  // bonus points alike — by scaling their 10,000-per-point unit; the breakdown
+  // shows the effective unit. (The stored field keeps its original name.)
   const conductUnit = BASE_POINT_VALUE * formPointWeight;
 
   const scoredRows = rows.map((row) => {
@@ -938,7 +946,7 @@ export function buildWeightedContributionRows(options = {}) {
     const contributionWeightedPoints = contributionRewardScore * contributionWeight;
     // Weighted per activity and per account class. With every weight at 1 this
     // is arithmetically identical to the flat BASE_POINT_VALUE it replaced.
-    const dutyBreakdown = dutyPointsBreakdown(row.dutiesByClass, dutyWeights);
+    const dutyBreakdown = dutyPointsBreakdown(row.dutiesByClass, dutyWeights, formPointWeight);
     const dutyPoints = dutyBreakdown.total;
     const conductPoints = row.conductBonus * conductUnit;
     const demolitionCounted = options.includeDemolitionPoints !== false;

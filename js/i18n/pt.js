@@ -3094,9 +3094,9 @@ const pt = {
   adminDutyWeightsSaved: 'Pesos guardados. Pontuações recalculadas.',
   adminScoringMultipliersTitle: 'Multiplicadores de pontuação',
   adminScoringContributionLabel: 'Peso da contribuição no jogo',
-  adminScoringFormPointsLabel: 'Peso dos pontos do formulário',
+  adminScoringFormPointsLabel: 'Peso do trabalho de apoio',
   adminScoringMultipliersHint:
-    'A contribuição no jogo é a do ranking mais os pontos fora da guilda. 0,5 a reduz pela metade para o apoio pesar relativamente mais; o peso dos pontos do formulário escala a unidade 1 ponto = 10.000. 1 mantém ambos os termos como estão hoje.',
+    'A contribuição no jogo é a do ranking mais os pontos fora da guilda. O peso de apoio escala todo o trabalho de apoio — muralhas de escudo, rotas, estandartes e os pontos bônus do formulário —, então 2 o dobra. 0,5 na contribuição a reduz pela metade. 1 mantém ambos os termos como estão hoje.',
   adminRewardSettingsTitle: 'Distribuição de recompensas',
   adminRewardSettingsNote:
     'Quantos jogadores cada categoria recompensa nesta temporada. Alterar isso renumera as vagas de recompensa; a página publicada mostra a nova distribuição após a próxima publicação.',

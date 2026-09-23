@@ -3290,9 +3290,9 @@ Object.assign(kr, {
   adminDutyWeightsSaved: '가중치를 저장했습니다. 점수를 다시 계산했습니다.',
   adminScoringMultipliersTitle: '점수 배수',
   adminScoringContributionLabel: '게임 내 기여 가중치',
-  adminScoringFormPointsLabel: '양식 점수 가중치',
+  adminScoringFormPointsLabel: '지원 작업 가중치',
   adminScoringMultipliersHint:
-    '게임 내 기여는 순위표 기여에 길드 외 점수를 더한 값입니다. 0.5로 줄이면 지원 작업의 비중이 상대적으로 커집니다. 양식 점수 가중치는 1점 = 10,000 단위를 조정합니다. 1은 두 항목을 지금 그대로 둡니다.',
+    '게임 내 기여는 순위표 기여에 길드 외 점수를 더한 값입니다. 지원 가중치는 방패벽, 길 안내, 배너, 양식 보너스 점수 등 모든 지원 작업을 조정하므로 2는 두 배가 됩니다. 기여에 0.5를 넣으면 절반이 됩니다. 1은 두 항목을 지금 그대로 둡니다.',
   adminRewardSettingsTitle: '보상 분배',
   adminRewardSettingsNote:
     '이번 시즌 각 항목이 보상하는 인원 수입니다. 변경하면 보상 슬롯 번호가 다시 매겨지고, 공개 페이지는 다음 발행 후 새 분배를 표시합니다.',
