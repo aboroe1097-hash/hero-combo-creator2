@@ -920,6 +920,7 @@ const it = {
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: 'Simulatore di battaglia',
+  tabBuildings: 'Edifici',
   tabSpecializationTowers: 'Torri di specializzazione',
   tabSpecializationTowersAliases:
     'specializzazione torre torri distintivo medaglie nodi rami albero tecnologico progressi cavalleria arcieri fanteria',
