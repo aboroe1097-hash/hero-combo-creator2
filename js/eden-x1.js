@@ -7714,7 +7714,12 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   const publishedScoring = data.publishedScoring || null;
   // Reward distribution published with the season: which categories reward how
   // many players, and whether the guild-master reward follows the R5.
-  currentRewardSettings = normalizeRewardSettings(data.rewardSettings);
+  // A season published before the distribution was carried (the X1 archive)
+  // keeps the rule it ran under: the top support scorer holds the guild-master
+  // reward inside the support quota, for the original Final Top 20.
+  currentRewardSettings = normalizeRewardSettings(
+    data.rewardSettings || { guildMasterSource: 'support_top1' }
+  );
   const model = buildWeightedContributionRows({
     contributionRecords,
     dutyRecords,

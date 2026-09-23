@@ -69,10 +69,10 @@ test('the Eden page offers an Issue or Complaint form that opens on demand', asy
   await expect(open).toHaveAttribute('aria-expanded', 'true');
   await expect(form).toBeVisible();
 
-  // The fields the rules require: a category from the enum, a bounded
+  // The fields the rules require: a category from the enum (six, with "missing"), a bounded
   // description, an optional image picker, and the anonymous switch.
   await expect(page.locator('#edenX1ComplaintCategory')).toBeVisible();
-  await expect(page.locator('#edenX1ComplaintCategory option')).toHaveCount(5);
+  await expect(page.locator('#edenX1ComplaintCategory option')).toHaveCount(6);
   await expect(page.locator('#edenX1ComplaintDescription')).toHaveAttribute('maxlength', '4000');
   await expect(page.locator('#edenX1ComplaintImages')).toHaveAttribute('type', 'file');
   await expect(page.locator('#edenX1ComplaintAnonymous')).toBeChecked();
