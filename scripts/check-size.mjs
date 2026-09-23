@@ -154,7 +154,14 @@ const LIMITS = {
   // twelve lazy language chunks; the audited graph is now 9953.6 KiB.
   // Translating the Royal Bounty guide adds eleven lazy locale chunks
   // (~107 KiB total, none on the initial path); audited at 10076.5 KiB.
-  totalJsBytes: 10084 * 1024,
+  // 16.5.0 combined release: the Eden Siege arena brings its own lazy
+  // eden-siege-engine/eden-siege-three chunks (~676 KiB, loaded only on
+  // eden-siege.html and kept out of the service-worker precache), plus the
+  // Community Downloads route, the Buildings planner data, the Specialisation
+  // workbook costs, and the admin batch-edit and duty-PNG modules (the PNG
+  // renderer is a click-time dynamic import). Measured 11094.9 KiB locally;
+  // retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11115 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -350,7 +357,11 @@ const LIMITS = {
   // emits two chunks no single route owned before: all-star-boh-model-*.js and
   // boh-signup-document-*.js. Measured at 733 files, so the cap moves by two to
   // keep the same three files of headroom.
-  deployFileCount: 736,
+  // 16.5.0 combined release adds the Community Downloads PDFs under
+  // dist/downloads/, the Eden Siege route with its isolated chunks, and the
+  // lazy duty-export, bulk-select and title modules. Measured 769 files; keep
+  // three of headroom.
+  deployFileCount: 772,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -396,7 +407,11 @@ const LIMITS = {
     // manual-entry form in css/ocr-dashboard-admin.css: 684.7/781.4 KiB. Lift
     // desktop by 1 KiB (mobile keeps its existing ceiling); admin-only panel
     // styles still belong in the admin file, not in shared ocr-dashboard.css.
-    'admin.html': { desktop: 685 * 1024, mobile: 786 * 1024 },
+    // 16.5.0 batch edit (bulk bar, per-card checkboxes) and upload titles
+    // (rename form, group chips and filter) add admin-only rules to
+    // css/ocr-dashboard-admin.css: 687.0 KiB desktop. Lift desktop by 3 KiB;
+    // mobile keeps its existing ceiling.
+    'admin.html': { desktop: 688 * 1024, mobile: 786 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
