@@ -156,13 +156,17 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  assert.match(sizeCheck, /totalJsBytes: 10084 \* 1024/);
-  // 430 since 16.0.3: the Specialization summary grid, the season select-all
-  // control, and the X10/X12 bracket cards measure 429.5 KiB in app.css.
-  assert.match(sizeCheck, /entryCssBytes: 430 \* 1024/);
+  assert.match(sizeCheck, /totalJsBytes: 11140 \* 1024/);
+  // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
+  // atmosphere.css and four dead compatibility tokens from _tokens.css measured
+  // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
+  assert.match(sizeCheck, /entryCssBytes: 427 \* 1024/);
   assert.match(sizeCheck, /totalCssBytes: 1635 \* 1024/);
-  assert.match(sizeCheck, /totalDeployBytes: 32100 \* 1024/);
-  assert.match(sizeCheck, /deployFileCount: 733/);
+  assert.match(sizeCheck, /totalDeployBytes: 33384 \* 1024/);
+  // 736 since the 2027 signup revival: sharing js/all-star-boh-model.js between
+  // the member route, the admin dashboard and the AI public-data adapter emits
+  // two chunks no single route owned before (measured 733 files, three spare).
+  assert.match(sizeCheck, /deployFileCount: 772/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
@@ -173,4 +177,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
     sizeCheck,
     /'specialization-towers\.html': \{ desktop: 80 \* 1024, mobile: 80 \* 1024 \}/
   );
+  // The member registration route now has a measured line of its own: it hosts
+  // the signup form, so its stylesheet can no longer grow unmeasured.
+  assert.match(sizeCheck, /'vtsscore\.html': \{ desktop: 22 \* 1024, mobile: 22 \* 1024 \}/);
 });

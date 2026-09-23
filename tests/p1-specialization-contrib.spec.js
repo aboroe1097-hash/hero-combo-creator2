@@ -16,7 +16,16 @@ test('node data contributions require a signed-in account', async ({ page }) => 
   await expect(community).toHaveAttribute('data-contrib-signed-in', 'false');
   await expect(page.locator('.spec-contrib-signin')).toBeVisible();
 
-  const medal = page.locator('[data-spec-node-medal]').first();
-  await expect(medal).toBeDisabled();
+  await page.locator('.spec-contrib-column').first().locator('summary').click();
+
+  // A node the workbook has already placed states its verified cost and offers no
+  // submission field at all.
+  const verified = page.locator('[data-contribution-key="training1:2"]');
+  await expect(verified.locator('.spec-contrib-stage--source')).toHaveCount(1);
+  await expect(verified.locator('[data-spec-node-medal]')).toHaveCount(0);
+
+  // The one node the workbook left unplaced keeps the field, inert while signed out.
+  const unverified = page.locator('[data-contribution-key="enhanced3:33"]');
+  await expect(unverified.locator('[data-spec-node-medal]')).toBeDisabled();
   await expect(page.locator('[data-spec-node-contributor]')).toHaveCount(0);
 });

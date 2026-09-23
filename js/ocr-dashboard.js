@@ -51,9 +51,11 @@ import {
   setContributionPrimary,
   exportContributionRecords,
   renderContributions,
+  renderAccountLinks,
   deleteExGuildEntry,
   clearExGuildData,
   setExGuildMatch,
+  openDutyListExport,
 } from './ocr-roster.js';
 
 import {
@@ -62,6 +64,9 @@ import {
   closeModal,
   buildPlayerSummary,
   animateAnalyticsCards,
+  bindAdminTablePager,
+  renderAdminTablePager,
+  resolveAdminTablePage,
 } from './ocr-render.js';
 import {
   processFiles,
@@ -71,6 +76,7 @@ import {
   displayGameTime,
 } from './ocr-engine.js';
 import { translations } from './translations.js';
+import { mountBulkSelect } from './admin-bulk-select.js';
 import {
   ACTIVE_EDEN_WORKSPACE,
   ACTIVE_EDEN_WORKSPACE_ID,
@@ -82,15 +88,44 @@ import {
   edenWorkspaceStorageKey,
   isEdenWorkspaceMutable,
   getEdenWorkspace,
+  listEdenWorkspaces,
   parseEdenWorkspaceRecord,
   setActiveAdminWorkspaceId,
 } from './eden-workspaces.js';
+import {
+  EDEN_SNAPSHOT_COLLECTION_KEYS,
+  EDEN_SNAPSHOT_DOC_KEYS,
+  SEASON_REGISTRY_PATH,
+  SEASON_START_REASONS,
+  activeEdenSeason,
+  buildEdenSnapshotRecallPlan,
+  defaultEdenSeasonLabel,
+  edenRecallDashboardWrite,
+  edenSnapshotRecallKeyNeedsAuthorStamp,
+  edenSnapshotRecallKeyNeedsTimestamp,
+  endEdenSeason,
+  findEdenSeason,
+  nextEdenSeasonId,
+  normalizeSeasonRegistry,
+  parseEdenSnapshotJson,
+  planEdenSnapshotRecallWrites,
+  renameEdenSeason,
+  reviveEdenSnapshotTimestamps,
+  seasonWorkspaceCandidates,
+  adoptEdenSeason,
+  adoptableEdenWorkspace,
+  startNextEdenSeason as startNextEdenSeasonTransition,
+} from './eden-seasons.js';
 const ACTIVE_EDEN_WORKSPACE_DEFAULT_SEASON = ACTIVE_EDEN_WORKSPACE.defaultSeason;
 
 // The archived Eden X1 workspace refuses every mutation: writes log a warning,
 // surface a sync failure, and the caller aborts. Reads and exports stay open.
+//
+// The resolved workspace view is passed through so the guard sees the archive
+// an admin recorded in the cloud, not just the shipped default. Without it an
+// ended season still looked writable in the tab that changed it.
 function blockEdenArchiveWrite(action = 'write') {
-  const err = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID);
+  const err = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID, currentEdenWorkspaceView());
   if (!err) return false;
   console.warn(err.message, action);
   log(`${err.message} Blocked: ${action}.`, 'warn');
@@ -124,6 +159,14 @@ import {
 } from './ocr-adjustments.js';
 import { createVtsScoreAdminView } from './vts-score-admin-view.js';
 import { loadVtsScoreSnapshot } from './vts-score-store.js';
+import {
+  BOH_SIGNUP_ADMIN_ENDPOINT,
+  BOH_SIGNUP_CONFIG_PATH,
+  BOH_SIGNUP_SEASON_PATTERN,
+  createBohSignupAdminView,
+  readBohSignupAdminError,
+  saveBohSignupSeasonConfig,
+} from './boh-signup-admin.js';
 import {
   BOH_MATCH_FIXTURES,
   BOH_MATCH_TEAMS,
@@ -159,14 +202,24 @@ import {
 import {
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   DEFAULT_DUTY_POINT_WEIGHTS,
+  DEFAULT_CONTRIBUTION_WEIGHT,
+  DEFAULT_FORM_POINT_WEIGHT,
   DUTY_ACCOUNT_CLASSES,
   DUTY_ACTIVITIES,
   buildWeightedContributionRows,
   normalizeDutyPointWeights,
+  normalizeContributionWeight,
+  normalizeFormPointWeight,
   getWeightedContributionRecordLabel,
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
+import {
+  DEFAULT_REWARD_SETTINGS,
+  GUILD_MASTER_SOURCES,
+  REWARD_QUOTA_KEYS,
+  normalizeRewardSettings,
+} from './eden-reward-settings.js';
 import { csvFooterLines, getExportBranding } from './export-branding.js';
 import {
   compactPlayerIdentity,
@@ -368,6 +421,13 @@ state.edenX1VoteSettings = null;
 // to its own defaults, so a failed load scores rather than scoring nothing.
 state.dutyPointWeights = null;
 state.includeDemolitionPoints = true;
+// Whole-score multipliers, tuned in the same panel. 1 leaves the arithmetic
+// exactly as it was before they existed.
+state.contributionWeight = DEFAULT_CONTRIBUTION_WEIGHT;
+state.formPointWeight = DEFAULT_FORM_POINT_WEIGHT;
+// Reward distribution rules for this season, in the same superadmin-only
+// family. Defaults until loaded, so the tables always have a distribution.
+state.rewardSettings = normalizeRewardSettings(null);
 let dutyPointWeightsVersion = 0;
 let edenX1VoteSettingsVersion = 0;
 let edenX1VoteSettingsSaveQueue = Promise.resolve();
@@ -376,6 +436,8 @@ state.conductSuggestions = [];
 state.bohMatchEntries = [];
 state.bohMatchResults = [];
 state.vtsScoreSnapshot = null;
+// Eden 2027 signups: the config document plus the season's submission rows.
+state.bohSignupsSnapshot = null;
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -436,6 +498,14 @@ const DUTY_POINT_WEIGHTS_DOC_PATH = edenWorkspaceFirestorePath(
 );
 const DUTY_POINT_WEIGHTS_LOCAL_KEY = edenWorkspaceStorageKey(
   'vts_duty_point_weights',
+  ACTIVE_EDEN_WORKSPACE_ID
+);
+const REWARD_SETTINGS_DOC_PATH = edenWorkspaceFirestorePath(
+  ACTIVE_EDEN_WORKSPACE_ID,
+  'rewardSettings'
+);
+const REWARD_SETTINGS_LOCAL_KEY = edenWorkspaceStorageKey(
+  'vts_reward_settings',
   ACTIVE_EDEN_WORKSPACE_ID
 );
 
@@ -743,11 +813,15 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
+  if (name === 'accounts') renderAccountLinks();
   if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'allStarBoh') renderBohMatchPanel();
+  if (name === 'bohSignups') renderBohSignupsPanel();
   if (name === 'vtsScore') renderVtsScorePanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
+  if (name === 'complaints') void ensureComplaintsMounted();
+  if (name === 'seasonLifecycle') void refreshEdenSeasonLifecyclePanel();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
   if (name === 'conductSuggest') renderConductSuggestPanel();
@@ -850,6 +924,150 @@ async function ensureUserRolesMounted() {
     if (mount) {
       mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
         dashT('adminRolesLoadFailed')
+      )}</div>`;
+    }
+  }
+}
+
+let complaintsModulePromise = null;
+
+const COMPLAINTS_COLLECTION = 'complaints';
+// The inbox is bounded on purpose: a superadmin reviewing month-old filings
+// does not need an unbounded read, and the reviewed filter runs in the panel.
+const COMPLAINTS_PAGE_LIMIT = 100;
+
+/**
+ * Reads the newest filings. Both the read and the review write are gated on the
+ * superadmin claim by firestore.rules, so a non-superadmin reaching this code
+ * would still be refused by the server.
+ */
+async function loadComplaintRecords() {
+  const { collection, getDocs, limit, orderBy, query } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  if (!db) return [];
+  const snap = await getDocs(
+    query(
+      collection(db, COMPLAINTS_COLLECTION),
+      orderBy('createdAt', 'desc'),
+      limit(COMPLAINTS_PAGE_LIMIT)
+    )
+  );
+  return snap.docs.map((entry) => {
+    const data = entry.data() || {};
+    const createdAtMs = data.createdAt?.toMillis?.();
+    return {
+      id: entry.id,
+      category: String(data.category || 'other').slice(0, 40),
+      description: String(data.description || '').slice(0, 4000),
+      images: Array.isArray(data.images)
+        ? data.images.filter((value) => typeof value === 'string').slice(0, 3)
+        : [],
+      anonymous: data.anonymous === true,
+      // An anonymous filing carries no name by rule; the empty string is the
+      // honest value here rather than a placeholder that could be mistaken
+      // for a real author.
+      submittedByName:
+        typeof data.submittedByName === 'string' ? data.submittedByName.slice(0, 80) : '',
+      reviewed: data.reviewed === true,
+      createdAtMs: typeof createdAtMs === 'number' ? createdAtMs : 0,
+    };
+  });
+}
+
+async function reviewComplaintRecord(id, reviewed) {
+  const { doc, updateDoc, serverTimestamp } = await loadFirestoreApi();
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error('complaint review unavailable');
+  const { currentAuthUid } = await import('./firebase.js');
+  // The rules pin reviewedBy to the caller and allow only these three fields,
+  // so this is the complete shape the write may carry.
+  await updateDoc(doc(db, COMPLAINTS_COLLECTION, String(id)), {
+    reviewed: reviewed === true,
+    reviewedAt: serverTimestamp(),
+    reviewedBy: currentAuthUid(),
+  });
+}
+
+/**
+ * Screenshots live in Cloud Storage under a path only a superadmin may read.
+ * They are fetched as blobs with the superadmin's own credentials and shown
+ * through local object URLs: a download URL would carry a token that opens the
+ * image for anyone it is pasted to, bypassing the superadmin-only rule.
+ */
+async function resolveComplaintImageUrl(storagePath) {
+  const path = String(storagePath || '');
+  if (!path) return '';
+  const { importFirebaseStorage } = await import('./firebase-sdk.js');
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error('complaint image unavailable');
+  const { getStorage, ref, getBlob } = await importFirebaseStorage();
+  const blob = await getBlob(ref(getStorage(db.app), path));
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Superadmin purge: spam and personal data must be removable. The screenshots
+ * go first, so a failure leaves the record (and its paths) for a retry rather
+ * than orphaned images nobody can find.
+ */
+async function deleteComplaintRecord(id, imagePaths = []) {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error('complaint delete unavailable');
+  const paths = (Array.isArray(imagePaths) ? imagePaths : []).filter(
+    (path) => typeof path === 'string' && path.startsWith('complaints/')
+  );
+  if (paths.length) {
+    const { importFirebaseStorage } = await import('./firebase-sdk.js');
+    const { getStorage, ref, deleteObject } = await importFirebaseStorage();
+    const storage = getStorage(db.app);
+    for (const path of paths) {
+      try {
+        await deleteObject(ref(storage, path));
+      } catch (error) {
+        if (error?.code !== 'storage/object-not-found') throw error;
+      }
+    }
+  }
+  const { doc, deleteDoc } = await loadFirestoreApi();
+  await deleteDoc(doc(db, COMPLAINTS_COLLECTION, String(id)));
+}
+
+async function ensureComplaintsMounted() {
+  if (!(await refreshSuperAdminSurfaces())) return;
+  if (!complaintsModulePromise) {
+    complaintsModulePromise = Promise.all([
+      import('./admin-complaints.js'),
+      import('../css/admin-complaints.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        complaintsModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+  }
+  try {
+    const module = await complaintsModulePromise;
+    const mount = $id('dashComplaintsRoot');
+    if (!mount) return;
+    module.renderComplaintsController(mount, {
+      listComplaints: loadComplaintRecords,
+      reviewComplaint: reviewComplaintRecord,
+      deleteComplaint: deleteComplaintRecord,
+      resolveImageUrl: resolveComplaintImageUrl,
+      formatDate: (ms) =>
+        formatLocaleDate(new Date(ms), getDashboardLang(), {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        }),
+      t: dashT,
+    });
+  } catch (error) {
+    console.error('COMPLAINTS LOAD ERROR:', error);
+    const mount = $id('dashComplaintsRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        dashT('adminComplaintsLoadFailed')
       )}</div>`;
     }
   }
@@ -1049,6 +1267,8 @@ function defaultEdenX1VoteSettings() {
     season: currentEdenVoteSeason(),
     votingOpen: true,
     allowEditing: true,
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     contributionRankingMode: EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
@@ -1058,12 +1278,22 @@ function defaultEdenX1VoteSettings() {
 
 function normalizeEdenX1VoteSettings(settings = {}) {
   const defaults = defaultEdenX1VoteSettings();
+  // One switch published both result sets until 16.5.1. It stays the fallback
+  // for the two that replaced it, so a stored document keeps meaning what it
+  // meant, and it is still written as the conservative aggregate for any reader
+  // that only knows the old field.
+  const legacyPublished = settings.showPublicResults === true;
+  const readToggle = (key) => (key in settings ? settings[key] === true : legacyPublished);
+  const showMemberResults = readToggle('showMemberResults');
+  const showManagementResults = readToggle('showManagementResults');
   return {
     ...defaults,
     season: String(settings.season || defaults.season),
     votingOpen: settings.votingOpen !== false,
     allowEditing: settings.allowEditing !== false,
-    showPublicResults: settings.showPublicResults === true,
+    showMemberResults,
+    showManagementResults,
+    showPublicResults: showMemberResults && showManagementResults,
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
       settings.contributionRankingMode
@@ -1157,7 +1387,8 @@ function renderEdenX1VoteSettings() {
   };
   setChecked('dashEdenVoteOpenToggle', settings.votingOpen);
   setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
-  setChecked('dashEdenVotePublicResultsToggle', settings.showPublicResults);
+  setChecked('dashEdenVotePublicResultsToggle', settings.showMemberResults);
+  setChecked('dashEdenVoteManagementResultsToggle', settings.showManagementResults);
   setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
   setChecked(
     'dashEdenContributionModeExtended',
@@ -1330,8 +1561,8 @@ function buildEdenX1PublicVoteResults(
   );
   return {
     season,
-    published: normalizedSettings.showPublicResults === true,
-    rankings: normalizedSettings.showPublicResults
+    published: normalizedSettings.showMemberResults === true,
+    rankings: normalizedSettings.showMemberResults
       ? totalRows.slice(0, 100).map((row) => ({
           playerName: row.candidateName,
           playerKey: row.playerKey,
@@ -1771,9 +2002,16 @@ function readLocalDutyPointWeights() {
     return {
       weights: normalizeDutyPointWeights(source.weights || source),
       includeDemolitionPoints: source.includeDemolitionPoints !== false,
+      contributionWeight: normalizeContributionWeight(source.contributionWeight),
+      formPointWeight: normalizeFormPointWeight(source.formPointWeight),
     };
   } catch {
-    return { weights: normalizeDutyPointWeights(null), includeDemolitionPoints: true };
+    return {
+      weights: normalizeDutyPointWeights(null),
+      includeDemolitionPoints: true,
+      contributionWeight: DEFAULT_CONTRIBUTION_WEIGHT,
+      formPointWeight: DEFAULT_FORM_POINT_WEIGHT,
+    };
   }
 }
 
@@ -1791,6 +2029,8 @@ async function loadDutyPointWeights() {
   const localSettings = readLocalDutyPointWeights();
   state.dutyPointWeights = localSettings.weights;
   state.includeDemolitionPoints = localSettings.includeDemolitionPoints;
+  state.contributionWeight = localSettings.contributionWeight;
+  state.formPointWeight = localSettings.formPointWeight;
   renderDutyPointWeights();
   if (state.adminIsAdmin !== true) return false;
   const loadVersion = dutyPointWeightsVersion;
@@ -1803,9 +2043,13 @@ async function loadDutyPointWeights() {
       const data = snap.data() || {};
       state.dutyPointWeights = normalizeDutyPointWeights(data.weights);
       state.includeDemolitionPoints = data.includeDemolitionPoints !== false;
+      state.contributionWeight = normalizeContributionWeight(data.contributionWeight);
+      state.formPointWeight = normalizeFormPointWeight(data.formPointWeight);
       writeLocalDutyPointWeights({
         weights: state.dutyPointWeights,
         includeDemolitionPoints: state.includeDemolitionPoints,
+        contributionWeight: state.contributionWeight,
+        formPointWeight: state.formPointWeight,
       });
       renderDutyPointWeights();
       render();
@@ -1820,14 +2064,22 @@ async function loadDutyPointWeights() {
 // Saving restates every score for this season the moment it lands, because
 // duty points are derived at render time rather than stored. That is the
 // intent — a weight is a rule, not a per-row value — but it is why the editor
-// says so out loud before saving.
-async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true) {
+// says so out loud before saving. The two whole-score multipliers ride in the
+// same document for the same reason.
+async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true, multipliers = {}) {
   if (blockEdenArchiveWrite('save duty point weights')) return false;
   dutyPointWeightsVersion += 1;
   const weights = normalizeDutyPointWeights(nextWeights);
   state.dutyPointWeights = weights;
   state.includeDemolitionPoints = includeDemolitionPoints !== false;
-  writeLocalDutyPointWeights({ weights, includeDemolitionPoints: state.includeDemolitionPoints });
+  state.contributionWeight = normalizeContributionWeight(multipliers.contributionWeight);
+  state.formPointWeight = normalizeFormPointWeight(multipliers.formPointWeight);
+  writeLocalDutyPointWeights({
+    weights,
+    includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
+  });
   renderDutyPointWeights();
   render();
   if (state.adminIsAdmin !== true) return false;
@@ -1839,6 +2091,8 @@ async function saveDutyPointWeights(nextWeights, includeDemolitionPoints = true)
     await setDoc(doc(db, DUTY_POINT_WEIGHTS_DOC_PATH), {
       weights,
       includeDemolitionPoints: state.includeDemolitionPoints,
+      contributionWeight: state.contributionWeight,
+      formPointWeight: state.formPointWeight,
       updatedAt: serverTimestamp(),
       updatedBy: state.adminUser?.uid || '',
     });
@@ -1863,6 +2117,21 @@ function renderDutyPointWeights() {
   }
   const demolitionToggle = $id('dashIncludeDemolitionPointsToggle');
   if (demolitionToggle) demolitionToggle.checked = state.includeDemolitionPoints !== false;
+  const contributionInput = $id('dashContributionWeightInput');
+  if (contributionInput && document.activeElement !== contributionInput) {
+    contributionInput.value = String(normalizeContributionWeight(state.contributionWeight));
+  }
+  const formPointsInput = $id('dashFormPointWeightInput');
+  if (formPointsInput && document.activeElement !== formPointsInput) {
+    formPointsInput.value = String(normalizeFormPointWeight(state.formPointWeight));
+  }
+}
+
+function collectScoringMultipliersFromInputs() {
+  return {
+    contributionWeight: $id('dashContributionWeightInput')?.value,
+    formPointWeight: $id('dashFormPointWeightInput')?.value,
+  };
 }
 
 function collectDutyPointWeightsFromInputs() {
@@ -1879,16 +2148,137 @@ function collectDutyPointWeightsFromInputs() {
   return next;
 }
 
+// Reward distribution rules for the season: how many players each category
+// rewards and who holds the guild-master reward. Kept beside the duty weights
+// because both are season rules that restate the published rewards, and both
+// are superadmin-only.
+function readLocalRewardSettings() {
+  try {
+    return normalizeRewardSettings(
+      JSON.parse(localStorage.getItem(REWARD_SETTINGS_LOCAL_KEY) || 'null')
+    );
+  } catch {
+    return normalizeRewardSettings(null);
+  }
+}
+
+function writeLocalRewardSettings(settings) {
+  try {
+    localStorage.setItem(REWARD_SETTINGS_LOCAL_KEY, JSON.stringify(settings));
+  } catch {
+    /* private mode and full quotas are not worth failing a save over */
+  }
+}
+
+async function loadRewardSettings() {
+  state.rewardSettings = readLocalRewardSettings();
+  renderRewardSettings();
+  if (state.adminIsAdmin !== true) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, REWARD_SETTINGS_DOC_PATH));
+    if (snap.exists()) {
+      state.rewardSettings = normalizeRewardSettings(snap.data() || {});
+      writeLocalRewardSettings(state.rewardSettings);
+      renderRewardSettings();
+      render();
+    }
+    return true;
+  } catch (err) {
+    console.error('REWARD SETTINGS LOAD ERROR:', err);
+    return false;
+  }
+}
+
+async function saveRewardSettings(nextSettings) {
+  if (blockEdenArchiveWrite('save reward settings')) return false;
+  const settings = normalizeRewardSettings(nextSettings);
+  state.rewardSettings = settings;
+  writeLocalRewardSettings(settings);
+  renderRewardSettings();
+  render();
+  if (state.adminIsAdmin !== true) return false;
+  const status = $id('dashRewardSettingsStatus');
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+    await setDoc(doc(db, REWARD_SETTINGS_DOC_PATH), {
+      ...settings,
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    if (status) status.textContent = dashT('adminRewardSettingsSaved');
+    return true;
+  } catch (err) {
+    console.error('REWARD SETTINGS SAVE ERROR:', err);
+    if (status) status.textContent = showCloudSyncFailure(err, 'Reward settings save failed');
+    return false;
+  }
+}
+
+function renderRewardSettings() {
+  const settings = normalizeRewardSettings(state.rewardSettings);
+  for (const key of REWARD_QUOTA_KEYS) {
+    const input = document.querySelector(`[data-reward-quota="${key}"]`);
+    if (input && document.activeElement !== input) input.value = String(settings.quotas[key]);
+  }
+  const source = $id('dashRewardGuildMasterSource');
+  if (source && document.activeElement !== source) source.value = settings.guildMasterSource;
+  const r5 = $id('dashRewardR5Player');
+  if (r5 && document.activeElement !== r5) r5.value = settings.r5PlayerKey;
+}
+
+function collectRewardSettingsFromInputs() {
+  const quotas = {};
+  for (const key of REWARD_QUOTA_KEYS) {
+    quotas[key] = document.querySelector(`[data-reward-quota="${key}"]`)?.value;
+  }
+  return {
+    quotas,
+    guildMasterSource: $id('dashRewardGuildMasterSource')?.value,
+    r5PlayerKey: $id('dashRewardR5Player')?.value,
+  };
+}
+
+function wireRewardSettings() {
+  $id('dashRewardSettingsSaveBtn')?.addEventListener('click', () => {
+    void saveRewardSettings(collectRewardSettingsFromInputs());
+  });
+  $id('dashRewardSettingsResetBtn')?.addEventListener('click', () => {
+    if (!confirm(dashT('adminRewardSettingsResetConfirm'))) return;
+    void saveRewardSettings(DEFAULT_REWARD_SETTINGS);
+  });
+  // The guild-master choice only matters when it follows the R5, so the name
+  // field follows that switch instead of sitting there looking authoritative.
+  const source = $id('dashRewardGuildMasterSource');
+  const r5 = $id('dashRewardR5Player');
+  const syncR5Disabled = () => {
+    if (!r5) return;
+    const usesR5 = (source?.value || DEFAULT_REWARD_SETTINGS.guildMasterSource) === 'r5';
+    r5.disabled = !usesR5;
+    r5.closest('.dash-reward-r5-field')?.classList.toggle('is-disabled', !usesR5);
+  };
+  source?.addEventListener('change', syncR5Disabled);
+  syncR5Disabled();
+}
+
 function wireDutyPointWeights() {
   $id('dashDutyWeightsSaveBtn')?.addEventListener('click', () => {
     void saveDutyPointWeights(
       collectDutyPointWeightsFromInputs(),
-      $id('dashIncludeDemolitionPointsToggle')?.checked !== false
+      $id('dashIncludeDemolitionPointsToggle')?.checked !== false,
+      collectScoringMultipliersFromInputs()
     );
   });
   $id('dashDutyWeightsResetBtn')?.addEventListener('click', () => {
     if (!confirm(dashT('adminDutyWeightsResetConfirm'))) return;
-    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true);
+    void saveDutyPointWeights(DEFAULT_DUTY_POINT_WEIGHTS, true, {
+      contributionWeight: DEFAULT_CONTRIBUTION_WEIGHT,
+      formPointWeight: DEFAULT_FORM_POINT_WEIGHT,
+    });
   });
 }
 
@@ -1912,7 +2302,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
         updatedAt: serverTimestamp(),
         updatedBy: state.adminUser?.uid || '',
       });
-      if (latestSettings.showPublicResults) await loadEdenX1Votes();
+      if (latestSettings.showMemberResults) await loadEdenX1Votes();
       await publishEdenX1PublicVoteResults(latestSettings);
       const status = $id('dashEdenVoteSettingsStatus');
       if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
@@ -1947,6 +2337,10 @@ async function activateCurrentEdenX1VoteSeason() {
     season: currentEdenVoteSeason(),
     votingOpen: false,
     allowEditing: false,
+    // A new season starts unpublished on every switch, both the split pair and
+    // the legacy aggregate they feed.
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     closesAt: '',
@@ -1971,7 +2365,7 @@ async function loadEdenX1VoteAdminData() {
 
 async function refreshEdenX1VoteAdminData() {
   await loadEdenX1VoteAdminData();
-  if (state.edenX1VoteSettings?.showPublicResults === true) {
+  if (state.edenX1VoteSettings?.showMemberResults === true) {
     await publishEdenX1PublicVoteResults(state.edenX1VoteSettings);
   }
 }
@@ -1992,7 +2386,10 @@ function bindEdenX1VoteAdminControls() {
   [
     ['dashEdenVoteOpenToggle', 'votingOpen'],
     ['dashEdenVoteEditingToggle', 'allowEditing'],
-    ['dashEdenVotePublicResultsToggle', 'showPublicResults'],
+    // Two switches now: the members' ballot and the management sheet publish
+    // independently, because the sheet is not season-scoped.
+    ['dashEdenVotePublicResultsToggle', 'showMemberResults'],
+    ['dashEdenVoteManagementResultsToggle', 'showManagementResults'],
     ['dashEdenVoteShowNamesToggle', 'showVoterNames'],
   ].forEach(([id, key]) => {
     $id(id)?.addEventListener('change', (event) => {
@@ -2432,10 +2829,18 @@ function renderConductAdjustments() {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
     return;
   }
-  list.innerHTML = rows
-    .map((record) => {
-      const pointsValue = Number(record.points || 0);
-      return `<article class="dash-conduct-row">
+  // A season accumulates hundreds of adjustments; the list pages like the
+  // other long admin tables instead of pushing everything below it off-screen.
+  const conductPage = resolveAdminTablePage(
+    'conduct',
+    `${state.r5Season || ''}|${searchQuery}|${rows.length}`,
+    rows
+  );
+  list.innerHTML =
+    conductPage.rows
+      .map((record) => {
+        const pointsValue = Number(record.points || 0);
+        return `<article class="dash-conduct-row">
         <div>
           <strong>${esc(record.playerName)}</strong>
           <span>${esc(conductCategoryLabel(record.category))} Â· ${esc(conductCreatedAtLabel(record))}</span>
@@ -2447,8 +2852,15 @@ function renderConductAdjustments() {
           <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-conduct-delete="${esc(record.id)}">${esc(dashT('adminDelete'))}</button>
         </div>
       </article>`;
-    })
-    .join('');
+      })
+      .join('') +
+    renderAdminTablePager('conduct', conductPage, 'dashConductList', { showAll: true });
+
+  bindAdminTablePager(list, 'conduct', conductPage, () => {
+    renderConductAdjustments();
+    const nextSearch = $id('dashConductSearch');
+    if (nextSearch) nextSearch.focus();
+  });
 
   list.querySelectorAll('[data-conduct-edit]').forEach((btn) => {
     btn.addEventListener('click', () => startConductEdit(btn.dataset.conductEdit));
@@ -2458,15 +2870,7 @@ function renderConductAdjustments() {
       const id = btn.dataset.conductDelete;
       if (!id || !confirm(dashT('adminConductDeleteConfirm'))) return;
       try {
-        if (state.cloudSyncConfigured === false) {
-          deleteLocalR5Adjustment(id);
-        } else {
-          const current = (state.r5Adjustments || []).find((record) => record.id === id);
-          await deleteR5Adjustment(id, {
-            expectedFingerprint: conductAdjustmentFingerprint(current),
-          });
-        }
-        state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
+        await deleteConductAdjustmentRecord(id);
         refreshAlliancePublicConductAdjustments();
         renderConductAdjustments();
         await savePublicConductSnapshot();
@@ -2479,6 +2883,66 @@ function renderConductAdjustments() {
         );
       }
     });
+  });
+  mountConductBulkSelect(list, conductPage.rows);
+}
+
+// One adjustment through the same delete path the row's own button uses.
+async function deleteConductAdjustmentRecord(id) {
+  if (state.cloudSyncConfigured === false) {
+    deleteLocalR5Adjustment(id);
+  } else {
+    const current = (state.r5Adjustments || []).find((record) => record.id === id);
+    await deleteR5Adjustment(id, {
+      expectedFingerprint: conductAdjustmentFingerprint(current),
+    });
+  }
+  state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
+}
+
+// Batch delete for the visible conduct adjustments. Each goes through the
+// single-delete path; a failure stops the batch and reports what was removed.
+function mountConductBulkSelect(list, rows) {
+  const articles = Array.from(list.querySelectorAll(':scope > .dash-conduct-row'));
+  mountBulkSelect(list, {
+    scope: 'conduct',
+    t: dashT,
+    items: rows.map((record, index) => ({
+      id: record.id,
+      slot: articles[index]?.firstElementChild || null,
+      label: record.playerName || record.id,
+    })),
+    actions: [
+      {
+        id: 'delete',
+        label: dashT('adminBulkDelete'),
+        danger: true,
+        run: async (ids) => {
+          if (!confirm(dashT('adminBulkDeleteConfirm', { count: ids.length }))) return false;
+          let deleted = 0;
+          try {
+            for (const id of ids) {
+              await deleteConductAdjustmentRecord(id);
+              deleted += 1;
+            }
+          } catch (err) {
+            setConductStatus(
+              showCloudSyncFailure(err, 'Bonus team effort points delete failed'),
+              'error'
+            );
+          }
+          if (!deleted) return false;
+          refreshAlliancePublicConductAdjustments();
+          renderConductAdjustments();
+          await savePublicConductSnapshot();
+          render();
+          if (deleted === ids.length) {
+            setConductStatus(dashT('adminBulkConductDeleted', { count: deleted }), 'success');
+          }
+          return true;
+        },
+      },
+    ],
   });
 }
 
@@ -3265,6 +3729,8 @@ function bindConductControls() {
   wireConductReviewControls();
   wireDutyPointWeights();
   void loadDutyPointWeights();
+  wireRewardSettings();
+  void loadRewardSettings();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
@@ -3605,6 +4071,13 @@ const SUPERADMIN_DASH_SUBTABS = new Set([
   'throneBuffs',
   'vtsScore',
   'userRoles',
+  // Complaints are member-filed and may name another member or an officer, so
+  // the whole inbox is superadmin-only — including the list read, which
+  // firestore.rules restricts to isSuperAdmin() independently of this gate.
+  'complaints',
+  // Ending a season archives a workspace for good, so the whole rollover panel
+  // is behind the second privilege level.
+  'seasonLifecycle',
 ]);
 
 function switchDashSubtab(name) {
@@ -3822,7 +4295,7 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
     if (!unpublish) {
       rosterSnapshots = await readEdenWorkspaceRosterSnapshots(db);
       const settings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {});
-      if (settings.showPublicResults && typeof buildEdenX1PublicVoteResults === 'function') {
+      if (settings.showMemberResults && typeof buildEdenX1PublicVoteResults === 'function') {
         publicVoteResults = buildEdenX1PublicVoteResults(settings);
       }
     }
@@ -3844,7 +4317,12 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
         : {
             dutyPointWeights: normalizeDutyPointWeights(state.dutyPointWeights),
             includeDemolitionPoints: state.includeDemolitionPoints !== false,
+            contributionWeight: normalizeContributionWeight(state.contributionWeight),
+            formPointWeight: normalizeFormPointWeight(state.formPointWeight),
           },
+      // The reward distribution travels with the season so the public page shows
+      // the slots and the guild-master holder the admin configured.
+      rewardSettings: unpublish ? null : normalizeRewardSettings(state.rewardSettings),
     });
     await setDoc(projectionRef, sanitizeForFirestore(projection));
     await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
@@ -3943,6 +4421,7 @@ async function exportActiveEdenWorkspaceSnapshot() {
       { workspace: ws.label },
       { source: 'workspace' }
     );
+    return true;
   } catch (err) {
     console.error('Workspace snapshot export failed:', err);
     showCloudSyncFailure(err, 'Workspace snapshot failed');
@@ -3953,6 +4432,7 @@ async function exportActiveEdenWorkspaceSnapshot() {
         9000
       );
     }
+    return false;
   }
 }
 
@@ -3967,6 +4447,830 @@ function edenWorkspaceFirestorePathsForExport() {
     voteHistory: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteHistory'),
     conductAdjustments: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'conductAdjustments'),
   };
+}
+
+// --- Season lifecycle panel (superadmin) ---
+//
+// One panel owns the whole rollover: the registry that names every season, the
+// two transitions that close one season and open the next, the label rename,
+// the read-only browse of an ended season, and the dry-run-first recall of a
+// workspace snapshot. Ending a season is what archives its workspace, so the
+// freeze goes through the same lifecycle path the command strip uses, and every
+// write in here consults blockEdenArchiveWrite first.
+
+let edenSeasonRegistryView = null;
+// Why the last registry load failed, so the panel can say so and offer a retry
+// instead of showing "Loading" forever.
+let edenSeasonRegistryError = '';
+let edenRecallDraft = null;
+// Which season the rename input is editing. Empty means "the running season".
+let edenSeasonRenameTargetId = '';
+
+function edenSeasonLifecycleLabel(state) {
+  if (state === 'ended') return dashT('adminSeasonStateEnded');
+  if (state === 'active') return dashT('adminSeasonStateActive');
+  return dashT('adminSeasonStateDraft');
+}
+
+function edenSeasonWorkspaceLabel(workspaceId) {
+  const id = String(workspaceId || '');
+  return id ? getEdenWorkspace(id).label : dashT('adminSeasonWorkspaceNone');
+}
+
+function edenSeasonStartedWindow(season) {
+  const started = season.startedAtMs
+    ? formatLocaleDate(season.startedAtMs, getDashboardLang())
+    : '—';
+  const ended = season.endedAtMs ? formatLocaleDate(season.endedAtMs, getDashboardLang()) : '—';
+  return dashT('adminSeasonWindow', { started, ended });
+}
+
+// Every workspace the release serves, with the season its records currently
+// hold. A workspace can only host a new season when it is still published-from
+// capable, unarchived and empty of another season's data, so the reads below
+// are what makes the "start the next season" button honest.
+async function readEdenWorkspaceViews(db) {
+  const { doc, getDoc } = await loadFirestoreApi();
+  const views = [];
+  for (const workspace of listEdenWorkspaces()) {
+    const view = { ...workspace, holdsSeasonId: '' };
+    if (!workspace.legacy) {
+      const recordSnap = await getDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, workspace.id));
+      Object.assign(
+        view,
+        parseEdenWorkspaceRecord(recordSnap.exists() ? recordSnap.data() : null) || {}
+      );
+    }
+    const dashboardPath = edenWorkspaceFirestorePath(workspace.id, 'dashboardData');
+    if (dashboardPath) {
+      const dashboardSnap = await getDoc(doc(db, dashboardPath));
+      if (dashboardSnap.exists()) {
+        view.holdsSeasonId = String(dashboardSnap.data()?.r5Season || '');
+      }
+    }
+    views.push(view);
+  }
+  return views;
+}
+
+async function loadEdenSeasonRegistry() {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error(dashT('adminCloudLocalCache'));
+  const { doc, getDoc } = await loadFirestoreApi();
+  const snap = await getDoc(doc(db, SEASON_REGISTRY_PATH));
+  const registry = normalizeSeasonRegistry(snap.exists() ? snap.data() : null);
+  const workspaces = await readEdenWorkspaceViews(db);
+  return { registry, workspaces };
+}
+
+function edenSeasonRegistryPayload(registry, serverTimestamp) {
+  return {
+    schemaVersion: 1,
+    seasons: registry.seasons.map((season) => ({
+      id: season.id,
+      label: season.label,
+      state: season.state,
+      workspaceId: season.workspaceId,
+      startedAtMs: season.startedAtMs,
+      endedAtMs: season.endedAtMs,
+    })),
+    updatedAt: serverTimestamp(),
+    updatedBy: state.adminUser?.uid || '',
+  };
+}
+
+async function saveEdenSeasonRegistry(registry) {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error(dashT('adminCloudLocalCache'));
+  const { doc, setDoc, serverTimestamp } = await loadFirestoreApi();
+  await setDoc(doc(db, SEASON_REGISTRY_PATH), edenSeasonRegistryPayload(registry, serverTimestamp));
+}
+
+// Archiving is the existing lifecycle path: the same workspace record the
+// command strip writes, with the terminal lifecycle. Nothing is deleted. The
+// archive guard decides whether the record may be written at all, so a workspace
+// that is already archived is left untouched and a retried end is safe — the
+// season still gets marked ended, it simply has nothing left to freeze.
+//
+// The archive and the registry's "ended" mark land in one batch: either the
+// workspace freezes and the season ends, or neither happens.
+async function endEdenSeasonAtomically(workspaceId, registry) {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error(dashT('adminCloudLocalCache'));
+  const { doc, getDoc, serverTimestamp, writeBatch } = await loadFirestoreApi();
+  const ref = doc(db, EDEN_WORKSPACE_COLLECTION_PATH, workspaceId);
+  const snap = await getDoc(ref);
+  const existing =
+    parseEdenWorkspaceRecord(snap.exists() ? snap.data() : null) || getEdenWorkspace(workspaceId);
+  const archive = !edenWorkspaceMutationError(workspaceId, existing);
+  const batch = writeBatch(db);
+  if (archive) {
+    batch.set(ref, {
+      id: workspaceId,
+      lifecycle: 'archived',
+      active: false,
+      createdAtMs: existing.createdAtMs || Date.now(),
+      archivedAtMs: Date.now(),
+      publication: existing.publication || null,
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+  }
+  batch.set(doc(db, SEASON_REGISTRY_PATH), edenSeasonRegistryPayload(registry, serverTimestamp));
+  await batch.commit();
+  return archive;
+}
+
+function seasonTransitionMessage(result) {
+  const reasons = {
+    'unknown-season': dashT('adminSeasonReasonUnknownSeason'),
+    'season-not-active': dashT('adminSeasonReasonNotActive'),
+    'season-already-ended': dashT('adminSeasonReasonAlreadyEnded'),
+    'active-season-exists': dashT('adminSeasonReasonActiveExists'),
+    'duplicate-season-id': dashT('adminSeasonReasonDuplicate'),
+    'no-free-workspace': dashT('adminSeasonNoFreeWorkspace'),
+    'unknown-workspace': dashT('adminSeasonReasonUnknownWorkspace'),
+    'workspace-archived': dashT('adminSeasonReasonWorkspaceArchived'),
+    'workspace-retired': dashT('adminSeasonReasonWorkspaceRetired'),
+    'workspace-in-use': dashT('adminSeasonReasonWorkspaceInUse'),
+    'empty-label': dashT('adminSeasonReasonEmptyLabel'),
+    'label-unchanged': dashT('adminSeasonReasonLabelUnchanged'),
+  };
+  return (
+    reasons[result?.reason] || dashT('adminSeasonReasonGeneric', { reason: result?.reason || '' })
+  );
+}
+
+async function endCurrentEdenSeason() {
+  // The workspace being changed is the season's own, not the one on screen, so
+  // the guard lives in archiveEdenWorkspace() where that workspace's record is
+  // read. The registry document is global and carries no workspace records.
+  const view = edenSeasonRegistryView;
+  const season = view ? activeEdenSeason(view.registry) : null;
+  if (!season) {
+    window.showToast?.(dashT('adminSeasonEndNothing'), 'info', 5000);
+    return false;
+  }
+  const workspaceLabel = edenSeasonWorkspaceLabel(season.workspaceId);
+  if (
+    !window.confirm(
+      dashT('adminSeasonEndConfirm', { season: season.label, workspace: workspaceLabel })
+    )
+  ) {
+    return false;
+  }
+  // A snapshot of the season's records is downloaded first, and nothing
+  // changes unless it was. The export reads the workspace this page serves.
+  if (season.workspaceId !== ACTIVE_EDEN_WORKSPACE_ID) {
+    window.showToast?.(
+      dashT('adminSeasonBackupSwitch', { workspace: workspaceLabel }),
+      'error',
+      9000
+    );
+    return false;
+  }
+  if (!(await exportActiveEdenWorkspaceSnapshot())) return false;
+  try {
+    const result = endEdenSeason(view.registry, season.id, { nowMs: Date.now() });
+    if (!result.ok) {
+      window.showToast?.(seasonTransitionMessage(result), 'error', 8000);
+      return false;
+    }
+    const archived = await endEdenSeasonAtomically(season.workspaceId, result.registry);
+    logDashboardEvent(
+      'adminLogSeasonEnded',
+      'success',
+      { season: result.season.label, workspace: workspaceLabel },
+      { source: 'workspace' }
+    );
+    window.showToast?.(
+      dashT(archived ? 'adminSeasonEndDone' : 'adminSeasonEndAlreadyArchived', {
+        season: result.season.label,
+      }),
+      'success',
+      7000
+    );
+    await refreshEdenSeasonLifecyclePanel();
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Season end failed');
+    window.showToast?.(
+      dashT('adminSeasonActionFailed', { error: err?.message || err }),
+      'error',
+      9000
+    );
+    return false;
+  }
+}
+
+async function adoptCurrentEdenSeason() {
+  const view = edenSeasonRegistryView;
+  const workspace = view ? adoptableEdenWorkspace(view) : null;
+  if (!workspace) return false;
+  const result = adoptEdenSeason(view.registry, { nowMs: Date.now(), workspace });
+  if (!result.ok) {
+    window.showToast?.(seasonTransitionMessage(result), 'error', 8000);
+    return false;
+  }
+  if (
+    !window.confirm(
+      dashT('adminSeasonAdoptConfirm', { season: result.season.label, workspace: workspace.label })
+    )
+  ) {
+    return false;
+  }
+  try {
+    await saveEdenSeasonRegistry(result.registry);
+    logDashboardEvent(
+      'adminLogSeasonStarted',
+      'success',
+      { season: result.season.label, workspace: workspace.label },
+      { source: 'workspace' }
+    );
+    window.showToast?.(
+      dashT('adminSeasonAdoptDone', { season: result.season.label, workspace: workspace.label }),
+      'success',
+      7000
+    );
+    await refreshEdenSeasonLifecyclePanel();
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Season adopt failed');
+    window.showToast?.(
+      dashT('adminSeasonActionFailed', { error: err?.message || err }),
+      'error',
+      9000
+    );
+    return false;
+  }
+}
+
+async function startNextEdenSeason() {
+  // Opening a season writes the global registry only; the workspace it binds is
+  // the candidate the rules below accept, and every record write in here still
+  // goes through the archive guard.
+  const view = edenSeasonRegistryView;
+  if (!view) return false;
+  const { candidates, blocked } = seasonWorkspaceCandidates({
+    registry: view.registry,
+    workspaces: view.workspaces,
+  });
+  const proposedId = nextEdenSeasonId(view.registry, { nowMs: Date.now() });
+  if (!candidates.length) {
+    // The button is disabled in this state and the strip says why; refuse again
+    // here so no other caller can start a season with nowhere to live.
+    window.showToast?.(dashT('adminSeasonNoFreeWorkspace'), 'error', 9000);
+    return false;
+  }
+  const target = candidates[0];
+  if (
+    !window.confirm(
+      dashT('adminSeasonStartConfirm', {
+        season: defaultEdenSeasonLabel(proposedId),
+        workspace: target.label,
+      })
+    )
+  ) {
+    return false;
+  }
+  try {
+    const result = startNextEdenSeasonTransition(view.registry, {
+      nowMs: Date.now(),
+      seasonId: proposedId,
+      label: defaultEdenSeasonLabel(proposedId),
+      workspaceId: target.id,
+      workspaces: view.workspaces,
+    });
+    if (!result.ok) {
+      window.showToast?.(seasonTransitionMessage(result), 'error', 9000);
+      return false;
+    }
+    await saveEdenSeasonRegistry(result.registry);
+    logDashboardEvent(
+      'adminLogSeasonStarted',
+      'success',
+      { season: result.season.label, workspace: target.label },
+      { source: 'workspace' }
+    );
+    window.showToast?.(
+      dashT('adminSeasonStartDone', { season: result.season.label, workspace: target.label }),
+      'success',
+      7000
+    );
+    await refreshEdenSeasonLifecyclePanel();
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Season start failed');
+    window.showToast?.(
+      dashT('adminSeasonActionFailed', { error: err?.message || err }),
+      'error',
+      9000
+    );
+    return false;
+  }
+}
+
+async function renameEdenSeasonLabel(seasonId, label) {
+  const view = edenSeasonRegistryView;
+  if (!view) return false;
+  const result = renameEdenSeason(view.registry, seasonId, label, { nowMs: Date.now() });
+  if (!result.ok) {
+    window.showToast?.(seasonTransitionMessage(result), 'error', 8000);
+    return false;
+  }
+  try {
+    await saveEdenSeasonRegistry(result.registry);
+    logDashboardEvent(
+      'adminLogSeasonRenamed',
+      'success',
+      { season: result.season.id, label: result.season.label },
+      { source: 'workspace' }
+    );
+    window.showToast?.(
+      dashT('adminSeasonRenameDone', { label: result.season.label }),
+      'success',
+      6000
+    );
+    await refreshEdenSeasonLifecyclePanel();
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Season rename failed');
+    window.showToast?.(
+      dashT('adminSeasonActionFailed', { error: err?.message || err }),
+      'error',
+      9000
+    );
+    return false;
+  }
+}
+
+// Browsing reuses the workspace switch: that workspace's records load, the
+// archive guard makes the whole admin read-only, and the snapshot button still
+// exports. No second read-only mode to maintain.
+function browseEdenSeason(season) {
+  if (!season?.workspaceId) return false;
+  if (season.workspaceId === ACTIVE_EDEN_WORKSPACE_ID) {
+    window.showToast?.(dashT('adminSeasonBrowseCurrent'), 'info', 5000);
+    return false;
+  }
+  const workspaceLabel = edenSeasonWorkspaceLabel(season.workspaceId);
+  if (!window.confirm(dashT('adminSeasonBrowseConfirm', { workspace: workspaceLabel })))
+    return false;
+  setActiveAdminWorkspaceId(season.workspaceId);
+  setTimeout(() => window.location.reload(), 350);
+  return true;
+}
+
+async function readEdenWorkspaceLiveRecords() {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error(dashT('adminCloudLocalCache'));
+  const { doc, getDoc, collection, getDocs } = await loadFirestoreApi();
+  const paths = edenWorkspaceFirestorePathsForExport();
+  const live = { docs: {}, collections: {} };
+  for (const key of EDEN_SNAPSHOT_DOC_KEYS) {
+    const path = paths[key];
+    if (!path) continue;
+    const snap = await getDoc(doc(db, path));
+    if (snap.exists()) live.docs[key] = snap.data();
+  }
+  for (const key of EDEN_SNAPSHOT_COLLECTION_KEYS) {
+    const path = paths[key];
+    if (!path) continue;
+    const snap = await getDocs(collection(db, path));
+    live.collections[key] = snap.docs.map((entry) => ({ id: entry.id, data: entry.data() }));
+  }
+  return live;
+}
+
+async function dryRunEdenSnapshotRecall(file) {
+  if (!file) return null;
+  const parsed = parseEdenSnapshotJson(await file.text());
+  if (!parsed.ok) {
+    edenRecallDraft = null;
+    window.showToast?.(dashT(snapshotRecallReasonKey(parsed.reason)), 'error', 9000);
+    renderEdenSeasonLifecyclePanel();
+    return null;
+  }
+  try {
+    const ws = currentEdenWorkspaceView();
+    const guardErr = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID, ws);
+    const plan = buildEdenSnapshotRecallPlan({
+      snapshot: parsed.snapshot,
+      live: await readEdenWorkspaceLiveRecords(),
+      workspaceId: ACTIVE_EDEN_WORKSPACE_ID,
+      workspaceLabel: ws.label,
+      writable: !guardErr,
+    });
+    edenRecallDraft = plan.ok
+      ? { snapshot: parsed.snapshot, plan, fileName: String(file.name || '') }
+      : null;
+    if (!plan.ok) {
+      window.showToast?.(dashT(snapshotRecallReasonKey(plan.reason)), 'error', 9000);
+    } else {
+      logDashboardEvent(
+        'adminLogSeasonRecallChecked',
+        'info',
+        {
+          workspace: ws.label,
+          create: String(plan.totals.create),
+          update: String(plan.totals.update),
+        },
+        { source: 'workspace' }
+      );
+    }
+    renderEdenSeasonLifecyclePanel();
+    return plan;
+  } catch (err) {
+    edenRecallDraft = null;
+    showCloudSyncFailure(err, 'Snapshot dry run failed');
+    window.showToast?.(
+      dashT('adminSeasonActionFailed', { error: err?.message || err }),
+      'error',
+      9000
+    );
+    return null;
+  }
+}
+
+function snapshotRecallReasonKey(reason) {
+  const keys = {
+    'snapshot-unreadable': 'adminSeasonRecallUnreadable',
+    'snapshot-unsupported-schema': 'adminSeasonRecallUnsupportedSchema',
+    'snapshot-empty': 'adminSeasonRecallEmpty',
+    'snapshot-workspace-mismatch': 'adminSeasonRecallWorkspaceMismatch',
+    'workspace-read-only': 'adminSeasonRecallReadOnly',
+  };
+  return keys[reason] || 'adminSeasonRecallUnreadable';
+}
+
+function snapshotRecallWarningText(code) {
+  const keys = {
+    'vote-history-append-only': 'adminSeasonRecallVoteHistoryWarning',
+    'conduct-create-needs-author': 'adminSeasonRecallConductWarning',
+    'season-mismatch': 'adminSeasonRecallSeasonWarning',
+  };
+  return keys[code] ? dashT(keys[code]) : '';
+}
+
+async function applyEdenSnapshotRecall() {
+  if (blockEdenArchiveWrite('recall snapshot')) return false;
+  const draft = edenRecallDraft;
+  if (!draft?.plan?.ok) return false;
+  const writes = planEdenSnapshotRecallWrites(draft.plan, draft.snapshot);
+  if (!writes.length) {
+    window.showToast?.(dashT('adminSeasonRecallNothing'), 'info', 6000);
+    return false;
+  }
+  const ws = currentEdenWorkspaceView();
+  if (
+    !window.confirm(
+      dashT('adminSeasonRecallApplyConfirm', { n: writes.length, workspace: ws.label })
+    )
+  ) {
+    return false;
+  }
+  // The recall overwrites live records, so today's state is downloaded first
+  // and the recall only runs once that backup exists.
+  if (!(await exportActiveEdenWorkspaceSnapshot())) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const { doc, setDoc, serverTimestamp, Timestamp } = await loadFirestoreApi();
+    const paths = edenWorkspaceFirestorePathsForExport();
+    const live = await readEdenWorkspaceLiveRecords();
+    let written = 0;
+    let refused = 0;
+    let firstError = '';
+    for (const write of writes) {
+      const path = paths[write.key];
+      if (!path) {
+        refused += 1;
+        continue;
+      }
+      let payload = reviveEdenSnapshotTimestamps(write.data, (millis) =>
+        Timestamp.fromMillis(millis)
+      );
+      if (write.key === 'dashboardData') {
+        payload = edenRecallDashboardWrite(payload, live.docs?.dashboardData, {
+          nowMs: Date.now(),
+        });
+      }
+      if (edenSnapshotRecallKeyNeedsTimestamp(write.key)) {
+        payload = { ...payload, updatedAt: serverTimestamp() };
+      }
+      if (edenSnapshotRecallKeyNeedsAuthorStamp(write.key)) {
+        payload = { ...payload, updatedBy: state.adminUser?.uid || '' };
+      }
+      try {
+        const ref = write.kind === 'doc' ? doc(db, path) : doc(db, path, write.id);
+        // The payload goes to Firestore as-is: sanitizeForFirestore() would walk
+        // into the revived Timestamp instances and flatten them to plain maps,
+        // which the conduct and vote validators refuse (`createdAt is
+        // timestamp`). The snapshot is already JSON-clean, so there is nothing
+        // the sanitizer would legitimately strip.
+        await setDoc(ref, payload);
+        written += 1;
+      } catch (err) {
+        refused += 1;
+        if (!firstError) firstError = err?.message || String(err);
+      }
+    }
+    logDashboardEvent(
+      refused ? 'adminLogSeasonRecallPartial' : 'adminLogSeasonRecalled',
+      refused ? 'warn' : 'success',
+      { workspace: ws.label, written: String(written), refused: String(refused) },
+      { source: 'workspace' }
+    );
+    window.showToast?.(
+      refused
+        ? dashT('adminSeasonRecallPartial', { written, refused, error: firstError })
+        : dashT('adminSeasonRecallDone', { written, workspace: ws.label }),
+      refused ? 'warn' : 'success',
+      9000
+    );
+    edenRecallDraft = null;
+    await refreshEdenSeasonLifecyclePanel();
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Snapshot recall failed');
+    window.showToast?.(
+      dashT('adminSeasonActionFailed', { error: err?.message || err }),
+      'error',
+      9000
+    );
+    return false;
+  }
+}
+
+function renderEdenSeasonRecallReport(plan) {
+  if (!plan?.ok) return '';
+  const rows = plan.rows
+    .map((row) => {
+      const detail =
+        row.kind === 'doc'
+          ? dashT(`adminSeasonRecallDocMode${row.mode.charAt(0).toUpperCase()}${row.mode.slice(1)}`)
+          : dashT('adminSeasonRecallCollectionCounts', {
+              create: row.create,
+              update: row.update,
+              unchanged: row.unchanged,
+            });
+      return `<tr><td>${esc(row.key)}</td><td>${
+        row.readOnly ? dashT('adminSeasonRecallReadOnlyRow') : detail
+      }</td></tr>`;
+    })
+    .join('');
+  return `
+    <p class="dash-empty">${esc(
+      dashT('adminSeasonRecallCollectionCounts', {
+        create: plan.totals.create,
+        update: plan.totals.update,
+        unchanged: plan.totals.unchanged,
+      })
+    )}</p>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead><tr><th scope="col">${esc(dashT('adminSeasonRecallColDocument'))}</th><th scope="col">${esc(
+          dashT('adminSeasonRecallColChange')
+        )}</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${plan.warnings
+      .map((code) => snapshotRecallWarningText(code))
+      .filter(Boolean)
+      .map((text) => `<p class="dash-empty">${esc(text)}</p>`)
+      .join('')}
+  `;
+}
+
+function renderEdenSeasonLifecyclePanel() {
+  const root = $id('dashSeasonLifecycleRoot');
+  if (!root) return;
+  const view = edenSeasonRegistryView;
+  if (!view) {
+    if (edenSeasonRegistryError) {
+      root.innerHTML = `<div class="dash-empty">${esc(
+        dashT('adminSeasonRegistryFailed', { error: edenSeasonRegistryError })
+      )} <button class="dash-btn" type="button" id="dashSeasonRetryBtn">${esc(
+        dashT('bohAccessRetry')
+      )}</button></div>`;
+      const retry = $id('dashSeasonRetryBtn');
+      if (retry) retry.onclick = () => void refreshEdenSeasonLifecyclePanel();
+      return;
+    }
+    root.innerHTML = `<div class="dash-empty">${esc(dashT('adminSeasonLifecycleLoading'))}</div>`;
+    return;
+  }
+  const { registry, workspaces } = view;
+  const season = activeEdenSeason(registry);
+  // The rename row can point at any season in the timeline; the save button
+  // follows the last one picked and falls back to the running season.
+  const renameTarget = findEdenSeason(registry, edenSeasonRenameTargetId) || season;
+  const { candidates } = seasonWorkspaceCandidates({ registry, workspaces });
+  // The registry starts empty while a workspace already runs a season; adopting
+  // it is the first step, or there is nothing to end and nowhere to start.
+  const adoptable = adoptableEdenWorkspace({ registry, workspaces });
+  // An archived workspace still shows the panel: browsing the timeline and
+  // checking a snapshot are reads. Only the transitions are disabled, and the
+  // archive guard refuses them again independently.
+  const readOnly = Boolean(
+    edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID, currentEdenWorkspaceView())
+  );
+  const rows = registry.seasons
+    .map((entry) => {
+      const canBrowse =
+        Boolean(entry.workspaceId) && entry.workspaceId !== ACTIVE_EDEN_WORKSPACE_ID;
+      return `<tr>
+        <td><strong>${esc(entry.label)}</strong><br /><span class="dash-th-right">${esc(entry.id)}</span></td>
+        <td>${esc(edenSeasonLifecycleLabel(entry.state))}</td>
+        <td>${esc(edenSeasonWorkspaceLabel(entry.workspaceId))}</td>
+        <td>${esc(edenSeasonStartedWindow(entry))}</td>
+        <td>
+          <button class="dash-btn" type="button" data-season-rename="${esc(entry.id)}">${esc(
+            dashT('adminSeasonRenameBtn')
+          )}</button>
+          <button class="dash-btn" type="button" data-season-browse="${esc(entry.id)}" ${
+            canBrowse ? '' : 'disabled'
+          }>${esc(dashT('adminSeasonBrowseBtn'))}</button>
+        </td>
+      </tr>`;
+    })
+    .join('');
+  const recall = edenRecallDraft
+    ? `<p class="dash-empty">${esc(
+        dashT('adminSeasonRecallPlanFor', {
+          file: edenRecallDraft.fileName || '—',
+          workspace: currentEdenWorkspaceView().label,
+        })
+      )}</p>
+      ${renderEdenSeasonRecallReport(edenRecallDraft.plan)}
+      <button class="dash-btn dash-btn-primary" type="button" id="dashSeasonRecallApplyBtn">${esc(
+        dashT('adminSeasonRecallApplyBtn')
+      )}</button>`
+    : `<p class="dash-empty">${esc(dashT('adminSeasonRecallHint'))}</p>`;
+  root.innerHTML = `
+    <div class="dash-card dash-card-align-start">
+      <div class="dash-card-hdr">
+        <div class="dash-card-hdr-wrap">
+          <h2 class="dash-card-title">${esc(dashT('adminSeasonLifecycleTitle'))}</h2>
+          <p class="dash-card-subtitle">${esc(
+            dashT('adminSeasonLifecycleSubtitle', { workspace: currentEdenWorkspaceView().label })
+          )}</p>
+        </div>
+      </div>
+      <div class="dash-workspace-strip">
+        <span class="dash-workspace-label">${esc(dashT('adminSeasonCurrentLabel'))}</span>
+        <span class="dash-workspace-lifecycle" data-lifecycle="${esc(season?.state || 'draft')}">${esc(
+          season ? `${season.label} · ${season.id}` : dashT('adminSeasonCurrentNone')
+        )}</span>
+        ${
+          adoptable
+            ? `<button class="dash-btn dash-btn-primary" type="button" id="dashSeasonAdoptBtn" ${
+                readOnly ? 'disabled' : ''
+              }>${esc(
+                dashT('adminSeasonAdoptBtn', {
+                  season: adoptable.holdsSeasonId,
+                  workspace: adoptable.label,
+                })
+              )}</button>`
+            : ''
+        }
+        <button class="dash-btn" type="button" id="dashSeasonEndBtn" ${
+          season && !readOnly ? '' : 'disabled'
+        }>${esc(dashT('adminSeasonEndBtn'))}</button>
+        <button class="dash-btn" type="button" id="dashSeasonStartBtn" ${
+          candidates.length && !readOnly ? '' : 'disabled'
+        }>${esc(dashT('adminSeasonStartBtn'))}</button>
+        <span class="dash-workspace-label">${esc(
+          candidates.length
+            ? dashT('adminSeasonStartTarget', { workspace: candidates[0].label })
+            : dashT('adminSeasonNoFreeWorkspace')
+        )}</span>
+      </div>
+      ${readOnly ? `<p class="dash-empty">${esc(dashT('adminSeasonReadOnlyNotice'))}</p>` : ''}
+      <div class="dash-workspace-strip">
+        <label class="dash-workspace-label" for="dashSeasonRenameInput">${esc(
+          dashT('adminSeasonRenameLabelField')
+        )}</label>
+        <input
+          id="dashSeasonRenameInput"
+          class="dash-input"
+          type="text"
+          maxlength="60"
+          placeholder="${esc(dashT('adminSeasonRenamePlaceholder'))}"
+          value="${esc(renameTarget?.label || '')}"
+        />
+        <button class="dash-btn" type="button" id="dashSeasonRenameBtn" ${
+          renameTarget && !readOnly ? '' : 'disabled'
+        }>${esc(dashT('adminSeasonRenameSave'))}</button>
+        <span class="dash-workspace-label">${esc(
+          dashT('adminSeasonRenameKeyHint', { id: renameTarget?.id || '—' })
+        )}</span>
+      </div>
+      ${
+        rows
+          ? `<div class="dash-table-wrap"><table class="dash-table">
+              <thead><tr>
+                <th scope="col">${esc(dashT('adminSeasonColSeason'))}</th>
+                <th scope="col">${esc(dashT('adminSeasonColState'))}</th>
+                <th scope="col">${esc(dashT('adminSeasonColWorkspace'))}</th>
+                <th scope="col">${esc(dashT('adminSeasonColWindow'))}</th>
+                <th scope="col">${esc(dashT('adminSeasonColActions'))}</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table></div>`
+          : `<p class="dash-empty">${esc(dashT('adminSeasonLifecycleEmpty'))}</p>`
+      }
+    </div>
+    <div class="dash-card dash-card-align-start">
+      <div class="dash-card-hdr">
+        <div class="dash-card-hdr-wrap">
+          <h2 class="dash-card-title">${esc(dashT('adminSeasonRecallTitle'))}</h2>
+          <p class="dash-card-subtitle">${esc(dashT('adminSeasonRecallSubtitle'))}</p>
+        </div>
+      </div>
+      <div class="dash-workspace-strip">
+        <label class="dash-workspace-label" for="dashSeasonRecallFile">${esc(
+          dashT('adminSeasonRecallPick')
+        )}</label>
+        <input id="dashSeasonRecallFile" class="dash-input" type="file" accept="application/json,.json" />
+        <button class="dash-btn" type="button" id="dashSeasonRecallDryRunBtn">${esc(
+          dashT('adminSeasonRecallDryRunBtn')
+        )}</button>
+      </div>
+      ${recall}
+    </div>
+  `;
+  bindEdenSeasonLifecycleControls(root);
+}
+
+function bindEdenSeasonLifecycleControls(root) {
+  const adoptBtn = $id('dashSeasonAdoptBtn');
+  if (adoptBtn) adoptBtn.onclick = () => void adoptCurrentEdenSeason();
+  const endBtn = $id('dashSeasonEndBtn');
+  if (endBtn) endBtn.onclick = () => void endCurrentEdenSeason();
+  const startBtn = $id('dashSeasonStartBtn');
+  if (startBtn) startBtn.onclick = () => void startNextEdenSeason();
+  const renameBtn = $id('dashSeasonRenameBtn');
+  if (renameBtn) {
+    renameBtn.onclick = () => {
+      const registry = edenSeasonRegistryView?.registry || normalizeSeasonRegistry(null);
+      const season =
+        findEdenSeason(registry, edenSeasonRenameTargetId) || activeEdenSeason(registry);
+      const input = $id('dashSeasonRenameInput');
+      if (season && input) void renameEdenSeasonLabel(season.id, input.value);
+    };
+  }
+  root.querySelectorAll('[data-season-rename]').forEach((button) => {
+    button.onclick = () => {
+      const season = findEdenSeason(edenSeasonRegistryView?.registry, button.dataset.seasonRename);
+      const input = $id('dashSeasonRenameInput');
+      if (!season) return;
+      // Pin the save button to this season: the row is what the admin picked,
+      // and its key is what the hint under the input has to show.
+      edenSeasonRenameTargetId = season.id;
+      if (input) {
+        input.value = season.label;
+        input.focus();
+      }
+      window.showToast?.(dashT('adminSeasonRenamePick', { season: season.label }), 'info', 5000);
+    };
+  });
+  root.querySelectorAll('[data-season-browse]').forEach((button) => {
+    button.onclick = () => {
+      const season = findEdenSeason(edenSeasonRegistryView?.registry, button.dataset.seasonBrowse);
+      if (season) browseEdenSeason(season);
+    };
+  });
+  const dryRunBtn = $id('dashSeasonRecallDryRunBtn');
+  if (dryRunBtn) {
+    dryRunBtn.onclick = () => {
+      const input = $id('dashSeasonRecallFile');
+      void dryRunEdenSnapshotRecall(input?.files?.[0] || null);
+    };
+  }
+  const applyBtn = $id('dashSeasonRecallApplyBtn');
+  if (applyBtn) applyBtn.onclick = () => void applyEdenSnapshotRecall();
+}
+
+async function refreshEdenSeasonLifecyclePanel() {
+  const root = $id('dashSeasonLifecycleRoot');
+  if (!root) return;
+  if (dashSuperAdmin !== true) return;
+  try {
+    edenSeasonRegistryView = await loadEdenSeasonRegistry();
+    edenSeasonRegistryError = '';
+  } catch (err) {
+    edenSeasonRegistryError = String(err?.message || err || 'unknown');
+    console.warn('Season registry unavailable:', err?.message || err);
+    window.showToast?.(
+      dashT('adminSeasonRegistryFailed', { error: err?.message || err }),
+      'warn',
+      9000
+    );
+    edenSeasonRegistryView = null;
+  }
+  renderEdenSeasonLifecyclePanel();
 }
 
 function bindEdenWorkspaceStrip() {
@@ -6325,6 +7629,8 @@ function buildWeightedContributionExportModel() {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
 }
 
@@ -6351,6 +7657,8 @@ function buildAllianceViewContributionModel() {
     demolitionRecords: state.dashData?.attacks,
     dutyPointWeights: state.dutyPointWeights,
     includeDemolitionPoints: state.includeDemolitionPoints,
+    contributionWeight: state.contributionWeight,
+    formPointWeight: state.formPointWeight,
   });
   const settings = normalizeEdenX1VoteSettings(
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
@@ -6969,6 +8277,208 @@ function bindVtsScoreControls() {
   button.addEventListener('click', () => {
     void loadVtsScoreAdminSnapshot({ force: true });
   });
+}
+
+// --- Eden 2027 signup registrations ------------------------------------------
+// Two writers on purpose. The season document (`boh_allstar_config/current`) is
+// an ordinary admin Firestore write pinned by validAllStarBohConfig(); a signup
+// is filed by the bohSignupAdmin Cloud Function, because the submissions
+// collection stays owner-written and tests/unit/all-star-boh-security.test.mjs
+// pins that rule. The season/version picker is revealed to superadmins only;
+// the manual form is open to any admin, which is who files entries by hand.
+
+let bohSignupsView = null;
+let bohSignupsLoading = false;
+
+function setBohSignupsStatus(message = '', type = 'info') {
+  const el = $id('dashBohSignupsStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `dash-upload-status ${message ? type : 'hidden'}`;
+}
+
+function ensureBohSignupsView() {
+  if (bohSignupsView) return bohSignupsView;
+  bohSignupsView = createBohSignupAdminView({
+    t: (key, vars, fallback) => {
+      const translated = dashT(key, vars || {});
+      return translated === key ? fallback || key : translated;
+    },
+  });
+  return bohSignupsView;
+}
+
+function bohSignupsSeason(value) {
+  const season = String(value || '').trim();
+  return BOH_SIGNUP_SEASON_PATTERN.test(season) ? season : '';
+}
+
+async function loadBohSignupsSnapshot() {
+  const { firestore, db } = await window.getVtsAdminFirestoreContext();
+  const configSnap = await firestore.getDoc(firestore.doc(db, BOH_SIGNUP_CONFIG_PATH));
+  const config = configSnap?.exists?.() ? configSnap.data() : {};
+  const season = bohSignupsSeason(config.activeSeason);
+  let signups = [];
+  if (season) {
+    const docs = await firestore.getDocs(
+      firestore.collection(db, `boh_allstar/${season}/submissions`)
+    );
+    signups = docs.docs
+      .map((entry) => ({ submissionUid: entry.id, ...entry.data() }))
+      .sort((left, right) =>
+        String(left.gameName || '').localeCompare(
+          String(right.gameName || ''),
+          getDashboardLang(),
+          {
+            sensitivity: 'base',
+          }
+        )
+      );
+  }
+  return { season, config, signups };
+}
+
+async function loadBohSignupsAdmin(options = {}) {
+  const root = $id('dashBohSignupsRoot');
+  if (!root || bohSignupsLoading) return;
+  if (state.bohSignupsSnapshot && !options.force) {
+    ensureBohSignupsView().render(root, state.bohSignupsSnapshot);
+    return;
+  }
+  bohSignupsLoading = true;
+  setBohSignupsStatus(dashT('adminBohSignupsLoading'), 'info');
+  try {
+    const snapshot = await loadBohSignupsSnapshot();
+    state.bohSignupsSnapshot = snapshot;
+    ensureBohSignupsView().render(root, snapshot);
+    setBohSignupsStatus('');
+  } catch (err) {
+    root.innerHTML = `<div class="dash-empty" role="alert">${esc(
+      dashT('adminBohSignupsUnavailable')
+    )}</div>`;
+    setBohSignupsStatus(showCloudSyncFailure(err, 'Signups load failed'), 'error');
+  } finally {
+    bohSignupsLoading = false;
+  }
+}
+
+function renderBohSignupsPanel() {
+  bindBohSignupsControls();
+  void loadBohSignupsAdmin();
+}
+
+async function submitBohSignupAdminRequest(payload) {
+  const user = state.adminUser;
+  if (!user?.getIdToken)
+    throw Object.assign(new Error('admin_required'), { code: 'admin_required' });
+  const { getFirebaseAppCheckToken } = await loadFirebaseApi();
+  const [idToken, appCheckToken] = await Promise.all([
+    user.getIdToken(),
+    getFirebaseAppCheckToken(),
+  ]);
+  const response = await fetch(BOH_SIGNUP_ADMIN_ENDPOINT, {
+    method: 'POST',
+    mode: 'cors',
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${idToken}`,
+      'X-Firebase-AppCheck': appCheckToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw Object.assign(new Error(body?.error || 'signup_failed'), {
+      code: body?.error || 'service_unavailable',
+      status: response.status,
+    });
+  }
+  return body;
+}
+
+function bindBohSignupsControls() {
+  const root = $id('dashBohSignupsRoot');
+  if (!root) return;
+  const refresh = $id('dashBohSignupsRefreshBtn');
+  if (refresh && !refresh.dataset.bound) {
+    refresh.dataset.bound = '1';
+    refresh.addEventListener('click', () => void loadBohSignupsAdmin({ force: true }));
+  }
+
+  const seasonForm = $id('dashBohSignupsSeasonForm');
+  if (seasonForm && !seasonForm.dataset.bound) {
+    seasonForm.dataset.bound = '1';
+    seasonForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const view = ensureBohSignupsView();
+      try {
+        const config = view.readSeasonConfig(root);
+        const saved = await saveBohSignupSeasonConfig(
+          config,
+          await window.getVtsAdminFirestoreContext()
+        );
+        state.bohSignupsSnapshot = { ...(state.bohSignupsSnapshot || {}), ...saved };
+        setBohSignupsStatus(dashT('adminBohSignupSeasonSaved'), 'success');
+        await loadBohSignupsAdmin({ force: true });
+      } catch (err) {
+        setBohSignupsStatus(
+          err?.code === 'invalid_season_setting'
+            ? dashT('adminBohSignupErrorInvalid')
+            : showCloudSyncFailure(err, 'Season settings save failed'),
+          'error'
+        );
+      }
+    });
+  }
+
+  const signupForm = $id('dashBohSignupForm');
+  if (signupForm && !signupForm.dataset.bound) {
+    signupForm.dataset.bound = '1';
+    signupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const view = ensureBohSignupsView();
+      const payload = view.collectRequest(root);
+      if (!payload.seasonId) {
+        setBohSignupsStatus(dashT('adminBohSignupErrorSeason'), 'error');
+        return;
+      }
+      setBohSignupsStatus(dashT('adminBohSignupSaving'), 'info');
+      try {
+        await submitBohSignupAdminRequest(payload);
+        view.fillForm(root, null);
+        setBohSignupsStatus(dashT('adminBohSignupSaved'), 'success');
+        await loadBohSignupsAdmin({ force: true });
+      } catch (err) {
+        setBohSignupsStatus(readBohSignupAdminError(err, { t: dashT }), 'error');
+      }
+    });
+  }
+
+  const cancelEdit = $id('dashBohSignupCancelEdit');
+  if (cancelEdit && !cancelEdit.dataset.bound) {
+    cancelEdit.dataset.bound = '1';
+    cancelEdit.addEventListener('click', () => ensureBohSignupsView().fillForm(root, null));
+  }
+
+  // The rows are re-rendered on every load, so the edit action is delegated.
+  const list = $id('dashBohSignupsList');
+  if (list && !list.dataset.bound) {
+    list.dataset.bound = '1';
+    list.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-boh-signup-edit]');
+      if (!button) return;
+      const uid = button.dataset.bohSignupEdit;
+      const signup = (state.bohSignupsSnapshot?.signups || []).find(
+        (entry) => entry.submissionUid === uid
+      );
+      if (!signup) return;
+      ensureBohSignupsView().fillForm(root, signup);
+      setBohSignupsStatus(dashT('adminBohSignupManualTitle'), 'info');
+      $id('dashBohSignupName')?.focus();
+    });
+  }
 }
 
 function renderBohMatchPanel() {
@@ -8435,6 +9945,13 @@ export async function bootOcrDashboard() {
   if (dashExpAllData) dashExpAllData.onclick = exportAdminAllDataCsv;
   $id('dashExpPdf').onclick = () => window.print();
   $id('dashExpPng').onclick = exportToPng;
+  // Duty list PNGs: the Export menu entries and each duty list's Share PNG.
+  document.querySelectorAll('[data-duty-export-png]').forEach((button) => {
+    button.onclick = () => {
+      $id('dashExportMenu')?.classList.remove('active');
+      openDutyListExport(button.dataset.dutyExportPng);
+    };
+  });
   $id('dashExpJson').onclick = exportData;
   const dashExpDebugJson = $id('dashExpDebugJson');
   if (dashExpDebugJson) dashExpDebugJson.onclick = exportAdminDebugJson;

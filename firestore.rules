@@ -721,6 +721,7 @@ service cloud.firestore {
     function validEdenX1VoteSettings() {
       return request.resource.data.keys().hasOnly([
         'season', 'votingOpen', 'allowEditing', 'showPublicResults',
+        'showMemberResults', 'showManagementResults',
         'showVoterNames', 'contributionRankingMode', 'closesAt', 'candidateRedirects',
         'updatedAt', 'updatedBy'
       ])
@@ -730,6 +731,10 @@ service cloud.firestore {
       && request.resource.data.votingOpen is bool
       && request.resource.data.allowEditing is bool
       && request.resource.data.showPublicResults is bool
+      // The single switch split in two; both are optional so a document written
+      // before the split still validates.
+      && (!('showMemberResults' in request.resource.data) || request.resource.data.showMemberResults is bool)
+      && (!('showManagementResults' in request.resource.data) || request.resource.data.showManagementResults is bool)
       && request.resource.data.showVoterNames is bool
       && (
         !('contributionRankingMode' in request.resource.data)
@@ -782,7 +787,7 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
         'schemaVersion', 'workspace', 'season', 'published', 'revision', 'publishedAtMs',
         'updatedBy', 'dashboard', 'rosterSnapshots', 'voteSettings', 'publicVoteResults',
-        'scoring'
+        'scoring', 'rewardSettings'
       ])
       && request.resource.data.schemaVersion == 1
       && request.resource.data.workspace == 'eden-x2'
@@ -800,7 +805,10 @@ service cloud.firestore {
       && request.resource.data.voteSettings is map
       && request.resource.data.publicVoteResults is map
       // Duty weights and the demolition switch, so public scores match admin.
-      && (!('scoring' in request.resource.data) || request.resource.data.scoring is map);
+      && (!('scoring' in request.resource.data) || request.resource.data.scoring is map)
+      // The reward distribution, so the public page shows the published quotas.
+      && (!('rewardSettings' in request.resource.data)
+        || validRewardSettingsShape(request.resource.data.rewardSettings));
     }
 
     function validEdenWorkspaceRecord(workspaceId) {
@@ -819,6 +827,58 @@ service cloud.firestore {
       && (!('archivedAtMs' in request.resource.data) || request.resource.data.archivedAtMs is number)
       && (!('publication' in request.resource.data) || request.resource.data.publication is map)
       && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy is string);
+    }
+
+    // Season registry: the timeline of Eden seasons (key, label, state,
+    // timestamps, workspace). One global document, superadmin-only, because it
+    // has to stay writable after the workspace it describes is archived, and
+    // labels for archived seasons cannot live inside those frozen records.
+    function validEdenSeasonEntry(entry) {
+      return entry is map
+        && entry.keys().hasOnly([
+          'id', 'label', 'state', 'workspaceId', 'startedAtMs', 'endedAtMs'
+        ])
+        && entry.id is string
+        && entry.id.matches('^[a-z0-9][a-z0-9_-]{2,39}$')
+        && entry.label is string
+        && entry.label.size() > 0
+        && entry.label.size() <= 60
+        && (entry.state == 'ended' || entry.state == 'active' || entry.state == 'draft')
+        && entry.workspaceId is string
+        && (
+          entry.workspaceId == ''
+          || entry.workspaceId == 'eden-x1'
+          || entry.workspaceId == 'eden-x2'
+        )
+        && entry.startedAtMs is number
+        && entry.startedAtMs >= 0
+        && entry.endedAtMs is number
+        && entry.endedAtMs >= 0;
+    }
+
+    // Rules have no list iteration, so every entry position is checked under a
+    // size guard instead. Eight positions is MAX_SEASON_COUNT on both sides.
+    function validEdenSeasonEntryAt(seasons, index) {
+      return seasons.size() < index + 1 || validEdenSeasonEntry(seasons[index]);
+    }
+
+    function validEdenSeasonRegistry() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['schemaVersion', 'seasons', 'updatedAt', 'updatedBy'])
+        && d.schemaVersion == 1
+        && d.seasons is list
+        && d.seasons.size() >= 1
+        && d.seasons.size() <= 8
+        && validEdenSeasonEntryAt(d.seasons, 0)
+        && validEdenSeasonEntryAt(d.seasons, 1)
+        && validEdenSeasonEntryAt(d.seasons, 2)
+        && validEdenSeasonEntryAt(d.seasons, 3)
+        && validEdenSeasonEntryAt(d.seasons, 4)
+        && validEdenSeasonEntryAt(d.seasons, 5)
+        && validEdenSeasonEntryAt(d.seasons, 6)
+        && validEdenSeasonEntryAt(d.seasons, 7)
+        && d.updatedAt == request.time
+        && d.updatedBy == request.auth.uid;
     }
 
     function hasStableConductMetadata() {
@@ -885,18 +945,26 @@ service cloud.firestore {
     }
 
     function validAllStarBohConfig() {
+      // `scoringProfileId` is the season's scoring version, chosen by a
+      // superadmin in the 2027 Signups tab and validated against the registry
+      // in js/all-star-boh-model.js. It lives here rather than on each signup
+      // because the submission shape is pinned key for key below and this file
+      // has no expression budget to spare; one version per season is also what
+      // the comparison actually means.
       return request.resource.data.keys().hasOnly([
-        'activeSeason', 'open', 'grantDurationMinutes'
+        'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
       ])
       && request.resource.data.keys().hasAll([
-        'activeSeason', 'open', 'grantDurationMinutes'
+        'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
       ])
       && request.resource.data.activeSeason is string
       && request.resource.data.activeSeason.matches('^[A-Za-z0-9_-]{1,80}$')
       && request.resource.data.open is bool
       && request.resource.data.grantDurationMinutes is int
       && request.resource.data.grantDurationMinutes >= 5
-      && request.resource.data.grantDurationMinutes <= 10080;
+      && request.resource.data.grantDurationMinutes <= 10080
+      && request.resource.data.scoringProfileId is string
+      && request.resource.data.scoringProfileId.matches('^[A-Za-z0-9._-]{1,80}$');
     }
 
     function validBohMapperPublish(season) {
@@ -2424,6 +2492,105 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Complaints and issues filed by guild members from the Eden page. Members
+    // (anonymous Auth included) may only CREATE; every read is reserved to a
+    // superadmin, because the whole point of the form is that a member can
+    // report leadership or another member without the guild seeing it. Delete
+    // is refused for everyone so an uncomfortable record cannot be quietly
+    // removed, and update is a superadmin-only review stamp pinned by
+    // validComplaintReview() so a reviewer cannot rewrite what was filed.
+    //
+    // ANONYMITY IS STRUCTURAL, NOT COSMETIC. When `anonymous` is true the
+    // document may not carry `submittedBy` or `submittedByName` at all — the
+    // validator rejects the write outright rather than storing the identity
+    // and hiding it in the UI. That is what makes the promise keepable: there
+    // is no field for a later reader, export, or relabeling mistake to
+    // recover, and no "publish as anonymous" path that silently keeps the
+    // author attached. Named complaints pin `submittedBy` to the caller's uid
+    // so a member cannot file under someone else's account.
+    function validComplaintImage(path, complaintId) {
+      // Images live in Cloud Storage under complaints/{complaintId}/…: the
+      // filing's own random id, never the uploader's uid, so screenshots do not
+      // de-anonymise an anonymous filing. Every stored path is pinned to this
+      // document's id, so a filing cannot point at another filing's images.
+      return path is string
+        && path.size() <= 320
+        && path.matches('^complaints/[A-Za-z0-9]{20}/[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$')
+        && path.split('/')[1] == complaintId;
+    }
+
+    function validComplaint(complaintId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+          'category', 'description', 'images', 'anonymous',
+          'submittedBy', 'submittedByName', 'createdAt', 'reviewed'
+        ])
+        && d.keys().hasAll(['category', 'description', 'images', 'anonymous', 'createdAt', 'reviewed'])
+        && d.category in ['bug', 'missing', 'conduct', 'fair-play', 'alliance', 'other']
+        && d.description is string
+        && d.description.size() >= 10
+        && d.description.size() <= 4000
+        && d.images is list
+        && d.images.size() <= 3
+        // Bounded by index rather than by a loop: rules have none, and the cap
+        // of three keeps the expression count flat.
+        && (!(d.images.size() > 0) || validComplaintImage(d.images[0], complaintId))
+        && (!(d.images.size() > 1) || validComplaintImage(d.images[1], complaintId))
+        && (!(d.images.size() > 2) || validComplaintImage(d.images[2], complaintId))
+        && d.anonymous is bool
+        && (!d.anonymous || !('submittedBy' in d))
+        && (!d.anonymous || !('submittedByName' in d))
+        && (d.anonymous || d.submittedBy == request.auth.uid)
+        && (d.anonymous
+          || (d.submittedByName is string
+            && d.submittedByName.size() > 0
+            && d.submittedByName.size() <= 80))
+        && d.createdAt == request.time
+        && d.reviewed == false
+        // Rate limit: the same batch must stamp the session's throttle
+        // document, whose own rule refuses a stamp within ten minutes of the
+        // previous one. Anonymous Auth makes signedIn() no gate on its own.
+        && getAfter(/databases/$(database)/documents/complaint_throttle/$(request.auth.uid)).data.lastAt
+          == request.time;
+    }
+
+    function validComplaintReview() {
+      // The only permitted update: stamp the review. The diff allowlist is the
+      // whole guard — a reviewer cannot touch the category, the description,
+      // the image list, or the author fields of what a member filed.
+      let d = request.resource.data;
+      return d.diff(resource.data).affectedKeys().hasOnly(['reviewed', 'reviewedAt', 'reviewedBy'])
+        && d.reviewed is bool
+        && d.reviewedBy == request.auth.uid
+        && d.reviewedAt == request.time;
+    }
+
+    match /complaints/{complaintId} {
+      allow read: if isSuperAdmin();
+      allow create: if signedIn()
+        && complaintId.matches('^[A-Za-z0-9]{20}$')
+        && validComplaint(complaintId);
+      allow update: if isSuperAdmin() && validComplaintReview();
+      // Spam and personal data must be removable; only a superadmin can.
+      allow delete: if isSuperAdmin();
+    }
+
+    // One stamp per signed-in session, readable by nobody. It carries only the
+    // time of the session's last filing, and exists to rate-limit filings.
+    match /complaint_throttle/{uid} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lastAt'])
+        && request.resource.data.lastAt == request.time;
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lastAt'])
+        && request.resource.data.lastAt == request.time
+        && resource.data.lastAt < request.time - duration.value(10, 'm');
+      allow delete: if false;
+    }
+
     match /eden_map/shared_intel {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validSharedIntel();
@@ -2433,7 +2600,13 @@ service cloud.firestore {
     match /boh_allstar_config/current {
       allow get: if isAdmin();
       allow list: if false;
-      allow create, update: if isAdmin() && validAllStarBohConfig();
+      // Admins open and close registration; only a superadmin picks the season
+      // and the scoring version every signup is validated against.
+      allow create: if isSuperAdmin() && validAllStarBohConfig();
+      allow update: if isAdmin() && validAllStarBohConfig()
+        && (isSuperAdmin()
+          || !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['activeSeason', 'scoringProfileId']));
       allow delete: if false;
     }
 
@@ -2681,19 +2854,26 @@ service cloud.firestore {
 
     // Duty scoring weights: points a single duty is worth, per activity and per
     // account class. A number here multiplies real scores, so the shape is
-    // pinned rather than trusted — three known activities, two known classes,
-    // finite non-negative numbers within the range the editor itself allows.
+    // pinned rather than trusted — three known activities, known classes, finite
+    // non-negative numbers within the range the editor itself allows.
+    //
+    // `main` and `alt` stay REQUIRED and `secondary` stays optional, the same
+    // way the vote-settings split kept its old keys: a document written before
+    // secondary existed still validates, so an un-upgraded client cannot lock
+    // itself out of its own scoring document.
     function validDutyPointWeightEntry(entry) {
       return entry is map
-        && entry.keys().hasOnly(['main', 'alt'])
+        && entry.keys().hasOnly(['main', 'alt', 'secondary'])
         && entry.keys().hasAll(['main', 'alt'])
         && entry.main is number && entry.main >= 0 && entry.main <= 100
-        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100;
+        && entry.alt is number && entry.alt >= 0 && entry.alt <= 100
+        && (!('secondary' in entry)
+          || (entry.secondary is number && entry.secondary >= 0 && entry.secondary <= 100));
     }
 
     function validDutyPointWeights() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'updatedAt', 'updatedBy'])
+      return d.keys().hasOnly(['weights', 'includeDemolitionPoints', 'contributionWeight', 'formPointWeight', 'updatedAt', 'updatedBy'])
         && d.weights is map
         && d.weights.keys().hasOnly(['banners', 'pathers', 'shieldWalls'])
         && d.weights.keys().hasAll(['banners', 'pathers', 'shieldWalls'])
@@ -2701,7 +2881,14 @@ service cloud.firestore {
         && validDutyPointWeightEntry(d.weights.pathers)
         && validDutyPointWeightEntry(d.weights.shieldWalls)
         && (!('includeDemolitionPoints' in d) || d.includeDemolitionPoints is bool)
-        && (!('updatedBy' in d) || d.updatedBy is string);
+        // Whole-score multipliers. 10 is the same ceiling the panel's inputs
+        // carry, and the client falls back to 1 for anything hostile.
+        && (!('contributionWeight' in d)
+          || (d.contributionWeight is number && d.contributionWeight >= 0 && d.contributionWeight <= 10))
+        && (!('formPointWeight' in d)
+          || (d.formPointWeight is number && d.formPointWeight >= 0 && d.formPointWeight <= 10))
+        && d.updatedAt == request.time
+        && d.updatedBy == request.auth.uid;
     }
     match /vts_admin/eden_x1_vote_settings {
       allow read: if signedIn();
@@ -2712,6 +2899,47 @@ service cloud.firestore {
     match /vts_admin/eden_x1_duty_point_weights {
       allow read: if isAdmin();
       allow create, update: if isSuperAdmin() && validDutyPointWeights();
+      allow delete: if false;
+    }
+
+    // Reward distribution rules: how many players each category rewards and who
+    // holds the guild-master reward. Superadmin-only, per workspace, and pinned
+    // so a typo cannot silently widen a quota.
+    // Shape shared by the superadmin reward document and its published copy.
+    function validRewardSettingsShape(d) {
+      return d is map
+        && d.keys().hasOnly(['quotas', 'guildMasterSource', 'r5PlayerKey'])
+        && d.quotas is map
+        && d.quotas.keys().hasOnly(['support', 'contribution', 'management', 'team'])
+        && d.quotas.support is int && d.quotas.support >= 0 && d.quotas.support <= 50
+        && d.quotas.contribution is int && d.quotas.contribution >= 0 && d.quotas.contribution <= 50
+        && d.quotas.management is int && d.quotas.management >= 0 && d.quotas.management <= 50
+        && d.quotas.team is int && d.quotas.team >= 0 && d.quotas.team <= 50
+        && d.guildMasterSource in ['r5', 'support_top1']
+        && (!('r5PlayerKey' in d) || (d.r5PlayerKey is string && d.r5PlayerKey.size() <= 80));
+    }
+
+    function validRewardSettings() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['quotas', 'guildMasterSource', 'r5PlayerKey', 'updatedAt', 'updatedBy'])
+        // Audit fields cannot be spoofed: the server time and the writer.
+        && d.updatedAt == request.time
+        && d.updatedBy == request.auth.uid
+        && d.quotas is map
+        && d.quotas.keys().hasOnly(['support', 'contribution', 'management', 'team'])
+        && d.quotas.keys().hasAll(['support', 'contribution', 'management', 'team'])
+        && d.quotas.support is int && d.quotas.support >= 0 && d.quotas.support <= 50
+        && d.quotas.contribution is int && d.quotas.contribution >= 0 && d.quotas.contribution <= 50
+        && d.quotas.management is int && d.quotas.management >= 0 && d.quotas.management <= 50
+        && d.quotas.team is int && d.quotas.team >= 0 && d.quotas.team <= 50
+        && d.guildMasterSource in ['r5', 'support_top1']
+        && (!('r5PlayerKey' in d) || (d.r5PlayerKey is string && d.r5PlayerKey.size() <= 80))
+        && (!('updatedBy' in d) || d.updatedBy is string);
+    }
+
+    match /vts_admin/eden_x1_reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validRewardSettings();
       allow delete: if false;
     }
 
@@ -2816,6 +3044,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /vts_admin/eden_x2_reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validRewardSettings();
+      allow delete: if false;
+    }
+
     match /vts_admin/eden_x2_public_vote_results {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
@@ -2830,7 +3064,20 @@ service cloud.firestore {
 
     match /vts_admin/eden_workspaces/records/{workspaceId} {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validEdenWorkspaceRecord(workspaceId);
+      // Publishing and unpublishing move a workspace between active and draft.
+      // Archiving it is what ends a season, and that is a superadmin act; so is
+      // touching an ended season's record at all, un-archiving included.
+      allow create, update: if isAdmin()
+        && validEdenWorkspaceRecord(workspaceId)
+        && ((request.resource.data.lifecycle != 'archived'
+          && (resource == null || resource.data.lifecycle != 'archived'))
+          || isSuperAdmin());
+      allow delete: if false;
+    }
+
+    match /vts_admin/season_registry {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && validEdenSeasonRegistry();
       allow delete: if false;
     }
 

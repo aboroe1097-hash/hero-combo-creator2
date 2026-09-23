@@ -1,6 +1,6 @@
 const COPY = Object.freeze({
   en: Object.freeze({
-    documentTitle: 'Eden X1 Rewards & Contribution | Hero Combo Creator',
+    documentTitle: 'Eden X1 Rewards & Contribution | RoC VTS Toolkit',
     metaDescription:
       'View Eden X1 season rewards, contribution rankings, team voting, and player performance for VTS 1097.',
     headerLabel: 'Eden X1 rewards and contribution dashboard',
@@ -15,9 +15,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Eden X1 voting guidance',
     publicDashboardLabel: 'Public Eden X1 performance dashboard',
     themeToggleLabel: 'Switch light or dark theme',
+    complaintsLabel: 'Issue and complaint form for alliance leadership',
   }),
   es: Object.freeze({
-    documentTitle: 'Recompensas y contribución de Eden X1 | Hero Combo Creator',
+    documentTitle: 'Recompensas y contribución de Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'Consulta las recompensas de temporada de Eden X1, la clasificación de contribución, la votación del equipo y el rendimiento de los jugadores de VTS 1097.',
     headerLabel: 'Panel de recompensas y contribución de Eden X1',
@@ -32,9 +33,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Guía de votación de Eden X1',
     publicDashboardLabel: 'Panel público de rendimiento de Eden X1',
     themeToggleLabel: 'Cambiar entre el tema claro y oscuro',
+    complaintsLabel: 'Formulario de incidencias y quejas para la dirección de la alianza',
   }),
   pt: Object.freeze({
-    documentTitle: 'Recompensas e contribuição do Eden X1 | Hero Combo Creator',
+    documentTitle: 'Recompensas e contribuição do Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'Confira as recompensas da temporada Eden X1, o ranking de contribuição, a votação da equipe e o desempenho dos jogadores da VTS 1097.',
     headerLabel: 'Painel de recompensas e contribuição do Eden X1',
@@ -49,9 +51,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Guia de votação do Eden X1',
     publicDashboardLabel: 'Painel público de desempenho do Eden X1',
     themeToggleLabel: 'Alternar entre o tema claro e escuro',
+    complaintsLabel: 'Formulário de problemas e reclamações para a liderança da aliança',
   }),
   de: Object.freeze({
-    documentTitle: 'Eden X1: Belohnungen & Beiträge | Hero Combo Creator',
+    documentTitle: 'Eden X1: Belohnungen & Beiträge | RoC VTS Toolkit',
     metaDescription:
       'Sieh dir die Eden-X1-Saisonbelohnungen, Beitragsrangliste, Teamabstimmung und Spielerleistung von VTS 1097 an.',
     headerLabel: 'Eden-X1-Dashboard für Belohnungen und Beiträge',
@@ -66,9 +69,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Hilfe zur Eden-X1-Abstimmung',
     publicDashboardLabel: 'Öffentliches Eden-X1-Leistungsdashboard',
     themeToggleLabel: 'Zwischen hellem und dunklem Design wechseln',
+    complaintsLabel: 'Formular für Probleme und Beschwerden an die Allianzleitung',
   }),
   fr: Object.freeze({
-    documentTitle: 'Récompenses et contributions Eden X1 | Hero Combo Creator',
+    documentTitle: 'Récompenses et contributions Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'Consultez les récompenses de la saison Eden X1, le classement des contributions, le vote de l’équipe et les performances des joueurs de VTS 1097.',
     headerLabel: 'Tableau de bord des récompenses et contributions Eden X1',
@@ -83,9 +87,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Guide de vote Eden X1',
     publicDashboardLabel: 'Tableau de bord public des performances Eden X1',
     themeToggleLabel: 'Basculer entre le thème clair et sombre',
+    complaintsLabel: 'Formulaire de problèmes et de plaintes pour la direction de l’alliance',
   }),
   tr: Object.freeze({
-    documentTitle: 'Eden X1 Ödülleri ve Katkıları | Hero Combo Creator',
+    documentTitle: 'Eden X1 Ödülleri ve Katkıları | RoC VTS Toolkit',
     metaDescription:
       'VTS 1097 için Eden X1 sezon ödüllerini, katkı sıralamasını, takım oylamasını ve oyuncu performansını görüntüleyin.',
     headerLabel: 'Eden X1 ödül ve katkı panosu',
@@ -100,9 +105,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Eden X1 oylama rehberi',
     publicDashboardLabel: 'Herkese açık Eden X1 performans panosu',
     themeToggleLabel: 'Açık veya koyu temaya geç',
+    complaintsLabel: 'İttifak yönetimi için sorun ve şikâyet formu',
   }),
   ru: Object.freeze({
-    documentTitle: 'Награды и вклад Eden X1 | Hero Combo Creator',
+    documentTitle: 'Награды и вклад Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'Смотрите награды сезона Eden X1, рейтинг вклада, голосование за членов команды и результаты игроков VTS 1097.',
     headerLabel: 'Панель наград и вклада Eden X1',
@@ -117,9 +123,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Подсказки по голосованию Eden X1',
     publicDashboardLabel: 'Публичная панель результатов Eden X1',
     themeToggleLabel: 'Переключить светлую или тёмную тему',
+    complaintsLabel: 'Форма проблем и жалоб для руководства альянса',
   }),
   id: Object.freeze({
-    documentTitle: 'Hadiah & Kontribusi Eden X1 | Hero Combo Creator',
+    documentTitle: 'Hadiah & Kontribusi Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'Lihat hadiah musim Eden X1, peringkat kontribusi, voting tim, dan performa pemain VTS 1097.',
     headerLabel: 'Dasbor hadiah dan kontribusi Eden X1',
@@ -134,9 +141,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Panduan voting Eden X1',
     publicDashboardLabel: 'Dasbor performa publik Eden X1',
     themeToggleLabel: 'Ganti ke tema terang atau gelap',
+    complaintsLabel: 'Formulir masalah dan keluhan untuk pimpinan aliansi',
   }),
   zh: Object.freeze({
-    documentTitle: '伊甸 X1 奖励与贡献 | Hero Combo Creator',
+    documentTitle: '伊甸 X1 奖励与贡献 | RoC VTS Toolkit',
     metaDescription: '查看 VTS 1097 的伊甸 X1 赛季奖励、贡献排名、队友投票和玩家表现。',
     headerLabel: '伊甸 X1 奖励与贡献面板',
     mainLabel: '伊甸 X1 赛季奖励',
@@ -150,9 +158,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: '伊甸 X1 投票指南',
     publicDashboardLabel: '伊甸 X1 公开表现面板',
     themeToggleLabel: '切换浅色或深色主题',
+    complaintsLabel: '面向联盟管理层的提交问题或投诉表单',
   }),
   ar: Object.freeze({
-    documentTitle: 'مكافآت ومساهمات Eden X1 | Hero Combo Creator',
+    documentTitle: 'مكافآت ومساهمات Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'اعرض مكافآت موسم Eden X1 وترتيب المساهمات وتصويت أعضاء الفريق وأداء لاعبي VTS 1097.',
     headerLabel: 'لوحة مكافآت ومساهمات Eden X1',
@@ -167,9 +176,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'إرشادات تصويت Eden X1',
     publicDashboardLabel: 'لوحة أداء Eden X1 العامة',
     themeToggleLabel: 'التبديل بين المظهر الفاتح والداكن',
+    complaintsLabel: 'نموذج المشكلات والشكاوى لقيادة التحالف',
   }),
   kr: Object.freeze({
-    documentTitle: 'Eden X1 보상 및 기여도 | Hero Combo Creator',
+    documentTitle: 'Eden X1 보상 및 기여도 | RoC VTS Toolkit',
     metaDescription:
       'VTS 1097의 Eden X1 시즌 보상, 기여도 순위, 팀원 투표 및 플레이어 활약을 확인하세요.',
     headerLabel: 'Eden X1 보상 및 기여도 대시보드',
@@ -184,9 +194,10 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Eden X1 투표 안내',
     publicDashboardLabel: 'Eden X1 공개 활약 대시보드',
     themeToggleLabel: '라이트 또는 다크 테마로 전환',
+    complaintsLabel: '연합 지도부에 보내는 문제 및 불만 양식',
   }),
   it: Object.freeze({
-    documentTitle: 'Ricompense e contributi Eden X1 | Hero Combo Creator',
+    documentTitle: 'Ricompense e contributi Eden X1 | RoC VTS Toolkit',
     metaDescription:
       'Consulta ricompense Eden X1, classifiche contributo, voto dei giocatori di squadra e prestazioni VTS 1097.',
     headerLabel: 'Dashboard ricompense e contributi Eden X1',
@@ -201,6 +212,7 @@ const COPY = Object.freeze({
     voteGuidanceLabel: 'Guida voto Eden X1',
     publicDashboardLabel: 'Dashboard pubblica prestazioni Eden X1',
     themeToggleLabel: 'Cambia tema chiaro o scuro',
+    complaintsLabel: 'Modulo per problemi e reclami alla dirigenza dell’alleanza',
   }),
 });
 

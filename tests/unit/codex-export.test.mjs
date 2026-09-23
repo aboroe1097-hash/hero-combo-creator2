@@ -73,7 +73,7 @@ test('csv exports carry branding footers with credits', () => {
   assert.ok(footerLines.length >= 3);
   const joined = footerLines.join('\n');
   assert.ok(joined.includes('DonPablone'));
-  assert.ok(joined.includes('Hero Combo Creator'));
+  assert.ok(joined.includes('RoC VTS Toolkit'));
   assert.ok(joined.includes('riseofcastles.net community'));
 });
 

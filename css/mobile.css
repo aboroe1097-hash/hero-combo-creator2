@@ -1,5 +1,5 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool
+   mobile.css — RoC VTS Toolkit
    Applied on screens ≤768px via <link media="(max-width: 768px)">
 
    UPGRADE PHILOSOPHY:
@@ -93,7 +93,10 @@ html.admin-standalone-root {
 html.admin-standalone-root body.admin-standalone-page {
   height: auto;
   min-height: 100%;
-  overflow-y: auto;
+  /* The root element scrolls; a body that is itself a scroll container (auto)
+     never scrolls but still traps position: sticky, so the admin's sticky bars
+     scrolled away on phones. */
+  overflow-y: visible;
   overscroll-behavior-y: auto;
   touch-action: pan-y pinch-zoom;
 }

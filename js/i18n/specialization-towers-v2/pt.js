@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_PT = Object.freeze({
+  reportWrongCost: 'Informar um custo errado',
+  selectNodeBeforeMedals: 'Selecione pelo menos um nó antes de adicionar medalhas.',
   title: 'Torres de especialização',
   subtitle: 'Recrie cada caminho de especialização, acompanhe medalhas e confira os bônus ativos.',
   betaBadge: 'Beta',

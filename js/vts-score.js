@@ -6,7 +6,12 @@ import {
   getSingleBohStatsScreenshot,
   prepareBohStatsScreenshot,
 } from './all-star-boh-ocr.js';
-import { ensureAnonymousAuth, getCurrentUser, getFirebaseAppCheckToken, initFirebase } from './firebase.js';
+import {
+  ensureAnonymousAuth,
+  getCurrentUser,
+  getFirebaseAppCheckToken,
+  initFirebase,
+} from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
 import {
   buildVtsScoreSubmission,
@@ -14,6 +19,8 @@ import {
   resolveVtsScorePlayer,
   VTS_SCORE_POWER_FIELDS,
 } from './vts-score-model.js';
+import { BOH_SIGNUP_FIELD_PATHS } from './boh-signup-document.js';
+import { BOH_SIGNUP_SAVE_ERROR, createBohSignupSession } from './boh-signup-form.js';
 
 const POWER_FIELD_I18N = Object.freeze({
   totalCastlePower: 'fieldTotalCastlePower',
@@ -167,8 +174,15 @@ export async function bootVtsScore(options = {}) {
     visiblePlayers: [],
     highlightedPlayerIndex: -1,
     review: null,
+    signup: null,
+    signupSession: null,
+    scoreWorkspaceOpen: false,
   };
   const pinPanel = element('vtsScoreGate');
+  const signupPanel = element('vtsScoreSignup');
+  const signupSuccess = element('vtsScoreSignupSuccess');
+  const signupForm = element('vtsScoreSignupForm');
+  const signupButton = element('vtsScoreSignupSubmit');
   const scorePanel = element('vtsScoreWorkspace');
   const pinForm = element('vtsScorePinForm');
   const scoreForm = element('vtsScoreForm');
@@ -342,10 +356,17 @@ export async function bootVtsScore(options = {}) {
 
   async function openWorkspace(grant) {
     state.grant = grant;
-    setStatus('Loading eligible Competition #11 signups…');
+    setHidden(pinPanel, true);
+    setHidden(scorePanel, true);
+    await openSignupStep(grant);
+    if (state.signup) await openScoreWorkspace();
+  }
+
+  async function openScoreWorkspace() {
+    setStatus('Loading eligible season signups…');
     const result = await state.client.getVtsScorePlayers();
     state.players = [...result.players];
-    setHidden(pinPanel, true);
+    state.scoreWorkspaceOpen = true;
     setHidden(scorePanel, false);
     playerInput.disabled = false;
     fileInput.disabled = false;
@@ -357,13 +378,66 @@ export async function bootVtsScore(options = {}) {
     );
   }
 
+  /**
+   * The registration step, in front of the score upload: same season, same
+   * member grant, and the same owner-only document the retired All-Star hub
+   * wrote. A member who has not registered yet sees only this step — the upload
+   * form needs a submitted signup to compare against, so offering it first
+   * would only produce a name search that cannot match.
+   */
+  async function openSignupStep(grant) {
+    setHidden(signupPanel, false);
+    setHidden(signupSuccess, true);
+    let existing = null;
+    try {
+      if (!state.signupSession) {
+        state.signupSession = createBohSignupSession({
+          uid: getCurrentUser()?.uid || '',
+          season: grant.seasonId,
+          loadFirestore: options.loadSignupFirestore,
+        });
+      }
+      existing = await state.signupSession.load();
+    } catch (error) {
+      setStatus(signupErrorMessage(error), 'error');
+    }
+    state.signup = existing;
+    renderSignupState();
+    if (existing) state.signupSession.fillForm(signupPanel, existing);
+  }
+
+  /** The season badge and the state line, both re-rendered on a language change. */
+  function renderSignupState() {
+    const season = element('vtsScoreSignupSeason');
+    if (season)
+      season.textContent = i18n.text('signupForSeason', { season: state.grant?.seasonId || '' });
+    const stateLine = element('vtsScoreSignupState');
+    if (!stateLine) return;
+    const key = state.signup ? 'signupStateSaved' : 'signupStateNone';
+    const values = state.signup ? { revision: String(state.signup.revision || 1) } : {};
+    stateLine.dataset.tone = state.signup ? 'success' : 'neutral';
+    stateLine.textContent = i18n.text(key, values);
+  }
+
+  function signupErrorMessage(error) {
+    const keys = {
+      [BOH_SIGNUP_SAVE_ERROR.accessDenied]: 'signupErrorAccess',
+      [BOH_SIGNUP_SAVE_ERROR.closed]: 'signupErrorClosed',
+      [BOH_SIGNUP_SAVE_ERROR.invalidInput]: 'signupErrorInvalid',
+      [BOH_SIGNUP_SAVE_ERROR.network]: 'signupErrorNetwork',
+      [BOH_SIGNUP_SAVE_ERROR.session]: 'signupErrorSession',
+    };
+    return i18n.text(keys[error?.code] || 'signupErrorGeneric');
+  }
+
   const initialized = await (options.initFirebase || initFirebase)();
   if (!initialized?.configured) throw new Error('Firebase is not configured.');
   const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
   if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
     getUser: async () => {
-      const currentUser = getCurrentUser() || await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
+      const currentUser =
+        getCurrentUser() || (await (options.ensureAnonymousAuth || ensureAnonymousAuth)());
       return currentUser;
     },
     getAppCheckToken: options.getAppCheckToken || getFirebaseAppCheckToken,
@@ -396,6 +470,45 @@ export async function bootVtsScore(options = {}) {
       state.file = null;
       fileInput.value = '';
       setStatus(friendlyError(error), 'error');
+    }
+  });
+
+  element('vtsScoreLanguage')?.addEventListener('change', () => {
+    if (state.grant) renderSignupState();
+  });
+
+  function readSignupFightingTimes(values) {
+    const raw = values?.commitment?.fightingTimeIds;
+    const picks = (Array.isArray(raw) ? raw : [raw]).map((value) => String(value || '').trim());
+    return picks.filter(Boolean);
+  }
+
+  signupForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const values = state.signupSession?.readForm(signupPanel) || {};
+    // "Two different times" is a real rule, not a nicety: the stored document
+    // must carry exactly two distinct picks, so say so before the write.
+    const times = readSignupFightingTimes(values);
+    if (new Set(times).size !== 2) {
+      setStatus(i18n.text('signupErrorFightingTimes'), 'error');
+      element('vtsScoreSignupFightingTime2')?.focus();
+      return;
+    }
+    setBusy(signupButton, true, i18n.text('signupSaving'));
+    try {
+      const saved = await state.signupSession.save(values);
+      state.signup = saved;
+      renderSignupState();
+      element('vtsScoreSignupSuccessName').textContent = saved.gameName || '';
+      element('vtsScoreSignupSuccessRevision').textContent = String(saved.revision || 1);
+      setHidden(signupSuccess, false);
+      setStatus(i18n.text('signupSaved'), 'success');
+      if (!state.scoreWorkspaceOpen) await openScoreWorkspace();
+      signupSuccess.focus();
+    } catch (error) {
+      setStatus(signupErrorMessage(error), 'error');
+    } finally {
+      setBusy(signupButton, false);
     }
   });
 

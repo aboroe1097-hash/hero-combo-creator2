@@ -34,7 +34,7 @@
     en: Object.freeze({
       updateAvailable: 'New version available — refresh to update.',
       dismiss: 'Dismiss',
-      installTitle: 'Install VTS Combos',
+      installTitle: 'Install RoC VTS',
       installSubtitle: 'One-tap access · Works offline',
       installAction: 'Install',
       installing: 'Installing…',
@@ -48,7 +48,7 @@
     es: Object.freeze({
       updateAvailable: 'Hay una nueva versión; actualiza la página para aplicarla.',
       dismiss: 'Cerrar',
-      installTitle: 'Instalar VTS Combos',
+      installTitle: 'Instalar RoC VTS',
       installSubtitle: 'Acceso con un toque · Funciona sin conexión',
       installAction: 'Instalar',
       installing: 'Instalando…',
@@ -63,7 +63,7 @@
     pt: Object.freeze({
       updateAvailable: 'Nova versão disponível — atualize a página para aplicá-la.',
       dismiss: 'Fechar',
-      installTitle: 'Instalar VTS Combos',
+      installTitle: 'Instalar RoC VTS',
       installSubtitle: 'Acesso com um toque · Funciona offline',
       installAction: 'Instalar',
       installing: 'Instalando…',
@@ -78,7 +78,7 @@
     de: Object.freeze({
       updateAvailable: 'Neue Version verfügbar – lade die Seite neu, um sie zu nutzen.',
       dismiss: 'Schließen',
-      installTitle: 'VTS Combos installieren',
+      installTitle: 'RoC VTS installieren',
       installSubtitle: 'Direktzugriff · Funktioniert offline',
       installAction: 'Installieren',
       installing: 'Wird installiert…',
@@ -93,7 +93,7 @@
     fr: Object.freeze({
       updateAvailable: 'Une nouvelle version est disponible — actualisez pour l’appliquer.',
       dismiss: 'Fermer',
-      installTitle: 'Installer VTS Combos',
+      installTitle: 'Installer RoC VTS',
       installSubtitle: 'Accès en un geste · Fonctionne hors connexion',
       installAction: 'Installer',
       installing: 'Installation…',
@@ -108,7 +108,7 @@
     hr: Object.freeze({
       updateAvailable: 'Dostupna je nova verzija — osvježi stranicu za ažuriranje.',
       dismiss: 'Zatvori',
-      installTitle: 'Instaliraj VTS Combos',
+      installTitle: 'Instaliraj RoC VTS',
       installSubtitle: 'Pristup jednim dodirom · Radi izvan mreže',
       installAction: 'Instaliraj',
       installing: 'Instaliranje…',
@@ -123,7 +123,7 @@
     tr: Object.freeze({
       updateAvailable: 'Yeni sürüm hazır — uygulamak için sayfayı yenile.',
       dismiss: 'Kapat',
-      installTitle: "VTS Combos'u yükle",
+      installTitle: "RoC VTS'i yükle",
       installSubtitle: 'Tek dokunuşla erişim · Çevrimdışı çalışır',
       installAction: 'Yükle',
       installing: 'Yükleniyor…',
@@ -138,7 +138,7 @@
     ru: Object.freeze({
       updateAvailable: 'Доступна новая версия — обновите страницу, чтобы применить её.',
       dismiss: 'Закрыть',
-      installTitle: 'Установить VTS Combos',
+      installTitle: 'Установить RoC VTS',
       installSubtitle: 'Быстрый запуск · Работает без интернета',
       installAction: 'Установить',
       installing: 'Установка…',
@@ -153,7 +153,7 @@
     id: Object.freeze({
       updateAvailable: 'Versi baru tersedia — muat ulang untuk memperbarui.',
       dismiss: 'Tutup',
-      installTitle: 'Pasang VTS Combos',
+      installTitle: 'Pasang RoC VTS',
       installSubtitle: 'Akses sekali ketuk · Bisa digunakan offline',
       installAction: 'Pasang',
       installing: 'Memasang…',
@@ -167,7 +167,7 @@
     zh: Object.freeze({
       updateAvailable: '新版本已上线，请刷新页面完成更新。',
       dismiss: '关闭',
-      installTitle: '安装 VTS Combos',
+      installTitle: '安装 RoC VTS',
       installSubtitle: '一键打开 · 离线也能用',
       installAction: '安装',
       installing: '正在安装…',
@@ -181,7 +181,7 @@
     ar: Object.freeze({
       updateAvailable: 'يتوفر إصدار جديد — حدّث الصفحة لتطبيقه.',
       dismiss: 'إغلاق',
-      installTitle: 'تثبيت VTS Combos',
+      installTitle: 'تثبيت RoC VTS',
       installSubtitle: 'وصول بلمسة واحدة · يعمل دون اتصال',
       installAction: 'تثبيت',
       installing: 'جارٍ التثبيت…',
@@ -195,7 +195,7 @@
     kr: Object.freeze({
       updateAvailable: '새 버전을 사용할 수 있습니다. 새로고침하여 업데이트하세요.',
       dismiss: '닫기',
-      installTitle: 'VTS Combos 설치',
+      installTitle: 'RoC VTS 설치',
       installSubtitle: '한 번에 실행 · 오프라인에서도 사용 가능',
       installAction: '설치',
       installing: '설치 중…',
@@ -210,7 +210,7 @@
     it: Object.freeze({
       updateAvailable: 'Nuova versione disponibile - aggiorna per applicarla.',
       dismiss: 'Chiudi',
-      installTitle: 'Installa VTS Combos',
+      installTitle: 'Installa RoC VTS',
       installSubtitle: 'Accesso con un tocco · funziona offline',
       installAction: 'Installa',
       installing: 'Installazione...',

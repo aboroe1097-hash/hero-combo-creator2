@@ -588,6 +588,20 @@ function renderCastlePanel(host) {
   });
 
   card.querySelector('[data-pln="print"]').addEventListener('click', () => window.print());
+
+  mountBuildingUpgrades(card);
+}
+
+// The Castle 26–30 / all-buildings upgrade planner used to be a top-level tab of its
+// own, which cost the shell a pill and a full-height panel for a tool that belongs
+// beside the Castle planner. It loads on demand so the tab's own bundle stays lean.
+function mountBuildingUpgrades(card) {
+  const host = document.createElement('div');
+  host.className = 'building-upgrades-host';
+  card.appendChild(host);
+  import('./building-upgrades.js')
+    .then((module) => module.initBuildingUpgrades(host))
+    .catch(() => {});
 }
 
 function parseOpsLines(text) {

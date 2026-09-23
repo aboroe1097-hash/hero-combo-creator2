@@ -575,10 +575,12 @@ test('getDutyCreditedNames credits both banner account and operator', () => {
     assert.equal(rb[0], 'redbull');
     assert.equal(rb.length, 1);
 
-    // Moldo (zubbs) -> credit Moldo AND zubbs (resolved through the roster).
+    // Moldo (zubbs) -> credit Moldo AND zubbs. The operator note resolves through
+    // the same authority as every other name, and the owner now teaches "Zubbs
+    // means Lady Zubbs", so the second credit lands on her account.
     const moldo = getDutyCreditedNames('Moldo (zubbs)', 'Moldo');
     assert.equal(moldo[0], 'Moldo');
-    assert.ok(moldo.includes('Zubbs'));
+    assert.ok(moldo.includes('Lady Zubbs'));
     assert.equal(moldo.length, 2);
 
     // Parenthetical chat noise that resolves to NO known player -> owner only.
@@ -743,7 +745,9 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   try {
     const op = expandDutyRawNames('Angel Banner (zubbs)');
     assert.equal(op[0], 'Angel Banner');
-    assert.equal(op[1], 'Zubbs');
+    // The taught abbreviation is consulted before the roster, so "zubbs" now
+    // names Lady Zubbs outright.
+    assert.equal(op[1], 'Lady Zubbs');
     assert.equal(op.length, 2);
 
     // Noise notes never mint phantom players.

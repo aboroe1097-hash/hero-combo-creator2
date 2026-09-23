@@ -3,18 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="vts-app-version" content="16.0.19" />
+    <meta name="vts-app-version" content="16.5.0" />
     <meta
       name="description"
-      content="VtsScore Competition #11 full power breakdown submission for VTS 1097."
+      content="VTS 1097 2027 season registration and the member power breakdown submission for VtsScore."
     />
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
-    <title>VtsScore · Competition #11</title>
+    <title>VtsScore · 2027 season registration</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=14.3.5" />
-    <link rel="stylesheet" href="css/vts-score.css?v=14.3.5" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260814_125122" />
-    <script src="js/theme-prepaint.js?v=14.3.5"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260923_155256.3.5" />
+    <link rel="stylesheet" href="css/vts-score.css?v=20260923_155256.3.5" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260923_155256" />
+    <script src="js/theme-prepaint.js?v=20260923_155256.3.5"></script>
   </head>
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
@@ -22,7 +22,7 @@
         <div class="vts-score-topbar">
           <a class="vts-score-brand" href="index.html" aria-label="VTS 1097 toolkit home">
             <img src="images/logo.png" alt="" width="64" height="64" />
-            <span><strong>VtsScore</strong><small>VTS 1097 · Competition #11</small></span>
+            <span><strong>VtsScore</strong><small>VTS 1097 · 2027 season</small></span>
           </a>
           <div class="vts-score-preferences">
             <label class="vts-score-language" for="vtsScoreLanguage">
@@ -48,12 +48,12 @@
           </div>
         </div>
         <div class="vts-score-hero__copy">
-          <p class="vts-score-kicker" data-vts-i18n="kicker">DEVELOPMENT RACE · FINAL CHECK</p>
-          <h1 data-vts-i18n="title">Upload tonight’s power breakdown</h1>
+          <p class="vts-score-kicker" data-vts-i18n="kicker">2027 SEASON · REGISTER AND FINAL CHECK</p>
+          <h1 data-vts-i18n="title">Register for the season, then upload your final score</h1>
           <p data-vts-i18n="intro">
-            Choose the same game name used for the All-Star sign-up, upload one current power
-            screenshot, review every power value, and submit the full breakdown for comparison with
-            your sign-up baseline.
+            Unlock with the VTS member PIN, fill the season registration once, and come back any
+            time registration is open to update it. When leadership calls for the final check,
+            upload one power screenshot and confirm every value against your registration.
           </p>
         </div>
         <div class="vts-score-deadline">
@@ -76,8 +76,11 @@
 
       <section id="vtsScoreGate" class="vts-score-card vts-score-gate" hidden>
         <p class="vts-score-kicker" data-vts-i18n="members">VTS MEMBERS</p>
-        <h2 data-vts-i18n="unlockTitle">Unlock final score upload</h2>
-        <p data-vts-i18n="unlockHelp">Use the same VTS member PIN as the All-Star sign-up hub.</p>
+        <h2 data-vts-i18n="unlockTitle">Unlock the season registration</h2>
+        <p data-vts-i18n="unlockHelp">
+          Use the VTS member PIN leadership shared with you. It opens the registration form and the
+          final score upload.
+        </p>
         <form id="vtsScorePinForm">
           <label for="vtsScorePin" data-vts-i18n="pin">Member PIN</label>
           <div class="vts-score-inline">
@@ -91,6 +94,346 @@
             <button type="submit" data-vts-i18n="unlock">Unlock</button>
           </div>
         </form>
+      </section>
+
+      <!-- Season registration: the retired All-Star BoH form, revived for the
+           active season. It lives on this route instead of a page of its own so
+           the member PIN, the OCR worker and the member-grant rules keep exactly
+           one surface. -->
+      <section id="vtsScoreSignup" class="vts-score-card vts-score-signup" hidden>
+        <p class="vts-score-kicker" data-vts-i18n="signupKicker">2027 SEASON · MEMBER REGISTRATION</p>
+        <h2>
+          <span data-vts-i18n="signupTitle">Fill your season registration</span>
+          <span id="vtsScoreSignupSeason" class="vts-score-signup-season"></span>
+        </h2>
+        <p data-vts-i18n="signupIntro">
+          Answer once for the new season: your power numbers, the roles you play, and the times you
+          can fight. Leadership builds the teams from these answers.
+        </p>
+        <p id="vtsScoreSignupState" class="vts-score-field-hint" role="status">
+          <span data-vts-i18n="signupStateNone"
+            >No registration for this season yet. Fill the form once and save.</span
+          >
+        </p>
+        <form id="vtsScoreSignupForm">
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">1</span>
+            <div>
+              <label for="vtsScoreSignupName" data-vts-i18n="gameName">Your game name</label>
+              <p data-vts-i18n="signupNameHelp">
+                Use the exact in-game name leadership sees in the guild list.
+              </p>
+              <input
+                id="vtsScoreSignupName"
+                type="text"
+                maxlength="160"
+                autocomplete="off"
+                placeholder="Start typing your game name"
+                data-vts-i18n-placeholder="gameNamePlaceholder"
+                data-boh-field="gameName"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">2</span>
+            <div>
+              <h2 data-vts-i18n="signupPowerTitle">Power numbers</h2>
+              <p data-vts-i18n="signupPowerHint">
+                Copy every value from your power breakdown exactly as the game shows it.
+              </p>
+              <div class="vts-score-signup-grid">
+                <label for="vtsScoreSignupTotalCastlePower">
+                  <span data-vts-i18n="fieldTotalCastlePower">Total Combat Power</span>
+                  <input
+                    id="vtsScoreSignupTotalCastlePower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.totalCastlePower"
+                    required
+                  />
+                </label>
+                <label for="vtsScoreSignupTroopPower">
+                  <span data-vts-i18n="fieldTroopPower">Troop Power</span>
+                  <input
+                    id="vtsScoreSignupTroopPower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.troopPower"
+                    required
+                  />
+                </label>
+                <label for="vtsScoreSignupBuildingPower">
+                  <span data-vts-i18n="fieldBuildingPower">Building Power</span>
+                  <input
+                    id="vtsScoreSignupBuildingPower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.buildingPower"
+                    required
+                  />
+                </label>
+                <label for="vtsScoreSignupTechnologyPower">
+                  <span data-vts-i18n="fieldTechnologyPower">Technology Power</span>
+                  <input
+                    id="vtsScoreSignupTechnologyPower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.technologyPower"
+                    required
+                  />
+                </label>
+                <label for="vtsScoreSignupHeroCombatPower">
+                  <span data-vts-i18n="fieldHeroCombatPower">Hero Combat Power</span>
+                  <input
+                    id="vtsScoreSignupHeroCombatPower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.heroCombatPower"
+                    required
+                  />
+                </label>
+                <label for="vtsScoreSignupDragonPower">
+                  <span data-vts-i18n="fieldDragonPower">Dragons Power</span>
+                  <input
+                    id="vtsScoreSignupDragonPower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.dragonPower"
+                    required
+                  />
+                </label>
+                <label for="vtsScoreSignupUnitSpecialtyPower">
+                  <span data-vts-i18n="fieldUnitSpecialtyPower">Unit Specialty Power</span>
+                  <input
+                    id="vtsScoreSignupUnitSpecialtyPower"
+                    type="number"
+                    min="0"
+                    max="100000000000"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.unitSpecialtyPower"
+                    required
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">3</span>
+            <div>
+              <h2 data-vts-i18n="signupTroopsTitle">Troops and heroes</h2>
+              <p data-vts-i18n="signupListHint">Separate several values with commas.</p>
+              <div class="vts-score-signup-grid">
+                <label for="vtsScoreSignupT9TroopTypes">
+                  <span data-vts-i18n="signupT9TroopTypes">T9 troop types</span>
+                  <input
+                    id="vtsScoreSignupT9TroopTypes"
+                    type="text"
+                    maxlength="120"
+                    autocomplete="off"
+                    data-boh-field="stats.t9TroopTypes"
+                  />
+                </label>
+                <label for="vtsScoreSignupReadySpeedHeroes">
+                  <span data-vts-i18n="signupReadySpeedHeroes">Ready speed heroes</span>
+                  <input
+                    id="vtsScoreSignupReadySpeedHeroes"
+                    type="text"
+                    maxlength="240"
+                    autocomplete="off"
+                    data-boh-field="stats.readySpeedHeroes"
+                  />
+                </label>
+                <label for="vtsScoreSignupLevel50Heroes">
+                  <span data-vts-i18n="signupLevel50Heroes">Level 50 heroes</span>
+                  <input
+                    id="vtsScoreSignupLevel50Heroes"
+                    type="number"
+                    min="0"
+                    max="500"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.level50HeroCount"
+                  />
+                </label>
+                <label for="vtsScoreSignupRocLevel">
+                  <span data-vts-i18n="signupRocLevel">ROC level</span>
+                  <input
+                    id="vtsScoreSignupRocLevel"
+                    type="number"
+                    min="0"
+                    max="160"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-boh-field="stats.rocLevel"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="vts-score-step">
+            <span class="vts-score-step__number" aria-hidden="true">4</span>
+            <div>
+              <h2 data-vts-i18n="signupRolesTitle">Roles, times, and commitment</h2>
+              <div class="vts-score-signup-grid">
+                <label for="vtsScoreSignupPreferredRole">
+                  <span data-vts-i18n="signupPreferredRole">Preferred role</span>
+                  <select id="vtsScoreSignupPreferredRole" data-boh-field="commitment.preferredRole">
+                    <option value="" data-vts-i18n="signupRoleNone">No preference</option>
+                    <option value="offensive" data-vts-i18n="signupRoleOffensive">
+                      Offensive team
+                    </option>
+                    <option value="rune" data-vts-i18n="signupRoleRune">Rune team</option>
+                    <option value="top" data-vts-i18n="signupRoleTop">Top side</option>
+                    <option value="bottom" data-vts-i18n="signupRoleBottom">Bottom side</option>
+                    <option value="backup" data-vts-i18n="signupRoleBackup">Backup</option>
+                    <option value="flexible" data-vts-i18n="signupRoleFlexible">Flexible</option>
+                  </select>
+                </label>
+                <label for="vtsScoreSignupSecondaryRole">
+                  <span data-vts-i18n="signupSecondaryRole">Second role (optional)</span>
+                  <select id="vtsScoreSignupSecondaryRole" data-boh-field="commitment.secondaryRole">
+                    <option value="" data-vts-i18n="signupRoleNone">No preference</option>
+                    <option value="offensive" data-vts-i18n="signupRoleOffensive">
+                      Offensive team
+                    </option>
+                    <option value="rune" data-vts-i18n="signupRoleRune">Rune team</option>
+                    <option value="top" data-vts-i18n="signupRoleTop">Top side</option>
+                    <option value="bottom" data-vts-i18n="signupRoleBottom">Bottom side</option>
+                    <option value="backup" data-vts-i18n="signupRoleBackup">Backup</option>
+                    <option value="flexible" data-vts-i18n="signupRoleFlexible">Flexible</option>
+                  </select>
+                </label>
+                <label for="vtsScoreSignupAvailability">
+                  <span data-vts-i18n="signupAvailability">Availability</span>
+                  <select id="vtsScoreSignupAvailability" data-boh-field="commitment.availability">
+                    <option value="all" data-vts-i18n="signupAvailabilityAll">Every fight</option>
+                    <option value="most" data-vts-i18n="signupAvailabilityMost">Most fights</option>
+                    <option value="backup" data-vts-i18n="signupAvailabilityBackup">
+                      Backup only
+                    </option>
+                  </select>
+                </label>
+                <label for="vtsScoreSignupMember">
+                  <span data-vts-i18n="signupMember">Signed up for VTS 1097</span>
+                  <select
+                    id="vtsScoreSignupMember"
+                    data-boh-boolean="true"
+                    data-boh-field="commitment.vts1097Member"
+                  >
+                    <option value="true" data-vts-i18n="signupYes">Yes</option>
+                    <option value="false" data-vts-i18n="signupNo">No</option>
+                  </select>
+                </label>
+                <label for="vtsScoreSignupFightingTime1">
+                  <span data-vts-i18n="signupFightingFirst">First fighting time</span>
+                  <select id="vtsScoreSignupFightingTime1" data-boh-field="commitment.fightingTimeIds">
+                    <option value="+12">+12</option>
+                    <option value="+14" selected>+14</option>
+                    <option value="+16">+16</option>
+                  </select>
+                </label>
+                <label for="vtsScoreSignupFightingTime2">
+                  <span data-vts-i18n="signupFightingSecond">Second fighting time</span>
+                  <select id="vtsScoreSignupFightingTime2" data-boh-field="commitment.fightingTimeIds">
+                    <option value="+12" selected>+12</option>
+                    <option value="+14">+14</option>
+                    <option value="+16">+16</option>
+                  </select>
+                </label>
+                <label for="vtsScoreSignupContact">
+                  <span data-vts-i18n="signupContact">Contact (optional)</span>
+                  <input
+                    id="vtsScoreSignupContact"
+                    type="text"
+                    maxlength="160"
+                    autocomplete="off"
+                    data-boh-field="commitment.contactNumber"
+                  />
+                </label>
+              </div>
+              <p class="vts-score-field-hint" data-vts-i18n="signupFightingTimesHelp">
+                Pick two different fighting times; leadership uses them to schedule your team.
+              </p>
+              <label class="vts-score-signup-block" for="vtsScoreSignupJoinReason">
+                <span data-vts-i18n="signupJoinReason">Why you want to join (optional)</span>
+                <textarea
+                  id="vtsScoreSignupJoinReason"
+                  rows="3"
+                  maxlength="1000"
+                  data-boh-field="commitment.joinReason"
+                ></textarea>
+              </label>
+              <label class="vts-score-signup-block" for="vtsScoreSignupNotes">
+                <span data-vts-i18n="signupNotes">Anything leadership should know (optional)</span>
+                <textarea
+                  id="vtsScoreSignupNotes"
+                  rows="3"
+                  maxlength="2000"
+                  data-boh-field="commitment.notes"
+                ></textarea>
+              </label>
+            </div>
+          </div>
+
+          <button
+            id="vtsScoreSignupSubmit"
+            class="vts-score-submit"
+            type="submit"
+            data-vts-i18n="signupSave"
+          >
+            Save my registration
+          </button>
+        </form>
+
+        <section id="vtsScoreSignupSuccess" class="vts-score-success" tabindex="-1" hidden>
+          <span aria-hidden="true">✓</span>
+          <p class="vts-score-kicker" data-vts-i18n="signupSavedKicker">REGISTRATION SAVED</p>
+          <h2>
+            <span data-vts-i18n="thankYou">Thank you,</span>
+            <strong id="vtsScoreSignupSuccessName"></strong>
+          </h2>
+          <p>
+            <span data-vts-i18n="signupSavedPrefix">
+              Your season registration is saved. Revision
+            </span>
+            <strong id="vtsScoreSignupSuccessRevision"></strong>.
+            <span data-vts-i18n="signupSavedSuffix">
+              Come back any time registration is open to update it.
+            </span>
+          </p>
+        </section>
       </section>
 
       <section id="vtsScoreWorkspace" class="vts-score-card" hidden>
@@ -205,7 +548,7 @@
         <a href="index.html" data-vts-i18n="back">Back to toolkit</a>
       </footer>
     </main>
-    <script type="module" src="js/vts-score.js?v=14.3.5"></script>
+    <script type="module" src="js/vts-score.js?v=20260923_155256.3.5"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

@@ -4,6 +4,7 @@ import { translations } from './translations.js';
 let builderFirestoreUnsub = null;
 import { allHeroesData } from './heroes-data.js';
 import { importFirestore } from './firebase-sdk.js';
+import { celebrate } from './fx/success-feedback.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import {
@@ -667,6 +668,7 @@ export async function saveCombo() {
         t.toastComboSaved || t.messageComboSavedSuccess || 'Combo saved!',
         'success'
       );
+    celebrate(document.getElementById('saveComboBtn'));
   } catch (err) {
     console.error(err);
     if (typeof window.showToast === 'function')

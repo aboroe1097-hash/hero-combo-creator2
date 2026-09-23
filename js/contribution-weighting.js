@@ -5,9 +5,14 @@ import {
   resolveCanonicalPlayerIdentity,
   stripExGuildGuildTag,
 } from './ocr-name-normalizer.js';
-import { currentPlayerRegistry, resolvePlayerRegistryFamilyKey } from './player-registry.js';
+import {
+  accountLinkClass,
+  currentPlayerRegistry,
+  resolvePlayerRegistryFamilyKey,
+} from './player-registry.js';
 import { collapseContributionOcrDuplicates } from './contribution-identity.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
+import { normalizeDutyRecordTitle } from './duty-record-title.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -27,16 +32,53 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
 // read the way an operator says them out loud: pathing on a main is worth 3.
 export const DUTY_POINT_UNIT = 10000;
 export const DUTY_ACTIVITIES = Object.freeze(['banners', 'pathers', 'shieldWalls']);
-export const DUTY_ACCOUNT_CLASSES = Object.freeze(['main', 'alt']);
+// The account classes one duty can score as. `alt` is every non-main account —
+// the banner accounts and the unlinked second accounts — and `secondary` is an
+// account the admin linked and marked as a real second account rather than a
+// banner, so it can be weighed differently.
+export const DUTY_ACCOUNT_CLASSES = Object.freeze(['main', 'alt', 'secondary']);
 export const MAX_DUTY_POINT_WEIGHT = 100;
 
 export const DEFAULT_DUTY_POINT_WEIGHTS = Object.freeze({
-  banners: Object.freeze({ main: 1, alt: 0.5 }),
-  pathers: Object.freeze({ main: 3, alt: 1 }),
+  banners: Object.freeze({ main: 1, alt: 0.5, secondary: 0.5 }),
+  pathers: Object.freeze({ main: 3, alt: 1, secondary: 1 }),
   // Shield walls keep the old flat value until someone decides otherwise;
   // changing a weight nobody asked about would restate scores silently.
-  shieldWalls: Object.freeze({ main: 1, alt: 1 }),
+  shieldWalls: Object.freeze({ main: 1, alt: 1, secondary: 1 }),
 });
+
+// Whole-score multipliers, tuned per season the same way the duty grid is.
+// 1 means "leave it as it is": both defaults reproduce the arithmetic that
+// predates them exactly, so wiring them in cannot restate a season's scores
+// until an operator moves one on purpose. An operator can halve in-game
+// contribution so support work weighs relatively more, or double what the
+// form's own points are worth.
+export const DEFAULT_CONTRIBUTION_WEIGHT = 1;
+export const DEFAULT_FORM_POINT_WEIGHT = 1;
+export const MAX_SCORING_MULTIPLIER = 10;
+
+function readMultiplier(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+// These arrive from an admin-edited document, so a hostile value falls back to
+// the neutral default rather than zeroing a whole scoring term. `null`, a blank
+// string and a non-number are all "absent", not "zero".
+export function normalizeContributionWeight(value) {
+  const number = readMultiplier(value);
+  return number !== null && number >= 0 && number <= MAX_SCORING_MULTIPLIER
+    ? number
+    : DEFAULT_CONTRIBUTION_WEIGHT;
+}
+
+export function normalizeFormPointWeight(value) {
+  const number = readMultiplier(value);
+  return number !== null && number >= 0 && number <= MAX_SCORING_MULTIPLIER
+    ? number
+    : DEFAULT_FORM_POINT_WEIGHT;
+}
 
 // Weights arrive from an admin-edited document, so treat every field as
 // hostile: non-numeric, negative, absurd, or missing entries all fall back to
@@ -50,10 +92,20 @@ export function normalizeDutyPointWeights(raw) {
     out[activity] = {};
     for (const cls of DUTY_ACCOUNT_CLASSES) {
       const value = Number(given[cls]);
+      // A season saved before the secondary class existed has no secondary
+      // weight. It scores exactly like that season's own alt weight (not the
+      // shipped default), so adding the class restates no existing score.
+      const classFallback =
+        cls === 'secondary' && out[activity].alt !== undefined ? out[activity].alt : fallback[cls];
       out[activity][cls] =
-        Number.isFinite(value) && value >= 0 && value <= MAX_DUTY_POINT_WEIGHT
+        given[cls] !== undefined &&
+        given[cls] !== null &&
+        given[cls] !== '' &&
+        Number.isFinite(value) &&
+        value >= 0 &&
+        value <= MAX_DUTY_POINT_WEIGHT
           ? value
-          : fallback[cls];
+          : classFallback;
     }
   }
   return out;
@@ -61,10 +113,22 @@ export function normalizeDutyPointWeights(raw) {
 
 // An account is the family main when it is the family's configured primary,
 // or when it is the whole family. Everything else a person also plays — the
-// secondary castles, the banner accounts — is an alt. Duty still lands on the
-// person's row either way; only what it is worth changes.
+// secondary castles, the banner accounts — is an alt, unless the admin linked
+// it and said it is a secondary account, which is its own class and its own
+// weight. Duty still lands on the person's row either way; only what it is
+// worth changes.
+// The guild's known secondary accounts, predefined so they score as the
+// secondary class without anyone linking them first. An explicit account link
+// still wins. Score-neutral by default: the secondary weight follows alt.
+export const SEEDED_SECONDARY_ACCOUNT_KEYS = Object.freeze(
+  new Set(['victoria', 'sharakikas', 'sskikass', 'takeurshin'])
+);
+
 export function classifyDutyAccount(accountKey) {
-  if (resolveAccountLink(accountKey)) return 'alt';
+  const link = resolveAccountLink(accountKey);
+  if (link) return accountLinkClass(link.type);
+  const seededKey = compactPlayerIdentity(accountKey) || String(accountKey || '');
+  if (SEEDED_SECONDARY_ACCOUNT_KEYS.has(seededKey)) return 'secondary';
   const familyKey = playerFamilyKey(accountKey);
   const primary = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey] || familyKey;
   const key = compactPlayerIdentity(accountKey) || String(accountKey || '');
@@ -72,19 +136,26 @@ export function classifyDutyAccount(accountKey) {
 }
 
 export function emptyDutyClassCounts() {
-  return {
-    banners: { main: 0, alt: 0 },
-    pathers: { main: 0, alt: 0 },
-    shieldWalls: { main: 0, alt: 0 },
-  };
+  const counts = {};
+  for (const activity of DUTY_ACTIVITIES) {
+    counts[activity] = Object.fromEntries(DUTY_ACCOUNT_CLASSES.map((cls) => [cls, 0]));
+  }
+  return counts;
 }
 
 // The same calculation as dutyPointsFor, itemised: for each activity, how
 // many duties a main and a secondary account did, the weight each counted at,
 // and the points that came out. Tables and detail views show this so a total
 // can be checked by hand.
-export function dutyPointsBreakdown(classCounts, weights) {
+export function dutyPointsBreakdown(classCounts, weights, supportWeight = 1) {
   const table = normalizeDutyPointWeights(weights);
+  // The season's support multiplier scales the point unit, so every line of the
+  // breakdown still multiplies out to its share of the total.
+  const scale =
+    Number.isFinite(Number(supportWeight)) && Number(supportWeight) >= 0
+      ? Number(supportWeight)
+      : 1;
+  const unit = DUTY_POINT_UNIT * scale;
   const activities = DUTY_ACTIVITIES.map((activity) => {
     const counts = classCounts?.[activity] || {};
     const byClass = {};
@@ -92,14 +163,14 @@ export function dutyPointsBreakdown(classCounts, weights) {
     for (const cls of DUTY_ACCOUNT_CLASSES) {
       const count = Number(counts[cls] || 0);
       const weight = table[activity][cls];
-      const classPoints = count * weight * DUTY_POINT_UNIT;
+      const classPoints = count * weight * unit;
       byClass[cls] = { count, weight, points: classPoints };
       points += classPoints;
     }
     return { activity, ...byClass, points };
   });
   return {
-    unit: DUTY_POINT_UNIT,
+    unit,
     activities,
     total: activities.reduce((sum, item) => sum + item.points, 0),
   };
@@ -454,8 +525,20 @@ function isBetterContributionRank(rank, currentBest) {
 // carry none and keep the account-based classification.
 export const DUTY_ENTRY_ACCOUNT_TYPES = Object.freeze(['main', 'banner']);
 
-export function dutyEntryAccountClass(entry) {
+// The class a saved duty row scores at. An operator's explicit Main/Banner
+// choice always wins. A type the upload only guessed (Banner by default, Main
+// only for an account on the registry's "always main" list) yields to the
+// account's link when it said Banner: an account the admin linked as a
+// secondary scores as a secondary, not as the alt the guess said.
+export function dutyEntryAccountClass(entry, accountKey = '') {
   const type = String(entry?.accountType || '').toLowerCase();
+  const operatorChose = entry?.accountTypeSource === 'operator';
+  // A saved "main" on a linked account is either the operator's choice or the
+  // admin's "always main" list, and stands either way.
+  if (!operatorChose && accountKey && type !== 'main') {
+    const link = resolveAccountLink(accountKey);
+    if (link && accountLinkClass(link.type) === 'secondary') return 'secondary';
+  }
   if (type === 'banner') return 'alt';
   if (type === 'main') return 'main';
   return '';
@@ -486,11 +569,16 @@ export function collectFamilyDutyEntries(dutyRecords = [], familyKey = '') {
         out.push({
           activity: bucket,
           date: String(record.date || ''),
+          // The operator's optional upload title ("Raceday 1"); the season
+          // view falls back to the upload day when it is blank.
+          title: normalizeDutyRecordTitle(record.title),
           gameTime: String(record.gameTime || ''),
           usageTime: String(entry.usageTime || ''),
           target: String(entry.target || ''),
           accountName: identity.playerName,
-          accountClass: dutyEntryAccountClass(entry) || classifyDutyAccount(identity.playerKey),
+          accountClass:
+            dutyEntryAccountClass(entry, identity.playerKey) ||
+            classifyDutyAccount(identity.playerKey),
         });
       });
     });
@@ -535,7 +623,7 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
         // The uploader said which account did this duty. "banner" scores the
         // player's alt weight even when the list only named the player;
         // "main" scores full weight even for a linked banner account.
-        const forced = dutyEntryAccountClass(entry);
+        const forced = dutyEntryAccountClass(entry, identity.playerKey);
         if (forced) row.forcedClass[bucket][forced] += 1;
         counts.set(identity.playerKey, row);
       });
@@ -764,11 +852,18 @@ export function buildWeightedContributionRows(options = {}) {
     const cls = classifyDutyAccount(accountKey);
     const split = familyDutyByClass.get(fam) || emptyDutyClassCounts();
     for (const activity of DUTY_ACTIVITIES) {
-      const forced = counts.forcedClass?.[activity] || { main: 0, alt: 0 };
-      const forcedTotal = forced.main + forced.alt;
+      // Rows saved with the per-row Main/Banner switch keep that class even when
+      // the account behind them is linked, so the split never contradicts the
+      // number the operator typed. Everything else follows the account.
+      const forced = counts.forcedClass?.[activity] || {};
+      const forcedTotal = DUTY_ACCOUNT_CLASSES.reduce(
+        (sum, name) => sum + Number(forced[name] || 0),
+        0
+      );
       split[activity][cls] += Math.max(0, counts[activity] - forcedTotal);
-      split[activity].main += forced.main;
-      split[activity].alt += forced.alt;
+      for (const name of DUTY_ACCOUNT_CLASSES) {
+        split[activity][name] += Number(forced[name] || 0);
+      }
     }
     familyDutyByClass.set(fam, split);
   });
@@ -849,27 +944,41 @@ export function buildWeightedContributionRows(options = {}) {
 
   const premiumCutoff = getContributionPremiumCutoff(record);
   const BASE_POINT_VALUE = 10000;
+  const contributionWeight = normalizeContributionWeight(options.contributionWeight);
+  const formPointWeight = normalizeFormPointWeight(options.formPointWeight);
+  // The support multiplier scales all support work — duties and the form's
+  // bonus points alike — by scaling their 10,000-per-point unit; the breakdown
+  // shows the effective unit. (The stored field keeps its original name.)
+  const conductUnit = BASE_POINT_VALUE * formPointWeight;
 
   const scoredRows = rows.map((row) => {
     const exGuildPoints = row.contributionExGuild || 0;
     const contributionRewardScore = row.contributionScore + exGuildPoints;
+    // In-game contribution is the whole term — leaderboard contribution plus
+    // what was earned outside the guild — so "half weight for in-game" scales
+    // both and means what an operator expects it to mean.
+    const contributionWeightedPoints = contributionRewardScore * contributionWeight;
     // Weighted per activity and per account class. With every weight at 1 this
     // is arithmetically identical to the flat BASE_POINT_VALUE it replaced.
-    const dutyBreakdown = dutyPointsBreakdown(row.dutiesByClass, dutyWeights);
+    const dutyBreakdown = dutyPointsBreakdown(row.dutiesByClass, dutyWeights, formPointWeight);
     const dutyPoints = dutyBreakdown.total;
-    const conductPoints = row.conductBonus * BASE_POINT_VALUE;
+    const conductPoints = row.conductBonus * conductUnit;
     const demolitionCounted = options.includeDemolitionPoints !== false;
     const demolitionWeight = Math.max(0, numberValue(weights.demolition));
     const demolitionPoints = demolitionCounted ? row.totalDemolition * demolitionWeight : 0;
-    const weightedScore = contributionRewardScore + demolitionPoints + dutyPoints + conductPoints;
+    const weightedScore =
+      contributionWeightedPoints + demolitionPoints + dutyPoints + conductPoints;
 
     return {
       ...row,
       contributionRewardScore,
+      contributionWeight,
+      contributionWeightedPoints,
+      formPointWeight,
       dutyBreakdown,
       dutyPoints,
       conductPoints,
-      conductUnit: BASE_POINT_VALUE,
+      conductUnit,
       demolitionCounted,
       demolitionWeight,
       demolitionPoints,

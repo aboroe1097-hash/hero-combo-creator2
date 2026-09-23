@@ -87,7 +87,7 @@ async function navigationPlacement(page, id) {
 
 async function expectOneUsefulHomeHeading(page) {
   const exposedHeadings = page.getByRole('heading', { level: 1 });
-  const homeHeading = page.getByRole('heading', { level: 1, name: 'Hero Combo Creator' });
+  const homeHeading = page.getByRole('heading', { level: 1, name: 'RoC VTS Toolkit' });
   await expect(exposedHeadings).toHaveCount(1);
   await expect(homeHeading).toHaveCount(1);
   await expect(homeHeading).toBeVisible();

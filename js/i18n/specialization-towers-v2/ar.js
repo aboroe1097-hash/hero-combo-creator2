@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_AR = Object.freeze({
+  reportWrongCost: 'الإبلاغ عن تكلفة خاطئة',
+  selectNodeBeforeMedals: 'اختر عقدة واحدة على الأقل قبل إضافة الميداليات.',
   title: 'أبراج التخصص',
   subtitle: 'أعد إنشاء كل مسار تخصص، وتتبع الميداليات، وراجع مكافآته النشطة.',
   betaBadge: 'تجريبي',

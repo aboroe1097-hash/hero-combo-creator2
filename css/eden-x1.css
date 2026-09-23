@@ -5174,12 +5174,18 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
       'weighted rail'
       'overview rail'
       'public   public'
-      'error    error';
+      'error    error'
+      'complaints complaints';
     column-gap: clamp(1rem, 1.5vw, 1.5rem);
     align-items: start;
   }
   .eden-x1-page .eden-x1-notice {
     grid-area: notice;
+  }
+  /* The complaint form had no area, so auto-placement put it above the
+     rewards; it belongs at the foot of the season page. */
+  .eden-x1-page #edenX1Complaints {
+    grid-area: complaints;
   }
   .eden-x1-page #edenX1Marquee {
     grid-area: marquee;
@@ -6595,5 +6601,190 @@ html.is-embedded .ai-drawer-launcher-shell {
 @container (min-width: 380px) {
   .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-form {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Active-season signup invitation. eden-x1.html is the archived season, so the
+   card only ever renders on the X2 page — but both routes share this sheet, and
+   a handful of rules is cheaper than a route split for one card. */
+#ocrDashboardRoot .eden-x1-signup-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+}
+#ocrDashboardRoot .eden-x1-signup-prompt__kicker {
+  display: block;
+  color: var(--frost-cyan);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+#ocrDashboardRoot .eden-x1-signup-prompt h2 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1.05rem;
+}
+#ocrDashboardRoot .eden-x1-signup-prompt p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .eden-x1-signup-prompt__linked {
+  margin-top: 0.35rem;
+  color: var(--frost-cyan);
+  font-weight: 700;
+}
+#ocrDashboardRoot .eden-x1-signup-prompt__cta {
+  flex: 0 0 auto;
+}
+
+/* ── Issue / Complaint filing (js/eden-complaints.js) ───────────────────────
+   Kept deliberately small: the Eden route CSS budget carries roughly 4 KiB of
+   headroom, so this reuses the shared dash-btn / dash-input controls for
+   everything it can and only styles the parts the form owns. */
+.eden-x1-complaint {
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.eden-x1-complaint-hdr h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.eden-x1-complaint-hdr p {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.eden-x1-complaint-open {
+  width: 100%;
+}
+
+.eden-x1-complaint-form,
+.eden-x1-complaint-field,
+.eden-x1-complaint-identity {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.eden-x1-complaint-field,
+.eden-x1-complaint-identity {
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.eden-x1-complaint-field textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+.eden-x1-complaint-file {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.eden-x1-complaint-field small,
+.eden-x1-complaint-identity small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.eden-x1-complaint-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.eden-x1-complaint-thumb {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin: 0;
+}
+
+.eden-x1-complaint-thumb img {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.eden-x1-complaint-thumb-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.eden-x1-complaint-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.eden-x1-complaint-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.eden-x1-complaint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.eden-x1-complaint-actions .dash-btn {
+  flex: 1 1 160px;
+  min-height: 44px;
+}
+
+.eden-x1-complaint-status {
+  min-height: 1.1rem;
+  font-size: 0.82rem;
+}
+
+.eden-x1-complaint-status[data-state='sent'] {
+  color: #6ee7b7;
+}
+
+.eden-x1-complaint-status[data-state='error'] {
+  color: #fca5a5;
+}
+
+[data-theme='light'] .eden-x1-complaint {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme='light'] .eden-x1-complaint-status[data-state='sent'] {
+  color: #047857;
+}
+
+[data-theme='light'] .eden-x1-complaint-status[data-state='error'] {
+  color: #b91c1c;
+}
+
+@media (min-width: 769px) {
+  .eden-x1-complaint-open {
+    width: auto;
   }
 }

@@ -1913,18 +1913,78 @@ const ROWS = {
 };
 
 const EXTRA_UI = Object.freeze({
-  en: Object.freeze({ season: 'Season', state: 'State', skins: 'Skins' }),
-  ar: Object.freeze({ season: 'الموسم', state: 'الحالة', skins: 'السكنات' }),
-  de: Object.freeze({ season: 'Saison', state: 'Status', skins: 'Skins' }),
-  es: Object.freeze({ season: 'Temporada', state: 'Estado', skins: 'Skins' }),
-  fr: Object.freeze({ season: 'Saison', state: 'Statut', skins: 'Skins' }),
-  id: Object.freeze({ season: 'Season', state: 'Status', skins: 'Skin' }),
-  it: Object.freeze({ season: 'Stagione', state: 'Stato', skins: 'Skin' }),
-  kr: Object.freeze({ season: '시즌', state: '상태', skins: '스킨' }),
-  pt: Object.freeze({ season: 'Temporada', state: 'Estado', skins: 'Skins' }),
-  ru: Object.freeze({ season: 'Сезон', state: 'Статус', skins: 'Скины' }),
-  tr: Object.freeze({ season: 'Sezon', state: 'Durum', skins: 'Kostümler' }),
-  zh: Object.freeze({ season: '赛季', state: '状态', skins: '皮肤' }),
+  en: Object.freeze({
+    season: 'Season',
+    state: 'State',
+    skins: 'Skins',
+    seasonTimeline: 'Season timeline',
+  }),
+  ar: Object.freeze({
+    season: 'الموسم',
+    state: 'الحالة',
+    skins: 'السكنات',
+    seasonTimeline: 'الجدول الزمني للمواسم',
+  }),
+  de: Object.freeze({
+    season: 'Saison',
+    state: 'Status',
+    skins: 'Skins',
+    seasonTimeline: 'Saison-Zeitleiste',
+  }),
+  es: Object.freeze({
+    season: 'Temporada',
+    state: 'Estado',
+    skins: 'Skins',
+    seasonTimeline: 'Cronología de temporadas',
+  }),
+  fr: Object.freeze({
+    season: 'Saison',
+    state: 'Statut',
+    skins: 'Skins',
+    seasonTimeline: 'Chronologie des saisons',
+  }),
+  id: Object.freeze({
+    season: 'Season',
+    state: 'Status',
+    skins: 'Skin',
+    seasonTimeline: 'Linimasa musim',
+  }),
+  it: Object.freeze({
+    season: 'Stagione',
+    state: 'Stato',
+    skins: 'Skin',
+    seasonTimeline: 'Cronologia delle stagioni',
+  }),
+  kr: Object.freeze({
+    season: '시즌',
+    state: '상태',
+    skins: '스킨',
+    seasonTimeline: '시즌 타임라인',
+  }),
+  pt: Object.freeze({
+    season: 'Temporada',
+    state: 'Estado',
+    skins: 'Skins',
+    seasonTimeline: 'Linha do tempo das temporadas',
+  }),
+  ru: Object.freeze({
+    season: 'Сезон',
+    state: 'Статус',
+    skins: 'Скины',
+    seasonTimeline: 'Хронология сезонов',
+  }),
+  tr: Object.freeze({
+    season: 'Sezon',
+    state: 'Durum',
+    skins: 'Kostümler',
+    seasonTimeline: 'Sezon zaman çizelgesi',
+  }),
+  zh: Object.freeze({
+    season: '赛季',
+    state: '状态',
+    skins: '皮肤',
+    seasonTimeline: '赛季时间线',
+  }),
 });
 
 export const HERO_ATLAS_UI = Object.freeze(
@@ -1956,7 +2016,7 @@ export function auditHeroAtlasUi() {
       if (placeholderSignature(value) !== placeholderSignature(ROWS.en[index]))
         errors.push(`${locale}.${KEYS[index] || index}: placeholder mismatch`);
     });
-    for (const key of ['season', 'state', 'skins']) {
+    for (const key of ['season', 'state', 'skins', 'seasonTimeline']) {
       const value = String(EXTRA_UI[locale]?.[key] || '');
       if (!value.trim()) errors.push(`${locale}.${key}: empty`);
       if (/[?�]|tokens truncated/iu.test(value)) errors.push(`${locale}.${key}: invalid text`);

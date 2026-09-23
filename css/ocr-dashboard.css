@@ -2883,7 +2883,9 @@ body[style*='overflow: hidden'] .tab-panel {
 
 @media (max-width: 768px) {
   body.admin-standalone-page {
-    overflow-x: hidden;
+    /* clip, not hidden: hidden would turn the visible y-axis back into a
+       scroll container and break position: sticky again. */
+    overflow-x: clip;
   }
 
   #adminPageRoot.admin-page-main,
@@ -4311,6 +4313,44 @@ body[style*='overflow: hidden'] .tab-panel {
   font-size: 0.66rem;
   font-weight: 800;
   white-space: nowrap;
+}
+/* The count is a disclosure: opening it shows the main / alt split and what
+   each share was worth, which the tooltip alone could not deliver on touch. */
+#ocrDashboardRoot .duty-count-details > summary.duty-count {
+  cursor: pointer;
+  list-style: none;
+}
+#ocrDashboardRoot .duty-count-details > summary.duty-count::-webkit-details-marker {
+  display: none;
+}
+#ocrDashboardRoot .duty-count-panel {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--ff-border);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.55);
+  text-align: left;
+}
+#ocrDashboardRoot .duty-count-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .duty-count-line > span {
+  color: var(--ff-text-dim);
+}
+#ocrDashboardRoot .duty-count-line[data-account='banner'] > span {
+  color: #fbbf24;
+}
+[data-theme='light'] #ocrDashboardRoot .duty-count-panel {
+  background: rgba(255, 255, 255, 0.92);
+}
+[data-theme='light'] #ocrDashboardRoot .duty-count-line[data-account='banner'] > span {
+  color: #b45309;
 }
 [data-theme='light'] #ocrDashboardRoot .duty-count-alt {
   color: #b45309;

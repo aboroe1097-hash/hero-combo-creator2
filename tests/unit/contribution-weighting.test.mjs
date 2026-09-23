@@ -347,7 +347,16 @@ test('weighted duty counts credit both banner account and operator when present'
     ]);
 
     assert.equal(counts.get(compactPlayerIdentity('ANGEL')).banners, 1);
-    assert.equal(counts.get(compactPlayerIdentity('Zubbs')).banners, 1);
+    // The operator note is taught: "Zubbs" now names Lady Zubbs outright, so the
+    // second credit lands on her account rather than on the family's roster
+    // spelling. Same family, one duty, still two credited accounts.
+    assert.equal(counts.get(compactPlayerIdentity('Lady Zubbs')).banners, 1);
+    assert.equal(
+      [...counts.entries()]
+        .filter(([key]) => getWeightedPlayerFamilyKey(key) === 'zubbs')
+        .reduce((sum, [, row]) => sum + row.banners, 0),
+      1
+    );
   });
 });
 
@@ -897,24 +906,50 @@ test('shared-identity accounts credit duty + conduct to the highest-contribution
 test('duty points weight each activity by the account class that performed it', async () => {
   const {
     DEFAULT_DUTY_POINT_WEIGHTS,
+    DUTY_ACCOUNT_CLASSES,
     DUTY_POINT_UNIT,
     classifyDutyAccount,
     dutyPointsFor,
     normalizeDutyPointWeights,
   } = await import('../../js/contribution-weighting.js');
 
+  // Three classes: the main, every other account, and a linked account the admin
+  // marked as a real second account rather than a banner.
+  assert.deepEqual(DUTY_ACCOUNT_CLASSES, ['main', 'alt', 'secondary']);
+
   // The shipped defaults are the ones the operator asked for out loud.
-  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.banners, { main: 1, alt: 0.5 });
-  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.pathers, { main: 3, alt: 1 });
+  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.banners, { main: 1, alt: 0.5, secondary: 0.5 });
+  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.pathers, { main: 3, alt: 1, secondary: 1 });
 
   // A family's primary account is the main; every other account a person plays
   // — secondary castles, banner accounts — is an alt.
   assert.equal(classifyDutyAccount('BiG BOiiE'), 'main');
   assert.equal(classifyDutyAccount('BOiiE BANNER'), 'alt');
+  // The guild's known second castles are predefined as the secondary class,
+  // which scores at the alt weight by default, so nothing moves on day one.
+  for (const name of ['Victoria', 'Sharakikas', 'SSKikass', 'TakeUrShin']) {
+    assert.equal(classifyDutyAccount(name), 'secondary', name);
+  }
 
   assert.equal(dutyPointsFor({ banners: { main: 2, alt: 0 } }), 2 * DUTY_POINT_UNIT);
   assert.equal(dutyPointsFor({ banners: { main: 0, alt: 2 } }), 1 * DUTY_POINT_UNIT);
   assert.equal(dutyPointsFor({ pathers: { main: 1, alt: 0 } }), 3 * DUTY_POINT_UNIT);
+  // The third class scores on its own cell, and its default matches the alt
+  // weight: adding the class cannot restate a season nobody retuned.
+  assert.equal(dutyPointsFor({ banners: { main: 0, alt: 0, secondary: 2 } }), 1 * DUTY_POINT_UNIT);
+  assert.equal(
+    DEFAULT_DUTY_POINT_WEIGHTS.banners.secondary,
+    DEFAULT_DUTY_POINT_WEIGHTS.banners.alt
+  );
+  assert.equal(
+    dutyPointsFor(
+      { banners: { main: 0, alt: 0, secondary: 1 } },
+      {
+        banners: { main: 1, alt: 1, secondary: 4 },
+      }
+    ),
+    4 * DUTY_POINT_UNIT
+  );
 
   // Every weight at 1 reproduces the flat 10,000-per-duty rule this replaced,
   // so the change is opt-in through configuration rather than forced.
@@ -942,16 +977,30 @@ test('duty points weight each activity by the account class that performed it', 
     pathers: { main: 2 },
     shieldWalls: { main: 1e9, alt: 4 },
   });
-  assert.deepEqual(cleaned.banners, { main: 1, alt: 0.5 });
+  assert.deepEqual(cleaned.banners, { main: 1, alt: 0.5, secondary: 0.5 });
   assert.equal(cleaned.pathers.main, 2);
   assert.equal(cleaned.pathers.alt, 1);
+  assert.equal(cleaned.pathers.secondary, 1);
   assert.equal(cleaned.shieldWalls.main, 1);
   assert.equal(cleaned.shieldWalls.alt, 4);
+  // No secondary cell: it follows this season's own alt weight, so a season
+  // saved before the class existed restates nothing.
+  assert.equal(cleaned.shieldWalls.secondary, 4);
+  assert.equal(
+    normalizeDutyPointWeights({ banners: { main: 1, alt: 0.8 } }).banners.secondary,
+    0.8
+  );
+  // A document written before the third class existed carries no secondary cell
+  // and still normalizes to the default for it.
   assert.deepEqual(normalizeDutyPointWeights(null), {
-    banners: { main: 1, alt: 0.5 },
-    pathers: { main: 3, alt: 1 },
-    shieldWalls: { main: 1, alt: 1 },
+    banners: { main: 1, alt: 0.5, secondary: 0.5 },
+    pathers: { main: 3, alt: 1, secondary: 1 },
+    shieldWalls: { main: 1, alt: 1, secondary: 1 },
   });
+  assert.equal(
+    normalizeDutyPointWeights({ banners: { main: 1, alt: 1, secondary: 2.5 } }).banners.secondary,
+    2.5
+  );
 });
 
 test('duty weights are stored per workspace and edited only by a superadmin', async () => {
@@ -978,7 +1027,7 @@ test('duty weights are stored per workspace and edited only by a superadmin', as
   assert.match(panel, /\shidden\b/);
   // One input per activity per account class, or a weight silently cannot be set.
   for (const activity of ['banners', 'pathers', 'shieldWalls']) {
-    for (const cls of ['main', 'alt']) {
+    for (const cls of ['main', 'alt', 'secondary']) {
       assert.match(
         panel,
         new RegExp(`data-duty-weight="${activity}" data-duty-class="${cls}"`),
@@ -1004,7 +1053,7 @@ test('duty weights are stored per workspace and edited only by a superadmin', as
   assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
 });
 
-test('upload rows and account links decide whether a duty scores as main or banner', async () => {
+test('upload rows and account links decide whether a duty scores as main, alt or secondary', async () => {
   const { buildWeightedContributionRows, classifyDutyAccount, getWeightedPlayerFamilyKey } =
     await import('../../js/contribution-weighting.js');
   const { setActivePlayerRegistry } = await import('../../js/player-registry.js');
@@ -1035,11 +1084,12 @@ test('upload rows and account links decide whether a duty scores as main or bann
     assert.deepEqual(classesFor([{ name: 'ANGEL', confirmed: 'ANGEL' }], 'ANGEL'), {
       main: 1,
       alt: 0,
+      secondary: 0,
     });
     // The list named the player, but the uploader said it was their banner.
     assert.deepEqual(
       classesFor([{ name: 'ANGEL', confirmed: 'ANGEL', accountType: 'banner' }], 'ANGEL'),
-      { main: 0, alt: 1 }
+      { main: 0, alt: 1, secondary: 0 }
     );
     // "Main" wins over an account that would otherwise count as an alt.
     assert.deepEqual(
@@ -1047,7 +1097,7 @@ test('upload rows and account links decide whether a duty scores as main or bann
         [{ name: 'Angel Banner', confirmed: 'Angel Banner', accountType: 'main' }],
         'ANGEL'
       ),
-      { main: 1, alt: 0 }
+      { main: 1, alt: 0, secondary: 0 }
     );
 
     // Unlinked, a banner account is its own player at full weight.
@@ -1068,8 +1118,273 @@ test('upload rows and account links decide whether a duty scores as main or bann
     assert.deepEqual(classesFor([{ name: 'Loony Banner', confirmed: 'Loony Banner' }], 'Loony'), {
       main: 0,
       alt: 1,
+      secondary: 0,
     });
+
+    // A link typed "secondary" is its own class: the account still belongs to
+    // its owner, but the duty is no longer lumped in with the banner accounts.
+    setActivePlayerRegistry({
+      players: [],
+      accountLinks: [{ account: 'Loony Banner', owner: 'Loony', type: 'secondary' }],
+    });
+    assert.equal(getWeightedPlayerFamilyKey('loonybanner'), getWeightedPlayerFamilyKey('loony'));
+    assert.equal(classifyDutyAccount('loonybanner'), 'secondary');
+    assert.deepEqual(classesFor([{ name: 'Loony Banner', confirmed: 'Loony Banner' }], 'Loony'), {
+      main: 0,
+      alt: 0,
+      secondary: 1,
+    });
+    // The per-row switch still overrides the account, one class at a time.
+    assert.deepEqual(
+      classesFor(
+        [{ name: 'Loony Banner', confirmed: 'Loony Banner', accountType: 'main' }],
+        'Loony'
+      ),
+      { main: 1, alt: 0, secondary: 0 }
+    );
+    // The upload's automatic guess is "banner" for every non-main account. On
+    // an account linked as secondary that guess yields to the link…
+    assert.deepEqual(
+      classesFor(
+        [{ name: 'Loony Banner', confirmed: 'Loony Banner', accountType: 'banner' }],
+        'Loony'
+      ),
+      { main: 0, alt: 0, secondary: 1 }
+    );
+    assert.deepEqual(
+      classesFor(
+        [
+          {
+            name: 'Loony Banner',
+            confirmed: 'Loony Banner',
+            accountType: 'banner',
+            accountTypeSource: 'guess',
+          },
+        ],
+        'Loony'
+      ),
+      { main: 0, alt: 0, secondary: 1 }
+    );
+    // …while an operator who picked Banner by hand is obeyed.
+    assert.deepEqual(
+      classesFor(
+        [
+          {
+            name: 'Loony Banner',
+            confirmed: 'Loony Banner',
+            accountType: 'banner',
+            accountTypeSource: 'operator',
+          },
+        ],
+        'Loony'
+      ),
+      { main: 0, alt: 1, secondary: 0 }
+    );
   } finally {
     setActivePlayerRegistry(null);
+  }
+});
+
+test('a secondary link scores its duty at the configured third-class weight', async () => {
+  const { buildWeightedContributionRows, DUTY_POINT_UNIT } =
+    await import('../../js/contribution-weighting.js');
+  const { setActivePlayerRegistry } = await import('../../js/player-registry.js');
+
+  const build = (dutyPointWeights) =>
+    buildWeightedContributionRows({
+      contributionRecords: [
+        {
+          id: 'c-secondary',
+          date: '2026-09-20',
+          entries: [{ rank: 1, name: 'Loony', contribution: 100000 }],
+        },
+      ],
+      dutyRecords: [
+        { id: 'd1', type: 'banner', date: '2026-09-20', entries: [{ name: 'Second Castle' }] },
+        { id: 'd2', type: 'banner', date: '2026-09-20', entries: [{ name: 'Outpost Two' }] },
+      ],
+      dutyPointWeights,
+    }).rows.find((row) => row.playerName === 'Loony');
+
+  try {
+    setActivePlayerRegistry({
+      players: [],
+      accountLinks: [
+        { account: 'Second Castle', owner: 'Loony', type: 'secondary' },
+        { account: 'Outpost Two', owner: 'Loony', type: 'banner' },
+      ],
+    });
+    // One duty through the secondary account, one through the banner account.
+    // The grid is explicit here so the third cell is provably the one read.
+    const row = build({ banners: { main: 1, alt: 2, secondary: 4 } });
+    assert.deepEqual(row.dutiesByClass.banners, { main: 0, alt: 1, secondary: 1 });
+    assert.equal(row.dutyPoints, (2 + 4) * DUTY_POINT_UNIT);
+    const banners = row.dutyBreakdown.activities.find((entry) => entry.activity === 'banners');
+    assert.equal(banners.secondary.points, 4 * DUTY_POINT_UNIT);
+    assert.equal(banners.alt.points, 2 * DUTY_POINT_UNIT);
+
+    // With nothing configured, the secondary duty keeps the alt weight it would
+    // have scored at before the class existed.
+    const defaulted = build(undefined);
+    assert.equal(defaulted.dutyPoints, defaulted.dutiesByClass.banners.alt * 1 * DUTY_POINT_UNIT);
+  } finally {
+    setActivePlayerRegistry(null);
+  }
+});
+
+test('whole-score multipliers scale in-game contribution and form points', async () => {
+  const {
+    DEFAULT_CONTRIBUTION_WEIGHT,
+    DEFAULT_FORM_POINT_WEIGHT,
+    MAX_SCORING_MULTIPLIER,
+    normalizeContributionWeight,
+    normalizeFormPointWeight,
+  } = await import('../../js/contribution-weighting.js');
+
+  const season = 'season-2027';
+  const build = (options = {}) =>
+    buildWeightedContributionRows({
+      season,
+      contributionRecords: [
+        {
+          id: 'multiplier-fixture',
+          date: '2026-09-23',
+          premiumCutoff: 1,
+          entries: [{ rank: 1, name: 'Multiplier Alpha', contribution: 100000 }],
+        },
+      ],
+      dutyRecords: [
+        { type: 'pather', entries: [{ name: 'Multiplier Alpha', confirmed: 'Multiplier Alpha' }] },
+      ],
+      r5Adjustments: [{ season, player: 'Multiplier Alpha', points: 2, category: 'extra_effort' }],
+      ...options,
+    });
+  const alpha = (model) => model.rows.find((row) => row.playerName === 'Multiplier Alpha');
+
+  // Absent configuration is neutral. Both multipliers default to 1, so a season
+  // that never opens the panel scores exactly as it did before they existed:
+  // contribution 100,000 + one pathing duty on a main (3 × 10,000) + 2 form
+  // points (2 × 10,000).
+  assert.equal(DEFAULT_CONTRIBUTION_WEIGHT, 1);
+  assert.equal(DEFAULT_FORM_POINT_WEIGHT, 1);
+  const baseline = alpha(build());
+  assert.equal(baseline.contributionWeight, 1);
+  assert.equal(baseline.formPointWeight, 1);
+  assert.equal(baseline.contributionWeightedPoints, 100000);
+  assert.equal(baseline.conductUnit, 10000);
+  assert.equal(baseline.weightedScore, 150000);
+
+  // Halving in-game contribution makes the same duties worth relatively more,
+  // which is the whole point of the knob.
+  const halved = alpha(build({ contributionWeight: 0.5 }));
+  assert.equal(halved.contributionWeight, 0.5);
+  assert.equal(halved.contributionWeightedPoints, 50000);
+  assert.equal(halved.weightedScore, 100000 / 2 + 30000 + 20000);
+
+  // The support weight ("support ×2") scales all support work: the duty unit and
+  // the form's bonus unit together, and the breakdown units follow so the
+  // popover still adds up.
+  const doubled = alpha(build({ formPointWeight: 2 }));
+  assert.equal(doubled.formPointWeight, 2);
+  assert.equal(doubled.conductUnit, 20000);
+  assert.equal(doubled.conductPoints, 40000);
+  assert.equal(doubled.dutyBreakdown.unit, 20000);
+  assert.equal(doubled.dutyPoints, 60000);
+  assert.equal(doubled.weightedScore, 100000 + 60000 + 40000);
+
+  // Hostile input falls back to neutral rather than to zero, and an explicit
+  // zero stays meaningful.
+  for (const bad of [null, undefined, '', 'nonsense', -1, MAX_SCORING_MULTIPLIER + 1]) {
+    assert.equal(normalizeContributionWeight(bad), 1);
+    assert.equal(normalizeFormPointWeight(bad), 1);
+  }
+  assert.equal(normalizeContributionWeight(0), 0);
+  assert.equal(normalizeFormPointWeight(MAX_SCORING_MULTIPLIER), MAX_SCORING_MULTIPLIER);
+
+  // The breakdown carries the multiplier so its lines still reconcile with the
+  // displayed weighted total.
+  const { buildScoreBreakdownLines } = await import('../../js/score-breakdown.js');
+  const lines = buildScoreBreakdownLines(halved);
+  assert.equal(lines.find((line) => line.kind === 'contribution')?.weight, 0.5);
+  assert.equal(lines.find((line) => line.kind === 'exGuild')?.weight, 0.5);
+  assert.equal(buildScoreBreakdownLines(baseline)[0].weight, 1);
+
+  // Every line's contribution to the total, summed, is the displayed total —
+  // with both multipliers moved at once.
+  const { weightedLinePoints } = await import('../../js/score-breakdown.js');
+  const tuned = alpha(
+    build({
+      contributionWeight: 0.5,
+      formPointWeight: 2,
+      demolitionRecords: [{ players: [{ name: 'Multiplier Alpha', total_demolition: 7000 }] }],
+    })
+  );
+  const sum = buildScoreBreakdownLines(tuned).reduce(
+    (total, line) => total + weightedLinePoints(line),
+    0
+  );
+  assert.equal(sum, tuned.weightedScore);
+  assert.ok(tuned.demolitionPoints > 0, 'the fixture carries a demolition line');
+  assert.equal(tuned.weightedScore, 50000 + 60000 + 40000 + tuned.demolitionPoints);
+});
+
+test('the multipliers are edited by a superadmin, rescore, and publish with the season', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { normalizeEdenProjectionScoring } = await import('../../js/eden-workspaces.js');
+
+  const markup = readFileSync('tabs/admin.html', 'utf8');
+  const panel = markup.match(/<section class="dash-duty-weights"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(panel, 'the scoring panel exists');
+  for (const id of ['dashContributionWeightInput', 'dashFormPointWeightInput']) {
+    assert.match(panel, new RegExp(`id="${id}"`), `${id} is in the superadmin panel`);
+  }
+  // Same superadmin gate as the duty grid, and hidden until the claim check.
+  assert.match(panel, /data-requires-superadmin/);
+
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  // Both scoring call sites, the published projection, and the two local
+  // mirrors (load + save) carry the multipliers. The scoring sites matter most:
+  // an export or a public page that scored differently would be worse than
+  // none, so this count is pinned rather than left to drift.
+  assert.equal(
+    [...dashboard.matchAll(/contributionWeight: state\.contributionWeight/g)].length,
+    5,
+    'two scoring call sites, the published projection, and two local mirrors'
+  );
+  assert.match(
+    dashboard,
+    /contributionWeight: normalizeContributionWeight\(state\.contributionWeight\)/
+  );
+  assert.match(dashboard, /collectScoringMultipliersFromInputs/);
+  assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
+
+  const renderer = readFileSync('js/ocr-render.js', 'utf8');
+  // The cached model must watch the multipliers or the tables keep stale scores.
+  assert.match(renderer, /state\.contributionWeight,\s*\n\s*state\.formPointWeight,/);
+
+  const rules = readFileSync('firestore.rules', 'utf8');
+  assert.match(rules, /validDutyPointWeights/);
+  assert.match(rules, /'contributionWeight', 'formPointWeight'/);
+  assert.match(rules, /d\.contributionWeight >= 0 && d\.contributionWeight <= 10/);
+
+  // Published scoring keeps sane numbers and drops hostile ones.
+  assert.deepEqual(
+    normalizeEdenProjectionScoring({ contributionWeight: 0.5, formPointWeight: 2 }),
+    {
+      contributionWeight: 0.5,
+      formPointWeight: 2,
+    }
+  );
+  assert.deepEqual(
+    normalizeEdenProjectionScoring({ contributionWeight: 11, formPointWeight: -3 }),
+    undefined
+  );
+  assert.deepEqual(normalizeEdenProjectionScoring('nonsense'), undefined);
+
+  // Every locale the i18n gate checks carries the panel copy.
+  for (const locale of ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh']) {
+    const pack = readFileSync(`js/i18n/${locale}.js`, 'utf8');
+    assert.match(pack, /adminScoringMultipliersTitle:/, `${locale} has the multipliers title`);
+    assert.match(pack, /adminScoringMultipliersHint:/, `${locale} has the multipliers hint`);
   }
 });

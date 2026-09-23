@@ -142,18 +142,43 @@ function distUrlExists(url) {
 // season schedule, which VtsScore loads behind its own server-verified gate.
 // Those must still never be precached ahead of that gate.
 const PROTECTED_ALL_STAR_PRECACHE_PATTERN = /^\/assets\/all-star-boh-[^/]*\.js$/iu;
+const PROTECTED_EDEN_SIEGE_PRECACHE_PATTERN = /^\/assets\/eden-siege-[^/]*\.js$/iu;
 
 function isProtectedAllStarPrecacheUrl(url) {
   return PROTECTED_ALL_STAR_PRECACHE_PATTERN.test(String(url || '').split(/[?#]/u, 1)[0]);
 }
 
+function isProtectedEdenSiegePrecacheUrl(url) {
+  return PROTECTED_EDEN_SIEGE_PRECACHE_PATTERN.test(String(url || '').split(/[?#]/u, 1)[0]);
+}
+
 function collectDistPrecacheUrls(existingUrls) {
-  const urls = new Set(existingUrls);
-  urls.add('/');
   const assetPattern =
     /\b(?:href|src)=["']([^"']+\.(?:css|js|webp|png|webmanifest)(?:\?[^"']*)?)["']/gi;
-  for (const entry of fs.readdirSync(dist)) {
-    if (!entry.endsWith('.html')) continue;
+  const htmlEntries = fs.readdirSync(dist).filter((entry) => entry.endsWith('.html'));
+  const downloadsAssets = new Set();
+  const otherPageAssets = new Set();
+  for (const entry of htmlEntries) {
+    const html = fs.readFileSync(path.join(dist, entry), 'utf8');
+    const assets = entry === 'downloads.html' ? downloadsAssets : otherPageAssets;
+    for (const match of html.matchAll(assetPattern)) {
+      const raw = match[1];
+      if (/^(?:https?:|data:|#)/i.test(raw)) continue;
+      assets.add(`/${raw.replace(/^\.?\/+/, '').split(/[?#]/u, 1)[0]}`);
+    }
+  }
+  const downloadOnlyAssets = new Set(
+    [...downloadsAssets].filter((asset) => !otherPageAssets.has(asset))
+  );
+  const isDownloadOnlyUrl = (url) => {
+    const pathname = String(url || '').split(/[?#]/u, 1)[0];
+    return pathname === '/downloads.html' || downloadOnlyAssets.has(pathname);
+  };
+
+  const urls = new Set(existingUrls.filter((url) => !isDownloadOnlyUrl(url)));
+  urls.add('/');
+  for (const entry of htmlEntries) {
+    if (entry === 'downloads.html') continue;
     urls.add(`/${entry}`);
     const html = fs.readFileSync(path.join(dist, entry), 'utf8');
     for (const match of html.matchAll(assetPattern)) {
@@ -165,12 +190,14 @@ function collectDistPrecacheUrls(existingUrls) {
   const assetsDir = path.join(dist, 'assets');
   if (fs.existsSync(assetsDir)) {
     for (const entry of fs.readdirSync(assetsDir)) {
-      if (/\.(?:js|css)$/.test(entry)) urls.add(`/assets/${entry}`);
+      const url = `/assets/${entry}`;
+      if (/\.(?:js|css)$/.test(entry) && !isDownloadOnlyUrl(url)) urls.add(url);
     }
   }
   return [...urls]
     .filter(distUrlExists)
     .filter((url) => !isProtectedAllStarPrecacheUrl(url))
+    .filter((url) => !isProtectedEdenSiegePrecacheUrl(url))
     .sort((a, b) => a.localeCompare(b));
 }
 

@@ -36,3 +36,16 @@ test('size:check guards the toolchain its budgets were calibrated on', () => {
   assert.match(checkSize, /TOOLCHAIN_PACKAGES\s*=\s*\[[^\]]*'vite'/u);
   assert.match(checkSize, /toolchainMismatches\.length/u);
 });
+
+test('route JavaScript budgets include scripts and modulepreloads', () => {
+  const checkSize = read('scripts/check-size.mjs');
+  assert.match(
+    checkSize,
+    /routeJsBytes:\s*\{[^}]*'eden-siege\.html':\s*\{\s*desktop:\s*684 \* 1024,\s*mobile:\s*684 \* 1024/su
+  );
+  assert.match(checkSize, /function resolveBuiltRouteJsAssets\(/u);
+  assert.match(checkSize, /relValues\.includes\('modulepreload'\)/u);
+  assert.match(checkSize, /routeJsMetrics/u);
+  assert.match(checkSize, /desktop initial JS/u);
+  assert.match(checkSize, /mobile initial JS/u);
+});

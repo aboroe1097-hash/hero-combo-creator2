@@ -1,4 +1,4 @@
-# https://roc-vts.com — VTS 1097 Hero Combo Creator
+# https://roc-vts.com — RoC VTS Toolkit (VTS 1097)
 User-agent: *
 Allow: /
 

@@ -44,6 +44,8 @@ jobs:
           VTS_EDEN_VOTES_PIN_HASH: ${{ secrets.VTS_EDEN_VOTES_PIN_HASH || vars.VTS_EDEN_VOTES_PIN_HASH }}
           VTS_ADMIN_OVERRIDE_CODE: ${{ secrets.VTS_ADMIN_OVERRIDE_CODE }}
           VTS_ADMIN_OVERRIDE_HASH: ${{ secrets.VTS_ADMIN_OVERRIDE_HASH || vars.VTS_ADMIN_OVERRIDE_HASH }}
+      - name: Test Eden Siege
+        run: npm run siege:test
       - run: cp CNAME dist/CNAME
       - uses: actions/upload-pages-artifact@v5
         with:

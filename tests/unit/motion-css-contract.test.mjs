@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const componentsCss = readFileSync('css/components.css', 'utf8');
 const shellCss = readFileSync('css/shell-v14.css', 'utf8');
+const atmosphereCss = readFileSync('css/atmosphere.css', 'utf8');
+const tokensCss = readFileSync('css/_tokens.css', 'utf8');
 
 test('component motion enumerates only the properties each state changes', () => {
   assert.doesNotMatch(componentsCss, /transition\s*:\s*all\b/i);
@@ -36,4 +38,27 @@ test('the final shell cascade disables known repeated and transition motion', ()
     finalReducedMotion,
     /#app \.command-header::before,\s*#app \.shell-more-panel,\s*#app \.shell-more-backdrop\s*\{[^}]*animation:\s*none !important/
   );
+});
+
+test('the atmosphere layer keeps only its consumed per-surface rules', () => {
+  assert.match(
+    atmosphereCss,
+    /:where\(a, button, \[role="button"\], input, select, textarea, \.tab-pill, summary\):focus-visible\s*\{[^}]*outline:\s*2px solid var\(--brand\)/
+  );
+  assert.match(atmosphereCss, /\.tab-pill-active\s*\{[^}]*box-shadow:\s*var\(--glow-brand\)/);
+  assert.doesNotMatch(
+    atmosphereCss,
+    /\.u-[a-z][a-z0-9-]*\s*[,{:]/,
+    'opt-in .u-* utilities ship only with a real consumer; the audited set had none'
+  );
+});
+
+test('the byte audit removed the dead compatibility tokens', () => {
+  for (const token of ['--glow-accent', '--glow-danger', '--surface-deep', '--noise-texture']) {
+    assert.doesNotMatch(
+      tokensCss,
+      new RegExp(`${token}\\s*:`),
+      `${token} has no consumer; re-add it together with one and update this test`
+    );
+  }
 });

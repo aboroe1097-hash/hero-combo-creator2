@@ -13,7 +13,7 @@ export {
  * rules until the battle engine explicitly models them.
  */
 
-export const SPECIALIZATION_DATA_REVISION = '2026-07-18-public-planner-assets';
+export const SPECIALIZATION_DATA_REVISION = '2026-09-23-workbook-badge-costs';
 export const SPECIALIZATION_CONTRIBUTION_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1b8KpSdvf02L5sGoi075MIO7J8IjKVMImBxHDDUWvF64/edit?usp=sharing';
 export const SPECIALIZATION_CONTRIBUTION_TEMPLATE_VERSION = 2;
@@ -35,7 +35,8 @@ export const SPECIALIZATION_SOURCE_METADATA = Object.freeze({
   columnCount: 8,
   evidenceNotes: Object.freeze([
     'The May 20, 2026 current guide confirms 8 columns and Season X28+ coverage.',
-    'The interactive planner data supplies canonical research-level medal totals, bonuses, milestones, passive skills, and Legion Skills; per-node costs remain unknown unless directly evidenced.',
+    'The interactive planner data supplies node order, bonuses, milestones, passive skills, and Legion Skills.',
+    'Per-node Virtue Badge costs come from the community "Unit Specilization" workbook (Ivan & CrazyDD / ΜΟΛΩΝ ΛΑΒΕ, youtube.com/@TheRocNoobs), transcribed node by node and level by level in the medal-evidence module; its section totals are the shipped research and column badge costs.',
   ]),
 });
 
@@ -1039,7 +1040,7 @@ const RESEARCH_DATA = {
   training2: {
     id: 'training2',
     name: 'Training II',
-    cost: 3348,
+    cost: 2633,
     sequence: 5,
     column: 2,
     nodes: [
@@ -1268,7 +1269,7 @@ const RESEARCH_DATA = {
   siege1: {
     id: 'siege1',
     name: 'Siege Skill I',
-    cost: 5424,
+    cost: 5789,
     sequence: 6,
     column: 2,
     nodes: [
@@ -1519,7 +1520,7 @@ const RESEARCH_DATA = {
   defensive1: {
     id: 'defensive1',
     name: 'Defensive Skill I',
-    cost: 8944,
+    cost: 7988,
     sequence: 7,
     column: 2,
     nodes: [
@@ -1810,7 +1811,7 @@ const RESEARCH_DATA = {
   neat1: {
     id: 'neat1',
     name: 'Neat Formation I',
-    cost: 13578,
+    cost: 10384,
     sequence: 8,
     column: 2,
     rowBranched: true,
@@ -2177,7 +2178,7 @@ const RESEARCH_DATA = {
   training3: {
     id: 'training3',
     name: 'Training III',
-    cost: 6696,
+    cost: 5590,
     sequence: 9,
     column: 3,
     nodes: [
@@ -2427,7 +2428,7 @@ const RESEARCH_DATA = {
   encounter2: {
     id: 'encounter2',
     name: 'Encounter Battle II',
-    cost: 10848,
+    cost: 11189,
     sequence: 10,
     column: 3,
     nodes: [
@@ -2748,7 +2749,7 @@ const RESEARCH_DATA = {
   callofglory2: {
     id: 'callofglory2',
     name: 'Call of Glory II',
-    cost: 17888,
+    cost: 15509,
     sequence: 11,
     column: 3,
     nodes: [
@@ -3097,7 +3098,7 @@ const RESEARCH_DATA = {
   enhanced2: {
     id: 'enhanced2',
     name: 'Enhanced Tactics II',
-    cost: 27156,
+    cost: 19903,
     sequence: 12,
     column: 3,
     nodes: [
@@ -3481,7 +3482,7 @@ const RESEARCH_DATA = {
   training4: {
     id: 'training4',
     name: 'Training IV',
-    cost: 13392,
+    cost: 9025,
     sequence: 13,
     column: 4,
     troopSpecificNodes: true,
@@ -3839,7 +3840,7 @@ const RESEARCH_DATA = {
   siege2: {
     id: 'siege2',
     name: 'Siege Skill II',
-    cost: 21696,
+    cost: 14384,
     sequence: 14,
     column: 4,
     nodes: [
@@ -4177,7 +4178,7 @@ const RESEARCH_DATA = {
   defensive2: {
     id: 'defensive2',
     name: 'Defensive Skill II',
-    cost: 35776,
+    cost: 19190,
     sequence: 15,
     column: 4,
     nodes: [
@@ -4550,7 +4551,7 @@ const RESEARCH_DATA = {
   neat2: {
     id: 'neat2',
     name: 'Neat Formation II',
-    cost: 54312,
+    cost: 27183,
     sequence: 16,
     column: 4,
     rowBranched: true,
@@ -4971,7 +4972,7 @@ const RESEARCH_DATA = {
   training5: {
     id: 'training5',
     name: 'Training V',
-    cost: 26784,
+    cost: 4431,
     sequence: 17,
     column: 5,
     nodes: [
@@ -5197,7 +5198,7 @@ const RESEARCH_DATA = {
   encounter3: {
     id: 'encounter3',
     name: 'Encounter Battle III',
-    cost: 43392,
+    cost: 16446,
     sequence: 18,
     column: 5,
     nodes: [
@@ -5512,7 +5513,7 @@ const RESEARCH_DATA = {
   callofglory3: {
     id: 'callofglory3',
     name: 'Call of Glory III',
-    cost: 71552,
+    cost: 22791,
     sequence: 19,
     column: 5,
     nodes: [
@@ -5861,7 +5862,7 @@ const RESEARCH_DATA = {
   enhanced3: {
     id: 'enhanced3',
     name: 'Enhanced Tactics III',
-    cost: 108624,
+    cost: 28186,
     sequence: 20,
     column: 5,
     nodes: [
@@ -6243,7 +6244,7 @@ const RESEARCH_DATA = {
   training6: {
     id: 'training6',
     name: 'Training VI',
-    cost: 53568,
+    cost: 8218,
     sequence: 21,
     column: 6,
     nodes: [
@@ -6496,7 +6497,7 @@ const RESEARCH_DATA = {
   siege3: {
     id: 'siege3',
     name: 'Siege Skill III',
-    cost: 86784,
+    cost: 15260,
     sequence: 22,
     column: 6,
     nodes: [
@@ -6826,7 +6827,7 @@ const RESEARCH_DATA = {
   defensive3: {
     id: 'defensive3',
     name: 'Defensive Skill III',
-    cost: 143104,
+    cost: 29247,
     sequence: 23,
     column: 6,
     nodes: [
@@ -7204,7 +7205,7 @@ const RESEARCH_DATA = {
   neat3: {
     id: 'neat3',
     name: 'Neat Formation III',
-    cost: 217248,
+    cost: 39937,
     sequence: 24,
     column: 6,
     rowBranched: true,
@@ -7625,7 +7626,7 @@ const RESEARCH_DATA = {
   training7: {
     id: 'training7',
     name: 'Training VII',
-    cost: 15896,
+    cost: 16446,
     sequence: 25,
     column: 7,
     nodes: [
@@ -7817,7 +7818,7 @@ const RESEARCH_DATA = {
   encounter4: {
     id: 'encounter4',
     name: 'Encounter Battle IV',
-    cost: 32100,
+    cost: 32893,
     sequence: 26,
     column: 7,
     nodes: [
@@ -8033,7 +8034,7 @@ const RESEARCH_DATA = {
   callofglory4: {
     id: 'callofglory4',
     name: 'Call of Glory IV',
-    cost: 48000,
+    cost: 49337,
     sequence: 27,
     column: 7,
     nodes: [
@@ -8273,7 +8274,7 @@ const RESEARCH_DATA = {
   enhanced4: {
     id: 'enhanced4',
     name: 'Enhanced Tactics IV',
-    cost: 64700,
+    cost: 65785,
     sequence: 28,
     column: 7,
     progressiveReveal: {
@@ -8582,7 +8583,7 @@ const RESEARCH_DATA = {
   training8: {
     id: 'training8',
     name: 'Training VIII',
-    cost: 27982,
+    cost: 23025,
     sequence: 29,
     column: 8,
     nodes: [
@@ -8798,7 +8799,7 @@ const RESEARCH_DATA = {
   siege4: {
     id: 'siege4',
     name: 'Siege Skill IV',
-    cost: 45000,
+    cost: 46048,
     sequence: 30,
     column: 8,
     nodes: [
@@ -9045,7 +9046,7 @@ const RESEARCH_DATA = {
   defensive4: {
     id: 'defensive4',
     name: 'Defensive Skill IV',
-    cost: 65500,
+    cost: 69076,
     sequence: 31,
     column: 8,
     nodes: [
@@ -9332,7 +9333,7 @@ const RESEARCH_DATA = {
   neat4: {
     id: 'neat4',
     name: 'Neat Formation IV',
-    cost: 84900,
+    cost: 92099,
     sequence: 32,
     column: 8,
     rowBranched: true,
@@ -9818,43 +9819,43 @@ const COLUMNS = {
   2: {
     name: 'Column II',
     researches: ['training2', 'siege1', 'defensive1', 'neat1'],
-    totalCost: 31294,
+    totalCost: 26794,
     unlockSeason: 'S3',
   },
   3: {
     name: 'Column III',
     researches: ['training3', 'encounter2', 'callofglory2', 'enhanced2'],
-    totalCost: 62588,
+    totalCost: 52191,
     unlockSeason: 'S3',
   },
   4: {
     name: 'Column IV',
     researches: ['training4', 'siege2', 'defensive2', 'neat2'],
-    totalCost: 125176,
+    totalCost: 69782,
     unlockSeason: 'S3',
   },
   5: {
     name: 'Column V',
     researches: ['training5', 'encounter3', 'callofglory3', 'enhanced3'],
-    totalCost: 250352,
+    totalCost: 71854,
     unlockSeason: 'S3',
   },
   6: {
     name: 'Column VI',
     researches: ['training6', 'siege3', 'defensive3', 'neat3'],
-    totalCost: 500704,
+    totalCost: 92662,
     unlockSeason: 'S3',
   },
   7: {
     name: 'Column VII',
     researches: ['training7', 'encounter4', 'callofglory4', 'enhanced4'],
-    totalCost: 160696,
+    totalCost: 164461,
     unlockSeason: 'SX1',
   },
   8: {
     name: 'Column VIII',
     researches: ['training8', 'siege4', 'defensive4', 'neat4'],
-    totalCost: 223382,
+    totalCost: 230248,
     unlockSeason: 'SX1',
   },
 };
