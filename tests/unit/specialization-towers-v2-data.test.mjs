@@ -33,7 +33,7 @@ const researchEntries = Object.entries(SPECIALIZATION_RESEARCH);
 const researchValues = Object.values(SPECIALIZATION_RESEARCH);
 
 test('specialization source provenance identifies the X28+ eight-column revision', () => {
-  assert.equal(SPECIALIZATION_DATA_REVISION, '2026-09-23-community-workbook-badge-costs');
+  assert.equal(SPECIALIZATION_DATA_REVISION, '2026-09-23-workbook-badge-costs');
   assert.deepEqual(SPECIALIZATION_SOURCE_METADATA, {
     title: 'Unit Specialization',
     publisher: 'ROCAcademy / Rise of Castles community guide',

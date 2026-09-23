@@ -13,7 +13,7 @@ export {
  * rules until the battle engine explicitly models them.
  */
 
-export const SPECIALIZATION_DATA_REVISION = '2026-09-23-community-workbook-badge-costs';
+export const SPECIALIZATION_DATA_REVISION = '2026-09-23-workbook-badge-costs';
 export const SPECIALIZATION_CONTRIBUTION_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1b8KpSdvf02L5sGoi075MIO7J8IjKVMImBxHDDUWvF64/edit?usp=sharing';
 export const SPECIALIZATION_CONTRIBUTION_TEMPLATE_VERSION = 2;
