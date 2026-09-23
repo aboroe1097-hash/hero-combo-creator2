@@ -178,6 +178,13 @@ export function createVelo({ element = 'ice' } = {}) {
       materials.flame.emissive.setHex(palette.flame);
       glow.color.setHex(palette.glow);
     },
+    /** The ultimate: Velo burns brighter and his wings glow while it lasts. */
+    setPower(active) {
+      glow.intensity = active ? 2.4 : 0.9;
+      glow.distance = active ? 14 : 9;
+      materials.wing.emissive.setHex(active ? materials.flame.color.getHex() : 0x000000);
+      materials.wing.emissiveIntensity = active ? 0.55 : 0;
+    },
     setHitFlash(active) {
       materials.hide.emissive.setHex(active ? 0x8a2020 : 0x000000);
       materials.hide.emissiveIntensity = active ? 0.9 : 0;

@@ -508,7 +508,7 @@
 .siege-toast {
   position: absolute;
   left: 50%;
-  top: 132px;
+  top: 170px;
   transform: translateX(-50%);
   padding: 8px 16px;
   border-radius: 999px;
@@ -709,6 +709,459 @@
   border-right-color: transparent;
   border-bottom-color: transparent;
   animation: siege-spin 1.6s linear infinite;
+}
+
+/* ── flagship HUD: boss bar, announcer, floating numbers, training ────── */
+.siege-bossbar {
+  position: absolute;
+  top: 124px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 70vw);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(40, 8, 8, 0.78);
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #fecaca;
+}
+
+.siege-bossbar-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+}
+
+.siege-bossbar-track i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ef4444, #f5c451);
+  transition: width 0.2s ease;
+}
+
+.siege-bossbar.is-telegraphing {
+  border-color: #ef4444;
+  box-shadow: 0 0 22px rgba(239, 68, 68, 0.5);
+}
+
+.siege-announce {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Sora', 'Inter', sans-serif;
+  font-size: clamp(22px, 4.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff7e0;
+  text-shadow:
+    0 0 18px rgba(245, 196, 81, 0.75),
+    0 2px 0 rgba(0, 0, 0, 0.6);
+  animation: siege-announce-pop 1.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.siege-announce[data-tone='boss'],
+.siege-announce[data-tone='multi'] {
+  color: #ffe4e0;
+  text-shadow:
+    0 0 20px rgba(239, 68, 68, 0.8),
+    0 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.siege-announce[data-tone='ult'] {
+  color: #e0f7ff;
+  text-shadow:
+    0 0 22px rgba(125, 211, 252, 0.9),
+    0 0 40px rgba(251, 146, 60, 0.5);
+}
+
+.siege-floaters {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.siege-floater {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e0f2fe;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  animation: siege-float 0.8s ease-out forwards;
+}
+
+.siege-floater.is-fire {
+  color: #fdba74;
+}
+
+.siege-floater.is-ice {
+  color: #bae6fd;
+}
+
+.siege-floater.is-crit {
+  color: #fff1c1;
+  font-size: 21px;
+  text-shadow:
+    0 0 10px rgba(245, 196, 81, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.siege-floater.is-gold {
+  color: #f5c451;
+  font-size: 13px;
+}
+
+.siege-floater.is-dodge,
+.siege-floater.is-shield {
+  color: #d9f99d;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siege-tutorial {
+  position: absolute;
+  top: 124px;
+  left: 12px;
+  width: min(290px, calc(100% - 24px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(6, 12, 22, 0.82);
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+[data-theme='light'] .siege-tutorial {
+  background: rgba(255, 255, 255, 0.92);
+  color: #101827;
+}
+
+.siege-tutorial strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-cyan, #7dd3fc);
+}
+
+.siege-tutorial ol {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 5px;
+}
+
+.siege-tutorial li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--text-muted, #9fb0cc);
+}
+
+.siege-tutorial li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.siege-tutorial li.is-done {
+  color: inherit;
+  text-decoration: line-through;
+  text-decoration-color: rgba(125, 211, 252, 0.6);
+}
+
+.siege-tutorial li.is-done::before {
+  background: var(--accent-cyan, #7dd3fc);
+  border-color: transparent;
+}
+
+.siege-tutorial .siege-btn {
+  min-height: 36px;
+  font-size: 12px;
+}
+
+.siege-ult {
+  border-color: rgba(125, 211, 252, 0.35);
+}
+
+.siege-ult i {
+  background: linear-gradient(90deg, rgba(251, 146, 60, 0.32), rgba(125, 211, 252, 0.36));
+}
+
+.siege-ult.is-ready {
+  border-color: var(--accent-cyan, #7dd3fc);
+}
+
+.siege-ult.is-active {
+  border-color: #fff1c1;
+  box-shadow: 0 0 18px rgba(245, 196, 81, 0.55);
+}
+
+.siege-dash {
+  position: absolute;
+  right: 124px;
+  bottom: 96px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(125, 211, 252, 0.55);
+  background: radial-gradient(circle, rgba(125, 211, 252, 0.3), rgba(15, 23, 42, 0.55));
+  color: inherit;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.siege-dash i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  background: rgba(3, 7, 14, 0.55);
+}
+
+.siege-dash span {
+  position: relative;
+}
+
+/* ── overlay extras: badge, stars, mode chips, run history ─────────────── */
+.siege-overlay-card {
+  max-height: calc(100% - 12px);
+  overflow-y: auto;
+}
+
+.siege-overlay-badge {
+  display: inline-block;
+  margin: 0 0 8px !important;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-gold, #f5c451), var(--accent-fire, #fb923c));
+  color: #1a1204 !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.siege-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 2px 0 12px;
+}
+
+.siege-stars i {
+  width: 30px;
+  height: 30px;
+  background: rgba(148, 163, 184, 0.35);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.siege-stars i.is-lit {
+  background: linear-gradient(180deg, #fff1c1, #f5c451);
+  animation: siege-star 0.5s ease-out backwards;
+}
+
+.siege-stars i.is-lit:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.siege-stars i.is-lit:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.siege-chips {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.siege-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.siege-chip-row > span {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted, #9fb0cc);
+  margin-inline-end: 4px;
+}
+
+.siege-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.siege-chip:hover,
+.siege-chip:focus-visible {
+  border-color: var(--accent-cyan, #7dd3fc);
+}
+
+.siege-chip.is-active {
+  border-color: var(--accent-cyan, #7dd3fc);
+  background: rgba(125, 211, 252, 0.16);
+}
+
+.siege-history {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #9fb0cc);
+}
+
+@keyframes siege-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -190%) scale(1);
+  }
+}
+
+@keyframes siege-announce-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  22% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -58%) scale(1);
+  }
+}
+
+@keyframes siege-star {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-30deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .siege-floater {
+    animation: siege-fade 0.8s linear forwards;
+  }
+
+  .siege-announce {
+    animation: siege-fade 1.5s linear forwards;
+  }
+
+  .siege-stars i.is-lit {
+    animation: none;
+  }
+}
+
+@keyframes siege-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .siege-bossbar {
+    top: 112px;
+  }
+
+  .siege-tutorial {
+    top: 112px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 560px) {
+  .siege-ult,
+  .siege-nova {
+    width: 60px;
+  }
+
+  .siege-tutorial {
+    top: auto;
+    bottom: 300px;
+    padding: 10px 12px;
+  }
+
+  /* Phones: the wing buttons sit under the thumb controls, and the build
+     picker floats above them, so nothing covers the stick or attack pad. */
+  .siege-dock {
+    bottom: 8px;
+  }
+
+  .siege-build {
+    position: absolute;
+    left: 50%;
+    bottom: 240px;
+    transform: translateX(-50%);
+  }
+
+  .siege-build button {
+    min-width: 84px;
+    min-height: 48px;
+  }
+
+  .siege-toast {
+    top: 164px;
+  }
 }
 
 [hidden] {

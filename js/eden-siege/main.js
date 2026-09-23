@@ -7,8 +7,24 @@
 
 import { getCopy, normalizeLocale } from './data/copy.js';
 import { HEROES, heroByName } from './data/theme.js';
-import { MAP_ORDER, mapById } from './data/maps.js';
-import { dailySeed } from './rng.js';
+import { MAP_ORDER, MAPS, mapById } from './data/maps.js';
+import { dailySeed, dailySiegeFor } from './rng.js';
+
+const MODES = ['campaign', 'endless', 'daily'];
+const TUTORIAL_KEY = 'vts_siege_tutorial_v1';
+
+// First-time players get the training wave in campaign mode; ?tutorial=1
+// forces it and ?tutorial=0 skips it (the browser spec pins the latter).
+function wantsTutorial(mode) {
+  const override = params().get('tutorial');
+  if (override === '1') return true;
+  if (override === '0' || mode !== 'campaign') return false;
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) !== 'done';
+  } catch {
+    return true;
+  }
+}
 
 const THEME_KEY = 'vts_theme';
 const HERO_KEY = 'vts_siege_hero';
@@ -77,7 +93,10 @@ async function boot() {
   const lang = currentLang();
   localizedDirection(lang);
   const copy = getCopy(lang);
-  const mapId = MAP_ORDER.includes(params().get('map')) ? params().get('map') : 'keep';
+  const mode = MODES.includes(params().get('mode')) ? params().get('mode') : 'campaign';
+  // The Daily Siege picks its own map so every player gets the same run.
+  const requestedMap = MAP_ORDER.includes(params().get('map')) ? params().get('map') : 'keep';
+  const mapId = mode === 'daily' ? dailySiegeFor().mapId : requestedMap;
   const map = mapById(mapId);
   const hero = heroForToday(mapId);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -97,6 +116,9 @@ async function boot() {
       canvas,
       hudRoot,
       mapId,
+      mode,
+      tutorial: wantsTutorial(mode),
+      links: { maps: MAP_ORDER.map((id) => ({ id, nameKey: MAPS[id].nameKey })) },
       heroName: hero.name,
       lang,
       theme: currentTheme(),
@@ -129,7 +151,8 @@ async function boot() {
     window.__EDEN_SIEGE__ = {
       game,
       mapId,
-      seed: dailySeed(mapId),
+      gameMode: mode,
+      seed: game.seed || dailySeed(mapId),
       hero: hero.name,
       mode: webgl ? 'webgl' : 'lite',
       scene: () => game.world.state,

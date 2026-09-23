@@ -23,6 +23,8 @@ export function createInput({ onPause, onRestart } = {}) {
     attackHeld: false,
     swap: null,
     nova: false,
+    dash: false,
+    ult: false,
     start: false,
     restart: false,
   };
@@ -32,7 +34,10 @@ export function createInput({ onPause, onRestart } = {}) {
   let touchAttack = false;
   let queuedSwap = null;
   let queuedNova = false;
+  let queuedDash = false;
+  let queuedUlt = false;
   let queuedStart = false;
+  const padLatch = { dash: false, ult: false };
 
   function onKeyDown(event) {
     if (event.repeat) return;
@@ -57,6 +62,10 @@ export function createInput({ onPause, onRestart } = {}) {
     if (event.code === 'KeyQ' || event.code === 'Key1') queuedSwap = 'ice';
     if (event.code === 'KeyE' || event.code === 'Key2') queuedSwap = 'fire';
     if (event.code === 'KeyF' || event.code === 'Key3') queuedNova = true;
+    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight' || event.code === 'KeyK') {
+      queuedDash = true;
+    }
+    if (event.code === 'KeyR' || event.code === 'Key4') queuedUlt = true;
     if (event.code === 'Enter') queuedStart = true;
   }
 
@@ -88,7 +97,14 @@ export function createInput({ onPause, onRestart } = {}) {
       const x = pad.axes[0] || 0;
       const z = pad.axes[1] || 0;
       if (Math.abs(x) < 0.18 && Math.abs(z) < 0.18 && !pad.buttons.some((b) => b.pressed)) continue;
-      return { x, z, attack: Boolean(pad.buttons[0]?.pressed), nova: Boolean(pad.buttons[1]?.pressed) };
+      return {
+        x,
+        z,
+        attack: Boolean(pad.buttons[0]?.pressed),
+        nova: Boolean(pad.buttons[1]?.pressed),
+        dash: Boolean(pad.buttons[2]?.pressed),
+        ult: Boolean(pad.buttons[3]?.pressed),
+      };
     }
     return null;
   }
@@ -119,6 +135,11 @@ export function createInput({ onPause, onRestart } = {}) {
         }
         attack = attack || pad.attack;
         if (pad.nova) queuedNova = true;
+        // Edge-triggered: holding the button is one dash, not one per cooldown.
+        if (pad.dash && !padLatch.dash) queuedDash = true;
+        if (pad.ult && !padLatch.ult) queuedUlt = true;
+        padLatch.dash = pad.dash;
+        padLatch.ult = pad.ult;
       }
       if (touchAttack) attack = true;
 
@@ -138,8 +159,12 @@ export function createInput({ onPause, onRestart } = {}) {
         command.swap = null;
       }
       command.nova = queuedNova;
+      command.dash = queuedDash;
+      command.ult = queuedUlt;
       command.start = queuedStart;
       queuedNova = false;
+      queuedDash = false;
+      queuedUlt = false;
       queuedStart = false;
       command.restart = false;
       return command;
@@ -163,6 +188,12 @@ export function createInput({ onPause, onRestart } = {}) {
     },
     requestNova() {
       queuedNova = true;
+    },
+    requestDash() {
+      queuedDash = true;
+    },
+    requestUlt() {
+      queuedUlt = true;
     },
     dispose() {
       window.removeEventListener('keydown', onKeyDown);
