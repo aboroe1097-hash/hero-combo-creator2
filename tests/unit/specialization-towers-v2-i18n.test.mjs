@@ -20,7 +20,8 @@ import {
 } from '../../js/i18n/specialization-towers-v2/index.js';
 
 const EXPECTED_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh'];
-const INTENTIONAL_EN_ONLY_KEYS = Object.freeze(['selectNodeBeforeMedals', 'reportWrongCost']);
+// Every UI key is now translated in every locale; none is English-only.
+const INTENTIONAL_EN_ONLY_KEYS = Object.freeze([]);
 
 function placeholders(value) {
   return [...String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
@@ -36,16 +37,14 @@ test('Specialization Towers v2 exposes one strict UI key contract across all 12 
   for (const locale of EXPECTED_LOCALES) {
     const pack = getSpecializationTowersV2Pack(locale);
     const localeKeys = Object.keys(pack).sort();
-    const expectedKeys = ['en', 'it', 'kr'].includes(locale)
-      ? englishKeys
-      : englishKeys.filter((key) => !INTENTIONAL_EN_ONLY_KEYS.includes(key));
+    const expectedKeys = englishKeys.filter((key) => !INTENTIONAL_EN_ONLY_KEYS.includes(key));
     assert.deepEqual(localeKeys, expectedKeys, `${locale} key parity`);
     const audit = auditSpecializationTowersV2Pack(pack);
     assert.deepEqual(audit, {
-      complete: ['en', 'it', 'kr'].includes(locale),
-      missing: ['en', 'it', 'kr'].includes(locale) ? [] : INTENTIONAL_EN_ONLY_KEYS,
+      complete: true,
+      missing: [],
       extra: [],
-      blank: ['en', 'it', 'kr'].includes(locale) ? [] : INTENTIONAL_EN_ONLY_KEYS,
+      blank: [],
       placeholderMismatches: [],
     });
 
@@ -57,11 +56,11 @@ test('Specialization Towers v2 exposes one strict UI key contract across all 12 
         `${locale}.${key} interpolation contract`
       );
     }
-    if (!['en', 'it', 'kr'].includes(locale)) {
-      assert.equal(
+    if (locale !== 'en') {
+      assert.notEqual(
         specializationTowersV2Text('selectNodeBeforeMedals', {}, locale),
         SPECIALIZATION_TOWERS_V2_EN.selectNodeBeforeMedals,
-        `${locale}.selectNodeBeforeMedals should intentionally fall back to English`
+        `${locale}.selectNodeBeforeMedals is translated`
       );
     }
   }

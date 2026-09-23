@@ -432,7 +432,11 @@ function t(key, vars = {}) {
   });
   // The X2 page reuses the X1 catalogs; only the season label differs, so the
   // label is swapped at read time instead of duplicating every catalog key.
-  if (EDEN_IS_X2) value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel);
+  if (EDEN_IS_X2) {
+    // Localized catalogs spell "Eden" in their own script (Arabic "عدن X1"), so
+    // the bare season code is swapped too.
+    value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel).replace(/\bX1\b/g, 'X2');
+  }
   return value;
 }
 
@@ -1623,7 +1627,7 @@ function renderEdenSignupPrompt() {
           : ''
       }
     </div>
-    <a class="eden-x1-signup-prompt__cta" href="${EDEN_SIGNUP_PATH}">${esc(
+    <a class="eden-x1-signup-prompt__cta dash-btn dash-btn-primary" href="${EDEN_SIGNUP_PATH}">${esc(
       t('edenX1SignupPromptCta')
     )}</a>
   </section>`;
@@ -6255,6 +6259,21 @@ function scheduleLocalizedRerender() {
   });
 }
 
+// Headings that carry the reward count ("Final Top 20") are translated before
+// the season's distribution is known; once it is, they are re-rendered so the
+// flow, the badge and the announcement agree.
+function refreshRewardCountCopy() {
+  if (typeof document === 'undefined') return;
+  Object.keys(REWARD_COUNT_COPY_KEYS).forEach((key) => {
+    document.querySelectorAll(`[data-i18n="${key}"]`).forEach((el) => {
+      el.textContent = t(key);
+    });
+    document.querySelectorAll(`[data-i18n-aria="${key}"]`).forEach((el) => {
+      el.setAttribute('aria-label', t(key));
+    });
+  });
+}
+
 function updateTextContent(lang) {
   currentLang = lang;
   setCurrentLanguage(lang);
@@ -7720,6 +7739,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   currentRewardSettings = normalizeRewardSettings(
     data.rewardSettings || { guildMasterSource: 'support_top1' }
   );
+  refreshRewardCountCopy();
   const model = buildWeightedContributionRows({
     contributionRecords,
     dutyRecords,

@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_TR = Object.freeze({
+  reportWrongCost: 'Yanlış maliyeti bildir',
+  selectNodeBeforeMedals: 'Madalya eklemeden önce en az bir düğüm seçin.',
   title: 'Uzmanlık Kuleleri',
   subtitle: 'Her uzmanlık yolunu yeniden oluştur, madalyaları takip et ve etkin bonusları incele.',
   betaBadge: 'Beta',

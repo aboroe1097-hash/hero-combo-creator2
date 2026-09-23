@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_RU = Object.freeze({
+  reportWrongCost: 'Сообщить о неверной стоимости',
+  selectNodeBeforeMedals: 'Выберите хотя бы один узел, прежде чем добавлять медали.',
   title: 'Башни специализации',
   subtitle:
     'Воссоздайте каждую ветку специализации, учитывайте медали и проверяйте активные бонусы.',

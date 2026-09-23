@@ -801,3 +801,16 @@
     height: 52px;
   }
 }
+
+/* Light theme: the overlay stats, secondary buttons and icon buttons kept their
+   dark translucent fills, leaving their labels near-invisible. */
+[data-theme='light'] .siege-overlay-stat,
+[data-theme='light'] .siege-btn:not(.siege-btn--primary),
+[data-theme='light'] .siege-icon-btn {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+[data-theme='light'] .siege-overlay-stat span {
+  color: #475569;
+}

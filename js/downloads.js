@@ -103,6 +103,11 @@ function renderGroup(group, byId, container) {
 }
 
 async function init() {
+  // The downloads (and their PDFs) are English-only for now, so the page keeps
+  // English left-to-right layout even when the site language is Arabic;
+  // otherwise the English copy was laid out right-to-left.
+  document.documentElement.setAttribute('dir', 'ltr');
+  document.documentElement.setAttribute('lang', 'en');
   const root = document.getElementById('downloadsGroups');
   const status = document.getElementById('downloadsStatus');
   const stats = document.getElementById('downloadsStats');

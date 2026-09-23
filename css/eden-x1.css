@@ -5174,12 +5174,18 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
       'weighted rail'
       'overview rail'
       'public   public'
-      'error    error';
+      'error    error'
+      'complaints complaints';
     column-gap: clamp(1rem, 1.5vw, 1.5rem);
     align-items: start;
   }
   .eden-x1-page .eden-x1-notice {
     grid-area: notice;
+  }
+  /* The complaint form had no area, so auto-placement put it above the
+     rewards; it belongs at the foot of the season page. */
+  .eden-x1-page #edenX1Complaints {
+    grid-area: complaints;
   }
   .eden-x1-page #edenX1Marquee {
     grid-area: marquee;

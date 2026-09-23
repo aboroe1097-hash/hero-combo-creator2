@@ -3353,3 +3353,8 @@ dialog[data-specialization-dialog][open] {
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+/* An empty toast is not a message: it rendered as a bare bordered bar. */
+.specialization-toast:empty {
+  display: none;
+}
