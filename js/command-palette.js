@@ -125,6 +125,13 @@ const DESTS = [
     fallback: 'Battle Simulator',
     kw: 'battle simulator beta troops combat formation rounds tactical might resistance speed',
   },
+  {
+    key: 'tabDownloads',
+    href: 'downloads.html',
+    kind: 'link',
+    fallback: 'Community Downloads',
+    kw: 'downloads download pdf export print research costs specialisation medals eden tables dragon master roster',
+  },
 ];
 
 function currentLang() {

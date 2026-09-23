@@ -62,6 +62,18 @@ test('toolkit map lists every tab with a working deep link and routes queries', 
   assert.equal(classes.ok, true);
   assert.equal(classes.data.tools[0].id, 'classDevelopment');
   assert.equal(classes.data.tools[0].hash, 'classDevelopment');
+
+  const downloads = await executeAiToolCall(
+    {
+      name: 'get_toolkit_map',
+      arguments: { query: 'where can I download the cost tables as a pdf' },
+    },
+    staticContext
+  );
+  assert.equal(downloads.ok, true);
+  assert.equal(downloads.data.tools[0].id, 'downloads');
+  assert.equal(downloads.data.tools[0].kind, 'page');
+  assert.equal(downloads.data.tools[0].href, 'downloads.html');
 });
 
 test('whats-new digest matches the released changelog and package version', async () => {
