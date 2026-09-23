@@ -2538,6 +2538,75 @@
   color: var(--text-muted);
   font-weight: 600;
 }
+#ocrDashboardRoot .dash-banner-date {
+  flex-wrap: wrap;
+}
+#ocrDashboardRoot .dash-upload-title {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+#ocrDashboardRoot .dash-upload-group-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  background: var(--surface-2, transparent);
+}
+#ocrDashboardRoot .dash-upload-rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+#ocrDashboardRoot .dash-upload-rename-field {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-upload-rename-field input,
+#ocrDashboardRoot .dash-duty-group-filter select {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+}
+#ocrDashboardRoot .dash-upload-rename-hint {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+#ocrDashboardRoot .dash-upload-rename-actions {
+  display: flex;
+  gap: 6px;
+}
+#ocrDashboardRoot .dash-duty-group-filter {
+  margin: 0 0 0.75rem;
+}
+#ocrDashboardRoot .dash-duty-group-filter label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-duty-group-filter select {
+  max-width: 100%;
+}
 #ocrDashboardRoot
   :is(.dash-banner-date, .dash-banner-event, .dash-banner-count, .dash-duty-cell-value) {
   min-width: 0;
@@ -3281,6 +3350,50 @@
   margin-right: auto;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+/* Batch edit: per-card checkbox and the sticky bar above each admin list. */
+#ocrDashboardRoot .admin-bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+#ocrDashboardRoot .admin-bulk-bar[data-active='1'] {
+  border-color: rgba(250, 204, 21, 0.6);
+}
+#ocrDashboardRoot .admin-bulk-count {
+  margin-right: auto;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .admin-bulk-check {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+#ocrDashboardRoot .admin-bulk-check input {
+  width: 18px;
+  height: 18px;
+}
+#ocrDashboardRoot .dash-duty-all-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+#ocrDashboardRoot .dash-account-link-suggest-owner {
+  min-width: 8rem;
+  max-width: 14rem;
 }
 #ocrDashboardRoot .dash-account-link-names em {
   color: var(--text-muted);

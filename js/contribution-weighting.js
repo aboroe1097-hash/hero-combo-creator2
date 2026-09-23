@@ -12,6 +12,7 @@ import {
 } from './player-registry.js';
 import { collapseContributionOcrDuplicates } from './contribution-identity.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
+import { normalizeDutyRecordTitle } from './duty-record-title.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -116,9 +117,18 @@ export function normalizeDutyPointWeights(raw) {
 // it and said it is a secondary account, which is its own class and its own
 // weight. Duty still lands on the person's row either way; only what it is
 // worth changes.
+// The guild's known secondary accounts, predefined so they score as the
+// secondary class without anyone linking them first. An explicit account link
+// still wins. Score-neutral by default: the secondary weight follows alt.
+export const SEEDED_SECONDARY_ACCOUNT_KEYS = Object.freeze(
+  new Set(['victoria', 'sharakikas', 'sskikass', 'takeurshin'])
+);
+
 export function classifyDutyAccount(accountKey) {
   const link = resolveAccountLink(accountKey);
   if (link) return accountLinkClass(link.type);
+  const seededKey = compactPlayerIdentity(accountKey) || String(accountKey || '');
+  if (SEEDED_SECONDARY_ACCOUNT_KEYS.has(seededKey)) return 'secondary';
   const familyKey = playerFamilyKey(accountKey);
   const primary = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey] || familyKey;
   const key = compactPlayerIdentity(accountKey) || String(accountKey || '');
@@ -516,14 +526,15 @@ function isBetterContributionRank(rank, currentBest) {
 export const DUTY_ENTRY_ACCOUNT_TYPES = Object.freeze(['main', 'banner']);
 
 // The class a saved duty row scores at. An operator's explicit Main/Banner
-// choice always wins. A type the upload only guessed ("banner" for anything
-// that is not a main) yields to the account's link: an account the admin
-// linked as a secondary scores as a secondary, not as the alt the guess said.
+// choice always wins. A type the upload only guessed (Banner by default, Main
+// only for an account on the registry's "always main" list) yields to the
+// account's link when it said Banner: an account the admin linked as a
+// secondary scores as a secondary, not as the alt the guess said.
 export function dutyEntryAccountClass(entry, accountKey = '') {
   const type = String(entry?.accountType || '').toLowerCase();
   const operatorChose = entry?.accountTypeSource === 'operator';
-  // The guess only ever says "banner" for a linked account, so a saved "main"
-  // on one is the operator's own choice and stands.
+  // A saved "main" on a linked account is either the operator's choice or the
+  // admin's "always main" list, and stands either way.
   if (!operatorChose && accountKey && type !== 'main') {
     const link = resolveAccountLink(accountKey);
     if (link && accountLinkClass(link.type) === 'secondary') return 'secondary';
@@ -558,6 +569,9 @@ export function collectFamilyDutyEntries(dutyRecords = [], familyKey = '') {
         out.push({
           activity: bucket,
           date: String(record.date || ''),
+          // The operator's optional upload title ("Raceday 1"); the season
+          // view falls back to the upload day when it is blank.
+          title: normalizeDutyRecordTitle(record.title),
           gameTime: String(record.gameTime || ''),
           usageTime: String(entry.usageTime || ''),
           target: String(entry.target || ''),

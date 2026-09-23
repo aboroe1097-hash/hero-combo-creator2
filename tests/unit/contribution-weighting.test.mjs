@@ -925,6 +925,11 @@ test('duty points weight each activity by the account class that performed it', 
   // — secondary castles, banner accounts — is an alt.
   assert.equal(classifyDutyAccount('BiG BOiiE'), 'main');
   assert.equal(classifyDutyAccount('BOiiE BANNER'), 'alt');
+  // The guild's known second castles are predefined as the secondary class,
+  // which scores at the alt weight by default, so nothing moves on day one.
+  for (const name of ['Victoria', 'Sharakikas', 'SSKikass', 'TakeUrShin']) {
+    assert.equal(classifyDutyAccount(name), 'secondary', name);
+  }
 
   assert.equal(dutyPointsFor({ banners: { main: 2, alt: 0 } }), 2 * DUTY_POINT_UNIT);
   assert.equal(dutyPointsFor({ banners: { main: 0, alt: 2 } }), 1 * DUTY_POINT_UNIT);

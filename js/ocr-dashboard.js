@@ -55,6 +55,7 @@ import {
   deleteExGuildEntry,
   clearExGuildData,
   setExGuildMatch,
+  openDutyListExport,
 } from './ocr-roster.js';
 
 import {
@@ -75,6 +76,7 @@ import {
   displayGameTime,
 } from './ocr-engine.js';
 import { translations } from './translations.js';
+import { mountBulkSelect } from './admin-bulk-select.js';
 import {
   ACTIVE_EDEN_WORKSPACE,
   ACTIVE_EDEN_WORKSPACE_ID,
@@ -2868,15 +2870,7 @@ function renderConductAdjustments() {
       const id = btn.dataset.conductDelete;
       if (!id || !confirm(dashT('adminConductDeleteConfirm'))) return;
       try {
-        if (state.cloudSyncConfigured === false) {
-          deleteLocalR5Adjustment(id);
-        } else {
-          const current = (state.r5Adjustments || []).find((record) => record.id === id);
-          await deleteR5Adjustment(id, {
-            expectedFingerprint: conductAdjustmentFingerprint(current),
-          });
-        }
-        state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
+        await deleteConductAdjustmentRecord(id);
         refreshAlliancePublicConductAdjustments();
         renderConductAdjustments();
         await savePublicConductSnapshot();
@@ -2889,6 +2883,66 @@ function renderConductAdjustments() {
         );
       }
     });
+  });
+  mountConductBulkSelect(list, conductPage.rows);
+}
+
+// One adjustment through the same delete path the row's own button uses.
+async function deleteConductAdjustmentRecord(id) {
+  if (state.cloudSyncConfigured === false) {
+    deleteLocalR5Adjustment(id);
+  } else {
+    const current = (state.r5Adjustments || []).find((record) => record.id === id);
+    await deleteR5Adjustment(id, {
+      expectedFingerprint: conductAdjustmentFingerprint(current),
+    });
+  }
+  state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
+}
+
+// Batch delete for the visible conduct adjustments. Each goes through the
+// single-delete path; a failure stops the batch and reports what was removed.
+function mountConductBulkSelect(list, rows) {
+  const articles = Array.from(list.querySelectorAll(':scope > .dash-conduct-row'));
+  mountBulkSelect(list, {
+    scope: 'conduct',
+    t: dashT,
+    items: rows.map((record, index) => ({
+      id: record.id,
+      slot: articles[index]?.firstElementChild || null,
+      label: record.playerName || record.id,
+    })),
+    actions: [
+      {
+        id: 'delete',
+        label: dashT('adminBulkDelete'),
+        danger: true,
+        run: async (ids) => {
+          if (!confirm(dashT('adminBulkDeleteConfirm', { count: ids.length }))) return false;
+          let deleted = 0;
+          try {
+            for (const id of ids) {
+              await deleteConductAdjustmentRecord(id);
+              deleted += 1;
+            }
+          } catch (err) {
+            setConductStatus(
+              showCloudSyncFailure(err, 'Bonus team effort points delete failed'),
+              'error'
+            );
+          }
+          if (!deleted) return false;
+          refreshAlliancePublicConductAdjustments();
+          renderConductAdjustments();
+          await savePublicConductSnapshot();
+          render();
+          if (deleted === ids.length) {
+            setConductStatus(dashT('adminBulkConductDeleted', { count: deleted }), 'success');
+          }
+          return true;
+        },
+      },
+    ],
   });
 }
 
@@ -9876,6 +9930,13 @@ export async function bootOcrDashboard() {
   if (dashExpAllData) dashExpAllData.onclick = exportAdminAllDataCsv;
   $id('dashExpPdf').onclick = () => window.print();
   $id('dashExpPng').onclick = exportToPng;
+  // Duty list PNGs: the Export menu entries and each duty list's Share PNG.
+  document.querySelectorAll('[data-duty-export-png]').forEach((button) => {
+    button.onclick = () => {
+      $id('dashExportMenu')?.classList.remove('active');
+      openDutyListExport(button.dataset.dutyExportPng);
+    };
+  });
   $id('dashExpJson').onclick = exportData;
   const dashExpDebugJson = $id('dashExpDebugJson');
   if (dashExpDebugJson) dashExpDebugJson.onclick = exportAdminDebugJson;
