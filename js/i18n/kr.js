@@ -437,6 +437,7 @@ const kr = {
   tabArcade: 'Arcade',
   tabVtsScoreBadge: 'COMP #11',
   tabBattleSimulator: '전투 시뮬레이터',
+  tabBuildings: '건물',
   tabSpecializationTowers: '전문화 타워',
   tabSpecializationTowersAliases:
     '전문화 타워 탑 배지 메달 노드 분기 기술 트리 진행도 기병 궁병 보병',

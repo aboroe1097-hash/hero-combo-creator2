@@ -30,7 +30,6 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: quality !== 'low',
-    powerPreference: 'high-performance',
     alpha: false,
     stencil: false,
   });
@@ -489,13 +488,45 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
 
   // ── tower rigs ────────────────────────────────────────────────────────────
   const towerRigs = new Map();
+  const towerGeometryCache = new Map();
 
-  function buildTowerRig(kind) {
+  function towerGeometry(resources, key, create) {
+    let entry = towerGeometryCache.get(key);
+    if (!entry) {
+      entry = { key, geometry: create(), references: 0 };
+      towerGeometryCache.set(key, entry);
+    }
+    if (!resources.geometries.has(entry)) {
+      resources.geometries.add(entry);
+      entry.references += 1;
+    }
+    return entry.geometry;
+  }
+
+  function towerMaterial(resources, options) {
+    const material = new THREE.MeshStandardMaterial(options);
+    resources.materials.add(material);
+    return material;
+  }
+
+  function disposeTowerRig(rig) {
+    scene.remove(rig.group);
+    for (const entry of rig.resources.geometries) {
+      entry.references -= 1;
+      if (entry.references === 0) {
+        entry.geometry.dispose();
+        towerGeometryCache.delete(entry.key);
+      }
+    }
+    for (const material of rig.resources.materials) material.dispose();
+  }
+
+  function buildTowerRig(kind, resources) {
     const art = TOWER_ART[kind] || TOWER_ART.frost;
     const group = new THREE.Group();
     const base = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.86, 1.05, 0.7, 10),
-      new THREE.MeshStandardMaterial({ color: art.body, roughness: 0.8 })
+      towerGeometry(resources, 'base', () => new THREE.CylinderGeometry(0.86, 1.05, 0.7, 10)),
+      towerMaterial(resources, { color: art.body, roughness: 0.8 })
     );
     base.position.y = 0.35;
     base.castShadow = settings.shadows;
@@ -503,8 +534,8 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
 
     if (art.shape === 'spire') {
       const spire = new THREE.Mesh(
-        new THREE.ConeGeometry(0.72, 2.5, 8),
-        new THREE.MeshStandardMaterial({
+        towerGeometry(resources, 'spire', () => new THREE.ConeGeometry(0.72, 2.5, 8)),
+        towerMaterial(resources, {
           color: art.trim,
           emissive: art.emissive,
           emissiveIntensity: 0.6,
@@ -515,14 +546,14 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
       group.add(spire);
     } else {
       const post = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 1.5, 0.3),
-        new THREE.MeshStandardMaterial({ color: art.body, roughness: 0.7 })
+        towerGeometry(resources, 'post', () => new THREE.BoxGeometry(0.3, 1.5, 0.3)),
+        towerMaterial(resources, { color: art.body, roughness: 0.7 })
       );
       post.position.y = 1.1;
       group.add(post);
       const bowl = new THREE.Mesh(
-        new THREE.SphereGeometry(0.52, 12, 10),
-        new THREE.MeshStandardMaterial({
+        towerGeometry(resources, 'bowl', () => new THREE.SphereGeometry(0.52, 12, 10)),
+        towerMaterial(resources, {
           color: art.trim,
           emissive: art.emissive,
           emissiveIntensity: 0.9,
@@ -532,15 +563,15 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
       bowl.position.y = 2;
       group.add(bowl);
     }
-    const halo = new THREE.Sprite(
-      new THREE.SpriteMaterial({
+    const haloMaterial = new THREE.SpriteMaterial({
         map: kind === 'frost' ? textures.ringIce : textures.ringFire,
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         opacity: 0.55,
-      })
-    );
+      });
+    resources.materials.add(haloMaterial);
+    const halo = new THREE.Sprite(haloMaterial);
     halo.position.y = 0.07;
     halo.scale.set(3.4, 3.4, 1);
     group.add(halo);
@@ -551,7 +582,8 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     for (const tower of state.towers) {
       let rig = towerRigs.get(tower.socket);
       if (!rig) {
-        rig = { group: buildTowerRig(tower.kind), pips: new THREE.Group() };
+        const resources = { geometries: new Set(), materials: new Set() };
+        rig = { group: buildTowerRig(tower.kind, resources), pips: new THREE.Group(), resources };
         rig.group.add(rig.pips);
         rig.group.position.set(tower.x, 0, tower.z);
         scene.add(rig.group);
@@ -563,8 +595,16 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
       const pipCount = rig.pips.children.length;
       for (let level = pipCount; level < tower.level - 1; level += 1) {
         const pip = new THREE.Mesh(
-          new THREE.BoxGeometry(0.22, 0.22, 0.22),
-          new THREE.MeshStandardMaterial({ color: 0xf5c451, emissive: 0x8a6a1f, emissiveIntensity: 0.7 })
+          towerGeometry(
+            rig.resources,
+            'pip',
+            () => new THREE.BoxGeometry(0.22, 0.22, 0.22)
+          ),
+          towerMaterial(rig.resources, {
+            color: 0xf5c451,
+            emissive: 0x8a6a1f,
+            emissiveIntensity: 0.7,
+          })
         );
         pip.position.set(0.9 + level * 0.34, 0.5, 0);
         rig.pips.add(pip);
@@ -573,7 +613,7 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     for (const [socketIndex, rig] of towerRigs) {
       const alive = state.towers.some((tower) => tower.socket === socketIndex);
       if (!alive) {
-        scene.remove(rig.group);
+        disposeTowerRig(rig);
         towerRigs.delete(socketIndex);
       }
     }

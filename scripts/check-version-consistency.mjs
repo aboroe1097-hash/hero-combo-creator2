@@ -169,6 +169,13 @@ function main() {
   );
 
   captureVersion(
+    'eden-siege.html',
+    /<meta name="vts-app-version" content="(\d+\.\d+\.\d+)"/,
+    'eden-siege.html app version meta',
+    expectedVersion
+  );
+
+  captureVersion(
     'maintenance.html',
     /class="version">v(\d+\.\d+\.\d+)</,
     'maintenance.html version label',

@@ -192,16 +192,79 @@ test.describe('Eden Siege', () => {
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.siege-overlay')).toBeVisible();
-    const pausedSteps = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats().simSteps);
+    const pausedStats = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
     await page.waitForTimeout(900);
-    const stillPaused = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats().simSteps);
-    expect(stillPaused).toBe(pausedSteps);
+    const stillPaused = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+    expect(stillPaused.simSteps).toBe(pausedStats.simSteps);
+    expect(stillPaused.frames).toBe(pausedStats.frames);
 
     await page.locator('.siege-overlay .siege-btn--primary').first().click();
     await expect(page.locator('.siege-overlay')).toBeHidden();
     await page.waitForTimeout(900);
-    const resumed = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats().simSteps);
-    expect(resumed).toBeGreaterThan(pausedSteps);
+    const resumed = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+    expect(resumed.simSteps).toBeGreaterThan(pausedStats.simSteps);
+    expect(resumed.frames).toBeGreaterThan(pausedStats.frames);
+    expect(failures).toEqual([]);
+  });
+
+  test('a terminal phase stops rendering until restart', async ({ page }) => {
+    const failures = await preparePage(page);
+    await bootSiege(page);
+    await beginRun(page);
+    await page.waitForTimeout(500);
+
+    await page.evaluate(() => {
+      window.__EDEN_SIEGE__.scene().phase = 'victory';
+    });
+    await page.waitForTimeout(200);
+    const terminalStats = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+    await page.waitForTimeout(500);
+    const stillTerminal = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+
+    expect(stillTerminal.frames).toBe(terminalStats.frames);
+    expect(stillTerminal.simSteps).toBe(terminalStats.simSteps);
+
+    await page.keyboard.press('Shift+R');
+    await expect
+      .poll(() => page.evaluate(() => window.__EDEN_SIEGE__.scene().phase))
+      .toBe('ready');
+    const restarted = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+    expect(restarted.frames).toBeGreaterThan(terminalStats.frames);
+    expect(restarted.simSteps).toBeGreaterThan(terminalStats.simSteps);
+    expect(failures).toEqual([]);
+  });
+
+  test('pagehide preserves the game when the browser may restore it from cache', async ({ page }) => {
+    const failures = await preparePage(page);
+    await bootSiege(page);
+    await beginRun(page);
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    });
+    const before = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats().frames);
+    await page.waitForTimeout(300);
+    const after = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats().frames);
+
+    expect(after).toBeGreaterThan(before);
+    expect(failures).toEqual([]);
+  });
+
+  test('restoring the WebGL context resumes a context-paused run', async ({ page }) => {
+    const failures = await preparePage(page);
+    const boot = await bootSiege(page);
+    test.skip(boot.mode !== 'webgl', 'WebGL context events require the 3D renderer');
+    await beginRun(page);
+
+    await page.locator('#siegeCanvas').evaluate((canvas) => {
+      canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    });
+    await expect.poll(() => page.evaluate(() => window.__EDEN_SIEGE__.game.stats().paused)).toBe(true);
+
+    await page.locator('#siegeCanvas').evaluate((canvas) => {
+      canvas.dispatchEvent(new Event('webglcontextrestored'));
+    });
+    await expect.poll(() => page.evaluate(() => window.__EDEN_SIEGE__.game.stats().paused)).toBe(false);
     expect(failures).toEqual([]);
   });
 
@@ -271,6 +334,10 @@ test.describe('Eden Siege', () => {
     const hudText = await page.locator('.siege-topbar').innerText();
     // The HUD uppercases its labels in CSS, so compare case-insensitively.
     expect(hudText).toMatch(/Очки|Волна|Золото|Рекорд/iu);
+
+    await page.goto('/eden-siege.html?lang=ko', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => Boolean(window.__EDEN_SIEGE__), null, { timeout: 45000 });
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
   });
 
   test.skip(isRemotePreview, 'local-only check');

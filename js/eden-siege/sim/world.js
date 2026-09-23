@@ -734,9 +734,12 @@ export function createWorld(options = {}) {
           const dz = bolt.z - unit.z;
           const reach = unit.radius + bolt.radius;
           if (dx * dx + dz * dz > reach * reach) continue;
-          if (bolt.splash > 0) splashDamage(bolt.x, bolt.z, bolt.splash, bolt.damage, bolt.element);
-          else damageUnit(unit, bolt.damage, bolt.element);
-          if (unit.hp <= 0) killUnit(unitIndex, bolt.element);
+          if (bolt.splash > 0) {
+            splashDamage(bolt.x, bolt.z, bolt.splash, bolt.damage, bolt.element);
+          } else {
+            damageUnit(unit, bolt.damage, bolt.element);
+            if (unit.hp <= 0) killUnit(unitIndex, bolt.element);
+          }
           consumed = true;
           break;
         }
@@ -902,6 +905,7 @@ export function createWorld(options = {}) {
       input.buildSocket = null;
       input.upgradeSocket = null;
       input.nova = false;
+      input.start = false;
       return;
     }
 
@@ -928,6 +932,8 @@ export function createWorld(options = {}) {
     input.attack = input.attackHeld;
     input.buildSocket = null;
     input.upgradeSocket = null;
+    input.nova = false;
+    input.start = false;
   }
 
   function snapshotHash() {

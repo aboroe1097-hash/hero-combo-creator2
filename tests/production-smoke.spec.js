@@ -96,6 +96,7 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     '/arcade.html',
     '/battle-simulator.html',
     '/specialization-towers.html',
+    '/eden-siege.html',
     '/downloads.html',
     '/games/boot/b-merge-rush.html',
   ]) {
@@ -109,6 +110,33 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     }
   }
 
+  await context.close();
+});
+
+test('home, admin and Eden X2 do not request Eden Siege or three.js chunks', async ({
+  browser,
+}) => {
+  test.skip(maintenanceEnabled, 'maintenance mode is enabled in this build');
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const siegeRequests = [];
+  page.on('request', (request) => {
+    try {
+      const pathname = new URL(request.url()).pathname;
+      if (/\/assets\/(?:eden-siege|three)(?:-[^/]+)?\.js$/iu.test(pathname)) {
+        siegeRequests.push(request.url());
+      }
+    } catch {
+      /* ignore unparseable URLs */
+    }
+  });
+
+  for (const route of ['/', '/admin.html', '/eden-x2.html']) {
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(250);
+  }
+
+  expect(siegeRequests).toEqual([]);
   await context.close();
 });
 

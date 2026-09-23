@@ -174,6 +174,7 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
     'arcade.html',
     'battle-simulator.html',
     'specialization-towers.html',
+    'eden-siege.html',
   ];
   const inlineExecutableScript =
     /<script(?![^>]*\bsrc=)(?![^>]*type="(?:application\/ld\+json|importmap)")/i;
@@ -214,7 +215,11 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
       });
     assert.ok(scriptSrc, `${page} should define script-src`);
     assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
-    if (page === 'battle-simulator.html' || page === 'specialization-towers.html') {
+    if (
+      page === 'battle-simulator.html' ||
+      page === 'specialization-towers.html' ||
+      page === 'eden-siege.html'
+    ) {
       assert.equal(connectSrc.trim(), "'self'", `${page} should not open external connections`);
     } else {
       assert.match(
@@ -278,6 +283,33 @@ test('build metadata refreshes cache-busted modules while Material shares the ma
   );
   assert.match(app, /eden-map\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /app-strife\.js\?v=\d{8}_\d{6}/);
+});
+
+test('standalone route CSS and JavaScript are stamped but excluded from the app shell', () => {
+  const generator = readFileSync('scripts/update-build-metadata.mjs', 'utf8');
+  const worker = readFileSync('public/sw.js', 'utf8');
+  const postBuild = readFileSync('scripts/post-build.mjs', 'utf8');
+
+  assert.match(generator, /'eden-siege\.html'/);
+  assert.match(generator, /'downloads\.html'/);
+  assert.match(
+    generator,
+    /if \(file === 'downloads\.html' \|\| file === 'eden-siege\.html'\) continue;/
+  );
+  assert.match(generator, /if \(file === 'downloads\.html' \|\| file === 'eden-siege\.html'\)/);
+  for (const file of ['downloads.html', 'eden-siege.html']) {
+    const html = readFileSync(file, 'utf8');
+    for (const match of html.matchAll(
+      /(?:href|src)="((?:css|js)\/[^"?#]+\.(?:css|js)(?:\?[^"]*)?)"/gu
+    )) {
+      assert.match(match[1], /\?v=\d{8}_\d{6}$/u, `${file} asset should be version stamped`);
+    }
+  }
+
+  const shell = worker.match(/const APP_SHELL = \[([\s\S]*?)\];/u)?.[1] || '';
+  assert.doesNotMatch(shell, /\/downloads\.html|\/css\/downloads\.css|\/assets\/downloads-/u);
+  assert.match(postBuild, /if \(entry === 'downloads\.html'\) continue;/u);
+  assert.match(postBuild, /downloadOnlyAssets/u);
 });
 
 test('theme manifests include dark and light install colors', () => {
@@ -842,6 +874,7 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.ok(urls.includes('/arcade.html'));
   assert.ok(urls.includes('/battle-simulator.html'));
   assert.ok(urls.includes('/specialization-towers.html'));
+  assert.ok(!urls.includes('/downloads.html'));
   assert.ok(urls.includes('/maintenance.html'));
   assert.ok(urls.some((url) => url.startsWith('/css/battle-simulator.css?v=')));
   assert.ok(urls.some((url) => url.startsWith('/js/battle-simulator.js?v=')));
@@ -866,6 +899,7 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   // scripts/post-build.mjs, not the source manifest.
   assert.ok(!urls.some((url) => url.startsWith('/js/ocr-dashboard.js')));
   assert.ok(!urls.some((url) => url.startsWith('/js/tech-db.js')));
+  assert.ok(!urls.some((url) => /\/assets\/eden-siege-[^/]*\.js(?:\?|$)/u.test(url)));
   assert.ok(!urls.includes('/images/strife/roc-strife-reference.png'));
 
   // Caching mechanics: atomic critical precache, no forced full re-downloads,
@@ -895,6 +929,8 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN/);
   assert.match(postBuild, /PROTECTED_ALL_STAR_PRECACHE_PATTERN =[^;]*all-star-boh-/);
   assert.match(postBuild, /!isProtectedAllStarPrecacheUrl\(url\)/);
+  assert.match(postBuild, /PROTECTED_EDEN_SIEGE_PRECACHE_PATTERN/);
+  assert.match(postBuild, /!isProtectedEdenSiegePrecacheUrl\(url\)/);
 });
 
 test('service worker cache policy rejects private traffic and preserves foreign caches', async () => {
@@ -943,6 +979,15 @@ test('service worker cache policy rejects private traffic and preserves foreign 
     },
   });
   vm.runInContext(source, context);
+
+  let pdfWasHandled = false;
+  listeners.fetch({
+    request: new Request('https://vts.test/downloads/research-guide.pdf'),
+    respondWith() {
+      pdfWasHandled = true;
+    },
+  });
+  assert.equal(pdfWasHandled, false, 'PDF downloads should bypass service-worker runtime caching');
 
   const isSafePublicRequest = vm.runInContext('isSafePublicRequest', context);
   const responseAllowsPublicCaching = vm.runInContext('responseAllowsPublicCaching', context);

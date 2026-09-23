@@ -15,6 +15,7 @@ const entryHtmlFiles = [
   'arcade.html',
   'battle-simulator.html',
   'specialization-towers.html',
+  'eden-siege.html',
   // VtsScore is a Vite entry (see vite.config.js) and now hosts the member
   // season registration as well as the score upload. It was missing from this
   // list, which is why its asset stamps had drifted to 14.3.5 while the app
@@ -72,12 +73,18 @@ function writeText(file, text) {
 function updateCacheBusters() {
   for (const file of entryHtmlFiles) {
     if (!fs.existsSync(path.join(root, file))) continue;
-    const html = readText(file)
+    let html = readText(file)
       .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`)
       .replace(
         /(src="js\/(?:app|admin-page)\.js)(?:\?v=[0-9A-Za-z_-]+)?"/g,
         `$1?v=${buildVersion}"`
       );
+    if (file === 'downloads.html' || file === 'eden-siege.html') {
+      html = html.replace(
+        /((?:href|src)="(?:css|js)\/[^"?#]+\.(?:css|js))(?:\?v=[0-9A-Za-z_-]+)?"/g,
+        `$1?v=${buildVersion}"`
+      );
+    }
     writeText(file, html);
   }
 
@@ -182,6 +189,9 @@ function collectLinkedAssets() {
   const assets = new Set();
 
   for (const file of entryHtmlFiles) {
+    // These standalone routes still receive version stamps, but their
+    // route-specific assets are fetched only when the route is opened.
+    if (file === 'downloads.html' || file === 'eden-siege.html') continue;
     if (!fs.existsSync(path.join(root, file))) continue;
     const html = readText(file);
     for (const match of html.matchAll(assetPattern)) {
@@ -380,6 +390,9 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) return;
+
+  // Public PDFs are downloads, not app assets; keep them out of runtime caches.
+  if (/^\\/downloads\\/[^/]+\\.pdf$/iu.test(url.pathname)) return;
 
   if (request.mode === 'navigate') {
     if (request.headers.has('Authorization')) return;

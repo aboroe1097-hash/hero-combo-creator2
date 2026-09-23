@@ -6,10 +6,9 @@
 // first pass — they also exercise RTL (ar) and long-word layouts (de is the
 // worst case, and is deliberately left for the L3 translation lane).
 //
-// NOTE: this dictionary is deliberately NOT wired into js/i18n/*.js yet. That
-// step (13-locale parity, check-i18n key coverage, standalone-copy keys) is
-// lane L3 in docs/plans/arcade-live-arena.md, because `npm run i18n:check`
-// requires every locale to carry the same key set as English in the same PR.
+// Spanish, Russian, Arabic and Chinese have full page copy. The other supported
+// locale IDs explicitly use the English source until reviewed translations are
+// available; the page still resolves every language preference safely.
 
 const EN = {
   game: {
@@ -145,13 +144,48 @@ const ES = {
     score: 'Puntuación final', best: 'Récord personal', newBest: 'Nuevo récord',
     waves: 'Oleadas superadas', kills: 'Bajas', share: 'Compartir', copied: 'Copiado',
     playAgain: 'Otra vez',
-    playerDown: 'Has caido - reapareces en la fortaleza',
   },
   maps: {
     mapKeepName: 'Muralla del Torreón',
     mapKeepDesc: 'Murallas nevadas. Tres puertas, una fortaleza.',
     mapShipName: 'Buque de transporte',
     mapShipDesc: 'Cubierta de contenedores, pasillos estrechos.',
+  },
+  tips: [
+    'Alterna bajas de Hielo y Fuego: ahí está el multiplicador de la cadena.',
+    'El Hielo detiene a la caballería. El Fuego remata lo que el Hielo inmoviliza.',
+    'La Nova se carga con bajas; guárdala para un jefe, no para un explorador aislado.',
+    'Las torres siguen disparando cuando caes. Construye antes de necesitarlas.',
+  ],
+  enemies: { enemyRanger: 'Explorador', enemyCavalry: 'Caballería', enemyDreadnought: 'Acorazado' },
+  towers: {
+    towerFrost: 'Aguja de Escarcha',
+    towerFrostDesc: 'Ralentiza al objetivo. Económica y paciente; se combina con el ala de Hielo.',
+    towerEmber: 'Ballesta de Ascuas',
+    towerEmberDesc: 'Daño de área, perfecta cuando los carriles se llenan.',
+  },
+  messages: {
+    notEnoughGold: 'No hay suficiente oro',
+    coreUnderAttack: 'La fortaleza está bajo ataque',
+    novaReady: 'Nova lista',
+    revived: 'De vuelta en la muralla',
+    bossIncoming: 'Se acerca el Acorazado',
+    waveCleared: 'Oleada superada',
+    socketEmpty: 'Espacio vacío',
+    socketBuilt: '{tower} construida',
+    socketUpgraded: '{tower} al nivel {level}',
+    playerDown: 'Has caído; reaparecerás en la fortaleza',
+    pausedByContext: 'Se perdió el contexto gráfico; la partida está en pausa',
+  },
+  challenge: { daily: 'Semilla diaria', seed: 'Semilla' },
+  errors: {
+    loadingTitle: 'Preparando la fortaleza',
+    loadingBody: 'Cargando el motor de asedio...',
+    webglTitle: 'Modo ligero',
+    webglBody: 'Este dispositivo no puede ejecutar el motor 3D; la arena se mostrará en modo simple.',
+    failedTitle: 'No se pudo cargar el motor',
+    failedBody: 'Comprueba la conexión e inténtalo de nuevo. No se perdió nada.',
+    retry: 'Intentar de nuevo',
   },
 };
 
@@ -188,13 +222,48 @@ const RU = {
     score: 'Итоговый счёт', best: 'Личный рекорд', newBest: 'Новый рекорд',
     waves: 'Волн пройдено', kills: 'Убийств', share: 'Поделиться', copied: 'Скопировано',
     playAgain: 'Ещё раз',
-    playerDown: 'Вы пали — возрождение у крепости',
   },
   maps: {
     mapKeepName: 'Стена цитадели',
     mapKeepDesc: 'Снежные стены. Трое ворот, одна крепость.',
     mapShipName: 'Транспортный корабль',
     mapShipDesc: 'Палуба с контейнерами, узкие проходы.',
+  },
+  tips: [
+    'Чередуйте убийства Льдом и Огнём — так растёт множитель серии.',
+    'Лёд останавливает кавалерию. Огонь добивает тех, кого сдержал Лёд.',
+    'Нова заряжается за убийства; придержите её для босса, а не для одиночного стрелка.',
+    'Башни продолжают стрелять, пока вы без сознания. Стройте их заранее.',
+  ],
+  enemies: { enemyRanger: 'Стрелок', enemyCavalry: 'Кавалерия', enemyDreadnought: 'Дредноут' },
+  towers: {
+    towerFrost: 'Ледяной шпиль',
+    towerFrostDesc: 'Замедляет цель. Дешёвый и надёжный; усиливает крыло Льда.',
+    towerEmber: 'Угольная баллиста',
+    towerEmberDesc: 'Урон по области для плотных волн на линии.',
+  },
+  messages: {
+    notEnoughGold: 'Недостаточно золота',
+    coreUnderAttack: 'Крепость под атакой',
+    novaReady: 'Нова готова',
+    revived: 'Вы снова на стене',
+    bossIncoming: 'Приближается Дредноут',
+    waveCleared: 'Волна отбита',
+    socketEmpty: 'Свободная площадка',
+    socketBuilt: 'Построено: {tower}',
+    socketUpgraded: '{tower}: уровень {level}',
+    playerDown: 'Вы пали — возрождение у крепости',
+    pausedByContext: 'Графический контекст потерян — игра на паузе',
+  },
+  challenge: { daily: 'Семя дня', seed: 'Семя' },
+  errors: {
+    loadingTitle: 'Подготовка крепости',
+    loadingBody: 'Загрузка осады...',
+    webglTitle: 'Лёгкий режим',
+    webglBody: 'Это устройство не поддерживает 3D-движок; арена будет показана в упрощённом виде.',
+    failedTitle: 'Не удалось загрузить движок',
+    failedBody: 'Проверьте подключение и попробуйте снова — прогресс не потерян.',
+    retry: 'Повторить',
   },
 };
 
@@ -231,13 +300,48 @@ const AR = {
     score: 'النتيجة النهائية', best: 'أفضل نتيجة', newBest: 'رقم قياسي جديد',
     waves: 'الموجات المنجزة', kills: 'القتلى', share: 'شارك', copied: 'تم النسخ',
     playAgain: 'العب مرة أخرى',
-    playerDown: 'سقطت — ستُبعث عند الحصن',
   },
   maps: {
     mapKeepName: 'سور القلعة',
     mapKeepDesc: 'أسوار مغطاة بالثلج. ثلاث بوابات وحصن واحد.',
     mapShipName: 'سفينة النقل',
     mapShipDesc: 'سطح الحاويات وممرات ضيقة.',
+  },
+  tips: [
+    'بدّل بين قتلى الجليد والنار؛ فمضاعف السلسلة هو سر النقاط.',
+    'يوقف الجليد اندفاع الفرسان، وتُنهي النار ما أمسكه الجليد.',
+    'تُشحن نوفا بالقتل؛ احتفظ بها للزعيم لا لقنّاص منفرد.',
+    'تواصل الأبراج إطلاق النار عند سقوطك. ابنها قبل أن تحتاج إليها.',
+  ],
+  enemies: { enemyRanger: 'رامٍ', enemyCavalry: 'فرسان', enemyDreadnought: 'مدرّعة' },
+  towers: {
+    towerFrost: 'برج الصقيع',
+    towerFrostDesc: 'يبطئ الهدف. رخيص وصبور، ويتكامل مع جناح الجليد.',
+    towerEmber: 'قذّافة الجمر',
+    towerEmberDesc: 'ضرر انفجاري للممرات حين تمتلئ بالأعداء.',
+  },
+  messages: {
+    notEnoughGold: 'الذهب لا يكفي',
+    coreUnderAttack: 'الحصن يتعرض للهجوم',
+    novaReady: 'نوفا جاهزة',
+    revived: 'عدت إلى السور',
+    bossIncoming: 'المدرّعة تقترب',
+    waveCleared: 'تم صد الموجة',
+    socketEmpty: 'موضع فارغ',
+    socketBuilt: 'تم بناء {tower}',
+    socketUpgraded: 'تمت ترقية {tower} إلى المستوى {level}',
+    playerDown: 'سقطت — ستُبعث عند الحصن',
+    pausedByContext: 'فُقد سياق الرسوم — الجولة متوقفة مؤقتاً',
+  },
+  challenge: { daily: 'بذرة اليوم', seed: 'البذرة' },
+  errors: {
+    loadingTitle: 'نجهّز الحصن',
+    loadingBody: 'جارٍ تحميل محرك الحصار...',
+    webglTitle: 'الوضع الخفيف',
+    webglBody: 'لا يستطيع هذا الجهاز تشغيل محرك ثلاثي الأبعاد؛ ستُعرض الساحة بوضع مبسّط.',
+    failedTitle: 'تعذّر تحميل المحرك',
+    failedBody: 'تحقّق من اتصالك وحاول مجدداً — لم يضع شيء.',
+    retry: 'حاول مجدداً',
   },
 };
 
@@ -274,7 +378,6 @@ const ZH = {
     score: '最终得分', best: '个人最佳', newBest: '新纪录',
     waves: '通过波次', kills: '击杀', share: '分享', copied: '已复制',
     playAgain: '再来一局',
-    playerDown: '你已倒下，将在要塞复活',
   },
   maps: {
     mapKeepName: '堡垒城墙',
@@ -282,10 +385,60 @@ const ZH = {
     mapShipName: '运输船',
     mapShipDesc: '集装箱甲板，狭窄通道。',
   },
+  tips: [
+    '交替使用冰与火击杀，连击倍率决定得分。',
+    '冰能定住冲锋的骑兵，火焰负责解决被冰控住的敌人。',
+    '击杀会为新星充能；留给首领波次，别浪费在落单的游骑兵身上。',
+    '倒下时防御塔仍会继续攻击，提前建好它们。',
+  ],
+  enemies: { enemyRanger: '游骑兵', enemyCavalry: '骑兵', enemyDreadnought: '无畏战舰' },
+  towers: {
+    towerFrost: '寒霜尖塔',
+    towerFrostDesc: '命中后减速。造价低、火力稳定，可与冰翼配合。',
+    towerEmber: '余烬弩炮',
+    towerEmberDesc: '范围伤害，适合敌人挤满通道时使用。',
+  },
+  messages: {
+    notEnoughGold: '金币不足',
+    coreUnderAttack: '要塞正在遭受攻击',
+    novaReady: '新星已就绪',
+    revived: '已重返城墙',
+    bossIncoming: '无畏战舰正在接近',
+    waveCleared: '波次已清除',
+    socketEmpty: '空置塔位',
+    socketBuilt: '已建造{tower}',
+    socketUpgraded: '{tower}已升至{level}级',
+    playerDown: '你已倒下，将在要塞复活',
+    pausedByContext: '图形上下文已丢失，战斗已暂停',
+  },
+  challenge: { daily: '每日种子', seed: '种子' },
+  errors: {
+    loadingTitle: '正在加固要塞',
+    loadingBody: '正在加载围城引擎...',
+    webglTitle: '轻量模式',
+    webglBody: '此设备无法运行 3D 引擎，战场将以简化模式绘制。',
+    failedTitle: '引擎加载失败',
+    failedBody: '请检查网络后重试，进度不会丢失。',
+    retry: '重试',
+  },
 };
 
-export const COPY = { en: EN, es: ES, ru: RU, ar: AR, zh: ZH };
 export const LOCALES = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
+export const COPY = {
+  en: EN,
+  es: ES,
+  pt: EN,
+  de: EN,
+  fr: EN,
+  hr: EN,
+  tr: EN,
+  ru: RU,
+  id: EN,
+  zh: ZH,
+  ar: AR,
+  kr: EN,
+  it: EN,
+};
 
 function merge(base, override) {
   if (!override || typeof override !== 'object') return base;

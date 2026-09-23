@@ -19,6 +19,7 @@ This is the release history, newest first. Entries describe their release-time b
 - The buildings planner moved into the Planners ▸ Castle panel instead of owning a tab of its own, so the Castle planner and the Castle 26–30 upgrade costs sit together. Its search filters the list as you type, and the tool follows the light theme.
 - Community Downloads is reachable from the command palette (Ctrl/Cmd+K) and from Velo, not only by its URL.
 - Community prices are shown per troop. Each troop's specialization tab is read on its own, so an archer node lists the archer medal cost instead of the footman one, and a node the workbook already covers offers a "Report a wrong cost" link instead of a submission box. The "nodes with data" count counts distinct nodes rather than every transcribed row.
+- Eden Siege consumes keyboard one-shot inputs once, splash hits no longer remove a living bystander, paused and finished runs stop rendering, restored pages and WebGL contexts recover safely, and removed tower rigs release their GPU resources. Its three.js chunks stay out of the shared offline shell; the page has Spanish, Russian, Arabic and Chinese copy, with English fallback for the other supported locales.
 
 ## 16.0.19 - 2026-09-23
 
