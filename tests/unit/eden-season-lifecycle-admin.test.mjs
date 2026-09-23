@@ -160,7 +160,7 @@ test('the season panel is a superadmin subtab wired into the dashboard', () => {
   );
   assert.match(
     dashboard,
-    /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[\s\S]*?'seasonLifecycle',\s*\]\);/
+    /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[^\]]*'seasonLifecycle',[^\]]*\]\);/
   );
   assert.match(
     dashboard,
@@ -168,7 +168,7 @@ test('the season panel is a superadmin subtab wired into the dashboard', () => {
   );
   assert.match(
     dashboard,
-    /if \(name === 'userRoles'\) void ensureUserRolesMounted\(\);\s*if \(name === 'seasonLifecycle'\)/
+    /if \(name === 'seasonLifecycle'\) void refreshEdenSeasonLifecyclePanel\(\);/
   );
 });
 

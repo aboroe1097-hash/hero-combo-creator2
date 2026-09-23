@@ -111,7 +111,7 @@ test('the dashboard routes the subtab through the superadmin gate and a lazy chu
   assert.match(dashboard, /if \(name === 'complaints'\) void ensureComplaintsMounted\(\);/);
   assert.match(
     dashboard,
-    /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[\s\S]*?'complaints',\n\]\);/
+    /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[^\]]*'complaints',[^\]]*\]\);/
   );
   assert.match(
     dashboard,
