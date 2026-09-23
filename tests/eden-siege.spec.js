@@ -228,9 +228,13 @@ test.describe('Eden Siege', () => {
     await expect
       .poll(() => page.evaluate(() => window.__EDEN_SIEGE__.scene().phase))
       .toBe('ready');
-    const restarted = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
-    expect(restarted.frames).toBeGreaterThan(terminalStats.frames);
-    expect(restarted.simSteps).toBeGreaterThan(terminalStats.simSteps);
+    // Restart sets the phase at once and schedules the next animation frame, so
+    // the loop resuming is observed by waiting for it rather than sampled once.
+    const stats = () => page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+    await expect.poll(async () => (await stats()).frames).toBeGreaterThan(terminalStats.frames);
+    await expect
+      .poll(async () => (await stats()).simSteps)
+      .toBeGreaterThan(terminalStats.simSteps);
     expect(failures).toEqual([]);
   });
 
