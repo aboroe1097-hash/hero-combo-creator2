@@ -2,10 +2,13 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAppCheck } from 'firebase-admin/app-check';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
 import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
+import { createComplaintRetentionJob } from './src/complaint-retention.js';
 import { createSetUserRoleHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
 
@@ -109,5 +112,32 @@ export const setUserRole = onCall(
       // client and nothing is logged from this entrypoint.
       throw error;
     }
+  }
+);
+
+// Complaint screenshots are kept only while leadership reviews them: once a
+// day, every screenshot older than 30 days is deleted (the complaint text
+// stays), which keeps Storage far inside the free tier. One small daily run on
+// Cloud Scheduler's free allowance.
+const purgeComplaintImagesJob = createComplaintRetentionJob({
+  db: firestore,
+  bucket: getStorage(firebaseApp).bucket(),
+  serverTimestamp: () => FieldValue.serverTimestamp(),
+});
+
+export const purgeComplaintImages = onSchedule(
+  {
+    schedule: 'every day 04:00',
+    timeZone: 'UTC',
+    region: 'us-central1',
+    memory: '256MiB',
+    timeoutSeconds: 120,
+    maxInstances: 1,
+    retryCount: 0,
+  },
+  async () => {
+    // The entrypoint logs nothing (see the security tests); the run's counts are
+    // visible in the function's execution history.
+    await purgeComplaintImagesJob();
   }
 );
