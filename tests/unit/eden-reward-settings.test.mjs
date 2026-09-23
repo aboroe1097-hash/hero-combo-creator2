@@ -152,7 +152,10 @@ test('the reward distribution is a superadmin document published with the season
 
   // The public page reads them and stops hard-coding the slot counts.
   const page = readFileSync('js/eden-x1.js', 'utf8');
-  assert.match(page, /currentRewardSettings = normalizeRewardSettings\(data\.rewardSettings\)/);
+  assert.match(
+    page,
+    /currentRewardSettings = normalizeRewardSettings\(\s*data\.rewardSettings \|\| \{ guildMasterSource: 'support_top1' \}\s*\)/
+  );
   assert.match(page, /allocateSupportRewards\(currentRewardSettings,/);
   assert.match(
     page,
