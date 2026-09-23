@@ -116,9 +116,16 @@ export async function heroesBySeason() {
             { label: 'No skin' },
           ],
           rows: seasonRows,
-          footer: ['All seasons', totals.heroes, totals.free, totals.paid, totals.withSkin, totals.heroes - totals.withSkin],
+          footer: [
+            'All seasons',
+            totals.heroes,
+            totals.free,
+            totals.paid,
+            totals.withSkin,
+            totals.heroes - totals.withSkin,
+          ],
           caption:
-            'A hero\'s season is the banner it is recruited under. Catch-up heroes appear under the season they were added to the roster.',
+            "A hero's season is the banner it is recruited under. Catch-up heroes appear under the season they were added to the roster.",
         })
       ),
       section(
@@ -161,8 +168,12 @@ export async function skinCatalogue() {
     return [
       tier.name,
       tier.rank || '—',
-      star1To2.length ? star1To2.map((item) => `${formatNumber(item.qty)}× ${item.name}`).join(', ') : '—',
-      star2To3.length ? star2To3.map((item) => `${formatNumber(item.qty)}× ${item.name}`).join(', ') : 'None',
+      star1To2.length
+        ? star1To2.map((item) => `${formatNumber(item.qty)}× ${item.name}`).join(', ')
+        : '—',
+      star2To3.length
+        ? star2To3.map((item) => `${formatNumber(item.qty)}× ${item.name}`).join(', ')
+        : 'None',
       tier.knownHeroes?.length || 0,
     ];
   });
@@ -222,10 +233,12 @@ export async function skinCatalogue() {
       ),
       section(
         'Star stages',
-        (skins.SKIN_STAR_STAGES || [])
+        Object.entries(skins.SKIN_STAR_STAGES || {})
           .map(
-            (stage) =>
-              `<p><b>${stage.star}★ ${stage.title}:</b> ${stage.detail}</p>`
+            ([star, stage]) =>
+              `<p><b>${star}★ ${stage.title}:</b> ${stage.unlock}${
+                stage.detail ? ` — ${stage.detail}` : ''
+              }</p>`
           )
           .join('') || '<p>No star stage descriptions published.</p>'
       ),

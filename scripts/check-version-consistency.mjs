@@ -110,6 +110,13 @@ captureVersion(
 );
 
 captureVersion(
+  'downloads.html',
+  /<meta name="vts-app-version" content="(\d+\.\d+\.\d+)"/,
+  'downloads.html app version meta',
+  expectedVersion
+);
+
+captureVersion(
   'maintenance.html',
   /class="version">v(\d+\.\d+\.\d+)</,
   'maintenance.html version label',

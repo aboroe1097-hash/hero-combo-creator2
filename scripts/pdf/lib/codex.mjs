@@ -13,6 +13,7 @@ const CODEX_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
   '..',
+  '..',
   'database',
   'codex'
 );

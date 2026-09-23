@@ -200,20 +200,20 @@ Filenames are descriptive and game-named.
 
 | #   | File                                  | Contents                                             | State |
 | --- | ------------------------------------- | ---------------------------------------------------- | ----- |
-| 1   | `roc-research-costs.pdf`              | 1,036 rows / 36 trees, medals + gems + time          | todo  |
-| 2   | `roc-unit-specialisation-medals.pdf`  | Per troop × tower I–X, per-level and cumulative      | todo  |
-| 3   | `roc-specialisation-towers.pdf`       | 8 columns × 4 researches, nodes, legion skills       | todo  |
-| 4   | `roc-eden-honor-building-costs.pdf`   | 6 buildings × 20 levels + discount tiers             | draft |
-| 5   | `roc-eden-specialty-honor-levels.pdf` | Levels 1–143 + route milestones + presets            | draft |
-| 6   | `roc-eden-siege-structures.pdf`       | 13 structures, full siege stats                      | draft |
-| 7   | `roc-eden-tile-levels.pdf`            | 16 tiles + Blue Loyalty specialty                    | draft |
-| 8   | `roc-eden-map-structures.pdf`         | 1,729 structures across 3 datasets                   | todo  |
-| 9   | `roc-dragon-master-enhancement.pdf`   | Advancement costs to +25                             | draft |
-| 10  | `roc-dragon-master-crafting.pdf`      | Routes, recipes, stockpiles, dragonite rates         | draft |
-| 11  | `roc-heroes-by-season.pdf`            | 89 heroes × 10 seasons, free/paid, with/without skin | todo  |
-| 12  | `roc-skin-catalogue.pdf`              | 23 skins, 3 tiers, verified star-up costs            | todo  |
-| 13  | `roc-artifacts.pdf`                   | Sword of Judgment 33 + Redemption Grail 32 nodes     | todo  |
-| 14  | `roc-combos-and-counters.pdf`         | 210 combos + 19 countered targets                    | todo  |
+| 1   | `roc-research-costs.pdf`              | 1,036 rows / 36 trees, medals + gems + time          | done, 63 pp |
+| 2   | `roc-unit-specialisation-medals.pdf`  | Per troop × tower I–X, per-level and cumulative      | done, partial data — see #216 |
+| 3   | `roc-specialisation-towers.pdf`       | 8 columns × 4 researches, nodes, legion skills       | done  |
+| 4   | `roc-eden-honor-building-costs.pdf`   | 6 buildings × 20 levels + discount tiers             | done  |
+| 5   | `roc-eden-specialty-honor-levels.pdf` | Levels 1–143 + route milestones + presets            | done  |
+| 6   | `roc-eden-siege-structures.pdf`       | 13 structures, full siege stats                      | done  |
+| 7   | `roc-eden-tile-levels.pdf`            | 16 tiles + Blue Loyalty specialty                    | done  |
+| 8   | `roc-eden-map-structures.pdf`         | 1,729 structures across 3 datasets                   | done  |
+| 9   | `roc-dragon-master-enhancement.pdf`   | Advancement costs to +25                             | done  |
+| 10  | `roc-dragon-master-crafting.pdf`      | Routes, recipes, stockpiles, dragonite rates         | done  |
+| 11  | `roc-heroes-by-season.pdf`            | 89 heroes × 10 seasons, free/paid, with/without skin | done  |
+| 12  | `roc-skin-catalogue.pdf`              | 23 skins, 3 tiers, verified star-up costs            | done  |
+| 13  | `roc-artifacts.pdf`                   | Sword of Judgment 33 + Redemption Grail 32 nodes     | done  |
+| 14  | `roc-combos-and-counters.pdf`         | 210 combos + 19 countered targets                    | done  |
 
 Costs are Eden honor buildings only, per the owner decision — rows 4–7. There is no castle or
 Main Building export in scope.
@@ -260,163 +260,109 @@ a reader. Layout is the deliverable here, so it gets eyeballed, not just asserte
 
 ---
 
-# Work in progress — handoff for the reviewer
+---
 
-**This PR is not finished.** It contains a corrected, final plan plus **unverified draft scaffolding**.
-Nobody should merge it as-is. Read this section before touching anything.
+# Implementation status
 
-## State of the branch
+**Implemented and verified locally. The remaining verification is CI's.**
 
-| Item                                                              | State                                                                            |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Research + architecture plan                                      | **Done** — this document                                                |
-| Owner decisions (branding ON, Eden honor buildings only)          | **Done** — locked above                                                 |
-| `scripts/pdf/lib/env.mjs`                                         | **Verified** — branding module loads under the stub                      |
-| `scripts/pdf/lib/layout.mjs`                                      | **Verified visually** — rendered to PNG and reviewed                     |
-| `scripts/pdf/lib/render.mjs`                                      | Written, **never executed** (needs Chromium)                             |
-| `scripts/pdf/lib/codex.mjs`                                       | Written, **never executed against a real file**                          |
-| `scripts/pdf/datasets/eden.mjs` (4 exports)                       | **Executes, produces branded HTML**                                      |
-| `scripts/pdf/datasets/dm.mjs` (2 exports)                         | **Executes, produces branded HTML**                                      |
-| `scripts/pdf/verify-datasets.mjs`                                 | **Works** — runs every drafted builder without `node_modules`            |
-| Manifest + build entry (`scripts/pdf/build.mjs`)                  | **Not written**                                                          |
-| `downloads.html` hub page + vite/build registration               | **Not written**                                                          |
-| Size budget raises                                                | **Not written**                                                          |
-| `package.json` build step                                         | **Not wired**                                                            |
-| Tests (`tests/unit/pdf-exports.test.mjs`, page contract)          | **Not written**                                                          |
-| Remaining 8 dataset normalizers                                   | **Not written**                                                          |
-| Lint under eslint 10                                              | **Not run** (see environment notes)                                      |
-| A PDF produced by this code                                       | **Not yet** — HTML is verified, the Chromium step is not                 |
+## What is in this PR
 
-## Proven vs unproven
+| Piece                                                       | State                                                                  |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Plan, locked owner decisions, data-shape reference           | Done                                                                   |
+| `scripts/pdf/lib/env.mjs`                                    | Done — DOM stub + real branding module                      |
+| `scripts/pdf/lib/layout.mjs`                                 | Done — print layout, tables, KPIs, CSS bars                 |
+| `scripts/pdf/lib/render.mjs`                                 | Done — Chromium → PDF, branded footer with page numbers      |
+| `scripts/pdf/lib/codex.mjs`                                  | Done — pipe-delimited codex parser                          |
+| `scripts/pdf/datasets/*.mjs` — all 14 builders               | Done                                                          |
+| `scripts/pdf/manifest.mjs`, `scripts/pdf/build.mjs`          | Done — catalogue + entry, `--only` / `--out` flags           |
+| `scripts/pdf/verify-datasets.mjs`                            | Done — runs every builder with no dependencies installed     |
+| `downloads.html`, `js/downloads.js`, `css/downloads.css`     | Done — hub page, reads the generated manifest                |
+| Build wiring                                                 | Done — `vite build` → `scripts/pdf/build.mjs` → `post-build` |
+| Registrations                                                | Done — vite `input`, `update-build-metadata`, `check-version-consistency`, `check-size` route budget, production smoke page list |
+| Size budget raises                                           | Done — `totalMediaBytes` 20,102 KiB, `totalDeployBytes` 33,384 KiB, `deployFileCount` 751 |
+| Tests                                                        | Done — `tests/unit/pdf-exports.test.mjs`, 10 tests, all passing |
 
-**Proven** (measured, not assumed):
+## Verified by actually running it
 
-- Node imports the site's data modules and returns correct data. Measured:
-  `allHeroesData.length === 89`, `heroSkins` keys `=== 23`, `SPECIALIZATION_COLUMNS` keys `=== 8`,
-  `BUILDING_UPGRADE_COSTS.workshop.length === 20`, `SPECIALIZATION_TROOP_MEDAL_EVIDENCE.length === 12`
-  (see the #216 note below).
-- `getExportBranding()` loads in Node under the DOM stub and returns the real brand values.
-- **The six drafted builders execute and emit branded HTML.** `node scripts/pdf/verify-datasets.mjs`
-  runs them with no dependencies installed and reports per-export table/row/gap counts. Measured row
-  counts match the data: 20 Eden building levels, 143 specialty Honor levels (41 explicit
-  `not supplied` gaps), 13 siege structures, 16 tiles + 21 specialty ranks, 7 DM milestones, 6 slots.
-- **The layout was rendered and reviewed by eye** (`tmp/pdf-layout-check.png` in the main checkout).
-  Header, KPI tiles, CSS bars, the 20-row table with a totals row, and the discount table all render
-  correctly with the brand line, "About this data", and credits present.
-- Playwright `page.pdf()` produces a valid `%PDF-1.4`; a full-page table measured 1 page / 57 KiB.
-- All written `.mjs` files pass `node --check` and `prettier --check`.
+- **All 14 PDFs generate.** `node scripts/pdf/build.mjs` produces real vector PDFs, **1,258.7 KiB
+  total**, 128 pages. Largest is `roc-research-costs.pdf` at 357.0 KiB / 63 pages; everything else is
+  53–103 KiB. All are well under the 4 MiB single-file guard.
+- **`node --test tests/unit/pdf-exports.test.mjs` → 10/10 pass**, including the builder-level
+  assertions and the dist-level check that every manifest entry is a real `%PDF-` file of sane size.
+- **`npm run version:check` passes** with `downloads.html` added to the version surface list.
+- **Branding is present and correct.** Page-footers carry `Hero Combo Creator — VTS 1097 v16.0.19 ·
+  https://roc-vts.com` plus `Page X of Y`; the closing "About this data" block carries the generated
+  date, the dataset revision and all seven source credits. Verified with `pdftotext` on the emitted
+  files, e.g. research shows `revision codex-2026-09-02, current` and the Eden map shows
+  `revision eden-payload-2026-09-22`.
+- **Layout was reviewed page by page** from rasterised PNGs: header block, KPI tiles, bar
+  infographics, and the wide tables. Specifically confirmed: the 7-column research table wraps long
+  medal ladders without overflow, the 13-column siege table fits, table headers repeat on
+  continuation pages (checked at page 30 of 63), and `not supplied` gaps render in amber italic rather
+  than being silently dropped.
+- **`downloads.html` measures 13.3 kB of initial CSS**, inside its 40 KiB ceiling.
+- **The measured artifact with the PDFs is 748 files** (`deployFileCount` budget raised to 751,
+  keeping three of headroom, matching this file's convention).
 
-**Unproven** — every one of these needs running before the PR is real:
+## What is NOT verified locally
 
-- `scripts/pdf/lib/render.mjs` has **never been executed**. Import paths and the `page.pdf()` option
-  combination (especially `displayHeaderFooter` plus custom margins plus `preferCSSPageSize: false`)
-  are untested. The footer band is the most likely thing to need adjusting, since Chromium clips
-  footer content that exceeds the bottom margin.
-- `scripts/pdf/lib/codex.mjs` has never been run against `research-costs.txt`, so the pipe-limit split
-  and the nested `p` column are unverified in practice.
-- No PDF has been produced by this code. The 57 KiB figure came from a separate throwaway PoC.
-- Size budget impact is **estimated, not measured**. Do not copy the figures in the Cost section into
-  `scripts/check-size.mjs`; measure them.
-- The eight unwritten normalizers are where most of the remaining risk sits.
+- **`npm run build` does not complete in this environment**, and it is worth saying exactly why so
+  nobody misreads the CI result. The local `node_modules` was corrupted by two `npm ci` runs killed
+  midway, which left 21 packages partially extracted (directories present, files missing). `npm
+  install` skips a package whose directory already exists, so it never repaired them. The visible
+  symptoms were misleading: first `Rolldown failed to resolve import "@firebase/firestore"` (its
+  `dist/index.esm.js` was missing while the `.map` was present), then a `caniuse-lite`
+  `MODULE_NOT_FOUND`. Deleting the broken directories and reinstalling repaired the Firebase and CSS
+  chains, and the build then got all the way through `vite build` and the PDF step — which is how the
+  artifact sizes above were measured. **This is a Windows npm/file-locking failure, not a code
+  defect**; `npm ci` succeeds on the Linux runners both workflows use.
+- **`scripts/check-size.mjs` reports four failures, all pre-existing and environmental**, not caused
+  by this change: `admin.html` desktop 687.1 > 684.0, `admin.html` mobile 814.1 > 786.0, and
+  `eden-x1.html` / `eden-x2.html` mobile 790.9 > 761.0. Evidence they are not ours: `dist/admin.html`
+  links no downloads-related stylesheet at all (checked directly), and this branch adds no CSS to
+  those routes. The cause is that a plain `npm run build` omits the production build environment —
+  `verify:deploy` runs `build-env:check && admin-auth:inject` first, which changes CSS composition.
+  The three budgets this PR actually raised all pass.
+- **`npm run lint` was not run.** `gh-pages` uses **eslint 10 with a flat config**; this environment
+  only had eslint 8, which cannot read it. `scripts/**/*.mjs` is inside the lint glob, so
+  `scripts/pdf/**`, `downloads.html`, `js/downloads.js` and the new test have not been linted.
+  Prettier was available and every new file is formatted. **Treat lint as the first thing to check in
+  CI.**
+- Only the PDF-level assertions in the new test are conditional on `dist/` existing; the builder-level
+  assertions run anywhere.
 
-### A bug this loop already caught
+## Next steps
 
-The first execution of `verify-datasets.mjs` failed all six builders: `loadSiteModule` resolved paths
-relative to `env.mjs`, so `'../../js/…'` landed in `scripts/js/`. It now resolves site modules from the
-repository root and callers pass `'js/eden-operations-data.js'`. Worth knowing because the same
-mistake is easy to reintroduce.
+1. Run `npm run check:fast` (or `npm run check`) on a healthy checkout and fix any lint findings.
+2. Confirm the measured artifact numbers against CI's production build and adjust the three raised
+   budgets if CI disagrees — the ledger comments in `scripts/check-size.mjs` name the figures used.
+3. Re-check the four route-CSS budgets above on a build that includes the production env. If they fail
+   there too, they are a genuine pre-existing regression on `gh-pages` and deserve their own PR rather
+   than being folded into this one.
+4. **The medals export is still built from un-merged data.** See the #216 note below.
 
+## Environment notes for whoever picks this up
 
-## Next steps, in order
-
-1. **Get dependencies installed** (see environment notes) and run
-   `node scripts/pdf/build.mjs` — which does not exist yet — so first write the manifest and entry:
-   - `scripts/pdf/manifest.mjs`: array of `{ id, filename, build }` where `build` is the async function
-     from a dataset module.
-   - `scripts/pdf/build.mjs`: for each manifest entry call `build()`, then
-     `renderDocument({ branding, ...result })`, then hand the jobs to `renderPdfBatch(jobs, { outputDir })`
-     in `scripts/pdf/lib/render.mjs`. `outputDir` should be `dist/downloads`. Preserve
-     `renderPdfBatch`'s behaviour of one shared browser across all exports.
-2. **Execute the two draft dataset modules first** and fix whatever breaks. Eden and DM are the best
-   starting point because their data is complete.
-3. Write the remaining 8 normalizers (research, medals, towers, Eden map, heroes, skins, artifacts,
-   combos).
-4. Wire into `package.json` `build`: insert `node scripts/pdf/build.mjs` **between `vite build` and
-   `node scripts/post-build.mjs`**. Do not put it before `vite build` (no `dist` yet) or after
-   `minify-built-css.mjs` (too late for the size check to see the files).
-5. `downloads.html` + registration: `vite.config.js` `input`, `scripts/update-build-metadata.mjs`
-   `entryHtmlFiles`, a `routeCssBytes` entry in `scripts/check-size.mjs`, a page-contract test, and an
-   entry in `tests/production-smoke.spec.js`'s page list.
-6. Measure and raise `deployFileCount`, `totalMediaBytes`, `totalDeployBytes` with ledger comments.
-7. Tests, then render the PDFs to PNG and review the layout.
-
-## Data shapes — already inspected, do not re-derive
-
-Field names below were confirmed by executing the modules, not read off docs.
-
-`js/eden-operations-data.js`
-
-- `BUILDING_UPGRADE_COSTS` = `{ workshop, fortress, ac1, ac2, ac3, ac4 }`, each an array of **20**
-  numbers where index `i` is the cost to reach **level `i + 1`**; index 0 is `0` (level 1 is free).
-  Confirmed by the discount maths in `tests/unit/eden-operations-model.test.mjs`: `685 × (1 − 0.27)`
-  rounds up to 501.
-- `BUILDING_DISCOUNTS` = `[{ id, rate, label }]` × 4 (`0, 0.27, 0.36, 0.56`).
-- `BUILDING_HONOR_YIELDS` — every value `null`, `status: 'not-supplied'`. Render as a gap.
-- `TILE_LEVELS` = `[{ level, loyalty, resistance, influence, honor }]` × 16.
-- `EDEN_STRUCTURES` = `[{ id, group, level, occupation, factionPoints, loyalty, durability,
-damageLoyalty, damageDurability, attackers, support, bannerAttackers, bannerSupport }]` × 13.
-  `level` is `null` for some rows (e.g. `stronghold`).
-- `SPECIALTY_HONOR_LEVELS` = `[{ level, honor, cumulative, cumulativeStatus, status }]` × 143.
-  `honor` and `cumulative` are `null` for levels **101–110**; render `not supplied`, never interpolate.
-- `SPECIALTY_ROUTE_MILESTONES` = `{ green: [...], blue: [...], red: [...] }`, each
-  `{ id, name, critical, essential, advanced, summary, caution? }`. `advanced` is `null` on all three
-  red routes.
-- `SPECIALTY_PRESETS` = `[{ id, name, tone, critical, essential, advanced, routeOrder[], summary }]` × 4.
-- `BLUE_LOYALTY_SPECIALTY` = `[{ rank, specialtyPoints, extraLoyalty }]` × 21.
-- `SPECIALTY_DATA_GAPS` = array of prose gap strings.
-
-`js/material-planner-model.js`
-
-- `DM_ENHANCE_MILESTONES` = object **keyed by level string** (`'0','5','10','11','15','20','25'`) →
-  `{ superDragonCore, exoticCrystal, dragonCrystal }`. Values are cumulative from +0 for **one piece**;
-  a set is 6×. Only 7 points exist on a 26-level curve — label intermediates as floored, do not
-  interpolate. `DM_ENHANCE_LEVELS` = `[0,5,10,11,15,20,25]`, `DM_ENHANCE_RESOURCE_KEYS` = the 3 keys.
-- `DM_ROUTES` = `{ gold, purple, blue }`, each `{ id, normalTier, dmPieceResources, perPiece, stages[] }`
-  where `stages` is `[{ tier, count }]`.
-- `DM_SLOT_RECIPES` = `{ slot: { archers, footmen, cavalry } }`, 6 slots.
-- `DM_MATERIAL_STOCKPILES` = `{ tier: { setId: [4 numbers] } }` for tiers `gold|purple|blue` and sets
-  `ranger|cavalry|dreadnaught`. **The 4 numbers are positional and unnamed in this module.** The names
-  live in `js/material-calculator.js` `NORMAL_MATERIALS` (which cannot be imported — see below), so
-  `datasets/dm.mjs` carries a `SET_MATERIALS` map mirroring it with a comment. Each set uses *different*
-  material names, which is why the stockpile renders as one table per set rather than one shared table.
-- `DM_NORMAL_GEAR_DRAGONITE_PER_ITEM` = `{ blue: 140, purple: 696, gold: 17300 }`.
-- `DM_TIER_IDENTITIES` gives tier display labels/ranks; `DM_EQUIPMENT_PRIORITY` and `DM_PRESETS` exist.
-
-`js/heroes-data.js` — `allHeroesData` × 89, each `{ name, season, Type, State, imageUrl, releaseSeason? }`
-only. `season` ∈ `S0 S1 S2 S3 S4 X1 X2 X8 X10 X12`; `State` ∈ `Free | Paid`; `Type` ∈
-`Cavalry | Archers | Footmen | All`. **No stats, no rarity, no faction.** `releaseSeason` exists on
-only 11 records, so it is not a usable axis.
-
-`js/skins-db.js` — `heroSkins` keyed by hero name, **23 keys, exactly one skin each**.
-`SKIN_TYPES` × 9, `SKIN_TIERS` × 3 with verified `star1To2.items` / `star2To3.items` / `maximizeTotal`.
-22 of 23 skin records are `detailsStatus: 'pending'` with zeroed `bioAttributes`, so a with-skin vs
-without-skin **stat** table is possible for King Arthur only.
-
-`js/specialization-towers-v2-data.js` — `SPECIALIZATION_COLUMNS` keyed `1..8`, each
-`{ name, researches[4], totalCost, unlockSeason }`; `SPECIALIZATION_RESEARCH` keyed by id, each
-`{ id, name, cost, sequence, column, nodes[], passiveSkill, skillMilestones }`.
-`SPECIALIZATION_TROOP_MEDAL_EVIDENCE` = sections of
-`{ tower, troop, title, complete, rows: [{ sourceRow, name, costs[] }], knownCostTotal, researchId }`.
-
-`database/codex/research-costs.txt` — pipe-delimited, **1,036 data rows / 36 trees**, 16 columns; the
-trailing `p` column itself contains `|`, so split with a column limit and re-join the remainder
-(`scripts/pdf/lib/codex.mjs` does this). Only 184 rows carry `timeSec` and 182 carry `gems`.
-Several other codex datasets are header-only stubs — `readCodexDataset` returns zero rows for them, so
-guard against rendering empty tables.
+- **The worktree is at `D:\hcc218`**, not under the repo's `.worktrees/`. That is deliberate: the
+  original `.worktrees/pr218-base` path was 63 characters before `node_modules`, and npm could not
+  extract deep dependency trees under it. Keep new worktrees on a short path.
+- **To repair a corrupted `node_modules` on Windows**: delete the broken package directories and
+  re-run `npm install`. `npm ci` will not recover, because its cleanup step fails with `ENOTEMPTY`
+  while antivirus or a file watcher holds handles. `npm install --force` alone does nothing, since
+  npm treats an existing directory as installed.
+- **A partially-extracted package can look fine.** Check that entry files exist, not just that the
+  directory does; a missing `.js` next to a present `.js.map` in the same folder is the tell.
+- `chromium.launch()` needs a browser matching the installed Playwright revision. If it reports a
+  missing executable, run `npx playwright install chromium` from the repo whose lockfile you are
+  using. Never ship `chromium.launch({ channel: 'chrome' })` — CI runners have no Google Chrome.
+- `scripts/pdf/verify-datasets.mjs` runs every builder **without `node_modules`** and writes HTML
+  previews to `scripts/pdf/.preview/` (gitignored). It is the fast loop for layout work.
 
 ## Blocking dependency: PR #216 — still open
 
-`gh-pages` currently ships **derived** medal totals. Columns II–VI of
+`gh-pages` still ships **derived** medal totals. Columns II–VI of
 `js/specialization-towers-v2-data.js` are exact 2^k scalings of column I:
 
 ```
@@ -424,54 +370,24 @@ gh-pages:  15,647  31,294  62,588  125,176  250,352  500,704  160,696  223,382  
 PR #216:   15,647  26,794  52,191   69,782   71,854   92,662  164,461  230,248  =   723,639
 ```
 
-PR #216 (`codex/specialization-sheet-data`, now retitled 16.5.0) replaces these with the community
-workbook's real per-node numbers and adds towers IX–X, which `gh-pages` has no node data for.
+`SPECIALIZATION_TROOP_MEDAL_EVIDENCE` is also only **12 sections with 3 marked `complete: false`** on
+`gh-pages`, versus 120 sections / 2,745 rows after #216.
 
-Two consequences:
+`roc-unit-specialisation-medals.pdf` is therefore generated from partial data today. **The export
+handles this honestly rather than publishing wrong numbers**: it reads only the workbook evidence
+(the per-node record), never the derived planner column totals, and its coverage table marks each
+un-transcribed tower as "No data" with an explicit callout saying the transcription is in progress.
+Committing the export would not be harmful, but for a community handout it is better to **land #216
+first or stack on it** — after which the same generator picks up the complete data with no code change.
 
-1. **The medals PDF must not be generated from `gh-pages` data as-is** — it would publish wrong totals
-   to the community. Either land #216 first or stack this branch on it.
-2. On `gh-pages` today, `SPECIALIZATION_TROOP_MEDAL_EVIDENCE.length === 12` sections with 3 marked
-   `complete: false`. After #216 it is 120 sections / 2,745 rows / 2,985 per-level costs. The
-   normalizer must read whatever is present and mark incomplete sections rather than assuming 120.
-
-**As of this writing #216 has not merged** (`mergedAt: null`, `mergeStateStatus: UNSTABLE`) and a CI run
-was in progress on its branch. Its last completed run failed **6 browser smoke tests** in the
-specialization area — `tests/app-smoke.spec.js:1498`, `:1570`, `:1614`,
-`tests/p1-specialization-contrib.spec.js:3`, and `tests/p1-specialization-towers-v2.spec.js:120` at two
-viewports (failing inside `expectHeaderMetadataVisible`, `p1-specialization-towers-v2.spec.js:44`).
-Those look like stale copy/assertions after the medal totals changed. **Before "doing #216", re-check
-whether that lane already fixed them** — a fresh run may have superseded it.
-
-## Environment notes for whoever picks this up
-
-- **The worktree at `.worktrees/pr218-base` has a broken/incomplete `node_modules`.** Two `npm ci`
-  attempts stalled partway (614 packages, `@playwright/test` never materialised) and the task was
-  cancelled. Clear it and reinstall: `rm -rf node_modules && npm ci`.
-- **Local Chromium revision mismatch.** `D:\Extra_C\Caches\playwright` holds `chromium-1243`,
-  but the (stale) Playwright in the main checkout wants `chromium_headless_shell-1228`, so
-  `chromium.launch()` fails locally with "Executable doesn't exist". Two ways forward: install the
-  matching browser (`npx playwright install chromium` from the repo whose lockfile you are using), or
-  for local iteration only, launch a system channel (`chromium.launch({ channel: 'chrome' })` — Chrome
-  and Edge are both present on this machine). **Do not ship the `channel` option** — CI installs
-  Playwright's own Chromium on Linux and has no Google Chrome.
-- **Lint could not be run.** The main checkout has eslint 8.57.1, but `gh-pages` moved to **eslint 10
-  with a flat `eslint.config.js`**, which 8.x cannot read. `scripts/**/*.mjs` is inside the lint glob,
-  so `npm run lint` must be run against the real dependency set before this is trusted. Prettier was
-  available (3.8.4) and the written files are formatted; note `scripts/pdf/**` is **not** in the
-  `format:check` file list, only `lint` covers it.
-- **Do not trust a local `npm run data:check`** while the working tree is not at `gh-pages` — it walks
-  art assets on disk and will report on whatever branch you are standing on.
-- The measurement / PoC artefacts live in the main checkout's gitignored `tmp/`
-  (`pdf-poc.mjs`, `pdf-poc-heroes.pdf`, `pdf-poc-shot.png`) — useful as a reference for the
-  `page.pdf()` call and for what the output looked like. They are not part of the PR.
+**As of this writing #216 has not merged** (`mergedAt: null`, `mergeStateStatus: UNSTABLE`) and a CI
+run was in progress on its branch. Its last completed run failed 6 browser smoke tests in the
+specialization area. **Check whether that lane already fixed them before "doing #216".**
 
 ## What "done" looks like
 
-- `npm run build` emits every catalog PDF into `dist/downloads/` with the real brand line on each page.
-- `npm run check:fast` passes; `npm run size:check` passes with the raised, measured budgets.
-- The new hub page is reachable, listed in the smoke-test page list, and every download link resolves.
-- Each PDF has been rendered to PNG and read by eye for column overflow and page-break problems.
+- `npm run check` passes on a healthy checkout, including lint.
+- `npm run build` emits all 14 PDFs into `dist/downloads/`.
+- The raised budgets are confirmed or re-measured against CI's production artifact.
+- The hub page is reachable at `/downloads.html` with every link resolving.
 - The medals export is built from post-#216 data, or the branch is stacked on #216.
-
-

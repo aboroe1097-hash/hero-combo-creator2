@@ -72,12 +72,7 @@ export async function edenMapStructures() {
             sectorStructures.reduce((sum, item) => sum + (Number(item.points) || 0), 0),
           ];
         }),
-        footer: [
-          'All sectors',
-          '—',
-          dataset.structures.length,
-          dataset.points,
-        ],
+        footer: ['All sectors', '—', dataset.structures.length, dataset.points],
         caption: `${dataset.datasetId}: ${dataset.structures.length} structures across ${dataset.sectorEntries.length} sectors.`,
       })
     ),
@@ -96,7 +91,8 @@ export async function edenMapStructures() {
             count,
             `${((count / dataset.structures.length) * 100).toFixed(1)}%`,
           ]),
-        caption: 'Ownership is not part of the dataset — guild assignment is entered per plan, not sourced.',
+        caption:
+          'Ownership is not part of the dataset — guild assignment is entered per plan, not sourced.',
       })
     ),
   ]);
@@ -104,6 +100,7 @@ export async function edenMapStructures() {
   return {
     filename: 'roc-eden-map-structures.pdf',
     eyebrow: 'Eden',
+    revision: store.builtAt ? `eden-payload-${String(store.builtAt).slice(0, 10)}` : undefined,
     title: 'Map structures by sector',
     subtitle:
       'Every placed Eden structure per dataset and sector, with type histograms and point totals for planning marches and objectives.',
@@ -120,7 +117,10 @@ export async function edenMapStructures() {
           label: 'Sectors (largest)',
           value: Math.max(...perDataset.map((dataset) => dataset.sectorEntries.length)),
         },
-        { label: 'Total points', value: perDataset.reduce((sum, dataset) => sum + dataset.points, 0) },
+        {
+          label: 'Total points',
+          value: perDataset.reduce((sum, dataset) => sum + dataset.points, 0),
+        },
       ]),
       callout({
         title: 'Coordinates are not listed here',

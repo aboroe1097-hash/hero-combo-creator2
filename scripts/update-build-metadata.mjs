@@ -15,6 +15,7 @@ const entryHtmlFiles = [
   'arcade.html',
   'battle-simulator.html',
   'specialization-towers.html',
+  'downloads.html',
 ];
 const baseAppShellFiles = [
   '/',

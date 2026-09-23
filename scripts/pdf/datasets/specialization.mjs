@@ -84,6 +84,7 @@ export async function specializationMedals() {
   return {
     filename: 'roc-unit-specialisation-medals.pdf',
     eyebrow: 'Unit Specialisation',
+    revision: spec.SPECIALIZATION_DATA_REVISION,
     title: 'Medal costs per node',
     subtitle:
       'Virtue Badge costs for every Unit Specialisation node, transcribed from the community workbook. Figures are per level of the node.',
@@ -152,7 +153,10 @@ export async function specializationMedals() {
       section(
         'Provenance',
         table({
-          columns: [{ label: 'Field', align: 'left' }, { label: 'Value', align: 'left' }],
+          columns: [
+            { label: 'Field', align: 'left' },
+            { label: 'Value', align: 'left' },
+          ],
           rows: [
             ['Workbook', source.sourceUrl || '—'],
             ['Observed', source.observedAt || '—'],
@@ -214,6 +218,7 @@ export async function specializationTowers() {
   return {
     filename: 'roc-specialisation-towers.pdf',
     eyebrow: 'Unit Specialisation',
+    revision: spec.SPECIALIZATION_DATA_REVISION,
     title: 'Towers, researches and legion skills',
     subtitle:
       'The eight Unit Specialisation columns, their four researches each, the attribute nodes within them, and the legion skill every column grants per troop type.',
@@ -289,7 +294,8 @@ export async function specializationTowers() {
               ];
             })
           ),
-          caption: 'Passive skills are shown by their footman name; each troop has its own variant.',
+          caption:
+            'Passive skills are shown by their footman name; each troop has its own variant.',
         })
       ),
       section(
@@ -309,7 +315,10 @@ export async function specializationTowers() {
       section(
         'Source',
         table({
-          columns: [{ label: 'Field', align: 'left' }, { label: 'Value', align: 'left' }],
+          columns: [
+            { label: 'Field', align: 'left' },
+            { label: 'Value', align: 'left' },
+          ],
           rows: [
             ['Title', metadata.title || '—'],
             ['Publisher', metadata.publisher || '—'],

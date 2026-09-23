@@ -274,7 +274,10 @@ const LIMITS = {
   // artifact audits to 31976.6 KiB. Retain roughly 7 KiB of headroom.
   // Translating the Royal Bounty guide adds eleven lazy locale chunks; the
   // artifact audits to 32093.1 KiB. Retain roughly 7 KiB of headroom.
-  totalDeployBytes: 32100 * 1024,
+  // Community Downloads adds the 14 PDFs (~1,259 KiB), the downloads.json
+  // manifest, and the hub page with its module and stylesheet, taking the
+  // artifact to roughly 33,377 KiB. Retain about 7 KiB.
+  totalDeployBytes: 33384 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -294,7 +297,12 @@ const LIMITS = {
   // 18828.2 KiB. Their 1.3 MiB of PNG sources stay source-only, so only the
   // served format counts here. Raised rather than ship the newest roster on
   // placeholder art; retain roughly 22 KiB.
-  totalMediaBytes: 18850 * 1024,
+  // Community Downloads ships 14 generated PDFs. They count as deployed media
+  // because the media filter excludes only css/html/js/json/map/md/txt/xml.
+  // Measured at 1,258.7 KiB across the 14 documents (largest single file
+  // roc-research-costs.pdf at 357.0 KiB, well under the 4 MiB guard), taking
+  // audited media to ~20,087 KiB. Retain roughly 15 KiB.
+  totalMediaBytes: 20102 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -330,7 +338,11 @@ const LIMITS = {
   // 16.0.19 adds css/player-season.css as its own on-demand chunk (so the Eden
   // pages' initial CSS stays within its budget); the build emits 730 files.
   // Keep three of headroom.
-  deployFileCount: 733,
+  // Community Downloads adds downloads.html, its module and stylesheet, the
+  // dist/downloads/downloads.json manifest, and 14 generated PDFs (measured at
+  // 1,258.7 KiB in total). That is 748 files; keep three of headroom so
+  // unplanned chunk proliferation still shows up.
+  deployFileCount: 751,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -395,6 +407,9 @@ const LIMITS = {
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
     'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
+    // Community Downloads is a static list page: shared tokens plus the download
+    // grid stylesheet, and no game data is loaded. Keep the same focused shape.
+    'downloads.html': { desktop: 40 * 1024, mobile: 40 * 1024 },
   },
 };
 

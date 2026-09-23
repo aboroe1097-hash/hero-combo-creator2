@@ -9,7 +9,7 @@
     "build:eden": "python scripts/eden/build-eden-datasets.py && python scripts/eden/check_dup_ids.py",
     "build-env:check": "node scripts/check-build-env.mjs",
     "dev": "vite",
-    "build": "npm run data:check && npm run build:eden && npm run codex:build && node scripts/build-changelog-digest.mjs && node scripts/update-build-metadata.mjs && vite build && node scripts/post-build.mjs && node scripts/minify-built-css.mjs",
+    "build": "npm run data:check && npm run build:eden && npm run codex:build && node scripts/build-changelog-digest.mjs && node scripts/update-build-metadata.mjs && vite build && node scripts/pdf/build.mjs && node scripts/post-build.mjs && node scripts/minify-built-css.mjs",
     "codex:build": "node scripts/codex/build-codex-payload.mjs",
     "data:check": "node scripts/check-tech-db.mjs",
     "firebase:admin-claim": "node scripts/firebase-set-admin-claim.mjs",
@@ -42,6 +42,7 @@
     "check:fast": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check",
     "check:full": "npm run check",
     "check": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check && npm run rules:check && npm run build && npm run size:check && npm run smoke:prod && npm run smoke",
+    "pdf:build": "node scripts/pdf/build.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {

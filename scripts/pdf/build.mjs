@@ -50,7 +50,9 @@ if (options.only && selected.length !== options.only.length) {
   throw new Error(`Unknown export id(s): ${unknown.join(', ')}`);
 }
 
-console.log(`Building ${selected.length} PDF export(s) into ${path.relative(REPO_ROOT, options.out)}`);
+console.log(
+  `Building ${selected.length} PDF export(s) into ${path.relative(REPO_ROOT, options.out)}`
+);
 
 const jobs = [];
 const failures = [];
@@ -60,7 +62,12 @@ for (const entry of selected) {
   try {
     const document = await entry.build();
     // Each document carries the same branding as the site's CSV and PNG exports.
-    const { branding } = await loadExportBranding({});
+    // Builders pass their source's own revision where it publishes one, so the
+    // footer and "About this data" name the exact dataset revision.
+    const { branding } = await loadExportBranding({
+      revision: document.revision,
+      verificationStatus: document.verificationStatus,
+    });
     const html = renderDocument({
       branding,
       eyebrow: document.eyebrow,

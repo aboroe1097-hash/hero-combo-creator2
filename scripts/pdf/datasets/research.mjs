@@ -3,7 +3,15 @@
 // carries gem and time data alongside the medal ladders.
 
 import { parseLevelValues, readCodexDataset } from '../lib/codex.mjs';
-import { bars, callout, formatDuration, formatNumber, kpis, section, table } from '../lib/layout.mjs';
+import {
+  bars,
+  callout,
+  formatDuration,
+  formatNumber,
+  kpis,
+  section,
+  table,
+} from '../lib/layout.mjs';
 
 const titleCase = (value) =>
   String(value || '')
@@ -28,6 +36,17 @@ export async function researchCosts() {
     throw new Error('research-costs.txt has no data rows; refusing to render an empty table');
   }
   const trees = groupByTree(dataset.rows);
+
+  // The codex file declares its own provenance in the leading `#` comment, e.g.
+  // "captureDate: 2026-09-02 ... verificationStatus: current".
+  const provenance = Object.fromEntries(
+    (dataset.comments || [])
+      .join(' | ')
+      .split('|')
+      .map((part) => part.split(':'))
+      .filter((pair) => pair.length === 2)
+      .map(([key, value]) => [key.trim(), value.trim()])
+  );
 
   const treeStats = trees.map((tree) => {
     const medals = tree.nodes.reduce((sum, node) => sum + (Number(node.totalMedals) || 0), 0);
@@ -87,6 +106,8 @@ export async function researchCosts() {
   return {
     filename: 'roc-research-costs.pdf',
     eyebrow: 'Research',
+    revision: provenance.captureDate ? `codex-${provenance.captureDate}` : undefined,
+    verificationStatus: provenance.verificationStatus,
     title: 'Research costs by tree',
     subtitle:
       'Every research node with its medal ladder, gem cost and research time, grouped by tree. Credit: Raven G, Ash Roe and the riseofcastles.net community.',

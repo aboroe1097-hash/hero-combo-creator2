@@ -52,6 +52,7 @@ export async function edenHonorBuildings() {
   return {
     filename: 'roc-eden-honor-building-costs.pdf',
     eyebrow: 'Eden',
+    revision: ops.EDEN_OPERATIONS_DATA_VERSION,
     title: 'Honor building upgrade costs',
     subtitle:
       'Cumulative material cost to raise each Eden Honor building from level 1 to level 20, with the alliance and specialty discount tiers applied.',
@@ -141,6 +142,7 @@ export async function edenSpecialtyHonor() {
   return {
     filename: 'roc-eden-specialty-honor.pdf',
     eyebrow: 'Eden',
+    revision: ops.EDEN_OPERATIONS_DATA_VERSION,
     title: 'Specialty Honor levels and routes',
     subtitle:
       'Honor required per specialty level, the cumulative climb to level 143, and the point cost of every specialty route at its critical, essential and advanced breakpoints.',
@@ -231,6 +233,7 @@ export async function edenSiegeStructures() {
   return {
     filename: 'roc-eden-siege-structures.pdf',
     eyebrow: 'Eden',
+    revision: ops.EDEN_OPERATIONS_DATA_VERSION,
     title: 'Siege structures reference',
     subtitle:
       'Occupation limits, loyalty and durability, siege damage, and attacker and support capacities for every capturable Eden structure.',
@@ -252,7 +255,7 @@ export async function edenSiegeStructures() {
         },
       ]),
       section(
-        'Loyalty and durability',
+        'Durability by structure',
         bars({
           items: structures.slice(0, 13).map((s) => ({
             label: s.id,
@@ -309,6 +312,7 @@ export async function edenTileLevels() {
   return {
     filename: 'roc-eden-tile-levels.pdf',
     eyebrow: 'Eden',
+    revision: ops.EDEN_OPERATIONS_DATA_VERSION,
     title: 'Tile levels and Blue Loyalty specialty',
     subtitle:
       'Loyalty, resistance, influence and Honor for every Eden tile level, plus the Blue specialty ranks that raise camp loyalty.',
