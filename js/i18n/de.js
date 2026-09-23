@@ -171,6 +171,12 @@ const de = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'Ergebnisse der Mitglieder-Abstimmung zeigen',
+  adminEdenVotesMemberResultsHint:
+    'Macht die Platzierung der Mitglieder bei der Team-Spieler-Abstimmung auf der öffentlichen Eden-Seite sichtbar, sobald sie bereit ist.',
+  adminEdenVotesManagementResults: 'Ergebnisse der R4/R5-Abstimmung zeigen',
+  adminEdenVotesManagementResultsHint:
+    'Veröffentlicht die Gewinner der Management-Abstimmung. Sie hat einen eigenen Schalter, weil diese Abstimmung nicht saisongebunden ist: Eine Saison ohne eigene R4/R5-Abstimmung würde sonst die Gewinner der vorigen Saison zeigen.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -271,7 +277,8 @@ const de = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'Add Names',
   adminShieldWallEmpty: 'No shield wall records yet.',
-  adminShieldWallDropZone: 'Screenshot der Schildwall-Liste hier ablegen oder auf Bild hochladen klicken',
+  adminShieldWallDropZone:
+    'Screenshot der Schildwall-Liste hier ablegen oder auf Bild hochladen klicken',
   adminShieldWallScanning: 'Schildwall-Liste wird gescannt…',
   adminDutySummaryTitle: 'Duty Summary',
   adminDutySummaryEmpty: 'Duty appearances will summarize here after records are saved.',
@@ -312,7 +319,8 @@ const de = {
   adminAccountLinksTitle: 'Kontoverknüpfungen',
   adminAccountLinksCount: '{count} verknüpft',
   adminAccountLinksSuggestedCount: '{count} Vorschläge',
-  adminAccountLinksHint: 'Verknüpfe ein Banner- oder Zweitkonto mit dem Spieler, der es führt. Seine Dienste zählen dann für diesen Spieler mit dem Zweitkonto-Gewicht, hier und auf der Eden-Seite.',
+  adminAccountLinksHint:
+    'Verknüpfe ein Banner- oder Zweitkonto mit dem Spieler, der es führt. Seine Dienste zählen dann für diesen Spieler mit dem Zweitkonto-Gewicht, hier und auf der Eden-Seite.',
   adminAccountLinksAccount: 'Banner- oder Zweitkonto',
   adminAccountLinksAccountPh: 'z. B. Angel Banner',
   adminAccountLinksOwner: 'Geführt von',
@@ -328,7 +336,8 @@ const de = {
   adminAccountLinksRemoveFor: 'Verknüpfung für {account} entfernen',
   adminAccountLinksNone: 'Noch keine Konten verknüpft.',
   adminAccountLinksSaved: 'Gespeichert. {count} verknüpfte Konten.',
-  adminAccountLinksLocal: 'Nur auf diesem Gerät gespeichert; Cloud-Sync fehlgeschlagen. {count} verknüpfte Konten.',
+  adminAccountLinksLocal:
+    'Nur auf diesem Gerät gespeichert; Cloud-Sync fehlgeschlagen. {count} verknüpfte Konten.',
   adminAccountLinksSavedLog: 'Kontoverknüpfungen gespeichert: {count} verknüpft (vorher {before}).',
   adminDutyAddNameRowTitle:
     'Einen weiteren Namen für dasselbe Ziel hinzufügen, z. B. wenn dort zwei Banner genutzt wurden',
@@ -502,9 +511,11 @@ const de = {
   betaNote: 'v{version} - VTS s1097 Community-Tool',
   tabManual: 'Manueller Bau',
   tabGenerator: 'Kombi-Generator',
-  tabCodex: "Heldentabellen",
-  researchMissingLayout: "Knotenliste: Layout und Voraussetzungen sind nicht verifiziert. Stufen lassen sich ohne angenommene Freischaltsperren ändern.",
-  researchCostDiscrepancy: "Quellabweichung: Stufenkosten ergeben {calculated} Kriegsabzeichen, veröffentlicht sind {published}. Schätzungen nutzen bis zur Prüfung die Stufenkosten.",
+  tabCodex: 'Heldentabellen',
+  researchMissingLayout:
+    'Knotenliste: Layout und Voraussetzungen sind nicht verifiziert. Stufen lassen sich ohne angenommene Freischaltsperren ändern.',
+  researchCostDiscrepancy:
+    'Quellabweichung: Stufenkosten ergeben {calculated} Kriegsabzeichen, veröffentlicht sind {published}. Schätzungen nutzen bis zur Prüfung die Stufenkosten.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Helden-Atlas',
   tabHeroesCombos: 'Helden- & Combo-Hub',
@@ -1516,7 +1527,8 @@ const de = {
   scoreBreakdownSecondary: 'Zweit / Banner',
   scoreBreakdownDutyFormula: '{count} × Gewicht {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Dienste Hauptkonto: {main} ({mainPoints} P.) · Zweit/Banner: {alt} ({altPoints} P.)',
+  scoreBreakdownClassSummary:
+    'Dienste Hauptkonto: {main} ({mainPoints} P.) · Zweit/Banner: {alt} ({altPoints} P.)',
   scoreBreakdownAltCount: '{count} Zweit',
   scoreBreakdownCountSplit: 'Hauptkonto: {main} · Zweit / Banner: {alt}',
   playerSeasonTitle: 'Saisonübersicht',
@@ -1527,8 +1539,7 @@ const de = {
   edenX1BreakdownDuty: 'Dienstpunkte',
   edenX1BreakdownConductPoints: 'Bonuspunkte fuer Teamleistung',
   edenX1BreakdownTotal: 'Gesamt',
-  edenX1DutyFormula:
-    '{banners} Banner + {pathers} Pfade + {shieldWalls} Schildwälle',
+  edenX1DutyFormula: '{banners} Banner + {pathers} Pfade + {shieldWalls} Schildwälle',
   edenX1ConductFormula: '{conduct} Teamleistung x 10.000',
   edenX1ConductPrivateNotice:
     'Diese Bonuspunkte fuer Teamleistung werden von R5 MalakAbo vergeben. Details sind nicht oeffentlich sichtbar; melde dich fuer Einspruch.',
@@ -3339,16 +3350,20 @@ const de = {
   adminSuggestShowAll: 'Alle {count} anzeigen',
   adminSuggestShowFewer: 'Erste {count} anzeigen',
   adminSuggestApproveAll: 'Alle {count} genehmigen',
-  adminSuggestApproveAllConfirm: '{count} Vorschlaege genehmigen? Jeder erstellt sofort seine Anpassung, und das laesst sich nicht gesammelt rueckgaengig machen.',
+  adminSuggestApproveAllConfirm:
+    '{count} Vorschlaege genehmigen? Jeder erstellt sofort seine Anpassung, und das laesst sich nicht gesammelt rueckgaengig machen.',
   adminSuggestApproveAllDone: '{count} Vorschlaege genehmigt.',
   adminSuggestApproveAllPartial: '{done} von {count} genehmigt; {failed} fehlgeschlagen.',
   adminSuggestReviewNoneForFilter: 'Keine Vorschlaege passen zu diesem Filter.',
   adminDutyWeightsTitle: 'Punktgewichte für Dienste',
-  adminDutyWeightsNote: 'Punkte, die ein Dienst wert ist, nach Tätigkeit und danach, ob ein Haupt- oder Zweitkonto ihn geleistet hat. Speichern berechnet diese Saison sofort neu, auch vergangene Einträge.',
+  adminDutyWeightsNote:
+    'Punkte, die ein Dienst wert ist, nach Tätigkeit und danach, ob ein Haupt- oder Zweitkonto ihn geleistet hat. Speichern berechnet diese Saison sofort neu, auch vergangene Einträge.',
   adminDutyWeightsIncludeDemolition: 'Abrisspunkte zur Gesamtleistung addieren',
-  adminDutyWeightsIncludeDemolitionHint: 'Ausschalten, um Abriss sichtbar zu lassen, ohne ihn zur Dashboard-Gesamtsumme zu addieren.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Ausschalten, um Abriss sichtbar zu lassen, ohne ihn zur Dashboard-Gesamtsumme zu addieren.',
   adminDutyWeightsActivity: 'Dienst',
-  adminDutyWeightsUnit: '1 Punkt = 10.000 Punktwert. Beispiel: Pfade auf einem Hauptkonto mit 3 ergeben 30.000.',
+  adminDutyWeightsUnit:
+    '1 Punkt = 10.000 Punktwert. Beispiel: Pfade auf einem Hauptkonto mit 3 ergeben 30.000.',
   adminDutyWeightsMain: 'Haupt',
   adminDutyWeightsAlt: 'Zweit / Nebenkonto',
   adminDutyWeightsBanners: 'Banner',
@@ -3356,24 +3371,30 @@ const de = {
   adminDutyWeightsShieldWalls: 'Schildwälle',
   adminDutyWeightsSave: 'Gewichte speichern',
   adminDutyWeightsReset: 'Auf Standard zurücksetzen',
-  adminDutyWeightsResetConfirm: 'Alle Gewichte auf den Standard zurücksetzen? Die Saison wird sofort neu berechnet.',
+  adminDutyWeightsResetConfirm:
+    'Alle Gewichte auf den Standard zurücksetzen? Die Saison wird sofort neu berechnet.',
   adminDutyWeightsSaved: 'Gewichte gespeichert. Punkte neu berechnet.',
   adminScoringMultipliersTitle: 'Punktmultiplikatoren',
   adminScoringContributionLabel: 'Gewicht der In-Game-Beiträge',
   adminScoringFormPointsLabel: 'Gewicht der Formularpunkte',
-  adminScoringMultipliersHint: 'In-Game-Beiträge sind die Beitragsliste plus Punkte außerhalb der Gilde. 0,5 halbiert sie, damit Support-Arbeit relativ mehr zählt; das Formularpunkte-Gewicht skaliert die Einheit 1 Punkt = 10.000. 1 lässt beide Werte genau wie heute.',
+  adminScoringMultipliersHint:
+    'In-Game-Beiträge sind die Beitragsliste plus Punkte außerhalb der Gilde. 0,5 halbiert sie, damit Support-Arbeit relativ mehr zählt; das Formularpunkte-Gewicht skaliert die Einheit 1 Punkt = 10.000. 1 lässt beide Werte genau wie heute.',
   adminRewardSettingsTitle: 'Belohnungsverteilung',
-  adminRewardSettingsNote: 'Wie viele Spieler jede Kategorie in dieser Saison belohnt. Eine Änderung nummeriert die Belohnungsplätze neu; die veröffentlichte Seite zeigt die neue Verteilung nach der nächsten Veröffentlichung.',
+  adminRewardSettingsNote:
+    'Wie viele Spieler jede Kategorie in dieser Saison belohnt. Eine Änderung nummeriert die Belohnungsplätze neu; die veröffentlichte Seite zeigt die neue Verteilung nach der nächsten Veröffentlichung.',
   adminRewardSettingsCategory: 'Kategorie',
   adminRewardSettingsSlots: 'Plätze',
   adminRewardSettingsGuildMaster: 'Guild-Master-Belohnung geht an',
   adminRewardSettingsGuildMasterR5: 'Den R5',
   adminRewardSettingsGuildMasterTop1: 'Den besten Support-Leister',
   adminRewardSettingsR5Label: 'R5-Spieler',
-  adminRewardSettingsHint: 'Ist der genannte R5 nicht in der Support-Liste, bleibt die Guild-Master-Belohnung beim besten Support-Leister, statt unvergeben zu bleiben.',
+  adminRewardSettingsHint:
+    'Ist der genannte R5 nicht in der Support-Liste, bleibt die Guild-Master-Belohnung beim besten Support-Leister, statt unvergeben zu bleiben.',
   adminRewardSettingsSave: 'Verteilung speichern',
-  adminRewardSettingsSaved: 'Verteilung gespeichert. Saison veröffentlichen, um die öffentliche Seite zu aktualisieren.',
-  adminRewardSettingsResetConfirm: 'Belohnungsverteilung auf die Standardwerte zurücksetzen? Das nummeriert die Belohnungsplätze neu.',
+  adminRewardSettingsSaved:
+    'Verteilung gespeichert. Saison veröffentlichen, um die öffentliche Seite zu aktualisieren.',
+  adminRewardSettingsResetConfirm:
+    'Belohnungsverteilung auf die Standardwerte zurücksetzen? Das nummeriert die Belohnungsplätze neu.',
   adminSuggestApprove: 'Genehmigen',
   adminSuggestReject: 'Ablehnen',
   adminSuggestApproveConfirm:

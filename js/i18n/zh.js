@@ -137,6 +137,11 @@ const zh = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: '显示成员投票结果',
+  adminEdenVotesMemberResultsHint: '就绪后在公开的 Eden 页面显示成员在“团队球员”投票中的排名。',
+  adminEdenVotesManagementResults: '显示 R4/R5 投票结果',
+  adminEdenVotesManagementResultsHint:
+    '公开管理投票的获胜者。它有独立开关，因为该投票不绑定赛季：否则尚未进行本赛季 R4/R5 投票的赛季会显示上一赛季的获胜者。',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -277,7 +282,8 @@ const zh = {
   adminAccountLinksTitle: '账号关联',
   adminAccountLinksCount: '{count} 个已关联',
   adminAccountLinksSuggestedCount: '{count} 个建议',
-  adminAccountLinksHint: '把旗号或小号关联到运营它的玩家。之后它的任务会按小号权重计入该玩家，这里和伊甸页面都一样。',
+  adminAccountLinksHint:
+    '把旗号或小号关联到运营它的玩家。之后它的任务会按小号权重计入该玩家，这里和伊甸页面都一样。',
   adminAccountLinksAccount: '旗号或小号',
   adminAccountLinksAccountPh: '例如 Angel Banner',
   adminAccountLinksOwner: '运营者',
@@ -458,9 +464,10 @@ const zh = {
   betaNote: 'v{version} - VTS s1097 社区工具',
   tabManual: '手动模式',
   tabGenerator: '组合生成器',
-  tabCodex: "英雄表格",
-  researchMissingLayout: "节点列表：布局和前置条件尚未核实。可编辑等级，不施加推测的解锁限制。",
-  researchCostDiscrepancy: "来源差异：各等级费用合计 {calculated} 枚战争勋章，公布的总计为 {published}。核实前按各等级费用估算。",
+  tabCodex: '英雄表格',
+  researchMissingLayout: '节点列表：布局和前置条件尚未核实。可编辑等级，不施加推测的解锁限制。',
+  researchCostDiscrepancy:
+    '来源差异：各等级费用合计 {calculated} 枚战争勋章，公布的总计为 {published}。核实前按各等级费用估算。',
   tabYouTube: 'YouTube',
   tabHeroes: '英雄图鉴',
   tabHeroesCombos: '英雄与组合中心',
@@ -1446,7 +1453,8 @@ const zh = {
   scoreBreakdownSecondary: '小号 / 旗号',
   scoreBreakdownDutyFormula: '{count} × 权重 {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: '主号任务：{main}（{mainPoints} 分）· 小号/旗号：{alt}（{altPoints} 分）',
+  scoreBreakdownClassSummary:
+    '主号任务：{main}（{mainPoints} 分）· 小号/旗号：{alt}（{altPoints} 分）',
   scoreBreakdownAltCount: '小号 {count}',
   scoreBreakdownCountSplit: '主号：{main} · 小号 / 旗帜号：{alt}',
   playerSeasonTitle: '赛季概览',
@@ -2146,7 +2154,8 @@ const zh = {
   adminSuggestApproveAllPartial: '已批准 {count} 条中的 {done} 条；{failed} 条失败。',
   adminSuggestReviewNoneForFilter: '没有符合此筛选的建议。',
   adminDutyWeightsTitle: '任务计分权重',
-  adminDutyWeightsNote: '一次任务的分值，按活动类型以及由主号还是小号完成来区分。保存后立即重算本赛季，包括此前的记录。',
+  adminDutyWeightsNote:
+    '一次任务的分值，按活动类型以及由主号还是小号完成来区分。保存后立即重算本赛季，包括此前的记录。',
   adminDutyWeightsIncludeDemolition: '将拆除积分计入总贡献',
   adminDutyWeightsIncludeDemolitionHint: '关闭后仍显示拆除数据，但不计入仪表板总分。',
   adminDutyWeightsActivity: '任务',
@@ -2163,16 +2172,19 @@ const zh = {
   adminScoringMultipliersTitle: '分数乘数',
   adminScoringContributionLabel: '游戏内贡献权重',
   adminScoringFormPointsLabel: '表单积分权重',
-  adminScoringMultipliersHint: '游戏内贡献等于排行榜贡献加上公会外积分。0.5 将其减半，让支援工作相对更有分量；表单积分权重可调整“1 分 = 10,000”的单位。1 表示两项维持现状。',
+  adminScoringMultipliersHint:
+    '游戏内贡献等于排行榜贡献加上公会外积分。0.5 将其减半，让支援工作相对更有分量；表单积分权重可调整“1 分 = 10,000”的单位。1 表示两项维持现状。',
   adminRewardSettingsTitle: '奖励分配',
-  adminRewardSettingsNote: '本赛季每个类别奖励多少人。修改后会重新编号奖励名额；已发布的页面将在下次发布后显示新分配。',
+  adminRewardSettingsNote:
+    '本赛季每个类别奖励多少人。修改后会重新编号奖励名额；已发布的页面将在下次发布后显示新分配。',
   adminRewardSettingsCategory: '类别',
   adminRewardSettingsSlots: '名额',
   adminRewardSettingsGuildMaster: '公会会长奖励归',
   adminRewardSettingsGuildMasterR5: 'R5',
   adminRewardSettingsGuildMasterTop1: '支援工作第一名',
   adminRewardSettingsR5Label: 'R5 玩家',
-  adminRewardSettingsHint: '如果指定的 R5 不在支援名单中，公会会长奖励仍归支援工作第一名，而不是无人持有。',
+  adminRewardSettingsHint:
+    '如果指定的 R5 不在支援名单中，公会会长奖励仍归支援工作第一名，而不是无人持有。',
   adminRewardSettingsSave: '保存分配',
   adminRewardSettingsSaved: '分配已保存。发布赛季以更新公开页面。',
   adminRewardSettingsResetConfirm: '将奖励分配重置为默认值？这会重新编号奖励名额。',

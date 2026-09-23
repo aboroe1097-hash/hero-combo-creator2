@@ -199,9 +199,11 @@ test('Eden keeps the last verified contribution authority when live settings are
     /requireAuthoritativeEdenVoteSettings\(\s*voteSettingsSnap,\s*dashboardData\?\.r5Season\s*\)/
   );
   assert.match(eden, /season: String\(settings\.season \|\| ''\)\.trim\(\)/);
+  // The cached members'-ballot results are only trusted while that ballot is
+  // being published; the switch that governs it split from the management one.
   assert.match(
     eden,
-    /verifiedVoteSettings\.showPublicResults !== true[\s\S]*?cachedData\?\.publicEdenX1VoteResults/
+    /verifiedVoteSettings\.showMemberResults !== true[\s\S]*?cachedData\?\.publicEdenX1VoteResults/
   );
   assert.doesNotMatch(
     eden,

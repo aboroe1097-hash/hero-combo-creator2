@@ -264,6 +264,11 @@ export const EDEN_PROJECTION_VOTE_SETTINGS_FIELDS = Object.freeze([
   'votingOpen',
   'allowEditing',
   'showPublicResults',
+  // The members' ballot and the R4/R5 sheet publish on their own switches. The
+  // aggregate above is still carried so a reader that only knows the old field
+  // keeps working.
+  'showMemberResults',
+  'showManagementResults',
   'showVoterNames',
   'contributionRankingMode',
   'closesAt',

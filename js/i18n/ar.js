@@ -139,6 +139,12 @@ const ar = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'إظهار نتائج تصويت الأعضاء',
+  adminEdenVotesMemberResultsHint:
+    'اجعل ترتيب الأعضاء في تصويت لاعبي الفريق مرئيًا على صفحة إيدن العامة عند الجهوزية.',
+  adminEdenVotesManagementResults: 'إظهار نتائج تصويت R4/R5',
+  adminEdenVotesManagementResultsHint:
+    'انشر نتائج تصويت الإدارة علنًا. له مفتاح خاص به لأن هذا التصويت غير مرتبط بموسم بعينه؛ وإلا فسيظهر الموسم الذي لم يُجرِ تصويته نتائج الموسم السابق.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -280,7 +286,8 @@ const ar = {
   adminAccountLinksTitle: 'ربط الحسابات',
   adminAccountLinksCount: '{count} مرتبط',
   adminAccountLinksSuggestedCount: '{count} مقترح',
-  adminAccountLinksHint: 'اربط حساب راية أو حسابًا ثانويًا باللاعب الذي يديره. تُحسب مهامه بعدها لذلك اللاعب بوزن الحساب الثانوي هنا وفي صفحة إيدن.',
+  adminAccountLinksHint:
+    'اربط حساب راية أو حسابًا ثانويًا باللاعب الذي يديره. تُحسب مهامه بعدها لذلك اللاعب بوزن الحساب الثانوي هنا وفي صفحة إيدن.',
   adminAccountLinksAccount: 'حساب راية أو ثانوي',
   adminAccountLinksAccountPh: 'مثال: Angel Banner',
   adminAccountLinksOwner: 'يديره',
@@ -466,9 +473,11 @@ const ar = {
   betaNote: 'v{version} - أداة مجتمع VTS s1097',
   tabManual: 'بناء يدوي',
   tabGenerator: 'مولد التشكيلات',
-  tabCodex: "جداول الأبطال",
-  researchMissingLayout: "قائمة العقد: التخطيط والمتطلبات السابقة غير مؤكدة. يمكن تعديل المستويات دون فرض شروط فتح مفترضة.",
-  researchCostDiscrepancy: "اختلاف في المصدر: مجموع تكاليف المستويات {calculated} شارة حرب، بينما الإجمالي المنشور {published}. تستخدم التقديرات تكاليف المستويات لحين التحقق.",
+  tabCodex: 'جداول الأبطال',
+  researchMissingLayout:
+    'قائمة العقد: التخطيط والمتطلبات السابقة غير مؤكدة. يمكن تعديل المستويات دون فرض شروط فتح مفترضة.',
+  researchCostDiscrepancy:
+    'اختلاف في المصدر: مجموع تكاليف المستويات {calculated} شارة حرب، بينما الإجمالي المنشور {published}. تستخدم التقديرات تكاليف المستويات لحين التحقق.',
   tabYouTube: 'يوتيوب',
   tabHeroes: 'أطلس الأبطال',
   tabHeroesCombos: 'مركز الأبطال والتركيبات',
@@ -1466,7 +1475,8 @@ const ar = {
   scoreBreakdownSecondary: 'ثانوي / راية',
   scoreBreakdownDutyFormula: '{count} × الوزن {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'مهام الحساب الرئيسي: {main} ({mainPoints} نقطة) · مهام الثانوي/الراية: {alt} ({altPoints} نقطة)',
+  scoreBreakdownClassSummary:
+    'مهام الحساب الرئيسي: {main} ({mainPoints} نقطة) · مهام الثانوي/الراية: {alt} ({altPoints} نقطة)',
   scoreBreakdownAltCount: '{count} ثانوي',
   scoreBreakdownCountSplit: 'الحساب الرئيسي: {main} · الثانوي / الراية: {alt}',
   playerSeasonTitle: 'ملخص الموسم',
@@ -3182,16 +3192,20 @@ Object.assign(ar, {
   adminSuggestShowAll: 'عرض الـ {count} جميعا',
   adminSuggestShowFewer: 'عرض أول {count}',
   adminSuggestApproveAll: 'اعتماد الـ {count} جميعا',
-  adminSuggestApproveAllConfirm: 'اعتماد {count} اقتراحا؟ كل واحد ينشئ تعديله الآن، ولا يمكن التراجع عن ذلك دفعة واحدة.',
+  adminSuggestApproveAllConfirm:
+    'اعتماد {count} اقتراحا؟ كل واحد ينشئ تعديله الآن، ولا يمكن التراجع عن ذلك دفعة واحدة.',
   adminSuggestApproveAllDone: 'تم اعتماد {count} اقتراحا.',
   adminSuggestApproveAllPartial: 'تم اعتماد {done} من {count}؛ فشل {failed}.',
   adminSuggestReviewNoneForFilter: 'لا توجد اقتراحات تطابق هذا المرشح.',
   adminDutyWeightsTitle: 'أوزان نقاط المهام',
-  adminDutyWeightsNote: 'قيمة المهمة الواحدة بحسب النشاط وبحسب ما إذا نفذها الحساب الرئيسي أو حساب ثانوي. الحفظ يعيد حساب الموسم فورا بما في ذلك السجلات السابقة.',
+  adminDutyWeightsNote:
+    'قيمة المهمة الواحدة بحسب النشاط وبحسب ما إذا نفذها الحساب الرئيسي أو حساب ثانوي. الحفظ يعيد حساب الموسم فورا بما في ذلك السجلات السابقة.',
   adminDutyWeightsIncludeDemolition: 'إضافة نقاط الهدم إلى إجمالي المساهمة',
-  adminDutyWeightsIncludeDemolitionHint: 'أوقفه لإبقاء الهدم ظاهرا دون إضافته إلى إجمالي لوحة المعلومات.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'أوقفه لإبقاء الهدم ظاهرا دون إضافته إلى إجمالي لوحة المعلومات.',
   adminDutyWeightsActivity: 'المهمة',
-  adminDutyWeightsUnit: 'نقطة واحدة = 10,000 من النتيجة. مثال: المسار على الحساب الرئيسي بقيمة 3 يضيف 30,000.',
+  adminDutyWeightsUnit:
+    'نقطة واحدة = 10,000 من النتيجة. مثال: المسار على الحساب الرئيسي بقيمة 3 يضيف 30,000.',
   adminDutyWeightsMain: 'رئيسي',
   adminDutyWeightsAlt: 'ثانوي',
   adminDutyWeightsBanners: 'الرايات',
@@ -3204,19 +3218,23 @@ Object.assign(ar, {
   adminScoringMultipliersTitle: 'مضاعفات النقاط',
   adminScoringContributionLabel: 'وزن المساهمة داخل اللعبة',
   adminScoringFormPointsLabel: 'وزن نقاط النموذج',
-  adminScoringMultipliersHint: 'المساهمة داخل اللعبة هي مساهمة القائمة بالإضافة إلى نقاط خارج التحالف. القيمة 0.5 تخفضها للنصف ليزيد وزن عمل الدعم نسبيًا؛ ووزن نقاط النموذج يضبط وحدة 1 نقطة = 10,000. القيمة 1 تُبقي الحدّين كما هما الآن.',
+  adminScoringMultipliersHint:
+    'المساهمة داخل اللعبة هي مساهمة القائمة بالإضافة إلى نقاط خارج التحالف. القيمة 0.5 تخفضها للنصف ليزيد وزن عمل الدعم نسبيًا؛ ووزن نقاط النموذج يضبط وحدة 1 نقطة = 10,000. القيمة 1 تُبقي الحدّين كما هما الآن.',
   adminRewardSettingsTitle: 'توزيع المكافآت',
-  adminRewardSettingsNote: 'عدد اللاعبين الذين تكافئهم كل فئة هذا الموسم. تغيير ذلك يعيد ترقيم فتحات المكافآت؛ وتظهر الصفحة المنشورة التوزيع الجديد بعد النشر التالي.',
+  adminRewardSettingsNote:
+    'عدد اللاعبين الذين تكافئهم كل فئة هذا الموسم. تغيير ذلك يعيد ترقيم فتحات المكافآت؛ وتظهر الصفحة المنشورة التوزيع الجديد بعد النشر التالي.',
   adminRewardSettingsCategory: 'الفئة',
   adminRewardSettingsSlots: 'الفتحات',
   adminRewardSettingsGuildMaster: 'مكافأة سيد التحالف تذهب إلى',
   adminRewardSettingsGuildMasterR5: 'قائد التحالف (R5)',
   adminRewardSettingsGuildMasterTop1: 'الأعلى في أعمال الدعم',
   adminRewardSettingsR5Label: 'لاعب R5',
-  adminRewardSettingsHint: 'إذا لم يكن قائد التحالف المحدد ضمن قائمة الدعم، تبقى مكافأة سيد التحالف على الأعلى في أعمال الدعم بدلًا من أن تبقى بلا صاحب.',
+  adminRewardSettingsHint:
+    'إذا لم يكن قائد التحالف المحدد ضمن قائمة الدعم، تبقى مكافأة سيد التحالف على الأعلى في أعمال الدعم بدلًا من أن تبقى بلا صاحب.',
   adminRewardSettingsSave: 'حفظ التوزيع',
   adminRewardSettingsSaved: 'تم حفظ التوزيع. انشر الموسم لتحديث الصفحة العامة.',
-  adminRewardSettingsResetConfirm: 'إعادة توزيع المكافآت إلى الإعدادات الافتراضية؟ سيؤدي ذلك إلى إعادة ترقيم فتحات المكافآت.',
+  adminRewardSettingsResetConfirm:
+    'إعادة توزيع المكافآت إلى الإعدادات الافتراضية؟ سيؤدي ذلك إلى إعادة ترقيم فتحات المكافآت.',
   adminSuggestApprove: 'موافقة',
   adminSuggestReject: 'رفض',
   adminSuggestApproveConfirm: 'هل تريد الموافقة على {points} لـ {player}؟ سيُنشئ هذا التعديل الآن.',

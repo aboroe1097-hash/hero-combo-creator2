@@ -101,7 +101,8 @@ const it = {
   edenX1ViewOnly: 'Sola lettura',
   edenX1NoFirebase: 'Firebase non è configurato. Impossibile caricare i dati.',
   edenX1NoData: 'Nessun dato contributo trovato.',
-  edenSeasonUnpublished: 'Questa stagione non è ancora stata pubblicata. I risultati appariranno quando un amministratore li pubblicherà.',
+  edenSeasonUnpublished:
+    'Questa stagione non è ancora stata pubblicata. I risultati appariranno quando un amministratore li pubblicherà.',
   edenX1NoRows: 'Nessuna riga di contributo ponderato da mostrare.',
   edenX1LoadFailed: 'Caricamento dati non riuscito: {error}',
   edenX1ThShieldWalls: 'Shield Wall',
@@ -121,7 +122,8 @@ const it = {
   scoreBreakdownSecondary: 'Secondario / stendardo',
   scoreBreakdownDutyFormula: '{count} × peso {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Servizi account principale: {main} ({mainPoints} pt) · Secondario/stendardo: {alt} ({altPoints} pt)',
+  scoreBreakdownClassSummary:
+    'Servizi account principale: {main} ({mainPoints} pt) · Secondario/stendardo: {alt} ({altPoints} pt)',
   scoreBreakdownAltCount: '{count} alt',
   scoreBreakdownCountSplit: 'Account principale: {main} · Alt / stendardo: {alt}',
   playerSeasonTitle: 'Riepilogo stagione',
@@ -131,8 +133,7 @@ const it = {
   playerSeasonDutyList: 'Compiti accreditati ({count})',
   edenX1BreakdownDuty: 'Punti incarico',
   edenX1BreakdownConductPoints: 'Punti bonus lavoro di squadra',
-  edenX1DutyFormula:
-    '{banners} banner + {pathers} tracciatori + {shieldWalls} shield wall',
+  edenX1DutyFormula: '{banners} banner + {pathers} tracciatori + {shieldWalls} shield wall',
   edenX1ConductFormula: '{conduct} bonus lavoro di squadra x 10.000',
   edenX1ConductPrivateNotice:
     'Questi punti bonus per il lavoro di squadra sono assegnati da R5 MalakAbo. I dettagli non sono pubblici; contattaci per fare ricorso.',
@@ -502,6 +503,12 @@ const it = {
   adminEdenVotesPublicResults: 'Mostra pubblicamente i risultati',
   adminEdenVotesPublicResultsHint:
     'Quando saranno pronti, rendi visibili le classifiche del voto nella pagina pubblica Eden X1.',
+  adminEdenVotesMemberResults: 'Mostra i risultati del voto dei membri',
+  adminEdenVotesMemberResultsHint:
+    'Rendi visibili le posizioni dei membri nel voto Giocatori di squadra sulla pagina Eden pubblica quando sono pronte.',
+  adminEdenVotesManagementResults: 'Mostra i risultati del voto R4/R5',
+  adminEdenVotesManagementResultsHint:
+    'Pubblica i vincitori del voto della direzione. Ha un interruttore proprio perché quel voto non è legato a una stagione: una stagione senza il proprio voto R4/R5 mostrerebbe i vincitori della precedente.',
   adminEdenVotesShowNames: 'Mostra i nomi dei votanti',
   adminEdenVotesShowNamesHint: 'Lascia disattivato se i risultati pubblici devono restare anonimi.',
   adminEdenVotesSettingsOpen: 'Le votazioni sono aperte.',
@@ -604,7 +611,8 @@ const it = {
     'Apri un gioco in una nuova scheda. I giochi di avvio sono prototipi locali che usano icone dei materiali DM, illustrazioni delle ali degli stivali e icone delle skin degli eroi. Monitoraggio combo e tastiera unificata in tutte le modalità.',
   adminShieldWallAddNames: 'Aggiungi nomi',
   adminShieldWallEmpty: 'Ancora nessun record Shield Wall.',
-  adminShieldWallDropZone: 'Trascina qui lo screenshot della lista Shield Wall o fai clic su Carica immagine',
+  adminShieldWallDropZone:
+    'Trascina qui lo screenshot della lista Shield Wall o fai clic su Carica immagine',
   adminShieldWallScanning: 'Scansione della lista Shield Wall...',
   adminDutySummaryTitle: 'Riepilogo incarichi',
   adminDutySummaryEmpty:
@@ -645,7 +653,8 @@ const it = {
   adminAccountLinksTitle: 'Collegamenti account',
   adminAccountLinksCount: '{count} collegati',
   adminAccountLinksSuggestedCount: '{count} suggeriti',
-  adminAccountLinksHint: 'Collega un account stendardo o secondario al giocatore che lo gestisce. I suoi servizi contano allora per quel giocatore con il peso secondario, qui e sulla pagina Eden.',
+  adminAccountLinksHint:
+    'Collega un account stendardo o secondario al giocatore che lo gestisce. I suoi servizi contano allora per quel giocatore con il peso secondario, qui e sulla pagina Eden.',
   adminAccountLinksAccount: 'Account stendardo o secondario',
   adminAccountLinksAccountPh: 'es. Angel Banner',
   adminAccountLinksOwner: 'Gestito da',
@@ -661,7 +670,8 @@ const it = {
   adminAccountLinksRemoveFor: 'Rimuovi collegamento di {account}',
   adminAccountLinksNone: 'Nessun account collegato.',
   adminAccountLinksSaved: 'Salvato. {count} account collegati.',
-  adminAccountLinksLocal: 'Salvato solo su questo dispositivo; sincronizzazione non riuscita. {count} account collegati.',
+  adminAccountLinksLocal:
+    'Salvato solo su questo dispositivo; sincronizzazione non riuscita. {count} account collegati.',
   adminAccountLinksSavedLog: 'Collegamenti salvati: {count} collegati (prima {before}).',
   adminDutyAddNameRowTitle:
     'Aggiungi un altro nome per lo stesso obiettivo, ad esempio se vi sono stati usati due stendardi',
@@ -837,9 +847,11 @@ const it = {
   betaNote: 'v{version} - Strumento della community VTS s1097',
   tabManual: 'Creazione manuale',
   tabGenerator: 'Generatore di combo',
-  tabCodex: "Tabelle eroi",
-  researchMissingLayout: "Elenco nodi: disposizione e prerequisiti non verificati. Puoi modificare i livelli senza vincoli di sblocco ipotizzati.",
-  researchCostDiscrepancy: "Discrepanza nella fonte: i livelli costano {calculated} distintivi di guerra; il totale pubblicato è {published}. Le stime usano i costi per livello in attesa di verifica.",
+  tabCodex: 'Tabelle eroi',
+  researchMissingLayout:
+    'Elenco nodi: disposizione e prerequisiti non verificati. Puoi modificare i livelli senza vincoli di sblocco ipotizzati.',
+  researchCostDiscrepancy:
+    'Discrepanza nella fonte: i livelli costano {calculated} distintivi di guerra; il totale pubblicato è {published}. Le stime usano i costi per livello in attesa di verifica.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlante eroi',
   tabHeroesCombos: 'Hub eroi e combo',
@@ -1019,14 +1031,14 @@ const it = {
   researchSelectNodePrompt: 'Seleziona un nodo per esaminare costi e progressi.',
   researchSetMax: 'Imposta MAX',
   researchSetHalf: 'Metà',
-  researchNodesComplete: "Nodi completati",
-  researchNodesStarted: "Nodi iniziati",
-  researchNextAvailable: "Prossimo disponibile",
-  researchRowLocked: "Completa prima la riga sopra: ogni nodo deve essere almeno al livello 1.",
-  researchRowLockedClear: "Prima azzera la riga successiva.",
+  researchNodesComplete: 'Nodi completati',
+  researchNodesStarted: 'Nodi iniziati',
+  researchNextAvailable: 'Prossimo disponibile',
+  researchRowLocked: 'Completa prima la riga sopra: ogni nodo deve essere almeno al livello 1.',
+  researchRowLockedClear: 'Prima azzera la riga successiva.',
   researchTreeTotal: 'Totale albero',
   researchTreeSpent: 'Speso',
-  researchTreeTotalHint: "Speso e rimanente per questo albero",
+  researchTreeTotalHint: 'Speso e rimanente per questo albero',
   researchTroopBranchesAria: 'Rami delle truppe',
   researchWarBadges: 'Distintivi di guerra',
   researchWarBadgesShort: 'WB',
@@ -2244,8 +2256,7 @@ const it = {
   edenPlaybookRoleSpeedLi4: '20 Blu completi riducono il costo del richiamo del 30%',
   edenPlaybookRoleHonorHead: '🏛️ 40 Verde',
   edenPlaybookRoleHonorTitle: 'Onore dalle strutture',
-  edenPlaybookRoleHonorDesc:
-    'Ottieni grandi quantità di Onore mentre potenzi le Linee del fronte.',
+  edenPlaybookRoleHonorDesc: 'Ottieni grandi quantità di Onore mentre potenzi le Linee del fronte.',
   edenPlaybookRoleHonorLi1: 'Ingegneria civile: +100% Onore per 2 ore',
   edenPlaybookRoleHonorLi2: 'Recupero di Ingegneria civile: 8 ore',
   edenPlaybookRoleHonorLi3: 'Ricompensa Onore: grande bonus proporzionato al livello',
@@ -2276,99 +2287,118 @@ const it = {
   edenPlaybookJump16Income: '1.600 di reddito',
   edenPlaybookJumpRule:
     'La regola di DrThunder: se puoi ottenere uno di questi salti—anche con forti perdite iniziali—il reddito extra può accelerare tutto ciò che segue.',
-  edenPlaybookTableAria:
-    'Tabella di DrThunder su reddito delle tessere e bersagli del veleno',
+  edenPlaybookTableAria: 'Tabella di DrThunder su reddito delle tessere e bersagli del veleno',
   edenPlaybookTableCaption: 'Reddito delle tessere e bersagli del danno da veleno',
   edenPlaybookTableTile: 'Livello tessera',
   edenPlaybookTableIncome: 'Reddito',
   edenPlaybookTablePoison97: 'Bersaglio veleno 97%',
   edenPlaybookTablePoison50: 'Bersaglio veleno 50%',
   edenPlaybookPoisonKicker: '☠️ DANNO DA VELENO E STRATEGIA DEGLI EROI',
-  edenPlaybookPoisonTitle: 'Perdite iniziali elevate possono comunque sbloccare una crescita più rapida',
+  edenPlaybookPoisonTitle:
+    'Perdite iniziali elevate possono comunque sbloccare una crescita più rapida',
   edenPlaybookPoisonIntro:
     'Spesso puoi conquistare tessere con il 97% di danno da veleno. Ucciderà molte truppe, ma questo scambio può valere la pena nelle fasi iniziali. Sotto il 50%, conquistare tessere diventa molto più facile.',
   edenPlaybookPoisonHeroesTitle: 'I migliori eroi per le tessere velenose',
   edenPlaybookPoisonHero1: 'Immortal',
   edenPlaybookPoisonHero1Hint: 'Un mostro nelle prime stagioni di Eden',
   edenPlaybookPoisonHero2: 'Rozen Blade',
-  edenPlaybookPoisonHero2Hint: 'Consigliato; non illustrato nell\'esempio',
+  edenPlaybookPoisonHero2Hint: "Consigliato; non illustrato nell'esempio",
   edenPlaybookPoisonHero3: 'Beast Queen',
-  edenPlaybookPoisonHero3Hint: 'Una delle migliori scelte per le tessere velenose in molte stagioni',
+  edenPlaybookPoisonHero3Hint:
+    'Una delle migliori scelte per le tessere velenose in molte stagioni',
   edenPlaybookPoisonWarning:
     '⚠️ Non riempire le tue legioni. Truppe in numero minore riducono i costi di guarigione e mantengono i tuoi eroi attivi per più colpi.',
   edenPlaybookPoisonImgAlt:
     'Legione su tessera velenosa in gioco con Immortal e due eroi di supporto con squadre di truppe più piccole',
-  edenPlaybookPoisonFigCaption: 'Esempio di formazione in gioco. Sostituisci l\'eroe centrale con Rozen Blade quando disponibile.',
+  edenPlaybookPoisonFigCaption:
+    "Esempio di formazione in gioco. Sostituisci l'eroe centrale con Rozen Blade quando disponibile.",
   edenPlaybookTroopSetupTitle: '💡 Esempi di impostazione delle truppe',
   edenPlaybookRatioStrong: 'Account forte',
   edenPlaybookRatioWeaker: 'Account più debole · potrebbero servire 2–3 colpi',
   edenPlaybookRatioRisky: 'Impostazione ad alto rischio',
-  edenPlaybookRatioTip: 'Per ottenere i migliori risultati, mantieni la squadra del primo eroe circa il doppio delle altre.',
+  edenPlaybookRatioTip:
+    'Per ottenere i migliori risultati, mantieni la squadra del primo eroe circa il doppio delle altre.',
   edenPlaybookFooter: 'Strategia e screenshot canonici:',
   edenPlaybookFooterSource: 'Thunder Loyalty Playbook, Nov. 2025.',
   edenPlaybookFooterNote:
-    'Adatta i tempi alla tua stagione, alle indicazioni dell\'alleanza, ai punti specializzazione, alle truppe e alla disponibilità dei reset.',
+    "Adatta i tempi alla tua stagione, alle indicazioni dell'alleanza, ai punti specializzazione, alle truppe e alla disponibilità dei reset.",
   edenPlaybookFocusKicker: 'IL TUO FOCUS ATTUALE',
   edenPlaybookWhyTitle: 'Perché questa fase è importante',
   edenPlaybookWatchTitle: 'Attenzione',
-  edenPlaybookVisualCaption: '{week} visuale {index}: riferimento originale del percorso di gioco di DrThunder.',
+  edenPlaybookVisualCaption:
+    '{week} visuale {index}: riferimento originale del percorso di gioco di DrThunder.',
   edenPlaybookVisualAlt: 'Riferimento specializzazione Eden di DrThunder {index}',
   edenPlaybookDay0GreenAlt: 'Posizionamento del punto specializzazione Verde Sinistra al Giorno 0',
-  edenPlaybookDay0GreenCaption: 'Giorno 0 Verde Sinistra: percorso per la costruzione di Honor e per l\'Honor giornaliero.',
-  edenPlaybookDay0BlueAlt: 'Posizionamento del punto specializzazione Blu Giù al Giorno 0 per tutte le fortezze',
-  edenPlaybookDay0BlueCaption: 'Giorno 0 Blu Giù: sblocca e posiziona tutte e quattro le fortezze prima del reset.',
+  edenPlaybookDay0GreenCaption:
+    "Giorno 0 Verde Sinistra: percorso per la costruzione di Honor e per l'Honor giornaliero.",
+  edenPlaybookDay0BlueAlt:
+    'Posizionamento del punto specializzazione Blu Giù al Giorno 0 per tutte le fortezze',
+  edenPlaybookDay0BlueCaption:
+    'Giorno 0 Blu Giù: sblocca e posiziona tutte e quattro le fortezze prima del reset.',
   edenPlaybookDay0Label: 'Giorno 0',
   edenPlaybookDay0Title: 'Preparati prima del reset',
   edenPlaybookDay0Why:
     'Verde Sinistra converte i punti extra in Honor anticipato, mentre Blu Giù sblocca la linea delle fortezze prima della corsa iniziale.',
-  edenPlaybookDay0Watch: 'Completa entrambi i percorsi e posiziona ogni fortezza prima di cambiare impostazione.',
-  edenPlaybookDay0Task1: 'Usa il reset Base di 7 giorni per aprire presto l\'accesso alle fortezze.',
-  edenPlaybookDay0Task2: 'Segui Verde Sinistra per gli edifici Honor e l\'abilità Honor giornaliera.',
-  edenPlaybookDay0Task3: 'Segui Blu Giù abbastanza a fondo da sbloccare e posizionare tutte e quattro le fortezze.',
-  edenPlaybookDay0Task4: 'Attiva l\'abilità Honor giornaliera.',
+  edenPlaybookDay0Watch:
+    'Completa entrambi i percorsi e posiziona ogni fortezza prima di cambiare impostazione.',
+  edenPlaybookDay0Task1: "Usa il reset Base di 7 giorni per aprire presto l'accesso alle fortezze.",
+  edenPlaybookDay0Task2:
+    "Segui Verde Sinistra per gli edifici Honor e l'abilità Honor giornaliera.",
+  edenPlaybookDay0Task3:
+    'Segui Blu Giù abbastanza a fondo da sbloccare e posizionare tutte e quattro le fortezze.',
+  edenPlaybookDay0Task4: "Attiva l'abilità Honor giornaliera.",
   edenPlaybookDay1Label: 'Giorno 1',
   edenPlaybookDay1Title: 'Sblocca le fortezze, setup Honor, poi la build di lealtà',
   edenPlaybookDay1Why:
-    'Le fortezze vanno piazzate prima dei reset; il Verde massimizza l\'Honor delle Frontline Workshop, poi il Blu accelera lealtà, lavorazione e posa di tessere.',
+    "Le fortezze vanno piazzate prima dei reset; il Verde massimizza l'Honor delle Frontline Workshop, poi il Blu accelera lealtà, lavorazione e posa di tessere.",
   edenPlaybookDay1Watch:
     'Costruisci entrambe le fortezze prima di ogni reset — e tieni attive le code di lavorazione mentre piazzi tessere.',
   edenPlaybookDay1Task1:
-    'Sblocca e costruisci le Fortezze d\'Assalto e di Guardia prima di resettare la specializzazione.',
+    "Sblocca e costruisci le Fortezze d'Assalto e di Guardia prima di resettare la specializzazione.",
   edenPlaybookDay1Task2:
     'Resetta la specializzazione, metti tutti i punti su Verde (sinistra) e potenzia ogni Frontline Workshop al livello massimo.',
   edenPlaybookDay1Task3:
-    'Resetta di nuovo nell\'albero Blu (sinistra e destra) per sbloccare workshop extra e nodi di lealtà.',
+    "Resetta di nuovo nell'albero Blu (sinistra e destra) per sbloccare workshop extra e nodi di lealtà.",
   edenPlaybookDay1Task4:
     'Piazza tessere Farm, Marble e Ale per i potenziamenti del Coalition Base Camp: campi più alti significano più lealtà e tessere di livello superiore.',
   edenPlaybookDay1Task5:
-    'Resta nella build di lealtà per le prime settimane, poi passa al ruolo dell\'alleanza (Demolizione, Posa Rapida, Banner).',
+    "Resta nella build di lealtà per le prime settimane, poi passa al ruolo dell'alleanza (Demolizione, Posa Rapida, Banner).",
   edenPlaybookDay2Label: 'Giorno 2',
   edenPlaybookDay2Title: 'Spingi il salto critico del Lv. 12',
-  edenPlaybookDay2Why: 'Il reddito passa da 1.000 al Lv. 11 a 1.200 al Lv. 12—uno dei salti più grandi della tabella.',
+  edenPlaybookDay2Why:
+    'Il reddito passa da 1.000 al Lv. 11 a 1.200 al Lv. 12—uno dei salti più grandi della tabella.',
   edenPlaybookDay2Watch:
-    'Le forti perdite iniziali da veleno possono funzionare, ma conserva abbastanza truppe per gli obiettivi dell\'alleanza.',
-  edenPlaybookDay2Task1: 'Partecipa alla demolizione delle strutture senza bloccare la crescita della lealtà.',
+    "Le forti perdite iniziali da veleno possono funzionare, ma conserva abbastanza truppe per gli obiettivi dell'alleanza.",
+  edenPlaybookDay2Task1:
+    'Partecipa alla demolizione delle strutture senza bloccare la crescita della lealtà.',
   edenPlaybookDay2Task2: 'Se il Lv. 12 è vicino, dagli la priorità rispetto agli edifici extra.',
-  edenPlaybookDay2Task3: 'Il Lv. 12 è il salto iniziale chiave: 1.200 di reddito e utili spazi vuoti centrali.',
+  edenPlaybookDay2Task3:
+    'Il Lv. 12 è il salto iniziale chiave: 1.200 di reddito e utili spazi vuoti centrali.',
   edenPlaybookWeek1Label: 'Settimana 1',
   edenPlaybookWeek1Title: 'Bilancia reddito e lavorazione',
-  edenPlaybookWeek1Why: 'Reddito senza lavorazione crea un arretrato; lavorazione senza tessere alte affama le code.',
+  edenPlaybookWeek1Why:
+    'Reddito senza lavorazione crea un arretrato; lavorazione senza tessere alte affama le code.',
   edenPlaybookWeek1Watch:
-    'Controlla i reset disponibili e i tempi dell\'alleanza prima di passare da Blu Destra a Blu Sinistra.',
+    "Controlla i reset disponibili e i tempi dell'alleanza prima di passare da Blu Destra a Blu Sinistra.",
   edenPlaybookWeek1ToolLabel: '🔄 Bilanciare Reddito e Produzione',
-  edenPlaybookWeek1ToolDesc: 'Apri il nostro strumento Lealtà Eden per confrontare lealtà, reddito e lavorazione.',
-  edenPlaybookWeek1Task1: 'Blu Destra aiuta a raggiungere tessere più alte; ogni nodo di lealtà vale circa 300.',
-  edenPlaybookWeek1Task2: 'Quando i materiali si accumulano, resetta a Blu Sinistra per la velocità di lavorazione.',
-  edenPlaybookWeek1Task3: 'Punta su Farm, Marble e Ale per i potenziamenti del Coalition Base Camp.',
+  edenPlaybookWeek1ToolDesc:
+    'Apri il nostro strumento Lealtà Eden per confrontare lealtà, reddito e lavorazione.',
+  edenPlaybookWeek1Task1:
+    'Blu Destra aiuta a raggiungere tessere più alte; ogni nodo di lealtà vale circa 300.',
+  edenPlaybookWeek1Task2:
+    'Quando i materiali si accumulano, resetta a Blu Sinistra per la velocità di lavorazione.',
+  edenPlaybookWeek1Task3:
+    'Punta su Farm, Marble e Ale per i potenziamenti del Coalition Base Camp.',
   edenPlaybookRoleLabel: 'Costruzione di ruolo',
   edenPlaybookRoleTitle: 'Cambia quando la lealtà è a posto',
   edenPlaybookRoleWhy:
-    'Quando la lealtà è stabile, i punti specializzazione possono servire l\'alleanza invece della sola crescita personale.',
+    "Quando la lealtà è stabile, i punti specializzazione possono servire l'alleanza invece della sola crescita personale.",
   edenPlaybookRoleWatch: 'Coordina i cooldown di Banner e demolizione: non attivarli da solo.',
   edenPlaybookRoleTask1: 'Demolizione: 31 punti Blu; abilità di demolizione attive facoltative.',
-  edenPlaybookRoleTask2: 'Banner: 47 punti Rossi per la stamina dell\'alleanza e i bonus di demolizione.',
+  edenPlaybookRoleTask2:
+    "Banner: 47 punti Rossi per la stamina dell'alleanza e i bonus di demolizione.",
   edenPlaybookRoleTask3: 'Posa rapida di tessere: 17 Verdi più 14–20 Blu facoltativi.',
-  edenPlaybookRoleTask4: 'Edifici Honor o posa di tessere: 40 Verdi; segui i tempi dell\'alleanza.',
+  edenPlaybookRoleTask4: "Edifici Honor o posa di tessere: 40 Verdi; segui i tempi dell'alleanza.",
   edenPlaybookAltDemolition: 'Percorso di specializzazione demolizione Blu',
   edenPlaybookAltBanner: 'Percorso di specializzazione banner Rosso',
   edenPlaybookAltSpeed: 'Percorso di specializzazione posa rapida Verde',
@@ -2427,24 +2457,30 @@ const it = {
   adminSuggestShowAll: 'Mostra tutte le {count}',
   adminSuggestShowFewer: 'Mostra le prime {count}',
   adminSuggestApproveAll: 'Approva tutte le {count}',
-  adminSuggestApproveAllConfirm: 'Approvare {count} suggerimenti? Ognuno crea subito la sua rettifica e non si annulla in blocco.',
+  adminSuggestApproveAllConfirm:
+    'Approvare {count} suggerimenti? Ognuno crea subito la sua rettifica e non si annulla in blocco.',
   adminSuggestApproveAllDone: '{count} suggerimenti approvati.',
   adminSuggestApproveAllPartial: 'Approvati {done} su {count}; {failed} non riusciti.',
   adminSuggestReviewNoneForFilter: 'Nessun suggerimento corrisponde a questo filtro.',
   adminDutyWeightsTitle: 'Pesi di punteggio dei servizi',
-  adminDutyWeightsNote: 'Punti che vale un servizio, per attività e a seconda che sia stato svolto da un account principale o secondario. Salvare ricalcola subito la stagione, comprese le voci passate.',
+  adminDutyWeightsNote:
+    'Punti che vale un servizio, per attività e a seconda che sia stato svolto da un account principale o secondario. Salvare ricalcola subito la stagione, comprese le voci passate.',
   adminDutyWeightsIncludeDemolition: 'Aggiungi i punti demolizione al contributo totale',
-  adminDutyWeightsIncludeDemolitionHint: 'Disattiva per lasciare visibile la demolizione senza aggiungerla al totale del pannello.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Disattiva per lasciare visibile la demolizione senza aggiungerla al totale del pannello.',
   adminDutyWeightsActivity: 'Servizio',
-  adminDutyWeightsUnit: '1 punto = 10.000 di punteggio. Esempio: il percorso su un principale a 3 aggiunge 30.000.',
+  adminDutyWeightsUnit:
+    '1 punto = 10.000 di punteggio. Esempio: il percorso su un principale a 3 aggiunge 30.000.',
   adminEdenVotesBallotAction: 'Azione',
   adminEdenVotesDeleteBallotFor: 'Elimina il voto di {name}',
-  adminEdenVotesDeleteConfirm: 'Eliminare il voto di {name}? I voti saranno rimossi dai totali e l’eliminazione apparirà nella cronologia.',
+  adminEdenVotesDeleteConfirm:
+    'Eliminare il voto di {name}? I voti saranno rimossi dai totali e l’eliminazione apparirà nella cronologia.',
   adminEdenVotesDeleteStale: 'Questo voto è cambiato. Aggiorna i voti e riprova.',
   adminEdenVotesDeleted: 'Voto di {name} eliminato.',
   adminEdenVotesDeleteFailed: 'Impossibile eliminare il voto. Aggiorna e riprova.',
   adminEdenVotesRedirectTitle: 'Conta i voti per un altro giocatore',
-  adminEdenVotesRedirectHint: 'I voti per un account banner o secondario possono contare per il giocatore che lo gestisce. Salvato per la stagione di questo workspace e applicato ai risultati pubblici.',
+  adminEdenVotesRedirectHint:
+    'I voti per un account banner o secondario possono contare per il giocatore che lo gestisce. Salvato per la stagione di questo workspace e applicato ai risultati pubblici.',
   adminEdenVotesRedirectFrom: 'Voti per',
   adminEdenVotesRedirectTo: 'Contali per',
   adminEdenVotesRedirectPick: 'Scegli un candidato',
@@ -2467,19 +2503,24 @@ const it = {
   adminScoringMultipliersTitle: 'Moltiplicatori di punteggio',
   adminScoringContributionLabel: 'Peso del contributo in gioco',
   adminScoringFormPointsLabel: 'Peso dei punti del modulo',
-  adminScoringMultipliersHint: 'Il contributo in gioco è quello della classifica più i punti fuori gilda. 0,5 lo dimezza così il supporto pesa relativamente di più; il peso dei punti del modulo scala l’unità 1 punto = 10.000. 1 lascia entrambi i termini come sono oggi.',
+  adminScoringMultipliersHint:
+    'Il contributo in gioco è quello della classifica più i punti fuori gilda. 0,5 lo dimezza così il supporto pesa relativamente di più; il peso dei punti del modulo scala l’unità 1 punto = 10.000. 1 lascia entrambi i termini come sono oggi.',
   adminRewardSettingsTitle: 'Distribuzione dei premi',
-  adminRewardSettingsNote: 'Quanti giocatori premia ogni categoria questa stagione. Modificarlo rinumera gli slot dei premi; la pagina pubblicata mostrerà la nuova distribuzione dopo la prossima pubblicazione.',
+  adminRewardSettingsNote:
+    'Quanti giocatori premia ogni categoria questa stagione. Modificarlo rinumera gli slot dei premi; la pagina pubblicata mostrerà la nuova distribuzione dopo la prossima pubblicazione.',
   adminRewardSettingsCategory: 'Categoria',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Il premio di guild master va a',
   adminRewardSettingsGuildMasterR5: 'All’R5',
   adminRewardSettingsGuildMasterTop1: 'Al miglior sostenitore',
   adminRewardSettingsR5Label: 'Giocatore R5',
-  adminRewardSettingsHint: 'Se l’R5 indicato non è nell’elenco del supporto, il premio di guild master resta al miglior sostenitore invece di rimanere senza titolare.',
+  adminRewardSettingsHint:
+    'Se l’R5 indicato non è nell’elenco del supporto, il premio di guild master resta al miglior sostenitore invece di rimanere senza titolare.',
   adminRewardSettingsSave: 'Salva distribuzione',
-  adminRewardSettingsSaved: 'Distribuzione salvata. Pubblica la stagione per aggiornare la pagina pubblica.',
-  adminRewardSettingsResetConfirm: 'Ripristinare la distribuzione dei premi ai valori predefiniti? Questo rinumera gli slot dei premi.',
+  adminRewardSettingsSaved:
+    'Distribuzione salvata. Pubblica la stagione per aggiornare la pagina pubblica.',
+  adminRewardSettingsResetConfirm:
+    'Ripristinare la distribuzione dei premi ai valori predefiniti? Questo rinumera gli slot dei premi.',
   adminSuggestApprove: 'Approva',
   adminSuggestReject: 'Rifiuta',
   adminSuggestApproveConfirm: 'Approvare {points} per {player}? Questo crea subito la correzione.',
@@ -2501,11 +2542,13 @@ const it = {
   adminBohMatchUploadHint:
     'Carica ogni cattura a scorrimento dell’elenco della tua squadra: le righe sovrapposte vengono unite automaticamente.',
   adminBohMatchPaste: 'Incolla le righe invece',
-  adminBohMatchPastePrompt: 'Incolla le righe dei punteggi, una per linea (posizione, nome, punteggio):',
+  adminBohMatchPastePrompt:
+    'Incolla le righe dei punteggi, una per linea (posizione, nome, punteggio):',
   adminBohMatchClear: 'Svuota righe',
   adminBohMatchScanning: 'Lettura dello screenshot {current} di {total}...',
   adminBohMatchScanned: 'Lette {count} righe di punteggi.',
-  adminBohMatchNoRows: 'Nessuna riga di punteggi ancora. Carica gli screenshot di Combat Progress per la tua squadra.',
+  adminBohMatchNoRows:
+    'Nessuna riga di punteggi ancora. Carica gli screenshot di Combat Progress per la tua squadra.',
   adminBohMatchNoRowsFound: 'Da lì non è stato possibile leggere alcuna riga di punteggi.',
   adminBohMatchRowCount: '{count} membri',
   adminBohMatchTotal: 'Totale {total}',
@@ -2532,11 +2575,12 @@ const it = {
   adminVtsScoreTierTwo: 'Tier 2 - Drago sotto 7M',
   adminVtsScoreAllTiers: 'Entrambi i tier combinati',
   adminVtsScoreTable: 'Classifica della competizione',
-  adminVtsScoreSortHint: 'Raggruppati per tier del Drago originale, poi ordinati per crescita del Potere Totale.',
+  adminVtsScoreSortHint:
+    'Raggruppati per tier del Drago originale, poi ordinati per crescita del Potere Totale.',
   adminVtsScorePlayer: 'Giocatore',
   adminVtsScoreTier: 'Tier',
   adminVtsScoreTierChip: 'Tier {tier}',
-  adminVtsScoreBaseline: 'Potere Totale all\'iscrizione',
+  adminVtsScoreBaseline: "Potere Totale all'iscrizione",
   adminVtsScoreFinal: 'Potere Totale finale',
   adminVtsScoreBaselineShort: 'Iscrizione',
   adminVtsScoreFinalShort: 'Finale',
@@ -2571,12 +2615,12 @@ const it = {
   adminVtsScoreExemptName: 'Nome giocatore',
   adminVtsScoreExemptAdd: 'Esenta',
   adminVtsScoreExemptNone: 'Nessuno è esentato.',
-  adminVtsScoreExemptRemove: 'Rimuovi {name} dall\'elenco degli esentati',
+  adminVtsScoreExemptRemove: "Rimuovi {name} dall'elenco degli esentati",
   adminVtsScoreExportPng: 'Esporta PNG',
   adminVtsScoreExportTitle: 'VtsScore - migliore crescita per categoria',
   adminVtsScoreExportSubtitle: '{count} upload in entrambi i tier',
   adminVtsScoreExportEmpty: 'Ancora nessun upload da esportare.',
-  adminVtsScoreExportFailed: 'Impossibile creare l\'immagine.',
+  adminVtsScoreExportFailed: "Impossibile creare l'immagine.",
   adminVtsScoreExportDone: 'Immagine della classifica scaricata.',
   adminBohStatTotalPower: 'Potere totale',
   adminBohStatTroopPower: 'Potere delle truppe',
@@ -2596,7 +2640,8 @@ const it = {
   adminBohMatchRowNotePh: 'Nota su questo giocatore (facoltativa)',
   adminBohMatchNoRowsHint:
     'Ancora nessuna riga di punteggio. Carica gli screenshot di Combat Progress, oppure compila solo il punteggio finale e una nota.',
-  adminBohMatchNothingToSave: 'Aggiungi righe di punteggio, un punteggio finale o una nota prima di salvare.',
+  adminBohMatchNothingToSave:
+    'Aggiungi righe di punteggio, un punteggio finale o una nota prima di salvare.',
   adminBohMatchUpdate: 'Aggiorna risultato partita',
   adminBohMatchUpdated: 'Risultato partita aggiornato.',
   adminBohMatchCancelEdit: 'Annulla modifica',
@@ -2619,7 +2664,8 @@ const it = {
     'Valuta ogni giocatore su 10 prima di inviare questo risultato - {count} ancora da valutare, a cominciare da {players}.',
   adminBohMatchRatingHint: 'Valuta ogni giocatore su 10. Le note sono facoltative.',
   plannersHubTitle: 'Pianificatori di progressione',
-  plannersHubDesc: 'Calcola i costi della ricerca, gestisci i preset di specializzazione, pianifica i potenziamenti del castello e calcola la stamina.',
+  plannersHubDesc:
+    'Calcola i costi della ricerca, gestisci i preset di specializzazione, pianifica i potenziamenti del castello e calcola la stamina.',
   plannersTabResearch: 'Pianificatore di ricerca',
   plannersTabPresets: 'Preset',
   plannersTabCastle: 'Castello',
@@ -2649,7 +2695,8 @@ const it = {
   plannersCostGems: 'Gemme',
   plannersCostTime: 'Tempo (s)',
   presetEngineTitle: 'Motore preset specialità',
-  presetEngineDesc: "Salva, confronta, importa e condividi build di specialità. L'applicazione di un preset aggiorna lo stato salvato delle Torri.",
+  presetEngineDesc:
+    "Salva, confronta, importa e condividi build di specialità. L'applicazione di un preset aggiorna lo stato salvato delle Torri.",
   presetEngineTree: 'Albero delle specialità',
   presetEngineTroop: 'Truppa',
   presetEngineSaveName: 'Nome preset',
@@ -2659,7 +2706,8 @@ const it = {
   presetEngineDelete: 'Elimina',
   presetEngineExport: 'Esporta',
   presetEngineShare: 'Condividi',
-  presetEngineNoPresets: 'Nessun preset ancora salvato. Applica una build nella scheda Torri, quindi salvala qui.',
+  presetEngineNoPresets:
+    'Nessun preset ancora salvato. Applica una build nella scheda Torri, quindi salvala qui.',
   presetEngineImportLabel: 'Importa un payload di preset',
   presetEngineImportGo: 'Importa',
   presetEngineImported: 'Preset importato',
@@ -2667,8 +2715,10 @@ const it = {
   presetEngineApplied: 'Preset applicato — ricarica la scheda Torri per visualizzarlo.',
   presetEngineInvalid: 'Impossibile applicare questo preset.',
   castlePlannerTitle: 'Pianificatore sviluppo castello',
-  castlePlannerDesc: 'Scopri cosa blocca il prossimo livello del castello e calcola il percorso di potenziamento.',
-  castlePlannerDataPending: "Nessun dato verificato sui costi degli edifici è ancora presente nell'app, quindi il pianificatore non può essere eseguito. I costi non vengono mai stimati a caso; questo pannello si attiverà automaticamente quando i dati verificati saranno disponibili.",
+  castlePlannerDesc:
+    'Scopri cosa blocca il prossimo livello del castello e calcola il percorso di potenziamento.',
+  castlePlannerDataPending:
+    "Nessun dato verificato sui costi degli edifici è ancora presente nell'app, quindi il pianificatore non può essere eseguito. I costi non vengono mai stimati a caso; questo pannello si attiverà automaticamente quando i dati verificati saranno disponibili.",
   castlePlannerTarget: 'Livello castello bersaglio',
   castlePlannerLevels: 'Livelli attuali degli edifici (uno per riga)',
   castlePlannerArchitect: 'Sconto architetto %',
@@ -2679,7 +2729,8 @@ const it = {
   castlePlannerAssumptions: 'Assunzioni',
   castlePlannerNoPlan: 'Nessun piano disponibile per quel livello di castello.',
   staminaTitle: 'Calcolatore di stamina',
-  staminaDesc: 'Proietta la stamina rispetto a un elenco di operazioni e condividi la scheda delle operazioni.',
+  staminaDesc:
+    'Proietta la stamina rispetto a un elenco di operazioni e condividi la scheda delle operazioni.',
   staminaCapacity: 'Capacità',
   staminaCurrent: 'Stamina attuale',
   staminaRegen: "Rigenerazione all'ora",

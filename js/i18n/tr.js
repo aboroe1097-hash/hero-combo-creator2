@@ -139,6 +139,12 @@ const tr = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'Üye oylaması sonuçlarını göster',
+  adminEdenVotesMemberResultsHint:
+    'Hazır olduğunda üyelerin Takım Oyuncuları oylamasındaki sıralamasını genel Eden sayfasında görünür yap.',
+  adminEdenVotesManagementResults: 'R4/R5 oylaması sonuçlarını göster',
+  adminEdenVotesManagementResultsHint:
+    'Yönetim oylamasının kazananlarını yayınla. Ayrı bir anahtarı var çünkü bu oylama sezona bağlı değil: kendi R4/R5 oylamasını yapmamış bir sezon aksi halde önceki sezonun kazananlarını gösterirdi.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -265,7 +271,7 @@ const tr = {
   adminDutyAccountType: 'Hesap',
   adminDutyAccountMain: 'Ana',
   adminDutyAccountBanner: 'Sancak',
-  adminDutyAccountGuessed: 'İsimden tahmin edildi; onaylamak için Düzenle\'yi aç.',
+  adminDutyAccountGuessed: "İsimden tahmin edildi; onaylamak için Düzenle'yi aç.",
   adminDutyStatusExact: 'Tam',
   adminDutyStatusLikely: 'Muhtemel',
   adminDutyStatusWeak: 'Kontrol et',
@@ -278,7 +284,8 @@ const tr = {
   adminAccountLinksTitle: 'Hesap bağlantıları',
   adminAccountLinksCount: '{count} bağlı',
   adminAccountLinksSuggestedCount: '{count} öneri',
-  adminAccountLinksHint: 'Bir sancak veya yan hesabı, onu yöneten oyuncuya bağla. Görevleri artık burada ve Eden sayfasında o oyuncuya yan hesap ağırlığıyla sayılır.',
+  adminAccountLinksHint:
+    'Bir sancak veya yan hesabı, onu yöneten oyuncuya bağla. Görevleri artık burada ve Eden sayfasında o oyuncuya yan hesap ağırlığıyla sayılır.',
   adminAccountLinksAccount: 'Sancak veya yan hesap',
   adminAccountLinksAccountPh: 'örn. Angel Banner',
   adminAccountLinksOwner: 'Yöneten',
@@ -294,7 +301,8 @@ const tr = {
   adminAccountLinksRemoveFor: '{account} bağlantısını kaldır',
   adminAccountLinksNone: 'Henüz bağlı hesap yok.',
   adminAccountLinksSaved: 'Kaydedildi. {count} bağlı hesap.',
-  adminAccountLinksLocal: 'Yalnızca bu cihaza kaydedildi; bulut eşitleme başarısız. {count} bağlı hesap.',
+  adminAccountLinksLocal:
+    'Yalnızca bu cihaza kaydedildi; bulut eşitleme başarısız. {count} bağlı hesap.',
   adminAccountLinksSavedLog: 'Hesap bağlantıları kaydedildi: {count} bağlı (önce {before}).',
   adminDutyAddNameRowTitle:
     'Aynı hedef için başka bir isim ekleyin, örneğin orada iki sancak kullanıldıysa',
@@ -466,9 +474,11 @@ const tr = {
   betaNote: 'v{version} - VTS s1097 Topluluk Aracı',
   tabManual: 'Manuel Mod',
   tabGenerator: 'Kombo Oluşturucu',
-  tabCodex: "Kahraman Tabloları",
-  researchMissingLayout: "Düğüm listesi: yerleşim ve ön koşullar doğrulanmadı. Seviyeler varsayılan açılma kısıtlamaları olmadan düzenlenebilir.",
-  researchCostDiscrepancy: "Kaynak tutarsızlığı: seviye maliyetleri {calculated} Savaş Rozeti, yayımlanan toplam {published}. Doğrulama beklenirken tahminler seviye maliyetlerini kullanır.",
+  tabCodex: 'Kahraman Tabloları',
+  researchMissingLayout:
+    'Düğüm listesi: yerleşim ve ön koşullar doğrulanmadı. Seviyeler varsayılan açılma kısıtlamaları olmadan düzenlenebilir.',
+  researchCostDiscrepancy:
+    'Kaynak tutarsızlığı: seviye maliyetleri {calculated} Savaş Rozeti, yayımlanan toplam {published}. Doğrulama beklenirken tahminler seviye maliyetlerini kullanır.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Kahraman Atlası',
   tabHeroesCombos: 'Kahraman ve kombo merkezi',
@@ -1470,7 +1480,8 @@ const tr = {
   scoreBreakdownSecondary: 'Yan hesap / sancak',
   scoreBreakdownDutyFormula: '{count} × ağırlık {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Ana hesap görevleri: {main} ({mainPoints} puan) · Yan/sancak: {alt} ({altPoints} puan)',
+  scoreBreakdownClassSummary:
+    'Ana hesap görevleri: {main} ({mainPoints} puan) · Yan/sancak: {alt} ({altPoints} puan)',
   scoreBreakdownAltCount: '{count} alt',
   scoreBreakdownCountSplit: 'Ana hesap: {main} · Alt / sancak: {alt}',
   playerSeasonTitle: 'Sezon özeti',
@@ -1481,8 +1492,7 @@ const tr = {
   edenX1BreakdownDuty: 'Görev puanları',
   edenX1BreakdownConductPoints: 'Bonus takim emegi puanlari',
   edenX1BreakdownTotal: 'Toplam',
-  edenX1DutyFormula:
-    '{banners} bayrak + {pathers} yol + {shieldWalls} kalkan duvarı',
+  edenX1DutyFormula: '{banners} bayrak + {pathers} yol + {shieldWalls} kalkan duvarı',
   edenX1ConductFormula: '{conduct} takim emegi x 10.000',
   edenX1ConductPrivateNotice:
     'Bu bonus takim emegi puanlari R5 MalakAbo tarafindan atanir. Ayrintilar herkese acik goruntulenemez; itiraz icin ulasin.',
@@ -2355,7 +2365,8 @@ Object.assign(tr, {
     'Oynamak için oyunu yeni sekmede aç. Boot oyunları; DM malzeme simgeleri, boot kanat görselleri ve kahraman kostümü simgelerini kullanan yerel prototiplerdir. Tüm modlarda kombo takibi ve ortak klavye kontrolleri bulunur.',
   adminShieldWallAddNames: 'Ad Ekle',
   adminShieldWallEmpty: 'Henüz kalkan duvarı kaydı yok.',
-  adminShieldWallDropZone: 'Kalkan duvarı listesi ekran görüntüsünü buraya bırakın veya Görsel Yükle’ye tıklayın',
+  adminShieldWallDropZone:
+    'Kalkan duvarı listesi ekran görüntüsünü buraya bırakın veya Görsel Yükle’ye tıklayın',
   adminShieldWallScanning: 'Kalkan duvarı listesi taranıyor...',
   adminDutySummaryTitle: 'Görev Özeti',
   adminDutySummaryEmpty: 'Kayıtlar kaydedildikten sonra görev katılımları burada özetlenir.',
@@ -3416,14 +3427,17 @@ Object.assign(tr, {
   adminSuggestShowAll: '{count} öneriyi göster',
   adminSuggestShowFewer: 'İlk {count} öneriyi göster',
   adminSuggestApproveAll: '{count} öneriyi onayla',
-  adminSuggestApproveAllConfirm: '{count} öneri onaylansın mı? Her biri düzeltmesini hemen oluşturur ve bu toplu olarak geri alınamaz.',
+  adminSuggestApproveAllConfirm:
+    '{count} öneri onaylansın mı? Her biri düzeltmesini hemen oluşturur ve bu toplu olarak geri alınamaz.',
   adminSuggestApproveAllDone: '{count} öneri onaylandı.',
   adminSuggestApproveAllPartial: '{count} öneriden {done} onaylandı; {failed} başarısız.',
   adminSuggestReviewNoneForFilter: 'Bu filtreye uyan öneri yok.',
   adminDutyWeightsTitle: 'Görev puan ağırlıkları',
-  adminDutyWeightsNote: 'Bir görevin değeri: etkinliğe ve görevi ana mı yoksa ikincil hesabın mı yaptığına göre. Kaydetmek sezonu geçmiş kayıtlar dahil hemen yeniden hesaplar.',
+  adminDutyWeightsNote:
+    'Bir görevin değeri: etkinliğe ve görevi ana mı yoksa ikincil hesabın mı yaptığına göre. Kaydetmek sezonu geçmiş kayıtlar dahil hemen yeniden hesaplar.',
   adminDutyWeightsIncludeDemolition: 'Yıkım puanlarını toplam katkıya ekle',
-  adminDutyWeightsIncludeDemolitionHint: 'Yıkımı görünür tutup pano toplamına eklememek için kapatın.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Yıkımı görünür tutup pano toplamına eklememek için kapatın.',
   adminDutyWeightsActivity: 'Görev',
   adminDutyWeightsUnit: '1 puan = 10.000 skor. Örnek: ana hesapta 3 değerindeki yol 30.000 ekler.',
   adminDutyWeightsMain: 'Ana',
@@ -3438,19 +3452,23 @@ Object.assign(tr, {
   adminScoringMultipliersTitle: 'Puan çarpanları',
   adminScoringContributionLabel: 'Oyun içi katkı ağırlığı',
   adminScoringFormPointsLabel: 'Form puanı ağırlığı',
-  adminScoringMultipliersHint: 'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. 0,5 bunu yarıya indirir, böylece destek işi göreceli olarak daha ağır basar; form puanı ağırlığı 1 puan = 10.000 birimini ölçekler. 1 her iki terimi bugünkü gibi bırakır.',
+  adminScoringMultipliersHint:
+    'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. 0,5 bunu yarıya indirir, böylece destek işi göreceli olarak daha ağır basar; form puanı ağırlığı 1 puan = 10.000 birimini ölçekler. 1 her iki terimi bugünkü gibi bırakır.',
   adminRewardSettingsTitle: 'Ödül dağılımı',
-  adminRewardSettingsNote: 'Bu sezon her kategorinin kaç oyuncuyu ödüllendireceği. Değiştirmek ödül slotlarını yeniden numaralandırır; yayınlanan sayfa yeni dağılımı bir sonraki yayından sonra gösterir.',
+  adminRewardSettingsNote:
+    'Bu sezon her kategorinin kaç oyuncuyu ödüllendireceği. Değiştirmek ödül slotlarını yeniden numaralandırır; yayınlanan sayfa yeni dağılımı bir sonraki yayından sonra gösterir.',
   adminRewardSettingsCategory: 'Kategori',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Guild master ödülü kime gider',
   adminRewardSettingsGuildMasterR5: 'R5',
   adminRewardSettingsGuildMasterTop1: 'En iyi destek oyuncusu',
   adminRewardSettingsR5Label: 'R5 oyuncusu',
-  adminRewardSettingsHint: 'Belirtilen R5 destek listesinde yoksa guild master ödülü sahipsiz kalmak yerine en iyi destek oyuncusunda kalır.',
+  adminRewardSettingsHint:
+    'Belirtilen R5 destek listesinde yoksa guild master ödülü sahipsiz kalmak yerine en iyi destek oyuncusunda kalır.',
   adminRewardSettingsSave: 'Dağılımı kaydet',
   adminRewardSettingsSaved: 'Dağılım kaydedildi. Genel sayfayı güncellemek için sezonu yayınlayın.',
-  adminRewardSettingsResetConfirm: 'Ödül dağılımı varsayılana döndürülsün mü? Bu, ödül slotlarını yeniden numaralandırır.',
+  adminRewardSettingsResetConfirm:
+    'Ödül dağılımı varsayılana döndürülsün mü? Bu, ödül slotlarını yeniden numaralandırır.',
   adminSuggestApprove: 'Onayla',
   adminSuggestReject: 'Reddet',
   adminSuggestApproveConfirm:

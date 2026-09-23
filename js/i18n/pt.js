@@ -140,6 +140,12 @@ const pt = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'Mostrar resultados da votação dos membros',
+  adminEdenVotesMemberResultsHint:
+    'Torne visível a classificação dos membros na votação de Jogadores de Equipe na página pública do Eden quando estiver pronta.',
+  adminEdenVotesManagementResults: 'Mostrar resultados da votação R4/R5',
+  adminEdenVotesManagementResultsHint:
+    'Publique os vencedores da votação da gestão. Ela tem o seu próprio interruptor porque essa votação não é vinculada a uma temporada: uma temporada sem votação R4/R5 própria mostraria os vencedores da anterior.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -240,7 +246,8 @@ const pt = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'Add Names',
   adminShieldWallEmpty: 'No shield wall records yet.',
-  adminShieldWallDropZone: 'Solte aqui a captura da lista da muralha de escudos ou clique em Enviar imagem',
+  adminShieldWallDropZone:
+    'Solte aqui a captura da lista da muralha de escudos ou clique em Enviar imagem',
   adminShieldWallScanning: 'Analisando lista da muralha de escudos...',
   adminDutySummaryTitle: 'Duty Summary',
   adminDutySummaryEmpty: 'Duty appearances will summarize here after records are saved.',
@@ -281,7 +288,8 @@ const pt = {
   adminAccountLinksTitle: 'Vínculos de contas',
   adminAccountLinksCount: '{count} vinculadas',
   adminAccountLinksSuggestedCount: '{count} sugeridas',
-  adminAccountLinksHint: 'Vincule uma conta de estandarte ou secundária ao jogador que a controla. As tarefas dela passam a contar para esse jogador com o peso de secundária, aqui e na página do Eden.',
+  adminAccountLinksHint:
+    'Vincule uma conta de estandarte ou secundária ao jogador que a controla. As tarefas dela passam a contar para esse jogador com o peso de secundária, aqui e na página do Eden.',
   adminAccountLinksAccount: 'Conta de estandarte ou secundária',
   adminAccountLinksAccountPh: 'ex.: Angel Banner',
   adminAccountLinksOwner: 'Controlada por',
@@ -297,7 +305,8 @@ const pt = {
   adminAccountLinksRemoveFor: 'Remover vínculo de {account}',
   adminAccountLinksNone: 'Nenhuma conta vinculada ainda.',
   adminAccountLinksSaved: 'Salvo. {count} contas vinculadas.',
-  adminAccountLinksLocal: 'Salvo só neste dispositivo; a sincronização falhou. {count} contas vinculadas.',
+  adminAccountLinksLocal:
+    'Salvo só neste dispositivo; a sincronização falhou. {count} contas vinculadas.',
   adminAccountLinksSavedLog: 'Vínculos salvos: {count} vinculadas (antes {before}).',
   adminDutyAddNameRowTitle:
     'Adicione outro nome para o mesmo alvo, por exemplo quando dois estandartes foram usados nele',
@@ -485,9 +494,11 @@ const pt = {
   betaNote: 'v{version} - Ferramenta da Comunidade VTS s1097',
   tabManual: 'Construtor Manual',
   tabGenerator: 'Gerador de Combos',
-  tabCodex: "Tabelas de heróis",
-  researchMissingLayout: "Lista de nós: disposição e pré-requisitos não verificados. Os níveis podem ser editados sem restrições de desbloqueio presumidas.",
-  researchCostDiscrepancy: "Divergência na fonte: os níveis somam {calculated} insígnias de guerra; o total publicado é {published}. As estimativas usam os custos por nível até a verificação.",
+  tabCodex: 'Tabelas de heróis',
+  researchMissingLayout:
+    'Lista de nós: disposição e pré-requisitos não verificados. Os níveis podem ser editados sem restrições de desbloqueio presumidas.',
+  researchCostDiscrepancy:
+    'Divergência na fonte: os níveis somam {calculated} insígnias de guerra; o total publicado é {published}. As estimativas usam os custos por nível até a verificação.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas de Heróis',
   tabHeroesCombos: 'Centro de heróis e combos',
@@ -1465,7 +1476,8 @@ const pt = {
   scoreBreakdownSecondary: 'Secundária / estandarte',
   scoreBreakdownDutyFormula: '{count} × peso {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Tarefas da conta principal: {main} ({mainPoints} pts) · Secundária/estandarte: {alt} ({altPoints} pts)',
+  scoreBreakdownClassSummary:
+    'Tarefas da conta principal: {main} ({mainPoints} pts) · Secundária/estandarte: {alt} ({altPoints} pts)',
   scoreBreakdownAltCount: '{count} alt',
   scoreBreakdownCountSplit: 'Conta principal: {main} · Alt / estandarte: {alt}',
   playerSeasonTitle: 'Resumo da temporada',
@@ -1476,8 +1488,7 @@ const pt = {
   edenX1BreakdownDuty: 'Pontos de tarefas',
   edenX1BreakdownConductPoints: 'Pontos bonus de esforco da equipe',
   edenX1BreakdownTotal: 'Total',
-  edenX1DutyFormula:
-    '{banners} banners + {pathers} caminhos + {shieldWalls} shield walls',
+  edenX1DutyFormula: '{banners} banners + {pathers} caminhos + {shieldWalls} shield walls',
   edenX1ConductFormula: '{conduct} esforco da equipe x 10.000',
   edenX1ConductPrivateNotice:
     'Estes pontos bonus de esforco da equipe sao atribuidos pelo R5 MalakAbo. Os detalhes nao podem ser vistos publicamente; entre em contato para recorrer.',
@@ -3002,16 +3013,20 @@ const pt = {
   adminSuggestShowAll: 'Mostrar todas as {count}',
   adminSuggestShowFewer: 'Mostrar as primeiras {count}',
   adminSuggestApproveAll: 'Aprovar todas as {count}',
-  adminSuggestApproveAllConfirm: 'Aprovar {count} sugestões? Cada uma cria o seu ajuste agora, e isto nao pode ser desfeito em bloco.',
+  adminSuggestApproveAllConfirm:
+    'Aprovar {count} sugestões? Cada uma cria o seu ajuste agora, e isto nao pode ser desfeito em bloco.',
   adminSuggestApproveAllDone: '{count} sugestões aprovadas.',
   adminSuggestApproveAllPartial: 'Aprovadas {done} de {count}; {failed} falharam.',
   adminSuggestReviewNoneForFilter: 'Nenhuma sugestão corresponde a este filtro.',
   adminDutyWeightsTitle: 'Pesos de pontuação de tarefas',
-  adminDutyWeightsNote: 'Pontos que uma tarefa vale, por atividade e conforme a conta principal ou secundária a tenha feito. Guardar recalcula a temporada de imediato, incluindo entradas anteriores.',
+  adminDutyWeightsNote:
+    'Pontos que uma tarefa vale, por atividade e conforme a conta principal ou secundária a tenha feito. Guardar recalcula a temporada de imediato, incluindo entradas anteriores.',
   adminDutyWeightsIncludeDemolition: 'Adicionar pontos de demolição à contribuição total',
-  adminDutyWeightsIncludeDemolitionHint: 'Desative para manter a demolição visível sem a somar ao total do painel.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Desative para manter a demolição visível sem a somar ao total do painel.',
   adminDutyWeightsActivity: 'Tarefa',
-  adminDutyWeightsUnit: '1 ponto = 10.000 de pontuação. Exemplo: rotas numa conta principal a 3 somam 30.000.',
+  adminDutyWeightsUnit:
+    '1 ponto = 10.000 de pontuação. Exemplo: rotas numa conta principal a 3 somam 30.000.',
   adminDutyWeightsMain: 'Principal',
   adminDutyWeightsAlt: 'Secundária',
   adminDutyWeightsBanners: 'Estandartes',
@@ -3024,19 +3039,24 @@ const pt = {
   adminScoringMultipliersTitle: 'Multiplicadores de pontuação',
   adminScoringContributionLabel: 'Peso da contribuição no jogo',
   adminScoringFormPointsLabel: 'Peso dos pontos do formulário',
-  adminScoringMultipliersHint: 'A contribuição no jogo é a do ranking mais os pontos fora da guilda. 0,5 a reduz pela metade para o apoio pesar relativamente mais; o peso dos pontos do formulário escala a unidade 1 ponto = 10.000. 1 mantém ambos os termos como estão hoje.',
+  adminScoringMultipliersHint:
+    'A contribuição no jogo é a do ranking mais os pontos fora da guilda. 0,5 a reduz pela metade para o apoio pesar relativamente mais; o peso dos pontos do formulário escala a unidade 1 ponto = 10.000. 1 mantém ambos os termos como estão hoje.',
   adminRewardSettingsTitle: 'Distribuição de recompensas',
-  adminRewardSettingsNote: 'Quantos jogadores cada categoria recompensa nesta temporada. Alterar isso renumera as vagas de recompensa; a página publicada mostra a nova distribuição após a próxima publicação.',
+  adminRewardSettingsNote:
+    'Quantos jogadores cada categoria recompensa nesta temporada. Alterar isso renumera as vagas de recompensa; a página publicada mostra a nova distribuição após a próxima publicação.',
   adminRewardSettingsCategory: 'Categoria',
   adminRewardSettingsSlots: 'Vagas',
   adminRewardSettingsGuildMaster: 'A recompensa de mestre da guilda vai para',
   adminRewardSettingsGuildMasterR5: 'O R5',
   adminRewardSettingsGuildMasterTop1: 'O melhor no apoio',
   adminRewardSettingsR5Label: 'Jogador R5',
-  adminRewardSettingsHint: 'Se o R5 indicado não estiver na lista de apoio, a recompensa de mestre da guilda fica com o melhor no apoio em vez de ficar sem titular.',
+  adminRewardSettingsHint:
+    'Se o R5 indicado não estiver na lista de apoio, a recompensa de mestre da guilda fica com o melhor no apoio em vez de ficar sem titular.',
   adminRewardSettingsSave: 'Salvar distribuição',
-  adminRewardSettingsSaved: 'Distribuição salva. Publique a temporada para atualizar a página pública.',
-  adminRewardSettingsResetConfirm: 'Restaurar a distribuição de recompensas para os padrões? Isso renumera as vagas de recompensa.',
+  adminRewardSettingsSaved:
+    'Distribuição salva. Publique a temporada para atualizar a página pública.',
+  adminRewardSettingsResetConfirm:
+    'Restaurar a distribuição de recompensas para os padrões? Isso renumera as vagas de recompensa.',
   adminSuggestApprove: 'Aprovar',
   adminSuggestReject: 'Rejeitar',
   adminSuggestApproveConfirm: 'Aprovar {points} para {player}? Isso cria o ajuste agora.',

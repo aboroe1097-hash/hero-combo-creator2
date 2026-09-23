@@ -1077,6 +1077,8 @@ function defaultEdenX1VoteSettings() {
     season: currentEdenVoteSeason(),
     votingOpen: true,
     allowEditing: true,
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     contributionRankingMode: EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
@@ -1086,12 +1088,22 @@ function defaultEdenX1VoteSettings() {
 
 function normalizeEdenX1VoteSettings(settings = {}) {
   const defaults = defaultEdenX1VoteSettings();
+  // One switch published both result sets until 16.5.1. It stays the fallback
+  // for the two that replaced it, so a stored document keeps meaning what it
+  // meant, and it is still written as the conservative aggregate for any reader
+  // that only knows the old field.
+  const legacyPublished = settings.showPublicResults === true;
+  const readToggle = (key) => (key in settings ? settings[key] === true : legacyPublished);
+  const showMemberResults = readToggle('showMemberResults');
+  const showManagementResults = readToggle('showManagementResults');
   return {
     ...defaults,
     season: String(settings.season || defaults.season),
     votingOpen: settings.votingOpen !== false,
     allowEditing: settings.allowEditing !== false,
-    showPublicResults: settings.showPublicResults === true,
+    showMemberResults,
+    showManagementResults,
+    showPublicResults: showMemberResults && showManagementResults,
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
       settings.contributionRankingMode
@@ -1185,7 +1197,8 @@ function renderEdenX1VoteSettings() {
   };
   setChecked('dashEdenVoteOpenToggle', settings.votingOpen);
   setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
-  setChecked('dashEdenVotePublicResultsToggle', settings.showPublicResults);
+  setChecked('dashEdenVotePublicResultsToggle', settings.showMemberResults);
+  setChecked('dashEdenVoteManagementResultsToggle', settings.showManagementResults);
   setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
   setChecked(
     'dashEdenContributionModeExtended',
@@ -1358,8 +1371,8 @@ function buildEdenX1PublicVoteResults(
   );
   return {
     season,
-    published: normalizedSettings.showPublicResults === true,
-    rankings: normalizedSettings.showPublicResults
+    published: normalizedSettings.showMemberResults === true,
+    rankings: normalizedSettings.showMemberResults
       ? totalRows.slice(0, 100).map((row) => ({
           playerName: row.candidateName,
           playerKey: row.playerKey,
@@ -2099,7 +2112,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
         updatedAt: serverTimestamp(),
         updatedBy: state.adminUser?.uid || '',
       });
-      if (latestSettings.showPublicResults) await loadEdenX1Votes();
+      if (latestSettings.showMemberResults) await loadEdenX1Votes();
       await publishEdenX1PublicVoteResults(latestSettings);
       const status = $id('dashEdenVoteSettingsStatus');
       if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
@@ -2134,6 +2147,10 @@ async function activateCurrentEdenX1VoteSeason() {
     season: currentEdenVoteSeason(),
     votingOpen: false,
     allowEditing: false,
+    // A new season starts unpublished on every switch, both the split pair and
+    // the legacy aggregate they feed.
+    showMemberResults: false,
+    showManagementResults: false,
     showPublicResults: false,
     showVoterNames: false,
     closesAt: '',
@@ -2158,7 +2175,7 @@ async function loadEdenX1VoteAdminData() {
 
 async function refreshEdenX1VoteAdminData() {
   await loadEdenX1VoteAdminData();
-  if (state.edenX1VoteSettings?.showPublicResults === true) {
+  if (state.edenX1VoteSettings?.showMemberResults === true) {
     await publishEdenX1PublicVoteResults(state.edenX1VoteSettings);
   }
 }
@@ -2179,7 +2196,10 @@ function bindEdenX1VoteAdminControls() {
   [
     ['dashEdenVoteOpenToggle', 'votingOpen'],
     ['dashEdenVoteEditingToggle', 'allowEditing'],
-    ['dashEdenVotePublicResultsToggle', 'showPublicResults'],
+    // Two switches now: the members' ballot and the management sheet publish
+    // independently, because the sheet is not season-scoped.
+    ['dashEdenVotePublicResultsToggle', 'showMemberResults'],
+    ['dashEdenVoteManagementResultsToggle', 'showManagementResults'],
     ['dashEdenVoteShowNamesToggle', 'showVoterNames'],
   ].forEach(([id, key]) => {
     $id(id)?.addEventListener('change', (event) => {
@@ -4026,7 +4046,7 @@ async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
     if (!unpublish) {
       rosterSnapshots = await readEdenWorkspaceRosterSnapshots(db);
       const settings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {});
-      if (settings.showPublicResults && typeof buildEdenX1PublicVoteResults === 'function') {
+      if (settings.showMemberResults && typeof buildEdenX1PublicVoteResults === 'function') {
         publicVoteResults = buildEdenX1PublicVoteResults(settings);
       }
     }

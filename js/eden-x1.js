@@ -724,14 +724,15 @@ function loadEdenManagementVoteResults(options = {}) {
   // showing the previous season's winners as though they were its own — Eden X2
   // displayed X1's R4 names while holding zero votes of its own.
   //
-  // showPublicResults is the switch that already governs the Firestore results
-  // path. Honouring it here too means one setting controls both, and a season
-  // stays blank until its vote is actually opened and published.
+  // The members' switch used to govern this too, which meant publishing the
+  // members' ballot also published the R4/R5 sheet — and because that sheet is
+  // not season-scoped, a season that had run no management vote of its own
+  // showed the previous season's winners. It has its own switch now.
   //
   // 'hidden' rather than 'error': every consumer treats a status other than
   // 'loaded' as no winners, and only 'error' renders a failure notice. Nothing
   // has failed here — the results simply are not this season's to show.
-  if (edenVoteSettings.showPublicResults !== true) {
+  if (edenVoteSettings.showManagementResults !== true) {
     // A load may already be in flight: the cached settings are read before the
     // authoritative ones, so a season whose results were switched off since the
     // cache was written starts the sheet fetch and only then learns it may not
@@ -1059,11 +1060,18 @@ function applyEdenVotePickToForm(host, pick) {
 }
 
 function normalizeEdenVoteSettings(settings = {}) {
+  // One switch published both result sets until 16.5.1; it stays the fallback
+  // for the two that replaced it, so a season published before the split keeps
+  // showing what it used to show.
+  const legacyPublished = settings.showPublicResults === true;
+  const readToggle = (key) => (key in settings ? settings[key] === true : legacyPublished);
   return {
     season: String(settings.season || '').trim(),
     votingOpen: settings.votingOpen !== false,
     allowEditing: settings.allowEditing !== false,
-    showPublicResults: settings.showPublicResults === true,
+    showMemberResults: readToggle('showMemberResults'),
+    showManagementResults: readToggle('showManagementResults'),
+    showPublicResults: readToggle('showMemberResults') && readToggle('showManagementResults'),
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
       settings.contributionRankingMode
@@ -7242,7 +7250,7 @@ async function loadEdenX1Dashboard() {
             data.rosterSnapshots = projection.rosterSnapshots;
           }
           data.publicEdenX1VoteResults = normalizePublicEdenVoteResults(
-            verifiedVoteSettings.showPublicResults !== true
+            verifiedVoteSettings.showMemberResults !== true
               ? {}
               : projection.publicVoteResults || {}
           );
@@ -7289,7 +7297,7 @@ async function loadEdenX1Dashboard() {
           data.rosterSnapshots = cachedData.rosterSnapshots;
         }
         const publicVoteResults =
-          verifiedVoteSettings.showPublicResults !== true
+          verifiedVoteSettings.showMemberResults !== true
             ? {}
             : publicVoteResultsSnap === null
               ? cachedData?.publicEdenX1VoteResults || {}
@@ -7309,7 +7317,7 @@ async function loadEdenX1Dashboard() {
         }
         const sidecarReadIncomplete =
           rosterSnap === null ||
-          (verifiedVoteSettings.showPublicResults === true && publicVoteResultsSnap === null) ||
+          (verifiedVoteSettings.showMemberResults === true && publicVoteResultsSnap === null) ||
           liveConductAdjustments === null;
         return {
           kind: 'ok',
@@ -7325,7 +7333,7 @@ async function loadEdenX1Dashboard() {
 
     if (cachedData) {
       applyEdenVoteSettings(cachedData.edenX1VoteSettings);
-      // The sheet fetch is gated on showPublicResults, so it can only start
+      // The sheet fetch is gated on showManagementResults, so it can only start
       // once settings exist. Firing it here keeps the cache preview as fast as
       // the old unconditional kick-off was.
       void loadEdenManagementVoteResults();

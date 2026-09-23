@@ -170,6 +170,12 @@ const fr = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'Afficher les résultats du vote des membres',
+  adminEdenVotesMemberResultsHint:
+    'Rendez visibles les places des membres au vote des joueurs d’équipe sur la page publique Eden lorsqu’elles sont prêtes.',
+  adminEdenVotesManagementResults: 'Afficher les résultats du vote R4/R5',
+  adminEdenVotesManagementResultsHint:
+    'Publiez les gagnants du vote de la direction. Ce vote a son propre interrupteur car il n’est pas lié à une saison : une saison sans vote R4/R5 propre afficherait sinon les gagnants de la précédente.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -270,7 +276,8 @@ const fr = {
     'Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.',
   adminShieldWallAddNames: 'Add Names',
   adminShieldWallEmpty: 'No shield wall records yet.',
-  adminShieldWallDropZone: 'Déposez ici la capture de la liste du mur de boucliers, ou cliquez sur Téléverser une image',
+  adminShieldWallDropZone:
+    'Déposez ici la capture de la liste du mur de boucliers, ou cliquez sur Téléverser une image',
   adminShieldWallScanning: 'Analyse de la liste du mur de boucliers…',
   adminDutySummaryTitle: 'Duty Summary',
   adminDutySummaryEmpty: 'Duty appearances will summarize here after records are saved.',
@@ -311,7 +318,8 @@ const fr = {
   adminAccountLinksTitle: 'Liens de comptes',
   adminAccountLinksCount: '{count} liés',
   adminAccountLinksSuggestedCount: '{count} suggérés',
-  adminAccountLinksHint: 'Liez un compte bannière ou secondaire au joueur qui le gère. Ses tâches comptent alors pour ce joueur au poids secondaire, ici et sur la page Eden.',
+  adminAccountLinksHint:
+    'Liez un compte bannière ou secondaire au joueur qui le gère. Ses tâches comptent alors pour ce joueur au poids secondaire, ici et sur la page Eden.',
   adminAccountLinksAccount: 'Compte bannière ou secondaire',
   adminAccountLinksAccountPh: 'ex. Angel Banner',
   adminAccountLinksOwner: 'Géré par',
@@ -327,7 +335,8 @@ const fr = {
   adminAccountLinksRemoveFor: 'Retirer le lien de {account}',
   adminAccountLinksNone: 'Aucun compte lié pour le moment.',
   adminAccountLinksSaved: 'Enregistré. {count} comptes liés.',
-  adminAccountLinksLocal: 'Enregistré sur cet appareil uniquement ; échec de la synchronisation. {count} comptes liés.',
+  adminAccountLinksLocal:
+    'Enregistré sur cet appareil uniquement ; échec de la synchronisation. {count} comptes liés.',
   adminAccountLinksSavedLog: 'Liens de comptes enregistrés : {count} liés (avant {before}).',
   adminDutyAddNameRowTitle:
     'Ajouter un autre nom pour cette même cible, par exemple si deux bannières y ont été utilisées',
@@ -501,9 +510,11 @@ const fr = {
   betaNote: 'v{version} - Outil Communautaire VTS s1097',
   tabManual: 'Mode Manuel',
   tabGenerator: 'Générateur de Combos',
-  tabCodex: "Tableaux des héros",
-  researchMissingLayout: "Liste des nœuds : disposition et prérequis non vérifiés. Les niveaux sont modifiables sans contraintes de déblocage supposées.",
-  researchCostDiscrepancy: "Écart de source : les niveaux totalisent {calculated} insignes de guerre ; le total publié est {published}. Les estimations utilisent les coûts par niveau en attendant vérification.",
+  tabCodex: 'Tableaux des héros',
+  researchMissingLayout:
+    'Liste des nœuds : disposition et prérequis non vérifiés. Les niveaux sont modifiables sans contraintes de déblocage supposées.',
+  researchCostDiscrepancy:
+    'Écart de source : les niveaux totalisent {calculated} insignes de guerre ; le total publié est {published}. Les estimations utilisent les coûts par niveau en attendant vérification.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas des Héros',
   tabHeroesCombos: 'Hub héros et combos',
@@ -1516,7 +1527,8 @@ const fr = {
   scoreBreakdownSecondary: 'Secondaire / bannière',
   scoreBreakdownDutyFormula: '{count} × poids {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Tâches du compte principal : {main} ({mainPoints} pts) · Secondaire/bannière : {alt} ({altPoints} pts)',
+  scoreBreakdownClassSummary:
+    'Tâches du compte principal : {main} ({mainPoints} pts) · Secondaire/bannière : {alt} ({altPoints} pts)',
   scoreBreakdownAltCount: '{count} alt',
   scoreBreakdownCountSplit: 'Compte principal : {main} · Alt / bannière : {alt}',
   playerSeasonTitle: 'Résumé de saison',
@@ -1527,8 +1539,7 @@ const fr = {
   edenX1BreakdownDuty: 'Points de tâches',
   edenX1BreakdownConductPoints: "Points bonus d'effort d'equipe",
   edenX1BreakdownTotal: 'Total',
-  edenX1DutyFormula:
-    '{banners} bannières + {pathers} chemins + {shieldWalls} murs de boucliers',
+  edenX1DutyFormula: '{banners} bannières + {pathers} chemins + {shieldWalls} murs de boucliers',
   edenX1ConductFormula: "{conduct} effort d'equipe x 10 000",
   edenX1ConductPrivateNotice:
     "Ces points bonus d'effort d'equipe sont attribues par R5 MalakAbo. Les details ne sont pas visibles publiquement; contactez-nous pour faire appel.",
@@ -3461,16 +3472,20 @@ const fr = {
   adminSuggestShowAll: 'Afficher les {count}',
   adminSuggestShowFewer: 'Afficher les {count} premières',
   adminSuggestApproveAll: 'Approuver les {count}',
-  adminSuggestApproveAllConfirm: 'Approuver {count} suggestions ? Chacune crée son ajustement immédiatement, et cela ne peut pas etre annulé en bloc.',
+  adminSuggestApproveAllConfirm:
+    'Approuver {count} suggestions ? Chacune crée son ajustement immédiatement, et cela ne peut pas etre annulé en bloc.',
   adminSuggestApproveAllDone: '{count} suggestions approuvées.',
   adminSuggestApproveAllPartial: '{done} sur {count} approuvées ; {failed} en échec.',
   adminSuggestReviewNoneForFilter: 'Aucune suggestion ne correspond a ce filtre.',
   adminDutyWeightsTitle: 'Pondération des points de service',
-  adminDutyWeightsNote: 'Points que vaut un service, selon activité et selon que le compte principal ou secondaire a agi. Enregistrer recalcule la saison immédiatement, entrées passées comprises.',
+  adminDutyWeightsNote:
+    'Points que vaut un service, selon activité et selon que le compte principal ou secondaire a agi. Enregistrer recalcule la saison immédiatement, entrées passées comprises.',
   adminDutyWeightsIncludeDemolition: 'Ajouter les points de démolition à la contribution totale',
-  adminDutyWeightsIncludeDemolitionHint: 'Désactivez pour garder la démolition visible sans l’ajouter au total du tableau de bord.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Désactivez pour garder la démolition visible sans l’ajouter au total du tableau de bord.',
   adminDutyWeightsActivity: 'Tâche',
-  adminDutyWeightsUnit: '1 point = 10 000 de score. Exemple : un tracé sur un compte principal à 3 ajoute 30 000.',
+  adminDutyWeightsUnit:
+    '1 point = 10 000 de score. Exemple : un tracé sur un compte principal à 3 ajoute 30 000.',
   adminDutyWeightsMain: 'Principal',
   adminDutyWeightsAlt: 'Secondaire',
   adminDutyWeightsBanners: 'Bannières',
@@ -3478,24 +3493,30 @@ const fr = {
   adminDutyWeightsShieldWalls: 'Murs de boucliers',
   adminDutyWeightsSave: 'Enregistrer',
   adminDutyWeightsReset: 'Rétablir les valeurs par défaut',
-  adminDutyWeightsResetConfirm: 'Rétablir toutes les pondérations ? La saison est recalculée immédiatement.',
+  adminDutyWeightsResetConfirm:
+    'Rétablir toutes les pondérations ? La saison est recalculée immédiatement.',
   adminDutyWeightsSaved: 'Pondérations enregistrées. Scores recalculés.',
   adminScoringMultipliersTitle: 'Multiplicateurs de points',
   adminScoringContributionLabel: 'Poids de la contribution en jeu',
   adminScoringFormPointsLabel: 'Poids des points du formulaire',
-  adminScoringMultipliersHint: 'La contribution en jeu comprend le classement plus les points hors guilde. 0,5 la divise par deux pour que le support pèse davantage ; le poids des points du formulaire ajuste l’unité 1 point = 10 000. 1 laisse les deux termes inchangés.',
+  adminScoringMultipliersHint:
+    'La contribution en jeu comprend le classement plus les points hors guilde. 0,5 la divise par deux pour que le support pèse davantage ; le poids des points du formulaire ajuste l’unité 1 point = 10 000. 1 laisse les deux termes inchangés.',
   adminRewardSettingsTitle: 'Répartition des récompenses',
-  adminRewardSettingsNote: 'Combien de joueurs chaque catégorie récompense cette saison. La modifier renumérote les places de récompense ; la page publiée affichera la nouvelle répartition après la prochaine publication.',
+  adminRewardSettingsNote:
+    'Combien de joueurs chaque catégorie récompense cette saison. La modifier renumérote les places de récompense ; la page publiée affichera la nouvelle répartition après la prochaine publication.',
   adminRewardSettingsCategory: 'Catégorie',
   adminRewardSettingsSlots: 'Places',
   adminRewardSettingsGuildMaster: 'La récompense de maître de guilde revient à',
   adminRewardSettingsGuildMasterR5: 'Le R5',
   adminRewardSettingsGuildMasterTop1: 'Le meilleur au soutien',
   adminRewardSettingsR5Label: 'Joueur R5',
-  adminRewardSettingsHint: 'Si le R5 indiqué ne figure pas dans la liste de soutien, la récompense de maître de guilde reste au meilleur au soutien plutôt que de rester sans titulaire.',
+  adminRewardSettingsHint:
+    'Si le R5 indiqué ne figure pas dans la liste de soutien, la récompense de maître de guilde reste au meilleur au soutien plutôt que de rester sans titulaire.',
   adminRewardSettingsSave: 'Enregistrer la répartition',
-  adminRewardSettingsSaved: 'Répartition enregistrée. Publiez la saison pour mettre à jour la page publique.',
-  adminRewardSettingsResetConfirm: 'Réinitialiser la répartition des récompenses aux valeurs par défaut ? Cela renumérote les places de récompense.',
+  adminRewardSettingsSaved:
+    'Répartition enregistrée. Publiez la saison pour mettre à jour la page publique.',
+  adminRewardSettingsResetConfirm:
+    'Réinitialiser la répartition des récompenses aux valeurs par défaut ? Cela renumérote les places de récompense.',
   adminSuggestApprove: 'Approuver',
   adminSuggestReject: 'Rejeter',
   adminSuggestApproveConfirm:

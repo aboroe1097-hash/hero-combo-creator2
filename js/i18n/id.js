@@ -139,6 +139,12 @@ const id = {
   adminEdenVotesPublicResults: 'Show results publicly',
   adminEdenVotesPublicResultsHint:
     'Make vote standings visible on the public Eden X1 page when ready.',
+  adminEdenVotesMemberResults: 'Tampilkan hasil suara anggota',
+  adminEdenVotesMemberResultsHint:
+    'Tampilkan peringkat anggota pada pemungutan Pemain Tim di halaman Eden publik saat sudah siap.',
+  adminEdenVotesManagementResults: 'Tampilkan hasil suara R4/R5',
+  adminEdenVotesManagementResultsHint:
+    'Publikasikan pemenang pemungutan manajemen. Ia punya sakelar sendiri karena pemungutan itu tidak terikat musim: musim yang belum menggelar pemungutan R4/R5 sendiri akan menampilkan pemenang musim sebelumnya.',
   adminEdenVotesShowNames: 'Show voter names',
   adminEdenVotesShowNamesHint: 'Keep off if public results should stay anonymous.',
   adminEdenVotesSettingsOpen: 'Voting is open.',
@@ -278,7 +284,8 @@ const id = {
   adminAccountLinksTitle: 'Tautan akun',
   adminAccountLinksCount: '{count} tertaut',
   adminAccountLinksSuggestedCount: '{count} saran',
-  adminAccountLinksHint: 'Tautkan akun banner atau alt ke pemain yang menjalankannya. Tugasnya lalu dihitung untuk pemain itu dengan bobot akun sekunder, di sini dan di halaman Eden.',
+  adminAccountLinksHint:
+    'Tautkan akun banner atau alt ke pemain yang menjalankannya. Tugasnya lalu dihitung untuk pemain itu dengan bobot akun sekunder, di sini dan di halaman Eden.',
   adminAccountLinksAccount: 'Akun banner atau alt',
   adminAccountLinksAccountPh: 'mis. Angel Banner',
   adminAccountLinksOwner: 'Dijalankan oleh',
@@ -466,9 +473,11 @@ const id = {
   betaNote: 'v{version} - Alat Komunitas VTS s1097',
   tabManual: 'Mode Manual',
   tabGenerator: 'Generator Kombo',
-  tabCodex: "Tabel Hero",
-  researchMissingLayout: "Daftar node: tata letak dan prasyarat belum diverifikasi. Level dapat diubah tanpa batasan pembukaan yang diasumsikan.",
-  researchCostDiscrepancy: "Perbedaan sumber: biaya level berjumlah {calculated} Lencana Perang; total publikasi {published}. Estimasi memakai biaya level sambil menunggu verifikasi.",
+  tabCodex: 'Tabel Hero',
+  researchMissingLayout:
+    'Daftar node: tata letak dan prasyarat belum diverifikasi. Level dapat diubah tanpa batasan pembukaan yang diasumsikan.',
+  researchCostDiscrepancy:
+    'Perbedaan sumber: biaya level berjumlah {calculated} Lencana Perang; total publikasi {published}. Estimasi memakai biaya level sambil menunggu verifikasi.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas Hero',
   tabHeroesCombos: 'Hub Hero & Kombo',
@@ -1471,7 +1480,8 @@ const id = {
   scoreBreakdownSecondary: 'Alt / banner',
   scoreBreakdownDutyFormula: '{count} × bobot {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
-  scoreBreakdownClassSummary: 'Tugas akun utama: {main} ({mainPoints} poin) · Alt/banner: {alt} ({altPoints} poin)',
+  scoreBreakdownClassSummary:
+    'Tugas akun utama: {main} ({mainPoints} poin) · Alt/banner: {alt} ({altPoints} poin)',
   scoreBreakdownAltCount: '{count} alt',
   scoreBreakdownCountSplit: 'Akun utama: {main} · Alt / panji: {alt}',
   playerSeasonTitle: 'Ringkasan musim',
@@ -1482,8 +1492,7 @@ const id = {
   edenX1BreakdownDuty: 'Poin tugas',
   edenX1BreakdownConductPoints: 'Poin bonus usaha tim',
   edenX1BreakdownTotal: 'Total',
-  edenX1DutyFormula:
-    '{banners} banner + {pathers} jalur + {shieldWalls} shield wall',
+  edenX1DutyFormula: '{banners} banner + {pathers} jalur + {shieldWalls} shield wall',
   edenX1ConductFormula: '{conduct} usaha tim x 10.000',
   edenX1ConductPrivateNotice:
     'Poin bonus usaha tim ini ditetapkan oleh R5 MalakAbo. Detail tidak dapat dilihat publik; hubungi kami untuk banding.',
@@ -2713,7 +2722,8 @@ Object.assign(id, {
   adminShieldWallTitle: 'Dinding Perisai',
   adminShieldWallAddNames: 'Tambahkan nama',
   adminShieldWallEmpty: 'Belum ada catatan Dinding Perisai.',
-  adminShieldWallDropZone: 'Letakkan screenshot daftar Dinding Perisai di sini atau klik Unggah Gambar',
+  adminShieldWallDropZone:
+    'Letakkan screenshot daftar Dinding Perisai di sini atau klik Unggah Gambar',
   adminShieldWallScanning: 'Memindai daftar Dinding Perisai…',
   adminDutyUnsupportedImageLog:
     'Tidak ada gambar {label} yang didukung. Gunakan PNG, JPG, atau WebP. Ditolak: {files}',
@@ -3288,16 +3298,20 @@ Object.assign(id, {
   adminSuggestShowAll: 'Tampilkan semua {count}',
   adminSuggestShowFewer: 'Tampilkan {count} pertama',
   adminSuggestApproveAll: 'Setujui semua {count}',
-  adminSuggestApproveAllConfirm: 'Setujui {count} saran? Masing-masing langsung membuat penyesuaiannya, dan ini tidak bisa dibatalkan sekaligus.',
+  adminSuggestApproveAllConfirm:
+    'Setujui {count} saran? Masing-masing langsung membuat penyesuaiannya, dan ini tidak bisa dibatalkan sekaligus.',
   adminSuggestApproveAllDone: '{count} saran disetujui.',
   adminSuggestApproveAllPartial: '{done} dari {count} disetujui; {failed} gagal.',
   adminSuggestReviewNoneForFilter: 'Tidak ada saran yang cocok dengan filter ini.',
   adminDutyWeightsTitle: 'Bobot poin tugas',
-  adminDutyWeightsNote: 'Nilai satu tugas, menurut aktivitas dan menurut apakah akun utama atau akun kedua yang melakukannya. Menyimpan langsung menghitung ulang musim ini, termasuk entri lama.',
+  adminDutyWeightsNote:
+    'Nilai satu tugas, menurut aktivitas dan menurut apakah akun utama atau akun kedua yang melakukannya. Menyimpan langsung menghitung ulang musim ini, termasuk entri lama.',
   adminDutyWeightsIncludeDemolition: 'Tambahkan poin penghancuran ke total kontribusi',
-  adminDutyWeightsIncludeDemolitionHint: 'Matikan agar penghancuran tetap terlihat tanpa ditambahkan ke total dasbor.',
+  adminDutyWeightsIncludeDemolitionHint:
+    'Matikan agar penghancuran tetap terlihat tanpa ditambahkan ke total dasbor.',
   adminDutyWeightsActivity: 'Tugas',
-  adminDutyWeightsUnit: '1 poin = 10.000 skor. Contoh: jalur di akun utama bernilai 3 menambah 30.000.',
+  adminDutyWeightsUnit:
+    '1 poin = 10.000 skor. Contoh: jalur di akun utama bernilai 3 menambah 30.000.',
   adminDutyWeightsMain: 'Utama',
   adminDutyWeightsAlt: 'Akun kedua',
   adminDutyWeightsBanners: 'Panji',
@@ -3310,19 +3324,24 @@ Object.assign(id, {
   adminScoringMultipliersTitle: 'Pengganda skor',
   adminScoringContributionLabel: 'Bobot kontribusi dalam game',
   adminScoringFormPointsLabel: 'Bobot poin formulir',
-  adminScoringMultipliersHint: 'Kontribusi dalam game adalah kontribusi papan peringkat ditambah poin luar guild. 0,5 memangkasnya separuh agar kerja dukungan lebih berbobot; bobot poin formulir menskalakan satuan 1 poin = 10.000. 1 membiarkan keduanya seperti sekarang.',
+  adminScoringMultipliersHint:
+    'Kontribusi dalam game adalah kontribusi papan peringkat ditambah poin luar guild. 0,5 memangkasnya separuh agar kerja dukungan lebih berbobot; bobot poin formulir menskalakan satuan 1 poin = 10.000. 1 membiarkan keduanya seperti sekarang.',
   adminRewardSettingsTitle: 'Distribusi hadiah',
-  adminRewardSettingsNote: 'Berapa banyak pemain yang diganjar tiap kategori musim ini. Mengubahnya menomori ulang slot hadiah; halaman publik menampilkan distribusi baru setelah publikasi berikutnya.',
+  adminRewardSettingsNote:
+    'Berapa banyak pemain yang diganjar tiap kategori musim ini. Mengubahnya menomori ulang slot hadiah; halaman publik menampilkan distribusi baru setelah publikasi berikutnya.',
   adminRewardSettingsCategory: 'Kategori',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Hadiah guild master diberikan kepada',
   adminRewardSettingsGuildMasterR5: 'R5',
   adminRewardSettingsGuildMasterTop1: 'Penyumbang dukungan teratas',
   adminRewardSettingsR5Label: 'Pemain R5',
-  adminRewardSettingsHint: 'Jika R5 yang disebut tidak ada dalam daftar dukungan, hadiah guild master tetap pada penyumbang dukungan teratas agar tidak kosong.',
+  adminRewardSettingsHint:
+    'Jika R5 yang disebut tidak ada dalam daftar dukungan, hadiah guild master tetap pada penyumbang dukungan teratas agar tidak kosong.',
   adminRewardSettingsSave: 'Simpan distribusi',
-  adminRewardSettingsSaved: 'Distribusi tersimpan. Publikasikan musim untuk memperbarui halaman publik.',
-  adminRewardSettingsResetConfirm: 'Kembalikan distribusi hadiah ke bawaan? Ini menomori ulang slot hadiah.',
+  adminRewardSettingsSaved:
+    'Distribusi tersimpan. Publikasikan musim untuk memperbarui halaman publik.',
+  adminRewardSettingsResetConfirm:
+    'Kembalikan distribusi hadiah ke bawaan? Ini menomori ulang slot hadiah.',
   adminSuggestApprove: 'Setujui',
   adminSuggestReject: 'Tolak',
   adminSuggestApproveConfirm:

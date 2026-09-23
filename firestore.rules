@@ -721,6 +721,7 @@ service cloud.firestore {
     function validEdenX1VoteSettings() {
       return request.resource.data.keys().hasOnly([
         'season', 'votingOpen', 'allowEditing', 'showPublicResults',
+        'showMemberResults', 'showManagementResults',
         'showVoterNames', 'contributionRankingMode', 'closesAt', 'candidateRedirects',
         'updatedAt', 'updatedBy'
       ])
@@ -730,6 +731,10 @@ service cloud.firestore {
       && request.resource.data.votingOpen is bool
       && request.resource.data.allowEditing is bool
       && request.resource.data.showPublicResults is bool
+      // The single switch split in two; both are optional so a document written
+      // before the split still validates.
+      && (!('showMemberResults' in request.resource.data) || request.resource.data.showMemberResults is bool)
+      && (!('showManagementResults' in request.resource.data) || request.resource.data.showManagementResults is bool)
       && request.resource.data.showVoterNames is bool
       && (
         !('contributionRankingMode' in request.resource.data)
