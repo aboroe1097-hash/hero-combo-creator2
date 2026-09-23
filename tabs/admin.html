@@ -321,6 +321,48 @@
                   <circle cx="12" cy="13" r="4" /></svg
                 ><span data-i18n="adminExpPng">PNG Dashboard</span>
               </button>
+              <button id="dashExpDutyPngBanner" data-duty-export-png="banner">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" /></svg
+                ><span data-i18n="adminExpPngBanners">PNG Banners List</span>
+              </button>
+              <button id="dashExpDutyPngPather" data-duty-export-png="pather">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" /></svg
+                ><span data-i18n="adminExpPngPathing">PNG Pathing List</span>
+              </button>
+              <button id="dashExpDutyPngShieldWall" data-duty-export-png="shield_wall">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" /></svg
+                ><span data-i18n="adminExpPngShieldWalls">PNG Shield Walls List</span>
+              </button>
               <button id="dashExpJson">
                 <svg
                   width="12"
@@ -2945,6 +2987,9 @@
               ><span data-i18n="adminBannerListTitle">Banners List</span>
             </h2>
             <div class="dash-card-actions">
+              <button class="dash-btn" type="button" data-duty-export-png="banner">
+                <span data-i18n="adminDutyShareListPng">Share PNG</span>
+              </button>
               <button id="dashBannerListPasteBtn" class="dash-btn">
                 <span data-i18n="adminBannerPasteNames">Paste Names</span>
               </button>
@@ -3011,6 +3056,9 @@
               ><span data-i18n="adminPatherListTitle">Pathers / Speed Tile Plans</span>
             </h2>
             <div class="dash-card-actions">
+              <button class="dash-btn" type="button" data-duty-export-png="pather">
+                <span data-i18n="adminDutyShareListPng">Share PNG</span>
+              </button>
               <button id="dashPatherListPasteBtn" class="dash-btn">
                 <span data-i18n="adminPatherPastePlan">Paste Plan</span>
               </button>
@@ -3077,6 +3125,9 @@
               ><span data-i18n="adminShieldWallTitle">Shield Wall</span>
             </h2>
             <div class="dash-card-actions">
+              <button class="dash-btn" type="button" data-duty-export-png="shield_wall">
+                <span data-i18n="adminDutyShareListPng">Share PNG</span>
+              </button>
               <button id="dashShieldWallPasteBtn" class="dash-btn">
                 <span data-i18n="adminShieldWallAddNames">Add Names</span>
               </button>

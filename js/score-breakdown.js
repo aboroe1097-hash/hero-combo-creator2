@@ -59,6 +59,22 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+// A duty upload without a title is named by its day ("Sep 23"). Restated from
+// duty-record-title.js because this module stays dependency-free.
+function dutyUploadDay(date, locale) {
+  const match = String(date || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return String(date || '');
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))));
+  } catch {
+    return String(date || '');
+  }
+}
+
 function weightText(value) {
   const number = Number(value) || 0;
   return Number.isInteger(number) ? String(number) : String(Number(number.toFixed(3)));
@@ -407,14 +423,18 @@ export function renderPlayerSeasonSummary(options) {
   const countBy = (activity) => duties.filter((duty) => duty.activity === activity).length;
   const activityLabel = (activity) => t(DUTY_ACTIVITY_SHORT_KEYS[activity] || activity);
 
+  const dutyLocale =
+    options.locale || (typeof document !== 'undefined' ? document.documentElement?.lang : '');
   const dutyRow = (duty) => {
     const when = [duty.date, duty.usageTime || duty.gameTime].filter(Boolean).join(' · ');
+    // The upload's title ("Raceday 1"), or the upload day when it has none.
+    const upload = String(duty.title || '').trim() || dutyUploadDay(duty.date, dutyLocale);
     // The chip names the class the duty scored as. A linked secondary account
     // used to print "Main", which is the one thing it is not.
     const cls = DUTY_ACCOUNT_CLASSES.includes(duty.accountClass) ? duty.accountClass : 'alt';
     const offMain = cls !== 'main';
     return `<li class="player-season-duty" data-activity="${escapeHtml(duty.activity)}">
-        <span class="player-season-duty-what"><strong>${escapeHtml(activityLabel(duty.activity))}</strong>${duty.target ? `<span>${escapeHtml(duty.target)}</span>` : ''}</span>
+        <span class="player-season-duty-what"><strong>${escapeHtml(activityLabel(duty.activity))}</strong>${upload ? `<span class="player-season-duty-upload">${escapeHtml(upload)}</span>` : ''}${duty.target ? `<span>${escapeHtml(duty.target)}</span>` : ''}</span>
         <span class="player-season-duty-when">${escapeHtml(when || '—')}</span>
         <span class="player-season-duty-chip" data-account="${dutyClassChip(cls)}">${escapeHtml(t(DUTY_CHIP_LABEL_KEYS[cls]))}${offMain && duty.accountName ? ` · ${escapeHtml(duty.accountName)}` : ''}</span>
       </li>`;

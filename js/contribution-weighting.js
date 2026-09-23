@@ -12,6 +12,7 @@ import {
 } from './player-registry.js';
 import { collapseContributionOcrDuplicates } from './contribution-identity.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
+import { normalizeDutyRecordTitle } from './duty-record-title.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -568,6 +569,9 @@ export function collectFamilyDutyEntries(dutyRecords = [], familyKey = '') {
         out.push({
           activity: bucket,
           date: String(record.date || ''),
+          // The operator's optional upload title ("Raceday 1"); the season
+          // view falls back to the upload day when it is blank.
+          title: normalizeDutyRecordTitle(record.title),
           gameTime: String(record.gameTime || ''),
           usageTime: String(entry.usageTime || ''),
           target: String(entry.target || ''),
