@@ -295,7 +295,8 @@ const ru = {
   adminAccountLinksAccountPh: 'напр. Angel Banner',
   adminAccountLinksOwner: 'Управляет',
   adminAccountLinksOwnerPh: 'напр. ANGEL',
-  adminAccountLinksAlt: 'Второстепенный',
+  adminAccountLinksAlt: 'Второстепенный / знамя',
+  adminAccountLinksSecondary: 'Второй аккаунт',
   adminAccountLinksAdd: 'Связать аккаунт',
   adminAccountLinksSuggested: 'Предлагаемые знаменные аккаунты',
   adminAccountsTab: 'Аккаунты',
@@ -313,6 +314,22 @@ const ru = {
   adminAccountLinksLocal:
     'Сохранено только на этом устройстве; синхронизация не удалась. Связанных аккаунтов: {count}.',
   adminAccountLinksSavedLog: 'Связи аккаунтов сохранены: {count} (было {before}).',
+  adminAliasesTitle: 'Псевдонимы игроков',
+  adminAliasesHint:
+    'Научите короткому имени, которое список использует для игрока, например zubs для Lady Zubbs. Выученный псевдоним проверяется раньше всех встроенных списков и поэтому всегда побеждает.',
+  adminAliasesAlias: 'Короткое имя',
+  adminAliasesAliasPh: 'напр. zubs',
+  adminAliasesCanonical: 'Считается как',
+  adminAliasesCanonicalPh: 'напр. Lady Zubbs',
+  adminAliasesAdd: 'Научить псевдоним',
+  adminAliasesActive: 'Выученные псевдонимы',
+  adminAliasesNone: 'Псевдонимы ещё не заданы.',
+  adminAliasesRemove: 'Удалить',
+  adminAliasesRemoveFor: 'Удалить псевдоним для {alias}',
+  adminAliasesSaved: 'Сохранено. Выученных псевдонимов: {count}.',
+  adminAliasesLocal:
+    'Сохранено только на этом устройстве; синхронизация не удалась. Выученных псевдонимов: {count}.',
+  adminAliasesSavedLog: 'Псевдонимы игроков сохранены: {count} (было {before}).',
   adminDutyAddNameRowTitle:
     'Добавить ещё одно имя для той же цели, например если на ней использовали два знамени',
   adminDutyUsageTimeTitle: 'Время использования',
@@ -1489,6 +1506,8 @@ const ru = {
   scoreBreakdownTimesWeight: '{count} × {weight}',
   scoreBreakdownNoDuty: 'Задач не записано',
   scoreBreakdownSecondary: 'Второстепенный / знамя',
+  scoreBreakdownSecondaryCount: '{count} второй',
+  scoreBreakdownSecondarySummary: 'Задачи второго аккаунта: {secondary} ({secondaryPoints} очк.)',
   scoreBreakdownDutyFormula: '{count} × вес {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
   scoreBreakdownClassSummary:
@@ -3125,7 +3144,8 @@ Object.assign(ru, {
   adminDutyWeightsUnit:
     '1 очко = 10 000 счёта. Пример: пути на основном аккаунте с весом 3 дают 30 000.',
   adminDutyWeightsMain: 'Основной',
-  adminDutyWeightsAlt: 'Дополнительный',
+  adminDutyWeightsAlt: 'Второстепенный / знамя',
+  adminDutyWeightsSecondary: 'Второй аккаунт',
   adminDutyWeightsBanners: 'Знамёна',
   adminDutyWeightsPathers: 'Дороги',
   adminDutyWeightsShieldWalls: 'Щитовые стены',

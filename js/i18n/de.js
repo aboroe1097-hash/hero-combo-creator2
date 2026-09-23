@@ -325,7 +325,8 @@ const de = {
   adminAccountLinksAccountPh: 'z. B. Angel Banner',
   adminAccountLinksOwner: 'Geführt von',
   adminAccountLinksOwnerPh: 'z. B. ANGEL',
-  adminAccountLinksAlt: 'Zweit / Nebenkonto',
+  adminAccountLinksAlt: 'Zweit / Banner',
+  adminAccountLinksSecondary: 'Sekundär',
   adminAccountLinksAdd: 'Konto verknüpfen',
   adminAccountLinksSuggested: 'Vorgeschlagene Bannerkonten',
   adminAccountsTab: 'Konten',
@@ -343,6 +344,22 @@ const de = {
   adminAccountLinksLocal:
     'Nur auf diesem Gerät gespeichert; Cloud-Sync fehlgeschlagen. {count} verknüpfte Konten.',
   adminAccountLinksSavedLog: 'Kontoverknüpfungen gespeichert: {count} verknüpft (vorher {before}).',
+  adminAliasesTitle: 'Spieler-Aliase',
+  adminAliasesHint:
+    'Lehre den Kurznamen, den eine Liste für einen Spieler verwendet, etwa zubs für Lady Zubbs. Ein gelehrter Alias wird vor allen eingebauten Listen geprüft und gewinnt damit immer.',
+  adminAliasesAlias: 'Kurzname',
+  adminAliasesAliasPh: 'z. B. zubs',
+  adminAliasesCanonical: 'Zählt als',
+  adminAliasesCanonicalPh: 'z. B. Lady Zubbs',
+  adminAliasesAdd: 'Alias lehren',
+  adminAliasesActive: 'Gelehrte Aliase',
+  adminAliasesNone: 'Noch keine Aliase gelehrt.',
+  adminAliasesRemove: 'Entfernen',
+  adminAliasesRemoveFor: 'Alias für {alias} entfernen',
+  adminAliasesSaved: 'Gespeichert. {count} gelehrte Aliase.',
+  adminAliasesLocal:
+    'Nur auf diesem Gerät gespeichert; Cloud-Sync fehlgeschlagen. {count} gelehrte Aliase.',
+  adminAliasesSavedLog: 'Spieler-Aliase gespeichert: {count} gelehrt (vorher {before}).',
   adminDutyAddNameRowTitle:
     'Einen weiteren Namen für dasselbe Ziel hinzufügen, z. B. wenn dort zwei Banner genutzt wurden',
   adminDutyUsageTimeTitle: 'Usage time',
@@ -1529,6 +1546,8 @@ const de = {
   scoreBreakdownTimesWeight: '{count} × {weight}',
   scoreBreakdownNoDuty: 'Keine Dienste erfasst',
   scoreBreakdownSecondary: 'Zweit / Banner',
+  scoreBreakdownSecondaryCount: '{count} Sekundär',
+  scoreBreakdownSecondarySummary: 'Sekundärkonto-Dienste: {secondary} ({secondaryPoints} P.)',
   scoreBreakdownDutyFormula: '{count} × Gewicht {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
   scoreBreakdownClassSummary:
@@ -3369,7 +3388,8 @@ const de = {
   adminDutyWeightsUnit:
     '1 Punkt = 10.000 Punktwert. Beispiel: Pfade auf einem Hauptkonto mit 3 ergeben 30.000.',
   adminDutyWeightsMain: 'Haupt',
-  adminDutyWeightsAlt: 'Zweit / Nebenkonto',
+  adminDutyWeightsAlt: 'Zweit / Banner',
+  adminDutyWeightsSecondary: 'Sekundärkonto',
   adminDutyWeightsBanners: 'Banner',
   adminDutyWeightsPathers: 'Wegebau',
   adminDutyWeightsShieldWalls: 'Schildwälle',

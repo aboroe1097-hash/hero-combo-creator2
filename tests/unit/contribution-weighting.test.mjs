@@ -347,7 +347,16 @@ test('weighted duty counts credit both banner account and operator when present'
     ]);
 
     assert.equal(counts.get(compactPlayerIdentity('ANGEL')).banners, 1);
-    assert.equal(counts.get(compactPlayerIdentity('Zubbs')).banners, 1);
+    // The operator note is taught: "Zubbs" now names Lady Zubbs outright, so the
+    // second credit lands on her account rather than on the family's roster
+    // spelling. Same family, one duty, still two credited accounts.
+    assert.equal(counts.get(compactPlayerIdentity('Lady Zubbs')).banners, 1);
+    assert.equal(
+      [...counts.entries()]
+        .filter(([key]) => getWeightedPlayerFamilyKey(key) === 'zubbs')
+        .reduce((sum, [, row]) => sum + row.banners, 0),
+      1
+    );
   });
 });
 
@@ -897,15 +906,20 @@ test('shared-identity accounts credit duty + conduct to the highest-contribution
 test('duty points weight each activity by the account class that performed it', async () => {
   const {
     DEFAULT_DUTY_POINT_WEIGHTS,
+    DUTY_ACCOUNT_CLASSES,
     DUTY_POINT_UNIT,
     classifyDutyAccount,
     dutyPointsFor,
     normalizeDutyPointWeights,
   } = await import('../../js/contribution-weighting.js');
 
+  // Three classes: the main, every other account, and a linked account the admin
+  // marked as a real second account rather than a banner.
+  assert.deepEqual(DUTY_ACCOUNT_CLASSES, ['main', 'alt', 'secondary']);
+
   // The shipped defaults are the ones the operator asked for out loud.
-  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.banners, { main: 1, alt: 0.5 });
-  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.pathers, { main: 3, alt: 1 });
+  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.banners, { main: 1, alt: 0.5, secondary: 0.5 });
+  assert.deepEqual(DEFAULT_DUTY_POINT_WEIGHTS.pathers, { main: 3, alt: 1, secondary: 1 });
 
   // A family's primary account is the main; every other account a person plays
   // — secondary castles, banner accounts — is an alt.
@@ -915,6 +929,22 @@ test('duty points weight each activity by the account class that performed it', 
   assert.equal(dutyPointsFor({ banners: { main: 2, alt: 0 } }), 2 * DUTY_POINT_UNIT);
   assert.equal(dutyPointsFor({ banners: { main: 0, alt: 2 } }), 1 * DUTY_POINT_UNIT);
   assert.equal(dutyPointsFor({ pathers: { main: 1, alt: 0 } }), 3 * DUTY_POINT_UNIT);
+  // The third class scores on its own cell, and its default matches the alt
+  // weight: adding the class cannot restate a season nobody retuned.
+  assert.equal(dutyPointsFor({ banners: { main: 0, alt: 0, secondary: 2 } }), 1 * DUTY_POINT_UNIT);
+  assert.equal(
+    DEFAULT_DUTY_POINT_WEIGHTS.banners.secondary,
+    DEFAULT_DUTY_POINT_WEIGHTS.banners.alt
+  );
+  assert.equal(
+    dutyPointsFor(
+      { banners: { main: 0, alt: 0, secondary: 1 } },
+      {
+        banners: { main: 1, alt: 1, secondary: 4 },
+      }
+    ),
+    4 * DUTY_POINT_UNIT
+  );
 
   // Every weight at 1 reproduces the flat 10,000-per-duty rule this replaced,
   // so the change is opt-in through configuration rather than forced.
@@ -942,16 +972,24 @@ test('duty points weight each activity by the account class that performed it', 
     pathers: { main: 2 },
     shieldWalls: { main: 1e9, alt: 4 },
   });
-  assert.deepEqual(cleaned.banners, { main: 1, alt: 0.5 });
+  assert.deepEqual(cleaned.banners, { main: 1, alt: 0.5, secondary: 0.5 });
   assert.equal(cleaned.pathers.main, 2);
   assert.equal(cleaned.pathers.alt, 1);
+  assert.equal(cleaned.pathers.secondary, 1);
   assert.equal(cleaned.shieldWalls.main, 1);
   assert.equal(cleaned.shieldWalls.alt, 4);
+  assert.equal(cleaned.shieldWalls.secondary, 1);
+  // A document written before the third class existed carries no secondary cell
+  // and still normalizes to the default for it.
   assert.deepEqual(normalizeDutyPointWeights(null), {
-    banners: { main: 1, alt: 0.5 },
-    pathers: { main: 3, alt: 1 },
-    shieldWalls: { main: 1, alt: 1 },
+    banners: { main: 1, alt: 0.5, secondary: 0.5 },
+    pathers: { main: 3, alt: 1, secondary: 1 },
+    shieldWalls: { main: 1, alt: 1, secondary: 1 },
   });
+  assert.equal(
+    normalizeDutyPointWeights({ banners: { main: 1, alt: 1, secondary: 2.5 } }).banners.secondary,
+    2.5
+  );
 });
 
 test('duty weights are stored per workspace and edited only by a superadmin', async () => {
@@ -978,7 +1016,7 @@ test('duty weights are stored per workspace and edited only by a superadmin', as
   assert.match(panel, /\shidden\b/);
   // One input per activity per account class, or a weight silently cannot be set.
   for (const activity of ['banners', 'pathers', 'shieldWalls']) {
-    for (const cls of ['main', 'alt']) {
+    for (const cls of ['main', 'alt', 'secondary']) {
       assert.match(
         panel,
         new RegExp(`data-duty-weight="${activity}" data-duty-class="${cls}"`),
@@ -1004,7 +1042,7 @@ test('duty weights are stored per workspace and edited only by a superadmin', as
   assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);
 });
 
-test('upload rows and account links decide whether a duty scores as main or banner', async () => {
+test('upload rows and account links decide whether a duty scores as main, alt or secondary', async () => {
   const { buildWeightedContributionRows, classifyDutyAccount, getWeightedPlayerFamilyKey } =
     await import('../../js/contribution-weighting.js');
   const { setActivePlayerRegistry } = await import('../../js/player-registry.js');
@@ -1035,11 +1073,12 @@ test('upload rows and account links decide whether a duty scores as main or bann
     assert.deepEqual(classesFor([{ name: 'ANGEL', confirmed: 'ANGEL' }], 'ANGEL'), {
       main: 1,
       alt: 0,
+      secondary: 0,
     });
     // The list named the player, but the uploader said it was their banner.
     assert.deepEqual(
       classesFor([{ name: 'ANGEL', confirmed: 'ANGEL', accountType: 'banner' }], 'ANGEL'),
-      { main: 0, alt: 1 }
+      { main: 0, alt: 1, secondary: 0 }
     );
     // "Main" wins over an account that would otherwise count as an alt.
     assert.deepEqual(
@@ -1047,7 +1086,7 @@ test('upload rows and account links decide whether a duty scores as main or bann
         [{ name: 'Angel Banner', confirmed: 'Angel Banner', accountType: 'main' }],
         'ANGEL'
       ),
-      { main: 1, alt: 0 }
+      { main: 1, alt: 0, secondary: 0 }
     );
 
     // Unlinked, a banner account is its own player at full weight.
@@ -1068,7 +1107,84 @@ test('upload rows and account links decide whether a duty scores as main or bann
     assert.deepEqual(classesFor([{ name: 'Loony Banner', confirmed: 'Loony Banner' }], 'Loony'), {
       main: 0,
       alt: 1,
+      secondary: 0,
     });
+
+    // A link typed "secondary" is its own class: the account still belongs to
+    // its owner, but the duty is no longer lumped in with the banner accounts.
+    setActivePlayerRegistry({
+      players: [],
+      accountLinks: [{ account: 'Loony Banner', owner: 'Loony', type: 'secondary' }],
+    });
+    assert.equal(getWeightedPlayerFamilyKey('loonybanner'), getWeightedPlayerFamilyKey('loony'));
+    assert.equal(classifyDutyAccount('loonybanner'), 'secondary');
+    assert.deepEqual(classesFor([{ name: 'Loony Banner', confirmed: 'Loony Banner' }], 'Loony'), {
+      main: 0,
+      alt: 0,
+      secondary: 1,
+    });
+    // The per-row switch still overrides the account, one class at a time.
+    assert.deepEqual(
+      classesFor(
+        [{ name: 'Loony Banner', confirmed: 'Loony Banner', accountType: 'main' }],
+        'Loony'
+      ),
+      { main: 1, alt: 0, secondary: 0 }
+    );
+    assert.deepEqual(
+      classesFor(
+        [{ name: 'Loony Banner', confirmed: 'Loony Banner', accountType: 'banner' }],
+        'Loony'
+      ),
+      { main: 0, alt: 1, secondary: 0 }
+    );
+  } finally {
+    setActivePlayerRegistry(null);
+  }
+});
+
+test('a secondary link scores its duty at the configured third-class weight', async () => {
+  const { buildWeightedContributionRows, DUTY_POINT_UNIT } =
+    await import('../../js/contribution-weighting.js');
+  const { setActivePlayerRegistry } = await import('../../js/player-registry.js');
+
+  const build = (dutyPointWeights) =>
+    buildWeightedContributionRows({
+      contributionRecords: [
+        {
+          id: 'c-secondary',
+          date: '2026-09-20',
+          entries: [{ rank: 1, name: 'Loony', contribution: 100000 }],
+        },
+      ],
+      dutyRecords: [
+        { id: 'd1', type: 'banner', date: '2026-09-20', entries: [{ name: 'Second Castle' }] },
+        { id: 'd2', type: 'banner', date: '2026-09-20', entries: [{ name: 'Outpost Two' }] },
+      ],
+      dutyPointWeights,
+    }).rows.find((row) => row.playerName === 'Loony');
+
+  try {
+    setActivePlayerRegistry({
+      players: [],
+      accountLinks: [
+        { account: 'Second Castle', owner: 'Loony', type: 'secondary' },
+        { account: 'Outpost Two', owner: 'Loony', type: 'banner' },
+      ],
+    });
+    // One duty through the secondary account, one through the banner account.
+    // The grid is explicit here so the third cell is provably the one read.
+    const row = build({ banners: { main: 1, alt: 2, secondary: 4 } });
+    assert.deepEqual(row.dutiesByClass.banners, { main: 0, alt: 1, secondary: 1 });
+    assert.equal(row.dutyPoints, (2 + 4) * DUTY_POINT_UNIT);
+    const banners = row.dutyBreakdown.activities.find((entry) => entry.activity === 'banners');
+    assert.equal(banners.secondary.points, 4 * DUTY_POINT_UNIT);
+    assert.equal(banners.alt.points, 2 * DUTY_POINT_UNIT);
+
+    // With nothing configured, the secondary duty keeps the alt weight it would
+    // have scored at before the class existed.
+    const defaulted = build(undefined);
+    assert.equal(defaulted.dutyPoints, defaulted.dutiesByClass.banners.alt * 1 * DUTY_POINT_UNIT);
   } finally {
     setActivePlayerRegistry(null);
   }

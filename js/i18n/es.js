@@ -298,7 +298,8 @@ const es = {
   adminAccountLinksAccountPh: 'p. ej. Angel Banner',
   adminAccountLinksOwner: 'La maneja',
   adminAccountLinksOwnerPh: 'p. ej. ANGEL',
-  adminAccountLinksAlt: 'Secundaria',
+  adminAccountLinksAlt: 'Secundaria / estandarte',
+  adminAccountLinksSecondary: 'Secundaria',
   adminAccountLinksAdd: 'Vincular cuenta',
   adminAccountLinksSuggested: 'Cuentas de estandarte sugeridas',
   adminAccountsTab: 'Cuentas',
@@ -316,6 +317,22 @@ const es = {
   adminAccountLinksLocal:
     'Guardado solo en este dispositivo; falló la sincronización. {count} cuentas vinculadas.',
   adminAccountLinksSavedLog: 'Vínculos guardados: {count} vinculadas (antes {before}).',
+  adminAliasesTitle: 'Alias de jugadores',
+  adminAliasesHint:
+    'Enseña el nombre corto que usa una lista para un jugador, como zubs para Lady Zubbs. Un alias enseñado se comprueba antes que todas las listas integradas, así que siempre gana.',
+  adminAliasesAlias: 'Nombre corto',
+  adminAliasesAliasPh: 'p. ej. zubs',
+  adminAliasesCanonical: 'Cuenta como',
+  adminAliasesCanonicalPh: 'p. ej. Lady Zubbs',
+  adminAliasesAdd: 'Enseñar alias',
+  adminAliasesActive: 'Alias enseñados',
+  adminAliasesNone: 'Aún no hay alias enseñados.',
+  adminAliasesRemove: 'Quitar',
+  adminAliasesRemoveFor: 'Quitar el alias de {alias}',
+  adminAliasesSaved: 'Guardado. {count} alias enseñados.',
+  adminAliasesLocal:
+    'Guardado solo en este dispositivo; falló la sincronización. {count} alias enseñados.',
+  adminAliasesSavedLog: 'Alias de jugadores guardados: {count} enseñados (antes {before}).',
   adminDutyAddNameRowTitle:
     'Añade otro nombre para este mismo objetivo, por ejemplo si se usaron dos estandartes en él',
   adminDutyUsageTimeTitle: 'Hora de uso',
@@ -1499,6 +1516,9 @@ const es = {
   scoreBreakdownTimesWeight: '{count} × {weight}',
   scoreBreakdownNoDuty: 'Sin tareas registradas',
   scoreBreakdownSecondary: 'Secundaria / estandarte',
+  scoreBreakdownSecondaryCount: '{count} secundaria',
+  scoreBreakdownSecondarySummary:
+    'Tareas de cuenta secundaria: {secondary} ({secondaryPoints} pts)',
   scoreBreakdownDutyFormula: '{count} × peso {weight} × {unit}',
   scoreBreakdownConductFormula: '{bonus} × {unit}',
   scoreBreakdownClassSummary:
@@ -3324,7 +3344,8 @@ const es = {
   adminDutyWeightsUnit:
     '1 punto = 10.000 de puntuación. Ejemplo: rutas en una cuenta principal a 3 suman 30.000.',
   adminDutyWeightsMain: 'Principal',
-  adminDutyWeightsAlt: 'Secundaria',
+  adminDutyWeightsAlt: 'Secundaria / estandarte',
+  adminDutyWeightsSecondary: 'Cuenta secundaria',
   adminDutyWeightsBanners: 'Estandartes',
   adminDutyWeightsPathers: 'Caminos',
   adminDutyWeightsShieldWalls: 'Muros de escudos',

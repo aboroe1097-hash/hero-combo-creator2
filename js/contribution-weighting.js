@@ -5,7 +5,11 @@ import {
   resolveCanonicalPlayerIdentity,
   stripExGuildGuildTag,
 } from './ocr-name-normalizer.js';
-import { currentPlayerRegistry, resolvePlayerRegistryFamilyKey } from './player-registry.js';
+import {
+  accountLinkClass,
+  currentPlayerRegistry,
+  resolvePlayerRegistryFamilyKey,
+} from './player-registry.js';
 import { collapseContributionOcrDuplicates } from './contribution-identity.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 
@@ -27,15 +31,19 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
 // read the way an operator says them out loud: pathing on a main is worth 3.
 export const DUTY_POINT_UNIT = 10000;
 export const DUTY_ACTIVITIES = Object.freeze(['banners', 'pathers', 'shieldWalls']);
-export const DUTY_ACCOUNT_CLASSES = Object.freeze(['main', 'alt']);
+// The account classes one duty can score as. `alt` is every non-main account —
+// the banner accounts and the unlinked second accounts — and `secondary` is an
+// account the admin linked and marked as a real second account rather than a
+// banner, so it can be weighed differently.
+export const DUTY_ACCOUNT_CLASSES = Object.freeze(['main', 'alt', 'secondary']);
 export const MAX_DUTY_POINT_WEIGHT = 100;
 
 export const DEFAULT_DUTY_POINT_WEIGHTS = Object.freeze({
-  banners: Object.freeze({ main: 1, alt: 0.5 }),
-  pathers: Object.freeze({ main: 3, alt: 1 }),
+  banners: Object.freeze({ main: 1, alt: 0.5, secondary: 0.5 }),
+  pathers: Object.freeze({ main: 3, alt: 1, secondary: 1 }),
   // Shield walls keep the old flat value until someone decides otherwise;
   // changing a weight nobody asked about would restate scores silently.
-  shieldWalls: Object.freeze({ main: 1, alt: 1 }),
+  shieldWalls: Object.freeze({ main: 1, alt: 1, secondary: 1 }),
 });
 
 // Whole-score multipliers, tuned per season the same way the duty grid is.
@@ -94,10 +102,13 @@ export function normalizeDutyPointWeights(raw) {
 
 // An account is the family main when it is the family's configured primary,
 // or when it is the whole family. Everything else a person also plays — the
-// secondary castles, the banner accounts — is an alt. Duty still lands on the
-// person's row either way; only what it is worth changes.
+// secondary castles, the banner accounts — is an alt, unless the admin linked
+// it and said it is a secondary account, which is its own class and its own
+// weight. Duty still lands on the person's row either way; only what it is
+// worth changes.
 export function classifyDutyAccount(accountKey) {
-  if (resolveAccountLink(accountKey)) return 'alt';
+  const link = resolveAccountLink(accountKey);
+  if (link) return accountLinkClass(link.type);
   const familyKey = playerFamilyKey(accountKey);
   const primary = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey] || familyKey;
   const key = compactPlayerIdentity(accountKey) || String(accountKey || '');
@@ -105,11 +116,11 @@ export function classifyDutyAccount(accountKey) {
 }
 
 export function emptyDutyClassCounts() {
-  return {
-    banners: { main: 0, alt: 0 },
-    pathers: { main: 0, alt: 0 },
-    shieldWalls: { main: 0, alt: 0 },
-  };
+  const counts = {};
+  for (const activity of DUTY_ACTIVITIES) {
+    counts[activity] = Object.fromEntries(DUTY_ACCOUNT_CLASSES.map((cls) => [cls, 0]));
+  }
+  return counts;
 }
 
 // The same calculation as dutyPointsFor, itemised: for each activity, how
@@ -797,11 +808,18 @@ export function buildWeightedContributionRows(options = {}) {
     const cls = classifyDutyAccount(accountKey);
     const split = familyDutyByClass.get(fam) || emptyDutyClassCounts();
     for (const activity of DUTY_ACTIVITIES) {
-      const forced = counts.forcedClass?.[activity] || { main: 0, alt: 0 };
-      const forcedTotal = forced.main + forced.alt;
+      // Rows saved with the per-row Main/Banner switch keep that class even when
+      // the account behind them is linked, so the split never contradicts the
+      // number the operator typed. Everything else follows the account.
+      const forced = counts.forcedClass?.[activity] || {};
+      const forcedTotal = DUTY_ACCOUNT_CLASSES.reduce(
+        (sum, name) => sum + Number(forced[name] || 0),
+        0
+      );
       split[activity][cls] += Math.max(0, counts[activity] - forcedTotal);
-      split[activity].main += forced.main;
-      split[activity].alt += forced.alt;
+      for (const name of DUTY_ACCOUNT_CLASSES) {
+        split[activity][name] += Number(forced[name] || 0);
+      }
     }
     familyDutyByClass.set(fam, split);
   });
