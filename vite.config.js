@@ -107,6 +107,9 @@ export default defineConfig({
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
         'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
+        // Eden Siege is the Arcade's first real-time route: its own canvas shell,
+        // with three.js behind a lazy import — see docs/plans/arcade-live-arena.md.
+        'eden-siege': resolve(__dirname, 'eden-siege.html'),
       },
       output: {
         codeSplitting: {
