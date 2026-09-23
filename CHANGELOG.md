@@ -10,6 +10,10 @@ This is the release history, newest first. Entries describe their release-time b
 - Heroes: the Atlas gained a season timeline. It lists the canonical hero-release seasons with hero counts that reconcile with the season filter, links each season to its shareable deep link, is a vertical list on phones, and stays readable at 320px, in both themes, and under reduced motion.
 - Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount.
 - Docs: the 16.5.0 motion plan and its Phase 0 baseline report live in docs/plans.
+- Specialization tower medal costs come from the community "Unit Specilization" workbook (Ivan & CrazyDD / ΜΟΛΩΝ ΛΑΒΕ) node by node and level by level, for all three troops and every tower row, instead of the partial transcription that covered archer VII–VIII and footman IX and left three sections incomplete. The planner now prices individual nodes and level-2 upgrades, not only the research total.
+- Where the workbook disagreed with the shipped numbers, the workbook wins and the column totals drop to their real values: Column II 31,294 → 26,794, Column III 62,588 → 52,191, Column IV 125,176 → 69,782, Column V 250,352 → 71,854, Column VI 500,704 → 92,662. Column I was already correct and is unchanged, and Columns VII–VIII move by a few percent to the exact values (160,696 → 164,461 and 223,382 → 230,248). Every column total still adds up to its four researches.
+- Towers IX and X are recorded from the same workbook with their node rows and totals, ready for a future column, and the source links plus the "With gratitude" panel credit the workbook's maintainers.
+- The workbook, its checksum, and a review-friendly snapshot are kept in the repository under `database/`, so the data can be re-derived without touching Google Sheets.
 
 ## 16.0.19 - 2026-09-23
 
