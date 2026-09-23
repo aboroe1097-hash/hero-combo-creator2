@@ -63,7 +63,7 @@ function webglAvailable() {
 
 function localizedDirection(lang) {
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.documentElement.lang = lang;
+  document.documentElement.lang = lang === 'kr' ? 'ko' : lang;
 }
 
 async function boot() {
@@ -119,7 +119,8 @@ async function boot() {
 
     // The command palette and the AI drawer navigate with hash routes; leaving
     // the page is the supervisor's job, so only the run needs stopping here.
-    window.addEventListener('pagehide', () => {
+    window.addEventListener('pagehide', (event) => {
+      if (event.persisted) return;
       themeObserver.disconnect();
       game.destroy();
     });

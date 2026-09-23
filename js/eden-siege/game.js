@@ -96,12 +96,27 @@ export async function startSiege({
 
   let paused = false;
   let destroyed = false;
-  let rafId = 0;
+  let rafId = null;
   let accumulator = 0;
   let lastFrame = performance.now();
   let hudClock = 0;
   let lastHitSoundAt = 0;
   let lastPhase = world.state.phase;
+
+  function isTerminalPhase() {
+    return world.state.phase === 'victory' || world.state.phase === 'defeat';
+  }
+
+  function stopFrame() {
+    if (rafId === null) return;
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  function scheduleFrame() {
+    if (destroyed || paused || rafId !== null) return;
+    rafId = requestAnimationFrame(frame);
+  }
   // Telemetry for the browser spec: a rendered frame and a simulated step are
   // different claims, and both are worth asserting on.
   let frames = 0;
@@ -167,8 +182,14 @@ export async function startSiege({
   }
 
   function restart() {
-    world.input.restart = true;
-    hud.setOverlay(null);
+    world.reset();
+    paused = false;
+    hud.setPaused(false);
+    accumulator = 0;
+    lastFrame = performance.now();
+    lastPhase = world.state.phase;
+    hud.setOverlay(overlayFor('ready'));
+    scheduleFrame();
   }
 
   async function share() {
@@ -185,10 +206,11 @@ export async function startSiege({
   }
 
   function setPaused(value) {
-    if (world.state.phase === 'victory' || world.state.phase === 'defeat') return;
+    if (isTerminalPhase() || destroyed) return;
     paused = Boolean(value);
     hud.setPaused(paused);
     if (paused) {
+      stopFrame();
       hud.setOverlay(overlayFor('paused'));
       return;
     }
@@ -196,6 +218,7 @@ export async function startSiege({
     lastFrame = performance.now();
     if (world.state.phase === 'ready') hud.setOverlay(overlayFor('ready'));
     else hud.setOverlay(null);
+    scheduleFrame();
   }
 
   function canInteract(socketIndex) {
@@ -297,39 +320,42 @@ export async function startSiege({
   }
 
   function frame(now) {
-    if (destroyed) return;
-    rafId = requestAnimationFrame(frame);
+    rafId = null;
+    if (destroyed || paused) return;
     const delta = Math.min(200, Math.max(0, now - lastFrame));
     lastFrame = now;
 
-    if (!paused) {
-      accumulator += delta;
-      const command = input.read();
-      let steps = 0;
-      while (accumulator >= STEP_MS && steps < MAX_STEPS_PER_FRAME) {
-        world.setInput(command);
-        world.step();
-        accumulator -= STEP_MS;
-        steps += 1;
-      }
-      if (steps === MAX_STEPS_PER_FRAME) accumulator = 0;
-      simSteps += steps;
-      handleEvents(world.drainEvents());
-
-      if (world.state.phase !== lastPhase) {
-        lastPhase = world.state.phase;
-        if (lastPhase === 'ready') hud.setOverlay(overlayFor('ready'));
-        else if (lastPhase !== 'victory' && lastPhase !== 'defeat') hud.setOverlay(null);
-      }
-      renderer.render(world.state, delta, accumulator / STEP_MS);
-      frames += 1;
-
-      hudClock += delta;
-      if (hudClock >= 90) {
-        hudClock = 0;
-        hud.update(world.state, { best });
-      }
+    accumulator += delta;
+    const command = input.read();
+    let steps = 0;
+    while (accumulator >= STEP_MS && steps < MAX_STEPS_PER_FRAME) {
+      world.setInput(command);
+      world.step();
+      command.nova = false;
+      command.start = false;
+      accumulator -= STEP_MS;
+      steps += 1;
     }
+    if (steps === 0) world.setInput(command);
+    if (steps === MAX_STEPS_PER_FRAME) accumulator = 0;
+    simSteps += steps;
+    handleEvents(world.drainEvents());
+
+    if (world.state.phase !== lastPhase) {
+      lastPhase = world.state.phase;
+      if (lastPhase === 'ready') hud.setOverlay(overlayFor('ready'));
+      else if (lastPhase !== 'victory' && lastPhase !== 'defeat') hud.setOverlay(null);
+    }
+    renderer.render(world.state, delta, accumulator / STEP_MS);
+    frames += 1;
+
+    hudClock += delta;
+    if (hudClock >= 90) {
+      hudClock = 0;
+      hud.update(world.state, { best });
+    }
+
+    if (!isTerminalPhase()) scheduleFrame();
   }
 
   // ── wiring ────────────────────────────────────────────────────────────────
@@ -372,16 +398,27 @@ export async function startSiege({
     if (document.hidden && !paused) setPaused(true);
   }
 
+  let contextPauseOwned = false;
   function onContextLost(event) {
     event.preventDefault();
-    setPaused(true);
+    contextPauseOwned = !paused;
+    if (contextPauseOwned) setPaused(true);
     hud.toast(copy.messages.pausedByContext ?? copy.phases.pauseTitle);
+  }
+
+  function onContextRestored() {
+    resize();
+    if (contextPauseOwned) {
+      contextPauseOwned = false;
+      setPaused(false);
+    }
   }
 
   canvas.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointerup', onPointerUp);
   document.addEventListener('visibilitychange', onVisibility);
   canvas.addEventListener('webglcontextlost', onContextLost);
+  canvas.addEventListener('webglcontextrestored', onContextRestored);
   window.addEventListener('resize', resize);
 
   hud.setBuildKind('frost');
@@ -389,7 +426,7 @@ export async function startSiege({
   hud.update(world.state, { best });
   hud.setOverlay(overlayFor('ready'));
   if (liteMode) hud.toast(copy.errors.webglBody);
-  rafId = requestAnimationFrame(frame);
+  scheduleFrame();
 
   return {
     world,
@@ -405,11 +442,12 @@ export async function startSiege({
     setPaused,
     destroy() {
       destroyed = true;
-      cancelAnimationFrame(rafId);
+      stopFrame();
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
       window.removeEventListener('resize', resize);
       input.dispose();
       audio.dispose();
