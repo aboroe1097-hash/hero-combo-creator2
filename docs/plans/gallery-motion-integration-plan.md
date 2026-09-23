@@ -51,6 +51,32 @@ functional UI, with the optional effect omitted.
 static fallbacks remain functional, release/version checks accept the real release history, the full
 integration checks pass, and the owner can review one coherent release PR into gh-pages.
 
+### 0.4 Scope freeze record (2026-09-23)
+
+Recorded against `claude/html-files-integration-plan-9211d8` (PR #215) with the Phase 0
+report as evidence.
+
+| Row | Status | Reason |
+|---|---|---|
+| P0 baseline/reclaim/policy/lifecycle/checks | **Included** | Measured reclaim, `js/fx/motion-policy.js` + `frame-loop.js`, and the parsed infinite-paint check all landed with tests |
+| P1 hub spotlight/entry | **Included** | One delegated pointer owner plus a one-shot cap-12 entry; reduced motion and Save-Data settle it |
+| P1 panel transitions | **Included** | `js/fx/view-swap.js` wraps the single `switchTab` update; unsupported/busy/reduced-motion navigates directly |
+| P1 loader completion | **Included** | One bounded `is-complete` settle; text never waits on it |
+| P1 combo deal | **Included (simplified)** | Existing top-5 stagger already finished within 600 ms; the top-card shimmer is now bounded to two passes instead of looping |
+| P1 detail sheen | **Included** | Spotlight plus a ±3° / ±3px header tilt behind a fine-pointer media query; rarity text untouched |
+| P1 Atlas keyboard/filter audit | **Static fallback (no change)** | Existing filter semantics, counts, sorting, deep links, and native controls retained; no ARIA grid conversion because the Atlas is not a composite grid |
+| P1 confirmed-success feedback | **Included** | Bounded pool wired only after combo save, share/copy, and Eden vote already succeed |
+| P1 animated totals | **Deferred** | Canonical localized text already updates immediately; an animated twin is conditional and adds RTL/decimals risk without user value |
+| P2 Eden route playback (§4.4) | **Deferred** | Needs a dense-map fixture and idle/pan/zoom baseline traces that this pass did not record; no fabricated ETA or phosphor data |
+| P2 tower connectors (§4.5) | **Deferred** | No trace evidence for the bounded stroke reveal yet |
+| P2 season timeline (§4.6) | **Included** | Canonical `season` data and counts reconcile with the Atlas filter, deep links and 12-locale label included; owner asked for it |
+| P2 Admin/OCR/VtsScore charts (§4.7) | **Deferred** | Read owner, history completeness, and timestamp semantics are unverified; a current total cannot become a series |
+| P2 Arcade SFX (§4.8) | **Deferred** | No existing sound setting or storage contract, the games live in five `games/boot` iframes with strict artifact-contract tests, a toggle label needs a 13-locale fill, and no audio acceptance evidence was produced |
+| P2 share art (§4.9) | **Deferred** | Seeded generative backgrounds are decorative-only and were not allocated bytes this pass |
+| P2 contrast tooling (§4.11) | **Partially included** | The parsed infinite-paint motion check shipped; the token-contrast script waits for explicit semantic foreground/background pairs |
+| P3 Materials scale-by-N (§4.5) | **Deferred** | Separate functional/data contract, per the plan |
+| P3 Battle Simulator worker pool (§4.10) | **Deferred** | Retained the existing single worker, per the plan |
+
 ## 1. Gallery inventory and evidence quality
 
 The original 2026-09-23 draft reported scanning all 100 sources and reading technique notes for 20 candidates.

@@ -72,6 +72,7 @@ The active release train uses 20 patch releases per minor version.
 - For release PRs, update `package.json`, the lockfile root/package versions, app constants, public HTML footers, the README release heading, and `CHANGELOG.md`.
 - Run `npm run version:check` to verify every public version surface and the 20-patch cadence.
 - Let `npm run build` refresh service-worker and cache metadata; include intentional generated changes instead of hand-editing build stamps.
+- **16.5.0 release-transition exception:** the owner requested the motion release directly from 16.0.18, and no 16.1-16.4 releases exist. `scripts/check-version-consistency.mjs` allows exactly that predecessor -> target pair via `APPROVED_RELEASE_TRANSITIONS`; never fabricate 16.1-16.4 changelog entries to satisfy cadence. Normal cadence resumes at 16.5.1, and the exception is covered by `tests/unit/version-transition.test.mjs`.
 - Documentation-only policy PRs do not need to bump the app version unless the owner explicitly asks for a release bump.
 
 ## External Deploys
