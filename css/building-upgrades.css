@@ -51,7 +51,9 @@
   max-width: 720px;
 }
 
-.building-tool-header h1 {
+/* The planner mounts inside the Planners ▸ Castle panel, which already owns the
+   page's heading levels, so its own title is a section heading. */
+.building-tool-header h2 {
   margin: 0.25rem 0 0.5rem;
   color: #fff;
   font-size: clamp(2rem, 4vw, 3rem);
@@ -528,26 +530,10 @@
   width: 27px;
   height: 27px;
 }
-.building-wiki-icon {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 9px;
-  object-fit: cover;
-  opacity: 0;
-}
-.building-row-icon.has-wiki-icon .building-wiki-icon {
-  opacity: 1;
-}
-.building-wiki-icon.is-unavailable {
+
+/* The search field filters rendered rows in place, so the list is never rebuilt. */
+.building-row-card[hidden] {
   display: none;
-}
-.building-row-icon__fallback {
-  display: none;
-}
-.building-row-icon:not(.has-wiki-icon) .building-row-icon__fallback {
-  display: block;
 }
 
 .building-row-name,
@@ -803,4 +789,145 @@
   .building-row-chevron {
     transition: none;
   }
+}
+
+/* Light theme. The palette tokens flip first; the surfaces that bypass them with a
+   literal dark gradient or a pale gold ink are listed explicitly, because a
+   #ffe3a6 figure on a white card is unreadable. */
+:root[data-theme='light'] .building-upgrades-host {
+  --building-bg: #f4f7fb;
+  --building-panel: rgba(255, 255, 255, 0.94);
+  --building-panel-raised: #ffffff;
+  --building-border: rgba(17, 34, 58, 0.16);
+  --building-text: #14213a;
+  --building-muted: #52637c;
+  --building-gold: #8a5a00;
+  --building-cyan: #0b6b86;
+}
+
+:root[data-theme='light'] .building-tool-header {
+  border-color: rgba(17, 34, 58, 0.14);
+  background:
+    radial-gradient(circle at 78% 22%, rgba(224, 175, 82, 0.18), transparent 28%),
+    linear-gradient(115deg, #ffffff 6%, #f1f5fb 58%, #f6efe4 100%);
+  box-shadow: 0 14px 34px rgba(15, 32, 56, 0.08);
+}
+
+:root[data-theme='light'] .building-tool-header h2 {
+  color: #14213a;
+}
+
+:root[data-theme='light'] .building-tool-mark {
+  filter: drop-shadow(0 12px 10px rgba(15, 32, 56, 0.16));
+}
+
+:root[data-theme='light'] .building-mode-switch,
+:root[data-theme='light'] .building-select-control select,
+:root[data-theme='light'] .building-search-control {
+  background: #ffffff;
+  border-color: rgba(17, 34, 58, 0.18);
+}
+
+:root[data-theme='light'] .building-mode-switch button:hover {
+  background: rgba(17, 34, 58, 0.06);
+}
+
+:root[data-theme='light'] .building-hero-card {
+  border-color: rgba(138, 90, 0, 0.26);
+  background:
+    radial-gradient(ellipse at 13% 100%, rgba(60, 120, 94, 0.12), transparent 38%),
+    linear-gradient(115deg, #ffffff, #f2f6fc 62%, #f7f2ea);
+}
+
+:root[data-theme='light'] .building-resource-card {
+  background: linear-gradient(145deg, #ffffff, #f6f9fd);
+}
+
+:root[data-theme='light'] .building-resource-card__icon {
+  border-color: rgba(17, 34, 58, 0.14);
+  background: rgba(17, 34, 58, 0.05);
+  color: #7a5a12;
+}
+
+:root[data-theme='light'] .building-resource-icon--crystal {
+  color: #0e7490;
+}
+
+:root[data-theme='light'] .building-resource-icon--coin {
+  color: #8a5a00;
+}
+
+:root[data-theme='light'] .building-resource-icon--wheat {
+  color: #8a6a12;
+}
+
+:root[data-theme='light'] .building-resource-icon--wood {
+  color: #8a5a2b;
+}
+
+:root[data-theme='light'] .building-resource-icon--flame {
+  color: #b45309;
+}
+
+:root[data-theme='light'] .building-resource-icon--stone {
+  color: #475569;
+}
+
+:root[data-theme='light'] .building-resource-icon--iron {
+  color: #334e6d;
+}
+
+:root[data-theme='light'] .building-step-card__level,
+:root[data-theme='light'] .building-row-total > strong,
+:root[data-theme='light'] .building-level-line__target,
+:root[data-theme='light'] .building-budget-banner > div > strong,
+:root[data-theme='light'] .building-hero-card__art--monogram {
+  color: #8a5a00;
+}
+
+:root[data-theme='light'] .building-row-total.is-incomplete > strong,
+:root[data-theme='light'] .building-unknown {
+  color: #b45309;
+}
+
+:root[data-theme='light'] .building-row-icon {
+  border-color: rgba(138, 90, 0, 0.3);
+  background: linear-gradient(145deg, #f7ecd2, #eef2f8 68%);
+  color: #7a5a12;
+}
+
+:root[data-theme='light'] .building-budget-banner {
+  border-color: rgba(138, 90, 0, 0.3);
+  background: linear-gradient(100deg, rgba(224, 175, 82, 0.18), rgba(241, 245, 251, 0.9));
+}
+
+:root[data-theme='light'] .building-data-warning {
+  border-color: rgba(180, 83, 9, 0.34);
+  background: rgba(251, 146, 60, 0.12);
+  color: #7c3d0a;
+}
+
+:root[data-theme='light'] .building-level-line {
+  border-bottom-color: rgba(17, 34, 58, 0.1);
+}
+
+:root[data-theme='light'] .building-source-note--sheet {
+  border-color: rgba(17, 34, 58, 0.16);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+:root[data-theme='light'] .building-source-note a {
+  color: #0b6b86;
+}
+
+:root[data-theme='light'] .building-source-note a:hover {
+  color: #06384a;
+}
+
+:root[data-theme='light'] .building-prerequisite {
+  background: rgba(224, 175, 82, 0.14);
+}
+
+:root[data-theme='light'] .building-bonus {
+  background: rgba(11, 107, 134, 0.08);
 }

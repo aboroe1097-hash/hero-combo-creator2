@@ -92,7 +92,6 @@ import {
   youtubeSection,
   researchSection,
   materialsSection,
-  buildingsSection,
   classDevelopmentSection,
   arcadeSection,
   tabHeroesCombosBtn,
@@ -102,7 +101,6 @@ import {
   tabResearchTowersBtn,
   researchTowersSection,
   tabMaterialsBtn,
-  tabBuildingsBtn,
   tabClassDevelopmentBtn,
   tabEdenMapBtn,
   tabStrifeBtn,
@@ -388,7 +386,6 @@ const TAB_BTN_IDS = {
   heroesCombos: 'tabHeroesCombos',
   researchTowers: 'tabResearchTowers',
   materials: 'tabMaterials',
-  buildings: 'tabBuildings',
   classDevelopment: 'tabClassDevelopment',
   edenMap: 'tabEdenMap',
   strife: 'tabStrife',
@@ -962,7 +959,6 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     { btn: tabHeroesCombosBtn, name: 'heroesCombos' },
     { btn: tabResearchTowersBtn, name: 'researchTowers' },
     { btn: tabMaterialsBtn, name: 'materials' },
-    { btn: tabBuildingsBtn, name: 'buildings' },
     { btn: tabClassDevelopmentBtn, name: 'classDevelopment' },
     { btn: tabEdenMapBtn, name: 'edenMap' },
     { btn: tabStrifeBtn, name: 'strife' },
@@ -1026,8 +1022,6 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
   let _artifactBooting = false;
   let _materialsReady = false;
   let _materialsBooting = false;
-  let _buildingsReady = false;
-  let _buildingsBooting = false;
   let _classDevelopmentReady = false;
   let _classDevelopmentBooting = false;
   let _strifeReady = false;
@@ -1043,7 +1037,6 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     heroesCombosSection,
     researchTowersSection,
     materialsSection,
-    buildingsSection,
     classDevelopmentSection,
     edenMapSection,
     strifeSection,
@@ -1268,25 +1261,6 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         })
         .finally(() => {
           _materialsBooting = false;
-        });
-    }
-    if (tabName === 'buildings' && !_buildingsReady) {
-      if (_buildingsBooting) return;
-      _buildingsBooting = true;
-      import('./building-upgrades.js')
-        .then((mod) => {
-          _buildingsReady = mod.initBuildingUpgrades();
-        })
-        .catch((err) => {
-          console.error('Building Upgrades failed to load', err);
-          if (isDynamicImportLoadFailure(err)) {
-            recoverFromStaleAssetGraph(err);
-            return;
-          }
-          renderTabLoadError(document.getElementById('buildingUpgradesRoot'), 'buildings');
-        })
-        .finally(() => {
-          _buildingsBooting = false;
         });
     }
     if (tabName === 'classDevelopment' && !_classDevelopmentReady) {

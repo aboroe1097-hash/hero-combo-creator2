@@ -2276,7 +2276,6 @@ const en = {
   languageLabel: 'Language',
   loadingEllipsis: 'Loading…',
   tabMaterials: 'DM Materials',
-  tabBuildings: 'Buildings',
   tabClassDevelopment: 'Class Development Hub',
   youtubeChoosePlaylist: 'Choose a playlist',
   youtubeFeatured: 'Featured playlist',

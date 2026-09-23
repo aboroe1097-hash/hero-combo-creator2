@@ -249,7 +249,6 @@ export const loyaltySection = document.getElementById('loyaltySection');
 export const youtubeSection = document.getElementById('youtubeSection');
 export const researchSection = document.getElementById('researchSection');
 export const materialsSection = document.getElementById('materialsSection');
-export const buildingsSection = document.getElementById('buildingsSection');
 export const classDevelopmentSection = document.getElementById('classDevelopmentSection');
 export const arcadeSection = document.getElementById('arcadeSection');
 
@@ -265,7 +264,6 @@ export const tabYouTubeBtn = document.getElementById('tabYouTube');
 export const tabResearchTowersBtn = document.getElementById('tabResearchTowers');
 export const researchTowersSection = document.getElementById('researchTowersSection');
 export const tabMaterialsBtn = document.getElementById('tabMaterials');
-export const tabBuildingsBtn = document.getElementById('tabBuildings');
 export const tabClassDevelopmentBtn = document.getElementById('tabClassDevelopment');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
