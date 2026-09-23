@@ -525,14 +525,15 @@ function isBetterContributionRank(rank, currentBest) {
 export const DUTY_ENTRY_ACCOUNT_TYPES = Object.freeze(['main', 'banner']);
 
 // The class a saved duty row scores at. An operator's explicit Main/Banner
-// choice always wins. A type the upload only guessed ("banner" for anything
-// that is not a main) yields to the account's link: an account the admin
-// linked as a secondary scores as a secondary, not as the alt the guess said.
+// choice always wins. A type the upload only guessed (Banner by default, Main
+// only for an account on the registry's "always main" list) yields to the
+// account's link when it said Banner: an account the admin linked as a
+// secondary scores as a secondary, not as the alt the guess said.
 export function dutyEntryAccountClass(entry, accountKey = '') {
   const type = String(entry?.accountType || '').toLowerCase();
   const operatorChose = entry?.accountTypeSource === 'operator';
-  // The guess only ever says "banner" for a linked account, so a saved "main"
-  // on one is the operator's own choice and stands.
+  // A saved "main" on a linked account is either the operator's choice or the
+  // admin's "always main" list, and stands either way.
   if (!operatorChose && accountKey && type !== 'main') {
     const link = resolveAccountLink(accountKey);
     if (link && accountLinkClass(link.type) === 'secondary') return 'secondary';

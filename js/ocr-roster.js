@@ -44,6 +44,13 @@ import {
 import { bohMatchEntriesFromText } from './boh-match-results.js';
 import { closeModal, getAdminWeightedModel } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
+import { mountBulkSelect } from './admin-bulk-select.js';
+import {
+  isDutyDate,
+  mergeDutyRecords,
+  setDutyRecordsAccountType,
+  setDutyRecordsDate,
+} from './duty-bulk-edit.js';
 
 // Season record mirrors refuse writes while the archived workspace is the
 // active one, so the X1 archive's local mirrors stay exactly as loaded.
@@ -69,7 +76,6 @@ import {
   summarizeCanonicalPlayerRecords,
 } from './ocr-name-normalizer.js';
 import {
-  classifyDutyAccount,
   getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
   isImageSourceContributionNote,
@@ -77,7 +83,10 @@ import {
 } from './contribution-weighting.js';
 import {
   ACCOUNT_LINK_TYPES,
+  compactRegistryName,
+  isMainAccount,
   normalizeAccountLinks,
+  normalizeMainAccounts,
   normalizePlayerRegistry,
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
@@ -1647,9 +1656,10 @@ function normalizeDutyEntries(input) {
 // --- Main / Banner per row -------------------------------------------------
 // Lists often name the player responsible when the duty was really done by
 // their banner account ("Angel" meaning Angel Banner). Each uploaded row says
-// which account did it; the pre-filled guess matches how the row would score
-// with no choice, except that an unlinked name containing "banner" is guessed
-// as a banner account.
+// which account did it. The owner's rule is "Banner on every list": the
+// pre-filled guess is Banner, and Main only for an account the admin put on the
+// "Always main" list in the Accounts card. An operator's own pick always wins
+// (accountTypeSource 'operator'), and a saved row keeps its stored type.
 const DUTY_BANNER_NAME_RE = /bann?er/i;
 let dutyAccountSwitchSeq = 0;
 // Every resolvable account-link suggestion behind the shortened list, so the
@@ -1661,20 +1671,24 @@ function normalizeDutyAccountType(value) {
   return type === 'banner' || type === 'main' ? type : '';
 }
 
-// Both the matched player and the text as uploaded count: "Roha banner" is a
-// banner row even after it is matched to ~Roha~.
+// Both the matched player and the text as uploaded count. A name on the main
+// list is Main, unless the other name reads as a banner ("Angel banner" matched
+// to a listed ~Angel~) or is a linked account that is not itself listed.
 export function guessDutyAccountType(...names) {
   const texts = names.map((name) => String(name || '').trim()).filter(Boolean);
-  if (!texts.length) return 'main';
-  for (const text of texts) {
-    if (resolveAccountLink(text) || DUTY_BANNER_NAME_RE.test(text)) return 'banner';
-    const key = compactPlayerIdentity(text);
-    // The switch offers Main or Banner only, so every non-main class — an alt
-    // and now a linked secondary account too — guesses Banner, which is what the
-    // row would score as until the operator says otherwise.
-    if (key && classifyDutyAccount(key) !== 'main') return 'banner';
-  }
-  return 'main';
+  const registry = state.playerRegistry || readStoredPlayerRegistry();
+  const listed = texts.map((text) => isMainAccount(text, registry));
+  const bannerish = texts.some(
+    (text, index) =>
+      !listed[index] && (DUTY_BANNER_NAME_RE.test(text) || Boolean(resolveAccountLink(text)))
+  );
+  return !bannerish && listed.some(Boolean) ? 'main' : 'banner';
+}
+
+// The type a row opens with: an operator's pick or a saved type stands, and
+// only a row with no type yet takes the guess.
+export function dutyRowAccountType(entry, ...names) {
+  return normalizeDutyAccountType(entry?.accountType) || guessDutyAccountType(...names);
 }
 
 function dutyStatusLabel(status) {
@@ -1706,8 +1720,7 @@ function renderDutyMatchRows(entries) {
       const suggestions = getDutySuggestions(rawName);
       const best = entry.confirmed || suggestions[0]?.name || '';
       const status = getDutyMatchStatus(rawName, best);
-      const accountType =
-        normalizeDutyAccountType(entry.accountType) || guessDutyAccountType(best, rawName);
+      const accountType = dutyRowAccountType(entry, best, rawName);
       const options = [`<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`]
         .concat(
           suggestions.map(
@@ -1790,6 +1803,28 @@ function addDutyNameRow(row) {
   added.querySelector('.dash-duty-manual-input')?.focus();
 }
 
+// "All rows: Main | Banner" in the duty modal sets every row's switch at once,
+// as the operator's choice, exactly as if each switch had been clicked.
+function renderDutyAllRowsAccount() {
+  return `<div class="dash-duty-all-account" role="group" aria-label="${esc(adminT('adminBulkAllRows'))}"><span class="dash-match-label">${esc(adminT('adminBulkAllRows'))}</span><button type="button" class="dash-btn dash-btn-xs" data-duty-all-account="main">${esc(adminT('adminDutyAccountMain'))}</button><button type="button" class="dash-btn dash-btn-xs" data-duty-all-account="banner">${esc(adminT('adminDutyAccountBanner'))}</button></div>`;
+}
+
+function bindDutyAllRowsAccount(body, onChange) {
+  body.querySelectorAll('[data-duty-all-account]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const value = button.dataset.dutyAllAccount;
+      body.querySelectorAll('.dash-duty-match-row').forEach((row) => {
+        const radio = row.querySelector(`[data-duty-account][value="${value}"]`);
+        if (!radio) return;
+        radio.checked = true;
+        row.dataset.accountSet = '1';
+        row.dataset.accountSource = 'operator';
+      });
+      onChange?.();
+    });
+  });
+}
+
 function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = null) {
   const meta = DUTY_TYPES[type];
   if (!meta) return;
@@ -1821,6 +1856,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <input type="text" id="dashDutyGameTime" name="dutyGameTime" value="${esc(existingRecord?.gameTime || '')}" placeholder="${esc(adminT('adminDutyGameTimePh'))}" inputmode="numeric" autocomplete="off" style="flex:1">
   </div>
   <div class="dash-duty-review-bar" data-duty-review-bar aria-live="polite"></div>
+  ${renderDutyAllRowsAccount()}
   <div class="dash-duty-match-list">${renderDutyMatchRows(cleanEntries)}</div>
   <div class="dash-duty-modal-actions">
     <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary">${esc(adminT(existingRecord ? 'adminDutyUpdateRecord' : 'adminDutySaveRecord', { singular }))}</button>
@@ -1897,6 +1933,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     renumberDutyRows();
     updateDutyDraftCount();
   });
+  bindDutyAllRowsAccount(body, updateDutyReviewBar);
   updateDutyDraftCount();
   $id('dashDutySaveBtn').onclick = async () => {
     const rows = Array.from(body.querySelectorAll('.dash-duty-match-row'));
@@ -2472,7 +2509,142 @@ function renderDutyType(type) {
     );
     bindAdminTablePager(body, owner, page, () => renderDutyType(type));
   });
+  mountDutyBulkSelect(body, type, records);
   hydrateDashboardTableLabels(body);
+}
+
+// --- Batch edit for saved duty records --------------------------------------
+// "Too many solo entries instead of batch entry, hard to edit one by one": each
+// saved card gets a checkbox, and the bar above the list merges, re-dates,
+// sets Main/Banner on, or deletes the selected records in one step. Every
+// action goes through saveDutyRecords, the same path a single edit uses.
+async function commitDutyBulkChange(type, nextRecords, logKey, vars = {}) {
+  if (blockArchiveMirrorWrite('batch edit duty records')) return false;
+  const previous = cloneJson(state.dutyRecords || [], []);
+  state.dutyRecords = nextRecords;
+  const synced = await saveDutyRecords({ immediate: true, awaitCloud: true });
+  renderDutyRecords();
+  refreshDashboardOverview();
+  const label = dutyLabel(type);
+  logRosterEvent(logKey, 'success', { label, ...vars }, { localOnly: true });
+  notifySpecialListCloudResult(synced, label);
+  pushUndoAction({
+    label,
+    message: adminT(logKey, { label, ...vars }),
+    undo: async () => {
+      state.dutyRecords = previous;
+      await saveDutyRecords({ immediate: true, awaitCloud: true });
+      renderDutyRecords();
+      refreshDashboardOverview();
+    },
+  });
+  return true;
+}
+
+function dutyBulkActions(type) {
+  const selected = (ids) => {
+    const wanted = new Set(ids);
+    return (state.dutyRecords || []).filter((record) => wanted.has(record.id));
+  };
+  const setAccount = (accountType) => async (ids) => {
+    const count = selected(ids).reduce((sum, r) => sum + (r.entries || []).length, 0);
+    return commitDutyBulkChange(
+      type,
+      setDutyRecordsAccountType(state.dutyRecords || [], ids, accountType),
+      'adminBulkDutyAccountLog',
+      {
+        count,
+        type: adminT(accountType === 'main' ? 'adminDutyAccountMain' : 'adminDutyAccountBanner'),
+      }
+    );
+  };
+  return [
+    {
+      id: 'merge',
+      label: adminT('adminBulkMerge'),
+      min: 2,
+      run: async (ids) => {
+        const picked = selected(ids);
+        const merged = mergeDutyRecords(picked);
+        if (!merged) {
+          window.alert(adminT('adminBulkMergeMixedTypes'));
+          return false;
+        }
+        if (
+          !confirm(
+            adminT('adminBulkMergeConfirm', {
+              count: picked.length,
+              date: merged.record.date || '--',
+              rows: merged.record.entries.length,
+            })
+          )
+        ) {
+          return false;
+        }
+        const removed = new Set(merged.removedIds);
+        const next = (state.dutyRecords || [])
+          .filter((record) => !removed.has(record.id))
+          .map((record) => (record.id === merged.record.id ? merged.record : record));
+        return commitDutyBulkChange(type, next, 'adminBulkMergedLog', {
+          count: picked.length,
+          rows: merged.record.entries.length,
+        });
+      },
+    },
+    {
+      id: 'date',
+      label: adminT('adminBulkSetDate'),
+      run: async (ids) => {
+        const first = selected(ids)[0];
+        const value = window.prompt(
+          adminT('adminBulkSetDatePrompt', { count: ids.length }),
+          first?.date || new Date().toISOString().slice(0, 10)
+        );
+        if (value === null) return false;
+        if (!isDutyDate(value)) {
+          window.alert(adminT('adminBulkSetDateInvalid'));
+          return false;
+        }
+        return commitDutyBulkChange(
+          type,
+          setDutyRecordsDate(state.dutyRecords || [], ids, value.trim()),
+          'adminBulkDatedLog',
+          { count: ids.length, date: value.trim() }
+        );
+      },
+    },
+    { id: 'main', label: adminT('adminBulkSetMain'), run: setAccount('main') },
+    { id: 'banner', label: adminT('adminBulkSetBanner'), run: setAccount('banner') },
+    {
+      id: 'delete',
+      label: adminT('adminBulkDelete'),
+      danger: true,
+      run: async (ids) => {
+        if (!confirm(adminT('adminBulkDeleteConfirm', { count: ids.length }))) return false;
+        const wanted = new Set(ids);
+        return commitDutyBulkChange(
+          type,
+          (state.dutyRecords || []).filter((record) => !wanted.has(record.id)),
+          'adminBulkDeletedLog',
+          { count: ids.length }
+        );
+      },
+    },
+  ];
+}
+
+function mountDutyBulkSelect(body, type, records) {
+  const cards = Array.from(body.querySelectorAll(':scope > .dash-banner-card'));
+  mountBulkSelect(body, {
+    scope: `duty-${type}`,
+    t: adminT,
+    items: records.map((record, index) => ({
+      id: record.id,
+      slot: cards[index]?.querySelector('.dash-banner-date') || cards[index] || null,
+      label: `${record.date || ''} ${dutySingular(record.type) || dutySingular(type)}`.trim(),
+    })),
+    actions: dutyBulkActions(type),
+  });
 }
 
 function renderDutySummary() {
@@ -2648,6 +2820,79 @@ function renderPlayerAliasesSection() {
   </div>`;
 }
 
+// --- Always main ------------------------------------------------------------
+// Uploaded duty rows default to Banner. The owner "un-banners" an account (for
+// example MalakAbo) by listing it here; its rows are then guessed as Main. The
+// list is stored in the player registry beside the account links.
+function currentMainAccounts() {
+  return normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()).mainAccounts;
+}
+
+async function saveMainAccounts(nextNames, statusHost) {
+  const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
+  registry.mainAccounts = normalizeMainAccounts(nextNames);
+  const synced = await savePlayerRegistry(registry, { immediate: true, awaitCloud: true });
+  renderDutyRecords();
+  refreshDashboardOverview();
+  document.querySelectorAll('[data-main-accounts-status]').forEach((status) => {
+    status.textContent = adminT(
+      synced === false ? 'adminMainAccountsLocal' : 'adminMainAccountsSaved',
+      { count: registry.mainAccounts.length }
+    );
+  });
+  if (statusHost) statusHost.querySelector('[data-main-accounts-status]')?.focus?.();
+  return synced;
+}
+
+function renderMainAccountsSection(candidates = []) {
+  const names = currentMainAccounts();
+  const listId = `dashMainAccountNames${(dutyAccountSwitchSeq += 1)}`;
+  return `<div class="dash-account-links-group dash-main-accounts" data-main-accounts>
+    <h4>${esc(adminT('adminMainAccountsTitle'))} <span class="dash-duty-review-chip">${esc(adminT('adminMainAccountsCount', { count: names.length }))}</span></h4>
+    <p class="dash-form-hint">${esc(adminT('adminMainAccountsHint'))}</p>
+    <form class="dash-account-links-form" data-main-accounts-form>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksAccount'))}</span><input type="text" list="${listId}" data-main-account-input autocomplete="off" required placeholder="${esc(adminT('adminMainAccountsPh'))}"></label>
+      <button type="submit" class="dash-btn dash-btn-primary">${esc(adminT('adminMainAccountsAdd'))}</button>
+      <datalist id="${listId}">${candidates.map((name) => `<option value="${esc(name)}"></option>`).join('')}</datalist>
+    </form>
+    ${
+      names.length
+        ? `<ul class="dash-account-links-list">${names
+            .map(
+              (name) => `<li>
+          <span class="dash-account-link-names"><strong>${esc(name)}</strong><span class="dash-duty-account-chip" data-account="main" data-saved="1">${esc(adminT('adminDutyAccountMain'))}</span></span>
+          <button type="button" class="dash-btn dash-btn-xs" data-main-account-remove data-account="${esc(name)}" aria-label="${esc(adminT('adminMainAccountsRemoveFor', { account: name }))}">${esc(adminT('adminAccountLinksRemove'))}</button>
+        </li>`
+            )
+            .join('')}</ul>`
+        : `<p class="dash-form-hint">${esc(adminT('adminMainAccountsNone'))}</p>`
+    }
+    <p class="dash-form-hint" data-main-accounts-status role="status" aria-live="polite" tabindex="-1"></p>
+  </div>`;
+}
+
+function bindMainAccountsHost(host) {
+  if (host.dataset.mainAccountsBound === '1') return;
+  host.dataset.mainAccountsBound = '1';
+  host.addEventListener('submit', (event) => {
+    const form = event.target.closest('[data-main-accounts-form]');
+    if (!form) return;
+    event.preventDefault();
+    const name = form.querySelector('[data-main-account-input]')?.value.trim() || '';
+    if (!name) return;
+    void saveMainAccounts([...currentMainAccounts(), name], host);
+  });
+  host.addEventListener('click', (event) => {
+    const remove = event.target.closest('[data-main-account-remove]');
+    if (!remove) return;
+    const key = compactRegistryName(remove.dataset.account);
+    void saveMainAccounts(
+      currentMainAccounts().filter((name) => compactRegistryName(name) !== key),
+      host
+    );
+  });
+}
+
 function renderAccountLinksCard(options = {}) {
   const links = currentAccountLinks();
   const candidates = accountLinkCandidateNames();
@@ -2662,7 +2907,13 @@ function renderAccountLinksCard(options = {}) {
   // one action.
   const ACCOUNT_LINK_SUGGESTION_LIMIT = 16;
   const suggestions = allSuggestions.slice(0, ACCOUNT_LINK_SUGGESTION_LIMIT);
-  pendingAccountLinkSuggestions = allSuggestions.filter((item) => item.owner);
+  // Every suggestion is kept, even one with no guessed owner: a rendered row's
+  // owner can be typed in before "Link all", and rows beyond the rendered ones
+  // keep their suggested owner (or are skipped when they have none).
+  pendingAccountLinkSuggestions = allSuggestions;
+  const linkAllCount =
+    suggestions.length +
+    allSuggestions.slice(ACCOUNT_LINK_SUGGESTION_LIMIT).filter((item) => item.owner).length;
   const hiddenSuggestionCount = allSuggestions.length - suggestions.length;
   const listId = `dashAccountLinkNames${(dutyAccountSwitchSeq += 1)}`;
   // One label per link type, so the third type cannot silently fall back to
@@ -2689,13 +2940,13 @@ function renderAccountLinksCard(options = {}) {
         ? `<div class="dash-account-links-group"><h4>${esc(adminT('adminAccountLinksSuggested'))}</h4>
         <div class="dash-account-links-bulk">
           ${hiddenSuggestionCount > 0 ? `<span class="dash-form-hint">${esc(adminT('adminAccountLinksShowingSome', { shown: suggestions.length, total: allSuggestions.length }))}</span>` : ''}
-          ${pendingAccountLinkSuggestions.length > 1 ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept-all data-count="${pendingAccountLinkSuggestions.length}">${esc(adminT('adminAccountLinksLinkAll', { count: pendingAccountLinkSuggestions.length }))}</button>` : ''}
+          ${linkAllCount > 1 ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept-all data-count="${linkAllCount}">${esc(adminT('adminAccountLinksLinkAll', { count: linkAllCount }))}</button>` : ''}
         </div>
         <ul class="dash-account-links-list">${suggestions
           .map(
-            (item) => `<li>
-          <span class="dash-account-link-names"><strong>${esc(item.account)}</strong><span aria-hidden="true">→</span><span>${item.owner ? esc(item.owner) : `<em>${esc(adminT('adminAccountLinksNoOwner'))}</em>`}</span></span>
-          ${item.owner ? `<button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksLink'))}</button>` : ''}
+            (item) => `<li data-account-link-suggestion data-account="${esc(item.account)}">
+          <span class="dash-account-link-names"><strong>${esc(item.account)}</strong><span aria-hidden="true">→</span><input type="text" class="dash-account-link-suggest-owner" list="${listId}" data-account-link-suggest-owner value="${esc(item.owner)}" autocomplete="off" placeholder="${esc(item.owner ? adminT('adminAccountLinksOwnerPh') : adminT('adminAccountLinksNoOwner'))}" aria-label="${esc(adminT('adminAccountLinksOwnerFor', { account: item.account }))}"><select data-account-link-suggest-type aria-label="${esc(adminT('adminAccountLinksTypeFor', { account: item.account }))}">${ACCOUNT_LINK_TYPES.map((type) => `<option value="${type}">${esc(typeLabel(type))}</option>`).join('')}</select></span>
+          <button type="button" class="dash-btn dash-btn-xs dash-btn-primary" data-account-link-accept data-account="${esc(item.account)}">${esc(adminT('adminAccountLinksLink'))}</button>
           <button type="button" class="dash-btn dash-btn-xs" data-account-link-prefill data-account="${esc(item.account)}" data-owner="${esc(item.owner)}">${esc(adminT('adminAccountLinksPick'))}</button>
         </li>`
           )
@@ -2714,9 +2965,48 @@ function renderAccountLinksCard(options = {}) {
             .join('')}</ul>`
         : `<p class="dash-form-hint">${esc(adminT('adminAccountLinksNone'))}</p>`
     }</div>
+    ${renderMainAccountsSection(candidates)}
     ${options.showAliases ? renderPlayerAliasesSection() : ''}
     <p class="dash-form-hint" data-account-links-status role="status" aria-live="polite" tabindex="-1"></p>
   </details>`;
+}
+
+// The owner and type the admin typed into each rendered suggestion row, keyed
+// by the suggested account's name as rendered.
+function readAccountLinkSuggestionRows(host) {
+  const rows = new Map();
+  host.querySelectorAll('[data-account-link-suggestion]').forEach((row) => {
+    const owner = row.querySelector('[data-account-link-suggest-owner]')?.value.trim() || '';
+    const type = row.querySelector('[data-account-link-suggest-type]')?.value || 'banner';
+    rows.set(row.dataset.account || '', {
+      owner,
+      type: ACCOUNT_LINK_TYPES.includes(type) ? type : 'banner',
+    });
+  });
+  return rows;
+}
+
+// "Link all after editing": a rendered row links with the owner and type as
+// edited; a row that was not rendered keeps its suggested owner as a banner.
+// Rows with no owner are skipped, and an existing link always wins.
+export function collectAccountLinkSuggestionAdditions(suggestions, editedRows, existingLinks) {
+  const existingKeys = new Set(
+    (existingLinks || []).map((link) => compactPlayerIdentity(link.account))
+  );
+  const seen = new Set();
+  const additions = [];
+  (suggestions || []).forEach((item) => {
+    const account = String(item?.account || '').trim();
+    const key = compactPlayerIdentity(account);
+    if (!account || !key || existingKeys.has(key) || seen.has(key)) return;
+    const edited = editedRows?.get?.(account);
+    const owner = String(edited ? edited.owner : item.owner || '').trim();
+    if (!owner) return;
+    const type = ACCOUNT_LINK_TYPES.includes(edited?.type) ? edited.type : 'banner';
+    seen.add(key);
+    additions.push({ account, owner, type });
+  });
+  return additions;
 }
 
 function bindAccountLinksHost(host) {
@@ -2757,11 +3047,16 @@ function bindAccountLinksHost(host) {
   host.addEventListener('click', (event) => {
     const accept = event.target.closest('[data-account-link-accept]');
     if (accept) {
+      const edited = readAccountLinkSuggestionRows(host).get(accept.dataset.account || '');
+      if (!edited?.owner) {
+        accept
+          .closest('[data-account-link-suggestion]')
+          ?.querySelector('[data-account-link-suggest-owner]')
+          ?.focus();
+        return;
+      }
       void saveAccountLinks(
-        [
-          ...currentAccountLinks(),
-          { account: accept.dataset.account, owner: accept.dataset.owner, type: 'banner' },
-        ],
+        [...currentAccountLinks(), { account: accept.dataset.account, ...edited }],
         host
       );
       return;
@@ -2772,10 +3067,11 @@ function bindAccountLinksHost(host) {
       // removed since the render are filtered out, and an existing link wins over
       // a suggestion so a hand-made choice is never overwritten by a guess.
       const existing = currentAccountLinks();
-      const existingKeys = new Set(existing.map((link) => compactPlayerIdentity(link.account)));
-      const additions = pendingAccountLinkSuggestions
-        .filter((item) => item.owner && !existingKeys.has(compactPlayerIdentity(item.account)))
-        .map((item) => ({ account: item.account, owner: item.owner, type: 'banner' }));
+      const additions = collectAccountLinkSuggestionAdditions(
+        pendingAccountLinkSuggestions,
+        readAccountLinkSuggestionRows(host),
+        existing
+      );
       if (!additions.length) return;
       if (!confirm(adminT('adminAccountLinksLinkAllConfirm', { count: additions.length }))) return;
       void saveAccountLinks([...existing, ...additions], host);
@@ -2786,9 +3082,12 @@ function bindAccountLinksHost(host) {
       const form = host.querySelector('[data-account-links-form]');
       const accountInput = form?.querySelector('[data-account-link-account]');
       const ownerInput = form?.querySelector('[data-account-link-owner]');
+      const edited = readAccountLinkSuggestionRows(host).get(prefill.dataset.account || '');
       if (accountInput) accountInput.value = prefill.dataset.account || '';
+      const typeSelect = form?.querySelector('[data-account-link-type]');
+      if (typeSelect && edited?.type) typeSelect.value = edited.type;
       if (ownerInput) {
-        ownerInput.value = prefill.dataset.owner || '';
+        ownerInput.value = edited ? edited.owner : prefill.dataset.owner || '';
         ownerInput.focus();
       }
       return;
@@ -2833,6 +3132,7 @@ export function renderAccountLinks() {
       if (details) details.open = wasOpen;
     }
     bindAccountLinksHost(host);
+    bindMainAccountsHost(host);
   });
 }
 
@@ -4846,8 +5146,91 @@ function renderContributions() {
     </div>`;
     })
     .join('');
+  mountContributionBulkSelect(body, records);
   hydrateDashboardTableLabels(body);
   renderExGuildTable();
+}
+
+// Batch delete for contribution snapshots, through the same save path as the
+// single delete button.
+function mountContributionBulkSelect(body, records) {
+  const cards = Array.from(body.querySelectorAll(':scope > .dash-banner-card'));
+  mountBulkSelect(body, {
+    scope: 'contribution-snapshots',
+    t: adminT,
+    items: records.map((record, index) => ({
+      id: record.id,
+      slot: cards[index]?.querySelector('.dash-banner-date') || null,
+      label: getContributionRecordLabel(record, index),
+    })),
+    actions: [
+      {
+        id: 'delete',
+        label: adminT('adminBulkDelete'),
+        danger: true,
+        run: (ids) => {
+          if (blockArchiveMirrorWrite('batch delete contribution snapshots')) return false;
+          if (!confirm(adminT('adminBulkDeleteConfirm', { count: ids.length }))) return false;
+          const wanted = new Set(ids);
+          state.contributionRecords = (state.contributionRecords || []).filter(
+            (record) => !wanted.has(record.id)
+          );
+          saveContributionRecords();
+          renderContributions();
+          renderDutyRecords();
+          refreshDashboardOverview();
+          logRosterEvent('adminBulkDeletedLog', 'warn', {
+            label: adminT('adminBulkSnapshotsLabel'),
+            count: ids.length,
+          });
+          return true;
+        },
+      },
+    ],
+  });
+}
+
+// Batch delete for ex-guild rows: backed up and undoable like the single delete.
+function mountExGuildBulkSelect(host, rows) {
+  const tableRows = Array.from(host.querySelectorAll('.dash-xg-table > tbody > tr'));
+  mountBulkSelect(host, {
+    scope: 'ex-guild',
+    t: adminT,
+    items: rows.map((entry, index) => ({
+      id: entry.id,
+      slot: tableRows[index]?.firstElementChild || null,
+      label: entry.name || entry.id,
+    })),
+    actions: [
+      {
+        id: 'delete',
+        label: adminT('adminBulkDelete'),
+        danger: true,
+        run: (ids) => {
+          if (!confirm(adminT('adminBulkDeleteConfirm', { count: ids.length }))) return false;
+          const previous = cloneExGuildEntries(state.exGuildContributions);
+          const wanted = new Set(ids);
+          backupExGuildContributions('delete-rows');
+          state.exGuildContributions = previous.filter((entry) => !wanted.has(entry.id));
+          saveExGuildContributions();
+          renderContributions();
+          refreshDashboardOverview();
+          pushUndoAction({
+            label: adminT('adminExGuildDataLabel'),
+            message: adminT('adminExGuildEntriesCleared', { count: ids.length }),
+            undo: async () => {
+              state.exGuildContributions = previous;
+              await saveExGuildContributions({ immediate: true, awaitCloud: true });
+              renderContributions();
+              refreshDashboardOverview();
+              logRosterEvent('adminLogExGuildDataRestored', 'success');
+            },
+          });
+          return true;
+        },
+      },
+    ],
+  });
 }
 
 function renderExGuildTable() {
@@ -4916,6 +5299,7 @@ function renderExGuildTable() {
   </div>`;
   bindExGuildMatchSearch(host);
   bindAdminTablePager(host, 'ex-guild', exGuildPage, () => renderExGuildTable());
+  mountExGuildBulkSelect(host, exGuildPage.rows);
   $id('dashExGuildDebuffExportInlineBtn')?.addEventListener('click', exportExGuildDebuffList);
   hydrateDashboardTableLabels(host);
 }

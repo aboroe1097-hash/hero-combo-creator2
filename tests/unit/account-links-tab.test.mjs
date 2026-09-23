@@ -125,35 +125,33 @@ test('every resolvable suggestion can be linked in one action', () => {
     roster,
     /const suggestions = allSuggestions\.slice\(0, ACCOUNT_LINK_SUGGESTION_LIMIT\);/
   );
-  assert.match(
-    roster,
-    /pendingAccountLinkSuggestions = allSuggestions\.filter\(\(item\) => item\.owner\);/
-  );
+  assert.match(roster, /pendingAccountLinkSuggestions = allSuggestions;/);
   assert.match(roster, /let pendingAccountLinkSuggestions = \[\];/);
 
   // One button, with a count, and a confirmation that names the count.
-  assert.match(
-    roster,
-    /data-account-link-accept-all data-count="\$\{pendingAccountLinkSuggestions\.length\}"/
-  );
+  assert.match(roster, /data-account-link-accept-all data-count="\$\{linkAllCount\}"/);
   assert.match(roster, /adminAccountLinksShowingSome/);
   assert.match(roster, /adminAccountLinksLinkAll/);
 
-  // The handler never overwrites a hand-made link and skips duplicates.
+  // The handler reads the edited rows, never overwrites a hand-made link and
+  // skips duplicates.
   assert.match(
     roster,
     /const acceptAll = event\.target\.closest\('\[data-account-link-accept-all\]'\);/
   );
-  assert.match(
-    roster,
-    /const existingKeys = new Set\(existing\.map\(\(link\) => compactPlayerIdentity\(link\.account\)\)\);/
-  );
-  assert.match(
-    roster,
-    /filter\(\(item\) => item\.owner && !existingKeys\.has\(compactPlayerIdentity\(item\.account\)\)\)/
-  );
+  assert.match(roster, /readAccountLinkSuggestionRows\(host\)/);
   assert.match(roster, /adminAccountLinksLinkAllConfirm/);
   assert.match(roster, /void saveAccountLinks\(\[\.\.\.existing, \.\.\.additions\], host\);/);
+});
+
+test('suggested links can be edited before Link or Link all', () => {
+  // Each suggestion row carries an editable owner (with the candidate
+  // datalist) and a type select, read at click time.
+  assert.match(roster, /data-account-link-suggest-owner value="\$\{esc\(item\.owner\)\}"/);
+  assert.match(roster, /list="\$\{listId\}" data-account-link-suggest-owner/);
+  assert.match(roster, /<select data-account-link-suggest-type/);
+  assert.match(roster, /adminAccountLinksOwnerFor/);
+  assert.match(roster, /adminAccountLinksTypeFor/);
 });
 
 test('the Accounts tab copy ships in every gated locale', () => {
