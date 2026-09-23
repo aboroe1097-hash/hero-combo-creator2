@@ -139,6 +139,8 @@ export function createInput({ onPause, onRestart } = {}) {
       }
       command.nova = queuedNova;
       command.start = queuedStart;
+      queuedNova = false;
+      queuedStart = false;
       command.restart = false;
       return command;
     },

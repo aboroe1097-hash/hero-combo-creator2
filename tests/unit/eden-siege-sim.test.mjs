@@ -108,6 +108,37 @@ test('the run starts in a ready phase and then opens wave one', () => {
   assert.ok(world.state.units.length > 0, 'wave one spawns enemies');
 });
 
+test('splash damage removes only units it kills, even when an array index shifts', () => {
+  const world = createWorld({ mapId: 'keep', seed: 'keep:splash-index', heroName: 'Sky Breaker' });
+  world.setInput({ start: true });
+  world.step();
+  advance(world, STEPS_PER_SECOND * 4);
+  assert.ok(world.state.units.length >= 2, 'the fixture uses spawned units');
+
+  const [target, survivor] = world.state.units;
+  world.state.units.splice(2);
+  Object.assign(target, { x: 0, z: 0, hp: 1 });
+  Object.assign(survivor, { x: 5, z: 0, hp: 1000 });
+  world.state.projectiles.length = 0;
+  world.state.projectiles.push({
+    x: target.x,
+    z: target.z,
+    vx: 0,
+    vz: 0,
+    ttlMs: 1000,
+    radius: 0.5,
+    damage: 100,
+    splash: 2,
+    element: 'fire',
+    owner: 'player',
+  });
+
+  world.step();
+
+  assert.ok(world.state.units.includes(survivor), 'the living unit remains in the world');
+  assert.ok(survivor.hp > 0, 'the living unit remains alive');
+});
+
 test('the player can kill, loot and score without any input beyond attacking', () => {
   const world = createWorld({ mapId: 'keep', seed: 'keep:loot', heroName: 'Sky Breaker' });
   world.setInput({ start: true });
