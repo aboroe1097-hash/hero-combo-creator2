@@ -49,10 +49,14 @@ function adminT(key, vars = {}) {
   return text;
 }
 
-const ADMIN_TABLE_INITIAL_ROWS = 10;
-const ADMIN_TABLE_PAGE_ROWS = 25;
+// Shared by every long admin table: the dashboard, the contributions tab and
+// the conduct list all page the same way, so a season's lists stop being an
+// endless scroll. Exported so those renderers reuse this one implementation
+// instead of each inventing its own limit.
+export const ADMIN_TABLE_INITIAL_ROWS = 10;
+export const ADMIN_TABLE_PAGE_ROWS = 25;
 
-function resolveAdminTablePage(owner, signature, rows) {
+export function resolveAdminTablePage(owner, signature, rows) {
   const limitKey = `_adminTableLimit_${owner}`;
   const signatureKey = `_adminTableSignature_${owner}`;
   if (state[signatureKey] !== signature) {
@@ -72,7 +76,7 @@ function resolveAdminTablePage(owner, signature, rows) {
   };
 }
 
-function renderAdminTablePager(owner, page, controlsId, options = {}) {
+export function renderAdminTablePager(owner, page, controlsId, options = {}) {
   if (page.total <= ADMIN_TABLE_INITIAL_ROWS) return '';
   const remaining = Math.max(0, page.total - page.visible);
   const nextCount = Math.min(ADMIN_TABLE_PAGE_ROWS, remaining);
@@ -86,7 +90,7 @@ function renderAdminTablePager(owner, page, controlsId, options = {}) {
   </div>`;
 }
 
-function bindAdminTablePager(host, owner, page, renderPage) {
+export function bindAdminTablePager(host, owner, page, renderPage) {
   const pager = host?.querySelector(`[data-admin-table-pager="${owner}"]`);
   if (!pager) return;
   pager.addEventListener('click', (event) => {

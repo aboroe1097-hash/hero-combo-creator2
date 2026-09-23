@@ -1,4 +1,12 @@
 import { renderDutyCountCell, renderScoreBreakdown } from './score-breakdown.js';
+// The shared pager: a season's lists run to hundreds of rows, so every long
+// table here starts at ten rows with a Load more / Show all control rather
+// than making the operator scroll past everything to reach the next section.
+import {
+  bindAdminTablePager,
+  renderAdminTablePager,
+  resolveAdminTablePage,
+} from './ocr-render.js';
 import {
   STORAGE_KEY,
   ROSTER_KEY,
@@ -2398,6 +2406,15 @@ function renderDutyType(type) {
       ).length;
       const rawNote = String(record.note || '').trim();
       const displayNote = getContributionDisplayNote(rawNote, entries.length);
+      // One upload can carry hundreds of duty rows; each card pages its own
+      // entries so a banner list can be skimmed without scrolling a page per day.
+      const dutyPageOwner = `duty-${type}-${record.id}`;
+      const dutyPage = resolveAdminTablePage(
+        dutyPageOwner,
+        `${record.id}|${entries.length}|${record.updatedAt || record.date || ''}`,
+        entries
+      );
+      const entryRows = dutyPage.rows;
       return `<div class="dash-banner-card">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
@@ -2413,9 +2430,9 @@ function renderDutyType(type) {
         </div>
       </div>
       <div class="dash-banner-body">
-        <table class="dash-banner-table dash-duty-detail-table">
+        <table id="dashDutyTable-${esc(record.id)}" class="dash-banner-table dash-duty-detail-table">
           <thead><tr><th>${esc(adminT('adminDutyGroup'))}</th><th>${esc(adminT('adminDutyOrder'))}</th><th>${esc(adminT('adminDutyTime'))}</th><th>${esc(adminT('adminDutyTarget'))}</th><th>${esc(adminT('adminDutyPad'))}</th><th>${esc(adminT('adminDutyUploaded'))}</th><th>${esc(adminT('adminDutyRosterMatch'))}</th><th>${esc(adminT('adminDutyAccountType'))}</th><th>${esc(adminT('adminDutyStatus'))}</th></tr></thead>
-          <tbody>${entries
+          <tbody>${entryRows
             .map(
               (entry) => `<tr>
             <td><span class="dash-duty-cell-value">${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
@@ -2431,10 +2448,22 @@ function renderDutyType(type) {
             )
             .join('')}</tbody>
         </table>
+        ${renderAdminTablePager(dutyPageOwner, dutyPage, `dashDutyTable-${esc(record.id)}`, { showAll: true })}
       </div>
     </div>`;
     })
     .join('');
+  records.forEach((record) => {
+    const recordEntries = Array.isArray(record.entries) ? record.entries : [];
+    if (recordEntries.length <= 0) return;
+    const owner = `duty-${type}-${record.id}`;
+    const page = resolveAdminTablePage(
+      owner,
+      `${record.id}|${recordEntries.length}|${record.updatedAt || record.date || ''}`,
+      recordEntries
+    );
+    bindAdminTablePager(body, owner, page, () => renderDutyType(type));
+  });
   hydrateDashboardTableLabels(body);
 }
 
@@ -4528,7 +4557,12 @@ function renderWeightedContributionTable(options = {}) {
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
   const compactView = isWeightedContributionCompactView();
-  const visibleRows = sortedContributionWeightedRows(filterContributionWeightedRows(rows));
+  const contributionWeightedPage = resolveAdminTablePage(
+    'contribution-weighted',
+    `${recordLabel || ''}|${state._contributionWeightedSearchQ || ''}|${rows.length}`,
+    sortedContributionWeightedRows(filterContributionWeightedRows(rows))
+  );
+  const visibleRows = contributionWeightedPage.rows;
   host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-contribution-compare-head">
       <div>
@@ -4547,7 +4581,7 @@ function renderWeightedContributionTable(options = {}) {
       </div>
     </div>
     <div class="dash-contribution-compare-table-wrap">
-      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
+      <table id="dashContributionWeightedTable" class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
         <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="demolition" tabindex="0">${esc(adminT('adminThDemo'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${
           visibleRows.length
@@ -4575,8 +4609,12 @@ function renderWeightedContributionTable(options = {}) {
         }</tbody>
       </table>
     </div>
+    ${renderAdminTablePager('contribution-weighted', contributionWeightedPage, 'dashContributionWeightedTable', { showAll: true })}
   </div>`;
   bindWeightedContributionViewToggle(host);
+  bindAdminTablePager(host, 'contribution-weighted', contributionWeightedPage, () =>
+    renderWeightedContributionTable({ reuseModel: true })
+  );
   const search = $id('dashContributionWeightedSearch');
   if (search) {
     search.oninput = (event) => {
@@ -4688,7 +4726,12 @@ function renderExGuildTable() {
     $id('dashExGuildRestoreBtn')?.addEventListener('click', restoreExGuildBackup);
     return;
   }
-  const rowsHtml = entries
+  const exGuildPage = resolveAdminTablePage(
+    'ex-guild',
+    `${entries.length}|${state._exGuildSearchQ || ''}`,
+    entries
+  );
+  const rowsHtml = exGuildPage.rows
     .map((entry) => {
       const { cleanName, manualMatch, matchedName } = resolveExGuildMatch(entry, {
         primaryKeys,
@@ -4723,10 +4766,12 @@ function renderExGuildTable() {
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
+  ${renderAdminTablePager('ex-guild', exGuildPage, 'dashExGuildBody', { showAll: true })}
   <div style="margin-top:0.5rem">
     <button type="button" class="dash-btn" data-admin-action="clear-exguild" style="font-size:0.75rem">${esc(adminT('adminExGuildClearAll'))}</button>
   </div>`;
   bindExGuildMatchSearch(host);
+  bindAdminTablePager(host, 'ex-guild', exGuildPage, () => renderExGuildTable());
   $id('dashExGuildDebuffExportInlineBtn')?.addEventListener('click', exportExGuildDebuffList);
   hydrateDashboardTableLabels(host);
 }

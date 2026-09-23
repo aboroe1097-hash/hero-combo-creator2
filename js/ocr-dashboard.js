@@ -62,6 +62,9 @@ import {
   closeModal,
   buildPlayerSummary,
   animateAnalyticsCards,
+  bindAdminTablePager,
+  renderAdminTablePager,
+  resolveAdminTablePage,
 } from './ocr-render.js';
 import {
   processFiles,
@@ -2482,10 +2485,18 @@ function renderConductAdjustments() {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
     return;
   }
-  list.innerHTML = rows
-    .map((record) => {
-      const pointsValue = Number(record.points || 0);
-      return `<article class="dash-conduct-row">
+  // A season accumulates hundreds of adjustments; the list pages like the
+  // other long admin tables instead of pushing everything below it off-screen.
+  const conductPage = resolveAdminTablePage(
+    'conduct',
+    `${state.r5Season || ''}|${searchQuery}|${rows.length}`,
+    rows
+  );
+  list.innerHTML =
+    conductPage.rows
+      .map((record) => {
+        const pointsValue = Number(record.points || 0);
+        return `<article class="dash-conduct-row">
         <div>
           <strong>${esc(record.playerName)}</strong>
           <span>${esc(conductCategoryLabel(record.category))} Â· ${esc(conductCreatedAtLabel(record))}</span>
@@ -2497,8 +2508,15 @@ function renderConductAdjustments() {
           <button class="dash-btn dash-btn-xs dash-btn-danger" type="button" data-conduct-delete="${esc(record.id)}">${esc(dashT('adminDelete'))}</button>
         </div>
       </article>`;
-    })
-    .join('');
+      })
+      .join('') +
+    renderAdminTablePager('conduct', conductPage, 'dashConductList', { showAll: true });
+
+  bindAdminTablePager(list, 'conduct', conductPage, () => {
+    renderConductAdjustments();
+    const nextSearch = $id('dashConductSearch');
+    if (nextSearch) nextSearch.focus();
+  });
 
   list.querySelectorAll('[data-conduct-edit]').forEach((btn) => {
     btn.addEventListener('click', () => startConductEdit(btn.dataset.conductEdit));

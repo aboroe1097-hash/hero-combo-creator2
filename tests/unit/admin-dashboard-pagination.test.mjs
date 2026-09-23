@@ -9,6 +9,58 @@ const dashboardCss = ['css/ocr-dashboard.css', 'css/ocr-dashboard-admin.css']
   .join('');
 const mobileCss = readFileSync('css/mobile.css', 'utf8');
 
+test('Every long admin list pages through the same 10-row pager', () => {
+  const rosterSource = readFileSync('js/ocr-roster.js', 'utf8');
+  const dashboardSource = readFileSync('js/ocr-dashboard.js', 'utf8');
+
+  // The helpers are exported from the renderer so the other modules reuse one
+  // implementation instead of each growing its own limit.
+  for (const helper of [
+    'export function resolveAdminTablePage',
+    'export function renderAdminTablePager',
+    'export function bindAdminTablePager',
+  ]) {
+    assert.ok(renderSource.includes(helper), `${helper} is exported`);
+  }
+
+  // Contributions weighted, ex-guild and the conduct list: owner, pager and
+  // bind all present, so a season's hundreds of rows start at ten.
+  for (const [source, owner] of [
+    [rosterSource, 'contribution-weighted'],
+    [rosterSource, 'ex-guild'],
+    [dashboardSource, 'conduct'],
+  ]) {
+    assert.ok(
+      source.includes(`resolveAdminTablePage(\n    '${owner}'`) || source.includes(`'${owner}',`),
+      `${owner} resolves a page`
+    );
+    assert.ok(source.includes(`renderAdminTablePager('${owner}'`), `${owner} renders a pager`);
+    assert.ok(
+      source.includes(`'${owner}',`) && source.includes('bindAdminTablePager('),
+      `${owner} binds its pager`
+    );
+  }
+  assert.ok(
+    rosterSource.includes(`'dashContributionWeightedTable'`),
+    'the weighted table carries an id for aria-controls'
+  );
+  assert.ok(
+    rosterSource.includes(`renderAdminTablePager('ex-guild', exGuildPage, 'dashExGuildBody'`),
+    'ex-guild pager'
+  );
+
+  // Each duty card pages its own entries, keyed by record so two uploads of the
+  // same day never share a limit.
+  assert.ok(rosterSource.includes('const dutyPageOwner = `duty-${type}-${record.id}`;'));
+  assert.ok(
+    rosterSource.includes('bindAdminTablePager(body, owner, page, () => renderDutyType(type))')
+  );
+
+  // The conduct list keeps the aggregate summary over every row, not just the
+  // visible page: the summary is what the operator reads for totals.
+  assert.match(dashboardSource, /renderConductSummary\(rows\);/);
+});
+
 test('Admin weighted and attack lists use a 10-row start with 25-row increments', () => {
   assert.match(renderSource, /const ADMIN_TABLE_INITIAL_ROWS = 10;/);
   assert.match(renderSource, /const ADMIN_TABLE_PAGE_ROWS = 25;/);
