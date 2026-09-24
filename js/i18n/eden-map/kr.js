@@ -100,5 +100,7 @@ export default {
     subTabBounty: '로열 바운티 Eden X2',
     subTabSeason: '현재 시즌 · {currentSeason}',
     subTabPrevious: '이전 시즌 · {previousSeason}',
+    subTabPathing: '에덴 경로',
+    subTabPathingDesc: '산악 경유지를 포함한 A→B 관문 경로를 계획하고 PNG로 내보냅니다.',
   },
 };

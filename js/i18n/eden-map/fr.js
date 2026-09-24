@@ -100,5 +100,8 @@ export default {
     subTabBounty: 'Prime Royale Eden X2',
     subTabSeason: 'Saison en cours · {currentSeason}',
     subTabPrevious: 'Saisons précédentes · {previousSeason}',
+    subTabPathing: 'Itinéraires Eden',
+    subTabPathingDesc:
+      'Planifie des itinéraires de portes de A à B avec des points de passage en montagne et exporte un PNG.',
   },
 };

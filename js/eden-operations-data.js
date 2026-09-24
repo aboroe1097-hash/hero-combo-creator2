@@ -249,6 +249,23 @@ export const TRAINING_MODES = Object.freeze({
   oldBoost: Object.freeze({ id: 'oldBoost', name: 'Old Boost', actionFactor: 1, bannerActionFactor: 1 }),
 });
 
+// Task-first entry points into the planners. Stage and role tags are navigation
+// aids for this tool, not game data: every step points at a planner input that
+// is already backed by the sources above. Each step names the copy key of the
+// planner field or result it points at, so the checklist reads exactly like the
+// control the player has to find.
+export const EDEN_OPERATION_PLAYBOOKS = Object.freeze([
+  { id: 'specialty-build', tool: 'specialty', icon: '🌳', stage: 'opening', roles: ['builder', 'tiler', 'attacker'], steps: ['preset', 'availablePoints', 'routePoints'] },
+  { id: 'material-budget', tool: 'buildings', icon: '🏗️', stage: 'opening', roles: ['builder'], steps: ['building', 'targetLevel', 'discount'] },
+  { id: 'hold-tile', tool: 'siege', icon: '🛡️', stage: 'growth', roles: ['builder', 'tiler'], steps: ['campLevels', 'specialtyRank', 'upgradeOrder'] },
+  { id: 'honor-farming', tool: 'training', icon: '⚔️', stage: 'growth', roles: ['tiler'], steps: ['tileLevel', 'sessions', 'boosted'] },
+  { id: 'honor-target', tool: 'honor', icon: '📈', stage: 'growth', roles: ['builder', 'tiler', 'attacker'], steps: ['currentLevel', 'targetLevel', 'honorRequired'] },
+  { id: 'staff-objective', tool: 'siege', icon: '🏰', stage: 'war', roles: ['attacker'], steps: ['structure', 'banner', 'assigned'] },
+]);
+
+export const EDEN_OPERATION_STAGES = Object.freeze(['opening', 'growth', 'war']);
+export const EDEN_OPERATION_ROLES = Object.freeze(['builder', 'tiler', 'attacker']);
+
 export const SPECIALTY_BONUS_PRESETS = Object.freeze([0, 0.3, 0.9, 1.9]);
 
 export const EDEN_OPERATIONS_DATA_VERSION = '2026-09-11';
