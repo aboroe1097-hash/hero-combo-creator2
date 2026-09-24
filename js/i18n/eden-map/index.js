@@ -200,6 +200,8 @@ const EN = Object.freeze({
     pathingClearStops: 'Clear stops',
     pathingLegTiles: '≈ {tiles} tiles',
     pathingTotalTiles: 'Total ≈ {tiles} tiles',
+    pathingPathers: '{count} pathers at {each} tiles each',
+    pathingRepeatTiles: '{tiles} tiles walked twice',
     pathingBlocked: 'A leg is blocked by impassable terrain, so a straight line is shown. Add a mountain pass to steer around it.',
     pathingRouting: 'Routing…',
     pathingNeedTwo: 'Add a destination (B) to draw the route.',

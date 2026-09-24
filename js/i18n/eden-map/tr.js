@@ -139,6 +139,8 @@ export default {
     pathingClearStops: 'Durakları temizle',
     pathingLegTiles: '≈ {tiles} kare',
     pathingTotalTiles: 'Toplam ≈ {tiles} kare',
+    pathingPathers: '{count} pather · {each} kare',
+    pathingRepeatTiles: '{tiles} kare iki kez geçildi',
     pathingBlocked: 'Bir bölüm geçilmez arazi tarafından engelleniyor, bu yüzden düz çizgi gösteriliyor. Etrafından dolaşmak için bir dağ geçidi ekle.',
     pathingRouting: 'Rota hesaplanıyor…',
     pathingNeedTwo: 'Rotayı çizmek için bir hedef (B) ekle.',

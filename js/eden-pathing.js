@@ -706,7 +706,7 @@ function renderSteps() {
     : `<p class="eden-path-empty">${escapeHtml(copy('pathingNoStops'))}</p>`;
   const summary =
     items.length >= 2
-      ? `<div class="eden-path-summary"><p class="eden-path-line">${escapeHtml(state.steps.line)}</p><p class="eden-path-total">${escapeHtml(copy('pathingTotalTiles', { tiles: num(state.tiles) }))}</p>${state.blocked ? `<p class="eden-path-warn" role="note">${escapeHtml(copy('pathingBlocked'))}</p>` : ''}</div>`
+      ? `<div class="eden-path-summary"><p class="eden-path-line">${escapeHtml(state.steps.line)}</p><p class="eden-path-total">${escapeHtml(copy('pathingTotalTiles', { tiles: num(state.tiles) }))}</p><p class="eden-path-pathers">${escapeHtml(copy('pathingPathers', { count: num(state.pathers), each: num(state.tilesPerPather) }))}</p>${state.overlapTiles ? `<p class="eden-path-muted">${escapeHtml(copy('pathingRepeatTiles', { tiles: num(state.overlapTiles) }))}</p>` : ''}${state.blocked ? `<p class="eden-path-warn" role="note">${escapeHtml(copy('pathingBlocked'))}</p>` : ''}</div>`
       : items.length === 1
         ? `<p class="eden-path-muted">${escapeHtml(copy('pathingNeedTwo'))}</p>`
         : '';
@@ -719,7 +719,7 @@ function renderSteps() {
   if (handleSummary) {
     handleSummary.textContent =
       items.length >= 2
-        ? `${routeName(route, plan().active)} · ${copy('pathingTotalTiles', { tiles: num(state.tiles) })}`
+        ? `${routeName(route, plan().active)} · ${copy('pathingTotalTiles', { tiles: num(state.tiles) })} · ${copy('pathingPathers', { count: num(state.pathers), each: num(state.tilesPerPather) })}`
         : routeName(route, plan().active);
   }
 }
@@ -1202,7 +1202,10 @@ async function exportPng(button) {
       g.fillText(routeName(block.route, block.index), startX(x + 26, colW - 52), y + 36);
       g.fillStyle = colors.muted;
       g.font = '600 16px Inter, system-ui, sans-serif';
-      const total = block.steps.items.length >= 2 ? copy('pathingTotalTiles', { tiles: num(block.state.tiles) }) : '';
+      const total =
+        block.steps.items.length >= 2
+          ? `${copy('pathingTotalTiles', { tiles: num(block.state.tiles) })} · ${copy('pathingPathers', { count: num(block.state.pathers), each: num(block.state.tilesPerPather) })}`
+          : '';
       g.textAlign = rtl ? 'left' : 'right';
       g.fillText(total, rtl ? x + 26 : x + colW - 22, y + 36);
       g.textAlign = rtl ? 'right' : 'left';

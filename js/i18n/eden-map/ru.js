@@ -140,6 +140,8 @@ export default {
     pathingClearStops: 'Очистить точки',
     pathingLegTiles: '≈ {tiles} клеток',
     pathingTotalTiles: 'Всего ≈ {tiles} клеток',
+    pathingPathers: '{count} pather · по {each} клеток',
+    pathingRepeatTiles: '{tiles} клеток пройдено дважды',
     pathingBlocked: 'Участок перекрыт непроходимой местностью, поэтому показана прямая линия. Добавьте горный перевал, чтобы обойти препятствие.',
     pathingRouting: 'Расчёт маршрута…',
     pathingNeedTwo: 'Добавьте цель (B), чтобы построить маршрут.',

@@ -140,6 +140,8 @@ export default {
     pathingClearStops: 'Effacer les étapes',
     pathingLegTiles: '≈ {tiles} cases',
     pathingTotalTiles: 'Total ≈ {tiles} cases',
+    pathingPathers: '{count} pather · {each} cases chacun',
+    pathingRepeatTiles: '{tiles} cases parcourues deux fois',
     pathingBlocked: 'Un tronçon est bloqué par un terrain infranchissable : une ligne droite est affichée. Ajoutez un col de montagne pour le contourner.',
     pathingRouting: 'Calcul de l\'itinéraire…',
     pathingNeedTwo: 'Ajoutez une destination (B) pour tracer l\'itinéraire.',

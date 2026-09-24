@@ -139,6 +139,8 @@ export default {
     pathingClearStops: 'Stationen leeren',
     pathingLegTiles: '≈ {tiles} Felder',
     pathingTotalTiles: 'Gesamt ≈ {tiles} Felder',
+    pathingPathers: '{count} pather · je {each} Felder',
+    pathingRepeatTiles: '{tiles} Felder doppelt gelaufen',
     pathingBlocked: 'Ein Abschnitt ist durch unpassierbares Gelände blockiert, daher wird eine gerade Linie gezeigt. Füge einen Bergpass hinzu, um es zu umgehen.',
     pathingRouting: 'Route wird berechnet…',
     pathingNeedTwo: 'Füge ein Ziel (B) hinzu, um die Route zu zeichnen.',

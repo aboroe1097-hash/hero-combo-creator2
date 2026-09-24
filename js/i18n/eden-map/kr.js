@@ -139,6 +139,8 @@ export default {
     pathingClearStops: '지점 모두 지우기',
     pathingLegTiles: '≈ {tiles}칸',
     pathingTotalTiles: '총 ≈ {tiles}칸',
+    pathingPathers: '{count} pather · 각 {each}칸',
+    pathingRepeatTiles: '{tiles}칸 두 번 통과',
     pathingBlocked: '통과할 수 없는 지형에 막힌 구간이 있어 직선으로 표시됩니다. 우회하려면 산악 통로를 추가하세요.',
     pathingRouting: '경로 계산 중…',
     pathingNeedTwo: '경로를 그리려면 목적지(B)를 추가하세요.',

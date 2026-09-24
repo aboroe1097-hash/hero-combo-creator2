@@ -139,6 +139,8 @@ export default {
     pathingClearStops: 'مسح المحطات',
     pathingLegTiles: '≈ {tiles} مربعًا',
     pathingTotalTiles: 'الإجمالي ≈ {tiles} مربعًا',
+    pathingPathers: '{count} pather · {each} بلاطة لكل واحد',
+    pathingRepeatTiles: '{tiles} بلاطة مقطوعة مرتين',
     pathingBlocked: 'أحد المقاطع محجوب بتضاريس لا يمكن عبورها، لذا يظهر خط مستقيم. أضف ممرًا جبليًا للالتفاف حولها.',
     pathingRouting: 'جارٍ حساب المسار…',
     pathingNeedTwo: 'أضف وجهة (B) لرسم المسار.',

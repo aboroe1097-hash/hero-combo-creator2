@@ -140,6 +140,8 @@ export default {
     pathingClearStops: 'Borrar paradas',
     pathingLegTiles: '≈ {tiles} casillas',
     pathingTotalTiles: 'Total ≈ {tiles} casillas',
+    pathingPathers: '{count} pather · {each} casillas cada uno',
+    pathingRepeatTiles: '{tiles} casillas recorridas dos veces',
     pathingBlocked: 'Un tramo está bloqueado por terreno infranqueable, así que se muestra una línea recta. Añade un paso de montaña para rodearlo.',
     pathingRouting: 'Calculando ruta…',
     pathingNeedTwo: 'Añade un destino (B) para dibujar la ruta.',

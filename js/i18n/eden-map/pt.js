@@ -140,6 +140,8 @@ export default {
     pathingClearStops: 'Limpar paradas',
     pathingLegTiles: '≈ {tiles} casas',
     pathingTotalTiles: 'Total ≈ {tiles} casas',
+    pathingPathers: '{count} pather · {each} casas cada',
+    pathingRepeatTiles: '{tiles} casas percorridas duas vezes',
     pathingBlocked: 'Um trecho está bloqueado por terreno intransponível, por isso aparece uma linha reta. Adicione uma passagem de montanha para contorná-lo.',
     pathingRouting: 'Calculando rota…',
     pathingNeedTwo: 'Adicione um destino (B) para desenhar a rota.',

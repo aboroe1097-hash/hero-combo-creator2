@@ -138,6 +138,8 @@ export default {
     pathingClearStops: '清空站点',
     pathingLegTiles: '≈ {tiles} 格',
     pathingTotalTiles: '总计 ≈ {tiles} 格',
+    pathingPathers: '{count} pather · 每人 {each} 格',
+    pathingRepeatTiles: '{tiles} 格重复经过',
     pathingBlocked: '有一段被不可通行地形阻挡，因此显示为直线。添加山口即可绕行。',
     pathingRouting: '正在计算路线…',
     pathingNeedTwo: '添加终点 (B) 以绘制路线。',

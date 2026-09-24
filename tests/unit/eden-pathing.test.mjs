@@ -12,10 +12,12 @@ import {
   createTerrainRouter,
   decodePlanShare,
   encodePlanShare,
+  estimatePathers,
   formatSteps,
   moveStop,
   nextRouteColor,
   normalizeLibrary,
+  rasterizeStep,
   removeStop,
   setEnd,
   setStart,
@@ -100,11 +102,15 @@ test('route legs are built from each consecutive pair of stops', () => {
   const stops = [createStop(0, 0), createStop(30, 40), createStop(30, 100)];
   const built = buildRouteLegs(stops, straight);
   assert.equal(built.legs.length, 2);
+  // max(dx, dy) + 1 tiles per leg: 30x40 takes 41 steps, 0x60 takes 61.
   assert.deepEqual(
     built.legs.map((leg) => leg.tiles),
-    [50, 60]
+    [41, 61]
   );
-  assert.equal(built.tiles, 110);
+  // The second leg starts on the first leg's last tile, which is counted once.
+  assert.equal(built.walkedTiles, 102);
+  assert.equal(built.tiles, 101);
+  assert.equal(built.overlapTiles, 1);
   assert.equal(built.blocked, false);
   assert.equal(built.pending, false);
 
@@ -167,6 +173,35 @@ test('the gate suggestion picks the smallest detour and skips gates already used
   assert.equal(suggestGate(withGate, gates).gate.type, 'CP1');
   assert.equal(suggestGate([createStop(0, 0)], gates), null);
   assert.equal(suggestGate(stops, []), null);
+});
+
+test('tiles are counted once and pathers are estimated from the occupied count', () => {
+  // Doubling back over the same ground occupies it once, even though every tile
+  // on the way back is walked a second time.
+  const doubled = buildRouteLegs([createStop(0, 0), createStop(10, 0), createStop(0, 0)], straight);
+  assert.equal(doubled.walkedTiles, 22);
+  assert.equal(doubled.tiles, 11);
+  assert.equal(doubled.overlapTiles, 11);
+  assert.equal(doubled.pathers, 1);
+
+  // The estimate is a ceiling on blocks of PATHING tiles per pather.
+  const atCapacity = buildRouteLegs([createStop(0, 0), createStop(39, 0)], straight);
+  assert.equal(atCapacity.tiles, 40);
+  assert.equal(atCapacity.pathers, 1);
+  const overCapacity = buildRouteLegs([createStop(0, 0), createStop(40, 0)], straight);
+  assert.equal(overCapacity.tiles, 41);
+  assert.equal(overCapacity.pathers, 2);
+  assert.equal(overCapacity.tilesPerPather, 40);
+
+  // A diagonal step and a side-by-side step both cost one tile.
+  const diagonal = rasterizeStep({ x: 752, y: 817 }, { x: 758, y: 823 });
+  assert.equal(diagonal.length, 7);
+  assert.deepEqual(diagonal[1], { x: 753, y: 818 });
+  assert.deepEqual(diagonal.at(-1), { x: 758, y: 823 });
+
+  assert.equal(estimatePathers(0), 0);
+  assert.equal(estimatePathers(81), 3);
+  assert.equal(estimatePathers(100, 50), 2);
 });
 
 test('the step list reads A → gate → mountain pass → B with per-leg tiles', () => {

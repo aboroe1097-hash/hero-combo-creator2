@@ -140,6 +140,8 @@ export default {
     pathingClearStops: 'Cancella tappe',
     pathingLegTiles: '≈ {tiles} caselle',
     pathingTotalTiles: 'Totale ≈ {tiles} caselle',
+    pathingPathers: '{count} pather · {each} caselle ciascuno',
+    pathingRepeatTiles: '{tiles} caselle percorse due volte',
     pathingBlocked: 'Un tratto è bloccato da terreno invalicabile, quindi viene mostrata una linea retta. Aggiungi un passo di montagna per aggirarlo.',
     pathingRouting: 'Calcolo del percorso…',
     pathingNeedTwo: 'Aggiungi una destinazione (B) per tracciare il percorso.',

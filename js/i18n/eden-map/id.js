@@ -140,6 +140,8 @@ export default {
     pathingClearStops: 'Kosongkan titik',
     pathingLegTiles: '≈ {tiles} petak',
     pathingTotalTiles: 'Total ≈ {tiles} petak',
+    pathingPathers: '{count} pather · {each} petak masing-masing',
+    pathingRepeatTiles: '{tiles} petak dilalui dua kali',
     pathingBlocked: 'Satu bagian terhalang medan yang tak bisa dilewati, jadi garis lurus ditampilkan. Tambahkan celah gunung untuk memutarinya.',
     pathingRouting: 'Menghitung rute…',
     pathingNeedTwo: 'Tambahkan tujuan (B) untuk menggambar rute.',
