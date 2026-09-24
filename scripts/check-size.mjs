@@ -169,7 +169,11 @@ const LIMITS = {
   // 13-locale strings (~8 KiB, imported by the seven standalone entries), and
   // the per-node Specialization workbook lookup. Measured 11154.9 KiB
   // locally; retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11175 * 1024,
+  // 16.5.4 combined release: Competition #12 (schedule, growth board and admin
+  // panel), Eden Pathing, the motion P2 modules, the per-hub PDF builders with
+  // their 12 lazy locale packs, and the Eden Siege fun pass. Measured
+  // 11590.8 KiB locally; retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11611 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -372,7 +376,10 @@ const LIMITS = {
   // 16.5.3 adds a shared locale-pack timeout helper used by Siege, Downloads,
   // and Building Upgrades. The locked production build emits one 518-byte
   // shared chunk for it (773 deployed files total); retain that measured file.
-  deployFileCount: 773,
+  // 16.5.4 combined release: the lazy hub-PDF, Competition #12, Eden Pathing,
+  // motion and Siege daily/promo chunks. Measured 807 files; keep three of
+  // headroom.
+  deployFileCount: 810,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -467,14 +474,17 @@ const LIMITS = {
     'downloads.html': { desktop: 40 * 1024, mobile: 40 * 1024 },
     // Measured from the 16.5.0 production build: 26,810 bytes desktop and
     // 125,788 bytes mobile, including the responsive mobile stylesheet.
-    'eden-siege.html': { desktop: 27 * 1024, mobile: 124 * 1024 },
+    // 16.5.4 fun pass (tower tiers, modes, results screen): 33.5 KiB desktop
+    // and 130.2 KiB mobile; retain under 1 KiB.
+    'eden-siege.html': { desktop: 34 * 1024, mobile: 131 * 1024 },
   },
   // Measured from the same build, including the route entry and both initial
   // three.js / siege chunks and the two standalone scripts: 698,236 bytes.
   routeJsBytes: {
     // 16.5.2: the shared tool shell (footer link set, 13 locales) measures
     // 691.0 KiB; retain about 1 KiB.
-    'eden-siege.html': { desktop: 692 * 1024, mobile: 692 * 1024 },
+    // 16.5.4 fun pass: 711.0 KiB; retain about 1 KiB.
+    'eden-siege.html': { desktop: 712 * 1024, mobile: 712 * 1024 },
   },
 };
 

@@ -156,7 +156,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  assert.match(sizeCheck, /totalJsBytes: 11175 \* 1024/);
+  assert.match(sizeCheck, /totalJsBytes: 11611 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
@@ -167,7 +167,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // the member route, the admin dashboard and the AI public-data adapter emits
   // two chunks no single route owned before (measured 733 files, three spare).
   // 16.5.3 adds one measured 518-byte shared locale-pack timeout chunk.
-  assert.match(sizeCheck, /deployFileCount: 773/);
+  assert.match(sizeCheck, /deployFileCount: 810/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
