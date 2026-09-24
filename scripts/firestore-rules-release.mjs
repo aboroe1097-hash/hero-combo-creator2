@@ -14,24 +14,20 @@
 // only the release step, then confirms by reading the release back. See
 // docs/firebase-deploy-runbook.md.
 //
-// It never uploads, never deletes, and only moves the release to a ruleset
-// whose text is byte-identical to ./firestore.rules (or, for `probe`, to the
-// ruleset that is already live). Uses the firebase-tools login, like
-// scripts/firestore-rules-status.mjs.
+// It never uploads or deletes. It only moves the release to a ruleset whose
+// rules text matches ./firestore.rules after normalizing line endings (or, for
+// `probe`, to the ruleset that is already live). Uses the firebase-tools login,
+// like scripts/firestore-rules-status.mjs.
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PROJECT = process.env.FIREBASE_PROJECT || 'abocombo';
 const RELEASE = `projects/${PROJECT}/releases/cloud.firestore`;
 const API = 'https://firebaserules.googleapis.com/v1';
 const RETRY_DELAYS_S = [0, 5, 15, 30, 60, 120];
-const mode = process.argv[2];
-
-if (mode !== 'probe' && mode !== 'release') {
-  console.log('Usage: node scripts/firestore-rules-release.mjs probe|release');
-  process.exit(1);
-}
+const normalizeRulesSource = (text) => String(text).replace(/\r\n?/g, '\n');
 
 function configStoreCandidates() {
   const home = process.env.USERPROFILE || process.env.HOME || '';
@@ -81,56 +77,135 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // The release's own read-back is the only trustworthy result: a 503 on the
 // PATCH has been seen to apply anyway.
-async function pointReleaseAt(rulesetName, token) {
-  for (const delay of RETRY_DELAYS_S) {
+export async function pointReleaseAt(
+  rulesetName,
+  token,
+  {
+    callApi = call,
+    sleepFor = sleep,
+    retryDelays = RETRY_DELAYS_S,
+    logger = console.log,
+    requireAcknowledgedPatch = false,
+  } = {}
+) {
+  for (const delay of retryDelays) {
     if (delay) {
-      console.log(`  waiting ${delay}s...`);
-      await sleep(delay * 1000);
+      logger(`  waiting ${delay}s...`);
+      await sleepFor(delay * 1000);
     }
-    const res = await call('PATCH', `${API}/${RELEASE}`, token, {
+    const res = await callApi('PATCH', `${API}/${RELEASE}`, token, {
       release: { name: RELEASE, rulesetName },
       updateMask: 'rulesetName',
     });
-    console.log(`  PATCH release -> ${res.status} ${res.text.slice(0, 160).replace(/\s+/g, ' ')}`);
-    const now = await call('GET', `${API}/${RELEASE}`, token);
-    if (now.json?.rulesetName === rulesetName) return true;
+    logger(`  PATCH release -> ${res.status} ${res.text.slice(0, 160).replace(/\s+/g, ' ')}`);
+    const now = await callApi('GET', `${API}/${RELEASE}`, token);
+    const patchAcknowledged = res.status >= 200 && res.status < 300;
+    if (
+      now.status === 200 &&
+      now.json?.rulesetName === rulesetName &&
+      (!requireAcknowledgedPatch || patchAcknowledged)
+    ) {
+      return true;
+    }
   }
   return false;
 }
 
-const token = await accessToken();
-const live = await call('GET', `${API}/${RELEASE}`, token);
-if (live.status !== 200) throw new Error(`Could not read the live release: ${live.text}`);
-console.log(`live ruleset : ${live.json.rulesetName}`);
+export async function findMatchingRuleset(
+  localRules,
+  token,
+  { project = PROJECT, callApi = call } = {}
+) {
+  const normalizedLocalRules = normalizeRulesSource(localRules);
+  let pageToken = '';
+  const seenTokens = new Set();
 
-if (mode === 'probe') {
-  const ok = await pointReleaseAt(live.json.rulesetName, token);
-  console.log(ok ? 'RESULT: the release endpoint works.' : 'RESULT: the release endpoint is failing.');
-  process.exit(ok ? 0 : 1);
-}
+  while (true) {
+    const url = new URL(`${API}/projects/${project}/rulesets`);
+    url.searchParams.set('pageSize', '100');
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-const local = fs.readFileSync('firestore.rules', 'utf8');
-const list = await call('GET', `${API}/projects/${PROJECT}/rulesets?pageSize=20`, token);
-if (list.status !== 200) throw new Error(`Could not list rulesets: ${list.text}`);
-let match = null;
-for (const summary of list.json?.rulesets || []) {
-  const full = await call('GET', `${API}/${summary.name}`, token);
-  if ((full.json?.source?.files || []).some((file) => file.content === local)) {
-    match = summary.name;
-    break;
+    const list = await callApi('GET', url.toString(), token);
+    if (list.status !== 200) throw new Error(`Could not list rulesets: ${list.text}`);
+    if (!Array.isArray(list.json?.rulesets)) {
+      throw new Error('Rulesets API returned an invalid list response.');
+    }
+
+    for (const summary of list.json.rulesets) {
+      if (!summary?.name) continue;
+      const full = await callApi('GET', `${API}/${summary.name}`, token);
+      if (full.status !== 200) {
+        throw new Error(`Could not read ruleset ${summary.name}: ${full.text}`);
+      }
+      if (
+        (full.json?.source?.files || []).some(
+          (file) => normalizeRulesSource(file.content ?? '') === normalizedLocalRules
+        )
+      ) {
+        return summary.name;
+      }
+    }
+
+    const nextPageToken = list.json.nextPageToken;
+    if (!nextPageToken) return null;
+    if (seenTokens.has(nextPageToken)) {
+      throw new Error('Rulesets API repeated a page token; stopping to avoid an infinite loop.');
+    }
+    seenTokens.add(nextPageToken);
+    pageToken = nextPageToken;
   }
 }
-if (!match) {
-  console.log(
-    'No uploaded ruleset matches ./firestore.rules yet. Run `npx firebase deploy --only firestore:rules --project abocombo` first; the upload usually lands even when the command fails.'
-  );
-  process.exit(1);
+
+async function main() {
+  const mode = process.argv[2];
+  if (mode !== 'probe' && mode !== 'release') {
+    console.log('Usage: node scripts/firestore-rules-release.mjs probe|release');
+    process.exitCode = 1;
+    return;
+  }
+
+  const token = await accessToken();
+  const live = await call('GET', `${API}/${RELEASE}`, token);
+  if (live.status !== 200) throw new Error(`Could not read the live release: ${live.text}`);
+  console.log(`live ruleset : ${live.json.rulesetName}`);
+
+  if (mode === 'probe') {
+    // A matching read-back alone cannot prove a no-op PATCH worked: that
+    // ruleset was already live. Require an acknowledged PATCH as well.
+    const ok = await pointReleaseAt(live.json.rulesetName, token, {
+      requireAcknowledgedPatch: true,
+    });
+    console.log(
+      ok ? 'RESULT: the release endpoint works.' : 'RESULT: the release endpoint is unconfirmed.'
+    );
+    process.exitCode = ok ? 0 : 1;
+    return;
+  }
+
+  const local = fs.readFileSync('firestore.rules', 'utf8');
+  const match = await findMatchingRuleset(local, token);
+  if (!match) {
+    console.log(
+      'No uploaded ruleset matches ./firestore.rules yet. Run `npx firebase deploy --only firestore:rules --project abocombo` first; the upload usually lands even when the command fails.'
+    );
+    process.exitCode = 1;
+    return;
+  }
+  if (match === live.json.rulesetName) {
+    console.log('Already live.');
+    process.exitCode = 0;
+    return;
+  }
+  console.log(`matching ruleset: ${match}`);
+  const ok = await pointReleaseAt(match, token);
+  console.log(ok ? 'DONE: new rules are live.' : 'FAILED: production is still on the old rules.');
+  process.exitCode = ok ? 0 : 1;
 }
-if (match === live.json.rulesetName) {
-  console.log('Already live.');
-  process.exit(0);
+
+const scriptPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
+if (scriptPath && scriptPath === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
 }
-console.log(`matching ruleset: ${match}`);
-const ok = await pointReleaseAt(match, token);
-console.log(ok ? 'DONE: new rules are live.' : 'FAILED: production is still on the old rules.');
-process.exit(ok ? 0 : 1);

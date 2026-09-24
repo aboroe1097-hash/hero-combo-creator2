@@ -29,22 +29,29 @@ The deploy is done only when `firestore-rules-status` prints `LIVE MATCHES THIS 
 Nothing in the rules file causes these errors, so do not edit or shrink it. A compile error comes back as a 400 that names a line, and a permission problem comes back as a 403. Retry until the status script reports a match:
 
 ```powershell
+function Test-RulesMatch {
+  $statusOutput = node scripts/firestore-rules-status.mjs 2>&1 | Out-String
+  $statusExitCode = $LASTEXITCODE
+  Write-Host $statusOutput
+  return ($statusExitCode -eq 0 -and $statusOutput.Contains('RESULT: LIVE MATCHES THIS CHECKOUT'))
+}
+
 for ($i = 1; $i -le 8; $i++) {
   Write-Host "--- attempt $i"
   npx firebase deploy --only firestore:rules --project abocombo
-  if ((node scripts/firestore-rules-status.mjs | Out-String) -notmatch 'LIVE DIFFERS') { Write-Host "Rules are live."; break }
+  if (Test-RulesMatch) { Write-Host "Rules are live."; break }
   node scripts/firestore-rules-release.mjs release
-  if ((node scripts/firestore-rules-status.mjs | Out-String) -notmatch 'LIVE DIFFERS') { Write-Host "Rules are live."; break }
+  if (Test-RulesMatch) { Write-Host "Rules are live."; break }
   Start-Sleep -Seconds (30 * $i)
 }
-node scripts/firestore-rules-status.mjs
+if (-not (Test-RulesMatch)) { throw "Could not confirm that the checkout's rules are live after all retries." }
 ```
 
 What the two scripts do:
 
 - `scripts/firestore-rules-status.mjs` (`npm run rules:status`): read-only. It reports which ruleset is live and diffs it against the checkout.
-- `scripts/firestore-rules-release.mjs release` (`npm run rules:release`) finds the already-uploaded ruleset whose text is identical to `./firestore.rules`. It points production at that ruleset, retrying through 503s, and confirms by reading the release back. It never uploads or deletes anything.
-- `scripts/firestore-rules-release.mjs probe` re-points production at the ruleset that is already live, so it changes nothing. If even this fails for a long time, the release endpoint itself is down: open a Firebase support case.
+- `scripts/firestore-rules-release.mjs release` (`npm run rules:release`) finds the already-uploaded ruleset whose text matches `./firestore.rules` after normalizing line endings. It points production at that ruleset, retrying through 503s, and confirms by reading the release back. It never uploads or deletes anything.
+- `scripts/firestore-rules-release.mjs probe` sends an idempotent PATCH to the ruleset that is already live, then reads the release back. It reports success only when the PATCH is acknowledged and the GET confirms the same ruleset; a matching GET after a failed PATCH is not enough to prove the endpoint works. If repeated probes remain unconfirmed, inspect the API response and credentials before escalating.
 
 ## Functions
 
