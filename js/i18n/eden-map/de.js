@@ -159,5 +159,10 @@ export default {
     pathingImpassable: 'Unpassierbar',
     pathingControls: 'Routensteuerung',
     pathingStorageOff: 'Dieser Browser blockiert das Speichern. Nutze „Link teilen“, um den Plan zu behalten.',
+    routePlayback: 'Routenwiedergabe',
+    routePlay: 'Abspielen',
+    routePause: 'Pause',
+    routeReplay: 'Wiederholen',
+    routeProgress: 'Routenfortschritt',
   },
 };

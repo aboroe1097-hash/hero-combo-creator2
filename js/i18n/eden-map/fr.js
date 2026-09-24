@@ -160,5 +160,10 @@ export default {
     pathingImpassable: 'Infranchissable',
     pathingControls: 'Commandes d\'itinéraire',
     pathingStorageOff: 'Ce navigateur bloque la sauvegarde. Utilisez « Partager le lien » pour conserver le plan.',
+    routePlayback: 'Lecture de l’itinéraire',
+    routePlay: 'Lire',
+    routePause: 'Pause',
+    routeReplay: 'Rejouer',
+    routeProgress: 'Progression de l’itinéraire',
   },
 };

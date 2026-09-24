@@ -158,5 +158,10 @@ export default {
     pathingImpassable: '不可通行',
     pathingControls: '路线控制',
     pathingStorageOff: '此浏览器禁止保存。请使用“分享链接”保留方案。',
+    routePlayback: '路线回放',
+    routePlay: '播放',
+    routePause: '暂停',
+    routeReplay: '重播',
+    routeProgress: '路线进度',
   },
 };

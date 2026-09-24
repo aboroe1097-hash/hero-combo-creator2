@@ -160,5 +160,10 @@ export default {
     pathingImpassable: 'Непроходимо',
     pathingControls: 'Управление маршрутом',
     pathingStorageOff: 'Этот браузер блокирует сохранение. Используйте «Поделиться ссылкой», чтобы сохранить план.',
+    routePlayback: 'Воспроизведение маршрута',
+    routePlay: 'Воспроизвести',
+    routePause: 'Пауза',
+    routeReplay: 'Повтор',
+    routeProgress: 'Прогресс маршрута',
   },
 };

@@ -159,5 +159,10 @@ export default {
     pathingImpassable: '통과 불가',
     pathingControls: '경로 설정',
     pathingStorageOff: '이 브라우저는 저장을 차단합니다. 계획을 보관하려면 공유 링크를 사용하세요.',
+    routePlayback: '경로 재생',
+    routePlay: '재생',
+    routePause: '일시정지',
+    routeReplay: '다시 재생',
+    routeProgress: '경로 진행률',
   },
 };

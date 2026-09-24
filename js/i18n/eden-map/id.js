@@ -160,5 +160,10 @@ export default {
     pathingImpassable: 'Tak bisa dilewati',
     pathingControls: 'Kontrol rute',
     pathingStorageOff: 'Browser ini memblokir penyimpanan. Gunakan Bagikan tautan untuk menyimpan rencana.',
+    routePlayback: 'Pemutaran rute',
+    routePlay: 'Putar',
+    routePause: 'Jeda',
+    routeReplay: 'Ulangi',
+    routeProgress: 'Kemajuan rute',
   },
 };

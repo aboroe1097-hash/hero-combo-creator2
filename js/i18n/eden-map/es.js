@@ -160,5 +160,10 @@ export default {
     pathingImpassable: 'Infranqueable',
     pathingControls: 'Controles de ruta',
     pathingStorageOff: 'Este navegador bloquea el guardado. Usa «Compartir enlace» para conservar el plan.',
+    routePlayback: 'Reproducción de ruta',
+    routePlay: 'Reproducir',
+    routePause: 'Pausa',
+    routeReplay: 'Repetir',
+    routeProgress: 'Progreso de la ruta',
   },
 };

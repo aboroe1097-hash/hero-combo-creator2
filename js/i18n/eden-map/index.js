@@ -220,6 +220,11 @@ const EN = Object.freeze({
     pathingImpassable: 'Impassable',
     pathingControls: 'Route controls',
     pathingStorageOff: 'This browser blocks saving. Use Share link to keep the plan.',
+    routePlayback: 'Route playback',
+    routePlay: 'Play',
+    routePause: 'Pause',
+    routeReplay: 'Replay',
+    routeProgress: 'Route progress',
   },
 });
 

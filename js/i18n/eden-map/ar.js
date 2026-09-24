@@ -159,5 +159,10 @@ export default {
     pathingImpassable: 'لا يمكن عبوره',
     pathingControls: 'عناصر التحكم في المسار',
     pathingStorageOff: 'هذا المتصفح يمنع الحفظ. استخدم «مشاركة الرابط» للاحتفاظ بالخطة.',
+    routePlayback: 'تشغيل المسار',
+    routePlay: 'تشغيل',
+    routePause: 'إيقاف مؤقت',
+    routeReplay: 'إعادة',
+    routeProgress: 'تقدّم المسار',
   },
 };

@@ -160,5 +160,10 @@ export default {
     pathingImpassable: 'Intransponível',
     pathingControls: 'Controles da rota',
     pathingStorageOff: 'Este navegador bloqueia o salvamento. Use “Compartilhar link” para manter o plano.',
+    routePlayback: 'Reprodução da rota',
+    routePlay: 'Reproduzir',
+    routePause: 'Pausar',
+    routeReplay: 'Repetir',
+    routeProgress: 'Progresso da rota',
   },
 };

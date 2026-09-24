@@ -159,5 +159,10 @@ export default {
     pathingImpassable: 'Geçilmez',
     pathingControls: 'Rota kontrolleri',
     pathingStorageOff: 'Bu tarayıcı kaydetmeyi engelliyor. Planı saklamak için “Bağlantıyı paylaş” seçeneğini kullan.',
+    routePlayback: 'Rota oynatma',
+    routePlay: 'Oynat',
+    routePause: 'Duraklat',
+    routeReplay: 'Tekrar oynat',
+    routeProgress: 'Rota ilerlemesi',
   },
 };

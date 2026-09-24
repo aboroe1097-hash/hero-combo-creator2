@@ -160,5 +160,10 @@ export default {
     pathingImpassable: 'Invalicabile',
     pathingControls: 'Controlli del percorso',
     pathingStorageOff: 'Questo browser blocca il salvataggio. Usa «Condividi link» per conservare il piano.',
+    routePlayback: 'Riproduzione percorso',
+    routePlay: 'Riproduci',
+    routePause: 'Pausa',
+    routeReplay: 'Ripeti',
+    routeProgress: 'Avanzamento percorso',
   },
 };

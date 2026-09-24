@@ -1,6 +1,6 @@
 # 16.5.0 — Motion and visual-craft release plan
 
-Status: **P0/P1 implemented and CI-green in 16.5.0 (PR #215); scope corrected in the 16.5.1 review**  
+Status: **P0/P1 implemented and CI-green in 16.5.0 (PR #215); scope corrected in the 16.5.1 review; P2 pass recorded in §0.5 (2026-09-24)**  
 Target: **16.5.0**, requested by the owner. This document does not bump the application version.  
 Revised: 2026-09-23 · Production reference at planning: origin/gh-pages **fd177c38**, application **16.0.18**; release integration refreshed it to **81dba72a**, application **16.0.19**, and the approved transition is now 16.0.19 → 16.5.0  
 Source: [100 HTML Files gallery](https://miaai-lab.github.io/Claude-Opus-5.5-100-HTML-Files/)
@@ -87,6 +87,46 @@ shared feedback chunk — a documented lift, not the plan's default (see
 `docs/plans/16.5.0-phase0-baseline.md`). Every row still marked *Deferred* remains absent from
 the code. The §2.2 browser trace baseline is still unrecorded, and the new motion behaviour has
 no browser-level test in a CI path.
+
+The P2 rows above are the 16.5.0/16.5.1 record and are kept as history. §0.5 supersedes them.
+
+### 0.5 P2 scope freeze record (2026-09-24)
+
+Recorded on `agent/motion-p2` from `04ff88df` (application 16.5.4). This pass implements every
+P2 item whose data already exists in the repository. It does not bump the version or edit the
+CHANGELOG. Byte figures come from `npm run build` + `npm run size:check` on the locked toolchain
+(vite 8.3.0, postcss 8.5.28, cssnano 8.0.2), before → after.
+
+| Row | Status | Evidence / reason |
+|---|---|---|
+| P2 Eden route playback (§4.4) | **Included** | `js/fx/route-playback.js` (pure arc-length slice, stop positions, finite clock) + `js/eden-route-playback.js` (control bar). It uses the saved `routedPath` coordinates unchanged. Arc length only paces the drawing; the status shows the stored tile distance, never an ETA. Play/Pause/Replay and a scrubber appear only while a saved path is selected. Numbered stops mark the user's waypoints. Playback asks for redraws through `scheduleDraw` and asks for no frames when paused, finished, hidden, or never started (measured 0 rAF requests in 2 s idle). Reduced motion hides Play/Replay: the full static route shows and the scrubber still works. Labels are in all 12 Eden Map packs. |
+| P2 tower connectors (§4.5) | **Included** | `js/specialization-tower-connectors.js`: a static accent segment runs from each column's first research to the next unfinished research. Completion uses the canonical `isComplete` rule. It draws once, `transform: scaleY` only for 420 ms, the first time a column is ≥35% visible in the graph scroller. Offscreen columns wait. Re-renders, reduced motion, and Save-Data show it statically. Each render does one batched geometry read. Order, totals, focus, and selection are unchanged, and all 13 Towers Playwright specs pass. |
+| P2 season timeline (§4.6) | **Included** (unchanged) | Shipped in 16.5.0 |
+| P2 existing-data chart: Research per-level cost curve (§4.7 technique) | **Included** | `js/research-cost-curve.js` draws the canonical tech-db per-level medal costs in the Research node inspector. It is static inline SVG and works in both themes and forced colors. A `<details>` table repeats the same numbers. The "Remaining" figure matches the existing inspector total, and a unit test reconciles every charted tech-db node. Missing levels show as unknown, not zero. Only existing localized keys are used. |
+| P2 Admin/OCR/VtsScore trend charts (§4.7) | **Deferred** | Unchanged gate: no verified history, timestamp, or read-owner contract. The VtsScore/admin files are also owned by other work in flight. |
+| P2 Arcade feedback (§4.8, non-audio) | **Included** | `games/boot/shared.js` adds a hit shard burst (6 shards per hit, at most 18 live, 420 ms, WAAPI, aria-hidden). Damage adds a stage nudge of 80 ms (independent `translate`, at most one per 400 ms). The score pops after the text has changed, and the game-over count-up is excluded. Float text gets a transform/opacity pop. Reduced motion and Save-Data create no shards, no shake, and no pop, and the float text only fades. Scoring, timing, and controls are untouched, and the artifact-contract tests pass. |
+| P2 Arcade SFX (§4.8) | **Deferred** | Same reason as §0.4: no sound setting or storage contract, and no audio acceptance evidence |
+| P2 share art (§4.9) | **Included (combo image)** | `js/fx/share-art.js` seeds a low-alpha composition from the normalized combo heroes plus `SHARE_ART_VERSION`. It is painted under the opaque cards and text of the existing combo PNG export. Repeat exports gave byte-identical images, and any failure falls back to the plain export. A tower-plan share image is **deferred**: Towers has only a JSON export, so there is no image export to decorate, and a new one would need its own renderer, copy, and acceptance. |
+
+Byte ledger for this pass (minified, uncompressed, as `size:check` counts them):
+
+| Metric | Before | After | Cap | Note |
+|---|---:|---:|---:|---|
+| total JS | 11153.7 KiB | 11169.5 KiB | 11175 KiB | **+15.8 KiB; 5.5 KiB local headroom, below the ~20 KiB reserve the size script documents for CI. Owner decision needed before release; the cap was not edited** |
+| total CSS | 1507.0 KiB | 1511.8 KiB | 1635 KiB | +4.8 KiB |
+| entry CSS | 421.2 KiB | 421.2 KiB | 427 KiB | unchanged |
+| specialization-towers.html CSS | 84.2 KiB | 85.1 KiB | 89 KiB | connector rules |
+| deployed files | 773 | 773 | 773 | no new file |
+
+`deployFileCount` has no headroom. Importing `js/fx/motion-policy.js` from the Towers entry or
+the Eden map chunk made it a new shared chunk (774 files), so those two surfaces read the same
+signals locally instead: `watchPlaybackMotion` in `js/fx/route-playback.js` and
+`defaultMotionAllowed` in the connectors module, both with the policy's `allowed` rule. New
+modules are imported by exactly one owning chunk. `scripts/check-motion-css.mjs` now also scans
+`games/boot/shared.css`, which has no infinite-paint findings. `tests/unit/motion-p2-contract.test.mjs`
+checks that each P2 animation is finite, transform/opacity-only, and gated by reduced motion.
+The §2.2 trace baseline and the dense-map p95 frame timing are still not recorded; the evidence
+for this pass is screenshots, idle rAF counts, and unit/Playwright checks.
 
 ## 1. Gallery inventory and evidence quality
 
