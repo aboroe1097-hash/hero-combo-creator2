@@ -1,4 +1,4 @@
-import { importFirestore } from '../firebase-sdk.js';
+import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from '../eden-workspaces.js';
 import {
   buildWeightedContributionRows,
   getWeightedPlayerFamilyKey,
@@ -6,10 +6,7 @@ import {
   sanitizePublicR5Adjustments,
 } from '../contribution-weighting.js';
 
-const DASHBOARD_PATH = 'vts_admin/dashboard_data';
-const CONDUCT_PATH = 'vts_admin/conduct_adjustments/records';
-const VOTE_SETTINGS_PATH = 'vts_admin/eden_x1_vote_settings';
-const PUBLIC_RESULTS_PATH = 'vts_admin/eden_x1_public_vote_results';
+const PUBLIC_PROJECTION_PATH = edenWorkspaceFirestorePath('eden-x2', 'publicProjection');
 const CACHE_MS = 60_000;
 
 let cached = null;
@@ -18,6 +15,13 @@ let inFlight = null;
 function integer(value) {
   const number = Number(value);
   return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
+}
+
+function numberOrNull(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function normalizePublicVoteResults(value = {}) {
@@ -74,71 +78,22 @@ function publicWeightedRow(row) {
   };
 }
 
-async function readConduct(db, firestore, season) {
-  const { collection, getDocs, query, where } = firestore;
-  const ref = collection(db, CONDUCT_PATH);
-  const snapshot = await getDocs(season ? query(ref, where('season', '==', season)) : ref);
-  const rows = [];
-  snapshot.forEach((item) => rows.push(item.data()));
-  return sanitizePublicR5Adjustments(rows, season);
-}
+export function buildEdenPublicDataFromProjection(projection) {
+  if (!isPublishedEdenProjection(projection) || projection.workspace !== 'eden-x2') return null;
 
-async function readManagementVoteResults() {
-  try {
-    const { loadManagementVotesPayloadWithFallback, summarizeManagementVotePayload } =
-      await import('../eden-x1-management-votes.js');
-    const payload = await loadManagementVotesPayloadWithFallback({ timeoutMs: 6_000 });
-    const summary = summarizeManagementVotePayload(payload);
-    return {
-      available: true,
-      totalBallots: integer(summary.totalBallots),
-      totalVotes: integer(summary.totalVotes),
-      rankings: (Array.isArray(summary.rankings) ? summary.rankings : [])
-        .slice(0, 50)
-        .map((row) => ({
-          playerName: String(row?.playerName || '')
-            .trim()
-            .slice(0, 100),
-          playerKey: String(row?.playerKey || '')
-            .trim()
-            .slice(0, 120),
-          familyKey: String(getWeightedPlayerFamilyKey(row?.playerKey || '')).slice(0, 120),
-          votes: integer(row?.votes),
-          voters: Array.isArray(row?.voters) ? row.voters.length : integer(row?.voters),
-        }))
-        .filter((row) => row.playerName),
-    };
-  } catch {
-    return { available: false, totalBallots: 0, totalVotes: 0, rankings: [] };
-  }
-}
-
-async function readPublicData() {
-  const [{ initFirebase, ensureAnonymousAuth, getDb }, firestore] = await Promise.all([
-    import('../firebase.js'),
-    importFirestore(),
-  ]);
-  const setup = initFirebase();
-  if (!setup.configured) throw new Error('Firebase is not configured.');
-  await ensureAnonymousAuth();
-  const db = getDb();
-  if (!db) throw new Error('Firebase is not ready.');
-  const { doc, getDoc } = firestore;
-  const [dashboardSnap, settingsSnap, publicResultsSnap, managementVoteResults] = await Promise.all(
-    [
-      getDoc(doc(db, DASHBOARD_PATH)),
-      getDoc(doc(db, VOTE_SETTINGS_PATH)).catch(() => null),
-      getDoc(doc(db, PUBLIC_RESULTS_PATH)).catch(() => null),
-      readManagementVoteResults(),
-    ]
+  const dashboard =
+    projection.dashboard && typeof projection.dashboard === 'object' ? projection.dashboard : {};
+  const settings =
+    projection.voteSettings && typeof projection.voteSettings === 'object'
+      ? projection.voteSettings
+      : {};
+  const scoring =
+    projection.scoring && typeof projection.scoring === 'object' ? projection.scoring : {};
+  const season = String(dashboard.r5Season || projection.season || 'X2').trim().slice(0, 40);
+  const adjustments = sanitizePublicR5Adjustments(
+    Array.isArray(dashboard.publicConductAdjustments) ? dashboard.publicConductAdjustments : [],
+    season
   );
-  if (!dashboardSnap.exists()) throw new Error('No public Eden dashboard data is available.');
-
-  const dashboard = dashboardSnap.data() || {};
-  const season = String(dashboard.r5Season || 'X1')
-    .trim()
-    .slice(0, 40);
-  const conduct = await readConduct(db, firestore, season).catch(() => []);
   const model = buildWeightedContributionRows({
     contributionRecords: Array.isArray(dashboard.contributionRecords)
       ? dashboard.contributionRecords
@@ -147,24 +102,44 @@ async function readPublicData() {
     exGuildContributions: Array.isArray(dashboard.exGuildContributions)
       ? dashboard.exGuildContributions
       : [],
-    r5Adjustments: conduct,
+    r5Adjustments: adjustments,
     season,
-    demolitionRecords: Array.isArray(dashboard.attacks) ? dashboard.attacks : [],
+    includeSupportOnly: true,
+    dutyPointWeights: scoring.dutyPointWeights,
+    contributionWeight: scoring.contributionWeight,
+    formPointWeight: scoring.formPointWeight,
+    demolitionRecords:
+      scoring.includeDemolitionPoints === true && Array.isArray(dashboard.attacks)
+        ? dashboard.attacks
+        : undefined,
+    includeDemolitionPoints: scoring.includeDemolitionPoints === true,
   });
-  const settings = settingsSnap?.exists?.() ? settingsSnap.data() || {} : {};
   const publicVoteResults = normalizePublicVoteResults(
-    publicResultsSnap?.exists?.() ? publicResultsSnap.data() : {}
+    settings.showMemberResults === true ? projection.publicVoteResults || {} : {}
   );
 
   return {
+    workspace: 'eden-x2',
     season,
+    seasonLabel: 'X2',
+    sourceRevision: integer(projection.revision) || null,
     asOf:
-      String(dashboard.updatedAt || dashboard.date || '')
+      String(dashboard.last_updated || dashboard.date || dashboard.updatedAtMs || '')
         .trim()
         .slice(0, 40) || null,
     attackCount: Array.isArray(dashboard.attacks) ? dashboard.attacks.length : 0,
     weights: model.weights,
     premiumCutoff: model.premiumCutoff,
+    scoring: {
+      dutyPointWeights: scoring.dutyPointWeights || null,
+      includeDemolitionPoints: scoring.includeDemolitionPoints === true,
+      contributionWeight: numberOrNull(scoring.contributionWeight),
+      formPointWeight: numberOrNull(scoring.formPointWeight),
+    },
+    rewardSettings:
+      projection.rewardSettings && typeof projection.rewardSettings === 'object'
+        ? projection.rewardSettings
+        : null,
     rows: model.rows.map(publicWeightedRow),
     voting: {
       contributionRankingMode: normalizeEdenX1ContributionRankingMode(
@@ -179,10 +154,28 @@ async function readPublicData() {
       showPublicResults: settings.showPublicResults === true,
     },
     publicVoteResults,
-    managementVoteResults,
+    // X2 management results are not part of the public projection. Never reuse
+    // old X1 spreadsheet results as a fallback for the current season.
+    managementVoteResults: { available: false, totalBallots: 0, totalVotes: 0, rankings: [] },
   };
 }
 
+async function readPublicData() {
+  const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
+    import('../firebase-eden.js'),
+    import('../firebase-sdk.js'),
+  ]);
+  const setup = initFirebase();
+  if (!setup.configured || !setup.app) throw new Error('Firebase is not configured.');
+  await ensureAnonymousAuth();
+  const firestore = await importFirestoreLite();
+  const { getFirestore, doc, getDoc } = firestore;
+  const snapshot = await getDoc(doc(getFirestore(setup.app), PUBLIC_PROJECTION_PATH));
+  const projection = snapshot.exists() ? snapshot.data() : null;
+  const publicData = buildEdenPublicDataFromProjection(projection);
+  if (!publicData) throw new Error('No published Eden X2 projection is available.');
+  return publicData;
+}
 export async function loadEdenPublicData({ forceRefresh = false } = {}) {
   const now = Date.now();
   if (!forceRefresh && cached && now - cached.loadedAt < CACHE_MS) return cached.value;

@@ -29,12 +29,12 @@ html.admin-standalone-root {
   --frost-text: #eef4ff;
   --frost-text-dim: #9fb0cc;
   --frost-text-mute: #41527a;
-  --frost-cyan: #7dd3fc;
-  --frost-fire: #fb923c;
-  --frost-gold: #f5c451;
-  --frost-violet: #a78bfa;
-  --frost-rose: #fb7185;
-  --frost-mint: #34d399;
+  --fr-cyan: #7dd3fc;
+  --fr-fire: #fb923c;
+  --fr-gold: #f5c451;
+  --fr-violet: #a78bfa;
+  --fr-rose: #fb7185;
+  --fr-mint: #34d399;
   --frost-grad-primary: linear-gradient(90deg, #7dd3fc, #fb923c);
   --frost-grad-celestial: linear-gradient(90deg, #7dd3fc, #a78bfa, #fb923c);
 }
@@ -52,6 +52,12 @@ html.admin-standalone-root {
   --text-muted: #526277;
   --muted: #526277;
   --surface-soft: #eef3f8;
+  --fr-cyan: #0369a1;
+  --fr-fire: #c2410c;
+  --fr-gold: #a16207;
+  --fr-violet: #6d28d9;
+  --fr-rose: #be123c;
+  --fr-mint: #047857;
   color: #0f172a;
 }
 
@@ -179,7 +185,7 @@ body.eden-x1-page {
   font-weight: 600;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
 }
 
 .eden-x1-page .eden-x1-marquee-status {
@@ -191,7 +197,7 @@ body.eden-x1-page {
   border: 1px solid rgba(125, 211, 252, 0.4);
   border-radius: 999px;
   background: rgba(125, 211, 252, 0.12);
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1;
@@ -202,13 +208,13 @@ body.eden-x1-page {
 .eden-x1-page .eden-x1-marquee-status[data-state='closed'] {
   border-color: rgba(251, 113, 133, 0.42);
   background: rgba(251, 113, 133, 0.12);
-  color: var(--frost-rose);
+  color: var(--fr-rose);
 }
 
 .eden-x1-page .eden-x1-marquee-status[data-state='urgent'] {
   border-color: rgba(251, 146, 60, 0.46);
   background: rgba(251, 146, 60, 0.14);
-  color: var(--frost-fire);
+  color: var(--fr-fire);
 }
 
 .eden-x1-page .eden-x1-marquee-status::before {
@@ -264,19 +270,19 @@ body.eden-x1-page {
 }
 
 .eden-x1-page .eden-x1-marquee-stat-value[data-tone='cyan'] {
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
 }
 .eden-x1-page .eden-x1-marquee-stat-value[data-tone='fire'] {
-  color: var(--frost-fire);
+  color: var(--fr-fire);
 }
 .eden-x1-page .eden-x1-marquee-stat-value[data-tone='gold'] {
-  color: var(--frost-gold);
+  color: var(--fr-gold);
 }
 .eden-x1-page .eden-x1-marquee-stat-value[data-tone='violet'] {
-  color: var(--frost-violet);
+  color: var(--fr-violet);
 }
 .eden-x1-page .eden-x1-marquee-stat-value[data-tone='mint'] {
-  color: var(--frost-mint);
+  color: var(--fr-mint);
 }
 
 .eden-x1-page .eden-x1-marquee-top {
@@ -298,7 +304,7 @@ body.eden-x1-page {
 .eden-x1-page .eden-x1-marquee-top-name {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--frost-gold);
+  color: var(--fr-gold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -396,7 +402,7 @@ body.eden-x1-page {
 
 .eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-name {
   font-weight: 700;
-  color: var(--frost-gold);
+  color: var(--fr-gold);
 }
 
 .eden-x1-page .eden-x1-podium-score {
@@ -442,7 +448,7 @@ body.eden-x1-page {
 }
 
 .eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-rank-num {
-  color: var(--frost-gold);
+  color: var(--fr-gold);
   font-size: 1.15rem;
 }
 
@@ -526,14 +532,14 @@ body.eden-x1-page {
 }
 
 .eden-x1-page .eden-x1-progression-milestone[data-state='done'] .eden-x1-progression-node {
-  background: var(--frost-cyan);
-  border-color: var(--frost-cyan);
+  background: var(--fr-cyan);
+  border-color: var(--fr-cyan);
   box-shadow: 0 0 12px rgba(125, 211, 252, 0.6);
 }
 
 .eden-x1-page .eden-x1-progression-milestone[data-state='now'] .eden-x1-progression-node {
-  background: var(--frost-violet);
-  border-color: var(--frost-violet);
+  background: var(--fr-violet);
+  border-color: var(--fr-violet);
   box-shadow: 0 0 14px rgba(167, 139, 250, 0.7);
   animation: eden-x1-progression-pulse 1.8s ease-in-out infinite;
 }
@@ -556,12 +562,12 @@ body.eden-x1-page {
 }
 
 .eden-x1-page .eden-x1-progression-milestone[data-state='now'] .eden-x1-progression-label {
-  color: var(--frost-violet);
+  color: var(--fr-violet);
   font-weight: 700;
 }
 
 .eden-x1-page .eden-x1-progression-milestone[data-state='done'] .eden-x1-progression-label {
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
 }
 
 .eden-x1-page .eden-x1-progression-foot {
@@ -575,7 +581,7 @@ body.eden-x1-page {
 .eden-x1-page .eden-x1-progression-pct {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--frost-violet);
+  color: var(--fr-violet);
 }
 
 .eden-x1-page .eden-x1-progression-now {
@@ -728,7 +734,7 @@ body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-notice {
 }
 
 body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-notice strong {
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
 }
 
 body.eden-x1-page[data-eden-season-state='archive'] .eden-x1-notice span {
@@ -1309,7 +1315,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 }
 
 #ocrDashboardRoot .eden-x1-public-modal .eden-x1-structure-player-row:focus-visible {
-  outline: 2px solid var(--frost-cyan);
+  outline: 2px solid var(--fr-cyan);
   outline-offset: 2px;
 }
 
@@ -1616,7 +1622,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 }
 
 #ocrDashboardRoot #edenX1PublicHeatmapScroll:focus-visible {
-  outline: 2px solid var(--frost-cyan);
+  outline: 2px solid var(--fr-cyan);
   outline-offset: -2px;
   border-radius: 8px;
 }
@@ -4273,7 +4279,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   }
 
   .eden-x1-row-expand-toggle:focus-visible {
-    outline: 2px solid var(--frost-cyan);
+    outline: 2px solid var(--fr-cyan);
     outline-offset: 2px;
   }
 
@@ -5284,7 +5290,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border: 1px solid rgba(125, 211, 252, 0.38);
   border-radius: 999px;
   background: rgba(125, 211, 252, 0.12);
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
@@ -5293,13 +5299,13 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 .eden-x1-page .eden-x1-vote-count[data-full='true'] {
   border-color: rgba(52, 211, 153, 0.46);
   background: rgba(52, 211, 153, 0.14);
-  color: var(--frost-mint);
+  color: var(--fr-mint);
 }
 
 .eden-x1-page .eden-x1-vote-count[data-over='true'] {
   border-color: rgba(251, 113, 133, 0.46);
   background: rgba(251, 113, 133, 0.14);
-  color: var(--frost-rose);
+  color: var(--fr-rose);
 }
 
 /* Selected candidate = accent + check (not color alone) */
@@ -5311,7 +5317,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border: 1px solid rgba(125, 211, 252, 0.44);
   border-radius: 999px;
   background: rgba(125, 211, 252, 0.12);
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
   font-size: 0.76rem;
   font-weight: 600;
   line-height: 1.25;
@@ -5324,7 +5330,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;
-  background: var(--frost-cyan);
+  background: var(--fr-cyan);
   color: #06111f;
   font-size: 0.68rem;
   font-weight: 900;
@@ -5354,7 +5360,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 .eden-x1-page .eden-x1-vote-confirm-clear:hover,
 .eden-x1-page .eden-x1-vote-confirm-clear:focus-visible {
   background: rgba(251, 113, 133, 0.18);
-  color: var(--frost-rose);
+  color: var(--fr-rose);
   border-color: rgba(251, 113, 133, 0.4);
   outline: none;
 }
@@ -5369,7 +5375,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   border: 1px solid rgba(251, 146, 60, 0.3);
   border-radius: 12px;
   background: rgba(251, 146, 60, 0.08);
-  color: var(--frost-fire);
+  color: var(--fr-fire);
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.35;
@@ -5378,13 +5384,13 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 .eden-x1-page .eden-x1-vote-eligibility[data-state='closed'] {
   border-color: rgba(251, 113, 133, 0.36);
   background: rgba(251, 113, 133, 0.1);
-  color: var(--frost-rose);
+  color: var(--fr-rose);
 }
 
 .eden-x1-page .eden-x1-vote-eligibility[data-state='open'] {
   border-color: rgba(52, 211, 153, 0.3);
   background: rgba(52, 211, 153, 0.08);
-  color: var(--frost-mint);
+  color: var(--fr-mint);
 }
 
 .eden-x1-page .eden-x1-vote-friday {
@@ -5439,7 +5445,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 .eden-x1-page .eden-x1-vote-status[data-state='error'] {
   border: 1px solid rgba(251, 113, 133, 0.36);
   background: rgba(251, 113, 133, 0.1);
-  color: var(--frost-rose);
+  color: var(--fr-rose);
   border-radius: 12px;
   padding: 0.5rem 0.7rem;
 }
@@ -5447,7 +5453,7 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
 .eden-x1-page .eden-x1-vote-status[data-state='success'] {
   border: 1px solid rgba(52, 211, 153, 0.36);
   background: rgba(52, 211, 153, 0.1);
-  color: var(--frost-mint);
+  color: var(--fr-mint);
   border-radius: 12px;
   padding: 0.5rem 0.7rem;
 }
@@ -6100,7 +6106,7 @@ body.eden-x1-page.eden-x1-overlay-open {
     .eden-x1-vote-info,
     .eden-x1-quicknav-chip
   ):focus-visible {
-  outline: 3px solid var(--frost-cyan) !important;
+  outline: 3px solid var(--fr-cyan) !important;
   outline-offset: 2px;
 }
 
@@ -6618,7 +6624,7 @@ html.is-embedded .ai-drawer-launcher-shell {
 }
 #ocrDashboardRoot .eden-x1-signup-prompt__kicker {
   display: block;
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -6634,7 +6640,7 @@ html.is-embedded .ai-drawer-launcher-shell {
 }
 #ocrDashboardRoot .eden-x1-signup-prompt__linked {
   margin-top: 0.35rem;
-  color: var(--frost-cyan);
+  color: var(--fr-cyan);
   font-weight: 700;
 }
 #ocrDashboardRoot .eden-x1-signup-prompt__cta {

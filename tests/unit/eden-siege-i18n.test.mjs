@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { COPY, LOCALES, getCopy, normalizeLocale } from '../../js/eden-siege/data/copy.js';
+import {
+  COPY,
+  LOCALES,
+  getCopy,
+  loadCopy,
+  normalizeLocale,
+} from '../../js/eden-siege/data/copy.js';
+
+const PACKS = JSON.parse(
+  readFileSync(new URL('../../js/eden-siege/data/copy-locales.json', import.meta.url), 'utf8')
+);
 
 const ENGLISH_PLACEHOLDERS = collectPlaceholders(COPY.en);
 
@@ -19,26 +30,40 @@ function collectPlaceholders(value, prefix = '', output = {}) {
 }
 
 test('every supported locale resolves complete Eden Siege copy with matching placeholders', () => {
-  assert.deepEqual(Object.keys(COPY), LOCALES);
+  assert.deepEqual(['en', ...Object.keys(PACKS)], LOCALES);
 
   for (const locale of LOCALES) {
-    const copy = getCopy(locale);
+    const copy = getCopy(locale, PACKS);
     assert.deepEqual(collectPlaceholders(copy), ENGLISH_PLACEHOLDERS, `${locale} placeholders`);
     assert.equal(copy.tips.length, COPY.en.tips.length, `${locale} tips`);
     assert.ok(copy.game.title, `${locale} title`);
   }
 });
 
-test('the four unavailable page locales use the explicit English fallback', () => {
-  for (const locale of ['de', 'fr', 'it', 'pt', 'tr', 'id', 'kr', 'hr']) {
-    assert.equal(COPY[locale], COPY.en, `${locale} points to the English fallback`);
-    assert.deepEqual(getCopy(locale), getCopy('en'));
+test('every non-English locale authors its own copy instead of the English fallback', () => {
+  for (const locale of LOCALES.filter((entry) => entry !== 'en')) {
+    assert.notEqual(PACKS[locale], undefined, `${locale} must have a locale pack`);
+    assert.equal(typeof PACKS[locale], 'object', `${locale} must have a copy object`);
   }
   assert.equal(normalizeLocale('ko'), 'kr');
 });
 
-test('Spanish, Russian, Arabic and Chinese use localized game titles', () => {
-  for (const locale of ['es', 'ru', 'ar', 'zh']) {
-    assert.notEqual(getCopy(locale).game.title, getCopy('en').game.title);
+test('every locale uses its own localized game title', () => {
+  const englishTitle = getCopy('en', PACKS).game.title;
+  for (const locale of LOCALES.filter((entry) => entry !== 'en')) {
+    assert.notEqual(getCopy(locale, PACKS).game.title, englishTitle, `${locale} title`);
   }
+});
+
+test('Eden Siege locale packs load on demand and fall back to English on failure', async () => {
+  let requestedUrl;
+  const copy = await loadCopy('es-MX', '/siege-copy.json', async (url) => {
+    requestedUrl = url;
+    return { ok: true, json: async () => PACKS };
+  });
+  assert.equal(requestedUrl, '/siege-copy.json');
+  assert.equal(copy.game.title, PACKS.es.game.title);
+
+  const fallback = await loadCopy('de', '/missing.json', async () => ({ ok: false }));
+  assert.equal(fallback.game.title, COPY.en.game.title);
 });

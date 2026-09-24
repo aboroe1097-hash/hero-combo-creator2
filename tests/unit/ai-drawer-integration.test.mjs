@@ -62,8 +62,15 @@ test('AI assistant is exposed as a floating drawer instead of a main navigation 
   assert.match(shellSource, /else if \(!consumeHistory\) replaceMoreHistoryState\(\)/);
   assert.match(
     launcherCss,
-    /body:has\(#shellMoreTools\) \.ai-drawer-launcher-shell \{[\s\S]*bottom: calc\(96px \+ env\(safe-area-inset-bottom\)\)/
+    /body\.shell-more-open \.ai-drawer-launcher-shell \{\s*display: none !important;/
   );
+  assert.match(
+    launcherCss,
+    /body:not\(\.shell-more-open\) \.ai-drawer-launcher-shell \{[\s\S]*bottom: calc\(12px \+ env\(safe-area-inset-bottom\)\)/
+  );
+  assert.match(launcherCss, /\.ai-drawer-launcher-shell\.is-scroll-hidden:not\(:focus-within\)/);
+  assert.match(launcherSource, /currentScrollY < 96[\s\S]*delta > 8[\s\S]*delta < -8/);
+  assert.match(launcherSource, /shell\?\.contains\(document\.activeElement\)/);
   assert.match(
     indexHtml,
     /name="vts-ai-endpoint"\s+content="https:\/\/vts-ai-strategy-assistant\.aboroe1097\.workers\.dev"/

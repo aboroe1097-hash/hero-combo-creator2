@@ -2,20 +2,26 @@
 // next to the PDFs, so the page can never advertise a file that did not ship.
 
 import { mountToolShell } from './tool-shell.js';
+import {
+  loadDownloadsCopy,
+  normalizeDownloadsLocale,
+  preferredDownloadsLocale,
+} from './i18n/downloads-copy.js';
+import downloadsCopyLocalesUrl from './i18n/downloads-copy-locales.json?url';
 import '../css/standalone-footer-v14.css';
 import '../css/tool-shell.css';
 
 const GROUPS = [
   {
-    label: 'Research',
+    key: 'research',
     ids: ['research-costs'],
   },
   {
-    label: 'Unit Specialisation',
+    key: 'unitSpecialisation',
     ids: ['unit-specialisation-medals', 'specialisation-towers'],
   },
   {
-    label: 'Eden',
+    key: 'eden',
     ids: [
       'eden-honor-buildings',
       'eden-specialty-honor',
@@ -25,18 +31,44 @@ const GROUPS = [
     ],
   },
   {
-    label: 'Dragon Master',
+    key: 'dragonMaster',
     ids: ['dragon-master-enhancement', 'dragon-master-crafting'],
   },
   {
-    label: 'Heroes and skins',
+    key: 'heroesSkins',
     ids: ['heroes-by-season', 'skin-catalogue'],
   },
   {
-    label: 'Reference',
+    key: 'reference',
     ids: ['artifacts', 'combos-and-counters'],
   },
 ];
+
+// The page has no language switcher, so the locale comes from the stored site
+// preference or the browser. Arabic drives the RTL layout; the Korean locale ID
+// stays `kr` internally and is written to the document as `ko`.
+function applyPageLanguage(locale) {
+  document.documentElement.setAttribute('lang', locale === 'kr' ? 'ko' : locale);
+  document.documentElement.setAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+}
+
+// Static page chrome the entry owns. The PDFs and their manifest titles stay
+// English, so only the surrounding hub copy is translated.
+function applyStaticCopy(copy) {
+  document.title = `${copy.title} | VTS 1097`;
+  const skip = document.querySelector('.downloads-skip-link');
+  if (skip) skip.textContent = copy.skip;
+  const heading = document.querySelector('.downloads-header h1');
+  if (heading) heading.textContent = copy.title;
+  const intro = document.querySelector('.downloads-header > p:not(.downloads-brandline)');
+  if (intro) intro.textContent = copy.intro;
+  const note = document.querySelector('.downloads-note');
+  if (note) {
+    const strong = document.createElement('strong');
+    strong.textContent = copy.noteStrong;
+    note.replaceChildren(strong, ` ${copy.noteBody}`);
+  }
+}
 
 const MANIFEST_URL = 'downloads/downloads.json';
 
@@ -85,14 +117,14 @@ function card(entry) {
   return anchor;
 }
 
-function renderGroup(group, byId, container) {
+function renderGroup(group, byId, container, copy) {
   const entries = group.ids.map((id) => byId.get(id)).filter(Boolean);
   if (!entries.length) return;
 
   const section = document.createElement('section');
   section.className = 'downloads-group';
   const heading = document.createElement('h2');
-  heading.textContent = group.label;
+  heading.textContent = copy.groups[group.key] || copy.groups.more;
   section.appendChild(heading);
 
   const list = document.createElement('ul');
@@ -107,15 +139,18 @@ function renderGroup(group, byId, container) {
 }
 
 async function init() {
-  // The downloads (and their PDFs) are English-only for now, so the page keeps
-  // English left-to-right layout even when the site language is Arabic;
-  // otherwise the English copy was laid out right-to-left.
-  document.documentElement.setAttribute('dir', 'ltr');
-  document.documentElement.setAttribute('lang', 'en');
+  const locale = normalizeDownloadsLocale(
+    new URLSearchParams(location.search).get('lang') || preferredDownloadsLocale()
+  );
+  const copy = await loadDownloadsCopy(locale, downloadsCopyLocalesUrl);
+  applyPageLanguage(locale);
+  applyStaticCopy(copy);
+
   const root = document.getElementById('downloadsGroups');
   const status = document.getElementById('downloadsStatus');
   const stats = document.getElementById('downloadsStats');
   if (!root) return;
+  if (status) status.textContent = copy.loading;
 
   try {
     const response = await fetch(MANIFEST_URL, { cache: 'no-cache' });
@@ -125,14 +160,14 @@ async function init() {
     if (!exports.length) throw new Error('empty manifest');
 
     const byId = new Map(exports.map((entry) => [entry.id, entry]));
-    GROUPS.forEach((group) => renderGroup(group, byId, root));
+    GROUPS.forEach((group) => renderGroup(group, byId, root, copy));
 
     // Anything the manifest ships but the groups do not list still gets shown,
     // so a new export cannot silently go missing from the hub.
     const grouped = new Set(GROUPS.flatMap((group) => group.ids));
     const ungrouped = exports.filter((entry) => !grouped.has(entry.id));
     if (ungrouped.length) {
-      renderGroup({ label: 'More', ids: ungrouped.map((entry) => entry.id) }, byId, root);
+      renderGroup({ key: 'more', ids: ungrouped.map((entry) => entry.id) }, byId, root, copy);
     }
 
     if (stats) {
@@ -140,21 +175,22 @@ async function init() {
       stats.hidden = false;
       stats.innerHTML = '';
       [
-        ['Documents', String(exports.length)],
-        ['Total size', formatBytes(total)],
-        ['Built', formatDate(manifest.generatedAt)],
+        [copy.stats.documents, String(exports.length)],
+        [copy.stats.totalSize, formatBytes(total)],
+        [copy.stats.built, formatDate(manifest.generatedAt)],
       ].forEach(([label, value]) => {
         const span = document.createElement('span');
-        span.innerHTML = `${label} <b></b>`;
-        span.querySelector('b').textContent = value;
+        span.append(`${label} `);
+        const bold = document.createElement('b');
+        bold.textContent = value;
+        span.appendChild(bold);
         stats.appendChild(span);
       });
     }
     if (status) status.remove();
   } catch (error) {
     if (status) {
-      status.textContent =
-        'The download list could not be loaded. Reload the page, or open a document directly from the downloads folder.';
+      status.textContent = copy.error;
       status.setAttribute('role', 'alert');
     }
   }

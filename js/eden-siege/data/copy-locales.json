@@ -1,0 +1,1274 @@
+{
+  "es": {
+    "game": {
+      "title": "Asedio de Eden",
+      "kicker": "Arena Hielo y Fuego · VTS 1097",
+      "tagline": "Aguanta la línea. El Hielo controla, el Fuego quema, y las alas recuerdan cada cadena."
+    },
+    "hud": {
+      "score": "Puntos",
+      "best": "Récord",
+      "wave": "Oleada",
+      "gold": "Oro",
+      "core": "Fortaleza",
+      "combo": "Cadena",
+      "nova": "Nova",
+      "build": "Construir",
+      "upgrade": "Mejorar",
+      "level": "Nv",
+      "pause": "Pausa",
+      "resume": "Continuar",
+      "mute": "Sonido sí",
+      "unmute": "Sonido no",
+      "restart": "Reiniciar",
+      "backToArcade": "Arcade",
+      "swap": "Cambiar ala",
+      "attack": "Atacar",
+      "controls": "WASD / flechas mover · Espacio atacar · Q E cambiar ala · F nova · Esc pausa"
+    },
+    "elements": {
+      "elementIce": "Hielo",
+      "elementFire": "Fuego"
+    },
+    "phases": {
+      "readyTitle": "Elige tu ala",
+      "readyBody": "Las oleadas cruzan las puertas en {seconds}s. Defiende la fortaleza.",
+      "readyStart": "Empezar el asedio",
+      "buildTitle": "Entre oleadas",
+      "buildBody": "Gasta oro en torres antes de que se abra la siguiente puerta.",
+      "waveTitle": "Oleada {n}",
+      "waveBoss": "Oleada de jefe",
+      "pauseTitle": "En pausa",
+      "pauseBody": "El asedio espera. Cambiar de pestaña pausa la partida.",
+      "victoryTitle": "Fortaleza en pie",
+      "victoryBody": "Todas las oleadas rotas. Las alas quedaron saciadas.",
+      "defeatTitle": "La puerta cayó",
+      "defeatBody": "La fortaleza se perdió, pero el récord sigue en pie."
+    },
+    "results": {
+      "score": "Puntuación final",
+      "best": "Récord personal",
+      "newBest": "Nuevo récord",
+      "waves": "Oleadas superadas",
+      "kills": "Bajas",
+      "share": "Compartir",
+      "copied": "Copiado",
+      "playAgain": "Otra vez"
+    },
+    "maps": {
+      "mapKeepName": "Muralla del Torreón",
+      "mapKeepDesc": "Murallas nevadas. Tres puertas, una fortaleza.",
+      "mapShipName": "Buque de transporte",
+      "mapShipDesc": "Cubierta de contenedores, pasillos estrechos."
+    },
+    "tips": [
+      "Alterna bajas de Hielo y Fuego: ahí está el multiplicador de la cadena.",
+      "El Hielo detiene a la caballería. El Fuego remata lo que el Hielo inmoviliza.",
+      "La Nova se carga con bajas; guárdala para un jefe, no para un explorador aislado.",
+      "Las torres siguen disparando cuando caes. Construye antes de necesitarlas."
+    ],
+    "enemies": {
+      "enemyRanger": "Explorador",
+      "enemyCavalry": "Caballería",
+      "enemyDreadnought": "Acorazado"
+    },
+    "towers": {
+      "towerFrost": "Aguja de Escarcha",
+      "towerFrostDesc": "Ralentiza al objetivo. Económica y paciente; se combina con el ala de Hielo.",
+      "towerEmber": "Ballesta de Ascuas",
+      "towerEmberDesc": "Daño de área, perfecta cuando los carriles se llenan."
+    },
+    "messages": {
+      "notEnoughGold": "No hay suficiente oro",
+      "coreUnderAttack": "La fortaleza está bajo ataque",
+      "novaReady": "Nova lista",
+      "revived": "De vuelta en la muralla",
+      "bossIncoming": "Se acerca el Acorazado",
+      "waveCleared": "Oleada superada",
+      "socketEmpty": "Espacio vacío",
+      "socketBuilt": "{tower} construida",
+      "socketUpgraded": "{tower} al nivel {level}",
+      "playerDown": "Has caído; reaparecerás en la fortaleza",
+      "pausedByContext": "Se perdió el contexto gráfico; la partida está en pausa"
+    },
+    "challenge": {
+      "daily": "Semilla diaria",
+      "seed": "Semilla"
+    },
+    "errors": {
+      "loadingTitle": "Preparando la fortaleza",
+      "loadingBody": "Cargando el motor de asedio...",
+      "webglTitle": "Modo ligero",
+      "webglBody": "Este dispositivo no puede ejecutar el motor 3D; la arena se mostrará en modo simple.",
+      "failedTitle": "No se pudo cargar el motor",
+      "failedBody": "Comprueba la conexión e inténtalo de nuevo. No se perdió nada.",
+      "retry": "Intentar de nuevo"
+    }
+  },
+  "pt": {
+    "game": {
+      "title": "Cerco de Eden",
+      "kicker": "Arena Gelo e Fogo · VTS 1097",
+      "tagline": "Mantenha a linha. O Gelo controla, o Fogo queima, e as asas lembram cada corrente."
+    },
+    "hud": {
+      "score": "Pontos",
+      "best": "Recorde",
+      "wave": "Onda",
+      "gold": "Ouro",
+      "core": "Fortaleza",
+      "combo": "Corrente",
+      "nova": "Nova",
+      "build": "Construir",
+      "upgrade": "Melhorar",
+      "level": "Nv",
+      "pause": "Pausa",
+      "resume": "Continuar",
+      "mute": "Som ativado",
+      "unmute": "Som desativado",
+      "restart": "Reiniciar",
+      "backToArcade": "Arcade",
+      "swap": "Trocar asa",
+      "attack": "Atacar",
+      "controls": "WASD / setas mover · Espaço atacar · Q E trocar asa · F nova · Esc pausa"
+    },
+    "elements": {
+      "elementIce": "Gelo",
+      "elementFire": "Fogo"
+    },
+    "phases": {
+      "readyTitle": "Escolha sua asa",
+      "readyBody": "As ondas atravessam os portões em {seconds}s. Defenda a fortaleza.",
+      "readyStart": "Começar o cerco",
+      "buildTitle": "Entre ondas",
+      "buildBody": "Gaste ouro em torres antes que o próximo portão abra.",
+      "waveTitle": "Onda {n}",
+      "waveBoss": "Onda de chefe",
+      "pauseTitle": "Pausado",
+      "pauseBody": "O cerco espera. Trocar de aba pausa a partida automaticamente.",
+      "victoryTitle": "Fortaleza mantida",
+      "victoryBody": "Todas as ondas rompidas. As asas se fartaram.",
+      "defeatTitle": "O portão caiu",
+      "defeatBody": "A fortaleza foi perdida, mas o recorde continua de pé."
+    },
+    "results": {
+      "score": "Pontuação final",
+      "best": "Recorde pessoal",
+      "newBest": "Novo recorde",
+      "waves": "Ondas concluídas",
+      "kills": "Abates",
+      "share": "Compartilhar",
+      "copied": "Copiado",
+      "playAgain": "Jogar de novo"
+    },
+    "maps": {
+      "mapKeepName": "Muralha do Torreão",
+      "mapKeepDesc": "Muralhas nevadas. Três portões, uma fortaleza.",
+      "mapShipName": "Navio de transporte",
+      "mapShipDesc": "Convés de contêineres, corredores estreitos."
+    },
+    "tips": [
+      "Alterne abates de Gelo e Fogo: o multiplicador da corrente está aí.",
+      "O Gelo imobiliza a cavalaria. O Fogo finaliza o que o Gelo segura.",
+      "A Nova carrega com abates; guarde-a para um chefe, não para um explorador isolado.",
+      "As torres continuam atirando quando você cai. Construa antes de precisar delas."
+    ],
+    "enemies": {
+      "enemyRanger": "Batedor",
+      "enemyCavalry": "Cavalaria",
+      "enemyDreadnought": "Encouraçado"
+    },
+    "towers": {
+      "towerFrost": "Agulha de Gelo",
+      "towerFrostDesc": "Desacelera o alvo. Barata e paciente; combina com a asa de Gelo.",
+      "towerEmber": "Balista de Brasa",
+      "towerEmberDesc": "Dano em área, ideal quando as pistas lotam."
+    },
+    "messages": {
+      "notEnoughGold": "Ouro insuficiente",
+      "coreUnderAttack": "A fortaleza está sob ataque",
+      "novaReady": "Nova pronta",
+      "revived": "De volta à muralha",
+      "bossIncoming": "Encouraçado se aproximando",
+      "waveCleared": "Onda eliminada",
+      "socketEmpty": "Espaço vazio",
+      "socketBuilt": "{tower} construída",
+      "socketUpgraded": "{tower} ao nível {level}",
+      "playerDown": "Você caiu — renascendo na fortaleza",
+      "pausedByContext": "Contexto gráfico perdido — a partida está pausada"
+    },
+    "challenge": {
+      "daily": "Semente diária",
+      "seed": "Semente"
+    },
+    "errors": {
+      "loadingTitle": "Erguendo a fortaleza",
+      "loadingBody": "Carregando o motor de cerco...",
+      "webglTitle": "Modo leve",
+      "webglBody": "Este dispositivo não executa o motor 3D; a arena será exibida no modo construtor.",
+      "failedTitle": "O motor não carregou",
+      "failedBody": "Verifique sua conexão e tente novamente — nada foi perdido.",
+      "retry": "Tentar novamente"
+    }
+  },
+  "de": {
+    "game": {
+      "title": "Belagerung von Eden",
+      "kicker": "Eis-und-Feuer-Arena · VTS 1097",
+      "tagline": "Halt die Linie. Eis kontrolliert, Feuer brennt, und die Flügel erinnern sich an jede Kette."
+    },
+    "hud": {
+      "score": "Punkte",
+      "best": "Rekord",
+      "wave": "Welle",
+      "gold": "Gold",
+      "core": "Festung",
+      "combo": "Kette",
+      "nova": "Nova",
+      "build": "Bauen",
+      "upgrade": "Verbessern",
+      "level": "Stufe",
+      "pause": "Pause",
+      "resume": "Fortsetzen",
+      "mute": "Ton an",
+      "unmute": "Ton aus",
+      "restart": "Neustart",
+      "backToArcade": "Arcade",
+      "swap": "Flügel wechseln",
+      "attack": "Angriff",
+      "controls": "WASD / Pfeiltasten bewegen · Leertaste angreifen · Q E Flügel wechseln · F Nova · Esc Pause"
+    },
+    "elements": {
+      "elementIce": "Eis",
+      "elementFire": "Feuer"
+    },
+    "phases": {
+      "readyTitle": "Wähle deinen Flügel",
+      "readyBody": "Wellen durchqueren die Tore in {seconds}s. Halte die Festung.",
+      "readyStart": "Belagerung beginnen",
+      "buildTitle": "Zwischen den Wellen",
+      "buildBody": "Gib Gold für Türme aus, bevor das nächste Tor öffnet.",
+      "waveTitle": "Welle {n}",
+      "waveBoss": "Boss-Welle",
+      "pauseTitle": "Pausiert",
+      "pauseBody": "Die Belagerung wartet. Ein Tabwechsel pausiert den Lauf automatisch.",
+      "victoryTitle": "Festung gehalten",
+      "victoryBody": "Jede Welle gebrochen. Die Flügel holten sich ihren Teil.",
+      "defeatTitle": "Das Tor fiel",
+      "defeatBody": "Die Festung ist verloren — doch der Rekord steht noch."
+    },
+    "results": {
+      "score": "Endpunktzahl",
+      "best": "Persönlicher Rekord",
+      "newBest": "Neuer Rekord",
+      "waves": "Wellen geschafft",
+      "kills": "Abschüsse",
+      "share": "Lauf teilen",
+      "copied": "Kopiert",
+      "playAgain": "Nochmal spielen"
+    },
+    "maps": {
+      "mapKeepName": "Burgwall",
+      "mapKeepDesc": "Verschneite Wälle. Drei Tore, eine Festung.",
+      "mapShipName": "Transportschiff",
+      "mapShipDesc": "Containerdeck, enge Gänge."
+    },
+    "tips": [
+      "Wechsle zwischen Eis- und Feuer-Abschüssen — der Ketten-Multiplikator bringt die Punkte.",
+      "Eis hält einen Kavallerieangriff fest. Feuer vollendet, was Eis hält.",
+      "Nova lädt durch Abschüsse; spare sie für eine Boss-Welle statt für einen einzelnen Schützen.",
+      "Türme feuern weiter, während du liegst. Baue sie, bevor du sie brauchst."
+    ],
+    "enemies": {
+      "enemyRanger": "Späher",
+      "enemyCavalry": "Kavallerie",
+      "enemyDreadnought": "Schlachtschiff"
+    },
+    "towers": {
+      "towerFrost": "Frostspitze",
+      "towerFrostDesc": "Verlangsamt das Ziel. Günstig, geduldig, verstärkt den Eis-Flügel.",
+      "towerEmber": "Glutballiste",
+      "towerEmberDesc": "Flächenschaden. Gemacht für den Moment, in dem die Gänge voll werden."
+    },
+    "messages": {
+      "notEnoughGold": "Nicht genug Gold",
+      "coreUnderAttack": "Die Festung wird angegriffen",
+      "novaReady": "Nova bereit",
+      "revived": "Zurück auf der Mauer",
+      "bossIncoming": "Schlachtschiff nähert sich",
+      "waveCleared": "Welle geschafft",
+      "socketEmpty": "Leerer Platz",
+      "socketBuilt": "{tower} errichtet",
+      "socketUpgraded": "{tower} auf Stufe {level}",
+      "playerDown": "Du bist gefallen — Wiederbelebung an der Festung",
+      "pausedByContext": "Grafikkontext verloren — der Lauf ist pausiert"
+    },
+    "challenge": {
+      "daily": "Täglicher Seed",
+      "seed": "Seed"
+    },
+    "errors": {
+      "loadingTitle": "Festung wird errichtet",
+      "loadingBody": "Belagerungsengine wird geladen...",
+      "webglTitle": "Lite-Modus",
+      "webglBody": "Dieses Gerät kann die 3D-Engine nicht ausführen; die Arena wird in der Bauansicht gezeichnet.",
+      "failedTitle": "Die Engine wurde nicht geladen",
+      "failedBody": "Prüfe deine Verbindung und versuche es erneut — nichts ist verloren.",
+      "retry": "Erneut versuchen"
+    }
+  },
+  "fr": {
+    "game": {
+      "title": "Siège d'Eden",
+      "kicker": "Arène de Glace et de Feu · VTS 1097",
+      "tagline": "Tenez la ligne. La Glace contrôle, le Feu brûle, et les ailes se souviennent de chaque chaîne."
+    },
+    "hud": {
+      "score": "Score",
+      "best": "Record",
+      "wave": "Vague",
+      "gold": "Or",
+      "core": "Forteresse",
+      "combo": "Chaîne",
+      "nova": "Nova",
+      "build": "Construire",
+      "upgrade": "Améliorer",
+      "level": "Niv",
+      "pause": "Pause",
+      "resume": "Reprendre",
+      "mute": "Son activé",
+      "unmute": "Son coupé",
+      "restart": "Recommencer",
+      "backToArcade": "Arcade",
+      "swap": "Changer d'aile",
+      "attack": "Attaquer",
+      "controls": "WASD / flèches déplacer · Espace attaquer · Q E changer d'aile · F nova · Esc pause"
+    },
+    "elements": {
+      "elementIce": "Glace",
+      "elementFire": "Feu"
+    },
+    "phases": {
+      "readyTitle": "Choisissez votre aile",
+      "readyBody": "Les vagues franchissent les portes en {seconds}s. Tenez la forteresse.",
+      "readyStart": "Lancer le siège",
+      "buildTitle": "Entre les vagues",
+      "buildBody": "Dépensez l'or en tours avant que la prochaine porte ne s'ouvre.",
+      "waveTitle": "Vague {n}",
+      "waveBoss": "Vague de boss",
+      "pauseTitle": "En pause",
+      "pauseBody": "Le siège attend. Changer d'onglet met la partie en pause automatiquement.",
+      "victoryTitle": "Forteresse tenue",
+      "victoryBody": "Chaque vague brisée. Les ailes ont pris leur dû.",
+      "defeatTitle": "La porte est tombée",
+      "defeatBody": "La forteresse est perdue — mais le record tient toujours."
+    },
+    "results": {
+      "score": "Score final",
+      "best": "Record personnel",
+      "newBest": "Nouveau record",
+      "waves": "Vagues franchies",
+      "kills": "Éliminations",
+      "share": "Partager la partie",
+      "copied": "Copié",
+      "playAgain": "Rejouer"
+    },
+    "maps": {
+      "mapKeepName": "Rempart du Donjon",
+      "mapKeepDesc": "Remparts enneigés. Trois portes, une forteresse.",
+      "mapShipName": "Navire de transport",
+      "mapShipDesc": "Pont à conteneurs, couloirs étroits."
+    },
+    "tips": [
+      "Alternez les éliminations de Glace et de Feu : le multiplicateur de chaîne fait le score.",
+      "La Glace bloque une charge de cavalerie. Le Feu achève ce que la Glace retient.",
+      "La Nova se charge avec les éliminations ; gardez-la pour un boss, pas pour un éclaireur isolé.",
+      "Les tours continuent de tirer quand vous êtes à terre. Construisez-les avant d'en avoir besoin."
+    ],
+    "enemies": {
+      "enemyRanger": "Éclaireur",
+      "enemyCavalry": "Cavalerie",
+      "enemyDreadnought": "Cuirassé"
+    },
+    "towers": {
+      "towerFrost": "Flèche de Givre",
+      "towerFrostDesc": "Ralentit sa cible. Peu coûteuse, patiente, se cumule avec l'aile de Glace.",
+      "towerEmber": "Baliste de Braise",
+      "towerEmberDesc": "Dégâts de zone. Faite pour le moment où les couloirs se remplissent."
+    },
+    "messages": {
+      "notEnoughGold": "Pas assez d'or",
+      "coreUnderAttack": "La forteresse est attaquée",
+      "novaReady": "Nova prête",
+      "revived": "De retour sur le rempart",
+      "bossIncoming": "Cuirassé en approche",
+      "waveCleared": "Vague nettoyée",
+      "socketEmpty": "Emplacement vide",
+      "socketBuilt": "{tower} érigée",
+      "socketUpgraded": "{tower} au niveau {level}",
+      "playerDown": "Vous êtes tombé — réapparition à la forteresse",
+      "pausedByContext": "Contexte graphique perdu — la partie est en pause"
+    },
+    "challenge": {
+      "daily": "Graine du jour",
+      "seed": "Graine"
+    },
+    "errors": {
+      "loadingTitle": "La forteresse se dresse",
+      "loadingBody": "Chargement du moteur de siège...",
+      "webglTitle": "Mode léger",
+      "webglBody": "Cet appareil ne peut pas exécuter le moteur 3D ; l'arène sera dessinée en vue constructeur.",
+      "failedTitle": "Le moteur n'a pas chargé",
+      "failedBody": "Vérifiez votre connexion et réessayez — rien n'a été perdu.",
+      "retry": "Réessayer"
+    }
+  },
+  "hr": {
+    "game": {
+      "title": "Opsada Edena",
+      "kicker": "Arena leda i vatre · VTS 1097",
+      "tagline": "Drži liniju. Led kontrolira, vatra pali, a krila pamte svaki lanac."
+    },
+    "hud": {
+      "score": "Bodovi",
+      "best": "Najbolje",
+      "wave": "Val",
+      "gold": "Zlato",
+      "core": "Tvrđava",
+      "combo": "Lanac",
+      "nova": "Nova",
+      "build": "Gradi",
+      "upgrade": "Poboljšaj",
+      "level": "Raz",
+      "pause": "Pauza",
+      "resume": "Nastavi",
+      "mute": "Zvuk uključen",
+      "unmute": "Zvuk isključen",
+      "restart": "Ponovno",
+      "backToArcade": "Arkada",
+      "swap": "Zamijeni krilo",
+      "attack": "Napad",
+      "controls": "WASD / strelice kretanje · Razmak napad · Q E zamjena krila · F nova · Esc pauza"
+    },
+    "elements": {
+      "elementIce": "Led",
+      "elementFire": "Vatra"
+    },
+    "phases": {
+      "readyTitle": "Odaberi svoje krilo",
+      "readyBody": "Valovi prelaze vrata za {seconds}s. Drži tvrđavu.",
+      "readyStart": "Započni opsadu",
+      "buildTitle": "Između valova",
+      "buildBody": "Potroši zlato na kule prije nego se otvore sljedeća vrata.",
+      "waveTitle": "Val {n}",
+      "waveBoss": "Val šefa",
+      "pauseTitle": "Pauzirano",
+      "pauseBody": "Opsada čeka. Promjena kartice automatski pauzira rundu.",
+      "victoryTitle": "Tvrđava izdržala",
+      "victoryBody": "Svaki val slomljen. Krila su se namirila.",
+      "defeatTitle": "Vrata su pala",
+      "defeatBody": "Tvrđava je izgubljena — ali rekord još stoji."
+    },
+    "results": {
+      "score": "Konačni rezultat",
+      "best": "Osobni rekord",
+      "newBest": "Novi rekord",
+      "waves": "Prošli valovi",
+      "kills": "Ubojstva",
+      "share": "Podijeli rundu",
+      "copied": "Kopirano",
+      "playAgain": "Igraj ponovno"
+    },
+    "maps": {
+      "mapKeepName": "Zid tvrđave",
+      "mapKeepDesc": "Snježni bedemi. Troja vrata, jedna tvrđava.",
+      "mapShipName": "Transportni brod",
+      "mapShipDesc": "Paluba s kontejnerima, uski prolazi."
+    },
+    "tips": [
+      "Izmjenjuj ubojstva ledom i vatrom — množitelj lanca nosi bodove.",
+      "Led blokira juriš konjice. Vatra dokrajčuje ono što led zadrži.",
+      "Nova se puni ubojstvima; sačuvaj je za val šefa, a ne za usamljenog strijelca.",
+      "Kule nastavljaju pucati dok si dolje. Gradi ih prije nego zatrebaju."
+    ],
+    "enemies": {
+      "enemyRanger": "Izviđač",
+      "enemyCavalry": "Konjica",
+      "enemyDreadnought": "Bojni brod"
+    },
+    "towers": {
+      "towerFrost": "Ledeni toranj",
+      "towerFrostDesc": "Usporava metu. Jeftin, strpljiv, pojačava ledeno krilo.",
+      "towerEmber": "Balista žara",
+      "towerEmberDesc": "Šteta po području, stvorena za trenutak kad se staze napune."
+    },
+    "messages": {
+      "notEnoughGold": "Nema dovoljno zlata",
+      "coreUnderAttack": "Tvrđava je pod napadom",
+      "novaReady": "Nova spremna",
+      "revived": "Ponovno na zidu",
+      "bossIncoming": "Bojni brod se približava",
+      "waveCleared": "Val očišćen",
+      "socketEmpty": "Prazno mjesto",
+      "socketBuilt": "{tower} podignut",
+      "socketUpgraded": "{tower} na razinu {level}",
+      "playerDown": "Pao si — oživljavaš kod tvrđave",
+      "pausedByContext": "Grafički kontekst izgubljen — runda je pauzirana"
+    },
+    "challenge": {
+      "daily": "Dnevni seed",
+      "seed": "Seed"
+    },
+    "errors": {
+      "loadingTitle": "Podizanje tvrđave",
+      "loadingBody": "Učitavanje motora opsade...",
+      "webglTitle": "Lite način",
+      "webglBody": "Ovaj uređaj ne može pokrenuti 3D motor; arena se crta u prikazu graditelja.",
+      "failedTitle": "Motor se nije učitao",
+      "failedBody": "Provjeri vezu i pokušaj ponovno — ništa nije izgubljeno.",
+      "retry": "Pokušaj ponovno"
+    }
+  },
+  "tr": {
+    "game": {
+      "title": "Eden Kuşatması",
+      "kicker": "Buz ve Ateş Arenası · VTS 1097",
+      "tagline": "Hattı tut. Buz kontrol eder, Ateş yakar ve kanatlar her zinciri hatırlar."
+    },
+    "hud": {
+      "score": "Puan",
+      "best": "Rekor",
+      "wave": "Dalga",
+      "gold": "Altın",
+      "core": "Kale",
+      "combo": "Zincir",
+      "nova": "Nova",
+      "build": "İnşa",
+      "upgrade": "Geliştir",
+      "level": "Sv",
+      "pause": "Duraklat",
+      "resume": "Devam",
+      "mute": "Ses açık",
+      "unmute": "Ses kapalı",
+      "restart": "Yeniden",
+      "backToArcade": "Atari",
+      "swap": "Kanat değiştir",
+      "attack": "Saldır",
+      "controls": "WASD / oklar hareket · Boşluk saldırı · Q E kanat değiştir · F nova · Esc duraklat"
+    },
+    "elements": {
+      "elementIce": "Buz",
+      "elementFire": "Ateş"
+    },
+    "phases": {
+      "readyTitle": "Kanadını seç",
+      "readyBody": "Dalgalar kapılardan {seconds} sn içinde geçer. Kaleyi tut.",
+      "readyStart": "Kuşatmayı başlat",
+      "buildTitle": "Dalgalar arasında",
+      "buildBody": "Sıradaki kapı açılmadan altını kulelere harca.",
+      "waveTitle": "Dalga {n}",
+      "waveBoss": "Patron dalgası",
+      "pauseTitle": "Duraklatıldı",
+      "pauseBody": "Kuşatma bekliyor. Sekme değişimi oyunu otomatik duraklatır.",
+      "victoryTitle": "Kale korundu",
+      "victoryBody": "Tüm dalgalar kırıldı. Kanatlar doydu.",
+      "defeatTitle": "Kapı düştü",
+      "defeatBody": "Kale kaybedildi — ama rekor hâlâ ayakta."
+    },
+    "results": {
+      "score": "Final puanı",
+      "best": "Kişisel rekor",
+      "newBest": "Yeni rekor",
+      "waves": "Geçilen dalgalar",
+      "kills": "Öldürme",
+      "share": "Koşuyu paylaş",
+      "copied": "Kopyalandı",
+      "playAgain": "Tekrar oyna"
+    },
+    "maps": {
+      "mapKeepName": "Kale Suru",
+      "mapKeepDesc": "Karla kaplı surlar. Üç kapı, bir kale.",
+      "mapShipName": "Nakliye Gemisi",
+      "mapShipDesc": "Konteyner güvertesi, dar koridorlar."
+    },
+    "tips": [
+      "Buz ve Ateş öldürmelerini değiştir — puan zincir çarpanında.",
+      "Buz, süvari hücumunu yerinde kilitler. Ateş, Buzun tuttuğunu bitirir.",
+      "Nova öldürmelerle dolar; onu başıboş bir avcıya değil patron dalgasına sakla.",
+      "Sen yerdeyken kuleler ateş etmeye devam eder. İhtiyaç duymadan önce inşa et."
+    ],
+    "enemies": {
+      "enemyRanger": "Avcı",
+      "enemyCavalry": "Süvari",
+      "enemyDreadnought": "Zırhlı"
+    },
+    "towers": {
+      "towerFrost": "Buz Kulesi",
+      "towerFrostDesc": "Vurduğunu yavaşlatır. Ucuz, sabırlı, Buz kanadıyla yığılır.",
+      "towerEmber": "Kor Balista",
+      "towerEmberDesc": "Alan hasarı. Yollar dolduğu an için yapıldı."
+    },
+    "messages": {
+      "notEnoughGold": "Yeterli altın yok",
+      "coreUnderAttack": "Kale saldırı altında",
+      "novaReady": "Nova hazır",
+      "revived": "Sura geri döndün",
+      "bossIncoming": "Zırhlı yaklaşıyor",
+      "waveCleared": "Dalga temizlendi",
+      "socketEmpty": "Boş yuva",
+      "socketBuilt": "{tower} kuruldu",
+      "socketUpgraded": "{tower} {level}. seviyeye",
+      "playerDown": "Düştün — kalede yeniden doğuyorsun",
+      "pausedByContext": "Grafik bağlamı kayboldu — koşu duraklatıldı"
+    },
+    "challenge": {
+      "daily": "Günlük tohum",
+      "seed": "Tohum"
+    },
+    "errors": {
+      "loadingTitle": "Kale yükseliyor",
+      "loadingBody": "Kuşatma motoru yükleniyor...",
+      "webglTitle": "Hafif mod",
+      "webglBody": "Bu cihaz 3D motoru çalıştıramıyor; arena inşaat görünümünde çizilecek.",
+      "failedTitle": "Motor yüklenmedi",
+      "failedBody": "Bağlantını kontrol et ve tekrar dene — hiçbir şey kaybolmadı.",
+      "retry": "Tekrar dene"
+    }
+  },
+  "ru": {
+    "game": {
+      "title": "Осада Эдема",
+      "kicker": "Арена Льда и Огня · VTS 1097",
+      "tagline": "Держи линию. Лёд держит, Огонь жжёт, а крылья помнят каждую цепь."
+    },
+    "hud": {
+      "score": "Очки",
+      "best": "Рекорд",
+      "wave": "Волна",
+      "gold": "Золото",
+      "core": "Крепость",
+      "combo": "Цепь",
+      "nova": "Нова",
+      "build": "Строить",
+      "upgrade": "Улучшить",
+      "level": "Ур",
+      "pause": "Пауза",
+      "resume": "Продолжить",
+      "mute": "Звук вкл",
+      "unmute": "Звук выкл",
+      "restart": "Заново",
+      "backToArcade": "Аркада",
+      "swap": "Сменить крыло",
+      "attack": "Атака",
+      "controls": "WASD / стрелки — движение · Пробел — атака · Q E — крыло · F — нова · Esc — пауза"
+    },
+    "elements": {
+      "elementIce": "Лёд",
+      "elementFire": "Огонь"
+    },
+    "phases": {
+      "readyTitle": "Выбери крыло",
+      "readyBody": "Волны пройдут через ворота через {seconds} с. Держи крепость.",
+      "readyStart": "Начать осаду",
+      "buildTitle": "Между волнами",
+      "buildBody": "Потрать золото на башни до открытия следующих ворот.",
+      "waveTitle": "Волна {n}",
+      "waveBoss": "Волна босса",
+      "pauseTitle": "Пауза",
+      "pauseBody": "Осада ждёт. Смена вкладки ставит игру на паузу.",
+      "victoryTitle": "Крепость устояла",
+      "victoryBody": "Все волны отбиты.",
+      "defeatTitle": "Ворота пали",
+      "defeatBody": "Крепость потеряна, но рекорд остался."
+    },
+    "results": {
+      "score": "Итоговый счёт",
+      "best": "Личный рекорд",
+      "newBest": "Новый рекорд",
+      "waves": "Волн пройдено",
+      "kills": "Убийств",
+      "share": "Поделиться",
+      "copied": "Скопировано",
+      "playAgain": "Ещё раз"
+    },
+    "maps": {
+      "mapKeepName": "Стена цитадели",
+      "mapKeepDesc": "Снежные стены. Трое ворот, одна крепость.",
+      "mapShipName": "Транспортный корабль",
+      "mapShipDesc": "Палуба с контейнерами, узкие проходы."
+    },
+    "tips": [
+      "Чередуйте убийства Льдом и Огнём — так растёт множитель серии.",
+      "Лёд останавливает кавалерию. Огонь добивает тех, кого сдержал Лёд.",
+      "Нова заряжается за убийства; придержите её для босса, а не для одиночного стрелка.",
+      "Башни продолжают стрелять, пока вы без сознания. Стройте их заранее."
+    ],
+    "enemies": {
+      "enemyRanger": "Стрелок",
+      "enemyCavalry": "Кавалерия",
+      "enemyDreadnought": "Дредноут"
+    },
+    "towers": {
+      "towerFrost": "Ледяной шпиль",
+      "towerFrostDesc": "Замедляет цель. Дешёвый и надёжный; усиливает крыло Льда.",
+      "towerEmber": "Угольная баллиста",
+      "towerEmberDesc": "Урон по области для плотных волн на линии."
+    },
+    "messages": {
+      "notEnoughGold": "Недостаточно золота",
+      "coreUnderAttack": "Крепость под атакой",
+      "novaReady": "Нова готова",
+      "revived": "Вы снова на стене",
+      "bossIncoming": "Приближается Дредноут",
+      "waveCleared": "Волна отбита",
+      "socketEmpty": "Свободная площадка",
+      "socketBuilt": "Построено: {tower}",
+      "socketUpgraded": "{tower}: уровень {level}",
+      "playerDown": "Вы пали — возрождение у крепости",
+      "pausedByContext": "Графический контекст потерян — игра на паузе"
+    },
+    "challenge": {
+      "daily": "Семя дня",
+      "seed": "Семя"
+    },
+    "errors": {
+      "loadingTitle": "Подготовка крепости",
+      "loadingBody": "Загрузка осады...",
+      "webglTitle": "Лёгкий режим",
+      "webglBody": "Это устройство не поддерживает 3D-движок; арена будет показана в упрощённом виде.",
+      "failedTitle": "Не удалось загрузить движок",
+      "failedBody": "Проверьте подключение и попробуйте снова — прогресс не потерян.",
+      "retry": "Повторить"
+    }
+  },
+  "id": {
+    "game": {
+      "title": "Pengepungan Eden",
+      "kicker": "Arena Es & Api · VTS 1097",
+      "tagline": "Pertahankan garis. Es mengendalikan, Api membakar, dan sayap mengingat setiap rantai."
+    },
+    "hud": {
+      "score": "Skor",
+      "best": "Terbaik",
+      "wave": "Gelombang",
+      "gold": "Emas",
+      "core": "Benteng",
+      "combo": "Rantai",
+      "nova": "Nova",
+      "build": "Bangun",
+      "upgrade": "Tingkatkan",
+      "level": "Lv",
+      "pause": "Jeda",
+      "resume": "Lanjut",
+      "mute": "Suara aktif",
+      "unmute": "Suara mati",
+      "restart": "Ulang",
+      "backToArcade": "Arkade",
+      "swap": "Ganti sayap",
+      "attack": "Serang",
+      "controls": "WASD / panah bergerak · Spasi serang · Q E ganti sayap · F nova · Esc jeda"
+    },
+    "elements": {
+      "elementIce": "Es",
+      "elementFire": "Api"
+    },
+    "phases": {
+      "readyTitle": "Pilih sayapmu",
+      "readyBody": "Gelombang menyeberangi gerbang dalam {seconds} dtk. Pertahankan benteng.",
+      "readyStart": "Mulai pengepungan",
+      "buildTitle": "Antar gelombang",
+      "buildBody": "Belanjakan emas untuk menara sebelum gerbang berikutnya terbuka.",
+      "waveTitle": "Gelombang {n}",
+      "waveBoss": "Gelombang bos",
+      "pauseTitle": "Dijeda",
+      "pauseBody": "Pengepungan menunggu. Mengganti tab otomatis menjeda permainan.",
+      "victoryTitle": "Benteng bertahan",
+      "victoryBody": "Semua gelombang dipatahkan. Sayap sudah puas.",
+      "defeatTitle": "Gerbang jatuh",
+      "defeatBody": "Benteng hilang — tetapi rekor masih berdiri."
+    },
+    "results": {
+      "score": "Skor akhir",
+      "best": "Rekor pribadi",
+      "newBest": "Rekor baru",
+      "waves": "Gelombang selesai",
+      "kills": "Bunuh",
+      "share": "Bagikan",
+      "copied": "Disalin",
+      "playAgain": "Main lagi"
+    },
+    "maps": {
+      "mapKeepName": "Tembok Benteng",
+      "mapKeepDesc": "Tembok bersalju. Tiga gerbang, satu benteng.",
+      "mapShipName": "Kapal Transpor",
+      "mapShipDesc": "Dek kontainer, jalur sempit."
+    },
+    "tips": [
+      "Selang-seling bunuh dengan Es dan Api — pengganda rantai menentukan skor.",
+      "Es mengunci serbuan kavaleri. Api menuntaskan yang ditahan Es.",
+      "Nova terisi dari bunuh; simpan untuk gelombang bos, bukan penembak jitu sendirian.",
+      "Menara tetap menembak saat kau tumbang. Bangun sebelum kau membutuhkannya."
+    ],
+    "enemies": {
+      "enemyRanger": "Penembak",
+      "enemyCavalry": "Kavaleri",
+      "enemyDreadnought": "Kapal Perang"
+    },
+    "towers": {
+      "towerFrost": "Menara Beku",
+      "towerFrostDesc": "Memperlambat sasaran. Murah dan sabar; menyatu dengan sayap Es.",
+      "towerEmber": "Balista Bara",
+      "towerEmberDesc": "Kerusakan area, dibuat untuk saat jalur penuh."
+    },
+    "messages": {
+      "notEnoughGold": "Emas tidak cukup",
+      "coreUnderAttack": "Benteng diserang",
+      "novaReady": "Nova siap",
+      "revived": "Kembali ke tembok",
+      "bossIncoming": "Kapal perang mendekat",
+      "waveCleared": "Gelombang dibersihkan",
+      "socketEmpty": "Slot kosong",
+      "socketBuilt": "{tower} dibangun",
+      "socketUpgraded": "{tower} ke level {level}",
+      "playerDown": "Kau tumbang — bangkit di benteng",
+      "pausedByContext": "Konteks grafis hilang — permainan dijeda"
+    },
+    "challenge": {
+      "daily": "Seed harian",
+      "seed": "Seed"
+    },
+    "errors": {
+      "loadingTitle": "Mendirikan benteng",
+      "loadingBody": "Memuat mesin pengepungan...",
+      "webglTitle": "Mode ringan",
+      "webglBody": "Perangkat ini tidak dapat menjalankan mesin 3D; arena digambar dalam tampilan pembangun.",
+      "failedTitle": "Mesin gagal dimuat",
+      "failedBody": "Periksa koneksimu dan coba lagi — tidak ada yang hilang.",
+      "retry": "Coba lagi"
+    }
+  },
+  "zh": {
+    "game": {
+      "title": "伊甸围城",
+      "kicker": "冰火竞技场 · VTS 1097",
+      "tagline": "守住防线。冰控制，火灼烧，双翼会记住每一次连击。"
+    },
+    "hud": {
+      "score": "得分",
+      "best": "最佳",
+      "wave": "波次",
+      "gold": "金币",
+      "core": "要塞",
+      "combo": "连击",
+      "nova": "新星",
+      "build": "建造",
+      "upgrade": "升级",
+      "level": "等级",
+      "pause": "暂停",
+      "resume": "继续",
+      "mute": "音效开",
+      "unmute": "音效关",
+      "restart": "重新开始",
+      "backToArcade": "街机",
+      "swap": "切换翼",
+      "attack": "攻击",
+      "controls": "WASD/方向键移动 · 空格攻击 · Q E 切换翼 · F 新星 · Esc 暂停"
+    },
+    "elements": {
+      "elementIce": "冰",
+      "elementFire": "火"
+    },
+    "phases": {
+      "readyTitle": "选择你的翼",
+      "readyBody": "{seconds} 秒后敌人将通过城门。守住要塞。",
+      "readyStart": "开始围城",
+      "buildTitle": "波次间歇",
+      "buildBody": "在下一道门开启前用金币建造防御塔。",
+      "waveTitle": "第 {n} 波",
+      "waveBoss": "首领波次",
+      "pauseTitle": "已暂停",
+      "pauseBody": "围城已暂停，切换标签页会自动暂停。",
+      "victoryTitle": "要塞守住了",
+      "victoryBody": "所有波次都被击破。",
+      "defeatTitle": "城门失守",
+      "defeatBody": "要塞失守，但记录仍在。"
+    },
+    "results": {
+      "score": "最终得分",
+      "best": "个人最佳",
+      "newBest": "新纪录",
+      "waves": "通过波次",
+      "kills": "击杀",
+      "share": "分享",
+      "copied": "已复制",
+      "playAgain": "再来一局"
+    },
+    "maps": {
+      "mapKeepName": "堡垒城墙",
+      "mapKeepDesc": "覆雪的城墙，三道城门，一座要塞。",
+      "mapShipName": "运输船",
+      "mapShipDesc": "集装箱甲板，狭窄通道。"
+    },
+    "tips": [
+      "交替使用冰与火击杀，连击倍率决定得分。",
+      "冰能定住冲锋的骑兵，火焰负责解决被冰控住的敌人。",
+      "击杀会为新星充能；留给首领波次，别浪费在落单的游骑兵身上。",
+      "倒下时防御塔仍会继续攻击，提前建好它们。"
+    ],
+    "enemies": {
+      "enemyRanger": "游骑兵",
+      "enemyCavalry": "骑兵",
+      "enemyDreadnought": "无畏战舰"
+    },
+    "towers": {
+      "towerFrost": "寒霜尖塔",
+      "towerFrostDesc": "命中后减速。造价低、火力稳定，可与冰翼配合。",
+      "towerEmber": "余烬弩炮",
+      "towerEmberDesc": "范围伤害，适合敌人挤满通道时使用。"
+    },
+    "messages": {
+      "notEnoughGold": "金币不足",
+      "coreUnderAttack": "要塞正在遭受攻击",
+      "novaReady": "新星已就绪",
+      "revived": "已重返城墙",
+      "bossIncoming": "无畏战舰正在接近",
+      "waveCleared": "波次已清除",
+      "socketEmpty": "空置塔位",
+      "socketBuilt": "已建造{tower}",
+      "socketUpgraded": "{tower}已升至{level}级",
+      "playerDown": "你已倒下，将在要塞复活",
+      "pausedByContext": "图形上下文已丢失，战斗已暂停"
+    },
+    "challenge": {
+      "daily": "每日种子",
+      "seed": "种子"
+    },
+    "errors": {
+      "loadingTitle": "正在加固要塞",
+      "loadingBody": "正在加载围城引擎...",
+      "webglTitle": "轻量模式",
+      "webglBody": "此设备无法运行 3D 引擎，战场将以简化模式绘制。",
+      "failedTitle": "引擎加载失败",
+      "failedBody": "请检查网络后重试，进度不会丢失。",
+      "retry": "重试"
+    }
+  },
+  "ar": {
+    "game": {
+      "title": "حصار عدن",
+      "kicker": "ساحة الجليد والنار · VTS 1097",
+      "tagline": "اثبت على الخط. الجليد يوقف، والنار تحرق، والأجنحة تتذكر كل سلسلة."
+    },
+    "hud": {
+      "score": "النقاط",
+      "best": "الأفضل",
+      "wave": "الموجة",
+      "gold": "الذهب",
+      "core": "الحصن",
+      "combo": "السلسلة",
+      "nova": "نوفا",
+      "build": "بناء",
+      "upgrade": "ترقية",
+      "level": "مستوى",
+      "pause": "إيقاف",
+      "resume": "متابعة",
+      "mute": "الصوت مفعل",
+      "unmute": "الصوت مغلق",
+      "restart": "إعادة",
+      "backToArcade": "الأركيد",
+      "swap": "تبديل الجناح",
+      "attack": "هجوم",
+      "controls": "WASD للحركة · مسافة للهجوم · Q E للجناح · F لنوفا · Esc للإيقاف"
+    },
+    "elements": {
+      "elementIce": "جليد",
+      "elementFire": "نار"
+    },
+    "phases": {
+      "readyTitle": "اختر جناحك",
+      "readyBody": "تعبر الموجات البوابات خلال {seconds} ثانية. دافع عن الحصن.",
+      "readyStart": "ابدأ الحصار",
+      "buildTitle": "بين الموجات",
+      "buildBody": "أنفق الذهب على الأبراج قبل فتح البوابة التالية.",
+      "waveTitle": "الموجة {n}",
+      "waveBoss": "موجة الزعيم",
+      "pauseTitle": "متوقف",
+      "pauseBody": "الحصار ينتظر. تغيير التبويب يوقف الجولة تلقائياً.",
+      "victoryTitle": "صمد الحصن",
+      "victoryBody": "كُسرت كل الموجات.",
+      "defeatTitle": "سقطت البوابة",
+      "defeatBody": "ضاع الحصن، لكن الرقم القياسي ما زال قائماً."
+    },
+    "results": {
+      "score": "النتيجة النهائية",
+      "best": "أفضل نتيجة",
+      "newBest": "رقم قياسي جديد",
+      "waves": "الموجات المنجزة",
+      "kills": "القتلى",
+      "share": "شارك",
+      "copied": "تم النسخ",
+      "playAgain": "العب مرة أخرى"
+    },
+    "maps": {
+      "mapKeepName": "سور القلعة",
+      "mapKeepDesc": "أسوار مغطاة بالثلج. ثلاث بوابات وحصن واحد.",
+      "mapShipName": "سفينة النقل",
+      "mapShipDesc": "سطح الحاويات وممرات ضيقة."
+    },
+    "tips": [
+      "بدّل بين قتلى الجليد والنار؛ فمضاعف السلسلة هو سر النقاط.",
+      "يوقف الجليد اندفاع الفرسان، وتُنهي النار ما أمسكه الجليد.",
+      "تُشحن نوفا بالقتل؛ احتفظ بها للزعيم لا لقنّاص منفرد.",
+      "تواصل الأبراج إطلاق النار عند سقوطك. ابنها قبل أن تحتاج إليها."
+    ],
+    "enemies": {
+      "enemyRanger": "رامٍ",
+      "enemyCavalry": "فرسان",
+      "enemyDreadnought": "مدرّعة"
+    },
+    "towers": {
+      "towerFrost": "برج الصقيع",
+      "towerFrostDesc": "يبطئ الهدف. رخيص وصبور، ويتكامل مع جناح الجليد.",
+      "towerEmber": "قذّافة الجمر",
+      "towerEmberDesc": "ضرر انفجاري للممرات حين تمتلئ بالأعداء."
+    },
+    "messages": {
+      "notEnoughGold": "الذهب لا يكفي",
+      "coreUnderAttack": "الحصن يتعرض للهجوم",
+      "novaReady": "نوفا جاهزة",
+      "revived": "عدت إلى السور",
+      "bossIncoming": "المدرّعة تقترب",
+      "waveCleared": "تم صد الموجة",
+      "socketEmpty": "موضع فارغ",
+      "socketBuilt": "تم بناء {tower}",
+      "socketUpgraded": "تمت ترقية {tower} إلى المستوى {level}",
+      "playerDown": "سقطت — ستُبعث عند الحصن",
+      "pausedByContext": "فُقد سياق الرسوم — الجولة متوقفة مؤقتاً"
+    },
+    "challenge": {
+      "daily": "بذرة اليوم",
+      "seed": "البذرة"
+    },
+    "errors": {
+      "loadingTitle": "نجهّز الحصن",
+      "loadingBody": "جارٍ تحميل محرك الحصار...",
+      "webglTitle": "الوضع الخفيف",
+      "webglBody": "لا يستطيع هذا الجهاز تشغيل محرك ثلاثي الأبعاد؛ ستُعرض الساحة بوضع مبسّط.",
+      "failedTitle": "تعذّر تحميل المحرك",
+      "failedBody": "تحقّق من اتصالك وحاول مجدداً — لم يضع شيء.",
+      "retry": "حاول مجدداً"
+    }
+  },
+  "kr": {
+    "game": {
+      "title": "에덴 공성전",
+      "kicker": "얼음과 불의 투기장 · VTS 1097",
+      "tagline": "전선을 지켜라. 얼음은 제어하고, 불은 태우며, 날개는 모든 연쇄를 기억한다."
+    },
+    "hud": {
+      "score": "점수",
+      "best": "최고",
+      "wave": "웨이브",
+      "gold": "골드",
+      "core": "요새",
+      "combo": "연쇄",
+      "nova": "노바",
+      "build": "건설",
+      "upgrade": "업그레이드",
+      "level": "Lv",
+      "pause": "일시정지",
+      "resume": "계속",
+      "mute": "소리 켜짐",
+      "unmute": "소리 꺼짐",
+      "restart": "재시작",
+      "backToArcade": "아케이드",
+      "swap": "날개 교체",
+      "attack": "공격",
+      "controls": "WASD / 방향키 이동 · 스페이스 공격 · Q E 날개 교체 · F 노바 · Esc 일시정지"
+    },
+    "elements": {
+      "elementIce": "얼음",
+      "elementFire": "불"
+    },
+    "phases": {
+      "readyTitle": "날개를 선택하세요",
+      "readyBody": "웨이브가 {seconds}초 후 성문을 넘습니다. 요새를 지키세요.",
+      "readyStart": "공성전 시작",
+      "buildTitle": "웨이브 사이",
+      "buildBody": "다음 성문이 열리기 전에 골드로 탑을 세우세요.",
+      "waveTitle": "웨이브 {n}",
+      "waveBoss": "보스 웨이브",
+      "pauseTitle": "일시정지됨",
+      "pauseBody": "공성전이 멈췄습니다. 탭을 바꾸면 자동으로 일시정지됩니다.",
+      "victoryTitle": "요새 사수",
+      "victoryBody": "모든 웨이브를 막았습니다. 날개가 만족했습니다.",
+      "defeatTitle": "성문이 무너졌다",
+      "defeatBody": "요새를 잃었지만 기록은 남아 있습니다."
+    },
+    "results": {
+      "score": "최종 점수",
+      "best": "개인 최고",
+      "newBest": "신기록",
+      "waves": "통과한 웨이브",
+      "kills": "킬",
+      "share": "기록 공유",
+      "copied": "복사됨",
+      "playAgain": "다시 플레이"
+    },
+    "maps": {
+      "mapKeepName": "성채 성벽",
+      "mapKeepDesc": "눈 덮인 성벽. 세 개의 성문, 하나의 요새.",
+      "mapShipName": "수송선",
+      "mapShipDesc": "컨테이너 갑판, 좁은 통로."
+    },
+    "tips": [
+      "얼음과 불 킬을 번갈아 사용하세요 — 연쇄 배율이 점수의 핵심입니다.",
+      "얼음은 기병 돌격을 붙잡습니다. 불은 얼음이 붙잡은 적을 끝냅니다.",
+      "노바는 킬로 충전됩니다. 떨어진 저격병이 아니라 보스 웨이브를 위해 아끼세요.",
+      "쓰러져도 탑은 계속 발사합니다. 필요하기 전에 세우세요."
+    ],
+    "enemies": {
+      "enemyRanger": "레인저",
+      "enemyCavalry": "기병",
+      "enemyDreadnought": "드레드노트"
+    },
+    "towers": {
+      "towerFrost": "서리 첨탑",
+      "towerFrostDesc": "명중한 적을 둔화시킵니다. 저렴하고 꾸준하며 얼음 날개와 겹칩니다.",
+      "towerEmber": "잿불 발리스타",
+      "towerEmberDesc": "범위 피해. 통로가 가득 차는 순간을 위한 무기입니다."
+    },
+    "messages": {
+      "notEnoughGold": "골드가 부족합니다",
+      "coreUnderAttack": "요새가 공격받고 있습니다",
+      "novaReady": "노바 준비 완료",
+      "revived": "성벽으로 복귀",
+      "bossIncoming": "드레드노트 접근 중",
+      "waveCleared": "웨이브 정리 완료",
+      "socketEmpty": "빈 슬롯",
+      "socketBuilt": "{tower} 건설됨",
+      "socketUpgraded": "{tower} 레벨 {level}",
+      "playerDown": "쓰러졌습니다 — 요새에서 부활합니다",
+      "pausedByContext": "그래픽 컨텍스트 손실 — 게임이 일시정지되었습니다"
+    },
+    "challenge": {
+      "daily": "일일 시드",
+      "seed": "시드"
+    },
+    "errors": {
+      "loadingTitle": "요새를 세우는 중",
+      "loadingBody": "공성 엔진을 불러오는 중...",
+      "webglTitle": "라이트 모드",
+      "webglBody": "이 기기는 3D 엔진을 실행할 수 없어 투기장을 건설자 시점으로 그립니다.",
+      "failedTitle": "엔진을 불러오지 못했습니다",
+      "failedBody": "연결을 확인하고 다시 시도하세요 — 잃은 것은 없습니다.",
+      "retry": "다시 시도"
+    }
+  },
+  "it": {
+    "game": {
+      "title": "Assedio di Eden",
+      "kicker": "Arena Ghiaccio e Fuoco · VTS 1097",
+      "tagline": "Tieni la linea. Il Ghiaccio controlla, il Fuoco brucia e le ali ricordano ogni catena."
+    },
+    "hud": {
+      "score": "Punti",
+      "best": "Record",
+      "wave": "Ondata",
+      "gold": "Oro",
+      "core": "Fortezza",
+      "combo": "Catena",
+      "nova": "Nova",
+      "build": "Costruisci",
+      "upgrade": "Potenzia",
+      "level": "Lv",
+      "pause": "Pausa",
+      "resume": "Riprendi",
+      "mute": "Audio attivo",
+      "unmute": "Audio disattivato",
+      "restart": "Ricomincia",
+      "backToArcade": "Arcade",
+      "swap": "Cambia ala",
+      "attack": "Attacca",
+      "controls": "WASD / frecce muovi · Spazio attacca · Q E cambia ala · F nova · Esc pausa"
+    },
+    "elements": {
+      "elementIce": "Ghiaccio",
+      "elementFire": "Fuoco"
+    },
+    "phases": {
+      "readyTitle": "Scegli la tua ala",
+      "readyBody": "Le ondate attraversano i cancelli in {seconds}s. Difendi la fortezza.",
+      "readyStart": "Inizia l'assedio",
+      "buildTitle": "Tra le ondate",
+      "buildBody": "Spendi oro in torri prima che si apra il prossimo cancello.",
+      "waveTitle": "Ondata {n}",
+      "waveBoss": "Ondata del boss",
+      "pauseTitle": "In pausa",
+      "pauseBody": "L'assedio attende. Cambiare scheda mette in pausa la partita automaticamente.",
+      "victoryTitle": "Fortezza tenuta",
+      "victoryBody": "Ogni ondata infranta. Le ali si sono saziate.",
+      "defeatTitle": "Il cancello è caduto",
+      "defeatBody": "La fortezza è perduta, ma il record resiste ancora."
+    },
+    "results": {
+      "score": "Punteggio finale",
+      "best": "Record personale",
+      "newBest": "Nuovo record",
+      "waves": "Ondate superate",
+      "kills": "Uccisioni",
+      "share": "Condividi",
+      "copied": "Copiato",
+      "playAgain": "Gioca ancora"
+    },
+    "maps": {
+      "mapKeepName": "Mura del Torrione",
+      "mapKeepDesc": "Mura innevate. Tre cancelli, una fortezza.",
+      "mapShipName": "Nave da trasporto",
+      "mapShipDesc": "Ponte container, corsie strette."
+    },
+    "tips": [
+      "Alterna uccisioni di Ghiaccio e Fuoco: il moltiplicatore della catena fa il punteggio.",
+      "Il Ghiaccio blocca la carica di cavalleria. Il Fuoco finisce ciò che il Ghiaccio trattiene.",
+      "La Nova si carica con le uccisioni; tienila per un boss, non per un esploratore isolato.",
+      "Le torri continuano a sparare mentre sei a terra. Costruiscile prima di servirtene."
+    ],
+    "enemies": {
+      "enemyRanger": "Esploratore",
+      "enemyCavalry": "Cavalleria",
+      "enemyDreadnought": "Corazzata"
+    },
+    "towers": {
+      "towerFrost": "Aguglia del Gelo",
+      "towerFrostDesc": "Rallenta il bersaglio. Economica e paziente; si somma all'ala di Ghiaccio.",
+      "towerEmber": "Balista di Brace",
+      "towerEmberDesc": "Danno ad area, perfetto quando le corsie si riempiono."
+    },
+    "messages": {
+      "notEnoughGold": "Oro insufficiente",
+      "coreUnderAttack": "La fortezza è sotto attacco",
+      "novaReady": "Nova pronta",
+      "revived": "Di nuovo sulle mura",
+      "bossIncoming": "Corazzata in avvicinamento",
+      "waveCleared": "Ondata superata",
+      "socketEmpty": "Slot vuoto",
+      "socketBuilt": "{tower} costruita",
+      "socketUpgraded": "{tower} al livello {level}",
+      "playerDown": "Sei caduto — rinascita alla fortezza",
+      "pausedByContext": "Contesto grafico perso — la partita è in pausa"
+    },
+    "challenge": {
+      "daily": "Seme giornaliero",
+      "seed": "Seme"
+    },
+    "errors": {
+      "loadingTitle": "Si erge la fortezza",
+      "loadingBody": "Caricamento del motore di assedio...",
+      "webglTitle": "Modalità ridotta",
+      "webglBody": "Questo dispositivo non può eseguire il motore 3D; l'arena sarà disegnata in vista costruttore.",
+      "failedTitle": "Il motore non si è caricato",
+      "failedBody": "Controlla la connessione e riprova — non è andato perso nulla.",
+      "retry": "Riprova"
+    }
+  }
+}
