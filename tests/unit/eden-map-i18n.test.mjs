@@ -237,4 +237,23 @@ test('the Eden hub lands on the season being played', () => {
   assert.match(hub, /userPickedSubtab = true;/);
   assert.match(hub, /const SEASON_LANDING_TIMEOUT_MS = \d+;/);
   assert.doesNotMatch(hub, /openIntent\(readSubtabIntent\(\) \|\| 'bounty'\)/);
+
+  // Sub-tab clicks write the hash so the URL matches the screen, but that is
+  // not a request for that sub-tab on the next visit — otherwise one click on
+  // Royal Bounty permanently replaced the season as the landing tab, because a
+  // hash sub-tab took the `else if (intent)` path and skipped the upgrade.
+  assert.match(hub, /const SUBTAB_CLICK_STATE_KEY = 'edenHubSubtabClicked';/);
+  assert.match(hub, /function subTabClickedThisSession\(\)/);
+  assert.match(hub, /function rememberSubTabClick\(name\)/);
+  assert.match(hub, /rememberSubTabClick\(name\);/);
+  assert.match(hub, /import \{ resolveEdenHubInitialRoute \} from '\.\/eden-hub-routing\.js'/);
+  assert.match(hub, /resolveEdenHubInitialRoute\(\s*requested,\s*clicked,\s*window\.history\s*\)/);
+  assert.match(hub, /const SEASON_LINK_TIMEOUT_MS = 8000;/);
+  assert.match(
+    hub,
+    /if \(intent === 'season' \|\| intent === 'vote'\) \{\s*if \(!openIntent\(intent, \{ scroll: true \}\)\) openSeasonIntentWhenPublished\(intent\);/
+  );
+  assert.match(hub, /if \(useCurrentSeasonDefault\) \{[\s\S]*?openIntent\('season'\);/);
+  // A shared link carries no history state, so it still opens what it names.
+  assert.match(hub, /window\.history\.state\?\.\[SUBTAB_CLICK_STATE_KEY\]/);
 });
