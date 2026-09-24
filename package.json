@@ -54,7 +54,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
-    "acorn": "^8.17.0",
+    "acorn": "^8.18.0",
     "autoprefixer": "^10.5.4",
     "cssnano": "^8.0.2",
     "esbuild": "^0.28.2",
