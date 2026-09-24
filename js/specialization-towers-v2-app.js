@@ -260,10 +260,10 @@ function renderHeader() {
     <header class="specialization-header">
       <div class="specialization-header-start specialization-header__brand">
         <a class="specialization-brand" href="index.html#research" aria-label="${escapeAttribute(t('back'))}">
-          <span class="specialization-brand-mark" aria-hidden="true">RO</span>
+          <span class="specialization-brand-mark" aria-hidden="true"><img src="images/logo-40.webp" alt="" width="36" height="36" decoding="async" /></span>
         </a>
         <nav class="specialization-breadcrumbs" aria-label="${escapeAttribute(t('towerNavigation'))}">
-          <a href="index.html">R.O.C. VTS</a>
+          <a href="index.html">RoC VTS Toolkit</a>
           <span class="specialization-breadcrumb-separator" aria-hidden="true">›</span>
           <a href="index.html#research">${escapeHtml(t('towerNavigation'))}</a>
           <span class="specialization-breadcrumb-separator" aria-hidden="true">›</span>

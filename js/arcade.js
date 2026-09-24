@@ -1,3 +1,4 @@
+import { mountToolShell } from './tool-shell.js';
 import {
   translations,
   applyLanguageDirection,
@@ -189,3 +190,7 @@ async function initArcade() {
 }
 
 initArcade();
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell();

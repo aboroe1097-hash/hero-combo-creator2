@@ -5,6 +5,7 @@
 // arriving on this page costs a small shell until the player actually starts a
 // run.
 
+import { mountToolShell } from '../tool-shell.js';
 import { getCopy, normalizeLocale } from './data/copy.js';
 import { HEROES, heroByName } from './data/theme.js';
 import { MAP_ORDER, mapById } from './data/maps.js';
@@ -150,3 +151,7 @@ if (document.readyState === 'loading') {
 } else {
   boot();
 }
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell();

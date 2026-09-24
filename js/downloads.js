@@ -1,6 +1,8 @@
 // Community downloads hub. Reads the manifest that scripts/pdf/build.mjs writes
 // next to the PDFs, so the page can never advertise a file that did not ship.
 
+import { mountToolShell } from './tool-shell.js';
+
 const GROUPS = [
   {
     label: 'Research',
@@ -157,3 +159,7 @@ async function init() {
 }
 
 init();
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell({ bar: true });

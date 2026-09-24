@@ -1,3 +1,4 @@
+import { mountToolShell } from './tool-shell.js';
 import {
   applyBattleSimulatorDocumentLocale,
   createBattleSimulatorTranslator,
@@ -51,3 +52,7 @@ async function start() {
 }
 
 start();
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell();
