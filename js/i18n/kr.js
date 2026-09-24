@@ -98,6 +98,7 @@ const kr = {
   adminConductPlayer: '플레이어',
   adminConductCategory: '카테고리',
   adminConductFilterCategory: '카테고리별 필터',
+  adminConductNoMatch: '이번 시즌에 이 필터와 일치하는 조정이 없습니다.',
   adminConductPoints: '포인트',
   adminConductNote: '메모',
   adminConductNotePh: '선택적 사유',

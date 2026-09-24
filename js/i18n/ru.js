@@ -175,6 +175,7 @@ const ru = {
   adminConductPlayer: 'Игрок',
   adminConductCategory: 'Категория',
   adminConductFilterCategory: 'Фильтр по категории',
+  adminConductNoMatch: 'В этом сезоне нет изменений, подходящих под эти фильтры.',
   adminConductPoints: 'Очки',
   adminConductNote: 'Заметка',
   adminConductNotePh: 'Причина (необязательно)',

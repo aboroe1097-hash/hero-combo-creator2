@@ -174,6 +174,7 @@ const ar = {
   adminConductPlayer: 'اللاعب',
   adminConductCategory: 'الفئة',
   adminConductFilterCategory: 'تصفية حسب الفئة',
+  adminConductNoMatch: 'لا توجد تعديلات في هذا الموسم تطابق عوامل التصفية هذه.',
   adminConductPoints: 'النقاط',
   adminConductNote: 'ملاحظة',
   adminConductNotePh: 'سبب اختياري',

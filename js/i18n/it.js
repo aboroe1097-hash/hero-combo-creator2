@@ -567,6 +567,7 @@ const it = {
   adminConductSeasonLabel: 'Stagione: {season}',
   adminConductCategory: 'Categoria',
   adminConductFilterCategory: 'Filtra per categoria',
+  adminConductNoMatch: 'Nessuna correzione di questa stagione corrisponde a questi filtri.',
   adminConductPoints: 'Punti',
   adminConductNote: 'Nota',
   adminConductNotePh: 'Motivo facoltativo',

@@ -4,7 +4,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.5 - 2026-09-24
 
-- The recent adjustments list in VTS Admin can now be filtered by which bonus or penalty an adjustment is: Banner help, Connected road, Extra effort, Merit - other, Blocked path, Toxicity, Ignored coordination, Penalty - other, and the two premium flags. Before this, a season of merits and penalties could only be read by scrolling and searching by player name. The localized category filter sits beside player search, and both filters can be combined.
+- The recent adjustments list in VTS Admin can now be filtered by which bonus or penalty an adjustment is: Banner help, Connected road, Extra effort, Merit - other, Blocked path, Toxicity, Ignored coordination, Penalty - other, and the two premium flags. Before this, a season of merits and penalties could only be read by scrolling and searching by player name. The localized category filter sits beside player search, and both filters can be combined. When nothing matches, the list says so instead of calling the season empty, and changing category starts the list from its first page.
 
 ## 16.5.4 - 2026-09-24
 

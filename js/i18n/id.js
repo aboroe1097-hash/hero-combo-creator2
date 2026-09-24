@@ -174,6 +174,7 @@ const id = {
   adminConductPlayer: 'Pemain',
   adminConductCategory: 'Kategori',
   adminConductFilterCategory: 'Saring berdasarkan kategori',
+  adminConductNoMatch: 'Tidak ada penyesuaian musim ini yang cocok dengan filter ini.',
   adminConductPoints: 'Poin',
   adminConductNote: 'Catatan',
   adminConductNotePh: 'Alasan opsional',
