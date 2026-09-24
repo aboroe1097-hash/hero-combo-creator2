@@ -70,3 +70,18 @@ test('Eden Siege locale packs load on demand and fall back to English on failure
   const stalledFallback = await loadCopy('fr', '/stalled.json', () => new Promise(() => {}), 5);
   assert.equal(stalledFallback.game.title, COPY.en.game.title);
 });
+
+test('the flagship copy (modes, training, streaks, results) is localized, not just inherited', () => {
+  const english = getCopy('en');
+  for (const section of ['modes', 'tutorial', 'modifiers']) {
+    assert.ok(english[section], `English defines ${section}`);
+  }
+  assert.equal(english.streaks.length, 5);
+  for (const locale of LOCALES.filter((entry) => entry !== 'en')) {
+    const copy = getCopy(locale, PACKS);
+    assert.notEqual(copy.tutorial.title, english.tutorial.title, `${locale} tutorial`);
+    assert.notEqual(copy.modes.daily, english.modes.daily, `${locale} daily siege`);
+    assert.notEqual(copy.streaks[0], english.streaks[0], `${locale} announcer`);
+    assert.notEqual(copy.hud.dash, english.hud.dash, `${locale} dash`);
+  }
+});

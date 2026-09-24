@@ -18,6 +18,7 @@ export function createRenderer2d({ canvas, map, themeName = 'dark' }) {
   let height = canvas.height;
   let theme = themeName;
   let scale = 18;
+  let lastCamera = { x: 0, z: 0 };
 
   function hex(value) {
     return `#${value.toString(16).padStart(6, '0')}`;
@@ -57,6 +58,7 @@ export function createRenderer2d({ canvas, map, themeName = 'dark' }) {
   function render(state, dtMs) {
     const colors = palette();
     const camera = cameraFor(state);
+    lastCamera = camera;
     ctx.clearRect(0, 0, width, height);
 
     const background = ctx.createLinearGradient(0, 0, 0, height);
@@ -145,7 +147,31 @@ export function createRenderer2d({ canvas, map, themeName = 'dark' }) {
       ctx.font = `${Math.max(9, scale * 0.5)}px "JetBrains Mono", monospace`;
       ctx.textAlign = 'center';
       ctx.fillText(String(unit.tier), point.x, point.y + scale * 0.2);
-      if (unit.kind === 'dreadnought') {
+      if (unit.shield > 0) {
+        ctx.strokeStyle = 'rgba(224,242,254,0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, unit.radius * scale + 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (unit.modifier === 'armored' || unit.modifier === 'swift') {
+        ctx.fillStyle = unit.modifier === 'armored' ? '#cbd5e1' : '#d9f99d';
+        ctx.fillRect(point.x - 3, point.y - unit.radius * scale - 7, 6, 6);
+      }
+      if (unit.telegraph) {
+        const slam = toScreen(unit.telegraph.x, unit.telegraph.z, camera);
+        const progress = 1 - unit.telegraph.ms / unit.telegraph.maxMs;
+        ctx.fillStyle = `rgba(239,68,68,${(0.15 + progress * 0.3).toFixed(2)})`;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(slam.x, slam.y, unit.telegraph.radius * scale, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(slam.x, slam.y, unit.telegraph.radius * scale * progress, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (unit.kind === 'dreadnought' || unit.boss) {
         ctx.strokeStyle = '#f5c451';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -230,10 +256,20 @@ export function createRenderer2d({ canvas, map, themeName = 'dark' }) {
     return bestIndex;
   }
 
+  function project(x, y, z, cssWidth, cssHeight) {
+    // The 2D view ignores height; scale from the backing size to CSS pixels.
+    const point = toScreen(x, z, lastCamera);
+    return { x: (point.x / width) * cssWidth, y: (point.y / height) * cssHeight - y * scale * 0.5 };
+  }
+
   return {
     kind: '2d',
     render,
     resize,
+    project,
+    spark: () => {},
+    setQuality: () => false,
+    quality: () => 'low',
     setTheme: (next) => {
       theme = next;
     },

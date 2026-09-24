@@ -25,7 +25,7 @@ export function createHud({ root, copy, heroName }) {
       </div>
       <div class="siege-stat"><span>${copy.hud.wave}</span><strong data-hud="wave">1</strong></div>
       <div class="siege-stat siege-stat--gold">
-        <img data-hud="goldIcon" alt="" width="20" height="20" /><strong data-hud="gold">0</strong>
+        <img data-hud="goldIcon" src="/assets/dm/materials/gold/ingot.png" alt="" width="20" height="20" /><strong data-hud="gold">0</strong>
       </div>
       <div class="siege-stat siege-stat--best">
         <span>${copy.hud.best}</span><strong data-hud="best">0</strong>
@@ -41,8 +41,21 @@ export function createHud({ root, copy, heroName }) {
       <div class="siege-core-bar"><i data-hud="coreFill"></i></div>
     </div>
 
+    <div class="siege-bossbar" data-hud="bossBar" hidden>
+      <span>${copy.hud.boss}</span>
+      <div class="siege-bossbar-track"><i data-hud="bossFill"></i></div>
+    </div>
+
     <div class="siege-banner" data-hud="banner" hidden></div>
+    <div class="siege-announce" data-hud="announce" aria-live="polite" hidden></div>
     <div class="siege-combo" data-hud="combo" hidden></div>
+    <div class="siege-floaters" data-hud="floaters" aria-hidden="true"></div>
+
+    <div class="siege-tutorial" data-hud="tutorial" hidden>
+      <strong>${copy.tutorial.title}</strong>
+      <ol data-hud="tutorialSteps"></ol>
+      <button type="button" class="siege-btn" data-hud="tutorialSkip">${copy.tutorial.skip}</button>
+    </div>
 
     <div class="siege-wings">
       <div class="siege-wing siege-wing--ice">
@@ -71,6 +84,9 @@ export function createHud({ root, copy, heroName }) {
         <button type="button" class="siege-nova" data-hud="nova">
           <i data-hud="novaFill"></i><span>${copy.hud.nova}</span>
         </button>
+        <button type="button" class="siege-nova siege-ult" data-hud="ult">
+          <i data-hud="ultFill"></i><span>${copy.hud.ult}</span>
+        </button>
       </div>
       <div class="siege-build" data-hud="build" hidden>
         <button type="button" data-build="frost" class="is-selected">
@@ -79,6 +95,7 @@ export function createHud({ root, copy, heroName }) {
         <button type="button" data-build="ember">
           <strong>${copy.towers.towerEmber}</strong><span data-cost="75">75</span>
         </button>
+        <button type="button" class="siege-build-call" data-hud="callWave">${copy.phases.buildCall}</button>
       </div>
     </div>
 
@@ -90,13 +107,20 @@ export function createHud({ root, copy, heroName }) {
       <button type="button" class="siege-attack" data-hud="attack">
         <span>${copy.hud.attack}</span>
       </button>
+      <button type="button" class="siege-dash" data-hud="dash">
+        <i data-hud="dashFill"></i><span>${copy.hud.dash}</span>
+      </button>
     </div>
 
     <div class="siege-overlay" data-hud="overlay" hidden>
       <div class="siege-overlay-card" role="dialog" aria-modal="true">
+        <p class="siege-overlay-badge" data-hud="overlayBadge" hidden></p>
         <h2 data-hud="overlayTitle"></h2>
+        <div class="siege-stars" data-hud="overlayStars" hidden></div>
         <p data-hud="overlayBody"></p>
+        <div class="siege-chips" data-hud="overlayChips" hidden></div>
         <div class="siege-overlay-stats" data-hud="overlayStats"></div>
+        <ol class="siege-history" data-hud="overlayHistory" hidden></ol>
         <div class="siege-overlay-actions" data-hud="overlayActions"></div>
       </div>
     </div>
@@ -131,7 +155,40 @@ export function createHud({ root, copy, heroName }) {
     overlayBody: ref('overlayBody'),
     overlayStats: ref('overlayStats'),
     overlayActions: ref('overlayActions'),
+    overlayBadge: ref('overlayBadge'),
+    overlayStars: ref('overlayStars'),
+    overlayChips: ref('overlayChips'),
+    overlayHistory: ref('overlayHistory'),
+    bossBar: ref('bossBar'),
+    bossFill: ref('bossFill'),
+    announce: ref('announce'),
+    floaters: ref('floaters'),
+    tutorial: ref('tutorial'),
+    tutorialSteps: ref('tutorialSteps'),
+    tutorialSkip: ref('tutorialSkip'),
+    callWave: ref('callWave'),
+    ult: ref('ult'),
+    ultFill: ref('ultFill'),
+    dash: ref('dash'),
+    dashFill: ref('dashFill'),
   };
+
+  // Floating damage numbers: a fixed pool of spans recycled round-robin, so a
+  // busy wave never allocates DOM nodes mid-fight.
+  const FLOATER_POOL = 28;
+  const floaters = [];
+  for (let index = 0; index < FLOATER_POOL; index += 1) {
+    const span = document.createElement('span');
+    span.className = 'siege-floater';
+    span.hidden = true;
+    span.addEventListener('animationend', () => {
+      span.hidden = true;
+    });
+    nodes.floaters.appendChild(span);
+    floaters.push(span);
+  }
+  let floaterCursor = 0;
+  let announceTimer = 0;
 
   let toastTimer = 0;
   let bannerTimer = 0;
@@ -154,11 +211,23 @@ export function createHud({ root, copy, heroName }) {
     buildKind: () => {},
     attack: () => {},
     stick: () => {},
+    ult: () => {},
+    dash: () => {},
+    skipTutorial: () => {},
+    callWave: () => {},
   };
 
   nodes.ice.addEventListener('click', () => handlers.swap('ice'));
   nodes.fire.addEventListener('click', () => handlers.swap('fire'));
   nodes.nova.addEventListener('click', () => handlers.nova());
+  nodes.ult.addEventListener('click', () => handlers.ult());
+  nodes.dash.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    handlers.dash();
+  });
+  nodes.tutorialSkip.addEventListener('click', () => handlers.skipTutorial());
+  // Touch players have no Enter key; this is how they cut the build timer short.
+  nodes.callWave.addEventListener('click', () => handlers.callWave());
   nodes.pause.addEventListener('click', () => handlers.pause());
   nodes.mute.addEventListener('click', () => {
     muted = !muted;
@@ -167,10 +236,10 @@ export function createHud({ root, copy, heroName }) {
     handlers.mute(muted);
   });
 
-  for (const button of nodes.build.querySelectorAll('button')) {
+  for (const button of nodes.build.querySelectorAll('button[data-build]')) {
     button.addEventListener('click', () => {
       selectedBuild = button.dataset.build;
-      for (const other of nodes.build.querySelectorAll('button')) {
+      for (const other of nodes.build.querySelectorAll('button[data-build]')) {
         other.classList.toggle('is-selected', other === button);
       }
       handlers.buildKind(selectedBuild);
@@ -222,6 +291,7 @@ export function createHud({ root, copy, heroName }) {
   nodes.attack.addEventListener('pointerleave', releaseAttack);
 
   let lastScore = 0;
+  let lastTutorialSignature = '';
 
   return {
     on(next) {
@@ -233,7 +303,9 @@ export function createHud({ root, copy, heroName }) {
         nodes.score.textContent = score.toLocaleString('en-US');
         lastScore = score;
       }
-      nodes.wave.textContent = `${Math.min(state.wave || 1, state.wavesTotal)} / ${state.wavesTotal}`;
+      if (state.tutorial?.active) nodes.wave.textContent = copy.hud.training;
+      else if (state.endless) nodes.wave.textContent = String(Math.max(1, state.wave));
+      else nodes.wave.textContent = `${Math.min(state.wave || 1, state.wavesTotal)} / ${state.wavesTotal}`;
       if (state.gold !== lastGold) {
         lastGold = state.gold;
         nodes.gold.textContent = Math.round(state.gold);
@@ -262,9 +334,42 @@ export function createHud({ root, copy, heroName }) {
       nodes.novaFill.style.width = `${(novaRatio * 100).toFixed(0)}%`;
       nodes.nova.classList.toggle('is-ready', state.nova.ready);
 
+      const ult = state.ult || { charge: 0, ready: false, activeMs: 0 };
+      const ultRatio = ult.activeMs > 0 ? ult.activeMs / 6500 : ult.charge / 100;
+      nodes.ultFill.style.width = `${Math.min(100, ultRatio * 100).toFixed(0)}%`;
+      nodes.ult.classList.toggle('is-ready', ult.ready);
+      nodes.ult.classList.toggle('is-active', ult.activeMs > 0);
+
+      const dashCd = Math.max(0, state.player.dashCdMs || 0);
+      nodes.dashFill.style.height = `${Math.min(100, (dashCd / 1500) * 100).toFixed(0)}%`;
+      nodes.dash.classList.toggle('is-cooling', dashCd > 0);
+
+      const boss = state.units.find((unit) => unit.boss);
+      nodes.bossBar.hidden = !boss;
+      if (boss) {
+        nodes.bossFill.style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100).toFixed(1)}%`;
+        nodes.bossBar.classList.toggle('is-telegraphing', Boolean(boss.telegraph));
+      }
+
+      const tutorial = state.tutorial;
+      nodes.tutorial.hidden = !tutorial?.active;
+      if (tutorial?.active) {
+        const signature = Object.values(tutorial.steps).join(',');
+        if (signature !== lastTutorialSignature) {
+          lastTutorialSignature = signature;
+          nodes.tutorialSteps.innerHTML = '';
+          for (const [step, done] of Object.entries(tutorial.steps)) {
+            const item = document.createElement('li');
+            item.textContent = copy.tutorial[step] || step;
+            item.classList.toggle('is-done', Boolean(done));
+            nodes.tutorialSteps.appendChild(item);
+          }
+        }
+      }
+
       const building = state.phase === 'build';
       nodes.build.hidden = !building;
-      for (const button of nodes.build.querySelectorAll('button')) {
+      for (const button of nodes.build.querySelectorAll('button[data-build]')) {
         const cost = Number(button.querySelector('[data-cost]').dataset.cost);
         button.classList.toggle('is-expensive', state.gold < cost);
       }
@@ -272,7 +377,7 @@ export function createHud({ root, copy, heroName }) {
     },
     setBuildKind(kind) {
       selectedBuild = kind;
-      for (const button of nodes.build.querySelectorAll('button')) {
+      for (const button of nodes.build.querySelectorAll('button[data-build]')) {
         button.classList.toggle('is-selected', button.dataset.build === kind);
       }
     },
@@ -316,12 +421,56 @@ export function createHud({ root, copy, heroName }) {
       nodes.overlay.hidden = false;
       nodes.overlayTitle.textContent = config.title;
       nodes.overlayBody.textContent = config.body;
-      nodes.overlayStats.innerHTML = (config.stats || [])
-        .map(
-          (stat) =>
-            `<div class="siege-overlay-stat"><span>${stat.label}</span><strong>${stat.value}</strong></div>`
-        )
-        .join('');
+      nodes.overlayBadge.hidden = !config.badge;
+      nodes.overlayBadge.textContent = config.badge || '';
+      nodes.overlayStars.hidden = config.stars === undefined;
+      nodes.overlayStars.innerHTML = '';
+      if (config.stars !== undefined) {
+        nodes.overlayStars.setAttribute('aria-label', `${copy.results.stars}: ${config.stars} / 3`);
+        for (let index = 0; index < 3; index += 1) {
+          const star = document.createElement('i');
+          star.className = index < config.stars ? 'is-lit' : '';
+          nodes.overlayStars.appendChild(star);
+        }
+      }
+      nodes.overlayChips.hidden = !config.chips?.length;
+      nodes.overlayChips.innerHTML = '';
+      for (const group of config.chips || []) {
+        const row = document.createElement('div');
+        row.className = 'siege-chip-row';
+        const label = document.createElement('span');
+        label.textContent = group.label;
+        row.appendChild(label);
+        for (const chip of group.items) {
+          const link = document.createElement('a');
+          link.className = chip.active ? 'siege-chip is-active' : 'siege-chip';
+          link.href = chip.href;
+          link.textContent = chip.label;
+          if (chip.title) link.title = chip.title;
+          if (chip.active) link.setAttribute('aria-current', 'true');
+          row.appendChild(link);
+        }
+        nodes.overlayChips.appendChild(row);
+      }
+      nodes.overlayHistory.hidden = !config.history?.length;
+      nodes.overlayHistory.innerHTML = '';
+      if (config.historyLabel) nodes.overlayHistory.setAttribute('aria-label', config.historyLabel);
+      for (const line of config.history || []) {
+        const item = document.createElement('li');
+        item.textContent = line;
+        nodes.overlayHistory.appendChild(item);
+      }
+      nodes.overlayStats.innerHTML = '';
+      for (const stat of config.stats || []) {
+        const cell = document.createElement('div');
+        cell.className = 'siege-overlay-stat';
+        const label = document.createElement('span');
+        label.textContent = stat.label;
+        const value = document.createElement('strong');
+        value.textContent = stat.value;
+        cell.append(label, value);
+        nodes.overlayStats.appendChild(cell);
+      }
       nodes.overlayActions.innerHTML = '';
       for (const action of config.actions || []) {
         const button = document.createElement('button');
@@ -331,6 +480,30 @@ export function createHud({ root, copy, heroName }) {
         button.addEventListener('click', action.onClick);
         nodes.overlayActions.appendChild(button);
       }
+    },
+    /** A number or word that rises off a point on screen and fades. */
+    floatText(x, y, text, tone = '') {
+      const span = floaters[floaterCursor];
+      floaterCursor = (floaterCursor + 1) % floaters.length;
+      span.hidden = true;
+      span.className = tone ? `siege-floater is-${tone}` : 'siege-floater';
+      span.textContent = text;
+      span.style.left = `${x.toFixed(0)}px`;
+      span.style.top = `${y.toFixed(0)}px`;
+      // Force a reflow so re-using a node restarts its animation.
+      void span.offsetWidth;
+      span.hidden = false;
+    },
+    announce(text, tone = '') {
+      nodes.announce.textContent = text;
+      nodes.announce.dataset.tone = tone;
+      nodes.announce.hidden = true;
+      void nodes.announce.offsetWidth;
+      nodes.announce.hidden = false;
+      window.clearTimeout(announceTimer);
+      announceTimer = window.setTimeout(() => {
+        nodes.announce.hidden = true;
+      }, 1500);
     },
     translate(nextCopy) {
       Object.assign(copy, nextCopy);
