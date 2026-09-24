@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.1 - 2026-09-24
+
+- Fixed: the site could fail to open with "This site can't be reached" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed helper still installs and takes over in such a browser.
+
 ## 16.5.0 - 2026-09-23
 
 - Motion and visual-craft release. Hubs gained a one-shot card entry and a pointer spotlight, tab changes cross-fade the incoming panel where the browser supports View Transitions, and the loader settles once when loading really completes.
