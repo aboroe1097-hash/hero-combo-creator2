@@ -33,6 +33,28 @@ function normalizedEvidenceName(value) {
     .trim();
 }
 
+let workbookNodeCosts = null;
+
+/**
+ * Per-level workbook medal costs for one troop's canonical node, or null when the
+ * workbook has no row the build could place on it. Costs are returned exactly as the
+ * workbook states them (one entry per level); an unknown node never becomes 0.
+ */
+export function getWorkbookNodeMedalCosts(troop, researchId, nodeId) {
+  if (!workbookNodeCosts) {
+    workbookNodeCosts = new Map();
+    for (const section of SPECIALIZATION_TROOP_MEDAL_EVIDENCE) {
+      if (!section.researchId) continue;
+      for (const row of section.rows) {
+        if (row.nodeId == null || row.costs.length === 0) continue;
+        workbookNodeCosts.set(evidenceNodeKey(section.troop, section.researchId, row.nodeId), row);
+      }
+    }
+  }
+  const row = workbookNodeCosts.get(evidenceNodeKey(troop, researchId, Number(nodeId)));
+  return row ? row.costs : null;
+}
+
 export function buildWorkbookEvidenceIndex(rows) {
   const byNodeKey = new Map();
   const nodeKeys = new Set();

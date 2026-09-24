@@ -21,3 +21,56 @@
 .shell-account-slot .vts-account-chip {
   min-height: 44px;
 }
+
+/* In the standalone deck (arcade, eden-x1/x2) the control row is a grid whose
+   narrow third column is sized for the 44px theme button. Auto-placed, the chip
+   landed in that column and was clipped to a sliver. Ordering the chip and the
+   back link last puts them together on their own row at every breakpoint: the
+   chip takes the first column, the link the rest. */
+.admin-command-actions .admin-control-row > .shell-account-slot {
+  order: 10;
+  grid-column: 1;
+  justify-self: start;
+}
+
+/* The body prefix outranks the admin deck's own back-link placement rules. */
+body.admin-standalone-page
+  .admin-command-actions
+  .admin-control-row
+  > .shell-account-slot
+  ~ .admin-back-tools {
+  order: 11;
+  grid-column: 2 / -1;
+  grid-row: auto;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+/* Phones: css/mobile.css pins the deck grid rows with !important. The chip
+   joins the last deck link on the bottom row; a second link (Eden's admin
+   shortcut) moves to the row above it. */
+@media (max-width: 768px) {
+  body.admin-standalone-page .admin-command-actions .admin-control-row > .shell-account-slot {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+  }
+
+  body.admin-standalone-page
+    .admin-command-actions
+    .admin-control-row
+    > .shell-account-slot
+    ~ .admin-back-tools:last-of-type {
+    grid-column: 2 / -1 !important;
+    grid-row: 4 !important;
+  }
+
+  body.admin-standalone-page
+    .admin-command-actions
+    .admin-control-row
+    > .shell-account-slot
+    ~ .admin-back-tools:not(:last-of-type) {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+  }
+}

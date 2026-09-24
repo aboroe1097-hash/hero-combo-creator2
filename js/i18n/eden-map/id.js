@@ -100,5 +100,8 @@ export default {
     subTabBounty: 'Hadiah Kerajaan Eden X2',
     subTabSeason: 'Musim saat ini · {currentSeason}',
     subTabPrevious: 'Musim sebelumnya · {previousSeason}',
+    subTabPathing: 'Jalur Eden',
+    subTabPathingDesc:
+      'Rencanakan rute gerbang A→B dengan titik jalan di pegunungan dan ekspor PNG.',
   },
 };

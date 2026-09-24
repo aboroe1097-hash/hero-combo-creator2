@@ -79,7 +79,11 @@ function updateCacheBusters() {
         /(src="js\/(?:app|admin-page)\.js)(?:\?v=[0-9A-Za-z_-]+)?"/g,
         `$1?v=${buildVersion}"`
       );
-    if (file === 'downloads.html' || file === 'eden-siege.html') {
+    if (
+      file === 'downloads.html' ||
+      file === 'eden-siege.html' ||
+      file === 'specialization-towers.html'
+    ) {
       html = html.replace(
         /((?:href|src)="(?:css|js)\/[^"?#]+\.(?:css|js))(?:\?v=[0-9A-Za-z_-]+)?"/g,
         `$1?v=${buildVersion}"`

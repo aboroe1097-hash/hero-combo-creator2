@@ -1,0 +1,202 @@
+/* Shared chrome for standalone tool pages (js/tool-shell.js).
+   The bar mirrors the command deck on the main page: glass panel, cyan-mint-
+   gold hairline on top, the lion logo and the site name, and one clear way
+   back to the tools. */
+.tool-shell-bar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: min(100% - 2rem, 1180px);
+  margin: max(12px, env(safe-area-inset-top)) auto 0;
+  padding: 0.55rem 0.65rem 0.55rem 0.75rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent-cyan, #67e8f9) 26%, transparent);
+  border-radius: var(--radius-xl, 18px);
+  background:
+    radial-gradient(
+      circle at 6% 0%,
+      color-mix(in srgb, var(--accent-cyan, #67e8f9) 14%, transparent),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 96% 130%,
+      color-mix(in srgb, var(--accent-gold, #fbbf24) 12%, transparent),
+      transparent 42%
+    ),
+    color-mix(in srgb, var(--surface-1, #0b1422) 94%, transparent);
+  box-shadow: 0 14px 38px color-mix(in srgb, #020617 30%, transparent);
+  backdrop-filter: blur(16px) saturate(130%);
+}
+
+.tool-shell-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, #67e8f9, #34d399 45%, #fbbf24);
+}
+
+.tool-shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  color: var(--text-primary, #f8fafc);
+  text-decoration: none;
+}
+
+.tool-shell-brand img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent-gold, #fbbf24) 40%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent-fire, #f97316) 28%, transparent);
+}
+
+.tool-shell-words {
+  display: grid;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.tool-shell-words strong {
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tool-shell-words small {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tool-shell-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The account chip normally floats fixed in the corner; in the bar it sits in
+   flow beside Back to tools. */
+.tool-shell-account.vts-account-chip-mount {
+  position: static;
+  z-index: auto;
+  inset: auto;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.tool-shell-account .vts-account-chip {
+  min-height: 44px;
+}
+
+.tool-shell-back {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding-inline: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--accent-cyan, #67e8f9) 40%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-cyan, #67e8f9) 10%, transparent);
+  color: var(--text-primary, #f8fafc);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.tool-shell-back:hover {
+  border-color: var(--accent-cyan, #67e8f9);
+  background: color-mix(in srgb, var(--accent-cyan, #67e8f9) 18%, transparent);
+}
+
+.tool-shell-back:focus-visible,
+.tool-shell-brand:focus-visible {
+  outline: 2px solid var(--accent-cyan, #67e8f9);
+  outline-offset: 3px;
+}
+
+.tool-shell-back-arrow {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-block-end: 2px solid currentColor;
+  border-inline-start: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+[dir='rtl'] .tool-shell-back-arrow {
+  transform: rotate(-135deg);
+}
+
+.tool-shell-footer {
+  width: min(100% - 2rem, 1180px);
+  margin-inline: auto;
+  margin-block-end: max(1rem, env(safe-area-inset-bottom));
+}
+
+.standalone-footer-links a[aria-current='page'] {
+  color: var(--accent-cyan, #67e8f9);
+}
+
+[data-theme='light'] .tool-shell-bar {
+  border-color: rgba(14, 116, 144, 0.28);
+  background:
+    radial-gradient(circle at 6% 0%, rgba(103, 232, 249, 0.18), transparent 40%),
+    rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
+}
+
+[data-theme='light'] .tool-shell-brand {
+  color: #0f172a;
+}
+
+[data-theme='light'] .tool-shell-words small {
+  color: #475569;
+}
+
+[data-theme='light'] .tool-shell-back {
+  border-color: rgba(14, 116, 144, 0.45);
+  background: rgba(14, 116, 144, 0.08);
+  color: #0f172a;
+}
+
+@media (max-width: 480px) {
+  .tool-shell-bar {
+    width: calc(100% - 1.5rem);
+    padding: 0.45rem 0.5rem 0.45rem 0.55rem;
+  }
+
+  .tool-shell-words {
+    display: none;
+  }
+
+  .tool-shell-back {
+    padding-inline: 0.7rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-shell-back {
+    transition: none;
+  }
+}

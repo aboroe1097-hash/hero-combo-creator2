@@ -100,5 +100,7 @@ export default {
     subTabBounty: 'Königliche Prämie Eden X2',
     subTabSeason: 'Aktuelle Saison · {currentSeason}',
     subTabPrevious: 'Frühere Saisons · {previousSeason}',
+    subTabPathing: 'Eden-Pfadplanung',
+    subTabPathingDesc: 'Plane Tor-Routen von A nach B mit Berg-Wegpunkten und exportiere ein PNG.',
   },
 };

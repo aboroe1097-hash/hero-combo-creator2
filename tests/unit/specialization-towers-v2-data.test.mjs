@@ -436,7 +436,7 @@ test('the community workbook supplies every troop and tower with per-node medal 
   // Rows the corpus can place carry the canonical node id; per-level costs are intact.
   const rows = SPECIALIZATION_TROOP_MEDAL_EVIDENCE.flatMap((section) => section.rows);
   assert.equal(rows.length, 2_745);
-  assert.equal(rows.filter((row) => row.nodeId !== null).length, 2_197);
+  assert.equal(rows.filter((row) => row.nodeId !== null).length, 2_205);
   assert.equal(
     rows.every((row) => row.costs.length > 0),
     true

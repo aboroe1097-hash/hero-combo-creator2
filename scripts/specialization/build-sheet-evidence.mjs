@@ -40,31 +40,134 @@ const normalize = (value) =>
     .replace(/[^a-z0-9]+/gu, ' ')
     .trim();
 
-/** Resolve a sheet node to the canonical node id for a troop, honouring troop renames. */
-function createNodeResolver(research, troop) {
-  const candidates = (research?.nodes ?? []).map((node) => ({
-    id: node.id,
-    names: [normalize(node.name), normalize(node.troopSpecific?.[troop]?.name)].filter(Boolean),
-  }));
+/**
+ * Reviewed placements for workbook rows whose name disagrees with the planner corpus.
+ *
+ * In each case the workbook names (and sometimes words) the troop's node differently
+ * from the corpus, but the row sits in the same slot and carries exactly the per-level
+ * cost the other two troop tabs record for that canonical node. The cost is attached to
+ * the node; the name/effect conflict is shipped alongside it as unresolved instead of
+ * being rewritten on either side.
+ */
+const REVIEWED_NAME_DISCREPANCIES = [
+  {
+    troop: 'cavalry',
+    researchId: 'encounter1',
+    sourceRow: '14',
+    nodeId: 14,
+    corpusName: 'Marching',
+    note: 'Workbook: "When all are Cavalry, Cavalry\'s Combat Speed increased by 10"; corpus: Marching Speed +5. Cost 712 matches the footman and archer Marching rows.',
+  },
+  {
+    troop: 'cavalry',
+    researchId: 'callofglory2',
+    sourceRow: '14',
+    nodeId: 14,
+    corpusName: 'Logistics Support',
+    note: 'Both state Reign of Chaos HP +6%; only the name differs. Costs 737/774 match the footman and archer Logistics Support rows.',
+  },
+  {
+    troop: 'cavalry',
+    researchId: 'callofglory3',
+    sourceRow: '19',
+    nodeId: 28,
+    corpusName: 'Logistics Support',
+    note: 'Workbook states Reign of Chaos HP +6%; corpus states HP +4%. Costs 1083/1137 match the footman and archer Logistics Support rows.',
+  },
+  {
+    troop: 'cavalry',
+    researchId: 'training5',
+    sourceRow: '13',
+    nodeId: 8,
+    corpusName: 'Energetic',
+    note: 'Workbook: "For squads with Cavalry, HP increased by 4%"; corpus: Base HP +2%. Costs 221/221 match the footman and archer Energetic rows.',
+  },
+  {
+    troop: 'archer',
+    researchId: 'enhanced3',
+    sourceRow: '17',
+    nodeId: 33,
+    corpusName: 'Secret Tactic I',
+    note: 'Passive skill. Workbook names it Secret Tactic II with "lowest troop power"; corpus names it Secret Tactic I with "highest troop power". Cost 3360 matches the footman and cavalry passive rows.',
+  },
+];
+
+const reviewedPlacement = (troop, researchId, sourceRow) =>
+  REVIEWED_NAME_DISCREPANCIES.find(
+    (entry) =>
+      entry.troop === troop && entry.researchId === researchId && entry.sourceRow === sourceRow
+  ) ?? null;
+
+/** The first magnitude a workbook buff states ("… increased by 3%" → 3). */
+function buffMagnitude(buff) {
+  const match = /(?:\bby|\+)\s*(\d+(?:\.\d+)?)/u.exec(String(buff || ''));
+  return match ? Number(match[1]) : null;
+}
+
+/**
+ * Resolve a section's sheet rows to canonical node ids for a troop, honouring troop
+ * renames. A research often repeats a node name with different magnitudes (Field Intel
+ * +2% and +3%), so a row first claims a same-named node whose bonus matches the
+ * workbook's stated magnitude, and only then the next unused same-named node.
+ */
+function resolveSectionNodes(research, troop, researchId, sheetNodes) {
+  const result = sheetNodes.map(() => null);
+  if (!research) return result;
+  const candidates = research.nodes.map((node) => {
+    const override = node.troopSpecific?.[troop];
+    const value = override?.bonusValue ?? node.bonusValue;
+    return {
+      id: node.id,
+      names: [normalize(node.name), normalize(override?.name)].filter(Boolean),
+      magnitude: Number.isFinite(value) ? Math.abs(value) : null,
+    };
+  });
   const used = new Set();
-  const resolve = (sheetName) => {
-    const wanted = normalize(sheetName);
-    const match = candidates.find((node) => !used.has(node.id) && node.names.includes(wanted));
-    if (!match) return null;
+
+  sheetNodes.forEach((node, index) => {
+    const pinned = reviewedPlacement(troop, researchId, node.sourceRow);
+    if (!pinned) return;
+    if (normalize(pinned.corpusName) === normalize(node.name)) {
+      throw new Error(`${troop} ${researchId} row ${node.sourceRow} no longer needs a pin`);
+    }
+    result[index] = pinned.nodeId;
+    used.add(pinned.nodeId);
+  });
+
+  const claim = (index, predicate) => {
+    const wanted = normalize(sheetNodes[index].name);
+    const match = candidates.find(
+      (node) => !used.has(node.id) && node.names.includes(wanted) && predicate(node)
+    );
+    if (!match) return;
     used.add(match.id);
-    return match.id;
+    result[index] = match.id;
   };
+  sheetNodes.forEach((node, index) => {
+    const magnitude = buffMagnitude(node.buff);
+    if (result[index] === null && magnitude !== null) {
+      claim(index, (candidate) => candidate.magnitude === magnitude);
+    }
+  });
+  sheetNodes.forEach((node, index) => {
+    if (result[index] === null) claim(index, () => true);
+  });
+
   // The workbook lists the troop's passive skill as the section's final row; the corpus
   // keeps it beside `nodes` when it is not already one of them. Only accept the leftover
   // row when its name matches the recorded passive, never by position alone.
-  resolve.consumePassive = (leftovers) => {
-    const passive = research?.passiveSkill?.[troop];
-    if (research?.passiveSkillNodeId == null || !passive?.name) return null;
-    if (leftovers.length !== 1) return null;
-    if (normalize(passive.name) !== normalize(leftovers[0].name)) return null;
-    return research.passiveSkillNodeId;
-  };
-  return resolve;
+  const passive = research.passiveSkill?.[troop];
+  const leftovers = result.flatMap((nodeId, index) => (nodeId === null ? [index] : []));
+  if (
+    research.passiveSkillNodeId != null &&
+    !used.has(research.passiveSkillNodeId) &&
+    passive?.name &&
+    leftovers.length === 1 &&
+    normalize(passive.name) === normalize(sheetNodes[leftovers[0]].name)
+  ) {
+    result[leftovers[0]] = research.passiveSkillNodeId;
+  }
+  return result;
 }
 
 function buildSections(snapshot) {
@@ -75,17 +178,9 @@ function buildSections(snapshot) {
     tab.sections.forEach((section, index) => {
       const researchId = column?.researches?.[index] ?? null;
       const research = researchId ? SPECIALIZATION_RESEARCH[researchId] : null;
-      const resolveNodeId = research ? createNodeResolver(research, tab.troop) : () => null;
-      const resolved = section.nodes.map((node) => ({ node, nodeId: resolveNodeId(node.name) }));
-      const leftovers = resolved.filter((entry) => entry.nodeId === null).map((entry) => entry.node);
-      const passiveNodeId = resolveNodeId.consumePassive
-        ? resolveNodeId.consumePassive(leftovers)
-        : null;
-      if (passiveNodeId !== null) {
-        const passiveEntry = resolved.find((entry) => entry.nodeId === null && entry.node.name === leftovers[0].name);
-        if (passiveEntry) passiveEntry.nodeId = passiveNodeId;
-      }
-      const rows = resolved.map(({ node, nodeId }) => {
+      const nodeIds = resolveSectionNodes(research, tab.troop, researchId, section.nodes);
+      const rows = section.nodes.map((node, rowIndex) => {
+        const nodeId = nodeIds[rowIndex];
         if (nodeId === null) unresolved.push({ tab: tab.tab, section: index + 1, name: node.name });
         return { sourceRow: node.sourceRow, name: node.name, costs: node.costs, nodeId };
       });
@@ -167,6 +262,24 @@ ${rows}
     })
     .join('\n');
 
+  const discrepancyLines = REVIEWED_NAME_DISCREPANCIES.map((entry) => {
+    const row = sections
+      .find((section) => section.troop === entry.troop && section.researchId === entry.researchId)
+      ?.rows.find((candidate) => candidate.sourceRow === entry.sourceRow);
+    if (!row || row.nodeId !== entry.nodeId) {
+      throw new Error(`reviewed placement ${entry.troop} ${entry.researchId} ${entry.sourceRow} did not apply`);
+    }
+    return `  Object.freeze({
+    troop: '${entry.troop}',
+    researchId: '${entry.researchId}',
+    sourceRow: ${JSON.stringify(entry.sourceRow)},
+    nodeId: ${entry.nodeId},
+    workbookName: ${JSON.stringify(row.name)},
+    corpusName: ${JSON.stringify(entry.corpusName)},
+    note: ${JSON.stringify(entry.note)},
+  }),`;
+  }).join('\n');
+
   return `/**
  * Per-node medal evidence from the community Unit Specilization workbook.
  *
@@ -231,6 +344,15 @@ function deepFreeze(value) {
 }
 
 deepFreeze(SPECIALIZATION_TROOP_MEDAL_EVIDENCE);
+
+/**
+ * Rows placed on a node whose planner-corpus name disagrees with the workbook. The
+ * cost matches the other troop tabs for that node, so it is attached; which name and
+ * effect the game actually shows for this troop is still unresolved.
+ */
+export const SPECIALIZATION_MEDAL_EVIDENCE_NAME_DISCREPANCIES = Object.freeze([
+${discrepancyLines}
+]);
 
 export function getSpecializationMedalEvidence({ tower, troop, researchId } = {}) {
   return SPECIALIZATION_TROOP_MEDAL_EVIDENCE.filter(

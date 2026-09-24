@@ -100,5 +100,7 @@ export default {
     subTabBounty: 'Kraliyet Ödülü Eden X2',
     subTabSeason: 'Mevcut sezon · {currentSeason}',
     subTabPrevious: 'Önceki sezonlar · {previousSeason}',
+    subTabPathing: 'Eden Rota Planı',
+    subTabPathingDesc: 'Dağ ara noktalarıyla A→B kapı rotaları planla ve PNG olarak dışa aktar.',
   },
 };

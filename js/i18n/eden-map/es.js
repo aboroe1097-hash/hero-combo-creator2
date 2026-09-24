@@ -100,5 +100,8 @@ export default {
     subTabBounty: 'Recompensa Real Eden X2',
     subTabSeason: 'Temporada actual · {currentSeason}',
     subTabPrevious: 'Temporadas anteriores · {previousSeason}',
+    subTabPathing: 'Rutas de Edén',
+    subTabPathingDesc:
+      'Planifica rutas de puertas de A a B con puntos de paso en montañas y exporta un PNG.',
   },
 };

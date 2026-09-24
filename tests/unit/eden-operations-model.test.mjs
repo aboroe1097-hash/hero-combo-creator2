@@ -8,11 +8,15 @@ import {
   calculateHonorProgress,
   calculateTilingPlan,
   calculateTrainingComparison,
+  checklistProgress,
   decodeEdenOperationsState,
   encodeEdenOperationsState,
+  filterOperationPlaybooks,
+  getSiegePlan,
   normalizeEdenOperationsState,
   readEdenOperationsState,
   rowsToCsv,
+  staffingStatus,
   writeEdenOperationsState,
 } from '../../js/eden-operations-model.js';
 
@@ -151,4 +155,47 @@ test('building costs reproduce the supplied sheet, including its rounded-up disc
       discountId,
     }).rows[0].discountedCost;
   assert.deepEqual(['green', 'green-architect', 'full-architect'].map(discounted), [501, 439, 302]);
+});
+
+test('operation board filters by stage, role, and localized search words', () => {
+  const words = (entry) => (entry.id === 'honor-farming' ? 'Special Training Boost' : entry.id);
+  assert.equal(filterOperationPlaybooks({}, words).length, 6);
+  assert.deepEqual(
+    filterOperationPlaybooks({ stage: 'war' }, words).map((entry) => entry.id),
+    ['staff-objective']
+  );
+  assert.deepEqual(filterOperationPlaybooks({ stage: 'war', role: 'builder' }, words), []);
+  assert.deepEqual(
+    filterOperationPlaybooks({ query: '  boost  special ' }, words).map((entry) => entry.id),
+    ['honor-farming']
+  );
+  assert.deepEqual(filterOperationPlaybooks({ query: 'zzz' }, words), []);
+});
+
+test('checklists and staffing counters normalize and survive a round trip', () => {
+  const state = normalizeEdenOperationsState({
+    checklist: { 'hold-tile.0': true, 'hold-tile.9': true, 'nope.0': true, 'hold-tile.1': 'yes' },
+    siege: { structureId: 'gate-1', assigned: { attackers: 3, support: -4 } },
+  });
+  assert.deepEqual(state.checklist, { 'hold-tile.0': true });
+  assert.deepEqual(state.siege.assigned, { attackers: 3, support: 0 });
+  assert.deepEqual(decodeEdenOperationsState(encodeEdenOperationsState(state)), state);
+  assert.deepEqual(
+    checklistProgress({ id: 'hold-tile', steps: ['a', 'b', 'c'] }, state.checklist),
+    {
+      done: 1,
+      total: 3,
+    }
+  );
+
+  const gate = getSiegePlan('gate-1');
+  assert.deepEqual(staffingStatus(gate, state.siege.assigned), {
+    attackers: 3,
+    support: 0,
+    missingAttackers: 0,
+    missingSupport: 8,
+    missing: 8,
+    ready: false,
+  });
+  assert.equal(staffingStatus(gate, { attackers: 2, support: 8 }).ready, true);
 });

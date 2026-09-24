@@ -100,5 +100,8 @@ export default {
     subTabBounty: 'Королевская награда Eden X2',
     subTabSeason: 'Текущий сезон · {currentSeason}',
     subTabPrevious: 'Прошлые сезоны · {previousSeason}',
+    subTabPathing: 'Маршруты Эдема',
+    subTabPathingDesc:
+      'Планируйте маршруты между воротами из A в B с горными точками и экспортируйте PNG.',
   },
 };

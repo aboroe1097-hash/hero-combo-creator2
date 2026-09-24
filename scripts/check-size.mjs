@@ -164,7 +164,12 @@ const LIMITS = {
   // Translating the last 30 English-fallback strings into nine lazy locale
   // chunks (Dragon Master guide, vote delete/redirect) brought CI to
   // 11116.6 KiB; retain ~25 KiB again rather than ship with none.
-  totalJsBytes: 11140 * 1024,
+  // 16.5.2: the Operations Lab task board, checklists and staffing counters
+  // (~10 KiB in its lazy chunk), the shared standalone tool shell with its
+  // 13-locale strings (~8 KiB, imported by the seven standalone entries), and
+  // the per-node Specialization workbook lookup. Measured 11154.9 KiB
+  // locally; retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11175 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -434,17 +439,23 @@ const LIMITS = {
     // The Battle saved-profile checklist lifts the audited standalone route to
     // 54.9 KiB on desktop and mobile; retain roughly 1 KiB of headroom.
     // The account chip stylesheet lifts the standalone Battle route to 57.5 KiB.
-    'battle-simulator.html': { desktop: 59 * 1024, mobile: 59 * 1024 },
+    // 16.5.2: the shared standalone footer and tool-shell styles (~7.6 KiB)
+    // bring the route to 65.1 KiB; retain roughly 1.5 KiB.
+    'battle-simulator.html': { desktop: 67 * 1024, mobile: 67 * 1024 },
     // Specialization Towers is route-isolated and loads only shared tokens plus
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
-    'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
+    // 16.5.2: the shared standalone footer and tool-shell styles plus the
+    // wrapping desktop header measure 87.8 KiB; retain roughly 1 KiB.
+    'specialization-towers.html': { desktop: 89 * 1024, mobile: 89 * 1024 },
     // VtsScore now hosts the member season registration as well as the score
     // upload, so it gets a budget line of its own: tokens, account chip and
     // css/vts-score.css measure 21.5 KiB on both viewports. The registration
     // form's rules live in that same stylesheet rather than a new one, which is
     // what keeps this route from adding a deploy file. Retain about 1 KiB.
-    'vtsscore.html': { desktop: 22 * 1024, mobile: 22 * 1024 },
+    // 16.5.2: the shared standalone footer and the branded Back-to-tools bar
+    // replace the page's own one-line footer: 30.6 KiB. Retain about 1.4 KiB.
+    'vtsscore.html': { desktop: 32 * 1024, mobile: 32 * 1024 },
     // Community Downloads is a static list page: shared tokens plus the download
     // grid stylesheet, and no game data is loaded. Keep the same focused shape.
     'downloads.html': { desktop: 40 * 1024, mobile: 40 * 1024 },
@@ -455,7 +466,9 @@ const LIMITS = {
   // Measured from the same build, including the route entry and both initial
   // three.js / siege chunks and the two standalone scripts: 698,236 bytes.
   routeJsBytes: {
-    'eden-siege.html': { desktop: 684 * 1024, mobile: 684 * 1024 },
+    // 16.5.2: the shared tool shell (footer link set, 13 locales) measures
+    // 691.0 KiB; retain about 1 KiB.
+    'eden-siege.html': { desktop: 692 * 1024, mobile: 692 * 1024 },
   },
 };
 
