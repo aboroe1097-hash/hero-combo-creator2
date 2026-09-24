@@ -352,6 +352,28 @@ function isFirebaseUnavailableError(error) {
   );
 }
 
+// The form files under an anonymous session on purpose, so the member's account
+// identity never leaves the value of this one field. Prefill it from the
+// signed-in profile so a member who wants a reply does not retype the name
+// leadership has to match them by — and leave it editable, because the
+// complaint may be about someone else. Anonymous filings hide the whole block,
+// so nothing is attached behind the member's back.
+async function prefillComplainantName(nameInput) {
+  if (!nameInput || text(nameInput.value).trim()) return;
+  try {
+    const { peekAccountState, loadAccountProfile } = await import('./account-profile-service.js');
+    const account = peekAccountState?.() || null;
+    if (!account || account.isGuest) return;
+    const profile = await loadAccountProfile();
+    const name = text(profile?.gameName || profile?.displayName || account.displayName);
+    if (name && !text(nameInput.value).trim()) {
+      nameInput.value = name.slice(0, EDEN_COMPLAINT_MAX_NAME);
+    }
+  } catch {
+    // Not signed in, or the profile lookup failed: the field stays theirs to fill.
+  }
+}
+
 function bindComplaintForm(root) {
   const openButton = root.querySelector('#edenX1ComplaintOpen');
   const cancelButton = root.querySelector('#edenX1ComplaintCancel');
@@ -393,7 +415,10 @@ function bindComplaintForm(root) {
     const opening = form.hidden;
     form.hidden = !opening;
     openButton.setAttribute('aria-expanded', opening ? 'true' : 'false');
-    if (opening) descriptionInput?.focus?.({ preventScroll: true });
+    if (opening) {
+      void prefillComplainantName(nameInput);
+      descriptionInput?.focus?.({ preventScroll: true });
+    }
   });
 
   cancelButton?.addEventListener('click', () => {
