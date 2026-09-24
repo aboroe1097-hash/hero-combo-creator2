@@ -248,6 +248,11 @@ test('the Eden hub lands on the season being played', () => {
   assert.match(hub, /rememberSubTabClick\(name\);/);
   assert.match(hub, /import \{ resolveEdenHubInitialRoute \} from '\.\/eden-hub-routing\.js'/);
   assert.match(hub, /resolveEdenHubInitialRoute\(\s*requested,\s*clicked,\s*window\.history\s*\)/);
+  assert.match(hub, /const SEASON_LINK_TIMEOUT_MS = 8000;/);
+  assert.match(
+    hub,
+    /if \(intent === 'season' \|\| intent === 'vote'\) \{\s*if \(!openIntent\(intent, \{ scroll: true \}\)\) openSeasonIntentWhenPublished\(intent\);/
+  );
   assert.match(hub, /if \(useCurrentSeasonDefault\) \{[\s\S]*?openIntent\('season'\);/);
   // A shared link carries no history state, so it still opens what it names.
   assert.match(hub, /window\.history\.state\?\.\[SUBTAB_CLICK_STATE_KEY\]/);

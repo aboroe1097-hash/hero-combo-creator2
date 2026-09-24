@@ -9,7 +9,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.5.5",
     "date": "2026-09-24",
     "highlights": [
-      "The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. A sub-tab yo…"
+      "The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. On refresh, …"
     ]
   },
   {

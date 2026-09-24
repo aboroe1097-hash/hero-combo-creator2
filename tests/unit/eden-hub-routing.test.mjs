@@ -46,6 +46,18 @@ test('a shared subtab link remains explicit without a matching click history mar
   assert.deepEqual(history.calls, []);
 });
 
+test('a same-session current-season click keeps the explicit season intent', () => {
+  const history = createHistory('https://roc-vts.com/#edenHub?subtab=season', {
+    edenHubSubtabClicked: 'season',
+  });
+
+  const route = resolveEdenHubInitialRoute('season', 'season', history);
+
+  assert.deepEqual(route, { intent: 'season', useCurrentSeasonDefault: false });
+  assert.equal(history.hash, '#edenHub?subtab=season');
+  assert.deepEqual(history.calls, []);
+});
+
 test('vote links and different subtab links remain explicit intents', () => {
   const voteHistory = createHistory('https://roc-vts.com/#edenHub?subtab=season&vote=1', {
     edenHubSubtabClicked: 'season',

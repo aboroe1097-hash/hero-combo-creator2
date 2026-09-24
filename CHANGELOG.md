@@ -4,7 +4,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.5 - 2026-09-24
 
-- The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. On refresh, that click-only sub-tab URL is cleared to match the season landing; a link someone shares still opens the sub-tab it names.
+- The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. On refresh, a leftover non-season sub-tab query is cleared so the hub returns to the season landing; direct season and ballot links and shared sub-tab links still open their named destinations.
 
 ## 16.5.4 - 2026-09-24
 
