@@ -1041,6 +1041,82 @@ test('service worker cache policy rejects private traffic and preserves foreign 
   assert.ok(!deleted.includes('foreign-cache'));
 });
 
+test('a broken CacheStorage never turns a good network response into a failed page load', async () => {
+  const source = readFileSync('public/sw.js', 'utf8');
+  const listeners = {};
+  const storageError = () => Promise.reject(new Error('Unexpected internal error.'));
+  let claimed = false;
+  const context = vm.createContext({
+    Request,
+    Response,
+    URL,
+    fetch: async (request) => new Response(`network:${new URL(request.url).pathname}`),
+    caches: { open: storageError, keys: storageError, delete: storageError, match: storageError },
+    self: {
+      location: { origin: 'https://vts.test' },
+      clients: {
+        async claim() {
+          claimed = true;
+        },
+      },
+      skipWaiting() {},
+      addEventListener(type, handler) {
+        listeners[type] = handler;
+      },
+    },
+  });
+  vm.runInContext(source, context);
+
+  async function dispatch(url, init = {}) {
+    let responsePromise = null;
+    listeners.fetch({
+      request: new Request(url, init),
+      respondWith(promise) {
+        responsePromise = promise;
+      },
+    });
+    assert.ok(responsePromise, `${url} should be handled`);
+    return (await responsePromise).text();
+  }
+
+  // A navigation, a hashed (cache-first) asset and a mutable asset all reach
+  // the network even though every cache call rejects.
+  const navigation = new Request('https://vts.test/eden-x2.html');
+  let navigationResponse = null;
+  listeners.fetch({
+    request: { method: 'GET', url: navigation.url, mode: 'navigate', headers: new Headers() },
+    respondWith(promise) {
+      navigationResponse = promise;
+    },
+  });
+  assert.equal(await (await navigationResponse).text(), 'network:/eden-x2.html');
+  assert.equal(
+    await dispatch('https://vts.test/assets/index-12345678.js', { credentials: 'omit' }),
+    'network:/assets/index-12345678.js'
+  );
+  assert.equal(
+    await dispatch('https://vts.test/images/logo.png', { credentials: 'omit' }),
+    'network:/images/logo.png'
+  );
+
+  // The fixed worker must still install and take over from the broken one.
+  let installPromise;
+  listeners.install({
+    waitUntil(promise) {
+      installPromise = promise;
+    },
+  });
+  await installPromise;
+  let activatePromise;
+  listeners.activate({
+    waitUntil(promise) {
+      activatePromise = promise;
+    },
+  });
+  await activatePromise;
+  assert.equal(claimed, true);
+});
+
 test('deployment size checks cover the full artifact and source-only map files stay out', () => {
   const sizeCheck = readFileSync('scripts/check-size.mjs', 'utf8');
   const postBuild = readFileSync('scripts/post-build.mjs', 'utf8');

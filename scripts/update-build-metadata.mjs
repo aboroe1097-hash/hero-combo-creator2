@@ -283,7 +283,31 @@ function publicNetworkRequest(request, { revalidate = false } = {}) {
     : new Request(request, init);
 }
 
+// CacheStorage can fail outright in a browser whose on-disk cache is damaged
+// ("Failed to execute 'open' on 'CacheStorage': Unexpected internal error").
+// Every cache read and write is therefore best-effort: a failure means "no
+// cached copy" or "not stored", never a failed page load. Before this, a
+// throwing caches.open() turned a good network response into a network error,
+// and the whole site showed "This site can't be reached".
 async function matchCurrentThenAny(request) {
+  try {
+    return await matchCachedResponse(request);
+  } catch {
+    return null;
+  }
+}
+
+async function storeResponse(key, response) {
+  try {
+    const cache = await caches.open(CACHE_VERSION);
+    await cache.put(key, response);
+    await trimCache(cache, MAX_CACHE_ENTRIES);
+  } catch {
+    // Not cached this time; the response is still served.
+  }
+}
+
+async function matchCachedResponse(request) {
   const keys = await caches.keys();
   const owned = keys.filter((key) => key.startsWith(VTS_CACHE_PREFIX)).sort().reverse();
   const ordered = [CACHE_VERSION, ...owned.filter((key) => key !== CACHE_VERSION)];
@@ -309,11 +333,7 @@ async function cacheFirst(request) {
   const cached = await matchCurrentThenAny(request);
   if (cached) return cached;
   const response = await fetch(publicNetworkRequest(request));
-  if (responseAllowsPublicCaching(response)) {
-    const cache = await caches.open(CACHE_VERSION);
-    await cache.put(request, response.clone());
-    await trimCache(cache, MAX_CACHE_ENTRIES);
-  }
+  if (responseAllowsPublicCaching(response)) await storeResponse(request, response.clone());
   return response;
 }
 
@@ -322,9 +342,7 @@ async function networkFirst(request, { revalidate = false, cacheKey = null } = {
   try {
     const response = await fetch(publicNetworkRequest(request, { revalidate }));
     if (responseAllowsPublicCaching(response)) {
-      const cache = await caches.open(CACHE_VERSION);
-      await cache.put(key, response.clone());
-      await trimCache(cache, MAX_CACHE_ENTRIES);
+      await storeResponse(key, response.clone());
       return response;
     }
     if (response.ok) return response;
@@ -350,7 +368,11 @@ const CRITICAL_PRECACHE_PATTERN = /\\.(?:html|css|js)(?:\\?|$)/;
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_VERSION).then(async (cache) => {
+    // A browser whose CacheStorage cannot even be opened still installs this
+    // worker without a precache: the fetch handler serves from the network, and
+    // replacing the previous worker is exactly what repairs such a browser.
+    caches.open(CACHE_VERSION).catch(() => null).then(async (cache) => {
+      if (!cache) return;
       const critical = [];
       const bestEffort = [];
       for (const url of APP_SHELL) {
@@ -380,6 +402,9 @@ self.addEventListener('activate', (event) => {
           owned.filter((key) => !keep.has(key)).map((key) => caches.delete(key))
         );
       })
+      // Cache cleanup is housekeeping; a storage failure must not stop the
+      // new worker from taking over open pages.
+      .catch(() => {})
       .then(() => self.clients.claim())
   );
 });
