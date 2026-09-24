@@ -11,7 +11,10 @@
 
 /**
  * High-tier combos database sorted by strategic meta-ranking.
- * Heroes are limited to seasons up to X2; X8 heroes are deliberately excluded for now.
+ * The S0-X2 list comes first and is the shared ranking: every lane there is fieldable
+ * without an X8 hero. Lanes that need an X8 hero live in the X8 catch-up block at the
+ * end, ordered by their own source score, so a lane most readers cannot field never
+ * renumbers the S0-X2 ranks above it.
  * @type {ComboEntry[]}
  */
 export const rankedCombos = [
@@ -235,6 +238,96 @@ export const rankedCombos = [
   { heroes: ['William Wallace', 'Jiguang Qi', "Heaven's Justice"] },
   { heroes: ["North's Rage", 'The Boneless', 'The Heroine'] },
   { heroes: ["North's Rage", 'The Boneless', "Heaven's Justice"] },
+
+  // --- X8 CATCH-UP BRACKET ---
+  // Lanes that need at least one X8 hero, from the name-matched X8 availability set
+  // (rocacademy free/no-skin export, matched to canonical hero names, 2026-07-25).
+  // Highest source score first; each note records the lane's tier and score there.
+  // Appended after the S0-X2 list on purpose: rank is array position, so putting these
+  // ahead of the shared list would renumber every S0-X2 lane and every counter badge.
+
+  { heroes: ['Alexander', 'Ragnar', 'Theodora'], note: 'X8 catch-up lane, S tier (source score 340.6).' },
+  { heroes: ['Warden', 'Ramses II', 'Beowulf'], note: 'X8 catch-up lane, S tier (source score 328.7).' },
+  { heroes: ['Cyrus', 'Ragnar', 'Caesar'], note: 'X8 catch-up lane, A tier (source score 288.8).' },
+  { heroes: ['Theodora', 'Warhammer', 'Alexander'], note: 'X8 catch-up lane, A tier (source score 282.1).' },
+  { heroes: ['Cyrus', 'Lancelot', 'Caesar'], note: 'X8 catch-up lane, A tier (source score 272).' },
+  { heroes: ['Theodora', 'Cyrus', 'Bjorn'], note: 'X8 catch-up lane, A tier (source score 265.2).' },
+  { heroes: ['Theodora', 'Cyrus', 'Caesar'], note: 'X8 catch-up lane, A tier (source score 262.7).' },
+  { heroes: ['Cyrus', 'Cleopatra VII', 'Caesar'], note: 'X8 catch-up lane, A tier (source score 259.4).' },
+  { heroes: ['Lawman', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, A tier (source score 258.8).' },
+  { heroes: ['Theodora', 'Cyrus', 'Lancelot'], note: 'X8 catch-up lane, A tier (source score 257.9).' },
+  { heroes: ['Warhammer', 'Lancelot', 'The Avalanche'], note: 'X8 catch-up lane, A tier (source score 257.1).' },
+  { heroes: ['Bleeding Steed', 'Warden', 'King Arthur'], note: 'X8 catch-up lane, B tier (source score 255.5).' },
+  { heroes: ['The Brave', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, B tier (source score 253.5).' },
+  { heroes: ['Alexander', 'Theodora', 'Bjorn'], note: 'X8 catch-up lane, B tier (source score 251.2).' },
+  { heroes: ['Cleopatra VII', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, B tier (source score 249).' },
+  { heroes: ['King Arthur', 'Theodora', 'Warhammer'], note: 'X8 catch-up lane, B tier (source score 248.6).' },
+  { heroes: ['Theodora', 'Bleeding Steed', 'Warhammer'], note: 'X8 catch-up lane, B tier (source score 247.8).' },
+  { heroes: ['The Brave', 'Bjorn', 'The Avalanche'], note: 'X8 catch-up lane, B tier (source score 247.2).' },
+  { heroes: ['Lawman', 'Bjorn', 'The Avalanche'], note: 'X8 catch-up lane, B tier (source score 247.1).' },
+  { heroes: ['Hunk', 'Warden', 'King Arthur'], note: 'X8 catch-up lane, B tier (source score 241.8).' },
+  { heroes: ['The Brave', 'Bjorn', 'Warhammer'], note: 'X8 catch-up lane, B tier (source score 239.8).' },
+  { heroes: ['Lawman', 'Lancelot', 'Warhammer'], note: 'X8 catch-up lane, B tier (source score 234.9).' },
+  { heroes: ['Hunk', 'Warden', 'Beowulf'], note: 'X8 catch-up lane, B tier (source score 233.8).' },
+  { heroes: ['Bleeding Steed', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, B tier (source score 228.3).' },
+  { heroes: ['Bjorn', 'Lancelot', 'Warhammer'], note: 'X8 catch-up lane, B tier (source score 227.6).' },
+  { heroes: ['Eidolon', 'Warden', 'Ashen Verdict'], note: 'X8 catch-up lane, C tier (source score 224.6).' },
+  { heroes: ['King Arthur', 'Ragnar', 'Bleeding Steed'], note: 'X8 catch-up lane, C tier (source score 224.5).' },
+  { heroes: ['Eidolon', 'Ashen Verdict', 'Jade Eagle'], note: 'X8 catch-up lane, C tier (source score 222.6).' },
+  { heroes: ['Ragnar', 'Ramses II', 'Jade Eagle'], note: 'X8 catch-up lane, C tier (source score 221.9).' },
+  { heroes: ['Bjorn', 'Army Breaker', 'The Avalanche'], note: 'X8 catch-up lane, C tier (source score 221.9).' },
+  { heroes: ['King Arthur', 'Bleeding Steed', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 221.5).' },
+  { heroes: ['Cyrus', 'Lancelot', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 221).' },
+  { heroes: ['Alexander', 'Bleeding Steed', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 219.5).' },
+  { heroes: ['Jeanne d\'Arc', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, C tier (source score 213.6).' },
+  { heroes: ['Lawman', 'Cleopatra VII', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 213.3).' },
+  { heroes: ['Warden', 'Spectral Reaper', 'Ramses II'], note: 'X8 catch-up lane, C tier (source score 212.6).' },
+  { heroes: ['Sakura', 'Ragnar', 'Jade Eagle'], note: 'X8 catch-up lane, C tier (source score 212.3).' },
+  { heroes: ['Warden', 'Jade Eagle', 'Spectral Reaper'], note: 'X8 catch-up lane, C tier (source score 211.4).' },
+  { heroes: ['Alexander', 'Warhammer', 'Cleopatra VII'], note: 'X8 catch-up lane, C tier (source score 210.5).' },
+  { heroes: ['Boudica', 'Ragnar', 'Jade Eagle'], note: 'X8 catch-up lane, C tier (source score 210.3).' },
+  { heroes: ['Army Breaker', 'Alfred', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 208).' },
+  { heroes: ['Wind-Walker', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, C tier (source score 202.4).' },
+  { heroes: ['Liberator', 'Theodora', 'Alexander'], note: 'X8 catch-up lane, C tier (source score 202.4).' },
+  { heroes: ['Octavius', 'Ragnar', 'Caesar'], note: 'X8 catch-up lane, C tier (source score 201.9).' },
+  { heroes: ['The Brave', 'Bjorn', 'Army Breaker'], note: 'X8 catch-up lane, C tier (source score 201.3).' },
+  { heroes: ['Lawman', 'Bleeding Steed', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 200.7).' },
+  { heroes: ['Lawman', 'Bjorn', 'Army Breaker'], note: 'X8 catch-up lane, C tier (source score 198.9).' },
+  { heroes: ['Warden', 'Spectral Reaper', 'Sakura'], note: 'X8 catch-up lane, C tier (source score 196.7).' },
+  { heroes: ['Lawman', 'Alfred', 'Warhammer'], note: 'X8 catch-up lane, C tier (source score 194.3).' },
+  { heroes: ['Ragnar', 'Ramses II', 'Caesar'], note: 'X8 catch-up lane, C tier (source score 193.4).' },
+  { heroes: ['Sky Breaker', 'Warden', 'Jade Eagle'], note: 'X8 catch-up lane, C tier (source score 189.1).' },
+  { heroes: ['Warden', 'Ashen Verdict', 'Spectral Reaper'], note: 'X8 catch-up lane, C tier (source score 188.6).' },
+  { heroes: ['Black Prince', 'Cleopatra VII', 'Bjorn'], note: 'X8 catch-up lane, C tier (source score 188.4).' },
+  { heroes: ['Hunk', 'Warden', 'Caesar'], note: 'X8 catch-up lane, C tier (source score 188).' },
+  { heroes: ['War Lord', 'Warhammer', 'The Avalanche'], note: 'X8 catch-up lane, C tier (source score 187.3).' },
+  { heroes: ['King Arthur', 'Cicero', 'Fortuneteller'], note: 'X8 catch-up lane, C tier (source score 187).' },
+  { heroes: ['The Brave', 'Bjorn', 'Jane'], note: 'X8 catch-up lane, C tier (source score 184.6).' },
+  { heroes: ['Sky Breaker', 'Sakura', 'Ashen Verdict'], note: 'X8 catch-up lane, C tier (source score 183.6).' },
+  { heroes: ['King Arthur', 'Skanda', 'Bleeding Steed'], note: 'X8 catch-up lane, C tier (source score 181.9).' },
+  { heroes: ['Liberator', 'Jade', 'Cao Cao'], note: 'X8 catch-up lane, C tier (source score 181.4).' },
+  { heroes: ['Lawman', 'Warhammer', 'Rainforest Ranger'], note: 'X8 catch-up lane, C tier (source score 181.3).' },
+  { heroes: ['Hunk', 'Warden', 'Spectral Reaper'], note: 'X8 catch-up lane, C tier (source score 181).' },
+  { heroes: ['Warden', 'Al Fatih', 'Ramses II'], note: 'X8 catch-up lane, C tier (source score 180.4).' },
+  { heroes: ['War Lord', 'Bjorn', 'The Avalanche'], note: 'X8 catch-up lane, C tier (source score 177.5).' },
+  { heroes: ['Immortal Guardian', 'Warden', 'Spectral Reaper'], note: 'X8 catch-up lane, C tier (source score 177.2).' },
+  { heroes: ['Ashen Verdict', 'Sakura', 'Spectral Reaper'], note: 'X8 catch-up lane, C tier (source score 175.1).' },
+  { heroes: ['Octavius', 'Warden', 'Caesar'], note: 'X8 catch-up lane, C tier (source score 174.1).' },
+  { heroes: ['Liberator', 'Bleeding Steed', 'Jade'], note: 'X8 catch-up lane, C tier (source score 173.1).' },
+  { heroes: ['Defender', 'Warden', 'Spectral Reaper'], note: 'X8 catch-up lane, C tier (source score 172.6).' },
+  { heroes: ['Skanda', 'Bleeding Steed', 'Valkyrie'], note: 'X8 catch-up lane, C tier (source score 171.6).' },
+  { heroes: ['Liberator', 'Skanda', 'Alexander'], note: 'X8 catch-up lane, C tier (source score 170.9).' },
+  { heroes: ['The Brave', 'Warhammer', 'Rainforest Ranger'], note: 'X8 catch-up lane, C tier (source score 170.1).' },
+  { heroes: ['Peace Bringer', 'Warden', 'Caesar'], note: 'X8 catch-up lane, C tier (source score 169.1).' },
+  { heroes: ['Soaring Hawk', 'Desert Storm', 'Skanda'], note: 'X8 catch-up lane, C tier (source score 168.1).' },
+  { heroes: ['Liberator', 'Skanda', 'Cao Cao'], note: 'X8 catch-up lane, C tier (source score 166.9).' },
+  { heroes: ['War Lord', 'Warhammer', 'Jane'], note: 'X8 catch-up lane, C tier (source score 158.4).' },
+  { heroes: ['Hunk', 'Scarlet Reaver', 'Valkyrie'], note: 'X8 catch-up lane, C tier (source score 157.6).' },
+  { heroes: ['Hunk', 'Warden', 'Rainforest Ranger'], note: 'X8 catch-up lane, C tier (source score 151.6).' },
+  { heroes: ['Rozen Blade', 'Warden', 'Rainforest Ranger'], note: 'X8 catch-up lane, C tier (source score 151.4).' },
+  { heroes: ['Liberator', 'Warden', 'Caesar'], note: 'X8 catch-up lane, C tier (source score 149.9).' },
+  { heroes: ['King Arthur', 'Warhammer', 'Skanda'], note: 'X8 catch-up lane, C tier (source score 149.4).' },
+  { heroes: ['Octavius', 'Warden', 'Rainforest Ranger'], note: 'X8 catch-up lane, C tier (source score 147.4).' },
 ];
 
 export function scoreComboByRank(index, total) {
