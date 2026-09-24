@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.4";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.5";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.5",
+    "date": "2026-09-24",
+    "highlights": [
+      "The Competition #12 registration form collects Artifact Power. It is optional, like the rules: some Power panels do not show the artifact row, and an empty box is left out of the document rather than saved as a zero. The Unit Specialty row now says Towers, because that is where …"
+    ]
+  },
   {
     "version": "16.5.4",
     "date": "2026-09-24",
@@ -97,13 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Shield Wall lists can now be uploaded as screenshots, the same way Banner and Pather lists are: an Upload Image button, a drop zone and a scanning indicator, in all twelve admin languages. Before this, Shield Wall only took typed or pasted names.",
       "Shift headings in a Shield Wall list (\"Morning\", \"Evening:\", \"Night\", \"Shift 2\") now become the row's group instead of being read as a player called \"Morning\". A player on both shifts keeps a row, and a Shield Wall credit, for each one. The image reader was also told to keep tho…"
-    ]
-  },
-  {
-    "version": "16.0.15",
-    "date": "2026-09-17",
-    "highlights": [
-      "The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashb…"
     ]
   }
 ].map((release) =>

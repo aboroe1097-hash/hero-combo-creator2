@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.5 - 2026-09-24
+
+- The Competition #12 registration form collects Artifact Power. It is optional, like the rules: some Power panels do not show the artifact row, and an empty box is left out of the document rather than saved as a zero. The Unit Specialty row now says Towers, because that is where most of it comes from and members were asking which line to read.
+
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.
