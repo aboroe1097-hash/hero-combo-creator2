@@ -108,17 +108,6 @@
   color: var(--ff-text-primary, var(--ff-text));
 }
 
-/* A tool that is announced but not built yet: visible, focusable for its
-   description, never activatable. */
-.vts-eden-subtab-btn.vts-eden-subtab-btn--soon,
-.vts-eden-subtab-btn.vts-eden-subtab-btn--soon:hover {
-  border-style: dashed;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
 /* The active pill was styled dark-first with a fixed near-white label. On the light
    surface the 20% violet tint composites to roughly #e1e0fc, leaving #f8fafc at about
    1.2:1 - the active Eden sub-tab was effectively invisible. */

@@ -31,6 +31,7 @@ const SEASON_LANDING_TIMEOUT_MS = 2500;
 const SEASON_LINK_TIMEOUT_MS = 8000;
 const EDEN_HUB_SUBTABS = [
   'map',
+  'pathing',
   'loyalty',
   'operations',
   'bounty',
@@ -163,6 +164,18 @@ async function loadLoyalty(root, panel) {
     panel.innerHTML = loadFailedMarkup(catalogFor(currentLanguage).tabLoyalty || 'Loyalty');
   } finally {
     loyaltyLoading = false;
+  }
+}
+
+// Eden Pathing loads its module (and stylesheet) only when opened. Re-running
+// init on every open lets a freshly followed share link import its plan.
+async function loadPathing(panel) {
+  try {
+    const module = await import('./eden-pathing.js');
+    await module.initEdenPathing?.(panel.querySelector('#edenPathingRoot'));
+  } catch (error) {
+    console.warn('[eden-hub] Eden Pathing failed to load', error);
+    panel.innerHTML = loadFailedMarkup('Eden Pathing');
   }
 }
 
@@ -332,6 +345,7 @@ export function bootEdenHub() {
 
   function loadPanelFor(name, panel, options = {}) {
     if (name === 'loyalty') loadLoyalty(root, panel);
+    if (name === 'pathing') loadPathing(panel);
     if (name === 'operations') loadOperations(panel);
     if (name === 'bounty') loadBounty(panel);
     if (name === 'playbook') loadPlaybook(panel);
