@@ -80,10 +80,8 @@ test('announcement rows name the same players with the same clickable name', asy
   );
   // An empty quota slot keeps its plain placeholder.
   assert.match(js, /row\.placeholder\s*\?\s*esc\(t\('edenX1Tba'\)\)/);
-  // The click is handled by the shared delegated listener, not a new one.
-  assert.match(js, /closest\('\[data-public-player\]'\)/);
   assert.match(
     js,
-    /showPublicDetail\('player', playerButton\.getAttribute\('data-public-player'\)\)/
+    /bindPublicPlayerLinks\(document, \(key\) => showPublicDetail\('player', key\)\)/
   );
 });

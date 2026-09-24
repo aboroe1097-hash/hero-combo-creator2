@@ -65,6 +65,7 @@ import {
   normalizeEdenVoteClosesAt,
 } from './eden-vote-deadline.js';
 import { resolveIntlLocale } from './utils.js';
+import { bindPublicPlayerLinks } from './eden-x1-public-player-links.js';
 import {
   cachedEdenDashboardSeasonIsObsolete,
   dashboardCacheVersion,
@@ -3376,6 +3377,7 @@ function scheduleCurrentTableRender(renderOptions = {}) {
 }
 
 function bindRewardFlowControls() {
+  bindPublicPlayerLinks(document, (key) => showPublicDetail('player', key));
   document.querySelectorAll('[data-reward-view]').forEach((button) => {
     if (button.dataset.rewardBound) return;
     button.dataset.rewardBound = '1';
@@ -6096,11 +6098,6 @@ function bindPublicDashboardControls(host) {
     const sortHeader = event.target.closest('th[data-public-weighted-sort]');
     if (sortHeader) {
       setPublicWeightedSort(sortHeader.dataset.publicWeightedSort, host);
-      return;
-    }
-    const playerButton = event.target.closest('[data-public-player]');
-    if (playerButton) {
-      showPublicDetail('player', playerButton.getAttribute('data-public-player'));
       return;
     }
     const structureButton = event.target.closest('[data-public-structure]');
