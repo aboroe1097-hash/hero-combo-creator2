@@ -358,20 +358,25 @@ function isFirebaseUnavailableError(error) {
 // leadership has to match them by — and leave it editable, because the
 // complaint may be about someone else. Anonymous filings hide the whole block,
 // so nothing is attached behind the member's back.
-async function prefillComplainantName(nameInput) {
-  if (!nameInput || text(nameInput.value).trim()) return;
+export async function prefillComplainantName(
+  nameInput,
+  loadAccountServices = () => import('./account-profile-service.js')
+) {
+  if (!nameInput || text(nameInput.value).trim()) return false;
   try {
-    const { peekAccountState, loadAccountProfile } = await import('./account-profile-service.js');
-    const account = peekAccountState?.() || null;
-    if (!account || account.isGuest) return;
+    const { peekAccountState, loadAccountProfile } = await loadAccountServices();
+    const account = (await peekAccountState?.()) || null;
+    if (!account || account.isGuest) return false;
     const profile = await loadAccountProfile();
     const name = text(profile?.gameName || profile?.displayName || account.displayName);
     if (name && !text(nameInput.value).trim()) {
       nameInput.value = name.slice(0, EDEN_COMPLAINT_MAX_NAME);
+      return true;
     }
   } catch {
     // Not signed in, or the profile lookup failed: the field stays theirs to fill.
   }
+  return false;
 }
 
 function bindComplaintForm(root) {
