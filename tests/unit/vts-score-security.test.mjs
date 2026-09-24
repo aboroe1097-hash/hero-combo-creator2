@@ -194,3 +194,88 @@ test('VtsScore POST verifies the target signup and stores no screenshot bytes', 
   assert.equal(stored.baselineSubmissionRevision, 4);
   assert.doesNotMatch(JSON.stringify(stored), /image|base64|screenshot/i);
 });
+
+function competitionSchedule(seasonId, offsetsMs) {
+  const keys = [
+    'opensAt',
+    'phase1ClosesAt',
+    'deadlineAt',
+    'reuploadOpensAt',
+    'reuploadClosesAt',
+    'winnersStartAt',
+    'winnersEndAt',
+  ];
+  return {
+    seasonId,
+    title: 'Competition #12',
+    ...Object.fromEntries(keys.map((key, index) => [key, { toMillis: () => offsetsMs[index] }])),
+  };
+}
+
+test('VtsScore POST is refused outside the re-upload window of a scheduled season', async () => {
+  // now() is 1_000_000: the final check phase, before the re-upload window.
+  const runtime = dependencies();
+  runtime.documents.set(
+    'boh_allstar_competition/current',
+    competitionSchedule(
+      'competition-11',
+      [0, 500_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]
+    )
+  );
+  const handler = createVtsScoreHandler(runtime);
+  const response = responseRecorder();
+  await handler(request('POST', fullScoreBody()), response);
+  assert.equal(response.statusCode, 403);
+  assert.deepEqual(response.body, { error: 'upload_closed' });
+  assert.equal(runtime.documents.has('boh_allstar/competition-11/raceScores/signup-uid'), false);
+
+  // After the window has closed it is still refused.
+  runtime.documents.set(
+    'boh_allstar_competition/current',
+    competitionSchedule('competition-11', [0, 100, 200, 300, 400, 500, 600])
+  );
+  const late = responseRecorder();
+  await handler(request('POST', fullScoreBody()), late);
+  assert.equal(late.statusCode, 403);
+  assert.deepEqual(late.body, { error: 'upload_closed' });
+});
+
+test('VtsScore POST is accepted inside the re-upload window', async () => {
+  const runtime = dependencies();
+  runtime.documents.set(
+    'boh_allstar_competition/current',
+    competitionSchedule('competition-11', [0, 100, 200, 300, 1_500_000, 1_600_000, 1_700_000])
+  );
+  const handler = createVtsScoreHandler(runtime);
+  const response = responseRecorder();
+  await handler(request('POST', fullScoreBody()), response);
+  assert.equal(response.statusCode, 200);
+  assert.ok(runtime.documents.has('boh_allstar/competition-11/raceScores/signup-uid'));
+});
+
+test('VtsScore POST keeps its behaviour for a season without a schedule', async () => {
+  const runtime = dependencies();
+  // A schedule for another season, and an unreadable one, both leave uploads open.
+  for (const schedule of [
+    competitionSchedule('competition-12', [0, 100, 200, 300, 400, 500, 600]),
+    { seasonId: 'competition-11', opensAt: 'not a time' },
+  ]) {
+    runtime.documents.set('boh_allstar_competition/current', schedule);
+    const handler = createVtsScoreHandler(runtime);
+    const response = responseRecorder();
+    await handler(request('POST', fullScoreBody()), response);
+    assert.equal(response.statusCode, 200);
+  }
+});
+
+test('VtsScore GET is not gated by the re-upload window', async () => {
+  const runtime = dependencies();
+  runtime.documents.set(
+    'boh_allstar_competition/current',
+    competitionSchedule('competition-11', [0, 100, 200, 300, 400, 500, 600])
+  );
+  const handler = createVtsScoreHandler(runtime);
+  const response = responseRecorder();
+  await handler(request('GET'), response);
+  assert.equal(response.statusCode, 200);
+});

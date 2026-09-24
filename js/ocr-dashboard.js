@@ -158,7 +158,12 @@ import {
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
 import { createVtsScoreAdminView } from './vts-score-admin-view.js';
-import { loadVtsScoreSnapshot } from './vts-score-store.js';
+import {
+  loadCompetitionGrowthSnapshot,
+  loadVtsScoreSnapshot,
+  publishCompetitionGrowthBoard,
+  saveCompetitionMatchDecisions,
+} from './vts-score-store.js';
 import {
   BOH_SIGNUP_ADMIN_ENDPOINT,
   BOH_SIGNUP_CONFIG_PATH,
@@ -8242,6 +8247,13 @@ function ensureVtsScoreView() {
     },
     locale: () => getDashboardLang(),
     setStatus: (message, type) => setVtsScoreStatus(message, type),
+    // Competition #12 growth: firestore.rules keep both writes superadmin-only.
+    growth: {
+      load: () => loadCompetitionGrowthSnapshot(),
+      saveDecisions: saveCompetitionMatchDecisions,
+      publish: publishCompetitionGrowthBoard,
+      canPublish: () => dashSuperAdmin === true,
+    },
   });
   return vtsScoreView;
 }

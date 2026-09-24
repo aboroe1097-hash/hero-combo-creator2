@@ -8,6 +8,7 @@ import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
 import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
+import { createCompetitionPhaseSyncJob } from './src/competition-phase.js';
 import { createComplaintRetentionJob } from './src/complaint-retention.js';
 import { createSetUserRoleHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
@@ -139,5 +140,28 @@ export const purgeComplaintImages = onSchedule(
     // The entrypoint logs nothing (see the security tests); the run's counts are
     // visible in the function's execution history.
     await purgeComplaintImagesJob();
+  }
+);
+
+// Competition #12: firestore.rules reads `open` and `acceptNewSignups` on the
+// season config rather than the schedule (the member write path has no
+// expression budget for it), so every ten minutes this job derives both flags
+// from the schedule's current phase and writes them only when they change.
+const syncCompetitionPhaseJob = createCompetitionPhaseSyncJob({ db: firestore });
+
+export const syncCompetitionPhase = onSchedule(
+  {
+    schedule: 'every 10 minutes',
+    timeZone: 'UTC',
+    region: 'us-central1',
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    maxInstances: 1,
+    retryCount: 0,
+  },
+  async () => {
+    // Logs nothing, like every entrypoint here (see the security tests); the
+    // run's outcome is visible in the function's execution history.
+    await syncCompetitionPhaseJob();
   }
 );
