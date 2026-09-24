@@ -22,6 +22,8 @@
       shell: {
         more: 'More',
         moreTools: 'More tools',
+        downloadsLink: 'PDF downloads',
+        buildingsLink: 'Buildings',
         close: 'Close',
         deckLabel: 'S1097 Deck',
         toolkitLabel: 'VTS 1097 toolkit',
@@ -154,6 +156,8 @@
       shell: {
         more: 'Más',
         moreTools: 'Más herramientas',
+        downloadsLink: 'Descargas PDF',
+        buildingsLink: 'Edificios',
         close: 'Cerrar',
         deckLabel: 'Panel S1097',
         toolkitLabel: 'Kit de herramientas VTS 1097',
@@ -286,6 +290,8 @@
       shell: {
         more: 'Mais',
         moreTools: 'Mais ferramentas',
+        downloadsLink: 'Downloads em PDF',
+        buildingsLink: 'Edifícios',
         close: 'Fechar',
         deckLabel: 'Painel S1097',
         toolkitLabel: 'Kit de ferramentas VTS 1097',
@@ -418,6 +424,8 @@
       shell: {
         more: 'Mehr',
         moreTools: 'Weitere Werkzeuge',
+        downloadsLink: 'PDF-Downloads',
+        buildingsLink: 'Gebäude',
         close: 'Schließen',
         deckLabel: 'S1097-Übersicht',
         toolkitLabel: 'VTS-1097-Werkzeuge',
@@ -550,6 +558,8 @@
       shell: {
         more: 'Plus',
         moreTools: 'Plus d’outils',
+        downloadsLink: 'Téléchargements PDF',
+        buildingsLink: 'Bâtiments',
         close: 'Fermer',
         deckLabel: 'Tableau S1097',
         toolkitLabel: 'Boîte à outils VTS 1097',
@@ -682,6 +692,8 @@
       shell: {
         more: 'Diğer',
         moreTools: 'Diğer araçlar',
+        downloadsLink: 'PDF indirmeleri',
+        buildingsLink: 'Binalar',
         close: 'Kapat',
         deckLabel: 'S1097 Panosu',
         toolkitLabel: 'VTS 1097 araç seti',
@@ -814,6 +826,8 @@
       shell: {
         more: 'Ещё',
         moreTools: 'Другие инструменты',
+        downloadsLink: 'PDF-файлы',
+        buildingsLink: 'Здания',
         close: 'Закрыть',
         deckLabel: 'Панель S1097',
         toolkitLabel: 'Инструменты VTS 1097',
@@ -946,6 +960,8 @@
       shell: {
         more: 'Lainnya',
         moreTools: 'Alat lainnya',
+        downloadsLink: 'Unduhan PDF',
+        buildingsLink: 'Bangunan',
         close: 'Tutup',
         deckLabel: 'Panel S1097',
         toolkitLabel: 'Perangkat VTS 1097',
@@ -1078,6 +1094,8 @@
       shell: {
         more: '更多',
         moreTools: '更多工具',
+        downloadsLink: 'PDF 下载',
+        buildingsLink: '建筑',
         close: '关闭',
         deckLabel: 'S1097 面板',
         toolkitLabel: 'VTS 1097 工具箱',
@@ -1210,6 +1228,8 @@
       shell: {
         more: 'المزيد',
         moreTools: 'أدوات إضافية',
+        downloadsLink: 'تنزيلات PDF',
+        buildingsLink: 'المباني',
         close: 'إغلاق',
         deckLabel: 'لوحة S1097',
         toolkitLabel: 'حزمة أدوات VTS 1097',
@@ -1342,6 +1362,8 @@
       shell: {
         more: '더보기',
         moreTools: '더 많은 도구',
+        downloadsLink: 'PDF 다운로드',
+        buildingsLink: '건물',
         close: '닫기',
         deckLabel: 'S1097 패널',
         toolkitLabel: 'VTS 1097 도구 모음',
@@ -1479,6 +1501,8 @@
     shell: {
       more: 'Altro',
       moreTools: 'Altri strumenti',
+      downloadsLink: 'Download PDF',
+      buildingsLink: 'Edifici',
       close: 'Chiudi',
       deckLabel: 'Pannello S1097',
       toolkitLabel: 'Strumenti VTS 1097',

@@ -5,6 +5,9 @@ import {
   BUILDING_UPGRADE_COSTS,
   EDEN_OPERATIONS_DATA_VERSION,
   EDEN_OPERATIONS_SOURCES,
+  EDEN_OPERATION_PLAYBOOKS,
+  EDEN_OPERATION_ROLES,
+  EDEN_OPERATION_STAGES,
   EDEN_STRUCTURES,
   SPECIALTY_DATA_GAPS,
   SPECIALTY_HONOR_LEVELS,
@@ -18,17 +21,21 @@ import {
   calculateHonorProgress,
   calculateTilingPlan,
   calculateTrainingComparison,
+  checklistProgress,
   decodeEdenOperationsState,
   encodeEdenOperationsState,
+  filterOperationPlaybooks,
   getSiegePlan,
   honorLevelRows,
   normalizeEdenOperationsState,
   readEdenOperationsState,
   rowsToCsv,
   specialtyAllocationSummary,
+  staffingStatus,
   writeEdenOperationsState,
 } from './eden-operations-model.js';
 import EN_COPY from './i18n/eden-operations/en.js';
+import { edenMapText, loadEdenMapLocale } from './i18n/eden-map/index.js';
 import { resolveIntlLocale, resolveRuntimeLocale } from './locale-format.js';
 
 const TOOL_META = Object.freeze([
@@ -59,12 +66,35 @@ const loadedCopy = new Map([['en', EN_COPY]]);
 let state = null;
 let mount = null;
 let booted = false;
+// The board's filters are a per-visit view, not part of the saved plan.
+const boardFilter = { stage: 'all', role: 'all', query: '' };
+const openSteps = new Set();
+const BOARD_OPEN_KEY = 'vts_eden_operations_board_open';
+let boardOpen = true;
+
+function readBoardOpen() {
+  try {
+    return globalThis.localStorage?.getItem(BOARD_OPEN_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+function writeBoardOpen(open) {
+  try {
+    globalThis.localStorage?.setItem(BOARD_OPEN_KEY, open ? '1' : '0');
+  } catch {
+    // Storage can be blocked; the board then simply opens by default.
+  }
+}
 
 function locale() {
   return resolveRuntimeLocale();
 }
 
 async function ensureCopy(language = locale()) {
+  // Hub tool names (Eden Map, Eden Loyalty, Eden Pathing) come from the hub's own pack.
+  await loadEdenMapLocale(language);
   if (loadedCopy.has(language) || !COPY_LOADERS[language]) return;
   try {
     loadedCopy.set(language, (await COPY_LOADERS[language]()).default);
@@ -175,19 +205,18 @@ function renderSpecialty() {
               ${tree.routes
                 .map((route) => {
                   const points = summary.allocations[route.id] || 0;
-                  const next =
-                    points < route.critical
-                      ? `${text('critical')} ${route.critical}`
-                      : points < route.essential
-                        ? `${text('essential')} ${route.essential}`
-                        : route.advanced != null && points < route.advanced
-                          ? `${text('advanced')} ${route.advanced}`
-                          : text('advanced');
+                  const chips = ['critical', 'essential', 'advanced']
+                    .filter((tier) => route[tier] != null)
+                    .map(
+                      (tier) =>
+                        `<button type="button" data-ops-milestone="${route.id}:${route[tier]}" aria-pressed="${points >= route[tier]}">${text(tier)} ${route[tier]}</button>`
+                    )
+                    .join('');
                   return `<article class="eden-ops-route${activePreset.routeOrder.includes(route.id) ? ' is-focus' : ''}">
                     <div class="eden-ops-route-copy"><strong>${escapeHtml(dataText(`route.${route.id}.name`, route.name))}</strong><span>${escapeHtml(dataText(`route.${route.id}.summary`, route.summary))}</span>${route.caution ? `<small>⚠ ${escapeHtml(dataText(`route.${route.id}.caution`, route.caution))}</small>` : ''}</div>
                     <label><span>${text('routePoints')}</span><input data-ops-route="${route.id}" type="number" min="0" max="130" value="${points}"></label>
                     <div class="eden-ops-route-track" style="--progress:${Math.min(100, (points / (route.advanced || route.essential)) * 100)}%"><i></i></div>
-                    <span class="eden-ops-route-next">${next}</span>
+                    <div class="eden-ops-route-next">${chips}</div>
                   </article>`;
                 })
                 .join('')}
@@ -286,6 +315,7 @@ function renderSiege() {
   const tiling = calculateTilingPlan(state.siege);
   const order = calculateCampUpgradeOrder(state.siege);
   const siege = getSiegePlan(state.siege.structureId, state.siege.banner);
+  const staffing = staffingStatus(siege, state.siege.assigned);
   return `<section class="eden-ops-workspace" aria-labelledby="edenOpsSiegeTitle">
     <div class="eden-ops-section-head"><div><p class="eden-ops-kicker">${text('kickerSiege')}</p><h3 id="edenOpsSiegeTitle">${text(TOOL_META[4].key)}</h3></div><div class="eden-ops-export-actions"><button data-ops-action="csv">${text('csv')}</button><button data-ops-action="png">${text('png')}</button></div></div>
     <div class="eden-ops-controls">
@@ -295,24 +325,121 @@ function renderSiege() {
     </div>
     <div class="eden-ops-metrics">${metric(text('totalLoyalty'), formatNumber(tiling.totalLoyalty), 'accent')}${metric(text('safeTile'), `T${tiling.safeTile.level}`, 'good')}${metric(text('gap'), formatNumber(tiling.loyaltyGap), tiling.loyaltyGap ? 'danger' : 'good')}</div>
     <div class="eden-ops-split">
-      <article class="eden-ops-card"><h4>${text('upgradeOrder')}</h4>${order.steps.length ? `<ol class="eden-ops-order">${order.steps.map((step) => `<li><strong>AC ${step.campNumber} → ${text('levelShort')} ${step.level}</strong><span>${formatNumber(step.cost)} · ${formatNumber(step.resultingLoyalty)} ${text('loyalty')}</span></li>`).join('')}</ol><p class="eden-ops-total">${text('cost')}: <strong>${formatNumber(order.totalCost, 2)}</strong></p>` : `<p>${text('noUpgrades')}</p>`}</article>
+      <article class="eden-ops-card"><h4>${text('upgradeOrder')}</h4>${order.steps.length ? `<ol class="eden-ops-order">${order.steps.map((step) => `<li><strong>AC ${step.campNumber} → ${text('levelShort')} ${step.level}</strong><span>${formatNumber(step.cost)} · ${formatNumber(step.resultingLoyalty)} ${text('loyalty')}</span></li>`).join('')}</ol><p class="eden-ops-total">${text('cost')}: <strong>${formatNumber(order.totalCost, 2)}</strong></p>` : `<p class="eden-ops-empty-inline">✓ ${text('noUpgrades')}</p>`}${hubLink('loyalty')}</article>
       <article class="eden-ops-card"><h4>${text('structure')}</h4>
         <div class="eden-ops-controls eden-ops-controls--stack">
           ${field(text('structure'), selectInput('siege.structureId', state.siege.structureId, EDEN_STRUCTURES.map((entry) => ({ value: entry.id, label: structureLabel(entry) }))))}
           ${field(text('banner'), `<input data-ops-field="siege.banner" type="checkbox"${state.siege.banner ? ' checked' : ''}>`, 'eden-ops-field--check')}
         </div>
         <dl class="eden-ops-objective"><div><dt>${text('loyalty')}</dt><dd>${formatNumber(siege.structure.loyalty)}</dd></div><div><dt>${text('durability')}</dt><dd>${formatNumber(siege.structure.durability)}</dd></div><div><dt>${text('damageDurability')}</dt><dd>${formatNumber(siege.structure.damageDurability)}</dd></div><div><dt>${text('attackers')}</dt><dd>${formatNumber(siege.attackers)}</dd></div><div><dt>${text('support')}</dt><dd>${formatNumber(siege.support)}</dd></div></dl>
+        ${renderStaffing(siege, staffing)}
+        ${hubLink('map')}
       </article>
     </div>
   </section>`;
 }
 
+function counterRow(side, value, required) {
+  const label = text(side);
+  const progress = required ? Math.min(100, (value / required) * 100) : 100;
+  return `<div class="eden-ops-counter${value >= required ? ' is-met' : ''}"><span>${label}</span><div class="eden-ops-counter-controls"><button type="button" data-ops-count="${side}:-1" aria-label="${escapeHtml(`− ${label}`)}"${value <= 0 ? ' disabled' : ''}>−</button><output aria-live="polite"><strong>${formatNumber(value)}</strong> / ${formatNumber(required)}</output><button type="button" data-ops-count="${side}:1" aria-label="${escapeHtml(`+ ${label}`)}">+</button></div><i class="eden-ops-counter-track" style="--progress:${progress}%"><b></b></i></div>`;
+}
+
+function renderStaffing(siege, staffing) {
+  return `<section class="eden-ops-staffing" aria-label="${escapeHtml(text('assigned'))}"><h5>${text('assigned')}${staffing.ready ? ' <span class="eden-ops-staff-ok">✓</span>' : ''}</h5>${counterRow('attackers', staffing.attackers, siege.attackers)}${counterRow('support', staffing.support, siege.support)}${staffing.ready ? '' : `<p class="eden-ops-staff-status">${text('staffMissing', { count: formatNumber(staffing.missing) })}</p>`}</section>`;
+}
+
+const HUB_LINKS = Object.freeze({
+  map: { key: 'subTabMap', icon: '🗺️' },
+  loyalty: { key: 'subTabLoyalty', icon: '🛡️' },
+});
+
+function hubLink(subtab) {
+  const link = HUB_LINKS[subtab];
+  return `<a class="eden-ops-hub-link" href="#edenHub?subtab=${subtab}"><span aria-hidden="true">${link.icon}</span>${escapeHtml(edenMapText(link.key, {}, locale()))}<span aria-hidden="true" class="eden-ops-arrow">→</span></a>`;
+}
+
+function toolName(toolId) {
+  return text(TOOL_META.find((tool) => tool.id === toolId).key);
+}
+
+function playbookWords(entry) {
+  return [
+    text(`op.${entry.id}.title`),
+    ...entry.steps.map((step) => text(step)),
+    text(`stage.${entry.stage}`),
+    ...entry.roles.map((role) => text(`role.${role}`)),
+    toolName(entry.tool),
+  ].join(' ');
+}
+
+function renderPlaybook(entry) {
+  const progress = checklistProgress(entry, state.checklist);
+  const complete = progress.done === progress.total;
+  const steps = entry.steps
+    .map((step, index) => {
+      const key = `${entry.id}.${index}`;
+      return `<li><label><input type="checkbox" data-ops-check="${key}"${state.checklist[key] ? ' checked' : ''}><span>${escapeHtml(text(step))}</span></label></li>`;
+    })
+    .join('');
+  return `<article class="eden-ops-op${complete ? ' is-complete' : ''}${entry.tool === state.activeTool ? ' is-current' : ''}"><header><span class="eden-ops-op-icon" aria-hidden="true">${entry.icon}</span><h4>${escapeHtml(text(`op.${entry.id}.title`))}</h4></header><div class="eden-ops-tags"><span class="eden-ops-tag eden-ops-tag--${entry.stage}">${text(`stage.${entry.stage}`)}</span>${entry.roles.map((role) => `<span class="eden-ops-tag">${text(`role.${role}`)}</span>`).join('')}</div><details${openSteps.has(entry.id) ? ' open' : ''} data-ops-steps="${entry.id}"><summary><span>${text('step')}</span><span class="eden-ops-progress">✓ ${progress.done}/${progress.total}</span></summary><ol class="eden-ops-steps">${steps}</ol></details><div class="eden-ops-op-actions"><button type="button" class="eden-ops-primary" data-ops-tool="${entry.tool}" data-ops-open="${entry.id}">${toolName(entry.tool)}<span aria-hidden="true" class="eden-ops-arrow">→</span></button></div></article>`;
+}
+
+function renderBoardList() {
+  const matches = filterOperationPlaybooks(boardFilter, playbookWords);
+  const count = `<p class="eden-ops-count" role="status">${matches.length}/${EDEN_OPERATION_PLAYBOOKS.length}</p>`;
+  if (!matches.length) {
+    return `${count}<div class="eden-ops-empty"><span aria-hidden="true">🔎</span><strong>${text('emptyTitle')}</strong><button type="button" data-ops-action="clear-filters">${text('reset')}</button></div>`;
+  }
+  return `${count}<div class="eden-ops-op-grid">${matches.map(renderPlaybook).join('')}</div>`;
+}
+
+function chipGroup(kind, label, values) {
+  return `<div class="eden-ops-chip-group" role="group" aria-label="${escapeHtml(label)}"><span>${label}</span>${['all', ...values]
+    .map(
+      (value) =>
+        `<button type="button" data-ops-${kind}="${value}" aria-pressed="${boardFilter[kind] === value}">${value === 'all' ? text('filterAll') : text(`${kind}.${value}`)}</button>`
+    )
+    .join('')}</div>`;
+}
+
+function renderBoard() {
+  // A collapsible board: returning planners can fold it away and keep the
+  // calculators near the top; the choice is a per-viewer convenience.
+  return `<details class="eden-ops-board" data-ops-board${boardOpen ? ' open' : ''}><summary><h3>${text('boardTitle')}</h3><span class="eden-ops-chevron" aria-hidden="true"></span></summary><div class="eden-ops-board-head"><label class="eden-ops-search"><span aria-hidden="true">⌕</span><input type="search" data-ops-search value="${escapeHtml(boardFilter.query)}" placeholder="${escapeHtml(text('searchLabel'))}…" aria-label="${escapeHtml(text('searchLabel'))}" autocomplete="off"></label><div class="eden-ops-filters">${chipGroup('stage', text('filterStage'), EDEN_OPERATION_STAGES)}${chipGroup('role', text('filterRole'), EDEN_OPERATION_ROLES)}</div></div><div class="eden-ops-board-list">${renderBoardList()}</div></details>`;
+}
+
+// Hub-wide labels ("VTS Eden Hub", the "SOON" badge) come from the site
+// catalog, so this section and the hub's sub-tab bar always agree.
+function siteText(key, fallback) {
+  const catalog = globalThis.VTS_TRANSLATIONS || {};
+  return (catalog[locale()] || catalog.en || {})[key] || fallback;
+}
+
+function renderMoreTools() {
+  const mapText = (key) => escapeHtml(edenMapText(key, {}, locale()));
+  return `<section class="eden-ops-more" aria-labelledby="edenOpsMoreTitle"><h3 id="edenOpsMoreTitle">${escapeHtml(siteText('tabEdenMap', 'VTS Eden Hub'))}</h3><div class="eden-ops-more-grid"><a class="eden-ops-more-card" href="#edenHub?subtab=map"><span aria-hidden="true">🗺️</span><strong>${mapText('subTabMap')}</strong></a><a class="eden-ops-more-card" href="#edenHub?subtab=loyalty"><span aria-hidden="true">🛡️</span><strong>${mapText('subTabLoyalty')}</strong></a><div class="eden-ops-more-card is-soon" aria-disabled="true"><span aria-hidden="true">🧭</span><strong>${mapText('subTabPathing')} <em>${escapeHtml(siteText('badgeSoon', 'SOON'))}</em></strong><small>${mapText('subTabPathingDesc')}</small></div></div></section>`;
+}
+
 function renderSources() {
-  return `<details class="eden-ops-sources"><summary>${text('sources')}</summary><div class="eden-ops-source-grid">${Object.values(EDEN_OPERATIONS_SOURCES).map((source) => `<a href="${escapeHtml(source.url || '#')}" target="_blank" rel="noreferrer"><strong>${escapeHtml(source.title)}</strong><span>${escapeHtml(sourceKindLabel(source.status))}</span></a>`).join('')}</div><ul>${SPECIALTY_DATA_GAPS.map((gap, index) => `<li>${escapeHtml(dataText(`gap.${index}`, gap))}</li>`).join('')}</ul><small>${text('dataset')} ${EDEN_OPERATIONS_DATA_VERSION}</small></details>`;
+  return `<details class="eden-ops-sources"><summary>${text('sources')}</summary><div class="eden-ops-source-grid">${Object.values(EDEN_OPERATIONS_SOURCES).map((source) => `<a href="${escapeHtml(source.url || '#')}" target="_blank" rel="noreferrer"><strong>${escapeHtml(source.title)}</strong>${source.author ? `<em>${escapeHtml(source.author)}</em>` : ''}<span>${escapeHtml(sourceKindLabel(source.status))}</span></a>`).join('')}</div><ul>${SPECIALTY_DATA_GAPS.map((gap, index) => `<li>${escapeHtml(dataText(`gap.${index}`, gap))}</li>`).join('')}</ul><small>${text('dataset')} ${EDEN_OPERATIONS_DATA_VERSION}</small></details>`;
+}
+
+// Re-rendering replaces the markup, so remember which control had focus and
+// hand it back; otherwise every counter or chip press drops keyboard focus.
+const FOCUS_ATTRIBUTES = ['data-ops-check', 'data-ops-count', 'data-ops-milestone', 'data-ops-stage', 'data-ops-role', 'data-ops-action'];
+
+function focusSelector() {
+  const active = document.activeElement;
+  if (!active || !mount?.contains(active)) return null;
+  if (active.matches('.eden-ops-tool-nav [data-ops-tool]')) return `.eden-ops-tool-nav [data-ops-tool="${active.dataset.opsTool}"]`;
+  const attribute = FOCUS_ATTRIBUTES.find((name) => active.hasAttribute(name));
+  return attribute ? `[${attribute}="${active.getAttribute(attribute)}"]` : null;
 }
 
 function render() {
   if (!mount || !state) return;
+  const refocus = focusSelector();
   mount.dir = locale() === 'ar' ? 'rtl' : 'ltr';
   const renderer = {
     specialty: renderSpecialty,
@@ -322,12 +449,15 @@ function render() {
     siege: renderSiege,
   }[state.activeTool];
   mount.innerHTML = `<div class="eden-ops-shell">
-    <header class="eden-ops-hero"><div><p class="eden-ops-kicker">${text('eyebrow')}</p><h2>${text('title')}</h2><p>${text('intro')}</p><span>${text('advisory')}</span></div><div class="eden-ops-plan-actions"><button data-ops-action="share">${text('share')}</button><button data-ops-action="export">${text('export')}</button><button data-ops-action="import">${text('import')}</button><button data-ops-action="reset">${text('reset')}</button><input data-ops-import type="file" accept="application/json,.json" hidden></div></header>
+    <header class="eden-ops-hero"><div><p class="eden-ops-kicker">${text('eyebrow')}</p><h2>${text('title')}</h2><p>${text('intro')}</p><ol class="eden-ops-how"><li>${text('how1')}</li><li>${text('how2')}</li><li>${text('how3')}</li></ol><span>${text('advisory')}</span></div><div class="eden-ops-plan-actions"><button data-ops-action="share">${text('share')}</button><button data-ops-action="export">${text('export')}</button><button data-ops-action="import">${text('import')}</button><button data-ops-action="reset">${text('reset')}</button><input data-ops-import type="file" accept="application/json,.json" hidden></div></header>
+    ${renderBoard()}
     <nav class="eden-ops-tool-nav" role="tablist" aria-label="${text('toolNavLabel')}">${TOOL_META.map((tool) => `<button type="button" role="tab" aria-selected="${tool.id === state.activeTool}" class="${tool.id === state.activeTool ? 'active' : ''}" data-ops-tool="${tool.id}"><span aria-hidden="true">${tool.icon}</span>${text(tool.key)}</button>`).join('')}</nav>
     <div class="eden-ops-live sr-only" role="status" aria-live="polite"></div>
     ${renderer()}
+    ${renderMoreTools()}
     ${renderSources()}
   </div>`;
+  if (refocus) mount.querySelector(refocus)?.focus({ preventScroll: true });
 }
 
 function announce(message, type = 'info') {
@@ -480,11 +610,41 @@ function bindEvents() {
       state.activeTool = tool.dataset.opsTool;
       writeEdenOperationsState(state);
       updateHashTool(state.activeTool);
+      if (tool.dataset.opsOpen) openSteps.add(tool.dataset.opsOpen);
       render();
+      // Opening from a card moves focus (and the view) to the planner's tab.
+      if (tool.dataset.opsOpen) mount.querySelector(`.eden-ops-tool-nav [data-ops-tool="${state.activeTool}"]`)?.focus();
+      return;
+    }
+    const filter = event.target.closest('[data-ops-stage], [data-ops-role]');
+    if (filter) {
+      const kind = filter.hasAttribute('data-ops-stage') ? 'stage' : 'role';
+      boardFilter[kind] = filter.getAttribute(`data-ops-${kind}`);
+      render();
+      return;
+    }
+    const milestone = event.target.closest('[data-ops-milestone]');
+    if (milestone) {
+      const [routeId, points] = milestone.dataset.opsMilestone.split(':');
+      state.specialty.allocations[routeId] = Number(points);
+      saveAndRender();
+      return;
+    }
+    const counter = event.target.closest('[data-ops-count]');
+    if (counter) {
+      const [side, delta] = counter.dataset.opsCount.split(':');
+      state.siege.assigned[side] = (state.siege.assigned[side] || 0) + Number(delta);
+      saveAndRender();
       return;
     }
     const action = event.target.closest('[data-ops-action]')?.dataset.opsAction;
     if (!action) return;
+    if (action === 'clear-filters') {
+      Object.assign(boardFilter, { stage: 'all', role: 'all', query: '' });
+      render();
+      mount.querySelector('[data-ops-search]')?.focus();
+      return;
+    }
     if (action === 'share') await copyShareLink();
     if (action === 'export') download('eden-operations-plan.json', JSON.stringify(state, null, 2), 'application/json');
     if (action === 'import') mount.querySelector('[data-ops-import]')?.click();
@@ -500,8 +660,39 @@ function bindEvents() {
     if (action === 'png') downloadPng();
   });
 
+  mount.addEventListener('input', (event) => {
+    if (!event.target.matches('[data-ops-search]')) return;
+    boardFilter.query = event.target.value;
+    // Only the result list changes, so the search box keeps focus and caret.
+    const list = mount.querySelector('.eden-ops-board-list');
+    if (list) list.innerHTML = renderBoardList();
+  });
+
+  mount.addEventListener(
+    'toggle',
+    (event) => {
+      if (event.target.hasAttribute?.('data-ops-board')) {
+        boardOpen = event.target.open;
+        writeBoardOpen(boardOpen);
+        return;
+      }
+      const id = event.target.dataset?.opsSteps;
+      if (!id) return;
+      if (event.target.open) openSteps.add(id);
+      else openSteps.delete(id);
+    },
+    true
+  );
+
   mount.addEventListener('change', (event) => {
     const input = event.target;
+    if (input.matches('[data-ops-check]')) {
+      const key = input.dataset.opsCheck;
+      if (input.checked) state.checklist[key] = true;
+      else delete state.checklist[key];
+      saveAndRender();
+      return;
+    }
     if (input.matches('[data-ops-field]')) {
       const raw = input.type === 'checkbox' ? input.checked : input.value;
       setNested(input.dataset.opsField, raw, input.type);
@@ -529,11 +720,13 @@ function bindEvents() {
   });
 
   mount.addEventListener('keydown', (event) => {
-    const current = event.target.closest('[data-ops-tool]');
+    const current = event.target.closest('.eden-ops-tool-nav [data-ops-tool]');
     if (!current || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault();
-    const buttons = [...mount.querySelectorAll('[data-ops-tool]')];
-    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const buttons = [...mount.querySelectorAll('.eden-ops-tool-nav [data-ops-tool]')];
+    // In RTL the visual order flips, so the arrow keys flip with it.
+    const forward = event.key === (mount.dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight');
+    const direction = forward ? 1 : -1;
     buttons[(buttons.indexOf(current) + direction + buttons.length) % buttons.length].focus();
   });
 }
@@ -557,11 +750,17 @@ export function initEdenOperations(root = document.getElementById('edenOperation
   mount = root;
   root.dataset.edenOperationsBooted = '1';
   state = readShareState();
+  boardOpen = readBoardOpen();
+  // Start with the open planner's checklist expanded; the rest stay scannable.
+  for (const entry of EDEN_OPERATION_PLAYBOOKS) {
+    if (entry.tool === state.activeTool) openSteps.add(entry.id);
+  }
   booted = true;
   bindEvents();
   render();
   // Paint English immediately, then repaint once the viewer's pack arrives.
   void ensureCopy().then(() => booted && render());
+  window.addEventListener('edenLanguageUpdate', () => booted && render());
   window.addEventListener('vts:language-change', async () => {
     await ensureCopy();
     if (booted) render();

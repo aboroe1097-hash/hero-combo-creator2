@@ -1,3 +1,4 @@
+import { mountToolShell } from './tool-shell.js';
 import {
   DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF,
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
@@ -84,7 +85,7 @@ import {
   resolveEdenAccountPlayer,
 } from './eden-account-link.js';
 
-export const APP_VERSION = '16.5.1';
+export const APP_VERSION = '16.5.2';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -7832,3 +7833,7 @@ if (EDEN_X1_TEST_MODE && !Array.isArray(globalThis.VTS_EDEN_X1_FIREBASE_MODULES)
 } else {
   main();
 }
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell();

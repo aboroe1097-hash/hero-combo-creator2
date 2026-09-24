@@ -2,6 +2,7 @@ import {
   BLUE_LOYALTY_SPECIALTY,
   BUILDING_DISCOUNTS,
   BUILDING_UPGRADE_COSTS,
+  EDEN_OPERATION_PLAYBOOKS,
   EDEN_STRUCTURES,
   SPECIALTY_BONUS_PRESETS,
   SPECIALTY_HONOR_LEVELS,
@@ -48,7 +49,9 @@ export const DEFAULT_EDEN_OPERATIONS_STATE = Object.freeze({
     targetTileLevel: 16,
     structureId: 'capital-6',
     banner: false,
+    assigned: Object.freeze({ attackers: 0, support: 0 }),
   }),
+  checklist: Object.freeze({}),
 });
 
 const TOOL_IDS = new Set(['specialty', 'honor', 'training', 'buildings', 'siege']);
@@ -64,6 +67,21 @@ export function clampNumber(value, min, max, fallback = min) {
 
 function integer(value, min, max, fallback) {
   return Math.round(clampNumber(value, min, max, fallback));
+}
+
+const CHECKLIST_KEYS = new Set(
+  EDEN_OPERATION_PLAYBOOKS.flatMap((entry) =>
+    entry.steps.map((_, index) => `${entry.id}.${index}`)
+  )
+);
+
+function normalizeChecklist(value) {
+  const result = {};
+  if (!value || typeof value !== 'object') return result;
+  for (const [key, done] of Object.entries(value)) {
+    if (CHECKLIST_KEYS.has(key) && done === true) result[key] = true;
+  }
+  return result;
 }
 
 function normalizeAllocations(value) {
@@ -159,7 +177,12 @@ export function normalizeEdenOperationsState(value = {}) {
         ? source.siege.structureId
         : defaultState.siege.structureId,
       banner: source.siege?.banner ?? defaultState.siege.banner,
+      assigned: {
+        attackers: integer(source.siege?.assigned?.attackers, 0, 500, 0),
+        support: integer(source.siege?.assigned?.support, 0, 500, 0),
+      },
     },
+    checklist: normalizeChecklist(source.checklist),
   };
 }
 
@@ -353,6 +376,49 @@ export function getSiegePlan(structureId, banner = false) {
     attackers: banner ? structure.bannerAttackers : structure.attackers,
     support: banner ? structure.bannerSupport : structure.support,
   };
+}
+
+// Staffing progress for the objective counters: how many more players each
+// side still needs before the published minimum is met.
+export function staffingStatus(plan, assigned = {}) {
+  const attackers = integer(assigned.attackers, 0, 500, 0);
+  const support = integer(assigned.support, 0, 500, 0);
+  const missingAttackers = Math.max(0, plan.attackers - attackers);
+  const missingSupport = Math.max(0, plan.support - support);
+  return {
+    attackers,
+    support,
+    missingAttackers,
+    missingSupport,
+    missing: missingAttackers + missingSupport,
+    ready: missingAttackers === 0 && missingSupport === 0,
+  };
+}
+
+export function checklistProgress(playbook, checklist = {}) {
+  let done = 0;
+  playbook.steps.forEach((_, index) => {
+    if (checklist[`${playbook.id}.${index}`]) done += 1;
+  });
+  return { done, total: playbook.steps.length };
+}
+
+// `describe` returns the localized words a viewer can search for (title,
+// summary, steps, tag labels), so search works in every language pack.
+export function filterOperationPlaybooks(filters = {}, describe = () => '') {
+  const stage = filters.stage || 'all';
+  const role = filters.role || 'all';
+  const terms = String(filters.query || '')
+    .toLocaleLowerCase()
+    .split(/\s+/u)
+    .filter(Boolean);
+  return EDEN_OPERATION_PLAYBOOKS.filter((entry) => {
+    if (stage !== 'all' && entry.stage !== stage) return false;
+    if (role !== 'all' && !entry.roles.includes(role)) return false;
+    if (!terms.length) return true;
+    const haystack = String(describe(entry)).toLocaleLowerCase();
+    return terms.every((term) => haystack.includes(term));
+  });
 }
 
 export function buildingCostRows() {

@@ -21,6 +21,7 @@ import {
   setResearchNodes,
   toggleResearchNode,
 } from './specialization-towers-v2-model.js';
+import { getWorkbookNodeMedalCosts } from './specialization-towers-medal-index.js';
 import {
   buildStatContributionSnapshot,
   summarizeStatContributions,
@@ -44,7 +45,7 @@ import {
   specializationTowersV2Text,
 } from './i18n/specialization-towers-v2/index.js';
 
-export const APP_VERSION = '16.5.1';
+export const APP_VERSION = '16.5.2';
 export const SPECIALIZATION_COLUMN_COUNT = 8;
 export const SPECIALIZATION_RESEARCHES_PER_COLUMN = 4;
 export const SPECIALIZATION_MILESTONE_PERCENTAGES = [25, 50, 75, 100];
@@ -259,10 +260,10 @@ function renderHeader() {
     <header class="specialization-header">
       <div class="specialization-header-start specialization-header__brand">
         <a class="specialization-brand" href="index.html#research" aria-label="${escapeAttribute(t('back'))}">
-          <span class="specialization-brand-mark" aria-hidden="true">RO</span>
+          <span class="specialization-brand-mark" aria-hidden="true"><img src="images/logo-40.webp" alt="" width="36" height="36" decoding="async" /></span>
         </a>
         <nav class="specialization-breadcrumbs" aria-label="${escapeAttribute(t('towerNavigation'))}">
-          <a href="index.html">R.O.C. VTS</a>
+          <a href="index.html">RoC VTS Toolkit</a>
           <span class="specialization-breadcrumb-separator" aria-hidden="true">›</span>
           <a href="index.html#research">${escapeHtml(t('towerNavigation'))}</a>
           <span class="specialization-breadcrumb-separator" aria-hidden="true">›</span>
@@ -486,6 +487,12 @@ function renderMilestones(research, progress) {
     </section>`;
 }
 
+/** Workbook per-level medal costs for the active troop's node ("151 + 158"), or unknown. */
+function nodeMedalCostLabel(researchId, nodeId) {
+  const costs = getWorkbookNodeMedalCosts(activeTroop, researchId, nodeId);
+  return costs ? costs.map((cost) => formatNumber(cost)).join(' + ') : t('medalsUnknown');
+}
+
 function renderAttributeNode(research, node, progress, index, { passive = false, access } = {}) {
   const selected = progress.selectedNodeIds.includes(node.id);
   const effect = passive
@@ -498,7 +505,7 @@ function renderAttributeNode(research, node, progress, index, { passive = false,
     <button type="button" class="specialization-node" data-specialization-attribute-node="${node.id}" data-research-id="${research.id}" data-node-state="${access.state}"${access.pathBranch ? ` data-path-branch="${escapeAttribute(access.pathBranch)}"` : ''} aria-pressed="${selected}" aria-label="${escapeAttribute(`${name}: ${effect}. ${status}`)}" title="${escapeAttribute(`${name}: ${effect}`)}"${disabled ? ' disabled' : ''}>
       <span class="specialization-node-icon" aria-hidden="true">${selected ? '✓' : access.state === 'locked' ? '🔒' : index + 1}</span>
       <span class="specialization-sr-only">${escapeHtml(name)} · ${escapeHtml(effect)}</span>
-      <span class="specialization-sr-only" data-specialization-node-cost>${escapeHtml(t('medalsUnknown'))}</span>
+      <span class="specialization-sr-only" data-specialization-node-cost>${escapeHtml(nodeMedalCostLabel(research.id, node.id))}</span>
     </button>`;
 }
 
@@ -540,7 +547,7 @@ function renderNodePathBody() {
         <div class="specialization-node-path__mastery"><strong>${percent}%</strong><span>${escapeHtml(displayName)}</span></div>
       </div>
       <ol class="specialization-effect-list">
-        ${visibleNodes.map((item) => `<li class="specialization-effect-row" data-node-state="${item.access.state}"><span class="specialization-node-icon" aria-hidden="true">${progress.selectedNodeIds.includes(item.id) ? '✓' : item.access.state === 'locked' ? '🔒' : item.index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.effect)}</small></div><span class="specialization-skill-status">${escapeHtml(nodeAccessStatusLabel(item.access))}</span></li>`).join('')}
+        ${visibleNodes.map((item) => `<li class="specialization-effect-row" data-node-state="${item.access.state}"><span class="specialization-node-icon" aria-hidden="true">${progress.selectedNodeIds.includes(item.id) ? '✓' : item.access.state === 'locked' ? '🔒' : item.index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.effect)}</small><span class="specialization-node-cost" data-specialization-node-cost>${escapeHtml(nodeMedalCostLabel(research.id, item.id))}</span></div><span class="specialization-skill-status">${escapeHtml(nodeAccessStatusLabel(item.access))}</span></li>`).join('')}
       </ol>
       ${nodeAccess.hiddenCount ? `<p class="specialization-hidden-node-count" data-specialization-hidden-node-count>${escapeHtml(t('hiddenNodeCount', { count: nodeAccess.hiddenCount }))}</p>` : ''}
       <p>${escapeHtml(t('exactMedalDataOnly'))}</p>

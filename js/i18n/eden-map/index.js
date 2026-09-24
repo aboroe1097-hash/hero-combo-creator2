@@ -161,6 +161,8 @@ const EN = Object.freeze({
     subTabBounty: 'Royal Bounty Eden X2',
     subTabSeason: 'Current Season · {currentSeason}',
     subTabPrevious: 'Previous Seasons · {previousSeason}',
+    subTabPathing: 'Eden Pathing',
+    subTabPathingDesc: 'Plan A→B gate routes with mountain waypoints and export a PNG.',
   },
 });
 

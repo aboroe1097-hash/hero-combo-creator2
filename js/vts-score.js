@@ -1,3 +1,6 @@
+import { mountToolShell } from './tool-shell.js';
+import '../css/standalone-footer-v14.css';
+import '../css/tool-shell.css';
 import { createAllStarBohAccessClient, AllStarBohAccessError } from './all-star-boh-access.js';
 import {
   buildBohStatsOcrRequest,
@@ -629,3 +632,7 @@ if (typeof document !== 'undefined' && document.getElementById('vtsScoreApp')) {
     setStatus(`${friendlyError(error)} Refresh the page to try again.`, 'error');
   });
 }
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell({ bar: true });

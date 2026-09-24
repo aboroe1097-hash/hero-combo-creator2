@@ -114,6 +114,8 @@
   const fallbackShellCopy = Object.freeze({
     more: 'More',
     moreTools: 'More tools',
+    downloadsLink: 'PDF downloads',
+    buildingsLink: 'Buildings',
     close: 'Close',
     deckLabel: 'S1097 Deck',
     toolkitLabel: 'VTS 1097 toolkit',
@@ -474,6 +476,10 @@
 
     if (moreLabel) moreLabel.textContent = copy.more;
     if (moreTitle) moreTitle.textContent = copy.moreTools;
+    moreLinks.querySelectorAll('[data-shell-more-link]').forEach((link) => {
+      const key = link.dataset.shellMoreLink;
+      link.textContent = copy[key] || fallbackShellCopy[key];
+    });
     moreButton.setAttribute('aria-label', copy.moreTools);
     morePanel.setAttribute('aria-label', copy.moreTools);
     moreClose.setAttribute('aria-label', copy.close);
@@ -699,6 +705,28 @@
       return !element.disabled && element.getClientRects().length > 0;
     });
   }
+
+  // Two destinations that are not tabs: the PDF downloads page, and the
+  // Buildings planner, which lives in Research & Towers ▸ Planners ▸ Castle.
+  // Built here rather than in index.html, which has no byte headroom.
+  const moreLinks = document.createElement('div');
+  moreLinks.className = 'shell-more-links';
+  [
+    ['downloadsLink', 'downloads.html'],
+    ['buildingsLink', '#researchTowers?subtab=research&planner=castle'],
+  ].forEach(([key, href]) => {
+    const link = document.createElement('a');
+    link.className = 'shell-more-link';
+    link.href = href;
+    link.dataset.shellMoreLink = key;
+    link.textContent = fallbackShellCopy[key];
+    link.addEventListener('click', () => {
+      // Close without history.back(): going back would undo the navigation.
+      if (!morePanel.hidden) dismissMore({ restoreFocus: false, consumeHistory: false });
+    });
+    moreLinks.append(link);
+  });
+  moreTools.after(moreLinks);
 
   buildLanguageMenu();
 

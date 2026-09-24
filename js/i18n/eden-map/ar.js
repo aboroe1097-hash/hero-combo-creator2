@@ -100,5 +100,7 @@ export default {
     subTabBounty: 'المكافأة الملكية Eden X2',
     subTabSeason: 'الموسم الحالي · {currentSeason}',
     subTabPrevious: 'المواسم السابقة · {previousSeason}',
+    subTabPathing: 'مسارات إيدن',
+    subTabPathingDesc: 'خطّط مسارات البوابات من A إلى B مع نقاط عبور جبلية وصدّرها بصيغة PNG.',
   },
 };

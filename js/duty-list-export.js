@@ -844,7 +844,8 @@ export async function renderDutyExportPages(model, options = {}) {
   const direction = options.direction || document.documentElement?.dir || 'ltr';
   brandingModulePromise ||= import('./export-branding.js');
   const { drawCanvasFooter, getExportBranding } = await brandingModulePromise;
-  const branding = options.branding || getExportBranding();
+  // Duty lists are the alliance's own records, so they carry no data credits.
+  const branding = options.branding || { ...getExportBranding(), sourceCredits: [] };
   const pages = paginateDutyExportRows(model.rows, options.perPage);
   return pages.map((rows, index) => {
     const canvas = document.createElement('canvas');

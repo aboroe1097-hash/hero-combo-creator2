@@ -2,6 +2,15 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.2 - 2026-09-24
+
+- One look across the standalone tools: VtsScore, Downloads, Arcade, Eden, Eden Siege, Specialization Towers and Battle Simulator share the same footer and link set, and VtsScore and Downloads gained the branded bar with Back to tools. Eden's deck button now reads Back to Tools, and the account button that was clipped in the Arcade and Eden decks has its own place beside the back link.
+- More tools lists PDF downloads and Buildings; Buildings opens Planners ▸ Castle directly (#researchTowers?subtab=research&planner=castle).
+- Research planner: a full visual pass — sub-tab pills, cards, styled fields, stat tiles for remaining costs, scrollable tables with sticky headers, and a progress bar per path node — for dark and light themes, phones and right-to-left languages.
+- Specialization Towers: every node now shows its medal cost from the community workbook for all three troops (735 nodes each), where it used to say the cost was unknown. Repeated node names at different strengths are matched by the strength the workbook states, and five naming differences between the workbook and the planner are recorded rather than rewritten. The header wraps instead of letting the toolbar cover the page title, and it carries the site logo and name.
+- Eden Operations Lab: a task board with six common jobs filtered by season stage and role, a saved three-step checklist per job, one-tap Critical/Essential/Advanced specialty routes, attacker and support counters for the chosen siege objective, links into Eden Map and Loyalty, and the data author's credit on the source cards. Eden Pathing is announced as coming soon, and the Eden Hub sub-tabs are readable in the light theme.
+- Duty list PNGs no longer carry a data-sources line: they are the alliance's own records. Exports whose credit list does not fit now point to the site instead of naming only the first contributor.
+
 ## 16.5.1 - 2026-09-24
 
 - Fixed: the site could fail to open with "This site can't be reached" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed helper still installs and takes over in such a browser.

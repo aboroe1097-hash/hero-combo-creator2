@@ -156,7 +156,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  assert.match(sizeCheck, /totalJsBytes: 11140 \* 1024/);
+  assert.match(sizeCheck, /totalJsBytes: 11175 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
@@ -171,13 +171,13 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(
     sizeCheck,
-    /'battle-simulator\.html': \{ desktop: 59 \* 1024, mobile: 59 \* 1024 \}/
+    /'battle-simulator\.html': \{ desktop: 67 \* 1024, mobile: 67 \* 1024 \}/
   );
   assert.match(
     sizeCheck,
-    /'specialization-towers\.html': \{ desktop: 80 \* 1024, mobile: 80 \* 1024 \}/
+    /'specialization-towers\.html': \{ desktop: 89 \* 1024, mobile: 89 \* 1024 \}/
   );
   // The member registration route now has a measured line of its own: it hosts
   // the signup form, so its stylesheet can no longer grow unmeasured.
-  assert.match(sizeCheck, /'vtsscore\.html': \{ desktop: 22 \* 1024, mobile: 22 \* 1024 \}/);
+  assert.match(sizeCheck, /'vtsscore\.html': \{ desktop: 32 \* 1024, mobile: 32 \* 1024 \}/);
 });
