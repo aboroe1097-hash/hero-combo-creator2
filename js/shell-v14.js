@@ -706,14 +706,14 @@
     });
   }
 
-  // Two destinations that are not tabs: the PDF downloads page, and the
-  // Buildings planner, which lives in Research & Towers ▸ Planners ▸ Castle.
+  // Two destinations that are not top-level tabs: the PDF downloads page, and
+  // the Buildings planner, which is the Research & Towers ▸ Buildings sub-tab.
   // Built here rather than in index.html, which has no byte headroom.
   const moreLinks = document.createElement('div');
   moreLinks.className = 'shell-more-links';
   [
     ['downloadsLink', 'downloads.html'],
-    ['buildingsLink', '#researchTowers?subtab=research&planner=castle'],
+    ['buildingsLink', '#researchTowers?subtab=buildings'],
   ].forEach(([key, href]) => {
     const link = document.createElement('a');
     link.className = 'shell-more-link';
