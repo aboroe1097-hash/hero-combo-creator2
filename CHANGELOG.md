@@ -4,7 +4,9 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.5 - 2026-09-24
 
-- Filing a complaint no longer asks a signed-in member to retype their name: the in-game name from their account is already in the field, and stays editable because the complaint may be about someone else. Filing anonymously still hides the whole identity block, so nothing is attached to a complaint the member chose to send without a name.
+- Filing a complaint no longer asks a signed-in member to retype their name: the in-game name from their account is already in the field, and stays editable because the complaint may be about someone else. Filing anonymously still hides the whole identity block, so nothing is attached to a complaint the member chose to send without a name. The name is only filled in while the field is untouched, so anything the member types or clears during the lookup stays as they left it.
+- The Hero Atlas **Hero Tables** and **Skins** switches no longer ignore a tap made while the Atlas is still loading: the view you picked opens as soon as it is ready.
+
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.

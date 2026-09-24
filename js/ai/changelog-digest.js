@@ -9,7 +9,8 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.5.5",
     "date": "2026-09-24",
     "highlights": [
-      "Filing a complaint no longer asks a signed-in member to retype their name: the in-game name from their account is already in the field, and stays editable because the complaint may be about someone else. Filing anonymously still hides the whole identity block, so nothing is atta…"
+      "Filing a complaint no longer asks a signed-in member to retype their name: the in-game name from their account is already in the field, and stays editable because the complaint may be about someone else. Filing anonymously still hides the whole identity block, so nothing is atta…",
+      "The Hero Atlas **Hero Tables** and **Skins** switches no longer ignore a tap made while the Atlas is still loading: the view you picked opens as soon as it is ready."
     ]
   },
   {

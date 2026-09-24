@@ -352,29 +352,38 @@ function isFirebaseUnavailableError(error) {
   );
 }
 
-// The form files under an anonymous session on purpose, so the member's account
-// identity never leaves the value of this one field. Prefill it from the
-// signed-in profile so a member who wants a reply does not retype the name
-// leadership has to match them by — and leave it editable, because the
-// complaint may be about someone else. Anonymous filings hide the whole block,
-// so nothing is attached behind the member's back.
+// A signed-in member usually files under their own name, so prefill the
+// identity field with the name their account chip shows (game name, then
+// profile display name, then the Auth display name) instead of making them
+// retype it. The field stays editable because the complaint may be filed on
+// someone else's behalf. The value is only sent when the member unchecks the
+// anonymous box; an anonymous filing drops the name before the document is
+// built. The lookup is abandoned as soon as the member edits the field, so a
+// slow profile read can never overwrite (or refill) what they typed.
 export async function prefillComplainantName(
   nameInput,
   loadAccountServices = () => import('./account-profile-service.js')
 ) {
   if (!nameInput || text(nameInput.value).trim()) return false;
+  let touched = false;
+  const markTouched = () => {
+    touched = true;
+  };
+  nameInput.addEventListener?.('input', markTouched);
   try {
     const { peekAccountState, loadAccountProfile } = await loadAccountServices();
     const account = (await peekAccountState?.()) || null;
-    if (!account || account.isGuest) return false;
+    if (touched || !account || account.isGuest) return false;
     const profile = await loadAccountProfile();
-    const name = text(profile?.gameName || profile?.displayName || account.displayName);
-    if (name && !text(nameInput.value).trim()) {
+    const name = text(profile?.gameName || profile?.displayName || account.displayName).trim();
+    if (name && !touched && !text(nameInput.value).trim()) {
       nameInput.value = name.slice(0, EDEN_COMPLAINT_MAX_NAME);
       return true;
     }
   } catch {
     // Not signed in, or the profile lookup failed: the field stays theirs to fill.
+  } finally {
+    nameInput.removeEventListener?.('input', markTouched);
   }
   return false;
 }
