@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.1",
+    "date": "2026-09-24",
+    "highlights": [
+      "Fixed: the site could fail to open with \"This site can't be reached\" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed…"
+    ]
+  },
   {
     "version": "16.5.0",
     "date": "2026-09-23",
@@ -95,14 +102,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Fixed every duty weight save failing with \"Missing or insufficient permissions\". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than tru…",
       "Fixed pathing points missing from Alliance View totals. That table recomputed duty points from the raw counts at a flat value, discarding the weighting it had already been handed, so pathing on a main scored 10,000 instead of 30,000. It now uses the computed points, keeps the fl…"
-    ]
-  },
-  {
-    "version": "16.0.11",
-    "date": "2026-09-08",
-    "highlights": [
-      "Duty points are now weighted by activity and by which account performed the duty, replacing a flat value that made a banner from a throwaway alt worth exactly what a main was worth. Defaults are banners 1 for a main and 0.5 for an alt, pathing 3 and 1; shield walls stay at 1 for…",
-      "Added a superadmin editor for those weights, stored per Eden workspace so retuning the season being played cannot restate a finished season. Saving recalculates the season immediately, past entries included, because duty points are derived at render time rather than stored."
     ]
   }
 ].map((release) =>
