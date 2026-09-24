@@ -7,6 +7,8 @@
 // preference first, then the browser language, exactly like the standalone
 // pages. English is the source of truth and the fallback.
 
+import { fetchLocalePack } from './fetch-locale-pack.js';
+
 const COPY = Object.freeze({
   en: Object.freeze({
     title: 'Community downloads',
@@ -80,7 +82,12 @@ export function getDownloadsCopy(locale = 'en', localizedPacks = {}) {
 
 const packRequests = new Map();
 
-export async function loadDownloadsCopy(locale = 'en', packsUrl, fetcher = globalThis.fetch) {
+export async function loadDownloadsCopy(
+  locale = 'en',
+  packsUrl,
+  fetcher = globalThis.fetch,
+  timeoutMs
+) {
   const normalized = normalizeDownloadsLocale(locale);
   if (normalized === 'en' || !packsUrl || typeof fetcher !== 'function') {
     return COPY.en;
@@ -88,7 +95,7 @@ export async function loadDownloadsCopy(locale = 'en', packsUrl, fetcher = globa
   try {
     let request = packRequests.get(packsUrl);
     if (!request) {
-      request = fetcher(packsUrl, { cache: 'force-cache' }).then((response) => {
+      request = fetchLocalePack(packsUrl, fetcher, timeoutMs).then((response) => {
         if (!response.ok) throw new Error('Downloads translations could not be loaded.');
         return response.json();
       });

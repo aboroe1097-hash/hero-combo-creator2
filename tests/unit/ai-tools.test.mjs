@@ -829,6 +829,13 @@ test('Eden context defers raw ballots and exposes bounded public leaderboard and
   assert.equal(rewards.data.management[0].playerName, 'Management Pick');
   assert.match(rewards.data.distribution.team, /Up to 3 eligible public team-vote names/);
 
+  const rewardsWithoutR5 = await executeAiToolCall(
+    { name: 'get_eden_context', arguments: { kind: 'rewards', season: 'X2' } },
+    { ...staticContext, edenPublicData: { ...publicData, rewardSettings: null } }
+  );
+  assert.equal(rewardsWithoutR5.ok, true);
+  assert.doesNotMatch(JSON.stringify(rewardsWithoutR5.data.support), /MalakAbo/u);
+
   const currentSeasonData = {
     ...publicData,
     season: 'season-2027',

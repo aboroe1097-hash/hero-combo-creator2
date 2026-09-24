@@ -66,4 +66,7 @@ test('Eden Siege locale packs load on demand and fall back to English on failure
 
   const fallback = await loadCopy('de', '/missing.json', async () => ({ ok: false }));
   assert.equal(fallback.game.title, COPY.en.game.title);
+
+  const stalledFallback = await loadCopy('fr', '/stalled.json', () => new Promise(() => {}), 5);
+  assert.equal(stalledFallback.game.title, COPY.en.game.title);
 });

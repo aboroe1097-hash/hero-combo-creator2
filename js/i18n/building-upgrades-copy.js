@@ -4,6 +4,8 @@
 // prerequisites from the community sheet stay canonical game terms. English is
 // the source of truth and the fallback for any key a locale has not covered.
 
+import { fetchLocalePack } from './fetch-locale-pack.js';
+
 const COPY = Object.freeze({
   en: Object.freeze({
     resources: Object.freeze({
@@ -110,7 +112,12 @@ export function getBuildingUpgradesCopy(locale = 'en', localizedPacks = {}) {
 
 const packRequests = new Map();
 
-export async function loadBuildingUpgradesCopy(locale = 'en', packsUrl, fetcher = globalThis.fetch) {
+export async function loadBuildingUpgradesCopy(
+  locale = 'en',
+  packsUrl,
+  fetcher = globalThis.fetch,
+  timeoutMs
+) {
   const normalized = normalizeBuildingUpgradesLocale(locale);
   if (normalized === 'en' || !packsUrl || typeof fetcher !== 'function') {
     return COPY.en;
@@ -118,7 +125,7 @@ export async function loadBuildingUpgradesCopy(locale = 'en', packsUrl, fetcher 
   try {
     let request = packRequests.get(packsUrl);
     if (!request) {
-      request = fetcher(packsUrl, { cache: 'force-cache' }).then((response) => {
+      request = fetchLocalePack(packsUrl, fetcher, timeoutMs).then((response) => {
         if (!response.ok) throw new Error('Building translations could not be loaded.');
         return response.json();
       });

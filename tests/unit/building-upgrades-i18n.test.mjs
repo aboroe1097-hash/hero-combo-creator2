@@ -79,6 +79,14 @@ test('building upgrade locale packs load on demand and fall back to English on f
     })
   );
   assert.equal(fallback.buildingsHeading, getBuildingUpgradesCopy('en').buildingsHeading);
+
+  const stalledFallback = await loadBuildingUpgradesCopy(
+    'fr',
+    '/stalled-building-copy.json',
+    () => new Promise(() => {}),
+    5
+  );
+  assert.equal(stalledFallback.buildingsHeading, getBuildingUpgradesCopy('en').buildingsHeading);
 });
 
 test('formatBuildingUpgradesText preserves unknown tokens and substitutes known ones', () => {

@@ -1,4 +1,5 @@
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from '../eden-workspaces.js';
+import { normalizePublishedRewardSettings } from '../eden-reward-settings.js';
 import {
   buildWeightedContributionRows,
   getWeightedPlayerFamilyKey,
@@ -136,10 +137,7 @@ export function buildEdenPublicDataFromProjection(projection) {
       contributionWeight: numberOrNull(scoring.contributionWeight),
       formPointWeight: numberOrNull(scoring.formPointWeight),
     },
-    rewardSettings:
-      projection.rewardSettings && typeof projection.rewardSettings === 'object'
-        ? projection.rewardSettings
-        : null,
+    rewardSettings: normalizePublishedRewardSettings(projection.rewardSettings),
     rows: model.rows.map(publicWeightedRow),
     voting: {
       contributionRankingMode: normalizeEdenX1ContributionRankingMode(

@@ -260,7 +260,7 @@ test('Combo Generator mobile controls stay in document flow without an empty Vel
   assert.match(aiLauncherCss, /\.ai-drawer-launcher \.velo-mascot__stage \{\s*animation: none;/);
   assert.match(
     aiLauncherCss,
-    /body:has\(#generatorSection:not\(\.hidden\)\):has\(#shellMoreTools\) \.ai-drawer-launcher-shell \{[\s\S]*?position: relative;/
+    /body:has\(#generatorSection:not\(\[hidden\]\):not\(\.hidden\)\):has\(#shellMoreTools\) \.ai-drawer-launcher-shell \{[\s\S]*?position: relative;/
   );
 });
 

@@ -1724,6 +1724,25 @@ test.describe('app smoke tabs', () => {
     );
   });
 
+  test('Velo stays above the phone nav and hides while the player scrolls down', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page);
+    await page.locator('[data-hub-subtab="manual"]').click();
+    await expect(page.locator('#generatorSection')).toBeHidden();
+
+    const launcher = page.locator('#aiDrawerLauncherShell');
+    const navigation = page.locator('#app .tool-nav-shell');
+    await expect(launcher).toBeVisible();
+    const launcherBox = await launcher.boundingBox();
+    const navigationBox = await navigation.boundingBox();
+    expect(launcherBox.y + launcherBox.height).toBeLessThanOrEqual(navigationBox.y - 8);
+
+    await page.evaluate(() => window.scrollTo(0, 240));
+    await expect(launcher).toHaveCSS('visibility', 'hidden');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(launcher).toHaveCSS('visibility', 'visible');
+  });
+
   test('manual and generator tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '[data-hub-subtab="manual"]', '#manualSection', '#availableHeroes');

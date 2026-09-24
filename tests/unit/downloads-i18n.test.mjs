@@ -67,6 +67,14 @@ test('downloads locale packs load on demand and fall back to English on failure'
     ok: false,
   }));
   assert.equal(fallback.title, getDownloadsCopy('en').title);
+
+  const stalledFallback = await loadDownloadsCopy(
+    'fr',
+    '/stalled-downloads-copy.json',
+    () => new Promise(() => {}),
+    5
+  );
+  assert.equal(stalledFallback.title, getDownloadsCopy('en').title);
 });
 
 test('preferredDownloadsLocale reads the stored site preference first', () => {

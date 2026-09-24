@@ -1,4 +1,8 @@
-import { allocateSupportRewards, normalizeRewardSettings, rewardQuota } from '../eden-reward-settings.js';
+import {
+  allocateSupportRewards,
+  normalizePublishedRewardSettings,
+  rewardQuota,
+} from '../eden-reward-settings.js';
 import { readMaterialPlanState, readResearchProgressState } from './saved-state.js';
 import {
   AiToolInputError,
@@ -741,7 +745,7 @@ function edenSupportTotal(row) {
 }
 
 function edenRewardRows(publicData, rows) {
-  const settings = normalizeRewardSettings(publicData.rewardSettings);
+  const settings = normalizePublishedRewardSettings(publicData.rewardSettings);
   const r5Key = String(settings.r5PlayerKey || '').trim();
   const r5FamilyKey = edenFamilyKey(r5Key);
   const r5Row = r5FamilyKey ? rows.find((row) => edenFamilyKey(row) === r5FamilyKey) || null : null;
@@ -823,7 +827,7 @@ function edenVoteRewardRows(publicData, rewardRows, rows) {
   rows.filter((row) => row.rewardReason === 'forfeit_premium').forEach(reserve);
   const available = (row) =>
     !reservedKeys.has(row?.playerKey) && (!row?.familyKey || !reservedFamilies.has(row.familyKey));
-  const settings = normalizeRewardSettings(publicData.rewardSettings);
+  const settings = normalizePublishedRewardSettings(publicData.rewardSettings);
   const management = (publicData.managementVoteResults?.rankings || [])
     .filter(available)
     .slice(0, rewardQuota(settings, 'management'))
@@ -1050,7 +1054,7 @@ export async function getEdenContextAdapter(rawArguments, context = {}) {
   if (kind === 'rewards') {
     const rewardRows = edenRewardRows(publicData, rows);
     const voteRewardRows = edenVoteRewardRows(publicData, rewardRows, rows);
-    const rewardSettings = normalizeRewardSettings(publicData.rewardSettings);
+    const rewardSettings = normalizePublishedRewardSettings(publicData.rewardSettings);
     return result(
       {
         ...base,

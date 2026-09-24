@@ -369,7 +369,10 @@ const LIMITS = {
   // dist/downloads/, the Eden Siege route with its isolated chunks, and the
   // lazy duty-export, bulk-select and title modules. Measured 769 files; keep
   // three of headroom.
-  deployFileCount: 772,
+  // 16.5.3 adds a shared locale-pack timeout helper used by Siege, Downloads,
+  // and Building Upgrades. The locked production build emits one 518-byte
+  // shared chunk for it (773 deployed files total); retain that measured file.
+  deployFileCount: 773,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

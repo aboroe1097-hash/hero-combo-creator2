@@ -681,14 +681,14 @@
 
   body:not(.shell-more-open) .ai-drawer-launcher-shell {
     inset-inline-end: max(12px, env(safe-area-inset-right));
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
   body:has(#shellMoreTools) .ai-drawer-launcher .velo-mascot__stage {
     animation: none;
   }
 
-  body:has(#generatorSection:not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
+  body:has(#generatorSection:not([hidden]):not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
     position: relative;
     inset: auto;
     display: flex;
@@ -715,7 +715,7 @@
 }
 
 @media (min-width: 641px) and (max-width: 768px) {
-  body:has(#generatorSection:not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
+  body:has(#generatorSection:not([hidden]):not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
     position: relative;
     inset: auto;
     display: flex;

@@ -93,6 +93,18 @@ test('Velo only exposes allowlisted aggregate fields when X2 public results are 
   );
 });
 
+test('an X2 projection without an R5 never inherits the shipped legacy reward name', () => {
+  const data = buildEdenPublicDataFromProjection(publishedProjection());
+
+  assert.equal(data.rewardSettings.r5PlayerKey, '');
+  assert.deepEqual(Object.keys(data.rewardSettings).sort(), [
+    'guildMasterSource',
+    'quotas',
+    'r5PlayerKey',
+  ]);
+  assert.doesNotMatch(JSON.stringify(data), /MalakAbo/u);
+});
+
 test('missing published multipliers stay unknown instead of becoming zero', () => {
   const data = buildEdenPublicDataFromProjection(
     publishedProjection({ scoring: { contributionWeight: null, formPointWeight: '' } })

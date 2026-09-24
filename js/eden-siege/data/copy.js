@@ -1,6 +1,8 @@
 // English fallback and runtime helpers for Eden Siege.
 // Localized packs live in copy-locales.json and are loaded with the Siege route.
 
+import { fetchLocalePack } from '../../i18n/fetch-locale-pack.js';
+
 const EN = {
   game: {
     title: 'Eden Siege',
@@ -130,11 +132,11 @@ export function getCopy(locale, localePacks = {}) {
   return merge(COPY.en, localePacks[normalized]);
 }
 
-export async function loadCopy(locale, packsUrl, fetcher = globalThis.fetch) {
+export async function loadCopy(locale, packsUrl, fetcher = globalThis.fetch, timeoutMs) {
   const normalized = normalizeLocale(locale);
   if (normalized === 'en' || !packsUrl || typeof fetcher !== 'function') return COPY.en;
   try {
-    const response = await fetcher(packsUrl, { cache: 'force-cache' });
+    const response = await fetchLocalePack(packsUrl, fetcher, timeoutMs);
     if (!response.ok) throw new Error('Eden Siege translations could not be loaded.');
     return getCopy(normalized, await response.json());
   } catch {

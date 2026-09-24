@@ -55,6 +55,18 @@ export function normalizeRewardSettings(raw) {
   return { quotas, guildMasterSource, r5PlayerKey };
 }
 
+export function normalizePublishedRewardSettings(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const settings = normalizeRewardSettings(source);
+  if (
+    !Object.prototype.hasOwnProperty.call(source, 'r5PlayerKey') ||
+    typeof source.r5PlayerKey !== 'string'
+  ) {
+    settings.r5PlayerKey = '';
+  }
+  return settings;
+}
+
 /**
  * How many rows a category's reward table shows: the configured quota, or the
  * shipped default when the category is unknown.
