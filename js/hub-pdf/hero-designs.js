@@ -77,7 +77,7 @@ section.sources { column-count: 1; column-gap: 6mm; margin-top: 6pt; }
 section.sources h2 { column-span: all; }
 section.sources li { color: ${muted}; font-size: 9pt; break-inside: avoid; }
 footer.colophon { color: ${muted}; border-color: #455263; margin-top: 7pt; break-inside: avoid; break-before: avoid; page-break-before: avoid; }
-.combo-grid { --troop: ${accent}; display: grid; grid-template-columns: repeat(${landscape ? (design === 'reference' ? 5 : 3) : 2}, minmax(0, 1fr)); gap: ${design === 'reference' ? 4 : 6}pt; margin: 4pt 0 7pt; }
+.combo-grid { --troop: ${accent}; display: grid; grid-template-columns: repeat(${landscape ? (design === 'reference' ? 4 : 3) : 2}, minmax(0, 1fr)); gap: ${design === 'reference' ? 4 : 6}pt; margin: 4pt 0 7pt; }
 .troop-archer { --troop: #82dba5; }
 .troop-footman { --troop: #ef9c89; }
 .troop-cavalry { --troop: #86c5f4; }
@@ -89,11 +89,11 @@ footer.colophon { color: ${muted}; border-color: #455263; margin-top: 7pt; break
 .rank-badge b { color: var(--troop); font: 800 17pt/1 var(--sans); }
 .combo-lineup { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2pt; padding: 0 4pt; direction: ltr; }
 .combo-hero { margin: 0; min-width: 0; text-align: center; }
-.position-label { display: block; font-size: 8pt; color: ${muted}; margin-bottom: 2pt; overflow-wrap: anywhere; }
-.portrait { position: relative; height: ${design === 'midnight' ? 64 : design === 'reference' ? 38 : 58}pt; background: linear-gradient(145deg, #334054, #101521); border: .5pt solid var(--troop); }
+.position-label { display: block; font-size: 8pt; color: ${muted}; margin-bottom: 2pt; overflow-wrap: break-word; }
+.portrait { position: relative; height: ${design === 'midnight' ? 54 : design === 'reference' ? 38 : 58}pt; background: linear-gradient(145deg, #334054, #101521); border: .5pt solid var(--troop); }
 .portrait-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--troop); font: 700 22pt/1 var(--serif); }
 .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
-.combo-hero figcaption { font: 600 9pt/1.2 var(--sans); padding: 3pt 0; overflow-wrap: anywhere; }
+.combo-hero figcaption { font: 600 9pt/1.2 var(--sans); padding: 3pt 0; overflow-wrap: break-word; }
 .combo-meta { margin: 0; padding: 3pt 5pt; border-top: .5pt solid #455263; font: 9pt/1.25 var(--sans); }
 .combo-meta .meta-score dd { color: var(--troop); font: 800 12pt/1.1 var(--sans); }
 table.data th.thumb-head { width: 1pt; padding: 0; border: 0; background: transparent; }
@@ -104,7 +104,7 @@ table.data tbody tr:nth-child(even) td.thumb { background: transparent; }
 .thumb-fallback { display: grid; place-items: center; height: 100%; color: ${muted}; font: 700 10pt/1 var(--serif); }
 .combo-meta div { display: flex; flex-wrap: wrap; gap: 3pt; }
 .combo-meta dt { color: ${muted}; }
-.combo-meta dd { margin: 0; overflow-wrap: anywhere; }
+.combo-meta dd { margin: 0; overflow-wrap: break-word; }
 .combo-section .hero-subsection:has(.troop-archer) h3 { color: #82dba5; }
 .combo-section .hero-subsection:has(.troop-footman) h3 { color: #ef9c89; }
 .combo-section .hero-subsection:has(.troop-cavalry) h3 { color: #86c5f4; }

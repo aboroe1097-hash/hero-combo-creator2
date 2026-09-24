@@ -20,9 +20,9 @@ import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-wo
 import { mountHubPdfPanel } from './hub-pdf-tab.js';
 import { resolveEdenHubInitialRoute } from './eden-hub-routing.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_222521';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_222521';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_222521';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_223223';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_223223';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_223223';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 // How long the hub waits for the season publication check before landing on
@@ -108,7 +108,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260924_222521')
+    import('./eden-map.js?v=20260924_223223')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -160,7 +160,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260924_222521');
+    const module = await import('./loyalty-spa.js?v=20260924_223223');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -255,7 +255,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260924_222521');
+    const module = await import('./bounty-guide.js?v=20260924_223223');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
