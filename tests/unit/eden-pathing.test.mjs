@@ -212,7 +212,8 @@ test('the step list reads A → gate → mountain pass → B with per-leg tiles'
     createStop(305, 905, 'pass'),
     createStop(800, 800, 'structure', 'WC8'),
   ];
-  const { legs } = buildRouteLegs(stops, straight);
+  const built = buildRouteLegs(stops, straight);
+  const { legs } = built;
   const steps = formatSteps(stops, legs, {
     structureLabel: (type) => ({ CP3: 'Gate Lv3', WC8: 'Wonder Capital Lv8' })[type],
     text: EN_T,
@@ -228,9 +229,10 @@ test('the step list reads A → gate → mountain pass → B with per-leg tiles'
   assert.equal(steps.items[1].label, 'Gate Lv3 (787:716)');
   assert.equal(steps.items[0].legTiles, null);
   assert.equal(steps.items[1].legTiles, legs[0].tiles);
+  assert.equal(steps.tiles, built.tiles);
   assert.equal(
     steps.tiles,
-    legs.reduce((sum, leg) => sum + leg.tiles, 0)
+    legs.reduce((sum, leg) => sum + leg.newTiles, 0)
   );
 });
 

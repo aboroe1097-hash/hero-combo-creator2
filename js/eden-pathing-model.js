@@ -360,7 +360,8 @@ export function formatSteps(stops = [], legs = [], { structureLabel = (type) => 
   const line = items
     .map((item) => (item.role === 'waypoint' ? item.name : `${item.badge} · ${item.name}`))
     .join(' → ');
-  const tiles = legs.reduce((sum, leg) => sum + (leg.tiles || 0), 0);
+  // Match the route-level summary: shared or revisited ground counts once.
+  const tiles = legs.reduce((sum, leg) => sum + (leg.newTiles ?? leg.tiles ?? 0), 0);
   return { items, line, tiles };
 }
 
