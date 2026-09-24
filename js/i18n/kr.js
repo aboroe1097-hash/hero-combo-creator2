@@ -97,6 +97,7 @@ const kr = {
   adminConductSeasonLabel: '시즌: {season}',
   adminConductPlayer: '플레이어',
   adminConductCategory: '카테고리',
+  adminConductFilterCategory: '카테고리별 필터',
   adminConductPoints: '포인트',
   adminConductNote: '메모',
   adminConductNotePh: '선택적 사유',

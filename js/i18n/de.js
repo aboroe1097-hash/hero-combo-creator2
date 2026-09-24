@@ -205,6 +205,7 @@ const de = {
   adminConductSeasonLabel: 'Saison: {season}',
   adminConductPlayer: 'Spieler',
   adminConductCategory: 'Kategorie',
+  adminConductFilterCategory: 'Nach Kategorie filtern',
   adminConductPoints: 'Punkte',
   adminConductNote: 'Notiz',
   adminConductNotePh: 'Optionaler Grund',

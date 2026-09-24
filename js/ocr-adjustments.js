@@ -252,6 +252,24 @@ export function aggregateR5Bonuses(adjustments = [], season) {
   return totals;
 }
 
+export function filterR5Adjustments(adjustments = [], options = {}) {
+  const season = String(options.season || '');
+  const category = String(options.category || '');
+  const playerQuery = String(options.playerQuery || '')
+    .trim()
+    .toLowerCase();
+
+  return (Array.isArray(adjustments) ? adjustments : []).filter(
+    (record) =>
+      record?.season === season &&
+      (!category || record.category === category) &&
+      (!playerQuery ||
+        String(record.playerName || '')
+          .toLowerCase()
+          .includes(playerQuery))
+  );
+}
+
 function readOcrTotal(row) {
   for (const field of TOTAL_FIELDS) {
     if (row?.[field] === undefined || row?.[field] === null) continue;

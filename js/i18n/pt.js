@@ -174,6 +174,7 @@ const pt = {
   adminConductSeasonLabel: 'Temporada: {season}',
   adminConductPlayer: 'Jogador',
   adminConductCategory: 'Categoria',
+  adminConductFilterCategory: 'Filtrar por categoria',
   adminConductPoints: 'Pontos',
   adminConductNote: 'Nota',
   adminConductNotePh: 'Motivo opcional',

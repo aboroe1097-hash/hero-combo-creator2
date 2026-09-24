@@ -149,6 +149,7 @@ import {
   defaultR5PointsForCategory,
   deleteR5Adjustment,
   deleteLocalR5Adjustment,
+  filterR5Adjustments,
   loadR5Adjustments,
   loadLocalR5Adjustments,
   normalizeR5Adjustment,
@@ -2766,6 +2767,30 @@ function renderConductCategoryPicker() {
   select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : 'banner_help';
 }
 
+// The list filter mirrors the picker above: options are rebuilt only when their
+// labels change, so a language switch re-labels them in place.
+function renderConductCategoryFilter() {
+  const select = $id('dashConductCategoryFilter');
+  if (!select) return;
+  const previous = select.value;
+  const allLabel = dashT('adminSuggestFilterAll');
+  const signature = [`all:${allLabel}`]
+    .concat(R5_ADJUSTMENT_CATEGORY_KEYS.map((key) => `${key}:${conductCategoryLabel(key)}`))
+    .join('|');
+  if (select.dataset.signature !== signature) {
+    select.dataset.signature = signature;
+    select.innerHTML = [
+      `<option value="">${esc(allLabel)}</option>`,
+      ...R5_ADJUSTMENT_CATEGORY_KEYS.map(
+        (key) => `<option value="${esc(key)}">${esc(conductCategoryLabel(key))}</option>`
+      ),
+    ].join('');
+  }
+  // An unknown value falls back to All rather than leaving a filter selected
+  // that matches nothing.
+  select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : '';
+}
+
 function resetConductForm() {
   state.r5EditingId = '';
   state._r5EditingFingerprint = '';
@@ -2810,6 +2835,7 @@ function renderConductAdjustments() {
   const list = $id('dashConductList');
   if (!list) return;
   renderConductCategoryPicker();
+  renderConductCategoryFilter();
   renderConductPlayerPicker();
   const seasonEl = $id('dashConductSeason');
   if (seasonEl) seasonEl.textContent = dashT('adminConductSeasonLabel', { season: state.r5Season });
@@ -2818,14 +2844,16 @@ function renderConductAdjustments() {
   if (points && !points.value) points.value = defaultR5PointsForCategory(category);
 
   const searchEl = $id('dashConductSearch');
-  const searchQuery = (searchEl?.value || '').trim().toLowerCase();
+  const searchQuery = searchEl?.value || '';
+  // Empty means every category. The filter answers "which bonus?" — before it,
+  // a season of merits and penalties could only be read by scrolling.
+  const categoryFilter = $id('dashConductCategoryFilter')?.value || '';
 
-  const rows = (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [])
-    .filter(
-      (record) =>
-        record?.season === state.r5Season &&
-        (!searchQuery || (record.playerName || '').toLowerCase().includes(searchQuery))
-    )
+  const rows = filterR5Adjustments(state.r5Adjustments, {
+    season: state.r5Season,
+    category: categoryFilter,
+    playerQuery: searchQuery,
+  })
     .slice()
     .sort((a, b) => {
       const aMs =
@@ -3751,6 +3779,7 @@ function bindConductControls() {
   void loadRewardSettings();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
+  $id('dashConductCategoryFilter')?.addEventListener('change', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
   const playerSearchInput = $id('dashConductPlayerSearchInput');
   playerSearchButton?.addEventListener('click', () => {

@@ -169,6 +169,7 @@ const zh = {
   adminConductSeasonLabel: '赛季：{season}',
   adminConductPlayer: '玩家',
   adminConductCategory: '类别',
+  adminConductFilterCategory: '按类别筛选',
   adminConductPoints: '分数',
   adminConductNote: '备注',
   adminConductNotePh: '可选原因',

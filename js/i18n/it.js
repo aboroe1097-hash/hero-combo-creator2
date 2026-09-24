@@ -566,6 +566,7 @@ const it = {
     'Aggiungi manualmente punti bonus o penalità per gioco di squadra, banner, strade e impegno collettivo. La classifica ricompense usa il totale corretto.',
   adminConductSeasonLabel: 'Stagione: {season}',
   adminConductCategory: 'Categoria',
+  adminConductFilterCategory: 'Filtra per categoria',
   adminConductPoints: 'Punti',
   adminConductNote: 'Nota',
   adminConductNotePh: 'Motivo facoltativo',

@@ -173,6 +173,7 @@ const id = {
   adminConductSeasonLabel: 'Musim: {season}',
   adminConductPlayer: 'Pemain',
   adminConductCategory: 'Kategori',
+  adminConductFilterCategory: 'Saring berdasarkan kategori',
   adminConductPoints: 'Poin',
   adminConductNote: 'Catatan',
   adminConductNotePh: 'Alasan opsional',
