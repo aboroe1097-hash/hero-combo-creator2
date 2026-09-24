@@ -55,6 +55,7 @@ npx firebase deploy --only "functions:<name>,functions:<name>" --project abocomb
 ```
 
 - Functions run on **Node 22** (`nvm use 22` if you use nvm). The frontend uses Node 20.
+- Deploying from a newer local Node works: on 2026-09-24 a deploy from Node 24 printed `EBADENGINE … required: { node: '22' }` and still deployed to the Node 22 runtime. The "outdated firebase-functions" and `npm audit` notices are follow-up work for their own PR, not something to fix in the release checkout.
 - `npm ci` in `functions/` is required on a fresh checkout. Without it, deploy fails with "User code failed to load … Timeout after 10000".
 - `FUNCTIONS_DISCOVERY_TIMEOUT=120` avoids the same timeout on a slow first load of the Admin SDK. Set it in the same PowerShell window as the deploy.
 - Deploy only the functions the release changed, and name them in the PR's "Separate backend deployment" section. If the CLI offers to delete functions that are not in the code, answer **No**.
@@ -83,4 +84,5 @@ npx firebase deploy --only "functions:<name>,functions:<name>" --project abocomb
   - The superadmin claim.
   - Even the unchanged live ruleset with one added comment failed in the console.
 - **What worked:** retrying. One `releases.patch` returned 503 and still took effect. The next deploy failed at `:test`, but its ruleset had already been uploaded, and `scripts/firestore-rules-release.mjs release` switched production to it on the second attempt: 503, then 200. Final state: `LIVE MATCHES THIS CHECKOUT`, ruleset `05643584-ba74-423d-87ee-0829897f5b98`, 144,821 bytes, 2026-09-24 17:02 UTC.
+- **Follow-up the same day:** `syncCompetitionPhase` (created), `vtsScore` and `bohSignupAdmin` deployed on the first attempt using the Functions steps above.
 - **Lesson:** a 503 from the Rules API is transient and says nothing about whether that step applied. Retry, then trust only `firestore-rules-status`.
