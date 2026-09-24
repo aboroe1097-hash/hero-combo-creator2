@@ -5,6 +5,8 @@ This is the release history, newest first. Entries describe their release-time b
 ## 16.5.5 - 2026-09-24
 
 - Clicking a reward category on the Eden season view now takes you to its table. The scroll only happened on phones before, so on a laptop the card swapped the table in below the fold and looked like nothing had happened; it now scrolls whenever the table is not already on screen. Clicking the category that is already showing scrolls to it too, instead of doing nothing.
+- Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. An unfilled quota slot keeps its plain placeholder.
+
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.

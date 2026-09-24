@@ -6663,9 +6663,17 @@ function renderAnnouncementTable() {
           <tbody>${rows
             .map((row) => {
               const meta = announcementCategoryMeta(row.category);
+              // The announcement names the same players as the weighted table,
+              // so they open the same player detail. A row with no entry (a
+              // quota slot nobody fills yet) stays plain text.
+              const canOpenPlayer = !row.placeholder && Boolean(row.playerKey);
               const name = row.placeholder
                 ? esc(t('edenX1Tba'))
-                : `<strong>${renderTaggedPlayerName(row)}</strong>`;
+                : `<strong>${
+                    canOpenPlayer
+                      ? publicPlayerButton(row.playerName, row.playerKey, 'eden-x1-table-name')
+                      : renderTaggedPlayerName(row)
+                  }</strong>`;
               return `<tr class="eden-x1-announcement-row--${row.category}">
                 <td data-label="${esc(t('edenX1ThNumber'))}">${row.rank}</td>
                  <td data-label="${esc(t('adminContributionMember'))}">${name}</td>

@@ -68,3 +68,22 @@ test('a reward category click scrolls to the table whenever the table is not on 
   assert.match(js, /prefers-reduced-motion: reduce/);
   assert.match(js, /behavior: reducedMotion \? 'auto' : 'smooth'/);
 });
+
+test('announcement rows name the same players with the same clickable name', async () => {
+  // The announcement table named players as plain text while every other
+  // player surface on the page opened the player detail, so the final list —
+  // the one members actually read — was the one you could not click through.
+  assert.match(js, /const canOpenPlayer = !row\.placeholder && Boolean\(row\.playerKey\);/);
+  assert.match(
+    js,
+    /canOpenPlayer\s*\?\s*publicPlayerButton\(row\.playerName, row\.playerKey, 'eden-x1-table-name'\)\s*:\s*renderTaggedPlayerName\(row\)/
+  );
+  // An empty quota slot keeps its plain placeholder.
+  assert.match(js, /row\.placeholder\s*\?\s*esc\(t\('edenX1Tba'\)\)/);
+  // The click is handled by the shared delegated listener, not a new one.
+  assert.match(js, /closest\('\[data-public-player\]'\)/);
+  assert.match(
+    js,
+    /showPublicDetail\('player', playerButton\.getAttribute\('data-public-player'\)\)/
+  );
+});
