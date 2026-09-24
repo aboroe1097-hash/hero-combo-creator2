@@ -5,7 +5,7 @@ This is the release history, newest first. Entries describe their release-time b
 ## 16.5.5 - 2026-09-24
 
 - Clicking a reward category on the Eden season view now takes you to its table. The scroll only happened on phones before, so on a laptop the card swapped the table in below the fold and looked like nothing had happened; it now scrolls whenever the table is not already on screen. Clicking the category that is already showing scrolls to it too, instead of doing nothing.
-- Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. An unfilled quota slot keeps its plain placeholder.
+- Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. On a phone each name is a full-height tap target, and the downloaded announcement image stays without link underlines. An unfilled quota slot keeps its plain placeholder, and so does a name with no season detail to open.
 
 ## 16.5.4 - 2026-09-24
 

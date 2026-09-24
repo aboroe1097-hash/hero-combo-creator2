@@ -5954,6 +5954,16 @@ function openPublicModal(title, subtitle, body) {
   }
 }
 
+// Whether showPublicDetail('player', key) has anything to show.
+function publicPlayerDetailAvailable(key) {
+  const normalizedKey = String(key || '');
+  if (!normalizedKey) return false;
+  return (
+    publicPlayerRows.some((row) => row.key === normalizedKey) ||
+    Boolean(findPublicWeightedRow(normalizedKey))
+  );
+}
+
 function showPublicDetail(type, key) {
   const normalizedKey = String(key || '');
   if (type === 'player') {
@@ -6662,8 +6672,11 @@ function renderAnnouncementTable() {
               const meta = announcementCategoryMeta(row.category);
               // The announcement names the same players as the weighted table,
               // so they open the same player detail. A row with no entry (a
-              // quota slot nobody fills yet) stays plain text.
-              const canOpenPlayer = !row.placeholder && Boolean(row.playerKey);
+              // quota slot nobody fills yet) stays plain text, and so does a
+              // name with no detail to open (a vote winner who matches no
+              // season row and has no hits), rather than a button that does
+              // nothing.
+              const canOpenPlayer = !row.placeholder && publicPlayerDetailAvailable(row.playerKey);
               const name = row.placeholder
                 ? esc(t('edenX1Tba'))
                 : `<strong>${

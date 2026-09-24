@@ -10,7 +10,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-24",
     "highlights": [
       "Clicking a reward category on the Eden season view now takes you to its table. The scroll only happened on phones before, so on a laptop the card swapped the table in below the fold and looked like nothing had happened; it now scrolls whenever the table is not already on screen.…",
-      "Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. An unfilled quota slot keeps its plain placeholder."
+      "Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. On a phone each name is a full-height tap target, and the downloaded announcement image stays without link unde…"
     ]
   },
   {

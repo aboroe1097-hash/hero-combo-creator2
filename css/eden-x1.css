@@ -1037,6 +1037,20 @@ body.eden-x1-page[data-eden-season-state='archive'] #edenX1PublicOverview {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
+/* The shared image is a poster, not the page: names keep no link underline. */
+.eden-x1-announcement-export .eden-x1-clickable-name {
+  text-decoration: none !important;
+}
+
+/* A phone-sized tap target for the clickable names in the final Top list. */
+@media (max-width: 768px) {
+  .eden-x1-announcement-table .eden-x1-clickable-name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
 @media (max-width: 760px) {
   .eden-x1-announcement-remaining-grid {
     grid-template-columns: 1fr;

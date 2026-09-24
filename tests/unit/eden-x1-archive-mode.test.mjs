@@ -73,7 +73,10 @@ test('announcement rows name the same players with the same clickable name', asy
   // The announcement table named players as plain text while every other
   // player surface on the page opened the player detail, so the final list —
   // the one members actually read — was the one you could not click through.
-  assert.match(js, /const canOpenPlayer = !row\.placeholder && Boolean\(row\.playerKey\);/);
+  assert.match(
+    js,
+    /const canOpenPlayer = !row\.placeholder && publicPlayerDetailAvailable\(row\.playerKey\);/
+  );
   assert.match(
     js,
     /canOpenPlayer\s*\?\s*publicPlayerButton\(row\.playerName, row\.playerKey, 'eden-x1-table-name'\)\s*:\s*renderTaggedPlayerName\(row\)/
