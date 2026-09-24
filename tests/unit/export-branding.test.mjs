@@ -88,10 +88,28 @@ test('canvas footer fits wide canvases and credits sources', () => {
 test('canvas footer truncates instead of overflowing narrow canvases', () => {
   const ctx = fakeCtx();
   const brand = getExportBranding();
-  const fits = drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 200 });
+  const fits = drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 100 });
   assert.equal(fits, false);
   const line2 = ctx.calls[1].text;
   assert.ok(line2.endsWith('…'));
+});
+
+test('canvas footer omits the Sources segment when an export passes no credits', () => {
+  const ctx = fakeCtx();
+  const brand = { ...getExportBranding(), sourceCredits: [] };
+  drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 1200 });
+  const text = ctx.calls.map((call) => call.text).join('\n');
+  assert.ok(!text.includes('Sources:'));
+  assert.ok(!text.includes('DonPablone'));
+  assert.ok(text.includes(brand.siteUrl));
+});
+
+test('a footer too narrow for every credit never singles out one name', () => {
+  const ctx = fakeCtx();
+  const brand = getExportBranding();
+  drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 520 });
+  const line2 = ctx.calls[1].text;
+  assert.ok(!line2.includes('DonPablone'), line2);
 });
 
 test('truncateCanvasText reports the fits contract', () => {
