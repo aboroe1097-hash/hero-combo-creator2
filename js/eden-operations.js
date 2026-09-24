@@ -418,7 +418,7 @@ function siteText(key, fallback) {
 
 function renderMoreTools() {
   const mapText = (key) => escapeHtml(edenMapText(key, {}, locale()));
-  return `<section class="eden-ops-more" aria-labelledby="edenOpsMoreTitle"><h3 id="edenOpsMoreTitle">${escapeHtml(siteText('tabEdenMap', 'VTS Eden Hub'))}</h3><div class="eden-ops-more-grid"><a class="eden-ops-more-card" href="#edenHub?subtab=map"><span aria-hidden="true">🗺️</span><strong>${mapText('subTabMap')}</strong></a><a class="eden-ops-more-card" href="#edenHub?subtab=loyalty"><span aria-hidden="true">🛡️</span><strong>${mapText('subTabLoyalty')}</strong></a><div class="eden-ops-more-card is-soon" aria-disabled="true"><span aria-hidden="true">🧭</span><strong>${mapText('subTabPathing')} <em>${escapeHtml(siteText('badgeSoon', 'SOON'))}</em></strong><small>${mapText('subTabPathingDesc')}</small></div></div></section>`;
+  return `<section class="eden-ops-more" aria-labelledby="edenOpsMoreTitle"><h3 id="edenOpsMoreTitle">${escapeHtml(siteText('tabEdenMap', 'VTS Eden Hub'))}</h3><div class="eden-ops-more-grid"><a class="eden-ops-more-card" href="#edenHub?subtab=map"><span aria-hidden="true">🗺️</span><strong>${mapText('subTabMap')}</strong></a><a class="eden-ops-more-card" href="#edenHub?subtab=loyalty"><span aria-hidden="true">🛡️</span><strong>${mapText('subTabLoyalty')}</strong></a><a class="eden-ops-more-card" href="#edenHub?subtab=pathing"><span aria-hidden="true">🧭</span><strong>${mapText('subTabPathing')}</strong><small>${mapText('subTabPathingDesc')}</small></a></div></section>`;
 }
 
 function renderSources() {

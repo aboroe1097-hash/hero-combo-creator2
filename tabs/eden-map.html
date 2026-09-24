@@ -76,24 +76,20 @@
     >
       Previous Seasons · Eden X1
     </button>
-    <!-- Announced tool: the pathing planner is not in the site yet, so this entry has no data-eden-subtab and never opens a panel. -->
     <button
       type="button"
-      class="vts-eden-subtab-btn vts-eden-subtab-btn--soon"
+      class="vts-eden-subtab-btn"
       role="tab"
       aria-selected="false"
-      aria-disabled="true"
-      aria-describedby="edenPathingSoonDesc"
+      data-eden-subtab="pathing"
       title="Plan A→B gate routes with mountain waypoints and export a PNG."
       data-eden-i18n-title="subTabPathingDesc"
-      data-subtool-badge="SOON" data-i18n-badge="badgeSoon"
+      data-subtool-badge="NEW"
+      data-i18n-badge="badgeNew"
     >
       <span data-eden-i18n="subTabPathing">Eden Pathing</span>
     </button>
   </nav>
-  <span id="edenPathingSoonDesc" class="sr-only" data-eden-i18n="subTabPathingDesc"
-    >Plan A→B gate routes with mountain waypoints and export a PNG.</span
-  >
   <div class="vts-eden-subtab-panel" data-eden-subtab-panel="map" role="tabpanel" hidden>
     <div class="eden-map-header">
       <div>
@@ -1325,6 +1321,14 @@
       <div class="tab-loading">
         <div class="spinner"></div>
         <span>Loading Eden Operations…</span>
+      </div>
+    </div>
+  </div>
+  <div class="vts-eden-subtab-panel" data-eden-subtab-panel="pathing" role="tabpanel" hidden>
+    <div id="edenPathingRoot" class="eden-pathing-root">
+      <div class="tab-loading">
+        <div class="spinner"></div>
+        <span>Loading Eden Pathing…</span>
       </div>
     </div>
   </div>
