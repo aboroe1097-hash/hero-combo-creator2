@@ -3613,7 +3613,7 @@ const fr = {
   adminRewardSettingsGuildMasterTop1: 'Le meilleur au soutien',
   adminRewardSettingsR5Label: 'Joueur R5',
   adminRewardSettingsHint:
-    'Si le R5 indiqué ne figure pas dans la liste de soutien, la récompense de maître de guilde reste au meilleur au soutien plutôt que de rester sans titulaire.',
+    'Un R5 sans travail de soutien personnel reçoit tout de même la récompense de chef de guilde par son nom ; la ligne apparaît avec des scores à zéro. Le quota de Travail de soutien inclut ce R5 et, même à 0, un joueur reçoit la récompense.',
   adminRewardSettingsSave: 'Enregistrer la répartition',
   adminRewardSettingsSaved:
     'Répartition enregistrée. Publiez la saison pour mettre à jour la page publique.',

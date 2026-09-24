@@ -3550,7 +3550,7 @@ Object.assign(id, {
   adminRewardSettingsGuildMasterTop1: 'Penyumbang dukungan teratas',
   adminRewardSettingsR5Label: 'Pemain R5',
   adminRewardSettingsHint:
-    'Jika R5 yang disebut tidak ada dalam daftar dukungan, hadiah guild master tetap pada penyumbang dukungan teratas agar tidak kosong.',
+    'R5 yang tidak punya kerja dukungan sendiri tetap memegang hadiah ketua guild berdasarkan namanya; barisnya tampil dengan skor nol. Kuota Kerja dukungan sudah termasuk R5 tersebut, dan bahkan pada 0 tetap ada satu pemain yang memegang hadiah.',
   adminRewardSettingsSave: 'Simpan distribusi',
   adminRewardSettingsSaved:
     'Distribusi tersimpan. Publikasikan musim untuk memperbarui halaman publik.',

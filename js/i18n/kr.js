@@ -3391,7 +3391,7 @@ Object.assign(kr, {
   adminRewardSettingsGuildMasterTop1: '지원 작업 1위',
   adminRewardSettingsR5Label: 'R5 플레이어',
   adminRewardSettingsHint:
-    '지정한 R5가 지원 목록에 없으면 길드 마스터 보상은 비어 있지 않도록 지원 작업 1위에게 남습니다.',
+    '자신의 지원 작업이 없는 R5도 이름으로 길드장 보상을 받으며, 해당 행은 점수 0으로 표시됩니다. 지원 작업 쿼터에는 그 R5가 포함되며, 쿼터가 0이어도 한 명은 보상을 받습니다.',
   adminRewardSettingsSave: '분배 저장',
   adminRewardSettingsSaved: '분배가 저장되었습니다. 공개 페이지를 갱신하려면 시즌을 발행하세요.',
   adminRewardSettingsResetConfirm:

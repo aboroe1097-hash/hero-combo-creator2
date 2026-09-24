@@ -304,7 +304,7 @@ const en = {
   adminRewardSettingsGuildMasterTop1: 'The top support scorer',
   adminRewardSettingsR5Label: 'R5 player',
   adminRewardSettingsHint:
-    'When the named R5 is not in the support list, the guild-master reward stays on the top support scorer rather than going unheld.',
+    'An R5 with no support work of their own still holds the guild-master reward by name; the row appears with zero scores. The Support Work quota includes that R5, and even at 0 one player holds the reward.',
   adminRewardSettingsSave: 'Save distribution',
   adminRewardSettingsSaved: 'Distribution saved. Publish the season to update the public page.',
   adminRewardSettingsResetConfirm:

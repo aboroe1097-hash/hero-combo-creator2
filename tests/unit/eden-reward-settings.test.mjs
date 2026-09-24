@@ -9,7 +9,6 @@ import {
   REWARD_QUOTA_KEYS,
   normalizePublishedRewardSettings,
   normalizeRewardSettings,
-  resolveGuildMasterSlot,
   allocateSupportRewards,
   announcementSlotCount,
   guildMasterIsReserved,
@@ -63,8 +62,26 @@ test('reward settings treat the document as hostile input', () => {
   assert.equal(cleaned.guildMasterSource, 'r5', 'unknown sources fall back to the R5');
   assert.equal(cleaned.r5PlayerKey, 'MalakAbo', 'trims the stored name');
 
-  // A zero quota is meaningful (that category rewards nobody) and is preserved.
+  // Normalizing keeps a stored 0 as 0. For contribution, management and team
+  // that rewards nobody; supportSlotCount still clamps Support Work to one
+  // guild-master holder.
   assert.equal(normalizeRewardSettings({ quotas: { support: 0 } }).quotas.support, 0);
+  assert.equal(normalizeRewardSettings({ quotas: { support: '0' } }).quotas.support, 0);
+  assert.equal(normalizeRewardSettings({ quotas: { support: ' 3 ' } }).quotas.support, 3);
+  // A cleared admin field ('' or whitespace) or a missing/null/boolean/array
+  // value keeps the default instead of coercing to 0.
+  for (const value of ['', '   ', null, undefined, false, true, [], [2], {}]) {
+    assert.equal(
+      normalizeRewardSettings({ quotas: { support: value, team: value } }).quotas.support,
+      DEFAULT_REWARD_SETTINGS.quotas.support,
+      `support ${JSON.stringify(value)}`
+    );
+    assert.equal(
+      normalizeRewardSettings({ quotas: { support: value, team: value } }).quotas.team,
+      DEFAULT_REWARD_SETTINGS.quotas.team,
+      `team ${JSON.stringify(value)}`
+    );
+  }
   // Every source the module accepts is a real switch value.
   for (const source of GUILD_MASTER_SOURCES) {
     assert.equal(normalizeRewardSettings({ guildMasterSource: source }).guildMasterSource, source);
@@ -72,38 +89,6 @@ test('reward settings treat the document as hostile input', () => {
   for (const key of REWARD_QUOTA_KEYS) {
     assert.equal(normalizeRewardSettings({ quotas: { [key]: 6 } }).quotas[key], 6);
   }
-});
-
-test('the guild-master slot follows the configured source and never goes unheld', () => {
-  const supportKeys = ['alpha', 'malakabo', 'gamma'];
-
-  // Default: the R5 holds it, wherever they sit in the support list.
-  assert.deepEqual(resolveGuildMasterSlot(null, '', supportKeys), {
-    source: 'r5',
-    slotIndex: 1,
-  });
-  // Explicitly asked for: it is the top support scorer.
-  assert.deepEqual(resolveGuildMasterSlot({ guildMasterSource: 'support_top1' }, '', supportKeys), {
-    source: 'support_top1',
-    slotIndex: 0,
-  });
-  // An R5 who did no support work this season: the reward stays held.
-  assert.deepEqual(resolveGuildMasterSlot(null, 'nobody', supportKeys), {
-    source: 'support_top1',
-    slotIndex: 0,
-  });
-  // The lookup is case-insensitive and tolerates the stored whitespace.
-  assert.deepEqual(resolveGuildMasterSlot(null, '  MALAKABO ', supportKeys), {
-    source: 'r5',
-    slotIndex: 1,
-  });
-  // An empty support list has no slot to hand it to.
-  assert.equal(resolveGuildMasterSlot(null, '', []).slotIndex, -1);
-  // A per-call override beats the stored name.
-  assert.deepEqual(resolveGuildMasterSlot({ r5PlayerKey: 'malakabo' }, 'gamma', supportKeys), {
-    source: 'r5',
-    slotIndex: 2,
-  });
 });
 
 test('the reward distribution is a superadmin document published with the season', async () => {
@@ -255,4 +240,69 @@ test('the R5 holds guild master inside the support quota, so the quota is the ro
 
   // No R5 named: nothing is reserved either.
   assert.equal(guildMasterIsReserved({ r5PlayerKey: '' }), false);
+});
+
+test('Support Work quotas 0, 1 and 2 always leave one guild-master holder, in both modes', () => {
+  const rows = ['alpha', 'malakabo', 'beta'].map((playerKey) => ({ playerKey }));
+  const options = { familyKeyOf: (row) => row.playerKey, r5FamilyKey: 'malakabo' };
+  const shape = (allocation) =>
+    allocation.map(({ row, reward }) => [row?.playerKey ?? null, reward]);
+
+  const cases = [
+    // Reserved R5: the R5 is always first and counts inside the quota.
+    { settings: {}, support: 0, slots: 1, expected: [['malakabo', 'guild_master']] },
+    { settings: {}, support: 1, slots: 1, expected: [['malakabo', 'guild_master']] },
+    {
+      settings: {},
+      support: 2,
+      slots: 2,
+      expected: [
+        ['malakabo', 'guild_master'],
+        ['alpha', 'core'],
+      ],
+    },
+    // support_top1: the top scorer holds it, and a quota of 0 does not empty the table.
+    {
+      settings: { guildMasterSource: 'support_top1' },
+      support: 0,
+      slots: 1,
+      expected: [['alpha', 'guild_master']],
+    },
+    {
+      settings: { guildMasterSource: 'support_top1' },
+      support: 1,
+      slots: 1,
+      expected: [['alpha', 'guild_master']],
+    },
+    {
+      settings: { guildMasterSource: 'support_top1' },
+      support: 2,
+      slots: 2,
+      expected: [
+        ['alpha', 'guild_master'],
+        ['malakabo', 'core'],
+      ],
+    },
+  ];
+  for (const { settings, support, slots, expected } of cases) {
+    const configured = { ...settings, quotas: { support } };
+    const label = `${configured.guildMasterSource || 'r5'} quota ${support}`;
+    assert.deepEqual(
+      shape(allocateSupportRewards(configured, rows, { ...options, r5Row: rows[1] })),
+      expected,
+      label
+    );
+    assert.equal(supportSlotCount(configured), slots, label);
+  }
+
+  // No R5 named behaves like support_top1 at quota 0.
+  assert.deepEqual(
+    shape(allocateSupportRewards({ r5PlayerKey: '', quotas: { support: 0 } }, rows)),
+    [['alpha', 'guild_master']]
+  );
+  // With no support rows at all there is nobody to hand it to.
+  assert.deepEqual(
+    allocateSupportRewards({ guildMasterSource: 'support_top1', quotas: { support: 0 } }, []),
+    []
+  );
 });

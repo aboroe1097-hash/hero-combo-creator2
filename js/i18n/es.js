@@ -3446,7 +3446,7 @@ const es = {
   adminRewardSettingsGuildMasterTop1: 'El mejor en apoyo',
   adminRewardSettingsR5Label: 'Jugador R5',
   adminRewardSettingsHint:
-    'Si el R5 indicado no está en la lista de apoyo, la recompensa de maestro de gremio se queda en el mejor en apoyo en lugar de quedar sin titular.',
+    'Un R5 sin trabajo de apoyo propio conserva igualmente la recompensa de líder de gremio por su nombre; la fila aparece con puntuaciones en cero. La cuota de Trabajo de apoyo incluye a ese R5 y, incluso con 0, un jugador recibe la recompensa.',
   adminRewardSettingsSave: 'Guardar distribución',
   adminRewardSettingsSaved:
     'Distribución guardada. Publica la temporada para actualizar la página pública.',

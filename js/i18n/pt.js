@@ -3153,7 +3153,7 @@ const pt = {
   adminRewardSettingsGuildMasterTop1: 'O melhor no apoio',
   adminRewardSettingsR5Label: 'Jogador R5',
   adminRewardSettingsHint:
-    'Se o R5 indicado não estiver na lista de apoio, a recompensa de mestre da guilda fica com o melhor no apoio em vez de ficar sem titular.',
+    'Um R5 sem trabalho de apoio próprio continua com a recompensa de líder da guilda pelo nome; a linha aparece com pontuações zeradas. A cota de Trabalho de apoio inclui esse R5 e, mesmo com 0, um jogador recebe a recompensa.',
   adminRewardSettingsSave: 'Salvar distribuição',
   adminRewardSettingsSaved:
     'Distribuição salva. Publique a temporada para atualizar a página pública.',

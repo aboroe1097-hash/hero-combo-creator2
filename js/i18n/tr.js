@@ -3697,7 +3697,7 @@ Object.assign(tr, {
   adminRewardSettingsGuildMasterTop1: 'En iyi destek oyuncusu',
   adminRewardSettingsR5Label: 'R5 oyuncusu',
   adminRewardSettingsHint:
-    'Belirtilen R5 destek listesinde yoksa guild master ödülü sahipsiz kalmak yerine en iyi destek oyuncusunda kalır.',
+    'Kendi destek çalışması olmayan bir R5 de lonca başkanı ödülünü adıyla alır; satırı sıfır puanla görünür. Destek çalışması kotası bu R5’i de kapsar ve kota 0 olsa bile ödülü bir oyuncu alır.',
   adminRewardSettingsSave: 'Dağılımı kaydet',
   adminRewardSettingsSaved: 'Dağılım kaydedildi. Genel sayfayı güncellemek için sezonu yayınlayın.',
   adminRewardSettingsResetConfirm:

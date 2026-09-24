@@ -2586,7 +2586,7 @@ const it = {
   adminRewardSettingsGuildMasterTop1: 'Al miglior sostenitore',
   adminRewardSettingsR5Label: 'Giocatore R5',
   adminRewardSettingsHint:
-    'Se l’R5 indicato non è nell’elenco del supporto, il premio di guild master resta al miglior sostenitore invece di rimanere senza titolare.',
+    'Un R5 senza lavoro di supporto proprio mantiene comunque il premio del capogilda per nome; la riga compare con punteggi a zero. La quota del Lavoro di supporto include quell’R5 e, anche a 0, un giocatore riceve il premio.',
   adminRewardSettingsSave: 'Salva distribuzione',
   adminRewardSettingsSaved:
     'Distribuzione salvata. Pubblica la stagione per aggiornare la pagina pubblica.',

@@ -2283,7 +2283,7 @@ const zh = {
   adminRewardSettingsGuildMasterTop1: '支援工作第一名',
   adminRewardSettingsR5Label: 'R5 玩家',
   adminRewardSettingsHint:
-    '如果指定的 R5 不在支援名单中，公会会长奖励仍归支援工作第一名，而不是无人持有。',
+    '没有自己支援工作的 R5 仍按名字获得公会长奖励；该行以零分显示。支援工作名额包含这位 R5，即使配额为 0，也有一名玩家获得奖励。',
   adminRewardSettingsSave: '保存分配',
   adminRewardSettingsSaved: '分配已保存。发布赛季以更新公开页面。',
   adminRewardSettingsResetConfirm: '将奖励分配重置为默认值？这会重新编号奖励名额。',

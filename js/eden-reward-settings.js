@@ -28,6 +28,11 @@ export const DEFAULT_REWARD_SETTINGS = Object.freeze({
 });
 
 function readQuota(value, fallback) {
+  // Only a real number or a non-blank numeric string counts. Number('') and
+  // Number(null) are 0, so a cleared admin field would otherwise save a quota
+  // of 0 instead of keeping the default.
+  const usable = typeof value === 'number' || (typeof value === 'string' && value.trim() !== '');
+  if (!usable) return fallback;
   const number = Number(value);
   if (!Number.isFinite(number) || number < 0) return fallback;
   return Math.min(MAX_REWARD_QUOTA, Math.floor(number));
@@ -92,13 +97,13 @@ export function guildMasterIsReserved(settings) {
 }
 
 /**
- * Rows the Support Work table shows. A reserved R5 fills one of the quota slots,
- * so the quota is the row count — except at a quota of 0, where the R5 still
- * holds the reward rather than leaving a season with nobody holding it.
+ * Rows the Support Work table shows. The guild-master holder (a reserved R5, or
+ * the top support scorer) fills one of the quota slots, so the quota is the row
+ * count — except at a quota of 0, where one player still holds the reward
+ * rather than leaving a season with nobody holding it. This holds in both modes.
  */
 export function supportSlotCount(settings) {
-  const quota = rewardQuota(settings, 'support');
-  return guildMasterIsReserved(settings) ? Math.max(quota, 1) : quota;
+  return Math.max(rewardQuota(settings, 'support'), 1);
 }
 
 /** Size of the final announcement: every category's slots together. */
@@ -124,7 +129,10 @@ export function announcementSlotCount(settings) {
  * @returns {Array<{ row: object|null, reward: 'guild_master'|'core' }>}
  *   With a reserved R5 the first entry is the R5 (row null if they have no
  *   scored row), and the R5 takes one of the quota slots, so `quota - 1` other
- *   support rows follow. A quota of 0 still yields the R5 alone.
+ *   support rows follow. A quota of 0 still yields the R5 alone. Without a
+ *   reserved R5 the top support scorer holds guild master inside the quota, and
+ *   a quota of 0 still yields that top scorer alone (nothing when there are no
+ *   support rows at all).
  */
 export function allocateSupportRewards(settings, supportRows, options = {}) {
   const normalized = normalizeRewardSettings(settings);
@@ -132,7 +140,7 @@ export function allocateSupportRewards(settings, supportRows, options = {}) {
   const rows = Array.isArray(supportRows) ? supportRows : [];
   if (!guildMasterIsReserved(normalized)) {
     return rows
-      .slice(0, quota)
+      .slice(0, Math.max(quota, 1))
       .map((row, index) => ({ row, reward: index === 0 ? 'guild_master' : 'core' }));
   }
   const familyKeyOf = typeof options.familyKeyOf === 'function' ? options.familyKeyOf : () => '';
@@ -142,35 +150,4 @@ export function allocateSupportRewards(settings, supportRows, options = {}) {
     .slice(0, Math.max(0, quota - 1))
     .map((row) => ({ row, reward: 'core' }));
   return [{ row: options.r5Row || null, reward: 'guild_master' }, ...others];
-}
-
-/**
- * Which support-work slot gets the guild-master reward.
- *
- * Returns `{ source, slotIndex }` where `slotIndex` is the zero-based support
- * slot that carries the guild-master reward. When the configured R5 is not in
- * the support list the answer falls back to the top support scorer, because a
- * season must never end with nobody holding the reward.
- */
-export function resolveGuildMasterSlot(settings, r5PlayerKey, supportPlayerKeys) {
-  const normalized = normalizeRewardSettings(settings);
-  const keys = Array.isArray(supportPlayerKeys) ? supportPlayerKeys : [];
-  if (normalized.guildMasterSource !== 'r5') {
-    return { source: 'support_top1', slotIndex: keys.length ? 0 : -1 };
-  }
-  const wanted = String(r5PlayerKey || normalized.r5PlayerKey || '')
-    .trim()
-    .toLowerCase();
-  const index = wanted
-    ? keys.findIndex(
-        (key) =>
-          String(key || '')
-            .trim()
-            .toLowerCase() === wanted
-      )
-    : -1;
-  if (index < 0) {
-    return { source: 'support_top1', slotIndex: keys.length ? 0 : -1 };
-  }
-  return { source: 'r5', slotIndex: index };
 }

@@ -3445,7 +3445,7 @@ Object.assign(ar, {
   adminRewardSettingsGuildMasterTop1: 'الأعلى في أعمال الدعم',
   adminRewardSettingsR5Label: 'لاعب R5',
   adminRewardSettingsHint:
-    'إذا لم يكن قائد التحالف المحدد ضمن قائمة الدعم، تبقى مكافأة سيد التحالف على الأعلى في أعمال الدعم بدلًا من أن تبقى بلا صاحب.',
+    'قائد R5 الذي ليس لديه عمل دعم خاص به يحتفظ مع ذلك بمكافأة قائد النقابة باسمه؛ ويظهر صفه بنقاط صفرية. تشمل حصة عمل الدعم هذا القائد R5، وحتى عند 0 يحصل لاعب واحد على المكافأة.',
   adminRewardSettingsSave: 'حفظ التوزيع',
   adminRewardSettingsSaved: 'تم حفظ التوزيع. انشر الموسم لتحديث الصفحة العامة.',
   adminRewardSettingsResetConfirm:

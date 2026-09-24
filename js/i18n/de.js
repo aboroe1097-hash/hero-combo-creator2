@@ -3490,7 +3490,7 @@ const de = {
   adminRewardSettingsGuildMasterTop1: 'Den besten Support-Leister',
   adminRewardSettingsR5Label: 'R5-Spieler',
   adminRewardSettingsHint:
-    'Ist der genannte R5 nicht in der Support-Liste, bleibt die Guild-Master-Belohnung beim besten Support-Leister, statt unvergeben zu bleiben.',
+    'Ein R5 ohne eigene Unterstützungsarbeit erhält die Gildenmeister-Belohnung trotzdem namentlich; die Zeile erscheint mit null Punkten. Die Quote für Unterstützungsarbeit schließt diesen R5 ein, und selbst bei 0 erhält ein Spieler die Belohnung.',
   adminRewardSettingsSave: 'Verteilung speichern',
   adminRewardSettingsSaved:
     'Verteilung gespeichert. Saison veröffentlichen, um die öffentliche Seite zu aktualisieren.',
