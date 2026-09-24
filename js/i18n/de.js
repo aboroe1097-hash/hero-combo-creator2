@@ -3482,7 +3482,7 @@ const de = {
     'In-Game-Beiträge sind die Beitragsliste plus Punkte außerhalb der Gilde. Das Support-Gewicht skaliert die gesamte Support-Arbeit — Schildwälle, Pfade, Banner und die Bonuspunkte des Formulars —, 2 verdoppelt sie also. 0,5 beim Beitrag halbiert ihn. 1 lässt beide Werte genau wie heute.',
   adminRewardSettingsTitle: 'Belohnungsverteilung',
   adminRewardSettingsNote:
-    'Wie viele Spieler jede Kategorie in dieser Saison belohnt. Eine Änderung nummeriert die Belohnungsplätze neu; die veröffentlichte Seite zeigt die neue Verteilung nach der nächsten Veröffentlichung.',
+    'Legt fest, wie viele Spieler jede Kategorie belohnt. Die Gildenmeister-Belohnung für den R5 zählt als ein Platz bei Unterstützungsarbeit; bei einer Quote von 0 bleibt die R5-Zeile erhalten. Änderungen nummerieren die Plätze neu; die öffentliche Seite zeigt die neue Verteilung nach der nächsten Veröffentlichung.',
   adminRewardSettingsCategory: 'Kategorie',
   adminRewardSettingsSlots: 'Plätze',
   adminRewardSettingsGuildMaster: 'Guild-Master-Belohnung geht an',

@@ -3605,7 +3605,7 @@ const fr = {
     'La contribution en jeu comprend le classement plus les points hors guilde. Le poids du soutien ajuste tout le travail de soutien — murs de boucliers, tracés, bannières et points bonus du formulaire —, donc 2 le double. 0,5 sur la contribution la divise par deux. 1 laisse les deux termes inchangés.',
   adminRewardSettingsTitle: 'Répartition des récompenses',
   adminRewardSettingsNote:
-    'Combien de joueurs chaque catégorie récompense cette saison. La modifier renumérote les places de récompense ; la page publiée affichera la nouvelle répartition après la prochaine publication.',
+    'Définit le nombre de joueurs récompensés par catégorie. La récompense de chef de guilde du R5 compte comme une place de Travail de soutien ; avec un quota de 0, la ligne du R5 reste présente. Les changements renumérotent les places ; la page publique affiche la nouvelle répartition après la prochaine publication.',
   adminRewardSettingsCategory: 'Catégorie',
   adminRewardSettingsSlots: 'Places',
   adminRewardSettingsGuildMaster: 'La récompense de maître de guilde revient à',

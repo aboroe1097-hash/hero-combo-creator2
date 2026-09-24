@@ -3438,7 +3438,7 @@ const es = {
     'La contribución en el juego es la del ranking más los puntos fuera del gremio. El peso de apoyo escala todo el trabajo de apoyo — muros de escudo, rutas, estandartes y los puntos extra del formulario —, así que 2 lo duplica. 0,5 en la contribución la reduce a la mitad. 1 deja ambos términos como están hoy.',
   adminRewardSettingsTitle: 'Distribución de recompensas',
   adminRewardSettingsNote:
-    'Cuántos jugadores recompensa cada categoría esta temporada. Cambiarlo renumera las plazas de recompensa; la página publicada muestra la nueva distribución tras la siguiente publicación.',
+    'Define cuántos jugadores recompensa cada categoría. La recompensa de líder de gremio para el R5 cuenta como una plaza de Trabajo de apoyo; con cuota 0, la fila del R5 se conserva. Los cambios renumeran las plazas; la página pública muestra la nueva distribución tras la siguiente publicación.',
   adminRewardSettingsCategory: 'Categoría',
   adminRewardSettingsSlots: 'Plazas',
   adminRewardSettingsGuildMaster: 'La recompensa de maestro de gremio va a',

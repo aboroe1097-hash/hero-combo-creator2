@@ -3689,7 +3689,7 @@ Object.assign(tr, {
     'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. Destek ağırlığı tüm destek işini — kalkan duvarları, yol açma, sancaklar ve formun bonus puanları — ölçekler, yani 2 onu ikiye katlar. Katkıda 0,5 onu yarıya indirir. 1 her iki terimi bugünkü gibi bırakır.',
   adminRewardSettingsTitle: 'Ödül dağılımı',
   adminRewardSettingsNote:
-    'Bu sezon her kategorinin kaç oyuncuyu ödüllendireceği. Değiştirmek ödül slotlarını yeniden numaralandırır; yayınlanan sayfa yeni dağılımı bir sonraki yayından sonra gösterir.',
+    'Her kategoride ödül alacak oyuncu sayısını belirler. R5’e verilen lonca başkanı ödülü Destek çalışması kotasında bir yer kaplar; kota 0 olsa da R5 satırı korunur. Değişiklikler sıraları yeniden numaralandırır; herkese açık sayfa yeni dağılımı sonraki yayından sonra gösterir.',
   adminRewardSettingsCategory: 'Kategori',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Guild master ödülü kime gider',
