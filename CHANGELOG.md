@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.5 - 2026-09-24
+
+- The recent adjustments list in VTS Admin can now be filtered by which bonus or penalty an adjustment is: Banner help, Connected road, Extra effort, Merit - other, Blocked path, Toxicity, Ignored coordination, Penalty - other, and the two premium flags. Before this, a season of merits and penalties could only be read by scrolling and searching by player name. The filter sits beside the existing name search and offers the same translated category names as the entry form.
+
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.

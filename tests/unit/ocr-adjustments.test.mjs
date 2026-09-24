@@ -515,3 +515,47 @@ test('conduct bulk paste reports unreadable rows and caps the batch size', () =>
   assert.equal(capped.rows.length, CONDUCT_BULK_MAX_ROWS);
   assert.equal(capped.truncated, true);
 });
+
+test('the recent adjustments list filters by bonus category', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync('tabs/admin.html', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+
+  // The control sits in the list head beside the player search, and reuses the
+  // filter row's existing label key so no new copy is needed.
+  assert.match(html, /id="dashConductCategoryFilter"/);
+  assert.match(
+    html,
+    /for="dashConductCategoryFilter"[\s\S]*?data-i18n="adminSuggestFilterLabel"[\s\S]*?<select[\s\S]*?id="dashConductCategoryFilter"/
+  );
+
+  // Options come from the same category list the entry form uses, so a new
+  // category needs no change here, and labels re-translate in place.
+  assert.match(dashboard, /function renderConductCategoryFilter\(\)/);
+  assert.match(
+    dashboard,
+    /R5_ADJUSTMENT_CATEGORY_KEYS\.map\(\s*\(key\) => `<option value="\$\{esc\(key\)\}">\$\{esc\(conductCategoryLabel\(key\)\)\}<\/option>`/
+  );
+  assert.match(dashboard, /`<option value="">\$\{esc\(allLabel\)\}<\/option>`/);
+  assert.match(dashboard, /const allLabel = dashT\('adminSuggestFilterAll'\)/);
+
+  // Rendered with the list, filtered on category, and re-rendered on change.
+  assert.match(
+    dashboard,
+    /renderConductCategoryPicker\(\);\s*\n\s*renderConductCategoryFilter\(\);/
+  );
+  assert.match(
+    dashboard,
+    /const categoryFilter = \$id\('dashConductCategoryFilter'\)\?\.value \|\| '';/
+  );
+  assert.match(dashboard, /\(!categoryFilter \|\| record\.category === categoryFilter\)/);
+  assert.match(
+    dashboard,
+    /\$id\('dashConductCategoryFilter'\)\?\.addEventListener\('change', \(\) => renderConductAdjustments\(\)\)/
+  );
+  // An empty value is "every category", which is what keeps All working.
+  assert.match(
+    dashboard,
+    /select\.value = R5_ADJUSTMENT_CATEGORY_KEYS\.includes\(previous\) \? previous : '';/
+  );
+});
