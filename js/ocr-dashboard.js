@@ -2894,7 +2894,7 @@ function renderConductAdjustments() {
         return `<article class="dash-conduct-row">
         <div>
           <strong>${esc(record.playerName)}</strong>
-          <span>${esc(conductCategoryLabel(record.category))} Â· ${esc(conductCreatedAtLabel(record))}</span>
+          <span>${esc(conductCategoryLabel(record.category))} · ${esc(conductCreatedAtLabel(record))}</span>
           ${record.note ? `<p>${esc(record.note)}</p>` : ''}
         </div>
         <div class="dash-conduct-row-actions">
