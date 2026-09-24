@@ -204,6 +204,7 @@ const fr = {
   adminConductSeasonLabel: 'Saison : {season}',
   adminConductPlayer: 'Joueur',
   adminConductCategory: 'Catégorie',
+  adminConductFilterCategory: 'Filtrer par catégorie',
   adminConductPoints: 'Points',
   adminConductNote: 'Note',
   adminConductNotePh: 'Raison facultative',

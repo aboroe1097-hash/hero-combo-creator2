@@ -173,6 +173,7 @@ const ar = {
   adminConductSeasonLabel: 'الموسم: {season}',
   adminConductPlayer: 'اللاعب',
   adminConductCategory: 'الفئة',
+  adminConductFilterCategory: 'تصفية حسب الفئة',
   adminConductPoints: 'النقاط',
   adminConductNote: 'ملاحظة',
   adminConductNotePh: 'سبب اختياري',

@@ -211,6 +211,7 @@ const en = {
   adminConductSeasonLabel: 'Season: {season}',
   adminConductPlayer: 'Player',
   adminConductCategory: 'Category',
+  adminConductFilterCategory: 'Filter by category',
   adminConductPoints: 'Points',
   adminConductNote: 'Note',
   adminConductNotePh: 'Optional reason',

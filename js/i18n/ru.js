@@ -174,6 +174,7 @@ const ru = {
   adminConductSeasonLabel: 'Сезон: {season}',
   adminConductPlayer: 'Игрок',
   adminConductCategory: 'Категория',
+  adminConductFilterCategory: 'Фильтр по категории',
   adminConductPoints: 'Очки',
   adminConductNote: 'Заметка',
   adminConductNotePh: 'Причина (необязательно)',

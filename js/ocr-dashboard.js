@@ -149,6 +149,7 @@ import {
   defaultR5PointsForCategory,
   deleteR5Adjustment,
   deleteLocalR5Adjustment,
+  filterR5Adjustments,
   loadR5Adjustments,
   loadLocalR5Adjustments,
   normalizeR5Adjustment,
@@ -2843,18 +2844,16 @@ function renderConductAdjustments() {
   if (points && !points.value) points.value = defaultR5PointsForCategory(category);
 
   const searchEl = $id('dashConductSearch');
-  const searchQuery = (searchEl?.value || '').trim().toLowerCase();
+  const searchQuery = searchEl?.value || '';
   // Empty means every category. The filter answers "which bonus?" — before it,
   // a season of merits and penalties could only be read by scrolling.
   const categoryFilter = $id('dashConductCategoryFilter')?.value || '';
 
-  const rows = (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [])
-    .filter(
-      (record) =>
-        record?.season === state.r5Season &&
-        (!categoryFilter || record.category === categoryFilter) &&
-        (!searchQuery || (record.playerName || '').toLowerCase().includes(searchQuery))
-    )
+  const rows = filterR5Adjustments(state.r5Adjustments, {
+    season: state.r5Season,
+    category: categoryFilter,
+    playerQuery: searchQuery,
+  })
     .slice()
     .sort((a, b) => {
       const aMs =

@@ -173,6 +173,7 @@ const tr = {
   adminConductSeasonLabel: 'Sezon: {season}',
   adminConductPlayer: 'Oyuncu',
   adminConductCategory: 'Kategori',
+  adminConductFilterCategory: 'Kategoriye göre filtrele',
   adminConductPoints: 'Puan',
   adminConductNote: 'Not',
   adminConductNotePh: 'İsteğe bağlı neden',
