@@ -24,7 +24,7 @@ test('a wrong predecessor or an arbitrary skip still fails', () => {
 
 test('normal cadence resumes right after the approved transition', () => {
   assert.equal(expectedPreviousVersion('16.5.1'), '16.5.0');
-  assert.equal(expectedPreviousVersion('16.6.0'), '16.5.20');
+  assert.equal(expectedPreviousVersion('16.5.4'), '16.5.20');
   assert.equal(cadenceFailure('16.5.1', '16.5.0'), null);
   assert.match(cadenceFailure('16.5.2', '16.5.0'), /must follow 16\.5\.1/);
   assert.equal(normalPreviousVersion('16.5.0'), '16.4.20');

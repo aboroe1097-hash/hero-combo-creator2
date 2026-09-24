@@ -9,10 +9,12 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.5.4",
     "date": "2026-09-24",
     "highlights": [
-      "The language button now shows the right language when a page applies a saved or linked language on load, on the main site and on the standalone pages.",
-      "Specialization Towers: the step and milestone controls sit on two rows, so the inspector no longer clips its close button and the 100% preset on wide screens (1440px and up).",
-      "Larger touch targets on phones: the standalone footer links, the tool bar's logo link, Arcade's name and refresh buttons, Eden's retry button, and the Battle Simulator's tower tabs, research nodes, setup toggle and checkboxes all reach 44px.",
-      "VTS Admin: when a superadmin's save or load is refused, the message now says the live security rules are older than the site and names the redeploy and status commands, instead of suggesting the account is wrong. It covers vote settings, reward settings, complaints and the seaso…"
+      "VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is…",
+      "VTS Admin: superadmins set the competition's start, phase-one close, deadline, re-upload window and winners start/end in game time. A scheduled job opens and closes sign-ups and re-uploads at those instants.",
+      "Eden Hub gained **Eden Pathing**, a route planner on the Eden map with PNG export, and Eden Map routes can be played back step by step.",
+      "Heroes & Combos, Research & Towers, Class Development and Eden each have a **PDFs** tab that builds a printable document from your choices (season, troop, focus, paper size, level of detail), with numbered sections, repeated table headers and page numbers. Unknown values print a…",
+      "Eden Siege fun pass: five tower tiers, armoured, swift and shielded enemies, warlord boss waves, Velo's dash and ultimate, a training wave, endless mode and a Daily Siege with the same seed for everyone. Runs end on a results screen with stars and recent runs saved in the browse…",
+      "Motion: Specialization Towers draw the connectors between nodes, the research planner shows a cost curve, Arcade gives hit feedback, and combo PNGs carry a background generated from the combos."
     ]
   },
   {
