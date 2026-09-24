@@ -499,7 +499,44 @@ export async function bootVtsScore(options = {}) {
     if (Number.isFinite(endsAt) && !state.countdownTimer) {
       state.countdownTimer = setInterval(renderCountdown, 1000);
     }
-    setHidden(element('vtsScoreGrowthBoard'), !getCompetitionPageState(state.phase).growthBoard);
+    const boardVisible = getCompetitionPageState(state.phase).growthBoard;
+    setHidden(element('vtsScoreGrowthBoard'), !boardVisible);
+    if (boardVisible) void mountGrowthBoard();
+  }
+
+  // The published growth board (results pending / winners). Loaded on demand so
+  // the rest of the season never downloads it; a missing or unreadable board
+  // keeps the "appears once results are published" line.
+  let growthBoard = null;
+  async function mountGrowthBoard({ rerender = false } = {}) {
+    const section = element('vtsScoreGrowthBoard');
+    if (!section) return;
+    try {
+      if (!growthBoard) {
+        growthBoard = { loading: true };
+        const board = await import('./competition-board.js');
+        const projection = await withTimeout(
+          board.loadCompetitionBoard(await loadBohSignupFirestore()),
+          SCHEDULE_READ_TIMEOUT_MS
+        );
+        growthBoard = { board, projection };
+        rerender = true;
+      }
+      if (!rerender || !growthBoard.projection) return;
+      let mount = section.querySelector('[data-growth-board-mount]');
+      if (!mount) {
+        mount = document.createElement('div');
+        mount.dataset.growthBoardMount = '';
+        section.append(mount);
+      }
+      section.querySelector('[data-vts-i18n="growthBoardPending"]')?.setAttribute('hidden', '');
+      growthBoard.board.renderCompetitionBoard(mount, growthBoard.projection, {
+        locale: i18n.language,
+      });
+    } catch (error) {
+      console.warn('VtsScore growth board unavailable', error);
+      growthBoard = null;
+    }
   }
 
   function renderPhaseNotice() {
@@ -587,6 +624,7 @@ export async function bootVtsScore(options = {}) {
   }
 
   element('vtsScoreLanguage')?.addEventListener('change', () => {
+    if (growthBoard?.projection) void mountGrowthBoard({ rerender: true });
     for (const picker of Object.values(state.pickers)) picker.render();
     renderSchedule();
     renderPhaseNotice();
