@@ -79,20 +79,26 @@ export function rewardQuota(settings, category) {
 }
 
 /**
- * Whether the season hands the guild-master reward to a named R5, outside the
- * support-work quota. The owner's rule: the R5 always holds it, even with no
- * support work of their own, and Support Work still rewards its full quota of
- * other players. With `support_top1`, or with no R5 named, the top support
- * scorer holds it inside the quota instead.
+ * Whether the season hands the guild-master reward to a named R5, taking one of
+ * the Support Work slots. The owner's rule: the R5 always holds it, even with no
+ * support work of their own, and the Support Work quota covers the R5 plus the
+ * other support players — a quota of 6 means 1 R5 and 5 others, not 6 others
+ * with an extra R5 row on top. With `support_top1`, or with no R5 named, the top
+ * support scorer holds it inside the quota instead.
  */
 export function guildMasterIsReserved(settings) {
   const normalized = normalizeRewardSettings(settings);
   return normalized.guildMasterSource === 'r5' && Boolean(normalized.r5PlayerKey);
 }
 
-/** Rows the Support Work table shows: its quota, plus the R5 row when reserved. */
+/**
+ * Rows the Support Work table shows. A reserved R5 fills one of the quota slots,
+ * so the quota is the row count — except at a quota of 0, where the R5 still
+ * holds the reward rather than leaving a season with nobody holding it.
+ */
 export function supportSlotCount(settings) {
-  return rewardQuota(settings, 'support') + (guildMasterIsReserved(settings) ? 1 : 0);
+  const quota = rewardQuota(settings, 'support');
+  return guildMasterIsReserved(settings) ? Math.max(quota, 1) : quota;
 }
 
 /** Size of the final announcement: every category's slots together. */
@@ -117,7 +123,8 @@ export function announcementSlotCount(settings) {
  * @param {object} [options.r5Row]  the R5's scored row, when the R5 has one
  * @returns {Array<{ row: object|null, reward: 'guild_master'|'core' }>}
  *   With a reserved R5 the first entry is the R5 (row null if they have no
- *   scored row), followed by `quota` support rows that exclude the R5.
+ *   scored row), and the R5 takes one of the quota slots, so `quota - 1` other
+ *   support rows follow. A quota of 0 still yields the R5 alone.
  */
 export function allocateSupportRewards(settings, supportRows, options = {}) {
   const normalized = normalizeRewardSettings(settings);
@@ -132,7 +139,7 @@ export function allocateSupportRewards(settings, supportRows, options = {}) {
   const r5FamilyKey = String(options.r5FamilyKey || '');
   const others = rows
     .filter((row) => !r5FamilyKey || familyKeyOf(row) !== r5FamilyKey)
-    .slice(0, quota)
+    .slice(0, Math.max(0, quota - 1))
     .map((row) => ({ row, reward: 'core' }));
   return [{ row: options.r5Row || null, reward: 'guild_master' }, ...others];
 }

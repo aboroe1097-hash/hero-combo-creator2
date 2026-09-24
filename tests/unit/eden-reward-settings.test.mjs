@@ -189,13 +189,13 @@ test('the reward distribution is a superadmin document published with the season
   }
 });
 
-test('the R5 holds guild master outside the support quota, which still fills in full', () => {
+test('the R5 holds guild master inside the support quota, so the quota is the row count', () => {
   const rows = ['alpha', 'malakabo', 'beta', 'gamma', 'delta', 'epsilon'].map((playerKey) => ({
     playerKey,
   }));
   const options = { familyKeyOf: (row) => row.playerKey, r5FamilyKey: 'malakabo' };
 
-  // Default: R5 first as guild master, then four OTHER support players.
+  // Default support quota is 4: the R5 plus three OTHER support players.
   const byDefault = allocateSupportRewards(null, rows, { ...options, r5Row: rows[1] });
   assert.deepEqual(
     byDefault.map(({ row, reward }) => [row?.playerKey, reward]),
@@ -204,12 +204,11 @@ test('the R5 holds guild master outside the support quota, which still fills in 
       ['alpha', 'core'],
       ['beta', 'core'],
       ['gamma', 'core'],
-      ['delta', 'core'],
     ]
   );
   assert.equal(guildMasterIsReserved(null), true);
-  assert.equal(supportSlotCount(null), 5);
-  assert.equal(announcementSlotCount(null), 21);
+  assert.equal(supportSlotCount(null), 4);
+  assert.equal(announcementSlotCount(null), 20);
 
   // An R5 with no support work (no scored row) still holds it by name.
   const noSupport = allocateSupportRewards(
@@ -222,15 +221,23 @@ test('the R5 holds guild master outside the support quota, which still fills in 
   );
   assert.equal(noSupport[0].row, null);
   assert.equal(noSupport[0].reward, 'guild_master');
-  assert.equal(noSupport.length, 5);
+  assert.equal(noSupport.length, 4);
 
   // Quotas re-flow: a smaller support quota keeps the R5 and trims the rest.
   const two = allocateSupportRewards({ quotas: { support: 2 } }, rows, options);
   assert.deepEqual(
     two.map(({ row }) => row?.playerKey ?? null),
-    [null, 'alpha', 'beta']
+    [null, 'alpha']
   );
-  assert.equal(announcementSlotCount({ quotas: { support: 2, contribution: 5 } }), 3 + 5 + 3 + 3);
+  assert.equal(announcementSlotCount({ quotas: { support: 2, contribution: 5 } }), 2 + 5 + 3 + 3);
+
+  // A quota of 0 is the one case where the R5 adds a row: the reward is never
+  // left unheld, so the table shows the R5 alone rather than nobody.
+  assert.equal(supportSlotCount({ quotas: { support: 0 } }), 1);
+  assert.equal(
+    allocateSupportRewards({ quotas: { support: 0 } }, rows, { ...options, r5Row: rows[1] }).length,
+    1
+  );
 
   // support_top1: the top scorer holds it inside the quota, nothing reserved.
   const top1 = allocateSupportRewards({ guildMasterSource: 'support_top1' }, rows, options);
